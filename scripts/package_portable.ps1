@@ -1,5 +1,6 @@
 param(
-  [string]$OutputDir = "release"
+  [string]$OutputDir = "release",
+  [switch]$SkipExe
 )
 
 $ErrorActionPreference = "Stop"
@@ -52,8 +53,10 @@ SourceFiles=SourceFiles
 SourceFiles0=$stage
 [SourceFiles0]
 "@
-Set-Content -LiteralPath $iexpress -Value $sed -Encoding ASCII
-& iexpress.exe /N /Q $iexpress
+if (-not $SkipExe) {
+  Set-Content -LiteralPath $iexpress -Value $sed -Encoding ASCII
+  & iexpress.exe /N /Q $iexpress
+}
 
 Write-Host "Created ZIP: $zip"
 Write-Host "IExpress output (if available): $out\seer-battle-simulator.exe"

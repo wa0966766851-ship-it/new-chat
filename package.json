@@ -12,7 +12,8 @@
     "test": "tsx src/tests/battle.units.test.ts && tsx src/tests/blocks.semantic.test.ts && tsx scripts/audit_block_coverage.ts --check",
     "audit:blocks": "tsx scripts/audit_block_coverage.ts --details",
     "audit:extra-actions": "tsx scripts/audit_extra_actions.ts",
-    "package:portable": "powershell -ExecutionPolicy Bypass -File scripts/package_portable.ps1"
+    "package:portable": "powershell -ExecutionPolicy Bypass -File scripts/package_portable.ps1",
+    "package:zip": "powershell -ExecutionPolicy Bypass -File scripts/package_portable.ps1 -SkipExe"
   },
   "dependencies": {
     "@google/genai": "^2.4.0",
