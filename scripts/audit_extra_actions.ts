@@ -15,14 +15,14 @@ const actionPattern = /額外行動|再次出手|進行[一二三四五六七八
 for (const elf of DEFAULT_ELVES as any[]) {
   const soul = elf.soulMark?.description || "";
   if (actionPattern.test(soul)) {
-    const status = elf.name.includes("斯嘉麗") ? "implemented" : elf.name.includes("蝕言") ? "partial" : "partial";
+    const status = elf.name.includes("斯嘉麗") || elf.name.includes("蝕言") ? "implemented" : "partial";
     findings.push({
       id: elf.id,
       elf: elf.name,
       location: "soulMark",
       text: soul.match(actionPattern)?.[0] || "額外行動",
       status,
-      evidence: elf.name.includes("斯嘉麗") ? "scarlettRegistry → queueExtraAction → BattleScreen drain" : elf.name.includes("蝕言") ? "traitsEngine triggerActionPhaseEnd/triggerRoundEnd 直接結算，未走獨立額外行動節點且未按描述選屬性" : "需補專屬執行器"
+      evidence: elf.name.includes("斯嘉麗") ? "scarlettRegistry → queueExtraAction → BattleScreen drain" : elf.name.includes("蝕言") ? "traitsEngine → queueExtraAction → skill_extra_action；場下餘波另以真實傷害結算" : "需補專屬執行器"
     });
   }
   for (const skill of [...(elf.skills || []), ...(elf.skillPool || [])] as any[]) {
@@ -34,8 +34,8 @@ for (const elf of DEFAULT_ELVES as any[]) {
       elf: elf.name,
       location: `skill:${skill.name}`,
       text: description.match(actionPattern)?.[0] || "額外行動",
-      status: isSixPetal ? "partial" : "missing",
-      evidence: isSixPetal ? "wuxuRegistry → queueExtraAction；目前一次 run 直接合併傷害，未建立 6 個獨立行動節點/動畫" : "未找到對應 BattleSkillRegistry/queueExtraAction 執行器"
+      status: isSixPetal ? "implemented" : "missing",
+      evidence: isSixPetal ? "wuxuRegistry → queueExtraAction；依描述在一次額外行動結束時合併結算六次總傷害，不播放六段動畫" : "未找到對應 BattleSkillRegistry/queueExtraAction 執行器"
     });
   }
   for (const [key, trait] of Object.entries(elf.alienTraits || {}) as any[]) {
@@ -46,8 +46,8 @@ for (const elf of DEFAULT_ELVES as any[]) {
       elf: elf.name,
       location: `alienTraits:${key}`,
       text: description.match(actionPattern)?.[0] || "額外行動",
-      status: elf.name.includes("蝕言") ? "partial" : "missing",
-      evidence: elf.name.includes("蝕言") ? "traitsEngine 已處理魔咒/滅靈魔咒，但以直接真實傷害結算，與描述的屬性克制額外行動不一致" : "未找到對應執行器"
+      status: elf.name.includes("蝕言") ? "implemented" : "missing",
+      evidence: elf.name.includes("蝕言") ? "traitsEngine → queueExtraAction；主體為最佳屬性技能傷害，場下餘波為無屬性真實傷害" : "未找到對應執行器"
     });
   }
 }
