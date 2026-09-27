@@ -152,7 +152,7 @@ export const STARLIGHT_RUS_SKILLS: Record<string, BattleSkillHandler> = {
     }
     const want = taken * 2;
     addLog(`🌊 【克制】：將本回合所受的 ${taken} 點技能傷害 2 倍反饋給對手！`, "effect");
-    ctx.applySkillTypeDamage(oppSide, want, "克制", { ignoreBlock: true, ignoreLimit: true, floor: want });
+    ctx.applySkillTypeDamage(oppSide, want, "克制", { ignoreBlock: true, ignoreLimit: true, floor: want, node: "attack_damage" });
   },
 
   "星光·排山倒海": (ctx) => {

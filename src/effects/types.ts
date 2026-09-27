@@ -9,6 +9,8 @@ export enum EffectTiming {
   BEFORE_ACTION = "BEFORE_ACTION",
   AFTER_ACTION = "AFTER_ACTION",
   ACTION_END = "ACTION_END",
+  EXTRA_ACTION_START = "EXTRA_ACTION_START",
+  EXTRA_ACTION_END = "EXTRA_ACTION_END",
   ROUND_START = "ROUND_START",
   ROUND_END = "ROUND_END",
   FATAL_RESIST = "FATAL_RESIST",
@@ -72,6 +74,7 @@ export interface ElfDeconstructedProfile {
 }
 
 export type DamageCategory = "skill_attack" | "skill_attribute" | "skill_extra_action" | "fixed" | "percent" | "true";
+export type DamageNode = "attack_damage" | "skill_effect" | "extra_action";
 
 export interface DamageComputation {
   base: number;              // Stage 0 結果，唯讀
@@ -82,9 +85,11 @@ export interface DamageComputation {
   bonusFixed?: number;       // Stage 3.5 固定加法值
   floor?: number;            // Stage 4 保底傷害，多來源時取 Math.max
   damageCategory: DamageCategory;
+  damageNode?: DamageNode;   // 結算節點與傷害分類分離；動畫不改變節點
   skillType?: string;        // 本次技能的屬性系別，用來判斷是否為「普通系」跳過限制
   isIncoming?: boolean;
   isCrit?: boolean;
+  isTypedSkill?: boolean;
 }
 
 export interface PpCostComputation {
@@ -122,7 +127,7 @@ export interface BattleEventContext {
   getStatuses: (elf: Elf) => Record<string, number>;
   applyPinkDamage: (side: "p1" | "p2", amount: number, label?: string, activeP1?: Elf, activeP2?: Elf, dmgType?: string) => number;
   applyTrueDamage: (side: "p1" | "p2", amount: number, label?: string, activeP1?: Elf, activeP2?: Elf) => number;
-  applySkillTypeDamage: (side: "p1" | "p2", amount: number, label?: string, opts?: { ignoreBlock?: boolean; ignoreLimit?: boolean; ignoreShield?: boolean; floor?: number; elem?: string; category?: "skill_extra_action" }) => number;
+  applySkillTypeDamage: (side: "p1" | "p2", amount: number, label?: string, opts?: { ignoreBlock?: boolean; ignoreLimit?: boolean; ignoreShield?: boolean; floor?: number; elem?: string; category?: "skill_attribute" | "skill_extra_action"; node?: DamageNode }) => number;
   applyAbsorb: (side: "p1" | "p2", amount: number) => void;
   
   // Dynamic state accessors
@@ -168,11 +173,14 @@ export interface BattleEventContext {
 
 export type BattleSkillHandler = (context: BattleEventContext) => void;
 
-/** 額外行動：amount＋elem＝以該屬性（吃克制）造成的額外行動傷害；run＝自訂結算（在該行動節點以擁有者 ctx 執行） */
+/**
+ * 額外行動是出手流程結束後的獨立行動節點，不等同再次使用技能，亦不觸發一般 ACTION_END。
+ * amount＋elem＝以該屬性（吃克制）造成額外行動傷害；run＝在擁有者 ctx 執行自訂結算。
+ */
 export interface ExtraAction {
   label: string;
   amount?: number;
   elem?: string;
   after?: (ctx: BattleEventContext, dealt: number) => void;
-  run?: (ctx: BattleEventContext) => void;
+  run?: (ctx: BattleEventContext) => number | void;
 }

@@ -142,7 +142,7 @@ export const handleDimensionalSoulMark = (ctx: BattleEventContext, event: Effect
         }
         // 10以上:攻擊附加等同對方最大體力值的技能傷害
         if (stacks >= 10) {
-          applySkillTypeDamage(oppSide, target.maxHp, "終章最大體力技能傷害");
+          applySkillTypeDamage(oppSide, target.maxHp, "終章最大體力技能傷害", { node: "attack_damage" });
         }
       }
       break;

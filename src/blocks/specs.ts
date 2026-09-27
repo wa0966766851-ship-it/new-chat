@@ -3,7 +3,7 @@
 // SOUL_MODE：精靈 id / 名稱 → "blocks"（魂印全部用積木）或 子句索引陣列（手寫魂印＋指定子句用積木補）
 export const SKILL_MODE: Record<string, "blocks" | number[]> = {
   // 5003 天蓬元帥八戒
-  "天河衝擊": "blocks",
+  "天河衝擊": "blocks", "殘軀鎖命": "blocks", "萬鈞鎮魂": "blocks", "混元護體": "blocks", "淨·天河倒懸": "blocks",
   // 5004 皮特薩拉羅
   "翎封禁之羽": "blocks", "翎萬羽歸宗": "blocks",
   // 5005 布萊克

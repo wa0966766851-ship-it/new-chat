@@ -81,11 +81,12 @@ function makeBlockContext(selfOverrides: Record<string, any> = {}, targetOverrid
       const elf = elfAt(side);
       elf.shield = (elf.shield || 0) + Math.floor(amount);
     },
-    applyStatChange: (side: "p1" | "p2", changes: Record<string, number>) => {
+    applyStatChange: (side: "p1" | "p2", changes: Record<string, number>, ppChanges?: Record<string, number>) => {
       const elf = elfAt(side);
       for (const [key, value] of Object.entries(changes)) {
         elf.statStages[key] = Math.max(-6, Math.min(6, (elf.statStages[key] || 0) + value));
       }
+      if (ppChanges?.all) elf.skills = elf.skills.map((skill: any) => ({ ...skill, pp: Math.max(0, Math.min(skill.maxPp ?? 99, (skill.pp || 0) + ppChanges.all)) }));
     },
     updateElf: (side: "p1" | "p2", patch: Record<string, any>) => Object.assign(elfAt(side), patch),
     updateAnyElf: () => {},
@@ -149,8 +150,8 @@ function skillByName(name: string) {
 
 console.log("\n=== 積木登記完整性 ===");
 
-t("8 個積木技能的所有子句皆可解析", () => {
-  assert.strictEqual(Object.keys(SKILL_MODE).length, 8);
+t("12 個積木技能的所有子句皆可解析", () => {
+  assert.strictEqual(Object.keys(SKILL_MODE).length, 12);
   for (const name of Object.keys(SKILL_MODE)) {
     const program = getSkillProgram(skillByName(name));
     const unparsed = program.clauses.filter(clause => !clause.parsed);
@@ -178,6 +179,51 @@ t("天河衝擊：消強後全屬性-1，消回合後禁療2回合", () => {
   assert.strictEqual(h.opponentState.p2_noHealTurns, 2);
 });
 
+t("殘軀鎖命：強化翻倍、傷害上限、回復計時與易傷均寫入戰鬥狀態", () => {
+  const h = makeBlockContext({ statStages: { ...baseStages(), atk: 1 } });
+  h.ctx.skill = skillByName("殘軀鎖命");
+  runSkillProgram(h.ctx, getSkillProgram(h.ctx.skill), "use");
+  assert.deepStrictEqual(h.self.statStages, { atk: 3, def: 2, spatk: 2, spdef: 2, speed: 2, accuracy: 2 });
+  assert.strictEqual(h.playerState.incomingSkillDmgCapTurns, 4);
+  assert.strictEqual(h.playerState.incomingSkillDmgCap, 200);
+  assert.strictEqual(h.opponentState.damageTakenBoostTurns, 3);
+  assert.ok(h.timers.p1.some(timer => timer.payload.block.trig === "round_end" && timer.remaining === 4));
+});
+
+t("萬鈞鎮魂：高體力目標受到1/4固定傷害，未擊敗時全屬性-1", () => {
+  const h = makeBlockContext({ currentHp: 500 }, { currentHp: 800, maxHp: 1000 });
+  h.ctx.skill = skillByName("萬鈞鎮魂");
+  const program = getSkillProgram(h.ctx.skill);
+  runSkillProgram(h.ctx, program, "use");
+  runSkillProgram(h.ctx, program, "after_hit");
+  assert.strictEqual(h.playerState.vampireRatio, 0.4);
+  assert.strictEqual(h.damage.fixed, 250);
+  assert.deepStrictEqual(h.target.statStages, { atk: -1, def: -1, spatk: -1, spdef: -1, speed: -1, accuracy: -1 });
+});
+
+t("混元護體：異常反彈、害怕、傷害上限與攻擊先制均生效", () => {
+  const h = makeBlockContext();
+  h.ctx.skill = skillByName("混元護體");
+  runSkillProgram(h.ctx, getSkillProgram(h.ctx.skill), "use");
+  assert.strictEqual(h.playerState.reflectStatusTurns, 4);
+  assert.ok(h.statuses.p2.includes("害怕"));
+  assert.strictEqual(h.playerState.incomingSkillDmgCapTurns, 3);
+  assert.strictEqual(h.playerState.incomingSkillDmgCap, 280);
+  assert.strictEqual(h.playerState.priorityBoostTurns, 3);
+  assert.strictEqual(h.playerState.priorityBoostValue, 2);
+  assert.strictEqual(h.playerState.priorityBoostAttackOnly, true);
+});
+
+t("淨·天河倒懸：消回合後禁療與屬性失效，低體力時傷害翻倍並吸血", () => {
+  const h = makeBlockContext({ currentHp: 400 }, { currentHp: 800 });
+  h.ctx.skill = skillByName("淨·天河倒懸");
+  runSkillProgram(h.ctx, getSkillProgram(h.ctx.skill), "use");
+  assert.strictEqual(h.opponentState.p2_noHealTurns, 3);
+  assert.strictEqual(h.opponentState.utilitySkillInvalidTurns, 3);
+  assert.strictEqual(h.playerState.skillDamageBoost, 2);
+  assert.strictEqual(h.playerState.vampireRatio, 1);
+});
+
 t("翎萬羽歸宗：異常目標使攻擊翻倍並啟用等量回血", () => {
   const h = makeBlockContext({}, { battleStatuses: { 麻痺: 2 } });
   h.ctx.skill = skillByName("翎萬羽歸宗");
@@ -202,6 +248,65 @@ t("深潛者盛宴：異常存在時3回合技能增傷由50%翻倍為100%", () 
   assert.strictEqual(h.timers.p1[0].payload.block.dmgOut, 1);
 });
 
+t("星光·音速火拳：消回合後降先制且機率增傷實際寫入狀態", () => {
+  const h = makeBlockContext();
+  h.ctx.skill = skillByName("星光·音速火拳");
+  runSkillProgram(h.ctx, getSkillProgram(h.ctx.skill), "use");
+  assert.strictEqual(h.opponentState.priorityBoostValue, -3);
+  assert.strictEqual(h.opponentState.priorityBoostTurns, 2);
+  assert.strictEqual(h.playerState.skillDamageBoost, 2);
+});
+
+t("星光·冥想：免疫反彈、免降、焚燼與3回合追傷均生效", () => {
+  const h = makeBlockContext();
+  h.ctx.skill = skillByName("星光·冥想");
+  runSkillProgram(h.ctx, getSkillProgram(h.ctx.skill), "use");
+  assert.strictEqual(h.playerState.reflectStatusTurns, 4);
+  assert.strictEqual(h.playerState.immuneStatDownTurns, 4);
+  assert.ok(h.statuses.p2.includes("焚燼"));
+  assert.ok(h.timers.p1.some(timer => timer.remaining === 3 && timer.payload.block.trig === "self_attack"));
+});
+
+t("星光·不滅之火：消強固傷、星火增傷、暴擊回滿與持續追傷均生效", () => {
+  const h = makeBlockContext({ currentHp: 100 }, { statStages: { ...baseStages(), atk: 2 } });
+  h.ctx.skill = skillByName("星光·不滅之火");
+  h.ctx.setMark({ id: "blk_星火之灼", name: "星火之灼", count: 1 }, "p2");
+  runSkillProgram(h.ctx, getSkillProgram(h.ctx.skill), "use");
+  assert.strictEqual(h.target.statStages.atk, 0);
+  assert.strictEqual(h.damage.fixed, 400);
+  assert.strictEqual(h.playerState.skillDamageBoost, 2.5);
+  assert.ok(h.timers.p1.some(timer => timer.remaining === 3 && timer.payload.block.trig === "self_skill"));
+  h.playerState.blkLastCrit = true;
+  runSkillProgram(h.ctx, getSkillProgram(h.ctx.skill), "after_hit");
+  assert.strictEqual(h.self.currentHp, 1000);
+});
+
+t("星光·覺醒：先手強化翻倍並建立回血追傷、增傷與先制效果", () => {
+  const h = makeBlockContext();
+  h.ctx.goesFirst = true;
+  h.ctx.skill = skillByName("星光·覺醒");
+  runSkillProgram(h.ctx, getSkillProgram(h.ctx.skill), "use");
+  assert.deepStrictEqual(h.self.statStages, { atk: 2, def: 2, spatk: 2, spdef: 2, speed: 2, accuracy: 2 });
+  assert.ok(h.timers.p1.some(timer => timer.remaining === 4 && timer.payload.block.trig === "self_skill"));
+  assert.ok(h.timers.p1.some(timer => timer.remaining === 3 && timer.payload.block.dmgOut === 1.5));
+  assert.strictEqual(h.playerState.priorityBoostValue, 2);
+  assert.strictEqual(h.playerState.priorityBoostTurns, 3);
+});
+
+t("星光·魔焰裂空：消強回血、星火增傷、弱化計時、必暴與封屬性均生效", () => {
+  const h = makeBlockContext({ currentHp: 100 }, { currentHp: 900, statStages: { ...baseStages(), def: 2 } });
+  h.ctx.skill = skillByName("星光·魔焰裂空");
+  h.ctx.setMark({ id: "blk_星火之灼", name: "星火之灼", count: 1 }, "p2");
+  runSkillProgram(h.ctx, getSkillProgram(h.ctx.skill), "use");
+  assert.strictEqual(h.self.currentHp, 500);
+  assert.strictEqual(h.target.statStages.def, 0);
+  assert.strictEqual(h.playerState.skillDamageBoost, 2.5);
+  assert.ok(h.timers.p1.some(timer => timer.remaining === 3 && timer.payload.block.trig === "self_attack"));
+  assert.strictEqual(h.opponentState.utilitySkillInvalidTurns, 2);
+  runSkillProgram(h.ctx, getSkillProgram(h.ctx.skill), "after_hit");
+  assert.ok(h.timers.p1.some(timer => timer.kind === "use_counter" && timer.remaining === 2 && timer.payload.block.crit));
+});
+
 t("贖魂讚詩：消回合成功後施加流血", () => {
   const h = makeBlockContext();
   h.ctx.skill = skillByName("贖魂讚詩");
@@ -211,11 +316,64 @@ t("贖魂讚詩：消回合成功後施加流血", () => {
 
 console.log("\n=== 積木魂印語意 ===");
 
+t("天蓬元帥八戒魂印：受擊消強，高低體力分別減傷25%與50%", () => {
+  const elf = elfById("5003");
+  const high = makeBlockContext({ id: elf.id, name: elf.name, currentHp: 800 }, { statStages: { ...baseStages(), atk: 2 } });
+  runSoulProgram(high.ctx, getSoulProgram(elf), ["damaged_attack"], {});
+  assert.strictEqual(high.target.statStages.atk, 0);
+  const highDamage = { base: 400, damageCategory: "skill_attack", isIncoming: true, isTypedSkill: false, increasePercent: 0, decreasePercent: 0, multiplier: 1 };
+  runSoulProgram(high.ctx, getSoulProgram(elf), ["passive"], highDamage);
+  assert.strictEqual(highDamage.decreasePercent, 0.25);
+
+  const low = makeBlockContext({ id: elf.id, name: elf.name, currentHp: 400 });
+  const lowDamage = { ...highDamage, decreasePercent: 0 };
+  runSoulProgram(low.ctx, getSoulProgram(elf), ["passive"], lowDamage);
+  assert.strictEqual(lowDamage.decreasePercent, 0.5);
+});
+
+t("天蓬元帥八戒魂印：低於1/4回合末回血並令對手全屬性-1", () => {
+  const elf = elfById("5003");
+  const h = makeBlockContext({ id: elf.id, name: elf.name, currentHp: 200 });
+  runSoulProgram(h.ctx, getSoulProgram(elf), ["round_end"], {});
+  assert.strictEqual(h.self.currentHp, 533);
+  assert.deepStrictEqual(h.target.statStages, { atk: -1, def: -1, spatk: -1, spdef: -1, speed: -1, accuracy: -1 });
+});
+
+t("天蓬元帥八戒魂印：死亡依弱化種類線性削減體力上限並延長禁療", () => {
+  const elf = elfById("5003");
+  const h = makeBlockContext(
+    { id: elf.id, name: elf.name },
+    { currentHp: 900, maxHp: 1000, statStages: { ...baseStages(), atk: -1, def: -2 } },
+  );
+  runSoulProgram(h.ctx, getSoulProgram(elf), ["defeated"], {});
+  assert.strictEqual(h.target.maxHp, 400);
+  assert.strictEqual(h.target.currentHp, 400);
+  assert.strictEqual(h.opponentState.p2_noHealTurns, 4);
+});
+
 t("星光·魔焰猩猩登場：為對手附加星火之灼", () => {
   const elf = elfById("5006");
   const h = makeBlockContext({ id: elf.id, name: elf.name });
   runSoulProgram(h.ctx, getSoulProgram(elf), ["entrance"], {});
   assert.ok(h.marks.p2.some(mark => mark.name === "星火之灼" && mark.effects.blkTurns === 3));
+});
+
+t("星光·魔焰猩猩物攻後：回血、等量百分比傷害與PP恢復皆生效", () => {
+  const elf = elfById("5006");
+  const h = makeBlockContext({ id: elf.id, name: elf.name, currentHp: 300, skills: [{ name: "測試物攻", category: "物理", pp: 0, maxPp: 5 }] });
+  runSoulProgram(h.ctx, getSoulProgram(elf), ["self_after_attack", "self_after_physical"], { skill: h.ctx.skill });
+  assert.strictEqual(h.self.currentHp, 633);
+  assert.strictEqual(h.damage.pink, 333);
+  assert.strictEqual(h.self.skills[0].pp, 1);
+});
+
+t("星光·魔焰猩猩特攻後：先附加1/3最大體力傷害，再依成功量回血", () => {
+  const elf = elfById("5006");
+  const h = makeBlockContext({ id: elf.id, name: elf.name, currentHp: 300, skills: [{ name: "測試特攻", category: "特殊", pp: 0, maxPp: 5 }] });
+  runSoulProgram(h.ctx, getSoulProgram(elf), ["self_after_attack", "self_after_special"], { skill: h.ctx.skill });
+  assert.strictEqual(h.damage.pink, 333);
+  assert.strictEqual(h.self.currentHp, 633);
+  assert.strictEqual(h.self.skills[0].pp, 1);
 });
 
 t("鎮魂.巴弗洛登場：對手窒息且自身混亂", () => {

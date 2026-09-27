@@ -271,9 +271,9 @@ export const DeconstructedElfRegistry: Record<string, ElfDeconstructedProfile> =
         },
         {
           id: 'shengqian.feast',
-          effectClass: 'ON_HIT',
-          flavor: { name: '深潛者盛宴', description: '自身處於能力下降狀態時先制+3且使用技能不受PP值限制、將自身任意能力下降狀態視為至少2倍同等級的全屬性能力提升；自身下2次技能無效時令本次技能額外造成對手當前體力¼的水系技能傷害且令對手100%漸凍1回合。' },
-          mechanics: { target: 'SELF', boostOnDebuff: true, damageBoostTurns: 3 }
+          effectClass: 'INNATE_AND_ATTACHED',
+          flavor: { name: '深潛者盛宴', description: '固有：能力下降時先制+3、不受PP限制，並將下降視為至少2倍同級全屬性提升；傷害克制取水、混沌、水.混沌、普通中的最高值。附加：下2次技能無效時造成水系技能傷害並漸凍，以及吸取與3回合技能增傷。' },
+          mechanics: { target: 'SELF', boostOnDebuff: true, bestTypeMatchup: ['水', '混沌', '水.混沌', '普通'], damageBoostTurns: 3 }
         }
       ]
     }

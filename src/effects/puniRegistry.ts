@@ -462,7 +462,7 @@ export const PUNI_SKILLS: Record<string, BattleSkillHandler> = {
       return;
     }
     const want = taken * 2;
-    ctx.applySkillTypeDamage(actor === "p1" ? "p2" : "p1", want, "【能量】反饋", { ignoreBlock: true, ignoreLimit: true, floor: want });
+    ctx.applySkillTypeDamage(actor === "p1" ? "p2" : "p1", want, "【能量】反饋", { ignoreBlock: true, ignoreLimit: true, floor: want, node: "attack_damage" });
     addLog(`✨ 【能量】：將本回合所受的 ${taken} 點技能傷害 2 倍反饋給對手！`, "damage");
   },
   "靈光之怒": (ctx) => {

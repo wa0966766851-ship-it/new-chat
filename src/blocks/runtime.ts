@@ -16,8 +16,25 @@ export interface RunState {
   prevOp?: string;
   survived?: boolean;
   lastDealt?: number;
+  maxHpBeforeChange?: Partial<Record<S, number>>;
+  conditionSnapshots?: Map<string, boolean | undefined>;
   event?: { trig: Trigger; data?: any };
 }
+
+const DYNAMIC_CONDS = new Set(["success", "triggered", "fail", "kill", "nokill", "dmg_cmp", "last_no_dmg"]);
+const condKey = (c: Cond) => `${c.c}:${JSON.stringify(c.p || {})}`;
+function snapshotConditions(ctx: BattleEventContext, clauses: Clause[], st: RunState) {
+  st.conditionSnapshots ||= new Map();
+  for (const clause of clauses) {
+    for (const c of [...(clause.cond || []), ...clause.body.flatMap(s => s.cond || [])]) {
+      if (!DYNAMIC_CONDS.has(c.c) && !st.conditionSnapshots.has(condKey(c))) st.conditionSnapshots.set(condKey(c), evalCond(ctx, c, st));
+    }
+  }
+}
+const evalEventCond = (ctx: BattleEventContext, c: Cond, st: RunState) => {
+  const key = condKey(c);
+  return (st.conditionSnapshots?.has(key) ? st.conditionSnapshots.get(key) : evalCond(ctx, c, st)) === true;
+};
 
 const STATUS_DURATION: Record<string, number> = { 中毒: 3, 燒傷: 3, 寄生: 3, 凍傷: 3, 衰弱: 3, 流血: 3 };
 const sideOf = (ctx: BattleEventContext, w: string): S => (w === "self" ? ctx.actor : ctx.targetSide);
@@ -84,9 +101,10 @@ export function evalCond(ctx: BattleEventContext, c: Cond, st: RunState): boolea
 // ───────── 傷害分類 ─────────
 /** kind：攻擊＝攻擊技能公式傷害；技能＝技能傷害（攻擊＋X系技能傷害）；非真實；空＝全部 */
 export function compMatchesKind(comp: any, kind?: string): boolean {
-  const skill = comp.damageCategory === "skill_attack";
-  if (kind === "攻擊") return skill && !comp.isTypedSkill;
-  if (kind === "技能") return skill || comp.damageCategory === "skill_extra_action";
+  const attack = comp.damageCategory === "skill_attack" && !comp.isTypedSkill;
+  const skill = attack || comp.damageCategory === "skill_attribute" || comp.damageCategory === "skill_extra_action";
+  if (kind === "攻擊") return attack;
+  if (kind === "技能") return skill;
   if (kind === "非真實") return comp.damageCategory !== "true";
   if (kind === "固定") return comp.damageCategory === "fixed";
   if (kind === "百分比") return comp.damageCategory === "percent";
@@ -113,7 +131,7 @@ function dealDamage0(ctx: BattleEventContext, side: S, amt: number, type: string
   if (amt <= 0) return 0;
   if (type === "真實") return ctx.applyTrueDamage(side, amt, "真實傷害") || amt;
   if (type === "固定") { const r = ctx.applyFixedDamage(side, amt, "固定傷害"); return typeof r === "number" ? r : amt; }
-  if (type === "技能") return ctx.applySkillTypeDamage(side, amt, `${elem || ""}系技能傷害`, { elem }) || amt;
+  if (type === "技能") return ctx.applySkillTypeDamage(side, amt, `${elem || ""}系技能傷害`, { elem, node: "attack_damage" }) || amt;
   return ctx.applyPinkDamage(side, amt, "百分比傷害", undefined, undefined, "percent") || amt;
 }
 
@@ -199,8 +217,10 @@ export const OPS: Record<string, OpFn> = {
   },
   dmg_from_last: (ctx, p, st) => { if (!st.lastAmount) return false; dealDamage(ctx, ctx.targetSide, st.lastAmount * p.ratio, p.type, p.elem); return true; },
   vampire: (ctx, p) => { ctx.setPlayerState("vampireRatio", p.ratio); return true; },
-  maxhp: (ctx, p) => {
+  maxhp: (ctx, p, st) => {
     const side = sideOf(ctx, p.side); const e = elfOf(ctx, side);
+    st.maxHpBeforeChange ||= {};
+    st.maxHpBeforeChange[side] ??= e.maxHp;
     const newMax = Math.max(1, Math.floor(e.maxHp * (1 + p.ratio)));
     ctx.updateElf(side, { maxHp: newMax, currentHp: Math.min(e.currentHp, newMax) } as any);
     ctx.addLog(`❤️ 【${e.name}】體力上限變為 ${newMax}！`, "effect");
@@ -320,11 +340,12 @@ export const OPS: Record<string, OpFn> = {
     if (key[p.what]) ctx.setPlayerState(key[p.what], true);
     return true;
   },
-  per_statdown_bonus: (ctx, p) => {
+  per_statdown_bonus: (ctx, p, st) => {
     const opp: any = ctx.target;
     const k = Object.values(opp?.statStages || {}).filter((v: any) => typeof v === "number" && v < 0).length;
     if (!k) return false;
-    const newMax = Math.max(1, Math.floor(opp.maxHp * (1 - p.ratio * k)));
+    const baseline = st.maxHpBeforeChange?.[ctx.targetSide] ?? opp.maxHp;
+    const newMax = Math.max(1, Math.floor(opp.maxHp - baseline * p.ratio * k));
     ctx.updateElf(ctx.targetSide, { maxHp: newMax, currentHp: Math.min(opp.currentHp, newMax) } as any);
     const key = `${ctx.targetSide}_noHealTurns`;
     ctx.setOpponentState(key, (ctx.getOpponentState(key) || 0) + p.turns * k);
@@ -460,6 +481,12 @@ export function runStmts(ctx: BattleEventContext, body: Stmt[], st: RunState) {
   // 先判定「…時效果翻倍」這類使用前狀態的條件
   const pre = new Map<Stmt, boolean>();
   for (const s of body) if (s.pre && s.cond) pre.set(s, s.cond.every(c => evalCond(ctx, c, st) === true));
+  // 同一觸發句內的狀態條件以句子開始時為準。否則「低體力時回血並弱化」會在回血後
+  // 重新判斷成 false，錯誤跳過同一句後半效果。依賴前一動作結果的條件仍即時計算。
+  if (!st.conditionSnapshots) {
+    st.conditionSnapshots = new Map();
+    for (const s of body) for (const c of s.cond || []) if (!DYNAMIC_CONDS.has(c.c)) st.conditionSnapshots.set(condKey(c), evalCond(ctx, c, st));
+  }
   // 「…時效果翻倍」看使用前的狀態
   const dblMap = new Map<Act, boolean>();
   for (const s of body) for (const a of s.acts) if (a.p?.x2If) dblMap.set(a, evalCond(ctx, a.p.x2If, st) === true);
@@ -468,7 +495,7 @@ export function runStmts(ctx: BattleEventContext, body: Stmt[], st: RunState) {
     if (s.chain === "success" && st.last !== true) continue;
     if (s.chain === "fail" && st.last !== false) continue;
     if (s.cond && s.cond.length) {
-      const ok = s.cond.every(c => evalCond(ctx, c, st) === true);
+      const ok = s.cond.every(c => evalEventCond(ctx, c, st));
       if (!ok) { if (s.elseActs) for (const a of s.elseActs) runAct(ctx, a, st); continue; }
     }
     let any: boolean | null = null;
@@ -484,13 +511,14 @@ export function runStmts(ctx: BattleEventContext, body: Stmt[], st: RunState) {
 }
 
 export function runClause(ctx: BattleEventContext, c: Clause, st: RunState) {
-  if (c.cond && !c.cond.every(x => evalCond(ctx, x, st) === true)) return;
+  if (c.cond && !c.cond.every(x => evalEventCond(ctx, x, st))) return;
   runStmts(ctx, c.body, st);
 }
 
 /** 技能：使用時 / 傷害結算後 */
 export function runSkillProgram(ctx: BattleEventContext, prog: Program, phase: "use" | "after_hit" | "on_invalid", only?: number[]) {
   const st: RunState = { last: null, lastAmount: 0 };
+  snapshotConditions(ctx, prog.clauses.filter((c, i) => (!only || only.includes(i)) && c.trig === phase && c.parsed), st);
   if (phase === "use" && ctx.skill?.name) {
     const nm = ctx.skill.name;
     ctx.setPlayerState(`blkUses:${nm}`, (ctx.getPlayerState(`blkUses:${nm}`) || 0) + 1);
@@ -510,6 +538,8 @@ export function eventTriggers(ctx: BattleEventContext, ev: string, data: any): T
     case EffectTiming.ROUND_START: return ["round_start", "team_round_start"];
     case EffectTiming.ROUND_END: return ["round_end"];
     case EffectTiming.BATTLE_PHASE_END: return ["phase_end"];
+    case EffectTiming.EXTRA_ACTION_START: return ["extra_action_start"];
+    case EffectTiming.EXTRA_ACTION_END: return ["extra_action_end"];
     case EffectTiming.ON_ENTRANCE: return ["entrance"];
     case EffectTiming.DEATH_NODE_1: return ["defeated"];
     case EffectTiming.ON_KILL: return ["kill"];
@@ -528,8 +558,8 @@ export function eventTriggers(ctx: BattleEventContext, ev: string, data: any): T
     case EffectTiming.BEFORE_DAMAGE: {
       const comp = data?.damageComp || data;
       if (!comp || typeof comp !== "object" || comp.base == null) return [];
-      const skill = comp.damageCategory === "skill_attack";
-      const atk = skill && !comp.isTypedSkill;
+      const skill = comp.damageCategory === "skill_attack" || comp.damageCategory === "skill_attribute" || comp.damageCategory === "skill_extra_action";
+      const atk = comp.damageCategory === "skill_attack" && !comp.isTypedSkill;
       if (comp.isIncoming) return ["passive", "incoming", ...(skill ? ["incoming_skill"] as Trigger[] : []), ...(atk ? ["incoming_attack"] as Trigger[] : []), ...(comp.damageCategory !== "true" ? ["incoming_nontrue"] as Trigger[] : [])];
       return ["passive", "outgoing", ...(skill ? ["outgoing_skill"] as Trigger[] : []), ...(atk ? ["outgoing_attack"] as Trigger[] : [])];
     }
@@ -555,7 +585,7 @@ export function runSideTimers(ctx: BattleEventContext, trigs: Trigger[], data: a
       if (!comp.isIncoming && b.dmgOut != null) comp.increasePercent += b.dmgOut;
       if (!comp.isIncoming && b.dmgOutMult) comp.multiplier *= b.dmgOutMult;
     }
-    if (comp && comp.isIncoming && b.blockSkillDmg && comp.damageCategory === "skill_attack") {
+    if (comp && comp.isIncoming && b.blockSkillDmg && compMatchesKind(comp, "技能")) {
       const amt = Math.floor(comp.base * (1 + (comp.increasePercent || 0)) * (1 - (comp.decreasePercent || 0)) * (comp.multiplier ?? 1));
       comp.multiplier = 0;
       ctx.setPlayerState("blkBlockedBySoul", (ctx.getPlayerState("blkBlockedBySoul") || 0) + Math.max(0, amt));
@@ -578,6 +608,7 @@ export function runSideTimers(ctx: BattleEventContext, trigs: Trigger[], data: a
 const PASSIVE_OPS = new Set(["dmg_mod", "boost", "note", "noop"]);
 export function runSoulProgram(ctx: BattleEventContext, prog: Program, trigs: Trigger[], data: any, only?: number[]): boolean {
   const st: RunState = { last: null, lastAmount: 0, event: { trig: trigs[0], data } };
+  snapshotConditions(ctx, prog.clauses.filter((c, i) => (!only || only.includes(i)) && c.parsed && trigs.includes(c.trig)), st);
   const onceKey = (i: number) => `blkOnce:${prog.title}:${i}`;
   prog.clauses.forEach((c, i) => {
     if (only && !only.includes(i)) return;

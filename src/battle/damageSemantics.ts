@@ -1,6 +1,7 @@
 export type RuntimeDamageType =
   | "skill"
   | "skill_attack"
+  | "skill_attribute"
   | "skill_extra_action"
   | "fixed"
   | "percent"
@@ -19,7 +20,7 @@ export function normalizeDamageType(data: any): RuntimeDamageType {
 }
 
 export const isSkillDamageType = (damageType: RuntimeDamageType): boolean =>
-  damageType === "skill" || damageType === "skill_attack" || damageType === "skill_extra_action";
+  damageType === "skill" || damageType === "skill_attack" || damageType === "skill_attribute" || damageType === "skill_extra_action";
 
 export const isFixedOrPercentDamageType = (damageType: RuntimeDamageType): boolean =>
   damageType === "fixed" || damageType === "percent";

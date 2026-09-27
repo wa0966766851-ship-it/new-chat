@@ -237,14 +237,17 @@ export function buildDamageAPIs(shared: SharedContextDeps): DamageAPIs {
         baseVal = Math.floor(baseVal * typeMult);
       }
 
+      const damageCategory = opts?.category || "skill_attribute";
+      const damageNode = opts?.node || (damageCategory === "skill_extra_action" ? "extra_action" : "skill_effect");
       const damageComp: DamageComputation = {
         base: baseVal,
         increasePercent: 0,
         decreasePercent: 0,
         multiplier: 1.0,
-        damageCategory: opts?.category || "skill_attack",
+        damageCategory,
+        damageNode,
         skillType: elemType,
-        isTypedSkill: !opts?.category, // X系技能傷害（非攻擊公式）
+        isTypedSkill: damageCategory === "skill_attribute", // X系技能傷害（非攻擊公式）
         isIncoming: true
       } as any;
 
@@ -319,7 +322,7 @@ export function buildDamageAPIs(shared: SharedContextDeps): DamageAPIs {
       const stage3 = damageComp.limit !== undefined ? Math.min(stage2, damageComp.limit) : stage2;
       const finalDamage = Math.floor(damageComp.floor !== undefined ? Math.max(stage3, damageComp.floor) : Math.max(0, stage3));
 
-      pushEffect({ type: 'damage', side: tSide, data: { amount: finalDamage, label: label || "附加技能傷害", popup: true, sourceElfName: self.name, damageType: opts?.category || "skill_attack", typedSkill: !opts?.category, ignoreShield: !!opts?.ignoreShield } });
+      pushEffect({ type: 'damage', side: tSide, data: { amount: finalDamage, label: label || "附加技能傷害", popup: true, sourceElfName: self.name, damageType: damageCategory, damageNode, typedSkill: damageCategory === "skill_attribute", ignoreShield: !!opts?.ignoreShield } });
       return finalDamage;
     },
     applyTrueDamage: (tSide, amt, label, p1Override, p2Override) => {

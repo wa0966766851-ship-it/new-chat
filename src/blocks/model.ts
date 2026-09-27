@@ -5,6 +5,7 @@ export type Side = "self" | "opp" | "both";
 /** 觸發時點（魂印標頭、N回合內的持續效果） */
 export type Trigger =
   | "use" // 技能使用（技能本身的效果）
+  | "extra_action_start" | "extra_action_end" // 額外行動獨立節點（不等同再次使用技能）
   | "after_hit" // 技能傷害結算後（擊敗／未擊敗、造成傷害量相關）
   | "on_invalid" // 技能無效（含未命中）時
   | "self_invalid" // 自身技能無效（持續效果用）

@@ -4,6 +4,7 @@
 // 跑法: npx esbuild src/tests/battle.units.test.ts --bundle --platform=node --outfile=/tmp/t.cjs && node /tmp/t.cjs
 
 import assert from "node:assert";
+import { drainExtraActionQueue } from "../battle/extraActions";
 import {
   addTimer, tickTimers, clearTurnEffects, hasTurnEffect, consumeUse,
   remainingOf, turnEffect, roundCounter, useCounter, type Timer,
@@ -229,6 +230,13 @@ t("額外行動傷害屬於技能傷害並由護盾吸收", () => {
   });
 });
 
+t("X系技能傷害有獨立分類並由護盾吸收", () => {
+  const result = settleDamageAbsorption(300, "skill_attribute", 120, 80);
+  assert.strictEqual(result.amount, 180);
+  assert.strictEqual(result.shield, 0);
+  assert.strictEqual(result.barrier, 80);
+});
+
 t("無視護盾只略過技能護盾，不會消耗護盾", () => {
   const result = settleDamageAbsorption(300, "skill_attack", 120, 80, true);
   assert.strictEqual(result.amount, 300);
@@ -250,6 +258,31 @@ t("歷史傷害名稱會正規化，不把額外行動降級成未知類型", ()
   assert.strictEqual(normalizeDamageType({ damageType: "true_damage" }), "true");
   assert.strictEqual(normalizeDamageType({ damageType: "skill_extra_action" }), "skill_extra_action");
 });
+
+console.log("\n=== 額外行動 ===");
+
+await (async () => {
+  let queue: Array<{ owner: "p1" | "p2"; id: string }> = [
+    { owner: "p1", id: "a" },
+    { owner: "p2", id: "enemy" },
+  ];
+  const order: string[] = [];
+  const result = await drainExtraActionQueue({
+    owner: "p1",
+    readQueue: () => queue,
+    writeQueue: next => { queue = next; },
+    canContinue: () => true,
+    execute: action => {
+      order.push(action.id);
+      if (action.id === "a") queue = [...queue, { owner: "p1", id: "nested" }];
+    },
+  });
+  t("額外行動會結算途中新增的同方連鎖，且保留另一方佇列", () => {
+    assert.deepStrictEqual(order, ["a", "nested"]);
+    assert.deepStrictEqual(queue, [{ owner: "p2", id: "enemy" }]);
+    assert.deepStrictEqual(result, { resolved: 2, truncated: false });
+  });
+})();
 
 console.log(`\n${"=".repeat(40)}\n通過: ${pass}  失敗: ${fail}\n${"=".repeat(40)}`);
 if (fail > 0) process.exit(1);

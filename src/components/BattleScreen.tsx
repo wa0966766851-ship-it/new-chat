@@ -10,6 +10,7 @@ import { BattleSkillRegistry, SoulMarkRegistry, hasSkillHandler, observesOpponen
 import { priorityFromDescription, conditionalPriorityFromDescription, executeGenericSkillTextAfterHit, rollSkillHit } from "../effects/genericSkillText";
 import { getAttackImmunity, ignoresAttackImmunity, grantsNextIgnoreOnSuccess } from "../battle/attackImmunity";
 import { runSkillBlocks, emitSkillUse, soulPassiveEvade, blockCondPriority, emitSelfInvalid } from "../blocks/registry";
+import { drainExtraActionQueue } from "../battle/extraActions";
 import { findBlockTimer } from "../blocks/runtime";
 import { modifySkillDamage, afterSkillHit, traitFatalResist, priorityBonus } from "../effects/traitEffects";
 import { SuitEffectRegistry } from "../effects/suitEffectRegistry";
@@ -1964,21 +1965,29 @@ export default function BattleScreen(props: BattleScreenProps) {
       if (!elf || checkElfDead(elf)) return;
       const ctxE = getBattleEventContext(side, true, idx);
       try { if (SoulMarkRegistry[elf.name]) SoulMarkRegistry[elf.name](ctxE, EffectTiming.ACTION_END, { actor: side }); } catch (e) { console.error(e); }
-      const q: any[] = ((syncStateRef.current as any).extraActionQueue || []);
-      const mine = q.filter(a => a.owner === side);
-      if (!mine.length) return;
-      syncStateRef.current = { ...syncStateRef.current, extraActionQueue: q.filter(a => a.owner !== side) } as any;
       const opp = side === "p1" ? "p2" : "p1";
-      for (const act of mine) {
-        if (checkElfDead(syncStateRef.current[side]) || checkElfDead(syncStateRef.current[opp])) break;
-        pushEffect({ type: 'log', side, data: { text: `⚡ 【額外行動】${act.label}`, type: "effect" } });
-        const c = getBattleEventContext(side, true, idx);
-        if (act.run) act.run(c);
-        else if (act.amount) {
-          const dealt = c.applySkillTypeDamage(opp, Math.floor(act.amount), act.label, { elem: act.elem, category: "skill_extra_action" });
-          act.after?.(getBattleEventContext(side, true, idx), dealt);
-        }
-        await processQueue();
+      // 每次只取一項並重新讀取佇列，讓額外行動結算中新增的額外行動也能在同一節點依序生效。
+      // 設上限防止錯誤效果互相排隊造成無限循環。
+      const drained = await drainExtraActionQueue<any>({
+        owner: side,
+        readQueue: () => ((syncStateRef.current as any).extraActionQueue || []),
+        writeQueue: extraActionQueue => { syncStateRef.current = { ...syncStateRef.current, extraActionQueue } as any; },
+        canContinue: () => !checkElfDead(syncStateRef.current[side]) && !checkElfDead(syncStateRef.current[opp]),
+        execute: async act => {
+          pushEffect({ type: 'log', side, data: { text: `⚡ 【額外行動】${act.label}`, type: "effect" } });
+          let c = getBattleEventContext(side, true, idx);
+          try { SoulMarkRegistry[syncStateRef.current[side].name]?.(c, EffectTiming.EXTRA_ACTION_START, { actor: side, action: act }); } catch (e) { console.error(e); }
+          let dealt = 0;
+          if (act.run) dealt = Number(act.run(c) || 0);
+          else if (act.amount) dealt = c.applySkillTypeDamage(opp, Math.floor(act.amount), act.label, { elem: act.elem, category: "skill_extra_action", node: "extra_action" });
+          c = getBattleEventContext(side, true, idx);
+          act.after?.(c, dealt);
+          try { SoulMarkRegistry[syncStateRef.current[side].name]?.(c, EffectTiming.EXTRA_ACTION_END, { actor: side, action: act, dealt }); } catch (e) { console.error(e); }
+          await processQueue();
+        },
+      });
+      if (drained.truncated) {
+        pushEffect({ type: 'log', side, data: { text: `⚠️ 額外行動超過安全上限，已停止後續連鎖。`, type: "info" } });
       }
     };
     let prevActor: { s: "p1" | "p2"; i: number } | null = null;

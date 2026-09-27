@@ -518,7 +518,7 @@ export const odinSkillRegistry: Record<string, (ctx: BattleEventContext) => void
     addLog(`⚡ 【ᚺᚢᚷᛁᚾ ᛟᚲ ᛗᚢᚾᛁᚾ】：3 回合內自身造成技能傷害提升 ${100 + 50 * lockCount}%！`, 'effect');
 
     // 🎯 直接附加對手300點遠古系技能傷害，若造成技能傷害為微弱則下2回合對手無法主動切換精靈
-    applySkillTypeDamage(oppSide, 300, 'ᚺᚢᚷᛁᚾ ᛟᚲ ᛗᚢᚾᛁᚾ·遠古系技能傷害');
+    applySkillTypeDamage(oppSide, 300, 'ᚺᚢᚷᛁᚾ ᛟᚲ ᛗᚢᚾᛁᚾ·遠古系技能傷害', { elem: '遠古', node: 'attack_damage' });
     if (oppElf?.type && getTypeMatchup('遠古', oppElf.type) < 1) {
       setOpponentState('noSwitchTurns', 3); // 本回合結束後剩 2 → 下2回合
       addLog(`⚡ 【ᚺᚢᚷᛁᚾ ᛟᚲ ᛗᚢᚾᛁᚾ】：技能傷害為微弱，下 2 回合對手無法主動切換精靈！`, 'effect');
