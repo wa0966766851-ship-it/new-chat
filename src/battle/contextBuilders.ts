@@ -319,7 +319,7 @@ export function buildDamageAPIs(shared: SharedContextDeps): DamageAPIs {
       const stage3 = damageComp.limit !== undefined ? Math.min(stage2, damageComp.limit) : stage2;
       const finalDamage = Math.floor(damageComp.floor !== undefined ? Math.max(stage3, damageComp.floor) : Math.max(0, stage3));
 
-      pushEffect({ type: 'damage', side: tSide, data: { amount: finalDamage, label: label || "附加技能傷害", popup: true, sourceElfName: self.name, damageType: opts?.category || "skill_attack", typedSkill: !opts?.category } });
+      pushEffect({ type: 'damage', side: tSide, data: { amount: finalDamage, label: label || "附加技能傷害", popup: true, sourceElfName: self.name, damageType: opts?.category || "skill_attack", typedSkill: !opts?.category, ignoreShield: !!opts?.ignoreShield } });
       return finalDamage;
     },
     applyTrueDamage: (tSide, amt, label, p1Override, p2Override) => {

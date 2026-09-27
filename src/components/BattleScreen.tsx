@@ -52,6 +52,12 @@ import {
   buildStateAPIs 
 } from "../battle/contextBuilders";
 import { activateRuneOnSkillSelect } from "../effects/odinRegistry";
+import {
+  isNonTrueDamageType,
+  isSkillDamageType,
+  normalizeDamageType,
+  settleDamageAbsorption,
+} from "../battle/damageSemantics";
 
 // TurnDamageStats is imported from BattleManager
 
@@ -123,14 +129,7 @@ function syncActiveIntoTeam(v: BattleState): BattleState {
   return out;
 }
 
-/** 傷害類型正規化：true_damage／汲取 → true；fixed_damage → fixed；percent_damage → percent */
-export const normalizeDamageType = (data: any): string => {
-  const dt = String(data?.damageType || "");
-  if (dt === "true_damage" || dt === "absorb" || (data?.label && String(data.label).includes("汲取"))) return "true";
-  if (dt === "fixed_damage") return "fixed";
-  if (dt === "percent_damage") return "percent";
-  return dt;
-};
+export { normalizeDamageType } from "../battle/damageSemantics";
 
 export const checkElfDead = (elf: Elf | undefined | null) => {
   if (!elf) return true;
@@ -310,10 +309,11 @@ export default function BattleScreen(props: BattleScreenProps) {
           }
         }
 
+        const normalizedDamageType = normalizeDamageType(data);
+
         // 讀取攻擊方/防守方身上的 marks，套用非真實傷害倍率
         // 「非真實傷害」= 技能傷害 + 固定傷害 + 百分比傷害（排除真實傷害本身）
-        const isNonTrueDamageType = data.damageType === "skill" || data.damageType === "skill_attack" || data.damageType === "fixed" || data.damageType === "percent";
-        if (isNonTrueDamageType) {
+        if (isNonTrueDamageType(normalizedDamageType)) {
           // 防守方：受到非真實傷害倍率
           const targetMarks = targetSide === "p1" ? cur.p1Marks : cur.p2Marks;
           for (const mark of (targetMarks || [])) {
@@ -336,26 +336,22 @@ export default function BattleScreen(props: BattleScreenProps) {
         }
 
         // --- 護盾/護罩吸收邏輯 ---
-        const isSkillDmg = data.damageType === "skill" || data.damageType === "skill_attack";
-        const isFixedOrPercent = data.damageType === "fixed" || data.damageType === "percent";
-
         // 不可直接改寫 target（它是 React state 物件）；改用區域變數，最後由 UPDATE_ELF 寫回
-        let nextShieldVal = target.shield || 0;
-        let nextBarrierVal = target.barrier || 0;
-        if (isSkillDmg && nextShieldVal > 0) {
-          const absorbed = Math.min(nextShieldVal, effectiveAmount);
-          nextShieldVal -= absorbed;
-          effectiveAmount -= absorbed;
-          if (absorbed > 0) {
-            dispatch({ type: 'ADD_LOG', log: { turn: cur.turnNumber, text: `🛡️ 【護盾】：吸收了 ${absorbed} 點技能傷害，剩餘護盾 ${nextShieldVal}！`, type: "effect" } });
-          }
-        } else if (isFixedOrPercent && nextBarrierVal > 0) {
-          const absorbed = Math.min(nextBarrierVal, effectiveAmount);
-          nextBarrierVal -= absorbed;
-          effectiveAmount -= absorbed;
-          if (absorbed > 0) {
-            dispatch({ type: 'ADD_LOG', log: { turn: cur.turnNumber, text: `🔵 【護罩】：吸收了 ${absorbed} 點傷害，剩餘護罩 ${nextBarrierVal}！`, type: "effect" } });
-          }
+        const absorption = settleDamageAbsorption(
+          effectiveAmount,
+          normalizedDamageType,
+          target.shield || 0,
+          target.barrier || 0,
+          !!data.ignoreShield,
+        );
+        effectiveAmount = absorption.amount;
+        const nextShieldVal = absorption.shield;
+        const nextBarrierVal = absorption.barrier;
+        if (absorption.shieldAbsorbed > 0) {
+          dispatch({ type: 'ADD_LOG', log: { turn: cur.turnNumber, text: `🛡️ 【護盾】：吸收了 ${absorption.shieldAbsorbed} 點技能傷害，剩餘護盾 ${nextShieldVal}！`, type: "effect" } });
+        }
+        if (absorption.barrierAbsorbed > 0) {
+          dispatch({ type: 'ADD_LOG', log: { turn: cur.turnNumber, text: `🔵 【護罩】：吸收了 ${absorption.barrierAbsorbed} 點傷害，剩餘護罩 ${nextBarrierVal}！`, type: "effect" } });
         }
         // -------------------------
 
@@ -413,7 +409,7 @@ export default function BattleScreen(props: BattleScreenProps) {
               hpChange: (currentStats.hpChange || 0) + hpDiff
             };
             const positiveDmg = Math.max(0, -hpDiff);
-            if (data.damageType === "skill_attack" || data.damageType === "skill") {
+            if (isSkillDamageType(normalizedDamageType)) {
               statsUpdates.skillDmg = (currentStats.skillDmg || 0) + positiveDmg;
               statsUpdates.lastType = 'skill';
             } else if (data.damageType === "fixed") {
@@ -581,7 +577,7 @@ export default function BattleScreen(props: BattleScreenProps) {
           SoulMarkRegistry[target.name](damagedCtx, EffectTiming.ON_DAMAGED, damagedPayload);
         }
         // 「對手受擊時…」類魂印（星火之灼／星芳之纏／星海之浸）需要在「對手」受到技能攻擊時被通知
-        if (dmg > 0 && (data.damageType === "skill" || data.damageType === "skill_attack")) {
+        if (dmg > 0 && isSkillDamageType(normalizedDamageType)) {
           const observerSide = targetSide === "p1" ? "p2" : "p1";
           const observer = syncStateRef.current[observerSide];
           if (observer && observesOpponentDamage(observer.name)) {
@@ -2867,7 +2863,8 @@ export default function BattleScreen(props: BattleScreenProps) {
           pushEffect({ type: 'damage', side: oppSide, data: { amount: currentOppMaxHp, label: "恐懼真傷", popup: true, damageType: "true_damage" } });
         }
         
-        pushEffect({ type: 'damage', side: oppSide, data: { amount: finalDamage, popup: true, isCrit: dmgRes.isCrit, label: dmgRes.isCrit ? "暴擊" : "", sourceElfName: currentActor.name, typeMultiplier: dmgRes.typeMultiplier, damageType: "skill_attack" } });
+        const ignoreShieldThisAction = !!syncStateRef.current[actorRegKey]?.ignoreImmunityAndShield;
+        pushEffect({ type: 'damage', side: oppSide, data: { amount: finalDamage, popup: true, isCrit: dmgRes.isCrit, label: dmgRes.isCrit ? "暴擊" : "", sourceElfName: currentActor.name, typeMultiplier: dmgRes.typeMultiplier, damageType: "skill_attack", ignoreShield: ignoreShieldThisAction } });
         afterSkillHit(currentActor, currentOpp, activeSkill, finalDamage, dmgRes.isCrit,
           getBattleEventContext(s, true, mIdx), getBattleEventContext(oppSide, true, mIdx), rng);
         // 通用：下 N 回合自身攻擊技能必定令對手陷入某異常（attackInflictStatus）
@@ -3043,6 +3040,7 @@ export default function BattleScreen(props: BattleScreenProps) {
          syncStateRef.current[actorRegKey]?.evasionActive ||
          syncStateRef.current[actorRegKey]?.[s + "_evasionActive"] ||
          syncStateRef.current[actorRegKey]?.immuneAll ||
+         syncStateRef.current[actorRegKey]?.ignoreImmunityAndShield ||
          syncStateRef.current[actorRegKey]?.[s + "_immuneAll"]
        ) {
          const nextRegState = {
@@ -3055,6 +3053,7 @@ export default function BattleScreen(props: BattleScreenProps) {
            evasionActive: false,
            [s + "_evasionActive"]: false,
            immuneAll: false,
+           ignoreImmunityAndShield: false,
            [s + "_immuneAll"]: false
          };
          syncStateRef.current = {
@@ -3064,7 +3063,7 @@ export default function BattleScreen(props: BattleScreenProps) {
          dispatch({
            type: 'UPDATE_REGISTRY_STATE',
            side: s,
-           state: { vampireRatio: 0, nextTurnPriority: 0, nextTurnCrit: false }
+           state: { vampireRatio: 0, nextTurnPriority: 0, nextTurnCrit: false, ignoreImmunityAndShield: false }
          });
        }
     }

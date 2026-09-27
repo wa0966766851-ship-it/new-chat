@@ -157,7 +157,7 @@ export const STARLIGHT_RUS_SKILLS: Record<string, BattleSkillHandler> = {
 
   "星光·排山倒海": (ctx) => {
     const { setOpponentState, setPlayerState, addLog, actor, applyStatusWithImmunityCheck } = ctx;
-    // 🎯 無視對手攻擊免疫效果、護盾效果（旗標；引擎尚未讀取）
+    // 🎯 無視對手攻擊免疫效果（描述解析於 attackImmunity）與護盾效果（本次行動旗標）
     setPlayerState("ignoreImmunityAndShield", true);
     // 🎯 給對手造成傷害時，傷害數值的50%恢復自身體力
     setPlayerState("vampireRatio", 0.5);

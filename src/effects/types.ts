@@ -122,7 +122,7 @@ export interface BattleEventContext {
   getStatuses: (elf: Elf) => Record<string, number>;
   applyPinkDamage: (side: "p1" | "p2", amount: number, label?: string, activeP1?: Elf, activeP2?: Elf, dmgType?: string) => number;
   applyTrueDamage: (side: "p1" | "p2", amount: number, label?: string, activeP1?: Elf, activeP2?: Elf) => number;
-  applySkillTypeDamage: (side: "p1" | "p2", amount: number, label?: string, opts?: { ignoreBlock?: boolean; ignoreLimit?: boolean; floor?: number; elem?: string; category?: "skill_extra_action" }) => number;
+  applySkillTypeDamage: (side: "p1" | "p2", amount: number, label?: string, opts?: { ignoreBlock?: boolean; ignoreLimit?: boolean; ignoreShield?: boolean; floor?: number; elem?: string; category?: "skill_extra_action" }) => number;
   applyAbsorb: (side: "p1" | "p2", amount: number) => void;
   
   // Dynamic state accessors

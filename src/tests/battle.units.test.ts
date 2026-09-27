@@ -9,6 +9,10 @@ import {
   remainingOf, turnEffect, roundCounter, useCounter, type Timer,
 } from "../battle/timers";
 import { decideAction, decideForcedSwitch, AI_HARD, type AIContext, type AIDeps } from "../battle/ai";
+import { runNode } from "../effects/effectRunner";
+import { CODEX } from "../data/codexRegistry";
+import { normalizeDamageType, settleDamageAbsorption } from "../battle/damageSemantics";
+import type { KitEntry } from "../effects/effectSystem.schema";
 
 let pass = 0, fail = 0;
 function t(name: string, fn: () => void) {
@@ -188,9 +192,6 @@ t("無可用技能時回傳 null,不會硬回 skills[0]", () => {
 });
 
 t("執行 runNode 並代入 resolveParams 參數且對手被施加麻痺", () => {
-  const { runNode } = require("../effects/effectRunner");
-  const { CODEX } = require("../data/codexRegistry");
-
   const logs: string[] = [];
   const p2Statuses: string[] = [];
 
@@ -208,11 +209,46 @@ t("執行 runNode 並代入 resolveParams 參數且對手被施加麻痺", () =>
     }
   };
 
-  const kit = [{ codeId: "0010", params: { "0": 100 }, node: "round_start", source: "soulmark", order: 0 }];
+  const kit = [{ codeId: "0010", params: { "0": 100 }, node: "round_start", source: "soulmark", order: 0 }] satisfies KitEntry[];
 
   runNode("round_start", kit, CODEX, ctx);
 
   assert.strictEqual(p2Statuses.includes("麻痺"), true, "對手應獲得「麻痺」狀態");
+});
+
+console.log("\n=== 傷害語意 ===");
+
+t("額外行動傷害屬於技能傷害並由護盾吸收", () => {
+  const result = settleDamageAbsorption(300, "skill_extra_action", 120, 80);
+  assert.deepStrictEqual(result, {
+    amount: 180,
+    shield: 0,
+    barrier: 80,
+    shieldAbsorbed: 120,
+    barrierAbsorbed: 0,
+  });
+});
+
+t("無視護盾只略過技能護盾，不會消耗護盾", () => {
+  const result = settleDamageAbsorption(300, "skill_attack", 120, 80, true);
+  assert.strictEqual(result.amount, 300);
+  assert.strictEqual(result.shield, 120);
+  assert.strictEqual(result.barrier, 80);
+});
+
+t("固定與百分比傷害由護罩吸收，真實傷害不受護罩影響", () => {
+  const fixed = settleDamageAbsorption(100, "fixed", 50, 70);
+  assert.strictEqual(fixed.amount, 30);
+  assert.strictEqual(fixed.barrier, 0);
+  const real = settleDamageAbsorption(100, "true", 50, 70);
+  assert.strictEqual(real.amount, 100);
+  assert.strictEqual(real.shield, 50);
+  assert.strictEqual(real.barrier, 70);
+});
+
+t("歷史傷害名稱會正規化，不把額外行動降級成未知類型", () => {
+  assert.strictEqual(normalizeDamageType({ damageType: "true_damage" }), "true");
+  assert.strictEqual(normalizeDamageType({ damageType: "skill_extra_action" }), "skill_extra_action");
 });
 
 console.log(`\n${"=".repeat(40)}\n通過: ${pass}  失敗: ${fail}\n${"=".repeat(40)}`);
