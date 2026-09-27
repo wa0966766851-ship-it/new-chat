@@ -1674,6 +1674,35 @@ export default function BattleScreen(props: BattleScreenProps) {
     TraitsEngine.triggerRoundEnd(p1Ctx);
     TraitsEngine.triggerRoundEnd(p2Ctx);
 
+    // 回合結束觸發的額外行動（例如未出手時的滅靈魔咒）必須在本回合收尾立即結算，
+    // 不得拖到下一個精靈出手才執行。這裡沿用與 endOfAction 相同的獨立節點語意。
+    for (const owner of ["p1", "p2"] as const) {
+      let resolved = 0;
+      while (resolved < 32) {
+        const queue = ((syncStateRef.current as any).extraActionQueue || []) as any[];
+        const index = queue.findIndex(action => action.owner === owner);
+        if (index < 0) break;
+        const action = queue[index];
+        syncStateRef.current = { ...syncStateRef.current, extraActionQueue: [...queue.slice(0, index), ...queue.slice(index + 1)] } as any;
+        const targetSide = owner === "p1" ? "p2" : "p1";
+        const c = getBattleEventContext(owner, true, 0);
+        pushEffect({ type: 'log', side: owner, data: { text: `⚡ 【額外行動】${action.label}`, type: "effect" } });
+        try { SoulMarkRegistry[syncStateRef.current[owner].name]?.(c, EffectTiming.EXTRA_ACTION_START, { actor: owner, action }); } catch (e) { console.error(e); }
+        let dealt = 0;
+        if (action.run) dealt = Number(action.run(c) || 0);
+        else if (action.amount) dealt = c.applySkillTypeDamage(targetSide, Math.floor(action.amount), action.label, { elem: action.elem, category: "skill_extra_action", node: "extra_action" });
+        const afterCtx = getBattleEventContext(owner, true, 0);
+        action.after?.(afterCtx, dealt);
+        try { SoulMarkRegistry[syncStateRef.current[owner].name]?.(afterCtx, EffectTiming.EXTRA_ACTION_END, { actor: owner, action, dealt }); } catch (e) { console.error(e); }
+        await processQueue();
+        resolved++;
+      }
+      if (resolved >= 32 && ((syncStateRef.current as any).extraActionQueue || []).some((action: any) => action.owner === owner)) {
+        syncStateRef.current = { ...syncStateRef.current, extraActionQueue: ((syncStateRef.current as any).extraActionQueue || []).filter((action: any) => action.owner !== owner) } as any;
+        pushEffect({ type: 'log', side: owner, data: { text: `⚠️ 額外行動超過安全上限，已停止後續連鎖。`, type: "info" } });
+      }
+    }
+
 
     // §1: Apply DAMAGE_TICK at round end
     await applyDamageTicks("p1", "END");
@@ -1965,6 +1994,8 @@ export default function BattleScreen(props: BattleScreenProps) {
       if (!elf || checkElfDead(elf)) return;
       const ctxE = getBattleEventContext(side, true, idx);
       try { if (SoulMarkRegistry[elf.name]) SoulMarkRegistry[elf.name](ctxE, EffectTiming.ACTION_END, { actor: side }); } catch (e) { console.error(e); }
+      // 咒術師的魔咒在主動出手流程結束後排入獨立額外行動節點。
+      TraitsEngine.triggerActionPhaseEnd(ctxE);
       const opp = side === "p1" ? "p2" : "p1";
       // 每次只取一項並重新讀取佇列，讓額外行動結算中新增的額外行動也能在同一節點依序生效。
       // 設上限防止錯誤效果互相排隊造成無限循環。
@@ -2175,6 +2206,8 @@ export default function BattleScreen(props: BattleScreenProps) {
       if (SoulMarkRegistry[currentActorBefore.name]) {
         SoulMarkRegistry[currentActorBefore.name](ctx, EffectTiming.BEFORE_ACTION);
       }
+      // 咒術師在選擇技能且自身處於詛咒時，先記錄本次魔咒待發狀態。
+      TraitsEngine.triggerBeforeAction(ctx);
       triggerSuitEffect(s, EffectTiming.BEFORE_ACTION);
       broadcastExtraElfNode("出手流程開始");
 

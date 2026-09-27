@@ -5,6 +5,7 @@ import { isStatusActive } from './statusManager';
 import { getStatuses } from './battleHelpers';
 import { checkControlImmunity } from '../effects/ailmentEngine';
 import { StatusRegistry } from '../effects/statusRegistry';
+import { getTypeMatchup } from './statCalculator';
 
 export class TraitsEngine {
   /**
@@ -300,35 +301,12 @@ export class TraitsEngine {
       if (isPending) {
         ctx.setPlayerState(`${selfSide}_wraithCastSpellPending`, false);
         
-        // 魔咒機制：威力值 + n 點傷害並附加同等護盾，同時對敵方場下造成隨機真實傷害
-        // n = 自身當前詛咒回合數 * 15
+        // 魔咒主體是技能傷害；只有場下餘波才是真實傷害。
         const curseTurns = ctx.getPlayerState(`${selfSide}_curseTurns`) || 3;
         const n = curseTurns * 15;
         const skillPower = ctx.skill?.power || 100;
-        const totalDamage = skillPower + n;
-
         ctx.addLog(`👻 【咒術師】召喚的賽博怨靈於行動階段發動了【魔咒】！`, "effect");
-        
-        // 施加真實傷害 / 技能傷害並吸收
-        const finalAbsorb = ctx.applyTrueDamage(oppSide, totalDamage, `賽博怨靈·魔咒`, ctx.activeP1, ctx.activeP2);
-        
-        // 附加等量護盾與護罩
-        ctx.self.shield = (ctx.self.shield || 0) + finalAbsorb;
-        ctx.self.barrier = (ctx.self.barrier || 0) + finalAbsorb;
-        ctx.self.currentHp = Math.min(ctx.self.maxHp, ctx.self.currentHp + finalAbsorb);
-        
-        ctx.addLog(`🛡️ 賽博怨靈為 【${elfName}】 附加了 ${finalAbsorb} 點護盾、護罩並恢復了等量體力！`, "heal");
-
-        // §3: 令對手場下隨機一隻精靈受到 n * 50% 的真實傷害
-        const doubleFactor = ctx.getPlayerState(`${selfSide}_wraithDamageDoubled`) ? 2 : 1;
-        const offFieldDmg = Math.floor(n * 0.5) * doubleFactor;
-        
-        const eligibleOppTeam = ctx.getEligibleTeam(oppSide);
-        if (eligibleOppTeam.length > 0) {
-          const randomTarget = eligibleOppTeam[Math.floor(Math.random() * eligibleOppTeam.length)];
-          randomTarget.currentHp = Math.max(1, randomTarget.currentHp - offFieldDmg);
-          ctx.addLog(`💥 賽博怨靈釋放暗黑魔力，令敵方備戰精靈 【${randomTarget.name}】 受到 ${offFieldDmg} 點場下真實傷害！`, "damage");
-        }
+        this.queueWraithExtraAction(ctx, `賽博怨靈·魔咒`, skillPower + n, n);
       }
     }
 
@@ -375,27 +353,7 @@ export class TraitsEngine {
         const n = curseTurns * 15;
         // 威力取最高技能威力
         const maxPower = Math.max(...ctx.self.skills.map(s => s.power || 0), 150);
-        const totalDamage = maxPower + n;
-        
-        const oppSide = selfSide === 'p1' ? 'p2' : 'p1';
-        const finalAbsorb = ctx.applyTrueDamage(oppSide, totalDamage, `賽博怨靈·滅靈魔咒`, ctx.activeP1, ctx.activeP2);
-        
-        ctx.self.shield = (ctx.self.shield || 0) + finalAbsorb;
-        ctx.self.barrier = (ctx.self.barrier || 0) + finalAbsorb;
-        ctx.self.currentHp = Math.min(ctx.self.maxHp, ctx.self.currentHp + finalAbsorb);
-        
-        ctx.addLog(`🛡️ 滅靈魔咒為 【${elfName}】 轉化了 ${finalAbsorb} 點護盾並恢復生命！`, "heal");
-
-        // §3: 隨機令敵方場下其中1隻精靈受到n乘以50%的真實傷害
-        const doubleFactor = ctx.getPlayerState(`${selfSide}_wraithDamageDoubled`) ? 2 : 1;
-        const offFieldDmg = Math.floor(n * 0.5) * doubleFactor;
-        
-        const eligibleOppTeam = ctx.getEligibleTeam(oppSide);
-        if (eligibleOppTeam.length > 0) {
-          const randomTarget = eligibleOppTeam[Math.floor(Math.random() * eligibleOppTeam.length)];
-          randomTarget.currentHp = Math.max(1, randomTarget.currentHp - offFieldDmg);
-          ctx.addLog(`🌌 滅靈魔咒的餘波掃向備戰精靈 【${randomTarget.name}】，造成 ${offFieldDmg} 點真實傷害！`, "effect");
-        }
+        this.queueWraithExtraAction(ctx, `賽博怨靈·滅靈魔咒`, maxPower + n, n);
       }
     }
 
@@ -511,6 +469,37 @@ export class TraitsEngine {
       ctx.setPlayerState(`${selfSide}_attackSkillInvalidTurns`, nextTurns);
       ctx.setPlayerState("attackSkillInvalidTurns", nextTurns);
     }
+  }
+
+  private static queueWraithExtraAction(ctx: BattleEventContext, label: string, skillDamage: number, curseTurns: number) {
+    const owner = ctx.actor;
+    const targetSide = owner === 'p1' ? 'p2' : 'p1';
+    ctx.queueExtraAction?.(owner, {
+      label,
+      run: (c) => {
+        const target = targetSide === 'p1' ? c.activeP1 : c.activeP2;
+        const elem = ['機械.暗影', '機械', '暗影'].reduce((best, candidate) =>
+          getTypeMatchup(candidate, target.type) > getTypeMatchup(best, target.type) ? candidate : best
+        );
+        const dealt = c.applySkillTypeDamage(targetSide, skillDamage, label, {
+          elem, category: 'skill_extra_action', node: 'extra_action'
+        });
+        c.self.shield = (c.self.shield || 0) + dealt;
+        c.self.barrier = (c.self.barrier || 0) + dealt;
+        c.self.currentHp = Math.min(c.self.maxHp, c.self.currentHp + dealt);
+        c.addLog(`🛡️ ${label}以${elem}最佳克制造成 ${dealt} 點技能傷害，並轉化為等量護盾、護罩與體力！`, 'heal');
+
+        const factor = c.getPlayerState(`${owner}_wraithDamageDoubled`) ? 2 : 1;
+        const offFieldDmg = Math.floor(curseTurns * 15 * 0.5) * factor;
+        const eligible = c.getEligibleTeam(targetSide);
+        if (eligible.length > 0) {
+          const randomTarget = eligible[Math.floor(Math.random() * eligible.length)];
+          randomTarget.currentHp = Math.max(1, randomTarget.currentHp - offFieldDmg);
+          c.addLog(`💥 ${label}餘波令場下【${randomTarget.name}】受到 ${offFieldDmg} 點真實傷害！`, 'damage');
+        }
+        return dealt;
+      }
+    });
   }
 
   /**
