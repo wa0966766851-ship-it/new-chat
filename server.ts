@@ -2,7 +2,6 @@ import express from "express";
 import path from "path";
 import fs from "fs";
 import https from "https";
-import { createServer as createViteServer } from "vite";
 import { GoogleGenAI, Type } from "@google/genai";
 import dotenv from "dotenv";
 import { REAL_CARD_EFFECT_MODULES as AI_EFFECT_REFERENCE_LIBRARY, TEMPLATE_GRAMMAR_GUIDELINES } from "./src/data/cardTemplates";
@@ -473,6 +472,7 @@ async function startServer() {
   app.use("/images", express.static(path.join(process.cwd(), "images")));
 
   if (process.env.NODE_ENV !== "production") {
+    const { createServer: createViteServer } = await import("vite");
     const vite = await createViteServer({
       server: { middlewareMode: true },
       appType: "spa",

@@ -1,0 +1,61 @@
+import { DEFAULT_ELVES } from "../src/data/defaultElves";
+
+type Finding = {
+  id: number | string;
+  elf: string;
+  location: string;
+  text: string;
+  status: "implemented" | "partial" | "missing";
+  evidence: string;
+};
+
+const findings: Finding[] = [];
+const actionPattern = /額外行動|再次出手|進行[一二三四五六七八九十0-9]+次行動/;
+
+for (const elf of DEFAULT_ELVES as any[]) {
+  const soul = elf.soulMark?.description || "";
+  if (actionPattern.test(soul)) {
+    const status = elf.name.includes("斯嘉麗") ? "implemented" : elf.name.includes("蝕言") ? "partial" : "partial";
+    findings.push({
+      id: elf.id,
+      elf: elf.name,
+      location: "soulMark",
+      text: soul.match(actionPattern)?.[0] || "額外行動",
+      status,
+      evidence: elf.name.includes("斯嘉麗") ? "scarlettRegistry → queueExtraAction → BattleScreen drain" : elf.name.includes("蝕言") ? "traitsEngine triggerActionPhaseEnd/triggerRoundEnd 直接結算，未走獨立額外行動節點且未按描述選屬性" : "需補專屬執行器"
+    });
+  }
+  for (const skill of [...(elf.skills || []), ...(elf.skillPool || [])] as any[]) {
+    const description = skill.description || "";
+    if (!actionPattern.test(description)) continue;
+    const isSixPetal = elf.name.includes("六刃") && skill.name === "終焉·六花斬";
+    findings.push({
+      id: elf.id,
+      elf: elf.name,
+      location: `skill:${skill.name}`,
+      text: description.match(actionPattern)?.[0] || "額外行動",
+      status: isSixPetal ? "partial" : "missing",
+      evidence: isSixPetal ? "wuxuRegistry → queueExtraAction；目前一次 run 直接合併傷害，未建立 6 個獨立行動節點/動畫" : "未找到對應 BattleSkillRegistry/queueExtraAction 執行器"
+    });
+  }
+  for (const [key, trait] of Object.entries(elf.alienTraits || {}) as any[]) {
+    const description = trait?.description || "";
+    if (!actionPattern.test(description)) continue;
+    findings.push({
+      id: elf.id,
+      elf: elf.name,
+      location: `alienTraits:${key}`,
+      text: description.match(actionPattern)?.[0] || "額外行動",
+      status: elf.name.includes("蝕言") ? "partial" : "missing",
+      evidence: elf.name.includes("蝕言") ? "traitsEngine 已處理魔咒/滅靈魔咒，但以直接真實傷害結算，與描述的屬性克制額外行動不一致" : "未找到對應執行器"
+    });
+  }
+}
+
+console.log("額外行動效果盤點");
+console.log(`命中描述 ${findings.length} 筆`);
+for (const f of findings) {
+  console.log(`${f.status.toUpperCase()}\t${f.id}\t${f.elf}\t${f.location}\t${f.text}\t${f.evidence}`);
+}
+const counts = findings.reduce<Record<string, number>>((a, f) => { a[f.status] = (a[f.status] || 0) + 1; return a; }, {});
+console.log(`彙總：已實裝 ${counts.implemented || 0}、部分實裝 ${counts.partial || 0}、未實裝 ${counts.missing || 0}`);
