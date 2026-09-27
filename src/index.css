@@ -20,6 +20,13 @@ body {
   backdrop-filter: blur(var(--card-blur, 12px)) !important;
 }
 
+/* 長表單需要穩定的實色底，避免高亮戰鬥背景穿透後讓欄位與標籤失去對比。 */
+#manual-panel-container {
+  background-color: rgba(10, 14, 20, 0.97) !important;
+  border-color: rgba(71, 85, 105, 0.78) !important;
+  backdrop-filter: blur(18px) !important;
+}
+
 /* Custom scrollbar for log screens */
 .custom-scrollbar::-webkit-scrollbar {
   width: 6px;

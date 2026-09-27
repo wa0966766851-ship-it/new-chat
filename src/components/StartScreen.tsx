@@ -1344,10 +1344,10 @@ export default function StartScreen({
   };
 
   return (
-    <div className="w-full max-w-7xl mx-auto px-6 py-8" id="start-screen-container">
+    <div className="w-full max-w-7xl mx-auto px-4 pb-8 pt-20 sm:px-6 sm:py-8" id="start-screen-container">
       {/* 標題 */}
       <motion.div initial={{ opacity: 0, y: -12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }} className="mb-6">
-        <h1 className="text-[34px] font-bold tracking-tight text-slate-50">賽爾號對戰模擬器</h1>
+        <h1 className="text-[28px] sm:text-[34px] font-bold tracking-tight text-slate-50">賽爾號對戰模擬器</h1>
         <p className="text-slate-400 mt-1 text-[15px]">6V6 精靈對戰 · 自訂陣容與首發</p>
       </motion.div>
 

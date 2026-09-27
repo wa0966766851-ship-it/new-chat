@@ -1282,12 +1282,12 @@ export function BattleScreenUI(props: BattleScreenUIProps) {
       </div>
 
       {/* 上方：雙方精靈卡 + 中央回合資訊 */}
-      <div className="absolute top-[56px] left-3 w-[min(440px,33%)] z-30">{renderCard("p1")}</div>
-      <div className="absolute top-[56px] right-3 w-[min(440px,33%)] z-30">{renderCard("p2")}</div>
-      <div className="absolute top-2 left-1/2 -translate-x-1/2 z-20">{renderMatchInfo()}</div>
+      <div className="absolute top-[140px] sm:top-[56px] left-3 w-[43%] sm:w-[min(440px,33%)] z-30">{renderCard("p1")}</div>
+      <div className="absolute top-[140px] sm:top-[56px] right-3 w-[43%] sm:w-[min(440px,33%)] z-30">{renderCard("p2")}</div>
+      <div className="absolute top-[58px] sm:top-2 left-1/2 -translate-x-1/2 z-20">{renderMatchInfo()}</div>
 
       {/* 本次傷害提示 */}
-      <div className="absolute top-[92px] left-1/2 -translate-x-1/2 z-20 pointer-events-none">
+      <div className="absolute top-[224px] sm:top-[92px] left-1/2 -translate-x-1/2 z-20 pointer-events-none">
         <AnimatePresence>
           {lastActionInfo && lastActionInfo.amount > 0 && (
             <motion.div key={`${lastActionInfo.side}-${lastActionInfo.amount}-${turnNumber}`} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }}

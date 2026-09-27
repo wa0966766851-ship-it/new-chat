@@ -43,7 +43,12 @@ export default function App() {
 function AppContent() {
   const { allElves, customElves, addCustomElf, updateElf, deleteCustomElf, restoreDeletedElves, deletedCount } = useGameData();
   const [view, setView] = useState<"start" | "custom" | "battle" | "destiny_wheel" | "interstellar_exploration" | "test_runner">("start");
-  const [showHeader, setShowHeader] = useState(true);
+  const [isCompactLayout, setIsCompactLayout] = useState(() =>
+    typeof window !== "undefined" && window.matchMedia("(max-width: 767px)").matches
+  );
+  const [showHeader, setShowHeader] = useState(() =>
+    typeof window === "undefined" || !window.matchMedia("(max-width: 767px)").matches
+  );
   const [showEncyclopedia, setShowEncyclopedia] = useState(false);
   const [battleMode, setBattleMode] = useState<BattleMode>("PVE");
   const [battleFormat, setBattleFormat] = useState<"normal_6v6" | "solo_1v1" | "peak_6v6" | "peak_3v3">("normal_6v6");
@@ -69,6 +74,22 @@ function AppContent() {
   const [editorTab, setEditorTab] = useState<"ai" | "manual" | "blockly" | undefined>(undefined);
 
   // 其他頁面要求開啟精靈編輯（例如解構報告的「用積木編輯」）
+  useEffect(() => {
+    const media = window.matchMedia("(max-width: 767px)");
+    const syncLayout = (matches: boolean) => {
+      setIsCompactLayout(matches);
+      if (matches) setShowHeader(false);
+    };
+    const onChange = (event: MediaQueryListEvent) => syncLayout(event.matches);
+    syncLayout(media.matches);
+    media.addEventListener("change", onChange);
+    return () => media.removeEventListener("change", onChange);
+  }, []);
+
+  useEffect(() => {
+    if (isCompactLayout) setShowHeader(false);
+  }, [view, showEncyclopedia, isCompactLayout]);
+
   useEffect(() => {
     const onEditElf = (e: Event) => {
       const d = (e as CustomEvent<{ elf?: Elf; elfId?: string; tab?: "ai" | "manual" | "blockly" }>).detail;
@@ -234,7 +255,7 @@ function AppContent() {
         initial={false}
         animate={{ width: showHeader ? 256 : 0 }}
         transition={{ duration: 0.22, ease: "easeOut" }}
-        className={`bg-[#0F1117]/85 backdrop-blur-md border-slate-800 z-50 shrink-0 h-full shadow-2xl relative overflow-hidden ${showHeader ? "border-r" : "border-r-0"}`}
+        className={`bg-[#0F1117]/95 backdrop-blur-md border-slate-800 z-[100] shrink-0 h-full shadow-2xl overflow-hidden ${isCompactLayout ? "fixed inset-y-0 left-0" : "relative"} ${showHeader ? "border-r" : "border-r-0"}`}
         aria-hidden={!showHeader}
       >
           <div className="w-64 h-full flex flex-col relative">
@@ -364,6 +385,15 @@ function AppContent() {
             </div>
           </div>
       </motion.aside>
+
+      {isCompactLayout && showHeader && (
+        <button
+          type="button"
+          aria-label="關閉側邊欄"
+          onClick={() => setShowHeader(false)}
+          className="fixed inset-0 z-[95] bg-black/55 backdrop-blur-[1px]"
+        />
+      )}
 
       {!showHeader && (
         <motion.button
