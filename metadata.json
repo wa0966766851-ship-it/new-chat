@@ -1,0 +1,6 @@
+{
+  "name": "賽爾對戰模擬器",
+  "description": "經典賽爾號對戰模擬器",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

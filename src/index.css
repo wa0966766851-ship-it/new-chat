@@ -1,0 +1,155 @@
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;600;700&family=JetBrains+Mono:wght@400;700&family=Inter:wght@400;500;600;700&family=Noto+Sans+Runic&family=Noto+Sans+Symbols&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-sans: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Inter", "PingFang TC", "Microsoft JhengHei UI", "Noto Sans TC", "Noto Sans Runic", "Noto Sans Symbols", "Segoe UI Historic", "Segoe UI Symbol", "Apple Symbols", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Space Grotesk", "Noto Sans Runic", "Segoe UI Historic", sans-serif;
+  --font-mono: "JetBrains Mono", "Noto Sans Runic", "Noto Sans Symbols", "Segoe UI Historic", "Segoe UI Symbol", "Apple Symbols", ui-monospace, SFMono-Regular, monospace;
+}
+
+body {
+  background-color: #0A0C10;
+  color: #f1f5f9;
+  font-family: var(--font-sans);
+}
+
+/* 動態綁定全域卡片與按鈕的透明度與色調 */
+[class*="bg-[#0F1117]"], [class*="bg-slate-900/8"], [class*="bg-slate-950/8"], .dynamic-card {
+  background-color: var(--card-bg, rgba(15, 17, 23, 0.8)) !important;
+  border-color: var(--card-border, #1e293b) !important;
+  backdrop-filter: blur(var(--card-blur, 12px)) !important;
+}
+
+/* Custom scrollbar for log screens */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: #020617;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: #1e293b;
+  border-radius: 4px;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #334155;
+}
+
+/* --- Universal Sleek Combat Animations --- */
+@keyframes violentShake {
+  0%, 100% { transform: translate(0, 0) rotate(0deg); }
+  15% { transform: translate(-10px, 5px) rotate(-1.5deg); }
+  30% { transform: translate(10px, -5px) rotate(1.5deg); }
+  45% { transform: translate(-8px, -3px) rotate(-1deg); }
+  60% { transform: translate(8px, 3px) rotate(1deg); }
+  75% { transform: translate(-5px, 2px) rotate(0deg); }
+  90% { transform: translate(3px, -1px) rotate(0deg); }
+}
+.animate-violent-shake {
+  animation: violentShake 0.45s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
+}
+
+@keyframes damagePopup {
+  0% { transform: scale(1.6) translateY(15px); opacity: 0; }
+  20% { transform: scale(1) translateY(0px); opacity: 1; }
+  35% { transform: scale(1.08) translateY(-4px); }
+  50% { transform: scale(1) translateY(0px); opacity: 1; }
+  80% { transform: scale(0.95) translateY(-28px); opacity: 0.9; }
+  100% { transform: scale(0.85) translateY(-50px); opacity: 0; }
+}
+.animate-damage-popup {
+  animation: damagePopup 1.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes slashCut {
+  0% { transform: scaleX(0) scaleY(0.5) rotate(45deg); opacity: 0; }
+  30% { transform: scaleX(1.6) scaleY(1.2) rotate(45deg); opacity: 1; box-shadow: 0 0 30px #fff; }
+  70% { transform: scaleX(1.9) scaleY(0.8) translate(25px, -25px) rotate(45deg); opacity: 0.8; }
+  100% { transform: scaleX(2.2) scaleY(0.2) translate(50px, -50px) rotate(45deg); opacity: 0; }
+}
+.animate-slash-cut {
+  animation: slashCut 0.48s ease-out forwards;
+}
+
+@keyframes slashCutReverse {
+  0% { transform: scaleX(0) scaleY(0.5) rotate(-45deg); opacity: 0; }
+  30% { transform: scaleX(1.6) scaleY(1.2) rotate(-45deg); opacity: 1; box-shadow: 0 0 30px #fff; }
+  70% { transform: scaleX(1.9) scaleY(0.8) translate(-25px, -25px) rotate(-45deg); opacity: 0.8; }
+  100% { transform: scaleX(2.2) scaleY(0.2) translate(-50px, -50px) rotate(-45deg); opacity: 0; }
+}
+.animate-slash-cut-reverse {
+  animation: slashCutReverse 0.48s ease-out forwards;
+}
+
+@keyframes energyBurst {
+  0% { transform: scale(0.3); opacity: 1; }
+  40% { transform: scale(1.1); opacity: 0.95; box-shadow: 0 0 70px rgba(255, 255, 255, 0.95), inset 0 0 40px rgba(255,255,255,0.8); }
+  100% { transform: scale(2.2); opacity: 0; }
+}
+.animate-energy-burst {
+  animation: energyBurst 0.65s cubic-bezier(0.1, 0.9, 0.2, 1) forwards;
+}
+
+@keyframes resonanceRise {
+  0% { transform: translateY(30px) scale(0.88); opacity: 0; }
+  30% { transform: translateY(0) scale(1.02); opacity: 0.85; }
+  70% { transform: translateY(-12px) scale(1.04); opacity: 0.65; }
+  100% { transform: translateY(-30px) scale(1.08); opacity: 0; }
+}
+.animate-resonance-rise {
+  animation: resonanceRise 0.75s ease-out forwards;
+}
+
+@keyframes strobeFlash {
+  0%, 100% { opacity: 0; }
+  15%, 55% { opacity: 0.95; transform: scale(1.03); filter: brightness(1.5); }
+  35%, 75% { opacity: 0.15; transform: scale(0.98); }
+}
+.animate-phantom-strobe {
+  animation: strobeFlash 0.55s ease-in-out forwards;
+}
+
+
+
+/* 效能：戰鬥畫面停用毛玻璃（backdrop-filter）。
+   全螢幕背景之上疊了十多層 backdrop-blur，任何動畫都會迫使瀏覽器每幀重算模糊，是戰鬥卡頓主因之一。 */
+[data-battle-root],
+[data-battle-root] * {
+  -webkit-backdrop-filter: none !important;
+  backdrop-filter: none !important;
+}
+
+
+/* ── iOS 風格共用元件 ─────────────────────────── */
+.ios-panel {
+  background: rgba(28, 28, 32, 0.72);
+  border: 0.5px solid rgba(255, 255, 255, 0.08);
+  border-radius: 22px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+  backdrop-filter: blur(20px) saturate(160%);
+}
+.ios-card {
+  background: rgba(255, 255, 255, 0.045);
+  border: 0.5px solid rgba(255, 255, 255, 0.08);
+  border-radius: 18px;
+}
+.ios-card:hover { background: rgba(255, 255, 255, 0.07); }
+.ios-segment {
+  display: inline-flex; gap: 2px; padding: 2px;
+  background: rgba(118, 118, 128, 0.24);
+  border-radius: 10px;
+}
+.ios-segment > button {
+  padding: 5px 12px; border-radius: 8px;
+  font-size: 13px; font-weight: 500; color: rgba(235, 235, 245, 0.7);
+  white-space: nowrap; transition: background .15s, color .15s;
+}
+.ios-segment > button[data-active="true"] {
+  background: rgba(99, 99, 102, 0.9); color: #fff;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+.ios-search {
+  background: rgba(118, 118, 128, 0.24);
+  border-radius: 10px; border: none;
+}

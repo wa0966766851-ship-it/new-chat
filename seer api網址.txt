@@ -1,0 +1,3 @@
+https://github.com/SeerAPI
+[https://github.com/SeerAPI/seer-unity-assets](https://api.seerapi.com/docs/v1/api_reference.html#tag/%E6%88%90%E5%B0%B1/GETv1/achievement/{name})
+https://api.seerapi.com/docs/v1/api_reference.html#tag/%E6%88%90%E5%B0%B1/GETv1/achievement/{name}

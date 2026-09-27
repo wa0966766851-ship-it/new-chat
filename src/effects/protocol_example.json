@@ -1,0 +1,32 @@
+{
+  "effect": {
+    "id": "SOUL_MARK_ZHAKESSI",
+    "name": "魔王咒怨",
+    "category": "CARRIED",
+    "timing": "ON_SKILL_HIT",
+    "priority": 10,
+    "condition": {
+      "type": "SKILL_TYPE",
+      "value": "ATTACK",
+      "target": "self"
+    },
+    "actions": [
+      {
+        "type": "STAT_CHANGE",
+        "value": { "stat": "all", "value": 1 },
+        "chance": 100,
+        "target": "self",
+        "message": "魔王咒怨：全屬性提升 1 級！"
+      },
+      {
+        "type": "STATUS_ADD",
+        "value": { "status": "fear", "duration": 2 },
+        "chance": 30,
+        "target": "opponent",
+        "message": "魔王咒怨：令對手陷入恐懼！"
+      }
+    ],
+    "onExpire": "LOG",
+    "duration": -1
+  }
+}
