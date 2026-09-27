@@ -3,6 +3,7 @@ import { DEFAULT_ELVES } from "../data/defaultElves";
 import { getSkillProgram, getSoulProgram } from "../blocks/registry";
 import { SKILL_MODE, SOUL_MODE } from "../blocks/specs";
 import { runSkillProgram, runSoulProgram } from "../blocks/runtime";
+import { resetPrd } from "../utils/prd";
 
 let pass = 0;
 let fail = 0;
@@ -40,6 +41,7 @@ function makeElf(overrides: Record<string, any> = {}) {
 }
 
 function makeBlockContext(selfOverrides: Record<string, any> = {}, targetOverrides: Record<string, any> = {}) {
+  resetPrd(() => 0);
   const self = makeElf({ name: "我方", ...selfOverrides });
   const target = makeElf({ name: "對手", ...targetOverrides });
   const playerState: Record<string, any> = {};
@@ -150,8 +152,8 @@ function skillByName(name: string) {
 
 console.log("\n=== 積木登記完整性 ===");
 
-t("12 個積木技能的所有子句皆可解析", () => {
-  assert.strictEqual(Object.keys(SKILL_MODE).length, 12);
+t("17 個積木技能的所有子句皆可解析", () => {
+  assert.strictEqual(Object.keys(SKILL_MODE).length, 17);
   for (const name of Object.keys(SKILL_MODE)) {
     const program = getSkillProgram(skillByName(name));
     const unparsed = program.clauses.filter(clause => !clause.parsed);

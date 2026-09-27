@@ -8,6 +8,8 @@ export const SKILL_MODE: Record<string, "blocks" | number[]> = {
   "翎封禁之羽": "blocks", "翎萬羽歸宗": "blocks",
   // 5005 布萊克
   "雙重暗影": "blocks",
+  // 5006 星光·魔焰猩猩
+  "星光·音速火拳": "blocks", "星光·冥想": "blocks", "星光·不滅之火": "blocks", "星光·覺醒": "blocks", "星光·魔焰裂空": "blocks",
   // 5008 鎮魂.巴弗洛
   "贖魂讚詩": "blocks", "亂魂舞": "blocks", "鎖魂曲": "blocks",
   // 5007 混濁海妖·布林克克
