@@ -81,7 +81,12 @@ run("npm run lint", shareDir);
 run("npm test", shareDir);
 
 // 步驟3：electron-builder（nsis + portable 都在 yml 裡）
+// 注意：npm run build:electron 只是 vite + esbuild，並不會產出 exe，
+// 真正的安裝包一定要再跑 electron-builder，所以這裡分兩段跑。
 run("npm run build:electron", shareDir);
+// 乾淨副本預設沒有 electron / electron-builder，先補上才打得動
+run("npm install -D electron electron-builder", shareDir);
+run("npx electron-builder --config electron-builder.yml --win nsis portable --publish never", shareDir);
 
 // 步驟4：收集產物到 dist_release/<APP_NAME><VERSION>/
 const appName = "賽爾對戰模擬器";
@@ -98,11 +103,12 @@ const copyRecursive = (src: string, dest: string) => {
     else fs.copyFileSync(s, d);
   }
 };
-if (fs.existsSync(shareDist)) {
-  // electron-builder 預設輸出 dist/，把安裝包搬過去
-  for (const name of fs.readdirSync(shareDist)) {
+// electron-builder 會把安裝包吐到 dist/（win nsis + portable），全部搬過去
+for (const cand of [shareDist, shareDir]) {
+  if (!fs.existsSync(cand)) continue;
+  for (const name of fs.readdirSync(cand)) {
     if (/\.(exe|msi|zip|yml|blockmap)$/i.test(name)) {
-      fs.copyFileSync(path.join(shareDist, name), path.join(outDir, name));
+      fs.copyFileSync(path.join(cand, name), path.join(outDir, name));
     }
   }
 }
