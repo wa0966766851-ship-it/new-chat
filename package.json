@@ -1,7 +1,7 @@
 {
   "name": "react-example",
   "private": true,
-  "version": "0.0.0",
+  "version": "1.0.0",
   "type": "module",
   "scripts": {
     "dev": "tsx server.ts",
@@ -16,6 +16,9 @@
     "audit:extra-actions": "tsx scripts/audit_extra_actions.ts",
     "package:portable": "powershell -ExecutionPolicy Bypass -File scripts/package_portable.ps1",
     "package:zip": "powershell -ExecutionPolicy Bypass -File scripts/package_portable.ps1 -SkipExe",
+    "build:exe": "tsx tools/build_exe.ts --bump",
+    "build:exe-keep": "tsx tools/build_exe.ts --keep-version",
+    "prepare:share": "tsx tools/prepare_share.ts --force",
     "electron:dev": "npm run build && electron electron/main.cjs",
     "package:electron": "npm run build:electron && electron-builder --config electron-builder.yml"
   },
