@@ -55,9 +55,6 @@ SourceFiles0=$stage
 [SourceFiles0]
 "@
 if (-not $SkipExe) {
-  # iexpress 的 .sed 只吃 ASCII：中文路徑與中文檔名都會變成 ?? 導致靜默失敗。
-  # 策略：複製到純英文暫存路徑，只打包純 ASCII 檔名；
-  # 中文檔名的圖資不進 EXE，遊戲會自動從 SeerAPI 遠端補圖。ZIP 版不受影響。
   $asciiRoot = Join-Path $env:TEMP "seer_build"
   $asciiStage = Join-Path $asciiRoot "portable"
   if (Test-Path -LiteralPath $asciiRoot) { Remove-Item -LiteralPath $asciiRoot -Recurse -Force }
@@ -74,12 +71,12 @@ if (-not $SkipExe) {
     if (-not (Test-Path -LiteralPath $destDir)) { New-Item -ItemType Directory -Path $destDir -Force | Out-Null }
     Copy-Item -LiteralPath $f.FullName -Destination $dest -Force
   }
-  Write-Host "EXE staging: $($asciiFiles.Count) ASCII files, $skipCount non-ASCII skipped (load from remote)."
+  Write-Host ("EXE staging: " + $asciiFiles.Count + " ASCII files, " + $skipCount + " non-ASCII skipped.")
   $asciiExe = Join-Path $asciiRoot "seer-battle-simulator.exe"
   $sedEntries = @()
   for ($i = 0; $i -lt $asciiFiles.Count; $i++) {
     $rel = $asciiFiles[$i].FullName.Substring($stage.Length + 1)
-    $sedEntries += "FILE$($i)=""$rel"""
+    $sedEntries += ('FILE' + $i + '="' + $rel + '"')
   }
   $sedFileList = $sedEntries -join "`r`n"
   $sed = @"
@@ -106,13 +103,15 @@ $sedFileList
 "@
   Set-Content -LiteralPath $iexpress -Value $sed -Encoding ASCII
   & iexpress.exe /N /Q $iexpress
+  $finalExe = Join-Path $out 'seer-battle-simulator.exe'
   if (Test-Path -LiteralPath $asciiExe) {
-    Copy-Item -LiteralPath $asciiExe (Join-Path $out "seer-battle-simulator.exe") -Force
-    Write-Host "Created EXE: $(Join-Path $out 'seer-battle-simulator.exe')"
+    Copy-Item -LiteralPath $asciiExe $finalExe -Force
+    Write-Host ('Created EXE: ' + $finalExe)
   } else {
-    Write-Warning "IExpress 沒有產出 exe（檔案數過多時常見），請改用 ZIP 版發佈。"
+    Write-Warning 'IExpress produced no exe. Use the ZIP instead.'
   }
 }
 
-Write-Host "Created ZIP: $zip"
-Write-Host ("IExpress output (if available): " + (Join-Path $out "seer-battle-simulator.exe"))
+Write-Host ('Created ZIP: ' + $zip)
+$finalExeMsg = Join-Path $out 'seer-battle-simulator.exe'
+Write-Host ('IExpress output (if available): ' + $finalExeMsg)
