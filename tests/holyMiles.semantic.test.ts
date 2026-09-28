@@ -61,6 +61,25 @@ test("八荒 halves nontrue damage by current HP steps and 天佑 repeats at rou
   assert.equal(events.filter(x => x === "percent:0.1").length, 6);
 });
 
+test("淨世洗禮頌 adds percent damage equal to actual skill damage against an abnormal opponent", () => {
+  const { ctx, events, target } = makeContext();
+  ctx.skill = HOLY_MILES_SKILLS[3];
+  target.battleStatuses = { 燒傷: 2 };
+  handleHolyMilesSoulMark(ctx, EffectTiming.ON_DAMAGED, { targetSide: "p2", amount: 345, damageType: "skill_attack" });
+  assert.ok(events.includes("pink:345"));
+});
+
+test("聖怒 doubles incoming skill damage when own percent damage fails to reduce HP", () => {
+  const { ctx, self, target } = makeContext();
+  target.currentHp = 100;
+  self.currentHp = 100;
+  handleHolyMilesSoulMark(ctx, EffectTiming.ROUND_START);
+  handleHolyMilesSoulMark(ctx, EffectTiming.OPPONENT_DAMAGE, { damageType: "percent", sourceElfName: self.name, hpReduced: 0 });
+  const damageComp = { multiplier: 1, damageCategory: "skill_attack", isIncoming: true };
+  handleHolyMilesSoulMark(ctx, EffectTiming.BEFORE_DAMAGE, { damageComp });
+  assert.equal(damageComp.multiplier, 1); // 八荒減半2次；聖怒翻倍2次
+});
+
 test("fifth skill accumulates drain, removes one PP from every enemy move and locks depleted choice", () => {
   const { ctx, own, opp, target, events } = makeContext();
   target.skills[0].pp = 1; target.skills[0].currentPp = 1;

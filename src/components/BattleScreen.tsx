@@ -584,7 +584,8 @@ export default function BattleScreen(props: BattleScreenProps) {
         // 同時提供 amount / damage / targetSide（部分魂印讀 extraData.damage 與 targetSide，過去缺值導致 NaN 與判定顛倒）
         const damagedPayload = {
           damageType: normalizeDamageType(data), rawDamageType: data.damageType,
-          amount: dmg, damage: dmg, targetSide, typedSkill: !!(data as any).typedSkill,
+          amount: dmg, damage: dmg, hpReduced: Math.max(0, target.currentHp - nextHp),
+          sourceElfName: data.sourceElfName, targetSide, typedSkill: !!(data as any).typedSkill,
           hpAdjustment: survivalTransition.hpAdjustment,
           ignoredDamage: survivalTransition.ignoredDamage,
           enteredNonPositive: survivalTransition.enteredNonPositive,
@@ -599,6 +600,13 @@ export default function BattleScreen(props: BattleScreenProps) {
           if (observer && observesOpponentDamage(observer.name)) {
             SoulMarkRegistry[observer.name](getBattleEventContext(observerSide, true, 0), EffectTiming.ON_DAMAGED, damagedPayload);
           }
+        }
+
+        // Generic observer event also reports absorbed or blocked percent damage.
+        const sourceSide = targetSide === "p1" ? "p2" : "p1";
+        const sourceElf = syncStateRef.current[sourceSide];
+        if (sourceElf && SoulMarkRegistry[sourceElf.name]) {
+          SoulMarkRegistry[sourceElf.name](getBattleEventContext(sourceSide, true, 0), EffectTiming.OPPONENT_DAMAGE, damagedPayload);
         }
 
         if (data.damageType === "true" || data.damageType === "true_damage") {

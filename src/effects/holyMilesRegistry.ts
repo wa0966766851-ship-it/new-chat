@@ -19,6 +19,7 @@ export function handleHolyMilesSoulMark(c: BattleEventContext, event: EffectTimi
       if (n > 0) set(c, name, n - 1);
     }
     set(c, "halves", 1 + hpSteps(c.self.currentHp, c.self.maxHp));
+    set(c, "anger", 0);
     if (turns(c, "cleansePending")) {
       const remaining = { ...c.getStatuses(c.self) };
       for (const id of Object.keys(remaining)) {
@@ -43,13 +44,10 @@ export function handleHolyMilesSoulMark(c: BattleEventContext, event: EffectTimi
         if (i > 0 && isAbnormal(c)) set(c, "cleansePending", 1);
       }
     }
-    set(c, "anger", 0);
   }
   if (event === EffectTiming.BEFORE_ACTION && c.skill?.category !== "屬性") {
     if (turns(c, "crit")) c.setPlayerState("mustCrit", true);
     c.applyAbsorb(c.targetSide, Math.floor(c.self.maxHp / 10));
-    // 吸取本身若被擋下，追蹤該次百分比傷害沒有造成體力變化。
-
   }
   if (event === EffectTiming.BEFORE_DAMAGE && data?.damageComp) {
     const d = data.damageComp as DamageComputation;
@@ -82,7 +80,11 @@ export function handleHolyMilesSoulMark(c: BattleEventContext, event: EffectTimi
     data.prevented = true;
     c.applyStatusWithImmunityCheck(c.targetSide, data.status, data.duration);
   }
-  if (event === EffectTiming.ON_DAMAGED && data?.targetSide === c.targetSide && data?.amount > 0 && /skill_attack/.test(data.damageType || "") && c.opponentSkill?.name === "淨世洗禮頌") {
+  if (event === EffectTiming.OPPONENT_DAMAGE && data?.damageType === "percent" && data.sourceElfName === c.self.name && data.hpReduced === 0) {
+    const highest = Math.max(0, ...c.getFullTeam(c.targetSide).map(e => hpSteps(e.currentHp, e.maxHp)));
+    set(c, "anger", 1 + highest);
+  }
+  if (event === EffectTiming.ON_DAMAGED && data?.targetSide === c.targetSide && data?.amount > 0 && /skill_attack/.test(data.damageType || "") && c.skill?.name === "淨世洗禮頌") {
     // The observer receives actual HP damage after shields and limits have been applied.
     if (Object.values(c.getStatuses(c.target)).some(n => n > 0)) c.applyPinkDamage(c.targetSide, data.amount, "淨世洗禮頌", undefined, undefined, "percent");
   }
