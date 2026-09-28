@@ -1,20 +1,48 @@
 $ErrorActionPreference = 'Stop'
-$appDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 
 Write-Host '==============================================='
 Write-Host ' Seer Battle Simulator - Portable Launcher (ps1)'
 Write-Host '==============================================='
 Write-Host ''
 
-# 0. Self check
-$nodeExe = Join-Path $appDir 'node.exe'
-$serverRoot = Join-Path $appDir 'server.single.cjs'
-$serverDist = Join-Path $appDir 'dist\server.single.cjs'
-$indexHtml = Join-Path $appDir 'dist\index.html'
+# 0. Resolve roots: support both portable root and repo packaging/ folder
+$scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
+$leaf = Split-Path -Leaf $scriptDir
+if ($leaf -eq 'packaging') { $appRoot = Split-Path -Parent $scriptDir } else { $appRoot = $scriptDir }
 
+# node.exe: portable root first, then system PATH
+$nodeLocal = Join-Path $appRoot 'node.exe'
+$nodeHere = Join-Path $scriptDir 'node.exe'
+$nodeExe = $null
+if (Test-Path -LiteralPath $nodeLocal) { $nodeExe = $nodeLocal }
+elseif (Test-Path -LiteralPath $nodeHere) { $nodeExe = $nodeHere }
+else {
+  try { $nodeExe = (Get-Command node.exe -ErrorAction Stop).Source } catch { $nodeExe = $null }
+}
+
+# server bundle: root then dist, in both appRoot and scriptDir
+$serverCands = @(
+  (Join-Path $appRoot 'server.single.cjs'),
+  (Join-Path $appRoot 'dist\server.single.cjs'),
+  (Join-Path $scriptDir 'server.single.cjs'),
+  (Join-Path $scriptDir 'dist\server.single.cjs'),
+  (Join-Path $appRoot 'dist\server.cjs')
+)
 $serverCjs = $null
-if (Test-Path -LiteralPath $serverRoot) { $serverCjs = $serverRoot }
-elseif (Test-Path -LiteralPath $serverDist) { $serverCjs = $serverDist }
+foreach ($c in $serverCands) { if ($c -and (Test-Path -LiteralPath $c)) { $serverCjs = $c; break } }
+
+$indexCands = @(
+  (Join-Path $appRoot 'dist\index.html'),
+  (Join-Path $scriptDir 'dist\index.html')
+)
+$indexHtml = $null
+foreach ($c in $indexCands) { if ($c -and (Test-Path -LiteralPath $c)) { $indexHtml = $c; break } }
+
+Write-Host ('Launcher dir: ' + $scriptDir)
+Write-Host ('App root:     ' + $appRoot)
+if ($serverCjs) { Write-Host ('Server file:  ' + $serverCjs) }
+if ($nodeExe) { Write-Host ('Node:         ' + $nodeExe) }
+Write-Host ''
 
 if (-not (Test-Path -LiteralPath $nodeExe)) {
   Write-Host '[ERROR] node.exe not found. Unzip the WHOLE zip.'
@@ -63,13 +91,13 @@ $env:PORT = "$free"
 $env:NODE_ENV = 'production'
 
 # 2. Start server
-$logFile = Join-Path $appDir 'server.log'
+$logFile = Join-Path $appRoot 'server.log'
 Write-Host "Starting server on http://127.0.0.1:$free ..."
 Write-Host "Log: $logFile"
 $psi = New-Object System.Diagnostics.ProcessStartInfo
 $psi.FileName = $nodeExe
 $psi.Arguments = '"' + $serverCjs + '"'
-$psi.WorkingDirectory = $appDir
+$psi.WorkingDirectory = $appRoot
 $psi.UseShellExecute = $false
 $psi.RedirectStandardOutput = $true
 $psi.RedirectStandardError = $true
