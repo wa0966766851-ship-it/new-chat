@@ -167,7 +167,7 @@ export const StatusBadgePanel: React.FC<StatusBadgePanelProps> = ({ elf, otherEf
                     label = template.label;
                     color = template.color;
                     displayValue = inst.stacks !== undefined 
-                      ? `${inst.stacks}${inst.maxStacks ? `/${inst.maxStacks}` : ''}${isShieldOrBarrier ? '點' : '層'}`
+                      ? `${inst.stacks}${inst.maxStacks ? `/${inst.maxStacks}` : ''}${inst.unit || (isShieldOrBarrier ? '點' : '層')}`
                       : inst.remainingTurns !== undefined && inst.remainingTurns > 0
                       ? `${inst.remainingTurns}回合`
                       : '';
@@ -224,7 +224,7 @@ export const StatusBadgePanel: React.FC<StatusBadgePanelProps> = ({ elf, otherEf
           color = template.color;
           const isShieldOrBarrier = selectedEffect.catalogId === 'shield_active' || selectedEffect.catalogId === 'barrier_active';
           displayValue = selectedEffect.stacks !== undefined 
-            ? `${selectedEffect.stacks}${selectedEffect.maxStacks ? `/${selectedEffect.maxStacks}` : ''}${isShieldOrBarrier ? '點' : '層'}`
+            ? `${selectedEffect.stacks}${selectedEffect.maxStacks ? `/${selectedEffect.maxStacks}` : ''}${selectedEffect.unit || (isShieldOrBarrier ? '點' : '層')}`
             : selectedEffect.remainingTurns !== undefined && selectedEffect.remainingTurns > 0
             ? `${selectedEffect.remainingTurns}回合`
             : '';

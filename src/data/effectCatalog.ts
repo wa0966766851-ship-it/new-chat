@@ -18,12 +18,13 @@ export interface EffectInstance {
   stacks?: number;
   active?: boolean;
   maxStacks?: number;
+  unit?: string;
   note?: string;
 }
 
 export const EFFECT_CATALOG: Record<string, any> = {
   // --- 4. 專屬機制與印記 (Indicia) ---
-  soul_sorrow: { id: 'soul_sorrow', badge: '👻', label: '魂殤', categories: ['indicia_hostile'], color: 'bg-violet-900/40 text-violet-300 border-violet-500/50', describe: (p) => `專屬機制：每層魂殤每回合扣除 25% 最大體力(目前 ${p.stacks ?? 0} 層)。` },
+  soul_sorrow: { id: 'soul_sorrow', badge: '👻', label: '魂殤', categories: ['indicia_hostile'], color: 'bg-violet-900/40 text-violet-300 border-violet-500/50', describe: (p) => `專屬印記：上限4道；持有者回合結束時，每道令體力調整減少最大體力25%；下場後消失（目前 ${p.stacks ?? 0}/4 道）。` },
   concealment: { 
     id: 'concealment', 
     badge: '👤', 

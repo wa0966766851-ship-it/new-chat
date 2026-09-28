@@ -168,6 +168,11 @@ export const isZeroPpExempt = (elf: Elf, sk: Skill, opp?: Elf | null): boolean =
   }
   if (isDimensionalDragon(elf) && poemStacks(elf) >= 2) return true; // 詩章 2：使用技能無視PP值限制
   if (sk.name === "星光·光合作用" || sk.name === "星光·花草能量") return true;
+  if ((elf.ppLimitIgnoredWhenParalyzedTurns || 0) > 0) {
+    const st = getStatuses(elf);
+    const turns = Math.max(st["麻痺"] || 0, st["麻痹"] || 0, st.paralyzed || 0);
+    if (turns >= (elf.ppLimitIgnoredWhenParalyzedTurns || 0)) return true;
+  }
   // 深潛者盛宴：自身處於能力下降狀態時使用技能不受PP值限制
   if (sk.name === "深潛者盛宴" && Object.values(elf.statStages || {}).some((v: any) => typeof v === "number" && v < 0)) return true;
 
@@ -384,6 +389,7 @@ export const hasAnyAbnormalStatus = (elf: any) => {
 export const isElfActionDisabled = (elf: any, opponent?: any) => {
   if (!elf) return false;
   const statuses = getStatuses(elf);
+  if (elf.suppressAbnormalSideEffectsWhenParalyzed && Math.max(statuses["麻痺"] || 0, statuses["麻痹"] || 0, statuses.paralyzed || 0) > 0) return false;
   for (const stId of Object.keys(statuses)) {
     if (statuses[stId] > 0) {
       const entry = StatusRegistry[stId];

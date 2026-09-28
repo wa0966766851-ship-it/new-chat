@@ -14,6 +14,10 @@ import { runNode } from "../effects/effectRunner";
 import { CODEX } from "../data/codexRegistry";
 import { normalizeDamageType, settleDamageAbsorption } from "../battle/damageSemantics";
 import type { KitEntry } from "../effects/effectSystem.schema";
+import { buildEffectViewModels } from "../battle/effectViewModel";
+import { getMark, markAppliesToElf, setMark } from "../battle/marks";
+import { runHolderMarks } from "../blocks/runtime";
+import { resolveHpAdjustment, reyGodDescentRule } from "../battle/survivalRules";
 
 let pass = 0, fail = 0;
 function t(name: string, fn: () => void) {
@@ -79,6 +83,117 @@ t("tickAt 分流:action_end 不被 round_end 扣到", () => {
   assert.strictEqual(remainingOf(L, "a"), 2);
   L = tickTimers(L, "action_end");
   assert.strictEqual(remainingOf(L, "a"), 1);
+});
+
+t("狀態視圖正確區分回合、其他計時與次數類", () => {
+  const views = buildEffectViewModels([], [
+    turnEffect("turn", "傷害提升", 2),
+    roundCounter("round", "魂印守護", 3, "soulmark"),
+    useCounter("use", "免死", 1, "soulmark"),
+  ]);
+  assert.deepStrictEqual(views.map(v => [v.id, v.category, v.unit, v.clearable]), [
+    ["timer:turn", "turn", "回合", true],
+    ["timer:use", "count", "次", false],
+    ["timer:round", "round", "回合", false],
+  ]);
+});
+
+t("印記視圖保留層數、下場保留與不可被消回合清除語意", () => {
+  const [view] = buildEffectViewModels([{
+    id: "water", displayChar: "水", count: 3, maxCount: 8, unit: "道",
+    name: "永恆之水", description: "造成攻擊傷害提升", source: "怒濤·滄嵐",
+    persistsOffField: true,
+  }], []);
+  assert.strictEqual(view.category, "mark");
+  assert.strictEqual(view.value, 3);
+  assert.strictEqual(view.unit, "道");
+  assert.strictEqual(view.persistsOffField, true);
+  assert.strictEqual(view.clearable, false);
+});
+
+t("魂殤登記會限制為4道並帶入正確顯示與結算語意", () => {
+  const [mark] = setMark([], {
+    id: "blk_魂殤", displayChar: "魂", count: 99,
+    name: "魂殤", description: "舊描述", source: "鎮魂.巴弗洛",
+    effects: { hpAdjustmentMaxHpRatioPerStack: 0.25 },
+  });
+  assert.strictEqual(mark.count, 4);
+  assert.strictEqual(mark.unit, "道");
+  assert.strictEqual(mark.maxCount, 4);
+  assert.strictEqual(mark.persistsOffField, false);
+  assert.strictEqual(mark.polarity, "negative");
+});
+
+t("魂殤在回合結束按層數執行體力調整，不算百分比傷害", () => {
+  let adjusted = 0;
+  const [mark] = setMark([], {
+    id: "blk_魂殤", displayChar: "殤", count: 3,
+    name: "魂殤", description: "", source: "鎮魂.巴弗洛",
+    effects: { hpAdjustmentMaxHpRatioPerStack: 0.25 },
+  });
+  const ctx = {
+    actor: "p1", self: { name: "測試精靈", maxHp: 1000 },
+    getMarks: () => [mark], getFullTeam: () => [],
+    adjustHp: (_side: string, amount: number) => { adjusted += amount; },
+    addLog: () => {}, clearMark: () => {}, setMark: () => {},
+  } as any;
+  runHolderMarks(ctx, ["round_end"], {}, true);
+  assert.strictEqual(adjusted, -750);
+});
+
+t("異能值0點仍顯示，且只在持有者上場時顯示", () => {
+  const [mark] = setMark([], {
+    id: "rey_alien_energy", displayChar: "異", count: 0,
+    name: "異能值", description: "目前無效果", source: "異境神霆·雷伊",
+    ownerBattleId: "rey-1", visibleWhenZero: true,
+  });
+  const visible = buildEffectViewModels([mark], [], "rey-1");
+  const hidden = buildEffectViewModels([mark], [], "other-1");
+  assert.strictEqual(visible.length, 1);
+  assert.strictEqual(visible[0].value, 0);
+  assert.strictEqual(visible[0].unit, "點");
+  assert.strictEqual(hidden.length, 0);
+});
+
+t("同隊不同精靈可各自持有同名印記，效果只套用到正確持有者", () => {
+  let marks = setMark([], {
+    id: "blk_千秋一淚", displayChar: "淚", count: 1, name: "千秋一淚", description: "", source: "滄嵐",
+    ownerBattleId: "elf-a",
+  });
+  marks = setMark(marks, {
+    id: "blk_千秋一淚", displayChar: "淚", count: 3, name: "千秋一淚", description: "", source: "滄嵐",
+    ownerBattleId: "elf-b",
+  });
+  assert.strictEqual(marks.length, 2);
+  assert.strictEqual(getMark(marks, "blk_千秋一淚", "elf-a")?.count, 1);
+  assert.strictEqual(getMark(marks, "blk_千秋一淚", "elf-b")?.count, 3);
+  assert.strictEqual(markAppliesToElf(marks[0], { battleId: "elf-a" }), true);
+  assert.strictEqual(markAppliesToElf(marks[0], { battleId: "elf-b" }), false);
+});
+
+t("帝辛的八荒、伏魔與墮魔為三種獨立印記", () => {
+  const ids = ["bahuang_mark", "fumo_mark", "duomo_mark"];
+  const marks = ids.reduce((current, id, index) => setMark(current, {
+    id, displayChar: String(index), count: 1, name: id, description: "", source: "帝辛",
+    ownerBattleId: index === 2 ? "opponent" : "dixin",
+  }), [] as any[]);
+  assert.deepStrictEqual(marks.map(mark => mark.id), ids);
+  assert.strictEqual(marks.find(mark => mark.id === "duomo_mark")?.polarity, "negative");
+});
+
+t("魔王咒怨達到5層不是上限，技能可繼續累積到6層以上", () => {
+  const [mark] = setMark([], {
+    id: "demon_grudge", displayChar: "魔", count: 7,
+    name: "魔王咒怨", description: "達到5層時免疫控制", source: "湮滅之主·咤克斯",
+  });
+  assert.strictEqual(mark.count, 7);
+  assert.strictEqual(mark.maxCount, undefined);
+});
+
+t("體力調整不受體力上限限制，神降時可調整至負體力下限", () => {
+  assert.deepStrictEqual(resolveHpAdjustment(900, 300), { hp: 1200, applied: 300 });
+  assert.deepStrictEqual(resolveHpAdjustment(100, -500), { hp: 0, applied: -100 });
+  assert.deepStrictEqual(resolveHpAdjustment(-100, -700, reyGodDescentRule(1000)), { hp: -800, applied: -700 });
 });
 
 console.log("\n=== AI 決策 ===");

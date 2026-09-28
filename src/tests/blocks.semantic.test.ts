@@ -152,8 +152,8 @@ function skillByName(name: string) {
 
 console.log("\n=== 積木登記完整性 ===");
 
-t("17 個積木技能的所有子句皆可解析", () => {
-  assert.strictEqual(Object.keys(SKILL_MODE).length, 17);
+t("31 個積木技能的所有子句皆可解析", () => {
+  assert.strictEqual(Object.keys(SKILL_MODE).length, 31);
   for (const name of Object.keys(SKILL_MODE)) {
     const program = getSkillProgram(skillByName(name));
     const unparsed = program.clauses.filter(clause => !clause.parsed);
@@ -242,6 +242,29 @@ t("雙重暗影：實際降低防禦並施加害怕", () => {
   assert.ok(h.statuses.p2.includes("害怕"));
 });
 
+t("夜魔之球：附加對手當前體力15%百分比傷害", () => {
+  const h = makeBlockContext({}, { currentHp: 800, maxHp: 1000 });
+  h.ctx.skill = skillByName("夜魔之球");
+  runSkillProgram(h.ctx, getSkillProgram(h.ctx.skill), "use");
+  assert.strictEqual(h.damage.pink, 120);
+});
+
+t("幽冥頓悟：自身全屬性+1且恢復1/3最大體力", () => {
+  const h = makeBlockContext({ currentHp: 400, maxHp: 1000 });
+  h.ctx.skill = skillByName("幽冥頓悟");
+  runSkillProgram(h.ctx, getSkillProgram(h.ctx.skill), "use");
+  assert.deepStrictEqual(h.self.statStages, { atk: 1, def: 1, spatk: 1, spdef: 1, speed: 1, accuracy: 1 });
+  assert.strictEqual(h.self.currentHp, 733);
+});
+
+t("夜魔神襲：解除自身能力下降且吸血50%寫入狀態", () => {
+  const h = makeBlockContext({ statStages: { ...baseStages(), atk: -2, def: -1 } });
+  h.ctx.skill = skillByName("夜魔神襲");
+  runSkillProgram(h.ctx, getSkillProgram(h.ctx.skill), "use");
+  assert.deepStrictEqual(h.self.statStages, { atk: 0, def: 0, spatk: 0, spdef: 0, speed: 0, accuracy: 0 });
+  assert.strictEqual(h.playerState.vampireRatio, 0.5);
+});
+
 t("深潛者盛宴：異常存在時3回合技能增傷由50%翻倍為100%", () => {
   const h = makeBlockContext({ battleStatuses: { 混亂: 2 } });
   h.ctx.skill = skillByName("深潛者盛宴");
@@ -314,6 +337,134 @@ t("贖魂讚詩：消回合成功後施加流血", () => {
   h.ctx.skill = skillByName("贖魂讚詩");
   runSkillProgram(h.ctx, getSkillProgram(h.ctx.skill), "use", [1]);
   assert.ok(h.statuses.p2.includes("流血"));
+});
+
+t("千鳥俱寂：全屬性提升且建立回血追傷與先制麻痺", () => {
+  const h = makeBlockContext();
+  h.ctx.skill = skillByName("千鳥俱寂");
+  runSkillProgram(h.ctx, getSkillProgram(h.ctx.skill), "use");
+  assert.deepStrictEqual(h.self.statStages, { atk: 1, def: 1, spatk: 1, spdef: 1, speed: 1, accuracy: 1 });
+  assert.ok(h.timers.p1.some(timer => timer.payload.block.trig === "round_end"));
+});
+
+t("千翎破陣：消回合成功後對手攻擊無效且異常增傷寫入狀態", () => {
+  const h = makeBlockContext({}, { battleStatuses: { 麻痺: 2 } });
+  h.ctx.skill = skillByName("千翎破陣");
+  runSkillProgram(h.ctx, getSkillProgram(h.ctx.skill), "use");
+  assert.strictEqual(h.playerState.skillDamageBoost, 2);
+});
+
+t("翎封禁之羽：消強後對手全屬性-1，消回合後令對手麻痺", () => {
+  const h = makeBlockContext({}, { statStages: { ...baseStages(), atk: 2, def: 1 } });
+  h.ctx.skill = skillByName("翎封禁之羽");
+  runSkillProgram(h.ctx, getSkillProgram(h.ctx.skill), "use");
+  assert.deepStrictEqual(h.target.statStages, { atk: -1, def: -1, spatk: -1, spdef: -1, speed: -1, accuracy: -1 });
+  assert.ok(h.statuses.p2.includes("麻痺"));
+});
+
+t("翎羽風暴：免疫反彈寫入狀態且令對手害怕", () => {
+  const h = makeBlockContext();
+  h.ctx.skill = skillByName("翎羽風暴");
+  runSkillProgram(h.ctx, getSkillProgram(h.ctx.skill), "use");
+  assert.strictEqual(h.playerState.reflectStatusTurns, 4);
+  assert.ok(h.statuses.p2.includes("害怕"));
+});
+
+t("星光·究極吸取：吸強成功加300護盾且吸血100%寫入狀態", () => {
+  const h = makeBlockContext({}, { statStages: { ...baseStages(), atk: 2 } });
+  h.ctx.skill = skillByName("星光·究極吸取");
+  runSkillProgram(h.ctx, getSkillProgram(h.ctx.skill), "use");
+  assert.strictEqual(h.self.shield, 300);
+  assert.strictEqual(h.playerState.vampireRatio, 1);
+});
+
+t("星光·光合作用：免疫反彈4回合且建立使用技能追傷計時", () => {
+  const h = makeBlockContext();
+  h.ctx.skill = skillByName("星光·光合作用");
+  runSkillProgram(h.ctx, getSkillProgram(h.ctx.skill), "use");
+  assert.strictEqual(h.playerState.reflectStatusTurns, 4);
+  assert.ok(h.timers.p1.some(timer => timer.payload.block.trig === "self_skill"));
+});
+
+t("星光·花草能量：高體力全屬性+2且獲400護盾", () => {
+  const h = makeBlockContext({ currentHp: 800 }, { currentHp: 400 });
+  h.ctx.skill = skillByName("星光·花草能量");
+  runSkillProgram(h.ctx, getSkillProgram(h.ctx.skill), "use");
+  assert.deepStrictEqual(h.self.statStages, { atk: 2, def: 2, spatk: 2, spdef: 2, speed: 2, accuracy: 2 });
+  assert.strictEqual(h.self.shield, 400);
+});
+
+t("星光·飛葉風暴：解除弱化回滿且附加已損失35%百分比傷害", () => {
+  const h = makeBlockContext({ statStages: { ...baseStages(), atk: -2 }, currentHp: 400, maxHp: 1000 }, { currentHp: 600, maxHp: 1000 });
+  h.ctx.skill = skillByName("星光·飛葉風暴");
+  runSkillProgram(h.ctx, getSkillProgram(h.ctx.skill), "use");
+  assert.strictEqual(h.self.currentHp, 1000);
+  assert.strictEqual(h.damage.pink, 140);
+});
+
+t("星光·金光綠葉：消回合後傷害轉體力且附加200固傷", () => {
+  const h = makeBlockContext();
+  h.ctx.skill = skillByName("星光·金光綠葉");
+  runSkillProgram(h.ctx, getSkillProgram(h.ctx.skill), "use");
+  assert.strictEqual(h.damage.fixed, 200);
+});
+
+t("訣別之一：雙倍吸取對手能力提升且對手正先制失效2回合", () => {
+  const h = makeBlockContext({}, { statStages: { ...baseStages(), atk: 2, speed: 1 } });
+  h.ctx.skill = skillByName("訣別");
+  runSkillProgram(h.ctx, getSkillProgram(h.ctx.skill), "use", [1]);
+  assert.deepStrictEqual(h.self.statStages, { atk: 4, def: 0, spatk: 0, spdef: 0, speed: 2, accuracy: 0 });
+  assert.strictEqual(h.opponentState.blkNoPosPrioTurns, 3);
+});
+
+t("訣別之二：無能力可吸時對手隨機2技能PP歸零", () => {
+  const h = makeBlockContext();
+  h.target.skills = [
+    { name: "技能A", category: "物理", pp: 5, maxPp: 5 },
+    { name: "技能B", category: "特殊", pp: 5, maxPp: 5 },
+    { name: "技能C", category: "屬性", pp: 5, maxPp: 5 },
+  ];
+  const seq = [0, 0.6, 0.1];
+  let i = 0;
+  h.ctx.rng = () => seq[(i++) % seq.length];
+  h.ctx.skill = skillByName("訣別");
+  runSkillProgram(h.ctx, getSkillProgram(h.ctx.skill), "use", [2]);
+  const zeroed = h.target.skills.filter((s: any) => s.pp === 0).length;
+  assert.strictEqual(zeroed, 2);
+});
+
+t("訣別之三：雙方進入混亂流血且每回合異常吸血150", () => {
+  const h = makeBlockContext();
+  h.ctx.skill = skillByName("訣別");
+  runSkillProgram(h.ctx, getSkillProgram(h.ctx.skill), "use", [4]);
+  assert.ok(h.statuses.p1.includes("混亂"));
+  assert.ok(h.statuses.p1.includes("流血"));
+  assert.ok(h.statuses.p2.includes("混亂"));
+  assert.ok(h.statuses.p2.includes("流血"));
+});
+
+t("亂魂舞：自身混亂且對手窒息，混亂下攻擊速度命中+2", () => {
+  const h = makeBlockContext();
+  h.ctx.skill = skillByName("亂魂舞");
+  runSkillProgram(h.ctx, getSkillProgram(h.ctx.skill), "use");
+  assert.ok(h.statuses.p1.includes("混亂"));
+  assert.ok(h.statuses.p2.includes("窒息"));
+});
+
+t("鎖魂曲：消雙方回合與護盾並附加速度50%百分比傷害", () => {
+  const h = makeBlockContext({ calculatedStats: { atk: 200, def: 200, spatk: 200, spdef: 200, speed: 240 } });
+  h.ctx.skill = skillByName("鎖魂曲");
+  runSkillProgram(h.ctx, getSkillProgram(h.ctx.skill), "use");
+  assert.strictEqual(h.damage.pink, 120);
+});
+
+t("引魂咏：對手無異常時增傷寫入狀態且吸血25%由 effectDetail 執行", () => {
+  const h = makeBlockContext();
+  h.ctx.skill = skillByName("引魂咏");
+  // 積木只覆蓋「對手不處於異常時傷害提升100%」；25% 吸血走 effectDetail，由通用執行器處理
+  runSkillProgram(h.ctx, getSkillProgram(h.ctx.skill), "use");
+  assert.strictEqual(h.playerState.skillDamageBoost, 2);
+  assert.strictEqual(h.ctx.skill.effectDetail, "heal:25%");
 });
 
 console.log("\n=== 積木魂印語意 ===");

@@ -2,6 +2,7 @@ import { getTypeMatchup } from "../utils/statCalculator";
 import { BattleEventContext, BattleSkillHandler, EffectTiming, ElfDeconstructedProfile } from './types';
 import { createExtraElf } from '../utils/extraElf';
 import { clampSkillPp } from '../utils/battleHelpers';
+import { liurenSurvivalRule } from '../battle/survivalRules';
 
 export const handleWuxuSoulMark = (ctx: BattleEventContext, event: EffectTiming | string, extraData?: any) => {
   const { self, actor, setPlayerState, getPlayerState, addLog, applyTrueDamage, applyHeal } = ctx;
@@ -52,7 +53,7 @@ export const handleWuxuSoulMark = (ctx: BattleEventContext, event: EffectTiming 
 
     if (event === EffectTiming.ON_ENTRANCE) {
       addLog(`🌑 【無序】：六刃出陣，原始體力共鳴！`, "effect");
-      ctx.updateElf(actor, { isConcealed: true });
+      ctx.updateElf(actor, { isConcealed: true, survivalRule: liurenSurvivalRule() });
       if (!getPlayerState("wuxuLiurenOriginalMaxHp")) {
         setPlayerState("wuxuLiurenOriginalMaxHp", self.maxHp);
       }

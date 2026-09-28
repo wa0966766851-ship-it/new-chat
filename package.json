@@ -6,14 +6,18 @@
   "scripts": {
     "dev": "tsx server.ts",
     "build": "vite build && esbuild server.ts --bundle --platform=node --format=cjs --packages=external --sourcemap --outfile=dist/server.cjs",
+    "build:electron": "vite build && esbuild server.ts --bundle --platform=node --format=cjs --packages=bundle --sourcemap --outfile=dist/server.cjs",
     "start": "node dist/server.cjs",
     "clean": "rm -rf dist server.js",
     "lint": "tsc --noEmit",
-    "test": "tsx src/tests/battle.units.test.ts && tsx src/tests/blocks.semantic.test.ts && tsx scripts/audit_block_coverage.ts --check",
+    "test": "tsx src/tests/battle.units.test.ts && tsx src/tests/blocks.semantic.test.ts && tsx tests/otherworldRey.semantic.test.ts && tsx scripts/gen-handled-skills.ts --check && tsx scripts/audit_block_coverage.ts --check",
+    "gen:handled-skills": "tsx scripts/gen-handled-skills.ts",
     "audit:blocks": "tsx scripts/audit_block_coverage.ts --details",
     "audit:extra-actions": "tsx scripts/audit_extra_actions.ts",
     "package:portable": "powershell -ExecutionPolicy Bypass -File scripts/package_portable.ps1",
-    "package:zip": "powershell -ExecutionPolicy Bypass -File scripts/package_portable.ps1 -SkipExe"
+    "package:zip": "powershell -ExecutionPolicy Bypass -File scripts/package_portable.ps1 -SkipExe",
+    "electron:dev": "npm run build && electron electron/main.cjs",
+    "package:electron": "npm run build:electron && electron-builder --config electron-builder.yml"
   },
   "dependencies": {
     "@google/genai": "^2.4.0",

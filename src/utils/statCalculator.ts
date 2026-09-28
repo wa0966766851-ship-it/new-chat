@@ -299,6 +299,11 @@ export function resetElfStateForBattle(elf: Elf, isStarter: boolean = false, sui
     }
     cloned.currentHp = cloned.maxHp;
   }
+  if (cloned.survivalRule?.mode === "god_descent") {
+    cloned.survivalRule = { ...cloned.survivalRule, active: true, preserveOffField: true, minHp: -70 * cloned.maxHp };
+  } else if (cloned.survivalRule?.mode === "freeze_at_zero") {
+    cloned.survivalRule = { ...cloned.survivalRule, active: true, preserveOffField: true, minHp: 0 };
+  }
 
   // 3. 重置能力等級與印記狀態
   cloned.statStages = { atk: 0, def: 0, spatk: 0, spdef: 0, speed: 0, accuracy: 0 };

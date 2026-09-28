@@ -1253,6 +1253,9 @@ export default function StartScreen({
         if (showDetailModal.alienTraits.exclusiveTrait) {
           textToCopy += `【專屬刻印 / 特質】 - ${showDetailModal.alienTraits.exclusiveTrait.name}\n${showDetailModal.alienTraits.exclusiveTrait.description}\n\n`;
         }
+        for (const trait of showDetailModal.alienTraits.exclusiveTraits || []) {
+          textToCopy += `【專屬刻印 / 特質】 - ${trait.name}\n${trait.description}\n\n`;
+        }
         if (showDetailModal.alienTraits.alienTrait) {
           textToCopy += `【異能特質】 - ${showDetailModal.alienTraits.alienTrait.name}\n${showDetailModal.alienTraits.alienTrait.description}\n\n`;
         }
@@ -2121,6 +2124,12 @@ export default function StartScreen({
                           {elf.alienTraits.exclusiveTrait.description}
                         </p>
                       )}
+                      {(elf.alienTraits.exclusiveTraits || []).map((trait) => (
+                        <p key={trait.name} className="text-[10px] text-red-400/80 leading-normal select-none line-clamp-2">
+                          <span className="font-bold text-red-300">🔥 {trait.name}：</span>
+                          {trait.description}
+                        </p>
+                      ))}
                       {elf.alienTraits.generalTrait && (
                         <p className="text-[10px] text-blue-400/80 leading-normal select-none line-clamp-2 mt-1">
                           <span className="font-bold text-blue-300">💠 {elf.alienTraits.generalTrait.name} ({elf.alienTraits.generalTrait.description})</span>
@@ -2573,6 +2582,17 @@ export default function StartScreen({
                       </p>
                     </div>
                   )}
+                  {(showDetailModal.alienTraits?.exclusiveTraits || []).map((trait) => (
+                    <div key={trait.name} className="bg-red-500/5 border border-red-500/20 rounded-2xl p-4 relative overflow-hidden">
+                      <div className="flex items-center gap-2 mb-2">
+                        <span className="w-2 h-2 rounded-full bg-red-400 animate-pulse" />
+                        <h4 className="text-xs font-bold text-red-300">專屬異能特質 / {trait.name}</h4>
+                      </div>
+                      <p className="text-red-100/90 text-[14px] leading-[1.75] font-sans whitespace-pre-wrap">
+                        {trait.description.replace(/([；;])\s*/g, '$1\n')}
+                      </p>
+                    </div>
+                  ))}
                   {showDetailModal.isAlienElf && (
                     <div className="bg-blue-600/5 border border-blue-500/20 rounded-2xl p-4 relative overflow-hidden">
                       <div className="flex flex-col gap-2 mb-2">

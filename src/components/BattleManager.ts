@@ -9,7 +9,7 @@ export interface TurnDamageStats {
   trueDmg: number;
   hpChange: number;
   heal: number;
-  lastType: 'skill' | 'crit' | 'fixed' | 'percent' | 'true' | 'absorb' | 'heal' | null;
+  lastType: 'skill' | 'crit' | 'fixed' | 'percent' | 'true' | 'absorb' | 'heal' | 'adjust_up' | 'adjust_down' | null;
   lastAmount?: number;
 }
 
@@ -17,7 +17,7 @@ export interface LastActionInfo {
   side: 'p1' | 'p2';
   targetElfName: string;
   amount: number;
-  type: 'skill' | 'crit' | 'fixed' | 'percent' | 'true' | 'absorb' | 'heal';
+  type: 'skill' | 'crit' | 'fixed' | 'percent' | 'true' | 'absorb' | 'heal' | 'adjust_up' | 'adjust_down';
   label: string;
 }
 
@@ -77,7 +77,7 @@ export interface BattleState {
 }
 
 export type BattleAction =
-  | { type: 'UPDATE_ELF'; side: 'p1' | 'p2'; elf: Partial<Elf> }
+  | { type: 'UPDATE_ELF'; side: 'p1' | 'p2'; elf: Partial<Elf>; targetId?: string }
   | { type: 'UPDATE_TEAM'; side: 'p1' | 'p2'; team: Elf[] }
   | { type: 'SET_ACTIVE_INDEX'; side: 'p1' | 'p2'; index: number }
   | { type: 'SET_PHASE'; phase: BattlePhase }
@@ -111,24 +111,34 @@ export const battleReducer = (state: BattleState, action: BattleAction): BattleS
   switch (action.type) {
     case 'UPDATE_ELF':
       if (action.side === 'p1') {
-        const newElf = { ...state.p1, ...action.elf };
         const newTeam = [...state.p1Team];
-        newTeam[state.p1ActiveIndex] = newElf;
+        const targetIndex = action.targetId
+          ? newTeam.findIndex((elf) => (elf.battleId || elf.id) === action.targetId || elf.id === action.targetId)
+          : state.p1ActiveIndex;
+        const resolvedIndex = targetIndex >= 0 ? targetIndex : state.p1ActiveIndex;
+        const newElf = { ...(newTeam[resolvedIndex] || state.p1), ...action.elf };
+        newTeam[resolvedIndex] = newElf;
+        const isActive = resolvedIndex === state.p1ActiveIndex;
         return { 
           ...state, 
-          p1: newElf, 
+          p1: isActive ? newElf : state.p1,
           p1Team: newTeam,
-          ...(action.elf.marks ? { p1Marks: action.elf.marks } : {})
+          ...(isActive && action.elf.marks ? { p1Marks: action.elf.marks } : {})
         };
       } else {
-        const newElf = { ...state.p2, ...action.elf };
         const newTeam = [...state.p2Team];
-        newTeam[state.p2ActiveIndex] = newElf;
+        const targetIndex = action.targetId
+          ? newTeam.findIndex((elf) => (elf.battleId || elf.id) === action.targetId || elf.id === action.targetId)
+          : state.p2ActiveIndex;
+        const resolvedIndex = targetIndex >= 0 ? targetIndex : state.p2ActiveIndex;
+        const newElf = { ...(newTeam[resolvedIndex] || state.p2), ...action.elf };
+        newTeam[resolvedIndex] = newElf;
+        const isActive = resolvedIndex === state.p2ActiveIndex;
         return { 
           ...state, 
-          p2: newElf, 
+          p2: isActive ? newElf : state.p2,
           p2Team: newTeam,
-          ...(action.elf.marks ? { p2Marks: action.elf.marks } : {})
+          ...(isActive && action.elf.marks ? { p2Marks: action.elf.marks } : {})
         };
       }
     case 'UPDATE_TEAM':

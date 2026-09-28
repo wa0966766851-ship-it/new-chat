@@ -404,7 +404,19 @@ export const OPS: Record<string, OpFn> = {
       if (a.op === "holder_invalid") eff.blkInvalid = a.p.kind || "all";
       if (a.op === "mark_duration" && !p.turns) eff.blkTurns = a.p.turns;
     }
-    ctx.setMark({ id: `blk_${p.name}`, name: p.name, count: 1, displayChar: p.name[0], description: def.map(c => c.raw.replace(/^>\s*/, "")).join("\n"), effects: eff } as any, side);
+    ctx.setMark({
+      id: `blk_${p.name}`,
+      name: p.name,
+      count: 1,
+      displayChar: p.name[0],
+      description: def.map(c => c.raw.replace(/^>\s*/, "")).join("\n"),
+      unit: "回合",
+      remainingRounds: p.turns,
+      clearable: false,
+      triggerNode: "round_end",
+      polarity: "negative",
+      effects: eff,
+    } as any, side);
     ctx.addLog(`🔖 為【${elfOf(ctx, side)?.name}】附加 ${p.turns} 回合的【${p.name}】！`, "effect");
     return true;
   },
@@ -650,7 +662,9 @@ export function markDefClauses(defElf: any, name: string): Clause[] {
 /** 持有者事件：ctx.actor 為持有者方 */
 export function runHolderMarks(ctx: BattleEventContext, trigs: Trigger[], data: any, isRoundEnd: boolean) {
   const side = ctx.actor;
-  const marks: any[] = (ctx.getMarks(side) || []).filter((m: any) => m.effects?.blkDef);
+  const marks: any[] = (ctx.getMarks(side) || []).filter((m: any) =>
+    m.effects?.blkDef || m.effects?.hpAdjustmentMaxHpRatioPerStack,
+  );
   if (!marks.length) return;
   const all = [...(ctx.getFullTeam?.("p1") || []), ...(ctx.getFullTeam?.("p2") || [])] as any[];
   const htrigs: Trigger[] = [];
@@ -667,9 +681,17 @@ export function runHolderMarks(ctx: BattleEventContext, trigs: Trigger[], data: 
       }
     }
     if (isRoundEnd) {
-      const left = (mk.effects.blkTurns || 0) - 1;
-      if (left <= 0) { ctx.clearMark(mk.id, side); ctx.addLog(`🔖 【${mk.name}】結束了。`, "info"); }
-      else ctx.setMark({ ...mk, effects: { ...mk.effects, blkTurns: left } }, side);
+      const ratio = Number(mk.effects?.hpAdjustmentMaxHpRatioPerStack || 0);
+      if (ratio > 0 && mk.count > 0) {
+        const amount = Math.floor(ctx.self.maxHp * ratio * mk.count);
+        ctx.adjustHp(side, -amount);
+        ctx.addLog(`👻 【${mk.name}】發作：${mk.count}${mk.unit || "層"}令【${ctx.self.name}】體力調整 -${amount}！`, "status");
+      }
+      if (Number.isFinite(mk.effects?.blkTurns)) {
+        const left = mk.effects.blkTurns - 1;
+        if (left <= 0) { ctx.clearMark(mk.id, side); ctx.addLog(`🔖 【${mk.name}】結束了。`, "info"); }
+        else ctx.setMark({ ...mk, remainingRounds: left, effects: { ...mk.effects, blkTurns: left } }, side);
+      }
     }
   }
 }

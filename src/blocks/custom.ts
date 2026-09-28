@@ -20,14 +20,49 @@ const statusTurns = (ctx: BattleEventContext, e: any) => Object.values(ctx.getSt
 const stages = (e: any, pick: (v: number) => boolean) => Object.entries(e?.statStages || {}).filter(([, v]) => typeof v === "number" && pick(v as number)) as [string, number][];
 const addMarkCount = (ctx: BattleEventContext, side: "p1" | "p2", id: string, name: string, n: number, extra: Record<string, any> = {}) => {
   const cur = (ctx.getMarks(side) || []).find((m: any) => m.id === id);
-  ctx.setMark({ id, name, count: (cur?.count || 0) + n, displayChar: name[0], description: extra.description || name, effects: { ...(cur?.effects || {}), ...(extra.effects || {}) } } as any, side);
+  const maxCount = extra.maxCount ?? cur?.maxCount;
+  const count = Math.min(maxCount ?? Number.POSITIVE_INFINITY, (cur?.count || 0) + n);
+  ctx.setMark({
+    ...cur,
+    ...extra,
+    id,
+    name,
+    count,
+    displayChar: extra.displayChar || cur?.displayChar || name[0],
+    description: extra.description || cur?.description || name,
+    effects: { ...(cur?.effects || {}), ...(extra.effects || {}) },
+  } as any, side);
 };
 
 export const CUSTOM: Record<string, CustomDef> = {
   // ───────── 5008 鎮魂·巴弗洛 ─────────
+  "持有者回合結束時，每有1道令自身體力調整減少最大體力25%": {
+    label: "魂殤：回合結束每道體力調整 -25%最大體力",
+    // 真正結算集中於 runHolderMarks 讀取印記 metadata，這裡只負責讓描述與積木一一對應。
+    run: () => true,
+  },
+  "上限4道，下場後消失": {
+    label: "魂殤：上限4道／下場清除",
+    // 上限由 normalizeMark、下場清除由換場流程統一處理。
+    run: () => true,
+  },
   "每回合開始時為敵方在場精靈附加1道魂殤": {
     label: "敵方在場精靈 +1 魂殤",
-    run: (ctx) => { addMarkCount(ctx, opp(ctx), "blk_魂殤", "魂殤", 1); ctx.addLog(`👻 為【${ctx.target?.name}】附加 1 道魂殤！`, "effect"); return true; },
+    run: (ctx) => {
+      addMarkCount(ctx, opp(ctx), "blk_魂殤", "魂殤", 1, {
+        unit: "道",
+        maxCount: 4,
+        clearable: false,
+        persistsOffField: false,
+        triggerNode: "round_end",
+        polarity: "negative",
+        description: "上限4道；回合結束時每道令持有者體力調整減少最大體力的25%；下場後消失。",
+        effects: { hpAdjustmentMaxHpRatioPerStack: 0.25 },
+      });
+      const stacks = (ctx.getMarks(opp(ctx)) || []).find((m: any) => m.id === "blk_魂殤")?.count || 0;
+      ctx.addLog(`👻 為【${ctx.target?.name}】附加 1 道魂殤（目前 ${stacks}/4 道）！`, "effect");
+      return true;
+    },
   },
   "直到上述異常結束前自身抵擋受到的技能傷害": {
     label: "直到該異常結束前 抵擋【技能傷害】",

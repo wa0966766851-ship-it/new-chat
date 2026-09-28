@@ -1,4 +1,4 @@
-import { Elf } from '../types';
+import { Elf, Skill } from '../types';
 import { BattleEventContext, BattleSkillHandler, EffectTiming } from './types';
 import { handleDestinyInterceptor } from "./destinyInterceptors";
 import { executeGenericSkillText } from "./genericSkillText";
@@ -207,6 +207,10 @@ const SOUL_MARK_MAPPING: Record<string, string> = {
   "怒濤.滄嵐": "handleCanglanSoulMark",
   "滄嵐": "handleCanglanSoulMark",
 
+  "5029": "handleOtherworldReySoulMark",
+  "異境神霆·雷伊": "handleOtherworldReySoulMark",
+  "異境神霆.雷伊": "handleOtherworldReySoulMark",
+
   "聖靈譜尼": "handleShenglingPuniSoulMark",
   "譜尼": "handlePuniBaseSoulMark",
   "1029": "handleLiujieSoulMark",
@@ -221,12 +225,15 @@ const SOUL_MARK_MAPPING: Record<string, string> = {
 
 let cachedSkillRegistry: Record<string, BattleSkillHandler> | null = null;
 let cachedSoulMarkRegistry: Record<string, SoulMarkHandler> | null = null;
+export type BattleSkillTransformHandler = (context: BattleEventContext, skill: Skill) => Skill | undefined;
+let cachedSkillTransforms: Record<string, BattleSkillTransformHandler> | null = null;
 
 function initializeRegistries() {
-  if (cachedSkillRegistry && cachedSoulMarkRegistry) return;
+  if (cachedSkillRegistry && cachedSoulMarkRegistry && cachedSkillTransforms) return;
   
   cachedSkillRegistry = {};
   cachedSoulMarkRegistry = {};
+  cachedSkillTransforms = {};
   
   // @ts-ignore
   const modules = import.meta.glob('./*Registry.ts', { eager: true });
@@ -238,6 +245,9 @@ function initializeRegistries() {
     for (const [key, value] of Object.entries(mod)) {
       if (key.endsWith('_SKILLS') && typeof value === 'object' && value !== null) {
         Object.assign(cachedSkillRegistry, value);
+      }
+      if (key.endsWith('_SKILL_TRANSFORMS') && typeof value === 'object' && value !== null) {
+        Object.assign(cachedSkillTransforms, value);
       }
     }
     
@@ -251,7 +261,7 @@ function initializeRegistries() {
 }
 
 // 會在「對手受到技能攻擊」時被通知 ON_DAMAGED 的魂印（handler 內以 extraData.targetSide 區分自身／對手受擊）
-const ON_DAMAGED_OBSERVER_HANDLERS = new Set(["handleMonkeySoulMark", "handleLisaSoulMark", "handleStarlightRusSoulMark"]);
+const ON_DAMAGED_OBSERVER_HANDLERS = new Set(["handleMonkeySoulMark", "handleLisaSoulMark", "handleStarlightRusSoulMark", "handleOtherworldReySoulMark"]);
 export function observesOpponentDamage(elfName: string): boolean {
   return ON_DAMAGED_OBSERVER_HANDLERS.has(SOUL_MARK_MAPPING[elfName]);
 }
@@ -259,6 +269,12 @@ export function observesOpponentDamage(elfName: string): boolean {
 /** 是否有專屬（手寫）技能 handler */
 export function hasSkillHandler(name: string): boolean {
   return name in getBattleSkillRegistry();
+}
+
+/** 在命中、技能無效與攻擊免疫判定前，把技能轉為實際使用型態。 */
+export function transformSkillBeforeResolve(context: BattleEventContext, skill: Skill): Skill {
+  initializeRegistries();
+  return cachedSkillTransforms?.[skill.name]?.(context, skill) || skill;
 }
 
 export function getBattleSkillRegistry(): Record<string, BattleSkillHandler> {
@@ -309,7 +325,9 @@ export const SoulMarkRegistry: Record<string, SoulMarkHandler> = new Proxy({}, {
   },
   has(target, prop) {
     if (typeof prop === "string") {
-      return prop in getSoulMarkRegistry() || true;
+      // 精確判斷：只有靜態魂印註冊表內有的才算有專屬 handler。
+      // 過去曾回傳 `|| true` 導致 `in` 檢查永遠為真、高估覆蓋率，已修正。
+      return prop in getSoulMarkRegistry();
     }
     return false;
   },
@@ -413,7 +431,10 @@ export const BattleSkillRegistry: Record<string, BattleSkillHandler> = new Proxy
   },
   has(target, prop) {
     if (typeof prop === "string") {
-      return true; // 允許所有技能皆可被 Proxy 回傳 Fallback Handler 處理
+      // 精確判斷：只有靜態技能註冊表內有的才算有專屬 handler。
+      // get 仍為所有技能回傳 fallback runner（含積木／通用文字），
+      // 因此「可執行」不等於「有專屬 handler」；覆蓋率與顯示一律以此為準。
+      return prop in getBattleSkillRegistry();
     }
     return false;
   },

@@ -8,6 +8,7 @@ import { getDeconstructedProfile } from "../effects/abilityRegistry";
 import { getEffectiveInscriptions } from "./inscriptionsCatalog";
 import { parseStatChangesFromText } from "../utils/statChangeManager";
 import { parseStatusesFromText } from "../utils/statusManager";
+import { OTHERWORLD_REY_SEED } from "./otherworldRey";
 
 function createRefSkill(
   elfId: string,
@@ -409,7 +410,7 @@ const SEED_ELVES: (Omit<Elf, "id" | "calculatedStats" | "currentHp" | "maxHp"> &
     baseStats: { hp: 162, atk: 143, def: 110, spatk: 70, spdef: 110, speed: 150 },
     soulMark: {
       name: "鎮",
-      description: "若自身存活於出戰背包內或在場則演奏鎮魂歌：每回合開始時為敵方在場精靈附加1道魂殤。雙方任一方受到混亂異常、窒息異常時：直到上述異常結束前自身抵擋受到的技能傷害且自身受到異常時立即轉化為混亂。登場時：為對手附加3回合窒息，為自身附加3回合混亂；任一項未觸發則對手3回合內造成固定傷害、百分比傷害減少40%。使用攻擊技能時：若自身處於異常狀態，附加對手等同於自身通過專屬特性抵擋的傷害100%的真實傷害；若自身不處於異常狀態，自身下回合所有技能先制+1。",
+      description: "若自身存活於出戰背包內或在場則演奏鎮魂歌：每回合開始時為敵方在場精靈附加1道魂殤。魂殤：持有者回合結束時，每有1道令自身體力調整減少最大體力25%；上限4道，下場後消失。雙方任一方受到混亂異常、窒息異常時：直到上述異常結束前自身抵擋受到的技能傷害且自身受到異常時立即轉化為混亂。登場時：為對手附加3回合窒息，為自身附加3回合混亂；任一項未觸發則對手3回合內造成固定傷害、百分比傷害減少40%。使用攻擊技能時：若自身處於異常狀態，附加對手等同於自身通過專屬特性抵擋的傷害100%的真實傷害；若自身不處於異常狀態，自身下回合所有技能先制+1。",
       effectType: "none",
       effectValue: 0,
       badgeChar: "鎮"
@@ -2723,7 +2724,8 @@ const SEED_ELVES: (Omit<Elf, "id" | "calculatedStats" | "currentHp" | "maxHp"> &
       createRefSkill('canglan', '王·洛浦凌波', '水', '特殊', 150, 5, 0, { isSureHit: true, fallbackDesc: '若自身處於能力下降狀態時先制+3；將自身能力下降狀態視為同等級能力提升狀態；反轉自身能力下降狀態，反轉成功則附加給對手等量能力下降狀態；消耗敵我雙方全部護盾與護罩以令對手下次技能無效，每消耗1點則本次技能威力提升1點，並附加對手等同於雙方消耗量70%的百分比傷害' }),
       createRefSkill('canglan', '王·深海之吻', '水', '特殊', 160, 5, 0, { isSureHit: true, isFifthSkill: true, fallbackDesc: '攻擊時造成的傷害不會出現微弱(克制關係為微弱時轉變為普通)；無視對手傷害限制效果；無視對手攻擊免疫效果；消除對手回合類效果，消除成功100%依序令對手束縛、凍傷、冰封，若均觸發或任意一項未觸發、對手不存在回合類效果或回合類效果無法消除時令自身免疫下2次異常狀態；將對手所處的異常狀態轉化為冰封，若對手不處於異常狀態則改為100%令對手冰封；附加對手自身最大體力值40%的百分比傷害並附加自身等量護盾(可疊加)，自身存在永恆之水時比例改為60%且額外恢復自身等量體力，對手存在千秋一淚時則吸取前額外汲取對手等同於自身最大體力25%的體力' })
     ]
-  }
+  },
+  OTHERWORLD_REY_SEED
 ];
 
 import { getNumericElfId } from './elfRegistry';

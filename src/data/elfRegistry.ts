@@ -132,6 +132,10 @@ export const ELF_ID_MAPPING: Record<string, string> = {
   "canglan": "5028",
   "1022": "5028",
   "1039": "5028",
+
+  // 29. 異境神霆·雷伊
+  "otherworld_thunder_rey": "5029",
+  "5029": "5029",
 };
 
 export function getNumericElfId(originalId: string, elfName: string): string {
@@ -157,6 +161,39 @@ export function applyElfOverrides(elf: any, defaultElves: any[]) {
   }
 
   const defMatch = defaultElves.find((de: any) => de.id === elf.id || de.name === elf.name);
+  // 5029 是內建規則模板：舊版曾把「神明／雷神」合併成摘要並寫入 localStorage。
+  // 載入時同步權威描述與機制欄位，但保留玩家自行調整的配裝、學習力與技能欄位。
+  if (defMatch && (updated.id === "5029" || updated.name === "異境神霆·雷伊")) {
+    updated = {
+      ...updated,
+      name: defMatch.name,
+      type: defMatch.type,
+      path: defMatch.path,
+      category: defMatch.category,
+      isAlienElf: defMatch.isAlienElf,
+      soulMark: defMatch.soulMark,
+      trait: defMatch.trait,
+      alienTraits: defMatch.alienTraits,
+      survivalRule: defMatch.survivalRule,
+      artPresentation: defMatch.artPresentation,
+      suppressAbnormalSideEffectsWhenParalyzed: defMatch.suppressAbnormalSideEffectsWhenParalyzed,
+      ppLimitIgnoredWhenParalyzedTurns: defMatch.ppLimitIgnoredWhenParalyzedTurns,
+      useAtkSpAtkSumForAttacks: defMatch.useAtkSpAtkSumForAttacks,
+      treatOpponentBoostAsDoubleDrop: defMatch.treatOpponentBoostAsDoubleDrop,
+      ownTurnEffectsUnclearable: defMatch.ownTurnEffectsUnclearable,
+      collapseOpponentTurnEffectsToOne: defMatch.collapseOpponentTurnEffectsToOne,
+      paralyzeBothOnOwnStatChangeTurns: defMatch.paralyzeBothOnOwnStatChangeTurns,
+    };
+  }
+  // 內建巴弗洛曾被舊版隊伍快照保存成缺少「魂殤」定義的描述；
+  // 僅同步內建精靈的權威文字，不覆蓋使用者自訂精靈。
+  if (defMatch && !updated.isCustom && (updated.id === "5008" || updated.name === "鎮魂.巴弗洛")) {
+    updated = {
+      ...updated,
+      description: defMatch.description,
+      soulMark: defMatch.soulMark,
+    };
+  }
   if (defMatch && defMatch.alienTraits && !updated.alienTraits) {
     updated.alienTraits = defMatch.alienTraits;
     updated.isAlienElf = defMatch.isAlienElf || true;

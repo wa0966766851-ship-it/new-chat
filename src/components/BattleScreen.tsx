@@ -6,7 +6,7 @@ import { isStoneThrower, toSSStone } from "../data/skillStones";
 import { SOURCE_SS_TEXT } from "../data/defaultElves";
 import { getTypeMatchup, resetElfStateForBattle, calculateEffectiveStat, getEffectiveBody } from "../utils/statCalculator";
 import { applyStatChanges } from "../utils/statChangeManager";
-import { BattleSkillRegistry, SoulMarkRegistry, hasSkillHandler, observesOpponentDamage } from "../effects/battleEventRegistry";
+import { BattleSkillRegistry, SoulMarkRegistry, hasSkillHandler, observesOpponentDamage, transformSkillBeforeResolve } from "../effects/battleEventRegistry";
 import { priorityFromDescription, conditionalPriorityFromDescription, executeGenericSkillTextAfterHit, rollSkillHit } from "../effects/genericSkillText";
 import { getAttackImmunity, ignoresAttackImmunity, grantsNextIgnoreOnSuccess } from "../battle/attackImmunity";
 import { runSkillBlocks, emitSkillUse, soulPassiveEvade, blockCondPriority, emitSelfInvalid } from "../blocks/registry";
@@ -37,7 +37,7 @@ import {
 
 import { addTimer, tickTimers, clearTurnEffects, hasTurnEffect } from "../battle/timers";
 import { runWrappedAtom } from "../effects/effectRunner";
-import { Mark, getMark, setMark as setMarkUtil, clearMark as clearMarkUtil } from "../battle/marks";
+import { Mark, getMark, markAppliesToElf, setMark as setMarkUtil, clearMark as clearMarkUtil } from "../battle/marks";
 import { TraitsEngine } from "../utils/traitsEngine";
 import { checkStatusDrivenFatalResist } from "../utils/statusFatalResist";
 
@@ -59,6 +59,7 @@ import {
   normalizeDamageType,
   settleDamageAbsorption,
 } from "../battle/damageSemantics";
+import { isAliveBySurvivalRule, resolveDamageTransition, resolveHpAdjustment, resolveRecoveryTransition } from "../battle/survivalRules";
 
 // TurnDamageStats is imported from BattleManager
 
@@ -134,7 +135,7 @@ export { normalizeDamageType } from "../battle/damageSemantics";
 
 export const checkElfDead = (elf: Elf | undefined | null) => {
   if (!elf) return true;
-  if (elf.currentHp > 0) return false;
+  if (isAliveBySurvivalRule(elf.currentHp, elf.survivalRule)) return false;
   if (elf.deathImmunity && elf.deathImmunity.deathImmuneTurns > 0) return false;
   return true;
 };
@@ -269,7 +270,7 @@ export default function BattleScreen(props: BattleScreenProps) {
         const targetSide = side;
         const target = cur[targetSide];
         
-        if (target.currentHp <= 0 && !(target.deathImmunity && target.deathImmunity.deathImmuneTurns > 0)) {
+        if (checkElfDead(target)) {
           break;
         }
         
@@ -317,7 +318,7 @@ export default function BattleScreen(props: BattleScreenProps) {
         if (isNonTrueDamageType(normalizedDamageType)) {
           // 防守方：受到非真實傷害倍率
           const targetMarks = targetSide === "p1" ? cur.p1Marks : cur.p2Marks;
-          for (const mark of (targetMarks || [])) {
+          for (const mark of (targetMarks || []).filter(mark => markAppliesToElf(mark, target))) {
             const takenMult = mark.effects?.nonTrueDamageTakenMultiplier;
             if (takenMult && takenMult !== 1 && mark.count > 0) {
               effectiveAmount = Math.floor(effectiveAmount * takenMult);
@@ -327,7 +328,8 @@ export default function BattleScreen(props: BattleScreenProps) {
           const resolvedSourceSide = targetSide === "p1" ? "p2" : "p1";
           if (resolvedSourceSide) {
             const sourceMarksAll = resolvedSourceSide === "p1" ? cur.p1Marks : cur.p2Marks;
-            for (const mark of (sourceMarksAll || [])) {
+            const sourceElf = resolvedSourceSide === "p1" ? cur.p1 : cur.p2;
+            for (const mark of (sourceMarksAll || []).filter(mark => markAppliesToElf(mark, sourceElf))) {
               const dealtMult = mark.effects?.nonTrueDamageDealtMultiplier;
               if (dealtMult && dealtMult !== 1 && mark.count > 0) {
                 effectiveAmount = Math.floor(effectiveAmount * dealtMult);
@@ -359,11 +361,18 @@ export default function BattleScreen(props: BattleScreenProps) {
         let lastActionType: 'skill' | 'crit' | 'fixed' | 'percent' | 'true' | 'absorb' | 'heal' = 'skill';
         let lastActionLabel = "技能傷害";
 
-        const dmg = Math.min(target.currentHp, effectiveAmount);
-        const nextHp = Math.max(0, target.currentHp - effectiveAmount);
+        const survivalTransition = resolveDamageTransition(
+          target.currentHp,
+          target.maxHp,
+          effectiveAmount,
+          normalizedDamageType === "true" ? "true" : "non_true",
+          target.survivalRule,
+        );
+        const dmg = survivalTransition.damageApplied;
+        const nextHp = survivalTransition.hp;
         
         // Synchronously update the ref used for logic
-        const wouldFaint = (target.currentHp - effectiveAmount) <= 0;
+        const wouldFaint = !survivalTransition.alive;
         let resisted = false;
         
         if (wouldFaint && !inDeathImmuneWindow) {
@@ -533,7 +542,7 @@ export default function BattleScreen(props: BattleScreenProps) {
             }
 
             const statsUpdates: Partial<TurnDamageStats> = {
-              hpChange: (currentStats.hpChange || 0) - dmg,
+              hpChange: (currentStats.hpChange || 0) + (nextHp - target.currentHp),
               lastType: lastActionType,
               lastAmount: dmg
             };
@@ -573,7 +582,13 @@ export default function BattleScreen(props: BattleScreenProps) {
         // Trigger ON_DAMAGED event for registries
         const damagedCtx = getBattleEventContext(targetSide, true, 0);
         // 同時提供 amount / damage / targetSide（部分魂印讀 extraData.damage 與 targetSide，過去缺值導致 NaN 與判定顛倒）
-        const damagedPayload = { damageType: normalizeDamageType(data), rawDamageType: data.damageType, amount: dmg, damage: dmg, targetSide, typedSkill: !!(data as any).typedSkill };
+        const damagedPayload = {
+          damageType: normalizeDamageType(data), rawDamageType: data.damageType,
+          amount: dmg, damage: dmg, targetSide, typedSkill: !!(data as any).typedSkill,
+          hpAdjustment: survivalTransition.hpAdjustment,
+          ignoredDamage: survivalTransition.ignoredDamage,
+          enteredNonPositive: survivalTransition.enteredNonPositive,
+        };
         if (SoulMarkRegistry[target.name]) {
           SoulMarkRegistry[target.name](damagedCtx, EffectTiming.ON_DAMAGED, damagedPayload);
         }
@@ -655,37 +670,9 @@ export default function BattleScreen(props: BattleScreenProps) {
       case 'adjust_hp': {
         const targetSide = side;
         const target = cur[targetSide];
-        
-        let multiplier = 1.0;
-        const statuses = getStatuses(target);
-        Object.keys(statuses).forEach(stId => {
-          const entry = StatusRegistry[stId];
-          entry?.mechanics?.forEach(m => {
-            if (m.type === 'SPECIAL_BUFF' && m.params?.healIncreasePercent) {
-              multiplier += m.params.healIncreasePercent;
-            }
-          });
-        });
-
-        const playerStateKey = `${targetSide}RegistryState` as "p1RegistryState" | "p2RegistryState";
-        const healReduce50Turns = syncStateRef.current[playerStateKey]?.healReduce50Turns || 0;
-        let maxAllowedHp = target.maxHp;
-        if (healReduce50Turns > 0) {
-           data.amount = Math.floor(data.amount * 0.5);
-           pushEffect({ type: 'log', side: targetSide, data: { text: `⚠️ 【恢復衰減】：體力恢復效果減少 50%！`, type: "effect" } });
-        }
-        const wuxuOrigMaxHp = syncStateRef.current[playerStateKey]?.wuxuLiurenOriginalMaxHp || syncStateRef.current[playerStateKey]?.wuxuOriginalMaxHp;
-        if (wuxuOrigMaxHp && (target.id?.includes("liuren") || target.name.includes("六刃"))) {
-            maxAllowedHp = Math.min(maxAllowedHp, wuxuOrigMaxHp);
-        }
-
-        let val = Math.floor(data.amount * multiplier);
-        if (val > 0) {
-           val = Math.max(0, Math.min(maxAllowedHp - target.currentHp, val));
-        } else {
-           val = Math.max(-target.currentHp, val);
-        }
-        const nextHp = target.currentHp + val;
+        const adjustment = resolveHpAdjustment(target.currentHp, data.amount, target.survivalRule);
+        const val = adjustment.applied;
+        const nextHp = adjustment.hp;
 
         const nextElf = { ...target, currentHp: nextHp };
         const teamKey = targetSide === 'p1' ? 'p1Team' : 'p2Team';
@@ -704,10 +691,9 @@ export default function BattleScreen(props: BattleScreenProps) {
         // Update turn stats
         const currentStats = targetSide === 'p1' ? syncStateRef.current.p1TurnStats : syncStateRef.current.p2TurnStats;
         const statsUpdates: Partial<TurnDamageStats> = {
-          heal: (currentStats.heal || 0) + val,
           hpChange: (currentStats.hpChange || 0) + val,
-          lastType: 'heal',
-          lastAmount: val
+          lastType: val >= 0 ? 'adjust_up' : 'adjust_down',
+          lastAmount: Math.abs(val)
         };
         dispatch({ type: 'UPDATE_TURN_STATS', side: targetSide, stats: statsUpdates });
         dispatch({
@@ -715,9 +701,9 @@ export default function BattleScreen(props: BattleScreenProps) {
           info: {
             side: targetSide,
             targetElfName: target.name,
-            amount: val,
-            type: 'heal',
-            label: '體力回復'
+            amount: Math.abs(val),
+            type: val >= 0 ? 'adjust_up' : 'adjust_down',
+            label: '體力調整'
           }
         });
         const statsKey = targetSide === 'p1' ? 'p1TurnStats' : 'p2TurnStats';
@@ -729,15 +715,16 @@ export default function BattleScreen(props: BattleScreenProps) {
           }
         };
 
-        if (val > 0) {
+        if (val !== 0) {
           const id = `pop_${++popupSeq}`;
           dispatch({ 
             type: 'ADD_DAMAGE_POPUP', 
             popup: { 
               id, 
-              text: `+${val}`, 
+              text: `${val > 0 ? "+" : ""}${val}`, 
               side, 
-              type: "heal" 
+              type: val > 0 ? "adjust_up" : "adjust_down",
+              label: "體力調整",
             } 
           });
           setTimeout(() => dispatch({ type: 'REMOVE_DAMAGE_POPUP', id }), 1000);
@@ -745,8 +732,8 @@ export default function BattleScreen(props: BattleScreenProps) {
             type: 'ADD_LOG', 
             log: { 
               turn: cur.turnNumber, 
-              text: `💚 【${target.name}】體力調整（+${val}）！`, 
-              type: 'heal' 
+              text: `🔄 【${target.name}】體力調整（${val > 0 ? "+" : ""}${val}）！`, 
+              type: 'effect' 
             } 
           });
         }
@@ -754,6 +741,7 @@ export default function BattleScreen(props: BattleScreenProps) {
       }
       case 'heal': {
         const targetSide = side;
+        const target = cur[targetSide];
         const playerStateKey = `${targetSide}RegistryState` as "p1RegistryState" | "p2RegistryState";
         const oppSide = targetSide === "p1" ? "p2" : "p1";
         const oppStateKey = `${oppSide}RegistryState` as "p1RegistryState" | "p2RegistryState";
@@ -762,7 +750,8 @@ export default function BattleScreen(props: BattleScreenProps) {
                             syncStateRef.current[`${oppSide}RegistryState`]?.[`${targetSide}_noHealTurns`] || 0;
         const oppSealHealTurns = syncStateRef.current[oppStateKey]?.oppSealHealTurns || 0;
         const healReduce50Turns = syncStateRef.current[playerStateKey]?.healReduce50Turns || 0;
-        if (noHealTurns > 0 || oppSealHealTurns > 0) {
+        const isGodDescentRecovery = target.survivalRule?.mode === "god_descent" && target.currentHp <= 0;
+        if (!isGodDescentRecovery && (noHealTurns > 0 || oppSealHealTurns > 0)) {
           const defaultNoHealReason = "體力恢復受到限制";
           const defaultOppSealReason = "恢復效果已被封印";
           const noHealReason = syncStateRef.current[playerStateKey]?.noHealReason || 
@@ -774,8 +763,7 @@ export default function BattleScreen(props: BattleScreenProps) {
           pushEffect({ type: 'log', side: targetSide, data: { text: `🚫 【恢復失效】：${reason}，【${targetSide === "p1" ? cur.p1.name : cur.p2.name}】體力無法恢復！`, type: "info" } });
           break;
         }
-        const target = cur[targetSide];
-        
+
         // §3: SPECIAL_BUFF healIncreasePercent & healReduction
         let multiplier = 1.0;
         const statuses = getStatuses(target);
@@ -804,9 +792,14 @@ export default function BattleScreen(props: BattleScreenProps) {
             maxAllowedHp = Math.min(maxAllowedHp, wuxuOrigMaxHp);
         }
 
-        let val = Math.floor(data.amount * multiplier);
-        val = Math.max(0, Math.min(maxAllowedHp - target.currentHp, val));
-        const nextHp = target.currentHp + val;
+        const requestedRecovery = Math.floor(data.amount * multiplier);
+        const recovery = resolveRecoveryTransition(target.currentHp, maxAllowedHp, requestedRecovery, target.survivalRule);
+        const nextHp = recovery.hp;
+        const val = recovery.hpAdjustment;
+
+        if (recovery.ignoredRecovery) {
+          pushEffect({ type: 'log', side: targetSide, data: { text: `⚡ 【神降】：原恢復量失效，改為增加最大體力70%的體力值（+${val}）！`, type: "effect" } });
+        }
 
         const nextElf = { ...target, currentHp: nextHp };
         const teamKey = targetSide === 'p1' ? 'p1Team' : 'p2Team';
@@ -996,7 +989,12 @@ export default function BattleScreen(props: BattleScreenProps) {
       goesFirst: moveIndex === 0,
       rng,
       showPopup,
-      getBody: (tSide: "p1" | "p2") => { const c = syncStateRef.current; return getEffectiveBody(c[tSide], tSide === "p1" ? c.p1Marks : c.p2Marks); },
+      getBody: (tSide: "p1" | "p2") => {
+        const c = syncStateRef.current;
+        const elf = c[tSide];
+        const marks = (tSide === "p1" ? c.p1Marks : c.p2Marks).filter(mark => markAppliesToElf(mark, elf));
+        return getEffectiveBody(elf, marks);
+      },
       addLog: (text, type, sourceCode) => {
         let source = sourceCode;
         if (!source) {
@@ -1061,6 +1059,10 @@ export default function BattleScreen(props: BattleScreenProps) {
 
     const statuses = getStatuses(elf);
     const effects = elf.effects || [];
+
+    if (elf.suppressAbnormalSideEffectsWhenParalyzed && Math.max(statuses["麻痺"] || 0, statuses["麻痹"] || 0, statuses.paralyzed || 0) > 0) {
+      return;
+    }
 
     for (const stId of Object.keys(statuses)) {
       if (checkElfDead(syncStateRef.current[side])) return;
@@ -2082,6 +2084,16 @@ export default function BattleScreen(props: BattleScreenProps) {
           }
 
           if (outgoingElf) {
+            const outCtx = getBattleEventContext(s, true, mIdx);
+            for (const mark of outCtx.getMarks(s)) {
+              if (mark.persistsOffField === false) {
+                outCtx.clearMark(mark.id, s);
+                outCtx.addLog(`💨 【${outgoingElf.name}】下場，【${mark.name}】隨之消失。`, "info");
+              }
+            }
+          }
+
+          if (outgoingElf) {
             const sideRegKey = s === 'p1' ? "p1RegistryState" : "p2RegistryState";
             syncStateRef.current = {
               ...syncStateRef.current,
@@ -2367,6 +2379,14 @@ export default function BattleScreen(props: BattleScreenProps) {
           (ctx as any).skill = ss;
           if (!actor.isConcealed) displaySkill = ss.name;
         }
+      }
+
+      // 技能本體轉化必須發生在技能無效、命中與攻擊免疫判定之前；PP仍扣原技能欄位。
+      const transformedSkill = transformSkillBeforeResolve(getBattleEventContext(s, true, mIdx), activeSkill);
+      if (transformedSkill !== activeSkill) {
+        activeSkill = transformedSkill;
+        (ctx as any).skill = transformedSkill;
+        if (!actor.isConcealed) displaySkill = transformedSkill.name;
       }
 
       const actorMarks = s === "p1" ? syncStateRef.current.p1Marks : syncStateRef.current.p2Marks;
@@ -3355,6 +3375,16 @@ export default function BattleScreen(props: BattleScreenProps) {
       if (outgoingElf && SoulMarkRegistry[outgoingElf.name]) {
         const outCtx = getBattleEventContext(side, true, 0);
         SoulMarkRegistry[outgoingElf.name](outCtx, EffectTiming.ON_SWITCH_OUT, { incomingElf: targetElf });
+      }
+
+      if (outgoingElf) {
+        const outCtx = getBattleEventContext(side, true, 0);
+        for (const mark of outCtx.getMarks(side)) {
+          if (mark.persistsOffField === false) {
+            outCtx.clearMark(mark.id, side);
+            outCtx.addLog(`💨 【${outgoingElf.name}】下場，【${mark.name}】隨之消失。`, "info");
+          }
+        }
       }
 
       if (outgoingElf) {

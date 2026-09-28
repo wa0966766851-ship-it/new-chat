@@ -3,15 +3,17 @@ import { Elf } from "../types";
 import { Timer } from "../battle/timers";
 import { Mark } from "../battle/marks";
 
-export type StateCategory = "特殊" | "常駐" | "回合類" | "次數類" | "異常";
+export type StateCategory = "特殊" | "常駐" | "回合類" | "其他計時" | "次數類" | "防護" | "異常";
 
 export interface ActiveEffect {
   name: string;
   desc: string;
   category: StateCategory;
   remaining?: number;
+  unit?: "回合" | "次";
   polarity: "POSITIVE" | "NEGATIVE" | "NEUTRAL";
   stacks?: number;
+  stackUnit?: string;
 }
 
 function translateStatus(status: string): string {
@@ -78,13 +80,14 @@ export function getActiveEffects(side: "p1" | "p2", state: any): ActiveEffect[] 
   // 3. 特殊印記 (特殊 / 常駐)
   const marks: Mark[] = side === "p1" ? (state.p1Marks || []) : (state.p2Marks || []);
   for (const mark of marks) {
-    if (mark.count > 0) {
+    if ((mark.count > 0 || mark.visibleWhenZero) && (!mark.ownerBattleId || mark.ownerBattleId === (elf.battleId || elf.id))) {
       effects.push({
         name: mark.name,
         desc: mark.description || "特殊印記狀態",
         category: "特殊",
-        stacks: mark.count,
-        polarity: "POSITIVE"
+        stacks: mark.remainingRounds ?? mark.count,
+        stackUnit: mark.remainingRounds !== undefined ? "回合" : (mark.unit || "層"),
+        polarity: mark.polarity === "negative" ? "NEGATIVE" : mark.polarity === "positive" ? "POSITIVE" : "NEUTRAL"
       });
     }
   }
@@ -93,12 +96,14 @@ export function getActiveEffects(side: "p1" | "p2", state: any): ActiveEffect[] 
   const timers: Timer[] = side === "p1" ? (state.p1Timers || []) : (state.p2Timers || []);
   for (const timer of timers) {
     const isTurn = timer.kind === "turn_effect";
+    const isUseCounter = timer.kind === "use_counter";
     const polarity = timer.payload?.polarity || "POSITIVE";
     effects.push({
-      name: timer.name || (isTurn ? "回合類效果" : "次數限制"),
+      name: timer.name || (isTurn ? "回合類效果" : isUseCounter ? "次數限制" : "其他計時"),
       desc: timer.description || "啟用中的技能或魂印模組化效果",
-      category: isTurn ? "回合類" : "次數類",
+      category: isTurn ? "回合類" : isUseCounter ? "次數類" : "其他計時",
       remaining: timer.remaining,
+      unit: isUseCounter ? "次" : "回合",
       polarity: polarity as any
     });
   }
@@ -138,7 +143,7 @@ export function getActiveEffects(side: "p1" | "p2", state: any): ActiveEffect[] 
     effects.push({
       name: "機械護盾",
       desc: `當前吸收護盾容量: ${elf.shield} 點`,
-      category: "次數類",
+      category: "防護",
       stacks: elf.shield,
       polarity: "POSITIVE"
     });
@@ -148,7 +153,7 @@ export function getActiveEffects(side: "p1" | "p2", state: any): ActiveEffect[] 
     effects.push({
       name: "戰術護罩",
       desc: `當前吸收護罩容量: ${elf.barrier} 點`,
-      category: "次數類",
+      category: "防護",
       stacks: elf.barrier,
       polarity: "POSITIVE"
     });
@@ -157,7 +162,7 @@ export function getActiveEffects(side: "p1" | "p2", state: any): ActiveEffect[] 
   return effects;
 }
 
-const ORDER: StateCategory[] = ["特殊", "常駐", "回合類", "次數類", "異常"];
+const ORDER: StateCategory[] = ["特殊", "常駐", "回合類", "其他計時", "次數類", "防護", "異常"];
 
 export function StatusInspector({ side, state }: { side: "p1" | "p2"; state: any }) {
   const all = getActiveEffects(side, state);
@@ -190,7 +195,7 @@ export function StatusInspector({ side, state }: { side: "p1" | "p2"; state: any
         </span>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
         {ORDER.map(cat => {
           const items = all.filter(e => e.category === cat);
           return (
@@ -231,7 +236,7 @@ export function StatusInspector({ side, state }: { side: "p1" | "p2"; state: any
                           </span>
                           {e.stacks !== undefined && (
                             <span className="text-[9px] font-black bg-slate-800/80 text-cyan-400 px-1.5 py-0.5 rounded border border-slate-700">
-                              {e.stacks} 層
+                              {e.stacks} {e.stackUnit || "層"}
                             </span>
                           )}
                         </div>
@@ -241,7 +246,7 @@ export function StatusInspector({ side, state }: { side: "p1" | "p2"; state: any
                         {e.remaining !== undefined && (
                           <div className="flex items-center gap-1.5 mt-1 text-[9px] font-black text-slate-500 uppercase tracking-widest">
                             <span className="inline-block w-1.5 h-1.5 rounded-full bg-slate-600 animate-pulse" />
-                            剩餘 {e.remaining} 回合
+                            剩餘 {e.remaining} {e.unit || "回合"}
                           </div>
                         )}
                       </div>

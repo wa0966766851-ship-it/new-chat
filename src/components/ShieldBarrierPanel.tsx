@@ -1,5 +1,7 @@
 import React from 'react';
 import { Elf } from '../types';
+import { ChainImage } from './SeerImages';
+import { buffIconFor } from '../battle/effectIcons';
 
 interface ShieldBarrierPanelProps {
   elf: Elf;
@@ -19,6 +21,9 @@ export const ShieldBarrierPanel: React.FC<ShieldBarrierPanelProps> = ({
   // Percentage relative to maxHp for bar width display
   const shieldPercent = Math.min(100, Math.max(0, (shield / maxHp) * 100));
   const barrierPercent = Math.min(100, Math.max(0, (barrier / maxHp) * 100));
+  const shieldIcon = buffIconFor('護盾') || '/seer/buff/33.png';
+  const barrierIcon = buffIconFor('護罩') || '/seer/buff/32.png';
+  const effectIcon = (url: string) => <ChainImage urls={[url]} className="w-4 h-4 rounded-sm shrink-0" />;
 
   return (
     <div className="mb-2">
@@ -27,7 +32,7 @@ export const ShieldBarrierPanel: React.FC<ShieldBarrierPanelProps> = ({
         className="flex justify-between items-center p-1.5 rounded cursor-pointer hover:bg-slate-800/40 transition-colors border border-slate-800/60 bg-slate-950/40 select-none"
       >
         <span className="text-[10px] text-cyan-400 font-black uppercase tracking-widest flex items-center gap-1">
-          🛡️ 精靈護盾與護罩 {isExpanded ? "▼" : "▶"}
+          {effectIcon(shieldIcon)} 精靈護盾與護罩 {isExpanded ? "▼" : "▶"}
         </span>
         
         {/* 折疊處小UI：分別顯示護盾與護罩，互相不干擾、不統計為一個數字 */}
@@ -39,7 +44,7 @@ export const ShieldBarrierPanel: React.FC<ShieldBarrierPanelProps> = ({
                 : "bg-slate-900/40 border-slate-800 text-slate-500"
             }`}
           >
-            🛡️ 護盾: <span className="font-mono">{shield > 0 ? shield : 0}</span>
+            {effectIcon(shieldIcon)} 護盾: <span className="font-mono">{shield > 0 ? shield : 0}</span>
           </span>
 
           <span
@@ -49,7 +54,7 @@ export const ShieldBarrierPanel: React.FC<ShieldBarrierPanelProps> = ({
                 : "bg-slate-900/40 border-slate-800 text-slate-500"
             }`}
           >
-            🔮 護罩: <span className="font-mono">{barrier > 0 ? barrier : 0}</span>
+            {effectIcon(barrierIcon)} 護罩: <span className="font-mono">{barrier > 0 ? barrier : 0}</span>
           </span>
         </div>
       </div>
@@ -60,7 +65,7 @@ export const ShieldBarrierPanel: React.FC<ShieldBarrierPanelProps> = ({
           <div>
             <div className="flex justify-between items-center mb-1">
               <span className="text-[10px] text-cyan-400 font-bold flex items-center gap-1">
-                🛡️ 精靈護盾 <span className="text-[8px] text-slate-500 font-normal">(吸收技能攻擊傷害)</span>
+                {effectIcon(shieldIcon)} 精靈護盾 <span className="text-[8px] text-slate-500 font-normal">(吸收技能攻擊傷害)</span>
               </span>
               <span className="text-[11px] font-black text-cyan-200">
                 {shield} <span className="text-[8px] text-slate-500">點</span>
@@ -78,7 +83,7 @@ export const ShieldBarrierPanel: React.FC<ShieldBarrierPanelProps> = ({
           <div>
             <div className="flex justify-between items-center mb-1">
               <span className="text-[10px] text-fuchsia-400 font-bold flex items-center gap-1">
-                🔮 精靈護罩 <span className="text-[8px] text-slate-500 font-normal">(吸收固傷/百分比傷害)</span>
+                {effectIcon(barrierIcon)} 精靈護罩 <span className="text-[8px] text-slate-500 font-normal">(吸收固傷/百分比傷害)</span>
               </span>
               <span className="text-[11px] font-black text-fuchsia-200">
                 {barrier} <span className="text-[8px] text-slate-500">點</span>
@@ -101,7 +106,7 @@ export const ShieldBarrierPanel: React.FC<ShieldBarrierPanelProps> = ({
             </div>
             <div className="grid grid-cols-3 border-b border-slate-900/60 px-1.5 py-1 text-center items-center">
               <div className="text-cyan-400 font-medium flex items-center justify-center gap-0.5">
-                🛡️ 精靈護盾
+                {effectIcon(shieldIcon)} 精靈護盾
               </div>
               <div className="text-slate-400">技能攻擊傷害</div>
               <div className={shield > 0 ? "text-cyan-300 font-bold" : "text-slate-600"}>
@@ -110,7 +115,7 @@ export const ShieldBarrierPanel: React.FC<ShieldBarrierPanelProps> = ({
             </div>
             <div className="grid grid-cols-3 px-1.5 py-1 text-center items-center">
               <div className="text-fuchsia-400 font-medium flex items-center justify-center gap-0.5">
-                🔮 精靈護罩
+                {effectIcon(barrierIcon)} 精靈護罩
               </div>
               <div className="text-slate-400">固定/百分比傷害</div>
               <div className={barrier > 0 ? "text-fuchsia-300 font-bold" : "text-slate-600"}>

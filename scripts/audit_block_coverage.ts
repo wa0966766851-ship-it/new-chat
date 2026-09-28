@@ -66,8 +66,9 @@ if (details) {
 
 if (check) {
   const failures: string[] = [];
-  if (skills.parsed < 463 || skills.total !== 723) failures.push(`技能覆蓋率退步或資料集改變：${skills.parsed}/${skills.total}`);
-  if (souls.parsed < 100 || souls.total !== 408) failures.push(`魂印覆蓋率退步或資料集改變：${souls.parsed}/${souls.total}`);
+  if (skills.parsed < 477 || skills.total !== 752) failures.push(`技能覆蓋率退步或資料集改變：${skills.parsed}/${skills.total}`);
+  // 5029 異境神霆·雷伊加入 16 個可稽核魂印子句；資料集基準由 409 更新為 425。
+  if (souls.parsed < 100 || souls.total !== 425) failures.push(`魂印覆蓋率退步或資料集改變：${souls.parsed}/${souls.total}`);
 
   for (const name of Object.keys(SKILL_MODE)) {
     const skill = DEFAULT_ELVES.flatMap(elf => elf.skills || []).find(item => item.name === name);

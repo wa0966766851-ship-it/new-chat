@@ -73,6 +73,8 @@ export const calculateDamage = (
 
   let atkS = rawAtkS;
   let defS = rawDefS;
+  if (actor.treatOpponentBoostAsDoubleDrop && defS > 0) defS = -2 * defS;
+  if (target.treatOpponentBoostAsDoubleDrop && atkS > 0) atkS = -2 * atkS;
 
   // 1:將對手能力提升視為同等級能力下降，自身能力下降視為同等級能力提升 (Poem >= 1)
   if (actorPoemCount >= 1) {

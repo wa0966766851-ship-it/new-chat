@@ -64,7 +64,11 @@ export function ElfAvatar({ elf, kind = "head", className, fallbackClassName, st
         <ChainImage urls={ready ? petImageUrls(elf as any, "head") : []} fallback={fb} className="w-full h-full object-cover rounded-full" alt={elf.name} />
       </div>
     );
-    return <ChainImage urls={urls} fallback={headFb} className={className} style={style} alt={elf.name} />;
+    const sceneMask = elf.artPresentation === "scene" ? {
+      WebkitMaskImage: "radial-gradient(ellipse 88% 92% at 50% 50%, #000 62%, rgba(0,0,0,.92) 76%, transparent 100%)",
+      maskImage: "radial-gradient(ellipse 88% 92% at 50% 50%, #000 62%, rgba(0,0,0,.92) 76%, transparent 100%)",
+    } as React.CSSProperties : undefined;
+    return <ChainImage urls={urls} fallback={headFb} className={className} style={{ ...sceneMask, ...style }} alt={elf.name} />;
   }
   return <ChainImage urls={urls} fallback={fb} className={className} style={style} alt={elf.name} />;
 }

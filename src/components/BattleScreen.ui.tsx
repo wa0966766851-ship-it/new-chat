@@ -34,13 +34,14 @@ import { getMaxPp, getStatuses } from "../utils/battleHelpers";
 import { computeHitChance } from "../effects/genericSkillText";
 import { ShieldBarrierPanel } from "./ShieldBarrierPanel";
 import { Elf, Skill, BattleLog, BattleItem } from "../types";
-import { Mark } from "../battle/marks";
-import { Timer } from "../battle/timers";
+import { BattleEffectViewModel, buildEffectViewModels, describeEffectMeta } from "../battle/effectViewModel";
 import { getHpBarColor } from "./BattleComponents";
 import { StatusInspector } from "./StatusInspector";
 import { getTypeMatchup, getAttributeBadgeColor, getEffectiveBody } from "../utils/statCalculator";
 import { ElfAvatar, TypeIcon, ChainImage } from "./SeerImages";
+import { isAliveBySurvivalRule } from "../battle/survivalRules";
 import { statusVisual, buffIconFor, stageDesc, STAT_FULL } from "../battle/effectIcons";
+import { markAppliesToElf } from "../battle/marks";
 import { effectLines, formatEffectText } from "../utils/descFormat";
 import { StatusRegistry } from "../effects/statusRegistry";
 import { EFFECT_CATALOG } from "../data/effectCatalog";
@@ -114,10 +115,6 @@ export function BattleScreenUI(props: BattleScreenUIProps) {
   const [hoveredSkillAnchor, setHoveredSkillAnchor] = useState<{ x: number; y: number; top?: number; bottom?: number } | null>(null);
   const [hoveredSoulMark, setHoveredSoulMark] = useState<{name: string, desc: string} | null>(null);
   const [modalContent, setModalContent] = useState<{ title: string; content: string } | null>(null);
-  const [markDetailShown, setMarkDetailShown] = useState<Mark | null>(null);
-  const [markDetailAnchor, setMarkDetailAnchor] = useState<{ x: number; y: number; top?: number; bottom?: number } | null>(null);
-  const [timerDetailShown, setTimerDetailShown] = useState<Timer | null>(null);
-  const [timerDetailAnchor, setTimerDetailAnchor] = useState<{ x: number; y: number; top?: number; bottom?: number } | null>(null);
   const [tooltipPos, setTooltipPos] = useState({ x: 0, y: 0 });
   const [showResist, setShowResist] = useState<Record<"p1" | "p2", boolean>>({ p1: false, p2: false });
   const [showTurnStats, setShowTurnStats] = useState<Record<"p1" | "p2", boolean>>({ p1: false, p2: false });
@@ -134,7 +131,6 @@ export function BattleScreenUI(props: BattleScreenUIProps) {
     statusAndImmunity: true,
     turnEffects: true,
     countEffects: true,
-    shieldBarrierSummary: true,
     marks: true,
   };
 
@@ -143,9 +139,8 @@ export function BattleScreenUI(props: BattleScreenUIProps) {
     statStages: "能力等級狀態",
     shieldBarrier: "精靈護盾與護罩",
     statusAndImmunity: "異常狀態與免疫",
-    turnEffects: "回合類效果",
+    turnEffects: "回合類與其他計時",
     countEffects: "次數效果",
-    shieldBarrierSummary: "護盾護罩（小計欄）",
     marks: "印記與特質",
   };
 
@@ -313,6 +308,7 @@ export function BattleScreenUI(props: BattleScreenUIProps) {
                       const isTrue = pop.type === 'true' || pop.type === 'true_damage' || isAbsorb;
                       const isPink = pop.type === 'fixed' || pop.type === 'percent' || pop.type === 'fixed_damage' || pop.type === 'percent_damage';
                       const isHeal = pop.type === 'heal';
+                      const isAdjustment = pop.type === 'adjust_up' || pop.type === 'adjust_down';
 
                       let containerClass = "";
                       let textStyle = "";
@@ -341,6 +337,10 @@ export function BattleScreenUI(props: BattleScreenUIProps) {
                         containerClass = "bg-emerald-950/95 border-2 border-emerald-500/80 text-emerald-300 shadow-[0_0_15px_rgba(16,185,129,0.85)] px-3 py-1 rounded-xl";
                         textStyle = "text-lg font-black text-emerald-200 drop-shadow-[0_0_8px_rgba(16,185,129,0.8)] tracking-tight";
                         icon = "💚 ";
+                      } else if (isAdjustment) {
+                        containerClass = "bg-cyan-950/95 border-2 border-cyan-500/80 text-cyan-200 shadow-[0_0_15px_rgba(6,182,212,0.85)] px-3 py-1 rounded-xl";
+                        textStyle = "text-lg font-black text-cyan-100 tracking-tight";
+                        icon = "🔄 ";
                       } else { // 技能傷害：咖啡紅
                         containerClass = "bg-amber-950/95 border-2 border-red-700/80 text-red-200 shadow-[0_0_15px_rgba(153,27,27,0.85)] px-3 py-1 rounded-xl";
                         textStyle = "text-lg font-black text-red-300 drop-shadow-[0_0_8px_rgba(153,27,27,0.9)] tracking-tight";
@@ -372,6 +372,33 @@ export function BattleScreenUI(props: BattleScreenUIProps) {
   const renderElfDetails = (side: "p1" | "p2", elf: Elf) => {
     const isP1 = side === "p1";
     const dynamicEffects = getDynamicEffects(side, elf);
+    const effectViews = buildEffectViewModels(
+      (isP1 ? p1Marks : p2Marks) || [],
+      (isP1 ? p1Timers : p2Timers) || [],
+      elf.battleId || elf.id,
+    );
+    const renderEffectGroup = (effects: BattleEffectViewModel[], emptyHint: string) => (
+      effects.length ? (
+        <div className="flex flex-wrap gap-1">
+          {effects.map(effect => (
+            <button
+              type="button"
+              key={effect.id}
+              onClick={() => setModalContent({ title: effect.label, content: describeEffectMeta(effect) })}
+              className={`px-1.5 py-0.5 rounded border text-[9px] font-bold transition-colors hover:brightness-125 ${
+                effect.polarity === "negative"
+                  ? "bg-rose-950/60 border-rose-500/30 text-rose-200"
+                  : effect.category === "count"
+                    ? "bg-violet-950/60 border-violet-500/30 text-violet-200"
+                    : "bg-cyan-950/60 border-cyan-500/30 text-cyan-200"
+              }`}
+            >
+              {effect.shortLabel} {effect.value}{effect.unit}
+            </button>
+          ))}
+        </div>
+      ) : <span className="text-[9px] text-slate-600">{emptyHint}</span>
+    );
     return (
       <div className="space-y-3">
             {/* 資訊分類按鈕列 (Categorized Info Tabs) */}
@@ -411,6 +438,8 @@ export function BattleScreenUI(props: BattleScreenUIProps) {
                 true:    { label: '⚡真實傷害', color: 'text-white bg-slate-900 border border-slate-200 shadow-[0_0_8px_rgba(255,255,255,0.6)]' },
                 absorb:  { label: '⚡真實傷害', color: 'text-white bg-slate-900 border border-slate-200 shadow-[0_0_8px_rgba(255,255,255,0.6)]' },
                 heal:    { label: '💚回復體力', color: 'text-emerald-300 bg-emerald-950/80 border border-emerald-700/80' },
+                adjust_up:   { label: '🔄體力調整', color: 'text-cyan-200 bg-cyan-950/80 border border-cyan-700/80' },
+                adjust_down: { label: '🔄體力調整', color: 'text-cyan-200 bg-cyan-950/80 border border-cyan-700/80' },
               };
               const lastCfg = stats?.lastType ? typeConfig[stats.lastType] : null;
               const lastValue = stats?.lastAmount !== undefined ? stats.lastAmount : 0;
@@ -426,7 +455,7 @@ export function BattleScreenUI(props: BattleScreenUIProps) {
                     </span>
                     {lastCfg && lastValue > 0 && (
                       <span className={`text-[9px] px-2 py-0.5 rounded font-black tracking-tight ${lastCfg.color}`}>
-                        {lastCfg.label} {stats.lastType === 'heal' ? `+${lastValue}` : `-${lastValue}`}
+                        {lastCfg.label} {stats.lastType === 'heal' || stats.lastType === 'adjust_up' ? `+${lastValue}` : `-${lastValue}`}
                       </span>
                     )}
                   </div>
@@ -471,7 +500,7 @@ export function BattleScreenUI(props: BattleScreenUIProps) {
               {((panelTab[side] || 'ALL') === 'ALL' || (panelTab[side] || 'ALL') === 'STATUSES') && sectionVisibility.statusAndImmunity && (
                 <div>
                     <span className="text-[10px] text-rose-500 font-black uppercase tracking-widest block mb-1">異常狀態與免疫:</span>
-                    <StatusBadgePanel elf={elf} otherEffects={dynamicEffects} categoryFilter={["CONTROL", "WEAKENING", "RESTRICTIVE", "EVOLUTIONARY", "AUXILIARY", "NEGATIVE_TURN"]} emptyHint="無異常狀態" />
+                    <StatusBadgePanel elf={elf} otherEffects={dynamicEffects} categoryFilter={["CONTROL", "WEAKENING", "RESTRICTIVE", "EVOLUTIONARY", "AUXILIARY"]} emptyHint="無異常狀態" />
                 </div>
               )}
 
@@ -583,24 +612,24 @@ export function BattleScreenUI(props: BattleScreenUIProps) {
                 );
               })()}
             </div>
-          {(sectionVisibility.turnEffects || sectionVisibility.countEffects || sectionVisibility.shieldBarrierSummary) && (
-            <div className="grid grid-cols-3 gap-2 border-t border-slate-800/50 pt-3">
+          {(sectionVisibility.turnEffects || sectionVisibility.countEffects) && (
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 border-t border-slate-800/50 pt-3">
                {sectionVisibility.turnEffects && (
                  <div className="space-y-1">
                     <span className="text-[9px] text-slate-500 font-black uppercase">回合類效果:</span>
-                    <StatusBadgePanel elf={elf} otherEffects={dynamicEffects} categoryFilter={["POSITIVE_TURN", "NEGATIVE_TURN"]} emptyHint="無回合類效果" />
+                    {renderEffectGroup(effectViews.filter(effect => effect.category === "turn"), "無回合類效果")}
+                 </div>
+               )}
+               {sectionVisibility.turnEffects && (
+                 <div className="space-y-1">
+                    <span className="text-[9px] text-slate-500 font-black uppercase">其他計時:</span>
+                    {renderEffectGroup(effectViews.filter(effect => effect.category === "round"), "無其他計時")}
                  </div>
                )}
                {sectionVisibility.countEffects && (
                  <div className="space-y-1">
                     <span className="text-[9px] text-slate-500 font-black uppercase">次數效果:</span>
-                    <StatusBadgePanel elf={elf} otherEffects={dynamicEffects} categoryFilter={["COUNT_EFFECT"]} emptyHint="無次數效果" />
-                 </div>
-               )}
-               {sectionVisibility.shieldBarrierSummary && (
-                 <div className="space-y-1">
-                    <span className="text-[9px] text-slate-500 font-black uppercase">護盾護罩:</span>
-                    <StatusBadgePanel elf={elf} otherEffects={dynamicEffects} categoryFilter={["SHIELD_BARRIER"]} emptyHint="無護盾與護罩" />
+                    {renderEffectGroup(effectViews.filter(effect => effect.category === "count"), "無次數效果")}
                  </div>
                )}
             </div>
@@ -743,7 +772,7 @@ export function BattleScreenUI(props: BattleScreenUIProps) {
                       <div className="grid grid-cols-[repeat(auto-fill,minmax(130px,1fr))] gap-2.5">
                         {p1Team.map((elf, idx) => {
                           const isExtra = idx >= 6 || !!elf.isExtra;
-                          const isDead = !elf || (elf.currentHp <= 0 && !(elf.deathImmunity && elf.deathImmunity.deathImmuneTurns > 0));
+                          const isDead = !elf || (!isAliveBySurvivalRule(elf.currentHp, elf.survivalRule) && !(elf.deathImmunity && elf.deathImmunity.deathImmuneTurns > 0));
                           const isDeathImmuneActive = !!(elf && elf.currentHp <= 0 && elf.deathImmunity && elf.deathImmunity.deathImmuneTurns > 0);
                           return (
                             <button
@@ -968,7 +997,7 @@ export function BattleScreenUI(props: BattleScreenUIProps) {
                   {team.map((e, idx) => {
                     const activeIdx = isP1 ? p1ActiveIndex : battle.p2ActiveIndex;
                     const isActive = idx === activeIdx;
-                    const isDead = !e || (e.currentHp <= 0 && !(e.deathImmunity && e.deathImmunity.deathImmuneTurns > 0));
+                    const isDead = !e || (!isAliveBySurvivalRule(e.currentHp, e.survivalRule) && !(e.deathImmunity && e.deathImmunity.deathImmuneTurns > 0));
                     const isExtraElf = idx >= 6;
                     
                     let colorClass;
@@ -1025,17 +1054,15 @@ export function BattleScreenUI(props: BattleScreenUIProps) {
 
 
   // ────────────────────────── 固定排版（預設） ──────────────────────────
-  const aliveCount = (team: Elf[]) => team.filter((e, i) => e && !e.isExtra && i < 6 && !e.isVanished && (e.currentHp > 0 || (e.deathImmunity && e.deathImmunity.deathImmuneTurns > 0))).length;
+  const aliveCount = (team: Elf[]) => team.filter((e, i) => e && !e.isExtra && i < 6 && !e.isVanished && (isAliveBySurvivalRule(e.currentHp, e.survivalRule) || (e.deathImmunity && e.deathImmunity.deathImmuneTurns > 0))).length;
 
   const catalogDesc = (c: any, inst: any) => {
     try { return typeof c?.describe === "function" ? c.describe(inst || {}) : (c?.description || ""); } catch { return c?.description || ""; }
   };
 
   const renderChips = (side: "p1" | "p2", elf: Elf) => {
-    type Chip = { key: string; text: string; cls: string; name: string; desc?: string; icon?: string };
+    type Chip = { key: string; text: string; cls: string; name: string; desc?: string; icon?: string; priority: number; kindLabel?: string };
     const chips: Chip[] = [];
-    if (elf.shield && elf.shield > 0) chips.push({ key: "shield", name: "護盾", text: `護盾 ${elf.shield}`, cls: "bg-sky-900/70 text-sky-200 border-sky-500/50", desc: `剩餘 ${elf.shield} 點：優先吸收技能攻擊傷害`, icon: buffIconFor("護盾") });
-    if (elf.barrier && elf.barrier > 0) chips.push({ key: "barrier", name: "護罩", text: `護罩 ${elf.barrier}`, cls: "bg-indigo-900/70 text-indigo-200 border-indigo-500/50", desc: `剩餘 ${elf.barrier} 點：優先吸收固定傷害與百分比傷害`, icon: buffIconFor("護罩") });
     const st = getStatuses(elf) as Record<string, any>;
     Object.entries(st || {}).forEach(([id, turns]) => {
       if (!turns) return;
@@ -1049,6 +1076,8 @@ export function BattleScreenUI(props: BattleScreenUIProps) {
         cls: "bg-rose-950/70 text-rose-200 border-rose-500/40",
         desc: vis?.desc || reg?.description || catalogDesc(cat, { remainingTurns: n }) || name,
         icon: vis?.icon || buffIconFor(name),
+        priority: 100,
+        kindLabel: "異",
       });
     });
     getDynamicEffects(side, elf).forEach((d: any) => {
@@ -1056,24 +1085,83 @@ export function BattleScreenUI(props: BattleScreenUIProps) {
       const c = (EFFECT_CATALOG as any)[d.catalogId];
       if (!c) return;
       const desc = d.note || catalogDesc(c, d) || c.label;
-      chips.push({ key: `d-${d.catalogId}`, name: c.label, text: d.remainingTurns > 1 ? `${c.label}(${d.remainingTurns})` : c.label, cls: "bg-violet-950/70 text-violet-200 border-violet-500/40", desc, icon: statusVisual(c.label)?.icon || buffIconFor(`${c.label} ${desc}`) });
+      chips.push({ key: `d-${d.catalogId}`, name: c.label, text: d.remainingTurns > 1 ? `${c.label}(${d.remainingTurns})` : c.label, cls: "bg-violet-950/70 text-violet-200 border-violet-500/40", desc, icon: statusVisual(c.label)?.icon || buffIconFor(`${c.label} ${desc}`), priority: 90, kindLabel: "效" });
     });
     const stages = (elf.statStages || {}) as Record<string, number>;
     Object.entries(stages).forEach(([k, v]) => {
       if (!v) return;
-      chips.push({ key: `g-${k}`, name: `${STAT_FULL[k] || k}等級`, text: `${STAGE_SHORT[k] || k}${v > 0 ? "+" : ""}${v}`, cls: v > 0 ? "bg-amber-950/70 text-amber-200 border-amber-500/40" : "bg-cyan-950/70 text-cyan-200 border-cyan-500/40", desc: stageDesc(k, v) });
+      chips.push({ key: `g-${k}`, name: `${STAT_FULL[k] || k}等級`, text: `${STAGE_SHORT[k] || k}${v > 0 ? "+" : ""}${v}`, cls: v > 0 ? "bg-amber-950/70 text-amber-200 border-amber-500/40" : "bg-cyan-950/70 text-cyan-200 border-cyan-500/40", desc: stageDesc(k, v), priority: 30, kindLabel: "能" });
     });
     const marks = (side === "p1" ? p1Marks : p2Marks) || [];
-    marks.forEach((m: any) => chips.push({ key: `m-${m.id}`, name: m.name, text: `${m.displayChar || m.name}${m.count != null ? " " + m.count : ""}`, cls: "bg-yellow-950/70 text-yellow-200 border-yellow-500/40", desc: m.description || m.name }));
+    const timers = (side === "p1" ? p1Timers : p2Timers) || [];
+    buildEffectViewModels(marks, timers, elf.battleId || elf.id).forEach(effect => {
+      const categoryStyle = effect.category === "mark"
+        ? "bg-yellow-950/70 text-yellow-200 border-yellow-500/40"
+        : effect.category === "count"
+          ? "bg-violet-950/70 text-violet-200 border-violet-500/40"
+          : effect.polarity === "negative"
+            ? "bg-rose-950/70 text-rose-200 border-rose-500/40"
+            : "bg-cyan-950/70 text-cyan-200 border-cyan-500/40";
+      const kindLabel = effect.category === "mark" ? "印" : effect.category === "turn" ? "回" : effect.category === "round" ? "常" : "次";
+      chips.push({
+        key: effect.id,
+        name: effect.label,
+        text: `${effect.shortLabel}${effect.value !== undefined ? ` ${effect.value}${effect.unit || ""}` : ""}`,
+        cls: categoryStyle,
+        desc: describeEffectMeta(effect),
+        priority: effect.priority,
+        kindLabel,
+      });
+    });
     if (!chips.length) return null;
+    chips.sort((a, b) => b.priority - a.priority || a.name.localeCompare(b.name, "zh-Hant"));
+    const visible = chips.slice(0, 4);
+    const hidden = chips.slice(4);
     return (
       <div className={`flex flex-wrap gap-1 mt-1.5 ${side === "p2" ? "justify-end" : ""}`}>
-        {chips.map(c => (
+        {visible.map(c => (
           <button type="button" key={c.key} title={`${c.name}\n${c.desc || ""}`}
             onClick={() => setModalContent({ title: c.name, content: c.desc || c.name })}
             className={`inline-flex items-center gap-1 px-1.5 py-[1px] rounded border text-[10px] font-bold leading-4 whitespace-nowrap hover:brightness-125 ${c.cls}`}>
+            {c.kindLabel && <span className="text-[8px] opacity-60">{c.kindLabel}</span>}
             {c.icon && <ChainImage urls={[c.icon]} className="w-3.5 h-3.5 rounded-sm" />}
             {c.text}
+          </button>
+        ))}
+        {hidden.length > 0 && (
+          <button
+            type="button"
+            onClick={() => setModalContent({
+              title: `${elf.name}－其他生效中效果`,
+              content: hidden.map(item => `【${item.kindLabel || "效"}】${item.name}\n${item.desc || item.name}`).join("\n\n"),
+            })}
+            className="inline-flex items-center px-1.5 py-[1px] rounded border border-slate-500/40 bg-slate-900/80 text-[10px] font-bold text-slate-300 hover:text-white"
+          >
+            +{hidden.length} 更多
+          </button>
+        )}
+      </div>
+    );
+  };
+
+  const renderProtectionRow = (side: "p1" | "p2", elf: Elf) => {
+    const items = [
+      { key: "shield", label: "護盾", value: elf.shield || 0, icon: buffIconFor("護盾") || "/seer/buff/33.png", cls: "border-sky-500/30 bg-sky-950/30 text-sky-200", desc: "優先吸收技能攻擊傷害" },
+      { key: "barrier", label: "護罩", value: elf.barrier || 0, icon: buffIconFor("護罩") || "/seer/buff/32.png", cls: "border-fuchsia-500/30 bg-fuchsia-950/30 text-fuchsia-200", desc: "優先吸收固定與百分比傷害" },
+    ];
+    return (
+      <div className={`mt-1.5 grid grid-cols-2 gap-1 ${side === "p2" ? "text-right" : ""}`}>
+        {items.map(item => (
+          <button
+            type="button"
+            key={item.key}
+            title={`${item.label}：${item.value} 點\n${item.desc}`}
+            onClick={() => setModalContent({ title: item.label, content: `目前 ${item.value} 點\n${item.desc}` })}
+            className={`flex items-center gap-1 rounded-md border px-1.5 py-1 text-[9px] font-bold hover:brightness-125 ${item.cls} ${item.value <= 0 ? "opacity-45" : ""} ${side === "p2" ? "flex-row-reverse" : ""}`}
+          >
+            <ChainImage urls={[item.icon]} className="w-4 h-4 rounded-sm shrink-0" />
+            <span className="truncate">{item.label}</span>
+            <span className="ml-auto font-mono text-[10px]">{item.value}</span>
           </button>
         ))}
       </div>
@@ -1094,7 +1182,11 @@ export function BattleScreenUI(props: BattleScreenUIProps) {
         <div className={`flex gap-3 p-2.5 ${isP1 ? "" : "flex-row-reverse"}`}>
           <button type="button" onClick={openDetail} title="查看精靈詳情"
             className="shrink-0 w-16 h-16 rounded-full overflow-hidden border-2 border-cyan-400/60 bg-slate-900 hover:scale-105 transition-transform">
-            <ElfAvatar elf={elf} kind="head" className="w-full h-full object-cover" />
+            <ElfAvatar
+              elf={elf}
+              kind="head"
+              className={`w-full h-full object-cover ${side === "p1" && String(elf.id) === "5029" ? "-scale-x-100" : ""}`}
+            />
           </button>
           <div className={`flex-1 min-w-0 ${isP1 ? "" : "text-right"}`}>
             <div className={`flex items-center gap-1.5 min-w-0 ${isP1 ? "" : "flex-row-reverse"}`}>
@@ -1125,6 +1217,7 @@ export function BattleScreenUI(props: BattleScreenUIProps) {
                 <span>{hpPct >= 10 ? Math.round(hpPct) : hpPct.toFixed(1)}%</span>
               </div>
             </div>
+            {renderProtectionRow(side, elf)}
             {renderChips(side, elf)}
           </div>
         </div>
@@ -1159,7 +1252,7 @@ export function BattleScreenUI(props: BattleScreenUIProps) {
             {team.map((e, i) => {
               if (!e) return null;
               const extra = !!e.isExtra || i >= 6;
-              const dead = e.isVanished || (e.currentHp <= 0 && !(e.deathImmunity && e.deathImmunity.deathImmuneTurns > 0));
+              const dead = e.isVanished || (!isAliveBySurvivalRule(e.currentHp, e.survivalRule) && !(e.deathImmunity && e.deathImmunity.deathImmuneTurns > 0));
               const active = i === activeIdx;
               return (
                 <button key={i} type="button" onClick={() => !e.isConcealed && setSelectedElfDetail({ elf: e, side, idx: i })}
@@ -1201,7 +1294,7 @@ export function BattleScreenUI(props: BattleScreenUIProps) {
     const isAttacking = props.activeSkillAnim?.side === side;
     const isShaking = props.consoleShake?.[side];
     const anim = isAttacking ? { x: [0, isP1 ? 80 : -80, 0] } : isShaking ? { x: [-8, 8, -8, 8, 0], transition: { duration: 0.3 } } : { x: 0 };
-    const dead = elf.currentHp <= 0;
+    const dead = !isAliveBySurvivalRule(elf.currentHp, elf.survivalRule);
     return (
       <div className={`absolute bottom-[2%] ${isP1 ? "left-[4%]" : "right-[4%]"} w-[26%] h-[74%] max-h-[400px] flex items-end justify-center pointer-events-none`}
         style={{ opacity: spriteMode === "dim" ? 0.55 : 1, display: spriteMode === "hide" ? "none" : undefined }}>
@@ -1292,7 +1385,7 @@ export function BattleScreenUI(props: BattleScreenUIProps) {
           {lastActionInfo && lastActionInfo.amount > 0 && (
             <motion.div key={`${lastActionInfo.side}-${lastActionInfo.amount}-${turnNumber}`} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }}
               className="px-3 py-1 rounded-xl bg-slate-950/85 border border-white/15 text-xs font-black text-slate-100 whitespace-nowrap">
-              【{lastActionInfo.targetElfName}】 {lastActionInfo.type === "heal" ? `+${lastActionInfo.amount}` : `-${lastActionInfo.amount}`}
+              【{lastActionInfo.targetElfName}】 {lastActionInfo.type === "heal" || lastActionInfo.type === "adjust_up" ? `+${lastActionInfo.amount}` : `-${lastActionInfo.amount}`}
             </motion.div>
           )}
         </AnimatePresence>
@@ -1412,88 +1505,6 @@ export function BattleScreenUI(props: BattleScreenUIProps) {
         {renderElfConsole("p1", p1)}
         {renderElfConsole("p2", p2)}
 
-        {/* Mark Details Modal */}
-        <AnimatePresence>
-          {markDetailShown && markDetailAnchor && (
-            <div
-              style={(() => {
-                const spaceAbove = markDetailAnchor.top || markDetailAnchor.y;
-                const showBelow = spaceAbove < 250;
-                return {
-                  position: 'fixed',
-                  left: Math.min(Math.max(180, markDetailAnchor.x), window.innerWidth - 180),
-                  top: showBelow ? (markDetailAnchor.bottom || markDetailAnchor.y) + 10 : (markDetailAnchor.top || markDetailAnchor.y) - 10,
-                  transform: showBelow ? 'translateX(-50%)' : 'translate(-50%, -100%)',
-                  zIndex: 10001,
-                };
-              })()}
-            >
-              <motion.div
-                initial={{ opacity: 0, y: 10, scale: 0.95 }}
-                animate={{ opacity: 1, y: 0, scale: 1 }}
-                exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                className="w-[360px] bg-[#0A0D14]/98 border-2 border-cyan-500 rounded-xl p-4 shadow-2xl backdrop-blur-xl"
-              >
-                <h4 className="text-sm font-black text-white mb-0.5">{markDetailShown.name}</h4>
-                <p className="text-[10px] text-slate-500 mb-2 uppercase tracking-tight">{markDetailShown.source}</p>
-                <p className="text-[11px] text-slate-300 leading-relaxed bg-slate-900/50 p-2 rounded border border-white/5 whitespace-pre-wrap">
-                  {markDetailShown.description}
-                </p>
-                <div className="mt-3 flex justify-between items-center">
-                  <span className="text-[10px] text-cyan-500/50 font-mono italic">MARK_ID: {markDetailShown.id}</span>
-                  <button 
-                    onClick={() => setMarkDetailShown(null)} 
-                    className="px-2 py-1 bg-slate-800 hover:bg-slate-700 text-[10px] text-slate-400 rounded transition-colors"
-                  >
-                    關閉
-                  </button>
-                </div>
-              </motion.div>
-            </div>
-          )}
-        </AnimatePresence>
-
-        {/* Timer Details Modal */}
-        <AnimatePresence>
-          {timerDetailShown && timerDetailAnchor && (
-            <div
-              style={(() => {
-                const spaceAbove = timerDetailAnchor.top || timerDetailAnchor.y;
-                const showBelow = spaceAbove < 250;
-                return {
-                  position: 'fixed',
-                  left: Math.min(Math.max(160, timerDetailAnchor.x), window.innerWidth - 160),
-                  top: showBelow ? (timerDetailAnchor.bottom || timerDetailAnchor.y) + 10 : (timerDetailAnchor.top || timerDetailAnchor.y) - 10,
-                  transform: showBelow ? 'translateX(-50%)' : 'translate(-50%, -100%)',
-                  zIndex: 10001,
-                };
-              })()}
-            >
-              <motion.div
-                initial={{ opacity: 0, y: 10, scale: 0.95 }}
-                animate={{ opacity: 1, y: 0, scale: 1 }}
-                exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                className="w-[320px] bg-[#0A0D14]/98 border-2 border-indigo-500 rounded-xl p-4 shadow-2xl backdrop-blur-xl"
-              >
-                <h4 className="text-sm font-black text-white mb-0.5">{timerDetailShown.name}</h4>
-                <p className="text-[10px] text-slate-500 mb-2">剩餘 {timerDetailShown.remaining} 回合 · {timerDetailShown.kind === 'turn_effect' ? '回合類效果（可被消除）' : '其他計時效果'}</p>
-                <p className="text-[11px] text-slate-300 leading-relaxed bg-slate-900/50 p-2 rounded border border-white/5 whitespace-pre-wrap">
-                  {timerDetailShown.description || timerDetailShown.name}
-                </p>
-                <div className="mt-3 flex justify-between items-center">
-                  <span className="text-[10px] text-indigo-500/50 font-mono italic uppercase">TIMER_ID: {timerDetailShown.id}</span>
-                  <button 
-                    onClick={() => setTimerDetailShown(null)} 
-                    className="px-2 py-1 bg-slate-800 hover:bg-slate-700 text-[10px] text-slate-400 rounded transition-colors"
-                  >
-                    關閉
-                  </button>
-                </div>
-              </motion.div>
-            </div>
-          )}
-        </AnimatePresence>
-
         {/* Combat Theater */}
         <div className="flex-1 flex flex-col p-6 gap-6 overflow-hidden relative pointer-events-none">
           
@@ -1533,6 +1544,8 @@ export function BattleScreenUI(props: BattleScreenUIProps) {
                             ? 'bg-pink-950/90 border-pink-500 text-pink-200 shadow-[0_0_20px_rgba(236,72,153,0.7)]'
                             : lastActionInfo.type === 'heal'
                             ? 'bg-emerald-950/90 border-emerald-500 text-emerald-200 shadow-[0_0_20px_rgba(16,185,129,0.7)]'
+                            : lastActionInfo.type === 'adjust_up' || lastActionInfo.type === 'adjust_down'
+                            ? 'bg-cyan-950/90 border-cyan-500 text-cyan-200 shadow-[0_0_20px_rgba(6,182,212,0.7)]'
                             : 'bg-amber-950/90 border-red-700 text-red-200 shadow-[0_0_20px_rgba(185,28,28,0.7)]'
                         }`}>
                           <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-black/50 border border-white/10 uppercase tracking-wider">
@@ -1546,9 +1559,10 @@ export function BattleScreenUI(props: BattleScreenUIProps) {
                             {lastActionInfo.type === 'true' && '⚡ 真實傷害'}
                             {lastActionInfo.type === 'absorb' && '⚡ 真實傷害'}
                             {lastActionInfo.type === 'heal' && '💚 體力回復'}
+                            {(lastActionInfo.type === 'adjust_up' || lastActionInfo.type === 'adjust_down') && '🔄 體力調整'}
                           </span>
                           <span className="text-xl font-black font-mono tracking-tight">
-                            {lastActionInfo.type === 'heal' ? `+${lastActionInfo.amount}` : `-${lastActionInfo.amount}`} HP
+                            {lastActionInfo.type === 'heal' || lastActionInfo.type === 'adjust_up' ? `+${lastActionInfo.amount}` : `-${lastActionInfo.amount}`} HP
                           </span>
                         </div>
                       ) : null}
@@ -1889,7 +1903,8 @@ export function BattleScreenUI(props: BattleScreenUIProps) {
                     )}
                     {(() => {
                       const isActiveDetail = (selectedElfDetail.side === 'p1' ? battle.p1 : battle.p2)?.id === selectedElfDetail.elf.id;
-                      const marks = isActiveDetail ? (selectedElfDetail.side === 'p1' ? battle.p1Marks : battle.p2Marks) : (selectedElfDetail.elf.marks || []);
+                      const marks = (isActiveDetail ? (selectedElfDetail.side === 'p1' ? battle.p1Marks : battle.p2Marks) : (selectedElfDetail.elf.marks || []))
+                        .filter(mark => markAppliesToElf(mark, selectedElfDetail.elf));
                       const body = getEffectiveBody(selectedElfDetail.elf, marks as any);
                       return (
                         <span className="ml-1 px-2 py-0.5 rounded text-[10px] font-bold bg-slate-800 text-slate-300" title={`原始：${selectedElfDetail.elf.height ?? 0} cm / ${selectedElfDetail.elf.weight ?? 0} kg`}>
@@ -2059,6 +2074,12 @@ export function BattleScreenUI(props: BattleScreenUIProps) {
                     </p>
                   </div>
                 )}
+                {(selectedElfDetail.elf.alienTraits?.exclusiveTraits || []).map((trait) => (
+                  <div key={trait.name} className="p-2.5 bg-red-950/30 border border-red-800/40 rounded-lg">
+                    <span className="text-xs font-bold text-red-300 block mb-1">🔥 專屬異能特質：{trait.name}</span>
+                    <p className="text-[11px] text-slate-300 leading-relaxed whitespace-pre-wrap">{trait.description}</p>
+                  </div>
+                ))}
               </div>
 
               <div className="mt-4 flex justify-end">

@@ -315,6 +315,7 @@ export function handleOdinSoulMark(ctx: BattleEventContext, event: EffectTiming,
         name: 'ᛏ 戰神符文',
         count: 1,
         displayChar: 'ᛏ',
+        ownerBattleId: selfElf.battleId || selfElf.id,
         description: 'ᛏ 符文：提升所有能力值 20%，每次出戰時與對手發起決鬥（下場後保留）'
       }, actor);
 
@@ -383,6 +384,21 @@ export function handleOdinSoulMark(ctx: BattleEventContext, event: EffectTiming,
         }
       });
     }
+
+    // 技能符文是掛在技能格上的資料，不是精靈印記；變更後必須送出新的技能陣列，
+    // 否則同步狀態雖已更新，React 畫面不會重繪 specialBadge。
+    if (selfElf.skills) {
+      ctx.updateElf(actor, { id: selfElf.id, skills: selfElf.skills.map(skill => ({
+        ...skill,
+        specialBadge: skill.specialBadge ? { ...skill.specialBadge } : undefined,
+      })) });
+    }
+    if (oppElf.skills) {
+      ctx.updateElf(oppActor, { id: oppElf.id, skills: oppElf.skills.map(skill => ({
+        ...skill,
+        specialBadge: skill.specialBadge ? { ...skill.specialBadge } : undefined,
+      })) });
+    }
   }
 
   // 3. 技能使用時 (BEFORE_SKILL)：處理 ᛇ 差額傷害與其他即時效果
@@ -425,6 +441,7 @@ export function handleOdinSoulMark(ctx: BattleEventContext, event: EffectTiming,
         name: 'ᛏ 戰神符文',
         count: 1,
         displayChar: 'ᛏ',
+        ownerBattleId: oppElf.battleId || oppElf.id,
         description: 'ᛏ 符文：提升所有能力值 20%，每次出戰時與對手發起決鬥（下場後保留）'
       }, oppActor);
       applyTiwazStats(oppElf);
@@ -647,6 +664,7 @@ export const odinSkillRegistry: Record<string, (ctx: BattleEventContext) => void
       name: 'ᛏ 戰神符文',
       count: 1,
       displayChar: 'ᛏ',
+      ownerBattleId: selfElf.battleId || selfElf.id,
       description: 'ᛏ 符文：提升所有能力值 20%，每次出戰時與對手發起決鬥（下場後保留）'
     }, actor);
     applyTiwazStats(selfElf);

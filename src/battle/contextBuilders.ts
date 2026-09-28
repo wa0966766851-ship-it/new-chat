@@ -770,6 +770,11 @@ export function buildStatusAPIs(shared: SharedContextDeps): StatusAPIs {
     getStatuses: (e) => getStatuses(e),
     clearTurnEffectsOf: (s) => {
       const c = syncStateRef.current;
+      const protectedElf = s === "p1" ? c.p1 : c.p2;
+      if (protectedElf?.ownTurnEffectsUnclearable) {
+        pushEffect({ type: 'log', side: s, data: { text: `⚡ 【專屬特質】：【${protectedElf.name}】的回合類效果無法被消除！`, type: "effect" } });
+        return false;
+      }
       const timersKey = `${s}Timers` as "p1Timers" | "p2Timers";
       const curTimers = c[timersKey];
       const [next, cleared] = clearTurnEffects(curTimers);
@@ -831,6 +836,13 @@ export function buildStatusAPIs(shared: SharedContextDeps): StatusAPIs {
 
       dispatch({ type: 'UPDATE_ELF', side: tSide, elf: { statStages: nextElf.statStages, skills: nextElf.skills } });
       pushEffect({ type: 'log', side: tSide, data: { text: `【${target.name}】的能力發生了變化！`, type: "status" } });
+      if (filteredChanges.length > 0 && target.paralyzeBothOnOwnStatChangeTurns) {
+        const turns = target.paralyzeBothOnOwnStatChangeTurns;
+        const otherSide = tSide === "p1" ? "p2" : "p1";
+        getBattleEventContext(tSide, true, 0).applyStatusWithImmunityCheck(tSide, "麻痺", turns);
+        getBattleEventContext(tSide, true, 0).applyStatusWithImmunityCheck(otherSide, "麻痺", turns);
+        pushEffect({ type: 'log', side: tSide, data: { text: `⚡ 【異】：自身能力等級被改變，雙方麻痺${turns}回合！`, type: "effect" } });
+      }
     },
     applyShield: (tSide, amount) => {
       const c = syncStateRef.current;
@@ -854,7 +866,7 @@ export function buildStatusAPIs(shared: SharedContextDeps): StatusAPIs {
 }
 
 export function buildStateAPIs(shared: SharedContextDeps): StateAPIs {
-  const { side, syncStateRef, dispatch, pushEffect, isP1, self } = shared;
+  const { side, syncStateRef, dispatch, pushEffect, isP1, self, getBattleEventContext } = shared;
   
   return {
     applyDeathImmunity: (tSide, opts) => {
@@ -978,7 +990,18 @@ export function buildStateAPIs(shared: SharedContextDeps): StateAPIs {
       const c = syncStateRef.current;
       const timersKey = `${s}Timers` as "p1Timers" | "p2Timers";
       const curTimers = c[timersKey];
-      const next = addTimer(curTimers, timer, { isLateMover });
+      const controllerSide = s === "p1" ? "p2" : "p1";
+      const controller = c[controllerSide];
+      let actualTimer = timer;
+      if (timer.kind === "turn_effect" && controller?.collapseOpponentTurnEffectsToOne && timer.remaining > 1) {
+        const reduced = timer.remaining - 1;
+        actualTimer = { ...timer, remaining: 1 };
+        const controllerStatuses = getStatuses(controller);
+        const existing = Math.max(controllerStatuses["麻痺"] || 0, controllerStatuses["麻痹"] || 0, controllerStatuses.paralyzed || 0);
+        getBattleEventContext(controllerSide, true, 0).applyStatusWithImmunityCheck(controllerSide, "麻痺", existing + 1 + reduced);
+        pushEffect({ type: 'log', side: controllerSide, data: { text: `⚡ 【異】：對手回合類效果改為1回合；減少${reduced}回合，自身麻痺增加${reduced + 1}回合！`, type: "effect" } });
+      }
+      const next = addTimer(curTimers, actualTimer, { isLateMover });
       
       syncStateRef.current = {
         ...c,
@@ -989,50 +1012,46 @@ export function buildStateAPIs(shared: SharedContextDeps): StateAPIs {
     },
     updateElf: (tSide, elfUpdates) => {
       const c = syncStateRef.current;
-      const target = tSide === 'p1' ? c.p1 : c.p2;
-      const isUpdatingActive = !elfUpdates.id || elfUpdates.id === target.id;
-      
-      if (isUpdatingActive) {
-        const nextElf = { ...target, ...elfUpdates };
-        syncStateRef.current = {
-          ...c,
-          [tSide]: nextElf,
-          [tSide === 'p1' ? 'p1Team' : 'p2Team']: c[tSide === 'p1' ? 'p1Team' : 'p2Team'].map(e => e.id === nextElf.id ? nextElf : e)
-        };
-        dispatch({ type: 'UPDATE_ELF', side: tSide, elf: elfUpdates });
-      } else {
-        const nextTeam = c[tSide === 'p1' ? 'p1Team' : 'p2Team'].map(e => {
-          if (e.id === elfUpdates.id) {
-            return { ...e, ...elfUpdates };
-          }
-          return e;
-        });
-        syncStateRef.current = {
-          ...c,
-          [tSide === 'p1' ? 'p1Team' : 'p2Team']: nextTeam
-        };
-        dispatch({ type: 'UPDATE_TEAM', side: tSide, team: nextTeam });
-      }
+      const teamKey = tSide === 'p1' ? 'p1Team' : 'p2Team';
+      const activeIndexKey = tSide === 'p1' ? 'p1ActiveIndex' : 'p2ActiveIndex';
+      const team = c[teamKey];
+      const contextualTarget = tSide === side ? self : c[tSide];
+      const requestedId = elfUpdates.battleId || elfUpdates.id || contextualTarget.battleId || contextualTarget.id;
+      const foundIndex = team.findIndex((elf) => (elf.battleId || elf.id) === requestedId || elf.id === requestedId);
+      const targetIndex = foundIndex >= 0 ? foundIndex : c[activeIndexKey];
+      const target = team[targetIndex] || c[tSide];
+      const nextElf = { ...target, ...elfUpdates };
+      const nextTeam = [...team];
+      nextTeam[targetIndex] = nextElf;
+      const isUpdatingActive = targetIndex === c[activeIndexKey];
+
+      syncStateRef.current = {
+        ...c,
+        [teamKey]: nextTeam,
+        ...(isUpdatingActive ? { [tSide]: nextElf } : {})
+      };
+      dispatch({ type: 'UPDATE_ELF', side: tSide, elf: elfUpdates, targetId: target.battleId || target.id });
     },
     updateAnyElf: (tSide, battleId, patch) => {
       const c = syncStateRef.current;
       const targetActive = tSide === 'p1' ? c.p1 : c.p2;
-      const isUpdatingActive = targetActive.id === battleId;
+      const isUpdatingActive = (targetActive.battleId || targetActive.id) === battleId || targetActive.id === battleId;
 
       if (isUpdatingActive) {
-        const nextElf = { ...targetActive, ...patch, id: battleId }; // ensure id is retained
+        // battleId 是單場戰鬥身分，不能回寫覆蓋精靈的資料 ID。
+        const nextElf = { ...targetActive, ...patch };
         syncStateRef.current = {
           ...c,
           [tSide]: nextElf,
           [tSide === 'p1' ? 'p1Team' : 'p2Team']: c[tSide === 'p1' ? 'p1Team' : 'p2Team'].map(e => e.id === nextElf.id ? nextElf : e)
         };
-        dispatch({ type: 'UPDATE_ELF', side: tSide, elf: nextElf });
+        dispatch({ type: 'UPDATE_ELF', side: tSide, elf: nextElf, targetId: battleId });
       } else {
         let changed = false;
         const nextTeam = c[tSide === 'p1' ? 'p1Team' : 'p2Team'].map(e => {
-          if (e.id === battleId) {
+          if ((e.battleId || e.id) === battleId || e.id === battleId) {
             changed = true;
-            return { ...e, ...patch, id: battleId };
+            return { ...e, ...patch };
           }
           return e;
         });

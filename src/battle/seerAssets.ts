@@ -56,6 +56,7 @@ export const CUSTOM_ART: Record<string, string> = {
   "無序墜星": "wuxu_zhuixing",
   "無序蝕言": "wuxu_shiyan",
   "無序六刃": "wuxu_liuren",
+  "異境神霆雷伊": "otherworld_thunder_rey",
 };
 
 export function resolvePetIds(elf: Pick<Elf, "name" | "id"> & { seerId?: number | string }, kind: "head" | "body" = "head"): number[] {

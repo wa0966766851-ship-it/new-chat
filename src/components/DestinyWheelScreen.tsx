@@ -993,6 +993,12 @@ export default function DestinyWheelScreen({
                       {inspectElf.alienTraits.exclusiveTrait.description}
                     </div>
                   )}
+                  {(inspectElf.alienTraits.exclusiveTraits || []).map((trait) => (
+                    <div key={trait.name} className="text-red-200">
+                      <div className="font-bold text-red-300 mb-1">🔥 專屬異能特質：【{trait.name}】</div>
+                      <div className="whitespace-pre-wrap">{trait.description}</div>
+                    </div>
+                  ))}
                   {inspectElf.alienTraits.generalTrait && (
                     <div className="bg-blue-950/30 p-3 rounded-xl border border-blue-500/40 text-xs text-blue-100 leading-relaxed">
                       <div className="font-bold text-blue-300">💠 通用特性：【{inspectElf.alienTraits.generalTrait.name}】 ({inspectElf.alienTraits.generalTrait.description})</div>

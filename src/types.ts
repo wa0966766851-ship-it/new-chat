@@ -222,6 +222,8 @@ export interface Elf {
   alienTraits?: {
     gen2Trait?: { name: string; description: string; mechanics?: Record<string, any> }; // 二代特質 (例如: 無我, 戰士)
     exclusiveTrait?: { name: string; description: string; mechanics?: Record<string, any> }; // 專屬特質 (例如: 無序星魂使徒)
+    /** 同一精靈擁有複數專屬特質時使用；舊資料仍可沿用 exclusiveTrait。 */
+    exclusiveTraits?: Array<{ name: string; description: string; mechanics?: Record<string, any> }>;
     alienTrait?: { name: string; description: string }; // 異能特質 (一代通用特質)
     generalTrait?: { name: string; description: string }; // 通用特性
   };
@@ -328,6 +330,18 @@ export interface Elf {
   bajieMaxHpReductionTurns?: number; // 八戒上限削減剩餘回合
   pitesalaluoFatalSurviveUsed?: boolean; // 皮特薩拉羅名刀是否已觸發
   deathImmunity?: { guardTurns: number; deathImmuneTurns: number; fixedPercentCap?: number; preserveOffField?: boolean };
+  /** 非正體力存活規則（六刃鎖0、雷伊神降負體力）；存放於精靈本體，換場後保留。 */
+  survivalRule?: import('./battle/survivalRules').NonPositiveSurvivalRule;
+  /** body 圖的呈現方式；scene 會保留整張場景圖並柔化矩形邊緣。 */
+  artPresentation?: 'sprite' | 'scene';
+  /** 規則型特質：用資料欄位接入通用引擎，避免以名稱硬編碼。 */
+  suppressAbnormalSideEffectsWhenParalyzed?: boolean;
+  ppLimitIgnoredWhenParalyzedTurns?: number;
+  useAtkSpAtkSumForAttacks?: boolean;
+  treatOpponentBoostAsDoubleDrop?: boolean;
+  ownTurnEffectsUnclearable?: boolean;
+  collapseOpponentTurnEffectsToOne?: boolean;
+  paralyzeBothOnOwnStatChangeTurns?: number;
 }
 
 export interface BattleItem {

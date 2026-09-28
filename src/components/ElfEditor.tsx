@@ -1452,6 +1452,7 @@ export default function ElfEditor({ initialElf, onSaveElf, onBack, initialTab }:
       alienTraits: (!isZhakesi && (gen2TraitName || exTraitName || alienTraitName || generalTraitName)) ? {
         gen2Trait: gen2TraitName ? { name: gen2TraitName, description: gen2TraitDesc } : undefined,
         exclusiveTrait: exTraitName ? { name: exTraitName, description: exTraitDesc } : undefined,
+        exclusiveTraits: initialElf?.alienTraits?.exclusiveTraits,
         alienTrait: alienTraitName ? { name: alienTraitName, description: ALIEN_TRAITS[alienTraitName]?.description || "" } : undefined,
         generalTrait: generalTraitName ? { name: generalTraitName, description: GENERAL_TRAITS[generalTraitName]?.description || "" } : undefined,
       } : undefined,
