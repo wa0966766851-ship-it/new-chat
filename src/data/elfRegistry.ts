@@ -136,6 +136,8 @@ export const ELF_ID_MAPPING: Record<string, string> = {
   // 29. 異境神霆·雷伊
   "otherworld_thunder_rey": "5029",
   "5029": "5029",
+  "holy_miles": "5030",
+  "5030": "5030",
 };
 
 export function getNumericElfId(originalId: string, elfName: string): string {

@@ -51,6 +51,8 @@ export type SoulMarkHandler = (context: BattleEventContext, event: EffectTiming,
 
 
 const SOUL_MARK_MAPPING: Record<string, string> = {
+  "5030": "handleHolyMilesSoulMark",
+  "聖靈邁爾斯": "handleHolyMilesSoulMark",
   "300": "handlePuniBaseSoulMark",
   "1000": "handlePuniBaseSoulMark", // 舊序號相容
   "5000": "handleShenglingPuniSoulMark",
@@ -261,7 +263,7 @@ function initializeRegistries() {
 }
 
 // 會在「對手受到技能攻擊」時被通知 ON_DAMAGED 的魂印（handler 內以 extraData.targetSide 區分自身／對手受擊）
-const ON_DAMAGED_OBSERVER_HANDLERS = new Set(["handleMonkeySoulMark", "handleLisaSoulMark", "handleStarlightRusSoulMark", "handleOtherworldReySoulMark"]);
+const ON_DAMAGED_OBSERVER_HANDLERS = new Set(["handleMonkeySoulMark", "handleLisaSoulMark", "handleStarlightRusSoulMark", "handleOtherworldReySoulMark", "handleHolyMilesSoulMark"]);
 export function observesOpponentDamage(elfName: string): boolean {
   return ON_DAMAGED_OBSERVER_HANDLERS.has(SOUL_MARK_MAPPING[elfName]);
 }

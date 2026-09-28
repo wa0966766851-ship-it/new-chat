@@ -9,6 +9,7 @@ import { getEffectiveInscriptions } from "./inscriptionsCatalog";
 import { parseStatChangesFromText } from "../utils/statChangeManager";
 import { parseStatusesFromText } from "../utils/statusManager";
 import { OTHERWORLD_REY_SEED } from "./otherworldRey";
+import { HOLY_MILES_SEED } from "./holyMiles";
 
 function createRefSkill(
   elfId: string,
@@ -2725,7 +2726,8 @@ const SEED_ELVES: (Omit<Elf, "id" | "calculatedStats" | "currentHp" | "maxHp"> &
       createRefSkill('canglan', '王·深海之吻', '水', '特殊', 160, 5, 0, { isSureHit: true, isFifthSkill: true, fallbackDesc: '攻擊時造成的傷害不會出現微弱(克制關係為微弱時轉變為普通)；無視對手傷害限制效果；無視對手攻擊免疫效果；消除對手回合類效果，消除成功100%依序令對手束縛、凍傷、冰封，若均觸發或任意一項未觸發、對手不存在回合類效果或回合類效果無法消除時令自身免疫下2次異常狀態；將對手所處的異常狀態轉化為冰封，若對手不處於異常狀態則改為100%令對手冰封；附加對手自身最大體力值40%的百分比傷害並附加自身等量護盾(可疊加)，自身存在永恆之水時比例改為60%且額外恢復自身等量體力，對手存在千秋一淚時則吸取前額外汲取對手等同於自身最大體力25%的體力' })
     ]
   },
-  OTHERWORLD_REY_SEED
+  OTHERWORLD_REY_SEED,
+  HOLY_MILES_SEED
 ];
 
 import { getNumericElfId } from './elfRegistry';

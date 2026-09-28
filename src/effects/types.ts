@@ -7,6 +7,7 @@ export enum EffectTiming {
   AFTER_DAMAGE = "AFTER_DAMAGE",
   ON_ENTRANCE = "ON_ENTRANCE",
   BEFORE_ACTION = "BEFORE_ACTION",
+  OPPONENT_ACTION = "OPPONENT_ACTION",
   AFTER_ACTION = "AFTER_ACTION",
   ACTION_END = "ACTION_END",
   EXTRA_ACTION_START = "EXTRA_ACTION_START",
@@ -109,6 +110,7 @@ export interface BattleEventContext {
   goesFirst?: boolean;
   isEntranceTurn?: boolean;
   skill: any;
+  opponentSkill?: Skill | null;
   isHit?: boolean;
   moveIndex?: number;
   activeP1: Elf;

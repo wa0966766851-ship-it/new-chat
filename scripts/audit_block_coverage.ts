@@ -66,9 +66,10 @@ if (details) {
 
 if (check) {
   const failures: string[] = [];
-  if (skills.parsed < 478 || skills.total !== 752) failures.push(`技能覆蓋率退步或資料集改變：${skills.parsed}/${skills.total}`);
+  // 5030 聖靈邁爾斯加入五個技能與四個魂印子句；技能由專屬 handler 處理。
+  if (skills.parsed < 483 || skills.total !== 757) failures.push(`技能覆蓋率退步或資料集改變：${skills.parsed}/${skills.total}`);
   // 5029 異境神霆·雷伊加入 16 個可稽核魂印子句；資料集基準由 409 更新為 427。
-  if (souls.parsed < 104 || souls.total !== 427) failures.push(`魂印覆蓋率退步或資料集改變：${souls.parsed}/${souls.total}`);
+  if (souls.parsed < 104 || souls.total !== 431) failures.push(`魂印覆蓋率退步或資料集改變：${souls.parsed}/${souls.total}`);
 
   for (const name of Object.keys(SKILL_MODE)) {
     const skill = DEFAULT_ELVES.flatMap(elf => elf.skills || []).find(item => item.name === name);

@@ -10,7 +10,7 @@
     "start": "node dist/server.cjs",
     "clean": "rm -rf dist server.js",
     "lint": "tsc --noEmit",
-    "test": "tsx src/tests/battle.units.test.ts && tsx src/tests/blocks.semantic.test.ts && tsx tests/otherworldRey.semantic.test.ts && tsx scripts/gen-handled-skills.ts --check && tsx scripts/audit_block_coverage.ts --check",
+    "test": "node --import tsx src/tests/battle.units.test.ts && node --import tsx src/tests/blocks.semantic.test.ts && node --import tsx tests/otherworldRey.semantic.test.ts && node --import tsx tests/holyMiles.semantic.test.ts && node --import tsx scripts/gen-handled-skills.ts --check && node --import tsx scripts/audit_block_coverage.ts --check",
     "gen:handled-skills": "tsx scripts/gen-handled-skills.ts",
     "audit:blocks": "tsx scripts/audit_block_coverage.ts --details",
     "audit:extra-actions": "tsx scripts/audit_extra_actions.ts",

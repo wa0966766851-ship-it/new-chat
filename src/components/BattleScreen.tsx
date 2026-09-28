@@ -983,6 +983,7 @@ export default function BattleScreen(props: BattleScreenProps) {
       p1FullTeam: cur.p1Team,
       p2FullTeam: cur.p2Team,
       skill: skill || { name: "未知", type: "無", category: "屬性", power: 0, pp: 0 },
+      opponentSkill: isP1 ? cur.p2SelectedSkill : cur.p1SelectedSkill,
       isHit,
       isEntranceTurn,
       moveIndex,
@@ -2221,6 +2222,11 @@ export default function BattleScreen(props: BattleScreenProps) {
       // 咒術師在選擇技能且自身處於詛咒時，先記錄本次魔咒待發狀態。
       TraitsEngine.triggerBeforeAction(ctx);
       triggerSuitEffect(s, EffectTiming.BEFORE_ACTION);
+      // Broadcast the selected move to the defending soul mark through a generic event.
+      const defendingElf = syncStateRef.current[oppSide];
+      if (SoulMarkRegistry[defendingElf.name]) {
+        SoulMarkRegistry[defendingElf.name](getBattleEventContext(oppSide, true, mIdx), EffectTiming.OPPONENT_ACTION, { skill: ctx.skill, side: s });
+      }
       broadcastExtraElfNode("出手流程開始");
 
       let displayName = actor.isConcealed ? "未知精靈" : actor.name;
