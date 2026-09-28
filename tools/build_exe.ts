@@ -86,7 +86,29 @@ run("npm test", shareDir);
 run("npm run build:electron", shareDir);
 // 乾淨副本預設沒有 electron / electron-builder，先補上才打得動
 run("npm install -D electron electron-builder", shareDir);
-run("npx electron-builder --config electron-builder.yml --win nsis portable --publish never", shareDir);
+// Electron 本體約 110MB，GitHub 直連慢時容易 600s 超時。
+// 預設走 npmmirror 鏡像加速，失敗自動重試 3 次；也可用環境變數覆寫。
+if (!process.env.ELECTRON_MIRROR) {
+  process.env.ELECTRON_MIRROR = "https://npmmirror.com/mirrors/electron/";
+}
+if (!process.env.ELECTRON_BUILDER_BINARIES_MIRROR) {
+  process.env.ELECTRON_BUILDER_BINARIES_MIRROR = "https://npmmirror.com/mirrors/electron-builder-binaries/";
+}
+let built = false;
+let lastErr: any = null;
+for (let attempt = 1; attempt <= 3; attempt++) {
+  try {
+    console.log(`electron-builder attempt ${attempt}/3 ...`);
+    run("npx electron-builder --config electron-builder.yml --win nsis portable --publish never", shareDir);
+    built = true;
+    break;
+  } catch (err) {
+    lastErr = err;
+    console.error(`attempt ${attempt} failed, ${attempt < 3 ? "retrying in 10s ..." : "no more retries."}`);
+    if (attempt < 3) execSync("ping -n 10 127.0.0.1 >nul", { cwd: ROOT, stdio: "inherit", shell: "cmd.exe" });
+  }
+}
+if (!built) throw lastErr;
 
 // 步驟4：收集產物到 dist_release/<APP_NAME><VERSION>/
 const appName = "賽爾對戰模擬器";
