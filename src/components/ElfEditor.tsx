@@ -1034,7 +1034,7 @@ export default function ElfEditor({ initialElf, onSaveElf, onBack, initialTab }:
     return list;
   }, []);
 
-  const analyzedKeywords = prompt ? fullDetectionKeywords.filter(k => prompt.includes(k.keyword)) : [];
+  const analyzedKeywords = useMemo(() => prompt ? fullDetectionKeywords.filter(k => prompt.includes(k.keyword)) : [], [prompt, fullDetectionKeywords]);
 
   // Form State
   const [elfName, setElfName] = useState<string>("自訂星皇");
@@ -1151,6 +1151,7 @@ export default function ElfEditor({ initialElf, onSaveElf, onBack, initialTab }:
   const [resistances, setResistances] = useState(initialElf?.resistances || getDefaultResistances());
   const [editingInscIndex, setEditingInscIndex] = useState<number | null>(null);
   const [expandedSkillKey, setExpandedSkillKey] = useState<string | null>(null);
+  const [showSkillPool, setShowSkillPool] = useState(false);
   const [zoomedSkillModal, setZoomedSkillModal] = useState<{ idx: number; isPoolSkill: boolean } | null>(null);
   const [zoomedTraitModal, setZoomedTraitModal] = useState<'gen2' | 'ex' | null>(null);
   const [isSkillStoneModalOpen, setIsSkillStoneModalOpen] = useState<boolean>(false);
@@ -1418,10 +1419,12 @@ export default function ElfEditor({ initialElf, onSaveElf, onBack, initialTab }:
       return;
     }
 
-    const calculated = calculateElfStats(baseStats, 100, undefined, evs, natureModifiers, inscriptions as Inscription[], guildBonuses);
+    const calculated = calculateElfStats(baseStats, 100, initialElf?.ivs, evs, natureModifiers,
+      inscriptions as Inscription[], guildBonuses, initialElf?.hasAnnualBonus);
     const isZhakesi = elfName === "湮滅之主・咤克斯" || initialElf?.id === "zhakesi" || soulMarkName === "咤";
 
     const savedElf: Elf = {
+      ...initialElf,
       id: initialElf?.id || `custom_${Date.now()}`,
       name: elfName,
       type: elfType,
@@ -1441,6 +1444,7 @@ export default function ElfEditor({ initialElf, onSaveElf, onBack, initialTab }:
       destinyRank: destinyRank || undefined,
       description: elfDescription,
       soulMark: {
+        ...initialElf?.soulMark,
         name: soulMarkName,
         description: soulMarkDesc,
         effectType: soulMarkEffectType,
@@ -1651,6 +1655,7 @@ export default function ElfEditor({ initialElf, onSaveElf, onBack, initialTab }:
       isFifthSkill: false
     };
     setSkillPool(prev => [...prev, newSkill]);
+    setShowSkillPool(true);
     alert("✨ 已成功將新普通技能加入【技能預備替換池】！您可以點擊上方出戰配置格的【🔄 從預備池替換】按鈕將其裝備上場！");
   };
 
@@ -1671,6 +1676,7 @@ export default function ElfEditor({ initialElf, onSaveElf, onBack, initialTab }:
       isFifthSkill: true
     };
     setSkillPool(prev => [...prev, newFifth]);
+    setShowSkillPool(true);
     alert("👑 已成功將新第五技能加入【技能預備替換池】！您可以點擊上方第五技能格的【🔄 從預備池替換】按鈕將其裝備上場！");
   };
 
@@ -2253,7 +2259,10 @@ export default function ElfEditor({ initialElf, onSaveElf, onBack, initialTab }:
     );
   };
 
-  const calculatedManualStats = calculateElfStats(baseStats, 100, undefined, evs, natureModifiers, inscriptions as Inscription[], guildBonuses);
+  const calculatedManualStats = useMemo(() => calculateElfStats(
+    baseStats, 100, initialElf?.ivs, evs, natureModifiers, inscriptions as Inscription[],
+    guildBonuses, initialElf?.hasAnnualBonus
+  ), [baseStats, evs, natureModifiers, inscriptions, guildBonuses, initialElf?.ivs, initialElf?.hasAnnualBonus]);
 
   return (
     <div className="w-full max-w-6xl mx-auto px-4 pt-20 pb-8" id="elf-editor-container">
@@ -3601,6 +3610,8 @@ export default function ElfEditor({ initialElf, onSaveElf, onBack, initialTab }:
                   evs={evs}
                   natureModifiers={natureModifiers}
                   inscriptions={inscriptions as Inscription[]}
+                  guildBonuses={guildBonuses}
+                  hasAnnualBonus={initialElf?.hasAnnualBonus}
                   onEvsChange={(newEvs) => setEvs(newEvs)}
                   onNatureChange={(newMods) => setNatureModifiers(newMods)}
                 />
@@ -3956,6 +3967,10 @@ export default function ElfEditor({ initialElf, onSaveElf, onBack, initialTab }:
                   </p>
                 </div>
                 <div className="flex flex-wrap items-center gap-2">
+                  <button type="button" onClick={() => setShowSkillPool(open => !open)}
+                    className="px-3 py-1.5 bg-slate-800 text-slate-200 rounded-xl text-xs font-bold">
+                    {showSkillPool ? "收起預備技能" : `展開預備技能（${skillPool.length}）`}
+                  </button>
                   <button
                     type="button"
                     onClick={handleAddPoolNormalSkill}
@@ -3973,7 +3988,7 @@ export default function ElfEditor({ initialElf, onSaveElf, onBack, initialTab }:
                 </div>
               </div>
 
-              {skillPool.length === 0 ? (
+              {!showSkillPool ? null : skillPool.length === 0 ? (
                 <div className="text-center py-10 bg-[#050608] border border-slate-800/80 rounded-xl text-slate-500 text-xs">
                   目前預備替換池中無技能。點擊上方按鈕立即研發自製招式！
                 </div>

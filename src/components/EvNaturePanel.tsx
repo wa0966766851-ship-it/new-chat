@@ -10,6 +10,8 @@ interface EvNaturePanelProps {
   evs?: BaseStats;
   natureModifiers?: { [key in keyof BaseStats]?: number };
   inscriptions?: { stats: BaseStats }[];
+  guildBonuses?: BaseStats;
+  hasAnnualBonus?: boolean;
   level?: number;
   onEvsChange: (newEvs: BaseStats) => void;
   onNatureChange: (newMods: { [key in keyof BaseStats]: number }) => void;
@@ -22,6 +24,8 @@ export default function EvNaturePanel({
   evs,
   natureModifiers,
   inscriptions,
+  guildBonuses,
+  hasAnnualBonus,
   level = 100,
   onEvsChange,
   onNatureChange,
@@ -42,27 +46,35 @@ export default function EvNaturePanel({
     ivs,
     currentEvs,
     currentMods,
-    inscriptions as Inscription[]
+    inscriptions as Inscription[],
+    guildBonuses,
+    hasAnnualBonus
   );
 
   const handleStatEvChange = (stat: keyof BaseStats, value: number) => {
     if (readonly) return;
     const clampedValue = Math.max(0, Math.min(255, isNaN(value) ? 0 : value));
     
-    // Check total
+    // Reallocate from other stats when all 510 points are already assigned.
+    // This keeps the standard full EV preset editable without a separate clearing step.
+    const nextEvs = { ...currentEvs };
     const otherSum = Object.entries(currentEvs)
       .filter(([k]) => k !== stat)
       .reduce((sum, [, v]) => sum + (v || 0), 0);
-      
-    let finalVal = clampedValue;
-    if (otherSum + finalVal > 510) {
-      finalVal = Math.max(0, 510 - otherSum);
+    let excess = Math.max(0, otherSum + clampedValue - 510);
+    if (excess > 0) {
+      const donors = (Object.keys(nextEvs) as (keyof BaseStats)[])
+        .filter(key => key !== stat)
+        .sort((a, b) => nextEvs[b] - nextEvs[a]);
+      for (const donor of donors) {
+        const taken = Math.min(excess, nextEvs[donor]);
+        nextEvs[donor] -= taken;
+        excess -= taken;
+        if (!excess) break;
+      }
     }
-
-    onEvsChange({
-      ...currentEvs,
-      [stat]: finalVal
-    });
+    nextEvs[stat] = clampedValue - excess;
+    onEvsChange(nextEvs);
   };
 
   const handleApplyPreset = (presetEvs: BaseStats) => {
@@ -86,14 +98,23 @@ export default function EvNaturePanel({
     if (type === "up") {
       targetUp = stat === "none" ? null : stat;
       if (targetUp === targetDown) targetDown = null;
+      if (targetUp && !targetDown) targetDown = nonHpStats.find(s => s !== targetUp) || null;
     } else {
       targetDown = stat === "none" ? null : stat;
       if (targetDown === targetUp) targetUp = null;
+      if (targetDown && !targetUp) targetUp = nonHpStats.find(s => s !== targetDown) || null;
     }
 
     if (targetUp) nextMods[targetUp] = 1.1;
     if (targetDown) nextMods[targetDown] = 0.9;
     
+    if (!targetUp || !targetDown) {
+      nextMods.atk = 1.0;
+      nextMods.def = 1.0;
+      nextMods.spatk = 1.0;
+      nextMods.spdef = 1.0;
+      nextMods.speed = 1.0;
+    }
     onNatureChange(nextMods);
   };
 

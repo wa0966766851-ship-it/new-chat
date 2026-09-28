@@ -125,7 +125,7 @@ function AppContent() {
   }, []);
 
   // Save new elf to localStorage
-  const allElvesCombined = [...customElves, ...DEFAULT_ELVES].filter((elf, index, self) => {
+  const allElvesCombined = React.useMemo(() => allElves.filter((elf, index, self) => {
     if (!elf) return false;
     const key = elf.id || elf.name;
     if (deletedElfIds.includes(key) || deletedElfIds.includes(elf.name) || (elf.id && deletedElfIds.includes(elf.id))) {
@@ -155,13 +155,14 @@ function AppContent() {
     }
     
     if (needsRecalc) {
-      const calc = calculateElfStats(updated.baseStats, updated.level || 100, updated.ivs, updated.evs, updated.natureModifiers, updated.inscriptions);
+      const calc = calculateElfStats(updated.baseStats, updated.level || 100, updated.ivs, updated.evs,
+        updated.natureModifiers, updated.inscriptions, updated.guildBonuses, updated.hasAnnualBonus);
       updated.calculatedStats = calc;
       updated.maxHp = calc.hp;
       updated.currentHp = calc.hp;
     }
     return updated;
-  });
+  }), [allElves, deletedElfIds, customSkillsMap, customInscriptionsMap, customResistancesMap]);
   elvesRef.current = allElvesCombined;
 
 
@@ -536,4 +537,3 @@ function AppContent() {
     </div>
   );
 }
-

@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { Elf } from "../../types";
+import { ElfAvatar, TypeIcon } from "../SeerImages";
 import { TitleDefinition } from "../../data/titles";
 import { SuitDefinition } from "../../data/suitsAndEyewears";
 import { 
@@ -1004,7 +1005,7 @@ export default function InterstellarRun({
                                 className="p-4 bg-slate-950/40 border border-white/5 rounded-2xl flex items-center gap-4 hover:border-indigo-500/20 transition-all group"
                               >
                                 <div className="w-16 h-16 bg-slate-900 rounded-xl overflow-hidden flex items-center justify-center border border-white/10 shadow-inner">
-                                  <img src={elf.path} alt={elf.name} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300" />
+                                  <ElfAvatar elf={elf} kind="head" className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300" />
                                 </div>
                                 <div className="flex-grow min-w-0">
                                   <div className="flex items-center gap-2">
@@ -1013,7 +1014,7 @@ export default function InterstellarRun({
                                       grade === "A" ? "bg-purple-500/20 text-purple-400" : grade === "B" ? "bg-blue-500/20 text-blue-400" : "bg-slate-500/20 text-slate-400"
                                     }`}>{grade} 級</span>
                                   </div>
-                                  <div className="text-[10px] text-slate-500 mt-1">屬性：{elf.type} | 總和：{getStatsTotal(elf.baseStats)}</div>
+                                  <div className="text-[10px] text-slate-500 mt-1 inline-flex items-center gap-1">屬性：<TypeIcon type={elf.type} size={12} />{elf.type} | 總和：{getStatsTotal(elf.baseStats)}</div>
                                   <div className="flex items-center gap-3 mt-2">
                                     <div className="flex items-center gap-1 text-[10px] text-slate-500"><Sword className="w-3 h-3" /> {elf.baseStats.atk}</div>
                                     <div className="flex items-center gap-1 text-[10px] text-slate-500"><Shield className="w-3 h-3" /> {elf.baseStats.def}</div>
@@ -1070,7 +1071,7 @@ export default function InterstellarRun({
                             
                             <div className="text-center py-4">
                               <div className="w-24 h-24 bg-slate-950/60 rounded-3xl mx-auto mb-4 border border-white/5 flex items-center justify-center overflow-hidden">
-                                <img src={elf.path} alt={elf.name} className="w-full h-full object-cover group-hover:scale-110 transition-transform" />
+                                <ElfAvatar elf={elf} kind="head" className="w-full h-full object-cover group-hover:scale-110 transition-transform" />
                               </div>
                               <div className="flex items-center justify-center gap-2">
                                 <h4 className="text-lg font-black text-white">{elf.name}</h4>
@@ -1078,7 +1079,7 @@ export default function InterstellarRun({
                                   grade === "SS" ? "bg-amber-500 text-slate-950" : "bg-indigo-500/20 text-indigo-400"
                                 }`}>{grade}</span>
                               </div>
-                              <p className="text-xs text-slate-500 mt-1">屬性：{elf.type} | 戰力值：{getStatsTotal(elf.baseStats)}</p>
+                              <p className="text-xs text-slate-500 mt-1 inline-flex items-center gap-1">屬性：<TypeIcon type={elf.type} size={13} />{elf.type} | 戰力值：{getStatsTotal(elf.baseStats)}</p>
                               
                               <div className="grid grid-cols-3 gap-2 mt-4 bg-slate-950/50 p-3 rounded-2xl border border-white/5">
                                 <div className="text-center"><span className="text-[9px] text-slate-500 block">攻擊</span><span className="text-xs font-bold text-slate-300">{elf.baseStats.atk}</span></div>
@@ -1133,7 +1134,7 @@ export default function InterstellarRun({
                               className="p-4 bg-slate-900 border border-white/5 hover:border-red-500/50 hover:bg-red-950/10 rounded-2xl flex items-center gap-4 transition-all cursor-pointer group"
                             >
                               <div className="w-14 h-14 bg-slate-950 rounded-xl overflow-hidden border border-white/5 flex items-center justify-center">
-                                <img src={elf.path} alt={elf.name} className="w-full h-full object-cover" />
+                                <ElfAvatar elf={elf} kind="head" className="w-full h-full object-cover" />
                               </div>
                               <div className="flex-grow">
                                 <div className="flex items-center gap-2">
@@ -1478,7 +1479,7 @@ export default function InterstellarRun({
                           }`}
                         >
                           <div className="w-12 h-12 bg-slate-900 rounded-xl overflow-hidden flex items-center justify-center border border-white/10">
-                            <img src={elf.avatar} alt={elf.name} className="w-full h-full object-cover" />
+                            <ElfAvatar elf={elf} kind="head" className="w-full h-full object-cover" />
                           </div>
                           <div className="flex-grow">
                             <span className="font-bold block">{elf.name}</span>
@@ -1695,7 +1696,7 @@ export default function InterstellarRun({
                            return (
                              <div key={idx} className="p-4 bg-slate-950/50 border border-white/5 rounded-2xl flex items-center gap-4 group">
                                <div className="w-14 h-14 bg-slate-900 rounded-2xl flex items-center justify-center text-xl overflow-hidden border border-white/10">
-                                 <img src={elf.path} alt={elf.name} className="w-full h-full object-cover" />
+                                 <ElfAvatar elf={elf} kind="head" className="w-full h-full object-cover" />
                                </div>
                                <div className="flex-grow">
                                  <div className="flex items-center gap-2">

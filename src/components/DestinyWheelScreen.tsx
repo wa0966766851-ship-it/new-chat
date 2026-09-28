@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { TypeIcon } from "./SeerImages";
+import { ElfAvatar, TypeIcon } from "./SeerImages";
 import { Elf, BattleMode } from "../types";
 import { DestinyElfInstance, perform12Pull, simulateAiBan, simulateAiPick } from "../utils/destinyGacha";
 import { motion, AnimatePresence } from "motion/react";
@@ -485,13 +485,7 @@ export default function DestinyWheelScreen({
                       </div>
 
                       <div className="flex-1 flex items-center justify-center my-4 overflow-hidden">
-                        {elf.path ? (
-                          <img src={elf.path || undefined} alt={elf.name} className="w-full h-full object-contain group-hover:scale-110 transition duration-300" />
-                        ) : (
-                          <div className="w-12 h-12 rounded-full bg-slate-800 flex items-center justify-center text-xl font-black">
-                            {elf.name.substring(0, 2)}
-                          </div>
-                        )}
+                        <ElfAvatar elf={elf} kind="body" className="max-w-full max-h-full object-contain group-hover:scale-110 transition duration-300" />
                       </div>
 
                       <div className="text-center z-10">
@@ -554,13 +548,7 @@ export default function DestinyWheelScreen({
                       </div>
 
                       <div className="flex-1 flex items-center justify-center my-4 overflow-hidden">
-                        {elf.path ? (
-                          <img src={elf.path || undefined} alt={elf.name} className="w-full h-full object-contain group-hover:scale-110 transition duration-300" />
-                        ) : (
-                          <div className="w-12 h-12 rounded-full bg-slate-800 flex items-center justify-center text-xl font-black">
-                            {elf.name.substring(0, 2)}
-                          </div>
-                        )}
+                        <ElfAvatar elf={elf} kind="body" className="max-w-full max-h-full object-contain group-hover:scale-110 transition duration-300" />
                       </div>
 
                       <div className="text-center z-10">
@@ -636,13 +624,7 @@ export default function DestinyWheelScreen({
                       </div>
 
                       <div className="flex-1 flex items-center justify-center my-4 overflow-hidden">
-                        {elf.path ? (
-                          <img src={elf.path || undefined} alt={elf.name} className="w-full h-full object-contain" />
-                        ) : (
-                          <div className="w-12 h-12 rounded-full bg-slate-800 flex items-center justify-center text-xl font-black">
-                            {elf.name.substring(0, 2)}
-                          </div>
-                        )}
+                        <ElfAvatar elf={elf} kind="body" className="max-w-full max-h-full object-contain" />
                       </div>
 
                       <div className="text-center z-10">
@@ -695,13 +677,7 @@ export default function DestinyWheelScreen({
                       </div>
 
                       <div className="flex-1 flex items-center justify-center my-4 overflow-hidden">
-                        {elf.path ? (
-                          <img src={elf.path || undefined} alt={elf.name} className="w-full h-full object-contain" />
-                        ) : (
-                          <div className="w-12 h-12 rounded-full bg-slate-800 flex items-center justify-center text-xl font-black">
-                            {elf.name.substring(0, 2)}
-                          </div>
-                        )}
+                        <ElfAvatar elf={elf} kind="body" className="max-w-full max-h-full object-contain" />
                       </div>
 
                       <div className="text-center z-10">
@@ -793,13 +769,7 @@ export default function DestinyWheelScreen({
                       )}
 
                       <div className="flex-1 flex items-center justify-center my-4 overflow-hidden">
-                        {elf.path ? (
-                          <img src={elf.path || undefined} alt={elf.name} className="w-full h-full object-contain" />
-                        ) : (
-                          <div className="w-12 h-12 rounded-full bg-slate-800 flex items-center justify-center text-xl font-black">
-                            {elf.name.substring(0, 2)}
-                          </div>
-                        )}
+                        <ElfAvatar elf={elf} kind="body" className="max-w-full max-h-full object-contain" />
                       </div>
 
                       <div className="text-center z-10">
@@ -882,13 +852,7 @@ export default function DestinyWheelScreen({
                       )}
 
                       <div className="flex-1 flex items-center justify-center my-4 overflow-hidden">
-                        {elf.path ? (
-                          <img src={elf.path || undefined} alt={elf.name} className="w-full h-full object-contain" />
-                        ) : (
-                          <div className="w-12 h-12 rounded-full bg-slate-800 flex items-center justify-center text-xl font-black">
-                            {elf.name.substring(0, 2)}
-                          </div>
-                        )}
+                        <ElfAvatar elf={elf} kind="body" className="max-w-full max-h-full object-contain" />
                       </div>
 
                       <div className="text-center z-10">
@@ -953,11 +917,7 @@ export default function DestinyWheelScreen({
 
               <div className="flex items-center gap-4 mb-4 border-b border-slate-800 pb-4">
                 <div className="w-16 h-16 rounded-xl bg-slate-950 border border-slate-700 flex items-center justify-center overflow-hidden">
-                  {inspectElf.path ? (
-                    <img src={inspectElf.path || undefined} alt={inspectElf.name} className="w-full h-full object-contain" />
-                  ) : (
-                    <span className="text-2xl font-black">{inspectElf.name.substring(0, 2)}</span>
-                  )}
+                  <ElfAvatar elf={inspectElf} kind="head" className="w-full h-full object-contain" />
                 </div>
                 <div>
                   <div className="flex items-center gap-2">

@@ -148,7 +148,7 @@ export function applyElfOverrides(elf: any, defaultElves: any[]) {
   let updated = { ...elf };
   let needsRecalc = false;
 
-  if (updated.name === "星光·魯斯王" || updated.id === "5010" || updated.id === "1007" || updated.id === "starlight_rus") {
+  if (!updated.isCustom && (updated.name === "星光·魯斯王" || updated.id === "5010" || updated.id === "1007" || updated.id === "starlight_rus")) {
     updated.baseStats = { hp: 170, atk: 142, def: 114, spatk: 70, spdef: 114, speed: 135 };
     needsRecalc = true;
   }

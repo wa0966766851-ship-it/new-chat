@@ -20,11 +20,8 @@ function useSeerIndexReady() {
 export function ChainImage({ urls, fallback, className, style, alt }: {
   urls: string[]; fallback?: React.ReactNode; className?: string; style?: React.CSSProperties; alt?: string;
 }) {
-  const list = urls.filter(u => !failed.has(u));
-  const key = list.join("|");
-  const [i, setI] = useState(0);
-  useEffect(() => setI(0), [key]);
-  const src = list[i];
+  const [, refresh] = useState(0);
+  const src = urls.find(u => !failed.has(u));
   if (!src) return <>{fallback ?? null}</>;
   return (
     <img
@@ -33,7 +30,7 @@ export function ChainImage({ urls, fallback, className, style, alt }: {
       draggable={false}
       className={className}
       style={style}
-      onError={() => { failed.add(src); setI(n => n + 1); }}
+      onError={() => { failed.add(src); refresh(n => n + 1); }}
     />
   );
 }

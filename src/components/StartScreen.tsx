@@ -1,7 +1,8 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { Elf, BattleMode, Inscription } from "../types";
 import { SEER_TYPES, calculateElfStats, getDefaultEvs, getAttributeBadgeColor } from "../utils/statCalculator";
 import { ElfAvatar, TypeIcon } from "./SeerImages";
+import EvNaturePanel from "./EvNaturePanel";
 import { TypeMatchupPanel } from "./TypeMatchupPanel";
 import { isStoneThrower } from "../data/skillStones";
 import { formatEffectText } from "../utils/descFormat";
@@ -164,6 +165,25 @@ export default function StartScreen({
   const [analyzeText, setAnalyzeText] = useState<string>("");
   const [showAnalyzeModal, setShowAnalyzeModal] = useState<Elf | null>(null);
   const [showDetailModal, setShowDetailModal] = useState<Elf | null>(null);
+  const detailStats = useMemo(() => showDetailModal ? calculateElfStats(
+    showDetailModal.baseStats, showDetailModal.level || 100, showDetailModal.ivs,
+    showDetailModal.evs, showDetailModal.natureModifiers,
+    showDetailModal.inscriptions as Inscription[], showDetailModal.guildBonuses,
+    showDetailModal.hasAnnualBonus
+  ) : null, [showDetailModal]);
+
+  const updateTraining = (changes: Pick<Elf, "evs" | "natureModifiers">) => {
+    if (!showDetailModal) return;
+    const nextElf = { ...showDetailModal, ...changes };
+    const stats = calculateElfStats(nextElf.baseStats, nextElf.level || 100, nextElf.ivs,
+      nextElf.evs, nextElf.natureModifiers, nextElf.inscriptions as Inscription[],
+      nextElf.guildBonuses, nextElf.hasAnnualBonus);
+    nextElf.calculatedStats = stats;
+    nextElf.maxHp = stats.hp;
+    nextElf.currentHp = stats.hp;
+    setShowDetailModal(nextElf);
+    onUpdateElf(nextElf);
+  };
   // Esc 關閉：先關技能替換庫，再關詳情
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -385,15 +405,22 @@ export default function StartScreen({
         if (latest) {
           const inscChanged = JSON.stringify(latest.inscriptions) !== JSON.stringify(inst.inscriptions);
           const statsChanged = JSON.stringify(latest.calculatedStats) !== JSON.stringify(inst.calculatedStats);
+          const trainingChanged = JSON.stringify(latest.evs) !== JSON.stringify(inst.evs)
+            || JSON.stringify(latest.natureModifiers) !== JSON.stringify(inst.natureModifiers)
+            || JSON.stringify(latest.guildBonuses) !== JSON.stringify(inst.guildBonuses);
           const poolChanged = JSON.stringify(latest.skillPool) !== JSON.stringify(inst.skillPool);
           const soulMarkChanged = JSON.stringify(latest.soulMark) !== JSON.stringify(inst.soulMark);
           const descChanged = latest.description !== inst.description;
           const nameChanged = latest.name !== inst.name;
           const typeChanged = latest.type !== inst.type;
-          const skillsChanged = JSON.stringify(latest.skills) !== JSON.stringify(inst.skills);
+          const equippedSkills = inst.skills?.map(skill => {
+            const { currentPp, ...saved } = skill as typeof skill & { currentPp?: number };
+            return saved;
+          });
+          const skillsChanged = JSON.stringify(latest.skills) !== JSON.stringify(equippedSkills);
           const missingSkills = !inst.skills || inst.skills.length === 0;
 
-          if (inscChanged || statsChanged || poolChanged || soulMarkChanged || descChanged || nameChanged || typeChanged || skillsChanged || missingSkills) {
+          if (inscChanged || statsChanged || trainingChanged || poolChanged || soulMarkChanged || descChanged || nameChanged || typeChanged || skillsChanged || missingSkills) {
             changed = true;
             return {
               ...inst,
@@ -402,7 +429,13 @@ export default function StartScreen({
               description: latest.description,
               soulMark: latest.soulMark,
               inscriptions: latest.inscriptions,
-              skills: inst.skills && inst.skills.length > 0 ? inst.skills : (latest.skills || inst.skills),
+              evs: latest.evs,
+              natureModifiers: latest.natureModifiers,
+              guildBonuses: latest.guildBonuses,
+              skills: (latest.skills || inst.skills || []).map(skill => ({
+                ...skill,
+                currentPp: inst.skills?.find(old => old.name === skill.name)?.currentPp ?? skill.pp,
+              })),
               skillPool: latest.skillPool,
               calculatedStats: latest.calculatedStats,
               maxHp: latest.maxHp,
@@ -454,7 +487,7 @@ export default function StartScreen({
       showDetailModal.ivs,
       showDetailModal.evs,
       showDetailModal.natureModifiers,
-      nextInsc as Inscription[]
+      nextInsc as Inscription[], showDetailModal.guildBonuses, showDetailModal.hasAnnualBonus
     );
 
     const nextElf: Elf = {
@@ -2485,8 +2518,7 @@ export default function StartScreen({
                   </div>
                   <div className="grid grid-cols-3 sm:grid-cols-6 gap-2.5">
                     {(['hp', 'atk', 'def', 'spatk', 'spdef', 'speed'] as const).map((key) => [key, (showDetailModal.baseStats as any)?.[key] ?? 0] as [string, number]).map(([key, baseVal]) => {
-                      const calcStats = calculateElfStats(showDetailModal.baseStats, 100, showDetailModal.ivs, showDetailModal.evs, showDetailModal.natureModifiers, showDetailModal.inscriptions as Inscription[]);
-                      const calcVal = (calcStats as any)[key] || baseVal;
+                      const calcVal = (detailStats as any)?.[key] ?? baseVal;
                       const defaultEvsMap = getDefaultEvs(showDetailModal.baseStats);
                       const evVal = (showDetailModal.evs as any)?.[key] ?? (defaultEvsMap as any)[key] ?? 0;
                       const modVal = (showDetailModal.natureModifiers as any)?.[key] || 1.0;
@@ -2504,6 +2536,18 @@ export default function StartScreen({
                     })}
                   </div>
                 </div>
+
+                <EvNaturePanel
+                  baseStats={showDetailModal.baseStats}
+                  ivs={showDetailModal.ivs}
+                  evs={showDetailModal.evs}
+                  natureModifiers={showDetailModal.natureModifiers}
+                  inscriptions={showDetailModal.inscriptions as Inscription[]}
+                  guildBonuses={showDetailModal.guildBonuses}
+                  hasAnnualBonus={showDetailModal.hasAnnualBonus}
+                  onEvsChange={evs => updateTraining({ evs })}
+                  onNatureChange={natureModifiers => updateTraining({ natureModifiers })}
+                />
 
                 {/* Resistance Panel in Detail Modal */}
                 <div className="ios-card p-3">
@@ -3517,13 +3561,7 @@ export default function StartScreen({
                         )}
 
                         <div className="flex-1 flex items-center justify-center my-2 overflow-hidden relative">
-                          {elf.path ? (
-                            <img src={elf.path} alt={elf.name} className="w-full h-full object-contain" />
-                          ) : (
-                            <div className="w-12 h-12 rounded-full bg-slate-800 flex items-center justify-center text-xl font-black text-slate-500">
-                              {elf.name.substring(0, 2)}
-                            </div>
-                          )}
+                          <ElfAvatar elf={elf} kind="body" className="max-w-full max-h-full object-contain" />
                         </div>
 
                         <div className="text-center z-10">
@@ -3626,13 +3664,7 @@ export default function StartScreen({
                         )}
 
                         <div className="flex-1 flex items-center justify-center my-2 overflow-hidden relative">
-                          {elf.path ? (
-                            <img src={elf.path} alt={elf.name} className="w-full h-full object-contain scale-x-[-1]" />
-                          ) : (
-                            <div className="w-12 h-12 rounded-full bg-slate-800 flex items-center justify-center text-xl font-black text-slate-500">
-                              {elf.name.substring(0, 2)}
-                            </div>
-                          )}
+                          <ElfAvatar elf={elf} kind="body" className="max-w-full max-h-full object-contain scale-x-[-1]" />
                         </div>
 
                         <div className="text-center z-10">
