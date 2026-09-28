@@ -486,9 +486,34 @@ async function startServer() {
     });
   }
 
-  app.listen(PORT, "0.0.0.0", () => {
-    console.log(`Server running on http://localhost:${PORT}`);
-  });
+  const startPort = Number(process.env.PORT || 3000);
+  const maxTries = 20;
+  const listenOnce = (port: number): Promise<number> =>
+    new Promise((resolve, reject) => {
+      const server = app.listen(port, "0.0.0.0", () => {
+        console.log(`Server running on http://localhost:${port}`);
+        resolve(port);
+      });
+      server.on("error", (err: any) => {
+        if (err && err.code === "EADDRINUSE") reject(err);
+        else reject(err);
+      });
+    });
+  let port = startPort;
+  for (let i = 0; i < maxTries; i++) {
+    try {
+      await listenOnce(port);
+      if (port !== startPort) console.log(`Port ${startPort} busy, switched to ${port}`);
+      return;
+    } catch (err: any) {
+      if (err && err.code === "EADDRINUSE") {
+        port += 1;
+        continue;
+      }
+      throw err;
+    }
+  }
+  throw new Error(`No free port between ${startPort} and ${startPort + maxTries - 1}`);
 }
 
 app.post("/api/get-title", async (req, res) => {

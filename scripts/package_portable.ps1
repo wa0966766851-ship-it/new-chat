@@ -27,6 +27,7 @@ foreach ($optional in @(([char]0x7CFB), "pet", ".seer-cache")) {
 $node = (Get-Command node.exe).Source
 Copy-Item $node (Join-Path $stage "node.exe") -Force
 Copy-Item (Join-Path $root "packaging\launch-portable.cmd") (Join-Path $stage "launch-portable.cmd") -Force
+Copy-Item (Join-Path $root "packaging\stop-portable.cmd") (Join-Path $stage "stop-portable.cmd") -Force
 
 $zip = Join-Path $out "seer-battle-simulator-portable.zip"
 Compress-Archive -Path (Join-Path $stage "*") -DestinationPath $zip -CompressionLevel Optimal
