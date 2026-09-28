@@ -15,4 +15,5 @@ _asset_backup/
 pet/
 images/
 public/seer/
-public/elf-art/
+# public/elf-art 是 AI 自繪圖，跟著倉庫走（雷伊、無序三隻）
+# public/seer/ 是官方圖快照，不進版控，靠 SeerAPI 遠端補
