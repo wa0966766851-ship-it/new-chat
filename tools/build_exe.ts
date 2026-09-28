@@ -125,8 +125,9 @@ const copyRecursive = (src: string, dest: string) => {
     else fs.copyFileSync(s, d);
   }
 };
-// electron-builder 會把安裝包吐到 dist/（win nsis + portable），全部搬過去
-for (const cand of [shareDist, shareDir]) {
+// electron-builder 會把安裝包吐到 dist-electron/（已在 yml 用 directories.output 分開，
+// 避免跟 vite 的 dist/ 混在一起自己包自己），全部搬過去
+for (const cand of [path.join(shareDir, "dist-electron"), shareDir]) {
   if (!fs.existsSync(cand)) continue;
   for (const name of fs.readdirSync(cand)) {
     if (/\.(exe|msi|zip|yml|blockmap)$/i.test(name)) {

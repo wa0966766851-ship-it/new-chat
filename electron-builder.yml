@@ -1,13 +1,19 @@
 appId: com.seer.battle.simulator
 productName: 賽爾對戰模擬器
 artifactName: 賽爾對戰模擬器-${version}-${os}-${arch}.${ext}
+directories:
+  output: dist-electron
 asar: true
+npmRebuild: false
 files:
   - electron/**/*
   - package.json
 extraResources:
   - from: dist
     to: dist
+    filter:
+      - "!win-unpacked"
+      - "!builder-effective-config.yaml"
   - from: images
     to: images
   - from: public
@@ -16,9 +22,8 @@ extraResources:
     to: 系
   - from: pet
     to: pet
-  - from: .seer-cache
-    to: .seer-cache
 win:
+  signAndEditExecutable: false
   target:
     - nsis
     - portable
