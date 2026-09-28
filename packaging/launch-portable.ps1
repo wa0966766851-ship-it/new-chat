@@ -5,10 +5,23 @@ Write-Host ' Seer Battle Simulator - Portable Launcher (ps1)'
 Write-Host '==============================================='
 Write-Host ''
 
-# 0. Resolve roots: support both portable root and repo packaging/ folder
+# 0. Resolve roots: launcher may sit in portable root, dist/, or repo packaging/
 $scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
-$leaf = Split-Path -Leaf $scriptDir
-if ($leaf -eq 'packaging') { $appRoot = Split-Path -Parent $scriptDir } else { $appRoot = $scriptDir }
+function Find-AppRoot([string]$start) {
+  $cur = $start
+  for ($i = 0; $i -lt 4; $i++) {
+    if ($cur -and (Test-Path -LiteralPath (Join-Path $cur 'dist\index.html'))) { return $cur }
+    if ($cur -and (Test-Path -LiteralPath (Join-Path $cur 'server.single.cjs'))) { return $cur }
+    $parent = Split-Path -Parent $cur
+    if (-not $parent -or $parent -eq $cur) { break }
+    $cur = $parent
+  }
+  # fallback: if we started inside dist/, its parent is the root
+  if ((Split-Path -Leaf $start) -eq 'dist') { return (Split-Path -Parent $start) }
+  if ((Split-Path -Leaf $start) -eq 'packaging') { return (Split-Path -Parent $start) }
+  return $start
+}
+$appRoot = Find-AppRoot $scriptDir
 
 # node.exe: portable root first, then system PATH
 $nodeLocal = Join-Path $appRoot 'node.exe'
@@ -44,8 +57,8 @@ if ($serverCjs) { Write-Host ('Server file:  ' + $serverCjs) }
 if ($nodeExe) { Write-Host ('Node:         ' + $nodeExe) }
 Write-Host ''
 
-if (-not (Test-Path -LiteralPath $nodeExe)) {
-  Write-Host '[ERROR] node.exe not found. Unzip the WHOLE zip.'
+if (-not $nodeExe) {
+  Write-Host '[ERROR] node.exe not found. Put launcher next to node.exe or install Node.js.'
   Read-Host 'Press Enter to exit'
   exit 1
 }
@@ -54,7 +67,7 @@ if (-not $serverCjs) {
   Read-Host 'Press Enter to exit'
   exit 1
 }
-if (-not (Test-Path -LiteralPath $indexHtml)) {
+if (-not $indexHtml) {
   Write-Host '[ERROR] dist\index.html not found. Incomplete unzip.'
   Read-Host 'Press Enter to exit'
   exit 1
