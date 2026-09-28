@@ -115,4 +115,4 @@ $sedFileList
 }
 
 Write-Host "Created ZIP: $zip"
-Write-Host "IExpress output (if available): $out\seer-battle-simulator.exe"
+Write-Host ("IExpress output (if available): " + (Join-Path $out "seer-battle-simulator.exe"))
