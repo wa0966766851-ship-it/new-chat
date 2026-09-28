@@ -187,7 +187,7 @@ const SEED_ELVES: (Omit<Elf, "id" | "calculatedStats" | "currentHp" | "maxHp"> &
     },
     skills: [
       createRefSkill("warrior_black", "雙重暗影", "暗影", "物理", 150, 5, 0, { fallbackDesc: "令對手防禦 -1，並 100% 令對手進入害怕狀態" }),
-      createRefSkill("warrior_black", "夜魔之球", "暗影", "特殊", 85, 15, 1, { fallbackDesc: "先制+1；附加對手當前體力 15% 的固定傷害" }),
+      createRefSkill("warrior_black", "夜魔之球", "暗影", "特殊", 85, 15, 1, { fallbackDesc: "先制+1；附加對手當前體力 15% 的百分比傷害" }),
       createRefSkill("warrior_black", "幽冥頓悟", "無屬性", "屬性", 0, 10, 0, { fallbackDesc: "必中；自身全屬性+1，並恢復自身 1/3 最大體力" }),
       createRefSkill("warrior_black", "狂夜屠戮", "普通", "物理", 130, 10, 0, { fallbackDesc: "造成大量物理攻擊傷害" }),
       createRefSkill("warrior_black", "夜魔神襲", "暗影", "特殊", 160, 5, 0, { fallbackDesc: "必中；解除自身能力下降狀態；造成傷害的 50% 恢復自身體力", isFifthSkill: true })

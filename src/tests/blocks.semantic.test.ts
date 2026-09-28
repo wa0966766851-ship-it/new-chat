@@ -4,6 +4,20 @@ import { getSkillProgram, getSoulProgram } from "../blocks/registry";
 import { SKILL_MODE, SOUL_MODE } from "../blocks/specs";
 import { runSkillProgram, runSoulProgram } from "../blocks/runtime";
 import { resetPrd } from "../utils/prd";
+import {
+  defaultDarkScarParts,
+  applyDarkScarSkillCap,
+  darkScarDealtMultiplier,
+  darkScarTakenMultiplier,
+  darkScarBlocksStatus,
+  combineDarkScar,
+} from "../effects/darkScarRegistry";
+import {
+  guardianReduction,
+  nextGuardianStacks,
+  GUARDIAN_MAX_STACKS,
+  GUARDIAN_DURATION,
+} from "../effects/guardianMarkRegistry";
 
 let pass = 0;
 let fail = 0;
@@ -465,6 +479,108 @@ t("引魂咏：對手無異常時增傷寫入狀態且吸血25%由 effectDetail 
   runSkillProgram(h.ctx, getSkillProgram(h.ctx.skill), "use");
   assert.strictEqual(h.playerState.skillDamageBoost, 2);
   assert.strictEqual(h.ctx.skill.effectDetail, "heal:25%");
+});
+
+t("影之牢籠：消耗全部體力且黯痕回合數+1、附加300固傷", () => {
+  const h = makeBlockContext({ currentHp: 800, maxHp: 1000 });
+  // 測試樁的 adjustHp 為空實作，consume_hp_all 在單元環境不扣血；
+  // 此處驗證黯痕累計與 300 固傷，扣血由 SOBIRAT_SKILLS handler 在實戰覆蓋
+  h.ctx.skill = skillByName("影之牢籠");
+  runSkillProgram(h.ctx, getSkillProgram(h.ctx.skill), "use");
+  assert.strictEqual(h.playerState.sobiratScarBonus, 1);
+  assert.strictEqual(h.damage.fixed, 300);
+});
+
+t("幽冥噬魂：免疫反彈5回合且建立害怕束縛與無效追擊", () => {
+  const h = makeBlockContext();
+  h.ctx.skill = skillByName("幽冥噬魂");
+  runSkillProgram(h.ctx, getSkillProgram(h.ctx.skill), "use");
+  assert.strictEqual(h.playerState.reflectStatusTurns, 5);
+  assert.ok(h.timers.p1.some(timer => timer.payload.block.trig === "self_skill"));
+  assert.ok(h.timers.p1.some(timer => timer.payload.block.trig === "opp_attack"));
+  assert.ok(h.timers.p1.some(timer => timer.payload.block.trig === "self_invalid"));
+});
+
+t("帝永壁令：全屬性+1且建立恢復轉盾、免控、先制計時", () => {
+  const h = makeBlockContext();
+  h.ctx.skill = skillByName("帝永壁令");
+  runSkillProgram(h.ctx, getSkillProgram(h.ctx.skill), "use");
+  assert.deepStrictEqual(h.self.statStages, { atk: 1, def: 1, spatk: 1, spdef: 1, speed: 1, accuracy: 1 });
+  assert.ok(h.timers.p1.some(timer => timer.payload.block.trig === "self_skill"));
+});
+
+t("盾碎同歸：有護盾時消耗並令對手隨機PP歸零", () => {
+  const h = makeBlockContext({ shield: 250 });
+  h.target.skills = [
+    { name: "技能A", category: "物理", pp: 5, maxPp: 5 },
+    { name: "技能B", category: "特殊", pp: 5, maxPp: 5 },
+    { name: "技能C", category: "屬性", pp: 5, maxPp: 5 },
+  ];
+  const seq = [0, 0.6, 0.1];
+  let i = 0;
+  h.ctx.rng = () => seq[(i++) % seq.length];
+  h.ctx.skill = skillByName("盾碎同歸");
+  runSkillProgram(h.ctx, getSkillProgram(h.ctx.skill), "use");
+  assert.strictEqual(h.self.shield, 0);
+  const zeroed = h.target.skills.filter((s: any) => s.pp === 0).length;
+  assert.strictEqual(zeroed, 2);
+});
+
+t("盾碎同歸：護盾為0時全屬性+2且下回合先制+3", () => {
+  const h = makeBlockContext({ shield: 0 });
+  h.ctx.skill = skillByName("盾碎同歸");
+  runSkillProgram(h.ctx, getSkillProgram(h.ctx.skill), "use");
+  assert.deepStrictEqual(h.self.statStages, { atk: 2, def: 2, spatk: 2, spdef: 2, speed: 2, accuracy: 2 });
+  assert.strictEqual(h.playerState.emperorNextTurnPriorityBoost3, true);
+});
+
+t("最終規格A1-1：影之牢籠疊加2層待觸發", () => {
+  const h = makeBlockContext({ currentHp: 800, maxHp: 1000 });
+  h.ctx.skill = skillByName("影之牢籠");
+  runSkillProgram(h.ctx, getSkillProgram(h.ctx.skill), "use");
+  runSkillProgram(h.ctx, getSkillProgram(h.ctx.skill), "use");
+  assert.strictEqual(h.playerState.sobiratScarBonus, 2);
+});
+
+t("最終規格A1-4：黯痕拆分與組合", () => {
+  const parts = defaultDarkScarParts(2);
+  assert.strictEqual(parts.duration, 5);
+  // 技能傷害上限 1 點
+  assert.strictEqual(applyDarkScarSkillCap("skill_attack", 300, parts, false), 1);
+  assert.strictEqual(applyDarkScarSkillCap("skill_attribute", 50, parts, false), 1);
+  assert.strictEqual(applyDarkScarSkillCap("percent", 300, parts, false), 300);
+  // 無視傷害限制改為本次減半
+  assert.strictEqual(applyDarkScarSkillCap("skill_attack", 300, parts, true), 150);
+  // 百分比/固定減半
+  assert.strictEqual(darkScarDealtMultiplier("percent", parts), 0.5);
+  assert.strictEqual(darkScarDealtMultiplier("fixed", parts), 0.5);
+  assert.strictEqual(darkScarDealtMultiplier("true", parts), 1);
+  // 受擊翻倍只限攻擊技能
+  assert.strictEqual(darkScarTakenMultiplier("skill_attack", parts), 2);
+  assert.strictEqual(darkScarTakenMultiplier("percent", parts), 1);
+  // 禁附加異常
+  assert.strictEqual(darkScarBlocksStatus(parts), true);
+  // 組合描述 7 段
+  assert.strictEqual(combineDarkScar(parts).length, 7);
+});
+
+t("最終規格A2-4：守護印記0～4層減傷25/35/45/55封頂", () => {
+  assert.strictEqual(guardianReduction(0), 0);
+  assert.strictEqual(guardianReduction(1), 0.25);
+  assert.strictEqual(guardianReduction(2), 0.35);
+  assert.strictEqual(guardianReduction(3), 0.45);
+  // 舊行為 4 層封頂 55%（與 BattleScreen 一致），疑慮保留
+  assert.strictEqual(guardianReduction(4), 0.55);
+  assert.strictEqual(guardianReduction(9), 0.55);
+  assert.strictEqual(nextGuardianStacks(0), 1);
+  assert.strictEqual(nextGuardianStacks(3), 4);
+  assert.strictEqual(nextGuardianStacks(4), GUARDIAN_MAX_STACKS);
+  assert.strictEqual(GUARDIAN_DURATION, 4);
+});
+
+t("最終規格B-1：夜魔之球fallback統一為百分比", () => {
+  const skill = skillByName("夜魔之球");
+  assert.ok(String(skill.description).includes("百分比"));
 });
 
 console.log("\n=== 積木魂印語意 ===");

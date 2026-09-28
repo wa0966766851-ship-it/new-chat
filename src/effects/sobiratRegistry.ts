@@ -168,7 +168,9 @@ export const handleSobiratSoulMark = (ctx: BattleEventContext, event: EffectTimi
       const baseDuration = 3;
       const bonus = getPlayerState("sobiratScarBonus") || 0;
       const duration = baseDuration + bonus;
-      
+      // 最終規格 A1-1：觸發後清空待觸發層數，避免重複累加到下一次
+      setPlayerState("sobiratScarBonus", 0);
+
       setOpponentState("DarkScarTurns", duration);
       applyStatusWithImmunityCheck(ctx.targetSide, "黯痕", duration);
       addLog(`🎡【黯痕】：對手被附加了 ${duration} 回合的【黯痕】印記！(期間受擊傷害翻倍，造成的百分比/固傷減半，技能傷害不超1點)`, "status");

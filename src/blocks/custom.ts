@@ -233,6 +233,90 @@ Object.assign(CUSTOM, {
   },
 } as Record<string, CustomDef>);
 
+// ───────── 5001 悲歌.索比拉特 / 5002 帝皇之盾（疑慮清單 A1/A2 對齊用） ─────────
+// 原則：只補積木解析，不刪除 SOBIRAT_SKILLS / IMPERIAL_SHIELD_SKILLS 舊 handler。
+Object.assign(CUSTOM, {
+  "以令下次被擊敗時黯痕回合數+1": {
+    label: "下次被擊敗時【黯痕】回合數+1（可疊加，觸發清空）",
+    run: (ctx: BattleEventContext) => {
+      // 最終規格 A1-1：使用成功即掛待觸發層數，可疊加；被擊敗結算時消耗清空。
+      // 舊 sobiratScarBonus 保留為同一計數器，不另立新鍵，避免雙軌。
+      ctx.setPlayerState("sobiratScarBonus", (ctx.getPlayerState("sobiratScarBonus") || 0) + 1);
+      ctx.addLog(`🎡【黯】：下次被擊敗時【黯痕】回合數+1（待觸發 ${(ctx.getPlayerState("sobiratScarBonus") || 0)} 層）！`, "effect");
+      return true;
+    },
+  },
+  "若對手因此被擊敗則自身保留1點體力": {
+    label: "若本擊擊敗對手則自身保留1點體力",
+    run: (ctx: BattleEventContext, st) => {
+      // 疑慮 A1-2：after_hit kill 條件，僅在本擊造成擊敗時生效
+      if (st.event?.trig !== "after_hit") return false;
+      if ((ctx.target?.currentHp ?? 1) > 0) return false;
+      ctx.updateElf(ctx.actor, { currentHp: Math.max(1, ctx.self.currentHp) } as any);
+      ctx.addLog(`🎡【影之牢籠】：同歸未死，保留1點體力！`, "effect");
+      return true;
+    },
+  },
+  "3回合內自身使用攻擊技能時若攻擊技能無效則消除對手回合類效果": {
+    label: "3回合 自身攻擊無效時消除對手回合類效果",
+    run: (ctx: BattleEventContext) => {
+      // 疑慮 A1-3：掛 self_invalid 追擊（仿深潛者盛宴），與舊 sobiratDispelOnFailedTurns 並存
+      ctx.addTimerTo(ctx.actor, { id: `blk_${ctx.actor}_sobirat_invalid`, name: "攻擊無效消回合", kind: "use_counter", source: "skill" as any, remaining: 3, tickAt: "never", payload: { block: { trig: "self_invalid", consumeOnFire: true, owner: ctx.actor, body: [{ acts: [{ op: "custom", p: { key: "__sobirat_invalid_hit" }, label: "" }] }] } } } as any, false);
+      return true;
+    },
+  },
+  "__sobirat_invalid_hit": {
+    label: "攻擊無效：消除對手回合類效果",
+    run: (ctx: BattleEventContext) => { ctx.clearTurnEffectsOf(ctx.targetSide); ctx.addLog(`🎡【幽冥噬魂】：攻擊無效，消除對手回合類效果！`, "effect"); return true; },
+  },
+  "4回合內每回合使用技能後恢復自身最大體力1/3，並將恢復量的50%轉化為護盾": {
+    label: "4回合 使用技能後恢復最大體力1/3，50%轉護盾",
+    run: (ctx: BattleEventContext) => {
+      // 疑慮 A2-1：按 self_skill 觸發（與舊 AFTER_ACTION 語義對齊到積木時點）
+      ctx.addTimerTo(ctx.actor, { id: `blk_${ctx.actor}_emperor_wall`, name: "帝壁恢復轉盾", kind: "turn_effect", source: "skill" as any, remaining: 4, tickAt: "round_end", payload: { block: { trig: "self_skill", owner: ctx.actor, body: [{ acts: [{ op: "custom", p: { key: "__emperor_wall_hit" }, label: "" }] }] } } } as any, false);
+      return true;
+    },
+  },
+  "__emperor_wall_hit": {
+    label: "恢復最大體力1/3，50%轉護盾",
+    run: (ctx: BattleEventContext) => {
+      const amt = Math.floor((ctx.self as any).maxHp / 3);
+      ctx.applyHeal(ctx.actor, amt);
+      ctx.applyShield(ctx.actor, Math.floor(amt * 0.5));
+      return true;
+    },
+  },
+  "消耗自身全部護盾值，每消耗100點護盾值令對手隨機1個技能PP歸零": {
+    label: "消耗全部護盾；每100點對手隨機1技能PP歸零",
+    run: (ctx: BattleEventContext) => {
+      // 疑慮 A2-2：快照護盾後清零，按 floor(shield/100) 執行
+      const cur = (ctx.self as any).shield || 0;
+      ctx.updateElf(ctx.actor, { shield: 0 } as any);
+      const n = Math.floor(cur / 100);
+      if (n <= 0) return false;
+      const skills: any[] = [...(ctx.target?.skills || [])];
+      const idx = skills.map((s, i) => i).filter((i) => (skills[i].pp || 0) > 0);
+      const r = ctx.rng || Math.random;
+      const pick = new Set<number>();
+      while (pick.size < Math.min(n, idx.length)) pick.add(idx[Math.floor(r() * idx.length)]);
+      ctx.updateElf(ctx.targetSide, { skills: skills.map((s, i) => (pick.has(i) ? { ...s, pp: 0 } : s)) } as any);
+      ctx.addLog(`🛡️【盾碎同歸】：消耗 ${cur} 護盾，令對手 ${pick.size} 個技能PP歸零！`, "effect");
+      return pick.size > 0;
+    },
+  },
+  "消耗護盾值為0時自身全屬性+2且下回合先制+3": {
+    label: "結算後護盾為0時：全屬性+2、下回合先制+3",
+    run: (ctx: BattleEventContext) => {
+      // 最終規格 A2-3：以結算後護盾為 0 才觸發（舊 handler 以使用前為 0，保留不刪）。
+      // 盾碎同歸的上一子句已清零護盾，此處檢查當前值即為結算後值。
+      if (((ctx.self as any).shield || 0) > 0) return false;
+      ctx.applyStatChange(ctx.actor, { atk: 2, def: 2, spatk: 2, spdef: 2, speed: 2, accuracy: 2 });
+      ctx.setPlayerState("emperorNextTurnPriorityBoost3", true);
+      return true;
+    },
+  },
+} as Record<string, CustomDef>);
+
 /** 魂印標頭（觸發時點）專屬對應 */
 export const CUSTOM_HEADERS: Record<string, { trig: Trigger; label: string; statuses?: string[] }> = {
   "若自身存活於出戰背包內或在場": { trig: "team_round_start" as Trigger, label: "存活於背包或在場・回合開始時" },
