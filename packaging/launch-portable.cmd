@@ -32,8 +32,8 @@ if not exist "%APP_DIR%dist\index.html" (
 )
 
 REM --- 1. Pick a free port: prefer PORT env, else 3000, then scan up
+if not defined PORT set "PORT=3000"
 set "WANT_PORT=%PORT%"
-if "%WANT_PORT%"=="" set "WANT_PORT=3000"
 set "FREE_PORT="
 for /L %%P in (%WANT_PORT%,1,3100) do (
   if not defined FREE_PORT (
@@ -62,9 +62,10 @@ start "SeerServer-%FREE_PORT%" /min cmd /c ""%APP_DIR%node.exe" "%SERVER_CJS%" >
 
 REM --- 3. Wait until server answers (max ~20s), then open browser
 set "READY="
+set "PSCMD=try { $r = Invoke-WebRequest -UseBasicParsing -Uri 'http://127.0.0.1:%FREE_PORT%/api/ai-status' -TimeoutSec 2; if ($r.StatusCode -eq 200) { exit 0 } else { exit 1 } } catch { exit 1 }"
 for /L %%I in (1,1,40) do (
   if not defined READY (
-    powershell -NoProfile -Command "try { $r = Invoke-WebRequest -UseBasicParsing -Uri 'http://127.0.0.1:%FREE_PORT%/api/ai-status' -TimeoutSec 2; if ($r.StatusCode -eq 200) { exit 0 } else { exit 1 } } catch { exit 1 }" >nul 2>nul
+    powershell -NoProfile -Command "%PSCMD%" >nul 2>nul
     if not errorlevel 1 set "READY=1"
     if not defined READY timeout /t 1 /nobreak >nul
   )
