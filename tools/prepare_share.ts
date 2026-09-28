@@ -5,7 +5,10 @@
 // 用法：npx tsx tools/prepare_share.ts --force [--src <dir>] [--out <dir>]
 import * as fs from "node:fs";
 import * as path from "node:path";
+import { fileURLToPath } from "node:url";
 
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 const args = process.argv.slice(2);
 function opt(name: string, dflt: string): string {
   const i = args.indexOf(name);

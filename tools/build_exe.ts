@@ -9,8 +9,11 @@
 //   npx tsx tools/build_exe.ts [--version X.Y.Z | --bump | --keep-version]
 import * as fs from "node:fs";
 import * as path from "node:path";
+import { fileURLToPath } from "node:url";
 import { execSync } from "node:child_process";
 
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 const ROOT = path.resolve(path.join(__dirname, ".."));
 const VERSION_FILE = path.join(ROOT, "version.ts");
 const PKG_FILE = path.join(ROOT, "package.json");
