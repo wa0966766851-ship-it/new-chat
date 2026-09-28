@@ -287,21 +287,25 @@ Object.assign(CUSTOM, {
     },
   },
   "消耗自身全部護盾值，每消耗100點護盾值令對手隨機1個技能PP歸零": {
-    label: "消耗全部護盾；每100點對手隨機1技能PP歸零",
+    label: "消耗全部護盾；每100點對手隨機1技能PP歸零（可重複命中）",
     run: (ctx: BattleEventContext) => {
-      // 疑慮 A2-2：快照護盾後清零，按 floor(shield/100) 執行
+      // 最終規格 A2-2：快照護盾後清零，按 floor(shield/100) 執行 N 次隨機 PP 歸零，可重複命中同一招。
+      // 與舊 handler（splice 去重＝不可重複）不同，此處以「可重複」為準；舊 handler 保留不刪。
       const cur = (ctx.self as any).shield || 0;
       ctx.updateElf(ctx.actor, { shield: 0 } as any);
       const n = Math.floor(cur / 100);
       if (n <= 0) return false;
       const skills: any[] = [...(ctx.target?.skills || [])];
       const idx = skills.map((s, i) => i).filter((i) => (skills[i].pp || 0) > 0);
+      if (!idx.length) return false;
       const r = ctx.rng || Math.random;
-      const pick = new Set<number>();
-      while (pick.size < Math.min(n, idx.length)) pick.add(idx[Math.floor(r() * idx.length)]);
-      ctx.updateElf(ctx.targetSide, { skills: skills.map((s, i) => (pick.has(i) ? { ...s, pp: 0 } : s)) } as any);
-      ctx.addLog(`🛡️【盾碎同歸】：消耗 ${cur} 護盾，令對手 ${pick.size} 個技能PP歸零！`, "effect");
-      return pick.size > 0;
+      // 可重複：執行 N 次，每次從 idx 獨立隨機（允許重複命中同一 index）
+      const hit: number[] = [];
+      for (let k = 0; k < n; k++) hit.push(idx[Math.floor(r() * idx.length)]);
+      const distinct = new Set<number>(hit);
+      ctx.updateElf(ctx.targetSide, { skills: skills.map((s, i) => (distinct.has(i) ? { ...s, pp: 0 } : s)) } as any);
+      ctx.addLog(`🛡️【盾碎同歸】：消耗 ${cur} 護盾，執行 ${n} 次隨機PP歸零（命中 ${distinct.size} 個不同技能）！`, "effect");
+      return distinct.size > 0;
     },
   },
   "消耗護盾值為0時自身全屬性+2且下回合先制+3": {
@@ -316,6 +320,17 @@ Object.assign(CUSTOM, {
     },
   },
 } as Record<string, CustomDef>);
+
+/** sobiratScarBonus ROUND_END 清空：防止跨回合累積 */
+export const CUSTOM_SOBIRAT_ROUND_END: Record<string, CustomDef> = {
+  "每回合結束時重設 sobiratScarBonus": {
+    label: "黯痕計數器回合結束重置",
+    run: (ctx: BattleEventContext) => {
+      ctx.setPlayerState("sobiratScarBonus", 0);
+      return true;
+    },
+  },
+};
 
 /** 魂印標頭（觸發時點）專屬對應 */
 export const CUSTOM_HEADERS: Record<string, { trig: Trigger; label: string; statuses?: string[] }> = {

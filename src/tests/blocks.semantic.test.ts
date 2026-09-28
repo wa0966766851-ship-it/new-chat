@@ -526,6 +526,24 @@ t("盾碎同歸：有護盾時消耗並令對手隨機PP歸零", () => {
   assert.strictEqual(zeroed, 2);
 });
 
+t("最終規格A2-2：盾碎同歸可重複命中同一招（護盾350對2招執行3次）", () => {
+  const h = makeBlockContext({ shield: 350 });
+  h.target.skills = [
+    { name: "技能A", category: "物理", pp: 5, maxPp: 5 },
+    { name: "技能B", category: "特殊", pp: 5, maxPp: 5 },
+  ];
+  // 3 次隨機全部命中同一 index：重複命中不增加不同技能數，但執行次數為 3
+  h.ctx.rng = () => 0;
+  h.ctx.skill = skillByName("盾碎同歸");
+  runSkillProgram(h.ctx, getSkillProgram(h.ctx.skill), "use");
+  assert.strictEqual(h.self.shield, 0);
+  const zeroed = h.target.skills.filter((s: any) => s.pp === 0).length;
+  // 可重複：3 次全中 A，只 1 個不同技能歸零（舊去重邏輯會卡在 min(3,2)=2，此處驗證新語義）
+  assert.strictEqual(zeroed, 1);
+  assert.strictEqual(h.target.skills[0].pp, 0);
+  assert.strictEqual(h.target.skills[1].pp, 5);
+});
+
 t("盾碎同歸：護盾為0時全屬性+2且下回合先制+3", () => {
   const h = makeBlockContext({ shield: 0 });
   h.ctx.skill = skillByName("盾碎同歸");

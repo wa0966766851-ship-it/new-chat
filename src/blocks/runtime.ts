@@ -324,9 +324,12 @@ export const OPS: Record<string, OpFn> = {
     return true;
   },
   pp_zero_random: (ctx, p) => {
+    // 通用語義：隨機 N 個「不同」技能（去重）。與盾碎同歸 custom 的「N 次獨立隨機、可重複」不同。
+    // 保留 Set 去重，避免訣別之二等「隨機2」變成可能只中1個。
     const idx = (ctx.target.skills || []).map((sk: any, i: number) => ({ sk, i })).filter((x: any) => (x.sk.pp || 0) > 0);
     const r = ctx.rng || Math.random; const pick = new Set<number>();
-    while (pick.size < Math.min(p.count, idx.length)) pick.add(idx[Math.floor(r() * idx.length)].i);
+    let guard = 0;
+    while (pick.size < Math.min(p.count, idx.length) && guard++ < 64) pick.add(idx[Math.floor(r() * idx.length)].i);
     ctx.updateElf(ctx.targetSide, { skills: (ctx.target.skills || []).map((sk: any, i: number) => pick.has(i) ? { ...sk, pp: 0 } : sk) });
     return pick.size > 0;
   },
