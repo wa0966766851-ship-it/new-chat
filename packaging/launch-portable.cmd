@@ -9,14 +9,17 @@ echo ===============================================
 echo.
 
 REM --- 0. Self check: required files must sit next to this cmd
+REM server.single.cjs may live at stage root (new) or dist/ (current zip)
+set "SERVER_CJS=%APP_DIR%server.single.cjs"
+if not exist "%SERVER_CJS%" set "SERVER_CJS=%APP_DIR%dist\server.single.cjs"
 if not exist "%APP_DIR%node.exe" (
   echo [ERROR] node.exe not found next to launch-portable.cmd.
   echo Please unzip the WHOLE zip, not just this file.
   pause
   exit /b 1
 )
-if not exist "%APP_DIR%server.single.cjs" (
-  echo [ERROR] server.single.cjs not found next to launch-portable.cmd.
+if not exist "%SERVER_CJS%" (
+  echo [ERROR] server.single.cjs not found (checked root and dist\).
   echo Please unzip the WHOLE zip, not just this file.
   pause
   exit /b 1
@@ -55,7 +58,7 @@ REM --- 2. Start server in background, log to server.log
 set "LOG=%APP_DIR%server.log"
 echo Starting server on http://127.0.0.1:%FREE_PORT% ...
 echo Log: %LOG%
-start "SeerServer-%FREE_PORT%" /min cmd /c ""%APP_DIR%node.exe" "%APP_DIR%server.single.cjs" >> "%LOG%" 2>&1"
+start "SeerServer-%FREE_PORT%" /min cmd /c ""%APP_DIR%node.exe" "%SERVER_CJS%" >> "%LOG%" 2>&1"
 
 REM --- 3. Wait until server answers (max ~20s), then open browser
 set "READY="
