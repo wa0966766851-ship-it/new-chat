@@ -2631,6 +2631,9 @@ export default function BattleScreen(props: BattleScreenProps) {
         if (ev > 0 && prdChance(`${oppSide}:blkEvade`, ev / 100)) {
           pushEffect({ type: 'log', side: oppSide, data: { text: `💨 【${syncStateRef.current[oppSide].name}】閃避了【${displaySkill}】！`, type: "effect" } });
           showPopup(oppSide, "Miss-0", "miss");
+          // 與無效分支（2603）／Miss分支（2621）一致：閃避也視為未命中，觸發 on_invalid＋self_invalid，
+          // 否則 self_invalid timer（深潛者／淨世／sobirat）遇到閃避不會被消耗。
+          try { runSkillBlocks(getBattleEventContext(s, true, mIdx), "on_invalid", hasSkillHandler(activeSkill.name)); emitSelfInvalid(getBattleEventContext(s, true, mIdx)); } catch (e) { console.error("[blocks]", e); }
           await processQueue();
           continue;
         }

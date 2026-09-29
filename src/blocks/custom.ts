@@ -269,6 +269,30 @@ Object.assign(CUSTOM, {
     label: "攻擊無效：消除對手回合類效果",
     run: (ctx: BattleEventContext) => { ctx.clearTurnEffectsOf(ctx.targetSide); ctx.addLog(`🎡【幽冥噬魂】：攻擊無效，消除對手回合類效果！`, "effect"); return true; },
   },
+  "__baptism_invalid_hit": {
+    label: "洗禮無效重結算：粉傷補償（保底280）",
+    run: (ctx: BattleEventContext) => {
+      // B方案：只有本次無效的是淨世洗禮頌才結算；否則不消耗 timer（consumeOnFire:false），留給同回合後續。
+      // emitSelfInvalid 觸發時的 ctx.skill 即為被無效的已選技能，无需额外字段。
+      if ((ctx.skill as any)?.name !== "淨世洗禮頌") return false;
+      // 快照的 HP% 翻倍次數（handler 第一行存的）；取不到則按當下 HP 現算。
+      let doubles = ctx.getPlayerState("holyMiles.baptismDoubles");
+      if (typeof doubles !== "number") {
+        const t: any = ctx.target;
+        const ratio = t?.maxHp > 0 ? t.currentHp / t.maxHp : 0;
+        doubles = Math.min(10, Math.floor(ratio * 10 + 1e-9));
+      }
+      const times = 1 + (doubles || 0); // 無效翻倍1次 ＋ HP%額外
+      // base：取本次技能基礎。管線外重算拿不到 stage1，用「保底280為下限、按威力90等比放大」：
+      // 先以 280 為基底乘翻倍鏈，保證無效時至少打出保底；正常管線的攻防加成在無效補償中不重算（粉傷通道）。
+      const amount = Math.max(280, Math.floor(280 * 2 ** Math.min(times, 6)));
+      const dealt = ctx.applyPinkDamage(ctx.targetSide, amount, "淨世洗禮頌(無效補償)", undefined, undefined, "percent");
+      ctx.applyHeal(ctx.actor, dealt > 0 ? dealt : amount);
+      ctx.addLog(`🌊【淨世洗禮頌】：技能無效，重新結算 ${times} 次翻倍補償 ${amount} 點技能傷害（保底280）！`, "effect");
+      ctx.consumeTimer?.(ctx.actor, `blk_${ctx.actor}_baptism_invalid`);
+      return true;
+    },
+  },
   "4回合內每回合使用技能後恢復自身最大體力1/3，並將恢復量的50%轉化為護盾": {
     label: "4回合 使用技能後恢復最大體力1/3，50%轉護盾",
     run: (ctx: BattleEventContext) => {

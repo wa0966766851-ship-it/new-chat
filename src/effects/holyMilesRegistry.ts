@@ -14,10 +14,17 @@ const isAbnormal = (c: BattleEventContext) => Object.values(c.getStatuses(c.self
 export function handleHolyMilesSoulMark(c: BattleEventContext, event: EffectTiming, data?: any): void {
   if (!active(c)) return;
   if (event === EffectTiming.ROUND_START) {
-    for (const name of ["reflect", "fatigue", "drain", "crit", "burn", "prioritySeal"]) {
+    for (const name of ["reflect", "fatigue", "drain", "crit", "burn"]) {
       const n = turns(c, name);
       if (n > 0) set(c, name, n - 1);
     }
+    // B方案：預先掛載淨世洗禮頌無效重結算 timer（本次無效時 handler 跑不到，只能預掛）。
+    // consumeOnFire:false ＋ __baptism_invalid_hit 內以技能名守衛：非淨世的無效不消耗，留給同回合後續的淨世無效；
+    // 正常命中則在 BEFORE_DAMAGE 主動 consume，避免殘留到下回合誤觸。
+    // 用 try 包住，隔離測試的簡易 ctx 沒有 addTimerTo 也不會炸。
+    try {
+      c.addTimerTo?.(c.actor, { id: `blk_${c.actor}_baptism_invalid`, name: "洗禮無效重結算", kind: "use_counter", source: "skill" as any, remaining: 1, tickAt: "never", payload: { block: { trig: "self_invalid", consumeOnFire: false, owner: c.actor, body: [{ acts: [{ op: "custom", p: { key: "__baptism_invalid_hit" }, label: "" }] }] } } } as any, false);
+    } catch { /* 隔離 ctx 無 timer 系統，略過 */ }
     set(c, "halves", 1 + hpSteps(c.self.currentHp, c.self.maxHp));
     set(c, "anger", 0);
     if (turns(c, "cleansePending")) {
@@ -32,6 +39,10 @@ export function handleHolyMilesSoulMark(c: BattleEventContext, event: EffectTimi
       });
       set(c, "cleansePending", 0);
       c.setOpponentState("priorityBoostTurns", 0);
+      // B方案四象：當回合對手先制效果失效。只清 priorityBoostTurns 蓋不住技能自帶先制，
+      // 補 blkNoPosPrioTurns（calcPriority:1939 會把 base＋bonus 壓到 ≤0）。設 2 與 no_pos_prio_turns 語義一致。
+      c.setOpponentState("blkNoPosPrioTurns", 2);
+      c.addLog?.(`🔱 【四象】：對手當回合先制效果失效！`, "effect");
     }
     if (turns(c, "drain")) c.applyAbsorb(c.targetSide, Math.floor(c.target.maxHp / 3) * (c.self.currentHp < c.self.maxHp / 2 ? 2 : 1));
   }
@@ -64,7 +75,14 @@ export function handleHolyMilesSoulMark(c: BattleEventContext, event: EffectTimi
         d.multiplier *= 2;
         set(c, "attackDouble", turns(c, "attackDouble") - 1);
       }
-      if (c.skill?.name === "淨世洗禮頌") d.floor = Math.max(d.floor || 0, 280);
+      if (c.skill?.name === "淨世洗禮頌") {
+        d.floor = Math.max(d.floor || 0, 280);
+        // B方案正常命中：HP%翻倍走主乘區。無效翻倍不走這裡（無效走不到傷害結算，走 __baptism_invalid_hit 重結算）。
+        const doubles = turns(c, "baptismDoubles");
+        if (doubles > 0) d.multiplier *= 2 ** Math.min(doubles, 6);
+        // 正常命中：消耗預掛的無效重結算 timer，避免殘留到下回合誤觸。
+        try { c.consumeTimer?.(c.actor, `blk_${c.actor}_baptism_invalid`); } catch { /* 隔離 ctx 無 timer，略過 */ }
+      }
     }
   }
   if (event === EffectTiming.OPPONENT_ACTION && data?.skill) {
@@ -124,7 +142,12 @@ export const HOLY_MILES_SKILLS: Record<string, BattleSkillHandler> = {
   "淨世洗禮頌": c => {
     c.setPlayerState("vampireRatio", 1);
     set(c, "burn", 4);
+    // B方案：快照對手 HP% 翻倍次數（傷害時點 HP 可能已變，先存）。
+    // doubles = floor(對手HP% × 10)，滿血 = 10。
+    const ratio = c.target.maxHp > 0 ? c.target.currentHp / c.target.maxHp : 0;
+    set(c, "baptismDoubles", Math.min(10, Math.floor(ratio * 10 + 1e-9)));
   },
+
   "聖靈乾坤斷": c => {
     if (c.clearTurnEffectsOf(c.targetSide)) c.applyStatChange(c.actor, { atk: 2, speed: 2, accuracy: 2 });
     c.setOpponentState("utilitySkillInvalidTurns", 2);

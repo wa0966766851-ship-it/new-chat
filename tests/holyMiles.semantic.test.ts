@@ -3,6 +3,7 @@ import { readFileSync } from "node:fs";
 import { test } from "node:test";
 import { HOLY_MILES_SEED, HOLY_MILES_SKILLS } from "../src/data/holyMiles";
 import { HOLY_MILES_SKILLS as handlers, handleHolyMilesSoulMark } from "../src/effects/holyMilesRegistry";
+import { CUSTOM } from "../src/blocks/custom";
 import { EffectTiming } from "../src/effects/types";
 import type { BattleEventContext } from "../src/effects/types";
 
@@ -10,6 +11,7 @@ const makeContext = () => {
   const own: Record<string, any> = {};
   const opp: Record<string, any> = {};
   const events: string[] = [];
+  const timers: any[] = [];
   const self = { ...HOLY_MILES_SEED, currentHp: 500, maxHp: 1000, calculatedStats: { def: 200, spdef: 200 }, statStages: {}, battleStatuses: {}, effects: [], skills: HOLY_MILES_SKILLS.map(s => ({ ...s })) } as any;
   const target = { id: "enemy", currentHp: 800, maxHp: 1000, statStages: {}, skills: [{ name: "敵方技能", pp: 2, currentPp: 2 }] } as any;
   const ctx = {
@@ -28,9 +30,11 @@ const makeContext = () => {
     applyStatChange: (_: string, v: object) => { events.push(`stats:${JSON.stringify(v)}`); },
     clearTurnEffectsOf: () => true,
     updateElf: (_: string, v: object) => { Object.assign(target, v); },
+    addTimerTo: (_: string, t: any) => { timers.push(t); },
+    consumeTimer: (_: string, id: string) => { const i = timers.findIndex((t: any) => t.id === id); if (i >= 0) timers.splice(i, 1); },
     addLog: () => {},
   } as unknown as BattleEventContext;
-  return { ctx, own, opp, events, self, target };
+  return { ctx, own, opp, events, timers, self, target };
 };
 
 test("base stats, skills and original-form sprite files", () => {
@@ -91,4 +95,53 @@ test("fifth skill accumulates drain, removes one PP from every enemy move and lo
   for (let i = 0; i < 4; i++) handlers["聖靈乾坤斷"](ctx);
   assert.equal(own["holyMiles.fifthUses"], 5);
   assert.ok(events.includes("absorb:500"));
+});
+
+test("淨世洗禮頌：ROUND_START預掛無效重結算timer＋handler快照HP%翻倍", () => {
+  const { ctx, own, timers } = makeContext();
+  handleHolyMilesSoulMark(ctx, EffectTiming.ROUND_START);
+  const t = timers.find((x: any) => x.id === "blk_p1_baptism_invalid");
+  assert.ok(t, "應預掛 baptism_invalid timer");
+  assert.equal(t.payload.block.trig, "self_invalid");
+  ctx.skill = HOLY_MILES_SKILLS[3];
+  handlers["淨世洗禮頌"](ctx);
+  assert.equal(own["holyMiles.baptismDoubles"], 8); // 對手800/1000
+});
+
+test("淨世洗禮頌：正常命中吃HP%翻倍（BEFORE_DAMAGE主乘區）", () => {
+  const { ctx, own, timers } = makeContext();
+  ctx.skill = HOLY_MILES_SKILLS[3];
+  handlers["淨世洗禮頌"](ctx); // 快照 doubles=8
+  const damageComp: any = { multiplier: 1, floor: 0, damageCategory: "skill_attack", isIncoming: false };
+  handleHolyMilesSoulMark(ctx, EffectTiming.BEFORE_DAMAGE, { damageComp });
+  assert.equal(damageComp.floor, 280);
+  assert.equal(damageComp.multiplier, 2 ** 6); // cap 6 → ×64
+  assert.ok(!timers.some((t: any) => t.id === "blk_p1_baptism_invalid"), "正常命中應消耗預掛timer");
+});
+
+test("淨世洗禮頌：無效重結算只認淨世，非淨世不消耗", () => {
+  const { ctx, events } = makeContext();
+  (ctx as any).skill = { name: "八荒憫淚" };
+  const r = CUSTOM["__baptism_invalid_hit"].run(ctx, { last: null, lastAmount: 0 });
+  assert.equal(r, false);
+  assert.ok(!events.some(e => e.startsWith("pink:")), "非淨世不應打出粉傷");
+});
+
+test("淨世洗禮頌：無效重結算打出保底粉傷（滿血×64封頂）", () => {
+  const { ctx, own, events } = makeContext();
+  (ctx as any).skill = { name: "淨世洗禮頌" };
+  own["holyMiles.baptismDoubles"] = 10;
+  const r = CUSTOM["__baptism_invalid_hit"].run(ctx, { last: null, lastAmount: 0 });
+  assert.equal(r, true);
+  assert.ok(events.includes("pink:17920"), `實際=${events}`);
+});
+
+test("四象：cleansePending觸發先制失效（blkNoPosPrioTurns）", () => {
+  const { ctx, own, opp, self } = makeContext();
+  self.battleStatuses = { 燒傷: 2 };
+  own["holyMiles.cleansePending"] = 1;
+  opp["priorityBoostTurns"] = 3;
+  handleHolyMilesSoulMark(ctx, EffectTiming.ROUND_START);
+  assert.equal(opp["priorityBoostTurns"], 0);
+  assert.equal(opp["blkNoPosPrioTurns"], 2);
 });
