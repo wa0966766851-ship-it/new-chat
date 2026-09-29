@@ -67,7 +67,13 @@ export function ElfAvatar({ elf, kind = "head", className, fallbackClassName, st
     } as React.CSSProperties : undefined;
     return <ChainImage urls={urls} fallback={headFb} className={className} style={{ ...sceneMask, ...style }} alt={elf.name} />;
   }
-  return <ChainImage urls={urls} fallback={fb} className={className} style={style} alt={elf.name} />;
+  const isOtherworldRey = String(elf.id) === "5029" || elf.name === "異境神霆·雷伊";
+  const portraitMask = isOtherworldRey ? {
+    WebkitMaskImage: "radial-gradient(circle at 50% 48%, #000 82%, transparent 100%)",
+    maskImage: "radial-gradient(circle at 50% 48%, #000 82%, transparent 100%)",
+    objectPosition: "50% 44%",
+  } as React.CSSProperties : undefined;
+  return <ChainImage urls={urls} fallback={fb} className={`${className || ""} ${isOtherworldRey ? "rounded-full" : ""}`} style={{ ...portraitMask, ...style }} alt={elf.name} />;
 }
 
 /** 屬性圖標：官方組合 → 「系」資料夾 → 雙屬性並排單屬性圖標 → 文字 */

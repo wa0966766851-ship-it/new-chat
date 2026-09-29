@@ -12,14 +12,15 @@ interface StatusBadgePanelProps {
   otherEffects?: EffectInstance[];
   emptyHint?: string;
   categoryFilter?: string[];
+  disguiseAbnormalStatuses?: boolean;
 }
 
-export const StatusBadgePanel: React.FC<StatusBadgePanelProps> = ({ elf, otherEffects = [], emptyHint, categoryFilter }) => {
+export const StatusBadgePanel: React.FC<StatusBadgePanelProps> = ({ elf, otherEffects = [], emptyHint, categoryFilter, disguiseAbnormalStatuses = false }) => {
   const [selectedEffect, setSelectedEffect] = useState<any | null>(null);
   
   // 1. Convert standard statuses from StatusRegistry
   const mergedStatuses = getStatuses(elf);
-  const registryStatuses = Object.entries(mergedStatuses)
+  let registryStatuses = Object.entries(mergedStatuses)
     .filter(([id]) => StatusRegistry[id])
     .map(([id, turns]) => ({
       catalogId: id,
@@ -29,13 +30,24 @@ export const StatusBadgePanel: React.FC<StatusBadgePanelProps> = ({ elf, otherEf
     }));
   
   // 2. Add non-standard effects from EFFECT_CATALOG
-  const catalogEffects = Object.entries(mergedStatuses)
+  let catalogEffects = Object.entries(mergedStatuses)
     .filter(([id]) => !StatusRegistry[id] && EFFECT_CATALOG[id])
     .map(([id, turns]) => ({
       catalogId: id,
       remainingTurns: turns as number,
       isStandardStatus: false
     }));
+
+  // 魘味只遮蔽己方看到的異常名稱；底層狀態、效果和計時器保持原樣。
+  if (disguiseAbnormalStatuses && (registryStatuses.length > 0 || catalogEffects.length > 0)) {
+    registryStatuses = [{
+      catalogId: '魘味',
+      remainingTurns: 0,
+      isStandardStatus: true,
+      data: StatusRegistry['魘味'],
+    }];
+    catalogEffects = [];
+  }
 
   // 3. Add an immunity indicator if immune
   const extraEffects: any[] = [];
@@ -50,7 +62,10 @@ export const StatusBadgePanel: React.FC<StatusBadgePanelProps> = ({ elf, otherEf
   // Combine all
   const allEffects = [...registryStatuses, ...catalogEffects, ...extraEffects, ...(otherEffects || [])];
   
-  const getCategoryStyle = (categories: string[]) => {
+  const getCategoryStyle = (categories: string[], name?: string) => {
+    if (categories.includes('BOSS_ONLY')) return name === '神話'
+      ? { label: 'BOSS特性', color: 'bg-amber-500/20 text-amber-300 border-amber-500/40', badge: '★' }
+      : { label: 'BOSS特性', color: 'bg-sky-500/20 text-sky-300 border-sky-500/40', badge: '🛡️' };
     if (categories.includes('CONTROL')) return { label: '控制', color: 'bg-red-500/20 text-red-400 border-red-500/40', badge: '🚫' };
     if (categories.includes('WEAKENING')) return { label: '弱化', color: 'bg-amber-500/20 text-amber-400 border-amber-500/40', badge: '🔻' };
     if (categories.includes('RESTRICTIVE')) return { label: '限制', color: 'bg-purple-500/20 text-purple-400 border-purple-500/40', badge: '⛓️' };
@@ -66,6 +81,7 @@ export const StatusBadgePanel: React.FC<StatusBadgePanelProps> = ({ elf, otherEf
     RESTRICTIVE: { label: '【限制類異常】', items: [] },
     EVOLUTIONARY: { label: '【衍化類異常】', items: [] },
     AUXILIARY: { label: '【附屬類異常】', items: [] },
+    BOSS_ONLY: { label: '【BOSS特性狀態】', items: [] },
     INDICIA: { label: '【我方印記與專屬】', items: [] },
     INDICIA_HOSTILE: { label: '【他源印記】', items: [] },
     POSITIVE_TURN: { label: '【正面回合類效果】', items: [] },
@@ -87,6 +103,7 @@ export const StatusBadgePanel: React.FC<StatusBadgePanelProps> = ({ elf, otherEf
     shield_barrier: '護盾護罩類',
     indicia: '我方印記',
     indicia_hostile: '他源印記',
+    boss_only: 'BOSS特性狀態',
     none: '一般異常'
   };
 
@@ -94,7 +111,8 @@ export const StatusBadgePanel: React.FC<StatusBadgePanelProps> = ({ elf, otherEf
     if (e.isStandardStatus) {
       const reg = e.data;
       let catKey = 'NONE';
-      if (reg.categories.includes('CONTROL')) catKey = 'CONTROL';
+      if (reg.categories.includes('BOSS_ONLY')) catKey = 'BOSS_ONLY';
+      else if (reg.categories.includes('CONTROL')) catKey = 'CONTROL';
       else if (reg.categories.includes('WEAKENING')) catKey = 'WEAKENING';
       else if (reg.categories.includes('RESTRICTIVE')) catKey = 'RESTRICTIVE';
       else if (reg.categories.includes('EVOLUTIONARY')) catKey = 'EVOLUTIONARY';
@@ -155,11 +173,11 @@ export const StatusBadgePanel: React.FC<StatusBadgePanelProps> = ({ elf, otherEf
 
                   const isShieldOrBarrier = inst.catalogId === 'shield_active' || inst.catalogId === 'barrier_active';
                   if (inst.isStandardStatus) {
-                    const style = getCategoryStyle(inst.data.categories);
+                    const style = getCategoryStyle(inst.data.categories, inst.data.name);
                     badge = style.badge;
                     label = inst.data.name;
                     color = style.color;
-                    displayValue = inst.remainingTurns > 0 ? `${inst.remainingTurns}回合` : '';
+                    displayValue = !inst.data.categories.includes('BOSS_ONLY') && inst.remainingTurns > 0 ? `${inst.remainingTurns}回合` : '';
                   } else {
                     const template = EFFECT_CATALOG[inst.catalogId];
                     if (!template) return null;
@@ -209,11 +227,11 @@ export const StatusBadgePanel: React.FC<StatusBadgePanelProps> = ({ elf, otherEf
         let catLabels = '';
 
         if (selectedEffect.isStandardStatus) {
-          const style = getCategoryStyle(selectedEffect.data.categories);
+          const style = getCategoryStyle(selectedEffect.data.categories, selectedEffect.data.name);
           badge = style.badge;
           label = selectedEffect.data.name;
           color = style.color;
-          displayValue = selectedEffect.remainingTurns > 0 ? `${selectedEffect.remainingTurns}回合` : '';
+          displayValue = !selectedEffect.data.categories.includes('BOSS_ONLY') && selectedEffect.remainingTurns > 0 ? `${selectedEffect.remainingTurns}回合` : '';
           description = selectedEffect.data.description || statusVisual(label)?.desc || '';
           catLabels = selectedEffect.data.categories.join(' / ');
         } else {

@@ -1,11 +1,14 @@
 import React from 'react';
 import { Elf } from '../types';
+import { statusVisual } from '../battle/effectIcons';
+import { ChainImage } from './SeerImages';
 
 interface StatStagePanelProps {
   elf: Elf;
   isExpanded?: boolean;
   onToggleExpand?: () => void;
   className?: string;
+  disguiseAsNightmare?: boolean;
 }
 
 const STAT_CONFIG: Array<{
@@ -25,6 +28,7 @@ export const StatStagePanel: React.FC<StatStagePanelProps> = ({
   isExpanded = true,
   onToggleExpand,
   className = '',
+  disguiseAsNightmare = false,
 }) => {
   const stages = elf.statStages || {
     atk: 0,
@@ -34,6 +38,23 @@ export const StatStagePanel: React.FC<StatStagePanelProps> = ({
     speed: 0,
     accuracy: 0,
   };
+  const hasStages = Object.values(stages).some(value => Number(value) !== 0);
+
+  if (disguiseAsNightmare && hasStages) {
+    const icon = statusVisual('魘味')?.icon;
+    return (
+      <div className={`space-y-1 ${className}`}>
+        <div onClick={onToggleExpand} className="flex justify-between items-center cursor-pointer p-1 rounded border border-transparent select-none">
+          <span className="text-[10px] text-amber-400 font-black uppercase tracking-widest flex items-center gap-1">⚡ 能力等級狀態 {onToggleExpand ? (isExpanded ? "▼" : "▶") : null}</span>
+          <span className="text-[8px] px-1.5 py-0.5 bg-purple-950/60 border border-purple-500/50 rounded text-purple-300 font-bold">魘味</span>
+        </div>
+        {isExpanded && <div className="flex items-center gap-1.5 p-1.5 bg-purple-950/40 border border-purple-600/40 rounded text-purple-200 text-[10px]">
+          {icon && <ChainImage urls={[icon]} className="w-4 h-4 rounded-sm" />}
+          <span>魘味</span>
+        </div>}
+      </div>
+    );
+  }
 
   let buffCount = 0;
   let debuffCount = 0;

@@ -1,4 +1,4 @@
-import React, { useState, useContext, useEffect, useRef } from "react";
+import React, { useState, useContext, useEffect, useMemo, useRef } from "react";
 import { createPortal } from "react-dom";
 import { 
   Shield, 
@@ -102,13 +102,18 @@ export function BattleScreenUI(props: BattleScreenUIProps) {
     p1StartHp, p2StartHp, lastActionInfo,
     damageDealt, p1Marks, p2Marks, p1Timers, p2Timers
   } = battle;
+  // 本地對戰畫面以 P1 為己方視角：魘味只改顯示，不觸碰戰鬥狀態資料。
+  const disguiseBattleStates = Object.entries(getStatuses(p1) || {}).some(([name, turns]) =>
+    (name === '魘味' || name === '魘昧') && Number(turns) > 0
+  );
 
-  const chartData = Object.entries(damageDealt || {}).map(([name, value]) => ({
+  // 防卡頓：傷害圖表按 damageDealt 緩存，避免每 effect 重算重繪（recharts 整圖重渲染是卡頓主因之一）。
+  const chartData = useMemo(() => Object.entries(damageDealt || {}).map(([name, value]) => ({
     name,
     value: Number(value)
-  })).filter(d => d.value > 0);
+  })).filter(d => d.value > 0), [damageDealt]);
 
-  const totalDamage = chartData.reduce((acc, curr) => acc + curr.value, 0);
+  const totalDamage = useMemo(() => chartData.reduce((acc, curr) => acc + curr.value, 0), [chartData]);
 
   const [tacticalTab, setTacticalTab] = useState<"SKILLS" | "TEAM" | "ITEMS" | "EFFECTS">("SKILLS");
   const [hoveredSkill, setHoveredSkill] = useState<Skill | null>(null);
@@ -152,7 +157,8 @@ export function BattleScreenUI(props: BattleScreenUIProps) {
     return DEFAULT_SECTION_VISIBILITY;
   });
 
-  const [panelTab, setPanelTab] = useState<Record<"p1" | "p2", "ALL" | "STATS" | "SHIELDS" | "STATUSES" | "SUMMARY">>({ p1: "ALL", p2: "ALL" });
+  type DetailTab = "STATS" | "SHIELDS" | "STATUSES" | "MARKS" | "TIMERS" | "SUMMARY";
+  const [panelTab, setPanelTab] = useState<Record<"p1" | "p2", DetailTab>>({ p1: "SUMMARY", p2: "SUMMARY" });
 
   useEffect(() => {
     try {
@@ -404,18 +410,19 @@ export function BattleScreenUI(props: BattleScreenUIProps) {
             {/* 資訊分類按鈕列 (Categorized Info Tabs) */}
             <div className="flex items-center gap-1 overflow-x-auto custom-scrollbar pb-1 border-b border-slate-800/80 mb-2 select-none">
               {[
-                { key: 'ALL', label: '🌐 全部' },
-                { key: 'STATS', label: '📊 能力' },
-                { key: 'SHIELDS', label: '🛡️ 護盾' },
-                { key: 'STATUSES', label: '🔮 異常' },
                 { key: 'SUMMARY', label: '⚔️ 統計' },
+                { key: 'STATS', label: '📊 能力' },
+                { key: 'SHIELDS', label: '🛡️ 防護' },
+                { key: 'STATUSES', label: '🔮 異常與抗性' },
+                { key: 'MARKS', label: '✦ 印記' },
+                { key: 'TIMERS', label: '◷ 計時效果' },
               ].map((t) => {
-                const isActive = (panelTab[side] || 'ALL') === t.key;
+                const isActive = panelTab[side] === t.key;
                 return (
                   <button
                     key={t.key}
                     type="button"
-                    onClick={() => setPanelTab((prev) => ({ ...prev, [side]: t.key as any }))}
+                    onClick={() => setPanelTab((prev) => ({ ...prev, [side]: t.key as DetailTab }))}
                     className={`px-2 py-0.5 rounded text-[10px] font-bold transition-all whitespace-nowrap shrink-0 ${
                       isActive
                         ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/50 shadow-sm'
@@ -428,7 +435,7 @@ export function BattleScreenUI(props: BattleScreenUIProps) {
               })}
             </div>
 
-            {((panelTab[side] || 'ALL') === 'ALL' || (panelTab[side] || 'ALL') === 'SUMMARY') && sectionVisibility.turnStats && (() => {
+            {panelTab[side] === 'SUMMARY' && sectionVisibility.turnStats && (() => {
               const stats = side === 'p1' ? p1TurnStats : p2TurnStats;
               const typeConfig: Record<string, { label: string; color: string }> = {
                 skill:   { label: '⚔️技能傷害', color: 'text-red-300 bg-amber-950/80 border border-red-700/80' },
@@ -476,10 +483,11 @@ export function BattleScreenUI(props: BattleScreenUIProps) {
             
             <div className="space-y-3">
               {/* Stat Stage Panel */}
-              {((panelTab[side] || 'ALL') === 'ALL' || (panelTab[side] || 'ALL') === 'STATS') && sectionVisibility.statStages && (
+              {panelTab[side] === 'STATS' && sectionVisibility.statStages && (
                 <div>
                   <StatStagePanel
                     elf={elf}
+                    disguiseAsNightmare={disguiseBattleStates}
                     isExpanded={showStatStages[side]}
                     onToggleExpand={() => setShowStatStages(prev => ({ ...prev, [side]: !prev[side] }))}
                   />
@@ -487,7 +495,7 @@ export function BattleScreenUI(props: BattleScreenUIProps) {
               )}
 
               {/* Shield and Barrier Panel */}
-              {((panelTab[side] || 'ALL') === 'ALL' || (panelTab[side] || 'ALL') === 'SHIELDS') && sectionVisibility.shieldBarrier && (
+              {panelTab[side] === 'SHIELDS' && sectionVisibility.shieldBarrier && (
                 <div>
                   <ShieldBarrierPanel
                     elf={elf}
@@ -497,15 +505,15 @@ export function BattleScreenUI(props: BattleScreenUIProps) {
                 </div>
               )}
 
-              {((panelTab[side] || 'ALL') === 'ALL' || (panelTab[side] || 'ALL') === 'STATUSES') && sectionVisibility.statusAndImmunity && (
+              {panelTab[side] === 'STATUSES' && sectionVisibility.statusAndImmunity && (
                 <div>
                     <span className="text-[10px] text-rose-500 font-black uppercase tracking-widest block mb-1">異常狀態與免疫:</span>
-                    <StatusBadgePanel elf={elf} otherEffects={dynamicEffects} categoryFilter={["CONTROL", "WEAKENING", "RESTRICTIVE", "EVOLUTIONARY", "AUXILIARY"]} emptyHint="無異常狀態" />
+                    <StatusBadgePanel elf={elf} otherEffects={dynamicEffects} disguiseAbnormalStatuses={disguiseBattleStates} categoryFilter={["CONTROL", "WEAKENING", "RESTRICTIVE", "EVOLUTIONARY", "AUXILIARY", "BOSS_ONLY"]} emptyHint="無異常狀態" />
                 </div>
               )}
 
               {/* Resistances Summary */}
-              {elf.resistances && (
+              {panelTab[side] === 'STATUSES' && elf.resistances && (
                 <div>
                   <div 
                     onClick={() => setShowResist(prev => ({ ...prev, [side]: !prev[side] }))}
@@ -569,7 +577,7 @@ export function BattleScreenUI(props: BattleScreenUIProps) {
               )}
               
               {/* Registry States & Marks */}
-              {sectionVisibility.marks && (() => {
+              {panelTab[side] === 'MARKS' && sectionVisibility.marks && (() => {
                 const registryState = isP1 ? battle.p1RegistryState : battle.p2RegistryState;
                 const entries = Object.entries(registryState || {}).filter(([key, val]) => {
                   const lowerKey = key.toLowerCase();
@@ -612,7 +620,7 @@ export function BattleScreenUI(props: BattleScreenUIProps) {
                 );
               })()}
             </div>
-          {(sectionVisibility.turnEffects || sectionVisibility.countEffects) && (
+          {panelTab[side] === 'TIMERS' && (sectionVisibility.turnEffects || sectionVisibility.countEffects) && (
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 border-t border-slate-800/50 pt-3">
                {sectionVisibility.turnEffects && (
                  <div className="space-y-1">
@@ -872,7 +880,7 @@ export function BattleScreenUI(props: BattleScreenUIProps) {
                     </>
                   )}
                   {tacticalTab === "EFFECTS" && (
-                    <StatusInspector side="p1" state={battle} />
+                    <StatusInspector state={battle} />
                   )}
     </>
   );
@@ -1030,9 +1038,6 @@ export function BattleScreenUI(props: BattleScreenUIProps) {
               </div>
             </div>
           <div className="mb-3 relative">
-            <div className="absolute -top-12 left-1/2 -translate-x-1/2 pointer-events-none z-[100] flex flex-col items-center gap-1.5 w-max">
-              {renderPopups(side)}
-            </div>
               <div className="flex justify-between items-baseline mb-1">
                 <span className="text-[10px] text-slate-400 font-bold">體力</span>
                 <span className="text-lg font-black text-white">{elf.currentHp} <span className="text-xs text-slate-500">/ {elf.maxHp}</span></span>
@@ -1064,16 +1069,23 @@ export function BattleScreenUI(props: BattleScreenUIProps) {
     type Chip = { key: string; text: string; cls: string; name: string; desc?: string; icon?: string; priority: number; kindLabel?: string };
     const chips: Chip[] = [];
     const st = getStatuses(elf) as Record<string, any>;
-    Object.entries(st || {}).forEach(([id, turns]) => {
+    const activeStatusEntries = Object.entries(st || {}).filter(([, turns]) => Number(turns) > 0);
+    if (disguiseBattleStates && activeStatusEntries.length > 0) {
+      const visual = statusVisual('魘味');
+      chips.push({ key: 's-魘味-mask', name: '魘味', text: '魘味', cls: "bg-rose-950/70 text-rose-200 border-rose-500/40", desc: StatusRegistry['魘味'].description, icon: visual?.icon, priority: 100, kindLabel: "異" });
+    } else activeStatusEntries.forEach(([id, turns]) => {
       if (!turns) return;
       const reg = (StatusRegistry as any)[id];
       const cat = (EFFECT_CATALOG as any)[id];
       const name = reg?.name || cat?.label || id;
       const vis = statusVisual(name);
       const n = Number(turns);
+      const statusChipColor = reg?.categories?.includes('BOSS_ONLY')
+        ? name === '神話' ? "bg-amber-950/70 text-amber-200 border-amber-500/50" : "bg-sky-950/70 text-sky-200 border-sky-500/50"
+        : "bg-rose-950/70 text-rose-200 border-rose-500/40";
       chips.push({
-        key: `s-${id}`, name, text: n > 0 && n < 99 ? `${name}(${n})` : name,
-        cls: "bg-rose-950/70 text-rose-200 border-rose-500/40",
+        key: `s-${id}`, name, text: reg?.categories?.includes('BOSS_ONLY') ? name : n > 0 && n < 99 ? `${name}(${n})` : name,
+        cls: statusChipColor,
         desc: vis?.desc || reg?.description || catalogDesc(cat, { remainingTurns: n }) || name,
         icon: vis?.icon || buffIconFor(name),
         priority: 100,
@@ -1088,7 +1100,9 @@ export function BattleScreenUI(props: BattleScreenUIProps) {
       chips.push({ key: `d-${d.catalogId}`, name: c.label, text: d.remainingTurns > 1 ? `${c.label}(${d.remainingTurns})` : c.label, cls: "bg-violet-950/70 text-violet-200 border-violet-500/40", desc, icon: statusVisual(c.label)?.icon || buffIconFor(`${c.label} ${desc}`), priority: 90, kindLabel: "效" });
     });
     const stages = (elf.statStages || {}) as Record<string, number>;
-    Object.entries(stages).forEach(([k, v]) => {
+    if (disguiseBattleStates && Object.values(stages).some(v => Number(v) !== 0)) {
+      chips.push({ key: 'g-魘味-mask', name: '魘味', text: '魘味', cls: "bg-purple-950/70 text-purple-200 border-purple-500/40", desc: StatusRegistry['魘味'].description, icon: statusVisual('魘味')?.icon, priority: 30, kindLabel: "能" });
+    } else Object.entries(stages).forEach(([k, v]) => {
       if (!v) return;
       chips.push({ key: `g-${k}`, name: `${STAT_FULL[k] || k}等級`, text: `${STAGE_SHORT[k] || k}${v > 0 ? "+" : ""}${v}`, cls: v > 0 ? "bg-amber-950/70 text-amber-200 border-amber-500/40" : "bg-cyan-950/70 text-cyan-200 border-cyan-500/40", desc: stageDesc(k, v), priority: 30, kindLabel: "能" });
     });
@@ -1328,7 +1342,21 @@ export function BattleScreenUI(props: BattleScreenUIProps) {
           return (
             <button
               key={i}
-              onClick={() => { if (phase === "p1_select") props.onSkillSelect("p1", skill); }}
+              onClick={(e) => {
+                // 手機端：沒有 hover，點已選中的技能彈說明浮窗，再點收起；點未選中的照常選招。
+                if (phase === "p1_select" && selected && hoveredSkill?.name === skill.name) {
+                  setHoveredSkill(null); setHoveredSkillAnchor(null); return;
+                }
+                if (phase === "p1_select") {
+                  props.onSkillSelect("p1", skill);
+                  // 手機 tap 同步彈說明（無 hover 環境下看得到技能描述）
+                  try {
+                    const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+                    setHoveredSkillAnchor({ x: rect.left + rect.width / 2, y: rect.top, top: rect.top, bottom: rect.bottom });
+                    setHoveredSkill(skill);
+                  } catch { /* 略過 */ }
+                }
+              }}
               onMouseEnter={(e) => {
                 const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
                 setHoveredSkillAnchor({ x: rect.left + rect.width / 2, y: rect.top, top: rect.top, bottom: rect.bottom });
@@ -1336,7 +1364,7 @@ export function BattleScreenUI(props: BattleScreenUIProps) {
               }}
               onMouseLeave={() => { setHoveredSkill(null); setHoveredSkillAnchor(null); }}
               disabled={disabled}
-              className={`group relative flex flex-col gap-1 rounded-xl border px-2.5 pt-2.5 pb-2 text-left transition-all bg-gradient-to-b from-slate-800/90 to-slate-900/90 hover:from-slate-700/90 hover:border-cyan-400/70 disabled:opacity-45 disabled:cursor-not-allowed ${isFifth ? "border-amber-400/80 shadow-[0_0_14px_rgba(245,158,11,0.25)]" : "border-white/10"} ${selected ? "ring-2 ring-cyan-400" : ""}`}
+              className={`group relative flex flex-col gap-1 rounded-xl border px-2.5 pt-2.5 pb-2 text-left transition-all bg-gradient-to-b from-slate-800/90 to-slate-900/90 hover:from-slate-700/90 hover:border-cyan-400/70 disabled:opacity-45 disabled:cursor-not-allowed min-h-[44px] ${isFifth ? "border-amber-400/80 shadow-[0_0_14px_rgba(245,158,11,0.25)]" : "border-white/10"} ${selected ? "ring-2 ring-cyan-400" : ""}`}
             >
               {isFifth && <span className="absolute -top-2 left-2 px-1.5 rounded bg-gradient-to-r from-amber-500 to-yellow-400 text-[10px] font-black text-slate-900 shadow">第五</span>}
               {skill.specialBadge && (
@@ -1374,10 +1402,10 @@ export function BattleScreenUI(props: BattleScreenUIProps) {
         {renderSprite("p2")}
       </div>
 
-      {/* 上方：雙方精靈卡 + 中央回合資訊 */}
-      <div className="absolute top-[140px] sm:top-[56px] left-3 w-[43%] sm:w-[min(440px,33%)] z-30">{renderCard("p1")}</div>
-      <div className="absolute top-[140px] sm:top-[56px] right-3 w-[43%] sm:w-[min(440px,33%)] z-30">{renderCard("p2")}</div>
-      <div className="absolute top-[58px] sm:top-2 left-1/2 -translate-x-1/2 z-20">{renderMatchInfo()}</div>
+      {/* 上方：雙方精靈卡 + 中央回合資訊（手機直屏改上下疊卡，避免左右挤在一起蓋住技能鈕） */}
+      <div className="absolute top-[118px] sm:top-[56px] left-3 w-[43%] sm:w-[min(440px,33%)] z-30">{renderCard("p1")}</div>
+      <div className="absolute top-[118px] sm:top-[56px] right-3 w-[43%] sm:w-[min(440px,33%)] z-30">{renderCard("p2")}</div>
+      <div className="absolute top-[44px] sm:top-2 left-1/2 -translate-x-1/2 z-20">{renderMatchInfo()}</div>
 
       {/* 本次傷害提示 */}
       <div className="absolute top-[224px] sm:top-[92px] left-1/2 -translate-x-1/2 z-20 pointer-events-none">
@@ -2003,13 +2031,13 @@ export function BattleScreenUI(props: BattleScreenUIProps) {
               {/* Stat Stages */}
               <div className="mb-4 bg-slate-900/60 p-3 rounded-xl border border-slate-800 space-y-1">
                 <span className="text-xs font-black text-cyan-400 block mb-1">能力等級狀態</span>
-                <StatStagePanel elf={selectedElfDetail.elf} isExpanded={true} />
+                <StatStagePanel elf={selectedElfDetail.elf} isExpanded={true} disguiseAsNightmare={disguiseBattleStates} />
               </div>
 
               {/* Current Statuses / Effects */}
               <div className="mb-4 bg-slate-900/60 p-3 rounded-xl border border-slate-800 space-y-1">
                 <span className="text-xs font-black text-rose-400 block mb-1">異常狀態與效果</span>
-                <StatusBadgePanel elf={selectedElfDetail.elf} emptyHint="無任何異常狀態或效果" />
+                <StatusBadgePanel elf={selectedElfDetail.elf} emptyHint="無任何異常狀態或效果" disguiseAbnormalStatuses={disguiseBattleStates} />
               </div>
 
               {/* Marks */}

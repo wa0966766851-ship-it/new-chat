@@ -5,8 +5,17 @@ import { getStatMultiplier } from "../utils/statCalculator";
 type StatusRow = [number, string, string]; // [圖標ID, 類別, 官方說明]
 const STATUS = (data as any).status as Record<string, StatusRow>;
 const BUFF_TAGS = (data as any).buffTags as Record<string, number>;
+// Seer battle-effect static assets: myth (yellow) and immunity (blue).
+const BOSS_STATUS_ICON_IDS: Record<string, number> = { 神話: 17, 免疫: 18 };
+// Locally supplied artwork for statuses without the intended in-game icon.
+const CUSTOM_STATUS_ICONS: Record<string, string> = {
+  沉睡: "/status-icons/沉睡.png",
+  星佑: "/status-icons/星佑.png",
+  星護: "/status-icons/星護.png",
+  繳械: "/status-icons/繳械.png",
+};
 
-const ALIAS: Record<string, string> = { 麻痹: "麻痺", 神游: "神遊", 異常抵抗: "異常免疫", 免疫: "異常免疫" };
+const ALIAS: Record<string, string> = { 麻痹: "麻痺", 神游: "神遊", 魘昧: "魘味", 異常抵抗: "異常免疫", 免疫: "異常免疫" };
 
 export interface EffectVisual { icon?: string; desc?: string; category?: string }
 
@@ -14,6 +23,12 @@ export interface EffectVisual { icon?: string; desc?: string; category?: string 
 export function statusVisual(name?: string): EffectVisual | null {
   if (!name) return null;
   const n = ALIAS[name] || name;
+  if (CUSTOM_STATUS_ICONS[n]) {
+    return { icon: CUSTOM_STATUS_ICONS[n], category: STATUS[n]?.[1] || "" };
+  }
+  if (BOSS_STATUS_ICON_IDS[name] !== undefined) {
+    return { icon: `/seer/abnormal/${BOSS_STATUS_ICON_IDS[name]}.png`, category: 'BOSS_ONLY' };
+  }
   const row = STATUS[n];
   if (!row) return null;
   return { icon: `/seer/abnormal/${row[0]}.png`, category: row[1], desc: row[2] };

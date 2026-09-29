@@ -143,6 +143,15 @@ export const checkElfDead = (elf: Elf | undefined | null) => {
 export default function BattleScreen(props: BattleScreenProps) {
   const { initialP1Team, initialP2Team, p1StarterId, p2StarterId, p1Suit, p2Suit, p1Title, p2Title, battleMode } = props;
   
+  // 防卡頓：URL ?fast=1 自動開啟省動畫模式（executeEffect 讀 window.__BATTLE_FAST__）。
+  // 手機／低階機用 ?fast=1 進場，動畫 delay 全歸零，只留 log。
+  if (typeof window !== 'undefined' && !(window as any)._battleFastInit) {
+    (window as any)._battleFastInit = true;
+    try {
+      if (new URLSearchParams(window.location.search).get('fast') === '1') (window as any).__BATTLE_FAST__ = true;
+    } catch { /* 非瀏覽器環境略過 */ }
+  }
+
   const rngRef = useRef(makeRng((typeof globalThis !== 'undefined' && (globalThis as any).__BATTLE_SEED__) || Date.now()));
   const rng = useCallback(() => rngRef.current(), []);
   const prdInitRef = useRef(false);

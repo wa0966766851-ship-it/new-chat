@@ -17,7 +17,7 @@ export const StatusRegistry: Record<string, StatusRegistryEntry> = {
   // 1. 【控制類異常】 (CONTROL)
   // ==========================================
   '麻痹': {
-    name: '麻痹',
+    name: '麻痺',
     categories: ['CONTROL'],
     description: '控制類異常狀態；處於該異常狀態則每回合無法行動',
     mechanics: [{ type: 'CANT_ACT' }]
@@ -33,6 +33,12 @@ export const StatusRegistry: Record<string, StatusRegistryEntry> = {
     categories: ['CONTROL'],
     description: '控制類異常狀態；處於該異常狀態則每回合無法行動',
     mechanics: [{ type: 'CANT_ACT' }]
+  },
+  '魘味': {
+    name: '魘味',
+    categories: ['WEAKENING'],
+    description: '弱化類異常；處於該異常時，場上敵我雙方的異常狀態與能力等級狀態均對己方展示為無回合數的「魘味」。此效果只改變己方看到的顯示，不改變原有效果與回合數。',
+    mechanics: []
   },
   '害怕': {
     name: '害怕',
@@ -436,14 +442,14 @@ export const StatusRegistry: Record<string, StatusRegistryEntry> = {
   },
   '神話': {
     name: '神話',
-    categories: ['AUXILIARY', 'BOSS_ONLY'],
-    description: '附屬類異常；BOSS 專用附屬異常；免疫能力下降；免疫異常狀態；PP 無限；所有技能必中(激活後無回合數限制且下場保留)',
+    categories: ['BOSS_ONLY'],
+    description: 'BOSS 專用異常狀態（黃色圖標）；免疫能力下降與異常狀態、PP 無限、所有技能必中。無回合數且不會隨回合遞減，下場後保留。',
     mechanics: [{ type: 'SPECIAL_BUFF', params: { immuneStatDebuff: true, immuneStatus: true, infinitePP: true, sureHit: true } }]
   },
   '免疫': {
     name: '免疫',
-    categories: ['AUXILIARY', 'BOSS_ONLY'],
-    description: '附屬類異常；BOSS 專用附屬異常；免疫異常狀態；PP 無限(激活後無回合數限制且下場保留)',
+    categories: ['BOSS_ONLY'],
+    description: 'BOSS 專用異常狀態（藍色圖標）；免疫異常狀態、PP 無限。無回合數且不會隨回合遞減，下場後保留。',
     mechanics: [{ type: 'SPECIAL_BUFF', params: { immuneStatus: true, infinitePP: true } }]
   },
   '異常抵抗': {

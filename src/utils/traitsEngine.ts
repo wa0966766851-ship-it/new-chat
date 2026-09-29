@@ -29,8 +29,11 @@ export class TraitsEngine {
     if (mechanics.isStoneThrower) {
       const stoneCount = ctx.self.skills.filter(s => s.isSkillStone || s.name.endsWith('石之力-S') || s.name.endsWith('石之力')).length;
       ctx.setPlayerState(`${selfSide}_stoneCount`, stoneCount);
-      if (stoneCount >= 4) {
-        ctx.addLog(`🔮 【${elfName}】攜帶了 4 個技能石，解鎖特質【神話】狀態！免疫所有異常、能力下降，且 PP 值無限！`, "effect");
+      if (stoneCount >= 4 && !isStatusActive(ctx.self, '神話')) {
+        const result = ctx.applyStatusWithImmunityCheck(selfSide, '神話', 999);
+        if (result.success) {
+          ctx.addLog(`🔮 【${elfName}】攜帶了 4 個技能石，解鎖特質【神話】狀態！免疫所有異常、能力下降，且 PP 值無限！`, "effect");
+        }
       }
     }
   }
@@ -163,7 +166,7 @@ export class TraitsEngine {
     }
 
     // 1. 【投石者】神話狀態免疫所有異常
-    if (mechanics.isStoneThrower) {
+    if (mechanics.isStoneThrower && status !== '神話') {
       const stoneCount = targetElf.skills.filter(s => s.isSkillStone || s.name.endsWith('石之力-S') || s.name.endsWith('石之力')).length;
       if (stoneCount >= 4) {
         ctx.addLog(`🛡️ 【${targetElf.name}】處於【神話】狀態下，免疫了 【${status}】 異常！`, "status");

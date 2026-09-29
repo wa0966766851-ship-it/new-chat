@@ -193,7 +193,10 @@ const Encyclopedia: React.FC<EncyclopediaProps> = ({ onClose, initialTab = 'elve
     });
 
     // 6. Abnormal Statuses (Source of truth: StatusRegistry)
+    const listedStatusNames = new Set<string>();
     Object.entries(StatusRegistry).forEach(([key, s]) => {
+      if (listedStatusNames.has(s.name)) return;
+      listedStatusNames.add(s.name);
       items.push({
         id: `stat_${key}`,
         title: s.name,
@@ -456,9 +459,12 @@ const Encyclopedia: React.FC<EncyclopediaProps> = ({ onClose, initialTab = 'elve
                     return null;
                   }
 
-                  let statusesInCategory = Object.entries(StatusRegistry).filter(([_, entry]) => 
-                    entry.categories.includes(catKey as StatusCategory)
-                  );
+                  const seenStatusNames = new Set<string>();
+                  let statusesInCategory = Object.entries(StatusRegistry).filter(([_, entry]) => {
+                    if (!entry.categories.includes(catKey as StatusCategory) || seenStatusNames.has(entry.name)) return false;
+                    seenStatusNames.add(entry.name);
+                    return true;
+                  });
 
                   // Apply text search query
                   if (statusSearchQuery.trim()) {

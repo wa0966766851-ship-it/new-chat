@@ -3,7 +3,7 @@ import { Elf } from "../types";
 import { Timer } from "../battle/timers";
 import { Mark } from "../battle/marks";
 
-export type StateCategory = "特殊" | "常駐" | "回合類" | "其他計時" | "次數類" | "防護" | "異常";
+export type StateCategory = "異常" | "能力" | "防護" | "印記" | "回合類" | "其他計時" | "次數類" | "常駐";
 
 export interface ActiveEffect {
   name: string;
@@ -18,19 +18,9 @@ export interface ActiveEffect {
 
 function translateStatus(status: string): string {
   const map: Record<string, string> = {
-    paralyzed: "麻痺",
-    poisoned: "中毒",
-    burned: "燒傷",
-    frozen: "凍傷",
-    scared: "害怕",
-    sleeping: "睡眠",
-    petrified: "石化",
-    confused: "混亂",
-    icebound: "冰封",
-    blind: "失明",
-    cursed: "詛咒",
-    disabled: "癱瘓",
-    tired: "疲憊"
+    paralyzed: "麻痺", poisoned: "中毒", burned: "燒傷", frozen: "凍傷", scared: "害怕",
+    sleeping: "睡眠", petrified: "石化", confused: "混亂", icebound: "冰封", blind: "失明",
+    cursed: "詛咒", disabled: "癱瘓", tired: "疲憊"
   };
   return map[status] || status;
 }
@@ -41,223 +31,143 @@ export function getActiveEffects(side: "p1" | "p2", state: any): ActiveEffect[] 
   if (!elf) return [];
 
   const effects: ActiveEffect[] = [];
-
-  // 1. 常駐 / 魂印效果 (carried)
-  if (elf.soulMark) {
-    effects.push({
-      name: `魂印 · ${elf.soulMark.name}`,
-      desc: elf.soulMark.description || "天生固有特權與被動技能",
-      category: "常駐",
-      polarity: "POSITIVE"
-    });
-  }
-
-  // 2. 異常狀態 (異常)
-  if (elf.battleStatus && elf.battleStatus !== "normal" && elf.battleStatus !== "none") {
-    effects.push({
-      name: translateStatus(elf.battleStatus),
-      desc: `受到此異常狀態限制，持續生效中。`,
-      category: "異常",
-      remaining: elf.battleStatusDuration || 1,
-      polarity: "NEGATIVE"
-    });
-  }
-
-  if (elf.battleStatuses) {
-    for (const [st, rem] of Object.entries(elf.battleStatuses)) {
-      if (st !== elf.battleStatus && rem > 0) {
-        effects.push({
-          name: translateStatus(st),
-          desc: `持有此異常狀態。`,
-          category: "異常",
-          remaining: rem,
-          polarity: "NEGATIVE"
-        });
-      }
+  if (elf.soulMark) effects.push({
+    name: `魂印 · ${elf.soulMark.name}`, desc: elf.soulMark.description || "固有效果與被動技能",
+    category: "常駐", polarity: "POSITIVE"
+  });
+  if (elf.alienTraits) {
+    for (const trait of Object.values(elf.alienTraits) as any[]) {
+      if (trait?.name) effects.push({ name: trait.name, desc: trait.description || "精靈特質", category: "常駐", polarity: "POSITIVE" });
     }
   }
+  if (elf.trait?.name) effects.push({ name: elf.trait.name, desc: elf.trait.description || "精靈特性", category: "常駐", polarity: "POSITIVE" });
 
-  // 3. 特殊印記 (特殊 / 常駐)
+  const statuses = elf.battleStatuses || {};
+  const primaryStatus = elf.battleStatus;
+  if (primaryStatus && primaryStatus !== "normal" && primaryStatus !== "none") {
+    const remaining = Number(elf.battleStatusDuration || statuses[primaryStatus] || 0);
+    effects.push({ name: translateStatus(primaryStatus), desc: "目前生效中的異常狀態。", category: "異常", remaining: remaining > 0 ? remaining : undefined, unit: "回合", polarity: "NEGATIVE" });
+  }
+  for (const [status, turns] of Object.entries(statuses)) {
+    const remaining = Number(turns);
+    if (status !== primaryStatus && remaining > 0) effects.push({
+      name: translateStatus(status), desc: "目前生效中的異常狀態。", category: "異常", remaining, unit: "回合", polarity: "NEGATIVE"
+    });
+  }
+  if (elf.statusImmuneTurns && elf.statusImmuneTurns > 0) effects.push({
+    name: "異常狀態免疫", desc: "暫時免疫可被此效果抵抗的異常狀態。", category: "異常", remaining: elf.statusImmuneTurns, unit: "回合", polarity: "POSITIVE"
+  });
+
+  const stageNames: Record<string, string> = { atk: "攻擊", spa: "特攻", def: "防禦", spd: "特防", spe: "速度", accuracy: "命中", evasion: "閃避" };
+  for (const [key, value] of Object.entries(elf.statStages || {})) {
+    const stage = Number(value);
+    if (stage !== 0) effects.push({
+      name: `${stageNames[key] || key} ${stage > 0 ? "+" : ""}${stage}`,
+      desc: `${stageNames[key] || key}能力等級變化。`, category: "能力", stacks: stage, stackUnit: "級",
+      polarity: stage > 0 ? "POSITIVE" : "NEGATIVE"
+    });
+  }
+
   const marks: Mark[] = side === "p1" ? (state.p1Marks || []) : (state.p2Marks || []);
   for (const mark of marks) {
-    if ((mark.count > 0 || mark.visibleWhenZero) && (!mark.ownerBattleId || mark.ownerBattleId === (elf.battleId || elf.id))) {
-      effects.push({
-        name: mark.name,
-        desc: mark.description || "特殊印記狀態",
-        category: "特殊",
-        stacks: mark.remainingRounds ?? mark.count,
-        stackUnit: mark.remainingRounds !== undefined ? "回合" : (mark.unit || "層"),
-        polarity: mark.polarity === "negative" ? "NEGATIVE" : mark.polarity === "positive" ? "POSITIVE" : "NEUTRAL"
-      });
-    }
+    if ((mark.count > 0 || mark.visibleWhenZero) && (!mark.ownerBattleId || mark.ownerBattleId === (elf.battleId || elf.id))) effects.push({
+      name: mark.name, desc: mark.description || "特殊印記狀態", category: "印記",
+      stacks: mark.remainingRounds ?? mark.count, stackUnit: mark.remainingRounds !== undefined ? "回合" : (mark.unit || "層"),
+      polarity: mark.polarity === "negative" ? "NEGATIVE" : mark.polarity === "positive" ? "POSITIVE" : "NEUTRAL"
+    });
   }
 
-  // 4. 計時器與效果 (回合類 / 次數類)
   const timers: Timer[] = side === "p1" ? (state.p1Timers || []) : (state.p2Timers || []);
   for (const timer of timers) {
-    const isTurn = timer.kind === "turn_effect";
-    const isUseCounter = timer.kind === "use_counter";
-    const polarity = timer.payload?.polarity || "POSITIVE";
+    if (timer.remaining <= 0) continue;
+    const category: StateCategory = timer.kind === "turn_effect" ? "回合類" : timer.kind === "use_counter" ? "次數類" : "其他計時";
+    const polarity = String(timer.payload?.polarity || "POSITIVE").toUpperCase() as ActiveEffect["polarity"];
     effects.push({
-      name: timer.name || (isTurn ? "回合類效果" : isUseCounter ? "次數限制" : "其他計時"),
-      desc: timer.description || "啟用中的技能或魂印模組化效果",
-      category: isTurn ? "回合類" : isUseCounter ? "次數類" : "其他計時",
-      remaining: timer.remaining,
-      unit: isUseCounter ? "次" : "回合",
-      polarity: polarity as any
+      name: timer.name || (category === "次數類" ? "次數限制" : "計時效果"),
+      desc: timer.description || "啟用中的技能或魂印效果。", category, remaining: timer.remaining,
+      unit: category === "次數類" ? "次" : "回合", polarity: ["POSITIVE", "NEGATIVE", "NEUTRAL"].includes(polarity) ? polarity : "POSITIVE"
     });
   }
 
-  // 5. 其他戰鬥內動態狀態 (回合類)
-  if (elf.statusImmuneTurns && elf.statusImmuneTurns > 0) {
-    effects.push({
-      name: "異常狀態免疫",
-      desc: "豁免所有受到的控制、弱化或限制類異常狀態（BOSS有效）",
-      category: "回合類",
-      remaining: elf.statusImmuneTurns,
-      polarity: "POSITIVE"
-    });
+  for (const [field, name, description] of [
+    ["cannotUseAttrSkillsTurns", "屬性技能封鎖", "暫時無法使用屬性類技能。"],
+    ["cannotUseAttackSkillsTurns", "攻擊技能失效", "暫時無法使用物理或特殊攻擊技能。"]
+  ] as const) {
+    const remaining = Number((elf as any)[field] || 0);
+    if (remaining > 0) effects.push({ name, desc: description, category: "回合類", remaining, unit: "回合", polarity: "NEGATIVE" });
   }
-
-  if (elf.cannotUseAttrSkillsTurns && elf.cannotUseAttrSkillsTurns > 0) {
-    effects.push({
-      name: "屬性技能封鎖",
-      desc: "暫時無法使用屬性類（非攻擊性）技能",
-      category: "回合類",
-      remaining: elf.cannotUseAttrSkillsTurns,
-      polarity: "NEGATIVE"
-    });
-  }
-
-  if (elf.cannotUseAttackSkillsTurns && elf.cannotUseAttackSkillsTurns > 0) {
-    effects.push({
-      name: "攻擊技能失效",
-      desc: "暫時無法使用任何物理或特殊攻擊技能",
-      category: "回合類",
-      remaining: elf.cannotUseAttackSkillsTurns,
-      polarity: "NEGATIVE"
-    });
-  }
-
-  if (elf.shield && elf.shield > 0) {
-    effects.push({
-      name: "機械護盾",
-      desc: `當前吸收護盾容量: ${elf.shield} 點`,
-      category: "防護",
-      stacks: elf.shield,
-      polarity: "POSITIVE"
-    });
-  }
-
-  if (elf.barrier && elf.barrier > 0) {
-    effects.push({
-      name: "戰術護罩",
-      desc: `當前吸收護罩容量: ${elf.barrier} 點`,
-      category: "防護",
-      stacks: elf.barrier,
-      polarity: "POSITIVE"
-    });
-  }
-
+  if (elf.shield && elf.shield > 0) effects.push({ name: "護盾", desc: `吸收技能攻擊傷害，容量 ${elf.shield}。`, category: "防護", stacks: elf.shield, polarity: "POSITIVE" });
+  if (elf.barrier && elf.barrier > 0) effects.push({ name: "護罩", desc: `吸收固定與百分比傷害，容量 ${elf.barrier}。`, category: "防護", stacks: elf.barrier, polarity: "POSITIVE" });
   return effects;
 }
 
-const ORDER: StateCategory[] = ["特殊", "常駐", "回合類", "其他計時", "次數類", "防護", "異常"];
+const ORDER: StateCategory[] = ["異常", "能力", "防護", "印記", "回合類", "其他計時", "次數類", "常駐"];
 
-export function StatusInspector({ side, state }: { side: "p1" | "p2"; state: any }) {
+export function StatusInspector({ state }: { state: any }) {
+  const [side, setSide] = React.useState<"p1" | "p2">("p1");
+  const [category, setCategory] = React.useState<StateCategory>("異常");
+  const elf: Elf | null = side === "p1" ? state?.p1 : state?.p2;
   const all = getActiveEffects(side, state);
-  const elf = side === "p1" ? state?.p1 : state?.p2;
 
-  if (!elf) {
-    return (
-      <div className="p-6 text-slate-500 text-center text-xs tracking-widest font-black uppercase">
-        無出戰精靈資訊
-      </div>
-    );
-  }
+  if (!elf) return <div className="p-6 text-center text-xs font-bold text-slate-500">目前沒有出戰精靈資訊</div>;
 
+  const items = all.filter(effect => effect.category === category);
   return (
-    <div id="status-inspector-panel" className="flex-1 flex flex-col gap-6 p-6 overflow-y-auto custom-scrollbar bg-slate-950/40 text-slate-200">
-      <div className="flex items-center justify-between border-b border-slate-800 pb-4">
-        <div className="flex items-center gap-3">
-          <div className="w-1.5 h-6 bg-cyan-500" />
-          <div>
-            <h3 className="font-black text-sm text-slate-100 tracking-wider">
-              【{elf.name}】 狀態檢視器
-            </h3>
-            <p className="text-[10px] text-slate-500 font-bold mt-0.5 tracking-wide">
-              即時統計當前在場精靈的所有魂印、印記、計時器及異常狀態
-            </p>
-          </div>
+    <div id="status-inspector-panel" className="flex-1 flex flex-col gap-3 p-3 sm:p-4 overflow-y-auto custom-scrollbar bg-slate-950/40 text-slate-200">
+      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-800 pb-3">
+        <div>
+          <h3 className="text-sm font-black text-slate-100">{side.toUpperCase()}・{elf.name} 狀態</h3>
+          <p className="mt-1 text-[10px] font-bold text-slate-500">先選對戰方，再按類別查看；每頁只呈現一種類型</p>
         </div>
-        <span className="text-[10px] bg-slate-800 text-cyan-400 font-black px-2.5 py-1 rounded border border-slate-700 uppercase tracking-widest">
-          ACTIVE EFFECTS: {all.length}
-        </span>
+        <div className="flex gap-1 rounded-lg border border-slate-800 bg-slate-900 p-1">
+          {(["p1", "p2"] as const).map(playerSide => (
+            <button key={playerSide} onClick={() => setSide(playerSide)}
+              className={`rounded-md px-3 py-1 text-[10px] font-black ${side === playerSide ? "bg-cyan-600 text-white" : "text-slate-400 hover:text-white"}`}>
+              {playerSide.toUpperCase()}
+            </button>
+          ))}
+        </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+      <div className="flex gap-1.5 overflow-x-auto custom-scrollbar pb-1">
         {ORDER.map(cat => {
-          const items = all.filter(e => e.category === cat);
+          const count = all.filter(effect => effect.category === cat).length;
           return (
-            <div key={cat} className="flex flex-col bg-slate-900/30 rounded-lg border border-slate-800 p-4">
-              <div className="flex items-center justify-between border-b border-slate-800 pb-2.5 mb-3">
-                <span className="text-xs font-black tracking-widest text-slate-400">
-                  ◆ {cat}狀態
-                </span>
-                <span className="text-[10px] font-black text-slate-500 bg-slate-900 px-1.5 py-0.5 rounded">
-                  {items.length}
-                </span>
-              </div>
-
-              {items.length === 0 ? (
-                <div className="flex-1 flex items-center justify-center py-6 text-[10px] text-slate-600 font-black uppercase tracking-widest italic">
-                  NO ACTIVE
-                </div>
-              ) : (
-                <div className="flex flex-col gap-2.5">
-                  {items.map((e, i) => {
-                    const isNeg = e.polarity === "NEGATIVE";
-                    const isPos = e.polarity === "POSITIVE";
-                    let bgClass = "bg-slate-900/50 border-slate-800/80 text-slate-300";
-                    if (isNeg) {
-                      bgClass = "bg-red-950/10 border-red-900/30 text-red-200";
-                    } else if (isPos) {
-                      bgClass = "bg-emerald-950/10 border-emerald-900/30 text-emerald-200";
-                    }
-
-                    return (
-                      <div 
-                        key={i} 
-                        className={`flex flex-col gap-1 p-3 rounded-md border transition-all hover:bg-slate-900/70 ${bgClass}`}
-                      >
-                        <div className="flex items-start justify-between gap-2">
-                          <span className="font-black text-[11px] leading-tight tracking-wide">
-                            {e.name}
-                          </span>
-                          {e.stacks !== undefined && (
-                            <span className="text-[9px] font-black bg-slate-800/80 text-cyan-400 px-1.5 py-0.5 rounded border border-slate-700">
-                              {e.stacks} {e.stackUnit || "層"}
-                            </span>
-                          )}
-                        </div>
-                        <p className="text-[10px] text-slate-400 font-medium leading-relaxed">
-                          {e.desc}
-                        </p>
-                        {e.remaining !== undefined && (
-                          <div className="flex items-center gap-1.5 mt-1 text-[9px] font-black text-slate-500 uppercase tracking-widest">
-                            <span className="inline-block w-1.5 h-1.5 rounded-full bg-slate-600 animate-pulse" />
-                            剩餘 {e.remaining} {e.unit || "回合"}
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
+            <button key={cat} onClick={() => setCategory(cat)}
+              className={`shrink-0 rounded-lg border px-2.5 py-1.5 text-[10px] font-black transition-colors ${category === cat ? "border-cyan-500/50 bg-cyan-500/15 text-cyan-200" : "border-slate-800 bg-slate-900/60 text-slate-400 hover:text-slate-200"}`}>
+              {cat} <span className="ml-1 opacity-70">{count}</span>
+            </button>
           );
         })}
       </div>
+
+      <section className="rounded-xl border border-slate-800 bg-slate-900/30 p-3 sm:p-4">
+        <div className="mb-3 flex items-center justify-between border-b border-slate-800 pb-2">
+          <h4 className="text-xs font-black tracking-wide text-slate-200">{category}狀態</h4>
+          <span className="text-[10px] font-black text-slate-400">{items.length} 項</span>
+        </div>
+        {items.length === 0 ? (
+          <div className="py-8 text-center text-[11px] font-bold text-slate-500">目前沒有生效中的{category}狀態</div>
+        ) : (
+          <div className="grid grid-cols-1 gap-2.5 md:grid-cols-2">
+            {items.map((effect, index) => {
+              const tone = effect.polarity === "NEGATIVE" ? "border-rose-900/40 bg-rose-950/20 text-rose-100"
+                : effect.polarity === "POSITIVE" ? "border-emerald-900/40 bg-emerald-950/20 text-emerald-100"
+                  : "border-slate-800 bg-slate-900/60 text-slate-200";
+              return (
+                <article key={`${effect.category}-${effect.name}-${index}`} className={`flex flex-col gap-1 rounded-lg border p-3 ${tone}`}>
+                  <div className="flex items-start justify-between gap-2">
+                    <span className="text-[11px] font-black leading-tight">{effect.name}</span>
+                    {effect.stacks !== undefined && <span className="shrink-0 rounded border border-slate-700 bg-slate-800/80 px-1.5 py-0.5 text-[9px] font-black text-cyan-300">{effect.stacks} {effect.stackUnit || "層"}</span>}
+                  </div>
+                  <p className="text-[10px] font-medium leading-relaxed text-slate-400">{effect.desc}</p>
+                  {effect.remaining !== undefined && <div className="mt-1 text-[9px] font-black text-slate-500">剩餘 {effect.remaining} {effect.unit || "回合"}</div>}
+                </article>
+              );
+            })}
+          </div>
+        )}
+      </section>
     </div>
   );
 }
