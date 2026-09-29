@@ -407,8 +407,12 @@ export const WUXU_SKILLS: Record<string, BattleSkillHandler> = {
       run: (c) => {
         const opp = c.actor === "p1" ? "p2" : "p1";
         const total = (elf: any) => seq.reduce((a, t) => a + Math.floor(66 * getTypeMatchup(t, elf.type)), 0);
+        // 在場：六次按序以各自系別單獨結算（每次管線只乘一次正確克制）。
+        // 舊寫法先 total（含六系克制）再 elem:"普通" 進管線，會被普通系克制二次污染。
+        for (let i = 0; i < seq.length; i++) {
+          c.applySkillTypeDamage(opp, 66, `終焉·六花斬(${i + 1}/6·${seq[i]})`, { elem: seq[i], category: "skill_extra_action" });
+        }
         const active: any = opp === "p1" ? c.activeP1 : c.activeP2;
-        c.applySkillTypeDamage(opp, total(active), "終焉·六花斬", { elem: "普通", category: "skill_extra_action" });
         for (const m of c.getFullTeam(opp) as any[]) {
           if (!m || m === active || (m.battleId && m.battleId === active?.battleId) || m.currentHp <= 0 || m.isConcealed) continue;
           const hp = Math.max(0, m.currentHp - total(m));
