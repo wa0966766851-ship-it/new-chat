@@ -86,6 +86,7 @@ export interface DamageComputation {
   limit?: number;            // Stage 3 傷害上限，多來源時取 Math.min
   bonusFixed?: number;       // Stage 3.5 固定加法值
   floor?: number;            // Stage 4 保底傷害，多來源時取 Math.max
+  pure?: boolean;            // 保底類獨立乘區：後續所有通用增減傷段跳過，自帶鏈與 floor／limit 不受影響
   damageCategory: DamageCategory;
   damageNode?: DamageNode;   // 結算節點與傷害分類分離；動畫不改變節點
   skillType?: string;        // 本次技能的屬性系別，用來判斷是否為「普通系」跳過限制
@@ -128,9 +129,9 @@ export interface BattleEventContext {
   applyDeathImmunity: (side: "p1" | "p2", opts: { guardTurns: number; deathImmuneTurns: number; fixedPercentCap?: number; preserveOffField?: boolean }) => void;
   applyPercentDamage: (side: "p1" | "p2", percent: number) => void;
   getStatuses: (elf: Elf) => Record<string, number>;
-  applyPinkDamage: (side: "p1" | "p2", amount: number, label?: string, activeP1?: Elf, activeP2?: Elf, dmgType?: string) => number;
+  applyPinkDamage: (side: "p1" | "p2", amount: number, label?: string, activeP1?: Elf, activeP2?: Elf, dmgType?: string, opts?: { pure?: boolean }) => number;
   applyTrueDamage: (side: "p1" | "p2", amount: number, label?: string, activeP1?: Elf, activeP2?: Elf) => number;
-  applySkillTypeDamage: (side: "p1" | "p2", amount: number, label?: string, opts?: { ignoreBlock?: boolean; ignoreLimit?: boolean; ignoreShield?: boolean; floor?: number; elem?: string; category?: "skill_attribute" | "skill_extra_action"; node?: DamageNode }) => number;
+  applySkillTypeDamage: (side: "p1" | "p2", amount: number, label?: string, opts?: { ignoreBlock?: boolean; ignoreLimit?: boolean; ignoreShield?: boolean; floor?: number; elem?: string; category?: "skill_attribute" | "skill_extra_action"; node?: DamageNode; pure?: boolean }) => number;
   applyAbsorb: (side: "p1" | "p2", amount: number) => void;
   
   // Dynamic state accessors

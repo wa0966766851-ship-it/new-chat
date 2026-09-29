@@ -76,10 +76,16 @@ export function handleHolyMilesSoulMark(c: BattleEventContext, event: EffectTimi
         set(c, "attackDouble", turns(c, "attackDouble") - 1);
       }
       if (c.skill?.name === "淨世洗禮頌") {
-        d.floor = Math.max(d.floor || 0, 280);
-        // B方案正常命中：HP%翻倍走主乘區。無效翻倍不走這裡（無效走不到傷害結算，走 __baptism_invalid_hit 重結算）。
+        // 保底類獨立乘區：原始攻擊傷害超過280才吃通用；沒超則 pure，後續通用段全跳，自帶鏈照算。
         const doubles = turns(c, "baptismDoubles");
-        if (doubles > 0) d.multiplier *= 2 ** Math.min(doubles, 6);
+        if (d.base > 280) {
+          d.floor = Math.max(d.floor || 0, 280);
+          if (doubles > 0) d.multiplier *= 2 ** Math.min(doubles, 6);
+        } else {
+          d.pure = true;
+          if (doubles > 0) d.multiplier *= 2 ** Math.min(doubles, 6);
+          d.floor = Math.max(d.floor || 0, 280);
+        }
         // 正常命中：消耗預掛的無效重結算 timer，避免殘留到下回合誤觸。
         try { c.consumeTimer?.(c.actor, `blk_${c.actor}_baptism_invalid`); } catch { /* 隔離 ctx 無 timer，略過 */ }
       }

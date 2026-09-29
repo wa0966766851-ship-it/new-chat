@@ -112,11 +112,23 @@ test("淨世洗禮頌：正常命中吃HP%翻倍（BEFORE_DAMAGE主乘區）", (
   const { ctx, own, timers } = makeContext();
   ctx.skill = HOLY_MILES_SKILLS[3];
   handlers["淨世洗禮頌"](ctx); // 快照 doubles=8
-  const damageComp: any = { multiplier: 1, floor: 0, damageCategory: "skill_attack", isIncoming: false };
+  const damageComp: any = { base: 500, multiplier: 1, floor: 0, damageCategory: "skill_attack", isIncoming: false };
   handleHolyMilesSoulMark(ctx, EffectTiming.BEFORE_DAMAGE, { damageComp });
   assert.equal(damageComp.floor, 280);
   assert.equal(damageComp.multiplier, 2 ** 6); // cap 6 → ×64
+  assert.equal(damageComp.pure, undefined); // 原始超280：吃通用，不設 pure
   assert.ok(!timers.some((t: any) => t.id === "blk_p1_baptism_invalid"), "正常命中應消耗預掛timer");
+});
+
+test("淨世洗禮頌：原始沒超280走獨立乘區（pure）", () => {
+  const { ctx } = makeContext();
+  ctx.skill = HOLY_MILES_SKILLS[3];
+  handlers["淨世洗禮頌"](ctx); // 快照 doubles=8
+  const damageComp: any = { base: 100, multiplier: 1, floor: 0, damageCategory: "skill_attack", isIncoming: false };
+  handleHolyMilesSoulMark(ctx, EffectTiming.BEFORE_DAMAGE, { damageComp });
+  assert.equal(damageComp.pure, true); // 原始沒超280：獨立乘區
+  assert.equal(damageComp.floor, 280); // 保底照掛
+  assert.equal(damageComp.multiplier, 2 ** 6); // 自帶鏈照算
 });
 
 test("淨世洗禮頌：無效重結算只認淨世，非淨世不消耗", () => {

@@ -283,10 +283,9 @@ Object.assign(CUSTOM, {
         doubles = Math.min(10, Math.floor(ratio * 10 + 1e-9));
       }
       const times = 1 + (doubles || 0); // 無效翻倍1次 ＋ HP%額外
-      // base：取本次技能基礎。管線外重算拿不到 stage1，用「保底280為下限、按威力90等比放大」：
-      // 先以 280 為基底乘翻倍鏈，保證無效時至少打出保底；正常管線的攻防加成在無效補償中不重算（粉傷通道）。
+      // 保底類獨立乘區：以 280 為基底乘自帶翻倍鏈，不吃通用增減傷（pure:true）。
       const amount = Math.max(280, Math.floor(280 * 2 ** Math.min(times, 6)));
-      const dealt = ctx.applyPinkDamage(ctx.targetSide, amount, "淨世洗禮頌(無效補償)", undefined, undefined, "percent");
+      const dealt = ctx.applyPinkDamage(ctx.targetSide, amount, "淨世洗禮頌(無效補償)", undefined, undefined, "percent", { pure: true });
       ctx.applyHeal(ctx.actor, dealt > 0 ? dealt : amount);
       ctx.addLog(`🌊【淨世洗禮頌】：技能無效，重新結算 ${times} 次翻倍補償 ${amount} 點技能傷害（保底280）！`, "effect");
       ctx.consumeTimer?.(ctx.actor, `blk_${ctx.actor}_baptism_invalid`);

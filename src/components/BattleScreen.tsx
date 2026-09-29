@@ -1314,7 +1314,8 @@ export default function BattleScreen(props: BattleScreenProps) {
       
       for (const e of currentEffects) {
         let nextDuration = e.duration;
-        if (e.isLateMover) {
+        const isPermanentBossStatus = StatusRegistry[e.id]?.categories?.includes('BOSS_ONLY');
+        if (e.isLateMover || isPermanentBossStatus) {
           // don't tick this turn
         } else {
           nextDuration -= 1;
@@ -1839,6 +1840,7 @@ export default function BattleScreen(props: BattleScreenProps) {
       pushEffect({ type: 'switch', side, data: { index: nextIdx } });
       await processQueue();
       const newCtx = getBattleEventContext(side);
+      TraitsEngine.triggerOnEntrance(newCtx);
       if (SoulMarkRegistry[team[nextIdx].name]) SoulMarkRegistry[team[nextIdx].name](newCtx, EffectTiming.ON_ENTRANCE);
       applyEntranceBlessings(side, team[nextIdx], newCtx);
       triggerSuitEffect(side, EffectTiming.ON_ENTRANCE);
@@ -2123,6 +2125,7 @@ export default function BattleScreen(props: BattleScreenProps) {
           await processQueue();
           const nCtx = getBattleEventContext(s, true, mIdx);
           const currentElf = syncStateRef.current[s];
+          TraitsEngine.triggerOnEntrance(nCtx);
           if (SoulMarkRegistry[currentElf.name]) SoulMarkRegistry[currentElf.name](nCtx, EffectTiming.ON_ENTRANCE);
           applyEntranceBlessings(s, currentElf, nCtx);
           triggerSuitEffect(s, EffectTiming.ON_ENTRANCE);
@@ -2811,8 +2814,8 @@ export default function BattleScreen(props: BattleScreenProps) {
 
         // §3: Apply SPECIAL_BUFF damage modifiers (using existing actorStatuses/oppStatuses)
         
-        // Attacker buffs
-        Object.keys(actorStatuses).forEach(stId => {
+        // Attacker buffs（pure 獨立乘區時跳過通用增減傷）
+        if (!damageComp.pure) Object.keys(actorStatuses).forEach(stId => {
           const entry = StatusRegistry[stId];
           entry?.mechanics?.forEach(m => {
             if (m.type === 'SPECIAL_BUFF') {
@@ -2827,8 +2830,8 @@ export default function BattleScreen(props: BattleScreenProps) {
           });
         });
 
-        // Defender buffs
-        Object.keys(oppStatuses).forEach(stId => {
+        // Defender buffs（pure 獨立乘區時跳過通用增減傷；floor 保底類不受影響）
+        if (!damageComp.pure) Object.keys(oppStatuses).forEach(stId => {
           const entry = StatusRegistry[stId];
           entry?.mechanics?.forEach(m => {
             if (m.type === 'SPECIAL_BUFF') {
@@ -2865,28 +2868,28 @@ export default function BattleScreen(props: BattleScreenProps) {
         });
 
         const oppMarksAll = oppSide === "p1" ? syncStateRef.current.p1Marks : syncStateRef.current.p2Marks;
-        for (const mark of (oppMarksAll || [])) {
+        if (!damageComp.pure) for (const mark of (oppMarksAll || [])) {
           const perStack = mark.effects?.damageTakenIncreasePercentPerStack;
           if (perStack && mark.count > 0) {
             damageComp.increasePercent = (damageComp.increasePercent || 0) + mark.count * perStack;
             pushEffect({ type: 'log', side: oppSide, data: { text: `⛓️ 【${mark.name}】：持有 ${mark.count} 道，使受到傷害提升 ${Math.round(mark.count * perStack * 100)}%！`, type: "effect" } });
           }
         }
-        
-        // 通用特性／異能特質（屬性強化、堅硬、吸收、虛無、重傷…）
-        modifySkillDamage(currentActor, currentOpp, activeSkill, damageComp, getBattleEventContext(s, true, mIdx), rng,
+
+        // 通用特性／異能特質（屬性強化、堅硬、吸收、虛無、重傷…；pure 獨立乘區時跳過）
+        if (!damageComp.pure) modifySkillDamage(currentActor, currentOpp, activeSkill, damageComp, getBattleEventContext(s, true, mIdx), rng,
           (text) => pushEffect({ type: 'log', side: s, data: { text, type: "effect" } }));
 
-         // Calculate final result
+         // Calculate final result（pure 獨立乘區時跳過通用增減傷；floor／limit／mercy 不跳）
         const stage1 = damageComp.base * (1 + damageComp.increasePercent) * (1 - damageComp.decreasePercent);
         const dmgDoubleTurns = syncStateRef.current[actorRegKey]?.dmgDoubleTurns > 0;
-        if (dmgDoubleTurns) damageComp.multiplier *= 2;
-        
+        if (!damageComp.pure && dmgDoubleTurns) damageComp.multiplier *= 2;
+
         const oppRegKeyDamage = oppSide === "p1" ? "p1RegistryState" : "p2RegistryState";
         const damageTakenBoostTurns = syncStateRef.current[oppRegKeyDamage]?.damageTakenBoostTurns > 0 || syncStateRef.current[oppRegKeyDamage]?.DamageBoostTurns > 0;
-        if (damageTakenBoostTurns) damageComp.multiplier *= 2;
+        if (!damageComp.pure && damageTakenBoostTurns) damageComp.multiplier *= 2;
                 const skillDamageBoost = syncStateRef.current[actorRegKey]?.skillDamageBoost;
-        if (skillDamageBoost) {
+        if (!damageComp.pure && skillDamageBoost) {
            damageComp.multiplier *= skillDamageBoost;
            syncStateRef.current = { ...syncStateRef.current, [actorRegKey]: { ...syncStateRef.current[actorRegKey], skillDamageBoost: 0 } };
         }
@@ -3305,6 +3308,7 @@ export default function BattleScreen(props: BattleScreenProps) {
         const starter = team[activeIdx];
         if (!starter || checkElfDead(starter)) continue;
         const ctx = getBattleEventContext(side, true, undefined, undefined, true);
+        TraitsEngine.triggerOnEntrance(ctx);
         if (SoulMarkRegistry[starter.name]) {
           SoulMarkRegistry[starter.name](ctx, EffectTiming.ON_ENTRANCE);
         }
@@ -3431,6 +3435,7 @@ export default function BattleScreen(props: BattleScreenProps) {
       };
 
       const newCtx = getBattleEventContext(side);
+      TraitsEngine.triggerOnEntrance(newCtx);
       if (SoulMarkRegistry[targetElf.name]) {
         SoulMarkRegistry[targetElf.name](newCtx, EffectTiming.ON_ENTRANCE);
       }

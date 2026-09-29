@@ -138,11 +138,11 @@ export function buildDamageAPIs(shared: SharedContextDeps): DamageAPIs {
   const { side, moveIndex, syncStateRef, pushEffect, getBattleEventContext, self } = shared;
   
   return {
-    applyPinkDamage: (tSide, amt, label, aP1, aP2, dmgType) => {
+    applyPinkDamage: (tSide, amt, label, aP1, aP2, dmgType, opts?: { pure?: boolean }) => {
       const c = syncStateRef.current;
       const tOpp = tSide === "p1" ? c.p1 : c.p2;
       let baseVal = Math.floor(amt);
-      
+
       // 屬性克制只影響攻擊技能的直接傷害；固定／百分比傷害不吃克制倍率
       void dmgType;
 
@@ -153,10 +153,12 @@ export function buildDamageAPIs(shared: SharedContextDeps): DamageAPIs {
         multiplier: 1.0,
         damageCategory: (dmgType || "fixed") as any,
         skillType: self.type,
-        isIncoming: true
+        isIncoming: true,
+        // 保底類獨立乘區：通用增減傷段全部跳過，自帶鏈與 floor 不受影響
+        pure: !!opts?.pure,
       } as any;
 
-      if (_secondaryDamageDepth === 0) {
+      if (!damageComp.pure && _secondaryDamageDepth === 0) {
         _secondaryDamageDepth++;
         try {
           if (SoulMarkRegistry[tOpp.name]) {
@@ -177,7 +179,7 @@ export function buildDamageAPIs(shared: SharedContextDeps): DamageAPIs {
       // Scan actor's marks for nonTrueDamageDealtMultiplier
       const actorSide = tSide === "p1" ? "p2" : "p1";
       const actorMarks = syncStateRef.current[`${actorSide}Marks` as "p1Marks" | "p2Marks"] || [];
-      for (const mark of actorMarks) {
+      if (!damageComp.pure) for (const mark of actorMarks) {
         if (mark.effects?.nonTrueDamageDealtMultiplier !== undefined && mark.count > 0) {
           damageComp.multiplier = (damageComp.multiplier || 1.0) * mark.effects.nonTrueDamageDealtMultiplier;
           pushEffect({
@@ -193,7 +195,7 @@ export function buildDamageAPIs(shared: SharedContextDeps): DamageAPIs {
 
       // Scan target's marks for nonTrueDamageTakenMultiplier
       const oppMarksAll = tSide === "p1" ? syncStateRef.current.p1Marks : syncStateRef.current.p2Marks;
-      for (const mark of (oppMarksAll || [])) {
+      if (!damageComp.pure) for (const mark of (oppMarksAll || [])) {
         if (mark.effects?.nonTrueDamageTakenMultiplier !== undefined && mark.count > 0) {
           damageComp.multiplier = (damageComp.multiplier || 1.0) * mark.effects.nonTrueDamageTakenMultiplier;
           pushEffect({
@@ -207,7 +209,7 @@ export function buildDamageAPIs(shared: SharedContextDeps): DamageAPIs {
         }
       }
 
-      for (const mark of (oppMarksAll || [])) {
+      if (!damageComp.pure) for (const mark of (oppMarksAll || [])) {
         const perStack = mark.effects?.damageTakenIncreasePercentPerStack;
         if (perStack && mark.count > 0) {
           damageComp.increasePercent = (damageComp.increasePercent || 0) + mark.count * perStack;
@@ -215,7 +217,7 @@ export function buildDamageAPIs(shared: SharedContextDeps): DamageAPIs {
         }
       }
 
-      applyActiveGateTimersToDamage(actorSide, tSide, damageComp, pushEffect, syncStateRef);
+      if (!damageComp.pure) applyActiveGateTimersToDamage(actorSide, tSide, damageComp, pushEffect, syncStateRef);
 
       const stage1 = damageComp.base * (1 + damageComp.increasePercent) * (1 - damageComp.decreasePercent);
       const stage2 = stage1 * damageComp.multiplier;
@@ -248,10 +250,12 @@ export function buildDamageAPIs(shared: SharedContextDeps): DamageAPIs {
         damageNode,
         skillType: elemType,
         isTypedSkill: damageCategory === "skill_attribute", // X系技能傷害（非攻擊公式）
-        isIncoming: true
+        isIncoming: true,
+        // 保底類獨立乘區（opts.pure）：克制照吃，通用增減傷段全部跳過
+        pure: !!(opts as any)?.pure,
       } as any;
 
-      if (_secondaryDamageDepth === 0) {
+      if (!damageComp.pure && _secondaryDamageDepth === 0) {
         _secondaryDamageDepth++;
         try {
           if (SoulMarkRegistry[tOpp.name]) {
@@ -272,7 +276,7 @@ export function buildDamageAPIs(shared: SharedContextDeps): DamageAPIs {
       // Scan actor's marks for nonTrueDamageDealtMultiplier
       const actorSide = tSide === "p1" ? "p2" : "p1";
       const actorMarks = syncStateRef.current[`${actorSide}Marks` as "p1Marks" | "p2Marks"] || [];
-      for (const mark of actorMarks) {
+      if (!damageComp.pure) for (const mark of actorMarks) {
         if (mark.effects?.nonTrueDamageDealtMultiplier !== undefined && mark.count > 0) {
           damageComp.multiplier = (damageComp.multiplier || 1.0) * mark.effects.nonTrueDamageDealtMultiplier;
           pushEffect({
@@ -288,7 +292,7 @@ export function buildDamageAPIs(shared: SharedContextDeps): DamageAPIs {
 
       // Scan target's marks for nonTrueDamageTakenMultiplier
       const oppMarksAll = tSide === "p1" ? syncStateRef.current.p1Marks : syncStateRef.current.p2Marks;
-      for (const mark of (oppMarksAll || [])) {
+      if (!damageComp.pure) for (const mark of (oppMarksAll || [])) {
         if (mark.effects?.nonTrueDamageTakenMultiplier !== undefined && mark.count > 0) {
           damageComp.multiplier = (damageComp.multiplier || 1.0) * mark.effects.nonTrueDamageTakenMultiplier;
           pushEffect({
@@ -302,7 +306,7 @@ export function buildDamageAPIs(shared: SharedContextDeps): DamageAPIs {
         }
       }
 
-      for (const mark of (oppMarksAll || [])) {
+      if (!damageComp.pure) for (const mark of (oppMarksAll || [])) {
         const perStack = mark.effects?.damageTakenIncreasePercentPerStack;
         if (perStack && mark.count > 0) {
           damageComp.increasePercent = (damageComp.increasePercent || 0) + mark.count * perStack;
@@ -310,7 +314,7 @@ export function buildDamageAPIs(shared: SharedContextDeps): DamageAPIs {
         }
       }
 
-      applyActiveGateTimersToDamage(actorSide, tSide, damageComp, pushEffect, syncStateRef);
+      if (!damageComp.pure) applyActiveGateTimersToDamage(actorSide, tSide, damageComp, pushEffect, syncStateRef);
 
       // 無視對手抵擋傷害（乘區被歸零）／無視傷害限制／保底傷害
       if (opts?.ignoreBlock && damageComp.multiplier === 0) damageComp.multiplier = 1;
