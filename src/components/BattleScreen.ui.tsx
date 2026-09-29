@@ -83,7 +83,6 @@ const COUNTER_LABELS: Record<string, string> = {
       healcount: "回復施展計數"
     };
 
-const STAGE_SHORT: Record<string, string> = { atk: "攻", def: "防", spatk: "特攻", spdef: "特防", speed: "速", accuracy: "命中" };
 
 const LOG_RENDER_LIMIT = 150;
 const PHASE_LABEL: Record<string, string> = {
@@ -1066,13 +1065,47 @@ export function BattleScreenUI(props: BattleScreenUIProps) {
   };
 
   const renderChips = (side: "p1" | "p2", elf: Elf) => {
-    type Chip = { key: string; text: string; cls: string; name: string; desc?: string; icon?: string; priority: number; kindLabel?: string };
-    const chips: Chip[] = [];
+    type Chip = { key: string; text: string; cls: string; name: string; desc?: string; icon?: string };
+    const rows: { key: string; label: string; chips: Chip[]; vertical?: boolean }[] = [];
+    const addRow = (key: string, label: string, chips: Chip[], vertical = false) => {
+      if (chips.length) rows.push({ key, label, chips, vertical });
+    };
+
+    // 第 1 行：防護資源只在有容量時顯示。
+    const protection: Chip[] = [
+      { key: "shield", name: "護盾", text: `護盾 ${elf.shield}`, icon: buffIconFor("護盾"), cls: "border-sky-500/40 bg-sky-950/50 text-sky-200", desc: "優先吸收技能攻擊傷害。" },
+      { key: "barrier", name: "護罩", text: `護罩 ${elf.barrier}`, icon: buffIconFor("護罩"), cls: "border-fuchsia-500/40 bg-fuchsia-950/50 text-fuchsia-200", desc: "優先吸收固定與百分比傷害。" },
+    ].filter(item => Number(item.key === "shield" ? elf.shield : elf.barrier) > 0);
+    addRow("protection", "防護", protection);
+
+    // 第 2 行：能力一項一列，使用完整名稱；Seer buff 圖庫有通用強化／弱化圖示。
+    const stageLabels: Record<string, string> = { atk: "攻擊", spatk: "特攻", def: "防禦", spdef: "特防", accuracy: "命中", speed: "速度" };
+    const stageChips: Chip[] = [];
+    const stages = (elf.statStages || {}) as Record<string, number>;
+    if (disguiseBattleStates && Object.values(stages).some(value => Number(value) !== 0)) {
+      stageChips.push({ key: "stage-nightmare", name: "魘味", text: "魘味", cls: "border-purple-500/40 bg-purple-950/50 text-purple-200", icon: statusVisual("魘味")?.icon, desc: StatusRegistry["魘味"].description });
+    } else {
+      for (const key of ["atk", "spatk", "def", "spdef", "accuracy", "speed"]) {
+        const value = Number(stages[key] || 0);
+        if (!value) continue;
+        const label = stageLabels[key] || STAT_FULL[key] || key;
+        const icon = buffIconFor(value > 0 ? "強化" : "弱化");
+        stageChips.push({
+          key: `stage-${key}`, name: `${label}能力等級`, text: `${label} ${value > 0 ? "+" : ""}${value}`,
+          cls: value > 0 ? "border-amber-500/40 bg-amber-950/50 text-amber-200" : "border-violet-500/40 bg-violet-950/50 text-violet-200",
+          icon, desc: stageDesc(key, value),
+        });
+      }
+    }
+    addRow("stages", "能力等級", stageChips, true);
+
+    // 第 3 行：異常狀態；魘味只影響顯示，不改動底層狀態。
     const st = getStatuses(elf) as Record<string, any>;
     const activeStatusEntries = Object.entries(st || {}).filter(([, turns]) => Number(turns) > 0);
+    const statusChips: Chip[] = [];
     if (disguiseBattleStates && activeStatusEntries.length > 0) {
       const visual = statusVisual('魘味');
-      chips.push({ key: 's-魘味-mask', name: '魘味', text: '魘味', cls: "bg-rose-950/70 text-rose-200 border-rose-500/40", desc: StatusRegistry['魘味'].description, icon: visual?.icon, priority: 100, kindLabel: "異" });
+      statusChips.push({ key: 's-魘味-mask', name: '魘味', text: '魘味', cls: "bg-rose-950/70 text-rose-200 border-rose-500/40", desc: StatusRegistry['魘味'].description, icon: visual?.icon });
     } else activeStatusEntries.forEach(([id, turns]) => {
       if (!turns) return;
       const reg = (StatusRegistry as any)[id];
@@ -1083,100 +1116,63 @@ export function BattleScreenUI(props: BattleScreenUIProps) {
       const statusChipColor = reg?.categories?.includes('BOSS_ONLY')
         ? name === '神話' ? "bg-amber-950/70 text-amber-200 border-amber-500/50" : "bg-sky-950/70 text-sky-200 border-sky-500/50"
         : "bg-rose-950/70 text-rose-200 border-rose-500/40";
-      chips.push({
+      statusChips.push({
         key: `s-${id}`, name, text: reg?.categories?.includes('BOSS_ONLY') ? name : n > 0 && n < 99 ? `${name}(${n})` : name,
         cls: statusChipColor,
         desc: vis?.desc || reg?.description || catalogDesc(cat, { remainingTurns: n }) || name,
         icon: vis?.icon || buffIconFor(name),
-        priority: 100,
-        kindLabel: "異",
       });
+    });
+
+    addRow("statuses", "異常", statusChips);
+
+    // 第 4 行：印記與所有計時／次數效果統一收在同一列，無效果時不佔位。
+    const effectChips: Chip[] = [];
+    const marks = (side === "p1" ? p1Marks : p2Marks) || [];
+    const timers = (side === "p1" ? p1Timers : p2Timers) || [];
+    buildEffectViewModels(marks, timers, elf.battleId || elf.id).forEach(effect => {
+      if (effect.category === "mark") {
+        effectChips.push({
+          key: effect.id, name: effect.label,
+          text: `${effect.shortLabel}${effect.value !== undefined ? ` ${effect.value}${effect.unit || ""}` : ""}`,
+          cls: "bg-yellow-950/70 text-yellow-200 border-yellow-500/40", desc: describeEffectMeta(effect),
+        });
+      } else {
+        const cls = effect.category === "count" ? "bg-violet-950/70 text-violet-200 border-violet-500/40"
+          : effect.polarity === "negative" ? "bg-rose-950/70 text-rose-200 border-rose-500/40"
+            : "bg-cyan-950/70 text-cyan-200 border-cyan-500/40";
+        effectChips.push({
+          key: effect.id, name: effect.label,
+          text: `${effect.label} ${effect.value ?? ""}${effect.unit || ""}`.trim(),
+          cls, desc: describeEffectMeta(effect), icon: buffIconFor(effect.label),
+        });
+      }
     });
     getDynamicEffects(side, elf).forEach((d: any) => {
       if (d.catalogId === "shield_active" || d.catalogId === "barrier_active") return;
       const c = (EFFECT_CATALOG as any)[d.catalogId];
       if (!c) return;
       const desc = d.note || catalogDesc(c, d) || c.label;
-      chips.push({ key: `d-${d.catalogId}`, name: c.label, text: d.remainingTurns > 1 ? `${c.label}(${d.remainingTurns})` : c.label, cls: "bg-violet-950/70 text-violet-200 border-violet-500/40", desc, icon: statusVisual(c.label)?.icon || buffIconFor(`${c.label} ${desc}`), priority: 90, kindLabel: "效" });
+      effectChips.push({ key: `d-${d.catalogId}`, name: c.label, text: d.remainingTurns > 1 ? `${c.label}（${d.remainingTurns}）` : c.label, cls: "bg-violet-950/70 text-violet-200 border-violet-500/40", desc, icon: statusVisual(c.label)?.icon || buffIconFor(`${c.label} ${desc}`) });
     });
-    const stages = (elf.statStages || {}) as Record<string, number>;
-    if (disguiseBattleStates && Object.values(stages).some(v => Number(v) !== 0)) {
-      chips.push({ key: 'g-魘味-mask', name: '魘味', text: '魘味', cls: "bg-purple-950/70 text-purple-200 border-purple-500/40", desc: StatusRegistry['魘味'].description, icon: statusVisual('魘味')?.icon, priority: 30, kindLabel: "能" });
-    } else Object.entries(stages).forEach(([k, v]) => {
-      if (!v) return;
-      chips.push({ key: `g-${k}`, name: `${STAT_FULL[k] || k}等級`, text: `${STAGE_SHORT[k] || k}${v > 0 ? "+" : ""}${v}`, cls: v > 0 ? "bg-amber-950/70 text-amber-200 border-amber-500/40" : "bg-cyan-950/70 text-cyan-200 border-cyan-500/40", desc: stageDesc(k, v), priority: 30, kindLabel: "能" });
-    });
-    const marks = (side === "p1" ? p1Marks : p2Marks) || [];
-    const timers = (side === "p1" ? p1Timers : p2Timers) || [];
-    buildEffectViewModels(marks, timers, elf.battleId || elf.id).forEach(effect => {
-      const categoryStyle = effect.category === "mark"
-        ? "bg-yellow-950/70 text-yellow-200 border-yellow-500/40"
-        : effect.category === "count"
-          ? "bg-violet-950/70 text-violet-200 border-violet-500/40"
-          : effect.polarity === "negative"
-            ? "bg-rose-950/70 text-rose-200 border-rose-500/40"
-            : "bg-cyan-950/70 text-cyan-200 border-cyan-500/40";
-      const kindLabel = effect.category === "mark" ? "印" : effect.category === "turn" ? "回" : effect.category === "round" ? "常" : "次";
-      chips.push({
-        key: effect.id,
-        name: effect.label,
-        text: `${effect.shortLabel}${effect.value !== undefined ? ` ${effect.value}${effect.unit || ""}` : ""}`,
-        cls: categoryStyle,
-        desc: describeEffectMeta(effect),
-        priority: effect.priority,
-        kindLabel,
-      });
-    });
-    if (!chips.length) return null;
-    chips.sort((a, b) => b.priority - a.priority || a.name.localeCompare(b.name, "zh-Hant"));
-    const visible = chips.slice(0, 4);
-    const hidden = chips.slice(4);
+    addRow("effects", "印記 / 回合", effectChips);
+    if (!rows.length) return null;
     return (
-      <div className={`flex flex-wrap gap-1 mt-1.5 ${side === "p2" ? "justify-end" : ""}`}>
-        {visible.map(c => (
-          <button type="button" key={c.key} title={`${c.name}\n${c.desc || ""}`}
-            onClick={() => setModalContent({ title: c.name, content: c.desc || c.name })}
-            className={`inline-flex items-center gap-1 px-1.5 py-[1px] rounded border text-[10px] font-bold leading-4 whitespace-nowrap hover:brightness-125 ${c.cls}`}>
-            {c.kindLabel && <span className="text-[8px] opacity-60">{c.kindLabel}</span>}
-            {c.icon && <ChainImage urls={[c.icon]} className="w-3.5 h-3.5 rounded-sm" />}
-            {c.text}
-          </button>
-        ))}
-        {hidden.length > 0 && (
-          <button
-            type="button"
-            onClick={() => setModalContent({
-              title: `${elf.name}－其他生效中效果`,
-              content: hidden.map(item => `【${item.kindLabel || "效"}】${item.name}\n${item.desc || item.name}`).join("\n\n"),
-            })}
-            className="inline-flex items-center px-1.5 py-[1px] rounded border border-slate-500/40 bg-slate-900/80 text-[10px] font-bold text-slate-300 hover:text-white"
-          >
-            +{hidden.length} 更多
-          </button>
-        )}
-      </div>
-    );
-  };
-
-  const renderProtectionRow = (side: "p1" | "p2", elf: Elf) => {
-    const items = [
-      { key: "shield", label: "護盾", value: elf.shield || 0, icon: buffIconFor("護盾") || "/seer/buff/33.png", cls: "border-sky-500/30 bg-sky-950/30 text-sky-200", desc: "優先吸收技能攻擊傷害" },
-      { key: "barrier", label: "護罩", value: elf.barrier || 0, icon: buffIconFor("護罩") || "/seer/buff/32.png", cls: "border-fuchsia-500/30 bg-fuchsia-950/30 text-fuchsia-200", desc: "優先吸收固定與百分比傷害" },
-    ];
-    return (
-      <div className={`mt-1.5 grid grid-cols-2 gap-1 ${side === "p2" ? "text-right" : ""}`}>
-        {items.map(item => (
-          <button
-            type="button"
-            key={item.key}
-            title={`${item.label}：${item.value} 點\n${item.desc}`}
-            onClick={() => setModalContent({ title: item.label, content: `目前 ${item.value} 點\n${item.desc}` })}
-            className={`flex items-center gap-1 rounded-md border px-1.5 py-1 text-[9px] font-bold hover:brightness-125 ${item.cls} ${item.value <= 0 ? "opacity-45" : ""} ${side === "p2" ? "flex-row-reverse" : ""}`}
-          >
-            <ChainImage urls={[item.icon]} className="w-4 h-4 rounded-sm shrink-0" />
-            <span className="truncate">{item.label}</span>
-            <span className="ml-auto font-mono text-[10px]">{item.value}</span>
-          </button>
+      <div className="mt-1.5 space-y-1">
+        {rows.map(row => (
+          <div key={row.key} className={`flex items-start gap-2 ${side === "p2" ? "flex-row-reverse text-right" : ""}`}>
+            <span className="w-[72px] shrink-0 pt-1 text-[9px] font-black text-slate-500">{row.label}</span>
+            <div className={`min-w-0 flex-1 ${row.vertical ? "flex flex-col gap-0.5" : "flex flex-wrap gap-1"}`}>
+              {row.chips.map(chip => (
+                <button type="button" key={chip.key} title={`${chip.name}\n${chip.desc || ""}`}
+                  onClick={() => setModalContent({ title: chip.name, content: chip.desc || chip.name })}
+                  className={`inline-flex max-w-full items-center gap-1 rounded border px-1.5 py-0.5 text-[10px] font-bold leading-4 hover:brightness-125 ${chip.cls} ${row.vertical ? "w-full justify-start" : "whitespace-nowrap"}`}>
+                  {chip.icon && <ChainImage urls={[chip.icon]} className="h-4 w-4 shrink-0 rounded-sm object-contain" />}
+                  <span className="truncate">{chip.text}</span>
+                </button>
+              ))}
+            </div>
+          </div>
         ))}
       </div>
     );
@@ -1231,7 +1227,6 @@ export function BattleScreenUI(props: BattleScreenUIProps) {
                 <span>{hpPct >= 10 ? Math.round(hpPct) : hpPct.toFixed(1)}%</span>
               </div>
             </div>
-            {renderProtectionRow(side, elf)}
             {renderChips(side, elf)}
           </div>
         </div>
@@ -1950,6 +1945,49 @@ export function BattleScreenUI(props: BattleScreenUIProps) {
                 </button>
               </div>
 
+              {/* Soul mark and traits: moved to the top and given readable detail cards. */}
+              <section className="mb-4 rounded-2xl border border-violet-500/25 bg-gradient-to-br from-violet-950/35 via-slate-900/70 to-amber-950/20 p-4 shadow-lg">
+                <div className="mb-3 flex items-center gap-2 border-b border-white/10 pb-2">
+                  <Star className="h-4 w-4 text-amber-300" />
+                  <h4 className="text-sm font-black tracking-wide text-white">魂印與專屬特性</h4>
+                </div>
+                <div className="space-y-2.5">
+                  {selectedElfDetail.elf.soulMark && (
+                    <article className="rounded-xl border border-purple-500/30 bg-purple-950/30 p-3">
+                      <h5 className="mb-1.5 flex items-center gap-2 text-sm font-black text-purple-200"><Zap className="h-4 w-4" />魂印・{selectedElfDetail.elf.soulMark.name}</h5>
+                      <p className="whitespace-pre-wrap text-[13px] leading-6 text-slate-200">{selectedElfDetail.elf.soulMark.description || "目前沒有文字描述。"}</p>
+                    </article>
+                  )}
+                  {selectedElfDetail.elf.trait && (
+                    <article className="rounded-xl border border-indigo-500/30 bg-indigo-950/30 p-3">
+                      <h5 className="mb-1.5 flex items-center gap-2 text-sm font-black text-indigo-200"><FlaskConical className="h-4 w-4" />特性・{selectedElfDetail.elf.trait.name}</h5>
+                      <p className="whitespace-pre-wrap text-[13px] leading-6 text-slate-200">{selectedElfDetail.elf.trait.description || "目前沒有文字描述。"}</p>
+                    </article>
+                  )}
+                  {(() => {
+                    const alienTraits = selectedElfDetail.elf.alienTraits;
+                    const main = alienTraits?.gen2Trait || alienTraits?.exclusiveTrait || alienTraits?.alienTrait || alienTraits?.generalTrait;
+                    const exclusive = alienTraits?.exclusiveTraits || [];
+                    if (!main && !exclusive.length) return null;
+                    return (
+                      <>
+                        {main && <article className="rounded-xl border border-amber-500/30 bg-amber-950/25 p-3">
+                          <h5 className="mb-1.5 flex items-center gap-2 text-sm font-black text-amber-200"><Star className="h-4 w-4" />異能特質・{main.name}</h5>
+                          <p className="whitespace-pre-wrap text-[13px] leading-6 text-slate-200">{main.description || "目前沒有文字描述。"}</p>
+                        </article>}
+                        {exclusive.map(trait => <article key={trait.name} className="rounded-xl border border-rose-500/30 bg-rose-950/25 p-3">
+                          <h5 className="mb-1.5 flex items-center gap-2 text-sm font-black text-rose-200"><Star className="h-4 w-4" />專屬異能特質・{trait.name}</h5>
+                          <p className="whitespace-pre-wrap text-[13px] leading-6 text-slate-200">{trait.description || "目前沒有文字描述。"}</p>
+                        </article>)}
+                      </>
+                    );
+                  })()}
+                  {!selectedElfDetail.elf.soulMark && !selectedElfDetail.elf.trait && !selectedElfDetail.elf.alienTraits?.gen2Trait && !selectedElfDetail.elf.alienTraits?.exclusiveTrait && !selectedElfDetail.elf.alienTraits?.alienTrait && !selectedElfDetail.elf.alienTraits?.generalTrait && !(selectedElfDetail.elf.alienTraits?.exclusiveTraits || []).length && (
+                    <p className="text-xs text-slate-500">目前沒有已登記的魂印或專屬特性。</p>
+                  )}
+                </div>
+              </section>
+
               {/* HP Bar */}
               <div className="mb-4 bg-slate-900/60 p-3 rounded-xl border border-slate-800">
                 <div className="flex justify-between items-baseline mb-1">
@@ -2063,51 +2101,6 @@ export function BattleScreenUI(props: BattleScreenUIProps) {
                 ) : (
                   <p className="text-xs text-slate-500 italic">無持有印記</p>
                 )}
-              </div>
-
-              {/* Soul Mark / Trait / Alien Trait Descriptions */}
-              <div className="space-y-2 bg-slate-900/60 p-3 rounded-xl border border-slate-800">
-                <span className="text-xs font-black text-purple-400 block">魂印與專屬天賦描述</span>
-                {selectedElfDetail.elf.soulMark ? (
-                  <div className="p-2.5 bg-purple-950/30 border border-purple-800/40 rounded-lg">
-                    <span className="text-xs font-bold text-purple-300 block mb-1">
-                      ⚡ 魂印：{selectedElfDetail.elf.soulMark.name}
-                    </span>
-                    <p className="text-[11px] text-slate-300 leading-relaxed whitespace-pre-wrap">
-                      {selectedElfDetail.elf.soulMark.description}
-                    </p>
-                  </div>
-                ) : (
-                  <p className="text-xs text-slate-500 italic">無專屬魂印</p>
-                )}
-
-                {selectedElfDetail.elf.trait && (
-                  <div className="p-2.5 bg-indigo-950/30 border border-indigo-800/40 rounded-lg">
-                    <span className="text-xs font-bold text-indigo-300 block mb-1">
-                      🧪 特性：{selectedElfDetail.elf.trait.name}
-                    </span>
-                    <p className="text-[11px] text-slate-300 leading-relaxed whitespace-pre-wrap">
-                      {selectedElfDetail.elf.trait.description}
-                    </p>
-                  </div>
-                )}
-
-                {(selectedElfDetail.elf.alienTraits?.gen2Trait || selectedElfDetail.elf.alienTraits?.exclusiveTrait || selectedElfDetail.elf.alienTraits?.alienTrait || selectedElfDetail.elf.alienTraits?.generalTrait) && (
-                  <div className="p-2.5 bg-amber-950/30 border border-amber-800/40 rounded-lg">
-                    <span className="text-xs font-bold text-amber-300 block mb-1">
-                      ⭐ 異能特質：{selectedElfDetail.elf.alienTraits?.gen2Trait?.name || selectedElfDetail.elf.alienTraits?.exclusiveTrait?.name || selectedElfDetail.elf.alienTraits?.alienTrait?.name || selectedElfDetail.elf.alienTraits?.generalTrait?.name}
-                    </span>
-                    <p className="text-[11px] text-slate-300 leading-relaxed whitespace-pre-wrap">
-                      {selectedElfDetail.elf.alienTraits?.gen2Trait?.description || selectedElfDetail.elf.alienTraits?.exclusiveTrait?.description || selectedElfDetail.elf.alienTraits?.alienTrait?.description || selectedElfDetail.elf.alienTraits?.generalTrait?.description}
-                    </p>
-                  </div>
-                )}
-                {(selectedElfDetail.elf.alienTraits?.exclusiveTraits || []).map((trait) => (
-                  <div key={trait.name} className="p-2.5 bg-red-950/30 border border-red-800/40 rounded-lg">
-                    <span className="text-xs font-bold text-red-300 block mb-1">🔥 專屬異能特質：{trait.name}</span>
-                    <p className="text-[11px] text-slate-300 leading-relaxed whitespace-pre-wrap">{trait.description}</p>
-                  </div>
-                ))}
               </div>
 
               <div className="mt-4 flex justify-end">

@@ -106,6 +106,7 @@ const ORDER: StateCategory[] = ["異常", "能力", "防護", "印記", "回合�
 export function StatusInspector({ state }: { state: any }) {
   const [side, setSide] = React.useState<"p1" | "p2">("p1");
   const [category, setCategory] = React.useState<StateCategory>("異常");
+  const [expandedPermanent, setExpandedPermanent] = React.useState<Record<string, boolean>>({});
   const elf: Elf | null = side === "p1" ? state?.p1 : state?.p2;
   const all = getActiveEffects(side, state);
 
@@ -157,10 +158,16 @@ export function StatusInspector({ state }: { state: any }) {
               return (
                 <article key={`${effect.category}-${effect.name}-${index}`} className={`flex flex-col gap-1 rounded-lg border p-3 ${tone}`}>
                   <div className="flex items-start justify-between gap-2">
-                    <span className="text-[11px] font-black leading-tight">{effect.name}</span>
+                    {category === "常駐" ? (
+                      <button type="button" title={effect.desc}
+                        onClick={() => setExpandedPermanent(prev => ({ ...prev, [effect.name]: !prev[effect.name] }))}
+                        className="flex flex-1 items-center justify-between gap-2 text-left text-[12px] font-black leading-tight hover:text-white">
+                        <span>{effect.name}</span><span className="shrink-0 text-[9px] font-bold text-cyan-300">{expandedPermanent[effect.name] ? "收合" : "查看說明"}</span>
+                      </button>
+                    ) : <span className="text-[11px] font-black leading-tight">{effect.name}</span>}
                     {effect.stacks !== undefined && <span className="shrink-0 rounded border border-slate-700 bg-slate-800/80 px-1.5 py-0.5 text-[9px] font-black text-cyan-300">{effect.stacks} {effect.stackUnit || "層"}</span>}
                   </div>
-                  <p className="text-[10px] font-medium leading-relaxed text-slate-400">{effect.desc}</p>
+                  {(category !== "常駐" || expandedPermanent[effect.name]) && <p className="whitespace-pre-wrap text-[12px] font-medium leading-5 text-slate-300">{effect.desc}</p>}
                   {effect.remaining !== undefined && <div className="mt-1 text-[9px] font-black text-slate-500">剩餘 {effect.remaining} {effect.unit || "回合"}</div>}
                 </article>
               );
