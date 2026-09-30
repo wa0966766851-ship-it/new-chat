@@ -1,38 +1,72 @@
-# 如何讓 Google AI Studio 高保真還原這份 PPT 模板
+# 賽爾對戰模擬器 Seer Battle Simulator
 
-## 為什麼原始檔案「AI Studio 不容易 100% 接受」
+React + Vite + Express + Electron 寫的賽爾號對戰模擬器：組隊、對戰結算、魂印 Registry、Blockly 技能編輯、圖鑑 Codex、打包成桌面版。
 
-1. **`.ppt`（舊版二進位格式)**：Gemini 無法直接解析內部的圖形物件座標，上傳後它只能靠「猜」畫面長相，文字位置、字型幾乎不可能還原。
-2. **原始 `.html`（9.9MB）**：雖然裡面其實是很乾淨的 SVG（每頁都是真正的 `<text>` 文字節點，不是外框路徑，這點很好），但 95 張圖全部用 base64 內嵌在文字裡，會把 prompt token 灌爆，AI Studio Build 的 agent 在生成/修改程式碼時容易「看不完」整份檔案、或直接因單檔過大被截斷、生成品質下降。
+遠端：https://github.com/wa0966766851-ship-it/new-chat.git（分支 main）
+版本：1.0.0（見 version.ts，單一版本來源）
 
-## 我做了什麼
+## 快速開始
 
-把原始 HTML 拆解成：
-- `slide_01.html` ~ `slide_12.html`：每頁一個檔案，只保留 SVG 結構（真文字、真座標、真顏色），單檔只有 9–28KB。
-- `images/`：95 張內嵌圖片解碼、去重後存成 53 個獨立圖檔，並把 SVG 裡的 `xlink:href` 改成 `images/xxx.png` 相對路徑。
+需求：Node 20+、npm。
 
-這樣每一頁都小到可以完整放進 AI Studio 的 prompt 上下文，AI 才有機會「精確」而不是「腦補」地還原版面。
+```bash
+npm install
+cp .env.example .env   # 填 GEMINI_API_KEY 才有 AI 生成精靈
+npm run dev            # tsx server.ts，前後端同源 http://localhost:3000
+npm run lint           # tsc --noEmit
+npm test               # 完整測試（含 scopes / loading / data / ui）
+npm run build          # vite build + esbuild server -> dist/
+npm start              # node dist/server.cjs
+```
 
-## 建議操作流程（在 Google AI Studio → Build 模式）
+沒有 GEMINI_API_KEY 時 /api/generate-elf 等會回 503，前端改走本地解析，不會炸場。
 
-**不要一次丟 12 頁**，Gemini 對長內容容易漏看細節。建議「一頁一頁」餵：
+## 指令一覽
 
-1. 進入 AI Studio → 左側 **Build** → 用 React/HTML 起一個新專案。
-2. 第一次 prompt，貼上類似這樣的指令，並用「+」附加 `slide_01.html` 和該頁用到的圖片：
+| 指令 | 用途 |
+|---|---|
+| npm run dev / start | 開發 / 生產啟動 |
+| npm test | 全部測試 |
+| npm run test:scopes | 體力與作用域語意測試 |
+| npm run test:loading | codex / profile 延遲載入測試 |
+| npm run test:data | packed 資料一致性檢查 |
+| npm run test:ui | UI 基礎測試 |
+| npm run audit:bundle | 打包體積稽核（build 後跑） |
+| npm run data:pack / data:skills | 產生 packed JSON / 技能索引 |
+| npm run package:portable / package:zip | 可攜包 |
+| npm run build:exe | 產生 exe（--bump 升版） |
+| npm run package:electron | electron-builder nsis+portable |
 
-   > 我附上一份簡報第 1 頁的原始 SVG 原始碼（座標單位=pt，viewBox 960x540 對應 13.333in x 7.5in）。請幫我用 HTML/CSS 建一個網頁元件，「完全依照座標、字型、字級、顏色 1:1 還原」這個畫面，不要重新設計或簡化。
-   > 額外要求：
-   > 1. 每一個原本的 `<text>` 內容，改成 `contenteditable="true"` 的元素（或對應的 input/textarea），讓使用者可以直接在畫面上點擊修改文字，但位置與樣式必須維持不變。
-   > 2. 圖片請保留原本的相對路徑引用。
-   > 3. 整體用一個固定比例的容器包起來（例如用 viewBox 或 transform: scale 讓 960x540 等比縮放），避免視窗大小改變時跑版。
+## 專案結構
 
-3. 看 Preview 是否跟原圖一致，用聊天視窗微調（例如：「第二行文字位置差 2px，請修正」）。
-4. 確認第 1 頁 OK 後，把它存成一個 `Slide1` 元件，再依序丟 `slide_02.html`...`slide_12.html`，請 Gemini 用同樣規則做出 `Slide2`...`Slide12`。
-5. 最後請 Gemini 把 12 個元件組成一個簡報應用（上一頁/下一頁切換、或側邊縮圖導覽），文字保持可編輯狀態。
+```
+index.html -> src/main.tsx -> src/App.tsx（view: start/custom/battle/destiny/interstellar/test）
+server.ts            # Express + Vite 中介 + Gemini API + /seer 圖資代理
+src/components/      # BattleScreen（調度）、StartScreen、ElfEditor、Encyclopedia 等
+src/battle/          # timers、marks、survivalRules、contextBuilders、stateScopes（作用域）
+src/effects/         # 各精靈 Registry（handler），描述物已搬到 src/data/elfProfiles/
+src/data/            # defaultElves、codex、blockLibrary、packed 生成檔、elfProfiles
+src/blocks/          # Blockly 自訂積木
+src/utils/           # elfStats（能力邊界）、statCalculator、extraElf 等
+electron/            # main.cjs + preload.cjs 桌面殼
+scripts/ / tools/    # 打包、稽核、分享工具
+tests/               # battle.units、blocks.semantic、scopes、loading 等
+```
 
-## 關鍵原則（讓 AI Studio「100% 接受」的實際做法）
+架構約定（見 AGENTS.md）：新魂印走 Registry Pattern，禁止再往 BattleScreen 硬塞；自然語言先拆 Trigger/Condition/Target/Action 再掛 BattleContext。
 
-- **餵向量化/文字化的來源，不要餵二進位檔或圖片截圖**：SVG/HTML 這種文字格式，Gemini 才能精確讀出座標數字，而不是用視覺辨識用猜的。
-- **化整為零**：單頁檔案 < 30KB，遠低於 AI Studio 每檔 20MB 的上傳限制，也大幅降低生成時「看漏內容」的機率。
-- **明確禁止「重新設計」**：一定要在 prompt 裡強調「1:1 還原、不要簡化、不要換版面」，否則 Gemini 預設行為是幫你「優化設計」，反而會偏離原模板。
-- **座標系統講清楚**：viewBox `0 0 960 540` 對應標準 16:9、13.333×7.5 吋投影片，1 單位 = 1pt，直接照抄座標即可，不需要換算。
+## 本次三包說明
+
+1. fix(hp/scopes)：能力正規邊界 + 個人/陣營分離
+   - 拔掉 suitsAndEyewears 的 hp || 100 兜底，改走 utils/elfStats.normalizeElfStats
+   - 新增 battle/stateScopes.switchBattleSide，正常切換與死亡強制換人共用
+   - Mark 預設 scope:elf，只有 fear_seed/flower、demon_grudge、scarlett_holy_light 為 team
+   - Timer 預設個人持有，lockSwitch 類才留陣營；updateElf 找不到身分不再退回在場者
+2. perf(data)：codex 延遲解析 + packed 生成 + elfProfiles 搬移，handler 不變
+3. feat(ui)：統一面板、錯誤邊界、咤克斯立繪、編輯器拆分
+
+## 注意事項
+
+- dist/、node_modules/、.env 不進版控；packed JSON 是生成檔，改源頭後要重跑 data:pack
+- LF/CRLF 警告無害；送版前跑過 lint + test + build 全綠再 push
+- 舊自訂精靈缺面板時讀取走寬容版（保留原文可進編輯器修），新增/存檔走嚴格版（缺資料直接報錯不偽造數值）
