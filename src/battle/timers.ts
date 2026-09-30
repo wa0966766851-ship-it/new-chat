@@ -20,6 +20,9 @@ export type TimerKind = "turn_effect" | "round_counter" | "use_counter";
 export type TickAt = "round_end" | "action_end" | "never";
 
 export interface Timer {
+  scope?: "elf" | "team";
+  ownerBattleId?: string;
+  persistsOffField?: boolean;
   /** 內部唯一 id(同 id 再次附加時依 stackRule 處理) */
   id: string;
   /** 顯示名稱。`turn_effect` 依定義為「未命名」,此處僅供 UI/log 用,不參與判定。 */

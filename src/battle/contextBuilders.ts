@@ -1,9 +1,10 @@
 import React, { MutableRefObject, Dispatch } from "react";
 import { Elf, Skill } from "../types";
-import { Mark } from "./marks";
+import { Mark, bindMarkToElf, markAppliesToElf } from "./marks";
 import { BattleState, BattleAction, EffectItem } from "../components/BattleManager";
 import { BattleEventContext, EffectTiming, DamageComputation, PriorityComputation } from "../effects/types";
 import { Timer } from "./timers";
+import { readScopedRegistry, writeScopedRegistry, addScopedTimer, setBattleSideMarks } from "./stateScopes";
 import { getTypeMatchup } from "../utils/statCalculator";
 import { emitStatusApplied } from "../blocks/registry";
 import { SoulMarkRegistry } from "../effects/battleEventRegistry";
@@ -64,7 +65,8 @@ export function applyActiveGateTimersToDamage(
   const c = syncStateRef.current;
   
   // 1. Dealt damage reduction (gate timers on the actor side)
-  const actorTimers = c[`${actorSide}Timers` as "p1Timers" | "p2Timers"] || [];
+  const actorTimers = (c[`${actorSide}Timers` as "p1Timers" | "p2Timers"] || [])
+    .filter(timer => timer.scope === "team" || !timer.ownerBattleId || timer.ownerBattleId === (c[actorSide].battleId || c[actorSide].id));
   for (const timer of actorTimers) {
     const wraps = Array.isArray(timer.payload?.wraps) ? timer.payload.wraps : [timer.payload?.wraps];
     if (timer.payload?.applyMode === "gate" && wraps.includes("damage_reduce")) {
@@ -82,7 +84,8 @@ export function applyActiveGateTimersToDamage(
   }
 
   // 2. Target side damage reduction (e.g. 守護印記)
-  const targetTimers = c[`${tSide}Timers` as "p1Timers" | "p2Timers"] || [];
+  const targetTimers = (c[`${tSide}Timers` as "p1Timers" | "p2Timers"] || [])
+    .filter(timer => timer.scope === "team" || !timer.ownerBattleId || timer.ownerBattleId === (c[tSide].battleId || c[tSide].id));
   for (const timer of targetTimers) {
     const wraps = Array.isArray(timer.payload?.wraps) ? timer.payload.wraps : [timer.payload?.wraps];
     if (timer.payload?.applyMode === "gate" && wraps.includes("damage_reduce")) {
@@ -179,7 +182,7 @@ export function buildDamageAPIs(shared: SharedContextDeps): DamageAPIs {
       // Scan actor's marks for nonTrueDamageDealtMultiplier
       const actorSide = tSide === "p1" ? "p2" : "p1";
       const actorMarks = syncStateRef.current[`${actorSide}Marks` as "p1Marks" | "p2Marks"] || [];
-      if (!damageComp.pure) for (const mark of actorMarks) {
+      if (!damageComp.pure) for (const mark of actorMarks.filter(mark => markAppliesToElf(mark, syncStateRef.current[actorSide]))) {
         if (mark.effects?.nonTrueDamageDealtMultiplier !== undefined && mark.count > 0) {
           damageComp.multiplier = (damageComp.multiplier || 1.0) * mark.effects.nonTrueDamageDealtMultiplier;
           pushEffect({
@@ -195,7 +198,7 @@ export function buildDamageAPIs(shared: SharedContextDeps): DamageAPIs {
 
       // Scan target's marks for nonTrueDamageTakenMultiplier
       const oppMarksAll = tSide === "p1" ? syncStateRef.current.p1Marks : syncStateRef.current.p2Marks;
-      if (!damageComp.pure) for (const mark of (oppMarksAll || [])) {
+      if (!damageComp.pure) for (const mark of (oppMarksAll || []).filter(mark => markAppliesToElf(mark, syncStateRef.current[tSide]))) {
         if (mark.effects?.nonTrueDamageTakenMultiplier !== undefined && mark.count > 0) {
           damageComp.multiplier = (damageComp.multiplier || 1.0) * mark.effects.nonTrueDamageTakenMultiplier;
           pushEffect({
@@ -209,7 +212,7 @@ export function buildDamageAPIs(shared: SharedContextDeps): DamageAPIs {
         }
       }
 
-      if (!damageComp.pure) for (const mark of (oppMarksAll || [])) {
+      if (!damageComp.pure) for (const mark of (oppMarksAll || []).filter(mark => markAppliesToElf(mark, syncStateRef.current[tSide]))) {
         const perStack = mark.effects?.damageTakenIncreasePercentPerStack;
         if (perStack && mark.count > 0) {
           damageComp.increasePercent = (damageComp.increasePercent || 0) + mark.count * perStack;
@@ -276,7 +279,7 @@ export function buildDamageAPIs(shared: SharedContextDeps): DamageAPIs {
       // Scan actor's marks for nonTrueDamageDealtMultiplier
       const actorSide = tSide === "p1" ? "p2" : "p1";
       const actorMarks = syncStateRef.current[`${actorSide}Marks` as "p1Marks" | "p2Marks"] || [];
-      if (!damageComp.pure) for (const mark of actorMarks) {
+      if (!damageComp.pure) for (const mark of actorMarks.filter(mark => markAppliesToElf(mark, syncStateRef.current[actorSide]))) {
         if (mark.effects?.nonTrueDamageDealtMultiplier !== undefined && mark.count > 0) {
           damageComp.multiplier = (damageComp.multiplier || 1.0) * mark.effects.nonTrueDamageDealtMultiplier;
           pushEffect({
@@ -292,7 +295,7 @@ export function buildDamageAPIs(shared: SharedContextDeps): DamageAPIs {
 
       // Scan target's marks for nonTrueDamageTakenMultiplier
       const oppMarksAll = tSide === "p1" ? syncStateRef.current.p1Marks : syncStateRef.current.p2Marks;
-      if (!damageComp.pure) for (const mark of (oppMarksAll || [])) {
+      if (!damageComp.pure) for (const mark of (oppMarksAll || []).filter(mark => markAppliesToElf(mark, syncStateRef.current[tSide]))) {
         if (mark.effects?.nonTrueDamageTakenMultiplier !== undefined && mark.count > 0) {
           damageComp.multiplier = (damageComp.multiplier || 1.0) * mark.effects.nonTrueDamageTakenMultiplier;
           pushEffect({
@@ -306,7 +309,7 @@ export function buildDamageAPIs(shared: SharedContextDeps): DamageAPIs {
         }
       }
 
-      if (!damageComp.pure) for (const mark of (oppMarksAll || [])) {
+      if (!damageComp.pure) for (const mark of (oppMarksAll || []).filter(mark => markAppliesToElf(mark, syncStateRef.current[tSide]))) {
         const perStack = mark.effects?.damageTakenIncreasePercentPerStack;
         if (perStack && mark.count > 0) {
           damageComp.increasePercent = (damageComp.increasePercent || 0) + mark.count * perStack;
@@ -351,7 +354,7 @@ export function buildDamageAPIs(shared: SharedContextDeps): DamageAPIs {
       // Scan actor's marks for nonTrueDamageDealtMultiplier
       const actorSide = tSide === "p1" ? "p2" : "p1";
       const actorMarks = syncStateRef.current[`${actorSide}Marks` as "p1Marks" | "p2Marks"] || [];
-      for (const mark of actorMarks) {
+      for (const mark of actorMarks.filter(mark => markAppliesToElf(mark, syncStateRef.current[actorSide]))) {
         if (mark.effects?.nonTrueDamageDealtMultiplier !== undefined && mark.count > 0) {
           pushEffect({
             type: 'log',
@@ -366,7 +369,7 @@ export function buildDamageAPIs(shared: SharedContextDeps): DamageAPIs {
 
       // Scan target's marks for nonTrueDamageTakenMultiplier
       const oppMarksAll = tSide === "p1" ? syncStateRef.current.p1Marks : syncStateRef.current.p2Marks;
-      for (const mark of (oppMarksAll || [])) {
+      for (const mark of (oppMarksAll || []).filter(mark => markAppliesToElf(mark, syncStateRef.current[tSide]))) {
         if (mark.effects?.nonTrueDamageTakenMultiplier !== undefined && mark.count > 0) {
           pushEffect({
             type: 'log',
@@ -379,7 +382,7 @@ export function buildDamageAPIs(shared: SharedContextDeps): DamageAPIs {
         }
       }
 
-      for (const mark of (oppMarksAll || [])) {
+      for (const mark of (oppMarksAll || []).filter(mark => markAppliesToElf(mark, syncStateRef.current[tSide]))) {
         const perStack = mark.effects?.damageTakenIncreasePercentPerStack;
         if (perStack && mark.count > 0) {
           damageComp.increasePercent = (damageComp.increasePercent || 0) + mark.count * perStack;
@@ -393,12 +396,12 @@ export function buildDamageAPIs(shared: SharedContextDeps): DamageAPIs {
 
       // If there's a custom non-true damage multiplier active, apply it even to true damage!
       let markMult = 1.0;
-      for (const mark of actorMarks) {
+      for (const mark of actorMarks.filter(mark => markAppliesToElf(mark, syncStateRef.current[actorSide]))) {
         if (mark.effects?.nonTrueDamageDealtMultiplier !== undefined && mark.count > 0) {
           markMult *= mark.effects.nonTrueDamageDealtMultiplier;
         }
       }
-      for (const mark of oppMarksAll) {
+      for (const mark of (oppMarksAll || []).filter(mark => markAppliesToElf(mark, syncStateRef.current[tSide]))) {
         if (mark.effects?.nonTrueDamageTakenMultiplier !== undefined && mark.count > 0) {
           markMult *= mark.effects.nonTrueDamageTakenMultiplier;
         }
@@ -460,7 +463,7 @@ export function buildDamageAPIs(shared: SharedContextDeps): DamageAPIs {
       // Scan actor's marks for nonTrueDamageDealtMultiplier
       const actorSide = tSide === "p1" ? "p2" : "p1";
       const actorMarks = syncStateRef.current[`${actorSide}Marks` as "p1Marks" | "p2Marks"] || [];
-      for (const mark of actorMarks) {
+      for (const mark of actorMarks.filter(mark => markAppliesToElf(mark, syncStateRef.current[actorSide]))) {
         if (mark.effects?.nonTrueDamageDealtMultiplier !== undefined && mark.count > 0) {
           damageComp.multiplier = (damageComp.multiplier || 1.0) * mark.effects.nonTrueDamageDealtMultiplier;
           pushEffect({
@@ -490,7 +493,7 @@ export function buildDamageAPIs(shared: SharedContextDeps): DamageAPIs {
 
       // Scan target's marks for nonTrueDamageTakenMultiplier
       const oppMarksAll = tSide === "p1" ? syncStateRef.current.p1Marks : syncStateRef.current.p2Marks;
-      for (const mark of (oppMarksAll || [])) {
+      for (const mark of (oppMarksAll || []).filter(mark => markAppliesToElf(mark, syncStateRef.current[tSide]))) {
         if (mark.effects?.nonTrueDamageTakenMultiplier !== undefined && mark.count > 0) {
           damageComp.multiplier = (damageComp.multiplier || 1.0) * mark.effects.nonTrueDamageTakenMultiplier;
           pushEffect({
@@ -504,7 +507,7 @@ export function buildDamageAPIs(shared: SharedContextDeps): DamageAPIs {
         }
       }
 
-      for (const mark of (oppMarksAll || [])) {
+      for (const mark of (oppMarksAll || []).filter(mark => markAppliesToElf(mark, syncStateRef.current[tSide]))) {
         const perStack = mark.effects?.damageTakenIncreasePercentPerStack;
         if (perStack && mark.count > 0) {
           damageComp.increasePercent = (damageComp.increasePercent || 0) + mark.count * perStack;
@@ -556,7 +559,7 @@ export function buildDamageAPIs(shared: SharedContextDeps): DamageAPIs {
       // Scan actor's marks for nonTrueDamageDealtMultiplier
       const actorSide = tSide === "p1" ? "p2" : "p1";
       const actorMarks = syncStateRef.current[`${actorSide}Marks` as "p1Marks" | "p2Marks"] || [];
-      for (const mark of actorMarks) {
+      for (const mark of actorMarks.filter(mark => markAppliesToElf(mark, syncStateRef.current[actorSide]))) {
         if (mark.effects?.nonTrueDamageDealtMultiplier !== undefined && mark.count > 0) {
           damageComp.multiplier = (damageComp.multiplier || 1.0) * mark.effects.nonTrueDamageDealtMultiplier;
           pushEffect({
@@ -586,7 +589,7 @@ export function buildDamageAPIs(shared: SharedContextDeps): DamageAPIs {
 
       // Scan target's marks for nonTrueDamageTakenMultiplier
       const oppMarksAll = tSide === "p1" ? syncStateRef.current.p1Marks : syncStateRef.current.p2Marks;
-      for (const mark of (oppMarksAll || [])) {
+      for (const mark of (oppMarksAll || []).filter(mark => markAppliesToElf(mark, syncStateRef.current[tSide]))) {
         if (mark.effects?.nonTrueDamageTakenMultiplier !== undefined && mark.count > 0) {
           damageComp.multiplier = (damageComp.multiplier || 1.0) * mark.effects.nonTrueDamageTakenMultiplier;
           pushEffect({
@@ -600,7 +603,7 @@ export function buildDamageAPIs(shared: SharedContextDeps): DamageAPIs {
         }
       }
 
-      for (const mark of (oppMarksAll || [])) {
+      for (const mark of (oppMarksAll || []).filter(mark => markAppliesToElf(mark, syncStateRef.current[tSide]))) {
         const perStack = mark.effects?.damageTakenIncreasePercentPerStack;
         if (perStack && mark.count > 0) {
           damageComp.increasePercent = (damageComp.increasePercent || 0) + mark.count * perStack;
@@ -929,52 +932,29 @@ export function buildStateAPIs(shared: SharedContextDeps): StateAPIs {
       const actorSide = targetSide || side; 
       const marksKey = `${actorSide}Marks` as "p1Marks" | "p2Marks";
       const curMarks = c[marksKey] || [];
-      const nextMark = { ...m, source: m.source || (self.name + " / " + (self.soulMark?.badgeChar || "")) };
+      const holder = actorSide === side ? self : c[actorSide];
+      const nextMark = bindMarkToElf({ ...m, source: m.source || (self.name + " / " + (self.soulMark?.badgeChar || "")) } as Mark, holder);
       const nextMarks = setMarkUtil(curMarks, nextMark as Mark);
       
-      const activeElf = actorSide === "p1" ? c.p1 : c.p2;
-      if (activeElf) {
-        activeElf.marks = nextMarks;
-        const teamKey = actorSide === "p1" ? "p1Team" : "p2Team";
-        const activeIdx = actorSide === "p1" ? c.p1ActiveIndex : c.p2ActiveIndex;
-        if (c[teamKey] && c[teamKey][activeIdx]) {
-          c[teamKey][activeIdx].marks = nextMarks;
-        }
-      }
-
-      syncStateRef.current = {
-        ...c,
-        [marksKey]: nextMarks
-      };
+      syncStateRef.current = setBattleSideMarks(c, actorSide, nextMarks);
 
       dispatch({ type: 'SET_MARKS', side: actorSide, marks: nextMarks });
     },
     getMarks: (targetSide) => {
       const c = syncStateRef.current;
       const marksKey = `${targetSide}Marks` as "p1Marks" | "p2Marks";
-      return c[marksKey] || [];
+      const holder = targetSide === side ? self : c[targetSide];
+      return (c[marksKey] || []).filter(mark => markAppliesToElf(mark, holder));
     },
     clearMark: (id, targetSide) => {
       const c = syncStateRef.current;
       const actorSide = targetSide || side;
       const marksKey = `${actorSide}Marks` as "p1Marks" | "p2Marks";
       const curMarks = c[marksKey] || [];
-      const nextMarks = clearMarkUtil(curMarks, id);
+      const holder = actorSide === side ? self : c[actorSide];
+      const nextMarks = curMarks.filter(mark => mark.id !== id || !markAppliesToElf(mark, holder));
       
-      const activeElf = actorSide === "p1" ? c.p1 : c.p2;
-      if (activeElf) {
-        activeElf.marks = nextMarks;
-        const teamKey = actorSide === "p1" ? "p1Team" : "p2Team";
-        const activeIdx = actorSide === "p1" ? c.p1ActiveIndex : c.p2ActiveIndex;
-        if (c[teamKey] && c[teamKey][activeIdx]) {
-          c[teamKey][activeIdx].marks = nextMarks;
-        }
-      }
-
-      syncStateRef.current = {
-        ...c,
-        [marksKey]: nextMarks
-      };
+      syncStateRef.current = setBattleSideMarks(c, actorSide, nextMarks);
 
       dispatch({ type: 'SET_MARKS', side: actorSide, marks: nextMarks });
     },
@@ -1005,14 +985,10 @@ export function buildStateAPIs(shared: SharedContextDeps): StateAPIs {
         getBattleEventContext(controllerSide, true, 0).applyStatusWithImmunityCheck(controllerSide, "麻痺", existing + 1 + reduced);
         pushEffect({ type: 'log', side: controllerSide, data: { text: `⚡ 【異】：對手回合類效果改為1回合；減少${reduced}回合，自身麻痺增加${reduced + 1}回合！`, type: "effect" } });
       }
-      const next = addTimer(curTimers, actualTimer, { isLateMover });
-      
-      syncStateRef.current = {
-        ...c,
-        [timersKey]: next
-      };
-
-      dispatch({ type: 'SET_TIMERS', side: s, timers: next });
+      const owner = s === side ? self : c[s];
+      // 麻痺回呼可能已更新同步狀態，不能用呼叫前的 c 覆蓋它。
+      syncStateRef.current = addScopedTimer(syncStateRef.current, s, owner, actualTimer, { isLateMover });
+      dispatch({ type: 'ADD_SCOPED_TIMER', side: s, owner, timer: actualTimer, context: { isLateMover } });
     },
     updateElf: (tSide, elfUpdates) => {
       const c = syncStateRef.current;
@@ -1022,7 +998,9 @@ export function buildStateAPIs(shared: SharedContextDeps): StateAPIs {
       const contextualTarget = tSide === side ? self : c[tSide];
       const requestedId = elfUpdates.battleId || elfUpdates.id || contextualTarget.battleId || contextualTarget.id;
       const foundIndex = team.findIndex((elf) => (elf.battleId || elf.id) === requestedId || elf.id === requestedId);
-      const targetIndex = foundIndex >= 0 ? foundIndex : c[activeIndexKey];
+      // 明確指定的身分找不到時不可退回在場者；延遲/板凳事件也不能寫錯人。
+      if (foundIndex < 0) return;
+      const targetIndex = foundIndex;
       const target = team[targetIndex] || c[tSide];
       const nextElf = { ...target, ...elfUpdates };
       const nextTeam = [...team];
@@ -1047,7 +1025,7 @@ export function buildStateAPIs(shared: SharedContextDeps): StateAPIs {
         syncStateRef.current = {
           ...c,
           [tSide]: nextElf,
-          [tSide === 'p1' ? 'p1Team' : 'p2Team']: c[tSide === 'p1' ? 'p1Team' : 'p2Team'].map(e => e.id === nextElf.id ? nextElf : e)
+          [tSide === 'p1' ? 'p1Team' : 'p2Team']: c[tSide === 'p1' ? 'p1Team' : 'p2Team'].map(e => (e.battleId || e.id) === (nextElf.battleId || nextElf.id) ? nextElf : e)
         };
         dispatch({ type: 'UPDATE_ELF', side: tSide, elf: nextElf, targetId: battleId });
       } else {
@@ -1070,16 +1048,12 @@ export function buildStateAPIs(shared: SharedContextDeps): StateAPIs {
     },
     getPlayerState: (k) => {
       const c = syncStateRef.current;
-      return (isP1 ? c.p1RegistryState : c.p2RegistryState)[k];
+      return readScopedRegistry(c, side, self, k);
     },
     setPlayerState: (k, v) => {
       const c = syncStateRef.current;
-      const sideRegKey = isP1 ? "p1RegistryState" : "p2RegistryState";
-      syncStateRef.current = {
-        ...c,
-        [sideRegKey]: { ...c[sideRegKey], [k]: v }
-      };
-      dispatch({ type: 'UPDATE_REGISTRY_STATE', side, state: { [k]: v } });
+      syncStateRef.current = writeScopedRegistry(c, side, self, { [k]: v });
+      dispatch({ type: 'UPDATE_SCOPED_REGISTRY_STATE', side, owner: self, state: { [k]: v } });
     },
     getOpponentState: (k) => {
       const c = syncStateRef.current;

@@ -1,5 +1,6 @@
 import { BaseStats } from "../types";
 import { TITLE_CATALOG } from "./titles";
+import { normalizeElfStats } from "../utils/elfStats";
 
 export interface SuitDefinition {
   id: string;
@@ -349,7 +350,8 @@ export function applyEquipmentToElfStats(
   const title = titleId ? TITLE_CATALOG[titleId] : undefined;
 
   const calcStat = (stat: keyof BaseStats) => {
-    let base = stats[stat] || 1;
+    const base = stats[stat];
+    if (!Number.isFinite(base) || base < 0) throw new Error(`裝備套用缺少有效能力值：${stat}`);
     let flatAdd = (suit?.statBonus?.[stat] || 0) + (eyewear?.statBonus?.[stat] || 0) + (title?.statBonus?.[stat] || 0);
     let flatSub = oppSuit?.oppStatDebuff?.[stat] || 0; // oppStatDebuff is already negative like -100
     
@@ -382,17 +384,7 @@ export function applyEquipmentToTeam(
 ): any[] {
   if (!team || team.length === 0) return [];
   return team.map((elf) => {
-    const cloned = JSON.parse(JSON.stringify(elf));
-    if (!cloned.calculatedStats) {
-      cloned.calculatedStats = {
-        hp: cloned.maxHp || 100,
-        atk: 100,
-        def: 100,
-        spatk: 100,
-        spdef: 100,
-        speed: 100,
-      };
-    }
+    const cloned = normalizeElfStats(JSON.parse(JSON.stringify(elf)));
     const eqStats = applyEquipmentToElfStats(cloned.calculatedStats, suitId, eyewearId, oppSuitId, titleId);
     cloned.calculatedStats = eqStats;
     cloned.maxHp = eqStats.hp;

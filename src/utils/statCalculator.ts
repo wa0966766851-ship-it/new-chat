@@ -6,60 +6,12 @@ import { isStoneThrower } from "../data/skillStones";
 /**
  * Returns default effort values ("本攻+體力": 255 HP + 255 Main Attack)
  */
-export function getDefaultEvs(baseStats?: BaseStats): BaseStats {
-  const isPhysical = (baseStats?.atk ?? 0) >= (baseStats?.spatk ?? 0);
-  return isPhysical
-    ? { hp: 255, atk: 255, def: 0, spatk: 0, spdef: 0, speed: 0 }
-    : { hp: 255, atk: 0, def: 0, spatk: 255, spdef: 0, speed: 0 };
-}
 
 /**
  * Calculates the final battle stats for a Seer Elf based on formulas:
  * Non-HP: floor( ( (Base_Stat * 2 + IV + EV / 4) * Level / 100 + 5 ) * Nature_Multiplier ) + Inscriptions
  * HP: floor( (Base_Stat * 2 + IV + EV / 4) * Level / 100 + 10 + Level ) + Inscriptions
  */
-export function calculateElfStats(
-  baseStats: BaseStats,
-  level: number = 100,
-  ivs?: BaseStats,
-  evs?: BaseStats,
-  natureModifiers?: { [key in keyof BaseStats]?: number },
-  inscriptions?: { stats: BaseStats }[],
-  guildBonuses?: BaseStats,
-  hasAnnualBonus?: boolean
-): BaseStats {
-  const safeBase = baseStats || { hp: 0, atk: 0, def: 0, spatk: 0, spdef: 0, speed: 0 };
-  const finalIvs: BaseStats = ivs || { hp: 31, atk: 31, def: 31, spatk: 31, spdef: 31, speed: 31 };
-  const finalEvs: BaseStats = evs || getDefaultEvs(safeBase); // 本攻+體力 default
-  const multipliers = natureModifiers || { hp: 1.0, atk: 1.0, def: 1.0, spatk: 1.0, spdef: 1.0, speed: 1.0 };
-  const finalGuild = guildBonuses || { hp: 0, atk: 0, def: 0, spatk: 0, spdef: 0, speed: 0 };
-  const annualMod = hasAnnualBonus ? 10 : 0;
-
-  const effectiveInsc = getEffectiveInscriptions(inscriptions as any);
-  const inscHp = effectiveInsc.reduce((sum, insc) => sum + (insc?.stats?.hp || 0), 0);
-  const inscAtk = effectiveInsc.reduce((sum, insc) => sum + (insc?.stats?.atk || 0), 0);
-  const inscDef = effectiveInsc.reduce((sum, insc) => sum + (insc?.stats?.def || 0), 0);
-  const inscSpAtk = effectiveInsc.reduce((sum, insc) => sum + (insc?.stats?.spatk || 0), 0);
-  const inscSpDef = effectiveInsc.reduce((sum, insc) => sum + (insc?.stats?.spdef || 0), 0);
-  const inscSpeed = effectiveInsc.reduce((sum, insc) => sum + (insc?.stats?.speed || 0), 0);
-
-  const calcNonHp = (base: number = 0, iv: number, ev: number, multiplier: number, insc: number, guild: number) => {
-    return Math.max(1, Math.floor(((base * 2 + iv + Math.floor(ev / 4)) * level / 100 + 5) * multiplier) + insc + guild + annualMod);
-  };
-
-  const calcHp = (base: number = 0, iv: number, ev: number, insc: number, guild: number) => {
-    return Math.max(1, Math.floor((base * 2 + iv + Math.floor(ev / 4)) * level / 100 + 10 + level) + insc + guild + annualMod);
-  };
-
-  return {
-    hp: calcHp(safeBase.hp, finalIvs.hp, finalEvs.hp, inscHp, finalGuild.hp),
-    atk: calcNonHp(safeBase.atk, finalIvs.atk, finalEvs.atk, multipliers.atk ?? 1.0, inscAtk, finalGuild.atk),
-    def: calcNonHp(safeBase.def, finalIvs.def, finalEvs.def, multipliers.def ?? 1.0, inscDef, finalGuild.def),
-    spatk: calcNonHp(safeBase.spatk, finalIvs.spatk, finalEvs.spatk, multipliers.spatk ?? 1.0, inscSpAtk, finalGuild.spatk),
-    spdef: calcNonHp(safeBase.spdef, finalIvs.spdef, finalEvs.spdef, multipliers.spdef ?? 1.0, inscSpDef, finalGuild.spdef),
-    speed: calcNonHp(safeBase.speed, finalIvs.speed, finalEvs.speed, multipliers.speed ?? 1.0, inscSpeed, finalGuild.speed),
-  };
-}
 
 /**
  * Calculates the multiplier for a stat based on its stage (-6 to +6).
@@ -292,10 +244,10 @@ export function resetElfStateForBattle(elf: Elf, isStarter: boolean = false, sui
     cloned.currentHp = 3000000;
   } else {
     // 若有自訂或保存的原始體力上限則還原，並讓當前體力回滿
-    if ((cloned as any).originalMaxHp) {
-      cloned.maxHp = (cloned as any).originalMaxHp;
-    } else if (cloned.calculatedStats && cloned.calculatedStats.hp) {
+    if (cloned.calculatedStats && cloned.calculatedStats.hp > 0) {
       cloned.maxHp = cloned.calculatedStats.hp;
+    } else if (Number.isFinite((cloned as any).originalMaxHp) && (cloned as any).originalMaxHp > 0) {
+      cloned.maxHp = (cloned as any).originalMaxHp;
     }
     cloned.currentHp = cloned.maxHp;
   }
@@ -402,3 +354,5 @@ export function getEffectiveBody(elf: Elf, marks: { count?: number; effects?: Re
   }
   return { height: Math.round(h * (1 + hPct) * hMul * 10) / 10, weight: Math.round(w * (1 + wPct) * wMul * 10) / 10 };
 }
+import { calculateElfStats, getDefaultEvs } from "./elfStats";
+export { calculateElfStats, getDefaultEvs } from "./elfStats";

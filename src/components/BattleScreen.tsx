@@ -38,6 +38,7 @@ import {
 import { addTimer, tickTimers, clearTurnEffects, hasTurnEffect } from "../battle/timers";
 import { runWrappedAtom } from "../effects/effectRunner";
 import { Mark, getMark, markAppliesToElf, setMark as setMarkUtil, clearMark as clearMarkUtil } from "../battle/marks";
+import { switchBattleSide } from "../battle/stateScopes";
 import { TraitsEngine } from "../utils/traitsEngine";
 import { checkStatusDrivenFatalResist } from "../utils/statusFatalResist";
 
@@ -795,6 +796,7 @@ export default function BattleScreen(props: BattleScreenProps) {
 
         // 積木印記：持有者體力恢復效果減少 X%
         for (const mk of ((targetSide === "p1" ? syncStateRef.current.p1Marks : syncStateRef.current.p2Marks) || []) as any[]) {
+          if (!markAppliesToElf(mk, syncStateRef.current[targetSide])) continue;
           const hr = mk.effects?.blkHealReduce;
           if (hr && !data.isPotion) multiplier = Math.max(0, multiplier - hr * (mk.effects?.blkHealPerStack ? mk.count : 1));
         }
@@ -872,47 +874,8 @@ export default function BattleScreen(props: BattleScreenProps) {
         await new Promise(r => setTimeout(r, fast ? 0 : (data.duration || 350)));
         dispatch({ type: 'SET_SKILL_ANIM', anim: null });
         return; // Already delayed
-      case 'switch': {
-        const sideRegKey = side === 'p1' ? 'p1RegistryState' : 'p2RegistryState';
-        const regState = syncStateRef.current[sideRegKey] || {};
-        const nextElf = (side === 'p1' ? cur.p1Team : cur.p2Team)[data.index];
-        const resetStats = { skillDmg: 0, fixedDmg: 0, percentDmg: 0, trueDmg: 0, hpChange: 0, heal: 0, lastType: null };
-        
-        let stateChanged = false;
-        const updatedRegState = { ...regState };
-        if (regState.clearOnSwitch && Array.isArray(regState.clearOnSwitch)) {
-          regState.clearOnSwitch.forEach((key: string) => {
-            if (updatedRegState[key] !== undefined) {
-              updatedRegState[key] = false;
-              stateChanged = true;
-            }
-          });
-          updatedRegState.clearOnSwitch = [];
-        }
-
-        if (stateChanged) {
-          syncStateRef.current = {
-            ...syncStateRef.current,
-            [side === 'p1' ? 'p1' : 'p2']: nextElf,
-            [side === 'p1' ? 'p1ActiveIndex' : 'p2ActiveIndex']: data.index,
-            [side === 'p1' ? 'p1StartHp' : 'p2StartHp']: nextElf.currentHp,
-            [side === 'p1' ? 'p1TurnStats' : 'p2TurnStats']: resetStats,
-            [sideRegKey]: updatedRegState
-          };
-          dispatch({
-            type: 'UPDATE_REGISTRY_STATE',
-            side,
-            state: updatedRegState
-          });
-        } else {
-          syncStateRef.current = {
-            ...syncStateRef.current,
-            [side === 'p1' ? 'p1' : 'p2']: nextElf,
-            [side === 'p1' ? 'p1ActiveIndex' : 'p2ActiveIndex']: data.index,
-            [side === 'p1' ? 'p1StartHp' : 'p2StartHp']: nextElf.currentHp,
-            [side === 'p1' ? 'p1TurnStats' : 'p2TurnStats']: resetStats
-          };
-        }
+case 'switch': {
+        syncStateRef.current = switchBattleSide(syncStateRef.current, side, data.index);
         dispatch({ type: 'SET_ACTIVE_INDEX', side, index: data.index });
         break;
       }
@@ -3434,14 +3397,10 @@ export default function BattleScreen(props: BattleScreenProps) {
       }
 
       pushEffect({ type: 'log', side, data: { text: `【${side === 'p1' ? '玩家一' : '玩家二'}】派出了 【${targetElf.name}】！`, type: "info" } });
-      dispatch({ type: 'FORCED_SWITCH', side, index, newElf: targetElf });
+      dispatch({ type: 'FORCED_SWITCH', side, index, newElf: syncStateRef.current[side === 'p1' ? 'p1Team' : 'p2Team'][index] });
       
       const activeIdxKey = side === 'p1' ? 'p1ActiveIndex' : 'p2ActiveIndex';
-      syncStateRef.current = {
-        ...syncStateRef.current,
-        [side]: targetElf,
-        [activeIdxKey]: index
-      };
+      syncStateRef.current = switchBattleSide(syncStateRef.current, side, index);
 
       const newCtx = getBattleEventContext(side);
       TraitsEngine.triggerOnEntrance(newCtx);

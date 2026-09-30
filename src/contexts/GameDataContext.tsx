@@ -2,6 +2,7 @@ import React, { createContext, useContext, useState, useEffect } from "react";
 import { Elf, Skill } from "../types";
 import { GLOBAL_ELVES } from "../data/gameData";
 import { ELF_ID_MAPPING } from "../data/elfRegistry";
+import { normalizeElfStats, normalizeStoredElfStats } from "../utils/elfStats";
 
 interface GameDataContextProps {
   allElves: Elf[];
@@ -261,9 +262,9 @@ export const GameDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     // 優先使用自訂精靈數據 (customElves)，其後才是系統預設精靈 (GLOBAL_ELVES)，並且套用 override
     const overriddenGlobalElves = GLOBAL_ELVES.map(elf => {
       const override = defaultElvesOverrides[elf.id!];
-      return override ? { ...elf, ...override } : elf;
+      return override ? normalizeStoredElfStats({ ...elf, ...override }) : elf;
     });
-    const combined = [...customElves, ...overriddenGlobalElves];
+    const combined = [...customElves.map(normalizeStoredElfStats), ...overriddenGlobalElves];
     const uniqueMap = new Map();
     combined.forEach(elf => {
       const key = elf.id || elf.name; // id優先，只有真的沒有id時才退回用名字
@@ -275,13 +276,13 @@ export const GameDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   }, [customElves, defaultElvesOverrides]);
 
   const addCustomElf = (elf: Elf) => {
-    setCustomElves(prev => [...prev, { ...elf, id: `custom_${Date.now()}` }]);
+    setCustomElves(prev => [...prev, normalizeElfStats({ ...elf, id: `custom_${Date.now()}` })]);
   };
 
   const updateElf = (updated: Elf, oldId?: string) => {
     const lookupId = oldId || updated.id;
     const nextId = updated.id ? (ELF_ID_MAPPING[updated.id] || updated.id) : undefined;
-    const finalElf = nextId !== updated.id ? { ...updated, id: nextId } : updated;
+    const finalElf = normalizeElfStats(nextId !== updated.id ? { ...updated, id: nextId } : updated);
 
     if (lookupId?.startsWith("custom_")) {
       setCustomElves(prev => {

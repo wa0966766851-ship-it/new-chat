@@ -12,6 +12,8 @@ export interface Mark {
   remainingRounds?: number;
   clearable?: boolean;
   persistsOffField?: boolean;
+  /** 陣營作用域必須明確宣告；下場保留本身不等於全隊共享。 */
+  scope?: "elf" | "team";
   triggerNode?: string;
   polarity?: "positive" | "negative" | "neutral";
   iconTag?: string;
@@ -81,11 +83,11 @@ export const MARK_DEFINITIONS: Record<string, Partial<Mark>> = {
     clearable: false, persistsOffField: true, polarity: "neutral", visibleWhenZero: true,
     description: "異能值系統預留欄位；目前只顯示數值，不產生任何戰鬥效果。",
   },
-  scarlett_holy_light: { unit: "層", maxCount: 3, clearable: false, persistsOffField: true, polarity: "positive" },
+  scarlett_holy_light: { scope: "team", unit: "層", maxCount: 3, clearable: false, persistsOffField: true, polarity: "positive" },
   // 魔王咒怨是「達到5層」而非「上限5層」；部分技能明確要求高於5層，不能截斷。
-  demon_grudge: { unit: "層", clearable: false, polarity: "positive" },
-  fear_seed: { unit: "層", maxCount: 5, clearable: false, polarity: "negative" },
-  fear_flower: { unit: "株", maxCount: 1, clearable: false, polarity: "negative" },
+  demon_grudge: { scope: "team", persistsOffField: true, unit: "層", clearable: false, polarity: "positive" },
+  fear_seed: { scope: "team", persistsOffField: true, unit: "層", maxCount: 5, clearable: false, polarity: "negative" },
+  fear_flower: { scope: "team", persistsOffField: true, unit: "株", maxCount: 1, clearable: false, polarity: "negative" },
 };
 
 export function normalizeMark(mark: Mark): Mark {
@@ -93,6 +95,8 @@ export function normalizeMark(mark: Mark): Mark {
   const maxCount = mark.maxCount ?? def.maxCount;
   const count = Math.max(0, Math.min(maxCount ?? Number.POSITIVE_INFINITY, mark.count));
   return {
+    scope: "elf",
+    persistsOffField: false,
     ...def,
     ...mark,
     count,
@@ -135,4 +139,12 @@ export function markAppliesToElf(mark: Pick<Mark, "ownerBattleId">, elf?: { batt
   if (!mark.ownerBattleId) return true;
   if (!elf) return false;
   return mark.ownerBattleId === (elf.battleId || elf.id);
+}
+
+/** 在知道目標精靈的附加邊界完成綁定，避免各魂印漏填持有者。 */
+export function bindMarkToElf(mark: Mark, elf: { battleId?: string; id?: string }): Mark {
+  const normalized = normalizeMark(mark);
+  return normalized.scope === "team" && !mark.ownerBattleId
+    ? normalized
+    : { ...normalized, ownerBattleId: mark.ownerBattleId || elf.battleId || elf.id };
 }

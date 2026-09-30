@@ -10,7 +10,12 @@ import { Elf, SoulMark } from "../types";
  * sub-clause (unaltered) that describes THIS extra elf inside the summoner's text.
  */
 export function createExtraElf(baseElf: Elf, overrides: Partial<Elf> & { name: string }): Elf {
-  const cloned: Elf = JSON.parse(JSON.stringify(baseElf));
+  // 只繼承基礎配置；戰鬥印記、存活規則、PP特權等不能從召喚者複製。
+  const inheritedKeys = ["type", "level", "baseStats", "ivs", "evs", "natureModifiers",
+    "calculatedStats", "maxHp", "height", "weight", "gender"] as const;
+  const cloned = JSON.parse(JSON.stringify(Object.fromEntries(
+    inheritedKeys.map(key => [key, baseElf[key]]),
+  ))) as Elf;
   const uniqueId = `extra_${overrides.name}_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
 
   const defaultExtraSoulMark: SoulMark = {
@@ -26,6 +31,13 @@ export function createExtraElf(baseElf: Elf, overrides: Partial<Elf> & { name: s
     id: uniqueId,
     battleId: uniqueId,
     isExtra: true,
+    skills: overrides.skills ?? [],
+    statStages: overrides.statStages ?? { atk: 0, def: 0, spatk: 0, spdef: 0, speed: 0, accuracy: 0 },
+    marks: overrides.marks ?? [],
+    effects: overrides.effects ?? [],
+    battleStatuses: overrides.battleStatuses ?? {},
+    shield: overrides.shield ?? 0,
+    barrier: overrides.barrier ?? 0,
     currentHp: overrides.currentHp ?? overrides.maxHp ?? cloned.maxHp,
     // Scope descriptive/effect fields to the extra elf only — do not inherit the summoner's.
     soulMark: overrides.soulMark ?? defaultExtraSoulMark,

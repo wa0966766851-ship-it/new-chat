@@ -1,6 +1,8 @@
 import { Elf, Skill, BattleLog, BattleItem } from "../types";
 import { Timer } from "../battle/timers";
 import { Mark } from "../battle/marks";
+import { switchBattleSide, writeScopedRegistry, addScopedTimer, setBattleSideMarks, type ElfScopeSnapshot } from "../battle/stateScopes";
+import type { AddContext } from "../battle/timers";
 
 export interface TurnDamageStats {
   skillDmg: number;
@@ -64,6 +66,8 @@ export interface BattleState {
   p2TurnStats: TurnDamageStats;
   p1RegistryState: Record<string, any>;
   p2RegistryState: Record<string, any>;
+  p1ElfState?: Record<string, ElfScopeSnapshot>;
+  p2ElfState?: Record<string, ElfScopeSnapshot>;
   p1Timers: Timer[];
   p2Timers: Timer[];
   p1Marks: Mark[];
@@ -91,7 +95,9 @@ export type BattleAction =
   | { type: 'SET_TURN'; turn: number }
   | { type: 'UPDATE_TURN_STATS'; side: 'p1' | 'p2'; stats: Partial<TurnDamageStats> }
   | { type: 'UPDATE_REGISTRY_STATE'; side: 'p1' | 'p2'; state: Record<string, any> }
+  | { type: 'UPDATE_SCOPED_REGISTRY_STATE'; side: 'p1' | 'p2'; owner: Elf; state: Record<string, any> }
   | { type: 'SET_TIMERS'; side: 'p1' | 'p2'; timers: Timer[] }
+  | { type: 'ADD_SCOPED_TIMER'; side: 'p1' | 'p2'; owner: Elf; timer: Timer; context?: AddContext }
   | { type: 'SET_MARKS'; side: 'p1' | 'p2'; marks: Mark[] }
   | { type: 'SET_LAST_DAMAGE'; side: 'p1' | 'p2'; damage: number }
   | { type: 'SET_LAST_ACTION_INFO'; info: LastActionInfo | null }
@@ -115,7 +121,8 @@ export const battleReducer = (state: BattleState, action: BattleAction): BattleS
         const targetIndex = action.targetId
           ? newTeam.findIndex((elf) => (elf.battleId || elf.id) === action.targetId || elf.id === action.targetId)
           : state.p1ActiveIndex;
-        const resolvedIndex = targetIndex >= 0 ? targetIndex : state.p1ActiveIndex;
+        if (targetIndex < 0) return state;
+        const resolvedIndex = targetIndex;
         const newElf = { ...(newTeam[resolvedIndex] || state.p1), ...action.elf };
         newTeam[resolvedIndex] = newElf;
         const isActive = resolvedIndex === state.p1ActiveIndex;
@@ -130,7 +137,8 @@ export const battleReducer = (state: BattleState, action: BattleAction): BattleS
         const targetIndex = action.targetId
           ? newTeam.findIndex((elf) => (elf.battleId || elf.id) === action.targetId || elf.id === action.targetId)
           : state.p2ActiveIndex;
-        const resolvedIndex = targetIndex >= 0 ? targetIndex : state.p2ActiveIndex;
+        if (targetIndex < 0) return state;
+        const resolvedIndex = targetIndex;
         const newElf = { ...(newTeam[resolvedIndex] || state.p2), ...action.elf };
         newTeam[resolvedIndex] = newElf;
         const isActive = resolvedIndex === state.p2ActiveIndex;
@@ -145,30 +153,8 @@ export const battleReducer = (state: BattleState, action: BattleAction): BattleS
       return action.side === 'p1' 
         ? { ...state, p1Team: action.team }
         : { ...state, p2Team: action.team };
-    case 'SET_ACTIVE_INDEX':
-      if (action.side === 'p1') {
-        const elf = state.p1Team[action.index];
-        const resetStats = { skillDmg: 0, fixedDmg: 0, percentDmg: 0, trueDmg: 0, hpChange: 0, heal: 0, lastType: null };
-        return { 
-          ...state, 
-          p1ActiveIndex: action.index, 
-          p1: { ...elf },
-          p1Marks: elf.marks || [],
-          p1StartHp: elf.currentHp,
-          p1TurnStats: resetStats
-        };
-      } else {
-        const elf = state.p2Team[action.index];
-        const resetStats = { skillDmg: 0, fixedDmg: 0, percentDmg: 0, trueDmg: 0, hpChange: 0, heal: 0, lastType: null };
-        return { 
-          ...state, 
-          p2ActiveIndex: action.index, 
-          p2: { ...elf },
-          p2Marks: elf.marks || [],
-          p2StartHp: elf.currentHp,
-          p2TurnStats: resetStats
-        };
-      }
+case 'SET_ACTIVE_INDEX':
+      return switchBattleSide(state, action.side, action.index);
     case 'SET_START_HP':
       return action.side === 'p1'
         ? { ...state, p1StartHp: action.hp }
@@ -212,10 +198,14 @@ export const battleReducer = (state: BattleState, action: BattleAction): BattleS
       return action.side === 'p1'
         ? { ...state, p1RegistryState: { ...state.p1RegistryState, ...action.state } }
         : { ...state, p2RegistryState: { ...state.p2RegistryState, ...action.state } };
+    case 'UPDATE_SCOPED_REGISTRY_STATE':
+      return writeScopedRegistry(state, action.side, action.owner, action.state);
     case 'SET_TIMERS':
       return { ...state, [`${action.side}Timers`]: action.timers };
+    case 'ADD_SCOPED_TIMER':
+      return addScopedTimer(state, action.side, action.owner, action.timer, action.context);
     case 'SET_MARKS':
-      return { ...state, [`${action.side}Marks`]: action.marks };
+      return setBattleSideMarks(state, action.side, action.marks);
     case 'SET_LAST_DAMAGE':
       if (action.side === 'p1') {
         return { ...state, p1LastDamage: action.damage, lastDamage: action.damage };
@@ -242,34 +232,16 @@ export const battleReducer = (state: BattleState, action: BattleAction): BattleS
           [action.elfName]: (state.damageDealt[action.elfName] || 0) + action.amount 
         } 
       };
-    case 'FORCED_SWITCH':
-      if (action.side === 'p1') {
-        const resetStats = { skillDmg: 0, fixedDmg: 0, percentDmg: 0, trueDmg: 0, hpChange: 0, heal: 0, lastType: null };
-        return { 
-          ...state, 
-          p1: action.newElf, 
-          p1Marks: action.newElf.marks || [],
-          p1ActiveIndex: action.index,
-          p1SelectedSkill: null,
-          p1StartHp: action.newElf.currentHp,
-          p1TurnStats: resetStats
-        };
-      } else {
-        const resetStats = { skillDmg: 0, fixedDmg: 0, percentDmg: 0, trueDmg: 0, hpChange: 0, heal: 0, lastType: null };
-        return { 
-          ...state, 
-          p2: action.newElf, 
-          p2Marks: action.newElf.marks || [],
-          p2ActiveIndex: action.index,
-          p2SelectedSkill: null,
-          p2StartHp: action.newElf.currentHp,
-          p2TurnStats: resetStats
-        };
-      }
+case 'FORCED_SWITCH': {
+      const teamKey = action.side === 'p1' ? 'p1Team' : 'p2Team';
+      const team = [...state[teamKey]];
+      team[action.index] = action.newElf;
+      return switchBattleSide({ ...state, [teamKey]: team }, action.side, action.index);
+    }
     case 'REPLACE_STATE':
       return action.state;
     case 'RESET_BATTLE':
-      return { ...state, ...action.initialState };
+      return { ...state, p1ElfState: {}, p2ElfState: {}, ...action.initialState };
     default:
       return state;
   }
