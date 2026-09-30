@@ -1,21 +1,21 @@
 import { ElfDeconstructedProfile, DeconstructedEffectEntry } from './types';
-import { PuniBaseDeconstructedProfile, ShenglingPuniDeconstructedProfile } from './puniRegistry';
-import { LisaDeconstructedProfile } from './lisaRegistry';
-import { MonkeyDeconstructedProfile } from './monkeyRegistry';
-import { DixinDeconstructedProfile } from './dixinRegistry';
-import { OpeiaDeconstructedProfile } from './opeiaRegistry';
-import { OdinDeconstructedProfile } from './odinRegistry';
-import { KeldDeconstructedProfile } from './keldRegistry';
-import { KeerhodeDeconstructedProfile } from './keerhodeRegistry';
-import { ScarlettDeconstructedProfile } from './scarlettRegistry';
-import { MarsDeconstructedProfile } from './marsRegistry';
-import { ChaosBlakeDeconstructedProfile } from './chaosBlakeRegistry';
-import { ReyDeconstructedProfile, GaiaDeconstructedProfile, CassiusDeconstructedProfile, BlakeDeconstructedProfile } from './wargodsRegistry';
-import { WuxuDeconstructedProfile, WuxuShiyanDeconstructedProfile, WuxuZhuixingDeconstructedProfile } from './wuxuRegistry';
-import { ZhakesiFearDeconstructedProfile } from './zhakesiFearRegistry';
-import { ZhakesiAnnihilationDeconstructedProfile } from './zhakesiAnnihilationRegistry';
-import { BelienteDeconstructedProfile } from './belienteRegistry';
-import { CanglanDeconstructedProfile } from './canglanRegistry';
+import { PuniBaseDeconstructedProfile, ShenglingPuniDeconstructedProfile } from '../data/elfProfiles/puniRegistry';
+import { LisaDeconstructedProfile } from '../data/elfProfiles/lisaRegistry';
+import { MonkeyDeconstructedProfile } from '../data/elfProfiles/monkeyRegistry';
+import { DixinDeconstructedProfile } from '../data/elfProfiles/dixinRegistry';
+import { OpeiaDeconstructedProfile } from '../data/elfProfiles/opeiaRegistry';
+import { OdinDeconstructedProfile } from '../data/elfProfiles/odinRegistry';
+import { KeldDeconstructedProfile } from '../data/elfProfiles/keldRegistry';
+import { KeerhodeDeconstructedProfile } from '../data/elfProfiles/keerhodeRegistry';
+import { ScarlettDeconstructedProfile } from '../data/elfProfiles/scarlettRegistry';
+import { MarsDeconstructedProfile } from '../data/elfProfiles/marsRegistry';
+import { ChaosBlakeDeconstructedProfile } from '../data/elfProfiles/chaosBlakeRegistry';
+import { ReyDeconstructedProfile, GaiaDeconstructedProfile, CassiusDeconstructedProfile, BlakeDeconstructedProfile } from '../data/elfProfiles/wargodsRegistry';
+import { WuxuDeconstructedProfile, WuxuShiyanDeconstructedProfile, WuxuZhuixingDeconstructedProfile } from '../data/elfProfiles/wuxuRegistry';
+import { ZhakesiFearDeconstructedProfile } from '../data/elfProfiles/zhakesiFearRegistry';
+import { ZhakesiAnnihilationDeconstructedProfile } from '../data/elfProfiles/zhakesiAnnihilationRegistry';
+import { BelienteDeconstructedProfile } from '../data/elfProfiles/belienteRegistry';
+import { CanglanDeconstructedProfile } from '../data/elfProfiles/canglanRegistry';
 
 /**
  * 風味指導指令 (Style Anchor)：

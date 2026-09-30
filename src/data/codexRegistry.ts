@@ -1,36 +1,19 @@
 import { EffectCode } from "../effects/effectSystem.schema";
-import { mapCodeToAtoms } from "../effects/atomMapper";
+import { createCodexEntry } from "./codexEntry";
 
 // Import raw codex JSON if exists, else fallback to standard list
-import rawCodex from "./codex.json";
+import packedCodex from "./codex.packed.json";
+import { expandRows, unpackJson, type PackedJson, type PackedRows } from "./packedJson";
+const rawCodex = expandRows(unpackJson<PackedRows<EffectCode>>(packedCodex as PackedJson));
 
 export const CODEX: Record<string, EffectCode> = {};
 
-// Initialize CODEX dictionary with mapped atoms
+// Initialize the index immediately; atom mapping is cached on first access.
 (function initCodex() {
   if (Array.isArray(rawCodex)) {
     for (const item of rawCodex as Partial<EffectCode>[]) {
       if (!item.id) continue;
-      const code: EffectCode = {
-        id: item.id,
-        template: item.template || "",
-        paramCount: item.paramCount ?? 0,
-        era: item.era || "legacy",
-        role: item.role || "innate",
-        node: item.node || null,
-        damageType: item.damageType || null,
-        counter: item.counter,
-        namedStatus: item.namedStatus ?? false,
-        isDual: item.isDual ?? false,
-        target: item.target || "self",
-        targetInferred: item.targetInferred ?? false,
-        polarity: item.polarity || "NEUTRAL",
-        contexts: item.contexts || ["skill"],
-        atoms: item.atoms && item.atoms.length > 0 ? item.atoms : mapCodeToAtoms(item),
-        clarity: item.clarity || "clear",
-        needsReview: item.needsReview ?? false,
-        reviewReason: item.reviewReason || ""
-      };
+      const code = createCodexEntry({ ...item, id: item.id });
       CODEX[item.id] = code;
     }
   }
