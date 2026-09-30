@@ -1,13 +1,12 @@
-import React, { useState, useMemo, useRef } from "react";
-import { ATOMS } from "../effects/effectRunner";
+import React, { useState, useMemo, useRef, useDeferredValue, useEffect } from "react";
+import { isBlocklyEntry } from "../blocks/kitEntries";
 import { KitEntry, EffectCode, Role, Node, Era } from "../effects/effectSystem.schema";
 import { CODEX, searchEffectCodes } from "../data/codexRegistry";
-import blockLibraryData from "../data/blockLibrary.json";
 import { Sparkles, Plus, Trash2, Tag, Info, Layers, Check, Search, AlertTriangle, Box, Shuffle, Edit3, Puzzle } from "lucide-react";
 import { BlocklyBuilder } from "./BlocklyBuilder";
 
 /** 積木（Blockly）可編輯的詞條：codeId 為原子名 */
-export const isBlocklyEntry = (e: KitEntry) => !!e && e.codeId !== "custom" && e.codeId in ATOMS;
+export { isBlocklyEntry } from "../blocks/kitEntries";
 
 interface BlockSlot {
   type: string;
@@ -36,7 +35,10 @@ interface BlockLibrary {
   blocks: BlockItem[];
 }
 
-const blockLibrary: BlockLibrary = blockLibraryData as unknown as BlockLibrary;
+const EMPTY_BLOCK_LIBRARY: BlockLibrary = {
+  pools: { 狀態: [], 目標: [], 傷害類型: [], 屬性項: [], 傷害運算: [], 數值類: {} },
+  blocks: [],
+};
 
 interface KitEffectBuilderProps {
   kit: KitEntry[];
@@ -60,7 +62,7 @@ const NODES: { value: Node; label: string }[] = [
   { value: "self_fatal", label: "致死時/重生 (self_fatal)" },
 ];
 
-function getDefaultSlotValue(typeText: string, idx: number, block: BlockItem): string {
+function getDefaultSlotValue(typeText: string, idx: number, block: BlockItem, blockLibrary: BlockLibrary): string {
   if (block.slots && block.slots.length > 0) {
     const found = block.slots.find(s => s.type === typeText && s.cur);
     if (found && found.cur) return found.cur;
@@ -97,6 +99,17 @@ export const KitEffectBuilder: React.FC<KitEffectBuilderProps> = ({
   onInsertDescription,
 }) => {
   const [mode, setMode] = useState<"id" | "block" | "blockly">("blockly");
+  const [blockLibrary, setBlockLibrary] = useState<BlockLibrary>(EMPTY_BLOCK_LIBRARY);
+  const [libraryError, setLibraryError] = useState(false);
+  useEffect(() => {
+    if (mode !== "block" || blockLibrary !== EMPTY_BLOCK_LIBRARY) return;
+    let active = true;
+    setLibraryError(false);
+    import("../data/blockLibraryData").then(module => {
+      if (active) setBlockLibrary(module.default as unknown as BlockLibrary);
+    }).catch(() => { if (active) setLibraryError(true); });
+    return () => { active = false; };
+  }, [mode, blockLibrary]);
   // 積木模式只編輯積木詞條，其他（編號／換槽）詞條原樣保留
   const blocklyPart = useMemo(() => (kit || []).filter(isBlocklyEntry), [kit]);
   const otherPart = useMemo(() => (kit || []).filter(e => !isBlocklyEntry(e)), [kit]);
@@ -118,17 +131,21 @@ export const KitEffectBuilder: React.FC<KitEffectBuilderProps> = ({
   const [selectedTarget, setSelectedTarget] = useState<string>("對手");
   const [blockSearchKeyword, setBlockSearchKeyword] = useState("");
   const [blockRoleFilter, setBlockRoleFilter] = useState<string>("all");
+  const deferredSearchKeyword = useDeferredValue(searchKeyword);
+  const deferredBlockSearchKeyword = useDeferredValue(blockSearchKeyword);
 
   const filteredCodes = useMemo(() => {
+    if (mode !== "id") return [];
     return searchEffectCodes({
       role: selectedRole === "all" ? undefined : selectedRole,
       era: selectedEra === "all" ? undefined : selectedEra,
-      keyword: searchKeyword,
+      keyword: deferredSearchKeyword,
     });
-  }, [selectedRole, selectedEra, searchKeyword]);
+  }, [mode, selectedRole, selectedEra, deferredSearchKeyword]);
 
   const filteredBlocks = useMemo(() => {
-    const kw = blockSearchKeyword.trim().toLowerCase();
+    if (mode !== "block") return [];
+    const kw = deferredBlockSearchKeyword.trim().toLowerCase();
     return (blockLibrary.blocks || []).filter(b => {
       if (blockRoleFilter !== "all" && b.role !== blockRoleFilter) return false;
       if (!kw) return true;
@@ -138,16 +155,16 @@ export const KitEffectBuilder: React.FC<KitEffectBuilderProps> = ({
         (b.src && b.src.toLowerCase().includes(kw))
       );
     });
-  }, [blockSearchKeyword, blockRoleFilter]);
+  }, [mode, deferredBlockSearchKeyword, blockRoleFilter, blockLibrary]);
 
   const { displayedBlocks, remainingCount } = useMemo(() => {
-    const limit = blockSearchKeyword.trim() ? 300 : 100;
+    const limit = deferredBlockSearchKeyword.trim() ? 300 : 100;
     const displayed = filteredBlocks.slice(0, limit);
     return {
       displayedBlocks: displayed,
       remainingCount: filteredBlocks.length - displayed.length,
     };
-  }, [filteredBlocks, blockSearchKeyword]);
+  }, [filteredBlocks, deferredBlockSearchKeyword]);
 
   const activeCode = activeCodeId ? CODEX[activeCodeId] : null;
   const activeBlock = selectedBlockId
@@ -157,7 +174,7 @@ export const KitEffectBuilder: React.FC<KitEffectBuilderProps> = ({
   const handleSelectBlock = (block: BlockItem) => {
     setSelectedBlockId(block.id);
     const tokens = extractSkeletonTokens(block.skeleton);
-    const defaults = tokens.map((tk, idx) => getDefaultSlotValue(tk.typeText, idx, block));
+    const defaults = tokens.map((tk, idx) => getDefaultSlotValue(tk.typeText, idx, block, blockLibrary));
     setBlockSlotValues(defaults);
     const hasSelf = block.skeleton.includes("自身") || block.skeleton.includes("自己") || block.skeleton.includes("己方");
     setSelectedTarget(hasSelf ? "自身" : "對手");
@@ -168,7 +185,7 @@ export const KitEffectBuilder: React.FC<KitEffectBuilderProps> = ({
     let text = activeBlock.skeleton;
     const tokens = extractSkeletonTokens(activeBlock.skeleton);
     tokens.forEach((tk, idx) => {
-      const val = blockSlotValues[idx] || getDefaultSlotValue(tk.typeText, idx, activeBlock);
+      const val = blockSlotValues[idx] || getDefaultSlotValue(tk.typeText, idx, activeBlock, blockLibrary);
       text = text.replace(`⟨${tk.typeText}⟩`, val);
     });
     // Adjust target wording
@@ -188,7 +205,7 @@ export const KitEffectBuilder: React.FC<KitEffectBuilderProps> = ({
       text = text.replace(/對方|對手|自身|自己/g, "場上全體");
     }
     return text;
-  }, [activeBlock, blockSlotValues, selectedTarget]);
+  }, [activeBlock, blockSlotValues, selectedTarget, blockLibrary]);
 
   const handleAddEntry = () => {
     if (!activeCode) return;
@@ -323,6 +340,10 @@ export const KitEffectBuilder: React.FC<KitEffectBuilderProps> = ({
           source={source}
           onInsertDescription={onInsertDescription}
         />
+      ) : mode === "block" && blockLibrary === EMPTY_BLOCK_LIBRARY ? (
+        <p role={libraryError ? "alert" : "status"} className="p-3 text-sm text-slate-400">
+          {libraryError ? "積木資料載入失敗，請切換其他模式後重試。" : "載入積木換槽資料…"}
+        </p>
       ) : mode === "block" ? (
         /* Block Mode (積木換槽模式) */
         <div className="border-t border-slate-800 pt-3">

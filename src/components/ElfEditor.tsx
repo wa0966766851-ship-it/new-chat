@@ -1,10 +1,11 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, lazy, Suspense } from "react";
+import type { ComponentProps } from "react";
 import { TypeIcon } from "./SeerImages";
+import { ElfEditorDraftSummary, ElfEditorSectionNav, type EditorSection } from "./ElfEditorSections";
 import { Elf, Skill, BaseStats, Inscription, DecompositionReport } from "../types";
 import { KitEntry } from "../effects/effectSystem.schema";
-import { KitEffectBuilder } from "./KitEffectBuilder";
 import { calculateElfStats, SEER_TYPES, getDefaultEvs, getAttributeBadgeColor } from "../utils/statCalculator";
-import { getElfDestinyRank } from "../utils/destinyGacha";
+import { getElfDisplayRank as getElfDestinyRank } from "../utils/elfDisplayRank";
 import { validateSeerNature } from "../utils/seerNatures";
 import EvNaturePanel from "./EvNaturePanel";
 import ResistancePanel, { getDefaultResistances } from "./ResistancePanel";
@@ -15,14 +16,21 @@ import { GENERAL_TRAITS } from "../data/generalTraits";
 import { ALIEN_TRAITS } from "../data/alienTraits";
 import { motion, AnimatePresence } from "motion/react";
 import { Puzzle, ArrowLeft, Sparkles, Save, ListPlus, Edit, Eye, ShieldAlert, Check, Shuffle, Crown, AlertCircle, X, BookOpen, Plus, Maximize2, Minimize2, ZoomIn, Search, Copy, Trash2, RefreshCw, Send, Share2 } from "lucide-react";
-import { EffectLibraryModal } from "./EffectLibraryModal";
+const EffectLibraryModal = lazy(() => import("./EffectLibraryModal").then(module => ({ default: module.EffectLibraryModal })));
 import { parseEffectDescriptionWithAI } from "../utils/aiTextParser";
 import { parseFullElfData } from "../utils/fullElfParser";
 import { parseRawAbilityEffect } from "../utils/effectParser";
 import { SKILL_STONE_ATTRIBUTES, SKILL_STONE_GRADES, SkillStoneGrade, PERFECT_SKILL_STONE_EFFECTS, getPerfectEffectsForAttribute, createSkillStone, isStoneThrower } from "../data/skillStones";
-import { REAL_CARD_EFFECT_MODULES as AI_EFFECT_REFERENCE_LIBRARY, CardTemplateModule as AIEffectModule } from "../data/cardTemplates";
 import { ClauseBreakdownCard } from "./ClauseBreakdownCard";
-import { ElfBlocklyPanel } from "./ElfBlocklyPanel";
+const LazyKitEffectBuilder = lazy(() => import("./KitEffectBuilder").then(m => ({ default: m.KitEffectBuilder })));
+const LazyElfBlocklyPanel = lazy(() => import("./ElfBlocklyPanel").then(m => ({ default: m.ElfBlocklyPanel })));
+const editorLoading = <p role="status" className="p-4 text-sm text-slate-400">載入積木編輯工具…</p>;
+function KitEffectBuilder(props: ComponentProps<typeof LazyKitEffectBuilder>) {
+  return <Suspense fallback={editorLoading}><LazyKitEffectBuilder {...props} /></Suspense>;
+}
+function ElfBlocklyPanel(props: ComponentProps<typeof LazyElfBlocklyPanel>) {
+  return <Suspense fallback={editorLoading}><LazyElfBlocklyPanel {...props} /></Suspense>;
+}
 
 const enrichSkillPoolWithStones = (pool: Skill[], elf?: Partial<Elf> | null): Skill[] => {
   const isST = elf && (isStoneThrower(elf as Elf) || elf.name?.includes("無序") || elf.alienTraits?.gen2Trait?.name?.includes("投石者") || (elf as any).trait_stone_thrower);
@@ -875,6 +883,7 @@ interface ElfEditorProps {
 
 export default function ElfEditor({ initialElf, onSaveElf, onBack, initialTab }: ElfEditorProps) {
   const [activeTab, setActiveTab] = useState<"ai" | "manual" | "blockly">(initialTab || (initialElf ? "manual" : "ai"));
+  const [manualSection, setManualSection] = useState<EditorSection>("basic");
   // AI（Gemini）是否可用：未設定 GEMINI_API_KEY 時停用 AI 按鈕，改用本地解析
   const [aiEnabled, setAiEnabled] = useState<boolean | null>(null);
   useEffect(() => {
@@ -2264,10 +2273,17 @@ export default function ElfEditor({ initialElf, onSaveElf, onBack, initialTab }:
     guildBonuses, initialElf?.hasAnnualBonus
   ), [baseStats, evs, natureModifiers, inscriptions, guildBonuses, initialElf?.ivs, initialElf?.hasAnnualBonus]);
 
+  const manualDraft = { ...initialElf, id: initialElf?.id || "editor-draft", name: elfName, type: elfType,
+    level: 100, path: path || undefined, baseStats, calculatedStats: calculatedManualStats,
+    currentHp: calculatedManualStats.hp, maxHp: calculatedManualStats.hp, skills, skillPool,
+    soulMark: { ...initialElf?.soulMark, name: soulMarkName, description: soulMarkDesc,
+      effectType: soulMarkEffectType, effectValue: soulMarkValue },
+  } as Elf;
+
   return (
-    <div className="w-full max-w-6xl mx-auto px-4 pt-20 pb-8" id="elf-editor-container">
+    <div className="elf-editor-page w-full max-w-6xl mx-auto px-4 sm:px-6 pt-20 pb-8" id="elf-editor-container">
       {/* Back Header */}
-      <div className="flex items-center justify-between gap-4 mb-8">
+      <div className="ios-panel p-5 flex flex-wrap items-center justify-between gap-4 mb-6">
         <div className="flex items-center gap-4">
           <button
             id="btn-editor-back"
@@ -2324,9 +2340,10 @@ export default function ElfEditor({ initialElf, onSaveElf, onBack, initialTab }:
       </div>
 
       {/* Tab Selectors */}
-      <div className="flex border-b border-slate-800 mb-6 bg-[#0F1117] p-1 rounded-xl max-w-md" id="editor-tabs">
+      <div className="ios-segment flex mb-6" id="editor-tabs">
         <button
           id="tab-ai-select"
+          data-active={activeTab === "ai"}
           onClick={() => setActiveTab("ai")}
           className={`flex-1 py-2 px-4 rounded-lg font-bold text-xs transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
             activeTab === "ai"
@@ -2339,6 +2356,7 @@ export default function ElfEditor({ initialElf, onSaveElf, onBack, initialTab }:
         </button>
         <button
           id="tab-manual-select"
+          data-active={activeTab === "manual"}
           onClick={() => setActiveTab("manual")}
           className={`flex-1 py-2 px-4 rounded-lg font-bold text-xs transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
             activeTab === "manual"
@@ -2351,6 +2369,7 @@ export default function ElfEditor({ initialElf, onSaveElf, onBack, initialTab }:
         </button>
         <button
           id="tab-blockly-select"
+          data-active={activeTab === "blockly"}
           onClick={() => setActiveTab("blockly")}
           className={`flex-1 py-2 px-4 rounded-lg font-bold text-xs transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
             activeTab === "blockly"
@@ -3262,9 +3281,14 @@ export default function ElfEditor({ initialElf, onSaveElf, onBack, initialTab }:
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -15 }}
             transition={{ duration: 0.3 }}
-            className="bg-[#0F1117] border border-slate-800 rounded-2xl p-6 shadow-xl space-y-8"
+            className="editor-workspace"
             id="manual-panel-container"
           >
+            <ElfEditorDraftSummary elf={manualDraft} />
+            <div className="editor-form-panel ios-panel ios-dialog p-4 sm:p-6 min-w-0">
+            <ElfEditorSectionNav active={manualSection} onChange={setManualSection} />
+            <div id="manual-section-content" className="space-y-6 mt-6">
+            {manualSection === "basic" && <>
             {/* Part 1: Basic Info */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <div>
@@ -3384,7 +3408,7 @@ export default function ElfEditor({ initialElf, onSaveElf, onBack, initialTab }:
                           if (generated.decompositionReport) {
                             setDecompositionReport(generated.decompositionReport);
                           }
-                          alert("AI 已根據描述自動解構並規範化實裝配置！");
+                          alert("AI 已產生配置草稿；效果是否正確生效仍需語意驗證。");
                         }
                       } catch (err) {
                         console.error(err);
@@ -3413,10 +3437,10 @@ export default function ElfEditor({ initialElf, onSaveElf, onBack, initialTab }:
                   <div className="flex items-center justify-between border-b border-violet-500/20 pb-2">
                     <h4 className="text-xs font-bold text-violet-300 flex items-center gap-1.5">
                       <Sparkles className="w-4 h-4 text-violet-400" />
-                      AI 效果解構與規範化報告 (實裝完成)
+                      AI 效果解構與規範化報告（待驗證草稿）
                     </h4>
                     <span className="text-[10px] bg-violet-500/20 text-violet-300 px-2 py-0.5 rounded-full font-mono font-bold">
-                      模板化規範實裝
+                      描述模板參考
                     </span>
                   </div>
                   {decompositionReport.decomposedTags && (
@@ -3570,7 +3594,10 @@ export default function ElfEditor({ initialElf, onSaveElf, onBack, initialTab }:
                 </div>
               </div>
 
-              <div className="border-t border-slate-800 pt-6">
+            </div>
+            </>}
+            {manualSection === "training" && <div className="space-y-6">
+              <div>
                 <h3 className="text-sm font-bold text-slate-300 mb-4 flex items-center gap-1.5">
                   <span className="w-1.5 h-3.5 bg-green-500 rounded-sm"></span>
                   戰隊加成設定 (個別精靈)
@@ -3606,7 +3633,7 @@ export default function ElfEditor({ initialElf, onSaveElf, onBack, initialTab }:
                 </h3>
                 <EvNaturePanel
                   baseStats={baseStats}
-                  ivs={{ hp: 31, atk: 31, def: 31, spatk: 31, spdef: 31, speed: 31 }}
+                  ivs={initialElf?.ivs || { hp: 31, atk: 31, def: 31, spatk: 31, spdef: 31, speed: 31 }}
                   evs={evs}
                   natureModifiers={natureModifiers}
                   inscriptions={inscriptions as Inscription[]}
@@ -3615,9 +3642,11 @@ export default function ElfEditor({ initialElf, onSaveElf, onBack, initialTab }:
                   onEvsChange={(newEvs) => setEvs(newEvs)}
                   onNatureChange={(newMods) => setNatureModifiers(newMods)}
                 />
-
+              </div>
+            </div>}
+            {manualSection === "resistance" && <>
                 {/* Part 2.2: Resistance Configuration */}
-                <div className="border-t border-slate-800 pt-6 mt-6">
+                <div>
                   <h3 className="text-sm font-bold text-slate-300 mb-3 flex items-center gap-1.5">
                     <span className="w-1.5 h-3.5 bg-emerald-500 rounded-sm"></span>
                     3️⃣ 抗性屬性配置（傷害抗性與異常抗性）
@@ -3627,9 +3656,9 @@ export default function ElfEditor({ initialElf, onSaveElf, onBack, initialTab }:
                     onChange={(newRes) => setResistances(newRes)}
                   />
                 </div>
-              </div>
-            </div>
+            </>}
 
+            {manualSection === "traits" && <>
             {/* Part 2.5: Passive Soul Mark */}
             <div className="border-t border-slate-800 pt-6">
               <h3 className="text-sm font-bold text-slate-300 mb-4 flex items-center gap-1.5">
@@ -3887,7 +3916,8 @@ export default function ElfEditor({ initialElf, onSaveElf, onBack, initialTab }:
             </div>
 
             {/* Part 2.7: Inscription System (Engravings) */}
-            <div className="border-t border-slate-800 pt-6">
+            </>}
+            {manualSection === "training" && <div className="border-t border-slate-800 pt-6">
               <div className="flex items-center justify-between mb-4">
                 <h3 className="text-sm font-bold text-slate-300 flex items-center gap-1.5">
                   <span className="w-1.5 h-3.5 bg-amber-500 rounded-sm"></span>
@@ -3909,8 +3939,9 @@ export default function ElfEditor({ initialElf, onSaveElf, onBack, initialTab }:
                   />
                 ))}
               </div>
-            </div>
+            </div>}
 
+            {manualSection === "skills" && <>
             {/* Part 4: Dynamic Skills Editor (Strictly 5 equipped slots) */}
             <div className="border-t border-slate-800 pt-6 relative">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
@@ -3999,6 +4030,8 @@ export default function ElfEditor({ initialElf, onSaveElf, onBack, initialTab }:
               )}
             </div>
 
+            </>}
+            </div>
               {/* Editor Skill Replacement Modal */}
               <AnimatePresence>
                 {replacingSkillIdx !== null && (
@@ -4118,15 +4151,17 @@ export default function ElfEditor({ initialElf, onSaveElf, onBack, initialTab }:
               </AnimatePresence>
 
             {/* Save Manual */}
-            <div className="flex justify-end pt-6 border-t border-slate-800">
+            <div className="editor-save-bar flex flex-wrap justify-between items-center gap-3 mt-6 pt-4 border-t border-white/10">
+              <p className="text-xs text-slate-400">所有分類共用一份草稿，儲存時一併保存。</p>
               <button
                 id="btn-save-manual-elf"
                 onClick={handleSaveManual}
                 className="py-3.5 px-8 bg-blue-600 hover:bg-blue-500 text-white rounded-xl font-bold text-xs shadow-[0_4px_20px_rgba(37,99,235,0.15)] transition-all transform hover:-translate-y-0.5 cursor-pointer flex items-center gap-2"
               >
                 <Save className="w-4 h-4" />
-                <span>儲存自訂精靈卡牌</span>
+                <span>{initialElf ? "儲存精靈修改" : "儲存自訂精靈卡牌"}</span>
               </button>
+            </div>
             </div>
           </motion.div>
         )}
@@ -4539,7 +4574,7 @@ export default function ElfEditor({ initialElf, onSaveElf, onBack, initialTab }:
         </div>
       )}
 
-      <EffectLibraryModal
+      {isEffectModalOpen && <Suspense fallback={<p role="status" className="ios-panel fixed inset-x-4 top-1/3 z-[300] p-6 text-slate-300">載入效果引用資料庫…</p>}><EffectLibraryModal
         isOpen={isEffectModalOpen}
         onClose={() => setIsEffectModalOpen(false)}
         onSelectModule={(mod) => {
@@ -4553,7 +4588,7 @@ export default function ElfEditor({ initialElf, onSaveElf, onBack, initialTab }:
             }
           }
         }}
-      />
+      /></Suspense>}
     </div>
   );
 }

@@ -1,10 +1,15 @@
 import React, { useEffect, useRef, useState, useCallback } from "react";
-import * as Blockly from "blockly";
+import * as Blockly from "blockly/core";
+import * as BlocklyMessages from "blockly/msg/en";
 import { KitEntry, Node } from "../effects/effectSystem.schema";
 import { Puzzle, Play, Code2, Trash2, RefreshCw, Layers, Sparkles, Check, Copy, BookmarkPlus, Download, Plus, Search } from "lucide-react";
 
 // Ensure custom blocks are defined once
 let blocksDefined = false;
+// 畫布只使用本檔的精靈效果積木，不載入未使用的通用程式積木庫。
+Blockly.setLocale(Object.fromEntries(
+  Object.entries(BlocklyMessages).filter((entry): entry is [string, string] => typeof entry[1] === "string"),
+));
 
 function defineCustomBlocks() {
   if (blocksDefined) return;

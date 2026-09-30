@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import type { Elf } from "../types";
+import { IMAGE_COPY_EVENT } from "./ImageCopyMenu";
 import { getSeerIndex, loadSeerIndex, onSeerIndexLoaded, petImageUrls, splitTypes, typeIconUrls, isNoneType } from "../battle/seerAssets";
 
 // 已知失敗的網址（避免重複請求）
@@ -30,6 +31,12 @@ export function ChainImage({ urls, fallback, className, style, alt }: {
       draggable={false}
       className={className}
       style={style}
+      onContextMenu={event => {
+        event.preventDefault(); event.stopPropagation();
+        window.dispatchEvent(new CustomEvent(IMAGE_COPY_EVENT, { detail: {
+          src: event.currentTarget.src, name: alt || "圖片", x: event.clientX, y: event.clientY,
+        } }));
+      }}
       onError={() => { failed.add(src); refresh(n => n + 1); }}
     />
   );

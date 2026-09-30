@@ -17,6 +17,9 @@ import { SKILL_STONE_ATTRIBUTES, PERFECT_SKILL_STONE_EFFECTS, createSkillStone, 
 import { calculateElfStats, resetElfStateForBattle, setDynamicMatchups } from "./utils/statCalculator";
 import { applyElfOverrides } from "./data/elfRegistry";
 import StartScreen from "./components/StartScreen";
+import { ElfAvatar } from "./components/SeerImages";
+import { ImageCopyMenu } from "./components/ImageCopyMenu";
+import { PageErrorBoundary } from "./components/PageErrorBoundary";
 
 import TechLoadingScreen from "./components/TechLoadingScreen";
 
@@ -256,7 +259,7 @@ function AppContent() {
         initial={false}
         animate={{ width: showHeader ? 256 : 0 }}
         transition={{ duration: 0.22, ease: "easeOut" }}
-        className={`bg-[#0F1117]/95 backdrop-blur-md border-slate-800 z-[100] shrink-0 h-full shadow-2xl overflow-hidden ${isCompactLayout ? "fixed inset-y-0 left-0" : "relative"} ${showHeader ? "border-r" : "border-r-0"}`}
+        className={`ios-sidebar z-[100] shrink-0 h-full shadow-2xl overflow-hidden ${isCompactLayout ? "fixed inset-y-0 left-0" : "relative"} ${showHeader ? "border-r" : "border-r-0"}`}
         aria-hidden={!showHeader}
       >
           <div className="w-64 h-full flex flex-col relative">
@@ -274,7 +277,9 @@ function AppContent() {
                 onClick={() => setView("start")}
                 className="flex items-center gap-3 text-slate-100 hover:text-white select-none cursor-pointer font-display"
               >
-                <div className="w-9 h-9 bg-blue-600 rounded flex items-center justify-center font-black text-lg text-white shadow-lg shadow-blue-500/10 shrink-0">S</div>
+                <div className="w-11 h-11 rounded-full overflow-hidden ring-1 ring-blue-400/30 bg-blue-950/20 shrink-0" title="聖靈譜尼 · 右鍵可複製圖片">
+                  <ElfAvatar elf={DEFAULT_ELVES.find(elf => elf.name === "聖靈譜尼") || DEFAULT_ELVES[0]} className="w-full h-full object-cover" />
+                </div>
                 <div className="flex flex-col items-start overflow-hidden">
                   <h1 className="text-base font-bold tracking-tight text-blue-400 flex items-center whitespace-nowrap">
                     賽爾號模擬器
@@ -418,6 +423,7 @@ function AppContent() {
         <div className="absolute inset-0 bg-[linear-gradient(to_right,#1e293b_1px,transparent_1px),linear-gradient(to_bottom,#1e293b_1px,transparent_1px)] bg-[size:4rem_4rem] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_50%,#000_70%,transparent_100%)] opacity-15 pointer-events-none -z-10"></div>
 
         {isTransitioning && <TechLoadingScreen />}
+        <PageErrorBoundary key={view} onBack={() => setView("start")}>
         <Suspense fallback={<TechLoadingScreen />}>
 
         {view === "start" && (
@@ -522,7 +528,9 @@ function AppContent() {
 
 
         </Suspense>
-        {showEncyclopedia && createPortal(<Suspense fallback={null}><Encyclopedia onClose={() => setShowEncyclopedia(false)} /></Suspense>, document.body)}
+        </PageErrorBoundary>
+        {showEncyclopedia && createPortal(<PageErrorBoundary onBack={() => setShowEncyclopedia(false)}><Suspense fallback={<TechLoadingScreen />}><Encyclopedia onClose={() => setShowEncyclopedia(false)} /></Suspense></PageErrorBoundary>, document.body)}
+        <ImageCopyMenu />
 
 
         </main>

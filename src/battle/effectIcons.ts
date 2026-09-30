@@ -14,6 +14,11 @@ const CUSTOM_STATUS_ICONS: Record<string, string> = {
   星護: "/status-icons/星護.png",
   繳械: "/status-icons/繳械.png",
 };
+// User-provided battle UI artwork; these are intentionally not SeerAPI buff ids.
+const CUSTOM_BUFF_ICONS: Record<string, string> = {
+  護盾: "/status-icons/精靈護盾.png",
+  護罩: "/status-icons/精靈護罩.png",
+};
 
 const ALIAS: Record<string, string> = { 麻痹: "麻痺", 神游: "神遊", 魘昧: "魘味", 異常抵抗: "異常免疫", 免疫: "異常免疫" };
 
@@ -36,7 +41,6 @@ export function statusVisual(name?: string): EffectVisual | null {
 
 // 關鍵字 → 官方 buff 標籤（取圖標）
 const KEYWORDS: [RegExp, string][] = [
-  [/護盾/, "護盾"], [/護罩/, "護罩"],
   [/免疫.*(異常)|異常.*免疫|異常抵抗/, "免疫異常"], [/免疫.*(弱化|能力下降)/, "免疫弱化"],
   [/免死|不死|存活|庇護|殘留1點/, "免死"], [/重生|復活/, "重生"],
   [/反彈|反傷|反擊/, "反傷"], [/吸血|汲取|吸取.*體力/, "吸血"],
@@ -52,6 +56,8 @@ const KEYWORDS: [RegExp, string][] = [
 /** 依效果名稱／說明推斷通用效果圖標（找不到回傳 undefined） */
 export function buffIconFor(text?: string): string | undefined {
   if (!text) return undefined;
+  if (/護盾/.test(text)) return CUSTOM_BUFF_ICONS.護盾;
+  if (/護罩/.test(text)) return CUSTOM_BUFF_ICONS.護罩;
   for (const [re, tag] of KEYWORDS) {
     if (re.test(text) && BUFF_TAGS[tag] != null) return `/seer/buff/${BUFF_TAGS[tag]}.png`;
   }

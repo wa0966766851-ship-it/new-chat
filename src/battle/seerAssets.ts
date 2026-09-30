@@ -44,12 +44,90 @@ function normalizeKeyed(idx: SeerIndex, key: string) {
 export const SEER_ID_OVERRIDES: Record<string, number> = {
   "混濁海妖.布林克克": 359,        // 布林克克（原版）
   "治癒.龍魂再臨 次元龍": 4586,    // 空元行者
-  "恐懼的化身·咤克斯": 3665,       // 厲魘魔王吒克斯
+  "恐懼的化身·咤克斯": 5010,       // 舊版吒克斯「恐懼的化身」外觀（Seer 靜態圖資）
   "湮滅之主・咤克斯": 4762,        // 湮滅之主吒克斯（官方）
   "變革·馬爾修斯": 3393,           // 馬爾修斯（最新型態）
   "帝皇之盾": 3404,                // 帝皇之鉞
   "六界神王": 4032,                // 命運之輪：六界御神
 };
+
+/** 戰鬥場景專用立繪比例。大型首領立繪放在資訊卡下層，避免遮住戰鬥資料。 */
+export type BattleSpriteProfile = {
+  width?: string;
+  height?: string;
+  scale?: number;
+};
+
+export const BATTLE_SPRITE_PROFILES: Record<string, BattleSpriteProfile> = {
+  [normalizeName("恐懼的化身·咤克斯")]: { width: "54%", height: "118%", scale: 1.08 },
+  [normalizeName("湮滅之主・咤克斯")]: { width: "54%", height: "118%", scale: 1.08 },
+};
+
+export function battleSpriteProfile(name: string): BattleSpriteProfile | null {
+  return BATTLE_SPRITE_PROFILES[normalizeName(name || "")] || null;
+}
+
+/**
+ * 依實際立繪方向標註。Seer 的戰鬥全身素材多數原生朝左；正面素材與
+ * 專案自訂立繪另外標記，避免用單一方向盲目翻轉整個名冊。
+ */
+type SpriteFacing = "left" | "right" | "front";
+const BATTLE_SPRITE_FACING: Record<string, SpriteFacing> = {
+  [normalizeName("悲歌.索比拉特")]: "left",
+  [normalizeName("帝皇之盾")]: "left",
+  [normalizeName("天蓬元帥八戒")]: "front",
+  [normalizeName("皮特薩拉羅")]: "left",
+  [normalizeName("布萊克")]: "left",
+  [normalizeName("譜尼")]: "front",
+  [normalizeName("星光·魔焰猩猩")]: "left",
+  [normalizeName("混濁海妖.布林克克")]: "left",
+  // Seer body 177 的巴弗洛立繪為斜側朝左，不是正面；P1 需鏡射，P2 保留原向。
+  [normalizeName("鎮魂.巴弗洛")]: "left",
+  [normalizeName("誑獅魔軀.魔獅迪露")]: "left",
+  [normalizeName("聖靈譜尼")]: "left",
+  [normalizeName("星光·魯斯王")]: "left",
+  [normalizeName("星光·麗莎布布")]: "left",
+  [normalizeName("冰魄·柯爾德")]: "left",
+  [normalizeName("柯爾霍德")]: "left",
+  [normalizeName("聖光斯嘉麗")]: "front",
+  [normalizeName("混沌·布萊克")]: "front",
+  [normalizeName("變革·馬爾修斯")]: "front",
+  [normalizeName("人皇·帝辛")]: "front",
+  [normalizeName("蟲后·奧佩婭")]: "left",
+  [normalizeName("眾神之父·奧丁")]: "left",
+  [normalizeName("皮皮")]: "front",
+  [normalizeName("治癒.龍魂再臨 次元龍")]: "front",
+  [normalizeName("無序.六刃")]: "front",
+  [normalizeName("無序·蝕言")]: "front",
+  [normalizeName("湮滅之主・咤克斯")]: "left",
+  [normalizeName("恐懼的化身·咤克斯")]: "left",
+  [normalizeName("無序.墜星")]: "left",
+  [normalizeName("蓓麗安特")]: "front",
+  [normalizeName("怒濤·滄嵐")]: "front",
+  [normalizeName("異境神霆·雷伊")]: "left",
+  [normalizeName("聖靈邁爾斯")]: "left",
+};
+
+/** 只有 ElfAvatar 會直接載入的 URL/資料網址才算自訂圖片；內建美術 key（如 otherworld_thunder_rey）仍使用方向表。 */
+export function hasRenderableElfImagePath(path?: string): boolean {
+  return !!path && /^(\/|https?:|data:)/.test(path);
+}
+
+/** P1 應朝右、P2 應朝左，彼此面對；未逐圖核實的精靈保留原圖。 */
+export function shouldMirrorBattleSprite(name: string, side: "p1" | "p2", hasCustomPath = false): boolean {
+  const facing = hasCustomPath ? "front" : BATTLE_SPRITE_FACING[normalizeName(name || "")];
+  if (!facing || facing === "front") return false;
+  const target = side === "p1" ? "right" : "left";
+  return facing !== target;
+}
+
+/** 依精靈身高縮放立繪；極端哨兵值改由場景比例設定控制。 */
+export function battleSpriteScale(name: string, rawHeight: number): number {
+  const heightScale = !Number.isFinite(rawHeight) || rawHeight <= 0 || rawHeight >= 10000
+    ? 1
+    : Math.min(1.85, Math.max(0.68, Math.sqrt(rawHeight / 180)));
+  return heightScale * (battleSpriteProfile(name)?.scale ?? 1);
+}
 
 /** 自訂美術（public/elf-art/{key}_head.png / _body.png），優先於官方圖 */
 export const CUSTOM_ART: Record<string, string> = {
@@ -57,6 +135,11 @@ export const CUSTOM_ART: Record<string, string> = {
   "無序蝕言": "wuxu_shiyan",
   "無序六刃": "wuxu_liuren",
   "異境神霆雷伊": "otherworld_thunder_rey",
+};
+
+/** 只替換戰鬥全身立繪；恐懼化身的頭像維持既有來源。 */
+const CUSTOM_BODY_ART: Record<string, string> = {
+  [normalizeName("恐懼的化身·咤克斯")]: "zhakesi_fear",
 };
 
 export function resolvePetIds(elf: Pick<Elf, "name" | "id"> & { seerId?: number | string }, kind: "head" | "body" = "head"): number[] {
@@ -88,7 +171,8 @@ export function resolvePetIds(elf: Pick<Elf, "name" | "id"> & { seerId?: number 
 }
 
 export function petImageUrls(elf: Pick<Elf, "name" | "id"> & { seerId?: number | string }, kind: "head" | "body" = "head"): string[] {
-  const art = CUSTOM_ART[normalizeName(elf.name || "")];
+  const name = normalizeName(elf.name || "");
+  const art = kind === "body" ? (CUSTOM_BODY_ART[name] || CUSTOM_ART[name]) : CUSTOM_ART[name];
   const urls = [...(art ? [`/elf-art/${art}_${kind}.png`] : []), ...resolvePetIds(elf, kind).map(id => `/seer/${kind}/${id}.png`)];
   // 全身圖缺圖時退回頭像
   // 全身圖缺圖時不以方形頭像替代（會擋住背景），改由 ElfAvatar 顯示圓形頭像

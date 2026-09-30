@@ -4,7 +4,7 @@ import { ELF_ID_MAPPING } from "./elfRegistry";
 import { Elf, Skill, StatChange } from "../types";
 import { KitEntry } from "../effects/effectSystem.schema";
 import { calculateElfStats } from "../utils/statCalculator";
-import { getDeconstructedProfile } from "../effects/abilityRegistry";
+import SKILL_REFERENCES from "./skillReferences.generated.json";
 import { getEffectiveInscriptions } from "./inscriptionsCatalog";
 import { parseStatChangesFromText } from "../utils/statChangeManager";
 import { parseStatusesFromText } from "../utils/statusManager";
@@ -28,8 +28,10 @@ function createRefSkill(
     effectDetail?: string;
   } = {}
 ): Skill {
-  const profile = getDeconstructedProfile(elfId);
-  const entries = profile?.skills?.[name];
+  const entries = (SKILL_REFERENCES as Record<string, Record<string, {
+    flavor: { description: string };
+    mechanics: Partial<Pick<Skill, 'category' | 'type' | 'accuracy' | 'isSureHit' | 'isFifthSkill'>> & { alwaysHit?: boolean };
+  }[]>>)[elfId]?.[name];
   
   let description = options.fallbackDesc || '';
   let resolvedCategory = category;

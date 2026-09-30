@@ -1,4 +1,5 @@
 import React, { useState, useContext, useEffect, useMemo, useRef } from "react";
+import { ElfReadOnlyProfile } from "./ElfReadOnlyProfile";
 import { createPortal } from "react-dom";
 import { 
   Shield, 
@@ -38,6 +39,7 @@ import { BattleEffectViewModel, buildEffectViewModels, describeEffectMeta } from
 import { getHpBarColor } from "./BattleComponents";
 import { StatusInspector } from "./StatusInspector";
 import { getTypeMatchup, getAttributeBadgeColor, getEffectiveBody } from "../utils/statCalculator";
+import { battleSpriteProfile, battleSpriteScale, hasRenderableElfImagePath, shouldMirrorBattleSprite } from "../battle/seerAssets";
 import { ElfAvatar, TypeIcon, ChainImage } from "./SeerImages";
 import { isAliveBySurvivalRule } from "../battle/survivalRules";
 import { statusVisual, buffIconFor, stageDesc, STAT_FULL } from "../battle/effectIcons";
@@ -805,6 +807,7 @@ export function BattleScreenUI(props: BattleScreenUIProps) {
                             >
                                <div className="w-12 h-12 mb-1.5 rounded-full overflow-hidden border border-cyan-500/40 bg-slate-900"><ElfAvatar elf={elf} kind="head" className="w-full h-full object-cover" fallbackClassName="w-full h-full flex items-center justify-center text-xl font-black text-slate-300" /></div>
                                <span className={`text-xs font-black mb-1 ${isExtra ? 'text-amber-400' : 'text-white'}`}>{elf.isConcealed ? "未知精靈" : elf.name}</span>
+                               {!elf.isConcealed && <span className="mb-2 inline-flex items-center gap-1 text-xs text-slate-300"><TypeIcon type={elf.type} size={16} />{elf.type}</span>}
                                <div className="w-full h-1 bg-slate-800 rounded-full overflow-hidden mb-1">
                                   <div className={`h-full ${getHpBarColor(elf.currentHp, elf.maxHp)}`} style={{ width: `${elf.maxHp > 0 ? (elf.currentHp / elf.maxHp) * 100 : 0}%` }} />
                                </div>
@@ -1065,7 +1068,7 @@ export function BattleScreenUI(props: BattleScreenUIProps) {
   };
 
   const renderChips = (side: "p1" | "p2", elf: Elf) => {
-    type Chip = { key: string; text: string; cls: string; name: string; desc?: string; icon?: string };
+    type Chip = { key: string; text: string; cls: string; name: string; desc?: string; icon?: string; stageLabel?: string; stageValue?: string };
     const rows: { key: string; label: string; chips: Chip[]; vertical?: boolean }[] = [];
     const addRow = (key: string, label: string, chips: Chip[], vertical = false) => {
       if (chips.length) rows.push({ key, label, chips, vertical });
@@ -1078,26 +1081,25 @@ export function BattleScreenUI(props: BattleScreenUIProps) {
     ].filter(item => Number(item.key === "shield" ? elf.shield : elf.barrier) > 0);
     addRow("protection", "防護", protection);
 
-    // 第 2 行：能力一項一列，使用完整名稱；Seer buff 圖庫有通用強化／弱化圖示。
-    const stageLabels: Record<string, string> = { atk: "攻擊", spatk: "特攻", def: "防禦", spdef: "特防", accuracy: "命中", speed: "速度" };
+    // 第 2 行：沿用遊戲畫面的緊湊文字標籤；通用強化／弱化素材不是各能力等級的準確圖示。
+    const stageLabels: Record<string, string> = { atk: "攻擊", def: "防禦", spatk: "特攻", spdef: "特防", speed: "速度", accuracy: "命中" };
     const stageChips: Chip[] = [];
     const stages = (elf.statStages || {}) as Record<string, number>;
     if (disguiseBattleStates && Object.values(stages).some(value => Number(value) !== 0)) {
       stageChips.push({ key: "stage-nightmare", name: "魘味", text: "魘味", cls: "border-purple-500/40 bg-purple-950/50 text-purple-200", icon: statusVisual("魘味")?.icon, desc: StatusRegistry["魘味"].description });
     } else {
-      for (const key of ["atk", "spatk", "def", "spdef", "accuracy", "speed"]) {
+      for (const key of ["atk", "def", "spatk", "spdef", "speed", "accuracy"]) {
         const value = Number(stages[key] || 0);
         if (!value) continue;
         const label = stageLabels[key] || STAT_FULL[key] || key;
-        const icon = buffIconFor(value > 0 ? "強化" : "弱化");
         stageChips.push({
           key: `stage-${key}`, name: `${label}能力等級`, text: `${label} ${value > 0 ? "+" : ""}${value}`,
           cls: value > 0 ? "border-amber-500/40 bg-amber-950/50 text-amber-200" : "border-violet-500/40 bg-violet-950/50 text-violet-200",
-          icon, desc: stageDesc(key, value),
+          desc: stageDesc(key, value), stageLabel: label, stageValue: `${value > 0 ? "+" : ""}${value}`,
         });
       }
     }
-    addRow("stages", "能力等級", stageChips, true);
+    addRow("stages", "能力等級", stageChips);
 
     // 第 3 行：異常狀態；魘味只影響顯示，不改動底層狀態。
     const st = getStatuses(elf) as Record<string, any>;
@@ -1162,13 +1164,15 @@ export function BattleScreenUI(props: BattleScreenUIProps) {
         {rows.map(row => (
           <div key={row.key} className={`flex items-start gap-2 ${side === "p2" ? "flex-row-reverse text-right" : ""}`}>
             <span className="w-[72px] shrink-0 pt-1 text-[9px] font-black text-slate-500">{row.label}</span>
-            <div className={`min-w-0 flex-1 ${row.vertical ? "flex flex-col gap-0.5" : "flex flex-wrap gap-1"}`}>
+            <div className={`min-w-0 flex-1 ${row.key === "stages" ? "flex flex-wrap items-start gap-1" : row.vertical ? "flex flex-col gap-0.5" : "flex flex-wrap gap-1"}`}>
               {row.chips.map(chip => (
                 <button type="button" key={chip.key} title={`${chip.name}\n${chip.desc || ""}`}
                   onClick={() => setModalContent({ title: chip.name, content: chip.desc || chip.name })}
-                  className={`inline-flex max-w-full items-center gap-1 rounded border px-1.5 py-0.5 text-[10px] font-bold leading-4 hover:brightness-125 ${chip.cls} ${row.vertical ? "w-full justify-start" : "whitespace-nowrap"}`}>
-                  {chip.icon && <ChainImage urls={[chip.icon]} className="h-4 w-4 shrink-0 rounded-sm object-contain" />}
-                  <span className="truncate">{chip.text}</span>
+                  className={`inline-flex max-w-full items-center gap-1 rounded border text-[10px] font-bold leading-4 hover:brightness-125 ${chip.cls} ${row.key === "stages" ? "h-[42px] w-[40px] shrink-0 flex-col justify-center gap-0 px-0.5 py-0.5 text-center whitespace-normal" : `px-1.5 py-0.5 ${row.vertical ? "w-full justify-start" : "whitespace-nowrap"}`}`}>
+                  {row.key === "stages" ? <><span className="text-[9px] leading-3">{chip.stageLabel}</span><span className="font-mono text-[11px] leading-4">{chip.stageValue}</span></> : <>
+                    {chip.icon && <ChainImage urls={[chip.icon]} className="h-4 w-4 shrink-0 rounded-sm object-contain" />}
+                    <span className="truncate">{chip.text}</span>
+                  </>}
                 </button>
               ))}
             </div>
@@ -1191,7 +1195,7 @@ export function BattleScreenUI(props: BattleScreenUIProps) {
       <div className={`pointer-events-auto w-full rounded-2xl border bg-slate-950/85 shadow-[0_8px_30px_rgba(0,0,0,0.5)] transition-colors ${isShaking ? "border-rose-500/80" : "border-cyan-500/30"}`}>
         <div className={`flex gap-3 p-2.5 ${isP1 ? "" : "flex-row-reverse"}`}>
           <button type="button" onClick={openDetail} title="查看精靈詳情"
-            className="shrink-0 w-16 h-16 rounded-full overflow-hidden border-2 border-cyan-400/60 bg-slate-900 hover:scale-105 transition-transform">
+            className="shrink-0 w-[72px] h-[72px] rounded-full overflow-hidden border-2 border-cyan-400/60 bg-slate-900 hover:scale-105 transition-transform">
             <ElfAvatar
               elf={elf}
               kind="head"
@@ -1201,7 +1205,7 @@ export function BattleScreenUI(props: BattleScreenUIProps) {
           <div className={`flex-1 min-w-0 ${isP1 ? "" : "text-right"}`}>
             <div className={`flex items-center gap-1.5 min-w-0 ${isP1 ? "" : "flex-row-reverse"}`}>
               <TypeIcon type={elf.type} size={20} />
-              <button type="button" onClick={openDetail} className="font-black text-[15px] text-white truncate hover:text-cyan-300">
+              <button type="button" onClick={openDetail} className="font-black text-base text-white truncate hover:text-cyan-300">
                 {elf.isConcealed ? "未知精靈" : elf.name}
               </button>
               {elf.soulMark && (
@@ -1220,9 +1224,9 @@ export function BattleScreenUI(props: BattleScreenUIProps) {
                   className="shrink-0 px-1.5 rounded bg-indigo-900/60 border border-indigo-500/40 text-[10px] font-bold text-indigo-200">{elf.trait.name}</button>
               )}
             </div>
-            <div className="relative mt-1.5 h-4 rounded-full bg-slate-800 overflow-hidden border border-white/10">
+            <div className="relative mt-1.5 h-5 rounded-full bg-slate-800 overflow-hidden border border-white/10">
               <div className={`absolute inset-y-0 ${isP1 ? "left-0" : "right-0"} transition-all duration-300 ${getHpBarColor(elf.currentHp, elf.maxHp)}`} style={{ width: `${hpPct}%` }} />
-              <div className="absolute inset-0 flex items-center justify-between px-2 text-[10px] font-black text-white drop-shadow-[0_1px_1px_rgba(0,0,0,0.9)]">
+              <div className="absolute inset-0 flex items-center justify-between px-2 text-[11px] font-black text-white drop-shadow-[0_1px_1px_rgba(0,0,0,0.9)]">
                 <span>{elf.currentHp}/{elf.maxHp}</span>
                 <span>{hpPct >= 10 ? Math.round(hpPct) : hpPct.toFixed(1)}%</span>
               </div>
@@ -1304,17 +1308,24 @@ export function BattleScreenUI(props: BattleScreenUIProps) {
     const isShaking = props.consoleShake?.[side];
     const anim = isAttacking ? { x: [0, isP1 ? 80 : -80, 0] } : isShaking ? { x: [-8, 8, -8, 8, 0], transition: { duration: 0.3 } } : { x: 0 };
     const dead = !isAliveBySurvivalRule(elf.currentHp, elf.survivalRule);
+    const spriteProfile = battleSpriteProfile(elf.name);
+    const height = Number(elf.height);
+    const spriteScale = battleSpriteScale(elf.name, height);
+    const mirrorSprite = shouldMirrorBattleSprite(elf.name, side, hasRenderableElfImagePath(elf.path));
+    const spriteStyle: React.CSSProperties = spriteProfile
+      ? { width: spriteProfile.width || "54%", height: spriteProfile.height || "118%" }
+      : { width: "26%", height: "74%", maxHeight: 400 };
     return (
-      <div className={`absolute bottom-[2%] ${isP1 ? "left-[4%]" : "right-[4%]"} w-[26%] h-[74%] max-h-[400px] flex items-end justify-center pointer-events-none`}
-        style={{ opacity: spriteMode === "dim" ? 0.55 : 1, display: spriteMode === "hide" ? "none" : undefined }}>
+      <div className={`absolute bottom-[2%] ${isP1 ? (spriteProfile ? "left-0" : "left-[4%]") : (spriteProfile ? "right-0" : "right-[4%]" )} flex items-end justify-center pointer-events-none`}
+        style={{ ...spriteStyle, opacity: spriteMode === "dim" ? 0.55 : 1, display: spriteMode === "hide" ? "none" : undefined }}>
         <div className="absolute top-0 left-1/2 -translate-x-1/2 z-20 pointer-events-none flex flex-col items-center gap-1.5 w-max">
           {renderPopups(side)}
         </div>
-        <motion.div animate={anim} transition={{ duration: 0.35 }} className={`h-full w-full flex items-end justify-center ${dead ? "opacity-30 grayscale" : ""}`}>
+        <motion.div animate={anim} transition={{ duration: 0.35 }} style={{ scale: spriteScale, scaleX: mirrorSprite ? -1 : 1 }} className={`h-full w-full flex items-end justify-center ${dead ? "opacity-30 grayscale" : ""}`}>
           <ElfAvatar
             elf={elf}
             kind="body"
-            className={`max-h-full max-w-full object-contain drop-shadow-[0_12px_18px_rgba(0,0,0,0.6)] ${isP1 ? "-scale-x-100" : ""}`}
+            className="max-h-full max-w-full object-contain drop-shadow-[0_12px_18px_rgba(0,0,0,0.6)]"
             fallbackClassName="w-36 h-36 rounded-full overflow-hidden ring-2 ring-white/15 flex items-center justify-center text-5xl font-black text-slate-200 mb-6 bg-black/20"
           />
         </motion.div>
@@ -1398,8 +1409,8 @@ export function BattleScreenUI(props: BattleScreenUIProps) {
       </div>
 
       {/* 上方：雙方精靈卡 + 中央回合資訊（手機直屏改上下疊卡，避免左右挤在一起蓋住技能鈕） */}
-      <div className="absolute top-[118px] sm:top-[56px] left-3 w-[43%] sm:w-[min(440px,33%)] z-30">{renderCard("p1")}</div>
-      <div className="absolute top-[118px] sm:top-[56px] right-3 w-[43%] sm:w-[min(440px,33%)] z-30">{renderCard("p2")}</div>
+      <div className="absolute top-[118px] sm:top-[56px] left-3 w-[43%] sm:w-[min(480px,35%)] z-30">{renderCard("p1")}</div>
+      <div className="absolute top-[118px] sm:top-[56px] right-3 w-[43%] sm:w-[min(480px,35%)] z-30">{renderCard("p2")}</div>
       <div className="absolute top-[44px] sm:top-2 left-1/2 -translate-x-1/2 z-20">{renderMatchInfo()}</div>
 
       {/* 本次傷害提示 */}
@@ -1903,214 +1914,35 @@ export function BattleScreenUI(props: BattleScreenUIProps) {
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.9, y: 20 }}
               onClick={(e) => e.stopPropagation()}
-              className="w-full max-w-lg bg-[#0A0D14]/98 border-2 border-amber-500/70 rounded-2xl p-6 shadow-2xl backdrop-blur-xl text-slate-200 max-h-[85vh] overflow-y-auto custom-scrollbar"
+              role="dialog" aria-modal="true" aria-label="戰鬥精靈介紹"
+              className="ios-panel ios-dialog w-full max-w-3xl p-4 sm:p-6 text-slate-200 max-h-[88vh] overflow-y-auto custom-scrollbar"
             >
-              {/* Header */}
-              <div className="flex justify-between items-start mb-4 pb-3 border-b border-amber-500/20">
-                <div className="flex items-center gap-3">
-                  <div className="w-14 h-14 rounded-full overflow-hidden bg-slate-900 border-2 border-amber-500/50 shadow-inner">
-                    <ElfAvatar elf={selectedElfDetail.elf} kind="head" className="w-full h-full object-cover" />
-                  </div>
-                  <div>
-                    <div className="flex items-center gap-2 mb-1">
-                      <h3 className="text-lg font-black text-white">{selectedElfDetail.elf.name}</h3>
-                      <span className="text-[10px] px-2 py-0.5 bg-amber-500/20 border border-amber-500/40 rounded text-amber-300 font-bold">
-                        {selectedElfDetail.side === 'p1' ? 'P1' : 'AI'} {selectedElfDetail.idx >= 6 ? `額外精靈 #${selectedElfDetail.idx + 1}` : `精靈 #${selectedElfDetail.idx + 1}`}
-                      </span>
-                    </div>
-                    <span className={`px-2 py-0.5 rounded text-[10px] font-bold inline-flex items-center gap-1 ${getAttributeBadgeColor(selectedElfDetail.elf.type)}`}>
-                      <TypeIcon type={selectedElfDetail.elf.type} size={14} showLabelWhenMissing={false} />屬性: {selectedElfDetail.elf.type}
-                    </span>
-                    {(selectedElfDetail.elf.isExtra || selectedElfDetail.idx >= 6) && (
-                      <span className="ml-1 px-2 py-0.5 rounded text-[10px] font-bold bg-amber-900/60 text-amber-200 border border-amber-500/40">額外精靈・不計勝負</span>
-                    )}
-                    {(() => {
-                      const isActiveDetail = (selectedElfDetail.side === 'p1' ? battle.p1 : battle.p2)?.id === selectedElfDetail.elf.id;
-                      const marks = (isActiveDetail ? (selectedElfDetail.side === 'p1' ? battle.p1Marks : battle.p2Marks) : (selectedElfDetail.elf.marks || []))
-                        .filter(mark => markAppliesToElf(mark, selectedElfDetail.elf));
-                      const body = getEffectiveBody(selectedElfDetail.elf, marks as any);
-                      return (
-                        <span className="ml-1 px-2 py-0.5 rounded text-[10px] font-bold bg-slate-800 text-slate-300" title={`原始：${selectedElfDetail.elf.height ?? 0} cm / ${selectedElfDetail.elf.weight ?? 0} kg`}>
-                          {body.height} cm / {body.weight} kg
-                        </span>
-                      );
-                    })()}
-                  </div>
-                </div>
-                <button
-                  onClick={() => setSelectedElfDetail(null)}
-                  className="text-slate-400 hover:text-white text-sm font-bold px-2.5 py-1 bg-slate-800 rounded-lg hover:bg-slate-700 transition-colors cursor-pointer"
-                >
-                  ✕
-                </button>
-              </div>
-
-              {/* Soul mark and traits: moved to the top and given readable detail cards. */}
-              <section className="mb-4 rounded-2xl border border-violet-500/25 bg-gradient-to-br from-violet-950/35 via-slate-900/70 to-amber-950/20 p-4 shadow-lg">
-                <div className="mb-3 flex items-center gap-2 border-b border-white/10 pb-2">
-                  <Star className="h-4 w-4 text-amber-300" />
-                  <h4 className="text-sm font-black tracking-wide text-white">魂印與專屬特性</h4>
-                </div>
-                <div className="space-y-2.5">
-                  {selectedElfDetail.elf.soulMark && (
-                    <article className="rounded-xl border border-purple-500/30 bg-purple-950/30 p-3">
-                      <h5 className="mb-1.5 flex items-center gap-2 text-sm font-black text-purple-200"><Zap className="h-4 w-4" />魂印・{selectedElfDetail.elf.soulMark.name}</h5>
-                      <p className="whitespace-pre-wrap text-[13px] leading-6 text-slate-200">{selectedElfDetail.elf.soulMark.description || "目前沒有文字描述。"}</p>
-                    </article>
-                  )}
-                  {selectedElfDetail.elf.trait && (
-                    <article className="rounded-xl border border-indigo-500/30 bg-indigo-950/30 p-3">
-                      <h5 className="mb-1.5 flex items-center gap-2 text-sm font-black text-indigo-200"><FlaskConical className="h-4 w-4" />特性・{selectedElfDetail.elf.trait.name}</h5>
-                      <p className="whitespace-pre-wrap text-[13px] leading-6 text-slate-200">{selectedElfDetail.elf.trait.description || "目前沒有文字描述。"}</p>
-                    </article>
-                  )}
-                  {(() => {
-                    const alienTraits = selectedElfDetail.elf.alienTraits;
-                    const main = alienTraits?.gen2Trait || alienTraits?.exclusiveTrait || alienTraits?.alienTrait || alienTraits?.generalTrait;
-                    const exclusive = alienTraits?.exclusiveTraits || [];
-                    if (!main && !exclusive.length) return null;
-                    return (
-                      <>
-                        {main && <article className="rounded-xl border border-amber-500/30 bg-amber-950/25 p-3">
-                          <h5 className="mb-1.5 flex items-center gap-2 text-sm font-black text-amber-200"><Star className="h-4 w-4" />異能特質・{main.name}</h5>
-                          <p className="whitespace-pre-wrap text-[13px] leading-6 text-slate-200">{main.description || "目前沒有文字描述。"}</p>
-                        </article>}
-                        {exclusive.map(trait => <article key={trait.name} className="rounded-xl border border-rose-500/30 bg-rose-950/25 p-3">
-                          <h5 className="mb-1.5 flex items-center gap-2 text-sm font-black text-rose-200"><Star className="h-4 w-4" />專屬異能特質・{trait.name}</h5>
-                          <p className="whitespace-pre-wrap text-[13px] leading-6 text-slate-200">{trait.description || "目前沒有文字描述。"}</p>
-                        </article>)}
-                      </>
-                    );
-                  })()}
-                  {!selectedElfDetail.elf.soulMark && !selectedElfDetail.elf.trait && !selectedElfDetail.elf.alienTraits?.gen2Trait && !selectedElfDetail.elf.alienTraits?.exclusiveTrait && !selectedElfDetail.elf.alienTraits?.alienTrait && !selectedElfDetail.elf.alienTraits?.generalTrait && !(selectedElfDetail.elf.alienTraits?.exclusiveTraits || []).length && (
-                    <p className="text-xs text-slate-500">目前沒有已登記的魂印或專屬特性。</p>
-                  )}
-                </div>
-              </section>
-
-              {/* HP Bar */}
-              <div className="mb-4 bg-slate-900/60 p-3 rounded-xl border border-slate-800">
-                <div className="flex justify-between items-baseline mb-1">
-                  <span className="text-xs text-slate-400 font-bold">體力狀態</span>
-                  <span className="text-sm font-black text-white">
-                    {selectedElfDetail.elf.currentHp} <span className="text-xs text-slate-500">/ {selectedElfDetail.elf.maxHp}</span>
-                  </span>
-                </div>
-                <div className="w-full h-2.5 bg-slate-800 rounded-full overflow-hidden">
-                  <div
-                    className={`h-full transition-all ${getHpBarColor(selectedElfDetail.elf.currentHp, selectedElfDetail.elf.maxHp)}`}
-                    style={{ width: `${Math.max(0, Math.min(100, (selectedElfDetail.elf.currentHp / (selectedElfDetail.elf.maxHp || 1)) * 100))}%` }}
-                  />
-                </div>
-              </div>
-
-              {/* Base Stats / Stats Overview */}
-              {selectedElfDetail.elf.stats && (
-                <div className="mb-4 bg-slate-900/60 p-3 rounded-xl border border-slate-800">
-                  <span className="text-xs font-black text-emerald-400 block mb-2">📊 精靈種族數值</span>
-                  <div className="grid grid-cols-3 gap-2 text-center text-[11px] font-mono">
-                    <div className="bg-slate-950/80 p-1.5 rounded border border-slate-800">
-                      <span className="text-slate-500 block text-[9px]">攻擊</span>
-                      <span className="text-white font-bold">{selectedElfDetail.elf.stats.atk || selectedElfDetail.elf.stats.attack || 0}</span>
-                    </div>
-                    <div className="bg-slate-950/80 p-1.5 rounded border border-slate-800">
-                      <span className="text-slate-500 block text-[9px]">物防</span>
-                      <span className="text-white font-bold">{selectedElfDetail.elf.stats.def || selectedElfDetail.elf.stats.defense || 0}</span>
-                    </div>
-                    <div className="bg-slate-950/80 p-1.5 rounded border border-slate-800">
-                      <span className="text-slate-500 block text-[9px]">特攻</span>
-                      <span className="text-white font-bold">{selectedElfDetail.elf.stats.spAtk || selectedElfDetail.elf.stats.spAttack || 0}</span>
-                    </div>
-                    <div className="bg-slate-950/80 p-1.5 rounded border border-slate-800">
-                      <span className="text-slate-500 block text-[9px]">特防</span>
-                      <span className="text-white font-bold">{selectedElfDetail.elf.stats.spDef || selectedElfDetail.elf.stats.spDefense || 0}</span>
-                    </div>
-                    <div className="bg-slate-950/80 p-1.5 rounded border border-slate-800">
-                      <span className="text-slate-500 block text-[9px]">速度</span>
-                      <span className="text-cyan-400 font-bold">{selectedElfDetail.elf.stats.speed || 0}</span>
-                    </div>
-                    <div className="bg-slate-950/80 p-1.5 rounded border border-slate-800">
-                      <span className="text-slate-500 block text-[9px]">最大體力</span>
-                      <span className="text-emerald-400 font-bold">{selectedElfDetail.elf.maxHp || 0}</span>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* Skills List */}
-              <div className="mb-4 bg-slate-900/60 p-3 rounded-xl border border-slate-800">
-                <span className="text-xs font-black text-blue-400 block mb-2">⚔️ 配備技能組</span>
-                <div className="space-y-2">
-                  {(selectedElfDetail.elf.skills || []).map((sk, sIdx) => (
-                    <div key={sIdx} className="bg-slate-950/80 p-2.5 rounded-lg border border-slate-800 text-xs">
-                      <div className="flex justify-between items-center mb-1">
-                        <span className="font-bold text-white flex items-center gap-1.5">
-                          <span className={`px-1.5 py-0.5 rounded text-[9px] font-bold ${getAttributeBadgeColor(sk.type)} inline-flex items-center gap-1`}>
-                            <TypeIcon type={sk.type} size={12} showLabelWhenMissing={false} />{sk.type}
-                          </span>
-                          {sk.name}
-                        </span>
-                        <div className="flex items-center gap-2 text-[10px] text-slate-400">
-                          <span>威力: {sk.power || '--'}</span>
-                          <span>PP: {sk.pp}/{getMaxPp(sk, selectedElfDetail.elf)}</span>
-                          {sk.priority ? <span className="text-amber-400">先制+{sk.priority}</span> : null}
-                        </div>
-                      </div>
-                      {sk.description && (
-                        <p className="text-[11px] text-slate-300 leading-relaxed whitespace-pre-wrap mt-1 bg-slate-900/40 p-1.5 rounded border border-slate-800/50">
-                          {formatEffectText(sk.description)}
-                        </p>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* Stat Stages */}
-              <div className="mb-4 bg-slate-900/60 p-3 rounded-xl border border-slate-800 space-y-1">
-                <span className="text-xs font-black text-cyan-400 block mb-1">能力等級狀態</span>
-                <StatStagePanel elf={selectedElfDetail.elf} isExpanded={true} disguiseAsNightmare={disguiseBattleStates} />
-              </div>
-
-              {/* Current Statuses / Effects */}
-              <div className="mb-4 bg-slate-900/60 p-3 rounded-xl border border-slate-800 space-y-1">
-                <span className="text-xs font-black text-rose-400 block mb-1">異常狀態與效果</span>
-                <StatusBadgePanel elf={selectedElfDetail.elf} emptyHint="無任何異常狀態或效果" disguiseAbnormalStatuses={disguiseBattleStates} />
-              </div>
-
-              {/* Marks */}
-              <div className="mb-4 bg-slate-900/60 p-3 rounded-xl border border-slate-800">
-                <span className="text-xs font-black text-amber-400 block mb-1">目前印記</span>
-                {selectedElfDetail.elf.marks && selectedElfDetail.elf.marks.length > 0 ? (
-                  <div className="space-y-1.5 mt-2">
-                    {selectedElfDetail.elf.marks.map((m) => (
-                      <div key={m.id} className="p-2 bg-amber-950/30 border border-amber-500/30 rounded-lg">
-                        <div className="flex justify-between items-center mb-1">
-                          <span className="text-xs font-bold text-amber-300 flex items-center gap-1.5">
-                            <span className="px-1.5 py-0.5 bg-amber-500/20 rounded text-[10px] font-black">{m.displayChar}</span>
-                            {m.name}
-                          </span>
-                          <span className="text-xs font-black text-white">層數/計數: {m.count}</span>
-                        </div>
-                        {m.description && (
-                          <p className="text-[11px] text-slate-300 leading-relaxed whitespace-pre-wrap">{m.description}</p>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <p className="text-xs text-slate-500 italic">無持有印記</p>
-                )}
-              </div>
-
-              <div className="mt-4 flex justify-end">
-                <button
-                  onClick={() => setSelectedElfDetail(null)}
-                  className="px-4 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs rounded-xl transition-colors cursor-pointer"
-                >
-                  關閉
-                </button>
-              </div>
+              {(() => {
+                const selectedTeam = selectedElfDetail.side === "p1" ? p1Team : p2Team;
+                const elf = selectedTeam[selectedElfDetail.idx] || selectedElfDetail.elf;
+                const isActive = selectedElfDetail.idx === (selectedElfDetail.side === "p1" ? p1ActiveIndex : battle.p2ActiveIndex);
+                const marks = (isActive ? (selectedElfDetail.side === "p1" ? battle.p1Marks : battle.p2Marks) : (elf.marks || []))
+                  .filter(mark => markAppliesToElf(mark, elf));
+                return <ElfReadOnlyProfile key={`${selectedElfDetail.side}-${selectedElfDetail.idx}`}
+                  elf={elf} getSkillMaxPp={getMaxPp} subtitle={`${selectedElfDetail.side.toUpperCase()} · 精靈 #${selectedElfDetail.idx + 1}`}
+                  effectiveBody={getEffectiveBody(elf, marks as any)} onClose={() => setSelectedElfDetail(null)}>
+                  <section className="ios-card p-4 space-y-3">
+                    <h3 className="text-sm font-semibold text-cyan-300">能力等級狀態</h3>
+                    <StatStagePanel elf={elf} isExpanded={true} disguiseAsNightmare={disguiseBattleStates} />
+                  </section>
+                  <section className="ios-card p-4 space-y-3">
+                    <h3 className="text-sm font-semibold text-rose-300">異常狀態與效果</h3>
+                    <StatusBadgePanel elf={elf} emptyHint="無任何異常狀態或效果" disguiseAbnormalStatuses={disguiseBattleStates} />
+                  </section>
+                  {marks.length > 0 && <section className="ios-card p-4 space-y-3">
+                    <h3 className="text-sm font-semibold text-amber-300">目前印記</h3>
+                    {marks.map((mark, i) => <details key={`${mark.id}-${i}`}>
+                      <summary className="text-sm cursor-pointer">{mark.name} · {mark.count}</summary>
+                      <p className="text-sm text-slate-300 whitespace-pre-wrap leading-6 mt-2">{mark.description}</p>
+                    </details>)}
+                  </section>}
+                </ElfReadOnlyProfile>;
+              })()}
             </motion.div>
           </div>
         )}

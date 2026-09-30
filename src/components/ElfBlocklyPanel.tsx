@@ -3,7 +3,7 @@ import React, { useMemo, useRef, useState } from "react";
 import type { KitEntry } from "../effects/effectSystem.schema";
 import type { Skill } from "../types";
 import { BlocklyBuilder } from "./BlocklyBuilder";
-import { isBlocklyEntry } from "./KitEffectBuilder";
+import { isBlocklyEntry } from "../blocks/kitEntries";
 import { getSoulMarkRegistry } from "../effects/battleEventRegistry";
 import { AlertTriangle } from "lucide-react";
 

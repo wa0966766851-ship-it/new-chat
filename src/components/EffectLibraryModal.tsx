@@ -1,7 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo, useDeferredValue, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { BookOpen, Sparkles, Search, Check, Tag, Shield, Zap, Flame, Heart, X, HelpCircle, ArrowRight } from 'lucide-react';
 import { CardTemplateModule as AIEffectModule, REAL_CARD_EFFECT_MODULES as AI_EFFECT_REFERENCE_LIBRARY, searchCardTemplates as searchEffectLibrary, TEMPLATE_GRAMMAR_GUIDELINES } from '../data/cardTemplates';
+import { getTemplateReviewReason, getTemplateTimingLabel } from '../utils/templateReview';
+
+const reviewCount = AI_EFFECT_REFERENCE_LIBRARY.filter(m => getTemplateReviewReason(m.standardSyntax)).length;
 
 interface EffectLibraryModalProps {
   isOpen: boolean;
@@ -18,19 +21,27 @@ export const EffectLibraryModal: React.FC<EffectLibraryModalProps> = ({
 }) => {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
-  const [activeTab, setActiveTab] = useState<"catalog" | "grammar">("catalog");
+  const [activeTab, setActiveTab] = useState<"catalog" | "review" | "grammar">("catalog");
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [page, setPage] = useState(0);
+  const deferredQuery = useDeferredValue(searchQuery);
+  const pageSize = 32;
+  useEffect(() => setPage(0), [deferredQuery, selectedCategory, activeTab]);
 
-  if (!isOpen) return null;
-
-  const filteredModules = searchEffectLibrary(searchQuery).filter(m => {
+  const filteredModules = useMemo(() => searchEffectLibrary(deferredQuery).filter(m => {
+    const needsReview = !!getTemplateReviewReason(m.standardSyntax);
+    if (activeTab === "review") return needsReview;
+    if (needsReview) return false;
     if (selectedCategory === "all") return true;
     if (selectedCategory === "soul_mark") return m.category === "soul_mark" || m.category === "survival" || m.category === "boost" || m.category === "control";
     if (selectedCategory === "skill_effect") return m.category === "skill_effect" || m.category === "boost" || m.category === "control" || m.category === "survival";
     return m.category === selectedCategory;
-  });
+  }), [deferredQuery, selectedCategory, activeTab]);
+  const pageCount = Math.max(1, Math.ceil(filteredModules.length / pageSize));
+  if (!isOpen) return null;
 
   const handleSelect = (mod: AIEffectModule) => {
+    if (getTemplateReviewReason(mod.standardSyntax)) return;
     onSelectModule(mod);
     setCopiedId(mod.id);
     setTimeout(() => {
@@ -57,36 +68,38 @@ export const EffectLibraryModal: React.FC<EffectLibraryModalProps> = ({
         initial={{ opacity: 0, scale: 0.95, y: 20 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
         exit={{ opacity: 0, scale: 0.95, y: 20 }}
-        className="bg-[#0D0F17] border border-slate-800 rounded-3xl p-6 w-full max-w-4xl max-h-[90vh] flex flex-col shadow-2xl overflow-hidden"
+        role="dialog" aria-modal="true" aria-label="效果引用資料庫"
+        className="ios-panel ios-dialog p-4 sm:p-6 w-full max-w-4xl max-h-[90vh] flex flex-col shadow-2xl overflow-hidden"
       >
         {/* Header */}
-        <div className="flex items-center justify-between border-b border-slate-800 pb-4 mb-4 shrink-0">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-violet-500/10 border border-violet-500/30 flex items-center justify-center text-violet-400">
+        <div className="flex items-start justify-between gap-3 border-b border-slate-800 pb-4 mb-4 shrink-0">
+          <div className="flex items-start gap-3 min-w-0">
+            <div className="w-10 h-10 shrink-0 rounded-xl bg-violet-500/10 border border-violet-500/30 flex items-center justify-center text-violet-400">
               <BookOpen className="w-5 h-5" />
             </div>
-            <div>
-              <h3 className="text-base font-bold text-slate-100 flex items-center gap-2">
+            <div className="min-w-0">
+              <h3 className="text-sm sm:text-base font-bold text-slate-100">
                 AI 效果引用與標準模板詞庫
-                <span className="text-[10px] bg-blue-500/10 text-blue-400 border border-blue-500/20 px-2 py-0.5 rounded font-mono font-normal">
+                <span className="hidden sm:inline-block sm:ml-2 text-[10px] bg-blue-500/10 text-blue-400 border border-blue-500/20 px-2 py-0.5 rounded font-mono font-normal">
                   解構入庫 & 模板化參考
                 </span>
               </h3>
               <p className="text-xs text-slate-400 mt-0.5">
-                點擊一鍵引用經典精靈效果或系統模組；AI 將自動解構您的文本並進行規範化實裝。
+                引用精靈效果的描述模板；模板可供生成參考，不代表效果已完成實裝或驗證。
               </p>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="w-8 h-8 rounded-full bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white flex items-center justify-center transition-colors"
+            aria-label="關閉效果引用資料庫"
+            className="w-8 h-8 shrink-0 rounded-full bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white flex items-center justify-center transition-colors"
           >
             <X className="w-4 h-4" />
           </button>
         </div>
 
         {/* Top Tabs: Catalog vs Grammar Guidelines */}
-        <div className="flex gap-2 mb-4 shrink-0 border-b border-slate-800/80 pb-3">
+        <div className="flex flex-wrap gap-2 mb-4 shrink-0 border-b border-slate-800/80 pb-3">
           <button
             onClick={() => setActiveTab("catalog")}
             className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 ${
@@ -96,8 +109,9 @@ export const EffectLibraryModal: React.FC<EffectLibraryModalProps> = ({
             }`}
           >
             <Sparkles className="w-3.5 h-3.5" />
-            效果模組庫存與引用 ({AI_EFFECT_REFERENCE_LIBRARY.length})
+            描述候選 ({AI_EFFECT_REFERENCE_LIBRARY.length - reviewCount})
           </button>
+          <button onClick={() => setActiveTab("review")} className={`px-4 py-2 rounded-xl text-xs font-bold ${activeTab === "review" ? "bg-amber-600 text-white" : "bg-slate-800/60 text-slate-400"}`}>待確認資料 ({reviewCount})</button>
           <button
             onClick={() => setActiveTab("grammar")}
             className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 ${
@@ -111,8 +125,9 @@ export const EffectLibraryModal: React.FC<EffectLibraryModalProps> = ({
           </button>
         </div>
 
-        {activeTab === "catalog" ? (
+        {activeTab !== "grammar" ? (
           <div className="flex flex-col flex-1 min-h-0 space-y-4">
+            {activeTab === "review" && <p className="text-xs text-amber-300 leading-5">原始內容保留。以下標題／背景資料暫不提供效果引用；需回到原始 txt 確認。其餘候選也不代表已實裝。</p>}
             {/* Filter and Search Bar */}
             <div className="flex flex-col sm:flex-row gap-3 justify-between items-center shrink-0">
               <div className="flex flex-wrap gap-1.5 w-full sm:w-auto">
@@ -156,10 +171,9 @@ export const EffectLibraryModal: React.FC<EffectLibraryModalProps> = ({
                   未找到匹配的效果模組，試試搜尋其他關鍵字或切換分類！
                 </div>
               ) : (
-                filteredModules.map((mod) => (
-                  <motion.div
+                filteredModules.slice(page * pageSize, (page + 1) * pageSize).map((mod) => (
+                  <div
                     key={mod.id}
-                    layout
                     className="bg-[#050608] border border-slate-800/80 hover:border-slate-700 rounded-2xl p-4 transition-all flex flex-col md:flex-row justify-between items-start md:items-center gap-4 group"
                   >
                     <div className="space-y-2 flex-1">
@@ -172,7 +186,7 @@ export const EffectLibraryModal: React.FC<EffectLibraryModalProps> = ({
                           {mod.source}
                         </span>
                         <span className="text-[10px] text-cyan-400 bg-cyan-950/30 px-2 py-0.5 rounded font-mono">
-                          觸發: {mod.triggerTime}
+                          時點: {getTemplateTimingLabel(mod.standardSyntax)}
                         </span>
                       </div>
                       <p className="text-xs text-slate-300 font-mono leading-relaxed bg-black/40 p-2.5 rounded-xl border border-slate-800/60">
@@ -189,14 +203,15 @@ export const EffectLibraryModal: React.FC<EffectLibraryModalProps> = ({
 
                     <button
                       onClick={() => handleSelect(mod)}
-                      disabled={copiedId === mod.id}
+                      disabled={activeTab === "review" || copiedId === mod.id}
+                      title={getTemplateReviewReason(mod.standardSyntax) || "僅引用描述文字，不會新增戰鬥 handler"}
                       className={`px-4 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center gap-2 shrink-0 w-full md:w-auto justify-center cursor-pointer ${
                         copiedId === mod.id
                           ? "bg-emerald-600 text-white shadow-lg shadow-emerald-600/20"
                           : "bg-violet-600/20 hover:bg-violet-600 text-violet-300 hover:text-white border border-violet-500/30"
                       }`}
                     >
-                      {copiedId === mod.id ? (
+                      {activeTab === "review" ? <span>待原始文本確認</span> : copiedId === mod.id ? (
                         <>
                           <Check className="w-4 h-4" />
                           <span>已引用到描述中！</span>
@@ -208,10 +223,18 @@ export const EffectLibraryModal: React.FC<EffectLibraryModalProps> = ({
                         </>
                       )}
                     </button>
-                  </motion.div>
+                  </div>
                 ))
               )}
             </div>
+            <nav aria-label="效果引用資料分頁" className="shrink-0 grid grid-cols-4 gap-1.5 text-center text-xs text-slate-300">
+              <span className="col-span-2 text-left text-slate-400">{filteredModules.length} 項</span>
+              <span className="col-span-2 text-right">第 {page + 1} / {pageCount} 頁</span>
+              <button type="button" disabled={page === 0} onClick={() => setPage(0)} className="rounded-xl bg-white/5 px-3 py-2 disabled:opacity-30">首頁</button>
+              <button type="button" disabled={page === 0} onClick={() => setPage(p => p - 1)} className="rounded-xl bg-white/5 px-3 py-2 disabled:opacity-30">上一頁</button>
+              <button type="button" disabled={page + 1 >= pageCount} onClick={() => setPage(p => p + 1)} className="rounded-xl bg-white/5 px-3 py-2 disabled:opacity-30">下一頁</button>
+              <button type="button" disabled={page + 1 >= pageCount} onClick={() => setPage(pageCount - 1)} className="rounded-xl bg-white/5 px-3 py-2 disabled:opacity-30">末頁</button>
+            </nav>
           </div>
         ) : (
           /* Grammar Guidelines Tab */
@@ -264,13 +287,13 @@ export const EffectLibraryModal: React.FC<EffectLibraryModalProps> = ({
         )}
 
         {/* Footer */}
-        <div className="border-t border-slate-800 pt-4 mt-4 flex justify-between items-center shrink-0">
+        <div className="border-t border-slate-800 pt-4 mt-4 flex justify-between items-center gap-3 shrink-0">
           <span className="text-xs text-slate-500 font-mono">
             提示：點擊「一鍵引用」會將規範文本直接附加到您目前的輸入框中
           </span>
           <button
             onClick={onClose}
-            className="py-2 px-5 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold rounded-xl transition-all"
+            className="py-2 px-3 sm:px-5 shrink-0 whitespace-nowrap bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold rounded-xl transition-all"
           >
             完成與返回
           </button>

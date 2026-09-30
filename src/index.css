@@ -22,9 +22,22 @@ body {
 
 /* 長表單需要穩定的實色底，避免高亮戰鬥背景穿透後讓欄位與標籤失去對比。 */
 #manual-panel-container {
-  background-color: rgba(10, 14, 20, 0.97) !important;
-  border-color: rgba(71, 85, 105, 0.78) !important;
-  backdrop-filter: blur(18px) !important;
+  background: transparent;
+}
+
+.editor-workspace { display: grid; grid-template-columns: minmax(0, 1fr); gap: 20px; align-items: start; }
+.editor-draft-summary { min-width: 0; }
+.elf-editor-page .editor-section-nav { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); width: 100%; gap: 4px; }
+.elf-editor-page .editor-section-nav > button { min-height: 40px; padding: 8px; white-space: normal; }
+.editor-save-bar { position: sticky; bottom: 0; background: rgb(28, 28, 32); padding-bottom: 8px; z-index: 10; }
+.elf-editor-page #manual-panel-container input, .elf-editor-page #manual-panel-container select,
+.elf-editor-page #manual-panel-container textarea { font-size: 14px; }
+.elf-editor-page #manual-panel-container textarea { line-height: 1.7; }
+@media (min-width: 1024px) {
+  .editor-workspace { grid-template-columns: minmax(0, 1fr) 260px; }
+  .editor-form-panel { grid-column: 1; grid-row: 1; }
+  .editor-draft-summary { grid-column: 2; grid-row: 1; position: sticky; top: 90px; }
+  .elf-editor-page .editor-section-nav { grid-template-columns: repeat(5, minmax(0, 1fr)); }
 }
 
 /* Custom scrollbar for log screens */
@@ -142,6 +155,11 @@ body {
   border-radius: 18px;
 }
 .ios-card:hover { background: rgba(255, 255, 255, 0.07); }
+/* 長篇介紹與資料庫彈窗需要穩定對比，不讓後方立繪透入文字。 */
+.ios-panel.ios-dialog {
+  background: rgba(28, 28, 32, 0.98);
+  backdrop-filter: none;
+}
 .ios-segment {
   display: inline-flex; gap: 2px; padding: 2px;
   background: rgba(118, 118, 128, 0.24);
@@ -159,4 +177,24 @@ body {
 .ios-search {
   background: rgba(118, 118, 128, 0.24);
   border-radius: 10px; border: none;
+}
+
+/* 一般頁面的共用資訊提示；手機可點擊，鍵盤可聚焦，桌面可懸停。 */
+.info-hint-content {
+  display: none; position: absolute; z-index: 11000; top: 100%; left: 0;
+  width: min(300px, 72vw); padding: 12px 14px; border-radius: 14px;
+  background: rgba(24, 27, 36, .98); border: 1px solid rgba(255,255,255,.12);
+  box-shadow: 0 8px 28px #0008; color: #e2e8f0; font-size: 13px; line-height: 1.7;
+  text-align: left; font-weight: normal; white-space: normal;
+}
+.info-hint:hover .info-hint-content, .info-hint:focus-within .info-hint-content,
+.info-hint-open { display: block; }
+.ios-sidebar { background: rgba(17, 22, 30, .92); border-right: 1px solid rgba(255,255,255,.08); }
+.elf-editor-page #editor-tabs { max-width: 540px; width: 100%; margin-bottom: 24px; }
+.elf-editor-page #editor-tabs button { font-size: 13px; padding: 10px 12px; }
+.elf-editor-page #editor-tabs button[data-active="true"] { background: rgba(99,99,102,.9); color: white; border-color: transparent; }
+.elf-editor-page #ai-panel-grid { gap: 20px; }
+.elf-editor-page #ai-panel-grid > div > div:first-child { border-radius: 22px; border-color: rgba(255,255,255,.1); }
+@media (prefers-reduced-motion: reduce) {
+  .ios-panel, .ios-card { transition: none; }
 }

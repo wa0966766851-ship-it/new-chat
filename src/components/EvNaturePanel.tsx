@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { InfoHint } from "./InfoHint";
 import { BaseStats, Inscription } from "../types";
 import { SEER_NATURES, getNatureFromModifiers, getModifiersFromNature, EV_PRESETS, SeerNature } from "../utils/seerNatures";
 import { calculateElfStats, getDefaultEvs } from "../utils/statCalculator";
@@ -31,7 +32,7 @@ export default function EvNaturePanel({
   onNatureChange,
   readonly = false
 }: EvNaturePanelProps) {
-  const [showFormula, setShowFormula] = useState(true);
+  const [showFormula, setShowFormula] = useState(false);
   const currentEvs = evs || getDefaultEvs(baseStats);
   const currentMods = natureModifiers || { hp: 1.0, atk: 1.0, def: 1.0, spatk: 1.0, spdef: 1.0, speed: 1.0 };
   
@@ -295,7 +296,8 @@ export default function EvNaturePanel({
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-800 pb-2.5">
           <h4 className="text-sm font-bold text-slate-200 flex items-center gap-2">
             <span className="w-1.5 h-3.5 bg-blue-500 rounded-sm"></span>
-            學習力分配系統 (Effort Values)
+            學習力分配
+            <InfoHint label="學習力分配說明">學習力總和上限 510，單項上限 255。詳細演算公式可在上方展開；此處仍保留可調整的實際數值。</InfoHint>
           </h4>
           <div className="flex items-center gap-3">
             <div className="text-xs font-mono font-bold flex items-center gap-1.5">

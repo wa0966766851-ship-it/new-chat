@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, lazy, Suspense } from "react";
 import { Elf, BattleMode, Inscription } from "../types";
 import { SEER_TYPES, calculateElfStats, getDefaultEvs, getAttributeBadgeColor } from "../utils/statCalculator";
 import { ElfAvatar, TypeIcon } from "./SeerImages";
@@ -6,7 +6,8 @@ import EvNaturePanel from "./EvNaturePanel";
 import { TypeMatchupPanel } from "./TypeMatchupPanel";
 import { isStoneThrower } from "../data/skillStones";
 import { formatEffectText } from "../utils/descFormat";
-import { getElfDestinyRank } from "../utils/destinyGacha";
+import { getElfDisplayRank as getElfDestinyRank } from "../utils/elfDisplayRank";
+import { InfoHint } from "./InfoHint";
 import { getNatureFromModifiers } from "../utils/seerNatures";
 import { SUIT_CATALOG, EYEWEAR_CATALOG } from "../data/suitsAndEyewears";
 import { TITLE_CATALOG } from "../data/titles";
@@ -16,11 +17,10 @@ import { ALIEN_TRAITS } from "../data/alienTraits";
 import { InscriptionSlot, InscriptionModal } from "./InscriptionSystem";
 import { motion, AnimatePresence } from "motion/react";
 import { Swords, Plus, Bot, User, Trash2, Crown, Sparkles, Check, HelpCircle, AlertCircle, Copy, Shuffle, Cpu, Edit3, Eye, Zap, MessageSquare, X, Search, Briefcase, Save, FolderOpen, Bookmark, CheckCircle2, Shield, RotateCcw, ShieldAlert, Flame, ArrowUp, ArrowDown, ArrowUpDown, ArrowLeftRight, Move, Layers, BookOpen, Disc, Dice5, ChevronRight, Rocket, Filter, ChevronUp, ChevronDown } from "lucide-react";
-import { EffectLibraryModal } from "./EffectLibraryModal";
 import ResistancePanel from "./ResistancePanel";
-import { BlockProgramView } from "./BlockProgramView";
-import { getSkillProgram, getSoulProgram, skillMode } from "../blocks/registry";
-import { hasSkillHandler, getSoulMarkRegistry } from "../effects/battleEventRegistry";
+const LazyBlockProgramView = lazy(() => import("./LazyBlockProgramView"));
+const EffectLibraryModal = lazy(() => import("./EffectLibraryModal").then(m => ({ default: m.EffectLibraryModal })));
+const detailLoading = <p role="status" className="p-3 text-sm text-slate-400">載入效果資料…</p>;
 
 interface StartScreenProps {
   allElves?: Elf[];
@@ -2530,7 +2530,7 @@ export default function StartScreen({
                             {key !== 'hp' && Math.abs(modVal - 0.9) < 0.01 && <span className="text-cyan-400 font-bold" title="弱化 0.9x">▼</span>}
                           </div>
                           <div className="text-xl font-semibold text-emerald-300 my-0.5 tabular-nums">{calcVal}</div>
-                          <div className="text-[11px] text-slate-500 leading-tight tabular-nums">種族 {baseVal}<br />學習 {evVal}</div>
+                          <div className="text-[11px] text-slate-500 leading-tight tabular-nums">種族 {baseVal}<InfoHint label={`${key === 'hp' ? '體力' : '能力值'}與學習力說明`}>學習力 {evVal}；種族值 {baseVal}。顯示的能力值已計入目前訓練與配裝，詳細演算可在下方展開。</InfoHint></div>
                         </div>
                       );
                     })}
@@ -2593,7 +2593,7 @@ export default function StartScreen({
                   </div>
                   {blockView && showDetailModal.soulMark ? (
                     <div className="relative z-10">
-                      <BlockProgramView program={getSoulProgram(showDetailModal)} source={getSoulMarkRegistry()[showDetailModal.name] ? "執行：專屬程式" : "執行：積木"} />
+                      <Suspense fallback={detailLoading}><LazyBlockProgramView elf={showDetailModal} /></Suspense>
                     </div>
                   ) : (
                   <p className="text-left text-slate-200 text-[14px] leading-[1.75] font-sans antialiased whitespace-pre-wrap selection:bg-violet-500/40 tracking-wide relative z-10">
@@ -2800,7 +2800,7 @@ export default function StartScreen({
                             </div>
                           </div>
                           
-                          {blockView ? (() => { const m = skillMode(s.name, hasSkillHandler(s.name)); return <BlockProgramView program={getSkillProgram(s)} source={m === "handler" ? "執行：專屬程式" : m === "blocks" ? "執行：積木" : "執行：專屬程式＋積木"} />; })() : <p className="text-slate-200 text-[13px] leading-[1.7] font-sans antialiased whitespace-pre-wrap tracking-wide">{formatEffectText(s.description)}</p>}
+                          {blockView ? <Suspense fallback={detailLoading}><LazyBlockProgramView skill={s} /></Suspense> : <p className="text-slate-200 text-[13px] leading-[1.7] font-sans antialiased whitespace-pre-wrap tracking-wide">{formatEffectText(s.description)}</p>}
                           
                           <div className="flex justify-between items-center text-xs text-slate-500 font-mono w-full border-t border-slate-900 pt-2 mt-auto">
                             <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5">
@@ -3707,11 +3707,11 @@ export default function StartScreen({
           </motion.div>
         </div>
       )}
- <EffectLibraryModal
+ {isEffectModalOpen && <Suspense fallback={detailLoading}><EffectLibraryModal
         isOpen={isEffectModalOpen}
         onClose={() => setIsEffectModalOpen(false)}
         onSelectModule={(mod) => setAnalyzeText((prev) => prev ? prev + "\n[引用系統庫-" + mod.name + "]: " + mod.standardSyntax : mod.standardSyntax)}
-      />
+      /></Suspense>}
       {showSelectionModal && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm animate-in fade-in duration-200">
           <motion.div

@@ -5,13 +5,16 @@ import { StatusRegistry } from '../effects/statusRegistry';
 import { StatusCategory } from '../effects/statusTypes';
 import { TYPE_MATCHUPS, SEER_TYPES, setDynamicMatchups, getAttributeBadgeColor, getTypeMatchup } from '../utils/statCalculator';
 import { MAJOR_EFFECT_CATEGORIES, INVALIDATION_MECHANISMS, DAMAGE_CATEGORIES, EXECUTION_MECHANICS } from '../data/effectClassificationCatalog';
-import { REAL_CARD_EFFECT_MODULES as AI_EFFECT_REFERENCE_LIBRARY } from '../data/cardTemplates';
+import type { CardTemplateModule } from '../data/cardTemplates';
 import { EFFECT_CATALOG } from '../data/effectCatalog';
 import { ElfAvatar, TypeIcon } from './SeerImages';
 import { statusVisual } from '../battle/effectIcons';
-import { ClauseBreakdownCard } from './ClauseBreakdownCard';
+import { ElfRosterCard } from './ElfRosterCard';
+import { ElfReadOnlyProfile } from './ElfReadOnlyProfile';
+import { readStoredRecord } from '../utils/safeStorage';
+import { getTemplateReviewReason, getTemplateTimingLabel } from '../utils/templateReview';
+import type { Elf } from '../types';
 
-import { getElfDestinyRank } from "../utils/destinyGacha";
 import { useGameData } from '../contexts/GameDataContext';
 
 interface EncyclopediaProps {
@@ -23,17 +26,31 @@ const Encyclopedia: React.FC<EncyclopediaProps> = ({ onClose, initialTab = 'elve
   const { allElves } = useGameData();
   const [activeTab, setActiveTab] = useState<'status' | 'types' | 'mechanics' | 'editor' | 'effectQuery' | 'elves'>(initialTab);
   const [searchQuery, setSearchQuery] = useState('');
+  const [selectedElf, setSelectedElf] = useState<Elf | null>(null);
+  const deferredElfQuery = React.useDeferredValue(searchQuery);
+  const [referenceLibrary, setReferenceLibrary] = useState<CardTemplateModule[]>([]);
+  const [referenceError, setReferenceError] = useState(false);
+  React.useEffect(() => {
+    if (activeTab !== 'effectQuery' || referenceLibrary.length) return;
+    let active = true;
+    setReferenceError(false);
+    import('../data/cardTemplates').then(module => {
+      if (active) setReferenceLibrary(module.REAL_CARD_EFFECT_MODULES.filter(m => !getTemplateReviewReason(m.standardSyntax)));
+    }).catch(() => { if (active) setReferenceError(true); });
+    return () => { active = false; };
+  }, [activeTab, referenceLibrary.length]);
   const [statusSearchQuery, setStatusSearchQuery] = useState('');
   const [selectedStatusCategories, setSelectedStatusCategories] = useState<StatusCategory[]>([]);
   const [searchQueryEffects, setSearchQueryEffects] = useState("");
   // 搜尋輸入延後處理（打字不卡），結果清單分段顯示
   const deferredEffectQuery = React.useDeferredValue(searchQueryEffects);
-  const [effectShowCount, setEffectShowCount] = useState(40);
+  const [effectPage, setEffectPage] = useState(0);
+  const effectPageSize = 40;
   const [selectedEffectCategory, setSelectedEffectCategory] = useState<"all" | "core" | "library" | "status">("all");
+  React.useEffect(() => setEffectPage(0), [deferredEffectQuery, selectedEffectCategory]);
   const [selectedSandboxId, setSelectedSandboxId] = useState("always_hit_vs_invalid");
   const [customMatchups, setCustomMatchups] = useState<any>(() => {
-    const stored = localStorage.getItem('seer_custom_matchups');
-    return stored ? JSON.parse(stored) : {};
+    return readStoredRecord('seer_custom_matchups');
   });
 
   // State for fullscreen/maximized mode
@@ -41,8 +58,10 @@ const Encyclopedia: React.FC<EncyclopediaProps> = ({ onClose, initialTab = 'elve
 
   // State for user-defined encyclopedia overrides (editing / modifying names or descriptions)
   const [overrides, setOverrides] = useState<Record<string, { title?: string; description?: string }>>(() => {
-    const stored = localStorage.getItem('seer_encyclopedia_overrides');
-    return stored ? JSON.parse(stored) : {};
+    const stored = readStoredRecord<{ title?: string; description?: string }>('seer_encyclopedia_overrides');
+    return Object.fromEntries(Object.entries(stored).filter(([, item]) => item &&
+      (item.title === undefined || typeof item.title === 'string') &&
+      (item.description === undefined || typeof item.description === 'string')));
   });
 
   // Inline editor states
@@ -120,6 +139,7 @@ const Encyclopedia: React.FC<EncyclopediaProps> = ({ onClose, initialTab = 'elve
   };
 
   const unifiedItems = React.useMemo(() => {
+    if (activeTab !== 'effectQuery') return [];
     const items: any[] = [];
 
     // 1. MAJOR_EFFECT_CATEGORIES
@@ -179,16 +199,16 @@ const Encyclopedia: React.FC<EncyclopediaProps> = ({ onClose, initialTab = 'elve
     });
 
     // 5. AI_EFFECT_REFERENCE_LIBRARY
-    AI_EFFECT_REFERENCE_LIBRARY.forEach(m => {
+    referenceLibrary.forEach(m => {
       items.push({
         id: `lib_${m.id}`,
         title: m.name,
         type: 'library_template',
         sourceName: m.source,
-        description: `【${m.triggerTime}】${m.standardSyntax} (技術指令: ${m.effectDetail})`,
+        description: `【${getTemplateTimingLabel(m.standardSyntax)}】${m.standardSyntax} (模板參數: ${m.effectDetail})`,
         badge: '✨',
         badgeColor: 'bg-amber-500/20 text-amber-300 border border-amber-500/30',
-        tags: [m.source, m.effectType, m.triggerTime, ...m.tags]
+        tags: [m.source, m.effectType, getTemplateTimingLabel(m.standardSyntax), ...m.tags]
       });
     });
 
@@ -240,7 +260,7 @@ const Encyclopedia: React.FC<EncyclopediaProps> = ({ onClose, initialTab = 'elve
       }
       return item;
     });
-  }, [overrides]);
+  }, [overrides, referenceLibrary, activeTab]);
 
   const filteredQueryItems = React.useMemo(() => {
     let result = unifiedItems;
@@ -348,46 +368,17 @@ const Encyclopedia: React.FC<EncyclopediaProps> = ({ onClose, initialTab = 'elve
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {allElves.filter(e => {
-                  const normalizedSearch = searchQuery.trim().toLowerCase().replace(/[·.]/g, '');
-                  const normalizedName = e.name.toLowerCase().replace(/[·.]/g, '');
-                  return normalizedName.includes(normalizedSearch) || e.type.includes(searchQuery);
-                }).map((elf, index) => (
-                  <div key={`${elf.id}-${index}`} className="ios-card p-4 space-y-3">
-                    <div className="flex items-center gap-3">
-                      <div className="w-12 h-12 shrink-0 rounded-full overflow-hidden bg-slate-800/80 ring-1 ring-white/10">
-                        <ElfAvatar elf={elf} kind="head" className="w-full h-full object-cover" fallbackClassName="w-full h-full flex items-center justify-center text-lg font-bold text-slate-300" />
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <div className="flex items-center gap-2">
-                          <h3 className="font-semibold text-[16px] text-slate-100 truncate">{elf.name}</h3>
-                          <span className="text-[11px] text-slate-500">#{elf.id}</span>
-                        </div>
-                        <div className="flex items-center gap-1.5 mt-0.5 text-[12px] text-slate-400">
-                          <TypeIcon type={elf.type} size={15} showLabelWhenMissing={false} />
-                          <span>{elf.type}</span>
-                          {getElfDestinyRank(elf) && <span className="px-1.5 rounded-full bg-cyan-500/15 text-cyan-300 text-[11px] font-semibold">命運 {getElfDestinyRank(elf)}</span>}
-                        </div>
-                      </div>
-                    </div>
-                    <div className="text-[12px] text-slate-500">
-                      {elf.height ?? 0} cm · {elf.weight || "—"} kg{elf.gender ? ` · ${elf.gender}` : ""}
-                    </div>
-                    {elf.description && <p className="text-[12px] text-slate-400 line-clamp-2">{elf.description}</p>}
-
-                    {/* 專屬特性 Clause Breakdown 透明視圖 */}
-                    <ClauseBreakdownCard
-                      title={elf.soulMark.name}
-                      description={elf.soulMark.description}
-                      elfId={String(elf.id)}
-                      elfName={elf.name}
-                      customKitItems={(elf as any).kit}
-                      isSoulMark={true}
-                    />
-                  </div>
-                ))}
+              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+                {allElves.filter(elf => {
+                  const query = deferredElfQuery.trim().toLowerCase().replace(/[·.]/g, '');
+                  return elf.name.toLowerCase().replace(/[·.]/g, '').includes(query) || (elf.type || '').includes(deferredElfQuery.trim());
+                }).map((elf, index) => <ElfRosterCard key={`${elf.id}-${index}`} elf={elf} onDetail={() => setSelectedElf(elf)} />)}
               </div>
+              {selectedElf && <div role="dialog" aria-modal="true" aria-label="百科精靈介紹" className="fixed inset-0 z-[11000] bg-black/65 flex items-center justify-center p-3 sm:p-6" onClick={() => setSelectedElf(null)}>
+                <div className="ios-panel ios-dialog w-full max-w-3xl max-h-[88vh] overflow-y-auto p-4 sm:p-6" onClick={event => event.stopPropagation()}>
+                  <ElfReadOnlyProfile key={selectedElf.id} elf={selectedElf} onClose={() => setSelectedElf(null)} />
+                </div>
+              </div>}
             </div>
           )}
 
@@ -1312,7 +1303,8 @@ const Encyclopedia: React.FC<EncyclopediaProps> = ({ onClose, initialTab = 'elve
                     </div>
 
                     <div className="space-y-3">
-                      {filteredQueryItems.slice(0, effectShowCount).map((item) => {
+                      {!referenceLibrary.length && <p role="status" className="text-sm text-slate-400">{referenceError ? '效果參考庫載入失敗，請關閉百科後重開。現有核心資料仍可查閱。' : '正在載入效果參考庫…'}</p>}
+                      {filteredQueryItems.slice(effectPage * effectPageSize, (effectPage + 1) * effectPageSize).map((item) => {
                         const isEditing = editingItemId === item.id;
 
                         return (
@@ -1474,12 +1466,13 @@ const Encyclopedia: React.FC<EncyclopediaProps> = ({ onClose, initialTab = 'elve
                         );
                       })}
 
-                      {filteredQueryItems.length > effectShowCount && (
-                        <button type="button" onClick={() => setEffectShowCount(c => c + 60)}
-                          className="w-full py-2 rounded-xl bg-white/[0.05] hover:bg-white/[0.1] text-[13px] text-slate-300">
-                          顯示更多（還有 {filteredQueryItems.length - effectShowCount} 項）
-                        </button>
-                      )}
+                      {filteredQueryItems.length > 0 && <nav className="flex items-center justify-between gap-3 text-sm py-3" aria-label="效果資料分頁">
+                        <button type="button" disabled={effectPage === 0} onClick={() => setEffectPage(0)} className="rounded-xl px-3 py-2 bg-white/5 disabled:opacity-30">首頁</button>
+                        <button type="button" disabled={effectPage === 0} onClick={() => setEffectPage(page => page - 1)} className="rounded-xl px-4 py-2 bg-white/5 hover:bg-white/10 disabled:opacity-30">上一頁</button>
+                        <span className="text-slate-400">第 {effectPage + 1} / {Math.max(1, Math.ceil(filteredQueryItems.length / effectPageSize))} 頁</span>
+                        <button type="button" disabled={(effectPage + 1) * effectPageSize >= filteredQueryItems.length} onClick={() => setEffectPage(page => page + 1)} className="rounded-xl px-4 py-2 bg-white/5 hover:bg-white/10 disabled:opacity-30">下一頁</button>
+                        <button type="button" disabled={(effectPage + 1) * effectPageSize >= filteredQueryItems.length} onClick={() => setEffectPage(Math.max(0, Math.ceil(filteredQueryItems.length / effectPageSize) - 1))} className="rounded-xl px-3 py-2 bg-white/5 disabled:opacity-30">末頁</button>
+                      </nav>}
                       {filteredQueryItems.length === 0 && (
                         <div className="py-12 flex flex-col items-center justify-center text-center space-y-3">
                           <HelpCircle className="w-8 h-8 text-slate-600 animate-pulse" />
