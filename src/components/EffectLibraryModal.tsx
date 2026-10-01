@@ -1,4 +1,5 @@
-import React, { useState, useMemo, useDeferredValue, useEffect } from 'react';
+import React, { useState, useMemo, useDeferredValue, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'motion/react';
 import { BookOpen, Sparkles, Search, Check, Tag, Shield, Zap, Flame, Heart, X, HelpCircle, ArrowRight } from 'lucide-react';
 import { CardTemplateModule as AIEffectModule, REAL_CARD_EFFECT_MODULES as AI_EFFECT_REFERENCE_LIBRARY, searchCardTemplates as searchEffectLibrary, TEMPLATE_GRAMMAR_GUIDELINES } from '../data/cardTemplates';
@@ -24,9 +25,40 @@ export const EffectLibraryModal: React.FC<EffectLibraryModalProps> = ({
   const [activeTab, setActiveTab] = useState<"catalog" | "review" | "grammar">("catalog");
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [page, setPage] = useState(0);
+  const dialogRef = useRef<HTMLDivElement>(null);
+  const feedbackTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const closeRef = useRef(onClose);
   const deferredQuery = useDeferredValue(searchQuery);
   const pageSize = 32;
   useEffect(() => setPage(0), [deferredQuery, selectedCategory, activeTab]);
+  useEffect(() => { closeRef.current = onClose; }, [onClose]);
+  useEffect(() => {
+    if (!isOpen) return;
+    const previousFocus = document.activeElement as HTMLElement | null;
+    dialogRef.current?.querySelector<HTMLButtonElement>('button')?.focus();
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') { event.preventDefault(); closeRef.current(); return; }
+      if (event.key !== 'Tab') return;
+      const dialog = dialogRef.current;
+      if (!dialog) return;
+      const controls = Array.from<HTMLElement>(dialog.querySelectorAll<HTMLElement>('button:not(:disabled), input, select, textarea, [tabindex="0"]'))
+        // 複合選擇器在不同 DOM 實作的順序可能不同，明確依畫面節點順序導航。
+        .sort((a, b) => a === b ? 0 : a.compareDocumentPosition(b) & 4 ? -1 : 1);
+      if (!controls.length) return;
+      const first = controls[0], last = controls[controls.length - 1];
+      if (event.shiftKey && (document.activeElement === first || !dialogRef.current?.contains(document.activeElement))) {
+        event.preventDefault(); last.focus();
+      } else if (!event.shiftKey && (document.activeElement === last || !dialogRef.current?.contains(document.activeElement))) {
+        event.preventDefault(); first.focus();
+      }
+    };
+    document.addEventListener('keydown', onKeyDown);
+    return () => {
+      document.removeEventListener('keydown', onKeyDown);
+      if (feedbackTimer.current) clearTimeout(feedbackTimer.current);
+      if (previousFocus?.isConnected) previousFocus.focus();
+    };
+  }, [isOpen]);
 
   const filteredModules = useMemo(() => searchEffectLibrary(deferredQuery).filter(m => {
     const needsReview = !!getTemplateReviewReason(m.standardSyntax);
@@ -44,7 +76,8 @@ export const EffectLibraryModal: React.FC<EffectLibraryModalProps> = ({
     if (getTemplateReviewReason(mod.standardSyntax)) return;
     onSelectModule(mod);
     setCopiedId(mod.id);
-    setTimeout(() => {
+    if (feedbackTimer.current) clearTimeout(feedbackTimer.current);
+    feedbackTimer.current = setTimeout(() => {
       setCopiedId(null);
     }, 1500);
   };
@@ -62,13 +95,14 @@ export const EffectLibraryModal: React.FC<EffectLibraryModalProps> = ({
     }
   };
 
-  return (
+  return createPortal(
     <div className="fixed inset-0 z-[300] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
       <motion.div
         initial={{ opacity: 0, scale: 0.95, y: 20 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
         exit={{ opacity: 0, scale: 0.95, y: 20 }}
         role="dialog" aria-modal="true" aria-label="效果引用資料庫"
+        ref={dialogRef}
         className="ios-panel ios-dialog p-4 sm:p-6 w-full max-w-4xl max-h-[90vh] flex flex-col shadow-2xl overflow-hidden"
       >
         {/* Header */}
@@ -176,7 +210,7 @@ export const EffectLibraryModal: React.FC<EffectLibraryModalProps> = ({
                     key={mod.id}
                     className="bg-[#050608] border border-slate-800/80 hover:border-slate-700 rounded-2xl p-4 transition-all flex flex-col md:flex-row justify-between items-start md:items-center gap-4 group"
                   >
-                    <div className="space-y-2 flex-1">
+                    <div className="space-y-2 flex-1 min-w-0 break-words">
                       <div className="flex items-center gap-2 flex-wrap">
                         <span className="text-sm font-bold text-slate-100 group-hover:text-violet-300 transition-colors">
                           {mod.name}
@@ -245,7 +279,7 @@ export const EffectLibraryModal: React.FC<EffectLibraryModalProps> = ({
                 什麼是「AI 解構與規範化模板描述」？
               </h4>
               <p className="text-slate-400">
-                在《賽爾號》中，強大的精靈技能與魂印具有高度嚴謹的語法結構。當您使用 AI 進行生成或實時修正時，AI 會首先將您的口語描述進行<strong>「功能解構」</strong>，將其中提及的強化、免死、麻痺、吸血等單元提取出來。
+                  描述可拆成觸發時點、條件、目標與行為，例如強化、免死、麻痺或吸血。AI 或本地解析結果只能當作草稿，仍須核對原始 TXT 與實際執行的效果。
               </p>
             </div>
 
@@ -268,7 +302,7 @@ export const EffectLibraryModal: React.FC<EffectLibraryModalProps> = ({
               <div className="bg-slate-900/50 border border-slate-800 p-4 rounded-xl space-y-2">
                 <h5 className="font-bold text-emerald-300">📌 規則二：複合效果使用正體全形分號「；」隔開</h5>
                 <p className="text-slate-400">
-                  嚴禁使用逗號或句號串連多個獨立判定，分號「；」是遊戲引擎解析判定優先級的核心符號。
+                  建議以分號「；」分開不同判定，讓描述較易閱讀與核對；分號本身不保證引擎能解析，也不決定戰鬥結算優先級。
                 </p>
                 <div className="bg-black/60 p-3 rounded-lg border border-slate-800 font-mono text-slate-200">
                   <span className="text-rose-400 line-through block mb-1">❌ 錯誤口語：血少的時候傷害增加50%，然後每回合回血20%，被打可能麻痺對面</span>
@@ -279,7 +313,7 @@ export const EffectLibraryModal: React.FC<EffectLibraryModalProps> = ({
               <div className="bg-slate-900/50 border border-slate-800 p-4 rounded-xl space-y-2">
                 <h5 className="font-bold text-violet-300">📌 規則三：已有效果引用 vs 新創效果入庫</h5>
                 <p className="text-slate-400">
-                  您在左側「效果模組庫存」點擊引用的經典效果（例如雷伊麻痺、劍舞強化），AI 在分析時會自動辨識並標記為<strong>「[引用庫存]」</strong>；若您在文本中提出了全新的原創機制，AI 會幫您標準化為上述模板語法，並標記為<strong>「[新入庫規範化效果]」</strong>，確保引擎能無縫相容！
+                  點擊引用只會附加描述文字，不會新增戰鬥處理器。新機制須另外建立積木或專屬處理器，加入技能語意測試；未確認的時點、條件與原始描述應保留待確認，不能視為已實裝。
                 </p>
               </div>
             </div>
@@ -299,6 +333,6 @@ export const EffectLibraryModal: React.FC<EffectLibraryModalProps> = ({
           </button>
         </div>
       </motion.div>
-    </div>
+    </div>, document.body
   );
 };

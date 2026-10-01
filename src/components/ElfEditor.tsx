@@ -882,6 +882,7 @@ interface ElfEditorProps {
 }
 
 export default function ElfEditor({ initialElf, onSaveElf, onBack, initialTab }: ElfEditorProps) {
+  const [manualDraftId] = useState(() => `custom_${Date.now()}`);
   const [activeTab, setActiveTab] = useState<"ai" | "manual" | "blockly">(initialTab || (initialElf ? "manual" : "ai"));
   const [manualSection, setManualSection] = useState<EditorSection>("basic");
   // AI（Gemini）是否可用：未設定 GEMINI_API_KEY 時停用 AI 按鈕，改用本地解析
@@ -1415,26 +1416,15 @@ export default function ElfEditor({ initialElf, onSaveElf, onBack, initialTab }:
     }
   };
 
-  // Handle Manual Save
-  const handleSaveManual = () => {
-    if (!elfName.trim()) {
-      alert("請輸入精靈名稱！");
-      return;
-    }
-
-    const natureCheck = validateSeerNature(natureModifiers);
-    if (!natureCheck.valid) {
-      alert(natureCheck.message);
-      return;
-    }
-
+  // 儲存與匯出使用相同完整草稿；匯出並不代表效果已實裝。
+  const buildManualElf = (): Elf => {
     const calculated = calculateElfStats(baseStats, 100, initialElf?.ivs, evs, natureModifiers,
       inscriptions as Inscription[], guildBonuses, initialElf?.hasAnnualBonus);
     const isZhakesi = elfName === "湮滅之主・咤克斯" || initialElf?.id === "zhakesi" || soulMarkName === "咤";
 
-    const savedElf: Elf = {
+    return {
       ...initialElf,
-      id: initialElf?.id || `custom_${Date.now()}`,
+      id: initialElf?.id || manualDraftId,
       name: elfName,
       type: elfType,
       level: 100,
@@ -1462,7 +1452,7 @@ export default function ElfEditor({ initialElf, onSaveElf, onBack, initialTab }:
         customCode: soulMarkCustomCode,
       },
       kit: kit,
-      alienTraits: (!isZhakesi && (gen2TraitName || exTraitName || alienTraitName || generalTraitName)) ? {
+      alienTraits: (!isZhakesi && (gen2TraitName || exTraitName || alienTraitName || generalTraitName || initialElf?.alienTraits?.exclusiveTraits?.length)) ? {
         gen2Trait: gen2TraitName ? { name: gen2TraitName, description: gen2TraitDesc } : undefined,
         exclusiveTrait: exTraitName ? { name: exTraitName, description: exTraitDesc } : undefined,
         exclusiveTraits: initialElf?.alienTraits?.exclusiveTraits,
@@ -1484,6 +1474,20 @@ export default function ElfEditor({ initialElf, onSaveElf, onBack, initialTab }:
       isCustom: true,
     };
 
+  };
+
+  // 匯出允許未完成草稿，正式儲存才檢查必填及性格。
+  const handleSaveManual = () => {
+    if (!elfName.trim()) {
+      alert("請輸入精靈名稱！");
+      return;
+    }
+    const natureCheck = validateSeerNature(natureModifiers);
+    if (!natureCheck.valid) {
+      alert(natureCheck.message);
+      return;
+    }
+    const savedElf = buildManualElf();
     onSaveElf(savedElf);
     alert(`精靈「${savedElf.name}」已儲存至精靈倉庫！`);
     onBack();
@@ -2305,7 +2309,9 @@ export default function ElfEditor({ initialElf, onSaveElf, onBack, initialTab }:
             type="button"
             onClick={() => {
               const exportData = {
+                schemaVersion: 2,
                 activeTab,
+                manualElf: buildManualElf(),
                 aiPreview: previewElf,
                 manualStats: {
                   elfName,
@@ -2328,7 +2334,7 @@ export default function ElfEditor({ initialElf, onSaveElf, onBack, initialTab }:
               a.download = `seer_elf_blueprint_${Date.now()}.json`;
               a.click();
               URL.revokeObjectURL(url);
-              alert("已匯出精靈研發圖紙 (JSON)！");
+              alert("已匯出完整精靈草稿 (JSON)。匯出不代表效果已實裝或通過驗證；目前尚未提供圖紙匯入功能。");
             }}
             className="flex items-center gap-2 px-4 py-2 bg-[#0F1117] hover:bg-slate-800 text-slate-300 border border-slate-800 rounded-xl text-xs font-bold transition-all"
             title="匯出精靈圖紙設定檔 (JSON)"

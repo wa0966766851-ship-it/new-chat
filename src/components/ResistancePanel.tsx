@@ -1,13 +1,14 @@
 import React, { useState } from "react";
 import { ElfResistances, ResistanceSlot } from "../types";
 import { Shield, RotateCcw, Sliders, Info, Zap, Flame, Snowflake } from "lucide-react";
+import { StatusRegistry } from "../effects/statusRegistry";
 
 const CONTROL_STATUS_OPTIONS = [
   "麻痹", "害怕", "疲憊", "睡眠", "石化", "癱瘓", "冰封", "焚燼", "感染", "神游", "空定", "詛咒", "凝滯", "繳械", "失溫", "束縛", "狂信", "沉睡"
 ];
 
 const WEAKENING_STATUS_OPTIONS = [
-  "中毒", "燒傷", "凍傷", "流血", "混亂", "衰弱", "易燃", "寄生", "失明", "失神", "沉默", "臣服", "沸湧", "腐朽", "遲鈍", "窒息"
+  "中毒", "燒傷", "凍傷", "流血", "混亂", "衰弱", "易燃", "寄生", "失明", "失神", "沉默", "臣服", "沸湧", "腐朽", "遲鈍", "窒息", "魘味"
 ];
 
 export function getDefaultResistances(): ElfResistances {
@@ -113,16 +114,20 @@ export default function ResistancePanel({ resistances, onChange, readonly = fals
   ];
   const bonus = statusResist.allImmune ? 5 : 0;
   const renderSlot = (slot: ResistanceSlot, options: string[], accent: string, tone: string) => {
-    const opts = options.includes(slot.status) ? options : [slot.status, ...options];
+    // UI 使用登記名稱；保留舊存檔的實際 key，避免查看頁面就改寫抗性。
+    const statusLabel = (status: string) => StatusRegistry[status]?.name || status;
+    const opts = [slot.status, ...options].filter((status, index, list) =>
+      list.findIndex(item => statusLabel(item) === statusLabel(status)) === index);
     return (
       <div key={slot.id} className="flex items-center gap-2 min-w-0 py-2 border-b border-white/[0.05] last:border-0">
         <select
+          aria-label={`${slot.category === 'control' ? '控制類' : '弱化類'}抗性 ${slot.id}`}
           disabled={readonly}
           value={slot.status}
           onChange={(e) => handleSlotChange(slot.id, 'status', e.target.value)}
           className={`w-[76px] shrink-0 bg-white/[0.06] rounded-lg px-1.5 py-1.5 text-[13px] font-medium ${tone} focus:outline-none`}
         >
-          {opts.map(opt => <option key={opt} value={opt} className="bg-slate-900 text-slate-200">{opt}</option>)}
+          {opts.map(opt => <option key={opt} value={opt} className="bg-slate-900 text-slate-200">{statusLabel(opt)}</option>)}
         </select>
         <input type="range" min={0} max={50} value={slot.rate} disabled={readonly}
           onChange={(e) => handleSlotChange(slot.id, 'rate', e.target.value)}
@@ -144,7 +149,7 @@ export default function ResistancePanel({ resistances, onChange, readonly = fals
           <div className="flex items-center gap-2">
             <button type="button" onClick={handleResetToDefault}
               className="px-3 py-1.5 rounded-full bg-white/[0.06] hover:bg-white/[0.12] text-[12px] font-medium text-slate-200 flex items-center gap-1"
-              title="傷害抗性 35%；控制 麻痹/害怕/疲憊、弱化 中毒/燒傷/凍傷 各 10%">
+              title="傷害抗性 35%；控制 麻痺/害怕/疲憊、弱化 中毒/燒傷/凍傷 各 10%">
               <RotateCcw className="w-3.5 h-3.5" /> 預設
             </button>
             <button type="button" onClick={handleResetDamageToZero}
