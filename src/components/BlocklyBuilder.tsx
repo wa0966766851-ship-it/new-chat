@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState, useCallback } from "react";
 import * as Blockly from "blockly/core";
 import * as BlocklyMessages from "blockly/msg/en";
+import { SEER_TYPES } from '../utils/statCalculator';
 import { KitEntry, Node } from "../effects/effectSystem.schema";
 import { Puzzle, Play, Code2, Trash2, RefreshCw, Layers, Sparkles, Check, Copy, BookmarkPlus, Download, Plus, Search } from "lucide-react";
 
@@ -217,24 +218,26 @@ function defineCustomBlocks() {
     // ==========================================
     {
       "type": "atom_extra_damage",
-      "message0": "💥 [原子] 追加傷害: 對 %1 造成 %2 %3 傷害",
+      "message0": "💥 [原子] 追加傷害: 對 %1 數值 %2 類型 %3 取值 %4 屬性 %5",
       "args0": [
         {
           "type": "field_dropdown",
           "name": "TARGET",
           "options": [["對手", "opponent"], ["自身", "self"]]
         },
-        { "type": "field_number", "name": "AMOUNT", "value": 150, "min": 1, "max": 5000 },
+        { "type": "field_number", "name": "AMOUNT", "value": 150, "min": 0, "max": 5000 },
         {
           "type": "field_dropdown",
           "name": "DAMAGE_TYPE",
-          "options": [["固定傷害 (fixed)", "fixed"], ["最大HP%% (percent)", "percent"], ["真實傷害 (true)", "true"]]
-        }
+          "options": [["固定傷害 (fixed)", "fixed"], ["最大HP%% (percent)", "percent"], ["X系技能傷害 (skill)", "skill"], ["真實傷害 (true)", "true"]]
+        },
+        { "type": "field_dropdown", "name": "AMOUNT_MODE", "options": [["點數", "flat"], ["目標最大體力%%", "max_hp_percent"]] },
+        { "type": "field_dropdown", "name": "ELEMENT", "options": SEER_TYPES.map(type => [type, type]) }
       ],
       "previousStatement": null,
       "nextStatement": null,
       "colour": 0,
-      "tooltip": "造成額外粉傷、百分比或真實傷害"
+      "tooltip": "類別與取值分開：固定／百分比由護罩承受，X系技能由護盾承受，真實穿透兩者。直接命中附加走攻擊傷害節點，延遲觸發走技能效果節點。"
     },
     {
       "type": "atom_damage_multiplier",
@@ -887,15 +890,17 @@ export const BlocklyBuilder: React.FC<BlocklyBuilderProps> = ({
     // Atomic blocks mapping
     if (type === "atom_extra_damage") {
       const target = block.getFieldValue("TARGET");
-      const amount = Number(block.getFieldValue("AMOUNT") || 150);
+      const amount = Number(block.getFieldValue("AMOUNT") ?? 150);
       const damageType = block.getFieldValue("DAMAGE_TYPE");
+      const amountMode = block.getFieldValue('AMOUNT_MODE') || 'flat';
+      const elem = block.getFieldValue('ELEMENT') || '普通';
       return {
         codeId: "extra_damage",
         node,
         source: currentSource,
         order,
-        customText: damageType === "percent" ? `${target === "opponent" ? "對手" : "自身"}受到最大體力${amount}%的百分比傷害` : `對${target === "opponent" ? "對手" : "自身"}造成${amount}點${damageType === "true" ? "真實" : "固定"}傷害`,
-        params: { target, amount, damageType }
+        customText: `${target === 'opponent' ? '對手' : '自身'}受到${damageType === 'percent' || amountMode === 'max_hp_percent' ? `最大體力${amount}%` : `${amount}點`}${damageType === 'percent' ? '百分比' : damageType === 'true' ? '真實' : damageType === 'skill' ? `${elem}系技能` : '固定'}傷害`,
+        params: { target, amount, damageType, amountMode, elem }
       };
     }
 
@@ -1254,7 +1259,7 @@ export const BlocklyBuilder: React.FC<BlocklyBuilderProps> = ({
 
   // ── 積木欄位 ↔ 參數 對照表（載入時用，確保可完整還原） ──
   const FIELD_MAP: Record<string, Record<string, string>> = {
-    atom_extra_damage: { TARGET: "target", AMOUNT: "amount", DAMAGE_TYPE: "damageType" },
+    atom_extra_damage: { TARGET: "target", AMOUNT: "amount", DAMAGE_TYPE: "damageType", AMOUNT_MODE: 'amountMode', ELEMENT: 'elem' },
     atom_damage_multiplier: { MULTIPLICITY: "multiplier" },
     atom_damage_reduce: { PERCENT: "percent" },
     atom_damage_reflect: { PERCENT: "percent", TARGET: "target" },
@@ -1439,6 +1444,11 @@ export const BlocklyBuilder: React.FC<BlocklyBuilderProps> = ({
       })
     });
     blocklyWorkspace.current = ws;
+    let resizeFrame = 0;
+    const resize = () => { cancelAnimationFrame(resizeFrame); resizeFrame = requestAnimationFrame(() => Blockly.svgResize(ws)); };
+    const resizeObserver = typeof ResizeObserver !== 'undefined' ? new ResizeObserver(resize) : null;
+    resizeObserver?.observe(workspaceRef.current);
+    window.addEventListener('resize', resize);
     loadKitToWorkspace(initialKitRef.current || []);
     setJsonOutput(JSON.stringify(convertWorkspaceToKit(), null, 2));
     ws.addChangeListener((event) => {
@@ -1453,6 +1463,7 @@ export const BlocklyBuilder: React.FC<BlocklyBuilderProps> = ({
       }
     });
     return () => {
+      resizeObserver?.disconnect(); window.removeEventListener('resize', resize); cancelAnimationFrame(resizeFrame);
       if (syncTimer.current) window.clearTimeout(syncTimer.current);
       ws.dispose();
       blocklyWorkspace.current = null;

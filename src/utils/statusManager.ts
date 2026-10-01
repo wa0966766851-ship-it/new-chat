@@ -1,6 +1,7 @@
 import { Elf, StatusCategory, StatusEffect } from "../types";
 import { StatusRegistry, StatusRegistryEntry } from "../effects/statusRegistry";
 import { getStatuses } from "./battleHelpers";
+import { sameStatus } from '../effects/statusIdentity';
 
 // StatusEffect is imported from types.ts
 
@@ -97,5 +98,5 @@ export function applyStatuses(
 export const isStatusActive = (elf: any, statusId: string) => {
   if (!elf) return false;
   const statuses = getStatuses(elf);
-  return (statuses[statusId] || 0) > 0;
+  return Object.entries(statuses).some(([key, turns]) => turns > 0 && sameStatus(key, statusId));
 };

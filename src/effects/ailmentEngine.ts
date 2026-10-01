@@ -1,24 +1,9 @@
 import { StatusRegistry } from './statusRegistry';
 import { BattleEventContext } from './types';
+import { canonicalStatusName } from './statusIdentity';
 
 // 別名對照表（包含常見繁簡體、英文 ID 或簡稱與 statusRegistry 中 name 的映射）
-const AILMENT_ALIAS_MAP: Record<string, string> = {
-  "麻痺": "麻痹",
-  "凍結": "冰封",
-  "冰凍": "冰封",
-  "frozen": "冰封",
-  "paralyzed": "麻痹",
-  "feared": "害怕",
-  "sleep": "睡眠",
-  "petrified": "石化",
-  "paralyzed_lock": "癱瘓",
-  "cursed": "詛咒",
-  "fanatic": "狂信",
-  "deep_sleep": "沉睡",
-  "ice_sealed": "冰封",
-  "incinerated": "焚燼",
-  "infected": "感染",
-};
+// 分類與抗性共用同一名稱入口；不要另外將 frozen 猜成冰封。
 
 /**
  * 判斷指定之異常狀態名稱或 ID 是否屬於「控制類異常」
@@ -30,7 +15,7 @@ const AILMENT_ALIAS_MAP: Record<string, string> = {
 export function isControlAilment(name: string): boolean {
   if (!name || typeof name !== 'string') return false;
 
-  const normalized = AILMENT_ALIAS_MAP[name] || name;
+  const normalized = canonicalStatusName(name);
   const entry = StatusRegistry[normalized] || StatusRegistry[name];
 
   if (entry) {
@@ -45,7 +30,7 @@ export function isControlAilment(name: string): boolean {
  */
 export function getAilmentCategory(name: string): string | null {
   if (!name) return null;
-  const normalized = AILMENT_ALIAS_MAP[name] || name;
+  const normalized = canonicalStatusName(name);
   const entry = StatusRegistry[normalized] || StatusRegistry[name];
 
   if (entry && entry.categories.length > 0) {

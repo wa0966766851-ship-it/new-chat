@@ -1465,6 +1465,7 @@ export default function ControlHub({ currentScene }: { currentScene: string }) {
               )}
               {activeTab === "advanced" && (
                 <div className="space-y-6">
+                  <section className="ios-card p-4 space-y-2"><h3 className="text-sm text-blue-200">效能診斷</h3><p className="text-xs text-slate-400">手動量測畫面間隔、長任務與可取得的記憶體；不自動常駐採樣，也不宣稱所有裝置都流暢。</p><button type="button" className="ios-button" onClick={() => window.dispatchEvent(new Event('open-performance-probe'))}>開啟本機效能量測</button></section>
                   <div className="bg-slate-900/80 rounded-2xl p-4 text-[11px] space-y-3 border border-slate-800">
                     <p className="text-slate-500 font-bold uppercase tracking-wider">目前系統配置</p>
                     <div className="text-slate-300 space-y-1.5 break-all">

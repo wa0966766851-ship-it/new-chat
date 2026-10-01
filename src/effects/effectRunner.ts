@@ -9,6 +9,7 @@ import type { AtomId, AtomTable, KitEntry, EffectCode, Node, Target } from "./ef
 import { mapCodeToAtoms } from "./atomMapper";
 import { blockEntryToAtom } from "./blockParams";
 import { prdPercent } from "../utils/prd";
+import { sameStatus } from './statusIdentity';
 
 // 底層不變式：真實傷害不可被護盾與減傷抵擋 (減傷/護盾原子自動跳過 true 傷害)
 export const isReducible = (dmgType: string) => dmgType !== "true";
@@ -27,14 +28,22 @@ export const ATOMS: AtomTable = {
       amt = Math.min(p.incremental.max, p.incremental.base + (count - 1) * p.incremental.step);
     }
     
+    if (p.amountMode === 'max_hp_percent' && p.dmgType !== 'percent') {
+      const elf = side === 'p1' ? ctx.activeP1 : ctx.activeP2;
+      amt = Math.floor((elf?.maxHp || 0) * amt / 100);
+    }
     if (p.dmgType === "true") {
       ctx.applyTrueDamage(side, amt, p.label || "追加真實傷害");
     } else if (p.dmgType === "fixed") {
       ctx.applyFixedDamage(side, amt, p.label || "追加固定傷害");
     } else if (p.dmgType === "percent") {
-      ctx.applyPercentDamage(side, p.ratio || amt || 10);
+      ctx.applyPercentDamage(side, p.ratio ?? amt / 100);
+    } else if (p.dmgType === 'skill' || p.dmgType === 'skill_attribute') {
+      // 直接技能附加與延遲傷害不能混為同一節點；額外行動由獨立行動流程負責。
+      const node = p.damageNode || (ctx.effectNode === 'on_hit' ? 'attack_damage' : 'skill_effect');
+      ctx.applySkillTypeDamage(side, amt, p.label || `${p.elem || '普通'}系技能傷害`, { elem: p.elem || '普通', node });
     } else {
-      ctx.applyPinkDamage?.(side, amt, p.label || "追加技能傷害");
+      ctx.addLog?.(`傷害類型未確認：${String(p.dmgType)}；未執行追加傷害。`, 'effect');
     }
   },
 
@@ -406,7 +415,7 @@ export const ATOMS: AtomTable = {
     }
     if (p.has_status !== undefined) {
       const statuses = ctx.getStatuses?.(selfElf) || {};
-      if (!statuses[p.has_status]) isTrue = false;
+      if (!Object.entries(statuses).some(([key, turns]) => Number(turns) > 0 && sameStatus(key, p.has_status))) isTrue = false;
     }
     if (p.is_first !== undefined) {
       const goesFirst = ctx.goesFirst !== undefined ? ctx.goesFirst : (ctx.moveIndex === 0);
@@ -479,12 +488,13 @@ function resolveParams(obj: Record<string, any>, slots: Record<string, any>): Re
 // ── runner 核心：在節點 N，取精靈 kit 中 node === N 的詞條，按 order 逐一執行 ────
 export function runNode(node: Node, kit: KitEntry[], codex: Record<string, EffectCode>, ctx: any) {
   if (!kit || !Array.isArray(kit)) return;
+  const nodeCtx = Object.create(ctx); nodeCtx.effectNode = node;
   const entries = kit.filter(e => e.node === node).sort((a, b) => a.order - b.order);
   for (const entry of entries) {
     // 積木工坊詞條：codeId 即原子名，直接依結構化參數執行（不再重新解析 customText）
     const direct = blockEntryToAtom(entry, ATOMS);
     if (direct) {
-      try { ATOMS[direct.atom](resolveParams(direct.params, entry.params || {}), direct.target, ctx); }
+      try { ATOMS[direct.atom](resolveParams(direct.params, entry.params || {}), direct.target, nodeCtx); }
       catch (err) { console.error(`[effectRunner] Error running block atom ${direct.atom}:`, err); }
       continue;
     }
@@ -507,7 +517,7 @@ export function runNode(node: Node, kit: KitEntry[], codex: Record<string, Effec
       const params = resolveParams({ ...bind.params, ...entry.params }, entry.params);
       const target = bind.target || code?.target || "self";
       try {
-        impl(params, target, ctx);
+        impl(params, target, nodeCtx);
       } catch (err) {
         console.error(`[effectRunner] Error running atom ${bind.atom}:`, err);
       }

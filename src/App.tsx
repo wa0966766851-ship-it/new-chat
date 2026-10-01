@@ -29,6 +29,7 @@ import { Sparkles, HelpCircle, Book, Disc, ChevronUp, ChevronDown, ChevronLeft, 
 import { AnimatePresence, motion } from "motion/react";
 import { GameDataProvider, useGameData } from "./contexts/GameDataContext";
 const ElfEditor = lazy(() => import("./components/ElfEditor"));
+const PerformanceProbe = lazy(() => import('./components/PerformanceProbe'));
 const Encyclopedia = lazy(() => import("./components/Encyclopedia"));
 const DestinyWheelScreen = lazy(() => import("./components/DestinyWheelScreen"));
 const TestRunnerPage = lazy(() => import("./components/TestRunnerPage"));
@@ -53,6 +54,8 @@ function AppContent() {
     typeof window === "undefined" || !window.matchMedia("(max-width: 767px)").matches
   );
   const [showEncyclopedia, setShowEncyclopedia] = useState(false);
+  const [showPerformanceProbe, setShowPerformanceProbe] = useState(false);
+  useEffect(() => { const open = () => setShowPerformanceProbe(true); window.addEventListener('open-performance-probe', open); return () => window.removeEventListener('open-performance-probe', open); }, []);
   const [battleMode, setBattleMode] = useState<BattleMode>("PVE");
   const [battleFormat, setBattleFormat] = useState<"normal_6v6" | "solo_1v1" | "peak_6v6" | "peak_3v3">("normal_6v6");
   const [battleKey, setBattleKey] = useState<number>(0);
@@ -531,6 +534,7 @@ function AppContent() {
         </PageErrorBoundary>
         {showEncyclopedia && createPortal(<PageErrorBoundary onBack={() => setShowEncyclopedia(false)}><Suspense fallback={<TechLoadingScreen />}><Encyclopedia onClose={() => setShowEncyclopedia(false)} /></Suspense></PageErrorBoundary>, document.body)}
         <ImageCopyMenu />
+        {showPerformanceProbe && <Suspense fallback={null}><PerformanceProbe onClose={() => setShowPerformanceProbe(false)} /></Suspense>}
 
 
         </main>

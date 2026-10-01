@@ -6,10 +6,11 @@ import { parseSkill, parseSoulMark, matchCond } from "./parse";
 import { CUSTOM } from "./custom";
 import { eventTriggers, runSideTimers, runSkillProgram, runSoulProgram, runAct, passiveEvade, runHolderMarks, setSoulProgramProvider, findBlockTimer, evalCond, statusTriggers } from "./runtime";
 import { SKILL_MODE, SOUL_MODE } from "./specs";
+import { BoundedCache } from '../utils/boundedCache';
 
-const skillCache = new Map<string, Program>();
+const skillCache = new BoundedCache<string, Program>(1024);
 setSoulProgramProvider((elf) => getSoulProgram(elf));
-const soulCache = new Map<string, Program>();
+const soulCache = new BoundedCache<string, Program>(128);
 
 export function getSkillProgram(skill: { name: string; description?: string }): Program {
   const key = skill.name + "\u0000" + (skill.description || "");

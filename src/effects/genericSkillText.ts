@@ -667,7 +667,7 @@ export function executeGenericSkillTextAfterHit(ctx: BattleEventContext): void {
 
 // ---------- 結構化欄位（effectType / effectDetail） ----------
 const DETAIL_STATUS: Record<string, string> = {
-  paralyze: "麻痺", burn: "燒傷", poison: "中毒", fear: "害怕", sleep: "睡眠", freeze: "冰封", frozen: "冰封",
+  paralyze: "麻痺", burn: "燒傷", poison: "中毒", fear: "害怕", sleep: "睡眠", freeze: "冰封", ice_sealed: "冰封", frozen: "石化",
   confuse: "混亂", petrify: "石化", frostbite: "凍傷", parasite: "寄生", weaken: "衰弱", blind: "失明", tired: "疲憊", fatigue: "疲憊",
 };
 export function applyEffectDetail(ctx: BattleEventContext): boolean {

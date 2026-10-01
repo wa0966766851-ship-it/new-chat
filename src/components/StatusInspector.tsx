@@ -2,6 +2,7 @@ import React from "react";
 import { Elf } from "../types";
 import { Timer } from "../battle/timers";
 import { Mark } from "../battle/marks";
+import { canonicalStatusName } from '../effects/statusIdentity';
 
 export type StateCategory = "異常" | "能力" | "防護" | "印記" | "回合類" | "其他計時" | "次數類" | "常駐";
 
@@ -18,11 +19,11 @@ export interface ActiveEffect {
 
 function translateStatus(status: string): string {
   const map: Record<string, string> = {
-    paralyzed: "麻痺", poisoned: "中毒", burned: "燒傷", frozen: "凍傷", scared: "害怕",
+    paralyzed: "麻痺", poisoned: "中毒", burned: "燒傷", scared: "害怕",
     sleeping: "睡眠", petrified: "石化", confused: "混亂", icebound: "冰封", blind: "失明",
     cursed: "詛咒", disabled: "癱瘓", tired: "疲憊"
   };
-  return map[status] || status;
+  return canonicalStatusName(map[status] || status);
 }
 
 export function getActiveEffects(side: "p1" | "p2", state: any): ActiveEffect[] {

@@ -2,14 +2,11 @@ import React, { useState } from "react";
 import { ElfResistances, ResistanceSlot } from "../types";
 import { Shield, RotateCcw, Sliders, Info, Zap, Flame, Snowflake } from "lucide-react";
 import { StatusRegistry } from "../effects/statusRegistry";
+import { statusOptionsFor } from '../effects/statusIdentity';
 
-const CONTROL_STATUS_OPTIONS = [
-  "麻痹", "害怕", "疲憊", "睡眠", "石化", "癱瘓", "冰封", "焚燼", "感染", "神游", "空定", "詛咒", "凝滯", "繳械", "失溫", "束縛", "狂信", "沉睡"
-];
+const CONTROL_STATUS_OPTIONS = statusOptionsFor('CONTROL');
 
-const WEAKENING_STATUS_OPTIONS = [
-  "中毒", "燒傷", "凍傷", "流血", "混亂", "衰弱", "易燃", "寄生", "失明", "失神", "沉默", "臣服", "沸湧", "腐朽", "遲鈍", "窒息", "魘味"
-];
+const WEAKENING_STATUS_OPTIONS = statusOptionsFor('WEAKENING');
 
 export function getDefaultResistances(): ElfResistances {
   return {

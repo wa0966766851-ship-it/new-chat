@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo, lazy, Suspense } from "react";
+import { createPortal } from 'react-dom';
 import { Elf, BattleMode, Inscription } from "../types";
 import { SEER_TYPES, calculateElfStats, getDefaultEvs, getAttributeBadgeColor } from "../utils/statCalculator";
 import { ElfAvatar, TypeIcon } from "./SeerImages";
@@ -18,6 +19,7 @@ import { InscriptionSlot, InscriptionModal } from "./InscriptionSystem";
 import { motion, AnimatePresence } from "motion/react";
 import { Swords, Plus, Bot, User, Trash2, Crown, Sparkles, Check, HelpCircle, AlertCircle, Copy, Shuffle, Cpu, Edit3, Eye, Zap, MessageSquare, X, Search, Briefcase, Save, FolderOpen, Bookmark, CheckCircle2, Shield, RotateCcw, ShieldAlert, Flame, ArrowUp, ArrowDown, ArrowUpDown, ArrowLeftRight, Move, Layers, BookOpen, Disc, Dice5, ChevronRight, Rocket, Filter, ChevronUp, ChevronDown } from "lucide-react";
 import ResistancePanel from "./ResistancePanel";
+import { EffectBlockToggle } from './EffectBlockToggle';
 const LazyBlockProgramView = lazy(() => import("./LazyBlockProgramView"));
 const EffectLibraryModal = lazy(() => import("./EffectLibraryModal").then(m => ({ default: m.EffectLibraryModal })));
 const detailLoading = <p role="status" className="p-3 text-sm text-slate-400">載入效果資料…</p>;
@@ -2204,6 +2206,7 @@ export default function StartScreen({
 
                 <button
                   onClick={() => setShowDetailModal(elf)}
+                  aria-label={`查看 ${elf.name} 的詳情`}
                   className="flex-1 py-1.5 bg-white/[0.06] hover:bg-white/[0.1] text-slate-200 text-[11px] font-semibold rounded-full transition-colors cursor-pointer flex items-center justify-center gap-1 whitespace-nowrap"
                 >
                   <Eye className="w-3 h-3" /> 詳情
@@ -2290,10 +2293,10 @@ export default function StartScreen({
       </div>
 
       {/* Elf Detail Modal */}
-      <AnimatePresence>
+      {createPortal(<AnimatePresence>
         {showDetailModal && (
           <div
-            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm"
+            className="fixed inset-0 z-[220] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm"
             onClick={() => {
               setShowDetailModal(null);
               setReplacingSlotIndex(null);
@@ -2610,9 +2613,9 @@ export default function StartScreen({
                         <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse" />
                         <h4 className="text-xs font-bold text-amber-300">二代異能特質 / {showDetailModal.alienTraits.gen2Trait.name}</h4>
                       </div>
-                      <p className="text-amber-100/90 text-[14px] leading-[1.75] font-sans whitespace-pre-wrap">
+                      <EffectBlockToggle trait={showDetailModal.alienTraits.gen2Trait}><p className="text-amber-100/90 text-[14px] leading-[1.75] font-sans whitespace-pre-wrap">
                         {showDetailModal.alienTraits.gen2Trait.description.replace(/([；;])\s*/g, '$1\n')}
-                      </p>
+                      </p></EffectBlockToggle>
                     </div>
                   )}
                   {showDetailModal.alienTraits?.exclusiveTrait && (
@@ -2621,9 +2624,9 @@ export default function StartScreen({
                         <span className="w-2 h-2 rounded-full bg-red-400 animate-pulse" />
                         <h4 className="text-xs font-bold text-red-300">專屬異能特質 / {showDetailModal.alienTraits.exclusiveTrait.name}</h4>
                       </div>
-                      <p className="text-red-100/90 text-[14px] leading-[1.75] font-sans whitespace-pre-wrap">
+                      <EffectBlockToggle trait={showDetailModal.alienTraits.exclusiveTrait}><p className="text-red-100/90 text-[14px] leading-[1.75] font-sans whitespace-pre-wrap">
                         {showDetailModal.alienTraits.exclusiveTrait.description.replace(/([；;])\s*/g, '$1\n')}
-                      </p>
+                      </p></EffectBlockToggle>
                     </div>
                   )}
                   {(showDetailModal.alienTraits?.exclusiveTraits || []).map((trait) => (
@@ -2632,9 +2635,9 @@ export default function StartScreen({
                         <span className="w-2 h-2 rounded-full bg-red-400 animate-pulse" />
                         <h4 className="text-xs font-bold text-red-300">專屬異能特質 / {trait.name}</h4>
                       </div>
-                      <p className="text-red-100/90 text-[14px] leading-[1.75] font-sans whitespace-pre-wrap">
+                      <EffectBlockToggle trait={trait}><p className="text-red-100/90 text-[14px] leading-[1.75] font-sans whitespace-pre-wrap">
                         {trait.description.replace(/([；;])\s*/g, '$1\n')}
-                      </p>
+                      </p></EffectBlockToggle>
                     </div>
                   ))}
                   {showDetailModal.isAlienElf && (
@@ -2673,9 +2676,9 @@ export default function StartScreen({
                         )}
                       </div>
                       {showDetailModal.alienTraits?.alienTrait && (
-                        <p className="text-blue-100/90 text-[14px] leading-[1.75] font-sans whitespace-pre-wrap mt-2 pt-2 border-t border-blue-500/20">
+                        <EffectBlockToggle trait={showDetailModal.alienTraits.alienTrait}><p className="text-blue-100/90 text-[14px] leading-[1.75] font-sans whitespace-pre-wrap mt-2 pt-2 border-t border-blue-500/20">
                           {showDetailModal.alienTraits.alienTrait.description.replace(/([；;])\s*/g, '$1\n')}
-                        </p>
+                        </p></EffectBlockToggle>
                       )}
                     </div>
                   )}
@@ -2710,9 +2713,9 @@ export default function StartScreen({
                           </select>
                         </div>
                         {showDetailModal.alienTraits?.generalTrait && (
-                          <p className="text-blue-100/90 text-[14px] leading-[1.75] font-sans whitespace-pre-wrap mt-2 pt-2 border-t border-blue-500/20">
+                          <EffectBlockToggle trait={showDetailModal.alienTraits.generalTrait}><p className="text-blue-100/90 text-[14px] leading-[1.75] font-sans whitespace-pre-wrap mt-2 pt-2 border-t border-blue-500/20">
                             {showDetailModal.alienTraits.generalTrait.description.replace(/([；;])\s*/g, '$1\n')}
-                          </p>
+                          </p></EffectBlockToggle>
                         )}
                       </div>
                     ) : showDetailModal.alienTraits?.generalTrait && (
@@ -2721,9 +2724,9 @@ export default function StartScreen({
                           <span className="w-2 h-2 rounded-full bg-blue-400 animate-pulse" />
                           <h4 className="text-[15px] font-semibold text-blue-200">通用特性 / {showDetailModal.alienTraits.generalTrait.name} ({showDetailModal.alienTraits.generalTrait.description})</h4>
                         </div>
-                        <p className="text-blue-100/90 text-[14px] leading-[1.75] font-sans whitespace-pre-wrap">
+                        <EffectBlockToggle trait={showDetailModal.alienTraits.generalTrait}><p className="text-blue-100/90 text-[14px] leading-[1.75] font-sans whitespace-pre-wrap">
                           {showDetailModal.alienTraits.generalTrait.description.replace(/([；;])\s*/g, '$1\n')}
-                        </p>
+                        </p></EffectBlockToggle>
                       </div>
                     )}
                   </div>
@@ -2819,6 +2822,7 @@ export default function StartScreen({
                               </button>
                               <button
                                 onClick={() => setReplacingSlotIndex(i)}
+                                aria-label={`替換技能 ${s.name}`}
                                 className={`px-2.5 py-1 rounded-full text-xs font-semibold flex items-center gap-1 whitespace-nowrap transition-all cursor-pointer ${
                                 isFifth
                                   ? "bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/30"
@@ -2835,11 +2839,12 @@ export default function StartScreen({
                   </div>
 
                   {/* Skill Replacement Pool Modal Overlay */}
-                  <AnimatePresence>
+                  {createPortal(<AnimatePresence>
                     {replacingSlotIndex !== null && (
-                      <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm" onClick={() => setReplacingSlotIndex(null)}>
+                      <div className="fixed inset-0 z-[230] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm" onClick={(e) => { e.stopPropagation(); setReplacingSlotIndex(null); }}>
                         <motion.div
                           onClick={(e) => e.stopPropagation()}
+                          role="dialog" aria-modal="true" aria-label="技能替換庫"
                           initial={{ opacity: 0, scale: 0.9 }}
                           animate={{ opacity: 1, scale: 1 }}
                           exit={{ opacity: 0, scale: 0.9 }}
@@ -2889,6 +2894,7 @@ export default function StartScreen({
                                   </div>
                                   <button
                                     onClick={() => setReplacingSlotIndex(null)}
+                                    aria-label="關閉技能替換庫"
                                     className="p-1.5 hover:bg-slate-800 text-slate-400 hover:text-slate-200 rounded-lg"
                                   >
                                     <X className="w-4 h-4" />
@@ -2979,7 +2985,7 @@ export default function StartScreen({
                         </motion.div>
                       </div>
                     )}
-                  </AnimatePresence>
+                  </AnimatePresence>, document.body)}
                 </div>
 
                 {/* Description */}
@@ -3062,7 +3068,7 @@ export default function StartScreen({
             </motion.div>
           </div>
         )}
-      </AnimatePresence>
+      </AnimatePresence>, document.body)}
 
       {editingModalInscIndex !== null && showDetailModal && (
         <InscriptionModal

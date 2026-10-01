@@ -2,6 +2,7 @@
 import React from "react";
 import type { Act, Clause, Cond, Program, Stmt } from "../blocks/model";
 import { TRIG_LABEL } from "../blocks/parse";
+import { suggestDamageTypes, damageChoiceLabel } from '../effects/damageChoices';
 
 const OP_TONE: Record<string, string> = {
   status: "bg-fuchsia-600/80", status_seq: "bg-fuchsia-600/80", status_random: "bg-fuchsia-600/80", status_chance_turns: "bg-fuchsia-600/80", convert_status: "bg-fuchsia-600/80",
@@ -27,7 +28,7 @@ const ActBlock: React.FC<{ a: Act }> = ({ a }) => {
       </div>
     );
   }
-  return <div className={`rounded-md px-2 py-1 text-[12px] font-medium text-white shadow-sm ${OP_TONE[a.op] || "bg-slate-600/80"}`}>{a.label || a.op}</div>;
+  return <div className={`rounded-md px-2 py-1 text-[12px] font-medium text-white shadow-sm ${OP_TONE[a.op] || "bg-slate-600/80"}`}>{a.label || a.op}<details className="mt-1 text-[11px] text-white/70"><summary className="cursor-pointer">參數／類型</summary><pre className="whitespace-pre-wrap break-all">{JSON.stringify({ action: a.op, ...a.p }, null, 2)}</pre></details></div>;
 }
 
 const CondChip: React.FC<{ c: Cond }> = ({ c }) => {
@@ -39,7 +40,7 @@ function StmtList({ body }: { body: Stmt[] }) {
     <>
       {body.map((s, i) => {
         const head = s.chain === "success" ? "成功則" : s.chain === "fail" ? "未觸發則" : null;
-        if (!s.cond?.length && !head) return <div key={i} className="space-y-1">{s.acts.map((a, j) => <ActBlock key={j} a={a} />)}</div>;
+        if (!s.cond?.length && !head && !s.elseActs?.length) return <div key={i} className="space-y-1">{s.acts.map((a, j) => <ActBlock key={j} a={a} />)}</div>;
         return (
           <div key={i} className="rounded-lg border border-cyan-500/30 bg-cyan-500/5">
             <div className="flex flex-wrap items-center gap-1 px-1.5 py-1 text-[11.5px] text-cyan-200">
@@ -47,6 +48,7 @@ function StmtList({ body }: { body: Stmt[] }) {
               {s.cond?.map((c, j) => <React.Fragment key={j}><span>若</span><CondChip c={c} /></React.Fragment>)}
             </div>
             <div className="space-y-1 border-l-4 border-cyan-500/50 ml-1.5 p-1.5">{s.acts.map((a, j) => <ActBlock key={j} a={a} />)}</div>
+            {!!s.elseActs?.length && <div className="p-1.5 space-y-1"><span className="text-xs text-amber-200">否則</span>{s.elseActs.map((a, j) => <ActBlock key={j} a={a} />)}</div>}
           </div>
         );
       })}
@@ -72,6 +74,7 @@ const ClauseBlock: React.FC<{ c: Clause }> = ({ c }) => {
           {c.cond?.map((x, i) => <CondChip key={i} c={x} />)}
         </div>
       )}
+      {(() => { const hint = suggestDamageTypes(c.raw); return hint && <p className="text-xs text-amber-200">傷害類型：{hint.types.map(damageChoiceLabel).join('／') || '待確認'}{hint.inferred ? '（建議，非已實裝）' : ''} · {hint.reason}</p>; })()}
       {c.body.length > 0 && <div className="space-y-1"><StmtList body={c.body} /></div>}
       {!c.parsed && (c.rest || []).length > 0 && c.marker !== "§" && (
         <div className="space-y-1">{(c.rest || []).map((r, i) => <div key={i} className="rounded-md border border-dashed border-rose-400/40 px-2 py-1 text-[11.5px] text-rose-200">{r}</div>)}</div>
@@ -83,12 +86,20 @@ const ClauseBlock: React.FC<{ c: Clause }> = ({ c }) => {
 export function BlockProgramView({ program, source }: { program: Program; source?: string }) {
   const total = program.clauses.filter(c => c.marker !== "§").length;
   const ok = program.clauses.filter(c => c.parsed).length;
+  function exportReview() {
+    const blob = new Blob([JSON.stringify({ schemaVersion: 1, purpose: 'effect-review-only', executionSource: source || '待確認', semanticVerification: 'pending', program }, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob), link = document.createElement('a');
+    link.href = url; link.download = `${program.title.replace(/[<>:"/\\|?*]/g, '_') || '效果'}_積木核對.json`; link.click();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  }
   return (
     <div className="space-y-1.5">
       <div className="flex items-center justify-between text-[11px] text-slate-400">
         <span>{source}</span>
-        <span title="已轉成積木的子句數">{ok}/{total}</span>
+        <span title="解析數，不是實裝或驗證數">解析 {ok}/{total}</span>
       </div>
+      <button type="button" onClick={exportReview} className="text-xs text-blue-300 border border-blue-500/30 rounded-lg px-2 py-1">匯出積木核對 JSON（含未解析原文）</button>
+      <p className="text-xs text-amber-200">語意驗證：待逐條確認。顯示積木不會切換戰鬥執行模式；未解析原文仍保留，下方參數可展開核對。</p>
       {program.clauses.map((c, i) => <ClauseBlock key={i} c={c} />)}
     </div>
   );

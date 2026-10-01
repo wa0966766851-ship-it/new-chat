@@ -5,6 +5,7 @@ import { isStatusActive } from './statusManager';
 import { getStatuses } from './battleHelpers';
 import { checkControlImmunity } from '../effects/ailmentEngine';
 import { StatusRegistry } from '../effects/statusRegistry';
+import { sameStatus, canonicalStatusName } from '../effects/statusIdentity';
 import { getTypeMatchup } from './statCalculator';
 
 export class TraitsEngine {
@@ -80,7 +81,7 @@ export class TraitsEngine {
     const mechanics = getElfAdvancedMechanics(targetElf);
     const stateSide = side;
 
-    const statusEntry = StatusRegistry[status];
+    const statusEntry = StatusRegistry[canonicalStatusName(status)] || StatusRegistry[status];
     const isAuxiliaryOrBoss = statusEntry?.categories?.some(c => c === 'AUXILIARY' || c === 'BOSS_ONLY' || c === 'NO_EFFECT');
 
     // 0.00 恐懼之種/恐懼之花免疫
@@ -111,7 +112,7 @@ export class TraitsEngine {
     if (!isAuxiliaryOrBoss) {
       const resistCfg = targetElf.resistances?.statusResist;
       if (resistCfg?.slots) {
-        const slot = resistCfg.slots.find(s => s.status === status);
+        const slot = resistCfg.slots.find(s => sameStatus(s.status, status));
         if (slot) {
           const totalRate = slot.rate + (resistCfg.allImmune ? 5 : 0);
           const rngFunc = ctx.rng || Math.random;

@@ -2,6 +2,8 @@ import { useState, useEffect, useMemo, lazy, Suspense } from "react";
 import type { ComponentProps } from "react";
 import { TypeIcon } from "./SeerImages";
 import { ElfEditorDraftSummary, ElfEditorSectionNav, type EditorSection } from "./ElfEditorSections";
+import { ExclusiveTraitsEditor } from './ExclusiveTraitsEditor';
+import { BlueprintImportButton } from './BlueprintImportButton';
 import { Elf, Skill, BaseStats, Inscription, DecompositionReport } from "../types";
 import { KitEntry } from "../effects/effectSystem.schema";
 import { calculateElfStats, SEER_TYPES, getDefaultEvs, getAttributeBadgeColor } from "../utils/statCalculator";
@@ -881,7 +883,9 @@ interface ElfEditorProps {
   initialTab?: "ai" | "manual" | "blockly";
 }
 
-export default function ElfEditor({ initialElf, onSaveElf, onBack, initialTab }: ElfEditorProps) {
+export default function ElfEditor({ initialElf: suppliedElf, onSaveElf, onBack, initialTab }: ElfEditorProps) {
+  const [initialElf, setInitialElf] = useState(suppliedElf);
+  useEffect(() => setInitialElf(suppliedElf), [suppliedElf?.id, suppliedElf?.name]);
   const [manualDraftId] = useState(() => `custom_${Date.now()}`);
   const [activeTab, setActiveTab] = useState<"ai" | "manual" | "blockly">(initialTab || (initialElf ? "manual" : "ai"));
   const [manualSection, setManualSection] = useState<EditorSection>("basic");
@@ -1106,6 +1110,7 @@ export default function ElfEditor({ initialElf, onSaveElf, onBack, initialTab }:
   const [gen2TraitDesc, setGen2TraitDesc] = useState<string>("");
   const [exTraitName, setExTraitName] = useState<string>("");
   const [exTraitDesc, setExTraitDesc] = useState<string>("");
+  const [exclusiveTraits, setExclusiveTraits] = useState<NonNullable<NonNullable<Elf['alienTraits']>['exclusiveTraits']>>([]);
   const [alienTraitName, setAlienTraitName] = useState<string>("");
   const [generalTraitName, setGeneralTraitName] = useState<string>("");
 
@@ -1212,6 +1217,7 @@ export default function ElfEditor({ initialElf, onSaveElf, onBack, initialTab }:
       setGen2TraitDesc(isZhakesi ? "" : (initialElf.alienTraits?.gen2Trait?.description || ""));
       setExTraitName(isZhakesi ? "" : (initialElf.alienTraits?.exclusiveTrait?.name || ""));
       setExTraitDesc(isZhakesi ? "" : (initialElf.alienTraits?.exclusiveTrait?.description || ""));
+      setExclusiveTraits(isZhakesi ? [] : (initialElf.alienTraits?.exclusiveTraits || []));
       setAlienTraitName(isZhakesi ? "" : (initialElf.alienTraits?.alienTrait?.name || ""));
       setGeneralTraitName(isZhakesi ? "" : (initialElf.alienTraits?.generalTrait?.name || ""));
       const eqSkills = (initialElf.skills || []).slice(0, 5);
@@ -1228,7 +1234,7 @@ export default function ElfEditor({ initialElf, onSaveElf, onBack, initialTab }:
       setInscriptions(getEffectiveInscriptions(initialElf.inscriptions));
       setResistances(initialElf.resistances || getDefaultResistances());
     }
-  }, [initialElf?.id, initialElf?.name]);
+  }, [initialElf]);
 
   // Memoized available pool for replacing skills to avoid recalculation and UI freezes during typing or small changes
   const { isFifthSlot, availablePool } = useMemo(() => {
@@ -1249,7 +1255,7 @@ export default function ElfEditor({ initialElf, onSaveElf, onBack, initialTab }:
   }, [replacingSkillIdx, skills, skillPool, elfName, gen2TraitName]);
 
   // AI Generated Elf Cache (before saving)
-  const [rightColumnTab, setRightColumnTab] = useState<"analysis" | "preview">("analysis");
+  const [rightColumnTab, setRightColumnTab] = useState<"input" | "analysis" | "preview">("input");
   const [previewElf, setPreviewElf] = useState<Elf | null>(null);
   const [isEffectModalOpen, setIsEffectModalOpen] = useState<boolean>(false);
   const [decompositionReport, setDecompositionReport] = useState<DecompositionReport | undefined>(initialElf?.decompositionReport);
@@ -1337,6 +1343,7 @@ export default function ElfEditor({ initialElf, onSaveElf, onBack, initialTab }:
       setGen2TraitDesc(finalElf.alienTraits?.gen2Trait?.description || "");
       setExTraitName(finalElf.alienTraits?.exclusiveTrait?.name || "");
       setExTraitDesc(finalElf.alienTraits?.exclusiveTrait?.description || "");
+      setExclusiveTraits(finalElf.alienTraits?.exclusiveTraits || []);
       setAlienTraitName(finalElf.alienTraits?.alienTrait?.name || "");
       setGeneralTraitName(finalElf.alienTraits?.generalTrait?.name || "");
       const genEqSkills = (finalElf.skills || []).slice(0, 5);
@@ -1452,10 +1459,10 @@ export default function ElfEditor({ initialElf, onSaveElf, onBack, initialTab }:
         customCode: soulMarkCustomCode,
       },
       kit: kit,
-      alienTraits: (!isZhakesi && (gen2TraitName || exTraitName || alienTraitName || generalTraitName || initialElf?.alienTraits?.exclusiveTraits?.length)) ? {
+      alienTraits: (!isZhakesi && (gen2TraitName || exTraitName || alienTraitName || generalTraitName || exclusiveTraits.length)) ? {
         gen2Trait: gen2TraitName ? { name: gen2TraitName, description: gen2TraitDesc } : undefined,
         exclusiveTrait: exTraitName ? { name: exTraitName, description: exTraitDesc } : undefined,
-        exclusiveTraits: initialElf?.alienTraits?.exclusiveTraits,
+        exclusiveTraits: exclusiveTraits.length ? exclusiveTraits : undefined,
         alienTrait: alienTraitName ? { name: alienTraitName, description: ALIEN_TRAITS[alienTraitName]?.description || "" } : undefined,
         generalTrait: generalTraitName ? { name: generalTraitName, description: GENERAL_TRAITS[generalTraitName]?.description || "" } : undefined,
       } : undefined,
@@ -2285,7 +2292,7 @@ export default function ElfEditor({ initialElf, onSaveElf, onBack, initialTab }:
   } as Elf;
 
   return (
-    <div className="elf-editor-page w-full max-w-6xl mx-auto px-4 sm:px-6 pt-20 pb-8" id="elf-editor-container">
+    <div className="elf-editor-page w-full max-w-6xl mx-auto px-4 sm:px-6 pt-16 sm:pt-20 pb-8" id="elf-editor-container">
       {/* Back Header */}
       <div className="ios-panel p-5 flex flex-wrap items-center justify-between gap-4 mb-6">
         <div className="flex items-center gap-4">
@@ -2304,7 +2311,12 @@ export default function ElfEditor({ initialElf, onSaveElf, onBack, initialTab }:
             <p className="text-xs text-slate-500 mt-0.5">AI 解析／手動表單／積木 三種方式編輯同一隻精靈</p>
           </div>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 flex-wrap">
+          <BlueprintImportButton onImport={elf => {
+            setInitialElf({ ...elf, id: suppliedElf?.id || manualDraftId });
+            setPreviewElf(null); setError(null); setActiveTab('manual'); setManualSection('basic');
+            setReplacingSkillIdx(null); setZoomedSkillModal(null); setZoomedTraitModal(null);
+          }} />
           <button
             type="button"
             onClick={() => {
@@ -2334,7 +2346,7 @@ export default function ElfEditor({ initialElf, onSaveElf, onBack, initialTab }:
               a.download = `seer_elf_blueprint_${Date.now()}.json`;
               a.click();
               URL.revokeObjectURL(url);
-              alert("已匯出完整精靈草稿 (JSON)。匯出不代表效果已實裝或通過驗證；目前尚未提供圖紙匯入功能。");
+              alert("已匯出完整精靈草稿 (JSON)。可用匯入圖紙還原；匯出不代表效果已實裝或通過驗證。");
             }}
             className="flex items-center gap-2 px-4 py-2 bg-[#0F1117] hover:bg-slate-800 text-slate-300 border border-slate-800 rounded-xl text-xs font-bold transition-all"
             title="匯出精靈圖紙設定檔 (JSON)"
@@ -2394,6 +2406,7 @@ export default function ElfEditor({ initialElf, onSaveElf, onBack, initialTab }:
           <motion.div key="blockly-panel" initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -15 }} transition={{ duration: 0.2 }} className="space-y-4">
             <ElfBlocklyPanel
               elfName={elfName}
+              elf={buildManualElf()}
               soulKit={kit}
               onSoulKitChange={setKit}
               skills={skills}
@@ -2415,12 +2428,13 @@ export default function ElfEditor({ initialElf, onSaveElf, onBack, initialTab }:
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -15 }}
             transition={{ duration: 0.3 }}
-            className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start"
+            className="space-y-4"
             id="ai-panel-grid"
           >
+            <nav className="ios-segment w-full" aria-label="AI 編輯分類">{([['input', '輸入'], ['analysis', '解析'], ['preview', '預覽']] as const).map(([key, label]) => <button key={key} type="button" className="flex-1" data-active={rightColumnTab === key} disabled={key === 'preview' && !previewElf} onClick={() => setRightColumnTab(key)}>{label}</button>)}</nav>
             {/* Input Box Column */}
-            <div className="lg:col-span-6 space-y-6">
-              <div className="bg-[#0F1117] border border-slate-800 rounded-2xl p-6 shadow-xl">
+            {rightColumnTab === 'input' && <div className="space-y-4">
+              <div className="bg-[#0F1117] border border-slate-800 rounded-2xl p-3 sm:p-6 shadow-xl">
                 <div className="flex items-center justify-between mb-2">
                   <h2 className="text-sm font-bold text-slate-200 flex items-center gap-2">
                     <Sparkles className="w-4 h-4 text-blue-400" />
@@ -2498,31 +2512,11 @@ export default function ElfEditor({ initialElf, onSaveElf, onBack, initialTab }:
                   onChange={(e) => setPrompt(e.target.value)}
                 />
 
-                {/* Real-time Highlighter Deconstruction View */}
-                <div className="mt-4 space-y-2">
-                  <div className="flex items-center justify-between">
-                    <span className="text-[11px] font-bold text-slate-400 flex items-center gap-1">
-                      <span className="w-1.5 h-1.5 bg-amber-400 rounded-full animate-pulse"></span>
-                      💡 螢光筆關鍵字即時重點標示 (點擊可查看可能套用的模組/代碼/印記)
-                    </span>
-                  </div>
-                  <div className="w-full bg-[#050608] border border-slate-800/80 rounded-xl p-4 min-h-[100px] max-h-[180px] overflow-y-auto custom-scrollbar leading-relaxed">
-                    {renderHighlightedText(prompt, analyzedKeywords)}
-                  </div>
-                </div>
-
-                {/* Interactive Grammar Legend & Core Rules */}
-                <div className="mt-4">
-                  <GrammarLegend currentText={prompt} />
-                </div>
-
                 {/* Preloader section */}
-                <div className="mt-4 border-t border-slate-800/60 pt-4 space-y-2">
-                  <div className="flex justify-between items-center">
-                    <span className="text-[11px] font-bold text-slate-400 flex items-center gap-1">
+                <details className="mt-3 border-t border-slate-800/60 pt-3 space-y-2">
+                    <summary className="text-xs font-bold text-slate-400 cursor-pointer">
                       📁 載入既有精靈進行字段解構與分析
-                    </span>
-                  </div>
+                    </summary>
                   <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2">
                     {DEFAULT_ELVES.map((elf, index) => (
                       <button
@@ -2540,7 +2534,7 @@ export default function ElfEditor({ initialElf, onSaveElf, onBack, initialTab }:
                       </button>
                     ))}
                   </div>
-                </div>
+                </details>
 
                 {error && (
                   <div className="mt-4 p-3 bg-rose-950/20 border border-rose-900/30 rounded-xl flex items-start gap-2.5">
@@ -2583,43 +2577,22 @@ export default function ElfEditor({ initialElf, onSaveElf, onBack, initialTab }:
               </div>
 
               {/* Tips for prompts */}
-              <div className="bg-[#0F1117]/60 border border-slate-800/80 rounded-xl p-5 space-y-2">
-                <h4 className="text-xs font-bold text-slate-300">💡 範例小說文本技巧：</h4>
+              <details className="bg-[#0F1117]/60 border border-slate-800/80 rounded-xl p-3 space-y-2">
+                <summary className="text-xs font-bold text-slate-300 cursor-pointer">💡 輸入文本技巧</summary>
                 <p className="text-xs text-slate-500 leading-relaxed">
                   在文本中包含「名字是『XXX』」、「『XX』系精靈」、「專屬特性叫作『XXX』其效果為XX」、「主力技能是『XX』擁有威力150，PP 5」等關鍵詞，可使 AI 生成的數值和特殊效果更完美貼近你的預期！
                 </p>
-              </div>
-            </div>
-
+              </details>
+            </div>}
             {/* Right Column: Dynamic View (Analysis or Preview) */}
-            <div className="lg:col-span-6 space-y-4">
-              
-              {/* Tab Navigation for Right Column */}
-              <div className="flex bg-[#050608] p-1 rounded-xl border border-slate-800">
-                <button
-                  type="button"
-                  onClick={() => setRightColumnTab("analysis")}
-                  className={`flex-1 py-2 text-[11px] font-bold rounded-lg transition-all ${
-                    rightColumnTab === "analysis" ? "bg-slate-800/80 text-slate-100 shadow" : "text-slate-500 hover:text-slate-300 hover:bg-slate-800/30"
-                  }`}
-                >
-                  🔍 文本偵測與底層對接分析
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setRightColumnTab("preview")}
-                  disabled={!previewElf}
-                  className={`flex-1 py-2 text-[11px] font-bold rounded-lg transition-all ${
-                    rightColumnTab === "preview" ? "bg-blue-600/20 text-blue-300 border border-blue-500/30 shadow" : "text-slate-500 hover:text-slate-300 hover:bg-slate-800/30"
-                  } disabled:opacity-50 disabled:cursor-not-allowed`}
-                >
-                  🚀 AI 研發預覽結果
-                </button>
-              </div>
-
+            {rightColumnTab !== 'input' && <div className="space-y-4">
               {rightColumnTab === "analysis" ? (
                 // --- Analysis & Pre-Processing View ---
-                <div className="bg-[#0F1117] border border-slate-800 rounded-2xl shadow-xl p-5 min-h-[500px]">
+                <div className="bg-[#0F1117] border border-slate-800 rounded-2xl shadow-xl p-3 sm:p-5">
+                  <details className="ios-card p-3 mb-3"><summary className="text-sm text-amber-200 cursor-pointer">關鍵字標示／語法與模組對照</summary>
+                    <div className="mt-3 max-h-[180px] overflow-y-auto whitespace-pre-wrap text-sm leading-7">{renderHighlightedText(prompt, analyzedKeywords)}</div>
+                    <GrammarLegend currentText={prompt} />
+                  </details>
                   <div className="flex items-center gap-2 mb-5">
                     <button
                       type="button"
@@ -3278,7 +3251,7 @@ export default function ElfEditor({ initialElf, onSaveElf, onBack, initialTab }:
               </AnimatePresence>
             </div>
             )}
-            </div>
+            </div>}
           </motion.div>
         ) : (
           <motion.div
@@ -3854,6 +3827,7 @@ export default function ElfEditor({ initialElf, onSaveElf, onBack, initialTab }:
             </div>
 
             {/* Alien Trait Section (Alien Elves only) */}
+            <ExclusiveTraitsEditor traits={exclusiveTraits} onChange={setExclusiveTraits} />
             {isAlienElf && (
               <div className="border-t border-slate-800 pt-6">
                 <h3 className="text-sm font-bold text-blue-400 flex items-center gap-1.5 mb-4">

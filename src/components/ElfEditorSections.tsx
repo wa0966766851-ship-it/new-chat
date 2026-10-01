@@ -30,7 +30,7 @@ export function ElfEditorDraftSummary({ elf }: { elf: Elf }) {
   }, []);
   return <aside className="editor-draft-summary ios-panel ios-dialog p-4" aria-label="精靈草稿摘要">
     <header className="flex gap-3 items-center">
-      <div className="w-14 h-14 rounded-full overflow-hidden ring-1 ring-white/15 shrink-0">
+      <div className="w-10 h-10 sm:w-14 sm:h-14 rounded-full overflow-hidden ring-1 ring-white/15 shrink-0">
         <ElfAvatar elf={elf} className="w-full h-full object-cover" />
       </div>
       <div className="min-w-0"><p className="text-xs text-slate-400">尚未儲存的草稿</p>

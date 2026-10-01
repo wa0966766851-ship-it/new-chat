@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { BookOpen, Sparkles, Search, Check, Tag, Shield, Zap, Flame, Heart, X, HelpCircle, ArrowRight } from 'lucide-react';
 import { CardTemplateModule as AIEffectModule, REAL_CARD_EFFECT_MODULES as AI_EFFECT_REFERENCE_LIBRARY, searchCardTemplates as searchEffectLibrary, TEMPLATE_GRAMMAR_GUIDELINES } from '../data/cardTemplates';
 import { getTemplateReviewReason, getTemplateTimingLabel } from '../utils/templateReview';
+import { suggestDamageTypes, damageChoiceLabel } from '../effects/damageChoices';
 
 const reviewCount = AI_EFFECT_REFERENCE_LIBRARY.filter(m => getTemplateReviewReason(m.standardSyntax)).length;
 
@@ -226,6 +227,7 @@ export const EffectLibraryModal: React.FC<EffectLibraryModalProps> = ({
                       <p className="text-xs text-slate-300 font-mono leading-relaxed bg-black/40 p-2.5 rounded-xl border border-slate-800/60">
                         {mod.standardSyntax}
                       </p>
+                      {(() => { const hint = suggestDamageTypes(mod.standardSyntax); return hint && <p className="text-xs text-amber-200">傷害：{hint.types.map(damageChoiceLabel).join('／') || '類別待選'}{hint.inferred ? '（建議，未確認）' : '（文本指定）'} · {hint.reason}</p>; })()}
                       <div className="flex flex-wrap gap-1.5 pt-0.5">
                         {mod.tags.map((tag, i) => (
                           <span key={i} className="text-[9px] text-slate-400 bg-slate-900 px-1.5 py-0.5 rounded">

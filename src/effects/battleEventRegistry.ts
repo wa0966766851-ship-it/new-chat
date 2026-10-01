@@ -50,7 +50,7 @@ export function mapTimingToNode(event: EffectTiming): Node | null {
 export type SoulMarkHandler = (context: BattleEventContext, event: EffectTiming, extraData?: any) => any;
 
 
-const SOUL_MARK_MAPPING: Record<string, string> = {
+export const SOUL_MARK_MAPPING: Record<string, string> = {
   "5030": "handleHolyMilesSoulMark",
   "聖靈邁爾斯": "handleHolyMilesSoulMark",
   "300": "handlePuniBaseSoulMark",

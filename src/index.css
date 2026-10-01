@@ -195,6 +195,13 @@ body {
 .elf-editor-page #editor-tabs button[data-active="true"] { background: rgba(99,99,102,.9); color: white; border-color: transparent; }
 .elf-editor-page #ai-panel-grid { gap: 20px; }
 .elf-editor-page #ai-panel-grid > div > div:first-child { border-radius: 22px; border-color: rgba(255,255,255,.1); }
+@media (max-width: 639px) {
+  .elf-editor-page #editor-tabs { margin-bottom: 12px; }
+  .elf-editor-page #editor-tabs button { font-size: 12px; padding: 8px 6px; }
+  .elf-editor-page .editor-draft-summary { padding: 10px 12px; }
+  .elf-editor-page .editor-draft-summary details { margin-top: 8px; }
+  .elf-editor-page #ai-panel-grid > div > div:first-child { padding: 14px; }
+}
 @media (prefers-reduced-motion: reduce) {
   .ios-panel, .ios-card { transition: none; }
 }

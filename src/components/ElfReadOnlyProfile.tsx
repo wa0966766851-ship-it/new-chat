@@ -4,6 +4,7 @@ import { ElfAvatar, TypeIcon } from "./SeerImages";
 import { ElfTraitCards } from "./ElfTraitCards";
 import { InfoHint } from "./InfoHint";
 import { formatEffectText } from "../utils/descFormat";
+import { EffectBlockToggle } from './EffectBlockToggle';
 
 /** 百科與戰鬥共用唯讀介紹；此元件沒有保存、修改精靈或訓練設定的入口。 */
 export const ElfReadOnlyProfile: React.FC<{
@@ -55,7 +56,7 @@ export const ElfReadOnlyProfile: React.FC<{
             <span className="inline-flex items-center gap-2"><TypeIcon type={skill.type} size={18} />{skill.name}{skill.isFifthSkill && <span className="text-xs text-amber-300">第五</span>}</span>
           </summary>
           <p className="mt-3 text-xs text-slate-400 flex flex-wrap gap-3"><span>{skill.category} · {skill.type}</span><span>威力 {skill.power}</span><span>PP {skill.currentPp ?? skill.pp} / {getSkillMaxPp?.(skill, elf) ?? skill.maxPp ?? skill.pp}</span><span>先制 {skill.priority || 0}</span></p>
-          <p className="mt-3 whitespace-pre-wrap text-sm leading-7 text-slate-200">{formatEffectText(skill.description)}</p>
+          <EffectBlockToggle skill={skill}><p className="whitespace-pre-wrap text-sm leading-7 text-slate-200">{formatEffectText(skill.description)}</p></EffectBlockToggle>
         </details>)}</div>}
     </>}
   </div>;

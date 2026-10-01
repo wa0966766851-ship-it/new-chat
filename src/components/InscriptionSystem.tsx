@@ -1,4 +1,5 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
+import { createPortal } from 'react-dom';
 import { Inscription, BaseStats } from "../types";
 import { INSCRIPTION_PRESETS, getDefaultInscriptions } from "../data/inscriptionsCatalog";
 import { Plus, X, Sparkles, Trash2, CheckCircle2, Shield, Zap, Award } from "lucide-react";
@@ -24,7 +25,7 @@ export function InscriptionSlot({ index, inscription, onClick, size = "md" }: In
   }[size];
 
   return (
-    <div
+    <button type="button" aria-label={`編輯第 ${index + 1} 刻印孔`}
       onClick={onClick}
       className={`${sizeClasses} p-[2px] transition-all duration-300 cursor-pointer flex items-center justify-center group relative drop-shadow-lg ${
         hasInsc
@@ -65,7 +66,7 @@ export function InscriptionSlot({ index, inscription, onClick, size = "md" }: In
           </div>
         )}
       </div>
-    </div>
+    </button>
   );
 }
 
@@ -77,6 +78,22 @@ interface InscriptionModalProps {
 }
 
 export function InscriptionModal({ slotIndex, inscription, onSave, onClose }: InscriptionModalProps) {
+  const dialogRef = useRef<HTMLDivElement>(null), closeRef = useRef(onClose);
+  closeRef.current = onClose;
+  useEffect(() => {
+    const previous = document.activeElement as HTMLElement | null;
+    dialogRef.current?.querySelector<HTMLButtonElement>('button')?.focus();
+    const key = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') { event.preventDefault(); event.stopPropagation(); closeRef.current(); return; }
+      if (event.key !== 'Tab') return;
+      const controls = Array.from<HTMLElement>(dialogRef.current?.querySelectorAll<HTMLElement>('button:not(:disabled), input, select, textarea, [tabindex="0"]') || []);
+      const first = controls[0], last = controls[controls.length - 1]; if (!first) return;
+      if (event.shiftKey && (document.activeElement === first || !dialogRef.current?.contains(document.activeElement))) { event.preventDefault(); last.focus(); }
+      else if (!event.shiftKey && (document.activeElement === last || !dialogRef.current?.contains(document.activeElement))) { event.preventDefault(); first.focus(); }
+    };
+    document.addEventListener('keydown', key, true);
+    return () => { document.removeEventListener('keydown', key, true); if (previous?.isConnected) previous.focus(); };
+  }, []);
   const defaultPreset = getDefaultInscriptions()[slotIndex || 0] || { name: `巔峰·極限全能 ${slotIndex + 1}`, stats: { hp: 150, atk: 75, def: 60, spatk: 75, spdef: 60, speed: 45 } };
   const [name, setName] = useState<string>(inscription?.name || defaultPreset.name);
   const [hp, setHp] = useState<number>(inscription?.stats?.hp ?? defaultPreset.stats.hp);
@@ -122,9 +139,9 @@ export function InscriptionModal({ slotIndex, inscription, onSave, onClose }: In
     onSave(undefined);
   };
 
-  return (
-    <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-200">
-      <div className="bg-[#0D1017] border border-amber-500/30 rounded-2xl max-w-lg w-full overflow-hidden shadow-[0_0_35px_rgba(245,158,11,0.15)] flex flex-col max-h-[90vh]">
+  return createPortal(
+    <div className="fixed inset-0 z-[10030] bg-black/80 backdrop-blur-sm flex items-center justify-center p-3">
+      <div ref={dialogRef} role="dialog" aria-modal="true" aria-label={`第 ${slotIndex + 1} 刻印孔裝備與調校`} className="bg-[#0D1017] border border-amber-500/30 rounded-2xl max-w-lg w-full overflow-hidden shadow-[0_0_35px_rgba(245,158,11,0.15)] flex flex-col max-h-[90dvh]">
         
         {/* Header */}
         <div className="bg-gradient-to-r from-amber-950/40 via-[#131824] to-[#0D1017] px-5 py-4 border-b border-amber-500/20 flex items-center justify-between">
@@ -152,6 +169,7 @@ export function InscriptionModal({ slotIndex, inscription, onSave, onClose }: In
           </div>
           <button
             onClick={onClose}
+            aria-label="關閉刻印調校"
             className="text-slate-400 hover:text-slate-200 p-1 rounded-lg hover:bg-slate-800 transition-colors"
           >
             <X className="w-5 h-5" />
@@ -346,6 +364,6 @@ export function InscriptionModal({ slotIndex, inscription, onSave, onClose }: In
         </div>
 
       </div>
-    </div>
+    </div>, document.body
   );
 }

@@ -1,14 +1,17 @@
 // 精靈自定 → 「積木」模式：大畫布積木編輯，直接綁定目前編輯中的精靈（魂印或技能）
 import React, { useMemo, useRef, useState } from "react";
 import type { KitEntry } from "../effects/effectSystem.schema";
-import type { Skill } from "../types";
+import type { Elf, Skill } from "../types";
 import { BlocklyBuilder } from "./BlocklyBuilder";
 import { isBlocklyEntry } from "../blocks/kitEntries";
 import { getSoulMarkRegistry } from "../effects/battleEventRegistry";
 import { AlertTriangle } from "lucide-react";
+import { isSoulBlocksOnly } from '../blocks/registry';
+import { EffectBlockToggle } from './EffectBlockToggle';
 
 interface Props {
   elfName: string;
+  elf: Elf;
   soulKit: KitEntry[];
   onSoulKitChange: (kit: KitEntry[]) => void;
   skills: Skill[];
@@ -17,13 +20,14 @@ interface Props {
   onInsertSkillDesc: (idx: number, text: string) => void;
 }
 
-export function ElfBlocklyPanel({ elfName, soulKit, onSoulKitChange, skills, onSkillKitChange, onInsertSoulDesc, onInsertSkillDesc }: Props) {
+export function ElfBlocklyPanel({ elfName, elf, soulKit, onSoulKitChange, skills, onSkillKitChange, onInsertSoulDesc, onInsertSkillDesc }: Props) {
   const [target, setTarget] = useState<string>("soul"); // "soul" | 技能索引
-  const idx = target === "soul" ? -1 : Number(target);
+  // 匯入／刪除技能後舊索引可能越界；不可把後續畫布寫回不存在的技能。
+  const idx = target === "soul" || !skills[Number(target)] ? -1 : Number(target);
   const kit = (idx < 0 ? soulKit : skills[idx]?.kit) || [];
   const blocklyPart = useMemo(() => kit.filter(isBlocklyEntry), [kit]);
   const otherPart = useMemo(() => kit.filter(e => !isBlocklyEntry(e)), [kit]);
-  const hasHandler = !!elfName && !!getSoulMarkRegistry()[elfName];
+  const hasHandler = !isSoulBlocksOnly(elf) && !!elfName && !!getSoulMarkRegistry()[elfName];
 
   // 外部改動（切換目標、其他模式修改）時重建畫布
   const lastEmitted = useRef<string>("");
@@ -59,6 +63,9 @@ export function ElfBlocklyPanel({ elfName, soulKit, onSoulKitChange, skills, onS
           「{elfName}」的魂印由專屬程式執行，這裡的積木魂印不會在戰鬥中生效。
         </div>
       )}
+      <details className="ios-card p-3"><summary className="cursor-pointer text-sm text-blue-200">原描述煉成／實裝核對（不覆寫編輯畫布）</summary>
+        <EffectBlockToggle {...(idx < 0 ? { elf } : { skill: skills[idx] })}><p className="whitespace-pre-wrap text-sm leading-7">{idx < 0 ? elf.soulMark?.description : skills[idx]?.description}</p></EffectBlockToggle>
+      </details>
       <div className="h-[72vh] rounded-2xl overflow-hidden border border-white/10">
         <BlocklyBuilder
           key={`${target}-${ver.current}`}

@@ -13,6 +13,9 @@ export default defineConfig(() => {
     },
     build: {
       manifest: true,
+      // 不使用 unsafe/property mangling：Blockly 公開 API 與工作區存檔格式需保持相容。
+      minify: 'terser',
+      terserOptions: { maxWorkers: 2, compress: { passes: 2 }, mangle: true, format: { comments: 'some' } },
       rollupOptions: {
         output: {
           manualChunks(id) {
