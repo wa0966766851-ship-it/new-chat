@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import type { KitEntry, Node } from '../effects/effectSystem.schema';
 import { validateAtomParams, DAMAGE_FILTER_TYPES } from '../effects/kitValidation';
-import { DAMAGE_CHOICES, damageChoiceLabel } from '../effects/damageChoices';
+import { DAMAGE_CHOICES, damageChoiceLabel, damageScopeLabel } from '../effects/damageChoices';
 import { SEER_TYPES } from '../utils/statCalculator';
 
 export function DamageModifierComposer({ source, onAdd }: { source: KitEntry['source']; onAdd: (e: KitEntry) => void }) {
@@ -19,12 +19,12 @@ export function DamageModifierComposer({ source, onAdd }: { source: KitEntry['so
       {atom === 'drain_hp' && <label>取值<select aria-label="吸取取值" className={field} value={unit} onChange={e => { setUnit(e.target.value); if (damageType === 'percent' && e.target.value === 'flat') setDamageType('fixed'); }}><option value="flat">點數</option><option value="max_hp_percent">對手最大體力 %</option></select></label>}
       {!modifier && damageType === 'skill' && <label>屬性<select aria-label="修正傷害屬性" className={field} value={elem} onChange={e => setElem(e.target.value)}>{SEER_TYPES.map(t => <option key={t}>{t}</option>)}</select></label>}
     </div>
-    {modifier && <fieldset className="flex flex-wrap gap-3 text-xs mt-3"><legend>作用傷害類別（可複選）</legend>{DAMAGE_FILTER_TYPES.map(type => <label key={type}><input type="checkbox" checked={types.includes(type)} onChange={e => setTypes(e.target.checked ? [...types, type] : types.filter(t => t !== type))} /> {damageChoiceLabel(type)}</label>)}</fieldset>}
+    {modifier && <fieldset className="flex flex-wrap gap-3 text-xs mt-3"><legend>作用傷害類別（可複選）</legend>{DAMAGE_FILTER_TYPES.map(type => <label key={type}><input type="checkbox" checked={types.includes(type)} onChange={e => setTypes(e.target.checked ? [...types, type] : types.filter(t => t !== type))} /> {damageScopeLabel(type)}</label>)}</fieldset>}
     <p className="text-xs text-slate-400 mt-2">時點：{node}。真實傷害不接受一般減傷；舊效果不指定範圍時保留原規則。吸取量與恢復量須另核對護盾、護罩及體力上下限情境。</p>
     {error && <p role="alert" className="text-rose-300">{error}</p>}
     <button type="button" className="ios-button mt-2" onClick={() => {
       const params = atom === 'damage_multiplier' ? { multiplier: value, damageTypes: types } : atom === 'damage_reduce' ? { percent: value, damageTypes: types } : atom === 'damage_reflect' ? { percent: value, damageType, elem, target: 'opponent' } : { amount: value, amountMode: unit, damageType, elem, target: 'opponent' };
-      try { validateAtomParams(atom, params); onAdd({ codeId: atom, params, node, source, order: 0, customText: `${atom}：${value}；${modifier ? types.map(damageChoiceLabel).join('／') : damageChoiceLabel(damageType)}` }); setError(''); }
+      try { validateAtomParams(atom, params); onAdd({ codeId: atom, params, node, source, order: 0, customText: `${atom}：${value}；${modifier ? types.map(damageScopeLabel).join('／') : damageChoiceLabel(damageType)}` }); setError(''); }
       catch (e) { setError((e as Error).message); }
     }}>加入傷害修正積木</button>
   </details>;

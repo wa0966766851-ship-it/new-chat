@@ -1,3 +1,4 @@
+import { isNonTrueDamageType } from './damageSemantics';
 import React, { MutableRefObject, Dispatch } from "react";
 import { Elf, Skill } from "../types";
 import { Mark, bindMarkToElf, markAppliesToElf } from "./marks";
@@ -102,14 +103,14 @@ export function buildDamageAPIs(shared: SharedContextDeps): DamageAPIs {
       // Scan actor's marks for nonTrueDamageDealtMultiplier
       const actorSide = side;
       const actorMarks = syncStateRef.current[`${actorSide}Marks` as "p1Marks" | "p2Marks"] || [];
-      if (!damageComp.pure) for (const mark of actorMarks.filter(mark => markAppliesToElf(mark, syncStateRef.current[actorSide]))) {
+      if (!damageComp.pure && isNonTrueDamageType(damageComp.damageCategory)) for (const mark of actorMarks.filter(mark => markAppliesToElf(mark, syncStateRef.current[actorSide]))) {
         if (mark.effects?.nonTrueDamageDealtMultiplier !== undefined && mark.count > 0) {
           damageComp.multiplier = (damageComp.multiplier || 1.0) * mark.effects.nonTrueDamageDealtMultiplier;
           pushEffect({
             type: 'log',
             side: actorSide,
             data: {
-              text: `🌀 【${mark.name}】：使造成的固定/百分比/真實傷害調整為 ${Math.round(mark.effects.nonTrueDamageDealtMultiplier * 100)}%！`,
+              text: `🌀 【${mark.name}】：使造成的非真實傷害調整為 ${Math.round(mark.effects.nonTrueDamageDealtMultiplier * 100)}%！`,
               type: "effect"
             }
           });
@@ -118,23 +119,23 @@ export function buildDamageAPIs(shared: SharedContextDeps): DamageAPIs {
 
       // Scan target's marks for nonTrueDamageTakenMultiplier
       const oppMarksAll = tSide === "p1" ? syncStateRef.current.p1Marks : syncStateRef.current.p2Marks;
-      if (!damageComp.pure) for (const mark of (oppMarksAll || []).filter(mark => markAppliesToElf(mark, syncStateRef.current[tSide]))) {
+      if (!damageComp.pure && isNonTrueDamageType(damageComp.damageCategory)) for (const mark of (oppMarksAll || []).filter(mark => markAppliesToElf(mark, syncStateRef.current[tSide]))) {
         if (mark.effects?.nonTrueDamageTakenMultiplier !== undefined && mark.count > 0) {
           damageComp.multiplier = (damageComp.multiplier || 1.0) * mark.effects.nonTrueDamageTakenMultiplier;
           pushEffect({
             type: 'log',
             side: tSide,
             data: {
-              text: `🌀 【${mark.name}】：使受到的固定/百分比/真實傷害調整為 ${Math.round(mark.effects.nonTrueDamageTakenMultiplier * 100)}%！`,
+              text: `🌀 【${mark.name}】：使受到的非真實傷害調整為 ${Math.round(mark.effects.nonTrueDamageTakenMultiplier * 100)}%！`,
               type: "effect"
             }
           });
         }
       }
 
-      if (!damageComp.pure) for (const mark of (oppMarksAll || []).filter(mark => markAppliesToElf(mark, syncStateRef.current[tSide]))) {
+      if (!damageComp.pure && isNonTrueDamageType(damageComp.damageCategory)) for (const mark of (oppMarksAll || []).filter(mark => markAppliesToElf(mark, syncStateRef.current[tSide]))) {
         const perStack = mark.effects?.damageTakenIncreasePercentPerStack;
-        if (perStack && mark.count > 0) {
+        if (damageComp.damageCategory === "skill_attack" && perStack && mark.count > 0) {
           damageComp.increasePercent = (damageComp.increasePercent || 0) + mark.count * perStack;
           pushEffect({ type: 'log', side: tSide, data: { text: `⛓️ 【${mark.name}】：持有 ${mark.count} 道，使受到攻擊傷害提升 ${Math.round(mark.count * perStack * 100)}%！`, type: "effect" } });
         }
@@ -199,14 +200,14 @@ export function buildDamageAPIs(shared: SharedContextDeps): DamageAPIs {
       // Scan actor's marks for nonTrueDamageDealtMultiplier
       const actorSide = side;
       const actorMarks = syncStateRef.current[`${actorSide}Marks` as "p1Marks" | "p2Marks"] || [];
-      if (!damageComp.pure) for (const mark of actorMarks.filter(mark => markAppliesToElf(mark, syncStateRef.current[actorSide]))) {
+      if (!damageComp.pure && isNonTrueDamageType(damageComp.damageCategory)) for (const mark of actorMarks.filter(mark => markAppliesToElf(mark, syncStateRef.current[actorSide]))) {
         if (mark.effects?.nonTrueDamageDealtMultiplier !== undefined && mark.count > 0) {
           damageComp.multiplier = (damageComp.multiplier || 1.0) * mark.effects.nonTrueDamageDealtMultiplier;
           pushEffect({
             type: 'log',
             side: actorSide,
             data: {
-              text: `🌀 【${mark.name}】：使造成的固定/百分比/真實傷害調整為 ${Math.round(mark.effects.nonTrueDamageDealtMultiplier * 100)}%！`,
+              text: `🌀 【${mark.name}】：使造成的非真實傷害調整為 ${Math.round(mark.effects.nonTrueDamageDealtMultiplier * 100)}%！`,
               type: "effect"
             }
           });
@@ -215,23 +216,23 @@ export function buildDamageAPIs(shared: SharedContextDeps): DamageAPIs {
 
       // Scan target's marks for nonTrueDamageTakenMultiplier
       const oppMarksAll = tSide === "p1" ? syncStateRef.current.p1Marks : syncStateRef.current.p2Marks;
-      if (!damageComp.pure) for (const mark of (oppMarksAll || []).filter(mark => markAppliesToElf(mark, syncStateRef.current[tSide]))) {
+      if (!damageComp.pure && isNonTrueDamageType(damageComp.damageCategory)) for (const mark of (oppMarksAll || []).filter(mark => markAppliesToElf(mark, syncStateRef.current[tSide]))) {
         if (mark.effects?.nonTrueDamageTakenMultiplier !== undefined && mark.count > 0) {
           damageComp.multiplier = (damageComp.multiplier || 1.0) * mark.effects.nonTrueDamageTakenMultiplier;
           pushEffect({
             type: 'log',
             side: tSide,
             data: {
-              text: `🌀 【${mark.name}】：使受到的固定/百分比/真實傷害調整為 ${Math.round(mark.effects.nonTrueDamageTakenMultiplier * 100)}%！`,
+              text: `🌀 【${mark.name}】：使受到的非真實傷害調整為 ${Math.round(mark.effects.nonTrueDamageTakenMultiplier * 100)}%！`,
               type: "effect"
             }
           });
         }
       }
 
-      if (!damageComp.pure) for (const mark of (oppMarksAll || []).filter(mark => markAppliesToElf(mark, syncStateRef.current[tSide]))) {
+      if (!damageComp.pure && isNonTrueDamageType(damageComp.damageCategory)) for (const mark of (oppMarksAll || []).filter(mark => markAppliesToElf(mark, syncStateRef.current[tSide]))) {
         const perStack = mark.effects?.damageTakenIncreasePercentPerStack;
-        if (perStack && mark.count > 0) {
+        if (damageComp.damageCategory === "skill_attack" && perStack && mark.count > 0) {
           damageComp.increasePercent = (damageComp.increasePercent || 0) + mark.count * perStack;
           pushEffect({ type: 'log', side: tSide, data: { text: `⛓️ 【${mark.name}】：持有 ${mark.count} 道，使受到攻擊傷害提升 ${Math.round(mark.count * perStack * 100)}%！`, type: "effect" } });
         }
@@ -271,66 +272,12 @@ export function buildDamageAPIs(shared: SharedContextDeps): DamageAPIs {
          SoulMarkRegistry[tOpp.name](oppCtx, EffectTiming.BEFORE_DAMAGE, withSelfRef(damageComp));
       }
 
-      // Scan actor's marks for nonTrueDamageDealtMultiplier
       const actorSide = side;
-      const actorMarks = syncStateRef.current[`${actorSide}Marks` as "p1Marks" | "p2Marks"] || [];
-      for (const mark of actorMarks.filter(mark => markAppliesToElf(mark, syncStateRef.current[actorSide]))) {
-        if (mark.effects?.nonTrueDamageDealtMultiplier !== undefined && mark.count > 0) {
-          pushEffect({
-            type: 'log',
-            side: actorSide,
-            data: {
-              text: `🌀 【${mark.name}】：使造成的固定/百分比/真實傷害調整為 ${Math.round(mark.effects.nonTrueDamageDealtMultiplier * 100)}%！`,
-              type: "effect"
-            }
-          });
-        }
-      }
-
-      // Scan target's marks for nonTrueDamageTakenMultiplier
-      const oppMarksAll = tSide === "p1" ? syncStateRef.current.p1Marks : syncStateRef.current.p2Marks;
-      for (const mark of (oppMarksAll || []).filter(mark => markAppliesToElf(mark, syncStateRef.current[tSide]))) {
-        if (mark.effects?.nonTrueDamageTakenMultiplier !== undefined && mark.count > 0) {
-          pushEffect({
-            type: 'log',
-            side: tSide,
-            data: {
-              text: `🌀 【${mark.name}】：使受到的固定/百分比/真實傷害調整為 ${Math.round(mark.effects.nonTrueDamageTakenMultiplier * 100)}%！`,
-              type: "effect"
-            }
-          });
-        }
-      }
-
-      for (const mark of (oppMarksAll || []).filter(mark => markAppliesToElf(mark, syncStateRef.current[tSide]))) {
-        const perStack = mark.effects?.damageTakenIncreasePercentPerStack;
-        if (perStack && mark.count > 0) {
-          damageComp.increasePercent = (damageComp.increasePercent || 0) + mark.count * perStack;
-          pushEffect({ type: 'log', side: tSide, data: { text: `⛓️ 【${mark.name}】：持有 ${mark.count} 道，使受到攻擊傷害提升 ${Math.round(mark.count * perStack * 100)}%！`, type: "effect" } });
-        }
-      }
-
       applyActiveGateTimersToDamage(actorSide, tSide, damageComp, pushEffect, syncStateRef, { side, moveIndex });
 
       // 真實傷害不受減傷與減縮影響，僅接受增傷
       const safeDecreasePercent = 0;
       let safeMultiplier = Math.max(1.0, damageComp.multiplier || 1.0);
-
-      // If there's a custom non-true damage multiplier active, apply it even to true damage!
-      let markMult = 1.0;
-      for (const mark of actorMarks.filter(mark => markAppliesToElf(mark, syncStateRef.current[actorSide]))) {
-        if (mark.effects?.nonTrueDamageDealtMultiplier !== undefined && mark.count > 0) {
-          markMult *= mark.effects.nonTrueDamageDealtMultiplier;
-        }
-      }
-      for (const mark of (oppMarksAll || []).filter(mark => markAppliesToElf(mark, syncStateRef.current[tSide]))) {
-        if (mark.effects?.nonTrueDamageTakenMultiplier !== undefined && mark.count > 0) {
-          markMult *= mark.effects.nonTrueDamageTakenMultiplier;
-        }
-      }
-      if (markMult !== 1.0) {
-        safeMultiplier = safeMultiplier * markMult;
-      }
 
       const stage1 = damageComp.base * (1 + (damageComp.increasePercent || 0)) * (1 - safeDecreasePercent);
       const stage2 = stage1 * safeMultiplier;
@@ -390,7 +337,7 @@ export function buildDamageAPIs(shared: SharedContextDeps): DamageAPIs {
             type: 'log',
             side: actorSide,
             data: {
-              text: `🌀 【${mark.name}】：使造成的固定/百分比/真實傷害調整為 ${Math.round(mark.effects.nonTrueDamageDealtMultiplier * 100)}%！`,
+              text: `🌀 【${mark.name}】：使造成的非真實傷害調整為 ${Math.round(mark.effects.nonTrueDamageDealtMultiplier * 100)}%！`,
               type: "effect"
             }
           });
@@ -420,7 +367,7 @@ export function buildDamageAPIs(shared: SharedContextDeps): DamageAPIs {
             type: 'log',
             side: tSide,
             data: {
-              text: `🌀 【${mark.name}】：使受到的固定/百分比/真實傷害調整為 ${Math.round(mark.effects.nonTrueDamageTakenMultiplier * 100)}%！`,
+              text: `🌀 【${mark.name}】：使受到的非真實傷害調整為 ${Math.round(mark.effects.nonTrueDamageTakenMultiplier * 100)}%！`,
               type: "effect"
             }
           });
@@ -429,7 +376,7 @@ export function buildDamageAPIs(shared: SharedContextDeps): DamageAPIs {
 
       for (const mark of (oppMarksAll || []).filter(mark => markAppliesToElf(mark, syncStateRef.current[tSide]))) {
         const perStack = mark.effects?.damageTakenIncreasePercentPerStack;
-        if (perStack && mark.count > 0) {
+        if (damageComp.damageCategory === "skill_attack" && perStack && mark.count > 0) {
           damageComp.increasePercent = (damageComp.increasePercent || 0) + mark.count * perStack;
           pushEffect({ type: 'log', side: tSide, data: { text: `⛓️ 【${mark.name}】：持有 ${mark.count} 道，使受到攻擊傷害提升 ${Math.round(mark.count * perStack * 100)}%！`, type: "effect" } });
         }
@@ -487,7 +434,7 @@ export function buildDamageAPIs(shared: SharedContextDeps): DamageAPIs {
             type: 'log',
             side: actorSide,
             data: {
-              text: `🌀 【${mark.name}】：使造成的固定/百分比/真實傷害調整為 ${Math.round(mark.effects.nonTrueDamageDealtMultiplier * 100)}%！`,
+              text: `🌀 【${mark.name}】：使造成的非真實傷害調整為 ${Math.round(mark.effects.nonTrueDamageDealtMultiplier * 100)}%！`,
               type: "effect"
             }
           });
@@ -517,7 +464,7 @@ export function buildDamageAPIs(shared: SharedContextDeps): DamageAPIs {
             type: 'log',
             side: tSide,
             data: {
-              text: `🌀 【${mark.name}】：使受到的固定/百分比/真實傷害調整為 ${Math.round(mark.effects.nonTrueDamageTakenMultiplier * 100)}%！`,
+              text: `🌀 【${mark.name}】：使受到的非真實傷害調整為 ${Math.round(mark.effects.nonTrueDamageTakenMultiplier * 100)}%！`,
               type: "effect"
             }
           });
@@ -526,7 +473,7 @@ export function buildDamageAPIs(shared: SharedContextDeps): DamageAPIs {
 
       for (const mark of (oppMarksAll || []).filter(mark => markAppliesToElf(mark, syncStateRef.current[tSide]))) {
         const perStack = mark.effects?.damageTakenIncreasePercentPerStack;
-        if (perStack && mark.count > 0) {
+        if (damageComp.damageCategory === "skill_attack" && perStack && mark.count > 0) {
           damageComp.increasePercent = (damageComp.increasePercent || 0) + mark.count * perStack;
           pushEffect({ type: 'log', side: tSide, data: { text: `⛓️ 【${mark.name}】：持有 ${mark.count} 道，使受到攻擊傷害提升 ${Math.round(mark.count * perStack * 100)}%！`, type: "effect" } });
         }

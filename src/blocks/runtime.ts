@@ -1,3 +1,4 @@
+import { matchesDamageTypes } from '../effects/damageChoices';
 // 積木執行器：把 Program（parse.ts 產生）在戰鬥中執行。
 import type { Act, Clause, Cond, Program, Stmt, Trigger } from "./model";
 import type { BattleEventContext } from "../effects/types";
@@ -101,15 +102,8 @@ export function evalCond(ctx: BattleEventContext, c: Cond, st: RunState): boolea
 // ───────── 傷害分類 ─────────
 /** kind：攻擊＝攻擊技能公式傷害；技能＝技能傷害（攻擊＋X系技能傷害）；非真實；空＝全部 */
 export function compMatchesKind(comp: any, kind?: string): boolean {
-  const attack = comp.damageCategory === "skill_attack" && !comp.isTypedSkill;
-  const skill = attack || comp.damageCategory === "skill_attribute" || comp.damageCategory === "skill_extra_action";
-  if (kind === "攻擊") return attack;
-  if (kind === "技能") return skill;
-  if (kind === "非真實") return comp.damageCategory !== "true";
-  if (kind === "固定") return comp.damageCategory === "fixed";
-  if (kind === "百分比") return comp.damageCategory === "percent";
-  if (kind === "真實") return comp.damageCategory === "true";
-  return true;
+  const scopes: Record<string, string> = { 攻擊: 'attack', 技能: 'skill', 非真實: 'non_true', 固定: 'fixed', 百分比: 'percent', 真實: 'true' };
+  return kind ? !!scopes[kind] && matchesDamageTypes([scopes[kind]], comp.damageCategory) : true;
 }
 
 // ───────── 動作 ─────────
