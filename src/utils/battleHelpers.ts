@@ -283,17 +283,11 @@ export const isControlStatus = (status?: string) => {
 // Multi-status helpers
 export const getStatuses = (elf: any): Record<string, number> => {
   if (!elf) return {};
-  if (!elf.battleStatuses) elf.battleStatuses = {};
-  // If legacy status was explicitly reset to normal or empty, clear all statuses
-  if (!elf.battleStatus || elf.battleStatus === "normal") {
-    elf.battleStatuses = {};
-  } else if (Object.keys(elf.battleStatuses).length === 0) {
-    // Migrate from legacy only if battleStatuses is currently empty
-    elf.battleStatuses[elf.battleStatus] = elf.battleStatusDuration || 1;
+  // 查詢不得修改精靈；明確存在的空 map 代表已清除，不復活舊單狀態欄位。
+  const merged: Record<string, number> = { ...(elf.battleStatuses || {}) };
+  if (elf.battleStatuses === undefined && elf.battleStatus && elf.battleStatus !== 'normal') {
+    merged[elf.battleStatus] = elf.battleStatusDuration ?? 1;
   }
-  
-  // Merge elf.effects array (new model, written by applyStatusWithImmunityCheck)
-  const merged: Record<string, number> = { ...elf.battleStatuses };
   if (Array.isArray(elf.effects)) {
     for (const eff of elf.effects) {
       if (eff && eff.id && typeof eff.duration === "number") {
@@ -301,7 +295,7 @@ export const getStatuses = (elf: any): Record<string, number> => {
       }
     }
   }
-  return merged;
+  return Object.fromEntries(Object.entries(merged).filter(([, duration]) => Number.isFinite(duration) && duration > 0));
 };
 
 export const isAbnormal = (elf: any): boolean => {
@@ -325,21 +319,31 @@ export const syncLegacy = (elf: any) => {
 };
 
 export const addStatusEffect = (elf: any, statusId: string, duration: number) => {
-  if (!statusId || statusId === "normal") return;
+  if (!elf || !statusId || statusId === "normal" || !Number.isFinite(duration) || duration <= 0) return;
   const statuses = getStatuses(elf);
-  // Rule: Take maximum duration
-  statuses[statusId] = Math.max(statuses[statusId] || 0, duration);
+  const name = canonicalStatusName(statusId);
+  for (const key of Object.keys(statuses)) if (sameStatus(key, name)) { duration = Math.max(statuses[key], duration); delete statuses[key]; }
+  statuses[name] = duration;
+  elf.battleStatuses = statuses;
+  elf.effects = (elf.effects || []).filter((e: any) => !sameStatus(e.id, name));
+  elf.effects.push({ id: name, name, duration, stacks: 1 });
   syncLegacy(elf);
 };
 
 export const removeStatusEffect = (elf: any, statusId: string) => {
   const statuses = getStatuses(elf);
-  delete statuses[statusId];
+  for (const key of Object.keys(statuses)) if (sameStatus(key, statusId)) delete statuses[key];
+  elf.battleStatuses = statuses;
+  elf.effects = (elf.effects || []).filter((e: any) => !sameStatus(e.id, statusId));
   syncLegacy(elf);
 };
 
-export const clearAllStatuses = (elf: any) => {
-  elf.battleStatuses = {};
+export const clearAllStatuses = (elf: any, includeBoss = false) => {
+  if (!elf) return;
+  const statuses = getStatuses(elf);
+  const protectedStatus = (id: string) => !includeBoss && StatusRegistry[canonicalStatusName(id)]?.categories.includes('BOSS_ONLY');
+  elf.battleStatuses = Object.fromEntries(Object.entries(statuses).filter(([id]) => protectedStatus(id)));
+  elf.effects = (elf.effects || []).filter((e: any) => protectedStatus(e.id));
   syncLegacy(elf);
 };
 
@@ -363,6 +367,8 @@ export const reduceStatusDuration = (elf: any, reduction: number) => {
       }
     }
   });
+  elf.battleStatuses = statuses;
+  elf.effects = (elf.effects || []).filter((e: any) => statuses[e.id] > 0).map((e: any) => ({ ...e, duration: statuses[e.id] }));
   syncLegacy(elf);
 };
 
@@ -383,7 +389,7 @@ export const isElfActionDisabled = (elf: any, opponent?: any) => {
   if (elf.suppressAbnormalSideEffectsWhenParalyzed && Math.max(statuses["麻痺"] || 0, statuses["麻痹"] || 0, statuses.paralyzed || 0) > 0) return false;
   for (const stId of Object.keys(statuses)) {
     if (statuses[stId] > 0) {
-      const entry = StatusRegistry[stId];
+      const entry = StatusRegistry[canonicalStatusName(stId)];
       for (const m of entry?.mechanics || []) {
         if (m.type !== "CANT_ACT") continue;
         // 狂信：只有對手為信仰對象時無法行動

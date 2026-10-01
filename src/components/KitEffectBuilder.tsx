@@ -8,6 +8,7 @@ function BlocklyBuilder(props: React.ComponentProps<typeof LazyBlocklyBuilder>) 
   return <React.Suspense fallback={<p role="status" className="p-4 text-slate-400">載入積木工作區…</p>}><LazyBlocklyBuilder {...props} /></React.Suspense>;
 }
 import { DamageEffectComposer } from './DamageEffectComposer';
+import { DamageModifierComposer } from './DamageModifierComposer';
 
 /** 積木（Blockly）可編輯的詞條：codeId 為原子名 */
 export { isBlocklyEntry } from "../blocks/kitEntries";
@@ -256,6 +257,7 @@ export const KitEffectBuilder: React.FC<KitEffectBuilderProps> = ({
   return (
     <div id="kit-effect-builder" className="bg-slate-900/90 border border-slate-700/80 rounded-xl p-4 text-slate-200">
       <DamageEffectComposer source={source as KitEntry['source']} onAdd={entry => onChange([...kit, { ...entry, order: kit.length }])} />
+      <DamageModifierComposer source={source as KitEntry['source']} onAdd={entry => onChange([...kit, { ...entry, order: kit.length }])} />
       <div className="flex items-center justify-between mb-3 border-b border-slate-700 pb-2">
         <div className="flex items-center gap-2">
           <Sparkles className="w-5 h-5 text-amber-400" />

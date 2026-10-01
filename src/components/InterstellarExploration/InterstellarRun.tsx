@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { Elf } from "../../types";
+import { matchesElfQuery } from '../../utils/elfSearch';
 import { ElfAvatar, TypeIcon } from "../SeerImages";
 import { TitleDefinition } from "../../data/titles";
 import { SuitDefinition } from "../../data/suitsAndEyewears";
@@ -966,7 +967,7 @@ export default function InterstellarRun({
                         <Search className="w-5 h-5 text-slate-500 absolute left-4 top-1/2 -translate-y-1/2" />
                         <input 
                           type="text" 
-                          placeholder="輸入精靈名稱進行搜尋..." 
+                          placeholder="名稱、ID、屬性（可用空白組合）"
                           value={recruitSearchQuery}
                           onChange={(e) => setRecruitSearchQuery(e.target.value)}
                           className="w-full pl-12 pr-4 py-3 bg-slate-950/60 border border-white/5 rounded-2xl text-sm focus:outline-none focus:border-indigo-500/50 text-slate-200 font-medium"
@@ -994,7 +995,7 @@ export default function InterstellarRun({
                             if (activeVoucherUsed === "A") return grade === "A" || grade === "B" || grade === "C";
                             return true;
                           })
-                          .filter(elf => elf.name.toLowerCase().includes(recruitSearchQuery.toLowerCase()))
+                          .filter(elf => matchesElfQuery(elf, recruitSearchQuery))
                           .map((elf, index) => {
                             const grade = getElfGrade(elf);
                             const cost = getRecruitDiamondCost(elf);

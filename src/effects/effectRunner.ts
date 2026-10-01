@@ -10,6 +10,8 @@ import { mapCodeToAtoms } from "./atomMapper";
 import { blockEntryToAtom } from "./blockParams";
 import { prdPercent } from "../utils/prd";
 import { sameStatus } from './statusIdentity';
+import { matchesDamageTypes } from './damageChoices';
+import { clearAllStatuses } from '../utils/battleHelpers';
 
 // 底層不變式：真實傷害不可被護盾與減傷抵擋 (減傷/護盾原子自動跳過 true 傷害)
 export const isReducible = (dmgType: string) => dmgType !== "true";
@@ -49,8 +51,8 @@ export const ATOMS: AtomTable = {
 
   // 2. 傷害/威力倍率
   damage_multiplier: (p, _target, ctx) => {
-    const mult = p.multiplier || p.value || 1.5;
-    if (ctx.damageComp && !ctx.damageComp.isIncoming) {
+    const mult = p.multiplier ?? p.value ?? 1.5;
+    if (ctx.damageComp && !ctx.damageComp.isIncoming && matchesDamageTypes(p.damageTypes, ctx.damageComp.damageCategory)) {
       ctx.damageComp.multiplier *= mult;
     }
   },
@@ -58,37 +60,39 @@ export const ATOMS: AtomTable = {
   // 3. 減傷/減半 (底層跳過 true)
   damage_reduce: (p, target, ctx) => {
     const side = resolveSide(target, ctx);
-    if (ctx.damageComp && ctx.damageComp.isIncoming !== false && isReducible(ctx.damageComp.damageCategory)) {
-      const reducePercent = p.percent || p.amount || 50;
-      ctx.damageComp.decreasePercent += reducePercent;
+    if (ctx.damageComp && ctx.damageComp.isIncoming !== false && isReducible(ctx.damageComp.damageCategory) && matchesDamageTypes(p.damageTypes, ctx.damageComp.damageCategory)) {
+      const reducePercent = p.percent ?? p.amount ?? 50;
+      ctx.damageComp.decreasePercent += reducePercent / 100;
     }
   },
 
   // 4. 傷害反彈
   damage_reflect: (p, target, ctx) => {
     const side = resolveSide(target, ctx);
-    const ratio = p.ratio || 0.5;
-    const lastDmg = ctx.getPlayerState?.(`${side}_lastDamageTaken`) || 100;
+    const ratio = p.ratio ?? 0.5;
+    const lastDmg = ctx.hpReduced ?? ctx.damageTaken ?? ctx.damage ?? ctx.getPlayerState?.(`${ctx.actor || 'p1'}_lastDamageTaken`) ?? 0;
     const reflectAmt = Math.floor(lastDmg * ratio);
-    ctx.applyTrueDamage(side, reflectAmt, "傷害反彈");
+    const type = p.damageType ?? p.dmgType ?? 'true';
+    const maxHp = (side === 'p1' ? ctx.activeP1 : ctx.activeP2)?.maxHp || 1;
+    ATOMS.extra_damage({ amount: reflectAmt, ratio: reflectAmt / maxHp, dmgType: type, elem: p.elem, label: '傷害反彈' }, target, ctx);
   },
 
   // 5. 恢復體力
   heal: (p, target, ctx) => {
     const side = resolveSide(target, ctx);
-    let amt = p.amount || 0;
+    let amt = p.amount ?? 0;
     if (!amt && p.ratio) {
       const elf = side === "p1" ? ctx.activeP1 : ctx.activeP2;
       amt = Math.floor((elf?.maxHp || 100) * p.ratio);
     }
-    ctx.applyHeal(side, amt || 50);
+    ctx.applyHeal(side, amt);
   },
 
   // 6. 吸取 (對手扣血 + 自身等量回血)
-  drain_hp: (p, _target, ctx) => {
+  drain_hp: (p, target, ctx) => {
     const me = ctx.actor || "p1";
-    const opp = me === "p1" ? "p2" : "p1";
-    let amt = p.amount || 100;
+    const opp = resolveSide(target, ctx);
+    let amt = p.amount ?? 100;
     
     if (p.incremental) {
       const stateKey = p.incremental.stateKey;
@@ -97,8 +101,20 @@ export const ATOMS: AtomTable = {
       amt = Math.min(p.incremental.max, p.incremental.base + (count - 1) * p.incremental.step);
     }
     
-    const dealt = ctx.applyTrueDamage(opp, amt, "吸取體力");
-    ctx.applyHeal(me, dealt || amt);
+    if (p.amountMode === 'max_hp_percent' || p.ratio !== undefined || p.damageType === 'percent') {
+      amt = Math.floor((opp === 'p1' ? ctx.activeP1 : ctx.activeP2)?.maxHp * (p.ratio ?? amt / 100));
+    }
+    const type = p.damageType ?? p.dmgType ?? 'true';
+    // primitive 回報的是排入傷害節點的量；不能把 0 再兜底成原始吸取量。
+    let dealt: number | void;
+    if (type === 'true') dealt = ctx.applyTrueDamage(opp, amt, '吸取體力');
+    else if (type === 'fixed') dealt = ctx.applyFixedDamage(opp, amt, '吸取體力');
+    else if (type === 'percent') dealt = ctx.applyPercentDamage(opp, p.ratio ?? (p.amount ?? 100) / 100);
+    else if (type === 'skill' || type === 'skill_attribute') dealt = ctx.applySkillTypeDamage(opp, amt, '吸取技能傷害', { elem: p.elem, node: ctx.effectNode === 'on_hit' ? 'attack_damage' : 'skill_effect' });
+    else { ctx.addLog?.('吸取傷害類型未確認，未執行。', 'effect'); return; }
+    // 未回報量的第三方 primitive 不推定回血；排隊後實際扣血／護罩仍需結算節點驗證。
+    if (typeof dealt === 'number') ctx.applyHeal(me, Math.max(0, dealt));
+    else ctx.addLog?.('吸取傷害已排入；傷害管線未回報實際量，不推定回血量。', 'effect');
   },
 
   // 7. 消耗自身體力 (代價, 保留至少 1 HP)
@@ -106,7 +122,7 @@ export const ATOMS: AtomTable = {
     const side = resolveSide(target, ctx);
     const elf = side === "p1" ? ctx.activeP1 : ctx.activeP2;
     if (!elf) return;
-    const cost = p.amount || Math.floor(elf.maxHp * (p.ratio || 0.2));
+    const cost = p.amount ?? Math.floor(elf.maxHp * (p.ratio ?? 0.2));
     const newHp = Math.max(1, elf.currentHp - cost);
     ctx.updateElf(side, { currentHp: newHp });
     ctx.addLog(`💔 【體力消耗】：【${elf.name}】消耗了 ${elf.currentHp - newHp} 點體力！`, "effect");
@@ -117,7 +133,7 @@ export const ATOMS: AtomTable = {
     const side = resolveSide(target, ctx);
     const elf = side === "p1" ? ctx.activeP1 : ctx.activeP2;
     if (!elf) return;
-    const delta = p.amount || 100;
+    const delta = p.amount ?? 100;
     const newMax = Math.max(1, elf.maxHp + delta);
     ctx.updateElf(side, { maxHp: newMax, currentHp: Math.min(elf.currentHp, newMax) });
     ctx.addLog(`📈 【體力上限變更】：【${elf.name}】體力上限變更為 ${newMax}！`, "effect");
@@ -127,7 +143,8 @@ export const ATOMS: AtomTable = {
   apply_status: (p, target, ctx) => {
     const side = resolveSide(target, ctx);
     const status = p.status || "麻痺";
-    const duration = p.duration || p.turns || 2;
+    const duration = p.duration ?? p.turns ?? 2;
+    if (duration <= 0) return;
     const chance = Number(p.chance ?? 100);
     if (chance < 100 && !prdPercent(`kit_status_${ctx.actor || "p1"}_${status}`, chance)) return;
     ctx.applyStatusWithImmunityCheck(side, status, duration);
@@ -140,7 +157,10 @@ export const ATOMS: AtomTable = {
     if (!elf) return;
     const currentStatuses = ctx.getStatuses(elf);
     if (Object.keys(currentStatuses).length > 0) {
-      ctx.setPlayerState(`${side}_statuses`, {});
+      const cleared = { ...elf, effects: [...(elf.effects || [])], battleStatuses: { ...(elf.battleStatuses || {}) } };
+      clearAllStatuses(cleared);
+      if (Object.keys(ctx.getStatuses(cleared)).length === Object.keys(currentStatuses).length) return;
+      ctx.updateElf(side, { effects: cleared.effects, battleStatuses: cleared.battleStatuses, battleStatus: cleared.battleStatus, battleStatusDuration: cleared.battleStatusDuration });
       ctx.addLog(`✨ 【異常解除】：【${elf.name}】解除所有異常狀態！`, "effect");
       if (ctx.getPlayerState("DeluStatusEndHeal") || ctx.getPlayerState(`${side}_DeluStatusEndHeal`)) {
         ctx.addLog(`✨ 【劫盡歸塵】：異常狀態結束或解除，恢復全部體力！`, "heal");
@@ -154,14 +174,13 @@ export const ATOMS: AtomTable = {
   stat_change: (p, target, ctx) => {
     const side = resolveSide(target, ctx);
     const changes: Record<string, number> = {};
-    if (p.all) {
-      const val = Number(p.all) || 1;
+    if (p.all !== undefined) {
+      const val = Number(p.all);
       ["atk", "def", "spatk", "spdef", "speed", "accuracy"].forEach(k => { changes[k] = val; });
     } else if (p.stat) {
-      changes[p.stat] = p.value || 1;
+      changes[p.stat] = p.value ?? 1;
     } else {
-      changes.atk = p.atk || 1;
-      changes.def = p.def || 0;
+      for (const key of ['atk','def','spatk','spdef','speed','accuracy']) if (p[key] !== undefined) changes[key] = p[key];
     }
     ctx.applyStatChange(side, changes);
   },
@@ -192,7 +211,7 @@ export const ATOMS: AtomTable = {
   // 13. 護盾/屏障
   shield: (p, target, ctx) => {
     const side = resolveSide(target, ctx);
-    const amt = p.amount || 200;
+    const amt = p.amount ?? 200;
     ctx.applyShield(side, amt);
   },
 
@@ -232,7 +251,7 @@ export const ATOMS: AtomTable = {
 
   // 15. 先制調整
   priority: (p, _target, ctx) => {
-    const bonus = p.bonus || 1;
+    const bonus = p.bonus ?? 1;
     if (ctx.priorityComp) {
       ctx.priorityComp.bonus += bonus;
     } else {
@@ -298,8 +317,8 @@ export const ATOMS: AtomTable = {
   rebirth: (p, target, ctx) => {
     const side = resolveSide(target, ctx);
     ctx.applyDeathImmunity(side, {
-      guardTurns: p.turns || 2,
-      deathImmuneTurns: p.turns || 2,
+      guardTurns: p.turns ?? 2,
+      deathImmuneTurns: p.turns ?? 2,
       fixedPercentCap: p.fixedCap
     });
   },
@@ -341,13 +360,13 @@ export const ATOMS: AtomTable = {
       name: name,
       kind: "turn_effect",
       source: "skill",
-      remaining: p.duration || 1,
+      remaining: p.duration ?? 1,
       tickAt: p.tickAt || "round_end",
       clearable: p.clearable ?? true,
       polarity: p.polarity || "NEGATIVE",
       displayChar: displayChar,
-      payload: { wraps: p.wraps, params: p.wrapParams, applyMode: p.applyMode || "gate", timerName: name, displayChar }
-    }, ctx.goesFirst === false);
+      payload: { wraps: p.wraps, wrapItems: p.wrapItems, params: p.wrapParams, applyMode: p.applyMode || "gate", timerName: name, displayChar, wrapTarget: target }
+    }, ctx.goesFirst === false && (p.applyMode ?? 'gate') === 'gate');
   },
 
   // 26. 消除回合類效果
@@ -426,7 +445,12 @@ export const ATOMS: AtomTable = {
       if (goesSecond !== !!p.is_second) isTrue = false;
     }
 
-    if (isTrue && p.inner) {
+    if (isTrue && Array.isArray(p.innerItems)) {
+      for (const item of p.innerItems) {
+        const normalized = blockEntryToAtom({ codeId: item.atom, params: item.params || {}, node: ctx.effectNode || 'on_hit', source: 'skill', order: 0 }, ATOMS);
+        if (normalized) ATOMS[normalized.atom](normalized.params, normalized.target, ctx);
+      }
+    } else if (isTrue && p.inner) {
       const innerAtom = p.inner;
       const impl = ATOMS[innerAtom];
       if (impl) {
@@ -457,6 +481,21 @@ export function runWrappedAtom(wraps: string | string[], params: any, wrapTarget
       console.error(`[effectRunner] Error running wrapped atom ${wrap}:`, err);
     }
   }
+}
+
+/** 一個容器內每個原子保留自己的參數與目標，不把第二個回血量覆蓋第一個傷害量。 */
+export function runTimerPayload(timer: any, ctx: any, ownerSide: 'p1' | 'p2') {
+  const payload = timer.payload || {};
+  if (payload.applyMode === 'on_expire' && timer.remaining > 1) return;
+  if (!['per_tick','on_expire'].includes(payload.applyMode)) return;
+  if (Array.isArray(payload.wrapItems)) {
+    for (const item of payload.wrapItems) {
+      const atom = blockEntryToAtom({ codeId: item.atom, params: item.params || {}, node: timer.tickAt === 'action_end' ? 'after_action' : 'round_end', source: 'skill', order: 0 }, ATOMS);
+      if (!atom) continue;
+      const subCtx = Object.create(ctx); subCtx.actor = ownerSide; subCtx.effectNode = timer.tickAt === 'action_end' ? 'after_action' : 'round_end';
+      ATOMS[atom.atom](atom.params, atom.target, subCtx);
+    }
+  } else runWrappedAtom(payload.wraps, payload.params, payload.wrapTarget || 'self', ownerSide, ctx);
 }
 
 // ── Target → 引擎 side (p1 / p2) 剖析 ─────────────────────────────────────

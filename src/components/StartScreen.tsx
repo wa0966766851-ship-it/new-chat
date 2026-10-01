@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo, lazy, Suspense } from "react";
+import { matchesElfQuery } from '../utils/elfSearch';
 import { createPortal } from 'react-dom';
 import { Elf, BattleMode, Inscription } from "../types";
 import { SEER_TYPES, calculateElfStats, getDefaultEvs, getAttributeBadgeColor } from "../utils/statCalculator";
@@ -1970,7 +1971,7 @@ export default function StartScreen({
                 <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
                 <input
                   type="text"
-                  placeholder="搜尋精靈名稱..."
+                  placeholder="名稱、ID、屬性（可用空白組合）"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="w-full bg-[#050608] border border-slate-800 focus:border-blue-500/50 rounded-xl pl-8 pr-8 py-1.5 text-xs text-slate-200 placeholder-slate-600 focus:outline-none transition-all shadow-inner"
@@ -2082,17 +2083,7 @@ export default function StartScreen({
         {/* Elf list cards */}
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 max-h-[580px] overflow-y-auto pr-2 custom-scrollbar">
           {allElves
-            .filter(e => {
-              const normalizedSearch = searchQuery.trim().toLowerCase().replace(/[·.]/g, '');
-              const normalizedName = e?.name?.toLowerCase().replace(/[·.]/g, '') || "";
-              if (normalizedSearch && !normalizedName.includes(normalizedSearch)) {
-                return false;
-              }
-              if (selectedTypes.length > 0) {
-                return selectedTypes.every(t => e.type.split("/").includes(t) || e.type.includes(t));
-              }
-              return true;
-            })
+            .filter(e => matchesElfQuery(e, searchQuery, selectedTypes))
             .map((elf, index) => (
             <div
               key={`${elf.id}-${index}`}
@@ -3749,7 +3740,7 @@ export default function StartScreen({
                     <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
                     <input
                       type="text"
-                      placeholder="搜尋精靈名稱..."
+                      placeholder="名稱、ID、屬性（可用空白組合）"
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
                       className="w-full bg-[#050608] border border-slate-800 focus:border-blue-500/50 rounded-xl pl-10 pr-4 py-2.5 text-sm text-slate-200 focus:outline-none transition-all shadow-inner"
@@ -3807,7 +3798,7 @@ export default function StartScreen({
                               : "bg-slate-950 border-slate-800 text-slate-500 hover:text-slate-300"
                           }`}
                         >
-                          {type}
+                          <TypeIcon type={type} size={18} showLabelWhenMissing={false} /> {type}
                         </button>
                       ))}
                     </div>
@@ -3818,11 +3809,7 @@ export default function StartScreen({
               {/* Modal Elf Grid */}
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                 {allElves
-                  .filter(e => {
-                    if (searchQuery.trim() && !e?.name?.toLowerCase().includes(searchQuery.trim().toLowerCase())) return false;
-                    if (selectedTypes.length > 0) return selectedTypes.every(t => e.type.includes(t));
-                    return true;
-                  })
+                  .filter(e => matchesElfQuery(e, searchQuery, selectedTypes))
                   .map((elf, index) => (
                     <button
                       key={`${elf.id}-${index}`}

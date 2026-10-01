@@ -1,4 +1,5 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useMemo } from "react";
+import { CONTROL_SECTIONS, normalizePlaylist, readControlSetting } from '../utils/controlSettings';
 import { 
   Palette, Sun, Moon, Maximize2, Minimize2, LayoutDashboard, Copy, Image as ImageIcon, Check, RotateCcw, 
   Sparkles, Eye, Music, Play, Square, X, ExternalLink, 
@@ -95,9 +96,19 @@ function notifyThemeUpdate() {
   } catch {}
 }
 
-function ScenePreviewMedia({ src, alt, className = "" }: { src: string; alt?: string; className?: string }) {
+function ScenePreviewMedia({ src, alt, className = "", allowPreview = false }: { src: string; alt?: string; className?: string; allowPreview?: boolean }) {
+  const [preview, setPreview] = useState(false);
+  useEffect(() => setPreview(false), [src]);
   if (!src) return null;
   if (src.endsWith(".html")) {
+    // 動態背景只在明確預覽時啟動；不可同時跑數十個隱藏動畫 iframe。
+    if (!preview) {
+      const placeholderClass = `flex items-center justify-center bg-slate-900 text-slate-300 text-xs ${className}`;
+      // 清單縮圖本身在選取按鈕裡，不再巢狀放按鈕；只有獨立大預覽可啟動 iframe。
+      return allowPreview
+        ? <button type="button" aria-label={`預覽 ${alt || '動態背景'}`} onClick={() => setPreview(true)} className={placeholderClass}>動態背景 · 點擊預覽</button>
+        : <span className={placeholderClass}>動態背景</span>;
+    }
     return (
       <iframe
         src={src}
@@ -211,7 +222,7 @@ const RECOMMENDED_BGMS = [
 export default function ControlHub({ currentScene }: { currentScene: string }) {
   const [state, setState] = useState(() => getThemeState());
   const [isOpen, setIsOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState<"visual" | "audio" | "resources" | "battle" | "advanced">("visual");
+  const [activeTab, setActiveTab] = useState<typeof CONTROL_SECTIONS[number]['id']>("visual");
   const [isMaximized, setIsMaximized] = useState(false);
   const [selectedScene, setSelectedScene] = useState<string>("start");
   const sceneResources = useSceneResources();
@@ -236,24 +247,30 @@ export default function ControlHub({ currentScene }: { currentScene: string }) {
     setLocalResources(sceneResources);
   }, [sceneResources]);
   
-  const [p1Panel, setP1Panel] = useState(() => JSON.parse(localStorage.getItem('p1Panel') || JSON.stringify(DEFAULT_P1_LAYOUT)));
-  const [p2Panel, setP2Panel] = useState(() => JSON.parse(localStorage.getItem('p2Panel') || JSON.stringify(DEFAULT_P2_LAYOUT)));
-  const [tacticalPanel, setTacticalPanel] = useState(() => JSON.parse(localStorage.getItem('tacticalPanel') || JSON.stringify(DEFAULT_TACTICAL_LAYOUT)));
+  const validPanel = (value: any): value is typeof DEFAULT_P1_LAYOUT => !!value &&
+    ['x', 'y'].every(key => Number.isFinite(value.pos?.[key])) &&
+    ['width', 'height'].every(key => Number.isFinite(value.size?.[key]) && value.size[key] > 0) &&
+    Number.isFinite(value.scale) && value.scale > 0 && Number.isFinite(value.opacity);
+  const [p1Panel, setP1Panel] = useState(() => readControlSetting('p1Panel', DEFAULT_P1_LAYOUT, validPanel));
+  const [p2Panel, setP2Panel] = useState(() => readControlSetting('p2Panel', DEFAULT_P2_LAYOUT, validPanel));
+  const [tacticalPanel, setTacticalPanel] = useState(() => readControlSetting('tacticalPanel', DEFAULT_TACTICAL_LAYOUT, validPanel));
   const [hudOpacity, setHudOpacity] = useState(() => parseFloat(localStorage.getItem('hudOpacity') || "0.95"));
   const [customLayout, setCustomLayout] = useState(() => { try { return localStorage.getItem('battleCustomLayout') === '1'; } catch { return false; } });
 
   useEffect(() => {
+    try {
     localStorage.setItem('p1Panel', JSON.stringify(p1Panel));
     localStorage.setItem('p2Panel', JSON.stringify(p2Panel));
     localStorage.setItem('tacticalPanel', JSON.stringify(tacticalPanel));
     localStorage.setItem('hudOpacity', hudOpacity.toString());
     window.dispatchEvent(new Event('battle-layout-update'));
+    } catch { /* 儲存不可用時不讓設定面板崩潰。 */ }
   }, [p1Panel, p2Panel, tacticalPanel, hudOpacity]);
 
   useEffect(() => {
     const handleOpenSettings = (e: any) => {
       setIsOpen(true);
-      if (e.detail?.tab) setActiveTab(e.detail.tab);
+      if (CONTROL_SECTIONS.some(section => section.id === e.detail?.tab)) setActiveTab(e.detail.tab);
     };
     window.addEventListener('open-settings', handleOpenSettings as EventListener);
     return () => window.removeEventListener('open-settings', handleOpenSettings as EventListener);
@@ -265,12 +282,9 @@ export default function ControlHub({ currentScene }: { currentScene: string }) {
   const [playlist, setPlaylist] = useState<{ url: string; title: string }[]>(() => {
     try {
       const saved = localStorage.getItem("seer_playlist");
-      const defaultPlaylist = DEFAULT_PLAYLIST.map(url => ({ url, title: "未知標題" }));
-      if (!saved) return defaultPlaylist;
-      const parsed = JSON.parse(saved);
-      return parsed.map((item: any) => typeof item === 'string' ? { url: item, title: "未知標題" } : item);
+      return normalizePlaylist(saved ? JSON.parse(saved) : DEFAULT_PLAYLIST, DEFAULT_PLAYLIST);
     } catch {
-      return DEFAULT_PLAYLIST.map(url => ({ url, title: "未知標題" }));
+      return DEFAULT_PLAYLIST.map(item => ({ ...item }));
     }
   });
 
@@ -278,7 +292,7 @@ export default function ControlHub({ currentScene }: { currentScene: string }) {
     try {
       const saved = localStorage.getItem("seer_backgrounds");
       const loaded = saved ? JSON.parse(saved) : [];
-      const merged = Array.from(new Set([...DEFAULT_BACKGROUNDS, ...loaded]));
+      const merged = Array.from(new Set([...DEFAULT_BACKGROUNDS, ...(Array.isArray(loaded) ? loaded.filter(url => typeof url === 'string') : [])]));
       return merged;
     } catch {
       return DEFAULT_BACKGROUNDS;
@@ -286,28 +300,12 @@ export default function ControlHub({ currentScene }: { currentScene: string }) {
   });
 
   useEffect(() => {
-    localStorage.setItem("seer_playlist", JSON.stringify(playlist));
-    localStorage.setItem("seer_backgrounds", JSON.stringify(backgrounds));
+    try {
+      localStorage.setItem("seer_playlist", JSON.stringify(playlist));
+      localStorage.setItem("seer_backgrounds", JSON.stringify(backgrounds));
+    } catch { setFeedback('儲存空間不可用：這次變更僅保留在畫面，未存入本機。'); }
   }, [playlist, backgrounds]);
 
-  useEffect(() => {
-    // Fetch missing titles
-    playlist.forEach(async (item, i) => {
-      if (item.title === "未知標題") {
-        try {
-          const res = await fetch("/api/get-title", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ url: item.url }),
-          });
-          const data = await res.json();
-          if (data.title) {
-            setPlaylist(prev => prev.map((p, idx) => idx === i ? { ...p, title: data.title } : p));
-          }
-        } catch {}
-      }
-    });
-  }, []);
   const [isPlaying, setIsPlaying] = useState(false);
   const [ytMounted, setYtMounted] = useState(false);
   useEffect(() => { if (isPlaying) setYtMounted(true); }, [isPlaying]);
@@ -341,11 +339,6 @@ export default function ControlHub({ currentScene }: { currentScene: string }) {
   const currentAccent = ACCENT_CONFIGS[state.accent];
 
   // --- Search Logic ---
-  const filteredConfigs = {
-    visual: searchTerm ? "視覺設定" : "",
-    audio: searchTerm ? "音樂設定" : "",
-    advanced: searchTerm ? "進階設定" : ""
-  };
 
   // --- Audio Logic ---
   const getMusicInfo = (url: string | null) => {
@@ -383,7 +376,8 @@ export default function ControlHub({ currentScene }: { currentScene: string }) {
     };
   };
 
-  const musicInfo = getMusicInfo(state.bgmUrl);
+  // 輪替有存檔副作用，只在真正切換場景／音樂時執行，不能每次開設定便換曲。
+  const musicInfo = useMemo(() => getMusicInfo(state.bgmUrl), [state.bgmUrl, currentScene, sceneResources[currentScene]?.bgm]);
 
   const sendYtCommand = (command: string, args: any[] = []) => {
     if (ytIframeRef.current?.contentWindow) {
@@ -496,36 +490,37 @@ export default function ControlHub({ currentScene }: { currentScene: string }) {
       <AnimatePresence>
         {isOpen && (
           <motion.div
-            initial={{ opacity: 0, scale: 0.9, y: -10, filter: "blur(10px)" }}
-            animate={{ opacity: 1, scale: 1, y: 0, filter: "blur(0px)" }}
-            exit={{ opacity: 0, scale: 0.9, y: -10, filter: "blur(10px)" }}
+            role="dialog" aria-label="系統控制中心" data-control-hub
+            initial={{ opacity: 0, y: -8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -8 }}
             className={isMaximized 
         ? "fixed inset-4 sm:inset-12 z-[200] bg-slate-950/95 backdrop-blur-3xl border border-slate-700/80 rounded-3xl shadow-[0_32px_64px_-16px_rgba(0,0,0,0.8)] flex flex-col overflow-hidden" 
-        : "fixed top-20 right-4 z-[200] w-80 sm:w-96 bg-slate-950/90 backdrop-blur-2xl border border-slate-700/50 rounded-3xl shadow-[0_32px_64px_-16px_rgba(0,0,0,0.5)] flex flex-col overflow-hidden max-h-[85vh]"}
+        : "fixed top-20 right-3 z-[200] w-[calc(100vw-1.5rem)] sm:w-[440px] bg-slate-950/95 backdrop-blur-md border border-slate-700/50 rounded-3xl shadow-2xl flex flex-col overflow-hidden max-h-[calc(100dvh-6rem)]"}
           >
             {/* Header Tabs */}
             <div className="flex flex-col p-2 bg-slate-900/50 border-b border-slate-800/50 gap-2">
                 <div className="flex justify-between items-center px-2 pt-1">
-                  <span className="text-xs font-bold text-slate-300">系統控制中心</span>
-                  <button onClick={() => setIsMaximized(!isMaximized)} className="text-slate-400 hover:text-white transition-colors p-1">
+                  <div><h2 className="text-base font-semibold text-slate-100">系統控制中心</h2><p className="text-xs text-slate-400 mt-1">依用途調整；變更會保留在本機</p></div>
+                  <div className="flex gap-1"><button type="button" aria-label={isMaximized ? '縮小控制中心' : '放大控制中心'} onClick={() => setIsMaximized(!isMaximized)} className="text-slate-400 hover:text-white transition-colors p-2">
                     {isMaximized ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
-                  </button>
+                  </button><button type="button" aria-label="關閉控制中心" onClick={() => setIsOpen(false)} className="p-2 text-slate-400 hover:text-white"><X className="w-4 h-4" /></button></div>
                 </div>
-                <input 
+                {activeTab === 'resources' && <input
                   type="text"
-                  placeholder="搜尋設定..."
+                  placeholder="搜尋場景名稱..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   className="bg-slate-950 border border-slate-800 rounded-xl px-4 py-2 text-xs text-white placeholder:text-slate-600 focus:outline-none focus:border-blue-500"
-                />
-                <div className="flex gap-2">
+                />}
+                <div className="grid grid-cols-3 gap-1" aria-label="控制中心分類">
                     <button
                       onClick={() => setActiveTab("visual")}
                       className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-2xl text-xs font-bold transition-all ${
                         activeTab === "visual" ? "bg-blue-600 text-white shadow-lg" : "text-slate-400 hover:text-slate-200"
                       }`}
                     >
-                      <Monitor className="w-4 h-4" /> 視覺
+                      <Monitor className="w-4 h-4" /> 外觀
                     </button>
                     <button
                       onClick={() => setActiveTab("audio")}
@@ -541,7 +536,7 @@ export default function ControlHub({ currentScene }: { currentScene: string }) {
                         activeTab === "battle" ? "bg-blue-600 text-white shadow-lg" : "text-slate-400 hover:text-slate-200"
                       }`}
                     >
-                      <LayoutDashboard className="w-4 h-4" /> 戰鬥
+                      <LayoutDashboard className="w-4 h-4" /> 戰鬥介面
                     </button>
                     <button
                       onClick={() => setActiveTab("resources")}
@@ -549,25 +544,28 @@ export default function ControlHub({ currentScene }: { currentScene: string }) {
                         activeTab === "resources" ? "bg-blue-600 text-white shadow-lg" : "text-slate-400 hover:text-slate-200"
                       }`}
                     >
-                      <Monitor className="w-4 h-4" /> 頁面管理
+                      <Monitor className="w-4 h-4" /> 場景配置
                     </button>
+                    <button onClick={() => setActiveTab('library')} className={`flex items-center justify-center gap-2 py-2.5 rounded-2xl text-xs font-bold ${activeTab === 'library' ? 'bg-blue-600 text-white' : 'text-slate-400 hover:text-slate-200'}`}><ImageIcon className="w-4 h-4" />素材庫</button>
                     <button
                       onClick={() => setActiveTab("advanced")}
                       className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-2xl text-xs font-bold transition-all ${
                         activeTab === "advanced" ? "bg-blue-600 text-white shadow-lg" : "text-slate-400 hover:text-slate-200"
                       }`}
                     >
-                      <Sliders className="w-4 h-4" /> 進階
+                      <Sliders className="w-4 h-4" /> 診斷
                     </button>
                 </div>
             </div>
 
             <div className={`p-5 overflow-y-auto custom-scrollbar ${isMaximized ? "flex-1" : "max-h-[70vh]"}`}>
+              <p className="text-xs text-slate-400 mb-4">{CONTROL_SECTIONS.find(section => section.id === activeTab)?.description}</p>
               {activeTab === "visual" && (
                 <div className="space-y-6">
                   {/* Mode Selector */}
                   <div className="space-y-3">
-                    <label className="text-[10px] uppercase tracking-widest text-slate-500 font-black">環境模式</label>
+                    <label className="text-xs text-slate-400 font-semibold">環境模式</label>
+                    <p className="text-xs text-slate-400">只調整背景遮罩的明暗，不改變主色或戰鬥數值的辨識色。</p>
                     <div className="grid grid-cols-3 gap-2">
                       {[
                         { id: "day", icon: Sun, label: "日間", color: "text-amber-400" },
@@ -576,6 +574,7 @@ export default function ControlHub({ currentScene }: { currentScene: string }) {
                       ].map((item) => (
                         <button
                           key={item.id}
+                          aria-pressed={state.theme === item.id}
                           onClick={() => updateUrlParam({ theme: item.id === "night" ? null : item.id })}
                           className={`flex flex-col items-center gap-2 p-3 rounded-2xl border transition-all ${
                             state.theme === item.id 
@@ -592,11 +591,15 @@ export default function ControlHub({ currentScene }: { currentScene: string }) {
 
                   {/* Accent Colors */}
                   <div className="space-y-3">
-                    <label className="text-[10px] uppercase tracking-widest text-slate-500 font-black">能量主色</label>
+                    <label className="text-xs text-slate-400 font-semibold">介面主色：{currentAccent.name}</label>
+                    <p className="text-xs text-slate-400">統一卡片邊框、控制中心選項與共用分頁的主色。血量、異常、強化／弱化與連線狀態保留原辨識色；獨立模式的專屬配色暫不變更。</p>
                     <div className="flex justify-between items-center bg-slate-900/80 p-2 rounded-2xl border border-slate-800">
                       {(Object.keys(ACCENT_CONFIGS) as AccentColor[]).map((key) => (
                         <button
                           key={key}
+                          aria-label={`主色：${ACCENT_CONFIGS[key].name}`}
+                          title={ACCENT_CONFIGS[key].name}
+                          aria-pressed={state.accent === key}
                           onClick={() => updateUrlParam({ accent: key === "emerald" ? null : key })}
                           className={`w-8 h-8 rounded-full transition-all flex items-center justify-center border-2 ${
                             state.accent === key ? "border-white scale-110 shadow-lg" : "border-transparent opacity-50 hover:opacity-100"
@@ -611,15 +614,17 @@ export default function ControlHub({ currentScene }: { currentScene: string }) {
 
                   {/* Opacity */}
                   <div className="space-y-3">
-                    <label className="text-[10px] uppercase tracking-widest text-slate-500 font-black">介面質感</label>
+                    <label className="text-xs text-slate-400 font-semibold">卡片透明度</label>
+                    <p className="text-xs text-slate-400">晶瑩較透明、經典平衡、沉浸接近不透明。只影響一般卡片；長篇詳情保持不透明以便閱讀，戰鬥停用背景模糊以降低負擔。</p>
                     <div className="grid grid-cols-3 gap-2">
                       {(Object.keys(OPACITY_CONFIGS) as CardOpacity[]).map((key) => (
                         <button
                           key={key}
+                          aria-pressed={state.cardOpacity === key}
                           onClick={() => updateUrlParam({ cardOpacity: key === "medium" ? null : key })}
                           className={`py-2 rounded-xl text-[11px] font-bold border transition-all ${
                             state.cardOpacity === key 
-                              ? "bg-emerald-500/20 border-emerald-500/50 text-emerald-300" 
+                              ? "control-selected"
                               : "bg-slate-900/50 border-slate-800 text-slate-500 hover:text-slate-300"
                           }`}
                         >
@@ -1082,7 +1087,7 @@ export default function ControlHub({ currentScene }: { currentScene: string }) {
                             <>
                               <div className="relative rounded-2xl border border-slate-800 bg-slate-950 aspect-[21/9] w-full overflow-hidden shadow-2xl flex flex-col justify-end p-5 shrink-0">
                                 {hasValidBg ? (
-                                  <ScenePreviewMedia src={selectedRes.bg} alt="Current Preview" className="absolute inset-0 w-full h-full object-cover object-center" />
+                                  <ScenePreviewMedia src={selectedRes.bg} alt="目前場景" allowPreview className="absolute inset-0 w-full h-full object-cover object-center" />
                                 ) : (
                                   <div className="absolute inset-0 flex flex-col items-center justify-center bg-slate-950 text-slate-700">
                                     <ImageIcon className="w-10 h-10 mb-2" />
@@ -1469,12 +1474,15 @@ export default function ControlHub({ currentScene }: { currentScene: string }) {
                   <div className="bg-slate-900/80 rounded-2xl p-4 text-[11px] space-y-3 border border-slate-800">
                     <p className="text-slate-500 font-bold uppercase tracking-wider">目前系統配置</p>
                     <div className="text-slate-300 space-y-1.5 break-all">
-                        <p>視覺背景: <span className="text-blue-400">{state.bgUrl || "預設"}</span></p>
+                        <p>視覺背景: <span className="text-blue-400">{state.bg || localResources[currentScene]?.bg || "預設"}</span></p>
                         <p>背景音樂: <span className="text-purple-400">{state.bgmUrl || "預設"}</span></p>
                         <p>歌單數: <span className="text-emerald-400">{playlist.length}</span> / 圖片數: <span className="text-emerald-400">{backgrounds.length}</span></p>
                     </div>
                   </div>
 
+                </div>
+              )}
+              {activeTab === 'library' && (
                   <div className="space-y-6">
                       {/* Playlist Management Table */}
                       <div className="space-y-2">
@@ -1493,9 +1501,9 @@ export default function ControlHub({ currentScene }: { currentScene: string }) {
                                   <tbody className="bg-slate-950">
                                     {playlist.map((item, i) => (
                                       <tr key={i} className="border-t border-slate-800/50">
-                                        <td className="px-2 py-1 truncate max-w-[150px]">{item.title}</td>
+                                        <td className="px-3 py-2"><span className="block text-sm">{item.title}</span><span className="block text-xs text-slate-500 break-all">{item.url}</span></td>
                                         <td className="px-2 py-1">
-                                            <button onClick={() => setPlaylist(playlist.filter((_, idx) => idx !== i))} className="hover:text-red-400 text-slate-600">
+                                            <button type="button" aria-label={`移除歌曲 ${item.title}`} onClick={() => setPlaylist(playlist.filter((_, idx) => idx !== i))} className="p-2 hover:text-red-400 text-slate-400">
                                                 <X className="w-3 h-3"/>
                                             </button>
                                         </td>
@@ -1534,9 +1542,9 @@ export default function ControlHub({ currentScene }: { currentScene: string }) {
                                   <tbody className="bg-slate-950">
                                     {backgrounds.map((url, i) => (
                                       <tr key={i} className="border-t border-slate-800/50">
-                                        <td className="px-2 py-1 truncate max-w-[150px]">{url}</td>
+                                        <td className="px-3 py-2 break-all text-xs">{url}</td>
                                         <td className="px-2 py-1">
-                                            <button onClick={() => setBackgrounds(backgrounds.filter((_, idx) => idx !== i))} className="hover:text-red-400 text-slate-600">
+                                            <button type="button" aria-label={`移除背景 ${i + 1}`} onClick={() => setBackgrounds(backgrounds.filter((_, idx) => idx !== i))} className="p-2 hover:text-red-400 text-slate-400">
                                                 <X className="w-3 h-3"/>
                                             </button>
                                         </td>
@@ -1558,7 +1566,6 @@ export default function ControlHub({ currentScene }: { currentScene: string }) {
                           />
                       </div>
                   </div>
-                </div>
               )}
             </div>
 

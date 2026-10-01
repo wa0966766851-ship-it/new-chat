@@ -15,6 +15,8 @@ import { findBlockTimer } from "../blocks/runtime";
 import { modifySkillDamage, afterSkillHit, traitFatalResist, priorityBonus } from "../effects/traitEffects";
 import { SuitEffectRegistry } from "../effects/suitEffectRegistry";
 import { StatusRegistry } from "../effects/statusRegistry";
+import { canonicalStatusName } from '../effects/statusIdentity';
+import { advanceStatusEffect } from '../battle/statusLifecycle';
 import { applyEquipmentToTeam } from "../data/suitsAndEyewears";
 import { makeRng } from "../utils/rng";
 import { resetPrd, prdChance } from "../utils/prd";
@@ -36,7 +38,7 @@ import {
 } from "../utils/battleHelpers";
 
 import { addTimer, tickTimers, clearTurnEffects, hasTurnEffect } from "../battle/timers";
-import { runWrappedAtom } from "../effects/effectRunner";
+import { runTimerPayload } from "../effects/effectRunner";
 import { Mark, getMark, markAppliesToElf, setMark as setMarkUtil, clearMark as clearMarkUtil } from "../battle/marks";
 import { switchBattleSide } from "../battle/stateScopes";
 import { TraitsEngine } from "../utils/traitsEngine";
@@ -1268,15 +1270,15 @@ case 'switch': {
 
     // T0-4: Replace effect ticking with timer ticking
     const nextP1Timers = tickTimers(mid.p1Timers, 'round_end', (t) => {
-      if (t.payload?.wraps && t.payload?.applyMode === "per_tick") {
+      if ((t.payload?.wraps || t.payload?.wrapItems) && ['per_tick','on_expire'].includes(t.payload?.applyMode)) {
         const tickCtx = getBattleEventContext('p1', true, 0);
-        runWrappedAtom(t.payload.wraps, t.payload.params, t.payload.wrapTarget || "self", "p1", tickCtx);
+        runTimerPayload(t, tickCtx, 'p1');
       }
     });
     const nextP2Timers = tickTimers(mid.p2Timers, 'round_end', (t) => {
-      if (t.payload?.wraps && t.payload?.applyMode === "per_tick") {
+      if ((t.payload?.wraps || t.payload?.wrapItems) && ['per_tick','on_expire'].includes(t.payload?.applyMode)) {
         const tickCtx = getBattleEventContext('p2', true, 0);
-        runWrappedAtom(t.payload.wraps, t.payload.params, t.payload.wrapTarget || "self", "p2", tickCtx);
+        runTimerPayload(t, tickCtx, 'p2');
       }
     });
 
@@ -1285,32 +1287,13 @@ case 'switch': {
       const nextEffects: BattleEffect[] = [];
       
       for (const e of currentEffects) {
-        let nextDuration = e.duration;
-        const isPermanentBossStatus = StatusRegistry[e.id]?.categories?.includes('BOSS_ONLY');
-        if (e.isLateMover || isPermanentBossStatus) {
-          // don't tick this turn
-        } else {
-          nextDuration -= 1;
-        }
-
-        // §3: SPECIAL_BUFF extendStatusTurns (星贖)
         const currentStatuses = getStatuses(elf);
-        Object.keys(currentStatuses).forEach(stId => {
-          const entry = StatusRegistry[stId];
-          const p = entry?.mechanics?.find(m => m.type === 'SPECIAL_BUFF')?.params || {};
-          if (p.extendStatusTurns) {
-            const eEntry = StatusRegistry[e.id];
-            if (eEntry && !eEntry.categories?.includes('RESTRICTIVE')) {
-              nextDuration += p.extendStatusTurns;
-            }
-          }
-        });
-
-        if (nextDuration > 0) {
-          nextEffects.push({ ...e, duration: nextDuration, isLateMover: false });
+        const transition = advanceStatusEffect(e, currentStatuses, rng);
+        if (transition.next) {
+          nextEffects.push(transition.next);
         } else {
           // §2: Check for EVOLUTION_TRANSFORM
-          const entry = StatusRegistry[e.id];
+          const entry = StatusRegistry[canonicalStatusName(e.id)];
           
           if (SoulMarkRegistry[elf.name]) {
              const filterCtx = getBattleEventContext(side, true, 0);
@@ -1322,10 +1305,7 @@ case 'switch': {
           const transform = entry.mechanics?.find(m => m.type === 'EVOLUTION_TRANSFORM');
           if (transform) {
             const params = transform.params || {};
-            let targetStatusName = params.nextStatus;
-            if (params.randomPool) {
-              targetStatusName = params.randomPool[Math.floor(rng() * params.randomPool.length)];
-            }
+            const targetStatusName = transition.transformed?.id;
             
             if (targetStatusName) {
               const targetEntry = StatusRegistry[targetStatusName];
@@ -1594,9 +1574,11 @@ case 'switch': {
       if (!liveElf || !midElf || liveElf.id !== midElf.id) return liveElf;
       const tickedEffects = side === "p1" ? nextP1Effects : nextP2Effects;
       const tickedDI = side === "p1" ? nextP1DeathImmunity : nextP2DeathImmunity;
+      const effects = mergeById(midElf.effects || [], tickedEffects || [], liveElf.effects || []);
       return {
         ...liveElf,
-        effects: mergeById(midElf.effects || [], tickedEffects || [], liveElf.effects || []),
+        effects,
+        battleStatuses: Object.fromEntries(effects.map(e => [e.id, e.duration])),
         deathImmunity: liveElf.deathImmunity === midElf.deathImmunity ? tickedDI : liveElf.deathImmunity,
       };
     };
@@ -3059,15 +3041,15 @@ case 'switch': {
 
       // T0-4: Tick timers for action_end after each action
       const nextP1TimersAction = tickTimers(syncStateRef.current.p1Timers, 'action_end', (t) => {
-        if (t.payload?.wraps && t.payload?.applyMode === "per_tick") {
+        if ((t.payload?.wraps || t.payload?.wrapItems) && ['per_tick','on_expire'].includes(t.payload?.applyMode)) {
           const tickCtx = getBattleEventContext('p1', true, mIdx);
-          runWrappedAtom(t.payload.wraps, t.payload.params, t.payload.wrapTarget || "self", "p1", tickCtx);
+          runTimerPayload(t, tickCtx, 'p1');
         }
       });
       const nextP2TimersAction = tickTimers(syncStateRef.current.p2Timers, 'action_end', (t) => {
-        if (t.payload?.wraps && t.payload?.applyMode === "per_tick") {
+        if ((t.payload?.wraps || t.payload?.wrapItems) && ['per_tick','on_expire'].includes(t.payload?.applyMode)) {
           const tickCtx = getBattleEventContext('p2', true, mIdx);
-          runWrappedAtom(t.payload.wraps, t.payload.params, t.payload.wrapTarget || "self", "p2", tickCtx);
+          runTimerPayload(t, tickCtx, 'p2');
         }
       });
       syncStateRef.current = {

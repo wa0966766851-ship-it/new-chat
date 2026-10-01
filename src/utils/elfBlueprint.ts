@@ -1,5 +1,8 @@
 import type { Elf, BaseStats } from '../types';
 import { calculateElfStats, getDefaultEvs } from './statCalculator';
+import { validateKit } from '../effects/kitValidation';
+import { StatusRegistry } from '../effects/statusRegistry';
+import { canonicalStatusName } from '../effects/statusIdentity';
 export const MAX_BLUEPRINT_BYTES = 2_000_000;
 const stats = ['hp', 'atk', 'def', 'spatk', 'spdef', 'speed'] as const;
 const object = (v: unknown): v is Record<string, any> => !!v && typeof v === 'object' && !Array.isArray(v);
@@ -14,16 +17,24 @@ function trait(value: unknown, label: string) {
   if (!object(value)) fail(label);
   text(value.name, `${label}.name`, 200); text(value.description, `${label}.description`);
   if (value.customCode !== undefined) text(value.customCode, `${label}.customCode`);
+  if (value.mechanics !== undefined) {
+    if (!object(value.mechanics) || Object.keys(value.mechanics).length > 200) fail(`${label}.mechanics`);
+    let visited = 0;
+    const visit = (v: unknown, path: string, depth: number) => {
+      if (++visited > 2000 || depth > 12) fail(`${path}（巢狀機制過深或過多）`);
+      if (v === null || typeof v === 'boolean') return;
+      if (typeof v === 'number') { number(v, path, -Number.MAX_SAFE_INTEGER, Number.MAX_SAFE_INTEGER); return; }
+      if (typeof v === 'string') { text(v, path, 2000); return; }
+      if (Array.isArray(v)) { if (v.length > 200) fail(path); v.forEach((child, i) => visit(child, `${path}[${i}]`, depth + 1)); return; }
+      if (!object(v) || Object.keys(v).length > 200) fail(path);
+      for (const [key, child] of Object.entries(v)) { text(key, `${path} key`, 200); visit(child, `${path}.${key}`, depth + 1); }
+    };
+    // 機制資料原樣保留；通過 JSON 校驗不代表存在對應的戰鬥 handler。
+    visit(value.mechanics, `${label}.mechanics`, 0);
+  }
 }
 function kit(value: unknown, label: string) {
-  if (!Array.isArray(value) || value.length > 1000) fail(label);
-  for (const entry of value) {
-    if (!object(entry) || !object(entry.params)) fail(label);
-    text(entry.codeId, `${label}.codeId`, 200); text(entry.node, `${label}.node`, 200);
-    if (!['skill', 'soulmark', 'mechanic', 'item'].includes(entry.source)) fail(`${label}.source`);
-    number(entry.order, `${label}.order`);
-    if (entry.customText !== undefined) text(entry.customText, `${label}.customText`);
-  }
+  validateKit(value, label);
 }
 /** 解析與檢查不寫存檔、不執行 customCode／Kit，戰鬥執行與語意另行驗證。 */
 export function parseElfBlueprint(json: string): { elf: Elf; warnings: string[]; version: number } {
@@ -57,7 +68,7 @@ export function parseElfBlueprint(json: string): { elf: Elf; warnings: string[];
   if (source.ivs !== undefined) numericStats(source.ivs, 'ivs', 31);
   if (source.guildBonuses !== undefined) numericStats(source.guildBonuses, 'guildBonuses', 100000);
   if (source.natureModifiers !== undefined) { if (!object(source.natureModifiers)) fail('natureModifiers'); for (const key of stats) if (source.natureModifiers[key] !== undefined) number(source.natureModifiers[key], `natureModifiers.${key}`, 0.1, 2); }
-  for (const key of ['height', 'weight']) if (source[key] !== undefined) number(source[key], key);
+  for (const key of ['height', 'weight']) if (source[key] !== undefined) number(source[key], key, 0, Number.MAX_SAFE_INTEGER);
   for (const key of ['id', 'gender', 'path', 'specialModeRating', 'destinyRank', 'description', 'imageUrl', 'avatarUrl', 'badge', 'category', 'rawPrompt']) if (source[key] !== undefined) text(source[key], key);
   if (source.seerId !== undefined && typeof source.seerId !== 'string' && typeof source.seerId !== 'number') fail('seerId');
   if (source.critValue !== undefined) number(source.critValue, 'critValue', 0, 10000);
@@ -65,7 +76,7 @@ export function parseElfBlueprint(json: string): { elf: Elf; warnings: string[];
   for (const field of ['skills', 'skillPool']) {
     const list = source[field];
     if (field === 'skillPool' && list === undefined) continue;
-    if (!Array.isArray(list) || list.length > (field === 'skills' ? 5 : 500)) fail(field);
+    if (!Array.isArray(list) || list.length > 500) fail(field);
     for (const skill of list) {
       trait(skill, field); text(skill.type, `${field}.type`, 100);
       if (!['物理', '特殊', '屬性'].includes(skill.category)) fail(`${field}.category`);
@@ -74,7 +85,29 @@ export function parseElfBlueprint(json: string): { elf: Elf; warnings: string[];
       if (skill.accuracy !== undefined) number(skill.accuracy, `${field}.accuracy`, 0, 10000);
       for (const key of ['id', 'effectType', 'effectDetail']) if (skill[key] !== undefined) text(skill[key], `${field}.${key}`);
       for (const key of ['maxPp', 'currentPp']) if (skill[key] !== undefined) number(skill[key], `${field}.${key}`, 0, 10000);
-      for (const key of ['isFifthSkill', 'isGuaranteedHit']) if (skill[key] !== undefined && typeof skill[key] !== 'boolean') fail(`${field}.${key}`);
+      for (const key of ['isFifthSkill', 'isGuaranteedHit', 'isSureHit', 'isCarrying', 'isInherent', 'isSkillStone', 'isPerfectSkillStone']) if (skill[key] !== undefined && typeof skill[key] !== 'boolean') fail(`${field}.${key}`);
+      if (skill.statChanges !== undefined) {
+        if (!Array.isArray(skill.statChanges) || skill.statChanges.length > 100) fail(`${field}.statChanges`);
+        for (const change of skill.statChanges) { if (!object(change) || !['atk','def','spatk','spdef','speed','accuracy','all'].includes(change.stat)) fail(`${field}.statChanges.stat`); number(change.value, `${field}.statChanges.value`, -6, 6); }
+      }
+      if (skill.statusEffects !== undefined) {
+        if (!Array.isArray(skill.statusEffects) || skill.statusEffects.length > 100) fail(`${field}.statusEffects`);
+        for (const effect of skill.statusEffects) {
+          if (!object(effect) || !StatusRegistry[canonicalStatusName(effect.name)]) fail(`${field}.statusEffects.name`);
+          number(effect.duration, `${field}.statusEffects.duration`, 0, 10000);
+          if (!Number.isInteger(effect.duration)) fail(`${field}.statusEffects.duration`);
+          if (effect.category !== undefined && !StatusRegistry[canonicalStatusName(effect.name)].categories.includes(effect.category)) fail(`${field}.statusEffects.category`);
+        }
+      }
+      if (skill.templateId !== undefined) text(skill.templateId, `${field}.templateId`, 200);
+      if (skill.templateArgs !== undefined) {
+        if (!Array.isArray(skill.templateArgs) || skill.templateArgs.length > 100) fail(`${field}.templateArgs`);
+        for (const arg of skill.templateArgs) {
+          if (!['number','string','boolean'].includes(typeof arg)) fail(`${field}.templateArgs（槽位僅接受數值／文字／布林）`);
+          if (typeof arg === 'number') number(arg, `${field}.templateArgs`, -1_000_000, 1_000_000);
+          if (typeof arg === 'string') text(arg, `${field}.templateArgs`, 2000);
+        }
+      }
       if (skill.kit !== undefined) kit(skill.kit, `${field}.kit`);
     }
   }
@@ -108,6 +141,12 @@ export function parseElfBlueprint(json: string): { elf: Elf; warnings: string[];
   const skipped = Object.keys(source).filter(k => !allowed.includes(k) && !['level','isCustom','calculatedStats','currentHp','maxHp'].includes(k));
   if (skipped.length) warnings.push(`未匯入戰鬥狀態或尚不支援欄位：${skipped.join('、')}。請保留原始圖紙。`);
   const elf: any = Object.fromEntries(allowed.filter(k => source[k] !== undefined).map(k => [k, source[k]]));
+  if (elf.skills.length > 5) {
+    const names = new Set((elf.skillPool || []).map((s: any) => s.name));
+    elf.skillPool = [...(elf.skillPool || []), ...elf.skills.slice(5).filter((s: any) => !names.has(s.name))];
+    elf.skills = elf.skills.slice(0, 5);
+    warnings.push('舊資料超過五個攜帶技能；超出者移入預備技能池，未丟棄技能。');
+  }
   elf.id ||= 'imported_blueprint'; elf.level = 100; elf.isCustom = true;
   elf.evs ||= getDefaultEvs(elf.baseStats as BaseStats);
   elf.inscriptions = (elf.inscriptions || []).map((i: unknown) => i === null ? undefined : i);

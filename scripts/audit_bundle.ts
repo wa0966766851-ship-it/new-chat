@@ -16,14 +16,14 @@ function visit(key: string) {
 }
 visit(entry[0]);
 for (const key of initial) {
-  assert.ok(!/vendor-blockly|codexRegistry|blockLibrary|abilityRegistry|KitEffectBuilder|ElfBlocklyPanel|cardTemplates|EffectLibraryModal/.test(key),
+  assert.ok(!/vendor-blockly|blockly-core-|codexRegistry|blockLibrary|abilityRegistry|KitEffectBuilder|ElfBlocklyPanel|cardTemplates|EffectLibraryModal/.test(key),
     `首頁不應提前載入效果/積木工具：${key}`);
 }
 const entryBytes = statSync(resolve(dist, entry[1].file)).size;
 assert.ok(entryBytes < 500_000, `首頁主區塊超過500 kB回歸預算：${entryBytes}`);
 for (const [key, chunk] of Object.entries(manifest)) {
-  if (/codexRegistry|blockLibraryData/.test(key)) {
-    assert.ok(statSync(resolve(dist, chunk.file)).size < 500_000, `效果資料超過500 kB預算：${key}`);
+  if (/codexRegistry|blockLibraryData|blockly-core-|vendor-blockly/.test(key)) {
+    assert.ok(statSync(resolve(dist, chunk.file)).size < 500_000, `效果／積木區塊超過500 kB預算：${key}`);
   }
 }
 let initialBytes = 0;

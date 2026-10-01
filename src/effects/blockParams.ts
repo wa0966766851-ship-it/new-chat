@@ -18,16 +18,16 @@ export function normalizeBlockAtom(atom: string, raw: Record<string, any> = {}):
       if (p.dmgType === "percent") p.ratio = raw.ratio ?? (Number(raw.amount) || 0) / 100;
       break;
     case "heal":
-      if (raw.mode === "percent") { p.ratio = (Number(raw.amount) || 0) / 100; p.amount = 0; }
+      if (raw.mode === "percent") { p.ratio = raw.ratio ?? (Number(raw.amount) || 0) / 100; p.amount = 0; }
       break;
     case "damage_reflect":
-      p.ratio = raw.ratio ?? (Number(raw.percent) || 50) / 100;
+      p.ratio = raw.ratio ?? Number(raw.percent ?? 50) / 100;
       break;
     case "maxhp_change":
       if (raw.mode === "reduce") p.amount = -Math.abs(Number(raw.amount) || 0);
       break;
     case "stat_change": {
-      const v = Number(raw.stages ?? raw.value ?? 1) || 1;
+      const v = Number(raw.stages ?? raw.value ?? 1);
       if (raw.stat === "all") { p.all = v; delete p.stat; }
       else if (raw.stat) { p.stat = STAT_KEY[raw.stat] || raw.stat; p.value = v; }
       break;
@@ -39,19 +39,20 @@ export function normalizeBlockAtom(atom: string, raw: Record<string, any> = {}):
       p.op = raw.op || (raw.mode === "recover" ? "add" : raw.mode === "drain" ? "drain" : "reduce");
       break;
     case "priority":
-      p.bonus = Number(raw.bonus ?? raw.level ?? 1) || 1;
+      p.bonus = Number(raw.bonus ?? raw.level ?? 1);
       break;
     case "accuracy":
       if (raw.mode === "boost" || raw.mode === "drop") {
         return { atom: "stat_change", params: { stat: "accuracy", value: raw.mode === "boost" ? 1 : -1 }, target: raw.mode === "boost" ? "self" : "opponent" };
       }
-      p.alwaysHit = true;
+      if (raw.mode === 'evade') p.evade = true;
+      else p.alwaysHit = true;
       break;
     case "turn_effect_apply":
       p.polarity = raw.polarity || (target === "self" ? "POSITIVE" : "NEGATIVE");
       break;
     case "rebirth":
-      p.turns = Number(raw.turns ?? 2) || 2;
+      p.turns = Number(raw.turns ?? 2);
       break;
   }
   delete p.target;
@@ -62,7 +63,7 @@ export function normalizeBlockAtom(atom: string, raw: Record<string, any> = {}):
 export function blockEntryToAtom(entry: KitEntry, atoms: Record<string, unknown>): RunnableAtom | null {
   if (!entry || !entry.codeId || entry.codeId === "custom" || !atoms[entry.codeId]) return null;
   const n = normalizeBlockAtom(entry.codeId, entry.params || {});
-  if (n.atom === "turn_effect_apply" && Array.isArray(n.params.wraps)) {
+  if (n.atom === "turn_effect_apply" && !Array.isArray(n.params.wrapItems) && Array.isArray(n.params.wraps)) {
     // 各包裝原子共用 wrapParams：逐一正規化後合併
     let merged: Record<string, any> = { ...(n.params.wrapParams || {}) };
     for (const w of n.params.wraps) merged = { ...merged, ...normalizeBlockAtom(w, n.params.wrapParams || {}).params };

@@ -9,6 +9,11 @@ export const DAMAGE_CHOICES = [
 ] as const;
 export type DamageChoice = typeof DAMAGE_CHOICES[number]['value'];
 export type DamageKind = DamageChoice | 'attack' | 'hp_adjust' | 'non_true';
+export function matchesDamageTypes(types: string[] | undefined, category: string): boolean {
+  if (!types?.length) return true; // 舊存檔保留原作用範圍，不默默改語意。
+  const normalized = category === 'skill_attack' ? 'attack' : ['skill_attribute','skill_extra_action'].includes(category) ? 'skill' : category;
+  return types.includes(normalized) || (normalized !== 'true' && types.includes('non_true'));
+}
 export const damageChoiceLabel = (type: string) => DAMAGE_CHOICES.find(c => c.value === type)?.label || ({ attack: '攻擊傷害（技能公式）', hp_adjust: '體力調整（不是傷害）', non_true: '非真實傷害（攻擊／技能／固定／百分比）' }[type] ?? '待確認傷害');
 /** 只建議，不改寫描述或自動實裝；增減傷的 % 不代表百分比傷害。 */
 export function suggestDamageTypes(text: string): { types: DamageKind[]; inferred: boolean; reason: string } | null {

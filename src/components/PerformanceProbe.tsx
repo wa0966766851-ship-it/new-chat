@@ -6,6 +6,7 @@ const empty = (): Result => ({ seconds: 0, frames: 0, slowFrames: 0, longestFram
 /** 僅按下開始時採樣；關閉／到期／卸載即停止，不上傳任何資料。 */
 export default function PerformanceProbe({ onClose }: { onClose: () => void }) {
   const [running, setRunning] = useState(false), [result, setResult] = useState<Result>(empty);
+  const [durationSeconds, setDurationSeconds] = useState(60);
   const stop = useRef<() => void>(() => {});
   const mounted = useRef(false);
   useEffect(() => { mounted.current = true; return () => { mounted.current = false; stop.current(); }; }, []);
@@ -33,12 +34,13 @@ export default function PerformanceProbe({ onClose }: { onClose: () => void }) {
       last = now; raf = requestAnimationFrame(frame);
     };
     document.addEventListener('visibilitychange', hidden);
-    timer = setInterval(() => { publish(); if (performance.now() - begin >= 60000) finish(); }, 1000);
+    timer = setInterval(() => { publish(); if (performance.now() - begin >= durationSeconds * 1000) finish(); }, 1000);
     raf = requestAnimationFrame(frame); stop.current = finish; setResult(sample); setRunning(true);
   }
   return createPortal(<aside aria-label="本機效能量測" className="fixed bottom-3 right-3 z-[10050] w-[min(350px,calc(100vw-24px))] ios-card p-4 text-xs shadow-2xl space-y-2">
     <div className="flex justify-between gap-2"><strong className="text-blue-200 text-sm">本機效能量測</strong><button type="button" aria-label="關閉效能量測" onClick={() => { stop.current(); onClose(); }}>✕</button></div>
-    <p className="text-slate-400">按開始後可關閉控制中心並操作各頁。最長 60 秒；切到背景即停止。本機讀值，不上傳。</p>
+    <p className="text-slate-400">按開始後可關閉控制中心並操作各頁。切到背景即停止。本機讀值，不上傳。</p>
+    <label className="flex items-center gap-2">採樣長度<select aria-label="採樣長度" disabled={running} value={durationSeconds} onChange={e => setDurationSeconds(Number(e.target.value))} className="bg-slate-900 rounded px-2 py-1"><option value={60}>1分鐘</option><option value={300}>5分鐘</option><option value={900}>15分鐘</option></select></label>
     <div className="flex gap-3"><button type="button" disabled={running} onClick={start}>開始量測</button><button type="button" disabled={!running} onClick={() => stop.current()}>停止量測</button></div>
     <output className="block space-y-1 text-slate-200" aria-label="效能量測結果">
       <p>{running ? '採樣中' : '已停止'} · {result.seconds.toFixed(1)} 秒 · 平均畫面回呼 {result.seconds > 0 ? (result.frames / result.seconds).toFixed(1) : '—'}/秒</p>

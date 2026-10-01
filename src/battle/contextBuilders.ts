@@ -13,6 +13,7 @@ import { applyStatChanges } from "../utils/statChangeManager";
 import { TraitsEngine } from "../utils/traitsEngine";
 import { getStatuses, shuffleArray, clampSkillPp } from "../utils/battleHelpers";
 import { StatusRegistry } from "../effects/statusRegistry";
+import { matchesDamageTypes } from '../effects/damageChoices';
 import { clearTurnEffects, hasTurnEffect, addTimer, getScaledParam } from "./timers";
 import { setMark as setMarkUtil, clearMark as clearMarkUtil } from "./marks";
 import { getEligibleTeam, getFirstStarter, getNthElf, getAdjacentElves, getSeparatedElves } from "./elfPositions";
@@ -64,75 +65,26 @@ export function applyActiveGateTimersToDamage(
 ) {
   const c = syncStateRef.current;
   
-  // 1. Dealt damage reduction (gate timers on the actor side)
-  const actorTimers = (c[`${actorSide}Timers` as "p1Timers" | "p2Timers"] || [])
-    .filter(timer => timer.scope === "team" || !timer.ownerBattleId || timer.ownerBattleId === (c[actorSide].battleId || c[actorSide].id));
-  for (const timer of actorTimers) {
-    const wraps = Array.isArray(timer.payload?.wraps) ? timer.payload.wraps : [timer.payload?.wraps];
-    if (timer.payload?.applyMode === "gate" && wraps.includes("damage_reduce")) {
-      const reducePercent = getScaledParam(timer, "percent", 50);
-      damageComp.decreasePercent = (damageComp.decreasePercent || 0) + reducePercent / 100;
-      pushEffect({
-        type: 'log',
-        side: actorSide,
-        data: {
-          text: `🛡️ 【${timer.name}】：造成的傷害減少 ${reducePercent}%！`,
-          type: "effect"
+  for (const owner of new Set([actorSide, tSide])) {
+    const timers = (c[`${owner}Timers`] || []).filter(timer => timer.scope === 'team' || !timer.ownerBattleId || timer.ownerBattleId === (c[owner].battleId || c[owner].id));
+    for (const timer of timers) {
+      const payload = timer.payload;
+      if (payload?.applyMode !== 'gate' || timer.remaining <= 0) continue;
+      const wraps = Array.isArray(payload.wrapItems) ? payload.wrapItems : (Array.isArray(payload.wraps) ? payload.wraps : [payload.wraps]).map(atom => ({ atom, params: payload.params || {} }));
+      for (const item of wraps) {
+        const params = item.params || {};
+        if (!matchesDamageTypes(params.damageTypes, damageComp.damageCategory)) continue;
+        const scaledTimer = { ...timer, payload: { ...payload, params } };
+        if (item.atom === 'damage_reduce' && damageComp.damageCategory !== 'true') {
+          const value = getScaledParam(scaledTimer, 'percent', params.amount ?? 50);
+          damageComp.decreasePercent = (damageComp.decreasePercent ?? 0) + value / 100;
+          pushEffect({ type: 'log', side: owner, data: { text: `🛡️ 【${timer.name}】：傷害減少 ${value}%！`, type: 'effect' } });
+        } else if (item.atom === 'damage_multiplier') {
+          const value = getScaledParam(scaledTimer, 'multiplier', 1.5);
+          damageComp.multiplier = (damageComp.multiplier ?? 1) * value;
+          pushEffect({ type: 'log', side: owner, data: { text: `🔥 【${timer.name}】：傷害乘以 ${value} 倍！`, type: 'effect' } });
         }
-      });
-    }
-  }
-
-  // 2. Target side damage reduction (e.g. 守護印記)
-  const targetTimers = (c[`${tSide}Timers` as "p1Timers" | "p2Timers"] || [])
-    .filter(timer => timer.scope === "team" || !timer.ownerBattleId || timer.ownerBattleId === (c[tSide].battleId || c[tSide].id));
-  for (const timer of targetTimers) {
-    const wraps = Array.isArray(timer.payload?.wraps) ? timer.payload.wraps : [timer.payload?.wraps];
-    if (timer.payload?.applyMode === "gate" && wraps.includes("damage_reduce")) {
-      const reducePercent = getScaledParam(timer, "percent", 50);
-      damageComp.decreasePercent = (damageComp.decreasePercent || 0) + reducePercent / 100;
-      pushEffect({
-        type: 'log',
-        side: tSide,
-        data: {
-          text: `🛡️ 【${timer.name}】：受到的傷害減少 ${reducePercent}%！`,
-          type: "effect"
-        }
-      });
-    }
-  }
-
-  // 3. Actor side damage multiplier (dealt damage boost)
-  for (const timer of actorTimers) {
-    const wraps = Array.isArray(timer.payload?.wraps) ? timer.payload.wraps : [timer.payload?.wraps];
-    if (timer.payload?.applyMode === "gate" && wraps.includes("damage_multiplier")) {
-      const mult = getScaledParam(timer, "multiplier", 1.5);
-      damageComp.multiplier = (damageComp.multiplier || 1.0) * mult;
-      pushEffect({
-        type: 'log',
-        side: actorSide,
-        data: {
-          text: `🔥 【${timer.name}】：造成的傷害乘以 ${mult} 倍！`,
-          type: "effect"
-        }
-      });
-    }
-  }
-
-  // 4. Target side damage multiplier (taken damage vulnerability, e.g. 黯痕)
-  for (const timer of targetTimers) {
-    const wraps = Array.isArray(timer.payload?.wraps) ? timer.payload.wraps : [timer.payload?.wraps];
-    if (timer.payload?.applyMode === "gate" && wraps.includes("damage_multiplier")) {
-      const mult = getScaledParam(timer, "multiplier", 1.5);
-      damageComp.multiplier = (damageComp.multiplier || 1.0) * mult;
-      pushEffect({
-        type: 'log',
-        side: tSide,
-        data: {
-          text: `💀 【${timer.name}】：受到的傷害乘以 ${mult} 倍！`,
-          type: "effect"
-        }
-      });
+      }
     }
   }
 }
@@ -523,6 +475,7 @@ export function buildDamageAPIs(shared: SharedContextDeps): DamageAPIs {
       const finalDamage = Math.floor(damageComp.floor !== undefined ? Math.max(stage3, damageComp.floor) : Math.max(0, stage3));
 
       pushEffect({ type: 'damage', side: tSide, data: { amount: finalDamage, label: "百分比傷害", popup: true, sourceElfName: self.name, damageType: "percent" } });
+      return finalDamage;
     },
     applyFixedDamage: (tSide, amt, label) => {
       const c = syncStateRef.current;

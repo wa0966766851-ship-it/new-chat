@@ -23,6 +23,7 @@ export interface Timer {
   scope?: "elf" | "team";
   ownerBattleId?: string;
   persistsOffField?: boolean;
+  clearable?: boolean;
   /** 內部唯一 id(同 id 再次附加時依 stackRule 處理) */
   id: string;
   /** 顯示名稱。`turn_effect` 依定義為「未命名」,此處僅供 UI/log 用,不參與判定。 */
@@ -131,6 +132,7 @@ export function tickTimers(
 ): Timer[] {
   const out: Timer[] = [];
   for (const t of list) {
+    if (t.remaining <= 0) continue;
     if (t.tickAt !== at) { out.push(t); continue; }
     if (t.lateMoverPending) { out.push({ ...t, lateMoverPending: false }); continue; }
     
@@ -169,7 +171,7 @@ export function consumeUse(list: Timer[], id: string): [Timer[], boolean] {
  * 移除即同時移除,不會再出現「計時器沒了效果還在」的殘留。
  */
 export function clearTurnEffects(list: Timer[]): [Timer[], number] {
-  const kept = list.filter(t => t.kind !== "turn_effect");
+  const kept = list.filter(t => t.kind !== "turn_effect" || t.clearable === false);
   return [kept, list.length - kept.length];
 }
 

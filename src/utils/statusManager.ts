@@ -1,6 +1,6 @@
 import { Elf, StatusCategory, StatusEffect } from "../types";
 import { StatusRegistry, StatusRegistryEntry } from "../effects/statusRegistry";
-import { getStatuses } from "./battleHelpers";
+import { getStatuses, addStatusEffect } from "./battleHelpers";
 import { sameStatus } from '../effects/statusIdentity';
 
 // StatusEffect is imported from types.ts
@@ -79,7 +79,8 @@ export function applyStatuses(
 
   effects.forEach(effect => {
     // Check for immunity (BOSS statuses or specific traits)
-    const isImmune = (clonedElf.battleStatuses!['神話'] || clonedElf.battleStatuses!['免疫'] || clonedElf.battleStatuses!['異常抵抗']);
+    const active = getStatuses(clonedElf);
+    const isImmune = (active['神話'] || active['免疫']);
     if (isImmune && !['神話', '免疫', '異常抵抗', '隱匿'].includes(effect.name)) {
       // Bosses/Immune units skip normal status
       return;
@@ -88,7 +89,8 @@ export function applyStatuses(
     // Special case: "狂信" needs source name
     // (Handled elsewhere or by params if we had them)
 
-    clonedElf.battleStatuses![effect.name] = effect.duration;
+    // 異常抵抗只是抗性骰結果的佔位，不是全異常免疫。
+    addStatusEffect(clonedElf, effect.name, effect.duration);
     logs.push(`${elf.name} 陷入了 ${effect.name} 狀態 (${effect.duration} 回合)`);
   });
 

@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { TypeIcon } from "./SeerImages";
+import { matchesElfQuery } from '../utils/elfSearch';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
   Sparkles, Shield, Swords, Crown, Zap, Trophy, HelpCircle, 
@@ -57,12 +58,7 @@ export default function DestinyIntroRuleTable({
   const filteredElves = useMemo(() => {
     return dynamicPool.filter(elf => {
       const matchesRank = selectedRankTab === 'all' || elf.destinyRank === selectedRankTab;
-      const term = searchTerm.trim().toLowerCase();
-      const matchesSearch = !term || 
-        elf.name.toLowerCase().includes(term) || 
-        elf.type.toLowerCase().includes(term) ||
-        (elf.soulMark?.name && elf.soulMark.name.toLowerCase().includes(term));
-      return matchesRank && matchesSearch;
+      return matchesRank && matchesElfQuery(elf, searchTerm);
     }).sort((a, b) => {
       // 默認排序：稀有度 S > A > B > C，同稀有度比較種族值總和
       const rankOrder: Record<DestinyRank, number> = { 'S': 4, 'A': 3, 'B': 2, 'C': 1 };
@@ -266,7 +262,7 @@ export default function DestinyIntroRuleTable({
               <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
               <input
                 type="text"
-                placeholder="搜尋精靈名稱、屬性或魂印..."
+                placeholder="名稱、ID、屬性或魂印（可用空白組合）"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="pl-9 pr-4 py-1.5 bg-slate-950 border border-slate-700 rounded-lg text-xs text-white placeholder-slate-500 focus:outline-none focus:border-amber-400 w-60 md:w-72 transition"

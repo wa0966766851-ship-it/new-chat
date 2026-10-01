@@ -4,6 +4,7 @@ import { X, Play, RefreshCw, Terminal, Activity, ShieldCheck, Check, AlertTriang
 import { DEFAULT_ELVES } from "../data/defaultElves";
 import { Elf, Skill, BattleLog } from "../types";
 import { resetElfStateForBattle } from "../utils/statCalculator";
+import { matchesElfQuery } from '../utils/elfSearch';
 
 interface MassTestModalProps {
   isOpen: boolean;
@@ -106,9 +107,7 @@ export default function MassTestModal({ isOpen, onClose }: MassTestModalProps) {
     setIsRunning(false);
   };
 
-  const filteredElves = DEFAULT_ELVES.filter(e => 
-    e.name.includes(searchQuery) || (e.id || "").includes(searchQuery)
-  );
+  const filteredElves = DEFAULT_ELVES.filter(e => matchesElfQuery(e, searchQuery));
 
   return (
     <div className="fixed inset-0 z-[110] flex items-center justify-center bg-black/85 backdrop-blur-md p-4 animate-in fade-in zoom-in duration-300">
@@ -166,7 +165,7 @@ export default function MassTestModal({ isOpen, onClose }: MassTestModalProps) {
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
             <input 
               type="text"
-              placeholder="搜索精靈名稱或 ID..."
+              placeholder="名稱、ID、屬性（可用空白組合）"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full pl-10 pr-4 py-2 bg-slate-900/60 border border-slate-700 rounded-xl text-xs text-slate-200 focus:outline-none focus:border-cyan-500/50"

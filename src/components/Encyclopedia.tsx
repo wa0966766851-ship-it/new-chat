@@ -14,6 +14,7 @@ import { ElfReadOnlyProfile } from './ElfReadOnlyProfile';
 import { readStoredRecord } from '../utils/safeStorage';
 import { getTemplateReviewReason, getTemplateTimingLabel } from '../utils/templateReview';
 import type { Elf } from '../types';
+import { matchesElfQuery } from '../utils/elfSearch';
 
 import { useGameData } from '../contexts/GameDataContext';
 
@@ -26,6 +27,7 @@ const Encyclopedia: React.FC<EncyclopediaProps> = ({ onClose, initialTab = 'elve
   const { allElves } = useGameData();
   const [activeTab, setActiveTab] = useState<'status' | 'types' | 'mechanics' | 'editor' | 'effectQuery' | 'elves'>(initialTab);
   const [searchQuery, setSearchQuery] = useState('');
+  const [elfTypes, setElfTypes] = useState<string[]>([]);
   const [selectedElf, setSelectedElf] = useState<Elf | null>(null);
   const deferredElfQuery = React.useDeferredValue(searchQuery);
   const [referenceLibrary, setReferenceLibrary] = useState<CardTemplateModule[]>([]);
@@ -360,19 +362,22 @@ const Encyclopedia: React.FC<EncyclopediaProps> = ({ onClose, initialTab = 'elve
                   <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
                   <input
                     type="text"
-                    placeholder="搜尋精靈名稱或屬性..."
+                    placeholder="名稱、ID、屬性（可用空白組合）"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     className="ios-search w-full pl-10 pr-4 py-2 text-[13px] text-slate-200 placeholder-slate-500 focus:outline-none"
                   />
                 </div>
               </div>
-
+              <details className="ios-card p-3">
+                <summary className="cursor-pointer text-sm text-slate-200">屬性篩選{elfTypes.length ? `（${elfTypes.join('＋')}）` : '（全部）'}</summary>
+                <div className="flex flex-wrap gap-2 pt-3">
+                  <button className="ios-button px-3 py-1.5 text-xs" onClick={() => setElfTypes([])}>全部</button>
+                  {SEER_TYPES.map(type => <button key={type} aria-pressed={elfTypes.includes(type)} className="elf-type-filter flex items-center gap-1.5 rounded-xl border border-white/10 px-2 py-1.5 text-xs" onClick={() => setElfTypes(prev => prev.includes(type) ? prev.filter(t => t !== type) : [...prev, type])}><TypeIcon type={type} size={18} showLabelWhenMissing={false} />{type}</button>)}
+                </div>
+              </details>
               <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-                {allElves.filter(elf => {
-                  const query = deferredElfQuery.trim().toLowerCase().replace(/[·.]/g, '');
-                  return elf.name.toLowerCase().replace(/[·.]/g, '').includes(query) || (elf.type || '').includes(deferredElfQuery.trim());
-                }).map((elf, index) => <ElfRosterCard key={`${elf.id}-${index}`} elf={elf} onDetail={() => setSelectedElf(elf)} />)}
+                {allElves.filter(elf => matchesElfQuery(elf, deferredElfQuery, elfTypes)).map((elf, index) => <ElfRosterCard key={`${elf.id}-${index}`} elf={elf} onDetail={() => setSelectedElf(elf)} />)}
               </div>
               {selectedElf && <div role="dialog" aria-modal="true" aria-label="百科精靈介紹" className="fixed inset-0 z-[11000] bg-black/65 flex items-center justify-center p-3 sm:p-6" onClick={() => setSelectedElf(null)}>
                 <div className="ios-panel ios-dialog w-full max-w-3xl max-h-[88vh] overflow-y-auto p-4 sm:p-6" onClick={event => event.stopPropagation()}>

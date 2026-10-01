@@ -1,0 +1,14 @@
+{
+  "schemaVersion": 2,
+  "manualElf": {
+    "id": "qa_stage5_only",
+    "name": "驗收草稿（勿儲存）",
+    "type": "電",
+    "baseStats": {"hp":120,"atk":170,"def":125,"spatk":170,"spdef":125,"speed":140},
+    "height": 185,
+    "weight": 70,
+    "soulMark": {"name":"驗","description":"格式驗收用，非已驗證戰鬥效果。","effectType":"none","effectValue":0},
+    "trait": {"name":"巢狀資料","description":"只驗保留。","mechanics":{"fixture":{"enabled":true,"values":[1,2,3]}}},
+    "skills": [{"name":"驗收電擊","type":"電","category":"特殊","power":40,"pp":10,"description":"附加40點固定傷害。"}]
+  }
+}

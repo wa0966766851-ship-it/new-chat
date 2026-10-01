@@ -1,0 +1,57 @@
+{
+  "version": "13.2.1",
+  "upstream": "https://github.com/RaspberryPiFoundation/blockly",
+  "commit": "168fe103ac42294b845dcd88033e30698d0320b8",
+  "propertyMangling": false,
+  "upstreamTypeDiagnostics": [
+    {
+      "code": 2322,
+      "file": "core/menuitem.ts",
+      "message": "Type 'string | null' is not assignable to type 'string'.   Type 'null' is not assignable to type 'string'."
+    }
+  ],
+  "cycleGroups": 6,
+  "rollupCycles": 20,
+  "files": [
+    {
+      "file": "index.js",
+      "bytes": 1289,
+      "sha256": "43382842ad92678e1531b40ee7f58836870647de4cc93cdc5557f0203eb492e7"
+    },
+    {
+      "file": "core-00.js",
+      "bytes": 104725,
+      "sha256": "2f6974231d96b667e68e7765d07071f9480c7366c37cc452e87e507d4cd8de24"
+    },
+    {
+      "file": "core-01.js",
+      "bytes": 108421,
+      "sha256": "752f985a58a3453b572c2b485f2e41be3554bf2fa3211706ae12aef1d4b0fae7"
+    },
+    {
+      "file": "core-02.js",
+      "bytes": 111787,
+      "sha256": "8fcb33be6ff3e39447252b795b9660d754e6d1a967e8afc443fe8abbe319f3eb"
+    },
+    {
+      "file": "core-04.js",
+      "bytes": 120632,
+      "sha256": "ccdcbc0fee931a5abeb911be4fd502c084e0faa791247687e7ced69ce70d1be1"
+    },
+    {
+      "file": "core-03.js",
+      "bytes": 59670,
+      "sha256": "70153d3e62285901898e2d6b666b3654ab2fd65a8b279cb6945b4ea9d054c7d6"
+    },
+    {
+      "file": "core-05.js",
+      "bytes": 108692,
+      "sha256": "2920efcd1492e38ae09cd104b785c89d93ea441b172a945e9830c5851aa3577d"
+    },
+    {
+      "file": "core-06.js",
+      "bytes": 3884,
+      "sha256": "8962d55e6b9c1e658fb8a225062ed1de20c31937b7750f096d36d5cb06a1b347"
+    }
+  ]
+}

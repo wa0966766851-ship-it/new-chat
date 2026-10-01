@@ -127,7 +127,7 @@ export interface BattleEventContext {
   addLog: (msg: string, type?: "info" | "damage" | "heal" | "status" | "effect" | "defeat", sourceCode?: string) => void;
   applyStatusWithImmunityCheck: (side: "p1" | "p2", status: string, duration: number, ignoreDeluImmune?: boolean) => { success: boolean, immune: boolean };
   applyDeathImmunity: (side: "p1" | "p2", opts: { guardTurns: number; deathImmuneTurns: number; fixedPercentCap?: number; preserveOffField?: boolean }) => void;
-  applyPercentDamage: (side: "p1" | "p2", percent: number) => void;
+  applyPercentDamage: (side: "p1" | "p2", percent: number) => number | void;
   getStatuses: (elf: Elf) => Record<string, number>;
   applyPinkDamage: (side: "p1" | "p2", amount: number, label?: string, activeP1?: Elf, activeP2?: Elf, dmgType?: string, opts?: { pure?: boolean }) => number;
   applyTrueDamage: (side: "p1" | "p2", amount: number, label?: string, activeP1?: Elf, activeP2?: Elf) => number;
