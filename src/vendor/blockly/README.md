@@ -6,6 +6,7 @@
 - 固定提交：`168fe103ac42294b845dcd88033e30698d0320b8`。
 - Apache-2.0 授權全文見 `LICENSE.txt`；各檔保留上游授權標頭。
 - `build-info.json` 保存各檔 SHA-256、大小、編譯診斷與來源版本。
+- `.gitattributes` 固定生成 JS 與清單為 LF，避免 Windows checkout 改換行後雜湊不符。
 - 僅匯出本編輯器使用的公開 API；保留底層欄位、事件、序列化、渲染器與初始化掛鉤。
 - 保留強連通依賴群組，以依賴拓樸順序合成小模組；不使用 property mangling。
 - 原型的 TypeScript 目標與上游相同為 ES2020、strict、舊式 class field 語意。固定上游存在一項 `menuitem.getId` DOM nullable 型別診斷，記錄但不改執行行為，其他型別錯誤停止生成。
