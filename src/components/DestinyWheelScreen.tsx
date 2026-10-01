@@ -60,8 +60,10 @@ export default function DestinyWheelScreen({
   const [p1Pool, setP1Pool] = useState<DestinyElfInstance[]>([]);
   const [p2Pool, setP2Pool] = useState<DestinyElfInstance[]>([]);
 
-  // 翻牌特效計數
-  const [revealIndex, setRevealIndex] = useState<number>(0);
+  // 翻牌狀態：B-2 雙選項並存 —— 逐張點翻（revealedIds）或一次全翻（isRevealingAll）
+  // 注意：p1/p2 是兩個獨立 12 池，不再共用 revealIndex 前綴，避免點一池開到另一池。
+  const [revealIndex, setRevealIndex] = useState<number>(-1); // 保留舊欄位避免外部引用斷裂，實際以 revealedIds 為準
+  const [revealedIds, setRevealedIds] = useState<string[]>([]);
   const [isRevealingAll, setIsRevealingAll] = useState<boolean>(false);
 
   // Ban 階段選擇 (最多 3 隻)
@@ -85,7 +87,8 @@ export default function DestinyWheelScreen({
     
     setP1Pool(p1Results);
     setP2Pool(p2Results);
-    setRevealIndex(0);
+    setRevealIndex(-1);
+    setRevealedIds([]);
     setIsRevealingAll(false);
 
     // 模擬 1.5 秒抽卡轉盤動畫後進入卡牌揭曉
@@ -94,16 +97,17 @@ export default function DestinyWheelScreen({
     }, 1500);
   };
 
-  // 逐格翻開或直接全部揭曉 (優化：點一次任意卡牌即可翻開所有牌)
-  const handleNextReveal = () => {
-    setRevealIndex(11);
-    setIsRevealingAll(true);
+  // B-2 雙選項並存：點未翻開的卡只翻開那一張；想跳過再按「一次全翻」
+  const handleNextReveal = (instanceId?: string) => {
+    if (!instanceId) return;
+    setRevealedIds((prev) => (prev.includes(instanceId) ? prev : [...prev, instanceId]));
   };
 
   const handleRevealAll = () => {
-    setRevealIndex(11);
+    setRevealedIds([...p1Pool.map((e) => e.instanceId), ...p2Pool.map((e) => e.instanceId)]);
     setIsRevealingAll(true);
   };
+  const isCardRevealed = (instanceId: string) => isRevealingAll || revealedIds.includes(instanceId);
 
   // 進入 Ban 階段
   const handleProceedToBan = () => {
@@ -423,7 +427,7 @@ export default function DestinyWheelScreen({
                 ✨ {battleMode === 'PVE' ? '雙方 12 連抽揭曉！請檢視你與對手的卡池！' : '雙人對決 12 連抽揭曉！雙方真人檢視各自卡池！'}
               </h3>
               <p className="text-xs text-slate-400">
-                💡 <span className="text-amber-300 font-bold">極速體驗已啟用：點擊任意卡牌或按鈕一次即可翻開所有卡池！</span>點擊已翻開的卡片可檢視詳細效果。
+                💡 點未翻開的卡只翻開那一張（已翻 <span className="text-amber-300 font-bold">{revealedIds.length} / 24</span>）；想跳過可按「一次全翻」。點擊已翻開的卡片可檢視詳細效果。
               </p>
             </div>
             <div className="flex gap-3 mt-3 md:mt-0">
@@ -455,19 +459,19 @@ export default function DestinyWheelScreen({
                 </span>
               </h4>
               <div className="grid grid-cols-3 sm:grid-cols-4 gap-2 sm:gap-3">
-                {p1Pool.map((elf, idx) => {
-                  const isRevealed = isRevealingAll || idx <= revealIndex;
+                {p1Pool.map((elf) => {
+                  const isRevealed = isCardRevealed(elf.instanceId);
                   const style = getRankStyle(elf.destinyRank);
 
                   if (!isRevealed) {
                     return (
                       <div
                         key={elf.instanceId}
-                        onClick={handleNextReveal}
+                        onClick={() => handleNextReveal(elf.instanceId)}
                         className="aspect-[3/4] rounded-xl bg-gradient-to-tr from-slate-900 via-indigo-950 to-purple-950 border-2 border-dashed border-indigo-500/40 flex flex-col items-center justify-center cursor-pointer hover:border-amber-400 transition animate-pulse"
                       >
                         <span className="text-2xl mb-1">🎡</span>
-                        <span className="text-[10px] text-amber-300 font-bold">點擊全翻</span>
+                        <span className="text-[10px] text-amber-300 font-bold">點擊翻開此牌</span>
                       </div>
                     );
                   }
@@ -518,19 +522,19 @@ export default function DestinyWheelScreen({
                 </span>
               </h4>
               <div className="grid grid-cols-3 sm:grid-cols-4 gap-2 sm:gap-3">
-                {p2Pool.map((elf, idx) => {
-                  const isRevealed = isRevealingAll || idx <= revealIndex;
+                {p2Pool.map((elf) => {
+                  const isRevealed = isCardRevealed(elf.instanceId);
                   const style = getRankStyle(elf.destinyRank);
 
                   if (!isRevealed) {
                     return (
                       <div
                         key={elf.instanceId}
-                        onClick={handleNextReveal}
+                        onClick={() => handleNextReveal(elf.instanceId)}
                         className="aspect-[3/4] rounded-xl bg-gradient-to-tr from-slate-900 via-purple-950 to-slate-950 border-2 border-dashed border-purple-500/40 flex flex-col items-center justify-center cursor-pointer hover:border-amber-400 transition animate-pulse"
                       >
                         <span className="text-2xl mb-1">🎰</span>
-                        <span className="text-[10px] text-amber-300 font-bold">點擊全翻</span>
+                        <span className="text-[10px] text-amber-300 font-bold">點擊翻開此牌</span>
                       </div>
                     );
                   }
