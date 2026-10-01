@@ -1,3 +1,5 @@
+import { damageScopeLabel } from '../effects/damageChoices';
+import { applyActionDamageModifiers } from './actionDamageModifiers';
 import type { BattleState, EffectItem } from '../components/BattleManager';
 import type { DamageComputation } from '../effects/types';
 import { matchesDamageTypes } from '../effects/damageChoices';
@@ -30,6 +32,7 @@ export function applyActiveGateTimersToDamage(
 ): void {
   if (damageComp.pure) return;
   const state = syncStateRef.current;
+  applyActionDamageModifiers(state[`${actorSide}RegistryState`], damageComp);
   for (const owner of new Set([actorSide, targetSide])) {
     const self = state[owner];
     const timers = state[`${owner}Timers`] || [];
@@ -40,7 +43,11 @@ export function applyActiveGateTimersToDamage(
     for (const timer of timers) {
       if (timer.scope !== 'team' && timer.ownerBattleId && timer.ownerBattleId !== (self.battleId || self.id)) continue;
       const p = timer.payload;
+      if (timer.pendingActivation) continue;
       if (p?.applyMode !== 'gate' || timer.remaining <= 0) continue;
+      if (typeof p.damageIncreasePercent === 'number' && owner === actorSide && matchesDamageTypes(p.damageTypes, damageComp.damageCategory)) {
+        damageComp.increasePercent += p.damageIncreasePercent;
+      }
       const items = Array.isArray(p.wrapItems) ? p.wrapItems :
         (Array.isArray(p.wraps) ? p.wraps : [p.wraps]).map(atom => ({ atom, params: p.params || {} }));
       visitModifiers(items, ctx, atom => {
@@ -51,11 +58,11 @@ export function applyActiveGateTimersToDamage(
         if (atom.atom === 'damage_reduce' && subject === targetSide && damageComp.damageCategory !== 'true') {
           const value = getScaledParam(scaled, 'percent', params.amount ?? 50);
           damageComp.decreasePercent = (damageComp.decreasePercent ?? 0) + value / 100;
-          pushEffect({ type: 'log', side: subject, data: { text: `🛡️ 【${timer.name}】：傷害減少 ${value}%！`, type: 'effect' } });
+          pushEffect({ type: 'log', side: subject, data: { text: `🛡️ 【${timer.name}】：${params.damageTypes?.map(damageScopeLabel).join("／") || "傷害（舊範圍待核對）"}減少 ${value}%！`, type: 'effect' } });
         } else if (atom.atom === 'damage_multiplier' && subject === actorSide) {
           const value = getScaledParam(scaled, 'multiplier', params.value ?? 1.5);
           damageComp.multiplier = (damageComp.multiplier ?? 1) * value;
-          pushEffect({ type: 'log', side: subject, data: { text: `🔥 【${timer.name}】：傷害乘以 ${value} 倍！`, type: 'effect' } });
+          pushEffect({ type: 'log', side: subject, data: { text: `🔥 【${timer.name}】：${params.damageTypes?.map(damageScopeLabel).join("／") || "傷害（舊範圍待核對）"}乘以 ${value} 倍！`, type: 'effect' } });
         }
       });
     }

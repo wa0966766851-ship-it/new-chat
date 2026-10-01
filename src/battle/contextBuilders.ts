@@ -1,3 +1,4 @@
+import { queueSkillLifesteal } from './lifesteal';
 import { isNonTrueDamageType } from './damageSemantics';
 import React, { MutableRefObject, Dispatch } from "react";
 import { Elf, Skill } from "../types";
@@ -58,6 +59,25 @@ export type StateAPIs = Pick<BattleEventContext,
   "shuffleArray" | "getEligibleTeam" | "getFullTeam" | "getFirstStarter" | "getNthElf" | "getAdjacentElves" | "getSeparatedElves" | "trackCodeExec"
 >;
 
+/** 附加傷害也通知造成者；兩個方向使用同一分類。 */
+function runDamageHooks(shared: SharedContextDeps, targetSide: 'p1' | 'p2', comp: DamageComputation): void {
+  if (comp.pure || _secondaryDamageDepth > 0) return;
+  _secondaryDamageDepth++;
+  try {
+    const state = shared.syncStateRef.current;
+    for (const [owner, incoming] of [[shared.side, false], [targetSide, true]] as const) {
+      comp.isIncoming = incoming;
+      const handler = SoulMarkRegistry[state[owner].name];
+      const suit = state[owner === 'p1' ? 'p1Suit' : 'p2Suit'];
+      if (handler || (suit && SuitEffectRegistry[suit])) {
+        const ctx = shared.getBattleEventContext(owner, true, shared.moveIndex);
+        handler?.(ctx, EffectTiming.BEFORE_DAMAGE, withSelfRef(comp));
+        if (suit) SuitEffectRegistry[suit]?.(ctx, EffectTiming.BEFORE_DAMAGE, withSelfRef(comp));
+      }
+    }
+  } finally { comp.isIncoming = true; _secondaryDamageDepth--; }
+}
+
 export function buildDamageAPIs(shared: SharedContextDeps): DamageAPIs {
   const { side, moveIndex, syncStateRef, pushEffect, getBattleEventContext, self } = shared;
   
@@ -82,23 +102,7 @@ export function buildDamageAPIs(shared: SharedContextDeps): DamageAPIs {
         pure: !!opts?.pure,
       } as any;
 
-      if (!damageComp.pure && _secondaryDamageDepth === 0) {
-        _secondaryDamageDepth++;
-        try {
-          if (SoulMarkRegistry[tOpp.name]) {
-             const oppCtx = getBattleEventContext(tSide, true, moveIndex);
-             SoulMarkRegistry[tOpp.name](oppCtx, EffectTiming.BEFORE_DAMAGE, withSelfRef(damageComp));
-          }
-
-          const suitId = tSide === "p1" ? c.p1Suit : c.p2Suit;
-          if (suitId && SuitEffectRegistry[suitId]) {
-             const oppCtx = getBattleEventContext(tSide, true, moveIndex);
-             SuitEffectRegistry[suitId](oppCtx, EffectTiming.BEFORE_DAMAGE, withSelfRef(damageComp));
-          }
-        } finally {
-          _secondaryDamageDepth--;
-        }
-      }
+      runDamageHooks(shared, tSide, damageComp);
 
       // Scan actor's marks for nonTrueDamageDealtMultiplier
       const actorSide = side;
@@ -179,23 +183,7 @@ export function buildDamageAPIs(shared: SharedContextDeps): DamageAPIs {
         pure: !!(opts as any)?.pure,
       } as any;
 
-      if (!damageComp.pure && _secondaryDamageDepth === 0) {
-        _secondaryDamageDepth++;
-        try {
-          if (SoulMarkRegistry[tOpp.name]) {
-             const oppCtx = getBattleEventContext(tSide, true, moveIndex);
-             SoulMarkRegistry[tOpp.name](oppCtx, EffectTiming.BEFORE_DAMAGE, withSelfRef(damageComp));
-          }
-
-          const suitId = tSide === "p1" ? c.p1Suit : c.p2Suit;
-          if (suitId && SuitEffectRegistry[suitId]) {
-             const oppCtx = getBattleEventContext(tSide, true, moveIndex);
-             SuitEffectRegistry[suitId](oppCtx, EffectTiming.BEFORE_DAMAGE, withSelfRef(damageComp));
-          }
-        } finally {
-          _secondaryDamageDepth--;
-        }
-      }
+      runDamageHooks(shared, tSide, damageComp);
 
       // Scan actor's marks for nonTrueDamageDealtMultiplier
       const actorSide = side;
@@ -251,6 +239,7 @@ export function buildDamageAPIs(shared: SharedContextDeps): DamageAPIs {
       const finalDamage = Math.floor(damageComp.floor !== undefined ? Math.max(stage3, damageComp.floor) : Math.max(0, stage3));
 
       pushEffect({ type: 'damage', side: tSide, data: { amount: finalDamage, label: label || "附加技能傷害", popup: true, sourceElfName: self.name, damageType: damageCategory, damageNode, typedSkill: damageCategory === "skill_attribute", ignoreShield: !!opts?.ignoreShield } });
+      if (tSide !== side) queueSkillLifesteal(side, finalDamage, damageCategory, syncStateRef.current[`${side}RegistryState`], pushEffect);
       return finalDamage;
     },
     applyTrueDamage: (tSide, amt, label, p1Override, p2Override) => {
@@ -267,10 +256,7 @@ export function buildDamageAPIs(shared: SharedContextDeps): DamageAPIs {
         isIncoming: true
       } as any;
 
-      if (SoulMarkRegistry[tOpp.name]) {
-         const oppCtx = getBattleEventContext(tSide, true, moveIndex);
-         SoulMarkRegistry[tOpp.name](oppCtx, EffectTiming.BEFORE_DAMAGE, withSelfRef(damageComp));
-      }
+      runDamageHooks(shared, tSide, damageComp);
 
       const actorSide = side;
       applyActiveGateTimersToDamage(actorSide, tSide, damageComp, pushEffect, syncStateRef, { side, moveIndex });
@@ -309,23 +295,7 @@ export function buildDamageAPIs(shared: SharedContextDeps): DamageAPIs {
         isIncoming: true
       } as any;
 
-      if (_secondaryDamageDepth === 0) {
-        _secondaryDamageDepth++;
-        try {
-          if (SoulMarkRegistry[target.name]) {
-             const oppCtx = getBattleEventContext(tSide, true, moveIndex);
-             SoulMarkRegistry[target.name](oppCtx, EffectTiming.BEFORE_DAMAGE, withSelfRef(damageComp));
-          }
-
-          const suitId = tSide === "p1" ? c.p1Suit : c.p2Suit;
-          if (suitId && SuitEffectRegistry[suitId]) {
-             const oppCtx = getBattleEventContext(tSide, true, moveIndex);
-             SuitEffectRegistry[suitId](oppCtx, EffectTiming.BEFORE_DAMAGE, withSelfRef(damageComp));
-          }
-        } finally {
-          _secondaryDamageDepth--;
-        }
-      }
+      runDamageHooks(shared, tSide, damageComp);
 
       // Scan actor's marks for nonTrueDamageDealtMultiplier
       const actorSide = side;
@@ -406,23 +376,7 @@ export function buildDamageAPIs(shared: SharedContextDeps): DamageAPIs {
         isIncoming: true
       } as any;
 
-      if (_secondaryDamageDepth === 0) {
-        _secondaryDamageDepth++;
-        try {
-          if (SoulMarkRegistry[target.name]) {
-             const oppCtx = getBattleEventContext(tSide, true, moveIndex);
-             SoulMarkRegistry[target.name](oppCtx, EffectTiming.BEFORE_DAMAGE, withSelfRef(damageComp));
-          }
-
-          const suitId = tSide === "p1" ? c.p1Suit : c.p2Suit;
-          if (suitId && SuitEffectRegistry[suitId]) {
-             const oppCtx = getBattleEventContext(tSide, true, moveIndex);
-             SuitEffectRegistry[suitId](oppCtx, EffectTiming.BEFORE_DAMAGE, withSelfRef(damageComp));
-          }
-        } finally {
-          _secondaryDamageDepth--;
-        }
-      }
+      runDamageHooks(shared, tSide, damageComp);
 
       // Scan actor's marks for nonTrueDamageDealtMultiplier
       const actorSide = side;

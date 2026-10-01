@@ -1218,7 +1218,8 @@
                       {
                         "op": "vampire",
                         "p": {
-                          "ratio": 1
+                          "ratio": 1,
+                          "kind": "技能"
                         },
                         "label": "吸血 100%"
                       }
@@ -2000,7 +2001,8 @@
                       {
                         "op": "vampire",
                         "p": {
-                          "ratio": 0.4
+                          "ratio": 0.4,
+                          "kind": "技能"
                         },
                         "label": "吸血 40%"
                       }
@@ -2082,9 +2084,10 @@
                         "op": "boost",
                         "p": {
                           "mult": 2,
-                          "kind": "攻擊"
+                          "kind": "攻擊",
+                          "power": true
                         },
-                        "label": "本次【攻擊傷害】×2"
+                        "label": "本次【攻擊威力】×2"
                       }
                     ]
                   }
@@ -3002,7 +3005,8 @@
                       {
                         "op": "vampire",
                         "p": {
-                          "ratio": 0.4
+                          "ratio": 0.4,
+                          "kind": "技能"
                         },
                         "label": "吸血 40%"
                       }
@@ -3385,7 +3389,8 @@
                         "op": "boost",
                         "p": {
                           "mult": 2,
-                          "kind": "攻擊"
+                          "kind": "攻擊",
+                          "power": false
                         },
                         "label": "本次【攻擊傷害】×2"
                       },
@@ -4340,9 +4345,10 @@
                         "op": "boost",
                         "p": {
                           "mult": 2,
-                          "kind": "攻擊"
+                          "kind": "攻擊",
+                          "power": true
                         },
-                        "label": "本次【攻擊傷害】×2"
+                        "label": "本次【攻擊威力】×2"
                       }
                     ]
                   }
@@ -4482,7 +4488,8 @@
                         "op": "boost",
                         "p": {
                           "mult": 2,
-                          "kind": "攻擊"
+                          "kind": "攻擊",
+                          "power": false
                         },
                         "label": "本次【攻擊傷害】×2"
                       },
@@ -4580,7 +4587,8 @@
                         "op": "boost",
                         "p": {
                           "mult": 1.5,
-                          "kind": "攻擊"
+                          "kind": "攻擊",
+                          "power": false
                         },
                         "label": "本次【攻擊傷害】×1.5"
                       }
@@ -5043,7 +5051,8 @@
                       {
                         "op": "vampire",
                         "p": {
-                          "ratio": 0.5
+                          "ratio": 0.5,
+                          "kind": "技能"
                         },
                         "label": "吸血 50%"
                       }
@@ -7357,6 +7366,7 @@
                         "p": {
                           "mult": 1.75,
                           "kind": "攻擊",
+                          "power": false,
                           "x2If": {
                             "c": "hp_cmp",
                             "p": {
@@ -7794,6 +7804,7 @@
                         "p": {
                           "mult": 1.75,
                           "kind": "攻擊",
+                          "power": false,
                           "x2If": {
                             "c": "hp_cmp",
                             "p": {
@@ -8240,7 +8251,8 @@
                       {
                         "op": "vampire",
                         "p": {
-                          "ratio": 1
+                          "ratio": 1,
+                          "kind": "技能"
                         },
                         "label": "吸血 100%"
                       }
@@ -10471,7 +10483,8 @@
                         "op": "boost",
                         "p": {
                           "mult": 2,
-                          "kind": "攻擊"
+                          "kind": "攻擊",
+                          "power": false
                         },
                         "label": "本次【攻擊傷害】×2"
                       }
@@ -10859,13 +10872,13 @@
                   {
                     "acts": [
                       {
-                        "op": "dmg_mod",
+                        "op": "boost",
                         "p": {
-                          "dir": "out",
+                          "mult": 1.5,
                           "kind": "非真實",
-                          "boost": 0.5
+                          "power": false
                         },
-                        "label": "造成【非真實傷害】+50%"
+                        "label": "本次【非真實傷害】×1.5"
                       }
                     ]
                   }
@@ -15617,6 +15630,7 @@
                         "p": {
                           "mult": 1.75,
                           "kind": "攻擊",
+                          "power": false,
                           "x2If": {
                             "c": "hp_cmp",
                             "p": {
@@ -16298,7 +16312,8 @@
                       {
                         "op": "vampire",
                         "p": {
-                          "ratio": 0.5
+                          "ratio": 0.5,
+                          "kind": "技能"
                         },
                         "label": "吸血 50%"
                       }
@@ -16754,7 +16769,8 @@
                       {
                         "op": "vampire",
                         "p": {
-                          "ratio": 1
+                          "ratio": 1,
+                          "kind": "技能"
                         },
                         "label": "吸血 100%"
                       }
@@ -17546,6 +17562,7 @@
                         "p": {
                           "mult": 1.75,
                           "kind": "攻擊",
+                          "power": false,
                           "x2If": {
                             "c": "hp_cmp",
                             "p": {
@@ -20935,7 +20952,8 @@
                         "op": "boost",
                         "p": {
                           "mult": 2.5,
-                          "kind": "攻擊"
+                          "kind": "攻擊",
+                          "power": false
                         },
                         "label": "本次【攻擊傷害】×2.5"
                       }
@@ -22158,9 +22176,10 @@
                         "op": "boost",
                         "p": {
                           "mult": 1.75,
-                          "kind": "攻擊"
+                          "kind": "攻擊",
+                          "power": true
                         },
-                        "label": "本次【攻擊傷害】×1.75"
+                        "label": "本次【攻擊威力】×1.75"
                       }
                     ]
                   }
@@ -22583,7 +22602,8 @@
                         "op": "boost",
                         "p": {
                           "mult": 1.5,
-                          "kind": "攻擊"
+                          "kind": "攻擊",
+                          "power": false
                         },
                         "label": "本次【攻擊傷害】×1.5"
                       }
@@ -24917,9 +24937,10 @@
                         "op": "boost",
                         "p": {
                           "mult": 1.7,
-                          "kind": "攻擊"
+                          "kind": "技能",
+                          "power": false
                         },
-                        "label": "本次【攻擊傷害】×1.7"
+                        "label": "本次【技能傷害】×1.7"
                       }
                     ]
                   },
@@ -28003,9 +28024,10 @@
                         "op": "boost",
                         "p": {
                           "mult": 1.5,
-                          "kind": "攻擊"
+                          "kind": "技能",
+                          "power": false
                         },
-                        "label": "本次【攻擊傷害】×1.5"
+                        "label": "本次【技能傷害】×1.5"
                       }
                     ]
                   }
@@ -29497,9 +29519,10 @@
                         "op": "boost",
                         "p": {
                           "mult": 1.75,
-                          "kind": "攻擊"
+                          "kind": "技能",
+                          "power": false
                         },
-                        "label": "本次【攻擊傷害】×1.75"
+                        "label": "本次【技能傷害】×1.75"
                       }
                     ]
                   }
@@ -30381,7 +30404,8 @@
                         "op": "boost",
                         "p": {
                           "mult": 1.2,
-                          "kind": "攻擊"
+                          "kind": "攻擊",
+                          "power": false
                         },
                         "label": "本次【攻擊傷害】×1.2"
                       }
@@ -30875,7 +30899,8 @@
                         "op": "boost",
                         "p": {
                           "mult": 2,
-                          "kind": "攻擊"
+                          "kind": "攻擊",
+                          "power": false
                         },
                         "label": "本次【攻擊傷害】×2"
                       }
@@ -31699,13 +31724,13 @@
                   {
                     "acts": [
                       {
-                        "op": "dmg_mod",
+                        "op": "boost",
                         "p": {
-                          "dir": "out",
+                          "mult": 2.2,
                           "kind": "非真實",
-                          "boost": 1.2
+                          "power": false
                         },
-                        "label": "造成【非真實傷害】+120%"
+                        "label": "本次【非真實傷害】×2.2"
                       }
                     ]
                   }
@@ -36985,7 +37010,8 @@
                         "op": "boost",
                         "p": {
                           "mult": 2.5,
-                          "kind": "攻擊"
+                          "kind": "攻擊",
+                          "power": false
                         },
                         "label": "本次【攻擊傷害】×2.5"
                       }
@@ -37385,7 +37411,8 @@
                         "op": "boost",
                         "p": {
                           "mult": 1.5,
-                          "kind": "攻擊"
+                          "kind": "攻擊",
+                          "power": false
                         },
                         "label": "本次【攻擊傷害】×1.5"
                       }
@@ -39469,9 +39496,10 @@
                         "op": "boost",
                         "p": {
                           "mult": 2,
-                          "kind": "攻擊"
+                          "kind": "攻擊",
+                          "power": true
                         },
-                        "label": "本次【攻擊傷害】×2"
+                        "label": "本次【攻擊威力】×2"
                       }
                     ]
                   }

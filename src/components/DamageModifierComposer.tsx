@@ -20,7 +20,7 @@ export function DamageModifierComposer({ source, onAdd }: { source: KitEntry['so
       {!modifier && damageType === 'skill' && <label>屬性<select aria-label="修正傷害屬性" className={field} value={elem} onChange={e => setElem(e.target.value)}>{SEER_TYPES.map(t => <option key={t}>{t}</option>)}</select></label>}
     </div>
     {modifier && <fieldset className="flex flex-wrap gap-3 text-xs mt-3"><legend>作用傷害類別（可複選）</legend>{DAMAGE_FILTER_TYPES.map(type => <label key={type}><input type="checkbox" checked={types.includes(type)} onChange={e => setTypes(e.target.checked ? [...types, type] : types.filter(t => t !== type))} /> {damageScopeLabel(type)}</label>)}</fieldset>}
-    <p className="text-xs text-slate-400 mt-2">時點：{node}。真實傷害不接受一般減傷；舊效果不指定範圍時保留原規則。吸取量與恢復量須另核對護盾、護罩及體力上下限情境。</p>
+    <p className="text-xs text-slate-400 mt-2">時點：{node}。技能範圍包含普通攻擊、X 系及額外行動；普通系屬性不等於普通攻擊。非真實排除真傷與體力調整。扣血＋恢復與技能吸血是不同效果；所有恢復仍受恢復規則限制。</p>
     {error && <p role="alert" className="text-rose-300">{error}</p>}
     <button type="button" className="ios-button mt-2" onClick={() => {
       const params = atom === 'damage_multiplier' ? { multiplier: value, damageTypes: types } : atom === 'damage_reduce' ? { percent: value, damageTypes: types } : atom === 'damage_reflect' ? { percent: value, damageType, elem, target: 'opponent' } : { amount: value, amountMode: unit, damageType, elem, target: 'opponent' };

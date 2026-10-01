@@ -155,7 +155,7 @@ test('50%減傷是0.5乘區且不減真傷，傷害類別與零倍率不兜底',
   const calls: any[] = [];
   ATOMS.stat_change(normalizeBlockAtom('stat_change', { stat: 'atk', stages: 0 }).params, 'self', { applyStatChange: (...a: any[]) => calls.push(a) }); assert.deepEqual(calls[0][1], { atk: 0 });
 });
-test('吸取傷害被擋0點時回血0點，不兜底原值；百分比反彈不把點數當HP百分比', () => {
+test('扣血＋恢復原子結算0點時回血0點（不代表所有吸血）；百分比反彈不把點數當HP百分比', () => {
   let heal = -1, ratio = -1;
   const ctx: any = { actor: 'p1', activeP1: elf(), activeP2: elf(), hpReduced: 200, applyFixedDamage: () => 0, applyHeal: (_s: string, a: number) => heal = a, applyPercentDamage: (_s: string, a: number) => ratio = a };
   ATOMS.drain_hp({ amount: 100, damageType: 'fixed' }, 'opponent', ctx); assert.equal(heal, 0);

@@ -40,6 +40,8 @@ export interface Timer {
    * 附加時若條件成立則設為 true,並於當回合的 tick 略過一次(見 tickTimers)。
    */
   lateMoverPending?: boolean;
+  /** 明寫「下N回合」：附加當回合不啟用，首次回合結束啟用且不扣期限。 */
+  pendingActivation?: boolean;
   /** 同 id 重複附加時的行為 */
   stackRule?: "refresh" | "extend" | "stack" | "ignore";
   layers?: number;
@@ -81,7 +83,7 @@ export function addTimer(list: Timer[], timer: Timer, ctx?: AddContext): Timer[]
   if (
     t.kind === "turn_effect" &&
     t.tickAt !== "never" &&
-    ctx?.isLateMover &&
+    !t.pendingActivation && ctx?.isLateMover &&
     (ctx.benefitAlreadyMissed ?? true)
   ) {
     t.lateMoverPending = true;
@@ -134,6 +136,7 @@ export function tickTimers(
   for (const t of list) {
     if (t.remaining <= 0) continue;
     if (t.tickAt !== at) { out.push(t); continue; }
+    if (t.pendingActivation) { out.push({ ...t, pendingActivation: false }); continue; }
     if (t.lateMoverPending) { out.push({ ...t, lateMoverPending: false }); continue; }
     
     if (onTickEffect) {

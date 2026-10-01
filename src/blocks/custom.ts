@@ -1,3 +1,4 @@
+import { queueActionPowerMultiplier } from '../battle/actionDamageModifiers';
 // 專屬積木：描述中精靈獨有、通用積木表達不了的句子。
 // key＝正規化後的子句原文（去掉 ■🎯> 標記），label＝積木上顯示的文字。
 // run 以該精靈一方的 ctx 執行（self＝自身、target＝對手）。
@@ -167,7 +168,7 @@ export const CUSTOM: Record<string, CustomDef> = {
     label: "本次【攻擊傷害】+35%（對手有技能PP<2時 +70%）",
     run: (ctx) => {
       const low = ((ctx.target as any).skills || []).some((k: any) => (k.pp ?? 0) < 2);
-      ctx.setPlayerState("skillDamageBoost", (ctx.getPlayerState("skillDamageBoost") || 1) * (low ? 1.7 : 1.35));
+      queueActionPowerMultiplier(ctx, low ? 1.7 : 1.35);
       return true;
     },
   },

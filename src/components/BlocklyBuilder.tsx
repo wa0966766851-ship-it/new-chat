@@ -255,7 +255,7 @@ export function defineCustomBlocks() {
       "previousStatement": null,
       "nextStatement": null,
       "colour": 0,
-      "tooltip": "提升造成的傷害倍率"
+      "tooltip": "依類別(JSON)提升造成的傷害。skill：普通攻擊、X系及額外行動；attack：普通攻擊子類；non_true：技能、固定、百分比，排除真傷與體力調整。"
     },
     {
       "type": "atom_damage_reduce",
@@ -267,7 +267,7 @@ export function defineCustomBlocks() {
       "previousStatement": null,
       "nextStatement": null,
       "colour": 0,
-      "tooltip": "降低受到的攻擊傷害百分比"
+      "tooltip": "依類別(JSON)減少受到的傷害。skill包含普通攻擊、X系及額外行動；attack只限攻擊；non_true排除真傷與體力調整。真實傷害不受一般減傷。"
     },
     {
       "type": "atom_damage_reflect",

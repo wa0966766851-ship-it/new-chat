@@ -107,7 +107,8 @@ export const calculateDamage = (
   
   // 積木：能力下降視為同級全屬性提升
   if ((side === "p1" ? p1RegistryState : p2RegistryState)?.blkStageAsBoost) atkS = Math.max(atkS, (side === "p1" ? p1RegistryState : p2RegistryState).blkStageAsBoost);
-  const base = ((42 * calculateEffectiveStat(atk, atkS) * skill.power / calculateEffectiveStat(def, defS)) / 50 + 2);
+  const powerMultiplier = (side === "p1" ? p1RegistryState : p2RegistryState)?.powerMultiplierThisAction ?? 1;
+  const base = ((42 * calculateEffectiveStat(atk, atkS) * skill.power * powerMultiplier / calculateEffectiveStat(def, defS)) / 50 + 2);
   
   const actorReg = side === "p1" ? p1RegistryState : p2RegistryState;
   let typeMult = getTypeMatchup(skill.type, target.type);

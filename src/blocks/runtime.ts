@@ -1,3 +1,5 @@
+import { queueActionDamageModifier, queueActionPowerMultiplier } from '../battle/actionDamageModifiers';
+import { isSkillDamageType, isNonTrueDamageType } from '../battle/damageSemantics';
 import { matchesDamageTypes } from '../effects/damageChoices';
 // 積木執行器：把 Program（parse.ts 產生）在戰鬥中執行。
 import type { Act, Clause, Cond, Program, Stmt, Trigger } from "./model";
@@ -210,7 +212,7 @@ export const OPS: Record<string, OpFn> = {
     if (!st.lastAmount) return false; ctx.applyHeal(ctx.actor, st.lastAmount); return true;
   },
   dmg_from_last: (ctx, p, st) => { if (!st.lastAmount) return false; dealDamage(ctx, ctx.targetSide, st.lastAmount * p.ratio, p.type, p.elem); return true; },
-  vampire: (ctx, p) => { ctx.setPlayerState("vampireRatio", p.ratio); return true; },
+  vampire: (ctx, p) => { ctx.setPlayerState("vampireRatio", p.ratio); ctx.setPlayerState("vampireDamageTypesThisAction", [p.kind === "攻擊" ? "attack" : "skill"]); return true; },
   maxhp: (ctx, p, st) => {
     const side = sideOf(ctx, p.side); const e = elfOf(ctx, side);
     st.maxHpBeforeChange ||= {};
@@ -244,9 +246,11 @@ export const OPS: Record<string, OpFn> = {
   mercy: (ctx) => { ctx.setPlayerState("mercyThisAction", true); return true; },
   boost: (ctx, p, st) => {
     const comp = st.event?.data?.damageComp || (st.event?.data?.base != null ? st.event.data : null);
+    if (p.power && comp) return false; // 威力需在公式前處理，不能當傷害倍率。
+    if (p.power) { queueActionPowerMultiplier(ctx, p.mult); return true; }
     if (comp) { if (comp.isIncoming || !compMatchesKind(comp, p.kind || "攻擊")) return false; comp.increasePercent += p.mult - 1; return true; }
     if (st.event?.trig === "passive") return false;
-    ctx.setPlayerState("skillDamageBoost", (ctx.getPlayerState("skillDamageBoost") || 1) * p.mult); ctx.addLog(`⚡ 本次傷害 ×${p.mult}！`, "effect"); return true;
+    return queueActionDamageModifier(ctx, p.mult, p.kind || "攻擊");
   },
   no_resist: (ctx) => { ctx.setPlayerState("noResistedThisAction", true); return true; },
   crit_now: (ctx) => { ctx.setPlayerState("nextTurnCrit", true); return true; },
@@ -256,10 +260,10 @@ export const OPS: Record<string, OpFn> = {
   dmg_cap_turns: (ctx, p) => { ctx.setPlayerState("incomingSkillDmgCapTurns", p.turns); ctx.setPlayerState("incomingSkillDmgCap", p.cap); return true; },
   dmg_mod_turns: (ctx, p) => {
     const owner = p.side === "opp" ? ctx.targetSide : ctx.actor;
-    const turns = p.turns + (p.next ? 1 : 0);
-    if (p.dir === "in") addBlockTimer(ctx, owner, `受傷-${p.reduce * 100}%`, turns, "turns", { dmgIn: -p.reduce, kind: p.kind });
-    else if (p.dir === "taken") addBlockTimer(ctx, owner, `受傷+${p.boost * 100}%`, turns, "turns", { dmgIn: p.boost, kind: p.kind });
-    else addBlockTimer(ctx, owner, `增傷+${p.boost * 100}%`, turns, "turns", { dmgOut: p.boost, kind: p.kind });
+    const turns = p.turns;
+    if (p.dir === "in") addBlockTimer(ctx, owner, `受傷-${p.reduce * 100}%`, turns, "turns", { dmgIn: -p.reduce, kind: p.kind }, !!p.next);
+    else if (p.dir === "taken") addBlockTimer(ctx, owner, `受傷+${p.boost * 100}%`, turns, "turns", { dmgIn: p.boost, kind: p.kind }, !!p.next);
+    else addBlockTimer(ctx, owner, `增傷+${p.boost * 100}%`, turns, "turns", { dmgOut: p.boost, kind: p.kind }, !!p.next);
     return true;
   },
   boost_turns_x2: (ctx, p) => { addBlockTimer(ctx, ctx.actor, `威力翻倍`, p.turns + 1, "turns", { dmgOutMult: 2, kind: "攻擊" }); return true; },
@@ -443,7 +447,7 @@ export const OPS: Record<string, OpFn> = {
 };
 
 // ───────── 持續效果（回合類，可被消除） ─────────
-export function addBlockTimer(ctx: BattleEventContext, side: S, name: string, n: number, mode: "turns" | "uses", payload: Record<string, any>) {
+export function addBlockTimer(ctx: BattleEventContext, side: S, name: string, n: number, mode: "turns" | "uses", payload: Record<string, any>, pendingActivation = false) {
   ctx.addTimerTo(side, {
     // 同來源同效果重複附加時刷新回合數（不疊加）
     id: `blk_${side}_${ctx.skill?.name || ctx.self?.name || "src"}_${name}_${payload.trig || ""}`,
@@ -451,6 +455,7 @@ export function addBlockTimer(ctx: BattleEventContext, side: S, name: string, n:
     kind: mode === "uses" ? "use_counter" : "turn_effect",
     source: "skill" as any,
     remaining: n,
+    pendingActivation,
     tickAt: mode === "uses" ? "never" : "round_end",
     payload: { block: { ...payload, owner: side, src: ctx.skill?.name || ctx.self?.name } },
     description: name,
@@ -567,9 +572,9 @@ export function eventTriggers(ctx: BattleEventContext, ev: string, data: any): T
     case EffectTiming.BEFORE_DAMAGE: {
       const comp = data?.damageComp || data;
       if (!comp || typeof comp !== "object" || comp.base == null) return [];
-      const skill = comp.damageCategory === "skill_attack" || comp.damageCategory === "skill_attribute" || comp.damageCategory === "skill_extra_action";
+      const skill = isSkillDamageType(comp.damageCategory);
       const atk = comp.damageCategory === "skill_attack" && !comp.isTypedSkill;
-      if (comp.isIncoming) return ["passive", "incoming", ...(skill ? ["incoming_skill"] as Trigger[] : []), ...(atk ? ["incoming_attack"] as Trigger[] : []), ...(comp.damageCategory !== "true" ? ["incoming_nontrue"] as Trigger[] : [])];
+      if (comp.isIncoming) return ["passive", "incoming", ...(skill ? ["incoming_skill"] as Trigger[] : []), ...(atk ? ["incoming_attack"] as Trigger[] : []), ...(isNonTrueDamageType(comp.damageCategory) ? ["incoming_nontrue"] as Trigger[] : [])];
       return ["passive", "outgoing", ...(skill ? ["outgoing_skill"] as Trigger[] : []), ...(atk ? ["outgoing_attack"] as Trigger[] : [])];
     }
     default: return [];
@@ -582,7 +587,8 @@ export function runSideTimers(ctx: BattleEventContext, trigs: Trigger[], data: a
   const comp = data?.damageComp || (data && data.base != null ? data : null);
   for (const t of timers) {
     const b = t.payload?.block;
-    if (!b || (t.remaining ?? 0) <= 0) continue;
+    if (!b || t.pendingActivation || (t.remaining ?? 0) <= 0) continue;
+    if (t.scope !== "team" && t.ownerBattleId && t.ownerBattleId !== (ctx.self.battleId || ctx.self.id)) continue;
     if (b.trig && trigs.includes(b.trig)) {
       const st: RunState = { last: null, lastAmount: 0, event: { trig: b.trig, data } };
       if (b.once || b.consumeOnFire) ctx.consumeTimer?.(ctx.actor, t.id);

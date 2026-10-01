@@ -75,7 +75,7 @@ export function switchBattleSide(state: BattleState, side: Side, index: number):
   for (const [key, value] of Object.entries(state[regKey])) {
     if (key === "clearOnSwitch") continue;
     if (isTeamRegistryKey(key)) shared[key] = value;
-    else if (!clearKeys.has(key) && !/Turns$|ThisTurn$|ThisAction$/.test(key)) personal[key] = value;
+    else if (!["vampireRatio", "skillDamageBoost"].includes(key) && !clearKeys.has(key) && !/Turns$|ThisTurn$|ThisAction$/.test(key)) personal[key] = value;
   }
   // 無序的追蹤是針對 incoming，第一次交棒保留；離開被追蹤者才失效。
   if (shared.wuxuBladeReviveTrackingElf !== incoming.name) shared.wuxuBladeReviveTrackingActive = false;

@@ -1,6 +1,7 @@
+import { queueActionPowerMultiplier } from '../battle/actionDamageModifiers';
 import type { Elf, Skill, StatType } from "../types";
 import { calculateEffectiveStat, getTypeMatchup } from "../utils/statCalculator";
-import { isSkillDamageType } from "../battle/damageSemantics";
+import { isSkillDamageType, isNonTrueDamageType, normalizeDamageType } from "../battle/damageSemantics";
 import { reyGodDescentRule, resolveDamageTransition, resolveRecoveryTransition } from "../battle/survivalRules";
 import { OTHERWORLD_REY_TRANSFORM_SKILLS } from "../data/otherworldRey";
 import type { BattleEventContext, BattleSkillHandler, DamageComputation, PriorityComputation } from "./types";
@@ -107,8 +108,10 @@ const skillDamageBoostFactor = (ctx: BattleEventContext): number => {
   return ctx.goesFirst ? 2 : 1;
 };
 
-const setCurrentDamageIncrease = (ctx: BattleEventContext, increasePercent: number) =>
+const setCurrentDamageIncrease = (ctx: BattleEventContext, increasePercent: number, scope = "skill") => {
   ctx.setPlayerState(`${R}.currentDamageIncrease`, increasePercent);
+  ctx.setPlayerState(`${R}.currentDamageScope`, scope);
+};
 
 const boostOpponentStages = (ctx: BattleEventContext) => {
   const amount = hasPositiveStage(ctx.target) ? 2 : 1;
@@ -178,6 +181,7 @@ export function handleOtherworldReySoulMark(ctx: BattleEventContext, event: Effe
 
   if (event === EffectTiming.BEFORE_ACTION && ctx.skill) {
     if (ctx.skill.category !== "屬性") {
+      queueActionPowerMultiplier(ctx, 1.7);
       if (self.useAtkSpAtkSumForAttacks) ctx.setPlayerState("blkAtkSpatkSum", true);
       const stageAmount = sumAbsoluteStatStages(self, target) * 70;
       if (isAbnormal(ctx, self)) {
@@ -190,17 +194,21 @@ export function handleOtherworldReySoulMark(ctx: BattleEventContext, event: Effe
   if (event === EffectTiming.BEFORE_DAMAGE && data?.damageComp) {
     const comp = data.damageComp as DamageComputation;
     if (!comp.isIncoming) {
-      comp.increasePercent += 0.7; // 電氣纏繞：攻擊威力提升70%的等價傷害乘區
-      comp.increasePercent += getLostHpRatio(self); // 雷神：每損失1%體力，非真實傷害+1%，最高70%
-      if (isParalyzed(ctx, self)) comp.increasePercent += 0.7;
-      comp.increasePercent += Number(ctx.getPlayerState(`${R}.currentDamageIncrease`) || 0);
+      if (isNonTrueDamageType(comp.damageCategory)) comp.increasePercent += getLostHpRatio(self);
+      if (isSkillDamageType(comp.damageCategory) && isParalyzed(ctx, self)) comp.increasePercent += 0.7;
+      const scope = String(ctx.getPlayerState(`${R}.currentDamageScope`) || "skill");
+      if (scope === "non_true" ? isNonTrueDamageType(comp.damageCategory) : isSkillDamageType(comp.damageCategory)) {
+        comp.increasePercent += Number(ctx.getPlayerState(`${R}.currentDamageIncrease`) || 0);
+      }
       const floor = Number(ctx.getPlayerState(`${R}.currentDamageFloor`) || 0);
-      if (floor > 0) comp.floor = Math.max(comp.floor || 0, floor);
+      if (isSkillDamageType(comp.damageCategory) && floor > 0) comp.floor = Math.max(comp.floor || 0, floor);
     } else {
       // 電氣纏繞：對手最終雙攻為面板70%；雷神：已損體力比例同步強化雙防。
-      comp.multiplier *= 0.7;
-      comp.multiplier /= 1 + getLostHpRatio(self);
-      if (isGodDescent(ctx) && comp.damageCategory !== "true") comp.multiplier = 0;
+      if (comp.damageCategory === "skill_attack") {
+        comp.multiplier *= 0.7;
+        comp.multiplier /= 1 + getLostHpRatio(self);
+      }
+      if (isGodDescent(ctx) && isNonTrueDamageType(comp.damageCategory)) comp.multiplier = 0;
     }
   }
 
@@ -271,10 +279,7 @@ export function handleOtherworldReySoulMark(ctx: BattleEventContext, event: Effe
   }
 }
 
-const isNonTrueDamage = (damageType: unknown) => {
-  const type = String(damageType || "");
-  return type !== "true" && type !== "true_damage" && type !== "absorb";
-};
+const isNonTrueDamage = (damageType: unknown) => isNonTrueDamageType(normalizeDamageType({ damageType }));
 
 export const OTHERWORLD_REY_SKILL_TRANSFORMS: Record<string, (ctx: BattleEventContext, skill: Skill) => Skill | undefined> = {
   "霆·禁雷敕令": (ctx) => {
@@ -310,7 +315,12 @@ const otherworldThunder: BattleSkillHandler = (ctx) => {
   ctx.setPlayerState(`${R}.currentDamageFloor`, 300 * getTypeMatchup(elem, ctx.target.type));
   ctx.applyAbsorb(ctx.targetSide, Math.floor(ctx.target.maxHp / 2));
   ctx.setPlayerState(`${R}.stormDrainTurns`, 5);
-  ctx.setPlayerState(`${R}.currentDamageIncrease`, 2.1);
+  ctx.addTimerTo(ctx.actor, {
+    id: 'non_true_next_boost', name: '下2回合非真實傷害提升210%', kind: 'turn_effect', source: 'skill',
+    remaining: 2, tickAt: 'round_end', pendingActivation: true,
+    payload: { applyMode: 'gate', damageIncreasePercent: 2.1, damageTypes: ['non_true'] },
+    description: '下2回合造成非真實傷害提升210%；排除真實傷害及體力調整。',
+  }, false);
   ctx.setPlayerState(`${R}.priorityTurns`, 2);
   ctx.setPlayerState(`${R}.priorityValue`, 3);
 };
@@ -334,7 +344,7 @@ const sameDustRite: BattleSkillHandler = (ctx) => {
 
 const thunderExecution: BattleSkillHandler = (ctx) => {
   boostOpponentStages(ctx);
-  setCurrentDamageIncrease(ctx, 0.7 * skillDamageBoostFactor(ctx));
+  setCurrentDamageIncrease(ctx, 0.7 * skillDamageBoostFactor(ctx), "non_true");
   ctx.applyAbsorb(ctx.targetSide, 70);
   ctx.setOpponentState("utilitySkillInvalidTurns", 2);
 };

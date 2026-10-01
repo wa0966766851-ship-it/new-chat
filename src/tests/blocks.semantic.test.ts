@@ -1,3 +1,4 @@
+import { applyActionDamageModifiers } from '../battle/actionDamageModifiers';
 import assert from "node:assert";
 import { DEFAULT_ELVES } from "../data/defaultElves";
 import { getSkillProgram, getSoulProgram } from "../blocks/registry";
@@ -19,6 +20,11 @@ import {
   GUARDIAN_DURATION,
 } from "../effects/guardianMarkRegistry";
 
+function actionAttackMultiplier(registry: any): number {
+  const comp: any = {damageCategory:'skill_attack', multiplier:1};
+  applyActionDamageModifiers(registry, comp);
+  return comp.multiplier;
+}
 let pass = 0;
 let fail = 0;
 
@@ -236,7 +242,7 @@ t("淨·天河倒懸：消回合後禁療與屬性失效，低體力時傷害翻
   runSkillProgram(h.ctx, getSkillProgram(h.ctx.skill), "use");
   assert.strictEqual(h.opponentState.p2_noHealTurns, 3);
   assert.strictEqual(h.opponentState.utilitySkillInvalidTurns, 3);
-  assert.strictEqual(h.playerState.skillDamageBoost, 2);
+  assert.strictEqual(actionAttackMultiplier(h.playerState), 2);
   assert.strictEqual(h.playerState.vampireRatio, 1);
 });
 
@@ -244,7 +250,7 @@ t("翎萬羽歸宗：異常目標使攻擊翻倍並啟用等量回血", () => {
   const h = makeBlockContext({}, { battleStatuses: { 麻痺: 2 } });
   h.ctx.skill = skillByName("翎萬羽歸宗");
   runSkillProgram(h.ctx, getSkillProgram(h.ctx.skill), "use", [3]);
-  assert.strictEqual(h.playerState.skillDamageBoost, 2);
+  assert.strictEqual(actionAttackMultiplier(h.playerState), 2);
   assert.strictEqual(h.playerState.vampireRatio, 1);
 });
 
@@ -293,7 +299,7 @@ t("星光·音速火拳：消回合後降先制且機率增傷實際寫入狀態
   runSkillProgram(h.ctx, getSkillProgram(h.ctx.skill), "use");
   assert.strictEqual(h.opponentState.priorityBoostValue, -3);
   assert.strictEqual(h.opponentState.priorityBoostTurns, 2);
-  assert.strictEqual(h.playerState.skillDamageBoost, 2);
+  assert.strictEqual(actionAttackMultiplier(h.playerState), 2);
 });
 
 t("星光·冥想：免疫反彈、免降、焚燼與3回合追傷均生效", () => {
@@ -313,7 +319,7 @@ t("星光·不滅之火：消強固傷、星火增傷、暴擊回滿與持續追
   runSkillProgram(h.ctx, getSkillProgram(h.ctx.skill), "use");
   assert.strictEqual(h.target.statStages.atk, 0);
   assert.strictEqual(h.damage.fixed, 400);
-  assert.strictEqual(h.playerState.skillDamageBoost, 2.5);
+  assert.strictEqual(actionAttackMultiplier(h.playerState), 2.5);
   assert.ok(h.timers.p1.some(timer => timer.remaining === 3 && timer.payload.block.trig === "self_skill"));
   h.playerState.blkLastCrit = true;
   runSkillProgram(h.ctx, getSkillProgram(h.ctx.skill), "after_hit");
@@ -327,7 +333,7 @@ t("星光·覺醒：先手強化翻倍並建立回血追傷、增傷與先制效
   runSkillProgram(h.ctx, getSkillProgram(h.ctx.skill), "use");
   assert.deepStrictEqual(h.self.statStages, { atk: 2, def: 2, spatk: 2, spdef: 2, speed: 2, accuracy: 2 });
   assert.ok(h.timers.p1.some(timer => timer.remaining === 4 && timer.payload.block.trig === "self_skill"));
-  assert.ok(h.timers.p1.some(timer => timer.remaining === 3 && timer.payload.block.dmgOut === 1.5));
+  assert.ok(h.timers.p1.some(timer => timer.remaining === 2 && timer.pendingActivation && timer.payload.block.dmgOut === 1.5));
   assert.strictEqual(h.playerState.priorityBoostValue, 2);
   assert.strictEqual(h.playerState.priorityBoostTurns, 3);
 });
@@ -339,7 +345,7 @@ t("星光·魔焰裂空：消強回血、星火增傷、弱化計時、必暴與
   runSkillProgram(h.ctx, getSkillProgram(h.ctx.skill), "use");
   assert.strictEqual(h.self.currentHp, 500);
   assert.strictEqual(h.target.statStages.def, 0);
-  assert.strictEqual(h.playerState.skillDamageBoost, 2.5);
+  assert.strictEqual(actionAttackMultiplier(h.playerState), 2.5);
   assert.ok(h.timers.p1.some(timer => timer.remaining === 3 && timer.payload.block.trig === "self_attack"));
   assert.strictEqual(h.opponentState.utilitySkillInvalidTurns, 2);
   runSkillProgram(h.ctx, getSkillProgram(h.ctx.skill), "after_hit");
@@ -365,7 +371,7 @@ t("千翎破陣：消回合成功後對手攻擊無效且異常增傷寫入狀�
   const h = makeBlockContext({}, { battleStatuses: { 麻痺: 2 } });
   h.ctx.skill = skillByName("千翎破陣");
   runSkillProgram(h.ctx, getSkillProgram(h.ctx.skill), "use");
-  assert.strictEqual(h.playerState.skillDamageBoost, 2);
+  assert.strictEqual(h.playerState.powerMultiplierThisAction, 2);
 });
 
 t("翎封禁之羽：消強後對手全屬性-1，消回合後令對手麻痺", () => {
@@ -477,7 +483,7 @@ t("引魂咏：對手無異常時增傷寫入狀態且吸血25%由 effectDetail 
   h.ctx.skill = skillByName("引魂咏");
   // 積木只覆蓋「對手不處於異常時傷害提升100%」；25% 吸血走 effectDetail，由通用執行器處理
   runSkillProgram(h.ctx, getSkillProgram(h.ctx.skill), "use");
-  assert.strictEqual(h.playerState.skillDamageBoost, 2);
+  assert.strictEqual(actionAttackMultiplier(h.playerState), 2);
   assert.strictEqual(h.ctx.skill.effectDetail, "heal:25%");
 });
 

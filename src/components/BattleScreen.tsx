@@ -1,3 +1,5 @@
+import { queueSkillLifesteal } from '../battle/lifesteal';
+import { isRecoveryBlocked, resolveRecoveryEffect } from '../battle/recovery';
 import React, { useReducer, useEffect, useRef, useCallback, useMemo } from "react";
 import { Elf, Skill, BattleLog, BattleMode, BattleItem, BattleEffect, StatChange } from "../types";
 import { BattleEventContext, EffectTiming, DamageComputation, PriorityComputation } from "../effects/types";
@@ -63,7 +65,7 @@ import {
   normalizeDamageType,
   settleDamageAbsorption,
 } from "../battle/damageSemantics";
-import { isAliveBySurvivalRule, resolveDamageTransition, resolveHpAdjustment, resolveRecoveryTransition } from "../battle/survivalRules";
+import { isAliveBySurvivalRule, resolveDamageTransition, resolveHpAdjustment } from "../battle/survivalRules";
 
 // TurnDamageStats is imported from BattleManager
 
@@ -771,8 +773,7 @@ export default function BattleScreen(props: BattleScreenProps) {
                             syncStateRef.current[`${oppSide}RegistryState`]?.[`${targetSide}_noHealTurns`] || 0;
         const oppSealHealTurns = syncStateRef.current[oppStateKey]?.oppSealHealTurns || 0;
         const healReduce50Turns = syncStateRef.current[playerStateKey]?.healReduce50Turns || 0;
-        const isGodDescentRecovery = target.survivalRule?.mode === "god_descent" && target.currentHp <= 0;
-        if (!isGodDescentRecovery && (noHealTurns > 0 || oppSealHealTurns > 0)) {
+        if (isRecoveryBlocked(target.currentHp, target.survivalRule, noHealTurns > 0 || oppSealHealTurns > 0)) {
           const defaultNoHealReason = "體力恢復受到限制";
           const defaultOppSealReason = "恢復效果已被封印";
           const noHealReason = syncStateRef.current[playerStateKey]?.noHealReason || 
@@ -814,8 +815,7 @@ export default function BattleScreen(props: BattleScreenProps) {
             maxAllowedHp = Math.min(maxAllowedHp, wuxuOrigMaxHp);
         }
 
-        const requestedRecovery = Math.floor(data.amount * multiplier);
-        const recovery = resolveRecoveryTransition(target.currentHp, maxAllowedHp, requestedRecovery, target.survivalRule);
+        const recovery = resolveRecoveryEffect(target.currentHp, maxAllowedHp, data.amount, multiplier, false, target.survivalRule);
         const nextHp = recovery.hp;
         const val = recovery.hpAdjustment;
 
@@ -2994,15 +2994,7 @@ case 'switch': {
           pushEffect({ type: 'log', side: oppSide, data: { text: `✨ 【${opp.name}】從【${wokenStatusName}】中醒來了！`, type: "status" } });
         }
 
-        // 公共模板吸血效果結算
-        const vampireRatio = syncStateRef.current[`${s}RegistryState`]?.vampireRatio || 0;
-        if (vampireRatio > 0 && finalDamage > 0) {
-          const healAmount = Math.floor(finalDamage * vampireRatio);
-          if (healAmount > 0) {
-            pushEffect({ type: 'heal', side: s, data: { amount: healAmount } });
-            pushEffect({ type: 'log', side: s, data: { text: `🩸 【吸血】：恢復了等同於傷害 ${Math.floor(vampireRatio * 100)}% 的體力（+${healAmount}）！`, type: "heal" } });
-          }
-        }
+        queueSkillLifesteal(s, finalDamage, "skill_attack", syncStateRef.current[`${s}RegistryState`], pushEffect);
       }
 
       await processQueue();
@@ -3072,6 +3064,8 @@ case 'switch': {
 
        // 清理公共模板行動臨時屬性
        if (
+         syncStateRef.current[actorRegKey]?.damageModifiersThisAction ||
+         syncStateRef.current[actorRegKey]?.powerMultiplierThisAction ||
          syncStateRef.current[actorRegKey]?.vampireRatio ||
          syncStateRef.current[actorRegKey]?.nextTurnPriority ||
          syncStateRef.current[actorRegKey]?.nextTurnCrit ||
@@ -3085,6 +3079,9 @@ case 'switch': {
        ) {
          const nextRegState = {
            ...syncStateRef.current[actorRegKey],
+           vampireDamageTypesThisAction: undefined,
+           damageModifiersThisAction: [],
+           powerMultiplierThisAction: 1,
            vampireRatio: 0,
            nextTurnPriority: 0,
            nextTurnCrit: false,
@@ -3103,7 +3100,7 @@ case 'switch': {
          dispatch({
            type: 'UPDATE_REGISTRY_STATE',
            side: s,
-           state: { vampireRatio: 0, nextTurnPriority: 0, nextTurnCrit: false, ignoreImmunityAndShield: false }
+           state: { vampireDamageTypesThisAction: undefined, damageModifiersThisAction: [], powerMultiplierThisAction: 1, vampireRatio: 0, nextTurnPriority: 0, nextTurnCrit: false, ignoreImmunityAndShield: false }
          });
        }
     }

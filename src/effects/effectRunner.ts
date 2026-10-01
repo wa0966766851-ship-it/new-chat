@@ -50,9 +50,9 @@ export const ATOMS: AtomTable = {
   },
 
   // 2. 傷害/威力倍率
-  damage_multiplier: (p, _target, ctx) => {
+  damage_multiplier: (p, target, ctx) => {
     const mult = p.multiplier ?? p.value ?? 1.5;
-    if (ctx.damageComp && !ctx.damageComp.isIncoming && matchesDamageTypes(p.damageTypes, ctx.damageComp.damageCategory)) {
+    if (ctx.damageComp && (target === "opponent" ? ctx.damageComp.isIncoming : !ctx.damageComp.isIncoming) && matchesDamageTypes(p.damageTypes, ctx.damageComp.damageCategory)) {
       ctx.damageComp.multiplier *= mult;
     }
   },
@@ -60,7 +60,7 @@ export const ATOMS: AtomTable = {
   // 3. 減傷/減半 (底層跳過 true)
   damage_reduce: (p, target, ctx) => {
     const side = resolveSide(target, ctx);
-    if (ctx.damageComp && ctx.damageComp.isIncoming !== false && isReducible(ctx.damageComp.damageCategory) && matchesDamageTypes(p.damageTypes, ctx.damageComp.damageCategory)) {
+    if (ctx.damageComp && (target === "opponent" ? ctx.damageComp.isIncoming === false : ctx.damageComp.isIncoming !== false) && isReducible(ctx.damageComp.damageCategory) && matchesDamageTypes(p.damageTypes, ctx.damageComp.damageCategory)) {
       const reducePercent = p.percent ?? p.amount ?? 50;
       ctx.damageComp.decreasePercent += reducePercent / 100;
     }
@@ -105,16 +105,16 @@ export const ATOMS: AtomTable = {
       amt = Math.floor((opp === 'p1' ? ctx.activeP1 : ctx.activeP2)?.maxHp * (p.ratio ?? amt / 100));
     }
     const type = p.damageType ?? p.dmgType ?? 'true';
-    // primitive 回報的是排入傷害節點的量；不能把 0 再兜底成原始吸取量。
+    // 此原子是扣血＋恢復，不是所有吸血的通則；primitive 回報結算量而非對手HP淨減少。
     let dealt: number | void;
     if (type === 'true') dealt = ctx.applyTrueDamage(opp, amt, '吸取體力');
     else if (type === 'fixed') dealt = ctx.applyFixedDamage(opp, amt, '吸取體力');
     else if (type === 'percent') dealt = ctx.applyPercentDamage(opp, p.ratio ?? (p.amount ?? 100) / 100);
     else if (type === 'skill' || type === 'skill_attribute') dealt = ctx.applySkillTypeDamage(opp, amt, '吸取技能傷害', { elem: p.elem, node: ctx.effectNode === 'on_hit' ? 'attack_damage' : 'skill_effect' });
     else { ctx.addLog?.('吸取傷害類型未確認，未執行。', 'effect'); return; }
-    // 未回報量的第三方 primitive 不推定回血；排隊後實際扣血／護罩仍需結算節點驗證。
+    // 未回報結算量的第三方 primitive 保留待確認；不可改讀對手HP差。
     if (typeof dealt === 'number') ctx.applyHeal(me, Math.max(0, dealt));
-    else ctx.addLog?.('吸取傷害已排入；傷害管線未回報實際量，不推定回血量。', 'effect');
+    else ctx.addLog?.('吸取傷害已排入；傷害管線未回報結算量，不推定回血量。', 'effect');
   },
 
   // 7. 消耗自身體力 (代價, 保留至少 1 HP)

@@ -1,3 +1,4 @@
+import { queueActionDamageModifier, queueActionPowerMultiplier } from '../battle/actionDamageModifiers';
 import { getStatMultiplier } from "../utils/statCalculator";
 /**
  * 通用技能描述執行器（無專屬註冊表 handler、無 kit 的技能使用）
@@ -86,8 +87,8 @@ interface Rule {
 const roll = (ctx: BattleEventContext) => (ctx.rng ? ctx.rng() : Math.random());
 
 const boostDamage = (ctx: BattleEventContext, mult: number, label: string) => {
-  ctx.setPlayerState("skillDamageBoost", (ctx.getPlayerState("skillDamageBoost") || 1) * mult);
-  ctx.addLog(`⚡ 【${label}】：本次傷害 ×${mult}！`, "effect");
+  if (/威力/.test(label)) queueActionPowerMultiplier(ctx, mult);
+  else queueActionDamageModifier(ctx, mult, /非真實/.test(label) ? "非真實" : /技能/.test(label) ? "技能" : "攻擊");
 };
 
 const resetStages = (ctx: BattleEventContext, side: Side, pick: (v: number) => boolean): boolean => {
@@ -252,9 +253,9 @@ const RULES: Rule[] = [
   // 威力／傷害倍率（通常搭配條件）
   { re: /(?:本技能)?威力加倍$/, apply: (_m, ctx) => boostDamage(ctx, 2, "威力加倍") },
   {
-    re: /(?:本技能)?(?:威力|造成的?(?:攻擊)?傷害|傷害)提升\s*(\d+)%/,
+    re: /(?:本技能)?(?:威力|造成的?(?:攻擊|技能|非真實)?傷害|技能傷害|攻擊傷害|非真實傷害|傷害)提升\s*(\d+)%/,
     apply: (m, ctx, _st, clause) => {
-      boostDamage(ctx, 1 + Number(m[1]) / 100, `傷害提升${m[1]}%`);
+      boostDamage(ctx, 1 + Number(m[1]) / 100, m[0]);
       if (/恢復等量體力/.test(clause)) ctx.setPlayerState("vampireRatio", 1);
     },
   },

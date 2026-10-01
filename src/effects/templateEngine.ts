@@ -1,3 +1,4 @@
+import { queueActionPowerMultiplier } from '../battle/actionDamageModifiers';
 import { BattleEventContext, EffectTiming } from './types';
 import { prdPercent } from '../utils/prd';
 
@@ -38,7 +39,7 @@ export const TEMPLATE_EFFECTS: Record<string, TemplateEffectExecutor> = {
     if (ctx.target.currentHp < ctx.target.maxHp / 2) {
       const multiplier = args[0] !== undefined ? Number(args[0]) : 2;
       // 不改動技能物件本身（避免威力永久累乘），改用本次行動的傷害倍率
-      ctx.setPlayerState("skillDamageBoost", (ctx.getPlayerState("skillDamageBoost") || 1) * multiplier);
+      queueActionPowerMultiplier(ctx, multiplier);
       ctx.addLog(`⚡ 【威能突破】：對手體力已低於 1/2，技能威力提升至 ${multiplier} 倍！`, "effect");
     }
   },
