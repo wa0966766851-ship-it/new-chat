@@ -22,6 +22,7 @@ import { ImageCopyMenu } from "./components/ImageCopyMenu";
 import { PageErrorBoundary } from "./components/PageErrorBoundary";
 
 import TechLoadingScreen from "./components/TechLoadingScreen";
+import { SiteUpdateNotice } from "./components/SiteUpdateNotice";
 
 import ControlHub from "./components/ControlHub";
 import { ThemeBackground } from "./components/ThemeController";
@@ -419,6 +420,7 @@ function AppContent() {
 
       {/* Main Content Area Wrapper */}
       <div className="flex-grow flex flex-col h-full overflow-hidden relative z-[60]">
+        <SiteUpdateNotice active={view === "start" && !editingElf} />
         <main className="flex-grow flex flex-col bg-transparent relative overflow-y-auto overflow-x-hidden w-full">
           {/* 專屬渲染於一般頁面的背景圖層 */}
         <ThemeBackground currentScene={showEncyclopedia ? "encyclopedia" : view} />

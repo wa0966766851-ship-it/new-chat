@@ -1,11 +1,28 @@
 import tailwindcss from '@tailwindcss/vite';
 import react from '@vitejs/plugin-react';
 import path from 'path';
+import { execFileSync } from 'node:child_process';
 import {defineConfig} from 'vite';
 
 export default defineConfig(() => {
+  // Keep the release marker tied to the exact GitHub revision used for this build.
+  // A missing Git checkout (for example an exported source archive) simply omits
+  // the update prompt instead of marking a release with an invented version.
+  let commit = '';
+  try {
+    commit = execFileSync('git', ['rev-parse', 'HEAD'], { cwd: __dirname, encoding: 'utf8' }).trim();
+  } catch { /* exported source without Git metadata */ }
   return {
-    plugins: [react(), tailwindcss()],
+    plugins: [
+      react(), tailwindcss(),
+      {
+        name: 'release-version',
+        generateBundle() {
+          this.emitFile({ type: 'asset', fileName: 'version.json', source: JSON.stringify({ commit }) });
+        },
+      },
+    ],
+    define: { __APP_COMMIT__: JSON.stringify(commit) },
     resolve: {
       alias: {
         '@': path.resolve(__dirname, '.'),
@@ -18,6 +35,10 @@ export default defineConfig(() => {
       terserOptions: { maxWorkers: 2, compress: { passes: 2 }, mangle: true, format: { comments: 'some' } },
       rollupOptions: {
         output: {
+          // Keep chart-only dependencies with the lazy battle UI. Rollup's
+          // implicit grouping would otherwise pull a 1 MB chart bundle into
+          // the start screen even before a battle is opened.
+          onlyExplicitManualChunks: true,
           manualChunks(id) {
             // 不可變的純資料獨立快取；不將含執行邏輯的模組強行拆入，以免循環初始化。
             const normalized = id.replace(/\\/g, '/');
@@ -27,9 +48,6 @@ export default defineConfig(() => {
             if (id.includes('node_modules')) {
               if (id.includes('lucide-react')) {
                 return 'vendor-lucide';
-              }
-              if (id.includes('recharts') || id.includes('d3')) {
-                return 'vendor-charts';
               }
               if (id.includes('blockly')) {
                 return 'vendor-blockly';
