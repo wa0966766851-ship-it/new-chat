@@ -88,6 +88,8 @@ export function validateAtomParams(atom: string, p: unknown, path = 'params', de
     }
   }
   if (atom === 'condition_gate') {
+    if (p.layer_gte !== undefined && (typeof p.timerId !== 'string' || !p.timerId.trim())) bad(path, '層數條件缺少 timerId');
+    if (p.has_status !== undefined && !StatusRegistry[canonicalStatusName(p.has_status)]) bad(path, '條件異常名稱尚未登記');
     if (p.innerItems !== undefined) items(p.innerItems, 'innerItems');
     else if (p.inner) nested(p.inner, p.innerParams ?? {}, 'innerParams');
     if (p.innerTarget !== undefined) choice(p.innerTarget, path, ['self','opponent']);

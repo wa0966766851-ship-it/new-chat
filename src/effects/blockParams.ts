@@ -70,7 +70,8 @@ export function blockEntryToAtom(entry: KitEntry, atoms: Record<string, unknown>
     n.params.wrapParams = merged;
   }
   if (n.atom === "condition_gate" && n.params.inner) {
-    const inner = normalizeBlockAtom(n.params.inner, n.params.innerParams || {});
+    const inner = normalizeBlockAtom(n.params.inner, { ...(n.params.innerParams || {}),
+      ...(n.params.innerTarget !== undefined ? { target: n.params.innerTarget } : {}) });
     n.params.inner = inner.atom;
     n.params.innerParams = inner.params;
     n.params.innerTarget = inner.target;

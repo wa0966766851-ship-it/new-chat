@@ -39,6 +39,7 @@ import {
 
 import { addTimer, tickTimers, clearTurnEffects, hasTurnEffect } from "../battle/timers";
 import { runTimerPayload } from "../effects/effectRunner";
+import { applyActiveGateTimersToDamage } from '../battle/damageGates';
 import { Mark, getMark, markAppliesToElf, setMark as setMarkUtil, clearMark as clearMarkUtil } from "../battle/marks";
 import { switchBattleSide } from "../battle/stateScopes";
 import { TraitsEngine } from "../utils/traitsEngine";
@@ -969,7 +970,7 @@ case 'switch': {
       isHit,
       isEntranceTurn,
       moveIndex,
-      goesFirst: moveIndex === 0,
+      goesFirst: moveIndex === 0 ? true : moveIndex === 1 ? false : undefined,
       rng,
       showPopup,
       getBody: (tSide: "p1" | "p2") => {
@@ -2749,6 +2750,9 @@ case 'switch': {
         triggerSuitEffect(oppSide, EffectTiming.BEFORE_DAMAGE, { damageComp });
         broadcastExtraElfNode("造成傷害前");
 
+        // 攻擊傷害與附加傷害共用持續閘門；條件、持有者及增減傷方向由模組判斷。
+        applyActiveGateTimersToDamage(s, oppSide, damageComp, pushEffect, syncStateRef, { side: s, moveIndex: mIdx });
+
         // Check for shieldBlockNextAtk
         const oppRegKey = oppSide === "p1" ? "p1RegistryState" : "p2RegistryState";
         const hasShield = syncStateRef.current[oppRegKey]?.shieldBlockNextAtk;
@@ -2822,7 +2826,7 @@ case 'switch': {
         });
 
         const oppMarksAll = oppSide === "p1" ? syncStateRef.current.p1Marks : syncStateRef.current.p2Marks;
-        if (!damageComp.pure) for (const mark of (oppMarksAll || [])) {
+        if (!damageComp.pure) for (const mark of (oppMarksAll || []).filter(mark => markAppliesToElf(mark, syncStateRef.current[oppSide]))) {
           const perStack = mark.effects?.damageTakenIncreasePercentPerStack;
           if (perStack && mark.count > 0) {
             damageComp.increasePercent = (damageComp.increasePercent || 0) + mark.count * perStack;

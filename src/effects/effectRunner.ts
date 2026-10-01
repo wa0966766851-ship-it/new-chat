@@ -9,14 +9,14 @@ import type { AtomId, AtomTable, KitEntry, EffectCode, Node, Target } from "./ef
 import { mapCodeToAtoms } from "./atomMapper";
 import { blockEntryToAtom } from "./blockParams";
 import { prdPercent } from "../utils/prd";
-import { sameStatus } from './statusIdentity';
+import { matchesEffectConditions } from './effectConditions';
 import { matchesDamageTypes } from './damageChoices';
 import { clearAllStatuses } from '../utils/battleHelpers';
 
 // 底層不變式：真實傷害不可被護盾與減傷抵擋 (減傷/護盾原子自動跳過 true 傷害)
 export const isReducible = (dmgType: string) => dmgType !== "true";
 
-// ── 28 個原子操作完整實作 ──────────────────────────────────────────────────
+// ── 原子操作入口；有入口不代表所有參數與下游機制已完整實裝 ──────────────────
 export const ATOMS: AtomTable = {
   // 1. 追加傷害: 依 params.dmgType 走對應傷害管線
   extra_damage: (p, target, ctx) => {
@@ -390,60 +390,7 @@ export const ATOMS: AtomTable = {
 
   // 28. 條件閘
   condition_gate: (p, target, ctx) => {
-    const side = resolveSide(target, ctx);
-    const actorSide = ctx.actor || "p1";
-    const oppSide = actorSide === "p1" ? "p2" : "p1";
-    
-    const selfElf = actorSide === "p1" ? ctx.activeP1 : ctx.activeP2;
-    const oppElf = oppSide === "p1" ? ctx.activeP1 : ctx.activeP2;
-    
-    let isTrue = true;
-
-    if (p.hp_below !== undefined) {
-      const ratio = Number(p.hp_below);
-      if (selfElf) {
-        const currentRatio = selfElf.currentHp / selfElf.maxHp;
-        if (currentRatio >= ratio) isTrue = false;
-      }
-    }
-    if (p.hp_above !== undefined) {
-      const ratio = Number(p.hp_above);
-      if (selfElf) {
-        const currentRatio = selfElf.currentHp / selfElf.maxHp;
-        if (currentRatio <= ratio) isTrue = false;
-      }
-    }
-    if (p.has_shield !== undefined) {
-      const hasShield = !!(selfElf?.shield && selfElf.shield > 0);
-      if (hasShield !== !!p.has_shield) isTrue = false;
-    }
-    if (p.is_gender !== undefined) {
-      const selfGender = selfElf?.gender || "none";
-      if (selfGender !== p.is_gender) isTrue = false;
-    }
-    if (p.enemy_type !== undefined) {
-      const enemyType = oppElf?.type;
-      if (enemyType !== p.enemy_type) isTrue = false;
-    }
-    if (p.layer_gte !== undefined && p.timerId) {
-      const timersKey = `${actorSide}Timers` as "p1Timers" | "p2Timers";
-      const list = ctx[timersKey] || (actorSide === "p1" ? ctx.p1Timers : ctx.p2Timers) || [];
-      const timer = list.find((t: any) => t.id === p.timerId);
-      const currentLayers = timer?.layers || (timer ? 1 : 0);
-      if (currentLayers < Number(p.layer_gte)) isTrue = false;
-    }
-    if (p.has_status !== undefined) {
-      const statuses = ctx.getStatuses?.(selfElf) || {};
-      if (!Object.entries(statuses).some(([key, turns]) => Number(turns) > 0 && sameStatus(key, p.has_status))) isTrue = false;
-    }
-    if (p.is_first !== undefined) {
-      const goesFirst = ctx.goesFirst !== undefined ? ctx.goesFirst : (ctx.moveIndex === 0);
-      if (goesFirst !== !!p.is_first) isTrue = false;
-    }
-    if (p.is_second !== undefined) {
-      const goesSecond = ctx.goesFirst !== undefined ? !ctx.goesFirst : (ctx.moveIndex === 1);
-      if (goesSecond !== !!p.is_second) isTrue = false;
-    }
+    const isTrue = matchesEffectConditions(p, ctx);
 
     if (isTrue && Array.isArray(p.innerItems)) {
       for (const item of p.innerItems) {
@@ -455,9 +402,9 @@ export const ATOMS: AtomTable = {
       const impl = ATOMS[innerAtom];
       if (impl) {
         ctx.addLog?.(`🎯 【條件閘門滿足】：滿足條件，觸發【${innerAtom}】！`, "effect");
-        const innerParams = p.innerParams || {};
-        const innerTarget = p.innerTarget || target;
-        impl(innerParams, innerTarget, ctx);
+        const normalized = blockEntryToAtom({ codeId: innerAtom, params: { ...(p.innerParams || {}),
+          ...(p.innerTarget !== undefined ? { target: p.innerTarget } : {}) }, node: ctx.effectNode || 'on_hit', source: 'skill', order: 0 }, ATOMS);
+        if (normalized) impl(normalized.params, normalized.target, ctx);
       }
     } else {
       ctx.trackCodeExec?.("condition_gate", p.template || "條件閘門未滿足", p.template);

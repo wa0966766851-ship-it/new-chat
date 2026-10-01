@@ -13,8 +13,9 @@ import { applyStatChanges } from "../utils/statChangeManager";
 import { TraitsEngine } from "../utils/traitsEngine";
 import { getStatuses, shuffleArray, clampSkillPp } from "../utils/battleHelpers";
 import { StatusRegistry } from "../effects/statusRegistry";
-import { matchesDamageTypes } from '../effects/damageChoices';
-import { clearTurnEffects, hasTurnEffect, addTimer, getScaledParam } from "./timers";
+import { applyActiveGateTimersToDamage } from './damageGates';
+export { applyActiveGateTimersToDamage } from './damageGates';
+import { clearTurnEffects, hasTurnEffect, addTimer } from "./timers";
 import { setMark as setMarkUtil, clearMark as clearMarkUtil } from "./marks";
 import { getEligibleTeam, getFirstStarter, getNthElf, getAdjacentElves, getSeparatedElves } from "./elfPositions";
 
@@ -55,39 +56,6 @@ export type StateAPIs = Pick<BattleEventContext,
   "getPlayerState" | "setPlayerState" | "getOpponentState" | "setOpponentState" |
   "shuffleArray" | "getEligibleTeam" | "getFullTeam" | "getFirstStarter" | "getNthElf" | "getAdjacentElves" | "getSeparatedElves" | "trackCodeExec"
 >;
-
-export function applyActiveGateTimersToDamage(
-  actorSide: "p1" | "p2",
-  tSide: "p1" | "p2",
-  damageComp: DamageComputation,
-  pushEffect: (effect: EffectItem) => void,
-  syncStateRef: MutableRefObject<BattleState>
-) {
-  const c = syncStateRef.current;
-  
-  for (const owner of new Set([actorSide, tSide])) {
-    const timers = (c[`${owner}Timers`] || []).filter(timer => timer.scope === 'team' || !timer.ownerBattleId || timer.ownerBattleId === (c[owner].battleId || c[owner].id));
-    for (const timer of timers) {
-      const payload = timer.payload;
-      if (payload?.applyMode !== 'gate' || timer.remaining <= 0) continue;
-      const wraps = Array.isArray(payload.wrapItems) ? payload.wrapItems : (Array.isArray(payload.wraps) ? payload.wraps : [payload.wraps]).map(atom => ({ atom, params: payload.params || {} }));
-      for (const item of wraps) {
-        const params = item.params || {};
-        if (!matchesDamageTypes(params.damageTypes, damageComp.damageCategory)) continue;
-        const scaledTimer = { ...timer, payload: { ...payload, params } };
-        if (item.atom === 'damage_reduce' && damageComp.damageCategory !== 'true') {
-          const value = getScaledParam(scaledTimer, 'percent', params.amount ?? 50);
-          damageComp.decreasePercent = (damageComp.decreasePercent ?? 0) + value / 100;
-          pushEffect({ type: 'log', side: owner, data: { text: `🛡️ 【${timer.name}】：傷害減少 ${value}%！`, type: 'effect' } });
-        } else if (item.atom === 'damage_multiplier') {
-          const value = getScaledParam(scaledTimer, 'multiplier', 1.5);
-          damageComp.multiplier = (damageComp.multiplier ?? 1) * value;
-          pushEffect({ type: 'log', side: owner, data: { text: `🔥 【${timer.name}】：傷害乘以 ${value} 倍！`, type: 'effect' } });
-        }
-      }
-    }
-  }
-}
 
 export function buildDamageAPIs(shared: SharedContextDeps): DamageAPIs {
   const { side, moveIndex, syncStateRef, pushEffect, getBattleEventContext, self } = shared;
@@ -132,7 +100,7 @@ export function buildDamageAPIs(shared: SharedContextDeps): DamageAPIs {
       }
 
       // Scan actor's marks for nonTrueDamageDealtMultiplier
-      const actorSide = tSide === "p1" ? "p2" : "p1";
+      const actorSide = side;
       const actorMarks = syncStateRef.current[`${actorSide}Marks` as "p1Marks" | "p2Marks"] || [];
       if (!damageComp.pure) for (const mark of actorMarks.filter(mark => markAppliesToElf(mark, syncStateRef.current[actorSide]))) {
         if (mark.effects?.nonTrueDamageDealtMultiplier !== undefined && mark.count > 0) {
@@ -172,7 +140,7 @@ export function buildDamageAPIs(shared: SharedContextDeps): DamageAPIs {
         }
       }
 
-      if (!damageComp.pure) applyActiveGateTimersToDamage(actorSide, tSide, damageComp, pushEffect, syncStateRef);
+      if (!damageComp.pure) applyActiveGateTimersToDamage(actorSide, tSide, damageComp, pushEffect, syncStateRef, { side, moveIndex });
 
       const stage1 = damageComp.base * (1 + damageComp.increasePercent) * (1 - damageComp.decreasePercent);
       const stage2 = stage1 * damageComp.multiplier;
@@ -229,7 +197,7 @@ export function buildDamageAPIs(shared: SharedContextDeps): DamageAPIs {
       }
 
       // Scan actor's marks for nonTrueDamageDealtMultiplier
-      const actorSide = tSide === "p1" ? "p2" : "p1";
+      const actorSide = side;
       const actorMarks = syncStateRef.current[`${actorSide}Marks` as "p1Marks" | "p2Marks"] || [];
       if (!damageComp.pure) for (const mark of actorMarks.filter(mark => markAppliesToElf(mark, syncStateRef.current[actorSide]))) {
         if (mark.effects?.nonTrueDamageDealtMultiplier !== undefined && mark.count > 0) {
@@ -269,7 +237,7 @@ export function buildDamageAPIs(shared: SharedContextDeps): DamageAPIs {
         }
       }
 
-      if (!damageComp.pure) applyActiveGateTimersToDamage(actorSide, tSide, damageComp, pushEffect, syncStateRef);
+      if (!damageComp.pure) applyActiveGateTimersToDamage(actorSide, tSide, damageComp, pushEffect, syncStateRef, { side, moveIndex });
 
       // 無視對手抵擋傷害（乘區被歸零）／無視傷害限制／保底傷害
       if (opts?.ignoreBlock && damageComp.multiplier === 0) damageComp.multiplier = 1;
@@ -304,7 +272,7 @@ export function buildDamageAPIs(shared: SharedContextDeps): DamageAPIs {
       }
 
       // Scan actor's marks for nonTrueDamageDealtMultiplier
-      const actorSide = tSide === "p1" ? "p2" : "p1";
+      const actorSide = side;
       const actorMarks = syncStateRef.current[`${actorSide}Marks` as "p1Marks" | "p2Marks"] || [];
       for (const mark of actorMarks.filter(mark => markAppliesToElf(mark, syncStateRef.current[actorSide]))) {
         if (mark.effects?.nonTrueDamageDealtMultiplier !== undefined && mark.count > 0) {
@@ -342,6 +310,8 @@ export function buildDamageAPIs(shared: SharedContextDeps): DamageAPIs {
         }
       }
 
+      applyActiveGateTimersToDamage(actorSide, tSide, damageComp, pushEffect, syncStateRef, { side, moveIndex });
+
       // 真實傷害不受減傷與減縮影響，僅接受增傷
       const safeDecreasePercent = 0;
       let safeMultiplier = Math.max(1.0, damageComp.multiplier || 1.0);
@@ -361,8 +331,6 @@ export function buildDamageAPIs(shared: SharedContextDeps): DamageAPIs {
       if (markMult !== 1.0) {
         safeMultiplier = safeMultiplier * markMult;
       }
-
-      applyActiveGateTimersToDamage(actorSide, tSide, damageComp, pushEffect, syncStateRef);
 
       const stage1 = damageComp.base * (1 + (damageComp.increasePercent || 0)) * (1 - safeDecreasePercent);
       const stage2 = stage1 * safeMultiplier;
@@ -413,7 +381,7 @@ export function buildDamageAPIs(shared: SharedContextDeps): DamageAPIs {
       }
 
       // Scan actor's marks for nonTrueDamageDealtMultiplier
-      const actorSide = tSide === "p1" ? "p2" : "p1";
+      const actorSide = side;
       const actorMarks = syncStateRef.current[`${actorSide}Marks` as "p1Marks" | "p2Marks"] || [];
       for (const mark of actorMarks.filter(mark => markAppliesToElf(mark, syncStateRef.current[actorSide]))) {
         if (mark.effects?.nonTrueDamageDealtMultiplier !== undefined && mark.count > 0) {
@@ -467,7 +435,7 @@ export function buildDamageAPIs(shared: SharedContextDeps): DamageAPIs {
         }
       }
 
-      applyActiveGateTimersToDamage(actorSide, tSide, damageComp, pushEffect, syncStateRef);
+      applyActiveGateTimersToDamage(actorSide, tSide, damageComp, pushEffect, syncStateRef, { side, moveIndex });
 
       const stage1 = damageComp.base * (1 + damageComp.increasePercent) * (1 - damageComp.decreasePercent);
       const stage2 = stage1 * damageComp.multiplier;
@@ -510,7 +478,7 @@ export function buildDamageAPIs(shared: SharedContextDeps): DamageAPIs {
       }
 
       // Scan actor's marks for nonTrueDamageDealtMultiplier
-      const actorSide = tSide === "p1" ? "p2" : "p1";
+      const actorSide = side;
       const actorMarks = syncStateRef.current[`${actorSide}Marks` as "p1Marks" | "p2Marks"] || [];
       for (const mark of actorMarks.filter(mark => markAppliesToElf(mark, syncStateRef.current[actorSide]))) {
         if (mark.effects?.nonTrueDamageDealtMultiplier !== undefined && mark.count > 0) {
@@ -564,7 +532,7 @@ export function buildDamageAPIs(shared: SharedContextDeps): DamageAPIs {
         }
       }
 
-      applyActiveGateTimersToDamage(actorSide, tSide, damageComp, pushEffect, syncStateRef);
+      applyActiveGateTimersToDamage(actorSide, tSide, damageComp, pushEffect, syncStateRef, { side, moveIndex });
 
       const stage1 = damageComp.base * (1 + damageComp.increasePercent) * (1 - damageComp.decreasePercent);
       const stage2 = stage1 * damageComp.multiplier;
