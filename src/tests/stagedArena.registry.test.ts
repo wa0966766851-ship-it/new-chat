@@ -7,7 +7,7 @@ import { STAGED_ARENA_SKILLS, STAGED_ARENA_SOULS } from '../effects/stagedArena'
 import { read } from '../effects/stagedArena/shared';
 import { awake } from '../effects/stagedArena/dragonHealingRegistry';
 import { finishMoiraiCounter, finishMoiraiFifth, settleYinYangHit } from '../effects/stagedArena/moiraiRegistry';
-import { invertPP, wuweiPower } from '../effects/stagedArena/wuweiRegistry';
+import { invertPP, transformWuweiSkill, wuweiPower } from '../effects/stagedArena/wuweiRegistry';
 import { resolvePetIds, SEER_ID_OVERRIDES } from '../battle/seerAssets';
 
 function setup(name: string) {
@@ -58,9 +58,14 @@ assert.equal(wuweiPower(0, 6, false), 470);
   const { c, self } = setup('無為龍者');
   STAGED_ARENA_SOULS[self.name](c, EffectTiming.ON_ENTRANCE);
   assert.equal(self.maxHp, 490); // (400 + 100 + 120 + 110 + 110 + 140) / 2
-  STAGED_ARENA_SOULS[self.name](c, EffectTiming.BEFORE_SKILL, { ppCostComp: { base: 1 } });
-  STAGED_ARENA_SOULS[self.name](c, EffectTiming.ON_PP_CONSUME);
+  const ppCostComp = { base: 1 };
+  STAGED_ARENA_SOULS[self.name](c, EffectTiming.BEFORE_SKILL, { ppCostComp });
+  assert.equal(ppCostComp.base, 0);
+  STAGED_ARENA_SOULS[self.name](c, EffectTiming.AFTER_ACTION);
   assert.equal(self.skills[0].currentPp, 0); // 8/8 PP swaps with 0 missing PP
+  c.skill = self.skills[4];
+  assert.equal(transformWuweiSkill(c, self.skills[4]).power, 170);
+  assert.equal(transformWuweiSkill(c, self.skills[4]).isSureHit, true);
 }
 {
   const { c, self } = setup('龍錄天鋒');

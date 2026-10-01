@@ -29,7 +29,7 @@ export const STAGED_ARENA_ELVES: Seed[] = source.filter(e => e.sourceId !== 17).
     level: 100,
     seerId: art[e.sourceId],
     baseStats: { hp: e.baseStats.hp, atk: e.baseStats.atk, spatk: e.baseStats.spa, def: e.baseStats.def, spdef: e.baseStats.spd, speed: e.baseStats.speed },
-    soulMark: { name: e.trait, description: e.traitDetail.replaceAll('<br>', '\n'), effectType: 'custom', effectValue: 0 },
+    soulMark: { name: e.trait, description: e.traitDetail.replaceAll('<br>', '\n'), effectType: 'custom', effectValue: 0, ...(e.sourceId === 12 ? { ignorePpLimit: true } : {}) },
     skills,
     skillPool: skills.map(s => ({ ...s })),
   };

@@ -1,4 +1,5 @@
-import type { BattleSkillHandler, DamageComputation } from '../types';
+import type { Skill } from '../../types';
+import type { BattleSkillHandler } from '../types';
 import { EffectTiming } from '../types';
 import { abnormal, activeUntil, bump, clearStatuses, damagePercentOfTarget, drain, hasBoost, live, modify, ppOf, read, restorePP, reverseDrops, status, transferBoosts, until, write, zeroPP, type ArenaContext } from './shared';
 
@@ -27,6 +28,7 @@ export function handleWuweiSoulMark(c: ArenaContext, event: EffectTiming, data?:
   }
   if (event === EffectTiming.BEFORE_SKILL) {
     write(c, 'used', 1);
+    write(c, 'ppPending', 1);
     const used = c.skill && c.self.skills.find(s => s.name === c.skill.name);
     const pp = used ? ppOf(used) : 0;
     write(c, 'ppBefore', pp);
@@ -41,7 +43,10 @@ export function handleWuweiSoulMark(c: ArenaContext, event: EffectTiming, data?:
   if (event === EffectTiming.BEFORE_STATUS_APPLY && data?.targetSide === c.actor && read(c, 'statusGuard')) {
     data.prevented = true; write(c, 'statusGuard', 0);
   }
-  if (event === EffectTiming.ON_PP_CONSUME) {
+  // A zero PP cost skips the main engine's ON_PP_CONSUME event entirely.
+  // Invert at action end, including when an attack misses.
+  if (event === EffectTiming.AFTER_ACTION && read(c, 'ppPending')) {
+    write(c, 'ppPending', 0);
     const name = c.skill?.name;
     const old = read(c, 'ppBefore');
     c.updateElf(c.actor, { skills: c.self.skills.map(s => s.name === name ? { ...s, currentPp: invertPP(old, s.maxPp ?? s.pp), pp: invertPP(old, s.maxPp ?? s.pp) } : s) });
@@ -102,7 +107,16 @@ export const WUWEI_SKILLS: Record<string, BattleSkillHandler> = {
   },
 };
 
-/** Future pre-damage transform, kept separate from the UI and AI action chooser. */
-export function wuweiDamagePower(c: ArenaContext, d: DamageComputation): void {
-  if (c.skill?.name === FIFTH && !d.isIncoming) d.base += wuweiPower(0, read(c, 'wanxiang'), c.self.type === c.skill.type);
+/** Before resolve and the damage formula: set the *skill power*, never add raw damage. */
+export function transformWuweiSkill(c: ArenaContext, skill: Skill): Skill {
+  const current = c.self.skills.find(s => s.name === skill.name);
+  const zeroPP = current ? ppOf(current) === 0 : false;
+  return {
+    ...skill,
+    isSureHit: skill.isSureHit || zeroPP,
+    power: skill.name === FIFTH ? wuweiPower(0, read(c, 'wanxiang'), c.self.type === skill.type) : skill.power,
+  };
 }
+export const WUWEI_SKILL_TRANSFORMS: Record<string, typeof transformWuweiSkill> = Object.fromEntries(
+  ['千秋虔', '百法拜', '十玄釋', '孑身誡', FIFTH].map(name => [name, transformWuweiSkill]),
+);
