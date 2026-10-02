@@ -21,7 +21,9 @@ test("known left-facing battle art faces the opponent on both sides", () => {
     "眾神之父·奧丁",
     "冰魄·柯爾德",
     "湮滅之主・咤克斯",
-    "恐懼的化身·咤克斯",
+    "皮皮",
+    "聖光斯嘉麗",
+    "怒濤·滄嵐",
     "無序.墜星",
     "聖靈邁爾斯",
   ];
@@ -36,14 +38,11 @@ test("front-facing art and unclassified user paths are never mirrored", () => {
   const frontFacing = [
     "天蓬元帥八戒",
     "譜尼",
-    "聖光斯嘉麗",
     "混沌·布萊克",
     "變革·馬爾修斯",
     "人皇·帝辛",
-    "皮皮",
     "治癒.龍魂再臨 次元龍",
     "蓓麗安特",
-    "怒濤·滄嵐",
     "無序.六刃",
     "無序·蝕言",
   ];
@@ -75,4 +74,13 @@ test("built-in art keys do not suppress the registered facing rule", () => {
   assert.equal(hasRenderableElfImagePath("https://example.test/body.png"), true);
   assert.equal(shouldMirrorBattleSprite("異境神霆·雷伊", "p1", hasRenderableElfImagePath("otherworld_thunder_rey")), true);
   assert.equal(shouldMirrorBattleSprite("異境神霆·雷伊", "p2", hasRenderableElfImagePath("otherworld_thunder_rey")), false);
+});
+
+test("fear custom art faces right while official fallback faces left", () => {
+  for (const name of ["恐懼的化身·咤克斯", "恐懼的化身.吒克斯"]) {
+    assert.equal(shouldMirrorBattleSprite(name, "p1"), false);
+    assert.equal(shouldMirrorBattleSprite(name, "p2"), true);
+    assert.equal(shouldMirrorBattleSprite(name, "p1", false, "/seer/body/5010.png"), true);
+    assert.equal(shouldMirrorBattleSprite(name, "p2", false, "/seer/body/5010.png"), false);
+  }
 });

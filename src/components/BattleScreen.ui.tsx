@@ -1,3 +1,4 @@
+import { BattleEndDialog } from "./BattleEndDialog";
 import React, { useState, useContext, useEffect, useMemo, useRef } from "react";
 import { ElfReadOnlyProfile } from "./ElfReadOnlyProfile";
 import { createPortal } from "react-dom";
@@ -39,7 +40,7 @@ import { BattleEffectViewModel, buildEffectViewModels, describeEffectMeta } from
 import { getHpBarColor } from "./BattleComponents";
 import { StatusInspector } from "./StatusInspector";
 import { getTypeMatchup, getAttributeBadgeColor, getEffectiveBody } from "../utils/statCalculator";
-import { battleSpriteProfile, battleSpriteScale, hasRenderableElfImagePath, shouldMirrorBattleSprite } from "../battle/seerAssets";
+import { battleSpriteProfile, battleSpriteScale } from "../battle/seerAssets";
 import { ElfAvatar, TypeIcon, ChainImage } from "./SeerImages";
 import { isAliveBySurvivalRule } from "../battle/survivalRules";
 import { statusVisual, buffIconFor, stageDesc, STAT_FULL } from "../battle/effectIcons";
@@ -50,6 +51,7 @@ import { EFFECT_CATALOG } from "../data/effectCatalog";
 import { BATTLE_ITEMS, ITEM_CATEGORIES, getItemCategory, ItemCategory, isZeroPpExempt, isElfSkillSelectionDisabled } from "../utils/battleHelpers";
 
 interface BattleScreenUIProps {
+  specialMode?: "destiny" | "interstellar";
   onSkillSelect: (side: "p1" | "p2", skill: Skill) => void;
   onSwitchElf: (side: "p1" | "p2", index: number) => void;
   onUseItem: (side: "p1" | "p2", item: BattleItem) => void;
@@ -1311,7 +1313,7 @@ export function BattleScreenUI(props: BattleScreenUIProps) {
     const spriteProfile = battleSpriteProfile(elf.name);
     const height = Number(elf.height);
     const spriteScale = battleSpriteScale(elf.name, height);
-    const mirrorSprite = shouldMirrorBattleSprite(elf.name, side, hasRenderableElfImagePath(elf.path));
+
     const spriteStyle: React.CSSProperties = spriteProfile
       ? { width: spriteProfile.width || "54%", height: spriteProfile.height || "118%" }
       : { width: "26%", height: "74%", maxHeight: 400 };
@@ -1321,10 +1323,11 @@ export function BattleScreenUI(props: BattleScreenUIProps) {
         <div className="absolute top-0 left-1/2 -translate-x-1/2 z-20 pointer-events-none flex flex-col items-center gap-1.5 w-max">
           {renderPopups(side)}
         </div>
-        <motion.div animate={anim} transition={{ duration: 0.35 }} style={{ scale: spriteScale, scaleX: mirrorSprite ? -1 : 1 }} className={`h-full w-full flex items-end justify-center ${dead ? "opacity-30 grayscale" : ""}`}>
+        <motion.div animate={anim} transition={{ duration: 0.35 }} style={{ scale: spriteScale }} className={`h-full w-full flex items-end justify-center ${dead ? "opacity-30 grayscale" : ""}`}>
           <ElfAvatar
             elf={elf}
             kind="body"
+            battleSide={side}
             className="max-h-full max-w-full object-contain drop-shadow-[0_12px_18px_rgba(0,0,0,0.6)]"
             fallbackClassName="w-36 h-36 rounded-full overflow-hidden ring-2 ring-white/15 flex items-center justify-center text-5xl font-black text-slate-200 mb-6 bg-black/20"
           />
@@ -1466,6 +1469,7 @@ export function BattleScreenUI(props: BattleScreenUIProps) {
 
   return (
     <div ref={battleRootRef} data-battle-root className="h-full w-full bg-transparent overflow-hidden relative font-sans text-slate-200">
+      {winner && !props.specialMode && <BattleEndDialog winner={winner} onRestart={props.onReset} onHome={props.onBackToMenu} />}
       {/* Global Interaction Blocker while resolving or during transitions */}
       {(phase === "resolving" || phase === "processing") && (
         <div className="fixed inset-0 z-[100] cursor-wait" />

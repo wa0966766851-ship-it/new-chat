@@ -169,6 +169,18 @@ export default function BattleScreen(props: BattleScreenProps) {
   const prdInitRef = useRef(false);
   if (!prdInitRef.current) { prdInitRef.current = true; resetPrd(() => rngRef.current()); }
 
+  const battleAliveRef = useRef(true);
+  const battleTimeoutsRef = useRef(new Set<ReturnType<typeof setTimeout>>());
+  const scheduleBattleTask = useCallback((callback: () => void, delay = 0) => {
+    if (!battleAliveRef.current) return undefined;
+    const timer = setTimeout(() => {
+      battleTimeoutsRef.current.delete(timer);
+      if (battleAliveRef.current) callback();
+    }, delay);
+    battleTimeoutsRef.current.add(timer);
+    return timer;
+  }, []);
+
   const [state, rawDispatch] = useReducer(battleReducer, null, () => {
     const p1Team = props.preparedTeams ? structuredClone(initialP1Team) : applyEquipmentToTeam(initialP1Team, p1Suit).map(e => resetElfStateForBattle(e, (e.battleId || e.id) === p1StarterId, p1Suit));
     const p2Team = props.preparedTeams ? structuredClone(initialP2Team) : applyEquipmentToTeam(initialP2Team, p2Suit).map(e => resetElfStateForBattle(e, (e.battleId || e.id) === p2StarterId, p2Suit));
@@ -208,13 +220,15 @@ export default function BattleScreen(props: BattleScreenProps) {
     syncBoxRef.current = {
       get current() { return value; },
       set current(next: BattleState) {
+        if (!battleAliveRef.current) return;
         value = syncActiveIntoTeam(next);
         if (!pending) {
           pending = true;
           queueMicrotask(() => {
             pending = false;
+            if (!battleAliveRef.current) return;
             rawDispatch({ type: 'REPLACE_STATE', state: value });
-            setTimeout(() => validateIdleRef.current(), 0);
+            scheduleBattleTask(() => validateIdleRef.current(), 0);
           });
         }
       }
@@ -222,12 +236,13 @@ export default function BattleScreen(props: BattleScreenProps) {
   }
   const syncStateRef = syncBoxRef.current;
   const dispatch = useCallback((action: BattleAction) => {
+    if (!battleAliveRef.current) return;
     const prevPhase = syncStateRef.current.phase;
     syncStateRef.current = battleReducer(syncStateRef.current, action);
     // 進入結算階段時直接排程結算（不依賴 render 後的 effect：若 React 把
     // p1_select→resolving 合併成一次 render，phase 看起來沒變，effect 不會再觸發而卡住）
     if (action.type === 'SET_PHASE' && action.phase === 'resolving' && prevPhase !== 'resolving') {
-      setTimeout(() => startResolveRef.current(), 0);
+      scheduleBattleTask(() => startResolveRef.current(), 0);
     }
   }, []) as React.Dispatch<BattleAction>;
   const startResolveRef = useRef<() => void>(() => {});
@@ -273,8 +288,23 @@ export default function BattleScreen(props: BattleScreenProps) {
   const isResolvingRef = useRef(false);
   const hasInitialEntranceRef = useRef(false);
 
+  useEffect(() => {
+    battleAliveRef.current = true;
+    return () => {
+      battleAliveRef.current = false;
+      // StrictMode 會同步重新啟用同一實例；只清理真正卸載的局。
+      queueMicrotask(() => {
+        if (battleAliveRef.current) return;
+        battleTimeoutsRef.current.forEach(clearTimeout);
+        battleTimeoutsRef.current.clear();
+        effectQueueRef.current.length = 0;
+      });
+    };
+  }, []);
+
   const damageOriginRef = useRef<Record<string, {side:"p1"|"p2";id:string}>>({});
   const executeEffect = useCallback(async (effect: EffectItem) => {
+    if (!battleAliveRef.current) return;
     const { type } = effect;
     // 只有「看得見的」效果需要停頓；log / 狀態 / 能力變化不等待，讓同一批 dispatch 合併成一次重繪
     const fast = typeof window !== 'undefined' && (window as any).__BATTLE_FAST__;
@@ -495,7 +525,7 @@ export default function BattleScreen(props: BattleScreenProps) {
             dispatch({ type: 'UPDATE_ELF', side, elf: { currentHp: nextHp, shield: nextShieldVal, barrier: nextBarrierVal } });
             dispatch({ type: 'SET_LAST_DAMAGE', side, damage: dmg });
             dispatch({ type: 'SET_SHAKE', side, isShaking: true });
-            setTimeout(() => dispatch({ type: 'SET_SHAKE', side, isShaking: false }), 400);
+            scheduleBattleTask(() => dispatch({ type: 'SET_SHAKE', side, isShaking: false }), 400);
 
             if (wouldFaint && inDeathImmuneWindow) {
                dispatch({ type: 'ADD_LOG', side, log: { text: `🌑 【死亡條件不受體力限制】：血量歸零也不會陣亡！(下場後保留效果且不因此降低效果回合數)`, type: "effect" } });
@@ -710,7 +740,7 @@ export default function BattleScreen(props: BattleScreenProps) {
               isCrit: data.isCrit
             } 
           });
-          setTimeout(() => dispatch({ type: 'REMOVE_DAMAGE_POPUP', id }), 1200);
+          scheduleBattleTask(() => dispatch({ type: 'REMOVE_DAMAGE_POPUP', id }), 1200);
         }
         break;
       }
@@ -775,7 +805,7 @@ export default function BattleScreen(props: BattleScreenProps) {
               label: "體力調整",
             } 
           });
-          setTimeout(() => dispatch({ type: 'REMOVE_DAMAGE_POPUP', id }), 1000);
+          scheduleBattleTask(() => dispatch({ type: 'REMOVE_DAMAGE_POPUP', id }), 1000);
           dispatch({ 
             type: 'ADD_LOG', 
             log: { 
@@ -894,7 +924,7 @@ export default function BattleScreen(props: BattleScreenProps) {
               type: "heal" 
             } 
           });
-          setTimeout(() => dispatch({ type: 'REMOVE_DAMAGE_POPUP', id }), 1000);
+          scheduleBattleTask(() => dispatch({ type: 'REMOVE_DAMAGE_POPUP', id }), 1000);
         }
         break;
       }
@@ -916,6 +946,7 @@ case 'switch': {
   }, [dispatch]);
 
   const processQueue = useCallback((): Promise<void> => {
+    if (!battleAliveRef.current) return Promise.resolve();
     // 在效果執行「內部」再次等待佇列會等到自己 → 永久卡在結算中；此時直接返回（新效果仍會被外層迴圈處理）
     if (executingEffectRef.current) {
       return Promise.resolve();
@@ -924,7 +955,7 @@ case 'switch': {
       return processingPromiseRef.current;
     }
     const run = (async () => {
-      while (effectQueueRef.current.length > 0) {
+      while (battleAliveRef.current && effectQueueRef.current.length > 0) {
         const effect = effectQueueRef.current.shift()!;
         // 旗標只涵蓋 executeEffect 的「同步段」：只擋同步巢狀呼叫，不影響外部正常等待佇列
         let pending: Promise<void>;
@@ -944,7 +975,7 @@ case 'switch': {
     processingPromiseRef.current = run;
     return run.finally(() => {
       processingPromiseRef.current = null;
-      setTimeout(() => validateIdleRef.current(), 0);
+      scheduleBattleTask(() => validateIdleRef.current(), 0);
     });
   }, [executeEffect]);
 
@@ -952,10 +983,11 @@ case 'switch': {
   const showPopup = useCallback((side: "p1" | "p2", text: string, type: string, label: string = "") => {
     const id = `pop_${++popupSeq}`;
     dispatch({ type: 'ADD_DAMAGE_POPUP', popup: { id, text, side, type, label } });
-    setTimeout(() => dispatch({ type: 'REMOVE_DAMAGE_POPUP', id }), 1200);
+    scheduleBattleTask(() => dispatch({ type: 'REMOVE_DAMAGE_POPUP', id }), 1200);
   }, [dispatch]);
 
   const pushEffect = useCallback((effect: EffectItem) => {
+    if (!battleAliveRef.current) return;
     effectQueueRef.current.push(effect);
     processQueue();
   }, [processQueue]);
@@ -1158,6 +1190,7 @@ case 'switch': {
     await processQueue();
   }, [dispatch, pushEffect, getBattleEventContext, processQueue]);
   const checkFaints = useCallback(async (killerSide?: "p1" | "p2") => {
+    if (!battleAliveRef.current) return false;
     const mid = syncStateRef.current;
 
     const f1 = checkElfDead(mid.p1);
@@ -1269,6 +1302,7 @@ case 'switch': {
       }
 
       await processQueue();
+      if (!battleAliveRef.current) return false;
       dispatch({ type: 'SET_WINNER', winner: w });
       dispatch({ type: 'SET_PHASE', phase: "game_over" });
       props.onBattleEnd?.(w as any, structuredClone(syncStateRef.current.p1Team));
@@ -1846,6 +1880,7 @@ case 'switch': {
   }, [getBattleEventContext, processQueue, pushEffect]);
 
   const resolveTurn = useCallback(async () => {
+    if (!battleAliveRef.current) return;
     const cur = latestStateRef.current;
     if (cur.phase !== "resolving") return;
     if (!cur.p1SelectedSkill || !cur.p2SelectedSkill) {
@@ -3215,7 +3250,7 @@ case 'switch': {
           return finalizeTurn(true).finally(() => { isResolvingRef.current = false; });
         }).catch(e => console.error("[validateIdle]", e)).finally(() => {
           validatingRef.current = false;
-          setTimeout(() => validateIdleRef.current(), 0);
+          scheduleBattleTask(() => validateIdleRef.current(), 0);
         });
         return;
       }
@@ -3264,7 +3299,7 @@ case 'switch': {
       isResolvingRef.current = true;
       finalizeTurn().catch(e => console.error("[finalizeTurn]", e)).finally(() => {
         isResolvingRef.current = false;
-        setTimeout(() => validateIdleRef.current(), 0);
+        scheduleBattleTask(() => validateIdleRef.current(), 0);
       });
     } else if (!isResolvingRef.current) {
       dispatch({ type: 'SET_PHASE', phase: "p1_select" });
@@ -3276,7 +3311,7 @@ case 'switch': {
       isResolvingRef.current = true;
       resolveTurn().catch(e => console.error("[resolveTurn]", e)).finally(() => {
         isResolvingRef.current = false;
-        setTimeout(() => validateIdleRef.current(), 0);
+        scheduleBattleTask(() => validateIdleRef.current(), 0);
       });
     }
   };
@@ -3287,7 +3322,7 @@ case 'switch': {
       isResolvingRef.current = true;
       resolveTurn().finally(() => {
         isResolvingRef.current = false;
-        setTimeout(() => validateIdleRef.current(), 0);
+        scheduleBattleTask(() => validateIdleRef.current(), 0);
       });
     }
   }, [phase, resolveTurn]);
@@ -3317,6 +3352,7 @@ case 'switch': {
   }, [getBattleEventContext, triggerSuitEffect, processQueue]);
 
   const onSkillSelect = (side: "p1" | "p2", skill: Skill) => {
+    if (!battleAliveRef.current) return;
     const cur = latestStateRef.current;
 
     // 選擇技能時立即點亮與激活符文
@@ -3366,6 +3402,7 @@ case 'switch': {
   };
 
   const onSwitchElf = (side: "p1" | "p2", index: number) => {
+    if (!battleAliveRef.current) return;
     const cur = latestStateRef.current;
     const team = side === 'p1' ? cur.p1Team : cur.p2Team;
     const targetElf = team[index];
@@ -3491,6 +3528,7 @@ case 'switch': {
   };
 
   const onUseItem = (side: "p1" | "p2", item: BattleItem) => {
+    if (!battleAliveRef.current) return;
     const curForItems = latestStateRef.current;
 
     // §40-1: Check if item usage is disabled by status
@@ -3530,7 +3568,7 @@ case 'switch': {
   // T0-6: Auto Battle Driver
   useEffect(() => {
     if (!state.isAutoBattle || winner || phase !== "p1_select") return;
-    const t = setTimeout(() => {
+    const t = scheduleBattleTask(() => {
       const cur = latestStateRef.current;
       const action = pickAiAction(cur, 'p1', p1Suit, p2Suit, rng);
       if (action.type === 'skill') onSkillSelect('p1', action.skill!);
@@ -3597,6 +3635,7 @@ case 'switch': {
         onSkillSelect={onSkillSelect}
         onSwitchElf={onSwitchElf}
         onUseItem={onUseItem}
+        specialMode={props.specialMode}
         onReset={props.onRestartBattle}
         onBackToMenu={() => { if (!syncStateRef.current.winner) props.onBattleEnd?.("exit", structuredClone(syncStateRef.current.p1Team)); props.onBackToMenu(); }}
         onAutoBattleToggle={() => dispatch({ type: 'SET_AUTO_BATTLE', isAuto: !state.isAutoBattle })}

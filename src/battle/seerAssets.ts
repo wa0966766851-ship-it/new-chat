@@ -89,13 +89,13 @@ const BATTLE_SPRITE_FACING: Record<string, SpriteFacing> = {
   [normalizeName("星光·麗莎布布")]: "left",
   [normalizeName("冰魄·柯爾德")]: "left",
   [normalizeName("柯爾霍德")]: "left",
-  [normalizeName("聖光斯嘉麗")]: "front",
+  [normalizeName("聖光斯嘉麗")]: "left",
   [normalizeName("混沌·布萊克")]: "front",
   [normalizeName("變革·馬爾修斯")]: "front",
   [normalizeName("人皇·帝辛")]: "front",
   [normalizeName("蟲后·奧佩婭")]: "left",
   [normalizeName("眾神之父·奧丁")]: "left",
-  [normalizeName("皮皮")]: "front",
+  [normalizeName("皮皮")]: "left",
   [normalizeName("治癒.龍魂再臨 次元龍")]: "front",
   [normalizeName("無序.六刃")]: "front",
   [normalizeName("無序·蝕言")]: "front",
@@ -103,9 +103,16 @@ const BATTLE_SPRITE_FACING: Record<string, SpriteFacing> = {
   [normalizeName("恐懼的化身·咤克斯")]: "left",
   [normalizeName("無序.墜星")]: "left",
   [normalizeName("蓓麗安特")]: "front",
-  [normalizeName("怒濤·滄嵐")]: "front",
+  [normalizeName("怒濤·滄嵐")]: "left",
   [normalizeName("異境神霆·雷伊")]: "left",
   [normalizeName("聖靈邁爾斯")]: "left",
+};
+
+// 同名精靈的備用型態可能具有不同朝向，以實際載入的素材為準。
+const BODY_SOURCE_FACING: Record<string, SpriteFacing> = {
+  "/elf-art/zhakesi_fear_body.png": "right",
+  ...Object.fromEntries([10,1204,177,187,2647,2844,303,306,309,3098,3404,343,3432,3456,359,3626,3740,3886,4647,4648,4649,4762,5000,875].map(id => [`/seer/body/${id}.png`, "left" as SpriteFacing])),
+  ...Object.fromEntries([300,3105,3393,3539,4586,4643,4032,2882].map(id => [`/seer/body/${id}.png`, "front" as SpriteFacing])),
 };
 
 /** 只有 ElfAvatar 會直接載入的 URL/資料網址才算自訂圖片；內建美術 key（如 otherworld_thunder_rey）仍使用方向表。 */
@@ -114,8 +121,10 @@ export function hasRenderableElfImagePath(path?: string): boolean {
 }
 
 /** P1 應朝右、P2 應朝左，彼此面對；未逐圖核實的精靈保留原圖。 */
-export function shouldMirrorBattleSprite(name: string, side: "p1" | "p2", hasCustomPath = false): boolean {
-  const facing = hasCustomPath ? "front" : BATTLE_SPRITE_FACING[normalizeName(name || "")];
+export function shouldMirrorBattleSprite(name: string, side: "p1" | "p2", hasCustomPath = false, source?: string): boolean {
+  const facing = source && BODY_SOURCE_FACING[source] || (hasCustomPath ? "front"
+    : !source && normalizeName(name) === normalizeName("恐懼的化身·咤克斯") ? "right"
+    : BATTLE_SPRITE_FACING[normalizeName(name || "")]);
   if (!facing || facing === "front") return false;
   const target = side === "p1" ? "right" : "left";
   return facing !== target;

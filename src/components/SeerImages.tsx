@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import type { Elf } from "../types";
 import { IMAGE_COPY_EVENT } from "./ImageCopyMenu";
-import { getSeerIndex, loadSeerIndex, onSeerIndexLoaded, petImageUrls, splitTypes, typeIconUrls, isNoneType } from "../battle/seerAssets";
+import { shouldMirrorBattleSprite, hasRenderableElfImagePath, getSeerIndex, loadSeerIndex, onSeerIndexLoaded, petImageUrls, splitTypes, typeIconUrls, isNoneType } from "../battle/seerAssets";
 
 // 已知失敗的網址（避免重複請求）
 const failed = new Set<string>();
@@ -18,8 +18,8 @@ function useSeerIndexReady() {
 }
 
 /** 依序嘗試多個網址，全部失敗時顯示 fallback */
-export function ChainImage({ urls, fallback, className, style, alt }: {
-  urls: string[]; fallback?: React.ReactNode; className?: string; style?: React.CSSProperties; alt?: string;
+export function ChainImage({ urls, fallback, className, style, alt, sourceStyle }: {
+  sourceStyle?: (src: string) => React.CSSProperties; urls: string[]; fallback?: React.ReactNode; className?: string; style?: React.CSSProperties; alt?: string;
 }) {
   const [, refresh] = useState(0);
   const src = urls.find(u => !failed.has(u));
@@ -30,7 +30,7 @@ export function ChainImage({ urls, fallback, className, style, alt }: {
       alt={alt || ""}
       draggable={false}
       className={className}
-      style={style}
+      style={{ ...style, ...sourceStyle?.(src) }}
       onContextMenu={event => {
         event.preventDefault(); event.stopPropagation();
         window.dispatchEvent(new CustomEvent(IMAGE_COPY_EVENT, { detail: {
@@ -42,8 +42,8 @@ export function ChainImage({ urls, fallback, className, style, alt }: {
   );
 }
 
-export function ElfAvatar({ elf, kind = "head", className, fallbackClassName, style }: {
-  elf: Elf; kind?: "head" | "body"; className?: string; fallbackClassName?: string; style?: React.CSSProperties;
+export function ElfAvatar({ elf, battleSide, kind = "head", className, fallbackClassName, style }: {
+  elf: Elf; battleSide?: "p1" | "p2"; kind?: "head" | "body"; className?: string; fallbackClassName?: string; style?: React.CSSProperties;
 }) {
   const ready = useSeerIndexReady();
   const concealed = !!elf.isConcealed;
@@ -72,7 +72,7 @@ export function ElfAvatar({ elf, kind = "head", className, fallbackClassName, st
       WebkitMaskImage: "radial-gradient(ellipse 88% 92% at 50% 50%, #000 62%, rgba(0,0,0,.92) 76%, transparent 100%)",
       maskImage: "radial-gradient(ellipse 88% 92% at 50% 50%, #000 62%, rgba(0,0,0,.92) 76%, transparent 100%)",
     } as React.CSSProperties : undefined;
-    return <ChainImage urls={urls} fallback={headFb} className={className} style={{ ...sceneMask, ...style }} alt={elf.name} />;
+    return <ChainImage urls={urls} fallback={headFb} className={className} style={{ ...sceneMask, ...style }} sourceStyle={battleSide ? src => ({ transform: shouldMirrorBattleSprite(elf.name, battleSide, hasRenderableElfImagePath(elf.path) && src === elf.path, src) ? "scaleX(-1)" : undefined }) : undefined} alt={elf.name} />;
   }
   const isOtherworldRey = String(elf.id) === "5029" || elf.name === "異境神霆·雷伊";
   const portraitMask = isOtherworldRey ? {

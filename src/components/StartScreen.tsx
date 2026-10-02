@@ -1,3 +1,4 @@
+import { TeamSetupTools } from "./TeamSetupTools";
 import React, { useState, useEffect, useMemo, lazy, Suspense } from "react";
 import { matchesElfQuery } from '../utils/elfSearch';
 import { createPortal } from 'react-dom';
@@ -281,6 +282,30 @@ export default function StartScreen({
     return null;
   });
 
+  const [lastUsedRecordP2, setLastUsedRecordP2] = useState<{ team: TeamInstance[]; starterId: string } | null>(() => {
+    try {
+      const record = JSON.parse(localStorage.getItem("seer_last_used_p2_team") || "null");
+      if (!Array.isArray(record?.team)) return null;
+      record.team = record.team.filter((e: any) => e?.calculatedStats && Array.isArray(e.skills));
+      record.team.forEach(syncSavedSkillPp);
+      return record;
+    } catch { return null; }
+  });
+  const handleSaveLastUsedP2 = () => {
+    if (!p2Team.length) { alert("請先在 P2 加入至少 1 隻精靈才能保存紀錄！"); return; }
+    const record = structuredClone({ team: p2Team, starterId: p2StarterId });
+    localStorage.setItem("seer_last_used_p2_team", JSON.stringify(record));
+    setLastUsedRecordP2(record);
+    setSaveSuccessMsg("已保存 P2 陣容紀錄");
+    setTimeout(() => setSaveSuccessMsg(""), 3500);
+  };
+  const handleLoadLastUsedP2 = () => {
+    if (!lastUsedRecordP2?.team.length) return;
+    const team = lastUsedRecordP2.team.map(e => createInstance(e, true));
+    const index = lastUsedRecordP2.team.findIndex(e => e.battleId === lastUsedRecordP2.starterId);
+    setP2Team(team); setP2StarterId(team[Math.max(0, index)]?.battleId || "");
+  };
+
   const [backpackPresets, setBackpackPresets] = useState<Record<number, { name: string; team: TeamInstance[]; starterId: string }>>(() => {
     try {
       const sanitizeTeam = (team: any[]) => {
@@ -349,43 +374,25 @@ export default function StartScreen({
   const [showBackpackModalP2, setShowBackpackModalP2] = useState(false);
   const [saveSuccessMsg, setSaveSuccessMsg] = useState("");
 
-  // Populate default first elf on mount
+  // 雙方各自還原保存的配裝及首發；沒有紀錄才建立預設陣容。
   useEffect(() => {
-    if (allElves.length > 0 && p1Team.length === 0) {
-      try {
-        const stored = localStorage.getItem("seer_last_used_p1_team");
-        if (stored) {
-          const parsed = JSON.parse(stored);
-          if (parsed && parsed.team && parsed.team.length > 0) {
-            const restored = parsed.team.map((e: any) => {
-              const matched = allElves.find(a => a?.id === e?.id || a?.name === e?.name) || e;
-              return createInstance(matched);
-            });
-            setP1Team(restored);
-            setP1StarterId(restored[0]?.battleId || "");
-            return;
-          }
-        }
-      } catch (e) {
-        console.error("Failed to load last used team:", e);
+    if (!allElves.length) return;
+    const initialize = (side: "p1" | "p2") => {
+      const team = side === "p1" ? p1Team : p2Team;
+      if (team.length) return;
+      const record = side === "p1" ? lastUsedRecord : lastUsedRecordP2;
+      const setTeam = side === "p1" ? setP1Team : setP2Team;
+      const setStarter = side === "p1" ? setP1StarterId : setP2StarterId;
+      if (record?.team?.length) {
+        const restored = record.team.map(e => createInstance(e, true));
+        const index = record.team.findIndex(e => e.battleId === record.starterId);
+        setTeam(restored); setStarter(restored[Math.max(0, index)]?.battleId || "");
+      } else {
+        const initial = allElves.slice(0, 12).map((_, i) => createInstance(allElves[(i + (side === "p2" ? 1 : 0)) % allElves.length]));
+        setTeam(initial); setStarter(initial[0]?.battleId || "");
       }
-      const initialP1: TeamInstance[] = [];
-      const p1Size = Math.min(12, allElves.length);
-      for (let i = 0; i < p1Size; i++) {
-        initialP1.push(createInstance(allElves[i]));
-      }
-      setP1Team(initialP1);
-      setP1StarterId(initialP1[0]?.battleId || "");
-    }
-    if (allElves.length > 0 && p2Team.length === 0) {
-      const initialP2: TeamInstance[] = [];
-      const p2Size = Math.min(12, allElves.length);
-      for (let i = 0; i < p2Size; i++) {
-        initialP2.push(createInstance(allElves[(i + 1) % allElves.length]));
-      }
-      setP2Team(initialP2);
-      setP2StarterId(initialP2[0]?.battleId || "");
-    }
+    };
+    initialize("p1"); initialize("p2");
   }, [allElves]);
 
   // Dynamically sync p1Team and p2Team when allElves changes (e.g. inscriptions or skills updated)
@@ -461,10 +468,11 @@ export default function StartScreen({
     syncTeam(p2Team, setP2Team, "p2", p2StarterId, setP2StarterId);
   }, [allElves]);
 
-  const createInstance = (elf: Elf): TeamInstance => {
-    const latest = allElves.find((e) => e && ((e.id && e.id === elf.id) || e.name === elf.name)) || elf;
+  const createInstance = (elf: Elf, preserveConfiguration = false): TeamInstance => {
+    const source = preserveConfiguration ? elf : allElves.find((e) => e && ((e.id && e.id === elf.id) || e.name === elf.name)) || elf;
+    const latest = JSON.parse(JSON.stringify(source)) as Elf;
     return {
-      ...JSON.parse(JSON.stringify(latest)),
+      ...latest,
       battleId: `${elf.id}_inst_${Math.random().toString(36).substr(2, 9)}`,
       statStages: { atk: 0, def: 0, spatk: 0, spdef: 0, speed: 0, accuracy: 0 },
       battleStatus: "normal",
@@ -662,7 +670,7 @@ export default function StartScreen({
       return;
     }
     const record = {
-      team: p1Team,
+      team: structuredClone(p1Team),
       starterId: p1StarterId,
       timestamp: new Date().toLocaleTimeString()
     };
@@ -678,8 +686,7 @@ export default function StartScreen({
       return;
     }
     const restoredTeam = lastUsedRecord.team.map(e => {
-      const matched = allElves.find(a => a?.id === e?.id || a?.name === e?.name) || e;
-      return createInstance(matched);
+      return createInstance(e, true);
     });
     const sIdx = lastUsedRecord.team.findIndex(e => e.battleId === lastUsedRecord.starterId);
     setP1Team(restoredTeam);
@@ -697,7 +704,7 @@ export default function StartScreen({
       ...backpackPresets,
       [slot]: {
         ...backpackPresets[slot],
-        team: p1Team,
+        team: structuredClone(p1Team),
         starterId: p1StarterId
       }
     };
@@ -714,8 +721,7 @@ export default function StartScreen({
       return;
     }
     const restoredTeam = preset.team.map(e => {
-      const matched = allElves.find(a => a?.id === e?.id || a?.name === e?.name) || e;
-      return createInstance(matched);
+      return createInstance(e, true);
     });
     const sIdx = preset.team.findIndex(e => e?.battleId === preset?.starterId);
     setP1Team(restoredTeam);
@@ -733,7 +739,7 @@ export default function StartScreen({
       ...backpackPresetsP2,
       [slot]: {
         ...backpackPresetsP2[slot],
-        team: p2Team,
+        team: structuredClone(p2Team),
         starterId: p2StarterId
       }
     };
@@ -750,8 +756,7 @@ export default function StartScreen({
       return;
     }
     const restoredTeam = preset.team.map(e => {
-      const matched = allElves.find(a => a?.id === e?.id || a?.name === e?.name) || e;
-      return createInstance(matched);
+      return createInstance(e, true);
     });
     const sIdx = preset.team.findIndex(e => e?.battleId === preset?.starterId);
     setP2Team(restoredTeam);
@@ -763,7 +768,7 @@ export default function StartScreen({
   const handleCopyP1ToAI = () => {
     if (p1Team.length === 0) return;
     const tempTeam = p1Team.map((e) => {
-      const cloned = createInstance(e);
+      const cloned = createInstance(e, true);
       return cloned;
     });
     setP2Team(tempTeam);
@@ -775,7 +780,7 @@ export default function StartScreen({
   const handleCopyAIToP1 = () => {
     if (p2Team.length === 0) return;
     const tempTeam = p2Team.map((e) => {
-      const cloned = createInstance(e);
+      const cloned = createInstance(e, true);
       return cloned;
     });
     setP1Team(tempTeam);
@@ -1676,70 +1681,9 @@ export default function StartScreen({
             )}
           </div>
 
-          {/* P1 Helper tools & Loadout Backpack */}
-          <div className="mt-3 space-y-2">
-            <div className="flex items-center gap-2">
-              <button
-                id="btn-p1-randomize"
-                onClick={handleRandomizeP1}
-                className="flex-1 py-2 bg-[#0F1117] hover:bg-slate-800 text-slate-300 hover:text-white border border-slate-800 hover:border-blue-500/40 font-bold text-xs rounded-xl transition-all cursor-pointer flex items-center justify-center gap-1.5 shadow-sm"
-                title="隨機為我方部署 12 隻戰鬥陣容 (填滿背包且盡量不重複)"
-              >
-                <Shuffle className="w-3.5 h-3.5 text-blue-400" />
-                隨機部署我方 (12隻滿載)
-              </button>
-              <button
-                onClick={() => setShowBackpackModal(true)}
-                className="flex-1 py-2 bg-gradient-to-r from-blue-950/70 to-indigo-950/70 hover:from-blue-900/80 hover:to-indigo-900/80 text-blue-300 hover:text-white border border-blue-500/30 hover:border-blue-400 font-bold text-xs rounded-xl transition-all cursor-pointer flex items-center justify-center gap-1.5 shadow-sm"
-                title="開啟負載配裝背包與上次使用隊伍紀錄"
-              >
-                <Briefcase className="w-3.5 h-3.5 text-amber-400 animate-pulse" />
-                精靈負載/配裝背包
-                {lastUsedRecord && <span className="w-2 h-2 rounded-full bg-emerald-400" title="已有保存紀錄" />}
-              </button>
-            </div>
-
-            {/* Last Used Quick Access Banner */}
-            <div className="p-2.5 bg-[#050608]/80 border border-slate-800/80 rounded-xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 text-[11px]">
-              <div className="flex items-center gap-2 truncate text-slate-400">
-                <Bookmark className="w-3.5 h-3.5 text-amber-400 shrink-0" />
-                <span>上次使用紀錄：</span>
-                {lastUsedRecord && lastUsedRecord.team?.length > 0 ? (
-                  <span className="font-bold text-slate-200 truncate" title={lastUsedRecord.team.map(e => e?.name).join(", ")}>
-                    {lastUsedRecord.team.map(e => e?.name).join(", ")} <span className="text-slate-500 font-mono">({lastUsedRecord.team.length}隻)</span>
-                  </span>
-                ) : (
-                  <span className="text-slate-600 italic">尚未保存紀錄 (需點保存)</span>
-                )}
-              </div>
-              <div className="flex items-center gap-1.5 shrink-0 w-full sm:w-auto justify-end">
-                {lastUsedRecord && lastUsedRecord.team?.length > 0 && (
-                  <button
-                    onClick={handleLoadLastUsed}
-                    className="px-2.5 py-1 bg-blue-600/20 hover:bg-blue-600/40 text-blue-300 border border-blue-500/30 rounded-lg text-[10px] font-bold transition-all cursor-pointer flex items-center gap-1"
-                  >
-                    <FolderOpen className="w-3 h-3" />
-                    載入紀錄
-                  </button>
-                )}
-                <button
-                  onClick={handleSaveLastUsed}
-                  className="px-2.5 py-1 bg-amber-500/20 hover:bg-amber-500/40 text-amber-300 border border-amber-500/30 rounded-lg text-[10px] font-bold transition-all cursor-pointer flex items-center gap-1 shadow-sm"
-                  title="必須主動點擊此按鈕，才會保存您當前的隊伍作為上次使用紀錄"
-                >
-                  <Save className="w-3 h-3" />
-                  保存當前 (需點保存)
-                </button>
-              </div>
-            </div>
-
-            {saveSuccessMsg && (
-              <div className="p-2 bg-emerald-950/60 border border-emerald-500/40 text-emerald-300 text-xs rounded-xl flex items-center gap-2 animate-fade-in font-bold">
-                <CheckCircle2 className="w-4 h-4 shrink-0 text-emerald-400" />
-                {saveSuccessMsg}
-              </div>
-            )}
-          </div>
+          <TeamSetupTools side="p1" names={lastUsedRecord?.team?.map(e => e.name) || []}
+            onRandomize={handleRandomizeP1} onCopy={handleCopyAIToP1} onBackpack={() => setShowBackpackModal(true)}
+            onSave={handleSaveLastUsed} onLoad={handleLoadLastUsed} message={saveSuccessMsg} />
         </div>
 
         {/* Player 2 Team Setup Area */}
@@ -1905,34 +1849,9 @@ export default function StartScreen({
             )}
           </div>
 
-          {/* AI Helper tools & P2 Backpack */}
-          <div className="flex flex-wrap items-center gap-2 mt-2">
-            <button
-              id="btn-ai-randomize"
-              onClick={handleRandomizeAI}
-              className="flex-1 min-w-[140px] py-2 bg-[#0F1117] hover:bg-slate-800 text-slate-300 hover:text-white border border-slate-800 hover:border-slate-700 font-bold text-xs rounded-xl transition-all cursor-pointer flex items-center justify-center gap-1.5"
-              title="隨機為 AI 對手部署 12 隻戰鬥陣容 (填滿背包且盡量不重複)"
-            >
-              <Shuffle className="w-3.5 h-3.5 text-blue-400" />
-              隨機部署 AI (12隻滿載)
-            </button>
-            <button
-              id="btn-ai-copy-p1"
-              onClick={handleCopyP1ToAI}
-              className="flex-1 min-w-[140px] py-2 bg-[#0F1117] hover:bg-slate-800 text-slate-300 hover:text-white border border-slate-800 hover:border-slate-700 font-bold text-xs rounded-xl transition-all cursor-pointer flex items-center justify-center gap-1.5"
-            >
-              <Copy className="w-3.5 h-3.5 text-indigo-400" />
-              鏡像複製 P1 陣列
-            </button>
-            <button
-              onClick={() => setShowBackpackModalP2(true)}
-              className="flex-1 min-w-[140px] py-2 bg-gradient-to-r from-rose-950/70 to-red-950/70 hover:from-rose-900/80 hover:to-red-900/80 text-rose-300 hover:text-white border border-rose-500/30 hover:border-rose-400 font-bold text-xs rounded-xl transition-all cursor-pointer flex items-center justify-center gap-1.5 shadow-sm"
-              title="開啟 P2 負載配裝背包紀錄"
-            >
-              <Briefcase className="w-3.5 h-3.5 text-rose-400 animate-pulse" />
-              P2 配裝背包
-            </button>
-          </div>
+          <TeamSetupTools side="p2" names={lastUsedRecordP2?.team?.map(e => e.name) || []}
+            onRandomize={handleRandomizeAI} onCopy={handleCopyP1ToAI} onBackpack={() => setShowBackpackModalP2(true)}
+            onSave={handleSaveLastUsedP2} onLoad={handleLoadLastUsedP2} message={saveSuccessMsg} />
         </div>
 
       </div>
