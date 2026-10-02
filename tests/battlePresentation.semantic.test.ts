@@ -119,6 +119,20 @@ try {
   await act(async () => fear.dispatchEvent(new dom.window.Event('error')));
   assert.equal(document.querySelector('img')!.style.transform, '', '備用官方朝左圖不再翻轉');
 
+  const { petImageUrls } = await server.ssrLoadModule('/src/battle/seerAssets.ts');
+  assert.equal(petImageUrls({ name: '天蓬元帥八戒', id: 'fixture' }, 'body')[0], '/seer/body/1536.png');
+  assert.equal(petImageUrls({ name: '人皇·帝辛', id: 'fixture' }, 'body')[0], '/elf-art/emperor_dixin_body.png');
+  for (const side of ['p1', 'p2']) {
+    await act(async () => root.render(React.createElement(ElfAvatar, { elf: { id: 'secret', name: '秘密身份', path: '/secret-real-image.png', isConcealed: true }, kind: 'body', battleSide: side })));
+    const ghost = document.querySelector('img')!;
+    assert.ok(ghost.src.endsWith('/elf-art/unknown_myth_ghost_body.png'));
+    assert.equal(ghost.alt, '未知精靈'); assert.equal(ghost.style.transform, '');
+    assert.ok(!document.body.innerHTML.includes('/secret-real-image.png'));
+  }
+  await act(async () => document.querySelector('img')!.dispatchEvent(new dom.window.Event('error')));
+  assert.equal(document.querySelector('img'), null, '鬼影缺圖也不能退回真實精靈');
+  assert.ok(document.body.textContent?.includes('?'));
+
   const { GameDataProvider } = await server.ssrLoadModule('/src/contexts/GameDataContext.tsx');
   const { DEFAULT_ELVES } = await server.ssrLoadModule('/src/data/defaultElves.ts');
   const { default: Start } = await server.ssrLoadModule('/src/components/StartScreen.tsx');

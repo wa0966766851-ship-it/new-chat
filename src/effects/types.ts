@@ -5,6 +5,9 @@ import { Mark } from "../battle/marks";
 export enum EffectTiming {
   BEFORE_DAMAGE = "BEFORE_DAMAGE",
   AFTER_DAMAGE = "AFTER_DAMAGE",
+  AFTER_ATTACK_HIT = "AFTER_ATTACK_HIT",
+  MODIFY_POWER = "MODIFY_POWER",
+  BEFORE_STATUS_TICK = "BEFORE_STATUS_TICK",
   ON_ENTRANCE = "ON_ENTRANCE",
   BEFORE_ACTION = "BEFORE_ACTION",
   OPPONENT_ACTION = "OPPONENT_ACTION",
@@ -24,6 +27,7 @@ export enum EffectTiming {
   BATTLE_PHASE_END = "BATTLE_PHASE_END",
   BEFORE_SKILL = "BEFORE_SKILL",
   ON_SKILL_HIT = "ON_SKILL_HIT",
+  SKILL_INVALID = "SKILL_INVALID",
   ENFORCE = "ENFORCE",
   ON_PP_CONSUME = "ON_PP_CONSUME",
   BEFORE_TURN_RESOLVE = "BEFORE_TURN_RESOLVE",
@@ -104,6 +108,7 @@ export interface PpCostComputation {
 }
 
 export interface BattleEventContext {
+  roundNumber?: number;
   specialMode?: 'destiny' | 'interstellar';
   applyTrueDamageToElf?: (side: "p1" | "p2", targetId: string, amount: number, label?: string) => void;
   applyHealToElf?: (side: 'p1' | 'p2', targetId: string, amount: number) => void;
@@ -136,7 +141,7 @@ export interface BattleEventContext {
   applyPinkDamage: (side: "p1" | "p2", amount: number, label?: string, activeP1?: Elf, activeP2?: Elf, dmgType?: string, opts?: { pure?: boolean }) => number;
   applyTrueDamage: (side: "p1" | "p2", amount: number, label?: string, activeP1?: Elf, activeP2?: Elf) => number;
   applySkillTypeDamage: (side: "p1" | "p2", amount: number, label?: string, opts?: { ignoreBlock?: boolean; ignoreLimit?: boolean; ignoreShield?: boolean; floor?: number; elem?: string; category?: "skill_attribute" | "skill_extra_action"; node?: DamageNode; pure?: boolean }) => number;
-  applyAbsorb: (side: "p1" | "p2", amount: number) => void;
+  applyAbsorb: (side: "p1" | "p2", amount: number, label?: string) => void;
   
   // Dynamic state accessors
   getPlayerState: (key: string) => any;

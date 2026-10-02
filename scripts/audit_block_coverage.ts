@@ -66,8 +66,9 @@ if (details) {
 
 if (check) {
   const failures: string[] = [];
-  // 5030 聖靈邁爾斯加入五個技能與四個魂印子句；技能由專屬 handler 處理。
-  if (skills.parsed < 483 || skills.total !== 757) failures.push(`技能覆蓋率退步或資料集改變：${skills.parsed}/${skills.total}`);
+  // 20261002：4 條成功／失敗延伸併回父效果；483/757 → 479/753。
+  // 全部 31 個 blocks 技能仍逐句完整解析；不是刪除效果或放寬未解析要求。
+  if (skills.parsed < 479 || skills.total !== 753) failures.push(`技能覆蓋率退步或資料集改變：${skills.parsed}/${skills.total}`);
   // 5029 異境神霆·雷伊加入 16 個可稽核魂印子句；資料集基準由 409 更新為 427。
   if (souls.parsed < 104 || souls.total !== 431) failures.push(`魂印覆蓋率退步或資料集改變：${souls.parsed}/${souls.total}`);
 

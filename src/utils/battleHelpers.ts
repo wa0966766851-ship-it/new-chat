@@ -177,7 +177,7 @@ export const isZeroPpExempt = (elf: Elf, sk: Skill, opp?: Elf | null): boolean =
     if (turns >= (elf.ppLimitIgnoredWhenParalyzedTurns || 0)) return true;
   }
   // 深潛者盛宴：自身處於能力下降狀態時使用技能不受PP值限制
-  if (sk.name === "深潛者盛宴" && Object.values(elf.statStages || {}).some((v: any) => typeof v === "number" && v < 0)) return true;
+  if (!elf.isInherentInvalid && sk.name === "深潛者盛宴" && Object.values(elf.statStages || {}).some((v: any) => typeof v === "number" && v < 0)) return true;
 
   // 2. 平靜：不受PP值限制且不消耗PP值
   if (isSerene(elf)) return true;
@@ -199,7 +199,7 @@ export const isZeroPpExempt = (elf: Elf, sk: Skill, opp?: Elf | null): boolean =
   if (hasPpExemptBadge) return true;
 
   // 5. 技能描述（含條件判定）
-  if (textPpExempt(elf, sk.description)) return true;
+  if (!elf.isInherentInvalid && textPpExempt(elf, sk.description)) return true;
 
   // 6. PP 下限透支
   if (sk.isPpPenalized) return false;
@@ -216,8 +216,6 @@ export const isPpCostFree = (elf: Elf, sk: Skill, opp?: Elf | null): boolean => 
   if (isCanglan(elf) && canglanActive(elf, opp)) return true;
   if (isSerene(elf)) return true;                               // 平靜
   if (sk.name === "星光·光合作用" || sk.name === "星光·花草能量") return true;
-  // 深潛者盛宴：自身處於能力下降狀態時使用技能不受PP值限制
-  if (sk.name === "深潛者盛宴" && Object.values(elf.statStages || {}).some((v: any) => typeof v === "number" && v < 0)) return true;
   if (sk.description && /不消耗\s*(技能)?\s*PP/.test(sk.description) && textPpExempt(elf, sk.description.replace(/不消耗\s*(技能)?\s*PP/g, "不受PP"))) return true;
   return false;
 };

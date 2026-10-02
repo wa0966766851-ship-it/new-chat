@@ -1,9 +1,14 @@
+import { abilityKeys, currentElf, clearStatuses } from './semanticOperations';
+import { sameStatus } from './statusIdentity';
+import type { Skill } from '../types';
 import { BattleEventContext, BattleSkillHandler, EffectTiming, ElfDeconstructedProfile } from './types';
 
 export const handleCanglanSoulMark = (ctx: BattleEventContext, event: EffectTiming | string, extraData?: any) => {
   const { self, actor, setPlayerState, getPlayerState, addLog, applyHeal } = ctx;
   const oppSide = actor === "p1" ? "p2" : "p1";
   const ownerId = (elf: any) => elf?.battleId || elf?.id;
+  const active = actor === 'p1' ? ctx.activeP1 : ctx.activeP2;
+  if (ownerId(active) !== ownerId(self) && [EffectTiming.ROUND_START, EffectTiming.ROUND_END, EffectTiming.BEFORE_SKILL, EffectTiming.AFTER_ACTION].includes(event as EffectTiming)) return false;
   const markCount = (side: "p1" | "p2", id: string, elf: any) =>
     ctx.getMarks(side).find(mark => mark.id === id && mark.ownerBattleId === ownerId(elf))?.count || 0;
   const setOwnedMark = (side: "p1" | "p2", elf: any, id: "blk_永恆之水" | "blk_千秋一淚", count: number) => {
@@ -56,15 +61,36 @@ export const handleCanglanSoulMark = (ctx: BattleEventContext, event: EffectTimi
       }
       break;
 
-    case EffectTiming.AFTER_DAMAGE:
+    case EffectTiming.ON_DAMAGED:
       // 每次受到技能傷害後恢復自身最大體力 1/3 並使自身抵擋下次受到的技能傷害
-      if (extraData?.isIncoming && (extraData?.damageCategory === "skill_attack" || extraData?.damageType === "skill_attack")) {
+      if (extraData?.targetSide === actor && String(extraData?.damageType).startsWith("skill") && extraData?.hpReduced > 0) {
+        setPlayerState("canglanTookSkillDamage", true);
         applyHeal(actor, Math.floor(self.maxHp / 3));
-        setPlayerState("evasionActive", true);
+        setPlayerState("blockAttackCount", (getPlayerState("blockAttackCount") || 0) + 1);
         addLog(`🌊 【瀾】：潮汐復甦，並準備抵擋下次攻擊！`, "heal");
       }
       break;
 
+    case EffectTiming.ROUND_START:
+      setPlayerState("canglanTookSkillDamage", false);
+      if (getPlayerState("canglanCureNextRound")) {
+        clearStatuses(ctx, actor, self, name => name !== "normal");
+        setPlayerState("canglanCureNextRound", false);
+      }
+      break;
+    case EffectTiming.MODIFY_PRIORITY:
+      if (extraData?.priorityComp) {
+        if ((self.shield || 0) > 0 || (ctx.target.shield || 0) > 0) extraData.priorityComp.bonus += 1;
+        if (!self.isInherentInvalid && ctx.skill?.name === '王·洛浦凌波' && Object.values(self.statStages || {}).some(n => n < 0)) extraData.priorityComp.bonus += 3;
+      }
+      break;
+    case EffectTiming.ROUND_END:
+      if (!getPlayerState("canglanTookSkillDamage")) {
+        const n = ctx.applyPinkDamage(oppSide, Math.floor(ctx.target.maxHp / 3), "瀾·吸取", undefined, undefined, "percent");
+        applyHeal(actor, n);
+        setPlayerState("canglanCureNextRound", true);
+      }
+      break;
     case EffectTiming.BEFORE_SKILL: {
       const anyShield = (self.shield || 0) > 0 || (ctx.target.shield || 0) > 0;
       const anyoneWithoutShield = (self.shield || 0) <= 0 || (ctx.target.shield || 0) <= 0;
@@ -142,50 +168,53 @@ export const CANGLAN_SKILLS: Record<string, BattleSkillHandler> = {
     }, actor);
   },
   "王·洛浦凌波": (ctx) => {
-    const { addLog, self, target, actor, updateElf } = ctx;
-    const oppSide = actor === "p1" ? "p2" : "p1";
-    const selfShield = self.shield || 0;
-    const selfBarrier = self.barrier || 0;
-    const oppShield = target ? (target.shield || 0) : 0;
-    const oppBarrier = target ? (target.barrier || 0) : 0;
-    const totalConsumed = selfShield + selfBarrier + oppShield + oppBarrier;
-
-    if (totalConsumed > 0) {
-      self.shield = 0;
-      self.barrier = 0;
-      if (target) {
-        target.shield = 0;
-        target.barrier = 0;
-      }
-      if (updateElf) {
-        updateElf(actor, { id: self.id, shield: 0, barrier: 0 });
-        if (target) updateElf(oppSide, { id: target.id, shield: 0, barrier: 0 });
-      }
-      addLog(`🌊 【王·洛浦凌波】：消耗雙方全部護盾與護罩 (${totalConsumed} 點)！令對手下次技能無效！`, "effect");
+    const { self, target, actor, targetSide } = ctx;
+    const stages = { ...self.statStages };
+    const transfer: Record<string, number> = {};
+    for (const key of abilityKeys) if ((stages[key] || 0) < 0) {
+      transfer[key] = stages[key]; stages[key] = -stages[key];
+    }
+    if (Object.keys(transfer).length) {
+      ctx.updateElf(actor, { statStages: stages });
+      ctx.applyStatChange(targetSide, transfer);
+    }
+    const consumed = (self.shield || 0) + (self.barrier || 0) + (target.shield || 0) + (target.barrier || 0);
+    ctx.setPlayerState("canglanConsumedProtection", consumed);
+    if (consumed > 0) {
+      ctx.updateElf(actor, { shield: 0, barrier: 0 });
+      ctx.updateElf(targetSide, { shield: 0, barrier: 0 });
+      ctx.setOpponentState("nextSkillInvalid", true);
+      ctx.setOpponentState("nextSkillInvalidReason", "【王·洛浦凌波】");
+      ctx.applyPinkDamage(targetSide, Math.floor(consumed * 0.7), "王·洛浦凌波", undefined, undefined, "percent");
     }
   },
   "王·深海之吻": (ctx) => {
-    const { addLog, self, target, actor, updateElf, applyPinkDamage } = ctx;
-    const oppSide = actor === "p1" ? "p2" : "p1";
-    const selfOwner = self.battleId || self.id;
-    const targetOwner = target.battleId || target.id;
-    const hasWater = ctx.getMarks(actor).some(mark => mark.id === "blk_永恆之水" && mark.ownerBattleId === selfOwner && mark.count > 0);
-    const hasTear = ctx.getMarks(oppSide).some(mark => mark.id === "blk_千秋一淚" && mark.ownerBattleId === targetOwner && mark.count > 0);
-    if (hasTear) {
-      const drain = Math.floor(self.maxHp * 0.25);
-      const actual = applyPinkDamage(oppSide, drain, "王·深海之吻汲取", ctx.activeP1, ctx.activeP2, "percent");
-      ctx.applyHeal(actor, actual);
-    }
-    const pct = hasWater ? 0.60 : 0.40;
-    const baseDmg = Math.floor(self.maxHp * pct);
-    const shieldGain = baseDmg;
-    self.shield = (self.shield || 0) + shieldGain;
-    if (updateElf) updateElf(actor, { id: self.id, shield: self.shield });
-
-    const dealt = applyPinkDamage(oppSide, baseDmg, "王·深海之吻百分比傷害", ctx.activeP1, ctx.activeP2, "percent");
-    if (hasWater) ctx.applyHeal(actor, dealt);
-    addLog(`💋 【王·深海之吻】：附加 ${dealt} 點百分比傷害，並為自身附加 ${shieldGain} 點深海護盾！`, "effect");
+    const { self, target, actor, targetSide } = ctx;
+    const cleared = ctx.clearTurnEffectsOf(targetSide, target);
+    if (cleared) for (const status of ["束縛", "凍傷", "冰封"]) ctx.applyStatusWithImmunityCheck(targetSide, status, 3);
+    // 原文的全部成功／任意失敗／不存在／不可清除四分枝均給免疫。
+    ctx.setPlayerState("blkImmuneStatusCount", (ctx.getPlayerState("blkImmuneStatusCount") || 0) + 2);
+    const before = ctx.getStatuses(currentElf(ctx, targetSide, target));
+    const frozen = ctx.applyStatusWithImmunityCheck(targetSide, "冰封", 3);
+    if (frozen.success) clearStatuses(ctx, targetSide, target, name => name !== "normal" && !sameStatus(name, "冰封") && (before[name] || 0) > 0);
+    const owner = self.battleId || self.id, foe = target.battleId || target.id;
+    const water = ctx.getMarks(actor).some(m => m.id === "blk_永恆之水" && m.ownerBattleId === owner && m.count > 0);
+    const tear = ctx.getMarks(targetSide).some(m => m.id === "blk_千秋一淚" && m.ownerBattleId === foe && m.count > 0);
+    if (tear) ctx.applyAbsorb(targetSide, Math.floor(self.maxHp / 4), "王·深海之吻·汲取");
+    const amount = Math.floor(self.maxHp * (water ? 0.6 : 0.4));
+    ctx.applyPinkDamage(targetSide, amount, "王·深海之吻", undefined, undefined, "percent");
+    const latest = currentElf(ctx, actor, self);
+    ctx.updateElf(actor, { shield: (latest.shield || 0) + amount });
+    if (water) ctx.applyHeal(actor, amount);
   }
+};
+
+export const CANGLAN_DAMAGE_TRANSFORMS = {
+  "王·洛浦凌波": (ctx: BattleEventContext, skill: Skill): Skill => {
+    const consumed = ctx.getPlayerState("canglanConsumedProtection") || 0;
+    ctx.setPlayerState("canglanConsumedProtection", 0);
+    return { ...skill, power: (skill.power || 0) + consumed };
+  },
 };
 
 export { CanglanDeconstructedProfile } from "../data/elfProfiles/canglanRegistry";

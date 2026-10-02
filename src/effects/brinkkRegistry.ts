@@ -1,6 +1,48 @@
 import { BattleEventContext, BattleSkillHandler, EffectTiming } from "./types";
 import { createExtraElf } from "../utils/extraElf";
-import { getMaxPp, clampSkillPp } from "../utils/battleHelpers";
+import { getMaxPp } from "../utils/battleHelpers";
+import { StatusRegistry } from "./statusRegistry";
+import { sameStatus } from "./statusIdentity";
+import type { Elf, Skill } from "../types";
+import { getTypeMatchup } from '../utils/statCalculator';
+
+const identity = (elf: Elf) => elf.battleId || elf.id;
+const activeTimers = (ctx: BattleEventContext) => (ctx.actor === "p1" ? ctx.p1Timers : ctx.p2Timers) || [];
+const timerOn = (ctx: BattleEventContext, id: string) => activeTimers(ctx).some(t => t.id === id && t.remaining > 0 && !t.pendingActivation && (!t.ownerBattleId || t.ownerBattleId === identity(ctx.self)));
+const addSkillTimer = (ctx: BattleEventContext, id: string, name: string, turns: number, payload: Record<string, any> = {}, next = false) => ctx.addTimerTo(ctx.actor, {
+  id, name, kind: "turn_effect", source: "skill", remaining: turns, tickAt: "round_end", pendingActivation: next, payload,
+}, ctx.moveIndex === 1);
+
+/** 解除指定異常的所有儲存形式，保留未指定的附屬類異常。 */
+export function clearBrinkkStatuses(ctx: BattleEventContext, elf: Elf, pick: (name: string) => boolean): void {
+  const side = identity(elf) === identity(ctx.self) ? ctx.actor : ctx.targetSide;
+  const current = ctx.getFullTeam(side).find(e => identity(e) === identity(elf)) || elf;
+  const patch: Partial<Elf> = {
+    battleStatuses: Object.fromEntries(Object.entries(current.battleStatuses || {}).filter(([name]) => !pick(name))),
+    effects: (current.effects || []).filter(effect => !pick(effect.name)),
+    ...(pick(current.battleStatus || "normal") ? { battleStatus: "normal" as const, battleStatusDuration: 0 } : {}),
+  };
+  Object.assign(elf, patch);
+  ctx.updateAnyElf(side, identity(elf), patch);
+}
+
+/** 固有威力變化；強化吸取／反轉仍在命中 handler 中先於傷害公式執行。 */
+export const BRINKK_DAMAGE_TRANSFORMS = {
+  "溺咒之握": (ctx: BattleEventContext, skill: Skill): Skill => ctx.self.isInherentInvalid ? skill : {
+    ...skill, power: (skill.power || 0) + Math.floor(ctx.target.maxHp / 3) + (ctx.self.ivs?.hp ?? 31),
+  },
+};
+export const BRINKK_SKILL_TRANSFORMS = {
+  "深潛者盛宴": (ctx: BattleEventContext, skill: Skill): Skill => {
+    if (!ctx.self.isInherentInvalid) {
+      ctx.setPlayerState("blkTypeOverride", ["水", "混沌", "水.混沌", "普通"]);
+      ctx.setPlayerState("blkTypeOverrideUses", 1);
+      ctx.setPlayerState("blkTypeOverrideCurrentAction", true);
+      ctx.setPlayerState("blkTypeOverrideExtend", 2);
+    }
+    return skill;
+  },
+};
 
 /**
  * 混濁海妖·布林克克 (Brinkk)
@@ -14,8 +56,7 @@ import { getMaxPp, clampSkillPp } from "../utils/battleHelpers";
 // 判定對手是否為天敵
 const isNaturalEnemy = (targetType: string): boolean => {
   if (!targetType) return false;
-  const typeStr = targetType.toString();
-  return typeStr.includes("草") || typeStr.includes("聖靈") || typeStr.includes("自然") || typeStr.includes("光");
+  return getTypeMatchup(targetType, "混沌.水") > 1;
 };
 
 export const handleBrinkkSoulMark = (ctx: BattleEventContext, event: EffectTiming | string, extraData?: any) => {
@@ -53,14 +94,14 @@ export const handleBrinkkSoulMark = (ctx: BattleEventContext, event: EffectTimin
 
     myFullTeam.forEach(elf => {
       sumHp += elf.maxHp || 1000;
-      sumAtk += elf.baseStats?.atk || 300;
-      sumDef += elf.baseStats?.def || 300;
-      sumSpatk += elf.baseStats?.spatk || 300;
-      sumSpdef += elf.baseStats?.spdef || 300;
-      sumSpeed += elf.baseStats?.speed || 300;
+      sumAtk += elf.calculatedStats.atk;
+      sumDef += elf.calculatedStats.def;
+      sumSpatk += elf.calculatedStats.spatk;
+      sumSpdef += elf.calculatedStats.spdef;
+      sumSpeed += elf.calculatedStats.speed;
     });
     
-    const cthyaatMaxHp = Math.max(800, Math.floor(sumHp / 2));
+    const cthyaatMaxHp = Math.max(1, Math.floor(sumHp / 2));
     setPlayerState("cthyaatHp", cthyaatMaxHp);
     setPlayerState("cthyaatMaxHp", cthyaatMaxHp);
     setPlayerState("cthyaatActive", true);
@@ -78,6 +119,7 @@ export const handleBrinkkSoulMark = (ctx: BattleEventContext, event: EffectTimin
         spdef: Math.floor(sumSpdef / 2),
         speed: Math.floor(sumSpeed / 2),
       },
+      calculatedStats: { hp: cthyaatMaxHp, atk: Math.floor(sumAtk / 2), def: Math.floor(sumDef / 2), spatk: Math.floor(sumSpatk / 2), spdef: Math.floor(sumSpdef / 2), speed: Math.floor(sumSpeed / 2) },
       badge: "🦑",
       skills: [],
       soulMark: {
@@ -94,17 +136,15 @@ export const handleBrinkkSoulMark = (ctx: BattleEventContext, event: EffectTimin
   }
 
   // 取得克塔亞特當前狀態
-  const cthyaatActive = getPlayerState("cthyaatActive");
-  const cthyaatHp = getPlayerState("cthyaatHp") || 0;
-  const cthyaatMaxHp = getPlayerState("cthyaatMaxHp") || 1000;
 
   // 己方精靈任意戰鬥階段節點結算時自身額外汲取己方在場精靈當前體力¼。
   // 抽為共用函式，掛到所有「場下克塔亞特能收到」的全隊廣播節點（回合開始/回合結束/戰鬥階段結束）。
   // 同步回寫 team 內真正的克塔亞特 Elf.currentHp，避免 playerState 與可視血條脫節（雙軌）。
   const runNodeDrain = (nodeLabel: string) => {
     const cActive = getPlayerState("cthyaatActive");
-    const cHp = getPlayerState("cthyaatHp") || 0;
-    const cMax = getPlayerState("cthyaatMaxHp") || 1000;
+    const liveExtra = getFullTeam(oppSide).find(e => e.isExtra && e.name === "克塔亞特");
+    const cHp = liveExtra?.currentHp ?? (getPlayerState("cthyaatHp") || 0);
+    const cMax = liveExtra?.maxHp ?? (getPlayerState("cthyaatMaxHp") || 1000);
     if (!cActive || cHp <= 0) return;
     const oppActiveElf = actor === "p1" ? ctx.activeP2 : ctx.activeP1;
     if (!oppActiveElf || oppActiveElf.currentHp <= 0) return;
@@ -130,8 +170,8 @@ export const handleBrinkkSoulMark = (ctx: BattleEventContext, event: EffectTimin
     const cthTeam = getFullTeam(oppSide);
     cthTeam.forEach(elf => {
       if (elf.isExtra && elf.name === "克塔亞特") return;
-      if (elf.currentHp > 0) {
-        elf.maxHp = Math.max(100, elf.maxHp - loss);
+      {
+        elf.maxHp = Math.max(1, elf.maxHp - loss);
         elf.currentHp = Math.min(elf.currentHp, elf.maxHp);
       }
     });
@@ -140,7 +180,53 @@ export const handleBrinkkSoulMark = (ctx: BattleEventContext, event: EffectTimin
     addLog(`💀 【克塔亞特】：古神殞落消逝！其所在陣營所有精靈體力上限永久降低 ${loss}（克塔亞特體力上限⅛）！`, "defeat");
   };
 
+  const liveCthyaat = getFullTeam(oppSide).find(e => e.isExtra && e.name === "克塔亞特");
+  if (liveCthyaat && getPlayerState("cthyaatActive")) {
+    setPlayerState("cthyaatHp", liveCthyaat.currentHp);
+    setPlayerState("cthyaatMaxHp", liveCthyaat.maxHp);
+    if (liveCthyaat.currentHp <= 0) onCthyaatDeath();
+  }
+  const cthyaatActive = getPlayerState("cthyaatActive");
+  const cthyaatHp = getPlayerState("cthyaatHp") || 0;
+  const cthyaatMaxHp = getPlayerState("cthyaatMaxHp") || 1000;
+
   switch (event) {
+    case EffectTiming.MODIFY_PRIORITY: {
+      const comp = extraData?.priorityComp;
+      if (!comp || self.isInherentInvalid) break;
+      if (ctx.skill?.name === "不淨者之約" && isNaturalEnemy(target.type)) comp.bonus += 3;
+      break;
+    }
+    case EffectTiming.BEFORE_ACTION: {
+      if (timerOn(ctx, "brinkk_deepsea")) {
+        const ratio = self.currentHp < self.maxHp / 2 ? 2 / 3 : 1 / 3;
+        ctx.applyAbsorb(oppSide, Math.floor(target.maxHp * ratio), "深海働哭·持續吸取");
+      }
+      break;
+    }
+    case EffectTiming.OPPONENT_DAMAGE: {
+      if (extraData?.hpReduced === 0 && extraData?.label === "深海働哭·持續吸取") applyTrueDamage(oppSide, 300, "深海働哭·吸取未減少");
+      if (extraData?.hpReduced === 0 && extraData?.label === "深潛者盛宴·獨立吸取" && getPlayerState("brinkkFeastAbsorbFallbackPending")) {
+        setPlayerState("brinkkFeastAbsorbFallbackPending", false);
+        ctx.applyAbsorb(oppSide, Math.floor(target.currentHp / 4), "深潛者盛宴·吸取未減少");
+      }
+      break;
+    }
+    case EffectTiming.OPPONENT_ACTION: {
+      if (timerOn(ctx, "brinkk_chiyu") && !Object.entries(ctx.getStatuses(target)).some(([name, duration]) => duration > 0 && StatusRegistry[name]?.categories.includes("CONTROL"))) {
+        ctx.setOpponentState("next2AtkInvalid", (ctx.getOpponentState("next2AtkInvalid") || 0) + 1);
+        ctx.setOpponentState("attackInvalidSource", "癡愚之觸");
+        setPlayerState("chiyuExtraPending", true);
+      }
+      break;
+    }
+    case EffectTiming.SKILL_INVALID: {
+      if (extraData?.isIncoming && extraData.reason?.includes("癡愚之觸") && getPlayerState("chiyuExtraPending")) {
+        setPlayerState("chiyuExtraPending", false);
+        setOpponentState("next2AtkInvalid", (getOpponentState("next2AtkInvalid") || 0) + 1);
+      }
+      break;
+    }
     case EffectTiming.ON_ENTRANCE: {
       const activeElf = actor === "p1" ? ctx.activeP1 : ctx.activeP2;
       const isBrinkkActive = activeElf?.id === self.id;
@@ -159,12 +245,12 @@ export const handleBrinkkSoulMark = (ctx: BattleEventContext, event: EffectTimin
       if (extraData?.enteredSide !== oppSide) break;
       const enteredElf = getFullTeam(oppSide).find(e => e.id === extraData?.enteredId);
       if (!enteredElf || (enteredElf.isExtra && enteredElf.name === "克塔亞特")) break;
+      setOpponentState("brinkkTrueDamageTakenCount", 0);
       addLog(`🦑 【克塔亞特】：${enteredElf.name} 出戰，古神寒氣侵襲！`, "effect");
       const frostRes = applyStatusWithImmunityCheck(oppSide, "漸凍", 1);
       if (!frostRes.success) {
-        const trueDamageTaken = getPlayerState("brinkkTrueDamageTakenCount") || 0;
-        setPlayerState("cthyaatDmgHalfTurns", 3);
-        setPlayerState("cthyaatDmgHalfCount", trueDamageTaken);
+        const trueDamageTaken = getOpponentState("brinkkTrueDamageTakenCount") || 0;
+        ctx.addTimerTo(oppSide, { id: "cthyaat_half_damage", name: "克塔亞特·非真實傷害減半", kind: "round_counter", source: "soulmark", remaining: 3, tickAt: "round_end", payload: { block: { dmgOutMult: 0.5, kind: "非真實", useLimitRegistryKey: "brinkkTrueDamageTakenCount", usesConsumed: 0 }, polarity: "negative" } }, false);
         addLog(`🦑 【克塔亞特】：漸凍未觸發，附加 3 回合內非真實傷害減半 ${trueDamageTaken} 次！`, "effect");
       }
       break;
@@ -177,7 +263,7 @@ export const handleBrinkkSoulMark = (ctx: BattleEventContext, event: EffectTimin
         if (extraData?.damageCategory !== "true") {
           // 自身位於場下期間，對手每次受到真實傷害時降低自身受到非真實傷害4% (最多疊加16次)
           const isBrinkkActive = (actor === "p1" ? ctx.activeP1 : ctx.activeP2)?.id === self.id;
-          if (!isBrinkkActive) {
+          if (isBrinkkActive) {
             const offFieldStacks = getPlayerState("brinkkOffFieldTrueDamageStacks") || 0;
             if (offFieldStacks > 0) {
               const reduction = 0.04 * offFieldStacks;
@@ -198,14 +284,6 @@ export const handleBrinkkSoulMark = (ctx: BattleEventContext, event: EffectTimin
               addLog(`🦑 【濁】：在場海妖凝聚痛苦，本次非真實傷害提升 ${onFieldStacks * 4}%！`, "effect");
             }
 
-            // 克塔亞特未觸發漸凍時造成的傷害減半次數消耗
-            const halfTurns = getPlayerState("cthyaatDmgHalfTurns") || 0;
-            const halfCount = getPlayerState("cthyaatDmgHalfCount") || 0;
-            if (halfTurns > 0 && halfCount > 0) {
-              extraData.multiplier *= 0.5;
-              setPlayerState("cthyaatDmgHalfCount", halfCount - 1);
-              addLog(`🦑 【克塔亞特】：寒霜侵蝕，非真實傷害減半（剩餘 ${halfCount - 1} 次）！`, "effect");
-            }
           }
         }
       }
@@ -236,8 +314,8 @@ export const handleBrinkkSoulMark = (ctx: BattleEventContext, event: EffectTimin
         }
 
         // 累計真實傷害次數，用於克塔亞特的非真實傷害減半次數
-        const count = (getPlayerState("brinkkTrueDamageTakenCount") || 0) + 1;
-        setPlayerState("brinkkTrueDamageTakenCount", count);
+        const count = (getOpponentState("brinkkTrueDamageTakenCount") || 0) + 1;
+        setOpponentState("brinkkTrueDamageTakenCount", count);
       }
       break;
     }
@@ -248,10 +326,10 @@ export const handleBrinkkSoulMark = (ctx: BattleEventContext, event: EffectTimin
 
       if (isBrinkkActive) {
         // 回合開始時，若場上存在本次在場期間不大於2回合或在場超過8回合以上的精靈，則自身體力上限提升20%並恢復自身全部體力與pp值
-        const brinkkTurns = getPlayerState("turnsInField") || 1;
-        const oppTurns = getOpponentState("turnsInField") || 1;
+        const brinkkTurns = ctx.roundNumber === undefined ? getPlayerState("turnsInField") || 1 : ctx.roundNumber - (getPlayerState("fieldEntryTurn") ?? 1) + 1;
+        const oppTurns = ctx.roundNumber === undefined ? getOpponentState("turnsInField") || 1 : ctx.roundNumber - (getOpponentState("fieldEntryTurn") ?? 1) + 1;
         
-        if (brinkkTurns <= 2 || brinkkTurns >= 8 || oppTurns <= 2 || oppTurns >= 8) {
+        if (brinkkTurns <= 2 || brinkkTurns > 8 || oppTurns <= 2 || oppTurns > 8) {
           // 體力上限提升 20%
           self.maxHp = Math.floor(self.maxHp * 1.2);
           self.currentHp = self.maxHp;
@@ -281,7 +359,9 @@ export const handleBrinkkSoulMark = (ctx: BattleEventContext, event: EffectTimin
       }
 
       // 深海働哭 延遲冰封與清除效果
-      if (getPlayerState("deepSeaFreezePending")) {
+      if (timerOn(ctx, "brinkk_freeze_pending")) {
+        ctx.consumeTimer?.(actor, "brinkk_freeze_pending");
+        if (getPlayerState("deepSeaFreezeTarget") !== identity(target)) break;
         setPlayerState("deepSeaFreezePending", false);
         clearTurnEffectsOf(oppSide);
         applyStatusWithImmunityCheck(oppSide, "冰封", 2);
@@ -335,17 +415,14 @@ export const handleBrinkkSoulMark = (ctx: BattleEventContext, event: EffectTimin
             if (cthyaatElf) { cthyaatElf.currentHp = newCthHp; }
             self.currentHp = self.maxHp;
             // 解除異常狀態
-            if (self.battleStatuses) self.battleStatuses = {};
-            self.battleStatus = "normal";
-            self.battleStatusDuration = 0;
+            clearBrinkkStatuses(ctx, self, name => name !== "normal");
+            if (newCthHp <= 0) onCthyaatDeath();
             addLog(`🔮 【不淨者之約】：古神之約重組軀殼！消耗克塔亞特 40% 體力 (${cost} HP)，布林克克滿血重生！`, "effect");
           } else {
             onCthyaatDeath();
             self.currentHp = self.maxHp;
             // 解除異常狀態
-            if (self.battleStatuses) self.battleStatuses = {};
-            self.battleStatus = "normal";
-            self.battleStatusDuration = 0;
+            clearBrinkkStatuses(ctx, self, name => name !== "normal");
             addLog(`🔮 【不淨者之約】：克塔亞特殘存生命燃燒殆盡！古神消逝，布林克克借屍重生！`, "effect");
           }
           if (extraData) extraData.cancelFatal = true;
@@ -390,20 +467,14 @@ export const BRINKK_SKILLS: Record<string, BattleSkillHandler> = {
       addLog(`🌊 【溺咒之握】：海妖之握吸取並反轉了對手的能力提升！`, "effect");
     }
 
-    // 2. 技能威力額外提升對手最大體力*1/3+個體值
-    const ivVal = self.ivs?.hp || 31;
-    const bonus = Math.floor(target.maxHp / 3) + ivVal;
-    ctx.setPlayerState(actor === "p1" ? "p1RegistryState" : "p2RegistryState", { damageBoostThisTurn: bonus / 100 }); // Roughly boosting damage, although not fixed. Alternatively just apply true damage.
-    applyTrueDamage(oppSide, bonus, "巨浪擠壓");
-    addLog(`🌊 【溺咒之握】：巨浪擠壓，追加額外真實傷害：${bonus} 點！`, "effect");
+    // 固有威力由 BRINKK_SKILL_TRANSFORMS 提供，不能換成增傷或真實傷害。
 
     // 3. 將對手所處的凍傷狀態轉化為冰封，轉化成功則附加等同於對手最大體力⅛的真實傷害
     const oppStatuses = getStatuses(target);
     if (oppStatuses["凍傷"] > 0) {
-      if (target.battleStatuses) {
-        delete target.battleStatuses["凍傷"];
-      }
-      applyStatusWithImmunityCheck(oppSide, "冰封", 2);
+      const result = applyStatusWithImmunityCheck(oppSide, "冰封", 2);
+      if (!result.success) return;
+      clearBrinkkStatuses(ctx, target, name => sameStatus(name, "凍傷"));
       addLog(`🌊 【溺咒之握】：將對手的「凍傷」轉化為「冰封」！`, "status");
       
       const trueDmg = Math.floor(target.maxHp / 8);
@@ -433,7 +504,7 @@ export const BRINKK_SKILLS: Record<string, BattleSkillHandler> = {
     }
 
     // 3. 3回合內，若對手使用技能時不處於控制類異常狀態，則無效對手下次攻擊，觸發無效成功則額外無效對手下次攻擊
-    setOpponentState("chiyuTriggerTurns", 3);
+    addSkillTimer(ctx, "brinkk_chiyu", "癡愚之觸·攻擊封鎖", 3);
     addLog(`🌊 【癡愚之觸】：混沌結界籠罩，3 回合內對手不處於控制異常時，將無效其下一次攻擊！`, "effect");
   },
 
@@ -448,26 +519,22 @@ export const BRINKK_SKILLS: Record<string, BattleSkillHandler> = {
 
     // 2. 汲取對手當前體力¼
     const drainAmt = Math.floor(target.currentHp / 4);
-    adjustHp(oppSide, -drainAmt);
-    applyHeal(actor, drainAmt);
+    ctx.applyAbsorb(oppSide, drainAmt);
     addLog(`🌊 【深海働哭】：汲取對手當前生命 1/4 (${drainAmt} HP)！`, "heal");
 
     // 3. 5回合內自身使用技能吸取對手最大體力⅓，自身體力低於最大體力½時吸取效果翻倍，吸取後對手體力未減少則額外附加對手300點真實傷害
-    setPlayerState("deepSeaWeepTurns", 5);
+    addSkillTimer(ctx, "brinkk_deepsea", "深海働哭·持續吸取", 5);
 
     // 4. 命中時令對手100%漸凍1回合，未觸發或對手已處於漸凍則回合結束時消除對手回合類效果並令對手100%冰封，同時解除自身所有非附屬類異常狀態
-    const frostRes = applyStatusWithImmunityCheck(oppSide, "漸凍", 1);
     const hasFrost = ctx.getStatuses(target)["漸凍"] > 0;
+    const frostRes = applyStatusWithImmunityCheck(oppSide, "漸凍", 1);
     if (!frostRes.success || hasFrost) {
-      setPlayerState("deepSeaFreezePending", true);
+      setPlayerState("deepSeaFreezeTarget", identity(target));
+      ctx.addTimerTo(actor, { id: "brinkk_freeze_pending", name: "深海働哭·回合末冰封", kind: "turn_effect", source: "skill", remaining: 1, tickAt: "never" }, false);
     }
 
     // 解除自身異常狀態
-    if (self.battleStatuses) {
-      self.battleStatuses = {};
-    }
-    self.battleStatus = "normal";
-    self.battleStatusDuration = 0;
+    clearBrinkkStatuses(ctx, self, name => !!StatusRegistry[name] && !StatusRegistry[name].categories.includes("AUXILIARY"));
     addLog(`🌊 【深海働哭】：淨化全身！解除自身所有的非附屬異常狀態。`, "effect");
   },
 
@@ -494,50 +561,8 @@ export const BRINKK_SKILLS: Record<string, BattleSkillHandler> = {
     applyStatusWithImmunityCheck(actor, "狂暴", 3);
 
     // 5. 下2回合對手所有技能先制-2，若對手當前速度高於自身則改為先制-3
-    setOpponentState("speedPriorityReduction", 2);
-    if (target.calculatedStats?.speed > self.calculatedStats?.speed) {
-      setOpponentState("priorityDebuffValue", -3);
-    } else {
-      setOpponentState("priorityDebuffValue", -2);
-    }
+    ctx.addTimerTo(oppSide, { id: "brinkk_contract_priority", name: "不淨者之約·先制下降", kind: "turn_effect", source: "skill", remaining: 2, tickAt: "round_end", pendingActivation: true,
+      payload: { block: { prio: target.calculatedStats.speed > self.calculatedStats.speed ? -3 : -2, src: "不淨者之約" }, polarity: "negative" } }, false);
     addLog(`🔮 【不淨者之約】：詛咒契約已成！下 2 回合對手技能先制降低！`, "effect");
-  },
-
-  "深潛者盛宴": (ctx) => {
-    const { self, target, actor, setPlayerState, applyAbsorb, applyStatusWithImmunityCheck, addLog } = ctx;
-    const oppSide = actor === "p1" ? "p2" : "p1";
-
-    addLog(`🐙 布林克克發動終極大招【深潛者盛宴】！`, "info");
-
-    // 1. 自身處於能力下降狀態時先制+3且使用技能不受PP值限制、將自身任意能力下降狀態視為至少2倍同等級的全屬性能力提升
-    const selfStages = self.statStages || {};
-    const hasDebuff = Object.values(selfStages).some(v => (v as number) < 0);
-    if (hasDebuff) {
-      // 模擬 PP 不受限制：將本技能 PP 補回滿
-      const curSkill = self.skills.find(s => s.name === "深潛者盛宴");
-      if (curSkill) curSkill.pp = getMaxPp(curSkill, self);
-      
-      // 將降能力視為 2 倍全屬性提升 (在傷害計算中疊加增傷)
-      ctx.setPlayerState(actor === "p1" ? "p1RegistryState" : "p2RegistryState", { damageBoostThisTurn: 1.0 });
-      addLog(`🐙 【深潛者盛宴】：身陷絕境之淵！化所有負面屬性為 2 倍全屬性爆發！`, "effect");
-    }
-
-    // 2. 造成傷害時取克制倍數最高者 (水、混沌、水混沌、普通)，未擊敗對手則延續下2次
-    ctx.setPlayerState(actor === "p1" ? "p1RegistryState" : "p2RegistryState", { brinkkNextMultiplier: 1.5 });
-
-    // 3. 吸取對手300點體力，雙方每處於1種能力等級提升/下降狀態則額外吸取40點(每次視為獨立吸取1次)，吸取後任意1次對手體力未減少則額外汲取對手當前體力¼
-    let statCount = 0;
-    Object.values(selfStages).forEach(v => { if (v !== 0) statCount++; });
-    Object.values(target.statStages || {}).forEach(v => { if (v !== 0) statCount++; });
-
-    const absorbTotal = 300 + statCount * 40;
-    applyAbsorb(oppSide, absorbTotal);
-    addLog(`🐙 【深潛者盛宴】：從深海祭壇汲取 ${absorbTotal} 體力（含雙方 ${statCount} 個屬性等級波動加成）！`, "heal");
-
-    // 4. 3回合內自身造成技能傷害提升50%，雙方任一方處於異常狀態則效果翻倍
-    setPlayerState("feastDamageBoostTurns", 3);
-    const hasAnyStatus = Object.keys(ctx.getStatuses(self)).length > 0 || Object.keys(ctx.getStatuses(target)).length > 0;
-    setPlayerState("feastDamageBoostMultiplier", hasAnyStatus ? 2.0 : 1.5);
-    addLog(`🐙 【深潛者盛宴】：3 回合內造成技能傷害提升（當前倍率：${hasAnyStatus ? "2.0倍 (翻倍)" : "1.5倍"}）！`, "effect");
   }
 };

@@ -1,3 +1,5 @@
+import { specialDamageFormula } from '../effects/specialDamageFormulaRegistry';
+import { skillTypeMultiplier } from '../battle/skillTypeOverride';
 import { Elf, Skill } from "../types";
 import { calculateEffectiveStat, getTypeMatchup } from "./statCalculator";
 import { SUIT_CATALOG } from "../data/suitsAndEyewears";
@@ -5,6 +7,7 @@ import { TITLE_CATALOG } from "../data/titles";
 import { Mark, getMark } from "../battle/marks";
 import { critChanceBonus } from "../effects/traitEffects";
 import { prdChance } from "./prd";
+import { skillStageView } from '../battle/skillStageView';
 
 export const calculateDamage = (
   actor: Elf,
@@ -61,8 +64,8 @@ export const calculateDamage = (
     def = Math.max(0, def - suit.effects.ignoreDefSpdefFlat);
   }
   
-  const rawAtkS = isPhys ? (actor.statStages?.atk || 0) : (actor.statStages?.spatk || 0);
-  const rawDefS = isPhys ? (target.statStages?.def || 0) : (target.statStages?.spdef || 0);
+  const rawAtkS = skillStageView(actor, skill, isPhys ? 'atk' : 'spatk');
+  const rawDefS = skillStageView({ statStages: target.statStages, isInherentInvalid: actor.isInherentInvalid }, skill, isPhys ? 'def' : 'spdef', true);
 
   const actorMarks = side === "p1" ? p1Marks : p2Marks;
   const oppSide = side === "p1" ? "p2" : "p1";
@@ -86,36 +89,18 @@ export const calculateDamage = (
     if (atkS > 0) atkS = -atkS;
   }
 
-  // Wuxu Shiyan (無序·蝕言) Off-field logic
-  const oppTeam = oppSide === 'p1' ? p1Team : p2Team;
-  const wuxuShiyan = oppTeam?.find(e => (e.name === "無序·蝕言" || e.name === "無序.蝕言") && e.currentHp > 0 && e.battleId !== target.battleId);
-  
-  if (wuxuShiyan && !isPhys) {
-    // 修正敵方所有精靈特殊攻擊計算公式改為只能造成等同於特攻值的傷害
-    // 然後若自身最終特防值每有1點特防則對手造成上述傷害時減少1%
-    const wuxuSpDef = Math.ceil(wuxuShiyan.calculatedStats.spdef / 10);
-    const baseDamage = calculateEffectiveStat(atk, atkS);
-    const reduction = wuxuSpDef * 0.01;
-    const finalDmg = Math.max(0, Math.floor(baseDamage * (1 - reduction)));
-    
-    return {
-      damage: finalDmg,
-      isCrit: false,
-      typeMultiplier: 1.0
-    };
-  }
-  
+  const formula = specialDamageFormula(actor, target, skill, (oppSide === 'p1' ? p1Team : p2Team) || [], atkS);
+  if (formula) return formula;
+
   // 積木：能力下降視為同級全屬性提升
   if ((side === "p1" ? p1RegistryState : p2RegistryState)?.blkStageAsBoost) atkS = Math.max(atkS, (side === "p1" ? p1RegistryState : p2RegistryState).blkStageAsBoost);
   const powerMultiplier = (side === "p1" ? p1RegistryState : p2RegistryState)?.powerMultiplierThisAction ?? 1;
   const base = ((42 * calculateEffectiveStat(atk, atkS) * skill.power * powerMultiplier / calculateEffectiveStat(def, defS)) / 50 + 2);
   
   const actorReg = side === "p1" ? p1RegistryState : p2RegistryState;
-  let typeMult = getTypeMatchup(skill.type, target.type);
+  const targetType = actorReg?.targetTypeThisAction || target.type;
+  let typeMult = skillTypeMultiplier(actorReg, skill.type, targetType);
   // 積木：克制倍數取指定屬性中最高者
-  if (Array.isArray(actorReg?.blkTypeOverride) && (actorReg.blkTypeOverrideUses || 0) > 0) {
-    typeMult = Math.max(...actorReg.blkTypeOverride.map((t: string) => getTypeMatchup(t, target.type)));
-  }
   // 本系加成 1.5 倍：技能屬性（含雙屬性技能的任一屬性）為自身系別中含有的屬性
   const splitT = (t?: string) => (t || "").replace(/系$/, "").split(/[.·・]/).filter(Boolean);
   const actorTypes = splitT(actor.type);

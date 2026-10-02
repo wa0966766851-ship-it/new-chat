@@ -25,11 +25,11 @@ export const DixinDeconstructedProfile: ElfDeconstructedProfile = {
         stack1AttackBoostPerStackPercent: 13,
         stack2FixedDamagePerStack: 39,
         stack3DrainPpAll: 2,
-        stack3DrainMaxHpPercent: 0.33,
+        stack3DrainMaxHpPercent: 1 / 3,
         stack3ImmuneFallbackTrueDamage: 300,
         stack3ImmuneFallbackGrantMark: '伏魔印記',
-        stack5HealMaxHpPercent: 0.33,
-        stack5HealLostHpPercent: 0.33,
+        stack5HealMaxHpPercent: 1 / 3,
+        stack5HealLostHpPercent: 1 / 3,
         stack5DisableOpponentNextSkillChance: 50,
         stack7ShieldPerFumoStack: true,
         stack7StealBuffsPerDuomoStack: true,
@@ -174,7 +174,7 @@ export const DixinDeconstructedProfile: ElfDeconstructedProfile = {
           target: 'OPPONENT',
           duration: 4,
           inspectAttributeSkillPenalty: { missNextAttack: true, noDamageNextAttack: true },
-          turnEndDrainMaxHpPercent: 0.33,
+          turnEndDrainMaxHpPercent: 1 / 3,
           fallbackTrueDamage: 300,
           fallbackGrantMark: '伏魔印記'
         }

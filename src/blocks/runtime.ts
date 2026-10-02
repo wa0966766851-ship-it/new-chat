@@ -542,6 +542,7 @@ export function runSkillProgram(ctx: BattleEventContext, prog: Program, phase: "
   prog.clauses.forEach((c, i) => {
     if (only && !only.includes(i)) return;
     if (c.trig !== phase || !c.parsed) return;
+    if (c.marker === "■" && ctx.self.isInherentInvalid) return;
     runClause(ctx, c, st);
   });
 }
@@ -597,8 +598,14 @@ export function runSideTimers(ctx: BattleEventContext, trigs: Trigger[], data: a
     if (comp && (b.dmgIn != null || b.dmgOut != null || b.dmgOutMult)) {
       if (!compMatchesKind(comp, b.kind)) continue;
       if (comp.isIncoming && b.dmgIn != null) { if (b.dmgIn < 0) comp.decreasePercent += -b.dmgIn; else comp.increasePercent += b.dmgIn; }
-      if (!comp.isIncoming && b.dmgOut != null) comp.increasePercent += b.dmgOut;
-      if (!comp.isIncoming && b.dmgOutMult) comp.multiplier *= b.dmgOutMult;
+      if (!comp.isIncoming && b.dmgOut != null) comp.increasePercent += b.dmgOut * (b.doubleIfAnyStatus && (hasAbn(ctx, ctx.self) || hasAbn(ctx, ctx.target)) ? 2 : 1);
+      if (!comp.isIncoming && b.dmgOutMult) {
+        const limit = b.useLimitRegistryKey ? Number(ctx.getPlayerState(b.useLimitRegistryKey) || 0) : Infinity;
+        if ((b.usesConsumed || 0) < limit) {
+          comp.multiplier *= b.dmgOutMult;
+          if (b.useLimitRegistryKey) ctx.addTimerTo(ctx.actor, { ...t, payload: { ...t.payload, block: { ...b, usesConsumed: (b.usesConsumed || 0) + 1 } } }, false);
+        }
+      }
     }
     if (comp && comp.isIncoming && b.blockSkillDmg && compMatchesKind(comp, "技能")) {
       const amt = Math.floor(comp.base * (1 + (comp.increasePercent || 0)) * (1 - (comp.decreasePercent || 0)) * (comp.multiplier ?? 1));

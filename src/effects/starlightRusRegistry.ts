@@ -10,6 +10,13 @@ export const handleStarlightRusSoulMark = (context: BattleEventContext, event: E
   const { self, target, actor, setPlayerState, getPlayerState, setOpponentState, getOpponentState, addLog, applyStatusWithImmunityCheck, clearTurnEffectsOf, activeP1, activeP2, applyPinkDamage, applyTrueDamage } = context;
   const oppSide = actor === "p1" ? "p2" : "p1";
 
+  if (event === EffectTiming.AFTER_ATTACK_HIT && extraData?.additionalEffectsEnabled !== false && extraData?.skill?.name === "星光·浪打千擊") {
+    if ((context.rng ?? Math.random)() < 0.2) context.applyStatChange(actor, { atk: 1, speed: 1, accuracy: 1 });
+  }
+  if (event === EffectTiming.BEFORE_DAMAGE && !extraData?.isIncoming && extraData?.damageCategory === "skill_attack") {
+    extraData.multiplier *= getPlayerState("rusAttackMultiplier") || 1;
+  }
+
   // 1. 登場與常駐標記
   if (event === EffectTiming.ON_ENTRANCE || event === EffectTiming.BEFORE_ACTION || event === EffectTiming.BEFORE_SKILL) {
     // 必定致命一擊
@@ -34,6 +41,12 @@ export const handleStarlightRusSoulMark = (context: BattleEventContext, event: E
   // 2. 攻擊後效果
   // AFTER_ACTION 只派發給行動方本身（無 extraData），以 ctx.skill 判斷是否為攻擊
   if (event === EffectTiming.AFTER_ACTION) {
+    setPlayerState("rusAttackMultiplier", 0);
+    const pending = getPlayerState("rusPendingPercentDamage") || 0;
+    if (pending > 0) {
+      setPlayerState("rusPendingPercentDamage", 0);
+      applyPinkDamage(oppSide, pending, "【星光·浪打千擊】百分比傷害", activeP1, activeP2, "percent");
+    }
     const usedSkill = extraData?.skill || context.skill;
     const isAttack = usedSkill?.category === "物理" || usedSkill?.category === "特殊";
     if (isAttack) {
@@ -178,11 +191,7 @@ export const STARLIGHT_RUS_SKILLS: Record<string, BattleSkillHandler> = {
     // 1. 必中、5~10次攻擊模擬
     const hits = Math.floor((ctx.rng ?? Math.random)() * 6) + 5;
     addLog(`🌊 【星光·浪打千擊】：展開了 ${hits} 次連環打擊！`, "effect");
-    for (let i = 0; i < hits; i++) {
-      if (prdChance("starlightRusRegistry:L167", 0.2)) {
-        applyStatChange(actor, { atk: 1, speed: 1, accuracy: 1 });
-      }
-    }
+    setPlayerState("attackHitCountThisAction", hits);
 
     // 2. 消除回合類效果
     if (clearTurnEffectsOf(oppSide, target)) {
@@ -191,7 +200,7 @@ export const STARLIGHT_RUS_SKILLS: Record<string, BattleSkillHandler> = {
     }
 
     // 3. 增傷判定
-    const isBurning = ctx.getOpponentState("starfireBurnTurns") > 0 || ctx.getOpponentState("starSeaSoakTurns") > 0;
+    const isBurning = ctx.getOpponentState("starfireBurnTurns") > 0;
     if (isBurning) {
       let multiplier = 1.75;
       if (self.currentHp < target.currentHp) {
@@ -200,13 +209,13 @@ export const STARLIGHT_RUS_SKILLS: Record<string, BattleSkillHandler> = {
       } else {
         addLog(`🌊 【星光·浪打千擊】：對手處於狀態中，傷害提升至 175%！`, "effect");
       }
-      setPlayerState("skillDamageBoost", multiplier);
+      setPlayerState("rusAttackMultiplier", multiplier);
     }
 
     // 4. 百分比傷害附加
     const count = (getPlayerState("langdaCount") || 0) + 1;
     setPlayerState("langdaCount", count);
     const ratio = Math.min(0.4, 0.2 + (count - 1) * 0.1);
-    applyPinkDamage(oppSide, Math.floor(self.maxHp * ratio), "【星光·浪打千擊】百分比傷害", activeP1, activeP2, "百分比傷害");
+    setPlayerState("rusPendingPercentDamage", Math.floor(self.maxHp * ratio));
   }
 };

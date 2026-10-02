@@ -1,3 +1,5 @@
+import { clearStatuses } from './semanticOperations';
+import { StatusRegistry } from './statusRegistry';
 import { getTypeMatchup } from "../utils/statCalculator";
 import { BattleEventContext, BattleSkillHandler, EffectTiming, ElfDeconstructedProfile } from './types';
 import { createExtraElf } from '../utils/extraElf';
@@ -231,12 +233,33 @@ export const handleWuxuSoulMark = (ctx: BattleEventContext, event: EffectTiming 
 
   // 無序·蝕言 (Wuxu Shiyan)
   if ((self.id || "").includes("shiyan") || self.name.includes("蝕言")) {
+    if (event === EffectTiming.ENFORCE || event === EffectTiming.ON_ENTRANCE) {
+      const originals: Record<string, number> = getPlayerState('shiyanOriginalSpdef') || {};
+      const active = actor === 'p1' ? ctx.activeP1 : ctx.activeP2;
+      if (self.currentHp > 0 && !self.isVanished) {
+        const original = originals[self.battleId || self.id] ?? self.calculatedStats.spdef;
+        const adjusted = Math.ceil(original / 10);
+        for (const e of ctx.getFullTeam(actor)) {
+          if (e !== self && (e.battleId || e.id) === (active.battleId || active.id)) continue;
+          const id = e.battleId || e.id;
+          originals[id] ??= e.calculatedStats.spdef;
+          if (e.calculatedStats.spdef !== adjusted) ctx.updateAnyElf(actor, id, { calculatedStats: { ...e.calculatedStats, spdef: adjusted } });
+        }
+        setPlayerState('shiyanOriginalSpdef', originals);
+      } else {
+        for (const e of ctx.getFullTeam(actor)) {
+          const original = originals[e.battleId || e.id];
+          if (original !== undefined) ctx.updateAnyElf(actor, e.battleId || e.id, { calculatedStats: { ...e.calculatedStats, spdef: original } });
+        }
+        setPlayerState('shiyanOriginalSpdef', {});
+      }
+    }
     const wraithElf = ctx.getFullTeam(actor).find(e => e.name.includes("賽博怨靈") && !e.isVanished);
     const isWraithActive = !!(wraithElf && wraithElf.currentHp > 0);
 
     if (event === EffectTiming.ON_ENTRANCE) {
       addLog(`🌑 【咒術師】：召喚與自身能力值相等的賽博怨靈作為額外精靈加入己方！`, "effect");
-      const adjustedSpdef = Math.ceil((self.calculatedStats?.spdef || self.baseStats?.spdef || 300) / 10);
+      const adjustedSpdef = Math.ceil((getPlayerState('shiyanOriginalSpdef')?.[self.battleId || self.id] ?? self.calculatedStats.spdef) / 10);
       const newWraith = createExtraElf(self, {
         name: "賽博怨靈",
         type: "機械·暗影",
@@ -294,17 +317,6 @@ export const handleWuxuSoulMark = (ctx: BattleEventContext, event: EffectTiming 
       }
     }
 
-    if (event === EffectTiming.BATTLE_PHASE_END) {
-       // 若戰鬥階段結束時若未選擇使用技能則改為賽博怨靈於該階段發動1次滅靈魔咒
-       const skillSelected = !!(actor === 'p1' ? ctx.activeP1.battleId : ctx.activeP2.battleId); // 這裡簡化判定
-       // 實際上應該在 BattleScreen 傳入 extraData
-       if (isWraithActive && extraData?.noSkillSelected) {
-          addLog(`👻 【咒術師】：未選擇技能，賽博怨靈發動【滅靈魔咒】！`, "effect");
-          // 呼叫 TraitsEngine 的邏輯（或在此實裝）
-          // ... 邏輯已在 TraitsEngine 中，此處僅作為觸發標記或補充
-       }
-    }
-
     if (event === EffectTiming.ON_KILL && extraData?.defeatedElf) {
        const deadElf = extraData.defeatedElf;
        const isDeadAlien = deadElf.isAlienElf || (deadElf.soulMark?.trait_warrior);
@@ -327,32 +339,21 @@ export const handleWuxuSoulMark = (ctx: BattleEventContext, event: EffectTiming 
       }
     }
 
-    if (event === EffectTiming.ROUND_END) {
-      // 賽博怨靈存在時自身詛咒類異常回合數不會減少
-      if (isWraithActive) {
-         const pReg = actor === 'p1' ? 'p1RegistryState' : 'p2RegistryState';
-         // 這裡需要手動補償回合數，因為系統會自動減 1
-         const currentCurse = ctx.getPlayerState(`${actor}_curseTurns`) || 0;
-         if (currentCurse > 0) {
-           setPlayerState(`${actor}_curseTurns`, currentCurse + 1);
-         }
-      }
-
-      // 戰鬥階段結束時: 將自身異常轉化為詛咒異常狀態且令自身詛咒回合數翻倍
-      // (這裡模擬為 ROUND_END，若有專門的 BATTLE_PHASE_END 更好)
+    if (event === EffectTiming.BEFORE_STATUS_TICK && isWraithActive && /詛咒|curse/i.test(extraData?.status || '')) extraData.skipTick = true;
+    if (event === EffectTiming.BATTLE_PHASE_END) {
+      const active = actor === 'p1' ? ctx.activeP1 : ctx.activeP2;
+      if ((active.battleId || active.id) !== (self.battleId || self.id) || self.currentHp <= 0) return false;
       const statuses = ctx.getStatuses(self);
-      let foundStatus = false;
-      Object.keys(statuses).forEach(s => {
-        if (s !== '詛咒' && statuses[s] > 0) {
-          foundStatus = true;
-          // 清除其他異常（簡化邏輯：由系統每回合自然結算或此處清除）
+      const oldCurse = statuses['詛咒'] || 0;
+      const convertible = Object.entries(statuses).filter(([name,n]) => n > 0 && name !== '詛咒' && StatusRegistry[name] && !StatusRegistry[name].categories.includes('AUXILIARY'));
+      if (convertible.length || oldCurse > 0) {
+        // 先確認新異常附加成功，再移除舊異常，避免免疫時吞掉原狀態。
+        const turns = oldCurse > 0 ? oldCurse * 2 : 6;
+        if (ctx.applyStatusWithImmunityCheck(actor, '詛咒', turns).success) {
+          const names = new Set(convertible.map(([name])=>name));
+          clearStatuses(ctx, actor, self, name=>names.has(name));
+          setPlayerState(actor + '_curseTurns', turns);
         }
-      });
-      if (foundStatus || statuses['詛咒'] > 0) {
-        const curseTurns = statuses['詛咒'] || 0;
-        const newTurns = Math.max(3, curseTurns * 2);
-        ctx.applyStatusWithImmunityCheck(actor, "詛咒", newTurns, true);
-        addLog(`🌑 【蝕】：異常轉化，詛咒加劇！`, "effect");
       }
     }
   }

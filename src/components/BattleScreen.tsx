@@ -1,4 +1,6 @@
 import { dispatchModeEvent } from '../battle/modeEvents';
+import { damagePresentationAmount } from '../battle/damagePresentation';
+import { BattlePresentation, type PresentationKind } from '../battle/presentation';
 import { activeConstraints } from '../battle/timedConstraints';
 import { readScopedRegistry } from '../battle/stateScopes';
 import { queueSkillLifesteal } from '../battle/lifesteal';
@@ -11,7 +13,9 @@ import { isStoneThrower, toSSStone } from "../data/skillStones";
 import { SOURCE_SS_TEXT } from "../data/defaultElves";
 import { getTypeMatchup, resetElfStateForBattle, calculateEffectiveStat, getEffectiveBody } from "../utils/statCalculator";
 import { applyStatChanges } from "../utils/statChangeManager";
-import { BattleSkillRegistry, SoulMarkRegistry, hasSkillHandler, observesOpponentDamage, transformSkillBeforeResolve } from "../effects/battleEventRegistry";
+import { BattleSkillRegistry, SoulMarkRegistry, hasSkillHandler, observesOpponentDamage, transformSkillBeforeResolve, transformSkillBeforeDamage } from "../effects/battleEventRegistry";
+import { skillStageView } from '../battle/skillStageView';
+import { consumeSkillTypeOverride } from '../battle/skillTypeOverride';
 import { priorityFromDescription, conditionalPriorityFromDescription, executeGenericSkillTextAfterHit, rollSkillHit } from "../effects/genericSkillText";
 import { getAttackImmunity, ignoresAttackImmunity, grantsNextIgnoreOnSuccess } from "../battle/attackImmunity";
 import { runSkillBlocks, emitSkillUse, soulPassiveEvade, blockCondPriority, emitSelfInvalid } from "../blocks/registry";
@@ -207,6 +211,13 @@ export default function BattleScreen(props: BattleScreenProps) {
   });
 
   const { phase, p1, p2, p1Team, p2Team, winner } = state;
+  const [presentationVersion, updatePresentation] = useReducer((n: number) => n + 1, 0);
+  const presentationRef = useRef<BattlePresentation | null>(null);
+  if (!presentationRef.current) presentationRef.current = new BattlePresentation(
+    () => { if (battleAliveRef.current) updatePresentation(); },
+    () => typeof window !== 'undefined' && !!(window as any).__BATTLE_FAST__
+  );
+  const presentation = presentationRef.current;
 
   // ── 單一真實來源 ─────────────────────────────────────────────
   // 過去戰鬥邏輯寫 syncStateRef、畫面讀 reducer state，兩邊靠手動同步；
@@ -221,6 +232,9 @@ export default function BattleScreen(props: BattleScreenProps) {
       get current() { return value; },
       set current(next: BattleState) {
         if (!battleAliveRef.current) return;
+        for (const side of ['p1', 'p2'] as const) {
+          if ((value[side].battleId || value[side].id) !== (next[side].battleId || next[side].id)) presentation.align(side, next[side]);
+        }
         value = syncActiveIntoTeam(next);
         if (!pending) {
           pending = true;
@@ -285,6 +299,7 @@ export default function BattleScreen(props: BattleScreenProps) {
   const isProcessingQueue = useRef(false);
   const processingPromiseRef = useRef<Promise<void> | null>(null);
   const executingEffectRef = useRef(false);
+  const presentationPotionRef = useRef(false);
   const isResolvingRef = useRef(false);
   const hasInitialEntranceRef = useRef(false);
 
@@ -298,6 +313,7 @@ export default function BattleScreen(props: BattleScreenProps) {
         battleTimeoutsRef.current.forEach(clearTimeout);
         battleTimeoutsRef.current.clear();
         effectQueueRef.current.length = 0;
+        presentation.dispose();
       });
     };
   }, []);
@@ -433,6 +449,7 @@ export default function BattleScreen(props: BattleScreenProps) {
           target.survivalRule,
         );
         const dmg = survivalTransition.damageApplied;
+        const displayedDamage = damagePresentationAmount(normalizedDamageType, effectiveAmount, dmg);
         const nextHp = survivalTransition.hp;
         if (dmg > 0) {
           const id=target.battleId||target.id;
@@ -632,7 +649,7 @@ export default function BattleScreen(props: BattleScreenProps) {
               info: {
                 side: targetSide,
                 targetElfName: target.name,
-                amount: dmg,
+                amount: displayedDamage,
                 type: lastActionType,
                 label: lastActionLabel
               }
@@ -653,12 +670,20 @@ export default function BattleScreen(props: BattleScreenProps) {
         // 同時提供 amount / damage / targetSide（部分魂印讀 extraData.damage 與 targetSide，過去缺值導致 NaN 與判定顛倒）
         const damagedPayload = {
           damageType: normalizeDamageType(data), rawDamageType: data.damageType,
-          amount: dmg, damage: dmg, hpReduced: Math.max(0, target.currentHp - nextHp),
+          amount: dmg, damage: dmg, hpReduced: Math.max(0, target.currentHp - nextHp), label: data.label,
           sourceElfName: data.sourceElfName, targetSide, typedSkill: !!(data as any).typedSkill,
           hpAdjustment: survivalTransition.hpAdjustment,
           ignoredDamage: survivalTransition.ignoredDamage,
           enteredNonPositive: survivalTransition.enteredNonPositive,
         };
+        const presentationAfterHp = syncStateRef.current[targetSide].currentHp;
+        if (presentationAfterHp !== target.currentHp || data.popup) {
+          presentation.record({ side: targetSide, elfId: target.battleId || target.id,
+            type: presentationAfterHp > target.currentHp ? 'adjust_up' : lastActionType === 'crit' ? 'skill' : lastActionType as PresentationKind,
+            amount: presentationAfterHp > target.currentHp ? presentationAfterHp - target.currentHp : displayedDamage, delta: presentationAfterHp - target.currentHp,
+            before: target.currentHp, after: presentationAfterHp, maxHp: target.maxHp,
+            label: lastActionLabel, isCrit: data.isCrit, alive: !checkElfDead(syncStateRef.current[targetSide]) });
+        }
         if (SoulMarkRegistry[target.name]) {
           SoulMarkRegistry[target.name](damagedCtx, EffectTiming.ON_DAMAGED, damagedPayload);
         }
@@ -674,6 +699,11 @@ export default function BattleScreen(props: BattleScreenProps) {
         // Generic observer event also reports absorbed or blocked percent damage.
         const sourceSide = targetSide === "p1" ? "p2" : "p1";
         const sourceElf = syncStateRef.current[sourceSide];
+        if (sourceElf && data.sourceElfName === sourceElf.name && (!data.sourceBattleId || data.sourceBattleId === (sourceElf.battleId || sourceElf.id))) {
+          const key = `${sourceSide}RegistryState` as const;
+          const reg = syncStateRef.current[key];
+          syncStateRef.current = { ...syncStateRef.current, [key]: consumeSkillTypeOverride(reg, normalizedDamageType, dmg) };
+        }
         if (sourceElf && SoulMarkRegistry[sourceElf.name]) {
           SoulMarkRegistry[sourceElf.name](getBattleEventContext(sourceSide, true, 0), EffectTiming.OPPONENT_DAMAGE, damagedPayload);
         }
@@ -733,7 +763,7 @@ export default function BattleScreen(props: BattleScreenProps) {
             type: 'ADD_DAMAGE_POPUP', 
             popup: { 
               id, 
-              text: `-${dmg}`, 
+              text: `-${displayedDamage}`,
               side: targetSide, 
               type: lastActionType,
               label: lastActionLabel,
@@ -742,6 +772,7 @@ export default function BattleScreen(props: BattleScreenProps) {
           });
           scheduleBattleTask(() => dispatch({ type: 'REMOVE_DAMAGE_POPUP', id }), 1200);
         }
+        await presentation.wait();
         break;
       }
       case 'adjust_hp': {
@@ -794,6 +825,9 @@ export default function BattleScreen(props: BattleScreenProps) {
         };
 
         if (val !== 0) {
+          presentation.record({ side: targetSide, elfId: target.battleId || target.id,
+            type: val > 0 ? 'adjust_up' : 'adjust_down', amount: Math.abs(val), delta: val,
+            before: target.currentHp, after: nextHp, maxHp: target.maxHp, label: '體力調整' });
           const id = `pop_${++popupSeq}`;
           dispatch({ 
             type: 'ADD_DAMAGE_POPUP', 
@@ -914,6 +948,9 @@ export default function BattleScreen(props: BattleScreenProps) {
         };
 
         if (val > 0) {
+          presentation.record({ side: targetSide, elfId: target.battleId || target.id,
+            type: 'heal', amount: val, delta: val, before: target.currentHp, after: nextHp,
+            maxHp: target.maxHp, label: data.presentationPotion ? '藥劑回血' : '回血', immediate: !!data.presentationPotion });
           const id = `pop_${++popupSeq}`;
           dispatch({ 
             type: 'ADD_DAMAGE_POPUP', 
@@ -926,6 +963,7 @@ export default function BattleScreen(props: BattleScreenProps) {
           });
           scheduleBattleTask(() => dispatch({ type: 'REMOVE_DAMAGE_POPUP', id }), 1000);
         }
+        await presentation.wait();
         break;
       }
       case 'log':
@@ -981,6 +1019,9 @@ case 'switch': {
 
   // 文字彈出（Miss／技能無效／附加效果失效）
   const showPopup = useCallback((side: "p1" | "p2", text: string, type: string, label: string = "") => {
+    const elf = syncStateRef.current[side];
+    presentation.record({ side, elfId: elf.battleId || elf.id, type: 'notice', amount: 0, delta: 0,
+      before: elf.currentHp, after: elf.currentHp, maxHp: elf.maxHp, text, label });
     const id = `pop_${++popupSeq}`;
     dispatch({ type: 'ADD_DAMAGE_POPUP', popup: { id, text, side, type, label } });
     scheduleBattleTask(() => dispatch({ type: 'REMOVE_DAMAGE_POPUP', id }), 1200);
@@ -988,6 +1029,8 @@ case 'switch': {
 
   const pushEffect = useCallback((effect: EffectItem) => {
     if (!battleAliveRef.current) return;
+    // 只加播放標記，不修改 isPotion 等影響回血結算的參數。
+    if (effect.type === 'heal' && presentationPotionRef.current) effect = { ...effect, data: { ...effect.data, presentationPotion: true } };
     effectQueueRef.current.push(effect);
     processQueue();
   }, [processQueue]);
@@ -1017,6 +1060,7 @@ case 'switch': {
 
     return {
       actor: side,
+      roundNumber: cur.turnNumber,
       specialMode: props.specialMode,
       currentPhase: cur.phase,
       applyTrueDamageToElf:(targetSide, targetId, amount, label)=> {
@@ -1090,6 +1134,8 @@ case 'switch': {
 
   const broadcastElfEntered = useCallback((enteredSide: "p1" | "p2", enteredId: string) => {
     const cur = syncStateRef.current;
+    // 在場期間對所有精靈都可讀，不能只由特定魂印自行累加。
+    getBattleEventContext(enteredSide).setPlayerState("fieldEntryTurn", cur.turnNumber);
     for (const side of ["p1", "p2"] as const) {
       const team = side === "p1" ? cur.p1Team : cur.p2Team;
       team.forEach(elf => {
@@ -1195,6 +1241,12 @@ case 'switch': {
 
     const f1 = checkElfDead(mid.p1);
     const f2 = checkElfDead(mid.p2);
+    if (f1 || f2) {
+      await presentation.flush(true);
+      if (!battleAliveRef.current) return false;
+      presentation.align('p1', syncStateRef.current.p1);
+      presentation.align('p2', syncStateRef.current.p2);
+    }
 
     // §2 Poem chapter death transfer for fainted elves across both teams
     for (const side of ["p1", "p2"] as const) {
@@ -1362,7 +1414,9 @@ case 'switch': {
       
       for (const e of currentEffects) {
         const currentStatuses = getStatuses(elf);
-        const transition = advanceStatusEffect(e, currentStatuses, rng);
+        const statusTick = { status: e.id, skipTick: false };
+        SoulMarkRegistry[elf.name]?.(getBattleEventContext(side, true, 0, elf), EffectTiming.BEFORE_STATUS_TICK, statusTick);
+        const transition = statusTick.skipTick ? { next: e, transformed: undefined } : advanceStatusEffect(e, currentStatuses, rng);
         if (transition.next) {
           nextEffects.push(transition.next);
         } else {
@@ -1747,6 +1801,11 @@ case 'switch': {
     // §1: Apply DAMAGE_TICK at round end
     await applyDamageTicks("p1", "END");
     await applyDamageTicks("p2", "END");
+    await presentation.flush();
+    if (!battleAliveRef.current) return;
+    presentation.turnNumber = syncStateRef.current.turnNumber;
+    presentation.align('p1', syncStateRef.current.p1);
+    presentation.align('p2', syncStateRef.current.p2);
 
     const afterTickF1 = checkElfDead(syncStateRef.current.p1);
     const afterTickF2 = checkElfDead(syncStateRef.current.p2);
@@ -1957,7 +2016,7 @@ case 'switch': {
       const regState = cur[`${side}RegistryState`] || {};
       const nextPriorityCount = regState.nextPriorityCount || 0;
       const comp: PriorityComputation = {
-        base: skill.priority || (!hasSkillHandler(skill.name) ? priorityFromDescription(skill.description || "", skill.name) : 0)
+        base: cur[side].isInherentInvalid ? 0 : (skill.priority || (!hasSkillHandler(skill.name) ? priorityFromDescription(skill.description || "", skill.name) : 0))
           + (!hasSkillHandler(skill.name) ? conditionalPriorityFromDescription(skill, side === "p1" ? cur.p1 : cur.p2, side === "p1" ? cur.p2 : cur.p1, (e) => getStatuses(e)) : blockCondPriority(skill, side === "p1" ? cur.p1 : cur.p2, side === "p1" ? cur.p2 : cur.p1, (e) => getStatuses(e))),
         bonus: (regState.nextTurnPriority || 0) + (nextPriorityCount > 0 ? 2 : 0) + priorityBonus(side === "p1" ? cur.p1 : cur.p2, skill, rng)
           + ((regState.priorityBoostTurns || 0) > 0 && !(regState.priorityBoostAttackOnly && skill.category === "屬性") ? (regState.priorityBoostValue || 0) : 0),
@@ -2020,8 +2079,8 @@ case 'switch': {
       p2Priority = Math.max(p2Priority, p1Priority + 999);
     }
 
-    let p1Speed = cur.p1.calculatedStats.speed;
-    let p2Speed = cur.p2.calculatedStats.speed;
+    let p1Speed = calculateEffectiveStat(cur.p1.calculatedStats.speed, skillStageView(cur.p1, p1Skill, 'speed'));
+    let p2Speed = calculateEffectiveStat(cur.p2.calculatedStats.speed, skillStageView(cur.p2, p2Skill, 'speed'));
     if (cur.p1RegistryState?.morningStarIgnoreSpeed) {
       p2Speed = Math.max(0, p2Speed - 10);
     }
@@ -2196,7 +2255,10 @@ case 'switch': {
           // 1. HP Recovery (hp, hybrid, special)
           if (item.value) {
             const heal = Math.min(item.value, currentElf.maxHp - currentElf.currentHp);
-            if (heal > 0) nCtx.applyHeal(s, heal);
+            if (heal > 0) {
+              presentationPotionRef.current = true;
+              try { nCtx.applyHeal(s, heal); } finally { presentationPotionRef.current = false; }
+            }
           }
           
           // 2. PP Recovery (pp, hybrid, special)
@@ -2243,6 +2305,8 @@ case 'switch': {
       }
 
       const ctx = getBattleEventContext(s, true, mIdx);
+      ctx.setPlayerState('blkTypeOverrideCurrentAction', false);
+      ctx.setPlayerState('attackHitCountThisAction', 0);
       const ppCostComp = {
         base: skill.name === "掙扎" ? 0 : 1,
         additionalCost: 0,
@@ -2594,7 +2658,7 @@ case 'switch': {
       const next2AtkInvalidVal = syncStateRef.current[myRegKey]?.next2AtkInvalid || 0;
       if (next2AtkInvalidVal > 0 && activeSkill.category !== "屬性") {
         skillIsInvalidated = true;
-        invalidationReason = `【幽幕折返】對手攻擊技能無效（剩餘 ${next2AtkInvalidVal} 次）`;
+        invalidationReason = `【${syncStateRef.current[myRegKey]?.attackInvalidSource || "幽幕折返"}】對手攻擊技能無效（剩餘 ${next2AtkInvalidVal} 次）`;
         
         // Decrement next2AtkInvalidVal
         syncStateRef.current = {
@@ -2632,6 +2696,8 @@ case 'switch': {
 
       if (skillIsInvalidated) {
         // 技能無效視同未命中
+        SoulMarkRegistry[syncStateRef.current[s].name]?.(getBattleEventContext(s, false, mIdx), EffectTiming.SKILL_INVALID, { skill: activeSkill, reason: invalidationReason, isIncoming: false });
+        SoulMarkRegistry[syncStateRef.current[oppSide].name]?.(getBattleEventContext(oppSide, false, mIdx), EffectTiming.SKILL_INVALID, { skill: activeSkill, reason: invalidationReason, isIncoming: true });
         pushEffect({ type: 'log', side: s, data: { text: `🚫 【技能無效】：受${invalidationReason}限制，【${displayName}】使用的【${displaySkill}】無效！`, type: "info" } });
         showPopup(oppSide, "技能無效-0", "invalid");
         try { runSkillBlocks(getBattleEventContext(s, true, mIdx), "on_invalid", hasSkillHandler(activeSkill.name)); emitSelfInvalid(getBattleEventContext(s, true, mIdx)); } catch (e) { console.error("[blocks]", e); }
@@ -2710,8 +2776,14 @@ case 'switch': {
       } else if (BattleSkillRegistry[activeSkill.name]) {
         BattleSkillRegistry[activeSkill.name](ctx);
       }
+      activeSkill = transformSkillBeforeDamage(getBattleEventContext(s, true, mIdx), activeSkill);
+      (ctx as any).skill = activeSkill;
       
       if (activeSkill.category !== "屬性" && activeSkill.power) {
+        const hitCount = Math.max(1, Math.floor(syncStateRef.current[actorRegKey]?.attackHitCountThisAction || 1));
+        syncStateRef.current = { ...syncStateRef.current, [actorRegKey]: { ...syncStateRef.current[actorRegKey], attackHitCountThisAction: 0 } };
+        for (let hitIndex = 0; hitIndex < hitCount; hitIndex++) {
+        if (checkElfDead(syncStateRef.current[s]) || checkElfDead(syncStateRef.current[oppSide])) break;
         const currentActor = syncStateRef.current[s];
         const currentOpp = syncStateRef.current[oppSide];
         const blkCrit = findBlockTimer((syncStateRef.current as any)[`${s}Timers`], b => b.crit);
@@ -2811,7 +2883,7 @@ case 'switch': {
         if (SoulMarkRegistry[currentActor.name]) {
           const actorCtx = getBattleEventContext(s, true, mIdx);
           damageComp.isIncoming = false;
-          SoulMarkRegistry[currentActor.name](actorCtx, EffectTiming.BEFORE_DAMAGE, { damageComp });
+          SoulMarkRegistry[currentActor.name](actorCtx, EffectTiming.BEFORE_DAMAGE, Object.assign(damageComp, { damageComp }));
         }
         damageComp.isIncoming = false;
         triggerSuitEffect(s, EffectTiming.BEFORE_DAMAGE, { damageComp });
@@ -2820,7 +2892,7 @@ case 'switch': {
         if (SoulMarkRegistry[currentOpp.name]) {
           const oppCtx = getBattleEventContext(oppSide, true, mIdx);
           damageComp.isIncoming = true;
-          SoulMarkRegistry[currentOpp.name](oppCtx, EffectTiming.BEFORE_DAMAGE, { damageComp });
+          SoulMarkRegistry[currentOpp.name](oppCtx, EffectTiming.BEFORE_DAMAGE, Object.assign(damageComp, { damageComp }));
         }
         damageComp.isIncoming = true;
         triggerSuitEffect(oppSide, EffectTiming.BEFORE_DAMAGE, { damageComp });
@@ -2915,6 +2987,7 @@ case 'switch': {
           (text) => pushEffect({ type: 'log', side: s, data: { text, type: "effect" } }));
 
          // Calculate final result（pure 獨立乘區時跳過通用增減傷；floor／limit／mercy 不跳）
+        if (activeConstraints(syncStateRef.current[`${s}Timers`], syncStateRef.current[s]).some(p => p.preventAttackDamage)) damageComp.multiplier = 0;
         const stage1 = damageComp.base * (1 + damageComp.increasePercent) * (1 - damageComp.decreasePercent);
         const dmgDoubleTurns = syncStateRef.current[actorRegKey]?.dmgDoubleTurns > 0;
         if (!damageComp.pure && dmgDoubleTurns) damageComp.multiplier *= 2;
@@ -3071,6 +3144,11 @@ case 'switch': {
         }
 
         queueSkillLifesteal(s, finalDamage, "skill_attack", syncStateRef.current[`${s}RegistryState`], pushEffect);
+        await processQueue();
+        const hitCtx = getBattleEventContext(s, true, mIdx);
+        SoulMarkRegistry[hitCtx.self.name]?.(hitCtx, EffectTiming.AFTER_ATTACK_HIT, { skill: activeSkill, hitIndex, hitCount, additionalEffectsEnabled: !addEffectsInvalid });
+        await processQueue();
+        }
       }
 
       await processQueue();
@@ -3091,9 +3169,9 @@ case 'switch': {
         if (dm && dm.kind === "use_counter" && activeSkill.category !== "屬性") getBattleEventContext(s, true, mIdx).consumeTimer?.(s, dm.id);
         {
           const rg = syncStateRef.current[actorRegKey] || {};
-          let uses = activeSkill.category !== "屬性" ? Math.max(0, (rg.blkTypeOverrideUses || 0) - 1) : (rg.blkTypeOverrideUses || 0);
-          if (rg.blkTypeOverrideExtend && (syncStateRef.current[oppSide]?.currentHp || 0) > 0) uses = rg.blkTypeOverrideExtend;
-          syncStateRef.current = { ...syncStateRef.current, [actorRegKey]: { ...rg, blkIgnoreLimit: false, blkIgnoreBlock: false, blkIgnoreShield: false, blkAtkSpatkSum: false, blkLastCrit: false, blkStageAsBoost: 0, blkTypeOverrideUses: uses, blkTypeOverrideExtend: 0 } };
+          let uses = rg.blkTypeOverrideUses || 0;
+          if (rg.blkTypeOverrideExtend && !checkElfDead(syncStateRef.current[oppSide])) uses = rg.blkTypeOverrideExtend;
+          syncStateRef.current = { ...syncStateRef.current, [actorRegKey]: { ...rg, blkIgnoreLimit: false, blkIgnoreBlock: false, blkIgnoreShield: false, blkAtkSpatkSum: false, blkLastCrit: false, blkStageAsBoost: 0, blkTypeOverrideUses: uses, blkTypeOverrideExtend: 0, blkTypeOverrideCurrentAction: false } };
         }
       }
 
@@ -3621,13 +3699,20 @@ case 'switch': {
   const handlersRef = useRef({ onSkillSelect, onSwitchElf, onUseItem });
   handlersRef.current = { onSkillSelect, onSwitchElf, onUseItem };
   const contextValue = useMemo<BattleContextProps>(() => ({
-    ...state, dispatch, pushEffect,
+    ...state,
+    turnNumber: presentation.turnNumber,
+    p1: { ...state.p1, currentHp: presentation.hp.get(`p1:${state.p1.battleId || state.p1.id}`) ?? state.p1.currentHp },
+    p2: { ...state.p2, currentHp: presentation.hp.get(`p2:${state.p2.battleId || state.p2.id}`) ?? state.p2.currentHp },
+    floatingDamagePopups: presentation.popups,
+    lastActionInfo: null,
+    consoleShake: { p1: false, p2: false },
+    dispatch, pushEffect,
     addLog: (text, type) => pushEffect({ type: 'log', side: 'p1', data: { text, type } }),
     trackCodeExec: () => {},
     onSkillSelect: (skill) => handlersRef.current.onSkillSelect('p1', skill),
     onSwitchElf: (index) => handlersRef.current.onSwitchElf('p1', index),
     onUseItem: (item) => handlersRef.current.onUseItem('p1', item)
-  }), [state, pushEffect]);
+  }), [state, pushEffect, presentationVersion]);
 
   return (
     <BattleContext.Provider value={contextValue}>
@@ -3640,8 +3725,8 @@ case 'switch': {
         onBackToMenu={() => { if (!syncStateRef.current.winner) props.onBattleEnd?.("exit", structuredClone(syncStateRef.current.p1Team)); props.onBackToMenu(); }}
         onAutoBattleToggle={() => dispatch({ type: 'SET_AUTO_BATTLE', isAuto: !state.isAutoBattle })}
         activeSkillAnim={state.activeSkillAnim}
-        floatingDamagePopups={state.floatingDamagePopups}
-        consoleShake={state.consoleShake}
+        floatingDamagePopups={presentation.popups}
+        consoleShake={{ p1: false, p2: false }}
         damageDealt={state.damageDealt}
       />
     </BattleContext.Provider>

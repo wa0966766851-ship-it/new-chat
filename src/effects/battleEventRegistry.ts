@@ -229,6 +229,7 @@ let cachedSkillRegistry: Record<string, BattleSkillHandler> | null = null;
 let cachedSoulMarkRegistry: Record<string, SoulMarkHandler> | null = null;
 export type BattleSkillTransformHandler = (context: BattleEventContext, skill: Skill) => Skill | undefined;
 let cachedSkillTransforms: Record<string, BattleSkillTransformHandler> | null = null;
+let cachedDamageTransforms: Record<string, BattleSkillTransformHandler> | null = null;
 
 function initializeRegistries() {
   if (cachedSkillRegistry && cachedSoulMarkRegistry && cachedSkillTransforms) return;
@@ -236,6 +237,7 @@ function initializeRegistries() {
   cachedSkillRegistry = {};
   cachedSoulMarkRegistry = {};
   cachedSkillTransforms = {};
+  cachedDamageTransforms = {};
   
   // @ts-ignore
   const modules = import.meta.glob('./*Registry.ts', { eager: true });
@@ -251,6 +253,7 @@ function initializeRegistries() {
       if (key.endsWith('_SKILL_TRANSFORMS') && typeof value === 'object' && value !== null) {
         Object.assign(cachedSkillTransforms, value);
       }
+      if (key.endsWith('_DAMAGE_TRANSFORMS') && typeof value === 'object' && value !== null) Object.assign(cachedDamageTransforms, value);
     }
     
     // Register Soul Marks using the mapping
@@ -277,6 +280,19 @@ export function hasSkillHandler(name: string): boolean {
 export function transformSkillBeforeResolve(context: BattleEventContext, skill: Skill): Skill {
   initializeRegistries();
   return cachedSkillTransforms?.[skill.name]?.(context, skill) || skill;
+}
+
+/** 使用當前狀態計算威力：命中時的吸取／消強／反轉先完成，再進入傷害公式。 */
+export function transformSkillBeforeDamage(context: BattleEventContext, skill: Skill): Skill {
+  initializeRegistries();
+  const transformed = cachedDamageTransforms?.[skill.name]?.(context, skill) || skill;
+  const powerComp = { power: transformed.power || 0 };
+  SoulMarkRegistry[context.self.name]?.(context, EffectTiming.MODIFY_POWER, { skill: transformed, powerComp });
+  const opposingContext = { ...context, self: context.target, target: context.self, actor: context.targetSide, targetSide: context.actor,
+    getPlayerState: context.getOpponentState, setPlayerState: context.setOpponentState,
+    getOpponentState: context.getPlayerState, setOpponentState: context.setPlayerState };
+  SoulMarkRegistry[context.target.name]?.(opposingContext, EffectTiming.MODIFY_POWER, { skill: transformed, powerComp, isIncoming: true });
+  return { ...transformed, power: powerComp.power };
 }
 
 export function getBattleSkillRegistry(): Record<string, BattleSkillHandler> {

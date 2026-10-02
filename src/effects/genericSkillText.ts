@@ -1,5 +1,6 @@
 import { queueActionDamageModifier, queueActionPowerMultiplier } from '../battle/actionDamageModifiers';
 import { getStatMultiplier } from "../utils/statCalculator";
+import { skillStageView } from '../battle/skillStageView';
 /**
  * 通用技能描述執行器（無專屬註冊表 handler、無 kit 的技能使用）
  *
@@ -758,7 +759,7 @@ export function computeHitChance(actor: any, target: any, skill: any, getStatuse
     if (st["混亂"]) base -= 0.8;   // 混亂：攻擊技能初始命中率降低80%（減法）
     if (st["易燃"]) base -= 0.3;   // 易燃：攻擊技能初始命中率降低30%（減法）
   }
-  const stage = Math.max(-6, Math.min(6, actor?.statStages?.accuracy || 0));
+  const stage = Math.max(-6, Math.min(6, skillStageView(actor, skill, 'accuracy')));
   const mult = getStatMultiplier(stage, true); // 命中等級（下降採使用者規則表）
   let chance = Math.max(0, base) * mult;
   if (ACC_TRAIT(actor, "精準")) chance *= 1.14;

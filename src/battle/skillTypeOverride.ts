@@ -1,0 +1,16 @@
+import { getTypeMatchup } from '../utils/statCalculator';
+import { isSkillDamageType } from './damageSemantics';
+
+export function skillTypeMultiplier(reg: Record<string, any> | undefined, type: string, targetType: string): number {
+  const target = reg?.targetTypeThisAction || targetType;
+  if (Array.isArray(reg?.blkTypeOverride) && (reg?.blkTypeOverrideCurrentAction || (reg?.blkTypeOverrideUses || 0) > 0)) {
+    return Math.max(...reg.blkTypeOverride.map((t: string) => getTypeMatchup(t, target)));
+  }
+  return getTypeMatchup(type, target);
+}
+
+/** 延續按真正造成技能傷害的次數消耗；屬性／額外行動和一般攻擊相同。 */
+export function consumeSkillTypeOverride(reg: Record<string, any>, category: string, amount: number): Record<string, any> {
+  if (amount <= 0 || !isSkillDamageType(category) || reg.blkTypeOverrideCurrentAction || !(reg.blkTypeOverrideUses > 0)) return reg;
+  return { ...reg, blkTypeOverrideUses: reg.blkTypeOverrideUses - 1 };
+}

@@ -194,7 +194,7 @@ Object.assign(CUSTOM, {
       const downs = Object.values((ctx.self as any).statStages || {}).filter((v: any) => typeof v === "number" && v < 0) as number[];
       if (!downs.length) return false;
       const lvl = Math.min(6, 2 * Math.max(...downs.map(v => -v)));
-      ctx.setPlayerState("blkStageAsBoost", lvl);
+      // 全能力視同於出手排序、命中與傷害計算直接讀取；不建立命中後才生效的增傷旗標。
       ctx.addLog(`🌊 能力下降視為全屬性 +${lvl}！`, "effect");
       return true;
     },
@@ -223,12 +223,17 @@ Object.assign(CUSTOM, {
     label: "吸取300；雙方每1種能力變化再吸取40（獨立）；任一次未減少則汲取對手當前體力¼",
     run: (ctx: BattleEventContext) => {
       const cnt = [ctx.self, ctx.target].reduce((a: number, e: any) => a + Object.values(e?.statStages || {}).filter((v: any) => typeof v === "number" && v !== 0).length, 0);
-      let miss = false;
+      ctx.setPlayerState("brinkkFeastAbsorbFallbackPending", true);
       for (const amt of [...Array(cnt).fill(40), 300]) {
-        const dealt = ctx.applyTrueDamage(ctx.targetSide, amt, "吸取");
-        if (!dealt) miss = true; else ctx.applyHeal(ctx.actor, dealt);
+        ctx.applyAbsorb(ctx.targetSide, amt, "深潛者盛宴·獨立吸取");
       }
-      if (miss) ctx.applyAbsorb(ctx.targetSide, Math.floor((ctx.target as any).currentHp / 4));
+      return true;
+    },
+  },
+  "3回合內自身造成技能傷害提升50%，雙方任一方處於異常狀態則效果翻倍": {
+    label: "3回合技能傷害+50%；每次傷害時任一方異常則增傷變為100%",
+    run: (ctx: BattleEventContext) => {
+      ctx.addTimerTo(ctx.actor, { id: "brinkk_feast_damage", name: "深潛者盛宴·技能增傷", kind: "turn_effect", source: "skill", remaining: 3, tickAt: "round_end", payload: { block: { dmgOut: 0.5, kind: "技能", doubleIfAnyStatus: true } } }, ctx.moveIndex === 1);
       return true;
     },
   },

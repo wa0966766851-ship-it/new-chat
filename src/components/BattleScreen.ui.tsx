@@ -310,68 +310,34 @@ export function BattleScreenUI(props: BattleScreenUIProps) {
   const renderPopups = (side: "p1" | "p2") => (
                 <AnimatePresence>
                   {(battle.floatingDamagePopups || props.floatingDamagePopups || [])
-                    .filter((p: any) => p.side === side)
+                    .filter((p: any) => p.side === side && (!p.elfId || p.elfId === ((side === 'p1' ? p1 : p2).battleId || (side === 'p1' ? p1 : p2).id)))
                     .map((pop: any) => {
-                      const isCrit = pop.type === 'crit' || pop.isCrit;
                       const isAbsorb = pop.type === 'absorb' || pop.label?.includes('汲取');
                       const isTrue = pop.type === 'true' || pop.type === 'true_damage' || isAbsorb;
                       const isPink = pop.type === 'fixed' || pop.type === 'percent' || pop.type === 'fixed_damage' || pop.type === 'percent_damage';
-                      const isHeal = pop.type === 'heal';
+                      const isHeal = pop.type === 'heal' || pop.type === 'adjust_up';
                       const isAdjustment = pop.type === 'adjust_up' || pop.type === 'adjust_down';
 
-                      let containerClass = "";
-                      let textStyle = "";
-                      let icon = "";
-
-                      const isMissLike = pop.type === 'miss' || pop.type === 'invalid' || pop.type === 'addInvalid';
-                      if (isMissLike) {
-                        containerClass = pop.type === 'addInvalid'
-                          ? "bg-violet-950/95 border-2 border-violet-400/80 text-violet-200 px-3 py-1 rounded-xl"
-                          : "bg-slate-800/95 border-2 border-slate-400/80 text-slate-200 px-3 py-1 rounded-xl";
-                        textStyle = "text-lg font-black tracking-tight";
-                        icon = "";
-                      } else if (isCrit) {
-                        containerClass = "bg-gradient-to-r from-red-600 via-rose-600 to-red-600 border-2 border-amber-300 text-white shadow-[0_0_25px_rgba(239,68,68,0.95)] px-3.5 py-1 rounded-xl";
-                        textStyle = "text-xl font-black text-amber-200 tracking-wider drop-shadow-[0_2px_4px_rgba(0,0,0,0.9)]";
-                        icon = "💥 CRITICAL! ";
-                      } else if (isTrue) {
-                        containerClass = "bg-slate-950/95 border-2 border-slate-100 text-white shadow-[0_0_22px_rgba(255,255,255,0.95)] px-3 py-1 rounded-xl";
-                        textStyle = "text-lg font-black text-white drop-shadow-[0_0_10px_rgba(255,255,255,0.95)] tracking-tight";
-                        icon = "⚡ ";
-                      } else if (isPink) {
-                        containerClass = "bg-pink-950/95 border-2 border-pink-500/80 text-pink-300 shadow-[0_0_18px_rgba(236,72,153,0.85)] px-3 py-1 rounded-xl";
-                        textStyle = "text-lg font-black text-pink-200 drop-shadow-[0_0_8px_rgba(244,63,94,0.8)] tracking-tight";
-                        icon = "💗 ";
-                      } else if (isHeal) {
-                        containerClass = "bg-emerald-950/95 border-2 border-emerald-500/80 text-emerald-300 shadow-[0_0_15px_rgba(16,185,129,0.85)] px-3 py-1 rounded-xl";
-                        textStyle = "text-lg font-black text-emerald-200 drop-shadow-[0_0_8px_rgba(16,185,129,0.8)] tracking-tight";
-                        icon = "💚 ";
-                      } else if (isAdjustment) {
-                        containerClass = "bg-cyan-950/95 border-2 border-cyan-500/80 text-cyan-200 shadow-[0_0_15px_rgba(6,182,212,0.85)] px-3 py-1 rounded-xl";
-                        textStyle = "text-lg font-black text-cyan-100 tracking-tight";
-                        icon = "🔄 ";
-                      } else { // 技能傷害：咖啡紅
-                        containerClass = "bg-amber-950/95 border-2 border-red-700/80 text-red-200 shadow-[0_0_15px_rgba(153,27,27,0.85)] px-3 py-1 rounded-xl";
-                        textStyle = "text-lg font-black text-red-300 drop-shadow-[0_0_8px_rgba(153,27,27,0.9)] tracking-tight";
-                        icon = "⚔️ ";
-                      }
+                      const isMissLike = pop.type === 'notice' || pop.type === 'miss' || pop.type === 'invalid' || pop.type === 'addInvalid';
 
                       return (
                         <motion.div
                           key={pop.id}
-                          initial={{ opacity: 0, scale: 0.3, y: 15 }}
+                          initial={{ opacity: 0, y: 6 }}
                           animate={{ 
                             opacity: 1, 
-                            scale: isCrit ? [1.4, 1.0] : 1.1, 
-                            y: -25,
-                            rotate: isCrit ? [-3, 3, 0] : 0 
+                            y: 0,
                           }}
-                          exit={{ opacity: 0, scale: 0.8, y: -50 }}
-                          transition={{ duration: 0.45, ease: "easeOut" }}
-                          className={`flex items-center gap-1.5 backdrop-blur-md ${containerClass}`}
+                          exit={{ opacity: 0, y: -8 }}
+                          transition={{ duration: 0.12, ease: "easeOut" }}
+                          className="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-slate-950/70"
+                          data-battle-popup={pop.type}
+                          data-presentation-id={pop.id}
+                          data-elf-id={pop.elfId}
                         >
-                          <span className="text-xs font-bold">{icon}{pop.label || ''}</span>
-                          <span className={textStyle}>{pop.text}</span>
+                          <span className="text-xs font-bold text-slate-300">{pop.isCrit ? '暴擊 ' : ''}{pop.label || ''}</span>
+                          <span className={`text-2xl font-black ${isHeal ? 'text-green-400' : isTrue ? 'text-white' : isPink ? 'text-pink-400' : isMissLike || isAdjustment ? 'text-slate-200' : 'text-red-400'}`}
+                            style={isHeal ? { textShadow: '-1px -1px 0 #eab308, 1px -1px 0 #eab308, -1px 1px 0 #eab308, 1px 1px 0 #eab308' } : undefined}>{pop.text}</span>
                         </motion.div>
                       );
                     })}
@@ -715,7 +681,7 @@ export function BattleScreenUI(props: BattleScreenUIProps) {
                                 disabled={phase !== "p1_select" || isElfSkillSelectionDisabled(p1) || ((skill.charge !== undefined ? skill.charge : skill.pp) <= 0 && !isZeroPpExempt(p1, skill, p2))}
                               >
                                 {isUltimate && (
-                                  <div className="absolute -top-2 -left-2 px-1.5 py-0.5 bg-gradient-to-r from-amber-600 to-yellow-600 rounded text-[8px] font-black text-white shadow-lg z-10 border border-amber-400/30 animate-pulse">SIGNATURE</div>
+                                  <div className="absolute -top-2 -left-2 px-1.5 py-0.5 bg-gradient-to-r from-amber-600 to-yellow-600 rounded text-[8px] font-black text-white shadow-lg z-10 border border-amber-400/30 ">SIGNATURE</div>
                                 )}
                                 {/* 預備特殊印記/標記動態顯示區 (資料驅動，有標記物件時自動映射渲染，無標記時不佔用空間與顯示) */}
                                 {skill.specialBadge && (
@@ -758,7 +724,7 @@ export function BattleScreenUI(props: BattleScreenUIProps) {
                                    )}
                                 </div>
                                 {p1SelectedSkill?.name === skill.name && (
-                                   <div className={`absolute inset-0 border-2 ${isUltimate ? 'border-amber-500' : 'border-cyan-500'} rounded-xl pointer-events-none animate-pulse`} />
+                                   <div className={`absolute inset-0 border-2 ${isUltimate ? 'border-amber-500' : 'border-cyan-500'} rounded-xl pointer-events-none`} />
                                 )}
                               </button>
                             );
@@ -827,7 +793,7 @@ export function BattleScreenUI(props: BattleScreenUIProps) {
                                )}
                                {elf.isVanished ? (
                                  <div className="absolute inset-0 bg-slate-950/80 rounded-xl flex items-center justify-center border border-purple-500/50 shadow-[inset_0_0_15px_rgba(147,51,234,0.3)]">
-                                   <span className="text-[10px] font-black text-purple-400 uppercase border border-purple-400 px-2 py-0.5 -rotate-12 tracking-widest animate-pulse">消逝</span>
+                                   <span className="text-[10px] font-black text-purple-400 uppercase border border-purple-400 px-2 py-0.5 -rotate-12 tracking-widest">消逝</span>
                                  </div>
                                ) : isDead ? (
                                  <div className="absolute inset-0 bg-black/60 rounded-xl flex items-center justify-center">
@@ -898,7 +864,7 @@ export function BattleScreenUI(props: BattleScreenUIProps) {
     const team = isP1 ? p1Team : p2Team;
     const panelState = isP1 ? p1Panel : p2Panel;
     const setPanelState = isP1 ? setP1Panel : setP2Panel;
-    const isAttacking = props.activeSkillAnim?.side === side;
+    const isAttacking = false; // 資訊艙保持穩定，出招只作用於場上的立繪。
     const isShaking = props.consoleShake?.[side];
     let panelAnimate = {};
     if (isAttacking) {
@@ -928,6 +894,7 @@ export function BattleScreenUI(props: BattleScreenUIProps) {
           </div>
         </div>
         <div className="p-4 space-y-4">
+          <div className="flex justify-center min-h-8">{renderPopups(side)}</div>
           <div className="flex items-start justify-between">
             <div className="flex items-center gap-3">
               <button
@@ -1306,9 +1273,12 @@ export function BattleScreenUI(props: BattleScreenUIProps) {
     const isP1 = side === "p1";
     const elf = isP1 ? p1 : p2;
     if (!elf) return null;
-    const isAttacking = props.activeSkillAnim?.side === side;
+    const isActing = props.activeSkillAnim?.side === side;
+    const isAttacking = isActing && props.activeSkillAnim?.category !== 'property';
     const isShaking = props.consoleShake?.[side];
-    const anim = isAttacking ? { x: [0, isP1 ? 80 : -80, 0] } : isShaking ? { x: [-8, 8, -8, 8, 0], transition: { duration: 0.3 } } : { x: 0 };
+    const anim = isAttacking ? { x: [0, isP1 ? 40 : -40, 0], filter: 'brightness(1)' }
+      : isActing ? { x: 0, filter: ['brightness(1)', 'brightness(1.3)', 'brightness(1)'] }
+      : { x: 0, filter: 'brightness(1)' };
     const dead = !isAliveBySurvivalRule(elf.currentHp, elf.survivalRule);
     const spriteProfile = battleSpriteProfile(elf.name);
     const height = Number(elf.height);
@@ -1322,6 +1292,7 @@ export function BattleScreenUI(props: BattleScreenUIProps) {
         style={{ ...spriteStyle, opacity: spriteMode === "dim" ? 0.55 : 1, display: spriteMode === "hide" ? "none" : undefined }}>
         <div className="absolute top-0 left-1/2 -translate-x-1/2 z-20 pointer-events-none flex flex-col items-center gap-1.5 w-max">
           {renderPopups(side)}
+          {isActing && <span className="rounded-lg bg-slate-950/80 px-3 py-1 text-sm font-bold text-cyan-200">{props.activeSkillAnim.skillName}</span>}
         </div>
         <motion.div animate={anim} transition={{ duration: 0.35 }} style={{ scale: spriteScale }} className={`h-full w-full flex items-end justify-center ${dead ? "opacity-30 grayscale" : ""}`}>
           <ElfAvatar
@@ -1803,7 +1774,7 @@ export function BattleScreenUI(props: BattleScreenUIProps) {
                         <span className="flex items-center gap-1.5 text-amber-300">
                           ✨ {hoveredSkill.specialBadge.text}
                         </span>
-                        <span className={`text-[10px] px-1.5 py-0.5 rounded border ${hoveredSkill.isRuneActive ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40 animate-pulse' : 'bg-slate-800/80 text-slate-400 border-slate-700/60'}`}>
+                        <span className={`text-[10px] px-1.5 py-0.5 rounded border ${hoveredSkill.isRuneActive ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40' : 'bg-slate-800/80 text-slate-400 border-slate-700/60'}`}>
                           {hoveredSkill.isRuneActive ? '【已激活】' : '【未激活】'}
                         </span>
                       </div>

@@ -1,4 +1,5 @@
 import { activeConstraints } from './timedConstraints';
+import { skillTypeMultiplier } from './skillTypeOverride';
 import { queueSkillLifesteal } from './lifesteal';
 import { isNonTrueDamageType } from './damageSemantics';
 import React, { MutableRefObject, Dispatch } from "react";
@@ -164,7 +165,7 @@ export function buildDamageAPIs(shared: SharedContextDeps): DamageAPIs {
       // 「X系技能傷害」以該屬性計算克制（未指定時用自身屬性）
       const elemType = opts?.elem || self.type;
       if (elemType && tOpp.type) {
-        const typeMult = getTypeMatchup(elemType, tOpp.type);
+        const typeMult = skillTypeMultiplier(c[`${side}RegistryState`], elemType, tOpp.type);
         baseVal = Math.floor(baseVal * typeMult);
       }
 
@@ -274,10 +275,10 @@ export function buildDamageAPIs(shared: SharedContextDeps): DamageAPIs {
       pushEffect({ type: 'damage', side: tSide, data: { amount: finalDamage, label, popup: true, sourceElfName: self.name, sourceSide:side, sourceBattleId:self.battleId||self.id, damageType: "true" } });
       return finalDamage;
     },
-    applyAbsorb: (tSide, amt) => {
+    applyAbsorb: (tSide, amt, label = "汲取") => {
       const val = Math.floor(amt);
       const actorSide = side; 
-      const actualDmg = getBattleEventContext(actorSide, true, moveIndex).applyTrueDamage(tSide, val, "汲取");
+      const actualDmg = getBattleEventContext(actorSide, true, moveIndex).applyTrueDamage(tSide, val, label);
       getBattleEventContext(actorSide, true, moveIndex).applyHeal(actorSide, actualDmg);
     },
     applyHeal: (tSide, amt) => pushEffect({ type: 'heal', side: tSide, data: { amount: Math.floor(amt) } }),
@@ -502,6 +503,18 @@ export function buildStatusAPIs(shared: SharedContextDeps): StatusAPIs {
       }
 
       const filterCtx = getBattleEventContext(tSide, true, 0);
+      const reflectCount = filterCtx.getPlayerState('blkReflectStatusCount') || 0;
+      const immuneCount = filterCtx.getPlayerState('blkImmuneStatusCount') || 0;
+      if (reflectCount > 0 || immuneCount > 0) {
+        const key = reflectCount > 0 ? 'blkReflectStatusCount' : 'blkImmuneStatusCount';
+        filterCtx.setPlayerState(key, (reflectCount > 0 ? reflectCount : immuneCount) - 1);
+        if (reflectCount > 0 && tSide !== side && !_reflectingStatus && _reflectHookDepth === 0) {
+          _reflectingStatus = true; _reflectHookDepth++;
+          try { filterCtx.applyStatusWithImmunityCheck(side, s, d); }
+          finally { _reflectingStatus = false; _reflectHookDepth--; }
+        }
+        return { success: false, immune: true };
+      }
 
       // §47: Suit BEFORE_STATUS_APPLY
       const suitId = tSide === 'p1' ? c.p1Suit : c.p2Suit;

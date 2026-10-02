@@ -23,9 +23,9 @@ export const CanglanDeconstructedProfile: ElfDeconstructedProfile = {
         unlimitedPpOnNoShield: true,
         tearOnNoShield: 1,
         halveSkillDamage: true,
-        recoverHpOnSkillDamage: 0.33,
+        recoverHpOnSkillDamage: 1 / 3,
         blockNextSkillDmgOnDamage: true,
-        absorbHpOnNoDamage: 0.33,
+        absorbHpOnNoDamage: 1 / 3,
         cureStatusOnNoDamage: true
       }
     }

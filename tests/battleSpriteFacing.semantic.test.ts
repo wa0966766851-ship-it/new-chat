@@ -26,6 +26,13 @@ test("known left-facing battle art faces the opponent on both sides", () => {
     "怒濤·滄嵐",
     "無序.墜星",
     "聖靈邁爾斯",
+    "譜尼",
+    "混沌·布萊克",
+    "治癒.龍魂再臨 次元龍",
+    "無序·蝕言",
+    "蓓麗安特",
+    "天蓬元帥八戒",
+    "人皇·帝辛",
   ];
 
   for (const name of leftFacing) {
@@ -36,15 +43,7 @@ test("known left-facing battle art faces the opponent on both sides", () => {
 
 test("front-facing art and unclassified user paths are never mirrored", () => {
   const frontFacing = [
-    "天蓬元帥八戒",
-    "譜尼",
-    "混沌·布萊克",
     "變革·馬爾修斯",
-    "人皇·帝辛",
-    "治癒.龍魂再臨 次元龍",
-    "蓓麗安特",
-    "無序.六刃",
-    "無序·蝕言",
   ];
 
   for (const name of frontFacing) {
@@ -83,4 +82,16 @@ test("fear custom art faces right while official fallback faces left", () => {
     assert.equal(shouldMirrorBattleSprite(name, "p1", false, "/seer/body/5010.png"), true);
     assert.equal(shouldMirrorBattleSprite(name, "p2", false, "/seer/body/5010.png"), false);
   }
+});
+
+
+test("source facing matches the user-confirmed P1 corrections", () => {
+  for (const [name, source] of [["譜尼", "/seer/body/300.png"], ["混沌·布萊克", "/seer/body/3539.png"],
+    ["治癒.龍魂再臨 次元龍", "/seer/body/4586.png"], ["無序·蝕言", "/elf-art/wuxu_shiyan_body.png"], ["蓓麗安特", "/seer/body/4643.png"]]) {
+    assert.equal(shouldMirrorBattleSprite(name, "p1", false, source), true);
+    assert.equal(shouldMirrorBattleSprite(name, "p2", false, source), false);
+  }
+  assert.equal(shouldMirrorBattleSprite("無序.六刃", "p2", false, "/elf-art/wuxu_liuren_body.png"), true);
+  assert.equal(shouldMirrorBattleSprite("無序.六刃", "p1", false, "/elf-art/wuxu_liuren_body.png"), false);
+  for (const side of ["p1", "p2"] as const) assert.equal(shouldMirrorBattleSprite("未知精靈", side, false, "/elf-art/unknown_myth_ghost_body.png"), false);
 });

@@ -3,7 +3,7 @@ import assert from "node:assert";
 import { DEFAULT_ELVES } from "../data/defaultElves";
 import { getSkillProgram, getSoulProgram } from "../blocks/registry";
 import { SKILL_MODE, SOUL_MODE } from "../blocks/specs";
-import { runSkillProgram, runSoulProgram } from "../blocks/runtime";
+import { runSkillProgram, runSoulProgram, runSideTimers } from "../blocks/runtime";
 import { resetPrd } from "../utils/prd";
 import {
   defaultDarkScarParts,
@@ -290,7 +290,13 @@ t("深潛者盛宴：異常存在時3回合技能增傷由50%翻倍為100%", () 
   h.ctx.skill = skillByName("深潛者盛宴");
   runSkillProgram(h.ctx, getSkillProgram(h.ctx.skill), "use", [5]);
   assert.strictEqual(h.timers.p1.length, 1);
-  assert.strictEqual(h.timers.p1[0].payload.block.dmgOut, 1);
+  const damageComp = { base: 100, damageCategory: 'skill_attack', isIncoming: false, increasePercent: 0, decreasePercent: 0, multiplier: 1 };
+  runSideTimers(h.ctx, ['outgoing'], { damageComp });
+  assert.strictEqual(damageComp.increasePercent, 1);
+  h.self.battleStatuses = {};
+  damageComp.increasePercent = 0;
+  runSideTimers(h.ctx, ['outgoing'], { damageComp });
+  assert.strictEqual(damageComp.increasePercent, 0.5, '異常解除後即回到50%，不能把施放時的100%凍結3回合');
 });
 
 t("星光·音速火拳：消回合後降先制且機率增傷實際寫入狀態", () => {

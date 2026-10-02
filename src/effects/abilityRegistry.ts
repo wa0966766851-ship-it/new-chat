@@ -178,8 +178,8 @@ export const DeconstructedElfRegistry: Record<string, ElfDeconstructedProfile> =
         {
           id: 'nizhou.priority',
           effectClass: 'INNATE',
-          flavor: { name: '深流之速', description: '先制+3，必定命中。' },
-          mechanics: { priority: 3, alwaysHit: true }
+          flavor: { name: '深流之速', description: '先制+3。' },
+          mechanics: { priority: 3 }
         },
         {
           id: 'nizhou.steal_buffs',
@@ -190,7 +190,7 @@ export const DeconstructedElfRegistry: Record<string, ElfDeconstructedProfile> =
         {
           id: 'nizhou.convert_freeze',
           effectClass: 'ON_HIT',
-          flavor: { name: '寒刺轉化', description: '將對手的凍傷狀態轉化為極度冰封；若轉化成功，附加對手最大體力 1/8 的真實傷害。' },
+          flavor: { name: '寒刺轉化', description: '將對手的凍傷狀態轉化為冰封；若轉化成功，附加對手最大體力 1/8 的真實傷害。' },
           mechanics: { target: 'OPPONENT', convertStatusFrom: '凍傷', convertStatusTo: '冰封', convertSuccessTrueDamagePercent: 0.125 }
         }
       ],
@@ -238,11 +238,16 @@ export const DeconstructedElfRegistry: Record<string, ElfDeconstructedProfile> =
           id: 'shenhai.drain_turn',
           effectClass: 'TURN',
           polarity: 'POSITIVE',
-          flavor: { name: '無盡海噬', description: '5回合內，自身使用技能時吸取對手最大體力的 1/3（若對手體力低於 1/2 則效果翻倍）。' },
-          mechanics: { duration: 5, target: 'SELF', drainMaxHpPercent: 0.33, doubleIfTargetHpBelow: 0.5 }
+          flavor: { name: '無盡海噬', description: '5回合內，自身使用技能時吸取對手最大體力的 1/3；自身體力低於最大體力1/2時吸取翻倍，吸取後對手體力未減少則附加300點真實傷害。' },
+          mechanics: { duration: 5, target: 'SELF', drainMaxHpPercent: 1 / 3, doubleIfSelfHpBelow: 0.5, noHpLossTrueDamage: 300 }
         }
       ],
       '不淨者之約': [
+        {
+          id: 'bujing.enemy_priority', effectClass: 'INNATE',
+          flavor: { name: '天敵先制', description: '對手為自身天敵時額外先制+3。' },
+          mechanics: { priorityIfNaturalEnemy: 3 }
+        },
         {
           id: 'bujing.always_hit',
           effectClass: 'INNATE',

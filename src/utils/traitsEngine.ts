@@ -306,8 +306,8 @@ export class TraitsEngine {
         ctx.setPlayerState(`${selfSide}_wraithCastSpellPending`, false);
         
         // 魔咒主體是技能傷害；只有場下餘波才是真實傷害。
-        const curseTurns = ctx.getPlayerState(`${selfSide}_curseTurns`) || 3;
-        const n = curseTurns * 15;
+        const curseTurns = Math.max(0, ...Object.entries(ctx.getStatuses(ctx.self)).filter(([name]) => /詛咒|curse/i.test(name)).map(([, n]) => n));
+        const n = curseTurns;
         const skillPower = ctx.skill?.power || 100;
         ctx.addLog(`👻 【咒術師】召喚的賽博怨靈於行動階段發動了【魔咒】！`, "effect");
         this.queueWraithExtraAction(ctx, `賽博怨靈·魔咒`, skillPower + n, n);
@@ -353,10 +353,10 @@ export class TraitsEngine {
       const selectedNoSkill = !ctx.skill || ctx.skill.name === '待機' || ctx.skill.name === '使用道具' || ctx.skill.name === '切換精靈';
       if (selectedNoSkill) {
         ctx.addLog(`🌌 【${elfName}】當前回合未選擇主動使用技能，賽博怨靈發動了【滅靈魔咒】！`, "effect");
-        const curseTurns = ctx.getPlayerState(`${selfSide}_curseTurns`) || 3;
-        const n = curseTurns * 15;
+        const curseTurns = Math.max(0, ...Object.entries(ctx.getStatuses(ctx.self)).filter(([name]) => /詛咒|curse/i.test(name)).map(([, n]) => n));
+        const n = curseTurns;
         // 威力取最高技能威力
-        const maxPower = Math.max(...ctx.self.skills.map(s => s.power || 0), 150);
+        const maxPower = Math.max(0, ...ctx.self.skills.map(s => s.power || 0));
         this.queueWraithExtraAction(ctx, `賽博怨靈·滅靈魔咒`, maxPower + n, n);
       }
     }
@@ -490,15 +490,16 @@ export class TraitsEngine {
         });
         c.self.shield = (c.self.shield || 0) + dealt;
         c.self.barrier = (c.self.barrier || 0) + dealt;
-        c.self.currentHp = Math.min(c.self.maxHp, c.self.currentHp + dealt);
+        c.applyHeal(owner, dealt);
         c.addLog(`🛡️ ${label}以${elem}最佳克制造成 ${dealt} 點技能傷害，並轉化為等量護盾、護罩與體力！`, 'heal');
 
         const factor = c.getPlayerState(`${owner}_wraithDamageDoubled`) ? 2 : 1;
-        const offFieldDmg = Math.floor(curseTurns * 15 * 0.5) * factor;
-        const eligible = c.getEligibleTeam(targetSide);
+        const offFieldDmg = Math.floor(curseTurns * 0.5) * factor;
+        const eligible = c.getEligibleTeam(targetSide).filter(e => (e.battleId || e.id) !== (target.battleId || target.id));
         if (eligible.length > 0) {
-          const randomTarget = eligible[Math.floor(Math.random() * eligible.length)];
-          randomTarget.currentHp = Math.max(1, randomTarget.currentHp - offFieldDmg);
+          const randomTarget = eligible[Math.floor((c.rng ?? Math.random)() * eligible.length)];
+          if (c.applyTrueDamageToElf) c.applyTrueDamageToElf(targetSide, randomTarget.battleId || randomTarget.id, offFieldDmg, label);
+          else c.updateAnyElf(targetSide, randomTarget.battleId || randomTarget.id, { currentHp: Math.max(0, randomTarget.currentHp - offFieldDmg) });
           c.addLog(`💥 ${label}餘波令場下【${randomTarget.name}】受到 ${offFieldDmg} 點真實傷害！`, 'damage');
         }
         return dealt;

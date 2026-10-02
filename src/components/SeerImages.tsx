@@ -55,9 +55,10 @@ export function ElfAvatar({ elf, battleSide, kind = "head", className, fallbackC
     </div>
   );
   if (concealed) {
-    // 未知精靈：不顯示任何真實圖像
+    // 身份隱藏期間只載入共用鬼影，不能使用真實立繪或頭像當備用圖。
     if (kind === "body") return (
-      <div className="w-40 h-40 rounded-full border-2 border-slate-500/60 bg-slate-900/70 flex items-center justify-center text-7xl font-black text-slate-300 shadow-[0_0_40px_rgba(148,163,184,0.25)]" title="未知精靈">?</div>
+      <ChainImage urls={["/elf-art/unknown_myth_ghost_body.png"]} fallback={fb} alt="未知精靈"
+        className={className || "w-full h-full object-contain"} style={style} />
     );
     return fb;
   }
@@ -80,7 +81,9 @@ export function ElfAvatar({ elf, battleSide, kind = "head", className, fallbackC
     maskImage: "radial-gradient(circle at 50% 48%, #000 82%, transparent 100%)",
     objectPosition: "50% 44%",
   } as React.CSSProperties : undefined;
-  return <ChainImage urls={urls} fallback={fb} className={`${className || ""} ${isOtherworldRey ? "rounded-full" : ""}`} style={{ ...portraitMask, ...style }} alt={elf.name} />;
+  return <ChainImage urls={urls} fallback={fb} className={`${className || ""} ${isOtherworldRey ? "rounded-full" : ""}`} style={{ ...portraitMask, ...style }}
+    sourceStyle={src => src === "/elf-art/emperor_dixin_body.png" ? { objectPosition: "50% 4%", transform: "scale(2.5)", transformOrigin: "50% 8%" } : {}}
+    alt={elf.name} />;
 }
 
 /** 屬性圖標：官方組合 → 「系」資料夾 → 雙屬性並排單屬性圖標 → 文字 */

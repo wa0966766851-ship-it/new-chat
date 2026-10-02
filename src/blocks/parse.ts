@@ -546,7 +546,13 @@ export function parseMarkLine(line: string, mark: string, prev?: Clause): Clause
 // ───────── 描述 → Program ─────────
 export function parseSkill(name: string, desc: string): Program {
   const clauses: Clause[] = [];
+  // 分枝與前一條使用同一分類／觸發與結果作用域，不能獨立重設條件。
+  const lines: string[] = [];
   for (const line of (desc || "").split(/\n/)) {
+    if (/^\s*>+\s*(?:消除成功|消除失敗|未觸發|若未觸發|反轉成功|吸取成功|转化成功|轉化成功)/.test(line) && lines.length) lines[lines.length - 1] += '，' + line.replace(/^\s*>+\s*/, '');
+    else lines.push(line);
+  }
+  for (const line of lines) {
     if (!line.trim()) continue;
     // 擊敗／未擊敗相關的放到傷害結算後
     // 「技能無效時，…」：技能無效（含未命中）時才執行

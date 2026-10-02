@@ -42,6 +42,7 @@ function normalizeKeyed(idx: SeerIndex, key: string) {
 /** 依名稱找出可用的寵物ID（含同名前置型態），依優先序排列 */
 /** 指定圖像（名稱 → 官方寵物 ID）：沒有官方圖或名稱對不上時使用 */
 export const SEER_ID_OVERRIDES: Record<string, number> = {
+  "天蓬元帥八戒": 1536,            // 使用者指定：菲爾蓬格
   "混濁海妖.布林克克": 359,        // 布林克克（原版）
   "治癒.龍魂再臨 次元龍": 4586,    // 空元行者
   "恐懼的化身·咤克斯": 5010,       // 舊版吒克斯「恐懼的化身」外觀（Seer 靜態圖資）
@@ -75,10 +76,10 @@ type SpriteFacing = "left" | "right" | "front";
 const BATTLE_SPRITE_FACING: Record<string, SpriteFacing> = {
   [normalizeName("悲歌.索比拉特")]: "left",
   [normalizeName("帝皇之盾")]: "left",
-  [normalizeName("天蓬元帥八戒")]: "front",
+  [normalizeName("天蓬元帥八戒")]: "left",
   [normalizeName("皮特薩拉羅")]: "left",
   [normalizeName("布萊克")]: "left",
-  [normalizeName("譜尼")]: "front",
+  [normalizeName("譜尼")]: "left",
   [normalizeName("星光·魔焰猩猩")]: "left",
   [normalizeName("混濁海妖.布林克克")]: "left",
   // Seer body 177 的巴弗洛立繪為斜側朝左，不是正面；P1 需鏡射，P2 保留原向。
@@ -90,19 +91,19 @@ const BATTLE_SPRITE_FACING: Record<string, SpriteFacing> = {
   [normalizeName("冰魄·柯爾德")]: "left",
   [normalizeName("柯爾霍德")]: "left",
   [normalizeName("聖光斯嘉麗")]: "left",
-  [normalizeName("混沌·布萊克")]: "front",
+  [normalizeName("混沌·布萊克")]: "left",
   [normalizeName("變革·馬爾修斯")]: "front",
-  [normalizeName("人皇·帝辛")]: "front",
+  [normalizeName("人皇·帝辛")]: "left",
   [normalizeName("蟲后·奧佩婭")]: "left",
   [normalizeName("眾神之父·奧丁")]: "left",
   [normalizeName("皮皮")]: "left",
-  [normalizeName("治癒.龍魂再臨 次元龍")]: "front",
-  [normalizeName("無序.六刃")]: "front",
-  [normalizeName("無序·蝕言")]: "front",
+  [normalizeName("治癒.龍魂再臨 次元龍")]: "left",
+  [normalizeName("無序.六刃")]: "right",
+  [normalizeName("無序·蝕言")]: "left",
   [normalizeName("湮滅之主・咤克斯")]: "left",
   [normalizeName("恐懼的化身·咤克斯")]: "left",
   [normalizeName("無序.墜星")]: "left",
-  [normalizeName("蓓麗安特")]: "front",
+  [normalizeName("蓓麗安特")]: "left",
   [normalizeName("怒濤·滄嵐")]: "left",
   [normalizeName("異境神霆·雷伊")]: "left",
   [normalizeName("聖靈邁爾斯")]: "left",
@@ -110,9 +111,14 @@ const BATTLE_SPRITE_FACING: Record<string, SpriteFacing> = {
 
 // 同名精靈的備用型態可能具有不同朝向，以實際載入的素材為準。
 const BODY_SOURCE_FACING: Record<string, SpriteFacing> = {
+  "/elf-art/unknown_myth_ghost_body.png": "front",
+  "/elf-art/emperor_dixin_body.png": "left",
+  "/elf-art/wuxu_liuren_body.png": "right",
+  "/elf-art/wuxu_shiyan_body.png": "left",
   "/elf-art/zhakesi_fear_body.png": "right",
   ...Object.fromEntries([10,1204,177,187,2647,2844,303,306,309,3098,3404,343,3432,3456,359,3626,3740,3886,4647,4648,4649,4762,5000,875].map(id => [`/seer/body/${id}.png`, "left" as SpriteFacing])),
-  ...Object.fromEntries([300,3105,3393,3539,4586,4643,4032,2882].map(id => [`/seer/body/${id}.png`, "front" as SpriteFacing])),
+  ...Object.fromEntries([300,3539,4586,4643,1536].map(id => [`/seer/body/${id}.png`, "left" as SpriteFacing])),
+  ...Object.fromEntries([3105,3393,4032,2882].map(id => [`/seer/body/${id}.png`, "front" as SpriteFacing])),
 };
 
 /** 只有 ElfAvatar 會直接載入的 URL/資料網址才算自訂圖片；內建美術 key（如 otherworld_thunder_rey）仍使用方向表。 */
@@ -148,6 +154,7 @@ export const CUSTOM_ART: Record<string, string> = {
 
 /** 只替換戰鬥全身立繪；恐懼化身的頭像維持既有來源。 */
 const CUSTOM_BODY_ART: Record<string, string> = {
+  [normalizeName("人皇·帝辛")]: "emperor_dixin",
   [normalizeName("恐懼的化身·咤克斯")]: "zhakesi_fear",
 };
 
@@ -181,6 +188,7 @@ export function resolvePetIds(elf: Pick<Elf, "name" | "id"> & { seerId?: number 
 
 export function petImageUrls(elf: Pick<Elf, "name" | "id"> & { seerId?: number | string }, kind: "head" | "body" = "head"): string[] {
   const name = normalizeName(elf.name || "");
+  if (kind === "head" && name === normalizeName("人皇·帝辛")) return ["/elf-art/emperor_dixin_body.png", ...resolvePetIds(elf, kind).map(id => `/seer/head/${id}.png`)];
   const art = kind === "body" ? (CUSTOM_BODY_ART[name] || CUSTOM_ART[name]) : CUSTOM_ART[name];
   const urls = [...(art ? [`/elf-art/${art}_${kind}.png`] : []), ...resolvePetIds(elf, kind).map(id => `/seer/${kind}/${id}.png`)];
   // 全身圖缺圖時退回頭像
