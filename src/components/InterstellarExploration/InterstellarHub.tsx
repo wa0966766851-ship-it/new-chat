@@ -398,10 +398,10 @@ export default function InterstellarHub({ allElves, onBack, onStartBattle }: Int
                           </div>
                           <div>
                             <div className="text-sm font-bold text-slate-200">初始燃料</div>
-                            <div className="text-[11px] text-slate-500">消耗移動</div>
+                            <div className="text-[11px] text-slate-500">初始 5，上限 10，進下一層回滿</div>
                           </div>
                         </div>
-                        <div className="text-xl font-black text-orange-400">10</div>
+                        <div className="text-xl font-black text-orange-400">5/10</div>
                       </div>
                     </div>
                   </div>

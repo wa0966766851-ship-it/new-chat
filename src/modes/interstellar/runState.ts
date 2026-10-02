@@ -32,6 +32,7 @@ export function prepareBattle(run: any, id: string, rolls: number[], teams?: any
 export function settleBattle(run: any, id: string, winner: string, team?: any[]): any {
   const battle = run.pendingBattle;
   if (!battle || battle.id !== id || !['p1','p2','exit','draw'].includes(winner)) return run;
+  if ((run as any).runOver) return run;
   const win = winner === 'p1'; const boss = battle.type === 'boss'; const elite = battle.type === 'elite';
   const beans = win ? boss ? 400 : elite ? 200 : 80 : 0;
   const multiplier = (run.selectedModifiers ?? []).reduce((m: number, key: string) => m + (DIFFICULTY_MODIFIERS.find(x => x.id === key)?.multiplier ?? 0), 1);
@@ -42,15 +43,24 @@ export function settleBattle(run: any, id: string, winner: string, team?: any[])
   if (win && order < (boss ? 1 : elite ? .5 : .15)) { const key = boss || tier < .25 ? 'A' : 'B'; vouchers[key] = (vouchers[key] ?? 0) + 1; }
   let layers = run.layers.map((l: any) => l.id !== battle.layer ? l : { ...l, nodes: l.nodes.map((n: any) => n.id === battle.nodeId && win ? { ...n, occupied:true } : n) });
   let currentLayer = run.currentLayer; let fuel = winner === 'p2' ? Math.max(0,run.fuel-2) : run.fuel;
+  // Boss 失敗懲罰：除扣 2 燃料外，加收 10% 賽爾豆撤退費（P0-B，不改其他經濟）
+  let retreatFee = 0;
+  if (!win && boss && winner === 'p2') { retreatFee = Math.floor((run.saerBeans ?? 0) * 0.1); }
   if (win && boss && battle.layer < 6) { currentLayer = battle.layer+1; if (!layers.some((l: any) => l.id === currentLayer)) layers = [...layers,{id:currentLayer,name:`第 ${currentLayer} 星區`,nodes:generateLayerMap(currentLayer)}]; fuel = Math.min(run.maxFuel ?? 10,fuel+3); }
+  // P0-A 續：打贏後若隊伍已無存活（同歸類邊界），同樣視為滅團，避免以傷換傷白嫖 Boss 獎勵後繼續走圖
   const runElves = (run.runElves ?? []).map((elf: any) => {
     const after = team?.find(x => (x.battleId || x.id) === (elf.battleId || elf.id));
     if (!after) return elf;
     return {...elf,maxHp:after.maxHp,survivalRule:after.survivalRule,currentHp:Math.min(after.maxHp,isAliveBySurvivalRule(after.currentHp,after.survivalRule)?after.currentHp:Math.max(0,after.currentHp)),skills:elf.skills.map((s: any,i: number)=>({...s,pp:after.skills[i]?.pp??s.pp})),explorationVitals:true};
   });
-  return { ...run, layers, currentLayer, fuel, runElves, piratePrincipal:win||winner==='p2'?0:run.piratePrincipal, saerBeans:run.saerBeans+beans+(win?(run.piratePrincipal??0):0), earnedExp:run.earnedExp+exp, vouchers,
+  const wiped = runElves.length > 0 && !runElves.some((e: any) => isAliveBySurvivalRule(e.currentHp, e.survivalRule));
+  const victory = win && boss && battle.layer >= 6;
+  const runOver = Boolean(wiped || victory);
+  const runResult = victory ? 'victory' : wiped ? 'wiped' : undefined;
+  return { ...run, layers, currentLayer, fuel, runElves, piratePrincipal:win||winner==='p2'?0:run.piratePrincipal, saerBeans:Math.max(0, run.saerBeans+beans+(win?(run.piratePrincipal??0):0)-retreatFee), earnedExp:run.earnedExp+exp, vouchers,
     collectibles:collectible ? [...run.collectibles,collectible] : run.collectibles, pendingBattle:null,
-    lastBattleResult:{ isWin:win,outcome:winner,beans,exp,collectible,recoveredPrincipal:win?(run.piratePrincipal??0):0 }, lastSettledBattleId:id };
+    runOver: runOver ? true : (run as any).runOver, runResult: runResult ?? (run as any).runResult,
+    lastBattleResult:{ isWin:win,outcome:winner,beans,exp,collectible,recoveredPrincipal:win?(run.piratePrincipal??0):0,retreatFee,runOver,runResult }, lastSettledBattleId:id };
 }
 export function settleStoredBattle(storage: Storage, runId: string, id: string, winner: string, team?: any[]): any {
   const run = loadRun(storage); if (!run || run.runId !== runId) return null;

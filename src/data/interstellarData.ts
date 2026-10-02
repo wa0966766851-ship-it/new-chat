@@ -58,13 +58,13 @@ export const INTERSTELLAR_COLLECTIBLES: Collectible[] = [
     effect: (s) => ({ ...s, speed: (s.speed || 0) + 75 })
   },
   { 
-    id: "dmg_reduction_bead", name: "減傷能量珠", description: "全隊受到傷害 -10% (戰鬥中生效)", type: "stat", rarity: "rare",
+    id: "dmg_reduction_bead", name: "減傷能量珠", description: "全隊受到傷害 -10%（尚未實裝，待戰鬥通道）", type: "stat", rarity: "rare",
     effect: (s) => s
   },
 
   // Named Collectibles (Epic/Legendary)
   { 
-    id: "justin_arm", name: "賈斯汀之臂", description: "全隊攻擊傷害 +15%", type: "special", rarity: "epic",
+    id: "justin_arm", name: "賈斯汀之臂", description: "全隊攻擊傷害 +15%（尚未實裝，待戰鬥通道）", type: "special", rarity: "epic",
     effect: (s) => s
   },
   { 
@@ -72,7 +72,7 @@ export const INTERSTELLAR_COLLECTIBLES: Collectible[] = [
     effect: (s) => ({ ...s, atk: (s.atk || 0) + 150 })
   },
   { 
-    id: "ray_wing", name: "雷神之翼", description: "全隊速度 +100，免疫麻痺狀態", type: "special", rarity: "epic",
+    id: "ray_wing", name: "雷神之翼", description: "全隊速度 +100（麻痺免疫尚未實裝）", type: "special", rarity: "epic",
     effect: (s) => ({ ...s, speed: (s.speed || 0) + 100 })
   },
   { 
@@ -92,15 +92,15 @@ export const INTERSTELLAR_COLLECTIBLES: Collectible[] = [
     })
   },
   { 
-    id: "captain_badge", name: "船長之徽", description: "全隊體力 +150，戰鬥後賽爾豆獲得 +15%", type: "special", rarity: "epic",
+    id: "captain_badge", name: "船長之徽", description: "全隊體力 +150（豆子加成尚未實裝）", type: "special", rarity: "epic",
     effect: (s) => ({ ...s, hp: (s.hp || 0) + 150 })
   },
   { 
-    id: "silver_wing", name: "銀翼獵手", description: "全隊攻擊傷害 +20%", type: "special", rarity: "epic",
+    id: "silver_wing", name: "銀翼獵手", description: "全隊攻擊傷害 +20%（尚未實裝，待戰鬥通道）", type: "special", rarity: "epic",
     effect: (s) => s
   },
   { 
-    id: "six_wing", name: "六翼獵手", description: "擊敗對手後恢復最大體力 20%", type: "special", rarity: "legendary",
+    id: "six_wing", name: "六翼獵手", description: "擊敗對手後恢復最大體力 20%（尚未實裝，待戰鬥通道）", type: "special", rarity: "legendary",
     effect: (s) => s
   },
   { 
@@ -124,19 +124,19 @@ export const INTERSTELLAR_COLLECTIBLES: Collectible[] = [
     effect: (s) => ({ ...s, def: (s.def || 0) + 150, spdef: (s.spdef || 0) + 150 })
   },
   { 
-    id: "energy_overload_core", name: "能量超載核心", description: "全隊攻擊 +300，但每回合損失 5% 體力 (戰鬥生效)", type: "special", rarity: "epic",
+    id: "energy_overload_core", name: "能量超載核心", description: "全隊攻擊 +300（掉血懲罰尚未實裝）", type: "special", rarity: "epic",
     effect: (s) => ({ ...s, atk: (s.atk || 0) + 300 })
   },
   {
-    id: "void_shield_gen", name: "虛空護盾發生器", description: "戰鬥開始時全隊獲得 500 點護盾", type: "special", rarity: "epic",
+    id: "void_shield_gen", name: "虛空護盾發生器", description: "戰鬥開始時全隊獲得 500 點護盾（尚未實裝，待戰鬥通道）", type: "special", rarity: "epic",
     effect: (s) => s
   },
   {
-    id: "nanobot_swarm", name: "奈米修復群", description: "每回合結束恢復全隊 50 點體力", type: "special", rarity: "rare",
+    id: "nanobot_swarm", name: "奈米修復群", description: "隊伍面板體力 +50（一次性，非每回合）", type: "special", rarity: "rare",
     effect: (s) => ({ ...s, hp: (s.hp || 0) + 50 })
   },
   {
-    id: "gravity_boots", name: "重力靴", description: "全隊速度 +40，免疫速度下降效果", type: "stat", rarity: "rare",
+    id: "gravity_boots", name: "重力靴", description: "全隊速度 +40（速度下降免疫尚未實裝）", type: "stat", rarity: "rare",
     effect: (s) => ({ ...s, speed: (s.speed || 0) + 40 })
   }
 ];

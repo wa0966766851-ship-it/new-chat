@@ -399,7 +399,7 @@ export default function InterstellarRun({
   const handleMoveToNode = (targetNodeId: string) => {
     if (movementLock.current) return;
     const next = moveRun(getRunSnapshot(), targetNodeId);
-    if (!next) { setActionOutcome('無法移動：請選擇相連節點並確認燃料。'); return; }
+    if (!next) { setActionOutcome(fuel < 1 ? '燃料耗盡：艦船進入節流模式，請先補給燃料再移動。' : '無法移動：請選擇相連節點並確認燃料。'); return; }
     movementLock.current = true;
     setLayers(next.layers); setFuel(next.fuel);
     const target = next.layers.find((l: any) => l.id === currentLayer).nodes.find((n: any) => n.id === targetNodeId);
