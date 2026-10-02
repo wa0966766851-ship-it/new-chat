@@ -13,7 +13,7 @@
     "test": "node --import tsx src/tests/battle.units.test.ts && node --import tsx tests/battleSpriteFacing.semantic.test.ts && node --import tsx src/tests/blocks.semantic.test.ts && node --import tsx tests/otherworldRey.semantic.test.ts && node --import tsx tests/holyMiles.semantic.test.ts && node --import tsx scripts/gen-handled-skills.ts --check && node --import tsx scripts/audit_block_coverage.ts --check && npm run test:loading",
     "test:loading": "node --import tsx tests/codexLoading.semantic.test.ts && node --import tsx tests/profileLoading.semantic.test.ts && npm run test:data && npm run test:ui && npm run test:scopes",
     "test:ui": "node --import tsx tests/uiFoundation.semantic.test.ts && node --import tsx tests/elfEditorLayout.semantic.test.ts && node --import tsx tests/pageRecovery.semantic.test.ts && node --import tsx tests/editorWorkflow.semantic.test.ts",
-    "test:scopes": "node --import tsx tests/battleStateScopes.semantic.test.ts && npm run test:effects",
+    "test:scopes": "node --import tsx tests/battleStateScopes.semantic.test.ts && npm run test:effects && npm run test:special-modes",
     "test:effects": "node --import tsx tests/damageScopes.semantic.test.ts && node --import tsx tests/effectClarity.semantic.test.ts && node --import tsx tests/effectLifecycle.semantic.test.ts && node --import tsx tests/effectConditions.semantic.test.ts && node --import tsx scripts/audit_effect_implementation.ts --check",
     "audit:implementation": "node --import tsx scripts/audit_effect_implementation.ts --write",
     "audit:bundle": "node --import tsx scripts/audit_bundle.ts",
@@ -31,7 +31,8 @@
     "build:exe-keep": "tsx tools/build_exe.ts --keep-version",
     "prepare:share": "tsx tools/prepare_share.ts --force",
     "electron:dev": "npm run build && electron electron/main.cjs",
-    "package:electron": "npm run build:electron && electron-builder --config electron-builder.yml"
+    "package:electron": "npm run build:electron && electron-builder --config electron-builder.yml",
+    "test:special-modes": "node --import tsx tests/interstellarSettlement.semantic.test.ts && node --import tsx tests/interstellarBattleSnapshot.semantic.test.ts && node --import tsx tests/destinyInterceptor.semantic.test.ts && node --import tsx tests/destinyGacha.semantic.test.ts && node --import tsx tests/destinyFlow.semantic.test.ts && node --import tsx tests/interstellarFlow.semantic.test.ts && node --import tsx tests/specialBattleIntegration.semantic.test.ts"
   },
   "dependencies": {
     "@google/genai": "^2.4.0",

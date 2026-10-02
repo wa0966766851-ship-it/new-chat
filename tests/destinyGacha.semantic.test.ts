@@ -1,0 +1,14 @@
+import assert from 'node:assert/strict';
+import { buildDestinyPool,pullFromDestinyPool,perform12Pull,shuffleDestiny,simulateAiBan,simulateAiPick } from '../src/utils/destinyGacha';
+const elf=(i:number,rank:string):any=>({id:String(i),name:'同名',destinyRank:rank,skills:[],baseStats:{hp:100,atk:100,def:100,spatk:100,spdef:100,speed:100},calculatedStats:{hp:500}});
+const pool=Array.from({length:20},(_,i)=>elf(i,i===0?'S':i<4?'A':i<8?'C':'B'));
+const seeded=()=>{let s=123;return()=>((s=(s*1664525+1013904223)>>>0)/2**32)};
+const cards=perform12Pull(pool,seeded());assert.equal(cards.length,12);assert.equal(new Set(cards.map(e=>e.id)).size,12);
+for(const [r,n] of [['S',1],['A',3],['C',2]] as const)assert.ok(cards.filter(e=>e.destinyRank===r).length>=n);
+assert.deepEqual(cards,perform12Pull(pool,seeded()));
+for(const n of [0,1,5])assert.throws(()=>perform12Pull(pool.slice(0,n),seeded()),/卡池不足/);
+assert.throws(()=>perform12Pull(pool.filter(e=>e.destinyRank!=='S'),seeded()),/卡池不足/);
+const bans=simulateAiBan(cards);const picked=simulateAiPick(cards.map(e=>({...e,isBanned:bans.includes(e.instanceId)})));assert.equal(picked.pickedIds.length,6);assert.ok(picked.pickedIds.includes(picked.starterId));
+assert.deepEqual(shuffleDestiny([1,2,3,4],()=>0),[2,3,4,1]);
+const prepared=buildDestinyPool(pool,seeded());const p1=pullFromDestinyPool(prepared,seeded(),'p1'), p2=pullFromDestinyPool(prepared,seeded(),'p2');assert.ok(p1.every(e=>!p2.some(other=>other.instanceId===e.instanceId)));assert.ok(p1.every(e=>e.interceptorEffect===prepared.find(x=>x.id===e.id)?.interceptorEffect));
+console.log('命運保底、短池拒絕、同名不同ID、固定種子與AI選卡通過');

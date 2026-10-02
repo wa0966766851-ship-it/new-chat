@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { ElfAvatar, TypeIcon } from "./SeerImages";
 import { Elf, BattleMode } from "../types";
-import { DestinyElfInstance, perform12Pull, simulateAiBan, simulateAiPick } from "../utils/destinyGacha";
+import { DestinyElfInstance, buildDestinyPool, pullFromDestinyPool, simulateAiBan, simulateAiPick } from "../utils/destinyGacha";
 import { motion, AnimatePresence } from "motion/react";
 import DestinyIntroRuleTable from "./DestinyIntroRuleTable";
 import { Sparkles, Shield, Swords, AlertCircle, RefreshCw, CheckCircle2, XCircle, ChevronRight, Crown, Zap, Flame, Trophy, HelpCircle, ArrowLeft, RotateCcw } from "lucide-react";
@@ -46,6 +46,8 @@ export default function DestinyWheelScreen({
   p1Title = "命運之輪主宰",
   p2Title = "宿命挑戰者"
 }: DestinyWheelScreenProps) {
+  const sessionPool = useMemo(()=>buildDestinyPool(allElves),[allElves]);
+  const [pullError, setPullError] = useState('');
   const [phase, setPhase] = useState<DraftPhase>('intro');
   const [battleMode, setBattleMode] = useState<BattleMode>(initialBattleMode);
   const [isMathStyle, setIsMathStyle] = useState<boolean>(true);
@@ -81,9 +83,10 @@ export default function DestinyWheelScreen({
 
   // 開始抽獎
   const handleStartPull = () => {
-    setPhase('pulling');
-    const p1Results = perform12Pull(allElves);
-    const p2Results = perform12Pull(allElves);
+    let p1Results: DestinyElfInstance[], p2Results: DestinyElfInstance[];
+    try { p1Results=pullFromDestinyPool(sessionPool,Math.random,'p1'); p2Results=pullFromDestinyPool(sessionPool,Math.random,'p2'); }
+    catch(error) { setPullError((error as Error).message); return; }
+    setPullError(''); setPhase('pulling');
     
     setP1Pool(p1Results);
     setP2Pool(p2Results);
@@ -225,6 +228,7 @@ export default function DestinyWheelScreen({
       const found = p1Pool.find(e => e.instanceId === id)!;
       return {
         ...found,
+        battleId:found.instanceId,
         currentHp: found.maxHp,
         statStages: { atk: 0, def: 0, spatk: 0, spdef: 0, speed: 0, accuracy: 0 }
       };
@@ -234,6 +238,7 @@ export default function DestinyWheelScreen({
       const found = p2Pool.find(e => e.instanceId === id)!;
       return {
         ...found,
+        battleId:found.instanceId,
         currentHp: found.maxHp,
         statStages: { atk: 0, def: 0, spatk: 0, spdef: 0, speed: 0, accuracy: 0 }
       };
@@ -247,8 +252,8 @@ export default function DestinyWheelScreen({
       battleMode,
       p1TeamFinal,
       p2TeamFinal,
-      starter1Elf ? starter1Elf.id || starter1Elf.name : p1TeamFinal[0].id || p1TeamFinal[0].name,
-      starter2Elf ? starter2Elf.id || starter2Elf.name : p2TeamFinal[0].id || p2TeamFinal[0].name,
+      starter1Elf ? starter1Elf.instanceId : p1TeamFinal[0].battleId!,
+      starter2Elf ? starter2Elf.instanceId : p2TeamFinal[0].battleId!,
       p1Suit,
       p1Eyewear,
       p2Suit,
@@ -305,6 +310,7 @@ export default function DestinyWheelScreen({
         backgroundColor: '#050c21'
       } : {}}
     >
+      {pullError && <p role="alert" className="text-rose-300 p-4">{pullError}</p>}
       {/* 命運之輪 · 數理分析矩陣與量子機率網格背景 (Analytical Math HUD Theme) */}
       {isMathStyle && (
         <div className="absolute inset-0 pointer-events-none z-0 opacity-25 overflow-hidden">
@@ -312,13 +318,13 @@ export default function DestinyWheelScreen({
           {/* 幾何座標與機率波式 */}
           <div className="absolute top-4 left-8 text-[11px] font-mono text-[#36B2BC] tracking-wider flex items-center gap-3">
             <span className="px-2 py-0.5 bg-[#36B2BC]/20 rounded border border-[#36B2BC]/40 font-bold">Φ-MATRIX</span>
-            <span>DESTINY QUANTUM PROBABILITY WAVE V3.2 // P(S)=4.0% · P(A)=16.0% · P(B)=55.0% · P(C)=25.0%</span>
+            <span>12連抽保底至少 1S＋3A＋2C // 其餘6隻混合抽取</span>
           </div>
           <div className="absolute top-4 right-8 text-[11px] font-mono text-[#36B2BC] tracking-widest">
             E[X] = Σ p(x_i)·v_i // MONTE CARLO GUARANTEE MATRIX
           </div>
           <div className="absolute bottom-4 left-8 text-[11px] font-mono text-[#36B2BC] flex items-center gap-3">
-            <span className="text-amber-400">● SEED: 0x7FA9B2</span>
+            <span className="text-amber-400">● 本局卡池效果已固定</span>
             <span>MARKOV STOCHASTIC FIELD // INTERCEPTOR SHIELDING ENGAGED</span>
           </div>
           <div className="absolute bottom-4 right-8 text-[11px] font-mono text-[#36B2BC]">
@@ -398,6 +404,7 @@ export default function DestinyWheelScreen({
       {phase === 'intro' && (
         <DestinyIntroRuleTable
           allElves={allElves}
+          pool={sessionPool}
           onStartPull={handleStartPull}
           isMathStyle={isMathStyle}
         />

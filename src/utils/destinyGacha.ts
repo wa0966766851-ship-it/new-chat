@@ -127,7 +127,7 @@ export function getElfDestinyRank(elf: Elf): DestinyRank {
 /**
  * 創建完整命運之輪卡池（包含所有傳入精靈 + 經典C級攔截卡）
  */
-export function buildDestinyPool(allElves: Elf[]): DestinyElfInstance[] {
+export function buildDestinyPool(allElves: Elf[], rng: () => number = Math.random): DestinyElfInstance[] {
   const pool: DestinyElfInstance[] = [];
   const safeElves = (allElves && Array.isArray(allElves)) ? allElves : [];
 
@@ -137,13 +137,13 @@ export function buildDestinyPool(allElves: Elf[]): DestinyElfInstance[] {
     const instance: DestinyElfInstance = {
       ...elf,
       destinyRank: rank,
-      instanceId: `pool_${elf.id || idx}_${Math.random().toString(36).substring(2, 7)}`
+      instanceId: `pool_${elf.id || idx}_${rng().toString(36).substring(2, 7)}`
     };
 
     // 如果是 C 級，為其綁定專屬命運攔截特效
     if (rank === 'C' && !instance.interceptorEffect) {
       const keys = Object.keys(INTERCEPTOR_EFFECTS);
-      const randomKey = keys[Math.floor(Math.random() * keys.length)];
+      const randomKey = keys[Math.floor(rng() * keys.length)];
       instance.interceptorEffect = INTERCEPTOR_EFFECTS[randomKey];
     }
 
@@ -180,7 +180,7 @@ export function buildDestinyPool(allElves: Elf[]): DestinyElfInstance[] {
         ...fullElf,
         destinyRank: 'C',
         interceptorEffect: INTERCEPTOR_EFFECTS[effectKey],
-        instanceId: `classic_${idx}_${Math.random().toString(36).substring(2, 7)}`
+        instanceId: `classic_${idx}_${rng().toString(36).substring(2, 7)}`
       });
     });
   }
@@ -190,58 +190,29 @@ export function buildDestinyPool(allElves: Elf[]): DestinyElfInstance[] {
 }
 
 /**
- * 執行 12 連抽（符合保底：1隻S，3隻A，其餘8隻B/C）
+ * 執行 12 連抽（保底至少1隻S，3隻A，2隻C，其餘混合）
  */
-export function perform12Pull(allElves: Elf[]): DestinyElfInstance[] {
-  const safeElves = (allElves && Array.isArray(allElves)) ? allElves : [];
-  const fullPool = buildDestinyPool(safeElves);
-  
-  const sPool = fullPool.filter(e => e.destinyRank === 'S');
-  const aPool = fullPool.filter(e => e.destinyRank === 'A');
-  const bPool = fullPool.filter(e => e.destinyRank === 'B');
-  const cPool = fullPool.filter(e => e.destinyRank === 'C');
-
-  // Helper隨機抽取不重複（若該層級數量不夠則從全池補充）
-  const pickRandom = (arr: DestinyElfInstance[], count: number, excludeIds: Set<string>): DestinyElfInstance[] => {
-    const result: DestinyElfInstance[] = [];
-    const available = arr.filter(e => !excludeIds.has(e.name)); // 按名字去重，避免同一人抽到兩個一模一樣的精靈
-    
-    const shuffled = [...available].sort(() => Math.random() - 0.5);
-    for (let i = 0; i < count; i++) {
-      if (shuffled[i]) {
-        result.push(shuffled[i]);
-        excludeIds.add(shuffled[i].name);
-      } else {
-        // 如果該層池子空了，從其餘未抽取池子抓取
-        const anyAvail = fullPool.filter(e => !excludeIds.has(e.name));
-        if (anyAvail.length > 0) {
-          const rand = anyAvail[Math.floor(Math.random() * anyAvail.length)];
-          result.push(rand);
-          excludeIds.add(rand.name);
-        }
-      }
-    }
-    return result;
-  };
-
-  const pulledNames = new Set<string>();
-
-  // 1. 保底 1 隻 S 級
-  const sResults = pickRandom(sPool, 1, pulledNames);
-  
-  // 2. 保底 3 隻 A 級
-  const aResults = pickRandom(aPool, 3, pulledNames);
-
-  // 3. 為了體現「C級進入戰鬥後攔截特效」的神髓，保底至少 2 隻 C 級攔截卡！
-  const cResults = pickRandom(cPool, 2, pulledNames);
-
-  // 4. 剩下 6 隻從 B 級與 C 級與 A 級中隨機分配
-  const remainderPool = [...bPool, ...cPool, ...aPool, ...sPool];
-  const remainderResults = pickRandom(remainderPool, 6, pulledNames);
-
-  // 組合 12 隻並打亂卡牌順序，增加抽牌開彩蛋的刺激感
-  const combined = [...sResults, ...aResults, ...cResults, ...remainderResults];
-  return combined.sort(() => Math.random() - 0.5).slice(0, 12);
+export function shuffleDestiny<T>(items: T[], rng:()=>number = Math.random): T[] {
+  const result=[...items];
+  for(let i=result.length-1;i>0;i--){const j=Math.floor(rng()*(i+1));[result[i],result[j]]=[result[j],result[i]];}
+  return result;
+}
+/** 至少1S＋3A＋2C，其餘混合；不足階級或不足12個不同精靈資料時不開局。 */
+export function perform12Pull(allElves: Elf[], rng:()=>number = Math.random): DestinyElfInstance[] {
+  return pullFromDestinyPool(buildDestinyPool(allElves,rng),rng);
+}
+/** 預覽與雙方抽卡共用已生成的模式效果；每方牌面仍有獨立實例身份。 */
+export function pullFromDestinyPool(candidates: DestinyElfInstance[], rng:()=>number = Math.random, prefix='draw'): DestinyElfInstance[] {
+  const pool=[...new Map(candidates.map(e=>[e.id||e.name,e])).values()];
+  const selected: DestinyElfInstance[]=[]; const used=new Set<string>();
+  for(const [rank,count] of [['S',1],['A',3],['C',2]] as const){
+    const available=shuffleDestiny(pool.filter(e=>e.destinyRank===rank&&!used.has(e.id||e.name)),rng);
+    if(available.length<count) throw new Error('卡池不足：需要至少1隻S、3隻A、2隻C及12隻不同精靈。');
+    for(const elf of available.slice(0,count)){selected.push(elf);used.add(elf.id||elf.name);}
+  }
+  const rest=shuffleDestiny(pool.filter(e=>!used.has(e.id||e.name)),rng);
+  if(rest.length<6) throw new Error('卡池不足12隻不同精靈，請擴充卡池後再試。');
+  return shuffleDestiny([...selected,...rest.slice(0,6)],rng).map((elf,i)=>({...elf,instanceId:`${prefix}_${i}_${elf.instanceId}`}));
 }
 
 /**

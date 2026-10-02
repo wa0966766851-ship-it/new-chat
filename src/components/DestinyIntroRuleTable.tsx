@@ -12,12 +12,14 @@ import { buildDestinyPool, DestinyElfInstance, DestinyRank, INTERCEPTOR_EFFECTS 
 
 interface DestinyIntroRuleTableProps {
   allElves: Elf[];
+  pool?: DestinyElfInstance[];
   onStartPull: () => void;
   isMathStyle?: boolean;
 }
 
 export default function DestinyIntroRuleTable({
   allElves,
+  pool,
   onStartPull,
   isMathStyle = false
 }: DestinyIntroRuleTableProps) {
@@ -28,8 +30,8 @@ export default function DestinyIntroRuleTable({
 
   // 實時動態運算：每當精靈圖鑑 allElves 更新時，自動重新計算全池分級與統計數值
   const dynamicPool = useMemo(() => {
-    return buildDestinyPool(allElves);
-  }, [allElves]);
+    return pool ?? buildDestinyPool(allElves);
+  }, [allElves,pool]);
 
   // 分級數據與佔比統計
   const poolStats = useMemo(() => {
@@ -183,8 +185,8 @@ export default function DestinyIntroRuleTable({
             </div>
             <p className="text-xs text-slate-300 leading-relaxed">
               {isMathStyle 
-                ? '系統依據古典機率分佈自全圖鑑隨機生成雙方 12 階精靈子空間。必出：1 隻 S 級真神 + 3 隻 A 級主力 + 8 隻 B/C 級精靈，雙方資源權重完全對等。'
-                : '雙方各自從底層圖鑑與特化卡池中隨機抽取 12 隻精靈。系統嚴格執行保底：必出 1 隻 S級真神 + 3 隻 A級主力 + 8 隻 B/C級精靈，雙方起跑線完全平等。'}
+                ? '系統依據古典機率分佈自全圖鑑隨機生成雙方 12 階精靈子空間。保底至少 1 隻 S 級、3 隻 A 級、2 隻 C 級，其餘 6 隻混合抽取；卡池不足時不開局。'
+                : '雙方各自從底層圖鑑與特化卡池中隨機抽取 12 隻精靈。系統嚴格執行保底：至少 1 隻 S級 + 3 隻 A級 + 2 隻 C級，其餘 6 隻從未抽取的各級精靈混合抽出。卡池不足時提示原因，不開始抽卡。'}
             </p>
           </div>
 
@@ -368,7 +370,7 @@ export default function DestinyIntroRuleTable({
             <span>目前所選等級準則與特性解析 ({selectedRankTab === 'all' ? '全卡池綜覽' : `${selectedRankTab} 級精靈`})：</span>
           </div>
           {selectedRankTab === 'all' && (
-            <p>命運之輪精靈庫將全圖鑑精靈與專屬擴展卡自動劃分為 S/A/B/C 四大稀有度。透過科學的種族值總和與技能機制判定，確保抽卡保底與對局平衡。點擊下方表格任意精靈可查看詳細數值與技能組成。</p>
+            <p>命運模式評級用於抽卡保底與模式分組；圖鑑展示評級用於一般圖鑑參考，兩者用途不同。模式預設等級優先，以下數值為未預設精靈的參考判定。命運之輪精靈庫將全圖鑑精靈與專屬擴展卡自動劃分為 S/A/B/C 四大稀有度。透過科學的種族值總和與技能機制判定，確保抽卡保底與對局平衡。點擊下方表格任意精靈可查看詳細數值與技能組成。</p>
           )}
           {selectedRankTab === 'S' && (
             <p><span className="text-amber-400 font-bold">【S級 巔峰神權】</span>：判定準則為 <code className="text-amber-300">種族值總和 ≥ 730</code> 或擁有 6 技能神權的頂級天花板（如聖靈譜尼、人皇帝辛、眾神之父奧丁、次元龍、混沌魔君索倫森等）。此階級精靈具有極強的單兵作戰與統治力，每次 12 連抽保底出現 1 隻。</p>
