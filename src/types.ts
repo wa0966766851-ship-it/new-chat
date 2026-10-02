@@ -22,6 +22,7 @@ export interface SoulMark {
   trait_wuxu_apostle?: boolean;
   trait_stone_thrower?: boolean;
   customCode?: string; // Custom real battle execution code
+  ignorePpLimit?: boolean; // 是否可在技能 PP 為 0 時選擇；扣費／回復規則另行處理
 }
 
 export interface SkillBadge {
