@@ -1,0 +1,11 @@
+import assert from 'node:assert/strict';
+import { buildExplorationSnapshot } from '../src/modes/interstellar/battleSnapshot';
+import { calculateElfStats } from '../src/utils/elfStats';
+const base:any={hp:100,atk:100,def:100,spatk:100,spdef:100,speed:100};
+const elf:any={id:'e',level:100,baseStats:base,calculatedStats:{hp:1,atk:1},maxHp:500,currentHp:100,explorationVitals:true,skills:[{name:'s',maxPp:5,pp:2}]};
+const boosted={...base,atk:150,speed:85};const out=buildExplorationSnapshot(elf,boosted);
+assert.deepEqual(out.calculatedStats,calculateElfStats(boosted,100));assert.equal(out.currentHp,100);assert.equal(out.skills[0].pp,2);
+assert.deepEqual(out,buildExplorationSnapshot(elf,boosted));assert.deepEqual(elf.baseStats,base);
+assert.equal(buildExplorationSnapshot({...elf,explorationVitals:false},boosted).currentHp,out.maxHp);
+assert.equal(buildExplorationSnapshot({...elf,currentHp:-100,survivalRule:{mode:'god_descent',active:true,preserveOffField:true,minHp:-10000}},boosted).currentHp,-100);
+console.log('星際面板重算、舊面板排除、重複開局與HP/PP保留通過');

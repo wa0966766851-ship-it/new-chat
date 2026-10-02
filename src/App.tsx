@@ -73,6 +73,7 @@ function AppContent() {
   const [p1Title, setP1Title] = useState<string>("");
   const [p2Title, setP2Title] = useState<string>("");
   const [editingElf, setEditingElf] = useState<Elf | null>(null);
+  const [specialMode, setSpecialMode] = useState<"destiny" | "interstellar" | undefined>();
   const [interstellarOptions, setInterstellarOptions] = useState<any>(null);
   const [customSkillsMap, setCustomSkillsMap] = useState<Record<string, any>>({});
   const [customInscriptionsMap, setCustomInscriptionsMap] = useState<Record<string, any>>({});
@@ -189,7 +190,7 @@ function AppContent() {
     options?: any
   ) => {
     if (team1.length > 0 && team2.length > 0) {
-      const resetTeam = (team: Elf[], suit?: string, starterId?: string) => team.map(e => resetElfStateForBattle(e, e.id === starterId || (e as any).battleId === starterId, suit));
+      const resetTeam = (team: Elf[], suit?: string, starterId?: string) => options?.preparedTeams ? team : team.map(e => resetElfStateForBattle(e, e.id === starterId || (e as any).battleId === starterId, suit));
       setP1Team(resetTeam(team1, suit1, starter1Id));
       setP2Team(resetTeam(team2, suit2, starter2Id));
       setP1StarterId(starter1Id);
@@ -202,6 +203,7 @@ function AppContent() {
       setP2Title(title2 || "");
       if (format) setBattleFormat(format);
       setBattleMode(mode);
+      setSpecialMode(options?.specialMode);
       setInterstellarOptions(options?.interstellarOptions || null);
       
       setIsTransitioning(true);
@@ -476,7 +478,7 @@ function AppContent() {
             initialBattleMode={battleMode}
             allElves={allElvesCombined}
             onStartBattle={(mode, team1, team2, starter1Id, starter2Id, s1, e1, s2, e2, t1, t2, fmt) => {
-              handleStartBattle(mode || "PVE", team1, team2, starter1Id, starter2Id, s1 || "destiny_armor", e1 || "", s2 || "destiny_armor", e2 || "", t1 || "命運之神", t2 || "宿命之敵", fmt || "normal_6v6");
+              handleStartBattle(mode || "PVE", team1, team2, starter1Id, starter2Id, s1 || "destiny_armor", e1 || "", s2 || "destiny_armor", e2 || "", t1 || "命運之神", t2 || "宿命之敵", fmt || "normal_6v6", {specialMode:"destiny"});
             }}
             onBack={() => setView("start")}
           />
@@ -487,7 +489,7 @@ function AppContent() {
             allElves={allElvesCombined}
             onBack={() => setView("start")}
             onStartBattle={(p1, p2, mode, options) => {
-              handleStartBattle(mode, p1, p2, p1[0]?.battleId || p1[0]?.id, p2[0]?.battleId || p2[0]?.id, options?.suit1, options?.eyewear1, options?.suit2, options?.eyewear2, options?.title1, options?.title2, options?.format);
+              handleStartBattle(mode, p1, p2, p1[0]?.battleId || p1[0]?.id, p2[0]?.battleId || p2[0]?.id, options?.suit1, options?.eyewear1, options?.suit2, options?.eyewear2, options?.title1, options?.title2, options?.format, options);
               if (options?.interstellarOptions) {
                 setInterstellarOptions(options.interstellarOptions);
               }
@@ -514,6 +516,9 @@ function AppContent() {
               hostPlayer={hostPlayer}
               onHostPlayerChange={setHostPlayer}
               interstellarOptions={interstellarOptions}
+              preparedTeams={!!interstellarOptions}
+              specialMode={specialMode}
+              onBattleEnd={(winner, team) => interstellarOptions?.onBattleEnd?.(winner, team)}
               onBackToMenu={() => {
                 if (interstellarOptions) {
                   setView("interstellar_exploration");

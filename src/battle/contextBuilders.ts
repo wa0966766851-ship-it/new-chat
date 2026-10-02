@@ -1,3 +1,4 @@
+import { activeConstraints } from './timedConstraints';
 import { queueSkillLifesteal } from './lifesteal';
 import { isNonTrueDamageType } from './damageSemantics';
 import React, { MutableRefObject, Dispatch } from "react";
@@ -152,7 +153,7 @@ export function buildDamageAPIs(shared: SharedContextDeps): DamageAPIs {
       const stage3 = damageComp.limit !== undefined ? Math.min(stage2, damageComp.limit) : stage2;
       const finalDamage = Math.floor(damageComp.floor !== undefined ? Math.max(stage3, damageComp.floor) : Math.max(0, stage3));
 
-      pushEffect({ type: 'damage', side: tSide, data: { amount: finalDamage, label: label || "附加傷害", popup: true, sourceElfName: self.name, damageType: damageComp.damageCategory } });
+      pushEffect({ type: 'damage', side: tSide, data: { amount: finalDamage, label: label || "附加傷害", popup: true, sourceElfName: self.name, sourceSide:side, sourceBattleId:self.battleId||self.id, damageType: damageComp.damageCategory } });
       return finalDamage;
     },
     applySkillTypeDamage: (tSide, amt, label, opts) => {
@@ -238,7 +239,7 @@ export function buildDamageAPIs(shared: SharedContextDeps): DamageAPIs {
       const stage3 = damageComp.limit !== undefined ? Math.min(stage2, damageComp.limit) : stage2;
       const finalDamage = Math.floor(damageComp.floor !== undefined ? Math.max(stage3, damageComp.floor) : Math.max(0, stage3));
 
-      pushEffect({ type: 'damage', side: tSide, data: { amount: finalDamage, label: label || "附加技能傷害", popup: true, sourceElfName: self.name, damageType: damageCategory, damageNode, typedSkill: damageCategory === "skill_attribute", ignoreShield: !!opts?.ignoreShield } });
+      pushEffect({ type: 'damage', side: tSide, data: { amount: finalDamage, label: label || "附加技能傷害", popup: true, sourceElfName: self.name, sourceSide:side, sourceBattleId:self.battleId||self.id, damageType: damageCategory, damageNode, typedSkill: damageCategory === "skill_attribute", ignoreShield: !!opts?.ignoreShield } });
       if (tSide !== side) queueSkillLifesteal(side, finalDamage, damageCategory, syncStateRef.current[`${side}RegistryState`], pushEffect);
       return finalDamage;
     },
@@ -270,7 +271,7 @@ export function buildDamageAPIs(shared: SharedContextDeps): DamageAPIs {
       const stage3 = damageComp.limit !== undefined ? Math.min(stage2, damageComp.limit) : stage2;
       const finalDamage = Math.floor(damageComp.floor !== undefined ? Math.max(stage3, damageComp.floor) : Math.max(0, stage3));
 
-      pushEffect({ type: 'damage', side: tSide, data: { amount: finalDamage, label, popup: true, sourceElfName: self.name, damageType: "true" } });
+      pushEffect({ type: 'damage', side: tSide, data: { amount: finalDamage, label, popup: true, sourceElfName: self.name, sourceSide:side, sourceBattleId:self.battleId||self.id, damageType: "true" } });
       return finalDamage;
     },
     applyAbsorb: (tSide, amt) => {
@@ -359,7 +360,7 @@ export function buildDamageAPIs(shared: SharedContextDeps): DamageAPIs {
       const stage3 = damageComp.limit !== undefined ? Math.min(stage2, damageComp.limit) : stage2;
       const finalDamage = Math.floor(damageComp.floor !== undefined ? Math.max(stage3, damageComp.floor) : Math.max(0, stage3));
 
-      pushEffect({ type: 'damage', side: tSide, data: { amount: finalDamage, label: "百分比傷害", popup: true, sourceElfName: self.name, damageType: "percent" } });
+      pushEffect({ type: 'damage', side: tSide, data: { amount: finalDamage, label: "百分比傷害", popup: true, sourceElfName: self.name, sourceSide:side, sourceBattleId:self.battleId||self.id, damageType: "percent" } });
       return finalDamage;
     },
     applyFixedDamage: (tSide, amt, label) => {
@@ -440,7 +441,7 @@ export function buildDamageAPIs(shared: SharedContextDeps): DamageAPIs {
       const stage3 = damageComp.limit !== undefined ? Math.min(stage2, damageComp.limit) : stage2;
       const finalDamage = Math.floor(damageComp.floor !== undefined ? Math.max(stage3, damageComp.floor) : Math.max(0, stage3));
 
-      pushEffect({ type: 'damage', side: tSide, data: { amount: finalDamage, label: label || "固定傷害", popup: true, sourceElfName: self.name, damageType: "fixed" } });
+      pushEffect({ type: 'damage', side: tSide, data: { amount: finalDamage, label: label || "固定傷害", popup: true, sourceElfName: self.name, sourceSide:side, sourceBattleId:self.battleId||self.id, damageType: "fixed" } });
       return finalDamage;
     },
   };
@@ -487,7 +488,7 @@ export function buildStatusAPIs(shared: SharedContextDeps): StatusAPIs {
           }
           return { success: false, immune: true };
         }
-        if ((targetRegState.immuneStatusTurns || 0) > 0 || (targetRegState.reflectStatusTurns || 0) > 0) {
+        if ((targetRegState.immuneStatusTurns || 0) > 0 || (targetRegState.reflectStatusTurns || 0) > 0 || activeConstraints(c[`${tSide}Timers`],target).some(p=>p.immuneStatus)) {
           pushEffect({ type: 'log', side: tSide, data: { text: `🛡️ 【異常免疫】：【${target.name}】免疫了【${s}】！`, type: "info" } });
           return { success: false, immune: true };
         }

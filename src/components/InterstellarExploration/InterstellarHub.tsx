@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from "react";
+import { loadRun } from "../../modes/interstellar/runState";
 import { Elf } from "../../types";
 import { Rocket, Lock, ArrowLeft, Play, Shield, Diamond, Zap, RefreshCw, Info, Check, AlertTriangle, HelpCircle, Trophy, X } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
@@ -16,8 +17,9 @@ interface InterstellarHubProps {
 type MenuState = "mode_select" | "basic_setup" | "in_run";
 
 export default function InterstellarHub({ allElves, onBack, onStartBattle }: InterstellarHubProps) {
-  const [menuState, setMenuState] = useState<MenuState>("mode_select");
+  const [menuState, setMenuState] = useState<MenuState>(() => { const run=loadRun(localStorage); return run?.lastBattleResult || run?.pendingBattle ? "in_run" : "mode_select"; });
   const [hasActiveRun, setHasActiveRun] = useState(false);
+  const corruptSave = !!localStorage.getItem("INTERSTELLAR_ACTIVE_RUN") && !loadRun(localStorage);
 
   useEffect(() => {
     const active = localStorage.getItem("INTERSTELLAR_ACTIVE_RUN");
@@ -83,6 +85,7 @@ export default function InterstellarHub({ allElves, onBack, onStartBattle }: Int
   };
 
   const handleStartBasicRun = () => {
+    if (corruptSave) return;
     if (!hasActiveRun) {
       localStorage.removeItem("INTERSTELLAR_ACTIVE_RUN");
     }
@@ -90,12 +93,13 @@ export default function InterstellarHub({ allElves, onBack, onStartBattle }: Int
   };
 
   const handleRunEnd = (finalLayer: number, earnedExp: number) => {
+    if (!loadRun(localStorage)) return; // 同一局結束回呼只能領一次經驗
     localStorage.removeItem("INTERSTELLAR_ACTIVE_RUN");
     setMetaData((prev: any) => ({
       ...prev,
       exp: prev.exp + earnedExp,
       level: Math.floor((prev.exp + earnedExp) / 1000) + 1,
-      lastLayerReached: finalLayer
+      lastLayerReached: Math.max(prev.lastLayerReached ?? 0, finalLayer)
     }));
     setMenuState("mode_select");
   };
@@ -125,6 +129,7 @@ export default function InterstellarHub({ allElves, onBack, onStartBattle }: Int
           {menuState === "mode_select" ? "返回首頁" : "返回模式選擇"}
         </button>
 
+        {corruptSave && <p role="alert" className="mb-6 text-amber-300">探索存檔損壞，原始資料已保留。請先備份並修復存檔，再繼續探索。</p>}
         <header className="mb-12 flex flex-col md:flex-row md:items-end justify-between gap-6">
           <div>
             <h1 className="text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-cyan-300 flex items-center gap-3">
@@ -288,7 +293,7 @@ export default function InterstellarHub({ allElves, onBack, onStartBattle }: Int
                 {/* Basic Mode */}
                 <div 
                   onClick={() => {
-                    if (hasActiveRun) {
+                    if (hasActiveRun && !corruptSave) {
                       setMenuState("in_run");
                     } else {
                       setMenuState("basic_setup");

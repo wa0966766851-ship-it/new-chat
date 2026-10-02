@@ -1,3 +1,4 @@
+import { activeConstraints } from "../battle/timedConstraints";
 import { Elf, Skill, BattleItem } from "../types";
 import { BattleState } from "../components/BattleManager";
 import { calculateDamage } from "./damageCalculator";
@@ -50,6 +51,7 @@ export const pickAiAction = (
     isSkillUsable: (elf: Elf, skill: Skill) => {
       const realSkill = elf.skills.find(s => s.name === skill.name);
       if (!realSkill) return false;
+      if (realSkill.category !== "屬性" && activeConstraints(state[`${side}Timers`],elf).some(p=>p.blockAttack)) return false;
       if (isZeroPpExempt(elf, realSkill, opponent)) return true;
       const currentPP = realSkill.charge !== undefined ? realSkill.charge : (realSkill.pp || 0);
       return currentPP > 0;
@@ -63,10 +65,11 @@ export const pickAiAction = (
 
   const scored = decideAction(ctx, deps);
   if (!scored) {
-    const fallback = self.skills.find(s => (s.charge ?? s.pp) > 0);
+    const blocked = activeConstraints(state[`${side}Timers`],self).some(p=>p.blockAttack);
+    const fallback = self.skills.find(s => (s.charge ?? s.pp) > 0 && (!blocked || s.category === "屬性"));
     return {
       type: "skill",
-      skill: fallback ? fallback : self.skills[0]
+      skill: fallback ?? (blocked ? {name:"等待",type:"無",category:"屬性",power:0,pp:0,priority:0,description:"暫時等待",effectType:"none",effectDetail:""} : self.skills[0])
     };
   }
 

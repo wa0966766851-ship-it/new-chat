@@ -30,11 +30,6 @@ export const handleImperialShieldSoulMark = (ctx: BattleEventContext, event: Eff
         updateElf(mySide, { shield: shieldAmount });
         addLog(`🎡【盾】：登場獲得自身最大體力 1/3 護盾 (${shieldAmount} 點)！`, "effect");
 
-        // 2. 封技攔截：登場時對手下1回合無法用攻擊技
-        setOpponentState("attackSkillInvalidTurns", 1);
-        setOpponentState("attackSkillInvalidReason", "封技攔截");
-        addLog(`🎡【封技攔截】：命運磁場籠罩戰場！對手下 1 回合無法使用任何攻擊技能！`, "effect");
-
         setPlayerState("empShieldInited", true);
       }
       break;

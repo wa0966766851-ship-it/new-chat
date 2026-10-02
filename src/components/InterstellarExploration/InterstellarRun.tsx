@@ -1,10 +1,14 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useRef } from "react";
+import { loadRun, saveRun, prepareBattle, settleStoredBattle, consumePotion, moveRun, newRunId, recruitRun } from "../../modes/interstellar/runState";
+import { generateLayerMap } from "../../modes/interstellar/map";
+import { buildExplorationSnapshot } from "../../modes/interstellar/battleSnapshot";
 import { Elf } from "../../types";
+import { isAliveBySurvivalRule } from "../../battle/survivalRules";
 import { matchesElfQuery } from '../../utils/elfSearch';
 import { ElfAvatar, TypeIcon } from "../SeerImages";
 import { TitleDefinition } from "../../data/titles";
 import { SuitDefinition } from "../../data/suitsAndEyewears";
-import { 
+import {
   Rocket, Diamond, Zap, Coins, Map as MapIcon, ShieldAlert,
   Tent, Sparkles, Building2, Skull, ChevronRight, ArrowRight,
   Shield, Trophy, FlaskConical, Settings, RefreshCw, Package, X, Heart, Sword, Info, Star, ChevronDown, Check, Users, Search
@@ -35,6 +39,7 @@ interface MapNode {
   x: number; // 0-100 percentage
   y: number; // 0-100 percentage
   connections: string[];
+  occupied?: boolean;
 }
 
 interface LayerData {
@@ -48,55 +53,19 @@ export default function InterstellarRun({
   startingDiamonds,
   initialEquipType,
   initialEquipId,
-  selectedModifiers,
+  selectedModifiers: initialModifiers,
   onEndRun,
   onStartBattle
 }: InterstellarRunProps) {
-  // Synchronous storage loading helper
-  const getSavedRunValue = <T,>(key: string, defaultValue: T): T => {
-    try {
-      const saved = localStorage.getItem("INTERSTELLAR_ACTIVE_RUN");
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        if (parsed[key] !== undefined) {
-          return parsed[key];
-        }
-      }
-    } catch (e) {
-      console.error("Failed to parse interstellar run data", e);
-    }
-    return defaultValue;
-  };
-
-  // Map Generation (Rich Node Graph with 3-branch paths, growth, event, bank)
-  const generateLayerMap = (layer: number): MapNode[] => {
-    const isBossLayer = layer === 6;
-    const nodes: MapNode[] = [
-      { id: `L${layer}-start`, type: "heal", status: "current", name: "起始空間站", x: 8, y: 50, connections: [`L${layer}-1a`, `L${layer}-1b`, `L${layer}-1c`] },
-      
-      // Column 1
-      { id: `L${layer}-1a`, type: "combat", status: "unvisited", name: "前哨守衛", x: 22, y: 25, connections: [`L${layer}-2a`, `L${layer}-2b`] },
-      { id: `L${layer}-1b`, type: "event_chance", status: "unvisited", name: "機會信號", x: 22, y: 50, connections: [`L${layer}-2b`, `L${layer}-2c`] },
-      { id: `L${layer}-1c`, type: "bank", status: "unvisited", name: "琪斯克銀行", x: 22, y: 75, connections: [`L${layer}-2c`, `L${layer}-2d`] },
-      
-      // Column 2
-      { id: `L${layer}-2a`, type: "combat", status: "unvisited", name: "星海礦區", x: 42, y: 20, connections: [`L${layer}-3a`] },
-      { id: `L${layer}-2b`, type: "growth", status: "unvisited", name: "基因成長艙", x: 42, y: 40, connections: [`L${layer}-3a`, `L${layer}-3b`] },
-      { id: `L${layer}-2c`, type: "event_destiny", status: "unvisited", name: "命運歧路", x: 42, y: 60, connections: [`L${layer}-3b`, `L${layer}-3c`] },
-      { id: `L${layer}-2d`, type: "elite", status: "unvisited", name: "帝國精英哨所", x: 42, y: 80, connections: [`L${layer}-3c`] },
-      
-      // Column 3
-      { id: `L${layer}-3a`, type: "shop", status: "unvisited", name: "星際交易所", x: 68, y: 25, connections: [`L${layer}-boss`] },
-      { id: `L${layer}-3b`, type: "event_chance", status: "unvisited", name: "虛空奇遇", x: 68, y: 50, connections: [`L${layer}-boss`] },
-      { id: `L${layer}-3c`, type: "heal", status: "unvisited", name: "行星安息所", x: 68, y: 75, connections: [`L${layer}-boss`] },
-      
-      { id: `L${layer}-boss`, type: "boss", status: "unvisited", name: isBossLayer ? "最終毀滅者" : `第 ${layer} 星區守護者`, x: 90, y: 50, connections: [] },
-    ];
-    return nodes;
-  };
-
+  const [savedRun] = useState(() => loadRun(localStorage));
+  const runId = useRef(savedRun?.runId || newRunId());
+  const revision = useRef(savedRun?.revision || 0);
+  const getSavedRunValue = <T,>(key: string, defaultValue: T): T => savedRun?.[key] ?? defaultValue;
+  const [selectedModifiers] = useState<string[]>(() => getSavedRunValue('selectedModifiers', initialModifiers));
+  const [piratePrincipal, setPiratePrincipal] = useState(() => getSavedRunValue('piratePrincipal', 0));
+  const movementLock = useRef(false);
   // Run States with Sync Initialization
-  const [diamonds, setDiamonds] = useState(() => getSavedRunValue("diamonds", 3));
+  const [diamonds, setDiamonds] = useState(() => getSavedRunValue("diamonds", startingDiamonds));
   const [fuel, setFuel] = useState(() => getSavedRunValue("fuel", 5));
   const [maxFuel] = useState(10);
   const [saerBeans, setSaerBeans] = useState(() => getSavedRunValue("saerBeans", 200));
@@ -105,12 +74,13 @@ export default function InterstellarRun({
   const [equipType, setEquipType] = useState<"suit" | "title">(() => getSavedRunValue("equipType", initialEquipType));
   const [equipId, setEquipId] = useState(() => getSavedRunValue("equipId", initialEquipId));
   const [potionUsage, setPotionUsage] = useState(() => getSavedRunValue("potionUsage", 0));
-  const [maxPotionUsage, setMaxPotionUsage] = useState(5); 
-  const [hasSpecialEquip, setHasSpecialEquip] = useState(() => getSavedRunValue("hasSpecialEquip", false)); 
+  const [maxPotionUsage, setMaxPotionUsage] = useState(() => getSavedRunValue("maxPotionUsage", 5));
+  const effectiveMaxPotionUsage = selectedModifiers.includes("no_potions") ? Math.max(0,maxPotionUsage-3) : maxPotionUsage;
+  const [hasSpecialEquip, setHasSpecialEquip] = useState(() => getSavedRunValue("hasSpecialEquip", false));
   const [earnedExp, setEarnedExp] = useState(() => getSavedRunValue("earnedExp", 0));
   const [runElves, setRunElves] = useState<Elf[]>(() => getSavedRunValue("runElves", []));
-  const [collectibles, setCollectibles] = useState<Collectible[]>(() => getSavedRunValue("collectibles", []));
-  const [vouchers, setVouchers] = useState<{ C: number; B: number; A: number; S: number }>(() => 
+  const [collectibles, setCollectibles] = useState<Collectible[]>(() => getSavedRunValue<any[]>("collectibles", []).map(c => INTERSTELLAR_COLLECTIBLES.find(x => x.id === c.id)).filter(Boolean) as Collectible[]);
+  const [vouchers, setVouchers] = useState<{ C: number; B: number; A: number; S: number }>(() =>
     getSavedRunValue("vouchers", { C: 1, B: 0, A: 0, S: 0 })
   );
   const [shopDiscountRate, setShopDiscountRate] = useState(() => getSavedRunValue("shopDiscountRate", 0));
@@ -135,9 +105,9 @@ export default function InterstellarRun({
   }, [currentLayerData]);
 
   const [showBackpack, setShowBackpack] = useState(false);
-  const [lastBattleResult, setLastBattleResult] = useState<any>(null);
+  const [lastBattleResult, setLastBattleResult] = useState<any>(() => getSavedRunValue("lastBattleResult", null));
 
-  const getStatsTotal = (stats: any) => 
+  const getStatsTotal = (stats: any) =>
     (stats.hp || 0) + (stats.atk || 0) + (stats.def || 0) + (stats.spatk || 0) + (stats.spdef || 0) + (stats.speed || 0);
 
   // Action States
@@ -324,15 +294,18 @@ export default function InterstellarRun({
     }
   ];
 
-  // Write-only storage persistence effect
+  const getRunSnapshot = () => ({
+    runId: runId.current, revision: revision.current, diamonds, fuel, maxFuel, saerBeans, bankBalance,
+    currentLayer, equipType, equipId, potionUsage, maxPotionUsage, hasSpecialEquip, earnedExp,
+    runElves, layers, collectibles, vouchers, selectedModifiers, piratePrincipal,
+    shopDiscountRate, healBonusRate, bankRateBonus, lastBattleResult,
+    pendingBattle: savedRun?.pendingBattle ?? null,
+    lastSettledBattleId: savedRun?.lastSettledBattleId
+  });
   useEffect(() => {
-    const runData = {
-      diamonds, fuel, saerBeans, bankBalance, currentLayer, equipType, equipId, 
-      potionUsage, hasSpecialEquip, earnedExp, runElves, layers, collectibles, vouchers,
-      shopDiscountRate, healBonusRate, bankRateBonus
-    };
-    localStorage.setItem("INTERSTELLAR_ACTIVE_RUN", JSON.stringify(runData));
-  }, [diamonds, fuel, saerBeans, bankBalance, currentLayer, equipType, equipId, potionUsage, hasSpecialEquip, earnedExp, runElves, layers, collectibles, vouchers, shopDiscountRate, healBonusRate, bankRateBonus]);
+    if (loadRun(localStorage)?.pendingBattle) return;
+    const saved = saveRun(localStorage, getRunSnapshot()); revision.current = saved.revision;
+  }, [diamonds, fuel, saerBeans, bankBalance, currentLayer, equipType, equipId, potionUsage, maxPotionUsage, hasSpecialEquip, earnedExp, runElves, layers, collectibles, vouchers, shopDiscountRate, healBonusRate, bankRateBonus, lastBattleResult, piratePrincipal]);
 
   // Initial Elf Generation (Starts with 3 B-grade Elves as requested)
   useEffect(() => {
@@ -342,7 +315,7 @@ export default function InterstellarRun({
         return total >= 580 && total <= 630;
       });
       const pool = bPool.length >= 3 ? bPool : allElves;
-      
+
       const selected: Elf[] = [];
       const tempPool = [...pool];
       for (let i = 0; i < 3; i++) {
@@ -395,7 +368,7 @@ export default function InterstellarRun({
     const nextL = currentLayer + 1;
     setCurrentLayer(nextL);
     setLayers(prev => [...prev, { id: nextL, name: getLayerName(nextL), nodes: generateLayerMap(nextL) }]);
-    setFuel(10); 
+    setFuel(10);
     setEarnedExp(e => e + 200);
   };
 
@@ -413,7 +386,7 @@ export default function InterstellarRun({
         ...l,
         nodes: l.nodes.map(n => {
           if (n.id === currentNode.id) {
-            return { ...n, status: "occupied" as const };
+            return { ...n, occupied: true };
           }
           return n;
         })
@@ -424,36 +397,21 @@ export default function InterstellarRun({
 
   // Handles movement to an adjacent connected node, costing 1 fuel
   const handleMoveToNode = (targetNodeId: string) => {
-    if (fuel < 1) {
-      setActionOutcome("飛船推進器燃料耗盡！請在周圍尋找能量補給站或交易所。");
-      return;
-    }
-
-    setLayers(prev => prev.map(l => {
-      if (l.id !== currentLayer) return l;
-      return {
-        ...l,
-        nodes: l.nodes.map(n => {
-          // Current node becomes unvisited (or left behind), and target node becomes current
-          if (n.status === "current") return { ...n, status: "unvisited" as const };
-          if (n.id === targetNodeId) return { ...n, status: "current" as const };
-          return n;
-        })
-      };
-    }));
-
-    setFuel(f => Math.max(0, f - 1));
-
-    // Force React to resolve state, then trigger engagement
-    setTimeout(() => {
-      handleEngage();
-    }, 50);
+    if (movementLock.current) return;
+    const next = moveRun(getRunSnapshot(), targetNodeId);
+    if (!next) { setActionOutcome('無法移動：請選擇相連節點並確認燃料。'); return; }
+    movementLock.current = true;
+    setLayers(next.layers); setFuel(next.fuel);
+    const target = next.layers.find((l: any) => l.id === currentLayer).nodes.find((n: any) => n.id === targetNodeId);
+    handleEngage(target);
+    queueMicrotask(() => { movementLock.current = false; });
   };
 
   // Activates the interactive node interface based on current node type
-  const handleEngage = () => {
-    if (!currentNode) return;
-    const type = currentNode.type;
+  const handleEngage = (node: MapNode | unknown = currentNode) => {
+    const target = (node && typeof node === "object" && "type" in node) ? node as MapNode : currentNode;
+    if (!target) return;
+    const type = target.type;
 
     if (type === "combat" || type === "elite" || type === "boss") {
       setActiveAction("combat");
@@ -465,7 +423,9 @@ export default function InterstellarRun({
       setActiveAction("growth");
     } else if (type === "heal") {
       setFuel(maxFuel);
-      occupyCurrentNode("你成功降落於星際聯盟空間站，主推進器高能燃料已被注滿，全隊狀態已安全恢復！");
+      setRunElves(prev => prev.map(e => ({...e, currentHp:e.maxHp, explorationVitals:true, skills:e.skills.map(s=>({...s,pp:s.maxPp??s.pp}))})));
+      setLayers(prev => prev.map(l => ({...l,nodes:l.nodes.map(n=>n.id===target.id?{...n,occupied:true}:n)})));
+      setActionOutcome("你成功降落於星際聯盟空間站，主推進器高能燃料已被注滿，全隊狀態已安全恢復！");
     } else if (type === "event_chance" || type === "event_destiny") {
       setActiveAction("event");
     }
@@ -494,7 +454,6 @@ export default function InterstellarRun({
   // Spend a recruitment order of a specific tier to show candidate selections
   const handleUseVoucher = (tier: "C" | "B" | "A" | "S") => {
     if (vouchers[tier] <= 0) return;
-    setVouchers(prev => ({ ...prev, [tier]: prev[tier] - 1 }));
     setActiveVoucherUsed(tier);
 
     if (tier === "S") {
@@ -507,7 +466,7 @@ export default function InterstellarRun({
         // Roll from high tier pool
         const pool = allElves.filter(e => getStatsTotal(e.baseStats) >= 650);
         const randomElf = pool[Math.floor(Math.random() * pool.length)] || allElves[0];
-        
+
         // Let first candidate be a temporary free recruit with a 30% chance
         rolled.push({
           elf: { ...randomElf, battleId: `player-recruit-${randomElf.id}-${Date.now()}-${i}` },
@@ -542,20 +501,13 @@ export default function InterstellarRun({
 
   // Perform actual recruitment adding to runElves, replacing if team was full
   const executeRecruitment = (elf: Elf, isTemp: boolean, replaceIdx: number) => {
-    const cost = isTemp ? 0 : getRecruitDiamondCost(elf);
-    setDiamonds(d => Math.max(0, d - cost));
-
-    const freshElf = { ...elf, battleId: `player-run-${elf.id}-${Date.now()}` };
-
-    setRunElves(prev => {
-      if (replaceIdx >= 0 && replaceIdx < prev.length) {
-        const next = [...prev];
-        next[replaceIdx] = freshElf;
-        return next;
-      }
-      return [...prev, freshElf];
-    });
-
+    if (!activeVoucherUsed || movementLock.current) return;
+    const freshElf={...elf,battleId:newRunId()};
+    const next=recruitRun(getRunSnapshot(),activeVoucherUsed,freshElf,isTemp?0:getRecruitDiamondCost(elf),replaceIdx);
+    if(!next)return;
+    movementLock.current=true;
+    setDiamonds(next.diamonds);setVouchers(next.vouchers);setRunElves(next.runElves);
+    queueMicrotask(()=>{movementLock.current=false;});
     setShowReplacementScreen(false);
     setElfToRecruit(null);
     setActiveVoucherUsed(null);
@@ -567,7 +519,7 @@ export default function InterstellarRun({
 
   // Initiate real battle by bundling team buffs, scaling enemies, and dispatching battle screen
   const startRealBattle = () => {
-    if (!currentNode) return;
+    if (!currentNode || (currentNode.occupied && !piratePrincipal)) return;
 
     // Apply collectibles and custom avatar equipment buffs to player's runElves
     const boostedTeam = runElves.map(elf => {
@@ -577,23 +529,6 @@ export default function InterstellarRun({
       collectibles.forEach(c => {
         if (c.effect) boostedStats = c.effect(boostedStats);
       });
-
-      // Apply suit/title buffs
-      const suit = SUIT_CATALOG[equipId];
-      const title = TITLE_CATALOG[equipId];
-      if (suit && equipType === "suit") {
-        boostedStats = {
-          ...boostedStats,
-          atk: (boostedStats.atk || 0) + 20,
-          spatk: (boostedStats.spatk || 0) + 20
-        };
-      }
-      if (title && equipType === "title") {
-        boostedStats = {
-          ...boostedStats,
-          hp: (boostedStats.hp || 0) + 50
-        };
-      }
 
       // Apply negative difficulty modifiers from active interstellar run setup
       selectedModifiers.forEach(id => {
@@ -606,7 +541,7 @@ export default function InterstellarRun({
         }
       });
 
-      return { ...elf, baseStats: boostedStats };
+      return buildExplorationSnapshot(elf, boostedStats, equipType === "suit" ? equipId : undefined, equipType === "title" ? equipId : undefined);
     });
 
     // Generate opponent team based on node complexity and current layer number
@@ -640,95 +575,28 @@ export default function InterstellarRun({
         spdef: Math.floor((e.baseStats.spdef || 0) * scaling * extraBossScaling),
         speed: Math.floor((e.baseStats.speed || 0) * scaling * extraBossScaling),
       };
-      enemyTeam.push({ ...e, baseStats: scaledStats, battleId: `enemy-${e.id}-${i}-${Date.now()}` });
+      enemyTeam.push({ ...buildExplorationSnapshot(e, scaledStats), battleId: `enemy-${e.id}-${i}-${Date.now()}` });
     }
 
-    const finalMaxPotions = selectedModifiers.includes("no_potions") ? Math.max(0, maxPotionUsage - 3) : maxPotionUsage;
+    const finalMaxPotions = effectiveMaxPotionUsage;
 
+    if (!boostedTeam.some(e => isAliveBySurvivalRule(e.currentHp,e.survivalRule))) { setActionOutcome('隊伍已無存活精靈，請先恢復體力。'); return; }
+    const stored = loadRun(localStorage);
+    const pending = stored?.pendingBattle ? stored : prepareBattle(getRunSnapshot(), newRunId(), Array.from({length:4},()=>Math.random()), {p1:boostedTeam,p2:enemyTeam});
+    const saved = stored?.pendingBattle ? stored : saveRun(localStorage,pending);
+    revision.current = saved.revision;
+    const id = saved.pendingBattle.id; const owner = saved.runId;
+    const teams = saved.pendingBattle.teams;
     const options = {
-      suit1: equipType === "suit" ? equipId : undefined,
-      title1: equipType === "title" ? equipId : undefined,
-      format: count === 1 ? "solo_1v1" : "normal_6v6",
-      interstellarOptions: {
-        potionUsage,
-        maxPotionUsage: finalMaxPotions,
-        onPotionUse: () => setPotionUsage(p => p + 1)
-      },
-      onBattleEnd: (winner: "p1" | "p2") => {
-        handleBattleFinish(winner);
+      suit1:equipType === 'suit' ? equipId : undefined, title1:equipType === 'title' ? equipId : undefined,
+      format:teams.p2.length === 1 ? 'solo_1v1' : 'normal_6v6', preparedTeams:true, specialMode:'interstellar',
+      interstellarOptions:{runId:owner,battleId:id,potionUsage:saved.potionUsage,maxPotionUsage:finalMaxPotions,
+        onPotionUse:()=>consumePotion(localStorage,owner,id,finalMaxPotions),
+        onBattleEnd:(winner: string, team?: Elf[])=>settleStoredBattle(localStorage,owner,id,winner,team)
       }
     };
-
     setActiveAction(null);
-    onStartBattle(boostedTeam, enemyTeam, "PVE", options);
-  };
-
-  // Receives PVE battle callback outcome to reward the player on winning
-  const handleBattleFinish = (winner: "p1" | "p2") => {
-    if (!currentNode) return;
-    const isWin = winner === "p1";
-    let rewardBeans = 0;
-    let rewardExp = 0;
-    let foundCollectible: Collectible | null = null;
-
-    if (isWin) {
-      rewardBeans = currentNode.type === "boss" ? 400 : currentNode.type === "elite" ? 200 : 80;
-      rewardExp = currentNode.type === "boss" ? 300 : 100;
-
-      // Apply difficulty multiplier to exp
-      const multiplier = selectedModifiers.reduce((acc, id) => {
-        const mod = DIFFICULTY_MODIFIERS.find(m => m.id === id);
-        return acc + (mod?.multiplier || 0);
-      }, 1);
-      rewardExp = Math.floor(rewardExp * multiplier);
-
-      // Randomly drop a collectible artifact
-      const dropChance = currentNode.type === "boss" ? 1 : currentNode.type === "elite" ? 0.6 : 0.2;
-      if (Math.random() < dropChance) {
-        foundCollectible = INTERSTELLAR_COLLECTIBLES[Math.floor(Math.random() * INTERSTELLAR_COLLECTIBLES.length)];
-        setCollectibles(prev => [...prev, foundCollectible!]);
-      }
-
-      setSaerBeans(s => s + rewardBeans);
-      setEarnedExp(e => e + rewardExp);
-
-      // Randomly drop B-tier or A-tier recruitment orders as battle loot!
-      const orderChance = currentNode.type === "boss" ? 1.0 : currentNode.type === "elite" ? 0.5 : 0.15;
-      if (Math.random() < orderChance) {
-        const rollOrder = Math.random();
-        if (rollOrder < 0.25 || currentNode.type === "boss") {
-          // Drop S-tier or A-tier
-          setVouchers(v => ({ ...v, A: v.A + 1 }));
-        } else {
-          setVouchers(v => ({ ...v, B: v.B + 1 }));
-        }
-      }
-
-      if (currentNode.type === "boss") {
-        if (currentLayer < 6) {
-          const nextL = currentLayer + 1;
-          setCurrentLayer(nextL);
-          setLayers(prev => [...prev, { id: nextL, name: getLayerName(nextL), nodes: generateLayerMap(nextL) }]);
-          setFuel(f => Math.min(maxFuel, f + 3)); 
-          occupyCurrentNode(`恭喜擊敗星區首領！成功奪回該星區控制權，下一星區已開放！燃料補充 +3！`);
-        } else {
-          occupyCurrentNode("恭喜！你已成功擊敗最終毀滅者，終結了星際危機！");
-        }
-      } else {
-        occupyCurrentNode(`戰鬥勝利！成功擊退星際守衛，獲得：賽爾豆 +${rewardBeans}，探險經驗 +${rewardExp}！`);
-      }
-    } else {
-      // Defeat! Cost 2 fuel as recovery penalty
-      setFuel(f => Math.max(0, f - 2));
-      occupyCurrentNode("戰鬥失敗！你的探險隊伍遭受重創，被迫撤退回安全區，飛船損耗燃料 -2。請重整旗鼓！");
-    }
-
-    setLastBattleResult({
-      isWin,
-      beans: rewardBeans,
-      exp: rewardExp,
-      collectible: foundCollectible
-    });
+    onStartBattle(teams.p1,teams.p2,'PVE',options);
   };
 
   // Change currently active equipment suit/title for 100 Saer Beans
@@ -796,7 +664,7 @@ export default function InterstellarRun({
             </div>
           </div>
 
-          <button 
+          <button
             onClick={() => setShowBackpack(true)}
             className="p-3 bg-blue-600/10 hover:bg-blue-600/20 text-blue-400 border border-blue-500/20 rounded-2xl transition-all relative group flex items-center gap-2"
           >
@@ -817,7 +685,7 @@ export default function InterstellarRun({
               <span className="text-[10px] font-bold text-slate-500 uppercase">{equipType === "suit" ? "Active Suit" : "Active Title"}</span>
               <span className="text-sm font-bold text-slate-200">{getEquipName()}</span>
             </div>
-            <button 
+            <button
               onClick={() => setShowEquipSwitcher(true)}
               className="p-1.5 hover:bg-white/10 rounded-lg transition-colors"
             >
@@ -825,7 +693,7 @@ export default function InterstellarRun({
             </button>
           </div>
 
-          <button 
+          <button
             onClick={() => onEndRun(currentLayer, earnedExp)}
             className="px-4 py-2 text-xs font-bold bg-white/5 text-slate-400 border border-white/10 rounded-xl hover:bg-red-500/10 hover:text-red-400 hover:border-red-500/20 transition-all active:scale-95"
           >
@@ -839,13 +707,13 @@ export default function InterstellarRun({
         <AnimatePresence>
           {activeAction === "combat" && (
             <div className="absolute inset-0 z-[60] flex items-center justify-center p-6">
-              <motion.div 
+              <motion.div
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
                 className="absolute inset-0 bg-red-950/60 backdrop-blur-sm"
               />
-              <motion.div 
+              <motion.div
                 initial={{ opacity: 0, scale: 0.9 }}
                 animate={{ opacity: 1, scale: 1 }}
                 exit={{ opacity: 0, scale: 0.9 }}
@@ -857,13 +725,13 @@ export default function InterstellarRun({
                 <h3 className="text-2xl font-black text-white mb-2">準備進入戰鬥</h3>
                 <p className="text-slate-400 mb-8">偵測到敵對信號。這將是一場艱難的對決，確保你的精靈已準備就緒。</p>
                 <div className="space-y-3">
-                  <button 
+                  <button
                     onClick={startRealBattle}
                     className="w-full py-4 bg-red-600 hover:bg-red-500 text-white font-black rounded-2xl shadow-lg shadow-red-600/20 transition-all"
                   >
                     發動攻擊
                   </button>
-                  <button 
+                  <button
                     onClick={() => setActiveAction(null)}
                     className="w-full py-3 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold rounded-2xl transition-all"
                   >
@@ -876,7 +744,7 @@ export default function InterstellarRun({
 
           {activeAction === "recruit" && (
             <div className="absolute inset-0 z-[60] flex items-center justify-center p-6">
-              <motion.div 
+              <motion.div
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
@@ -889,7 +757,7 @@ export default function InterstellarRun({
                 }}
                 className="absolute inset-0 bg-slate-950/90 backdrop-blur-md"
               />
-              <motion.div 
+              <motion.div
                 initial={{ opacity: 0, scale: 0.95 }}
                 animate={{ opacity: 1, scale: 1 }}
                 exit={{ opacity: 0, scale: 0.95 }}
@@ -928,7 +796,7 @@ export default function InterstellarRun({
                       ].map((item) => {
                         const count = vouchers[item.tier as keyof typeof vouchers] || 0;
                         return (
-                          <div 
+                          <div
                             key={item.tier}
                             className={`p-6 rounded-[28px] border bg-gradient-to-br ${item.color} flex flex-col justify-between transition-all group relative overflow-hidden`}
                           >
@@ -940,12 +808,12 @@ export default function InterstellarRun({
                               <div className="text-sm font-bold text-slate-300 mt-2">{item.name}</div>
                               <p className="text-xs text-slate-500 mt-2 leading-relaxed">{item.desc}</p>
                             </div>
-                            <button 
+                            <button
                               disabled={count <= 0}
                               onClick={() => handleUseVoucher(item.tier as any)}
                               className={`w-full py-3 rounded-xl font-black text-xs transition-all active:scale-95 ${
-                                count > 0 
-                                  ? "bg-indigo-600 hover:bg-indigo-500 text-white shadow-lg shadow-indigo-600/20" 
+                                count > 0
+                                  ? "bg-indigo-600 hover:bg-indigo-500 text-white shadow-lg shadow-indigo-600/20"
                                   : "bg-slate-800 text-slate-600 cursor-not-allowed"
                               }`}
                             >
@@ -965,15 +833,15 @@ export default function InterstellarRun({
                     <div className="flex items-center gap-4 mb-6">
                       <div className="relative flex-grow">
                         <Search className="w-5 h-5 text-slate-500 absolute left-4 top-1/2 -translate-y-1/2" />
-                        <input 
-                          type="text" 
+                        <input
+                          type="text"
                           placeholder="名稱、ID、屬性（可用空白組合）"
                           value={recruitSearchQuery}
                           onChange={(e) => setRecruitSearchQuery(e.target.value)}
                           className="w-full pl-12 pr-4 py-3 bg-slate-950/60 border border-white/5 rounded-2xl text-sm focus:outline-none focus:border-indigo-500/50 text-slate-200 font-medium"
                         />
                       </div>
-                      <button 
+                      <button
                         onClick={() => {
                           setActiveVoucherUsed(null);
                           setRecruitSelectionMode(null);
@@ -1001,8 +869,8 @@ export default function InterstellarRun({
                             const cost = getRecruitDiamondCost(elf);
                             const canAfford = diamonds >= cost;
                             return (
-                              <div 
-                                key={`${elf.id}-${index}`} 
+                              <div
+                                key={`${elf.id}-${index}`}
                                 className="p-4 bg-slate-950/40 border border-white/5 rounded-2xl flex items-center gap-4 hover:border-indigo-500/20 transition-all group"
                               >
                                 <div className="w-16 h-16 bg-slate-900 rounded-xl overflow-hidden flex items-center justify-center border border-white/10 shadow-inner">
@@ -1022,12 +890,12 @@ export default function InterstellarRun({
                                     <div className="flex items-center gap-1 text-[10px] text-slate-500"><Heart className="w-3 h-3" /> {elf.baseStats.hp}</div>
                                   </div>
                                 </div>
-                                <button 
+                                <button
                                   disabled={!canAfford}
                                   onClick={() => handleSelectRecruitElf(elf, false)}
                                   className={`px-4 py-2 text-xs font-black rounded-xl transition-all active:scale-95 flex flex-col items-center ${
-                                    canAfford 
-                                      ? "bg-indigo-600 hover:bg-indigo-500 text-white" 
+                                    canAfford
+                                      ? "bg-indigo-600 hover:bg-indigo-500 text-white"
                                       : "bg-slate-800 text-slate-600 cursor-not-allowed"
                                   }`}
                                 >
@@ -1056,11 +924,11 @@ export default function InterstellarRun({
                         const cost = isTemp ? 0 : getRecruitDiamondCost(elf);
                         const canAfford = diamonds >= cost;
                         return (
-                          <div 
+                          <div
                             key={idx}
                             className={`p-6 rounded-[32px] border flex flex-col justify-between transition-all group overflow-hidden relative ${
-                              isTemp 
-                                ? "bg-gradient-to-b from-cyan-950/90 to-slate-900 border-cyan-400/40 hover:border-cyan-400 shadow-[0_0_20px_rgba(34,211,238,0.15)]" 
+                              isTemp
+                                ? "bg-gradient-to-b from-cyan-950/90 to-slate-900 border-cyan-400/40 hover:border-cyan-400 shadow-[0_0_20px_rgba(34,211,238,0.15)]"
                                 : "bg-gradient-to-b from-purple-950/70 to-slate-900 border-purple-500/20 hover:border-purple-400/40"
                             }`}
                           >
@@ -1069,7 +937,7 @@ export default function InterstellarRun({
                                 臨時招募 (不耗鑽)
                               </div>
                             )}
-                            
+
                             <div className="text-center py-4">
                               <div className="w-24 h-24 bg-slate-950/60 rounded-3xl mx-auto mb-4 border border-white/5 flex items-center justify-center overflow-hidden">
                                 <ElfAvatar elf={elf} kind="head" className="w-full h-full object-cover group-hover:scale-110 transition-transform" />
@@ -1081,7 +949,7 @@ export default function InterstellarRun({
                                 }`}>{grade}</span>
                               </div>
                               <p className="text-xs text-slate-500 mt-1 inline-flex items-center gap-1">屬性：<TypeIcon type={elf.type} size={13} />{elf.type} | 戰力值：{getStatsTotal(elf.baseStats)}</p>
-                              
+
                               <div className="grid grid-cols-3 gap-2 mt-4 bg-slate-950/50 p-3 rounded-2xl border border-white/5">
                                 <div className="text-center"><span className="text-[9px] text-slate-500 block">攻擊</span><span className="text-xs font-bold text-slate-300">{elf.baseStats.atk}</span></div>
                                 <div className="text-center"><span className="text-[9px] text-slate-500 block">防禦</span><span className="text-xs font-bold text-slate-300">{elf.baseStats.def}</span></div>
@@ -1089,13 +957,13 @@ export default function InterstellarRun({
                               </div>
                             </div>
 
-                            <button 
+                            <button
                               disabled={!canAfford}
                               onClick={() => handleSelectRecruitElf(elf, isTemp)}
                               className={`w-full py-3.5 rounded-xl font-black text-xs transition-all active:scale-95 flex flex-col items-center justify-center gap-0.5 ${
-                                canAfford 
-                                  ? isTemp 
-                                    ? "bg-cyan-500 hover:bg-cyan-400 text-slate-950 shadow-lg shadow-cyan-500/20" 
+                                canAfford
+                                  ? isTemp
+                                    ? "bg-cyan-500 hover:bg-cyan-400 text-slate-950 shadow-lg shadow-cyan-500/20"
                                     : "bg-indigo-600 hover:bg-indigo-500 text-white shadow-lg"
                                   : "bg-slate-800 text-slate-600 cursor-not-allowed"
                               }`}
@@ -1129,7 +997,7 @@ export default function InterstellarRun({
                         {runElves.map((elf, idx) => {
                           const grade = getElfGrade(elf);
                           return (
-                            <div 
+                            <div
                               key={idx}
                               onClick={() => executeRecruitment(elfToRecruit, elfToRecruitIsTemp, idx)}
                               className="p-4 bg-slate-900 border border-white/5 hover:border-red-500/50 hover:bg-red-950/10 rounded-2xl flex items-center gap-4 transition-all cursor-pointer group"
@@ -1154,7 +1022,7 @@ export default function InterstellarRun({
                     </div>
 
                     <div className="flex justify-end gap-4 border-t border-white/5 pt-4">
-                      <button 
+                      <button
                         onClick={() => {
                           setShowReplacementScreen(false);
                           setElfToRecruit(null);
@@ -1172,7 +1040,7 @@ export default function InterstellarRun({
                     持有：C級x{vouchers.C} | B級x{vouchers.B} | A級x{vouchers.A} | S級x{vouchers.S}
                   </span>
                   {!showReplacementScreen && (
-                    <button 
+                    <button
                       onClick={() => {
                         setActiveVoucherUsed(null);
                         setRecruitSelectionMode(null);
@@ -1190,14 +1058,14 @@ export default function InterstellarRun({
 
           {activeAction === "shop" && (
             <div className="absolute inset-0 z-[60] flex items-center justify-center p-6">
-              <motion.div 
+              <motion.div
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
                 onClick={() => setActiveAction(null)}
                 className="absolute inset-0 bg-slate-950/60 backdrop-blur-sm"
               />
-              <motion.div 
+              <motion.div
                 initial={{ opacity: 0, scale: 0.9 }}
                 animate={{ opacity: 1, scale: 1 }}
                 exit={{ opacity: 0, scale: 0.9 }}
@@ -1216,11 +1084,11 @@ export default function InterstellarRun({
                 </div>
 
                 <div className="flex-grow overflow-y-auto space-y-3 pr-2 custom-scrollbar">
-                  <ShopItem 
-                    name="高能燃料箱" 
-                    desc="補滿當前燃料，前行必備" 
-                    cost={100} 
-                    icon={<Zap className="w-5 h-5" />} 
+                  <ShopItem
+                    name="高能燃料箱"
+                    desc="補滿當前燃料，前行必備"
+                    cost={100}
+                    icon={<Zap className="w-5 h-5" />}
                     onBuy={() => {
                       if (saerBeans >= 100) {
                         setSaerBeans(s => s - 100);
@@ -1228,13 +1096,13 @@ export default function InterstellarRun({
                         occupyCurrentNode("高能燃料箱加注完成！飛船續航狀態全滿。");
                         setActiveAction(null);
                       }
-                    }} 
+                    }}
                   />
-                  <ShopItem 
-                    name="A級招募令" 
-                    desc="獲得 1 張 A級招募令，召喚強力精靈" 
-                    cost={300} 
-                    icon={<Sparkles className="w-5 h-5" />} 
+                  <ShopItem
+                    name="A級招募令"
+                    desc="獲得 1 張 A級招募令，召喚強力精靈"
+                    cost={300}
+                    icon={<Sparkles className="w-5 h-5" />}
                     onBuy={() => {
                       if (saerBeans >= 300) {
                         setSaerBeans(s => s - 300);
@@ -1242,13 +1110,13 @@ export default function InterstellarRun({
                         occupyCurrentNode("購買 A 級招募令成功！已存儲至招募核心。");
                         setActiveAction(null);
                       }
-                    }} 
+                    }}
                   />
-                  <ShopItem 
-                    name="核心能量鑽石 x1" 
-                    desc="獲得 1 顆能量鑽石，用於招募高級精靈" 
-                    cost={200} 
-                    icon={<Diamond className="w-5 h-5" />} 
+                  <ShopItem
+                    name="核心能量鑽石 x1"
+                    desc="獲得 1 顆能量鑽石，用於招募高級精靈"
+                    cost={200}
+                    icon={<Diamond className="w-5 h-5" />}
                     onBuy={() => {
                       if (saerBeans >= 200) {
                         setSaerBeans(s => s - 200);
@@ -1256,13 +1124,13 @@ export default function InterstellarRun({
                         occupyCurrentNode("超純度能量鑽石充能完畢！已添加至金庫。");
                         setActiveAction(null);
                       }
-                    }} 
+                    }}
                   />
-                  <ShopItem 
-                    name="戰略解毒藥劑包" 
-                    desc="解鎖最大藥劑使用次數上限 +2" 
-                    cost={150} 
-                    icon={<FlaskConical className="w-5 h-5" />} 
+                  <ShopItem
+                    name="戰略解毒藥劑包"
+                    desc="解鎖最大藥劑使用次數上限 +2"
+                    cost={150}
+                    icon={<FlaskConical className="w-5 h-5" />}
                     onBuy={() => {
                       if (saerBeans >= 150) {
                         setSaerBeans(s => s - 150);
@@ -1270,11 +1138,11 @@ export default function InterstellarRun({
                         occupyCurrentNode("戰術套裝藥劑配額解鎖成功！");
                         setActiveAction(null);
                       }
-                    }} 
+                    }}
                   />
                 </div>
 
-                <button 
+                <button
                   onClick={() => setActiveAction(null)}
                   className="mt-8 w-full py-4 bg-slate-800 hover:bg-slate-700 text-white font-black rounded-2xl transition-all"
                 >
@@ -1286,14 +1154,14 @@ export default function InterstellarRun({
 
           {activeAction === "bank" && (
             <div className="absolute inset-0 z-[60] flex items-center justify-center p-6">
-              <motion.div 
+              <motion.div
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
                 onClick={() => setActiveAction(null)}
                 className="absolute inset-0 bg-slate-950/70 backdrop-blur-sm"
               />
-              <motion.div 
+              <motion.div
                 initial={{ opacity: 0, scale: 0.9 }}
                 animate={{ opacity: 1, scale: 1 }}
                 exit={{ opacity: 0, scale: 0.9 }}
@@ -1337,7 +1205,7 @@ export default function InterstellarRun({
 
                 <div className="space-y-2 flex-grow">
                   <div className="flex gap-2">
-                    <button 
+                    <button
                       disabled={saerBeans < 100}
                       onClick={() => {
                         if (saerBeans >= 100) {
@@ -1349,7 +1217,7 @@ export default function InterstellarRun({
                     >
                       存入 100 豆
                     </button>
-                    <button 
+                    <button
                       disabled={saerBeans < 500}
                       onClick={() => {
                         if (saerBeans >= 500) {
@@ -1363,13 +1231,13 @@ export default function InterstellarRun({
                     </button>
                   </div>
 
-                  <button 
+                  <button
                     disabled={bankBalance <= 0}
                     onClick={() => {
                       if (bankBalance <= 0) return;
                       const rate = bankInterestRates[bankType] + bankRateBonus;
                       const yieldAmount = Math.floor(bankBalance * (1 + rate));
-                      
+
                       if (bankType === "kiske") {
                         setSaerBeans(s => s + yieldAmount);
                         setBankBalance(0);
@@ -1391,6 +1259,7 @@ export default function InterstellarRun({
                       } else {
                         const ambush = Math.random() < 0.25;
                         if (ambush) {
+                          setPiratePrincipal(bankBalance);
                           setBankBalance(0);
                           setActiveAction(null);
                           // Force a combat action with the bonus pirate defense
@@ -1411,7 +1280,7 @@ export default function InterstellarRun({
                 </div>
 
                 <div className="flex gap-3 mt-6 pt-6 border-t border-white/5">
-                  <button 
+                  <button
                     onClick={() => {
                       // Mark node as occupied, granting a persistent bank interest bonus of +5%
                       setBankRateBonus(b => b + 0.05);
@@ -1422,7 +1291,7 @@ export default function InterstellarRun({
                   >
                     佔領據點 (+5% 利息加成)
                   </button>
-                  <button 
+                  <button
                     onClick={() => setActiveAction(null)}
                     className="px-6 py-3 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold rounded-xl text-xs transition-colors"
                   >
@@ -1435,7 +1304,7 @@ export default function InterstellarRun({
 
           {activeAction === "growth" && (
             <div className="absolute inset-0 z-[60] flex items-center justify-center p-6">
-              <motion.div 
+              <motion.div
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
@@ -1445,7 +1314,7 @@ export default function InterstellarRun({
                 }}
                 className="absolute inset-0 bg-slate-950/80 backdrop-blur-sm"
               />
-              <motion.div 
+              <motion.div
                 initial={{ opacity: 0, scale: 0.9 }}
                 animate={{ opacity: 1, scale: 1 }}
                 exit={{ opacity: 0, scale: 0.9 }}
@@ -1470,12 +1339,12 @@ export default function InterstellarRun({
                     <h4 className="text-sm font-black text-slate-400 mb-4 uppercase tracking-wider">選擇基因受體精靈</h4>
                     <div className="flex-grow overflow-y-auto space-y-3 pr-2 custom-scrollbar">
                       {runElves.map((elf, idx) => (
-                        <div 
+                        <div
                           key={idx}
                           onClick={() => setSelectedGrowthElfIdx(idx)}
                           className={`p-4 rounded-2xl flex items-center gap-4 transition-all cursor-pointer border ${
-                            selectedGrowthElfIdx === idx 
-                              ? "bg-green-950/20 border-green-500 text-white" 
+                            selectedGrowthElfIdx === idx
+                              ? "bg-green-950/20 border-green-500 text-white"
                               : "bg-slate-950/40 border-white/5 hover:border-white/10 text-slate-300"
                           }`}
                         >
@@ -1505,13 +1374,13 @@ export default function InterstellarRun({
                     ) : (
                       <div className="space-y-4">
                         <h4 className="text-sm font-black text-slate-400 uppercase tracking-wider">選擇注入重組基因</h4>
-                        
+
                         {[
                           { name: "力量突變基因 💪", bonus: "攻擊屬性額外永久 +40", statKey: "atk", amount: 40, desc: "大幅增強物理與特攻破壞力，使其每次打擊更具威脅。" },
                           { name: "生命重組基因 ❤️", bonus: "最大體力永久 +100", statKey: "hp", amount: 100, desc: "重組高能分子，大幅提升戰場耐打度與承傷能力。" },
                           { name: "敏捷反射基因 ⚡", bonus: "先手速度屬性永久 +30", statKey: "speed", amount: 30, desc: "注入神經反射刺激劑，使其更容易在戰鬥中搶佔先手權。" }
                         ].map((gene, idx) => (
-                          <div 
+                          <div
                             key={idx}
                             onClick={() => {
                               const nextElves = [...runElves];
@@ -1541,7 +1410,7 @@ export default function InterstellarRun({
                 </div>
 
                 <div className="flex justify-between border-t border-white/5 pt-6 mt-6">
-                  <button 
+                  <button
                     onClick={() => {
                       // Occupy current node, and gain some bonus saer beans instead
                       setSaerBeans(s => s + 150);
@@ -1553,7 +1422,7 @@ export default function InterstellarRun({
                   >
                     回收轉換成 150 賽爾豆
                   </button>
-                  <button 
+                  <button
                     onClick={() => {
                       setSelectedGrowthElfIdx(null);
                       setActiveAction(null);
@@ -1569,13 +1438,13 @@ export default function InterstellarRun({
 
           {activeAction === "event" && currentEvent && (
             <div className="absolute inset-0 z-[60] flex items-center justify-center p-6">
-              <motion.div 
+              <motion.div
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
                 className="absolute inset-0 bg-slate-950/80 backdrop-blur-md"
               />
-              <motion.div 
+              <motion.div
                 initial={{ opacity: 0, scale: 0.9 }}
                 animate={{ opacity: 1, scale: 1 }}
                 exit={{ opacity: 0, scale: 0.9 }}
@@ -1583,7 +1452,7 @@ export default function InterstellarRun({
               >
                 {/* Visual glow backdrop inside */}
                 <div className="absolute -top-12 -left-12 w-44 h-44 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none" />
-                
+
                 <div className="mb-8 relative z-10">
                   <span className={`text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded-full border ${
                     currentEventType === "chance" ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20" : "bg-purple-500/10 text-purple-400 border-purple-500/20"
@@ -1598,7 +1467,7 @@ export default function InterstellarRun({
 
                 <div className="space-y-3 relative z-10">
                   {currentEvent.options.map((option: any, index: number) => (
-                    <button 
+                    <button
                       key={index}
                       onClick={() => {
                         if (option.isBattle) {
@@ -1619,7 +1488,7 @@ export default function InterstellarRun({
                 </div>
 
                 <div className="mt-8 flex justify-end relative z-10">
-                  <button 
+                  <button
                     onClick={() => setActiveAction(null)}
                     className="px-6 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-400 font-bold rounded-xl text-xs transition-colors"
                   >
@@ -1632,14 +1501,14 @@ export default function InterstellarRun({
 
           {actionOutcome && (
             <div className="absolute inset-0 z-[70] flex items-center justify-center p-6">
-              <motion.div 
+              <motion.div
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
                 onClick={() => setActionOutcome(null)}
                 className="absolute inset-0 bg-slate-950/40 backdrop-blur-[2px]"
               />
-              <motion.div 
+              <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: 20 }}
@@ -1650,7 +1519,7 @@ export default function InterstellarRun({
                 </div>
                 <h3 className="text-xl font-bold text-white mb-4">任務報告</h3>
                 <p className="text-slate-200 mb-8 leading-relaxed font-medium">{actionOutcome}</p>
-                <button 
+                <button
                   onClick={() => setActionOutcome(null)}
                   className="w-full py-3 bg-white text-indigo-900 font-black rounded-xl transition-all hover:bg-indigo-50"
                 >
@@ -1663,7 +1532,7 @@ export default function InterstellarRun({
           {/* Backpack Modal */}
           {showBackpack && (
             <div className="fixed inset-0 z-[80] flex items-center justify-center p-4 sm:p-6 bg-slate-950/80 backdrop-blur-md">
-              <motion.div 
+              <motion.div
                 initial={{ scale: 0.9, opacity: 0 }}
                 animate={{ scale: 1, opacity: 1 }}
                 exit={{ scale: 0.9, opacity: 0 }}
@@ -1683,7 +1552,7 @@ export default function InterstellarRun({
                     <X className="w-8 h-8" />
                   </button>
                 </div>
-                
+
                 <div className="flex-grow p-6 sm:p-8 overflow-y-auto custom-scrollbar">
                   <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-12">
                     {/* Elves List */}
@@ -1753,9 +1622,9 @@ export default function InterstellarRun({
                     </div>
                   </div>
                 </div>
-                
+
                 <div className="p-6 bg-slate-950/80 border-t border-white/5 flex justify-end">
-                  <button 
+                  <button
                     onClick={() => setShowBackpack(false)}
                     className="px-10 py-3 bg-blue-600 hover:bg-blue-500 text-white font-black rounded-xl transition-all shadow-lg shadow-blue-600/20"
                   >
@@ -1769,7 +1638,7 @@ export default function InterstellarRun({
           {/* Battle Result Modal */}
           {lastBattleResult && (
             <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-slate-950/90 backdrop-blur-xl">
-              <motion.div 
+              <motion.div
                 initial={{ scale: 0.8, opacity: 0 }}
                 animate={{ scale: 1, opacity: 1 }}
                 className="bg-slate-900 border border-white/10 rounded-[48px] w-full max-w-lg overflow-hidden shadow-[0_0_80px_rgba(0,0,0,0.6)] flex flex-col"
@@ -1781,10 +1650,10 @@ export default function InterstellarRun({
                     {lastBattleResult.isWin ? <Trophy className="w-14 h-14" /> : <Skull className="w-14 h-14" />}
                   </div>
                   <h3 className="text-4xl font-black text-white mb-2 relative z-10">
-                    {lastBattleResult.isWin ? "戰鬥勝利！" : "戰鬥失敗"}
+                    {lastBattleResult.isWin ? "戰鬥勝利！" : lastBattleResult.outcome === "exit" ? "已退出戰鬥" : lastBattleResult.outcome === "draw" ? "戰鬥平手" : "戰鬥失敗"}
                   </h3>
                   <p className="text-slate-500 text-xs font-bold uppercase tracking-[0.2em] relative z-10">Sector Mission Complete</p>
-                  
+
                   {/* Decorative Background Icon */}
                   <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-[0.03]">
                     {lastBattleResult.isWin ? <Trophy className="w-64 h-64" /> : <Skull className="w-64 h-64" />}
@@ -1796,7 +1665,7 @@ export default function InterstellarRun({
                     <div className="p-5 bg-slate-950/80 rounded-3xl border border-white/5 flex flex-col items-center">
                       <div className="text-[10px] text-slate-500 font-bold uppercase tracking-widest mb-2">獲得賽爾豆</div>
                       <div className="text-2xl font-black text-amber-400 flex items-center gap-2">
-                        <Coins className="w-6 h-6" /> +{lastBattleResult.beans}
+                        <Coins className="w-6 h-6" /> +{lastBattleResult.beans + (lastBattleResult.recoveredPrincipal || 0)}
                       </div>
                     </div>
                     <div className="p-5 bg-slate-950/80 rounded-3xl border border-white/5 flex flex-col items-center">
@@ -1808,7 +1677,7 @@ export default function InterstellarRun({
                   </div>
 
                   {lastBattleResult.collectible && (
-                    <motion.div 
+                    <motion.div
                       initial={{ y: 20, opacity: 0 }}
                       animate={{ y: 0, opacity: 1 }}
                       transition={{ delay: 0.3 }}
@@ -1829,7 +1698,7 @@ export default function InterstellarRun({
                     </motion.div>
                   )}
 
-                  <button 
+                  <button
                     onClick={() => {
                       setLastBattleResult(null);
                     }}
@@ -1844,14 +1713,14 @@ export default function InterstellarRun({
 
           {showEquipSwitcher && (
             <div className="absolute inset-0 z-50 flex items-center justify-center p-6 sm:p-12">
-              <motion.div 
+              <motion.div
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
                 onClick={() => setShowEquipSwitcher(false)}
                 className="absolute inset-0 bg-slate-950/80 backdrop-blur-md"
               />
-              <motion.div 
+              <motion.div
                 initial={{ opacity: 0, scale: 0.95, y: 20 }}
                 animate={{ opacity: 1, scale: 1, y: 0 }}
                 exit={{ opacity: 0, scale: 0.95, y: 20 }}
@@ -1879,12 +1748,12 @@ export default function InterstellarRun({
                   </div>
 
                   <div className="grid grid-cols-2 gap-4">
-                    <button 
+                    <button
                       onClick={() => handleChangeEquip("suit", "morning_star")}
                       disabled={saerBeans < 100 || (equipType === "suit" && equipId === "morning_star")}
                       className={`p-4 rounded-2xl border text-left transition-all ${
-                        equipType === "suit" && equipId === "morning_star" 
-                          ? "bg-blue-600 border-blue-400 text-white" 
+                        equipType === "suit" && equipId === "morning_star"
+                          ? "bg-blue-600 border-blue-400 text-white"
                           : "bg-slate-950 border-white/5 hover:border-white/20"
                       } disabled:opacity-50`}
                     >
@@ -1892,12 +1761,12 @@ export default function InterstellarRun({
                       <div className="font-bold">晨曦之星戰甲</div>
                       <div className="text-[10px] opacity-70">提供全方位屬性加成</div>
                     </button>
-                    <button 
+                    <button
                       onClick={() => handleChangeEquip("title", "zhandou_aihaozhe")}
                       disabled={saerBeans < 100 || (equipType === "title" && equipId === "zhandou_aihaozhe")}
                       className={`p-4 rounded-2xl border text-left transition-all ${
-                        equipType === "title" && equipId === "zhandou_aihaozhe" 
-                          ? "bg-purple-600 border-purple-400 text-white" 
+                        equipType === "title" && equipId === "zhandou_aihaozhe"
+                          ? "bg-purple-600 border-purple-400 text-white"
                           : "bg-slate-950 border-white/5 hover:border-white/20"
                       } disabled:opacity-50`}
                     >
@@ -1974,7 +1843,7 @@ export default function InterstellarRun({
             {/* Nodes */}
             {currentLayerData.nodes.map((node) => {
               const isCurrent = node.status === "current";
-              const isOccupied = node.status === "occupied";
+              const isOccupied = node.occupied || node.status === "occupied";
               const isAvailable = currentNode?.connections.includes(node.id) || false;
 
               return (
@@ -1999,8 +1868,8 @@ export default function InterstellarRun({
                       disabled={!isAvailable && !isCurrent}
                       onClick={() => handleMoveToNode(node.id)}
                       className={`w-12 h-12 rounded-2xl flex items-center justify-center border-2 transition-all duration-300 ${
-                        isCurrent 
-                          ? "bg-blue-600 border-blue-400 shadow-[0_0_25px_rgba(59,130,246,0.5)] rotate-45" 
+                        isCurrent
+                          ? "bg-blue-600 border-blue-400 shadow-[0_0_25px_rgba(59,130,246,0.5)] rotate-45"
                           : isOccupied
                             ? "bg-emerald-950/50 border-emerald-500/50 text-emerald-400"
                             : isAvailable
@@ -2052,12 +1921,12 @@ export default function InterstellarRun({
                   }`}>
                     {getNodeIcon(currentNode.type, true, true)}
                   </div>
-                  
+
                   <h3 className="text-2xl font-black text-white mb-2">{currentNode.name}</h3>
                   <div className="px-3 py-1 bg-white/5 rounded-full text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-6 border border-white/5">
                     Type: {currentNode.type.replace("_", " ")}
                   </div>
-                  
+
                   <p className="text-sm text-slate-400 leading-relaxed max-w-[240px] mb-8">
                     {getNodeDescription(currentNode.type)}
                   </p>
@@ -2068,7 +1937,7 @@ export default function InterstellarRun({
                         <div className="text-[10px] text-slate-500 font-bold uppercase mb-1">Potion Limit</div>
                         <div className="flex items-center gap-1.5 text-slate-200">
                           <FlaskConical className="w-3.5 h-3.5 text-indigo-400" />
-                          <span className="font-bold text-sm">{potionUsage}/{maxPotionUsage}</span>
+                          <span className="font-bold text-sm">{potionUsage}/{effectiveMaxPotionUsage}</span>
                         </div>
                       </div>
                       <div className="p-3 bg-slate-950/50 rounded-xl border border-white/5">
@@ -2080,7 +1949,7 @@ export default function InterstellarRun({
                       </div>
                     </div>
 
-                    <button 
+                    <button
                       onClick={() => setActiveAction("recruit")}
                       className="w-full group bg-indigo-600/20 hover:bg-indigo-600/30 text-indigo-400 font-bold py-3 rounded-2xl transition-all border border-indigo-500/20 flex items-center justify-center gap-2 mb-3"
                     >
@@ -2088,8 +1957,8 @@ export default function InterstellarRun({
                       <span>RECRUIT ELVES</span>
                     </button>
 
-                    <button 
-                      onClick={handleEngage}
+                    <button
+                      onClick={() => handleEngage()}
                       className="w-full group bg-blue-600 hover:bg-blue-500 text-white font-black py-4 rounded-2xl transition-all shadow-xl shadow-blue-600/20 flex items-center justify-center gap-2 overflow-hidden relative"
                     >
                       <span className="relative z-10">ENGAGE NODE</span>
@@ -2100,7 +1969,7 @@ export default function InterstellarRun({
                 </motion.div>
               )}
             </div>
-            
+
             {/* Footer Notice */}
             <div className="mt-auto pt-6 border-t border-white/5">
               <div className="flex items-center gap-2 text-[10px] font-bold text-slate-600 uppercase tracking-widest">
@@ -2121,7 +1990,7 @@ function RecruitCard({ tier, cost, color, textColor, onRecruit }: { tier: string
         <div className={`text-3xl font-black ${textColor} mb-1`}>{tier}</div>
         <div className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Recruit Order</div>
       </div>
-      <button 
+      <button
         onClick={onRecruit}
         className={`w-full py-3 ${cost > 0 ? "bg-white text-slate-900" : "bg-slate-800 text-white"} font-black rounded-xl text-sm transition-all shadow-lg`}
       >
@@ -2141,7 +2010,7 @@ function ShopItem({ name, desc, cost, icon, onBuy }: { name: string, desc: strin
         <div className="font-bold text-slate-200">{name}</div>
         <div className="text-[10px] text-slate-500">{desc}</div>
       </div>
-      <button 
+      <button
         onClick={onBuy}
         className="px-4 py-2 bg-amber-600 hover:bg-amber-500 text-white text-xs font-black rounded-xl transition-all active:scale-95"
       >

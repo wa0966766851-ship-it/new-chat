@@ -104,6 +104,9 @@ export interface PpCostComputation {
 }
 
 export interface BattleEventContext {
+  specialMode?: 'destiny' | 'interstellar';
+  applyTrueDamageToElf?: (side: "p1" | "p2", targetId: string, amount: number, label?: string) => void;
+  applyHealToElf?: (side: 'p1' | 'p2', targetId: string, amount: number) => void;
   p1FullTeam: Elf[];
   p2FullTeam: Elf[];
   self: Elf;
@@ -111,6 +114,7 @@ export interface BattleEventContext {
   actor: "p1" | "p2";
   goesFirst?: boolean;
   isEntranceTurn?: boolean;
+  currentPhase?: string;
   skill: any;
   opponentSkill?: Skill | null;
   isHit?: boolean;
