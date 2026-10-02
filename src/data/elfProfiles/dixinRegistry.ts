@@ -169,7 +169,7 @@ export const DixinDeconstructedProfile: ElfDeconstructedProfile = {
         id: 'dixin.yuyu.turn',
         effectClass: 'TURN',
         polarity: 'NEGATIVE',
-        flavor: { name: '檢定與生命吸取', description: '4回合內對手使用屬性技能時令對手下回合攻擊技能命中效果失效且無法造成技能傷害；4回合內每回合結束時吸取對手1/3最大體力，若對方未受到百分比傷害則附加300點真實傷害且附加自身1層伏魔印記', combatLog: '帝辛立下天道檢定，吸取天地生機！' },
+        flavor: { name: '檢定與生命吸取', description: '4回合內對手使用屬性技能時令對手下回合攻擊技能附加效果失效且無法造成技能傷害；4回合內每回合結束時吸取對手1/3最大體力，若對方未受到百分比傷害則附加300點真實傷害且附加自身1層伏魔印記', combatLog: '帝辛立下天道檢定，吸取天地生機！' },
         mechanics: {
           target: 'OPPONENT',
           duration: 4,

@@ -860,9 +860,11 @@ export default function BattleScreen(props: BattleScreenProps) {
         const playerStateKey = `${targetSide}RegistryState` as "p1RegistryState" | "p2RegistryState";
         const oppSide = targetSide === "p1" ? "p2" : "p1";
         const oppStateKey = `${oppSide}RegistryState` as "p1RegistryState" | "p2RegistryState";
+        // 競技場莫伊萊：下回合無法透過技能恢復體力（回合數制，通用 tick 自動遞減）
+        const skillHealBlockTurns = syncStateRef.current[oppStateKey]?.skillHealBlockTurns || 0;
         const noHealTurns = recoveryRegistry?.noHealTurns ||
                             recoveryRegistry?.[`${targetSide}_noHealTurns`] ||
-                            syncStateRef.current[`${oppSide}RegistryState`]?.[`${targetSide}_noHealTurns`] || 0;
+                            syncStateRef.current[`${oppSide}RegistryState`]?.[`${targetSide}_noHealTurns`] || (skillHealBlockTurns > 0 ? 1 : 0);
         const oppSealHealTurns = syncStateRef.current[oppStateKey]?.oppSealHealTurns || 0;
         const healReduce50Turns = recoveryRegistry?.healReduce50Turns || 0;
         if (isRecoveryBlocked(target.currentHp, target.survivalRule, noHealTurns > 0 || oppSealHealTurns > 0)) {
@@ -1746,8 +1748,8 @@ case 'switch': {
       p2Timers: mergeById(mid.p2Timers || [], nextP2Timers, live.p2Timers || []),
       p1: finalP1,
       p2: finalP2,
-      p1RegistryState: tickGenericTurns(live.p1RegistryState, mid.p1RegistryState),
-      p2RegistryState: tickGenericTurns(live.p2RegistryState, mid.p2RegistryState),
+      p1RegistryState: { ...tickGenericTurns(live.p1RegistryState, mid.p1RegistryState), switchedThisTurn: false },
+      p2RegistryState: { ...tickGenericTurns(live.p2RegistryState, mid.p2RegistryState), switchedThisTurn: false },
       turnNumber: mid.turnNumber + 1,
       p1SelectedSkill: null,
       p2SelectedSkill: null,
@@ -2022,6 +2024,8 @@ case 'switch': {
           + ((regState.priorityBoostTurns || 0) > 0 && !(regState.priorityBoostAttackOnly && skill.category === "屬性") ? (regState.priorityBoostValue || 0) : 0),
         forcedFirst: false
       };
+      // 競技場：下回合先制懲罰（回合數制，通用 tick 自動遞減；莫伊萊1／無為1／無極2）
+      if ((regState.priorityPenaltyTurns || 0) > 0) comp.bonus -= 2;
       // 積木持續效果：下N次技能先制、N回合必定先手
       {
         const blkT = (cur as any)[`${side}Timers`];
@@ -2200,13 +2204,14 @@ case 'switch': {
               ...syncStateRef.current,
               [sideRegKey]: {
                 ...syncStateRef.current[sideRegKey],
-                previousActiveElfId: outgoingElf.id
+                previousActiveElfId: outgoingElf.id,
+                switchedThisTurn: true
               }
             };
             dispatch({
               type: 'UPDATE_REGISTRY_STATE',
               side: s,
-              state: { previousActiveElfId: outgoingElf.id }
+              state: { previousActiveElfId: outgoingElf.id, switchedThisTurn: true }
             });
           }
 
@@ -2510,7 +2515,10 @@ case 'switch': {
 
       if (!ignoreAttackInvalidation) {
         // 1. Check for complete skill invalidation
-        if (oppState.globalSkillInvalidTurns > 0) {
+        if ((actorState.allSkillInvalidTurns || 0) > 0 || (oppState[`${s}_allSkillInvalidTurns`] || 0) > 0) {
+          skillIsInvalidated = true;
+          invalidationReason = actorState.allSkillInvalidReason || oppState[`${s}_allSkillInvalidReason`] || "全技能無效狀態";
+        } else if (oppState.globalSkillInvalidTurns > 0) {
           skillIsInvalidated = true;
           invalidationReason = oppState.globalSkillInvalidReason || "技能無效狀態";
         } else if (oppState.immuneAll || oppState[`${oppSide}_immuneAll`]) {
@@ -2652,6 +2660,11 @@ case 'switch': {
       if ((syncStateRef.current[s] as any)?.isAdditionalInvalid) {
         addEffectsInvalid = true;
         addEffectsInvalidReason = "技能附加效果失效";
+      }
+      // 競技場：雅髯獅嘯自潔附加的對手命中附加效果失效（回合數制，通用 tick 自動遞減）
+      if (!addEffectsInvalid && (syncStateRef.current[myRegKey]?.allHitEffectNullTurns || 0) > 0) {
+        addEffectsInvalid = true;
+        addEffectsInvalidReason = "附加效果失效";
       }
 
       // Check for next2AtkInvalid
@@ -3529,13 +3542,14 @@ case 'switch': {
           ...syncStateRef.current,
           [sideRegKey]: {
             ...syncStateRef.current[sideRegKey],
-            previousActiveElfId: outgoingElf.id
+            previousActiveElfId: outgoingElf.id,
+            switchedThisTurn: true
           }
         };
         dispatch({
           type: 'UPDATE_REGISTRY_STATE',
           side,
-          state: { previousActiveElfId: outgoingElf.id }
+          state: { previousActiveElfId: outgoingElf.id, switchedThisTurn: true }
         });
       }
 

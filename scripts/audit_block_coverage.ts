@@ -68,9 +68,11 @@ if (check) {
   const failures: string[] = [];
   // 20261002：4 條成功／失敗延伸併回父效果；483/757 → 479/753。
   // 全部 31 個 blocks 技能仍逐句完整解析；不是刪除效果或放寬未解析要求。
-  if (skills.parsed < 479 || skills.total !== 753) failures.push(`技能覆蓋率退步或資料集改變：${skills.parsed}/${skills.total}`);
+  // 競技場五隻加入 25 技能＋18 魂印子句（handler 專屬執行，不走積木解析）：753 → 778，已解析維持 479。
+  if (skills.parsed < 479 || skills.total !== 778) failures.push(`技能覆蓋率退步或資料集改變：${skills.parsed}/${skills.total}`);
   // 5029 異境神霆·雷伊加入 16 個可稽核魂印子句；資料集基準由 409 更新為 427。
-  if (souls.parsed < 104 || souls.total !== 431) failures.push(`魂印覆蓋率退步或資料集改變：${souls.parsed}/${souls.total}`);
+  // 競技場五隻魂印走專屬 handler：431 → 449，已解析維持 104。
+  if (souls.parsed < 104 || souls.total !== 449) failures.push(`魂印覆蓋率退步或資料集改變：${souls.parsed}/${souls.total}`);
 
   for (const name of Object.keys(SKILL_MODE)) {
     const skill = DEFAULT_ELVES.flatMap(elf => elf.skills || []).find(item => item.name === name);

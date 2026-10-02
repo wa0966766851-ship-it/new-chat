@@ -69,8 +69,8 @@ check('未定傷害不偷用粉傷，非法數值／未指定技能屬性拒絕�
   assert.equal(createDamageEntry({ amount: 210, unit: 'percent' }).params.amount, 210);
   assert.throws(() => createDamageEntry({ amount: 10, unit: 'points', type: 'skill' }));
 });
-check('所有32隻精靈均能取得魂印／攜帶／預備技能積木與待確認清單', () => {
-  assert.equal(DEFAULT_ELVES.length, 32);
+check('所有37隻精靈均能取得魂印／攜帶／預備技能積木與待確認清單', () => {
+  assert.equal(DEFAULT_ELVES.length, 37);
   const handlers = { skill: () => true, soul: () => true };
   for (const elf of DEFAULT_ELVES) {
     const soul = describeExecution({ elf }, handlers);

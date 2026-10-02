@@ -7,6 +7,7 @@ import { runGenericSoulMark } from "./genericSoulMark";
 import { runBlockEvent, runSkillBlocks, skillMode, isSoulBlocksOnly } from "../blocks/registry";
 import { CODEX } from "../data/codexRegistry";
 import { Node } from "./effectSystem.schema";
+import { STAGED_ARENA_SKILLS, STAGED_ARENA_SOULS, STAGED_ARENA_SKILL_TRANSFORMS } from "./stagedArena/index";
 
 export function mapTimingToNode(event: EffectTiming): Node | null {
   switch (event) {
@@ -223,6 +224,17 @@ export const SOUL_MARK_MAPPING: Record<string, string> = {
   "蓋亞": "handleGaiaSoulMark",
   "1025": "handleCassiusSoulMark",
   "卡修斯": "handleCassiusSoulMark",
+
+  "arena_12": "handleWuweiSoulMark",
+  "無為龍者": "handleWuweiSoulMark",
+  "arena_13": "handleTianfengSoulMark",
+  "龍錄天鋒": "handleTianfengSoulMark",
+  "arena_14": "handleWujiSoulMark",
+  "無極聖武": "handleWujiSoulMark",
+  "arena_15": "handleMoiraiSoulMark",
+  "命運龍輪 莫伊萊": "handleMoiraiSoulMark",
+  "arena_16": "handleDragonHealingSoulMark",
+  "鎮世龍魂・龍之治癒": "handleDragonHealingSoulMark",
 };
 
 let cachedSkillRegistry: Record<string, BattleSkillHandler> | null = null;
@@ -263,6 +275,10 @@ function initializeRegistries() {
       }
     }
   }
+  // 競技場五隻：獨立目錄不被上方 glob 掃到，在此明確合併（玩家與 AI 共用同一套）
+  Object.assign(cachedSkillRegistry, STAGED_ARENA_SKILLS);
+  Object.assign(cachedSoulMarkRegistry, STAGED_ARENA_SOULS);
+  Object.assign(cachedSkillTransforms, STAGED_ARENA_SKILL_TRANSFORMS);
 }
 
 // 會在「對手受到技能攻擊」時被通知 ON_DAMAGED 的魂印（handler 內以 extraData.targetSide 區分自身／對手受擊）

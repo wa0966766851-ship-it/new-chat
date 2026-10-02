@@ -415,10 +415,10 @@ export const isElfSkillSelectionDisabled = (elf: any) => {
   return false;
 };
 
-/** 「無法主動切換精靈 N 回合」：寫在被限制方的註冊狀態 noSwitchTurns（或 p1_/p2_ 前綴） */
+/** 「無法主動切換精靈 N 回合」：寫在被限制方的註冊狀態 noSwitchTurns（或 p1_/p2_ 前綴；競技場 cannotSwitchTurns 視為同義） */
 export const getNoSwitchTurns = (state: any, side: "p1" | "p2"): number => {
   const reg = state?.[side === "p1" ? "p1RegistryState" : "p2RegistryState"] || {};
-  return Math.max(reg.noSwitchTurns || 0, reg[`${side}_noSwitchTurns`] || 0);
+  return Math.max(reg.noSwitchTurns || 0, reg[`${side}_noSwitchTurns`] || 0, reg.cannotSwitchTurns || 0, reg[`${side}_cannotSwitchTurns`] || 0);
 };
 
 export const isElfSwitchDisabled = (elf: any, oppElf: any, isTyrDuelField: boolean, noSwitchTurns: number) => {

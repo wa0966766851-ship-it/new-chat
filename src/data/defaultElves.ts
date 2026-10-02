@@ -10,6 +10,7 @@ import { parseStatChangesFromText } from "../utils/statChangeManager";
 import { parseStatusesFromText } from "../utils/statusManager";
 import { OTHERWORLD_REY_SEED } from "./otherworldRey";
 import { HOLY_MILES_SEED } from "./holyMiles";
+import { STAGED_ARENA_ELVES } from "./stagedArenaElves";
 
 function createRefSkill(
   elfId: string,
@@ -2729,7 +2730,8 @@ const SEED_ELVES: (Omit<Elf, "id" | "calculatedStats" | "currentHp" | "maxHp"> &
     ]
   },
   OTHERWORLD_REY_SEED,
-  HOLY_MILES_SEED
+  HOLY_MILES_SEED,
+  ...STAGED_ARENA_ELVES
 ];
 
 import { getNumericElfId } from './elfRegistry';
