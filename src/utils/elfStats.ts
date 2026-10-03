@@ -1,5 +1,6 @@
 import type { BaseStats, Elf } from "../types";
 import { getEffectiveInscriptions } from "../data/inscriptionsCatalog";
+import { getDefaultNatureModifiers } from "./seerNatures";
 
 const STAT_KEYS = ["hp", "atk", "def", "spatk", "spdef", "speed"] as const;
 
@@ -47,7 +48,7 @@ export function calculateElfStats(
   const safeBase = baseStats || { hp: 0, atk: 0, def: 0, spatk: 0, spdef: 0, speed: 0 };
   const finalIvs: BaseStats = ivs || { hp: 31, atk: 31, def: 31, spatk: 31, spdef: 31, speed: 31 };
   const finalEvs: BaseStats = evs || getDefaultEvs(safeBase); // 本攻+體力 default
-  const multipliers = natureModifiers || { hp: 1.0, atk: 1.0, def: 1.0, spatk: 1.0, spdef: 1.0, speed: 1.0 };
+  const multipliers = natureModifiers || getDefaultNatureModifiers(safeBase); // 未設定 → 種族值最高項的性格
   const finalGuild = guildBonuses || { hp: 0, atk: 0, def: 0, spatk: 0, spdef: 0, speed: 0 };
   const annualMod = hasAnnualBonus ? 10 : 0;
 

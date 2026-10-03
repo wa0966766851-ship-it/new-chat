@@ -136,7 +136,7 @@ try {
     const weakening = document.querySelector('select[aria-label="弱化類抗性 w1"]') as HTMLSelectElement;
     assert.equal([...control.options].filter(option => option.textContent === '麻痺').length, 1);
     assert.equal(control.value, '麻痹');
-    assert.ok([...weakening.options].some(option => option.value === '魘味'));
+    assert.ok([...weakening.options].some(option => option.value === '魘昧'), '官方名稱魘昧');
     await click('儲存精靈修改');
     assert.deepEqual(saved?.resistances, legacy.resistances);
     assert.deepEqual(fixture.resistances?.statusResist.selectedStatuses, ['麻痺']);

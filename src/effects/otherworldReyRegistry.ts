@@ -138,6 +138,15 @@ export function handleOtherworldReySoulMark(ctx: BattleEventContext, event: Effe
     event === EffectTiming.ENFORCE
   )) return;
 
+  // 臨時能力值（不是增減傷）：
+  //  雷神：自身不為滿體力時，體力每降低1%，雙攻值與雙防值在雙方計算傷害時額外提升1%（最高70%），戰鬥階段結束時失去。
+  //  電氣纏繞：對手使用攻擊技能時，對手最終攻擊／特攻值變為面板原始值的70%。
+  if (isReyActive(ctx) && (event === EffectTiming.ON_ENTRANCE || event === EffectTiming.BEFORE_SKILL || event === EffectTiming.OPPONENT_ACTION || event === EffectTiming.ROUND_START)) {
+    ctx.setPlayerState("calcAtkDefMult", 1 + getLostHpRatio(self));
+    ctx.setPlayerState("opponentAtkPanelRatio", 0.7);
+  }
+  if (event === EffectTiming.BATTLE_PHASE_END) ctx.setPlayerState("calcAtkDefMult", 1);
+
   if (event === EffectTiming.ON_ENTRANCE) {
     ctx.updateElf(actor, { category: "異能精靈", isAlienElf: true, survivalRule: reyGodDescentRule(self.maxHp) });
     ctx.setMark({
@@ -203,11 +212,7 @@ export function handleOtherworldReySoulMark(ctx: BattleEventContext, event: Effe
       const floor = Number(ctx.getPlayerState(`${R}.currentDamageFloor`) || 0);
       if (isSkillDamageType(comp.damageCategory) && floor > 0) comp.floor = Math.max(comp.floor || 0, floor);
     } else {
-      // 電氣纏繞：對手最終雙攻為面板70%；雷神：已損體力比例同步強化雙防。
-      if (comp.damageCategory === "skill_attack") {
-        comp.multiplier *= 0.7;
-        comp.multiplier /= 1 + getLostHpRatio(self);
-      }
+      // 電氣纏繞與雷神的雙攻／雙防改由傷害公式的能力值處理（calcAtkDefMult／opponentAtkPanelRatio），不在此用增減傷代替。
       if (isGodDescent(ctx) && isNonTrueDamageType(comp.damageCategory)) comp.multiplier = 0;
     }
   }

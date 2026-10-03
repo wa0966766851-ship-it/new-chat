@@ -4,7 +4,7 @@
  * 過去這兩類特性只能在編輯器裡選擇、在介面上顯示，戰鬥引擎完全沒有讀取（除了「亂舞」「瞬殺」少數被個別魂印引用）。
  * 這裡依 src/data/generalTraits.ts、src/data/alienTraits.ts 的描述逐條實作，資料驅動、不依精靈名稱判斷。
  *
- * 目前無法實作的：精準／迴避（本模擬器沒有命中率判定，所有技能都必定命中）。
+ * 精準／迴避：由命中判定處理（genericSkillText.computeHitChance）。
  */
 import { Elf, Skill } from "../types";
 import { BattleEventContext } from "./types";

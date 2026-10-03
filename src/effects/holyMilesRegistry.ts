@@ -13,6 +13,8 @@ const isAbnormal = (c: BattleEventContext) => Object.values(c.getStatuses(c.self
 /** 本精靈所有跨回合狀態只由自己的生命週期遞減，避免核心增加名字特判。 */
 export function handleHolyMilesSoulMark(c: BattleEventContext, event: EffectTiming, data?: any): void {
   if (!active(c)) return;
+  // 八荒：回合中途登場時沒有經過本回合的回合開始判定，只保留「每次受到非真實傷害減半1次」。
+  if (event === EffectTiming.ON_ENTRANCE) set(c, "halves", 1);
   if (event === EffectTiming.ROUND_START) {
     for (const name of ["reflect", "fatigue", "drain", "crit", "burn"]) {
       const n = turns(c, name);
@@ -49,9 +51,11 @@ export function handleHolyMilesSoulMark(c: BattleEventContext, event: EffectTimi
   if (event === EffectTiming.ROUND_END) {
     if (c.self.currentHp > 0) {
       const repetitions = 1 + hpSteps(c.self.maxHp - c.self.currentHp, c.self.maxHp);
+      const amount = Math.floor(c.self.maxHp / 10);
       for (let i = 0; i < repetitions; i++) {
-        c.applyHeal(c.actor, Math.floor(c.self.maxHp / 10));
-        c.applyPercentDamage(c.targetSide, 0.1);
+        // 天佑：恢復自身最大體力 10%，並造成對手「等量」百分比傷害（以自身恢復量為準，不是對手最大體力 10%）。
+        c.applyHeal(c.actor, amount);
+        c.applyPinkDamage(c.targetSide, amount, "天佑", undefined, undefined, "percent");
         if (i > 0 && isAbnormal(c)) set(c, "cleansePending", 1);
       }
     }
@@ -65,12 +69,10 @@ export function handleHolyMilesSoulMark(c: BattleEventContext, event: EffectTimi
     if (d.isIncoming && d.damageCategory !== "true") {
       const count = turns(c, "halves") || 1;
       d.multiplier *= 2 ** -count;
-      if (turns(c, "anger") && d.damageCategory === "skill_attack") {
-        d.multiplier *= 2 ** turns(c, "anger");
-        set(c, "anger", 0);
-      }
     }
     if (!d.isIncoming && d.damageCategory === "skill_attack") {
+      // 聖怒：對手受到百分比傷害後體力未減少 → 本回合對手受到攻擊技能所造成的技能傷害翻倍 1 次＋每 10% 額外 1 次。
+      if (turns(c, "anger")) d.multiplier *= 2 ** turns(c, "anger");
       if (turns(c, "attackDouble")) {
         d.multiplier *= 2;
         set(c, "attackDouble", turns(c, "attackDouble") - 1);
@@ -78,14 +80,10 @@ export function handleHolyMilesSoulMark(c: BattleEventContext, event: EffectTimi
       if (c.skill?.name === "淨世洗禮頌") {
         // 保底類獨立乘區：原始攻擊傷害超過280才吃通用；沒超則 pure，後續通用段全跳，自帶鏈照算。
         const doubles = turns(c, "baptismDoubles");
-        if (d.base > 280) {
-          d.floor = Math.max(d.floor || 0, 280);
-          if (doubles > 0) d.multiplier *= 2 ** Math.min(doubles, 6);
-        } else {
-          d.pure = true;
-          if (doubles > 0) d.multiplier *= 2 ** Math.min(doubles, 6);
-          d.floor = Math.max(d.floor || 0, 280);
-        }
+        // 保底「不少於280」本身翻倍：對方在場精靈體力每有 10% 翻倍 1 次（每次都套用）。
+        const floor = 280 * 2 ** Math.max(0, doubles);
+        d.floor = Math.max(d.floor || 0, floor);
+        if (d.base <= floor) d.pure = true;
         // 正常命中：消耗預掛的無效重結算 timer，避免殘留到下回合誤觸。
         try { c.consumeTimer?.(c.actor, `blk_${c.actor}_baptism_invalid`); } catch { /* 隔離 ctx 無 timer，略過 */ }
       }

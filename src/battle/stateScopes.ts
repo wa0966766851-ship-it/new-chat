@@ -104,7 +104,9 @@ export function switchBattleSide(state: BattleState, side: Side, index: number):
   }
   const active = { ...incoming, marks: marks.filter(mark => markAppliesToElf(mark, incoming)) };
   const team = [...state[teamKey]];
-  team[state[indexKey]] = { ...outgoing, marks: marks.filter(mark => markAppliesToElf(mark, outgoing)) };
+  // 屬性剝離只在場上有效：下場時恢復原屬性。
+  const peelRestore = outgoing.typePeeled ? { type: outgoing.originalType || outgoing.type, typePeeled: false } : {};
+  team[state[indexKey]] = { ...outgoing, ...peelRestore, marks: marks.filter(mark => markAppliesToElf(mark, outgoing)) };
   team[index] = active;
   return {
     ...state, [teamKey]: team, [side]: active, [indexKey]: index,

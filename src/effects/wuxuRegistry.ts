@@ -226,6 +226,7 @@ export const handleWuxuSoulMark = (ctx: BattleEventContext, event: EffectTiming 
         const realSkill = self.skills.find(sk => sk.name === skill.name);
         if (realSkill) {
           extraData.priorityComp.bonus += (realSkill.pp ?? 0);
+          setPlayerState(`wuxuComboPp:${skill.name}`, realSkill.pp ?? 0); // 使用前 PP，供連擊次數
         }
       }
     }
@@ -469,8 +470,10 @@ export const WUXU_SKILLS: Record<string, BattleSkillHandler> = {
     // 1. 輸出動態連擊日誌
     const activeSkill = self.skills.find(s => s.name === "蟄刃復歸");
     const currentPp = activeSkill ? (activeSkill.pp ?? 0) : 5;
-    const comboHits = currentPp + 1;
-    addLog(`🧘 【蟄刃復歸】連擊！當前 PP 值為 ${currentPp}，觸發了 ${comboHits} 次連續回復與共鳴！`, "effect");
+    const ppAtUse = Number(ctx.getPlayerState(`wuxuComboPp:蟄刃復歸`) ?? (currentPp + 1));
+    const comboHits = 1 + ppAtUse * 1; // 「每有1點PP值則技能連擊次數+1」
+    ctx.setPlayerState("attackHitCountThisAction", comboHits);
+    addLog(`🧘 【蟄刃復歸】連擊！使用時 PP ${ppAtUse}，連擊 ${comboHits} 次！`, "effect");
 
     // 令自身平靜
     const isSerene = self.battleStatus === "平靜" || (self.battleStatuses && self.battleStatuses["平靜"] > 0);
@@ -502,8 +505,10 @@ export const WUXU_SKILLS: Record<string, BattleSkillHandler> = {
     // 1. 輸出動態連擊日誌
     const activeSkill = self.skills.find(s => s.name === "靜刃止水");
     const currentPp = activeSkill ? (activeSkill.pp ?? 0) : 5;
-    const comboHits = currentPp + 1;
-    addLog(`🧘 【靜刃止水】連擊！當前 PP 值為 ${currentPp}，觸發了 ${comboHits} 次連續斬擊！`, "effect");
+    const ppAtUse = Number(ctx.getPlayerState(`wuxuComboPp:靜刃止水`) ?? (currentPp + 1));
+    const comboHits = 1 + ppAtUse * 1; // 「每有1點PP值則技能連擊次數+1」
+    ctx.setPlayerState("attackHitCountThisAction", comboHits);
+    addLog(`🧘 【靜刃止水】連擊！使用時 PP ${ppAtUse}，連擊 ${comboHits} 次！`, "effect");
 
     // 6回合內自身免疫並反彈所有異常狀態
     setPlayerState(`${actor}_immuneAndReflectStatusTurns`, 6);
@@ -552,8 +557,10 @@ export const WUXU_SKILLS: Record<string, BattleSkillHandler> = {
     // 1. 輸出動態連擊日誌
     const activeSkill = self.skills.find(s => s.name === "六刃碎界斷");
     const currentPp = activeSkill ? (activeSkill.pp ?? 0) : 5;
-    const comboHits = currentPp + 3;
-    addLog(`⚔️ 【六刃碎界斷】連擊！當前 PP 值為 ${currentPp}，觸發了 ${comboHits} 次空間破碎斬！`, "effect");
+    const ppAtUse = Number(ctx.getPlayerState(`wuxuComboPp:六刃碎界斷`) ?? (currentPp + 1));
+    const comboHits = 1 + ppAtUse * 3; // 「每有1點PP值則技能連擊次數+3」
+    ctx.setPlayerState("attackHitCountThisAction", comboHits);
+    addLog(`⚔️ 【六刃碎界斷】連擊！使用時 PP ${ppAtUse}，連擊 ${comboHits} 次！`, "effect");
 
     // 6回合內對手體力恢復量下降100%
     setPlayerState(`${targetSide}_noHealTurns`, 6);

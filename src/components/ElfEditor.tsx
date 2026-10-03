@@ -8,7 +8,7 @@ import { Elf, Skill, BaseStats, Inscription, DecompositionReport } from "../type
 import { KitEntry } from "../effects/effectSystem.schema";
 import { calculateElfStats, SEER_TYPES, getDefaultEvs, getAttributeBadgeColor } from "../utils/statCalculator";
 import { getElfDisplayRank as getElfDestinyRank } from "../utils/elfDisplayRank";
-import { validateSeerNature } from "../utils/seerNatures";
+import { validateSeerNature, getDefaultNatureModifiers } from "../utils/seerNatures";
 import EvNaturePanel from "./EvNaturePanel";
 import ResistancePanel, { getDefaultResistances } from "./ResistancePanel";
 import { InscriptionSlot, InscriptionModal } from "./InscriptionSystem";
@@ -1071,14 +1071,9 @@ export default function ElfEditor({ initialElf: suppliedElf, onSaveElf, onBack, 
   const [destinyRank, setDestinyRank] = useState<string>("");
   
   // Custom nature modifiers
-  const [natureModifiers, setNatureModifiers] = useState<{ [key in keyof BaseStats]?: number }>({
-    hp: 1.0,
-    atk: 1.0,
-    def: 1.0,
-    spatk: 1.0,
-    spdef: 1.0,
-    speed: 1.0,
-  });
+  const [natureModifiers, setNatureModifiers] = useState<{ [key in keyof BaseStats]?: number }>(
+    () => getDefaultNatureModifiers({ hp: 0, atk: 125, def: 95, spatk: 80, spdef: 95, speed: 115 }),
+  );
 
   // Custom effort values (EVs / 學習力)
   const [evs, setEvs] = useState<BaseStats>({
@@ -1190,7 +1185,7 @@ export default function ElfEditor({ initialElf: suppliedElf, onSaveElf, onBack, 
       if (initialElf.natureModifiers) {
         setNatureModifiers(initialElf.natureModifiers);
       } else {
-        setNatureModifiers({ hp: 1.0, atk: 1.0, def: 1.0, spatk: 1.0, spdef: 1.0, speed: 1.0 });
+        setNatureModifiers(getDefaultNatureModifiers(initialElf.baseStats));
       }
       setElfDescription(initialElf.description || "");
       setHeight(initialElf.height || 0);

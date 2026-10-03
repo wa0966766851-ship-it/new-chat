@@ -1,3 +1,4 @@
+import { hiddenFromViewer } from "../battle/viewerPerspective";
 import React, { useEffect, useState } from "react";
 import type { Elf } from "../types";
 import { IMAGE_COPY_EVENT } from "./ImageCopyMenu";
@@ -46,7 +47,7 @@ export function ElfAvatar({ elf, battleSide, kind = "head", className, fallbackC
   elf: Elf; battleSide?: "p1" | "p2"; kind?: "head" | "body"; className?: string; fallbackClassName?: string; style?: React.CSSProperties;
 }) {
   const ready = useSeerIndexReady();
-  const concealed = !!elf.isConcealed;
+  const concealed = hiddenFromViewer(elf, battleSide);
   const own = elf.path && /^(\/|https?:|data:)/.test(elf.path) ? [elf.path] : [];
   const urls = ready ? [...own, ...petImageUrls(elf as any, kind)] : own;
   const fb = (

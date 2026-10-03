@@ -265,7 +265,7 @@ function AppContent() {
         initial={false}
         animate={{ width: showHeader ? 256 : 0 }}
         transition={{ duration: 0.22, ease: "easeOut" }}
-        className={`ios-sidebar z-[100] shrink-0 h-full shadow-2xl overflow-hidden ${isCompactLayout ? "fixed inset-y-0 left-0" : "relative"} ${showHeader ? "border-r" : "border-r-0"}`}
+        className={`ios-sidebar shrink-0 h-full shadow-2xl overflow-hidden ${isCompactLayout ? "fixed inset-y-0 left-0 z-[100]" : "relative z-[50]"} ${showHeader ? "border-r" : "border-r-0"}`}
         aria-hidden={!showHeader}
       >
           <div className="w-64 h-full flex flex-col relative">

@@ -131,7 +131,13 @@ export const handleDimensionalSoulMark = (ctx: BattleEventContext, event: Effect
       }
       break;
 
+    case EffectTiming.AFTER_ATTACK_HIT: {
+      const factor = Number(ctx.getPlayerState("wangshiHealFactor") || 0);
+      if (factor > 0 && Number(extraData?.damage) > 0) ctx.applyHeal(ctx.actor, Math.floor(Number(extraData.damage) * factor));
+      break;
+    }
     case EffectTiming.AFTER_ACTION:
+      if (getPlayerState("wangshiHealFactor")) setPlayerState("wangshiHealFactor", 0);
       if (extraData?.actor === actor) {
         // 7:攻擊附加雙方體力差值的真實傷害
         if (stacks >= 7) {
@@ -304,7 +310,8 @@ export const DIMENSIONAL_SKILLS: Record<string, BattleSkillHandler> = {
       target.skills.forEach(s => { if (s.pp === s.maxPp) fullPpCount++; });
 
       if (fullPpCount > 0) dmg *= Math.pow(2, fullPpCount);
-      applyPinkDamage(oppSide, dmg, "告命詩途(龍魂)");
+      // 「附加50點次元龍系技能傷害」：直接造成 X 系技能傷害（吃次元龍系克制），不是粉傷。
+      ctx.applySkillTypeDamage(oppSide, dmg, "告命詩途(龍魂)", { elem: "次元龍" } as any);
     }
   },
 
@@ -375,10 +382,15 @@ export const DIMENSIONAL_SKILLS: Record<string, BattleSkillHandler> = {
     }
 
     if (isDragonSoul) {
+      // 龍魂：雙方每存在 1 個 PP 值為滿的技能則翻倍 7 次（每個都套用：×2^(7n)）。
+      let full = 0;
+      for (const sk of [...self.skills, ...target.skills]) if ((sk.currentPp ?? sk.pp) === (sk.maxPp ?? sk.pp)) full++;
+      const factor = 2 ** (7 * full);
       if (self.currentHp > target.currentHp) {
-        applyHeal(actor, 300);
+        // 攻擊傷害的 100% 回復自身體力：攻擊結算後（AFTER_ATTACK_HIT）依實際攻擊傷害計算。
+        setPlayerState("wangshiHealFactor", factor);
       } else if (self.currentHp < target.currentHp) {
-        const trueDmg = Math.floor(Math.abs(self.currentHp - target.currentHp) * 0.7);
+        const trueDmg = Math.floor(Math.abs(self.currentHp - target.currentHp) * 0.7 * factor);
         applyTrueDamage(oppSide, trueDmg, "妄世律裁(龍魂)");
       }
     }

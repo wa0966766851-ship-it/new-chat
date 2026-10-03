@@ -69,8 +69,10 @@ export function handleWuweiSoulMark(c: ArenaContext, event: EffectTiming, data?:
     c.updateElf(c.actor, { skills: moves });
   }
   if (event === EffectTiming.ON_KILL) {
-    write(c, 'wanxiang', 0);
-    // The source's defeated-team disappearance must be handled by a team death hook.
+    // 萬相乖離（官方後半句）：自身擊敗對手後，令對方全部陣亡精靈消逝。依使用者決定不重置萬相乖離。
+    for (const e of c.getFullTeam(c.targetSide)) {
+      if (e.currentHp <= 0 && !(e as any).isVanished && !(e as any).vanished) c.vanishElf(c.targetSide, e);
+    }
   }
 }
 

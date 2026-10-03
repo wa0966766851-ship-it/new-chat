@@ -92,10 +92,11 @@ for(const side of ['p1','p2']as const){
   w.ctx.applyTrueDamageToElf=(_s:string,id:string,n:number)=>offField.push({id,n});
   spells[0].run(w.ctx);assert.equal(magic[0],w.ctx.skill.power+6,'n 是詛咒回合數，沒有乘15');assert.deepEqual(offField,[{id:'bench',n:3}]);
 
-  const r=setup(side,'5010','星光·浪打千擊');STARLIGHT_RUS_SKILLS['星光·浪打千擊'](r.ctx);assert.equal(r.state.attackHitCountThisAction,5);assert.equal(r.self.statStages.atk,undefined,'不能預先擲完全部強化骰');
-  handleStarlightRusSoulMark(r.ctx,E.AFTER_ATTACK_HIT,{skill:r.ctx.skill});assert.equal(r.self.statStages.atk,1);assert.equal(r.state.rusAttackMultiplier,undefined,'星海不等於星火');
+  const r=setup(side,'5010','星光·浪打千擊');STARLIGHT_RUS_SKILLS['星光·浪打千擊'](r.ctx);assert.equal(r.state.attackHitCountThisAction,5);
+  // 連擊屬變威力：每擊強化在傷害前結算，命中後不再擲骰
+  const atkBefore=r.self.statStages.atk;handleStarlightRusSoulMark(r.ctx,E.AFTER_ATTACK_HIT,{skill:r.ctx.skill});assert.equal(r.self.statStages.atk,atkBefore,'命中後不再擲強化骰');assert.equal(r.state.rusAttackMultiplier,undefined,'星海不等於星火');
 }
-console.log('第二輪單元文義：雙方、六能力、0至9層威力/固傷、吸取與無強化分枝、盾罩消耗、真正汲取、轉化失敗、受擊時點、特殊公式、逐擊強化通過。');
+console.log('第二輪單元文義：雙方、六能力、0至9層威力/固傷、吸取與無強化分枝、盾罩消耗、真正汲取、轉化失敗、受擊時點、特殊公式、連擊強化前置通過。');
 let extension: any = { blkTypeOverride: ['水','混沌','水.混沌','普通'], blkTypeOverrideUses: 2 };
 assert.equal(skillTypeMultiplier(extension,'火','草'),Math.max(...extension.blkTypeOverride.map((t:string)=>getTypeMatchup(t,'草'))));
 extension=consumeSkillTypeOverride(extension,'skill_attribute',10);assert.equal(extension.blkTypeOverrideUses,1);

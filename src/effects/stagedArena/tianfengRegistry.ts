@@ -42,12 +42,13 @@ export function handleTianfengSoulMark(c: ArenaContext, event: EffectTiming, dat
     if (activeUntil(c, 'decreePP')) { restorePP(c, c.targetSide, -1); restorePP(c, c.actor, 1); }
     if (!read(c, 'hitOver300')) c.applyStatChange(c.actor, { spatk: 1, speed: 1 });
   }
+  if (event === EffectTiming.AFTER_ATTACK_HIT && data?.hitIndex === 0) settleBloodRain(c);
   if (event === EffectTiming.OPPONENT_ACTION && data?.skill?.category === '屬性' && activeUntil(c, 'attrNull')) c.setOpponentState('utilitySkillInvalidTurns', 1);
 }
 
 export const TIANFENG_SKILLS: Record<string, BattleSkillHandler> = {
   '鋒毫浸血雨': c => {
-    until(c, 'bloodRain', 1); until(c, 'attrNull', 2); until(c, 'pressure', 2);
+    write(c, 'bloodRainRound', read(c, 'round') + 1); until(c, 'attrNull', 2); until(c, 'pressure', 2);
     if (c.target.currentHp > 0) {
       modify(c, c.targetSide, -1);
       if (!hasDrop(c.target)) c.setOpponentState('cannotSwitchTurns', 2);
@@ -83,10 +84,11 @@ export const TIANFENG_SKILLS: Record<string, BattleSkillHandler> = {
   },
 };
 
-/** Called by an adapter after the *next* attack hits, not by the setup skill itself. */
+/** 鋒毫浸血雨：下 1 回合攻擊命中時（僅一次），消耗自身目前體力 1/2 並造成等量百分比傷害。 */
 export function settleBloodRain(c: ArenaContext): number {
-  if (!activeUntil(c, 'bloodRain')) return 0;
-  write(c, 'bloodRain', 0);
+  const due = read(c, 'bloodRainRound');
+  if (!due || read(c, 'round') !== due) return 0;
+  write(c, 'bloodRainRound', 0);
   const cost = Math.floor(c.self.currentHp / 2);
   c.adjustHp(c.actor, -cost);
   return percent(c, cost, '鋒毫浸血雨');

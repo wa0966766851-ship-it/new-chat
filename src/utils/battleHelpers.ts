@@ -179,6 +179,9 @@ export const isZeroPpExempt = (elf: Elf, sk: Skill, opp?: Elf | null): boolean =
   // 深潛者盛宴：自身處於能力下降狀態時使用技能不受PP值限制
   if (!elf.isInherentInvalid && sk.name === "深潛者盛宴" && Object.values(elf.statStages || {}).some((v: any) => typeof v === "number" && v < 0)) return true;
 
+  // 通用：技能本身被效果標記為「不受PP值限制」（例如英雄之耀達到3層）
+  if ((sk as any).ignorePpLimit === true) return true;
+
   // 2. 平靜：不受PP值限制且不消耗PP值
   if (isSerene(elf)) return true;
   if (elf.soulMark && (elf.soulMark as any).ignorePpLimit === true) return true;

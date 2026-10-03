@@ -21,6 +21,7 @@ import { StatusRegistry } from "./statusRegistry";
 import { TEMPLATE_EFFECTS, executeTemplateEffect } from "./templateEngine";
 import { SOUL_MARK_HANDLED_SKILLS } from "./soulMarkHandledSkills";
 import { prdPercent, prdChance } from "../utils/prd";
+import { statusChanceBlocked } from '../battle/statusChanceRules';
 // 機率判定一律走偽隨機（每個「精靈 × 技能 × 效果位置」各自計數）
 const chanceOf = (ctx: BattleEventContext, tag: string, percent: number) =>
   prdPercent(`${ctx.actor}:${ctx.self?.id}:${ctx.skill?.name ?? ""}:${tag}`, percent);
@@ -325,7 +326,7 @@ const RULES: Rule[] = [
       const status = STATUS_ALIAS[m[2]] || m[2];
       if (!isStatusStatus(status)) return false;
       st.lastTriggered = false;
-      if (!chanceOf(ctx, "L308", chance)) return;
+      if (statusChanceBlocked(ctx, chance) || !chanceOf(ctx, "L308", chance)) return;
       const res = ctx.applyStatusWithImmunityCheck(ctx.targetSide, status, STATUS_DURATION[status] ?? 2);
       st.lastTriggered = !!res.success;
       if (res.success) ctx.addLog(`💫 【異常狀態】：使對手陷入了【${status}】！`, "status");
@@ -365,7 +366,7 @@ const RULES: Rule[] = [
     re: /(?:(\d+)%\s*)?(?:令|使)?(?:敵我)?雙方(?:同時)?(?:進入)?((?:麻痺|中毒|燒傷|害怕|睡眠|冰封|石化|寄生|凍傷|混亂|衰弱|失明|疲憊|流血|詛咒|凝滯)(?:、(?:麻痺|中毒|燒傷|害怕|睡眠|冰封|石化|寄生|凍傷|混亂|衰弱|失明|疲憊|流血|詛咒|凝滯))*)(?:異常)?(?:狀態)?$/,
     apply: (m, ctx) => {
       const chance = m[1] !== undefined ? Number(m[1]) : 100;
-      if (!chanceOf(ctx, "L348", chance)) return;
+      if (statusChanceBlocked(ctx, chance) || !chanceOf(ctx, "L348", chance)) return;
       for (const status of m[2].split("、")) {
         if (!isStatusStatus(status)) continue;
         for (const side of [ctx.targetSide, ctx.actor] as Side[]) ctx.applyStatusWithImmunityCheck(side, status, STATUS_DURATION[status] ?? 2);
@@ -695,7 +696,7 @@ export function applyEffectDetail(ctx: BattleEventContext): boolean {
     m = part.match(/^([a-z_]+):(\d+)%?$/i);
     if (m && DETAIL_STATUS[m[1].toLowerCase()]) {
       const status = DETAIL_STATUS[m[1].toLowerCase()];
-      if (isStatusStatus(status) && chanceOf(ctx, "L633", Number(m[2]))) {
+      if (isStatusStatus(status) && !statusChanceBlocked(ctx, Number(m[2])) && chanceOf(ctx, "L633", Number(m[2]))) {
         if (ctx.applyStatusWithImmunityCheck(ctx.targetSide, status, STATUS_DURATION[status] ?? 2).success) ctx.addLog(`💫 使對手陷入了【${status}】！`, "status");
       }
       done = true; continue;

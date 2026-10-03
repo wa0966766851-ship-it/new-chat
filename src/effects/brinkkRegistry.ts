@@ -250,7 +250,7 @@ export const handleBrinkkSoulMark = (ctx: BattleEventContext, event: EffectTimin
       const frostRes = applyStatusWithImmunityCheck(oppSide, "漸凍", 1);
       if (!frostRes.success) {
         const trueDamageTaken = getOpponentState("brinkkTrueDamageTakenCount") || 0;
-        ctx.addTimerTo(oppSide, { id: "cthyaat_half_damage", name: "克塔亞特·非真實傷害減半", kind: "round_counter", source: "soulmark", remaining: 3, tickAt: "round_end", payload: { block: { dmgOutMult: 0.5, kind: "非真實", useLimitRegistryKey: "brinkkTrueDamageTakenCount", usesConsumed: 0 }, polarity: "negative" } }, false);
+        ctx.addTimerTo(oppSide, { id: "cthyaat_half_damage", name: "克塔亞特·非真實傷害減半", kind: "round_counter", source: "soulmark", remaining: 3, tickAt: "round_end", payload: { block: { dmgOutMult: 0.5, kind: "非真實", powRegistryKey: "brinkkTrueDamageTakenCount" }, polarity: "negative" } }, false);
         addLog(`🦑 【克塔亞特】：漸凍未觸發，附加 3 回合內非真實傷害減半 ${trueDamageTaken} 次！`, "effect");
       }
       break;

@@ -13,6 +13,15 @@ const CUSTOM_STATUS_ICONS: Record<string, string> = {
   星佑: "/status-icons/星佑.png",
   星護: "/status-icons/星護.png",
   繳械: "/status-icons/繳械.png",
+  // Approved artwork (2026-10-03); presentation only, no status-rule overrides.
+  眩暈: "/status-icons/眩暈.png",
+  神悔: "/status-icons/神悔.png",
+  腐朽: "/status-icons/腐朽.png",
+  失溫: "/status-icons/失溫.png",
+  遲鈍: "/status-icons/遲鈍.png",
+  窒息: "/status-icons/窒息.png",
+  平靜: "/status-icons/平靜.png",
+  入魔: "/status-icons/入魔.png",
 };
 // User-provided battle UI artwork; these are intentionally not SeerAPI buff ids.
 const CUSTOM_BUFF_ICONS: Record<string, string> = {
@@ -20,7 +29,7 @@ const CUSTOM_BUFF_ICONS: Record<string, string> = {
   護罩: "/status-icons/精靈護罩.png",
 };
 
-const ALIAS: Record<string, string> = { 麻痹: "麻痺", 神游: "神遊", 魘昧: "魘味", 異常抵抗: "異常免疫", 免疫: "異常免疫" };
+const ALIAS: Record<string, string> = { 麻痹: "麻痺", 神游: "神遊", 魘味: "魘昧", 異常抵抗: "異常免疫", 免疫: "異常免疫" };
 
 export interface EffectVisual { icon?: string; desc?: string; category?: string }
 

@@ -59,6 +59,9 @@ export const INTERCEPTOR_EFFECTS: Record<string, DestinyInterceptorEffect> = {
   }
 };
 
+/** 六界神王：C 級但以【界】魂印取代攔截效果（介面也不顯示攔截標籤）。 */
+export const usesSoulMarkInsteadOfInterceptor = (name?: string) => !!name?.includes("六界神王");
+
 // 專門為命運之輪模式擴展的 C 級經典攔截卡（如果圖鑑中沒有，會作為抽卡補充包加入池中）
 export const CLASSIC_INTERCEPTORS: Partial<Elf>[] = [
   {
@@ -141,7 +144,7 @@ export function buildDestinyPool(allElves: Elf[], rng: () => number = Math.rando
     };
 
     // 如果是 C 級，為其綁定專屬命運攔截特效
-    if (rank === 'C' && !instance.interceptorEffect) {
+    if (rank === 'C' && !instance.interceptorEffect && !usesSoulMarkInsteadOfInterceptor(instance.name)) {
       const keys = Object.keys(INTERCEPTOR_EFFECTS);
       const randomKey = keys[Math.floor(rng() * keys.length)];
       instance.interceptorEffect = INTERCEPTOR_EFFECTS[randomKey];
@@ -179,7 +182,7 @@ export function buildDestinyPool(allElves: Elf[], rng: () => number = Math.rando
       pool.push({
         ...fullElf,
         destinyRank: 'C',
-        interceptorEffect: INTERCEPTOR_EFFECTS[effectKey],
+        interceptorEffect: usesSoulMarkInsteadOfInterceptor(fullElf.name) ? undefined : INTERCEPTOR_EFFECTS[effectKey],
         instanceId: `classic_${idx}_${rng().toString(36).substring(2, 7)}`
       });
     });

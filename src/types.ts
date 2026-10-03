@@ -162,6 +162,8 @@ export interface Elf {
   name: string;
   type: string;
   originalType?: string;
+  /** 屬性被剝離（顯示為無屬性）；下場時恢復 originalType。 */
+  typePeeled?: boolean;
   level: number;
   baseStats: BaseStats;
   ivs?: BaseStats; // individual values (0-31), if undefined we assume 31

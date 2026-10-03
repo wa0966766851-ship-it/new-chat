@@ -240,6 +240,9 @@ export function typeComboId(type: string): number | null {
 /** 屬性圖標網址候選：官方組合 → 使用者「系」資料夾 */
 /** 無屬性（含屬性技能誤填「屬性」）→ 官方 pettype/prop.png */
 export const isNoneType = (type?: string) => !type || ["無屬性", "无属性", "屬性", "--", "無"].includes(type.replace(/系$/, ""));
+/** public/seer/xi 目前的檔案（新增圖檔時同步加入）。 */
+const XI_FILES = new Set(["機械.暗影", "混沌.水系", "混沌.電系", "神秘.電系", "邪靈.戰鬥系"]);
+
 export function typeIconUrls(type: string): string[] {
   if (isNoneType(type)) return ["/seer/type/prop.png"];
   const parts = splitTypes(type);
@@ -247,14 +250,10 @@ export function typeIconUrls(type: string): string[] {
   const urls: string[] = [];
   const combo = typeComboId(type);
   if (combo != null) urls.push(`/seer/type/${combo}.png`);
-  // 使用者「系」資料夾：雙屬性兩種順序都試（例：水.混沌 ↔ 混沌.水系.png）
+  // 使用者「系」資料夾（public/seer/xi）：只引用實際存在的檔案，避免逐一試錯產生 404。
   const orders = parts.length > 1 ? [parts, [...parts].reverse()] : [parts];
-  for (const o of orders) {
-    urls.push(`/seer/xi/${encodeURIComponent(o.join("") + "系")}.png`);
-    if (o.length > 1) {
-      urls.push(`/seer/xi/${encodeURIComponent(o.join(".") + "系")}.png`);
-      urls.push(`/seer/xi/${encodeURIComponent(o.join("."))}.png`);
-    }
+  for (const o of orders) for (const name of [o.join(".") + "系", o.join("."), o.join("") + "系"]) {
+    if (XI_FILES.has(name)) urls.push(`/seer/xi/${encodeURIComponent(name)}.png`);
   }
   return urls;
 }

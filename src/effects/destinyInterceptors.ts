@@ -19,7 +19,7 @@ export function handleDestinyInterceptor(ctx: BattleEventContext, event: EffectT
     }
   }
   const effect=ctx.self.interceptorEffect;
-  if(ctx.self.destinyRank!=='C'||!effect) return;
+  if(ctx.self.destinyRank!=='C'||!effect||ctx.self.name?.includes('六界神王')) return; // 六界神王以【界】魂印取代攔截
   const timed=(side:'p1'|'p2',id:string,turns:number,payload:any,next=false)=>ctx.addTimerTo(side,{id,name:effect.name,kind:'round_counter',source:'mechanic',remaining:turns,tickAt:'round_end',pendingActivation:next,payload},false);
   if(event===EffectTiming.ON_ENTRANCE&&effect.type==='on_enter') {
     if(ctx.getPlayerState('modeInterceptorEntranceActive'))return;

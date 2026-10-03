@@ -43,7 +43,9 @@ try {
   await act(async () => root.render(React.createElement(Battle, { ...props, key: 'special', specialMode: 'interstellar' })));
   await act(async () => { driver.onSkillSelect('p1', driver.getSyncState().p1.skills[0]); driver.onSkillSelect('p2', driver.getSyncState().p2.skills[0]); });
   for (let i = 0; i < 80 && !driver.getSyncState().winner; i++) await act(async () => { await new Promise(r => setTimeout(r, 20)); });
-  assert.equal(driver.getSyncState().winner, 'p1'); assert.equal(document.querySelector('dialog'), null);
+  assert.equal(driver.getSyncState().winner, 'p1');
+  const sd = document.querySelector('dialog'); assert.ok(sd?.textContent?.includes('返回回廊'), '特殊模式只給返回模式'); assert.ok(!sd?.textContent?.includes('重來'));
+  await click(sd!, '返回回廊'); assert.equal(home, 2);
 
   // 使用與 App 相同的 key 重建流程，驗收真實按鈕而非只測重建函式。
   const restartProps = { ...props, preparedTeams: false,
@@ -122,7 +124,10 @@ try {
   const { petImageUrls } = await server.ssrLoadModule('/src/battle/seerAssets.ts');
   assert.equal(petImageUrls({ name: '天蓬元帥八戒', id: 'fixture' }, 'body')[0], '/seer/body/1536.png');
   assert.equal(petImageUrls({ name: '人皇·帝辛', id: 'fixture' }, 'body')[0], '/elf-art/emperor_dixin_body.png');
-  for (const side of ['p1', 'p2']) {
+  // 隱匿只對敵方視角掩蓋：己方（P1）完整顯示真實立繪。
+  await act(async () => root.render(React.createElement(ElfAvatar, { elf: { id: 'secret', name: '秘密身份', path: '/secret-real-image.png', isConcealed: true }, kind: 'body', battleSide: 'p1' })));
+  assert.ok(document.querySelector('img')!.src.endsWith('/secret-real-image.png'), '己方隱匿精靈顯示真實立繪');
+  for (const side of ['p2']) {
     await act(async () => root.render(React.createElement(ElfAvatar, { elf: { id: 'secret', name: '秘密身份', path: '/secret-real-image.png', isConcealed: true }, kind: 'body', battleSide: side })));
     const ghost = document.querySelector('img')!;
     assert.ok(ghost.src.endsWith('/elf-art/unknown_myth_ghost_body.png'));

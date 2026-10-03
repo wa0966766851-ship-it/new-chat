@@ -1,0 +1,15 @@
+Use case: style-transfer plus precise-object-edit.
+Input image 1: edit target, the eight-icon review sheet.
+Input image 2: genuine in-game "神遊" status icon, style AND composition reference specifically for the new "神悔" icon.
+Edit the review sheet, preserving the four-column two-row layout and exact Traditional Chinese labels. The user requests a more unified, softer, rounder in-game icon style, NOT the current hard vector geometry.
+
+Critical change to top-row second icon "神悔": REMOVE the separate floating gold halo and gold diamond completely. Build its new pictogram from image 2: a central off-white four-point star nested inside a gray-blue circular medallion with four broad curling/swirl arms around it. Rounded flowing arms and subdued mist-softened edges, a little more dreamy and softly blurred than the 神遊 reference. Keep the central star clear. Use a slightly hazy pale lavender-gray/blue perimeter to distinguish 神悔 from 神遊 without introducing a different symbol. No standalone halo, no diamond beneath a halo, no eye, no text inside the icon.
+
+Unify ALL eight icons with moderate corner rounding and gentle edge softness:
+- preserve the existing icon identities and basic compositions for 眩暈 (tilted ring and three wedges), 腐朽 (crumbling shield), 失溫 (thermometer plus down arrow), 遲鈍 (forward arrow stopped by bar), 窒息 (constricted airway and red blocking bar), 平靜 (water drop and two calm horizontal ripples), 入魔 (horned abstract diamond with narrow center fissure).
+- Round off the harsh sharp polygon corners of the symbols into natural slightly rounded silhouettes. Use subtle smooth transitions at boundaries, faint controlled softness at edges and softly shaded colors like a simple painted game icon, not a sterile vector pictogram. Broad color areas still clean and few; NO busy detail, texture grains, sparkles, particle storms, photorealism, elaborate 3D or dramatic bloom.
+- All eight external frames should have the SAME modestly rounded-square shape, not angular chamfered octagons. Keep a consistent cyan-blue slim double outline and equal dark navy inner fill. A small subtle soft edge is enough. Keep crisp readable silhouettes and inner negative spaces; DO NOT Gaussian blur the whole sheet or labels. This is small-icon artwork, not complex illustration.
+- All tile interiors fully opaque dark navy, no mottled patches, no alpha holes. Sheet background solid dark navy.
+- Apply the same updated designs to their small preview versions below each icon.
+- Preserve exact labels in order: top 眩暈、神悔、腐朽、失溫; bottom 遲鈍、窒息、平靜、入魔. Preserve preview placement and size-caption text as review-sheet annotations, not inside icons.
+Output a clean polished edited review sheet for user approval, not assets installed in the game.

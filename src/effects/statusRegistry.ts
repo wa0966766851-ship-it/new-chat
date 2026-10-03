@@ -34,10 +34,17 @@ export const StatusRegistry: Record<string, StatusRegistryEntry> = {
     description: '控制類異常狀態；處於該異常狀態則每回合無法行動',
     mechanics: [{ type: 'CANT_ACT' }]
   },
+  // 官方名稱「魘昧」（SeerAPI 異常 44）；「魘味」為舊字形別名。
+  '魘昧': {
+    name: '魘昧',
+    categories: ['WEAKENING', 'RESTRICTIVE'],
+    description: '弱化類異常狀態；限制類異常；場上的異常狀態、能力提升狀態對己方均展示為1回合的魘昧（只改變己方看到的顯示，不改變原有效果與回合數）',
+    mechanics: []
+  },
   '魘味': {
-    name: '魘味',
-    categories: ['WEAKENING'],
-    description: '弱化類異常；處於該異常時，場上敵我雙方的異常狀態與能力等級狀態均對己方展示為無回合數的「魘味」。此效果只改變己方看到的顯示，不改變原有效果與回合數。',
+    name: '魘昧',
+    categories: ['WEAKENING', 'RESTRICTIVE'],
+    description: '弱化類異常狀態；限制類異常；場上的異常狀態、能力提升狀態對己方均展示為1回合的魘昧（只改變己方看到的顯示，不改變原有效果與回合數）',
     mechanics: []
   },
   '害怕': {

@@ -13,6 +13,7 @@ import { getTypeMatchup } from "../utils/statCalculator";
 import { emitStatusApplied } from "../blocks/registry";
 import { SoulMarkRegistry } from "../effects/battleEventRegistry";
 import { SuitEffectRegistry } from "../effects/suitEffectRegistry";
+import { runRelicEffects } from "../effects/relicEffectRegistry";
 import { applyStatChanges } from "../utils/statChangeManager";
 import { TraitsEngine } from "../utils/traitsEngine";
 import { getStatuses, shuffleArray, clampSkillPp } from "../utils/battleHelpers";
@@ -71,10 +72,12 @@ function runDamageHooks(shared: SharedContextDeps, targetSide: 'p1' | 'p2', comp
       comp.isIncoming = incoming;
       const handler = SoulMarkRegistry[state[owner].name];
       const suit = state[owner === 'p1' ? 'p1Suit' : 'p2Suit'];
-      if (handler || (suit && SuitEffectRegistry[suit])) {
+      const relics = owner === 'p1' ? state.p1Relics : state.p2Relics;
+      if (handler || (suit && SuitEffectRegistry[suit]) || relics?.length) {
         const ctx = shared.getBattleEventContext(owner, true, shared.moveIndex);
         handler?.(ctx, EffectTiming.BEFORE_DAMAGE, withSelfRef(comp));
         if (suit) SuitEffectRegistry[suit]?.(ctx, EffectTiming.BEFORE_DAMAGE, withSelfRef(comp));
+        runRelicEffects(relics, ctx, EffectTiming.BEFORE_DAMAGE, withSelfRef(comp));
       }
     }
   } finally { comp.isIncoming = true; _secondaryDamageDepth--; }
@@ -154,7 +157,7 @@ export function buildDamageAPIs(shared: SharedContextDeps): DamageAPIs {
       const stage3 = damageComp.limit !== undefined ? Math.min(stage2, damageComp.limit) : stage2;
       const finalDamage = Math.floor(damageComp.floor !== undefined ? Math.max(stage3, damageComp.floor) : Math.max(0, stage3));
 
-      pushEffect({ type: 'damage', side: tSide, data: { amount: finalDamage, label: label || "附加傷害", popup: true, sourceElfName: self.name, sourceSide:side, sourceBattleId:self.battleId||self.id, damageType: damageComp.damageCategory } });
+      pushEffect({ type: 'damage', side: tSide, data: { marksApplied: true, amount: finalDamage, label: label || "附加傷害", popup: true, sourceElfName: self.name, sourceSide:side, sourceBattleId:self.battleId||self.id, damageType: damageComp.damageCategory } });
       return finalDamage;
     },
     applySkillTypeDamage: (tSide, amt, label, opts) => {
@@ -240,7 +243,7 @@ export function buildDamageAPIs(shared: SharedContextDeps): DamageAPIs {
       const stage3 = damageComp.limit !== undefined ? Math.min(stage2, damageComp.limit) : stage2;
       const finalDamage = Math.floor(damageComp.floor !== undefined ? Math.max(stage3, damageComp.floor) : Math.max(0, stage3));
 
-      pushEffect({ type: 'damage', side: tSide, data: { amount: finalDamage, label: label || "附加技能傷害", popup: true, sourceElfName: self.name, sourceSide:side, sourceBattleId:self.battleId||self.id, damageType: damageCategory, damageNode, typedSkill: damageCategory === "skill_attribute", ignoreShield: !!opts?.ignoreShield } });
+      pushEffect({ type: 'damage', side: tSide, data: { marksApplied: true, amount: finalDamage, label: label || "附加技能傷害", popup: true, sourceElfName: self.name, sourceSide:side, sourceBattleId:self.battleId||self.id, damageType: damageCategory, damageNode, typedSkill: damageCategory === "skill_attribute", ignoreShield: !!opts?.ignoreShield } });
       if (tSide !== side) queueSkillLifesteal(side, finalDamage, damageCategory, syncStateRef.current[`${side}RegistryState`], pushEffect);
       return finalDamage;
     },
@@ -272,7 +275,7 @@ export function buildDamageAPIs(shared: SharedContextDeps): DamageAPIs {
       const stage3 = damageComp.limit !== undefined ? Math.min(stage2, damageComp.limit) : stage2;
       const finalDamage = Math.floor(damageComp.floor !== undefined ? Math.max(stage3, damageComp.floor) : Math.max(0, stage3));
 
-      pushEffect({ type: 'damage', side: tSide, data: { amount: finalDamage, label, popup: true, sourceElfName: self.name, sourceSide:side, sourceBattleId:self.battleId||self.id, damageType: "true" } });
+      pushEffect({ type: 'damage', side: tSide, data: { marksApplied: true, amount: finalDamage, label, popup: true, sourceElfName: self.name, sourceSide:side, sourceBattleId:self.battleId||self.id, damageType: "true" } });
       return finalDamage;
     },
     applyAbsorb: (tSide, amt, label = "汲取") => {
@@ -361,7 +364,7 @@ export function buildDamageAPIs(shared: SharedContextDeps): DamageAPIs {
       const stage3 = damageComp.limit !== undefined ? Math.min(stage2, damageComp.limit) : stage2;
       const finalDamage = Math.floor(damageComp.floor !== undefined ? Math.max(stage3, damageComp.floor) : Math.max(0, stage3));
 
-      pushEffect({ type: 'damage', side: tSide, data: { amount: finalDamage, label: "百分比傷害", popup: true, sourceElfName: self.name, sourceSide:side, sourceBattleId:self.battleId||self.id, damageType: "percent" } });
+      pushEffect({ type: 'damage', side: tSide, data: { marksApplied: true, amount: finalDamage, label: "百分比傷害", popup: true, sourceElfName: self.name, sourceSide:side, sourceBattleId:self.battleId||self.id, damageType: "percent" } });
       return finalDamage;
     },
     applyFixedDamage: (tSide, amt, label) => {
@@ -442,7 +445,7 @@ export function buildDamageAPIs(shared: SharedContextDeps): DamageAPIs {
       const stage3 = damageComp.limit !== undefined ? Math.min(stage2, damageComp.limit) : stage2;
       const finalDamage = Math.floor(damageComp.floor !== undefined ? Math.max(stage3, damageComp.floor) : Math.max(0, stage3));
 
-      pushEffect({ type: 'damage', side: tSide, data: { amount: finalDamage, label: label || "固定傷害", popup: true, sourceElfName: self.name, sourceSide:side, sourceBattleId:self.battleId||self.id, damageType: "fixed" } });
+      pushEffect({ type: 'damage', side: tSide, data: { marksApplied: true, amount: finalDamage, label: label || "固定傷害", popup: true, sourceElfName: self.name, sourceSide:side, sourceBattleId:self.battleId||self.id, damageType: "fixed" } });
       return finalDamage;
     },
   };
@@ -455,6 +458,12 @@ export function buildStatusAPIs(shared: SharedContextDeps): StatusAPIs {
     applyStatusWithImmunityCheck: (tSide, s, d) => {
       // 反彈／轉嫁類效果互相觸發時的遞迴保護（雙方都有「反彈異常」會無限互彈直到堆疊溢位）
       if (_statusApplyDepth >= 3) return { success: false, immune: true };
+      // 「本回合執行過附加異常狀態的效果」（砥礪判定用）：對他方附加即記錄，不論成敗。
+      if (tSide !== side) {
+        const c0 = syncStateRef.current;
+        const rk = `${side}RegistryState` as 'p1RegistryState' | 'p2RegistryState';
+        syncStateRef.current = { ...c0, [rk]: { ...(c0[rk] || {}), statusAttachTurn: c0.turnNumber } } as any;
+      }
       _statusApplyDepth++;
       try { return ((): { success: boolean; immune: boolean } => {
       const c = syncStateRef.current;
@@ -528,6 +537,11 @@ export function buildStatusAPIs(shared: SharedContextDeps): StatusAPIs {
         if (statusData.prevented || statusData.prevent) {
           return { success: false, immune: true };
         }
+      }
+      const tRelics = tSide === 'p1' ? c.p1Relics : c.p2Relics;
+      if (!isReflectedIn && tRelics?.length) {
+        runRelicEffects(tRelics, filterCtx, EffectTiming.BEFORE_STATUS_APPLY, statusData);
+        if (statusData.prevented || statusData.prevent) return { success: false, immune: true };
       }
 
       // Also call SoulMarkRegistry for BEFORE_STATUS_APPLY to allow soul mark immunities/replacements (M1)
@@ -643,6 +657,11 @@ export function buildStatusAPIs(shared: SharedContextDeps): StatusAPIs {
       const filteredChanges = Object.entries(changes || {}).filter(([stat, value]) => {
          if (value < 0 && immuneStatDownTurns > 0) {
             pushEffect({ type: 'log', side: tSide, data: { text: `🛡️ 【能力下降免疫】：【${target.name}】免疫了能力下降！`, type: "effect" } });
+            return false;
+         }
+         // 星際藏品【重力靴】：速度下降免疫
+         if (value < 0 && stat === "speed" && (tSide === "p1" ? c.p1Relics : c.p2Relics)?.includes("gravity_boots")) {
+            pushEffect({ type: 'log', side: tSide, data: { text: `👢 【重力靴】：【${target.name}】免疫了速度下降！`, type: "effect" } });
             return false;
          }
          return true;

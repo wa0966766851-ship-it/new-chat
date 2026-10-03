@@ -48,6 +48,17 @@ export const handleCanglanSoulMark = (ctx: BattleEventContext, event: EffectTimi
     }
 
     case EffectTiming.BEFORE_DAMAGE:
+      // 回合開始時：雙方每存在100點護盾 → 直到下回合結束，每次受到固定／百分比傷害額外減半一次（n 次即 ×0.5^n），
+      // 且減半後傷害不超過雙方當前護盾值總和的 1/3（下場後保留）。
+      if (extraData?.isIncoming && (extraData?.damageCategory === "fixed" || extraData?.damageCategory === "percent")) {
+        const n = Number(getPlayerState("canglanShieldHalves") || 0);
+        if (n > 0 && Number(getPlayerState("canglanShieldHalvesLeft") || 0) > 0) {
+          extraData.multiplier *= 0.5 ** n;
+          const shields = (self.shield || 0) + (ctx.target?.shield || 0);
+          extraData.limit = Math.min(extraData.limit ?? Infinity, Math.floor(shields / 3));
+          addLog(`🌊 【瀾】：固定／百分比傷害減半 ${n} 次！`, "effect");
+        }
+      }
       if (!extraData?.isIncoming && extraData?.damageCategory === "skill_attack") {
         const water = markCount(actor, "blk_永恆之水", self);
         if (water > 0 && extraData?.increasePercent !== undefined) {
@@ -71,8 +82,13 @@ export const handleCanglanSoulMark = (ctx: BattleEventContext, event: EffectTimi
       }
       break;
 
-    case EffectTiming.ROUND_START:
+    case EffectTiming.ROUND_START: {
       setPlayerState("canglanTookSkillDamage", false);
+      const steps = Math.floor(((self.shield || 0) + (ctx.target?.shield || 0)) / 100);
+      const prevLeft = Number(getPlayerState("canglanShieldHalvesLeft") || 0);
+      const prevN = prevLeft > 0 ? Number(getPlayerState("canglanShieldHalves") || 0) : 0;
+      if (steps > 0) { setPlayerState("canglanShieldHalves", Math.max(steps, prevN)); setPlayerState("canglanShieldHalvesLeft", 2); }
+    }
       if (getPlayerState("canglanCureNextRound")) {
         clearStatuses(ctx, actor, self, name => name !== "normal");
         setPlayerState("canglanCureNextRound", false);
@@ -85,6 +101,7 @@ export const handleCanglanSoulMark = (ctx: BattleEventContext, event: EffectTimi
       }
       break;
     case EffectTiming.ROUND_END:
+      if (Number(getPlayerState("canglanShieldHalvesLeft") || 0) > 0) setPlayerState("canglanShieldHalvesLeft", Number(getPlayerState("canglanShieldHalvesLeft")) - 1);
       if (!getPlayerState("canglanTookSkillDamage")) {
         const n = ctx.applyPinkDamage(oppSide, Math.floor(ctx.target.maxHp / 3), "瀾·吸取", undefined, undefined, "percent");
         applyHeal(actor, n);

@@ -11,7 +11,7 @@ import { isStoneThrower } from "../data/skillStones";
 import { formatEffectText } from "../utils/descFormat";
 import { getElfDisplayRank as getElfDestinyRank } from "../utils/elfDisplayRank";
 import { InfoHint } from "./InfoHint";
-import { getNatureFromModifiers } from "../utils/seerNatures";
+import { getNatureFromModifiers, getDefaultNatureModifiers } from "../utils/seerNatures";
 import { SUIT_CATALOG, EYEWEAR_CATALOG } from "../data/suitsAndEyewears";
 import { TITLE_CATALOG } from "../data/titles";
 import { DEFAULT_ELVES } from "../data/defaultElves";
@@ -2421,7 +2421,7 @@ export default function StartScreen({
                       Lv.100 能力值
                     </h4>
                     {(() => {
-                      const nature = getNatureFromModifiers(showDetailModal.natureModifiers);
+                      const nature = getNatureFromModifiers(showDetailModal.natureModifiers, showDetailModal.baseStats);
                       return (
                         <span className="text-xs font-bold px-2.5 py-0.5 bg-amber-500/15 border border-amber-500/40 text-amber-300 rounded-full">
                           性格：{nature?.name} {nature.description !== "平衡性格 (全部 1.0x)" ? `(${nature.description})` : "(平衡 1.0x)"}
@@ -2434,7 +2434,7 @@ export default function StartScreen({
                       const calcVal = (detailStats as any)?.[key] ?? baseVal;
                       const defaultEvsMap = getDefaultEvs(showDetailModal.baseStats);
                       const evVal = (showDetailModal.evs as any)?.[key] ?? (defaultEvsMap as any)[key] ?? 0;
-                      const modVal = (showDetailModal.natureModifiers as any)?.[key] || 1.0;
+                      const modVal = ((showDetailModal.natureModifiers ?? getDefaultNatureModifiers(showDetailModal.baseStats)) as any)?.[key] || 1.0;
                       return (
                         <div key={key} className="bg-black/25 p-3 rounded-2xl text-center">
                           <div className="text-xs text-slate-400 uppercase font-bold mb-1 flex items-center justify-center gap-1">
@@ -3416,14 +3416,15 @@ export default function StartScreen({
                     {!bpPhase.startsWith("ban") && <span className="text-xs text-slate-400">點擊卡片出戰/移出，點選👑設為首發</span>}
                   </h4>
                   <span className="text-xs font-mono bg-cyan-950/60 text-cyan-400 px-2 py-0.5 rounded border border-cyan-800/50">
-                    {bpPhase.startsWith("ban") ? `被禁: ${p1Team.filter(e => p2BannedIds.includes(e.battleId)).length}/${banCount}` : `已出戰: ${p1PickedIds.length}/${pickCount}`}
+                    {bpPhase.startsWith("ban") ? (battleMode === "PVE" ? `被禁: ?/${banCount}` : `被禁: ${p1Team.filter(e => p2BannedIds.includes(e.battleId)).length}/${banCount}`) : `已出戰: ${p1PickedIds.length}/${pickCount}`}
                   </span>
                 </div>
                 
                 <div className="grid grid-cols-3 sm:grid-cols-4 gap-3 overflow-y-auto pr-1 custom-scrollbar">
                   {p1Team.map((elf, index) => {
                     const isBanPhase = bpPhase.startsWith("ban");
-                    const isBanned = p2BannedIds.includes(elf.battleId);
+                    // PVE 同步禁選：AI 對 P1 的禁用在 P1 確認前不揭曉
+                    const isBanned = !(isBanPhase && battleMode === "PVE") && p2BannedIds.includes(elf.battleId);
                     const isPicked = p1PickedIds.includes(elf.battleId);
                     const isStarter = p1BpStarterId === elf.battleId;
                     

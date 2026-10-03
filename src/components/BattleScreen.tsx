@@ -1,6 +1,8 @@
 import { dispatchModeEvent } from '../battle/modeEvents';
 import { damagePresentationAmount } from '../battle/damagePresentation';
-import { BattlePresentation, type PresentationKind } from '../battle/presentation';
+import { BattlePresentation, effectivenessLabel, type PresentationKind } from '../battle/presentation';
+import { hiddenFromViewer } from '../battle/viewerPerspective';
+import { BATTLE_ANIMATION_EVENT, readAnimationSettings, type BattleAnimationSettings } from '../battle/animationSettings';
 import { activeConstraints } from '../battle/timedConstraints';
 import { readScopedRegistry } from '../battle/stateScopes';
 import { queueSkillLifesteal } from '../battle/lifesteal';
@@ -23,6 +25,7 @@ import { drainExtraActionQueue } from "../battle/extraActions";
 import { findBlockTimer } from "../blocks/runtime";
 import { modifySkillDamage, afterSkillHit, traitFatalResist, priorityBonus } from "../effects/traitEffects";
 import { SuitEffectRegistry } from "../effects/suitEffectRegistry";
+import { runRelicEffects } from "../effects/relicEffectRegistry";
 import { StatusRegistry } from "../effects/statusRegistry";
 import { canonicalStatusName } from '../effects/statusIdentity';
 import { advanceStatusEffect } from '../battle/statusLifecycle';
@@ -112,7 +115,7 @@ interface BattleScreenProps {
   onBattleEnd?: (winner: "p1" | "p2" | "exit" | "draw", team?: Elf[]) => void;
   preparedTeams?: boolean;
   specialMode?: "destiny" | "interstellar";
-  interstellarOptions?: {onPotionUse?:()=>boolean;onBattleEnd?:Function};
+  interstellarOptions?: {onPotionUse?:()=>boolean;onBattleEnd?:Function;relics?:string[];enemyRelics?:string[]};
   onDriverInit?: (driver: {
     getState: () => any;
     getSyncState?: () => any;
@@ -192,6 +195,7 @@ export default function BattleScreen(props: BattleScreenProps) {
     const p2Idx = Math.max(0, p2Team.findIndex(e => (e.battleId || e.id) === p2StarterId || e.id === p2StarterId));
     
     return {
+      p1Suit, p2Suit, p1Relics: props.interstellarOptions?.relics ?? [], p2Relics: props.interstellarOptions?.enemyRelics ?? [],
       p1Team, p2Team, p1ActiveIndex: p1Idx, p2ActiveIndex: p2Idx,
       p1: { ...p1Team[p1Idx] }, p2: { ...p2Team[p2Idx] },
       p1StartHp: p1Team[p1Idx].currentHp,
@@ -213,11 +217,28 @@ export default function BattleScreen(props: BattleScreenProps) {
   const { phase, p1, p2, p1Team, p2Team, winner } = state;
   const [presentationVersion, updatePresentation] = useReducer((n: number) => n + 1, 0);
   const presentationRef = useRef<BattlePresentation | null>(null);
+  const animationSettingsRef = useRef<BattleAnimationSettings>(readAnimationSettings());
+  useEffect(() => {
+    const refresh = () => { animationSettingsRef.current = readAnimationSettings(); };
+    window.addEventListener(BATTLE_ANIMATION_EVENT, refresh);
+    window.addEventListener('storage', refresh);
+    return () => { window.removeEventListener(BATTLE_ANIMATION_EVENT, refresh); window.removeEventListener('storage', refresh); };
+  }, []);
   if (!presentationRef.current) presentationRef.current = new BattlePresentation(
     () => { if (battleAliveRef.current) updatePresentation(); },
-    () => typeof window !== 'undefined' && !!(window as any).__BATTLE_FAST__
+    () => typeof window !== 'undefined' && !!(window as any).__BATTLE_FAST__,
+    () => animationSettingsRef.current
   );
   const presentation = presentationRef.current;
+  /** 額外行動節點結束：第一次紅字播完後，不論額外行動幾次只多播一次動畫＋一筆合併紅字。 */
+  async function finishExtraPresentation(owner: "p1" | "p2", resolved: number) {
+    if (resolved > 0 && battleAliveRef.current) {
+      await presentation.wait();
+      pushEffect({ type: 'animation', side: owner, data: { anim: { side: owner, category: 'attack', skillName: '額外行動', targetSide: owner === "p1" ? "p2" : "p1" }, duration: 400 } });
+      await processQueue();
+    }
+    await presentation.endExtra();
+  }
 
   // ── 單一真實來源 ─────────────────────────────────────────────
   // 過去戰鬥邏輯寫 syncStateRef、畫面讀 reducer state，兩邊靠手動同步；
@@ -395,7 +416,8 @@ export default function BattleScreen(props: BattleScreenProps) {
 
         // 讀取攻擊方/防守方身上的 marks，套用非真實傷害倍率
         // 「非真實傷害」= 技能傷害 + 固定傷害 + 百分比傷害（排除真實傷害本身）
-        if (isNonTrueDamageType(normalizedDamageType)) {
+        // 由效果層（附加／固定／百分比／X系）結算的傷害已在 contextBuilders 套過印記倍率，不可重複套用。
+        if (isNonTrueDamageType(normalizedDamageType) && !data.marksApplied) {
           // 防守方：受到非真實傷害倍率
           const targetMarks = targetSide === "p1" ? cur.p1Marks : cur.p2Marks;
           for (const mark of (targetMarks || []).filter(mark => markAppliesToElf(mark, target))) {
@@ -682,7 +704,9 @@ export default function BattleScreen(props: BattleScreenProps) {
             type: presentationAfterHp > target.currentHp ? 'adjust_up' : lastActionType === 'crit' ? 'skill' : lastActionType as PresentationKind,
             amount: presentationAfterHp > target.currentHp ? presentationAfterHp - target.currentHp : displayedDamage, delta: presentationAfterHp - target.currentHp,
             before: target.currentHp, after: presentationAfterHp, maxHp: target.maxHp,
-            label: lastActionLabel, isCrit: data.isCrit, alive: !checkElfDead(syncStateRef.current[targetSide]) });
+            label: lastActionLabel, isCrit: data.isCrit, alive: !checkElfDead(syncStateRef.current[targetSide]),
+            effectiveness: effectivenessLabel((data as any).typeMultiplier),
+            sourceSide: (data as any).sourceSide, skillName: (data as any).skillName });
         }
         if (SoulMarkRegistry[target.name]) {
           SoulMarkRegistry[target.name](damagedCtx, EffectTiming.ON_DAMAGED, damagedPayload);
@@ -741,18 +765,22 @@ export default function BattleScreen(props: BattleScreenProps) {
           });
         }
 
-        // §3: SPECIAL_BUFF healOnTrueDmgPercent (砥礪)
-        if (data.damageType === "true") {
+        // §3: SPECIAL_BUFF healOnTrueDmgPercent (砥礪，依戰鬥百科)：受到真實傷害後，
+        // 若本回合未執行過附加異常狀態的效果則增加傷害值 80% 體力。觸發不移除異常；判定成敗記錄給來源特性使用。
+        if (normalizeDamageType(data) === "true" && dmg > 0) {
           const targetStatuses = getStatuses(target);
           Object.keys(targetStatuses).forEach(stId => {
             const entry = StatusRegistry[stId];
             const p = entry?.mechanics?.find(m => m.type === 'SPECIAL_BUFF')?.params || {};
-            if (p.healOnTrueDmgPercent) {
+            if (p.healOnTrueDmgPercent && (targetStatuses[stId] || 0) > 0) {
+              const tReg = (syncStateRef.current as any)[`${targetSide}RegistryState`] || {};
+              const success = tReg.statusAttachTurn !== syncStateRef.current.turnNumber;
+              const hCtx = getBattleEventContext(targetSide);
               const heal = Math.floor(dmg * p.healOnTrueDmgPercent);
-              if (heal > 0) {
-                const hCtx = getBattleEventContext(targetSide);
-                hCtx.adjustHp(targetSide, heal);
-              }
+              if (success && heal > 0) hCtx.adjustHp(targetSide, heal);
+              const outcomeKey = `teamDiliOutcome.${target.battleId || target.id}`;
+              if (success || hCtx.getPlayerState(outcomeKey) !== "success") hCtx.setPlayerState(outcomeKey, success ? "success" : "fail");
+              dispatch({ type: 'ADD_LOG', log: { turn: cur.turnNumber, text: success ? `🪨 【${entry.name}】：增加 ${heal} 點體力（體力調整，非恢復）！` : `🪨 【${entry.name}】：本回合已執行過附加異常狀態的效果，未增加體力。`, type: "effect" } });
             }
           });
         }
@@ -972,6 +1000,8 @@ export default function BattleScreen(props: BattleScreenProps) {
         dispatch({ type: 'ADD_LOG', log: { turn: cur.turnNumber, text: data.text, type: data.type || 'info', sourceCode: data.sourceCode } });
         break;
       case 'animation':
+        // 出招動畫開關：關閉時不播放也不等待，結算照常。
+        if (!animationSettingsRef.current.skill) return;
         dispatch({ type: 'SET_SKILL_ANIM', anim: data.anim });
         await new Promise(r => setTimeout(r, fast ? 0 : (data.duration || 350)));
         dispatch({ type: 'SET_SKILL_ANIM', anim: null });
@@ -1117,6 +1147,8 @@ case 'switch': {
       const ctx = getBattleEventContext(side);
       SuitEffectRegistry[suitId](ctx, event, extraData);
     }
+    const relics = side === "p1" ? cur.p1Relics : cur.p2Relics;
+    if (relics?.length) runRelicEffects(relics, getBattleEventContext(side), event, extraData);
   }, [getBattleEventContext, p1Suit, p2Suit]);
 
   // 出手流程節點廣播：戰鬥階段的各節點只 dispatch 給在場當事人，場下的額外精靈擁有者（如布林克克/克塔亞特）收不到。
@@ -1774,6 +1806,7 @@ case 'switch': {
     // 不得拖到下一個精靈出手才執行。這裡沿用與 endOfAction 相同的獨立節點語意。
     for (const owner of ["p1", "p2"] as const) {
       let resolved = 0;
+      presentation.beginExtra();
       while (resolved < 32) {
         const queue = ((syncStateRef.current as any).extraActionQueue || []) as any[];
         const index = queue.findIndex(action => action.owner === owner);
@@ -1797,6 +1830,7 @@ case 'switch': {
         syncStateRef.current = { ...syncStateRef.current, extraActionQueue: ((syncStateRef.current as any).extraActionQueue || []).filter((action: any) => action.owner !== owner) } as any;
         pushEffect({ type: 'log', side: owner, data: { text: `⚠️ 額外行動超過安全上限，已停止後續連鎖。`, type: "info" } });
       }
+      await finishExtraPresentation(owner, resolved);
     }
 
 
@@ -2059,6 +2093,14 @@ case 'switch': {
         comp.bonus = 0;
       }
 
+      // 印記先制修正（可限定對手名稱，例如武誅：對手為無極聖武時先制-2）
+      {
+        const oppElf = cur[side === "p1" ? "p2" : "p1"];
+        for (const mark of ((cur as any)[`${side}Marks`] || []).filter((m: any) => markAppliesToElf(m, elf))) {
+          const b = mark.effects?.priorityBonus;
+          if (b && mark.count > 0 && (!mark.effects?.vsOpponentName || oppElf?.name === mark.effects.vsOpponentName)) comp.bonus += b;
+        }
+      }
       if (SoulMarkRegistry[elf.name]) {
         const ctx = getBattleEventContext(side, true, 0);
         SoulMarkRegistry[elf.name](ctx, EffectTiming.MODIFY_PRIORITY, { priorityComp: comp });
@@ -2076,6 +2118,13 @@ case 'switch': {
 
     let p1Priority = p1Res.priority;
     let p2Priority = p2Res.priority;
+    // 通用：「對手先制等級無法高於自身」（由魂印／技能在 MODIFY_PRIORITY 設定，本回合一次）。
+    for (const side of ["p1", "p2"] as const) {
+      const reg = (syncStateRef.current as any)[`${side}RegistryState`] || {};
+      if (!reg.capOpponentPriorityThisTurn) continue;
+      if (side === "p1") p2Priority = Math.min(p2Priority, p1Priority); else p1Priority = Math.min(p1Priority, p2Priority);
+      syncStateRef.current = { ...syncStateRef.current, [`${side}RegistryState`]: { ...reg, capOpponentPriorityThisTurn: false } } as any;
+    }
 
     if (p1Res.forcedFirst && !p2Res.forcedFirst) {
       p1Priority = Math.max(p1Priority, p2Priority + 999);
@@ -2106,6 +2155,7 @@ case 'switch': {
       const opp = side === "p1" ? "p2" : "p1";
       // 每次只取一項並重新讀取佇列，讓額外行動結算中新增的額外行動也能在同一節點依序生效。
       // 設上限防止錯誤效果互相排隊造成無限循環。
+      presentation.beginExtra();
       const drained = await drainExtraActionQueue<any>({
         owner: side,
         readQueue: () => ((syncStateRef.current as any).extraActionQueue || []),
@@ -2127,6 +2177,7 @@ case 'switch': {
       if (drained.truncated) {
         pushEffect({ type: 'log', side, data: { text: `⚠️ 額外行動超過安全上限，已停止後續連鎖。`, type: "info" } });
       }
+      await finishExtraPresentation(side, drained.resolved);
     };
     let prevActor: { s: "p1" | "p2"; i: number } | null = null;
 
@@ -2340,8 +2391,10 @@ case 'switch': {
       }
       broadcastExtraElfNode("出手流程開始");
 
-      let displayName = actor.isConcealed ? "未知精靈" : actor.name;
-      let displaySkill = actor.isConcealed ? "未知技能" : skill.name;
+      // 隱匿只對敵方視角掩蓋；己方完整顯示（UI 另對敵方隱匿精靈的所有文字做掩蓋）。
+      const actorHidden = hiddenFromViewer(actor, s);
+      let displayName = actorHidden ? "未知精靈" : actor.name;
+      let displaySkill = actorHidden ? "未知技能" : skill.name;
       let activeSkill = skill;
 
       const actorStatuses = getStatuses(actor);
@@ -2494,7 +2547,7 @@ case 'switch': {
           pushEffect({ type: 'log', side: s, data: { text: `☄️ 【投石者】：【${activeSkill.name}】轉化為【${ss.name}】！`, type: "effect" } });
           activeSkill = ss;
           (ctx as any).skill = ss;
-          if (!actor.isConcealed) displaySkill = ss.name;
+          if (!actorHidden) displaySkill = ss.name;
         }
       }
 
@@ -2503,7 +2556,7 @@ case 'switch': {
       if (transformedSkill !== activeSkill) {
         activeSkill = transformedSkill;
         (ctx as any).skill = transformedSkill;
-        if (!actor.isConcealed) displaySkill = transformedSkill.name;
+        if (!actorHidden) displaySkill = transformedSkill.name;
       }
 
       const actorMarks = s === "p1" ? syncStateRef.current.p1Marks : syncStateRef.current.p2Marks;
@@ -2795,7 +2848,8 @@ case 'switch': {
       if (activeSkill.category !== "屬性" && activeSkill.power) {
         const hitCount = Math.max(1, Math.floor(syncStateRef.current[actorRegKey]?.attackHitCountThisAction || 1));
         syncStateRef.current = { ...syncStateRef.current, [actorRegKey]: { ...syncStateRef.current[actorRegKey], attackHitCountThisAction: 0 } };
-        for (let hitIndex = 0; hitIndex < hitCount; hitIndex++) {
+        // 連擊不是額外行動：單次計算×連擊次數（官方公式），只播一次動畫；每擊附帶判定於結算後依次數處理。
+        for (let pass = 0; pass < 1; pass++) {
         if (checkElfDead(syncStateRef.current[s]) || checkElfDead(syncStateRef.current[oppSide])) break;
         const currentActor = syncStateRef.current[s];
         const currentOpp = syncStateRef.current[oppSide];
@@ -2808,11 +2862,15 @@ case 'switch': {
         let ignoreSpDefPercent = 0;
         let ignoreDefPercent = 0;
         let ignoreOppBuff = false;
-        if (syncStateRef.current[actorRegKey]?.ignoreOppBuffTurns > 0) {
+        if (syncStateRef.current[actorRegKey]?.ignoreOppBuffTurns > 0 || syncStateRef.current[actorRegKey]?.ignoreOppBuffThisAction) {
            ignoreOppBuff = true;
         }
         if (syncStateRef.current[actorRegKey]?.ignoreDef25Turns > 0) {
            ignoreDefPercent = 0.25;
+        }
+        // 星際藏品【迪恩之刃】：物理攻擊額外無視對手防禦 5%
+        if (activeSkill.category === "物理" && (s === "p1" ? syncStateRef.current.p1Relics : syncStateRef.current.p2Relics)?.includes("dean_blade")) {
+           ignoreDefPercent += 0.05;
         }
         if (ignoreSpDefCount > 0 && activeSkill.category === "特殊") {
           ignoreSpDefPercent = 0.60;
@@ -2837,7 +2895,7 @@ case 'switch': {
           isCritGuaranteed ? true : undefined,
           mid.p1Team,
           mid.p2Team,
-          { ignoreSpDefPercent, ignoreDefPercent, ignoreOppBuff },
+          { ignoreSpDefPercent, ignoreDefPercent, ignoreOppBuff, hitCount },
           p1Title,
           p2Title,
           syncStateRef.current.p1RegistryState,
@@ -2999,6 +3057,18 @@ case 'switch': {
         if (!damageComp.pure) modifySkillDamage(currentActor, currentOpp, activeSkill, damageComp, getBattleEventContext(s, true, mIdx), rng,
           (text) => pushEffect({ type: 'log', side: s, data: { text, type: "effect" } }));
 
+        // 印記：依持有者體力比例調整攻擊傷害（例如武誅：體力高於1/2時受到攻擊傷害提升、低於1/2時造成攻擊傷害降低）
+        if (!damageComp.pure) {
+          for (const mark of ((syncStateRef.current as any)[`${oppSide}Marks`] || []).filter((m: any) => markAppliesToElf(m, currentOpp))) {
+            const k = mark.effects?.attackTakenMultAboveHalfHp;
+            if (k && mark.count > 0 && currentOpp.currentHp > currentOpp.maxHp / 2) damageComp.multiplier *= k;
+          }
+          for (const mark of ((syncStateRef.current as any)[`${s}Marks`] || []).filter((m: any) => markAppliesToElf(m, currentActor))) {
+            const k = mark.effects?.attackDealtMultBelowHalfHp;
+            if (k && mark.count > 0 && currentActor.currentHp < currentActor.maxHp / 2) damageComp.multiplier *= k;
+          }
+        }
+
          // Calculate final result（pure 獨立乘區時跳過通用增減傷；floor／limit／mercy 不跳）
         if (activeConstraints(syncStateRef.current[`${s}Timers`], syncStateRef.current[s]).some(p => p.preventAttackDamage)) damageComp.multiplier = 0;
         const stage1 = damageComp.base * (1 + damageComp.increasePercent) * (1 - damageComp.decreasePercent);
@@ -3024,7 +3094,7 @@ case 'switch': {
         if ((oppRegCap.incomingSkillDmgCapTurns || 0) > 0 && oppRegCap.incomingSkillDmgCap !== undefined) {
           finalLimit = Math.min(finalLimit, oppRegCap.incomingSkillDmgCap);
         }
-        if (syncStateRef.current[actorRegKey]?.blkIgnoreLimit) finalLimit = Infinity;
+        if (syncStateRef.current[actorRegKey]?.blkIgnoreLimit || syncStateRef.current[actorRegKey]?.ignoreDamageLimitThisAction) finalLimit = Infinity;
         const stage3 = finalLimit !== Infinity ? Math.min(stage2, finalLimit) : stage2;
         const stage3_5 = stage3 + (damageComp.bonusFixed || 0);
         let finalDamage = Math.floor(damageComp.floor !== undefined ? Math.max(stage3_5, damageComp.floor) : Math.max(0, stage3_5));
@@ -3065,8 +3135,8 @@ case 'switch': {
           pushEffect({ type: 'damage', side: oppSide, data: { amount: currentOppMaxHp, label: "恐懼真傷", popup: true, damageType: "true_damage" } });
         }
         
-        const ignoreShieldThisAction = !!syncStateRef.current[actorRegKey]?.ignoreImmunityAndShield;
-        pushEffect({ type: 'damage', side: oppSide, data: { amount: finalDamage, popup: true, isCrit: dmgRes.isCrit, label: dmgRes.isCrit ? "暴擊" : "", sourceElfName: currentActor.name, sourceSide:s, sourceBattleId:currentActor.battleId||currentActor.id, typeMultiplier: dmgRes.typeMultiplier, damageType: "skill_attack", ignoreShield: ignoreShieldThisAction } });
+        const ignoreShieldThisAction = !!(syncStateRef.current[actorRegKey]?.ignoreImmunityAndShield || syncStateRef.current[actorRegKey]?.blkIgnoreShield || syncStateRef.current[actorRegKey]?.ignoreShieldThisAction);
+        pushEffect({ type: 'damage', side: oppSide, data: { amount: finalDamage, popup: true, isCrit: dmgRes.isCrit, label: [dmgRes.isCrit ? "暴擊" : "", hitCount > 1 ? `${hitCount}連擊` : ""].filter(Boolean).join(" "), sourceElfName: currentActor.name, sourceSide:s, sourceBattleId:currentActor.battleId||currentActor.id, skillName: displaySkill, typeMultiplier: dmgRes.typeMultiplier, damageType: "skill_attack", ignoreShield: ignoreShieldThisAction } });
         afterSkillHit(currentActor, currentOpp, activeSkill, finalDamage, dmgRes.isCrit,
           getBattleEventContext(s, true, mIdx), getBattleEventContext(oppSide, true, mIdx), rng);
         // 通用：下 N 回合自身攻擊技能必定令對手陷入某異常（attackInflictStatus）
@@ -3158,8 +3228,12 @@ case 'switch': {
 
         queueSkillLifesteal(s, finalDamage, "skill_attack", syncStateRef.current[`${s}RegistryState`], pushEffect);
         await processQueue();
-        const hitCtx = getBattleEventContext(s, true, mIdx);
-        SoulMarkRegistry[hitCtx.self.name]?.(hitCtx, EffectTiming.AFTER_ATTACK_HIT, { skill: activeSkill, hitIndex, hitCount, additionalEffectsEnabled: !addEffectsInvalid });
+        for (let hitIndex = 0; hitIndex < hitCount; hitIndex++) {
+          if (checkElfDead(syncStateRef.current[s])) break; // 攻擊方已倒下（如被反擊致死）不再結算每擊效果
+          const hitCtx = getBattleEventContext(s, true, mIdx);
+          // 傷害只記在第一擊（總量），其餘擊只做每擊判定
+          SoulMarkRegistry[hitCtx.self.name]?.(hitCtx, EffectTiming.AFTER_ATTACK_HIT, { skill: activeSkill, hitIndex, hitCount, damage: hitIndex === 0 ? finalDamage : 0, totalDamage: finalDamage, additionalEffectsEnabled: !addEffectsInvalid });
+        }
         await processQueue();
         }
       }
@@ -3184,7 +3258,7 @@ case 'switch': {
           const rg = syncStateRef.current[actorRegKey] || {};
           let uses = rg.blkTypeOverrideUses || 0;
           if (rg.blkTypeOverrideExtend && !checkElfDead(syncStateRef.current[oppSide])) uses = rg.blkTypeOverrideExtend;
-          syncStateRef.current = { ...syncStateRef.current, [actorRegKey]: { ...rg, blkIgnoreLimit: false, blkIgnoreBlock: false, blkIgnoreShield: false, blkAtkSpatkSum: false, blkLastCrit: false, blkStageAsBoost: 0, blkTypeOverrideUses: uses, blkTypeOverrideExtend: 0, blkTypeOverrideCurrentAction: false } };
+          syncStateRef.current = { ...syncStateRef.current, [actorRegKey]: { ...rg, blkIgnoreLimit: false, blkIgnoreBlock: false, blkIgnoreShield: false, ignoreDamageLimitThisAction: false, fixedTypeMultThisAction: 0, ignoreAttackImmunityThisAction: false, ignoreShieldThisAction: false, ignoreOppBuffThisAction: false, oppBoostAsDropThisAction: false, selfDropAsOppDropThisAction: false, blkAtkSpatkSum: false, blkLastCrit: false, blkStageAsBoost: 0, blkTypeOverrideUses: uses, blkTypeOverrideExtend: 0, blkTypeOverrideCurrentAction: false } };
         }
       }
 
@@ -3619,6 +3693,8 @@ case 'switch': {
     }
   };
 
+  const [potionsUsed, setPotionsUsed] = React.useState(0);
+  const potionLimit = props.interstellarOptions?.onPotionUse ? { max: Number((props.interstellarOptions as any).maxPotionUsage) || 0, left: Math.max(0, (Number((props.interstellarOptions as any).maxPotionUsage) || 0) - potionsUsed) } : undefined;
   const onUseItem = (side: "p1" | "p2", item: BattleItem) => {
     if (!battleAliveRef.current) return;
     const curForItems = latestStateRef.current;
@@ -3629,8 +3705,10 @@ case 'switch': {
       return;
     }
 
-    if (side === "p1" && props.interstellarOptions?.onPotionUse && item.type !== "special" && !props.interstellarOptions.onPotionUse()) {
-      pushEffect({type:"log",side,data:{text:"藥劑次數已用盡。",type:"effect"}}); return;
+    // 星際探索：每次使用道具消耗 1 次藥劑；用盡即鎖定（只影響此模式）。「特殊」欄位保留，不計次、不鎖定。
+    if (side === "p1" && props.interstellarOptions?.onPotionUse && item.type !== "special") {
+      if (!props.interstellarOptions.onPotionUse()) { pushEffect({type:"log",side,data:{text:"藥劑次數已用盡。",type:"effect"}}); return; }
+      setPotionsUsed(n => n + 1);
     }
     dispatch({ type: 'SET_ITEM', side, item });
     dispatch({ type: 'SET_SKILL', side, skill: { name: "使用道具", type: "無", category: "屬性", power: 0, pp: 0, priority: 6 } });
@@ -3665,6 +3743,13 @@ case 'switch': {
       const action = pickAiAction(cur, 'p1', p1Suit, p2Suit, rng);
       if (action.type === 'skill') onSkillSelect('p1', action.skill!);
       else if (action.type === 'switch') onSwitchElf('p1', action.switchIndex!);
+      else if (action.type === 'item' && action.item) onUseItem('p1', action.item);
+      // 托管保底：選擇被拒（道具用盡、技能受限等）時改用第一個可用技能，避免卡在選擇階段
+      if (syncStateRef.current.phase === "p1_select" && battleAliveRef.current) {
+        const me = syncStateRef.current.p1;
+        const usable = (me?.skills || []).find(sk => (sk.pp ?? 0) > 0 || isZeroPpExempt(me, sk, syncStateRef.current.p2));
+        if (usable) onSkillSelect('p1', usable);
+      }
     }, 400);
     return () => clearTimeout(t);
   }, [phase, state.isAutoBattle, winner, p1Suit, p2Suit]);
@@ -3734,6 +3819,7 @@ case 'switch': {
         onSkillSelect={onSkillSelect}
         onSwitchElf={onSwitchElf}
         onUseItem={onUseItem}
+        potionLimit={potionLimit}
         specialMode={props.specialMode}
         onReset={props.onRestartBattle}
         onBackToMenu={() => { if (!syncStateRef.current.winner) props.onBattleEnd?.("exit", structuredClone(syncStateRef.current.p1Team)); props.onBackToMenu(); }}

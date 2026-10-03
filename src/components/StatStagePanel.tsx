@@ -30,31 +30,20 @@ export const StatStagePanel: React.FC<StatStagePanelProps> = ({
   className = '',
   disguiseAsNightmare = false,
 }) => {
-  const stages = elf.statStages || {
+  const rawStages = (elf.statStages || {
     atk: 0,
     def: 0,
     spatk: 0,
     spdef: 0,
     speed: 0,
     accuracy: 0,
-  };
-  const hasStages = Object.values(stages).some(value => Number(value) !== 0);
-
-  if (disguiseAsNightmare && hasStages) {
-    const icon = statusVisual('魘味')?.icon;
-    return (
-      <div className={`space-y-1 ${className}`}>
-        <div onClick={onToggleExpand} className="flex justify-between items-center cursor-pointer p-1 rounded border border-transparent select-none">
-          <span className="text-[10px] text-amber-400 font-black uppercase tracking-widest flex items-center gap-1">⚡ 能力等級狀態 {onToggleExpand ? (isExpanded ? "▼" : "▶") : null}</span>
-          <span className="text-[8px] px-1.5 py-0.5 bg-purple-950/60 border border-purple-500/50 rounded text-purple-300 font-bold">魘味</span>
-        </div>
-        {isExpanded && <div className="flex items-center gap-1.5 p-1.5 bg-purple-950/40 border border-purple-600/40 rounded text-purple-200 text-[10px]">
-          {icon && <ChainImage urls={[icon]} className="w-4 h-4 rounded-sm" />}
-          <span>魘味</span>
-        </div>}
-      </div>
-    );
-  }
+  }) as Record<string, number>;
+  // 魘昧（官方）：能力提升狀態對己方展示為 1 回合的魘昧；能力下降照常顯示。
+  const maskedBoost = disguiseAsNightmare && Object.values(rawStages).some(value => Number(value) > 0);
+  const stages = (disguiseAsNightmare
+    ? Object.fromEntries(Object.entries(rawStages).map(([k, v]) => [k, Number(v) > 0 ? 0 : v]))
+    : rawStages) as any;
+  const nightmareIcon = statusVisual('魘昧')?.icon;
 
   let buffCount = 0;
   let debuffCount = 0;
@@ -95,7 +84,12 @@ export const StatStagePanel: React.FC<StatStagePanelProps> = ({
               弱化 -{totalDebuffStages} ({debuffCount}項)
             </span>
           )}
-          {buffCount === 0 && debuffCount === 0 && (
+          {maskedBoost && (
+            <span className="text-[8px] px-1.5 py-0.5 bg-purple-950/60 border border-purple-500/50 rounded text-purple-300 font-bold inline-flex items-center gap-0.5">
+              {nightmareIcon && <ChainImage urls={[nightmareIcon]} className="w-3 h-3 rounded-sm" />}魘昧(1)
+            </span>
+          )}
+          {buffCount === 0 && debuffCount === 0 && !maskedBoost && (
             <span className="text-[8px] px-1.5 py-0.5 bg-slate-900/60 border border-slate-700/50 rounded text-slate-400 font-medium">
               持平 (0)
             </span>

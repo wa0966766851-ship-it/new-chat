@@ -41,10 +41,10 @@ export const StatusBadgePanel: React.FC<StatusBadgePanelProps> = ({ elf, otherEf
   // 魘味只遮蔽己方看到的異常名稱；底層狀態、效果和計時器保持原樣。
   if (disguiseAbnormalStatuses && (registryStatuses.length > 0 || catalogEffects.length > 0)) {
     registryStatuses = [{
-      catalogId: '魘味',
-      remainingTurns: 0,
+      catalogId: '魘昧',
+      remainingTurns: 1,
       isStandardStatus: true,
-      data: StatusRegistry['魘味'],
+      data: StatusRegistry['魘昧'],
     }];
     catalogEffects = [];
   }

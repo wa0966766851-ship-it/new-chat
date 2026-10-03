@@ -43,6 +43,7 @@ export function ignoresAttackImmunity(
       if ((st.atk || 0) >= (st.spatk || 0)) return skill?.name || "技能";
     }
   }
+  if (r.ignoreAttackImmunityThisAction) return "本次攻擊無視攻擊免疫";
   if (r.ignoreAttackImmunityNext) return "下次攻擊無視攻擊免疫";
   if ((r.ignoreAttackImmunityUntilSwitch || 0) > 0 || r.ignoreAttackImmunityUntilSwitch === true) return "直到下場前無視攻擊免疫";
   if (actor && getElfAdvancedMechanics(actor).ignoreImmuneShieldEffects) return "特質";

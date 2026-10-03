@@ -1,0 +1,37 @@
+{
+  "base": "Use case: stylized-concept.\nAsset type: one square raster game abnormal-status UI icon, part of an eight-icon set for a Seer battle simulator. Deliver ONE icon only, not a sheet.\nStyle: extremely simple flat geometric game pictogram, bold large silhouettes, two main colors, crisp hard edges. NOT elaborate fantasy concept art. Intended to remain legible at 16 and 24 pixels.\nFrame invariant for the whole set: centered square dark navy tile (#07121f) with all four corners neatly cut at 45 degrees, a consistent thin outer bright cyan-blue outline (#43c7ff) and an inner deeper blue outline (#2469ac), no ornament. Frame fills 92% of canvas, equal margins, inner pictogram fills 60% of canvas. Absolutely flat frame, no 3D bevel, no light rays, no neon bloom, no drop shadow. Retain opaque dark fill INSIDE the frame. The small area OUTSIDE the clipped frame, including clipped corners, must be genuinely transparent, NOT a checkerboard.\nOne main symbol and at most one supporting geometric motif. Centered balanced composition, generous gaps and very thick strokes, no tiny details, no texture, no complex effects, no words, no numbers, no labels, no watermark, no person, no skull. No scenery.",
+  "specs": [
+    [
+      "眩暈",
+      "A large pale lavender tilted oval ring with exactly three chunky purple short wedges around it. Empty center. Suggest loss of balance; NOT a spiral, NOT an eye."
+    ],
+    [
+      "神悔",
+      "A pale gold halo visibly broken by one wide gap, above a large downward-pointing ivory diamond with a dark violet accent. Exactly these two shapes. Suggest remorse and loss of clarity. No face or eye."
+    ],
+    [
+      "腐朽",
+      "A single gray-green shield-shaped flat plate whose edge is crumbling with three large missing chunks, with two small but bold fragments beside it. A simple recognizable erosion symbol. No crossed swords, no liquid, no ornate shield."
+    ],
+    [
+      "失溫",
+      "A thick pale-cyan thermometer silhouette with a bulb, beside one large downward white arrow. No ticks, no numbers, no snowflake. Just these two clearly separate bold symbols."
+    ],
+    [
+      "遲鈍",
+      "A thick amber rightward arrow stopped by a single short perpendicular ivory bar, arrow tip blunt and truncated before the bar. Clear sense of slowed forward progress. No downward arrow, no clock, no creature."
+    ],
+    [
+      "窒息",
+      "A thick pale-gray stylized airway: two inward-curving vertical sides taper towards a very narrow center. One dark-red horizontal bar blocks the central airway. Only a bold symmetric constricted tube and a blocking bar. No anatomical realism, no lungs, no face, no chains."
+    ],
+    [
+      "平靜",
+      "A single large teal rounded water droplet above exactly two short horizontal pale-mint ripple bars. Quiet symmetric stable composition. No spiral, no waves with foam, no person, no leaves."
+    ],
+    [
+      "入魔",
+      "One large vivid magenta diamond silhouette with two short upward horns, with one vertical dark-violet narrow fissure cut into its center. Abstract corruption glyph, not a face: no eyes, no mouth, no skull, no character."
+    ]
+  ]
+}

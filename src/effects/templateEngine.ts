@@ -1,6 +1,7 @@
 import { queueActionPowerMultiplier } from '../battle/actionDamageModifiers';
 import { BattleEventContext, EffectTiming } from './types';
 import { prdPercent } from '../utils/prd';
+import { statusChanceBlocked } from '../battle/statusChanceRules';
 
 // 定義模板執行器型別
 export type TemplateEffectExecutor = (args: any[], ctx: BattleEventContext) => void;
@@ -80,7 +81,7 @@ export const TEMPLATE_EFFECTS: Record<string, TemplateEffectExecutor> = {
   // 0010: 命中後{0}%令對方麻痺
   "0010": (args, ctx) => {
     const chance = args[0] !== undefined ? Number(args[0]) : 100;
-    if (chanceOf(ctx, "L76", chance)) {
+    if (!statusChanceBlocked(ctx, chance) && chanceOf(ctx, "L76", chance)) {
       const res = ctx.applyStatusWithImmunityCheck(ctx.targetSide, "麻痺", 2);
       if (res.success) {
         ctx.addLog(`⚡ 【異常狀態】：使對手陷入了【麻痺】狀態！`, "status");
@@ -91,7 +92,7 @@ export const TEMPLATE_EFFECTS: Record<string, TemplateEffectExecutor> = {
   // 0011: 命中後{0}%令對方中毒（BOSS有效）
   "0011": (args, ctx) => {
     const chance = args[0] !== undefined ? Number(args[0]) : 100;
-    if (chanceOf(ctx, "L87", chance)) {
+    if (!statusChanceBlocked(ctx, chance) && chanceOf(ctx, "L87", chance)) {
       const res = ctx.applyStatusWithImmunityCheck(ctx.targetSide, "中毒", 3);
       if (res.success) {
         ctx.addLog(`🤢 【異常狀態】：使對手陷入了【中毒】狀態！`, "status");
@@ -102,7 +103,7 @@ export const TEMPLATE_EFFECTS: Record<string, TemplateEffectExecutor> = {
   // 0012: 命中後{0}%令對方燒傷（BOSS有效）
   "0012": (args, ctx) => {
     const chance = args[0] !== undefined ? Number(args[0]) : 100;
-    if (chanceOf(ctx, "L98", chance)) {
+    if (!statusChanceBlocked(ctx, chance) && chanceOf(ctx, "L98", chance)) {
       const res = ctx.applyStatusWithImmunityCheck(ctx.targetSide, "燒傷", 3);
       if (res.success) {
         ctx.addLog(`🔥 【異常狀態】：使對手陷入了【燒傷】狀態！`, "status");
@@ -167,7 +168,7 @@ export const TEMPLATE_EFFECTS: Record<string, TemplateEffectExecutor> = {
   // 0015: 命中後{0}%令對方害怕
   "0015": (args, ctx) => {
     const chance = args[0] !== undefined ? Number(args[0]) : 100;
-    if (chanceOf(ctx, "L163", chance)) {
+    if (!statusChanceBlocked(ctx, chance) && chanceOf(ctx, "L163", chance)) {
       const res = ctx.applyStatusWithImmunityCheck(ctx.targetSide, "害怕", 2);
       if (res.success) {
         ctx.addLog(`😱 【異常狀態】：使對手陷入了【害怕】狀態！`, "status");
@@ -178,7 +179,7 @@ export const TEMPLATE_EFFECTS: Record<string, TemplateEffectExecutor> = {
   // 0016: 命中後{0}%令對方冰封
   "0016": (args, ctx) => {
     const chance = args[0] !== undefined ? Number(args[0]) : 100;
-    if (chanceOf(ctx, "L174", chance)) {
+    if (!statusChanceBlocked(ctx, chance) && chanceOf(ctx, "L174", chance)) {
       const res = ctx.applyStatusWithImmunityCheck(ctx.targetSide, "冰封", 2);
       if (res.success) {
         ctx.addLog(`❄️ 【異常狀態】：使對手陷入了【冰封】狀態！`, "status");

@@ -62,7 +62,7 @@ test("八荒 halves nontrue damage by current HP steps and 天佑 repeats at rou
   assert.equal(damageComp.multiplier, 1 / 64); // base half plus five 10% steps
   handleHolyMilesSoulMark(ctx, EffectTiming.ROUND_END);
   assert.equal(events.filter(x => x === "heal:100").length, 6);
-  assert.equal(events.filter(x => x === "percent:0.1").length, 6);
+  assert.equal(events.filter(x => x === "pink:100").length, 6, "天佑：等量（=恢復量）百分比傷害");
 });
 
 test("淨世洗禮頌 adds percent damage equal to actual skill damage against an abnormal opponent", () => {
@@ -73,15 +73,18 @@ test("淨世洗禮頌 adds percent damage equal to actual skill damage against a
   assert.ok(events.includes("pink:345"));
 });
 
-test("聖怒 doubles incoming skill damage when own percent damage fails to reduce HP", () => {
+test("聖怒：自身百分比傷害未令對手體力減少時，本回合對手受到的攻擊傷害翻倍", () => {
   const { ctx, self, target } = makeContext();
   target.currentHp = 100;
   self.currentHp = 100;
   handleHolyMilesSoulMark(ctx, EffectTiming.ROUND_START);
   handleHolyMilesSoulMark(ctx, EffectTiming.OPPONENT_DAMAGE, { damageType: "percent", sourceElfName: self.name, hpReduced: 0 });
-  const damageComp = { multiplier: 1, damageCategory: "skill_attack", isIncoming: true };
+  const damageComp = { multiplier: 1, damageCategory: "skill_attack", isIncoming: false };
   handleHolyMilesSoulMark(ctx, EffectTiming.BEFORE_DAMAGE, { damageComp });
-  assert.equal(damageComp.multiplier, 1); // 八荒減半2次；聖怒翻倍2次
+  assert.equal(damageComp.multiplier, 4); // 聖怒：翻倍1次＋對方最高體力比例每10%額外1次（此情境共2次）
+  const incoming = { multiplier: 1, damageCategory: "skill_attack", isIncoming: true };
+  handleHolyMilesSoulMark(ctx, EffectTiming.BEFORE_DAMAGE, { damageComp: incoming });
+  assert.equal(incoming.multiplier, 0.25, "邁爾斯自己受到的傷害只吃八荒減半，不再被聖怒翻倍");
 });
 
 test("fifth skill accumulates drain, removes one PP from every enemy move and locks depleted choice", () => {
@@ -114,9 +117,9 @@ test("淨世洗禮頌：正常命中吃HP%翻倍（BEFORE_DAMAGE主乘區）", (
   handlers["淨世洗禮頌"](ctx); // 快照 doubles=8
   const damageComp: any = { base: 500, multiplier: 1, floor: 0, damageCategory: "skill_attack", isIncoming: false };
   handleHolyMilesSoulMark(ctx, EffectTiming.BEFORE_DAMAGE, { damageComp });
-  assert.equal(damageComp.floor, 280);
-  assert.equal(damageComp.multiplier, 2 ** 6); // cap 6 → ×64
-  assert.equal(damageComp.pure, undefined); // 原始超280：吃通用，不設 pure
+  assert.equal(damageComp.floor, 280 * 2 ** 8, "保底 280 本身翻倍（每 10% 一次）");
+  assert.equal(damageComp.multiplier, 1, "攻擊傷害本身不翻倍");
+  assert.equal(damageComp.pure, true); // 原始未超過保底：獨立乘區
   assert.ok(!timers.some((t: any) => t.id === "blk_p1_baptism_invalid"), "正常命中應消耗預掛timer");
 });
 
@@ -126,9 +129,9 @@ test("淨世洗禮頌：原始沒超280走獨立乘區（pure）", () => {
   handlers["淨世洗禮頌"](ctx); // 快照 doubles=8
   const damageComp: any = { base: 100, multiplier: 1, floor: 0, damageCategory: "skill_attack", isIncoming: false };
   handleHolyMilesSoulMark(ctx, EffectTiming.BEFORE_DAMAGE, { damageComp });
-  assert.equal(damageComp.pure, true); // 原始沒超280：獨立乘區
-  assert.equal(damageComp.floor, 280); // 保底照掛
-  assert.equal(damageComp.multiplier, 2 ** 6); // 自帶鏈照算
+  assert.equal(damageComp.pure, true); // 原始沒超過保底：獨立乘區
+  assert.equal(damageComp.floor, 280 * 2 ** 8);
+  assert.equal(damageComp.multiplier, 1);
 });
 
 test("淨世洗禮頌：無效重結算只認淨世，非淨世不消耗", () => {
@@ -139,13 +142,13 @@ test("淨世洗禮頌：無效重結算只認淨世，非淨世不消耗", () =>
   assert.ok(!events.some(e => e.startsWith("pink:")), "非淨世不應打出粉傷");
 });
 
-test("淨世洗禮頌：無效重結算打出保底粉傷（滿血×64封頂）", () => {
+test("淨世洗禮頌：無效重結算打出保底粉傷（無效1次＋滿血10次，不封頂）", () => {
   const { ctx, own, events } = makeContext();
   (ctx as any).skill = { name: "淨世洗禮頌" };
   own["holyMiles.baptismDoubles"] = 10;
   const r = CUSTOM["__baptism_invalid_hit"].run(ctx, { last: null, lastAmount: 0 });
   assert.equal(r, true);
-  assert.ok(events.includes("pink:17920"), `實際=${events}`);
+  assert.ok(events.includes(`pink:${280 * 2 ** 11}`), `實際=${events}`);
 });
 
 test("四象：cleansePending觸發先制失效（blkNoPosPrioTurns）", () => {

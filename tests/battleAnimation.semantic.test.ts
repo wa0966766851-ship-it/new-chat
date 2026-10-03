@@ -76,3 +76,34 @@ assert.equal(white[0].text, '-180', '白字保存兩筆原真傷，HP 凍結也�
 assert.equal(white[0].delta, -40);
 assert.equal(bounded.hp.get('p1:first'), 0, '播放 HP 不因原傷害數字低於 0');
 console.log('動畫驗收：紅傷／吃藥即時、粉綠白分組、白傷總量、空段跳過、陣亡順序、身份隔離、卸載／重來清除通過。');
+
+// 額外行動：不論幾次，紅字播完後只多播一次合併紅字。
+const extraShown: any[] = [];
+const ex = new BattlePresentation(() => { if (ex.popups.length) extraShown.push(structuredClone(ex.popups[0])); }, () => true);
+await ex.record(event('skill', -50, 500));
+ex.beginExtra();
+await ex.record(event('skill', -20, 450, { elfId: 'first' }));
+await ex.record(event('skill', -30, 430));
+await ex.record(event('fixed', -5, 400));
+await ex.record(event('skill', -10, 395));
+assert.equal(extraShown.length, 1, '額外行動期間的紅字先收集');
+await ex.endExtra();
+assert.deepEqual(extraShown.map(e => [e.type, e.amount, e.label]), [['skill', 50, undefined], ['skill', 60, '額外行動']], '三次額外行動只多播一次');
+await ex.flush();
+assert.deepEqual(extraShown.at(-1).type, 'fixed', '額外行動的粉傷仍留到回合末');
+ex.beginExtra(); await ex.endExtra();
+assert.equal(extraShown.length, 3, '沒有額外行動不播空段');
+
+// 自訂開關：關閉的通道不出現浮字，播放 HP 仍對齊結算。
+const settings = { skill: true, damage: false, extra: true, potion: false, roundEnd: false };
+const muted: any[] = [];
+const m = new BattlePresentation(() => { if (m.popups.length) muted.push(structuredClone(m.popups[0])); }, () => true, () => settings);
+await m.record(event('skill', -40, 500));
+await m.record(event('heal', 10, 460, { immediate: true, label: '藥劑回血' }));
+await m.record(event('true', -20, 470));
+await m.flush();
+assert.equal(muted.length, 0, '技能傷害／吃藥／回合末關閉時不顯示');
+assert.equal(m.hp.get('p1:first'), 450, '關閉顯示仍同步體力');
+m.beginExtra(); await m.record(event('skill', -15, 450)); await m.endExtra();
+assert.deepEqual(muted.map(e => e.label), ['額外行動'], '額外行動開關獨立');
+console.log('動畫開關與額外行動合併通過。');

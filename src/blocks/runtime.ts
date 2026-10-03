@@ -10,6 +10,7 @@ import { executeTemplateEffect } from "../effects/templateEngine";
 import { STAT_KEYS } from "./parse";
 import { CUSTOM } from "./custom";
 import { getTypeMatchup } from "../utils/statCalculator";
+import { statusChanceBlocked } from '../battle/statusChanceRules';
 
 type S = "p1" | "p2";
 export interface RunState {
@@ -137,12 +138,12 @@ export const OPS: Record<string, OpFn> = {
   status: (ctx, p, st) => {
     const sides: S[] = p.side === "both" ? [ctx.targetSide, ctx.actor] : [sideOf(ctx, p.side)];
     let ok = false;
-    if (!chance(ctx, `st:${p.status}`, p.chance ?? 100)) return false;
+    if (statusChanceBlocked(ctx, p.chance ?? 100) || !chance(ctx, `st:${p.status}`, p.chance ?? 100)) return false;
     for (const s of sides) ok = applyStatus(ctx, s, p.status, p.turns) || ok;
     return ok;
   },
   status_chance_turns: (ctx, p, st) => OPS.status(ctx, p, st),
-  status_seq: (ctx, p) => { if (p.chance != null && !chance(ctx, `seq:${p.list}`, p.chance)) return false; let any = false; for (const s of p.list) any = applyStatus(ctx, ctx.targetSide, s) || any; return any; },
+  status_seq: (ctx, p) => { if (p.chance != null && (statusChanceBlocked(ctx, p.chance) || !chance(ctx, `seq:${p.list}`, p.chance))) return false; let any = false; for (const s of p.list) any = applyStatus(ctx, ctx.targetSide, s) || any; return any; },
   status_random: (ctx, p) => {
     const pool = p.cls === "控制類" ? ["麻痺", "害怕", "疲憊", "石化", "睡眠"] : p.cls === "弱化類" ? ["中毒", "燒傷", "凍傷", "衰弱", "流血", "混亂"] : ["麻痺", "害怕", "疲憊", "中毒", "燒傷", "凍傷", "衰弱", "混亂"];
     const r = ctx.rng || Math.random; const picked = new Set<string>();
@@ -360,7 +361,7 @@ export const OPS: Record<string, OpFn> = {
   },
   bench_entrance_status: (ctx, p) => {
     // ctx 為登場方
-    if (!chance(ctx, `bench:${p.status}`, p.chance)) return false;
+    if (statusChanceBlocked(ctx, p.chance) || !chance(ctx, `bench:${p.status}`, p.chance)) return false;
     const r = ctx.applyStatusWithImmunityCheck(ctx.actor, p.status, STATUS_DURATION[p.status] ?? 2);
     if (r.success) ctx.addLog(`💫 【${ctx.self?.name}】登場時陷入了【${p.status}】！`, "status");
     return r.success;
@@ -600,8 +601,11 @@ export function runSideTimers(ctx: BattleEventContext, trigs: Trigger[], data: a
       if (comp.isIncoming && b.dmgIn != null) { if (b.dmgIn < 0) comp.decreasePercent += -b.dmgIn; else comp.increasePercent += b.dmgIn; }
       if (!comp.isIncoming && b.dmgOut != null) comp.increasePercent += b.dmgOut * (b.doubleIfAnyStatus && (hasAbn(ctx, ctx.self) || hasAbn(ctx, ctx.target)) ? 2 : 1);
       if (!comp.isIncoming && b.dmgOutMult) {
+        // 「減半 n 次」：每次傷害都乘 dmgOutMult 的 n 次方（n 讀當下登錄值）。
+        const powN = b.powRegistryKey ? Math.max(0, Number(ctx.getPlayerState(b.powRegistryKey) || 0)) : -1;
+        if (powN > 0) comp.multiplier *= b.dmgOutMult ** powN;
         const limit = b.useLimitRegistryKey ? Number(ctx.getPlayerState(b.useLimitRegistryKey) || 0) : Infinity;
-        if ((b.usesConsumed || 0) < limit) {
+        if (powN < 0 && (b.usesConsumed || 0) < limit) {
           comp.multiplier *= b.dmgOutMult;
           if (b.useLimitRegistryKey) ctx.addTimerTo(ctx.actor, { ...t, payload: { ...t.payload, block: { ...b, usesConsumed: (b.usesConsumed || 0) + 1 } } }, false);
         }

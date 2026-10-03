@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { InfoHint } from "./InfoHint";
 import { BaseStats, Inscription } from "../types";
-import { SEER_NATURES, getNatureFromModifiers, getModifiersFromNature, EV_PRESETS, SeerNature } from "../utils/seerNatures";
+import { SEER_NATURES, getNatureFromModifiers, getModifiersFromNature, getDefaultNatureModifiers, EV_PRESETS, SeerNature } from "../utils/seerNatures";
 import { calculateElfStats, getDefaultEvs } from "../utils/statCalculator";
 import { Sparkles, Zap, Shield, Sword, Heart, Wind, RotateCcw, CheckCircle2, AlertTriangle, HelpCircle, ChevronDown, ChevronUp } from "lucide-react";
 
@@ -34,8 +34,8 @@ export default function EvNaturePanel({
 }: EvNaturePanelProps) {
   const [showFormula, setShowFormula] = useState(false);
   const currentEvs = evs || getDefaultEvs(baseStats);
-  const currentMods = natureModifiers || { hp: 1.0, atk: 1.0, def: 1.0, spatk: 1.0, spdef: 1.0, speed: 1.0 };
-  
+  const currentMods = natureModifiers || getDefaultNatureModifiers(baseStats);
+
   const currentNature: SeerNature = getNatureFromModifiers(currentMods);
 
   const totalEvs = Object.values(currentEvs).reduce((sum, v) => sum + (v || 0), 0);

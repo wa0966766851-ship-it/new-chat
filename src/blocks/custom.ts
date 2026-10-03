@@ -290,7 +290,7 @@ Object.assign(CUSTOM, {
       }
       const times = 1 + (doubles || 0); // 無效翻倍1次 ＋ HP%額外
       // 保底類獨立乘區：以 280 為基底乘自帶翻倍鏈，不吃通用增減傷（pure:true）。
-      const amount = Math.max(280, Math.floor(280 * 2 ** Math.min(times, 6)));
+      const amount = Math.max(280, Math.floor(280 * 2 ** times)); // 每次翻倍都要套用，不設上限
       const dealt = ctx.applyPinkDamage(ctx.targetSide, amount, "淨世洗禮頌(無效補償)", undefined, undefined, "percent", { pure: true });
       ctx.applyHeal(ctx.actor, dealt > 0 ? dealt : amount);
       ctx.addLog(`🌊【淨世洗禮頌】：技能無效，重新結算 ${times} 次翻倍補償 ${amount} 點技能傷害（保底280）！`, "effect");

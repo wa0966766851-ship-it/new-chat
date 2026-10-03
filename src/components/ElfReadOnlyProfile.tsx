@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import type { Elf, Skill } from "../types";
 import { ElfAvatar, TypeIcon } from "./SeerImages";
+import { hiddenFromViewer } from "../battle/viewerPerspective";
 import { ElfTraitCards } from "./ElfTraitCards";
 import { InfoHint } from "./InfoHint";
 import { formatEffectText } from "../utils/descFormat";
@@ -11,13 +12,15 @@ export const ElfReadOnlyProfile: React.FC<{
   elf: Elf; onClose: () => void; subtitle?: string;
   effectiveBody?: { height: number; weight: number }; children?: React.ReactNode;
   getSkillMaxPp?: (skill: Skill, elf: Elf) => number;
-}> = ({ elf, onClose, subtitle, effectiveBody, children, getSkillMaxPp }) => {
+  /** 戰鬥中開啟時的陣營：己方隱匿精靈完整顯示，敵方才掩蓋。 */
+  battleSide?: "p1" | "p2";
+}> = ({ elf, onClose, subtitle, effectiveBody, children, getSkillMaxPp, battleSide }) => {
   const [tab, setTab] = useState<"traits" | "stats" | "skills">("traits");
-  const concealed = !!elf.isConcealed;
+  const concealed = hiddenFromViewer(elf, battleSide);
   return <div className="space-y-5" data-testid="elf-readonly-profile">
     <header className="flex items-start gap-4 border-b border-white/10 pb-4">
       <div className="w-16 h-16 sm:w-20 sm:h-20 shrink-0 rounded-full overflow-hidden bg-black/20 ring-1 ring-white/15">
-        <ElfAvatar elf={elf} className="w-full h-full object-cover" />
+        <ElfAvatar elf={elf} battleSide={battleSide} className="w-full h-full object-cover" />
       </div>
       <div className="flex-1 min-w-0 space-y-2">
         <p className="text-xs text-slate-400">{subtitle || "精靈介紹"} · 唯讀</p>

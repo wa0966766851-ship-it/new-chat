@@ -26,7 +26,7 @@ try {
     skills['星光·浪打千擊']=(ctx:any)=>STARLIGHT_RUS_SKILLS['星光·浪打千擊']({...ctx,rng:()=>scenario==='ten'?0.999:0});
     souls['逐擊觀測者']=(ctx:any,event:string,data:any)=>{
       if(event==='AFTER_ATTACK_HIT'){
-        rolled++;handleStarlightRusSoulMark({...ctx,rng:()=>0},event,data);
+        rolled++;
       }
     };
     souls['受擊觀測者']=(ctx:any,event:string,data:any)=>{
@@ -51,13 +51,16 @@ try {
     }
     // 等待已開始的佇列結算完成；動畫不參與結算。
     await act(async()=>{await new Promise(r=>setTimeout(r,30));});
-    const wanted=scenario==='fatal'||scenario==='backlash'||scenario==='sealed'?1:scenario==='ten'?10:5;
-    assert.equal(hits.length,wanted,`${side}/${scenario}: 真正受擊節點數`);
-    assert.equal(rolled,wanted,`${side}/${scenario}: 每一擊只通知一次`);
+    // 連擊＝一次計算×連擊次數：受擊節點只有一次；每擊附帶判定仍逐擊（攻擊方被反擊致死則停止）。
+    const n=scenario==='ten'?10:5;
+    const wanted=scenario==='backlash'?0:n;
+    assert.equal(hits.length,1,`${side}/${scenario}: 連擊只結算一次傷害`);
+    assert.equal(rolled,scenario==='sealed'?1:wanted,`${side}/${scenario}: 每一擊只通知一次`);
     assert.ok(hits.every(x=>x.damage>0));
-    if(scenario==='rebirth')assert.equal(reborn,true,'免死／重生後仍可繼續');
-    if(scenario!=='sealed')assert.equal(driver.getSyncState()[side].statStages.atk,Math.min(6,wanted));
-    else assert.equal(driver.getSyncState()[side].statStages.atk||0,0,'附加失效不擲強化骰');
+    if(scenario==='rebirth')assert.equal(reborn,true,'免死／重生');
+    // 每擊強化於傷害前以 PRD 結算（10 擊必至少觸發一次）
+    if(scenario==='ten')assert.ok((driver.getSyncState()[side].statStages.atk||0)>=1,'逐擊強化先結算');
+    if(scenario==='sealed')assert.equal(driver.getSyncState()[side].statStages.atk||0,0,'附加失效不擲強化骰');
   }
-  console.log('真實引擎逐擊：P1/P2、5擊/10擊、逐击能力更新、致死停止、重生續擊、反擊致死停止、附加失效通過。');
+  console.log('真實引擎連擊：P1/P2、5擊/10擊單次結算、逐擊判定、反擊致死停止、附加失效通過。');
 } finally {await act(async()=>root.unmount());await server.close();dom.window.close();}

@@ -7,6 +7,7 @@ import {
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { useSceneResources, saveSceneResources, DEFAULT_SCENE_RESOURCES, SceneResourceMap } from "../utils/resourceManager";
+import { BATTLE_ANIMATION_OPTIONS, readAnimationSettings, writeAnimationSettings } from "../battle/animationSettings";
 
 // --- Theme Types & Config ---
 const DEFAULT_P1_LAYOUT = { pos: { x: 59.6, y: -5.2 }, size: { width: 636.8, height: 400 }, opacity: 0.95, scale: 1 };
@@ -255,6 +256,7 @@ export default function ControlHub({ currentScene }: { currentScene: string }) {
   const [p2Panel, setP2Panel] = useState(() => readControlSetting('p2Panel', DEFAULT_P2_LAYOUT, validPanel));
   const [tacticalPanel, setTacticalPanel] = useState(() => readControlSetting('tacticalPanel', DEFAULT_TACTICAL_LAYOUT, validPanel));
   const [hudOpacity, setHudOpacity] = useState(() => parseFloat(localStorage.getItem('hudOpacity') || "0.95"));
+  const [animationSettings, setAnimationSettings] = useState(() => readAnimationSettings());
   const [customLayout, setCustomLayout] = useState(() => { try { return localStorage.getItem('battleCustomLayout') === '1'; } catch { return false; } });
 
   useEffect(() => {
@@ -823,6 +825,18 @@ export default function ControlHub({ currentScene }: { currentScene: string }) {
               
               {activeTab === "battle" && (
                 <div className="space-y-6">
+                  <div className="bg-slate-900/40 p-4 rounded-xl border border-white/5 space-y-2" data-testid="battle-animation-settings">
+                    <span className="text-[10px] font-black text-cyan-500 uppercase tracking-widest block">動畫播放</span>
+                    <div className="grid grid-cols-2 gap-2">
+                      {BATTLE_ANIMATION_OPTIONS.map(option => (
+                        <label key={option.key} title={option.tip} className="flex items-center justify-between gap-2 rounded-lg bg-slate-800/60 px-3 py-2 cursor-pointer select-none">
+                          <span className="text-xs font-bold text-slate-200">{option.label}</span>
+                          <input type="checkbox" className="w-4 h-4 accent-cyan-500" checked={animationSettings[option.key]}
+                            onChange={e => { const next = { ...animationSettings, [option.key]: e.target.checked }; setAnimationSettings(next); writeAnimationSettings(next); }} />
+                        </label>
+                      ))}
+                    </div>
+                  </div>
                   <label className="flex items-center justify-between gap-4 bg-slate-900/40 p-4 rounded-xl border border-white/5 cursor-pointer select-none" title="開啟後戰鬥畫面改用可拖曳、縮放、調整透明度的浮動視窗；關閉時使用固定排版">
                     <span className="text-xs font-black text-slate-200">自訂佈局（拖曳／縮放／透明）</span>
                     <input

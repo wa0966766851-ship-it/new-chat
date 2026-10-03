@@ -1449,7 +1449,6 @@ const SEED_ELVES: (Omit<Elf, "id" | "calculatedStats" | "currentHp" | "maxHp"> &
     gender: "雄性",
     baseStats: { hp: 165, atk: 155, def: 115, spatk: 85, spdef: 115, speed: 135 },
     evs: { hp: 255, atk: 255, def: 0, spatk: 0, spdef: 0, speed: 0 },
-    natureModifiers: { hp: 1.0, atk: 1.0, def: 1.0, spatk: 1.0, spdef: 1.0, speed: 1.0 },
     soulMark: {
       name: "荒",
       badgeChar: "荒",
@@ -1482,7 +1481,6 @@ const SEED_ELVES: (Omit<Elf, "id" | "calculatedStats" | "currentHp" | "maxHp"> &
     gender: "雌性",
     baseStats: { hp: 175, atk: 70, def: 118, spatk: 152, spdef: 118, speed: 137 },
     evs: { hp: 255, atk: 0, def: 0, spatk: 255, spdef: 0, speed: 0 },
-    natureModifiers: { hp: 1.0, atk: 1.0, def: 1.0, spatk: 1.0, spdef: 1.0, speed: 1.0 },
     soulMark: {
       name: "后",
       badgeChar: "后",

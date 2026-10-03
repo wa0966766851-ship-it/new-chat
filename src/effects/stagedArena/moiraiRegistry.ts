@@ -46,20 +46,39 @@ export function handleMoiraiSoulMark(c: ArenaContext, event: EffectTiming, data?
     if (!d.isIncoming && d.damageCategory === 'skill_attack' && activeUntil(c, 'attackBoost')) d.multiplier *= 2;
     if (!d.isIncoming && ['fixed', 'percent'].includes(d.damageCategory) && activeUntil(c, 'specialBoost')) d.multiplier *= 1.5;
     if (d.isIncoming && d.damageCategory === 'skill_attack' && read(c, 'counter') > 0) {
-      // The counter settles after this hit has been blocked. The adapter
-      // passes the resolved, pre-block hit amount to finishMoiraiCounter.
+      // 抵擋前的本次攻擊傷害：攻擊方增減傷與乘區已在此之前結算。
+      const blocked = Math.max(0, Math.floor(d.base * (1 + (d.increasePercent || 0)) * (1 - (d.decreasePercent || 0)) * d.multiplier));
       d.multiplier = 0;
       write(c, 'counter', read(c, 'counter') - 1);
       write(c, 'counterPending', 1);
+      finishMoiraiCounter(c, blocked);
     }
+  }
+  if (event === EffectTiming.AFTER_ATTACK_HIT && data?.skill && data.additionalEffectsEnabled !== false) {
+    if (data.skill.name === '陰陽三合') settleYinYangHit(c);
+    if (data.skill.name === '恆·蒼穹斗轉') { bump(c, 'fifthDamage', Math.max(0, Number(data.damage) || 0)); write(c, 'fifthPending', 1); }
+  }
+  if (event === EffectTiming.AFTER_ACTION && read(c, 'fifthPending')) {
+    const total = read(c, 'fifthDamage');
+    write(c, 'fifthPending', 0); write(c, 'fifthDamage', 0);
+    finishMoiraiFifth(c, total);
+  }
+  // 恆·蒼穹斗轉：攻擊傷害低於 300 時，下 2 回合攻擊必定致命一擊。
+  if (event === EffectTiming.BEFORE_SKILL && c.skill && c.skill.category !== '屬性') {
+    // 列星安辰：下 2 回合攻擊無視對手能力提升狀態。
+    if (activeUntil(c, 'ignoreBoost')) c.setPlayerState('ignoreOppBuffThisAction', true);
+    const from = read(c, 'critFrom');
+    if (from && read(c, 'round') >= from && read(c, 'round') <= from + 1) c.setPlayerState('mustCrit', true);
   }
   if (event === EffectTiming.MODIFY_PRIORITY && c.skill?.name === '九轉輪迴天' && hasDrop(c.self) && data?.priorityComp) data.priorityComp.bonus += 3;
 }
 
-export function finishMoiraiCounter(c: ArenaContext, blockedDamage: number, percentImmune: boolean): void {
-  if (!read(c, 'counterPending')) return;
+/** 日月安屬：抵擋下一次攻擊傷害，並對攻擊者附加該次攻擊傷害 100% 的百分比傷害。 */
+export function finishMoiraiCounter(c: ArenaContext, blockedDamage: number): number {
+  if (!read(c, 'counterPending')) return 0;
   write(c, 'counterPending', 0);
-  if (!percentImmune && blockedDamage > 0) percent(c, blockedDamage, '日月安屬反擊');
+  c.addLog?.(`🛡️ 【日月安屬】：免疫本次攻擊傷害${blockedDamage > 0 ? `，反擊 ${blockedDamage} 點百分比傷害` : ''}！`, 'effect');
+  return blockedDamage > 0 ? percent(c, blockedDamage, '日月安屬反擊') : 0;
 }
 
 /** One independent proc per successful hit, after the attack's multi-hit roll. */
@@ -70,12 +89,13 @@ export function settleYinYangHit(c: ArenaContext): boolean {
 }
 
 /** The fifth skill's 300-point branch and HP-based extra damage happen after attack settlement. */
-export function finishMoiraiFifth(c: ArenaContext, attackDamage: number, percentImmune: boolean): void {
-  if (attackDamage > 300) grantStatusImmunity(c, c.actor, 1);
-  else if (attackDamage < 300) until(c, 'crit', 2);
+export function finishMoiraiFifth(c: ArenaContext, attackDamage: number): void {
+  if (attackDamage > 300) c.setPlayerState('blkImmuneStatusCount', Number(c.getPlayerState('blkImmuneStatusCount') || 0) + 1);
+  else if (attackDamage < 300) write(c, 'critFrom', read(c, 'round') + 1);
+  if (c.target.currentHp <= 0) return;
   const amount = Math.floor(c.self.maxHp * .25);
-  if (percentImmune) c.applyTrueDamage(c.targetSide, amount, '恆·蒼穹斗轉');
-  else percent(c, amount, '恆·蒼穹斗轉');
+  // 對手免疫百分比傷害（實際未造成）時轉為真實傷害。
+  if (!percent(c, amount, '恆·蒼穹斗轉')) c.applyTrueDamage(c.targetSide, amount, '恆·蒼穹斗轉');
 }
 
 export const MOIRAI_SKILLS: Record<string, BattleSkillHandler> = {
@@ -99,11 +119,12 @@ export const MOIRAI_SKILLS: Record<string, BattleSkillHandler> = {
   '陰陽三合': c => {
     if (hasBoost(c.target)) { transferBoosts(c); c.setOpponentState('priorityPenaltyTurns', 1); }
     else modify(c, c.targetSide, -1);
-    // 20% is a proc chance per actual hit; store the plan for the multi-hit adapter.
-    write(c, 'yinYangHits', 5 + Math.floor((c.rng?.() ?? Math.random()) * 6));
+    // 一回合攻擊 5～10 次；每次實際命中後由 AFTER_ATTACK_HIT 獨立判定 20%。
+    c.setPlayerState('attackHitCountThisAction', 5 + Math.floor((c.rng?.() ?? Math.random()) * 6));
   },
   '恆·蒼穹斗轉': c => {
     if (c.clearTurnEffectsOf(c.targetSide)) status(c, '沉默', 1);
-    // finishMoiraiFifth is invoked by a post-attack adapter with the actual hit.
+    // 300 分支與 25% 百分比傷害在攻擊結算後（AFTER_ACTION）以實際攻擊傷害判定。
+    write(c, 'fifthDamage', 0);
   },
 };

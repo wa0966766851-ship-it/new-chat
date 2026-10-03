@@ -87,6 +87,8 @@ function emitSoul(ctx: BattleEventContext, trigs: Trigger[], data: any, elf: any
 
 /** 「自身位於背包時：對方切換登場…」：登場方 ctx，檢查對方背包內（非在場、存活）精靈 */
 function runBenchOnOppEntrance(ctx: BattleEventContext) {
+  // 「切換登場」：戰鬥開始時的首發登場不算（尚未發生過任何換人）。
+  if (!ctx.getPlayerState?.("previousActiveElfId")) return;
   const other = ctx.actor === "p1" ? "p2" : "p1";
   const team: any[] = (ctx.getFullTeam ? ctx.getFullTeam(other) : []) || [];
   const active = (other === "p1" ? ctx.activeP1 : ctx.activeP2) as any;

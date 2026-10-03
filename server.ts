@@ -451,14 +451,15 @@ app.get("/seer/:kind/:file", async (req, res) => {
     for (const p of [path.join(root, "public", "seer", "xi", file), path.join(root, "系", file)]) if (isPng(p)) return send(p);
     res.status(404).end(); return;
   }
-  if (!["head", "body", "type", "abnormal", "buff"].includes(kind) || !(/^\d+\.png$/.test(file) || (kind === "type" && file === "prop.png"))) { res.status(404).end(); return; }
+  if (!["head", "body", "type", "abnormal", "buff", "card"].includes(kind) || !(/^\d+\.png$/.test(file) || (kind === "type" && file === "prop.png"))) { res.status(404).end(); return; }
   // 官方資源優先（public/seer → 快取 → 遠端）；使用者 pet/ 資料夾僅在官方取不到時使用（舊版編號可能對不上）
   const cacheFile = path.join(root, ".seer-cache", kind, file);
   for (const p of [path.join(root, "public", "seer", kind, file), cacheFile]) if (isPng(p)) return send(p);
   const userPet = kind === "head" ? path.join(root, "pet", file) : "";
   const key = `${kind}/${file}`;
   if (seerMisses.has(key)) { if (userPet && isPng(userPet)) return send(userPet); res.status(404).end(); return; }
-  const remote = `${SEER_REMOTE}/${kind === "type" ? "pettype" : (kind === "abnormal" || kind === "buff") ? "battleeffect/" + kind : "pet/" + kind}/${file}`;
+  // card：autocard 卡面立繪（星蝕回廊塔羅卡用），路徑在 art/autocard 下
+  const remote = kind === "card" ? `${SEER_REMOTE.replace("/ui/assets", "")}/autocard/texture/cards/card_${file}` : `${SEER_REMOTE}/${kind === "type" ? "pettype" : (kind === "abnormal" || kind === "buff") ? "battleeffect/" + kind : "pet/" + kind}/${file}`;
   const buf = await fetchBuffer(remote);
   if (!buf || buf[0] !== 0x89 || buf[1] !== 0x50) { seerMisses.add(key); if (userPet && isPng(userPet)) return send(userPet); res.status(404).end(); return; }
   try { fs.mkdirSync(path.dirname(cacheFile), { recursive: true }); fs.writeFileSync(cacheFile, buf); } catch {}

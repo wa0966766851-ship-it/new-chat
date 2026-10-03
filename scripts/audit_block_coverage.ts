@@ -69,10 +69,13 @@ if (check) {
   // 20261002：4 條成功／失敗延伸併回父效果；483/757 → 479/753。
   // 全部 31 個 blocks 技能仍逐句完整解析；不是刪除效果或放寬未解析要求。
   // 競技場五隻加入 25 技能＋18 魂印子句（handler 專屬執行，不走積木解析）：753 → 778，已解析維持 479。
-  if (skills.parsed < 479 || skills.total !== 778) failures.push(`技能覆蓋率退步或資料集改變：${skills.parsed}/${skills.total}`);
+  // 20261003：競技場五隻＋5030 技能描述改為 ■／🎯／> 逐行標記（原文不變，補必中／先制），子句拆細：778 → 912，已解析 479 → 536。
+  // 20261003-2：無相諦補消逝、日月安屬沉默改戰鬥百科定義、龍魂之源／印記／之力說明行：912 → 915。
+  if (skills.parsed < 536 || skills.total !== 915) failures.push(`技能覆蓋率退步或資料集改變：${skills.parsed}/${skills.total}`);
   // 5029 異境神霆·雷伊加入 16 個可稽核魂印子句；資料集基準由 409 更新為 427。
   // 競技場五隻魂印走專屬 handler：431 → 449，已解析維持 104。
-  if (souls.parsed < 104 || souls.total !== 449) failures.push(`魂印覆蓋率退步或資料集改變：${souls.parsed}/${souls.total}`);
+  // 20261003-2：無極聖武補英雄之耀／武誅／亮節／威怯官方定義、龍之治癒補赤龍與四龍追加效果：449 → 456，已解析 104 → 105。
+  if (souls.parsed < 105 || souls.total !== 456) failures.push(`魂印覆蓋率退步或資料集改變：${souls.parsed}/${souls.total}`);
 
   for (const name of Object.keys(SKILL_MODE)) {
     const skill = DEFAULT_ELVES.flatMap(elf => elf.skills || []).find(item => item.name === name);

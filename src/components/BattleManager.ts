@@ -40,6 +40,12 @@ export interface EffectItem {
 }
 
 export interface BattleState {
+  /** 套裝 id（傷害鉤子／異常附加前的套裝效果由此讀取） */
+  p1Suit?: string;
+  p2Suit?: string;
+  /** 星際探索藏品 id */
+  p1Relics?: string[];
+  p2Relics?: string[];
   p1Team: Elf[];
   p2Team: Elf[];
   p1ActiveIndex: number;

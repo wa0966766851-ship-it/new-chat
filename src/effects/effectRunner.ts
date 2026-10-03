@@ -12,6 +12,7 @@ import { prdPercent } from "../utils/prd";
 import { matchesEffectConditions } from './effectConditions';
 import { matchesDamageTypes } from './damageChoices';
 import { clearAllStatuses } from '../utils/battleHelpers';
+import { statusChanceBlocked } from '../battle/statusChanceRules';
 
 // 底層不變式：真實傷害不可被護盾與減傷抵擋 (減傷/護盾原子自動跳過 true 傷害)
 export const isReducible = (dmgType: string) => dmgType !== "true";
@@ -146,7 +147,7 @@ export const ATOMS: AtomTable = {
     const duration = p.duration ?? p.turns ?? 2;
     if (duration <= 0) return;
     const chance = Number(p.chance ?? 100);
-    if (chance < 100 && !prdPercent(`kit_status_${ctx.actor || "p1"}_${status}`, chance)) return;
+    if (chance < 100 && (statusChanceBlocked(ctx, chance) || !prdPercent(`kit_status_${ctx.actor || "p1"}_${status}`, chance))) return;
     ctx.applyStatusWithImmunityCheck(side, status, duration);
   },
 

@@ -1,0 +1,1504 @@
+{
+  "schemaVersion": 1,
+  "scope": "StatusRegistry unique entry.name; excludes marks, shields and timed effects; artwork coverage is not mechanic correctness",
+  "counts": {
+    "registryKeys": 58,
+    "uniqueStatuses": 56,
+    "mappedExisting": 56,
+    "missing": 0,
+    "unmappedLocal": 0
+  },
+  "rows": [
+    {
+      "name": "麻痺",
+      "registryKeys": [
+        "麻痹",
+        "麻痺"
+      ],
+      "aliases": [
+        "paralyzed"
+      ],
+      "categories": [
+        "CONTROL"
+      ],
+      "description": "控制類異常狀態；處於該異常狀態則每回合無法行動",
+      "icon": "/seer/abnormal/0.png",
+      "asset": "public/seer/abnormal/0.png",
+      "image": {
+        "validPng": true,
+        "width": 68,
+        "height": 68,
+        "bitDepth": 8,
+        "colorType": 6,
+        "bytes": 10349,
+        "alphaChannel": true
+      },
+      "coverage": "mapped_existing",
+      "localCandidates": []
+    },
+    {
+      "name": "疲憊",
+      "registryKeys": [
+        "疲憊"
+      ],
+      "aliases": [
+        "fatigued"
+      ],
+      "categories": [
+        "CONTROL"
+      ],
+      "description": "控制類異常狀態；處於該異常狀態則每回合無法行動",
+      "icon": "/seer/abnormal/7.png",
+      "asset": "public/seer/abnormal/7.png",
+      "image": {
+        "validPng": true,
+        "width": 68,
+        "height": 68,
+        "bitDepth": 8,
+        "colorType": 6,
+        "bytes": 7953,
+        "alphaChannel": true
+      },
+      "coverage": "mapped_existing",
+      "localCandidates": []
+    },
+    {
+      "name": "魘昧",
+      "registryKeys": [
+        "魘昧",
+        "魘味"
+      ],
+      "aliases": [],
+      "categories": [
+        "WEAKENING",
+        "RESTRICTIVE"
+      ],
+      "description": "弱化類異常狀態；限制類異常；場上的異常狀態、能力提升狀態對己方均展示為1回合的魘昧（只改變己方看到的顯示，不改變原有效果與回合數）",
+      "icon": "/seer/abnormal/44.png",
+      "asset": "public/seer/abnormal/44.png",
+      "image": {
+        "validPng": true,
+        "width": 68,
+        "height": 68,
+        "bitDepth": 8,
+        "colorType": 6,
+        "bytes": 9290,
+        "alphaChannel": true
+      },
+      "coverage": "mapped_existing",
+      "localCandidates": []
+    },
+    {
+      "name": "害怕",
+      "registryKeys": [
+        "害怕"
+      ],
+      "aliases": [
+        "feared"
+      ],
+      "categories": [
+        "CONTROL"
+      ],
+      "description": "控制類異常狀態；處於該異常狀態則每回合無法行動",
+      "icon": "/seer/abnormal/6.png",
+      "asset": "public/seer/abnormal/6.png",
+      "image": {
+        "validPng": true,
+        "width": 68,
+        "height": 68,
+        "bitDepth": 8,
+        "colorType": 6,
+        "bytes": 8367,
+        "alphaChannel": true
+      },
+      "coverage": "mapped_existing",
+      "localCandidates": []
+    },
+    {
+      "name": "睡眠",
+      "registryKeys": [
+        "睡眠"
+      ],
+      "aliases": [
+        "sleep"
+      ],
+      "categories": [
+        "CONTROL"
+      ],
+      "description": "控制類異常狀態；處於該異常狀態則每回合無法行動，若受到攻擊技能命中則睡眠解除",
+      "icon": "/seer/abnormal/8.png",
+      "asset": "public/seer/abnormal/8.png",
+      "image": {
+        "validPng": true,
+        "width": 68,
+        "height": 68,
+        "bitDepth": 8,
+        "colorType": 6,
+        "bytes": 10167,
+        "alphaChannel": true
+      },
+      "coverage": "mapped_existing",
+      "localCandidates": []
+    },
+    {
+      "name": "石化",
+      "registryKeys": [
+        "石化"
+      ],
+      "aliases": [
+        "frozen",
+        "petrified"
+      ],
+      "categories": [
+        "CONTROL"
+      ],
+      "description": "控制類異常狀態；處於該異常狀態則每回合無法行動",
+      "icon": "/seer/abnormal/9.png",
+      "asset": "public/seer/abnormal/9.png",
+      "image": {
+        "validPng": true,
+        "width": 68,
+        "height": 68,
+        "bitDepth": 8,
+        "colorType": 6,
+        "bytes": 8364,
+        "alphaChannel": true
+      },
+      "coverage": "mapped_existing",
+      "localCandidates": []
+    },
+    {
+      "name": "癱瘓",
+      "registryKeys": [
+        "癱瘓"
+      ],
+      "aliases": [
+        "paralyzed_lock"
+      ],
+      "categories": [
+        "CONTROL",
+        "RESTRICTIVE"
+      ],
+      "description": "控制類異常；限制類異常；處於該異常狀態則每回合無法行動，且無法主動切換精靈下場",
+      "icon": "/seer/abnormal/19.png",
+      "asset": "public/seer/abnormal/19.png",
+      "image": {
+        "validPng": true,
+        "width": 68,
+        "height": 68,
+        "bitDepth": 8,
+        "colorType": 6,
+        "bytes": 11590,
+        "alphaChannel": true
+      },
+      "coverage": "mapped_existing",
+      "localCandidates": []
+    },
+    {
+      "name": "狂信",
+      "registryKeys": [
+        "狂信"
+      ],
+      "aliases": [
+        "fanatic"
+      ],
+      "categories": [
+        "CONTROL"
+      ],
+      "description": "控制類異常狀態；處於該異常狀態則對手為信仰對象時自身無法行動；若進入狀態時自身沒有信仰對象，則本次狂信來源成為自身信仰對象",
+      "icon": "/seer/abnormal/41.png",
+      "asset": "public/seer/abnormal/41.png",
+      "image": {
+        "validPng": true,
+        "width": 68,
+        "height": 68,
+        "bitDepth": 8,
+        "colorType": 6,
+        "bytes": 11869,
+        "alphaChannel": true
+      },
+      "coverage": "mapped_existing",
+      "localCandidates": []
+    },
+    {
+      "name": "冰封",
+      "registryKeys": [
+        "冰封"
+      ],
+      "aliases": [
+        "ice_sealed",
+        "凍結",
+        "冰凍"
+      ],
+      "categories": [
+        "CONTROL",
+        "EVOLUTIONARY"
+      ],
+      "description": "控制類異常狀態；衍化類異常；處於該異常狀態則每回合無法行動；異常結束後轉化為速度 -1 與凍傷 3 回合",
+      "icon": "/seer/abnormal/15.png",
+      "asset": "public/seer/abnormal/15.png",
+      "image": {
+        "validPng": true,
+        "width": 68,
+        "height": 68,
+        "bitDepth": 8,
+        "colorType": 6,
+        "bytes": 8737,
+        "alphaChannel": true
+      },
+      "coverage": "mapped_existing",
+      "localCandidates": []
+    },
+    {
+      "name": "焚燼",
+      "registryKeys": [
+        "焚燼"
+      ],
+      "aliases": [
+        "incinerated"
+      ],
+      "categories": [
+        "CONTROL",
+        "EVOLUTIONARY"
+      ],
+      "description": "控制類異常狀態；衍化類異常；處於該異常狀態則每回合無法行動；異常結束後轉化為命中 -1 與燒傷狀態3 回合",
+      "icon": "/seer/abnormal/22.png",
+      "asset": "public/seer/abnormal/22.png",
+      "image": {
+        "validPng": true,
+        "width": 68,
+        "height": 68,
+        "bitDepth": 8,
+        "colorType": 6,
+        "bytes": 11232,
+        "alphaChannel": true
+      },
+      "coverage": "mapped_existing",
+      "localCandidates": []
+    },
+    {
+      "name": "詛咒",
+      "registryKeys": [
+        "詛咒"
+      ],
+      "aliases": [
+        "cursed"
+      ],
+      "categories": [
+        "CONTROL",
+        "EVOLUTIONARY"
+      ],
+      "description": "控制類異常狀態；衍化類異常；處於該異常狀態則每回合無法行動；異常結束後隨機轉化為烈焰詛咒、虛弱詛咒、致命詛咒中的一種狀態3 回合",
+      "icon": "/seer/abnormal/23.png",
+      "asset": "public/seer/abnormal/23.png",
+      "image": {
+        "validPng": true,
+        "width": 68,
+        "height": 68,
+        "bitDepth": 8,
+        "colorType": 6,
+        "bytes": 9696,
+        "alphaChannel": true
+      },
+      "coverage": "mapped_existing",
+      "localCandidates": []
+    },
+    {
+      "name": "感染",
+      "registryKeys": [
+        "感染"
+      ],
+      "aliases": [
+        "infected"
+      ],
+      "categories": [
+        "CONTROL",
+        "EVOLUTIONARY"
+      ],
+      "description": "控制類異常狀態；衍化類異常；處於該異常狀態則每回合無法行動；異常結束後轉化為攻擊 -1、特攻 -1 與中毒狀態",
+      "icon": "/seer/abnormal/27.png",
+      "asset": "public/seer/abnormal/27.png",
+      "image": {
+        "validPng": true,
+        "width": 68,
+        "height": 68,
+        "bitDepth": 8,
+        "colorType": 6,
+        "bytes": 11201,
+        "alphaChannel": true
+      },
+      "coverage": "mapped_existing",
+      "localCandidates": []
+    },
+    {
+      "name": "神游",
+      "registryKeys": [
+        "神游"
+      ],
+      "aliases": [
+        "trance"
+      ],
+      "categories": [
+        "CONTROL",
+        "EVOLUTIONARY"
+      ],
+      "description": "控制類異常狀態；衍化類異常；處於該異常狀態則每回合無法行動；異常結束後轉化為3 回合失神狀態",
+      "icon": "/seer/abnormal/39.png",
+      "asset": "public/seer/abnormal/39.png",
+      "image": {
+        "validPng": true,
+        "width": 68,
+        "height": 68,
+        "bitDepth": 8,
+        "colorType": 6,
+        "bytes": 12444,
+        "alphaChannel": true
+      },
+      "coverage": "mapped_existing",
+      "localCandidates": []
+    },
+    {
+      "name": "空定",
+      "registryKeys": [
+        "空定"
+      ],
+      "aliases": [],
+      "categories": [
+        "CONTROL",
+        "EVOLUTIONARY"
+      ],
+      "description": "控制類異常狀態；衍化類異常；處於該異常狀態則每回合無法行動；異常結束後轉化為 3 回合沉默狀態",
+      "icon": "/seer/abnormal/40.png",
+      "asset": "public/seer/abnormal/40.png",
+      "image": {
+        "validPng": true,
+        "width": 68,
+        "height": 68,
+        "bitDepth": 8,
+        "colorType": 6,
+        "bytes": 13434,
+        "alphaChannel": true
+      },
+      "coverage": "mapped_existing",
+      "localCandidates": []
+    },
+    {
+      "name": "沉睡",
+      "registryKeys": [
+        "沉睡"
+      ],
+      "aliases": [
+        "deep_sleep"
+      ],
+      "categories": [
+        "CONTROL",
+        "EVOLUTIONARY"
+      ],
+      "description": "控制類異常狀態；衍化類異常；處於該異常狀態無法行動且期間受到致命一擊傷害時轉化為睡眠；異常結束後轉化為睡眠 3 回合",
+      "icon": "/status-icons/沉睡.png",
+      "asset": "public/status-icons/沉睡.png",
+      "image": {
+        "validPng": true,
+        "width": 256,
+        "height": 256,
+        "bitDepth": 8,
+        "colorType": 2,
+        "bytes": 50738,
+        "alphaChannel": false
+      },
+      "coverage": "mapped_existing",
+      "localCandidates": [
+        "異常圖標/沉睡.png",
+        "public/status-icons/沉睡.png"
+      ]
+    },
+    {
+      "name": "中毒",
+      "registryKeys": [
+        "中毒"
+      ],
+      "aliases": [
+        "poisoned"
+      ],
+      "categories": [
+        "WEAKENING"
+      ],
+      "description": "弱化類異常；處於該異常狀態則每回合對手出手時受到等同於最大體力 1/8 的真實傷害；若再度陷入中毒，額外附加 1 次最大體力 1/8 的真實傷害",
+      "icon": "/seer/abnormal/1.png",
+      "asset": "public/seer/abnormal/1.png",
+      "image": {
+        "validPng": true,
+        "width": 68,
+        "height": 68,
+        "bitDepth": 8,
+        "colorType": 6,
+        "bytes": 9256,
+        "alphaChannel": true
+      },
+      "coverage": "mapped_existing",
+      "localCandidates": []
+    },
+    {
+      "name": "燒傷",
+      "registryKeys": [
+        "燒傷"
+      ],
+      "aliases": [
+        "burned"
+      ],
+      "categories": [
+        "WEAKENING"
+      ],
+      "description": "弱化類異常；處於該異常狀態則每回合對手出手時受到等同於最大體力 1/8 的真實傷害，且攻擊技能初始威力降低 50%",
+      "icon": "/seer/abnormal/2.png",
+      "asset": "public/seer/abnormal/2.png",
+      "image": {
+        "validPng": true,
+        "width": 68,
+        "height": 68,
+        "bitDepth": 8,
+        "colorType": 6,
+        "bytes": 8307,
+        "alphaChannel": true
+      },
+      "coverage": "mapped_existing",
+      "localCandidates": []
+    },
+    {
+      "name": "寄生",
+      "registryKeys": [
+        "寄生"
+      ],
+      "aliases": [],
+      "categories": [
+        "WEAKENING"
+      ],
+      "description": "弱化類異常；處於該異常狀態則每回合對手出手時受到等同於最大體力 1/8 的真實傷害，並使對手恢復等量體力",
+      "icon": "/seer/abnormal/4.png",
+      "asset": "public/seer/abnormal/4.png",
+      "image": {
+        "validPng": true,
+        "width": 68,
+        "height": 68,
+        "bitDepth": 8,
+        "colorType": 6,
+        "bytes": 10607,
+        "alphaChannel": true
+      },
+      "coverage": "mapped_existing",
+      "localCandidates": []
+    },
+    {
+      "name": "凍傷",
+      "registryKeys": [
+        "凍傷"
+      ],
+      "aliases": [
+        "frostbite"
+      ],
+      "categories": [
+        "WEAKENING"
+      ],
+      "description": "弱化類異常；處於該異常狀態則每回合對手出手時受到等同於最大體力 1/8 的真實傷害",
+      "icon": "/seer/abnormal/5.png",
+      "asset": "public/seer/abnormal/5.png",
+      "image": {
+        "validPng": true,
+        "width": 68,
+        "height": 68,
+        "bitDepth": 8,
+        "colorType": 6,
+        "bytes": 8787,
+        "alphaChannel": true
+      },
+      "coverage": "mapped_existing",
+      "localCandidates": []
+    },
+    {
+      "name": "混亂",
+      "registryKeys": [
+        "混亂"
+      ],
+      "aliases": [
+        "confused"
+      ],
+      "categories": [
+        "WEAKENING"
+      ],
+      "description": "弱化類異常；攻擊技能初始命中率降低 80%；處於該異常狀態則每回合對手出手時受到 50 點真實傷害",
+      "icon": "/seer/abnormal/10.png",
+      "asset": "public/seer/abnormal/10.png",
+      "image": {
+        "validPng": true,
+        "width": 68,
+        "height": 68,
+        "bitDepth": 8,
+        "colorType": 6,
+        "bytes": 12745,
+        "alphaChannel": true
+      },
+      "coverage": "mapped_existing",
+      "localCandidates": []
+    },
+    {
+      "name": "衰弱",
+      "registryKeys": [
+        "衰弱"
+      ],
+      "aliases": [
+        "shuairuo"
+      ],
+      "categories": [
+        "WEAKENING"
+      ],
+      "description": "弱化類異常；處於該異常狀態則受到的攻擊傷害額外提升；若衰弱回合數為 1/2/3/4/5，分別額外提升 25%/50%/100%/250%/500%，大於 5 回合仍為 500%",
+      "icon": "/seer/abnormal/11.png",
+      "asset": "public/seer/abnormal/11.png",
+      "image": {
+        "validPng": true,
+        "width": 68,
+        "height": 68,
+        "bitDepth": 8,
+        "colorType": 6,
+        "bytes": 12812,
+        "alphaChannel": true
+      },
+      "coverage": "mapped_existing",
+      "localCandidates": []
+    },
+    {
+      "name": "易燃",
+      "registryKeys": [
+        "易燃"
+      ],
+      "aliases": [],
+      "categories": [
+        "WEAKENING"
+      ],
+      "description": "弱化類異常；處於該異常狀態則攻擊技能初始命中率降低 30%，且受到火系攻擊時將轉化為燒傷狀態",
+      "icon": "/seer/abnormal/13.png",
+      "asset": "public/seer/abnormal/13.png",
+      "image": {
+        "validPng": true,
+        "width": 68,
+        "height": 68,
+        "bitDepth": 8,
+        "colorType": 6,
+        "bytes": 12587,
+        "alphaChannel": true
+      },
+      "coverage": "mapped_existing",
+      "localCandidates": []
+    },
+    {
+      "name": "流血",
+      "registryKeys": [
+        "流血"
+      ],
+      "aliases": [
+        "bleeding"
+      ],
+      "categories": [
+        "WEAKENING"
+      ],
+      "description": "弱化類異常；處於該異常狀態則每回合對手出手時受到 80 點真實傷害",
+      "icon": "/seer/abnormal/16.png",
+      "asset": "public/seer/abnormal/16.png",
+      "image": {
+        "validPng": true,
+        "width": 68,
+        "height": 68,
+        "bitDepth": 8,
+        "colorType": 6,
+        "bytes": 11277,
+        "alphaChannel": true
+      },
+      "coverage": "mapped_existing",
+      "localCandidates": []
+    },
+    {
+      "name": "失明",
+      "registryKeys": [
+        "失明"
+      ],
+      "aliases": [
+        "shiming"
+      ],
+      "categories": [
+        "WEAKENING"
+      ],
+      "description": "弱化類異常；處於該異常狀態則有 50% 概率攻擊技能丟失；非必中攻擊以「MISS」形式實現，必中攻擊技能以「攻擊技能無法造成傷害且附加效果失效」形式實現",
+      "icon": "/seer/abnormal/20.png",
+      "asset": "public/seer/abnormal/20.png",
+      "image": {
+        "validPng": true,
+        "width": 68,
+        "height": 68,
+        "bitDepth": 8,
+        "colorType": 6,
+        "bytes": 11109,
+        "alphaChannel": true
+      },
+      "coverage": "mapped_existing",
+      "localCandidates": []
+    },
+    {
+      "name": "束縛",
+      "registryKeys": [
+        "束縛"
+      ],
+      "aliases": [
+        "shackled"
+      ],
+      "categories": [
+        "WEAKENING"
+      ],
+      "description": "弱化類異常；處於該異常狀態則所有先制效果失效，每回合對手出手時受到等同於自身最大體力 1/8 的百分比傷害",
+      "icon": "/seer/abnormal/28.png",
+      "asset": "public/seer/abnormal/28.png",
+      "image": {
+        "validPng": true,
+        "width": 68,
+        "height": 68,
+        "bitDepth": 8,
+        "colorType": 6,
+        "bytes": 11821,
+        "alphaChannel": true
+      },
+      "coverage": "mapped_existing",
+      "localCandidates": []
+    },
+    {
+      "name": "失神",
+      "registryKeys": [
+        "失神"
+      ],
+      "aliases": [
+        "stupefied"
+      ],
+      "categories": [
+        "WEAKENING"
+      ],
+      "description": "弱化類異常；處於該異常狀態則 50% 概率屬性技能失效",
+      "icon": "/seer/abnormal/29.png",
+      "asset": "public/seer/abnormal/29.png",
+      "image": {
+        "validPng": true,
+        "width": 68,
+        "height": 68,
+        "bitDepth": 8,
+        "colorType": 6,
+        "bytes": 12213,
+        "alphaChannel": true
+      },
+      "coverage": "mapped_existing",
+      "localCandidates": []
+    },
+    {
+      "name": "沉默",
+      "registryKeys": [
+        "沉默"
+      ],
+      "aliases": [
+        "silenced"
+      ],
+      "categories": [
+        "WEAKENING"
+      ],
+      "description": "弱化類異常；處於該異常狀態則第五技能無效；處於該異常狀態則每回合結束時受到等同於自身最大體力 1/8 的百分比傷害",
+      "icon": "/seer/abnormal/30.png",
+      "asset": "public/seer/abnormal/30.png",
+      "image": {
+        "validPng": true,
+        "width": 68,
+        "height": 68,
+        "bitDepth": 8,
+        "colorType": 6,
+        "bytes": 10824,
+        "alphaChannel": true
+      },
+      "coverage": "mapped_existing",
+      "localCandidates": []
+    },
+    {
+      "name": "眩暈",
+      "registryKeys": [
+        "眩暈"
+      ],
+      "aliases": [],
+      "categories": [
+        "RESTRICTIVE",
+        "EVOLUTIONARY"
+      ],
+      "description": "限制類異常，衍化類異常，處於該異常無法選擇所有類型技能，異常結束後轉化為3回合遲鈍",
+      "icon": "/status-icons/眩暈.png",
+      "asset": "public/status-icons/眩暈.png",
+      "image": {
+        "validPng": true,
+        "width": 256,
+        "height": 256,
+        "bitDepth": 8,
+        "colorType": 6,
+        "bytes": 174849,
+        "alphaChannel": true
+      },
+      "coverage": "mapped_existing",
+      "localCandidates": [
+        "public/status-icons/眩暈.png"
+      ]
+    },
+    {
+      "name": "神悔",
+      "registryKeys": [
+        "神悔"
+      ],
+      "aliases": [],
+      "categories": [
+        "CONTROL",
+        "EVOLUTIONARY"
+      ],
+      "description": "控制類異常；衍化類異常；無法行動，異常結束後轉化為3回合失明",
+      "icon": "/status-icons/神悔.png",
+      "asset": "public/status-icons/神悔.png",
+      "image": {
+        "validPng": true,
+        "width": 256,
+        "height": 256,
+        "bitDepth": 8,
+        "colorType": 6,
+        "bytes": 166650,
+        "alphaChannel": true
+      },
+      "coverage": "mapped_existing",
+      "localCandidates": [
+        "public/status-icons/神悔.png"
+      ]
+    },
+    {
+      "name": "臣服",
+      "registryKeys": [
+        "臣服"
+      ],
+      "aliases": [
+        "submit"
+      ],
+      "categories": [
+        "WEAKENING"
+      ],
+      "description": "弱化類異常；處於該異常狀態則無法造成固定傷害、百分比傷害及通過使用攻擊技能所造成的技能傷害",
+      "icon": "/seer/abnormal/31.png",
+      "asset": "public/seer/abnormal/31.png",
+      "image": {
+        "validPng": true,
+        "width": 68,
+        "height": 68,
+        "bitDepth": 8,
+        "colorType": 6,
+        "bytes": 12143,
+        "alphaChannel": true
+      },
+      "coverage": "mapped_existing",
+      "localCandidates": []
+    },
+    {
+      "name": "沸湧",
+      "registryKeys": [
+        "沸湧"
+      ],
+      "aliases": [],
+      "categories": [
+        "WEAKENING"
+      ],
+      "description": "處於該異常狀態則受到的攻擊傷害至少為其最大體力的 30%，對手打出致命一擊時效果提升至 50%",
+      "icon": "/seer/abnormal/36.png",
+      "asset": "public/seer/abnormal/36.png",
+      "image": {
+        "validPng": true,
+        "width": 68,
+        "height": 68,
+        "bitDepth": 8,
+        "colorType": 6,
+        "bytes": 11930,
+        "alphaChannel": true
+      },
+      "coverage": "mapped_existing",
+      "localCandidates": []
+    },
+    {
+      "name": "繳械",
+      "registryKeys": [
+        "繳械"
+      ],
+      "aliases": [],
+      "categories": [
+        "WEAKENING",
+        "RESTRICTIVE"
+      ],
+      "description": "弱化類異常，限制類異常，無法選擇使用藥劑，選擇技能階段令選擇的技能PP值歸0，觸發成功時因該技能PP值為0則當回合無法行動",
+      "icon": "/status-icons/繳械.png",
+      "asset": "public/status-icons/繳械.png",
+      "image": {
+        "validPng": true,
+        "width": 256,
+        "height": 256,
+        "bitDepth": 8,
+        "colorType": 2,
+        "bytes": 125408,
+        "alphaChannel": false
+      },
+      "coverage": "mapped_existing",
+      "localCandidates": [
+        "異常圖標/繳械.png",
+        "public/status-icons/繳械.png"
+      ]
+    },
+    {
+      "name": "腐朽",
+      "registryKeys": [
+        "腐朽"
+      ],
+      "aliases": [],
+      "categories": [
+        "WEAKENING"
+      ],
+      "description": "弱化類異常，處於該異常狀態減少、降低攻擊傷害效果衰減至0%且受到物理攻擊、特殊攻擊技能傷害提升30%且受到前述傷害時額外提高150點傷害；直至本回合戰鬥階段結束時未受到上述傷害則受到300點真實傷害且此異常回合數+2",
+      "icon": "/status-icons/腐朽.png",
+      "asset": "public/status-icons/腐朽.png",
+      "image": {
+        "validPng": true,
+        "width": 256,
+        "height": 256,
+        "bitDepth": 8,
+        "colorType": 6,
+        "bytes": 168554,
+        "alphaChannel": true
+      },
+      "coverage": "mapped_existing",
+      "localCandidates": [
+        "public/status-icons/腐朽.png"
+      ]
+    },
+    {
+      "name": "失溫",
+      "registryKeys": [
+        "失溫"
+      ],
+      "aliases": [],
+      "categories": [
+        "WEAKENING",
+        "RESTRICTIVE"
+      ],
+      "description": "弱化類異常，限制類異常，無法選擇使用藥劑，戰鬥階段結束時受到180點真實傷害，減少4點技能pp值",
+      "icon": "/status-icons/失溫.png",
+      "asset": "public/status-icons/失溫.png",
+      "image": {
+        "validPng": true,
+        "width": 256,
+        "height": 256,
+        "bitDepth": 8,
+        "colorType": 6,
+        "bytes": 168787,
+        "alphaChannel": true
+      },
+      "coverage": "mapped_existing",
+      "localCandidates": [
+        "public/status-icons/失溫.png"
+      ]
+    },
+    {
+      "name": "烈焰詛咒",
+      "registryKeys": [
+        "烈焰詛咒"
+      ],
+      "aliases": [
+        "flame_curse"
+      ],
+      "categories": [
+        "AUXILIARY"
+      ],
+      "description": "附屬類異常；附屬詛咒類異常；處於該異常狀態則每回合結束時受到等同於自身最大體力 1/8 的百分比傷害",
+      "icon": "/seer/abnormal/24.png",
+      "asset": "public/seer/abnormal/24.png",
+      "image": {
+        "validPng": true,
+        "width": 68,
+        "height": 68,
+        "bitDepth": 8,
+        "colorType": 6,
+        "bytes": 9155,
+        "alphaChannel": true
+      },
+      "coverage": "mapped_existing",
+      "localCandidates": []
+    },
+    {
+      "name": "遲鈍",
+      "registryKeys": [
+        "遲鈍"
+      ],
+      "aliases": [],
+      "categories": [
+        "WEAKENING"
+      ],
+      "description": "弱化類異常，處於該異常狀態時速度能力值、正先制等級、造成非真實傷害減半（向下取整），受到非真實傷害翻倍",
+      "icon": "/status-icons/遲鈍.png",
+      "asset": "public/status-icons/遲鈍.png",
+      "image": {
+        "validPng": true,
+        "width": 256,
+        "height": 256,
+        "bitDepth": 8,
+        "colorType": 6,
+        "bytes": 152323,
+        "alphaChannel": true
+      },
+      "coverage": "mapped_existing",
+      "localCandidates": [
+        "public/status-icons/遲鈍.png"
+      ]
+    },
+    {
+      "name": "窒息",
+      "registryKeys": [
+        "窒息"
+      ],
+      "aliases": [
+        "suffocated"
+      ],
+      "categories": [
+        "WEAKENING"
+      ],
+      "description": "弱化類異常狀態；處於該異常狀態時使用攻擊技能時轉化為撞擊（撞擊：威力 35，造成物理傷害）；異常結束或被解除時消耗自身全部體力令自身死亡",
+      "icon": "/status-icons/窒息.png",
+      "asset": "public/status-icons/窒息.png",
+      "image": {
+        "validPng": true,
+        "width": 256,
+        "height": 256,
+        "bitDepth": 8,
+        "colorType": 6,
+        "bytes": 167114,
+        "alphaChannel": true
+      },
+      "coverage": "mapped_existing",
+      "localCandidates": [
+        "public/status-icons/窒息.png"
+      ]
+    },
+    {
+      "name": "凝滯",
+      "registryKeys": [
+        "凝滯"
+      ],
+      "aliases": [],
+      "categories": [
+        "WEAKENING",
+        "RESTRICTIVE"
+      ],
+      "description": "弱化類異常；限制類異常；處於該異常狀態則無法主動切換下場，但免疫受到的控制類異常狀態",
+      "icon": "/seer/abnormal/32.png",
+      "asset": "public/seer/abnormal/32.png",
+      "image": {
+        "validPng": true,
+        "width": 68,
+        "height": 68,
+        "bitDepth": 8,
+        "colorType": 6,
+        "bytes": 11808,
+        "alphaChannel": true
+      },
+      "coverage": "mapped_existing",
+      "localCandidates": []
+    },
+    {
+      "name": "山神守護",
+      "registryKeys": [
+        "山神守護"
+      ],
+      "aliases": [],
+      "categories": [
+        "AUXILIARY"
+      ],
+      "description": "附屬類異常；處於該異常狀態則每回合受到對手的攻擊傷害減少 80%",
+      "icon": "/seer/abnormal/12.png",
+      "asset": "public/seer/abnormal/12.png",
+      "image": {
+        "validPng": true,
+        "width": 68,
+        "height": 68,
+        "bitDepth": 8,
+        "colorType": 6,
+        "bytes": 10105,
+        "alphaChannel": true
+      },
+      "coverage": "mapped_existing",
+      "localCandidates": []
+    },
+    {
+      "name": "狂暴",
+      "registryKeys": [
+        "狂暴"
+      ],
+      "aliases": [
+        "furious"
+      ],
+      "categories": [
+        "AUXILIARY"
+      ],
+      "description": "附屬類異常；處於該異常狀態則造成傷害翻倍",
+      "icon": "/seer/abnormal/14.png",
+      "asset": "public/seer/abnormal/14.png",
+      "image": {
+        "validPng": true,
+        "width": 68,
+        "height": 68,
+        "bitDepth": 8,
+        "colorType": 6,
+        "bytes": 6992,
+        "alphaChannel": true
+      },
+      "coverage": "mapped_existing",
+      "localCandidates": []
+    },
+    {
+      "name": "平靜",
+      "registryKeys": [
+        "平靜"
+      ],
+      "aliases": [],
+      "categories": [
+        "AUXILIARY"
+      ],
+      "description": "附屬類異常；處於該狀態使用技能時不受PP值限制且不消耗PP值，回合結束時受到最大體力1%的真實傷害(不致死)並恢復自身所有技能一定PP值(恢復量等於自身PP值上限最高者⅕，向上取整)",
+      "icon": "/status-icons/平靜.png",
+      "asset": "public/status-icons/平靜.png",
+      "image": {
+        "validPng": true,
+        "width": 256,
+        "height": 256,
+        "bitDepth": 8,
+        "colorType": 6,
+        "bytes": 165856,
+        "alphaChannel": true
+      },
+      "coverage": "mapped_existing",
+      "localCandidates": [
+        "public/status-icons/平靜.png"
+      ]
+    },
+    {
+      "name": "入魔",
+      "registryKeys": [
+        "入魔"
+      ],
+      "aliases": [],
+      "categories": [
+        "AUXILIARY"
+      ],
+      "description": "附屬類異常；自身攻擊時克制倍數歸1並乘以神靈系、聖靈系、光系中對自身克制倍數之和(計算時基礎克制倍數默認為1倍，再乘以神靈系、聖靈系、光系三種屬性對該精靈克制倍數總和因此可超過4倍)，回合結束時若當回合未選擇攻擊技能則失去體力上限20%令自身所有附屬類異常回合數+1，反之減少當回合所選擇的攻擊技能1點PP值",
+      "icon": "/status-icons/入魔.png",
+      "asset": "public/status-icons/入魔.png",
+      "image": {
+        "validPng": true,
+        "width": 256,
+        "height": 256,
+        "bitDepth": 8,
+        "colorType": 6,
+        "bytes": 166372,
+        "alphaChannel": true
+      },
+      "coverage": "mapped_existing",
+      "localCandidates": [
+        "public/status-icons/入魔.png"
+      ]
+    },
+    {
+      "name": "星哲",
+      "registryKeys": [
+        "星哲"
+      ],
+      "aliases": [],
+      "categories": [
+        "AUXILIARY"
+      ],
+      "description": "附屬類異常；星附屬類異常狀態；該狀態下的精靈造成的固定傷害、百分比傷害提升 30%，每回合結束後恢復最大體力的 1/4",
+      "icon": "/seer/abnormal/34.png",
+      "asset": "public/seer/abnormal/34.png",
+      "image": {
+        "validPng": true,
+        "width": 68,
+        "height": 68,
+        "bitDepth": 8,
+        "colorType": 6,
+        "bytes": 12212,
+        "alphaChannel": true
+      },
+      "coverage": "mapped_existing",
+      "localCandidates": []
+    },
+    {
+      "name": "超頻",
+      "registryKeys": [
+        "超頻"
+      ],
+      "aliases": [],
+      "categories": [
+        "AUXILIARY",
+        "EVOLUTIONARY"
+      ],
+      "description": "附屬類異常；衍化類異常；該狀態下精靈的技能先制 +1 且行動開始時恢復所選擇技能的全部 PP 值",
+      "icon": "/seer/abnormal/35.png",
+      "asset": "public/seer/abnormal/35.png",
+      "image": {
+        "validPng": true,
+        "width": 68,
+        "height": 68,
+        "bitDepth": 8,
+        "colorType": 6,
+        "bytes": 11203,
+        "alphaChannel": true
+      },
+      "coverage": "mapped_existing",
+      "localCandidates": []
+    },
+    {
+      "name": "砥礪",
+      "registryKeys": [
+        "砥礪"
+      ],
+      "aliases": [],
+      "categories": [
+        "AUXILIARY"
+      ],
+      "description": "附屬類異常；該狀態下的精靈受到真實傷害後，若本回合未執行過附加異常狀態的效果，則直接增加此傷害值 80% 的體力",
+      "icon": "/seer/abnormal/37.png",
+      "asset": "public/seer/abnormal/37.png",
+      "image": {
+        "validPng": true,
+        "width": 68,
+        "height": 68,
+        "bitDepth": 8,
+        "colorType": 6,
+        "bytes": 9898,
+        "alphaChannel": true
+      },
+      "coverage": "mapped_existing",
+      "localCandidates": []
+    },
+    {
+      "name": "星贖",
+      "registryKeys": [
+        "星贖"
+      ],
+      "aliases": [
+        "xingshu"
+      ],
+      "categories": [
+        "AUXILIARY"
+      ],
+      "description": "附屬類異常；星附屬類異常狀態；處於該異常狀態則體力恢復效果提升 30%，戰鬥階段結束時（每回合結束時）所有非限制類異常狀態的回合數 +1",
+      "icon": "/seer/abnormal/38.png",
+      "asset": "public/seer/abnormal/38.png",
+      "image": {
+        "validPng": true,
+        "width": 68,
+        "height": 68,
+        "bitDepth": 8,
+        "colorType": 6,
+        "bytes": 13295,
+        "alphaChannel": true
+      },
+      "coverage": "mapped_existing",
+      "localCandidates": []
+    },
+    {
+      "name": "雷解",
+      "registryKeys": [
+        "雷解"
+      ],
+      "aliases": [],
+      "categories": [
+        "AUXILIARY"
+      ],
+      "description": "附屬類異常；自身造成攻擊傷害後，附加對方該傷害值 60% 的真實傷害",
+      "icon": "/seer/abnormal/42.png",
+      "asset": "public/seer/abnormal/42.png",
+      "image": {
+        "validPng": true,
+        "width": 68,
+        "height": 68,
+        "bitDepth": 8,
+        "colorType": 6,
+        "bytes": 12838,
+        "alphaChannel": true
+      },
+      "coverage": "mapped_existing",
+      "localCandidates": []
+    },
+    {
+      "name": "漸凍",
+      "registryKeys": [
+        "漸凍"
+      ],
+      "aliases": [
+        "gradual_freeze"
+      ],
+      "categories": [
+        "AUXILIARY",
+        "EVOLUTIONARY"
+      ],
+      "description": "附屬類異常；衍化類異常；異常結束後轉化為 3回合冰封",
+      "icon": "/seer/abnormal/43.png",
+      "asset": "public/seer/abnormal/43.png",
+      "image": {
+        "validPng": true,
+        "width": 68,
+        "height": 68,
+        "bitDepth": 8,
+        "colorType": 6,
+        "bytes": 13326,
+        "alphaChannel": true
+      },
+      "coverage": "mapped_existing",
+      "localCandidates": []
+    },
+    {
+      "name": "星佑",
+      "registryKeys": [
+        "星佑"
+      ],
+      "aliases": [],
+      "categories": [
+        "AUXILIARY"
+      ],
+      "description": "附屬類異常；星附屬類異常狀態；處於該異常狀態受到技能傷害降低 30% 且對手帶有正先制的技能無效；自身體力歸 0 時 100% 令自身重生一次並解除所有非控制類異常狀態",
+      "icon": "/status-icons/星佑.png",
+      "asset": "public/status-icons/星佑.png",
+      "image": {
+        "validPng": true,
+        "width": 256,
+        "height": 256,
+        "bitDepth": 8,
+        "colorType": 2,
+        "bytes": 153337,
+        "alphaChannel": false
+      },
+      "coverage": "mapped_existing",
+      "localCandidates": [
+        "異常圖標/星佑.png",
+        "public/status-icons/星佑.png"
+      ]
+    },
+    {
+      "name": "星護",
+      "registryKeys": [
+        "星護"
+      ],
+      "aliases": [],
+      "categories": [
+        "AUXILIARY"
+      ],
+      "description": "附屬類異常；星附屬類異常狀態；處於該異常狀態受到固定傷害、百分比傷害降低 30%，100% 閃避對手所有技能且對手帶有必中的技能使用後該 PP 值歸 1；自身存在技能 PP 值被消耗歸 0 時令自身強制保留該技能最大 PP 值 100% 並解除自身所有非弱化類異常狀態",
+      "icon": "/status-icons/星護.png",
+      "asset": "public/status-icons/星護.png",
+      "image": {
+        "validPng": true,
+        "width": 256,
+        "height": 256,
+        "bitDepth": 8,
+        "colorType": 2,
+        "bytes": 141733,
+        "alphaChannel": false
+      },
+      "coverage": "mapped_existing",
+      "localCandidates": [
+        "異常圖標/星護.png",
+        "public/status-icons/星護.png"
+      ]
+    },
+    {
+      "name": "星賜",
+      "registryKeys": [
+        "星賜"
+      ],
+      "aliases": [
+        "star_gift"
+      ],
+      "categories": [
+        "AUXILIARY"
+      ],
+      "description": "附屬類異常；星附屬類異常狀態；該狀態下的精靈造成的攻擊傷害提升 30%，每回合結束後恢復 2 點 PP 值",
+      "icon": "/seer/abnormal/33.png",
+      "asset": "public/seer/abnormal/33.png",
+      "image": {
+        "validPng": true,
+        "width": 68,
+        "height": 68,
+        "bitDepth": 8,
+        "colorType": 6,
+        "bytes": 12293,
+        "alphaChannel": true
+      },
+      "coverage": "mapped_existing",
+      "localCandidates": []
+    },
+    {
+      "name": "虛弱詛咒",
+      "registryKeys": [
+        "虛弱詛咒"
+      ],
+      "aliases": [
+        "weakness_curse"
+      ],
+      "categories": [
+        "AUXILIARY"
+      ],
+      "description": "附屬類異常；附屬詛咒類異常；處於該異常狀態則造成的攻擊傷害減少 50%",
+      "icon": "/seer/abnormal/26.png",
+      "asset": "public/seer/abnormal/26.png",
+      "image": {
+        "validPng": true,
+        "width": 68,
+        "height": 68,
+        "bitDepth": 8,
+        "colorType": 6,
+        "bytes": 9122,
+        "alphaChannel": true
+      },
+      "coverage": "mapped_existing",
+      "localCandidates": []
+    },
+    {
+      "name": "致命詛咒",
+      "registryKeys": [
+        "致命詛咒"
+      ],
+      "aliases": [
+        "fatal_curse"
+      ],
+      "categories": [
+        "AUXILIARY"
+      ],
+      "description": "附屬類異常；附屬詛咒類異常；處於該異常狀態則受到的攻擊傷害提高 50%",
+      "icon": "/seer/abnormal/25.png",
+      "asset": "public/seer/abnormal/25.png",
+      "image": {
+        "validPng": true,
+        "width": 68,
+        "height": 68,
+        "bitDepth": 8,
+        "colorType": 6,
+        "bytes": 9299,
+        "alphaChannel": true
+      },
+      "coverage": "mapped_existing",
+      "localCandidates": []
+    },
+    {
+      "name": "神話",
+      "registryKeys": [
+        "神話"
+      ],
+      "aliases": [],
+      "categories": [
+        "BOSS_ONLY"
+      ],
+      "description": "BOSS 專用異常狀態（黃色圖標）；免疫能力下降與異常狀態、PP 無限、所有技能必中。無回合數且不會隨回合遞減，下場後保留。",
+      "icon": "/seer/abnormal/17.png",
+      "asset": "public/seer/abnormal/17.png",
+      "image": {
+        "validPng": true,
+        "width": 68,
+        "height": 68,
+        "bitDepth": 8,
+        "colorType": 6,
+        "bytes": 10813,
+        "alphaChannel": true
+      },
+      "coverage": "mapped_existing",
+      "localCandidates": []
+    },
+    {
+      "name": "免疫",
+      "registryKeys": [
+        "免疫"
+      ],
+      "aliases": [],
+      "categories": [
+        "BOSS_ONLY"
+      ],
+      "description": "BOSS 專用異常狀態（藍色圖標）；免疫異常狀態、PP 無限。無回合數且不會隨回合遞減，下場後保留。",
+      "icon": "/seer/abnormal/18.png",
+      "asset": "public/seer/abnormal/18.png",
+      "image": {
+        "validPng": true,
+        "width": 68,
+        "height": 68,
+        "bitDepth": 8,
+        "colorType": 6,
+        "bytes": 10594,
+        "alphaChannel": true
+      },
+      "coverage": "mapped_existing",
+      "localCandidates": []
+    },
+    {
+      "name": "異常抵抗",
+      "registryKeys": [
+        "異常抵抗"
+      ],
+      "aliases": [
+        "status_immune"
+      ],
+      "categories": [
+        "AUXILIARY",
+        "NO_EFFECT"
+      ],
+      "description": "附屬類異常；無效果類異常；自身觸發異常狀態抗性抵抗時進行轉化產生的異常狀態；最多1回合且視為無效果異常",
+      "icon": "/seer/abnormal/21.png",
+      "asset": "public/seer/abnormal/21.png",
+      "image": {
+        "validPng": true,
+        "width": 68,
+        "height": 68,
+        "bitDepth": 8,
+        "colorType": 6,
+        "bytes": 9902,
+        "alphaChannel": true
+      },
+      "coverage": "mapped_existing",
+      "localCandidates": []
+    }
+  ],
+  "extraSourceRows": [
+    {
+      "name": "異常免疫",
+      "data": [
+        21,
+        "附屬類",
+        "附屬類異常狀態，無效果"
+      ]
+    },
+    {
+      "name": "寄生對手",
+      "data": [
+        3,
+        "",
+        "弱化類異常狀態，該狀態下精靈每回合對手行動開始時扣除最大體力的1/8，同時對手會恢復等量的體力"
+      ]
+    },
+    {
+      "name": "神遊",
+      "data": [
+        39,
+        "控制類",
+        "控制類異常狀態，該狀態下精靈無法行動，神遊結束後會轉化爲失神"
+      ]
+    }
+  ],
+  "unresolvedAliases": [
+    "切割",
+    "失控詛咒",
+    "星執者"
+  ]
+}

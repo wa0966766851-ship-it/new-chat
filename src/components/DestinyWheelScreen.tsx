@@ -342,31 +342,30 @@ export default function DestinyWheelScreen({
       <div className="absolute bottom-[-10%] right-[-10%] w-[600px] h-[600px] bg-amber-500/10 rounded-full blur-[140px] pointer-events-none animate-pulse" />
 
       {/* 頂部導航列 */}
-      <header className="flex flex-col md:flex-row md:items-center justify-between mb-6 pb-4 border-b border-[#36B2BC]/30 relative z-10 gap-3">
+      <header className="flex flex-col md:flex-row md:items-center justify-between mb-6 py-3 px-3 rounded-xl bg-slate-950/75 backdrop-blur-md border border-[#36B2BC]/30 relative z-10 gap-3 md:mr-52">
         <div className="flex items-center gap-3">
           <button 
             onClick={onBack}
-            className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-slate-900/80 hover:bg-slate-800 text-slate-300 border border-slate-700 transition"
+            className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-slate-900/80 hover:bg-slate-800 text-slate-300 border border-slate-700 transition whitespace-nowrap shrink-0"
           >
             <ArrowLeft className="w-4 h-4" /> 返回大廳
           </button>
           <div className="flex items-center gap-2">
             <span className="text-2xl">🎡</span>
             <div>
-              <h1 className="text-xl md:text-2xl font-black bg-gradient-to-r from-[#36B2BC] via-purple-300 to-indigo-300 bg-clip-text text-transparent flex items-center gap-2">
-                <span>命運之輪 (Wheel of Destiny)</span>
-                {isMathStyle && (
-                  <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-[#36B2BC]/20 text-[#36B2BC] border border-[#36B2BC]/50 font-normal">
-                    ANALYTICAL HUD v3.2
-                  </span>
-                )}
+              <h1 className="text-xl md:text-2xl font-black bg-gradient-to-r from-[#36B2BC] via-purple-300 to-indigo-300 bg-clip-text text-transparent flex items-center gap-2 whitespace-nowrap" title="Wheel of Destiny">
+                <span>命運之輪</span>
+
               </h1>
             </div>
           </div>
         </div>
 
         {/* 階段指示器 */}
-        <div className="hidden md:flex items-center gap-2 text-xs font-semibold">
+        <span className="hidden md:inline-flex 2xl:hidden px-3 py-1 rounded-full border border-[#36B2BC] bg-[#36B2BC]/20 text-[#36B2BC] text-xs font-semibold whitespace-nowrap" title="01 12連抽 → 02 Ban 3 → 03 Pick 6">
+          {phase === 'ban' ? '02 / Ban 3' : phase === 'pick' ? '03 / Pick 6' : '01 / 12 連抽'}
+        </span>
+        <div className="hidden 2xl:flex items-center gap-2 text-xs font-semibold whitespace-nowrap">
           <span className={`px-3 py-1 rounded-full border ${phase === 'intro' || phase === 'pulling' || phase === 'reveal' ? 'bg-[#36B2BC]/20 border-[#36B2BC] text-[#36B2BC]' : 'bg-slate-900/60 border-slate-700 text-slate-500'}`}>
             01/ 12連抽隨機矩陣
           </span>
@@ -380,14 +379,14 @@ export default function DestinyWheelScreen({
           </span>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 whitespace-nowrap">
           <button
             onClick={() => setIsMathStyle(!isMathStyle)}
             className={`px-3 py-1.5 rounded-lg text-xs font-bold border transition flex items-center gap-1 ${
               isMathStyle ? 'bg-[#36B2BC]/20 border-[#36B2BC] text-[#36B2BC] shadow-[0_0_12px_rgba(54,178,188,0.3)]' : 'bg-slate-800 border-slate-600 text-slate-300'
             }`}
           >
-            <span>📐 {isMathStyle ? '命運數理矩陣 (MATH HUD)' : '標準科技風'}</span>
+            <span title={isMathStyle ? '命運數理矩陣（MATH HUD）' : '標準科技風'}>📐 {isMathStyle ? '數理 HUD' : '標準'}</span>
           </button>
           <button
             onClick={() => setBattleMode(m => m === 'PVE' ? 'PVP' : 'PVE')}
@@ -395,7 +394,7 @@ export default function DestinyWheelScreen({
               battleMode === 'PVE' ? 'bg-indigo-600/30 border-indigo-500 text-indigo-200' : 'bg-amber-600/30 border-amber-500 text-amber-200'
             }`}
           >
-            {battleMode === 'PVE' ? '🤖 PVE (對戰智能AI)' : '👥 PVP (輪流操作模式)'}
+            <span title={battleMode === 'PVE' ? '對戰智能 AI' : '輪流操作模式'}>{battleMode === 'PVE' ? '🤖 PVE' : '👥 PVP'}</span>
           </button>
         </div>
       </header>
@@ -505,12 +504,12 @@ export default function DestinyWheelScreen({
                       </div>
 
                       {elf.destinyRank === 'C' && elf.interceptorEffect && !elf.name.includes("六界神王") && (
-                        <div className="absolute bottom-1 right-1 bg-emerald-900/90 text-emerald-300 text-[9px] px-1.5 py-0.5 rounded border border-emerald-500 font-bold">
+                        <div className="absolute top-6 right-1 z-10 bg-emerald-900/90 text-emerald-300 text-[9px] px-1.5 py-0.5 rounded border border-emerald-500 font-bold">
                           🛡️ {elf.interceptorEffect.name}
                         </div>
                       )}
                       {elf.name.includes("六界神王") && (
-                        <div className="absolute bottom-1 right-1 bg-amber-950/90 text-amber-300 text-[9px] px-1.5 py-0.5 rounded border border-amber-500 font-bold">
+                        <div className="absolute top-6 right-1 z-10 bg-amber-950/90 text-amber-300 text-[9px] px-1.5 py-0.5 rounded border border-amber-500 font-bold">
                           ✨ 【界】魂印
                         </div>
                       )}
@@ -568,12 +567,12 @@ export default function DestinyWheelScreen({
                       </div>
 
                       {elf.destinyRank === 'C' && elf.interceptorEffect && !elf.name.includes("六界神王") && (
-                        <div className="absolute bottom-1 right-1 bg-emerald-900/90 text-emerald-300 text-[9px] px-1.5 py-0.5 rounded border border-emerald-500 font-bold">
+                        <div className="absolute top-6 right-1 z-10 bg-emerald-900/90 text-emerald-300 text-[9px] px-1.5 py-0.5 rounded border border-emerald-500 font-bold">
                           🛡️ {elf.interceptorEffect.name}
                         </div>
                       )}
                       {elf.name.includes("六界神王") && (
-                        <div className="absolute bottom-1 right-1 bg-amber-950/90 text-amber-300 text-[9px] px-1.5 py-0.5 rounded border border-amber-500 font-bold">
+                        <div className="absolute top-6 right-1 z-10 bg-amber-950/90 text-amber-300 text-[9px] px-1.5 py-0.5 rounded border border-amber-500 font-bold">
                           ✨ 【界】魂印
                         </div>
                       )}
@@ -650,12 +649,12 @@ export default function DestinyWheelScreen({
                       )}
 
                       {elf.destinyRank === 'C' && elf.interceptorEffect && !isBannedByP1 && !elf.name.includes("六界神王") && (
-                        <div className="absolute bottom-1 right-1 bg-emerald-900/90 text-emerald-300 text-[9px] px-1.5 py-0.5 rounded border border-emerald-500 font-bold">
+                        <div className="absolute top-6 right-1 z-10 bg-emerald-900/90 text-emerald-300 text-[9px] px-1.5 py-0.5 rounded border border-emerald-500 font-bold">
                           🛡️ {elf.interceptorEffect.name}
                         </div>
                       )}
                       {elf.name.includes("六界神王") && !isBannedByP1 && (
-                        <div className="absolute bottom-1 right-1 bg-amber-950/90 text-amber-300 text-[9px] px-1.5 py-0.5 rounded border border-amber-500 font-bold">
+                        <div className="absolute top-6 right-1 z-10 bg-amber-950/90 text-amber-300 text-[9px] px-1.5 py-0.5 rounded border border-amber-500 font-bold">
                           ✨ 【界】魂印
                         </div>
                       )}
@@ -668,11 +667,11 @@ export default function DestinyWheelScreen({
             {/* 玩家池子：展示 AI Ban 掉了誰，或者在 PVP 下由 P2 點選 Ban */}
             <div className="bg-slate-900/60 border border-slate-700 rounded-xl p-4 opacity-90">
               <h4 className="text-sm font-bold text-slate-300 mb-3 flex items-center justify-between">
-                <span>{battleMode === 'PVE' ? '🛡️ 我方卡池 (AI 同步禁用中...)' : `🎯 點擊敵方 (${p1Title}) 精靈進行禁用 - P2 剩餘可 Ban: ${3 - p2BannedIds.length}`}</span>
+                <span>{battleMode === 'PVE' ? '🛡️ 我方卡池（AI 禁用確認後揭曉）' : `🎯 點擊敵方 (${p1Title}) 精靈進行禁用 - P2 剩餘可 Ban: ${3 - p2BannedIds.length}`}</span>
               </h4>
               <div className="grid grid-cols-3 sm:grid-cols-4 gap-3">
                 {p1Pool.map(elf => {
-                  const isBannedByAI = p2BannedIds.includes(elf.instanceId);
+                  const isBannedByAI = battleMode === 'PVP' && p2BannedIds.includes(elf.instanceId); // PVE：AI 禁用於確認後揭曉
                   const style = getRankStyle(elf.destinyRank);
 
                   return (
@@ -801,12 +800,12 @@ export default function DestinyWheelScreen({
                       </div>
 
                       {elf.destinyRank === 'C' && elf.interceptorEffect && !elf.name.includes("六界神王") && (
-                        <div className="absolute bottom-1 left-1 bg-emerald-900/90 text-emerald-300 text-[8px] px-1 py-0.5 rounded border border-emerald-500 font-bold">
+                        <div className="absolute top-6 left-1 z-10 bg-emerald-900/90 text-emerald-300 text-[8px] px-1 py-0.5 rounded border border-emerald-500 font-bold">
                           🛡️ {elf.interceptorEffect.name}
                         </div>
                       )}
                       {elf.name.includes("六界神王") && (
-                        <div className="absolute bottom-1 left-1 bg-amber-950/90 text-amber-300 text-[8px] px-1 py-0.5 rounded border border-amber-500 font-bold">
+                        <div className="absolute top-6 left-1 z-10 bg-amber-950/90 text-amber-300 text-[8px] px-1 py-0.5 rounded border border-amber-500 font-bold">
                           ✨ 【界】魂印
                         </div>
                       )}
@@ -884,12 +883,12 @@ export default function DestinyWheelScreen({
                       </div>
 
                       {elf.destinyRank === 'C' && elf.interceptorEffect && !elf.name.includes("六界神王") && (
-                        <div className="absolute bottom-1 right-1 bg-emerald-900/90 text-emerald-300 text-[8px] px-1 py-0.5 rounded border border-emerald-500 font-bold">
+                        <div className="absolute top-6 right-1 z-10 bg-emerald-900/90 text-emerald-300 text-[8px] px-1 py-0.5 rounded border border-emerald-500 font-bold">
                           🛡️ {elf.interceptorEffect.name}
                         </div>
                       )}
                       {elf.name.includes("六界神王") && (
-                        <div className="absolute bottom-1 right-1 bg-amber-950/90 text-amber-300 text-[8px] px-1 py-0.5 rounded border border-amber-500 font-bold">
+                        <div className="absolute top-6 right-1 z-10 bg-amber-950/90 text-amber-300 text-[8px] px-1 py-0.5 rounded border border-amber-500 font-bold">
                           ✨ 【界】魂印
                         </div>
                       )}

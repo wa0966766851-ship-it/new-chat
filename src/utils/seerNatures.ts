@@ -47,8 +47,30 @@ export const SEER_NATURES: SeerNature[] = [
   { name: "坦率", up: null, down: null, description: "平衡性格 (全部 1.0x)", category: "平衡" },
 ];
 
-export function getNatureFromModifiers(mods?: { [key in keyof BaseStats]?: number }): SeerNature {
-  if (!mods) return SEER_NATURES.find(n => n.name === "認真")!;
+/**
+ * 預設性格：提升種族值最高的一項（體力不受性格影響，不計入）；
+ * 降低項為較弱的那一項攻擊（與預設學習力「本攻＋體力」一致），
+ * 若最高項本身是攻擊則降低另一項攻擊。同分時優先順序：本攻 → 速度 → 防禦 → 特防。
+ */
+export function getDefaultNature(baseStats?: Partial<BaseStats>): SeerNature {
+  const fallback = SEER_NATURES.find(n => n.name === "認真")!;
+  if (!baseStats) return fallback;
+  const atk = baseStats.atk ?? 0, spatk = baseStats.spatk ?? 0;
+  const mainAtk: keyof BaseStats = atk >= spatk ? "atk" : "spatk";
+  const weakAtk: keyof BaseStats = mainAtk === "atk" ? "spatk" : "atk";
+  const order: (keyof BaseStats)[] = [mainAtk, "speed", "def", "spdef", weakAtk];
+  let up = order[0];
+  for (const key of order) if ((baseStats[key] ?? 0) > (baseStats[up] ?? 0)) up = key;
+  const down: keyof BaseStats = up === weakAtk ? mainAtk : weakAtk;
+  return SEER_NATURES.find(n => n.up === up && n.down === down) ?? fallback;
+}
+
+export function getDefaultNatureModifiers(baseStats?: Partial<BaseStats>): { [key in keyof BaseStats]: number } {
+  return getModifiersFromNature(getDefaultNature(baseStats).name);
+}
+
+export function getNatureFromModifiers(mods?: { [key in keyof BaseStats]?: number }, baseStats?: Partial<BaseStats>): SeerNature {
+  if (!mods) return getDefaultNature(baseStats);
   let upStat: keyof BaseStats | null = null;
   let downStat: keyof BaseStats | null = null;
   

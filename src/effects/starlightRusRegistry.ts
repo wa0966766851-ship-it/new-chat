@@ -10,9 +10,6 @@ export const handleStarlightRusSoulMark = (context: BattleEventContext, event: E
   const { self, target, actor, setPlayerState, getPlayerState, setOpponentState, getOpponentState, addLog, applyStatusWithImmunityCheck, clearTurnEffectsOf, activeP1, activeP2, applyPinkDamage, applyTrueDamage } = context;
   const oppSide = actor === "p1" ? "p2" : "p1";
 
-  if (event === EffectTiming.AFTER_ATTACK_HIT && extraData?.additionalEffectsEnabled !== false && extraData?.skill?.name === "星光·浪打千擊") {
-    if ((context.rng ?? Math.random)() < 0.2) context.applyStatChange(actor, { atk: 1, speed: 1, accuracy: 1 });
-  }
   if (event === EffectTiming.BEFORE_DAMAGE && !extraData?.isIncoming && extraData?.damageCategory === "skill_attack") {
     extraData.multiplier *= getPlayerState("rusAttackMultiplier") || 1;
   }
@@ -192,6 +189,13 @@ export const STARLIGHT_RUS_SKILLS: Record<string, BattleSkillHandler> = {
     const hits = Math.floor((ctx.rng ?? Math.random)() * 6) + 5;
     addLog(`🌊 【星光·浪打千擊】：展開了 ${hits} 次連環打擊！`, "effect");
     setPlayerState("attackHitCountThisAction", hits);
+    // 連擊屬於變威力：每擊 20% 強化先於傷害計算結算，再以結算後能力等級計算（單次計算×連擊次數）。
+    let boosts = 0;
+    for (let i = 0; i < hits; i++) if (prdChance(`${actor}:rus:wave-boost`, 0.2)) boosts++;
+    if (boosts > 0) {
+      applyStatChange(actor, { atk: boosts, speed: boosts, accuracy: boosts });
+      addLog(`🌊 【星光·浪打千擊】：${hits} 擊中 ${boosts} 次觸發，攻擊、速度、命中 +${boosts}！`, "effect");
+    }
 
     // 2. 消除回合類效果
     if (clearTurnEffectsOf(oppSide, target)) {

@@ -120,7 +120,7 @@ export default function DestinyIntroRuleTable({
   };
 
   return (
-    <div className="flex-1 flex flex-col items-center justify-start text-left max-w-7xl mx-auto w-full z-10 py-6 px-4 overflow-y-auto">
+    <div className="flex-1 flex flex-col items-center justify-start text-left max-w-7xl mx-auto w-full z-10 py-6 px-4 overflow-y-auto *:shrink-0">
       {/* 1. 頂部橫幅與啟動行動區 */}
       <motion.div
         initial={{ scale: 0.95, opacity: 0 }}

@@ -2,6 +2,8 @@ import { getTypeMatchup } from '../utils/statCalculator';
 import { isSkillDamageType } from './damageSemantics';
 
 export function skillTypeMultiplier(reg: Record<string, any> | undefined, type: string, targetType: string): number {
+  // 本次技能固定按指定克制倍率計算（例如「固定按最高克制倍率」＝4 倍）。
+  if (Number(reg?.fixedTypeMultThisAction) > 0) return Number(reg!.fixedTypeMultThisAction);
   const target = reg?.targetTypeThisAction || targetType;
   if (Array.isArray(reg?.blkTypeOverride) && (reg?.blkTypeOverrideCurrentAction || (reg?.blkTypeOverrideUses || 0) > 0)) {
     return Math.max(...reg.blkTypeOverride.map((t: string) => getTypeMatchup(t, target)));

@@ -20,7 +20,7 @@ export const calculateDamage = (
   isCritOverride?: boolean,
   p1Team?: Elf[],
   p2Team?: Elf[],
-  options?: { ignoreSpDefPercent?: number, ignoreDefPercent?: number, ignoreOppBuff?: boolean },
+  options?: { ignoreSpDefPercent?: number, ignoreDefPercent?: number, ignoreOppBuff?: boolean, hitCount?: number },
   p1Title?: string,
   p2Title?: string,
   p1RegistryState?: any,
@@ -38,6 +38,14 @@ export const calculateDamage = (
   // 積木：計算傷害時令攻擊、特攻等於原本二者總和
   if ((side === "p1" ? p1RegistryState : p2RegistryState)?.blkAtkSpatkSum) atk = (actor.calculatedStats.atk || 0) + (actor.calculatedStats.spatk || 0);
   let def = isPhys ? target.calculatedStats.def : target.calculatedStats.spdef;
+  // 臨時能力值（效果層設定於登錄狀態）：calcAtkDefMult＝自身雙攻／雙防在雙方計算傷害時的倍率；
+  // opponentAtkPanelRatio＝對手攻擊時其最終攻擊／特攻變為面板原始值的比例（忽略能力等級）。
+  const statRegA = side === "p1" ? p1RegistryState : p2RegistryState;
+  const statRegT = side === "p1" ? p2RegistryState : p1RegistryState;
+  const atkPanelRatio = Number(statRegT?.opponentAtkPanelRatio) > 0 ? Number(statRegT.opponentAtkPanelRatio) : 0;
+  if (Number(statRegA?.calcAtkDefMult) > 0) atk = atk * Number(statRegA.calcAtkDefMult);
+  if (Number(statRegT?.calcAtkDefMult) > 0) def = def * Number(statRegT.calcAtkDefMult);
+  if (atkPanelRatio) atk = (isPhys ? actor.calculatedStats.atk : actor.calculatedStats.spatk) * atkPanelRatio;
   
   if (oppSuit?.id === "nuclear_armor" && target.currentHp < target.maxHp / 3) {
     def *= 2;
@@ -89,13 +97,24 @@ export const calculateDamage = (
     if (atkS > 0) atkS = -atkS;
   }
 
+  // 無視對手能力提升（列星安辰、魯斯王、積木「無視能力提升」等）；視為下降優先。
+  const stageReg = side === "p1" ? p1RegistryState : p2RegistryState;
+  if (stageReg?.oppBoostAsDropThisAction && defS > 0) defS = -defS;
+  else if (options?.ignoreOppBuff && defS > 0) defS = 0;
+  // 將自身能力下降視為對手的能力下降
+  if (stageReg?.selfDropAsOppDropThisAction && atkS < 0) { defS = Math.max(-6, defS + atkS); atkS = 0; }
+
+  if (atkPanelRatio) atkS = 0; // 「最終」攻擊／特攻＝面板原始值×比例，不再套能力等級
   const formula = specialDamageFormula(actor, target, skill, (oppSide === 'p1' ? p1Team : p2Team) || [], atkS);
-  if (formula) return formula;
+  if (formula) { const n = Math.max(1, Math.floor(options?.hitCount || 1)); return n > 1 ? { ...formula, damage: Math.floor(formula.damage) * n, hitCount: n } : formula; }
 
   // 積木：能力下降視為同級全屬性提升
   if ((side === "p1" ? p1RegistryState : p2RegistryState)?.blkStageAsBoost) atkS = Math.max(atkS, (side === "p1" ? p1RegistryState : p2RegistryState).blkStageAsBoost);
   const powerMultiplier = (side === "p1" ? p1RegistryState : p2RegistryState)?.powerMultiplierThisAction ?? 1;
-  const base = ((42 * calculateEffectiveStat(atk, atkS) * skill.power * powerMultiplier / calculateEffectiveStat(def, defS)) / 50 + 2);
+  // 官方公式：[(等級×0.4+2)×威力×攻÷防÷50+2]×本系×克制 → 取整 → ×浮動(217~255)/255 → 取整 → ×暴擊 → 取整 → ×連擊次數。
+  // 方括號內為整體不拆分（不先取整）；能力等級換算後的面板值已於 calculateEffectiveStat 取整。
+  const levelFactor = (actor.level ?? 100) * 0.4 + 2;
+  const base = ((levelFactor * calculateEffectiveStat(atk, atkS) * skill.power * powerMultiplier / Math.max(1, calculateEffectiveStat(def, defS))) / 50 + 2);
   
   const actorReg = side === "p1" ? p1RegistryState : p2RegistryState;
   const targetType = actorReg?.targetTypeThisAction || target.type;
@@ -105,7 +124,8 @@ export const calculateDamage = (
   const splitT = (t?: string) => (t || "").replace(/系$/, "").split(/[.·・]/).filter(Boolean);
   const actorTypes = splitT(actor.type);
   const stab = skill.type && skill.type !== "無屬性" && splitT(skill.type).some(t => actorTypes.includes(t)) ? 1.5 : 1.0;
-  const mult = typeMult * stab * randomValue;
+  // 浮動取整數 217~255
+  const roll = Math.max(217, Math.min(255, Math.round(randomValue * 255)));
 
   const titleId = side === "p1" ? p1Title : p2Title;
   const title = titleId ? TITLE_CATALOG[titleId] : undefined;
@@ -138,7 +158,12 @@ export const calculateDamage = (
   if (isCrit && suit?.effects?.critDamageMultiplier) {
     critBonusMultiplier *= suit.effects.critDamageMultiplier;
   }
-  const final = Math.floor(base * mult * (isCrit ? critBonusMultiplier : 1.0) * suitDmgBonus * titleDmgBonus * oppSuitDmgRed * inscDmgBonus);
+  const hitCount = Math.max(1, Math.floor(options?.hitCount || 1));
+  let final = Math.floor(base * stab * typeMult);
+  final = Math.floor(final * roll / 255);
+  if (isCrit) final = Math.floor(final * critBonusMultiplier);
+  for (const m of [suitDmgBonus, titleDmgBonus, oppSuitDmgRed, inscDmgBonus]) if (m !== 1) final = Math.floor(final * m);
+  final = final * hitCount;
   
   let statResetApplied: "def" | "spdef" | null = null;
   if (isCrit) {
@@ -150,6 +175,7 @@ export const calculateDamage = (
     damage: Math.max(0, final), 
     isCrit, 
     typeMultiplier: typeMult,
+    hitCount,
     statResetApplied
   };
 };
