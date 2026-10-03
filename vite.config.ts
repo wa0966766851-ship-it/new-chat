@@ -45,6 +45,7 @@ export default defineConfig(() => {
             // 官方原始碼已依循環依賴群組／拓樸順序生成 ESM，不重新合回單體。
             const blocklyModule = normalized.match(/\/src\/vendor\/blockly\/(core-\d+)\.js$/);
             if (blocklyModule) return `blockly-${blocklyModule[1]}`;
+            if (/\/src\/data\/defaultElves\.ts$/.test(normalized)) return 'data-elves';
             // 跨首頁／百科／特殊模式共用的純函數，沒有 React 或狀態初始化相依。
             if (/\/src\/utils\/(elfSearch|controlSettings|safeStorage|elfDisplayRank)\.ts$/.test(normalized)) return 'ui-foundation';
             if (/\/src\/data\/(elfSourceText\.json|skillReferences\.generated\.json|alienTraits\.ts|generalTraits\.ts|titles\.ts)$/.test(normalized)) {
