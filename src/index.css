@@ -1,6 +1,9 @@
 @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;600;700&family=JetBrains+Mono:wght@400;700&family=Inter:wght@400;500;600;700&family=Noto+Sans+Runic&family=Noto+Sans+Symbols&family=Cinzel:wght@500;700;900&family=Noto+Serif+TC:wght@400;600;900&display=swap');
 @import "tailwindcss";
 @import "./components/InterstellarExploration/eclipse/eclipse.css";
+@import "./components/battle/battleSkin.css";
+/* 矮螢幕（手機橫放）：高度 ≤ 560px */
+@custom-variant short (@media (max-height: 560px));
 
 @theme {
   --font-sans: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Inter", "PingFang TC", "Microsoft JhengHei UI", "Noto Sans TC", "Noto Sans Runic", "Noto Sans Symbols", "Segoe UI Historic", "Segoe UI Symbol", "Apple Symbols", ui-sans-serif, system-ui, sans-serif;
@@ -156,6 +159,29 @@ body {
   border-radius: 18px;
 }
 .ios-card:hover { background: rgba(255, 255, 255, 0.07); }
+/* 更新頁的操作須能辨識、可鍵盤聚焦；作用域僅限本面板。 */
+[data-update-settings] .ios-button,
+[data-update-settings] .ios-button-primary {
+  display: inline-flex; align-items: center; justify-content: center;
+  min-height: 44px; max-width: 100%; padding: 10px 14px;
+  border: 1px solid rgba(255,255,255,.18); border-radius: 12px;
+  background: rgba(255,255,255,.07); color: #f1f5f9;
+  font-size: 13px; font-weight: 600; line-height: 1.5;
+  text-align: center; white-space: normal; overflow-wrap: anywhere;
+  cursor: pointer; text-decoration: none;
+}
+[data-update-settings] .ios-button-primary {
+  background: color-mix(in srgb, var(--accent-hex, #3b82f6) 55%, #0f172a);
+  border-color: var(--accent-hex, #3b82f6);
+}
+[data-update-settings] .ios-button:hover:not(:disabled) {
+  background: rgba(255,255,255,.13); border-color: var(--accent-hex, #3b82f6);
+}
+[data-update-settings] .ios-button:focus-visible,
+[data-update-settings] .ios-button-primary:focus-visible {
+  outline: 2px solid var(--accent-hex, #3b82f6); outline-offset: 3px;
+}
+[data-update-settings] button:disabled { opacity: .45; cursor: not-allowed; }
 /* 長篇介紹與資料庫彈窗需要穩定對比，不讓後方立繪透入文字。 */
 .ios-panel.ios-dialog {
   background: rgba(28, 28, 32, 0.98);

@@ -1,8 +1,9 @@
-const { app, BrowserWindow, dialog } = require("electron");
+const { app, BrowserWindow, dialog, ipcMain, shell } = require("electron");
 const { fork } = require("node:child_process");
 const path = require("node:path");
 const http = require("node:http");
 const { waitForOwnServer } = require("./serverProcess.cjs");
+const { UpdateService } = require('./update/updateService.cjs');
 
 // An explicit profile directory lets release smoke tests avoid real player saves.
 if (process.env.SEER_USER_DATA_DIR) {
@@ -50,12 +51,24 @@ async function startServer() {
 
 async function createWindow() {
   const url = await startServer();
+  const updates = new UpdateService({ version: app.getVersion(), kind: process.env.PORTABLE_EXECUTABLE_FILE ? 'portable' : 'installer',
+    directory: path.join(app.getPath('userData'), 'updates'), originalExe: process.env.PORTABLE_EXECUTABLE_FILE });
+  const guard = event => {
+    if (!mainWindow || event.sender !== mainWindow.webContents || event.senderFrame !== mainWindow.webContents.mainFrame || new URL(event.senderFrame.url).origin !== url) throw new Error('不允許的更新呼叫');
+  };
+  for (const [channel, handler] of Object.entries({
+    'seer:update:check': () => updates.check(), 'seer:update:status': () => updates.status(),
+    'seer:update:download': snapshot => updates.download(snapshot), 'seer:update:cancel': () => updates.cancel(),
+    'seer:update:folder': () => { const folder = updates.status().folder; return folder ? shell.openPath(folder) : ''; },
+  })) ipcMain.handle(channel, (event, ...args) => { guard(event); return handler(...args); });
   mainWindow = new BrowserWindow({
     width: 1440,
     height: 960,
     minWidth: 960,
     minHeight: 700,
     backgroundColor: "#101827",
+    icon: path.join(app.isPackaged ? process.resourcesPath : path.join(__dirname, ".."),
+      "public", "seer", "head", "5000.png"),
     webPreferences: {
       preload: path.join(__dirname, "preload.cjs"),
       contextIsolation: true,

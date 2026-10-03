@@ -13,6 +13,10 @@ await fs.mkdir(path.join(destination, 'electron'), { recursive: true });
 for (const filename of ['main.cjs', 'preload.cjs', 'serverProcess.cjs']) {
   await fs.copyFile(path.join(root, 'electron', filename), path.join(destination, 'electron', filename));
 }
+await fs.mkdir(path.join(destination, 'electron', 'update'), { recursive: true });
+for (const filename of ['releaseClient.cjs', 'updateService.cjs']) {
+  await fs.copyFile(path.join(root, 'electron', 'update', filename), path.join(destination, 'electron', 'update', filename));
+}
 await fs.writeFile(path.join(destination, 'package.json'), JSON.stringify({
   name: source.name,
   version: source.version,

@@ -4,6 +4,7 @@ import fs from "fs";
 import https from "https";
 import { GoogleGenAI, Type } from "@google/genai";
 import dotenv from "dotenv";
+import { AssetCache } from './electron/update/assetCache.cjs';
 import { REAL_CARD_EFFECT_MODULES as AI_EFFECT_REFERENCE_LIBRARY, TEMPLATE_GRAMMAR_GUIDELINES } from "./src/data/cardTemplates";
 
 dotenv.config();
@@ -12,6 +13,24 @@ const app = express();
 const PORT = Number(process.env.PORT || 3000);
 
 app.use(express.json());
+// Lite builds carry a local, version-pinned manifest from the verified application package.
+// Full builds have no manifest and retain their original offline routes.
+const assetManifestFile = path.join(process.cwd(), 'dist', 'asset-manifest.json');
+if (process.env.NODE_ENV === 'production' && fs.existsSync(assetManifestFile)) {
+  const manifest = JSON.parse(fs.readFileSync(assetManifestFile, 'utf8'));
+  const version = JSON.parse(fs.readFileSync(path.join(process.cwd(), 'dist', 'version.json'), 'utf8')).version;
+  if (manifest.version !== version) throw new Error('素材與程式版本不一致');
+  const assets = new AssetCache(manifest, path.join(process.env.SEER_CACHE_DIR || path.join(process.cwd(), '.seer-cache'), 'release-assets'));
+  app.use(async (req, res, next) => {
+    if (!['GET', 'HEAD'].includes(req.method)) return next();
+    let url: string; try { url = decodeURIComponent(req.path); } catch { return res.status(400).end(); }
+    if (!manifest.entries.some((entry: { url: string }) => entry.url === url)) return next();
+    try {
+      const file = await assets.get(url); res.setHeader('Content-Type', 'image/png');
+      res.setHeader('Cache-Control', 'private, max-age=0, must-revalidate'); return res.sendFile(file);
+    } catch { return res.status(503).json({ error: '素材尚未下載或校驗失敗，請連線後重試；目前程式仍保留。' }); }
+  });
+}
 
 // Initialize Gemini SDK with AI Studio build metadata
 const ai = new GoogleGenAI({
@@ -451,7 +470,7 @@ app.get("/seer/:kind/:file", async (req, res) => {
     for (const p of [path.join(root, "public", "seer", "xi", file), path.join(root, "系", file)]) if (isPng(p)) return send(p);
     res.status(404).end(); return;
   }
-  if (!["head", "body", "type", "abnormal", "buff", "card"].includes(kind) || !(/^\d+\.png$/.test(file) || (kind === "type" && file === "prop.png"))) { res.status(404).end(); return; }
+  if (!["head", "body", "type", "abnormal", "buff", "signbuff", "card"].includes(kind) || !(/^\d+\.png$/.test(file) || (kind === "type" && file === "prop.png"))) { res.status(404).end(); return; }
   // 官方資源優先（public/seer → 快取 → 遠端）；使用者 pet/ 資料夾僅在官方取不到時使用（舊版編號可能對不上）
   const cacheFile = path.join(process.env.SEER_CACHE_DIR || path.join(root, ".seer-cache"), kind, file);
   for (const p of [path.join(root, "public", "seer", kind, file), cacheFile]) if (isPng(p)) return send(p);
@@ -459,7 +478,7 @@ app.get("/seer/:kind/:file", async (req, res) => {
   const key = `${kind}/${file}`;
   if (seerMisses.has(key)) { if (userPet && isPng(userPet)) return send(userPet); res.status(404).end(); return; }
   // card：autocard 卡面立繪（星蝕回廊塔羅卡用），路徑在 art/autocard 下
-  const remote = kind === "card" ? `${SEER_REMOTE.replace("/ui/assets", "")}/autocard/texture/cards/card_${file}` : `${SEER_REMOTE}/${kind === "type" ? "pettype" : (kind === "abnormal" || kind === "buff") ? "battleeffect/" + kind : "pet/" + kind}/${file}`;
+  const remote = kind === "card" ? `${SEER_REMOTE.replace("/ui/assets", "")}/autocard/texture/cards/card_${file}` : `${SEER_REMOTE}/${kind === "type" ? "pettype" : (kind === "abnormal" || kind === "buff" || kind === "signbuff") ? "battleeffect/" + kind : "pet/" + kind}/${file}`;
   const buf = await fetchBuffer(remote);
   if (!buf || buf[0] !== 0x89 || buf[1] !== 0x50) { seerMisses.add(key); if (userPet && isPng(userPet)) return send(userPet); res.status(404).end(); return; }
   try { fs.mkdirSync(path.dirname(cacheFile), { recursive: true }); fs.writeFileSync(cacheFile, buf); } catch {}
@@ -470,6 +489,13 @@ app.get("/seer/:kind/:file", async (req, res) => {
 
 // Setup Vite Dev Server / Static Files Serve
 async function startServer() {
+  app.get('/version.json', (_req, res) => {
+    res.setHeader('Cache-Control', 'no-store, max-age=0');
+    if (process.env.NODE_ENV !== 'production') return res.json({ development: true });
+    const file = path.join(process.cwd(), 'dist', 'version.json');
+    if (!fs.existsSync(file)) return res.status(404).json({ error: '網站尚未提供版本資訊' });
+    return res.sendFile(file);
+  });
   app.use("/images", express.static(path.join(process.cwd(), "images")));
 
   if (process.env.NODE_ENV !== "production") {

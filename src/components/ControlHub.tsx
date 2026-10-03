@@ -93,7 +93,7 @@ import type { ThemeMode, AccentColor, CardOpacity } from "./ControlHubPresets";
 export type { ThemeMode, AccentColor, CardOpacity } from "./ControlHubPresets";
 const ControlHubPanel = lazy(() => import("./ControlHubPanel"));
 
-function useControlHubModel(currentScene: string) {
+function useControlHubModel(currentScene: string, canApplyUpdates: boolean) {
   const [state, setState] = useState(() => getThemeState());
   const [isOpen, setIsOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<typeof CONTROL_SECTIONS[number]['id']>("visual");
@@ -301,13 +301,13 @@ function useControlHubModel(currentScene: string) {
     }
   }, [musicInfo.id, isPlaying]);
 
-  return { isMaximized, setIsMaximized, setIsOpen, activeTab, searchTerm, setSearchTerm, setActiveTab, state, updateUrlParam, currentAccent, setFeedback, backgrounds, inputBgUrl, setInputBgUrl, isPlaying, musicInfo, togglePlay, setIsPlaying, playlist, inputBgmUrl, setInputBgmUrl, animationSettings, setAnimationSettings, customLayout, setCustomLayout, p1Panel, setP1Panel, p2Panel, setP2Panel, tacticalPanel, setTacticalPanel, hudOpacity, setHudOpacity, setLocalResources, localResources, selectedScene, sceneResources, currentScene, setSelectedScene, updateSceneBg, updateSceneBgm, setIsMuted, setPlaylist, setBackgrounds, feedback, isOpen, isMuted, toggleMute, ytMounted, ytIframeRef };
+  return { isMaximized, setIsMaximized, setIsOpen, activeTab, searchTerm, setSearchTerm, setActiveTab, state, updateUrlParam, currentAccent, setFeedback, backgrounds, inputBgUrl, setInputBgUrl, isPlaying, musicInfo, togglePlay, setIsPlaying, playlist, inputBgmUrl, setInputBgmUrl, animationSettings, setAnimationSettings, customLayout, setCustomLayout, p1Panel, setP1Panel, p2Panel, setP2Panel, tacticalPanel, setTacticalPanel, hudOpacity, setHudOpacity, setLocalResources, localResources, selectedScene, sceneResources, currentScene, setSelectedScene, updateSceneBg, updateSceneBgm, setIsMuted, setPlaylist, setBackgrounds, feedback, isOpen, isMuted, toggleMute, ytMounted, ytIframeRef, canApplyUpdates };
 }
 
 export type ControlHubPanelModel = ReturnType<typeof useControlHubModel>;
 
-export default function ControlHub({ currentScene }: { currentScene: string }) {
-  const model = useControlHubModel(currentScene);
+export default function ControlHub({ currentScene, canApplyUpdates = false }: { currentScene: string; canApplyUpdates?: boolean }) {
+  const model = useControlHubModel(currentScene, canApplyUpdates);
   const { isOpen, setIsOpen, currentAccent, isPlaying, isMuted, toggleMute, ytMounted, musicInfo, ytIframeRef } = model;
   return (
     <div className="fixed top-4 right-4 z-[100] flex flex-col items-end gap-3 select-none font-sans">

@@ -51,7 +51,9 @@ test('精靈搜尋支援序號、名稱、魂印、複合屬性及多詞，數�
 test('控制中心相容舊歌單與錯誤巢狀存檔，分類不混用', () => {
   assert.deepEqual(normalizePlaylist([{url:{url:'https://example.test/music',title:'原標題'},title:'未知標題'}], []), [{url:'https://example.test/music',title:'原標題'}]);
   assert.deepEqual(normalizePlaylist(['legacy', null, {url:3}], []), [{url:'legacy',title:'歌曲 1'}]);
-  assert.equal(new Set(CONTROL_SECTIONS.map(s => s.id)).size, 6);
+  const ids = CONTROL_SECTIONS.map(s => s.id);
+  assert.deepEqual(ids, ['visual', 'audio', 'battle', 'resources', 'library', 'advanced', 'updates']);
+  assert.equal(new Set(ids).size, ids.length);
 });
 test('巢狀特質機制保留、過深拒絕；不把資料通過當成可執行', () => {
   const source = structuredClone(DEFAULT_ELVES[0]);

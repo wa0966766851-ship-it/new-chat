@@ -6,7 +6,8 @@ import { mkdir, mkdtemp, readFile, writeFile } from 'node:fs/promises';
 import { resolve, join } from 'node:path';
 
 assert.equal(process.platform, 'win32', '此驗收僅適用 Windows EXE');
-const executable = resolve(process.argv[2] || 'dist-electron/賽爾對戰模擬器-1.0.0-portable.exe');
+const version = JSON.parse(await readFile('package.json', 'utf8')).version;
+const executable = resolve(process.argv[2] || `dist-electron/賽爾對戰模擬器-${version}-portable.exe`);
 await mkdir(resolve('build'), { recursive: true });
 const profile = await mkdtemp(join(resolve('build'), 'portable-smoke-'));
 const probe = createServer();

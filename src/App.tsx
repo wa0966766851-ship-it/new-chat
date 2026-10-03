@@ -54,6 +54,10 @@ function AppContent() {
   const [showHeader, setShowHeader] = useState(() =>
     typeof window === "undefined" || !window.matchMedia("(max-width: 767px)").matches
   );
+  // 對戰畫面在矮螢幕（手機橫放）或窄螢幕自動收起側邊欄，讓出戰場空間
+  useEffect(() => {
+    if (view === "battle" && typeof window !== "undefined" && (window.innerHeight <= 560 || window.innerWidth < 1100)) setShowHeader(false);
+  }, [view]);
   const [showEncyclopedia, setShowEncyclopedia] = useState(false);
   const [showPerformanceProbe, setShowPerformanceProbe] = useState(false);
   useEffect(() => { const open = () => setShowPerformanceProbe(true); window.addEventListener('open-performance-probe', open); return () => window.removeEventListener('open-performance-probe', open); }, []);
@@ -215,49 +219,9 @@ function AppContent() {
     }
   };
 
-  const handleStartBattle2 = (
-    mode: BattleMode,
-    team1: Elf[],
-    team2: Elf[],
-    starter1Id: string,
-    starter2Id: string,
-    suit1?: string,
-    eyewear1?: string,
-    suit2?: string,
-    eyewear2?: string,
-    title1?: string,
-    title2?: string,
-    format?: "normal_6v6" | "solo_1v1" | "peak_6v6" | "peak_3v3",
-    options?: any
-  ) => {
-    if (team1.length > 0 && team2.length > 0) {
-      const resetTeam = (team: Elf[], suit?: string, starterId?: string) => team.map(e => resetElfStateForBattle(e, e.id === starterId || (e as any).battleId === starterId, suit));
-      setP1Team(resetTeam(team1, suit1, starter1Id));
-      setP2Team(resetTeam(team2, suit2, starter2Id));
-      setP1StarterId(starter1Id);
-      setP2StarterId(starter2Id);
-      setP1Suit(suit1 || "");
-      setP1Eyewear(eyewear1 || "");
-      setP2Suit(suit2 || "");
-      setP2Eyewear(eyewear2 || "");
-      setP1Title(title1 || "");
-      setP2Title(title2 || "");
-      if (format) setBattleFormat(format);
-      setBattleMode(mode);
-      setInterstellarOptions(options?.interstellarOptions || null);
-      
-      setIsTransitioning(true);
-      setTimeout(() => {
-        setView("battle");
-        setBattleKey(k => k + 1);
-        setIsTransitioning(false);
-      }, 300);
-    }
-  };
-
   return (
     <div className="h-screen w-full flex relative bg-transparent text-slate-100 overflow-hidden" id="app-wrapper">
-      <ControlHub currentScene={showEncyclopedia ? "encyclopedia" : view} />
+      <ControlHub currentScene={showEncyclopedia ? "encyclopedia" : view} canApplyUpdates={view === 'start' && !editingElf && !showEncyclopedia} />
       
       {/* Sidebar Navigation */}
       {/* 以寬度收合：內容區立即接手空間，不會留下空白 */}
@@ -547,7 +511,7 @@ function AppContent() {
         </main>
 
         {/* Bottom Bar: Stats Quick View */}
-        <footer className="bg-slate-900/85 backdrop-blur-md border-t border-slate-800 py-3 sm:py-0 sm:h-10 flex flex-col sm:flex-row items-center px-4 sm:px-8 text-[10px] text-slate-400 gap-2 sm:gap-8 font-mono shrink-0 select-none relative z-10">
+        <footer className={`${view === "battle" ? "short:hidden max-sm:hidden" : ""} bg-slate-900/85 backdrop-blur-md border-t border-slate-800 py-3 sm:py-0 sm:h-10 flex flex-col sm:flex-row items-center px-4 sm:px-8 text-[10px] text-slate-400 gap-2 sm:gap-8 font-mono shrink-0 select-none relative z-10`}>
           <span>計算公式: [(攻擊方LV×0.4+2)×技能威力×攻擊/防禦/50+2]×修正</span>
           <span className="hidden md:inline">屬性係數: 本系修正(1.5x) / 克制係數(0.5x-4.0x)</span>
           <span className="sm:ml-auto">© 2026 AI 賽爾號對戰模擬器 - 繁體中文版</span>

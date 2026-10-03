@@ -80,3 +80,20 @@ export function stageDesc(key: string, v: number): string {
   const mult = getStatMultiplier(v, key === "accuracy");
   return `${STAT_FULL[key] || key}等級 ${v > 0 ? "+" : ""}${v}：${STAT_FULL[key] || key}×${Number(mult.toFixed(2))}`;
 }
+
+/** 官方印記（sign）圖示：battleeffect/signbuff/<id>.png，id 取自 SeerAPI api-data sign。 */
+const SIGN_ICON_IDS: Record<string, number> = {
+  精靈護盾: 2, 護盾: 2, 精靈護罩: 3, 護罩: 3,
+  星芳之纏: 96, 星芳之缠: 96, 星海之浸: 97, 星火之灼: 98,
+};
+export function signIconFor(name?: string): string | undefined {
+  if (!name) return undefined;
+  const key = Object.keys(SIGN_ICON_IDS).find(k => name.includes(k));
+  return key ? `/seer/signbuff/${SIGN_ICON_IDS[key]}.png` : undefined;
+}
+/** 以戰鬥狀態鍵記錄、沒有計時器實體的專屬印記（三主寵星光型態）。 */
+export const STATE_SIGNS: { key: string; name: string }[] = [
+  { key: "starFangTurns", name: "星芳之纏" },
+  { key: "starSeaSoakTurns", name: "星海之浸" },
+  { key: "starfireBurnTurns", name: "星火之灼" },
+];

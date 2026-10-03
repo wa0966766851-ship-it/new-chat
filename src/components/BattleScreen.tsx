@@ -29,6 +29,7 @@ import { runRelicEffects } from "../effects/relicEffectRegistry";
 import { StatusRegistry } from "../effects/statusRegistry";
 import { canonicalStatusName } from '../effects/statusIdentity';
 import { advanceStatusEffect, mergeSameStatus } from '../battle/statusLifecycle';
+import { judgeTurnLimit, countedAlive, PEAK_TURN_LIMIT } from '../battle/turnLimit';
 import { applyEquipmentToTeam } from "../data/suitsAndEyewears";
 import { makeRng } from "../utils/rng";
 import { resetPrd, prdChance } from "../utils/prd";
@@ -115,6 +116,7 @@ interface BattleScreenProps {
   onBattleEnd?: (winner: "p1" | "p2" | "exit" | "draw", team?: Elf[]) => void;
   preparedTeams?: boolean;
   specialMode?: "destiny" | "interstellar";
+  battleFormat?: "normal_6v6" | "solo_1v1" | "peak_6v6" | "peak_3v3";
   interstellarOptions?: {onPotionUse?:()=>boolean;onBattleEnd?:Function;relics?:string[];enemyRelics?:string[]};
   onDriverInit?: (driver: {
     getState: () => any;
@@ -1861,6 +1863,26 @@ case 'switch': {
       const idx = side === "p1" ? st.p1ActiveIndex : st.p2ActiveIndex;
       return team.some((e, i) => i !== idx && !e.isExtra && !checkElfDead(e));
     };
+    // 巔峰 6V6：滿 50 回合依存活精靈數判勝負（額外精靈不計）
+    {
+      const st = syncStateRef.current;
+      const w = judgeTurnLimit(props.battleFormat, st.turnNumber - 1, st.p1Team, st.p2Team, checkElfDead);
+      if (w) {
+        const a = countedAlive(st.p1Team, checkElfDead), b = countedAlive(st.p2Team, checkElfDead);
+        pushEffect({ type: 'log', side: 'p1', data: { text: `⏱️ 已滿 ${PEAK_TURN_LIMIT} 回合：存活精靈 ${a} 比 ${b}，${w === "p1" ? "玩家一獲勝！" : w === "p2" ? "對手獲勝！" : "平手！"}`, type: "system" } });
+        for (const side of ["p1", "p2"] as const) {
+          (side === "p1" ? st.p1Team : st.p2Team).forEach(elf => {
+            if (SoulMarkRegistry[elf.name]) SoulMarkRegistry[elf.name](getBattleEventContext(side, false, 0, elf), EffectTiming.BATTLE_END, { winner: w });
+          });
+        }
+        await processQueue();
+        if (!battleAliveRef.current) return;
+        dispatch({ type: 'SET_WINNER', winner: w });
+        dispatch({ type: 'SET_PHASE', phase: "game_over" });
+        props.onBattleEnd?.(w as any, structuredClone(syncStateRef.current.p1Team));
+        return;
+      }
+    }
     // 等待重生（陣亡方無人可換）時不再進入換人，否則會自動無限推進回合
     const onlyWaitingRebirth = force && !((afterTickF1 && hasReplacement("p1")) || (afterTickF2 && hasReplacement("p2")));
     if ((afterTickF1 || afterTickF2) && !onlyWaitingRebirth) {
@@ -3811,6 +3833,7 @@ case 'switch': {
   const contextValue = useMemo<BattleContextProps>(() => ({
     ...state,
     turnNumber: presentation.turnNumber,
+    battleFormat: props.battleFormat,
     p1: { ...state.p1, currentHp: presentation.hp.get(`p1:${state.p1.battleId || state.p1.id}`) ?? state.p1.currentHp },
     p2: { ...state.p2, currentHp: presentation.hp.get(`p2:${state.p2.battleId || state.p2.id}`) ?? state.p2.currentHp },
     floatingDamagePopups: presentation.popups,

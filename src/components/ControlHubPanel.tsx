@@ -7,6 +7,7 @@ import { BATTLE_ANIMATION_OPTIONS, writeAnimationSettings } from "../battle/anim
 import { ACCENT_CONFIGS, OPACITY_CONFIGS, RECOMMENDED_BACKGROUNDS, RECOMMENDED_BGMS, DEFAULT_PLAYLIST, DEFAULT_BACKGROUNDS } from "./ControlHubPresets";
 import type { AccentColor, CardOpacity } from "./ControlHubPresets";
 import type { ControlHubPanelModel } from "./ControlHub";
+import { UpdateSettingsPanel } from './UpdateSettingsPanel';
 
 function ScenePreviewMedia({ src, alt, className = "", allowPreview = false }: { src: string; alt?: string; className?: string; allowPreview?: boolean }) {
   const [preview, setPreview] = useState(false);
@@ -108,11 +109,13 @@ export default function ControlHubPanel(model: ControlHubPanelModel) {
                     >
                       <Sliders className="w-4 h-4" /> 診斷
                     </button>
+                    <button type="button" onClick={() => setActiveTab('updates')} className={`flex items-center justify-center gap-2 py-2.5 rounded-2xl text-xs font-bold ${activeTab === 'updates' ? 'bg-blue-600 text-white' : 'text-slate-400 hover:text-slate-200'}`}>檢查更新</button>
                 </div>
             </div>
 
             <div className={`p-5 overflow-y-auto custom-scrollbar ${isMaximized ? "flex-1" : "max-h-[70vh]"}`}>
               <p className="text-xs text-slate-400 mb-4">{CONTROL_SECTIONS.find(section => section.id === activeTab)?.description}</p>
+              {activeTab === 'updates' && <UpdateSettingsPanel canApplyUpdates={model.canApplyUpdates} />}
               {activeTab === "visual" && (
                 <div className="space-y-6">
                   {/* Mode Selector */}
@@ -388,119 +391,6 @@ export default function ControlHubPanel(model: ControlHubPanelModel) {
                       ))}
                     </div>
                   </div>
-                  <label className="flex items-center justify-between gap-4 bg-slate-900/40 p-4 rounded-xl border border-white/5 cursor-pointer select-none" title="開啟後戰鬥畫面改用可拖曳、縮放、調整透明度的浮動視窗；關閉時使用固定排版">
-                    <span className="text-xs font-black text-slate-200">自訂佈局（拖曳／縮放／透明）</span>
-                    <input
-                      type="checkbox"
-                      checked={customLayout}
-                      onChange={(e) => {
-                        const v = e.target.checked;
-                        setCustomLayout(v);
-                        try { localStorage.setItem('battleCustomLayout', v ? '1' : '0'); } catch {}
-                        window.dispatchEvent(new Event('battle-layout-update'));
-                      }}
-                      className="w-4 h-4 accent-cyan-500"
-                    />
-                  </label>
-                  {customLayout && (<>
-                  {/* Panel Controls */}
-                  {[
-                    { label: "玩家一 (P1) 視窗", state: p1Panel, setter: setP1Panel },
-                    { label: "玩家二 (P2) 視窗", state: p2Panel, setter: setP2Panel },
-                    { label: "戰術指令 (Tactical) 視窗", state: tacticalPanel, setter: setTacticalPanel }
-                  ].map((panel, idx) => (
-                    <div key={idx} className="space-y-3 bg-slate-900/40 p-4 rounded-xl border border-white/5">
-                      <label className="text-[10px] font-black text-cyan-500 uppercase tracking-widest block">{panel.label}</label>
-
-                      {/* Position Control */}
-                      <div className="grid grid-cols-2 gap-4">
-                        <div className="space-y-1">
-                          <span className="text-[9px] text-slate-500 font-bold uppercase tracking-tighter">X 座標</span>
-                          <input
-                            type="number"
-                            value={Math.round(panel.state.pos.x)}
-                            onChange={(e) => panel.setter((prev: any) => ({ ...prev, pos: { ...prev.pos, x: parseInt(e.target.value) || 0 } }))}
-                            className="w-full bg-slate-800 border border-white/10 rounded px-2 py-1 text-xs font-mono text-white outline-none focus:border-cyan-500/50"
-                          />
-                        </div>
-                        <div className="space-y-1">
-                          <span className="text-[9px] text-slate-500 font-bold uppercase tracking-tighter">Y 座標</span>
-                          <input
-                            type="number"
-                            value={Math.round(panel.state.pos.y)}
-                            onChange={(e) => panel.setter((prev: any) => ({ ...prev, pos: { ...prev.pos, y: parseInt(e.target.value) || 0 } }))}
-                            className="w-full bg-slate-800 border border-white/10 rounded px-2 py-1 text-xs font-mono text-white outline-none focus:border-cyan-500/50"
-                          />
-                        </div>
-                      </div>
-
-                      {/* Scale & Opacity Control */}
-                      <div className="grid grid-cols-2 gap-4">
-                        <div className="space-y-1">
-                          <span className="text-[9px] text-slate-500 font-bold uppercase tracking-tighter">縮放比例 (%)</span>
-                          <input
-                            type="number"
-                            min="0.1" max="2" step="0.05"
-                            value={Math.round(panel.state.scale * 100)}
-                            onChange={(e) => panel.setter((prev: any) => ({ ...prev, scale: (parseInt(e.target.value) || 100) / 100 }))}
-                            className="w-full bg-slate-800 border border-white/10 rounded px-2 py-1 text-xs font-mono text-white outline-none focus:border-cyan-500/50"
-                          />
-                        </div>
-                        <div className="space-y-1">
-                          <span className="text-[9px] text-slate-500 font-bold uppercase tracking-tighter">透明度 (%)</span>
-                          <input
-                            type="number"
-                            min="0" max="100"
-                            value={Math.round(panel.state.opacity * 100)}
-                            onChange={(e) => panel.setter((prev: any) => ({ ...prev, opacity: (parseInt(e.target.value) || 100) / 100 }))}
-                            className="w-full bg-slate-800 border border-white/10 rounded px-2 py-1 text-xs font-mono text-white outline-none focus:border-cyan-500/50"
-                          />
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-
-                  <div className="space-y-3">
-                    <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest block">系統 HUD 不透明度 (Opacity)</label>
-                    <div className="flex items-center gap-4">
-                      <input
-                        type="range"
-                        min="0.2"
-                        max="1"
-                        step="0.05"
-                        value={hudOpacity}
-                        onChange={(e) => setHudOpacity(parseFloat(e.target.value))}
-                        className="flex-1 h-2 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-cyan-500"
-                      />
-                      <span className="text-sm font-mono font-bold text-cyan-400 w-12">{Math.round(hudOpacity * 100)}%</span>
-                    </div>
-                  </div>
-
-                  <div className="pt-4 border-t border-slate-800 grid grid-cols-2 gap-4">
-                    <button
-                      onClick={() => {
-                        const layoutConfig = JSON.stringify({ p1: p1Panel, p2: p2Panel, tactical: tacticalPanel }, null, 2);
-                        navigator.clipboard.writeText(layoutConfig);
-                        setFeedback("視窗佈局代碼已複製到剪貼簿！");
-                        setTimeout(() => setFeedback(null), 2000);
-                      }}
-                      className="flex items-center justify-center gap-2 py-3 bg-cyan-600/20 border border-cyan-500/30 hover:bg-cyan-600/30 text-cyan-400 rounded-xl text-[10px] font-black transition-all uppercase tracking-widest"
-                    >
-                      <Copy className="w-3 h-3" /> 複製佈局代碼
-                    </button>
-                    <button
-                      onClick={() => {
-                        // 依目前戰鬥畫面大小重新計算布局（由戰鬥畫面接收事件後計算）
-                        setHudOpacity(0.95);
-                        try { localStorage.setItem('hudOpacity', '0.95'); localStorage.removeItem('battleLayoutVersion'); } catch {}
-                        window.dispatchEvent(new Event('battle-layout-update'));
-                      }}
-                      className="py-3 bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white rounded-xl text-[10px] font-black transition-all uppercase tracking-widest border border-white/5"
-                    >
-                      重置 UI 佈局
-                    </button>
-                  </div>
-                  </>)}
                 </div>
               )}
                          {activeTab === "resources" && (

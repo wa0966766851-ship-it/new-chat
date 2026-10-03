@@ -7,6 +7,15 @@ directories:
 asar: true
 compression: maximum
 beforeBuild: electron/beforeBuild.cjs
+afterPack: electron/afterPack.cjs
+electronLanguages:
+  - en-US
+  - zh-CN
+  - zh-TW
+publish:
+  provider: github
+  owner: wa0966766851-ship-it
+  repo: new-chat
 files:
   - electron/**/*
   - package.json
@@ -25,13 +34,21 @@ extraResources:
   - from: pet
     to: pet
 win:
-  signAndEditExecutable: false
+  icon: electron/assets/holy-puni.ico
+  signAndEditExecutable: true
+  signExecutable: false
   target:
     - nsis
     - portable
+    - nsis-web
 nsis:
   oneClick: false
   perMachine: false
   allowToChangeInstallationDirectory: true
 portable:
   artifactName: 賽爾對戰模擬器-${version}-portable.exe
+nsisWeb:
+  oneClick: false
+  perMachine: false
+  allowToChangeInstallationDirectory: true
+  artifactName: 賽爾對戰模擬器-${version}-web-setup.exe

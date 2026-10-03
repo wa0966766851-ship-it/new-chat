@@ -1,7 +1,7 @@
 {
   "name": "react-example",
   "private": true,
-  "version": "1.0.0",
+  "version": "1.0.1",
   "type": "module",
   "main": "electron/main.cjs",
   "scripts": {
@@ -11,8 +11,8 @@
     "start": "node dist/server.cjs",
     "clean": "rm -rf dist server.js",
     "lint": "tsc --noEmit",
-    "test": "node --import tsx src/tests/battle.units.test.ts && node --import tsx tests/battleSpriteFacing.semantic.test.ts && node --import tsx src/tests/blocks.semantic.test.ts && node --import tsx tests/otherworldRey.semantic.test.ts && node --import tsx tests/holyMiles.semantic.test.ts && node --import tsx scripts/gen-handled-skills.ts --check && node --import tsx scripts/audit_block_coverage.ts --check && npm run test:loading",
-    "test:loading": "node --import tsx tests/codexLoading.semantic.test.ts && node --import tsx tests/profileLoading.semantic.test.ts && npm run test:data && npm run test:ui && npm run test:scopes",
+    "test": "node --import tsx src/tests/battle.units.test.ts && node --import tsx tests/battleSpriteFacing.semantic.test.ts && node --import tsx tests/battleLayout.semantic.test.ts && node --import tsx src/tests/blocks.semantic.test.ts && node --import tsx tests/otherworldRey.semantic.test.ts && node --import tsx tests/holyMiles.semantic.test.ts && node --import tsx scripts/gen-handled-skills.ts --check && node --import tsx scripts/audit_block_coverage.ts --check && npm run test:loading",
+    "test:loading": "node --import tsx tests/codexLoading.semantic.test.ts && node --import tsx tests/profileLoading.semantic.test.ts && npm run test:data && npm run test:ui && npm run test:scopes && npm run test:updates",
     "test:ui": "node --import tsx tests/battlePresentation.semantic.test.ts && node --import tsx tests/uiFoundation.semantic.test.ts && node --import tsx tests/elfEditorLayout.semantic.test.ts && node --import tsx tests/pageRecovery.semantic.test.ts && node --import tsx tests/editorWorkflow.semantic.test.ts && node --import tsx tests/homepageLoading.semantic.test.ts && npm run test:animation",
     "test:animation": "node --import tsx tests/viewerFog.semantic.test.ts && node --import tsx tests/battleAnimation.semantic.test.ts && node --import tsx tests/battleAnimationIntegration.semantic.test.ts",
     "test:scopes": "node --import tsx tests/battleStateScopes.semantic.test.ts && npm run test:effects && npm run test:special-modes",
@@ -34,8 +34,10 @@
     "build:exe-keep": "tsx tools/build_exe.ts --keep-version",
     "prepare:share": "tsx tools/prepare_share.ts --force",
     "electron:dev": "npm run build && electron electron/main.cjs",
-    "package:electron": "npm run build:electron && electron-builder --config electron-builder.yml",
-    "test:electron": "node tests/electronLauncher.semantic.test.mjs && node tests/electronServerPackaging.semantic.test.mjs",
+    "package:electron": "npm run build:electron && electron-builder --config electron-builder.yml --publish never",
+    "test:electron": "node tests/electronLauncher.semantic.test.mjs && node tests/electronUpdates.semantic.test.mjs && node tests/electronServerPackaging.semantic.test.mjs",
+    "test:updates": "node --import tsx tests/updates.semantic.test.ts && node tests/electronUpdates.semantic.test.mjs && node tests/electronSlimming.semantic.test.mjs && node tests/assetCache.semantic.test.mjs",
+    "prepare:electron-lite": "node scripts/prepare_light_assets.mjs",
     "test:electron-artifact": "node tests/electronArtifact.semantic.test.mjs && node tests/electronPortable.smoke.test.mjs",
     "test:special-modes": "node --import tsx tests/comboFormula.semantic.test.ts && node --import tsx tests/relicEffects.semantic.test.ts && node --import tsx tests/eclipseEngine.semantic.test.ts && node --import tsx tests/interstellarBattleSnapshot.semantic.test.ts && node --import tsx tests/destinyInterceptor.semantic.test.ts && node --import tsx tests/destinyGacha.semantic.test.ts && node --import tsx tests/destinyFlow.semantic.test.ts && node --import tsx tests/interstellarFlow.semantic.test.ts && node --import tsx tests/specialBattleIntegration.semantic.test.ts"
   },

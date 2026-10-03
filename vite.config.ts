@@ -2,6 +2,8 @@ import tailwindcss from '@tailwindcss/vite';
 import react from '@vitejs/plugin-react';
 import path from 'path';
 import { execFileSync } from 'node:child_process';
+import { createHash } from 'node:crypto';
+import { readFileSync } from 'node:fs';
 import {defineConfig} from 'vite';
 
 export default defineConfig(() => {
@@ -12,17 +14,20 @@ export default defineConfig(() => {
   try {
     commit = execFileSync('git', ['rev-parse', 'HEAD'], { cwd: __dirname, encoding: 'utf8' }).trim();
   } catch { /* exported source without Git metadata */ }
+  const version = JSON.parse(readFileSync(path.join(__dirname, 'package.json'), 'utf8')).version;
+  const builtAt = new Date().toISOString();
+  const buildId = createHash('sha256').update(`${commit}:${version}:${builtAt}:${process.pid}`).digest('hex');
   return {
     plugins: [
       react(), tailwindcss(),
       {
         name: 'release-version',
         generateBundle() {
-          this.emitFile({ type: 'asset', fileName: 'version.json', source: JSON.stringify({ commit }) });
+          this.emitFile({ type: 'asset', fileName: 'version.json', source: JSON.stringify({ schemaVersion: 1, version, commit, buildId, builtAt }) });
         },
       },
     ],
-    define: { __APP_COMMIT__: JSON.stringify(commit) },
+    define: { __APP_COMMIT__: JSON.stringify(commit), __APP_BUILD_ID__: JSON.stringify(buildId), __APP_VERSION__: JSON.stringify(version) },
     resolve: {
       alias: {
         '@': path.resolve(__dirname, '.'),

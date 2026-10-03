@@ -44,20 +44,6 @@ interface StartScreenProps {
     p2Title?: string,
     format?: "normal_6v6" | "solo_1v1" | "peak_6v6" | "peak_3v3"
   ) => void;
-  onStartBattle2?: (
-    mode: BattleMode,
-    team1: Elf[],
-    team2: Elf[],
-    starter1Id: string,
-    starter2Id: string,
-    p1Suit?: string,
-    p1Eyewear?: string,
-    p2Suit?: string,
-    p2Eyewear?: string,
-    p1Title?: string,
-    p2Title?: string,
-    format?: "normal_6v6" | "solo_1v1" | "peak_6v6" | "peak_3v3"
-  ) => void;
   hostPlayer?: "p1" | "p2";
   onHostPlayerChange?: (host: "p1" | "p2") => void;
   onNavigateToCustom: () => void;
@@ -90,7 +76,6 @@ export default function StartScreen({
   hostPlayer = "p1",
   onHostPlayerChange,
   onStartBattle,
-  onStartBattle2,
   onNavigateToCustom,
   onNavigateToDestinyWheel,
   onNavigateToInterstellar,
@@ -1095,91 +1080,6 @@ export default function StartScreen({
     }
   };
 
-  const handleStart2 = () => {
-    if (p1Team.length === 0 || p2Team.length === 0 || !p1StarterId || !p2StarterId) return;
-    if (battleFormat === "normal_6v6" || battleFormat === "solo_1v1") {
-      let p1Active = p1Team.slice(0, 6).map(e => {
-        const bonusElf = { ...e, hasAnnualBonus: p1AnnualBonus };
-        bonusElf.calculatedStats = calculateElfStats(
-          bonusElf.baseStats, 100, bonusElf.ivs, bonusElf.evs, bonusElf.natureModifiers, bonusElf.inscriptions, bonusElf.guildBonuses, bonusElf.hasAnnualBonus
-        );
-        bonusElf.maxHp = bonusElf.calculatedStats.hp;
-        bonusElf.currentHp = bonusElf.calculatedStats.hp;
-        return bonusElf;
-      });
-      let p2Active = p2Team.slice(0, 6).map(e => {
-        const bonusElf = { ...e, hasAnnualBonus: p2AnnualBonus };
-        bonusElf.calculatedStats = calculateElfStats(
-          bonusElf.baseStats, 100, bonusElf.ivs, bonusElf.evs, bonusElf.natureModifiers, bonusElf.inscriptions, bonusElf.guildBonuses, bonusElf.hasAnnualBonus
-        );
-        bonusElf.maxHp = bonusElf.calculatedStats.hp;
-        bonusElf.currentHp = bonusElf.calculatedStats.hp;
-        return bonusElf;
-      });
-      const st1 = p1Active.find(e => e.battleId === p1StarterId)?.battleId || p1Active[0]?.battleId || p1StarterId;
-      const st2 = p2Active.find(e => e.battleId === p2StarterId)?.battleId || p2Active[0]?.battleId || p2StarterId;
-      if (battleFormat === "solo_1v1") {
-        p1Active = p1Active.filter(e => e.battleId === st1);
-        p2Active = p2Active.filter(e => e.battleId === st2);
-      }
-      onStartBattle2?.(battleMode, p1Active, p2Active, st1, st2, p1Suit, p1Eyewear, p2Suit, p2Eyewear, p1Title, p2Title, battleFormat);
-    } else {
-      // For peak tournament formats, route to Room 2 directly once finalized
-      const p1Ready = ensureBattleTeam(p1Team, p1StarterId, battleFormat, pickCount);
-      const p2Ready = ensureBattleTeam(p2Team, p2StarterId, battleFormat, pickCount);
-      setP1Team(p1Ready.team);
-      setP2Team(p2Ready.team);
-      setP1StarterId(p1Ready.starterId);
-      setP2StarterId(p2Ready.starterId);
-
-      setP1BannedIds([]);
-      setP2BannedIds([]);
-      setP1PickedIds([]);
-      setP2PickedIds([]);
-      setP1BpStarterId("");
-      setP2BpStarterId("");
-
-      let aiBans: string[] = [];
-      if (battleMode === "PVE" && banCount > 0) {
-        aiBans = [...p1Ready.team]
-          .sort((a, b) => {
-            const sumA = Object.values(a.baseStats).reduce<number>((acc, val) => acc + (Number(val) || 0), 0);
-            const sumB = Object.values(b.baseStats).reduce<number>((acc, val) => acc + (Number(val) || 0), 0);
-            return Number(sumB) - Number(sumA);
-          })
-          .slice(0, Math.min(banCount, p1Ready.team.length - 1))
-          .map(e => e.battleId);
-        setP2BannedIds(aiBans);
-      }
-
-      if (banCount > 0) {
-        setBpPhase("ban_p1");
-      } else {
-        setBpPhase("pick_p1");
-        if (battleFormat === "peak_6v6" || battleFormat === "peak_3v3") {
-          const pickNum = pickCount;
-          const initialP1 = p1Ready.team.slice(0, pickNum).map(e => e.battleId);
-          setP1PickedIds(initialP1);
-          setP1BpStarterId(initialP1[0] || "");
-          if (battleMode === "PVE") {
-            const sortedAI = [...p2Ready.team].sort((a, b) => {
-              const sumA = Object.values(a.baseStats).reduce<number>((acc, val) => acc + (Number(val) || 0), 0);
-              const sumB = Object.values(b.baseStats).reduce<number>((acc, val) => acc + (Number(val) || 0), 0);
-              return Number(sumB) - Number(sumA);
-            });
-            const aiPicked = sortedAI.slice(0, pickNum).map(e => e.battleId);
-            setP2PickedIds(aiPicked);
-            setP2BpStarterId(aiPicked[0] || "");
-          } else {
-            const initialP2 = p2Ready.team.slice(0, pickNum).map(e => e.battleId);
-            setP2PickedIds(initialP2);
-            setP2BpStarterId(initialP2[0] || "");
-          }
-        }
-      }
-    }
-  };
-
   const handleConfirmBansAndEnterPick = () => {
     setBpPhase("pick_p1");
     const pickNum = pickCount;
@@ -1212,7 +1112,7 @@ export default function StartScreen({
     }
   };
 
-  const handleLaunchPeakBattle = (useRoom2 = false) => {
+  const handleLaunchPeakBattle = () => {
     const finalP1Active = p1Team.filter(e => p1PickedIds.includes(e.battleId)).map(e => {
       const bonusElf = { ...e, isExtra: false, hasAnnualBonus: p1AnnualBonus };
       bonusElf.calculatedStats = calculateElfStats(
@@ -1237,37 +1137,20 @@ export default function StartScreen({
     const starter1 = p1BpStarterId || finalP1Active[0]?.battleId || p1StarterId;
     const starter2 = p2BpStarterId || finalP2Active[0]?.battleId || p2StarterId;
     
-    if (useRoom2) {
-      onStartBattle2?.(
-        battleMode,
-        finalP1Active.length > 0 ? finalP1Active : p1Team,
-        finalP2Active.length > 0 ? finalP2Active : p2Team,
-        starter1,
-        starter2,
-        p1Suit,
-        p1Eyewear,
-        p2Suit,
-        p2Eyewear,
-        p1Title,
-        p2Title,
-        battleFormat
-      );
-    } else {
-      onStartBattle(
-        battleMode,
-        finalP1Active.length > 0 ? finalP1Active : p1Team,
-        finalP2Active.length > 0 ? finalP2Active : p2Team,
-        starter1,
-        starter2,
-        p1Suit,
-        p1Eyewear,
-        p2Suit,
-        p2Eyewear,
-        p1Title,
-        p2Title,
-        battleFormat
-      );
-    }
+    onStartBattle(
+      battleMode,
+      finalP1Active.length > 0 ? finalP1Active : p1Team,
+      finalP2Active.length > 0 ? finalP2Active : p2Team,
+      starter1,
+      starter2,
+      p1Suit,
+      p1Eyewear,
+      p2Suit,
+      p2Eyewear,
+      p1Title,
+      p2Title,
+      battleFormat
+    );
   };
 
 
@@ -1498,13 +1381,6 @@ export default function StartScreen({
                 title="經典對戰艙（Room 1）：包含經典 IF 分支判定"
               >
                 <Swords className="w-5 h-5" />開始對戰
-              </button>
-              <button
-                onClick={handleStart2}
-                className="w-full py-3 rounded-2xl bg-white/[0.08] hover:bg-white/[0.14] text-slate-100 text-[14px] font-medium flex items-center justify-center gap-2 transition-colors"
-                title="重構對戰艙（Room 2）：解耦、模組化註冊機制"
-              >
-                <Sparkles className="w-4 h-4 text-violet-300" />重構對戰艙
               </button>
             </>
           )}
@@ -3394,7 +3270,7 @@ export default function StartScreen({
                       if (isBanPhase) {
                         handleConfirmBansAndEnterPick();
                       } else {
-                        handleLaunchPeakBattle(false);
+                        handleLaunchPeakBattle();
                       }
                     }}
                     disabled={

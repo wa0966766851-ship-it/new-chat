@@ -20,6 +20,7 @@ export const CONTROL_SECTIONS = [
   { id: 'resources', title: '場景配置', description: '各頁使用的背景與音樂' },
   { id: 'library', title: '素材庫', description: '管理歌單與可選背景' },
   { id: 'advanced', title: '診斷', description: '效能量測與目前設定摘要' },
+  { id: 'updates', title: '更新', description: '手動檢查網站部署及桌面版本；不自動重載或覆寫' },
 ] as const;
 
 export function readControlSetting<T>(key: string, fallback: T, valid: (value: unknown) => value is T): T {

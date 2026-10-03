@@ -14,8 +14,10 @@ export const ElfReadOnlyProfile: React.FC<{
   getSkillMaxPp?: (skill: Skill, elf: Elf) => number;
   /** 戰鬥中開啟時的陣營：己方隱匿精靈完整顯示，敵方才掩蓋。 */
   battleSide?: "p1" | "p2";
-}> = ({ elf, onClose, subtitle, effectiveBody, children, getSkillMaxPp, battleSide }) => {
-  const [tab, setTab] = useState<"traits" | "stats" | "skills">("traits");
+  /** 戰鬥中：在場精靈的即時狀態（能力等級、異常、印記、計時），作為第一個分頁。 */
+  battlePanel?: React.ReactNode;
+}> = ({ elf, onClose, subtitle, effectiveBody, children, getSkillMaxPp, battleSide, battlePanel }) => {
+  const [tab, setTab] = useState<"battle" | "traits" | "stats" | "skills">(battlePanel ? "battle" : "traits");
   const concealed = hiddenFromViewer(elf, battleSide);
   return <div className="space-y-5" data-testid="elf-readonly-profile">
     <header className="flex items-start gap-4 border-b border-white/10 pb-4">
@@ -34,9 +36,10 @@ export const ElfReadOnlyProfile: React.FC<{
     </header>
     {concealed ? <p className="text-sm text-slate-400">此精靈正處於隱匿，真實資料暫不展示。</p> : <>
       <nav className="ios-segment w-full" aria-label="精靈介紹分類">
-        {([['traits', '專屬特性'], ['stats', '能力資料'], ['skills', '技能']] as const).map(([key, label]) =>
+        {([...(battlePanel ? [['battle', '戰鬥狀態']] : []), ['traits', '專屬特性'], ['stats', '能力資料'], ['skills', '技能']] as [typeof tab, string][]).map(([key, label]) =>
           <button key={key} type="button" className="flex-1" data-active={tab === key} onClick={() => setTab(key)}>{label}</button>)}
       </nav>
+      {tab === "battle" && battlePanel}
       {tab === "traits" && <ElfTraitCards elf={elf} />}
       {tab === "stats" && <>
         <div className="ios-card p-4 flex items-center justify-between">
