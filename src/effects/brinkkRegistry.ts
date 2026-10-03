@@ -364,7 +364,7 @@ export const handleBrinkkSoulMark = (ctx: BattleEventContext, event: EffectTimin
         if (getPlayerState("deepSeaFreezeTarget") !== identity(target)) break;
         setPlayerState("deepSeaFreezePending", false);
         clearTurnEffectsOf(oppSide);
-        applyStatusWithImmunityCheck(oppSide, "冰封", 2);
+        applyStatusWithImmunityCheck(oppSide, "冰封", 3); // 描述未寫回合數：預設 3
         addLog(`🌊 【深海働哭】：古神之怨引發回合末冰封與消除回合類效果！`, "status");
       }
       break;
@@ -472,7 +472,7 @@ export const BRINKK_SKILLS: Record<string, BattleSkillHandler> = {
     // 3. 將對手所處的凍傷狀態轉化為冰封，轉化成功則附加等同於對手最大體力⅛的真實傷害
     const oppStatuses = getStatuses(target);
     if (oppStatuses["凍傷"] > 0) {
-      const result = applyStatusWithImmunityCheck(oppSide, "冰封", 2);
+      const result = applyStatusWithImmunityCheck(oppSide, "冰封", 3); // 描述未寫回合數：預設 3
       if (!result.success) return;
       clearBrinkkStatuses(ctx, target, name => sameStatus(name, "凍傷"));
       addLog(`🌊 【溺咒之握】：將對手的「凍傷」轉化為「冰封」！`, "status");
@@ -555,7 +555,7 @@ export const BRINKK_SKILLS: Record<string, BattleSkillHandler> = {
     // 3. 令對手全屬性-1、凍傷，任一項未觸發或均觸發則100%令對手冰封
     applyStatChange(oppSide, { atk: -1, def: -1, spatk: -1, spdef: -1, speed: -1, accuracy: -1 });
     applyStatusWithImmunityCheck(oppSide, "凍傷", 3);
-    applyStatusWithImmunityCheck(oppSide, "冰封", 2);
+    applyStatusWithImmunityCheck(oppSide, "冰封", 3); // 描述未寫回合數：預設 3
 
     // 4. 令自身100%狂暴
     applyStatusWithImmunityCheck(actor, "狂暴", 3);

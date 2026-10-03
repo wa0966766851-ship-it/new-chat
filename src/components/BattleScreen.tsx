@@ -28,7 +28,7 @@ import { SuitEffectRegistry } from "../effects/suitEffectRegistry";
 import { runRelicEffects } from "../effects/relicEffectRegistry";
 import { StatusRegistry } from "../effects/statusRegistry";
 import { canonicalStatusName } from '../effects/statusIdentity';
-import { advanceStatusEffect } from '../battle/statusLifecycle';
+import { advanceStatusEffect, mergeSameStatus } from '../battle/statusLifecycle';
 import { applyEquipmentToTeam } from "../data/suitsAndEyewears";
 import { makeRng } from "../utils/rng";
 import { resetPrd, prdChance } from "../utils/prd";
@@ -151,6 +151,12 @@ function syncActiveIntoTeam(v: BattleState): BattleState {
 }
 
 export { normalizeDamageType } from "../battle/damageSemantics";
+
+/** 陣亡者的延後效果（例如斯嘉麗重生倒數）只能由其召喚、且仍存活的額外精靈代為執行；陣亡期間不算存活。 */
+const hasLivingSummonedExtra = (team: Elf[], elf: Elf) => {
+  const id = String(elf.battleId || elf.id);
+  return team.some(e => e.isExtra && e.summonerId === id && !e.isVanished && e.currentHp > 0);
+};
 
 export const checkElfDead = (elf: Elf | undefined | null) => {
   if (!elf) return true;
@@ -460,8 +466,18 @@ export default function BattleScreen(props: BattleScreenProps) {
         }
         // -------------------------
 
+        // 傷害分類（在任何分支前決定，抵抗致命的分支也適用）：
+        // 技能傷害＝受屬性克制影響的傷害（攻擊、X系、額外行動）；固定／百分比；真實（含汲取）。
         let lastActionType: 'skill' | 'crit' | 'fixed' | 'percent' | 'true' | 'absorb' | 'heal' = 'skill';
         let lastActionLabel = "技能傷害";
+        {
+          const dt0 = String(data.damageType || "");
+          if (data.label?.includes("汲取") || dt0 === "absorb" || dt0 === "true" || dt0 === "true_damage") { lastActionType = "true"; lastActionLabel = data.label || "真實傷害"; }
+          else if (dt0 === "fixed" || dt0 === "fixed_damage") { lastActionType = "fixed"; lastActionLabel = data.label || "固定傷害"; }
+          else if (dt0 === "percent" || dt0 === "percent_damage") { lastActionType = "percent"; lastActionLabel = data.label || "百分比傷害"; }
+          else if (data.isCrit) { lastActionType = "crit"; lastActionLabel = data.label || "致命一擊"; }
+          else { lastActionType = "skill"; lastActionLabel = data.label || "技能傷害"; }
+        }
 
         const survivalTransition = resolveDamageTransition(
           target.currentHp,
@@ -471,7 +487,8 @@ export default function BattleScreen(props: BattleScreenProps) {
           target.survivalRule,
         );
         const dmg = survivalTransition.damageApplied;
-        const displayedDamage = damagePresentationAmount(normalizedDamageType, effectiveAmount, dmg);
+        const isSkillNature = lastActionType === 'skill' || lastActionType === 'crit';
+        const displayedDamage = damagePresentationAmount(isSkillNature ? 'skill' : lastActionType === 'true' ? 'true' : normalizedDamageType, effectiveAmount, dmg); // 護盾吸收後、體力截斷前
         const nextHp = survivalTransition.hp;
         if (dmg > 0) {
           const id=target.battleId||target.id;
@@ -614,7 +631,7 @@ export default function BattleScreen(props: BattleScreenProps) {
                     nextEffects[i] = {
                       id: targetStatusName,
                       name: targetEntry?.name || targetStatusName,
-                      duration: params.nextDuration || 1,
+                      duration: params.nextDuration || 3,
                       isLateMover: false,
                       stacks: 1
                     };
@@ -625,29 +642,12 @@ export default function BattleScreen(props: BattleScreenProps) {
               }
 
               if (transformed) {
-                syncStateRef.current = { ...syncStateRef.current, [targetSide]: { ...targetElf, effects: nextEffects } };
-                dispatch({ type: 'UPDATE_ELF', side: targetSide, elf: { effects: nextEffects } });
+                const merged = mergeSameStatus(nextEffects);
+                syncStateRef.current = { ...syncStateRef.current, [targetSide]: { ...targetElf, effects: merged } };
+                dispatch({ type: 'UPDATE_ELF', side: targetSide, elf: { effects: merged } });
               }
             }
 
-            const dt = String(data.damageType || "");
-            if (data.label?.includes("汲取") || dt === "absorb" || dt === "true" || dt === "true_damage") {
-              // 汲取體力造成的傷害統一視為真實傷害
-              lastActionType = "true";
-              lastActionLabel = "真實傷害";
-            } else if (data.isCrit) {
-              lastActionType = "crit";
-              lastActionLabel = "致命一擊";
-            } else if (dt === "fixed" || dt === "fixed_damage") {
-              lastActionType = "fixed";
-              lastActionLabel = "固定傷害";
-            } else if (dt === "percent" || dt === "percent_damage") {
-              lastActionType = "percent";
-              lastActionLabel = "百分比傷害";
-            } else {
-              lastActionType = "skill";
-              lastActionLabel = "技能傷害";
-            }
 
             const statsUpdates: Partial<TurnDamageStats> = {
               hpChange: (currentStats.hpChange || 0) + (nextHp - target.currentHp),
@@ -702,7 +702,9 @@ export default function BattleScreen(props: BattleScreenProps) {
         if (presentationAfterHp !== target.currentHp || data.popup) {
           presentation.record({ side: targetSide, elfId: target.battleId || target.id,
             type: presentationAfterHp > target.currentHp ? 'adjust_up' : lastActionType === 'crit' ? 'skill' : lastActionType as PresentationKind,
-            amount: presentationAfterHp > target.currentHp ? presentationAfterHp - target.currentHp : displayedDamage, delta: presentationAfterHp - target.currentHp,
+            amount: presentationAfterHp > target.currentHp ? presentationAfterHp - target.currentHp
+              : (lastActionType === 'fixed' || lastActionType === 'percent') ? target.currentHp - presentationAfterHp : displayedDamage,
+            delta: presentationAfterHp - target.currentHp,
             before: target.currentHp, after: presentationAfterHp, maxHp: target.maxHp,
             label: lastActionLabel, isCrit: data.isCrit, alive: !checkElfDead(syncStateRef.current[targetSide]),
             effectiveness: effectivenessLabel((data as any).typeMultiplier),
@@ -883,7 +885,7 @@ export default function BattleScreen(props: BattleScreenProps) {
         const targetSide = side;
         const teamForHeal = cur[`${side}Team`];
         const target = data.targetId ? teamForHeal.find(e=>(e.battleId||e.id)===data.targetId) : cur[targetSide];
-        if (!target || (data.targetId && !isAliveBySurvivalRule(target.currentHp,target.survivalRule))) break;
+        if (!target || checkElfDead(target)) break; // 已陣亡者不受回復（重生另走專用流程）
         const recoveryRegistry = new Proxy({}, {get:(_,key)=>readScopedRegistry(syncStateRef.current,targetSide,target,String(key))}) as any;
         const playerStateKey = `${targetSide}RegistryState` as "p1RegistryState" | "p2RegistryState";
         const oppSide = targetSide === "p1" ? "p2" : "p1";
@@ -1002,6 +1004,8 @@ export default function BattleScreen(props: BattleScreenProps) {
       case 'animation':
         // 出招動畫開關：關閉時不播放也不等待，結算照常。
         if (!animationSettingsRef.current.skill) return;
+        // 出招排在前面已發生的演出（例如藥劑綠字）之後，紅字在出招之後
+        await presentation.wait();
         dispatch({ type: 'SET_SKILL_ANIM', anim: data.anim });
         await new Promise(r => setTimeout(r, fast ? 0 : (data.duration || 350)));
         dispatch({ type: 'SET_SKILL_ANIM', anim: null });
@@ -1471,7 +1475,7 @@ case 'switch': {
             
             if (targetStatusName) {
               const targetEntry = StatusRegistry[targetStatusName];
-              const nextDur = params.nextDuration || 1;
+              const nextDur = params.nextDuration || 3; // 衍生轉化未定義回合數：預設 3（同名合併見 mergeSameStatus）
               nextEffects.push({
                 id: targetStatusName,
                 name: targetEntry?.name || targetStatusName,
@@ -1510,7 +1514,8 @@ case 'switch': {
           }
         }
       }
-      return nextEffects;
+      // 轉化撞上既有同名異常、或多個異常轉化成同一個：合併為一筆、回合數相加
+      return mergeSameStatus(nextEffects);
     };
 
     const nextP1Effects = updateEffects(mid.p1, "p1");
@@ -1619,6 +1624,8 @@ case 'switch': {
       const killedOpponentThisRound = checkElfDead(mid[oppSide]);
 
       team.forEach(elf => {
+        // 已死亡的精靈不再響應回合節點（避免場下自我回血＝復活）；只有「死後倒數、時間到於背包內重生」的魂印仍需計時
+        if (checkElfDead(elf) && !hasLivingSummonedExtra(team, elf)) return;
         if (SoulMarkRegistry[elf.name]) {
           const ctx = getBattleEventContext(side, false, 0, elf);
           SoulMarkRegistry[elf.name](ctx, EffectTiming.ROUND_END);
@@ -1837,6 +1844,9 @@ case 'switch': {
     // §1: Apply DAMAGE_TICK at round end
     await applyDamageTicks("p1", "END");
     await applyDamageTicks("p2", "END");
+    // 直接改體力、沒有留下紀錄的效果：回合末補成淨變化
+    presentation.reconcile('p1', syncStateRef.current.p1);
+    presentation.reconcile('p2', syncStateRef.current.p2);
     await presentation.flush();
     if (!battleAliveRef.current) return;
     presentation.turnNumber = syncStateRef.current.turnNumber;
@@ -2034,6 +2044,7 @@ case 'switch': {
     for (const side of ["p1", "p2"] as const) {
       const team = side === "p1" ? cur.p1Team : cur.p2Team;
       team.forEach(elf => {
+        if (checkElfDead(elf) && !hasLivingSummonedExtra(team, elf)) return; // 陣亡者不響應回合開始
         if (SoulMarkRegistry[elf.name]) {
           const ctx = getBattleEventContext(side, false, 0, elf);
           SoulMarkRegistry[elf.name](ctx, EffectTiming.ROUND_START);

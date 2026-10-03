@@ -168,7 +168,7 @@ export const handleWuxuSoulMark = (ctx: BattleEventContext, event: EffectTiming 
       }
       
       if (self.trait?.name === "亂舞" && ctx.skill && ctx.skill.category !== "屬性") {
-        const eligibleOppTeam = ctx.getEligibleTeam(oppSide);
+        const eligibleOppTeam = ctx.getEligibleTeam(oppSide).filter((e: any) => e.currentHp > 0 && e !== (oppSide === "p1" ? ctx.activeP1 : ctx.activeP2)); // 已陣亡者不會被波及（不會被拉回 1 血）
         if (eligibleOppTeam.length > 0) {
           const randomTarget = eligibleOppTeam[Math.floor(Math.random() * eligibleOppTeam.length)];
           const offFieldDmg = Math.floor(ctx.skill.power || 0); // Estimate

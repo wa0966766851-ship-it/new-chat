@@ -5,7 +5,8 @@ import * as E from "../../modes/interstellar/v2/engine";
 
 import MapView from "./eclipse/MapView";
 import { SCENES } from "./eclipse/Scenes";
-import { EclipseMoon, RelicSigil, TeamStrip, NpcArt } from "./eclipse/parts";
+import { EclipseMoon, NpcArt, alive } from "./eclipse/parts";
+import Ledger, { type LedgerTab } from "./eclipse/Ledger";
 
 interface InterstellarRunProps {
   allElves: Elf[];
@@ -38,6 +39,14 @@ function Resource({ icon, label, value }: { icon: string; label: string; value: 
   );
 }
 
+function LedgerButton({ label, count, warn, onClick }: { label: string; count?: string; warn?: boolean; onClick: () => void }) {
+  return (
+    <button onClick={onClick} className="px-4 py-2 border border-[rgba(217,180,90,.45)] hover:bg-[rgba(217,180,90,.1)] font-black tracking-widest text-sm">
+      {label}{count !== undefined && <span className={`ml-1.5 text-xs tabular-nums ${warn ? "ecl-blood" : "ecl-muted"}`}>{count}</span>}
+    </button>
+  );
+}
+
 export default function InterstellarRun({ allElves, startingDiamonds, initialEquipType, initialEquipId, selectedModifiers, onEndRun, onStartBattle, onLeave }: InterstellarRunProps) {
   const pool = allElves;
   const [run, setRun] = React.useState<E.RunV2>(() => {
@@ -47,6 +56,7 @@ export default function InterstellarRun({ allElves, startingDiamonds, initialEqu
     return E.saveRunV2(localStorage, fresh);
   });
   const runRef = React.useRef(run); runRef.current = run;
+  const [ledger, setLedger] = React.useState<LedgerTab | null>(null);
   const busy = React.useRef(false);
 
   const dispatch = React.useCallback((f: (r: E.RunV2) => E.RunV2) => {
@@ -82,7 +92,7 @@ export default function InterstellarRun({ allElves, startingDiamonds, initialEqu
   const act = E.actDef(run);
   const backdrop = ACT_BACKDROP[run.act];
   const Scene = run.scene.kind !== "map" ? SCENES[run.scene.kind] : null;
-  const maxTeam = E.mods(run).maxTeam;
+  const lineup = E.lineupOf(run);
   const note = run.scene.kind === "map" ? run.scene.note : undefined;
 
   return (
@@ -109,16 +119,13 @@ export default function InterstellarRun({ allElves, startingDiamonds, initialEqu
           <EclipseMoon value={run.eclipse} />
         </div>
         <div className="ml-auto flex items-center gap-2">
+          <LedgerButton label="隊伍" count={`${lineup.filter(alive).length}/${E.lineupSlots(run)}`} warn={lineup.some(e => !alive(e))} onClick={() => setLedger("team")} />
+          <LedgerButton label="遺物" count={String(run.relics.length)} onClick={() => setLedger("relics")} />
+          <LedgerButton label="紀事" onClick={() => setLedger("chronicle")} />
           {onLeave && <button className="ecl-btn ecl-btn-ghost text-xs px-4 py-2" onClick={onLeave} title="保留進度，回到大廳">暫離</button>}
         </div>
       </header>
       <div className="ecl-rule mx-6" />
-
-      {/* 遺物架 */}
-      <div className="relative z-20 px-6 py-2 flex items-center gap-2 min-h-12 flex-wrap">
-        <span className="ecl-roman text-[10px] ecl-muted mr-1">Relics</span>
-        {run.relics.length === 0 ? <span className="text-xs ecl-muted">尚無遺物</span> : run.relics.map((id, i) => <RelicSigil key={`${id}-${i}`} id={id} size="sm" />)}
-      </div>
 
       {/* 地圖 */}
       <main className="relative z-10 flex-1 px-4 md:px-10 flex items-center">
@@ -126,14 +133,6 @@ export default function InterstellarRun({ allElves, startingDiamonds, initialEqu
           <MapView run={run} onMove={id => dispatch(r => E.moveTo(r, id, pool))} />
         </div>
       </main>
-
-      {/* 底部：隊伍＋紀事 */}
-      <footer className="relative z-20 px-6 pb-5 pt-2 flex flex-wrap items-end justify-between gap-6">
-        <TeamStrip team={run.team} max={maxTeam} />
-        <div className="max-w-md text-xs leading-relaxed ecl-muted space-y-0.5 text-right">
-          {run.chronicle.slice(0, 3).map((c, i) => <div key={i} style={{ opacity: 1 - i * .3 }}>{c}</div>)}
-        </div>
-      </footer>
 
       <AnimatePresence>
         {note && (
@@ -144,12 +143,16 @@ export default function InterstellarRun({ allElves, startingDiamonds, initialEqu
         )}
       </AnimatePresence>
 
+      <AnimatePresence>
+        {ledger && (run.scene.kind === "map" || run.scene.kind === "prelude") && <Ledger run={run} tab={ledger} onTab={setLedger} onClose={() => setLedger(null)} dispatch={dispatch} />}
+      </AnimatePresence>
+
       {/* 場景覆蓋層 */}
       <AnimatePresence>
         {Scene && (
           <motion.div key={run.scene.kind} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
             className="absolute inset-0 z-40 overflow-y-auto bg-[rgba(4,3,8,.82)] backdrop-blur-[3px] p-4 md:p-10 flex items-start md:items-center">
-            <Scene run={run} pool={pool} dispatch={dispatch} onFight={fight} onExit={() => onEndRun(run.act, run.exp)} />
+            <Scene run={run} pool={pool} dispatch={dispatch} onFight={fight} onExit={() => onEndRun(run.act, run.exp)} onOpenTeam={() => setLedger("team")} />
           </motion.div>
         )}
       </AnimatePresence>

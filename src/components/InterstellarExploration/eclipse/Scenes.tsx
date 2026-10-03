@@ -8,7 +8,7 @@ import { ElfTarot, NpcArt, Ornament, RelicIcon, RelicSigil, TeamStrip, alive } f
 import { ElfAvatar } from "../../SeerImages";
 
 type Dispatch = (f: (r: E.RunV2) => E.RunV2) => void;
-interface SceneProps { run: E.RunV2; pool: Elf[]; dispatch: Dispatch; onFight: () => void; onExit: () => void; }
+interface SceneProps { run: E.RunV2; pool: Elf[]; dispatch: Dispatch; onFight: () => void; onExit: () => void; onOpenTeam?: () => void; }
 
 /** 場景外框：左立繪、右文字 */
 function Stage({ npc, kicker, title, children, wide }: { npc?: number; kicker: string; title: string; children: React.ReactNode; wide?: boolean }) {
@@ -97,7 +97,7 @@ export function ShopScene({ run, pool, dispatch }: SceneProps) {
   const [replace, setReplace] = React.useState<number | null>(null);
   if (run.scene.kind !== "shop") return null;
   const stock = run.scene.stock;
-  const full = run.team.length >= E.mods(run).maxTeam;
+  const full = false; // 隊伍無上限：新成員一律加入（出戰名單滿則待命）
   const buy = (i: number, replaceIdx = -1) => dispatch(r => E.shopBuy(r, i, pool, replaceIdx));
   const label = (s: E.ShopItem) => s.kind === "relic" ? RELIC_BY_ID[s.ref!]?.name : s.kind === "elf" ? E.findElf(pool, s.ref!)?.name : s.kind === "potion" ? "藥劑" : s.kind === "mend" ? "縫合（全隊恢復 30%）" : "淨化（移除一個詛咒）";
   return (
@@ -207,7 +207,7 @@ export function AltarScene({ run, dispatch }: SceneProps) {
   );
 }
 
-export function PreludeScene({ run, pool, dispatch, onFight }: SceneProps) {
+export function PreludeScene({ run, pool, dispatch, onFight, onOpenTeam }: SceneProps) {
   if (run.scene.kind !== "prelude") return null;
   const enc = run.scene.encounter;
   const foes = E.buildEnemies(enc, pool, E.enemyHpFloor(run, enc));
@@ -226,8 +226,13 @@ export function PreludeScene({ run, pool, dispatch, onFight }: SceneProps) {
         ))}
       </div>
       <div className="mt-4 text-center text-sm ecl-muted">體力 ×{enc.hpScale ?? enc.scale}・其他能力 ×{enc.scale}{enc.reward ? `・勝利可得${enc.reward === "legendary" ? "傳說" : "稀有"}遺物` : ""}</div>
-      <div className="flex justify-center gap-4 pt-6">
-        <button className={`ecl-btn ${boss ? "ecl-btn-blood" : ""}`} onClick={onFight}>迎戰</button>
+      <div className="mt-6 flex flex-wrap items-center justify-center gap-2 text-sm">
+        <span className="ecl-muted mr-1">出戰 {E.lineupOf(run).filter(alive).length}/{E.lineupSlots(run)}：</span>
+        {E.lineupOf(run).map((e, i) => <span key={e.battleId || i} className={`px-2 py-0.5 border ${alive(e) ? "border-[rgba(217,180,90,.35)]" : "border-[rgba(224,71,95,.4)] ecl-blood line-through"}`}>{e.name}</span>)}
+        {onOpenTeam && <button className="text-xs ml-2 px-3 py-1 border border-[rgba(217,180,90,.5)] hover:bg-[rgba(217,180,90,.1)]" onClick={onOpenTeam}>調整出戰</button>}
+      </div>
+      <div className="flex justify-center gap-4 pt-4">
+        <button className={`ecl-btn ${boss ? "ecl-btn-blood" : ""}`} disabled={!E.lineupOf(run).some(alive)} title={E.lineupOf(run).some(alive) ? "" : "出戰名單沒有存活的精靈"} onClick={onFight}>迎戰</button>
         {!boss && <button className="ecl-btn ecl-btn-ghost" onClick={() => dispatch(r => E.fleeEncounter(r))}>撤離</button>}
       </div>
     </Stage>
@@ -238,7 +243,7 @@ export function RewardScene({ run, pool, dispatch }: SceneProps) {
   const [replace, setReplace] = React.useState<string | null>(null);
   if (run.scene.kind !== "reward") return null;
   const { reward, title } = run.scene;
-  const full = run.team.length >= E.mods(run).maxTeam;
+  const full = false; // 隊伍無上限：新成員一律加入（出戰名單滿則待命）
   return (
     <Stage kicker="Spoils" title={title} wide>
       <div className="flex flex-wrap gap-6 mb-6 text-lg">
@@ -268,7 +273,7 @@ export function RewardScene({ run, pool, dispatch }: SceneProps) {
 export function RecruitScene({ run, pool, dispatch }: SceneProps) {
   const [replace, setReplace] = React.useState<string | null>(null);
   if (run.scene.kind !== "recruit") return null;
-  const full = run.team.length >= E.mods(run).maxTeam;
+  const full = false; // 隊伍無上限：新成員一律加入（出戰名單滿則待命）
   return (
     <Stage kicker="Covenant" title={run.scene.note} wide>
       <p className="ecl-muted mb-4">選一個，帶它走。其餘的會留在這裡，等下一個人。</p>

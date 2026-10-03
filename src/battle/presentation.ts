@@ -27,6 +27,9 @@ export class BattlePresentation {
   hp = new Map<string, number>();
   popups: any[] = [];
   private deferred: PresentationEvent[] = [];
+  private dead = new Set<string>();
+  /** 已排入播放（含尚未播完）的預定體力；用於對帳直接改體力的效果。 */
+  private planned = new Map<string, number>();
   private tail = Promise.resolve();
   private active = true;
   private sequence = 0;
@@ -57,59 +60,96 @@ export class BattlePresentation {
       merged.set(key, previous ? { ...previous, amount: previous.amount + e.amount, delta: previous.delta + e.delta,
         after: e.after, maxHp: e.maxHp, isCrit: previous.isCrit || e.isCrit, alive: e.alive } : { ...e });
     }
-    return [...merged.values()].map(e => ({ ...e, type: 'skill' as const, channel: 'extra' as const, label: '額外行動' }));
+    return [...merged.values()].map(e => ({ ...e, type: 'skill' as const, channel: 'extra' as const, label: '額外行動', skillName: e.skillName || '額外行動' }));
   }
   private key(e: Pick<PresentationEvent, 'side' | 'elfId'>) { return `${e.side}:${e.elfId}`; }
+  /**
+   * 播放規則（依原廠）：
+   * - 出手：（藥劑綠字）→ 出招 → 紅字技能傷害（克制標示、實際傷害值）→ 額外行動合併紅字。
+   * - 技能傷害＝受屬性克制影響的傷害，發生當下即播（含回合開始等節點，不另外重排）。
+   * - 固定／百分比／回血／體力調整：延到回合結束，依精靈合併為「體力淨變化」一筆；正→綠字黃框、負→粉字、0 不播。
+   * - 真實傷害：回合結束最後播（白字）。
+   * - 陣亡不再把累積的延後紀錄提前插播；只在延後紀錄本身致命時，先把延後紀錄依上述規則結算。
+   */
   record(e: PresentationEvent): Promise<void> {
     if (!this.active) return Promise.resolve();
     if (!this.hp.has(this.key(e))) this.hp.set(this.key(e), e.before);
-    // 致命事件是呈現邊界；此時不能按顏色重排，否則會看成先死再回血。
     const instant = e.type === 'skill' || e.type === 'notice' || e.immediate;
     const extra = this.extraDepth > 0 && e.type === 'skill';
-    if (e.alive !== true && e.after <= 0 && e.delta < 0) {
-      // 致命：先播已收集的額外行動紅字，再依原序播放累積的非紅傷，最後是致命這筆。
-      if (extra) this.extraPending.push(e);
-      const head = this.extraDepth > 0 ? this.mergeExtra() : [];
-      const prior = this.deferred.splice(0).map(p => ({ ...p, channel: 'roundEnd' as const }));
-      const last = extra ? [] : [{ ...e, channel: instant ? (e.immediate && e.type === 'heal' ? 'potion' as const : 'damage' as const) : 'roundEnd' as const }];
-      return this.enqueue([...head, ...prior, ...last]);
+    const fatal = e.alive !== true && e.after <= 0 && e.delta < 0;
+    if (extra) {
+      this.extraPending.push(e);
+      // 額外行動中擊倒：立即播出合併的額外行動紅字
+      return fatal ? this.enqueue(this.mergeExtra()) : Promise.resolve();
     }
-    if (extra) { this.extraPending.push(e); return Promise.resolve(); }
     if (instant) return this.enqueue([{ ...e, channel: e.immediate && e.type === 'heal' ? 'potion' : 'damage' }]);
     this.deferred.push(e);
-    return Promise.resolve();
+    return fatal ? this.flush() : Promise.resolve();
   }
-  flush(chronological = false): Promise<void> {
-    const events: PresentationEvent[] = this.deferred.splice(0).map(e => ({ ...e, channel: 'roundEnd' as const }));
-    if (!chronological) {
-      const rank = (e: PresentationEvent) => e.type === 'fixed' || e.type === 'percent' ? 0 : e.type === 'heal' || e.type === 'adjust_up' ? 1 : 2;
-      // 只排序播放紀錄；同組保持原順序，不遺漏任何一筆真傷。
-      events.sort((a, b) => rank(a) - rank(b));
-      const groups = new Map<string, PresentationEvent>();
-      const counts = new Map<string, number>();
-      for (const e of events) {
-        const kind = e.type === 'percent' ? 'fixed' : e.type === 'adjust_up' ? 'heal' : e.type;
-        const key = `${this.key(e)}:${kind}`;
-        const previous = groups.get(key);
-        groups.set(key, previous ? { ...previous, amount: previous.amount + e.amount,
-          delta: previous.delta + e.delta, after: e.after, maxHp: e.maxHp } : { ...e, type: kind });
-        counts.set(key, (counts.get(key) || 0) + 1);
+  /** 回合結束（或延後紀錄致命時）：體力淨變化（綠／粉）→ 真實傷害（白）。 */
+  flush(_chronological = false): Promise<void> {
+    const events = this.deferred.splice(0);
+    const net = new Map<string, PresentationEvent & { n: number }>();
+    const trueDmg = new Map<string, PresentationEvent & { n: number }>();
+    for (const e of events) {
+      const k = this.key(e);
+      const bucket = e.type === 'true' ? trueDmg : net;
+      const prev = bucket.get(k);
+      if (e.type === 'true') {
+        bucket.set(k, prev ? { ...prev, amount: prev.amount + e.amount, delta: prev.delta + e.delta, after: e.after, maxHp: e.maxHp, alive: e.alive, n: prev.n + 1 }
+          : { ...e, n: 1 });
+      } else {
+        bucket.set(k, prev ? { ...prev, delta: prev.delta + e.delta, after: e.after, maxHp: e.maxHp, alive: e.alive, n: prev.n + 1 }
+          : { ...e, n: 1 });
       }
-      events.splice(0, events.length, ...[...groups].map(([key, e]) => ({ ...e,
-        label: (counts.get(key) || 0) > 1 ? `${e.type === 'fixed' ? '粉傷' : e.type === 'heal' ? '回血' : e.type === 'true' ? '真實傷害' : '體力調整'}（${counts.get(key)}筆）` : e.label })));
     }
-    return this.enqueue(events);
+    const out: PresentationEvent[] = [];
+    for (const g of net.values()) {
+      const { n: _n, ...e } = g;
+      if (e.delta === 0) { out.push({ ...e, type: 'adjust_up', amount: 0, label: undefined, silent: true } as any); continue; }
+      out.push({ ...e, type: e.delta > 0 ? 'heal' : 'fixed', amount: Math.abs(e.delta), label: undefined, isCrit: false, effectiveness: undefined });
+    }
+    for (const g of trueDmg.values()) {
+      const { n, ...e } = g;
+      out.push({ ...e, type: 'true', label: n > 1 ? `真實傷害（${n}筆）` : e.label });
+    }
+    return this.enqueue(out.map(e => ({ ...e, channel: 'roundEnd' as const })));
   }
   wait() { return this.tail; }
+  /**
+   * 回合末對帳：有些效果直接改體力而沒有留下紀錄（例如部分魂印回血）。
+   * 預定體力（已排入＋待播）與實際不符時，差額補成一筆體力調整，併入回合末淨變化。
+   */
+  reconcile(side: 'p1' | 'p2', elf: { id: string; battleId?: string; currentHp: number; maxHp: number }) {
+    if (!this.active) return;
+    const key = `${side}:${elf.battleId || elf.id}`;
+    if (this.dead.has(key) || !this.hp.has(key) && !this.planned.has(key)) return;
+    const base = this.planned.get(key) ?? this.hp.get(key)!;
+    const pending = [...this.deferred, ...this.extraPending].filter(e => this.key(e) === key).reduce((n, e) => n + e.delta, 0);
+    const expected = base + pending;
+    const diff = elf.currentHp - expected;
+    if (!diff) return;
+    this.deferred.push({ side, elfId: elf.battleId || elf.id, type: diff > 0 ? 'adjust_up' : 'adjust_down', amount: Math.abs(diff), delta: diff,
+      before: expected, after: elf.currentHp, maxHp: elf.maxHp, alive: true });
+  }
   private enqueue(events: PresentationEvent[]): Promise<void> {
+    for (const e of events) {
+      const k = this.key(e);
+      const cur = this.planned.get(k) ?? this.hp.get(k) ?? e.before;
+      this.planned.set(k, e.alive !== true && e.after <= 0 ? e.after : cur + e.delta);
+    }
     const play = async () => {
       for (const e of events) {
         if (!this.active) return;
         const key = this.key(e);
-        const hp = (this.hp.get(key) ?? e.before) + e.delta;
-        // 非致命紀錄的分組播放不製造假陣亡；最後對齊真實快照。
-        this.hp.set(key, e.after > 0 ? Math.min(e.maxHp, Math.max(1, hp)) : hp);
-        if (!this.visible(e)) { this.notify(); continue; }
+        // 已在播放中倒下的精靈：之後的延後紀錄不再播放，也不把血條拉回來。
+        if (this.dead.has(key) && e.type !== 'skill') continue;
+        const cur = this.hp.get(key) ?? e.before;
+        const fatal = e.alive !== true && e.after <= 0;
+        // 致命：直接顯示真實結果；非致命：相對變化，不製造假陣亡；最後對齊真實快照。
+        this.hp.set(key, fatal ? e.after : e.after > 0 ? Math.min(e.maxHp, Math.max(1, cur + e.delta)) : cur + e.delta);
+        if (fatal) this.dead.add(key);
+        if ((e as any).silent || !this.visible(e)) { this.notify(); continue; }
         const id = `presentation_${++this.sequence}`;
         this.popups = [{ ...e, id, text: e.text ?? `${e.type === 'heal' || e.type === 'adjust_up' ? '+' : '-'}${e.amount}` }];
         this.notify();
@@ -132,7 +172,10 @@ export class BattlePresentation {
   }
   align(side: 'p1' | 'p2', elf: { id: string; battleId?: string; currentHp: number }) {
     if (!this.active) return;
-    this.hp.set(`${side}:${elf.battleId || elf.id}`, elf.currentHp);
+    const key = `${side}:${elf.battleId || elf.id}`;
+    this.hp.set(key, elf.currentHp);
+    this.planned.set(key, elf.currentHp);
+    if (elf.currentHp > 0) this.dead.delete(key);
     this.notify();
   }
   dispose() {
@@ -142,6 +185,8 @@ export class BattlePresentation {
     this.extraDepth = 0;
     this.popups = [];
     this.hp.clear();
+    this.dead.clear();
+    this.planned.clear();
     this.cancelWait?.();
   }
 }

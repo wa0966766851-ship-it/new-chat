@@ -112,6 +112,10 @@ const BATTLE_SPRITE_FACING: Record<string, SpriteFacing> = {
   [normalizeName("怒濤·滄嵐")]: "left",
   [normalizeName("異境神霆·雷伊")]: "left",
   [normalizeName("聖靈邁爾斯")]: "left",
+  [normalizeName("無為龍者")]: "left",
+  [normalizeName("龍錄天鋒")]: "left",
+  [normalizeName("無極聖武")]: "left",
+  [normalizeName("命運龍輪 莫伊萊")]: "left",
 };
 
 // 同名精靈的備用型態可能具有不同朝向，以實際載入的素材為準。
@@ -124,6 +128,8 @@ const BODY_SOURCE_FACING: Record<string, SpriteFacing> = {
   ...Object.fromEntries([10,1204,177,187,2647,2844,303,306,309,3098,3404,343,3432,3456,359,3626,3740,3886,4647,4648,4649,4762,5000,875].map(id => [`/seer/body/${id}.png`, "left" as SpriteFacing])),
   ...Object.fromEntries([300,3539,4586,4643,1536].map(id => [`/seer/body/${id}.png`, "left" as SpriteFacing])),
   ...Object.fromEntries([3105,3393,4032,2882].map(id => [`/seer/body/${id}.png`, "front" as SpriteFacing])),
+  // 幻域競技場暫用圖（2026-10-03 使用者確認）：四張皆以朝左處理，P1 鏡射、P2 原圖。
+  ...Object.fromEntries([4661,4903,4800,4275].map(id => [`/seer/body/${id}.png`, "left" as SpriteFacing])),
 };
 
 /** 只有 ElfAvatar 會直接載入的 URL/資料網址才算自訂圖片；內建美術 key（如 otherworld_thunder_rey）仍使用方向表。 */

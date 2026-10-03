@@ -18,8 +18,8 @@ await p.record(event('true', -10, 450));
 await p.record(event('percent', -5, 440));
 await p.record(event('true', -15, 435));
 await p.flush();
-assert.deepEqual(shown.map(e => e.type), ['skill', 'fixed', 'heal', 'true']);
-assert.deepEqual(shown.map(e => e.amount), [40, 35, 20, 25], '多筆白傷總額不漏掉前幾筆');
+assert.deepEqual(shown.map(e => e.type), ['skill', 'fixed', 'true'], '固定／百分比／回血合併為體力淨變化，真傷最後');
+assert.deepEqual(shown.map(e => e.amount), [40, 15, 25], '淨變化 -30+20-5＝-15（粉）；多筆白傷總額不漏');
 assert.equal(p.hp.get('p1:first'), 420);
 assert.equal(p.popups.length, 0);
 const count = shown.length;
@@ -36,7 +36,7 @@ const q = new BattlePresentation(() => { if (q.popups.length) lethal.push(q.popu
 await q.record(event('heal', 10, 40));
 await q.record(event('fixed', -5, 50));
 await q.record(event('true', -45, 45));
-assert.deepEqual(lethal.map(e => e.type), ['heal', 'fixed', 'true'], '陣亡邊界依原紀錄順序播放');
+assert.deepEqual(lethal.map(e => e.type), ['heal', 'true'], '延後紀錄致命：淨變化（+5 綠）→ 真傷');
 assert.equal(q.hp.get('p1:first'), 0);
 
 let notifications = 0;
@@ -61,7 +61,8 @@ assert.equal(freeze.hp, 0); assert.equal(atZero.hp, 0);
 assert.equal(freeze.alive, true); assert.equal(atZero.alive, true);
 assert.equal(damagePresentationAmount('true', 127, freeze.damageApplied), 127);
 assert.equal(damagePresentationAmount('true', 53, atZero.damageApplied), 53);
-assert.equal(damagePresentationAmount('skill', 127, 40), 40, '非真傷維持既有數字');
+assert.equal(damagePresentationAmount('skill', 127, 40), 127, '技能傷害顯示實際傷害，不是體力變化');
+assert.equal(damagePresentationAmount('fixed', 127, 40), 40, '固定傷害顯示體力變化');
 const ordinary = resolveDamageTransition(40, 500, 127, 'true');
 assert.equal(ordinary.hp, 0); assert.equal(ordinary.alive, false);
 assert.equal(damagePresentationAmount('true', 127, ordinary.damageApplied), 127, '一般精靈超額真傷也保留原值，死亡判定不變');
@@ -75,6 +76,19 @@ assert.equal(white.length, 1);
 assert.equal(white[0].text, '-180', '白字保存兩筆原真傷，HP 凍結也不變成 -0');
 assert.equal(white[0].delta, -40);
 assert.equal(bounded.hp.get('p1:first'), 0, '播放 HP 不因原傷害數字低於 0');
+// 淨變化為 0 不播；技能擊倒不把延後紀錄插到前面
+const zero: any[] = [];
+const z = new BattlePresentation(() => { if (z.popups.length) zero.push(z.popups[0]); }, () => true);
+await z.record(event('fixed', -20, 100));
+await z.record(event('heal', 20, 80));
+await z.flush();
+assert.equal(zero.length, 0, '淨變化 0 不播放');
+await z.record(event('fixed', -20, 100));
+await z.record(event('skill', -80, 80, { effectiveness: '克制' }));
+assert.deepEqual(zero.map(e => [e.type, e.effectiveness]), [['skill', '克制']], '擊倒紅字先播，粉傷不插到前面');
+await z.flush();
+assert.equal(zero.length, 1, '已倒下的精靈不再播延後紀錄');
+assert.equal(z.hp.get('p1:first'), 0);
 console.log('動畫驗收：紅傷／吃藥即時、粉綠白分組、白傷總量、空段跳過、陣亡順序、身份隔離、卸載／重來清除通過。');
 
 // 額外行動：不論幾次，紅字播完後只多播一次合併紅字。

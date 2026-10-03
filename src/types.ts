@@ -206,6 +206,7 @@ export interface Elf {
   };
   isVanished?: boolean; // Flag to identify if the elf has vanished
   isExtra?: boolean; // 標示該精靈是否為額外/待命後備精靈 (Peak 模式 50 回合勝負判定時預設不計入)
+  summonerId?: string; // 額外精靈的召喚者 battleId（陣亡召喚者的延後效果由存活的額外精靈代為執行）
   badge?: string; // 精靈徽章圖示或標籤 (例如: ✨, 🦑, 👻)
   hasDiedTriggered?: boolean; // Flag for Brinkk revival
   battleStatus?: string; // e.g. 'normal', 'paralyzed', 'burned', 'disarmed', 'decayed', 'hypothermia', 'sluggish', etc.

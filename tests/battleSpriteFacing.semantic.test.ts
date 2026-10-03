@@ -94,4 +94,9 @@ test("source facing matches the user-confirmed P1 corrections", () => {
   assert.equal(shouldMirrorBattleSprite("無序.六刃", "p2", false, "/elf-art/wuxu_liuren_body.png"), true);
   assert.equal(shouldMirrorBattleSprite("無序.六刃", "p1", false, "/elf-art/wuxu_liuren_body.png"), false);
   for (const side of ["p1", "p2"] as const) assert.equal(shouldMirrorBattleSprite("未知精靈", side, false, "/elf-art/unknown_myth_ghost_body.png"), false);
+  // 幻域競技場暫用圖（使用者確認）：P1 鏡射、P2 原圖
+  for (const [n, id] of [["無為龍者", 4661], ["龍錄天鋒", 4903], ["無極聖武", 4800], ["命運龍輪 莫伊萊", 4275]] as const) {
+    assert.equal(shouldMirrorBattleSprite(n, "p1", false, `/seer/body/${id}.png`), true);
+    assert.equal(shouldMirrorBattleSprite(n, "p2", false, `/seer/body/${id}.png`), false);
+  }
 });

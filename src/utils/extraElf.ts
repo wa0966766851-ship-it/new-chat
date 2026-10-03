@@ -31,6 +31,8 @@ export function createExtraElf(baseElf: Elf, overrides: Partial<Elf> & { name: s
     id: uniqueId,
     battleId: uniqueId,
     isExtra: true,
+    // 召喚者（陣亡後的延後效果，例如斯嘉麗重生，由存活的額外精靈代為執行）
+    summonerId: String(baseElf.battleId || baseElf.id),
     skills: overrides.skills ?? [],
     statStages: overrides.statStages ?? { atk: 0, def: 0, spatk: 0, spdef: 0, speed: 0, accuracy: 0 },
     marks: overrides.marks ?? [],

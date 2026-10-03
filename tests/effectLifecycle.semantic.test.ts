@@ -7,7 +7,7 @@ import { parseElfBlueprint } from '../src/utils/elfBlueprint';
 import { ATOM_PARAMETER_FIELDS, validateAtomParams, validateKit } from '../src/effects/kitValidation';
 import { ATOMS, runNode, runTimerPayload } from '../src/effects/effectRunner';
 import { normalizeBlockAtom } from '../src/effects/blockParams';
-import { advanceStatusEffect } from '../src/battle/statusLifecycle';
+import { advanceStatusEffect, mergeSameStatus } from '../src/battle/statusLifecycle';
 import { StatusRegistry } from '../src/effects/statusRegistry';
 import { addStatusEffect, clearAllStatuses, getStatuses, removeStatusEffect } from '../src/utils/battleHelpers';
 import { applyStatuses } from '../src/utils/statusManager';
@@ -209,5 +209,11 @@ test('神話與BOSS免疫抵擋異常；已過期BOSS不抵擋；異常抵抗不
   }
   const e = elf(); e.battleStatuses = { 神話: 0 }; assert.equal(getStatuses(applyStatuses(e, [{ name: '麻痺', duration: 2 }] as any).elf)['麻痺'], 2);
   const resist = elf(); addStatusEffect(resist, '異常抵抗', 1); assert.equal(getStatuses(applyStatuses(resist, [{ name: '麻痺', duration: 2 }] as any).elf)['麻痺'], 2);
+});
+test('漸凍 1 回合當回合結束轉冰封 3 回合；同名異常合併、回合數相加', () => {
+  const t = advanceStatusEffect({ id: '漸凍', name: '漸凍', duration: 1, isLateMover: false, stacks: 1 } as any, {}, () => 0.5);
+  assert.equal(t.next, undefined); assert.equal(t.transformed?.id, '冰封'); assert.equal(t.transformed?.duration, 3);
+  const merged = mergeSameStatus([{ id: '冰封', duration: 2 }, { id: '中毒', duration: 1 }, { id: '冰封', duration: 3 }, { id: '冰封', duration: 3 }]);
+  assert.deepEqual(merged, [{ id: '冰封', duration: 8 }, { id: '中毒', duration: 1 }]);
 });
 console.log(`\n${passed} 項第五階段匯入／積木／狀態結算測試通過；分類與期限測試不代表每個狀態所有機制均通過。`);

@@ -24,7 +24,7 @@ export interface RelicDef {
     extraRewardChoice?: number;// 遺物獎勵多 n 選項
     revealMystery?: boolean;   // 看穿「？」節點
     potions?: number;          // 取得時藥劑 +n
-    maxTeam?: number;          // 隊伍上限 +n
+    lineupBonus?: number;      // 出戰與待命上限 +n（最多各 6）
     eliteRelicChoice?: number; // 精英遺物選項 +n
   };
 }
@@ -79,7 +79,7 @@ export const RELICS: RelicDef[] = [
   { id: "thousand_eyes", name: "千眼聖骸", rarity: "legendary", glyph: "瞳", desc: "攻擊傷害 +20%，對手每有 1 級能力提升再 +5%" },
   { id: "faceless_mask", name: "無面者面具", rarity: "legendary", glyph: "面", desc: "受到的非真實傷害 −30%；回合結束失去 3% 最大體力", lore: "你還記得自己的臉嗎？" },
   { id: "gaia_fist", name: "戰神之拳", rarity: "legendary", glyph: "拳", desc: "全隊攻擊 +250、防禦 −50", panel: { atk: 250, def: -50 } },
-  { id: "lantern_heart", name: "提燈者之心", rarity: "legendary", glyph: "燈", desc: "隊伍上限 +1；星爐修復 +50%", run: { maxTeam: 1, restHealMult: 1.5 } },
+  { id: "lantern_heart", name: "提燈者之心", rarity: "legendary", glyph: "燈", desc: "出戰與待命上限各 +1（最多各 6）；星爐修復 +50%", run: { lineupBonus: 1, restHealMult: 1.5 } },
 
   // ── 詛咒 ──
   { id: "curse_bone", name: "蝕骨詛咒", rarity: "cursed", glyph: "骨", desc: "回合結束失去 3% 最大體力" },
@@ -102,7 +102,7 @@ export const RARITY_LABEL: Record<RelicRarity, string> = { common: "普通", rar
 
 /** 依持有遺物彙整局內修正 */
 export function runMods(relics: readonly string[]) {
-  const mods = { beansMult: 1, shopMult: 1, eclipsePerMove: 0, restHealMult: 1, extraRewardChoice: 0, revealMystery: false, maxTeam: 6, eliteRelicChoice: 0 };
+  const mods = { beansMult: 1, shopMult: 1, eclipsePerMove: 0, restHealMult: 1, extraRewardChoice: 0, revealMystery: false, lineupBonus: 0, eliteRelicChoice: 0 };
   for (const id of relics) {
     const r = RELIC_BY_ID[id]?.run; if (!r) continue;
     if (r.beansMult) mods.beansMult += r.beansMult;
@@ -111,7 +111,7 @@ export function runMods(relics: readonly string[]) {
     if (r.restHealMult) mods.restHealMult *= r.restHealMult;
     if (r.extraRewardChoice) mods.extraRewardChoice += r.extraRewardChoice;
     if (r.revealMystery) mods.revealMystery = true;
-    if (r.maxTeam) mods.maxTeam += r.maxTeam;
+    if (r.lineupBonus) mods.lineupBonus += r.lineupBonus;
     if (r.eliteRelicChoice) mods.eliteRelicChoice += r.eliteRelicChoice;
   }
   mods.beansMult = Math.max(0, mods.beansMult);

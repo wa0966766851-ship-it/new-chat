@@ -82,7 +82,7 @@ export const CUSTOM: Record<string, CustomDef> = {
       const e: any = ctx.self;
       const effects = (e.effects || []).filter((x: any) => x.id !== s);
       ctx.updateElf(ctx.actor, { effects } as any);
-      ctx.applyStatusWithImmunityCheck(ctx.actor, "混亂", Number(st.event?.data?.duration || 2));
+      ctx.applyStatusWithImmunityCheck(ctx.actor, "混亂", Number(st.event?.data?.duration || 3));
       ctx.addLog(`🌀 【${e.name}】的【${s}】轉化為【混亂】！`, "status");
       return true;
     },

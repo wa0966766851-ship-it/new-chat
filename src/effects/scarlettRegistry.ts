@@ -122,6 +122,12 @@ export const handleScarlettSoulMark = (ctx: BattleEventContext, event: EffectTim
       }
 
       if (getPlayerState("scarlettReviveActive")) {
+        // 重生由珀妮（斯嘉麗攜帶的光系額外精靈）執行：珀妮不在或已倒下則無法重生
+        if (!isPuniAlive) {
+          setPlayerState("scarlettReviveActive", false);
+          addLog(`✨ 【聖光斯嘉麗】：珀妮已不在，重生中斷。`, "info");
+          break;
+        }
         const activeElf = actor === "p1" ? ctx.activeP1 : ctx.activeP2;
         const isMeActive = activeElf.id === self.id;
 
@@ -138,7 +144,7 @@ export const handleScarlettSoulMark = (ctx: BattleEventContext, event: EffectTim
               currentHp: origMaxHp,
               isVanished: false
             });
-            addLog(`✨ 【聖光斯嘉麗】：重生時間到！於背包內浴火重生，體力恢復至滿血！`, "effect");
+            addLog(`✨ 【珀妮】：重生時間到！斯嘉麗於背包內浴火重生，體力恢復至滿血！`, "effect");
             setPlayerState("scarlettReviveActive", false);
           } else {
             addLog(`✨ 【聖光斯嘉麗】：背包重生倒數剩餘 ${countdown} 回合。`, "info");
@@ -149,7 +155,8 @@ export const handleScarlettSoulMark = (ctx: BattleEventContext, event: EffectTim
     }
 
     case "CHECK_REBIRTH_PENDING":
-      return getPlayerState("scarlettReviveActive") && getPlayerState("scarlettReviveCountdown") === 1;
+      // 倒數中的斯嘉麗仍是陣亡狀態，不算存活；隊伍全滅即結束。
+      return false;
   }
 
   return false;

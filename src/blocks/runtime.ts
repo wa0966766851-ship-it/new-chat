@@ -40,6 +40,7 @@ const evalEventCond = (ctx: BattleEventContext, c: Cond, st: RunState) => {
   return (st.conditionSnapshots?.has(key) ? st.conditionSnapshots.get(key) : evalCond(ctx, c, st)) === true;
 };
 
+export const DEFAULT_STATUS_TURNS = 3; // 異常未特別定義回合數時預設 3 回合
 const STATUS_DURATION: Record<string, number> = { 中毒: 3, 燒傷: 3, 寄生: 3, 凍傷: 3, 衰弱: 3, 流血: 3 };
 const sideOf = (ctx: BattleEventContext, w: string): S => (w === "self" ? ctx.actor : ctx.targetSide);
 const elfOf = (ctx: BattleEventContext, side: S): any => (side === "p1" ? ctx.activeP1 : ctx.activeP2);
@@ -113,7 +114,7 @@ export function compMatchesKind(comp: any, kind?: string): boolean {
 type OpFn = (ctx: BattleEventContext, p: any, st: RunState) => boolean | void;
 
 function applyStatus(ctx: BattleEventContext, side: S, status: string, turns?: number): boolean {
-  const r = ctx.applyStatusWithImmunityCheck(side, status, turns ?? STATUS_DURATION[status] ?? 2);
+  const r = ctx.applyStatusWithImmunityCheck(side, status, turns ?? STATUS_DURATION[status] ?? DEFAULT_STATUS_TURNS);
   if (r.success) ctx.addLog(`💫 【${elfOf(ctx, side)?.name}】陷入了【${status}】！`, "status");
   return !!r.success;
 }

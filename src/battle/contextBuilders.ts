@@ -167,8 +167,10 @@ export function buildDamageAPIs(shared: SharedContextDeps): DamageAPIs {
 
       // 「X系技能傷害」以該屬性計算克制（未指定時用自身屬性）
       const elemType = opts?.elem || self.type;
+      let typeMultiplier: number | undefined;
       if (elemType && tOpp.type) {
         const typeMult = skillTypeMultiplier(c[`${side}RegistryState`], elemType, tOpp.type);
+        typeMultiplier = typeMult;
         baseVal = Math.floor(baseVal * typeMult);
       }
 
@@ -243,7 +245,7 @@ export function buildDamageAPIs(shared: SharedContextDeps): DamageAPIs {
       const stage3 = damageComp.limit !== undefined ? Math.min(stage2, damageComp.limit) : stage2;
       const finalDamage = Math.floor(damageComp.floor !== undefined ? Math.max(stage3, damageComp.floor) : Math.max(0, stage3));
 
-      pushEffect({ type: 'damage', side: tSide, data: { marksApplied: true, amount: finalDamage, label: label || "附加技能傷害", popup: true, sourceElfName: self.name, sourceSide:side, sourceBattleId:self.battleId||self.id, damageType: damageCategory, damageNode, typedSkill: damageCategory === "skill_attribute", ignoreShield: !!opts?.ignoreShield } });
+      pushEffect({ type: 'damage', side: tSide, data: { marksApplied: true, amount: finalDamage, label: label || "附加技能傷害", popup: true, sourceElfName: self.name, sourceSide:side, sourceBattleId:self.battleId||self.id, damageType: damageCategory, damageNode, typedSkill: damageCategory === "skill_attribute", ignoreShield: !!opts?.ignoreShield, typeMultiplier } });
       if (tSide !== side) queueSkillLifesteal(side, finalDamage, damageCategory, syncStateRef.current[`${side}RegistryState`], pushEffect);
       return finalDamage;
     },

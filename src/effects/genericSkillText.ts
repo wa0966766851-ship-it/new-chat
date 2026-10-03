@@ -35,6 +35,7 @@ const STAT_KEY: Record<string, string> = {
 const STAT_WORD = "(?:全屬性|攻擊|防禦|特攻|特防|速度|命中)";
 
 const STATUS_ALIAS: Record<string, string> = { 麻痹: "麻痺" };
+const DEFAULT_STATUS_TURNS = 3; // 異常未特別定義回合數時預設 3 回合
 const STATUS_DURATION: Record<string, number> = { 中毒: 3, 燒傷: 3, 寄生: 3, 凍傷: 3, 衰弱: 3 };
 
 // ---------- 條件判定 ----------
@@ -327,7 +328,7 @@ const RULES: Rule[] = [
       if (!isStatusStatus(status)) return false;
       st.lastTriggered = false;
       if (statusChanceBlocked(ctx, chance) || !chanceOf(ctx, "L308", chance)) return;
-      const res = ctx.applyStatusWithImmunityCheck(ctx.targetSide, status, STATUS_DURATION[status] ?? 2);
+      const res = ctx.applyStatusWithImmunityCheck(ctx.targetSide, status, STATUS_DURATION[status] ?? DEFAULT_STATUS_TURNS);
       st.lastTriggered = !!res.success;
       if (res.success) ctx.addLog(`💫 【異常狀態】：使對手陷入了【${status}】！`, "status");
     },
@@ -369,7 +370,7 @@ const RULES: Rule[] = [
       if (statusChanceBlocked(ctx, chance) || !chanceOf(ctx, "L348", chance)) return;
       for (const status of m[2].split("、")) {
         if (!isStatusStatus(status)) continue;
-        for (const side of [ctx.targetSide, ctx.actor] as Side[]) ctx.applyStatusWithImmunityCheck(side, status, STATUS_DURATION[status] ?? 2);
+        for (const side of [ctx.targetSide, ctx.actor] as Side[]) ctx.applyStatusWithImmunityCheck(side, status, STATUS_DURATION[status] ?? DEFAULT_STATUS_TURNS);
       }
       ctx.addLog(`💫 雙方陷入【${m[2]}】！`, "status");
     },
@@ -697,7 +698,7 @@ export function applyEffectDetail(ctx: BattleEventContext): boolean {
     if (m && DETAIL_STATUS[m[1].toLowerCase()]) {
       const status = DETAIL_STATUS[m[1].toLowerCase()];
       if (isStatusStatus(status) && !statusChanceBlocked(ctx, Number(m[2])) && chanceOf(ctx, "L633", Number(m[2]))) {
-        if (ctx.applyStatusWithImmunityCheck(ctx.targetSide, status, STATUS_DURATION[status] ?? 2).success) ctx.addLog(`💫 使對手陷入了【${status}】！`, "status");
+        if (ctx.applyStatusWithImmunityCheck(ctx.targetSide, status, STATUS_DURATION[status] ?? DEFAULT_STATUS_TURNS).success) ctx.addLog(`💫 使對手陷入了【${status}】！`, "status");
       }
       done = true; continue;
     }

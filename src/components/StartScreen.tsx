@@ -5,8 +5,6 @@ import { createPortal } from 'react-dom';
 import { Elf, BattleMode, Inscription } from "../types";
 import { SEER_TYPES, calculateElfStats, getDefaultEvs, getAttributeBadgeColor } from "../utils/statCalculator";
 import { ElfAvatar, TypeIcon } from "./SeerImages";
-import EvNaturePanel from "./EvNaturePanel";
-import { TypeMatchupPanel } from "./TypeMatchupPanel";
 import { isStoneThrower } from "../data/skillStones";
 import { formatEffectText } from "../utils/descFormat";
 import { getElfDisplayRank as getElfDestinyRank } from "../utils/elfDisplayRank";
@@ -17,14 +15,18 @@ import { TITLE_CATALOG } from "../data/titles";
 import { DEFAULT_ELVES } from "../data/defaultElves";
 import { GENERAL_TRAITS } from "../data/generalTraits";
 import { ALIEN_TRAITS } from "../data/alienTraits";
-import { InscriptionSlot, InscriptionModal } from "./InscriptionSystem";
+import { InscriptionSlot } from "./InscriptionSlot";
 import { motion, AnimatePresence } from "motion/react";
 import { Swords, Plus, Bot, User, Trash2, Crown, Sparkles, Check, HelpCircle, AlertCircle, Copy, Shuffle, Cpu, Edit3, Eye, Zap, MessageSquare, X, Search, Briefcase, Save, FolderOpen, Bookmark, CheckCircle2, Shield, RotateCcw, ShieldAlert, Flame, ArrowUp, ArrowDown, ArrowUpDown, ArrowLeftRight, Move, Layers, BookOpen, Disc, Dice5, ChevronRight, Rocket, Filter, ChevronUp, ChevronDown } from "lucide-react";
-import ResistancePanel from "./ResistancePanel";
 import { EffectBlockToggle } from './EffectBlockToggle';
+const EvNaturePanel = lazy(() => import("./EvNaturePanel"));
+const TypeMatchupPanel = lazy(() => import("./TypeMatchupPanel").then(m => ({ default: m.TypeMatchupPanel })));
+const ResistancePanel = lazy(() => import("./ResistancePanel"));
+const InscriptionModal = lazy(() => import("./InscriptionModal").then(m => ({ default: m.InscriptionModal })));
 const LazyBlockProgramView = lazy(() => import("./LazyBlockProgramView"));
 const EffectLibraryModal = lazy(() => import("./EffectLibraryModal").then(m => ({ default: m.EffectLibraryModal })));
 const detailLoading = <p role="status" className="p-3 text-sm text-slate-400">載入效果資料…</p>;
+const detailPanelLoading = <p role="status" className="ios-card min-h-24 p-4 text-sm text-slate-400">載入詳細面板…</p>;
 
 interface StartScreenProps {
   allElves?: Elf[];
@@ -2411,7 +2413,9 @@ export default function StartScreen({
                   </div>
                 </div>
 
-                <TypeMatchupPanel type={showDetailModal.type} />
+                <Suspense fallback={detailPanelLoading}>
+                  <TypeMatchupPanel type={showDetailModal.type} />
+                </Suspense>
 
                 {/* Stats & Nature */}
                 <div className="ios-card p-5 space-y-4">
@@ -2450,6 +2454,7 @@ export default function StartScreen({
                   </div>
                 </div>
 
+                <Suspense fallback={detailPanelLoading}>
                 <EvNaturePanel
                   baseStats={showDetailModal.baseStats}
                   ivs={showDetailModal.ivs}
@@ -2461,9 +2466,11 @@ export default function StartScreen({
                   onEvsChange={evs => updateTraining({ evs })}
                   onNatureChange={natureModifiers => updateTraining({ natureModifiers })}
                 />
+                </Suspense>
 
                 {/* Resistance Panel in Detail Modal */}
                 <div className="ios-card p-3">
+                  <Suspense fallback={detailPanelLoading}>
                   <ResistancePanel
                     resistances={showDetailModal.resistances}
                     readonly={!onUpdateElf}
@@ -2478,6 +2485,7 @@ export default function StartScreen({
                       }
                     }}
                   />
+                  </Suspense>
                 </div>
 
                   </div>
@@ -2981,12 +2989,19 @@ export default function StartScreen({
       </AnimatePresence>, document.body)}
 
       {editingModalInscIndex !== null && showDetailModal && (
+        <Suspense fallback={
+          <div role="status" className="fixed inset-0 z-[10030] bg-black/80 flex items-center justify-center text-slate-200">
+            載入刻印調校…
+            <button type="button" className="ml-4 ios-button" onClick={() => setEditingModalInscIndex(null)}>取消</button>
+          </div>
+        }>
         <InscriptionModal
           slotIndex={editingModalInscIndex}
           inscription={showDetailModal.inscriptions?.[editingModalInscIndex]}
           onSave={handleSaveModalInscription}
           onClose={() => setEditingModalInscIndex(null)}
         />
+        </Suspense>
       )}
 
       {/* AI Analysis Modal */}

@@ -1310,7 +1310,9 @@ export function BattleScreenUI(props: BattleScreenUIProps) {
     const elf = isP1 ? p1 : p2;
     if (!elf) return null;
     const isActing = props.activeSkillAnim?.side === side;
-    const isAttacking = isActing && props.activeSkillAnim?.category !== 'property';
+    // 額外行動紅字播放時，攻擊方也做一次出招動作
+    const extraStrike = (battle.floatingDamagePopups || props.floatingDamagePopups || []).some((p: any) => p.sourceSide === side && p.channel === 'extra');
+    const isAttacking = (isActing && props.activeSkillAnim?.category !== 'property') || extraStrike;
     const isShaking = props.consoleShake?.[side];
     const skillPopup = (battle.floatingDamagePopups || props.floatingDamagePopups || []).find((p: any) => p.sourceSide === side && p.skillName);
     const skillBanner: string | null = skillPopup?.skillName || (isActing ? props.activeSkillAnim?.skillName : null) || null;

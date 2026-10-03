@@ -39,7 +39,8 @@ export type Scene =
 export interface RunV2 {
   schemaVersion: 2; runId: string; revision: number; seed: number; nonce: number;
   act: number; map: ActMap; at: string | null; revealAct?: number;
-  team: Elf[]; relics: string[]; beans: number; shards: number; potions: number; eclipse: number;
+  /** 全部精靈（無上限）；lineup＝出戰、bench＝待命（合稱背包，各上限見 lineupSlots/benchSlots），其餘在倉庫 */
+  team: Elf[]; lineup?: string[]; bench?: string[]; relics: string[]; beans: number; shards: number; potions: number; eclipse: number;
   equipType: "suit" | "title"; equipId: string; modifiers: string[];
   scene: Scene; pendingBattle: null | { id: string; nodeId: string | null; encounter: Encounter };
   exp: number; stats: { fights: number; elites: number; bosses: number; steps: number };
@@ -115,6 +116,95 @@ function panelFor(run: RunV2, elf: Elf) {
 export function snapshotElf(run: RunV2, elf: Elf): Elf {
   return { ...buildExplorationSnapshot(elf, elf.baseStats, run.equipType === "suit" ? run.equipId : undefined, run.equipType === "title" ? run.equipId : undefined, panelFor(run, elf)), explorationVitals: true } as Elf;
 }
+/* ───────── 背包（出戰＋待命）與倉庫 ───────── */
+const bid = (e: Elf) => String(e.battleId || e.id);
+/** 出戰上限：第 1 章 3 隻，每章 +1，最多 6；提燈者之心等遺物再 +1（仍以 6 為上限）。 */
+export function lineupSlots(run: RunV2): number {
+  return Math.min(6, 3 + (run.act - 1) + mods(run).lineupBonus);
+}
+/** 待命上限與出戰同步成長（背包 6 → 12，同首頁 6 出戰＋6 待命）。 */
+export const benchSlots = (run: RunV2) => lineupSlots(run);
+/** 實際出戰名單：依 lineup 順序取存在於隊伍的精靈；舊存檔無名單時以隊伍順序的存活者補滿。 */
+export function lineupOf(run: RunV2): Elf[] {
+  const slots = lineupSlots(run);
+  const byId = new Map(run.team.map(e => [bid(e), e]));
+  const picked = (run.lineup ?? []).map(id => byId.get(id)).filter(Boolean) as Elf[];
+  const out = picked.slice(0, slots);
+  if (out.length < slots) for (const e of run.team) { if (out.length >= slots) break; if (!out.includes(e) && isAlive(e) && picked.length === 0) out.push(e); }
+  return out;
+}
+/** 待命：bench 順序；舊存檔無 bench 時以隊伍順序補滿。 */
+export function benchOf(run: RunV2): Elf[] {
+  const slots = benchSlots(run);
+  const lu = lineupOf(run);
+  const byId = new Map(run.team.map(e => [bid(e), e]));
+  const src = run.bench ? run.bench.map(id => byId.get(id)).filter(Boolean) as Elf[] : run.team;
+  return src.filter(e => !lu.includes(e)).slice(0, slots);
+}
+/** 倉庫：不在背包內的其餘精靈（無上限）。 */
+export function storageOf(run: RunV2): Elf[] {
+  const bag = new Set([...lineupOf(run), ...benchOf(run)]);
+  return run.team.filter(e => !bag.has(e));
+}
+export const inLineup = (run: RunV2, e: Elf) => lineupOf(run).includes(e);
+const canEditBag = (run: RunV2) => run.scene.kind === "map" || run.scene.kind === "prelude";
+function withBag(run: RunV2, lineup: string[], bench: string[]): RunV2 {
+  const ls = new Set(lineup);
+  return { ...run, lineup, bench: bench.filter(x => !ls.has(x)).slice(0, benchSlots(run)) };
+}
+/** 出戰 ↔ 待命（滿則下場者改入倉庫；地圖與迎戰前可調整） */
+export function toggleLineup(run: RunV2, idx: number): RunV2 {
+  if (!canEditBag(run)) return run;
+  const e = run.team[idx]; if (!e) return run;
+  const cur = lineupOf(run).map(bid), bench = benchOf(run).map(bid);
+  const id = bid(e);
+  if (cur.includes(id)) { if (cur.length <= 1) return run; return withBag(run, cur.filter(x => x !== id), [id, ...bench]); }
+  if (cur.length >= lineupSlots(run)) return run;
+  if (!bench.includes(id) && run.scene.kind !== "map") return run; // 倉庫只在地圖上取用
+  return withBag(run, [...cur, id], bench.filter(x => x !== id));
+}
+/** 待命 ↔ 倉庫（只在地圖上） */
+export function toggleStorage(run: RunV2, idx: number): RunV2 {
+  if (run.scene.kind !== "map") return run;
+  const e = run.team[idx]; if (!e) return run;
+  const id = bid(e), cur = lineupOf(run).map(bid), bench = benchOf(run).map(bid);
+  if (cur.includes(id)) return run;
+  if (bench.includes(id)) return { ...run, lineup: cur, bench: bench.filter(x => x !== id) };
+  if (bench.length >= benchSlots(run)) return run;
+  return withBag(run, cur, [...bench, id]);
+}
+/** 設為首發：移到出戰名單最前（滿員則最後一位退回待命） */
+export function setStarter(run: RunV2, idx: number): RunV2 {
+  if (!canEditBag(run)) return run;
+  const e = run.team[idx]; if (!e || !isAlive(e)) return run;
+  const id = bid(e);
+  const bench = benchOf(run).map(bid);
+  if (!lineupOf(run).includes(e) && !bench.includes(id) && run.scene.kind !== "map") return run;
+  let cur = lineupOf(run).map(bid).filter(x => x !== id);
+  let out: string[] = [];
+  if (cur.length >= lineupSlots(run)) { out = cur.slice(lineupSlots(run) - 1); cur = cur.slice(0, lineupSlots(run) - 1); }
+  return withBag(run, [id, ...cur], [...out, ...bench.filter(x => x !== id)]);
+}
+/** 補位：出戰→待命依序由待命、倉庫補滿 */
+function refillBag(run: RunV2): RunV2 {
+  const cur = lineupOf(run).map(bid); let bench = benchOf(run).map(bid);
+  while (cur.length < lineupSlots(run) && bench.length) cur.push(bench.shift()!);
+  const used = new Set([...cur, ...bench]);
+  for (const e of run.team) { if (cur.length >= lineupSlots(run)) break; if (!used.has(bid(e)) && isAlive(e)) { cur.push(bid(e)); used.add(bid(e)); } }
+  for (const e of run.team) { if (bench.length >= benchSlots(run)) break; if (!used.has(bid(e))) { bench.push(bid(e)); used.add(bid(e)); } }
+  return { ...run, lineup: cur, bench };
+}
+/** 新成員：出戰有空位→出戰；待命有空位→待命；否則送入倉庫 */
+function autoJoin(run: RunV2, e: Elf): RunV2 {
+  const cur = lineupOf(run).map(bid), bench = benchOf(run).map(bid);
+  if (cur.length < lineupSlots(run)) return { ...run, lineup: [...cur, bid(e)], bench };
+  if (bench.length < benchSlots(run)) return { ...run, lineup: cur, bench: [...bench, bid(e)] };
+  return { ...run, lineup: cur, bench };
+}
+export function bagPlace(run: RunV2, e: Elf): "lineup" | "bench" | "storage" {
+  return lineupOf(run).includes(e) ? "lineup" : benchOf(run).includes(e) ? "bench" : "storage";
+}
+
 /** 遺物或淬鍊改變面板後同步隊伍體力上限（保留已損失量）。 */
 function syncTeam(run: RunV2): RunV2 { return { ...run, team: run.team.map(e => snapshotElf(run, e)) }; }
 
@@ -127,7 +217,7 @@ export function toggleDraft(run: RunV2, id: string): RunV2 {
 export function confirmDraft(run: RunV2, pool: Elf[]): RunV2 {
   if (run.scene.kind !== "draft" || run.scene.picks.length !== 3) return run;
   const team = run.scene.picks.map((id, i) => ({ ...findElf(pool, id)!, battleId: `run-${run.seed}-${i}-${id}` })).filter(e => e.id !== undefined) as Elf[];
-  return syncTeam(log({ ...run, team, scene: { kind: "map" } }, `持燈者：${team.map(e => e.name).join("、")}。`));
+  return syncTeam(log({ ...run, team, lineup: team.map(bid), bench: [], scene: { kind: "map" } }, `持燈者：${team.map(e => e.name).join("、")}。`));
 }
 
 /* ───────── 地圖移動 ───────── */
@@ -231,10 +321,10 @@ export const enemyAffixRelics = (enc: Encounter) => [...new Set(enc.enemies.flat
 export function startBattle(run: RunV2, pool: Elf[], battleId: string): { run: RunV2; p1: Elf[]; p2: Elf[]; relics: string[]; enemyRelics: string[] } | null {
   if (run.scene.kind !== "prelude") return null;
   const enc = run.scene.encounter;
-  const p1 = run.team.map(e => snapshotElf(run, e)).map(e => run.relics.includes("void_shield_gen") ? { ...e, shield: (e.shield || 0) + 500 } : e);
-  if (!p1.some(isAlive)) return null;
-  // 已陣亡者排在後面，首發為第一隻存活者
-  const ordered = [...p1.filter(isAlive), ...p1.filter(e => !isAlive(e))];
+  // 只派出出戰名單中的存活者（名單順序＝出場順序）
+  const p1 = lineupOf(run).filter(isAlive).map(e => snapshotElf(run, e)).map(e => run.relics.includes("void_shield_gen") ? { ...e, shield: (e.shield || 0) + 500 } : e);
+  if (!p1.length) return null;
+  const ordered = p1;
   const p2 = buildEnemies(enc, pool, enemyHpFloor(run, enc));
   const relics = run.relics.map(id => id === "eclipse_crown" ? `eclipse_crown:${run.eclipse}` : id);
   return { run: { ...run, pendingBattle: { id: battleId, nodeId: run.at, encounter: enc } }, p1: ordered, p2, relics, enemyRelics: enemyAffixRelics(enc) };
@@ -316,13 +406,13 @@ export function takeRewardRecruit(run: RunV2, id: string, pool: Elf[], replaceId
   const next = addMember(run, id, pool, replaceIdx); if (next === run) return run;
   return { ...next, scene: { ...run.scene, reward: { ...run.scene.reward, recruitTaken: id } } };
 }
-function addMember(run: RunV2, id: string, pool: Elf[], replaceIdx: number): RunV2 {
+/** 隊伍沒有上限；出戰名單有空位就自動上場，否則待命。（replaceIdx 保留舊參數相容，不再使用） */
+function addMember(run: RunV2, id: string, pool: Elf[], _replaceIdx = -1): RunV2 {
   const base = findElf(pool, id); if (!base) return run;
-  const max = mods(run).maxTeam;
   const elf = snapshotElf(run, { ...base, battleId: `run-${run.seed}-${run.nonce}-${id}` } as Elf);
-  const team = [...run.team];
-  if (replaceIdx >= 0 && replaceIdx < team.length) team[replaceIdx] = elf; else if (team.length < max) team.push(elf); else return run;
-  return log({ ...run, team, nonce: run.nonce + 1 }, `【${base.name}】加入了隊伍。`);
+  const joined = autoJoin({ ...run, team: [...run.team, elf] }, elf);
+  const place = bagPlace(joined, elf);
+  return log({ ...joined, nonce: run.nonce + 1 }, `【${base.name}】加入了隊伍${place === "bench" ? "（待命）" : place === "storage" ? "（背包已滿，送入倉庫）" : ""}。`);
 }
 /** 離開獎勵：首領之後進入下一章（全隊回復、陣亡者以 50% 復甦） */
 export function leaveReward(run: RunV2, pool: Elf[]): RunV2 {
@@ -336,7 +426,9 @@ function advanceAct(run: RunV2, _pool: Elf[]): RunV2 {
   const [map, nonce] = withDice(run, d => generateActMap(act, d));
   const team = run.team.map(e => ({ ...e, currentHp: isAlive(e) ? e.maxHp : Math.floor(e.maxHp * .5), skills: e.skills.map(s => ({ ...s, pp: s.maxPp ?? s.pp })) }) as Elf);
   const potions = Math.max(run.potions, 3) + (run.relics.includes("apothecary_lamp") ? 2 : 0);
-  return log(prerollMysteries({ ...run, act, map, nonce, at: map.nodes.find(n => n.col === 0)!.id, team, potions, eclipse: Math.max(0, run.eclipse - 15), scene: { kind: "map", note: `第 ${act} 章：${ACTS[act - 1]?.name}` } }), `進入【${ACTS[act - 1]?.name}】。`);
+  const next = prerollMysteries({ ...run, act, map, nonce, at: map.nodes.find(n => n.col === 0)!.id, team, potions, eclipse: Math.max(0, run.eclipse - 15), scene: { kind: "map", note: `第 ${act} 章：${ACTS[act - 1]?.name}・背包 ${Math.min(6, 3 + (act - 1) + mods(run).lineupBonus)} 出戰＋${Math.min(6, 3 + (act - 1) + mods(run).lineupBonus)} 待命` } });
+  // 出戰上限提高：以待命中的夥伴依序補上空位
+  return log(refillBag(next), `進入【${ACTS[act - 1]?.name}】。`);
 }
 
 /* ───────── 事件 ───────── */
@@ -415,8 +507,9 @@ export function restAction(run: RunV2, action: "mend" | "revive" | "temper", tar
   const m = mods(run);
   if (action === "mend") {
     const p = .35 * m.restHealMult;
-    const team = run.team.map(e => isAlive(e) ? { ...e, currentHp: Math.min(e.maxHp, e.currentHp + Math.floor(e.maxHp * p)), skills: e.skills.map(s => ({ ...s, pp: s.maxPp ?? s.pp })) } as Elf : e);
-    return { ...run, team, potions: run.potions + 1, scene: { kind: "rest", done: `火光裡，傷口合上了。全隊恢復 ${Math.round(p * 100)}% 體力，技能 PP 回滿，藥劑 +1。` } };
+    const bag = new Set([...lineupOf(run), ...benchOf(run)]);
+    const team = run.team.map(e => bag.has(e) && isAlive(e) ? { ...e, currentHp: Math.min(e.maxHp, e.currentHp + Math.floor(e.maxHp * p)), skills: e.skills.map(s => ({ ...s, pp: s.maxPp ?? s.pp })) } as Elf : e);
+    return { ...run, team, potions: run.potions + 1, scene: { kind: "rest", done: `火光裡，傷口合上了。背包精靈恢復 ${Math.round(p * 100)}% 體力，技能 PP 回滿，藥劑 +1。` } };
   }
   if (action === "revive") {
     const t = run.team[targetIdx]; if (!t || isAlive(t)) return run;
