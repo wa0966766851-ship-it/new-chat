@@ -2,6 +2,12 @@ const { app, BrowserWindow, dialog } = require("electron");
 const { fork } = require("node:child_process");
 const path = require("node:path");
 const http = require("node:http");
+const { waitForOwnServer } = require("./serverProcess.cjs");
+
+// An explicit profile directory lets release smoke tests avoid real player saves.
+if (process.env.SEER_USER_DATA_DIR) {
+  app.setPath("userData", path.resolve(process.env.SEER_USER_DATA_DIR));
+}
 
 const PORT = Number(process.env.SEER_PORT || 3000);
 let serverProcess;
@@ -13,32 +19,13 @@ function serverScriptPath() {
     : path.join(__dirname, "..", "dist", "server.cjs");
 }
 
-function waitForServer(url, timeoutMs = 15000) {
-  const startedAt = Date.now();
-  return new Promise((resolve, reject) => {
-    const check = () => {
-      const req = http.get(url, (res) => {
-        res.resume();
-        if (res.statusCode && res.statusCode < 500) return resolve();
-        retry();
-      });
-      req.on("error", retry);
-      req.setTimeout(1000, () => { req.destroy(); retry(); });
-    };
-    const retry = () => {
-      if (Date.now() - startedAt > timeoutMs) return reject(new Error("本機伺服器啟動逾時"));
-      setTimeout(check, 250);
-    };
-    check();
-  });
-}
-
 async function startServer() {
   const cwd = app.isPackaged ? process.resourcesPath : path.join(__dirname, "..");
   serverProcess = fork(serverScriptPath(), [], {
     cwd,
     silent: true,
-    env: { ...process.env, NODE_ENV: "production", PORT: String(PORT), ELECTRON_RUN_AS_NODE: "1" },
+    env: { ...process.env, NODE_ENV: "production", PORT: String(PORT), ELECTRON_RUN_AS_NODE: "1",
+      SEER_HOST: "127.0.0.1", SEER_CACHE_DIR: path.join(app.getPath("userData"), "seer-cache") },
     execPath: process.execPath,
   });
   serverProcess.stderr?.on("data", (data) => console.error(`[server] ${data}`));
@@ -47,11 +34,22 @@ async function startServer() {
       dialog.showErrorBox("對戰模擬器", `本機伺服器已停止（代碼 ${code}）。`);
     }
   });
-  await waitForServer(`http://127.0.0.1:${PORT}/api/ai-status`);
+  // Wait for THIS child's ready message, not any development server on PORT.
+  const port = await waitForOwnServer(serverProcess);
+  const url = `http://127.0.0.1:${port}`;
+  await new Promise((resolve, reject) => {
+    const req = http.get(`${url}/api/ai-status`, (res) => {
+      res.resume();
+      res.statusCode === 200 ? resolve() : reject(new Error("本機伺服器健康檢查失敗"));
+    });
+    req.on("error", reject);
+    req.setTimeout(5000, () => req.destroy(new Error("健康檢查逾時")));
+  });
+  return url;
 }
 
 async function createWindow() {
-  await startServer();
+  const url = await startServer();
   mainWindow = new BrowserWindow({
     width: 1440,
     height: 960,
@@ -65,12 +63,21 @@ async function createWindow() {
       sandbox: true,
     },
   });
-  await mainWindow.loadURL(`http://127.0.0.1:${PORT}`);
+  await mainWindow.loadURL(url);
+  console.log(`Desktop ready: ${url}`);
 }
 
-app.whenReady().then(() => createWindow()).catch((error) => {
+const hasLock = app.requestSingleInstanceLock();
+if (!hasLock) app.quit();
+else app.whenReady().then(() => createWindow()).catch((error) => {
   dialog.showErrorBox("對戰模擬器無法啟動", error.message);
   app.quit();
+});
+app.on("second-instance", () => {
+  if (mainWindow && !mainWindow.isDestroyed()) {
+    if (mainWindow.isMinimized()) mainWindow.restore();
+    mainWindow.focus();
+  }
 });
 
 app.on("window-all-closed", () => app.quit());

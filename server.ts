@@ -453,7 +453,7 @@ app.get("/seer/:kind/:file", async (req, res) => {
   }
   if (!["head", "body", "type", "abnormal", "buff", "card"].includes(kind) || !(/^\d+\.png$/.test(file) || (kind === "type" && file === "prop.png"))) { res.status(404).end(); return; }
   // 官方資源優先（public/seer → 快取 → 遠端）；使用者 pet/ 資料夾僅在官方取不到時使用（舊版編號可能對不上）
-  const cacheFile = path.join(root, ".seer-cache", kind, file);
+  const cacheFile = path.join(process.env.SEER_CACHE_DIR || path.join(root, ".seer-cache"), kind, file);
   for (const p of [path.join(root, "public", "seer", kind, file), cacheFile]) if (isPng(p)) return send(p);
   const userPet = kind === "head" ? path.join(root, "pet", file) : "";
   const key = `${kind}/${file}`;
@@ -491,7 +491,7 @@ async function startServer() {
   const maxTries = 20;
   const listenOnce = (port: number): Promise<number> =>
     new Promise((resolve, reject) => {
-      const server = app.listen(port, "0.0.0.0", () => {
+      const server = app.listen(port, process.env.SEER_HOST || "0.0.0.0", () => {
         console.log(`Server running on http://localhost:${port}`);
         resolve(port);
       });

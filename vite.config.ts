@@ -75,7 +75,7 @@ export default defineConfig(() => {
       // Disable file watching when DISABLE_HMR is true to save CPU during agent edits.
       watch: process.env.DISABLE_HMR === 'true' ? null : {
         // 驗收報告、截圖與封裝產物不應造成正在編輯的頁面被整頁重載。
-        ignored: ['**/docs/**', '**/release/**', '**/releases/**', '**/dist/**', '**/_備份*/**'],
+        ignored: ['**/docs/**', '**/release/**', '**/releases/**', '**/dist/**', '**/build/**', '**/dist-electron/**', '**/.seer-cache/**', '**/_備份*/**'],
       },
     },
   };

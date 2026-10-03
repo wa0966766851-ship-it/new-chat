@@ -2,9 +2,11 @@ appId: com.seer.battle.simulator
 productName: 賽爾對戰模擬器
 artifactName: 賽爾對戰模擬器-${version}-${os}-${arch}.${ext}
 directories:
+  app: build/electron-app
   output: dist-electron
 asar: true
-npmRebuild: false
+compression: maximum
+beforeBuild: electron/beforeBuild.cjs
 files:
   - electron/**/*
   - package.json
@@ -28,7 +30,7 @@ win:
     - nsis
     - portable
 nsis:
-  oneClick: true
+  oneClick: false
   perMachine: false
   allowToChangeInstallationDirectory: true
 portable:
