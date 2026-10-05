@@ -15,6 +15,8 @@ export const SKILL_MODE: Record<string, "blocks" | number[]> = {
   // 5007 混濁海妖·布林克克（深潛者盛宴已積木化；其餘 4 技走舊 BRINKK_SKILLS handler，維持 handler，不登記）
   "深潛者盛宴": "blocks",
   // 5011 星光·麗莎布布（技能 25/25 全解析，無專屬 handler，本來就走積木；此處明確登記鎖定）
+  // 5014 聖光斯嘉麗：主效果走 SCARLETT_SKILLS 專屬 handler；「技能無效時」子句（含未命中）改由積木執行
+  "純白聖翎": [3], "暮光舞動": [5],
   "星光·究極吸取": "blocks", "星光·光合作用": "blocks", "星光·花草能量": "blocks", "星光·飛葉風暴": "blocks", "星光·金光綠葉": "blocks",
 };
 export const SOUL_MODE: Record<string, "blocks" | number[]> = {

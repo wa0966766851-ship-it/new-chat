@@ -1,3 +1,4 @@
+import { addDamageReduction, multiplyDamageReduction, reductionPolicy } from './damageReduction';
 import { damageScopeLabel } from '../effects/damageChoices';
 import { applyActionDamageModifiers } from './actionDamageModifiers';
 import type { BattleState, EffectItem } from '../components/BattleManager';
@@ -7,6 +8,7 @@ import { matchesEffectConditions } from '../effects/effectConditions';
 import { normalizeBlockAtom, type RunnableAtom } from '../effects/blockParams';
 import { getStatuses } from '../utils/battleHelpers';
 import { getScaledParam } from './timers';
+import { activeConstraints } from './timedConstraints';
 
 type Side = 'p1' | 'p2';
 type ActionOrder = { side: Side; moveIndex?: number };
@@ -32,6 +34,7 @@ export function applyActiveGateTimersToDamage(
 ): void {
   if (damageComp.pure) return;
   const state = syncStateRef.current;
+  damageComp.reductionPolicy ??= reductionPolicy(state, targetSide, state[targetSide], damageComp.damageCategory);
   applyActionDamageModifiers(state[`${actorSide}RegistryState`], damageComp);
   for (const owner of new Set([actorSide, targetSide])) {
     const self = state[owner];
@@ -48,6 +51,9 @@ export function applyActiveGateTimersToDamage(
       if (typeof p.damageIncreasePercent === 'number' && owner === actorSide && matchesDamageTypes(p.damageTypes, damageComp.damageCategory)) {
         damageComp.increasePercent += p.damageIncreasePercent;
       }
+      if (typeof p.damageTakenIncreasePercent === 'number' && owner === targetSide && matchesDamageTypes(p.damageTypes, damageComp.damageCategory)) {
+        damageComp.increasePercent += p.damageTakenIncreasePercent;
+      }
       const items = Array.isArray(p.wrapItems) ? p.wrapItems :
         (Array.isArray(p.wraps) ? p.wraps : [p.wraps]).map(atom => ({ atom, params: p.params || {} }));
       visitModifiers(items, ctx, atom => {
@@ -56,12 +62,13 @@ export function applyActiveGateTimersToDamage(
         if (!matchesDamageTypes(params.damageTypes, damageComp.damageCategory)) return;
         const scaled = { ...timer, payload: { ...p, params } };
         if (atom.atom === 'damage_reduce' && subject === targetSide && damageComp.damageCategory !== 'true') {
-          const value = getScaledParam(scaled, 'percent', params.amount ?? 50);
-          damageComp.decreasePercent = (damageComp.decreasePercent ?? 0) + value / 100;
+          const raw = getScaledParam(scaled, 'percent', params.amount ?? 50);
+          const value = addDamageReduction(damageComp, raw / 100, true, `gate:${owner}:${timer.id}`) * 100;
           pushEffect({ type: 'log', side: subject, data: { text: `🛡️ 【${timer.name}】：${params.damageTypes?.map(damageScopeLabel).join("／") || "傷害（舊範圍待核對）"}減少 ${value}%！`, type: 'effect' } });
         } else if (atom.atom === 'damage_multiplier' && subject === actorSide) {
-          const value = getScaledParam(scaled, 'multiplier', params.value ?? 1.5);
-          damageComp.multiplier = (damageComp.multiplier ?? 1) * value;
+          const rawValue = getScaledParam(scaled, 'multiplier', params.value ?? 1.5);
+          const value = rawValue < 1 ? 1 - multiplyDamageReduction(damageComp, rawValue, false) : rawValue;
+          if (rawValue >= 1) damageComp.multiplier = (damageComp.multiplier ?? 1) * value;
           pushEffect({ type: 'log', side: subject, data: { text: `🔥 【${timer.name}】：${params.damageTypes?.map(damageScopeLabel).join("／") || "傷害（舊範圍待核對）"}乘以 ${value} 倍！`, type: 'effect' } });
         }
       });

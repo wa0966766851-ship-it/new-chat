@@ -84,6 +84,16 @@ test("個體回合/次數計時器不傳下一隻，陣營鎖切仍保留", () =
   const back = switchBattleSide(next, "p1", 0);
   assert.deepEqual(back.p1Timers.map((t: any) => t.id).sort(), ["charges", "lock"]);
 });
+for (const side of ['p1', 'p2'] as const) test(`${side}明確個體鎖切優先於舊陣營預設，強制换人後不串位`, () => {
+  let state = fixture();
+  state = addScopedTimer(state, side, state[side], timer('personal-lock', 'turn_effect',
+    { scope: 'elf', persistsOffField: false, payload: { lockSwitch: true } }));
+  assert.equal(state[`${side}Timers`][0].ownerBattleId, state[side].battleId);
+  assert.equal(state[`${side}Timers`][0].scope, 'elf');
+  const next = battleReducer(state, { type: 'FORCED_SWITCH', side, index: 1, newElf: state[`${side}Team`][1] });
+  assert.equal(next[`${side}Timers`].length, 0);
+  assert.equal(switchBattleSide(next, side, 0)[`${side}Timers`].length, 0, '回場不復活已清的鎖切');
+});
 test("板凳新增計時器只能寫進自己的銀行，不覆蓋在場者", () => {
   const state = fixture();
   const next = addScopedTimer(state, "p1", state.p1Team[1], timer("bench"));

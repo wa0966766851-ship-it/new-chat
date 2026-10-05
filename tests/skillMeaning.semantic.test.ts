@@ -18,7 +18,7 @@ function setup(side: 'p1' | 'p2', skillName: string) {
   target.battleId = 'foe'; target.maxHp = 1200; target.currentHp = 1000; target.statStages = { atk: 2, def: 2 };
   const other = side === 'p1' ? 'p2' : 'p1';
   const state: any = { cthyaatInitialized: true }, oppState: any = {};
-  const timers: any[] = [], oppTimers: any[] = [], damages: any[] = [], absorbs: any[] = [];
+  const timers: any[] = [], oppTimers: any[] = [], damages: any[] = [], absorbs: any[] = [], heals: any[] = [];
   let immune = false;
   const ctx: any = { self, target, actor: side, targetSide: other, skill: self.skills.find((s: any) => s.name === skillName), moveIndex: 0,
     activeP1: side === 'p1' ? self : target, activeP2: side === 'p2' ? self : target,
@@ -29,6 +29,8 @@ function setup(side: 'p1' | 'p2', skillName: string) {
     updateAnyElf: (s: string, id: string, patch: any) => Object.assign(s === side ? self : target, patch),
     applyStatChange: (s: string, values: any) => { const e = s === side ? self : target; e.statStages ||= {}; for (const [k,v] of Object.entries(values)) e.statStages[k] = (e.statStages[k] || 0) + Number(v); },
     applyTrueDamage: (s: string, amount: number, label: string) => { damages.push({ s, amount, label }); return amount; },
+    applyPinkDamage: (s: string, amount: number, label: string, _p1: any, _p2: any, kind: string) => { damages.push({ s, amount, label, kind }); return amount; },
+    applyHeal: (s: string, amount: number) => heals.push({ s, amount }),
     applyAbsorb: (s: string, amount: number, label: string) => absorbs.push({ s, amount, label }),
     getStatuses: (e: any) => e.battleStatuses || {},
     applyStatusWithImmunityCheck: (s: string, name: string, turns: number) => { if (immune) return { success: false, immune: true }; const e = s === side ? self : target; e.battleStatuses ||= {}; e.battleStatuses[name] = turns; return { success: true, immune: false }; },
@@ -36,7 +38,7 @@ function setup(side: 'p1' | 'p2', skillName: string) {
     consumeTimer: (s: string, id: string) => { const list = s === side ? timers : oppTimers; const i = list.findIndex(x => x.id === id); if (i >= 0) list.splice(i, 1); },
     clearTurnEffectsOf: () => false,
   };
-  return { ctx, self, target, state, oppState, timers, oppTimers, damages, absorbs, immune: (v: boolean) => immune = v };
+  return { ctx, self, target, state, oppState, timers, oppTimers, damages, absorbs, heals, immune: (v: boolean) => immune = v };
 }
 for (const side of ['p1', 'p2'] as const) {
   const h = setup(side, '溺咒之握');
@@ -59,7 +61,10 @@ for (const side of ['p1', 'p2'] as const) {
   assert.equal(d.timers.some(t => t.id === 'brinkk_freeze_pending'), false, '首次成功附加漸凍不能誤走已有分枝');
   assert.equal(d.absorbs[0].amount, 250);
   d.self.currentHp = 100; handleBrinkkSoulMark(d.ctx, EffectTiming.BEFORE_ACTION);
-  assert.equal(d.absorbs.at(-1).amount, 800, '自身低血吸取翻倍');
+    assert.equal(d.damages.at(-1).amount, 800, '自身低血吸取翻倍');
+    assert.equal(d.damages.at(-1).kind, 'percent', '持續吸取是百分比傷害，不是真傷');
+    assert.equal(d.heals.at(-1).amount, 800, '按百分比傷害結算值恢復');
+    assert.equal(d.absorbs.length, 1, '立即汲取仍為真傷，持續吸取不走舊API');
   handleBrinkkSoulMark(d.ctx, EffectTiming.OPPONENT_DAMAGE, { hpReduced: 0, label: '深海働哭·持續吸取' });
   assert.equal(d.damages.at(-1).amount, 300);
   assert.equal(clearTurnEffects(d.timers)[0].length, 0, '持續效果可清除');
@@ -84,8 +89,10 @@ for (const side of ['p1', 'p2'] as const) {
   assert.deepEqual(f.self.statStages, { atk: -2, speed: -1, accuracy: -1 });
   assert.equal(isZeroPpExempt(f.self, { ...f.ctx.skill, pp: 0 }), true); assert.equal(isPpCostFree(f.self, f.ctx.skill), false);
   runSkillProgram(f.ctx, parseSkill(f.ctx.skill.name, f.ctx.skill.description), 'use');
-  assert.deepEqual(f.absorbs.map(x => x.amount), [40,40,40,40,40,300], '每次吸取独立；双方5种变化');
-  assert.ok(f.timers.some(t => t.id === 'brinkk_feast_damage'));
+  assert.deepEqual(f.damages.map(x => [x.kind, x.amount]), [['fixed',40],['fixed',40],['fixed',40],['fixed',40],['fixed',40],['fixed',300]], '每次吸取獨立固定傷害；雙方5種變化');
+  assert.deepEqual(f.heals.map(x => x.amount), [40,40,40,40,40,300], '各筆依結算值提出等量恢復');
+  assert.equal(f.absorbs.length, 0, '不再使用舊的真傷吸取API');
+  assert.ok(f.timers.some(t => t.id === `blk_${side}_brinkk_feast_damage`));
 
   const extra = setup(side, '不淨者之約');
   extra.state.cthyaatInitialized = false;

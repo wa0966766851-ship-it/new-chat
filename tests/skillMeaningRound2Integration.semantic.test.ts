@@ -24,7 +24,7 @@ try {
     const hits:any[]=[];let rolled=0,reborn=false;
     const skills=getBattleSkillRegistry(), souls=getSoulMarkRegistry();
     skills['星光·浪打千擊']=(ctx:any)=>STARLIGHT_RUS_SKILLS['星光·浪打千擊']({...ctx,rng:()=>scenario==='ten'?0.999:0});
-    souls['逐擊觀測者']=(ctx:any,event:string,data:any)=>{
+    souls['連擊附帶次數觀測者']=(ctx:any,event:string,data:any)=>{
       if(event==='AFTER_ATTACK_HIT'){
         rolled++;
       }
@@ -32,13 +32,13 @@ try {
     souls['受擊觀測者']=(ctx:any,event:string,data:any)=>{
       if(event==='ON_DAMAGED'&&data.damageType==='skill_attack'){
         hits.push({damage:data.damage,hp:ctx.self.currentHp});
-        if(scenario==='backlash')ctx.applyTrueDamage(ctx.targetSide,20000,'逐擊反擊');
+        if(scenario==='backlash')ctx.applyTrueDamage(ctx.targetSide,20000,'受擊反擊');
       }
       if(event==='FATAL_RESIST'&&scenario==='rebirth'&&!reborn){reborn=true;ctx.self.currentHp=10000;return true;}
       return false;
     };
     const skill=structuredClone(DEFAULT_ELVES.find((e:any)=>e.id==='5010').skills.find((s:any)=>s.name==='星光·浪打千擊'));
-    const a=make('逐擊觀測者',200);a.skills=[skill];a.isAdditionalInvalid=scenario==='sealed';
+    const a=make('連擊附帶次數觀測者',200);a.skills=[skill];a.isAdditionalInvalid=scenario==='sealed';
     const b=make('受擊觀測者',100);if(scenario==='fatal'||scenario==='rebirth')b.currentHp=1;
     await act(async()=>root.render(React.createElement(Battle,{key:side+scenario,
       initialP1Team:[side==='p1'?a:b],initialP2Team:[side==='p2'?a:b],p1StarterId:side==='p1'?a.id:b.id,p2StarterId:side==='p2'?a.id:b.id,
@@ -51,16 +51,16 @@ try {
     }
     // 等待已開始的佇列結算完成；動畫不參與結算。
     await act(async()=>{await new Promise(r=>setTimeout(r,30));});
-    // 連擊＝一次計算×連擊次數：受擊節點只有一次；每擊附帶判定仍逐擊（攻擊方被反擊致死則停止）。
+    // 連擊＝一次計算×連擊次數：傷害／受擊節點只有一次；描述中的每擊附帶效果按連擊數通知，不新增傷害節點。
     const n=scenario==='ten'?10:5;
     const wanted=scenario==='backlash'?0:n;
     assert.equal(hits.length,1,`${side}/${scenario}: 連擊只結算一次傷害`);
-    assert.equal(rolled,scenario==='sealed'?1:wanted,`${side}/${scenario}: 每一擊只通知一次`);
+    assert.equal(rolled,scenario==='sealed'?1:wanted,`${side}/${scenario}: 連擊附帶觸發次數，不是傷害節點`);
     assert.ok(hits.every(x=>x.damage>0));
     if(scenario==='rebirth')assert.equal(reborn,true,'免死／重生');
     // 每擊強化於傷害前以 PRD 結算（10 擊必至少觸發一次）
-    if(scenario==='ten')assert.ok((driver.getSyncState()[side].statStages.atk||0)>=1,'逐擊強化先結算');
+    if(scenario==='ten')assert.ok((driver.getSyncState()[side].statStages.atk||0)>=1,'連擊附帶強化先結算');
     if(scenario==='sealed')assert.equal(driver.getSyncState()[side].statStages.atk||0,0,'附加失效不擲強化骰');
   }
-  console.log('真實引擎連擊：P1/P2、5擊/10擊單次結算、逐擊判定、反擊致死停止、附加失效通過。');
+  console.log('真實引擎連擊：P1/P2、5擊/10擊單次結算、連擊附帶次數判定、反擊致死停止、附加失效通過。');
 } finally {await act(async()=>root.unmount());await server.close();dom.window.close();}

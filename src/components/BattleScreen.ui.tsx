@@ -1,4 +1,6 @@
 import { BattleEndDialog, SpecialBattleEndDialog } from "./BattleEndDialog";
+import { damagePopupStyle, damagePopupLabel } from '../battle/damagePopupStyle';
+import { appearanceElf } from '../battle/illusion';
 import React, { useState, useContext, useEffect, useMemo, useRef } from "react";
 import { ElfReadOnlyProfile } from "./ElfReadOnlyProfile";
 import { createPortal } from "react-dom";
@@ -279,18 +281,13 @@ export function BattleScreenUI(props: BattleScreenUIProps) {
                   {(battle.floatingDamagePopups || props.floatingDamagePopups || [])
                     .filter((p: any) => p.side === side && (!p.elfId || p.elfId === ((side === 'p1' ? p1 : p2).battleId || (side === 'p1' ? p1 : p2).id)))
                     .map((pop: any) => {
-                      const isAbsorb = pop.type === 'absorb' || pop.label?.includes('汲取');
-                      const isTrue = pop.type === 'true' || pop.type === 'true_damage' || isAbsorb;
-                      const isPink = pop.type === 'fixed' || pop.type === 'percent' || pop.type === 'fixed_damage' || pop.type === 'percent_damage';
-                      const isHeal = pop.type === 'heal' || pop.type === 'adjust_up';
-                      const isAdjustment = pop.type === 'adjust_up' || pop.type === 'adjust_down';
-
-                      const isMissLike = pop.type === 'notice' || pop.type === 'miss' || pop.type === 'invalid' || pop.type === 'addInvalid';
-
-                      const isSkillHit = !isHeal && !isTrue && !isPink && !isMissLike && !isAdjustment;
+                      const visual = damagePopupStyle(pop.type);
+                      const label = damagePopupLabel(pop.label);
+                      const isHeal = visual.heal;
+                      const isSkillHit = visual.skill;
                       const eff = pop.effectiveness as string | undefined;
                       const effClass = eff === '克制' ? 'text-amber-300 border-amber-400/70 bg-amber-950/70' : eff === '微弱' ? 'text-sky-300 border-sky-400/60 bg-sky-950/70' : eff === '無效' ? 'text-slate-300 border-slate-500/60 bg-slate-900/80' : 'text-slate-200 border-slate-500/40 bg-slate-950/60';
-                      const numClass = isHeal ? 'text-green-400' : isTrue ? 'text-white' : isPink ? 'text-pink-400' : isMissLike || isAdjustment ? 'text-slate-200' : 'text-red-500';
+                      const numClass = visual.colorClass;
                       return (
                         <motion.div
                           key={pop.id}
@@ -303,10 +300,10 @@ export function BattleScreenUI(props: BattleScreenUIProps) {
                           data-presentation-id={pop.id}
                           data-elf-id={pop.elfId}
                         >
-                          {(eff && isSkillHit) || pop.label || pop.isCrit ? (
+                          {(eff && isSkillHit) || label || pop.isCrit ? (
                             <div className="flex items-center gap-1">
                               {eff && isSkillHit && <span className={`px-1.5 py-px rounded border text-xs font-black tracking-widest ${effClass}`} data-effectiveness={eff}>{eff}</span>}
-                              {(pop.label || pop.isCrit) && <span className="text-xs font-bold text-slate-200 drop-shadow-[0_1px_2px_rgba(0,0,0,0.9)]">{fog(pop.label || '暴擊')}</span>}
+                              {(label || pop.isCrit) && <span className="text-xs font-bold text-slate-200 drop-shadow-[0_1px_2px_rgba(0,0,0,0.9)]">{fog(label || '暴擊')}</span>}
                             </div>
                           ) : null}
                           <span className={`${isSkillHit ? 'text-5xl' : 'text-3xl'} font-black tabular-nums ${numClass}`}
@@ -678,18 +675,20 @@ export function BattleScreenUI(props: BattleScreenUIProps) {
                                 }
                               }}
                               onMouseLeave={() => setHoveredSoulMark(null)}
-                              className={`group relative flex flex-col items-center bg-slate-900/60 border rounded-xl p-2.5 transition-all cursor-pointer
+                              className={`group relative flex items-center gap-2 text-left bg-slate-900/60 border rounded-xl px-2 py-1.5 transition-all cursor-pointer
                                 ${idx === p1ActiveIndex ? 'border-cyan-500 bg-cyan-950/20 shadow-[0_0_15px_rgba(6,182,212,0.1)] opacity-100 grayscale-0' : isExtra ? 'border-amber-500/40 bg-amber-950/10 shadow-[0_0_10px_rgba(245,158,11,0.05)] hover:border-amber-400' : 'border-slate-800 hover:border-slate-600'} 
                                 ${isDead || elf.isVanished ? 'opacity-40 grayscale' : ''}`}
                               disabled={!isExtra && (idx === p1ActiveIndex || isDead || (phase !== "p1_select" && !phase.includes("forced_switch")))}
                             >
-                               <div className="w-12 h-12 mb-1.5 rounded-full overflow-hidden border border-cyan-500/40 bg-slate-900"><ElfAvatar elf={elf} battleSide="p1" kind="head" className="w-full h-full object-cover" fallbackClassName="w-full h-full flex items-center justify-center text-xl font-black text-slate-300" /></div>
-                               <span className={`text-xs font-black mb-1 ${isExtra ? 'text-amber-400' : 'text-white'}`}>{hiddenFromViewer(elf, "p1") ? "未知精靈" : elf.name}</span>
-                               {!hiddenFromViewer(elf, "p1") && <span className="mb-2 inline-flex items-center gap-1 text-xs text-slate-300"><TypeIcon type={elf.type} size={16} />{elf.type}</span>}
-                               <div className="w-full h-1 bg-slate-800 rounded-full overflow-hidden mb-1">
+                               <div className="w-10 h-10 shrink-0 rounded-full overflow-hidden border border-cyan-500/40 bg-slate-900"><ElfAvatar elf={elf} battleSide="p1" kind="head" className="w-full h-full object-cover" fallbackClassName="w-full h-full flex items-center justify-center text-xl font-black text-slate-300" /></div>
+                               <div className="flex-1 min-w-0 flex flex-col gap-0.5">
+                               <span className={`text-xs font-black truncate ${isExtra ? 'text-amber-400' : 'text-white'}`}>{hiddenFromViewer(elf, "p1") ? "未知精靈" : elf.name}</span>
+                               {!hiddenFromViewer(elf, "p1") && <span className="inline-flex items-center gap-1 text-[11px] text-slate-300 truncate"><TypeIcon type={elf.type} size={14} />{elf.type}</span>}
+                               <div className="w-full h-1 bg-slate-800 rounded-full overflow-hidden">
                                   <div className={`h-full ${getHpBarColor(elf.currentHp, elf.maxHp)}`} style={{ width: `${elf.maxHp > 0 ? (elf.currentHp / elf.maxHp) * 100 : 0}%` }} />
                                </div>
-                               <span className="text-[9px] font-bold text-slate-500">{elf.currentHp}/{elf.maxHp}</span>
+                               <span className="text-[9px] font-bold text-slate-400 leading-none">{elf.currentHp}/{elf.maxHp}</span>
+                               </div>
                                {idx === p1ActiveIndex && (
                                  <div className="absolute -top-1 -right-1 px-1.5 py-0.5 bg-cyan-500 text-[8px] font-black text-white rounded rounded-bl-none">出場中</div>
                                )}
@@ -906,7 +905,7 @@ export function BattleScreenUI(props: BattleScreenUIProps) {
   /** 精靈 HUD：頭像＋名稱＋體力。詳細資訊收在頭像點開的頁面。 */
   const renderCard = (side: "p1" | "p2") => {
     const isP1 = side === "p1";
-    const elf = isP1 ? p1 : p2;
+    const elf = appearanceElf(isP1 ? p1 : p2);
     if (!elf) return null;
     const idx = isP1 ? p1ActiveIndex : battle.p2ActiveIndex;
     const hpPct = elf.maxHp > 0 ? Math.max(0, Math.min(100, (elf.currentHp / elf.maxHp) * 100)) : 0;
@@ -1028,7 +1027,7 @@ export function BattleScreenUI(props: BattleScreenUIProps) {
 
   const renderSprite = (side: "p1" | "p2") => {
     const isP1 = side === "p1";
-    const elf = isP1 ? p1 : p2;
+    const elf = appearanceElf(isP1 ? p1 : p2);
     if (!elf) return null;
     const isActing = props.activeSkillAnim?.side === side;
     // 額外行動紅字播放時，攻擊方也做一次出招動作

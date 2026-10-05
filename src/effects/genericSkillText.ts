@@ -1,4 +1,5 @@
 import { queueActionDamageModifier, queueActionPowerMultiplier } from '../battle/actionDamageModifiers';
+import { queueHpDrain } from '../battle/hpDrain';
 import { getStatMultiplier } from "../utils/statCalculator";
 import { skillStageView } from '../battle/skillStageView';
 /**
@@ -107,6 +108,15 @@ const CN_NUM: Record<string, number> = { 一: 1, 二: 2, 兩: 2, 三: 3, 四: 4,
 const num = (x: string) => (CN_NUM[x] ?? Number(x));
 
 const RULES: Rule[] = [
+  {
+    multiTurn: true,
+    re: /^(?:使用時)?(\d+)%機率(?:一|1)回合受到傷害減半$/,
+    apply: (m, ctx) => {
+      if (!chanceOf(ctx, 'damage-half-on-use', Number(m[1]))) return;
+      ctx.addTimerTo(ctx.actor, { id: 'skill_on_use_damage_half', name: ctx.skill?.name || '傷害減半', source: 'skill', kind: 'turn_effect',
+        remaining: 1, tickAt: 'round_end', payload: { block: { dmgIn: -0.5, kind: '非真實' } } }, false);
+    },
+  },
   // ---- 持續型（N 回合）----
   {
     multiTurn: true,
@@ -465,7 +475,7 @@ const RULES: Rule[] = [
     apply: (m, ctx) => {
       const t = ctx.target;
       const amt = m[1] ? Math.floor((t.maxHp * Number(m[1])) / Number(m[2])) : m[3] ? Math.floor((t.maxHp * Number(m[3])) / 100) : Number(m[4]);
-      ctx.applyAbsorb(ctx.targetSide, amt);
+      queueHpDrain(ctx, ctx.targetSide, amt, m[4] ? 'fixed' : 'percent');
     },
   },
 

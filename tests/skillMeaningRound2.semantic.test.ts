@@ -50,7 +50,7 @@ for(const side of ['p1','p2']as const){
     layers.damages.length=0;handleDixinSoulMark(layers.ctx,E.AFTER_ACTION);assert.deepEqual(layers.damages.map(x=>[x.kind,x.n]),n>=2?[['fixed',n*39]]:[]);
   }
   layers.state.dixinBahuangStacks=4;layers.damages.length=0;DIXIN_SKILLS['鹿台悲歌'](layers.ctx);assert.equal(layers.damages[0].n,556);assert.equal(layers.state.dixinBahuangStacks,6);assert.equal(layers.self.statStages.accuracy,2);
-  handleDixinSoulMark(layers.ctx,E.OPPONENT_DAMAGE,{label:'八荒汲取',hpReduced:0});assert.equal(layers.damages.at(-1).kind,'true');
+  handleDixinSoulMark(layers.ctx,E.OPPONENT_DAMAGE,{label:'八荒吸取',hpReduced:0});assert.equal(layers.damages.at(-1).kind,'true');
   layers.state.dixinBahuangStacks=3;handleDixinSoulMark(layers.ctx,E.OPPONENT_ACTION);handleDixinSoulMark(layers.ctx,E.ROUND_END);assert.equal(layers.state.dixinBahuangStacks,2);
   assert.equal(layers.damages.some(x=>x.label==='八荒固傷'&&x.kind==='true'),false,'回合末不再用真傷代替固傷');
 

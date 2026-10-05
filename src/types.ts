@@ -36,6 +36,8 @@ export interface SkillBadge {
 }
 
 export interface Skill {
+  /** 僅本次選擇快照使用，不覆寫背包技能。 */
+  battleSlot?: number;
   name: string;
   type: string; // e.g. "電", "火", "草", "水", "無屬性"
   category: '物理' | '特殊' | '屬性';
@@ -59,6 +61,9 @@ export interface Skill {
   
   // Skill Stone properties (技能石)
   isSkillStone?: boolean; // 是否為技能石技能
+  skillStoneRuleset?: 'standard' | 'project'; // SeerAPI 原版／專案 TXT
+  skillStoneOriginalGrade?: 'D' | 'C' | 'B' | 'A' | 'S' | 'SS';
+  skillStoneDamageMultiplier?: number; // 本次轉化效果，不回寫原技能
   skillStoneGrade?: 'D' | 'C' | 'B' | 'A' | 'S' | 'SS'; // 技能石等級
   isPerfectSkillStone?: boolean; // 是否為完美技能石
   skillStoneEffect?: string; // 完美技能石特效代碼
@@ -102,6 +107,8 @@ export type EffectSubCategory = "FIXED" | "PERCENT" | "HP_BASED" | string;
 
 export interface BattleEffect {
   id: string; // Internal ID for logic
+  /** 回合之間（死亡換人）附加：下回合開始補扣一次，視同上一回合已附加。 */
+  catchUpTick?: boolean;
   name: string; // Display name
   duration?: number; // For compatibility with legacy code
   unit?: TimerUnit; // 計數單位: 回合, 次數, 永久
@@ -158,12 +165,23 @@ export interface StatChange {
 }
 
 export interface Elf {
+  /** 開局背包另一區相同位數的快照；不把待命精靈加入勝敗判定隊伍。 */
+  initialCounterpart?: Elf;
+  /** 幻化保持戰鬥身分與自身技能欄位；外觀／同槽轉化與原始快照分開。 */
+  illusion?: {
+    source: string;
+    target: Elf;
+    original: Pick<Elf, 'calculatedStats' | 'maxHp' | 'trait' | 'alienTraits' | 'isAlienElf' | 'category'>;
+    ppBonus: number;
+  };
   id: string; // unique identifier (especially for customized/saved elves)
   name: string;
   type: string;
   originalType?: string;
   /** 屬性被剝離（顯示為無屬性）；下場時恢復 originalType。 */
   typePeeled?: boolean;
+  /** 屬性被效果暫時改變（例如變為暗影系），直到下場；下場時恢復 originalType。 */
+  typeChangedUntilSwitch?: boolean;
   level: number;
   baseStats: BaseStats;
   ivs?: BaseStats; // individual values (0-31), if undefined we assume 31

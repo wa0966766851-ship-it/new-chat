@@ -7,6 +7,9 @@ import { checkControlImmunity } from '../effects/ailmentEngine';
 import { StatusRegistry } from '../effects/statusRegistry';
 import { sameStatus, canonicalStatusName } from '../effects/statusIdentity';
 import { getTypeMatchup } from './statCalculator';
+import { applyAdvancedDamageModifiers } from '../battle/advancedDamageModifiers';
+import { reductionPolicy } from '../battle/damageReduction';
+import { distinctStoneCount, hasStoneThrowerMythic, isSkillStone } from '../data/skillStones';
 
 export class TraitsEngine {
   /**
@@ -28,7 +31,7 @@ export class TraitsEngine {
 
     // 3. 【投石者】檢查 4 個技能石並激活神話狀態
     if (mechanics.isStoneThrower) {
-      const stoneCount = ctx.self.skills.filter(s => s.isSkillStone || s.name.endsWith('石之力-S') || s.name.endsWith('石之力')).length;
+      const stoneCount = distinctStoneCount(ctx.self);
       ctx.setPlayerState(`${selfSide}_stoneCount`, stoneCount);
       if (stoneCount >= 4 && !isStatusActive(ctx.self, '神話')) {
         const result = ctx.applyStatusWithImmunityCheck(selfSide, '神話', 999);
@@ -168,7 +171,7 @@ export class TraitsEngine {
 
     // 1. 【投石者】神話狀態免疫所有異常
     if (mechanics.isStoneThrower && status !== '神話') {
-      const stoneCount = targetElf.skills.filter(s => s.isSkillStone || s.name.endsWith('石之力-S') || s.name.endsWith('石之力')).length;
+      const stoneCount = distinctStoneCount(targetElf);
       if (stoneCount >= 4) {
         ctx.addLog(`🛡️ 【${targetElf.name}】處於【神話】狀態下，免疫了 【${status}】 異常！`, "status");
         return { handled: true };
@@ -230,23 +233,13 @@ export class TraitsEngine {
       ctx.addLog(`🎯 【${attacker.name}】的【戰士】特質：鎖定對手防禦弱點！始終以較低防禦力 60% 計算傷害！`, "effect");
     }
 
-    // 3. 【投石者】4個技能石 50% 增傷
-    if (atkMechanics.isStoneThrower) {
-      const stoneCount = attacker.skills.filter(s => s.isSkillStone || s.name.endsWith('石之力-S') || s.name.endsWith('石之力')).length;
-      if (stoneCount >= 4) {
-        finalDamage = finalDamage * 1.5;
-        ctx.addLog(`✨ 【${attacker.name}】處於投石者【神話】狀態，攻擊傷害提升 50%！`, "damage");
-      }
-    }
-
-    // 4. 【投石者】對方防禦 4個技能石 50% 減傷
-    if (defMechanics.isStoneThrower) {
-      const stoneCount = defender.skills.filter(s => s.isSkillStone || s.name.endsWith('石之力-S') || s.name.endsWith('石之力')).length;
-      if (stoneCount >= 4) {
-        finalDamage = finalDamage * 0.5;
-        ctx.addLog(`🛡️ 【${defender.name}】處於投石者【神話】狀態，受到攻擊傷害降低 50%！`, "effect");
-      }
-    }
+    // 舊相容入口共用新結算規則；主戰鬥管線不另外呼叫此方法，避免重複減傷。
+    const side = ctx.actor === 'p1' ? 'p2' : 'p1';
+    const category = skill.category === '屬性' ? 'skill_attribute' as const : 'skill_attack' as const;
+    const comp = { base: finalDamage, increasePercent: 0, decreasePercent: 0, multiplier: 1, damageCategory: category,
+      reductionPolicy: reductionPolicy({ p1Timers: ctx.p1Timers || [], p2Timers: ctx.p2Timers || [], p1Marks: ctx.getMarks('p1'), p2Marks: ctx.getMarks('p2') }, side, defender, category) };
+    applyAdvancedDamageModifiers(comp, attacker, defender);
+    finalDamage = comp.base * (1 + comp.increasePercent) * comp.multiplier;
 
     // 5. 【無序星魂使徒】對異能精靈造成傷害翻倍
     const isTargetAlien = defender.isAlienElf || defMechanics.alwaysAlienElf;
@@ -266,15 +259,7 @@ export class TraitsEngine {
     const selfSide = ctx.actor;
     const elfName = ctx.self.name;
 
-    // 1. 【投石者】擁有 4 個技能石時，技能 PP 無限，免除扣除
-    if (mechanics.isStoneThrower) {
-      const stoneCount = ctx.self.skills.filter(s => s.isSkillStone || s.name.endsWith('石之力-S') || s.name.endsWith('石之力')).length;
-      if (stoneCount >= 4 && ctx.skill) {
-        // 動態將當前選擇技能的 PP 補滿，維持無限
-        ctx.skill.pp = 99;
-        ctx.self.skills.forEach(s => s.pp = 99);
-      }
-    }
+    // 投石者的 PP 無限由 isPpCostFree 判定，不改技能數字或第五技能 PP。
 
     // 2. 【咒術師】在詛咒狀態下，選擇技能時額外消耗該技能 1 點 PP
     if (mechanics.cursePpTax && ctx.skill) {
@@ -314,19 +299,24 @@ export class TraitsEngine {
       }
     }
 
-    // 2. 【投石者】使用技能石對對手背包精靈造成真實傷害
-    if (mechanics.isStoneThrower && ctx.skill?.isSkillStone) {
-      const stoneType = ctx.skill.type || '普通';
-      const baseOffField = Math.floor(ctx.skill.power * mechanics.stoneUseOfffieldTrueDamagePercent!);
-      ctx.addLog(`🔮 【投石者】擲出完美技能石【${ctx.skill.name}】！崩解星碎令對手備戰背包內精靈受到真實共鳴傷害！`, "effect");
-      
-      const eligibleOppTeam = ctx.getEligibleTeam(oppSide); // §3: Use injected utility
-      eligibleOppTeam.forEach((member: any) => {
-        // §3: Double check concealed is excluded (utility already does it but it's fine)
-        if (member && member.currentHp > 0) {
-          member.currentHp = Math.max(1, member.currentHp - baseOffField); // 真實傷害保底留1血或扣除
-        }
-      });
+  }
+
+  /** 主攻擊傷害結算後；場下傷害不再用威力估算，也不直接改隊員引用。 */
+  static triggerSkillDamageSettled(ctx: BattleEventContext, damage: number) {
+    const mechanics = getElfAdvancedMechanics(ctx.self);
+    if (!mechanics.isStoneThrower || !isSkillStone(ctx.skill) || !(damage > 0)) return;
+    const activeId = ctx.target.battleId || ctx.target.id;
+    for (const member of ctx.getEligibleTeam(ctx.targetSide)) {
+      if ((member.battleId || member.id) === activeId || member.currentHp <= 0) continue;
+      const amount = Math.floor(damage * (mechanics.stoneUseOfffieldTrueDamagePercent || .25) * getTypeMatchup(ctx.skill.type, member.type));
+      if (amount > 0) ctx.applyTrueDamageToElf?.(ctx.targetSide, member.battleId || member.id, amount, '真實傷害');
+    }
+  }
+
+  static triggerBattlePhaseEnd(ctx: BattleEventContext) {
+    const mechanics = getElfAdvancedMechanics(ctx.self);
+    if (mechanics.turnEndHeal4Stones && hasStoneThrowerMythic(ctx.self) && ctx.self.currentHp > 0) {
+      ctx.applyHeal(ctx.actor, Math.floor(ctx.self.maxHp * mechanics.turnEndHeal4Stones));
     }
   }
 
@@ -338,15 +328,7 @@ export class TraitsEngine {
     const selfSide = ctx.actor;
     const elfName = ctx.self.name;
 
-    // 1. 【投石者】攜帶4個技能石恢復 25% 體力
-    if (mechanics.isStoneThrower && mechanics.turnEndHeal4Stones) {
-      const stoneCount = ctx.self.skills.filter(s => s.isSkillStone || s.name.endsWith('石之力-S') || s.name.endsWith('石之力')).length;
-      if (stoneCount >= 4) {
-        const heal = Math.floor(ctx.self.maxHp * mechanics.turnEndHeal4Stones);
-        ctx.self.currentHp = Math.min(ctx.self.maxHp, ctx.self.currentHp + heal);
-        ctx.addLog(`✨ 【${elfName}】的投石者【神話】恢復了 ${heal} 點體力！`, "heal");
-      }
-    }
+    // 投石者的恢復改由 BATTLE_PHASE_END 經正常恢復管線執行一次。
 
     // 2. 【咒術師】若未選擇使用技能，發動 1 次滅靈魔咒
     if (mechanics.wraithEndSpellIfNoSkill && ctx.getPlayerState(`${selfSide}_cyberWraithActive`)) {
@@ -535,15 +517,11 @@ export class TraitsEngine {
       }
     }
 
-    // 2. 【投石者】首次致死保留 1 血
+    // 投石者 TXT 沒有「首次」限制；每次致死保留1。只走此入口，不再由魂印重複抵擋。
     if (mechanics.firstFatalSurviveAt1Hp) {
-      const alreadyResisted = ctx.getPlayerState(`${selfSide}_stoneThrowerFatalResisted`);
-      if (!alreadyResisted) {
-        ctx.setPlayerState(`${selfSide}_stoneThrowerFatalResisted`, true);
-        ctx.self.currentHp = 1;
-        ctx.addLog(`🌟 【${elfName}】的【投石者】特質觸發：不屈星芒！承受致死傷害，保留 1 點體力！`, "effect");
-        return true;
-      }
+      ctx.updateElf(selfSide, { currentHp: 1 });
+      ctx.addLog(`🌟 【${elfName}】的【投石者】：承受致死傷害，保留 1 點體力！`, "effect");
+      return true;
     }
 
     return false;

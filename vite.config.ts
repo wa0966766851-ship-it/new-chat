@@ -33,6 +33,8 @@ export default defineConfig(() => {
         '@': path.resolve(__dirname, '.'),
       },
     },
+    // 僅掃描正式入口，避免驗證伺服器把備份、報告與舊建置 HTML 當成應用入口。
+    optimizeDeps: { entries: ['index.html'] },
     build: {
       manifest: true,
       // 不使用 unsafe/property mangling：Blockly 公開 API 與工作區存檔格式需保持相容。
@@ -50,10 +52,12 @@ export default defineConfig(() => {
             // 官方原始碼已依循環依賴群組／拓樸順序生成 ESM，不重新合回單體。
             const blocklyModule = normalized.match(/\/src\/vendor\/blockly\/(core-\d+)\.js$/);
             if (blocklyModule) return `blockly-${blocklyModule[1]}`;
+            // 描述解析為純函式；獨立快取，不強拆帶狀態的精靈 handler。
+            if (/\/src\/blocks\/parse\.ts$/.test(normalized)) return 'effect-description-parser';
             if (/\/src\/data\/defaultElves\.ts$/.test(normalized)) return 'data-elves';
             // 跨首頁／百科／特殊模式共用的純函數，沒有 React 或狀態初始化相依。
             if (/\/src\/utils\/(elfSearch|controlSettings|safeStorage|elfDisplayRank)\.ts$/.test(normalized)) return 'ui-foundation';
-            if (/\/src\/data\/(elfSourceText\.json|skillReferences\.generated\.json|alienTraits\.ts|generalTraits\.ts|titles\.ts)$/.test(normalized)) {
+            if (/\/src\/data\/(descriptions\.compressed\.json|descriptionSources\.ts|alienTraits\.ts|generalTraits\.ts|titles\.ts)$/.test(normalized)) {
               return 'data-reference';
             }
             if (id.includes('node_modules')) {

@@ -1,7 +1,7 @@
 import { BaseStats, Inscription, Elf } from "../types";
 import { getEffectiveInscriptions } from "../data/inscriptionsCatalog";
 import { SUIT_CATALOG } from "../data/suitsAndEyewears";
-import { isStoneThrower } from "../data/skillStones";
+import { isStoneThrower, isSkillStone, stoneBasePp } from "../data/skillStones";
 
 /**
  * Returns default effort values ("本攻+體力": 255 HP + 255 Main Attack)
@@ -213,15 +213,17 @@ export function resetElfStateForBattle(elf: Elf, isStarter: boolean = false, sui
   if (!elf) return elf;
   const cloned: Elf = JSON.parse(JSON.stringify(elf));
   cloned.effects = [];
+  delete cloned.illusion;
+  delete (cloned as any).orbHpBonus;
   cloned.originalType = cloned.originalType || cloned.type;
   cloned.type = cloned.originalType;
   
   // 1. 重置 PP 值與 PP 值上限，清空符文與 PP 限制印記
   if (cloned.skills) {
     cloned.skills = cloned.skills.map((s: any) => {
-      const originalMax = s.maxPp !== undefined ? s.maxPp : (s.pp !== undefined ? s.pp : 5);
+      const originalMax = isSkillStone(s) ? stoneBasePp(s) : s.maxPp !== undefined ? s.maxPp : (s.pp !== undefined ? s.pp : 5);
       // 投石者（墜星特有）：裝備的技能石 PP 上限 +10
-      const stoneOffset = s.isSkillStone && isStoneThrower(cloned) ? 10 : 0;
+      const stoneOffset = isSkillStone(s) && isStoneThrower(cloned) ? 10 : 0;
       const effectiveMax = Math.max(0, originalMax + (s.ppMaxOffset || 0) + (cloned.globalPpMaxOffset || 0) + stoneOffset);
       const cleanSk: any = {
         ...s,

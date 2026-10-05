@@ -8,15 +8,23 @@ export type RuntimeDamageType =
   | "true"
   | string;
 
-/** 將歷史事件名稱正規化成戰鬥引擎使用的傷害分類。 */
+/** 中文標籤／舊別名 → 引擎分類（applyPinkDamage 的 dmgType 常傳「百分比傷害」等中文） */
+const DAMAGE_TYPE_ALIASES: Record<string, RuntimeDamageType> = {
+  "百分比傷害": "percent", "百分比": "percent", "pink": "percent", "pink_damage": "percent",
+  "固定傷害": "fixed", "固定": "fixed",
+  "真實傷害": "true", "真實": "true", "true_dmg": "true",
+  "攻擊傷害": "skill_attack", "技能傷害": "skill", "額外行動傷害": "skill_extra_action",
+};
+
+/** 將歷史事件名稱正規化成戰鬥引擎使用的傷害分類（'skill_attack'|'skill_attribute'|'skill_extra_action'|'skill'(泛技能)|'fixed'|'percent'|'true'）。 */
 export function normalizeDamageType(data: any): RuntimeDamageType {
   const damageType = String(data?.damageType || "");
-  if (damageType === "true_damage" || damageType === "absorb" || String(data?.label || "").includes("汲取")) {
+  if (damageType === "true_damage" || damageType === "absorb") {
     return "true";
   }
   if (damageType === "fixed_damage") return "fixed";
   if (damageType === "percent_damage") return "percent";
-  return damageType;
+  return DAMAGE_TYPE_ALIASES[damageType] ?? damageType;
 }
 
 export const isSkillDamageType = (damageType: RuntimeDamageType): boolean =>

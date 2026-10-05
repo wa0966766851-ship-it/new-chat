@@ -1,4 +1,5 @@
 import type { Skill } from '../types';
+import { runDixinFormation } from './dixinFormation';
 import { abilityKeys, abilityLevels, absorbBoosts, currentElf } from './semanticOperations';
 import { prdChance } from "../utils/prd";
 import { BattleEventContext, BattleSkillHandler, EffectTiming, ElfDeconstructedProfile } from './types';
@@ -8,6 +9,12 @@ export const handleDixinSoulMark = (ctx: BattleEventContext, event: EffectTiming
   const oppSide = actor === "p1" ? "p2" : "p1";
   const active = actor === 'p1' ? ctx.activeP1 : ctx.activeP2;
   const isActive = (active.battleId || active.id) === (self.battleId || self.id);
+  runDixinFormation(ctx, event, extraData);
+  if (event === EffectTiming.BEFORE_DAMAGE && !extraData?.isIncoming && isActive && ctx.skill?.name === '帝怒傾天'
+    && !self.isInherentInvalid && (getPlayerState('dixinBahuangStacks') || 0) >= 3) {
+    const comp = extraData.damageComp || extraData;
+    comp.reductionPolicy = { ...comp.reductionPolicy, attenuation: 0 };
+  }
   if (!isActive && [EffectTiming.ROUND_END, EffectTiming.BATTLE_PHASE_END, EffectTiming.MODIFY_POWER].includes(event as EffectTiming)) return false;
   if (event === EffectTiming.ROUND_START) setPlayerState('dixinOpponentUsedSkill', false);
   if (event === EffectTiming.OPPONENT_ACTION) setPlayerState('dixinOpponentUsedSkill', true);
@@ -29,14 +36,14 @@ export const handleDixinSoulMark = (ctx: BattleEventContext, event: EffectTiming
     ctx.setMark({ id, name, displayChar, count, ownerBattleId: ownerId(elf), description: "" }, side);
     return count;
   };
-  const syncBahuangMark = (count: number) => ctx.setMark({
+  const syncBahuangMark = (count: number) => { ctx.setMark({
     id: "bahuang_mark",
     displayChar: "荒",
     count,
     name: "八荒",
     ownerBattleId: self.battleId || self.id,
     description: "帝辛專屬層數；最高9層，各層解鎖效果依魂印描述結算。",
-  }, actor);
+  }, actor); runDixinFormation(ctx, 'CHECK_FORMATION'); };
 
   // 1. 登場時：獲得 2 層八荒
   if (event === EffectTiming.ON_ENTRANCE) {
@@ -61,9 +68,9 @@ export const handleDixinSoulMark = (ctx: BattleEventContext, event: EffectTiming
     let stacks = getPlayerState("dixinBahuangStacks") || 0;
     
     // 判定對方是否使用技能
-    if (getPlayerState('dixinOpponentUsedSkill') || extraData?.opponentUsedSkill) {
+    if ((getPlayerState('dixinOpponentUsedSkill') || extraData?.opponentUsedSkill) && !dixinTimer(ctx, 'dixin_nine_lock')) {
       stacks = Math.max(0, stacks - 1);
-    } else {
+    } else if (!getPlayerState('dixinOpponentUsedSkill') && !extraData?.opponentUsedSkill) {
       stacks = Math.min(9, stacks + 1);
     }
     setPlayerState("dixinBahuangStacks", stacks);
@@ -87,7 +94,7 @@ export const handleDixinSoulMark = (ctx: BattleEventContext, event: EffectTiming
       ctx.updateElf(oppSide, { skills });
       ctx.updateElf(actor, { skills: self.skills.map(skill => ({ ...skill, pp: Math.min(skill.maxPp ?? skill.pp, (skill.pp || 0) + ppDrain) })) });
       const drainAmt = Math.floor(target.maxHp / 3) * dixinEffectFactor(ctx);
-      const actual = applyPinkDamage(oppSide, drainAmt, "八荒汲取");
+      const actual = applyPinkDamage(oppSide, drainAmt, "八荒吸取", undefined, undefined, 'percent');
       applyHeal(actor, actual);
 
     }
@@ -114,7 +121,7 @@ export const handleDixinSoulMark = (ctx: BattleEventContext, event: EffectTiming
     const stacks = getPlayerState("dixinBahuangStacks") || 0;
     if (stacks >= 2) ctx.applyFixedDamage(oppSide, stacks * 39 * dixinEffectFactor(ctx), "八荒固傷");
   }
-  if (event === EffectTiming.OPPONENT_DAMAGE && ["八荒汲取", "人皇御宇·吸取"].includes(extraData?.label) && extraData?.hpReduced <= 0) {
+  if (event === EffectTiming.OPPONENT_DAMAGE && ["八荒吸取", "人皇御宇·吸取"].includes(extraData?.label) && extraData?.hpReduced <= 0) {
     applyTrueDamage(oppSide, 300, "八荒吸取未生效");
     addOwnedMark(actor, self, "fumo_mark", "伏魔印記", "伏");
   }
@@ -144,7 +151,7 @@ export const DIXIN_SKILLS: Record<string, BattleSkillHandler> = {
     const stacks = getPlayerState("dixinBahuangStacks") || 0;
     const bonus = stacks > 3 ? 2 : 1;
     applyStatChange(actor, { atk: bonus, def: bonus, spatk: bonus, spdef: bonus, speed: bonus, accuracy: bonus });
-    const drained = ctx.applyPinkDamage(ctx.targetSide, stacks * 139, "鹿台悲歌·吸取", undefined, undefined, "percent");
+    const drained = ctx.applyPinkDamage(ctx.targetSide, stacks * 139, "鹿台悲歌·吸取", undefined, undefined, "fixed");
     ctx.applyHeal(actor, drained);
     ctx.addTimerTo(actor, { id: "dixin_lutai_priority", name: "鹿台悲歌", source: "skill", kind: "turn_effect", remaining: 2, tickAt: "round_end", pendingActivation: true, payload: { block: { prio: 2 } } }, ctx.moveIndex === 1);
     ctx.applyStatusWithImmunityCheck(actor, "狂暴", 3);
@@ -154,6 +161,16 @@ export const DIXIN_SKILLS: Record<string, BattleSkillHandler> = {
       ownerBattleId: ctx.self.battleId || ctx.self.id,
       description: "帝辛專屬層數；最高9層，各層解鎖效果依魂印描述結算。",
     }, actor);
+    runDixinFormation(ctx, 'CHECK_FORMATION');
+  },
+  "九鼎震八荒": (ctx) => {
+    if (ctx.getPlayerState('dixinNineUsed')) return;
+    ctx.setPlayerState('dixinNineUsed', true);
+    ctx.setPlayerState('dixinBahuangStacks', 9);
+    ctx.addTimerTo(ctx.actor, { id: 'dixin_nine_lock', name: '九鼎震八荒', kind: 'turn_effect', source: 'skill',
+      remaining: 9, tickAt: 'round_end' }, false);
+    ctx.setMark({ id: 'bahuang_mark', name: '八荒', displayChar: '荒', count: 9, description: '九鼎震八荒成功後附加9層八荒。', ownerBattleId: ctx.self.battleId || ctx.self.id });
+    runDixinFormation(ctx, 'CHECK_FORMATION');
   },
   "人皇御宇": (ctx) => {
     const { actor, addLog, setOpponentState, applyStatusWithImmunityCheck } = ctx;

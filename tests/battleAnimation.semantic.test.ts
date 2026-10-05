@@ -7,7 +7,7 @@ const event = (type: PresentationEvent['type'], delta: number, before: number, o
   side: 'p1', elfId: 'first', type, amount: Math.abs(delta), delta, before, after: before + delta, maxHp: 500, ...options,
 });
 const shown: any[] = [];
-const p = new BattlePresentation(() => { if (p.popups.length) shown.push(structuredClone(p.popups[0])); }, () => true);
+const p = new BattlePresentation(() => { if (p.popups.length) shown.push(...structuredClone(p.popups)); }, () => true);
 await p.record(event('fixed', -30, 500));
 assert.equal(shown.length, 0, '粉傷先記錄，真實值已結算也不立即播放');
 await p.record(event('skill', -40, 470));
@@ -18,7 +18,7 @@ await p.record(event('true', -10, 450));
 await p.record(event('percent', -5, 440));
 await p.record(event('true', -15, 435));
 await p.flush();
-assert.deepEqual(shown.map(e => e.type), ['skill', 'fixed', 'true'], '固定／百分比／回血合併為體力淨變化，真傷最後');
+assert.deepEqual(shown.map(e => e.type), ['skill', 'fixed', 'true'], '固定／百分比／回血合併為體力淨變化，真傷獨立分類');
 assert.deepEqual(shown.map(e => e.amount), [40, 15, 25], '淨變化 -30+20-5＝-15（粉）；多筆白傷總額不漏');
 assert.equal(p.hp.get('p1:first'), 420);
 assert.equal(p.popups.length, 0);
@@ -32,7 +32,8 @@ assert.equal(p.hp.get('p1:first'), 450);
 assert.equal(p.hp.get('p1:second'), 490, '換人後不同精靈不共用播放 HP');
 
 const lethal: any[] = [];
-const q = new BattlePresentation(() => { if (q.popups.length) lethal.push(q.popups[0]); }, () => true);
+const q = new BattlePresentation(() => { if (q.popups.length) lethal.push(...q.popups); }, () => true);
+q.setInAction(false); // 出手外（回合末等）的致死：當下結算
 await q.record(event('heal', 10, 40));
 await q.record(event('fixed', -5, 50));
 await q.record(event('true', -45, 45));
@@ -89,6 +90,30 @@ assert.deepEqual(zero.map(e => [e.type, e.effectiveness]), [['skill', '克制']]
 await z.flush();
 assert.equal(zero.length, 1, '已倒下的精靈不再播延後紀錄');
 assert.equal(z.hp.get('p1:first'), 0);
+// 出手外（回合開始）的技能傷害：不致死就留到回合末，與粉傷、真傷一起播；致死時當下播
+const outer: any[] = [];
+const o = new BattlePresentation(() => { if (o.popups.length) outer.push(...o.popups); }, () => true);
+o.setInAction(false);
+await o.record(event('skill', -30, 500, { effectiveness: '克制' }));
+assert.equal(outer.length, 0, '回合開始的紅傷不先播');
+o.setInAction(true);
+await o.record(event('skill', -50, 470));
+assert.deepEqual(outer.map(e => e.amount), [50], '出手紅傷先播');
+await o.record(event('fixed', -10, 420));
+await o.flush();
+assert.deepEqual(outer.map(e => [e.type, e.amount]), [['skill', 50], ['skill', 30], ['fixed', 10]], '回合末：延後紅傷→淨變化');
+o.setInAction(false);
+await o.record(event('skill', -410, 410, { elfId: 'k', before: 410, after: 0 }));
+assert.equal(outer.at(-1).amount, 410, '致死時當下播');
+// 出手中致死的真傷：不搶在出招／紅字前面，出手結束才播
+const fo: any[] = [];
+const f = new BattlePresentation(() => { if (f.popups.length) fo.push(f.popups[0]); }, () => true);
+f.setInAction(true);
+await f.record(event('true', -100, 100, { elfId: 'z', before: 100, after: 0 }));
+assert.equal(fo.length, 0, '致死真傷先不播');
+await f.record(event('skill', -20, 0, { elfId: 'z', before: 0, after: 0, alive: true }));
+f.setInAction(false); await f.wait();
+assert.deepEqual(fo.map(e => e.type), ['skill', 'true'], '紅字先、真傷後');
 console.log('動畫驗收：紅傷／吃藥即時、粉綠白分組、白傷總量、空段跳過、陣亡順序、身份隔離、卸載／重來清除通過。');
 
 // 額外行動：不論幾次，紅字播完後只多播一次合併紅字。

@@ -511,11 +511,11 @@ function AppContent() {
         </main>
 
         {/* Bottom Bar: Stats Quick View */}
-        <footer className={`${view === "battle" ? "short:hidden max-sm:hidden" : ""} bg-slate-900/85 backdrop-blur-md border-t border-slate-800 py-3 sm:py-0 sm:h-10 flex flex-col sm:flex-row items-center px-4 sm:px-8 text-[10px] text-slate-400 gap-2 sm:gap-8 font-mono shrink-0 select-none relative z-10`}>
+        {view !== "battle" && <footer className={`bg-slate-900/85 backdrop-blur-md border-t border-slate-800 py-3 sm:py-0 sm:h-10 flex flex-col sm:flex-row items-center px-4 sm:px-8 text-[10px] text-slate-400 gap-2 sm:gap-8 font-mono shrink-0 select-none relative z-10`}>
           <span>計算公式: [(攻擊方LV×0.4+2)×技能威力×攻擊/防禦/50+2]×修正</span>
           <span className="hidden md:inline">屬性係數: 本系修正(1.5x) / 克制係數(0.5x-4.0x)</span>
           <span className="sm:ml-auto">© 2026 AI 賽爾號對戰模擬器 - 繁體中文版</span>
-        </footer>
+        </footer>}
       </div>
     </div>
   );

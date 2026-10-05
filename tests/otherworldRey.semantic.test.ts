@@ -80,6 +80,7 @@ test("負血雷伊的延遲技能更新不會覆蓋新上場精靈技能", () =>
 test("同塵祭會把0血與負血直接調整為1點體力", () => {
   for (const hp of [0, -700]) {
     let selfPatch: any = {};
+    const timers: any[] = [];
     const ctx = {
       self: { currentHp: hp, statStages: {}, maxHp: 1000 },
       target: { statStages: {}, weight: 0, maxHp: 1000, currentHp: 1000 },
@@ -91,9 +92,12 @@ test("同塵祭會把0血與負血直接調整為1點體力", () => {
       },
       setOpponentState: () => {},
       getOpponentState: () => 0,
+      addTimerTo: (side: string, timer: any) => { assert.equal(side, 'p2'); timers.push(timer); },
     } as any;
     OTHERWORLD_REY_SKILLS["同塵祭"](ctx);
     assert.equal(selfPatch.currentHp, 1);
+    assert.equal(timers[0].payload.block.ppMult, 7);
+    assert.equal(timers[0].payload.block.kind, undefined, '所有技能PP而非僅攻擊技能');
   }
 });
 

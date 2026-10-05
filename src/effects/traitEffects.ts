@@ -1,3 +1,4 @@
+import { addDamageReduction, multiplyDamageReduction } from '../battle/damageReduction';
 /**
  * 通用特性（generalTrait）與異能特質（alienTrait）的戰鬥效果
  *
@@ -9,6 +10,7 @@
 import { Elf, Skill } from "../types";
 import { BattleEventContext } from "./types";
 import { prdChance } from "../utils/prd";
+import { bypassesAttackDefense } from '../battle/attackDefense';
 
 type Rng = () => number;
 type Log = (text: string) => void;
@@ -68,7 +70,7 @@ export function priorityBonus(elf: Elf, skill: Skill | null, rng: Rng): number {
 
 /** 技能傷害計算階段（攻守雙方特性） */
 export function modifySkillDamage(
-  actor: Elf, target: Elf, skill: Skill, comp: { increasePercent: number; decreasePercent: number; multiplier: number; bonusFixed?: number },
+  actor: Elf, target: Elf, skill: Skill, comp: { increasePercent: number; decreasePercent: number; multiplier: number; bonusFixed?: number; damageCategory?: import('./types').DamageCategory; attackDefenseBypass?: import('../battle/attackDefense').AttackDefenseBypass },
   ctx: BattleEventContext, rng: Rng, log: Log
 ) {
   const isPhys = skill.category === "物理";
@@ -90,10 +92,10 @@ export function modifySkillDamage(
   }
   // ── 守方
   for (const n of traitNames(target)) {
-    if (n === "堅硬") comp.decreasePercent += 0.14;
-    if (n === "吸收" && prdChance(`${actor?.id}>${target?.id}:trait:L93`, 0.14)) { comp.bonusFixed = (comp.bonusFixed || 0) - 60; log(`🛡️ 【吸收】：受到的技能傷害降低 60 點！`); }
-    if (n === "守護" && prdChance(`${actor?.id}>${target?.id}:trait:L94`, 0.03)) { comp.multiplier *= 0.5; log(`🛡️ 【守護】：受到的技能傷害減半！`); }
-    if ((n === "虛無" && prdChance(`${actor?.id}>${target?.id}:trait:L95`, 0.08)) || (n === "抵擋" && prdChance(`${actor?.id}>${target?.id}:trait:L95`, 0.03))) { comp.multiplier = 0; log(`🛡️ 【${n}】：完全抵擋了本次攻擊！`); }
+    if (n === "堅硬") addDamageReduction(comp as any, 0.14);
+    if (n === "吸收" && prdChance(`${actor?.id}>${target?.id}:trait:L93`, 0.14)) { (comp as any).flatReduction = ((comp as any).flatReduction || 0) + 60 * ((comp as any).reductionPolicy?.attenuation ?? 1); log(`🛡️ 【吸收】：受到的技能傷害降低 60 點！`); }
+    if (n === "守護" && prdChance(`${actor?.id}>${target?.id}:trait:L94`, 0.03)) { multiplyDamageReduction(comp as any, 0.5); log(`🛡️ 【守護】：受到的技能傷害減半！`); }
+    if (!bypassesAttackDefense({ ...comp, damageCategory: comp.damageCategory ?? 'skill_attack' }, 'block') && ((n === "虛無" && prdChance(`${actor?.id}>${target?.id}:trait:L95`, 0.08)) || (n === "抵擋" && prdChance(`${actor?.id}>${target?.id}:trait:L95`, 0.03)))) { comp.multiplier = 0; log(`🛡️ 【${n}】：完全抵擋了本次攻擊！`); }
   }
 }
 

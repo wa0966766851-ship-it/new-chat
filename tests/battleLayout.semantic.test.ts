@@ -42,3 +42,27 @@ assert.equal(signIconFor('星芳之纏'), '/seer/signbuff/96.png');
 assert.equal(signIconFor('星海之浸'), '/seer/signbuff/97.png');
 assert.equal(signIconFor('星火之灼'), '/seer/signbuff/98.png');
 console.log('對戰版面：立繪身高比例、可見區域擺放、巔峰 50 回合判定、三主寵印記圖示通過');
+
+// 無極聖武【英雄之耀】：只有「機率 ≤50% 使對方陷入異常」的通用特性扣層；頑強、瞬殺、反抗等不算
+{
+  const { hasLowChanceStatusTrait } = await import('../src/effects/stagedArena/wujiRegistry');
+  assert.equal(hasLowChanceStatusTrait('受到普通攻擊時有 8% 使對方麻痺'), true);
+  assert.equal(hasLowChanceStatusTrait('自身的物理攻擊有 8% 機率使對方害怕'), true);
+  assert.equal(hasLowChanceStatusTrait('受到致死攻擊時有 8% 機率餘下 2 點體力'), false);
+  assert.equal(hasLowChanceStatusTrait('進攻類技能有 7.0% 機率秒殺對方'), false);
+  assert.equal(hasLowChanceStatusTrait('受到特殊攻擊時有 14% 機率使對方攻擊降低 1 個等級'), false);
+  const { countsAgainstHeroGlory, heroGloryGain, heroGloryDescription } = await import('../src/effects/stagedArena/wujiRegistry');
+  assert.equal(hasLowChanceStatusTrait('使用攻擊技能後 30% 令對手害怕'), true, '專屬特性寫法：令對手');
+  assert.equal(hasLowChanceStatusTrait('攻擊後 100% 令對手麻痺'), false, '高於 50% 不算');
+  assert.equal(hasLowChanceStatusTrait('回合結束時 50% 解除自身異常狀態'), false, '解除異常不算');
+  // 檢測專屬特性（魂印）與通用特性，不檢測特質
+  assert.equal(countsAgainstHeroGlory({ soulMark: { description: '受到攻擊時 20% 使對方中毒' } }), true, '專屬特性計入');
+  assert.equal(countsAgainstHeroGlory({ trait: { description: '8% 使對方燒傷' } }), true, '通用特性計入');
+  assert.equal(countsAgainstHeroGlory({ alienTraits: { generalTrait: { description: '8% 使對方麻痺' } } }), true, '通用特性計入');
+  assert.equal(countsAgainstHeroGlory({ soulMark: { description: '免疫異常' }, alienTraits: { gen2Trait: { description: '10% 使對方害怕' }, alienTrait: { description: '10% 使對方麻痺' } } } as any), false, '特質不計入');
+  assert.equal(heroGloryGain(500, 300, 3), 90);
+  assert.match(heroGloryDescription(3, 90, 200), /目前 3 層：.*各 \+90/);
+  const { STAGED_ARENA_ELVES } = await import('../src/data/stagedArenaElves');
+  assert.ok(STAGED_ARENA_ELVES.every(e => e.skills.every(s => s.category !== '屬性' || s.type === '無屬性')), '競技場精靈屬性技能顯示無屬性圖示');
+  console.log('無極聖武英雄之耀扣層條件、競技場屬性技能圖示通過');
+}

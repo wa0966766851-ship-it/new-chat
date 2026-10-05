@@ -1,5 +1,6 @@
 import { BattleEventContext, BattleSkillHandler, EffectTiming, ElfDeconstructedProfile } from './types';
 import { Elf } from '../types';
+import { bypassesAttackDefense } from '../battle/attackDefense';
 import { clampSkillPp } from '../utils/battleHelpers';
 
 export const handleFearIncarnationSoulMark = (ctx: BattleEventContext, event: EffectTiming | string, extraData?: any) => {
@@ -190,7 +191,7 @@ export const handleFearIncarnationSoulMark = (ctx: BattleEventContext, event: Ef
       } else {
         // Defending
         const hasShield = getPlayerState("shieldBlockNextAtk");
-        if (hasShield) {
+        if (hasShield && !bypassesAttackDefense(extraData, 'block')) {
           extraData.multiplier = 0;
           setPlayerState("shieldBlockNextAtk", false);
           const dmg = Math.floor(ctx.target.maxHp / 3);

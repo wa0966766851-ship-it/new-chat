@@ -1,6 +1,8 @@
+import { multiplyDamageReduction } from '../battle/damageReduction';
 import { BattleEventContext, BattleSkillHandler, EffectTiming, ElfDeconstructedProfile } from "./types";
 import { isStatusActive } from "../utils/statusManager";
 import { isAbnormal as isAbnormalHelper } from "../utils/battleHelpers";
+import { combineSettlementCallbacks } from '../battle/settlementReceipt';
 
 /**
  * 冰魄·柯爾德 (Keld) A級專屬註冊表 [冰]
@@ -37,24 +39,35 @@ export const handleKeerhodeSoulMark = (context: BattleEventContext, event: Effec
     }
   }
 
-  // 2. 傷害減免與肅霜之禁 (BEFORE_DAMAGE)
+  // 凕：高傷害才減少60%；不能沿用5012的無條件冰魂減傷。
   if (event === EffectTiming.BEFORE_DAMAGE) {
-    const isIncoming = extraData?.isIncoming;
-    
-    // 肅霜之禁：限制對手傷害
-    if (isIncoming) {
-      const frostBan = getOpponentState("frostBanAmount") || 0;
-      if (frostBan > 0 && extraData.base > frostBan) {
-        addLog(`❄️ 【肅霜】：對手造成的傷害無法超過肅霜之禁的點數 (${frostBan})！`, "effect");
-        extraData.limit = Math.min(extraData.limit || Infinity, frostBan);
+    const comp = extraData?.damageComp || extraData;
+    if (comp?.isIncoming && !comp.pure && comp.damageCategory !== "true") {
+      (comp.beforeFinalDamage ||= []).push(() => {
+      if (comp.pure) return;
+      const before = Math.max(0, comp.base * (1 + comp.increasePercent) * Math.max(0, 1 - comp.decreasePercent) * comp.multiplier - (comp.flatReduction || 0));
+      if (before >= self.currentHp / 3) {
+        multiplyDamageReduction(comp, 0.4);
+        const after = Math.max(0, comp.base * (1 + comp.increasePercent) * Math.max(0, 1 - comp.decreasePercent) * comp.multiplier - (comp.flatReduction || 0));
+        const points = Math.max(0, Math.floor(before) - Math.floor(after));
+        if (points > 0) {
+          const previous = context.getMarks(oppSide).find(m => m.id === 'frost_glow' && m.ownerBattleId === (target.battleId || target.id));
+          context.setMark({ id: 'frost_glow', name: '霜寒幽光', displayChar: '霜', count: (previous?.count || 0) + points,
+            ownerBattleId: target.battleId || target.id, persistsOffField: true,
+            description: '受到固定／百分比傷害超過霜寒幽光點數10%時減半。',
+            effects: { thresholdDamageReduction: { thresholdRatio: 0.1, multiplier: 0.5, damageTypes: ['fixed', 'percent'] } } }, oppSide);
+        }
+        addLog(`❄️ 【凕】：本次非真實傷害降低，附加${points}點霜寒幽光。`, 'effect');
+      } else {
+        comp.afterDamage = combineSettlementCallbacks(comp.afterDamage, receipt => {
+          const amount = Math.floor(receipt.settledAmount * 0.6);
+          if (amount <= 0) return;
+          context.applyTrueDamage(oppSide, amount, '凕·低傷汲取', undefined, undefined, {
+            onSettled: r => context.applyHeal(actor, r.settledAmount),
+          });
+        });
       }
-
-      if (extraData.damageCategory !== "true") {
-        const reduction = Math.floor(extraData.base * 0.6);
-        extraData.decreasePercent += 0.6;
-        setPlayerState("lastReducedDmg", reduction);
-        addLog(`❄️ 【冰】：常駐減傷 60% (減少了 ${reduction} 點)！`, "effect");
-      }
+      });
     }
   }
 

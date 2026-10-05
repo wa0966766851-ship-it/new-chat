@@ -22,7 +22,7 @@ const EffectLibraryModal = lazy(() => import("./EffectLibraryModal").then(module
 import { parseEffectDescriptionWithAI } from "../utils/aiTextParser";
 import { parseFullElfData } from "../utils/fullElfParser";
 import { parseRawAbilityEffect } from "../utils/effectParser";
-import { SKILL_STONE_ATTRIBUTES, SKILL_STONE_GRADES, SkillStoneGrade, PERFECT_SKILL_STONE_EFFECTS, getPerfectEffectsForAttribute, createSkillStone, isStoneThrower } from "../data/skillStones";
+import { SKILL_STONE_ATTRIBUTES, SKILL_STONE_GRADES, SkillStoneGrade, PERFECT_SKILL_STONE_EFFECTS, getPerfectEffectsForAttribute, createSkillStone, isStoneThrower, equipSkillStone, stoneIconUrl } from "../data/skillStones";
 import { ClauseBreakdownCard } from "./ClauseBreakdownCard";
 const LazyKitEffectBuilder = lazy(() => import("./KitEffectBuilder").then(m => ({ default: m.KitEffectBuilder })));
 const LazyElfBlocklyPanel = lazy(() => import("./ElfBlocklyPanel").then(m => ({ default: m.ElfBlocklyPanel })));
@@ -35,10 +35,10 @@ function ElfBlocklyPanel(props: ComponentProps<typeof LazyElfBlocklyPanel>) {
 }
 
 const enrichSkillPoolWithStones = (pool: Skill[], elf?: Partial<Elf> | null): Skill[] => {
-  const isST = elf && (isStoneThrower(elf as Elf) || elf.name?.includes("無序") || elf.alienTraits?.gen2Trait?.name?.includes("投石者") || (elf as any).trait_stone_thrower);
+  const isST = elf && isStoneThrower(elf as Elf);
   const stonePool = isST ? SKILL_STONE_ATTRIBUTES.map(attr => {
     const effect = PERFECT_SKILL_STONE_EFFECTS.find(e => e.targetAttribute === attr);
-    return createSkillStone(attr, 'S', '特殊', true, effect?.id);
+    return createSkillStone(attr, 'S', '特殊', true, effect?.id, 'project');
   }) : [];
   const combined = [...pool, ...stonePool];
   const map = new Map<string, Skill>();
@@ -1709,61 +1709,20 @@ export default function ElfEditor({ initialElf: suppliedElf, onSaveElf, onBack, 
   };
 
   const handleEquipSkillStone = () => {
-    const newStone = createSkillStone(stoneAttr, stoneGrade, stoneCategory, stoneIsPerfect, stoneEffectId);
     
     // Check if current elf is stone thrower
     const currentElfForCheck: Elf = {
       id: "temp", name: elfName, type: elfType, level: 100, baseStats, calculatedStats: baseStats, currentHp: 100, maxHp: 100,
       soulMark: { name: soulMarkName, description: soulMarkDesc, effectType: soulMarkEffectType, effectValue: soulMarkValue },
       alienTraits: { gen2Trait: gen2TraitName ? { name: gen2TraitName, description: gen2TraitDesc } : undefined },
-      skills: skills
+      skills: skills, skillPool
     };
-    const thrower = isStoneThrower(currentElfForCheck);
-
-    const updatedSkills = [...skills];
-    if (!thrower) {
-      // Normal elf: can only equip ONE skill stone! Remove any other skill stones first
-      for (let i = 0; i < updatedSkills.length; i++) {
-        if (i !== stoneTargetSlot && updatedSkills[i]?.isSkillStone) {
-          updatedSkills[i] = {
-            name: "普通攻擊",
-            type: "普通",
-            category: "物理",
-            power: 50,
-            pp: 35,
-            description: "一般物理攻擊",
-            priority: 0,
-            effectType: "none",
-            effectDetail: ""
-          };
-        }
-      }
-    } else {
-      // Stone thrower: cannot equip duplicate attribute stone!
-      for (let i = 0; i < updatedSkills.length; i++) {
-        if (i !== stoneTargetSlot && updatedSkills[i]?.isSkillStone && updatedSkills[i]?.type === stoneAttr) {
-          alert(`⚠️ 投石者無法裝備重複屬性的技能石！已將其他槽位中相同的【${stoneAttr}】屬性技能石替換。`);
-          updatedSkills[i] = {
-            name: "普通攻擊",
-            type: "普通",
-            category: "物理",
-            power: 50,
-            pp: 35,
-            description: "一般物理攻擊",
-            priority: 0,
-            effectType: "none",
-            effectDetail: ""
-          };
-        }
-      }
-    }
-
-    if (stoneTargetSlot < updatedSkills.length) {
-      updatedSkills[stoneTargetSlot] = newStone;
-    } else {
-      updatedSkills.push(newStone);
-    }
-    setSkills(updatedSkills.slice(0, 5));
+    try {
+      const newStone = createSkillStone(stoneAttr, stoneGrade, stoneCategory, stoneIsPerfect, stoneEffectId, isStoneThrower(currentElfForCheck) ? 'project' : 'standard');
+      const equipped = equipSkillStone(currentElfForCheck, newStone, stoneTargetSlot);
+      setSkills(equipped.skills);
+      setSkillPool(equipped.skillPool);
+    } catch (error) { alert((error as Error).message); return; }
     setIsSkillStoneModalOpen(false);
   };
 
@@ -4391,7 +4350,8 @@ export default function ElfEditor({ initialElf: suppliedElf, onSaveElf, onBack, 
             <div className="flex justify-between items-center border-b border-slate-800 pb-3">
               <div>
                 <h3 className="text-lg font-bold text-white flex items-center gap-2">
-                  <span>💎 技能石系統 (Skill Stone Configurator)</span>
+                  <img src={stoneIconUrl(stoneAttr, stoneGrade)} alt={`${stoneAttr}系 ${stoneGrade} 級技能石`} className="w-12 h-12 object-contain" />
+                  <span>技能石系統</span>
                 </h3>
                 <p className="text-xs text-slate-400 mt-0.5">
                   為精靈配置並綁定各系技能石。等級越高威力越強，完美技能石更附帶強大的命中/回合後特效！
@@ -4411,13 +4371,13 @@ export default function ElfEditor({ initialElf: suppliedElf, onSaveElf, onBack, 
                 <div className="font-bold flex items-center gap-1">🌟 【投石者】異能特質共鳴：</div>
                 <div>• 該精靈可同時攜帶高達 <b>4</b> 種不同屬性的技能石（無法重複屬性）。</div>
                 <div>• 戰鬥中使用任意等級技能石，都將轉化為使用同屬系 <b>SS級</b> 技能石，威力躍升至 <b>240</b>，且本系PP上限+10！</div>
-                <div>• 若攜帶 4 顆技能石，更將在 PVE 中解鎖 <b>神話</b> 狀態與攻防加成！</div>
+                <div>• 攜帶 4 顆不同屬性技能石，PVP／PVE 均解鎖 <b>神話</b>，PP 免消耗（不是改成 99），攻擊傷害增減 50%。</div>
               </div>
             ) : (
               <div className="bg-slate-800/60 border border-slate-700 rounded-xl p-3 text-xs text-slate-300 space-y-1">
                 <div className="font-bold text-slate-200">ℹ️ 常規精靈技能石綁定規則：</div>
                 <div>• 精靈綁定技能石後，將占用常規技能槽（前4槽）的一個格子。</div>
-                <div>• <b>更換技能石或新技能將摧毀上次綁定的技能石</b>（每隻常規精靈最多僅能裝備一顆技能石）。</div>
+                <div>• 每隻最多一顆；更換請選原槽位。被替換的技能保留在預備技能池，不會覆蓋其他技能。</div>
               </div>
             )}
 
@@ -4447,8 +4407,8 @@ export default function ElfEditor({ initialElf: suppliedElf, onSaveElf, onBack, 
                   onChange={(e) => setStoneGrade(e.target.value as SkillStoneGrade)}
                   className="w-full bg-[#050608] border border-emerald-500/40 rounded-xl px-3 py-2 text-xs text-white font-bold"
                 >
-                  {(Object.keys(SKILL_STONE_GRADES) as SkillStoneGrade[]).map((g) => (
-                    <option key={g} value={g}>{SKILL_STONE_GRADES[g].label} (威力: {g === 'SS' ? 240 : SKILL_STONE_GRADES[g].power}, PP: {SKILL_STONE_GRADES[g].pp})</option>
+                  {(Object.keys(SKILL_STONE_GRADES) as SkillStoneGrade[]).filter(g => g !== 'SS').map((g) => (
+                    <option key={g} value={g}>{SKILL_STONE_GRADES[g].label} (威力: {SKILL_STONE_GRADES[g].power}, PP: {SKILL_STONE_GRADES[g].pp})</option>
                   ))}
                 </select>
               </div>
@@ -4506,7 +4466,7 @@ export default function ElfEditor({ initialElf: suppliedElf, onSaveElf, onBack, 
                     className="w-full bg-[#050608] border border-slate-700 rounded-lg px-3 py-2 text-xs text-amber-300 font-bold"
                   >
                     <optgroup label={`【${stoneAttr}系】專屬完美特效`}>
-                      {getPerfectEffectsForAttribute(stoneAttr).map((eff) => (
+                      {getPerfectEffectsForAttribute(stoneAttr).filter(e => e.targetAttribute).map((eff) => (
                         <option key={eff.id} value={eff.id}>
                           {eff.name} — {eff.description} ({eff.chance}%機率)
                         </option>

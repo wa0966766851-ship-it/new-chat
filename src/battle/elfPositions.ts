@@ -1,5 +1,7 @@
 import { Elf } from '../types';
 
+const sameElf = (a: Elf, b: Elf): boolean => b.battleId ? a.battleId === b.battleId : a.id === b.id;
+
 /**
  * 取得出戰隊伍 (排除額外精靈)
  * 目前架構中 team 即為出戰隊伍，未來若有額外精靈需在此排除
@@ -29,7 +31,7 @@ export function getNthElf(team: Elf[], n: number): Elf | undefined {
  */
 export function getAdjacentElves(team: Elf[], targetElf: Elf): Elf[] {
   const eligible = team.filter(e => !e.isVanished && !(e as any).isExtra);
-  const idx = eligible.findIndex(e => (e.battleId && e.battleId === targetElf.battleId) || e.id === targetElf.id || e.name === targetElf.name);
+  const idx = eligible.findIndex(e => sameElf(e, targetElf));
   if (idx === -1) return [];
   
   const result: Elf[] = [];
@@ -43,7 +45,7 @@ export function getAdjacentElves(team: Elf[], targetElf: Elf): Elf[] {
  */
 export function getSeparatedElves(team: Elf[], targetElf: Elf): Elf[] {
   const eligible = team.filter(e => !e.isVanished && !(e as any).isExtra);
-  const idx = eligible.findIndex(e => (e.battleId && e.battleId === targetElf.battleId) || e.id === targetElf.id || e.name === targetElf.name);
+  const idx = eligible.findIndex(e => sameElf(e, targetElf));
   if (idx === -1) return [];
   
   const result: Elf[] = [];

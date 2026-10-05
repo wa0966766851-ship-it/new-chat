@@ -40,27 +40,27 @@ const A = (op: string, re: RegExp, p: ActDef["p"], label: ActDef["label"]): ActD
 export const ACTS: ActDef[] = [
   // 純標記（由技能欄位處理）
   A("noop", /^(必中|先制\s*[+＋-]\s*\d+|先手攻擊|必定先手|__RAMP__|無特殊效果|（無特殊效果）|造成(?:物理|特殊|攻擊|技能)?傷害|攻擊技能|屬性技能)$/, (m) => ({ tag: m[0] }), (p) => p.tag),
-  A("noop", /^該技能(?:為)?(?:必中|先制)/, (m) => ({ tag: m[0] }), (p) => p.tag),
+  A("noop", /^該技能(?:為)?(?:必中|先制\s*[+＋-]\s*\d+)$/, (m) => ({ tag: m[0] }), (p) => p.tag),
 
   // ── 異常
-  A("status_seq", new RegExp(`^依次(?:令|使)對[手方](?:進入)?((?:${STATUS_LIST})(?:[、,，](?:${STATUS_LIST}))+)(?:狀態)?`), (m) => ({ list: m[1].split(/[、,，]/) }), (p) => `依次附加 ${p.list.join("→")}`),
+  A("status_seq", new RegExp(`^依次(?:令|使)對[手方](?:進入)?((?:${STATUS_LIST})(?:[、,，](?:${STATUS_LIST}))+)(?:狀態)?$`), (m) => ({ list: m[1].split(/[、,，]/) }), (p) => `依次附加 ${p.list.join("→")}`),
   A("status", new RegExp(`^(?:(\\d+)%\\s*(?:的)?(?:機率)?\\s*)?(?:令|使|為)?(敵我雙方|雙方|自身|對[手方])?(?:同時)?(?:進入|陷入|附加)?(?:(\\d+)\\s*回合(?:的)?)?${ST}(?:異常)?(?:狀態)?(?:(\\d+)\\s*回合)?$`),
     (m) => ({ chance: m[1] ? n(m[1]) : 100, side: who(m[2]), status: m[4].replace("麻痹", "麻痺").replace("神游", "神遊"), turns: m[3] ? n(m[3]) : m[5] ? n(m[5]) : undefined }),
     (p) => `${whoLabel(p.side)} ${p.status}${p.turns ? ` ${p.turns}回合` : ""}${p.chance < 100 ? ` (${p.chance}%)` : ""}`),
-  A("status", new RegExp(`^(?:(\\d+)%\\s*(?:機率)?)?(?:令|使)(雙方|自身|對[手方])(?:隨機)?進入(?:(\\d+)\\s*回合(?:的)?)?${ST}`),
+  A("status", new RegExp(`^(?:(\\d+)%\\s*(?:機率)?)?(?:令|使)(雙方|自身|對[手方])(?:隨機)?進入(?:(\\d+)\\s*回合(?:的)?)?${ST}(?:狀態)?$`),
     (m) => ({ chance: m[1] ? n(m[1]) : 100, side: who(m[2]), status: m[4], turns: m[3] ? n(m[3]) : undefined }),
     (p) => `${whoLabel(p.side)} ${p.status}${p.turns ? ` ${p.turns}回合` : ""}${p.chance < 100 ? ` (${p.chance}%)` : ""}`),
-  A("status_random", /^(?:令|使)?對[手方]隨機進入(兩|二|\d+)?種?(非附屬類|弱化類|控制類)?異常(?:狀態)?/, (m) => ({ count: m[1] ? n(m[1]) : 1, cls: m[2] || "" }), (p) => `對手隨機 ${p.count} 種${p.cls}異常`),
+  A("status_random", /^(?:令|使)?對[手方]隨機進入(兩|二|\d+)?種?(非附屬類|弱化類|控制類)?異常(?:狀態)?$/, (m) => ({ count: m[1] ? n(m[1]) : 1, cls: m[2] || "" }), (p) => `對手隨機 ${p.count} 種${p.cls}異常`),
   A("cure_status", /^(?:解除|消除)(自身|雙方|對[手方])(?:所有|的)?(?:異常|異常狀態)(?:狀態)?$/, (m) => ({ side: who(m[1]) }), (p) => `解除${whoLabel(p.side)}異常`),
-  A("convert_status", new RegExp(`^將(自身|對[手方])(?:所處的?)?(?:異常|異常狀態)(?:狀態)?轉化為${ST}`), (m) => ({ side: who(m[1]), status: m[2] }), (p) => `${whoLabel(p.side)}異常轉化為 ${p.status}`),
-  A("immune_status_count", /^(?:令)?(自身)?免疫(?:並反彈)?下\s*(\d+|[一二兩三])\s*次(?:受到的)?(?:異常|異常狀態)/, (m) => ({ count: n(m[2]), reflect: /反彈/.test(m[0]) }), (p) => `免疫${p.reflect ? "並反彈" : ""}下 ${p.count} 次異常`),
+  A("convert_status", new RegExp(`^將(自身|對[手方])(?:所處的?)?(?:異常|異常狀態)(?:狀態)?轉化為${ST}(?:異常)?(?:狀態)?$`), (m) => ({ side: who(m[1]), status: m[2] }), (p) => `${whoLabel(p.side)}異常轉化為 ${p.status}`),
+  A("immune_status_count", /^(?:令)?(自身)?免疫(?:並反彈)?下\s*(\d+|[一二兩三])\s*次(?:受到的)?(?:異常|異常狀態)(?:狀態)?$/, (m) => ({ count: n(m[2]), reflect: /反彈/.test(m[0]) }), (p) => `免疫${p.reflect ? "並反彈" : ""}下 ${p.count} 次異常`),
 
   // ── 能力等級
   A("stat_clear", /^消除(對[手方]|自身|雙方|敵我雙方)(?:的)?(?:所有)?能力(提升|上升|下降)(?:、(?:下降|提升|上升))?(?:狀態)?$/, (m) => ({ side: who(m[1]), kind: /下降/.test(m[2]) && !/[、]/.test(m[0]) ? "down" : /[、]/.test(m[0]) ? "all" : "up" }), (p) => `消除${whoLabel(p.side)}能力${p.kind === "up" ? "提升" : p.kind === "down" ? "下降" : "變化"}`),
   A("stat_clear", /^(?:解除|清除)(自身|對[手方])(?:的)?(?:所有)?能力下降(?:狀態)?$/, (m) => ({ side: who(m[1]), kind: "down" }), (p) => `解除${whoLabel(p.side)}能力下降`),
   A("stat_steal", /^(雙倍)?(吸取|複製)對[手方](?:的)?能力提升(?:狀態)?$/, (m) => ({ mode: m[2], double: !!m[1] }), (p) => `${p.mode}對手能力提升${p.double ? "×2" : ""}`),
   A("stat_reverse", /^反轉(自身|對[手方])(?:的)?能力(下降|提升)(?:狀態)?$/, (m) => ({ side: who(m[1]), kind: m[2] === "下降" ? "down" : "up" }), (p) => `反轉${whoLabel(p.side)}能力${p.kind === "down" ? "下降" : "提升"}`),
-  A("stat_transfer", /^將自身(?:的)?能力下降(?:狀態)?(?:轉移|回饋|反饋)給對[手方]/, () => ({}), () => `自身能力下降轉移給對手`),
+  A("stat_transfer", /^將自身(?:的)?能力下降(?:狀態)?(?:轉移|回饋|反饋)給對[手方]$/, () => ({}), () => `自身能力下降轉移給對手`),
   A("stat", new RegExp(`^(?:(\\d+)%\\s*(?:機率)?)?(?:令|使|改變)?\\s*(自身|對[手方]|雙方|敵我雙方)?\\s*(?:的)?\\s*${STATS}\\s*(?:等級)?\\s*([+＋-]\\s*\\d+)$`),
     (m) => ({ chance: m[1] ? n(m[1]) : 100, side: m[2] ? who(m[2]) : "auto", stats: statList(m[3]), v: Number(m[4].replace(/[＋\s]/g, "").replace("+", "")) }),
     (p) => `${p.side === "auto" ? "" : whoLabel(p.side) + " "}${p.stats.join("、")} ${p.v > 0 ? "+" : ""}${p.v}${p.chance < 100 ? ` (${p.chance}%)` : ""}`),
@@ -91,15 +91,16 @@ export const ACTS: ActDef[] = [
   A("drain", new RegExp(`^(?:吸取|汲取)對[手方](?:最大體力(?:的)?\\s*${RATIO}|當前體力(?:的)?\\s*${RATIO}|\\s*(\\d+)\\s*點(?:固定)?體力|(?:最大體力)?${RATIO}(?:的)?(?:最大)?體力)$`),
     (m) => ({ ratio: ratio(m[1] || m[4]), cur: !!m[2], ratioCur: ratio(m[2]), flat: m[3] ? n(m[3]) : undefined, true: /汲取/.test(m[0]) }),
     (p) => `${p.true ? "汲取" : "吸取"}對手${p.flat != null ? ` ${p.flat} 點` : p.cur ? `當前體力 ${pct(p.ratioCur)}` : `最大體力 ${pct(p.ratio)}`}`),
-  A("mercy", /^(?:對[方手])?會?(?:餘下|保留)\s*1\s*點?體力$/, () => ({}), () => `手下留情（保留1點體力）`),
+  A("mercy", /^對[方手]會?(?:餘下|保留)\s*1\s*點?體力$/, () => ({}), () => `手下留情（對手保留1點體力）`),
 
   // ── 傷害修正（本次）
   A("boost", new RegExp(`^(?:本次|當回合|本技能)?(?:自身)?(?:技能)?(?:威力|造成的?(?:攻擊|技能|非真實)?傷害|攻擊傷害|傷害)(?:額外)?(?:提升|提高|增加)\\s*${NUM}%$`), (m) => ({ mult: 1 + n(m[1]) / 100, kind: /非真實傷害/.test(m[0]) ? "非真實" : /技能傷害/.test(m[0]) ? "技能" : "攻擊", power: /威力/.test(m[0]) }), (p) => `本次【${p.power ? "攻擊威力" : KIND[p.kind]}】×${p.mult}`),
   A("boost", /^(?:本技能|本次)?(?:威力|傷害)(?:加倍|翻倍)$/, (m) => ({ mult: 2, kind: "攻擊", power: /威力/.test(m[0]) }), (p) => `本次【${p.power ? "攻擊威力" : "攻擊傷害"}】×2`),
-  A("no_resist", /^(?:攻擊時)?造成的傷害不會出現微弱/, () => ({}), () => `不會出現微弱`),
+  A("no_resist", /^(?:攻擊時)?造成的傷害不會出現微弱$/, () => ({}), () => `不會出現微弱`),
   A("crit_now", /^(?:本次|當回合)?(?:攻擊)?必定(?:打出)?(?:致命一擊|暴擊)$/, () => ({}), () => `必定致命一擊`),
 
   // ── 持續型修正
+  A("dmg_mod_turns", /^(?:使用時)?(\d+)%機率(?:一|1)回合受到傷害減半$/, (m) => ({ chance: n(m[1]), turns: 1, kind: "非真實", reduce: 0.5, dir: "in" }), (p) => `本回合受到非真實傷害減半（${p.chance}%）`),
   A("dmg_mod_turns", new RegExp(`^(\\d+)\\s*回合內(?:自身)?受到(?:的)?(攻擊|技能|非真實)?傷害(?:減少|降低)\\s*${NUM}%$`), (m) => ({ turns: n(m[1]), kind: m[2] || "", reduce: n(m[3]) / 100, dir: "in" }), (p) => `${p.turns}回合 受到【${KIND[p.kind]}】-${p.reduce * 100}%`),
   A("dmg_mod_turns", new RegExp(`^(?:下\\s*)?(\\d+)\\s*回合(?:內)?(?:自身)?(?:造成的?)?(攻擊|技能|非真實)?傷害(?:提升|提高)\\s*${NUM}%$`), (m) => ({ turns: n(m[1]), kind: m[2] || "", boost: n(m[3]) / 100, dir: "out", next: /^下/.test(m[0]) }), (p) => `${p.next ? "下" : ""}${p.turns}回合 造成【${KIND[p.kind]}】+${p.boost * 100}%`),
   A("dmg_mod_uses", new RegExp(`^(?:自身)?下\\s*(\\d+|[一二兩三])\\s*次(?:造成的?)?(攻擊|技能|非真實)?(?:攻擊)?傷害(?:提升|提高)\\s*${NUM}%$`), (m) => ({ uses: n(m[1]), kind: m[2] || "", boost: n(m[3]) / 100 }), (p) => `下${p.uses}次 【${KIND[p.kind]}】+${p.boost * 100}%`),
@@ -181,7 +182,7 @@ export const ACTS: ActDef[] = [
   A("dmg_from_last", /^(?:並)?附加等同於恢復量的(百分比|固定|真實)傷害$/, (m) => ({ ratio: 1, type: m[1] }), (p) => `【${dmgName(p.type)}】等同恢復量`),
 
   A("attack_inflict_turns", new RegExp(`^下\\s*(\\d+)\\s*回合(?:自身)?(?:的)?攻擊(?:技能)?必定令對[手方]${ST}$`), (m) => ({ turns: n(m[1]), status: m[2] }), (p) => `下${p.turns}回合 攻擊必定令對手${p.status}`),
-  A("survive", /^(?:保留|殘留)\s*1\s*點體力$/, () => ({}), () => `保留1點體力`),
+  A("survive", /^(?:自身)?(?:保留|殘留)\s*1\s*點?體力$/, () => ({}), () => `自身保留1點體力`),
   A("bench_entrance_status", new RegExp(`^對方(?:切換)?登場(?:時)?(?:有)?(\\d+)%(?:機率)?進入${ST}$`), (m) => ({ chance: n(m[1]), status: m[2] }), (p) => `對方登場 ${p.status} (${p.chance}%)`),
 
   A("vampire", new RegExp(`^造成(?:的)?(?:技能|攻擊)?傷害(?:的)?\\s*${RATIO}\\s*(?:恢復|回復)自身(?:的)?體力$`), (m) => ({ ratio: ratio(m[1]), kind: /攻擊/.test(m[0]) ? "攻擊" : "技能" }), (p) => `吸血 ${pct(p.ratio)}`),
@@ -232,6 +233,8 @@ export const CONDS: CondDef[] = [
   C("hp_ratio", new RegExp(`^(自身|對[手方])(?:當前)?體力(高於|大於|低於|小於|不高於|不低於|不大於|不小於)(?:最大體力(?:的)?)?${RATIO}$`), (m) => `${m[1]}體力${m[2]}${m[3]}`, (m) => ({ side: who(m[1]), op: m[2], ratio: ratio(m[3]) })),
   C("hp_cmp", /^(自身|對[手方])(?:當前)?體力(高於|大於|低於|小於|不高於|不低於)(對[手方]|自身)$/, (m) => `${m[1]}體力${m[2]}${m[3]}`, (m) => ({ side: who(m[1]), op: m[2] })),
   C("shield", /^(對[手方]|自身)(不)?(?:擁有|存在|有|處於)護盾(?:、護罩)?(?:狀態)?$/, (m) => `${m[1]}${m[2] || ""}擁有護盾`, (m) => ({ side: who(m[1]), neg: !!m[2] })),
+  C("hp_full", /^(自身|對[手方])(?:處於)?滿體力$/, (m) => `${m[1]}滿體力`, (m) => ({ side: who(m[1]) })),
+  C("no_skill_dmg", /^(?:當回合)?自身未受到(技能|攻擊)?傷害$/, (m) => `自身未受到${m[1] || ""}傷害`, (m) => ({ kind: m[1] || "" })),
   C("pp_full", /^(?:該技能)?PP值(?:為滿|已滿)$/, () => "PP值為滿"),
   C("invalid", /^(?:攻擊)?技能無效(?:時)?$|^技能無效時$/, () => "技能無效"),
   C("weak", /^(?:造成的?)?(?:技能)?傷害為微弱$/, () => "傷害為微弱"),
@@ -300,7 +303,7 @@ export function customAct(t: string): Act | null {
 
 // ───────── 句子解析 ─────────
 export function matchAct(s: string): Act | null {
-  const t0 = s.replace(/^(?:並且|並|且|同時|然後|再|命中後|命中時|使用時|則|額外)\s*/, "").replace(/[。！]$/, "").trim();
+  const t0 = s.replace(/^(?:並且|並|且|同時|然後|再|命中後|命中時|使用時|則|額外)\s*/, "").replace(/^改為/, "").replace(/[。！]$/, "").trim();
   if (!t0) return { op: "noop", p: {}, label: "" };
   const variants = [t0, t0.replace(/^附加(?=當回合|若|吸取|令|使)/, ""), t0.replace(/^附加/, ""), t0.replace(/^(?:令|使)/, "")];
   for (const t of variants) {
@@ -354,7 +357,10 @@ function parseSegment(seg: string, rest: string[]): Stmt | null {
   if (cu) return { acts: [cu] };
   let m = seg.match(/^(?:若)?(消除|吸取|複製|交換|解除|反轉|轉化|附加|無視)成功(?:時|後)?(?:則)?(.+)$/);
   if (m) { const r = matchActs(m[2]); rest.push(...r.rest); return { chain: "success", acts: r.acts }; }
-  m = seg.match(/^(?:若)?(?:未觸發|觸發失敗|消除失敗|任一項未觸發(?:或均觸發)?)(?:則|時)?(.+)$/);
+  m = seg.match(/^(?:若)?任一項未觸發(或均觸發)?(?:則|時)?(.+)$/);
+  // 「任一項未觸發或均觸發」＝無論成敗都執行
+  if (m) { const r = matchActs(m[2]); rest.push(...r.rest); return m[1] ? { acts: r.acts } : { chain: "any_fail", acts: r.acts }; }
+  m = seg.match(/^(?:若)?(?:未觸發|觸發失敗|消除失敗)(?:則|時)?(.+)$/);
   if (m) { const r = matchActs(m[1]); rest.push(...r.rest); return { chain: "fail", acts: r.acts }; }
   m = seg.match(/^(?:若)?觸發成功(?:則|時)?(.+)$/);
   if (m) { const r = matchActs(m[1]); rest.push(...r.rest); return { chain: "success", acts: r.acts }; }
@@ -467,7 +473,25 @@ function parseBody(text: string, rest: string[]): Stmt[] {
     const st = parseSegment(seg, rest);
     if (st) out.push(st);
   }
+  markLiveConds(out);
   return out;
+}
+
+/** 句中前段附加了異常，後段「處於該異常」條件須即時判定（不可用句首快照） */
+function markLiveConds(out: Stmt[]) {
+  const applied = new Set<string>();
+  for (const st of out) {
+    if (st.cond?.some(c => (c.c === "has_status" || c.c === "abnormal") && (applied.has(c.p?.side) || applied.has("both")))) st.live = true;
+    for (const a of st.acts) if (/^status/.test(a.op) || a.op === "convert_status") applied.add(a.p.side || "opp");
+  }
+}
+
+/** 致命／被擊敗時「保留1點體力」＝自身存活（不是手下留情） */
+const SELF_SURVIVE_TRIGS = new Set<Trigger>(["fatal", "defeated"]);
+function fixSurvive(c: Clause): Clause {
+  if (!SELF_SURVIVE_TRIGS.has(c.trig)) return c;
+  for (const b of c.body) b.acts = b.acts.map(a => a.op === "mercy" && !/對[手方]/.test(c.raw) ? { op: "survive", p: {}, label: "保留1點體力" } : a);
+  return c;
 }
 
 
@@ -477,7 +501,7 @@ export function parseHeader(head: string): { trig: Trigger; cond?: Cond[] } | nu
   const h = head.replace(/^本場戰鬥僅限一次[，,]?/, "");
   const t0 = matchTrigger(h);
   if (t0) return { trig: t0 };
-  let m = h.match(/^(.+?時)(?:若)?(.+)$/);
+  let m = h.match(/^(.+?時)[，,]?\s*(?:若)?(.+)$/);
   if (m) { const t = matchTrigger(m[1]); const c = matchCond(m[2]); if (t) return { trig: t, cond: c ? [c] : [{ c: "text", label: m[2], p: { text: m[2] } }] }; }
   m = h.match(/^(.+?)若(.+)$/);
   if (m) { const t = matchTrigger(m[1] + "時") || matchTrigger(m[1]); const c = matchCond(m[2]); if (t) return { trig: t, cond: c ? [c] : [{ c: "text", label: m[2], p: { text: m[2] } }] }; }
@@ -562,6 +586,14 @@ export function parseSkill(name: string, desc: string): Program {
     const c = parseLine(line, trig);
     const ca = c.body[0]?.acts[0];
     if (ca?.op === "custom" && CUSTOM[ca.p.key]?.trig) c.trig = CUSTOM[ca.p.key].trig!;
+    // 「造成傷害的X%恢復自身體力，…等量…」：等量取實際傷害，須於傷害結算後執行
+    if (c.trig === "use") {
+      let vamp = false;
+      for (const b of c.body) {
+        if (vamp && b.acts.some(a => a.op === "dmg_equal" || a.op === "heal_equal")) b.afterHit = true;
+        if (b.acts.some(a => a.op === "vampire")) vamp = true;
+      }
+    }
     clauses.push(c);
   }
   return { title: name, kind: "skill", clauses };
@@ -591,7 +623,7 @@ export function parseSoulMark(title: string, text: string): Program {
       // 單行魂印（無標頭）：嘗試以「XX時，」開頭
       const m = line.match(/^(.{2,14}?時)[，,：:](.+)$/);
       const t2 = m ? matchTrigger(m[1]) : null;
-      if (t2) { clauses.push(parseLine(m![2], t2)); continue; }
+      if (t2) { clauses.push(fixSurvive(parseLine(m![2], t2))); continue; }
       clauses.push(parseLine(line, "passive"));
       continue;
     }
@@ -601,13 +633,27 @@ export function parseSoulMark(title: string, text: string): Program {
       if (mc) clauses.push(mc);
       continue;
     }
-    const c = parseLine(line, cur);
+    const c = fixSurvive(parseLine(line, cur));
     const ca = c.body[0]?.acts[0];
     const ctrig = ca?.op === "custom" ? CUSTOM[ca.p.key]?.trig : undefined;
     if (ctrig) c.trig = ctrig; else if (curCond) c.cond = curCond;
+    // 標頭條件無法解析：不可宣稱已實裝（執行時亦不觸發）
+    const tc = !ctrig && curCond?.find(x => x.c === "text");
+    if (tc) { c.parsed = false; c.rest = [...(c.rest || []), `（條件）${tc.label}`]; }
     clauses.push(c);
   }
+  fixHpBoundary(clauses);
   return { title, kind: "soul", clauses };
+}
+
+/** 「高於X」「低於X」成對出現時，恰好等於X須歸入一側：高於→不低於 */
+function fixHpBoundary(clauses: Clause[]) {
+  const conds = clauses.flatMap(c => c.cond || []).filter(c => c.c === "hp_ratio");
+  for (const c of conds) {
+    if (c.p?.op !== "高於" && c.p?.op !== "大於") continue;
+    if (!conds.some(o => o !== c && (o.p?.op === "低於" || o.p?.op === "小於") && o.p?.side === c.p?.side && o.p?.ratio === c.p?.ratio)) continue;
+    c.p = { ...c.p, op: "不低於" }; c.label = c.label.replace(/高於|大於/, "不低於");
+  }
 }
 
 /** 覆蓋率：解析成功的子句數 */

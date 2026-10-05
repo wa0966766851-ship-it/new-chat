@@ -71,16 +71,23 @@ if (check) {
   // 競技場五隻加入 25 技能＋18 魂印子句（handler 專屬執行，不走積木解析）：753 → 778，已解析維持 479。
   // 20261003：競技場五隻＋5030 技能描述改為 ■／🎯／> 逐行標記（原文不變，補必中／先制），子句拆細：778 → 912，已解析 479 → 536。
   // 20261003-2：無相諦補消逝、日月安屬沉默改戰鬥百科定義、龍魂之源／印記／之力說明行：912 → 915。
-  if (skills.parsed < 536 || skills.total !== 915) failures.push(`技能覆蓋率退步或資料集改變：${skills.parsed}/${skills.total}`);
+  // 20261005：5031完整描述＋5032～5034來源TXT加入；601/1034只是解析基準，不是實裝率。
+  if (skills.parsed < 601 || skills.total !== 1034) failures.push(`技能覆蓋率退步或資料集改變：${skills.parsed}/${skills.total}`);
   // 5029 異境神霆·雷伊加入 16 個可稽核魂印子句；資料集基準由 409 更新為 427。
   // 競技場五隻魂印走專屬 handler：431 → 449，已解析維持 104。
   // 20261003-2：無極聖武補英雄之耀／武誅／亮節／威怯官方定義、龍之治癒補赤龍與四龍追加效果：449 → 456，已解析 104 → 105。
-  if (souls.parsed < 105 || souls.total !== 456) failures.push(`魂印覆蓋率退步或資料集改變：${souls.parsed}/${souls.total}`);
+  // 20261004 P1 積木修正：轉化異常等正則補 $ 錨定，5023「將自身異常轉化為詛咒異常狀態且令自身詛咒回合數翻倍」後半句不再被吞掉，誠實標為未解析：105 → 104。
+  if (souls.parsed < 112 || souls.total !== 579) failures.push(`魂印覆蓋率退步或資料集改變：${souls.parsed}/${souls.total}`);
 
   for (const name of Object.keys(SKILL_MODE)) {
     const skill = DEFAULT_ELVES.flatMap(elf => elf.skills || []).find(item => item.name === name);
     if (!skill) failures.push(`積木技能不存在：${name}`);
-    else if (coverage(getSkillProgram(skill).clauses).missing.length) failures.push(`積木技能仍有未解析子句：${name}`);
+    else {
+      // 指定子句模式（專屬 handler＋積木補指定子句，例如 5014 技能無效時子句）：只要求登記的子句可解析
+      const mode = SKILL_MODE[name];
+      const clauses = getSkillProgram(skill).clauses.filter((_, i) => mode === "blocks" || mode.includes(i));
+      if (coverage(clauses).missing.length) failures.push(`積木技能仍有未解析子句：${name}`);
+    }
   }
   for (const key of Object.keys(SOUL_MODE)) {
     const elf = DEFAULT_ELVES.find(item => String(item.id) === key || item.name === key);

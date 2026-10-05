@@ -44,7 +44,8 @@ export function writeScopedRegistry(state: BattleState, side: Side, elf: Elf, pa
 }
 
 export function addScopedTimer(state: BattleState, side: Side, elf: Elf, timer: Timer, context?: AddContext): BattleState {
-  const scoped: Timer = timer.scope === "team" || timer.payload?.lockSwitch
+  // 明確個體作用域優先；舊未指定作用域的陣營鎖切仍保持相容。
+  const scoped: Timer = timer.scope === "team" || (timer.scope !== "elf" && timer.payload?.lockSwitch)
     ? { ...timer, scope: "team" }
     : { ...timer, scope: "elf", ownerBattleId: timer.ownerBattleId || battleIdentity(elf) };
   if (scoped.scope === "team" || scoped.ownerBattleId === battleIdentity(state[side])) {
@@ -104,8 +105,8 @@ export function switchBattleSide(state: BattleState, side: Side, index: number):
   }
   const active = { ...incoming, marks: marks.filter(mark => markAppliesToElf(mark, incoming)) };
   const team = [...state[teamKey]];
-  // 屬性剝離只在場上有效：下場時恢復原屬性。
-  const peelRestore = outgoing.typePeeled ? { type: outgoing.originalType || outgoing.type, typePeeled: false } : {};
+  // 屬性剝離／暫時改變屬性只在場上有效：下場時恢復原屬性。
+  const peelRestore = (outgoing.typePeeled || outgoing.typeChangedUntilSwitch) ? { type: outgoing.originalType || outgoing.type, typePeeled: false, typeChangedUntilSwitch: false } : {};
   team[state[indexKey]] = { ...outgoing, ...peelRestore, marks: marks.filter(mark => markAppliesToElf(mark, outgoing)) };
   team[index] = active;
   return {

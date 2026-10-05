@@ -62,6 +62,7 @@ export function resolveDamageTransition(
   incomingDamage: number,
   nature: DamageNature,
   rule: NonPositiveSurvivalRule = standardSurvivalRule(),
+  options: { ignoreNonTrueImmunity?: boolean } = {},
 ): DamageTransition {
   const amount = Math.max(0, Math.floor(incomingDamage));
   const crossingZero = currentHp > 0 && currentHp - amount <= 0;
@@ -80,7 +81,7 @@ export function resolveDamageTransition(
   }
 
   const floor = Number.isFinite(rule.minHp) ? rule.minHp : -70 * Math.max(0, maxHp);
-  if (nature === "non_true" && (currentHp <= 0 || crossingZero)) {
+  if (nature === "non_true" && !options.ignoreNonTrueImmunity && (currentHp <= 0 || crossingZero)) {
     // 原傷害不進入體力；從0（首次進入）或當前負體力另作-70%最大體力調整。
     const baseHp = crossingZero ? 0 : currentHp;
     const hp = Math.max(floor, baseHp - Math.floor(maxHp * 0.7));

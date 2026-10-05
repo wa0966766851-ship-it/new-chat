@@ -8,7 +8,8 @@ const art: Record<number, number | undefined> = { 12: 4661, 13: 4903, 14: 4800, 
 export const STAGED_ARENA_ELVES: Seed[] = source.filter(e => e.sourceId !== 17).map(e => {
   const skills: Skill[] = e.skills.map((s, index) => ({
     name: s.name,
-    type: s.type.join('.'),
+    // 屬性技能與既有精靈一致顯示「無屬性」圖示；攻擊技能保留技能本身屬性
+    type: s.kind === '屬性' ? '無屬性' : s.type.join('.'),
     category: s.kind as Skill['category'],
     power: s.power,
     pp: s.pp,

@@ -1,5 +1,7 @@
+import { multiplyDamageReduction } from '../battle/damageReduction';
 import { BattleEventContext, BattleSkillHandler, EffectTiming, ElfDeconstructedProfile } from './types';
 import { turnEffect } from "../battle/timers";
+import { combineSettlementCallbacks } from '../battle/settlementReceipt';
 
 export const handleKeldSoulMark = (ctx: BattleEventContext, event: EffectTiming | string, extraData?: any) => {
   const { self, actor, setPlayerState, getPlayerState, addLog, applyTrueDamage, applyHeal } = ctx;
@@ -8,20 +10,25 @@ export const handleKeldSoulMark = (ctx: BattleEventContext, event: EffectTiming 
   switch (event) {
     case EffectTiming.BEFORE_DAMAGE:
       // 自身受到的非真實傷害額外減少 60%
-      if (extraData?.isIncoming && extraData?.damageCategory !== "true") {
-        const reduced = Math.floor(extraData.base * 0.6);
-        extraData.multiplier *= 0.4;
-        
-        if (reduced < 200) {
-          // 戰鬥階段結束時自身受到 25% 的真實傷害 (這裡暫記標記)
-          setPlayerState("keldBacklash", true);
-        } else {
-          // 若不低於 200 點且自身擁有寂殺之魄則令對手凍傷 3 回合
-          const souls = getPlayerState("keldSoulStacks") || 0;
-          if (souls > 0) {
-            ctx.applyStatusWithImmunityCheck(oppSide, "凍傷", 3);
-          }
-        }
+      if (extraData?.isIncoming && extraData?.damageCategory !== "true" && !extraData.pure) {
+        (extraData.beforeFinalDamage ||= []).push(() => {
+          const before = Math.max(0, extraData.base * (1 + extraData.increasePercent) * Math.max(0, 1 - extraData.decreasePercent) * extraData.multiplier - (extraData.flatReduction || 0));
+          const rate = multiplyDamageReduction(extraData, 0.4);
+          if (!rate) return; // 被無視減傷時不誤觸發「以此法減少」的副作用。
+          const after = Math.max(0, extraData.base * (1 + extraData.increasePercent) * Math.max(0, 1 - extraData.decreasePercent) * extraData.multiplier - (extraData.flatReduction || 0));
+          const reduced = Math.max(0, Math.floor(before) - Math.floor(after));
+          if (reduced <= 0) return;
+          extraData.afterDamage = combineSettlementCallbacks(extraData.afterDamage, () => {
+            if (reduced <= 200) setPlayerState('keldBacklashCount', (getPlayerState('keldBacklashCount') || 0) + 1);
+            if (reduced >= 200 && (getPlayerState('keldSoulStacks') || 0) > 0) {
+              const result = ctx.applyStatusWithImmunityCheck(oppSide, '凍傷', 3);
+              if (!result.success) {
+                ctx.clearTurnEffectsOf(oppSide);
+                ctx.setNextTurns(oppSide, 'lockSwitchTurns', 2);
+              }
+            }
+          });
+        });
       }
       break;
 
@@ -42,11 +49,11 @@ export const handleKeldSoulMark = (ctx: BattleEventContext, event: EffectTiming 
       }
       break;
 
-    case EffectTiming.ROUND_END:
-      if (getPlayerState("keldBacklash")) {
-        const backlashDmg = Math.floor(self.maxHp * 0.25);
+    case EffectTiming.BATTLE_PHASE_END:
+      if (getPlayerState("keldBacklashCount")) {
+        const backlashDmg = Math.floor(self.maxHp * 0.25) * getPlayerState('keldBacklashCount');
         applyTrueDamage(actor, backlashDmg, "冰魄反噬");
-        setPlayerState("keldBacklash", false);
+        setPlayerState("keldBacklashCount", 0);
       }
       break;
 

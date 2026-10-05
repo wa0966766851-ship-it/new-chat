@@ -1,4 +1,5 @@
 import { TeamSetupTools } from "./TeamSetupTools";
+import { bindInitialCounterparts } from '../battle/illusion';
 import React, { useState, useEffect, useMemo, lazy, Suspense } from "react";
 import { matchesElfQuery } from '../utils/elfSearch';
 import { createPortal } from 'react-dom';
@@ -68,6 +69,7 @@ function syncSavedSkillPp(e: any) {
     if (!d) return;
     s.pp = d.pp;
     s.maxPp = d.maxPp !== undefined ? d.maxPp : d.pp;
+    if (d.category === "屬性" && d.type) s.type = d.type; // 屬性技能圖示以目前資料為準（無屬性）
   });
 }
 
@@ -999,7 +1001,7 @@ export default function StartScreen({
   const handleStart = () => {
     if (p1Team.length === 0 || p2Team.length === 0 || !p1StarterId || !p2StarterId) return;
     if (battleFormat === "normal_6v6" || battleFormat === "solo_1v1") {
-      let p1Active = p1Team.slice(0, 6).map(e => {
+      let p1Active = p1Team.map(e => {
         const bonusElf = { ...e, hasAnnualBonus: p1AnnualBonus };
         bonusElf.calculatedStats = calculateElfStats(
           bonusElf.baseStats, 100, bonusElf.ivs, bonusElf.evs, bonusElf.natureModifiers, bonusElf.inscriptions, bonusElf.guildBonuses, bonusElf.hasAnnualBonus
@@ -1008,7 +1010,7 @@ export default function StartScreen({
         bonusElf.currentHp = bonusElf.calculatedStats.hp;
         return bonusElf;
       });
-      let p2Active = p2Team.slice(0, 6).map(e => {
+      let p2Active = p2Team.map(e => {
         const bonusElf = { ...e, hasAnnualBonus: p2AnnualBonus };
         bonusElf.calculatedStats = calculateElfStats(
           bonusElf.baseStats, 100, bonusElf.ivs, bonusElf.evs, bonusElf.natureModifiers, bonusElf.inscriptions, bonusElf.guildBonuses, bonusElf.hasAnnualBonus
@@ -1017,6 +1019,8 @@ export default function StartScreen({
         bonusElf.currentHp = bonusElf.calculatedStats.hp;
         return bonusElf;
       });
+      p1Active = bindInitialCounterparts(p1Active, 6).slice(0, 6);
+      p2Active = bindInitialCounterparts(p2Active, 6).slice(0, 6);
       const st1 = p1Active.find(e => e.battleId === p1StarterId)?.battleId || p1Active[0]?.battleId || p1StarterId;
       const st2 = p2Active.find(e => e.battleId === p2StarterId)?.battleId || p2Active[0]?.battleId || p2StarterId;
       if (battleFormat === "solo_1v1") {
@@ -1139,8 +1143,8 @@ export default function StartScreen({
     
     onStartBattle(
       battleMode,
-      finalP1Active.length > 0 ? finalP1Active : p1Team,
-      finalP2Active.length > 0 ? finalP2Active : p2Team,
+      finalP1Active.length > 0 ? bindInitialCounterparts([...finalP1Active, ...p1Team.filter(e => !p1PickedIds.includes(e.battleId) && !p2BannedIds.includes(e.battleId))], finalP1Active.length).slice(0, finalP1Active.length) : p1Team,
+      finalP2Active.length > 0 ? bindInitialCounterparts([...finalP2Active, ...p2Team.filter(e => !p2PickedIds.includes(e.battleId) && !p1BannedIds.includes(e.battleId))], finalP2Active.length).slice(0, finalP2Active.length) : p2Team,
       starter1,
       starter2,
       p1Suit,

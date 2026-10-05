@@ -1,3 +1,4 @@
+import { multiplyDamageReduction, addDamageReduction } from '../battle/damageReduction';
 import { BattleEventContext, BattleSkillHandler, EffectTiming } from "./types";
 import { isAbnormal } from "../utils/battleHelpers";
 import { getMark } from "../battle/marks";
@@ -72,21 +73,21 @@ export const handleDimensionalSoulMark = (ctx: BattleEventContext, event: Effect
       break;
 
     case EffectTiming.BEFORE_DAMAGE:
-      if (extraData?.isIncoming) {
+      if (extraData?.isIncoming && String(extraData.damageCategory).startsWith("skill")) {
         // 5:每有1篇詩章，受到技能傷害減少10%
         if (stacks >= 5) {
           const reduction = Math.min(1.0, stacks * 0.10);
-          extraData.multiplier *= (1 - reduction);
+          multiplyDamageReduction(extraData, 1 - reduction);
           addLog(`🐉 【龍】：受到技能傷害減免 ${Math.round(reduction * 100)}%！`, "effect");
         }
         // 4:減少下次受到的技能傷害40% (配合每2篇+10%的額外加成)
         const nextRed = getPlayerState("dimensionalDmgReduction") || 0;
         if (nextRed > 0) {
-          extraData.multiplier *= (1 - nextRed);
+          multiplyDamageReduction(extraData, 1 - nextRed);
           addLog(`🐉 【龍】：下次傷害減免觸發，減免 ${Math.round(nextRed * 100)}%！`, "effect");
           setPlayerState("dimensionalDmgReduction", 0);
         }
-      } else {
+      } else if (!extraData?.isIncoming) {
         // 5:每有1篇詩章，攻擊傷害提升20%
         if (stacks >= 5) {
           extraData.multiplier *= (1 + stacks * 0.20);
@@ -116,8 +117,8 @@ export const handleDimensionalSoulMark = (ctx: BattleEventContext, event: Effect
         const drainAmt = Math.floor(target.maxHp * extraRatio);
         const actualDrain = applyPinkDamage(oppSide, drainAmt, "詩章吸血");
         applyHeal(actor, actualDrain);
-        setPlayerState("dimensionalDmgReduction", extraRatio);
-        addLog(`🐉 【龍】：吸取對手最大體力 ${Math.round(extraRatio * 100)}% (${actualDrain} 點) 並獲得同等減傷！`, "effect");
+        setPlayerState("dimensionalDmgReduction", 0.4);
+        addLog(`🐉 【龍】：吸取對手最大體力 ${Math.round(extraRatio * 100)}% (${actualDrain} 點)，下次受到技能傷害減少40%！`, "effect");
       }
       break;
 

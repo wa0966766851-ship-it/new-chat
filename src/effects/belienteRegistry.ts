@@ -39,7 +39,9 @@ export const BELIENTE_SKILLS: Record<string, BattleSkillHandler> = {
     // ... (保持原有的技能邏輯，但確保符合規範)
     addLog(`✨ 【星垂穹儀】：星辰運轉，命運干涉！`, "effect");
     setPlayerState("ImmuneStatDebuffTurns", 5);
-    setPlayerState("DmgToHealNextTurn", true);
+    // 攻擊傷害轉體力是結算防護，不是攻擊免疫；被無視時不消耗。
+    context.addTimerTo(actor, { id: 'beliente_damage_conversion', name: '星光倒流', kind: 'use_counter',
+      source: 'skill', remaining: 1, tickAt: 'never', payload: { block: { absorbToHeal: true, kind: '攻擊' } } }, false);
     setPlayerState("BelienteVaultTurns", 1);
     // 🎯 反轉自身能力下降狀態，反轉成功則使對手隨機2個技能PP歸零
     const stages: Record<string, number> = { ...(self.statStages || {}) } as any;

@@ -1,3 +1,5 @@
+import { benchSkip } from './fieldGuard';
+import { bypassesAttackDefense } from '../battle/attackDefense';
 import { BattleEventContext, BattleSkillHandler, EffectTiming, ElfDeconstructedProfile } from "./types";
 import { isAbnormal, getMaxPp, clampSkillPp } from "../utils/battleHelpers";
 import { StatusRegistry } from "./statusRegistry";
@@ -32,6 +34,7 @@ const puniSharedRoundEnd = (context: BattleEventContext) => {
  * 聖靈譜尼 (Holy Spirit Puni) 專屬註冊表 [神]
  */
 export const handleShenglingPuniSoulMark = (context: BattleEventContext, event: EffectTiming | string, extraData?: any) => {
+  if (benchSkip(context, event)) return; // 場下不觸發回合節點效果（例：聖・回合結束回復）
   const priorityComp = extraData?.priorityComp;
   const { self, target, actor, setPlayerState, getPlayerState, setOpponentState, addLog, clearTurnEffectsOf, applyStatusWithImmunityCheck, applyPinkDamage, skill, updateElf, applyFixedDamage } = context;
   const oppSide = actor === "p1" ? "p2" : "p1";
@@ -131,13 +134,13 @@ export const handleShenglingPuniSoulMark = (context: BattleEventContext, event: 
   // BEFORE_DAMAGE: 虛無 (受到攻擊傷害時，免疫下 1 次受到的攻擊傷害) & 其它無效化
   if (event === EffectTiming.BEFORE_DAMAGE && extraData) {
     if (extraData.isIncoming === true) {
-      if (extraData.damageCategory === "skill_attack" && getPlayerState("puniNextAttackImmune")) {
+      if (extraData.damageCategory === "skill_attack" && getPlayerState("puniNextAttackImmune") && !bypassesAttackDefense(extraData, 'block')) {
         extraData.multiplier = 0;
         setPlayerState("puniNextAttackImmune", false);
         addLog(`✨ 【虛無】：化身虛無，使對手本次攻擊無效化！`, "effect");
       }
       
-      if (getPlayerState("puniVoidShieldTurns") > 0) {
+      if (getPlayerState("puniVoidShieldTurns") > 0 && !bypassesAttackDefense(extraData, 'block')) {
         extraData.multiplier = 0;
         addLog(`✨ 【璨靈聖光】：免疫攻擊傷害！`, "status");
       }
@@ -347,6 +350,7 @@ export const handleShenglingPuniSoulMark = (context: BattleEventContext, event: 
  * 譜尼 (Puni Base) 專屬註冊表 [聖]
  */
 export const handlePuniBaseSoulMark = (context: BattleEventContext, event: EffectTiming | string, extraData?: any) => {
+  if (benchSkip(context, event)) return; // 場下不觸發回合節點效果（例：聖・回合結束回復）
   const { self, actor, getPlayerState, setPlayerState, addLog } = context;
   const oppSide = actor === "p1" ? "p2" : "p1";
   if (event === EffectTiming.ROUND_START) puniSharedRoundStart(context);
@@ -493,9 +497,9 @@ export const PUNI_SKILLS: Record<string, BattleSkillHandler> = {
       ctx.addLog(`🚫 【附加效果失效】：【斷空破】的附加效果失效！`, "info");
       return;
     }
-    const { applyFixedDamage, addLog, targetSide } = ctx;
-    applyFixedDamage(targetSide, 30);
-    addLog(`✨ 【斷空破】：額外附加 30 點傷害！`, "damage");
+    const { applyTrueDamage, addLog, targetSide } = ctx;
+    applyTrueDamage(targetSide, 30, '斷空破');
+    addLog(`✨ 【斷空破】：額外附加 30 點真實傷害！`, "damage");
   },
   "輪迴": (ctx) => {
     const sealed = ctx.getPlayerState("additionalEffectsSealed") || ctx.getPlayerState(`${ctx.actor}_sealSkillAdditionalEffects`) > 0;
@@ -590,7 +594,7 @@ export const PUNI_SKILLS: Record<string, BattleSkillHandler> = {
     }
     const { target, applyPinkDamage, addLog, targetSide } = ctx;
     const dmg = Math.floor(target.maxHp / 8);
-    applyPinkDamage(targetSide, dmg, "【聖靈魔閃光】百分比");
+    applyPinkDamage(targetSide, dmg, "【聖靈魔閃光】百分比", undefined, undefined, 'percent');
     addLog(`✨ 【聖靈魔閃光】：降低對手 1/8 的 HP！`, "damage");
   },
   // Exclusive skills
@@ -699,12 +703,13 @@ export const PUNI_SKILLS: Record<string, BattleSkillHandler> = {
       }
     }
     if (cleared) {
-      target.statStages = oppStages;
+      ctx.updateElf(targetSide, { statStages: oppStages });
       addLog(`✨ 【神靈之觸】：消除了對手的能力提升狀態！`, "effect");
       
       // [消除成功]對手下 1 次攻擊技能無效
-      setOpponentState("nextAttackSkillInvalid", true);
-      setOpponentState("nextAttackSkillInvalidReason", "【神靈之觸】消除補償");
+      ctx.addTimerTo(targetSide, { id: 'puni_touch_next_attack_invalid', name: '神靈之觸',
+        source: 'skill', kind: 'use_counter', remaining: 1, tickAt: 'never', persistsOffField: false,
+        payload: { block: { invalid: '攻擊', src: '神靈之觸' } } }, false);
       addLog(`✨ 【神靈之觸】：消除成功，使對手下 1 次使用的攻擊技能失效！`, "status");
     }
 

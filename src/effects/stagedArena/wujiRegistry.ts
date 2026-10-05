@@ -1,5 +1,6 @@
 import type { BattleSkillHandler, DamageComputation } from '../types';
 import { EffectTiming } from '../types';
+import { StatusRegistry } from '../statusRegistry';
 import { STATS, clearStatuses, activeUntil, bump, damagePercentOfTarget, grantStatusImmunity, live, modify, read, restorePP, reverseDrops, status, until, write, type ArenaContext } from './shared';
 
 const HERO = 'arena.heroGlory';
@@ -51,11 +52,31 @@ function removeWujiMark(c: ArenaContext, side: Side, owner: string, id: string):
   showMark(c, side, owner, id, 0);
 }
 
+/**
+ * 特性描述是否含「機率不高於 50% 的異常狀態附加效果」（例：帶電 8% 使對方麻痺、30% 令對手害怕）。
+ * 只看「使／令對方陷入異常狀態」且機率 ≤ 50%；能力等級變化、秒殺、免死、反彈等不算。
+ */
+export function hasLowChanceStatusTrait(desc: string): boolean {
+  const names = [...Object.keys(StatusRegistry).filter(k => k.length >= 2 && !/[.*+?^${}()|[\]\\]/.test(k)), '異常狀態', '異常'];
+  const re = new RegExp(`(\\d+(?:\\.\\d+)?)\\s*%[^。；;\\n%]{0,16}?(?:使|令|讓)?(?:對方|對手)?(?:陷入|進入|處於)?(?:${names.join('|')})`, 'g');
+  for (const m of desc.matchAll(re)) if (Number(m[1]) <= 50 && !/解除|消除|免疫|抵抗|自身|己方/.test(m[0])) return true;
+  return false;
+}
+
+/** 英雄之耀檢測的「特性」：專屬特性（魂印）與通用特性；不含二代／專屬／異能特質。 */
+export function heroGloryTraitTexts(e: { soulMark?: { description?: string }; trait?: { description?: string }; alienTraits?: { generalTrait?: { description?: string } } }): string[] {
+  return [e.soulMark?.description, e.trait?.description, e.alienTraits?.generalTrait?.description].filter((d): d is string => !!d);
+}
+export const countsAgainstHeroGlory = (e: Parameters<typeof heroGloryTraitTexts>[0]) => heroGloryTraitTexts(e).some(hasLowChanceStatusTrait);
+
+export const heroGloryGain = (atk: number, spatk: number, layers: number) => Math.floor(Math.abs((atk || 0) - (spatk || 0)) * 0.15 * Math.max(0, layers));
+
 /** 英雄之耀（官方）：每有1層，自身其他能力值提升自身雙攻差值的15%。 */
 export function applyHeroGloryStats(c: ArenaContext, layers: number): void {
   if (layers <= 0) return;
   const st = c.self.calculatedStats;
-  const gain = Math.floor(Math.abs((st.atk || 0) - (st.spatk || 0)) * 0.15 * layers);
+  const gain = heroGloryGain(st.atk, st.spatk, layers);
+  write(c, 'heroGain', gain); write(c, 'heroDiff', Math.abs((st.atk || 0) - (st.spatk || 0)));
   if (!gain) return;
   c.updateElf(c.actor, {
     calculatedStats: { ...st, hp: (st.hp || 0) + gain, def: st.def + gain, spdef: st.spdef + gain, speed: st.speed + gain },
@@ -115,7 +136,7 @@ export function handleWujiSoulMark(c: ArenaContext, event: EffectTiming, data?: 
   if (event === EffectTiming.ON_ENTRANCE) {
     if (!read(c, 'initialized')) {
       const own = c.getFullTeam(c.actor).filter(e => idOf(e) !== idOf(c.self));
-      const layers = own.reduce((n, e) => n + (/機率|燒傷|麻痺|凍傷|中毒/.test(e.alienTraits?.generalTrait?.description || '') ? -1 : 1), 0);
+      const layers = own.reduce((n, e) => n + (countsAgainstHeroGlory(e) ? -1 : 1), 0);
       write(c, 'hero', Math.max(0, layers)); write(c, 'initialized', 1);
       applyHeroGloryStats(c, read(c, 'hero'));
       // 英雄之耀達到 3 層：烈武天徵、亂武天傀、鋭武銘戈不受 PP 值限制。
@@ -123,7 +144,7 @@ export function handleWujiSoulMark(c: ArenaContext, event: EffectTiming, data?: 
     }
     c.setMark({ id: HERO, name: '英雄之耀', displayChar: '耀', source: '無極聖武', ownerBattleId: idOf(c.self), count: read(c, 'hero'),
       unit: '層', persistsOffField: true, clearable: false, polarity: 'positive',
-      description: '每有1層，自身其他能力值提升自身雙攻差值的15%且自身登場時為對手附加1回合武誅' } as any, c.actor);
+      description: heroGloryDescription(read(c, 'hero'), read(c, 'heroGain'), read(c, 'heroDiff')) } as any, c.actor);
     // 官方：自身登場時，每層為對手附加 1 回合武誅。
     if (read(c, 'hero') && c.target.currentHp > 0) giveWujiMark(c, c.targetSide, idOf(c.target), WUZHU, read(c, 'hero'));
   }
@@ -157,6 +178,15 @@ export function handleWujiSoulMark(c: ArenaContext, event: EffectTiming, data?: 
       if (c.getPlayerState('attackImmunityIgnoredThisAction') && c.target.currentHp > 0) giveWujiMark(c, c.targetSide, idOf(c.target), WEIYUE, 3); // ⑤
     } else if (read(c, 'hero') && c.target.currentHp > 0) giveWujiMark(c, c.targetSide, idOf(c.target), WUZHU, read(c, 'hero'));
   }
+}
+
+/** 英雄之耀印記說明：層數與實際加成綁定顯示。 */
+export function heroGloryDescription(layers: number, gain: number, diff: number): string {
+  const base = '每有1層，自身其他能力值提升自身雙攻差值的15%且自身登場時為對手附加1回合武誅';
+  const now = layers > 0
+    ? `目前 ${layers} 層：體力、防禦、特防、速度各 +${gain}（雙攻差 ${diff} × 15% × ${layers}）；登場附加 ${layers} 回合武誅`
+    : '目前 0 層：無能力加成';
+  return `${base}\n${now}${layers >= 3 ? '\n已達 3 層：烈武天徵、亂武天傀、鋭武銘戈強化' : ''}`;
 }
 
 const HERO_FREE_SKILLS = ['烈武天徵', '亂武天傀', '鋭武銘戈'];

@@ -1,3 +1,4 @@
+import { multiplyDamageReduction, addDamageReduction } from '../battle/damageReduction';
 import { BattleEventContext, BattleSkillHandler, EffectTiming } from "./types";
 import { createExtraElf } from "../utils/extraElf";
 import { getMaxPp } from "../utils/battleHelpers";
@@ -5,6 +6,7 @@ import { StatusRegistry } from "./statusRegistry";
 import { sameStatus } from "./statusIdentity";
 import type { Elf, Skill } from "../types";
 import { getTypeMatchup } from '../utils/statCalculator';
+import { queueHpDrain } from '../battle/hpDrain';
 
 const identity = (elf: Elf) => elf.battleId || elf.id;
 const activeTimers = (ctx: BattleEventContext) => (ctx.actor === "p1" ? ctx.p1Timers : ctx.p2Timers) || [];
@@ -200,7 +202,7 @@ export const handleBrinkkSoulMark = (ctx: BattleEventContext, event: EffectTimin
     case EffectTiming.BEFORE_ACTION: {
       if (timerOn(ctx, "brinkk_deepsea")) {
         const ratio = self.currentHp < self.maxHp / 2 ? 2 / 3 : 1 / 3;
-        ctx.applyAbsorb(oppSide, Math.floor(target.maxHp * ratio), "深海働哭·持續吸取");
+        queueHpDrain(ctx, oppSide, Math.floor(target.maxHp * ratio), 'percent', "深海働哭·持續吸取");
       }
       break;
     }
@@ -267,7 +269,7 @@ export const handleBrinkkSoulMark = (ctx: BattleEventContext, event: EffectTimin
             const offFieldStacks = getPlayerState("brinkkOffFieldTrueDamageStacks") || 0;
             if (offFieldStacks > 0) {
               const reduction = 0.04 * offFieldStacks;
-              extraData.multiplier *= (1 - reduction);
+              multiplyDamageReduction(extraData, 1 - reduction);
               addLog(`🦑 【濁】：位於場下的海妖護庇，受到的非真實傷害降低 ${offFieldStacks * 4}%！`, "effect");
             }
           }

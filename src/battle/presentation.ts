@@ -1,5 +1,6 @@
 /** 播放層只保存已結算的紀錄，永遠不寫回 BattleState。 */
 import { DEFAULT_BATTLE_ANIMATION, type BattleAnimationSettings } from './animationSettings';
+import { damagePopupLabel } from './damagePopupStyle';
 export type PresentationKind = 'skill' | 'fixed' | 'percent' | 'heal' | 'true' | 'adjust_up' | 'adjust_down' | 'notice';
 export interface PresentationEvent {
   side: 'p1' | 'p2'; elfId: string; type: PresentationKind;
@@ -36,6 +37,14 @@ export class BattlePresentation {
   private cancelWait?: () => void;
   /** 額外行動節點中的技能傷害：先收集，節點結束只播一次。 */
   private extraDepth = 0;
+  /** 是否在某隻精靈的出手流程中。出手外（回合開始／結束等節點）的技能傷害不即時播，留到回合末或致死時。 */
+  private inAction = true;
+  /** 出手中致死的非紅字（真傷、粉傷等）：先讓出招與紅字播完，出手結束（或陣亡判定）時再結算。 */
+  private fatalPending = false;
+  setInAction(v: boolean) {
+    this.inAction = v;
+    if (this.fatalPending) { this.fatalPending = false; void this.flush(); }
+  }
   private extraPending: PresentationEvent[] = [];
   constructor(private notify: () => void, private fast: () => boolean,
     private settings: () => BattleAnimationSettings = () => DEFAULT_BATTLE_ANIMATION) {}
@@ -68,13 +77,13 @@ export class BattlePresentation {
    * - 出手：（藥劑綠字）→ 出招 → 紅字技能傷害（克制標示、實際傷害值）→ 額外行動合併紅字。
    * - 技能傷害＝受屬性克制影響的傷害，發生當下即播（含回合開始等節點，不另外重排）。
    * - 固定／百分比／回血／體力調整：延到回合結束，依精靈合併為「體力淨變化」一筆；正→綠字黃框、負→粉字、0 不播。
-   * - 真實傷害：回合結束最後播（白字）。
+   * - 真實傷害：收尾合併白字，與同一收尾節點的粉／綠字同步展示，不重排效果結算。
    * - 陣亡不再把累積的延後紀錄提前插播；只在延後紀錄本身致命時，先把延後紀錄依上述規則結算。
    */
   record(e: PresentationEvent): Promise<void> {
     if (!this.active) return Promise.resolve();
     if (!this.hp.has(this.key(e))) this.hp.set(this.key(e), e.before);
-    const instant = e.type === 'skill' || e.type === 'notice' || e.immediate;
+    const instant = (e.type === 'skill' && this.inAction) || e.type === 'notice' || e.immediate;
     const extra = this.extraDepth > 0 && e.type === 'skill';
     const fatal = e.alive !== true && e.after <= 0 && e.delta < 0;
     if (extra) {
@@ -84,14 +93,19 @@ export class BattlePresentation {
     }
     if (instant) return this.enqueue([{ ...e, channel: e.immediate && e.type === 'heal' ? 'potion' : 'damage' }]);
     this.deferred.push(e);
+    if (fatal && this.inAction) { this.fatalPending = true; return Promise.resolve(); }
     return fatal ? this.flush() : Promise.resolve();
   }
-  /** 回合結束（或延後紀錄致命時）：體力淨變化（綠／粉）→ 真實傷害（白）。 */
+  /** 同一收尾節點的體力淨變化（綠／粉）與真實傷害（白）同步播；不重排戰鬥結算。 */
   flush(_chronological = false): Promise<void> {
+    this.fatalPending = false;
     const events = this.deferred.splice(0);
+    // 出手外的技能傷害（回合開始等）：紅字先播（保留克制標示），再播體力淨變化與真傷
+    const skills = events.filter(e => e.type === 'skill');
+    const rest = events.filter(e => e.type !== 'skill');
     const net = new Map<string, PresentationEvent & { n: number }>();
     const trueDmg = new Map<string, PresentationEvent & { n: number }>();
-    for (const e of events) {
+    for (const e of rest) {
       const k = this.key(e);
       const bucket = e.type === 'true' ? trueDmg : net;
       const prev = bucket.get(k);
@@ -103,7 +117,7 @@ export class BattlePresentation {
           : { ...e, n: 1 });
       }
     }
-    const out: PresentationEvent[] = [];
+    const out: PresentationEvent[] = skills.map(e => ({ ...e }));
     for (const g of net.values()) {
       const { n: _n, ...e } = g;
       if (e.delta === 0) { out.push({ ...e, type: 'adjust_up', amount: 0, label: undefined, silent: true } as any); continue; }
@@ -113,7 +127,7 @@ export class BattlePresentation {
       const { n, ...e } = g;
       out.push({ ...e, type: 'true', label: n > 1 ? `真實傷害（${n}筆）` : e.label });
     }
-    return this.enqueue(out.map(e => ({ ...e, channel: 'roundEnd' as const })));
+    return this.enqueue(out.map(e => ({ ...e, channel: 'roundEnd' as const })), true);
   }
   wait() { return this.tail; }
   /**
@@ -132,28 +146,36 @@ export class BattlePresentation {
     this.deferred.push({ side, elfId: elf.battleId || elf.id, type: diff > 0 ? 'adjust_up' : 'adjust_down', amount: Math.abs(diff), delta: diff,
       before: expected, after: elf.currentHp, maxHp: elf.maxHp, alive: true });
   }
-  private enqueue(events: PresentationEvent[]): Promise<void> {
+  private enqueue(events: PresentationEvent[], simultaneous = false): Promise<void> {
     for (const e of events) {
       const k = this.key(e);
       const cur = this.planned.get(k) ?? this.hp.get(k) ?? e.before;
       this.planned.set(k, e.alive !== true && e.after <= 0 ? e.after : cur + e.delta);
     }
     const play = async () => {
-      for (const e of events) {
+      const frames = simultaneous ? [events] : events.map(e => [e]);
+      for (const frame of frames) {
         if (!this.active) return;
-        const key = this.key(e);
-        // 已在播放中倒下的精靈：之後的延後紀錄不再播放，也不把血條拉回來。
-        if (this.dead.has(key) && e.type !== 'skill') continue;
-        const cur = this.hp.get(key) ?? e.before;
-        const fatal = e.alive !== true && e.after <= 0;
-        // 致命：直接顯示真實結果；非致命：相對變化，不製造假陣亡；最後對齊真實快照。
-        this.hp.set(key, fatal ? e.after : e.after > 0 ? Math.min(e.maxHp, Math.max(1, cur + e.delta)) : cur + e.delta);
-        if (fatal) this.dead.add(key);
-        if ((e as any).silent || !this.visible(e)) { this.notify(); continue; }
-        const id = `presentation_${++this.sequence}`;
-        this.popups = [{ ...e, id, text: e.text ?? `${e.type === 'heal' || e.type === 'adjust_up' ? '+' : '-'}${e.amount}` }];
+        const alreadyDead = new Set(this.dead);
+        const popups: any[] = [];
+        for (const e of frame) {
+          const key = this.key(e);
+          // 同一畫面中先記錄致死粉字，不得吞掉一起播放的白字。
+          if (alreadyDead.has(key) && e.type !== 'skill') continue;
+          const cur = this.hp.get(key) ?? e.before;
+          const fatal = e.alive !== true && e.after <= 0;
+          // 致命：直接顯示真實結果；非致命：相對變化，不製造假陣亡。
+          this.hp.set(key, fatal ? e.after : e.after > 0 ? Math.min(e.maxHp, Math.max(1, cur + e.delta)) : cur + e.delta);
+          if (fatal) this.dead.add(key);
+          if ((e as any).silent || !this.visible(e)) continue;
+          const id = `presentation_${++this.sequence}`;
+          popups.push({ ...e, label: damagePopupLabel(e.label), id,
+            text: e.text ?? `${e.type === 'heal' || e.type === 'adjust_up' ? '+' : '-'}${e.amount}` });
+        }
+        this.popups = popups;
         this.notify();
-        if (!this.fast()) await this.pause(e.type === 'skill' ? POPUP_HOLD_MS.skill : POPUP_HOLD_MS.other);
+        if (!popups.length) continue;
+        if (!this.fast()) await this.pause(popups.some(e => e.type === 'skill') ? POPUP_HOLD_MS.skill : POPUP_HOLD_MS.other);
         if (!this.active) return;
         this.popups = [];
         this.notify();

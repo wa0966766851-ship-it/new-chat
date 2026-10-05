@@ -1,16 +1,18 @@
 import { ELF_TEXT } from "./elfDescriptions";
-import SOURCE_TEXT from "./elfSourceText.json";
+import { SOURCE_TEXT, SKILL_REFERENCES } from './descriptionSources';
 import { ELF_ID_MAPPING } from "./elfRegistry";
 import { Elf, Skill, StatChange } from "../types";
 import { KitEntry } from "../effects/effectSystem.schema";
 import { calculateElfStats } from "../utils/statCalculator";
-import SKILL_REFERENCES from "./skillReferences.generated.json";
 import { getEffectiveInscriptions } from "./inscriptionsCatalog";
 import { parseStatChangesFromText } from "../utils/statChangeManager";
 import { parseStatusesFromText } from "../utils/statusManager";
 import { OTHERWORLD_REY_SEED } from "./otherworldRey";
 import { HOLY_MILES_SEED } from "./holyMiles";
+import { LIUJIE_SEED } from "./liujie";
+import { NEW_ELF_SEEDS } from "./newElves";
 import { STAGED_ARENA_ELVES } from "./stagedArenaElves";
+import { isSkillStone, stoneBasePp } from './skillStones';
 
 function createRefSkill(
   elfId: string,
@@ -2729,6 +2731,8 @@ const SEED_ELVES: (Omit<Elf, "id" | "calculatedStats" | "currentHp" | "maxHp"> &
   },
   OTHERWORLD_REY_SEED,
   HOLY_MILES_SEED,
+  LIUJIE_SEED,
+  ...NEW_ELF_SEEDS,
   ...STAGED_ARENA_ELVES
 ];
 
@@ -2770,6 +2774,8 @@ export const DEFAULT_ELVES: Elf[] = SEED_ELVES.map(applySourceText).map((item, i
   const calculated = calculateElfStats(item.baseStats, item.level, item.ivs, item.evs, item.natureModifiers, inscriptions);
   return {
     ...item,
+    skills: item.skills.map(s => isSkillStone(s) ? { ...s, isSkillStone: true, skillStoneRuleset: 'project' as const, pp: stoneBasePp(s), maxPp: stoneBasePp(s) } : s),
+    skillPool: item.skillPool?.map(s => isSkillStone(s) ? { ...s, isSkillStone: true, skillStoneRuleset: 'project' as const, pp: stoneBasePp(s), maxPp: stoneBasePp(s) } : s),
     id: getNumericElfId(item.id || `default_${index}`, item.name),
     inscriptions,
     calculatedStats: calculated,

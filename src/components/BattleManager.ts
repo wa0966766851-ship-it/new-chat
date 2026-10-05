@@ -3,6 +3,7 @@ import { Timer } from "../battle/timers";
 import { Mark } from "../battle/marks";
 import { switchBattleSide, writeScopedRegistry, addScopedTimer, setBattleSideMarks, type ElfScopeSnapshot } from "../battle/stateScopes";
 import type { AddContext } from "../battle/timers";
+import { skillSlot } from '../battle/skillSlot';
 
 export interface TurnDamageStats {
   skillDmg: number;
@@ -175,7 +176,8 @@ case 'SET_ACTIVE_INDEX':
     }
     case 'SET_SKILL': {
       // 複製一份：效果處理可能改寫本次行動的技能（如威力），不可污染精靈技能欄位上的原物件
-      const picked = action.skill ? { ...action.skill } : null;
+      const slot = skillSlot(state[action.side], action.skill);
+      const picked = action.skill ? { ...action.skill, battleSlot: slot >= 0 ? slot : undefined } : null;
       return action.side === 'p1'
         ? { ...state, p1SelectedSkill: picked }
         : { ...state, p2SelectedSkill: picked };

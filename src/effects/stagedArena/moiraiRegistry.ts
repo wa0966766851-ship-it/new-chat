@@ -1,5 +1,6 @@
 import type { BattleSkillHandler, DamageComputation } from '../types';
 import { EffectTiming } from '../types';
+import { bypassesAttackDefense } from '../../battle/attackDefense';
 import { STATS, activeUntil, bump, chance, grantStatusImmunity, damagePercentOfTarget, hasBoost, hasDrop, live, modify, percent, read, restorePP, reverseDrops, status, transferBoosts, until, write, type ArenaContext } from './shared';
 
 export function moiraiStart(c: ArenaContext, choice: 0 | 1): void {
@@ -45,7 +46,7 @@ export function handleMoiraiSoulMark(c: ArenaContext, event: EffectTiming, data?
     const d = data.damageComp as DamageComputation;
     if (!d.isIncoming && d.damageCategory === 'skill_attack' && activeUntil(c, 'attackBoost')) d.multiplier *= 2;
     if (!d.isIncoming && ['fixed', 'percent'].includes(d.damageCategory) && activeUntil(c, 'specialBoost')) d.multiplier *= 1.5;
-    if (d.isIncoming && d.damageCategory === 'skill_attack' && read(c, 'counter') > 0) {
+    if (d.isIncoming && d.damageCategory === 'skill_attack' && read(c, 'counter') > 0 && !bypassesAttackDefense(d, 'block')) {
       // 抵擋前的本次攻擊傷害：攻擊方增減傷與乘區已在此之前結算。
       const blocked = Math.max(0, Math.floor(d.base * (1 + (d.increasePercent || 0)) * (1 - (d.decreasePercent || 0)) * d.multiplier));
       d.multiplier = 0;

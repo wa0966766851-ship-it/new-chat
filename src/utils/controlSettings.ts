@@ -14,14 +14,28 @@ export function normalizePlaylist(value: unknown, fallback: PlaylistItem[]): Pla
 }
 
 export const CONTROL_SECTIONS = [
-  { id: 'visual', title: '外觀', description: '主題、主色與目前背景' },
-  { id: 'audio', title: '音樂', description: '播放、靜音與音樂連結' },
-  { id: 'battle', title: '戰鬥介面', description: '資訊面板配置與透明度' },
-  { id: 'resources', title: '場景配置', description: '各頁使用的背景與音樂' },
-  { id: 'library', title: '素材庫', description: '管理歌單與可選背景' },
-  { id: 'advanced', title: '診斷', description: '效能量測與目前設定摘要' },
-  { id: 'updates', title: '更新', description: '手動檢查網站部署及桌面版本；不自動重載或覆寫' },
+  { id: 'background', title: '背景', description: '點縮圖直接套用；可指定套用到單一頁面或全部頁面' },
+  { id: 'audio', title: '音樂', description: '播放控制、歌單與各頁 BGM' },
+  { id: 'visual', title: '外觀', description: '明暗、主色與卡片透明度' },
+  { id: 'battle', title: '戰鬥', description: '戰鬥動畫開關' },
+  { id: 'system', title: '系統', description: '效能量測、設定備份與更新' },
 ] as const;
+
+export type ControlSectionId = typeof CONTROL_SECTIONS[number]['id'];
+/** 舊分頁 id（外部 open-settings 事件或舊存檔）對應到新分頁。 */
+const LEGACY_SECTION: Record<string, ControlSectionId> = { resources: 'background', library: 'background', advanced: 'system', updates: 'system' };
+export function resolveControlSection(id: unknown): ControlSectionId | null {
+  if (typeof id !== 'string') return null;
+  if (CONTROL_SECTIONS.some(section => section.id === id)) return id as ControlSectionId;
+  return LEGACY_SECTION[id] ?? null;
+}
+
+/** HTML 動態背景用預先截好的縮圖，避免同時開數十個 iframe。 */
+export function backgroundThumb(url: string): string {
+  if (!url.endsWith('.html')) return url;
+  const name = url.split('/').pop()!.replace(/\.html$/, '');
+  return `/bg-thumbs/${name}.jpg`;
+}
 
 export function readControlSetting<T>(key: string, fallback: T, valid: (value: unknown) => value is T): T {
   try { const value = JSON.parse(localStorage.getItem(key) || 'null'); return valid(value) ? value : fallback; }

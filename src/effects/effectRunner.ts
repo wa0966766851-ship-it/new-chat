@@ -1,3 +1,4 @@
+import { addDamageReduction, multiplyDamageReduction } from '../battle/damageReduction';
 import { getMaxPp } from "../utils/battleHelpers";
 // ============================================================================
 // effectRunner.ts —— 模組化 28 原子執行器 (Effect Runner)
@@ -54,7 +55,8 @@ export const ATOMS: AtomTable = {
   damage_multiplier: (p, target, ctx) => {
     const mult = p.multiplier ?? p.value ?? 1.5;
     if (ctx.damageComp && (target === "opponent" ? ctx.damageComp.isIncoming : !ctx.damageComp.isIncoming) && matchesDamageTypes(p.damageTypes, ctx.damageComp.damageCategory)) {
-      ctx.damageComp.multiplier *= mult;
+      // 此原子修改「造成的傷害」，即使目標是對手也不是受擊方減傷。
+      if (mult < 1) multiplyDamageReduction(ctx.damageComp, mult, false); else ctx.damageComp.multiplier *= mult;
     }
   },
 
@@ -63,7 +65,8 @@ export const ATOMS: AtomTable = {
     const side = resolveSide(target, ctx);
     if (ctx.damageComp && (target === "opponent" ? ctx.damageComp.isIncoming === false : ctx.damageComp.isIncoming !== false) && isReducible(ctx.damageComp.damageCategory) && matchesDamageTypes(p.damageTypes, ctx.damageComp.damageCategory)) {
       const reducePercent = p.percent ?? p.amount ?? 50;
-      ctx.damageComp.decreasePercent += reducePercent / 100;
+      // 此原子修改「目標受到的傷害」；以施加方視角選對手仍須讀受擊減傷政策。
+      addDamageReduction(ctx.damageComp, reducePercent / 100);
     }
   },
 

@@ -3,6 +3,7 @@ import { calculateElfStats, getDefaultEvs } from './statCalculator';
 import { validateKit } from '../effects/kitValidation';
 import { StatusRegistry } from '../effects/statusRegistry';
 import { canonicalStatusName } from '../effects/statusIdentity';
+import { SKILL_STONE_GRADES, SKILL_STONE_ATTRIBUTES, getPerfectEffectsForAttribute } from '../data/skillStones';
 export const MAX_BLUEPRINT_BYTES = 2_000_000;
 const stats = ['hp', 'atk', 'def', 'spatk', 'spdef', 'speed'] as const;
 const object = (v: unknown): v is Record<string, any> => !!v && typeof v === 'object' && !Array.isArray(v);
@@ -86,6 +87,14 @@ export function parseElfBlueprint(json: string): { elf: Elf; warnings: string[];
       for (const key of ['id', 'effectType', 'effectDetail']) if (skill[key] !== undefined) text(skill[key], `${field}.${key}`);
       for (const key of ['maxPp', 'currentPp']) if (skill[key] !== undefined) number(skill[key], `${field}.${key}`, 0, 10000);
       for (const key of ['isFifthSkill', 'isGuaranteedHit', 'isSureHit', 'isCarrying', 'isInherent', 'isSkillStone', 'isPerfectSkillStone']) if (skill[key] !== undefined && typeof skill[key] !== 'boolean') fail(`${field}.${key}`);
+      if (skill.skillStoneRuleset !== undefined && !['standard', 'project'].includes(skill.skillStoneRuleset)) fail(`${field}.skillStoneRuleset`);
+      if (skill.skillStoneGrade !== undefined && !Object.hasOwn(SKILL_STONE_GRADES, skill.skillStoneGrade)) fail(`${field}.skillStoneGrade`);
+      if (skill.skillStoneOriginalGrade !== undefined && !Object.hasOwn(SKILL_STONE_GRADES, skill.skillStoneOriginalGrade)) fail(`${field}.skillStoneOriginalGrade`);
+      if (skill.isSkillStone) {
+        if (!SKILL_STONE_ATTRIBUTES.includes(skill.type) || skill.category === '屬性' || skill.isFifthSkill) fail(`${field}.技能石類型或槽位`);
+        if (skill.skillStoneEffect !== undefined && !getPerfectEffectsForAttribute(skill.type).some(e => e.id === skill.skillStoneEffect)) fail(`${field}.skillStoneEffect`);
+        if (skill.isPerfectSkillStone && !getPerfectEffectsForAttribute(skill.type).some(e => e.id === (skill.skillStoneEffect || skill.effectDetail))) fail(`${field}.完美技能石缺少合法效果`);
+      }
       if (skill.statChanges !== undefined) {
         if (!Array.isArray(skill.statChanges) || skill.statChanges.length > 100) fail(`${field}.statChanges`);
         for (const change of skill.statChanges) { if (!object(change) || !['atk','def','spatk','spdef','speed','accuracy','all'].includes(change.stat)) fail(`${field}.statChanges.stat`); number(change.value, `${field}.statChanges.value`, -6, 6); }

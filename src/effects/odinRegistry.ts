@@ -1,3 +1,4 @@
+import { addDamageReduction } from '../battle/damageReduction';
 import { getTypeMatchup } from "../utils/statCalculator";
 import { BattleEventContext, EffectTiming, ElfDeconstructedProfile } from './types';
 import { isControlAilment } from './ailmentEngine';
@@ -190,7 +191,7 @@ export function handleOdinSoulMark(ctx: BattleEventContext, event: EffectTiming,
   if (event === EffectTiming.BEFORE_DAMAGE) {
     const comp = extraData?.computation || extraData;
     if (comp && typeof comp.multiplier === 'number') {
-      const isSkillDmg = comp.damageCategory === 'skill_attack';
+      const isSkillDmg = String(comp.damageCategory).startsWith('skill');
       if (!comp.isIncoming) {
         // 自身造成技能傷害
         if (isSkillDmg && getPlayerState('odin_next_dmg_plus_50')) {
@@ -207,7 +208,7 @@ export function handleOdinSoulMark(ctx: BattleEventContext, event: EffectTiming,
       } else {
         // 受到對手技能傷害：對手「下次造成技能傷害降低50%」（「免疫下次受到的攻擊」改由引擎攻擊免疫處理）
         if (isSkillDmg && getOpponentState('odin_next_dmg_minus_50')) {
-          comp.decreasePercent += 0.5;
+          addDamageReduction(comp, 0.5, false);
           setOpponentState('odin_next_dmg_minus_50', false);
         }
       }

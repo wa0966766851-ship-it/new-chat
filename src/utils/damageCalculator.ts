@@ -8,6 +8,8 @@ import { Mark, getMark } from "../battle/marks";
 import { critChanceBonus } from "../effects/traitEffects";
 import { prdChance } from "./prd";
 import { skillStageView } from '../battle/skillStageView';
+import { isStoneThrower, isSkillStone } from '../data/skillStones';
+import { getElfAdvancedMechanics } from '../data/traitsRegistry';
 
 export const calculateDamage = (
   actor: Elf,
@@ -20,7 +22,7 @@ export const calculateDamage = (
   isCritOverride?: boolean,
   p1Team?: Elf[],
   p2Team?: Elf[],
-  options?: { ignoreSpDefPercent?: number, ignoreDefPercent?: number, ignoreOppBuff?: boolean, hitCount?: number },
+  options?: { ignoreSpDefPercent?: number, ignoreDefPercent?: number, ignoreOppBuff?: boolean, hitCount?: number, critChanceBonus?: number },
   p1Title?: string,
   p2Title?: string,
   p1RegistryState?: any,
@@ -52,8 +54,12 @@ export const calculateDamage = (
   }
   
   let ignorePercent = 0;
+  ignorePercent = Math.max(ignorePercent, getElfAdvancedMechanics(actor).ignoreDefPercent || 0);
   if (!isPhys && options?.ignoreSpDefPercent) {
     ignorePercent = Math.max(ignorePercent, options.ignoreSpDefPercent);
+  }
+  if (!isPhys && statRegA?.ignoreSpDefPercentUntilSwitch) {
+    ignorePercent = Math.max(ignorePercent, Math.min(1, statRegA.ignoreSpDefPercentUntilSwitch));
   }
   if (isPhys && options?.ignoreDefPercent) {
     ignorePercent = Math.max(ignorePercent, options.ignoreDefPercent);
@@ -65,7 +71,7 @@ export const calculateDamage = (
     ignorePercent = Math.max(ignorePercent, suit.effects.ignoreDefSpdefPercent);
   }
   if (ignorePercent > 0) {
-    def = Math.floor(def * (1 - ignorePercent));
+    def = Math.max(1, Math.floor(def * (1 - ignorePercent)));
   }
 
   if (suit?.effects?.ignoreDefSpdefFlat) {
@@ -114,16 +120,27 @@ export const calculateDamage = (
   // 官方公式：[(等級×0.4+2)×威力×攻÷防÷50+2]×本系×克制 → 取整 → ×浮動(217~255)/255 → 取整 → ×暴擊 → 取整 → ×連擊次數。
   // 方括號內為整體不拆分（不先取整）；能力等級換算後的面板值已於 calculateEffectiveStat 取整。
   const levelFactor = (actor.level ?? 100) * 0.4 + 2;
-  const base = ((levelFactor * calculateEffectiveStat(atk, atkS) * skill.power * powerMultiplier / Math.max(1, calculateEffectiveStat(def, defS))) / 50 + 2);
+  // 通用：弱點傷害（weakPointDefenseTurns，寫在攻擊方）＝以對手當前雙防值中較低者×比例（預設60%）作為防禦方數值
+  let effDef = calculateEffectiveStat(def, defS);
+  if (Number(statRegA?.weakPointDefenseTurns) > 0) {
+    const otherKey = isPhys ? 'spdef' : 'def';
+    const otherS = skillStageView({ statStages: target.statStages, isInherentInvalid: actor.isInherentInvalid }, skill, otherKey, true);
+    const otherEff = calculateEffectiveStat(target.calculatedStats[otherKey], otherS);
+    const ratio = Number(statRegA?.weakPointDefenseRatio) > 0 ? Number(statRegA.weakPointDefenseRatio) : 0.6;
+    effDef = Math.max(1, Math.floor(Math.min(effDef, otherEff) * ratio));
+  }
+  const base = ((levelFactor * calculateEffectiveStat(atk, atkS) * skill.power * powerMultiplier / Math.max(1, effDef)) / 50 + 2);
   
   const actorReg = side === "p1" ? p1RegistryState : p2RegistryState;
-  const targetType = actorReg?.targetTypeThisAction || target.type;
-  let typeMult = skillTypeMultiplier(actorReg, skill.type, targetType);
+  // 通用：下N次攻擊的屬性克制計算改以指定屬性（attackTypeOverride 自身攻擊屬性／targetTypeOverride 對手屬性；attackTypeOverrideUses 次數）
+  const typeOverrideActive = Number(actorReg?.attackTypeOverrideUses) > 0;
+  const targetType = actorReg?.targetTypeThisAction || (typeOverrideActive && actorReg?.targetTypeOverride) || target.type;
+  let typeMult = skillTypeMultiplier(actorReg, (typeOverrideActive && actorReg?.attackTypeOverride) || skill.type, targetType);
   // 積木：克制倍數取指定屬性中最高者
   // 本系加成 1.5 倍：技能屬性（含雙屬性技能的任一屬性）為自身系別中含有的屬性
   const splitT = (t?: string) => (t || "").replace(/系$/, "").split(/[.·・]/).filter(Boolean);
   const actorTypes = splitT(actor.type);
-  const stab = skill.type && skill.type !== "無屬性" && splitT(skill.type).some(t => actorTypes.includes(t)) ? 1.5 : 1.0;
+  const stab = (isStoneThrower(actor) && isSkillStone(skill)) || (skill.type && skill.type !== "無屬性" && splitT(skill.type).some(t => actorTypes.includes(t))) ? 1.5 : 1.0;
   // 浮動取整數 217~255
   const roll = Math.max(217, Math.min(255, Math.round(randomValue * 255)));
 
@@ -140,7 +157,7 @@ export const calculateDamage = (
     suitCritBonus += stacks * suit.effects.critRateBonusPerStack;
   }
 
-  const critChance = Math.max(0, Math.min(1, ((actor.critValue ?? 1) / 16) + suitCritBonus + ((title?.critBonus || 0) / 100) + critChanceBonus(actor, target)));
+  const critChance = Math.max(0, Math.min(1, ((actor.critValue ?? 1) / 16) + suitCritBonus + ((title?.critBonus || 0) / 100) + critChanceBonus(actor, target) + Number(options?.critChanceBonus || 0)));
   const isCrit = isCritOverride !== undefined ? isCritOverride : prdChance(`crit:${side}:${actor.id}`, critChance);
   
   let suitDmgBonus = suit?.effects?.damageDealtMultiplier || 1.0;
@@ -163,7 +180,7 @@ export const calculateDamage = (
   final = Math.floor(final * roll / 255);
   if (isCrit) final = Math.floor(final * critBonusMultiplier);
   for (const m of [suitDmgBonus, titleDmgBonus, oppSuitDmgRed, inscDmgBonus]) if (m !== 1) final = Math.floor(final * m);
-  final = final * hitCount;
+  final = Math.floor(final * (skill.skillStoneDamageMultiplier || 1)) * hitCount;
   
   let statResetApplied: "def" | "spdef" | null = null;
   if (isCrit) {

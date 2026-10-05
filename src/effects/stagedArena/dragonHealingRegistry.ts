@@ -1,5 +1,7 @@
+import { multiplyDamageReduction } from '../../battle/damageReduction';
 import type { BattleSkillHandler, DamageComputation } from '../types';
 import { EffectTiming } from '../types';
+import { bypassesAttackDefense } from '../../battle/attackDefense';
 import { calculateDamage } from '../../utils/damageCalculator';
 import { STATS, activeUntil, bump, damagePercentOfTarget, hasBoost, hasDrop, live, modify, percent, read, restorePP, status, transferBoosts, until, write, type ArenaContext } from './shared';
 
@@ -35,8 +37,8 @@ export function handleDragonHealingSoulMark(c: ArenaContext, event: EffectTiming
     const d = data.damageComp as DamageComputation;
     const count = awakeCount(read(c, 'dragons'));
     if (!d.isIncoming && d.damageCategory === 'skill_attack') d.multiplier *= 1 + count * .5;
-    if (d.isIncoming && d.damageCategory !== 'true') d.multiplier *= Math.max(.4, 1 - count * .15);
-    if (d.isIncoming && d.damageCategory === 'skill_attack' && (read(c, 'dragons') & 4)) {
+    if (d.isIncoming && d.damageCategory !== 'true') multiplyDamageReduction(d, Math.max(.4, 1 - count * .15));
+    if (d.isIncoming && d.damageCategory === 'skill_attack' && (read(c, 'dragons') & 4) && !bypassesAttackDefense(d, 'conversion')) {
       bump(c, 'redStored', Math.min(d.base, Math.max(0, c.self.maxHp - read(c, 'redStored'))));
       d.multiplier = 0;
     }

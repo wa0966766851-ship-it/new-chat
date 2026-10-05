@@ -1,6 +1,6 @@
 // src/utils/battleHelpers.ts
 import { Elf, Skill, BattleItem } from "../types";
-import { isStoneThrower } from "../data/skillStones";
+import { isStoneThrower, isSkillStone, stoneBasePp, hasStoneThrowerMythic } from "../data/skillStones";
 import { StatusRegistry } from "../effects/statusRegistry";
 import { STATUS_NAMES_MAP } from '../effects/statusAliases';
 import { canonicalStatusName, sameStatus } from '../effects/statusIdentity';
@@ -34,10 +34,10 @@ export const getMinPp = (sk?: Skill, elf?: Elf): number => {
 // 取得技能常規與特權最大PP上限 (支持高於上限 X 點，正負偏移)
 export const getMaxPp = (sk?: Skill, elf?: Elf): number => {
   if (!sk) return 5;
-  const baseMax = sk.maxPp !== undefined ? sk.maxPp : (sk.pp !== undefined ? sk.pp : 5);
+  const baseMax = isSkillStone(sk) ? stoneBasePp(sk) : sk.maxPp !== undefined ? sk.maxPp : (sk.pp !== undefined ? sk.pp : 5);
   const skillOffset = sk.ppMaxOffset || 0;
   const elfOffset = elf?.globalPpMaxOffset || 0;
-  const stoneThrowerOffset = (elf && (isStoneThrower(elf) || elf.alienTraits?.gen2Trait?.name?.includes("投石者") || elf.trait_stone_thrower) && sk.isSkillStone) ? 10 : 0;
+  const stoneThrowerOffset = elf && isStoneThrower(elf) && isSkillStone(sk) ? 10 : 0;
   return Math.max(0, baseMax + skillOffset + elfOffset + stoneThrowerOffset);
 };
 
@@ -165,10 +165,7 @@ export const isZeroPpExempt = (elf: Elf, sk: Skill, opp?: Elf | null): boolean =
   // 1. 專屬機制
   if (elf.name === "變革·馬爾修斯") return true; // 充能系統
   if (isCanglan(elf) && canglanActive(elf, opp)) return true;
-  if (elf.name?.includes("墜星") || elf.id === "wuxu_zhuixing") {
-    const stoneCount = (elf.skills || []).filter(s => s.isSkillStone).length;
-    if (stoneCount >= 4) return true;
-  }
+  if (hasStoneThrowerMythic(elf)) return true;
   if (isDimensionalDragon(elf) && poemStacks(elf) >= 2) return true; // 詩章 2：使用技能無視PP值限制
   if (sk.name === "星光·光合作用" || sk.name === "星光·花草能量") return true;
   if ((elf.ppLimitIgnoredWhenParalyzedTurns || 0) > 0) {
@@ -214,6 +211,7 @@ export const isZeroPpExempt = (elf: Elf, sk: Skill, opp?: Elf | null): boolean =
 /** 使用技能時不消耗 PP */
 export const isPpCostFree = (elf: Elf, sk: Skill, opp?: Elf | null): boolean => {
   if (!elf || !sk) return false;
+  if (hasStoneThrowerMythic(elf)) return true;
   if (elf.name === "變革·馬爾修斯") return true;               // 充能系統另計
   if (elf.name?.includes("奧佩婭")) return true;               // 自身使用技能時：不消耗技能PP值
   if (isCanglan(elf) && canglanActive(elf, opp)) return true;
@@ -296,7 +294,15 @@ export const getStatuses = (elf: any): Record<string, number> => {
       }
     }
   }
-  return Object.fromEntries(Object.entries(merged).filter(([, duration]) => Number.isFinite(duration) && duration > 0));
+  // 舊存檔與手寫 handler 可能使用英文／歷史別名。讀取端也須統一，
+  // 否則「有中毒」的 UI 與中毒結算會看到不同狀態；查詢仍不回寫存檔。
+  const canonical: Record<string, number> = {};
+  for (const [id, duration] of Object.entries(merged)) {
+    if (!Number.isFinite(duration) || duration <= 0) continue;
+    const name = canonicalStatusName(id);
+    canonical[name] = Math.max(canonical[name] || 0, duration);
+  }
+  return canonical;
 };
 
 export const isAbnormal = (elf: any): boolean => {

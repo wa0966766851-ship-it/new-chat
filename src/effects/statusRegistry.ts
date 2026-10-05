@@ -350,13 +350,13 @@ export const StatusRegistry: Record<string, StatusRegistryEntry> = {
     name: '山神守護',
     categories: ['AUXILIARY'],
     description: '附屬類異常；處於該異常狀態則每回合受到對手的攻擊傷害減少 80%',
-    mechanics: [{ type: 'SPECIAL_BUFF', params: { damageTakenMultiplier: 0.2 } }]
+    mechanics: [{ type: 'SPECIAL_BUFF', params: { damageTakenMultiplier: 0.2, damageTypes: ['attack'] } }]
   },
   '狂暴': {
     name: '狂暴',
     categories: ['AUXILIARY'],
-    description: '附屬類異常；處於該異常狀態則造成傷害翻倍',
-    mechanics: [{ type: 'SPECIAL_BUFF', params: { damageDealtMultiplier: 2 } }]
+    description: '附屬類異常；處於該異常狀態則造成攻擊傷害翻倍',
+    mechanics: [{ type: 'SPECIAL_BUFF', params: { damageDealtMultiplier: 2, damageTypes: ['attack'] } }]
   },
   '平靜': {
     name: '平靜',
@@ -421,7 +421,7 @@ export const StatusRegistry: Record<string, StatusRegistryEntry> = {
     name: '星佑',
     categories: ['AUXILIARY'],
     description: '附屬類異常；星附屬類異常狀態；處於該異常狀態受到技能傷害降低 30% 且對手帶有正先制的技能無效；自身體力歸 0 時 100% 令自身重生一次並解除所有非控制類異常狀態',
-    mechanics: [{ type: 'SPECIAL_BUFF', params: { damageTakenMultiplier: 0.7, immunePrioritySkills: true, reviveOnce: true, purgeNonControlOnRevive: true } }]
+    mechanics: [{ type: 'SPECIAL_BUFF', params: { damageTakenMultiplier: 0.7, damageTypes: ['skill'], immunePrioritySkills: true, reviveOnce: true, purgeNonControlOnRevive: true } }]
   },
   '星護': {
     name: '星護',
@@ -433,19 +433,19 @@ export const StatusRegistry: Record<string, StatusRegistryEntry> = {
     name: '星賜',
     categories: ['AUXILIARY'],
     description: '附屬類異常；星附屬類異常狀態；該狀態下的精靈造成的攻擊傷害提升 30%，每回合結束後恢復 2 點 PP 值',
-    mechanics: [{ type: 'SPECIAL_BUFF', params: { damageDealtMultiplier: 1.3, ppRegenPerTurn: 2 } }]
+    mechanics: [{ type: 'SPECIAL_BUFF', params: { damageDealtMultiplier: 1.3, damageTypes: ['attack'], ppRegenPerTurn: 2 } }]
   },
   '虛弱詛咒': {
     name: '虛弱詛咒',
     categories: ['AUXILIARY'],
     description: '附屬類異常；附屬詛咒類異常；處於該異常狀態則造成的攻擊傷害減少 50%',
-    mechanics: [{ type: 'SPECIAL_BUFF', params: { damageDealtMultiplier: 0.5 } }]
+    mechanics: [{ type: 'SPECIAL_BUFF', params: { damageDealtMultiplier: 0.5, damageTypes: ['attack'] } }]
   },
   '致命詛咒': {
     name: '致命詛咒',
     categories: ['AUXILIARY'],
     description: '附屬類異常；附屬詛咒類異常；處於該異常狀態則受到的攻擊傷害提高 50%',
-    mechanics: [{ type: 'SPECIAL_BUFF', params: { damageTakenMultiplier: 1.5 } }]
+    mechanics: [{ type: 'SPECIAL_BUFF', params: { damageTakenMultiplier: 1.5, damageTypes: ['attack'] } }]
   },
   '神話': {
     name: '神話',

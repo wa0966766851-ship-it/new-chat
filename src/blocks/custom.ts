@@ -1,9 +1,11 @@
 import { queueActionPowerMultiplier } from '../battle/actionDamageModifiers';
+import { queueHpDrain } from '../battle/hpDrain';
 // 專屬積木：描述中精靈獨有、通用積木表達不了的句子。
 // key＝正規化後的子句原文（去掉 ■🎯> 標記），label＝積木上顯示的文字。
 // run 以該精靈一方的 ctx 執行（self＝自身、target＝對手）。
 import type { BattleEventContext } from "../effects/types";
 import type { Trigger } from "./model";
+import { removeStatusEffect } from "../utils/battleHelpers";
 
 export interface CustomRunState { last: boolean | null; lastAmount: number; event?: { trig: Trigger; data?: any } }
 export interface CustomDef {
@@ -69,7 +71,9 @@ export const CUSTOM: Record<string, CustomDef> = {
     label: "直到該異常結束前 抵擋【技能傷害】",
     run: (ctx, st) => {
       const turns = Number(st.event?.data?.duration || 2);
-      ctx.addTimerTo(ctx.actor, { id: `blk_${ctx.actor}_baphomet_block`, name: "抵擋技能傷害", kind: "round_counter", source: "soulmark" as any, remaining: turns, tickAt: "round_end", payload: { block: { blockSkillDmg: true, owner: ctx.actor, src: "鎮魂.巴弗洛" } } } as any, false);
+      const whileStatus = st.event?.data?.side && st.event?.data?.status ? { side: st.event.data.side, status: st.event.data.status } : undefined;
+      // 異常提前解除時由 runSideTimers 依 whileStatus 結束
+      ctx.addTimerTo(ctx.actor, { id: `blk_${ctx.actor}_baphomet_block`, name: "抵擋技能傷害", kind: "round_counter", source: "soulmark" as any, remaining: turns, tickAt: "round_end", payload: { block: { blockSkillDmg: true, whileStatus, owner: ctx.actor, src: "鎮魂.巴弗洛" } } } as any, false);
       return true;
     },
   },
@@ -79,9 +83,10 @@ export const CUSTOM: Record<string, CustomDef> = {
     run: (ctx, st) => {
       const s = st.event?.data?.status;
       if (!s || s === "混亂" || st.event?.data?.side !== ctx.actor) return false;
-      const e: any = ctx.self;
-      const effects = (e.effects || []).filter((x: any) => x.id !== s);
-      ctx.updateElf(ctx.actor, { effects } as any);
+      const live: any = (ctx.getFullTeam?.(ctx.actor) || []).find((x: any) => (x.battleId || x.id) === ((ctx.self as any).battleId || ctx.self.id)) || ctx.self;
+      const e: any = { ...live, effects: [...(live.effects || [])], battleStatuses: { ...(live.battleStatuses || {}) } };
+      removeStatusEffect(e, s);
+      ctx.updateElf(ctx.actor, { effects: e.effects, battleStatuses: e.battleStatuses, battleStatus: e.battleStatus, battleStatusDuration: e.battleStatusDuration } as any);
       ctx.applyStatusWithImmunityCheck(ctx.actor, "混亂", Number(st.event?.data?.duration || 3));
       ctx.addLog(`🌀 【${e.name}】的【${s}】轉化為【混亂】！`, "status");
       return true;
@@ -179,11 +184,35 @@ export const CUSTOM: Record<string, CustomDef> = {
       for (const s of ["混亂", "流血"]) for (const side of [opp(ctx), ctx.actor] as ("p1" | "p2")[]) ok = ctx.applyStatusWithImmunityCheck(side, s, s === "流血" ? 3 : 2).success || ok;
       if (!ok) return false;
       const turns = statusTurns(ctx, ctx.self) + statusTurns(ctx, ctx.target);
-      if (turns > 0) ctx.applyAbsorb(opp(ctx), 150 * turns);
+      if (turns > 0) queueHpDrain(ctx, opp(ctx), 150 * turns, 'fixed');
       return true;
     },
   },
 };
+
+// ───────── 5014 聖光斯嘉麗：技能無效時子句（專屬 handler＋SKILL_MODE 指定子句） ─────────
+Object.assign(CUSTOM, {
+  "恢復自身最大體力½且下次受到異常狀態時轉化為星贖": {
+    label: "技能無效時：恢復最大體力½、下次受到異常轉化為星贖",
+    run: (ctx: BattleEventContext) => {
+      const heal = Math.floor(((ctx.self as any).maxHp || 0) / 2);
+      ctx.applyHeal(ctx.actor, heal);
+      ctx.setPlayerState("nextStatusToXingshu", true);
+      ctx.addLog(`✨ 【純白聖翎】無效：恢復 ${heal} 體力，下次受到異常轉化為星贖！`, "effect");
+      return true;
+    },
+  },
+  "下2次攻擊將對手視為暗影系，自身攻擊視為光系": {
+    label: "技能無效時：下2次攻擊對手視為暗影系、自身攻擊視為光系",
+    run: (ctx: BattleEventContext) => {
+      ctx.setPlayerState("attackTypeOverride", "光");
+      ctx.setPlayerState("targetTypeOverride", "暗影");
+      ctx.setPlayerState("attackTypeOverrideUses", 2);
+      ctx.addLog(`✨ 【暮光舞動】無效：下2次攻擊以光系對暗影系計算克制！`, "effect");
+      return true;
+    },
+  },
+});
 
 // ───────── 5007 混濁海妖·布林克克：深潛者盛宴 ─────────
 Object.assign(CUSTOM, {
@@ -194,7 +223,9 @@ Object.assign(CUSTOM, {
       const downs = Object.values((ctx.self as any).statStages || {}).filter((v: any) => typeof v === "number" && v < 0) as number[];
       if (!downs.length) return false;
       const lvl = Math.min(6, 2 * Math.max(...downs.map(v => -v)));
-      // 全能力視同於出手排序、命中與傷害計算直接讀取；不建立命中後才生效的增傷旗標。
+      // 傷害公式讀取 blkStageAsBoost（攻擊方能力等級視為至少 lvl）；行動結束由引擎重置為 0。
+      // 防禦／速度／命中的視同提升需引擎在對應讀取點支援（已列入報告）。
+      ctx.setPlayerState("blkStageAsBoost", lvl);
       ctx.addLog(`🌊 能力下降視為全屬性 +${lvl}！`, "effect");
       return true;
     },
@@ -224,16 +255,22 @@ Object.assign(CUSTOM, {
     run: (ctx: BattleEventContext) => {
       const cnt = [ctx.self, ctx.target].reduce((a: number, e: any) => a + Object.values(e?.statStages || {}).filter((v: any) => typeof v === "number" && v !== 0).length, 0);
       ctx.setPlayerState("brinkkFeastAbsorbFallbackPending", true);
+      // 技能結束時清除待決旗標（未觸發的補汲取不可延續到之後的吸取）
+      ctx.addTimerTo(ctx.actor, { id: `blk_${ctx.actor}_brinkk_feast_pending_clear`, name: "盛宴待決清除", kind: "use_counter", source: "skill" as any, remaining: 1, tickAt: "never", payload: { block: { trig: "self_after_skill", once: true, owner: ctx.actor, body: [{ acts: [{ op: "custom", p: { key: "__brinkk_feast_clear" }, label: "" }] }] } } } as any, false);
       for (const amt of [...Array(cnt).fill(40), 300]) {
-        ctx.applyAbsorb(ctx.targetSide, amt, "深潛者盛宴·獨立吸取");
+        queueHpDrain(ctx, ctx.targetSide, amt, 'fixed', "深潛者盛宴·獨立吸取");
       }
       return true;
     },
   },
+  "__brinkk_feast_clear": {
+    label: "深潛者盛宴：技能結束清除補汲取待決",
+    run: (ctx: BattleEventContext) => { ctx.setPlayerState("brinkkFeastAbsorbFallbackPending", false); return true; },
+  },
   "3回合內自身造成技能傷害提升50%，雙方任一方處於異常狀態則效果翻倍": {
     label: "3回合技能傷害+50%；每次傷害時任一方異常則增傷變為100%",
     run: (ctx: BattleEventContext) => {
-      ctx.addTimerTo(ctx.actor, { id: "brinkk_feast_damage", name: "深潛者盛宴·技能增傷", kind: "turn_effect", source: "skill", remaining: 3, tickAt: "round_end", payload: { block: { dmgOut: 0.5, kind: "技能", doubleIfAnyStatus: true } } }, ctx.moveIndex === 1);
+      ctx.addTimerTo(ctx.actor, { id: `blk_${ctx.actor}_brinkk_feast_damage`, name: "深潛者盛宴·技能增傷", kind: "turn_effect", source: "skill", remaining: 3, tickAt: "round_end", payload: { block: { dmgOut: 0.5, kind: "技能", doubleIfAnyStatus: true } } }, ctx.moveIndex === 1);
       return true;
     },
   },

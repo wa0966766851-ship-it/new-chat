@@ -1,6 +1,8 @@
+import { addDamageReduction } from '../battle/damageReduction';
 import { prdChance } from "../utils/prd";
 import { BattleEventContext, EffectTiming } from "./types";
 import { getTypeMatchup } from "../utils/statCalculator";
+import { bypassesAttackDefense } from '../battle/attackDefense';
 
 export const SuitEffectRegistry: Record<string, (ctx: BattleEventContext, event: EffectTiming, extraData?: any) => any> = {
   morning_star: (ctx, event, extraData) => {
@@ -21,11 +23,11 @@ export const SuitEffectRegistry: Record<string, (ctx: BattleEventContext, event:
 
     if (event === EffectTiming.BEFORE_DAMAGE && extraData!.damageComp) {
       const self = ctx.self;
-      if (extraData?.damageComp.isIncoming) {
+      if (extraData?.damageComp.isIncoming && extraData.damageComp.damageCategory === "skill_attack") {
         // 受到的攻擊傷害減少10%
         let reduction = 0.1;
         if (self.currentHp < self.maxHp / 2) reduction *= 2;
-        extraData!.damageComp.decreasePercent += reduction;
+        addDamageReduction(extraData!.damageComp, reduction);
       } else {
         // 造成的攻擊傷害提升10%
         let boost = 0.1;
@@ -103,7 +105,7 @@ export const SuitEffectRegistry: Record<string, (ctx: BattleEventContext, event:
   crystal_barrier: (ctx, event, extraData) => {
     // 水晶之盾套裝: 每次受到超過250點的技能傷害時，有20%機率抵擋本次技能傷害
     if (event === EffectTiming.BEFORE_DAMAGE && extraData!.damageComp?.isIncoming && extraData!.damageComp.damageCategory === "skill_attack") {
-      if (extraData?.damageComp.base > 250 && prdChance("suitEffectRegistry:L105", 0.2)) {
+      if (!bypassesAttackDefense(extraData.damageComp, 'block') && extraData?.damageComp.base > 250 && prdChance("suitEffectRegistry:L105", 0.2)) {
         extraData!.damageComp.multiplier = 0;
         ctx.addLog(`💎 【水晶之盾】：抵擋本次技能傷害！`, "effect");
       }
@@ -168,7 +170,7 @@ export const SuitEffectRegistry: Record<string, (ctx: BattleEventContext, event:
       if (extraData?.damageComp.isIncoming) {
         // 固定與百分比減傷 2% * stacks
         if (extraData?.damageComp.damageCategory === "fixed" || extraData!.damageComp.damageCategory === "percent") {
-          extraData!.damageComp.decreasePercent += 0.02 * stacks;
+          addDamageReduction(extraData!.damageComp, 0.02 * stacks);
         }
       } else {
         // 增傷 4% * stacks
@@ -267,7 +269,7 @@ export const SuitEffectRegistry: Record<string, (ctx: BattleEventContext, event:
 
     if (event === EffectTiming.BEFORE_DAMAGE && extraData!.damageComp?.isIncoming) {
       const reduction = isBerserk ? 0.3 : 0.15;
-      extraData!.damageComp.decreasePercent += reduction;
+      addDamageReduction(extraData!.damageComp, reduction);
     }
 
     if (event === EffectTiming.BEFORE_SKILL && isBerserk) {
@@ -299,8 +301,9 @@ export const SuitEffectRegistry: Record<string, (ctx: BattleEventContext, event:
 
     if (event === EffectTiming.BEFORE_DAMAGE && !extraData!.damageComp?.isIncoming) {
       const typeMult = getTypeMatchup(ctx.skill?.type || "無屬性", ctx.target.type);
-      if (typeMult < 1.0) {
-        extraData!.damageComp.multiplier = 1.0;
+      if (typeMult < 1.0 && typeMult > 0 && extraData!.damageComp.damageCategory === 'skill_attack') {
+        // 修正克制乘區，不重設魂印／異常已累積的傷害倍率。
+        extraData!.damageComp.base = Math.floor(extraData!.damageComp.base / typeMult);
         ctx.setPlayerState(regKey, { ...ctx.getPlayerState(regKey), fateDefierAbsorb: true });
       } else if (typeMult > 1.0) {
         ctx.setPlayerState(regKey, { ...ctx.getPlayerState(regKey), fateDefierTired: true });
@@ -376,7 +379,7 @@ export const SuitEffectRegistry: Record<string, (ctx: BattleEventContext, event:
         if (shield === 0) {
           const lostHpPercent = (ctx.self.maxHp - ctx.self.currentHp) / ctx.self.maxHp;
           const reduction = 0.05 + Math.floor(lostHpPercent / 0.15) * 0.05;
-          extraData!.damageComp.decreasePercent += Math.min(0.25, reduction);
+          addDamageReduction(extraData!.damageComp, Math.min(0.25, reduction));
         }
       }
     }
@@ -608,8 +611,9 @@ export const SuitEffectRegistry: Record<string, (ctx: BattleEventContext, event:
     }
 
     if (event === EffectTiming.BEFORE_DAMAGE && extraData!.damageComp?.isIncoming) {
-      if (ctx.getPlayerState("spaceTimeNextDmgReduce")) {
-        extraData!.damageComp.decreasePercent = (extraData!.damageComp.decreasePercent || 0) + 0.3;
+      if (ctx.getPlayerState("spaceTimeNextDmgReduce") && !extraData.damageComp.pure
+        && ['skill_attack', 'fixed', 'percent'].includes(extraData.damageComp.damageCategory)) {
+        addDamageReduction(extraData!.damageComp, 0.3);
         ctx.setPlayerState("spaceTimeNextDmgReduce", false);
         ctx.addLog(`✨ 【時空戰甲】：使本次受到的傷害減少 30%！`, "effect");
       }

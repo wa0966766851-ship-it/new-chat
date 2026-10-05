@@ -1,5 +1,6 @@
 import { BattleEventContext, BattleSkillHandler, EffectTiming } from "./types";
 import { isStatusActive } from "../utils/statusManager";
+import { bypassesAttackDefense } from '../battle/attackDefense';
 
 /**
  * 鎮魂·巴弗洛 (Baphomet)
@@ -23,7 +24,7 @@ export const handleBaphometSoulMark = (ctx: BattleEventContext, event: EffectTim
       // 當任一方處於混亂或窒息狀態時，自身抵擋所有攻擊技能傷害
       const selfConfused = isStatusActive(self, "confused") || getPlayerState("suffocating");
       const oppConfused = isStatusActive(ctx.target, "confused") || getOpponentState("suffocating");
-      if ((selfConfused || oppConfused) && extraData?.isIncoming) {
+      if ((selfConfused || oppConfused) && extraData?.isIncoming && !bypassesAttackDefense(extraData, 'block')) {
         addLog(`🔔 【亂】：冥界共鳴觸發！抵擋了攻擊傷害！`, "effect");
         if (extraData) extraData.multiplier = 0;
       }

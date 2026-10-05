@@ -138,6 +138,22 @@ export const ELF_ID_MAPPING: Record<string, string> = {
   "5029": "5029",
   "holy_miles": "5030",
   "5030": "5030",
+  "liujie": "5031",
+  "5031": "5031",
+
+  // 30. elf_source_files 新增精靈（先登記資料，效果依專屬 registry 逐條補全）
+  "astral_aesfia": "5032",
+  "5032": "5032",
+  "星核寰宇·艾斯菲亞": "5032",
+  "星核寰宇.艾斯菲亞": "5032",
+  "astral_aesfig": "5033",
+  "5033": "5033",
+  "星軌重構·艾斯菲格": "5033",
+  "星軌重構.艾斯菲格": "5033",
+  "mogos_overlord": "5034",
+  "5034": "5034",
+  "邪靈主宰·摩哥斯": "5034",
+  "邪靈主宰.摩哥斯": "5034",
 };
 
 export function getNumericElfId(originalId: string, elfName: string): string {

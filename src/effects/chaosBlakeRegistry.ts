@@ -35,22 +35,7 @@ export const handleChaosBlakeSoulMark = (context: BattleEventContext, event: Eff
     setOpponentState("hpAtRoundStart", target.currentHp);
   }
 
-  // 2. 受到傷害後 (ON_DAMAGED): 1/2 血以下減免與先制
-  if (event === EffectTiming.ON_DAMAGED) {
-    if (self.currentHp < self.maxHp / 2) {
-      setPlayerState("chaosBlakeShieldNextTurn", true);
-      setPlayerState("chaosBlakePriorityNextTurn", 3);
-      addLog(`🌑 【混】：體力低於 1/2，下回合進入影身狀態 (減傷 100% 且先制 +3)！`, "effect");
-    }
-  }
-
-  // 3. 減傷執行 (BEFORE_DAMAGE)
-  if (event === EffectTiming.BEFORE_DAMAGE) {
-    if (extraData?.isIncoming && getPlayerState("chaosBlakeShieldNextTurn")) {
-      extraData.multiplier = 0;
-      addLog(`🌑 【混】：影身狀態，免疫本次傷害！`, "effect");
-    }
-  }
+  // 5015 原文沒有「低血完全免傷／先制+3」，移除複製舊魂印帶入的額外防禦。
 
   // 4. 使用技能後 (AFTER_ACTION): 體力變動值 20% 真實傷害
   if (event === EffectTiming.AFTER_ACTION && extraData?.actor === actor) {
@@ -74,11 +59,6 @@ export const handleChaosBlakeSoulMark = (context: BattleEventContext, event: Eff
     }
   }
   
-  if (event === EffectTiming.ROUND_END) {
-    if (getPlayerState("chaosBlakeShieldNextTurn")) {
-      setPlayerState("chaosBlakeShieldNextTurn", false);
-    }
-  }
 
   return false;
 };

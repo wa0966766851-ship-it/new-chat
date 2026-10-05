@@ -4,7 +4,9 @@ import type { BattleEventContext } from "../effects/types";
 import { EffectTiming } from "../effects/types";
 import { parseSkill, parseSoulMark, matchCond } from "./parse";
 import { CUSTOM } from "./custom";
-import { eventTriggers, runSideTimers, runSkillProgram, runSoulProgram, runAct, passiveEvade, runHolderMarks, setSoulProgramProvider, findBlockTimer, evalCond, statusTriggers } from "./runtime";
+import { eventTriggers, runSideTimers, runSkillProgram, runSoulProgram, runAct, passiveEvade, runHolderMarks, setSoulProgramProvider, findBlockTimer, evalCond, statusTriggers, settleNoDmgFollowUps, surviveAt1 } from "./runtime";
+import { isSkillDamageType } from "../battle/damageSemantics";
+export { blockStatusGuard } from "./runtime";
 import { SKILL_MODE, SOUL_MODE } from "./specs";
 import { BoundedCache } from '../utils/boundedCache';
 
@@ -56,6 +58,7 @@ const ACTIVE_ONLY = new Set<string>([EffectTiming.ROUND_START, EffectTiming.ROUN
 /** 魂印事件：側邊持續效果 + 精靈魂印積木（依 SOUL_MODE） */
 export function runBlockEvent(ctx: BattleEventContext, event: string, data: any, elf: any): boolean {
   if (event === EffectTiming.ON_ENTRANCE) runBenchOnOppEntrance(ctx);
+  recordBattleFacts(ctx, event, data);
   const trigs = eventTriggers(ctx, event, data);
   if (!trigs.length) return false;
   const active = (ctx.actor === "p1" ? ctx.activeP1 : ctx.activeP2) as any;
@@ -73,9 +76,19 @@ export function runBlockEvent(ctx: BattleEventContext, event: string, data: any,
     const rb = findBlockTimer(timers, b => b.rebirth);
     if (rb) { ctx.consumeTimer?.(ctx.actor, rb.id); ctx.applyHeal(ctx.actor, (ctx.self as any).maxHp); ctx.addLog(`✨ 【${ctx.self?.name}】重生了！`, "effect"); return true; }
     const t = findBlockTimer(timers, b => b.survive);
-    if (t) { ctx.addLog(`💀 【${ctx.self?.name}】強制存活，保留 1 點體力！`, "effect"); return true; }
+    if (t) { surviveAt1(ctx); ctx.addLog(`💀 【${ctx.self?.name}】強制存活，保留 1 點體力！`, "effect"); return true; }
   }
   return emitSoul(ctx, trigs, data, elf, isActive || event === EffectTiming.FATAL_RESIST);
+}
+
+/** 積木條件需要的戰鬥事實：本次攻擊實際傷害、當回合是否受到技能／攻擊傷害、待決的「體力未減少」追加 */
+function recordBattleFacts(ctx: BattleEventContext, event: string, data: any) {
+  if (event === EffectTiming.AFTER_ATTACK_HIT && data && (data.hitIndex ?? 0) === 0) ctx.setPlayerState("blkLastHitDamage", Number(data.totalDamage ?? data.damage ?? 0));
+  if (event === EffectTiming.OPPONENT_DAMAGE) settleNoDmgFollowUps(ctx, data);
+  if (event === EffectTiming.ON_DAMAGED && data && (!data.targetSide || data.targetSide === ctx.actor) && (data.amount ?? 0) > 0 && isSkillDamageType(String(data.damageType || ""))) {
+    ctx.setPlayerState("blkSkillDmgTakenRound", ctx.roundNumber ?? 0);
+    if (!data.typedSkill) ctx.setPlayerState("blkAttackDmgTakenRound", ctx.roundNumber ?? 0);
+  }
 }
 
 function emitSoul(ctx: BattleEventContext, trigs: Trigger[], data: any, elf: any, isActive: boolean): boolean {
@@ -144,6 +157,19 @@ export function blockCondPriority(skill: any, self: any, opp: any, getStatuses: 
     }
   }
   return bonus;
+}
+
+/** 積木技能：條件式「…時先制+N且必定命中」→ 條件成立時本次視為必中（引擎於命中判定前轉換技能） */
+export function blockSkillTransform(ctx: BattleEventContext, skill: any): any {
+  if (!skill || skill.isSureHit || SKILL_MODE[skill.name] !== "blocks") return skill;
+  const prog = getSkillProgram(skill);
+  for (const c of prog.clauses) for (const b of c.body) for (const a of b.acts) {
+    const m = a.op === "noop" && String(a.p.tag || "").match(/^(.+?時)?.*且必定命中/);
+    if (!m) continue;
+    const cond = b.cond?.[0] || (m[1] ? matchCond(m[1].replace(/時$/, "")) : null);
+    if (!cond || evalCond(ctx, cond, { last: null, lastAmount: 0 }) === true) return { ...skill, isSureHit: true };
+  }
+  return skill;
 }
 
 /** 異常附加成功後（由 applyStatusWithImmunityCheck 呼叫；雙方各自的 ctx） */

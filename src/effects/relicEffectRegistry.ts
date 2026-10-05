@@ -1,3 +1,4 @@
+import { addDamageReduction } from '../battle/damageReduction';
 import { BattleEventContext, EffectTiming } from "./types";
 import { prdChance } from "../utils/prd";
 
@@ -22,7 +23,7 @@ const loseEnd = (p: number, label: string): RelicHandler => (ctx, event) => {
   if (event === EffectTiming.ROUND_END && alive(ctx)) { ctx.adjustHp(ctx.actor, -pctHp(ctx, p)); ctx.addLog(`🩸 【${label}】：失去 ${Math.round(p * 100)}% 最大體力。`, "effect"); }
 };
 const dmgOut = (p: number): RelicHandler => (_c, event, extra) => { const comp = outgoingAttack(event, extra); if (comp) comp.increasePercent += p; };
-const dmgIn = (p: number): RelicHandler => (_c, event, extra) => { const comp = incomingAttack(event, extra); if (comp) comp.decreasePercent += p; };
+const dmgIn = (p: number): RelicHandler => (_c, event, extra) => { const comp = incomingAttack(event, extra); if (comp) addDamageReduction(comp, p); };
 const onKillHeal = (p: number, label: string): RelicHandler => (ctx, event, extra) => {
   if (event === EffectTiming.BATTLE_PHASE_END && extra?.killedOpponent && alive(ctx)) { ctx.applyHeal(ctx.actor, pctHp(ctx, p)); ctx.addLog(`🪽 【${label}】：擊敗對手，恢復 ${Math.round(p * 100)}% 最大體力！`, "heal"); }
 };
@@ -34,7 +35,7 @@ const roundStartStatus = (chance: number, status: string, label: string): RelicH
 
 export const RelicEffectRegistry: Record<string, RelicHandler> = {
   // ── 既有藏品 ──
-  dmg_reduction_bead: (_c, event, extra) => { const comp = incomingAny(event, extra); if (comp && comp.damageCategory !== "true") comp.decreasePercent += 0.1; },
+  dmg_reduction_bead: (_c, event, extra) => { const comp = incomingAny(event, extra); if (comp && comp.damageCategory !== "true") addDamageReduction(comp, 0.1); },
   justin_arm: dmgOut(0.15),
   silver_wing: dmgOut(0.2),
   six_wing: onKillHeal(0.2, "六翼獵手"),
@@ -51,7 +52,7 @@ export const RelicEffectRegistry: Record<string, RelicHandler> = {
   third_eye: (ctx, event, extra) => { const comp = outgoingAttack(event, extra); if (comp && hasAbnormal(ctx.target)) comp.increasePercent += 0.3; },
   web_spindle: roundStartStatus(0.2, "疲憊", "蛛網紡錘"),
   blood_watch: (ctx, event, extra) => { const comp = outgoingAttack(event, extra); if (comp && ctx.self.currentHp < ctx.self.maxHp / 2) comp.increasePercent += 0.35; },
-  silver_stitch: (_c, event, extra) => { const comp = incomingAny(event, extra); if (comp && (comp.damageCategory === "fixed" || comp.damageCategory === "percent")) comp.decreasePercent += 0.5; },
+  silver_stitch: (_c, event, extra) => { const comp = incomingAny(event, extra); if (comp && (comp.damageCategory === "fixed" || comp.damageCategory === "percent")) addDamageReduction(comp, 0.5); },
   tear_vial: (ctx, event) => {
     if (event === EffectTiming.ROUND_END && alive(ctx) && ctx.self.currentHp < ctx.self.maxHp / 3) { ctx.applyHeal(ctx.actor, pctHp(ctx, 0.15)); ctx.addLog("💧 【淚滴瓶】：恢復 15% 最大體力。", "heal"); }
   },
@@ -63,7 +64,7 @@ export const RelicEffectRegistry: Record<string, RelicHandler> = {
     comp.increasePercent += 0.2 + 0.05 * boosts;
   },
   faceless_mask: (ctx, event, extra) => {
-    const comp = incomingAny(event, extra); if (comp && comp.damageCategory !== "true") comp.decreasePercent += 0.3;
+    const comp = incomingAny(event, extra); if (comp && comp.damageCategory !== "true") addDamageReduction(comp, 0.3);
     loseEnd(0.03, "無面者面具")(ctx, event, extra, 0);
   },
   // ── 詛咒 ──

@@ -5,6 +5,7 @@ import { BattleEventContext, BattleSkillHandler, EffectTiming, ElfDeconstructedP
 import { createExtraElf } from '../utils/extraElf';
 import { clampSkillPp } from '../utils/battleHelpers';
 import { liurenSurvivalRule } from '../battle/survivalRules';
+import { handleStoneThrowerSoul } from './stoneThrowerSoul';
 
 export const handleWuxuSoulMark = (ctx: BattleEventContext, event: EffectTiming | string, extraData?: any) => {
   const { self, actor, setPlayerState, getPlayerState, addLog, applyTrueDamage, applyHeal } = ctx;
@@ -145,7 +146,7 @@ export const handleWuxuSoulMark = (ctx: BattleEventContext, event: EffectTiming 
     if (event === EffectTiming.BEFORE_DAMAGE && extraData?.damageComp && extraData.damageComp.isIncoming === false) {
       const damageComp = extraData.damageComp;
       if (self.trait?.name === "亂舞") {
-        damageComp.multiplier = (damageComp.multiplier || 1.0) * 1.12;
+        damageComp.multiplier = (damageComp.multiplier ?? 1.0) * 1.12;
       }
       
       const isNonTrue = damageComp.damageCategory === "skill_attack" || damageComp.damageCategory === "fixed" || damageComp.damageCategory === "percent";
@@ -154,7 +155,7 @@ export const handleWuxuSoulMark = (ctx: BattleEventContext, event: EffectTiming 
         const stacks = Math.floor(hpLossPercent / 0.1);
         let boost = 1.2 + stacks * 1.2;
         if (self.currentHp < self.maxHp / 2) boost *= 2;
-        damageComp.multiplier = (damageComp.multiplier || 1.0) * boost;
+        damageComp.multiplier = (damageComp.multiplier ?? 1.0) * boost;
       }
     }
 
@@ -361,21 +362,7 @@ export const handleWuxuSoulMark = (ctx: BattleEventContext, event: EffectTiming 
 
   // 無序·墜星 (Wuxu Zhuixing)
   if ((self.id || "").includes("zhuixing") || self.name.includes("墜星")) {
-    if (event === EffectTiming.FATAL_RESIST) {
-      const survived = !!getPlayerState(`${actor}_zhuixingSurvived`);
-      if (!survived) {
-        addLog(`☄️ 【豪邁/投石者】：遭受致死傷害時保留 1 點體力！`, "effect");
-        setPlayerState(`${actor}_zhuixingSurvived`, true);
-        ctx.updateElf(actor, { currentHp: 1 });
-        return true;
-      }
-    }
-
-    if (event === EffectTiming.AFTER_ACTION) {
-      addLog(`☄️ 【墜】：星河降誕，恢復與壓制！`, "effect");
-      self.skills.forEach(s => { if (s.pp !== undefined) s.pp = clampSkillPp(s, s.pp + 2, self); });
-      ctx.applyStatusWithImmunityCheck(oppSide, "封屬", 2);
-    }
+    handleStoneThrowerSoul(ctx, event, extraData);
     
     if (event === EffectTiming.ON_KILL && extraData?.defeatedElf) {
        const deadElf = extraData.defeatedElf;

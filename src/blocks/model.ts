@@ -52,7 +52,11 @@ export interface Stmt {
   acts: Act[];
   elseActs?: Act[];
   /** 此句依賴上一句的結果（消除成功則／未觸發則） */
-  chain?: "success" | "fail";
+  chain?: "success" | "fail" | "any_fail";
+  /** 條件即時判定（句中前段剛附加的異常：「令自身混亂，自身處於混亂則…」） */
+  live?: boolean;
+  /** 傷害結算後才執行（「造成傷害的X%恢復體力，…等量…」的等量＝實際傷害×X%） */
+  afterHit?: boolean;
   /** 條件於整句開始前判定（「…時強化效果翻倍」看的是使用前的狀態） */
   pre?: boolean;
 }

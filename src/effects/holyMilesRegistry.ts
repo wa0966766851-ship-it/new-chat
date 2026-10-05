@@ -1,3 +1,4 @@
+import { multiplyDamageReduction, addDamageReduction } from '../battle/damageReduction';
 import type { StatType } from "../types";
 import type { BattleEventContext, BattleSkillHandler, DamageComputation } from "./types";
 import { EffectTiming } from "./types";
@@ -68,7 +69,7 @@ export function handleHolyMilesSoulMark(c: BattleEventContext, event: EffectTimi
     const d = data.damageComp as DamageComputation;
     if (d.isIncoming && d.damageCategory !== "true") {
       const count = turns(c, "halves") || 1;
-      d.multiplier *= 2 ** -count;
+      for (let i = 0; i < count; i++) multiplyDamageReduction(d, 0.5);
     }
     if (!d.isIncoming && d.damageCategory === "skill_attack") {
       // 聖怒：對手受到百分比傷害後體力未減少 → 本回合對手受到攻擊技能所造成的技能傷害翻倍 1 次＋每 10% 額外 1 次。

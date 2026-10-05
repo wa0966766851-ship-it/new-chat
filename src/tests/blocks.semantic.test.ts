@@ -172,11 +172,13 @@ function skillByName(name: string) {
 
 console.log("\n=== 積木登記完整性 ===");
 
-t("31 個積木技能的所有子句皆可解析", () => {
-  assert.strictEqual(Object.keys(SKILL_MODE).length, 31);
+t("33 個積木技能（31 全積木＋2 指定子句）的積木子句皆可解析", () => {
+  assert.strictEqual(Object.keys(SKILL_MODE).length, 33);
   for (const name of Object.keys(SKILL_MODE)) {
     const program = getSkillProgram(skillByName(name));
-    const unparsed = program.clauses.filter(clause => !clause.parsed);
+    const mode = SKILL_MODE[name];
+    // 指定子句模式（專屬 handler＋積木補指定子句）：只要求登記的子句可解析
+    const unparsed = program.clauses.filter((clause, i) => (mode === "blocks" || mode.includes(i)) && !clause.parsed);
     assert.deepStrictEqual(unparsed.map(clause => clause.raw), [], `${name} 仍有未解析子句`);
   }
 });
@@ -227,7 +229,8 @@ t("混元護體：異常反彈、害怕、傷害上限與攻擊先制均生效",
   const h = makeBlockContext();
   h.ctx.skill = skillByName("混元護體");
   runSkillProgram(h.ctx, getSkillProgram(h.ctx.skill), "use");
-  assert.strictEqual(h.playerState.reflectStatusTurns, 4);
+  // 「非附屬類」分類免疫：以計時器依分類判定（不再寫全免疫的 reflectStatusTurns）
+  assert.ok(h.timers.p1.some(timer => timer.remaining === 4 && timer.payload.block.statusGuard?.cls === "非附屬類" && timer.payload.block.statusGuard.reflect));
   assert.ok(h.statuses.p2.includes("害怕"));
   assert.strictEqual(h.playerState.incomingSkillDmgCapTurns, 3);
   assert.strictEqual(h.playerState.incomingSkillDmgCap, 280);
@@ -303,8 +306,9 @@ t("星光·音速火拳：消回合後降先制且機率增傷實際寫入狀態
   const h = makeBlockContext();
   h.ctx.skill = skillByName("星光·音速火拳");
   runSkillProgram(h.ctx, getSkillProgram(h.ctx.skill), "use");
-  assert.strictEqual(h.opponentState.priorityBoostValue, -3);
-  assert.strictEqual(h.opponentState.priorityBoostTurns, 2);
+  // 對手先制-3：獨立計時器（下回合生效），不覆寫對手自身的 priorityBoost*
+  assert.strictEqual(h.opponentState.priorityBoostValue, undefined);
+  assert.ok(h.timers.p2.some(timer => timer.payload.block.prio === -3 && timer.pendingActivation && timer.remaining === 1));
   assert.strictEqual(actionAttackMultiplier(h.playerState), 2);
 });
 
@@ -392,7 +396,7 @@ t("翎羽風暴：免疫反彈寫入狀態且令對手害怕", () => {
   const h = makeBlockContext();
   h.ctx.skill = skillByName("翎羽風暴");
   runSkillProgram(h.ctx, getSkillProgram(h.ctx.skill), "use");
-  assert.strictEqual(h.playerState.reflectStatusTurns, 4);
+  assert.ok(h.timers.p1.some(timer => timer.remaining === 4 && timer.payload.block.statusGuard?.cls === "非附屬類" && timer.payload.block.statusGuard.reflect));
   assert.ok(h.statuses.p2.includes("害怕"));
 });
 

@@ -1,3 +1,4 @@
+import { multiplyDamageReduction, addDamageReduction } from '../battle/damageReduction';
 import { abilityKeys, currentElf, clearStatuses } from './semanticOperations';
 import { sameStatus } from './statusIdentity';
 import type { Skill } from '../types';
@@ -53,7 +54,7 @@ export const handleCanglanSoulMark = (ctx: BattleEventContext, event: EffectTimi
       if (extraData?.isIncoming && (extraData?.damageCategory === "fixed" || extraData?.damageCategory === "percent")) {
         const n = Number(getPlayerState("canglanShieldHalves") || 0);
         if (n > 0 && Number(getPlayerState("canglanShieldHalvesLeft") || 0) > 0) {
-          extraData.multiplier *= 0.5 ** n;
+          for (let i = 0; i < n; i++) multiplyDamageReduction(extraData, 0.5);
           const shields = (self.shield || 0) + (ctx.target?.shield || 0);
           extraData.limit = Math.min(extraData.limit ?? Infinity, Math.floor(shields / 3));
           addLog(`🌊 【瀾】：固定／百分比傷害減半 ${n} 次！`, "effect");
@@ -66,8 +67,8 @@ export const handleCanglanSoulMark = (ctx: BattleEventContext, event: EffectTimi
         }
       }
       // 自身受到技能傷害減半
-      if (extraData?.isIncoming && extraData?.damageCategory === "skill_attack") {
-        extraData.multiplier *= 0.5;
+      if (extraData?.isIncoming && String(extraData?.damageCategory).startsWith("skill")) {
+        multiplyDamageReduction(extraData, 0.5);
         addLog(`🌊 【瀾】：水幕屏障，傷害減半！`, "effect");
       }
       break;

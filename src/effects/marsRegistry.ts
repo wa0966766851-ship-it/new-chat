@@ -1,6 +1,9 @@
+import { multiplyDamageReduction, addDamageReduction } from '../battle/damageReduction';
+import { benchSkip } from './fieldGuard';
 import { ElfDeconstructedProfile, EffectTiming, BattleEventContext, BattleSkillHandler } from './types';
 
 export const handleMarsSoulMark = (ctx: BattleEventContext, event: EffectTiming, extraData?: any) => {
+  if (benchSkip(ctx, event)) return; // 場下不觸發回合節點效果（例：聖・回合結束回復）
   const isP1 = ctx.actor === "p1";
   const self = ctx.self;
   const target = ctx.target;
@@ -136,9 +139,9 @@ export const handleMarsSoulMark = (ctx: BattleEventContext, event: EffectTiming,
       const isIncoming = extraData?.isIncoming;
       
       // 1. 堅壁機甲："護盾與護罩存在時自身首次受到的非真實傷害減半1次"
-      if (isIncoming && self.shield && self.shield > 0 && !ctx.getPlayerState("marsShieldDamageHalvedUsed")) {
+      if (isIncoming && (self.shield || 0) > 0 && (self.barrier || 0) > 0 && !ctx.getPlayerState("marsShieldDamageHalvedUsed")) {
         if (extraData && extraData.damageCategory !== "true") {
-          extraData.multiplier *= 0.5;
+          multiplyDamageReduction(extraData, 0.5);
           ctx.setPlayerState("marsShieldDamageHalvedUsed", true);
           ctx.addLog(`🛡️ 【堅壁機甲】首次受防禦護航：受到的傷害減半！`, "effect");
         }

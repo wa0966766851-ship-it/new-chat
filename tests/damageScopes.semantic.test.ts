@@ -117,7 +117,9 @@ import { tickTimers, addTimer } from '../src/battle/timers';
 import { OTHERWORLD_REY_SKILLS } from '../src/effects/otherworldReyRegistry';
 for(const side of ['p1','p2'] as const){
  const target=side==='p1'?'p2':'p1';let timers:any[]=[];
- const c:any={actor:side,targetSide:target,self:elf('rey'),target:elf('opp'),getPlayerState:()=>0,setPlayerState:()=>{},applyStatChange:()=>{},applyAbsorb:()=>{},addTimerTo:(_s:string,t:any)=>{timers=addTimer(timers,t,{isLateMover:true});}};
+ const c:any={actor:side,targetSide:target,self:elf('rey'),target:elf('opp'),getPlayerState:()=>0,setPlayerState:()=>{},applyStatChange:()=>{},
+  applyPinkDamage:(s:string,amount:number,_l:any,_p1:any,_p2:any,type:string)=>{assert.equal(s,target);assert.equal(type,'percent');return amount;},
+  applyHeal:(s:string)=>assert.equal(s,side),addTimerTo:(_s:string,t:any)=>{timers=addTimer(timers,t,{isLateMover:true});}};
  OTHERWORLD_REY_SKILLS['異境神霆'](c);
  assert.equal(timers[0].remaining,2);assert.equal(timers[0].lateMoverPending,undefined);
  const state:any={p1:elf('a'),p2:elf('b'),p1RegistryState:{},p2RegistryState:{},p1Timers:[],p2Timers:[]};

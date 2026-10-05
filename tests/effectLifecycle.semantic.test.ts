@@ -22,6 +22,13 @@ let passed = 0;
 const test = (name: string, fn: () => void) => { fn(); passed++; console.log(`✓ ${name}`); };
 const entry = (codeId: string, params: any = {}): KitEntry => ({ codeId, params, node: 'on_hit', source: 'skill', order: 0 });
 const elf = () => ({ id: 'test', name: '測試', currentHp: 100, maxHp: 1000, effects: [], battleStatuses: {} } as any);
+
+test('歷史異常別名在讀取端合併且不污染存檔；frozen不誤轉冰封', () => {
+  const old = { battleStatuses: { poisoned: 2, 中毒: 3, frozen: 2, ice_sealed: 4 }, effects: [] };
+  const snapshot = JSON.stringify(old);
+  assert.deepEqual(getStatuses(old), { 中毒: 3, 石化: 2, 冰封: 4 });
+  assert.equal(JSON.stringify(old), snapshot);
+});
 test('模組化 Blockly 檔案可重現核對且維持舊版公開序列化格式', () => {
   const folder=new URL('../src/vendor/blockly/',import.meta.url);
   const info=JSON.parse(readFileSync(new URL('build-info.json',folder),'utf8'));
@@ -52,7 +59,7 @@ test('控制中心相容舊歌單與錯誤巢狀存檔，分類不混用', () =>
   assert.deepEqual(normalizePlaylist([{url:{url:'https://example.test/music',title:'原標題'},title:'未知標題'}], []), [{url:'https://example.test/music',title:'原標題'}]);
   assert.deepEqual(normalizePlaylist(['legacy', null, {url:3}], []), [{url:'legacy',title:'歌曲 1'}]);
   const ids = CONTROL_SECTIONS.map(s => s.id);
-  assert.deepEqual(ids, ['visual', 'audio', 'battle', 'resources', 'library', 'advanced', 'updates']);
+  assert.deepEqual(ids, ['background', 'audio', 'visual', 'battle', 'system']);
   assert.equal(new Set(ids).size, ids.length);
 });
 test('巢狀特質機制保留、過深拒絕；不把資料通過當成可執行', () => {

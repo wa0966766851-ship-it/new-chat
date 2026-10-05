@@ -1,5 +1,6 @@
 import { Elf, BaseStats, Skill } from "../types";
 import { calculateElfStats } from "./statCalculator";
+import { LIUJIE_SEED } from '../data/liujie';
 
 export type DestinyRank = 'S' | 'A' | 'B' | 'C';
 
@@ -64,27 +65,7 @@ export const usesSoulMarkInsteadOfInterceptor = (name?: string) => !!name?.inclu
 
 // 專門為命運之輪模式擴展的 C 級經典攔截卡（如果圖鑑中沒有，會作為抽卡補充包加入池中）
 export const CLASSIC_INTERCEPTORS: Partial<Elf>[] = [
-  {
-    name: "六界神王",
-    type: "光·次元",
-    level: 100,
-    baseStats: { hp: 175, atk: 135, def: 115, spatk: 70, spdef: 113, speed: 137 },
-    soulMark: {
-      name: "界",
-      badgeChar: "界",
-      description: "【光·次元】界神王魂印：回合開始若自身處於能力提升則免疫異常且攻擊傷害提升50%，否則戰鬥階段結束全屬性+1且下回合先制+2；攻擊時100%反饋當次傷害。每回合結束隨機領悟六大秘法：地葬(200護盾/護罩)、瀚海(200固傷/回血)、混沌(2技能PP歸零)、幻境(下回合必暴)、天玄(下回免疫>400傷害)、時空(下回先制+1)；領悟效果下場重置自身狀態與PP並清除對手技能記錄。被擊敗消除對手回合類效果並反轉強化為下降，同時令對手受等量致命傷真實傷害（場下生效）。",
-      effectType: "none",
-      effectValue: 0
-    },
-    skills: [
-      { name: "界・裁決之劍", type: "光·次元", category: "物理", power: 85, pp: 20, priority: 3, description: "若自身能力下降則先制+1且必中；消強/消回合成功分別令對手失明/疲憊；反轉自身下降恢復1/3體力", effectType: "none", effectDetail: "" },
-      { name: "禁靈領域", type: "無屬性", category: "屬性", power: 0, pp: 5, priority: 0, isSureHit: true, description: "全屬性+1(強化時翻倍)；4回合1/3回血固傷(低於1/2翻倍)；3回強化被消/吸則對手2回屬性失效", effectType: "none", effectDetail: "" },
-      { name: "升臨恩澤", type: "無屬性", category: "屬性", power: 0, pp: 5, priority: 0, isSureHit: true, description: "5回合彈控；3回合200固傷(低於對手翻倍)；免疫下1次攻擊；下2回合先制+3", effectType: "none", effectDetail: "" },
-      { name: "超界審判", type: "光·次元", category: "物理", power: 150, pp: 5, priority: 0, isSureHit: true, description: "下降狀態先制+3並反轉；對手2技能PP歸零；傷害+50%(強化時翻倍)", effectType: "none", effectDetail: "" },
-      { name: "界·六神歸一", type: "光·次元", category: "物理", power: 160, pp: 5, priority: 0, isSureHit: true, isFifthSkill: true, description: "無視護盾效果；消回合成功疲憊(否則麻痺)；300護盾(後手翻倍)；300固傷(先手+100並回血)", effectType: "none", effectDetail: "" }
-    ],
-    path: "https://images.unsplash.com/photo-1518709268805-4e9042af9f23?auto=format&fit=crop&w=300&q=80"
-  }
+  LIUJIE_SEED
 ];
 
 /**

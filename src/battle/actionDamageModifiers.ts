@@ -1,5 +1,6 @@
 import type { BattleEventContext, DamageComputation } from '../effects/types';
 import { matchesDamageTypes, damageScopeLabel } from '../effects/damageChoices';
+import { multiplyDamageReduction } from './damageReduction';
 
 export const ACTION_DAMAGE_KEY = 'damageModifiersThisAction';
 export const ACTION_POWER_KEY = 'powerMultiplierThisAction';
@@ -21,6 +22,8 @@ export function queueActionPowerMultiplier(ctx: BattleEventContext, multiplier: 
 export function applyActionDamageModifiers(registry: any, comp: DamageComputation): void {
   if (comp.pure) return;
   for (const item of registry?.[ACTION_DAMAGE_KEY] || []) {
-    if (matchesDamageTypes([item.scope], comp.damageCategory)) comp.multiplier *= item.multiplier;
+    if (matchesDamageTypes([item.scope], comp.damageCategory)) {
+      if (item.multiplier < 1) multiplyDamageReduction(comp, item.multiplier, false); else comp.multiplier *= item.multiplier;
+    }
   }
 }

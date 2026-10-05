@@ -1,5 +1,7 @@
 import { readFileSync, writeFileSync } from "node:fs";
 import assert from "node:assert/strict";
+import { gzipSync } from 'node:zlib';
+import { gunzipSync, strFromU8 } from 'fflate';
 import { expandRows, unpackJson, type PackedJson, type PackedValue } from "../src/data/packedJson";
 
 /** 機械式資料產生器：原始 JSON 留作編輯來源，執行端只載入去重版。 */
@@ -20,6 +22,18 @@ function pack(source: unknown): PackedJson {
   const root = encode(source);
   return { strings, root };
 }
+
+// 三個編輯來源共用字典。原始檔保留，執行時完整還原；不以壓縮改寫技能語意。
+const descriptions = Object.fromEntries(['elfSourceText', 'skillReferences.generated', 'newElfSources']
+  .map(name => [name, JSON.parse(readFileSync(`src/data/${name}.json`, 'utf8'))]));
+const descriptionBytes = Buffer.from(JSON.stringify(descriptions));
+const compressed = gzipSync(descriptionBytes, { level: 9 });
+assert.deepEqual(JSON.parse(strFromU8(gunzipSync(compressed))), descriptions, '首頁描述及新精靈資料必須逐值完全相同');
+const descriptionOutput = JSON.stringify({ schemaVersion: 1, gzip: compressed.toString('base64') }) + '\n';
+const descriptionPath = 'src/data/descriptions.compressed.json';
+if (process.argv.includes('--check')) assert.equal(readFileSync(descriptionPath, 'utf8'), descriptionOutput, '描述去重資料過期');
+else writeFileSync(descriptionPath, descriptionOutput);
+console.log(`descriptions: ${descriptionBytes.length} → ${Buffer.byteLength(descriptionOutput)} bytes；完整還原相同。`);
 
 function compactRows(rows: Record<string, unknown>[]) {
   const defaults: Record<string, unknown> = {};
