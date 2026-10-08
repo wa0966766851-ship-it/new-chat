@@ -29,7 +29,7 @@
     "format:blockly": "node --import tsx tools/normalizeBlocklyLineEndings.ts",
     "data:pack": "node --import tsx scripts/pack_effect_data.ts",
     "data:skills": "node --import tsx scripts/gen_skill_references.ts",
-    "test:data": "node --import tsx scripts/pack_effect_data.ts --check && node --import tsx scripts/gen_skill_references.ts --check",
+    "test:data": "node --import tsx tests/packedDescriptions.semantic.test.ts && node --import tsx scripts/pack_effect_data.ts --check && node --import tsx scripts/gen_skill_references.ts --check",
     "gen:handled-skills": "tsx scripts/gen-handled-skills.ts",
     "audit:blocks": "node --import tsx scripts/audit_block_coverage.ts --write",
     "audit:blocks:details": "node --import tsx scripts/audit_block_coverage.ts --details",

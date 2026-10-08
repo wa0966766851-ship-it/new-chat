@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import { gzipSync } from 'node:zlib';
 import { gunzipSync, strFromU8 } from 'fflate';
 import { expandRows, unpackJson, type PackedJson, type PackedValue } from "../src/data/packedJson";
+import { assertPackedDescriptions } from './lib/packedDescriptions';
 
 /** 機械式資料產生器：原始 JSON 留作編輯來源，執行端只載入去重版。 */
 function pack(source: unknown): PackedJson {
@@ -31,7 +32,7 @@ const compressed = gzipSync(descriptionBytes, { level: 9 });
 assert.deepEqual(JSON.parse(strFromU8(gunzipSync(compressed))), descriptions, '首頁描述及新精靈資料必須逐值完全相同');
 const descriptionOutput = JSON.stringify({ schemaVersion: 1, gzip: compressed.toString('base64') }) + '\n';
 const descriptionPath = 'src/data/descriptions.compressed.json';
-if (process.argv.includes('--check')) assert.equal(readFileSync(descriptionPath, 'utf8'), descriptionOutput, '描述去重資料過期');
+if (process.argv.includes('--check')) assertPackedDescriptions(readFileSync(descriptionPath, 'utf8'), descriptions);
 else writeFileSync(descriptionPath, descriptionOutput);
 console.log(`descriptions: ${descriptionBytes.length} → ${Buffer.byteLength(descriptionOutput)} bytes；完整還原相同。`);
 
