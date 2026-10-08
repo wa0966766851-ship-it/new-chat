@@ -41,7 +41,15 @@ export async function publishPackage(root, credentials, fetcher = fetch) {
   }));
   await request('manifest', 'POST', JSON.stringify(manifest));
   const result = await request('activate', 'POST', JSON.stringify({ buildId: manifest.buildId, expectedBuildId: before.buildId || null }));
-  return { buildId: result.buildId, previousBuildId: result.previousBuildId, fileCount: manifest.files.length };
+  const current = await request('status');
+  const live = await fetcher(`${SITE}/version.json`, { method: 'GET', redirect: 'error', signal: AbortSignal.timeout(120000),
+    headers: { 'OAI-Sites-Authorization': `Bearer ${credentials.service}`, 'X-Seer-Publish-Key': credentials.publisher } });
+  if (!live.ok) throw new Error(`啟用後版本查詢失敗（${live.status}）；資源及前一版本均保留，請確認發布狀態`);
+  const identity = await live.json();
+  if (current.buildId !== manifest.buildId || identity.buildId !== manifest.buildId || identity.commit !== manifest.commit || identity.version !== manifest.version) {
+    throw new Error('啟用後線上版本不符或已有並行發布；不宣稱更新成功，也不刪除或自動回滾資源');
+  }
+  return { buildId: result.buildId, commit: identity.commit, verified: true, previousBuildId: result.previousBuildId, fileCount: manifest.files.length };
 }
 if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1])).href) {
   try {

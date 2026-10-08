@@ -37,6 +37,8 @@ const fetcher = async (url, init) => {
   assert.equal(init.redirect, 'error');
   assert.equal(init.headers['OAI-Sites-Authorization'], `Bearer ${credentials.service}`);
   const path = new URL(url).pathname; calls.push(path);
+  if (path === '/version.json' && mode === 'verification-unavailable') return new Response(null, { status: 503 });
+  if (path === '/version.json' && mode === 'wrong-version') return Response.json({ buildId: '0'.repeat(64), commit: '0'.repeat(40), version: 'invalid' });
   if (mode === 'interrupted' && init.method === 'PUT') return Response.json({}, { status: 503 });
   const body = mode === 'corrupted' && init.method === 'PUT' ? Buffer.from('corrupted') : init.body;
   const before = env.BUCKET.operations;
@@ -57,6 +59,12 @@ for (const [path, text] of oldFiles) {
 await writeFile(join(fixture, 'web-package-manifest.json'), JSON.stringify(old));
 await publishPackage(fixture, credentials, fetcher);
 assert.equal(await activeId(), oldId);
+for (const failure of ['verification-unavailable', 'wrong-version']) {
+  mode = failure;
+  await assert.rejects(publishPackage(fixture, credentials, fetcher), /啟用後/);
+  assert.equal(await activeId(), oldId); // 校驗失敗不能假報成功或刪除已啟用的資源。
+  assert.equal((await read(`/__build/${oldId}/assets/lazy.js`)).status, 200);
+}
 for (const failure of ['interrupted', 'corrupted']) {
   calls.length = 0; mode = failure;
   await assert.rejects(publishPackage(packageRoot, credentials, fetcher));
@@ -69,7 +77,9 @@ const manifest = JSON.parse(await readFile(join(packageRoot, 'web-package-manife
 const result = await publishPackage(packageRoot, credentials, fetcher);
 assert.equal(result.previousBuildId, oldId);
 assert.equal(await activeId(), manifest.buildId);
-assert.equal(calls.at(-1), '/_updates/activate');
+assert.deepEqual(calls.slice(-3), ['/_updates/activate', '/_updates/status', '/version.json']);
+assert.equal(result.verified, true);
+assert.equal(result.commit, manifest.commit);
 assert.equal((await read('/')).headers.get('location'), `/__build/${manifest.buildId}/`);
 assert.equal((await (await read('/version.json')).json()).buildId, manifest.buildId);
 for (const file of manifest.files) {
@@ -90,4 +100,4 @@ assert.equal(env.BUCKET.writes, writes);
 const rollback = await fetcher(`${site}/_updates/activate`, { method: 'POST', redirect: 'error', headers: { 'OAI-Sites-Authorization': `Bearer ${credentials.service}`, 'X-Seer-Publish-Key': credentials.publisher }, body: JSON.stringify({ buildId: oldId, expectedBuildId: manifest.buildId }) });
 assert.equal(rollback.status, 200); assert.equal(await activeId(), oldId);
 assert.equal((await read(`/__build/${manifest.buildId}/index.html`)).status, 200);
-console.log(JSON.stringify({ result: 'passed', packageFiles: manifest.files.length, manifestStorageOperations: manifestOperations, checks: ['interrupted upload retains old version', 'corrupted upload rejected', 'all resources and lazy modules readable', 'old tab pinned', 'publisher key required', 'rollback keeps both versions'], scope: 'local mock only; platform visitor sharing and real R2 unverified', temporaryFixture: fixture }));
+console.log(JSON.stringify({ result: 'passed', packageFiles: manifest.files.length, manifestStorageOperations: manifestOperations, checks: ['interrupted upload retains old version', 'corrupted upload rejected', 'all resources and lazy modules readable', 'old tab pinned', 'publisher key required', 'rollback keeps both versions', 'post-activation lookup failure cannot report success', 'mismatched live version cannot report success'], scope: 'local mock only; platform visitor sharing and real R2 unverified', temporaryFixture: fixture }));
