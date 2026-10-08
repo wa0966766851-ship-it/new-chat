@@ -22,9 +22,9 @@ let checks = 0;
 try {
   const { default: Battle } = await server.ssrLoadModule('/src/components/BattleScreen.tsx');
   const { getSoulMarkRegistry, getBattleSkillRegistry } = await server.ssrLoadModule('/src/effects/battleEventRegistry.ts');
-  const { handleDixinSoulMark } = await server.ssrLoadModule('/src/effects/dixinRegistry.ts');
-  const { handleKeldSoulMark } = await server.ssrLoadModule('/src/effects/keldRegistry.ts');
-  const { handleKeerhodeSoulMark } = await server.ssrLoadModule('/src/effects/keerhodeRegistry.ts');
+  const { handleDixinSoulMark } = await server.ssrLoadModule('/src/effects/elves/dixin/registry.ts');
+  const { handleKeldSoulMark } = await server.ssrLoadModule('/src/effects/elves/keld/registry.ts');
+  const { handleKeerhodeSoulMark } = await server.ssrLoadModule('/src/effects/elves/keerhode/registry.ts');
   const souls = getSoulMarkRegistry(), skills = getBattleSkillRegistry();
   let driver: any;
   for (const side of ['p1', 'p2'] as const) for (const mode of ['status', 'gate', 'mark', 'trait', 'resistance', 'dixin_ignore', 'hp_ceiling', 'keld_reduce', 'keerhode_reduce']) {

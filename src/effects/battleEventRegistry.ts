@@ -4,17 +4,19 @@ import { handleDestinyInterceptor } from "./destinyInterceptors";
 import { executeGenericSkillText } from "./genericSkillText";
 import { runNode } from "./effectRunner";
 import { runGenericSoulMark } from "./genericSoulMark";
-import { runBlockEvent, runSkillBlocks, skillMode, isSoulBlocksOnly, blockSkillTransform } from "../blocks/registry";
+import { runBlockEvent, runCopiedSoulEvent, runSkillBlocks, skillMode, isSoulBlocksOnly, blockSkillTransform } from "../blocks/registry";
 import { isSkillStone } from '../data/skillStones';
 import { transformStone, stoneBeforeDamage } from './skillStoneEffects';
 import { CODEX } from "../data/codexRegistry";
 import { Node } from "./effectSystem.schema";
-import { STAGED_ARENA_SKILLS, STAGED_ARENA_SOULS, STAGED_ARENA_SKILL_TRANSFORMS } from "./stagedArena/index";
+import { STAGED_ARENA_SKILLS, STAGED_ARENA_SOULS, STAGED_ARENA_SKILL_TRANSFORMS } from "./elves/staged-arena/index";
+import { ELF_REGISTRY_MODULES } from './elves/index';
 import { illusionSkill } from '../battle/illusion';
+import { acquiredEffectContext } from '../battle/acquiredEffectContext';
 import { activeConstraints } from '../battle/timedConstraints';
 import { runNewElfLifecycle, innateDisabled } from './newElfLifecycle';
-import { executeAstralMemory } from './astralTwinsRegistry';
-import { runMogosTeamEffects } from './mogosRegistry';
+import { executeAstralMemory } from './elves/astral-twins/registry';
+import { runMogosTeamEffects } from './elves/mogos/registry';
 
 export function mapTimingToNode(event: EffectTiming): Node | null {
   switch (event) {
@@ -59,6 +61,8 @@ export type SoulMarkHandler = (context: BattleEventContext, event: EffectTiming,
 
 
 export const SOUL_MARK_MAPPING: Record<string, string> = {
+  '5035': 'handleHamoSoulMark',
+  '御天龍神·哈莫': 'handleHamoSoulMark',
   "5030": "handleHolyMilesSoulMark",
   "聖靈邁爾斯": "handleHolyMilesSoulMark",
   "5032": "handleAstralAesfiaSoulMark",
@@ -190,9 +194,9 @@ export const SOUL_MARK_MAPPING: Record<string, string> = {
   "無序·六刃": "handleWuxuSoulMark",
   "無序.六刃": "handleWuxuSoulMark",
 
-  "5023": "handleWuxuSoulMark",
-  "無序·蝕言": "handleWuxuSoulMark",
-  "無序.蝕言": "handleWuxuSoulMark",
+  "5023": "handleShiyanSoulMark",
+  "無序·蝕言": "handleShiyanSoulMark",
+  "無序.蝕言": "handleShiyanSoulMark",
 
   "5024": "handleAnnihilationLordSoulMark",
   "1018": "handleAnnihilationLordSoulMark",
@@ -271,9 +275,11 @@ function initializeRegistries() {
   cachedOnInvalid = {};
   
   // @ts-ignore
-  const modules = import.meta.glob('./*Registry.ts', { eager: true });
+  const commonModules = import.meta.glob('./*Registry.ts', { eager: true });
+  const modules = { ...commonModules, ...ELF_REGISTRY_MODULES };
   
-  for (const [path, mod] of Object.entries(modules)) {
+  // 舊的合併順序也是頂層路徑字典序；有同名歷史匯出時維持原先勝出者。
+  for (const [path, mod] of Object.entries(modules).sort(([a], [b]) => a < b ? -1 : a > b ? 1 : 0)) {
     if (!mod || typeof mod !== 'object') continue;
     
     // Register Battle Skills (any exported object ending with _SKILLS)
@@ -405,12 +411,16 @@ function copiedSoul(ctx: BattleEventContext, event: EffectTiming, extraData?: an
   const illusion = ctx.self?.illusion;
   if (!illusion || (ctx as any).illusionDepth || event === EffectTiming.ON_ENTRANCE || event === EffectTiming.ON_SWITCH_OUT) return;
   const handler = getSoulMarkRegistry()[illusion.target.name];
-  const copy = Object.create(ctx);
-  copy.illusionDepth = 1;
-  Object.defineProperty(copy, 'self', { get: () => ({ ...ctx.self, name: illusion.target.name, soulMark: illusion.target.soulMark, illusion: undefined }) });
-  const result = isSoulBlocksOnly(copy.self) ? runBlockEvent(copy, event, extraData, copy.self)
+  const copy = acquiredEffectContext(ctx);
+  // 模式查目標ID，非原精靈ID；同時避免重跑持有者的timer與印記。
+  const result = isSoulBlocksOnly(illusion.target) ? undefined
     : handler ? handler(copy, event, extraData) : runGenericSoulMark(copy, event, extraData, copy.self);
-  return result;
+  if (!handler && illusion.target.kit?.length) {
+    const node = mapTimingToNode(event);
+    if (node) runNode(node, illusion.target.kit.filter(e => e.source !== 'skill'), CODEX,
+      extraData && typeof extraData === 'object' ? Object.assign(Object.create(copy), extraData) : copy);
+  }
+  return runCopiedSoulEvent(copy, event, extraData, illusion.target) || result;
 }
 
 export const SoulMarkRegistry: Record<string, SoulMarkHandler> = new Proxy({}, {

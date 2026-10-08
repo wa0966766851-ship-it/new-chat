@@ -6,7 +6,7 @@ import { queueSkillLifesteal } from '../src/battle/lifesteal';
 import { normalizeDamageType, settleDamageAbsorption } from '../src/battle/damageSemantics';
 import { queueHpDrain } from '../src/battle/hpDrain';
 import { damagePopupStyle, damagePopupLabel } from '../src/battle/damagePopupStyle';
-import { opeiaTemporaryStats } from '../src/effects/opeiaRegistry';
+import { opeiaTemporaryStats } from '../src/effects/elves/opeia/registry';
 import { settlementReceipt } from '../src/battle/settlementReceipt';
 
 let checks = 0;

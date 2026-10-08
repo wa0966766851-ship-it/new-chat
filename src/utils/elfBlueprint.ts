@@ -3,7 +3,7 @@ import { calculateElfStats, getDefaultEvs } from './statCalculator';
 import { validateKit } from '../effects/kitValidation';
 import { StatusRegistry } from '../effects/statusRegistry';
 import { canonicalStatusName } from '../effects/statusIdentity';
-import { SKILL_STONE_GRADES, SKILL_STONE_ATTRIBUTES, getPerfectEffectsForAttribute } from '../data/skillStones';
+import { SKILL_STONE_GRADES, SKILL_STONE_ATTRIBUTES, getPerfectEffectsForAttribute, validateSkillStoneLoadout, isSkillStone } from '../data/skillStones';
 export const MAX_BLUEPRINT_BYTES = 2_000_000;
 const stats = ['hp', 'atk', 'def', 'spatk', 'spdef', 'speed'] as const;
 const object = (v: unknown): v is Record<string, any> => !!v && typeof v === 'object' && !Array.isArray(v);
@@ -90,7 +90,7 @@ export function parseElfBlueprint(json: string): { elf: Elf; warnings: string[];
       if (skill.skillStoneRuleset !== undefined && !['standard', 'project'].includes(skill.skillStoneRuleset)) fail(`${field}.skillStoneRuleset`);
       if (skill.skillStoneGrade !== undefined && !Object.hasOwn(SKILL_STONE_GRADES, skill.skillStoneGrade)) fail(`${field}.skillStoneGrade`);
       if (skill.skillStoneOriginalGrade !== undefined && !Object.hasOwn(SKILL_STONE_GRADES, skill.skillStoneOriginalGrade)) fail(`${field}.skillStoneOriginalGrade`);
-      if (skill.isSkillStone) {
+      if (isSkillStone(skill)) {
         if (!SKILL_STONE_ATTRIBUTES.includes(skill.type) || skill.category === '屬性' || skill.isFifthSkill) fail(`${field}.技能石類型或槽位`);
         if (skill.skillStoneEffect !== undefined && !getPerfectEffectsForAttribute(skill.type).some(e => e.id === skill.skillStoneEffect)) fail(`${field}.skillStoneEffect`);
         if (skill.isPerfectSkillStone && !getPerfectEffectsForAttribute(skill.type).some(e => e.id === (skill.skillStoneEffect || skill.effectDetail))) fail(`${field}.完美技能石缺少合法效果`);
@@ -157,6 +157,7 @@ export function parseElfBlueprint(json: string): { elf: Elf; warnings: string[];
     warnings.push('舊資料超過五個攜帶技能；超出者移入預備技能池，未丟棄技能。');
   }
   elf.id ||= 'imported_blueprint'; elf.level = 100; elf.isCustom = true;
+  validateSkillStoneLoadout(elf, elf.skills);
   elf.evs ||= getDefaultEvs(elf.baseStats as BaseStats);
   elf.inscriptions = (elf.inscriptions || []).map((i: unknown) => i === null ? undefined : i);
   elf.calculatedStats = calculateElfStats(elf.baseStats, 100, elf.ivs, elf.evs, elf.natureModifiers, elf.inscriptions, elf.guildBonuses, elf.hasAnnualBonus);

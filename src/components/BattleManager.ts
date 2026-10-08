@@ -4,6 +4,10 @@ import { Mark } from "../battle/marks";
 import { switchBattleSide, writeScopedRegistry, addScopedTimer, setBattleSideMarks, type ElfScopeSnapshot } from "../battle/stateScopes";
 import type { AddContext } from "../battle/timers";
 import { skillSlot } from '../battle/skillSlot';
+import type { BattleItemInventory } from '../battle/itemInventory';
+import { createBattleItemInventory } from '../battle/itemInventory';
+import { normalizePpPatch } from '../battle/ppTransitions';
+import { trackIllusionStatWrite } from '../battle/illusionStats';
 
 export interface TurnDamageStats {
   skillDmg: number;
@@ -38,9 +42,13 @@ export interface EffectItem {
   side: 'p1' | 'p2';
   data: any;
   delay?: number;
+  /** 只在效果佇列內使用，識別一次效果及其衍生反應。 */
+  chainId?: number;
 }
 
 export interface BattleState {
+  p1ItemInventory?: BattleItemInventory;
+  p2ItemInventory?: BattleItemInventory;
   /** 套裝 id（傷害鉤子／異常附加前的套裝效果由此讀取） */
   p1Suit?: string;
   p2Suit?: string;
@@ -88,6 +96,7 @@ export interface BattleState {
 }
 
 export type BattleAction =
+  | { type: 'SET_ITEM_INVENTORY'; side: 'p1' | 'p2'; inventory: BattleItemInventory }
   | { type: 'UPDATE_ELF'; side: 'p1' | 'p2'; elf: Partial<Elf>; targetId?: string }
   | { type: 'UPDATE_TEAM'; side: 'p1' | 'p2'; team: Elf[] }
   | { type: 'SET_ACTIVE_INDEX'; side: 'p1' | 'p2'; index: number }
@@ -122,6 +131,8 @@ const MAX_LOGS = 400;
 
 export const battleReducer = (state: BattleState, action: BattleAction): BattleState => {
   switch (action.type) {
+    case 'SET_ITEM_INVENTORY':
+      return { ...state, [`${action.side}ItemInventory`]: action.inventory };
     case 'UPDATE_ELF':
       if (action.side === 'p1') {
         const newTeam = [...state.p1Team];
@@ -130,7 +141,8 @@ export const battleReducer = (state: BattleState, action: BattleAction): BattleS
           : state.p1ActiveIndex;
         if (targetIndex < 0) return state;
         const resolvedIndex = targetIndex;
-        const newElf = { ...(newTeam[resolvedIndex] || state.p1), ...action.elf };
+        const before = newTeam[resolvedIndex] || state.p1;
+        const newElf = { ...before, ...normalizePpPatch(trackIllusionStatWrite(before, action.elf)) };
         newTeam[resolvedIndex] = newElf;
         const isActive = resolvedIndex === state.p1ActiveIndex;
         return { 
@@ -146,7 +158,8 @@ export const battleReducer = (state: BattleState, action: BattleAction): BattleS
           : state.p2ActiveIndex;
         if (targetIndex < 0) return state;
         const resolvedIndex = targetIndex;
-        const newElf = { ...(newTeam[resolvedIndex] || state.p2), ...action.elf };
+        const before = newTeam[resolvedIndex] || state.p2;
+        const newElf = { ...before, ...normalizePpPatch(trackIllusionStatWrite(before, action.elf)) };
         newTeam[resolvedIndex] = newElf;
         const isActive = resolvedIndex === state.p2ActiveIndex;
         return { 
@@ -249,7 +262,10 @@ case 'FORCED_SWITCH': {
     case 'REPLACE_STATE':
       return action.state;
     case 'RESET_BATTLE':
-      return { ...state, p1ElfState: {}, p2ElfState: {}, ...action.initialState };
+      return { ...state, p1ElfState: {}, p2ElfState: {},
+        p1ItemInventory: state.p1ItemInventory ? createBattleItemInventory() : undefined,
+        p2ItemInventory: state.p2ItemInventory ? createBattleItemInventory() : undefined,
+        ...action.initialState };
     default:
       return state;
   }

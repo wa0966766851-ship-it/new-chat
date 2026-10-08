@@ -6,6 +6,8 @@ React + Vite + Express + Electron 的賽爾號對戰模擬器：組隊、戰鬥�
 版本單一來源：`version.ts`（目前 `1.0.0`，須符合 semver，electron-builder 要用）。
 入口：`index.html` → `src/main.tsx` → `src/App.tsx`。
 
+現況／稽核／檔案分類從 [文件入口](docs/README.md) 開始；[檔案地圖](docs/PROJECT_STRUCTURE.md) 區分原文、執行程式、生成產物與備份。
+
 ## 關於本倉庫（給 AI 搜尋的判讀用）
 
 - 這是賽爾號對戰模擬器，不是 PPT 模板還原專案。

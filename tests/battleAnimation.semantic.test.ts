@@ -88,8 +88,11 @@ await z.record(event('fixed', -20, 100));
 await z.record(event('skill', -80, 80, { effectiveness: '克制' }));
 assert.deepEqual(zero.map(e => [e.type, e.effectiveness]), [['skill', '克制']], '擊倒紅字先播，粉傷不插到前面');
 await z.flush();
-assert.equal(zero.length, 1, '已倒下的精靈不再播延後紀錄');
+assert.equal(zero.length, 2, '生前已結算粉傷在主攻擊之後仍顯示，不因主攻擊致死而吞掉');
 assert.equal(z.hp.get('p1:first'), 0);
+await z.record(event('fixed', 0, 0, { amount: 20, after: 0 }));
+await z.flush();
+assert.equal(zero.length, 2, '死亡後新產生的傷害不冒充生前紀錄');
 // 出手外（回合開始）的技能傷害：不致死就留到回合末，與粉傷、真傷一起播；致死時當下播
 const outer: any[] = [];
 const o = new BattlePresentation(() => { if (o.popups.length) outer.push(...o.popups); }, () => true);

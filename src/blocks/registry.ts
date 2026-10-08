@@ -9,6 +9,7 @@ import { isSkillDamageType } from "../battle/damageSemantics";
 export { blockStatusGuard } from "./runtime";
 import { SKILL_MODE, SOUL_MODE } from "./specs";
 import { BoundedCache } from '../utils/boundedCache';
+import { acquiredEffectContext } from '../battle/acquiredEffectContext';
 
 const skillCache = new BoundedCache<string, Program>(1024);
 setSoulProgramProvider((elf) => getSoulProgram(elf));
@@ -98,6 +99,18 @@ function emitSoul(ctx: BattleEventContext, trigs: Trigger[], data: any, elf: any
   return runSoulProgram(ctx, getSoulProgram(elf), trigs, data, Array.isArray(mode) ? mode : undefined);
 }
 
+/** 幻化取得的魂印以目標資料ID選模式，但結算持有者仍是ctx.self。
+ * 不能再呼叫runBlockEvent：側邊timer／印記已由原持有者結算一次。 */
+export function runCopiedSoulEvent(ctx: BattleEventContext, event: string, data: any, source: any): boolean {
+  return emitSoul(ctx, eventTriggers(ctx, event, data), data, source, true);
+}
+
+function emitCurrentSouls(ctx: BattleEventContext, trigs: Trigger[], data: any): void {
+  emitSoul(ctx, trigs, data, ctx.self, true);
+  const source = ctx.self?.illusion?.target;
+  if (source) emitSoul(acquiredEffectContext(ctx), trigs, data, source, true);
+}
+
 /** 「自身位於背包時：對方切換登場…」：登場方 ctx，檢查對方背包內（非在場、存活）精靈 */
 function runBenchOnOppEntrance(ctx: BattleEventContext) {
   // 「切換登場」：戰鬥開始時的首發登場不算（尚未發生過任何換人）。
@@ -125,9 +138,9 @@ export function emitSkillUse(actorCtx: BattleEventContext, oppCtx: BattleEventCo
   const oppT = (after ? [`opp_after_skill`, `opp_after_${kind}`] : [`opp_skill`, `opp_${kind}`]) as Trigger[];
   const data = { skill };
   runSideTimers(actorCtx, selfT, data);
-  emitSoul(actorCtx, selfT, data, actorCtx.self, true);
+  emitCurrentSouls(actorCtx, selfT, data);
   runSideTimers(oppCtx, oppT, data);
-  emitSoul(oppCtx, oppT, data, oppCtx.self, true);
+  emitCurrentSouls(oppCtx, oppT, data);
 }
 
 /** 魂印完全改由積木執行（不跑手寫 handler） */
@@ -137,8 +150,10 @@ export function isSoulBlocksOnly(elf: any): boolean {
 
 /** 常駐閃避（僅限登記為積木魂印的精靈） */
 export function soulPassiveEvade(elf: any, skill: any): number {
-  if (!elf || !(SOUL_MODE[String(elf.id)] ?? SOUL_MODE[elf.name])) return 0;
-  return passiveEvade(getSoulProgram(elf), skill);
+  if (!elf) return 0;
+  // 沿用正式命中入口既有的max優先規則，不擅自把多個閃避百分比相加。
+  return Math.max(...[elf, elf.illusion?.target].filter(Boolean).map(source =>
+    (SOUL_MODE[String(source.id)] ?? SOUL_MODE[source.name]) ? passiveEvade(getSoulProgram(source), skill) : 0));
 }
 
 /** 積木模式（覆寫手寫程式）的技能：條件式先制「…時先制+N」 */
@@ -176,9 +191,7 @@ export function blockSkillTransform(ctx: BattleEventContext, skill: any): any {
 export function emitStatusApplied(ctxs: [BattleEventContext, BattleEventContext], data: { side: string; status: string; duration: number }) {
   for (const c of ctxs) {
     const trigs = statusTriggers(c, data);
-    const elf: any = c.self;
-    const mode = elf && (SOUL_MODE[String(elf.id)] ?? SOUL_MODE[elf.name]);
-    if (mode) runSoulProgram(c, getSoulProgram(elf), trigs, data, Array.isArray(mode) ? mode : undefined);
+    emitCurrentSouls(c, trigs, data);
   }
 }
 

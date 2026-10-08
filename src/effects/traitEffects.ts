@@ -8,6 +8,7 @@ import { addDamageReduction, multiplyDamageReduction } from '../battle/damageRed
  * 精準／迴避：由命中判定處理（genericSkillText.computeHitChance）。
  */
 import { Elf, Skill } from "../types";
+import { effectSourceViews } from '../battle/effectSources';
 import { BattleEventContext } from "./types";
 import { prdChance } from "../utils/prd";
 import { bypassesAttackDefense } from '../battle/attackDefense';
@@ -17,8 +18,10 @@ type Log = (text: string) => void;
 
 export function traitNames(elf: Elf | undefined | null): string[] {
   if (!elf) return [];
-  const t: any = (elf as any).alienTraits || {};
-  return [t.generalTrait?.name, t.alienTrait?.name].filter((n: any): n is string => typeof n === "string" && n.length > 0);
+  return [...new Set(effectSourceViews(elf).flatMap(source => {
+    const t = source.alienTraits || {};
+    return [t.generalTrait?.name, t.alienTrait?.name].filter((n): n is string => typeof n === 'string' && n.length > 0);
+  }))];
 }
 const has = (elf: Elf | undefined | null, name: string) => traitNames(elf).includes(name);
 

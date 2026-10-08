@@ -38,7 +38,8 @@ export const calculateDamage = (
 
   let atk = isPhys ? actor.calculatedStats.atk : actor.calculatedStats.spatk;
   // 積木：計算傷害時令攻擊、特攻等於原本二者總和
-  if ((side === "p1" ? p1RegistryState : p2RegistryState)?.blkAtkSpatkSum) atk = (actor.calculatedStats.atk || 0) + (actor.calculatedStats.spatk || 0);
+  if ((side === "p1" ? p1RegistryState : p2RegistryState)?.blkAtkSpatkSum ||
+    (side === 'p1' ? p1RegistryState : p2RegistryState)?.blkAtkSpAtkSum) atk = (actor.calculatedStats.atk || 0) + (actor.calculatedStats.spatk || 0);
   let def = isPhys ? target.calculatedStats.def : target.calculatedStats.spdef;
   // 臨時能力值（效果層設定於登錄狀態）：calcAtkDefMult＝自身雙攻／雙防在雙方計算傷害時的倍率；
   // opponentAtkPanelRatio＝對手攻擊時其最終攻擊／特攻變為面板原始值的比例（忽略能力等級）。
@@ -111,7 +112,7 @@ export const calculateDamage = (
   if (stageReg?.selfDropAsOppDropThisAction && atkS < 0) { defS = Math.max(-6, defS + atkS); atkS = 0; }
 
   if (atkPanelRatio) atkS = 0; // 「最終」攻擊／特攻＝面板原始值×比例，不再套能力等級
-  const formula = specialDamageFormula(actor, target, skill, (oppSide === 'p1' ? p1Team : p2Team) || [], atkS);
+  const formula = specialDamageFormula(actor, target, skill, (oppSide === 'p1' ? p1Team : p2Team) || [], atkS, calculateEffectiveStat(atk, atkS));
   if (formula) { const n = Math.max(1, Math.floor(options?.hitCount || 1)); return n > 1 ? { ...formula, damage: Math.floor(formula.damage) * n, hitCount: n } : formula; }
 
   // 積木：能力下降視為同級全屬性提升
@@ -136,11 +137,12 @@ export const calculateDamage = (
   const typeOverrideActive = Number(actorReg?.attackTypeOverrideUses) > 0;
   const targetType = actorReg?.targetTypeThisAction || (typeOverrideActive && actorReg?.targetTypeOverride) || target.type;
   let typeMult = skillTypeMultiplier(actorReg, (typeOverrideActive && actorReg?.attackTypeOverride) || skill.type, targetType);
+  if (actorReg?.minimumTypeMultiplierThisAction !== undefined) typeMult = Math.max(typeMult, actorReg.minimumTypeMultiplierThisAction);
   // 積木：克制倍數取指定屬性中最高者
   // 本系加成 1.5 倍：技能屬性（含雙屬性技能的任一屬性）為自身系別中含有的屬性
   const splitT = (t?: string) => (t || "").replace(/系$/, "").split(/[.·・]/).filter(Boolean);
   const actorTypes = splitT(actor.type);
-  const stab = (isStoneThrower(actor) && isSkillStone(skill)) || (skill.type && skill.type !== "無屬性" && splitT(skill.type).some(t => actorTypes.includes(t))) ? 1.5 : 1.0;
+  const stab = actorReg?.grantStabThisAction || (isStoneThrower(actor) && isSkillStone(skill)) || (skill.type && skill.type !== "無屬性" && splitT(skill.type).some(t => actorTypes.includes(t))) ? 1.5 : 1.0;
   // 浮動取整數 217~255
   const roll = Math.max(217, Math.min(255, Math.round(randomValue * 255)));
 

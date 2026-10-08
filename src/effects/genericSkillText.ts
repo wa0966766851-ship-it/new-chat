@@ -1,5 +1,6 @@
 import { queueActionDamageModifier, queueActionPowerMultiplier } from '../battle/actionDamageModifiers';
 import { queueHpDrain } from '../battle/hpDrain';
+import { traitNames } from './traitEffects';
 import { getStatMultiplier } from "../utils/statCalculator";
 import { skillStageView } from '../battle/skillStageView';
 /**
@@ -739,8 +740,7 @@ export function conditionalPriorityFromDescription(skill: any, self: any, opp: a
 }
 
 const ACC_TRAIT = (elf: any, name: string) => {
-  const t = elf?.alienTraits || {};
-  return t.generalTrait?.name === name || t.alienTrait?.name === name;
+  return traitNames(elf).includes(name);
 };
 
 /**

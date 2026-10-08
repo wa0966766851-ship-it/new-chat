@@ -21,7 +21,7 @@ try {
   const {createSkillStone,PERFECT_SKILL_STONE_EFFECTS:effects}=await server.ssrLoadModule('/src/data/skillStones.ts');
   const {getStatuses}=await server.ssrLoadModule('/src/utils/battleHelpers.ts');
   const {getTypeMatchup}=await server.ssrLoadModule('/src/utils/statCalculator.ts');
-  const {handleWuxuSoulMark}=await server.ssrLoadModule('/src/effects/wuxuRegistry.ts');
+  const {handleWuxuSoulMark}=await server.ssrLoadModule('/src/effects/elves/wuxu/registry.ts');
   const play=async(side:string,self:any,enemy:any,bench?:any)=>{
     const team=[enemy,...(bench?[bench]:[])];
     await act(async()=>root.render(React.createElement(Battle,{key:checks,initialP1Team:side==='p1'?[self]:team,

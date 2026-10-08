@@ -5,7 +5,7 @@ import { SKILL_STONE_ATTRIBUTES as attrs, SKILL_STONE_GRADES as grades, PERFECT_
 import { getMaxPp, isPpCostFree, isZeroPpExempt } from '../src/utils/battleHelpers';
 import { resetElfStateForBattle, getTypeMatchup } from '../src/utils/statCalculator';
 import { stoneAfterHit, stoneBeforeDamage, stonePriorityBonus } from '../src/effects/skillStoneEffects';
-import { handleStoneThrowerSoul } from '../src/effects/stoneThrowerSoul';
+import { handleStoneThrowerSoul } from '../src/effects/elves/wuxu/stoneThrowerSoul';
 import { TraitsEngine } from '../src/utils/traitsEngine';
 import { calculateDamage } from '../src/utils/damageCalculator';
 import { parseElfBlueprint } from '../src/utils/elfBlueprint';
@@ -24,6 +24,7 @@ function context(skill: any, side = 'p1'): any {
     calls, timers, reg, opp, getPlayerState: (k: string) => reg[k], setPlayerState: (k: string, v: any) => reg[k] = v,
     getOpponentState: (k: string) => opp[k], setOpponentState: (k: string, v: any) => opp[k] = v,
     updateElf: (s: string, patch: any) => Object.assign(s === side ? self : target, patch),
+    updateAnyElf: (s: string, _id: string, patch: any) => Object.assign(s === side ? self : target, patch),
     applyStatChange: (s: string, changes: any) => calls.push(['stat', s, changes]),
     applyStatusWithImmunityCheck: (s: string, status: string, turns: number) => { calls.push(['status', s, status, turns]); return { success: true }; },
     applyFixedDamage: (s: string, amount: number) => calls.push(['fixed', s, amount]),

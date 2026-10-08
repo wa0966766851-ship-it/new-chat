@@ -15,7 +15,7 @@ export interface SettlementReceipt {
   blocked: boolean;
 }
 export type SettlementCallback = (result: SettlementReceipt) => void;
-export type SettlementOptions = { onSettled?: SettlementCallback };
+export type SettlementOptions = { onSettled?: SettlementCallback; isPotion?: boolean; presentationPotion?: boolean };
 export function combineSettlementCallbacks(...callbacks: (SettlementCallback | undefined)[]): SettlementCallback {
   return receipt => { for (const callback of callbacks) notifySettlement({ onSettled: callback }, receipt); };
 }

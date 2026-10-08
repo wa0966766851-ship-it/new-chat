@@ -1,6 +1,7 @@
 import React from "react";
 import { motion } from "motion/react";
 import type { Elf } from "../../types";
+import { appearanceElf } from "../../battle/illusion";
 import { ElfAvatar } from "../SeerImages";
 import { opaqueBoxFromPixels, placeSprite, spriteHeightRatio, type OpaqueBox } from "../../battle/spriteMetrics";
 
@@ -37,6 +38,7 @@ interface ProportionalSpriteProps {
   overlay: (visibleHeight: number) => React.ReactNode;
 }
 export const ProportionalSprite: React.FC<ProportionalSpriteProps> = ({ elf, side, anchorX, stageW, stageH, anim, dead, opacity, overlay }) => {
+  elf = appearanceElf(elf);
   const wrap = React.useRef<HTMLDivElement>(null);
   const [m, setM] = React.useState<{ src: string; box: OpaqueBox; mirrored: boolean } | null>(null);
   const [fallback, setFallback] = React.useState(false);
@@ -45,25 +47,42 @@ export const ProportionalSprite: React.FC<ProportionalSpriteProps> = ({ elf, sid
   React.useEffect(() => {
     let alive = true;
     const root = wrap.current; if (!root) return;
+    const pendingLoads = new Map<HTMLImageElement, EventListener>();
     const check = () => {
       if (!alive) return;
       const img = root.querySelector("img");
-      if (!img) return;
+      if (!img) { setM(null); setFallback(true); return; }
+      const source = img.src;
+      // 換圖尚未載入時，不得沿用上一張的可見區域、位置與大小。
+      setM(prev => prev && prev.src !== source ? null : prev);
+      setFallback(false);
       const done = () => {
-        if (!alive || !img.naturalWidth) return;
+        if (!alive || !root.contains(img) || img.src !== source || !img.naturalWidth) return;
         const src = img.currentSrc || img.src;
         const mirrored = /scaleX\(-1\)/.test(img.style.transform || "");
         setFallback(false);
         setM(prev => prev && prev.src === src && prev.mirrored === mirrored ? prev : { src, box: measure(img), mirrored });
       };
-      if (img.complete) done(); else img.addEventListener("load", done, { once: true });
+      const previous = pendingLoads.get(img);
+      if (previous) img.removeEventListener("load", previous);
+      pendingLoads.delete(img);
+      if (img.complete) done(); else {
+        pendingLoads.set(img, done);
+        img.addEventListener("load", done, { once: true });
+      }
     };
     check();
-    const mo = new MutationObserver(check);
-    mo.observe(root, { subtree: true, childList: true, attributes: true, attributeFilter: ["src"] });
+    const mo = new MutationObserver(records => {
+      // 同一網址的P1/P2反轉也需要重量；不因外層動作動畫反覆量圖。
+      if (records.some(r => r.type === "childList" || (r.target as Element).tagName === "IMG")) check();
+    });
+    mo.observe(root, { subtree: true, childList: true, attributes: true, attributeFilter: ["src", "style"] });
     const t = setTimeout(() => { if (alive && !root.querySelector("img")) setFallback(true); }, 1200);
-    return () => { alive = false; mo.disconnect(); clearTimeout(t); };
-  }, [elf.battleId, elf.id]);
+    return () => {
+      alive = false; mo.disconnect(); clearTimeout(t);
+      pendingLoads.forEach((handler, img) => img.removeEventListener("load", handler));
+    };
+  }, [elf.battleId, elf.id, elf.name, elf.path, side]);
 
   const ratio = spriteHeightRatio(Number(elf.height));
   const place = m && stageH > 0 ? placeSprite(m.box, stageW, stageH, ratio, 1, m.mirrored) : null;

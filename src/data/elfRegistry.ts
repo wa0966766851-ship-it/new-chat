@@ -1,4 +1,9 @@
+import { syncOtherworldReyDescriptions } from './otherworldReyDescriptions';
+
 export const ELF_ID_MAPPING: Record<string, string> = {
+  'imperial_dragon_hamo': '5035',
+  '5035': '5035',
+  '御天龍神·哈莫': '5035',
   // 譜尼（序號 300；舊序號 1000 保留相容）
   "puni_base": "300",
   "300": "300",
@@ -181,7 +186,7 @@ export function applyElfOverrides(elf: any, defaultElves: any[]) {
   const defMatch = defaultElves.find((de: any) => de.id === elf.id || de.name === elf.name);
   // 5029 是內建規則模板：舊版曾把「神明／雷神」合併成摘要並寫入 localStorage。
   // 載入時同步權威描述與機制欄位，但保留玩家自行調整的配裝、學習力與技能欄位。
-  if (defMatch && (updated.id === "5029" || updated.name === "異境神霆·雷伊")) {
+  if (defMatch && !updated.isCustom && updated.id === "5029") {
     updated = {
       ...updated,
       name: defMatch.name,
@@ -202,6 +207,7 @@ export function applyElfOverrides(elf: any, defaultElves: any[]) {
       collapseOpponentTurnEffectsToOne: defMatch.collapseOpponentTurnEffectsToOne,
       paralyzeBothOnOwnStatChangeTurns: defMatch.paralyzeBothOnOwnStatChangeTurns,
     };
+    updated = syncOtherworldReyDescriptions(updated);
   }
   // 內建巴弗洛曾被舊版隊伍快照保存成缺少「魂殤」定義的描述；
   // 僅同步內建精靈的權威文字，不覆蓋使用者自訂精靈。

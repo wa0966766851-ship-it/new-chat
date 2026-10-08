@@ -43,7 +43,13 @@ export class BattlePresentation {
   private fatalPending = false;
   setInAction(v: boolean) {
     this.inAction = v;
-    if (this.fatalPending) { this.fatalPending = false; void this.flush(); }
+    if (!v && this.fatalPending) { this.fatalPending = false; void this.flush(); }
+  }
+  /** 前置傷害已擊敗目標：只補出招結果，不補算傷害、不修改戰鬥體力。 */
+  skippedAttack(side: 'p1' | 'p2', elf: { id: string; battleId?: string; currentHp: number; maxHp: number },
+    sourceSide: 'p1' | 'p2', skillName: string): Promise<void> {
+    return this.record({ side, elfId: elf.battleId || elf.id, type: 'skill', amount: 0, text: '0', delta: 0,
+      before: elf.currentHp, after: elf.currentHp, maxHp: elf.maxHp, alive: true, sourceSide, skillName });
   }
   private extraPending: PresentationEvent[] = [];
   constructor(private notify: () => void, private fast: () => boolean,
@@ -161,11 +167,15 @@ export class BattlePresentation {
         for (const e of frame) {
           const key = this.key(e);
           // 同一畫面中先記錄致死粉字，不得吞掉一起播放的白字。
-          if (alreadyDead.has(key) && e.type !== 'skill') continue;
+          // 真實／粉字可先結算、後播放：主傷害動畫已致死不能吞掉生前已結算的紀錄。
+          if (alreadyDead.has(key) && e.type !== 'skill' && e.before <= 0 && e.alive !== true) continue;
           const cur = this.hp.get(key) ?? e.before;
           const fatal = e.alive !== true && e.after <= 0;
           // 致命：直接顯示真實結果；非致命：相對變化，不製造假陣亡。
-          this.hp.set(key, fatal ? e.after : e.after > 0 ? Math.min(e.maxHp, Math.max(1, cur + e.delta)) : cur + e.delta);
+          // 生前事件延後播放時，已陣亡者只顯示數字，不回放其舊HP而製造假復活。
+          if (!alreadyDead.has(key) || fatal || e.before <= 0 && e.after > 0 && e.delta > 0) {
+            this.hp.set(key, fatal ? e.after : e.after > 0 ? Math.min(e.maxHp, Math.max(1, cur + e.delta)) : cur + e.delta);
+          }
           if (fatal) this.dead.add(key);
           if ((e as any).silent || !this.visible(e)) continue;
           const id = `presentation_${++this.sequence}`;

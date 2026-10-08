@@ -1,6 +1,7 @@
 import { hiddenFromViewer } from "../battle/viewerPerspective";
 import React, { useEffect, useState } from "react";
 import type { Elf } from "../types";
+import { appearanceElf } from "../battle/illusion";
 import { IMAGE_COPY_EVENT } from "./ImageCopyMenu";
 import { shouldMirrorBattleSprite, hasRenderableElfImagePath, getSeerIndex, loadSeerIndex, onSeerIndexLoaded, petImageUrls, splitTypes, typeIconUrls, isNoneType } from "../battle/seerAssets";
 
@@ -48,6 +49,9 @@ export function ElfAvatar({ elf, battleSide, kind = "head", className, fallbackC
 }) {
   const ready = useSeerIndexReady();
   const concealed = hiddenFromViewer(elf, battleSide);
+  // 所有呼叫端一致使用幻化外觀，不能讓原本自訂path蓋過目標圖片。
+  // 戰鬥身分與隱匿仍屬於原持有者；只替換圖片、朝向及素材呈現方式。
+  elf = appearanceElf(elf);
   const own = elf.path && /^(\/|https?:|data:)/.test(elf.path) ? [elf.path] : [];
   const urls = ready ? [...own, ...petImageUrls(elf as any, kind)] : own;
   const fb = (
@@ -76,7 +80,7 @@ export function ElfAvatar({ elf, battleSide, kind = "head", className, fallbackC
     } as React.CSSProperties : undefined;
     return <ChainImage urls={urls} fallback={headFb} className={className} style={{ ...sceneMask, ...style }} sourceStyle={battleSide ? src => ({ transform: shouldMirrorBattleSprite(elf.name, battleSide, hasRenderableElfImagePath(elf.path) && src === elf.path, src) ? "scaleX(-1)" : undefined }) : undefined} alt={elf.name} />;
   }
-  const isOtherworldRey = String(elf.id) === "5029" || elf.name === "異境神霆·雷伊";
+  const isOtherworldRey = elf.name === "異境神霆·雷伊";
   const portraitMask = isOtherworldRey ? {
     WebkitMaskImage: "radial-gradient(circle at 50% 48%, #000 82%, transparent 100%)",
     maskImage: "radial-gradient(circle at 50% 48%, #000 82%, transparent 100%)",

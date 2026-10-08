@@ -11,6 +11,7 @@ import { queueActionDamageModifier } from '../battle/actionDamageModifiers';
 import { endIllusion } from '../battle/illusion';
 import { skillSlot } from '../battle/skillSlot';
 import { bypassesAttackDefense } from '../battle/attackDefense';
+import { getMaxPp } from '../utils/battleHelpers';
 
 /** 效果綁持有者：施加者下場後仍由受方執行，不依賴特定精靈 handler。 */
 export function runNewElfLifecycle(ctx: BattleEventContext, event: EffectTiming, data?: any): void {
@@ -27,6 +28,11 @@ export function runNewElfLifecycle(ctx: BattleEventContext, event: EffectTiming,
     ctx.setPlayerState('fieldPpSnapshot', ctx.self.skills.map(s => s.pp));
     ctx.setPlayerState('fieldDamageCounts', {});
     ctx.setPlayerState('fieldStatusCount', 0);
+    const nextStatus = ctx.getPlayerState('nextElfStatus');
+    if (nextStatus) {
+      ctx.setPlayerState('nextElfStatus', undefined);
+      ctx.applyStatusWithImmunityCheck(ctx.actor, nextStatus.status, nextStatus.duration);
+    }
     const priority = ctx.getPlayerState('nextElfAstralPriority');
     if (priority !== undefined) {
       timed(ctx, ctx.actor, 'astral_next_entry', 2, priority === 'disabled' ? { disablePriority: true } : { block: { prio: -2 } }, false, 'skill', false);
@@ -34,11 +40,24 @@ export function runNewElfLifecycle(ctx: BattleEventContext, event: EffectTiming,
     }
   }
   if (onField) {
+    if (event === EffectTiming.ON_PP_CONSUME || event === EffectTiming.PP_CHANGED && (data?.changed || data?.removed > 0)) ctx.setPlayerState('fieldPpChanged', true);
     const before: number[] | undefined = ctx.getPlayerState('fieldPpSnapshot');
     if (before && before.some((n, i) => n !== ctx.self.skills[i]?.pp)) ctx.setPlayerState('fieldPpChanged', true);
     ctx.setPlayerState('fieldPpSnapshot', ctx.self.skills.map(s => s.pp));
   }
   const payloads = activeConstraints(timersFor(ctx, ctx.actor), ctx.self);
+  if (event === EffectTiming.OPPONENT_ACTION && onField) ctx.setPlayerState('blockedSkillDamageThisAction', false);
+  if (event === EffectTiming.ON_KILL) {
+    const next = ctx.getPlayerState('nextKillStatus');
+    if (next) {
+      ctx.setPlayerState('nextKillStatus', undefined);
+      ctx.setOpponentState('nextElfStatus', next);
+    }
+  }
+  if (event === EffectTiming.SKILL_INVALID && !data?.isIncoming && data?.consumedInvalidation?.payload?.invalidFollowup) {
+    const followup = data.consumedInvalidation.payload.invalidFollowup;
+    timed(ctx, ctx.actor, 'invalid_same_category_followup', followup.rounds, { block: { addInvalid: followup.sameCategory ? data.skill.category : 'all' } }, true);
+  }
   if ([EffectTiming.ENFORCE, EffectTiming.ROUND_START, EffectTiming.BEFORE_SKILL].includes(event) && onField) {
     const disabled = payloads.some(p => p.inherentInvalid);
     if (disabled && !ctx.getPlayerState('timedInherentWasActive')) {
@@ -52,6 +71,17 @@ export function runNewElfLifecycle(ctx: BattleEventContext, event: EffectTiming,
     if (payloads.some(p => p.preventAction)) ctx.setPlayerState('actionPreventedRound', ctx.roundNumber);
   }
   if (event === EffectTiming.BEFORE_SKILL && onField) {
+    for (const p of payloads) if (p.skillUseReaction && ctx.skill) {
+      const reaction = p.skillUseReaction;
+      if (ctx.skill.category === '屬性') {
+        timed(ctx, ctx.actor, 'attack_skill_restriction', reaction.utilityNextAttackInvalidRounds,
+          { block: { dmgOutMult: 0, kind: '攻擊', addInvalid: '攻擊' } }, true);
+      } else {
+        const names = Object.keys(StatusRegistry).filter(name => StatusRegistry[name].categories?.some(category =>
+          ['CONTROL', 'WEAKENING', 'RESTRICTIVE', 'EVOLUTIONARY'].includes(category)));
+        for (const name of ctx.shuffleArray(names).slice(0, reaction.attackRandomStatuses)) ctx.applyStatusWithImmunityCheck(ctx.actor, name, 3);
+      }
+    }
     ctx.setPlayerState('soulSureHitThisAction', false);
     ctx.setPlayerState('sourceSkillThisAction', ctx.skill);
     if (ctx.skill?.category !== '屬性') for (const timer of timersFor(ctx, ctx.actor)) {
@@ -63,7 +93,7 @@ export function runNewElfLifecycle(ctx: BattleEventContext, event: EffectTiming,
     }
   }
   if (event === ('SELF_STATUS_APPLIED' as EffectTiming)) {
-    ctx.setPlayerState('fieldStatusCount', (ctx.getPlayerState('fieldStatusCount') || 0) + 1);
+    if (onField) ctx.setPlayerState('fieldStatusCount', (ctx.getPlayerState('fieldStatusCount') || 0) + 1);
     if (getStatuses(ctx.self)['平靜']) {
       const clone = { ...ctx.self, effects: (ctx.self.effects || []).filter(e => e.name !== '狂暴'),
         battleStatuses: { ...getStatuses(ctx.self) } };
@@ -77,7 +107,7 @@ export function runNewElfLifecycle(ctx: BattleEventContext, event: EffectTiming,
     const settled = receipt?.settledAmount ?? data.damage ?? 0;
     if (settled > 0) {
       const key = isSkillDamageType(category) ? 'skill' : category;
-      for (const name of ['battleDamageCounts', 'fieldDamageCounts']) {
+      for (const name of onField ? ['battleDamageCounts', 'fieldDamageCounts'] : ['battleDamageCounts']) {
         const counts = ctx.getPlayerState(name) || {};
         ctx.setPlayerState(name, { ...counts, [key]: (counts[key] || 0) + 1 });
       }
@@ -100,8 +130,20 @@ export function runNewElfLifecycle(ctx: BattleEventContext, event: EffectTiming,
   if (event === EffectTiming.BEFORE_DAMAGE) {
     const comp = data?.damageComp || data;
     if (!comp) return;
+    if (comp.isIncoming && comp.damageCategory === 'skill_attack' && comp.skillCategory === '物理') {
+      for (const timer of timersFor(ctx, ctx.actor)) {
+        if (timer.remaining <= 0 || timer.pendingActivation || (timer.ownerBattleId && timer.ownerBattleId !== identity(ctx.self))) continue;
+        if (timer.payload?.incomingPhysicalSkillMultiplier) {
+          comp.multiplier *= timer.payload.incomingPhysicalSkillMultiplier;
+          if (timer.kind === 'use_counter') ctx.consumeTimer?.(ctx.actor, timer.id);
+        }
+      }
+    }
     if (comp.isIncoming) for (const p of payloads) {
-      if (p.blockSkillDamage && isSkillDamageType(comp.damageCategory) && !bypassesAttackDefense(comp, 'block')) comp.multiplier = 0;
+      if (p.blockSkillDamage && isSkillDamageType(comp.damageCategory) && !bypassesAttackDefense(comp, 'block')) {
+        if (comp.multiplier > 0 && comp.base > 0) ctx.setPlayerState('blockedSkillDamageThisAction', true);
+        comp.multiplier = 0;
+      }
       if (p.halveNonTrue && comp.damageCategory !== 'true') addDamageReduction(comp, .5);
       if (p.halveReflectSkill && isSkillDamageType(comp.damageCategory)) {
         let raw = 0;
@@ -128,6 +170,21 @@ export function runNewElfLifecycle(ctx: BattleEventContext, event: EffectTiming,
   if (event === EffectTiming.ON_SKILL_HIT && ctx.skill?.category !== '屬性') for (const p of payloads) if (p.attackAdditionalTruePercent) ctx.applyTrueDamage(ctx.targetSide, Math.floor(ctx.target.maxHp * p.attackAdditionalTruePercent));
   if ([EffectTiming.AFTER_ACTION, EffectTiming.ACTION_FAILED].includes(event) && onField) {
     for (const p of payloads) {
+      if (p.afterUseDrainRatio) {
+        const spec = p.afterUseDrainRatio;
+        drain(ctx, ctx.target.maxHp * spec.ratio * (spec.doubleBelowHalf && ctx.self.currentHp < ctx.self.maxHp / 2 ? 2 : 1), 'percent');
+      }
+      if (p.afterUseDamage) {
+        const spec = p.afterUseDamage;
+        ctx.applyPinkDamage(ctx.targetSide, spec.amount, undefined, undefined, undefined, spec.type, { onSettled: r => {
+          if (spec.trueIfNoLoss && r.hpLost === 0) ctx.applyTrueDamage(ctx.targetSide, spec.trueIfNoLoss);
+        } });
+      }
+      if (p.afterUseHealEqualPercent) {
+        const requested = Math.floor(ctx.self.maxHp * p.afterUseHealEqualPercent);
+        ctx.applyHeal(ctx.actor, requested);
+        ctx.applyPinkDamage(ctx.targetSide, requested, undefined, undefined, undefined, 'percent');
+      }
       if (p.afterUseDrain) {
         const spec = p.afterUseDrain;
         drain(ctx, spec.amount * (spec.doubleLower && ctx.self.currentHp < ctx.target.currentHp ? 2 : 1), 'fixed', lost => {
@@ -157,6 +214,21 @@ export function runNewElfLifecycle(ctx: BattleEventContext, event: EffectTiming,
         ctx.applyPinkDamage(ctx.targetSide, n, undefined, undefined, undefined, 'percent');
       }
       if (p.roundDrainThird) drain(ctx, ctx.target.maxHp / 3 * (ctx.self.currentHp < ctx.self.maxHp / 2 ? 2 : 1), 'percent');
+      if (p.roundDrainSpec) {
+        const spec = p.roundDrainSpec;
+        drain(ctx, ctx.target.maxHp * spec.ratio * (spec.doubleBelowHalf && ctx.self.currentHp < ctx.self.maxHp / 2 ? 2 : 1), 'percent', lost => {
+          if (lost === 0 && spec.benchHealIfNoLoss) for (const elf of ctx.getFullTeam(ctx.actor)) {
+            if (identity(elf) !== identity(active(ctx, ctx.actor)) && alive(elf)) ctx.applyHealToElf?.(ctx.actor, identity(elf), spec.benchHealIfNoLoss);
+          }
+        });
+      }
+      if (p.roundPpAbsorb) {
+        const own = ctx.self, spec = p.roundPpAbsorb;
+        const doubled = spec.doubleWhenLostHalf && own.skills.reduce((n, s) => n + getMaxPp(s, own) - s.pp, 0) > own.skills.reduce((n, s) => n + getMaxPp(s, own), 0) / 2;
+        const amount = spec.amount * (doubled ? 2 : 1);
+        changePp(ctx, ctx.targetSide, ctx.target, s => Math.max(0, s.pp - amount));
+        changePp(ctx, ctx.actor, own, s => Math.min(getMaxPp(s, own), s.pp + amount), true);
+      }
       if (p.sleepOnFixed && !ctx.getPlayerState('fixedReceivedThisRound')) ctx.applyStatusWithImmunityCheck(ctx.targetSide, '沉睡', 3);
     }
     ctx.setPlayerState('fixedReceivedThisRound', false);

@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { BRINKK_SKILLS, BRINKK_DAMAGE_TRANSFORMS, handleBrinkkSoulMark } from '../src/effects/brinkkRegistry';
+import { BRINKK_SKILLS, BRINKK_DAMAGE_TRANSFORMS, handleBrinkkSoulMark } from '../src/effects/elves/brinkk/registry';
 import { DEFAULT_ELVES } from '../src/data/defaultElves';
 import { calculateDamage } from '../src/utils/damageCalculator';
 import { getTypeMatchup } from '../src/utils/statCalculator';

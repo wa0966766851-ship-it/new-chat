@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { runSideTimers } from '../src/blocks/runtime';
-import { handleCanglanSoulMark } from '../src/effects/canglanRegistry';
+import { handleCanglanSoulMark } from '../src/effects/elves/canglan/registry';
 import { EffectTiming } from '../src/effects/types';
 import { calculateDamage } from '../src/utils/damageCalculator';
 

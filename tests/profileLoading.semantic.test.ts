@@ -4,6 +4,7 @@ import ts from "typescript";
 import { DeconstructedElfRegistry } from "../src/effects/abilityRegistry";
 
 const directory = new URL("../src/data/elfProfiles/", import.meta.url);
+const elfModules = JSON.parse(readFileSync(new URL('../src/effects/elves/modules.json', import.meta.url), 'utf8'));
 let checked = 0;
 for (const filename of readdirSync(directory).filter(name => name.endsWith(".ts"))) {
   const pureUrl = new URL(filename, directory);
@@ -14,7 +15,8 @@ for (const filename of readdirSync(directory).filter(name => name.endsWith(".ts"
     }
   }
   const profiles = await import(pureUrl.href);
-  const legacy = await import(new URL(`../src/effects/${filename}`, import.meta.url).href);
+  const modulePath = elfModules[filename] ? `elves/${elfModules[filename]}` : filename;
+  const legacy = await import(new URL(`../src/effects/${modulePath}`, import.meta.url).href);
   for (const [name, profile] of Object.entries(profiles)) {
     assert.equal(legacy[name], profile, `${name} 的舊匯出必須保留相同物件`);
     assert.ok(Object.values(DeconstructedElfRegistry).includes(profile as never), `${name} 必須仍在描述登記表`);

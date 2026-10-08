@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import React, { act } from 'react';
 import { JSDOM } from 'jsdom';
 import { createServer } from 'vite';
-import { countOpeiaTeam } from '../src/effects/opeiaRegistry';
+import { countOpeiaTeam } from '../src/effects/elves/opeia/registry';
 import { findBlockTimer } from '../src/blocks/runtime';
 import { tickTimers } from '../src/battle/timers';
 import { applyActiveGateTimersToDamage } from '../src/battle/damageGates';

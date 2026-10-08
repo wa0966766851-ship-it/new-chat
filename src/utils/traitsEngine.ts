@@ -10,6 +10,13 @@ import { getTypeMatchup } from './statCalculator';
 import { applyAdvancedDamageModifiers } from '../battle/advancedDamageModifiers';
 import { reductionPolicy } from '../battle/damageReduction';
 import { distinctStoneCount, hasStoneThrowerMythic, isSkillStone } from '../data/skillStones';
+import { alive, changePp, identity } from '../effects/newElfOperations';
+import { skillSlot } from '../battle/skillSlot';
+
+function wraithOwnerOnField(ctx: BattleEventContext): boolean {
+  const active = ctx.actor === 'p1' ? ctx.activeP1 : ctx.activeP2;
+  return !!active && alive(ctx.self) && identity(ctx.self) === identity(active);
+}
 
 export class TraitsEngine {
   /**
@@ -255,6 +262,7 @@ export class TraitsEngine {
    * 判定並套用：當精靈選擇技能並準備消耗 PP 時 (咒術師、投石者、修復等觸發)
    */
   static triggerBeforeAction(ctx: BattleEventContext) {
+    if (!wraithOwnerOnField(ctx)) return;
     const mechanics = getElfAdvancedMechanics(ctx.self);
     const selfSide = ctx.actor;
     const elfName = ctx.self.name;
@@ -266,7 +274,11 @@ export class TraitsEngine {
       const statuses = getStatuses(ctx.self);
       const hasCurse = !!(statuses['cursed'] || statuses['詛咒'] || statuses['curse'] || statuses['curse_status']);
       if (hasCurse) {
-        ctx.skill.pp = Math.max(0, (ctx.skill.pp || 0) - mechanics.cursePpTax);
+        if (ctx.getPlayerState('selectionPpTaxRound') === ctx.roundNumber) return;
+        ctx.setPlayerState('selectionPpTaxRound', ctx.roundNumber);
+        const slot = skillSlot(ctx.self, ctx.skill);
+        if (slot < 0) return;
+        changePp(ctx, selfSide, ctx.self, (s, i) => i === slot ? Math.max(0, s.pp - mechanics.cursePpTax) : s.pp);
         ctx.addLog(`👻 【${elfName}】處於【詛咒】狀態下，【咒術師】魂印額外消耗了該技能 1 點 PP 值！`, "effect");
         
         // 觸發賽博怨靈的行動魔咒準備
@@ -279,13 +291,14 @@ export class TraitsEngine {
    * 判定並套用：行動階段結束時，呼叫賽博怨靈或投石者的額外行動效果
    */
   static triggerActionPhaseEnd(ctx: BattleEventContext) {
+    if (!wraithOwnerOnField(ctx)) { ctx.setPlayerState(`${ctx.actor}_wraithCastSpellPending`, false); return; }
     const mechanics = getElfAdvancedMechanics(ctx.self);
     const selfSide = ctx.actor;
     const oppSide = selfSide === 'p1' ? 'p2' : 'p1';
     const elfName = ctx.self.name;
 
     // 1. 【咒術師】賽博怨靈發動魔咒
-    if (mechanics.wraithActionSpell && ctx.getPlayerState(`${selfSide}_cyberWraithActive`)) {
+    if (mechanics.wraithActionSpell && (ctx.getPlayerState(`${selfSide}_cyberWraithActive`) || ctx.getPlayerState(`${selfSide}_wraithSubUsed`))) {
       const isPending = ctx.getPlayerState(`${selfSide}_wraithCastSpellPending`);
       if (isPending) {
         ctx.setPlayerState(`${selfSide}_wraithCastSpellPending`, false);
@@ -293,7 +306,7 @@ export class TraitsEngine {
         // 魔咒主體是技能傷害；只有場下餘波才是真實傷害。
         const curseTurns = Math.max(0, ...Object.entries(ctx.getStatuses(ctx.self)).filter(([name]) => /詛咒|curse/i.test(name)).map(([, n]) => n));
         const n = curseTurns;
-        const skillPower = ctx.skill?.power || 100;
+        const skillPower = ctx.skill?.power ?? 0;
         ctx.addLog(`👻 【咒術師】召喚的賽博怨靈於行動階段發動了【魔咒】！`, "effect");
         this.queueWraithExtraAction(ctx, `賽博怨靈·魔咒`, skillPower + n, n);
       }
@@ -331,7 +344,7 @@ export class TraitsEngine {
     // 投石者的恢復改由 BATTLE_PHASE_END 經正常恢復管線執行一次。
 
     // 2. 【咒術師】若未選擇使用技能，發動 1 次滅靈魔咒
-    if (mechanics.wraithEndSpellIfNoSkill && ctx.getPlayerState(`${selfSide}_cyberWraithActive`)) {
+    if (wraithOwnerOnField(ctx) && mechanics.wraithEndSpellIfNoSkill && (ctx.getPlayerState(`${selfSide}_cyberWraithActive`) || ctx.getPlayerState(`${selfSide}_wraithSubUsed`))) {
       const selectedNoSkill = !ctx.skill || ctx.skill.name === '待機' || ctx.skill.name === '使用道具' || ctx.skill.name === '切換精靈';
       if (selectedNoSkill) {
         ctx.addLog(`🌌 【${elfName}】當前回合未選擇主動使用技能，賽博怨靈發動了【滅靈魔咒】！`, "effect");
@@ -459,10 +472,13 @@ export class TraitsEngine {
 
   private static queueWraithExtraAction(ctx: BattleEventContext, label: string, skillDamage: number, curseTurns: number) {
     const owner = ctx.actor;
+    const ownerId = identity(ctx.self);
     const targetSide = owner === 'p1' ? 'p2' : 'p1';
     ctx.queueExtraAction?.(owner, {
       label,
       run: (c) => {
+        // 排隊後仍須確認原持有者存活且仍在場；不能換人後由下一隻代放。
+        if (!wraithOwnerOnField(c) || identity(c.self) !== ownerId) return 0;
         const target = targetSide === 'p1' ? c.activeP1 : c.activeP2;
         const elem = ['機械.暗影', '機械', '暗影'].reduce((best, candidate) =>
           getTypeMatchup(candidate, target.type) > getTypeMatchup(best, target.type) ? candidate : best
@@ -470,16 +486,15 @@ export class TraitsEngine {
         const dealt = c.applySkillTypeDamage(targetSide, skillDamage, label, {
           elem, category: 'skill_extra_action', node: 'extra_action'
         });
-        c.self.shield = (c.self.shield || 0) + dealt;
-        c.self.barrier = (c.self.barrier || 0) + dealt;
+        c.updateElf(owner, { shield: (c.self.shield || 0) + dealt, barrier: (c.self.barrier || 0) + dealt });
         c.applyHeal(owner, dealt);
         c.addLog(`🛡️ ${label}以${elem}最佳克制造成 ${dealt} 點技能傷害，並轉化為等量護盾、護罩與體力！`, 'heal');
 
         const factor = c.getPlayerState(`${owner}_wraithDamageDoubled`) ? 2 : 1;
-        const offFieldDmg = Math.floor(curseTurns * 0.5) * factor;
-        const eligible = c.getEligibleTeam(targetSide).filter(e => (e.battleId || e.id) !== (target.battleId || target.id));
+        const eligible = c.getEligibleTeam(targetSide).filter(e => alive(e) && identity(e) !== identity(target));
         if (eligible.length > 0) {
           const randomTarget = eligible[Math.floor((c.rng ?? Math.random)() * eligible.length)];
+          const offFieldDmg = Math.floor(randomTarget.maxHp * curseTurns * 0.5 * factor);
           if (c.applyTrueDamageToElf) c.applyTrueDamageToElf(targetSide, randomTarget.battleId || randomTarget.id, offFieldDmg, label);
           else c.updateAnyElf(targetSide, randomTarget.battleId || randomTarget.id, { currentHp: Math.max(0, randomTarget.currentHp - offFieldDmg) });
           c.addLog(`💥 ${label}餘波令場下【${randomTarget.name}】受到 ${offFieldDmg} 點真實傷害！`, 'damage');
@@ -499,17 +514,20 @@ export class TraitsEngine {
     const elfName = ctx.self.name;
 
     // 1. 【咒術師】賽博怨靈替死
-    const wraithHp = ctx.getPlayerState(`${selfSide}_cyberWraithHp`) || ctx.getPlayerState(`${selfSide}_cyberWraithMaxHp`) || 0;
-    if (mechanics.wraithSubstituteDeathOnce && ctx.getPlayerState(`${selfSide}_cyberWraithActive`) && wraithHp > 0) {
+    const wraithHp = ctx.getPlayerState(`${selfSide}_cyberWraithHp`) ?? ctx.getPlayerState(`${selfSide}_cyberWraithMaxHp`) ?? 0;
+    // 專屬註冊表已管理實體怨靈，不得再用舊虛擬HP入口替死第二次。
+    if (!ctx.getPlayerState(`${selfSide}_cyberWraithRegistryManaged`) && mechanics.wraithSubstituteDeathOnce
+      && !ctx.getPlayerState(`${selfSide}_wraithSubUsed`) && ctx.getPlayerState(`${selfSide}_cyberWraithActive`) && wraithHp > 0) {
       ctx.setPlayerState(`${selfSide}_cyberWraithHp`, 0);
       const hasSubbed = ctx.getPlayerState(`${selfSide}_cyberWraithHasSubbed`);
       if (!hasSubbed) {
         ctx.setPlayerState(`${selfSide}_cyberWraithHasSubbed`, true);
+        ctx.setPlayerState(`${selfSide}_wraithSubUsed`, true);
         ctx.setPlayerState(`${selfSide}_cyberWraithActive`, false); // 怨靈死亡
         ctx.setPlayerState(`${selfSide}_wraithDamageDoubled`, true); // 後續真實傷害翻倍
 
         const retainHp = Math.floor(ctx.self.maxHp * mechanics.wraithSubstituteDeathHpRatio!);
-        ctx.self.currentHp = retainHp;
+        ctx.updateElf(selfSide, { currentHp: retainHp });
 
         ctx.addLog(`💖 【${elfName}】即將重傷倒下！「賽博怨靈」代為承受了全部致命傷害並消逝！`, "effect");
         ctx.addLog(`✨ 賽博怨靈替死守護成功！【${elfName}】保留了 ${retainHp} 點 (20%) 體力！`, "heal");

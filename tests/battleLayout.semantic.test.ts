@@ -45,13 +45,13 @@ console.log('對戰版面：立繪身高比例、可見區域擺放、巔峰 50 
 
 // 無極聖武【英雄之耀】：只有「機率 ≤50% 使對方陷入異常」的通用特性扣層；頑強、瞬殺、反抗等不算
 {
-  const { hasLowChanceStatusTrait } = await import('../src/effects/stagedArena/wujiRegistry');
+  const { hasLowChanceStatusTrait } = await import('../src/effects/elves/staged-arena/wujiRegistry');
   assert.equal(hasLowChanceStatusTrait('受到普通攻擊時有 8% 使對方麻痺'), true);
   assert.equal(hasLowChanceStatusTrait('自身的物理攻擊有 8% 機率使對方害怕'), true);
   assert.equal(hasLowChanceStatusTrait('受到致死攻擊時有 8% 機率餘下 2 點體力'), false);
   assert.equal(hasLowChanceStatusTrait('進攻類技能有 7.0% 機率秒殺對方'), false);
   assert.equal(hasLowChanceStatusTrait('受到特殊攻擊時有 14% 機率使對方攻擊降低 1 個等級'), false);
-  const { countsAgainstHeroGlory, heroGloryGain, heroGloryDescription } = await import('../src/effects/stagedArena/wujiRegistry');
+  const { countsAgainstHeroGlory, heroGloryGain, heroGloryDescription } = await import('../src/effects/elves/staged-arena/wujiRegistry');
   assert.equal(hasLowChanceStatusTrait('使用攻擊技能後 30% 令對手害怕'), true, '專屬特性寫法：令對手');
   assert.equal(hasLowChanceStatusTrait('攻擊後 100% 令對手麻痺'), false, '高於 50% 不算');
   assert.equal(hasLowChanceStatusTrait('回合結束時 50% 解除自身異常狀態'), false, '解除異常不算');

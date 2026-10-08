@@ -1,0 +1,179 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-10-08",
+  "note": "實際搬移清單；不刪資料、美術或備份。一般模組明確清單保留原鍵字典序；競技場獨立index。移動前未提交內容亦保留。",
+  "entries": [
+    {
+      "from": "src/effects/astralTwinsRegistry.ts",
+      "to": "src/effects/elves/astral-twins/registry.ts"
+    },
+    {
+      "from": "src/effects/baphometRegistry.ts",
+      "to": "src/effects/elves/baphomet/registry.ts"
+    },
+    {
+      "from": "src/effects/belienteRegistry.ts",
+      "to": "src/effects/elves/beliente/registry.ts"
+    },
+    {
+      "from": "src/effects/brinkkRegistry.ts",
+      "to": "src/effects/elves/brinkk/registry.ts"
+    },
+    {
+      "from": "src/effects/canglanRegistry.ts",
+      "to": "src/effects/elves/canglan/registry.ts"
+    },
+    {
+      "from": "src/effects/chaosBlakeRegistry.ts",
+      "to": "src/effects/elves/chaos-blake/registry.ts"
+    },
+    {
+      "from": "src/effects/deluRegistry.ts",
+      "to": "src/effects/elves/delu/registry.ts"
+    },
+    {
+      "from": "src/effects/destinyCRegistry.ts",
+      "to": "src/effects/elves/destiny-c/registry.ts"
+    },
+    {
+      "from": "src/effects/dimensionalDragonRegistry.ts",
+      "to": "src/effects/elves/dimensional-dragon/registry.ts"
+    },
+    {
+      "from": "src/effects/dixinRegistry.ts",
+      "to": "src/effects/elves/dixin/registry.ts"
+    },
+    {
+      "from": "src/effects/hamoRegistry.ts",
+      "to": "src/effects/elves/hamo/registry.ts"
+    },
+    {
+      "from": "src/effects/holyMilesRegistry.ts",
+      "to": "src/effects/elves/holy-miles/registry.ts"
+    },
+    {
+      "from": "src/effects/imperialShieldRegistry.ts",
+      "to": "src/effects/elves/imperial-shield/registry.ts"
+    },
+    {
+      "from": "src/effects/keerhodeRegistry.ts",
+      "to": "src/effects/elves/keerhode/registry.ts"
+    },
+    {
+      "from": "src/effects/keldRegistry.ts",
+      "to": "src/effects/elves/keld/registry.ts"
+    },
+    {
+      "from": "src/effects/lisaRegistry.ts",
+      "to": "src/effects/elves/lisa/registry.ts"
+    },
+    {
+      "from": "src/effects/marsRegistry.ts",
+      "to": "src/effects/elves/mars/registry.ts"
+    },
+    {
+      "from": "src/effects/mogosRegistry.ts",
+      "to": "src/effects/elves/mogos/registry.ts"
+    },
+    {
+      "from": "src/effects/monkeyRegistry.ts",
+      "to": "src/effects/elves/monkey/registry.ts"
+    },
+    {
+      "from": "src/effects/odinRegistry.ts",
+      "to": "src/effects/elves/odin/registry.ts"
+    },
+    {
+      "from": "src/effects/opeiaRegistry.ts",
+      "to": "src/effects/elves/opeia/registry.ts"
+    },
+    {
+      "from": "src/effects/otherworldReyRegistry.ts",
+      "to": "src/effects/elves/otherworld-rey/registry.ts"
+    },
+    {
+      "from": "src/effects/pipiRegistry.ts",
+      "to": "src/effects/elves/pipi/registry.ts"
+    },
+    {
+      "from": "src/effects/pitesalaluoRegistry.ts",
+      "to": "src/effects/elves/pitesalaluo/registry.ts"
+    },
+    {
+      "from": "src/effects/puniRegistry.ts",
+      "to": "src/effects/elves/puni/registry.ts"
+    },
+    {
+      "from": "src/effects/scarlettRegistry.ts",
+      "to": "src/effects/elves/scarlett/registry.ts"
+    },
+    {
+      "from": "src/effects/sobiratRegistry.ts",
+      "to": "src/effects/elves/sobirat/registry.ts"
+    },
+    {
+      "from": "src/effects/starlightRusRegistry.ts",
+      "to": "src/effects/elves/starlight-rus/registry.ts"
+    },
+    {
+      "from": "src/effects/wargodsRegistry.ts",
+      "to": "src/effects/elves/wargods/registry.ts"
+    },
+    {
+      "from": "src/effects/warriorRegistry.ts",
+      "to": "src/effects/elves/warrior/registry.ts"
+    },
+    {
+      "from": "src/effects/wuxuRegistry.ts",
+      "to": "src/effects/elves/wuxu/registry.ts"
+    },
+    {
+      "from": "src/effects/wuxuShiyanRegistry.ts",
+      "to": "src/effects/elves/wuxu-shiyan/registry.ts"
+    },
+    {
+      "from": "src/effects/zhakesiAnnihilationRegistry.ts",
+      "to": "src/effects/elves/zhakesi-annihilation/registry.ts"
+    },
+    {
+      "from": "src/effects/zhakesiFearRegistry.ts",
+      "to": "src/effects/elves/zhakesi-fear/registry.ts"
+    },
+    {
+      "from": "src/effects/dixinFormation.ts",
+      "to": "src/effects/elves/dixin/formation.ts"
+    },
+    {
+      "from": "src/effects/stoneThrowerSoul.ts",
+      "to": "src/effects/elves/wuxu/stoneThrowerSoul.ts"
+    },
+    {
+      "from": "src/effects/stagedArena/dragonHealingRegistry.ts",
+      "to": "src/effects/elves/staged-arena/dragonHealingRegistry.ts"
+    },
+    {
+      "from": "src/effects/stagedArena/index.ts",
+      "to": "src/effects/elves/staged-arena/index.ts"
+    },
+    {
+      "from": "src/effects/stagedArena/moiraiRegistry.ts",
+      "to": "src/effects/elves/staged-arena/moiraiRegistry.ts"
+    },
+    {
+      "from": "src/effects/stagedArena/shared.ts",
+      "to": "src/effects/elves/staged-arena/shared.ts"
+    },
+    {
+      "from": "src/effects/stagedArena/tianfengRegistry.ts",
+      "to": "src/effects/elves/staged-arena/tianfengRegistry.ts"
+    },
+    {
+      "from": "src/effects/stagedArena/wujiRegistry.ts",
+      "to": "src/effects/elves/staged-arena/wujiRegistry.ts"
+    },
+    {
+      "from": "src/effects/stagedArena/wuweiRegistry.ts",
+      "to": "src/effects/elves/staged-arena/wuweiRegistry.ts"
+    }
+  ]
+}

@@ -75,6 +75,9 @@ export enum EffectTiming {
   ELF_ENTERED = "ELF_ENTERED",
   /** 該方回合類效果被成功消除後（通用；data: { cleared }） */
   TURN_EFFECTS_CLEARED = "TURN_EFFECTS_CLEARED",
+  BEFORE_STAT_CHANGE = 'BEFORE_STAT_CHANGE',
+  PP_CHANGED = 'PP_CHANGED',
+  STAT_BOOST_CLEARED = 'STAT_BOOST_CLEARED',
 }
 
 /** AFTER_ACTION／OPPONENT_AFTER_ACTION／ACTION_FAILED 的 extraData */
@@ -162,6 +165,7 @@ export interface DamageComputation {
   damageCategory: DamageCategory;
   damageNode?: DamageNode;   // 結算節點與傷害分類分離；動畫不改變節點
   skillType?: string;        // 本次技能的屬性系別，用來判斷是否為「普通系」跳過限制
+  skillCategory?: string;    // 物理／特殊／屬性；不同於傷害分類。
   isIncoming?: boolean;
   isCrit?: boolean;
   isTypedSkill?: boolean;
@@ -176,11 +180,17 @@ export interface PpCostComputation {
 }
 
 export interface BattleEventContext {
+  /** 從指定陣營背包扣一瓶並立即使用；recipient預設自己，空庫存不偽造回復。 */
+  useBattleItem?: (inventorySide: 'p1' | 'p2', itemId: string, recipient?: 'p1' | 'p2') => boolean;
+  /** 指定持有者的通用事件，不偷換成當前操作方。 */
+  emitElfEvent?: (side: 'p1' | 'p2', owner: Elf, event: EffectTiming, data: Record<string, unknown>) => void;
   /** 所有傷害類型的指定精靈入口；場下不偷換成真實傷害。 */
   applyDamageToElf?: (side: 'p1' | 'p2', targetId: string, amount: number, type: DamageCategory,
     opts?: { elem?: string; label?: string; onSettled?: import('../battle/settlementReceipt').SettlementCallback; reaction?: boolean }) => number;
   /** 驅逐：以共用切換隔離狀態，但跳過主動／死亡／登場鉤子。 */
   expel?: (side: 'p1' | 'p2') => boolean;
+  /** 當前傷害及其衍生反應收尾；不是下一次出招，不重跑傷害或PP。 */
+  afterDamageChain?: (run: (ctx: BattleEventContext) => void) => void;
   roundNumber?: number;
   specialMode?: 'destiny' | 'interstellar';
   applyTrueDamageToElf?: (side: "p1" | "p2", targetId: string, amount: number, label?: string) => void;
@@ -219,7 +229,7 @@ export interface BattleEventContext {
   
   // Dynamic state accessors
   getPlayerState: (key: string) => any;
-  setPlayerState: (key: string, val: any) => void;
+  setPlayerState: (key: string, val: any, acquiredSource?: string) => void;
   getOpponentState: (key: string) => any;
   setOpponentState: (key: string, val: any) => void;
   

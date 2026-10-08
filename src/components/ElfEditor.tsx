@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo, lazy, Suspense } from "react";
 import type { ComponentProps } from "react";
+import { plainDescription } from '../utils/descFormat';
 import { TypeIcon } from "./SeerImages";
 import { ElfEditorDraftSummary, ElfEditorSectionNav, type EditorSection } from "./ElfEditorSections";
 import { ExclusiveTraitsEditor } from './ExclusiveTraitsEditor';
@@ -22,7 +23,7 @@ const EffectLibraryModal = lazy(() => import("./EffectLibraryModal").then(module
 import { parseEffectDescriptionWithAI } from "../utils/aiTextParser";
 import { parseFullElfData } from "../utils/fullElfParser";
 import { parseRawAbilityEffect } from "../utils/effectParser";
-import { SKILL_STONE_ATTRIBUTES, SKILL_STONE_GRADES, SkillStoneGrade, PERFECT_SKILL_STONE_EFFECTS, getPerfectEffectsForAttribute, createSkillStone, isStoneThrower, equipSkillStone, stoneIconUrl } from "../data/skillStones";
+import { SKILL_STONE_ATTRIBUTES, SKILL_STONE_GRADES, SkillStoneGrade, PERFECT_SKILL_STONE_EFFECTS, getPerfectEffectsForAttribute, createSkillStone, isStoneThrower, isSkillStone, equipSkillStone, stoneIconUrl, validateSkillStoneLoadout, skillConfigurationKey } from "../data/skillStones";
 import { ClauseBreakdownCard } from "./ClauseBreakdownCard";
 const LazyKitEffectBuilder = lazy(() => import("./KitEffectBuilder").then(m => ({ default: m.KitEffectBuilder })));
 const LazyElfBlocklyPanel = lazy(() => import("./ElfBlocklyPanel").then(m => ({ default: m.ElfBlocklyPanel })));
@@ -43,7 +44,7 @@ const enrichSkillPoolWithStones = (pool: Skill[], elf?: Partial<Elf> | null): Sk
   const combined = [...pool, ...stonePool];
   const map = new Map<string, Skill>();
   combined.forEach(sk => {
-    if (sk && sk.name && !map.has(sk.name)) map.set(sk.name, sk);
+    if (sk && sk.name && !map.has(skillConfigurationKey(sk))) map.set(skillConfigurationKey(sk), sk);
   });
   return Array.from(map.values());
 };
@@ -496,7 +497,7 @@ const SmartDescription = ({ text, className = "" }: { text?: string, className?:
   const regexStr = `(${allWords.join('|')}|[0-9]+%|[0-9]+點|1/[0-9]+|LV[0-9]+)`;
   const regex = new RegExp(regexStr, 'g');
 
-  const parts = text.split(regex);
+  const parts = plainDescription(text).split(regex);
 
   return (
     <div className={`leading-relaxed font-sans ${className}`}>
@@ -1221,8 +1222,8 @@ export default function ElfEditor({ initialElf: suppliedElf, onSaveElf, onBack, 
       const rawPool = [...(initialElf.skillPool || []), ...(defMatch?.skillPool || []), ...(initialElf.skills || [])];
       const uniquePoolMap = new Map<string, Skill>();
       rawPool.forEach(sk => {
-        if (sk && sk.name && !uniquePoolMap.has(sk.name)) {
-          uniquePoolMap.set(sk.name, sk);
+        if (sk && sk.name && !uniquePoolMap.has(skillConfigurationKey(sk))) {
+          uniquePoolMap.set(skillConfigurationKey(sk), sk);
         }
       });
       setSkillPool(enrichSkillPoolWithStones(Array.from(uniquePoolMap.values()), initialElf));
@@ -1243,7 +1244,7 @@ export default function ElfEditor({ initialElf: suppliedElf, onSaveElf, onBack, 
       alienTraits: { gen2Trait: { name: gen2TraitName, description: "" } }
     });
     const filtered = enriched.filter(sk => {
-      const skIsFifth = sk.isFifthSkill || sk.name.includes("第五") || sk.power >= 160;
+      const skIsFifth = sk.isFifthSkill || (!isSkillStone(sk) && (sk.name.includes("第五") || sk.power >= 160));
       return isFifth ? skIsFifth : !skIsFifth;
     });
     return { isFifthSlot: isFifth, availablePool: filtered };
@@ -1346,8 +1347,8 @@ export default function ElfEditor({ initialElf: suppliedElf, onSaveElf, onBack, 
       const genPoolRaw = [...(generated.skillPool || []), ...(finalElf.skills || []), ...skillPool];
       const genUniqueMap = new Map<string, Skill>();
       genPoolRaw.forEach((sk: Skill) => {
-        if (sk && sk.name && !genUniqueMap.has(sk.name)) {
-          genUniqueMap.set(sk.name, sk);
+        if (sk && sk.name && !genUniqueMap.has(skillConfigurationKey(sk))) {
+          genUniqueMap.set(skillConfigurationKey(sk), sk);
         }
       });
       setSkillPool(enrichSkillPoolWithStones(Array.from(genUniqueMap.values()), finalElf));
@@ -1466,7 +1467,7 @@ export default function ElfEditor({ initialElf: suppliedElf, onSaveElf, onBack, 
         const pRaw = [...skillPool, ...skills];
         const pMap = new Map<string, Skill>();
         pRaw.forEach(sk => {
-          if (sk && sk.name && !pMap.has(sk.name)) pMap.set(sk.name, sk);
+          if (sk && sk.name && !pMap.has(skillConfigurationKey(sk))) pMap.set(skillConfigurationKey(sk), sk);
         });
         return enrichSkillPoolWithStones(Array.from(pMap.values()), { name: elfName, alienTraits: { gen2Trait: { name: gen2TraitName, description: "" } } });
       })(),
@@ -1490,6 +1491,8 @@ export default function ElfEditor({ initialElf: suppliedElf, onSaveElf, onBack, 
       return;
     }
     const savedElf = buildManualElf();
+    try { validateSkillStoneLoadout(savedElf, savedElf.skills); }
+    catch (e) { alert((e as Error).message); return; }
     onSaveElf(savedElf);
     alert(`精靈「${savedElf.name}」已儲存至精靈倉庫！`);
     onBack();
@@ -1507,6 +1510,8 @@ export default function ElfEditor({ initialElf: suppliedElf, onSaveElf, onBack, 
         specialModeRating,
         path: path || previewElf.path
       };
+      try { validateSkillStoneLoadout(mergedElf, mergedElf.skills); }
+      catch (e) { alert((e as Error).message); return; }
       onSaveElf(mergedElf);
       alert(`精靈「${previewElf.name}」已成功儲存至倉庫！`);
       onBack();
@@ -1524,7 +1529,7 @@ export default function ElfEditor({ initialElf: suppliedElf, onSaveElf, onBack, 
     setSkills(prevSkills => {
       const updated = [...prevSkills];
       if (!updated[index]) return prevSkills;
-      const oldName = updated[index].name;
+      const oldKey = skillConfigurationKey(updated[index]);
       let newSkill = { ...updated[index], [field]: value };
       
       if (field === 'type' && value === '無屬性') {
@@ -1550,7 +1555,7 @@ export default function ElfEditor({ initialElf: suppliedElf, onSaveElf, onBack, 
       // Keep skillPool in sync if the skill exists in pool
       setSkillPool(prevPool => {
         return prevPool.map(poolSk => {
-          if (poolSk.name === oldName || poolSk.name === newSkill.name) {
+          if (skillConfigurationKey(poolSk) === oldKey) {
             return { ...newSkill };
           }
           return poolSk;
@@ -1566,7 +1571,7 @@ export default function ElfEditor({ initialElf: suppliedElf, onSaveElf, onBack, 
     setSkills(prevSkills => {
       const updated = [...prevSkills];
       if (!updated[idx]) return prevSkills;
-      const oldName = updated[idx].name;
+      const oldKey = skillConfigurationKey(updated[idx]);
       let newSkill = { ...updated[idx], description };
       if (effectType && effectType !== "none") newSkill.effectType = effectType;
       if (effectDetail) newSkill.effectDetail = effectDetail;
@@ -1576,7 +1581,7 @@ export default function ElfEditor({ initialElf: suppliedElf, onSaveElf, onBack, 
 
       setSkillPool(prevPool => {
         return prevPool.map(poolSk => {
-          if (poolSk.name === oldName || poolSk.name === newSkill.name) {
+          if (skillConfigurationKey(poolSk) === oldKey) {
             return { ...newSkill };
           }
           return poolSk;
@@ -1592,7 +1597,7 @@ export default function ElfEditor({ initialElf: suppliedElf, onSaveElf, onBack, 
     setSkillPool(prevPool => {
       const updated = [...prevPool];
       if (!updated[poolIdx]) return prevPool;
-      const oldName = updated[poolIdx].name;
+      const oldKey = skillConfigurationKey(updated[poolIdx]);
       let newSkill = { ...updated[poolIdx], [field]: value };
 
       if (field === 'type' && value === '無屬性') {
@@ -1618,7 +1623,7 @@ export default function ElfEditor({ initialElf: suppliedElf, onSaveElf, onBack, 
       // Keep equipped skills in sync if equipped
       setSkills(prevSkills => {
         return prevSkills.map(eqSk => {
-          if (eqSk.name === oldName || eqSk.name === newSkill.name) {
+          if (skillConfigurationKey(eqSk) === oldKey) {
             return { ...newSkill };
           }
           return eqSk;
@@ -1634,7 +1639,7 @@ export default function ElfEditor({ initialElf: suppliedElf, onSaveElf, onBack, 
     setSkillPool(prevPool => {
       const updated = [...prevPool];
       if (!updated[poolIdx]) return prevPool;
-      const oldName = updated[poolIdx].name;
+      const oldKey = skillConfigurationKey(updated[poolIdx]);
       let newSkill = { ...updated[poolIdx], description };
       if (effectType && effectType !== "none") newSkill.effectType = effectType;
       if (effectDetail) newSkill.effectDetail = effectDetail;
@@ -1644,7 +1649,7 @@ export default function ElfEditor({ initialElf: suppliedElf, onSaveElf, onBack, 
 
       setSkills(prevSkills => {
         return prevSkills.map(eqSk => {
-          if (eqSk.name === oldName || eqSk.name === newSkill.name) {
+          if (skillConfigurationKey(eqSk) === oldKey) {
             return { ...newSkill };
           }
           return eqSk;
@@ -1699,7 +1704,7 @@ export default function ElfEditor({ initialElf: suppliedElf, onSaveElf, onBack, 
   const handleRemovePoolSkill = (poolIdx: number) => {
     const targetSkill = skillPool[poolIdx];
     if (!targetSkill) return;
-    const equippedIndex = skills.findIndex(s => s && s.name === targetSkill.name);
+    const equippedIndex = skills.findIndex(s => s && skillConfigurationKey(s) === skillConfigurationKey(targetSkill));
     if (equippedIndex !== -1) {
       alert(`⚠️ 招式【${targetSkill.name}】目前已裝備在第 ${equippedIndex + 1} 格出戰技能中！請先從上方出戰欄位替換為其他招式後，再進行刪除。`);
       return;
@@ -1729,9 +1734,9 @@ export default function ElfEditor({ initialElf: suppliedElf, onSaveElf, onBack, 
   // Reusable Skill Card Renderer for both Equipped Skills and Pool Skills
   const renderSkillCard = (skill: Skill, idx: number, isPoolSkill: boolean) => {
     const isFifth = isPoolSkill
-      ? (skill.isFifthSkill || skill.name.includes("第五") || skill.power >= 160)
+      ? (skill.isFifthSkill || (!isSkillStone(skill) && (skill.name.includes("第五") || skill.power >= 160)))
       : (idx === 4 || skill.isFifthSkill);
-    const equippedSlotIdx = isPoolSkill ? skills.findIndex(s => s && s.name === skill.name) : idx;
+    const equippedSlotIdx = isPoolSkill ? skills.findIndex(s => s && skillConfigurationKey(s) === skillConfigurationKey(skill)) : idx;
     const isEquippedInPool = isPoolSkill && equippedSlotIdx !== -1;
     const idPrefix = isPoolSkill ? `skill-pool-${idx}` : `skill-eq-${idx}`;
     const skillKey = `${isPoolSkill ? "pool" : "eq"}-${idx}`;
@@ -3333,8 +3338,8 @@ export default function ElfEditor({ initialElf: suppliedElf, onSaveElf, onBack, 
                           const genPoolRaw = [...(generated.skillPool || []), ...(generated.skills || []), ...skillPool];
                           const genUniqueMap = new Map<string, Skill>();
                           genPoolRaw.forEach((sk: Skill) => {
-                            if (sk && sk.name && !genUniqueMap.has(sk.name)) {
-                              genUniqueMap.set(sk.name, sk);
+                            if (sk && sk.name && !genUniqueMap.has(skillConfigurationKey(sk))) {
+                              genUniqueMap.set(skillConfigurationKey(sk), sk);
                             }
                           });
                           setSkillPool(enrichSkillPoolWithStones(Array.from(genUniqueMap.values()), generated));
@@ -4028,9 +4033,9 @@ export default function ElfEditor({ initialElf: suppliedElf, onSaveElf, onBack, 
                           </div>
                         ) : (
                           availablePool.map((sk, skIdx) => {
-                            const equippedIdx = skills.findIndex((s, idx) => s && s.name === sk.name && idx !== replacingSkillIdx);
+                            const equippedIdx = skills.findIndex((s, idx) => s && skillConfigurationKey(s) === skillConfigurationKey(sk) && idx !== replacingSkillIdx);
                             const isEquipped = equippedIdx !== -1;
-                            const isCurrent = skills[replacingSkillIdx]?.name === sk.name;
+                            const isCurrent = !!skills[replacingSkillIdx] && skillConfigurationKey(skills[replacingSkillIdx]) === skillConfigurationKey(sk);
 
                             return (
                               <div
@@ -4044,6 +4049,10 @@ export default function ElfEditor({ initialElf: suppliedElf, onSaveElf, onBack, 
                                   } else {
                                     nextSkills[replacingSkillIdx] = { ...sk };
                                   }
+                                  try { validateSkillStoneLoadout({ id: initialElf?.id || 'temp', name: elfName,
+                                    alienTraits: { gen2Trait: { name: gen2TraitName, description: gen2TraitDesc } },
+                                    soulMark: { name: soulMarkName, description: soulMarkDesc, effectType: soulMarkEffectType, effectValue: soulMarkValue } }, nextSkills); }
+                                  catch (e) { alert((e as Error).message); return; }
                                   setSkills(nextSkills);
                                   setReplacingSkillIdx(null);
                                 }}

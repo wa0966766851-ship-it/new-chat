@@ -1,4 +1,9 @@
 import { matchesDamageTypes } from '../effects/damageChoices';
+import { trackIllusionStatWrite } from './illusionStats';
+import { trackNativeRegistryWrite } from './acquiredEffectContext';
+import { normalizePpPatch } from './ppTransitions';
+import { applyBattleItem, consumeBattleItem } from './itemInventory';
+import { BATTLE_ITEMS, isElfItemDisabled } from '../utils/battleHelpers';
 import { capCurrentHp } from './hpCeiling';
 import { applyAdvancedDamageModifiers, applyOutgoingSkillRestriction } from './advancedDamageModifiers';
 import { reductionPolicy, multiplyDamageReduction, applyStatusDamageModifiers, applyMarkDamageReductions, finalizeDamageReductions } from './damageReduction';
@@ -67,7 +72,7 @@ export interface SharedContextDeps {
 export type DamageAPIs = Pick<BattleEventContext, "applyPinkDamage" | "applyTrueDamage" | "applySkillTypeDamage" | "applyAbsorb" | "applyHeal" | "adjustHp" | "applyPercentDamage" | "applyFixedDamage">;
 export type StatusAPIs = Pick<BattleEventContext, "applyStatusWithImmunityCheck" | "getStatuses" | "clearTurnEffectsOf" | "hasTurnEffectOn" | "applyStatChange" | "applyShield">;
 export type StateAPIs = Pick<BattleEventContext, 
-  "applyDeathImmunity" | "vanishElf" | "addExtraElf" | "setMark" | "clearMark" | "getMarks" | "addTimerTo" | "consumeTimer" | "queueExtraAction" | "updateElf" | "updateAnyElf" | 
+  "useBattleItem" | "applyDeathImmunity" | "vanishElf" | "addExtraElf" | "setMark" | "clearMark" | "getMarks" | "addTimerTo" | "consumeTimer" | "queueExtraAction" | "updateElf" | "updateAnyElf" | "emitElfEvent" |
   "getPlayerState" | "setPlayerState" | "getOpponentState" | "setOpponentState" |
   "shuffleArray" | "getEligibleTeam" | "getFullTeam" | "getFirstStarter" | "getNthElf" | "getAdjacentElves" | "getSeparatedElves" | "trackCodeExec" | "setNextTurns"
 >;
@@ -321,7 +326,7 @@ export function buildDamageAPIs(shared: SharedContextDeps): DamageAPIs {
       const actualDmg = getBattleEventContext(actorSide, true, moveIndex).applyTrueDamage(tSide, val, label);
       getBattleEventContext(actorSide, true, moveIndex).applyHeal(actorSide, actualDmg);
     },
-    applyHeal: (tSide, amt, opts) => pushEffect({ type: 'heal', side: tSide, data: { amount: Math.floor(amt), onSettled: opts?.onSettled } }),
+    applyHeal: (tSide, amt, opts) => pushEffect({ type: 'heal', side: tSide, data: { amount: Math.floor(amt), ...opts } }),
     adjustHp: (tSide, amt) => pushEffect({ type: 'adjust_hp', side: tSide, data: { amount: Math.floor(amt) } }),
     applyPercentDamage: (tSide, p) => {
       const c = syncStateRef.current;
@@ -554,8 +559,8 @@ export function buildStatusAPIs(shared: SharedContextDeps): StatusAPIs {
         const targetRegState = c[`${tSide}RegistryState` as 'p1RegistryState' | 'p2RegistryState'] || {};
         const protectionTimers = targetTimers.filter(t => t.remaining > 0 && !t.pendingActivation &&
           (t.scope === 'team' || !t.ownerBattleId || t.ownerBattleId === (target.battleId || target.id)));
-        const acceptsStatus = (t: Timer) => !(t.payload as any)?.excludeStatusCategory ||
-          !StatusRegistry[s]?.categories?.includes((t.payload as any).excludeStatusCategory);
+        const acceptsStatus = (t: Timer) => (!t.payload?.statusGuardSourceSide || t.payload.statusGuardSourceSide === side) &&
+          (!(t.payload as any)?.excludeStatusCategory || !StatusRegistry[s]?.categories?.includes((t.payload as any).excludeStatusCategory));
         const reflectionTimer = protectionTimers.find(t => t.payload?.reflectStatus && acceptsStatus(t));
         const blkGuard = blockStatusGuard(c[`${tSide}Timers` as "p1Timers" | "p2Timers"], target, s); // 積木：分類異常免疫／反彈
         if (((targetRegState.reflectStatusTurns || 0) > 0 || reflectionTimer || blkGuard === "reflect") && !_reflectingStatus && _reflectHookDepth === 0) {
@@ -735,7 +740,7 @@ export function buildStatusAPIs(shared: SharedContextDeps): StatusAPIs {
       if (Object.keys(zeroKeys).length) dispatch({ type: 'UPDATE_REGISTRY_STATE', side: s, state: zeroKeys });
       if (cleared > 0) {
         const owner = syncStateRef.current[s];
-        try { SoulMarkRegistry[owner.name]?.(getBattleEventContext(s, true, 0), EffectTiming.TURN_EFFECTS_CLEARED, { cleared, side: s }); } catch (e) { console.error(e); }
+        try { SoulMarkRegistry[owner.name]?.(getBattleEventContext(s, true, 0), EffectTiming.TURN_EFFECTS_CLEARED, { cleared, removed, sourceSide: side, side: s }); } catch (e) { console.error(e); }
       }
       return cleared > 0;
     },
@@ -745,12 +750,19 @@ export function buildStatusAPIs(shared: SharedContextDeps): StatusAPIs {
       return hasTurnEffect(c[timersKey]);
     },
     applyStatChange: (tSide, changes, ppChanges) => {
+      const interception = { changes: { ...changes }, prevented: false, sourceSide: side };
+      const originalTarget = syncStateRef.current[tSide];
+      SoulMarkRegistry[originalTarget.name]?.(getBattleEventContext(tSide, true, 0), EffectTiming.BEFORE_STAT_CHANGE, interception);
+      changes = interception.prevented ? {} : interception.changes;
+      // 攔截鉤子可以更新狀態；不能用鉤子執行前的快照覆寫其結果。
       const c = syncStateRef.current;
-      const target = tSide === 'p1' ? c.p1 : c.p2;
-      const immuneStatDownTurns = syncStateRef.current[tSide === "p1" ? "p1RegistryState" : "p2RegistryState"]?.immuneStatDownTurns || 0;
+      const target = c[tSide];
+      const immuneStatDownTurns = c[`${tSide}RegistryState`]?.immuneStatDownTurns || 0;
+      const immuneStatDownTimer = c[`${tSide}Timers`].some(t => t.remaining > 0 && !t.pendingActivation &&
+        (!t.ownerBattleId || t.ownerBattleId === (target.battleId || target.id)) && t.payload?.immuneStatDown);
       
       const filteredChanges = Object.entries(changes || {}).filter(([stat, value]) => {
-         if (value < 0 && (immuneStatDownTurns > 0 || hasStoneThrowerMythic(target) || Object.keys(getStatuses(target)).some(name => StatusRegistry[name]?.mechanics?.some(m => m.params?.immuneStatDebuff)))) {
+         if (value < 0 && (immuneStatDownTurns > 0 || immuneStatDownTimer || hasStoneThrowerMythic(target) || Object.keys(getStatuses(target)).some(name => StatusRegistry[name]?.mechanics?.some(m => m.params?.immuneStatDebuff)))) {
             pushEffect({ type: 'log', side: tSide, data: { text: `🛡️ 【能力下降免疫】：【${target.name}】免疫了能力下降！`, type: "effect" } });
             return false;
          }
@@ -831,7 +843,7 @@ export function buildStatusAPIs(shared: SharedContextDeps): StatusAPIs {
 }
 
 export function buildStateAPIs(shared: SharedContextDeps): StateAPIs {
-  const { side, syncStateRef, dispatch, pushEffect, isP1, self, getBattleEventContext } = shared;
+  const { side, moveIndex, syncStateRef, dispatch, pushEffect, isP1, self, getBattleEventContext } = shared;
   
   return {
     applyDeathImmunity: (tSide, opts) => {
@@ -884,6 +896,22 @@ export function buildStateAPIs(shared: SharedContextDeps): StateAPIs {
         }
         pushEffect({ type: 'log', side: tSide, data: { text: `🌌 【${updatedElf.name}】化為虛無，徹底消逝在戰場中！`, type: "defeat" } });
       }
+    },
+    useBattleItem: (inventorySide, itemId, recipient = side) => {
+      const item = BATTLE_ITEMS.find(item => item.id === itemId);
+      const current = syncStateRef.current;
+      const holder = recipient === side ? current[`${side}Team`].find(elf => (elf.battleId || elf.id) === (self.battleId || self.id)) || current[side] : current[recipient];
+      if (!item || isElfItemDisabled(holder)) return false;
+      const inventory = current[`${inventorySide}ItemInventory`];
+      // 未配置正式庫存時只允許原模式正常使用；不能憑空偷取。
+      if (!inventory && inventorySide !== recipient) return false;
+      if (inventory) {
+        const next = consumeBattleItem(inventory, itemId);
+        if (!next) return false;
+        syncStateRef.current = { ...current, [`${inventorySide}ItemInventory`]: next };
+        dispatch({ type: 'SET_ITEM_INVENTORY', side: inventorySide, inventory: next });
+      }
+      return applyBattleItem(getBattleEventContext(recipient, true, moveIndex, holder), item, recipient);
     },
     setMark: (m, targetSide) => {
       const c = syncStateRef.current;
@@ -960,6 +988,7 @@ export function buildStateAPIs(shared: SharedContextDeps): StateAPIs {
       if (foundIndex < 0) return;
       const targetIndex = foundIndex;
       const target = team[targetIndex] || c[tSide];
+      elfUpdates = normalizePpPatch(trackIllusionStatWrite(target, elfUpdates));
       // 通用：處於「能力上升狀態無法被消除」（statBoostUnclearableTurns，寫在被保護方）時，他方效果不能降低其能力提升
       if (elfUpdates.statStages && tSide !== side && targetIndex === c[activeIndexKey]
         && ((c[`${tSide}RegistryState` as 'p1RegistryState' | 'p2RegistryState'] || {}).statBoostUnclearableTurns || 0) > 0) {
@@ -986,10 +1015,21 @@ export function buildStateAPIs(shared: SharedContextDeps): StateAPIs {
         ...(isUpdatingActive ? { [tSide]: nextElf } : {})
       };
       dispatch({ type: 'UPDATE_ELF', side: tSide, elf: elfUpdates, targetId: target.battleId || target.id });
+      if (elfUpdates.statStages && tSide !== side) {
+        const removedStages = Object.fromEntries(Object.entries(target.statStages || {}).filter(([k, v]) => typeof v === 'number' && v > 0 && Number(nextElf.statStages?.[k] || 0) < v));
+        if (Object.keys(removedStages).length) SoulMarkRegistry[target.name]?.(getBattleEventContext(tSide, true, 0, nextElf), EffectTiming.STAT_BOOST_CLEARED, { removedStages, sourceSide: side });
+      }
+    },
+    emitElfEvent: (ownerSide, owner, event, data) => {
+      const current = syncStateRef.current[`${ownerSide}Team`].find(e => (e.battleId || e.id) === (owner.battleId || owner.id));
+      if (!current) return;
+      const ctx = getBattleEventContext(ownerSide, true, 0, current);
+      SoulMarkRegistry[current.name]?.(ctx, event, data);
     },
     updateAnyElf: (tSide, battleId, patch) => {
       const c = syncStateRef.current;
       const patchTarget = c[`${tSide}Team`].find(e => (e.battleId || e.id) === battleId || e.id === battleId);
+      if (patchTarget) patch = normalizePpPatch(trackIllusionStatWrite(patchTarget, patch));
       if (patchTarget && patch.currentHp !== undefined) patch = { ...patch, currentHp: capCurrentHp(c, tSide, patchTarget, patch.currentHp) };
       const targetActive = tSide === 'p1' ? c.p1 : c.p2;
       const isUpdatingActive = (targetActive.battleId || targetActive.id) === battleId || targetActive.id === battleId;
@@ -1025,9 +1065,18 @@ export function buildStateAPIs(shared: SharedContextDeps): StateAPIs {
       const c = syncStateRef.current;
       return readScopedRegistry(c, side, self, k);
     },
-    setPlayerState: (k, v) => {
+    setPlayerState: (k, v, acquiredSource) => {
       const c = syncStateRef.current;
-      syncStateRef.current = writeScopedRegistry(c, side, self, { [k]: v });
+      const currentOwner = c[`${side}Team`].find(e => (e.battleId || e.id) === (self.battleId || self.id)) || self;
+      const patch = trackNativeRegistryWrite(currentOwner, k, v, acquiredSource);
+      if (patch) {
+        const nextOwner = { ...currentOwner, ...patch };
+        const team = c[`${side}Team`].map(e => (e.battleId || e.id) === (self.battleId || self.id) ? nextOwner : e);
+        syncStateRef.current = { ...c, [`${side}Team`]: team,
+          ...((c[side].battleId || c[side].id) === (self.battleId || self.id) ? { [side]: nextOwner } : {}) };
+        dispatch({ type: 'UPDATE_ELF', side, elf: patch, targetId: self.battleId || self.id });
+      }
+      syncStateRef.current = writeScopedRegistry(syncStateRef.current, side, self, { [k]: v });
       dispatch({ type: 'UPDATE_SCOPED_REGISTRY_STATE', side, owner: self, state: { [k]: v } });
     },
     getOpponentState: (k) => {

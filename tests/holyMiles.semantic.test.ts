@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { test } from "node:test";
 import { HOLY_MILES_SEED, HOLY_MILES_SKILLS } from "../src/data/holyMiles";
-import { HOLY_MILES_SKILLS as handlers, handleHolyMilesSoulMark } from "../src/effects/holyMilesRegistry";
+import { HOLY_MILES_SKILLS as handlers, handleHolyMilesSoulMark } from "../src/effects/elves/holy-miles/registry";
 import { CUSTOM } from "../src/blocks/custom";
 import { EffectTiming } from "../src/effects/types";
 import type { BattleEventContext } from "../src/effects/types";

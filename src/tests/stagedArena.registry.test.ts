@@ -3,13 +3,13 @@ import type { Elf } from '../types';
 import type { BattleEventContext } from '../effects/types';
 import { EffectTiming } from '../effects/types';
 import { STAGED_ARENA_ELVES } from '../data/stagedArenaElves';
-import { STAGED_ARENA_SKILLS, STAGED_ARENA_SOULS } from '../effects/stagedArena';
-import { read } from '../effects/stagedArena/shared';
-import { awake, triggerDragonSoulMarks } from '../effects/stagedArena/dragonHealingRegistry';
-import { giveWujiMark, wujiMarkRounds, WUJI_MARK_DEFS } from '../effects/stagedArena/wujiRegistry';
+import { STAGED_ARENA_SKILLS, STAGED_ARENA_SOULS } from '../effects/elves/staged-arena/index';
+import { read } from '../effects/elves/staged-arena/shared';
+import { awake, triggerDragonSoulMarks } from '../effects/elves/staged-arena/dragonHealingRegistry';
+import { giveWujiMark, wujiMarkRounds, WUJI_MARK_DEFS } from '../effects/elves/staged-arena/wujiRegistry';
 import { statusChanceBlocked } from '../battle/statusChanceRules';
-import { finishMoiraiCounter, finishMoiraiFifth, settleYinYangHit } from '../effects/stagedArena/moiraiRegistry';
-import { invertPP, transformWuweiSkill, wuweiPower } from '../effects/stagedArena/wuweiRegistry';
+import { finishMoiraiCounter, finishMoiraiFifth, settleYinYangHit } from '../effects/elves/staged-arena/moiraiRegistry';
+import { invertPP, transformWuweiSkill, wuweiPower } from '../effects/elves/staged-arena/wuweiRegistry';
 import { resolvePetIds, SEER_ID_OVERRIDES } from '../battle/seerAssets';
 
 function setup(name: string) {

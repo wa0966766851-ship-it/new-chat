@@ -33,6 +33,9 @@ test("known left-facing battle art faces the opponent on both sides", () => {
     "蓓麗安特",
     "天蓬元帥八戒",
     "人皇·帝辛",
+    "星核寰宇·艾斯菲亞",
+    "星軌重構·艾斯菲格",
+    "御天龍神·哈莫",
   ];
 
   for (const name of leftFacing) {
@@ -86,6 +89,12 @@ test("fear custom art faces right while official fallback faces left", () => {
 
 
 test("source facing matches the user-confirmed P1 corrections", () => {
+  for (const [name, id] of [["星核寰宇·艾斯菲亞", 79], ["星軌重構·艾斯菲格", 418], ["御天龍神·哈莫", 3809]] as const) {
+    for (const custom of [false, true]) {
+      assert.equal(shouldMirrorBattleSprite(name, "p1", custom, `/seer/body/${id}.png`), true);
+      assert.equal(shouldMirrorBattleSprite(name, "p2", custom, `/seer/body/${id}.png`), false);
+    }
+  }
   for (const [name, source] of [["譜尼", "/seer/body/300.png"], ["混沌·布萊克", "/seer/body/3539.png"],
     ["治癒.龍魂再臨 次元龍", "/seer/body/4586.png"], ["無序·蝕言", "/elf-art/wuxu_shiyan_body.png"], ["蓓麗安特", "/seer/body/4643.png"]]) {
     assert.equal(shouldMirrorBattleSprite(name, "p1", false, source), true);

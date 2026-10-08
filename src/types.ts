@@ -167,12 +167,19 @@ export interface StatChange {
 export interface Elf {
   /** 開局背包另一區相同位數的快照；不把待命精靈加入勝敗判定隊伍。 */
   initialCounterpart?: Elf;
+  /** 同一持有者重複取得效果時，隔離上一次幻化的私有計數。 */
+  illusionGeneration?: number;
   /** 幻化保持戰鬥身分與自身技能欄位；外觀／同槽轉化與原始快照分開。 */
   illusion?: {
     source: string;
     target: Elf;
     original: Pick<Elf, 'calculatedStats' | 'maxHp' | 'trait' | 'alienTraits' | 'isAlienElf' | 'category'>;
     ppBonus: number;
+    effectKey?: string;
+    /** 取得效果的私有寫入；解除只回復仍由該來源持有的值。 */
+    registryWrites?: Record<string, { before: any; value: any }>;
+    /** 自身能力與借用能力分層；解除不可從已重算的面板盲扣。 */
+    restoration?: { ownStats: BaseStats; ownMaxHp: number; projectedStats: BaseStats; projectedMaxHp: number };
   };
   id: string; // unique identifier (especially for customized/saved elves)
   name: string;

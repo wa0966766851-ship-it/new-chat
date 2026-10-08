@@ -3,9 +3,11 @@ import type { BattleEventContext } from './types';
 import { abilityKeys, clearStatuses } from './semanticOperations';
 import { getMaxPp, getStatuses, clampSkillPp } from '../utils/battleHelpers';
 import { activeConstraints } from '../battle/timedConstraints';
-import { settlePpChanges } from '../battle/ppTransitions';
+import { settlePpChanges, withPp } from '../battle/ppTransitions';
 import { isAliveBySurvivalRule } from '../battle/survivalRules';
 import type { Timer } from '../battle/timers';
+import { EffectTiming } from './types';
+import type { PpTransitionReason } from '../battle/ppTransitions';
 
 export type Side = 'p1' | 'p2';
 export const identity = (elf: Pick<Elf, 'id' | 'battleId'>): string => elf.battleId || elf.id;
@@ -53,7 +55,7 @@ export function uses(ctx: BattleEventContext, side: Side, id: string, count: num
 
 /** 欄位按slot改PP；同名技能不可互相覆寫。削PP也必須通過星護耗盡處理。 */
 export function changePp(ctx: BattleEventContext, side: Side, elf: Elf,
-  change: (skill: Skill, index: number) => number, recovery = false): { removed: number; emptied: number[] } {
+  change: (skill: Skill, index: number) => number, recovery = false, reason: PpTransitionReason = recovery ? 'restore' : 'drain'): { removed: number; emptied: number[] } {
   const current = ctx.getFullTeam(side).find(e => identity(e) === identity(elf)) || elf;
   const reductions = activeConstraints(timersFor(ctx, side), current).reduce((n, p) => n + (p.ppRecoveryReductionPercent || 0), 0);
   let removed = 0;
@@ -61,11 +63,15 @@ export function changePp(ctx: BattleEventContext, side: Side, elf: Elf,
     let pp = change(skill, i);
     if (recovery && pp > skill.pp) pp = clampSkillPp(skill, skill.pp + Math.floor((pp - skill.pp) * Math.max(0, 1 - reductions)), current);
     removed += Math.max(0, skill.pp - pp);
-    return { ...skill, pp };
+    return withPp(skill, pp);
   });
   const result = settlePpChanges(current, skills);
+  const consumedSlots = current.skills.flatMap((s, i) => skills[i].pp < s.pp ? [i] : []);
+  const changed = current.skills.some((s, i) => s.pp !== result.patch.skills?.[i]?.pp) || removed > 0;
   ctx.updateAnyElf(side, identity(current), result.patch);
-  return { removed, emptied: result.emptied.filter(i => (result.patch.skills?.[i]?.pp || 0) <= 0) };
+  if (changed) ctx.emitElfEvent?.(side, current, EffectTiming.PP_CHANGED, { reason, emptied: result.emptied, removed, consumedSlots, changed: true, sourceSide: ctx.actor });
+  const after = ctx.getFullTeam(side).find(e => identity(e) === identity(current)) || current;
+  return { removed, emptied: result.emptied.filter(i => (after.skills?.[i]?.pp || 0) <= 0) };
 }
 export function restorePp(ctx: BattleEventContext, side: Side, elf: Elf, amount = Infinity): void {
   changePp(ctx, side, elf, skill => Math.min(getMaxPp(skill, elf), skill.pp + amount), true);

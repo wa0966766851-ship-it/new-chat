@@ -9,7 +9,7 @@ import {
   resolveReyFifthTransformation,
   sumAbsoluteStatStages,
   OTHERWORLD_REY_SKILLS,
-} from "../src/effects/otherworldReyRegistry";
+} from "../src/effects/elves/otherworld-rey/registry";
 import { OTHERWORLD_REY_SEED } from "../src/data/otherworldRey";
 import { battleReducer } from "../src/components/BattleManager";
 import {

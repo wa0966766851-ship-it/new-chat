@@ -15,6 +15,8 @@ export const SKILL_STONE_GRADES = {
 };
 
 export type SkillStoneGrade = keyof typeof SKILL_STONE_GRADES;
+/** 可裝備的等級；SS僅是投石者出招時的轉化，不是背包装備項目。 */
+export const EQUIPPABLE_STONE_GRADES: SkillStoneGrade[] = ['D', 'C', 'B', 'A', 'S'];
 
 export interface SkillStoneEffectDef {
   id: string;
@@ -120,7 +122,15 @@ export function toSSStone(skill: Skill, ssText?: Record<string, string>): Skill 
 }
 
 export function isSkillStone(skill?: Skill): boolean {
-  return !!skill && (skill.isSkillStone === true || /石之力-(?:SS|S|A|B|C|D)$/.test(skill.name));
+  return !!skill && (skill.isSkillStone === true || skill.skillStoneGrade !== undefined || /石之力-(?:SS|S|A|B|C|D)$/.test(skill.name));
+}
+
+/** 普通招式沿用名稱；技能石同名但物特、普通／完美、特效及規則不同，不能合併。 */
+export function skillConfigurationKey(skill: Skill): string {
+  if (!isSkillStone(skill)) return skill.name;
+  return JSON.stringify([skill.name, skill.type, skill.category, stoneGrade(skill),
+    !!skill.isPerfectSkillStone, skill.isPerfectSkillStone ? skill.skillStoneEffect || skill.effectDetail || '' : '',
+    skill.skillStoneRuleset || 'standard']);
 }
 
 export function stoneGrade(skill: Skill): SkillStoneGrade {
@@ -162,9 +172,22 @@ export function equipSkillStone(elf: Elf, stone: Skill, slot: number): { skills:
   if (others.some(s => s.type === stone.type)) throw new Error('投石者不能裝備重複屬性的技能石');
   const skills = [...elf.skills], skillPool = [...(elf.skillPool || [])];
   const old = skills[slot];
-  if (old && !skillPool.some(s => s.name === old.name)) skillPool.push(old);
+  if (old && !skillPool.some(s => skillConfigurationKey(s) === skillConfigurationKey(old))) skillPool.push(old);
   skills[slot] = stone;
+  validateSkillStoneLoadout(elf, skills);
   return { skills, skillPool };
+}
+
+/** 生成入口及預備池替換入口共用，避免從技能池繞過限制。 */
+export function validateSkillStoneLoadout(elf: Pick<Elf, 'id' | 'name' | 'alienTraits' | 'soulMark' | 'trait_stone_thrower'>, skills: Skill[]): void {
+  const stones = skills.filter(isSkillStone);
+  if (skills.some((s, i) => isSkillStone(s) && (i >= 4 || s.isFifthSkill))) throw new Error('技能石只能佔前四個普通技能槽');
+  // 裝備等級不能拿戰鬥轉化的 originalGrade 當作兜底，否則SS會被誤放行。
+  if (stones.some(s => !EQUIPPABLE_STONE_GRADES.includes(s.skillStoneGrade || (s.name.match(/-(SS|S|A|B|C|D)$/)?.[1] as SkillStoneGrade) || 'S'))) throw new Error('最高只能裝備S級技能石；SS由投石者戰鬥時轉化');
+  if (stones.some(s => !SKILL_STONE_ATTRIBUTES.includes(s.type) || !['物理', '特殊'].includes(s.category))) throw new Error('技能石必須為有效單屬性的物理或特殊技能');
+  if (stones.some(s => s.isPerfectSkillStone && !stoneEffect(s))) throw new Error('完美技能石缺少該屬性的合法效果');
+  if (!isStoneThrower(elf as Elf) && stones.length > 1) throw new Error('一般精靈最多裝備一個技能石；請替換原技能石槽位');
+  if (isStoneThrower(elf as Elf) && new Set(stones.map(s => s.type)).size !== stones.length) throw new Error('投石者不能裝備重複屬性的技能石');
 }
 
 export function isStoneThrower(elf?: Elf): boolean {

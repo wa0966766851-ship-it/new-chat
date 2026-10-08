@@ -1,10 +1,10 @@
 import assert from 'node:assert/strict';
 import { DEFAULT_ELVES } from '../src/data/defaultElves';
-import { DIXIN_SKILLS, DIXIN_DAMAGE_TRANSFORMS, handleDixinSoulMark } from '../src/effects/dixinRegistry';
-import { OPEIA_SKILLS, countOpeiaTeam, handleOpeiaSoulMark } from '../src/effects/opeiaRegistry';
-import { CANGLAN_SKILLS, CANGLAN_DAMAGE_TRANSFORMS, handleCanglanSoulMark } from '../src/effects/canglanRegistry';
-import { handleWuxuSoulMark } from '../src/effects/wuxuRegistry';
-import { STARLIGHT_RUS_SKILLS, handleStarlightRusSoulMark } from '../src/effects/starlightRusRegistry';
+import { DIXIN_SKILLS, DIXIN_DAMAGE_TRANSFORMS, handleDixinSoulMark } from '../src/effects/elves/dixin/registry';
+import { OPEIA_SKILLS, countOpeiaTeam, handleOpeiaSoulMark } from '../src/effects/elves/opeia/registry';
+import { CANGLAN_SKILLS, CANGLAN_DAMAGE_TRANSFORMS, handleCanglanSoulMark } from '../src/effects/elves/canglan/registry';
+import { handleShiyanSoulMark as handleWuxuSoulMark } from '../src/effects/elves/wuxu-shiyan/registry';
+import { STARLIGHT_RUS_SKILLS, handleStarlightRusSoulMark } from '../src/effects/elves/starlight-rus/registry';
 import { EffectTiming as E } from '../src/effects/types';
 import { calculateDamage } from '../src/utils/damageCalculator';
 import { skillStageView } from '../src/battle/skillStageView';
@@ -90,7 +90,8 @@ for(const side of ['p1','p2']as const){
   const magic:any[]=[], offField:any[]=[];const bench={...w.target,battleId:'bench'};
   w.ctx.applySkillTypeDamage=(_s:string,n:number)=>{magic.push(n);return n;};w.ctx.getEligibleTeam=()=>[w.target,bench];
   w.ctx.applyTrueDamageToElf=(_s:string,id:string,n:number)=>offField.push({id,n});
-  spells[0].run(w.ctx);assert.equal(magic[0],w.ctx.skill.power+6,'n 是詛咒回合數，沒有乘15');assert.deepEqual(offField,[{id:'bench',n:3}]);
+  spells[0].run(w.ctx);assert.equal(magic[0],w.ctx.skill.power+6,'n 是詛咒回合數，沒有乘15');assert.deepEqual(offField,[{id:'bench',n:Math.floor(bench.maxHp*6*.5)}], '場下n×50%按最大體力比例，不是3點');
+  w.state[side+'_cyberWraithHasSubbed']=true;w.state[side+'_wraithDamageDoubled']=true;spells[0].run(w.ctx);assert.equal(offField.at(-1).n,Math.floor(bench.maxHp*6),'替死後場下真實傷害比例翻倍');
 
   const r=setup(side,'5010','星光·浪打千擊');STARLIGHT_RUS_SKILLS['星光·浪打千擊'](r.ctx);assert.equal(r.state.attackHitCountThisAction,5);
   // 連擊屬變威力：每擊強化在傷害前結算，命中後不再擲骰

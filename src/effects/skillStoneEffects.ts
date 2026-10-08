@@ -1,10 +1,9 @@
 import type { Skill } from '../types';
 import type { BattleEventContext, BattleSkillAfterHitHandler } from './types';
 import { isSkillStone, isStoneThrower, stoneEffect, toSSStone } from '../data/skillStones';
-import { clampSkillPp } from '../utils/battleHelpers';
 import { prdPercent } from '../utils/prd';
-import { recoverPpByTimers, settlePpChanges } from '../battle/ppTransitions';
 import { skillSlot } from '../battle/skillSlot';
+import { changePp, restorePp } from './newElfOperations';
 
 type Roll = (key: string, percent: number) => boolean;
 function additionalAllowed(ctx: BattleEventContext): boolean {
@@ -61,16 +60,13 @@ export function stoneAfterHit(ctx: BattleEventContext, roll: Roll = prdPercent):
       else ctx.applyTrueDamage(opp, 200, '真實傷害');
       break;
     case 'restore_all_pp_1':
-      ctx.updateElf(self, settlePpChanges(ctx.self,
-        recoverPpByTimers(ctx.self, 1, (self === 'p1' ? ctx.p1Timers : ctx.p2Timers) || [])).patch);
+      restorePp(ctx, self, ctx.self, 1);
       break;
     case 'reduce_opp_pp_1': {
-      const skills = ctx.target.skills.map(s => ({ ...s, pp: clampSkillPp(s, s.pp - 1, ctx.target) }));
-      const result = settlePpChanges(ctx.target, skills);
-      ctx.updateElf(opp, result.patch);
       const selected = ctx.opponentSkill;
       const slot = skillSlot(ctx.target, selected);
-      if (slot >= 0 && result.patch.skills?.[slot]?.pp === 0) ctx.setOpponentState('actionPreventedRound', ctx.roundNumber);
+      const result = changePp(ctx, opp, ctx.target, s => Math.max(0, s.pp - 1));
+      if (result.emptied.includes(slot)) ctx.setOpponentState('actionPreventedRound', ctx.roundNumber);
       break;
     }
     case 'half_damage_1turn':

@@ -61,7 +61,7 @@ let checks = 0;
 try {
   const { default: Battle } = await server.ssrLoadModule('/src/components/BattleScreen.tsx');
   const { getSoulMarkRegistry, getBattleSkillRegistry } = await server.ssrLoadModule('/src/effects/battleEventRegistry.ts');
-  const { handleShenglingPuniSoulMark } = await server.ssrLoadModule('/src/effects/puniRegistry.ts');
+  const { handleShenglingPuniSoulMark } = await server.ssrLoadModule('/src/effects/elves/puni/registry.ts');
   const souls = getSoulMarkRegistry(), skills = getBattleSkillRegistry();
   let driver: any;
   async function finish(before: number) {

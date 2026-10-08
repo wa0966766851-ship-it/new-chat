@@ -43,6 +43,7 @@ function normalizeKeyed(idx: SeerIndex, key: string) {
 /** 依名稱找出可用的寵物ID（含同名前置型態），依優先序排列 */
 /** 指定圖像（名稱 → 官方寵物 ID）：沒有官方圖或名稱對不上時使用 */
 export const SEER_ID_OVERRIDES: Record<string, number> = {
+  '御天龍神·哈莫': 3809, // 本機 SeerAPI 索引：龍神哈莫，不冒用其他型態。
   "天蓬元帥八戒": 1536,            // 使用者指定：菲爾蓬格
   "混濁海妖.布林克克": 359,        // 布林克克（原版）
   "治癒.龍魂再臨 次元龍": 4586,    // 空元行者
@@ -115,10 +116,10 @@ const BATTLE_SPRITE_FACING: Record<string, SpriteFacing> = {
   [normalizeName("蓓麗安特")]: "left",
   [normalizeName("怒濤·滄嵐")]: "left",
   [normalizeName("異境神霆·雷伊")]: "left",
-  // 本輪新增的 SeerAPI 素材：艾斯菲亞／艾斯菲格與六界神王為正面構圖，
-  // 摩哥斯原圖朝左；P1 只鏡射朝左素材，P2 保留原向。
-  [normalizeName("星核寰宇·艾斯菲亞")]: "front",
-  [normalizeName("星軌重構·艾斯菲格")]: "front",
+  // 逐圖核對 body 79／418／3809：三者皆斜側朝左，P1 鏡射、P2 原圖。
+  [normalizeName("星核寰宇·艾斯菲亞")]: "left",
+  [normalizeName("星軌重構·艾斯菲格")]: "left",
+  [normalizeName("御天龍神·哈莫")]: "left",
   [normalizeName("邪靈主宰·摩哥斯")]: "left",
   [normalizeName("六界神王")]: "front",
   [normalizeName("聖靈邁爾斯")]: "left",
@@ -138,8 +139,8 @@ const BODY_SOURCE_FACING: Record<string, SpriteFacing> = {
   ...Object.fromEntries([10,1204,177,187,2647,2844,303,306,309,3098,3404,343,3432,3456,359,3626,3740,3886,4647,4648,4649,4762,5000,875].map(id => [`/seer/body/${id}.png`, "left" as SpriteFacing])),
   ...Object.fromEntries([300,3539,4586,4643,1536].map(id => [`/seer/body/${id}.png`, "left" as SpriteFacing])),
   ...Object.fromEntries([3105,3393,4032,2882].map(id => [`/seer/body/${id}.png`, "front" as SpriteFacing])),
-  ...Object.fromEntries([79,418,3045].map(id => [`/seer/body/${id}.png`, "front" as SpriteFacing])),
-  ...Object.fromEntries([3561].map(id => [`/seer/body/${id}.png`, "left" as SpriteFacing])),
+  ...Object.fromEntries([3045].map(id => [`/seer/body/${id}.png`, "front" as SpriteFacing])),
+  ...Object.fromEntries([79,418,3809,3561].map(id => [`/seer/body/${id}.png`, "left" as SpriteFacing])),
   // 幻域競技場暫用圖（2026-10-03 使用者確認）：四張皆以朝左處理，P1 鏡射、P2 原圖。
   ...Object.fromEntries([4661,4903,4800,4275].map(id => [`/seer/body/${id}.png`, "left" as SpriteFacing])),
 };

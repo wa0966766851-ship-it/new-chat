@@ -1,6 +1,21 @@
 // 技能／魂印描述顯示：一條效果一行（僅影響顯示，不改原文）
 const MARKER = /^\s*(■|◆|◇|🎯|>|＞)/;
 
+/** 僅清除文字排版符號；不刪除乘號、比例、負號或效果分類標記。 */
+export function plainDescription(desc?: string): string {
+  return (desc || '').replace(/\r/g, '')
+    .replace(/^[\t ]*```[^\n]*$/gm, '')
+    .replace(/^[\t ]*(?:---+|___+|\*\*\*+)[\t ]*$/gm, '')
+    .replace(/^[\t ]*(?:>[\t ]*)+/gm, '')
+    .replace(/^[\t ]*#{1,6}[\t ]+/gm, '')
+    .replace(/^[\t ]*[-*+][\t ]+/gm, '• ')
+    .replace(/\*\*([^\n]+?)\*\*/g, '$1')
+    .replace(/__([^\n]+?)__/g, '$1')
+    .replace(/`([^`\n]+)`/g, '$1')
+    .replace(/\[([^\]\n]+)\]\([^\)\n]+\)/g, '$1')
+    .trim();
+}
+
 function splitOutsideBrackets(line: string, seps: string[]): string[] {
   const out: string[] = [];
   let depth = 0, buf = "";
@@ -21,7 +36,7 @@ function splitOutsideBrackets(line: string, seps: string[]): string[] {
 export function effectLines(desc?: string): string[] {
   if (!desc) return [];
   const lines: string[] = [];
-  for (const raw of desc.replace(/\r/g, "").split("\n")) {
+  for (const raw of plainDescription(desc).split("\n")) {
     const line = raw.trimEnd();
     if (!line.trim()) continue;
     // 已依使用者格式標記的行（■固有、🎯附加、◇攜帶、> 延伸）保持原樣

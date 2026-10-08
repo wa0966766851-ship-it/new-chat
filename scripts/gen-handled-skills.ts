@@ -8,7 +8,9 @@ import { DEFAULT_ELVES } from "../src/data/defaultElves";
 import * as fs from "fs";
 import ts from "typescript";
 const dir = "src/effects";
-const files = fs.readdirSync(dir).filter(f => /Registry\.ts$/.test(f));
+const elfModules: Record<string, string> = JSON.parse(fs.readFileSync(`${dir}/elves/modules.json`, 'utf8'));
+const files = [...fs.readdirSync(dir).filter(f => /Registry\.ts$/.test(f)),
+  ...Object.values(elfModules).map(file => `elves/${file}`)];
 
 /**
  * 只掃描 export function/const handle*SoulMark 的函式本體，並追蹤由

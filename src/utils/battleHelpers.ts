@@ -1,5 +1,7 @@
 // src/utils/battleHelpers.ts
 import { Elf, Skill, BattleItem } from "../types";
+import { effectSourceViews } from '../battle/effectSources';
+import { skillSlot } from '../battle/skillSlot';
 import { isStoneThrower, isSkillStone, stoneBasePp, hasStoneThrowerMythic } from "../data/skillStones";
 import { StatusRegistry } from "../effects/statusRegistry";
 import { STATUS_NAMES_MAP } from '../effects/statusAliases';
@@ -159,7 +161,7 @@ const textPpExempt = (elf: Elf, text?: string): boolean => {
   return false;
 };
 
-export const isZeroPpExempt = (elf: Elf, sk: Skill, opp?: Elf | null): boolean => {
+const nativeZeroPpExempt = (elf: Elf, sk: Skill, opp?: Elf | null): boolean => {
   if (!elf || !sk || !elf.name) return false;
 
   // 1. 專屬機制
@@ -209,7 +211,7 @@ export const isZeroPpExempt = (elf: Elf, sk: Skill, opp?: Elf | null): boolean =
 };
 
 /** 使用技能時不消耗 PP */
-export const isPpCostFree = (elf: Elf, sk: Skill, opp?: Elf | null): boolean => {
+const nativePpCostFree = (elf: Elf, sk: Skill, opp?: Elf | null): boolean => {
   if (!elf || !sk) return false;
   if (hasStoneThrowerMythic(elf)) return true;
   if (elf.name === "變革·馬爾修斯") return true;               // 充能系統另計
@@ -220,6 +222,14 @@ export const isPpCostFree = (elf: Elf, sk: Skill, opp?: Elf | null): boolean => 
   if (sk.description && /不消耗\s*(技能)?\s*PP/.test(sk.description) && textPpExempt(elf, sk.description.replace(/不消耗\s*(技能)?\s*PP/g, "不受PP"))) return true;
   return false;
 };
+
+/** 選招及扣PP都保留自身來源，並納入幻化取得的效果定義。 */
+export const isZeroPpExempt = (elf: Elf, sk: Skill, opp?: Elf | null): boolean =>
+  !!elf && !!sk && effectSourceViews(elf).some((source, i) => nativeZeroPpExempt(source,
+    i ? { ...(elf.illusion?.target.skills[skillSlot(elf, sk)] || sk), pp: sk.pp } : sk, opp));
+export const isPpCostFree = (elf: Elf, sk: Skill, opp?: Elf | null): boolean =>
+  !!elf && !!sk && effectSourceViews(elf).some((source, i) => nativePpCostFree(source,
+    i ? { ...(elf.illusion?.target.skills[skillSlot(elf, sk)] || sk), pp: sk.pp } : sk, opp));
 
 export const BATTLE_ITEMS: BattleItem[] = [
   { id: 'hp_330', name: '全滿體力藥劑', description: '回復 330 點體力。不受減療影響。', type: 'hp', value: 330 },

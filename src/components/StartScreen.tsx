@@ -6,8 +6,8 @@ import { createPortal } from 'react-dom';
 import { Elf, BattleMode, Inscription } from "../types";
 import { SEER_TYPES, calculateElfStats, getDefaultEvs, getAttributeBadgeColor } from "../utils/statCalculator";
 import { ElfAvatar, TypeIcon } from "./SeerImages";
-import { isStoneThrower } from "../data/skillStones";
-import { formatEffectText } from "../utils/descFormat";
+import { isStoneThrower, validateSkillStoneLoadout, skillConfigurationKey } from "../data/skillStones";
+import { formatEffectText, plainDescription } from "../utils/descFormat";
 import { getElfDisplayRank as getElfDestinyRank } from "../utils/elfDisplayRank";
 import { InfoHint } from "./InfoHint";
 import { getNatureFromModifiers, getDefaultNatureModifiers } from "../utils/seerNatures";
@@ -26,6 +26,7 @@ const ResistancePanel = lazy(() => import("./ResistancePanel"));
 const InscriptionModal = lazy(() => import("./InscriptionModal").then(m => ({ default: m.InscriptionModal })));
 const LazyBlockProgramView = lazy(() => import("./LazyBlockProgramView"));
 const EffectLibraryModal = lazy(() => import("./EffectLibraryModal").then(m => ({ default: m.EffectLibraryModal })));
+const SkillStonePicker = lazy(() => import('./SkillStonePicker'));
 const detailLoading = <p role="status" className="p-3 text-sm text-slate-400">載入效果資料…</p>;
 const detailPanelLoading = <p role="status" className="ios-card min-h-24 p-4 text-sm text-slate-400">載入詳細面板…</p>;
 
@@ -409,6 +410,7 @@ export default function StartScreen({
             || JSON.stringify(latest.guildBonuses) !== JSON.stringify(inst.guildBonuses);
           const poolChanged = JSON.stringify(latest.skillPool) !== JSON.stringify(inst.skillPool);
           const soulMarkChanged = JSON.stringify(latest.soulMark) !== JSON.stringify(inst.soulMark);
+          const traitsChanged = JSON.stringify(latest.alienTraits) !== JSON.stringify(inst.alienTraits);
           const descChanged = latest.description !== inst.description;
           const nameChanged = latest.name !== inst.name;
           const typeChanged = latest.type !== inst.type;
@@ -419,7 +421,7 @@ export default function StartScreen({
           const skillsChanged = JSON.stringify(latest.skills) !== JSON.stringify(equippedSkills);
           const missingSkills = !inst.skills || inst.skills.length === 0;
 
-          if (inscChanged || statsChanged || trainingChanged || poolChanged || soulMarkChanged || descChanged || nameChanged || typeChanged || skillsChanged || missingSkills) {
+          if (inscChanged || statsChanged || trainingChanged || poolChanged || soulMarkChanged || traitsChanged || descChanged || nameChanged || typeChanged || skillsChanged || missingSkills) {
             changed = true;
             return {
               ...inst,
@@ -427,6 +429,7 @@ export default function StartScreen({
               type: latest.type,
               description: latest.description,
               soulMark: latest.soulMark,
+              alienTraits: latest.alienTraits,
               inscriptions: latest.inscriptions,
               evs: latest.evs,
               natureModifiers: latest.natureModifiers,
@@ -1000,6 +1003,8 @@ export default function StartScreen({
 
   const handleStart = () => {
     if (p1Team.length === 0 || p2Team.length === 0 || !p1StarterId || !p2StarterId) return;
+    try { for (const elf of [...p1Team, ...p2Team]) validateSkillStoneLoadout(elf, elf.skills); }
+    catch (error) { alert(`隊伍技能石配置不合法：${(error as Error).message}。請先更換多餘技能石；原背包不會被刪除。`); return; }
     if (battleFormat === "normal_6v6" || battleFormat === "solo_1v1") {
       let p1Active = p1Team.map(e => {
         const bonusElf = { ...e, hasAnnualBonus: p1AnnualBonus };
@@ -1117,6 +1122,8 @@ export default function StartScreen({
   };
 
   const handleLaunchPeakBattle = () => {
+    try { for (const elf of [...p1Team, ...p2Team]) validateSkillStoneLoadout(elf, elf.skills); }
+    catch (error) { alert(`隊伍技能石配置不合法：${(error as Error).message}。請先更換多餘技能石；原背包不會被刪除。`); return; }
     const finalP1Active = p1Team.filter(e => p1PickedIds.includes(e.battleId)).map(e => {
       const bonusElf = { ...e, isExtra: false, hasAnnualBonus: p1AnnualBonus };
       bonusElf.calculatedStats = calculateElfStats(
@@ -1184,7 +1191,7 @@ export default function StartScreen({
           textToCopy += `【專屬刻印 / 特質】 - ${showDetailModal.alienTraits.exclusiveTrait.name}\n${showDetailModal.alienTraits.exclusiveTrait.description}\n\n`;
         }
         for (const trait of showDetailModal.alienTraits.exclusiveTraits || []) {
-          textToCopy += `【專屬刻印 / 特質】 - ${trait.name}\n${trait.description}\n\n`;
+          textToCopy += `【專屬刻印 / 特質】 - ${trait.name}\n${plainDescription(trait.description)}\n\n`;
         }
         if (showDetailModal.alienTraits.alienTrait) {
           textToCopy += `【異能特質】 - ${showDetailModal.alienTraits.alienTrait.name}\n${showDetailModal.alienTraits.alienTrait.description}\n\n`;
@@ -1934,7 +1941,7 @@ export default function StartScreen({
                       )}
                     </div>
                     <p className="mt-1 text-[11px] text-slate-400 leading-relaxed select-none line-clamp-3">
-                      {(elf.soulMark.description || "").split("【命運之輪")[0].trim()}
+                      {plainDescription(elf.soulMark.description).split("【命運之輪")[0].trim()}
                     </p>
                   </div>
                   {elf.alienTraits && (
@@ -1942,19 +1949,19 @@ export default function StartScreen({
                       {elf.alienTraits.gen2Trait && (
                         <p className="text-[10px] text-amber-400/80 leading-normal select-none line-clamp-2">
                           <span className="font-bold text-amber-300">🌟 {elf.alienTraits.gen2Trait.name}：</span>
-                          {elf.alienTraits.gen2Trait.description}
+                          {plainDescription(elf.alienTraits.gen2Trait.description)}
                         </p>
                       )}
                       {elf.alienTraits.exclusiveTrait && (
                         <p className="text-[10px] text-red-400/80 leading-normal select-none line-clamp-2">
                           <span className="font-bold text-red-300">🔥 {elf.alienTraits.exclusiveTrait.name}：</span>
-                          {elf.alienTraits.exclusiveTrait.description}
+                          {plainDescription(elf.alienTraits.exclusiveTrait.description)}
                         </p>
                       )}
                       {(elf.alienTraits.exclusiveTraits || []).map((trait) => (
                         <p key={trait.name} className="text-[10px] text-red-400/80 leading-normal select-none line-clamp-2">
                           <span className="font-bold text-red-300">🔥 {trait.name}：</span>
-                          {trait.description}
+                          {plainDescription(trait.description)}
                         </p>
                       ))}
                       {elf.alienTraits.generalTrait && (
@@ -2398,7 +2405,7 @@ export default function StartScreen({
                     </div>
                   ) : (
                   <p className="text-left text-slate-200 text-[14px] leading-[1.75] font-sans antialiased whitespace-pre-wrap selection:bg-violet-500/40 tracking-wide relative z-10">
-                    {showDetailModal.soulMark?.description?.replace(/([；;])\s*/g, '$1\n')}
+                    {formatEffectText(showDetailModal.soulMark?.description)}
                   </p>
                   )}
                 </div>
@@ -2412,7 +2419,7 @@ export default function StartScreen({
                         <h4 className="text-xs font-bold text-amber-300">二代異能特質 / {showDetailModal.alienTraits.gen2Trait.name}</h4>
                       </div>
                       <EffectBlockToggle trait={showDetailModal.alienTraits.gen2Trait}><p className="text-amber-100/90 text-[14px] leading-[1.75] font-sans whitespace-pre-wrap">
-                        {showDetailModal.alienTraits.gen2Trait.description.replace(/([；;])\s*/g, '$1\n')}
+                        {formatEffectText(showDetailModal.alienTraits.gen2Trait.description)}
                       </p></EffectBlockToggle>
                     </div>
                   )}
@@ -2423,7 +2430,7 @@ export default function StartScreen({
                         <h4 className="text-xs font-bold text-red-300">專屬異能特質 / {showDetailModal.alienTraits.exclusiveTrait.name}</h4>
                       </div>
                       <EffectBlockToggle trait={showDetailModal.alienTraits.exclusiveTrait}><p className="text-red-100/90 text-[14px] leading-[1.75] font-sans whitespace-pre-wrap">
-                        {showDetailModal.alienTraits.exclusiveTrait.description.replace(/([；;])\s*/g, '$1\n')}
+                        {formatEffectText(showDetailModal.alienTraits.exclusiveTrait.description)}
                       </p></EffectBlockToggle>
                     </div>
                   )}
@@ -2434,7 +2441,7 @@ export default function StartScreen({
                         <h4 className="text-xs font-bold text-red-300">專屬異能特質 / {trait.name}</h4>
                       </div>
                       <EffectBlockToggle trait={trait}><p className="text-red-100/90 text-[14px] leading-[1.75] font-sans whitespace-pre-wrap">
-                        {trait.description.replace(/([；;])\s*/g, '$1\n')}
+                        {formatEffectText(trait.description)}
                       </p></EffectBlockToggle>
                     </div>
                   ))}
@@ -2475,7 +2482,7 @@ export default function StartScreen({
                       </div>
                       {showDetailModal.alienTraits?.alienTrait && (
                         <EffectBlockToggle trait={showDetailModal.alienTraits.alienTrait}><p className="text-blue-100/90 text-[14px] leading-[1.75] font-sans whitespace-pre-wrap mt-2 pt-2 border-t border-blue-500/20">
-                          {showDetailModal.alienTraits.alienTrait.description.replace(/([；;])\s*/g, '$1\n')}
+                          {formatEffectText(showDetailModal.alienTraits.alienTrait.description)}
                         </p></EffectBlockToggle>
                       )}
                     </div>
@@ -2512,7 +2519,7 @@ export default function StartScreen({
                         </div>
                         {showDetailModal.alienTraits?.generalTrait && (
                           <EffectBlockToggle trait={showDetailModal.alienTraits.generalTrait}><p className="text-blue-100/90 text-[14px] leading-[1.75] font-sans whitespace-pre-wrap mt-2 pt-2 border-t border-blue-500/20">
-                            {showDetailModal.alienTraits.generalTrait.description.replace(/([；;])\s*/g, '$1\n')}
+                            {formatEffectText(showDetailModal.alienTraits.generalTrait.description)}
                           </p></EffectBlockToggle>
                         )}
                       </div>
@@ -2523,7 +2530,7 @@ export default function StartScreen({
                           <h4 className="text-[15px] font-semibold text-blue-200">通用特性 / {showDetailModal.alienTraits.generalTrait.name} ({showDetailModal.alienTraits.generalTrait.description})</h4>
                         </div>
                         <EffectBlockToggle trait={showDetailModal.alienTraits.generalTrait}><p className="text-blue-100/90 text-[14px] leading-[1.75] font-sans whitespace-pre-wrap">
-                          {showDetailModal.alienTraits.generalTrait.description.replace(/([；;])\s*/g, '$1\n')}
+                          {formatEffectText(showDetailModal.alienTraits.generalTrait.description)}
                         </p></EffectBlockToggle>
                       </div>
                     )}
@@ -2663,7 +2670,7 @@ export default function StartScreen({
                               ...(defMatch?.skills || [])
                             ];
                             const skillMap = new Map<string, any>();
-                            allKnownSkills.forEach(sk => { if (sk && sk.name) skillMap.set(sk.name, sk); });
+                            allKnownSkills.forEach(sk => { if (sk && sk.name) skillMap.set(skillConfigurationKey(sk), sk); });
                             const availablePool = Array.from(skillMap.values()).filter(sk =>
                               isFifthSlot ? sk.isFifthSkill : !sk.isFifthSkill
                             );
@@ -2702,15 +2709,20 @@ export default function StartScreen({
                                 <p className="text-[13px] text-slate-400 mb-3">{isFifthSlot ? "第五技能僅能與第五技能互換" : "點選即替換；已裝備的技能會互換位置"}</p>
 
                                 <div className="overflow-y-auto space-y-2.5 pr-1 flex-1 min-h-0">
+                                  {!isFifthSlot && <Suspense fallback={detailLoading}><SkillStonePicker elf={showDetailModal} slot={replacingSlotIndex} onEquip={nextElf => {
+                                    onUpdateElf(nextElf); setShowDetailModal(nextElf);
+                                    const syncTeam = (team: TeamInstance[]) => team.map(inst => inst.id === nextElf.id ? { ...inst, skills: nextElf.skills, skillPool: nextElf.skillPool } : inst);
+                                    setP1Team(syncTeam); setP2Team(syncTeam); setReplacingSlotIndex(null);
+                                  }} /></Suspense>}
                                   {availablePool.length === 0 ? (
                                     <div className="text-center py-8 text-slate-500 text-xs">
                                       當前技能池中沒有可用的{isFifthSlot ? "其他第五技能" : "普通技能"}。
                                     </div>
                                   ) : (
                                     availablePool.map((sk, skIdx) => {
-                                      const equippedIdx = showDetailModal.skills.findIndex((s, idx) => s?.name === sk?.name && idx !== replacingSlotIndex);
+                                      const equippedIdx = showDetailModal.skills.findIndex((s, idx) => s && skillConfigurationKey(s) === skillConfigurationKey(sk) && idx !== replacingSlotIndex);
                                       const isEquipped = equippedIdx !== -1;
-                                      const isCurrent = showDetailModal.skills[replacingSlotIndex]?.name === sk?.name;
+                                      const isCurrent = !!showDetailModal.skills[replacingSlotIndex] && skillConfigurationKey(showDetailModal.skills[replacingSlotIndex]) === skillConfigurationKey(sk);
 
                                       return (
                                         <div
@@ -2724,6 +2736,8 @@ export default function StartScreen({
                                             } else {
                                               nextSkills[replacingSlotIndex] = { ...sk };
                                             }
+                                            try { validateSkillStoneLoadout(showDetailModal, nextSkills); }
+                                            catch (e) { alert((e as Error).message); return; }
                                             const nextElf = { ...showDetailModal, skills: nextSkills };
                                             onUpdateElf?.(nextElf);
                                             setShowDetailModal(nextElf);

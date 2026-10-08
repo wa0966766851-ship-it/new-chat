@@ -1,0 +1,1241 @@
+{
+  "schemaVersion": 1,
+  "note": "僅人工對應已跑過的部分情境；不代表全句驗收。依賴或測試改動後須重測並人工核對，不可直接更新hash冒充通過。2026-10-08幻化批次：13筆原斷言逐項核對，對應44個新精靈單元、25個哈莫蝕言單元及43個正式戰鬥情境重跑通過後，更新4個共同依賴指紋；仍為部分證據。2026-10-09：同批原斷言再次核對，25／43／44情境通過，補登取得效果上下文與積木執行依賴；文字指紋只統一CRLF/LF，仍不升級完整驗收。",
+  "evidence": [
+    {
+      "id": "hamo-low-cap",
+      "elfId": "5035",
+      "entry": "鱗",
+      "fragment": "改為受到技能傷害無法超過250",
+      "testFile": "tests/hamoShiyan.semantic.test.ts",
+      "anchor": "哈莫低體力改限技能傷害，綠鱗重置不是恢復",
+      "scenario": "P1／P2低體力且低於對手，技能與非技能傷害分流",
+      "expected": "技能傷害上限250，不把固定／百分比傷害改成同一上限",
+      "remaining": "所有異常分類與每一龍鱗組合的交叉邊界",
+      "lastPassed": "2026-10-09：本輪25個單元情境通過；註冊接點與原斷言人工核對，仍僅部分證據",
+      "testSha256": "fb82cb387bb74d125f755c11f32a59e04e42c41058d7605e57f73e0414227495",
+      "inputs": [
+        {
+          "path": "src/effects/elves/hamo/registry.ts",
+          "sha256": "afdf6c3424294d5625593aec0a74c5d5b808a56673a63cd9084cf6720f35ece7"
+        },
+        {
+          "path": "src/effects/elves/wuxu-shiyan/registry.ts",
+          "sha256": "76a83023d60126ff349b6dce521b52582326f99641222041005e51f31b77d789"
+        },
+        {
+          "path": "src/effects/elves/mogos/registry.ts",
+          "sha256": "8eb515d98d344aca50765dda0bf53d1c7c3506ea4726735ff83b303eac3b9353"
+        },
+        {
+          "path": "src/effects/elves/astral-twins/registry.ts",
+          "sha256": "05738303d97d453583aa7cd54a4aa3ee9eb5d8bc00aaabcf774f45b47cb67713"
+        },
+        {
+          "path": "src/effects/newElfOperations.ts",
+          "sha256": "5866b40dd474ebcd9e0393e945d18ef6a7b8212d4c3bb5c6b88a2c1d102048e0"
+        },
+        {
+          "path": "src/effects/newElfLifecycle.ts",
+          "sha256": "340a15c08d6ea122d7d8d041c2e44f4e4109de4f7ada7a6f9134e00d83ea1711"
+        },
+        {
+          "path": "src/effects/battleEventRegistry.ts",
+          "sha256": "f49de14c2102ca2b0c4dd5e45fe2b7e6bc928c3ae77c99919c94ce2c02597415"
+        },
+        {
+          "path": "src/blocks/registry.ts",
+          "sha256": "c6a4b4faa6dd69675dcc803a7e4cc9d2eef4dc382ab4f324420a58c9aa50e83c"
+        },
+        {
+          "path": "src/battle/contextBuilders.ts",
+          "sha256": "652e29fda4615a5f1f3abc06849fc8f5cd70e294b5c9baf6561103f2e3ebd95f"
+        },
+        {
+          "path": "src/battle/itemInventory.ts",
+          "sha256": "5922033bee0425fc5c073e2a05267b46e18eead81ad5d33dcd67fceb01ea7b4b"
+        },
+        {
+          "path": "src/components/BattleScreen.tsx",
+          "sha256": "0c620c39893b46ae69589cf47b62247ccaff28b746e8a63e6ccdf93fb7a0d50d"
+        },
+        {
+          "path": "src/components/BattleManager.ts",
+          "sha256": "d5878b3516ae26b3baa861d96b5e18d1dd2ddd4ad4aa2865494bc9131c2dc774"
+        },
+        {
+          "path": "src/battle/settlementReceipt.ts",
+          "sha256": "1090fde5e6cf03def794e59d806a70677f2f0c699f2055551c36b7d354dd0c21"
+        },
+        {
+          "path": "src/utils/damageCalculator.ts",
+          "sha256": "3f251260e9ad7ced3ef1389f7a8c0f7693540f688908898fd0ec101e84d1cff9"
+        },
+        {
+          "path": "src/data/hamo.ts",
+          "sha256": "f90e9c2661989c4b9442e005d8e366ac1053a005ebbd4b4680a13d96177a2dd0"
+        },
+        {
+          "path": "src/effects/elves/index.ts",
+          "sha256": "2fd3d522d71b293e0e1fe94f61c574fda73ca04144e1d3856a81ddb87a34505b"
+        },
+        {
+          "path": "src/effects/elves/modules.json",
+          "sha256": "53d9c85a4387c9c64692ba6151867957f8c063ae56d5454da5d1275407a49e3a"
+        },
+        {
+          "path": "src/effects/elves/staged-arena/index.ts",
+          "sha256": "3057316785d31e2c997f96242e254558da502e44c26bf896f0a8538a06eee20e"
+        },
+        {
+          "path": "src/battle/acquiredEffectContext.ts",
+          "sha256": "a166d121a11b0458ec41841a59802cfc6a68236ad5029a562d55d4bbfeb865b5"
+        },
+        {
+          "path": "src/blocks/runtime.ts",
+          "sha256": "d08f3b1b64fa9285f375d5c54a3c359a013182c33d187a0a9381706c773f2ba3"
+        }
+      ]
+    },
+    {
+      "id": "hamo-green-reset",
+      "elfId": "5035",
+      "entry": "鱗",
+      "fragment": "持有精靈PP值被清除時重置自身體力、PP值為100%",
+      "testFile": "tests/hamoShiyanIntegration.semantic.test.ts",
+      "anchor": "原本耗盡且未出招槽也重置回滿",
+      "scenario": "正式P1／P2戰鬥持有綠鱗，敵方先手清所有PP，哈莫後手出招",
+      "expected": "直接重置HP及所有PP；本槽正常出招再扣1、未用槽回滿；回合末消失削減敵方HP上限20%",
+      "remaining": "各種清除來源、免消失期限與重複觸發",
+      "lastPassed": "2026-10-09：本輪43個正式情境通過；註冊接點與原斷言人工核對，仍僅部分證據",
+      "testSha256": "c7cc2bc3305a78db942a8e20db62cb64cb9991f4b168f644f3d24d24b6bc58b7",
+      "inputs": [
+        {
+          "path": "src/effects/elves/hamo/registry.ts",
+          "sha256": "afdf6c3424294d5625593aec0a74c5d5b808a56673a63cd9084cf6720f35ece7"
+        },
+        {
+          "path": "src/effects/elves/wuxu-shiyan/registry.ts",
+          "sha256": "76a83023d60126ff349b6dce521b52582326f99641222041005e51f31b77d789"
+        },
+        {
+          "path": "src/effects/elves/mogos/registry.ts",
+          "sha256": "8eb515d98d344aca50765dda0bf53d1c7c3506ea4726735ff83b303eac3b9353"
+        },
+        {
+          "path": "src/effects/elves/astral-twins/registry.ts",
+          "sha256": "05738303d97d453583aa7cd54a4aa3ee9eb5d8bc00aaabcf774f45b47cb67713"
+        },
+        {
+          "path": "src/effects/newElfOperations.ts",
+          "sha256": "5866b40dd474ebcd9e0393e945d18ef6a7b8212d4c3bb5c6b88a2c1d102048e0"
+        },
+        {
+          "path": "src/effects/newElfLifecycle.ts",
+          "sha256": "340a15c08d6ea122d7d8d041c2e44f4e4109de4f7ada7a6f9134e00d83ea1711"
+        },
+        {
+          "path": "src/effects/battleEventRegistry.ts",
+          "sha256": "f49de14c2102ca2b0c4dd5e45fe2b7e6bc928c3ae77c99919c94ce2c02597415"
+        },
+        {
+          "path": "src/blocks/registry.ts",
+          "sha256": "c6a4b4faa6dd69675dcc803a7e4cc9d2eef4dc382ab4f324420a58c9aa50e83c"
+        },
+        {
+          "path": "src/battle/contextBuilders.ts",
+          "sha256": "652e29fda4615a5f1f3abc06849fc8f5cd70e294b5c9baf6561103f2e3ebd95f"
+        },
+        {
+          "path": "src/battle/itemInventory.ts",
+          "sha256": "5922033bee0425fc5c073e2a05267b46e18eead81ad5d33dcd67fceb01ea7b4b"
+        },
+        {
+          "path": "src/components/BattleScreen.tsx",
+          "sha256": "0c620c39893b46ae69589cf47b62247ccaff28b746e8a63e6ccdf93fb7a0d50d"
+        },
+        {
+          "path": "src/components/BattleManager.ts",
+          "sha256": "d5878b3516ae26b3baa861d96b5e18d1dd2ddd4ad4aa2865494bc9131c2dc774"
+        },
+        {
+          "path": "src/battle/settlementReceipt.ts",
+          "sha256": "1090fde5e6cf03def794e59d806a70677f2f0c699f2055551c36b7d354dd0c21"
+        },
+        {
+          "path": "src/utils/damageCalculator.ts",
+          "sha256": "3f251260e9ad7ced3ef1389f7a8c0f7693540f688908898fd0ec101e84d1cff9"
+        },
+        {
+          "path": "src/data/hamo.ts",
+          "sha256": "f90e9c2661989c4b9442e005d8e366ac1053a005ebbd4b4680a13d96177a2dd0"
+        },
+        {
+          "path": "src/effects/elves/index.ts",
+          "sha256": "2fd3d522d71b293e0e1fe94f61c574fda73ca04144e1d3856a81ddb87a34505b"
+        },
+        {
+          "path": "src/effects/elves/modules.json",
+          "sha256": "53d9c85a4387c9c64692ba6151867957f8c063ae56d5454da5d1275407a49e3a"
+        },
+        {
+          "path": "src/effects/elves/staged-arena/index.ts",
+          "sha256": "3057316785d31e2c997f96242e254558da502e44c26bf896f0a8538a06eee20e"
+        },
+        {
+          "path": "src/battle/acquiredEffectContext.ts",
+          "sha256": "a166d121a11b0458ec41841a59802cfc6a68236ad5029a562d55d4bbfeb865b5"
+        },
+        {
+          "path": "src/blocks/runtime.ts",
+          "sha256": "d08f3b1b64fa9285f375d5c54a3c359a013182c33d187a0a9381706c773f2ba3"
+        }
+      ]
+    },
+    {
+      "id": "hamo-recovery",
+      "elfId": "5035",
+      "entry": "鱗",
+      "fragment": "自身回合結束時恢復自身最大體力15%",
+      "testFile": "tests/hamoShiyan.semantic.test.ts",
+      "anchor": "哈莫回復每10%逐次乘1.1，每次重新取體力",
+      "scenario": "損失50%體力，逐次乘1.1並獨立重新讀取體力",
+      "expected": "恢復量為最大體力15%×1.1的5次方，依規則取整",
+      "remaining": "每一損血邊界、封恢復、跨回合與其他增幅疊加",
+      "lastPassed": "2026-10-09：本輪25個單元情境通過；註冊接點與原斷言人工核對，仍僅部分證據",
+      "testSha256": "fb82cb387bb74d125f755c11f32a59e04e42c41058d7605e57f73e0414227495",
+      "inputs": [
+        {
+          "path": "src/effects/elves/hamo/registry.ts",
+          "sha256": "afdf6c3424294d5625593aec0a74c5d5b808a56673a63cd9084cf6720f35ece7"
+        },
+        {
+          "path": "src/effects/elves/wuxu-shiyan/registry.ts",
+          "sha256": "76a83023d60126ff349b6dce521b52582326f99641222041005e51f31b77d789"
+        },
+        {
+          "path": "src/effects/elves/mogos/registry.ts",
+          "sha256": "8eb515d98d344aca50765dda0bf53d1c7c3506ea4726735ff83b303eac3b9353"
+        },
+        {
+          "path": "src/effects/elves/astral-twins/registry.ts",
+          "sha256": "05738303d97d453583aa7cd54a4aa3ee9eb5d8bc00aaabcf774f45b47cb67713"
+        },
+        {
+          "path": "src/effects/newElfOperations.ts",
+          "sha256": "5866b40dd474ebcd9e0393e945d18ef6a7b8212d4c3bb5c6b88a2c1d102048e0"
+        },
+        {
+          "path": "src/effects/newElfLifecycle.ts",
+          "sha256": "340a15c08d6ea122d7d8d041c2e44f4e4109de4f7ada7a6f9134e00d83ea1711"
+        },
+        {
+          "path": "src/effects/battleEventRegistry.ts",
+          "sha256": "f49de14c2102ca2b0c4dd5e45fe2b7e6bc928c3ae77c99919c94ce2c02597415"
+        },
+        {
+          "path": "src/blocks/registry.ts",
+          "sha256": "c6a4b4faa6dd69675dcc803a7e4cc9d2eef4dc382ab4f324420a58c9aa50e83c"
+        },
+        {
+          "path": "src/battle/contextBuilders.ts",
+          "sha256": "652e29fda4615a5f1f3abc06849fc8f5cd70e294b5c9baf6561103f2e3ebd95f"
+        },
+        {
+          "path": "src/battle/itemInventory.ts",
+          "sha256": "5922033bee0425fc5c073e2a05267b46e18eead81ad5d33dcd67fceb01ea7b4b"
+        },
+        {
+          "path": "src/components/BattleScreen.tsx",
+          "sha256": "0c620c39893b46ae69589cf47b62247ccaff28b746e8a63e6ccdf93fb7a0d50d"
+        },
+        {
+          "path": "src/components/BattleManager.ts",
+          "sha256": "d5878b3516ae26b3baa861d96b5e18d1dd2ddd4ad4aa2865494bc9131c2dc774"
+        },
+        {
+          "path": "src/battle/settlementReceipt.ts",
+          "sha256": "1090fde5e6cf03def794e59d806a70677f2f0c699f2055551c36b7d354dd0c21"
+        },
+        {
+          "path": "src/utils/damageCalculator.ts",
+          "sha256": "3f251260e9ad7ced3ef1389f7a8c0f7693540f688908898fd0ec101e84d1cff9"
+        },
+        {
+          "path": "src/data/hamo.ts",
+          "sha256": "f90e9c2661989c4b9442e005d8e366ac1053a005ebbd4b4680a13d96177a2dd0"
+        },
+        {
+          "path": "src/effects/elves/index.ts",
+          "sha256": "2fd3d522d71b293e0e1fe94f61c574fda73ca04144e1d3856a81ddb87a34505b"
+        },
+        {
+          "path": "src/effects/elves/modules.json",
+          "sha256": "53d9c85a4387c9c64692ba6151867957f8c063ae56d5454da5d1275407a49e3a"
+        },
+        {
+          "path": "src/effects/elves/staged-arena/index.ts",
+          "sha256": "3057316785d31e2c997f96242e254558da502e44c26bf896f0a8538a06eee20e"
+        },
+        {
+          "path": "src/battle/acquiredEffectContext.ts",
+          "sha256": "a166d121a11b0458ec41841a59802cfc6a68236ad5029a562d55d4bbfeb865b5"
+        },
+        {
+          "path": "src/blocks/runtime.ts",
+          "sha256": "d08f3b1b64fa9285f375d5c54a3c359a013182c33d187a0a9381706c773f2ba3"
+        }
+      ]
+    },
+    {
+      "id": "hamo-root-percent",
+      "elfId": "5035",
+      "entry": "纏根",
+      "fragment": "5回合內自身使用技能時恢復自身最大體力1/1並造成等量百分比傷害",
+      "testFile": "tests/hamoShiyanIntegration.semantic.test.ts",
+      "anchor": "纏根按請求回滿量造成等量百分比傷害",
+      "scenario": "正式戰鬥P1／P2使用纏根，目標存活至回合末",
+      "expected": "按請求回滿量造成百分比傷害，感染失敗分支可產生感染",
+      "remaining": "完整5回合期限、所有減療與傷害防護組合",
+      "lastPassed": "2026-10-09：本輪43個正式情境通過；註冊接點與原斷言人工核對，仍僅部分證據",
+      "testSha256": "c7cc2bc3305a78db942a8e20db62cb64cb9991f4b168f644f3d24d24b6bc58b7",
+      "inputs": [
+        {
+          "path": "src/effects/elves/hamo/registry.ts",
+          "sha256": "afdf6c3424294d5625593aec0a74c5d5b808a56673a63cd9084cf6720f35ece7"
+        },
+        {
+          "path": "src/effects/elves/wuxu-shiyan/registry.ts",
+          "sha256": "76a83023d60126ff349b6dce521b52582326f99641222041005e51f31b77d789"
+        },
+        {
+          "path": "src/effects/elves/mogos/registry.ts",
+          "sha256": "8eb515d98d344aca50765dda0bf53d1c7c3506ea4726735ff83b303eac3b9353"
+        },
+        {
+          "path": "src/effects/elves/astral-twins/registry.ts",
+          "sha256": "05738303d97d453583aa7cd54a4aa3ee9eb5d8bc00aaabcf774f45b47cb67713"
+        },
+        {
+          "path": "src/effects/newElfOperations.ts",
+          "sha256": "5866b40dd474ebcd9e0393e945d18ef6a7b8212d4c3bb5c6b88a2c1d102048e0"
+        },
+        {
+          "path": "src/effects/newElfLifecycle.ts",
+          "sha256": "340a15c08d6ea122d7d8d041c2e44f4e4109de4f7ada7a6f9134e00d83ea1711"
+        },
+        {
+          "path": "src/effects/battleEventRegistry.ts",
+          "sha256": "f49de14c2102ca2b0c4dd5e45fe2b7e6bc928c3ae77c99919c94ce2c02597415"
+        },
+        {
+          "path": "src/blocks/registry.ts",
+          "sha256": "c6a4b4faa6dd69675dcc803a7e4cc9d2eef4dc382ab4f324420a58c9aa50e83c"
+        },
+        {
+          "path": "src/battle/contextBuilders.ts",
+          "sha256": "652e29fda4615a5f1f3abc06849fc8f5cd70e294b5c9baf6561103f2e3ebd95f"
+        },
+        {
+          "path": "src/battle/itemInventory.ts",
+          "sha256": "5922033bee0425fc5c073e2a05267b46e18eead81ad5d33dcd67fceb01ea7b4b"
+        },
+        {
+          "path": "src/components/BattleScreen.tsx",
+          "sha256": "0c620c39893b46ae69589cf47b62247ccaff28b746e8a63e6ccdf93fb7a0d50d"
+        },
+        {
+          "path": "src/components/BattleManager.ts",
+          "sha256": "d5878b3516ae26b3baa861d96b5e18d1dd2ddd4ad4aa2865494bc9131c2dc774"
+        },
+        {
+          "path": "src/battle/settlementReceipt.ts",
+          "sha256": "1090fde5e6cf03def794e59d806a70677f2f0c699f2055551c36b7d354dd0c21"
+        },
+        {
+          "path": "src/utils/damageCalculator.ts",
+          "sha256": "3f251260e9ad7ced3ef1389f7a8c0f7693540f688908898fd0ec101e84d1cff9"
+        },
+        {
+          "path": "src/data/hamo.ts",
+          "sha256": "f90e9c2661989c4b9442e005d8e366ac1053a005ebbd4b4680a13d96177a2dd0"
+        },
+        {
+          "path": "src/effects/elves/index.ts",
+          "sha256": "2fd3d522d71b293e0e1fe94f61c574fda73ca04144e1d3856a81ddb87a34505b"
+        },
+        {
+          "path": "src/effects/elves/modules.json",
+          "sha256": "53d9c85a4387c9c64692ba6151867957f8c063ae56d5454da5d1275407a49e3a"
+        },
+        {
+          "path": "src/effects/elves/staged-arena/index.ts",
+          "sha256": "3057316785d31e2c997f96242e254558da502e44c26bf896f0a8538a06eee20e"
+        },
+        {
+          "path": "src/battle/acquiredEffectContext.ts",
+          "sha256": "a166d121a11b0458ec41841a59802cfc6a68236ad5029a562d55d4bbfeb865b5"
+        },
+        {
+          "path": "src/blocks/runtime.ts",
+          "sha256": "d08f3b1b64fa9285f375d5c54a3c359a013182c33d187a0a9381706c773f2ba3"
+        }
+      ]
+    },
+    {
+      "id": "hamo-root-pp",
+      "elfId": "5035",
+      "entry": "纏根",
+      "fragment": "5回合內對手PP值消耗量提升20倍",
+      "testFile": "tests/hamoShiyanIntegration.semantic.test.ts",
+      "anchor": "正常出招消耗20PP，回合末再被吸取1PP",
+      "scenario": "感染禁止出招／可正常出招兩種P1／P2情境",
+      "expected": "不能出招不虛扣20PP；正常出招扣20，回合末另吸1",
+      "remaining": "完整5回合期限、PP不足及其他PP倍率疊加",
+      "lastPassed": "2026-10-09：本輪43個正式情境通過；註冊接點與原斷言人工核對，仍僅部分證據",
+      "testSha256": "c7cc2bc3305a78db942a8e20db62cb64cb9991f4b168f644f3d24d24b6bc58b7",
+      "inputs": [
+        {
+          "path": "src/effects/elves/hamo/registry.ts",
+          "sha256": "afdf6c3424294d5625593aec0a74c5d5b808a56673a63cd9084cf6720f35ece7"
+        },
+        {
+          "path": "src/effects/elves/wuxu-shiyan/registry.ts",
+          "sha256": "76a83023d60126ff349b6dce521b52582326f99641222041005e51f31b77d789"
+        },
+        {
+          "path": "src/effects/elves/mogos/registry.ts",
+          "sha256": "8eb515d98d344aca50765dda0bf53d1c7c3506ea4726735ff83b303eac3b9353"
+        },
+        {
+          "path": "src/effects/elves/astral-twins/registry.ts",
+          "sha256": "05738303d97d453583aa7cd54a4aa3ee9eb5d8bc00aaabcf774f45b47cb67713"
+        },
+        {
+          "path": "src/effects/newElfOperations.ts",
+          "sha256": "5866b40dd474ebcd9e0393e945d18ef6a7b8212d4c3bb5c6b88a2c1d102048e0"
+        },
+        {
+          "path": "src/effects/newElfLifecycle.ts",
+          "sha256": "340a15c08d6ea122d7d8d041c2e44f4e4109de4f7ada7a6f9134e00d83ea1711"
+        },
+        {
+          "path": "src/effects/battleEventRegistry.ts",
+          "sha256": "f49de14c2102ca2b0c4dd5e45fe2b7e6bc928c3ae77c99919c94ce2c02597415"
+        },
+        {
+          "path": "src/blocks/registry.ts",
+          "sha256": "c6a4b4faa6dd69675dcc803a7e4cc9d2eef4dc382ab4f324420a58c9aa50e83c"
+        },
+        {
+          "path": "src/battle/contextBuilders.ts",
+          "sha256": "652e29fda4615a5f1f3abc06849fc8f5cd70e294b5c9baf6561103f2e3ebd95f"
+        },
+        {
+          "path": "src/battle/itemInventory.ts",
+          "sha256": "5922033bee0425fc5c073e2a05267b46e18eead81ad5d33dcd67fceb01ea7b4b"
+        },
+        {
+          "path": "src/components/BattleScreen.tsx",
+          "sha256": "0c620c39893b46ae69589cf47b62247ccaff28b746e8a63e6ccdf93fb7a0d50d"
+        },
+        {
+          "path": "src/components/BattleManager.ts",
+          "sha256": "d5878b3516ae26b3baa861d96b5e18d1dd2ddd4ad4aa2865494bc9131c2dc774"
+        },
+        {
+          "path": "src/battle/settlementReceipt.ts",
+          "sha256": "1090fde5e6cf03def794e59d806a70677f2f0c699f2055551c36b7d354dd0c21"
+        },
+        {
+          "path": "src/utils/damageCalculator.ts",
+          "sha256": "3f251260e9ad7ced3ef1389f7a8c0f7693540f688908898fd0ec101e84d1cff9"
+        },
+        {
+          "path": "src/data/hamo.ts",
+          "sha256": "f90e9c2661989c4b9442e005d8e366ac1053a005ebbd4b4680a13d96177a2dd0"
+        },
+        {
+          "path": "src/effects/elves/index.ts",
+          "sha256": "2fd3d522d71b293e0e1fe94f61c574fda73ca04144e1d3856a81ddb87a34505b"
+        },
+        {
+          "path": "src/effects/elves/modules.json",
+          "sha256": "53d9c85a4387c9c64692ba6151867957f8c063ae56d5454da5d1275407a49e3a"
+        },
+        {
+          "path": "src/effects/elves/staged-arena/index.ts",
+          "sha256": "3057316785d31e2c997f96242e254558da502e44c26bf896f0a8538a06eee20e"
+        },
+        {
+          "path": "src/battle/acquiredEffectContext.ts",
+          "sha256": "a166d121a11b0458ec41841a59802cfc6a68236ad5029a562d55d4bbfeb865b5"
+        },
+        {
+          "path": "src/blocks/runtime.ts",
+          "sha256": "d08f3b1b64fa9285f375d5c54a3c359a013182c33d187a0a9381706c773f2ba3"
+        }
+      ]
+    },
+    {
+      "id": "hamo-next-invalid",
+      "elfId": "5035",
+      "entry": "龍神·御天陣",
+      "fragment": "令對手下次釋放的技能無效",
+      "testFile": "tests/hamoShiyanIntegration.semantic.test.ts",
+      "anchor": "對手本回合後手使用下次技能已消耗無效",
+      "scenario": "正式P1／P2第五技先手與後手、害怕未行動、同類與異類、2回合到期；下次無效及後續封鎖在主動換人時不傳下一隻",
+      "expected": "下次按實際使用消耗，害怕不消耗；成功後僅同類附加失效2回合，到期恢復",
+      "remaining": "死亡強制換人作用域、各類免疫與轉化技能交叉邊界",
+      "lastPassed": "2026-10-09：本輪正式戰鬥整合43情境通過；原斷言保留，註冊接點及新增換人情境人工核對",
+      "testSha256": "c7cc2bc3305a78db942a8e20db62cb64cb9991f4b168f644f3d24d24b6bc58b7",
+      "inputs": [
+        {
+          "path": "src/effects/elves/hamo/registry.ts",
+          "sha256": "afdf6c3424294d5625593aec0a74c5d5b808a56673a63cd9084cf6720f35ece7"
+        },
+        {
+          "path": "src/effects/elves/wuxu-shiyan/registry.ts",
+          "sha256": "76a83023d60126ff349b6dce521b52582326f99641222041005e51f31b77d789"
+        },
+        {
+          "path": "src/effects/elves/mogos/registry.ts",
+          "sha256": "8eb515d98d344aca50765dda0bf53d1c7c3506ea4726735ff83b303eac3b9353"
+        },
+        {
+          "path": "src/effects/elves/astral-twins/registry.ts",
+          "sha256": "05738303d97d453583aa7cd54a4aa3ee9eb5d8bc00aaabcf774f45b47cb67713"
+        },
+        {
+          "path": "src/effects/newElfOperations.ts",
+          "sha256": "5866b40dd474ebcd9e0393e945d18ef6a7b8212d4c3bb5c6b88a2c1d102048e0"
+        },
+        {
+          "path": "src/effects/newElfLifecycle.ts",
+          "sha256": "340a15c08d6ea122d7d8d041c2e44f4e4109de4f7ada7a6f9134e00d83ea1711"
+        },
+        {
+          "path": "src/effects/battleEventRegistry.ts",
+          "sha256": "f49de14c2102ca2b0c4dd5e45fe2b7e6bc928c3ae77c99919c94ce2c02597415"
+        },
+        {
+          "path": "src/blocks/registry.ts",
+          "sha256": "c6a4b4faa6dd69675dcc803a7e4cc9d2eef4dc382ab4f324420a58c9aa50e83c"
+        },
+        {
+          "path": "src/battle/contextBuilders.ts",
+          "sha256": "652e29fda4615a5f1f3abc06849fc8f5cd70e294b5c9baf6561103f2e3ebd95f"
+        },
+        {
+          "path": "src/battle/itemInventory.ts",
+          "sha256": "5922033bee0425fc5c073e2a05267b46e18eead81ad5d33dcd67fceb01ea7b4b"
+        },
+        {
+          "path": "src/components/BattleScreen.tsx",
+          "sha256": "0c620c39893b46ae69589cf47b62247ccaff28b746e8a63e6ccdf93fb7a0d50d"
+        },
+        {
+          "path": "src/components/BattleManager.ts",
+          "sha256": "d5878b3516ae26b3baa861d96b5e18d1dd2ddd4ad4aa2865494bc9131c2dc774"
+        },
+        {
+          "path": "src/battle/settlementReceipt.ts",
+          "sha256": "1090fde5e6cf03def794e59d806a70677f2f0c699f2055551c36b7d354dd0c21"
+        },
+        {
+          "path": "src/utils/damageCalculator.ts",
+          "sha256": "3f251260e9ad7ced3ef1389f7a8c0f7693540f688908898fd0ec101e84d1cff9"
+        },
+        {
+          "path": "src/data/hamo.ts",
+          "sha256": "f90e9c2661989c4b9442e005d8e366ac1053a005ebbd4b4680a13d96177a2dd0"
+        },
+        {
+          "path": "src/effects/elves/index.ts",
+          "sha256": "2fd3d522d71b293e0e1fe94f61c574fda73ca04144e1d3856a81ddb87a34505b"
+        },
+        {
+          "path": "src/effects/elves/modules.json",
+          "sha256": "53d9c85a4387c9c64692ba6151867957f8c063ae56d5454da5d1275407a49e3a"
+        },
+        {
+          "path": "src/effects/elves/staged-arena/index.ts",
+          "sha256": "3057316785d31e2c997f96242e254558da502e44c26bf896f0a8538a06eee20e"
+        },
+        {
+          "path": "src/battle/acquiredEffectContext.ts",
+          "sha256": "a166d121a11b0458ec41841a59802cfc6a68236ad5029a562d55d4bbfeb865b5"
+        },
+        {
+          "path": "src/blocks/runtime.ts",
+          "sha256": "d08f3b1b64fa9285f375d5c54a3c359a013182c33d187a0a9381706c773f2ba3"
+        }
+      ]
+    },
+    {
+      "id": "shiyan-potion-theft",
+      "elfId": "5023",
+      "entry": "械律·置換",
+      "fragment": "偷取對手150藥劑並立即使用",
+      "testFile": "tests/hamoShiyanIntegration.semantic.test.ts",
+      "anchor": "useBattleItem",
+      "scenario": "敵方150藥劑有庫存與耗盡，P1／P2正式PP攜帶效果連鎖",
+      "expected": "有庫存扣敵方一個再對持有者用，耗盡不能憑空補血",
+      "remaining": "星際探索外部庫存接線及場下持有者全部連鎖",
+      "lastPassed": "2026-10-09：本輪43個正式情境通過；註冊接點與原斷言人工核對，仍僅部分證據",
+      "testSha256": "c7cc2bc3305a78db942a8e20db62cb64cb9991f4b168f644f3d24d24b6bc58b7",
+      "inputs": [
+        {
+          "path": "src/effects/elves/hamo/registry.ts",
+          "sha256": "afdf6c3424294d5625593aec0a74c5d5b808a56673a63cd9084cf6720f35ece7"
+        },
+        {
+          "path": "src/effects/elves/wuxu-shiyan/registry.ts",
+          "sha256": "76a83023d60126ff349b6dce521b52582326f99641222041005e51f31b77d789"
+        },
+        {
+          "path": "src/effects/elves/mogos/registry.ts",
+          "sha256": "8eb515d98d344aca50765dda0bf53d1c7c3506ea4726735ff83b303eac3b9353"
+        },
+        {
+          "path": "src/effects/elves/astral-twins/registry.ts",
+          "sha256": "05738303d97d453583aa7cd54a4aa3ee9eb5d8bc00aaabcf774f45b47cb67713"
+        },
+        {
+          "path": "src/effects/newElfOperations.ts",
+          "sha256": "5866b40dd474ebcd9e0393e945d18ef6a7b8212d4c3bb5c6b88a2c1d102048e0"
+        },
+        {
+          "path": "src/effects/newElfLifecycle.ts",
+          "sha256": "340a15c08d6ea122d7d8d041c2e44f4e4109de4f7ada7a6f9134e00d83ea1711"
+        },
+        {
+          "path": "src/effects/battleEventRegistry.ts",
+          "sha256": "f49de14c2102ca2b0c4dd5e45fe2b7e6bc928c3ae77c99919c94ce2c02597415"
+        },
+        {
+          "path": "src/blocks/registry.ts",
+          "sha256": "c6a4b4faa6dd69675dcc803a7e4cc9d2eef4dc382ab4f324420a58c9aa50e83c"
+        },
+        {
+          "path": "src/battle/contextBuilders.ts",
+          "sha256": "652e29fda4615a5f1f3abc06849fc8f5cd70e294b5c9baf6561103f2e3ebd95f"
+        },
+        {
+          "path": "src/battle/itemInventory.ts",
+          "sha256": "5922033bee0425fc5c073e2a05267b46e18eead81ad5d33dcd67fceb01ea7b4b"
+        },
+        {
+          "path": "src/components/BattleScreen.tsx",
+          "sha256": "0c620c39893b46ae69589cf47b62247ccaff28b746e8a63e6ccdf93fb7a0d50d"
+        },
+        {
+          "path": "src/components/BattleManager.ts",
+          "sha256": "d5878b3516ae26b3baa861d96b5e18d1dd2ddd4ad4aa2865494bc9131c2dc774"
+        },
+        {
+          "path": "src/battle/settlementReceipt.ts",
+          "sha256": "1090fde5e6cf03def794e59d806a70677f2f0c699f2055551c36b7d354dd0c21"
+        },
+        {
+          "path": "src/utils/damageCalculator.ts",
+          "sha256": "3f251260e9ad7ced3ef1389f7a8c0f7693540f688908898fd0ec101e84d1cff9"
+        },
+        {
+          "path": "src/data/hamo.ts",
+          "sha256": "f90e9c2661989c4b9442e005d8e366ac1053a005ebbd4b4680a13d96177a2dd0"
+        },
+        {
+          "path": "src/effects/elves/index.ts",
+          "sha256": "2fd3d522d71b293e0e1fe94f61c574fda73ca04144e1d3856a81ddb87a34505b"
+        },
+        {
+          "path": "src/effects/elves/modules.json",
+          "sha256": "53d9c85a4387c9c64692ba6151867957f8c063ae56d5454da5d1275407a49e3a"
+        },
+        {
+          "path": "src/effects/elves/staged-arena/index.ts",
+          "sha256": "3057316785d31e2c997f96242e254558da502e44c26bf896f0a8538a06eee20e"
+        },
+        {
+          "path": "src/battle/acquiredEffectContext.ts",
+          "sha256": "a166d121a11b0458ec41841a59802cfc6a68236ad5029a562d55d4bbfeb865b5"
+        },
+        {
+          "path": "src/blocks/runtime.ts",
+          "sha256": "d08f3b1b64fa9285f375d5c54a3c359a013182c33d187a0a9381706c773f2ba3"
+        }
+      ]
+    },
+    {
+      "id": "astral-late-defense",
+      "elfId": "5032",
+      "entry": "核",
+      "fragment": "後出手則當回合受到非真實傷害減半",
+      "testFile": "tests/newElves.semantic.test.ts",
+      "anchor": "後手被動在對方出手前開啟，一回合只執行一次",
+      "scenario": "後手方尚未出招，先受到對手技能傷害",
+      "expected": "後手防禦於對手出手前生效且一回合只執行一次",
+      "remaining": "此整句先手分支、所有幻化魂印組合、全部吸取支線",
+      "lastPassed": "2026-10-09：本輪44個單元檢查通過；註冊接點與原斷言人工核對，仍僅部分證據",
+      "testSha256": "b803036de9abd572cda39315c96a295f54fe7689445c8bb7bc2ee730c3f04662",
+      "inputs": [
+        {
+          "path": "src/effects/elves/hamo/registry.ts",
+          "sha256": "afdf6c3424294d5625593aec0a74c5d5b808a56673a63cd9084cf6720f35ece7"
+        },
+        {
+          "path": "src/effects/elves/wuxu-shiyan/registry.ts",
+          "sha256": "76a83023d60126ff349b6dce521b52582326f99641222041005e51f31b77d789"
+        },
+        {
+          "path": "src/effects/elves/mogos/registry.ts",
+          "sha256": "8eb515d98d344aca50765dda0bf53d1c7c3506ea4726735ff83b303eac3b9353"
+        },
+        {
+          "path": "src/effects/elves/astral-twins/registry.ts",
+          "sha256": "05738303d97d453583aa7cd54a4aa3ee9eb5d8bc00aaabcf774f45b47cb67713"
+        },
+        {
+          "path": "src/effects/newElfOperations.ts",
+          "sha256": "5866b40dd474ebcd9e0393e945d18ef6a7b8212d4c3bb5c6b88a2c1d102048e0"
+        },
+        {
+          "path": "src/effects/newElfLifecycle.ts",
+          "sha256": "340a15c08d6ea122d7d8d041c2e44f4e4109de4f7ada7a6f9134e00d83ea1711"
+        },
+        {
+          "path": "src/effects/battleEventRegistry.ts",
+          "sha256": "f49de14c2102ca2b0c4dd5e45fe2b7e6bc928c3ae77c99919c94ce2c02597415"
+        },
+        {
+          "path": "src/blocks/registry.ts",
+          "sha256": "c6a4b4faa6dd69675dcc803a7e4cc9d2eef4dc382ab4f324420a58c9aa50e83c"
+        },
+        {
+          "path": "src/battle/contextBuilders.ts",
+          "sha256": "652e29fda4615a5f1f3abc06849fc8f5cd70e294b5c9baf6561103f2e3ebd95f"
+        },
+        {
+          "path": "src/battle/itemInventory.ts",
+          "sha256": "5922033bee0425fc5c073e2a05267b46e18eead81ad5d33dcd67fceb01ea7b4b"
+        },
+        {
+          "path": "src/components/BattleScreen.tsx",
+          "sha256": "0c620c39893b46ae69589cf47b62247ccaff28b746e8a63e6ccdf93fb7a0d50d"
+        },
+        {
+          "path": "src/components/BattleManager.ts",
+          "sha256": "d5878b3516ae26b3baa861d96b5e18d1dd2ddd4ad4aa2865494bc9131c2dc774"
+        },
+        {
+          "path": "src/battle/settlementReceipt.ts",
+          "sha256": "1090fde5e6cf03def794e59d806a70677f2f0c699f2055551c36b7d354dd0c21"
+        },
+        {
+          "path": "src/utils/damageCalculator.ts",
+          "sha256": "3f251260e9ad7ced3ef1389f7a8c0f7693540f688908898fd0ec101e84d1cff9"
+        },
+        {
+          "path": "src/data/hamo.ts",
+          "sha256": "f90e9c2661989c4b9442e005d8e366ac1053a005ebbd4b4680a13d96177a2dd0"
+        },
+        {
+          "path": "src/effects/elves/index.ts",
+          "sha256": "2fd3d522d71b293e0e1fe94f61c574fda73ca04144e1d3856a81ddb87a34505b"
+        },
+        {
+          "path": "src/effects/elves/modules.json",
+          "sha256": "53d9c85a4387c9c64692ba6151867957f8c063ae56d5454da5d1275407a49e3a"
+        },
+        {
+          "path": "src/effects/elves/staged-arena/index.ts",
+          "sha256": "3057316785d31e2c997f96242e254558da502e44c26bf896f0a8538a06eee20e"
+        },
+        {
+          "path": "src/battle/acquiredEffectContext.ts",
+          "sha256": "a166d121a11b0458ec41841a59802cfc6a68236ad5029a562d55d4bbfeb865b5"
+        },
+        {
+          "path": "src/blocks/runtime.ts",
+          "sha256": "d08f3b1b64fa9285f375d5c54a3c359a013182c33d187a0a9381706c773f2ba3"
+        }
+      ]
+    },
+    {
+      "id": "mogos-friendly-recovery",
+      "elfId": "5034",
+      "entry": "邪",
+      "fragment": "使用方消耗該技能全部PP值",
+      "testFile": "tests/newElves.semantic.test.ts",
+      "anchor": "敵方出招扣敵方PP但恢復及臨時上限固定給摩哥斯隊伍",
+      "scenario": "敵方使用技能、摩哥斯隊伍有受傷場下精靈",
+      "expected": "扣使用方技能PP，回血與臨時上限給摩哥斯隊伍，不給敵方",
+      "remaining": "整句所有成功／道數已滿分支與各場下優先順序",
+      "lastPassed": "2026-10-09：本輪44個單元檢查通過；註冊接點與原斷言人工核對，仍僅部分證據",
+      "testSha256": "b803036de9abd572cda39315c96a295f54fe7689445c8bb7bc2ee730c3f04662",
+      "inputs": [
+        {
+          "path": "src/effects/elves/hamo/registry.ts",
+          "sha256": "afdf6c3424294d5625593aec0a74c5d5b808a56673a63cd9084cf6720f35ece7"
+        },
+        {
+          "path": "src/effects/elves/wuxu-shiyan/registry.ts",
+          "sha256": "76a83023d60126ff349b6dce521b52582326f99641222041005e51f31b77d789"
+        },
+        {
+          "path": "src/effects/elves/mogos/registry.ts",
+          "sha256": "8eb515d98d344aca50765dda0bf53d1c7c3506ea4726735ff83b303eac3b9353"
+        },
+        {
+          "path": "src/effects/elves/astral-twins/registry.ts",
+          "sha256": "05738303d97d453583aa7cd54a4aa3ee9eb5d8bc00aaabcf774f45b47cb67713"
+        },
+        {
+          "path": "src/effects/newElfOperations.ts",
+          "sha256": "5866b40dd474ebcd9e0393e945d18ef6a7b8212d4c3bb5c6b88a2c1d102048e0"
+        },
+        {
+          "path": "src/effects/newElfLifecycle.ts",
+          "sha256": "340a15c08d6ea122d7d8d041c2e44f4e4109de4f7ada7a6f9134e00d83ea1711"
+        },
+        {
+          "path": "src/effects/battleEventRegistry.ts",
+          "sha256": "f49de14c2102ca2b0c4dd5e45fe2b7e6bc928c3ae77c99919c94ce2c02597415"
+        },
+        {
+          "path": "src/blocks/registry.ts",
+          "sha256": "c6a4b4faa6dd69675dcc803a7e4cc9d2eef4dc382ab4f324420a58c9aa50e83c"
+        },
+        {
+          "path": "src/battle/contextBuilders.ts",
+          "sha256": "652e29fda4615a5f1f3abc06849fc8f5cd70e294b5c9baf6561103f2e3ebd95f"
+        },
+        {
+          "path": "src/battle/itemInventory.ts",
+          "sha256": "5922033bee0425fc5c073e2a05267b46e18eead81ad5d33dcd67fceb01ea7b4b"
+        },
+        {
+          "path": "src/components/BattleScreen.tsx",
+          "sha256": "0c620c39893b46ae69589cf47b62247ccaff28b746e8a63e6ccdf93fb7a0d50d"
+        },
+        {
+          "path": "src/components/BattleManager.ts",
+          "sha256": "d5878b3516ae26b3baa861d96b5e18d1dd2ddd4ad4aa2865494bc9131c2dc774"
+        },
+        {
+          "path": "src/battle/settlementReceipt.ts",
+          "sha256": "1090fde5e6cf03def794e59d806a70677f2f0c699f2055551c36b7d354dd0c21"
+        },
+        {
+          "path": "src/utils/damageCalculator.ts",
+          "sha256": "3f251260e9ad7ced3ef1389f7a8c0f7693540f688908898fd0ec101e84d1cff9"
+        },
+        {
+          "path": "src/data/hamo.ts",
+          "sha256": "f90e9c2661989c4b9442e005d8e366ac1053a005ebbd4b4680a13d96177a2dd0"
+        },
+        {
+          "path": "src/effects/elves/index.ts",
+          "sha256": "2fd3d522d71b293e0e1fe94f61c574fda73ca04144e1d3856a81ddb87a34505b"
+        },
+        {
+          "path": "src/effects/elves/modules.json",
+          "sha256": "53d9c85a4387c9c64692ba6151867957f8c063ae56d5454da5d1275407a49e3a"
+        },
+        {
+          "path": "src/effects/elves/staged-arena/index.ts",
+          "sha256": "3057316785d31e2c997f96242e254558da502e44c26bf896f0a8538a06eee20e"
+        },
+        {
+          "path": "src/battle/acquiredEffectContext.ts",
+          "sha256": "a166d121a11b0458ec41841a59802cfc6a68236ad5029a562d55d4bbfeb865b5"
+        },
+        {
+          "path": "src/blocks/runtime.ts",
+          "sha256": "d08f3b1b64fa9285f375d5c54a3c359a013182c33d187a0a9381706c773f2ba3"
+        }
+      ]
+    },
+    {
+      "id": "hamo-cycle-capacity",
+      "fragment": "提升己方所有龍系精靈所有能力上限20%",
+      "testFile": "tests/hamoShiyanIntegration.semantic.test.ts",
+      "anchor": "場下龍系體力上限複利",
+      "scenario": "正式P1／P2戰鬥兩次違反純水火草循環，龍系與非龍系場下隊員並存",
+      "expected": "龍系六維逐次乘1.2，兩次後體力144000、攻擊144；非龍系不變",
+      "remaining": "多隻哈莫、臨時上限疊加、死亡重生及所有技能傷害來源",
+      "elfId": "5035",
+      "entry": "鱗",
+      "inputs": [
+        {
+          "path": "src/effects/elves/hamo/registry.ts",
+          "sha256": "afdf6c3424294d5625593aec0a74c5d5b808a56673a63cd9084cf6720f35ece7"
+        },
+        {
+          "path": "src/effects/elves/wuxu-shiyan/registry.ts",
+          "sha256": "76a83023d60126ff349b6dce521b52582326f99641222041005e51f31b77d789"
+        },
+        {
+          "path": "src/effects/elves/mogos/registry.ts",
+          "sha256": "8eb515d98d344aca50765dda0bf53d1c7c3506ea4726735ff83b303eac3b9353"
+        },
+        {
+          "path": "src/effects/elves/astral-twins/registry.ts",
+          "sha256": "05738303d97d453583aa7cd54a4aa3ee9eb5d8bc00aaabcf774f45b47cb67713"
+        },
+        {
+          "path": "src/effects/newElfOperations.ts",
+          "sha256": "5866b40dd474ebcd9e0393e945d18ef6a7b8212d4c3bb5c6b88a2c1d102048e0"
+        },
+        {
+          "path": "src/effects/newElfLifecycle.ts",
+          "sha256": "340a15c08d6ea122d7d8d041c2e44f4e4109de4f7ada7a6f9134e00d83ea1711"
+        },
+        {
+          "path": "src/effects/battleEventRegistry.ts",
+          "sha256": "f49de14c2102ca2b0c4dd5e45fe2b7e6bc928c3ae77c99919c94ce2c02597415"
+        },
+        {
+          "path": "src/blocks/registry.ts",
+          "sha256": "c6a4b4faa6dd69675dcc803a7e4cc9d2eef4dc382ab4f324420a58c9aa50e83c"
+        },
+        {
+          "path": "src/battle/contextBuilders.ts",
+          "sha256": "652e29fda4615a5f1f3abc06849fc8f5cd70e294b5c9baf6561103f2e3ebd95f"
+        },
+        {
+          "path": "src/battle/itemInventory.ts",
+          "sha256": "5922033bee0425fc5c073e2a05267b46e18eead81ad5d33dcd67fceb01ea7b4b"
+        },
+        {
+          "path": "src/components/BattleScreen.tsx",
+          "sha256": "0c620c39893b46ae69589cf47b62247ccaff28b746e8a63e6ccdf93fb7a0d50d"
+        },
+        {
+          "path": "src/components/BattleManager.ts",
+          "sha256": "d5878b3516ae26b3baa861d96b5e18d1dd2ddd4ad4aa2865494bc9131c2dc774"
+        },
+        {
+          "path": "src/battle/settlementReceipt.ts",
+          "sha256": "1090fde5e6cf03def794e59d806a70677f2f0c699f2055551c36b7d354dd0c21"
+        },
+        {
+          "path": "src/utils/damageCalculator.ts",
+          "sha256": "3f251260e9ad7ced3ef1389f7a8c0f7693540f688908898fd0ec101e84d1cff9"
+        },
+        {
+          "path": "src/data/hamo.ts",
+          "sha256": "f90e9c2661989c4b9442e005d8e366ac1053a005ebbd4b4680a13d96177a2dd0"
+        },
+        {
+          "path": "src/effects/elves/index.ts",
+          "sha256": "2fd3d522d71b293e0e1fe94f61c574fda73ca04144e1d3856a81ddb87a34505b"
+        },
+        {
+          "path": "src/effects/elves/modules.json",
+          "sha256": "53d9c85a4387c9c64692ba6151867957f8c063ae56d5454da5d1275407a49e3a"
+        },
+        {
+          "path": "src/effects/elves/staged-arena/index.ts",
+          "sha256": "3057316785d31e2c997f96242e254558da502e44c26bf896f0a8538a06eee20e"
+        },
+        {
+          "path": "src/battle/acquiredEffectContext.ts",
+          "sha256": "a166d121a11b0458ec41841a59802cfc6a68236ad5029a562d55d4bbfeb865b5"
+        },
+        {
+          "path": "src/blocks/runtime.ts",
+          "sha256": "d08f3b1b64fa9285f375d5c54a3c359a013182c33d187a0a9381706c773f2ba3"
+        }
+      ],
+      "lastPassed": "2026-10-09：本輪43個正式情境通過；註冊接點與原斷言人工核對，仍僅部分證據",
+      "testSha256": "c7cc2bc3305a78db942a8e20db62cb64cb9991f4b168f644f3d24d24b6bc58b7"
+    },
+    {
+      "id": "hamo-scale-protection",
+      "fragment": "持有精靈2回合內免疫龍鱗的消失",
+      "testFile": "tests/hamoShiyanIntegration.semantic.test.ts",
+      "anchor": "最後無色鱗染色的下一回合仍在2回合保護內",
+      "scenario": "P1／P2第5回合染完三色，第6／7回合藍紅鱗再次成功觸發",
+      "expected": "第6回合仍保護但清敵方盾罩；第7回合到期移除觸發鱗並執行削除副作用",
+      "remaining": "完整下場期限、全部免消失／移除來源、特殊模式與魂印複製",
+      "elfId": "5035",
+      "entry": "鱗",
+      "inputs": [
+        {
+          "path": "src/effects/elves/hamo/registry.ts",
+          "sha256": "afdf6c3424294d5625593aec0a74c5d5b808a56673a63cd9084cf6720f35ece7"
+        },
+        {
+          "path": "src/effects/elves/wuxu-shiyan/registry.ts",
+          "sha256": "76a83023d60126ff349b6dce521b52582326f99641222041005e51f31b77d789"
+        },
+        {
+          "path": "src/effects/elves/mogos/registry.ts",
+          "sha256": "8eb515d98d344aca50765dda0bf53d1c7c3506ea4726735ff83b303eac3b9353"
+        },
+        {
+          "path": "src/effects/elves/astral-twins/registry.ts",
+          "sha256": "05738303d97d453583aa7cd54a4aa3ee9eb5d8bc00aaabcf774f45b47cb67713"
+        },
+        {
+          "path": "src/effects/newElfOperations.ts",
+          "sha256": "5866b40dd474ebcd9e0393e945d18ef6a7b8212d4c3bb5c6b88a2c1d102048e0"
+        },
+        {
+          "path": "src/effects/newElfLifecycle.ts",
+          "sha256": "340a15c08d6ea122d7d8d041c2e44f4e4109de4f7ada7a6f9134e00d83ea1711"
+        },
+        {
+          "path": "src/effects/battleEventRegistry.ts",
+          "sha256": "f49de14c2102ca2b0c4dd5e45fe2b7e6bc928c3ae77c99919c94ce2c02597415"
+        },
+        {
+          "path": "src/blocks/registry.ts",
+          "sha256": "c6a4b4faa6dd69675dcc803a7e4cc9d2eef4dc382ab4f324420a58c9aa50e83c"
+        },
+        {
+          "path": "src/battle/contextBuilders.ts",
+          "sha256": "652e29fda4615a5f1f3abc06849fc8f5cd70e294b5c9baf6561103f2e3ebd95f"
+        },
+        {
+          "path": "src/battle/itemInventory.ts",
+          "sha256": "5922033bee0425fc5c073e2a05267b46e18eead81ad5d33dcd67fceb01ea7b4b"
+        },
+        {
+          "path": "src/components/BattleScreen.tsx",
+          "sha256": "0c620c39893b46ae69589cf47b62247ccaff28b746e8a63e6ccdf93fb7a0d50d"
+        },
+        {
+          "path": "src/components/BattleManager.ts",
+          "sha256": "d5878b3516ae26b3baa861d96b5e18d1dd2ddd4ad4aa2865494bc9131c2dc774"
+        },
+        {
+          "path": "src/battle/settlementReceipt.ts",
+          "sha256": "1090fde5e6cf03def794e59d806a70677f2f0c699f2055551c36b7d354dd0c21"
+        },
+        {
+          "path": "src/utils/damageCalculator.ts",
+          "sha256": "3f251260e9ad7ced3ef1389f7a8c0f7693540f688908898fd0ec101e84d1cff9"
+        },
+        {
+          "path": "src/data/hamo.ts",
+          "sha256": "f90e9c2661989c4b9442e005d8e366ac1053a005ebbd4b4680a13d96177a2dd0"
+        },
+        {
+          "path": "src/effects/elves/index.ts",
+          "sha256": "2fd3d522d71b293e0e1fe94f61c574fda73ca04144e1d3856a81ddb87a34505b"
+        },
+        {
+          "path": "src/effects/elves/modules.json",
+          "sha256": "53d9c85a4387c9c64692ba6151867957f8c063ae56d5454da5d1275407a49e3a"
+        },
+        {
+          "path": "src/effects/elves/staged-arena/index.ts",
+          "sha256": "3057316785d31e2c997f96242e254558da502e44c26bf896f0a8538a06eee20e"
+        },
+        {
+          "path": "src/battle/acquiredEffectContext.ts",
+          "sha256": "a166d121a11b0458ec41841a59802cfc6a68236ad5029a562d55d4bbfeb865b5"
+        },
+        {
+          "path": "src/blocks/runtime.ts",
+          "sha256": "d08f3b1b64fa9285f375d5c54a3c359a013182c33d187a0a9381706c773f2ba3"
+        }
+      ],
+      "lastPassed": "2026-10-09：本輪43個正式情境通過；註冊接點與原斷言人工核對，仍僅部分證據",
+      "testSha256": "c7cc2bc3305a78db942a8e20db62cb64cb9991f4b168f644f3d24d24b6bc58b7"
+    },
+    {
+      "id": "hamo-red-bypass",
+      "fragment": "持有精靈免疫受到的攻擊傷害、固定傷害、百分比傷害",
+      "testFile": "tests/hamoShiyan.semantic.test.ts",
+      "anchor": "哈莫紅鱗讀通用無視抵擋",
+      "scenario": "P1／P2通用無視攻擊抵擋參數、固定／百分比／真實／其他技能傷害分類探針",
+      "expected": "攻擊抵擋可被通用旗標貫穿；固定百分比免疫不被誤跳過；真實傷害不免疫",
+      "remaining": "全部攜帶無視旗標的真實技能、循環／其他限制重疊及反射",
+      "elfId": "5035",
+      "entry": "鱗",
+      "inputs": [
+        {
+          "path": "src/effects/elves/hamo/registry.ts",
+          "sha256": "afdf6c3424294d5625593aec0a74c5d5b808a56673a63cd9084cf6720f35ece7"
+        },
+        {
+          "path": "src/effects/elves/wuxu-shiyan/registry.ts",
+          "sha256": "76a83023d60126ff349b6dce521b52582326f99641222041005e51f31b77d789"
+        },
+        {
+          "path": "src/effects/elves/mogos/registry.ts",
+          "sha256": "8eb515d98d344aca50765dda0bf53d1c7c3506ea4726735ff83b303eac3b9353"
+        },
+        {
+          "path": "src/effects/elves/astral-twins/registry.ts",
+          "sha256": "05738303d97d453583aa7cd54a4aa3ee9eb5d8bc00aaabcf774f45b47cb67713"
+        },
+        {
+          "path": "src/effects/newElfOperations.ts",
+          "sha256": "5866b40dd474ebcd9e0393e945d18ef6a7b8212d4c3bb5c6b88a2c1d102048e0"
+        },
+        {
+          "path": "src/effects/newElfLifecycle.ts",
+          "sha256": "340a15c08d6ea122d7d8d041c2e44f4e4109de4f7ada7a6f9134e00d83ea1711"
+        },
+        {
+          "path": "src/effects/battleEventRegistry.ts",
+          "sha256": "f49de14c2102ca2b0c4dd5e45fe2b7e6bc928c3ae77c99919c94ce2c02597415"
+        },
+        {
+          "path": "src/blocks/registry.ts",
+          "sha256": "c6a4b4faa6dd69675dcc803a7e4cc9d2eef4dc382ab4f324420a58c9aa50e83c"
+        },
+        {
+          "path": "src/battle/contextBuilders.ts",
+          "sha256": "652e29fda4615a5f1f3abc06849fc8f5cd70e294b5c9baf6561103f2e3ebd95f"
+        },
+        {
+          "path": "src/battle/itemInventory.ts",
+          "sha256": "5922033bee0425fc5c073e2a05267b46e18eead81ad5d33dcd67fceb01ea7b4b"
+        },
+        {
+          "path": "src/components/BattleScreen.tsx",
+          "sha256": "0c620c39893b46ae69589cf47b62247ccaff28b746e8a63e6ccdf93fb7a0d50d"
+        },
+        {
+          "path": "src/components/BattleManager.ts",
+          "sha256": "d5878b3516ae26b3baa861d96b5e18d1dd2ddd4ad4aa2865494bc9131c2dc774"
+        },
+        {
+          "path": "src/battle/settlementReceipt.ts",
+          "sha256": "1090fde5e6cf03def794e59d806a70677f2f0c699f2055551c36b7d354dd0c21"
+        },
+        {
+          "path": "src/utils/damageCalculator.ts",
+          "sha256": "3f251260e9ad7ced3ef1389f7a8c0f7693540f688908898fd0ec101e84d1cff9"
+        },
+        {
+          "path": "src/data/hamo.ts",
+          "sha256": "f90e9c2661989c4b9442e005d8e366ac1053a005ebbd4b4680a13d96177a2dd0"
+        },
+        {
+          "path": "src/effects/elves/index.ts",
+          "sha256": "2fd3d522d71b293e0e1fe94f61c574fda73ca04144e1d3856a81ddb87a34505b"
+        },
+        {
+          "path": "src/effects/elves/modules.json",
+          "sha256": "53d9c85a4387c9c64692ba6151867957f8c063ae56d5454da5d1275407a49e3a"
+        },
+        {
+          "path": "src/effects/elves/staged-arena/index.ts",
+          "sha256": "3057316785d31e2c997f96242e254558da502e44c26bf896f0a8538a06eee20e"
+        },
+        {
+          "path": "src/battle/acquiredEffectContext.ts",
+          "sha256": "a166d121a11b0458ec41841a59802cfc6a68236ad5029a562d55d4bbfeb865b5"
+        },
+        {
+          "path": "src/blocks/runtime.ts",
+          "sha256": "d08f3b1b64fa9285f375d5c54a3c359a013182c33d187a0a9381706c773f2ba3"
+        }
+      ],
+      "lastPassed": "2026-10-09：本輪25個單元情境通過；註冊接點與原斷言人工核對，仍僅部分證據",
+      "testSha256": "fb82cb387bb74d125f755c11f32a59e04e42c41058d7605e57f73e0414227495"
+    },
+    {
+      "id": "hamo-skill-bonus",
+      "fragment": "自身造成技能傷害提升150%",
+      "testFile": "tests/hamoShiyan.semantic.test.ts",
+      "anchor": "哈莫常駐150%只加技能傷害",
+      "scenario": "P1／P2逐項傳入攻擊、屬性技能、額外行動、固定、百分比、真實傷害",
+      "expected": "三種技能傷害乘2.5，固定／百分比／真實傷害不變",
+      "remaining": "全部增減傷乘區、免疫、最低傷害與重算公式疊加",
+      "elfId": "5035",
+      "entry": "鱗",
+      "inputs": [
+        {
+          "path": "src/effects/elves/hamo/registry.ts",
+          "sha256": "afdf6c3424294d5625593aec0a74c5d5b808a56673a63cd9084cf6720f35ece7"
+        },
+        {
+          "path": "src/effects/elves/wuxu-shiyan/registry.ts",
+          "sha256": "76a83023d60126ff349b6dce521b52582326f99641222041005e51f31b77d789"
+        },
+        {
+          "path": "src/effects/elves/mogos/registry.ts",
+          "sha256": "8eb515d98d344aca50765dda0bf53d1c7c3506ea4726735ff83b303eac3b9353"
+        },
+        {
+          "path": "src/effects/elves/astral-twins/registry.ts",
+          "sha256": "05738303d97d453583aa7cd54a4aa3ee9eb5d8bc00aaabcf774f45b47cb67713"
+        },
+        {
+          "path": "src/effects/newElfOperations.ts",
+          "sha256": "5866b40dd474ebcd9e0393e945d18ef6a7b8212d4c3bb5c6b88a2c1d102048e0"
+        },
+        {
+          "path": "src/effects/newElfLifecycle.ts",
+          "sha256": "340a15c08d6ea122d7d8d041c2e44f4e4109de4f7ada7a6f9134e00d83ea1711"
+        },
+        {
+          "path": "src/effects/battleEventRegistry.ts",
+          "sha256": "f49de14c2102ca2b0c4dd5e45fe2b7e6bc928c3ae77c99919c94ce2c02597415"
+        },
+        {
+          "path": "src/blocks/registry.ts",
+          "sha256": "c6a4b4faa6dd69675dcc803a7e4cc9d2eef4dc382ab4f324420a58c9aa50e83c"
+        },
+        {
+          "path": "src/battle/contextBuilders.ts",
+          "sha256": "652e29fda4615a5f1f3abc06849fc8f5cd70e294b5c9baf6561103f2e3ebd95f"
+        },
+        {
+          "path": "src/battle/itemInventory.ts",
+          "sha256": "5922033bee0425fc5c073e2a05267b46e18eead81ad5d33dcd67fceb01ea7b4b"
+        },
+        {
+          "path": "src/components/BattleScreen.tsx",
+          "sha256": "0c620c39893b46ae69589cf47b62247ccaff28b746e8a63e6ccdf93fb7a0d50d"
+        },
+        {
+          "path": "src/components/BattleManager.ts",
+          "sha256": "d5878b3516ae26b3baa861d96b5e18d1dd2ddd4ad4aa2865494bc9131c2dc774"
+        },
+        {
+          "path": "src/battle/settlementReceipt.ts",
+          "sha256": "1090fde5e6cf03def794e59d806a70677f2f0c699f2055551c36b7d354dd0c21"
+        },
+        {
+          "path": "src/utils/damageCalculator.ts",
+          "sha256": "3f251260e9ad7ced3ef1389f7a8c0f7693540f688908898fd0ec101e84d1cff9"
+        },
+        {
+          "path": "src/data/hamo.ts",
+          "sha256": "f90e9c2661989c4b9442e005d8e366ac1053a005ebbd4b4680a13d96177a2dd0"
+        },
+        {
+          "path": "src/effects/elves/index.ts",
+          "sha256": "2fd3d522d71b293e0e1fe94f61c574fda73ca04144e1d3856a81ddb87a34505b"
+        },
+        {
+          "path": "src/effects/elves/modules.json",
+          "sha256": "53d9c85a4387c9c64692ba6151867957f8c063ae56d5454da5d1275407a49e3a"
+        },
+        {
+          "path": "src/effects/elves/staged-arena/index.ts",
+          "sha256": "3057316785d31e2c997f96242e254558da502e44c26bf896f0a8538a06eee20e"
+        },
+        {
+          "path": "src/battle/acquiredEffectContext.ts",
+          "sha256": "a166d121a11b0458ec41841a59802cfc6a68236ad5029a562d55d4bbfeb865b5"
+        },
+        {
+          "path": "src/blocks/runtime.ts",
+          "sha256": "d08f3b1b64fa9285f375d5c54a3c359a013182c33d187a0a9381706c773f2ba3"
+        }
+      ],
+      "lastPassed": "2026-10-09：本輪25個單元情境通過；註冊接點與原斷言人工核對，仍僅部分證據",
+      "testSha256": "fb82cb387bb74d125f755c11f32a59e04e42c41058d7605e57f73e0414227495"
+    }
+  ]
+}

@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import type { Elf, Skill } from "../types";
 import { ElfAvatar, TypeIcon } from "./SeerImages";
-import { hiddenFromViewer } from "../battle/viewerPerspective";
+import { hiddenFromViewer, elfForViewer, visibleSkills } from "../battle/viewerPerspective";
 import { ElfTraitCards } from "./ElfTraitCards";
 import { InfoHint } from "./InfoHint";
 import { formatEffectText } from "../utils/descFormat";
@@ -16,7 +16,8 @@ export const ElfReadOnlyProfile: React.FC<{
   battleSide?: "p1" | "p2";
   /** 戰鬥中：在場精靈的即時狀態（能力等級、異常、印記、計時），作為第一個分頁。 */
   battlePanel?: React.ReactNode;
-}> = ({ elf, onClose, subtitle, effectiveBody, children, getSkillMaxPp, battleSide, battlePanel }) => {
+}> = ({ elf: sourceElf, onClose, subtitle, effectiveBody, children, getSkillMaxPp, battleSide, battlePanel }) => {
+  const elf = elfForViewer(sourceElf, battleSide);
   const [tab, setTab] = useState<"battle" | "traits" | "stats" | "skills">(battlePanel ? "battle" : "traits");
   const concealed = hiddenFromViewer(elf, battleSide);
   return <div className="space-y-5" data-testid="elf-readonly-profile">
@@ -56,13 +57,16 @@ export const ElfReadOnlyProfile: React.FC<{
         </div>
         {children}
       </>}
-      {tab === "skills" && <div className="space-y-3">{(elf.skills || []).map((skill, i) =>
+      {tab === "skills" && <div className="space-y-3">{visibleSkills(elf).map((skill, i) =>
         <details key={`${skill.name}-${i}`} className="ios-card p-4" open={i === 0}>
           <summary className="cursor-pointer text-sm font-semibold text-slate-100">
-            <span className="inline-flex items-center gap-2"><TypeIcon type={skill.type} size={18} />{skill.name}{skill.isFifthSkill && <span className="text-xs text-amber-300">第五</span>}</span>
+            <span className="inline-flex items-center gap-2"><TypeIcon type={elf.skills[i].type} size={18} />{elf.skills[i].name}{elf.skills[i].isFifthSkill && <span className="text-xs text-amber-300">第五</span>}</span>
+            {elf.illusion && !elf.isInherentInvalid && <span className="block text-xs text-cyan-200 mt-1">轉化 → {skill.name}</span>}
           </summary>
-          <p className="mt-3 text-xs text-slate-400 flex flex-wrap gap-3"><span>{skill.category} · {skill.type}</span><span>威力 {skill.power}</span><span>PP {skill.currentPp ?? skill.pp} / {getSkillMaxPp?.(skill, elf) ?? skill.maxPp ?? skill.pp}</span><span>先制 {skill.priority || 0}</span></p>
+          {elf.illusion && !elf.isInherentInvalid && <p className="mt-3 text-xs text-slate-400">轉化後資訊（原技能固有效果保留）</p>}
+          <p className="mt-3 text-xs text-slate-400 flex flex-wrap gap-3"><span>{skill.category} · {skill.type}</span><span>威力 {skill.power}</span><span>PP {skill.pp} / {getSkillMaxPp?.(skill, elf) ?? skill.maxPp ?? skill.pp}</span><span>先制 {skill.priority || 0}</span></p>
           <EffectBlockToggle skill={skill}><p className="whitespace-pre-wrap text-sm leading-7 text-slate-200">{formatEffectText(skill.description)}</p></EffectBlockToggle>
+          {elf.illusion && !elf.isInherentInvalid && <div className="mt-3 border-t border-white/10 pt-3"><p className="text-xs text-slate-400">原技能（固有效果仍生效；原附加效果不重跑）</p><EffectBlockToggle skill={elf.skills[i]}><p className="whitespace-pre-wrap text-sm leading-7 text-slate-200">{formatEffectText(elf.skills[i].description)}</p></EffectBlockToggle></div>}
         </details>)}</div>}
     </>}
   </div>;

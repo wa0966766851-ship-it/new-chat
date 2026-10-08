@@ -1,8 +1,9 @@
 import { activeConstraints } from "../battle/timedConstraints";
+import { hasBattleItem } from '../battle/itemInventory';
 import { Elf, Skill, BattleItem } from "../types";
 import { BattleState } from "../components/BattleManager";
 import { calculateDamage } from "./damageCalculator";
-import { BATTLE_ITEMS, getStatuses, isZeroPpExempt, isElfSwitchDisabled, getNoSwitchTurns } from "./battleHelpers";
+import { BATTLE_ITEMS, getStatuses, isZeroPpExempt, isElfSwitchDisabled, getNoSwitchTurns, isElfItemDisabled } from "./battleHelpers";
 import { getTypeMatchup } from "./statCalculator";
 import { decideAction, decideForcedSwitch, type AIContext, type AIDeps } from "../battle/ai";
 
@@ -33,9 +34,9 @@ export const pickAiAction = (
     opponent,
     team,
     activeIndex,
-    items: BATTLE_ITEMS as BattleItem[],
+    items: BATTLE_ITEMS.filter(item => hasBattleItem(state[`${side}ItemInventory`], item.id)),
     canSwitch,
-    canUseItem: true,
+    canUseItem: !isElfItemDisabled(self),
     turnNumber: state.turnNumber,
   };
 

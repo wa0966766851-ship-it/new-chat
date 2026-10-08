@@ -1,4 +1,5 @@
 import { Elf } from '../types';
+import { effectSourceViews } from '../battle/effectSources';
 
 export interface AdvancedTraitMechanics {
   // 豪邁
@@ -169,6 +170,10 @@ export function getAdvancedTrait(name: string): AdvancedTrait | undefined {
  * 判斷精靈是否擁有特定進階特質，並獲取其合併後的 mechanics 參數
  */
 export function getElfAdvancedMechanics(elf: Elf): AdvancedTraitMechanics {
+  if (!elf) return {};
+  return Object.assign({}, ...effectSourceViews(elf).map(nativeAdvancedMechanics));
+}
+function nativeAdvancedMechanics(elf: Elf): AdvancedTraitMechanics {
   const merged: AdvancedTraitMechanics = {};
   if (!elf) return merged;
   
@@ -180,6 +185,9 @@ export function getElfAdvancedMechanics(elf: Elf): AdvancedTraitMechanics {
     }
     if (elf.alienTraits.exclusiveTrait?.name) {
       traitsToInquire.push(...elf.alienTraits.exclusiveTrait.name.split(/[\s/·]+/));
+    }
+    for (const trait of [...(elf.alienTraits.exclusiveTraits || []), elf.alienTraits.alienTrait, elf.alienTraits.generalTrait]) {
+      if (trait?.name) traitsToInquire.push(...trait.name.split(/[\s/·]+/));
     }
   }
   

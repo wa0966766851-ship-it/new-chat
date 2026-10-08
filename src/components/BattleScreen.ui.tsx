@@ -1,6 +1,8 @@
 import { BattleEndDialog, SpecialBattleEndDialog } from "./BattleEndDialog";
 import { damagePopupStyle, damagePopupLabel } from '../battle/damagePopupStyle';
 import { appearanceElf } from '../battle/illusion';
+import { skillSlot } from '../battle/skillSlot';
+import { hasBattleItem } from '../battle/itemInventory';
 import React, { useState, useContext, useEffect, useMemo, useRef } from "react";
 import { ElfReadOnlyProfile } from "./ElfReadOnlyProfile";
 import { createPortal } from "react-dom";
@@ -45,11 +47,11 @@ import { getTypeMatchup, getAttributeBadgeColor, getEffectiveBody } from "../uti
 import { battleSpriteProfile, battleSpriteScale } from "../battle/seerAssets";
 import { ElfAvatar, TypeIcon, ChainImage } from "./SeerImages";
 import { ProportionalSprite } from "./battle/ProportionalSprite";
-import { hiddenFromViewer, viewerMaskTerms, maskViewerText, UNKNOWN_EFFECT } from "../battle/viewerPerspective";
+import { hiddenFromViewer, viewerMaskTerms, maskViewerText, UNKNOWN_EFFECT, elfForViewer, visibleSkills } from "../battle/viewerPerspective";
 import { isAliveBySurvivalRule } from "../battle/survivalRules";
 import { statusVisual, buffIconFor, stageDesc, STAT_FULL, signIconFor, STATE_SIGNS } from "../battle/effectIcons";
 import { markAppliesToElf } from "../battle/marks";
-import { effectLines, formatEffectText } from "../utils/descFormat";
+import { effectLines, formatEffectText, plainDescription } from "../utils/descFormat";
 import { StatusRegistry } from "../effects/statusRegistry";
 import { EFFECT_CATALOG } from "../data/effectCatalog";
 import { BATTLE_ITEMS, ITEM_CATEGORIES, getItemCategory, ItemCategory, isZeroPpExempt, isElfSkillSelectionDisabled } from "../utils/battleHelpers";
@@ -307,7 +309,7 @@ export function BattleScreenUI(props: BattleScreenUIProps) {
                             </div>
                           ) : null}
                           <span className={`${isSkillHit ? 'text-5xl' : 'text-3xl'} font-black tabular-nums ${numClass}`}
-                            style={{ textShadow: isHeal ? '-1px -1px 0 #eab308, 1px -1px 0 #eab308, -1px 1px 0 #eab308, 1px 1px 0 #eab308' : '0 0 2px #000, 0 2px 0 #000, 0 0 12px rgba(0,0,0,0.85)' }}>{fog(pop.text)}</span>
+                            style={{ textShadow: visual.textShadow }}>{fog(pop.text)}</span>
                         </motion.div>
                       );
                     })}
@@ -737,6 +739,7 @@ export function BattleScreenUI(props: BattleScreenUIProps) {
                       </div>
                       <div className="grid grid-cols-[repeat(auto-fill,minmax(190px,1fr))] gap-2">
                         {BATTLE_ITEMS.filter(it => itemCat === "all" || getItemCategory(it) === itemCat).map((item, idx) => {
+                          const stock = battle.p1ItemInventory?.[item.id];
                           const cat = getItemCategory(item);
                           const tone = cat === "hp" ? "text-emerald-400 border-emerald-500/30 bg-emerald-500/10"
                             : cat === "pp" ? "text-sky-400 border-sky-500/30 bg-sky-500/10"
@@ -749,13 +752,14 @@ export function BattleScreenUI(props: BattleScreenUIProps) {
                               onClick={() => { props.onUseItem("p1", item as any); setTacticalTab("SKILLS"); }}
                               title={item.description}
                               className="group flex items-center gap-2.5 bg-slate-900/60 border border-slate-800 hover:border-amber-500/40 rounded-xl px-2.5 py-2 transition-all hover:bg-slate-800 disabled:opacity-40 text-left"
-                              disabled={phase !== "p1_select" || (!!props.potionLimit && props.potionLimit.left <= 0 && item.type !== "special")}
+                              disabled={phase !== "p1_select" || !hasBattleItem(battle.p1ItemInventory, item.id) || (!!props.potionLimit && props.potionLimit.left <= 0 && item.type !== "special")}
                             >
                               <div className={`w-8 h-8 shrink-0 rounded-lg flex items-center justify-center border ${tone}`}>
                                 <FlaskConical className="w-4 h-4" />
                               </div>
                               <div className="flex-1 min-w-0">
                                 <div className="text-xs font-black text-white truncate">{item.name}</div>
+                                {stock && <div className="text-[11px] font-bold text-amber-200 tabular-nums" data-item-stock={item.id}>{stock.left}/{stock.max}</div>}
                                 <div className="text-[10px] text-slate-400 leading-tight truncate">{item.description}</div>
                               </div>
                             </button>
@@ -905,7 +909,7 @@ export function BattleScreenUI(props: BattleScreenUIProps) {
   /** 精靈 HUD：頭像＋名稱＋體力。詳細資訊收在頭像點開的頁面。 */
   const renderCard = (side: "p1" | "p2") => {
     const isP1 = side === "p1";
-    const elf = appearanceElf(isP1 ? p1 : p2);
+    const elf = appearanceElf(elfForViewer(isP1 ? p1 : p2, side));
     if (!elf) return null;
     const idx = isP1 ? p1ActiveIndex : battle.p2ActiveIndex;
     const hpPct = elf.maxHp > 0 ? Math.max(0, Math.min(100, (elf.currentHp / elf.maxHp) * 100)) : 0;
@@ -920,7 +924,7 @@ export function BattleScreenUI(props: BattleScreenUIProps) {
             className="relative shrink-0 w-14 h-14 sm:w-[84px] sm:h-[84px] short:w-11 short:h-11 rounded-full overflow-hidden border-2 bg-slate-900 hover:scale-105 transition-transform"
             style={{ borderColor: "var(--bt-line)" }}>
             <ElfAvatar elf={elf} battleSide={side} kind="head"
-              className={`w-full h-full object-cover ${side === "p1" && String(elf.id) === "5029" ? "-scale-x-100" : ""}`} />
+              className={`w-full h-full object-cover ${side === "p1" && elf.name === "異境神霆·雷伊" ? "-scale-x-100" : ""}`} />
             {!hidden && <span className="absolute bottom-0 inset-x-0 text-[10px] font-black bg-black/60 text-white/90 leading-4">詳情</span>}
           </button>
           <div className={`flex-1 min-w-0 ${isP1 ? "" : "text-right"}`}>
@@ -929,18 +933,18 @@ export function BattleScreenUI(props: BattleScreenUIProps) {
               <button type="button" onClick={openDetail} className="font-black text-sm sm:text-lg truncate hover:brightness-125" style={{ fontFamily: "var(--bt-title-font)" }}>
                 {hidden ? "未知精靈" : elf.name}
               </button>
-              {elf.soulMark && (
+              {!hidden && elf.soulMark && (
                 <button type="button" onClick={() => setModalContent({ title: elf.soulMark?.name || "魂印", content: elf.soulMark?.description || "" })}
                   title={`魂印：${elf.soulMark.name}`}
                   className="hidden sm:inline shrink-0 px-1.5 rounded bg-purple-900/70 border border-purple-500/50 text-xs font-black text-purple-200 hover:bg-purple-800/70">
                   「{elf.soulMark.badgeChar || (elf.soulMark.name || "").slice(0, 1)}」
                 </button>
               )}
-              {trait && (
+              {!hidden && trait && (
                 <button type="button" onClick={() => setModalContent({ title: trait.name, content: trait.description })} title={`特質：${trait.name}`}
                   className="hidden sm:inline shrink-0 px-1.5 rounded bg-amber-900/60 border border-amber-500/40 text-[11px] font-bold text-amber-200">{trait.name}</button>
               )}
-              {elf.trait && (
+              {!hidden && elf.trait && (
                 <button type="button" onClick={() => setModalContent({ title: elf.trait!.name, content: elf.trait!.description })} title={`特性：${elf.trait.name}`}
                   className="hidden sm:inline shrink-0 px-1.5 rounded bg-indigo-900/60 border border-indigo-500/40 text-[11px] font-bold text-indigo-200">{elf.trait.name}</button>
               )}
@@ -968,8 +972,9 @@ export function BattleScreenUI(props: BattleScreenUIProps) {
 
   const renderMatchInfo = () => {
     const fogged = hiddenFromViewer(p1, "p1") || hiddenFromViewer(p2, "p2");
-    const m1 = p1 && p2 ? getTypeMatchup(p1.type, p2.type) : 1;
-    const m2 = p1 && p2 ? getTypeMatchup(p2.type, p1.type) : 1;
+    const shownP1 = elfForViewer(p1, 'p1'), shownP2 = elfForViewer(p2, 'p2');
+    const m1 = p1 && p2 ? getTypeMatchup(shownP1.type, shownP2.type) : 1;
+    const m2 = p1 && p2 ? getTypeMatchup(shownP2.type, shownP1.type) : 1;
     const multCls = (m: number) => fogged ? "text-slate-400" : m > 1 ? "text-rose-400" : m === 0 ? "text-slate-500" : m < 1 ? "text-sky-300" : "text-slate-100";
     const fmt = (m: number) => fogged ? "×?" : `×${Number(m.toFixed(3))}`;
     // 陣容點：一般精靈（計勝負）＋額外精靈（金色菱形，不計勝負）
@@ -989,7 +994,7 @@ export function BattleScreenUI(props: BattleScreenUIProps) {
               const active = i === activeIdx;
               return (
                 <button key={i} type="button" onClick={() => !hiddenFromViewer(e, side) && setSelectedElfDetail({ elf: e, side, idx: i })}
-                  title={`${hiddenFromViewer(e, side) ? "未知精靈" : e.name}${extra ? "（額外精靈・不計勝負）" : ""}${e.isVanished ? "（消逝）" : dead ? "（陣亡）" : active ? "（出戰中）" : ""}`}
+                  title={`${hiddenFromViewer(e, side) ? "未知精靈" : elfForViewer(e, side).name}${extra ? "（額外精靈・不計勝負）" : ""}${e.isVanished ? "（消逝）" : dead ? "（陣亡）" : active ? "（出戰中）" : ""}`}
                   className={`${extra ? "w-2 h-2 rotate-45 rounded-[1px]" : "w-2 h-2 rounded-full"} ${
                     extra ? (dead ? "bg-amber-900/60" : "bg-amber-400") : dead ? "bg-slate-700" : active ? "bg-cyan-300 ring-1 ring-cyan-200" : "bg-emerald-400"
                   } hover:scale-150 transition-transform`} />
@@ -1013,11 +1018,11 @@ export function BattleScreenUI(props: BattleScreenUIProps) {
         </div>
         <div className="bt-panel flex flex-col items-center gap-1 px-4 py-1.5">
           <div className="flex items-center gap-2.5">
-            <TypeIcon type={p1?.type} size={30} />
+            <TypeIcon type={shownP1?.type} size={30} />
             <span className={`text-xl font-black tabular-nums ${multCls(m1)}`} title="我方屬性對對方的克制倍率">{fmt(m1)}</span>
             <span className="text-xs font-black bt-muted">VS</span>
             <span className={`text-xl font-black tabular-nums ${multCls(m2)}`} title="對方屬性對我方的克制倍率">{fmt(m2)}</span>
-            {hiddenFromViewer(p2, "p2") ? <span className="text-base font-black text-slate-400">?</span> : <TypeIcon type={p2?.type} size={30} />}
+            {hiddenFromViewer(p2, "p2") ? <span className="text-base font-black text-slate-400">?</span> : <TypeIcon type={shownP2?.type} size={30} />}
           </div>
           <div className="flex items-center gap-4">{dots("p1")}<span className="w-px h-3 bg-white/15" />{dots("p2")}</div>
         </div>
@@ -1100,38 +1105,42 @@ export function BattleScreenUI(props: BattleScreenUIProps) {
   };
 
   const renderSkillRow = () => {
-    const baseSkills = p1?.skills || [];
+    const baseSkills = visibleSkills(p1);
     const displaySkills = baseSkills.length >= 5 ? [baseSkills[4], baseSkills[0], baseSkills[1], baseSkills[2], baseSkills[3]] : baseSkills;
     const isMars = p1?.name === "變革·馬爾修斯";
     return (
       <div className="grid grid-cols-3 sm:grid-cols-5 gap-1.5 sm:gap-2.5">
         {displaySkills.map((skill, i) => {
-          const isFifth = !!skill.isFifthSkill || (baseSkills.length >= 5 && skill.name === baseSkills[4].name);
+          const slot = skill.battleSlot!;
+          const original = { ...p1.skills[slot], battleSlot: slot };
+          const isFifth = !!original.isFifthSkill || slot === 4;
           const uses = skill.charge !== undefined ? skill.charge : skill.pp;
           const disabled = phase !== "p1_select" || isElfSkillSelectionDisabled(p1) || (uses <= 0 && !isZeroPpExempt(p1, skill, p2));
-          const selected = p1SelectedSkill?.name === skill.name;
+          const selected = skillSlot(p1, p1SelectedSkill) === slot;
+          const hover = p1.illusion && !p1.isInherentInvalid ? { ...skill, name: `${original.name} → ${skill.name}`,
+            description: `【原技能】${original.name}\n${original.description}\n\n【轉化後】${skill.name}\n${skill.description}` } : skill;
           return (
             <button
               key={i}
               onClick={(e) => {
                 // 手機端：沒有 hover，點已選中的技能彈說明浮窗，再點收起；點未選中的照常選招。
-                if (phase === "p1_select" && selected && hoveredSkill?.name === skill.name) {
+                if (phase === "p1_select" && selected && hoveredSkill?.battleSlot === slot) {
                   setHoveredSkill(null); setHoveredSkillAnchor(null); return;
                 }
                 if (phase === "p1_select") {
-                  props.onSkillSelect("p1", skill);
+                  props.onSkillSelect("p1", original);
                   // 手機 tap 同步彈說明（無 hover 環境下看得到技能描述）
                   try {
                     const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
                     setHoveredSkillAnchor({ x: rect.left + rect.width / 2, y: rect.top, top: rect.top, bottom: rect.bottom });
-                    setHoveredSkill(skill);
+                    setHoveredSkill(hover);
                   } catch { /* 略過 */ }
                 }
               }}
               onMouseEnter={(e) => {
                 const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
                 setHoveredSkillAnchor({ x: rect.left + rect.width / 2, y: rect.top, top: rect.top, bottom: rect.bottom });
-                setHoveredSkill(skill);
+                setHoveredSkill(hover);
               }}
               onMouseLeave={() => { setHoveredSkill(null); setHoveredSkillAnchor(null); }}
               disabled={disabled}
@@ -1142,9 +1151,10 @@ export function BattleScreenUI(props: BattleScreenUIProps) {
                 <span className={`absolute -top-2 right-2 px-1.5 rounded text-[9px] font-black border ${skill.specialBadge.bg || "bg-purple-900/90"} ${skill.specialBadge.color || "text-purple-200"} ${skill.specialBadge.border || "border-purple-500/40"}`}>{skill.specialBadge.text}</span>
               )}
               <div className="flex items-center gap-1.5 min-w-0">
-                <TypeIcon type={skill.type && skill.type !== "--" ? skill.type : "無屬性"} size={20} />
-                <span className="font-black text-xs sm:text-[15px] text-white truncate group-hover:brightness-125">{skill.name}</span>
+                <TypeIcon type={original.type && original.type !== "--" ? original.type : "無屬性"} size={20} />
+                <span className="font-black text-xs sm:text-[15px] text-white truncate group-hover:brightness-125">{original.name}</span>
               </div>
+              {p1.illusion && !p1.isInherentInvalid && skill.name !== original.name && <div className="text-[10px] sm:text-xs text-cyan-200 truncate" title={`原技能固有效果保留；實際使用：${skill.category}／${skill.type}／威力${skill.power}`}>轉化 → {skill.name} · {skill.type} · {skill.category}</div>}
               <div className="flex items-center justify-between text-xs bt-muted">
                 {isMars ? (
                   <span>充能 <b className={uses <= 0 ? "text-rose-400" : "text-amber-300"}>{uses}</b></span>
@@ -1253,7 +1263,7 @@ export function BattleScreenUI(props: BattleScreenUIProps) {
               <h3 className="bt-title text-xl mb-4 pr-6 leading-tight shrink-0">{modalContent.title}</h3>
               <div className="overflow-y-auto custom-scrollbar pr-2">
                 <p className="text-sm text-slate-300 leading-relaxed whitespace-pre-wrap font-medium">
-                  {modalContent.content}
+                  {plainDescription(modalContent.content)}
                 </p>
               </div>
             </motion.div>
@@ -1447,7 +1457,7 @@ export function BattleScreenUI(props: BattleScreenUIProps) {
                   .filter(mark => markAppliesToElf(mark, elf));
                 return <ElfReadOnlyProfile battleSide={selectedElfDetail.side} key={`${selectedElfDetail.side}-${selectedElfDetail.idx}`}
                   elf={elf} getSkillMaxPp={getMaxPp} subtitle={`${selectedElfDetail.side.toUpperCase()} · 精靈 #${selectedElfDetail.idx + 1}`}
-                  effectiveBody={getEffectiveBody(elf, marks as any)} onClose={() => setSelectedElfDetail(null)}
+                  effectiveBody={getEffectiveBody(elfForViewer(elf, selectedElfDetail.side), marks as any)} onClose={() => setSelectedElfDetail(null)}
                   battlePanel={isActive ? <section className="bt-sub p-4 space-y-3" data-battle-detail>
                     {elf.battleId && renderChips(selectedElfDetail.side, elf)}
                     <div style={{ zoom: 1.2 } as React.CSSProperties}>{renderElfDetails(selectedElfDetail.side, elf)}</div>

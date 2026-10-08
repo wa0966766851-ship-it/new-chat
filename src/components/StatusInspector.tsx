@@ -3,6 +3,9 @@ import { Elf } from "../types";
 import { Timer } from "../battle/timers";
 import { Mark } from "../battle/marks";
 import { canonicalStatusName } from '../effects/statusIdentity';
+import { plainDescription } from '../utils/descFormat';
+import { effectDefinitionEntries } from '../battle/effectSources';
+import { elfForViewer, hiddenFromViewer } from '../battle/viewerPerspective';
 
 export type StateCategory = "異常" | "能力" | "防護" | "印記" | "回合類" | "其他計時" | "次數類" | "常駐";
 
@@ -28,20 +31,13 @@ function translateStatus(status: string): string {
 
 export function getActiveEffects(side: "p1" | "p2", state: any): ActiveEffect[] {
   if (!state) return [];
-  const elf: Elf | null = side === "p1" ? state.p1 : state.p2;
-  if (!elf) return [];
+  const source: Elf | null = side === "p1" ? state.p1 : state.p2;
+  if (!source || hiddenFromViewer(source, side)) return [];
+  const elf = elfForViewer(source, side);
 
   const effects: ActiveEffect[] = [];
-  if (elf.soulMark) effects.push({
-    name: `魂印 · ${elf.soulMark.name}`, desc: elf.soulMark.description || "固有效果與被動技能",
-    category: "常駐", polarity: "POSITIVE"
-  });
-  if (elf.alienTraits) {
-    for (const trait of Object.values(elf.alienTraits) as any[]) {
-      if (trait?.name) effects.push({ name: trait.name, desc: trait.description || "精靈特質", category: "常駐", polarity: "POSITIVE" });
-    }
-  }
-  if (elf.trait?.name) effects.push({ name: elf.trait.name, desc: elf.trait.description || "精靈特性", category: "常駐", polarity: "POSITIVE" });
+  for (const entry of effectDefinitionEntries(elf)) effects.push({ name: `${entry.kind} · ${entry.name}`,
+    desc: entry.description || '固有效果與被動技能', category: '常駐', polarity: 'POSITIVE' });
 
   const statuses = elf.battleStatuses || {};
   const primaryStatus = elf.battleStatus;
@@ -160,7 +156,7 @@ export function StatusInspector({ state }: { state: any }) {
                 <article key={`${effect.category}-${effect.name}-${index}`} className={`flex flex-col gap-1 rounded-lg border p-3 ${tone}`}>
                   <div className="flex items-start justify-between gap-2">
                     {category === "常駐" ? (
-                      <button type="button" title={effect.desc}
+                      <button type="button" title={plainDescription(effect.desc)}
                         onClick={() => setExpandedPermanent(prev => ({ ...prev, [effect.name]: !prev[effect.name] }))}
                         className="flex flex-1 items-center justify-between gap-2 text-left text-[12px] font-black leading-tight hover:text-white">
                         <span>{effect.name}</span><span className="shrink-0 text-[9px] font-bold text-cyan-300">{expandedPermanent[effect.name] ? "收合" : "查看說明"}</span>
@@ -168,7 +164,7 @@ export function StatusInspector({ state }: { state: any }) {
                     ) : <span className="text-[11px] font-black leading-tight">{effect.name}</span>}
                     {effect.stacks !== undefined && <span className="shrink-0 rounded border border-slate-700 bg-slate-800/80 px-1.5 py-0.5 text-[9px] font-black text-cyan-300">{effect.stacks} {effect.stackUnit || "層"}</span>}
                   </div>
-                  {(category !== "常駐" || expandedPermanent[effect.name]) && <p className="whitespace-pre-wrap text-[12px] font-medium leading-5 text-slate-300">{effect.desc}</p>}
+                  {(category !== "常駐" || expandedPermanent[effect.name]) && <p className="whitespace-pre-wrap text-[12px] font-medium leading-5 text-slate-300">{plainDescription(effect.desc)}</p>}
                   {effect.remaining !== undefined && <div className="mt-1 text-[9px] font-black text-slate-500">剩餘 {effect.remaining} {effect.unit || "回合"}</div>}
                 </article>
               );

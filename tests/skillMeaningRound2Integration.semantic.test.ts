@@ -15,7 +15,7 @@ try {
   const {default:Battle}=await server.ssrLoadModule('/src/components/BattleScreen.tsx');
   const {DEFAULT_ELVES}=await server.ssrLoadModule('/src/data/defaultElves.ts');
   const {getBattleSkillRegistry,getSoulMarkRegistry}=await server.ssrLoadModule('/src/effects/battleEventRegistry.ts');
-  const {STARLIGHT_RUS_SKILLS,handleStarlightRusSoulMark}=await server.ssrLoadModule('/src/effects/starlightRusRegistry.ts');
+  const {STARLIGHT_RUS_SKILLS,handleStarlightRusSoulMark}=await server.ssrLoadModule('/src/effects/elves/starlight-rus/registry.ts');
   let driver:any;
   const make=(id:string,speed:number):any=>({id,battleId:id,name:id,type:'普通',level:100,currentHp:10000,maxHp:10000,
     baseStats:{hp:10000,atk:100,def:1000,spatk:100,spdef:1000,speed},calculatedStats:{hp:10000,atk:100,def:1000,spatk:100,spdef:1000,speed},statStages:{},

@@ -11,6 +11,7 @@ import { OTHERWORLD_REY_SEED } from "./otherworldRey";
 import { HOLY_MILES_SEED } from "./holyMiles";
 import { LIUJIE_SEED } from "./liujie";
 import { NEW_ELF_SEEDS } from "./newElves";
+import { HAMO_SEED } from './hamo';
 import { STAGED_ARENA_ELVES } from "./stagedArenaElves";
 import { isSkillStone, stoneBasePp } from './skillStones';
 
@@ -2733,6 +2734,7 @@ const SEED_ELVES: (Omit<Elf, "id" | "calculatedStats" | "currentHp" | "maxHp"> &
   HOLY_MILES_SEED,
   LIUJIE_SEED,
   ...NEW_ELF_SEEDS,
+  HAMO_SEED,
   ...STAGED_ARENA_ELVES
 ];
 

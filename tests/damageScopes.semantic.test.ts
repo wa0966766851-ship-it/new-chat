@@ -82,7 +82,7 @@ for(const side of ['p1','p2'] as const){
  assert.equal(returned[`${side}RegistryState`].powerMultiplierThisAction,undefined);
 }
 console.log('文字指定範圍、本次倍率、威力公式、換回不復活通過');
-import { handleOtherworldReySoulMark } from '../src/effects/otherworldReyRegistry';
+import { handleOtherworldReySoulMark } from '../src/effects/elves/otherworld-rey/registry';
 import { EffectTiming } from '../src/effects/types';
 for(const side of ['p1','p2'] as const){
  const self:any={...elf('rey'),currentHp:500,survivalRule:{mode:'god_descent',active:true,minHp:-70000}};
@@ -114,7 +114,7 @@ try{
 }finally{await engine.close();}
 console.log('雷伊技能／非真實／免疫範圍與真正造成方入口通過');
 import { tickTimers, addTimer } from '../src/battle/timers';
-import { OTHERWORLD_REY_SKILLS } from '../src/effects/otherworldReyRegistry';
+import { OTHERWORLD_REY_SKILLS } from '../src/effects/elves/otherworld-rey/registry';
 for(const side of ['p1','p2'] as const){
  const target=side==='p1'?'p2':'p1';let timers:any[]=[];
  const c:any={actor:side,targetSide:target,self:elf('rey'),target:elf('opp'),getPlayerState:()=>0,setPlayerState:()=>{},applyStatChange:()=>{},

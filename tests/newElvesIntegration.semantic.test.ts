@@ -21,6 +21,7 @@ try {
   const { SOUL_MARK_MAPPING, getBattleSkillRegistry, getBattleSkillAfterHitRegistry, getSoulMarkRegistry } = await server.ssrLoadModule('/src/effects/battleEventRegistry.ts');
   const { getStatuses } = await server.ssrLoadModule('/src/utils/battleHelpers.ts');
   const { targetedDamageAPI } = await server.ssrLoadModule('/src/battle/targetedDamage.ts');
+  const { BATTLE_ITEMS } = await server.ssrLoadModule('/src/utils/battleHelpers.ts');
   // 場下測試使用正式 context 提供的指定精靈 API，不自行模擬扣血。
   for (const type of ['fixed', 'percent', 'true', 'skill_extra_action']) {
     getBattleSkillRegistry()[`指定場下-${type}`] = (ctx: any) => {
@@ -33,6 +34,14 @@ try {
     ctx.applyDamageToElf(ctx.targetSide, bench.battleId || bench.id, 999999, 'true');
   };
   getBattleSkillRegistry()['驅逐驗收-致命'] = (ctx: any) => ctx.applyTrueDamage(ctx.targetSide, 999999);
+  getBattleSkillRegistry()['驅逐驗收-攻擊致命'] = (ctx: any) => ctx.applySkillTypeDamage(ctx.targetSide, 999999, '普通', undefined, undefined, { category: 'skill_attack' });
+  getBattleSkillRegistry()['驅逐驗收-印記連鎖'] = (ctx: any) => {
+    // 模擬另一來源摩哥斯先前施加的印記，不依賴已修掉的敵方出招錯掛自己。
+    ctx.setMark({ id: 'mogos_residual', name: '埒殘銜闕', count: 3, maxCount: 3,
+      scope: 'elf', ownerBattleId: ctx.target.battleId || ctx.target.id, persistsOffField: true,
+      clearable: false, effects: { nonTrueDamageTakenMultiplier: 1.5 } }, ctx.targetSide);
+    ctx.applySkillTypeDamage(ctx.targetSide, 999999, '普通', undefined, undefined, { category: 'skill_attack' });
+  };
   const switchHooks: string[] = [];
   getSoulMarkRegistry()['驅逐後一般隊員'] = (_ctx: any, timing: string) => { switchHooks.push(timing); return false; };
   assert.equal(SOUL_MARK_MAPPING['5031'], undefined); assert.equal(SOUL_MARK_MAPPING['六界神王'], undefined);
@@ -42,11 +51,11 @@ try {
     baseStats: { hp: 100, atk: 100, def: 100, spatk: 100, spdef: 100, speed: 100 }, statStages: {}, effects: [], skills: [{ ...wait }] });
   const elf = (id: string) => { const seed = structuredClone(DEFAULT_ELVES.find((e: any) => e.id === id)); return { ...seed, ...make(id), name: seed.name, skills: seed.skills, type: seed.type }; };
   let driver: any;
-  async function mount(key: string, side: string, self: any, enemy: any, bench: any[] = [], enemyBench: any[] = []) {
+  async function mount(key: string, side: string, self: any, enemy: any, bench: any[] = [], enemyBench: any[] = [], mode?: string) {
     await act(async () => root.render(React.createElement(Battle, { key,
       initialP1Team: side === 'p1' ? [self, ...bench] : [enemy, ...enemyBench], initialP2Team: side === 'p2' ? [self, ...bench] : [enemy, ...enemyBench],
       p1StarterId: side === 'p1' ? self.id : enemy.id, p2StarterId: side === 'p2' ? self.id : enemy.id,
-      battleMode: 'PVP', preparedTeams: true, onBackToMenu: () => {}, onRestartBattle: () => {}, onDriverInit: (d: any) => driver = d })));
+      battleMode: 'PVP', preparedTeams: true, specialMode: mode, onBackToMenu: () => {}, onRestartBattle: () => {}, onDriverInit: (d: any) => driver = d })));
   }
   async function turn(side: string, ownIndex: number, enemyIndex = 0) {
     const before = driver.getSyncState().turnNumber;
@@ -57,10 +66,52 @@ try {
   }
   for (const side of ['p1', 'p2'] as const) {
     const other = side === 'p1' ? 'p2' : 'p1';
+    const late = elf('5033'); late.skills = [{ ...wait, priority: -10 }];
+    const fast = make('後手免傷攻方');
+    fast.skills = [{ ...wait, category: '物理', power: 100, priority: 10 }];
+    fast.calculatedStats.atk = 10000;
+    const received: any[] = [];
+    getSoulMarkRegistry()[fast.name] = (_ctx: any, event: string, data: any) => {
+      if (event === 'AFTER_DAMAGE' && !data?.isIncoming && data?.damageType === 'skill_attack') received.push(data);
+    };
+    await mount(`late-immunity-${side}`, side, late, fast);
+    await turn(side, 0);
+    assert.equal(received.length, 1);
+    assert.equal(received[0].receipt.settledAmount, 0, '後手空間躍遷須擋住對方首次技能傷害');
+    checks++;
+
+    for (const mode of [undefined, 'destiny']) {
+      const patient = make(`藥劑受方-${side}-${mode}`); patient.currentHp = 500;
+      getSoulMarkRegistry()[patient.name] = (ctx: any, event: string) => {
+        if (event === 'ON_ENTRANCE') ctx.addTimerTo(ctx.actor, { id: '減療驗收', remaining: 9, tickAt: 'round_end', kind: 'turn_effect', payload: { recoveryReductionPercent: .9 } }, false);
+      };
+      await mount(`potion-${side}-${mode}`, side, patient, make('藥劑對手'), [], [], mode);
+      const before = driver.getSyncState().turnNumber;
+      await act(async () => {
+        if (side === 'p2') driver.onSkillSelect('p1', driver.getSyncState().p1.skills[0]);
+        driver.onUseItem(side, BATTLE_ITEMS.find((i: any) => i.id === 'hp_150'));
+        if (side === 'p1') driver.onSkillSelect('p2', driver.getSyncState().p2.skills[0]);
+      });
+      for (let i = 0; i < 300 && driver.getSyncState().turnNumber === before; i++) await act(async () => { await new Promise(r => setTimeout(r, 10)); });
+      assert.equal(driver.getSyncState().turnNumber, before + 1);
+      assert.equal(driver.getSyncState()[side].currentHp, 650, '藥劑不被一般90%減療縮成15點');
+      assert.equal(driver.getSyncState()[`${side}ItemInventory`].hp_150.left, 99);
+      assert.equal(driver.getSyncState()[`${other}ItemInventory`].hp_150.left, 100);
+      await mount(`potion-restart-${side}-${mode}`, side, patient, make('藥劑對手'), [], [], mode);
+      assert.equal(driver.getSyncState()[`${side}ItemInventory`].hp_150.left, 100, '重新進入戰鬥重置庫存');
+      checks++;
+    }
     const f = elf('5032'), enemy = make(`enemy-${side}`); enemy.skills[0].name = '幻化目標等待'; enemy.skills[0].priority = 0;
     await mount(`illusion-${side}`, side, f, enemy, [make('own-bench')], [make('enemy-bench')]);
     assert.equal(driver.getSyncState()[side].illusion.target.name, enemy.name); assert.equal(driver.getSyncState()[side].maxHp, 200000);
     assert.ok(getStatuses(driver.getSyncState()[side])['星護']);
+    if (side === 'p1') {
+      const button = [...document.querySelectorAll('button')].find(b => b.textContent?.includes('星核脈衝') && b.textContent?.includes('轉化 → 幻化目標等待'));
+      assert.ok(button, '己方技能欄同時顯示原名與转化後名稱');
+      await act(async () => button.dispatchEvent(new dom.window.MouseEvent('click', { bubbles: true })));
+      assert.equal(driver.getSyncState().p1SelectedSkill.name, '星核脈衝', '點轉化卡仍選原槽，保留變思遷憶');
+      checks++;
+    }
     await turn(side, 0);
     let state = driver.getSyncState();
     assert.equal(state[side].skills[0].name, '星核脈衝', '轉化只改使用中的技能，背包槽不被改寫');
@@ -127,20 +178,22 @@ try {
     assert.equal(state[`${other}Team`][1].currentHp,1,'場下致命存活寫入持有者而非在場者');
     assert.equal(state[other].currentHp,100000); checks++;
 
-    const fatal = make('orb-fatal-source'); fatal.skills[0].name = '驅逐驗收-致命'; fatal.skills[0].priority = 10;
+    for (const fatalName of ['驅逐驗收-致命', '驅逐驗收-攻擊致命', '驅逐驗收-印記連鎖']) {
+    const fatal = make('orb-fatal-source'); fatal.skills[0].name = fatalName; fatal.skills[0].priority = 10;
     const next = make('orb-expel-next'); next.name = '驅逐後一般隊員';
     const extra = make('orb-extra-excluded'); extra.isExtra = true;
-    await mount(`orb-expel-${side}`,side,elf('5034'),fatal,[next,extra]);
+    await mount(`orb-expel-${side}-${fatalName}`,side,elf('5034'),fatal,[next,extra]);
     switchHooks.length = 0;
     await turn(side,1); state=driver.getSyncState();
     assert.equal(state[`${side}ActiveIndex`],1,'驅逐只選一般存活隊員，不選額外精靈');
     assert.equal(state[side].battleId,next.battleId);
-    assert.equal(state[`${side}Team`][0].currentHp,1,'致命存活體力保留在摩哥斯');
+    assert.equal(state[`${side}Team`][0].currentHp,1,`致命存活體力保留在摩哥斯：${JSON.stringify(state.logs.slice(-18))}`);
     assert.equal(state[`${side}Team`][0].maxHp,125000,'六維提升含體力上限');
     assert.equal(state[side].skills[0].name,wait.name,'下隻不被舊技能覆蓋');
     assert.ok(!switchHooks.some(t=>['ON_ENTRANCE','ON_SWITCH_OUT','BEFORE_SWITCH_OUT'].includes(t)),'驅逐不執行普通切換登場／下場鉤子');
     assert.equal(state[`${side}RegistryState`].teamMogosOrb.phase,'竭擇期','魂珠換人保留但不重抽');
     checks++;
+    }
   }
   assert.equal(errors.length, 0, '捕获到的戰鬥handler錯誤不可被catch掩蓋為通過');
   console.log(`新精靈真正戰鬥：${checks} 個双側場景通過`);

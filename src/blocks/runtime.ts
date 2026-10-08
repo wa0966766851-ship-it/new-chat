@@ -820,7 +820,8 @@ const PASSIVE_OPS = new Set(["dmg_mod", "boost", "note", "noop"]);
 export function runSoulProgram(ctx: BattleEventContext, prog: Program, trigs: Trigger[], data: any, only?: number[]): boolean {
   const st: RunState = { last: null, lastAmount: 0, event: { trig: trigs[0], data } };
   snapshotConditions(ctx, prog.clauses.filter((c, i) => (!only || only.includes(i)) && c.parsed && trigs.includes(c.trig)), st);
-  const onceKey = (i: number) => `blkOnce:${prog.title}:${i}`;
+  const source = (ctx as any).illusionEffectKey;
+  const onceKey = (i: number) => `blkOnce:${source ? `${source}:` : ''}${prog.title}:${i}`;
   prog.clauses.forEach((c, i) => {
     if (only && !only.includes(i)) return;
     if (!c.parsed || !trigs.includes(c.trig)) return;
