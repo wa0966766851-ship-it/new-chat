@@ -4,13 +4,12 @@ import { isSkillStone, isStoneThrower, stoneEffect, toSSStone } from '../data/sk
 import { prdPercent } from '../utils/prd';
 import { skillSlot } from '../battle/skillSlot';
 import { changePp, restorePp } from './newElfOperations';
+import { additionalAllowed } from './additionalGate';
+import { readChancePriority } from './skillProperty';
 
 type Roll = (key: string, percent: number) => boolean;
-function additionalAllowed(ctx: BattleEventContext): boolean {
-  const timers = (ctx.actor === 'p1' ? ctx.p1Timers : ctx.p2Timers) || [];
-  return (ctx as any).additionalEffectsEnabled !== false && !ctx.self.isAdditionalInvalid && !(ctx.getPlayerState('allHitEffectNullTurns') > 0)
-    && !timers.some(t => !t.pendingActivation && t.remaining > 0 && ['all', '攻擊'].includes(t.payload?.block?.addInvalid));
-}
+/** 5026 等定義已把技能石效果寫成技能自帶的連鎖 Kit：由 Kit 執行，這裡的資料表路徑不得再重複結算。 */
+export const kitDrivenStone = (skill?: Skill): boolean => skill?.effectMode === 'kit' && !!skill.kit?.length;
 const key = (ctx: BattleEventContext, skill: Skill) => `${ctx.actor}:${ctx.self.battleId || ctx.self.id}:${skill.name}:stone`;
 const proc = (ctx: BattleEventContext, skill: Skill, roll: Roll) => {
   const effect = stoneEffect(skill);
@@ -19,6 +18,8 @@ const proc = (ctx: BattleEventContext, skill: Skill, roll: Roll) => {
 
 /** 附加效果統一走 metadata，不再讓文字解析猜測或重複執行。 */
 export function stonePriorityBonus(ctx: BattleEventContext, skill: Skill, roll: Roll = prdPercent): number {
+  // Kit 版技能石：機率先制由技能自帶的機率先制屬性讀取（投石者先轉化為 SS，機率 100%）。
+  if (kitDrivenStone(skill)) return readChancePriority(transformStone(ctx, skill), ctx, roll);
   if (stoneEffect(skill)?.detail !== 'priority_plus_1' || !additionalAllowed(ctx)) return 0;
   const cache = ctx.getPlayerState('conditionalSkillPriorityRoll');
   const id = `${ctx.roundNumber}:${skill.name}`;
@@ -33,6 +34,7 @@ export function transformStone(ctx: BattleEventContext, skill: Skill): Skill {
 }
 
 export function stoneBeforeDamage(ctx: BattleEventContext, skill: Skill, roll: Roll = prdPercent): Skill {
+  if (kitDrivenStone(skill)) return skill;
   if (!additionalAllowed(ctx) || stoneEffect(skill)?.detail !== 'double_power' || !proc(ctx, skill, roll)) return skill;
   // 舊專案 TXT 明寫威力；SeerAPI 原版明寫傷害。兩者不是同一公式。
   return skill.skillStoneRuleset === 'standard'
@@ -42,7 +44,7 @@ export function stoneBeforeDamage(ctx: BattleEventContext, skill: Skill, roll: R
 
 export function stoneAfterHit(ctx: BattleEventContext, roll: Roll = prdPercent): void {
   const skill: Skill = ctx.skill, effect = stoneEffect(skill);
-  if (!additionalAllowed(ctx) || !effect || ['double_power', 'priority_plus_1'].includes(effect.detail) || ctx.isHit === false || !proc(ctx, skill, roll)) return;
+  if (kitDrivenStone(skill) || !additionalAllowed(ctx) || !effect || ['double_power', 'priority_plus_1'].includes(effect.detail) || ctx.isHit === false || !proc(ctx, skill, roll)) return;
   const self = ctx.actor, opp = ctx.targetSide;
   if (effect.type === 'status') {
     const [status, turns] = effect.detail.split(':');

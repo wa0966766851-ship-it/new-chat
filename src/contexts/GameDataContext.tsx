@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { Elf, Skill } from "../types";
 import { GLOBAL_ELVES } from "../data/gameData";
+import { getDefaultElvesRevision, subscribeDefaultElves } from "../data/defaultElves";
 import { syncOtherworldReyDescriptions } from "../data/otherworldReyDescriptions";
 import { ELF_ID_MAPPING } from "../data/elfRegistry";
 import { normalizeElfStats, normalizeStoredElfStats } from "../utils/elfStats";
@@ -97,6 +98,14 @@ export const GameDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   });
 
   const [deletedElves, setDeletedElves] = useState<Elf[]>([]);
+
+  // 預設清單在掛載後才補入匯入精靈時（正常流程由 main.tsx 在首次繪製前載入完成）重算 allElves。
+  const [defaultElvesRevision, setDefaultElvesRevision] = useState(getDefaultElvesRevision);
+  useEffect(() => {
+    const unsubscribe = subscribeDefaultElves(() => setDefaultElvesRevision(getDefaultElvesRevision()));
+    setDefaultElvesRevision(getDefaultElvesRevision());
+    return unsubscribe;
+  }, []);
 
   // One-time team and preset migrations
   useEffect(() => {
@@ -274,7 +283,7 @@ export const GameDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       }
     });
     return Array.from(uniqueMap.values());
-  }, [customElves, defaultElvesOverrides]);
+  }, [customElves, defaultElvesOverrides, defaultElvesRevision]);
 
   const addCustomElf = (elf: Elf) => {
     setCustomElves(prev => [...prev, normalizeElfStats({ ...elf, id: `custom_${Date.now()}` })]);

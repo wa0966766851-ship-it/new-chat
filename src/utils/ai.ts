@@ -1,161 +1,33 @@
-import { activeConstraints } from "../battle/timedConstraints";
-import { hasBattleItem } from '../battle/itemInventory';
-import { Elf, Skill, BattleItem } from "../types";
-import { BattleState } from "../components/BattleManager";
-import { calculateDamage } from "./damageCalculator";
-import { BATTLE_ITEMS, getStatuses, isZeroPpExempt, isElfSwitchDisabled, getNoSwitchTurns, isElfItemDisabled } from "./battleHelpers";
-import { getTypeMatchup } from "./statCalculator";
-import { decideAction, decideForcedSwitch, type AIContext, type AIDeps } from "../battle/ai";
+import type { Elf, Skill, BattleItem } from '../types';
+import type { BattleState } from '../components/BattleManager';
+import { BATTLE_ITEMS } from './battleHelpers';
+import { heuristicRanking } from '../battle/ai/heuristic';
+import { decisionKnowledge } from '../battle/ai/knowledge';
+import { readAISettings, settingsForSide } from '../battle/ai/settings';
+import { legalActions } from '../battle/ai/legalActions';
+import { type PlannedAction, type DecisionRequest } from '../battle/ai/types';
 
-export interface AIAction {
-  type: 'skill' | 'switch' | 'item';
-  skill?: Skill;
-  switchIndex?: number;
-  item?: BattleItem;
+export interface AIAction { type: 'skill' | 'switch' | 'item'; skill?: Skill; switchIndex?: number; item?: BattleItem }
+export function materializeAiAction(state: BattleState, side: 'p1' | 'p2', action: PlannedAction): AIAction {
+  if (action.kind === 'skill') return { type: 'skill', skill: state[side].skills[action.slot] };
+  if (action.kind === 'switch') return { type: 'switch', switchIndex: action.index };
+  if (action.kind === 'item') return { type: 'item', item: BATTLE_ITEMS.find(i => i.id === action.id) };
+  return { type: 'skill', skill: { name: '等待', type: '無', category: '屬性', power: 0, pp: 0, priority: 0, description: '沒有可用行動，等待本回合結束。', effectType: 'none', effectDetail: '' } };
 }
-
-export const pickAiAction = (
-  state: BattleState,
-  side: 'p1' | 'p2',
-  p1Suit?: string,
-  p2Suit?: string,
-  rng: () => number = Math.random
-): AIAction => {
-  const self = side === 'p1' ? state.p1 : state.p2;
-  const opponent = side === 'p1' ? state.p2 : state.p1;
-  const team = side === 'p1' ? state.p1Team : state.p2Team;
-  const activeIndex = side === 'p1' ? state.p1ActiveIndex : state.p2ActiveIndex;
-
-  const canSwitch = team.some((elf, idx) => !elf.isExtra && (elf.currentHp > 0 || (elf.deathImmunity?.deathImmuneTurns ?? 0) > 0) && idx !== activeIndex) && !state.isTyrDuelField
-    && !isElfSwitchDisabled(self, opponent, false, getNoSwitchTurns(state, side));
-
-  const ctx: AIContext = {
-    self,
-    opponent,
-    team,
-    activeIndex,
-    items: BATTLE_ITEMS.filter(item => hasBattleItem(state[`${side}ItemInventory`], item.id)),
-    canSwitch,
-    canUseItem: !isElfItemDisabled(self),
-    turnNumber: state.turnNumber,
-  };
-
-  const deps: AIDeps = {
-    estimateDamage: (attacker: Elf, defender: Elf, skill: Skill) => {
-      const res = calculateDamage(attacker, defender, skill, side, p1Suit, p2Suit, 1.0, false);
-      return res.damage;
-    },
-    getTypeMatchup,
-    getStatuses: (elf: Elf) => {
-      return getStatuses(elf);
-    },
-    isSkillUsable: (elf: Elf, skill: Skill) => {
-      const realSkill = elf.skills.find(s => s.name === skill.name);
-      if (!realSkill) return false;
-      if (realSkill.category !== "屬性" && activeConstraints(state[`${side}Timers`],elf).some(p=>p.blockAttack)) return false;
-      if (isZeroPpExempt(elf, realSkill, opponent)) return true;
-      const currentPP = realSkill.charge !== undefined ? realSkill.charge : (realSkill.pp || 0);
-      return currentPP > 0;
-    },
-    isControlStatus: (status: string) => {
-      const ctrl = ["害怕", "麻痺", "睡眠", "冰封", "疲憊", "癱瘓"];
-      return ctrl.includes(status);
-    },
-    rng,
-  };
-
-  const scored = decideAction(ctx, deps);
-  if (!scored) {
-    const blocked = activeConstraints(state[`${side}Timers`],self).some(p=>p.blockAttack);
-    const fallback = self.skills.find(s => (s.charge ?? s.pp) > 0 && (!blocked || s.category === "屬性"));
-    return {
-      type: "skill",
-      skill: fallback ?? (blocked ? {name:"等待",type:"無",category:"屬性",power:0,pp:0,priority:0,description:"暫時等待",effectType:"none",effectDetail:""} : self.skills[0])
-    };
-  }
-
-  const action = scored.action;
-  switch (action.kind) {
-    case "skill":
-      return {
-        type: "skill",
-        skill: action.skill,
-      };
-    case "switch":
-      // 額外精靈不可作為切換上場的對象；若 AI 誤選則改為使用技能
-      if (team[action.index]?.isExtra) {
-        const fb = self.skills.find(s => (s.charge ?? s.pp) > 0) || self.skills[0];
-        return { type: "skill", skill: fb };
-      }
-      return {
-        type: "switch",
-        switchIndex: action.index,
-      };
-    case "item":
-      return {
-        type: "item",
-        item: action.item,
-      };
-  }
-};
-
-export const pickAiForcedSwitch = (
-  state: BattleState,
-  side: 'p1' | 'p2',
-  p1Suit?: string,
-  p2Suit?: string,
-  rng: () => number = Math.random
-): number => {
-  const self = side === 'p1' ? state.p1 : state.p2;
-  const opponent = side === 'p1' ? state.p2 : state.p1;
-  const team = side === 'p1' ? state.p1Team : state.p2Team;
-  const activeIndex = side === 'p1' ? state.p1ActiveIndex : state.p2ActiveIndex;
-
-  const canSwitch = team.some((elf, idx) => !elf.isExtra && (elf.currentHp > 0 || (elf.deathImmunity?.deathImmuneTurns ?? 0) > 0) && idx !== activeIndex);
-
-  const ctx: AIContext = {
-    self,
-    opponent,
-    team,
-    activeIndex,
-    items: BATTLE_ITEMS as BattleItem[],
-    canSwitch,
-    canUseItem: false,
-    turnNumber: state.turnNumber,
-  };
-
-  const deps: AIDeps = {
-    estimateDamage: (attacker: Elf, defender: Elf, skill: Skill) => {
-      const res = calculateDamage(attacker, defender, skill, side, p1Suit, p2Suit, 1.0, false);
-      return res.damage;
-    },
-    getTypeMatchup,
-    getStatuses: (elf: Elf) => {
-      return getStatuses(elf);
-    },
-    isSkillUsable: (elf: Elf, skill: Skill) => {
-      const realSkill = elf.skills.find(s => s.name === skill.name);
-      if (!realSkill) return false;
-      if (isZeroPpExempt(elf, realSkill, opponent)) return true;
-      const currentPP = realSkill.charge !== undefined ? realSkill.charge : (realSkill.pp || 0);
-      return currentPP > 0;
-    },
-    isControlStatus: (status: string) => {
-      const ctrl = ["害怕", "麻痺", "睡眠", "冰封", "疲憊", "癱瘓"];
-      return ctrl.includes(status);
-    },
-    rng,
-  };
-
+function fallbackRequest(state: BattleState, side: 'p1' | 'p2', p1Suit?: string, p2Suit?: string, rng: () => number = Math.random, forced = false): DecisionRequest {
+  return { state: decisionKnowledge(state, side).state, side, p1Suit, p2Suit, forced,
+    seed: Math.floor(rng() * 0xffffffff), settings: settingsForSide(readAISettings(),side) };
+}
+/** 相容既有同步入口：修正合法性與方向；完整推演由畫面注入的背景服務負責。 */
+export const pickAiAction = (state: BattleState, side: 'p1' | 'p2', p1Suit?: string, p2Suit?: string, rng: () => number = Math.random): AIAction => {
   try {
-    const bestIdx = decideForcedSwitch(ctx, deps);
-    if (bestIdx !== -1 && team[bestIdx] && !team[bestIdx].isExtra) return bestIdx;
-  } catch (err) {
-    console.error("AI forced switch calculation error:", err);
-  }
-
-  // Safety Fallback to prevent getting stuck (額外精靈不可作為替補)
-  const fallbackIdx = team.findIndex((elf, idx) => !elf.isExtra && (elf.currentHp > 0 || (elf.deathImmunity?.deathImmuneTurns ?? 0) > 0) && idx !== activeIndex);
-  if (fallbackIdx !== -1) return fallbackIdx;
-  return team.findIndex(elf => !elf.isExtra && (elf.currentHp > 0 || (elf.deathImmunity?.deathImmuneTurns ?? 0) > 0));
+    const ranked = heuristicRanking(fallbackRequest(state, side, p1Suit, p2Suit, rng));
+    return materializeAiAction(state, side, ranked[0]?.action || { kind: 'wait' });
+  } catch { return materializeAiAction(state, side, legalActions(state, side)[0] || { kind: 'wait' }); }
+};
+export const pickAiForcedSwitch = (state: BattleState, side: 'p1' | 'p2', p1Suit?: string, p2Suit?: string, rng: () => number = Math.random): number => {
+  let best: PlannedAction | undefined;
+  try { best = heuristicRanking(fallbackRequest(state, side, p1Suit, p2Suit, rng, true))[0]?.action; }
+  catch { best = legalActions(state, side, true)[0]; }
+  return best?.kind === 'switch' ? best.index : -1;
 };

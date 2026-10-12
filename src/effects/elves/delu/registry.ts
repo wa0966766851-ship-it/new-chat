@@ -30,7 +30,37 @@ export const handleDeluSoulMark = (context: BattleEventContext, event: EffectTim
     }
   }
 
-  
+
+  // 回合開始：體力不低於對手 → 當回合造成非真實傷害提升50%；體力低於¼ → 直到下場前每回合開始受到最大體力75%真實傷害
+  if (event === EffectTiming.ROUND_START) {
+    const low = self.currentHp < self.maxHp / 4;
+    setPlayerState("deluRoundStartLow", low);
+    if (self.currentHp >= (target?.currentHp ?? Infinity)) {
+      setPlayerState("DeluNonTrueDmgBoostTurns", 1); // 回合結束通用遞減
+      addLog(`🦁 【獅】：體力不低於對手，本回合造成的非真實傷害提升50%！`, "effect");
+    }
+    if (low) setPlayerState("deluLowHpBleed", true);
+    if (getPlayerState("deluLowHpBleed")) context.applyTrueDamage(actor, Math.floor(self.maxHp * 0.75), "【獅】反噬");
+  }
+  if (event === EffectTiming.ON_SWITCH_OUT) setPlayerState("deluLowHpBleed", false);
+
+  if (event === EffectTiming.BEFORE_DAMAGE && extraData && !extraData.isIncoming) {
+    if ((getPlayerState("DeluNonTrueDmgBoostTurns") || 0) > 0 && extraData.damageCategory !== "true") extraData.increasePercent += 0.5;
+    // 回合開始時體力低於¼：自身使用技能時1回合內對手受到傷害不小於對手體力上限
+    if (getPlayerState("deluFloorThisTurn") && extraData.damageCategory !== "true") extraData.floor = Math.max(extraData.floor || 0, target?.maxHp || 0);
+  }
+
+  if (event === EffectTiming.BEFORE_SKILL && getPlayerState("deluRoundStartLow")) {
+    setPlayerState("deluFloorThisTurn", true);
+    setOpponentState(`${oppSide}_noHealTurns`, 1);
+    context.applyTrueDamage(oppSide, target.maxHp, "【獅】");
+    if ((context.getMarks(oppSide) || []).some(m => m.id === "delu_shackles" && (m.count || 0) > 0)) {
+      const left = context.target?.currentHp || 0;
+      if (left > 0) context.applyTrueDamage(oppSide, left, "【獅】魔軀枷鎖");
+    }
+  }
+  if (event === EffectTiming.ROUND_END) setPlayerState("deluFloorThisTurn", false);
+
   if (event === EffectTiming.ON_STATUS_IMMUNIZED) {
      const count = getPlayerState("DeluNextStatusImmuneCount") || 0;
      if (count > 0) {
@@ -221,8 +251,9 @@ export const DELU_SKILLS: Record<string, BattleSkillHandler> = {
     self.statStages = newStages as any;
     addLog(`📈 【負岳勢】山岳：全屬性提升 ${boost} 級！`, "effect");
     
-    setPlayerState("DamageBoostTurns", 2);
-    setPlayerState("dmgDoubleTurns", 2);
+    // 原文：下2回合自身攻擊技能造成傷害提升100%。過去另寫了 DamageBoostTurns（引擎視為「持有者受到傷害×2」），
+    // 等於讓迪露自己受到的傷害翻倍；已刪除（2026-10-11）。
+    ctx.setNextTurns?.("self", "dmgDoubleTurns", 2);
     ctx.addTimerTo(actor, turnEffect("delu_damage_boost", "負岳勢-增傷", 2, { 
       payload: { double: true },
       displayChar: "增",

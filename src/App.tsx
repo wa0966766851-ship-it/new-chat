@@ -64,6 +64,7 @@ function AppContent() {
   const [battleMode, setBattleMode] = useState<BattleMode>("PVE");
   const [battleFormat, setBattleFormat] = useState<"normal_6v6" | "solo_1v1" | "peak_6v6" | "peak_3v3">("normal_6v6");
   const [battleKey, setBattleKey] = useState<number>(0);
+  const restartedRef = React.useRef(false);
   const [isTransitioning, setIsTransitioning] = useState<boolean>(false);
   const [p1Team, setP1Team] = useState<Elf[]>([]);
   const [p2Team, setP2Team] = useState<Elf[]>([]);
@@ -210,6 +211,7 @@ function AppContent() {
       setSpecialMode(options?.specialMode);
       setInterstellarOptions(options?.interstellarOptions || null);
       
+      restartedRef.current = false;
       setIsTransitioning(true);
       setTimeout(() => {
         setView("battle");
@@ -491,7 +493,8 @@ function AppContent() {
                 }
                 setInterstellarOptions(null);
               }}
-              onRestartBattle={() => setBattleKey(k => k + 1)}
+              introReplay={battleKey > 0 && restartedRef.current}
+              onRestartBattle={() => { restartedRef.current = true; setBattleKey(k => k + 1); }}
             />
           </Suspense>
         )}

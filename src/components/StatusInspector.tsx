@@ -4,8 +4,13 @@ import { Timer } from "../battle/timers";
 import { Mark } from "../battle/marks";
 import { canonicalStatusName } from '../effects/statusIdentity';
 import { plainDescription } from '../utils/descFormat';
+import { EffectDescription } from './EffectDescription';
 import { effectDefinitionEntries } from '../battle/effectSources';
-import { elfForViewer, hiddenFromViewer } from '../battle/viewerPerspective';
+import { elfForViewer, hiddenFromViewer, UNKNOWN_ELF, maskViewerText, viewerMaskTerms } from '../battle/viewerPerspective';
+import { activeEffectViews, visibleEffectSourceText } from '../battle/activeEffectViews';
+import { getStatuses } from '../utils/battleHelpers';
+import { statusVisual, UNKNOWN_EFFECT_ICON } from '../battle/effectIcons';
+import { ChainImage } from './SeerImages';
 
 export type StateCategory = "異常" | "能力" | "防護" | "印記" | "回合類" | "其他計時" | "次數類" | "常駐";
 
@@ -18,6 +23,8 @@ export interface ActiveEffect {
   polarity: "POSITIVE" | "NEGATIVE" | "NEUTRAL";
   stacks?: number;
   stackUnit?: string;
+  icon?: string;
+  source?: string;
 }
 
 function translateStatus(status: string): string {
@@ -36,28 +43,30 @@ export function getActiveEffects(side: "p1" | "p2", state: any): ActiveEffect[] 
   const elf = elfForViewer(source, side);
 
   const effects: ActiveEffect[] = [];
+  const hiddenTerms = viewerMaskTerms(state.p2Team || [state.p2]);
+  const mask = (text: string | undefined) => maskViewerText(text, hiddenTerms);
   for (const entry of effectDefinitionEntries(elf)) effects.push({ name: `${entry.kind} · ${entry.name}`,
     desc: entry.description || '固有效果與被動技能', category: '常駐', polarity: 'POSITIVE' });
 
-  const statuses = elf.battleStatuses || {};
-  const primaryStatus = elf.battleStatus;
-  if (primaryStatus && primaryStatus !== "normal" && primaryStatus !== "none") {
-    const remaining = Number(elf.battleStatusDuration || statuses[primaryStatus] || 0);
-    effects.push({ name: translateStatus(primaryStatus), desc: "目前生效中的異常狀態。", category: "異常", remaining: remaining > 0 ? remaining : undefined, unit: "回合", polarity: "NEGATIVE" });
-  }
-  for (const [status, turns] of Object.entries(statuses)) {
+  const statuses = getStatuses(elf);
+  // 與現行異常登記表／簡介一致：異常與能力提升顯示為1回合魘昧，下降照常。
+  const masked = Object.entries(getStatuses(state.p1) || {}).some(([name, turns]) => canonicalStatusName(name) === '魘昧' && Number(turns) > 0);
+  const hasStates = Object.values(statuses).some(turns => Number(turns) > 0);
+  const stages = Object.entries(elf.statStages || {});
+  if (masked && hasStates) effects.push({ name: '魘昧', desc: '異常狀態受到魘味遮蔽；顯示的1回合不是實際期限。', remaining: 1, unit: '回合', category: '異常', polarity: 'NEGATIVE', icon: statusVisual('魘昧')?.icon || UNKNOWN_EFFECT_ICON });
+  for (const [status, turns] of masked ? [] : Object.entries(statuses)) {
     const remaining = Number(turns);
-    if (status !== primaryStatus && remaining > 0) effects.push({
-      name: translateStatus(status), desc: "目前生效中的異常狀態。", category: "異常", remaining, unit: "回合", polarity: "NEGATIVE"
+    const visual = statusVisual(status);
+    if (remaining > 0) effects.push({
+      name: translateStatus(status), desc: visual?.desc || "目前生效中的異常狀態。", category: "異常", remaining: visual?.category === 'BOSS_ONLY' ? undefined : remaining, unit: "回合", polarity: "NEGATIVE", icon: visual?.icon || UNKNOWN_EFFECT_ICON
     });
   }
-  if (elf.statusImmuneTurns && elf.statusImmuneTurns > 0) effects.push({
-    name: "異常狀態免疫", desc: "暫時免疫可被此效果抵抗的異常狀態。", category: "異常", remaining: elf.statusImmuneTurns, unit: "回合", polarity: "POSITIVE"
-  });
 
-  const stageNames: Record<string, string> = { atk: "攻擊", spa: "特攻", def: "防禦", spd: "特防", spe: "速度", accuracy: "命中", evasion: "閃避" };
-  for (const [key, value] of Object.entries(elf.statStages || {})) {
+  const stageNames: Record<string, string> = { atk: "攻擊", spatk: "特攻", spa: "特攻", def: "防禦", spdef: "特防", spd: "特防", speed: "速度", spe: "速度", accuracy: "命中", evasion: "閃避" };
+  if (masked && stages.some(([, value]) => Number(value) > 0)) effects.push({ name: '魘昧', desc: '能力提升受到魘味遮蔽；顯示的1回合不是實際期限。', remaining: 1, unit: '回合', category: '能力', polarity: 'NEUTRAL', icon: statusVisual('魘昧')?.icon || UNKNOWN_EFFECT_ICON });
+  for (const [key, value] of stages) {
     const stage = Number(value);
+    if (masked && stage > 0) continue;
     if (stage !== 0) effects.push({
       name: `${stageNames[key] || key} ${stage > 0 ? "+" : ""}${stage}`,
       desc: `${stageNames[key] || key}能力等級變化。`, category: "能力", stacks: stage, stackUnit: "級",
@@ -66,35 +75,14 @@ export function getActiveEffects(side: "p1" | "p2", state: any): ActiveEffect[] 
   }
 
   const marks: Mark[] = side === "p1" ? (state.p1Marks || []) : (state.p2Marks || []);
-  for (const mark of marks) {
-    if ((mark.count > 0 || mark.visibleWhenZero) && (!mark.ownerBattleId || mark.ownerBattleId === (elf.battleId || elf.id))) effects.push({
-      name: mark.name, desc: mark.description || "特殊印記狀態", category: "印記",
-      stacks: mark.remainingRounds ?? mark.count, stackUnit: mark.remainingRounds !== undefined ? "回合" : (mark.unit || "層"),
-      polarity: mark.polarity === "negative" ? "NEGATIVE" : mark.polarity === "positive" ? "POSITIVE" : "NEUTRAL"
-    });
-  }
-
   const timers: Timer[] = side === "p1" ? (state.p1Timers || []) : (state.p2Timers || []);
-  for (const timer of timers) {
-    if (timer.remaining <= 0) continue;
-    const category: StateCategory = timer.kind === "turn_effect" ? "回合類" : timer.kind === "use_counter" ? "次數類" : "其他計時";
-    const polarity = String(timer.payload?.polarity || "POSITIVE").toUpperCase() as ActiveEffect["polarity"];
-    effects.push({
-      name: timer.name || (category === "次數類" ? "次數限制" : "計時效果"),
-      desc: timer.description || "啟用中的技能或魂印效果。", category, remaining: timer.remaining,
-      unit: category === "次數類" ? "次" : "回合", polarity: ["POSITIVE", "NEGATIVE", "NEUTRAL"].includes(polarity) ? polarity : "POSITIVE"
-    });
+  const categories: Record<string, StateCategory> = { mark: '印記', turn: '回合類', round: '其他計時', count: '次數類', mechanism: '常駐', protection: '防護' };
+  for (const view of activeEffectViews(elf, marks, timers, (side === 'p1' ? state.p1RegistryState : state.p2RegistryState) || {}, visibleEffectSourceText(side === 'p1' ? state.p2 : state.p1, side === 'p1' ? 'p2' : 'p1'))) {
+    const metricIsStack = view.category === 'mark' || view.category === 'protection';
+    effects.push({ name: mask(view.label), desc: mask(view.description), category: categories[view.category], icon: view.icon, source: mask(view.source),
+      polarity: view.polarity.toUpperCase() as ActiveEffect['polarity'],
+      ...(metricIsStack ? { stacks: view.value, stackUnit: view.unit } : { remaining: view.value, unit: view.unit as '回合' | '次' | undefined }) });
   }
-
-  for (const [field, name, description] of [
-    ["cannotUseAttrSkillsTurns", "屬性技能封鎖", "暫時無法使用屬性類技能。"],
-    ["cannotUseAttackSkillsTurns", "攻擊技能失效", "暫時無法使用物理或特殊攻擊技能。"]
-  ] as const) {
-    const remaining = Number((elf as any)[field] || 0);
-    if (remaining > 0) effects.push({ name, desc: description, category: "回合類", remaining, unit: "回合", polarity: "NEGATIVE" });
-  }
-  if (elf.shield && elf.shield > 0) effects.push({ name: "護盾", desc: `吸收技能攻擊傷害，容量 ${elf.shield}。`, category: "防護", stacks: elf.shield, polarity: "POSITIVE" });
-  if (elf.barrier && elf.barrier > 0) effects.push({ name: "護罩", desc: `吸收固定與百分比傷害，容量 ${elf.barrier}。`, category: "防護", stacks: elf.barrier, polarity: "POSITIVE" });
   return effects;
 }
 
@@ -105,6 +93,7 @@ export function StatusInspector({ state }: { state: any }) {
   const [category, setCategory] = React.useState<StateCategory>("異常");
   const [expandedPermanent, setExpandedPermanent] = React.useState<Record<string, boolean>>({});
   const elf: Elf | null = side === "p1" ? state?.p1 : state?.p2;
+  const visibleName = elf ? hiddenFromViewer(elf, side) ? UNKNOWN_ELF : elfForViewer(elf, side).name : '';
   const all = getActiveEffects(side, state);
 
   if (!elf) return <div className="p-6 text-center text-xs font-bold text-slate-500">目前沒有出戰精靈資訊</div>;
@@ -114,7 +103,7 @@ export function StatusInspector({ state }: { state: any }) {
     <div id="status-inspector-panel" className="flex-1 flex flex-col gap-3 p-3 sm:p-4 overflow-y-auto custom-scrollbar bg-slate-950/40 text-slate-200">
       <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-800 pb-3">
         <div>
-          <h3 className="text-sm font-black text-slate-100">{side.toUpperCase()}・{elf.name} 狀態</h3>
+          <h3 className="text-sm font-black text-slate-100">{side.toUpperCase()}・{visibleName} 狀態</h3>
           <p className="mt-1 text-[10px] font-bold text-slate-500">先選對戰方，再按類別查看；每頁只呈現一種類型</p>
         </div>
         <div className="flex gap-1 rounded-lg border border-slate-800 bg-slate-900 p-1">
@@ -155,6 +144,7 @@ export function StatusInspector({ state }: { state: any }) {
               return (
                 <article key={`${effect.category}-${effect.name}-${index}`} className={`flex flex-col gap-1 rounded-lg border p-3 ${tone}`}>
                   <div className="flex items-start justify-between gap-2">
+                    {effect.icon && <ChainImage urls={[effect.icon]} className="h-6 w-6 shrink-0 object-contain" />}
                     {category === "常駐" ? (
                       <button type="button" title={plainDescription(effect.desc)}
                         onClick={() => setExpandedPermanent(prev => ({ ...prev, [effect.name]: !prev[effect.name] }))}
@@ -164,7 +154,8 @@ export function StatusInspector({ state }: { state: any }) {
                     ) : <span className="text-[11px] font-black leading-tight">{effect.name}</span>}
                     {effect.stacks !== undefined && <span className="shrink-0 rounded border border-slate-700 bg-slate-800/80 px-1.5 py-0.5 text-[9px] font-black text-cyan-300">{effect.stacks} {effect.stackUnit || "層"}</span>}
                   </div>
-                  {(category !== "常駐" || expandedPermanent[effect.name]) && <p className="whitespace-pre-wrap text-[12px] font-medium leading-5 text-slate-300">{plainDescription(effect.desc)}</p>}
+                  {(category !== "常駐" || expandedPermanent[effect.name]) && <EffectDescription description={effect.desc} className="text-[12px] font-medium leading-5 text-slate-300" />}
+                  {effect.source && <div className="text-[10px] text-slate-400">來源：{effect.source}</div>}
                   {effect.remaining !== undefined && <div className="mt-1 text-[9px] font-black text-slate-500">剩餘 {effect.remaining} {effect.unit || "回合"}</div>}
                 </article>
               );

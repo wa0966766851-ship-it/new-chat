@@ -4,6 +4,7 @@ const path = require("node:path");
 const http = require("node:http");
 const { waitForOwnServer } = require("./serverProcess.cjs");
 const { UpdateService } = require('./update/updateService.cjs');
+const { createDesktopShortcutService } = require('./desktopShortcut.cjs');
 
 // An explicit profile directory lets release smoke tests avoid real player saves.
 if (process.env.SEER_USER_DATA_DIR) {
@@ -51,12 +52,19 @@ async function startServer() {
 
 async function createWindow() {
   const url = await startServer();
+  const shortcuts = createDesktopShortcutService({ directory: app.getPath('userData'), desktop: app.getPath('desktop'),
+    executable: process.env.PORTABLE_EXECUTABLE_FILE || process.execPath, writeShortcut: shell.writeShortcutLink,
+    supported: process.platform === 'win32' && app.isPackaged });
+  try { shortcuts.onStartup(); } catch (error) { console.error('[shortcut]', error.message); }
   const updates = new UpdateService({ version: app.getVersion(), kind: process.env.PORTABLE_EXECUTABLE_FILE ? 'portable' : 'installer',
     directory: path.join(app.getPath('userData'), 'updates'), originalExe: process.env.PORTABLE_EXECUTABLE_FILE });
   const guard = event => {
-    if (!mainWindow || event.sender !== mainWindow.webContents || event.senderFrame !== mainWindow.webContents.mainFrame || new URL(event.senderFrame.url).origin !== url) throw new Error('不允許的更新呼叫');
+    if (!mainWindow || event.sender !== mainWindow.webContents || event.senderFrame !== mainWindow.webContents.mainFrame || new URL(event.senderFrame.url).origin !== url) throw new Error('不允許的桌面功能呼叫');
   };
   for (const [channel, handler] of Object.entries({
+    'seer:launcher:status': () => shortcuts.status(),
+    'seer:launcher:preferences': enabled => shortcuts.preferences(enabled),
+    'seer:launcher:create': confirm => shortcuts.create(confirm),
     'seer:update:check': () => updates.check(), 'seer:update:status': () => updates.status(),
     'seer:update:download': snapshot => updates.download(snapshot), 'seer:update:cancel': () => updates.cancel(),
     'seer:update:folder': () => { const folder = updates.status().folder; return folder ? shell.openPath(folder) : ''; },

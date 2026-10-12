@@ -1,0 +1,303 @@
+{
+  "schemaVersion": 1,
+  "note": "僅登記本批已跑過的部分情境；共同依賴摘要避免逐條重複。未把Kit路由／中文顯示／存檔往返當成全句語意通過。",
+  "testFile": "tests/migrate_monkeyBaphomet.semantic.test.ts",
+  "testSha256": "71182f44ffc339c698160636e58f357cfa00b58373585f66cd9f3b28fddad7fa",
+  "lastPassed": "2026-10-12：27組P1/P2正式引擎／個別原子情境通過；不是整隻精靈完整驗收",
+  "inputs": [
+    {
+      "path": "src/data/migratedMonkeyBaphometSkillKits.ts",
+      "sha256": "cf15dcc9d4bfb7b54c439751b2d22d009999d186234a4b71d98df9e8da6f9dee"
+    },
+    {
+      "path": "src/data/migratedSequenceSkillKits.ts",
+      "sha256": "fde085fbf1e70d017d66c993361b66187eb7bc062679d8c42e257fd2f04411fd"
+    },
+    {
+      "path": "src/data/reviewedSkillKits.ts",
+      "sha256": "00e57416ab8f5de1042f600a41042292b0295fa48fe9e3226fac844f066cf323"
+    },
+    {
+      "path": "src/data/defaultElves.ts",
+      "sha256": "a6d4e202ecd3f2aae3654795abb30a08449f7b2cd8ee2938f75eb9b5f716a739"
+    },
+    {
+      "path": "src/effects/sequenceContract.ts",
+      "sha256": "c50404b2b1f98bf5ee21b52235af2b295850867db6f18acde340b29323e3713a"
+    },
+    {
+      "path": "src/effects/sequenceRuntime.ts",
+      "sha256": "8bf7f9bc0a7185b6d9c7fe29eab3673b2153c34a471e9973ed21d629c585dbf1"
+    },
+    {
+      "path": "src/effects/connectedEffects.ts",
+      "sha256": "14d219a3a92616b58e94a6ee8275df9cce4c44d39fe8b841728d1f0c5bb3ec37"
+    },
+    {
+      "path": "src/effects/damageBases.ts",
+      "sha256": "7cf8465c3544e79b14e604ad0ad066cf818d5ae85a12c16f16fa7745284e0f66"
+    },
+    {
+      "path": "src/blocks/runtime.ts",
+      "sha256": "762fe00cb719e8a410c96a3ee473aaccc81d81da61bdd6703c8b25f26cff8f95"
+    },
+    {
+      "path": "src/blocks/registry.ts",
+      "sha256": "09191da04f90ddae7867e8c1126eb5f9ba53122436be21c4dccedcb7cc46341f"
+    },
+    {
+      "path": "src/battle/timers.ts",
+      "sha256": "dfa92a7eb80066f20fdfac74661c682bab1d8cf9692b1e918a9fd4912fff4637"
+    },
+    {
+      "path": "src/battle/stateScopes.ts",
+      "sha256": "fdd872ac21e9565872e5a6a1230523a8f40db157670ea0a23060cb0887630f99"
+    },
+    {
+      "path": "src/battle/contextBuilders.ts",
+      "sha256": "dc06ff2096d98fd444433458946402a5cb788b367fb7abf80108cf28ae0ae26e"
+    },
+    {
+      "path": "src/utils/battleHelpers.ts",
+      "sha256": "0f831baaa6b1c57ead75c0c71f0f04f00d327e170c89a43766512a782205251f"
+    },
+    {
+      "path": "src/engine/battleEngine.ts",
+      "sha256": "5d89426ee6d30ef59f76bb0777d4c85a460d00200f76a857714e5af31301f3fa"
+    },
+    {
+      "path": "src/effects/skillProperty.ts",
+      "sha256": "33f033140cee875a71d9ba64c9b3def5ca891d5769f6d80176f716e747caa621"
+    },
+    {
+      "path": "src/effects/statusRegistry.ts",
+      "sha256": "55cfecaa5b4e389a3097dc4a2bcca5909e695883bc703444c601292d739bcf94"
+    },
+    {
+      "path": "src/data/reviewedKitCatalogue.ts",
+      "sha256": "12d6261ffb03223db08ff4b6482c443a527c89b9a150b166c830bfe770aad986"
+    },
+    {
+      "path": "src/data/reviewedKits.compressed.json",
+      "sha256": "df94ff7b5850c189f2661f45486257eca0960c77d9069ae758a45b633130636f"
+    },
+    {
+      "path": "src/data/reviewedSoulKits.ts",
+      "sha256": "7627a7be97e0e412e22f7ca6408ef8dba0464251d6303ade5b46baeebaa026a7"
+    },
+    {
+      "path": "src/data/baphometSoulKit.ts",
+      "sha256": "53b6dc786006879af994b60a07924c65d65a74d6fd1cfd5f365b4222a43e48f7"
+    },
+    {
+      "path": "src/effects/sequenceClosureOperations.ts",
+      "sha256": "e16e52770f6a09896c158311727725a8a9ce75d64623550317eeb4e1f612a1d5"
+    },
+    {
+      "path": "src/effects/sequenceClosureContract.ts",
+      "sha256": "2bd8cd075f8a1c988f9d37bcec90787866aabfafa33319306229f4cd0fe9d590"
+    },
+    {
+      "path": "src/effects/markProgram.ts",
+      "sha256": "d438b7564e254a3797c174a230c4c197c7643f64d69333c3091c825610f1e7b5"
+    },
+    {
+      "path": "src/blocks/timerProgramIdentity.ts",
+      "sha256": "dd20a8620c797733ca2930136c4da10b76b2daf846ccc26caa7b854078d00770"
+    },
+    {
+      "path": "src/battle/damageBlocking.ts",
+      "sha256": "b4c087076e180b87012dcafbec8adad20224d273c55f74c2735f9158731357fb"
+    },
+    {
+      "path": "src/battle/statusSkillTransform.ts",
+      "sha256": "aa734d02031a57cb8dfe1a0daa1614ffc999d7826958b2a77257a54f3cfc1405"
+    },
+    {
+      "path": "src/utils/traitsEngine.ts",
+      "sha256": "ae9e7cde972195bd268277f7ae3eaf11452bc7d17730d6d40e692a21e284fce7"
+    },
+    {
+      "path": "src/effects/kitValidation.ts",
+      "sha256": "4ead17f5f654cd44c6e03f2aea9e471845fdf2e886d4fb46c4e71d6c811ce049"
+    },
+    {
+      "path": "src/effects/ppOperations.ts",
+      "sha256": "1c8180c98c2d715edee34f2df597b0a52db0c359bf6072dd16cdac919a134a93"
+    },
+    {
+      "path": "src/effects/ppConsumptionChain.ts",
+      "sha256": "e9874c7da3cf7eba3ab99dc4ca22f05db7480bd0934db2f8f37aae14cfd32c4b"
+    },
+    {
+      "path": "src/battle/statusTransitionEvents.ts",
+      "sha256": "b7e6d7507c41a819846099b055cfcab8bc19df08e98cc584bb83c12079228d41"
+    },
+    {
+      "path": "src/effects/newElfLifecycle.ts",
+      "sha256": "715bc3e934f1358261149c06a2d47a579422851ad2eeb7c57821326b24d12463"
+    },
+    {
+      "path": "src/data/migratedEventSkillKits.ts",
+      "sha256": "d0a443080bb3442345ef5bf04d6dec8fd98061c2ac1a8a2e06eabd31269d4bb7"
+    },
+    {
+      "path": "src/effects/soulProperty.ts",
+      "sha256": "216731de0ce2fbc28fb592c0ec0afd44b0522af0066f2923112c09103e160920"
+    },
+    {
+      "path": "src/battle/skillStageView.ts",
+      "sha256": "272844653b65caeedea9ca5988987f155e28931debed8a9eb94258e08d89212d"
+    },
+    {
+      "path": "src/effects/genericSkillText.ts",
+      "sha256": "d50e62d32c0dd4ac53f057ed6a63a81ba2f8d41519c4440032b067b238b3db78"
+    },
+    {
+      "path": "src/effects/effectNodes.ts",
+      "sha256": "5363eacf18e705480176a7994a02a6cd0a2d41d69f1e9fcf6b5a1b2a9223ca93"
+    },
+    {
+      "path": "src/battle/recoveryOrigin.ts",
+      "sha256": "c870dd4843e3dcfd248b5c66c4ddc71945e6fa5fb0135aa6796a34f35a8bcd68"
+    },
+    {
+      "path": "src/battle/lifesteal.ts",
+      "sha256": "70e0fe708c4d9906845b4384bdd0a98c45acf5d31265f2cc3444d36e584ca5e7"
+    },
+    {
+      "path": "src/battle/settlementReceipt.ts",
+      "sha256": "bbd656c0d82e933c286b044b05efdfae0ccb9831451dec5600fe1e76cd6b4e10"
+    },
+    {
+      "path": "src/effects/effectRunner.ts",
+      "sha256": "f2a19f7bf4a28370079927443a4c7043186ec8142568e1622edeff1cf48c8925"
+    },
+    {
+      "path": "src/effects/battleEventRegistry.ts",
+      "sha256": "bb16ffae2d474538c3b9e8c511b75403e6ee428ac656733775a17dd84e5013f9"
+    }
+  ],
+  "evidence": [
+    {
+      "id": "monkey-baphomet-20261012-1",
+      "elfId": "5006",
+      "entry": "星光·冥想",
+      "fragment": "4回合內免疫並反彈所有受到的異常狀態",
+      "anchor": "冥想整招：焚燼成功、免疫反彈異常與免降能力",
+      "scenario": "雙側正式引擎測試；異常轉化BOSS／其他效果保留另以真實runtime獨立驗證",
+      "expected": "第4回合反彈中毒，自身不受中毒；第5回合失效",
+      "remaining": "完整魂印與特質交叉、全部異常免疫／抵抗／BOSS例外、死亡／幻化與所有備用技能組合仍未全部驗收。"
+    },
+    {
+      "id": "monkey-baphomet-20261012-2",
+      "elfId": "5006",
+      "entry": "星光·冥想",
+      "fragment": "4回合內免疫能力下降狀態",
+      "anchor": "冥想整招：焚燼成功、免疫反彈異常與免降能力",
+      "scenario": "雙側正式引擎測試；異常轉化BOSS／其他效果保留另以真實runtime獨立驗證",
+      "expected": "第4回合攻擊不下降，第5回合攻擊-1",
+      "remaining": "完整魂印與特質交叉、全部異常免疫／抵抗／BOSS例外、死亡／幻化與所有備用技能組合仍未全部驗收。"
+    },
+    {
+      "id": "monkey-baphomet-20261012-3",
+      "elfId": "5006",
+      "entry": "星光·冥想",
+      "fragment": "命中後100%使對手焚燼",
+      "anchor": "冥想焚燼失敗：只在下兩回合使用時附加害怕",
+      "scenario": "雙側正式引擎測試；異常轉化BOSS／其他效果保留另以真實runtime獨立驗證",
+      "expected": "成功焚燼；被一次抵抗後只於下兩回合使用技能附加害怕",
+      "remaining": "完整魂印與特質交叉、全部異常免疫／抵抗／BOSS例外、死亡／幻化與所有備用技能組合仍未全部驗收。"
+    },
+    {
+      "id": "monkey-baphomet-20261012-4",
+      "elfId": "5006",
+      "entry": "星光·冥想",
+      "fragment": "3回合內每回合攻擊附加自身攻擊和特攻總和50%的百分比傷害",
+      "anchor": "冥想3回合面板雙攻附加",
+      "scenario": "雙側正式引擎測試；異常轉化BOSS／其他效果保留另以真實runtime獨立驗證",
+      "expected": "450+650的50%=550；含當回合3回合、後手不多一回合；由護罩吸收",
+      "remaining": "完整魂印與特質交叉、全部異常免疫／抵抗／BOSS例外、死亡／幻化與所有備用技能組合仍未全部驗收。"
+    },
+    {
+      "id": "monkey-baphomet-20261012-5",
+      "elfId": "5008",
+      "entry": "贖魂讚詩",
+      "fragment": "消除對手回合類效果，消除成功則對手流血",
+      "anchor": "贖魂成功消回合後流血被轉害怕",
+      "scenario": "雙側正式引擎測試；異常轉化BOSS／其他效果保留另以真實runtime獨立驗證",
+      "expected": "清除成功才附加流血，緊接轉化後是害怕；無回合效果不無條件附加",
+      "remaining": "完整魂印與特質交叉、全部異常免疫／抵抗／BOSS例外、死亡／幻化與所有備用技能組合仍未全部驗收。"
+    },
+    {
+      "id": "monkey-baphomet-20261012-6",
+      "elfId": "5008",
+      "entry": "贖魂讚詩",
+      "fragment": "將對手所處的異常狀態轉化為害怕",
+      "anchor": "異常轉化保留BOSS狀態、印記及其他效果",
+      "scenario": "雙側正式引擎測試；異常轉化BOSS／其他效果保留另以真實runtime獨立驗證",
+      "expected": "只轉換一般異常；BOSS神話與非異常技能增益及印記保留；期限3回合",
+      "remaining": "完整魂印與特質交叉、全部異常免疫／抵抗／BOSS例外、死亡／幻化與所有備用技能組合仍未全部驗收。"
+    },
+    {
+      "id": "monkey-baphomet-20261012-7",
+      "elfId": "5008",
+      "entry": "贖魂讚詩",
+      "fragment": "4回合內若對手使用攻擊技能則進入窒息狀態",
+      "anchor": "贖魂對手攻擊監控",
+      "scenario": "雙側正式引擎測試；異常轉化BOSS／其他效果保留另以真實runtime獨立驗證",
+      "expected": "屬性招不觸發；第4回合攻擊窒息，第5回合停止；下場不串位",
+      "remaining": "完整魂印與特質交叉、全部異常免疫／抵抗／BOSS例外、死亡／幻化與所有備用技能組合仍未全部驗收。"
+    },
+    {
+      "id": "monkey-baphomet-20261012-8",
+      "elfId": "5008",
+      "entry": "引魂咏",
+      "fragment": "若對手不處於異常狀態時造成傷害提升100%",
+      "anchor": "引魂整招：無異常才翻倍攻擊",
+      "scenario": "雙側正式引擎測試；異常轉化BOSS／其他效果保留另以真實runtime獨立驗證",
+      "expected": "攻擊伤害為對照兩倍；附加吸取不翻倍，不與舊absorb重複",
+      "remaining": "完整魂印與特質交叉、全部異常免疫／抵抗／BOSS例外、死亡／幻化與所有備用技能組合仍未全部驗收。"
+    },
+    {
+      "id": "monkey-baphomet-20261012-9",
+      "elfId": "5008",
+      "entry": "引魂咏",
+      "fragment": "吸取對手最大體力25%，每次使用提升10%，最高50%",
+      "anchor": "引魂25/35/45/50%遞增",
+      "scenario": "雙側正式引擎測試；異常轉化BOSS／其他效果保留另以真實runtime獨立驗證",
+      "expected": "25/35/45/50%遞增，穿插其他招不重置；恢復等量且有上限",
+      "remaining": "完整魂印與特質交叉、全部異常免疫／抵抗／BOSS例外、死亡／幻化與所有備用技能組合仍未全部驗收。"
+    },
+    {
+      "id": "monkey-baphomet-20261012-10",
+      "elfId": "5008",
+      "entry": "引魂咏",
+      "fragment": "技能無效時，消除對手回合類效果",
+      "anchor": "引魂未命中：不執行吸取",
+      "scenario": "雙側正式引擎測試；異常轉化BOSS／其他效果保留另以真實runtime獨立驗證",
+      "expected": "未命中不吸取，仍消除對手回合類效果且附加流血與窒息",
+      "remaining": "完整魂印與特質交叉、全部異常免疫／抵抗／BOSS例外、死亡／幻化與所有備用技能組合仍未全部驗收。"
+    },
+    {
+      "id": "monkey-baphomet-20261012-11",
+      "elfId": "5006",
+      "entry": "縮頭",
+      "fragment": "100%改變自身防禦等級+1",
+      "anchor": "基本招確實強化",
+      "scenario": "雙側正式引擎測試；異常轉化BOSS／其他效果保留另以真實runtime獨立驗證",
+      "expected": "成功時防禦+1；附加效果失效時不強化",
+      "remaining": "完整魂印與特質交叉、全部異常免疫／抵抗／BOSS例外、死亡／幻化與所有備用技能組合仍未全部驗收。"
+    },
+    {
+      "id": "monkey-baphomet-20261012-12",
+      "elfId": "5006",
+      "entry": "熱量集合",
+      "fragment": "100%改變自身特攻等級+1",
+      "anchor": "基本招確實強化",
+      "scenario": "雙側正式引擎測試；異常轉化BOSS／其他效果保留另以真實runtime獨立驗證",
+      "expected": "成功時特攻+1；附加效果失效時不強化",
+      "remaining": "完整魂印與特質交叉、全部異常免疫／抵抗／BOSS例外、死亡／幻化與所有備用技能組合仍未全部驗收。"
+    }
+  ]
+}

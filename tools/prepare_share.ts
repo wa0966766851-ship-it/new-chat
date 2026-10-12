@@ -6,6 +6,7 @@
 import * as fs from "node:fs";
 import * as path from "node:path";
 import { fileURLToPath } from "node:url";
+import { shouldDropShareFile } from './shareFilePolicy';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -29,8 +30,6 @@ const DROP_DIRS = new Set([
   ".seer-cache", "_修正前備份", "_asset_backup",
   "release", "dist_release",
 ]);
-const DROP_FILES = new Set([".env", ".env.local", "server.log", "launcher/server.log"]);
-const DROP_SUFFIX = [".log"];
 
 function shouldDropDir(rel: string): boolean {
   const parts = rel.split(path.sep).filter(Boolean);
@@ -38,11 +37,7 @@ function shouldDropDir(rel: string): boolean {
   return parts.some((p) => DROP_DIRS.has(p));
 }
 function shouldDropFile(rel: string): boolean {
-  const base = path.basename(rel);
-  if (DROP_FILES.has(base)) return true;
-  if (DROP_SUFFIX.some((s) => base.endsWith(s))) return true;
-  if (base === ".env" || base.startsWith(".env.")) return true;
-  return false;
+  return shouldDropShareFile(rel);
 }
 
 function copyClean(srcDir: string, destDir: string): { dirs: number; files: number; skipped: number } {

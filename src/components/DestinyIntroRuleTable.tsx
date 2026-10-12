@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from 'react';
-import { TypeIcon } from "./SeerImages";
+import { TypeIcon, SkillTypeIcon } from "./SeerImages";
+import { skillDisplayType } from '../utils/skillPresentation';
 import { matchesElfQuery } from '../utils/elfSearch';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
@@ -654,7 +655,7 @@ export default function DestinyIntroRuleTable({
                         <div className="flex items-center justify-between mb-1">
                           <div className="flex items-center gap-2">
                             <span className="font-bold text-white">{skill.name}</span>
-                            <span className="px-1.5 py-0.2 rounded bg-slate-800 text-[10px] text-slate-300 inline-flex items-center gap-0.5"><TypeIcon type={skill.type} size={11} showLabelWhenMissing={false} />{skill.type}</span>
+                            <span className="px-1.5 py-0.2 rounded bg-slate-800 text-[10px] text-slate-300 inline-flex items-center gap-0.5"><SkillTypeIcon skill={skill} size={11} showLabelWhenMissing={false} />{skillDisplayType(skill)}</span>
                             <span className={`px-1.5 py-0.2 rounded text-[10px] ${skill.category === '物理' ? 'bg-amber-950 text-amber-300 border border-amber-800' : skill.category === '特殊' ? 'bg-purple-950 text-purple-300 border border-purple-800' : 'bg-slate-800 text-slate-300'}`}>
                               {skill.category}
                             </span>

@@ -1,0 +1,21 @@
+import assert from 'node:assert/strict';
+import { readFileSync, writeFileSync } from 'node:fs';
+import { gzipSync } from 'node:zlib';
+import { gunzipSync, strFromU8 } from 'fflate';
+import { REVIEWED_SKILL_KITS } from '../src/data/reviewedSkillKits';
+import { REVIEWED_SEQUENCE_SKILL_KITS } from '../src/data/reviewedSequenceSkillKits';
+import { MIGRATED_SEQUENCE_SKILL_KITS } from '../src/data/migratedSequenceSkillKits';
+import { validateKit } from '../src/effects/kitValidation';
+import { REVIEWED_SOUL_KITS } from '../src/data/reviewedSoulKits';
+const source = [...REVIEWED_SKILL_KITS, ...REVIEWED_SEQUENCE_SKILL_KITS, ...MIGRATED_SEQUENCE_SKILL_KITS,...REVIEWED_SOUL_KITS];
+for (const definition of source) validateKit(definition.kit);
+const raw = JSON.stringify(source), zipped = gzipSync(raw, { level: 9 });
+assert.deepEqual(JSON.parse(strFromU8(gunzipSync(zipped))), source, '封裝不得丟失原文、參數、節點、角色或順序');
+const output = JSON.stringify({ schemaVersion: 1, gzip: zipped.toString('base64') }) + '\n';
+const file = 'src/data/reviewedKits.compressed.json';
+if (process.argv.includes('--check')) {
+  const saved = JSON.parse(readFileSync(file, 'utf8'));
+  assert.equal(saved.schemaVersion, 1);
+  assert.deepEqual(JSON.parse(strFromU8(gunzipSync(Buffer.from(saved.gzip, 'base64')))), source, '積木來源已變更，需執行npm run data:kit-pack');
+} else writeFileSync(file, output);
+console.log(`可編輯積木定義完整封裝：${source.length}份，${Buffer.byteLength(raw)} → ${Buffer.byteLength(output)} bytes；無語意改寫`);

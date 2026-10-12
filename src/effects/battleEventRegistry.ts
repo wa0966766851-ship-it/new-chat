@@ -1,12 +1,14 @@
 import { Elf, Skill } from '../types';
+import {withRecoveryOrigin} from '../battle/recoveryOrigin';
 import { BattleEventContext, BattleSkillHandler, BattleSkillAfterHitHandler, BattleSkillOnInvalidHandler, EffectTiming } from './types';
 import { handleDestinyInterceptor } from "./destinyInterceptors";
 import { executeGenericSkillText } from "./genericSkillText";
+import { deriveContext } from "./deriveContext";
 import { runNode } from "./effectRunner";
 import { runGenericSoulMark } from "./genericSoulMark";
-import { runBlockEvent, runCopiedSoulEvent, runSkillBlocks, skillMode, isSoulBlocksOnly, blockSkillTransform } from "../blocks/registry";
+import { runBlockEvent, runCopiedSoulEvent, runSkillBlocks, skillMode, isSoulBlocksOnly, blockSkillTransform, setSoulHandlerProvider } from "../blocks/registry";
 import { isSkillStone } from '../data/skillStones';
-import { transformStone, stoneBeforeDamage } from './skillStoneEffects';
+import { transformStone, stoneBeforeDamage, kitDrivenStone } from './skillStoneEffects';
 import { CODEX } from "../data/codexRegistry";
 import { Node } from "./effectSystem.schema";
 import { STAGED_ARENA_SKILLS, STAGED_ARENA_SOULS, STAGED_ARENA_SKILL_TRANSFORMS } from "./elves/staged-arena/index";
@@ -17,6 +19,12 @@ import { activeConstraints } from '../battle/timedConstraints';
 import { runNewElfLifecycle, innateDisabled } from './newElfLifecycle';
 import { executeAstralMemory } from './elves/astral-twins/registry';
 import { runMogosTeamEffects } from './elves/mogos/registry';
+import { usesAuthoredSkill, usesAuthoredSoul, soulDefinition, setConnectedSkillHandlerProvider } from './connectedEffects';
+import { effectRoute } from './effectConnection';
+import { withPpConsumptionChain } from './ppConsumptionChain';
+import { applyFormulaProperties } from './skillProperty';
+setSoulHandlerProvider(elf => !!getSoulMarkRegistry()[elf?.name]);
+setConnectedSkillHandlerProvider(hasSkillHandler);
 
 export function mapTimingToNode(event: EffectTiming): Node | null {
   switch (event) {
@@ -152,9 +160,9 @@ export const SOUL_MARK_MAPPING: Record<string, string> = {
   "聖光斯嘉麗": "handleScarlettSoulMark",
   "斯嘉麗": "handleScarlettSoulMark",
   
-  "5015": "handleChaosBlakeSoulMark",
+  "5015": "handleChaosBlakeNightSoulMark",
   "1012": "handleChaosBlakeSoulMark",
-  "混沌·布萊克": "handleChaosBlakeSoulMark",
+  "混沌·布萊克": "handleChaosBlakeNightSoulMark",
   
   "5016": "handleMarsSoulMark",
   "1013": "handleMarsSoulMark",
@@ -307,6 +315,13 @@ function initializeRegistries() {
   Object.assign(cachedSkillRegistry, STAGED_ARENA_SKILLS);
   Object.assign(cachedSoulMarkRegistry, STAGED_ARENA_SOULS);
   Object.assign(cachedSkillTransforms, STAGED_ARENA_SKILL_TRANSFORMS);
+  // 同名技能選擇描述／積木來源後，後置及失效支線也不能偷偷重跑舊註冊表。
+  for (const table of [cachedAfterHit, cachedOnInvalid]) for (const [name, handler] of Object.entries(table)) {
+    table[name] = ((ctx: BattleEventContext, result: any) => {
+      if (ctx.skill && usesAuthoredSkill(ctx.skill, name in cachedSkillRegistry!, ctx.self) && effectRoute(ctx.skill, name in cachedSkillRegistry!) !== 'registry') return;
+      return handler(withRecoveryOrigin(ctx,'skill'), result);
+    }) as any;
+  }
 }
 
 // 會在「對手受到技能攻擊」時被通知 ON_DAMAGED 的魂印（handler 內以 extraData.targetSide 區分自身／對手受擊）
@@ -353,18 +368,20 @@ export function transformSkillBeforeResolve(context: BattleEventContext, skill: 
   if (context.self.isInherentInvalid || innateDisabled(context)) skill = { ...skill, priority: 0, isSureHit: false,
     alwaysHit: false, ignoreImmunity: false, ignoreShield: false, ignoreAttackImmunity: false } as Skill;
   if (isSkillStone(skill)) return transformStone(context, skill);
-  return blockSkillTransform(context, cachedSkillTransforms?.[skill.name]?.(context, skill) || skill);
+  const authored = usesAuthoredSkill(skill, hasSkillHandler(skill.name), context.self) && effectRoute(skill, hasSkillHandler(skill.name)) !== 'registry';
+  return blockSkillTransform(context, authored ? applyFormulaProperties(skill,context) : cachedSkillTransforms?.[skill.name]?.(context, skill) || skill);
 }
 
 /** 使用當前狀態計算威力：命中時的吸取／消強／反轉先完成，再進入傷害公式。 */
 export function transformSkillBeforeDamage(context: BattleEventContext, skill: Skill): Skill {
   initializeRegistries();
-  const transformed = isSkillStone(skill) ? stoneBeforeDamage(context, skill) : cachedDamageTransforms?.[skill.name]?.(context, skill) || skill;
+  const authored = usesAuthoredSkill(skill, hasSkillHandler(skill.name), context.self) && effectRoute(skill, hasSkillHandler(skill.name)) !== 'registry';
+  const transformed = isSkillStone(skill) ? stoneBeforeDamage(context, skill) : authored ? skill : cachedDamageTransforms?.[skill.name]?.(context, skill) || skill;
   const powerComp = { power: transformed.power || 0 };
   SoulMarkRegistry[context.self.name]?.(context, EffectTiming.MODIFY_POWER, { skill: transformed, powerComp });
-  const opposingContext = { ...context, self: context.target, target: context.self, actor: context.targetSide, targetSide: context.actor,
+  const opposingContext = deriveContext(context, { self: context.target, target: context.self, actor: context.targetSide, targetSide: context.actor,
     getPlayerState: context.getOpponentState, setPlayerState: context.setOpponentState,
-    getOpponentState: context.getPlayerState, setOpponentState: context.setPlayerState };
+    getOpponentState: context.getPlayerState, setOpponentState: context.setPlayerState });
   SoulMarkRegistry[context.target.name]?.(opposingContext, EffectTiming.MODIFY_POWER, { skill: transformed, powerComp, isIncoming: true });
   return { ...transformed, power: powerComp.power };
 }
@@ -427,7 +444,8 @@ export const SoulMarkRegistry: Record<string, SoulMarkHandler> = new Proxy({}, {
   get(target, prop) {
     if (typeof prop === "string") {
       const originalHandler = getSoulMarkRegistry()[prop];
-      return (ctx: BattleEventContext, event: EffectTiming, extraData?: any) => {
+      return (ctx: BattleEventContext, event: EffectTiming, extraData?: any) => withPpConsumptionChain(ctx,event,extraData,() => {
+        ctx=withRecoveryOrigin(ctx,'soul');
         sharedSoulLifecycle(ctx, event, extraData);
         if (event === EffectTiming.ON_ENTRANCE && activeConstraints(ctx.actor === 'p1' ? ctx.p1Timers : ctx.p2Timers, ctx.self).some(p => p.stripEntrance)) return;
         let res = undefined;
@@ -438,19 +456,21 @@ export const SoulMarkRegistry: Record<string, SoulMarkHandler> = new Proxy({}, {
             : (ctx.activeP2 && ctx.activeP2.name === prop)
               ? ctx.activeP2
               : null;
-        const soulBlocks = !!elf && isSoulBlocksOnly(elf);
+        const authoredSoul = !!elf && usesAuthoredSoul(elf, !!originalHandler);
+        const authoredRoute = elf && effectRoute(soulDefinition(elf), !!originalHandler);
+        const soulBlocks = !!elf && (isSoulBlocksOnly(elf) || authoredSoul && authoredRoute !== 'registry');
         if (originalHandler && !soulBlocks) {
           res = originalHandler(ctx, event, extraData);
-        } else if (elf && (elf as any).soulMark?.effectType && (elf as any).soulMark.effectType !== "none") {
+        } else if (!authoredSoul && elf && (elf as any).soulMark?.effectType && (elf as any).soulMark.effectType !== "none") {
           // 自訂精靈：依 soulMark.effectType / effectValue 執行
           res = runGenericSoulMark(ctx, event, extraData, elf);
         }
         // 積木：側邊持續效果（N回合內…）與登記為積木的魂印子句
-        try { if (runBlockEvent(ctx, event, extraData, elf || ctx.self)) res = true; } catch (e) { console.error("[blocks]", e); }
+        try { if (runBlockEvent(ctx, event, extraData, elf || ctx.self, !!originalHandler)) res = true; } catch (e) { console.error("[blocks]", e); }
         notifyTeamObservers(ctx, event, extraData, elf);
         res = copiedSoul(ctx, event, extraData) || res;
         // 已有手寫魂印 handler 的精靈（譜尼等），kit 只是描述用資料，不再重複執行
-        if (!originalHandler && elf && elf.kit && elf.kit.length > 0) {
+        if (!authoredSoul && !originalHandler && elf && elf.kit && elf.kit.length > 0) {
           const node = mapTimingToNode(event);
           if (node) {
             // extraData（damageComp / priorityComp 等）併入 ctx，傷害與先制修正原子才拿得到
@@ -459,7 +479,7 @@ export const SoulMarkRegistry: Record<string, SoulMarkHandler> = new Proxy({}, {
           }
         }
         return res;
-      };
+      });
     }
     return undefined;
   },
@@ -477,7 +497,8 @@ export const SoulMarkRegistry: Record<string, SoulMarkHandler> = new Proxy({}, {
   getOwnPropertyDescriptor(target, prop) {
     if (typeof prop === "string") {
       const reg = getSoulMarkRegistry();
-      const value = (ctx: BattleEventContext, event: EffectTiming, extraData?: any) => {
+      const value = (ctx: BattleEventContext, event: EffectTiming, extraData?: any) => withPpConsumptionChain(ctx,event,extraData,() => {
+        ctx=withRecoveryOrigin(ctx,'soul');
         sharedSoulLifecycle(ctx, event, extraData);
         if (event === EffectTiming.ON_ENTRANCE && activeConstraints(ctx.actor === 'p1' ? ctx.p1Timers : ctx.p2Timers, ctx.self).some(p => p.stripEntrance)) return;
         const originalHandler = reg[prop];
@@ -489,19 +510,21 @@ export const SoulMarkRegistry: Record<string, SoulMarkHandler> = new Proxy({}, {
             : (ctx.activeP2 && ctx.activeP2.name === prop)
               ? ctx.activeP2
               : null;
-        const soulBlocks = !!elf && isSoulBlocksOnly(elf);
+        const authoredSoul = !!elf && usesAuthoredSoul(elf, !!originalHandler);
+        const authoredRoute = elf && effectRoute(soulDefinition(elf), !!originalHandler);
+        const soulBlocks = !!elf && (isSoulBlocksOnly(elf) || authoredSoul && authoredRoute !== 'registry');
         if (originalHandler && !soulBlocks) {
           res = originalHandler(ctx, event, extraData);
-        } else if (elf && (elf as any).soulMark?.effectType && (elf as any).soulMark.effectType !== "none") {
+        } else if (!authoredSoul && elf && (elf as any).soulMark?.effectType && (elf as any).soulMark.effectType !== "none") {
           // 自訂精靈：依 soulMark.effectType / effectValue 執行
           res = runGenericSoulMark(ctx, event, extraData, elf);
         }
         // 積木：側邊持續效果（N回合內…）與登記為積木的魂印子句
-        try { if (runBlockEvent(ctx, event, extraData, elf || ctx.self)) res = true; } catch (e) { console.error("[blocks]", e); }
+        try { if (runBlockEvent(ctx, event, extraData, elf || ctx.self, !!originalHandler)) res = true; } catch (e) { console.error("[blocks]", e); }
         notifyTeamObservers(ctx, event, extraData, elf);
         res = copiedSoul(ctx, event, extraData) || res;
         // 已有手寫魂印 handler 的精靈（譜尼等），kit 只是描述用資料，不再重複執行
-        if (!originalHandler && elf && elf.kit && elf.kit.length > 0) {
+        if (!authoredSoul && !originalHandler && elf && elf.kit && elf.kit.length > 0) {
           const node = mapTimingToNode(event);
           if (node) {
             // extraData（damageComp / priorityComp 等）併入 ctx，傷害與先制修正原子才拿得到
@@ -510,7 +533,7 @@ export const SoulMarkRegistry: Record<string, SoulMarkHandler> = new Proxy({}, {
           }
         }
         return res;
-      };
+      });
       return {
         enumerable: true,
         configurable: true,
@@ -529,7 +552,15 @@ export const SoulMarkRegistry: Record<string, SoulMarkHandler> = new Proxy({}, {
 function makeSkillRunner(name: string, reg: Record<string, BattleSkillHandler>): BattleSkillHandler {
   const hasH = name in reg;
   return (ctx: BattleEventContext) => {
-    if (isSkillStone(ctx.skill)) return; // 由 metadata 專用入口執行一次，含自訂名稱。
+    ctx=withRecoveryOrigin(ctx,'skill');
+    if (isSkillStone(ctx.skill) && !kitDrivenStone(ctx.skill)) return; // 一般技能石由 metadata 專用入口執行一次（含自訂名稱）；效果已寫成 Kit 的技能石走下面的 Kit 路徑。
+    if (ctx.skill?.effectMode === 'registry' && !hasH) {
+      ctx.addLog(`【效果待接通】${name}：沒有對應專屬註冊表。`, 'effect'); return;
+    }
+    if (ctx.skill && usesAuthoredSkill(ctx.skill, hasH, ctx.self) && effectRoute(ctx.skill, hasH) !== 'registry') {
+      runSkillBlocks(ctx, 'use', hasH);
+      return;
+    }
     if (ctx.skill?.templateId) { if (hasH) reg[name](ctx); else executeGenericSkillText(ctx); return; }
     const mode = skillMode(name, hasH);
     if (hasH && mode !== "blocks") reg[name](ctx);
@@ -567,7 +598,7 @@ export const BattleSkillRegistry: Record<string, BattleSkillHandler> = new Proxy
         } else {
           originalHandler(ctx);
         }
-        if (ctx.skill && ctx.skill.kit && ctx.skill.kit.length > 0) {
+        if (ctx.skill && !usesAuthoredSkill(ctx.skill, prop in reg, ctx.self) && ctx.skill.kit && ctx.skill.kit.length > 0) {
           runNode("on_hit", ctx.skill.kit, CODEX, ctx);
         }
       };
@@ -609,7 +640,7 @@ export const BattleSkillRegistry: Record<string, BattleSkillHandler> = new Proxy
         } else {
           originalHandler(ctx);
         }
-        if (ctx.skill && ctx.skill.kit && ctx.skill.kit.length > 0) {
+        if (ctx.skill && !usesAuthoredSkill(ctx.skill, prop in reg, ctx.self) && ctx.skill.kit && ctx.skill.kit.length > 0) {
           runNode("on_hit", ctx.skill.kit, CODEX, ctx);
         }
       };

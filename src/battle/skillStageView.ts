@@ -1,9 +1,16 @@
 import type { Elf, Skill, StatType } from '../types';
+import { skillPropertyIssue } from '../effects/sequenceContract';
 
 /** 計算用的「視為」不改動真實能力等級，也不需要命中後才開啟。 */
-export function skillStageView(elf: Pick<Elf, 'statStages' | 'isInherentInvalid'>, skill: Pick<Skill, 'description'> | null | undefined, stat: StatType, opponent = false): number {
+export function skillStageView(elf: Pick<Elf, 'statStages' | 'isInherentInvalid'>, skill: Pick<Skill, 'description'> & Partial<Pick<Skill,'kit'|'effectMode'>> | null | undefined, stat: StatType, opponent = false): number {
   const original = elf.statStages?.[stat] || 0;
   if (!skill || elf.isInherentInvalid) return original;
+  if(skill.effectMode==='kit') {
+    const mode=skill.kit?.find(e=>e.codeId==='skill_property'&&e.params.property==='stage_view'&&!skillPropertyIssue(e))?.params.value;
+    if(opponent&&mode==='opp_up_as_down'&&original>0)return -original;
+    if(!opponent&&mode==='self_down_as_up'&&original<0)return -original;
+    return original; // 積木模式不偷偷再解析原文，修改圖紙後立即按參數生效。
+  }
   const text = skill.description || '';
   if (opponent) return /(?:將)?對手能力提升(?:狀態|效果)?視為(?:同等級)?能力下降/.test(text) && original > 0 ? -original : original;
   const negatives = Object.values(elf.statStages || {}).filter(v => v < 0);

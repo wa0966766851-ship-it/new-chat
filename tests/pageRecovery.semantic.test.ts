@@ -58,6 +58,24 @@ try {
     assert.match(text, /不代表.*已實裝/); assert.match(text, /TXT/);
     assert.match(text, /不可自行猜測/); assert.doesNotMatch(text, /100%|絕無|自動綁定/);
   });
+  await check('控制中心資源失敗只隔離面板，主頁與草稿保持顯示且能關閉', async () => {
+    function Shell() {
+      const [open, setOpen] = React.useState(true);
+      return React.createElement(React.Fragment, {},
+        React.createElement('main', {}, '編輯中的草稿'),
+        open ? React.createElement(PageErrorBoundary, {
+          key: 'control-hub', onBack: () => setOpen(false), backLabel: '關閉控制中心',
+          children: React.createElement(BrokenPage),
+        }) : null);
+    }
+    await act(async () => root.render(React.createElement(Shell)));
+    assert.equal(document.querySelector('main')!.textContent, '編輯中的草稿');
+    assert.ok(document.querySelector('[role="alert"]'));
+    await click('關閉控制中心');
+    assert.equal(document.querySelector('[role="alert"]'), null);
+    assert.equal(document.querySelector('main')!.textContent, '編輯中的草稿');
+    assert.equal(dom.window.localStorage.getItem('draft-fixture'), '已儲存資料');
+  });
 } finally {
   await act(async () => root.unmount()); dom.window.close(); console.error = originalError;
 }

@@ -329,7 +329,8 @@ try {
   t('真實戰鬥：布萊克首次致命保留1點體力', () => {
     assert.equal(st().p1.currentHp, 1, L1);
     assert.ok(fx('p2')['害怕'] > 0, '對手害怕');
-    assert.ok(Object.keys(st().p1RegistryState).some(k => k.startsWith('blkOnce:') && st().p1RegistryState[k]), '首次旗標');
+    // 整份魂印已遷移為明確once容器；驗證該容器旗標，不能繼續要求舊文字解析器的blkOnce鍵。
+    assert.equal(st().p1RegistryState['blockOnce::first-fatal-resistance'],true,'實際Kit的一次性致死旗標');
   });
 
   // 分類免疫（引擎 blockStatusGuard 掛鉤）：控制類被擋、弱化類照常

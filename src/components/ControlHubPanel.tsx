@@ -10,6 +10,8 @@ import type { ControlHubPanelModel } from "./ControlHub";
 import { UpdateSettingsPanel } from './UpdateSettingsPanel';
 import { parseMusicSource } from '../utils/musicSource';
 import { playAudioTestTone } from '../utils/audioTestTone';
+import { BattleAISettingsPanel } from './BattleAISettingsPanel';
+import { LauncherSettingsPanel } from './LauncherSettingsPanel';
 
 const TAB_ICONS: Record<ControlSectionId, React.ComponentType<{ className?: string }>> = {
   background: ImageIcon, audio: Music, visual: Palette, battle: Swords, system: Sliders,
@@ -326,7 +328,8 @@ export default function ControlHubPanel(model: ControlHubPanelModel) {
           </Section>
         </>)}
 
-        {activeTab === 'battle' && (
+        {activeTab === 'battle' && (<>
+          <BattleAISettingsPanel />
           <Section title="動畫播放" hint="關閉的項目直接略過動畫，不影響結算">
             <div className="grid grid-cols-2 gap-2" data-testid="battle-animation-settings">
               {BATTLE_ANIMATION_OPTIONS.map(option => (
@@ -338,9 +341,10 @@ export default function ControlHubPanel(model: ControlHubPanelModel) {
               ))}
             </div>
           </Section>
-        )}
+        </>)}
 
         {activeTab === 'system' && (<>
+          <LauncherSettingsPanel />
           <Section title="背景與音樂設定" hint="包含各頁背景／BGM、背景庫與歌單">
             <div className="grid grid-cols-3 gap-2">
               <button type="button" onClick={exportConfig} className="py-2 rounded-lg bg-slate-900 border border-slate-700 text-xs text-slate-200 flex items-center justify-center gap-1.5 hover:border-slate-500"><Copy className="w-3.5 h-3.5" />匯出</button>

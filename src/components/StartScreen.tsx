@@ -5,9 +5,11 @@ import { matchesElfQuery } from '../utils/elfSearch';
 import { createPortal } from 'react-dom';
 import { Elf, BattleMode, Inscription } from "../types";
 import { SEER_TYPES, calculateElfStats, getDefaultEvs, getAttributeBadgeColor } from "../utils/statCalculator";
-import { ElfAvatar, TypeIcon } from "./SeerImages";
+import { ElfAvatar, TypeIcon, SkillTypeIcon } from "./SeerImages";
+import { skillDisplayType, skillDisplayTypeLabel } from '../utils/skillPresentation';
 import { isStoneThrower, validateSkillStoneLoadout, skillConfigurationKey } from "../data/skillStones";
-import { formatEffectText, plainDescription } from "../utils/descFormat";
+import { plainDescription } from "../utils/descFormat";
+import { EffectDescription } from './EffectDescription';
 import { getElfDisplayRank as getElfDestinyRank } from "../utils/elfDisplayRank";
 import { InfoHint } from "./InfoHint";
 import { getNatureFromModifiers, getDefaultNatureModifiers } from "../utils/seerNatures";
@@ -25,6 +27,7 @@ const TypeMatchupPanel = lazy(() => import("./TypeMatchupPanel").then(m => ({ de
 const ResistancePanel = lazy(() => import("./ResistancePanel"));
 const InscriptionModal = lazy(() => import("./InscriptionModal").then(m => ({ default: m.InscriptionModal })));
 const LazyBlockProgramView = lazy(() => import("./LazyBlockProgramView"));
+const BattleAIQuickSettings = lazy(() => import('./BattleAIQuickSettings').then(m=>({default:m.BattleAIQuickSettings})));
 const EffectLibraryModal = lazy(() => import("./EffectLibraryModal").then(m => ({ default: m.EffectLibraryModal })));
 const SkillStonePicker = lazy(() => import('./SkillStonePicker'));
 const detailLoading = <p role="status" className="p-3 text-sm text-slate-400">載入效果資料…</p>;
@@ -1167,6 +1170,7 @@ export default function StartScreen({
 
   const [copiedSection, setCopiedSection] = useState<string | null>(null);
   const [blockView, setBlockView] = useState(false);
+  useEffect(() => { setBlockView(false); }, [showDetailModal?.id]);
 
   const handleCopyText = (type: 'full' | 'soulMark' | 'skill', data?: any) => {
     if (!showDetailModal) return;
@@ -1216,7 +1220,7 @@ export default function StartScreen({
       if (showDetailModal.skills && showDetailModal.skills.length > 0) {
         textToCopy += `【核心技能組】\n`;
         showDetailModal.skills.forEach(sk => {
-          const typeStr = sk.type && sk.type !== '無屬性' ? `${sk.type}系` : '';
+          const typeStr = skillDisplayTypeLabel(sk);
           const fifthStr = sk.isFifthSkill ? ' (第五技能)' : '';
           textToCopy += `[${sk.name}] ${typeStr} ${sk.category}技能${fifthStr}\n威力：${sk.power} | PP：${sk.pp}\n效果：${sk.description.replace(/([；;])\s*/g, '$1\n')}\n\n`;
         });
@@ -1224,7 +1228,7 @@ export default function StartScreen({
     } else if (type === 'soulMark' && showDetailModal.soulMark) {
       textToCopy = `【魂印 / 專屬特性】 - ${showDetailModal.soulMark.name}\n${showDetailModal.soulMark.description.replace(/([；;])\s*/g, '$1\n')}`;
     } else if (type === 'skill' && data) {
-      const typeStr = data.type && data.type !== '無屬性' ? `${data.type}系` : '';
+      const typeStr = skillDisplayTypeLabel(data);
       const fifthStr = data.isFifthSkill ? ' (第五技能)' : '';
       textToCopy = `[${data.name}] ${typeStr} ${data.category}技能${fifthStr}\n威力：${data.power} | PP：${data.pp}\n效果：${data.description.replace(/([；;])\s*/g, '$1\n')}`;
     }
@@ -1303,6 +1307,7 @@ export default function StartScreen({
             </div>
           </div>
 
+          {battleMode === 'PVE' && <Suspense fallback={<p className="px-4 py-3 text-xs text-slate-500">載入本地 AI 策略…</p>}><BattleAIQuickSettings pve /></Suspense>}
           {/* 賽制 */}
           <div className="flex flex-wrap items-center justify-between gap-3 px-4 py-3 border-b border-white/[0.06]">
             <span className="text-[15px] text-slate-100" title="巔峰賽制會先進行 BP 禁選與首發盲選">賽制</span>
@@ -1940,9 +1945,7 @@ export default function StartScreen({
                         <span className="ml-auto px-1.5 rounded-full bg-amber-500/15 text-amber-300 text-[10px]">異能</span>
                       )}
                     </div>
-                    <p className="mt-1 text-[11px] text-slate-400 leading-relaxed select-none line-clamp-3">
-                      {plainDescription(elf.soulMark.description).split("【命運之輪")[0].trim()}
-                    </p>
+                    <p className="mt-1 text-[11px] text-slate-400 leading-relaxed select-none line-clamp-3">{plainDescription(elf.soulMark.description).split("【命運之輪")[0].trim()}</p>
                   </div>
                   {elf.alienTraits && (
                     <div className="mt-1.5 pt-1 border-t border-slate-800/60 space-y-1">
@@ -2399,14 +2402,16 @@ export default function StartScreen({
                       </button>
                     </div>
                   </div>
+                  <nav aria-label="魂印呈現方式" className="ios-segment inline-flex mb-3 relative z-10">
+                    <button type="button" data-active={!blockView} onClick={() => setBlockView(false)}>魂印描述</button>
+                    <button type="button" data-active={blockView} onClick={() => setBlockView(true)}>魂印積木／實裝核對</button>
+                  </nav>
                   {blockView && showDetailModal.soulMark ? (
                     <div className="relative z-10">
                       <Suspense fallback={detailLoading}><LazyBlockProgramView elf={showDetailModal} /></Suspense>
                     </div>
                   ) : (
-                  <p className="text-left text-slate-200 text-[14px] leading-[1.75] font-sans antialiased whitespace-pre-wrap selection:bg-violet-500/40 tracking-wide relative z-10">
-                    {formatEffectText(showDetailModal.soulMark?.description)}
-                  </p>
+                  <EffectDescription description={showDetailModal.soulMark?.description} className="text-left text-slate-200 text-[14px] leading-[1.75] font-sans antialiased  selection:bg-violet-500/40 tracking-wide relative z-10" />
                   )}
                 </div>
 
@@ -2418,9 +2423,7 @@ export default function StartScreen({
                         <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse" />
                         <h4 className="text-xs font-bold text-amber-300">二代異能特質 / {showDetailModal.alienTraits.gen2Trait.name}</h4>
                       </div>
-                      <EffectBlockToggle trait={showDetailModal.alienTraits.gen2Trait}><p className="text-amber-100/90 text-[14px] leading-[1.75] font-sans whitespace-pre-wrap">
-                        {formatEffectText(showDetailModal.alienTraits.gen2Trait.description)}
-                      </p></EffectBlockToggle>
+                      <EffectBlockToggle trait={showDetailModal.alienTraits.gen2Trait}><EffectDescription description={showDetailModal.alienTraits.gen2Trait.description} className="text-amber-100/90 text-[14px] leading-[1.75] font-sans" /></EffectBlockToggle>
                     </div>
                   )}
                   {showDetailModal.alienTraits?.exclusiveTrait && (
@@ -2429,9 +2432,7 @@ export default function StartScreen({
                         <span className="w-2 h-2 rounded-full bg-red-400 animate-pulse" />
                         <h4 className="text-xs font-bold text-red-300">專屬異能特質 / {showDetailModal.alienTraits.exclusiveTrait.name}</h4>
                       </div>
-                      <EffectBlockToggle trait={showDetailModal.alienTraits.exclusiveTrait}><p className="text-red-100/90 text-[14px] leading-[1.75] font-sans whitespace-pre-wrap">
-                        {formatEffectText(showDetailModal.alienTraits.exclusiveTrait.description)}
-                      </p></EffectBlockToggle>
+                      <EffectBlockToggle trait={showDetailModal.alienTraits.exclusiveTrait}><EffectDescription description={showDetailModal.alienTraits.exclusiveTrait.description} className="text-red-100/90 text-[14px] leading-[1.75] font-sans" /></EffectBlockToggle>
                     </div>
                   )}
                   {(showDetailModal.alienTraits?.exclusiveTraits || []).map((trait) => (
@@ -2440,9 +2441,7 @@ export default function StartScreen({
                         <span className="w-2 h-2 rounded-full bg-red-400 animate-pulse" />
                         <h4 className="text-xs font-bold text-red-300">專屬異能特質 / {trait.name}</h4>
                       </div>
-                      <EffectBlockToggle trait={trait}><p className="text-red-100/90 text-[14px] leading-[1.75] font-sans whitespace-pre-wrap">
-                        {formatEffectText(trait.description)}
-                      </p></EffectBlockToggle>
+                      <EffectBlockToggle trait={trait}><EffectDescription description={trait.description} className="text-red-100/90 text-[14px] leading-[1.75] font-sans" /></EffectBlockToggle>
                     </div>
                   ))}
                   {showDetailModal.isAlienElf && (
@@ -2481,9 +2480,7 @@ export default function StartScreen({
                         )}
                       </div>
                       {showDetailModal.alienTraits?.alienTrait && (
-                        <EffectBlockToggle trait={showDetailModal.alienTraits.alienTrait}><p className="text-blue-100/90 text-[14px] leading-[1.75] font-sans whitespace-pre-wrap mt-2 pt-2 border-t border-blue-500/20">
-                          {formatEffectText(showDetailModal.alienTraits.alienTrait.description)}
-                        </p></EffectBlockToggle>
+                        <EffectBlockToggle trait={showDetailModal.alienTraits.alienTrait}><EffectDescription description={showDetailModal.alienTraits.alienTrait.description} className="text-blue-100/90 text-[14px] leading-[1.75] font-sans  mt-2 pt-2 border-t border-blue-500/20" /></EffectBlockToggle>
                       )}
                     </div>
                   )}
@@ -2518,9 +2515,7 @@ export default function StartScreen({
                           </select>
                         </div>
                         {showDetailModal.alienTraits?.generalTrait && (
-                          <EffectBlockToggle trait={showDetailModal.alienTraits.generalTrait}><p className="text-blue-100/90 text-[14px] leading-[1.75] font-sans whitespace-pre-wrap mt-2 pt-2 border-t border-blue-500/20">
-                            {formatEffectText(showDetailModal.alienTraits.generalTrait.description)}
-                          </p></EffectBlockToggle>
+                          <EffectBlockToggle trait={showDetailModal.alienTraits.generalTrait}><EffectDescription description={showDetailModal.alienTraits.generalTrait.description} className="text-blue-100/90 text-[14px] leading-[1.75] font-sans  mt-2 pt-2 border-t border-blue-500/20" /></EffectBlockToggle>
                         )}
                       </div>
                     ) : showDetailModal.alienTraits?.generalTrait && (
@@ -2529,9 +2524,7 @@ export default function StartScreen({
                           <span className="w-2 h-2 rounded-full bg-blue-400 animate-pulse" />
                           <h4 className="text-[15px] font-semibold text-blue-200">通用特性 / {showDetailModal.alienTraits.generalTrait.name} ({showDetailModal.alienTraits.generalTrait.description})</h4>
                         </div>
-                        <EffectBlockToggle trait={showDetailModal.alienTraits.generalTrait}><p className="text-blue-100/90 text-[14px] leading-[1.75] font-sans whitespace-pre-wrap">
-                          {formatEffectText(showDetailModal.alienTraits.generalTrait.description)}
-                        </p></EffectBlockToggle>
+                        <EffectBlockToggle trait={showDetailModal.alienTraits.generalTrait}><EffectDescription description={showDetailModal.alienTraits.generalTrait.description} className="text-blue-100/90 text-[14px] leading-[1.75] font-sans" /></EffectBlockToggle>
                       </div>
                     )}
                   </div>
@@ -2602,13 +2595,13 @@ export default function StartScreen({
                               }`}>
                                 {s.category}
                               </span>
-                              <span className={`text-[11px] px-1.5 py-0.5 rounded font-bold ${getAttributeBadgeColor(s.type)} inline-flex items-center gap-1`}>
-                                <TypeIcon type={s.type} size={14} showLabelWhenMissing={false} />{s.type}
+                              <span className={`text-[11px] px-1.5 py-0.5 rounded font-bold ${getAttributeBadgeColor(skillDisplayType(s))} inline-flex items-center gap-1`}>
+                                <SkillTypeIcon skill={s} size={14} showLabelWhenMissing={false} />{skillDisplayType(s)}
                               </span>
                             </div>
                           </div>
                           
-                          {blockView ? <Suspense fallback={detailLoading}><LazyBlockProgramView skill={s} /></Suspense> : <p className="text-slate-200 text-[13px] leading-[1.7] font-sans antialiased whitespace-pre-wrap tracking-wide">{formatEffectText(s.description)}</p>}
+                          {blockView ? <Suspense fallback={detailLoading}><LazyBlockProgramView elf={showDetailModal} skill={s} /></Suspense> : <EffectDescription description={s.description} className="text-slate-200 text-[13px] leading-[1.7] font-sans antialiased  tracking-wide" />}
                           
                           <div className="flex justify-between items-center text-xs text-slate-500 font-mono w-full border-t border-slate-900 pt-2 mt-auto">
                             <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5">
@@ -2773,7 +2766,7 @@ export default function StartScreen({
                                         >
                                           <div className="flex items-center justify-between">
                                             <span className={`font-bold text-[15px] flex items-center gap-2 ${isFifthSlot ? "text-amber-300" : isEquipped ? "text-purple-300" : "text-blue-400"}`}>
-                                              {sk?.type && <TypeIcon type={sk.type} size={18} showLabelWhenMissing={false} />}
+                                              {sk && <SkillTypeIcon skill={sk} size={18} showLabelWhenMissing={false} />}
                                               {sk?.name || "無技能"}
                                               {isCurrent && <span className="text-[11px] bg-blue-500/20 text-blue-300 px-1.5 py-0.5 rounded">當前裝備</span>}
                                               {isEquipped && <span className="text-[11px] bg-purple-500/20 text-purple-300 border border-purple-500/30 px-1.5 py-0.5 rounded flex items-center gap-0.5"><Shuffle className="w-2.5 h-2.5" />點擊與第 {equippedIdx + 1} 格互換</span>}
@@ -2785,7 +2778,7 @@ export default function StartScreen({
                                               <span>PP: <strong className="text-slate-300">{sk.pp}/{sk.maxPp !== undefined ? sk.maxPp : sk.pp}</strong></span>
                                             </div>
                                           </div>
-                                          <p className="text-[13px] text-slate-200 leading-[1.7] whitespace-pre-wrap">{formatEffectText(sk.description)}</p>
+                                          <EffectDescription description={sk.description} className="text-[13px] text-slate-200 leading-[1.7]" />
                                         </div>
                                       );
                                     })

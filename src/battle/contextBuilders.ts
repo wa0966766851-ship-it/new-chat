@@ -1,3 +1,6 @@
+import { applyAlienDoubleDamage } from './advancedDamageModifiers';
+import { createDamageComp, floorDamage } from './damagePipeline';
+import { resolveDamageBlocking } from './damageBlocking';
 import { matchesDamageTypes } from '../effects/damageChoices';
 import { trackIllusionStatWrite } from './illusionStats';
 import { trackNativeRegistryWrite } from './acquiredEffectContext';
@@ -20,7 +23,7 @@ import { Mark, bindMarkToElf, markAppliesToElf } from "./marks";
 import { BattleState, BattleAction, EffectItem } from "../components/BattleManager";
 import { BattleEventContext, EffectTiming, DamageComputation, PriorityComputation } from "../effects/types";
 import { Timer } from "./timers";
-import { readScopedRegistry, writeScopedRegistry, addScopedTimer, setBattleSideMarks } from "./stateScopes";
+import { readScopedRegistry, writeScopedRegistry, addScopedTimer, consumeScopedTimer, clearScopedTurnEffects, scopedTimers, setBattleSideMarks } from "./stateScopes";
 import { getTypeMatchup } from "../utils/statCalculator";
 import { emitStatusApplied, blockStatusGuard } from "../blocks/registry";
 import { SoulMarkRegistry } from "../effects/battleEventRegistry";
@@ -31,6 +34,7 @@ import { TraitsEngine } from "../utils/traitsEngine";
 import { getStatuses, shuffleArray, clampSkillPp } from "../utils/battleHelpers";
 import { StatusRegistry } from "../effects/statusRegistry";
 import { canonicalStatusName } from '../effects/statusIdentity';
+import { patchesStatuses, removedStatusEvents } from './statusTransitionEvents';
 import { hasStoneThrowerMythic } from '../data/skillStones';
 import { applyActiveGateTimersToDamage } from './damageGates';
 export { applyActiveGateTimersToDamage } from './damageGates';
@@ -83,6 +87,7 @@ function runDamageHooks(shared: SharedContextDeps, targetSide: 'p1' | 'p2', comp
     attackDefenseBypassUntilSwitch: readScopedRegistry(shared.syncStateRef.current, shared.side, shared.self, 'attackDefenseBypassUntilSwitch'),
   }, comp.damageCategory);
   comp.reductionPolicy = reductionPolicy(shared.syncStateRef.current, targetSide, shared.syncStateRef.current[targetSide], comp.damageCategory);
+  if (targetSide !== shared.side) applyAlienDoubleDamage(comp, shared.self, shared.syncStateRef.current[targetSide]);
   if (comp.pure) return;
   if (_secondaryDamageDepth > 0) {
     applyMarkDamageReductions(comp, shared.syncStateRef.current, targetSide, shared.syncStateRef.current[targetSide]);
@@ -124,7 +129,7 @@ export function buildDamageAPIs(shared: SharedContextDeps): DamageAPIs {
       // 屬性克制只影響攻擊技能的直接傷害；固定／百分比傷害不吃克制倍率
       void dmgType;
 
-      const damageComp: DamageComputation = {
+      const damageComp: DamageComputation = createDamageComp({
         base: baseVal,
         increasePercent: 0,
         decreasePercent: 0,
@@ -135,7 +140,7 @@ export function buildDamageAPIs(shared: SharedContextDeps): DamageAPIs {
         isIncoming: true,
         // 保底類獨立乘區：通用增減傷段全部跳過，自帶鏈與 floor 不受影響
         pure: !!opts?.pure,
-      } as any;
+      } as any);
 
       runDamageHooks(shared, tSide, damageComp);
       applyStatusDamageModifiers(damageComp, syncStateRef.current[side], syncStateRef.current[tSide]);
@@ -156,6 +161,13 @@ export function buildDamageAPIs(shared: SharedContextDeps): DamageAPIs {
             }
           });
         }
+      }
+
+      // 黯痕：持有者造成的百分比／固定傷害減半（applyPinkDamage 過去漏掉）
+      if (!damageComp.pure && tSide !== actorSide && (syncStateRef.current[`${actorSide}RegistryState` as 'p1RegistryState' | 'p2RegistryState']?.DarkScarTurns || 0) > 0
+        && (damageComp.damageCategory === 'fixed' || damageComp.damageCategory === 'percent')) {
+        multiplyDamageReduction(damageComp, 0.5, false);
+        pushEffect({ type: 'log', side: actorSide, data: { text: `🚫 【黯痕】：造成的百分比與固定傷害減半！`, type: "effect" } });
       }
 
       // Scan target's marks for nonTrueDamageTakenMultiplier
@@ -190,7 +202,7 @@ export function buildDamageAPIs(shared: SharedContextDeps): DamageAPIs {
       const stage1 = damageComp.base * (1 + damageComp.increasePercent) * Math.max(0, 1 - damageComp.decreasePercent);
       const stage2 = Math.max(0, stage1 * damageComp.multiplier - (damageComp.flatReduction || 0));
       const stage3 = damageComp.limit !== undefined ? Math.min(stage2, damageComp.limit) : stage2;
-      const finalDamage = Math.min(damageComp.outgoingLimit ?? Infinity, Math.floor(damageComp.floor !== undefined ? Math.max(stage3, damageComp.floor) : Math.max(0, stage3)));
+      const finalDamage = resolveDamageBlocking(damageComp,Math.min(damageComp.outgoingLimit ?? Infinity, floorDamage(damageComp.floor !== undefined ? Math.max(stage3, damageComp.floor) : Math.max(0, stage3))));
 
       pushEffect({ type: 'damage', side: tSide, data: { marksApplied: true, amount: finalDamage, requestedAmount: amt, onSettled: combineSettlementCallbacks(opts?.onSettled, damageComp.afterDamage), label: label || "附加傷害", popup: true, sourceElfName: self.name, sourceSide:side, sourceBattleId:self.battleId||self.id, damageType: damageComp.damageCategory, attackDefenseBypass: damageComp.attackDefenseBypass, reductionPolicy: damageComp.reductionPolicy, ignoreShield: !!damageComp.attackDefenseBypass?.shield } });
       return finalDamage;
@@ -211,7 +223,7 @@ export function buildDamageAPIs(shared: SharedContextDeps): DamageAPIs {
 
       const damageCategory = opts?.category || "skill_attribute";
       const damageNode = opts?.node || (damageCategory === "skill_extra_action" ? "extra_action" : "skill_effect");
-      const damageComp: DamageComputation = {
+      const damageComp: DamageComputation = createDamageComp({
         base: baseVal,
         increasePercent: 0,
         decreasePercent: 0,
@@ -223,7 +235,7 @@ export function buildDamageAPIs(shared: SharedContextDeps): DamageAPIs {
         isIncoming: true,
         // 保底類獨立乘區（opts.pure）：克制照吃，通用增減傷段全部跳過
         pure: !!(opts as any)?.pure,
-      } as any;
+      } as any);
 
       runDamageHooks(shared, tSide, damageComp);
       applyStatusDamageModifiers(damageComp, syncStateRef.current[side], syncStateRef.current[tSide]);
@@ -282,7 +294,7 @@ export function buildDamageAPIs(shared: SharedContextDeps): DamageAPIs {
       const stage1 = damageComp.base * (1 + damageComp.increasePercent) * Math.max(0, 1 - damageComp.decreasePercent);
       const stage2 = Math.max(0, stage1 * damageComp.multiplier - (damageComp.flatReduction || 0));
       const stage3 = damageComp.limit !== undefined ? Math.min(stage2, damageComp.limit) : stage2;
-      const finalDamage = Math.min(damageComp.outgoingLimit ?? Infinity, Math.floor(damageComp.floor !== undefined ? Math.max(stage3, damageComp.floor) : Math.max(0, stage3)));
+      const finalDamage = resolveDamageBlocking(damageComp,Math.min(damageComp.outgoingLimit ?? Infinity, floorDamage(damageComp.floor !== undefined ? Math.max(stage3, damageComp.floor) : Math.max(0, stage3))));
 
       pushEffect({ type: 'damage', side: tSide, data: { marksApplied: true, amount: finalDamage, reductionPolicy: damageComp.reductionPolicy, onSettled: damageComp.afterDamage, label: label || "附加技能傷害", popup: true, sourceElfName: self.name, sourceSide:side, sourceBattleId:self.battleId||self.id, damageType: damageCategory, damageNode, typedSkill: damageCategory === "skill_attribute", ignoreShield: !!opts?.ignoreShield, typeMultiplier } });
       if (tSide !== side) queueSkillLifesteal(side, finalDamage, damageCategory, syncStateRef.current[`${side}RegistryState`], pushEffect);
@@ -293,14 +305,14 @@ export function buildDamageAPIs(shared: SharedContextDeps): DamageAPIs {
       const tOpp = tSide === "p1" ? (p1Override || cur.p1) : (p2Override || cur.p2);
       const baseVal = Math.floor(amt);
 
-      const damageComp: DamageComputation = {
+      const damageComp: DamageComputation = createDamageComp({
         base: baseVal,
         increasePercent: 0,
         decreasePercent: 0,
         multiplier: 1.0,
         damageCategory: "true",
         isIncoming: true
-      } as any;
+      } as any);
 
       runDamageHooks(shared, tSide, damageComp);
       applyStatusDamageModifiers(damageComp, syncStateRef.current[side], syncStateRef.current[tSide]);
@@ -314,17 +326,17 @@ export function buildDamageAPIs(shared: SharedContextDeps): DamageAPIs {
 
       const stage1 = damageComp.base * (1 + (damageComp.increasePercent || 0)) * (1 - safeDecreasePercent);
       const stage2 = stage1 * safeMultiplier;
-      const stage3 = damageComp.limit !== undefined ? Math.min(stage2, damageComp.limit) : stage2;
-      const finalDamage = Math.min(damageComp.outgoingLimit ?? Infinity, Math.floor(damageComp.floor !== undefined ? Math.max(stage3, damageComp.floor) : Math.max(0, stage3)));
+      // 真實傷害不受傷害上限與保底影響（使用者確認 2026-10-11）；自身輸出上限（黯痕等）仍適用
+      const finalDamage = resolveDamageBlocking(damageComp,Math.min(damageComp.outgoingLimit ?? Infinity, floorDamage(Math.max(0, stage2))));
 
       pushEffect({ type: 'damage', side: tSide, data: { marksApplied: true, amount: finalDamage, reductionPolicy: damageComp.reductionPolicy, requestedAmount: amt, onSettled: combineSettlementCallbacks(opts?.onSettled, damageComp.afterDamage), label, popup: true, sourceElfName: self.name, sourceSide:side, sourceBattleId:self.battleId||self.id, damageType: "true" } });
       return finalDamage;
     },
-    applyAbsorb: (tSide, amt, label = "汲取") => {
+    applyAbsorb: (tSide, amt, label = "汲取",opts) => {
       const val = Math.floor(amt);
       const actorSide = side; 
       const actualDmg = getBattleEventContext(actorSide, true, moveIndex).applyTrueDamage(tSide, val, label);
-      getBattleEventContext(actorSide, true, moveIndex).applyHeal(actorSide, actualDmg);
+      getBattleEventContext(actorSide, true, moveIndex).applyHeal(actorSide, actualDmg,opts);
     },
     applyHeal: (tSide, amt, opts) => pushEffect({ type: 'heal', side: tSide, data: { amount: Math.floor(amt), ...opts } }),
     adjustHp: (tSide, amt) => pushEffect({ type: 'adjust_hp', side: tSide, data: { amount: Math.floor(amt) } }),
@@ -334,14 +346,14 @@ export function buildDamageAPIs(shared: SharedContextDeps): DamageAPIs {
       const baseVal = Math.floor(target.maxHp * p);
       if (activeConstraints(c[`${tSide}Timers`], target).some(p => p.fixedPercentAsTrue)) return buildDamageAPIs(shared).applyTrueDamage(tSide, baseVal);
 
-      const damageComp: DamageComputation = {
+      const damageComp: DamageComputation = createDamageComp({
         base: baseVal,
         increasePercent: 0,
         decreasePercent: 0,
         multiplier: 1.0,
         damageCategory: "percent",
         isIncoming: true
-      } as any;
+      } as any);
 
       runDamageHooks(shared, tSide, damageComp);
       applyStatusDamageModifiers(damageComp, syncStateRef.current[side], syncStateRef.current[tSide]);
@@ -409,7 +421,7 @@ export function buildDamageAPIs(shared: SharedContextDeps): DamageAPIs {
       const stage1 = damageComp.base * (1 + damageComp.increasePercent) * Math.max(0, 1 - damageComp.decreasePercent);
       const stage2 = Math.max(0, stage1 * damageComp.multiplier - (damageComp.flatReduction || 0));
       const stage3 = damageComp.limit !== undefined ? Math.min(stage2, damageComp.limit) : stage2;
-      const finalDamage = Math.min(damageComp.outgoingLimit ?? Infinity, Math.floor(damageComp.floor !== undefined ? Math.max(stage3, damageComp.floor) : Math.max(0, stage3)));
+      const finalDamage = resolveDamageBlocking(damageComp,Math.min(damageComp.outgoingLimit ?? Infinity, floorDamage(damageComp.floor !== undefined ? Math.max(stage3, damageComp.floor) : Math.max(0, stage3))));
 
       pushEffect({ type: 'damage', side: tSide, data: { marksApplied: true, amount: finalDamage, reductionPolicy: damageComp.reductionPolicy, onSettled: damageComp.afterDamage, label: "百分比傷害", popup: true, sourceElfName: self.name, sourceSide:side, sourceBattleId:self.battleId||self.id, damageType: "percent" } });
       return finalDamage;
@@ -420,14 +432,14 @@ export function buildDamageAPIs(shared: SharedContextDeps): DamageAPIs {
       if (activeConstraints(c[`${tSide}Timers`], target).some(p => p.fixedPercentAsTrue)) return buildDamageAPIs(shared).applyTrueDamage(tSide, amt, label);
       const baseVal = Math.floor(amt);
 
-      const damageComp: DamageComputation = {
+      const damageComp: DamageComputation = createDamageComp({
         base: baseVal,
         increasePercent: 0,
         decreasePercent: 0,
         multiplier: 1.0,
         damageCategory: "fixed",
         isIncoming: true
-      } as any;
+      } as any);
 
       runDamageHooks(shared, tSide, damageComp);
       applyStatusDamageModifiers(damageComp, syncStateRef.current[side], syncStateRef.current[tSide]);
@@ -495,7 +507,7 @@ export function buildDamageAPIs(shared: SharedContextDeps): DamageAPIs {
       const stage1 = damageComp.base * (1 + damageComp.increasePercent) * Math.max(0, 1 - damageComp.decreasePercent);
       const stage2 = Math.max(0, stage1 * damageComp.multiplier - (damageComp.flatReduction || 0));
       const stage3 = damageComp.limit !== undefined ? Math.min(stage2, damageComp.limit) : stage2;
-      const finalDamage = Math.min(damageComp.outgoingLimit ?? Infinity, Math.floor(damageComp.floor !== undefined ? Math.max(stage3, damageComp.floor) : Math.max(0, stage3)));
+      const finalDamage = resolveDamageBlocking(damageComp,Math.min(damageComp.outgoingLimit ?? Infinity, floorDamage(damageComp.floor !== undefined ? Math.max(stage3, damageComp.floor) : Math.max(0, stage3))));
 
       pushEffect({ type: 'damage', side: tSide, data: { marksApplied: true, amount: finalDamage, reductionPolicy: damageComp.reductionPolicy, onSettled: damageComp.afterDamage, label: label || "固定傷害", popup: true, sourceElfName: self.name, sourceSide:side, sourceBattleId:self.battleId||self.id, damageType: "fixed" } });
       return finalDamage;
@@ -504,33 +516,40 @@ export function buildDamageAPIs(shared: SharedContextDeps): DamageAPIs {
 }
 
 export function buildStatusAPIs(shared: SharedContextDeps): StatusAPIs {
-  const { side, moveIndex, syncStateRef, dispatch, pushEffect, getBattleEventContext } = shared;
+  const { side, self, moveIndex, syncStateRef, dispatch, pushEffect, getBattleEventContext } = shared;
+  // 指定持有者上下文的自身操作必須寫該隊員，不能默認寫activeIndex。
+  const recipient=(c:BattleState,tSide:'p1'|'p2')=>tSide===side
+    ? c[`${tSide}Team`].find(e=>(e.battleId||e.id)===(self.battleId||self.id)) || self
+    : c[tSide];
   
   return {
-    applyStatusWithImmunityCheck: (tSide, s, d) => {
+    applyStatusWithImmunityCheck: (tSide, s, d, _ignoreDeluImmune, targetBattleId) => {
       // 在免疫、反彈、分類及入庫之前統一歷史代號；不能把 poisoned 等當未知異常。
       s = canonicalStatusName(s);
       // 反彈／轉嫁類效果互相觸發時的遞迴保護（雙方都有「反彈異常」會無限互彈直到堆疊溢位）
       if (_statusApplyDepth >= 3) return { success: false, immune: true };
-      // 「本回合執行過附加異常狀態的效果」（砥礪判定用）：對他方附加即記錄，不論成敗。
-      if (tSide !== side) {
+      // 「本回合執行過附加異常狀態的效果」：對自身或他方的附加均記錄，不論成敗。
+      {
         const c0 = syncStateRef.current;
-        const rk = `${side}RegistryState` as 'p1RegistryState' | 'p2RegistryState';
-        syncStateRef.current = { ...c0, [rk]: { ...(c0[rk] || {}), statusAttachTurn: c0.turnNumber } } as any;
+        // 場下來源的附加行為屬於該個體，不能污染同側正在受擊者。
+        syncStateRef.current = writeScopedRegistry(c0, side, self, { statusAttachTurn: c0.turnNumber });
       }
       _statusApplyDepth++;
       try { return ((): { success: boolean; immune: boolean } => {
       const c = syncStateRef.current;
-      const target = tSide === 'p1' ? c.p1 : c.p2;
+      const target = targetBattleId?c[`${tSide}Team`].find(e=>(e.battleId||e.id)===targetBattleId):recipient(c,tSide);
+      if(!target)return {success:false,immune:false};
+      const targetId=target.battleId||target.id;
+      const targetContext=()=>getBattleEventContext(tSide,true,0,target);
       // 通用：異常被免疫時通知受方魂印／套裝（ON_STATUS_IMMUNIZED；反彈不算免疫）
       const notifyImmunized = (reason: string) => {
         if (_immunizedNotifyDepth > 0) return;
         _immunizedNotifyDepth++;
         try {
           const cur = syncStateRef.current;
-          const tElf = tSide === 'p1' ? cur.p1 : cur.p2;
+          const tElf = cur[`${tSide}Team`].find(e=>(e.battleId||e.id)===targetId)||target;
           const sId = tSide === 'p1' ? cur.p1Suit : cur.p2Suit;
-          const ictx = getBattleEventContext(tSide, true, 0);
+          const ictx = getBattleEventContext(tSide, true, 0,tElf);
           const payload = { status: s, duration: d, targetSide: tSide, sourceSide: side, reason };
           if (sId && SuitEffectRegistry[sId]) SuitEffectRegistry[sId](ictx, EffectTiming.ON_STATUS_IMMUNIZED, payload);
           if (tElf && SoulMarkRegistry[tElf.name]) SoulMarkRegistry[tElf.name](ictx, EffectTiming.ON_STATUS_IMMUNIZED, payload);
@@ -539,7 +558,7 @@ export function buildStatusAPIs(shared: SharedContextDeps): StatusAPIs {
       };
 
       // Check active gate timers on target side for wraps === "immune"
-      const targetTimers = c[`${tSide}Timers` as "p1Timers" | "p2Timers"] || [];
+      const targetTimers = scopedTimers(c,tSide,target);
       for (const timer of targetTimers) {
         if (timer.remaining <= 0 || timer.pendingActivation || (timer.scope !== 'team' && timer.ownerBattleId && timer.ownerBattleId !== (target.battleId || target.id))) continue;
         const wraps = Array.isArray(timer.payload?.wraps) ? timer.payload.wraps : [timer.payload?.wraps];
@@ -556,20 +575,20 @@ export function buildStatusAPIs(shared: SharedContextDeps): StatusAPIs {
 
       // 通用異常免疫／反彈（immuneStatusTurns 過去只有寫入、從未被讀取，導致各精靈的「免疫異常」效果全部無效）
       if (tSide !== side) {
-        const targetRegState = c[`${tSide}RegistryState` as 'p1RegistryState' | 'p2RegistryState'] || {};
+        const targetRegState = {reflectStatusTurns:readScopedRegistry(c,tSide,target,'reflectStatusTurns'),immuneStatusTurns:readScopedRegistry(c,tSide,target,'immuneStatusTurns')};
         const protectionTimers = targetTimers.filter(t => t.remaining > 0 && !t.pendingActivation &&
           (t.scope === 'team' || !t.ownerBattleId || t.ownerBattleId === (target.battleId || target.id)));
         const acceptsStatus = (t: Timer) => (!t.payload?.statusGuardSourceSide || t.payload.statusGuardSourceSide === side) &&
           (!(t.payload as any)?.excludeStatusCategory || !StatusRegistry[s]?.categories?.includes((t.payload as any).excludeStatusCategory));
         const reflectionTimer = protectionTimers.find(t => t.payload?.reflectStatus && acceptsStatus(t));
-        const blkGuard = blockStatusGuard(c[`${tSide}Timers` as "p1Timers" | "p2Timers"], target, s); // 積木：分類異常免疫／反彈
+        const blkGuard = blockStatusGuard(targetTimers, target, s); // 積木：分類異常免疫／反彈
         if (((targetRegState.reflectStatusTurns || 0) > 0 || reflectionTimer || blkGuard === "reflect") && !_reflectingStatus && _reflectHookDepth === 0) {
-          if (reflectionTimer?.kind === 'use_counter') getBattleEventContext(tSide, true, 0).consumeTimer?.(tSide, reflectionTimer.id);
+          if (reflectionTimer?.kind === 'use_counter') targetContext().consumeTimer?.(tSide, reflectionTimer.id);
           pushEffect({ type: 'log', side: tSide, data: { text: `🔁 【反彈異常】：【${target.name}】將【${s}】反彈給對手！`, type: "effect" } });
           _reflectingStatus = true;
           _reflectHookDepth++;
           try {
-            getBattleEventContext(tSide, true, 0).applyStatusWithImmunityCheck(side, s, d);
+            targetContext().applyStatusWithImmunityCheck(side, s, d,undefined,self.battleId||self.id);
           } finally {
             _reflectingStatus = false;
             _reflectHookDepth--;
@@ -578,21 +597,19 @@ export function buildStatusAPIs(shared: SharedContextDeps): StatusAPIs {
         }
         const immunityTimer = protectionTimers.find(t => (t.payload?.immuneStatus || t.payload?.reflectStatus) && acceptsStatus(t));
         if (blkGuard || (targetRegState.immuneStatusTurns || 0) > 0 || (targetRegState.reflectStatusTurns || 0) > 0 || immunityTimer) {
-          if (immunityTimer?.kind === 'use_counter') getBattleEventContext(tSide, true, 0).consumeTimer?.(tSide, immunityTimer.id);
+          if (immunityTimer?.kind === 'use_counter') targetContext().consumeTimer?.(tSide, immunityTimer.id);
           pushEffect({ type: 'log', side: tSide, data: { text: `🛡️ 【異常免疫】：【${target.name}】免疫了【${s}】！`, type: "info" } });
           notifyImmunized("immuneStatus");
           return { success: false, immune: true };
         }
       }
 
-      const actorRegKey = `${side}RegistryState` as 'p1RegistryState' | 'p2RegistryState';
-      const actorRegState = c[actorRegKey] || {};
-      if (actorRegState.DarkScarTurns > 0) {
+      if (readScopedRegistry(c,side,self,'DarkScarTurns') > 0) {
         pushEffect({ type: 'log', side: side, data: { text: `🚫 【黯痕】：處於黯痕狀態下，無法附加任何異常狀態！`, type: "info" } });
         return { success: false, immune: true };
       }
 
-      const filterCtx = getBattleEventContext(tSide, true, 0);
+      const filterCtx = targetContext();
       const reflectCount = filterCtx.getPlayerState('blkReflectStatusCount') || 0;
       const immuneCount = filterCtx.getPlayerState('blkImmuneStatusCount') || 0;
       if (reflectCount > 0 || immuneCount > 0) {
@@ -600,7 +617,7 @@ export function buildStatusAPIs(shared: SharedContextDeps): StatusAPIs {
         filterCtx.setPlayerState(key, (reflectCount > 0 ? reflectCount : immuneCount) - 1);
         if (reflectCount > 0 && tSide !== side && !_reflectingStatus && _reflectHookDepth === 0) {
           _reflectingStatus = true; _reflectHookDepth++;
-          try { filterCtx.applyStatusWithImmunityCheck(side, s, d); }
+          try { filterCtx.applyStatusWithImmunityCheck(side, s, d,undefined,self.battleId||self.id); }
           finally { _reflectingStatus = false; _reflectHookDepth--; }
         }
         if (reflectCount <= 0) notifyImmunized("immuneCount");
@@ -610,7 +627,7 @@ export function buildStatusAPIs(shared: SharedContextDeps): StatusAPIs {
       // §47: Suit BEFORE_STATUS_APPLY
       const suitId = tSide === 'p1' ? c.p1Suit : c.p2Suit;
       // targetSide＝受到異常的一方、sourceSide＝施加方（handler 以 targetSide === ctx.actor 判斷自身受到）
-      const statusData: { status: string; duration: number; prevented: boolean; prevent?: boolean; targetSide: 'p1' | 'p2'; sourceSide: 'p1' | 'p2' } = { status: s, duration: d, prevented: false, targetSide: tSide, sourceSide: side };
+      const statusData: { status: string; duration: number; prevented: boolean; prevent?: boolean; immunized?:boolean; targetSide: 'p1' | 'p2'; sourceSide: 'p1' | 'p2' } = { status: s, duration: d, prevented: false, targetSide: tSide, sourceSide: side };
       const isReflectedIn = _reflectHookDepth > 0; // 被反彈過來的異常：不再響應攔截／反彈
       if (!isReflectedIn && suitId && SuitEffectRegistry[suitId]) {
         _reflectHookDepth++;
@@ -618,13 +635,14 @@ export function buildStatusAPIs(shared: SharedContextDeps): StatusAPIs {
         s = canonicalStatusName(statusData.status);
         d = statusData.duration;
         if (statusData.prevented || statusData.prevent) {
+          if(statusData.immunized)notifyImmunized('statusGuard');
           return { success: false, immune: true };
         }
       }
       const tRelics = tSide === 'p1' ? c.p1Relics : c.p2Relics;
       if (!isReflectedIn && tRelics?.length) {
         runRelicEffects(tRelics, filterCtx, EffectTiming.BEFORE_STATUS_APPLY, statusData);
-        if (statusData.prevented || statusData.prevent) return { success: false, immune: true };
+        if (statusData.prevented || statusData.prevent) {if(statusData.immunized)notifyImmunized('statusGuard');return { success: false, immune: true };}
       }
 
       // Also call SoulMarkRegistry for BEFORE_STATUS_APPLY to allow soul mark immunities/replacements (M1)
@@ -634,6 +652,7 @@ export function buildStatusAPIs(shared: SharedContextDeps): StatusAPIs {
         s = canonicalStatusName(statusData.status);
         d = statusData.duration;
         if (statusData.prevented || statusData.prevent) {
+          if(statusData.immunized)notifyImmunized('statusGuard');
           return { success: false, immune: true };
         }
       }
@@ -650,7 +669,8 @@ export function buildStatusAPIs(shared: SharedContextDeps): StatusAPIs {
       }
 
       const isLate = (moveIndex === 1 && tSide === side);
-      const latestTarget = syncStateRef.current[tSide];
+      const latestTarget = syncStateRef.current[`${tSide}Team`].find(e=>(e.battleId||e.id)===targetId);
+      if(!latestTarget)return {success:false,immune:false};
       const existingEffects = latestTarget.effects || [];
       const existing = existingEffects.find(e => e.id === s);
       
@@ -662,22 +682,20 @@ export function buildStatusAPIs(shared: SharedContextDeps): StatusAPIs {
         nextStacks = Math.min((existing.stacks || 1) + 1, 2);
       }
 
-      // 死亡換人（回合結束後、下回合前）附加的異常：下回合開始補扣一次
-      const betweenRounds = String(c.phase || "").startsWith("forced_switch");
+      // 死亡換人（回合結束後、下回合前）附加的異常：照常在下一個回合結束扣減（不在回合開始補扣，2026-10-10）。
       const newEffect = { 
         id: s, 
         name: s, 
         duration: d, 
         isLateMover: isLate,
         stacks: nextStacks,
-        ...(betweenRounds ? { catchUpTick: true } : {})
       };
       const nextEffects = [...existingEffects.filter(e => e.id !== s), newEffect];
       
       const nextElf: any = { ...latestTarget, effects: nextEffects };
       // 狂信：進入狀態時若自身沒有信仰對象，則本次狂信來源成為信仰對象
       if (s === '狂信' && !nextElf.faithTarget) {
-        const src = side === 'p1' ? c.p1 : c.p2;
+        const src = self;
         if (src && tSide !== side) {
           nextElf.faithTarget = src.name;
           pushEffect({ type: 'log', side: tSide, data: { text: `🙏 【狂信】：【${target.name}】的信仰對象成為【${src.name}】！`, type: "status" } });
@@ -686,22 +704,24 @@ export function buildStatusAPIs(shared: SharedContextDeps): StatusAPIs {
       const latest = syncStateRef.current;
       const nextTeam = [...latest[`${tSide}Team`]];
       const activeIdx = latest[`${tSide}ActiveIndex`];
-      nextTeam[activeIdx] = nextElf;
+      const targetIndex=nextTeam.findIndex(e=>(e.battleId||e.id)===targetId);
+      if(targetIndex<0)return {success:false,immune:false};
+      nextTeam[targetIndex] = nextElf;
       
       syncStateRef.current = {
         ...latest,
-        [tSide]: nextElf,
+        ...(targetIndex===activeIdx?{[tSide]:nextElf}:{}),
         [tSide === 'p1' ? 'p1Team' : 'p2Team']: nextTeam
       };
 
-      dispatch({ type: 'UPDATE_ELF', side: tSide, elf: { effects: nextEffects } });
+      dispatch({ type: 'UPDATE_ELF', side: tSide,targetId, elf: { effects: nextEffects } });
       
       if (SoulMarkRegistry[nextElf.name]) {
-        const targetCtx = getBattleEventContext(tSide, true, 0);
-        SoulMarkRegistry[nextElf.name](targetCtx, "SELF_STATUS_APPLIED" as any, { status: s, duration: d });
+        const targetCtx = getBattleEventContext(tSide, true, 0,nextElf);
+        SoulMarkRegistry[nextElf.name](targetCtx, EffectTiming.SELF_STATUS_APPLIED, { status: s, duration: d,targetSide:tSide,sourceSide:side });
       }
       if (_statusApplyDepth <= 1) {
-        try { emitStatusApplied([getBattleEventContext("p1", true, 0), getBattleEventContext("p2", true, 0)], { side: tSide, status: s, duration: d }); } catch (e) { console.error("[blocks]", e); }
+        try { emitStatusApplied([getBattleEventContext("p1", true, 0,tSide==='p1'?nextElf:undefined), getBattleEventContext("p2", true, 0,tSide==='p2'?nextElf:undefined)], { side: tSide, status: s, duration: d }); } catch (e) { console.error("[blocks]", e); }
       }
 
       return { success: true, immune: false };
@@ -710,55 +730,44 @@ export function buildStatusAPIs(shared: SharedContextDeps): StatusAPIs {
     getStatuses: (e) => getStatuses(e),
     clearTurnEffectsOf: (s) => {
       const c = syncStateRef.current;
-      const protectedElf = s === "p1" ? c.p1 : c.p2;
+      const protectedElf = recipient(c,s);
       if (protectedElf?.ownTurnEffectsUnclearable) {
         pushEffect({ type: 'log', side: s, data: { text: `⚡ 【專屬特質】：【${protectedElf.name}】的回合類效果無法被消除！`, type: "effect" } });
         return false;
       }
       // 通用：該方在場精靈處於「回合類效果無法被消除」（turnEffectsUnclearableTurns，寫在被保護方）
-      const protReg = c[`${s}RegistryState` as 'p1RegistryState' | 'p2RegistryState'] || {};
-      if ((protReg.turnEffectsUnclearableTurns || 0) > 0 && hasTurnEffect(c[`${s}Timers` as "p1Timers" | "p2Timers"] || [])) {
+      const ownerId=protectedElf.battleId||protectedElf.id;
+      const ownTimers=scopedTimers(c,s,protectedElf);
+      if ((readScopedRegistry(c,s,protectedElf,'turnEffectsUnclearableTurns') || 0) > 0 && hasTurnEffect(ownTimers)) {
         pushEffect({ type: 'log', side: s, data: { text: `🛡️ 【${protectedElf?.name}】的回合類效果無法被消除！`, type: 'effect' } });
         return false;
       }
-      const timersKey = `${s}Timers` as "p1Timers" | "p2Timers";
-      const curTimers = c[timersKey];
-      const [next, cleared] = clearTurnEffects(curTimers);
-      // 通用：回合類效果計時器可宣告其對應的登錄狀態鍵（payload.mirrorRegistryKeys），被消除時一併歸零
-      const removed = (curTimers || []).filter(t => !next.includes(t));
+      const result=clearScopedTurnEffects(c,s,protectedElf),removed=result.removed,cleared=removed.length;
       const zeroKeys: Record<string, any> = {};
       for (const t of removed) for (const k of (t.payload?.mirrorRegistryKeys || [])) zeroKeys[k] = 0;
-      const regKey = `${s}RegistryState` as 'p1RegistryState' | 'p2RegistryState';
-      
-      syncStateRef.current = {
-        ...c,
-        [timersKey]: next,
-        ...(Object.keys(zeroKeys).length ? { [regKey]: { ...(c[regKey] || {}), ...zeroKeys } } : {})
-      };
-
-      dispatch({ type: 'SET_TIMERS', side: s, timers: next });
-      if (Object.keys(zeroKeys).length) dispatch({ type: 'UPDATE_REGISTRY_STATE', side: s, state: zeroKeys });
+      syncStateRef.current=result.state;
+      dispatch({type:'SET_SCOPED_TIMERS',side:s,ownerId,timers:result.state[`${s}Timers`],ownerTimers:result.state[`${s}ElfState`]?.[ownerId]?.timers});
+      if (Object.keys(zeroKeys).length) dispatch({ type: 'UPDATE_SCOPED_REGISTRY_STATE', side: s,owner:protectedElf, state: zeroKeys });
       if (cleared > 0) {
-        const owner = syncStateRef.current[s];
-        try { SoulMarkRegistry[owner.name]?.(getBattleEventContext(s, true, 0), EffectTiming.TURN_EFFECTS_CLEARED, { cleared, removed, sourceSide: side, side: s }); } catch (e) { console.error(e); }
+        try { SoulMarkRegistry[protectedElf.name]?.(getBattleEventContext(s, true, 0,protectedElf), EffectTiming.TURN_EFFECTS_CLEARED, { cleared, removed, sourceSide: side, side: s }); } catch (e) { console.error(e); }
       }
       return cleared > 0;
     },
     hasTurnEffectOn: (s) => {
       const c = syncStateRef.current;
-      const timersKey = `${s}Timers` as "p1Timers" | "p2Timers";
-      return hasTurnEffect(c[timersKey]);
+      return hasTurnEffect(scopedTimers(c,s,recipient(c,s)));
     },
     applyStatChange: (tSide, changes, ppChanges) => {
       const interception = { changes: { ...changes }, prevented: false, sourceSide: side };
-      const originalTarget = syncStateRef.current[tSide];
-      SoulMarkRegistry[originalTarget.name]?.(getBattleEventContext(tSide, true, 0), EffectTiming.BEFORE_STAT_CHANGE, interception);
+      const originalTarget = recipient(syncStateRef.current,tSide);
+      SoulMarkRegistry[originalTarget.name]?.(getBattleEventContext(tSide, true, 0,originalTarget), EffectTiming.BEFORE_STAT_CHANGE, interception);
       changes = interception.prevented ? {} : interception.changes;
       // 攔截鉤子可以更新狀態；不能用鉤子執行前的快照覆寫其結果。
       const c = syncStateRef.current;
-      const target = c[tSide];
-      const immuneStatDownTurns = c[`${tSide}RegistryState`]?.immuneStatDownTurns || 0;
-      const immuneStatDownTimer = c[`${tSide}Timers`].some(t => t.remaining > 0 && !t.pendingActivation &&
+      const target = recipient(c,tSide);
+      const immuneStatDownTurns = readScopedRegistry(c,tSide,target,'immuneStatDownTurns') || 0;
+      const timers=scopedTimers(c,tSide,target);
+      const immuneStatDownTimer = timers.some(t => t.remaining > 0 && !t.pendingActivation &&
         (!t.ownerBattleId || t.ownerBattleId === (target.battleId || target.id)) && t.payload?.immuneStatDown);
       
       const filteredChanges = Object.entries(changes || {}).filter(([stat, value]) => {
@@ -801,43 +810,47 @@ export function buildStatusAPIs(shared: SharedContextDeps): StatusAPIs {
       }
 
       const nextTeam = [...(tSide === 'p1' ? c.p1Team : c.p2Team)];
+      const targetIndex=nextTeam.findIndex(e=>(e.battleId||e.id)===(target.battleId||target.id));
+      if(targetIndex<0)return {success:false,applied:{}};
       const activeIdx = tSide === 'p1' ? c.p1ActiveIndex : c.p2ActiveIndex;
-      nextTeam[activeIdx] = nextElf;
+      nextTeam[targetIndex] = nextElf;
       
       syncStateRef.current = {
         ...c,
-        [tSide]: nextElf,
+        ...(targetIndex===activeIdx?{[tSide]:nextElf}:{}),
         [tSide === 'p1' ? 'p1Team' : 'p2Team']: nextTeam
       };
 
-      dispatch({ type: 'UPDATE_ELF', side: tSide, elf: { statStages: nextElf.statStages, skills: nextElf.skills } });
+      dispatch({ type: 'UPDATE_ELF', side: tSide,targetId:target.battleId||target.id, elf: { statStages: nextElf.statStages, skills: nextElf.skills } });
       pushEffect({ type: 'log', side: tSide, data: { text: `【${target.name}】的能力發生了變化！`, type: "status" } });
       if (filteredChanges.length > 0 && target.paralyzeBothOnOwnStatChangeTurns) {
         const turns = target.paralyzeBothOnOwnStatChangeTurns;
         const otherSide = tSide === "p1" ? "p2" : "p1";
-        getBattleEventContext(tSide, true, 0).applyStatusWithImmunityCheck(tSide, "麻痺", turns);
-        getBattleEventContext(tSide, true, 0).applyStatusWithImmunityCheck(otherSide, "麻痺", turns);
+        getBattleEventContext(tSide, true, 0,target).applyStatusWithImmunityCheck(tSide, "麻痺", turns);
+        getBattleEventContext(tSide, true, 0,target).applyStatusWithImmunityCheck(otherSide, "麻痺", turns);
         pushEffect({ type: 'log', side: tSide, data: { text: `⚡ 【異】：自身能力等級被改變，雙方麻痺${turns}回合！`, type: "effect" } });
       }
       return { success: Object.keys(applied).length > 0, applied };
     },
     applyShield: (tSide, amount) => {
       const c = syncStateRef.current;
-      const target = tSide === 'p1' ? c.p1 : c.p2;
+      const target = recipient(c,tSide);
       const nextShield = (target.shield || 0) + amount;
       
       const nextElf = { ...target, shield: nextShield };
       const nextTeam = [...(tSide === 'p1' ? c.p1Team : c.p2Team)];
       const activeIdx = tSide === 'p1' ? c.p1ActiveIndex : c.p2ActiveIndex;
-      nextTeam[activeIdx] = nextElf;
+      const targetIndex=nextTeam.findIndex(e=>(e.battleId||e.id)===(target.battleId||target.id));
+      if(targetIndex<0)return;
+      nextTeam[targetIndex] = nextElf;
       
       syncStateRef.current = {
         ...c,
-        [tSide]: nextElf,
+        ...(targetIndex===activeIdx?{[tSide]:nextElf}:{}),
         [tSide === 'p1' ? 'p1Team' : 'p2Team']: nextTeam
       };
 
-      dispatch({ type: 'UPDATE_ELF', side: tSide, elf: { shield: nextShield } });
+      dispatch({ type: 'UPDATE_ELF', side: tSide,targetId:target.battleId||target.id, elf: { shield: nextShield } });
     },
   };
 }
@@ -932,13 +945,13 @@ export function buildStateAPIs(shared: SharedContextDeps): StateAPIs {
       const holder = targetSide === side ? self : c[targetSide];
       return (c[marksKey] || []).filter(mark => markAppliesToElf(mark, holder));
     },
-    clearMark: (id, targetSide) => {
+    clearMark: (id, targetSide, ownerBattleId) => {
       const c = syncStateRef.current;
       const actorSide = targetSide || side;
       const marksKey = `${actorSide}Marks` as "p1Marks" | "p2Marks";
       const curMarks = c[marksKey] || [];
       const holder = actorSide === side ? self : c[actorSide];
-      const nextMarks = curMarks.filter(mark => mark.id !== id || !markAppliesToElf(mark, holder));
+      const nextMarks = curMarks.filter(mark => mark.id !== id || (ownerBattleId===undefined?!markAppliesToElf(mark,holder):(mark.ownerBattleId||null)!==ownerBattleId));
       
       syncStateRef.current = setBattleSideMarks(c, actorSide, nextMarks);
 
@@ -950,11 +963,11 @@ export function buildStateAPIs(shared: SharedContextDeps): StateAPIs {
     },
     consumeTimer: (s, id) => {
       const c = syncStateRef.current;
-      const timersKey = `${s}Timers` as "p1Timers" | "p2Timers";
-      const cur = c[timersKey] || [];
-      const next = cur.flatMap((t: any) => t.id !== id ? [t] : (t.remaining - 1 > 0 ? [{ ...t, remaining: t.remaining - 1 }] : []));
-      syncStateRef.current = { ...c, [timersKey]: next };
-      dispatch({ type: 'SET_TIMERS', side: s, timers: next });
+      const owner=s===side?self:c[s];
+      syncStateRef.current=consumeScopedTimer(c,s,owner,id);
+      // 引擎dispatch以同一syncState為起點；必須派發替換快照，否則再扣一次。
+      const next=syncStateRef.current,ownerId=owner.battleId||owner.id;
+      dispatch({type:'SET_SCOPED_TIMERS',side:s,ownerId,timers:next[`${s}Timers`],ownerTimers:next[`${s}ElfState`]?.[ownerId]?.timers});
     },
     addTimerTo: (s, timer, isLateMover) => {
       const c = syncStateRef.current;
@@ -1015,6 +1028,8 @@ export function buildStateAPIs(shared: SharedContextDeps): StateAPIs {
         ...(isUpdatingActive ? { [tSide]: nextElf } : {})
       };
       dispatch({ type: 'UPDATE_ELF', side: tSide, elf: elfUpdates, targetId: target.battleId || target.id });
+      if(patchesStatuses(elfUpdates))for(const ended of removedStatusEvents(target,nextElf))
+        SoulMarkRegistry[nextElf.name]?.(getBattleEventContext(tSide,true,0,nextElf),EffectTiming.ON_STATUS_ENDED,{...ended,targetSide:tSide,sourceSide:side});
       if (elfUpdates.statStages && tSide !== side) {
         const removedStages = Object.fromEntries(Object.entries(target.statStages || {}).filter(([k, v]) => typeof v === 'number' && v > 0 && Number(nextElf.statStages?.[k] || 0) < v));
         if (Object.keys(removedStages).length) SoulMarkRegistry[target.name]?.(getBattleEventContext(tSide, true, 0, nextElf), EffectTiming.STAT_BOOST_CLEARED, { removedStages, sourceSide: side });
@@ -1060,6 +1075,9 @@ export function buildStateAPIs(shared: SharedContextDeps): StateAPIs {
           dispatch({ type: 'UPDATE_TEAM', side: tSide, team: nextTeam });
         }
       }
+      const after=syncStateRef.current[`${tSide}Team`].find(e=>(e.battleId||e.id)===battleId||e.id===battleId);
+      if(patchTarget&&after&&patchesStatuses(patch))for(const ended of removedStatusEvents(patchTarget,after))
+        SoulMarkRegistry[after.name]?.(getBattleEventContext(tSide,true,0,after),EffectTiming.ON_STATUS_ENDED,{...ended,targetSide:tSide,sourceSide:side});
     },
     getPlayerState: (k) => {
       const c = syncStateRef.current;
@@ -1141,10 +1159,10 @@ export function buildStateAPIs(shared: SharedContextDeps): StateAPIs {
     setNextTurns: (who, key, n) => {
       const tSide = who === "self" ? side : who === "opp" ? (side === "p1" ? "p2" : "p1") : who;
       const c = syncStateRef.current;
-      const regKey = `${tSide}RegistryState` as "p1RegistryState" | "p2RegistryState";
-      const pend = { ...((c[regKey] || {})[PENDING_TURNS_KEY] || {}), [key]: Math.max(0, Math.floor(n)) };
-      syncStateRef.current = { ...c, [regKey]: { ...(c[regKey] || {}), [PENDING_TURNS_KEY]: pend } };
-      dispatch({ type: 'UPDATE_REGISTRY_STATE', side: tSide, state: { [PENDING_TURNS_KEY]: pend } });
+      const owner=tSide===side?self:c[tSide];
+      const pend = { ...(readScopedRegistry(c,tSide,owner,PENDING_TURNS_KEY) || {}), [key]: Math.max(0, Math.floor(n)) };
+      syncStateRef.current = writeScopedRegistry(c,tSide,owner,{[PENDING_TURNS_KEY]:pend});
+      dispatch({ type: 'UPDATE_SCOPED_REGISTRY_STATE', side: tSide,owner, state: { [PENDING_TURNS_KEY]: pend } });
     },
   };
 }

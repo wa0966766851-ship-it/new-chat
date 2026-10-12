@@ -121,14 +121,16 @@ function roundEnd(c: ArenaContext): void {
 
 export function handleWujiSoulMark(c: ArenaContext, event: EffectTiming, data?: any): void {
   if (event === EffectTiming.ELF_ENTERED && data?.enteredSide) {
-    // 自身位於出戰背包時，任意一方精靈登場：僅令該次登場的精靈受到 1 回合【砥礪】。
+    // 出戰背包包含在場及場下隊員；只套用到這次實際登場的個體。
     const side = data.enteredSide as Side;
-    if (c.self.currentHp <= 0 || data.enteredId === idOf(c.self)) return;
+    if (c.self.currentHp <= 0) return;
     const entered = activeOf(c, side);
-    if (!entered || idOf(entered) !== data.enteredId) return;
+    // 引擎登場事件沿用模板／隊員id，印記與結算採battleId；兩者不能直接比較。
+    if (!entered || (entered.id !== data.enteredId && idOf(entered) !== data.enteredId)) return;
+    const owner = idOf(entered);
     const res = c.applyStatusWithImmunityCheck(side, '砥礪', 1);
-    if (res.success) c.setPlayerState(PENDING, [...pendingList(c).filter(p => p.owner !== data.enteredId), { side, owner: data.enteredId }]);
-    else giveWujiMark(c, side, data.enteredId, WEIYUE, 3);
+    if (res.success) c.setPlayerState(PENDING, [...pendingList(c).filter(p => p.owner !== owner), { side, owner }]);
+    else giveWujiMark(c, side, owner, WEIYUE, 3);
     return;
   }
   if (event === EffectTiming.ROUND_END) roundEnd(c);

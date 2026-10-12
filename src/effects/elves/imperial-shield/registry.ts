@@ -73,16 +73,6 @@ export const handleImperialShieldSoulMark = (ctx: BattleEventContext, event: Eff
     }
 
     case EffectTiming.BEFORE_DAMAGE: {
-      // 1. 聖盾裁決：[無護盾] 本技能威力+100% (如果是自身造成的傷害)
-      if (extraData && !extraData.isIncoming) {
-        if (ctx.skill?.name === "聖盾裁決") {
-          if (!self.shield || self.shield <= 0) {
-            extraData.multiplier *= 2;
-            addLog("【聖盾裁決】：自身未擁有護盾，技能威力提升 100%！", "effect");
-          }
-        }
-      }
-
       // 2. 隨時拍下當前護盾的快照，確保陣亡時能正確捕捉剩餘護盾值
       setPlayerState("empShieldSnapshot", self.shield || 0);
       break;
@@ -169,38 +159,6 @@ export const handleImperialShieldSoulMark = (ctx: BattleEventContext, event: Eff
 };
 
 export const IMPERIAL_SHIELD_SKILLS: Record<string, BattleSkillHandler> = {
-  "盾先鋒制裁": (ctx) => {
-    const { self, target, actor, addLog, clearTurnEffectsOf, applyStatChange } = ctx;
-    addLog("【盾先鋒制裁】：先制必中，消強消回合！", "effect");
-
-    const oppSide = actor === "p1" ? "p2" : "p1";
-
-    // B 命中前 (消回合)
-    const clearedRoundEffects = clearTurnEffectsOf(oppSide);
-
-    // B 命中前 (消強)
-    let clearedBuffs = false;
-    for (const key in target.statStages) {
-      if ((target.statStages[key as keyof typeof target.statStages] || 0) > 0) {
-        target.statStages[key as keyof typeof target.statStages] = 0;
-        clearedBuffs = true;
-      }
-    }
-
-    // C 命中後 (成功消強) -> 對手全屬性-1
-    if (clearedBuffs) {
-      applyStatChange(oppSide, { atk: -1, def: -1, spatk: -1, spdef: -1, speed: -1, accuracy: -1 });
-      addLog("【盾先鋒制裁】：消除能力提升成功！對手全屬性 -1！", "effect");
-    }
-
-    // C 命中後 (成功消回合) -> 對手2回合屬性技能無效
-    if (clearedRoundEffects) {
-      ctx.setOpponentState("utilitySkillInvalidTurns", 2);
-      ctx.setOpponentState("utilitySkillInvalidReason", "盾先鋒制裁");
-      addLog("【盾先鋒制裁】：消除回合效果成功！對手 2 回合內屬性技能失效！", "effect");
-    }
-  },
-
   "帝永壁令": (ctx) => {
     const { self, actor, setPlayerState, addLog, applyStatChange } = ctx;
     addLog("【帝永壁令】：帝心不渝，永壁不倒！", "effect");
@@ -268,62 +226,6 @@ export const IMPERIAL_SHIELD_SKILLS: Record<string, BattleSkillHandler> = {
       applyStatChange(actor, { atk: 2, def: 2, spatk: 2, spdef: 2, speed: 2, accuracy: 2 });
       setPlayerState("emperorNextTurnPriorityBoost3", true);
       addLog("【盾碎同歸】：未消耗任何護盾值！自身全屬性 +2 且下回合先制 +3！", "effect");
-    }
-  },
-
-  "聖盾裁決": (ctx) => {
-    const { self, target, actor, addLog, setPlayerState, applyPinkDamage } = ctx;
-    addLog("【聖盾裁決】：聖光重擊，公正裁決！", "effect");
-
-    const oppSide = actor === "p1" ? "p2" : "p1";
-
-    // 1. 造成傷害40%恢復自身體力 (設置吸血比例)
-    setPlayerState("vampireRatio", 0.40);
-
-    // 2. [有護盾] 附加護盾值70%百分比傷害
-    if (self.shield && self.shield > 0) {
-      const extraDmg = Math.floor(self.shield * 0.70);
-      if (extraDmg > 0) {
-        applyPinkDamage(oppSide, extraDmg, "聖盾裁決", undefined, undefined, "percent");
-        addLog(`【聖盾裁決】：自身擁有護盾，附加護盾值 70% 的百分比傷害 (${extraDmg} 點)！`, "effect");
-      }
-    }
-  },
-
-  "帝·永恆守護": (ctx) => {
-    const { self, target, actor, addLog, clearTurnEffectsOf, applyTrueDamage, applyPinkDamage, applyHeal } = ctx;
-    addLog("【帝·永恆守護】：萬世帝防，永恆不朽！", "effect");
-
-    const oppSide = actor === "p1" ? "p2" : "p1";
-
-    // 1. B 命中前: 消除對手回合類效果
-    const cleared = clearTurnEffectsOf(oppSide);
-
-    // 2. C 命中後: [成功消回合] 對手下1次技能無效
-    if (cleared) {
-      ctx.setOpponentState("nextSkillInvalid", true);
-      ctx.setOpponentState("nextSkillInvalidReason", "永恆守護");
-      addLog("【帝·永恆守護】：消除回合效果成功！對手下 1 次技能失效！", "effect");
-    }
-
-    // 3. C 命中後: [有護盾] 附加護盾值等量真實傷害
-    if (self.shield && self.shield > 0) {
-      const shieldVal = self.shield;
-      applyTrueDamage(oppSide, shieldVal, "永恆守護");
-      addLog(`【帝·永恆守護】：自身擁有護盾，附加護盾值等量真實傷害 (${shieldVal} 點)！`, "effect");
-    }
-
-    // 4. C 命中後: 附加對手最大體力1/3百分比傷害
-    const oppElf = oppSide === "p1" ? ctx.activeP1 : ctx.activeP2;
-    const percentDmg = Math.floor(oppElf.maxHp / 3);
-
-    applyPinkDamage(oppSide, percentDmg, "永恆守護", undefined, undefined, "percent");
-    addLog(`【帝·永恆守護】：附加對手最大體力 1/3 百分比傷害 (${percentDmg} 點)！`, "effect");
-
-    // 5. C 命中後: [未擊敗對手] 恢復自身等量體力
-    if (oppElf.currentHp > 0) {
-      applyHeal(actor, percentDmg);
-      addLog(`【帝·永恆守護】：未擊敗對手，自身恢復等同百分比傷害體力 (${percentDmg} 點)！`, "heal");
     }
   }
 };

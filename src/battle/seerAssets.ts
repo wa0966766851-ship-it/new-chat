@@ -82,7 +82,7 @@ export function battleSpriteProfile(name: string): BattleSpriteProfile | null {
  * 依實際立繪方向標註。Seer 的戰鬥全身素材多數原生朝左；正面素材與
  * 專案自訂立繪另外標記，避免用單一方向盲目翻轉整個名冊。
  */
-type SpriteFacing = "left" | "right" | "front";
+export type SpriteFacing = "left" | "right" | "front";
 const BATTLE_SPRITE_FACING: Record<string, SpriteFacing> = {
   [normalizeName("悲歌.索比拉特")]: "left",
   [normalizeName("帝皇之盾")]: "left",
@@ -97,6 +97,7 @@ const BATTLE_SPRITE_FACING: Record<string, SpriteFacing> = {
   [normalizeName("誑獅魔軀.魔獅迪露")]: "left",
   [normalizeName("聖靈譜尼")]: "left",
   [normalizeName("星光·魯斯王")]: "left",
+  [normalizeName("星光·雷納多")]: "left",
   [normalizeName("星光·麗莎布布")]: "left",
   [normalizeName("冰魄·柯爾德")]: "left",
   [normalizeName("柯爾霍德")]: "left",
@@ -131,6 +132,8 @@ const BATTLE_SPRITE_FACING: Record<string, SpriteFacing> = {
 
 // 同名精靈的備用型態可能具有不同朝向，以實際載入的素材為準。
 const BODY_SOURCE_FACING: Record<string, SpriteFacing> = {
+  // 2026-10-12逐圖核對4937：三眼機械頭／口部朝畫面左；P1鏡射、P2保留。
+  "/seer/body/4937.png": "left",
   "/elf-art/unknown_myth_ghost_body.png": "front",
   "/elf-art/emperor_dixin_body.png": "left",
   "/elf-art/wuxu_liuren_body.png": "right",
@@ -150,14 +153,18 @@ export function hasRenderableElfImagePath(path?: string): boolean {
   return !!path && /^(\/|https?:|data:)/.test(path);
 }
 
-/** P1 應朝右、P2 應朝左，彼此面對；未逐圖核實的精靈保留原圖。 */
+/** 唯一座標基準：P1在畫面左側→朝右；P2在右側→朝左。不得各畫面自行取反。 */
+export function mirrorSourceFacing(facing: SpriteFacing | undefined, side: "p1" | "p2"): boolean {
+  if (!facing || facing === "front") return false;
+  return facing !== (side === "p1" ? "right" : "left");
+}
+
+/** 原圖方向只記一次；實際素材優先，未知圖不猜，非戰鬥頭像不使用此函式。 */
 export function shouldMirrorBattleSprite(name: string, side: "p1" | "p2", hasCustomPath = false, source?: string): boolean {
   const facing = source && BODY_SOURCE_FACING[source] || (hasCustomPath ? "front"
     : !source && normalizeName(name) === normalizeName("恐懼的化身·咤克斯") ? "right"
     : BATTLE_SPRITE_FACING[normalizeName(name || "")]);
-  if (!facing || facing === "front") return false;
-  const target = side === "p1" ? "right" : "left";
-  return facing !== target;
+  return mirrorSourceFacing(facing, side);
 }
 
 /** 依精靈身高縮放立繪；極端哨兵值改由場景比例設定控制。 */

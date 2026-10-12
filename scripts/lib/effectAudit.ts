@@ -16,6 +16,7 @@ export function clauseIdentity(elfId: string, kind: string, name: string, raw: s
 }
 
 export function clauseExecution(route: string, parsed: boolean, index: number, mode?: 'blocks' | number[]) {
+  if (route === 'kit' || route === 'description') return parsed ? 'authored-block-runtime' : 'blocked-unresolved';
   if (route === 'trait-review') return 'trait-review';
   if (route === 'handler' || (route === 'hybrid' && !Array.isArray(mode))) return 'handler-review';
   if (route === 'hybrid' && Array.isArray(mode) && !mode.includes(index)) return 'handler-review';

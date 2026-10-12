@@ -10,7 +10,10 @@ export type Node =
   | "before_damage" | "on_hit" | "on_damaged" | "after_action"
   | "round_start" | "round_end" | "battle_phase_end"
   | "on_kill" | "self_fatal" | "cthyaat_death" | "battle_end"
-  | "on_skill_use" | "on_attacked" | "any_battle_node" | "passive_always" | "modify_priority";
+  | "on_skill_use" | "on_attacked" | "any_battle_node" | "passive_always" | "modify_priority"
+  | "on_invalid" | "before_switch_out" | "on_switch_out" | "opponent_after_action" | "pp_consumed"
+  | "extra_action_start" | "extra_action_end" | "before_status_apply" | "opponent_entered"
+  | "on_status_ended" | "on_status_received" | "on_status_immunized" | "before_status_tick";
 
 // ── 三分類軸(前面談定的)──────────────────────────────────────────────
 export type Role = "innate" | "attached" | "carried";          // ■ 🎯 ◇
@@ -33,12 +36,15 @@ export interface CounterSpec {
 
 // ── 原子操作 id(2278 筆全部歸約到這 28 個；runner 只需實作這些)──────────
 export type AtomId =
+  | "effect_sequence"     // 明確動作／條件／成功失敗連鎖；不呼叫專屬handler
+  | "skill_property"      // 命中／基礎先制的公式前唯讀查詢
+  | "soul_property"       // 魂印／特質常駐命中查詢（不以回合timer代替）
   | "extra_damage"        // 追加傷害(依 damageType: fixed/percent/true)
   | "damage_multiplier"   // 威力/傷害倍率(■固有)
   | "damage_reduce"       // 減傷/減半(底層自動跳過 true)
   | "damage_reflect"      // 反彈
   | "heal"                // 恢復體力
-  | "drain_hp"            // 吸取(=extra_damage(true/percent) + heal;雙極)
+  | "drain_hp"            // 吸取：固定／百分比；汲取：真實。恢復及結算由明確參數決定。
   | "hp_cost"             // 消耗自身體力(代價)
   | "maxhp_change"        // 體力上限增減
   | "apply_status"        // 施加具名異常狀態(麻痺/中毒…)
@@ -99,6 +105,7 @@ export interface KitEntry {
   node: Node;                    // 技能=隱含(由 role 決定);魂印=顯式選擇
   source: "skill" | "soulmark" | "mechanic" | "item";
   order: number;                 // 同節點內執行順序(詞條有序)
+  role?: Role;                   // 技能固有／附加／攜帶；舊技能詞條預設附加，魂印不受此分類限制
 }
 
 // ── runner 契約:每個原子的執行簽名(接既有引擎 primitive)──────────────────

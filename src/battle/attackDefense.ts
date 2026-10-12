@@ -1,3 +1,4 @@
+import { getElfAdvancedMechanics } from '../data/traitsRegistry';
 import type { DamageComputation } from '../effects/types';
 import type { Elf } from '../types';
 import { normalizeDamageType } from './damageSemantics';
@@ -12,6 +13,8 @@ export interface AttackDefenseBypass {
 }
 export function attackDefenseBypass(elf: Pick<Elf, 'id' | 'battleId'>, registry: Record<string, any>, damageType: string): AttackDefenseBypass {
   if (normalizeDamageType({ damageType }) !== 'skill_attack') return {};
+  // 特質「戰士」：自身攻擊無視對手傷害限制、抵擋、轉化傷害與護盾承傷（攻擊免疫另於命中判定處理）
+  if (getElfAdvancedMechanics(elf as Elf).ignoreImmuneShieldEffects) return { block: true, conversion: true, limit: true, shield: true };
   const rule = registry.attackDefenseBypassUntilSwitch;
   if (!rule || rule.ownerBattleId !== (elf.battleId || elf.id)) return {};
   return { block: rule.block === true, conversion: rule.conversion === true,

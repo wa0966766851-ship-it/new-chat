@@ -50,7 +50,7 @@ function LedgerButton({ label, count, warn, onClick }: { label: string; count?: 
 export default function InterstellarRun({ allElves, startingDiamonds, initialEquipType, initialEquipId, selectedModifiers, onEndRun, onStartBattle, onLeave }: InterstellarRunProps) {
   const pool = allElves;
   const [run, setRun] = React.useState<E.RunV2>(() => {
-    const saved = E.loadRunV2(localStorage);
+    const saved = E.resumeRunV2(localStorage,pool);
     if (saved) return saved;
     const fresh = E.createRun({ pool, equipType: initialEquipType, equipId: initialEquipId, modifiers: selectedModifiers, startingShards: startingDiamonds });
     return E.saveRunV2(localStorage, fresh);
@@ -58,6 +58,11 @@ export default function InterstellarRun({ allElves, startingDiamonds, initialEqu
   const runRef = React.useRef(run); runRef.current = run;
   const [ledger, setLedger] = React.useState<LedgerTab | null>(null);
   const busy = React.useRef(false);
+  React.useEffect(()=>{
+    if(busy.current)return;
+    const updated=E.resumeRunV2(localStorage,pool);
+    if(updated && JSON.stringify(updated)!==JSON.stringify(runRef.current)) {runRef.current=updated;setRun(updated);}
+  },[pool]);
 
   const dispatch = React.useCallback((f: (r: E.RunV2) => E.RunV2) => {
     if (busy.current) return;

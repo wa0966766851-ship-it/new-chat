@@ -30,7 +30,13 @@ try{
  await turn(1,'skill');
  assert.equal(d.getSyncState().p2.name,'Y'); assert.equal(fx('Y'),'漸凍1','死切上場附加 1 回合漸凍');
  await turn(0,'skill');
- assert.equal(fx('Y'),'冰封2','下回合開始轉化為冰封 3，回合結束扣為 2（與主動換人一致）');
- assert.ok(d.getSyncState().logs.some((l:any)=>l.turn===2&&/漸凍】衍生轉化為【冰封/.test(l.text)),'第 2 回合開始轉化');
- console.log('死亡換人：換人時附加的漸凍於下回合開始補扣並轉化通過');
-} finally { await server.close(); process.exit(0); }
+ // 使用者確認（2026-10-10）：死切上場附加的異常不在回合開始補扣；漸凍1 撐過下一回合，於該回合結束（回合扣減點）才轉化。
+ assert.equal(fx('Y'),'冰封3','第 2 回合結束才轉化為冰封 3（不提前到回合開始）');
+ const logs=d.getSyncState().logs.map((l:any)=>l.text);
+ const conv=logs.findIndex((t:string)=>/漸凍】衍生轉化為【冰封/.test(t));
+ const lastUse=logs.map((t:string,i:number)=>/使用了【等待】/.test(t)?i:-1).filter((i:number)=>i>=0).pop();
+ assert.ok(conv>lastUse,'轉化紀錄排在本回合雙方出手之後');
+ await turn(0,'skill');
+ assert.equal(fx('Y'),'冰封2','冰封從第 3 回合起生效並照常扣減');
+ console.log('死亡換人：換人時附加的漸凍於下一個回合結束才轉化通過');
+} catch (e) { console.error(e); process.exitCode = 1; } finally { await server.close(); process.exit(process.exitCode ?? 0); }

@@ -1,6 +1,54 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { battleSpriteScale, hasRenderableElfImagePath, shouldMirrorBattleSprite } from "../src/battle/seerAssets.ts";
+import React from "react";
+import { renderToStaticMarkup } from "react-dom/server";
+import { JSDOM } from "jsdom";
+import { readFileSync } from "node:fs";
+import { ElfAvatar } from "../src/components/SeerImages";
+import { battleSpriteScale, hasRenderableElfImagePath, shouldMirrorBattleSprite, mirrorSourceFacing, loadSeerIndex } from "../src/battle/seerAssets.ts";
+
+test("coordinate contract: P1 faces screen-right, P2 faces screen-left, exactly one mirror", () => {
+  for (const original of ["left", "right"] as const) {
+    const rendered = (side: "p1" | "p2") => mirrorSourceFacing(original, side)
+      ? original === "left" ? "right" : "left" : original;
+    assert.equal(rendered("p1"), "right");
+    assert.equal(rendered("p2"), "left");
+    assert.notEqual(mirrorSourceFacing(original, "p1"), mirrorSourceFacing(original, "p2"));
+  }
+  for (const side of ["p1", "p2"] as const) {
+    assert.equal(mirrorSourceFacing("front", side), false);
+    assert.equal(mirrorSourceFacing(undefined, side), false);
+  }
+});
+
+test("4937: verified left-facing source mirrors only P1, never guesses a custom replacement", () => {
+  for (const name of ["星光·雷納多", "星光雷納多", "星光.雷納多"]) {
+    assert.equal(shouldMirrorBattleSprite(name, "p1"), true);
+    assert.equal(shouldMirrorBattleSprite(name, "p2"), false);
+    for (const custom of [false, true]) {
+      assert.equal(shouldMirrorBattleSprite(name, "p1", custom, "/seer/body/4937.png"), true);
+      assert.equal(shouldMirrorBattleSprite(name, "p2", custom, "/seer/body/4937.png"), false);
+    }
+    assert.equal(shouldMirrorBattleSprite(name, "p1", true, "/custom/replacement.png"), false);
+  }
+});
+
+test("4937 actual ElfAvatar DOM: P1 body flips once, P2 and portraits remain untouched", async () => {
+  await loadSeerIndex();
+  const elf = JSON.parse(readFileSync(new URL('../src/data/imported/wiki_4937.json', import.meta.url), 'utf8'));
+  for (const side of ['p1', 'p2'] as const) {
+    const markup = renderToStaticMarkup(React.createElement(ElfAvatar, { elf, battleSide: side, kind: 'body' }));
+    const doc = new JSDOM(markup).window.document;
+    const img = doc.querySelector('img')!;
+    assert.equal(img.getAttribute('src'), '/seer/body/4937.png');
+    assert.equal(img.style.transform, side === 'p1' ? 'scaleX(-1)' : '');
+    assert.equal(doc.querySelectorAll('[style*="scaleX"]').length, side === 'p1' ? 1 : 0);
+    const head = new JSDOM(renderToStaticMarkup(React.createElement(ElfAvatar, { elf, battleSide: side, kind: 'head' }))).window.document;
+    assert.equal(head.querySelector('img')!.style.transform, '');
+  }
+  const neutral = new JSDOM(renderToStaticMarkup(React.createElement(ElfAvatar, { elf, kind: 'body' }))).window.document;
+  assert.equal(neutral.querySelector('img')!.style.transform, '', 'detail art outside battle is not flipped');
+});
 
 test("known left-facing battle art faces the opponent on both sides", () => {
   const leftFacing = [

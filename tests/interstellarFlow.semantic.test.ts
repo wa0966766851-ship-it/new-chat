@@ -8,7 +8,7 @@ Object.assign(globalThis, { window: dom.window, document: dom.window.document, l
 const { createRoot } = await import('react-dom/client');
 const { default: Run } = await import('../src/components/InterstellarExploration/InterstellarRun');
 const E = await import('../src/modes/interstellar/v2/engine');
-const { DEFAULT_ELVES } = await import('../src/data/defaultElves');
+const { DEFAULT_ELVES } = await import('../src/data/defaultElvesLoaded');
 const root = createRoot(document.getElementById('root')!);
 let launched: any;
 const props = { allElves: DEFAULT_ELVES, startingDiamonds: 4, initialEquipType: 'suit' as const, initialEquipId: '', selectedModifiers: ['no_potions'],

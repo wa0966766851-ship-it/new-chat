@@ -130,7 +130,8 @@ export function resolveRecoveryTransition(
     const hp = Math.min(maxHp, currentHp + Math.floor(maxHp * 0.7));
     return { hp, exitedGodDescent: hp > 0, ignoredRecovery: true, hpAdjustment: hp - currentHp };
   }
-  const hp = Math.min(maxHp, currentHp + Math.max(0, Math.floor(requestedRecovery)));
+  // 恢復不會讓體力下降（體力已高於上限時維持原值）
+  const hp = Math.max(currentHp, Math.min(maxHp, currentHp + Math.max(0, Math.floor(requestedRecovery))));
   return { hp, exitedGodDescent: false, ignoredRecovery: false, hpAdjustment: hp - currentHp };
 }
 

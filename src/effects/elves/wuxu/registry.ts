@@ -1,3 +1,4 @@
+import { isAlienElf } from '../../../battle/advancedDamageModifiers';
 import { getTypeMatchup } from "../../../utils/statCalculator";
 import { BattleEventContext, BattleSkillHandler, EffectTiming, ElfDeconstructedProfile } from '../../types';
 import { liurenSurvivalRule } from '../../../battle/survivalRules';
@@ -24,11 +25,11 @@ export const handleWuxuSoulMark = (ctx: BattleEventContext, event: EffectTiming 
         const fullTeam = ctx.getFullTeam(actor);
         const prevElf = fullTeam.find(e => e.id === previousId);
         if (prevElf) {
-          const healAmt = Math.min(totalTrueDmg, prevElf.maxHp - prevElf.currentHp);
-          if (healAmt > 0) {
-            const nextHp = prevElf.currentHp + healAmt;
-            ctx.updateElf(actor, { id: prevElf.id, currentHp: nextHp });
-            addLog(`🌑 【無序·六刃】：己方上一隻出戰精靈 【${prevElf.name}】 恢復了 ${healAmt} 點體力！`, "heal");
+          // 經恢復流程（受恢復限制、不復活陣亡精靈）
+          if (prevElf.currentHp > 0 && prevElf.currentHp < prevElf.maxHp) {
+            if (ctx.applyHealToElf) ctx.applyHealToElf(actor, prevElf.battleId || prevElf.id, totalTrueDmg);
+            else ctx.updateElf(actor, { id: prevElf.id, currentHp: Math.min(prevElf.maxHp, prevElf.currentHp + totalTrueDmg) });
+            addLog(`🌑 【無序·六刃】：己方上一隻出戰精靈 【${prevElf.name}】 恢復體力！`, "heal");
           }
         }
       }
@@ -41,7 +42,8 @@ export const handleWuxuSoulMark = (ctx: BattleEventContext, event: EffectTiming 
         const boost = totalTrueDmg * 6;
         setPlayerState("wuxuTempMaxHpBoost", boost);
         setPlayerState("wuxuTempMaxHpBoostIsPermanent", false);
-        ctx.updateElf(actor, { maxHp: self.maxHp + boost, currentHp: self.currentHp + boost, tempMaxHpBoost: boost });
+        // 只提高上限，不增加目前體力（自身體力無法增加超過原始體力上限）
+        ctx.updateElf(actor, { maxHp: self.maxHp + boost, tempMaxHpBoost: boost });
         addLog(`🌑 【無序·六刃】：自身獲得 ${boost} 點臨時體力上限！`, "effect");
       } else if (hasBoost && !isPermanent) {
         // 再次觸發出戰效果：原臨時體力上限變為永久體力上限
@@ -56,6 +58,8 @@ export const handleWuxuSoulMark = (ctx: BattleEventContext, event: EffectTiming 
       if (!getPlayerState("wuxuLiurenOriginalMaxHp")) {
         setPlayerState("wuxuLiurenOriginalMaxHp", self.maxHp);
       }
+      // 通用個體鍵：恢復不得超過原始體力上限（戰鬥引擎 heal 讀取）
+      if (!getPlayerState("recoveryMaxHpCap")) setPlayerState("recoveryMaxHpCap", getPlayerState("wuxuLiurenOriginalMaxHp") || self.maxHp);
       triggerEntranceEffect();
       setPlayerState("wuxuBoost", true);
     }
@@ -111,17 +115,17 @@ export const handleWuxuSoulMark = (ctx: BattleEventContext, event: EffectTiming 
 
     if (event === EffectTiming.BEFORE_DAMAGE && extraData?.damageComp && extraData.damageComp.isIncoming === false) {
       const damageComp = extraData.damageComp;
-      if (self.trait?.name === "亂舞") {
-        damageComp.multiplier = (damageComp.multiplier ?? 1.0) * 1.12;
-      }
+      // 亂舞（攻擊／特攻+12%）已移到攻擊公式的能力值（damageCalculator），這裡不再對所有傷害 ×1.12。
       
       const isNonTrue = damageComp.damageCategory === "skill_attack" || damageComp.damageCategory === "fixed" || damageComp.damageCategory === "percent";
       if (isNonTrue) {
         const hpLossPercent = (1 - self.currentHp / self.maxHp) * 100;
         const stacks = Math.floor(hpLossPercent / 0.1);
-        let boost = 1.2 + stacks * 1.2;
-        if (self.currentHp < self.maxHp / 2) boost *= 2;
-        damageComp.multiplier = (damageComp.multiplier ?? 1.0) * boost;
+        // 原文：造成非真實傷害提升120%；每降低0.1%體力上述效果提升120%；低於½時效果翻倍。
+        // 效果值＝120%×(1+層數)（翻倍作用在效果值），傷害×(1+效果值)。過去寫成×(1.2+層數×1.2)，滿血只有+20%（2026-10-11 修正）。
+        let effect = 1.2 * (1 + stacks);
+        if (self.currentHp < self.maxHp / 2) effect *= 2;
+        damageComp.multiplier = (damageComp.multiplier ?? 1.0) * (1 + effect);
       }
     }
 
@@ -152,7 +156,7 @@ export const handleWuxuSoulMark = (ctx: BattleEventContext, event: EffectTiming 
 
     if (event === EffectTiming.ON_KILL && extraData?.defeatedElf) {
       const deadElf = extraData.defeatedElf;
-      const isDeadAlien = deadElf.isAlienElf || (deadElf.soulMark?.trait_warrior); // Check if it's an alien elf
+      const isDeadAlien = isAlienElf(deadElf); // Check if it's an alien elf
       if (isDeadAlien) {
         addLog(`🌑 【無序星魂使徒】：徹底終結了異能精靈 【${deadElf.name}】！`, "effect");
         ctx.vanishElf(oppSide, deadElf);
@@ -206,7 +210,7 @@ export const handleWuxuSoulMark = (ctx: BattleEventContext, event: EffectTiming 
     
     if (event === EffectTiming.ON_KILL && extraData?.defeatedElf) {
        const deadElf = extraData.defeatedElf;
-       const isDeadAlien = deadElf.isAlienElf || (deadElf.soulMark?.trait_warrior);
+       const isDeadAlien = isAlienElf(deadElf);
        if (isDeadAlien) {
          addLog(`🌑 【無序星魂使徒】：徹底終結了異能精靈 【${deadElf.name}】！`, "effect");
          ctx.vanishElf(oppSide, deadElf);

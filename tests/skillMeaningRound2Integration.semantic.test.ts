@@ -23,7 +23,7 @@ try {
   for(const side of ['p1','p2'])for(const scenario of ['five','ten','fatal','rebirth','backlash','sealed']){
     const hits:any[]=[];let rolled=0,reborn=false;
     const skills=getBattleSkillRegistry(), souls=getSoulMarkRegistry();
-    skills['星光·浪打千擊']=(ctx:any)=>STARLIGHT_RUS_SKILLS['星光·浪打千擊']({...ctx,rng:()=>scenario==='ten'?0.999:0});
+    skills['星光·浪打千擊']=(ctx:any)=>{const controlled=Object.create(ctx);controlled.rng=()=>scenario==='ten'?0.999:0;return STARLIGHT_RUS_SKILLS['星光·浪打千擊'](controlled);};
     souls['連擊附帶次數觀測者']=(ctx:any,event:string,data:any)=>{
       if(event==='AFTER_ATTACK_HIT'){
         rolled++;

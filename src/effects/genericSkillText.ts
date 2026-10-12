@@ -1,6 +1,8 @@
 import { queueActionDamageModifier, queueActionPowerMultiplier } from '../battle/actionDamageModifiers';
 import { queueHpDrain } from '../battle/hpDrain';
 import { traitNames } from './traitEffects';
+import { usesAuthoredSkill, hasConnectedSkillHandler } from './connectedEffects';
+import { blockSkillTransform } from '../blocks/registry';
 import { getStatMultiplier } from "../utils/statCalculator";
 import { skillStageView } from '../battle/skillStageView';
 /**
@@ -114,7 +116,8 @@ const RULES: Rule[] = [
     re: /^(?:使用時)?(\d+)%機率(?:一|1)回合受到傷害減半$/,
     apply: (m, ctx) => {
       if (!chanceOf(ctx, 'damage-half-on-use', Number(m[1]))) return;
-      ctx.addTimerTo(ctx.actor, { id: 'skill_on_use_damage_half', name: ctx.skill?.name || '傷害減半', source: 'skill', kind: 'turn_effect',
+      ctx.addTimerTo(ctx.actor, { id: 'skill_on_use_damage_half', name: '非真實傷害減半', source: 'skill', kind: 'turn_effect',
+        presentation: { semanticId: 'received_damage', label: '非真實傷害減半', description: '受到非真實傷害降低50%。', iconTag: '減傷', sourceName: ctx.skill?.name, polarity: 'positive' },
         remaining: 1, tickAt: 'round_end', payload: { block: { dmgIn: -0.5, kind: '非真實' } } }, false);
     },
   },
@@ -751,9 +754,14 @@ const ACC_TRAIT = (elf: any, name: string) => {
  */
 export function computeHitChance(actor: any, target: any, skill: any, getStatuses: StatusGetter, targetReg?: Record<string, any>): number {
   if (!skill || skill.name === "切換精靈" || skill.name === "使用道具") return 1;
+  // 前置完整上下文讀取的附加條件必中不屬於固有必中；固有失效不可連帶抹去。
+  if(skill.isSureHitByAttached && !actor?.isAdditionalInvalid)return 1;
   const inherentOff = !!actor?.isInherentInvalid; // 固有效果失效：必中不生效
   if (!inherentOff) {
     if (skill.isSureHit) return 1;
+    if (usesAuthoredSkill(skill, hasConnectedSkillHandler(skill.name), actor)) {
+      if (blockSkillTransform(pseudoCtx(actor, target, getStatuses), skill).isSureHit) return 1;
+    } else {
     const clauses = splitClauses(skill.description || "");
     if (clauses.some(c => c === "必中" || /^必中/.test(c))) return 1;
     for (const clause of clauses) {
@@ -761,6 +769,7 @@ export function computeHitChance(actor: any, target: any, skill: any, getStatuse
       if (/必定命中/.test(body)) {
         if (!cond || evalCondition(cond, pseudoCtx(actor, target, getStatuses), { lastClearSuccess: null, doubleSelfBuff: false })) return 1;
       }
+    }
     }
   }
   // 閃避對手所有攻擊（evadeAttackTurns，設在閃避方）：只對非必中技能有效

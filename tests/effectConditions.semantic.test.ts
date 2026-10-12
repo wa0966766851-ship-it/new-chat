@@ -127,7 +127,7 @@ test('真正固定傷害 API 與普通攻擊入口接入共用閘門，不只測
   s.p2Timers = [timer([item('damage_multiplier', { multiplier: 9 })])];
   assert.equal(api.applyFixedDamage('p1', 100), 160, '自傷來源仍是自己，不偷用對手9倍增傷');
   assert.equal(api.applyTrueDamage('p2', 100), 200, '真傷增傷先於安全倍率計算，不被舊快照忽略');
-  const source = readFileSync(new URL('../src/components/BattleScreen.tsx', import.meta.url), 'utf8');
+  const source = readFileSync(new URL('../src/engine/battleEngine.ts', import.meta.url), 'utf8');
   assert.match(source, /applyActiveGateTimersToDamage\(s, oppSide, damageComp, pushEffect, syncStateRef, \{ side: s, moveIndex: mIdx \}\)/);
   assert.match(source, /goesFirst: moveIndex === 0 \? true : moveIndex === 1 \? false : undefined/);
 });

@@ -31,7 +31,12 @@ export function runNewElfLifecycle(ctx: BattleEventContext, event: EffectTiming,
     const nextStatus = ctx.getPlayerState('nextElfStatus');
     if (nextStatus) {
       ctx.setPlayerState('nextElfStatus', undefined);
-      ctx.applyStatusWithImmunityCheck(ctx.actor, nextStatus.status, nextStatus.duration);
+      // 下一隻的異常仍由敵方來源附加；不能以受方「自己附加」繞過其免疫／反彈。
+      const sourceSide=nextStatus.sourceSide||ctx.targetSide;
+      const source=ctx.getFullTeam(sourceSide).find(e=>identity(e)===nextStatus.sourceBattleId)||active(ctx,sourceSide);
+      const sourceCtx=ctx.contextForElf?.(sourceSide,source);
+      if(sourceCtx)sourceCtx.applyStatusWithImmunityCheck(ctx.actor,nextStatus.status,nextStatus.duration);
+      else ctx.applyStatusWithImmunityCheck(ctx.actor, nextStatus.status, nextStatus.duration);
     }
     const priority = ctx.getPlayerState('nextElfAstralPriority');
     if (priority !== undefined) {

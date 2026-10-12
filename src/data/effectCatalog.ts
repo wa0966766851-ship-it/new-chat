@@ -11,6 +11,7 @@
  */
 
 import { StatusRegistry } from '../effects/statusRegistry';
+import { MARS_MECHA_CATALOG } from '../effects/elves/mars/presentation';
 
 export interface EffectInstance {
   catalogId: string;
@@ -112,6 +113,7 @@ export const EFFECT_CATALOG: Record<string, any> = {
   priority_boost_turns: { id: 'priority_boost_turns', badge: '⚡💨', label: '技能先制提升', categories: ['positive_turn'], color: 'bg-sky-500/20 text-sky-300 border-sky-500/30', describe: () => '使用的技能優先級（先制值）提升。' },
   no_heal_turns: { id: 'no_heal_turns', badge: '❤️‍🩹🚫', label: '無法恢復體力', categories: ['negative_turn'], color: 'bg-red-950/40 text-red-300 border-red-600/40', describe: () => '體力恢復效果全部失效，無法透過技能或機制恢復生命。' },
   prop_invalid_turns: { id: 'prop_invalid_turns', badge: '🚫🔮', label: '屬性失效', categories: ['negative_turn'], color: 'bg-purple-950/40 text-purple-300 border-purple-600/40', describe: () => '屬性技能失效，無法發揮任何附加作用。' },
+  attack_invalid_turns: { id: 'attack_invalid_turns', badge: '🚫', label: '攻擊技能失效', categories: ['negative_turn'], color: 'bg-rose-950/40 text-rose-300 border-rose-600/40', describe: () => '物理與特殊攻擊技能失效。' },
   dmg_amplify_turns: { id: 'dmg_amplify_turns', badge: '💥📈', label: '受傷提升', categories: ['negative_turn'], color: 'bg-rose-950/40 text-rose-300 border-rose-600/40', describe: () => '承受額外傷害，受到的攻擊傷害提升 50% 或更高。' },
   dmg_limit_turns: { id: 'dmg_limit_turns', badge: '🛑🧱', label: '傷害限制', categories: ['positive_turn'], color: 'bg-blue-500/20 text-blue-300 border-blue-500/30', describe: () => '每次受到的最大攻擊傷害被限制在特定上限值以內。' },
   insta_kill_turns: { id: 'insta_kill_turns', badge: '💀⚡', label: '斬殺狀態', categories: ['positive_turn'], color: 'bg-red-500/20 text-red-300 border-red-500/30', describe: () => '若對手體力低於特定比例，則 100% 直接擊潰對手。' },
@@ -125,8 +127,7 @@ export const EFFECT_CATALOG: Record<string, any> = {
   brinkk_max_type_matchup: { id: 'brinkk_max_type_matchup', badge: '🌊⚖️', label: '屬性最高克制', categories: ['positive_turn'], color: 'bg-blue-500/20 text-blue-300 border-blue-500/30', describe: () => '混濁海妖.布林克克專屬：自身技能使用時，克制倍率自動調整為當前技能對敵方背包所有屬性中的最高克制倍率。' },
   revive_ready_cleanse: { id: 'revive_ready_cleanse', badge: '👼🔄', label: '不滅重生(淨化)', categories: ['positive_turn'], color: 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30', describe: () => '巴弗滅不滅魂：受到致死傷害時100%免死、免異常，且全屬性+1，每場限1次。' },
   revive_ready_reset: { id: 'revive_ready_reset', badge: '👼🔄', label: '不滅重生(重置)', categories: ['positive_turn'], color: 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30', describe: () => '星光·魯斯王不滅魂：受到致死傷害時100%免死、恢復全體力，每場限1次。' },
-  mars_mech_speed: { id: 'mars_mech_speed', badge: '🤖💨', label: '迅擊機甲模式', categories: ['indicia'], color: 'bg-cyan-500/20 text-cyan-300 border-cyan-500/30', describe: () => '變革·馬爾修斯專屬：每回合使自身全屬性+1；若對手使用的技能先制高於自身，則當回合受到傷害減少 350 點。' },
-  mars_mech_destroy: { id: 'mars_mech_destroy', badge: '🤖💥', label: '毀滅機甲模式', categories: ['indicia'], color: 'bg-red-500/20 text-red-300 border-red-500/30', describe: () => '變革·馬爾修斯專屬：造成的攻擊傷害提升 50%；若對手防禦大於特防，則造成的攻擊傷害提升 100%。' },
+  ...MARS_MECHA_CATALOG,
 
   // --- 6. 蓓麗安特專屬回合類效果 (Beliente Specific Round Effects) ---
   star_sea_immersion: { id: 'star_sea_immersion', badge: '💫🌌', label: '星海之浸', categories: ['negative_turn'], color: 'bg-purple-950/40 text-purple-300 border-purple-600/40', describe: () => '蓓麗安特專屬削弱：造成的傷害減少 50% 且屬性技能無效。' },

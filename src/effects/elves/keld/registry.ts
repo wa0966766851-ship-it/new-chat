@@ -1,6 +1,5 @@
 import { multiplyDamageReduction } from '../../../battle/damageReduction';
 import { BattleEventContext, BattleSkillHandler, EffectTiming, ElfDeconstructedProfile } from '../../types';
-import { turnEffect } from "../../../battle/timers";
 import { combineSettlementCallbacks } from '../../../battle/settlementReceipt';
 
 export const handleKeldSoulMark = (ctx: BattleEventContext, event: EffectTiming | string, extraData?: any) => {
@@ -70,20 +69,6 @@ export const handleKeldSoulMark = (ctx: BattleEventContext, event: EffectTiming 
 };
 
 export const KELD_SKILLS: Record<string, BattleSkillHandler> = {
-  "傲視千川": (ctx) => {
-    const { actor, addLog, applyStatChange } = ctx;
-    addLog(`❄️ 【傲視千川】：寒氣凌人，凍結虛空！`, "effect");
-    applyStatChange(actor, { atk: 1, def: 1, spatk: 1, spdef: 1, speed: 1, accuracy: 1 });
-    
-    // Migrate to Timer system
-    const oppSide = actor === "p1" ? "p2" : "p1";
-    ctx.addTimerTo(oppSide, turnEffect("keld_lock_switch", "傲視千川-封換", 2, {
-      displayChar: "封",
-      description: "下 2 回合無法主動切換精靈",
-      payload: { lockSwitch: true }
-    }), ctx.goesFirst === false);
-    addLog(`❄️ 【傲視千川】：對手下 2 回合無法主動切換精靈！`, "effect");
-  },
   "凝寒止喧": (ctx) => {
     const { addLog, clearTurnEffectsOf } = ctx;
     addLog(`❄️ 【凝寒止喧】：萬物肅靜，冰封一切！`, "effect");

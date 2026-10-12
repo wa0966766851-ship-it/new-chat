@@ -1,3 +1,4 @@
+import { traitNames } from '../effects/traitEffects';
 import { specialDamageFormula } from '../effects/specialDamageFormulaRegistry';
 import { skillTypeMultiplier } from '../battle/skillTypeOverride';
 import { Elf, Skill } from "../types";
@@ -10,6 +11,7 @@ import { prdChance } from "./prd";
 import { skillStageView } from '../battle/skillStageView';
 import { isStoneThrower, isSkillStone } from '../data/skillStones';
 import { getElfAdvancedMechanics } from '../data/traitsRegistry';
+import { equipmentDamageFactors } from '../battle/damagePipeline';
 
 export const calculateDamage = (
   actor: Elf,
@@ -30,7 +32,7 @@ export const calculateDamage = (
   p1Marks?: Mark[],
   p2Marks?: Mark[]
 ) => {
-  if (skill.category === "屬性" || !skill.power) return { damage: 0, isCrit: false, typeMultiplier: 1.0 };
+  if (skill.category === "屬性" || !skill.power) return { damage: 0, isCrit: false, typeMultiplier: 1.0, hitCount: 1, statResetApplied: null as "def" | "spdef" | null, formulaReplaced: false, equipmentMultiplier: 1 };
   
   const isPhys = skill.category === "物理";
   const suit = p1Suit && side === "p1" ? SUIT_CATALOG[p1Suit] : (p2Suit && side === "p2" ? SUIT_CATALOG[p2Suit] : undefined);
@@ -113,30 +115,43 @@ export const calculateDamage = (
 
   if (atkPanelRatio) atkS = 0; // 「最終」攻擊／特攻＝面板原始值×比例，不再套能力等級
   const formula = specialDamageFormula(actor, target, skill, (oppSide === 'p1' ? p1Team : p2Team) || [], atkS, calculateEffectiveStat(atk, atkS));
-  if (formula) { const n = Math.max(1, Math.floor(options?.hitCount || 1)); return n > 1 ? { ...formula, damage: Math.floor(formula.damage) * n, hitCount: n } : formula; }
+  // 公式替換：結果即總傷，不吃暴擊、也不乘連擊（使用者確認 2026-10-11）
+  if (formula) return { ...formula, damage: Math.floor(formula.damage), hitCount: Math.max(1, Math.floor(options?.hitCount || 1)), formulaReplaced: true, equipmentMultiplier: 1 };
 
   // 積木：能力下降視為同級全屬性提升
   if ((side === "p1" ? p1RegistryState : p2RegistryState)?.blkStageAsBoost) atkS = Math.max(atkS, (side === "p1" ? p1RegistryState : p2RegistryState).blkStageAsBoost);
   const powerMultiplier = (side === "p1" ? p1RegistryState : p2RegistryState)?.powerMultiplierThisAction ?? 1;
+  const powerAdd = Number((side === "p1" ? p1RegistryState : p2RegistryState)?.powerAddThisAction) || 0;
   // 官方公式：[(等級×0.4+2)×威力×攻÷防÷50+2]×本系×克制 → 取整 → ×浮動(217~255)/255 → 取整 → ×暴擊 → 取整 → ×連擊次數。
   // 方括號內為整體不拆分（不先取整）；能力等級換算後的面板值已於 calculateEffectiveStat 取整。
   const levelFactor = (actor.level ?? 100) * 0.4 + 2;
   // 通用：弱點傷害（weakPointDefenseTurns，寫在攻擊方）＝以對手當前雙防值中較低者×比例（預設60%）作為防禦方數值
   let effDef = calculateEffectiveStat(def, defS);
-  if (Number(statRegA?.weakPointDefenseTurns) > 0) {
+  // 特質「戰士」：始終以弱點傷害計算；對方每 1 點護盾，60% 的比例再降 1%（最低 1%）。
+  // 未實裝：原文「每 1% 傷害減少也降 1%」需要在公式前得知對方當次減傷，目前不計。
+  const atkMech = getElfAdvancedMechanics(actor);
+  if (Number(statRegA?.weakPointDefenseTurns) > 0 || atkMech.alwaysWeaknessDamage) {
     const otherKey = isPhys ? 'spdef' : 'def';
     const otherS = skillStageView({ statStages: target.statStages, isInherentInvalid: actor.isInherentInvalid }, skill, otherKey, true);
     const otherEff = calculateEffectiveStat(target.calculatedStats[otherKey], otherS);
-    const ratio = Number(statRegA?.weakPointDefenseRatio) > 0 ? Number(statRegA.weakPointDefenseRatio) : 0.6;
+    let ratio = Number(statRegA?.weakPointDefenseRatio) > 0 ? Number(statRegA.weakPointDefenseRatio) : 0.6;
+    if (atkMech.alwaysWeaknessDamage && atkMech.weaknessShieldReductionPercent) ratio = Math.max(0.01, ratio - (Number(target.shield) || 0) * atkMech.weaknessShieldReductionPercent / 100);
     effDef = Math.max(1, Math.floor(Math.min(effDef, otherEff) * ratio));
   }
-  const base = ((levelFactor * calculateEffectiveStat(atk, atkS) * skill.power * powerMultiplier / Math.max(1, effDef)) / 50 + 2);
+  // 通用特性「亂舞」：攻擊／特攻提升12%（能力值，屬公式輸入）
+  const atkTraitMult = (actor.trait?.name === "亂舞" || traitNames(actor).includes("亂舞")) ? 1.12 : 1;
+  const base = ((levelFactor * Math.floor(calculateEffectiveStat(atk, atkS) * atkTraitMult) * (skill.power + powerAdd) * powerMultiplier / Math.max(1, effDef)) / 50 + 2);
   
   const actorReg = side === "p1" ? p1RegistryState : p2RegistryState;
   // 通用：下N次攻擊的屬性克制計算改以指定屬性（attackTypeOverride 自身攻擊屬性／targetTypeOverride 對手屬性；attackTypeOverrideUses 次數）
   const typeOverrideActive = Number(actorReg?.attackTypeOverrideUses) > 0;
   const targetType = actorReg?.targetTypeThisAction || (typeOverrideActive && actorReg?.targetTypeOverride) || target.type;
   let typeMult = skillTypeMultiplier(actorReg, (typeOverrideActive && actorReg?.attackTypeOverride) || skill.type, targetType);
+  // 特質「戰士」：克制倍數取技能擁有的屬性中對對手最優的系別
+  if (atkMech.bestElementAdvantage && !(typeOverrideActive && actorReg?.attackTypeOverride)) {
+    const parts = String(skill.type || '').replace(/系$/, '').split(/[.·・]/).filter(Boolean);
+    for (const part of parts) typeMult = Math.max(typeMult, skillTypeMultiplier(actorReg, part, targetType));
+  }
   if (actorReg?.minimumTypeMultiplierThisAction !== undefined) typeMult = Math.max(typeMult, actorReg.minimumTypeMultiplierThisAction);
   // 積木：克制倍數取指定屬性中最高者
   // 本系加成 1.5 倍：技能屬性（含雙屬性技能的任一屬性）為自身系別中含有的屬性
@@ -162,27 +177,17 @@ export const calculateDamage = (
   const critChance = Math.max(0, Math.min(1, ((actor.critValue ?? 1) / 16) + suitCritBonus + ((title?.critBonus || 0) / 100) + critChanceBonus(actor, target) + Number(options?.critChanceBonus || 0)));
   const isCrit = isCritOverride !== undefined ? isCritOverride : prdChance(`crit:${side}:${actor.id}`, critChance);
   
-  let suitDmgBonus = suit?.effects?.damageDealtMultiplier || 1.0;
-  let titleDmgBonus = title?.effects?.damageDealtMultiplier || 1.0;
-  let oppSuitDmgRed = oppSuit?.effects?.damageTakenMultiplier || 1.0;
-  
-  let inscDmgBonus = 1.0;
-  if (actor.inscriptions && actor.inscriptions.some(insc => insc && (insc.id === "liuren_qianghua" || insc.name === "強化"))) {
-    inscDmgBonus = 1.2;
-  }
+  // 套裝／稱號／刻印「傷害提升／減少X%」、寶石「傷害翻倍」不在公式內：由引擎在增傷／減傷層加入（battle/damagePipeline.ts）。
+  const equipment = equipmentDamageFactors({ actor, target, skill, side, isCrit, p1Suit, p2Suit, p1Title, p2Title });
 
   const critResistPercent = target.resistances?.damageResist?.crit || 0;
-  // 致命一擊倍率 = 2 ×（1 − 致命抗性）：無抗 2 倍、5% 1.9 倍、滿抗 35% 1.3 倍
-  let critBonusMultiplier = 2 * (1 - critResistPercent / 100);
-  if (isCrit && suit?.effects?.critDamageMultiplier) {
-    critBonusMultiplier *= suit.effects.critDamageMultiplier;
-  }
+  // 致命一擊倍率 = 2 ×（1 − 致命抗性）：無抗 2 倍、5% 1.9 倍、滿抗 35% 1.3 倍（只在這裡套用一次）
+  const critBonusMultiplier = 2 * (1 - critResistPercent / 100);
   const hitCount = Math.max(1, Math.floor(options?.hitCount || 1));
   let final = Math.floor(base * stab * typeMult);
   final = Math.floor(final * roll / 255);
   if (isCrit) final = Math.floor(final * critBonusMultiplier);
-  for (const m of [suitDmgBonus, titleDmgBonus, oppSuitDmgRed, inscDmgBonus]) if (m !== 1) final = Math.floor(final * m);
-  final = Math.floor(final * (skill.skillStoneDamageMultiplier || 1)) * hitCount;
+  final = final * hitCount;
   
   let statResetApplied: "def" | "spdef" | null = null;
   if (isCrit) {
@@ -195,6 +200,9 @@ export const calculateDamage = (
     isCrit, 
     typeMultiplier: typeMult,
     hitCount,
-    statResetApplied
+    statResetApplied,
+    formulaReplaced: false,
+    /** 套裝／稱號／刻印／寶石倍率（不含於 damage；供 AI 估算） */
+    equipmentMultiplier: equipment.multiplier * (skill.skillStoneDamageMultiplier || 1),
   };
 };

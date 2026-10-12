@@ -1,9 +1,10 @@
 import { addDamageReduction, multiplyDamageReduction } from '../battle/damageReduction';
-import { queueActionDamageModifier, queueActionPowerMultiplier } from '../battle/actionDamageModifiers';
+import { queueActionDamageModifier, queueActionPowerMultiplier, queueActionPowerAdd } from '../battle/actionDamageModifiers';
 import { queueHpDrain } from '../battle/hpDrain';
 import { bypassesAttackDefense } from '../battle/attackDefense';
 import { isSkillDamageType, isNonTrueDamageType } from '../battle/damageSemantics';
 import { matchesDamageTypes } from '../effects/damageChoices';
+import { makeEffectPresentation } from '../battle/effectPresentation';
 // 積木執行器：把 Program（parse.ts 產生）在戰鬥中執行。
 import type { Act, Clause, Cond, Program, Stmt, Trigger } from "./model";
 import type { BattleEventContext } from "../effects/types";
@@ -18,10 +19,22 @@ import { statusChanceBlocked } from '../battle/statusChanceRules';
 import { settleDamageAbsorption } from '../battle/damageSemantics';
 import { StatusRegistry } from '../effects/statusRegistry';
 import { canonicalStatusName } from '../effects/statusIdentity';
-import { removeStatusEffect } from '../utils/battleHelpers';
+import {withRecoveryOrigin,blocksOwnSkillRecovery,blocksTimedRecovery} from '../battle/recoveryOrigin';
+import { removeStatusEffect, clearAllStatuses } from '../utils/battleHelpers';
+import { markAppliesToElf } from '../battle/marks';
+import { applyKitPpOperation } from '../effects/ppOperations';
+import { skillSlot } from '../battle/skillSlot';
+import { STATE_SIGNS } from '../battle/stateSigns';
+import { DAMAGE_STAT_BASES } from '../effects/damageBases';
+import { closureOperations } from '../effects/sequenceClosureOperations';
+import { applyMarkProgram } from '../effects/markProgram';
+import { sequenceIssue } from '../effects/sequenceContract';
+import { timerProgramIdentity } from './timerProgramIdentity';
 
 type S = "p1" | "p2";
 export interface RunState {
+  markStacks?:number;
+  sourceKind?: 'skill' | 'soul' | 'trait'; // 明確積木容器保留來源，魂印／特質計時不可誤列為可消除技能效果。
   last: boolean | null; // 上一個動作是否成功（消除成功／觸發）
   lastAmount: number; // 上一個動作的數值（等量）
   lastStmt?: Stmt;
@@ -41,10 +54,10 @@ export interface RunState {
 
 const DYNAMIC_CONDS = new Set(["success", "triggered", "fail", "kill", "nokill", "dmg_cmp", "last_no_dmg", "invalid", "weak"]);
 const condKey = (c: Cond) => `${c.c}:${JSON.stringify(c.p || {})}`;
-function snapshotConditions(ctx: BattleEventContext, clauses: Clause[], st: RunState) {
+export function snapshotConditions(ctx: BattleEventContext, clauses: Clause[], st: RunState) {
   st.conditionSnapshots ||= new Map();
   for (const clause of clauses) {
-    for (const c of [...(clause.cond || []), ...clause.body.flatMap(s => s.cond || [])]) {
+    for (const c of [...(clause.cond || []), ...clause.body.flatMap(s => [...(s.cond || []),...[...s.acts,...(s.elseActs || [])].flatMap(a=>a.p?.x2If ? [a.p.x2If] : [])])]) {
       if (!DYNAMIC_CONDS.has(c.c) && !st.conditionSnapshots.has(condKey(c))) st.conditionSnapshots.set(condKey(c), evalCond(ctx, c, st));
     }
   }
@@ -61,7 +74,7 @@ const elfOf = (ctx: BattleEventContext, side: S): any => (side === "p1" ? ctx.ac
 const idOf = (e: any) => String(e?.battleId || e?.id || "");
 /** 同一回合內讀取場上最新精靈（ctx.activeP1/P2 是建立 ctx 當下的快照） */
 export function liveElf(ctx: BattleEventContext, side: S): any {
-  const base = elfOf(ctx, side) || (side === ctx.targetSide ? ctx.target : side === ctx.actor ? ctx.self : undefined);
+  const base = (side === ctx.actor ? ctx.self : side === ctx.targetSide ? ctx.target : undefined) || elfOf(ctx, side);
   if (!base) return base;
   return (ctx.getFullTeam?.(side) || []).find((e: any) => idOf(e) === idOf(base)) || base;
 }
@@ -71,12 +84,14 @@ const hasAbn = (ctx: BattleEventContext, elf: any) => Object.values(ctx.getStatu
 const hasStage = (elf: any, up: boolean) => Object.values(elf?.statStages || {}).some((v: any) => typeof v === "number" && (up ? v > 0 : v < 0));
 
 function resetStages(ctx: BattleEventContext, side: S, pick: (v: number) => boolean): boolean {
-  const elf = elfOf(ctx, side);
-  const stages: Record<string, number> = { ...(elf?.statStages || {}) };
+  const elf = liveElf(ctx, side);
+  const before: Record<string, number> = { ...(elf?.statStages || {}) };
+  const stages: Record<string, number> = { ...before };
   let changed = false;
   for (const k in stages) if (typeof stages[k] === "number" && pick(stages[k])) { stages[k] = 0; changed = true; }
   if (changed) ctx.updateElf(side, { statStages: stages as any });
-  return changed;
+  // 寫入可能被「提升不可消除」攔截。成功分支必須看寫入後；比較對象是寫入前的複本（updateElf 可能原地修改）。
+  return changed && (!ctx.getFullTeam || Object.keys(stages).some(k=>Number(liveElf(ctx,side)?.statStages?.[k] || 0)!==Number(before[k] || 0)));
 }
 
 function cmp(a: number, op: string, b: number): boolean {
@@ -90,9 +105,11 @@ function cmp(a: number, op: string, b: number): boolean {
 // ───────── 條件 ─────────
 export function evalCond(ctx: BattleEventContext, c: Cond, st: RunState): boolean | undefined {
   const p = c.p || {};
-  const self: any = ctx.self, opp: any = ctx.target;
+  const self: any = liveElf(ctx, ctx.actor), opp: any = liveElf(ctx, ctx.targetSide);
   const pick = (w: string) => (w === "self" ? self : opp);
   switch (c.c) {
+    // 「N%機率」：偽隨機分布（與其他機率事件同一入口），每份技能各自計數；100% 不消耗亂數。
+    case "chance": return chance(ctx, `cond:${p.pct}`, p.pct);
     case "first": return ctx.goesFirst === true || ctx.moveIndex === 0;
     case "last": return !(ctx.goesFirst === true || ctx.moveIndex === 0);
     case "success": case "triggered": return st.last === true;
@@ -101,7 +118,8 @@ export function evalCond(ctx: BattleEventContext, c: Cond, st: RunState): boolea
     case "nokill": return (opp?.currentHp ?? 1) > 0;
     case "has_status": {
       const sides = p.side === "both" ? [self, opp] : [pick(p.side)];
-      return sides.some(e => ((ctx.getStatuses(e) || {})[p.status] || 0) > 0);
+      const present=sides.some(e => Object.entries(ctx.getStatuses(e)||{}).some(([name,turns])=>canonicalStatusName(name)===canonicalStatusName(p.status)&&turns>0));
+      return p.neg?!present:present;
     }
     case "abnormal": {
       const r = p.side === "any" ? hasAbn(ctx, self) || hasAbn(ctx, opp) : hasAbn(ctx, pick(p.side));
@@ -122,13 +140,24 @@ export function evalCond(ctx: BattleEventContext, c: Cond, st: RunState): boolea
     case "text": { const re = matchCondText(p.text); return re ? evalCond(ctx, re, st) : false; }
     case "pp_full": { const sk = ctx.skill; return !!sk && (sk.pp ?? 0) >= (sk.maxPp ?? sk.pp ?? 0); }
     case "dmg_cmp": return cmp(st.event?.data?.dealt ?? ctx.getPlayerState("blkLastHitDamage") ?? 0, p.op, p.v);
-    case "event_status": return (p.statuses || []).includes(st.event?.data?.status);
-    case "type_is": return String((p.side === "self" ? self : opp)?.type || "").includes(p.type);
+    case "event_status": return (p.statuses || []).includes(canonicalStatusName((ctx as any).effectEventData?.status || st.event?.data?.status || ''));
+    case "type_is": {const present=String(pick(p.side)?.type||'').split(/[.·・]/).includes(p.type);return p.neg?!present:present;}
     case "enemy": return getTypeMatchup(opp?.type || "", self?.type || "") >= 2;
     case "self_enemy": return getTypeMatchup(self?.type || "", opp?.type || "") >= 2;
     case "crit": return !!ctx.getPlayerState("blkLastCrit");
     case "last_no_dmg": return st.lastDealt === 0;
-    case "has_mark": return (ctx.getMarks(p.side === "self" ? ctx.actor : ctx.targetSide) || []).some((m: any) => (m.name === p.name || m.id === `blk_${p.name}`) && (m.count || 0) > 0);
+    case "stab": {
+      // 「若屬性相同」＝本系：技能屬性（每一部分）都包含在自身目前的屬性中
+      const own = String(self?.type || "").split(/[.·・]/).filter(Boolean);
+      const sk = String(ctx.skill?.type || "").split(/[.·・]/).filter(Boolean);
+      return sk.length > 0 && sk.every(t => own.includes(t));
+    }
+    case "has_mark": {
+      // 星火之灼／星芳之纏／星海之浸：以戰鬥狀態鍵（剩餘回合）記錄，沒有 Mark 實體；同樣視為「處於該印記」。
+      const sign = STATE_SIGNS.find(s => s.name === p.name);
+      if (sign && Number((p.side === "self" ? ctx.getPlayerState : ctx.getOpponentState)(sign.key)) > 0) return true;
+      return (ctx.getMarks(p.side === "self" ? ctx.actor : ctx.targetSide) || []).some((m: any) => markAppliesToElf(m,pick(p.side)) && (m.name === p.name || m.id === p.name || m.id === `blk_${p.name}`) && (m.count || 0) > 0);
+    }
     default: return undefined;
   }
 }
@@ -163,6 +192,8 @@ function dealDamage0(ctx: BattleEventContext, side: S, amt: number, type: string
   amt = Math.max(0, Math.floor(amt));
   if (amt <= 0) return 0;
   const num = (v: any) => (typeof v === "number" && Number.isFinite(v) ? Math.max(0, Math.floor(v)) : 0);
+  const recipient=liveElf(ctx,side),active=elfOf(ctx,side);
+  if(recipient && active && idOf(recipient)!==idOf(active))return num(ctx.applyDamageToElf?.(side,idOf(recipient),amt,(RT_TYPE[type] || 'percent') as any,{elem,label:`${type}傷害`}));
   if (type === "真實") return num(ctx.applyTrueDamage(side, amt, "真實傷害"));
   if (type === "固定") return num(ctx.applyFixedDamage(side, amt, "固定傷害"));
   if (type === "技能") return num(ctx.applySkillTypeDamage(side, amt, `${elem || ""}系技能傷害`, { elem, node: "attack_damage" }));
@@ -176,13 +207,19 @@ export function actualHeal(ctx: BattleEventContext, side: S, amt: number): numbe
   const own = side === ctx.actor ? ctx.getPlayerState : ctx.getOpponentState;
   const other = side === ctx.actor ? ctx.getOpponentState : ctx.getPlayerState;
   if ((own(`noHealTurns`) || 0) > 0 || (own(`${side}_noHealTurns`) || 0) > 0 || (other(`${side}_noHealTurns`) || 0) > 0 || (other("oppSealHealTurns") || 0) > 0) return 0;
+  if(blocksOwnSkillRecovery((ctx as any).recoveryOrigin,side,idOf(e),Number(own('skillHealBlockTurns'))||0))return 0;
+  if(blocksTimedRecovery(side==='p1'?ctx.p1Timers:ctx.p2Timers,side,idOf(e),(ctx as any).recoveryOrigin))return 0;
   let mult = 1;
-  for (const mk of (ctx.getMarks?.(side) || []) as any[]) { const hr = mk.effects?.blkHealReduce; if (hr) mult = Math.max(0, mult - hr * (mk.effects?.blkHealPerStack ? mk.count : 1)); }
+  for (const mk of (ctx.getMarks?.(side) || []) as any[]) { if(!markAppliesToElf(mk,e))continue;const hr = mk.effects?.blkHealReduce; if (hr) mult = Math.max(0, mult - hr * (mk.effects?.blkHealPerStack ? mk.count : 1)); }
   return Math.max(0, Math.min(Math.floor(amt * mult), (e.maxHp || 0) - (e.currentHp || 0)));
 }
 function heal(ctx: BattleEventContext, side: S, amt: number): number {
   const real = actualHeal(ctx, side, Math.floor(amt));
-  ctx.applyHeal(side, Math.floor(amt));
+  const recipient=liveElf(ctx,side),active=elfOf(ctx,side);
+  if(recipient && active && idOf(recipient)!==idOf(active)) {
+    if(!ctx.applyHealToElf)return 0;
+    ctx.applyHealToElf(side,idOf(recipient),Math.floor(amt));
+  } else ctx.applyHeal(side, Math.floor(amt));
   return real;
 }
 
@@ -209,13 +246,16 @@ export function settleNoDmgFollowUps(ctx: BattleEventContext, data: any) {
 /** 回合類效果的登錄狀態鍵：以 turn_effect 計時器鏡像，「消除回合類效果」時一併歸零並算消除成功 */
 function mirrorTurn(ctx: BattleEventContext, side: S, name: string, turns: number, keys: string[]) {
   if (!(turns > 0) || turns >= 99) return;
+  const presentation = makeEffectPresentation({ mirrorRegistryKeys: keys }, ctx.skill?.name, name);
+  presentation.description = name;
   ctx.addTimerTo(side, {
     id: `blk_${side}_${ctx.skill?.name || ctx.self?.name || "src"}_${name}_mirror`, name, kind: "turn_effect", source: "skill" as any,
     remaining: turns, tickAt: "round_end", stackRule: "refresh", displayChar: name[0], description: name,
+    presentation,
     payload: { mirrorRegistryKeys: keys, block: { mirror: true, owner: side, src: ctx.skill?.name || ctx.self?.name } },
   } as any, false);
 }
-const isSkillCtx = (st: RunState) => !st.event || st.event.trig === "use" || st.event.trig === "after_hit" || st.event.trig === "on_invalid";
+const isSkillCtx = (st: RunState) => st.sourceKind ? st.sourceKind==='skill' : !st.event || st.event.trig === "use" || st.event.trig === "after_hit" || st.event.trig === "on_invalid";
 /** 技能附加且以回合計數 → 回合類效果；魂印附加的不可被消除 */
 function setTurnKey(ctx: BattleEventContext, side: S, st: RunState, name: string, kv: Record<string, any>, turnsKey: string) {
   const set = side === ctx.actor ? ctx.setPlayerState : ctx.setOpponentState;
@@ -247,6 +287,15 @@ export function blockStatusGuard(timers: any[] | undefined, elf: any, status: st
 }
 
 export const OPS: Record<string, OpFn> = {
+  pp_op:(ctx,p)=>{
+    const side=sideOf(ctx,p.side);
+    if(!p.stopIfEmpty)return applyKitPpOperation(ctx,side,p.mode,p.amount || 0);
+    // 「若因此對手PP值歸0則對手當回合無法行動」：以該回合對手已選的技能槽判定。
+    const slot=skillSlot(liveElf(ctx,side),ctx.opponentSkill),report={emptied:[] as number[]};
+    const changed=applyKitPpOperation(ctx,side,p.mode,p.amount || 0,undefined,report);
+    if(slot>=0&&report.emptied.includes(slot))(side===ctx.actor?ctx.setPlayerState:ctx.setOpponentState)('actionPreventedRound',ctx.roundNumber);
+    return changed;
+  },
   noop: () => true,
   note: () => true,
   status: (ctx, p, st) => {
@@ -267,15 +316,32 @@ export const OPS: Record<string, OpFn> = {
   cure_status: (ctx, p) => {
     const sides: S[] = p.side === "both" ? [ctx.actor, ctx.targetSide] : [sideOf(ctx, p.side)];
     let any = false;
-    for (const s of sides) { const e = elfOf(ctx, s); if (hasAbn(ctx, e)) { ctx.updateElf(s, { effects: [], battleStatuses: {}, battleStatus: "normal", battleStatusDuration: 0 } as any); any = true; } }
+    for (const s of sides) {
+      const e=liveElf(ctx,s),before=ctx.getStatuses(e) || {};
+      if(!hasAbn(ctx,e))continue;
+      const updated={...e,effects:[...(e.effects || [])],battleStatuses:{...before}};
+      clearAllStatuses(updated);
+      if(JSON.stringify(before)!==JSON.stringify(ctx.getStatuses(updated) || {})) {
+        ctx.updateElf(s,{effects:updated.effects,battleStatuses:updated.battleStatuses,battleStatus:updated.battleStatus,battleStatusDuration:updated.battleStatusDuration} as any);any=true;
+      }
+    }
     if (any) ctx.addLog(`🌿 解除了異常狀態！`, "status");
     return any;
   },
   convert_status: (ctx, p) => {
     const side = sideOf(ctx, p.side); const e = liveElf(ctx, side);
-    if (!hasAbn(ctx, e)) return false;
-    ctx.updateElf(side, { effects: [], battleStatuses: {}, battleStatus: "normal", battleStatusDuration: 0 } as any);
-    return applyStatus(ctx, side, p.status);
+    const before = ctx.getStatuses(e) || {};
+    const convertible = Object.keys(before).filter(id => {
+      const entry = StatusRegistry[canonicalStatusName(id)];
+      return entry && !entry.categories.includes('BOSS_ONLY');
+    });
+    if (!convertible.length) return false;
+    // 只移除真正被轉化的異常，不把計時效果／其他增益及BOSS特性一起清空。
+    const updated = { ...e, effects: [...(e.effects || [])], battleStatuses: { ...before } };
+    for (const id of convertible) removeStatusEffect(updated, id);
+    ctx.updateElf(side, { effects: updated.effects, battleStatuses: updated.battleStatuses,
+      battleStatus: updated.battleStatus, battleStatusDuration: updated.battleStatusDuration } as any);
+    return applyStatus(ctx, side, p.status, p.turns);
   },
   immune_status_count: (ctx, p) => { ctx.setPlayerState(p.reflect ? "blkReflectStatusCount" : "blkImmuneStatusCount", (ctx.getPlayerState(p.reflect ? "blkReflectStatusCount" : "blkImmuneStatusCount") || 0) + p.count); ctx.addLog(`🛡️ 免疫${p.reflect ? "並反彈" : ""}下 ${p.count} 次異常狀態！`, "effect"); return true; },
   immune_status_turns: (ctx, p, st) => {
@@ -299,7 +365,9 @@ export const OPS: Record<string, OpFn> = {
     return any;
   },
   stat_steal: (ctx, p) => {
-    const opp: any = ctx.target; const gains: Record<string, number> = {}; let any = false;
+    // 對手處於「能力提升無法被消除或吸取」：吸取整體失敗（不先替自身加上）
+    if (p.mode === "吸取" && (Number(ctx.getOpponentState("statBoostUnclearableTurns")) || 0) > 0) return false;
+    const opp: any = liveElf(ctx, ctx.targetSide); const gains: Record<string, number> = {}; let any = false;
     for (const k in (opp.statStages || {})) { const v = opp.statStages[k]; if (typeof v === "number" && v > 0) { gains[k] = v * (p.double ? 2 : 1); any = true; } }
     if (!any) return false;
     ctx.applyStatChange(ctx.actor, gains);
@@ -307,28 +375,54 @@ export const OPS: Record<string, OpFn> = {
     return true;
   },
   stat_reverse: (ctx, p) => {
-    const side = sideOf(ctx, p.side); const e = elfOf(ctx, side);
+    const side = sideOf(ctx, p.side); const e = liveElf(ctx, side);
     const stages: Record<string, number> = { ...(e?.statStages || {}) }; let any = false;
-    for (const k in stages) { const v = stages[k]; if (typeof v === "number" && (p.kind === "down" ? v < 0 : v > 0)) { stages[k] = -v; any = true; } }
+    for (const k in stages) { const v = stages[k]; if (typeof v === "number" && (p.kind === 'all'?v!==0:p.kind === "down" ? v < 0 : v > 0)) { stages[k] = -v; any = true; } }
     if (any) ctx.updateElf(side, { statStages: stages as any });
     return any;
   },
   stat_transfer: (ctx) => { executeTemplateEffect("0056", [], ctx); return true; },
   stat: (ctx, p) => {
     if (!chance(ctx, `stat:${p.stats}`, p.chance ?? 100)) return false;
+    let changed=false;
     const apply = (side: "self" | "opp" | "both" | "auto", stats: string[], v: number) => {
       const who = side === "auto" ? (v > 0 ? "self" : "opp") : side;
       const sides: S[] = who === "both" ? [ctx.actor, ctx.targetSide] : [sideOf(ctx, who)];
       const ch: Record<string, number> = {};
       for (const s of stats) for (const k of STAT_KEYS[s] || []) ch[k] = v;
-      for (const s of sides) ctx.applyStatChange(s, ch);
+      for (const s of sides) {
+        const before={...liveElf(ctx,s)?.statStages},result=ctx.applyStatChange(s, ch);
+        changed=changed || (result ? result.success : Object.keys(ch).some(k=>(liveElf(ctx,s)?.statStages?.[k] || 0)!==(before[k] || 0)));
+      }
     };
     apply(p.side, p.stats, p.v);
     if (p.stats2) apply(p.side2, p.stats2, p.v2);
-    return true;
+    return changed;
   },
 
-  heal: (ctx, p, st) => { const side = sideOf(ctx, p.side); const e = liveElf(ctx, side); const amt = Math.floor(e.maxHp * p.ratio); const real = heal(ctx, side, amt); st.lastAmount = real; ctx.addLog(`💚 恢復了 ${real} 點體力！`, "heal"); return real > 0; },
+  heal: (ctx, p, st) => { const side = sideOf(ctx, p.side); const e = liveElf(ctx, side); const amt = Math.floor(e.maxHp * p.ratio); const real = heal(ctx, side, amt); st.lastAmount = real; (st as any).lastHealOverflow = Math.max(0, amt - real); ctx.addLog(`💚 恢復了 ${real} 點體力！`, "heal"); return real > 0; },
+  /**
+   * 「（恢復後）每溢出N點：下回合受到的攻擊傷害減少X%且獲得M點護盾」：讀前一個恢復動作的溢出量（請求量−實際恢復量）。
+   * 減傷為下回合的回合計數（附加當回合不生效），上限100%。
+   */
+  heal_overflow: (ctx, p, st) => {
+    const over = Number((st as any).lastHealOverflow) || 0;
+    const n = Math.floor(over / p.unit);
+    if (n <= 0) return false;
+    if (p.reduce) addBlockTimer(ctx, ctx.actor, `溢出減傷${Math.round(Math.min(1, n * p.reduce) * 100)}%`, 1, "turns", { dmgIn: -Math.min(1, n * p.reduce), kind: p.kind || "攻擊" }, true, isSkillCtx(st) ? "turn_effect" : "round_counter");
+    if (p.shield) ctx.applyShield(ctx.actor, n * p.shield);
+    ctx.addLog(`🔷 恢復溢出 ${over} 點：下回合受到的${p.kind || "攻擊"}傷害減少 ${Math.round(Math.min(1, n * (p.reduce || 0)) * 100)}%、獲得 ${n * (p.shield || 0)} 點護盾！`, "effect");
+    return true;
+  },
+  /** 「本場戰鬥自身造成的X傷害提升a%，最高b%」：每次累加，跟著精靈保留（個體鍵），由引擎攻擊流程讀取 battleDamageBoost */
+  battle_boost: (ctx, p) => {
+    const cur = Number(ctx.getPlayerState("battleDamageBoost")) || 0;
+    const next = Math.min(p.cap ?? Infinity, Math.round((cur + p.inc) * 1e6) / 1e6);
+    if (next <= cur) return false;
+    ctx.setPlayerState("battleDamageBoost", next);
+    ctx.addLog(`📈 本場戰鬥造成的攻擊傷害提升 ${Math.round(next * 100)}%！`, "effect");
+    return true;
+  },
   heal_flat: (ctx, p, st) => { st.lastAmount = heal(ctx, ctx.actor, p.amount); return st.lastAmount > 0; },
   heal_equal: (ctx, _p, st) => {
     // 「傷害提升X%並恢復等量體力」：等量＝本次攻擊傷害（只含攻擊傷害）
@@ -345,7 +439,7 @@ export const OPS: Record<string, OpFn> = {
     if (st.event?.trig === "after_hit") { st.lastAmount = Math.floor((ctx.getPlayerState("blkLastHitDamage") || 0) * p.ratio); return st.lastAmount > 0; }
     ctx.setPlayerState("vampireRatio", p.ratio); ctx.setPlayerState("vampireDamageTypesThisAction", [p.kind === "攻擊" ? "attack" : "skill"]); return true; },
   maxhp: (ctx, p, st) => {
-    const side = sideOf(ctx, p.side); const e = elfOf(ctx, side);
+    const side = sideOf(ctx, p.side); const e = liveElf(ctx, side);
     st.maxHpBeforeChange ||= {};
     st.maxHpBeforeChange[side] ??= e.maxHp;
     const newMax = Math.max(1, Math.floor(e.maxHp * (1 + p.ratio)));
@@ -358,14 +452,14 @@ export const OPS: Record<string, OpFn> = {
       if (p.both) { dealDamage(ctx, ctx.actor, p.flat, p.type); }
       st.lastAmount = dealDamage(ctx, ctx.targetSide, p.flat, p.type, p.elem, st); return true;
     }
-    const base = elfOf(ctx, sideOf(ctx, p.of));
-    if (p.base === "護盾值") { const sv = base?.shield || 0; if (sv <= 0) return false; st.lastAmount = dealDamage(ctx, ctx.targetSide, sv * p.ratio, p.type, undefined, st); return true; }
+    const base = liveElf(ctx, sideOf(ctx, p.of));
+    if (p.base === "護盾值") { const sv = base?.shield || 0; if (sv <= 0) return false; st.lastAmount = dealDamage(ctx, ctx.targetSide, sv * p.ratio, p.type, p.elem, st); return true; }
     let v = p.base === "當前體力" ? base.currentHp : p.base === "已損失體力" ? base.maxHp - base.currentHp : base.maxHp;
     if (String(p.base).startsWith("stat:")) {
-      const cs = base.calculatedStats || {}; const key: Record<string, string[]> = { 攻擊和特攻: ["atk", "spatk"], 攻擊: ["atk"], 特攻: ["spatk"], 防禦: ["def"], 特防: ["spdef"], 速度: ["speed"] };
-      v = (key[p.base.slice(5)] || []).reduce((a, k) => a + (cs[k] || 0), 0);
+      const cs = base.calculatedStats || {};
+      v = (DAMAGE_STAT_BASES[p.base] || []).reduce((a, k) => a + (cs[k] || 0), 0);
     }
-    st.lastAmount = dealDamage(ctx, ctx.targetSide, v * p.ratio, p.type, undefined, st);
+    st.lastAmount = dealDamage(ctx, ctx.targetSide, v * p.ratio, p.type, p.elem, st);
     return true;
   },
   dmg_equal: (ctx, p, st) => { if (!st.lastAmount) return false; st.lastAmount = dealDamage(ctx, ctx.targetSide, st.lastAmount, p.type, undefined, st); return true; },
@@ -381,24 +475,33 @@ export const OPS: Record<string, OpFn> = {
   boost: (ctx, p, st) => {
     const comp = st.event?.data?.damageComp || (st.event?.data?.base != null ? st.event.data : null);
     if (p.power && comp) return false; // 威力需在公式前處理，不能當傷害倍率。
+    if (p.power && p.add != null) { if (p.add > 0) queueActionPowerAdd(ctx, p.add); return p.add > 0; }
     if (p.power) { queueActionPowerMultiplier(ctx, p.mult); return true; }
     if (comp) { if (comp.isIncoming || !compMatchesKind(comp, p.kind || "攻擊")) return false; comp.increasePercent += p.mult - 1; return true; }
     if (st.event?.trig === "passive") return false;
     return queueActionDamageModifier(ctx, p.mult, p.kind || "攻擊");
   },
   no_resist: (ctx) => { ctx.setPlayerState("noResistedThisAction", true); return true; },
+  crit_bonus_turns: (ctx, p) => { addBlockTimer(ctx, ctx.actor, `致命機率增加${Math.round(p.bonus * 10000) / 100}%`, p.turns, "turns", { critChanceBonus: p.bonus }, !!p.next); return true; },
   crit_now: (ctx) => { ctx.setPlayerState("nextTurnCrit", true); return true; },
-  crit_turns: (ctx, p) => { addBlockTimer(ctx, ctx.actor, `必定致命`, p.turns + (p.now ? 0 : 1), "turns", { crit: true }); return true; },
-  crit_uses: (ctx, p) => { addBlockTimer(ctx, ctx.actor, `必定致命`, p.uses, "uses", { crit: true, attackOnly: true }); return true; },
+  crit_turns: (ctx, p) => { addBlockTimer(ctx, ctx.actor, `必定致命`, p.next ? p.turns : p.turns + (p.now ? 0 : 1), "turns", { crit: true },!!p.next); return true; },
+  crit_uses: (ctx, p) => {
+    const scope=p.scope || 'elf',id=scope==='team'?`blk_${ctx.actor}_team_guaranteed_critical`:undefined;
+    const old=id?(ctx.actor==='p1'?ctx.p1Timers:ctx.p2Timers).find(t=>t.id===id):undefined;
+    addBlockTimer(ctx,ctx.actor,'必定致命',Math.max(p.uses,old?.remaining || 0),'uses',{crit:true,attackOnly:true},false,undefined,false,scope,id);
+    return true;
+  },
   dmg_taken_x2: (ctx, p, st) => { setTurnKey(ctx, ctx.targetSide, st, "受到傷害翻倍", { damageTakenBoostTurns: p.turns + 1 }, "damageTakenBoostTurns"); return true; },
   dmg_cap_turns: (ctx, p, st) => { setTurnKey(ctx, ctx.actor, st, `受傷上限${p.cap}`, { incomingSkillDmgCapTurns: p.turns, incomingSkillDmgCap: p.cap }, "incomingSkillDmgCapTurns"); return true; },
-  dmg_mod_turns: (ctx, p) => {
+  dmg_mod_turns: (ctx, p,st) => {
     if (p.chance != null && !chance(ctx, 'dmg_mod_turns', p.chance)) return false;
     const owner = p.side === "opp" ? ctx.targetSide : ctx.actor;
     const turns = p.turns;
-    if (p.dir === "in") addBlockTimer(ctx, owner, `受傷-${p.reduce * 100}%`, turns, "turns", { dmgIn: -p.reduce, kind: p.kind }, !!p.next);
-    else if (p.dir === "taken") addBlockTimer(ctx, owner, `受傷+${p.boost * 100}%`, turns, "turns", { dmgIn: p.boost, kind: p.kind }, !!p.next);
-    else addBlockTimer(ctx, owner, `增傷+${p.boost * 100}%`, turns, "turns", { dmgOut: p.boost, kind: p.kind }, !!p.next);
+    const kind=isSkillCtx(st)?'turn_effect':'round_counter';
+    if (p.dir === "in") addBlockTimer(ctx, owner, `受傷-${p.reduce * 100}%`, turns, "turns", { dmgIn: -p.reduce, kind: p.kind }, !!p.next,kind,!p.next&&!p.lateCompensation);
+    else if (p.dir === "taken") addBlockTimer(ctx, owner, `受傷+${p.boost * 100}%`, turns, "turns", { dmgIn: p.boost, kind: p.kind }, !!p.next,kind,!p.next&&!p.lateCompensation);
+    else if(p.dir==='out_reduce')addBlockTimer(ctx,owner,`${p.kind}輸出傷害-${p.reduce*100}%`,turns,'turns',{dmgOutReduce:p.reduce,kind:p.kind},!!p.next,kind,!p.next);
+    else addBlockTimer(ctx, owner, `增傷+${p.boost * 100}%`, turns, "turns", { dmgOut: p.boost, kind: p.kind }, !!p.next,kind,!p.next);
     return true;
   },
   boost_turns_x2: (ctx, p) => { addBlockTimer(ctx, ctx.actor, `威力翻倍`, p.turns + 1, "turns", { dmgOutMult: 2, kind: "攻擊" }); return true; },
@@ -428,6 +531,12 @@ export const OPS: Record<string, OpFn> = {
   block_attack: (ctx, p) => { addBlockTimer(ctx, ctx.actor, `抵擋攻擊`, p.count, "uses", { blockAttack: true }); ctx.addLog(`🛡️ 抵擋下 ${p.count} 次攻擊傷害！`, "effect"); return true; },
   invalid_next: (ctx, p) => { addBlockTimer(ctx, ctx.targetSide, `技能無效`, p.uses, "uses", { invalid: p.kind || "all" }); ctx.addLog(`🚫 對手下 ${p.uses} 次${p.kind}技能無效！`, "effect"); return true; },
   invalid_turns: (ctx, p, st) => {
+    // 「下N回合…技能無效」：附加當回合不啟用，下回合起 N 回合（回合類效果，可被消除）
+    if (p.next) {
+      addBlockTimer(ctx, ctx.targetSide, `${p.kind || ""}技能無效`, p.turns, "turns", { invalid: p.kind || "all" }, true, isSkillCtx(st) ? "turn_effect" : "round_counter");
+      ctx.addLog(`🚫 下 ${p.turns} 回合對手${p.kind}技能無效！`, "effect");
+      return true;
+    }
     if (p.kind !== "屬性") setTurnKey(ctx, ctx.targetSide, st, "攻擊技能無效", { attackSkillInvalidTurns: Math.max(p.turns, ctx.getOpponentState("attackSkillInvalidTurns") || 0) }, "attackSkillInvalidTurns");
     if (p.kind !== "攻擊") setTurnKey(ctx, ctx.targetSide, st, "屬性技能無效", { utilitySkillInvalidTurns: Math.max(p.turns, ctx.getOpponentState("utilitySkillInvalidTurns") || 0) }, "utilitySkillInvalidTurns");
     ctx.addLog(`🚫 ${p.turns} 回合內對手${p.kind}技能無效！`, "effect");
@@ -436,7 +545,12 @@ export const OPS: Record<string, OpFn> = {
   add_invalid_turns: (ctx, p) => { addBlockTimer(ctx, ctx.targetSide, `附加失效`, p.turns, "turns", { addInvalid: p.kind || "all" }); return true; },
   add_invalid_next: (ctx, p) => { addBlockTimer(ctx, ctx.targetSide, `附加失效`, p.uses, "uses", { addInvalid: p.kind || "all" }); return true; },
   no_switch: (ctx, p, st) => { setTurnKey(ctx, ctx.targetSide, st, "無法切換", { noSwitchTurns: Math.max(p.turns + (p.next ? 1 : 0), ctx.getOpponentState("noSwitchTurns") || 0) }, "noSwitchTurns"); ctx.addLog(`⛓️ ${p.turns} 回合內對手無法主動切換精靈！`, "effect"); return true; },
-  no_heal: (ctx, p, st) => { setTurnKey(ctx, ctx.targetSide, st, "禁療", { [`${ctx.targetSide}_noHealTurns`]: p.turns + (p.next ? 1 : 0) }, `${ctx.targetSide}_noHealTurns`); ctx.setOpponentState(`${ctx.targetSide}_noHealReason`, `【${ctx.skill?.name || "效果"}】禁療`); return true; },
+  no_heal: (ctx, p, st) => {
+    if(p.next){addBlockTimer(ctx,ctx.targetSide,p.scope==='own_skill'?'自身技能回復受限':'禁療',p.turns,'turns',{healGuard:p.scope==='own_skill'?'own_skill':'all'},true,isSkillCtx(st)?'turn_effect':'round_counter');return true;}
+    const key=p.scope==='own_skill'?'skillHealBlockTurns':`${ctx.targetSide}_noHealTurns`;
+    setTurnKey(ctx,ctx.targetSide,st,p.scope==='own_skill'?'無法透過自身技能回復':'禁療',{[key]:p.turns+(p.next?1:0)},key);
+    ctx.setOpponentState(`${ctx.targetSide}_noHealReason`,`【${ctx.skill?.name || '效果'}】${p.scope==='own_skill'?'自身技能回復受限':'禁療'}`);return true;
+  },
   clear_turn: (ctx, p) => {
     const sides: S[] = p.side === "both" ? [ctx.actor, ctx.targetSide] : [sideOf(ctx, p.side)];
     let any = false; for (const s of sides) any = ctx.clearTurnEffectsOf(s) || any;
@@ -445,13 +559,21 @@ export const OPS: Record<string, OpFn> = {
   },
   clear_shield: (ctx, p) => {
     const sides: S[] = p.side === "both" ? [ctx.actor, ctx.targetSide] : [sideOf(ctx, p.side)];
-    let any = false; for (const s of sides) { const e = elfOf(ctx, s); if ((e?.shield || 0) > 0) { ctx.updateElf(s, { shield: 0 } as any); any = true; } }
+    let any = false; for (const s of sides) {
+      const e = liveElf(ctx, s), patch: any = {};
+      if (p.kind !== 'barrier' && (e?.shield || 0) > 0) patch.shield = 0;
+      if ((p.kind === 'both' || p.kind === 'barrier') && (e?.barrier || 0) > 0) patch.barrier = 0;
+      if (Object.keys(patch).length) { ctx.updateElf(s, patch); any = true; }
+    }
     return any;
   },
-  shield: (ctx, p, st) => { const amt = Math.max(0, Math.floor(p.flat ?? ctx.self.maxHp * p.ratio)); ctx.applyShield(ctx.actor, amt); st.lastAmount = amt; return amt > 0; },
+  shield: (ctx, p, st) => { const amt = Math.max(0, Math.floor(p.flat ?? liveElf(ctx,ctx.actor).maxHp * p.ratio)); ctx.applyShield(ctx.actor, amt); st.lastAmount = amt; return amt > 0; },
   pp_zero: (ctx, p) => {
-    const skills = (ctx.target.skills || []).map((sk: any) => (!p.kind || (p.kind === "屬性" ? sk.category === "屬性" : sk.category !== "屬性")) ? { ...sk, pp: 0 } : sk);
-    ctx.updateElf(ctx.targetSide, { skills }); ctx.addLog(`⚡ 對手${p.kind}技能 PP 歸零！`, "effect"); return true;
+    // 走 PP 操作入口：受星護等 PP 保護約束，並派發 PP_CHANGED（過去直接改寫技能欄）
+    const only = p.kind ? (sk: any) => (p.kind === "屬性" ? sk.category === "屬性" : sk.category !== "屬性") : undefined;
+    const changed = applyKitPpOperation(ctx, ctx.targetSide, "zero", 0, only);
+    if (changed) ctx.addLog(`⚡ 對手${p.kind || ""}技能 PP 歸零！`, "effect");
+    return changed;
   },
   pp_zero_all: (ctx) => {
     for (const s of [ctx.actor, ctx.targetSide] as S[]) { const e = elfOf(ctx, s); ctx.updateElf(s, { skills: (e.skills || []).map((k: any) => ({ ...k, pp: 0 })) }); }
@@ -460,18 +582,18 @@ export const OPS: Record<string, OpFn> = {
   pp_zero_random: (ctx, p) => {
     // 通用語義：隨機 N 個「不同」技能（去重）。與盾碎同歸 custom 的「N 次獨立隨機、可重複」不同。
     // 保留 Set 去重，避免訣別之二等「隨機2」變成可能只中1個。
-    const idx = (ctx.target.skills || []).map((sk: any, i: number) => ({ sk, i })).filter((x: any) => (x.sk.pp || 0) > 0);
-    const r = ctx.rng || Math.random; const pick = new Set<number>();
-    let guard = 0;
-    while (pick.size < Math.min(p.count, idx.length) && guard++ < 64) pick.add(idx[Math.floor(r() * idx.length)].i);
-    ctx.updateElf(ctx.targetSide, { skills: (ctx.target.skills || []).map((sk: any, i: number) => pick.has(i) ? { ...sk, pp: 0 } : sk) });
-    return pick.size > 0;
+    const pool = [...(liveElf(ctx, ctx.targetSide)?.skills || [])].filter((sk: any) => (sk.pp || 0) > 0);
+    const r = ctx.rng || Math.random, selected = new Set<any>();
+    // 無放回抽樣：即使隨機源一直返回0，也必須選到N個不同技能槽。
+    for (let n = Math.min(p.count, pool.length); n > 0; n--) {
+      const index = Math.min(pool.length - 1, Math.floor(r() * pool.length));
+      selected.add(pool.splice(index, 1)[0]);
+    }
+    return applyKitPpOperation(ctx, ctx.targetSide, 'zero', 0, sk => selected.has(sk));
   },
-  pp_drain: (ctx, p) => { executeTemplateEffect("0030", [p.v], ctx); if (p.steal) executeTemplateEffect("0051", [p.v], ctx); return true; },
-  pp_restore: (ctx, p) => {
-    if (p.v >= 99) { ctx.updateElf(ctx.actor, { skills: (ctx.self.skills || []).map((k: any) => ({ ...k, pp: k.maxPp ?? k.pp })) }); return true; }
-    executeTemplateEffect("0051", [p.v], ctx); return true;
-  },
+  // PP 一律走 applyKitPpOperation：恢復限制、星護與 PP_CHANGED 事件同一管道，不直接寫 skills。
+  pp_drain: (ctx, p) => applyKitPpOperation(ctx, ctx.targetSide, p.steal ? "drain" : "reduce", p.v),
+  pp_restore: (ctx, p) => applyKitPpOperation(ctx, ctx.actor, p.mode === "recover" ? "recover" : "add", p.v || 0),
   ignore: (ctx, p) => {
     // 攻擊免疫／免疫：無視攻擊免疫（attackImmunity 讀 ignoreAttackImmunityThisAction，本次行動結束時重置）
     const key: Record<string, string> = { 傷害限制: "blkIgnoreLimit", 抵擋傷害: "blkIgnoreBlock", 護盾: "blkIgnoreShield", 正先制: "blkIgnorePrio", 能力提升: "ignoreOppBuffThisAction", 攻擊免疫: "ignoreAttackImmunityThisAction", 免疫攻擊: "ignoreAttackImmunityThisAction", 免疫: "ignoreAttackImmunityThisAction" };
@@ -480,7 +602,7 @@ export const OPS: Record<string, OpFn> = {
     return true;
   },
   ignore_def_turns: (ctx, p, st) => {
-    // 引擎讀取 ignoreDef25Turns（固定忽略雙防25%）；其他比例寫入 ignoreDefPercentTurns/Value（目前引擎無讀取者，已列入報告）
+    // 引擎讀取 ignoreDef25Turns（固定忽略雙防25%）；其他比例寫入 ignoreDefPercentTurns/Value（引擎已讀取，2026-10-11）
     const turns = p.turns + 1;
     if (Math.abs(p.ratio - 0.25) < 1e-9) setTurnKey(ctx, ctx.actor, st, "忽略雙防25%", { ignoreDef25Turns: turns }, "ignoreDef25Turns");
     else setTurnKey(ctx, ctx.actor, st, `忽略雙防${Math.round(p.ratio * 100)}%`, { ignoreDefPercentTurns: turns, ignoreDefPercentValue: p.ratio }, "ignoreDefPercentTurns");
@@ -512,15 +634,46 @@ export const OPS: Record<string, OpFn> = {
     if (r.success) ctx.addLog(`💫 【${ctx.self?.name}】登場時陷入了【${p.status}】！`, "status");
     return r.success;
   },
+  // 事件監看：一次觸發後移除；來源明確保留，次數計時不能被誤認為魂印。
+  watch: (ctx, p, st) => { addBlockTimer(ctx, ctx.actor, p.text || "事件監看", 1, "uses", { trig: p.trig, body: p.body, once: true,sourceKind:st.sourceKind }); return true; },
+  next_entry_status:(ctx,p)=>{ctx.setOpponentState('nextElfStatus',{status:p.status,duration:p.turns,sourceSide:ctx.actor,sourceBattleId:idOf(ctx.self)});return true;},
+  stop_status_tick:(_ctx,_p,st)=>{const data=st.event?.data?.effectEventData||st.event?.data;if(!data?.status)return false;data.skipTick=true;return true;},
+  stat_protect_turns: (ctx, p, st) => { setTurnKey(ctx, ctx.actor, st, "能力提升不可消除", { statBoostUnclearableTurns: Math.max(p.turns, Number(ctx.getPlayerState("statBoostUnclearableTurns")) || 0) }, "statBoostUnclearableTurns"); return true; },
+  ignore_next: (ctx, p) => { if (p.what !== "攻擊免疫") return false; ctx.setPlayerState("ignoreAttackImmunityNext", true); ctx.addLog("⚔️ 下次攻擊技能無視攻擊免疫！", "effect"); return true; },
+  heal_reduce_turns: (ctx, p, st) => {
+    ctx.addTimerTo(ctx.targetSide, { id: `heal_reduce_${ctx.skill?.name || ctx.self?.name}`, name: `恢復效果-${Math.round(p.ratio * 100)}%`, kind: isSkillCtx(st) ? "turn_effect" : "round_counter",
+      source: "skill" as any, remaining: p.turns, tickAt: "round_end", stackRule: "refresh", payload: { recoveryReductionPercent: p.ratio } } as any, ctx.moveIndex === 1);
+    ctx.addLog(`💔 ${p.turns} 回合內對手體力恢復效果減少 ${Math.round(p.ratio * 100)}%！`, "effect");
+    return true;
+  },
   at_round_end: (ctx, p) => { addBlockTimer(ctx, ctx.actor, "回合結束", 1, "uses", { trig: "round_end", body: p.body, once: true }); return true; },
   stat_steal_random: (ctx, p) => {
-    const keys = ["atk", "def", "spatk", "spdef", "speed", "accuracy"]; const r = ctx.rng || Math.random; const pick = new Set<string>();
-    while (pick.size < Math.min(p.count, keys.length)) pick.add(keys[Math.floor(r() * keys.length)]);
-    const down: Record<string, number> = {}, up: Record<string, number> = {};
-    pick.forEach(k => { down[k] = -p.v; up[k] = p.v; });
-    ctx.applyStatChange(ctx.targetSide, down); ctx.applyStatChange(ctx.actor, up); return true;
+    const pool = ["atk", "def", "spatk", "spdef", "speed", "accuracy"],r=ctx.rng||Math.random;
+    const down:Record<string,number>={};
+    // 無放回：固定亂數測試／最後只剩一項時也能終止，不能靠while碰運氣。
+    for(let i=0;i<Math.min(p.count,6);i++){const value=r(),index=Number.isFinite(value)?Math.max(0,Math.min(pool.length-1,Math.floor(value*pool.length))):0;down[pool.splice(index,1)[0]]=-p.v;}
+    const applied=ctx.applyStatChange(ctx.targetSide,down)?.applied||{},up:Record<string,number>={};
+    for(const [key,value] of Object.entries(applied))if(value<0)up[key]=-value;
+    if(!Object.keys(up).length)return false;
+    ctx.applyStatChange(ctx.actor,up);return true;
   },
-  pp_cost_mult: (ctx, p) => { addBlockTimer(ctx, ctx.targetSide, `PP消耗×${p.mult}`, p.turns, "turns", { ppMult: p.mult, kind: p.kind }); return true; },
+  shield_from_last:(ctx,p,st)=>{if(!(st.lastAmount>0))return false;ctx.applyShield(ctx.actor,Math.floor(st.lastAmount*p.ratio));return true;},
+  status_replace:(ctx,p)=>{const data=(ctx as any).effectEventData;if(!data?.status)return false;data.status=canonicalStatusName(p.status);return true;},
+  block_damage:(ctx,p,st)=>{
+    const comp=st.event?.data?.damageComp||st.event?.data;
+    if(!comp?.isIncoming||!compMatchesKind(comp,p.kind)||bypassesAttackDefense(comp,'block'))return false;
+    comp.damageBlocks||=new Map();
+    const key=`blockCounter:${p.key}`,owner=`${ctx.actor}:${idOf(ctx.self)}:${key}`;
+    comp.damageBlocks.set(owner,(amount:number)=>ctx.setPlayerState(key,Math.min(Number.MAX_SAFE_INTEGER,(Number(ctx.getPlayerState(key))||0)+amount)));
+    return true;
+  },
+  damage_from_counter:(ctx,p,st)=>{
+    const key=`blockCounter:${p.key}`,amount=Number(ctx.getPlayerState(key))||0;
+    if(amount<=0)return false;
+    st.lastAmount=dealDamage(ctx,ctx.targetSide,amount*p.ratio,p.type,undefined,st);
+    if(p.consume)ctx.setPlayerState(key,0);return true;
+  },
+  pp_cost_mult: (ctx, p) => { addBlockTimer(ctx, ctx.targetSide, `PP消耗×${p.mult}`, p.turns, "turns", { ppMult: p.mult, kind: p.kind },false,undefined,true); return true; },
   dmg_to_heal_turns: (ctx, p) => {
     // 下回合：pendingActivation（本回合不生效，回合結束啟用、下回合結束到期）
     if (p.next) addBlockTimer(ctx, ctx.actor, "下回合傷害轉體力", 1, "turns", { absorbToHeal: true }, true);
@@ -532,14 +685,15 @@ export const OPS: Record<string, OpFn> = {
   custom: (ctx, p, st) => { const d = CUSTOM[p.key]; return d ? d.run(ctx, st as any) !== false : false; },
   evade: () => true,
   attack_extra_turns: (ctx, p) => { addBlockTimer(ctx, ctx.actor, `攻擊附加${p.type}傷害`, p.turns + 1, "turns", { trig: "self_after_attack", body: [{ acts: [{ op: "dmg", p: { flat: p.flat, type: p.type }, label: "" }] }] }); return true; },
-  evade_turns: (ctx, p) => { addBlockTimer(ctx, ctx.actor, `閃避${p.chance}%`, p.turns, "turns", { evade: p.chance, kind: p.kind }); return true; },
-  survive_turns: (ctx, p) => { addBlockTimer(ctx, ctx.actor, `死亡時保留1體力`, p.turns, "turns", { survive: true }); return true; },
-  no_pos_prio_turns: (ctx, p, st) => { setTurnKey(ctx, ctx.targetSide, st, "正先制失效", { blkNoPosPrioTurns: p.turns + 1 }, "blkNoPosPrioTurns"); return true; }, // 常駐閃避：由命中判定讀取（passiveEvadeChance）
+  evade_turns: (ctx, p) => { addBlockTimer(ctx, ctx.actor, `閃避${p.chance}%`, p.turns, "turns", { evade: p.chance, kind: p.kind },false,undefined,true); return true; },
+  survive_turns: (ctx, p) => { addBlockTimer(ctx, ctx.actor, `死亡時保留1體力`, p.turns, "turns", { survive: true },false,undefined,true); return true; },
+  no_pos_prio_turns: (ctx, p, st) => { setTurnKey(ctx, ctx.targetSide, st, "正先制失效", { blkNoPosPrioTurns: p.turns + (p.next ? 1 : 0) }, "blkNoPosPrioTurns"); return true; },
   consume_hp_all: (ctx) => { ctx.adjustHp(ctx.actor, -ctx.self.currentHp); return true; },
+  mark_program:(ctx,p)=>applyMarkProgram(ctx,p,liveElf(ctx,sideOf(ctx,p.side))),
   mark: (ctx, p) => {
     const side = sideOf(ctx, p.side);
     const id = `blk_${p.name}`;
-    const cur = (ctx.getMarks(side) || []).find((m: any) => m.id === id)?.count || 0;
+    const cur = (ctx.getMarks(side) || []).find((m: any) => m.id === id && markAppliesToElf(m,liveElf(ctx,side)))?.count || 0;
     ctx.setMark({ id, name: p.name, count: cur + p.count, displayChar: p.name[0] } as any, side);
     return true;
   },
@@ -579,17 +733,27 @@ export const OPS: Record<string, OpFn> = {
   holder_invalid: () => true,
   mark_duration: () => true,
   heal_opp_equal: (ctx, _p, st) => { if (!st.lastAmount) return false; const real = heal(ctx, ctx.targetSide, st.lastAmount); return real > 0; },
-  pp_restore_opp: (ctx, p) => {
-    const e: any = ctx.target;
-    ctx.updateElf(ctx.targetSide, { skills: (e.skills || []).map((k: any) => ({ ...k, pp: p.v >= 99 ? (k.maxPp ?? k.pp) : Math.min(k.maxPp ?? 99, (k.pp || 0) + p.v) })) });
-    return true;
-  },
+  pp_restore_opp: (ctx, p) => applyKitPpOperation(ctx, ctx.targetSide, p.mode === "recover" ? "recover" : "add", p.v || 0),
   mark_remove: (ctx, p) => { ctx.clearMark(`blk_${p.name}`, ctx.actor); ctx.addLog(`🔖 【${p.name}】消失了！`, "effect"); return true; },
   double_prev: (ctx, _p, st) => { if (st.lastStmt) for (const a of st.lastStmt.acts) runAct(ctx, a, st); return true; },
-  timed: (ctx, p) => {
-    const turns = p.turns + (p.from === "next" ? 1 : 0);
-    addBlockTimer(ctx, ctx.actor, (p.label || "持續效果"), turns, "turns", { trig: p.trig, body: p.body });
+  timed: (ctx, p, st) => {
+    // 「N回合內」包含啟動當回合，即使該回合的監控事件已經過去也不補一回合。
+    // 起算與事件獨立：self_attack／opp_attack／round_start都不能因後手而變N+1。
+    const thisTurnCounts = p.from !== 'next';
+    addBlockTimer(ctx, ctx.actor, (p.label || "持續效果"), p.turns, "turns", { trig: p.trig, body: p.body }, p.from === 'next', isSkillCtx(st)?'turn_effect':'round_counter', thisTurnCounts);
+    // 使用通知在新timer建立前已發出：初次命中啟動時明確補本次，不額外延長一回合。
+    if(p.initial && ctx.skill && (p.trig==='self_skill'||(p.trig==='self_attack'?ctx.skill.category!=='屬性':ctx.skill.category==='屬性'))) {
+      const frame:RunState={last:null,lastAmount:0,sourceKind:st.sourceKind,event:{trig:p.trig,data:{skill:ctx.skill}}};
+      runStmts(ctx,p.body,frame);
+    }
     return true;
+  },
+  ...closureOperations({ liveElf, addTimer: addBlockTimer, damage: dealDamage }),
+  once:(ctx,p,st)=>{
+    const key=`blockOnce:${(ctx as any).illusionEffectKey || ''}:${p.key}`;
+    if(ctx.getPlayerState(key))return false;
+    ctx.setPlayerState(key,true);
+    runStmts(ctx,p.body,st);return st.last===true || !!st.survived;
   },
 };
 
@@ -599,19 +763,23 @@ export function surviveAt1(ctx: BattleEventContext) {
 }
 
 // ───────── 持續效果（回合類，可被消除） ─────────
-export function addBlockTimer(ctx: BattleEventContext, side: S, name: string, n: number, mode: "turns" | "uses", payload: Record<string, any>, pendingActivation = false, kind?: "turn_effect" | "round_counter") {
+export function addBlockTimer(ctx: BattleEventContext, side: S, name: string, n: number, mode: "turns" | "uses", payload: Record<string, any>, pendingActivation = false, kind?: "turn_effect" | "round_counter", benefitThisTurn = false, scope: 'elf' | 'team' = 'elf',timerId?:string) {
+  const sourceName = kind === 'round_counter' ? ctx.self?.soulMark?.name || ctx.self?.name : ctx.skill?.name;
+  const presentation = makeEffectPresentation({ block: payload }, sourceName, name === '持續效果' ? undefined : name);
   ctx.addTimerTo(side, {
     // 同來源同效果重複附加時刷新回合數（不疊加）
-    id: `blk_${side}_${ctx.skill?.name || ctx.self?.name || "src"}_${name}_${payload.trig || ""}`,
-    name,
+    id: timerId || `blk_${side}_${ctx.skill?.name || ctx.self?.name || "src"}_${name}_${payload.trig || ""}${timerProgramIdentity(payload)}`,
+    name: presentation.label,
+    presentation,
+    scope,
     kind: mode === "uses" ? "use_counter" : (kind || "turn_effect"),
-    source: "skill" as any,
+    source: kind === 'round_counter' ? 'soulmark' : 'skill',
     remaining: n,
     pendingActivation,
     tickAt: mode === "uses" ? "never" : "round_end",
     payload: { block: { ...payload, owner: side, src: ctx.skill?.name || ctx.self?.name } },
-    description: name,
-  } as any, ctx.moveIndex === 1);
+    description: presentation.description || presentation.label,
+  } as any, ctx.moveIndex === 1 && !benefitThisTurn);
 }
 
 /** 「效果翻倍」：把數值參數加倍 */
@@ -623,10 +791,31 @@ function doubled(op: string, p: any): any {
   return q;
 }
 
+/**
+ * 通用計數（「每有1…」）：數值欄位乘上計數。新增計數只能在這裡登記，並附 P1/P2 測試。
+ * - self_up_kinds：自身處於能力提升的能力種類數
+ * - sides_priority_zero：本回合出手先制為 0 的一方數（引擎在排序時記錄 actionPriorityThisTurn）
+ */
+export const PER_COUNTERS: Record<string, (ctx: BattleEventContext) => number> = {
+  self_up_kinds: (ctx) => Object.values(liveElf(ctx, ctx.actor)?.statStages || {}).filter((v: any) => Number(v) > 0).length,
+  sides_priority_zero: (ctx) => [ctx.actor, ctx.targetSide].filter(s => {
+    const v = (s === ctx.actor ? ctx.getPlayerState : ctx.getOpponentState)("actionPriorityThisTurn");
+    return v !== undefined && v !== null && Number(v) === 0;
+  }).length,
+};
+const PER_FIELDS = ["add", "v", "flat", "amount", "ratio"];
+
 export function runAct(ctx: BattleEventContext, a: Act, st: RunState, dbl = false): boolean {
   const fn = OPS[a.op];
   if (!fn) return false;
   let p = a.p;
+  if (p.per) {
+    const counter = PER_COUNTERS[p.per];
+    if (!counter) return false;
+    const n = counter(ctx);
+    if (n <= 0) return false;
+    p = { ...p }; for (const k of PER_FIELDS) if (typeof p[k] === "number") p[k] = p[k] * n;
+  }
   // 每次使用額外附加（最高）
   if (p.rampInc != null) {
     const key = p.rampStreak ? `blkStreak:${ctx.skill?.name}` : `blkUses:${ctx.skill?.name}`;
@@ -644,6 +833,7 @@ export function runAct(ctx: BattleEventContext, a: Act, st: RunState, dbl = fals
 }
 
 export function runStmts(ctx: BattleEventContext, body: Stmt[], st: RunState, opts: { afterHitOnly?: boolean } = {}) {
+  if(st.sourceKind)ctx=withRecoveryOrigin(ctx,st.sourceKind);
   // 先判定「…時效果翻倍」這類使用前狀態的條件
   const pre = new Map<Stmt, boolean>();
   for (const s of body) if (s.pre && s.cond) pre.set(s, s.cond.every(c => evalCond(ctx, c, st) === true));
@@ -655,20 +845,26 @@ export function runStmts(ctx: BattleEventContext, body: Stmt[], st: RunState, op
   }
   // 「…時效果翻倍」看使用前的狀態
   const dblMap = new Map<Act, boolean>();
-  for (const s of body) for (const a of s.acts) if (a.p?.x2If) dblMap.set(a, evalCond(ctx, a.p.x2If, st) === true);
+  for (const s of body) for (const a of [...s.acts,...(s.elseActs || [])]) if (a.p?.x2If) dblMap.set(a, evalEventCond(ctx, a.p.x2If, st));
   for (let i = 0; i < body.length; i++) {
     const s = body[i];
     // 傷害結算後才執行的句子（afterHit）：使用時略過；結算後只跑這些句子
     if (opts.afterHitOnly ? !s.afterHit && !s.acts.some(a => a.op === "vampire") : s.afterHit && st.event?.trig !== "after_hit") continue;
-    if (pre.has(s)) { if (pre.get(s)) for (const a of s.acts) runAct(ctx, a, st); continue; }
     if (s.chain === "success" && st.last !== true) continue;
     if (s.chain === "fail" && st.last !== false) continue;
     if (s.chain === "any_fail" && !(st.history || []).some(x => x === false)) continue;
     if (s.cond && s.cond.length) {
       // 「附加後對手體力未減少」：延後到實際扣血結算時判定（由上一句的傷害登記）
       if (st.deferred?.has(s)) continue;
-      const ok = s.cond.every(c => s.live ? evalCond(ctx, c, st) === true : evalEventCond(ctx, c, st));
-      if (!ok) { if (s.elseActs) for (const a of s.elseActs) runAct(ctx, a, st); continue; }
+      const ok = pre.has(s) ? pre.get(s) : s.cond.every(c => s.live ? evalCond(ctx, c, st) === true : evalEventCond(ctx, c, st));
+      if (!ok) {
+        if (s.elseActs?.length) {
+          let any = false;
+          for (const a of s.elseActs) { const r=runAct(ctx,a,st,dblMap.get(a)===true); st.prevOp=a.op; if(a.op!=="noop"&&a.op!=="note")any=r||any; }
+          st.last=any; (st.history ||= []).push(any); st.lastStmt={...s,acts:s.elseActs};
+        }
+        continue;
+      }
     }
     const next = body[i + 1];
     if (next?.cond?.some(c => c.c === "last_no_dmg") && !next.chain) st.deferNoDmg = next;
@@ -688,6 +884,7 @@ export function runStmts(ctx: BattleEventContext, body: Stmt[], st: RunState, op
 
 /** 每個子句重設數值類狀態（等量／上一數值不可跨子句洩漏）；成敗鏈與「任一項」歷史保留 */
 export function runClause(ctx: BattleEventContext, c: Clause, st: RunState, opts: { afterHitOnly?: boolean } = {}): boolean {
+  if(st.sourceKind)ctx=withRecoveryOrigin(ctx,st.sourceKind);
   if (c.cond && !c.cond.every(x => evalEventCond(ctx, x, st))) return false;
   st.lastAmount = 0; st.lastDealt = undefined; st.prevOp = undefined; st.lastStmt = undefined; st.deferNoDmg = undefined; st.deferred = undefined;
   if (st.historyTrig !== c.trig) { st.history = []; st.historyTrig = c.trig; }
@@ -695,17 +892,26 @@ export function runClause(ctx: BattleEventContext, c: Clause, st: RunState, opts
   return true;
 }
 
+/** 記錄本次使用技能（遞增數值「每次使用增加」「連續使用」的計數）。resetOnSwitch：計數隨下場清除（rampReset:'switch'）。 */
+export function recordSkillUse(ctx: BattleEventContext, resetOnSwitch = false) {
+  const nm = ctx.skill?.name;
+  if (!nm) return;
+  ctx.setPlayerState(`blkUses:${nm}`, (ctx.getPlayerState(`blkUses:${nm}`) || 0) + 1);
+  const streak = ctx.getPlayerState("blkLastSkill") === nm ? (ctx.getPlayerState(`blkStreak:${nm}`) || 0) + 1 : 1;
+  ctx.setPlayerState(`blkStreak:${nm}`, streak); ctx.setPlayerState("blkLastSkill", nm);
+  if (resetOnSwitch) {
+    const keep: string[] = ctx.getPlayerState("clearOnSwitch") || [];
+    const add = [`blkUses:${nm}`, `blkStreak:${nm}`].filter(k => !keep.includes(k));
+    if (add.length) ctx.setPlayerState("clearOnSwitch", [...keep, ...add]);
+  }
+}
+
 /** 技能：使用時 / 傷害結算後 */
 export function runSkillProgram(ctx: BattleEventContext, prog: Program, phase: "use" | "after_hit" | "on_invalid", only?: number[]) {
-  const st: RunState = { last: null, lastAmount: 0, event: phase === "use" ? undefined : { trig: phase } };
+  const st: RunState = { last: null, lastAmount: 0, sourceKind:'skill', event: phase === "use" ? undefined : { trig: phase } };
   snapshotConditions(ctx, prog.clauses.filter((c, i) => (!only || only.includes(i)) && c.trig === phase && c.parsed), st);
   if (phase === "use") ctx.setPlayerState("blkLastHitDamage", 0);
-  if (phase === "use" && ctx.skill?.name) {
-    const nm = ctx.skill.name;
-    ctx.setPlayerState(`blkUses:${nm}`, (ctx.getPlayerState(`blkUses:${nm}`) || 0) + 1);
-    const streak = ctx.getPlayerState("blkLastSkill") === nm ? (ctx.getPlayerState(`blkStreak:${nm}`) || 0) + 1 : 1;
-    ctx.setPlayerState(`blkStreak:${nm}`, streak); ctx.setPlayerState("blkLastSkill", nm);
-  }
+  if (phase === "use") recordSkillUse(ctx);
   prog.clauses.forEach((c, i) => {
     if (only && !only.includes(i)) return;
     if (!c.parsed) return;
@@ -724,6 +930,10 @@ export function runSkillProgram(ctx: BattleEventContext, prog: Program, phase: "
 // ───────── 事件 → 觸發時點 ─────────
 export function eventTriggers(ctx: BattleEventContext, ev: string, data: any): Trigger[] {
   switch (ev) {
+    case EffectTiming.ON_STATUS_ENDED:return ['status_end'];
+    case EffectTiming.SELF_STATUS_APPLIED:return ['status_received'];
+    case EffectTiming.ON_STATUS_IMMUNIZED:return ['status_immune'];
+    case EffectTiming.BEFORE_STATUS_TICK:return ['status_tick'];
     case EffectTiming.ROUND_START: return ["round_start", "team_round_start"];
     case EffectTiming.ROUND_END: return ["round_end"];
     case EffectTiming.BATTLE_PHASE_END: return ["phase_end"];
@@ -737,6 +947,7 @@ export function eventTriggers(ctx: BattleEventContext, ev: string, data: any): T
     case EffectTiming.DEATH_NODE_1: return ["defeated"];
     case EffectTiming.ON_KILL: return ["kill"];
     case EffectTiming.ON_SWITCH_OUT: return ["switch_out"];
+    case EffectTiming.SHIELD_BROKEN: return ["shield_broken" as Trigger];
     case EffectTiming.FATAL_RESIST: return ["fatal"];
     case EffectTiming.ON_DAMAGED: {
       if (data?.targetSide && data.targetSide !== ctx.actor) return [];
@@ -769,7 +980,7 @@ export function runSideTimers(ctx: BattleEventContext, trigs: Trigger[], data: a
     if (!b || t.pendingActivation || (t.remaining ?? 0) <= 0) continue;
     if (t.scope !== "team" && t.ownerBattleId && t.ownerBattleId !== (ctx.self.battleId || ctx.self.id)) continue;
     if (b.trig && trigs.includes(b.trig)) {
-      const st: RunState = { last: null, lastAmount: 0, event: { trig: b.trig, data } };
+      const st: RunState = { last: null, lastAmount: 0, sourceKind:b.sourceKind || (t.kind==='turn_effect'?'skill':'soul'), event: { trig: b.trig, data } };
       if (b.once || b.consumeOnFire) ctx.consumeTimer?.(ctx.actor, t.id);
       runStmts(ctx, b.body || [], st);
     }
@@ -800,11 +1011,11 @@ export function runSideTimers(ctx: BattleEventContext, trigs: Trigger[], data: a
       ctx.setPlayerState("blkBlockedBySoul", (ctx.getPlayerState("blkBlockedBySoul") || 0) + Math.max(0, amt));
       ctx.addLog(`🛡️ 抵擋了 ${amt} 點技能傷害！`, "effect");
     }
-    if (comp && !comp.isIncoming && b.dmgOutReduce && (!b.kinds || b.kinds.includes(comp.damageCategory))) addDamageReduction(comp, b.dmgOutReduce, false);
+    if (comp && !comp.isIncoming && b.dmgOutReduce && (b.kind?compMatchesKind(comp,b.kind):!b.kinds||b.kinds.includes(comp.damageCategory))) addDamageReduction(comp, b.dmgOutReduce, false);
     if (comp && comp.isIncoming && b.absorbToHeal && compMatchesKind(comp, b.kind) && !bypassesAttackDefense(comp, 'conversion')) {
       const amt = Math.floor(comp.base * (1 + (comp.increasePercent || 0)) * (1 - (comp.decreasePercent || 0)) * (comp.multiplier ?? 1));
       comp.multiplier = 0;
-      if (amt > 0) { ctx.applyHeal(ctx.actor, amt); ctx.addLog(`💚 受到的傷害轉化為 ${amt} 點體力！`, "heal");
+      if (amt > 0) { withRecoveryOrigin(ctx,b.sourceKind || (t.kind==='turn_effect'?'skill':'soul')).applyHeal(ctx.actor, amt); ctx.addLog(`💚 受到的傷害轉化為 ${amt} 點體力！`, "heal");
         if (t.kind === 'use_counter') ctx.consumeTimer?.(ctx.actor, t.id);
       }
     }
@@ -818,7 +1029,7 @@ export function runSideTimers(ctx: BattleEventContext, trigs: Trigger[], data: a
 /** 魂印程式：依事件觸發 */
 const PASSIVE_OPS = new Set(["dmg_mod", "boost", "note", "noop"]);
 export function runSoulProgram(ctx: BattleEventContext, prog: Program, trigs: Trigger[], data: any, only?: number[]): boolean {
-  const st: RunState = { last: null, lastAmount: 0, event: { trig: trigs[0], data } };
+  const st: RunState = { last: null, lastAmount: 0, sourceKind:'soul',event: { trig: trigs[0], data } };
   snapshotConditions(ctx, prog.clauses.filter((c, i) => (!only || only.includes(i)) && c.parsed && trigs.includes(c.trig)), st);
   const source = (ctx as any).illusionEffectKey;
   const onceKey = (i: number) => `blkOnce:${source ? `${source}:` : ''}${prog.title}:${i}`;
@@ -861,8 +1072,8 @@ export function markDefClauses(defElf: any, name: string): Clause[] {
 /** 持有者事件：ctx.actor 為持有者方 */
 export function runHolderMarks(ctx: BattleEventContext, trigs: Trigger[], data: any, isRoundEnd: boolean) {
   const side = ctx.actor;
-  const marks: any[] = (ctx.getMarks(side) || []).filter((m: any) =>
-    m.effects?.blkDef || m.effects?.hpAdjustmentMaxHpRatioPerStack,
+  const marks: any[] = (ctx.getMarks(side) || []).filter((m: any) => markAppliesToElf(m,liveElf(ctx,side)) && (
+    m.effects?.blkDef || m.effects?.hpAdjustmentMaxHpRatioPerStack || m.effects?.blockProgram),
   );
   if (!marks.length) return;
   const all = [...(ctx.getFullTeam?.("p1") || []), ...(ctx.getFullTeam?.("p2") || [])] as any[];
@@ -871,6 +1082,10 @@ export function runHolderMarks(ctx: BattleEventContext, trigs: Trigger[], data: 
   if (trigs.includes("damaged")) htrigs.push("holder_damaged");
   if (trigs.includes("passive")) htrigs.push("holder_passive");
   for (const mk of marks) {
+    if(Array.isArray(mk.effects.blockProgram))for(const rule of mk.effects.blockProgram as Clause[]) {
+      if(!trigs.includes(rule.trig)||sequenceIssue(rule,undefined,0,true))continue;
+      runClause(ctx,rule,{last:null,lastAmount:0,markStacks:mk.count,sourceKind:'soul',event:{trig:rule.trig,data}});
+    }
     const defElf = all.find(e => e?.name === mk.effects.blkDef);
     if (htrigs.length && defElf) {
       for (const c of markDefClauses(defElf, mk.name)) {
@@ -888,7 +1103,7 @@ export function runHolderMarks(ctx: BattleEventContext, trigs: Trigger[], data: 
       }
       if (Number.isFinite(mk.effects?.blkTurns)) {
         const left = mk.effects.blkTurns - 1;
-        if (left <= 0) { ctx.clearMark(mk.id, side); ctx.addLog(`🔖 【${mk.name}】結束了。`, "info"); }
+        if (left <= 0) { ctx.clearMark(mk.id, side,mk.ownerBattleId||null); ctx.addLog(`🔖 【${mk.name}】結束了。`, "info"); }
         else ctx.setMark({ ...mk, remainingRounds: left, effects: { ...mk.effects, blkTurns: left } }, side);
       }
     }

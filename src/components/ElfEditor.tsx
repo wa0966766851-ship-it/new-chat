@@ -1,12 +1,15 @@
 import { useState, useEffect, useMemo, lazy, Suspense } from "react";
 import type { ComponentProps } from "react";
 import { plainDescription } from '../utils/descFormat';
-import { TypeIcon } from "./SeerImages";
+import { EffectDescription } from './EffectDescription';
+import { TypeIcon, SkillTypeIcon } from "./SeerImages";
+import { skillDisplayType, skillDisplayTypeLabel } from '../utils/skillPresentation';
 import { ElfEditorDraftSummary, ElfEditorSectionNav, type EditorSection } from "./ElfEditorSections";
 import { ExclusiveTraitsEditor } from './ExclusiveTraitsEditor';
 import { BlueprintImportButton } from './BlueprintImportButton';
 import { Elf, Skill, BaseStats, Inscription, DecompositionReport } from "../types";
 import { KitEntry } from "../effects/effectSystem.schema";
+import type { EffectDefinition, EffectExecutionMode } from '../effects/effectConnection';
 import { calculateElfStats, SEER_TYPES, getDefaultEvs, getAttributeBadgeColor } from "../utils/statCalculator";
 import { getElfDisplayRank as getElfDestinyRank } from "../utils/elfDisplayRank";
 import { validateSeerNature, getDefaultNatureModifiers } from "../utils/seerNatures";
@@ -26,6 +29,7 @@ import { parseRawAbilityEffect } from "../utils/effectParser";
 import { SKILL_STONE_ATTRIBUTES, SKILL_STONE_GRADES, SkillStoneGrade, PERFECT_SKILL_STONE_EFFECTS, getPerfectEffectsForAttribute, createSkillStone, isStoneThrower, isSkillStone, equipSkillStone, stoneIconUrl, validateSkillStoneLoadout, skillConfigurationKey } from "../data/skillStones";
 import { ClauseBreakdownCard } from "./ClauseBreakdownCard";
 const LazyKitEffectBuilder = lazy(() => import("./KitEffectBuilder").then(m => ({ default: m.KitEffectBuilder })));
+const LazyEffectConnectionControls = lazy(() => import('./EffectConnectionControls'));
 const LazyElfBlocklyPanel = lazy(() => import("./ElfBlocklyPanel").then(m => ({ default: m.ElfBlocklyPanel })));
 const editorLoading = <p role="status" className="p-4 text-sm text-slate-400">載入積木編輯工具…</p>;
 function KitEffectBuilder(props: ComponentProps<typeof LazyKitEffectBuilder>) {
@@ -497,11 +501,8 @@ const SmartDescription = ({ text, className = "" }: { text?: string, className?:
   const regexStr = `(${allWords.join('|')}|[0-9]+%|[0-9]+點|1/[0-9]+|LV[0-9]+)`;
   const regex = new RegExp(regexStr, 'g');
 
-  const parts = plainDescription(text).split(regex);
-
-  return (
-    <div className={`leading-relaxed font-sans ${className}`}>
-      {parts.map((part, i) => {
+  return <EffectDescription description={text} className={`leading-relaxed font-sans ${className}`}
+    renderText={line => line.split(regex).map((part, i) => {
         let catKey: keyof typeof CATEGORIES | null = null;
         if (STATUS_KEYWORDS.includes(part) || part.includes("異常") || part.includes("狀態")) catKey = 'status';
         else if (TIMING_KEYWORDS.includes(part)) catKey = 'timing';
@@ -545,9 +546,7 @@ const SmartDescription = ({ text, className = "" }: { text?: string, className?:
           );
         }
         return <span key={i}>{part}</span>;
-      })}
-    </div>
-  );
+      })} />;
 };
 
 const LiveDeconstructPreview = ({ text, title }: { text?: string, title: string }) => {
@@ -1092,7 +1091,9 @@ export default function ElfEditor({ initialElf: suppliedElf, onSaveElf, onBack, 
   const [soulMarkEffectType, setSoulMarkEffectType] = useState<any>("paralyze_chance");
   const [soulMarkValue, setSoulMarkValue] = useState<number>(30);
   const [soulMarkCustomCode, setSoulMarkCustomCode] = useState<string>("");
-  const [kit, setKit] = useState<KitEntry[]>(initialElf?.kit || []);
+  const [kit, setKit] = useState<KitEntry[]>(initialElf?.soulMark?.kit ?? initialElf?.kit ?? []);
+  const [soulEffectMode, setSoulEffectMode] = useState<EffectExecutionMode>(initialElf?.soulMark?.effectMode || 'auto');
+  const [traitEffectConfigs, setTraitEffectConfigs] = useState<Record<string, Partial<EffectDefinition>>>({});
   const [guildBonuses, setGuildBonuses] = useState<BaseStats>(initialElf?.guildBonuses || {
     hp: 30,
     atk: 15,
@@ -1203,7 +1204,9 @@ export default function ElfEditor({ initialElf: suppliedElf, onSaveElf, onBack, 
       setSoulMarkEffectType(initialElf.soulMark?.effectType || "none");
       setSoulMarkValue(initialElf.soulMark?.effectValue || 0);
       setSoulMarkCustomCode(initialElf.soulMark?.customCode || "");
-      setKit(initialElf.kit || []);
+      setKit(initialElf.soulMark?.kit ?? initialElf.kit ?? []);
+      setSoulEffectMode(initialElf.soulMark?.effectMode || 'auto');
+      setTraitEffectConfigs({});
       if (initialElf.guildBonuses) {
         setGuildBonuses(initialElf.guildBonuses);
       } else {
@@ -1453,15 +1456,18 @@ export default function ElfEditor({ initialElf: suppliedElf, onSaveElf, onBack, 
         effectValue: soulMarkValue,
         badgeChar: soulMarkBadgeChar,
         customCode: soulMarkCustomCode,
+        effectMode: soulEffectMode,
+        kit: undefined, // 編輯器以根 kit 為唯一魂印儲存位置，兼容舊根欄位。
       },
       kit: kit,
       alienTraits: (!isZhakesi && (gen2TraitName || exTraitName || alienTraitName || generalTraitName || exclusiveTraits.length)) ? {
-        gen2Trait: gen2TraitName ? { name: gen2TraitName, description: gen2TraitDesc } : undefined,
-        exclusiveTrait: exTraitName ? { name: exTraitName, description: exTraitDesc } : undefined,
+        gen2Trait: gen2TraitName ? { ...initialElf?.alienTraits?.gen2Trait, ...traitEffectConfigs.gen2Trait, name: gen2TraitName, description: gen2TraitDesc } : undefined,
+        exclusiveTrait: exTraitName ? { ...initialElf?.alienTraits?.exclusiveTrait, ...traitEffectConfigs.exclusiveTrait, name: exTraitName, description: exTraitDesc } : undefined,
         exclusiveTraits: exclusiveTraits.length ? exclusiveTraits : undefined,
-        alienTrait: alienTraitName ? { name: alienTraitName, description: ALIEN_TRAITS[alienTraitName]?.description || "" } : undefined,
-        generalTrait: generalTraitName ? { name: generalTraitName, description: GENERAL_TRAITS[generalTraitName]?.description || "" } : undefined,
+        alienTrait: alienTraitName ? { ...initialElf?.alienTraits?.alienTrait, ...traitEffectConfigs.alienTrait, name: alienTraitName, description: traitEffectConfigs.alienTrait?.description ?? ALIEN_TRAITS[alienTraitName]?.description ?? "" } : undefined,
+        generalTrait: generalTraitName ? { ...initialElf?.alienTraits?.generalTrait, ...traitEffectConfigs.generalTrait, name: generalTraitName, description: traitEffectConfigs.generalTrait?.description ?? GENERAL_TRAITS[generalTraitName]?.description ?? "" } : undefined,
       } : undefined,
+      trait: initialElf?.trait ? { ...initialElf.trait, ...traitEffectConfigs.trait } : undefined,
       skills: skills.slice(0, 5),
       skillPool: (() => {
         const pRaw = [...skillPool, ...skills];
@@ -1573,10 +1579,7 @@ export default function ElfEditor({ initialElf: suppliedElf, onSaveElf, onBack, 
       if (!updated[idx]) return prevSkills;
       const oldKey = skillConfigurationKey(updated[idx]);
       let newSkill = { ...updated[idx], description };
-      if (effectType && effectType !== "none") newSkill.effectType = effectType;
-      if (effectDetail) newSkill.effectDetail = effectDetail;
-      if (templateId) newSkill.templateId = templateId;
-      if (templateArgs) newSkill.templateArgs = templateArgs;
+      // AI 映射是參考分析，不自動覆寫執行碼、參數或來源。
       updated[idx] = newSkill;
 
       setSkillPool(prevPool => {
@@ -1641,10 +1644,7 @@ export default function ElfEditor({ initialElf: suppliedElf, onSaveElf, onBack, 
       if (!updated[poolIdx]) return prevPool;
       const oldKey = skillConfigurationKey(updated[poolIdx]);
       let newSkill = { ...updated[poolIdx], description };
-      if (effectType && effectType !== "none") newSkill.effectType = effectType;
-      if (effectDetail) newSkill.effectDetail = effectDetail;
-      if (templateId) newSkill.templateId = templateId;
-      if (templateArgs) newSkill.templateArgs = templateArgs;
+      // 保留原效果碼；語意解析由統一來源合約處理。
       updated[poolIdx] = newSkill;
 
       setSkills(prevSkills => {
@@ -1837,14 +1837,16 @@ export default function ElfEditor({ initialElf: suppliedElf, onSaveElf, onBack, 
             />
           </div>
           <div>
-            <DualTypeSelect
+            {skill.category === '屬性' ? <div className="flex items-center gap-2 rounded border border-slate-800 px-2.5 py-1.5 text-xs text-slate-300" title="屬性技能顯示為無屬性；轉為物攻／特攻後使用設定系別。">
+              <SkillTypeIcon skill={skill} size={18} />無屬性
+            </div> : <DualTypeSelect
               id={`${idPrefix}-type`}
               value={skill.type}
               onChange={(val) => isPoolSkill ? handlePoolSkillChange(idx, "type", val) : handleSkillChange(idx, "type", val)}
               className="w-full bg-[#0F1117] border border-slate-800 rounded px-1.5 py-1.5 text-[10px] text-slate-200 cursor-pointer focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
               label1="主"
               label2="副"
-            />
+            />}
           </div>
         </div>
 
@@ -2012,9 +2014,9 @@ export default function ElfEditor({ initialElf: suppliedElf, onSaveElf, onBack, 
               onClick={async () => {
                 const res = await parseEffectDescriptionWithAI(skill.description || skill.name);
                 if (isPoolSkill) {
-                  handlePoolSkillAIMap(idx, res.structuredTemplate, res.recommendedEffectType, res.recommendedEffectDetail, res.recommendedTemplateId, res.recommendedTemplateArgs);
+                  handlePoolSkillAIMap(idx, skill.description || '');
                 } else {
-                  handleSkillAIMap(idx, res.structuredTemplate, res.recommendedEffectType, res.recommendedEffectDetail, res.recommendedTemplateId, res.recommendedTemplateArgs);
+                  handleSkillAIMap(idx, skill.description || '');
                 }
                 if (res.templateSuggestions.length > 0) {
                   alert(`🤖【${skill.name}】結構化映射報告：\n\n${res.templateSuggestions.join("\n")}`);
@@ -2068,13 +2070,13 @@ export default function ElfEditor({ initialElf: suppliedElf, onSaveElf, onBack, 
 
           {isExpanded && (
             <div className="mt-3">
+              <Suspense fallback={editorLoading}><LazyEffectConnectionControls definition={skill} kind="skill" elf={buildManualElf()} onModeChange={mode => isPoolSkill ? handlePoolSkillChange(idx, 'effectMode', mode) : handleSkillChange(idx, 'effectMode', mode)} onKitChange={k => isPoolSkill ? handlePoolSkillChange(idx,'kit',k) : handleSkillChange(idx,'kit',k)} /></Suspense>
               <KitEffectBuilder
                 kit={skill.kit || []}
-                onChange={(newKit) =>
-                  isPoolSkill
-                    ? handlePoolSkillChange(idx, "kit", newKit)
-                    : handleSkillChange(idx, "kit", newKit)
-                }
+                onChange={(newKit) => {
+                  if (isPoolSkill) { handlePoolSkillChange(idx, 'kit', newKit); handlePoolSkillChange(idx, 'effectMode', 'kit'); }
+                  else { handleSkillChange(idx, 'kit', newKit); handleSkillChange(idx, 'effectMode', 'kit'); }
+                }}
                 source="skill"
                 onInsertDescription={(text) => {
                   const oldDesc = skill.description || "";
@@ -2184,7 +2186,7 @@ export default function ElfEditor({ initialElf: suppliedElf, onSaveElf, onBack, 
       if (selected.skills && selected.skills.length > 0) {
         text += `【核心技能組】\n`;
         selected.skills.forEach(sk => {
-          const typeStr = sk.type && sk.type !== '無屬性' ? `${sk.type}系` : '';
+          const typeStr = skillDisplayTypeLabel(sk);
           const fifthStr = sk.isFifthSkill ? ' (第五技能)' : '';
           text += `[${sk.name}] ${typeStr} ${sk.category}技能${fifthStr}\n威力：${sk.power} | PP：${sk.pp}\n效果：${sk.description}\n\n`;
         });
@@ -2247,7 +2249,15 @@ export default function ElfEditor({ initialElf: suppliedElf, onSaveElf, onBack, 
     level: 100, path: path || undefined, baseStats, calculatedStats: calculatedManualStats,
     currentHp: calculatedManualStats.hp, maxHp: calculatedManualStats.hp, skills, skillPool,
     soulMark: { ...initialElf?.soulMark, name: soulMarkName, description: soulMarkDesc,
-      effectType: soulMarkEffectType, effectValue: soulMarkValue },
+      effectType: soulMarkEffectType, effectValue: soulMarkValue, effectMode: soulEffectMode, kit: undefined }, kit,
+    trait: initialElf?.trait ? { ...initialElf.trait, ...traitEffectConfigs.trait } : undefined,
+    alienTraits: {
+      gen2Trait: gen2TraitName ? { ...initialElf?.alienTraits?.gen2Trait, ...traitEffectConfigs.gen2Trait, name: gen2TraitName, description: gen2TraitDesc } : undefined,
+      exclusiveTrait: exTraitName ? { ...initialElf?.alienTraits?.exclusiveTrait, ...traitEffectConfigs.exclusiveTrait, name: exTraitName, description: exTraitDesc } : undefined,
+      exclusiveTraits,
+      alienTrait: alienTraitName ? { ...initialElf?.alienTraits?.alienTrait, ...traitEffectConfigs.alienTrait, name: alienTraitName, description: traitEffectConfigs.alienTrait?.description ?? ALIEN_TRAITS[alienTraitName]?.description ?? '' } : undefined,
+      generalTrait: generalTraitName ? { ...initialElf?.alienTraits?.generalTrait, ...traitEffectConfigs.generalTrait, name: generalTraitName, description: traitEffectConfigs.generalTrait?.description ?? GENERAL_TRAITS[generalTraitName]?.description ?? '' } : undefined,
+    },
   } as Elf;
 
   return (
@@ -2367,10 +2377,22 @@ export default function ElfEditor({ initialElf: suppliedElf, onSaveElf, onBack, 
               elfName={elfName}
               elf={buildManualElf()}
               soulKit={kit}
-              onSoulKitChange={setKit}
+              onSoulKitChange={k => { setKit(k); setSoulEffectMode('kit'); }}
               skills={skills}
-              onSkillKitChange={(i, k) => handleSkillChange(i, "kit", k)}
+              onSkillKitChange={(i, k) => { handleSkillChange(i, 'kit', k); handleSkillChange(i, 'effectMode', 'kit'); }}
+              onSoulModeChange={setSoulEffectMode}
+              onSkillModeChange={(i, mode) => handleSkillChange(i, 'effectMode', mode)}
+              onTraitChange={(key, value) => {
+                if (key.startsWith('exclusiveTraits.')) setExclusiveTraits(prev => prev.map((t,i) => i === Number(key.split('.')[1]) ? { ...t, ...value, description: value.description || '' } : t));
+                else {
+                  setTraitEffectConfigs(prev => ({ ...prev, [key]: value }));
+                  if (key === 'gen2Trait') setGen2TraitDesc(value.description || '');
+                  if (key === 'exclusiveTrait') setExTraitDesc(value.description || '');
+                }
+              }}
               onInsertSoulDesc={(text) => setSoulMarkDesc((prev) => (prev ? prev + "\n" + text : text))}
+              onReplaceSoulDesc={setSoulMarkDesc}
+              onReplaceSkillDesc={(i,text)=>handleSkillChange(i,'description',text)}
               onInsertSkillDesc={(i, text) => handleSkillChange(i, "description", (skills[i]?.description ? skills[i].description + "\n" : "") + text)}
             />
             <div className="flex justify-end">
@@ -3006,9 +3028,10 @@ export default function ElfEditor({ initialElf: suppliedElf, onSaveElf, onBack, 
 
                       {/* 模組化積木被動/魂印效果 */}
                       <div className="mb-4">
+                        <Suspense fallback={editorLoading}><LazyEffectConnectionControls definition={{ name: soulMarkName, description: soulMarkDesc, effectMode: soulEffectMode, kit }} kind="soul" elfName={elfName} elf={buildManualElf()} onModeChange={setSoulEffectMode} onKitChange={setKit} /></Suspense>
                         <KitEffectBuilder
                           kit={kit}
-                          onChange={setKit}
+                          onChange={k => { setKit(k); setSoulEffectMode('kit'); }}
                           source="soulmark"
                           onInsertDescription={(text) => setSoulMarkDesc((prev) => (prev ? prev + "\n" + text : text))}
                         />
@@ -3155,8 +3178,8 @@ export default function ElfEditor({ initialElf: suppliedElf, onSaveElf, onBack, 
                             <div key={index} className="p-3 bg-[#050608] border border-slate-800 rounded-xl">
                               <div className="flex justify-between items-center mb-1">
                                 <span className="font-bold text-slate-200 text-xs">{skill.name}</span>
-                                <span className={`text-[9px] px-1.5 rounded ${getAttributeBadgeColor(skill.type)} inline-flex items-center gap-0.5`}><TypeIcon type={skill.type} size={11} showLabelWhenMissing={false} />
-                                  {skill.type}
+                                <span className={`text-[9px] px-1.5 rounded ${getAttributeBadgeColor(skillDisplayType(skill))} inline-flex items-center gap-0.5`}><SkillTypeIcon skill={skill} size={11} showLabelWhenMissing={false} />
+                                  {skillDisplayType(skill)}
                                 </span>
                               </div>
                               <div className="flex flex-wrap gap-x-2 gap-y-0.5 text-[10px] text-slate-400 mb-1.5 font-mono">
@@ -3649,10 +3672,7 @@ export default function ElfEditor({ initialElf: suppliedElf, onSaveElf, onBack, 
                       onClick={async () => {
                         setIsParsingEffect(true);
                         const res = await parseEffectDescriptionWithAI(soulMarkDesc);
-                        setSoulMarkDesc(res.structuredTemplate);
-                        if (res.recommendedEffectType !== "none") {
-                          setSoulMarkEffectType(res.recommendedEffectType);
-                        }
+                        // 只展示分析，不以推薦的預設效果覆蓋原始魂印。
                         if (res.templateSuggestions.length > 0) {
                           alert(`🤖 AI 結構化映射報告：\n\n${res.templateSuggestions.join("\n")}`);
                         }
@@ -4068,7 +4088,7 @@ export default function ElfEditor({ initialElf: suppliedElf, onSaveElf, onBack, 
                               >
                                 <div className="flex items-center justify-between">
                                   <span className={`font-bold text-xs flex items-center gap-1.5 ${isFifthSlot ? "text-amber-300" : isEquipped ? "text-purple-300" : "text-blue-400"}`}>
-                                    {sk.type && <TypeIcon type={sk.type} size={14} showLabelWhenMissing={false} />}
+                                    <SkillTypeIcon skill={sk} size={14} showLabelWhenMissing={false} />
                                     {sk.name}
                                     {isCurrent && <span className="text-[9px] bg-blue-500/20 text-blue-300 px-1.5 py-0.5 rounded">當前裝備</span>}
                                     {isEquipped && <span className="text-[9px] bg-purple-500/20 text-purple-300 px-1.5 py-0.5 rounded flex items-center gap-0.5"><Shuffle className="w-2.5 h-2.5" />點擊與第 {equippedIdx + 1} 格互換</span>}
@@ -4165,9 +4185,9 @@ export default function ElfEditor({ initialElf: suppliedElf, onSaveElf, onBack, 
                     onClick={async () => {
                       const res = await parseEffectDescriptionWithAI(targetSkill.description || targetSkill.name);
                       if (isPoolSkill) {
-                        handlePoolSkillAIMap(idx, res.structuredTemplate, res.recommendedEffectType, res.recommendedEffectDetail, res.recommendedTemplateId, res.recommendedTemplateArgs);
+                        handlePoolSkillAIMap(idx, targetSkill.description || '');
                       } else {
-                        handleSkillAIMap(idx, res.structuredTemplate, res.recommendedEffectType, res.recommendedEffectDetail, res.recommendedTemplateId, res.recommendedTemplateArgs);
+                        handleSkillAIMap(idx, targetSkill.description || '');
                       }
                       if (res.templateSuggestions.length > 0) {
                         alert(`🤖【${targetSkill.name}】結構化映射報告：\n\n${res.templateSuggestions.join("\n")}`);

@@ -1,3 +1,4 @@
+import { isAlienElf } from '../../../battle/advancedDamageModifiers';
 import type { BattleEventContext as C, BattleSkillHandler } from '../../types';
 import type { Skill } from '../../../types';
 import { EffectTiming as E } from '../../types';
@@ -148,7 +149,7 @@ function runShiyanSoul(ctx: C, event: E, extraData?: any): any {
 
     if (event === EffectTiming.ON_KILL && extraData?.defeatedElf) {
        const deadElf = extraData.defeatedElf;
-       const isDeadAlien = deadElf.isAlienElf || (deadElf.soulMark?.trait_warrior);
+       const isDeadAlien = isAlienElf(deadElf);
        if (isDeadAlien) {
          addLog(`🌑 【無序星魂使徒】：徹底終結了異能精靈 【${deadElf.name}】！`, "effect");
          ctx.vanishElf(oppSide, deadElf);
@@ -202,6 +203,8 @@ function runCarriedPpChain(c: C, slots: number[]): void {
   if (!existing) c.setPlayerState('ppCarryChain', chain);
   try {
     for (const slot of slots) {
+      // 積木版攜帶槽由共用PP節點執行，不能再借原精靈名稱重播。
+      if(c.self.skills[slot]?.effectMode==='kit')continue;
       const action = carried[c.self.skills[slot]?.name];
       if (!action || chain.seen.includes(slot)) continue;
       chain.seen.push(slot);

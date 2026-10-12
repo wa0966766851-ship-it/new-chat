@@ -87,7 +87,7 @@ export class TraitsEngine {
    * 返回 true 表示異常被成功免疫或轉化，阻止原本的狀態附加
    */
   static filterStatusInflict(ctx: BattleEventContext, side: "p1" | "p2", status: string, duration: number): { handled: boolean, overrideStatus?: string, overrideDuration?: number } {
-    const targetElf = side === 'p1' ? ctx.activeP1 : ctx.activeP2;
+    const targetElf = side===ctx.actor?ctx.self:side===ctx.targetSide?ctx.target:side==='p1'?ctx.activeP1:ctx.activeP2;
     const mechanics = getElfAdvancedMechanics(targetElf);
     const stateSide = side;
 
@@ -98,9 +98,11 @@ export class TraitsEngine {
     const targetMarks = ctx.getMarks(side) || [];
     const seedMark = targetMarks.find(m => m.id === "fear_seed");
     if (seedMark && (status === "害怕" || status === "feared")) {
-      const regKey = side === "p1" ? "p1RegistryState" : "p2RegistryState";
-      const curState = ctx.getPlayerState(regKey) || {};
-      ctx.setPlayerState(regKey, { ...curState, fearSeedDrainPP: true });
+      // 寫到持有印記的一方（戰鬥引擎在其出手時讀 fearSeedDrainPP／fearSeedDrainReason）。
+      // 過去寫成 setPlayerState(regKey, {...})，鍵落在巢狀物件裡，引擎讀不到（2026-10-10 修正）。
+      const setSide = side === ctx.actor ? ctx.setPlayerState : ctx.setOpponentState;
+      setSide("fearSeedDrainPP", true);
+      setSide("fearSeedDrainReason", "恐懼之種");
       ctx.addLog(`😨 【恐懼之種】：免疫害怕，但將令技能PP歸零！`, "effect");
       return { handled: true };
     }

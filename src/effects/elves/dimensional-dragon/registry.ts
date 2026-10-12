@@ -1,3 +1,4 @@
+import { hasTurnEffect } from "../../../battle/timers";
 import { multiplyDamageReduction, addDamageReduction } from '../../../battle/damageReduction';
 import { BattleEventContext, BattleSkillHandler, EffectTiming } from "../../types";
 import { isAbnormal } from "../../../utils/battleHelpers";
@@ -30,6 +31,10 @@ export const handleDimensionalSoulMark = (ctx: BattleEventContext, event: Effect
   const stacks = poemHpSnapshots.length;
   const isDragonSoul = getPlayerState("dimensionalDragonSoul") || false;
 
+  // 技能增傷只在本次行動有效（未命中、無效時不殘留）
+  if (event === EffectTiming.AFTER_ACTION || event === EffectTiming.ROUND_END) {
+    if ((getPlayerState("dragonSkillBoostsThisAction") || []).length) setPlayerState("dragonSkillBoostsThisAction", []);
+  }
   switch (event) {
     case EffectTiming.ON_ENTRANCE:
       addLog(`🐉 【龍】：次元龍帝臨世！時空詩章共 ${stacks} 篇！`, "effect");
@@ -87,14 +92,18 @@ export const handleDimensionalSoulMark = (ctx: BattleEventContext, event: Effect
           addLog(`🐉 【龍】：下次傷害減免觸發，減免 ${Math.round(nextRed * 100)}%！`, "effect");
           setPlayerState("dimensionalDmgReduction", 0);
         }
-      } else if (!extraData?.isIncoming) {
-        // 5:每有1篇詩章，攻擊傷害提升20%
+      } else if (!extraData?.isIncoming && extraData?.damageCategory === "skill_attack") {
+        // 5:每有1篇詩章，攻擊傷害提升20%（只限攻擊技能）
         if (stacks >= 5) {
-          extraData.multiplier *= (1 + stacks * 0.20);
+          extraData.increasePercent += stacks * 0.20;
         }
+        // 技能本身的增傷（技能 handler 在傷害前執行並寫入，這裡消耗）
+        const skillBoosts: number[] = getPlayerState("dragonSkillBoostsThisAction") || [];
+        for (const b of skillBoosts) extraData.increasePercent += b;
+        if (skillBoosts.length) setPlayerState("dragonSkillBoostsThisAction", []);
         // 8:無視對手攻擊免疫效果，無視傷害限制效果，無視成功時攻擊技能所造成的技能傷害提升100%
         if (stacks >= 8 && getPlayerState("attackImmunityIgnoredThisAction")) {
-          extraData.multiplier *= 2.0;
+          extraData.increasePercent += 1;
           addLog(`🐉 【詩章8】：無視攻擊免疫成功，技能傷害提升100%！`, "effect");
         }
         // 6:雙方每有50點精靈護盾、精靈護罩，自身攻擊技能威力額外提升50點
@@ -182,11 +191,16 @@ export const DIMENSIONAL_SKILLS: Record<string, BattleSkillHandler> = {
 
     addLog(`🐉 使用【閱世】：閱盡紅塵萬載，洞悉因果！`, "effect");
 
-    // 消除回合類效果
-    if ((target as any).turnEffects && (target as any).turnEffects.length > 0) {
+    // 若對手處於回合類效果則傷害提升100%並消除回合類效果（龍魂：傷害額外提升100%）
+    const oppTimers = (oppSide === "p1" ? ctx.p1Timers : ctx.p2Timers) || [];
+    const boosts: number[] = [];
+    if (hasTurnEffect(oppTimers) || ((target as any).turnEffects?.length > 0)) {
+      boosts.push(1);
       clearTurnEffectsOf(oppSide, target);
-      addLog(`🐉 【閱世】：消除對手回合類效果！`, "effect");
+      addLog(`🐉 【閱世】：對手處於回合類效果，傷害提升100%並消除！`, "effect");
     }
+    if (isDragonSoul) boosts.push(1);
+    setPlayerState("dragonSkillBoostsThisAction", boosts);
 
     // 吸取能力提升
     let sucked = false;
@@ -217,10 +231,7 @@ export const DIMENSIONAL_SKILLS: Record<string, BattleSkillHandler> = {
       addLog(`🐉 【閱世】：未能吸取強化，轉為自身全屬性 +1！`, "effect");
     }
 
-    // 龍魂額外效果
-    if (isDragonSoul) {
-      addLog(`🐉 【閱世】(龍魂)：傷害額外提升 100%！`, "effect");
-    }
+    if (isDragonSoul) addLog(`🐉 【閱世】(龍魂)：傷害額外提升 100%！`, "effect");
   },
 
   "敕界歸元": (ctx) => {
@@ -272,6 +283,9 @@ export const DIMENSIONAL_SKILLS: Record<string, BattleSkillHandler> = {
     const boost = p > 0 ? 2 : 1;
 
     addLog(`🐉 使用【告命詩途】：翻開命運詩篇，宣告終途！`, "effect");
+    // 下2回合對手受到的攻擊傷害提升150%（引擎讀取 attackTakenBoostTurns／Rate，設在對手）
+    ctx.setOpponentState("attackTakenBoostRate", 1.5);
+    ctx.setNextTurns?.("opp", "attackTakenBoostTurns", 2);
 
     const newSelfStages = { ...self.statStages };
     for (const k of ["atk", "def", "spatk", "spdef", "speed", "accuracy"]) {
@@ -360,6 +374,11 @@ export const DIMENSIONAL_SKILLS: Record<string, BattleSkillHandler> = {
     const isDragonSoul = getPlayerState("dimensionalDragonSoul") || false;
 
     addLog(`🐉 使用【遺典.妄世律裁】：最終妄言之律，裁決降臨！`, "effect");
+    // 自身每有1篇詩章攻擊傷害提升20%
+    {
+      const chapters = getMark(getMarks(actor), "poem_chapter")?.effects?.poemHpSnapshots?.length || 0;
+      if (chapters > 0) setPlayerState("dragonSkillBoostsThisAction", [0.2 * chapters]);
+    }
 
     // 5技能必觸發效果: 對方每有1種PP為滿則附加當前體力20%的傷害
     let oppFullPp = 0;

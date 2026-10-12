@@ -56,10 +56,13 @@ try{
  assert.match(L,/受純白聖翎限制/,'K1 屬性技能無效');
  assert.equal(skillOf('p2','T增益').pp,0,'K1 使用後屬性技能 PP 歸0');
  assert.match(L,/暮光舞動】：恢復 \d+ 體力並造成等量百分比傷害/,'K3 使用技能恢復＋百分比傷害');
+ // 情境設定：K1 把對手全部技能 PP 歸 0，引擎依原廠規則拒絕選 0 PP 技能；後續回合要對手「出招」，須先補回 PP（斷言語意不變）
+ skillOf('p2','等待').pp=20;
  L=await turn('晨曦昭世','等待');
  assert.ok(st().p1RegistryState.immuneAttackTurns>=2,'K2 攻擊免疫');
  assert.equal(st().p1RegistryState.reflectStatusTurns,4,'K2 5回合反彈異常');
  const hpBefore=st().p2.currentHp;
+ skillOf('p2','等待').pp=20; // 純白聖翎限制期間，對手每次使用屬性技能後 PP 又歸 0，需再補（同上情境設定）
  L=await turn('王·聖璨天潔','等待');
  assert.match(L,/晨曦昭世】：附加自身最大體力20%的真實傷害/,'K2 使用技能附加真傷');
  assert.match(L,/未消除回合類效果，自身免疫下1次異常狀態/,'K5 未觸發分支');

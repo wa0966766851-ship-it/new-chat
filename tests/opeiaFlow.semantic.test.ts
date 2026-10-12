@@ -28,13 +28,15 @@ try {
     effects: [], skills: [structuredClone(waitSkill)] });
   for (const side of ['p1', 'p2']) for (const scenario of ['attack', 'attribute', 'immune']) {
     const trace: any[] = [];
-    souls['蟲后·奧佩婭'] = (ctx: any, event: string, data: any) => original({ ...ctx,
-      applyStatusWithImmunityCheck: (target: string, status: string, duration: number) => {
+    souls['蟲后·奧佩婭'] = (ctx: any, event: string, data: any) => {
+      const observed=Object.create(ctx);
+      observed.applyStatusWithImmunityCheck = (target: string, status: string, duration: number) => {
         const result = ctx.applyStatusWithImmunityCheck(target, status, duration);
         trace.push({ event, target, status, ...result });
         return result;
-      },
-    }, event as any, data);
+      };
+      return original(observed,event as any,data);
+    };
     const template = structuredClone(DEFAULT_ELVES.find((e: any) => e.id === '5018'));
     const opeia = { ...template, ...make('5018', template.name), type: '蟲',
       skills: [scenario === 'attack' ? structuredClone(template.skills.find((s: any) => s.name === '毒噬魂絲')) : structuredClone(waitSkill)] };

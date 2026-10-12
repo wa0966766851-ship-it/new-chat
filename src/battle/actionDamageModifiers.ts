@@ -19,6 +19,12 @@ export function queueActionPowerMultiplier(ctx: BattleEventContext, multiplier: 
   ctx.setPlayerState(ACTION_POWER_KEY, (ctx.getPlayerState(ACTION_POWER_KEY) ?? 1) * multiplier);
   ctx.addLog(`⚡ 本次攻擊威力 ×${multiplier}！`, 'effect');
 }
+/** 「技能威力提升N」：加在原威力上（先於威力倍率）。 */
+export const ACTION_POWER_ADD_KEY = 'powerAddThisAction';
+export function queueActionPowerAdd(ctx: BattleEventContext, amount: number): void {
+  ctx.setPlayerState(ACTION_POWER_ADD_KEY, (Number(ctx.getPlayerState(ACTION_POWER_ADD_KEY)) || 0) + amount);
+  ctx.addLog(`⚡ 本次攻擊威力 +${amount}！`, 'effect');
+}
 export function applyActionDamageModifiers(registry: any, comp: DamageComputation): void {
   if (comp.pure) return;
   for (const item of registry?.[ACTION_DAMAGE_KEY] || []) {

@@ -1,5 +1,8 @@
 
+import type { EffectPresentation } from './effectPresentation';
+
 export interface Mark {
+  presentation?: EffectPresentation;
   id: string;            // 唯一鍵，例如 "delu_shackles"
   displayChar: string;   // 徽章上顯示的字/短標籤，例如 "枷"
   count: number;         // 徽章旁的數字

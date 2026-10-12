@@ -1,0 +1,117 @@
+import assert from 'node:assert/strict';
+import React, { act } from 'react';
+import { createServer } from 'vite';
+import { JSDOM } from 'jsdom';
+
+const dom = new JSDOM('<div id="root"></div>', { url: 'http://localhost/' });
+Object.assign(globalThis, { window: dom.window, document: dom.window.document, localStorage: dom.window.localStorage,
+  HTMLElement: dom.window.HTMLElement, Element: dom.window.Element, IS_REACT_ACT_ENVIRONMENT: true });
+Object.defineProperty(globalThis, 'navigator', { configurable: true, value: dom.window.navigator });
+const { createRoot } = await import('react-dom/client');
+const root = createRoot(document.getElementById('root')!);
+const server = await createServer({ server: { middlewareMode: true, hmr: false, watch: null }, appType: 'custom', logLevel: 'silent' });
+let checks = 0;
+try {
+  const { timed, uses } = await server.ssrLoadModule('/src/effects/newElfOperations.ts');
+  const { runAct } = await server.ssrLoadModule('/src/blocks/runtime.ts');
+  const { MIGRATED_SEQUENCE_SKILL_KITS } = await server.ssrLoadModule('/src/data/migratedSequenceSkillKits.ts');
+  const { buildEffectViewModels, describeEffectMeta } = await server.ssrLoadModule('/src/battle/effectViewModel.ts');
+  const { activeEffectViews, visibleEffectSourceText } = await server.ssrLoadModule('/src/battle/activeEffectViews.ts');
+  const { payloadPresentation } = await server.ssrLoadModule('/src/battle/effectPresentation.ts');
+  const { effectIcon, signIconFor, UNKNOWN_EFFECT_ICON } = await server.ssrLoadModule('/src/battle/effectIcons.ts');
+  const { getActiveEffects, StatusInspector } = await server.ssrLoadModule('/src/components/StatusInspector.tsx');
+  const { addTimer, tickTimers } = await server.ssrLoadModule('/src/battle/timers.ts');
+  const timers: any[] = [];
+  const elf: any = { id: 'fixture', battleId: 'holder', name: '測試精靈', currentHp: 100, maxHp: 100,
+    skills: [], statStages: {}, effects: [], soulMark: { name: '測試魂印', description: '' } };
+  const ctx: any = { actor: 'p1', targetSide: 'p2', self: elf, skill: { name: '逐波' }, goesFirst: false,
+    addTimerTo: (_side: string, timer: any) => timers.push(timer), getPlayerState: () => undefined };
+  timed(ctx, 'p1', 'priority', 2, { block: { prio: 3 } }, true);
+  timed(ctx, 'p1', 'drain', 5, { afterUseDrainRatio: { ratio: 1 / 3, doubleBelowHalf: true } });
+  assert.deepEqual(timers.map(t => t.name), ['先制+3', '使用技能後吸取體力']);
+  assert.ok(timers.every(t => t.presentation.sourceName === '逐波'));
+  assert.deepEqual(timers.map(t => [t.id, t.remaining, t.kind, t.pendingActivation]), [['priority', 2, 'turn_effect', true], ['drain', 5, 'turn_effect', false]]); checks++;
+  assert.match(timers[1].description, /33.33%.*半血.*翻倍/); checks++;
+  uses(ctx, 'p2', 'invalid', 1, { block: { invalid: '攻擊' } });
+  const [invalid] = buildEffectViewModels([], [timers.at(-1)], 'holder');
+  assert.equal(invalid.label, '攻擊技能無效'); assert.equal(invalid.category, 'count');
+  assert.equal(invalid.polarity, 'negative'); assert.equal(invalid.unit, '次'); checks++;
+  timed(ctx, 'p1', 'soul', 2, { lockSwitch: true }, false, 'soulmark');
+  assert.equal(timers.at(-1).presentation.sourceName, '測試魂印');
+  assert.equal(timers.at(-1).kind, 'round_counter'); checks++;
+  const skill = MIGRATED_SEQUENCE_SKILL_KITS.find((s: any) => s.name === '旋滅裂空陣');
+  ctx.skill = { name: skill.name };
+  const action = skill.kit[0].params.clause.body[0].acts[0];
+  assert.equal(runAct(ctx, action, { last: null, lastAmount: 0, sourceKind: 'skill' }), true);
+  assert.match(timers.at(-1).name, /使用技能後.*30點固定傷害/);
+  assert.notEqual(timers.at(-1).name, '持續效果');
+  const {timerProgramIdentity}=await server.ssrLoadModule('/src/blocks/timerProgramIdentity.ts');
+  assert.equal(timers.at(-1).id, `blk_p1_旋滅裂空陣_持續效果_self_after_use${timerProgramIdentity(action.p)}`, '相同節點的不同程式分開，顯示標籤不參與執行識別'); checks++;
+  const renamed=structuredClone(action.p);renamed.body[0].acts[0].label='只改展示名稱';
+  assert.equal(timerProgramIdentity(renamed),timerProgramIdentity(action.p));checks++;
+  const changed=structuredClone(action.p);changed.body[0].acts[0].p.flat++;
+  assert.notEqual(timerProgramIdentity(changed),timerProgramIdentity(action.p));checks++;
+  assert.match(describeEffectMeta(buildEffectViewModels([], [timers.at(-1)])[0]), /來源：旋滅裂空陣/); checks++;
+  runAct(ctx, action, { last: null, lastAmount: 0, sourceKind: 'soul', event: { trig: 'round_start' } });
+  assert.equal(timers.at(-1).source, 'soulmark'); assert.equal(timers.at(-1).kind, 'round_counter'); checks++;
+  const negative = { id: 'negative', name: '禁療', remaining: 2, kind: 'turn_effect', source: 'skill', tickAt: 'round_end', polarity: 'NEGATIVE', payload: {} };
+  assert.equal(buildEffectViewModels([], [negative])[0].polarity, 'negative'); checks++;
+  assert.equal(buildEffectViewModels([], [{ ...negative, clearable: false }])[0].clearable, false); checks++;
+  assert.equal(payloadPresentation({ block: { dmgIn: 0.2, kind: '技能' } }).polarity, 'negative');
+  assert.match(payloadPresentation({ block: { dmgOut: -0.2, kind: '非真實' } }).label, /非真實傷害降低20%/); checks++;
+  const mirrored = { ...negative, polarity: undefined, payload: { mirrorRegistryKeys: ['attackSkillInvalidTurns'] } };
+  assert.equal(buildEffectViewModels([], [mirrored])[0].polarity, 'negative'); checks++;
+  assert.equal(visibleEffectSourceText({ ...elf, isConcealed: true }, 'p2'), '');
+  assert.equal(visibleEffectSourceText({ ...elf, illusion: { target: { ...elf, soulMark: { description: '公開複製對象' } } } }, 'p2'), '公開複製對象'); checks++;
+  const mark = { id: 'custom', name: '不借圖的印記', displayChar: '印', count: 2, iconTag: '先制', ownerBattleId: 'holder' };
+  assert.equal(buildEffectViewModels([mark], [], 'holder')[0].icon, effectIcon('先制'));
+  assert.deepEqual(buildEffectViewModels([mark], [], 'other'), []); checks++;
+  const unknown = buildEffectViewModels([{ ...mark, iconTag: undefined }], [])[0];
+  assert.equal(unknown.icon, UNKNOWN_EFFECT_ICON);
+  assert.equal(signIconFor('消除護盾'), undefined);
+  assert.equal(effectIcon(undefined, '消除護盾'), UNKNOWN_EFFECT_ICON);
+  assert.equal(effectIcon('極速機甲：先制+2，受控後失效'), UNKNOWN_EFFECT_ICON); checks++;
+  const common = { id: 'attack-lock', name: '來源技能', remaining: 2, kind: 'turn_effect', source: 'skill', tickAt: 'round_end', payload: { block: { invalid: '攻擊' } } };
+  const state: any = { p1: { ...elf, cannotUseAttackSkillsTurns: 2, effects: [{ id: 'poisoned', duration: 3 }] }, p2: { ...elf, id: 'enemy', battleId: 'enemy' }, p1Marks: [mark], p1Timers: [common] };
+  const before = JSON.stringify(state);
+  const projection = activeEffectViews(state.p1, [mark], [common]);
+  assert.equal(projection.filter((v: any) => v.semanticId === 'invalid:攻擊').length, 1);
+  assert.equal(activeEffectViews(state.p1, [], [common, { ...common, id: 'independent' }]).filter((v: any) => v.semanticId === 'invalid:攻擊').length, 2, 'independent timers must not be merged'); checks++;
+  const inspector = getActiveEffects('p1', state);
+  const lock = inspector.find((v: any) => v.name === '攻擊技能無效');
+  assert.ok(lock); assert.equal(lock.category, '回合類'); assert.equal(lock.icon, effectIcon('技能無效'));
+  assert.ok(inspector.some((v: any) => v.name === '中毒' && v.remaining === 3)); checks++;
+  assert.equal(JSON.stringify(state), before, 'projection must not write battle state'); checks++;
+  assert.deepEqual(getActiveEffects('p2', { ...state, p2: { ...state.p2, isConcealed: true } }), []); checks++;
+  const secretSource = getActiveEffects('p1', { ...state, p1Timers: [{ ...common, presentation: { semanticId: 'invalid:攻擊', label: '攻擊技能無效', sourceName: '隱藏來源技能' } }], p2: { ...state.p2, isConcealed: true, skills: [{ name: '隱藏來源技能' }] } });
+  assert.equal(secretSource.find((v: any) => v.name === '攻擊技能無效').source, '未知技能'); checks++;
+  const maskedState = { ...state, p1: { ...state.p1, battleStatuses: { 魘味: 3 }, statStages: { atk: 2 } }, p2: { ...state.p2, battleStatuses: { 燒傷: 2 }, statStages: { atk: 1, def: -3 } } };
+  for (const side of ['p1', 'p2']) {
+    const hiddenStates = getActiveEffects(side, maskedState).filter((v: any) => v.name === '魘昧');
+    assert.equal(hiddenStates.length, 2); assert.ok(hiddenStates.every((v: any) => v.remaining === 1 && v.stacks === undefined));
+    if (side === 'p2') assert.ok(getActiveEffects(side, maskedState).some((v: any) => v.name === '防禦 -3')); checks++;
+  }
+  assert.equal(buildEffectViewModels([{ ...mark, presentation: { semanticId: 'explicit', label: mark.name, polarity: 'negative' } }], [], 'holder')[0].polarity, 'negative'); checks++;
+  const offField = { ...common, ownerBattleId: 'other' };
+  assert.deepEqual(buildEffectViewModels([], [offField], 'holder'), []); checks++;
+  assert.deepEqual(activeEffectViews({ ...elf, shield: 0, barrier: 0 }), []);
+  assert.equal(activeEffectViews({ ...elf, shield: 10 })[0].category, 'protection'); checks++;
+  assert.equal(activeEffectViews(elf, [{ ...mark, name: '星海之浸' }], [], { starSeaSoakTurns: 3 }).filter((v: any) => v.label === '星海之浸').length, 1); checks++;
+  for (const payload of [{ afterUseDrain: { amount: 300 } }, { nextAttackSkillBoost: 2.5 }, { reflectSkillQuarter: true }, { halveNonTrue: true }, { recoveryReductionPercent: 1 }, { incomingAttackCritical: true }]) {
+    assert.ok(payloadPresentation(payload)); checks++;
+  }
+  let list = addTimer([], timers[0]); list = tickTimers(list, 'round_end');
+  assert.equal(list[0].remaining, 2); assert.equal(list[0].pendingActivation, false);
+  list = tickTimers(list, 'round_end'); assert.equal(list[0].remaining, 1); checks++;
+  await act(async () => root.render(React.createElement(StatusInspector, { state })));
+  const category = [...document.querySelectorAll('button')].find(b => b.textContent?.startsWith('回合類'))!;
+  await act(async () => category.click());
+  assert.match(document.body.textContent!, /攻擊技能無效/);
+  assert.doesNotMatch(document.body.textContent!, /屬性失效/);
+  assert.equal(document.querySelector('article img')?.getAttribute('src'), effectIcon('技能無效')); checks++;
+  await act(async () => root.render(React.createElement(StatusInspector, { state: { ...state, p2: { ...state.p2, name: '不公開的名字', isConcealed: true } } })));
+  const p2Button = [...document.querySelectorAll('button')].find(b => b.textContent === 'P2')!;
+  await act(async () => p2Button.click());
+  assert.match(document.querySelector('h3')!.textContent!, /未知精靈/); assert.doesNotMatch(document.body.textContent!, /不公開的名字/); checks++;
+  console.log(`效果顯示契約、註冊表／Kit、分類圖標及明細面板：${checks} 情境通過。`);
+} finally { await act(async () => root.unmount()); await server.close(); dom.window.close(); }

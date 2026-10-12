@@ -1,9 +1,14 @@
 import type { AtomId } from './effectSystem.schema';
 import { canonicalStatusName } from './statusIdentity';
 import { StatusRegistry } from './statusRegistry';
+import { sequenceIssue, skillPropertyIssue } from './sequenceContract';
+import { soulPropertyIssue } from './soulProperty';
 
-export const EFFECT_NODES = ['battle_start','on_entered','before_action','before_skill','before_damage','on_hit','on_damaged','after_action','round_start','round_end','battle_phase_end','on_kill','self_fatal','cthyaat_death','battle_end','on_skill_use','on_attacked','any_battle_node','passive_always','modify_priority'] as const;
+export const EFFECT_NODES = ['battle_start','on_entered','before_action','before_skill','before_damage','on_hit','on_damaged','after_action','round_start','round_end','battle_phase_end','on_kill','self_fatal','cthyaat_death','battle_end','on_skill_use','on_attacked','any_battle_node','passive_always','modify_priority','on_invalid','before_switch_out','on_switch_out','opponent_after_action','pp_consumed','extra_action_start','extra_action_end','before_status_apply','opponent_entered','on_status_ended','on_status_received','on_status_immunized','before_status_tick'] as const;
 export const ATOM_PARAMETER_FIELDS: Record<AtomId, string[]> = {
+  effect_sequence: ['clause'],
+  skill_property: ['property','value','conditions','pct'],
+  soul_property:['property','chance','kind'],
   extra_damage: ['amount','ratio','dmgType','damageType','amountMode','elem','damageNode','incremental','label'],
   damage_multiplier: ['multiplier','value','damageTypes'], damage_reduce: ['percent','amount','damageTypes'],
   damage_reflect: ['ratio','percent','damageType','dmgType','elem'], heal: ['amount','ratio','mode'],
@@ -30,7 +35,37 @@ export function validateAtomParams(atom: string, p: unknown, path = 'params', de
   if (!fields) bad(path, `未知或尚未實裝原子 ${atom}`);
   const allowed = new Set(['target', ...fields]);
   for (const key of Object.keys(p)) if (!allowed.has(key)) bad(`${path}.${key}`, `不是 ${atom} 的參數`);
+  if (atom === 'effect_sequence') {
+    const issue=sequenceIssue(p.clause);if(issue)bad(path,issue);
+    const clause=p.clause;
+    const inspect=(body:any[])=>{for(const statement of body) {
+      for(const condition of statement.cond || [])if(condition.c==='has_status'&&!StatusRegistry[canonicalStatusName(condition.p.status)])bad(path,`條件異常${condition.p.status}尚未登記`);
+      for(const condition of statement.cond || [])if(condition.c==='event_status')for(const status of condition.p.statuses)if(!StatusRegistry[canonicalStatusName(status)])bad(path,`本次異常${status}尚未登記`);
+      for(const action of [...statement.acts,...(statement.elseActs||[])]) {
+        const statuses=['status','status_replace','next_entry_status'].includes(action.op)?[action.p.status]:action.op==='status_seq'?action.p.list:[];
+        for(const status of statuses) if(!StatusRegistry[canonicalStatusName(status)])bad(path,`異常${status}尚未登記`);
+        if(['timed','once','watch','at_round_end'].includes(action.op))inspect(action.p.body);
+        if(action.op==='mark_program')for(const rule of action.p.rules){inspect([{cond:rule.cond||[],acts:[]}]);inspect(rule.body);}
+      }
+    }};
+    inspect([{cond:clause.cond || [],acts:[]}]);inspect(clause.body);
+  }
   if (p.target !== undefined) choice(p.target, `${path}.target`, ['self','opponent']);
+  if(atom==='soul_property') {
+    const issue=soulPropertyIssue({codeId:atom,source:'soulmark',node:'passive_always',order:0,params:p});
+    if(issue)bad(path,issue);return;
+  }
+  if (atom === 'skill_property') {
+    choice(p.property, `${path}.property`, ['sure_hit','base_priority','base_accuracy','stage_view','conditional_sure_hit','chance_priority','conditional_priority']);
+    if (p.property === 'chance_priority') { num(p.value, `${path}.value`, 1, 100); num(p.pct, `${path}.pct`, 0, 100); return; }
+    if (p.property === 'sure_hit'||p.property==='conditional_sure_hit') { if (p.value !== true) bad(path, '必中需為true'); }
+    else if(p.property==='stage_view') { choice(p.value, `${path}.value`, ['opp_up_as_down','self_down_as_opp_down','self_down_as_up']); }
+    else { num(p.value, `${path}.value`, -100, 100); if (!Number.isInteger(p.value)) bad(path, '公式前查詢需為整數'); }
+    const issue=sequenceIssue({raw:'固有查詢',trig:'use',parsed:true,cond:p.conditions ?? [],body:[{acts:[{op:'heal_flat',p:{amount:0},label:''}]}]});
+    if(issue)bad(path,issue);
+    for(const condition of p.conditions || [])if(condition.c==='has_status'&&!StatusRegistry[canonicalStatusName(condition.p.status)])bad(path,`條件異常${condition.p.status}尚未登記`);
+    return;
+  }
   for (const key of ['amount','multiplier','percent','ratio','value','all','stages','atk','def','spatk','spdef','speed','accuracy','bonus','level','duration','turns','chance','fixedCap','hp_below','hp_above','layer_gte']) {
     if (p[key] === undefined) continue;
     const signed = ['maxhp_change','stat_change','priority'].includes(atom) && ['amount','value','all','stages','atk','def','spatk','spdef','speed','accuracy','bonus','level'].includes(key);
@@ -111,7 +146,10 @@ export function validateKit(value: unknown, path = 'kit', depth = 0): void {
     choice(entry.source, `${at}.source`, ['skill','soulmark','mechanic','item']); num(entry.order, `${at}.order`, 0, 1_000_000);
     if (!Number.isInteger(entry.order)) bad(at, '順序需為整數');
     if (entry.customText !== undefined) str(entry.customText, `${at}.customText`);
+    if (entry.role !== undefined) choice(entry.role, `${at}.role`, ['innate','attached','carried']);
     if (ATOM_PARAMETER_FIELDS[entry.codeId]) validateAtomParams(entry.codeId, entry.params, `${at}.params`, depth);
     else if (['mark_op','force_switch'].includes(entry.codeId)) bad(at, '此舊積木沒有對應原子執行器，請保留原圖紙並人工核對');
+    if(entry.codeId==='skill_property'){const issue=skillPropertyIssue(entry as any);if(issue)bad(at,issue);}
+    if(entry.codeId==='soul_property'){const issue=soulPropertyIssue(entry as any);if(issue)bad(at,issue);}
   });
 }

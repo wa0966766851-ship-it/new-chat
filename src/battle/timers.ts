@@ -1,4 +1,5 @@
 import type { EffectSource } from "../types";
+import type { EffectPresentation } from './effectPresentation';
 
 /* ────────────────────────────────────────────────────────────
  * 1. 分類定義(依戰鬥百科)
@@ -20,6 +21,9 @@ export type TimerKind = "turn_effect" | "round_counter" | "use_counter";
 export type TickAt = "round_end" | "action_end" | "never";
 
 export interface Timer {
+  /** Display-only metadata shared by registry, Kit and UI; never used for resolution. */
+  presentation?: EffectPresentation;
+  polarity?: string;
   scope?: "elf" | "team";
   ownerBattleId?: string;
   persistsOffField?: boolean;

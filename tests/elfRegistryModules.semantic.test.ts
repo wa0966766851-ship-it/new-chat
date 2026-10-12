@@ -23,7 +23,20 @@ try {
     afterHit: Object.keys(registry.getBattleSkillAfterHitRegistry()).sort(),
     invalid: Object.keys(registry.getBattleSkillOnInvalidRegistry()).sort(),
   };
-  assert.deepEqual(actual, baseline, '搬移前後真正Vite入口的技能／魂印／命中後／無效分支不得遺失或新增');
+  // 原搬移指紋保留；只允許確實轉成Kit的指定技能退出handler，不能掩蓋其他遺失。
+  const migrations:Record<string,string[]>={'聖光氣':['300','5000'],'神聖復甦':['5000'],'神聖啟示歌':['5000'],'鎖魂曲':['5008'],'黯·萬魂歸寂':['5001'],'光榮之夢':['5000']};
+  const {DEFAULT_ELVES}=await server.ssrLoadModule('/src/data/defaultElvesLoaded.ts');
+  const {kitEntryIssue}=await server.ssrLoadModule('/src/effects/effectConnection.ts');
+  for(const [name,ids] of Object.entries(migrations)) {
+    assert.ok(baseline.skills.includes(name),`遷移必須對應原基準：${name}`);assert.ok(!actual.skills.includes(name));
+    for(const id of ids) {
+      const elf=DEFAULT_ELVES.find((e:any)=>String(e.id)===id);
+      const skill=[...elf.skills,...(elf.skillPool||[])].find((s:any)=>s.name===name);
+      assert.equal(skill?.effectMode,'kit',`${id}/${name}不能刪handler後沒有新入口`);
+      assert.ok(skill.kit.length);for(const entry of skill.kit)assert.equal(kitEntryIssue(entry),null);
+    }
+  }
+  assert.deepEqual(actual,{...baseline,skills:baseline.skills.filter((name:string)=>!migrations[name])},'除指定Kit遷移外，原註冊表所有入口必須保持');
   const expected: Record<string, any> = {};
   for (const [, mod] of Object.entries(ELF_REGISTRY_MODULES).sort(([a], [b]) => a < b ? -1 : a > b ? 1 : 0)) {
     for (const [name, value] of Object.entries(mod as object)) if (name.endsWith('_SKILLS')) Object.assign(expected, value);

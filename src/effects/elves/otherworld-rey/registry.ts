@@ -231,6 +231,12 @@ export function handleOtherworldReySoulMark(ctx: BattleEventContext, event: Effe
     }
   }
 
+  // 本次行動的增傷／保底：未命中或無效時也要清掉，避免殘留到下一次攻擊
+  if (event === EffectTiming.ACTION_FAILED) {
+    setCurrentDamageIncrease(ctx, 0);
+    ctx.setPlayerState(`${R}.currentDamageFloor`, 0);
+  }
+
   if (event === EffectTiming.AFTER_ACTION && ctx.skill) {
     addParalysis(ctx, targetSide, 1); // 電氣纏繞
     if (ctx.skill.category === "物理") {
@@ -364,7 +370,7 @@ const forbiddenThunderOrder: BattleSkillHandler = (ctx) => {
   if (trueDamage > 0) ctx.applyTrueDamage(ctx.targetSide, trueDamage, "【霆·禁雷敕令】附加真實傷害");
   const cleared = ctx.clearTurnEffectsOf(ctx.targetSide, ctx.target);
   if (cleared) {
-    ctx.setOpponentState("damageTakenBoostTurns", 2);
+    ctx.setNextTurns?.("opp", "damageTakenBoostTurns", 2); // 下2回合
     ctx.setOpponentState("DamageBoostTurns", 2);
   }
   if (ctx.self.currentHp < ctx.self.maxHp / 3) setCurrentDamageIncrease(ctx, 2); // 最終3倍 = 原傷害 +200%

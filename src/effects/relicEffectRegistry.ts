@@ -103,3 +103,16 @@ export function runRelicEffects(relics: readonly string[] | undefined, ctx: Batt
 }
 
 export const hasRelic = (relics: readonly string[] | undefined, id: string) => !!relics?.some(r => parse(r)[0] === id);
+
+/** 藏品對攻擊公式的靜態修正：物理攻擊額外無視對手防禦的比例（原寫在戰鬥引擎，2026-10-10 搬入）。 */
+const RELIC_IGNORE_DEF: Record<string, { category: '物理' | '特殊'; percent: number }> = {
+  dean_blade: { category: '物理', percent: 0.05 }, // 星際藏品【迪恩之刃】：物理攻擊無視防禦 5%
+};
+export function relicIgnoreDefPercent(relics: readonly string[] | undefined, skillCategory: string): number {
+  let total = 0;
+  for (const entry of relics || []) {
+    const def = RELIC_IGNORE_DEF[parse(entry)[0]];
+    if (def && def.category === skillCategory) total += def.percent;
+  }
+  return total;
+}

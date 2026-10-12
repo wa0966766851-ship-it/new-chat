@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import * as Blockly from '../src/vendor/blockly/index.js';
 import LegacyBlockly from 'blockly/core';
 import { defineCustomBlocks, buildEntryBlock, createKitBlockParser } from '../src/components/BlocklyBuilder';
-import { DEFAULT_ELVES } from '../src/data/defaultElves';
+import { DEFAULT_ELVES } from '../src/data/defaultElvesLoaded';
 import { parseElfBlueprint } from '../src/utils/elfBlueprint';
 import { ATOM_PARAMETER_FIELDS, validateAtomParams, validateKit } from '../src/effects/kitValidation';
 import { ATOMS, runNode, runTimerPayload } from '../src/effects/effectRunner';
@@ -85,8 +85,8 @@ test('只剩 BOSS 狀態時解除失敗，不得假觸發解除成功回血', ()
   ATOMS.cure_status({},'self',{actor:'p1',activeP1:self,getStatuses,getPlayerState:()=>true,applyHeal:()=>healed++,updateElf:()=>updated++,addLog:()=>{},setPlayerState:()=>{}});
   assert.equal(healed,0); assert.equal(updated,0); assert.deepEqual(getStatuses(self),{'神話':1});
 });
-test('28 原子都有參數白名單；未知欄位、非法數值與未實裝舊積木不能偷渡', () => {
-  assert.equal(Object.keys(ATOM_PARAMETER_FIELDS).length, 28);
+test('執行原子與參數白名單逐項一致；未知欄位、非法數值與未實裝舊積木不能偷渡', () => {
+  assert.deepEqual(Object.keys(ATOM_PARAMETER_FIELDS).sort(),Object.keys(ATOMS).sort());
   for (const id of Object.keys(ATOM_PARAMETER_FIELDS)) assert.throws(() => validateAtomParams(id, { unknown: true }));
   for (const value of [-1, NaN, Infinity, '100']) assert.throws(() => validateAtomParams('extra_damage', { amount: value }));
   for (const id of ['mark_op','force_switch','bad']) assert.throws(() => validateAtomParams(id, {}));

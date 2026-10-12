@@ -61,17 +61,3 @@ export const handlePitesalaluoSoulMark = (ctx: BattleEventContext, event: Effect
       break;
   }
 };
-
-export const PITESALALUO_SKILLS = {
-  "翎封禁之羽": (ctx: BattleEventContext) => {
-    ctx.addLog("【翎封禁之羽】：禁忌的羽毛！");
-    ctx.setOpponentState("statChanges", { atk: 0, def: 0, spatk: 0, spdef: 0, speed: 0, acc: 0, eva: 0 });
-    // 消除成功則令對手麻痺 (簡化)
-    ctx.applyStatusWithImmunityCheck(ctx.targetSide, "麻痺", 1);
-  },
-  "翎萬羽歸宗": (ctx: BattleEventContext) => {
-    ctx.addLog("【翎萬羽歸宗】：萬羽齊鳴，天崩地裂！");
-    ctx.setOpponentState("turnEffects", []);
-    ctx.applyStatusWithImmunityCheck(ctx.targetSide, "疲憊", 1);
-  }
-};

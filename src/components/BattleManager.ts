@@ -114,6 +114,7 @@ export type BattleAction =
   | { type: 'UPDATE_SCOPED_REGISTRY_STATE'; side: 'p1' | 'p2'; owner: Elf; state: Record<string, any> }
   | { type: 'SET_TIMERS'; side: 'p1' | 'p2'; timers: Timer[] }
   | { type: 'ADD_SCOPED_TIMER'; side: 'p1' | 'p2'; owner: Elf; timer: Timer; context?: AddContext }
+  | { type: 'SET_SCOPED_TIMERS'; side: 'p1' | 'p2'; ownerId:string; timers:Timer[]; ownerTimers?:Timer[] }
   | { type: 'SET_MARKS'; side: 'p1' | 'p2'; marks: Mark[] }
   | { type: 'SET_LAST_DAMAGE'; side: 'p1' | 'p2'; damage: number }
   | { type: 'SET_LAST_ACTION_INFO'; info: LastActionInfo | null }
@@ -223,6 +224,10 @@ case 'SET_ACTIVE_INDEX':
       return writeScopedRegistry(state, action.side, action.owner, action.state);
     case 'SET_TIMERS':
       return { ...state, [`${action.side}Timers`]: action.timers };
+    case 'SET_SCOPED_TIMERS': {
+      const key=`${action.side}ElfState` as const,bank=state[key]||{},snapshot=bank[action.ownerId];
+      return {...state,[`${action.side}Timers`]:action.timers,...(snapshot&&action.ownerTimers?{[key]:{...bank,[action.ownerId]:{...snapshot,timers:action.ownerTimers}}}:{})};
+    }
     case 'ADD_SCOPED_TIMER':
       return addScopedTimer(state, action.side, action.owner, action.timer, action.context);
     case 'SET_MARKS':

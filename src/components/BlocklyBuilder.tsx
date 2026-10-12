@@ -5,6 +5,9 @@ import * as BlocklyMessages from "blockly/msg/en";
 import { SEER_TYPES } from '../utils/statCalculator';
 import { KitEntry, Node } from "../effects/effectSystem.schema";
 import { validateKit } from '../effects/kitValidation';
+import { EFFECT_NODE_LABELS, kitEntryIssue } from '../effects/effectConnection';
+import { EFFECT_NODES } from '../effects/effectNodes';
+import { canvasParams, mergeCanvasParams } from '../effects/blockCanvasParams';
 import { Puzzle, Play, Code2, Trash2, RefreshCw, Layers, Sparkles, Check, Copy, BookmarkPlus, Download, Plus, Search } from "lucide-react";
 
 // Ensure custom blocks are defined once
@@ -21,6 +24,18 @@ export function defineCustomBlocks() {
   blocksDefined = true;
 
   Core.defineBlocksWithJsonArray([
+    {type:'soul_property',message0:'常駐閃避 %1 %% 範圍 %2（必中除外）',args0:[{type:'field_number',name:'CHANCE',value:100,min:1,max:100},{type:'field_dropdown',name:'KIND',options:[['所有技能','all'],['攻擊技能','攻擊'],['屬性技能','屬性']]}],previousStatement:null,nextStatement:null,colour:45},
+    {type:'skill_property',message0:'公式前查詢 %1 數值 %2 條件 %3 機率 %4',args0:[{type:'field_dropdown',name:'PROPERTY',options:[['固有必中','sure_hit'],['固有命中率','base_accuracy'],['固有能力視圖','stage_view'],['固有基礎先制','base_priority'],['附加條件必中','conditional_sure_hit'],['附加條件先制','conditional_priority'],['附加機率先制','chance_priority']]},
+      {type:'field_input',name:'VALUE',text:'true'},{type:'field_input',name:'CONDITIONS',text:'[]'},{type:'field_number',name:'PCT',value:100,min:1,max:100}],previousStatement:null,nextStatement:null,colour:45},
+    {type:'effect_sequence',message0:'🔗 條件／結果連鎖 %1 %2 %3',args0:[{type:'field_input',name:'CONDITIONS',text:'[]'},{type:'input_dummy'},{type:'input_statement',name:'BODY'}],previousStatement:null,nextStatement:null,colour:230,
+      tooltip:'同一事件的條件快照及成功／失敗連鎖。條件使用明確JSON，不執行文字或腳本。'},
+    {type:'sequence_statement',message0:'分支 %1 即時條件 %2 前置快照 %3 條件 %4 %5 執行 %6 否則 %7',args0:[
+      {type:'field_dropdown',name:'CHAIN',options:[['一般','none'],['前項成功','success'],['前項失敗','fail'],['任一項失敗','any_fail']]},
+      {type:'field_checkbox',name:'LIVE',checked:false},{type:'field_checkbox',name:'PRE',checked:false},{type:'field_input',name:'CONDITIONS',text:'[]'},{type:'input_dummy'},
+      {type:'input_statement',name:'ACTS'},{type:'input_statement',name:'ELSE'}],previousStatement:null,nextStatement:null,colour:260},
+    {type:'sequence_action',message0:'動作 %1 參數 %2',args0:[{type:'field_label_serializable',name:'OP',text:'stat'},
+      {type:'field_input',name:'PARAMS',text:'{}'}],previousStatement:null,nextStatement:null,colour:160,
+      tooltip:'編輯確切目標、數值、傷害類型及範圍；儲存前逐項校驗，不接受未知參數。'},
     { type: 'native_effect_reference', message0: '🔒 保留原機制 %1', args0: [{type: 'field_label_serializable', name: 'LABEL', text: '專屬效果'}], previousStatement: null, nextStatement: null, colour: 280,
       tooltip: '這項機制目前沒有可編輯欄位，原資料完整保留；移動不會改變參數，刪除才會移除。' },
     // ==========================================
@@ -104,7 +119,7 @@ export function defineCustomBlocks() {
         { "type": "input_statement", "name": "STACK" }
       ],
       "colour": 340,
-      "tooltip": "遭對手攻擊扣血時觸發"
+      "tooltip": "HP結算後通知受方；傷害類型需另外篩選，不只攻擊傷害"
     },
     {
       "type": "node_before_damage",
@@ -114,7 +129,7 @@ export function defineCustomBlocks() {
         { "type": "input_statement", "name": "STACK" }
       ],
       "colour": 10,
-      "tooltip": "傷害倍率／減傷／必定致命一擊／無視減傷請放這裡（自身攻擊時算加成，受到攻擊時算減傷）"
+      "tooltip": "在公式計算時修正damageComp；增傷讀造成方、減傷讀受到方。暴擊與無視原子尚未完全接通，不能只靠標籤算生效。"
     },
     {
       "type": "node_modify_priority",
@@ -144,19 +159,7 @@ export function defineCustomBlocks() {
         {
           "type": "field_dropdown",
           "name": "TARGET_NODE",
-          "options": [
-            ["技能命中時 (on_hit)", "on_hit"],
-            ["回合開始時 (round_start)", "round_start"],
-            ["回合結束時 (round_end)", "round_end"],
-            ["登場切換時 (on_entered)", "on_entered"],
-            ["出手流程前 (before_action)", "before_action"],
-            ["使用技能前 (before_skill)", "before_skill"],
-            ["受到傷害時 (on_damaged)", "on_damaged"],
-            ["擊敗對手時 (on_kill)", "on_kill"],
-            ["傷害計算時 (before_damage)", "before_damage"],
-            ["先制判定時 (modify_priority)", "modify_priority"],
-            ["行動結束後 (after_action)", "after_action"]
-          ]
+          "options": Object.entries(EFFECT_NODE_LABELS).map(([node, label]) => [`${label} (${node})`, node])
         },
         { "type": "input_dummy" },
         { "type": "input_statement", "name": "STACK" }
@@ -319,7 +322,7 @@ export function defineCustomBlocks() {
           "name": "TARGET",
           "options": [["自身", "self"], ["對手", "opponent"]]
         },
-        { "type": "field_number", "name": "AMOUNT", "value": 50, "min": 1, "max": 2000 },
+        { "type": "field_number", "name": "AMOUNT", "value": 50, "min": 0, "max": 2000 },
         {
           "type": "field_dropdown",
           "name": "MODE",
@@ -349,14 +352,14 @@ export function defineCustomBlocks() {
         {
           "type": "field_dropdown",
           "name": "TARGET",
-          "options": [["對手所有技能", "opponent"], ["自身當前技能", "self"]]
+          "options": [["對手所有技能", "opponent"], ["自身所有技能", "self"]]
         },
         {
           "type": "field_dropdown",
           "name": "MODE",
-          "options": [["扣除/減少", "reduce"], ["吸取", "drain"], ["恢復", "recover"]]
+          "options": [["扣除/減少", "reduce"], ["吸取並逐槽恢復", "drain"], ["增加", "recover"], ["恢復至上限", "full"], ["歸零", "zero"]]
         },
-        { "type": "field_number", "name": "AMOUNT", "value": 1, "min": 1, "max": 10 }
+        { "type": "field_number", "name": "AMOUNT", "value": 1, "min": 0, "max": 10000 }
       ],
       "previousStatement": null,
       "nextStatement": null,
@@ -449,7 +452,7 @@ export function defineCustomBlocks() {
         {
           "type": "field_dropdown",
           "name": "STAGES",
-          "options": [["+1", "1"], ["+2", "2"], ["+3", "3"], ["-1", "-1"], ["-2", "-2"], ["-3", "-3"]]
+          "options": [["+1", "1"], ["+2", "2"], ["+3", "3"], ["+4", "4"], ["+5", "5"], ["+6", "6"], ["0", "0"], ["-1", "-1"], ["-2", "-2"], ["-3", "-3"], ["-4", "-4"], ["-5", "-5"], ["-6", "-6"]]
         }
       ],
       "previousStatement": null,
@@ -501,9 +504,8 @@ export function defineCustomBlocks() {
       "message0": "🚀 [原子] 先制加成: 技能先制 %1",
       "args0": [
         {
-          "type": "field_dropdown",
-          "name": "LEVEL",
-          "options": [["+1", "1"], ["+2", "2"], ["+3", "3"], ["+4", "4"], ["-1", "-1"]]
+          "type": "field_number",
+          "name": "LEVEL", "value": 1, "min": -100, "max": 100, "precision": 1
         }
       ],
       "previousStatement": null,
@@ -666,19 +668,12 @@ const TOOLBOX_CONFIG = {
       kind: "category",
       name: "⚡ 時點觸發槽 (Triggers)",
       colour: "#06b6d4",
-      contents: [
-        { kind: "block", type: "node_on_hit" },
-        { kind: "block", type: "node_round_start" },
-        { kind: "block", type: "node_round_end" },
-        { kind: "block", type: "node_on_entered" },
-        { kind: "block", type: "node_before_action" },
-        { kind: "block", type: "node_before_skill" },
-        { kind: "block", type: "node_on_damaged" },
-        { kind: "block", type: "node_on_kill" },
-        { kind: "block", type: "node_before_damage" },
-        { kind: "block", type: "node_modify_priority" },
-        { kind: "block", type: "custom_node_slot" }
-      ]
+      contents: [...new Set(Object.values(EFFECT_NODES).map(node=>node.phase))].map(phase => ({
+        kind:'category', name:phase, colour:'#06b6d4',
+        contents:Object.entries(EFFECT_NODES).filter(([,node])=>node.phase===phase).map(([node])=>({
+          kind:'block',type:'custom_node_slot',fields:{TARGET_NODE:node},
+        })),
+      }))
     },
     {
       kind: "category",
@@ -758,14 +753,37 @@ export function createKitBlockParser(currentSource: KitEntry['source']) {
   const parseBlockToEntry = (block: Blockly.Block, node: Node, order: number = 0): KitEntry | null => {
     const metadata = block.data ? JSON.parse(block.data) : null;
     if (metadata?.opaqueEntry) return { ...metadata.opaqueEntry, node, order, source: currentSource };
+    if(block.type==='soul_property')return {...metadata.entry,node,order,source:currentSource,params:{property:'evade',chance:Number(block.getFieldValue('CHANCE')),kind:block.getFieldValue('KIND')}};
+    if(block.type==='skill_property')return {...metadata.entry,node,order,source:currentSource,params:{property:block.getFieldValue('PROPERTY'),value:JSON.parse(block.getFieldValue('VALUE')),conditions:JSON.parse(block.getFieldValue('CONDITIONS')),...(block.getFieldValue('PROPERTY')==='chance_priority'?{pct:Number(block.getFieldValue('PCT'))}:{})}};
+    if(block.type==='effect_sequence') {
+      const readActions=(first: Blockly.Block | null)=>{const acts:any[]=[];for(let b=first;b;b=b.getNextBlock()) {
+        if(b.type!=='sequence_action')throw new Error('連鎖分支內只允許明確動作積木');
+        acts.push({op:b.getFieldValue('OP'),p:JSON.parse(b.getFieldValue('PARAMS')),label:b.data?JSON.parse(b.data).label || '':''});
+      }return acts;};
+      const body:any[]=[];
+      for(let b=block.getInputTargetBlock('BODY');b;b=b.getNextBlock()) {
+        if(b.type!=='sequence_statement')throw new Error('連鎖內只允許條件／結果分支');
+        const saved=b.data?JSON.parse(b.data):{};const cond=JSON.parse(b.getFieldValue('CONDITIONS'));
+        const acts=readActions(b.getInputTargetBlock('ACTS')),otherwise=readActions(b.getInputTargetBlock('ELSE'));
+        const chain=b.getFieldValue('CHAIN'),live=b.getFieldValue('LIVE')==='TRUE',pre=b.getFieldValue('PRE')==='TRUE';
+        body.push({...saved,acts,...(otherwise.length||saved.elseActs?{elseActs:otherwise}:{}),
+          ...(cond.length||saved.cond?{cond}:{}),...(chain==='none'?{}:{chain}),...(live||saved.live!==undefined?{live}:{}),...(pre||saved.pre!==undefined?{pre}:{})});
+        if(chain==='none')delete body.at(-1).chain;
+      }
+      const saved=metadata.entry as KitEntry;
+      const cond=JSON.parse(block.getFieldValue('CONDITIONS'));
+      return {...saved,node,order,source:currentSource,params:{clause:{...saved.params.clause,body,
+        ...(cond.length||saved.params.clause.cond?{cond}:{})}}};
+    }
     const result = parseVisible(block, node, order);
     if (result && metadata) {
-      const unchanged = metadata.fields && Object.entries(metadata.fields).every(([name, value]) => block.getFieldValue(name) === value);
-      result.params = unchanged ? { ...metadata.params } : { ...metadata.params, ...result.params };
-      if (!unchanged && ['atom_extra_damage', 'atom_damage_reflect', 'atom_drain_hp'].includes(block.type)) {
-        delete result.params.ratio; delete result.params.dmgType;
-      }
-      if (unchanged && metadata.customText) result.customText = metadata.customText;
+      if (metadata.role) result.role = metadata.role;
+      const changed = Object.entries(metadata.fields || {}).filter(([name, value]) => block.getFieldValue(name) !== value).map(([name]) => name);
+      // 容器還需比較子積木，不能只看外層欄位而吞掉內部修改。
+      const container = ['condition_gate', 'turn_effect_apply'].includes(result.codeId);
+      const unchanged = !!metadata.fields && changed.length === 0 && !container;
+      result.params = unchanged ? { ...metadata.params } : mergeCanvasParams(result.codeId, metadata.params || {}, result.params, changed);
+      if (unchanged && Object.hasOwn(metadata, 'customText')) result.customText = metadata.customText;
     }
     return result;
     function parseVisible(block: Blockly.Block, node: Node, order: number): KitEntry | null {
@@ -778,7 +796,7 @@ export function createKitBlockParser(currentSource: KitEntry['source']) {
     if (type === "turn_effect_apply") {
       const timerName = block.getFieldValue("TIMER_NAME") || "具名印記";
       const displayChar = block.getFieldValue("DISPLAY_CHAR") || "印";
-      const duration = Number(block.getFieldValue("DURATION") || 3);
+      const duration = Number(block.getFieldValue("DURATION") ?? 3);
       const applyMode = block.getFieldValue("APPLY_MODE") || "gate";
       const clearable = block.getFieldValue("CLEARABLE") === "TRUE";
 
@@ -817,7 +835,7 @@ export function createKitBlockParser(currentSource: KitEntry['source']) {
 
     if (type === "condition_gate") {
       const condType = block.getFieldValue("COND_TYPE") || "hp_below";
-      const condVal = Number(block.getFieldValue("COND_VAL") || 50);
+      const condVal = Number(block.getFieldValue("COND_VAL") ?? 50);
 
       const innerBlock = block.getInputTargetBlock("INNER_STACK");
       const innerParsed = innerBlock ? parseAtomBlock(innerBlock) : null;
@@ -914,7 +932,7 @@ export function createKitBlockParser(currentSource: KitEntry['source']) {
 
     if (type === "atom_heal") {
       const target = block.getFieldValue("TARGET");
-      const amount = Number(block.getFieldValue("AMOUNT") || 50);
+      const amount = Number(block.getFieldValue("AMOUNT") ?? 50);
       const mode = block.getFieldValue("MODE");
       return {
         codeId: "heal",
@@ -927,7 +945,7 @@ export function createKitBlockParser(currentSource: KitEntry['source']) {
     }
 
     if (type === "atom_shield") {
-      const amount = Number(block.getFieldValue("AMOUNT") || 200);
+      const amount = Number(block.getFieldValue("AMOUNT") ?? 200);
       return {
         codeId: "shield",
         node,
@@ -941,21 +959,21 @@ export function createKitBlockParser(currentSource: KitEntry['source']) {
     if (type === "atom_pp_op") {
       const target = block.getFieldValue("TARGET");
       const mode = block.getFieldValue("MODE");
-      const amount = Number(block.getFieldValue("AMOUNT") || 1);
+      const amount = Number(block.getFieldValue("AMOUNT") ?? 1);
       return {
         codeId: "pp_op",
         node,
         source: currentSource,
         order,
-        customText: `${mode === "reduce" ? "扣除" : mode === "drain" ? "吸取" : "恢復"} ${target === "opponent" ? "對手" : "自身"} ${amount} 點 PP`,
-        params: { target, mode, amount }
+        customText: `${target === "opponent" ? "對手" : "自身"}所有技能PP${mode === 'full' ? '恢復至上限' : mode === 'zero' ? '歸零' : `${mode === 'reduce' ? '減少' : mode === 'drain' ? '被吸取' : '增加'}${amount}點`}`,
+        params: { target, op: mode === 'full' ? 'recover' : mode === 'recover' ? 'add' : mode, amount }
       };
     }
 
     if (type === "atom_maxhp_change") {
       const target = block.getFieldValue("TARGET");
       const mode = block.getFieldValue("MODE");
-      const amount = Number(block.getFieldValue("AMOUNT") || 100);
+      const amount = Number(block.getFieldValue("AMOUNT") ?? 100);
       return {
         codeId: "maxhp_change",
         node,
@@ -969,8 +987,8 @@ export function createKitBlockParser(currentSource: KitEntry['source']) {
     if (type === "atom_apply_status") {
       const target = block.getFieldValue("TARGET");
       const status = block.getFieldValue("STATUS_NAME");
-      const duration = Number(block.getFieldValue("DURATION") || 2);
-      const chance = Number(block.getFieldValue("CHANCE") || 100);
+      const duration = Number(block.getFieldValue("DURATION") ?? 2);
+      const chance = Number(block.getFieldValue("CHANCE") ?? 100);
       return {
         codeId: "apply_status",
         node,
@@ -996,7 +1014,7 @@ export function createKitBlockParser(currentSource: KitEntry['source']) {
     if (type === "atom_stat_change") {
       const target = block.getFieldValue("TARGET");
       const stat = block.getFieldValue("STAT_NAME");
-      const stages = Number(block.getFieldValue("STAGES") || 1);
+      const stages = Number(block.getFieldValue("STAGES") ?? 1);
       return {
         codeId: "stat_change",
         node,
@@ -1033,7 +1051,7 @@ export function createKitBlockParser(currentSource: KitEntry['source']) {
     }
 
     if (type === "atom_priority") {
-      const level = Number(block.getFieldValue("LEVEL") || 1);
+      const level = Number(block.getFieldValue("LEVEL") ?? 1);
       return {
         codeId: "priority",
         node,
@@ -1075,7 +1093,7 @@ export function createKitBlockParser(currentSource: KitEntry['source']) {
         node,
         source: currentSource,
         order,
-        customText: `本次傷害轉為真實傷害（無視減傷與護盾）`,
+        customText: `無視指定防護（不改變傷害類型；執行端待接通）`,
         params: { type: pierceType }
       };
     }
@@ -1086,7 +1104,7 @@ export function createKitBlockParser(currentSource: KitEntry['source']) {
         node,
         source: currentSource,
         order,
-        customText: `獲取連擊/額外行動`,
+        customText: `獲得額外行動（不是連擊；執行端待接通）`,
         params: {}
       };
     }
@@ -1103,7 +1121,7 @@ export function createKitBlockParser(currentSource: KitEntry['source']) {
     }
 
     if (type === "atom_rebirth") {
-      const turns = Number(block.getFieldValue("TURNS") || 2);
+      const turns = Number(block.getFieldValue("TURNS") ?? 2);
       return {
         codeId: "rebirth",
         node,
@@ -1129,7 +1147,7 @@ export function createKitBlockParser(currentSource: KitEntry['source']) {
     if (type === "atom_mark_op") {
       const target = block.getFieldValue("TARGET");
       const mode = block.getFieldValue("MODE");
-      const count = Number(block.getFieldValue("COUNT") || 1);
+      const count = Number(block.getFieldValue("COUNT") ?? 1);
       return {
         codeId: "mark_op",
         node,
@@ -1228,13 +1246,20 @@ export function createKitBlockParser(currentSource: KitEntry['source']) {
     const type = `atom_${atom}`;
     const map = FIELD_MAP[type];
     if (!map) return null;
+    const projected = canvasParams(atom, params);
+    if (!projected) return null;
     const b = ws.newBlock(type) as Blockly.BlockSvg;
     const preserved = { ...params };
     if (params.damageType === undefined && params.dmgType !== undefined) setFieldSafe(b, 'DAMAGE_TYPE', params.dmgType === 'skill_attribute' ? 'skill' : params.dmgType);
     if ((atom === 'drain_hp' || atom === 'damage_reflect') && params.damageType === undefined && params.dmgType === undefined) setFieldSafe(b, 'DAMAGE_TYPE', 'true');
-    if (params.ratio !== undefined) setFieldSafe(b, atom === 'damage_reflect' ? 'PERCENT' : 'AMOUNT', params.ratio * 100);
     if (params.damageTypes === undefined) setFieldSafe(b, 'DAMAGE_TYPES', ['attack','skill','fixed','percent','true']);
-    for (const [field, key] of Object.entries(map)) setFieldSafe(b, field, params[key]);
+    for (const [field, key] of Object.entries(map)) setFieldSafe(b, field, projected[key]);
+    for (const [field, key] of Object.entries(map)) {
+      const expected = projected[key]; if (expected === undefined || !b.getField(field)) continue;
+      const value = b.getFieldValue(field);
+      const same = typeof expected === 'number' ? Number(value) === expected : String(value) === (field === 'DAMAGE_TYPES' ? JSON.stringify(expected) : String(expected));
+      if (!same) { b.dispose(); return null; } // 範圍或選項無法表達時完整保留，不讓預設值偽裝原參數。
+    }
     if (params.damageType === 'skill_attribute') setFieldSafe(b, 'DAMAGE_TYPE', 'skill');
     if (atom === 'drain_hp' && params.ratio !== undefined) setFieldSafe(b, 'AMOUNT_MODE', 'max_hp_percent');
     b.data = JSON.stringify({ params: preserved, fields: Object.fromEntries(Object.keys(map).filter(name => b.getField(name)).map(name => [name, b.getFieldValue(name)])) });
@@ -1244,6 +1269,36 @@ export function createKitBlockParser(currentSource: KitEntry['source']) {
 
   export const buildEntryBlock = (ws: Blockly.WorkspaceSvg, item: KitEntry): Blockly.BlockSvg | null => {
     const p = item.params || {};
+    if(item.codeId==='soul_property'&&!kitEntryIssue(item)) {
+      const b=ws.newBlock('soul_property') as Blockly.BlockSvg;b.data=JSON.stringify({entry:item});
+      setFieldSafe(b,'CHANCE',p.chance);setFieldSafe(b,'KIND',p.kind);
+      (b as any).initSvg?.();(b as any).render?.();return b;
+    }
+    if(item.codeId==='skill_property'&&!kitEntryIssue(item)) {
+      const b=ws.newBlock('skill_property') as Blockly.BlockSvg;b.data=JSON.stringify({entry:item});
+      setFieldSafe(b,'PROPERTY',p.property);setFieldSafe(b,'VALUE',JSON.stringify(p.value));setFieldSafe(b,'CONDITIONS',JSON.stringify(p.conditions||[]));
+      setFieldSafe(b,'PCT',p.pct ?? 100);
+      (b as any).initSvg?.();(b as any).render?.();return b;
+    }
+    if(item.codeId==='effect_sequence' && !kitEntryIssue(item)) {
+      const make=(type:string,data:any)=>{const b=ws.newBlock(type) as Blockly.BlockSvg;b.data=JSON.stringify(data);return b;};
+      const finish=(b:Blockly.BlockSvg)=>{(b as any).initSvg?.();(b as any).render?.();};
+      const b=make('effect_sequence',{entry:item});setFieldSafe(b,'CONDITIONS',JSON.stringify(p.clause.cond || []));
+      let conn=b.getInput('BODY')!.connection;
+      for(const stmt of p.clause.body) {
+        const sb=make('sequence_statement',stmt);
+        setFieldSafe(sb,'CHAIN',stmt.chain || 'none');setFieldSafe(sb,'LIVE',stmt.live?'TRUE':'FALSE');
+        setFieldSafe(sb,'PRE',stmt.pre?'TRUE':'FALSE');
+        setFieldSafe(sb,'CONDITIONS',JSON.stringify(stmt.cond || []));
+        for(const [slot,acts] of [['ACTS',stmt.acts],['ELSE',stmt.elseActs || []]] as const) {
+          let ac=sb.getInput(slot)!.connection;
+          for(const act of acts) {const ab=make('sequence_action',{label:act.label});setFieldSafe(ab,'OP',act.op);setFieldSafe(ab,'PARAMS',JSON.stringify(act.p));
+            finish(ab);ac!.connect(ab.previousConnection!);ac=ab.nextConnection;}
+        }
+        finish(sb);conn!.connect(sb.previousConnection!);conn=sb.nextConnection;
+      }
+      finish(b);return b;
+    }
     const conditionKeys = Object.keys(p).filter(key => !['inner', 'innerParams', 'innerItems', 'template', 'target'].includes(key));
     const opaque = () => {
       const b = ws.newBlock('native_effect_reference') as Blockly.BlockSvg;
@@ -1252,12 +1307,16 @@ export function createKitBlockParser(currentSource: KitEntry['source']) {
       (b as any).initSvg?.(); (b as any).render?.(); return b;
     };
     if (item.codeId === 'condition_gate' && (conditionKeys.length !== 1 || !['hp_below','hp_above','has_shield','is_first','is_second'].includes(conditionKeys[0]))) return opaque();
+    if (item.codeId === 'condition_gate' && !conditionKeys[0].startsWith('hp') && p[conditionKeys[0]] !== true) return opaque();
     if (item.codeId === "turn_effect_apply") {
       const b = ws.newBlock("turn_effect_apply") as Blockly.BlockSvg;
-      b.data = JSON.stringify({ params: p });
+      b.data = JSON.stringify({ params: p, role: item.role });
       setFieldSafe(b, "DURATION", p.duration); setFieldSafe(b, "APPLY_MODE", p.applyMode);
       setFieldSafe(b, "TIMER_NAME", p.timerName); setFieldSafe(b, "DISPLAY_CHAR", p.displayChar);
       setFieldSafe(b, "CLEARABLE", p.clearable !== false);
+      const expectedFields: Record<string, unknown> = {DURATION:p.duration,APPLY_MODE:p.applyMode,TIMER_NAME:p.timerName,DISPLAY_CHAR:p.displayChar,CLEARABLE:p.clearable === undefined ? undefined : (p.clearable ? 'TRUE' : 'FALSE')};
+      if(Object.entries(expectedFields).some(([name,value])=>value !== undefined && String(b.getFieldValue(name)) !== String(value))) {b.dispose(false);return opaque();}
+      b.data = JSON.stringify({ params: p, role: item.role, fields: Object.fromEntries(['DURATION','APPLY_MODE','TIMER_NAME','DISPLAY_CHAR','CLEARABLE'].map(name=>[name,b.getFieldValue(name)])) });
       (b as any).initSvg?.(); (b as any).render?.();
       const items: { atom: string; params: any }[] = Array.isArray(p.wrapItems) ? p.wrapItems
         : (Array.isArray(p.wraps) ? p.wraps.map((w: string) => ({ atom: w, params: p.wrapParams || {} })) : []);
@@ -1270,12 +1329,16 @@ export function createKitBlockParser(currentSource: KitEntry['source']) {
     }
     if (item.codeId === "condition_gate") {
       const b = ws.newBlock("condition_gate") as Blockly.BlockSvg;
-      b.data = JSON.stringify({ params: p });
+      b.data = JSON.stringify({ params: p, role: item.role });
       const cond = ["hp_below", "hp_above", "has_shield", "is_first", "is_second"].find(k => p[k] !== undefined);
       if (cond) {
         setFieldSafe(b, "COND_TYPE", cond);
-        if (cond.startsWith("hp")) setFieldSafe(b, "COND_VAL", Math.round(Number(p[cond]) * 100));
+        if (cond.startsWith("hp")) {
+          const value=Number(p[cond])*100;setFieldSafe(b,'COND_VAL',value);
+          if(Number(b.getFieldValue('COND_VAL')) !== value) {b.dispose(false);return opaque();}
+        }
       }
+      b.data = JSON.stringify({ params: p, role: item.role, fields: Object.fromEntries(['COND_TYPE','COND_VAL'].map(name=>[name,b.getFieldValue(name)])) });
       (b as any).initSvg?.(); (b as any).render?.();
       const items = p.innerItems ?? (p.inner ? [{ atom: p.inner, params: p.innerParams || {} }] : []);
       let conn = b.getInput('INNER_STACK')?.connection;
@@ -1286,6 +1349,7 @@ export function createKitBlockParser(currentSource: KitEntry['source']) {
       return b;
     }
     const atom = buildAtomBlock(ws, item.codeId, p);
+    if (atom) atom.data = JSON.stringify({ ...(atom.data ? JSON.parse(atom.data) : {}), role: item.role, customText: item.customText });
     return atom || opaque();
   };
 
@@ -1293,21 +1357,25 @@ export function createKitBlockParser(currentSource: KitEntry['source']) {
 interface BlocklyBuilderProps {
   initialKit?: KitEntry[];
   onChange?: (kit: KitEntry[]) => void;
+  onPendingChange?: (pending: boolean) => void;
   source?: "skill" | "soulmark" | "mechanic" | "item";
   onInsertDescription?: (text: string) => void;
   fullPageMode?: boolean;
   initialElfId?: string;
   onClose?: () => void;
+  editingBlockedReason?: string;
 }
 
 export const BlocklyBuilder: React.FC<BlocklyBuilderProps> = ({
   initialKit = [],
   onChange,
+  onPendingChange,
   source = "skill",
   onInsertDescription,
   fullPageMode = false,
   initialElfId,
   onClose,
+  editingBlockedReason,
 }) => {
   const workspaceRef = useRef<HTMLDivElement>(null);
   const blocklyWorkspace = useRef<Blockly.WorkspaceSvg | null>(null);
@@ -1315,6 +1383,8 @@ export const BlocklyBuilder: React.FC<BlocklyBuilderProps> = ({
   const [autoSync, setAutoSync] = useState<boolean>(true);
   const [copied, setCopied] = useState<boolean>(false);
   const [savedMacros, setSavedMacros] = useState<CustomMacro[]>([]);
+  const [parameterDraft, setParameterDraft] = useState<string | null>(null);
+  const [parameterError, setParameterError] = useState('');
 
   const currentSource = (source || "skill") as "skill" | "soulmark" | "mechanic" | "item";
 
@@ -1332,7 +1402,11 @@ export const BlocklyBuilder: React.FC<BlocklyBuilderProps> = ({
 
   // Save macro to localStorage
   const handleSaveMacro = () => {
-    const kit = convertWorkspaceToKit();
+    let kit: KitEntry[];
+    try {
+      kit = convertWorkspaceToKit(); validateKit(kit);
+      const issue=kit.map(e=>kitEntryIssue(e)).find(Boolean);if(issue)throw new Error(issue);
+    } catch(error) { setJsonOutput(`未儲存：${(error as Error).message}`); return; }
     if (kit.length === 0) {
       alert("⚠️ 當前畫布沒有任何積木可儲存！");
       return;
@@ -1409,8 +1483,9 @@ export const BlocklyBuilder: React.FC<BlocklyBuilderProps> = ({
     const ws = blocklyWorkspace.current;
     if (!ws) return;
     loadingRef.current = true;
-    ws.clear();
+    Core.Events.disable();
     try {
+      ws.clear();
       if (!kit || kit.length === 0) return;
       const grouped: Record<string, KitEntry[]> = {};
       for (const entry of kit) (grouped[entry.node || "on_hit"] ||= []).push(entry);
@@ -1426,9 +1501,12 @@ export const BlocklyBuilder: React.FC<BlocklyBuilderProps> = ({
           const child = buildEntryBlock(ws, item);
           if (child && conn && child.previousConnection) { conn.connect(child.previousConnection); conn = child.nextConnection; count++; }
         }
-        startY += 90 + count * 50;
+        nodeBlock.render();
+        // 條件／否則與巢狀連鎖的高度不同，不能再依頂層積木個數猜間距。
+        startY += Math.max(90 + count * 50, nodeBlock.getHeightWidth().height + 40);
       }
     } finally {
+      Core.Events.enable();
       loadingRef.current = false;
     }
   }, []);
@@ -1438,19 +1516,28 @@ export const BlocklyBuilder: React.FC<BlocklyBuilderProps> = ({
   onChangeRef.current = onChange;
   const autoSyncRef = useRef(autoSync);
   autoSyncRef.current = autoSync;
+  const pendingRef = useRef(onPendingChange);
+  pendingRef.current = onPendingChange;
+  const canvasPendingRef = useRef(false);
+  const parameterPendingRef = useRef(false);
   const syncTimer = useRef<number | null>(null);
   const handleWorkspaceChange = useCallback((immediate = false) => {
+    canvasPendingRef.current = true;
+    pendingRef.current?.(true);
     const run = () => {
       try {
       const kit = convertWorkspaceToKit();
       validateKit(kit);
       setJsonOutput(JSON.stringify(kit, null, 2));
-      if (autoSyncRef.current && onChangeRef.current) onChangeRef.current(kit);
+      if (editingBlockedReason) throw new Error(editingBlockedReason);
+      const issue = kit.map(e => kitEntryIssue(e)).find(Boolean);
+      if (issue) throw new Error(issue);
+      if (autoSyncRef.current && onChangeRef.current) {onChangeRef.current(kit);canvasPendingRef.current=false;pendingRef.current?.(parameterPendingRef.current);}
       } catch (error) { setJsonOutput(`未回寫：${(error as Error).message}`); }
     };
     if (syncTimer.current) window.clearTimeout(syncTimer.current);
     if (immediate) run(); else syncTimer.current = window.setTimeout(run, 250);
-  }, [convertWorkspaceToKit]);
+  }, [convertWorkspaceToKit, editingBlockedReason]);
 
   // Preset workspace setups
   const loadPreset = useCallback((presetType: "combo" | "shield" | "control" | "clear") => {
@@ -1458,12 +1545,12 @@ export const BlocklyBuilder: React.FC<BlocklyBuilderProps> = ({
     const presets: Record<string, KitEntry[]> = {
       clear: [],
       combo: [
-        { codeId: "turn_effect_apply", node: "on_hit", source: currentSource, order: 0, customText: "", params: { duration: 3, applyMode: "gate", clearable: true, timerName: "負岳護盾", displayChar: "岳", wraps: ["damage_reduce"], wrapParams: { percent: 40 } } },
+        { codeId: "turn_effect_apply", node: "on_hit", source: currentSource, order: 0, customText: "", params: { duration: 3, applyMode: "gate", clearable: true, timerName: "負岳護盾", displayChar: "岳", wraps: ["damage_reduce"], wrapParams: { percent: 40, damageTypes: ['non_true'] } } },
         { codeId: "stat_change", node: "on_hit", source: currentSource, order: 1, customText: "", params: { target: "self", stat: "atk", stages: 1 } },
       ],
       shield: [
         { codeId: "shield", node: "round_start", source: currentSource, order: 0, customText: "", params: { amount: 250 } },
-        { codeId: "damage_reduce", node: "round_start", source: currentSource, order: 1, customText: "", params: { percent: 40 } },
+        { codeId: "damage_reduce", node: "before_damage", source: currentSource, order: 1, customText: "", params: { percent: 40, damageTypes: ['non_true'] } },
       ],
       control: [
         { codeId: "apply_status", node: "on_hit", source: currentSource, order: 0, customText: "", params: { target: "opponent", status: "麻痺", duration: 2, chance: 100 } },
@@ -1480,10 +1567,8 @@ export const BlocklyBuilder: React.FC<BlocklyBuilderProps> = ({
   useEffect(() => {
     defineCustomBlocks();
     if (!workspaceRef.current || blocklyWorkspace.current) return;
-    const SKILL_HIDDEN = new Set(["atom_damage_multiplier", "atom_damage_reduce", "atom_crit", "atom_pierce", "atom_priority"]);
-    const toolbox = currentSource === "skill"
-      ? { ...TOOLBOX_CONFIG, contents: TOOLBOX_CONFIG.contents.map((c: any) => ({ ...c, contents: c.contents.filter((b: any) => c.name.includes("Triggers") ? b.type === "node_on_hit" : !SKILL_HIDDEN.has(b.type)) })) }
-      : TOOLBOX_CONFIG;
+    // 技能也可能有固有先制／傷害計算／攜帶被動，不再把這些節點隱藏。
+    const toolbox = TOOLBOX_CONFIG;
     const ws = Core.inject(workspaceRef.current, {
       toolbox,
       media: "/blockly-media/", // 本機素材，不依賴 static.blockly.com
@@ -1540,14 +1625,14 @@ export const BlocklyBuilder: React.FC<BlocklyBuilderProps> = ({
   const presetBtn = "px-3 py-1.5 bg-white/[0.06] hover:bg-white/[0.12] text-slate-200 rounded-lg transition";
 
   return (
-    <div className={`flex flex-col bg-slate-950 text-slate-100 overflow-hidden ${fullPageMode ? "h-full w-full" : "min-h-[620px] rounded-2xl border border-white/10"}`}>
+    <div data-effect-workspace className={`ios-card flex flex-col text-slate-100 overflow-hidden ${fullPageMode ? "h-full w-full" : "min-h-[620px]"}`}>
       {/* Toolbar */}
       <div className="flex flex-wrap items-center justify-between gap-3 px-4 py-3 bg-slate-900/80 border-b border-white/10">
         <div className="flex items-center gap-2.5">
           <Puzzle className="w-5 h-5 text-cyan-400" />
           <h3 className="font-semibold text-[15px] text-slate-100">積木編輯</h3>
-          <span className="text-[12px] text-slate-500" title="技能積木只在「技能命中時」執行；魂印積木依觸發時點執行">
-            {currentSource === "skill" ? "技能：命中時執行" : currentSource === "soulmark" ? "魂印：依時點觸發" : "依時點觸發"}
+          <span className="text-[12px] text-slate-500" title="每條效果依畫布上方的觸發時點執行；放錯時點或尚未接通會列出原因">
+            {currentSource === "skill" ? "技能：依時點與固有／附加／攜帶身分執行" : currentSource === "soulmark" ? "魂印：依時點觸發" : "依時點觸發"}
           </span>
         </div>
         <div className="flex flex-wrap items-center gap-2 text-[13px]">
@@ -1571,12 +1656,12 @@ export const BlocklyBuilder: React.FC<BlocklyBuilderProps> = ({
       </div>
 
       {/* Body */}
-      <div className="flex-grow flex flex-col md:flex-row relative min-h-[480px]">
+      <div className="flex-grow flex flex-col md:flex-row relative min-h-0 overflow-y-auto">
         <div className="flex-grow relative min-h-[480px]">
           <div ref={workspaceRef} className="absolute inset-0 w-full h-full" />
         </div>
 
-        <div className="w-full md:w-80 bg-slate-900/80 border-t md:border-t-0 md:border-l border-white/10 flex flex-col p-3 gap-3">
+        <div className="w-full md:w-80 md:shrink-0 md:overflow-y-auto bg-slate-900/80 border-t md:border-t-0 md:border-l border-white/10 flex flex-col p-3 gap-3">
           {savedMacros.length > 0 && (
             <div className="rounded-xl bg-black/30 p-2.5 flex flex-col gap-2">
               <div className="text-[13px] font-semibold text-amber-300">巨集（{savedMacros.length}）</div>
@@ -1599,10 +1684,10 @@ export const BlocklyBuilder: React.FC<BlocklyBuilderProps> = ({
 
           <div className="flex items-center justify-between text-[13px]">
             {onChange ? (
-              <label className="flex items-center gap-2 cursor-pointer text-slate-300" title="關閉後編輯不會寫回精靈">
+              <label className="flex items-center gap-2 cursor-pointer text-slate-300" title="關閉後需按套用，才同步到草稿；儲存精靈才會正式保留">
                 <input type="checkbox" checked={autoSync} onChange={(e) => { setAutoSync(e.target.checked); if (e.target.checked) { autoSyncRef.current = true; handleWorkspaceChange(true); } }}
                   className="rounded border-slate-700 bg-slate-950 text-cyan-500 focus:ring-0" />
-                即時寫回精靈
+                即時同步草稿
               </label>
             ) : <span className="text-slate-500">未綁定精靈（僅預覽）</span>}
             <button type="button" onClick={copyJsonToClipboard}
@@ -1611,18 +1696,41 @@ export const BlocklyBuilder: React.FC<BlocklyBuilderProps> = ({
               {copied ? "已複製" : "複製 JSON"}
             </button>
           </div>
+          {editingBlockedReason && <p role="status" className="text-xs text-amber-200">{editingBlockedReason}</p>}
+          {onChange && <button type="button" disabled={!!editingBlockedReason} className="ios-button-secondary py-2 text-xs disabled:opacity-40" onClick={() => {
+            try {const kit=convertWorkspaceToKit();validateKit(kit);const issue=kit.map(e=>kitEntryIssue(e)).find(Boolean);if(issue)throw new Error(issue);onChangeRef.current?.(kit);setJsonOutput(JSON.stringify(kit,null,2));canvasPendingRef.current=false;pendingRef.current?.(parameterPendingRef.current);}
+            catch(error){setJsonOutput(`未回寫：${(error as Error).message}`);}
+          }}>套用畫布到草稿</button>}
 
           <div className="rounded-xl bg-black/30 p-2.5 space-y-1.5 max-h-48 overflow-y-auto">
             <div className="text-[12px] text-slate-500">效果預覽</div>
-            {(() => { try { const k = JSON.parse(jsonOutput) as KitEntry[]; return k.length ? k.map((e, i) => (
-              <div key={i} className="text-[13px] text-slate-200 leading-snug"><span className="text-slate-500 mr-1">{NODE_LABEL[e.node] || e.node}</span>{e.customText}</div>
-            )) : <div className="text-[13px] text-slate-500">從左側拖入「觸發時點」，再把效果積木接在裡面</div>; } catch { return null; } })()}
+            {(() => { try { const k = JSON.parse(jsonOutput) as KitEntry[]; return k.length ? k.map((e, i) => {
+              const issue = kitEntryIssue(e);
+              return <div key={i} className={`text-[13px] leading-snug rounded-lg p-2 border ${issue ? 'border-amber-500/30 text-amber-200' : 'border-white/10 text-slate-200'}`}>
+                <span className="text-slate-400 mr-1">{EFFECT_NODE_LABELS[e.node] || e.node}</span>{e.customText || e.codeId}
+                {issue && <p role="status" className="mt-1 text-xs">待接通：{issue}</p>}
+                <details className="mt-1 text-xs text-slate-400"><summary className="cursor-pointer">目標／傷害範圍／完整參數</summary><pre className="whitespace-pre-wrap break-all">{JSON.stringify(e.params, null, 2)}</pre></details>
+              </div>;
+            }) : <div className="text-[13px] text-slate-500">從左側拖入「觸發時點」，再把效果積木接在裡面</div>; } catch { return <p role="alert" className="text-xs text-amber-200">{jsonOutput}</p>; } })()}
           </div>
 
           <details className="flex-grow flex flex-col rounded-xl bg-black/30 p-2.5 overflow-hidden">
-            <summary className="text-[12px] text-slate-500 cursor-pointer">KitEntry JSON</summary>
-            <textarea readOnly value={jsonOutput}
-              className="w-full h-56 mt-1 bg-transparent text-cyan-300 font-mono text-[11px] resize-none focus:outline-none overflow-y-auto leading-relaxed" />
+            <summary className="text-[12px] text-slate-400 cursor-pointer">進階參數編輯（含保留機制／巢狀條件）</summary>
+            <p className="my-2 text-xs text-slate-400">完整參數與畫布共用同一份資料；不支援或無執行端的選項會拒絕套用，不會只存下日誌。</p>
+            <textarea aria-label="積木完整參數" value={parameterDraft ?? jsonOutput} onChange={event => {setParameterDraft(event.target.value);setParameterError('');parameterPendingRef.current=true;pendingRef.current?.(true);}}
+              className="w-full h-56 mt-1 bg-transparent text-cyan-300 font-mono text-[11px] resize-y focus:outline-none overflow-y-auto leading-relaxed" />
+            {parameterError && <p role="alert" className="text-xs text-amber-200">{parameterError}</p>}
+            <div className="flex gap-2 mt-2">
+              <button type="button" className="ios-button-secondary text-xs p-2" onClick={() => {setParameterDraft(null);setParameterError('');parameterPendingRef.current=false;pendingRef.current?.(canvasPendingRef.current);}}>取消參數修改</button>
+              <button type="button" disabled={!!editingBlockedReason || parameterDraft === null || !onChange} className="ios-button-primary text-xs p-2 disabled:opacity-40" onClick={() => {
+                try {
+                  const kit = JSON.parse(parameterDraft!); validateKit(kit);
+                  const issue = (kit as KitEntry[]).map(e => kitEntryIssue(e)).find(Boolean); if (issue) throw new Error(issue);
+                  loadKitToWorkspace(kit); onChangeRef.current?.(kit); setJsonOutput(JSON.stringify(kit,null,2));
+                  setParameterDraft(null); setParameterError(''); parameterPendingRef.current=false;canvasPendingRef.current=false;pendingRef.current?.(false);
+                } catch(error) {setParameterError((error as Error).message);}
+              }}>套用參數到草稿</button>
+            </div>
           </details>
 
           {onInsertDescription && (
@@ -1642,8 +1750,4 @@ export const BlocklyBuilder: React.FC<BlocklyBuilderProps> = ({
   );
 };
 
-const NODE_LABEL: Record<string, string> = {
-  on_hit: "命中時", round_start: "回合開始", round_end: "回合結束", battle_start: "戰鬥開始", on_entered: "登場時",
-  before_action: "出手前", before_skill: "使用技能前", on_damaged: "受傷時", on_kill: "擊敗時",
-  before_damage: "傷害計算時", modify_priority: "先制判定時", after_action: "行動後", self_fatal: "受致命傷時", battle_phase_end: "戰鬥階段結束",
-};
+const NODE_LABEL = EFFECT_NODE_LABELS;

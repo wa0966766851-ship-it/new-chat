@@ -11,14 +11,20 @@ const server = await createServer({ server: { middlewareMode: true, hmr: false, 
     config.server.hmr = false; config.server.watch = null;
   } }] });
 try {
-  const { DEFAULT_ELVES } = await server.ssrLoadModule('/src/data/defaultElves.ts');
+  const { DEFAULT_ELVES } = await server.ssrLoadModule('/src/data/defaultElvesLoaded.ts');
   const { describeExecution, auditProgram } = await server.ssrLoadModule('/src/blocks/audit.ts');
   const { getElfTraitEntries } = await server.ssrLoadModule('/src/components/ElfTraitCards.tsx');
   const { SKILL_MODE, SOUL_MODE } = await server.ssrLoadModule('/src/blocks/specs.ts');
   const { getBattleSkillRegistry, getSoulMarkRegistry } = await server.ssrLoadModule('/src/effects/battleEventRegistry.ts');
   const skillsRegistry = getBattleSkillRegistry(), soulsRegistry = getSoulMarkRegistry();
   const handlers = { skill: (name: string) => typeof skillsRegistry[name] === 'function', soul: (name: string) => typeof soulsRegistry[name] === 'function' };
-  const evidence: AuditEvidence[] = JSON.parse(readFileSync('docs/audits/semantic-evidence.json', 'utf8')).evidence;
+  const monkeyBaphometEvidence = JSON.parse(readFileSync('docs/audits/monkey-baphomet-evidence.json', 'utf8'));
+  const evidence: AuditEvidence[] = [
+    ...JSON.parse(readFileSync('docs/audits/semantic-evidence.json', 'utf8')).evidence,
+    ...JSON.parse(readFileSync('docs/audits/reviewed-skill-evidence.json', 'utf8')).evidence,
+    ...monkeyBaphometEvidence.evidence.map(proof => ({ ...proof, testFile: monkeyBaphometEvidence.testFile,
+      testSha256: monkeyBaphometEvidence.testSha256, lastPassed: monkeyBaphometEvidence.lastPassed, inputs: monkeyBaphometEvidence.inputs })),
+  ];
   const sources = findTextSources(root, DEFAULT_ELVES);
   const usedEvidence = new Set<string>();
   const rows = DEFAULT_ELVES.map((elf: any) => {
@@ -26,7 +32,7 @@ try {
     const entries = [
       { kind: '魂印', name: elf.soulMark?.name || '無魂印', sourceText: elf.soulMark?.description || '', ...describeExecution({ elf }, handlers) },
       ...getElfTraitEntries(elf).filter((t: any) => t.kind !== '專屬特性／魂印').map((trait: any) => ({ kind: trait.kind, name: trait.name, sourceText: trait.description, ...describeExecution({ trait }, handlers) })),
-      ...skills.map(skill => ({ kind: '技能', name: skill.name, sourceText: skill.description || '', ...describeExecution({ skill }, handlers) })),
+      ...skills.map(skill => ({ kind: '技能', name: skill.name, sourceText: skill.description || '', ...describeExecution({ elf, skill }, handlers) })),
     ];
     const textSources = sources.get(elf.id) || [];
     return { id: elf.id, name: elf.name, sourceFiles: textSources.map(({ path, sha256 }) => ({ path, sha256 })),

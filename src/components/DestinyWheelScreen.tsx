@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo } from "react";
-import { ElfAvatar, TypeIcon } from "./SeerImages";
+import { ElfAvatar, TypeIcon, SkillTypeIcon } from "./SeerImages";
+import { skillDisplayType } from '../utils/skillPresentation';
 import { Elf, BattleMode } from "../types";
 import { DestinyElfInstance, buildDestinyPool, pullFromDestinyPool, simulateAiBan, simulateAiPick } from "../utils/destinyGacha";
 import { motion, AnimatePresence } from "motion/react";
@@ -994,7 +995,7 @@ export default function DestinyWheelScreen({
                   <div key={idx} className="bg-slate-950/60 border border-slate-800 p-2 rounded-lg text-xs flex justify-between items-center">
                     <div>
                       <span className="font-bold text-indigo-300 mr-2">{sk.name}</span>
-                      <span className="text-[10px] text-slate-500"><span className="inline-flex items-center gap-0.5 align-middle"><TypeIcon type={sk.type} size={11} showLabelWhenMissing={false} /></span>[{sk.type}/{sk.category}] 威力:{sk.power} PP:{sk.pp}</span>
+                      <span className="text-[10px] text-slate-500"><span className="inline-flex items-center gap-0.5 align-middle"><SkillTypeIcon skill={sk} size={11} showLabelWhenMissing={false} /></span>[{skillDisplayType(sk)}/{sk.category}] 威力:{sk.power} PP:{sk.pp}</span>
                     </div>
                     {sk.priority && sk.priority !== 0 ? (
                       <span className="text-[10px] bg-amber-500/20 text-amber-400 px-1.5 py-0.5 rounded">先制{sk.priority > 0 ? `+${sk.priority}` : sk.priority}</span>

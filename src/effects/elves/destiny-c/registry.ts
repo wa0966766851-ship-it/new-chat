@@ -136,10 +136,3 @@ export const IMPERIAL_SHIELD_SKILLS = {
     }
   }
 };
-
-export const BAJIE_SKILLS = {
-  "天河衝擊": (ctx: BattleEventContext) => {
-    ctx.addLog("【天河衝擊】：震撼乾坤的一擊！", "effect");
-    ctx.applyStatusWithImmunityCheck(ctx.targetSide, "禁療", 2);
-  }
-};

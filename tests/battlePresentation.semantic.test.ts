@@ -108,11 +108,18 @@ try {
   console.log('重來驗收：雙隊／場下HP與PP、狀態、護盾、計時器、註冊表、日誌、換人、動畫全快照重設，StrictMode及未完成舊局回呼隔離通過');
   (window as any).__BATTLE_FAST__ = true;
 
-  const { BattleEndDialog } = await server.ssrLoadModule('/src/components/BattleEndDialog.tsx');
-  for (const [winner, title] of [['p2', 'P2 勝利'], ['draw', '雙方平手']]) {
-    await act(async () => root.render(React.createElement(BattleEndDialog, { winner, onRestart: () => {}, onHome: () => {} })));
+  // 普通對戰結束畫面（原 BattleEndDialog）改由 BattleResult 負責：同樣的勝負文字、重來／回到首頁。
+  const { BattleResult } = await server.ssrLoadModule('/src/components/battle/BattleResult.tsx');
+  const { createDamageLedger, summarizeLedger } = await server.ssrLoadModule('/src/battle/damageLedger.ts');
+  const endCalls: string[] = [];
+  for (const [winner, title] of [['p2', 'P2 勝利'], ['draw', '平手']]) {
+    await act(async () => root.render(React.createElement(BattleResult, { winner, battleMode: 'PVP', summary: summarizeLedger(createDamageLedger(), 0), p1Team: [], p2Team: [], format: '自由戰', onRestart: () => endCalls.push('restart'), onHome: () => endCalls.push('home') })));
     assert.ok(document.querySelector('dialog')?.textContent?.includes(title));
+    const buttons = [...document.querySelectorAll('dialog button')] as HTMLButtonElement[];
+    await act(async () => buttons.find(button => button.textContent === '重來')!.click());
+    await act(async () => buttons.find(button => button.textContent === '回到首頁')!.click());
   }
+  assert.deepEqual(endCalls, ['restart', 'home', 'restart', 'home']);
   const { ElfAvatar } = await server.ssrLoadModule('/src/components/SeerImages.tsx');
   const { loadSeerIndex } = await server.ssrLoadModule('/src/battle/seerAssets.ts'); await loadSeerIndex();
   await act(async () => root.render(React.createElement(ElfAvatar, { elf: { id: 'fear', name: '恐懼的化身·咤克斯' }, kind: 'body', battleSide: 'p2' })));

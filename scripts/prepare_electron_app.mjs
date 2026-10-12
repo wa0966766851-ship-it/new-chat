@@ -10,7 +10,7 @@ await fs.access(path.join(root, 'dist', 'index.html'));
 await fs.mkdir(path.join(destination, 'electron'), { recursive: true });
 // A separate runtime package avoids shipping build tools, node_modules and .env.
 // Server dependencies are already included in the isolated, smoke-tested bundle.
-for (const filename of ['main.cjs', 'preload.cjs', 'serverProcess.cjs']) {
+for (const filename of ['main.cjs', 'preload.cjs', 'serverProcess.cjs', 'desktopShortcut.cjs']) {
   await fs.copyFile(path.join(root, 'electron', filename), path.join(destination, 'electron', filename));
 }
 await fs.mkdir(path.join(destination, 'electron', 'update'), { recursive: true });

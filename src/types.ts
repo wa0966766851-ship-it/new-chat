@@ -1,5 +1,6 @@
 import { AbilityDefinition } from './effects/types';
 import { KitEntry } from './effects/effectSystem.schema';
+import type { EffectExecutionMode } from './effects/effectConnection';
 
 export interface BaseStats {
   hp: number;
@@ -11,6 +12,8 @@ export interface BaseStats {
 }
 
 export interface SoulMark {
+  effectMode?: EffectExecutionMode;
+  kit?: KitEntry[];
   name: string;
   description: string;
   effectType: 'paralyze_chance' | 'burn_chance' | 'heal_on_turn_end' | 'damage_boost' | 'shield' | 'status_immune' | 'speed_boost' | 'custom' | 'none';
@@ -36,6 +39,7 @@ export interface SkillBadge {
 }
 
 export interface Skill {
+  effectMode?: EffectExecutionMode;
   /** 僅本次選擇快照使用，不覆寫背包技能。 */
   battleSlot?: number;
   name: string;
@@ -249,12 +253,12 @@ export interface Elf {
   category?: string; // e.g. "異能精靈"
   isAlienElf?: boolean; // 類型：是否為異能精靈 (或由特質「戰士」賦予)
   alienTraits?: {
-    gen2Trait?: { name: string; description: string; mechanics?: Record<string, any> }; // 二代特質 (例如: 無我, 戰士)
-    exclusiveTrait?: { name: string; description: string; mechanics?: Record<string, any> }; // 專屬特質 (例如: 無序星魂使徒)
+    gen2Trait?: { name: string; description: string; mechanics?: Record<string, any>; kit?: KitEntry[]; effectMode?: EffectExecutionMode }; // 二代特質
+    exclusiveTrait?: { name: string; description: string; mechanics?: Record<string, any>; kit?: KitEntry[]; effectMode?: EffectExecutionMode }; // 專屬特質
     /** 同一精靈擁有複數專屬特質時使用；舊資料仍可沿用 exclusiveTrait。 */
-    exclusiveTraits?: Array<{ name: string; description: string; mechanics?: Record<string, any> }>;
-    alienTrait?: { name: string; description: string }; // 異能特質 (一代通用特質)
-    generalTrait?: { name: string; description: string }; // 通用特性
+    exclusiveTraits?: Array<{ name: string; description: string; mechanics?: Record<string, any>; kit?: KitEntry[]; effectMode?: EffectExecutionMode }>;
+    alienTrait?: { name: string; description: string; kit?: KitEntry[]; effectMode?: EffectExecutionMode }; // 異能特質
+    generalTrait?: { name: string; description: string; kit?: KitEntry[]; effectMode?: EffectExecutionMode }; // 通用特性
   };
   isConcealed?: boolean; // 隱匿：印記狀態 (立繪黑影，技能顯示為未知技能)
   trait_stone_thrower?: boolean; // 投石者特質

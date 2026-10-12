@@ -88,12 +88,26 @@ const SIGN_ICON_IDS: Record<string, number> = {
 };
 export function signIconFor(name?: string): string | undefined {
   if (!name) return undefined;
-  const key = Object.keys(SIGN_ICON_IDS).find(k => name.includes(k));
-  return key ? `/seer/signbuff/${SIGN_ICON_IDS[key]}.png` : undefined;
+  const id = SIGN_ICON_IDS[name];
+  return id !== undefined ? `/seer/signbuff/${id}.png` : undefined;
 }
-/** 以戰鬥狀態鍵記錄、沒有計時器實體的專屬印記（三主寵星光型態）。 */
-export const STATE_SIGNS: { key: string; name: string }[] = [
-  { key: "starFangTurns", name: "星芳之纏" },
-  { key: "starSeaSoakTurns", name: "星海之浸" },
-  { key: "starfireBurnTurns", name: "星火之灼" },
-];
+
+export const UNKNOWN_EFFECT_ICON = '/status-icons/effect-placeholder.svg';
+/** Exact, explicitly selected tag only. A composite description must never pick its first keyword. */
+export function effectIcon(iconTag?: string, markName?: string): string {
+  if (iconTag && CUSTOM_BUFF_ICONS[iconTag]) return CUSTOM_BUFF_ICONS[iconTag];
+  if (iconTag && SIGN_ICON_IDS[iconTag] !== undefined) return `/seer/signbuff/${SIGN_ICON_IDS[iconTag]}.png`;
+  if (iconTag && BUFF_TAGS[iconTag] !== undefined) return `/seer/buff/${BUFF_TAGS[iconTag]}.png`;
+  return signIconFor(markName) || UNKNOWN_EFFECT_ICON;
+}
+
+const CATALOG_ICON_TAGS: Record<string, string> = {
+  immune_status_turns: '免疫異常', status_immune: '免疫異常', immune_drop_turns: '免疫弱化',
+  seal_support_turns: '技能無效', prop_invalid_turns: '技能無效', attack_invalid_turns: '技能無效',
+  negate_attack_turns: '免傷', dodge_turns: '閃避', vampire_turns: '吸血',
+  shield_active: '護盾', barrier_active: '護罩', true_dmg_turns: '附加傷害',
+};
+export function catalogEffectIcon(id: string, label?: string): string {
+  return effectIcon(CATALOG_ICON_TAGS[id], label);
+}
+export { STATE_SIGNS } from "./stateSigns";

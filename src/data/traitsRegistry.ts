@@ -176,24 +176,28 @@ export function getElfAdvancedMechanics(elf: Elf): AdvancedTraitMechanics {
 function nativeAdvancedMechanics(elf: Elf): AdvancedTraitMechanics {
   const merged: AdvancedTraitMechanics = {};
   if (!elf) return merged;
+  const overriddenNames = new Set([elf.alienTraits?.gen2Trait,elf.alienTraits?.exclusiveTrait,
+    ...(elf.alienTraits?.exclusiveTraits || []),elf.alienTraits?.alienTrait,elf.alienTraits?.generalTrait]
+    .filter(trait=>trait && ['kit','description'].includes(trait.effectMode || 'auto'))
+    .flatMap(trait=>trait!.name.split(/[\s/·]+/)).filter(Boolean));
   
   // 1. 從精靈的 alienTraits 屬性中提取
   const traitsToInquire: string[] = [];
   if (elf.alienTraits) {
-    if (elf.alienTraits.gen2Trait?.name) {
+    if (elf.alienTraits.gen2Trait?.name && !['kit','description'].includes(elf.alienTraits.gen2Trait.effectMode || 'auto')) {
       traitsToInquire.push(...elf.alienTraits.gen2Trait.name.split(/[\s/·]+/));
     }
-    if (elf.alienTraits.exclusiveTrait?.name) {
+    if (elf.alienTraits.exclusiveTrait?.name && !['kit','description'].includes(elf.alienTraits.exclusiveTrait.effectMode || 'auto')) {
       traitsToInquire.push(...elf.alienTraits.exclusiveTrait.name.split(/[\s/·]+/));
     }
     for (const trait of [...(elf.alienTraits.exclusiveTraits || []), elf.alienTraits.alienTrait, elf.alienTraits.generalTrait]) {
-      if (trait?.name) traitsToInquire.push(...trait.name.split(/[\s/·]+/));
+      if (trait?.name && !['kit','description'].includes(trait.effectMode || 'auto')) traitsToInquire.push(...trait.name.split(/[\s/·]+/));
     }
   }
   
   // 2. 輔助檢查解構 Profile 中是否定義了對應的 mechanics 標記
   // 例如，如果 elf 的名稱是無序三刃或擁有特定戰士/咒術師魂印，也可以直接關聯
-  const clean = (str: string) => str.replace(/[·\.\s]/g, '');
+  const clean = (str: string) => String(str ?? '').replace(/[·\.\s]/g, '');
   const elfName = clean(elf.name);
   
   if (elfName.includes('蝕言') || elf.id === 'wuxu_shiyan') {
@@ -207,7 +211,7 @@ function nativeAdvancedMechanics(elf: Elf): AdvancedTraitMechanics {
   }
   
   // 3. 遍歷並合併對應的 mechanics 屬性
-  const uniqueTraits = Array.from(new Set(traitsToInquire.map(t => t.trim()).filter(Boolean)));
+  const uniqueTraits = Array.from(new Set(traitsToInquire.map(t => t.trim()).filter(t=>t && !overriddenNames.has(t))));
   for (const t of uniqueTraits) {
     const tDef = getAdvancedTrait(t);
     if (tDef) {

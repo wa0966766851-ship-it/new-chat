@@ -71,6 +71,26 @@ export const handleKeerhodeSoulMark = (context: BattleEventContext, event: Effec
     }
   }
 
+  // 未暝之夜：造成傷害提升150%、技能先制+1、吸血100%
+  const night = Number(getPlayerState("keerhodeNightStacks")) || 0;
+  if (night > 0) {
+    if (event === EffectTiming.BEFORE_DAMAGE && extraData && !extraData.isIncoming && extraData.damageCategory !== "true") extraData.increasePercent += 1.5;
+    if (event === EffectTiming.MODIFY_PRIORITY && extraData?.priorityComp) extraData.priorityComp.bonus += 1;
+    if (event === EffectTiming.BEFORE_SKILL && (Number(getPlayerState("vampireRatio")) || 0) < 1) setPlayerState("vampireRatio", 1);
+  }
+
+  // 在場敵我雙方任一方受到真實傷害時（回合開始時體力不高於½則取消此條件）：附加1道未暝之夜
+  if (self.name === "柯爾霍德") {
+    const onField = (actor === "p1" ? activeP1 : activeP2);
+    const isActive = onField && (onField.battleId || onField.id) === (self.battleId || self.id);
+    const gain = (event === EffectTiming.TRUE_DAMAGE_TAKEN && (extraData?.damage || 0) > 0)
+      || (event === EffectTiming.ROUND_START && self.currentHp <= self.maxHp / 2);
+    if (isActive && gain) {
+      setPlayerState("keerhodeNightStacks", night + 1);
+      addLog(`🌙 【凕】：獲得 1 道未暝之夜（目前 ${night + 1} 道）！`, "effect");
+    }
+  }
+
   // 3. 受到傷害後 (ON_DAMAGED)
   if (event === EffectTiming.ON_DAMAGED) {
     const { category, amount } = extraData;
@@ -161,11 +181,7 @@ export const handleKeerhodeSoulMark = (context: BattleEventContext, event: Effec
 };
 
 export const KEERHODE_SKILLS: Record<string, BattleSkillHandler> = {
-  "傲視千川": (ctx) => {
-    ctx.addLog(`❄️ 使用【傲視千川】：全屬性提升！對手受傷翻倍且無法切換！`, "effect");
-    ctx.setOpponentState("damageTakenBoostTurns", 2);
-    ctx.setOpponentState("lockSwitchTurns", 2);
-  },
+  // 「傲視千川」屬於 5012 冰魄柯爾德，實作在 keld/registry.ts（此處舊副本會被載入順序覆蓋，已移除）。
   "凝寒止喧": (ctx) => {
     ctx.addLog(`❄️ 使用【凝寒止喧】：消除對手回合類效果，封印屬性技能！`, "effect");
     ctx.clearTurnEffectsOf(ctx.actor === "p1" ? "p2" : "p1", ctx.target);

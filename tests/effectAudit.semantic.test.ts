@@ -30,6 +30,9 @@ check('混合模式只執行指定子句，未解析保留fallback風險', () =>
   assert.equal(clauseExecution('hybrid', true, 2, [2]), 'block-runtime');
   assert.equal(clauseExecution('hybrid', true, 1, [2]), 'handler-review');
   assert.equal(clauseExecution('blocks', false, 1), 'text-fallback-review');
+  assert.equal(clauseExecution('kit', true, 0), 'authored-block-runtime');
+  assert.equal(clauseExecution('kit', false, 0), 'blocked-unresolved');
+  assert.equal(clauseExecution('description', false, 0), 'blocked-unresolved');
 });
 const temp = mkdtempSync(resolve(tmpdir(), 'seer-audit-evidence-'));
 try {

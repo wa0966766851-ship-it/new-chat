@@ -326,7 +326,7 @@ export const StatusRegistry: Record<string, StatusRegistryEntry> = {
     categories: ['WEAKENING'],
     description: '弱化類異常狀態；處於該異常狀態時使用攻擊技能時轉化為撞擊（撞擊：威力 35，造成物理傷害）；異常結束或被解除時消耗自身全部體力令自身死亡',
     mechanics: [
-      { type: 'SPECIAL_BUFF', params: { overrideAttack: '撞擊', dieOnEnd: true } }
+      { type: 'SPECIAL_BUFF', params: { overrideAttack: '撞擊', overrideAttackPower:35,overrideAttackCategory:'物理',overrideAttackType:'普通',dieOnEnd: true } }
     ]
   },
 

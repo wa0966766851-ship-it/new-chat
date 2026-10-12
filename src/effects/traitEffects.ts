@@ -20,7 +20,7 @@ export function traitNames(elf: Elf | undefined | null): string[] {
   if (!elf) return [];
   return [...new Set(effectSourceViews(elf).flatMap(source => {
     const t = source.alienTraits || {};
-    return [t.generalTrait?.name, t.alienTrait?.name].filter((n): n is string => typeof n === 'string' && n.length > 0);
+    return [t.generalTrait, t.alienTrait].filter(trait => !['kit','description'].includes(trait?.effectMode || 'auto')).map(trait => trait?.name).filter((n): n is string => typeof n === 'string' && n.length > 0);
   }))];
 }
 const has = (elf: Elf | undefined | null, name: string) => traitNames(elf).includes(name);

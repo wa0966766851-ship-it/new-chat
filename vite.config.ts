@@ -35,6 +35,26 @@ export default defineConfig(() => {
     },
     // 僅掃描正式入口，避免驗證伺服器把備份、報告與舊建置 HTML 當成應用入口。
     optimizeDeps: { entries: ['index.html'] },
+    // 背景推演獨立載入正式引擎；ES worker 支援動態模組分塊。
+    worker: {
+      format: 'es',
+      rollupOptions: { output: {
+        onlyExplicitManualChunks: true,
+        manualChunks(id) {
+          const file = id.replace(/\\/g, '/');
+          // 資料／精靈註冊模組／通用引擎依既有模組邊界分塊。
+          // 初始化順序與跨塊相容性由正式Worker測試鎖定，不改寫任何handler。
+          if (file.includes('/src/effects/elves/')) return 'ai-elf-effects';
+          if (/\/src\/data\/(blockLibraryData\.ts|blockLibrary\.packed\.json|packedJson\.ts)$/.test(file)) return 'ai-data-blocks';
+          if (file.includes('/src/data/elfProfiles/')) return 'ai-data-profiles';
+          if (/\/src\/data\/(reviewedSkillKits|reviewedSequenceSkillKits|migratedSequenceSkillKits)\.ts$/.test(file)) return 'ai-data-kits';
+          if (/\/src\/data\/(descriptions\.compressed\.json|descriptionSources\.ts)$/.test(file)) return 'ai-data-descriptions';
+          if (/\/src\/data\/defaultElves\.ts$/.test(file)) return 'ai-data-elves';
+          if (/\/src\/data\/codex\.packed\.json$/.test(file)) return 'ai-data-codex';
+          if (/\/src\/blocks\/parse\.ts$/.test(file)) return 'ai-description-parser';
+        },
+      } },
+    },
     build: {
       manifest: true,
       // 不使用 unsafe/property mangling：Blockly 公開 API 與工作區存檔格式需保持相容。
@@ -55,6 +75,8 @@ export default defineConfig(() => {
             // 描述解析為純函式；獨立快取，不強拆帶狀態的精靈 handler。
             if (/\/src\/blocks\/parse\.ts$/.test(normalized)) return 'effect-description-parser';
             if (/\/src\/data\/defaultElves\.ts$/.test(normalized)) return 'data-elves';
+            // 百科壓縮資料（約350 kB）為純資料；獨立成塊，codexRegistry 邏輯塊才不會超過500 kB預算。
+            if (/\/src\/data\/codex\.packed\.json$/.test(normalized)) return 'data-codex';
             // 跨首頁／百科／特殊模式共用的純函數，沒有 React 或狀態初始化相依。
             if (/\/src\/utils\/(elfSearch|controlSettings|safeStorage|elfDisplayRank)\.ts$/.test(normalized)) return 'ui-foundation';
             if (/\/src\/data\/(descriptions\.compressed\.json|descriptionSources\.ts|alienTraits\.ts|generalTraits\.ts|titles\.ts)$/.test(normalized)) {

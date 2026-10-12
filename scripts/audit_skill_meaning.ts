@@ -1,7 +1,7 @@
 import { readdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { pathToFileURL } from 'node:url';
 import { resolve } from 'node:path';
-import { DEFAULT_ELVES } from '../src/data/defaultElves';
+import { DEFAULT_ELVES } from '../src/data/defaultElvesLoaded';
 import { SOUL_MARK_MAPPING } from '../src/effects/battleEventRegistry';
 import { SKILL_MODE, SOUL_MODE } from '../src/blocks/specs';
 import { parseSkill } from '../src/blocks/parse';

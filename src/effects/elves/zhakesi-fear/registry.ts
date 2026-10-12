@@ -133,8 +133,8 @@ export const handleFearIncarnationSoulMark = (ctx: BattleEventContext, event: Ef
           });
           ctx.updateElf(actor, { id: self.id, skills: self.skills });
 
-          const hpPercent = healAmt / self.maxHp;
-          applyTrueDamage(oppSide, Math.floor(ctx.target.maxHp * hpPercent), "恐懼反哺百分比傷害");
+          // 原文：對手受到等同於自身恢復量的百分比傷害
+          ctx.applyPinkDamage(oppSide, healAmt, "恐懼反哺百分比傷害", undefined, undefined, "percent");
           addLog(`🦇 【懼】：戰鬥階段結束，自身恢復損失體力的 50%（${healAmt} 點，+1 PP）！同時對手受到同等比例傷害！`, "heal");
 
           // 若對手體力未滿則全屬性-1且至少減至1，未觸發則對手下2回合無法切換
@@ -168,22 +168,31 @@ export const handleFearIncarnationSoulMark = (ctx: BattleEventContext, event: Ef
       if (priorityCount > 0) {
         setPlayerState("nextPriorityCount", priorityCount - 1);
       }
+      break;
+    }
+
+    case EffectTiming.ON_SKILL_HIT: {
+      // 深淵凝視：下3次自身攻擊技能附加對手300點固定傷害（獨立的固定傷害，不併入攻擊傷害）。
+      // 過去 BEFORE_DAMAGE 併入 bonusFixed、引擎又另外附加一次固定傷害，造成重複（2026-10-10 修正）。
+      // 未實裝：「若對手受到此傷害後體力未減少則額外附加300點真實傷害」。
       const fixedCount = getPlayerState("nextAtkFixedDmgCount") || 0;
-      if (fixedCount > 0 && ctx.skill?.category !== "屬性") {
+      if (fixedCount > 0) {
         setPlayerState("nextAtkFixedDmgCount", fixedCount - 1);
+        ctx.applyFixedDamage(oppSide, 300, "深淵凝視");
+        addLog(`🦇 【深淵凝視】：附加 300 點固定傷害！（剩餘 ${fixedCount - 1} 次）`, "effect");
       }
       break;
     }
 
     case EffectTiming.BEFORE_DAMAGE: {
       if (!extraData?.isIncoming) {
-        // Attacking
-        const fixedCount = getPlayerState("nextAtkFixedDmgCount") || 0;
-        if (fixedCount > 0) {
-          extraData.bonusFixed = (extraData.bonusFixed || 0) + 300;
-          addLog(`🦇 【深淵凝視】：附加 300 點固定傷害！`, "effect");
+        // Attacking（劫數：當回合「攻擊傷害」提升，只限攻擊技能）
+        const boost = extraData?.damageCategory === "skill_attack" ? (getPlayerState("damageBoostThisTurn") || 0) : 0;
+        // 懼噬·虛實逆寫：每有一種能力等級與對手相同，本技能造成傷害提升12%
+        if (extraData?.damageCategory === "skill_attack" && String(ctx.skill?.name || "").includes("虛實逆寫")) {
+          const same = ["atk", "def", "spatk", "spdef", "speed", "accuracy"].filter(k => ((self.statStages as any)?.[k] || 0) === ((ctx.target?.statStages as any)?.[k] || 0)).length;
+          if (same > 0) { extraData.increasePercent += 0.12 * same; addLog(`🦇 【虛實逆寫】：${same} 種能力等級相同，傷害提升 ${same * 12}%！`, "effect"); }
         }
-        const boost = getPlayerState("damageBoostThisTurn") || 0;
         if (boost > 0) {
           extraData.increasePercent = (extraData.increasePercent || 0) + boost;
           addLog(`🦇 【劫數・萬念歸墟】：當回合傷害提升 ${boost * 100}%！`, "effect");
@@ -270,7 +279,7 @@ export const ZHAKESI_FEAR_SKILLS: Record<string, BattleSkillHandler> = {
       ctx.updateElf(oppSide, { id: oppElf.id, statStages: oppStages });
     }
 
-    ctx.setOpponentState("noHealTurns", 3);
+    ctx.setOpponentState(`${oppSide}_noHealTurns`, 3); // 帶方位前綴才會被遞減
     ctx.setOpponentState("utilitySkillAddEffectInvalidTurns", 3);
   },
 
@@ -281,7 +290,9 @@ export const ZHAKESI_FEAR_SKILLS: Record<string, BattleSkillHandler> = {
     ctx.setPlayerState(`${actor}_immuneAndReflectStatusTurns`, 5);
     ctx.setPlayerState("skillFearTurns", 3);
     ctx.setPlayerState("nextAtkFixedDmgCount", 3);
-    ctx.setPlayerState("damageBoostTurns", 2);
+    // 下2次自身攻擊技能造成傷害提升150%（引擎讀取 attackDamageBoostCharges）
+    ctx.setPlayerState("attackDamageBoostCharges", 2);
+    ctx.setPlayerState("attackDamageBoostChargeRate", 1.5);
   },
 
   "幽幕折返": (ctx) => {
@@ -297,9 +308,12 @@ export const ZHAKESI_FEAR_SKILLS: Record<string, BattleSkillHandler> = {
 
     ctx.setPlayerState("drainHpTurns", 5);
     ctx.setOpponentState("next2AtkInvalid", 2);
+    ctx.setOpponentState("attackInvalidSource", "幽幕折返");
     ctx.setPlayerState("nextTurnPriority", 2);
     ctx.setPlayerState("nextPriorityCount", 3);
     ctx.setPlayerState("ignoreSpDefCount", 3);
+    ctx.setPlayerState("ignoreSpDefPercent", 0.6);
+    ctx.setPlayerState("ignoreSpDefSource", "幽幕折返");
   },
 
   "懼噬.虛實逆寫": (ctx) => {

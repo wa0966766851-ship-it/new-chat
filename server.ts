@@ -4,6 +4,7 @@ import fs from "fs";
 import https from "https";
 import { GoogleGenAI, Type } from "@google/genai";
 import dotenv from "dotenv";
+import { registerLauncherPreferences } from './server/launcherPreferences';
 import { AssetCache } from './electron/update/assetCache.cjs';
 import { REAL_CARD_EFFECT_MODULES as AI_EFFECT_REFERENCE_LIBRARY, TEMPLATE_GRAMMAR_GUIDELINES } from "./src/data/cardTemplates";
 
@@ -13,6 +14,7 @@ const app = express();
 const PORT = Number(process.env.PORT || 3000);
 
 app.use(express.json());
+registerLauncherPreferences(app, process.cwd());
 // Lite builds carry a local, version-pinned manifest from the verified application package.
 // Full builds have no manifest and retain their original offline routes.
 const assetManifestFile = path.join(process.cwd(), 'dist', 'asset-manifest.json');

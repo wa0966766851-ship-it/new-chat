@@ -12,8 +12,8 @@ import { HOLY_MILES_SEED } from "./holyMiles";
 import { LIUJIE_SEED } from "./liujie";
 import { NEW_ELF_SEEDS } from "./newElves";
 import { HAMO_SEED } from './hamo';
-import { STAGED_ARENA_ELVES } from "./stagedArenaElves";
 import { isSkillStone, stoneBasePp } from './skillStones';
+import { applyReviewedSkillKits } from './reviewedKitCatalogue';
 
 function createRefSkill(
   elfId: string,
@@ -2735,7 +2735,6 @@ const SEED_ELVES: (Omit<Elf, "id" | "calculatedStats" | "currentHp" | "maxHp"> &
   LIUJIE_SEED,
   ...NEW_ELF_SEEDS,
   HAMO_SEED,
-  ...STAGED_ARENA_ELVES
 ];
 
 import { getNumericElfId } from './elfRegistry';
@@ -2771,7 +2770,8 @@ function applySourceText(item: Elf): Elf {
   return { ...item, soulMark, skills, skillPool };
 }
 
-export const DEFAULT_ELVES: Elf[] = SEED_ELVES.map(applySourceText).map((item, index) => {
+const prepareSeeds = (items: any[]): Elf[] => items.map(applySourceText).map(applyReviewedSkillKits);
+function finalizeSeed(item: Elf, index: number): Elf {
   const inscriptions = getEffectiveInscriptions(item.inscriptions);
   const calculated = calculateElfStats(item.baseStats, item.level, item.ivs, item.evs, item.natureModifiers, inscriptions);
   return {
@@ -2784,4 +2784,25 @@ export const DEFAULT_ELVES: Elf[] = SEED_ELVES.map(applySourceText).map((item, i
     currentHp: calculated.hp,
     maxHp: calculated.hp
   };
-});
+}
+
+/** 預設精靈清單（同一個陣列物件）。API 匯入的精靈在 loadImportedElves() 完成後才追加到尾端。 */
+export const DEFAULT_ELVES: Elf[] = prepareSeeds(SEED_ELVES).map(finalizeSeed);
+
+// ── 延後載入：API 匯入精靈與階段競技場精靈（stagedArenaElves＋heavyweights.json）的資料不進首頁初始 JS ──────────────────────────
+// 載入完成前清單不含匯入精靈；完成後以與其他精靈完全相同的流程（原文套用→審核 Kit→定稿）追加，並通知訂閱者。
+let importedLoad: Promise<void> | null = null;
+let revision = 0;
+const listeners = new Set<() => void>();
+export const getDefaultElvesRevision = () => revision;
+export function subscribeDefaultElves(listener: () => void): () => void { listeners.add(listener); return () => { listeners.delete(listener); }; }
+export function loadImportedElves(): Promise<void> {
+  // 順序與先前靜態載入相同：階段競技場精靈（原本在 SEED_ELVES 尾端）→ API 匯入精靈，皆追加在清單尾端。
+  importedLoad ??= Promise.all([import("./stagedArenaElves"), import("./importedElves")]).then(([{ STAGED_ARENA_ELVES }, { IMPORTED_ELF_SEEDS }]) => {
+    const start = DEFAULT_ELVES.length;
+    DEFAULT_ELVES.push(...prepareSeeds([...STAGED_ARENA_ELVES, ...IMPORTED_ELF_SEEDS] as any).map((item, i) => finalizeSeed(item, start + i)));
+    revision++;
+    listeners.forEach(listener => listener());
+  }).catch(error => { importedLoad = null; throw error; });
+  return importedLoad;
+}

@@ -6,6 +6,7 @@ import { useSceneResources, saveSceneResources, DEFAULT_SCENE_RESOURCES, SceneRe
 import { readAnimationSettings } from "../battle/animationSettings";
 import { parseMusicSource, musicWatchUrl } from "../utils/musicSource";
 import { useMusicPlayer } from "./useMusicPlayer";
+import { PageErrorBoundary } from "./PageErrorBoundary";
 
 // --- Theme Types & Config ---
 
@@ -269,11 +270,13 @@ export default function ControlHub({ currentScene, canApplyUpdates = false }: { 
 
       <AnimatePresence>
         {isOpen && (
+          <PageErrorBoundary onBack={() => setIsOpen(false)} backLabel="關閉控制中心">
           <Suspense fallback={<div role="status" className="ios-card p-4 text-slate-200">
             載入控制中心… <button type="button" className="ios-button ml-2" onClick={() => setIsOpen(false)}>取消</button>
           </div>}>
             <ControlHubPanel {...model} />
           </Suspense>
+          </PageErrorBoundary>
         )}
       </AnimatePresence>
     </div>

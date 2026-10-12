@@ -211,6 +211,10 @@ export function handleOdinSoulMark(ctx: BattleEventContext, event: EffectTiming,
           addDamageReduction(comp, 0.5, false);
           setOpponentState('odin_next_dmg_minus_50', false);
         }
+        // ᛁ 符文：激活後直到下場前持有者（對手）造成的非真實傷害減半
+        if (comp.damageCategory !== 'true' && (ctx.target?.skills || []).some((sk: any) => sk?.isRuneActive && (sk.skillRune || sk.specialBadge?.text) === ODIN_RUNES.ISA.symbol)) {
+          addDamageReduction(comp, 0.5, false);
+        }
       }
     }
   }
@@ -498,72 +502,6 @@ export const odinSkillRegistry: Record<string, (ctx: BattleEventContext) => void
     // 🎯 場上存在異常狀態時，當回合造成技能傷害提升75%（■ 無視免疫攻擊由引擎 attackImmunity 處理）
     const hasAbn = Object.keys(getStatuses(ctx.activeP1) || {}).length > 0 || Object.keys(getStatuses(ctx.activeP2) || {}).length > 0;
     if (hasAbn) ctx.setPlayerState('odinAnsuzBoostThisTurn', true);
-  },
-
-  'ᚷᚢᚾᚷᚾᛁᚱ ᚦᚱᛖᚢᛗᚨᛞᚱ': (ctx) => {
-    const { actor, applyStatusWithImmunityCheck, applyHeal, applyStatChange, addLog } = ctx;
-    const oppSide = actor === 'p1' ? 'p2' : 'p1';
-    const selfElf = actor === 'p1' ? ctx.activeP1 : ctx.activeP2;
-    const oppElf = actor === 'p1' ? ctx.activeP2 : ctx.activeP1;
-
-    // 1. 解除自身能力下降狀態，解除成功則恢復自身全部體力
-    const selfStages = selfElf.statStages || { atk: 0, def: 0, spatk: 0, spdef: 0, speed: 0, accuracy: 0 };
-    const negativeChanges: Record<string, number> = {};
-    let hasNegative = false;
-    const statKeys = ['atk', 'def', 'spatk', 'spdef', 'speed', 'accuracy'] as const;
-    statKeys.forEach(k => {
-      const v = selfStages[k] || 0;
-      if (v < 0) {
-        negativeChanges[k] = -v;
-        hasNegative = true;
-      }
-    });
-
-    if (hasNegative) {
-      applyStatChange(actor, negativeChanges);
-      applyHeal(actor, selfElf.maxHp || 1000);
-      addLog(`⚡ 【岡格尼爾】：解除自身能力下降狀態成功，恢復自身全部體力！`, 'heal');
-    }
-
-    // 2. 消除對手能力提升狀態，消除成功則100%令對手害怕
-    const oppStages = oppElf.statStages || { atk: 0, def: 0, spatk: 0, spdef: 0, speed: 0, accuracy: 0 };
-    const positiveChanges: Record<string, number> = {};
-    let hasPositive = false;
-    statKeys.forEach(k => {
-      const v = oppStages[k] || 0;
-      if (v > 0) {
-        positiveChanges[k] = -v;
-        hasPositive = true;
-      }
-    });
-
-    if (hasPositive) {
-      applyStatChange(oppSide, positiveChanges);
-      applyStatusWithImmunityCheck(oppSide, '害怕', 3);
-      addLog(`⚡ 【岡格尼爾】：消除對手能力提升狀態成功，令對手害怕！`, 'effect');
-    }
-
-    // 3. 吸取對手最大體力¼，自身體力低於最大體力½時吸取效果翻倍
-    const oppMaxHp = oppElf.maxHp || 1000;
-    const ratio = selfElf.currentHp < (selfElf.maxHp || 1000) / 2 ? 0.5 : 0.25;
-    const absorbAmt = Math.floor(oppMaxHp * ratio);
-    ctx.applyTrueDamage(oppSide, absorbAmt, '岡格尼爾吸取');
-    applyHeal(actor, absorbAmt);
-  },
-
-  'ᛉᛖᛚᛃᚨ ᛟᚾ ᛁᚷᚷᛞᚱᚨᛋᛁᛚ': (ctx) => {
-    const { actor, addLog, applyStatChange, setPlayerState, setOpponentState } = ctx;
-    const oppSide = actor === 'p1' ? 'p2' : 'p1';
-    const selfElf = actor === 'p1' ? ctx.activeP1 : ctx.activeP2;
-    const oppElf = actor === 'p1' ? ctx.activeP2 : ctx.activeP1;
-
-    const boost = selfElf.currentHp > oppElf.currentHp ? 2 : 1;
-    applyStatChange(actor, { atk: boost, def: boost, spAtk: boost, spDef: boost, spd: boost, accuracy: boost });
-
-    setPlayerState(`${actor}_yggdrasilAbsorbTurns`, 5);
-    setOpponentState(`${oppSide}_noHealTurns`, 2);
-    setPlayerState(`${actor}_nextSkillsPriorityBonus`, 2);
-    addLog(`🌿 【世界樹恩澤】：奧丁全屬性 +${boost}！開啟 5 回合吸取與 2 回合先制 +2！`, 'effect');
   },
 
   'ᚱᚨᚷᚾᚨᚱᛟᚲ': (ctx) => {

@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import React, { act } from 'react';
 import { JSDOM } from 'jsdom';
-import { DEFAULT_ELVES } from '../src/data/defaultElves';
+import { DEFAULT_ELVES } from '../src/data/defaultElvesLoaded';
 import { createSkillStone, equipSkillStone, isStoneThrower, skillConfigurationKey, validateSkillStoneLoadout } from '../src/data/skillStones';
 import { parseElfBlueprint } from '../src/utils/elfBlueprint';
 

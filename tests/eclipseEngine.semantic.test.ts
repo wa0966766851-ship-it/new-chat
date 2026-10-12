@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { DEFAULT_ELVES } from '../src/data/defaultElves';
+import { DEFAULT_ELVES } from '../src/data/defaultElvesLoaded';
 import * as E from '../src/modes/interstellar/v2/engine';
 import { EVENT_BY_ID } from '../src/modes/interstellar/v2/content';
 import { RELIC_BY_ID } from '../src/modes/interstellar/v2/relics';

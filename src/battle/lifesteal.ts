@@ -11,7 +11,7 @@ export function queueSkillLifesteal(
   if (!Number.isFinite(damage) || !Number.isFinite(ratio) || ratio <= 0 || !matchesDamageTypes(scopes, category)) return 0;
   const amount = Math.max(0, Math.floor(damage * ratio));
   if (amount > 0) {
-    pushEffect({ type: 'heal', side, data: { amount } });
+    pushEffect({ type: 'heal', side, data: { amount,recoveryOrigin:registry.vampireRecoveryOriginThisAction } });
     pushEffect({ type: 'log', side, data: { text: `🩸 【吸血】：技能結算值 ${damage} ×${ratio}，恢復請求 ${amount} 點體力。`, type: 'heal' } });
   }
   return amount;

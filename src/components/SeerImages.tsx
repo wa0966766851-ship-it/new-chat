@@ -1,6 +1,7 @@
 import { hiddenFromViewer } from "../battle/viewerPerspective";
 import React, { useEffect, useState } from "react";
-import type { Elf } from "../types";
+import type { Elf, Skill } from "../types";
+import { skillDisplayType } from '../utils/skillPresentation';
 import { appearanceElf } from "../battle/illusion";
 import { IMAGE_COPY_EVENT } from "./ImageCopyMenu";
 import { shouldMirrorBattleSprite, hasRenderableElfImagePath, getSeerIndex, loadSeerIndex, onSeerIndexLoaded, petImageUrls, splitTypes, typeIconUrls, isNoneType } from "../battle/seerAssets";
@@ -91,7 +92,11 @@ export function ElfAvatar({ elf, battleSide, kind = "head", className, fallbackC
     alt={elf.name} />;
 }
 
-/** 屬性圖標：官方組合 → 「系」資料夾 → 雙屬性並排單屬性圖標 → 文字 */
+/** 技能圖標依技能分類投影；屬性技能不沿用舊資料中的攻擊系別。 */
+export function SkillTypeIcon({skill,...props}:{skill:Pick<Skill,'type'|'category'>;size?:number;className?:string;showLabelWhenMissing?:boolean}) {
+  return <TypeIcon {...props} type={skillDisplayType(skill)} />;
+}
+/** 精靈／系別圖標：官方組合 → 「系」資料夾 → 單屬性並排 → 文字。 */
 export function TypeIcon({ type, size = 22, className, showLabelWhenMissing = true }: {
   type: string; size?: number; className?: string; showLabelWhenMissing?: boolean;
 }) {

@@ -1,6 +1,17 @@
 import { multiplyDamageReduction, addDamageReduction } from '../../../battle/damageReduction';
 import { benchSkip } from '../../fieldGuard';
 import { ElfDeconstructedProfile, EffectTiming, BattleEventContext, BattleSkillHandler } from '../../types';
+import { queueHpDrain } from '../../../battle/hpDrain';
+import { skillSlot } from '../../../battle/skillSlot';
+
+/** 出招技能是暫存副本，充能必須寫回選中的原槽；moveIndex是出手順序，不能當槽號。 */
+function setSkillCharge(ctx: BattleEventContext, charge: number): void {
+  const index = skillSlot(ctx.self, ctx.skill);
+  ctx.skill.charge = Math.max(0, charge);
+  if (index < 0) return; // 同名而無槽資訊不猜第一格。
+  const skills = ctx.self.skills.map((skill, slot) => slot === index ? { ...skill, charge: ctx.skill.charge } : skill);
+  ctx.updateElf(ctx.actor, { id: ctx.self.id, battleId: ctx.self.battleId, skills });
+}
 
 export const handleMarsSoulMark = (ctx: BattleEventContext, event: EffectTiming, extraData?: any) => {
   if (benchSkip(ctx, event)) return; // 場下不觸發回合節點效果（例：聖・回合結束回復）
@@ -14,7 +25,7 @@ export const handleMarsSoulMark = (ctx: BattleEventContext, event: EffectTiming,
       ctx.setPlayerState("marsMechaMode", "speed"); // Combined with極速機甲
       ctx.setPlayerState("marsShieldActive", true);
       
-      const shieldAmt = Math.floor(self.maxHp * 0.33);
+      const shieldAmt = Math.floor(self.maxHp / 3);
       self.shield = (self.shield || 0) + shieldAmt;
       self.barrier = (self.barrier || 0) + shieldAmt;
       if (ctx.updateElf) {
@@ -29,7 +40,7 @@ export const handleMarsSoulMark = (ctx: BattleEventContext, event: EffectTiming,
     case EffectTiming.ROUND_START: {
       // 回合開始時：
       // 1. 堅壁機甲：附加等同於自身最大體力⅓的護盾與護罩且護盾與護罩存在時自身首次受到的非真實傷害減半1次；
-      const shieldAmt = Math.floor(self.maxHp * 0.33);
+      const shieldAmt = Math.floor(self.maxHp / 3);
       self.shield = shieldAmt;
       self.barrier = shieldAmt;
       if (ctx.updateElf) {
@@ -59,9 +70,8 @@ export const handleMarsSoulMark = (ctx: BattleEventContext, event: EffectTiming,
         // 吸取對手最大體力的1/3 (boss無效)
         const isBoss = target.name.includes("魔獅迪露") || target.maxHp > 100000;
         if (!isBoss) {
-          const drainAmt = Math.floor(target.maxHp * 0.33);
-          const actualDrain = ctx.applyPinkDamage(ctx.actor === "p1" ? "p2" : "p1", drainAmt, "王·超限共頻百分比吸體", ctx.activeP1, ctx.activeP2, "percent");
-          self.currentHp = Math.min(self.maxHp, self.currentHp + actualDrain);
+          const drainAmt = Math.floor(target.maxHp / 3);
+          const actualDrain = queueHpDrain(ctx, ctx.targetSide, drainAmt, 'percent', '王·超限共頻');
           ctx.addLog(`⚙️ 【王·超限共頻】超限汲取：吸取對手最大體力⅓ (${actualDrain} 點)！`, "heal");
         } else {
           ctx.addLog(`⚙️ 由於對手為Boss，【王·超限共頻】最大體力⅓汲取效果無效！`, "info");
@@ -118,16 +128,14 @@ export const handleMarsSoulMark = (ctx: BattleEventContext, event: EffectTiming,
         const currentCharge = ctx.skill.charge !== undefined ? ctx.skill.charge : ctx.skill.pp;
         if (currentCharge > 0) {
           // 消耗該技能所有充能值
-          ctx.skill.charge = 0;
-          ctx.skill.pp = 0; // synchronize pp to 0 in UI but keep selectable
+          setSkillCharge(ctx, 0);
           
           // 汲取對手等同於15倍消耗值的體力值
           const drainAmt = currentCharge * 15;
-          const actualDrain = ctx.applyPinkDamage(ctx.actor === "p1" ? "p2" : "p1", drainAmt, "馬爾修斯充能極限吸體", ctx.activeP1, ctx.activeP2, "fixed");
-          self.currentHp = Math.min(self.maxHp, self.currentHp + actualDrain);
+          const actualDrain = queueHpDrain(ctx, ctx.targetSide, drainAmt, 'true', '充能極限打擊');
           
           // 當回合攻擊技能造成傷害提升150%
-          ctx.setPlayerState("marsDamageMultiplier", 2.5);
+          ctx.setPlayerState("marsChargeStrikeBoost", 1.5); // 當回合攻擊技能傷害提升150%（回合結束清除）
           ctx.addLog(`💥 馬爾修斯充能超頻！消耗了 【${ctx.skill.name}】 全部 ${currentCharge} 點充能，汲取對手 ${actualDrain} 點體力，且當回合技能傷害提升 150%！`, "effect");
         }
         ctx.setPlayerState("marsEndTurnChargeStrike", false); // consume the strike
@@ -147,11 +155,12 @@ export const handleMarsSoulMark = (ctx: BattleEventContext, event: EffectTiming,
         }
       }
       
-      // Apply 150% damage boost if active
-      const dmgMul = ctx.getPlayerState("marsDamageMultiplier") || 1.0;
-      if (!isIncoming && dmgMul > 1.0 && extraData) {
-        extraData.multiplier *= dmgMul;
-        ctx.setPlayerState("marsDamageMultiplier", 1.0); // Reset after damage
+      // 兩個「提升X%」各自獨立（相乘），只限攻擊技能傷害
+      if (!isIncoming && extraData && extraData.damageCategory === "skill_attack") {
+        const strike = Number(ctx.getPlayerState("marsChargeStrikeBoost")) || 0;
+        if (strike > 0) extraData.increasePercent += strike; // 當回合有效
+        const protocol = Number(ctx.getPlayerState("marsProtocolBoostThisAction")) || 0;
+        if (protocol > 0) { extraData.increasePercent += protocol; ctx.setPlayerState("marsProtocolBoostThisAction", 0); }
       }
       break;
     }
@@ -170,8 +179,7 @@ export const handleMarsSoulMark = (ctx: BattleEventContext, event: EffectTiming,
           const oppHpRatio = target.currentHp / target.maxHp;
           if (oppHpRatio < 0.3) {
             // Low Hp execution: "消耗對手所有體力與該技能1點充能值以提升自身所有能力值30%"
-            ctx.skill.charge = Math.max(0, currentCharge - 1);
-            ctx.skill.pp = ctx.skill.charge; // Sync pp
+            setSkillCharge(ctx, currentCharge - 1);
             
             ctx.addLog(`💥 【毀滅機甲】弱者斬殺！消耗 1 點充能與對手所有生命！`, "effect");
             ctx.applyTrueDamage(ctx.actor === "p1" ? "p2" : "p1", target.currentHp, "毀滅斬殺", ctx.activeP1, ctx.activeP2);
@@ -184,12 +192,10 @@ export const handleMarsSoulMark = (ctx: BattleEventContext, event: EffectTiming,
             self.statStages = selfStages;
           } else {
             // High Hp percentage drain: "消耗該技能1點充能值以附加對手最大體力30%的百分比傷害並恢復自身等量體力"
-            ctx.skill.charge = Math.max(0, currentCharge - 1);
-            ctx.skill.pp = ctx.skill.charge; // Sync pp
+            setSkillCharge(ctx, currentCharge - 1);
             
             const drainAmt = Math.floor(target.maxHp * 0.3);
-            const actualDrain = ctx.applyPinkDamage(ctx.actor === "p1" ? "p2" : "p1", drainAmt, "毀滅百分比滲透", ctx.activeP1, ctx.activeP2, "percent");
-            self.currentHp = Math.min(self.maxHp, self.currentHp + actualDrain);
+            const actualDrain = queueHpDrain(ctx, ctx.targetSide, drainAmt, 'percent', '毀滅機甲');
             ctx.addLog(`💥 【毀滅機甲】超頻：消耗 1 點充能，附加對手最大體力 30% 百分比傷害 (${actualDrain} 點) 並恢復等量體力！`, "effect");
           }
         }
@@ -198,10 +204,13 @@ export const handleMarsSoulMark = (ctx: BattleEventContext, event: EffectTiming,
     }
     
     case EffectTiming.ROUND_END: {
+      ctx.setPlayerState("marsChargeStrikeBoost", 0);
+      ctx.setPlayerState("marsProtocolBoostThisAction", 0);
       // 1. 堅壁機甲："回合結束時恢復自身最大體力的⅓並附加對手等量百分比傷害，若護盾護罩消失時則額外提前觸發1次(回合結束時可再次觸發)"
-      const healAmt = Math.floor(self.maxHp * 0.33);
-      self.currentHp = Math.min(self.maxHp, self.currentHp + healAmt);
-      const splashDmg = Math.floor(target.maxHp * 0.33);
+      const healAmt = Math.floor(self.maxHp / 3);
+      ctx.applyHeal(ctx.actor, healAmt);
+      // 「等量」引用本次恢復請求，不另取對手最大體力⅓，也不因自身滿血而變0。
+      const splashDmg = healAmt;
       ctx.applyPinkDamage(ctx.actor === "p1" ? "p2" : "p1", splashDmg, "堅壁被動反噬", ctx.activeP1, ctx.activeP2, "percent");
       ctx.addLog(`⚙️ 【堅壁機甲】修復與被動反噬：恢復 ${healAmt} 點體力，並附加對手等量 (${splashDmg} 點) 傷害！`, "effect");
 
@@ -215,16 +224,7 @@ export const handleMarsSoulMark = (ctx: BattleEventContext, event: EffectTiming,
         ctx.setPlayerState("marsEndTurnChargeStrike", false);
       }
 
-      // 3. 充能自動恢復機制：若有任意技能充能歸 0，自動補充所有技能 5 點充能
-      const skills = self.skills || [];
-      const hasZeroCharge = skills.some((s: any) => (s.charge !== undefined ? s.charge : s.pp) <= 0);
-      if (hasZeroCharge) {
-        skills.forEach((s: any) => {
-          s.charge = (s.charge || 0) + 5;
-          s.pp = s.charge; // Sync to PP
-        });
-        ctx.addLog(`⚙️ 【充能系統】監測到部分機甲功率耗盡，緊急向所有技能注入 5 點充能！`, "effect");
-      }
+      // TXT 的「所有技能+5充能」只屬於第五技能附加效果，不在回合末自動執行。
       break;
     }
     
@@ -261,12 +261,12 @@ export const MARS_SKILLS: Record<string, BattleSkillHandler> = {
     }
     
     // 吸取對手當前體力1/4 (若PP/充能為滿時則為1/2)
-    const isFull = ctx.skill ? (ctx.skill.charge !== undefined ? ctx.skill.charge === ctx.skill.maxPp : ctx.skill.pp === ctx.skill.maxPp) : true;
+    // 魂印令PP永遠視為滿；充能可以為0或超出上限，不能拿充能判斷PP。
+    const isFull = ctx.self.name === '變革·馬爾修斯' || !!ctx.skill && ctx.skill.pp === ctx.skill.maxPp;
     const ratio = isFull ? 0.5 : 0.25;
     const drainAmt = Math.floor(target.currentHp * ratio);
     if (drainAmt > 0) {
-      const actualDrain = ctx.applyPinkDamage(isP1 ? "p2" : "p1", drainAmt, "革新已至吸體", ctx.activeP1, ctx.activeP2, "percent");
-      self.currentHp = Math.min(self.maxHp, self.currentHp + actualDrain);
+      const actualDrain = queueHpDrain(ctx, ctx.targetSide, drainAmt, 'percent', '革新已至');
       ctx.addLog(`⚙️ 【革新已至】吸取對手當前體力的 ${isFull ? "50%" : "25%"} (${actualDrain} 點)！`, "heal");
     }
     
@@ -323,15 +323,18 @@ export const MARS_SKILLS: Record<string, BattleSkillHandler> = {
     
     // 造成技能傷害提升70%，每次使用額外提升35%，最高170% (在毀滅組合時最高300%)
     let boost = ctx.getPlayerState("marsProtocolDamageBoost") || 0.7;
-    ctx.setPlayerState("marsDamageMultiplier", 1.0 + boost);
-    
-    // Increment boost
     const mode = ctx.getPlayerState("marsMechaMode") || "speed";
     const maxBoost = mode === "destroy" ? 3.0 : 1.7;
+    // 此技能 PP 值為滿時效果翻倍（使用時 PP＝目前+1）
+    const ppFull = ctx.skill && ctx.skill.maxPp !== undefined && (Number(ctx.skill.pp) || 0) + 1 >= Number(ctx.skill.maxPp);
+    const applied = Math.min(maxBoost, ppFull ? boost * 2 : boost);
+    ctx.setPlayerState("marsProtocolBoostThisAction", applied);
+    
+    // Increment boost
     const nextBoost = Math.min(maxBoost, boost + 0.35);
     ctx.setPlayerState("marsProtocolDamageBoost", nextBoost);
     
-    ctx.addLog(`💥 【王·肅正協議】執行：使對手屬性技能失效、PP消耗翻倍，當前傷害提升 ${Math.round(boost * 100)}%！`, "effect");
+    ctx.addLog(`💥 【王·肅正協議】執行：使對手屬性技能失效、PP消耗翻倍，當前傷害提升 ${Math.round(applied * 100)}%！`, "effect");
   },
   
   '王·超限共頻': (ctx) => {
@@ -368,8 +371,7 @@ export const MARS_SKILLS: Record<string, BattleSkillHandler> = {
       const isBoss = target.name.includes("魔獅迪露") || target.maxHp > 100000;
       if (!isBoss) {
         const drainAmt = Math.floor(target.maxHp * 0.7);
-        const actualDrain = ctx.applyPinkDamage(isP1 ? "p2" : "p1", drainAmt, "王·超限共頻消除反噬", ctx.activeP1, ctx.activeP2, "percent");
-        self.currentHp = Math.min(self.maxHp, self.currentHp + actualDrain);
+        const actualDrain = queueHpDrain(ctx, ctx.targetSide, drainAmt, 'percent', '王·超限共頻');
         ctx.addLog(`💥 【王·超限共頻】超限湮滅：消除雙方強化與防壁，吸取對手最大體力 70% (${actualDrain} 點)！`, "heal");
       }
     }
@@ -388,6 +390,12 @@ export const MARS_SKILLS: Record<string, BattleSkillHandler> = {
     stages.accuracy = Math.min(6, (stages.accuracy || 0) + 1 * multiplier);
     self.statStages = stages;
     ctx.addLog(`📈 自身全能力 +${multiplier}！`, "effect");
+
+    // 只在成功執行這份附加效果時補充；不補到上限，保留超上限充能。
+    if (self.skills.some(skill => (skill.charge ?? skill.pp) === 0)) {
+      const skills = self.skills.map(skill => ({ ...skill, charge: Math.max(0, skill.charge ?? skill.pp) + 5 }));
+      ctx.updateElf(ctx.actor, { id: self.id, battleId: self.battleId, skills });
+    }
     
     // 5回合內免疫並反彈所有異常狀態
     ctx.setPlayerState("immuneAndReflectStatusTurns", 5);

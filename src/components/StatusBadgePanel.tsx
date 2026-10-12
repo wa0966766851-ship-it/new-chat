@@ -4,7 +4,7 @@ import { EFFECT_CATALOG, EffectInstance } from '../data/effectCatalog';
 import { Elf } from '../types';
 import { getStatuses } from '../utils/battleHelpers';
 import { StatusRegistry } from '../effects/statusRegistry';
-import { statusVisual, buffIconFor } from '../battle/effectIcons';
+import { statusVisual, catalogEffectIcon } from '../battle/effectIcons';
 import { ChainImage } from './SeerImages';
 
 interface StatusBadgePanelProps {
@@ -204,7 +204,7 @@ export const StatusBadgePanel: React.FC<StatusBadgePanelProps> = ({ elf, otherEf
                         title={`點擊查看【${label}】詳細效果說明`}
                         className={`text-[9px] px-1.5 py-0.5 rounded border flex items-center gap-1 font-mono cursor-pointer select-none transition-all hover:brightness-125 hover:scale-105 active:scale-95 ${color}`}
                       >
-                        {(() => { const ic = statusVisual(label)?.icon || buffIconFor(label); return ic ? <ChainImage urls={[ic]} className="w-3.5 h-3.5 rounded-sm" fallback={<span className="font-extrabold">{badge}</span>} /> : <span className="font-extrabold">{badge}</span>; })()}
+                        {(() => { const ic = statusVisual(label)?.icon || catalogEffectIcon(inst.catalogId, label); return <ChainImage urls={[ic]} className="w-3.5 h-3.5 rounded-sm" fallback={<span className="font-extrabold">◇</span>} />; })()}
                         <span>{label}</span>
                         {displayValue && <span className="opacity-80 scale-90">{displayValue}</span>}
                       </span>

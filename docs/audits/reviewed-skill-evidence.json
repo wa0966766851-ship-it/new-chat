@@ -1,0 +1,756 @@
+{
+  "schemaVersion": 1,
+  "note": "人工登記已跑過的第一批積木技能部分證據；不得由候選、Kit或測試檔存在推定完整語意通過。",
+  "evidence": [
+    {
+      "id": "reviewed-kit-300-1",
+      "elfId": "300",
+      "entry": "元素",
+      "fragment": "額外附加200點真實傷害",
+      "testFile": "tests/reviewedSkillKits.semantic.test.ts",
+      "anchor": "精確追加且只有一次",
+      "scenario": "TXT精確對照、原文變更停止套用、P1/P2正式戰鬥、附加失效、使用/命中/無效節點不重複",
+      "expected": "200點真實傷害",
+      "remaining": "魂印與其他特質、各種免疫/反彈/傷害上限、擊敗後事件與所有組合交叉情境",
+      "lastPassed": "2026-10-09：42情境通過，技能使用無魂印的隔離持有者驗證；非整隻精靈通過",
+      "testSha256": "2cdad8adef92be1172a46634aa9baf2932d2e4757b472e9b9477075806a0c43c",
+      "inputs": [
+        {
+          "path": "src/data/reviewedSkillKits.ts",
+          "sha256": "c097688a586730ce40f8cf4f1c3b44e0ca1da5cccad502ea53e1cd18f58d60ba"
+        },
+        {
+          "path": "src/data/defaultElves.ts",
+          "sha256": "2a304aaab5c91466c5c39ee45c182c0b13cb9bca9c6702223ebca7f953241a32"
+        },
+        {
+          "path": "src/blocks/registry.ts",
+          "sha256": "7caf29f45a25fe10e11f0dc37a1c9fdeaf263fa482f4fdeba74c261707597995"
+        },
+        {
+          "path": "src/effects/connectedEffects.ts",
+          "sha256": "e111d4aaea06239803b57d8b6c5cedced120b04302cb5d3f487831562e3fbae5"
+        },
+        {
+          "path": "src/effects/effectRunner.ts",
+          "sha256": "7ce0e5a23acd3fcfc82f1c10bc7081a2a040af145c39da49b4c1f40f392bbb4f"
+        },
+        {
+          "path": "src/effects/effectConnection.ts",
+          "sha256": "d9213f940036b8536bb46124d42615d49face8d276efc2d33c8a73f99f5c9e7f"
+        },
+        {
+          "path": "src/effects/blockParams.ts",
+          "sha256": "c936fe4b19c5dacb13c531fff5ab61a3002550aa7aaa6db0d6ae09f29b2a072b"
+        },
+        {
+          "path": "src/effects/battleEventRegistry.ts",
+          "sha256": "1347c563b97318f4b359b4056952408f0ff7aa79ba8beb08ad81bf4c234806b3"
+        },
+        {
+          "path": "src/components/BattleScreen.tsx",
+          "sha256": "9ccf980934785d0288eec793816930fd49a76b994ad8f98baf57cc41fabe69bc"
+        },
+        {
+          "path": "src/components/BattleManager.ts",
+          "sha256": "d5878b3516ae26b3baa861d96b5e18d1dd2ddd4ad4aa2865494bc9131c2dc774"
+        },
+        {
+          "path": "src/battle/contextBuilders.ts",
+          "sha256": "652e29fda4615a5f1f3abc06849fc8f5cd70e294b5c9baf6561103f2e3ebd95f"
+        },
+        {
+          "path": "src/battle/damageSemantics.ts",
+          "sha256": "a1e9ff5c54fcc91145adfe62fb456ccb550c00ed8accd3bf8215c9ff5939580e"
+        },
+        {
+          "path": "src/battle/settlementReceipt.ts",
+          "sha256": "1090fde5e6cf03def794e59d806a70677f2f0c699f2055551c36b7d354dd0c21"
+        },
+        {
+          "path": "elf_source_files/elf_files/300_譜尼.txt",
+          "sha256": "49880d4114aeb7409e844a629142cbddee0ae1c2bb2b577cec64f429ba9b4fa6"
+        },
+        {
+          "path": "elf_source_files/elf_files/5000_聖靈譜尼.txt",
+          "sha256": "8e7b820bd70b3e4b2afc2b127d53d7535166180fd6e3e3211acc54ba11827632"
+        }
+      ]
+    },
+    {
+      "id": "reviewed-kit-300-2",
+      "elfId": "300",
+      "entry": "斷空破",
+      "fragment": "額外附加對手30點真實傷害",
+      "testFile": "tests/reviewedSkillKits.semantic.test.ts",
+      "anchor": "精確追加且只有一次",
+      "scenario": "TXT精確對照、原文變更停止套用、P1/P2正式戰鬥、附加失效、使用/命中/無效節點不重複",
+      "expected": "30點真實傷害",
+      "remaining": "魂印與其他特質、各種免疫/反彈/傷害上限、擊敗後事件與所有組合交叉情境",
+      "lastPassed": "2026-10-09：42情境通過，技能使用無魂印的隔離持有者驗證；非整隻精靈通過",
+      "testSha256": "2cdad8adef92be1172a46634aa9baf2932d2e4757b472e9b9477075806a0c43c",
+      "inputs": [
+        {
+          "path": "src/data/reviewedSkillKits.ts",
+          "sha256": "c097688a586730ce40f8cf4f1c3b44e0ca1da5cccad502ea53e1cd18f58d60ba"
+        },
+        {
+          "path": "src/data/defaultElves.ts",
+          "sha256": "2a304aaab5c91466c5c39ee45c182c0b13cb9bca9c6702223ebca7f953241a32"
+        },
+        {
+          "path": "src/blocks/registry.ts",
+          "sha256": "7caf29f45a25fe10e11f0dc37a1c9fdeaf263fa482f4fdeba74c261707597995"
+        },
+        {
+          "path": "src/effects/connectedEffects.ts",
+          "sha256": "e111d4aaea06239803b57d8b6c5cedced120b04302cb5d3f487831562e3fbae5"
+        },
+        {
+          "path": "src/effects/effectRunner.ts",
+          "sha256": "7ce0e5a23acd3fcfc82f1c10bc7081a2a040af145c39da49b4c1f40f392bbb4f"
+        },
+        {
+          "path": "src/effects/effectConnection.ts",
+          "sha256": "d9213f940036b8536bb46124d42615d49face8d276efc2d33c8a73f99f5c9e7f"
+        },
+        {
+          "path": "src/effects/blockParams.ts",
+          "sha256": "c936fe4b19c5dacb13c531fff5ab61a3002550aa7aaa6db0d6ae09f29b2a072b"
+        },
+        {
+          "path": "src/effects/battleEventRegistry.ts",
+          "sha256": "1347c563b97318f4b359b4056952408f0ff7aa79ba8beb08ad81bf4c234806b3"
+        },
+        {
+          "path": "src/components/BattleScreen.tsx",
+          "sha256": "9ccf980934785d0288eec793816930fd49a76b994ad8f98baf57cc41fabe69bc"
+        },
+        {
+          "path": "src/components/BattleManager.ts",
+          "sha256": "d5878b3516ae26b3baa861d96b5e18d1dd2ddd4ad4aa2865494bc9131c2dc774"
+        },
+        {
+          "path": "src/battle/contextBuilders.ts",
+          "sha256": "652e29fda4615a5f1f3abc06849fc8f5cd70e294b5c9baf6561103f2e3ebd95f"
+        },
+        {
+          "path": "src/battle/damageSemantics.ts",
+          "sha256": "a1e9ff5c54fcc91145adfe62fb456ccb550c00ed8accd3bf8215c9ff5939580e"
+        },
+        {
+          "path": "src/battle/settlementReceipt.ts",
+          "sha256": "1090fde5e6cf03def794e59d806a70677f2f0c699f2055551c36b7d354dd0c21"
+        },
+        {
+          "path": "elf_source_files/elf_files/300_譜尼.txt",
+          "sha256": "49880d4114aeb7409e844a629142cbddee0ae1c2bb2b577cec64f429ba9b4fa6"
+        },
+        {
+          "path": "elf_source_files/elf_files/5000_聖靈譜尼.txt",
+          "sha256": "8e7b820bd70b3e4b2afc2b127d53d7535166180fd6e3e3211acc54ba11827632"
+        }
+      ]
+    },
+    {
+      "id": "reviewed-kit-300-3",
+      "elfId": "300",
+      "entry": "聖堂之門",
+      "fragment": "消除對方能力提升效果",
+      "testFile": "tests/reviewedSkillKits.semantic.test.ts",
+      "anchor": "normal.target.statStages.atk",
+      "scenario": "TXT精確對照、原文變更停止套用、P1/P2正式戰鬥、附加失效、使用/命中/無效節點不重複",
+      "expected": "只清除對手正能力等級，不清下降",
+      "remaining": "魂印與其他特質、各種免疫/反彈/傷害上限、擊敗後事件與所有組合交叉情境",
+      "lastPassed": "2026-10-09：42情境通過，技能使用無魂印的隔離持有者驗證；非整隻精靈通過",
+      "testSha256": "2cdad8adef92be1172a46634aa9baf2932d2e4757b472e9b9477075806a0c43c",
+      "inputs": [
+        {
+          "path": "src/data/reviewedSkillKits.ts",
+          "sha256": "c097688a586730ce40f8cf4f1c3b44e0ca1da5cccad502ea53e1cd18f58d60ba"
+        },
+        {
+          "path": "src/data/defaultElves.ts",
+          "sha256": "2a304aaab5c91466c5c39ee45c182c0b13cb9bca9c6702223ebca7f953241a32"
+        },
+        {
+          "path": "src/blocks/registry.ts",
+          "sha256": "7caf29f45a25fe10e11f0dc37a1c9fdeaf263fa482f4fdeba74c261707597995"
+        },
+        {
+          "path": "src/effects/connectedEffects.ts",
+          "sha256": "e111d4aaea06239803b57d8b6c5cedced120b04302cb5d3f487831562e3fbae5"
+        },
+        {
+          "path": "src/effects/effectRunner.ts",
+          "sha256": "7ce0e5a23acd3fcfc82f1c10bc7081a2a040af145c39da49b4c1f40f392bbb4f"
+        },
+        {
+          "path": "src/effects/effectConnection.ts",
+          "sha256": "d9213f940036b8536bb46124d42615d49face8d276efc2d33c8a73f99f5c9e7f"
+        },
+        {
+          "path": "src/effects/blockParams.ts",
+          "sha256": "c936fe4b19c5dacb13c531fff5ab61a3002550aa7aaa6db0d6ae09f29b2a072b"
+        },
+        {
+          "path": "src/effects/battleEventRegistry.ts",
+          "sha256": "1347c563b97318f4b359b4056952408f0ff7aa79ba8beb08ad81bf4c234806b3"
+        },
+        {
+          "path": "src/components/BattleScreen.tsx",
+          "sha256": "9ccf980934785d0288eec793816930fd49a76b994ad8f98baf57cc41fabe69bc"
+        },
+        {
+          "path": "src/components/BattleManager.ts",
+          "sha256": "d5878b3516ae26b3baa861d96b5e18d1dd2ddd4ad4aa2865494bc9131c2dc774"
+        },
+        {
+          "path": "src/battle/contextBuilders.ts",
+          "sha256": "652e29fda4615a5f1f3abc06849fc8f5cd70e294b5c9baf6561103f2e3ebd95f"
+        },
+        {
+          "path": "src/battle/damageSemantics.ts",
+          "sha256": "a1e9ff5c54fcc91145adfe62fb456ccb550c00ed8accd3bf8215c9ff5939580e"
+        },
+        {
+          "path": "src/battle/settlementReceipt.ts",
+          "sha256": "1090fde5e6cf03def794e59d806a70677f2f0c699f2055551c36b7d354dd0c21"
+        },
+        {
+          "path": "elf_source_files/elf_files/300_譜尼.txt",
+          "sha256": "49880d4114aeb7409e844a629142cbddee0ae1c2bb2b577cec64f429ba9b4fa6"
+        },
+        {
+          "path": "elf_source_files/elf_files/5000_聖靈譜尼.txt",
+          "sha256": "8e7b820bd70b3e4b2afc2b127d53d7535166180fd6e3e3211acc54ba11827632"
+        }
+      ]
+    },
+    {
+      "id": "reviewed-kit-300-4",
+      "elfId": "300",
+      "entry": "千烈虛光閃",
+      "fragment": "解除自身能力下降狀態",
+      "testFile": "tests/reviewedSkillKits.semantic.test.ts",
+      "anchor": "normal.self.statStages.atk",
+      "scenario": "TXT精確對照、原文變更停止套用、P1/P2正式戰鬥、附加失效、使用/命中/無效節點不重複",
+      "expected": "只解除自身負能力等級，不清提升",
+      "remaining": "魂印與其他特質、各種免疫/反彈/傷害上限、擊敗後事件與所有組合交叉情境",
+      "lastPassed": "2026-10-09：42情境通過，技能使用無魂印的隔離持有者驗證；非整隻精靈通過",
+      "testSha256": "2cdad8adef92be1172a46634aa9baf2932d2e4757b472e9b9477075806a0c43c",
+      "inputs": [
+        {
+          "path": "src/data/reviewedSkillKits.ts",
+          "sha256": "c097688a586730ce40f8cf4f1c3b44e0ca1da5cccad502ea53e1cd18f58d60ba"
+        },
+        {
+          "path": "src/data/defaultElves.ts",
+          "sha256": "2a304aaab5c91466c5c39ee45c182c0b13cb9bca9c6702223ebca7f953241a32"
+        },
+        {
+          "path": "src/blocks/registry.ts",
+          "sha256": "7caf29f45a25fe10e11f0dc37a1c9fdeaf263fa482f4fdeba74c261707597995"
+        },
+        {
+          "path": "src/effects/connectedEffects.ts",
+          "sha256": "e111d4aaea06239803b57d8b6c5cedced120b04302cb5d3f487831562e3fbae5"
+        },
+        {
+          "path": "src/effects/effectRunner.ts",
+          "sha256": "7ce0e5a23acd3fcfc82f1c10bc7081a2a040af145c39da49b4c1f40f392bbb4f"
+        },
+        {
+          "path": "src/effects/effectConnection.ts",
+          "sha256": "d9213f940036b8536bb46124d42615d49face8d276efc2d33c8a73f99f5c9e7f"
+        },
+        {
+          "path": "src/effects/blockParams.ts",
+          "sha256": "c936fe4b19c5dacb13c531fff5ab61a3002550aa7aaa6db0d6ae09f29b2a072b"
+        },
+        {
+          "path": "src/effects/battleEventRegistry.ts",
+          "sha256": "1347c563b97318f4b359b4056952408f0ff7aa79ba8beb08ad81bf4c234806b3"
+        },
+        {
+          "path": "src/components/BattleScreen.tsx",
+          "sha256": "9ccf980934785d0288eec793816930fd49a76b994ad8f98baf57cc41fabe69bc"
+        },
+        {
+          "path": "src/components/BattleManager.ts",
+          "sha256": "d5878b3516ae26b3baa861d96b5e18d1dd2ddd4ad4aa2865494bc9131c2dc774"
+        },
+        {
+          "path": "src/battle/contextBuilders.ts",
+          "sha256": "652e29fda4615a5f1f3abc06849fc8f5cd70e294b5c9baf6561103f2e3ebd95f"
+        },
+        {
+          "path": "src/battle/damageSemantics.ts",
+          "sha256": "a1e9ff5c54fcc91145adfe62fb456ccb550c00ed8accd3bf8215c9ff5939580e"
+        },
+        {
+          "path": "src/battle/settlementReceipt.ts",
+          "sha256": "1090fde5e6cf03def794e59d806a70677f2f0c699f2055551c36b7d354dd0c21"
+        },
+        {
+          "path": "elf_source_files/elf_files/300_譜尼.txt",
+          "sha256": "49880d4114aeb7409e844a629142cbddee0ae1c2bb2b577cec64f429ba9b4fa6"
+        },
+        {
+          "path": "elf_source_files/elf_files/5000_聖靈譜尼.txt",
+          "sha256": "8e7b820bd70b3e4b2afc2b127d53d7535166180fd6e3e3211acc54ba11827632"
+        }
+      ]
+    },
+    {
+      "id": "reviewed-kit-300-5",
+      "elfId": "300",
+      "entry": "聖靈魔閃光",
+      "fragment": "附加對手等同於對方在場精靈最大體力1/8的百分比傷害",
+      "testFile": "tests/reviewedSkillKits.semantic.test.ts",
+      "anchor": "精確追加且只有一次",
+      "scenario": "TXT精確對照、原文變更停止套用、P1/P2正式戰鬥、附加失效、使用/命中/無效節點不重複",
+      "expected": "最大體力4000時追加500百分比傷害，由護罩承受，非護盾",
+      "remaining": "魂印與其他特質、各種免疫/反彈/傷害上限、擊敗後事件與所有組合交叉情境",
+      "lastPassed": "2026-10-09：42情境通過，技能使用無魂印的隔離持有者驗證；非整隻精靈通過",
+      "testSha256": "2cdad8adef92be1172a46634aa9baf2932d2e4757b472e9b9477075806a0c43c",
+      "inputs": [
+        {
+          "path": "src/data/reviewedSkillKits.ts",
+          "sha256": "c097688a586730ce40f8cf4f1c3b44e0ca1da5cccad502ea53e1cd18f58d60ba"
+        },
+        {
+          "path": "src/data/defaultElves.ts",
+          "sha256": "2a304aaab5c91466c5c39ee45c182c0b13cb9bca9c6702223ebca7f953241a32"
+        },
+        {
+          "path": "src/blocks/registry.ts",
+          "sha256": "7caf29f45a25fe10e11f0dc37a1c9fdeaf263fa482f4fdeba74c261707597995"
+        },
+        {
+          "path": "src/effects/connectedEffects.ts",
+          "sha256": "e111d4aaea06239803b57d8b6c5cedced120b04302cb5d3f487831562e3fbae5"
+        },
+        {
+          "path": "src/effects/effectRunner.ts",
+          "sha256": "7ce0e5a23acd3fcfc82f1c10bc7081a2a040af145c39da49b4c1f40f392bbb4f"
+        },
+        {
+          "path": "src/effects/effectConnection.ts",
+          "sha256": "d9213f940036b8536bb46124d42615d49face8d276efc2d33c8a73f99f5c9e7f"
+        },
+        {
+          "path": "src/effects/blockParams.ts",
+          "sha256": "c936fe4b19c5dacb13c531fff5ab61a3002550aa7aaa6db0d6ae09f29b2a072b"
+        },
+        {
+          "path": "src/effects/battleEventRegistry.ts",
+          "sha256": "1347c563b97318f4b359b4056952408f0ff7aa79ba8beb08ad81bf4c234806b3"
+        },
+        {
+          "path": "src/components/BattleScreen.tsx",
+          "sha256": "9ccf980934785d0288eec793816930fd49a76b994ad8f98baf57cc41fabe69bc"
+        },
+        {
+          "path": "src/components/BattleManager.ts",
+          "sha256": "d5878b3516ae26b3baa861d96b5e18d1dd2ddd4ad4aa2865494bc9131c2dc774"
+        },
+        {
+          "path": "src/battle/contextBuilders.ts",
+          "sha256": "652e29fda4615a5f1f3abc06849fc8f5cd70e294b5c9baf6561103f2e3ebd95f"
+        },
+        {
+          "path": "src/battle/damageSemantics.ts",
+          "sha256": "a1e9ff5c54fcc91145adfe62fb456ccb550c00ed8accd3bf8215c9ff5939580e"
+        },
+        {
+          "path": "src/battle/settlementReceipt.ts",
+          "sha256": "1090fde5e6cf03def794e59d806a70677f2f0c699f2055551c36b7d354dd0c21"
+        },
+        {
+          "path": "elf_source_files/elf_files/300_譜尼.txt",
+          "sha256": "49880d4114aeb7409e844a629142cbddee0ae1c2bb2b577cec64f429ba9b4fa6"
+        },
+        {
+          "path": "elf_source_files/elf_files/5000_聖靈譜尼.txt",
+          "sha256": "8e7b820bd70b3e4b2afc2b127d53d7535166180fd6e3e3211acc54ba11827632"
+        }
+      ]
+    },
+    {
+      "id": "reviewed-kit-5000-1",
+      "elfId": "5000",
+      "entry": "元素",
+      "fragment": "額外附加200點真實傷害",
+      "testFile": "tests/reviewedSkillKits.semantic.test.ts",
+      "anchor": "精確追加且只有一次",
+      "scenario": "TXT精確對照、原文變更停止套用、P1/P2正式戰鬥、附加失效、使用/命中/無效節點不重複",
+      "expected": "200點真實傷害",
+      "remaining": "魂印與其他特質、各種免疫/反彈/傷害上限、擊敗後事件與所有組合交叉情境",
+      "lastPassed": "2026-10-09：42情境通過，技能使用無魂印的隔離持有者驗證；非整隻精靈通過",
+      "testSha256": "2cdad8adef92be1172a46634aa9baf2932d2e4757b472e9b9477075806a0c43c",
+      "inputs": [
+        {
+          "path": "src/data/reviewedSkillKits.ts",
+          "sha256": "c097688a586730ce40f8cf4f1c3b44e0ca1da5cccad502ea53e1cd18f58d60ba"
+        },
+        {
+          "path": "src/data/defaultElves.ts",
+          "sha256": "2a304aaab5c91466c5c39ee45c182c0b13cb9bca9c6702223ebca7f953241a32"
+        },
+        {
+          "path": "src/blocks/registry.ts",
+          "sha256": "7caf29f45a25fe10e11f0dc37a1c9fdeaf263fa482f4fdeba74c261707597995"
+        },
+        {
+          "path": "src/effects/connectedEffects.ts",
+          "sha256": "e111d4aaea06239803b57d8b6c5cedced120b04302cb5d3f487831562e3fbae5"
+        },
+        {
+          "path": "src/effects/effectRunner.ts",
+          "sha256": "7ce0e5a23acd3fcfc82f1c10bc7081a2a040af145c39da49b4c1f40f392bbb4f"
+        },
+        {
+          "path": "src/effects/effectConnection.ts",
+          "sha256": "d9213f940036b8536bb46124d42615d49face8d276efc2d33c8a73f99f5c9e7f"
+        },
+        {
+          "path": "src/effects/blockParams.ts",
+          "sha256": "c936fe4b19c5dacb13c531fff5ab61a3002550aa7aaa6db0d6ae09f29b2a072b"
+        },
+        {
+          "path": "src/effects/battleEventRegistry.ts",
+          "sha256": "1347c563b97318f4b359b4056952408f0ff7aa79ba8beb08ad81bf4c234806b3"
+        },
+        {
+          "path": "src/components/BattleScreen.tsx",
+          "sha256": "9ccf980934785d0288eec793816930fd49a76b994ad8f98baf57cc41fabe69bc"
+        },
+        {
+          "path": "src/components/BattleManager.ts",
+          "sha256": "d5878b3516ae26b3baa861d96b5e18d1dd2ddd4ad4aa2865494bc9131c2dc774"
+        },
+        {
+          "path": "src/battle/contextBuilders.ts",
+          "sha256": "652e29fda4615a5f1f3abc06849fc8f5cd70e294b5c9baf6561103f2e3ebd95f"
+        },
+        {
+          "path": "src/battle/damageSemantics.ts",
+          "sha256": "a1e9ff5c54fcc91145adfe62fb456ccb550c00ed8accd3bf8215c9ff5939580e"
+        },
+        {
+          "path": "src/battle/settlementReceipt.ts",
+          "sha256": "1090fde5e6cf03def794e59d806a70677f2f0c699f2055551c36b7d354dd0c21"
+        },
+        {
+          "path": "elf_source_files/elf_files/300_譜尼.txt",
+          "sha256": "49880d4114aeb7409e844a629142cbddee0ae1c2bb2b577cec64f429ba9b4fa6"
+        },
+        {
+          "path": "elf_source_files/elf_files/5000_聖靈譜尼.txt",
+          "sha256": "8e7b820bd70b3e4b2afc2b127d53d7535166180fd6e3e3211acc54ba11827632"
+        }
+      ]
+    },
+    {
+      "id": "reviewed-kit-5000-2",
+      "elfId": "5000",
+      "entry": "斷空破",
+      "fragment": "額外附加對手30點真實傷害",
+      "testFile": "tests/reviewedSkillKits.semantic.test.ts",
+      "anchor": "精確追加且只有一次",
+      "scenario": "TXT精確對照、原文變更停止套用、P1/P2正式戰鬥、附加失效、使用/命中/無效節點不重複",
+      "expected": "30點真實傷害",
+      "remaining": "魂印與其他特質、各種免疫/反彈/傷害上限、擊敗後事件與所有組合交叉情境",
+      "lastPassed": "2026-10-09：42情境通過，技能使用無魂印的隔離持有者驗證；非整隻精靈通過",
+      "testSha256": "2cdad8adef92be1172a46634aa9baf2932d2e4757b472e9b9477075806a0c43c",
+      "inputs": [
+        {
+          "path": "src/data/reviewedSkillKits.ts",
+          "sha256": "c097688a586730ce40f8cf4f1c3b44e0ca1da5cccad502ea53e1cd18f58d60ba"
+        },
+        {
+          "path": "src/data/defaultElves.ts",
+          "sha256": "2a304aaab5c91466c5c39ee45c182c0b13cb9bca9c6702223ebca7f953241a32"
+        },
+        {
+          "path": "src/blocks/registry.ts",
+          "sha256": "7caf29f45a25fe10e11f0dc37a1c9fdeaf263fa482f4fdeba74c261707597995"
+        },
+        {
+          "path": "src/effects/connectedEffects.ts",
+          "sha256": "e111d4aaea06239803b57d8b6c5cedced120b04302cb5d3f487831562e3fbae5"
+        },
+        {
+          "path": "src/effects/effectRunner.ts",
+          "sha256": "7ce0e5a23acd3fcfc82f1c10bc7081a2a040af145c39da49b4c1f40f392bbb4f"
+        },
+        {
+          "path": "src/effects/effectConnection.ts",
+          "sha256": "d9213f940036b8536bb46124d42615d49face8d276efc2d33c8a73f99f5c9e7f"
+        },
+        {
+          "path": "src/effects/blockParams.ts",
+          "sha256": "c936fe4b19c5dacb13c531fff5ab61a3002550aa7aaa6db0d6ae09f29b2a072b"
+        },
+        {
+          "path": "src/effects/battleEventRegistry.ts",
+          "sha256": "1347c563b97318f4b359b4056952408f0ff7aa79ba8beb08ad81bf4c234806b3"
+        },
+        {
+          "path": "src/components/BattleScreen.tsx",
+          "sha256": "9ccf980934785d0288eec793816930fd49a76b994ad8f98baf57cc41fabe69bc"
+        },
+        {
+          "path": "src/components/BattleManager.ts",
+          "sha256": "d5878b3516ae26b3baa861d96b5e18d1dd2ddd4ad4aa2865494bc9131c2dc774"
+        },
+        {
+          "path": "src/battle/contextBuilders.ts",
+          "sha256": "652e29fda4615a5f1f3abc06849fc8f5cd70e294b5c9baf6561103f2e3ebd95f"
+        },
+        {
+          "path": "src/battle/damageSemantics.ts",
+          "sha256": "a1e9ff5c54fcc91145adfe62fb456ccb550c00ed8accd3bf8215c9ff5939580e"
+        },
+        {
+          "path": "src/battle/settlementReceipt.ts",
+          "sha256": "1090fde5e6cf03def794e59d806a70677f2f0c699f2055551c36b7d354dd0c21"
+        },
+        {
+          "path": "elf_source_files/elf_files/300_譜尼.txt",
+          "sha256": "49880d4114aeb7409e844a629142cbddee0ae1c2bb2b577cec64f429ba9b4fa6"
+        },
+        {
+          "path": "elf_source_files/elf_files/5000_聖靈譜尼.txt",
+          "sha256": "8e7b820bd70b3e4b2afc2b127d53d7535166180fd6e3e3211acc54ba11827632"
+        }
+      ]
+    },
+    {
+      "id": "reviewed-kit-5000-3",
+      "elfId": "5000",
+      "entry": "聖堂之門",
+      "fragment": "消除對方能力提升效果",
+      "testFile": "tests/reviewedSkillKits.semantic.test.ts",
+      "anchor": "normal.target.statStages.atk",
+      "scenario": "TXT精確對照、原文變更停止套用、P1/P2正式戰鬥、附加失效、使用/命中/無效節點不重複",
+      "expected": "只清除對手正能力等級，不清下降",
+      "remaining": "魂印與其他特質、各種免疫/反彈/傷害上限、擊敗後事件與所有組合交叉情境",
+      "lastPassed": "2026-10-09：42情境通過，技能使用無魂印的隔離持有者驗證；非整隻精靈通過",
+      "testSha256": "2cdad8adef92be1172a46634aa9baf2932d2e4757b472e9b9477075806a0c43c",
+      "inputs": [
+        {
+          "path": "src/data/reviewedSkillKits.ts",
+          "sha256": "c097688a586730ce40f8cf4f1c3b44e0ca1da5cccad502ea53e1cd18f58d60ba"
+        },
+        {
+          "path": "src/data/defaultElves.ts",
+          "sha256": "2a304aaab5c91466c5c39ee45c182c0b13cb9bca9c6702223ebca7f953241a32"
+        },
+        {
+          "path": "src/blocks/registry.ts",
+          "sha256": "7caf29f45a25fe10e11f0dc37a1c9fdeaf263fa482f4fdeba74c261707597995"
+        },
+        {
+          "path": "src/effects/connectedEffects.ts",
+          "sha256": "e111d4aaea06239803b57d8b6c5cedced120b04302cb5d3f487831562e3fbae5"
+        },
+        {
+          "path": "src/effects/effectRunner.ts",
+          "sha256": "7ce0e5a23acd3fcfc82f1c10bc7081a2a040af145c39da49b4c1f40f392bbb4f"
+        },
+        {
+          "path": "src/effects/effectConnection.ts",
+          "sha256": "d9213f940036b8536bb46124d42615d49face8d276efc2d33c8a73f99f5c9e7f"
+        },
+        {
+          "path": "src/effects/blockParams.ts",
+          "sha256": "c936fe4b19c5dacb13c531fff5ab61a3002550aa7aaa6db0d6ae09f29b2a072b"
+        },
+        {
+          "path": "src/effects/battleEventRegistry.ts",
+          "sha256": "1347c563b97318f4b359b4056952408f0ff7aa79ba8beb08ad81bf4c234806b3"
+        },
+        {
+          "path": "src/components/BattleScreen.tsx",
+          "sha256": "9ccf980934785d0288eec793816930fd49a76b994ad8f98baf57cc41fabe69bc"
+        },
+        {
+          "path": "src/components/BattleManager.ts",
+          "sha256": "d5878b3516ae26b3baa861d96b5e18d1dd2ddd4ad4aa2865494bc9131c2dc774"
+        },
+        {
+          "path": "src/battle/contextBuilders.ts",
+          "sha256": "652e29fda4615a5f1f3abc06849fc8f5cd70e294b5c9baf6561103f2e3ebd95f"
+        },
+        {
+          "path": "src/battle/damageSemantics.ts",
+          "sha256": "a1e9ff5c54fcc91145adfe62fb456ccb550c00ed8accd3bf8215c9ff5939580e"
+        },
+        {
+          "path": "src/battle/settlementReceipt.ts",
+          "sha256": "1090fde5e6cf03def794e59d806a70677f2f0c699f2055551c36b7d354dd0c21"
+        },
+        {
+          "path": "elf_source_files/elf_files/300_譜尼.txt",
+          "sha256": "49880d4114aeb7409e844a629142cbddee0ae1c2bb2b577cec64f429ba9b4fa6"
+        },
+        {
+          "path": "elf_source_files/elf_files/5000_聖靈譜尼.txt",
+          "sha256": "8e7b820bd70b3e4b2afc2b127d53d7535166180fd6e3e3211acc54ba11827632"
+        }
+      ]
+    },
+    {
+      "id": "reviewed-kit-5000-4",
+      "elfId": "5000",
+      "entry": "千烈虛光閃",
+      "fragment": "解除自身能力下降狀態",
+      "testFile": "tests/reviewedSkillKits.semantic.test.ts",
+      "anchor": "normal.self.statStages.atk",
+      "scenario": "TXT精確對照、原文變更停止套用、P1/P2正式戰鬥、附加失效、使用/命中/無效節點不重複",
+      "expected": "只解除自身負能力等級，不清提升",
+      "remaining": "魂印與其他特質、各種免疫/反彈/傷害上限、擊敗後事件與所有組合交叉情境",
+      "lastPassed": "2026-10-09：42情境通過，技能使用無魂印的隔離持有者驗證；非整隻精靈通過",
+      "testSha256": "2cdad8adef92be1172a46634aa9baf2932d2e4757b472e9b9477075806a0c43c",
+      "inputs": [
+        {
+          "path": "src/data/reviewedSkillKits.ts",
+          "sha256": "c097688a586730ce40f8cf4f1c3b44e0ca1da5cccad502ea53e1cd18f58d60ba"
+        },
+        {
+          "path": "src/data/defaultElves.ts",
+          "sha256": "2a304aaab5c91466c5c39ee45c182c0b13cb9bca9c6702223ebca7f953241a32"
+        },
+        {
+          "path": "src/blocks/registry.ts",
+          "sha256": "7caf29f45a25fe10e11f0dc37a1c9fdeaf263fa482f4fdeba74c261707597995"
+        },
+        {
+          "path": "src/effects/connectedEffects.ts",
+          "sha256": "e111d4aaea06239803b57d8b6c5cedced120b04302cb5d3f487831562e3fbae5"
+        },
+        {
+          "path": "src/effects/effectRunner.ts",
+          "sha256": "7ce0e5a23acd3fcfc82f1c10bc7081a2a040af145c39da49b4c1f40f392bbb4f"
+        },
+        {
+          "path": "src/effects/effectConnection.ts",
+          "sha256": "d9213f940036b8536bb46124d42615d49face8d276efc2d33c8a73f99f5c9e7f"
+        },
+        {
+          "path": "src/effects/blockParams.ts",
+          "sha256": "c936fe4b19c5dacb13c531fff5ab61a3002550aa7aaa6db0d6ae09f29b2a072b"
+        },
+        {
+          "path": "src/effects/battleEventRegistry.ts",
+          "sha256": "1347c563b97318f4b359b4056952408f0ff7aa79ba8beb08ad81bf4c234806b3"
+        },
+        {
+          "path": "src/components/BattleScreen.tsx",
+          "sha256": "9ccf980934785d0288eec793816930fd49a76b994ad8f98baf57cc41fabe69bc"
+        },
+        {
+          "path": "src/components/BattleManager.ts",
+          "sha256": "d5878b3516ae26b3baa861d96b5e18d1dd2ddd4ad4aa2865494bc9131c2dc774"
+        },
+        {
+          "path": "src/battle/contextBuilders.ts",
+          "sha256": "652e29fda4615a5f1f3abc06849fc8f5cd70e294b5c9baf6561103f2e3ebd95f"
+        },
+        {
+          "path": "src/battle/damageSemantics.ts",
+          "sha256": "a1e9ff5c54fcc91145adfe62fb456ccb550c00ed8accd3bf8215c9ff5939580e"
+        },
+        {
+          "path": "src/battle/settlementReceipt.ts",
+          "sha256": "1090fde5e6cf03def794e59d806a70677f2f0c699f2055551c36b7d354dd0c21"
+        },
+        {
+          "path": "elf_source_files/elf_files/300_譜尼.txt",
+          "sha256": "49880d4114aeb7409e844a629142cbddee0ae1c2bb2b577cec64f429ba9b4fa6"
+        },
+        {
+          "path": "elf_source_files/elf_files/5000_聖靈譜尼.txt",
+          "sha256": "8e7b820bd70b3e4b2afc2b127d53d7535166180fd6e3e3211acc54ba11827632"
+        }
+      ]
+    },
+    {
+      "id": "reviewed-kit-5000-5",
+      "elfId": "5000",
+      "entry": "聖靈魔閃光",
+      "fragment": "附加對手等同於對方在場精靈最大體力1/8的百分比傷害",
+      "testFile": "tests/reviewedSkillKits.semantic.test.ts",
+      "anchor": "精確追加且只有一次",
+      "scenario": "TXT精確對照、原文變更停止套用、P1/P2正式戰鬥、附加失效、使用/命中/無效節點不重複",
+      "expected": "最大體力4000時追加500百分比傷害，由護罩承受，非護盾",
+      "remaining": "魂印與其他特質、各種免疫/反彈/傷害上限、擊敗後事件與所有組合交叉情境",
+      "lastPassed": "2026-10-09：42情境通過，技能使用無魂印的隔離持有者驗證；非整隻精靈通過",
+      "testSha256": "2cdad8adef92be1172a46634aa9baf2932d2e4757b472e9b9477075806a0c43c",
+      "inputs": [
+        {
+          "path": "src/data/reviewedSkillKits.ts",
+          "sha256": "c097688a586730ce40f8cf4f1c3b44e0ca1da5cccad502ea53e1cd18f58d60ba"
+        },
+        {
+          "path": "src/data/defaultElves.ts",
+          "sha256": "2a304aaab5c91466c5c39ee45c182c0b13cb9bca9c6702223ebca7f953241a32"
+        },
+        {
+          "path": "src/blocks/registry.ts",
+          "sha256": "7caf29f45a25fe10e11f0dc37a1c9fdeaf263fa482f4fdeba74c261707597995"
+        },
+        {
+          "path": "src/effects/connectedEffects.ts",
+          "sha256": "e111d4aaea06239803b57d8b6c5cedced120b04302cb5d3f487831562e3fbae5"
+        },
+        {
+          "path": "src/effects/effectRunner.ts",
+          "sha256": "7ce0e5a23acd3fcfc82f1c10bc7081a2a040af145c39da49b4c1f40f392bbb4f"
+        },
+        {
+          "path": "src/effects/effectConnection.ts",
+          "sha256": "d9213f940036b8536bb46124d42615d49face8d276efc2d33c8a73f99f5c9e7f"
+        },
+        {
+          "path": "src/effects/blockParams.ts",
+          "sha256": "c936fe4b19c5dacb13c531fff5ab61a3002550aa7aaa6db0d6ae09f29b2a072b"
+        },
+        {
+          "path": "src/effects/battleEventRegistry.ts",
+          "sha256": "1347c563b97318f4b359b4056952408f0ff7aa79ba8beb08ad81bf4c234806b3"
+        },
+        {
+          "path": "src/components/BattleScreen.tsx",
+          "sha256": "9ccf980934785d0288eec793816930fd49a76b994ad8f98baf57cc41fabe69bc"
+        },
+        {
+          "path": "src/components/BattleManager.ts",
+          "sha256": "d5878b3516ae26b3baa861d96b5e18d1dd2ddd4ad4aa2865494bc9131c2dc774"
+        },
+        {
+          "path": "src/battle/contextBuilders.ts",
+          "sha256": "652e29fda4615a5f1f3abc06849fc8f5cd70e294b5c9baf6561103f2e3ebd95f"
+        },
+        {
+          "path": "src/battle/damageSemantics.ts",
+          "sha256": "a1e9ff5c54fcc91145adfe62fb456ccb550c00ed8accd3bf8215c9ff5939580e"
+        },
+        {
+          "path": "src/battle/settlementReceipt.ts",
+          "sha256": "1090fde5e6cf03def794e59d806a70677f2f0c699f2055551c36b7d354dd0c21"
+        },
+        {
+          "path": "elf_source_files/elf_files/300_譜尼.txt",
+          "sha256": "49880d4114aeb7409e844a629142cbddee0ae1c2bb2b577cec64f429ba9b4fa6"
+        },
+        {
+          "path": "elf_source_files/elf_files/5000_聖靈譜尼.txt",
+          "sha256": "8e7b820bd70b3e4b2afc2b127d53d7535166180fd6e3e3211acc54ba11827632"
+        }
+      ]
+    }
+  ]
+}

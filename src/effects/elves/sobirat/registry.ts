@@ -187,36 +187,6 @@ export const handleSobiratSoulMark = (ctx: BattleEventContext, event: EffectTimi
 };
 
 export const SOBIRAT_SKILLS: Record<string, BattleSkillHandler> = {
-  "黯索魂噬": (ctx) => {
-    const { self, target, addLog, clearTurnEffectsOf, applyStatusWithImmunityCheck, applyStatChange } = ctx;
-    addLog("【黯索魂噬】：消強消回合，幽暗黑影索魂噬魄！", "effect");
-    
-    // 消回合 (B / Inherent)
-    const cleared = clearTurnEffectsOf(ctx.targetSide);
-    
-    // 消強 (B / Inherent)
-    let hasBuff = false;
-    for (const key in target.statStages) {
-      if ((target.statStages[key as keyof typeof target.statStages] || 0) > 0) {
-        hasBuff = true;
-        target.statStages[key as keyof typeof target.statStages] = 0;
-      }
-    }
-
-    // C / Additional
-    if (cleared) {
-      const res = applyStatusWithImmunityCheck(ctx.targetSide, "害怕", 1);
-      if (res.success) {
-        addLog("【黯索魂噬】：消除回合效果成功！令對手進入害怕 1 回合！", "status");
-      }
-    }
-
-    if (hasBuff) {
-      applyStatChange(ctx.targetSide, { atk: -1, def: -1, spatk: -1, spdef: -1, speed: -1, accuracy: -1 });
-      addLog("【黯索魂噬】：消強成功！令對手全屬性 -1！", "effect");
-    }
-  },
-
   "陰世遊靈": (ctx) => {
     const { self, actor, setPlayerState, getPlayerState, addLog, applyStatChange } = ctx;
     addLog("【陰世遊靈】：陰冷迷霧，遊魂出世！", "effect");
@@ -274,23 +244,4 @@ export const SOBIRAT_SKILLS: Record<string, BattleSkillHandler> = {
     addLog("【幽冥噬魂】：附加 3 回合自身攻擊技能無效時消除對手回合類效果！", "effect");
   },
 
-  "黯·萬魂歸寂": (ctx) => {
-    const { clearTurnEffectsOf, setPlayerState, addLog } = ctx;
-    addLog("【黯·萬魂歸寂】：萬魂哀鳴，冥河封鎖！", "effect");
-
-    // 消除對手回合類效果 (B / Inherent)
-    const cleared = clearTurnEffectsOf(ctx.targetSide);
-
-    // [消除成功] -> 對手 2 回合屬性技能無效 (C / Additional)
-    if (cleared) {
-      ctx.setOpponentState("sealPropertyTurns", 3); // 3 turns (ticks down on round end, so 2 active combat turns)
-      ctx.setOpponentState("utilitySkillInvalidTurns", 2);
-      ctx.setOpponentState("utilitySkillInvalidReason", "冥河封鎖");
-      addLog("【黯·萬魂歸寂】：消除回合效果成功！對手 2 回合內屬性技能失效！", "status");
-    }
-
-    // 自身獲得 3 回合免死 (不滅意志)
-    setPlayerState("sobiratSurviveTurns", 3);
-    addLog("【黯·萬魂歸寂】：自身獲得 3 回合不滅意志（若體力歸零則強制存活保留 1 點體力）！", "status");
-  }
 };

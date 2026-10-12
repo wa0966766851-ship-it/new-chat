@@ -1,3 +1,5 @@
+import { addDamageIncrease } from '../../../battle/damagePipeline';
+import { queueActionPowerMultiplier } from '../../../battle/actionDamageModifiers';
 import { benchSkip } from '../../fieldGuard';
 import { bypassesAttackDefense } from '../../../battle/attackDefense';
 import { BattleEventContext, BattleSkillHandler, EffectTiming, ElfDeconstructedProfile } from "../../types";
@@ -33,6 +35,29 @@ const puniSharedRoundEnd = (context: BattleEventContext) => {
 /**
  * 聖靈譜尼 (Holy Spirit Puni) 專屬註冊表 [神]
  */
+/**
+ * 璨靈聖光／聖光吟誦的持續狀態（300 譜尼與 5000 聖靈譜尼共用；2026-10-11 由聖靈譜尼抽出，基礎譜尼過去完全沒有）。
+ * - 2回合內免疫對手的攻擊傷害（只限攻擊傷害）
+ * - 下2回合攻擊威力翻倍（威力屬公式輸入）
+ * - 下2回合對手受到的傷害提高150%
+ */
+const puniSkillStateEffects = (context: BattleEventContext, event: EffectTiming | string, extraData?: any) => {
+  const { getPlayerState, addLog } = context;
+  if (event === EffectTiming.BEFORE_SKILL && context.skill && context.skill.category !== "屬性" && getPlayerState("puniDoubleDamageTurns") > 0) {
+    queueActionPowerMultiplier(context, 2);
+  }
+  if (event === EffectTiming.BEFORE_DAMAGE && extraData) {
+    if (extraData.isIncoming === true) {
+      if (extraData.damageCategory === "skill_attack" && getPlayerState("puniVoidShieldTurns") > 0 && !bypassesAttackDefense(extraData, 'block')) {
+        extraData.multiplier = 0;
+        addLog(`✨ 【璨靈聖光】：免疫攻擊傷害！`, "status");
+      }
+    } else if (getPlayerState("puniDamageBoostTurns") > 0) {
+      addDamageIncrease(extraData, 1.5);
+    }
+  }
+};
+
 export const handleShenglingPuniSoulMark = (context: BattleEventContext, event: EffectTiming | string, extraData?: any) => {
   if (benchSkip(context, event)) return; // 場下不觸發回合節點效果（例：聖・回合結束回復）
   const priorityComp = extraData?.priorityComp;
@@ -131,6 +156,8 @@ export const handleShenglingPuniSoulMark = (context: BattleEventContext, event: 
     }
   }
 
+  puniSkillStateEffects(context, event, extraData);
+
   // BEFORE_DAMAGE: 虛無 (受到攻擊傷害時，免疫下 1 次受到的攻擊傷害) & 其它無效化
   if (event === EffectTiming.BEFORE_DAMAGE && extraData) {
     if (extraData.isIncoming === true) {
@@ -140,20 +167,8 @@ export const handleShenglingPuniSoulMark = (context: BattleEventContext, event: 
         addLog(`✨ 【虛無】：化身虛無，使對手本次攻擊無效化！`, "effect");
       }
       
-      if (getPlayerState("puniVoidShieldTurns") > 0 && !bypassesAttackDefense(extraData, 'block')) {
-        extraData.multiplier = 0;
-        addLog(`✨ 【璨靈聖光】：免疫攻擊傷害！`, "status");
-      }
     } else {
       // 自身造成傷害
-      if (getPlayerState("puniDoubleDamageTurns") > 0) {
-        extraData.multiplier *= 2;
-        addLog(`✨ 【璨靈聖光】：傷害翻倍！`, "effect");
-      }
-      // 聖光吟誦：下2回合對手受到傷害提升150% (damage is multiplied by 2.5)
-      if (getPlayerState("puniDamageBoostTurns") > 0) {
-        extraData.multiplier *= 2.5;
-      }
     }
   }
 
@@ -312,17 +327,6 @@ export const handleShenglingPuniSoulMark = (context: BattleEventContext, event: 
     }
     if (getPlayerState("puniMengPriorityTurns") > 0) setPlayerState("puniMengPriorityTurns", getPlayerState("puniMengPriorityTurns") - 1);
 
-    if (getPlayerState("puniShengMingHealTurns") > 0) {
-      setPlayerState("puniShengMingHealTurns", getPlayerState("puniShengMingHealTurns") - 1);
-      const heal = 100;
-      self.currentHp = Math.min(self.maxHp, self.currentHp + heal);
-      addLog(`✨ 【生命】：恢復 100 點固定體力！`, "heal");
-    }
-    if (getPlayerState("puniXuanMieFixedTurns") > 0) {
-      setPlayerState("puniXuanMieFixedTurns", getPlayerState("puniXuanMieFixedTurns") - 1);
-      context.applyFixedDamage(oppSide, 30);
-      addLog(`✨ 【旋滅裂空陣】：附加 30 點固定傷害！`, "damage");
-    }
     if (getPlayerState("puniShengYingBuffIfAlive")) {
       setPlayerState("puniShengYingBuffIfAlive", false);
       if (target.currentHp > 0) {
@@ -372,10 +376,7 @@ export const handlePuniBaseSoulMark = (context: BattleEventContext, event: Effec
   }
 
   // 3. BEFORE_DAMAGE: 虛無無效化對手攻擊
-  if (event === EffectTiming.BEFORE_DAMAGE && extraData) {
-    if (extraData.isIncoming === true) {
-    }
-  }
+  puniSkillStateEffects(context, event, extraData);
 
   // 4. ON_DAMAGED: 能量傷害反饋
   if (event === EffectTiming.ON_DAMAGED && extraData) {
@@ -396,6 +397,9 @@ export const handlePuniBaseSoulMark = (context: BattleEventContext, event: Effec
 
     // 技能計數器更新與結算
     puniSharedRoundEnd(context);
+    for (const key of ["puniVoidShieldTurns", "puniDoubleDamageTurns", "puniAlwaysFirstTurns", "puniDamageBoostTurns"]) {
+      if (getPlayerState(key) > 0) setPlayerState(key, getPlayerState(key) - 1);
+    }
     if (getPlayerState("puniShengGuangQiTurns") > 0) {
       setPlayerState("puniShengGuangQiTurns", getPlayerState("puniShengGuangQiTurns") - 1);
     }
@@ -403,18 +407,6 @@ export const handlePuniBaseSoulMark = (context: BattleEventContext, event: Effec
       setPlayerState("puniShengJieMissTurns", getPlayerState("puniShengJieMissTurns") - 1);
     }
 
-    if (getPlayerState("puniShengMingHealTurns") > 0) {
-      setPlayerState("puniShengMingHealTurns", getPlayerState("puniShengMingHealTurns") - 1);
-      const shengMingHeal = 100;
-      self.currentHp = Math.min(self.maxHp, self.currentHp + shengMingHeal);
-      addLog(`✨ 【生命】：恢復 100 點固定體力！`, "heal");
-    }
-
-    if (getPlayerState("puniXuanMieTurns") > 0) {
-      setPlayerState("puniXuanMieTurns", getPlayerState("puniXuanMieTurns") - 1);
-      context.applyFixedDamage(oppSide, 30);
-      addLog(`✨ 【旋滅裂空陣】：附加 30 點固定傷害！`, "damage");
-    }
   }
 
   return false;
@@ -424,8 +416,6 @@ export const handlePuniBaseSoulMark = (context: BattleEventContext, event: Effec
 // 技能全表 (27 個技能) - 已完全消除 hardcoded 'p1' 或 'p2'
 // ==============================================================
 export const PUNI_SKILLS: Record<string, BattleSkillHandler> = {
-  "極光": (ctx) => {}, // 無特殊效果
-  "神聖之光": (ctx) => {}, // 無特殊效果
   "虛無": (ctx) => {
     const sealed = ctx.getPlayerState("additionalEffectsSealed") || ctx.getPlayerState(`${ctx.actor}_sealSkillAdditionalEffects`) > 0;
     if (sealed) {
@@ -481,16 +471,6 @@ export const PUNI_SKILLS: Record<string, BattleSkillHandler> = {
       addLog(`✨ 【靈光之怒】：對手能力等級總和為 +${sum}，額外附加 ${bonusDmg} 點固定傷害！`, "damage");
     }
   },
-  "生命": (ctx) => {
-    const sealed = ctx.getPlayerState("additionalEffectsSealed") || ctx.getPlayerState(`${ctx.actor}_sealSkillAdditionalEffects`) > 0;
-    if (sealed) {
-      ctx.addLog(`🚫 【附加效果失效】：【生命】的附加效果失效！`, "info");
-      return;
-    }
-    const { setPlayerState, addLog } = ctx;
-    setPlayerState("puniShengMingHealTurns", 5);
-    addLog(`✨ 【生命】：5 回合內，每回合回復 100 點固定體力值！`, "status");
-  },
   "斷空破": (ctx) => {
     const sealed = ctx.getPlayerState("additionalEffectsSealed") || ctx.getPlayerState(`${ctx.actor}_sealSkillAdditionalEffects`) > 0;
     if (sealed) {
@@ -532,16 +512,6 @@ export const PUNI_SKILLS: Record<string, BattleSkillHandler> = {
     }
     if (cleared) addLog(`✨ 【聖堂之門】：消除了對手能力提升狀態！`, "effect");
   },
-  "永恆": (ctx) => {
-    const sealed = ctx.getPlayerState("additionalEffectsSealed") || ctx.getPlayerState(`${ctx.actor}_sealSkillAdditionalEffects`) > 0;
-    if (sealed) {
-      ctx.addLog(`🚫 【附加效果失效】：【永恆】的附加效果失效！`, "info");
-      return;
-    }
-    const { self, addLog } = ctx;
-    self.skills.forEach(s => s.pp = getMaxPp(s, self));
-    addLog(`✨ 【永恆】：回復自身所有技能 PP 值！`, "effect");
-  },
   "聖潔": (ctx) => {
     const sealed = ctx.getPlayerState("additionalEffectsSealed") || ctx.getPlayerState(`${ctx.actor}_sealSkillAdditionalEffects`) > 0;
     if (sealed) {
@@ -555,16 +525,6 @@ export const PUNI_SKILLS: Record<string, BattleSkillHandler> = {
     setPlayerState("incomingUtilityInvalidReason", "【聖潔】屬性免疫");
     addLog(`✨ 【聖潔】：5 回合內屬性技能對自身必定 MISS！`, "status");
   },
-  "旋滅裂空陣": (ctx) => {
-    const sealed = ctx.getPlayerState("additionalEffectsSealed") || ctx.getPlayerState(`${ctx.actor}_sealSkillAdditionalEffects`) > 0;
-    if (sealed) {
-      ctx.addLog(`🚫 【附加效果失效】：【旋滅裂空陣】的附加效果失效！`, "info");
-      return;
-    }
-    const { setPlayerState, addLog } = ctx;
-    setPlayerState("puniXuanMieTurns", 5);
-    addLog(`✨ 【旋滅裂空陣】：5 回合內每回合附加 30 點固定傷害！`, "status");
-  },
   "千烈虛光閃": (ctx) => {
     const { self, addLog } = ctx;
     let cleared = false;
@@ -575,16 +535,6 @@ export const PUNI_SKILLS: Record<string, BattleSkillHandler> = {
       }
     }
     if (cleared) addLog(`✨ 【千烈虛光閃】：解除了自身的能力下降狀態！`, "effect");
-  },
-  "聖光氣": (ctx) => {
-    const sealed = ctx.getPlayerState("additionalEffectsSealed") || ctx.getPlayerState(`${ctx.actor}_sealSkillAdditionalEffects`) > 0;
-    if (sealed) {
-      ctx.addLog(`🚫 【附加效果失效】：【聖光氣】的附加效果失效！`, "info");
-      return;
-    }
-    const { setPlayerState, addLog } = ctx;
-    setPlayerState("puniShengGuangQiTurns", 2);
-    addLog(`✨ 【聖光氣】：接下來 2 回合攻擊必定致命一擊！`, "effect");
   },
   "聖靈魔閃光": (ctx) => {
     const sealed = ctx.getPlayerState("additionalEffectsSealed") || ctx.getPlayerState(`${ctx.actor}_sealSkillAdditionalEffects`) > 0;
@@ -601,8 +551,9 @@ export const PUNI_SKILLS: Record<string, BattleSkillHandler> = {
   "璨靈聖光": (ctx) => {
     const { setPlayerState, addLog } = ctx;
     // B effects:
-    setPlayerState("puniDoubleDamageTurns", 2);
-    setPlayerState("puniAlwaysFirstTurns", 2);
+    // 「下2回合」：本回合不生效，之後 2 個回合（ctx.setNextTurns 於回合結束遞減後才寫入）
+    ctx.setNextTurns?.("self", "puniDoubleDamageTurns", 2);
+    ctx.setNextTurns?.("self", "puniAlwaysFirstTurns", 2);
 
     // C effects:
     const sealed = ctx.getPlayerState("additionalEffectsSealed") || ctx.getPlayerState(`${ctx.actor}_sealSkillAdditionalEffects`) > 0;
@@ -612,37 +563,6 @@ export const PUNI_SKILLS: Record<string, BattleSkillHandler> = {
       setPlayerState("puniVoidShieldTurns", 2);
       setPlayerState("puniCanLingHealTurns", 5);
       addLog(`✨ 【璨靈聖光】：2 回合免傷、5 回合回血、下 2 回合必定先手且傷害翻倍！`, "status");
-    }
-  },
-  "落芳天華": (ctx) => {
-    const { self, target, applyFixedDamage, addLog, getPlayerState, setPlayerState, targetSide } = ctx;
-    // B effects:
-    let stolen = false;
-    for (const key in target.statStages) {
-      if (target.statStages[key] > 0) {
-        self.statStages[key] = (self.statStages[key] || 0) + target.statStages[key];
-        target.statStages[key] = 0;
-        stolen = true;
-      }
-    }
-    if (stolen) addLog(`✨ 【落芳天華】：吸收了對手能力提升！`, "effect");
-
-    // C effects:
-    const sealed = ctx.getPlayerState("additionalEffectsSealed") || ctx.getPlayerState(`${ctx.actor}_sealSkillAdditionalEffects`) > 0;
-    if (sealed) {
-      ctx.addLog(`🚫 【附加效果失效】：落芳天華的附加效果失效！`, "info");
-    } else {
-      let count = (getPlayerState("puniLuoFangCount") || 0) + 1;
-      setPlayerState("puniLuoFangCount", count);
-      const isCounter = target.type.includes("混沌") || target.type.includes("神秘") || target.type.includes("邪靈");
-      const baseDmg = Math.min(400, 100 + (count - 1) * 100);
-      const dmg = isCounter ? baseDmg * 2 : baseDmg;
-      applyFixedDamage(targetSide, dmg);
-      if (isCounter) {
-        addLog(`✨ 【落芳天華】：面對天敵，效果翻倍，附加了 ${dmg} 點固定傷害！`, "damage");
-      } else {
-        addLog(`✨ 附加 ${dmg} 點固定傷害！`, "damage");
-      }
     }
   },
   "聖靈悲魂曲": (ctx) => {
@@ -689,46 +609,6 @@ export const PUNI_SKILLS: Record<string, BattleSkillHandler> = {
       setPlayerState("puniShengYingBuffIfAlive", true);
     }
   },
-  "神靈之觸": (ctx) => {
-    const { self, target, addLog, setPlayerState, applyPinkDamage, getPlayerState, setOpponentState, targetSide } = ctx;
-    
-    // B effects (命中前 / BEFORE_SKILL): 消除對手能力提升狀態
-    let cleared = false;
-    const oppStages = { ...target.statStages };
-    for (const key in oppStages) {
-      const k = key as keyof typeof oppStages;
-      if ((oppStages[k] || 0) > 0) {
-        oppStages[k] = 0;
-        cleared = true;
-      }
-    }
-    if (cleared) {
-      ctx.updateElf(targetSide, { statStages: oppStages });
-      addLog(`✨ 【神靈之觸】：消除了對手的能力提升狀態！`, "effect");
-      
-      // [消除成功]對手下 1 次攻擊技能無效
-      ctx.addTimerTo(targetSide, { id: 'puni_touch_next_attack_invalid', name: '神靈之觸',
-        source: 'skill', kind: 'use_counter', remaining: 1, tickAt: 'never', persistsOffField: false,
-        payload: { block: { invalid: '攻擊', src: '神靈之觸' } } }, false);
-      addLog(`✨ 【神靈之觸】：消除成功，使對手下 1 次使用的攻擊技能失效！`, "status");
-    }
-
-    // C effects (命中後 / AFTER_ACTION): 附加對手 15% 百分比傷害，連用 +10% 最高 45%
-    let count = getPlayerState("puniShenLingTouchCount") || 0;
-    const lastSkill = getPlayerState("lastUsedSkillName");
-    if (lastSkill === "神靈之觸") {
-      count = Math.min(4, count + 1); // 15%, 25%, 35%, 45%
-    } else {
-      count = 1;
-    }
-    setPlayerState("puniShenLingTouchCount", count);
-    setPlayerState("lastUsedSkillName", "神靈之觸");
-
-    const pct = 0.15 + (count - 1) * 0.10;
-    const dmg = Math.floor(target.maxHp * pct);
-    applyPinkDamage(targetSide, dmg, "【神靈之觸】百分比傷害", undefined, undefined, "percent");
-    addLog(`✨ 【神靈之觸】：附加對手最大體力 ${(pct * 100).toFixed(0)}% 的百分比傷害 (${dmg})！`, "damage");
-  },
   "聖光吟誦": (ctx) => {
     const { applyStatusWithImmunityCheck, addLog, setPlayerState, setOpponentState, targetSide } = ctx;
     
@@ -747,7 +627,7 @@ export const PUNI_SKILLS: Record<string, BattleSkillHandler> = {
     setPlayerState("puniYinSongReflectTurns", 4);
 
     // 下 2 回合對手受到傷害提升 150%
-    setPlayerState("puniDamageBoostTurns", 2);
+    ctx.setNextTurns?.("self", "puniDamageBoostTurns", 2); // 下2回合
 
     addLog(`✨ 【聖光吟誦】：附加 4 回合受擊反彈對手最大體力 1/3 傷害，下 2 回合對手受到傷害提升 150% 的特殊效果！`, "effect");
   },
@@ -761,74 +641,6 @@ export const PUNI_SKILLS: Record<string, BattleSkillHandler> = {
       }
     }
     if (cleared) addLog(`✨ 【神神之門】：消除了對手能力提升狀態！`, "effect");
-  },
-  "神聖復甦": (ctx) => {
-    const { self, target, addLog, clearTurnEffectsOf, applyPinkDamage, actor, targetSide } = ctx;
-    
-    // B effects (命中前): 消除雙方能力提升下降狀態
-    self.statStages = { atk: 0, def: 0, spatk: 0, spdef: 0, speed: 0, accuracy: 0 };
-    target.statStages = { atk: 0, def: 0, spatk: 0, spdef: 0, speed: 0, accuracy: 0 };
-    
-    // 消除雙方回合類效果
-    clearTurnEffectsOf("p1");
-    clearTurnEffectsOf("p2");
-    addLog(`✨ 【神聖復甦】：消除了雙方的能力狀態與所有回合類效果！`, "effect");
-
-    // C effects (命中後): 使雙方所有技能 PP 歸零
-    self.skills.forEach(s => s.pp = 0);
-    target.skills.forEach(s => s.pp = 0);
-    
-    // 恢復自身最大體力 100%
-    const healAmount = self.maxHp - self.currentHp;
-    self.currentHp = self.maxHp;
-    addLog(`✨ 【神聖復甦】：雙方技能 PP 歸零，自身體力已全滿！`, "heal");
-    
-    // 附加等同恢復量的百分比傷害
-    if (healAmount > 0) {
-      applyPinkDamage(targetSide, healAmount, "【神聖復甦】百分比傷害", undefined, undefined, "percent");
-      addLog(`✨ 【神聖復甦】：附加了等同於體力恢復量 (${healAmount}) 的百分比傷害！`, "damage");
-    }
-  },
-  "光榮之夢": (ctx) => {
-    const { self, target, addLog, setPlayerState, applyStatChange, actor, targetSide, applyPinkDamage } = ctx;
-    
-    // 全屬性+1，對手非混沌系時翻倍
-    const isChaos = target.type.includes("混沌");
-    const stages = isChaos ? 1 : 2;
-    applyStatChange(actor, { atk: stages, def: stages, spatk: stages, spdef: stages, speed: stages, accuracy: stages });
-    addLog(`✨ 【光榮之夢】：自身全屬性 +${stages}！`, "effect");
-
-    // 3 回合每回合吸取對手能力強化狀態 (handled in ROUND_END)
-    setPlayerState("puniMengStealTurns", 3);
-    
-    // 恢復自身最大體力的1/2，自身體力低於1/2時造成等量百分比傷害
-    const wasLow = self.currentHp < self.maxHp / 2;
-    const healAmount = Math.min(self.maxHp - self.currentHp, Math.floor(self.maxHp / 2));
-    self.currentHp = Math.min(self.maxHp, self.currentHp + healAmount);
-    addLog(`✨ 【光榮之夢】：恢復自身 ${healAmount} 點體力！`, "heal");
-    if (wasLow && healAmount > 0) {
-      applyPinkDamage(targetSide, healAmount, "【光榮之夢】百分比傷害", undefined, undefined, "percent");
-      addLog(`✨ 【光榮之夢】：附加了等同於體力恢復量 (${healAmount}) 的百分比傷害！`, "damage");
-    }
-
-    // 下 2 回合自身所有技能先制 +2 (handled in MODIFY_PRIORITY)
-    setPlayerState("puniMengPriorityTurns", 3); // 本回合結束後剩 2 → 下2回合生效
-    
-    addLog(`✨ 【光榮之夢】：3 回合內使用技能吸取對手能力提升，下 2 回合自身技能先制 +2！`, "effect");
-  },
-  "神聖啟示歌": (ctx) => {
-    const { target, goesFirst, addLog, setPlayerState } = ctx;
-    if (goesFirst) {
-      // 隨機 2 個技能 PP 值歸零
-      const rnd = ctx.rng ?? Math.random;
-      const idx = target.skills.map((_, i) => i);
-      for (let i = idx.length - 1; i > 0; i--) { const j = Math.floor(rnd() * (i + 1)); [idx[i], idx[j]] = [idx[j], idx[i]]; }
-      idx.slice(0, 2).forEach(i => { target.skills[i].pp = 0; });
-      addLog(`✨ 【神聖啟示歌】：先出手，令對手隨機 2 個技能 PP 歸零！`, "effect");
-    } else {
-      setPlayerState("puniQiShiPriorityTurns", 2); // 本回合結束後剩 1 → 下回合生效
-      addLog(`✨ 【神聖啟示歌】：後出手，下回合所有技能先制 +3！`, "effect");
-    }
   },
   "神靈救世光": (ctx) => {
     const { self, target, addLog, clearTurnEffectsOf, setPlayerState, targetSide, adjustHp, applyHeal, actor } = ctx;

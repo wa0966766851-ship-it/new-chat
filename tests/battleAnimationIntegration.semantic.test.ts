@@ -52,7 +52,8 @@ try {
       onDriverInit: (d: any) => driver = d,
     })));
     await act(async () => { driver.onSkillSelect('p1', driver.getSyncState().p1.skills[0]); driver.onSkillSelect('p2', driver.getSyncState().p2.skills[0]); });
-    for (let i = 0; i < 250 && !(driver.getSyncState().turnNumber === 2 && driver.getSyncState().phase === 'p1_select'); i++) {
+    // 引擎先算完整回合，畫面再依時間軸播放：要等播放也結束。
+    for (let i = 0; i < 250 && !(driver.getSyncState().turnNumber === 2 && driver.getSyncState().phase === 'p1_select' && !driver.isPresenting()); i++) {
       await act(async () => { await new Promise(r => setTimeout(r, 40)); });
     }
     observer.disconnect();
@@ -120,7 +121,7 @@ try {
       battleMode: 'PVP', preparedTeams: true, onBackToMenu: () => {}, onDriverInit: (d: any) => driver = d,
     })));
     await act(async () => { driver.onSkillSelect('p1', driver.getSyncState().p1.skills[0]); driver.onSkillSelect('p2', driver.getSyncState().p2.skills[0]); });
-    for (let i = 0; i < 150 && !(driver.getSyncState().turnNumber === 2 && driver.getSyncState().phase === 'p1_select'); i++) await act(async () => { await new Promise(r => setTimeout(r, 40)); });
+    for (let i = 0; i < 150 && !(driver.getSyncState().turnNumber === 2 && driver.getSyncState().phase === 'p1_select' && !driver.isPresenting()); i++) await act(async () => { await new Promise(r => setTimeout(r, 40)); });
     observer.disconnect();
     const st = driver.getSyncState();
     assert.equal(st.phase, 'p1_select'); assert.equal(st.winner, null);

@@ -15,6 +15,18 @@ export function applyAdvancedDamageModifiers(comp: DamageComputation, actor: Elf
   if (def.damageReduce4Stones && fourStones(target)) multiplyDamageReduction(comp, 1 - def.damageReduce4Stones);
 }
 
+/** 戰鬥中是否視為異能精靈（資料標記、類別，或特質「戰士」等 alwaysAlienElf）。 */
+export function isAlienElf(elf: Elf | undefined | null): boolean {
+  if (!elf) return false;
+  return !!elf.isAlienElf || (elf as any).category === '異能精靈' || !!getElfAdvancedMechanics(elf).alwaysAlienElf;
+}
+
+/** 特質「無序星魂使徒」：對異能精靈造成傷害翻倍（所有傷害類別；屬「翻倍」獨立乘區）。 */
+export function applyAlienDoubleDamage(comp: DamageComputation, actor: Elf | undefined, target: Elf | undefined): void {
+  if (!actor || !target || comp.pure) return;
+  if (getElfAdvancedMechanics(actor).doubleDamageToAlienElf && isAlienElf(target)) comp.multiplier *= 2;
+}
+
 /** 持有者自身的輸出上限，不可被「無視對手傷害限制」一起清掉。 */
 export function applyOutgoingSkillRestriction(comp: DamageComputation, registry: Record<string, any>): void {
   if (comp.pure || !isSkillDamageType(comp.damageCategory) || !(registry.DarkScarTurns > 0)) return;

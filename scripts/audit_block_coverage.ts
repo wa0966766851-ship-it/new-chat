@@ -1,4 +1,4 @@
-import { DEFAULT_ELVES } from "../src/data/defaultElves";
+import { DEFAULT_ELVES } from "../src/data/defaultElvesLoaded";
 import { getSkillProgram, getSoulProgram } from "../src/blocks/registry";
 import { SKILL_MODE, SOUL_MODE } from "../src/blocks/specs";
 import { writeFileSync, readFileSync } from 'node:fs';
@@ -114,12 +114,14 @@ if (check) {
   // 20261003-2：無相諦補消逝、日月安屬沉默改戰鬥百科定義、龍魂之源／印記／之力說明行：912 → 915。
   // 20261005：5031完整描述＋5032～5034來源TXT加入；601/1034只是解析基準，不是實裝率。
   // 20261007：5035哈莫新增17/40技能與3/44魂印子句。原資料基準未降低；新增未解析項仍在報告。
-  if (skills.parsed < 618 || skills.total !== 1074) failures.push(`技能覆蓋率退步或資料集改變：${skills.parsed}/${skills.total}`);
+  // 20261012：API 匯入 4937 星光·雷納多（+21 技能子句），句型擴充讓既有技能多解析數句：618/1074 → 643/1095。
+  if (skills.parsed < 643 || skills.total !== 1095) failures.push(`技能覆蓋率退步或資料集改變：${skills.parsed}/${skills.total}`);
   // 5029 異境神霆·雷伊加入 16 個可稽核魂印子句；資料集基準由 409 更新為 427。
   // 競技場五隻魂印走專屬 handler：431 → 449，已解析維持 104。
   // 20261003-2：無極聖武補英雄之耀／武誅／亮節／威怯官方定義、龍之治癒補赤龍與四龍追加效果：449 → 456，已解析 104 → 105。
   // 20261004 P1 積木修正：轉化異常等正則補 $ 錨定，5023「將自身異常轉化為詛咒異常狀態且令自身詛咒回合數翻倍」後半句不再被吞掉，誠實標為未解析：105 → 104。
-  if (souls.parsed < 115 || souls.total !== 623) failures.push(`魂印覆蓋率退步或資料集改變：${souls.parsed}/${souls.total}`);
+  // 20261012：4937 魂印 +4 子句（全部解析）：115/623 → 119/627。
+  if (souls.parsed < 119 || souls.total !== 627) failures.push(`魂印覆蓋率退步或資料集改變：${souls.parsed}/${souls.total}`);
 
   for (const name of Object.keys(SKILL_MODE)) {
     const skill = DEFAULT_ELVES.flatMap(elf => elf.skills || []).find(item => item.name === name);

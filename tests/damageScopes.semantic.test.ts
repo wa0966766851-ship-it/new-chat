@@ -102,14 +102,15 @@ try{
   const ctx:any={actor:side,targetSide:target,self:s[side],target:s[target],activeP1:s.p1,activeP2:s.p2,getMarks:()=>[],p1Timers:[],p2Timers:[],getStatuses:()=>({麻痺:2}),getPlayerState:()=>0,getOpponentState:()=>0};
   const events:any[]=[];
   const api=buildDamageAPIs({side,self:s[side],opp:s[target],syncStateRef:{current:s},pushEffect:(e:any)=>events.push(e),getBattleEventContext:()=>ctx});
-  assert.equal(api.applySkillTypeDamage(target,100,'X系',{elem:'普通'}),220,'實際API通知造成方技能增傷');
-  assert.equal(api.applySkillTypeDamage(target,100,'額外行動',{elem:'普通',category:'skill_extra_action'}),220);
+  // 兩個增傷來源（失去體力 50%、麻痺 70%）各自相乘：100×1.5×1.7＝255（使用者確認全部乘算，2026-10-11）
+  assert.equal(api.applySkillTypeDamage(target,100,'X系',{elem:'普通'}),255,'實際API通知造成方技能增傷');
+  assert.equal(api.applySkillTypeDamage(target,100,'額外行動',{elem:'普通',category:'skill_extra_action'}),255); // 兩個增傷來源相乘 1.5×1.7
   assert.equal(api.applyFixedDamage(target,100),150);
   assert.equal(api.applyTrueDamage(target,100),100);
   s[`${side}RegistryState`].vampireRatio=0.5;
   s[target].shield=999; s[target].currentHp=10; events.length=0;
-  assert.equal(api.applySkillTypeDamage(target,100,'吸血',{elem:'普通'}),220);
-  assert.equal(events.find((e:any)=>e.type==='heal').data.amount,110,'實際API吸血不按護盾或10HP限縮');
+  assert.equal(api.applySkillTypeDamage(target,100,'吸血',{elem:'普通'}),255); // 兩個增傷來源相乘 1.5×1.7
+  assert.equal(events.find((e:any)=>e.type==='heal').data.amount,127,'實際API吸血不按護盾或10HP限縮（255×50%）');
  }
 }finally{await engine.close();}
 console.log('雷伊技能／非真實／免疫範圍與真正造成方入口通過');

@@ -9,9 +9,12 @@ import { generateActMap, reachable, type ActMap, type MapNode } from "./map";
 import { RELICS, RELIC_BY_ID, applyRelicPanel, relicPool, runMods, type RelicRarity } from "./relics";
 import { buildExplorationSnapshot } from "../battleSnapshot";
 import { isAliveBySurvivalRule } from "../../../battle/survivalRules";
+import { refreshExplorationElf } from './definitionSync';
 
 export const RUN_KEY_V2 = "INTERSTELLAR_ECLIPSE_RUN";
 export const META_KEY = "INTERSTELLAR_META";
+export const DEFINITION_SYNC_BACKUP_KEY = `${RUN_KEY_V2}_BEFORE_DEFINITION_SYNC`;
+export const definitionSyncBackupKey = (runId:string):string => `${DEFINITION_SYNC_BACKUP_KEY}:${runId}`;
 type Storage = Pick<globalThis.Storage, "getItem" | "setItem" | "removeItem">;
 
 export type Tier = "low" | "mid" | "high" | "apex";
@@ -85,6 +88,30 @@ export function createRun(opts: { pool: Elf[]; equipType: "suit" | "title"; equi
 export function loadRunV2(storage: Pick<Storage, "getItem">): RunV2 | null {
   const raw = storage.getItem(RUN_KEY_V2); if (!raw) return null;
   try { const r = JSON.parse(raw); return r?.schemaVersion === 2 && r.map && Array.isArray(r.team) ? r : null; } catch { return null; }
+}
+/** 只在非戰鬥中更新定義；未結算的戰鬥必須沿用原快照，不能在中途換魂印／技能。 */
+export function syncRunDefinitions(run:RunV2,pool:readonly Elf[]):RunV2 {
+  if(run.pendingBattle)return run;
+  let changed=false;
+  const team=run.team.map(saved=>{
+    let next=refreshExplorationElf(saved,pool);
+    if(next===saved)return saved;
+    if(JSON.stringify(next.baseStats)!==JSON.stringify(saved.baseStats)) {
+      // 只同步新面板及體力上限，仍保留已損失體力／死亡／負血，不清除個體持續狀態。
+      const snapshot=snapshotElf(run,{...next,explorationVitals:true} as Elf);
+      next={...next,calculatedStats:snapshot.calculatedStats,maxHp:snapshot.maxHp,currentHp:snapshot.currentHp};
+    }
+    changed=true;return next;
+  });
+  return changed?{...run,team}:run;
+}
+/** 每局首次覆寫前留下完整存檔；相同定義不加revision、不重複備份。 */
+export function resumeRunV2(storage:Storage,pool:readonly Elf[]):RunV2|null {
+  const run=loadRunV2(storage);if(!run)return null;
+  const next=syncRunDefinitions(run,pool);if(next===run)return run;
+  const backupKey=definitionSyncBackupKey(run.runId);
+  if(!storage.getItem(backupKey))storage.setItem(backupKey,JSON.stringify(run));
+  return saveRunV2(storage,next);
 }
 /** 寫入：不覆蓋較新的修訂（例如戰鬥結算已寫入的局面）。 */
 export function saveRunV2(storage: Storage, run: RunV2): RunV2 {

@@ -1,7 +1,7 @@
 import React from 'react';
 import { Elf } from '../types';
 import { ChainImage } from './SeerImages';
-import { buffIconFor } from '../battle/effectIcons';
+import { effectIcon as resolveEffectIcon } from '../battle/effectIcons';
 
 interface ShieldBarrierPanelProps {
   elf: Elf;
@@ -21,8 +21,8 @@ export const ShieldBarrierPanel: React.FC<ShieldBarrierPanelProps> = ({
   // Percentage relative to maxHp for bar width display
   const shieldPercent = Math.min(100, Math.max(0, (shield / maxHp) * 100));
   const barrierPercent = Math.min(100, Math.max(0, (barrier / maxHp) * 100));
-  const shieldIcon = buffIconFor('護盾')!;
-  const barrierIcon = buffIconFor('護罩')!;
+  const shieldIcon = resolveEffectIcon('護盾');
+  const barrierIcon = resolveEffectIcon('護罩');
   const effectIcon = (url: string) => <ChainImage urls={[url]} className="w-4 h-4 rounded-full shrink-0 object-contain" />;
 
   return (

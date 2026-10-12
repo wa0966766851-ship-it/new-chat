@@ -11,7 +11,9 @@ export const handleStarlightRusSoulMark = (context: BattleEventContext, event: E
   const oppSide = actor === "p1" ? "p2" : "p1";
 
   if (event === EffectTiming.BEFORE_DAMAGE && !extraData?.isIncoming && extraData?.damageCategory === "skill_attack") {
-    extraData.multiplier *= getPlayerState("rusAttackMultiplier") || 1;
+    // 「提升75%（體力低於對手則翻倍＝150%）」屬增傷層
+    const m = Number(getPlayerState("rusAttackMultiplier")) || 1;
+    if (m > 1) extraData.increasePercent += m - 1;
   }
 
   // 1. 登場與常駐標記
@@ -37,7 +39,7 @@ export const handleStarlightRusSoulMark = (context: BattleEventContext, event: E
 
   // 2. 攻擊後效果
   // AFTER_ACTION 只派發給行動方本身（無 extraData），以 ctx.skill 判斷是否為攻擊
-  if (event === EffectTiming.AFTER_ACTION) {
+  if (event === EffectTiming.AFTER_ACTION || event === EffectTiming.ACTION_FAILED) {
     setPlayerState("rusAttackMultiplier", 0);
     const pending = getPlayerState("rusPendingPercentDamage") || 0;
     if (pending > 0) {
@@ -143,9 +145,10 @@ export const STARLIGHT_RUS_SKILLS: Record<string, BattleSkillHandler> = {
     ["atk", "def", "spatk", "spdef", "speed", "accuracy"].forEach(k => {
       stages[k as keyof typeof stages] = Math.min(6, (stages[k as keyof typeof stages] || 0) + bonus);
     });
-    setPlayerState("dmgDoubleTurns", 2);
-    setPlayerState("ignoreDef25Turns", 2);
-    setPlayerState("ignoreOppBuffTurns", 2);
+    // 「下2回合」：本回合不生效，之後 2 個回合
+    ctx.setNextTurns?.("self", "dmgDoubleTurns", 2);
+    ctx.setNextTurns?.("self", "ignoreDef25Turns", 2);
+    ctx.setNextTurns?.("self", "ignoreOppBuffTurns", 2);
     addLog(`🌊 【星光·隨風逐浪】：全屬性+${bonus}，進入傷害翻倍、穿防與無視強化狀態！`, "effect");
   },
 

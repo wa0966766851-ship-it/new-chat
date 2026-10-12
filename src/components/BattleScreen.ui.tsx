@@ -1,4 +1,6 @@
-import { BattleEndDialog, SpecialBattleEndDialog } from "./BattleEndDialog";
+import { SpecialBattleEndDialog } from "./BattleEndDialog";
+import { BattleResult } from "./battle/BattleResult";
+import { summarizeLedger, type DamageLedger } from "../battle/damageLedger";
 import { damagePopupStyle, damagePopupLabel } from '../battle/damagePopupStyle';
 import { appearanceElf } from '../battle/illusion';
 import { skillSlot } from '../battle/skillSlot';
@@ -40,20 +42,25 @@ import { getMaxPp, getStatuses } from "../utils/battleHelpers";
 import { computeHitChance } from "../effects/genericSkillText";
 import { ShieldBarrierPanel } from "./ShieldBarrierPanel";
 import { Elf, Skill, BattleLog, BattleItem } from "../types";
-import { BattleEffectViewModel, buildEffectViewModels, describeEffectMeta } from "../battle/effectViewModel";
+import { BattleEffectViewModel, describeEffectMeta } from "../battle/effectViewModel";
+import { activeEffectViews, visibleEffectSourceText } from '../battle/activeEffectViews';
 import { getHpBarColor } from "./BattleComponents";
 import { StatusInspector } from "./StatusInspector";
 import { getTypeMatchup, getAttributeBadgeColor, getEffectiveBody } from "../utils/statCalculator";
 import { battleSpriteProfile, battleSpriteScale } from "../battle/seerAssets";
-import { ElfAvatar, TypeIcon, ChainImage } from "./SeerImages";
+import { ElfAvatar, TypeIcon, ChainImage, SkillTypeIcon } from "./SeerImages";
+import { skillDisplayType, skillDisplayTypeLabel } from '../utils/skillPresentation';
 import { ProportionalSprite } from "./battle/ProportionalSprite";
 import { hiddenFromViewer, viewerMaskTerms, maskViewerText, UNKNOWN_EFFECT, elfForViewer, visibleSkills } from "../battle/viewerPerspective";
 import { isAliveBySurvivalRule } from "../battle/survivalRules";
-import { statusVisual, buffIconFor, stageDesc, STAT_FULL, signIconFor, STATE_SIGNS } from "../battle/effectIcons";
+import { statusVisual, stageDesc, STAT_FULL, signIconFor, UNKNOWN_EFFECT_ICON } from "../battle/effectIcons";
 import { markAppliesToElf } from "../battle/marks";
-import { effectLines, formatEffectText, plainDescription } from "../utils/descFormat";
+import { effectLines } from "../utils/descFormat";
+import { EffectDescription } from './EffectDescription';
 import { StatusRegistry } from "../effects/statusRegistry";
 import { EFFECT_CATALOG } from "../data/effectCatalog";
+import { SkillResources } from './SkillResources';
+import { formatCompactHud, formatFullNumber } from '../utils/formatBigNumber';
 import { BATTLE_ITEMS, ITEM_CATEGORIES, getItemCategory, ItemCategory, isZeroPpExempt, isElfSkillSelectionDisabled } from "../utils/battleHelpers";
 
 interface BattleScreenUIProps {
@@ -70,6 +77,10 @@ interface BattleScreenUIProps {
   floatingDamagePopups: any[];
   consoleShake: any;
   damageDealt: Record<string, number>;
+  /** 傷害帳本（結算畫面用） */
+  ledger?: DamageLedger;
+  battleMode?: string;
+  formatLabel?: string;
 }
 
 const COLORS = ['#06b6d4', '#8b5cf6', '#ec4899', '#f59e0b', '#10b981', '#ef4444'];
@@ -79,10 +90,6 @@ const DEFAULT_P2_LAYOUT = { pos: { x: 734.8, y: -3.6 }, size: { width: 598.4, he
 const DEFAULT_TACTICAL_LAYOUT = { pos: { x: 161.2, y: 414 }, size: { width: 1199.2, height: 320 }, opacity: 0.95, scale: 1.1 };
 
 const COUNTER_LABELS: Record<string, string> = {
-      marsmechamode: "當前裝載機甲",
-      marsreformactivemode: "共鳴組合模式",
-      marsenergy: "主充能核心",
-      marspower: "核心超載係數",
       p1delufatalresistturns: "致死防護能量",
       p2delufatalresistturns: "致死防護能量",
       fatalresistturns: "不屈守護回合",
@@ -132,6 +139,8 @@ export function BattleScreenUI(props: BattleScreenUIProps) {
     name: maskViewerText(name, fogTerms),
     value: Number(value)
   })).filter(d => d.value > 0), [damageDealt, fogTerms]);
+
+  const resultSummary = useMemo(() => winner && props.ledger ? summarizeLedger(props.ledger, turnNumber) : null, [winner, props.ledger, turnNumber]);
 
   const totalDamage = useMemo(() => chartData.reduce((acc, curr) => acc + curr.value, 0), [chartData]);
 
@@ -234,50 +243,6 @@ export function BattleScreenUI(props: BattleScreenUIProps) {
     return () => ro?.disconnect();
   }, []);
 
-  const getDynamicEffects = (side: "p1" | "p2", elf: Elf) => {
-    const isP1 = side === "p1";
-    const dynamicEffects: any[] = [];
-
-    // 1. 異常狀態免疫 (Status Immunities)
-    if (elf.statusImmuneTurns && elf.statusImmuneTurns > 0) {
-      dynamicEffects.push({ catalogId: 'immune_status_turns', remainingTurns: elf.statusImmuneTurns });
-    }
-    // 2. 屬性技能封鎖 (Attribute Skills Sealed)
-    if (elf.cannotUseAttrSkillsTurns && elf.cannotUseAttrSkillsTurns > 0) {
-      dynamicEffects.push({ catalogId: 'seal_support_turns', remainingTurns: elf.cannotUseAttrSkillsTurns });
-    }
-    // 3. 攻擊技能失效 (Attack Skills Sealed)
-    if (elf.cannotUseAttackSkillsTurns && elf.cannotUseAttackSkillsTurns > 0) {
-      dynamicEffects.push({ catalogId: 'prop_invalid_turns', remainingTurns: elf.cannotUseAttackSkillsTurns });
-    }
-    // 4. 攻擊傷害免疫 (Damage Negation)
-    if (elf.isAttackImmune) {
-      dynamicEffects.push({ catalogId: 'negate_attack_turns', remainingTurns: 1 });
-    }
-    // 5. 機械護盾 (Active Shields)
-    if (elf.shield && elf.shield > 0) {
-      dynamicEffects.push({ catalogId: 'shield_active', remainingTurns: 1, stacks: elf.shield, note: `剩餘護盾吸收值: ${elf.shield}` });
-    }
-    // 6. 戰術護罩 (Active Barriers)
-    if (elf.barrier && elf.barrier > 0) {
-      dynamicEffects.push({ catalogId: 'barrier_active', remainingTurns: 1, stacks: elf.barrier, note: `剩餘護罩吸收值: ${elf.barrier}` });
-    }
-
-    // 7. 馬爾修斯械印機甲共鳴解析
-    if (elf.name === '變革·馬爾修斯') {
-      const registryState = isP1 ? battle.p1RegistryState : battle.p2RegistryState;
-      const activeMode = registryState?.marsMechaMode || registryState?.marsReformActiveMode || 'speed';
-      if (activeMode === 'defense' || activeMode === 'wall' || activeMode === '堅壁') {
-        dynamicEffects.push({ catalogId: 'mars_record_paralyzed', remainingTurns: 1, note: '【堅壁機甲】護航：每回合啟動⅓最大生命護盾與護罩，非真傷減半，回合結束高額修復與被動反傷。' });
-      } else if (activeMode === 'speed' || activeMode === '極速') {
-        dynamicEffects.push({ catalogId: 'star_rule', remainingTurns: 1, note: '【極速機甲】護航：自身先制等級額外+2，先出手時壓制對手全屬性-1（若提速則翻倍），後手封鎖對方先制。' });
-      } else if (activeMode === 'destroy' || activeMode === '毀滅') {
-        dynamicEffects.push({ catalogId: 'demon_curse', remainingTurns: 1, note: '【毀滅機甲】護航：所有攻擊技能威力提升100%-170%。出手後判定斬殺或造成30%生命汲取。' });
-      }
-    }
-    return dynamicEffects;
-  };
-
   const renderPopups = (side: "p1" | "p2") => (
                 <AnimatePresence>
                   {(battle.floatingDamagePopups || props.floatingDamagePopups || [])
@@ -308,7 +273,7 @@ export function BattleScreenUI(props: BattleScreenUIProps) {
                               {(label || pop.isCrit) && <span className="text-xs font-bold text-slate-200 drop-shadow-[0_1px_2px_rgba(0,0,0,0.9)]">{fog(label || '暴擊')}</span>}
                             </div>
                           ) : null}
-                          <span className={`${isSkillHit ? 'text-5xl' : 'text-3xl'} font-black tabular-nums ${numClass}`}
+                          <span className={`${isSkillHit ? 'text-5xl' : 'text-3xl'} font-black tabular-nums max-w-[11ch] truncate ${numClass}`}
                             style={{ textShadow: visual.textShadow }}>{fog(pop.text)}</span>
                         </motion.div>
                       );
@@ -320,11 +285,11 @@ export function BattleScreenUI(props: BattleScreenUIProps) {
     // 隱匿：敵方視角不展示能力等級、防護、異常、印記與計時效果。
     if (hiddenFromViewer(elf, side)) return <div className="text-[11px] text-slate-400 p-2 rounded border border-slate-800 bg-slate-900/60">{UNKNOWN_EFFECT}</div>;
     const isP1 = side === "p1";
-    const dynamicEffects = getDynamicEffects(side, elf);
-    const effectViews = buildEffectViewModels(
+    const effectViews = activeEffectViews(elf,
       (isP1 ? p1Marks : p2Marks) || [],
       (isP1 ? p1Timers : p2Timers) || [],
-      elf.battleId || elf.id,
+      (isP1 ? battle.p1RegistryState : battle.p2RegistryState) || {},
+      visibleEffectSourceText(isP1 ? p2 : p1, isP1 ? 'p2' : 'p1'),
     );
     const renderEffectGroup = (effects: BattleEffectViewModel[], emptyHint: string) => (
       effects.length ? (
@@ -333,7 +298,7 @@ export function BattleScreenUI(props: BattleScreenUIProps) {
             <button
               type="button"
               key={effect.id}
-              onClick={() => setModalContent({ title: effect.label, content: describeEffectMeta(effect) })}
+              onClick={() => setModalContent({ title: fog(effect.label), content: fog(describeEffectMeta(effect)) })}
               className={`px-1.5 py-0.5 rounded border text-[9px] font-bold transition-colors hover:brightness-125 ${
                 effect.polarity === "negative"
                   ? "bg-rose-950/60 border-rose-500/30 text-rose-200"
@@ -342,7 +307,8 @@ export function BattleScreenUI(props: BattleScreenUIProps) {
                     : "bg-cyan-950/60 border-cyan-500/30 text-cyan-200"
               }`}
             >
-              {effect.shortLabel} {effect.value}{effect.unit}
+              <ChainImage urls={[effect.icon]} className="inline-block h-5 w-5 mr-1 object-contain" />
+              {fog(effect.label)} {effect.value}{effect.value !== undefined ? effect.unit : ''}
             </button>
           ))}
         </div>
@@ -451,7 +417,7 @@ export function BattleScreenUI(props: BattleScreenUIProps) {
               {panelTab[side] === 'STATUSES' && sectionVisibility.statusAndImmunity && (
                 <div>
                     <span className="text-[10px] text-rose-500 font-black uppercase tracking-widest block mb-1">異常狀態與免疫:</span>
-                    <StatusBadgePanel elf={elf} otherEffects={dynamicEffects} disguiseAbnormalStatuses={disguiseBattleStates} categoryFilter={["CONTROL", "WEAKENING", "RESTRICTIVE", "EVOLUTIONARY", "AUXILIARY", "BOSS_ONLY"]} emptyHint="無異常狀態" />
+                    <StatusBadgePanel elf={elf} disguiseAbnormalStatuses={disguiseBattleStates} categoryFilter={["CONTROL", "WEAKENING", "RESTRICTIVE", "EVOLUTIONARY", "AUXILIARY", "BOSS_ONLY"]} emptyHint="無異常狀態" />
                 </div>
               )}
 
@@ -526,31 +492,17 @@ export function BattleScreenUI(props: BattleScreenUIProps) {
                   const lowerKey = key.toLowerCase();
                   return COUNTER_LABELS[lowerKey] !== undefined;
                 });
-                const marks = isP1 ? p1Marks : p2Marks;
+                const marks = effectViews.filter(view => view.category === 'mark');
                 
                 if (entries.length === 0 && (!marks || marks.length === 0)) return null;
                 return (
                   <div>
                     <span className="text-[10px] text-cyan-400 font-black uppercase tracking-widest block mb-1">印記:</span>
                     <div className="flex flex-wrap gap-1">
-                      {marks && marks.map((mark) => (
-                        <button
-                          key={mark.id}
-                          onClick={() => setModalContent({ title: mark.name, content: mark.description })}
-                          className="px-1.5 py-0.5 bg-amber-950/40 border border-amber-500/30 rounded flex items-center gap-1.5 hover:bg-amber-900/40 transition-colors cursor-pointer"
-                        >
-                          <span className="text-[9px] text-amber-300 font-black">{mark.displayChar}</span>
-                          <span className="text-[10px] font-black text-white">{mark.count}</span>
-                        </button>
-                      ))}
+                      {renderEffectGroup(marks, '無印記')}
                       {entries.map(([key, val]) => {
                         const lowerKey = key.toLowerCase();
-                        let displayVal = String(val);
-                        if (lowerKey === 'marsmechamode' || lowerKey === 'marsreformactivemode') {
-                          if (val === 'speed') displayVal = '極速機甲 ⚡';
-                          if (val === 'destroy') displayVal = '毀滅機甲 💥';
-                          if (val === 'wall' || val === 'defense' || val === '堅壁') displayVal = '堅壁機甲 ⚙️';
-                        }
+                        const displayVal = String(val);
                         return (
                           <div key={key} className="px-1.5 py-0.5 bg-cyan-950/40 border border-cyan-500/20 rounded flex items-center gap-1.5">
                             <span className="text-[9px] text-cyan-300 font-black">{COUNTER_LABELS[lowerKey]}</span>
@@ -577,6 +529,10 @@ export function BattleScreenUI(props: BattleScreenUIProps) {
                     {renderEffectGroup(effectViews.filter(effect => effect.category === "round"), "無其他計時")}
                  </div>
                )}
+               <div className="space-y-1">
+                  <span className="text-[9px] text-slate-500 font-black uppercase">常駐機制:</span>
+                  {renderEffectGroup(effectViews.filter(effect => effect.category === 'mechanism'), '無額外常駐機制')}
+               </div>
                {sectionVisibility.countEffects && (
                  <div className="space-y-1">
                     <span className="text-[9px] text-slate-500 font-black uppercase">次數效果:</span>
@@ -689,7 +645,7 @@ export function BattleScreenUI(props: BattleScreenUIProps) {
                                <div className="w-full h-1 bg-slate-800 rounded-full overflow-hidden">
                                   <div className={`h-full ${getHpBarColor(elf.currentHp, elf.maxHp)}`} style={{ width: `${elf.maxHp > 0 ? (elf.currentHp / elf.maxHp) * 100 : 0}%` }} />
                                </div>
-                               <span className="text-[9px] font-bold text-slate-400 leading-none">{elf.currentHp}/{elf.maxHp}</span>
+                               <span className="text-[9px] font-bold text-slate-400 leading-none truncate" title={`${formatFullNumber(elf.currentHp)}/${formatFullNumber(elf.maxHp)}`}>{formatCompactHud(elf.currentHp)}/{formatCompactHud(elf.maxHp)}</span>
                                </div>
                                {idx === p1ActiveIndex && (
                                  <div className="absolute -top-1 -right-1 px-1.5 py-0.5 bg-cyan-500 text-[8px] font-black text-white rounded rounded-bl-none">出場中</div>
@@ -834,7 +790,7 @@ export function BattleScreenUI(props: BattleScreenUIProps) {
         key: `s-${id}`, name, text: reg?.categories?.includes('BOSS_ONLY') ? name : n > 0 && n < 99 ? `${name}(${n})` : name,
         cls: statusChipColor,
         desc: vis?.desc || reg?.description || catalogDesc(cat, { remainingTurns: n }) || name,
-        icon: vis?.icon || buffIconFor(name),
+        icon: vis?.icon || UNKNOWN_EFFECT_ICON,
       });
     });
 
@@ -844,60 +800,41 @@ export function BattleScreenUI(props: BattleScreenUIProps) {
     const effectChips: Chip[] = [];
     const marks = (side === "p1" ? p1Marks : p2Marks) || [];
     const timers = (side === "p1" ? p1Timers : p2Timers) || [];
-    buildEffectViewModels(marks, timers, elf.battleId || elf.id).forEach(effect => {
+    activeEffectViews(elf, marks, timers, (side === 'p1' ? battle.p1RegistryState : battle.p2RegistryState) || {}, visibleEffectSourceText(side === 'p1' ? p2 : p1, side === 'p1' ? 'p2' : 'p1')).filter(effect => effect.category !== 'protection').forEach(effect => {
       if (effect.category === "mark") {
         effectChips.push({
           key: effect.id, name: effect.label,
-          text: `${effect.shortLabel}${effect.value !== undefined ? ` ${effect.value}${effect.unit || ""}` : ""}`,
-          cls: "bg-yellow-950/70 text-yellow-200 border-yellow-500/40", desc: describeEffectMeta(effect), icon: signIconFor(effect.label),
+          text: `${effect.label}${effect.value !== undefined ? ` ${effect.value}${effect.unit || ""}` : ""}`,
+          cls: effect.polarity === 'negative' ? "bg-rose-950/70 text-rose-200 border-rose-500/40" : "bg-yellow-950/70 text-yellow-200 border-yellow-500/40", desc: describeEffectMeta(effect), icon: effect.icon,
         });
       } else {
-        const cls = effect.category === "count" ? "bg-violet-950/70 text-violet-200 border-violet-500/40"
-          : effect.polarity === "negative" ? "bg-rose-950/70 text-rose-200 border-rose-500/40"
+        const cls = effect.polarity === "negative" ? "bg-rose-950/70 text-rose-200 border-rose-500/40"
+          : effect.category === "count" ? "bg-violet-950/70 text-violet-200 border-violet-500/40"
+            : effect.polarity === 'neutral' ? "bg-slate-950/70 text-slate-200 border-slate-500/40"
             : "bg-cyan-950/70 text-cyan-200 border-cyan-500/40";
         effectChips.push({
           key: effect.id, name: effect.label,
           text: `${effect.label} ${effect.value ?? ""}${effect.unit || ""}`.trim(),
-          cls, desc: describeEffectMeta(effect), icon: signIconFor(effect.label) || buffIconFor(effect.label),
+          cls, desc: describeEffectMeta(effect), icon: effect.icon,
         });
       }
     });
-    getDynamicEffects(side, elf).forEach((d: any) => {
-      if (d.catalogId === "shield_active" || d.catalogId === "barrier_active") return;
-      const c = (EFFECT_CATALOG as any)[d.catalogId];
-      if (!c) return;
-      const desc = d.note || catalogDesc(c, d) || c.label;
-      effectChips.push({ key: `d-${d.catalogId}`, name: c.label, text: d.remainingTurns > 1 ? `${c.label}（${d.remainingTurns}）` : c.label, cls: "bg-violet-950/70 text-violet-200 border-violet-500/40", desc, icon: statusVisual(c.label)?.icon || buffIconFor(`${c.label} ${desc}`) });
-    });
-    // 以狀態鍵記錄的專屬印記（星芳之纏／星海之浸／星火之灼）：沒有計時器實體，另行顯示。
-    {
-      const reg = (side === "p1" ? battle.p1RegistryState : battle.p2RegistryState) || {};
-      const opp = side === "p1" ? p2 : p1;
-      for (const sg of STATE_SIGNS) {
-        const n = Number(reg[sg.key] || 0);
-        if (n <= 0 || effectChips.some(c => c.name === sg.name)) continue;
-        const src = opp?.soulMark?.description || "";
-        const at = src.indexOf(`${sg.name}:`) >= 0 ? src.indexOf(`${sg.name}:`) : src.indexOf(`${sg.name}：`);
-        effectChips.unshift({ key: `sign-${sg.key}`, name: sg.name, text: `${sg.name}（${n}）`, cls: "bg-yellow-950/70 text-yellow-200 border-yellow-500/40",
-          desc: at >= 0 ? src.slice(at) : `專屬印記・剩餘 ${n} 回合`, icon: signIconFor(sg.name) });
-      }
-    }
     addRow("effects", "印記 / 回合", effectChips);
     if (!rows.length) return null;
     // 頭像下方分層：能力等級（小長方形）→ 異常 → 印記與回合類；每層各占一列，不併排。
     return (
       <div className={`flex flex-col gap-1 ${side === "p2" ? "items-end" : "items-start"}`} data-status-tray={side}>
-        {[...rows].sort((a, b) => ["stages", "effects", "statuses"].indexOf(a.key) - ["stages", "effects", "statuses"].indexOf(b.key)).map(row => (
+        {[...rows].sort((a, b) => ["stages", "statuses", "effects"].indexOf(a.key) - ["stages", "statuses", "effects"].indexOf(b.key)).map(row => (
           <div key={row.key} data-tray-row={row.key} className={`flex flex-wrap gap-1 ${side === "p2" ? "justify-end" : ""}`}>
             {row.chips.map(chip => (
-              <button type="button" key={chip.key} title={`${chip.name}\n${chip.desc || ""}`}
-                onClick={() => setModalContent({ title: chip.name, content: chip.desc || chip.name })}
+              <button type="button" key={chip.key} title={fog(`${chip.name}\n${chip.desc || ""}`)}
+                onClick={() => setModalContent({ title: fog(chip.name), content: fog(chip.desc || chip.name) })}
                 className={row.key === "stages"
                   ? `inline-flex h-[44px] w-[44px] short:h-[32px] short:w-[34px] shrink-0 flex-col items-center justify-center rounded border text-center font-bold leading-none hover:brightness-125 shadow-[0_2px_6px_rgba(0,0,0,.5)] ${chip.cls}`
-                  : `bt-tile hover:brightness-125 shadow-[0_2px_6px_rgba(0,0,0,.5)] ${chip.cls}`}>
+                  : `bt-tile max-w-full sm:max-w-[18rem] hover:brightness-125 shadow-[0_2px_6px_rgba(0,0,0,.5)] ${chip.cls}`}>
                 {row.key === "stages"
                   ? <><span className="text-[11px]">{chip.stageLabel}</span><span className="font-mono text-[15px] mt-0.5">{chip.stageValue}</span></>
-                  : <>{chip.icon && <ChainImage urls={[chip.icon]} className="h-5 w-5 shrink-0 rounded-sm object-contain" />}<span className="whitespace-nowrap">{chip.text}</span></>}
+                  : <>{chip.icon && <ChainImage urls={[chip.icon]} className="h-5 w-5 shrink-0 rounded-sm object-contain" />}<span className="min-w-0 truncate">{fog(chip.text)}</span></>}
               </button>
             ))}
           </div>
@@ -952,7 +889,7 @@ export function BattleScreenUI(props: BattleScreenUIProps) {
             <div className="bt-hp mt-2">
               <div className={`absolute inset-y-0 ${isP1 ? "left-0" : "right-0"} transition-all duration-300 ${getHpBarColor(elf.currentHp, elf.maxHp)}`} style={{ width: `${hpPct}%` }} />
               <div className="absolute inset-0 flex items-center justify-between px-1.5 sm:px-2.5 text-[10px] sm:text-[13px] font-black text-white drop-shadow-[0_1px_1px_rgba(0,0,0,0.9)] tabular-nums">
-                <span>{elf.currentHp}/{elf.maxHp}</span>
+                <span className="min-w-0 truncate" title={`${formatFullNumber(elf.currentHp)}/${formatFullNumber(elf.maxHp)}`}>{formatCompactHud(elf.currentHp)}/{formatCompactHud(elf.maxHp)}</span>
                 <span>{hpPct >= 10 ? Math.round(hpPct) : hpPct.toFixed(1)}%</span>
               </div>
             </div>
@@ -1107,7 +1044,6 @@ export function BattleScreenUI(props: BattleScreenUIProps) {
   const renderSkillRow = () => {
     const baseSkills = visibleSkills(p1);
     const displaySkills = baseSkills.length >= 5 ? [baseSkills[4], baseSkills[0], baseSkills[1], baseSkills[2], baseSkills[3]] : baseSkills;
-    const isMars = p1?.name === "變革·馬爾修斯";
     return (
       <div className="grid grid-cols-3 sm:grid-cols-5 gap-1.5 sm:gap-2.5">
         {displaySkills.map((skill, i) => {
@@ -1151,16 +1087,12 @@ export function BattleScreenUI(props: BattleScreenUIProps) {
                 <span className={`absolute -top-2 right-2 px-1.5 rounded text-[9px] font-black border ${skill.specialBadge.bg || "bg-purple-900/90"} ${skill.specialBadge.color || "text-purple-200"} ${skill.specialBadge.border || "border-purple-500/40"}`}>{skill.specialBadge.text}</span>
               )}
               <div className="flex items-center gap-1.5 min-w-0">
-                <TypeIcon type={original.type && original.type !== "--" ? original.type : "無屬性"} size={20} />
+                <SkillTypeIcon skill={original} size={20} />
                 <span className="font-black text-xs sm:text-[15px] text-white truncate group-hover:brightness-125">{original.name}</span>
               </div>
-              {p1.illusion && !p1.isInherentInvalid && skill.name !== original.name && <div className="text-[10px] sm:text-xs text-cyan-200 truncate" title={`原技能固有效果保留；實際使用：${skill.category}／${skill.type}／威力${skill.power}`}>轉化 → {skill.name} · {skill.type} · {skill.category}</div>}
+              {p1.illusion && !p1.isInherentInvalid && skill.name !== original.name && <div className="text-[10px] sm:text-xs text-cyan-200 truncate" title={`原技能固有效果保留；實際使用：${skill.category}／${skillDisplayType(skill)}／威力${skill.power}`}>轉化 → {skill.name} · {skillDisplayType(skill)} · {skill.category}</div>}
               <div className="flex items-center justify-between text-xs bt-muted">
-                {isMars ? (
-                  <span>充能 <b className={uses <= 0 ? "text-rose-400" : "text-amber-300"}>{uses}</b></span>
-                ) : (
-                  <span>次數 <b className={skill.pp <= 1 ? "text-rose-400" : "text-slate-100"}>{skill.pp}/{getMaxPp(skill, p1)}</b></span>
-                )}
+                <SkillResources elf={p1} skill={skill} normalLabel="次數" />
                 <span>{skill.category === "屬性" ? <b className="text-emerald-300">屬性</b> : <>威力 <b className="text-slate-100">{skill.power || 0}</b></>}</span>
               </div>
             </button>
@@ -1231,7 +1163,7 @@ export function BattleScreenUI(props: BattleScreenUIProps) {
 
   return (
     <div ref={battleRootRef} data-battle-root data-skin={props.specialMode === "interstellar" ? "eclipse" : "default"} className="h-full w-full bg-transparent overflow-hidden relative font-sans text-slate-200">
-      {winner && !props.specialMode && <BattleEndDialog winner={winner} onRestart={props.onReset} onHome={props.onBackToMenu} />}
+      {winner && !props.specialMode && resultSummary && <BattleResult winner={winner as any} battleMode={props.battleMode || "PVE"} summary={resultSummary} p1Team={p1Team} p2Team={p2Team} format={props.formatLabel || "自由戰"} onRestart={props.onReset} onHome={props.onBackToMenu} />}
       {winner && props.specialMode && <SpecialBattleEndDialog winner={winner} mode={props.specialMode} onBack={props.onBackToMenu} />}
       {/* Global Interaction Blocker while resolving or during transitions */}
       {(phase === "resolving" || phase === "processing") && (
@@ -1262,9 +1194,7 @@ export function BattleScreenUI(props: BattleScreenUIProps) {
               </button>
               <h3 className="bt-title text-xl mb-4 pr-6 leading-tight shrink-0">{modalContent.title}</h3>
               <div className="overflow-y-auto custom-scrollbar pr-2">
-                <p className="text-sm text-slate-300 leading-relaxed whitespace-pre-wrap font-medium">
-                  {plainDescription(modalContent.content)}
-                </p>
+                <EffectDescription description={modalContent.content} className="text-sm text-slate-300 leading-relaxed  font-medium" />
               </div>
             </motion.div>
           </div>
@@ -1298,13 +1228,13 @@ export function BattleScreenUI(props: BattleScreenUIProps) {
                   <div>
                     <h3 className="text-2xl font-black text-white tracking-tight flex items-center gap-3">
                       {hoveredSkill.name}
-                      <span className={`px-2.5 py-1 rounded text-[11px] uppercase tracking-widest font-black ${getAttributeBadgeColor(hoveredSkill.type === "--" ? "無屬性" : (hoveredSkill.type || "無屬性"))} inline-flex items-center gap-1.5`}>
-                        <TypeIcon type={hoveredSkill.type} size={18} showLabelWhenMissing={false} />{hoveredSkill.type && hoveredSkill.type !== "--" ? `${hoveredSkill.type}系` : (hoveredSkill.category === "屬性" ? "屬性技能" : "無屬性")}
+                      <span className={`px-2.5 py-1 rounded text-[11px] uppercase tracking-widest font-black ${getAttributeBadgeColor(skillDisplayType(hoveredSkill))} inline-flex items-center gap-1.5`}>
+                        <SkillTypeIcon skill={hoveredSkill} size={18} showLabelWhenMissing={false} />{skillDisplayTypeLabel(hoveredSkill)}
                       </span>
                     </h3>
                     <div className="flex gap-3 mt-2">
                       <span className="text-[10px] text-slate-400 font-black uppercase tracking-widest bg-slate-800/80 px-2 py-0.5 rounded border border-white/5">種類: {hoveredSkill.category}</span>
-                      <span className="text-[10px] text-slate-400 font-black uppercase tracking-widest bg-slate-800/80 px-2 py-0.5 rounded border border-white/5">PP: {hoveredSkill.pp}/{getMaxPp(hoveredSkill, p1)}</span>
+                      <span className="text-[10px] text-slate-400 font-black bg-slate-800/80 px-2 py-0.5 rounded border border-white/5"><SkillResources elf={p1} skill={hoveredSkill} /></span>
                     </div>
                   </div>
                   <div className="text-right">

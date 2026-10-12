@@ -16,6 +16,18 @@ export function resetPrd(rng: () => number) {
   counters.clear();
 }
 
+/** 複製目前失敗計數供隔離推演；不暴露真正亂數產生器。 */
+export const snapshotPrd = (): [string, number][] => [...counters.entries()];
+export function restorePrd(snapshot: [string, number][], rng: () => number) {
+  resetPrd(rng);
+  for (const [key, value] of snapshot) if (Number.isFinite(value) && value >= 0) counters.set(key, value);
+}
+/** 僅供隔離的後台測試保存／還原。實際瀏覽器推演不得在主執行緒呼叫。 */
+export function preservePrd(): () => void {
+  const oldRng = rngFn, oldCounters = snapshotPrd();
+  return () => restorePrd(oldCounters, oldRng);
+}
+
 function pFromC(c: number): number {
   let procByN = 0, sumNP = 0;
   const maxN = Math.ceil(1 / c);

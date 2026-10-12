@@ -36,6 +36,17 @@ const errors: unknown[][] = [], originalError = console.error;
 console.error = (...args) => { errors.push(args); originalError(...args); };
 let checks = 0;
 const settle = () => act(async () => { await new Promise(r => setTimeout(r, 5)); });
+const profileLoaded = async () => {
+  await settle();
+  assert.equal(document.querySelector('[aria-label="預設積木"]'), null, '精靈介紹預設顯示文字描述，不自動載入積木');
+  // 模擬使用者按下每張卡片的「積木／實裝核對」切換；原本的積木載入斷言維持不變。
+  const toggles = [...document.querySelectorAll<HTMLButtonElement>('nav[aria-label="效果呈現方式"] button')].filter(b => b.textContent?.trim() === '積木／實裝核對');
+  assert.ok(toggles.length > 0, '介紹頁提供積木檢視切換');
+  for (const b of toggles) await act(async () => b.click());
+  // 以時間（30秒）而非固定次數等待：vite首次轉譯積木解析器在高負載下可能超過1.5秒，但仍必須真的載入完成。
+  for(const t0=Date.now();Date.now()-t0<30000&&!document.querySelector('[aria-label="預設積木"]');) await settle();
+  assert.ok(document.querySelector('[aria-label="預設積木"]'),'預設積木必須完成實際非同步載入，不能忽略載入錯誤');
+};
 const image = (selector = 'img') => { const img = document.querySelector<HTMLImageElement>(selector); assert.ok(img, selector); return img; };
 const loaded = async (selector = 'img') => { await act(async () => image(selector).dispatchEvent(new dom.window.Event('load'))); await settle(); };
 try {
@@ -69,13 +80,16 @@ try {
     profile.illusion.target.skills[0].name = `取得技能-${side}`;
     profile.illusion.target.type = '龍';
     await act(async () => root.render(React.createElement(ElfReadOnlyProfile, { key: `own-${side}`, elf: profile, battleSide: 'p1', onClose() {} })));
+    await profileLoaded();
     assert.ok(document.body.textContent!.includes('原特性'));
     assert.ok(document.body.textContent!.includes('目標特性'));
     assert.ok(document.body.textContent!.includes('幻化取得'));
     await act(async () => [...document.querySelectorAll('nav button')].find(b => b.textContent === '技能')!.dispatchEvent(new dom.window.MouseEvent('click', { bubbles: true })));
+    await settle(); // 技能分頁預設顯示描述（使用者決定 2026-10-10），不等待積木載入
     assert.ok(document.body.textContent!.includes(`原槽技能-${side}`));
     assert.ok(document.body.textContent!.includes(`轉化 → 取得技能-${side}`));
     await act(async () => root.render(React.createElement(ElfReadOnlyProfile, { key: `enemy-${side}`, elf: profile, battleSide: 'p2', onClose() {} })));
+    await profileLoaded();
     assert.ok(!document.body.textContent!.includes('原特性'), '敵方介紹不洩漏原特性');
     assert.ok(document.body.textContent!.includes('目標特性'));
     assert.ok(document.body.textContent!.includes('龍'), '敵方幻化介紹顯示複製對象屬性');

@@ -1,6 +1,7 @@
 /** 播放層只保存已結算的紀錄，永遠不寫回 BattleState。 */
 import { DEFAULT_BATTLE_ANIMATION, type BattleAnimationSettings } from './animationSettings';
 import { damagePopupLabel } from './damagePopupStyle';
+import { formatCompactHud } from '../utils/formatBigNumber';
 export type PresentationKind = 'skill' | 'fixed' | 'percent' | 'heal' | 'true' | 'adjust_up' | 'adjust_down' | 'notice';
 export interface PresentationEvent {
   side: 'p1' | 'p2'; elfId: string; type: PresentationKind;
@@ -27,6 +28,39 @@ export class BattlePresentation {
   turnNumber = 1;
   hp = new Map<string, number>();
   popups: any[] = [];
+  /**
+   * 畫面看到的戰鬥狀態：引擎整批算完後以 stage() 排進播放時間軸，播到該點才換成這份狀態
+   * （日誌、異常圖示、能力等級、phase 都跟著動畫進度走；體力另由 hp 表逐筆播放）。
+   */
+  view: any = null;
+  /** 出招動畫（原本寫在 BattleState.activeSkillAnim）。 */
+  skillAnim: any = null;
+  /** 時間軸上尚未播完的段數；> 0 代表畫面還落後於引擎。 */
+  private pending = 0;
+  get busy() { return this.pending > 0; }
+  /** 排入時間軸：前面的演出播完才執行（不等待也不阻擋引擎）。 */
+  private schedule(step: () => void | Promise<void>): Promise<void> {
+    this.pending++;
+    this.tail = this.tail.then(async () => { try { if (this.active) await step(); } finally { this.pending--; } });
+    return this.tail;
+  }
+  /** 引擎提交的狀態：播到這裡時畫面才換成它。 */
+  stage(state: any): Promise<void> {
+    if (!this.active) return Promise.resolve();
+    if (this.view === null) { this.view = state; this.notify(); return this.tail; }
+    return this.schedule(() => { this.view = state; this.notify(); });
+  }
+  /** 出招動畫：排在前面的演出之後；duration 毫秒（快速模式為 0）。 */
+  animate(anim: any, duration: number, enabled = true): Promise<void> {
+    if (!this.active || !enabled) return Promise.resolve();
+    return this.schedule(async () => {
+      this.skillAnim = anim; this.notify();
+      if (!this.fast()) await this.pause(duration);
+      this.skillAnim = null; this.notify();
+    });
+  }
+  /** 回合數顯示：播到回合收尾才換。 */
+  setTurn(n: number): Promise<void> { return this.schedule(() => { this.turnNumber = n; this.notify(); }); }
   private deferred: PresentationEvent[] = [];
   private dead = new Set<string>();
   /** 已排入播放（含尚未播完）的預定體力；用於對帳直接改體力的效果。 */
@@ -158,6 +192,7 @@ export class BattlePresentation {
       const cur = this.planned.get(k) ?? this.hp.get(k) ?? e.before;
       this.planned.set(k, e.alive !== true && e.after <= 0 ? e.after : cur + e.delta);
     }
+    this.pending++;
     const play = async () => {
       const frames = simultaneous ? [events] : events.map(e => [e]);
       for (const frame of frames) {
@@ -180,7 +215,7 @@ export class BattlePresentation {
           if ((e as any).silent || !this.visible(e)) continue;
           const id = `presentation_${++this.sequence}`;
           popups.push({ ...e, label: damagePopupLabel(e.label), id,
-            text: e.text ?? `${e.type === 'heal' || e.type === 'adjust_up' ? '+' : '-'}${e.amount}` });
+            text: e.text ?? `${e.type === 'heal' || e.type === 'adjust_up' ? '+' : '-'}${formatCompactHud(e.amount)}` });
         }
         this.popups = popups;
         this.notify();
@@ -193,7 +228,7 @@ export class BattlePresentation {
         if (!this.fast()) await this.pause(POPUP_HOLD_MS.exit);
       }
     };
-    this.tail = this.tail.then(play);
+    this.tail = this.tail.then(play).finally(() => { this.pending--; });
     return this.tail;
   }
   private pause(ms: number) {
@@ -202,13 +237,17 @@ export class BattlePresentation {
       this.cancelWait = () => { clearTimeout(timer); resolve(); };
     });
   }
+  /** 以戰鬥狀態校正顯示體力（換人、回合收尾）。排進時間軸，不提前顯示尚未播放的結果。 */
   align(side: 'p1' | 'p2', elf: { id: string; battleId?: string; currentHp: number }) {
     if (!this.active) return;
     const key = `${side}:${elf.battleId || elf.id}`;
-    this.hp.set(key, elf.currentHp);
-    this.planned.set(key, elf.currentHp);
-    if (elf.currentHp > 0) this.dead.delete(key);
-    this.notify();
+    const hp = elf.currentHp;
+    this.planned.set(key, hp);
+    void this.schedule(() => {
+      this.hp.set(key, hp);
+      if (hp > 0) this.dead.delete(key);
+      this.notify();
+    });
   }
   dispose() {
     this.active = false;
@@ -216,6 +255,7 @@ export class BattlePresentation {
     this.extraPending = [];
     this.extraDepth = 0;
     this.popups = [];
+    this.skillAnim = null;
     this.hp.clear();
     this.dead.clear();
     this.planned.clear();

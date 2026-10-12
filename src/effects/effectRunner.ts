@@ -1,5 +1,6 @@
 import { addDamageReduction, multiplyDamageReduction } from '../battle/damageReduction';
-import { getMaxPp } from "../utils/battleHelpers";
+import { withRecoveryOrigin } from '../battle/recoveryOrigin';
+import { applyKitPpOperation, type KitPpMode } from './ppOperations';
 // ============================================================================
 // effectRunner.ts —— 模組化 28 原子執行器 (Effect Runner)
 // 接既有引擎 primitive: applyTrueDamage, applyFixedDamage, applyPercentDamage,
@@ -14,12 +15,18 @@ import { matchesEffectConditions } from './effectConditions';
 import { matchesDamageTypes } from './damageChoices';
 import { clearAllStatuses } from '../utils/battleHelpers';
 import { statusChanceBlocked } from '../battle/statusChanceRules';
+import { prepareSequenceFrame, runEffectSequence } from './sequenceRuntime';
+import { kitToSequences } from './atomToSequence';
 
 // 底層不變式：真實傷害不可被護盾與減傷抵擋 (減傷/護盾原子自動跳過 true 傷害)
 export const isReducible = (dmgType: string) => dmgType !== "true";
 
 // ── 原子操作入口；有入口不代表所有參數與下游機制已完整實裝 ──────────────────
 export const ATOMS: AtomTable = {
+  effect_sequence: (p, _target, ctx) => runEffectSequence(p.clause,ctx),
+  // 由先制／命中查詢讀取，不在行動中再次加算。
+  skill_property: () => {},
+  soul_property: () => {}, // 由soulPassiveEvade正式命中查詢讀取，不在傷害階段重播
   // 1. 追加傷害: 依 params.dmgType 走對應傷害管線
   extra_damage: (p, target, ctx) => {
     const side = resolveSide(target, ctx);
@@ -222,35 +229,8 @@ export const ATOMS: AtomTable = {
   // 14. PP 歸零/扣除/回復
   pp_op: (p, target, ctx) => {
     const side = resolveSide(target, ctx);
-    const elf = side === "p1" ? ctx.activeP1 : ctx.activeP2;
-    if (!elf) return;
-    if (p.op === "zero") {
-      const updatedSkills = elf.skills.map(s => ({ ...s, pp: 0 }));
-      ctx.updateElf(side, { skills: updatedSkills });
-      ctx.addLog(`⚡ 【PP歸零】：【${elf.name}】的所有技能 PP 歸零！`, "effect");
-    } else if (p.op === "recover") {
-      const updatedSkills = elf.skills.map(s => ({ ...s, pp: s.maxPp }));
-      ctx.updateElf(side, { skills: updatedSkills });
-      ctx.addLog(`🔋 【PP回復】：【${elf.name}】恢復所有技能 PP！`, "effect");
-    } else if (p.op === "drain") {
-      // 吸取：對手扣 PP，自身當前技能等量回復
-      const dec = p.amount || 1;
-      ctx.updateElf(side, { skills: elf.skills.map(s => ({ ...s, pp: Math.max(0, (s.pp ?? 0) - dec) })) });
-      const meSide: "p1" | "p2" = ctx.actor || "p1";
-      const me = meSide === "p1" ? ctx.activeP1 : ctx.activeP2;
-      if (me) ctx.updateElf(meSide, { skills: me.skills.map(s => ({ ...s, pp: Math.min(getMaxPp(s, me), (s.pp ?? 0) + dec) })) });
-      ctx.addLog(`🔋 【PP吸取】：吸取【${elf.name}】技能 PP ${dec} 點！`, "effect");
-    } else if (p.op === "add") {
-      const inc = p.amount || 1;
-      const updatedSkills = elf.skills.map(s => ({ ...s, pp: Math.min(getMaxPp(s, elf), (s.pp ?? 0) + inc) }));
-      ctx.updateElf(side, { skills: updatedSkills });
-      ctx.addLog(`🔋 【PP增加】：【${elf.name}】技能 PP 增加 ${inc}！`, "effect");
-    } else {
-      const dec = p.amount || 1;
-      const updatedSkills = elf.skills.map(s => ({ ...s, pp: Math.max(0, (s.pp ?? 0) - dec) }));
-      ctx.updateElf(side, { skills: updatedSkills });
-      ctx.addLog(`🔻 【PP扣除】：【${elf.name}】技能 PP 減少 ${dec}！`, "effect");
-    }
+    if(!['zero','recover','drain','add','reduce'].includes(p.op))throw new Error(`未知PP操作：${p.op}`);
+    applyKitPpOperation(ctx,side,p.op as KitPpMode,p.amount ?? 1);
   },
 
   // 15. 先制調整
@@ -368,6 +348,8 @@ export const ATOMS: AtomTable = {
       tickAt: p.tickAt || "round_end",
       clearable: p.clearable ?? true,
       polarity: p.polarity || "NEGATIVE",
+      presentation: { semanticId: p.effectId || timerId, label: name, description: p.description || name,
+        sourceName: ctx.skill?.name, iconTag: p.iconTag, polarity: String(p.polarity || 'negative').toLowerCase() as any },
       displayChar: displayChar,
       payload: { wraps: p.wraps, wrapItems: p.wrapItems, params: p.wrapParams, applyMode: p.applyMode || "gate", timerName: name, displayChar, wrapTarget: target }
     }, ctx.goesFirst === false && (p.applyMode ?? 'gate') === 'gate');
@@ -478,9 +460,13 @@ function resolveParams(obj: Record<string, any>, slots: Record<string, any>): Re
 // ── runner 核心：在節點 N，取精靈 kit 中 node === N 的詞條，按 order 逐一執行 ────
 export function runNode(node: Node, kit: KitEntry[], codex: Record<string, EffectCode>, ctx: any) {
   if (!kit || !Array.isArray(kit)) return;
-  const nodeCtx = Object.create(ctx); nodeCtx.effectNode = node;
-  const entries = kit.filter(e => e.node === node).sort((a, b) => a.order - b.order);
+  let nodeCtx = Object.create(ctx); nodeCtx.effectNode = node;
+  // 等價的舊原子自動轉成連鎖（atomToSequence.ts）；不等價的維持原子。儲存的資料不被修改。
+  const entries = kitToSequences(kit).filter(e => e.node === node).sort((a, b) => a.order - b.order);
+  if(entries.some(e=>e.codeId==='effect_sequence'))nodeCtx.sequenceFrame=prepareSequenceFrame(entries,node,nodeCtx);
   for (const entry of entries) {
+    nodeCtx=withRecoveryOrigin(nodeCtx,entry.source==='skill'?'skill':entry.source==='soulmark'?'soul':'trait');
+    nodeCtx.effectEntrySource=entry.source;
     // 積木工坊詞條：codeId 即原子名，直接依結構化參數執行（不再重新解析 customText）
     const direct = blockEntryToAtom(entry, ATOMS);
     if (direct) {
@@ -513,4 +499,5 @@ export function runNode(node: Node, kit: KitEntry[], codex: Record<string, Effec
       }
     }
   }
+  return nodeCtx.sequenceFrame?.survived === true;
 }

@@ -9,14 +9,24 @@ $probe  = 'http://127.0.0.1:3000'
 $logDir = Join-Path $root 'launcher'
 $log    = Join-Path $logDir 'server.log'
 $appName = '賽爾對戰模擬器'
+$ownedProcesses = New-Object System.Collections.Generic.List[System.Diagnostics.Process]
 Set-Location $root
+. (Join-Path $PSScriptRoot 'startupWindow.ps1')
+
+function Stop-OwnedProcesses {
+  foreach ($process in $ownedProcesses) {
+    if (-not $process.HasExited) { & taskkill /PID $process.Id /T /F 2>$null | Out-Null }
+  }
+}
 
 function Show-Error($msg) {
   [System.Windows.Forms.MessageBox]::Show($msg, $appName, 'OK', 'Error') | Out-Null
 }
 
 trap {
-  try { if ($splash) { $splash.Close() } } catch {}
+  Stop-OwnedProcesses
+  try { if ($startup) { Complete-StartupWindow $startup } } catch {}
+  if ($_.Exception -is [System.OperationCanceledException]) { exit 0 }
   Show-Error ("啟動器發生錯誤：`n" + $_.Exception.Message)
   exit 1
 }
@@ -28,58 +38,49 @@ function Test-Server {
   } catch { return $false }
 }
 
-# ── 小型啟動畫面
-$splash = New-Object System.Windows.Forms.Form
-$splash.FormBorderStyle = 'None'
-$splash.StartPosition = 'CenterScreen'
-$splash.Size = New-Object System.Drawing.Size(360, 110)
-$splash.BackColor = [System.Drawing.Color]::FromArgb(10, 14, 22)
-$splash.TopMost = $true
-$splash.ShowInTaskbar = $true
-$splash.Text = $appName
-$lbl = New-Object System.Windows.Forms.Label
-$lbl.ForeColor = [System.Drawing.Color]::FromArgb(103, 232, 249)
-$lbl.Font = New-Object System.Drawing.Font('Microsoft JhengHei UI', 12, [System.Drawing.FontStyle]::Bold)
-$lbl.Dock = 'Fill'
-$lbl.TextAlign = 'MiddleCenter'
-$lbl.Text = "$appName`n啟動中…"
-$splash.Controls.Add($lbl)
 $icoPath = Join-Path $logDir 'app.ico'
-if (Test-Path $icoPath) { $splash.Icon = New-Object System.Drawing.Icon($icoPath) }
-$splash.Show()
+# ── 可關閉且不置頂的啟動視窗
+$startup = New-StartupWindow $appName $icoPath
+$startup.Form.Show()
 [System.Windows.Forms.Application]::DoEvents()
-function Set-Splash($text) { $lbl.Text = "$appName`n$text"; [System.Windows.Forms.Application]::DoEvents() }
+function Set-Splash($text, [int]$step = 1) { Update-StartupWindow $startup $text $step }
+function Wait-StartupProcess($process, [string]$message, [int]$step) {
+  $ownedProcesses.Add($process)
+  while (-not $process.HasExited) {
+    Set-Splash $message $step
+    Start-Sleep -Milliseconds 100
+    $process.Refresh()
+  }
+  $process.WaitForExit()
+  Update-StartupWindow $startup $message $step $false
+  return $process.ExitCode
+}
 
-# ── 桌面捷徑（第一次執行時建立）
+# ── 桌面捷徑預設不建立；僅讀取設定中明確啟用的偏好。
 try {
-  $desktop = [Environment]::GetFolderPath('Desktop')
-  $lnk = Join-Path $desktop "$appName.lnk"
-  if (-not (Test-Path $lnk)) {
-    $ws = New-Object -ComObject WScript.Shell
-    $sc = $ws.CreateShortcut($lnk)
-    $sc.TargetPath = Join-Path $env:SystemRoot 'System32\WindowsPowerShell\v1.0\powershell.exe'
-    $sc.Arguments = "-NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File `"$PSCommandPath`""
-    $sc.WorkingDirectory = $root
-    if (Test-Path $icoPath) { $sc.IconLocation = $icoPath }
-    $sc.WindowStyle = 7
-    $sc.Save()
+  $settingsFile = Join-Path $logDir 'settings.json'
+  if (Test-Path -LiteralPath $settingsFile) {
+    $settings = Get-Content -LiteralPath $settingsFile -Raw | ConvertFrom-Json
+    if ($settings.autoDesktopShortcut -is [bool] -and $settings.autoDesktopShortcut) {
+      & (Join-Path $PSScriptRoot 'create-shortcut.ps1')
+    }
   }
 } catch {}
 
 # ── Node.js
 $node = Get-Command node -ErrorAction SilentlyContinue
 if (-not $node) {
-  $splash.Close()
+  Complete-StartupWindow $startup
   Show-Error "找不到 Node.js。`n請到 https://nodejs.org 安裝 LTS 版本後再開啟。"
   exit 1
 }
 
 # ── 第一次：安裝套件（顯示視窗）
 if (-not (Test-Path (Join-Path $root 'node_modules\tsx'))) {
-  Set-Splash '第一次啟動：安裝套件中（約 1~3 分鐘）…'
-  $p = Start-Process -FilePath 'cmd.exe' -ArgumentList '/c', 'npm install' -WorkingDirectory $root -PassThru -Wait
-  if ($p.ExitCode -ne 0) {
-    $splash.Close()
+  Set-Splash '第一次啟動：安裝套件中，可最小化或停止。' 2
+  $p = Start-Process -FilePath 'cmd.exe' -ArgumentList '/c', "npm install > `"$logDir\install.log`" 2>&1" -WorkingDirectory $root -WindowStyle Hidden -PassThru
+  if ((Wait-StartupProcess $p '套件安裝中；完成後會自動進入建置。' 2) -ne 0) {
+    Complete-StartupWindow $startup
     Show-Error '套件安裝失敗，請確認網路後重試。'
     exit 1
   }
@@ -93,8 +94,11 @@ function Test-NeedBuild {
   foreach ($d in @('src', 'public')) {
     $dir = Join-Path $root $d
     if (Test-Path $dir) {
-      $newer = Get-ChildItem -Path $dir -Recurse -File -ErrorAction SilentlyContinue | Where-Object { $_.LastWriteTime -gt $built } | Select-Object -First 1
-      if ($newer) { return $true }
+      foreach ($file in Get-ChildItem -LiteralPath $dir -Recurse -File -ErrorAction SilentlyContinue) {
+        [System.Windows.Forms.Application]::DoEvents()
+        if ($startup.Cancelled) { throw [System.OperationCanceledException]::new() }
+        if ($file.LastWriteTime -gt $built) { return $true }
+      }
     }
   }
   foreach ($f in @('index.html', 'vite.config.ts', 'package.json')) {
@@ -106,26 +110,31 @@ function Test-NeedBuild {
 
 $useDev = $env:SEER_DEV -eq '1'
 if (-not $useDev -and -not (Test-Server) -and (Test-NeedBuild)) {
-  Set-Splash '建置正式版中（約 15~40 秒，只在更新後執行）…'
+  Set-Splash '偵測到原始碼更新，正在建置正式版；完成與否以建置行程結果為準。' 3
   $b = Start-Process -FilePath 'cmd.exe' -ArgumentList '/c', "npx vite build > `"$logDir\build.log`" 2>&1" -WorkingDirectory $root -WindowStyle Hidden -PassThru
-  while (-not $b.HasExited) { Start-Sleep -Milliseconds 100; [System.Windows.Forms.Application]::DoEvents() }
-  if ($b.ExitCode -ne 0) { $useDev = $true }  # 建置失敗 → 改用開發模式啟動
+  if ((Wait-StartupProcess $b '建置中；可最小化，不會置頂。紀錄：launcher/build.log' 3) -ne 0) {
+    $useDev = $true
+    Set-Splash '正式版建置失敗，改用開發模式啟動；錯誤保留在 build.log。' 3
+  }
 }
 
 # ── 伺服器
 $server = $null
 if (-not (Test-Server)) {
-  Set-Splash '啟動伺服器中…'
+  Set-Splash '啟動伺服器，等待實際連線成功…' 4
+  $env:SEER_LAUNCHER = '1'
+  $env:SEER_HOST = '127.0.0.1'
   $cmd = if ($useDev) { "npm run dev > `"$log`" 2>&1" } else { "set NODE_ENV=production&& npx tsx server.ts > `"$log`" 2>&1" }
   $server = Start-Process -FilePath 'cmd.exe' -ArgumentList '/c', $cmd -WorkingDirectory $root -WindowStyle Hidden -PassThru
+  $ownedProcesses.Add($server)
   $ok = $false
   for ($i = 0; $i -lt 180; $i++) {
     if (Test-Server) { $ok = $true; break }
     if ($server.HasExited) { break }
-    for ($k = 0; $k -lt 5; $k++) { Start-Sleep -Milliseconds 100; [System.Windows.Forms.Application]::DoEvents() }
+    for ($k = 0; $k -lt 5; $k++) { Start-Sleep -Milliseconds 100; Set-Splash "等待伺服器就緒（第 $($i + 1) 次探測）…" 4 }
   }
   if (-not $ok) {
-    $splash.Close()
+    Complete-StartupWindow $startup
     if ($server -and -not $server.HasExited) { & taskkill /PID $server.Id /T /F | Out-Null }
     Show-Error "伺服器啟動失敗。`n錯誤紀錄：$log"
     exit 1
@@ -157,7 +166,7 @@ function Find-Browser {
 $browser = Find-Browser
 $profileDir = Join-Path $env:LOCALAPPDATA 'SeerBattleSim\browser'
 New-Item -ItemType Directory -Force -Path $profileDir | Out-Null
-$splash.Close()
+Set-Splash '伺服器已就緒，正在開啟遊戲視窗。' 5
 
 if ($browser) {
   $bargs = @(
@@ -170,6 +179,7 @@ if ($browser) {
     '--disable-background-mode'
   )
   Start-Process -FilePath $browser -ArgumentList $bargs | Out-Null
+  Complete-StartupWindow $startup
   # 同一設定檔可能交由既有行程開窗：等到該設定檔已沒有任何可見視窗為止
   $seen = $false
   $waited = 0
@@ -184,6 +194,7 @@ if ($browser) {
   }
 } else {
   Start-Process $url
+  Complete-StartupWindow $startup
   [System.Windows.Forms.MessageBox]::Show('找不到 Edge／Chrome，已用預設瀏覽器開啟。關閉此訊息會停止伺服器。', $appName) | Out-Null
 }
 

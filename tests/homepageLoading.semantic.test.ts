@@ -11,14 +11,15 @@ Object.assign(globalThis, {
   IS_REACT_ACT_ENVIRONMENT: true, getComputedStyle: dom.window.getComputedStyle.bind(dom.window),
   requestAnimationFrame: (f: FrameRequestCallback) => setTimeout(f, 0), cancelAnimationFrame: clearTimeout,
 });
+Object.defineProperty(globalThis,'navigator',{value:dom.window.navigator,configurable:true});
 const { createRoot } = await import('react-dom/client');
 const root = createRoot(document.getElementById('root')!);
-const server = await createServer({ server: { middlewareMode: true, hmr: false }, appType: 'custom' });
+const server = await createServer({ server: { middlewareMode: true, hmr: false, watch: null }, appType: 'custom' });
 const loaded = (name: string) => !!server.moduleGraph.getModuleById(
   fileURLToPath(new URL(`../src/components/${name}.tsx`, import.meta.url)).replaceAll('\\', '/')
 )?.ssrModule;
 const waitFor = async (predicate: () => boolean, label: string) => {
-  for (let i = 0; i < 100 && !predicate(); i++) await act(async () => { await new Promise(r => setTimeout(r, 20)); });
+  for (let i = 0; i < 500 && !predicate(); i++) await act(async () => { await new Promise(r => setTimeout(r, 20)); });
   assert.ok(predicate(), label);
 };
 const click = async (button: Element | null, label: string) => {
@@ -38,7 +39,15 @@ try {
     ),
   )));
   for (const name of deferred) assert.equal(loaded(name), false, `${name} 不得在首頁提前執行`);
+  assert.equal(loaded('LazyBlockProgramView'),false,'未查看精靈不應提前載入預設積木');
+  assert.equal(loaded('BlocklyBuilder'),false,'首頁不建立編輯畫布');
   assert.equal(document.querySelector('iframe'), null, '未播放音樂不得建立播放器');
+  await waitFor(()=>!!document.querySelector('[data-testid="homepage-ai-settings"]'),'真正首頁有AI設定入口');
+  const enemyStyle=document.querySelector<HTMLElement>('[aria-label="首頁敵方AI風格"]')!;
+  assert.equal(enemyStyle.querySelectorAll('button').length,5,'五種打法可見');
+  assert.equal(document.querySelector('[aria-label="首頁敵方AI風險"]')!.querySelectorAll('button').length,3,'風險獨立選擇');
+  await click(enemyStyle.querySelector<HTMLElement>('button[data-value="disruptive"]')!,'選擇干擾風格');
+  assert.equal(JSON.parse(localStorage.getItem('seer_local_battle_ai_v1')!).style,'disruptive');
 
   const openHub = () => [...document.querySelectorAll('button')].find(b => b.textContent?.trim() === '控制中心')!;
   await click(openHub(), '開啟控制中心');
@@ -56,6 +65,14 @@ try {
 
   await click(document.querySelector('button[aria-label^="查看 "][aria-label$=" 的詳情"]'), '開啟精靈詳情');
   await waitFor(() => ['EvNaturePanel', 'ResistancePanel', 'TypeMatchupPanel'].every(loaded), '三個詳情面板按需載入');
+  await waitFor(()=>!!document.querySelector('[data-testid="effect-description"]'),'精靈詳情預設完整階層文字');
+  assert.equal(loaded('LazyBlockProgramView'),false,'只看文字詳情不提前載入積木');
+  assert.equal(document.querySelector('[aria-label="預設積木"]'),null,'預設不顯示積木');
+  await click(document.querySelector('[aria-label="魂印呈現方式"] button[data-active="false"]'),'手動切換魂印積木');
+  await waitFor(()=>!!document.querySelector('[aria-label="預設積木"]'),'手動切換才載入既存積木與待接通清單');
+  assert.equal(loaded('BlocklyBuilder'),false,'唯讀預設積木不載入Blockly編輯器');
+  await click(document.querySelector('[aria-label="魂印呈現方式"] button[data-active="false"]'),'返回完整文字描述');
+  assert.equal(document.querySelector('[aria-label="預設積木"]'),null,'返回文字不殘留積木區');
   assert.equal(loaded('InscriptionModal'), false, '未開啟刻印孔不應載入調校視窗');
   const inscription = document.querySelector('button[aria-label="編輯第 1 刻印孔"]');
   await click(inscription, '開啟刻印孔');

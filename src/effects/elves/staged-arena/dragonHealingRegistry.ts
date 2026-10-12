@@ -36,13 +36,27 @@ export function handleDragonHealingSoulMark(c: ArenaContext, event: EffectTiming
   if (event === EffectTiming.BEFORE_DAMAGE && data?.damageComp) {
     const d = data.damageComp as DamageComputation;
     const count = awakeCount(read(c, 'dragons'));
-    if (!d.isIncoming && d.damageCategory === 'skill_attack') d.multiplier *= 1 + count * .5;
+    if (!d.isIncoming && d.damageCategory === 'skill_attack' && count) d.increasePercent += count * .5; // 每喚醒1龍攻擊傷害提升50%
+    if (!d.isIncoming && d.damageCategory === 'skill_attack') {
+      // 剛莖棍壓：無視攻擊免疫成功時+100%；對手每有1個技能PP為0則+20%
+      if (c.skill?.name === '剛莖棍壓') {
+        if (c.getPlayerState('attackImmunityIgnoredThisAction')) d.increasePercent += 1;
+        const zero = (c.target.skills || []).filter((s: any) => (Number(s?.pp) || 0) <= 0).length;
+        if (zero) d.increasePercent += .2 * zero;
+      }
+      // 但願不會是個怪物：每有1項異常未觸發，本技能傷害提升100%
+      if (c.skill?.name === '但願不會是個怪物') {
+        const missed = Number(c.getPlayerState('monsterStatusMissedThisAction')) || 0;
+        for (let i = 0; i < missed; i++) d.increasePercent += 1;
+        c.setPlayerState('monsterStatusMissedThisAction', 0);
+      }
+    }
     if (d.isIncoming && d.damageCategory !== 'true') multiplyDamageReduction(d, Math.max(.4, 1 - count * .15));
     if (d.isIncoming && d.damageCategory === 'skill_attack' && (read(c, 'dragons') & 4) && !bypassesAttackDefense(d, 'conversion')) {
       bump(c, 'redStored', Math.min(d.base, Math.max(0, c.self.maxHp - read(c, 'redStored'))));
       d.multiplier = 0;
     }
-    if (!d.isIncoming && ['fixed', 'percent'].includes(d.damageCategory) && activeUntil(c, 'specialBoost')) d.multiplier *= 1.5;
+    if (!d.isIncoming && ['fixed', 'percent'].includes(d.damageCategory) && activeUntil(c, 'specialBoost')) d.increasePercent += .5;
   }
   if (event === EffectTiming.ROUND_END) {
     const n = awakeCount(read(c, 'dragons'));
@@ -242,8 +256,10 @@ export const DRAGON_HEALING_SKILLS: Record<string, BattleSkillHandler> = {
     applySoulPower(c);
     // 使用前已擁有龍魂之力：本技能固定按最高克制倍率（4 倍）計算；對手先制上限於 MODIFY_PRIORITY 處理。
     if (already) c.setPlayerState('fixedTypeMultThisAction', 4);
+    let missed = 0;
     if (c.clearTurnEffectsOf(c.targetSide)) {
-      for (const name of ['疲憊', '害怕', '睡眠']) status(c, name, 3);
+      for (const name of ['疲憊', '害怕', '睡眠']) if (!status(c, name, 3)) missed++;
     }
+    c.setPlayerState('monsterStatusMissedThisAction', missed);
   },
 };

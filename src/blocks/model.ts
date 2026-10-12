@@ -16,6 +16,7 @@ export type Trigger =
   | "phase_end"
   | "self_skill" | "self_attack" | "self_status" // 自身使用技能／攻擊技能／屬性技能時
   | "self_after_skill" | "self_after_attack" | "self_after_status" | "self_after_physical" | "self_after_special" // 自身使用技能後
+  | "self_after_use" // 已使用技能後，包含未命中／技能無效；行動前被打斷不觸發
   | "opp_skill" | "opp_attack" | "opp_status" // 對手使用技能時
   | "opp_after_skill" | "opp_after_attack" | "opp_after_status"
   | "damaged" | "damaged_skill" | "damaged_attack" | "damaged_true" | "damaged_fixed" | "damaged_percent" | "damaged_nontrue" // 自身受到傷害後
@@ -24,6 +25,9 @@ export type Trigger =
   | "defeated" // 自身被擊敗時
   | "kill" // 擊敗對手時
   | "fatal" // 受到致命傷害時
+  | "before_status" // 受方異常附加前，可阻止或替換本次異常
+  | "pp_consumed" // 本技能槽的PP確實被消耗，同一因果鏈每槽一次
+  | "status_end" | "status_immune" | "status_tick" // 持有者異常結束、免疫結果及扣減前
   | "switch_out"
   | "status_received" // 自身受到異常狀態時
   | "bench" // 自身位於背包時

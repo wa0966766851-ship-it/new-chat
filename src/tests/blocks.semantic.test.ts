@@ -1,6 +1,6 @@
 import { applyActionDamageModifiers } from '../battle/actionDamageModifiers';
 import assert from "node:assert";
-import { DEFAULT_ELVES } from "../data/defaultElves";
+import { DEFAULT_ELVES } from "../data/defaultElvesLoaded";
 import { getSkillProgram, getSoulProgram } from "../blocks/registry";
 import { SKILL_MODE, SOUL_MODE } from "../blocks/specs";
 import { runSkillProgram, runSoulProgram, runSideTimers } from "../blocks/runtime";
@@ -111,7 +111,8 @@ function makeBlockContext(selfOverrides: Record<string, any> = {}, targetOverrid
       if (ppChanges?.all) elf.skills = elf.skills.map((skill: any) => ({ ...skill, pp: Math.max(0, Math.min(skill.maxPp ?? 99, (skill.pp || 0) + ppChanges.all)) }));
     },
     updateElf: (side: "p1" | "p2", patch: Record<string, any>) => Object.assign(elfAt(side), patch),
-    updateAnyElf: () => {},
+    // 與正式戰鬥一致：PP 等操作走 getFullTeam（下方已有）／updateAnyElf，模擬環境必須真的寫入。
+    updateAnyElf: (side: "p1" | "p2", _id: string, patch: Record<string, any>) => { Object.assign(elfAt(side), patch); },
     applyPinkDamage: (_side: string, amount: number) => (damage.pink += Math.floor(amount), Math.floor(amount)),
     applyFixedDamage: (_side: string, amount: number) => (damage.fixed += Math.floor(amount), Math.floor(amount)),
     applyTrueDamage: (_side: string, amount: number) => (damage.true += Math.floor(amount), Math.floor(amount)),
@@ -210,7 +211,9 @@ t("殘軀鎖命：強化翻倍、傷害上限、回復計時與易傷均寫入�
   assert.deepStrictEqual(h.self.statStages, { atk: 3, def: 2, spatk: 2, spdef: 2, speed: 2, accuracy: 2 });
   assert.strictEqual(h.playerState.incomingSkillDmgCapTurns, 4);
   assert.strictEqual(h.playerState.incomingSkillDmgCap, 200);
-  assert.strictEqual(h.opponentState.damageTakenBoostTurns, 3);
+  // 全域規則：「受到傷害提升」未指明類型時只算攻擊傷害 → 對手身上為「攻擊傷害 +100%」計時器（不再是全傷害翻倍鍵）
+  assert.strictEqual(h.opponentState.damageTakenBoostTurns, undefined);
+  assert.ok(h.timers.p2.some(timer => timer.payload.block.dmgIn === 1 && timer.payload.block.kind === "攻擊" && timer.remaining === 2));
   assert.ok(h.timers.p1.some(timer => timer.payload.block.trig === "round_end" && timer.remaining === 4));
 });
 

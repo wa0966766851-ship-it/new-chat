@@ -18,6 +18,8 @@ function trait(value: unknown, label: string) {
   if (!object(value)) fail(label);
   text(value.name, `${label}.name`, 200); text(value.description, `${label}.description`);
   if (value.customCode !== undefined) text(value.customCode, `${label}.customCode`);
+  if (value.effectMode !== undefined && !['auto','description','kit','registry'].includes(value.effectMode)) fail(`${label}.effectMode`);
+  if (value.kit !== undefined) validateKit(value.kit, `${label}.kit`);
   if (value.mechanics !== undefined) {
     if (!object(value.mechanics) || Object.keys(value.mechanics).length > 200) fail(`${label}.mechanics`);
     let visited = 0;
@@ -118,6 +120,7 @@ export function parseElfBlueprint(json: string): { elf: Elf; warnings: string[];
         }
       }
       if (skill.kit !== undefined) kit(skill.kit, `${field}.kit`);
+      if (skill.effectMode !== undefined && !['auto','description','kit','registry'].includes(skill.effectMode)) fail(`${field}.effectMode`);
     }
   }
   if (source.soulMark) { trait(source.soulMark, 'soulMark'); if (source.soulMark.customCode) warnings.push('包含魂印自訂程式；匯入不會執行，請在實戰前審查程式與效果。'); }

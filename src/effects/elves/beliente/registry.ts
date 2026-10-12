@@ -20,11 +20,19 @@ export const handleBelienteSoulMark = (ctx: BattleEventContext, event: EffectTim
       }
       break;
 
-    case EffectTiming.ROUND_END:
-      if (getPlayerState("BelienteRegenTurns") > 0) {
+    // 星河入眸：4回合內每回合使用技能時恢復最大體力½並造成等量百分比傷害（過去誤在回合結束造成真實傷害）
+    case EffectTiming.BEFORE_SKILL:
+      if (getPlayerState("BelienteRegenTurns") > 0 && !getPlayerState("BelienteRegenUsedThisTurn")) {
+        setPlayerState("BelienteRegenUsedThisTurn", true);
         const regenAmt = Math.floor(self.maxHp / 2);
         applyHeal(actor, regenAmt);
-        ctx.applyTrueDamage(oppSide, regenAmt, "星能沐浴");
+        ctx.applyPinkDamage(oppSide, regenAmt, "星能沐浴", undefined, undefined, "percent");
+      }
+      break;
+
+    case EffectTiming.ROUND_END:
+      setPlayerState("BelienteRegenUsedThisTurn", false);
+      if (getPlayerState("BelienteRegenTurns") > 0) {
         setPlayerState("BelienteRegenTurns", getPlayerState("BelienteRegenTurns") - 1);
       }
       break;
