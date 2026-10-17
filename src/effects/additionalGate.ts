@@ -1,4 +1,9 @@
 import type { BattleEventContext } from './types';
+import {activeConstraints} from '../battle/timedConstraints';
+
+export function innateAllowed(ctx:BattleEventContext):boolean{
+  return !ctx.self.isInherentInvalid&&!activeConstraints((ctx.actor==='p1'?ctx.p1Timers:ctx.p2Timers)||[],ctx.self).some(p=>p.inherentInvalid);
+}
 
 /** 附加效果是否可生效：附加效果失效／全命中效果無效／回合內附加無效，任一成立即不可。 */
 export function additionalAllowed(ctx: BattleEventContext): boolean {

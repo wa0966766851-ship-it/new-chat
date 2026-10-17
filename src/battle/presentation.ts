@@ -13,6 +13,8 @@ export interface PresentationEvent {
   channel?: PresentationChannel;
   /** 攻擊傷害的克制標示（原廠：克制／微弱／普通／無效） */
   effectiveness?: Effectiveness;
+  /** 只同步體力、不顯示跳字。 */
+  silent?: boolean;
   /** 攻擊方與技能名（技能名顯示在攻擊方本體上） */
   sourceSide?: 'p1' | 'p2'; skillName?: string;
 }
@@ -79,11 +81,17 @@ export class BattlePresentation {
     this.inAction = v;
     if (!v && this.fatalPending) { this.fatalPending = false; void this.flush(); }
   }
-  /** 前置傷害已擊敗目標：只補出招結果，不補算傷害、不修改戰鬥體力。 */
+  /**
+   * 出招時目標已被前置傷害擊敗：技能傷害不落地、不修改戰鬥體力。
+   * displayAmount 有已算出的傷害值時，照常顯示紅字（暴擊、克制標示）；沒有（計算前就已倒下）則不顯示跳字，絕不補 0。
+   */
   skippedAttack(side: 'p1' | 'p2', elf: { id: string; battleId?: string; currentHp: number; maxHp: number },
-    sourceSide: 'p1' | 'p2', skillName: string): Promise<void> {
-    return this.record({ side, elfId: elf.battleId || elf.id, type: 'skill', amount: 0, text: '0', delta: 0,
-      before: elf.currentHp, after: elf.currentHp, maxHp: elf.maxHp, alive: true, sourceSide, skillName });
+    sourceSide: 'p1' | 'p2', skillName: string, displayAmount = 0,
+    shown?: { isCrit?: boolean; label?: string; effectiveness?: Effectiveness }): Promise<void> {
+    const amount = Number.isFinite(displayAmount) ? Math.max(0, Math.floor(displayAmount)) : 0;
+    return this.record({ side, elfId: elf.battleId || elf.id, type: 'skill', amount, delta: 0,
+      before: elf.currentHp, after: elf.currentHp, maxHp: elf.maxHp, alive: true, sourceSide, skillName, silent: amount <= 0,
+      isCrit: shown?.isCrit, label: shown?.label, effectiveness: shown?.effectiveness });
   }
   private extraPending: PresentationEvent[] = [];
   constructor(private notify: () => void, private fast: () => boolean,
@@ -160,7 +168,7 @@ export class BattlePresentation {
     const out: PresentationEvent[] = skills.map(e => ({ ...e }));
     for (const g of net.values()) {
       const { n: _n, ...e } = g;
-      if (e.delta === 0) { out.push({ ...e, type: 'adjust_up', amount: 0, label: undefined, silent: true } as any); continue; }
+      if (e.delta === 0) { out.push({ ...e, type: 'adjust_up', amount: 0, label: undefined, silent: true }); continue; }
       out.push({ ...e, type: e.delta > 0 ? 'heal' : 'fixed', amount: Math.abs(e.delta), label: undefined, isCrit: false, effectiveness: undefined });
     }
     for (const g of trueDmg.values()) {
@@ -212,7 +220,7 @@ export class BattlePresentation {
             this.hp.set(key, fatal ? e.after : e.after > 0 ? Math.min(e.maxHp, Math.max(1, cur + e.delta)) : cur + e.delta);
           }
           if (fatal) this.dead.add(key);
-          if ((e as any).silent || !this.visible(e)) continue;
+          if (e.silent || !this.visible(e)) continue;
           const id = `presentation_${++this.sequence}`;
           popups.push({ ...e, label: damagePopupLabel(e.label), id,
             text: e.text ?? `${e.type === 'heal' || e.type === 'adjust_up' ? '+' : '-'}${formatCompactHud(e.amount)}` });

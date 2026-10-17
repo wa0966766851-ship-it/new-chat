@@ -22,6 +22,7 @@ try {
   const {getStatuses}=await server.ssrLoadModule('/src/utils/battleHelpers.ts');
   const {getTypeMatchup}=await server.ssrLoadModule('/src/utils/statCalculator.ts');
   const {handleWuxuSoulMark}=await server.ssrLoadModule('/src/effects/elves/wuxu/registry.ts');
+  const {DEFAULT_ELVES}=await server.ssrLoadModule('/src/data/defaultElvesLoaded.ts');
   const play=async(side:string,self:any,enemy:any,bench?:any)=>{
     const team=[enemy,...(bench?[bench]:[])];
     await act(async()=>root.render(React.createElement(Battle,{key:checks,initialP1Team:side==='p1'?[self]:team,
@@ -59,16 +60,18 @@ try {
   // 真正墜星魂印／四石神話：檢查 PP 不扣、不疊加，並測控制與弱化免疫。
   for(const side of ['p1','p2']) {
     const other=side==='p1'?'p2':'p1',self=make(`zhuixing-${side}`),enemy=make('神話對手');self.name='無序.墜星';
+    // 墜星魂印「專屬特性」已遷移為正式Kit（舊 handler 除名）：改掛內建 Kit，仍走真實引擎。
+    self.soulMark=structuredClone(DEFAULT_ELVES.find((e:any)=>String(e.id)==='5026').soulMark);assert.equal(self.soulMark.effectMode,'kit');
     self.skills=['電','超能','神秘','自然'].map(a=>({...createSkillStone(a,'S','特殊',true,effects.find((e:any)=>e.targetAttribute===a).id,'project'),pp:12,priority:10}));
     const attack:any[]=[];
-    souls[self.name]=(c:any,ev:string,data:any)=>{if(ev==='ON_SKILL_HIT')attack.push(data);return handleWuxuSoulMark(c,ev,data);};
-    souls[enemy.name]=(c:any,ev:string)=>{if(ev==='ON_ENTRANCE'){c.applyStatChange(c.targetSide,{atk:-2});c.applyStatusWithImmunityCheck(c.targetSide,'中毒',3);}return false;};
+    // 魂印改走 Kit，不再有 handler 可旁路觀察命中；改由受擊方在 ON_DAMAGED 觀察主技能傷害（實際扣血量＝原 settledDamage 的命中事件）。
+    souls[enemy.name]=(c:any,ev:string,data:any)=>{if(ev==='ON_DAMAGED'&&data?.damageType==='skill_attack')attack.push({settledDamage:data.hpReduced});if(ev==='ON_ENTRANCE'){c.applyStatChange(c.targetSide,{atk:-2});c.applyStatusWithImmunityCheck(c.targetSide,'中毒',3);}return false;};
     const state=await play(side,self,enemy);
     assert.deepEqual(state[side].skills.map((s:any)=>s.pp),[12,12,12,12]);assert.equal(state[side].statStages.atk||0,0);
     assert.ok(!getStatuses(state[side])['中毒']);assert.ok(getStatuses(state[side])['神話']);
     assert.equal(attack.length,1);assert.ok(state[side].currentHp>=Math.min(100000,80000+25000+attack[0].settledDamage));
     assert.ok(state[`${other}RegistryState`].utilitySkillInvalidTurns>0);
-    delete souls[self.name];delete souls[enemy.name];
+    delete souls[enemy.name];
   }
   for(const side of ['p1','p2']) for(const failure of ['miss','invalid','ppzero']) {
     const self=make(`失敗-${side}-${failure}`),enemy=make('失敗對手'),other=side==='p1'?'p2':'p1';

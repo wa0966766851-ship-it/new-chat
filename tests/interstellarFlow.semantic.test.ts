@@ -19,7 +19,7 @@ const text = () => document.body.textContent || '';
 try {
   await act(async () => root.render(React.createElement(Run, props)));
   let run = E.loadRunV2(localStorage)!;
-  assert.equal(run.shards, 4); assert.equal(run.potions, 1, '禁藥之契');
+  assert.equal(run.shards, 4); assert.equal(E.anyTokenCount(run), 0); assert.equal(run.potions, 1, '禁藥之契');
   assert.ok(text().includes('選擇持燈者'));
   // 選秀：點三張卡
   const cards = buttons().filter(b => b.classList.contains('ecl-card')).slice(0, 3);

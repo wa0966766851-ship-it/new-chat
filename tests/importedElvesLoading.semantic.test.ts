@@ -37,6 +37,7 @@ ok(reached.some(f => f.endsWith('/src/data/defaultElves.ts')), '入口確實會�
 ok(!reached.some(f => /\/src\/data\/importedElves\.ts$/.test(f)), '首頁靜態匯入圖不含 importedElves.ts');
 ok(!reached.some(f => /\/src\/data\/imported\//.test(f)), '首頁靜態匯入圖不含 imported/ 打包資料');
 ok(!reached.some(f => /\/src\/data\/stagedArenaElves\.ts$/.test(f)) && !reached.some(f => /heavyweights\.json$/.test(f)), '首頁靜態匯入圖不含階段競技場精靈（stagedArenaElves／heavyweights.json）');
+ok(!reached.some(f=>/reviewedKits\.(deferred|compressed)\.json$/.test(f)),'首頁不提前載入競技場圖紙或完整封裝副本');
 ok(!reached.some(f => /defaultElvesLoaded\.ts$/.test(f)), '應用程式不得引用含頂層 await 的測試入口');
 ok(/import\(\s*["']\.\/importedElves["']\s*\)/.test(readFileSync(resolve(root, 'src/data/defaultElves.ts'), 'utf8')), '以動態 import 取得匯入精靈');
 ok(/import\(\s*["']\.\/stagedArenaElves["']\s*\)/.test(readFileSync(resolve(root, 'src/data/defaultElves.ts'), 'utf8')), '以動態 import 取得階段競技場精靈');
@@ -78,6 +79,11 @@ try {
   ok(game.GLOBAL_SKILLS.length > skillsBefore && game.GLOBAL_SKILLS.some((s: any) => imported[0].skills.includes(s)), 'GLOBAL_SKILLS 同步補齊');
   const e = imported[0];
   ok(importedGraph(), '載入後 importedElves 才被執行');
+  const {MIGRATED_SEQUENCE_SKILL_KITS}=await server.ssrLoadModule('/src/data/migratedSequenceSkillKits.ts');
+  const {isLegacyWrappedKit}=await server.ssrLoadModule('/src/blocks/ops/legacyHandler.ts');
+  const arenaDefinitions=MIGRATED_SEQUENCE_SKILL_KITS.filter((d:any)=>!d.kind&&d.elfIds.every((id:string)=>id.startsWith('arena_')));
+  for(const d of arenaDefinitions)for(const id of d.elfIds){const owner=DEFAULT_ELVES.find((e:any)=>String(e.id)===id);const s=[...owner.skills,...(owner.skillPool||[])].find((s:any)=>s.name===d.name&&s.description===d.description);assert.ok(s,`${id}/${d.name}完整來源`);assert.equal(s.effectMode,isLegacyWrappedKit(d.kit)?'registry':'kit');assert.deepEqual(s.kit,d.kit);}
+  ok(arenaDefinitions.length>=6,'載入完成與通知前六份既有競技場圖紙全數正確接通');
   ok(e.soulMark?.effectMode === 'kit' && e.skills.length > 0 && e.skills.every((s: any) => s.effectMode === 'kit'), '匯入精靈仍只走 Kit');
   ok(e.calculatedStats?.hp > 0 && e.maxHp === e.calculatedStats.hp && e.currentHp === e.maxHp, '匯入精靈與其他預設精靈一樣完成數值計算');
 

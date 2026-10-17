@@ -8,3 +8,4 @@ const sources: Record<string, any> = JSON.parse(strFromU8(gunzipSync(bytes)));
 export const SOURCE_TEXT = sources.elfSourceText;
 export const SKILL_REFERENCES = sources['skillReferences.generated'];
 export const NEW_ELF_SOURCES = sources.newElfSources;
+export const HAMO_SOURCE_DATA = sources.hamoSource;

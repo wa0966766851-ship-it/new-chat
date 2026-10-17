@@ -1,13 +1,108 @@
+import {MIGRATED_SELECTION_SKILL_KITS} from './migratedSelectionSkillKits';
+import {MIGRATED_FAREWELL_SKILL_KITS} from './migratedFarewellSkillKit';
+import {MIGRATED_SIX_BLADE_SKILL_KITS} from './migratedSixBladeSkillKit';
+import {MIGRATED_DORMANT_BLADE_SKILL_KITS} from './migratedDormantBladeSkillKit';
+import {MIGRATED_REY_SKILL_KITS} from './migratedReySkillKits';
+import {MIGRATED_NIGHT_SKILL_KITS} from './migratedNightSkillKit';
+import {MIGRATED_BLOCK_RECOVERY_SKILL_KITS} from './migratedBlockRecoverySkillKits';
+import {MIGRATED_RANDOM_STAGE_SKILL_KITS} from './migratedRandomStageSkillKits';
+import {MIGRATED_TYPE_VIEW_SKILL_KITS} from './migratedTypeViewSkillKits';
+import {MIGRATED_REMOVED_LEVEL_SKILL_KITS} from './migratedRemovedLevelSkillKits';
+import {MIGRATED_RESTORED_PP_SKILL_KITS} from './migratedRestoredPpSkillKits';
+import {MIGRATED_MARK_DURATION_SKILL_KITS} from './migratedMarkDurationSkillKits';
 import type { ReviewedSequenceSkill } from './reviewedSequenceSkillKits';
 import { property, sequence, action } from './reviewedSequenceSkillKits';
 import type { KitEntry } from '../effects/effectSystem.schema';
 import { MIGRATED_SKILL_STONE_KITS } from './migratedSkillStoneKits';
 import { MIGRATED_RECURRING_SKILL_KITS } from './migratedRecurringSkillKits';
+import { MIGRATED_FINAL_A_KITS } from './migratedFinalAKits';
 import { MIGRATED_MONKEY_BAPHOMET_SKILL_KITS } from './migratedMonkeyBaphometSkillKits';
 import { REMAINING_SIMPLE_SKILL_KITS } from './remainingSimpleSkillKits';
+import { MIGRATED_LEGACY_WRAPPED_KITS } from './migratedLegacyWrappedKits';
 import { MIGRATED_CLOSURE_SKILL_KITS } from './migratedClosureSkillKits';
 import { MIGRATED_SHARED_SKILL_KITS } from './migratedSharedSkillKits';
 import { MIGRATED_EVENT_SKILL_KITS } from './migratedEventSkillKits';
+import { MIGRATED_EXISTING_PRIMITIVE_SKILL_KITS } from './migratedExistingPrimitiveSkillKits';
+import { MIGRATED_GAP_SKILL_KITS } from './migratedGapSkillKits';
+import { MIGRATED_DIRECT_SKILL_KITS } from './migratedDirectSkillKits';
+import { MIGRATED_DURATION_SKILL_KITS } from './migratedDurationSkillKits';
+import { MIGRATED_REFLECTION_SKILL_KITS } from './migratedReflectionSkillKits';
+import { MIGRATED_STATUS_COLLECTION_SKILL_KITS } from './migratedStatusCollectionSkillKits';
+import { MIGRATED_FEEDBACK_SKILL_KITS } from './migratedFeedbackSkillKits';
+import { MIGRATED_QUERY_SKILL_KITS } from './migratedQuerySkillKits';
+import { MIGRATED_POWER_TIMING_SKILL_KITS } from './migratedPowerTimingSkillKits';
+import { MIGRATED_FORMULA_CAP_SKILL_KITS } from './migratedFormulaCapSkillKits';
+import { MIGRATED_FOLLOWUP_SKILL_KITS } from './migratedFollowupSkillKits';
+import { MIGRATED_DEFERRED_DAMAGE_SKILL_KITS } from './migratedDeferredDamageSkillKits';
+import { MIGRATED_REACTION_SKILL_KITS } from './migratedReactionSkillKits';
+import { MIGRATED_RESULT_SKILL_KITS } from './migratedResultSkillKits';
+import { MIGRATED_CARRIED_REACTION_SKILL_KITS } from './migratedCarriedReactionSkillKits';
+import { MIGRATED_LIFESTEAL_SKILL_KITS } from './migratedLifestealSkillKits';
+import { MIGRATED_HP_SCALING_SKILL_KITS } from './migratedHpScalingSkillKits';
+import { MIGRATED_TYPED_DEFENSE_SKILL_KITS } from './migratedTypedDefenseSkillKits';
+import { MIGRATED_STATUS_RESTRICTION_SKILL_KITS } from './migratedStatusRestrictionSkillKits';
+import { MIGRATED_SELECTED_PP_SKILL_KITS } from './migratedSelectedPpSkillKits';
+import { MIGRATED_CLASS_CURE_SKILL_KITS } from './migratedClassCureSkillKits';
+import { MIGRATED_STEP_DAMAGE_SKILL_KITS } from './migratedStepDamageSkillKits';
+import { MIGRATED_CLEARED_REACTION_SKILL_KITS } from './migratedClearedReactionSkillKits';
+import { MIGRATED_EXPIRY_REACTION_SKILL_KITS } from './migratedExpiryReactionSkillKits';
+import { MIGRATED_IMMUNITY_FALLBACK_SKILL_KITS } from './migratedImmunityFallbackSkillKits';
+import { MIGRATED_STAT_REMOVAL_SKILL_KITS } from './migratedStatRemovalSkillKits';
+import { MIGRATED_CRITICAL_DRAIN_SKILL_KITS } from './migratedCriticalDrainSkillKits';
+import { MIGRATED_EXCLUDED_STATUS_SKILL_KITS } from './migratedExcludedStatusSkillKits';
+import { MIGRATED_INSTANT_KILL_SKILL_KITS } from './migratedInstantKillSkillKits';
+import { MIGRATED_CONVERSION_KILL_SKILL_KITS } from './migratedConversionKillSkillKits';
+import { MIGRATED_RESOURCE_KILL_SKILL_KITS } from './migratedResourceKillSkillKits';
+import { MIGRATED_COLLECTION_SKILL_KITS } from './migratedCollectionSkillKits';
+import { MIGRATED_LAYER_SKILL_KITS } from './migratedLayerSkillKits';
+import {MIGRATED_STAGE_SKILL_KITS} from './migratedStageSkillKits';
+import {MIGRATED_UTILITY_MONITOR_SKILL_KITS} from './migratedUtilityMonitorSkillKits';
+import { MIGRATED_DIXIN_SKILL_KITS } from './migratedDixinSkillKits';
+import { MIGRATED_SOBIRAT_CAGE_KIT } from './migratedSobiratCageKit';
+import { MIGRATED_ASTRAL_AESFIA_KITS, MIGRATED_ASTRAL_AESFIA_SKILLS_2, MIGRATED_ASTRAL_AESFIA_FLASH } from './migratedAstralAesfiaKits';
+import {MIGRATED_COUNTED_ATTACK_SKILL_KITS} from './migratedCountedAttackSkillKits';
+import {MIGRATED_STAGE_GUARD_SKILL_KITS} from './migratedStageGuardSkillKits';
+// 5032/5033/5034 星核系與摩哥斯技能 Kit（DSH 20261015 接線）
+import { MIGRATED_ASTRAL_AESFIG_SKILLS } from './migratedAstralAesfigSkillKits';
+import { MIGRATED_MOGOS_SKILLS } from './migratedMogosSkillKits';
+// 5014 聖光斯嘉麗 王·凰歌盡霄（DSH 20261016 接線）
+import { MIGRATED_SCARLETT_SKILL_KITS } from './migratedScarlettSkillKits';
+// 5010 星光·魯斯王 星光·浪打千擊（DSH 20261016 接線；修正舊 handler missTurns 死鍵）
+import { MIGRATED_STARLIGHT_SKILL_KITS } from './migratedStarlightSkillKits';
+// 5018 蟲后·奧佩婭 毒噬魂絲（DSH 20261016 接線）
+import { MIGRATED_OPEIA_SKILL_KITS } from './migratedOpeiaSkillKits';
+// 5022 無序.六刃 靜刃止水（DSH 20261016 接線；pp_priority/pp_combo_hits 新通用op）
+import { MIGRATED_WUXU_SKILL_KITS } from './migratedWuxuSkillKits';
+// 5027 蓓麗安特 星河入眸（DSH 20261016 接線；evade_turns onExpire 新機制）
+import { MIGRATED_BELIENTE_SKILL_KITS } from './migratedBelienteSkillKits';
+import { MIGRATED_FINAL_B_SKILL_KITS } from './migratedFinalBKits';
+// 5028 怒濤·滄嵐 滄海永存（DSH 20261016 接線）
+import { MIGRATED_CANGLAN_SKILL_KITS } from './migratedCanglanSkillKits';
+// 300 譜尼 / 5000 聖靈譜尼 靈光之怒（DSH 20261016 接線；power_mod perStageLevel 新通用欄位）
+import { MIGRATED_PUNI_SKILL_KITS } from './migratedPuniSkillKits';
+// 5007 混濁海妖.布林克克 癡愚之觸（DSH 20261016 接線；abnormal 條件 cls 新參數）
+import { MIGRATED_BRINKK_SKILL_KITS } from './migratedBrinkkSkillKits';
+import { MIGRATED_FINAL_C_SKILL_KITS } from './migratedFinalCKits';
+// 5012 冰魄·柯爾德 凝寒止喧（DSH 20261016 接線；multi_hit perMarkHits 新機制）
+import { MIGRATED_KELD_SKILL_KITS } from './migratedKeldSkillKits';
+// 5021 治癒.龍魂再臨 次元龍 閱世（DSH 20261016 接線；dragon_soul 新條件）
+import { MIGRATED_DIMENSIONAL_DRAGON_SKILL_KITS } from './migratedDimensionalDragonSkillKits';
+// 5019 奧丁符文系 ᛟᛞᛁᚾᛋ ᚨᚾᛋᚢᛉ（DSH 20261016 接線）
+import { MIGRATED_ODIN_RUNE_SKILL_KITS } from './migratedOdinRuneSkillKits';
+// 5031 六界神王 界·六神歸一（DSH 20261016 接線）
+import { MIGRATED_SIX_GODS_SKILL_KITS } from './migratedSixGodsSkillKits';
+// 5035 御天龍神·哈莫 破曉（DSH 20261016 接線；dmg_taken_uses/atk_gap 新機制）
+import { MIGRATED_HAMO_SKILL_KITS } from './migratedHamoSkillKits';
+// 5009 誑獅魔軀.魔獅迪露 劫盡歸塵（DSH 20261017 接線；counter_spend 新通用 op）
+import { MIGRATED_DELU_SKILL_KITS } from './migratedDeluSkillKits';
+// arena_16 鎮世龍魂・龍之治癒 剛莖棍壓（DSH 20261017 第一批 legacyWrapped 拆解；ignore_success 新條件）
+import { MIGRATED_ARENA16_SKILL_KITS } from './migratedArena16SkillKits';
+// arena_13 三技（DSH 20261017 第十批；arenaShared 通用件）
+import { MIGRATED_ARENA13_SKILL_KITS } from './migratedArena13SkillKits';
+// 5023 無序·蝕言 械律·置換（DSH 20261017 第二批；use_stolen_item 新通用 op）
+import { MIGRATED_WUXU_SHIYAN_SKILL_KITS } from './migratedWuxuShiyanSkillKits';
+// 5013 柯爾霍德 王·夜予寒吟（DSH 20261017 第五批；stage_sum_damage／pp_cap_floor_bench 新通用 op）
+import { MIGRATED_KEERHODE_SKILL_KITS } from './migratedKeerhodeSkillKits';
 /** 「技能使用後」：成功行動結束（after_action）才觸發的附加連鎖。 */
 const afterSkill=(raw:string,body:any[],order:number):KitEntry=>({codeId:'effect_sequence',node:'after_action',source:'skill',role:'attached',order,customText:raw,
   params:{clause:{raw,marker:'🎯',trig:'self_after_skill',parsed:true,body}}});
@@ -16,11 +111,90 @@ const afterSkill=(raw:string,body:any[],order:number):KitEntry=>({codeId:'effect
 const afterHit=(raw:string,body:any[],order:number):KitEntry=>({codeId:'effect_sequence',node:'on_hit',source:'skill',role:'attached',order,customText:raw,
   params:{clause:{raw,marker:'🎯',trig:'after_hit',parsed:true,body}}});
 
-/** P4 遷移：逐隻核對 TXT 後的整份技能定義。原文完全相同才套入；每份都有 tests/migrate_<ID>.semantic.test.ts。 */
+/** 整份技能定義；持有者與全文相同才套入。各批驗證範圍見 docs/積木遷移進度_20261013.md，不據入口數授予語意驗收。 */
 export const MIGRATED_SEQUENCE_SKILL_KITS: ReviewedSequenceSkill[] = [
+  ...MIGRATED_FAREWELL_SKILL_KITS,
+  ...MIGRATED_SIX_BLADE_SKILL_KITS,
+  ...MIGRATED_DORMANT_BLADE_SKILL_KITS,
+  ...MIGRATED_REY_SKILL_KITS,
+  ...MIGRATED_NIGHT_SKILL_KITS,
+  ...MIGRATED_RANDOM_STAGE_SKILL_KITS,
+  ...MIGRATED_TYPE_VIEW_SKILL_KITS,
+  ...MIGRATED_REMOVED_LEVEL_SKILL_KITS,
+  ...MIGRATED_RESTORED_PP_SKILL_KITS,
+  ...MIGRATED_BLOCK_RECOVERY_SKILL_KITS,
+  ...MIGRATED_COUNTED_ATTACK_SKILL_KITS,
+  ...MIGRATED_STAGE_GUARD_SKILL_KITS,
+  ...MIGRATED_MARK_DURATION_SKILL_KITS,
+  ...MIGRATED_SELECTION_SKILL_KITS,
+  ...MIGRATED_ASTRAL_AESFIA_KITS,
+  // 5032 全部技能：星核脈衝／星霧迷境／殞星衝擊（含 stat_match→dmg_from_last 差值固定傷害修正）／寰宇幻影閃
+  ...MIGRATED_ASTRAL_AESFIA_SKILLS_2,
+  ...MIGRATED_ASTRAL_AESFIA_FLASH,
+  // 5033 五技＋5034 三技（摧妖斬／王·墮落絕語／王·潰墮妖族）
+  // 妖靈天性已由 migratedEventSkillKits 提供（本次修正其屬性技能誤用 on_hit 的死條款），故不重複收錄。
+  ...MIGRATED_ASTRAL_AESFIG_SKILLS,
+  ...MIGRATED_MOGOS_SKILLS.filter(row => row.name !== '妖靈天性'),
+  ...MIGRATED_SCARLETT_SKILL_KITS,
+  ...MIGRATED_STARLIGHT_SKILL_KITS,
+  ...MIGRATED_OPEIA_SKILL_KITS,
+  ...MIGRATED_WUXU_SKILL_KITS,
+  ...MIGRATED_BELIENTE_SKILL_KITS,
+  ...MIGRATED_FINAL_B_SKILL_KITS,
+  ...MIGRATED_CANGLAN_SKILL_KITS,
+  ...MIGRATED_PUNI_SKILL_KITS,
+  ...MIGRATED_BRINKK_SKILL_KITS,
+  ...MIGRATED_FINAL_C_SKILL_KITS,
+  ...MIGRATED_KELD_SKILL_KITS,
+  ...MIGRATED_DIMENSIONAL_DRAGON_SKILL_KITS,
+  ...MIGRATED_ODIN_RUNE_SKILL_KITS,
+  ...MIGRATED_SIX_GODS_SKILL_KITS,
+  ...MIGRATED_HAMO_SKILL_KITS,
+  ...MIGRATED_DELU_SKILL_KITS,
+  ...MIGRATED_ARENA16_SKILL_KITS,
+  ...MIGRATED_ARENA13_SKILL_KITS,
+  ...MIGRATED_WUXU_SHIYAN_SKILL_KITS,
+  ...MIGRATED_KEERHODE_SKILL_KITS,
+  ...MIGRATED_LAYER_SKILL_KITS,
+  ...MIGRATED_STAGE_SKILL_KITS,
+  ...MIGRATED_UTILITY_MONITOR_SKILL_KITS,
+  ...MIGRATED_DIXIN_SKILL_KITS,
+  ...MIGRATED_SOBIRAT_CAGE_KIT,
+  ...MIGRATED_COLLECTION_SKILL_KITS,
+  ...MIGRATED_RESOURCE_KILL_SKILL_KITS,
+  ...MIGRATED_CONVERSION_KILL_SKILL_KITS,
   ...MIGRATED_CLOSURE_SKILL_KITS,
   ...MIGRATED_SHARED_SKILL_KITS,
   ...MIGRATED_EVENT_SKILL_KITS,
+  ...MIGRATED_EXISTING_PRIMITIVE_SKILL_KITS,
+  ...MIGRATED_GAP_SKILL_KITS,
+  ...MIGRATED_DIRECT_SKILL_KITS,
+  ...MIGRATED_DURATION_SKILL_KITS,
+  ...MIGRATED_REFLECTION_SKILL_KITS,
+  ...MIGRATED_STATUS_COLLECTION_SKILL_KITS,
+  ...MIGRATED_FEEDBACK_SKILL_KITS,
+  ...MIGRATED_QUERY_SKILL_KITS,
+  ...MIGRATED_POWER_TIMING_SKILL_KITS,
+  ...MIGRATED_FORMULA_CAP_SKILL_KITS,
+  ...MIGRATED_FOLLOWUP_SKILL_KITS,
+  ...MIGRATED_DEFERRED_DAMAGE_SKILL_KITS,
+  ...MIGRATED_REACTION_SKILL_KITS,
+  ...MIGRATED_RESULT_SKILL_KITS,
+  ...MIGRATED_CARRIED_REACTION_SKILL_KITS,
+  ...MIGRATED_LIFESTEAL_SKILL_KITS,
+  ...MIGRATED_HP_SCALING_SKILL_KITS,
+  ...MIGRATED_TYPED_DEFENSE_SKILL_KITS,
+  ...MIGRATED_STATUS_RESTRICTION_SKILL_KITS,
+  ...MIGRATED_SELECTED_PP_SKILL_KITS,
+  ...MIGRATED_CLASS_CURE_SKILL_KITS,
+  ...MIGRATED_STEP_DAMAGE_SKILL_KITS,
+  ...MIGRATED_CLEARED_REACTION_SKILL_KITS,
+  ...MIGRATED_EXPIRY_REACTION_SKILL_KITS,
+  ...MIGRATED_IMMUNITY_FALLBACK_SKILL_KITS,
+  ...MIGRATED_STAT_REMOVAL_SKILL_KITS,
+  ...MIGRATED_CRITICAL_DRAIN_SKILL_KITS,
+  ...MIGRATED_INSTANT_KILL_SKILL_KITS,
+  ...MIGRATED_EXCLUDED_STATUS_SKILL_KITS,
   // 5005 布萊克
   {elfIds:['5005'],name:'狂夜屠戮',description:'（無特殊效果）',kit:[
     sequence('（無特殊效果）',[{acts:[action('noop',{})]}],0),
@@ -81,7 +255,7 @@ export const MIGRATED_SEQUENCE_SKILL_KITS: ReviewedSequenceSkill[] = [
     property('■ 必中','sure_hit',true,0),property('■ 先制+2','base_priority',2,1),
     sequence('🎯 全屬性+1，自身處於能力提升狀態時強化效果翻倍',[{acts:[action('stat',{chance:100,side:'auto',stats:['全屬性'],v:1,x2If:{c:'stage',p:{side:'self',kind:'up',neg:false},label:'自身處於能力提升'}})]}],2),
     sequence('🎯 4回合內自身體力受到攻擊傷害不超過200點',[{acts:[action('dmg_cap_turns',{turns:4,cap:200})]}],3),
-    sequence('🎯 4回合內每回合恢復自身最大體力1/3，恢復量的50%轉化為附加對手等量戰鬥系傷害',[{acts:[action('timed',{turns:4,from:'now',trig:'round_end',body:[{acts:[action('heal',{side:'self',ratio:1/3}),action('dmg_from_last',{ratio:0.5,type:'技能',elem:'戰鬥'})]}]})]}],4),
+    sequence('🎯 4回合內每回合恢復自身最大體力1/3，恢復量的50%轉化為附加對手等量戰鬥系傷害',[{acts:[action('timed',{turns:4,from:'now',trig:'self_skill',initial:true,body:[{acts:[action('heal',{side:'self',ratio:1/3}),action('dmg_from_last',{ratio:0.5,type:'技能',elem:'戰鬥'})]}]})]}],4),
     sequence('🎯 下2回合對手受到攻擊傷害提升100%',[{acts:[action('dmg_mod_turns',{side:'opp',dir:'taken',kind:'攻擊',boost:1,turns:2,next:true})]}],5),
   ]},
   // 5002 帝皇之盾（帝永壁令／盾碎同歸：custom 動作 B；魂印 B）
@@ -179,7 +353,7 @@ export const MIGRATED_SEQUENCE_SKILL_KITS: ReviewedSequenceSkill[] = [
     sequence('🎯 下2回合自身所有技能先制+2',[{acts:[action('prio_turns',{turns:2,attackOnly:false,v:2})]}],4),
   ]},
   // 5024 湮滅之主・咤克斯：無限・虛數湮滅（其餘八招與魂印含 B 缺口／待確認）。附加「等量」＝本招實際恢復量（舊 handler 誤用對手最大體力 100%）。
-  {elfIds:["5024"],name:"無限・虛數湮滅",description:"■ 先制+1\n■ 必中\n🎯 消除對手回合類效果，消除成功則令對手疲憊，未觸發則100%令對手詛咒\n🎯 消除對手能力提升狀態，消除成功則令對手害怕，未觸發則100%令對手詛咒\n🎯 2回合內令對手使用的屬性技能無效\n🎯 恢復自身最大體力1/1並附加對手等量百分比傷害",kit:[{"codeId": "skill_property", "node": "modify_priority", "source": "skill", "role": "innate", "order": 0, "customText": "■ 先制+1", "params": {"property": "base_priority", "value": 1, "conditions": []}}, {"codeId": "skill_property", "node": "before_skill", "source": "skill", "role": "innate", "order": 1, "customText": "■ 必中", "params": {"property": "sure_hit", "value": true, "conditions": []}}, {"codeId": "effect_sequence", "params": {"clause": {"raw": "🎯 消除對手回合類效果，消除成功則令對手疲憊，未觸發則100%令對手詛咒", "marker": "🎯", "trig": "use", "body": [{"acts": [{"op": "clear_turn", "p": {"side": "opp"}, "label": "消除對手回合類效果"}]}, {"chain": "success", "acts": [{"op": "status", "p": {"chance": 100, "side": "opp", "status": "疲憊"}, "label": "對手 疲憊"}]}, {"chain": "fail", "acts": [{"op": "status", "p": {"chance": 100, "side": "opp", "status": "詛咒"}, "label": "對手 詛咒"}]}], "parsed": true}}, "node": "on_skill_use", "source": "skill", "order": 2, "customText": "🎯 消除對手回合類效果，消除成功則令對手疲憊，未觸發則100%令對手詛咒", "role": "attached"}, {"codeId": "effect_sequence", "params": {"clause": {"raw": "🎯 消除對手能力提升狀態，消除成功則令對手害怕，未觸發則100%令對手詛咒", "marker": "🎯", "trig": "use", "body": [{"acts": [{"op": "stat_clear", "p": {"side": "opp", "kind": "up"}, "label": "消除對手能力提升"}]}, {"chain": "success", "acts": [{"op": "status", "p": {"chance": 100, "side": "opp", "status": "害怕"}, "label": "對手 害怕"}]}, {"chain": "fail", "acts": [{"op": "status", "p": {"chance": 100, "side": "opp", "status": "詛咒"}, "label": "對手 詛咒"}]}], "parsed": true}}, "node": "on_skill_use", "source": "skill", "order": 3, "customText": "🎯 消除對手能力提升狀態，消除成功則令對手害怕，未觸發則100%令對手詛咒", "role": "attached"}, {"codeId": "effect_sequence", "params": {"clause": {"raw": "🎯 2回合內令對手使用的屬性技能無效", "marker": "🎯", "trig": "use", "body": [{"acts": [{"op": "invalid_turns", "p": {"turns": 2, "kind": "屬性"}, "label": "2回合 對手屬性技能無效"}]}], "parsed": true}}, "node": "on_skill_use", "source": "skill", "order": 4, "customText": "🎯 2回合內令對手使用的屬性技能無效", "role": "attached"}, {"codeId": "effect_sequence", "params": {"clause": {"raw": "🎯 恢復自身最大體力1/1並附加對手等量百分比傷害", "marker": "🎯", "trig": "use", "body": [{"acts": [{"op": "heal", "p": {"side": "self", "ratio": 1}, "label": "恢復自身最大體力 100%"}, {"op": "dmg_equal", "p": {"type": "百分比"}, "label": "【百分比傷害】等量"}]}], "parsed": true}}, "node": "on_skill_use", "source": "skill", "order": 5, "customText": "🎯 恢復自身最大體力1/1並附加對手等量百分比傷害", "role": "attached"}]},
+  {elfIds:["5024"],name:"無限・虛數湮滅",description:"■ 先制+3\n■ 必中\n🎯 消除對手回合類效果，消除成功則令對手疲憊，未觸發則100%令對手詛咒\n🎯 消除對手能力提升狀態，消除成功則令對手害怕，未觸發則100%令對手詛咒\n🎯 2回合內令對手使用的屬性技能無效\n🎯 恢復自身最大體力1/1並附加對手等量百分比傷害",kit:[{"codeId": "skill_property", "node": "modify_priority", "source": "skill", "role": "innate", "order": 0, "customText": "■ 先制+3", "params": {"property": "base_priority", "value": 3, "conditions": []}}, {"codeId": "skill_property", "node": "before_skill", "source": "skill", "role": "innate", "order": 1, "customText": "■ 必中", "params": {"property": "sure_hit", "value": true, "conditions": []}}, {"codeId": "effect_sequence", "params": {"clause": {"raw": "🎯 消除對手回合類效果，消除成功則令對手疲憊，未觸發則100%令對手詛咒", "marker": "🎯", "trig": "use", "body": [{"acts": [{"op": "clear_turn", "p": {"side": "opp"}, "label": "消除對手回合類效果"}]}, {"chain": "success", "acts": [{"op": "status", "p": {"chance": 100, "side": "opp", "status": "疲憊"}, "label": "對手 疲憊"}]}, {"chain": "fail", "acts": [{"op": "status", "p": {"chance": 100, "side": "opp", "status": "詛咒"}, "label": "對手 詛咒"}]}], "parsed": true}}, "node": "on_skill_use", "source": "skill", "order": 2, "customText": "🎯 消除對手回合類效果，消除成功則令對手疲憊，未觸發則100%令對手詛咒", "role": "attached"}, {"codeId": "effect_sequence", "params": {"clause": {"raw": "🎯 消除對手能力提升狀態，消除成功則令對手害怕，未觸發則100%令對手詛咒", "marker": "🎯", "trig": "use", "body": [{"acts": [{"op": "stat_clear", "p": {"side": "opp", "kind": "up"}, "label": "消除對手能力提升"}]}, {"chain": "success", "acts": [{"op": "status", "p": {"chance": 100, "side": "opp", "status": "害怕"}, "label": "對手 害怕"}]}, {"chain": "fail", "acts": [{"op": "status", "p": {"chance": 100, "side": "opp", "status": "詛咒"}, "label": "對手 詛咒"}]}], "parsed": true}}, "node": "on_skill_use", "source": "skill", "order": 3, "customText": "🎯 消除對手能力提升狀態，消除成功則令對手害怕，未觸發則100%令對手詛咒", "role": "attached"}, {"codeId": "effect_sequence", "params": {"clause": {"raw": "🎯 2回合內令對手使用的屬性技能無效", "marker": "🎯", "trig": "use", "body": [{"acts": [{"op": "invalid_turns", "p": {"turns": 2, "kind": "屬性"}, "label": "2回合 對手屬性技能無效"}]}], "parsed": true}}, "node": "on_skill_use", "source": "skill", "order": 4, "customText": "🎯 2回合內令對手使用的屬性技能無效", "role": "attached"}, {"codeId": "effect_sequence", "params": {"clause": {"raw": "🎯 恢復自身最大體力1/1並附加對手等量百分比傷害", "marker": "🎯", "trig": "use", "body": [{"acts": [{"op": "heal", "p": {"side": "self", "ratio": 1}, "label": "恢復自身最大體力 100%"}, {"op": "dmg_equal", "p": {"type": "百分比"}, "label": "【百分比傷害】等量"}]}], "parsed": true}}, "node": "on_skill_use", "source": "skill", "order": 5, "customText": "🎯 恢復自身最大體力1/1並附加對手等量百分比傷害", "role": "attached"}]},
   // 5011 星光·麗莎布布：附加傷害取主傷害結算後的已損失體力（使用者已確認）。
   {elfIds:['5011'],name:'星光·飛葉風暴',description:'■ 必中\n🎯 解除自身能力下降狀態，解除成功則恢復自身所有體力\n🎯 1回合內受到物理攻擊和特殊攻擊傷害減少50%\n🎯 附加對手已損失體力35%的百分比傷害',kit:[
     property('■ 必中','sure_hit',true,0),
@@ -196,6 +370,9 @@ export const MIGRATED_SEQUENCE_SKILL_KITS: ReviewedSequenceSkill[] = [
   // 5026 無序.墜星 的 21 份石之力-S（各自一筆，見 migratedSkillStoneKits.ts）
   ...MIGRATED_SKILL_STONE_KITS,
   ...MIGRATED_RECURRING_SKILL_KITS,
+  ...MIGRATED_FINAL_A_KITS,
   ...MIGRATED_MONKEY_BAPHOMET_SKILL_KITS,
   ...REMAINING_SIMPLE_SKILL_KITS,
+  // legacy_handler 過渡包裝（技能／魂印／特質混合；pack 依 kind 區分）。
+  ...MIGRATED_LEGACY_WRAPPED_KITS,
 ];

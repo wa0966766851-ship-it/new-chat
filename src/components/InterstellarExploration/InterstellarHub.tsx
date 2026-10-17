@@ -9,13 +9,19 @@ import { ACTS, START_PACTS } from "../../modes/interstellar/v2/content";
 import { RELICS } from "../../modes/interstellar/v2/relics";
 import { EVENTS } from "../../modes/interstellar/v2/content";
 import { Ornament, NpcArt } from "./eclipse/parts";
+import SuitSelect from "./eclipse/SuitSelect";
+import { SeedField, LevelPicker, BanPicker } from "./eclipse/SetupPanels";
+import { newSeed } from "../../modes/interstellar/v2/rng";
+import { encodeRunCode, parseSeedInput } from "../../modes/interstellar/v2/seed";
+import { clampN, nEffects } from "../../modes/interstellar/v2/levels";
+import { perkOf } from "../../modes/interstellar/v2/suitPerks";
 
 interface InterstellarHubProps {
   allElves: Elf[];
   onBack: () => void;
   onStartBattle: (p1: Elf[], p2: Elf[], mode: any, options?: any) => void;
 }
-type Menu = "title" | "setup" | "in_run" | "codex";
+type Menu = "title" | "gear" | "setup" | "in_run" | "codex";
 interface Meta { exp: number; level: number; bestAct: number; wins: number; runs: number }
 
 function readMeta(): Meta {
@@ -39,6 +45,33 @@ export default function InterstellarHub({ allElves, onBack, onStartBattle }: Int
   const [equipId, setEquipId] = React.useState<string>(() => Object.keys(SUIT_CATALOG)[0] ?? "");
   const [pacts, setPacts] = React.useState<string[]>([]);
   const [confirmAbandon, setConfirmAbandon] = React.useState(false);
+  const [nLevel, setNLevel] = React.useState(0);
+  const [bans, setBans] = React.useState<string[]>([]);
+  const [seedText, setSeedText] = React.useState(() => String(newSeed()));
+  const [copied, setCopied] = React.useState(false);
+  const pool = React.useMemo(() => E.bannablePool(allElves), [allElves]);
+  const poolSig = React.useMemo(() => E.poolSigOf(allElves), [allElves]);
+  const parsed = React.useMemo(() => parseSeedInput(seedText), [seedText]);
+  const seed = parsed ? (parsed.kind === "code" ? parsed.setup.seed : parsed.seed) : 0;
+  const seedNote = parsed?.kind === "code" && parsed.setup.poolSig && parsed.setup.poolSig !== poolSig ? "精靈池與局碼產生時不同，地圖相同但敵人與獎勵可能不同"
+    : seedText.trim() && !parsed ? "局碼格式不正確" : undefined;
+  const lv = nEffects(nLevel);
+  const perkNow = lv.perksOff ? null : perkOf(equipType, equipId);
+  const cap = E.banCapFor(nLevel, perkNow);
+  const setLevel = (n: number) => { const v = clampN(n); setNLevel(v); setBans(b => b.slice(0, E.banCapFor(v, nEffects(v).perksOff ? null : perkOf(equipType, equipId)))); };
+  const setup = { seed, nLevel, equipType, equipId, modifiers: pacts, bans, poolSig };
+  /** 輸入的是完整局碼 → 把其中的裝束、契約、等級與禁用一起帶入 */
+  const onSeedText = (v: string) => {
+    setSeedText(v); setCopied(false);
+    const p = parseSeedInput(v);
+    if (p?.kind === "code") {
+      setNLevel(p.setup.nLevel); setBans(p.setup.bans); setPacts(p.setup.modifiers); setEquipType(p.setup.equipType); setEquipId(p.setup.equipId);
+    }
+  };
+  const copyCode = async () => {
+    const code = encodeRunCode(setup);
+    try { await navigator.clipboard.writeText(code); setCopied(true); } catch { setSeedText(code); }
+  };
   const startingShards = 3 + (meta.bestAct >= 3 ? 1 : 0) + (meta.wins > 0 ? 1 : 0);
 
   React.useEffect(() => { localStorage.setItem(E.META_KEY, JSON.stringify(meta)); }, [meta]);
@@ -56,14 +89,10 @@ export default function InterstellarHub({ allElves, onBack, onStartBattle }: Int
   if (menu === "in_run") {
     return (
       <InterstellarRun allElves={allElves} startingDiamonds={startingShards} initialEquipType={equipType} initialEquipId={equipId}
-        selectedModifiers={pacts} onEndRun={endRun} onStartBattle={onStartBattle}
+        selectedModifiers={pacts} seed={seed} nLevel={nLevel} bans={bans} onEndRun={endRun} onStartBattle={onStartBattle}
         onLeave={() => { setActive(E.loadRunV2(localStorage)); setMenu("title"); }} />
     );
   }
-
-  const equipList = equipType === "suit"
-    ? Object.values(SUIT_CATALOG).map(s => ({ id: s.id, name: s.name, desc: s.description }))
-    : Object.values(TITLE_CATALOG).map(t => ({ id: t.id, name: t.name, desc: t.description }));
 
   return (
     <div className="ecl-root w-full h-full min-h-[100vh] overflow-y-auto" style={{ ["--ecl-hue" as any]: "#fbbf24" }}>
@@ -72,8 +101,8 @@ export default function InterstellarHub({ allElves, onBack, onStartBattle }: Int
       <div className="ecl-grain" />
       <img src="/eclipse/bg_throne.webp" alt="" aria-hidden className="absolute inset-0 w-full h-full object-cover opacity-40 -z-[1] pointer-events-none" />
 
-      <div className="relative z-10 max-w-6xl mx-auto px-6 md:pr-56 py-8">
-        <button className="ecl-btn ecl-btn-ghost text-xs px-4 py-2" onClick={() => menu === "title" ? onBack() : setMenu("title")}>{menu === "title" ? "返回首頁" : "返回"}</button>
+      <div className={`relative z-10 mx-auto px-6 pt-16 md:pt-8 pb-24 md:pb-10 ${menu === "gear" ? "max-w-[1680px] md:pr-24" : "max-w-6xl md:pr-56"}`}>
+        <button className="ecl-btn ecl-btn-ghost text-xs px-4 py-2" onClick={() => menu === "title" ? onBack() : menu === "setup" ? setMenu("gear") : setMenu("title")}>{menu === "title" ? "返回首頁" : "返回"}</button>
 
         <AnimatePresence mode="wait">
           {menu === "title" && (
@@ -89,10 +118,10 @@ export default function InterstellarHub({ allElves, onBack, onStartBattle }: Int
                 <div className="flex flex-wrap gap-4 mt-8">
                   {active ? (
                     <>
-                      <button className="ecl-btn" onClick={() => setMenu("in_run")}>繼續旅程・第 {active.act} 章</button>
+                      <button className="ecl-btn" onClick={() => setMenu("in_run")} title={active.scene.kind === "end" ? "這局已經結算，進入後可收起存檔" : undefined}>{active.scene.kind === "end" ? (active.scene.result === "wiped" ? "敗北結算" : "旅程結算") : "繼續旅程"}・第 {active.act} 章</button>
                       <button className="ecl-btn ecl-btn-blood" onClick={() => setConfirmAbandon(true)}>熄滅燈火</button>
                     </>
-                  ) : <button className="ecl-btn" onClick={() => setMenu("setup")}>啟程</button>}
+                  ) : <button className="ecl-btn" onClick={() => setMenu("gear")}>啟程</button>}
                   <button className="ecl-btn ecl-btn-ghost" onClick={() => setMenu("codex")}>圖錄</button>
                 </div>
                 {confirmAbandon && (
@@ -125,52 +154,44 @@ export default function InterstellarHub({ allElves, onBack, onStartBattle }: Int
             </motion.section>
           )}
 
+          {menu === "gear" && (
+            <motion.section key="gear" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="mt-6">
+              <SuitSelect equipType={equipType} equipId={equipId} perksOff={lv.perksOff} onChange={(t, id) => { setEquipType(t); setEquipId(id); setBans(b => b.slice(0, E.banCapFor(nLevel, lv.perksOff || t !== "suit" ? null : perkOf(t, id)))); }} onNext={() => setMenu("setup")} />
+            </motion.section>
+          )}
+
           {menu === "setup" && (
-            <motion.section key="setup" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="mt-8">
+            <motion.section key="setup" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="mt-8 max-w-3xl">
               <h2 className="ecl-title text-4xl ecl-gilt">啟程之前</h2>
               <Ornament className="my-4" />
-              <div className="grid lg:grid-cols-2 gap-8">
-                <div className="ecl-frame p-6">
+              <div className="space-y-6">
+                <div className="ecl-frame p-6 space-y-5">
+                  <SeedField value={seedText} onChange={onSeedText} onRandom={() => { setSeedText(String(newSeed())); setCopied(false); }} onCopy={copyCode} note={seedNote} copied={copied} />
+                  <LevelPicker value={nLevel} onChange={setLevel} />
+                  <BanPicker bans={bans} pool={pool} cap={cap} onChange={setBans} />
+                </div>
+                <div className="ecl-frame ecl-frame-blood p-6">
                   <div className="flex items-center justify-between mb-3">
-                    <h3 className="font-black tracking-widest">隨身裝束</h3>
-                    <div className="flex gap-1 text-xs">
-                      {(["suit", "title"] as const).map(t => (
-                        <button key={t} className={`px-3 py-1 border ${equipType === t ? "border-[var(--ecl-gold)] ecl-gilt" : "border-transparent ecl-muted"}`}
-                          onClick={() => { setEquipType(t); setEquipId(t === "suit" ? Object.keys(SUIT_CATALOG)[0] : Object.keys(TITLE_CATALOG)[0]); }}>{t === "suit" ? "套裝" : "稱號"}</button>
-                      ))}
-                    </div>
+                    <h3 className="font-black tracking-widest">契約詛咒</h3>
+                    <span className="text-xs ecl-blood">經驗 ×{(1 + pacts.length * .1).toFixed(1)}</span>
                   </div>
-                  <div className="space-y-1.5 max-h-[22rem] overflow-y-auto pr-2">
-                    {equipList.map(eq => (
-                      <button key={eq.id} onClick={() => setEquipId(eq.id)} className={`w-full text-left px-3 py-2 border transition-colors ${equipId === eq.id ? "border-[var(--ecl-gold)] bg-[rgba(217,180,90,.08)]" : "border-[rgba(217,180,90,.15)] hover:border-[rgba(217,180,90,.4)]"}`}>
-                        <div className={`font-black text-sm ${equipId === eq.id ? "ecl-gilt" : ""}`}>{eq.name}</div>
-                        <div className="text-[11px] ecl-muted leading-relaxed line-clamp-2">{eq.desc}</div>
-                      </button>
-                    ))}
+                  <div className="space-y-1.5">
+                    {START_PACTS.map(p => { const on = pacts.includes(p.id); return (
+                      <button key={p.id} onClick={() => setPacts(v => on ? v.filter(x => x !== p.id) : [...v, p.id])}
+                        className={`w-full flex items-center justify-between px-3 py-2 border ${on ? "border-[var(--ecl-blood-hi)] bg-[rgba(155,28,49,.15)]" : "border-[rgba(224,71,95,.2)] hover:border-[rgba(224,71,95,.45)]"}`}>
+                        <span><span className={`font-black text-sm ${on ? "ecl-blood" : ""}`}>{p.name}</span><span className="text-xs ecl-muted ml-2">{p.desc}</span></span>
+                        <span className={on ? "ecl-blood" : "ecl-muted"}>{on ? "✦" : "◇"}</span>
+                      </button>); })}
                   </div>
                 </div>
-                <div className="space-y-6">
-                  <div className="ecl-frame ecl-frame-blood p-6">
-                    <div className="flex items-center justify-between mb-3">
-                      <h3 className="font-black tracking-widest">契約詛咒</h3>
-                      <span className="text-xs ecl-blood">經驗 ×{(1 + pacts.length * .1).toFixed(1)}</span>
-                    </div>
-                    <div className="space-y-1.5">
-                      {START_PACTS.map(p => { const on = pacts.includes(p.id); return (
-                        <button key={p.id} onClick={() => setPacts(v => on ? v.filter(x => x !== p.id) : [...v, p.id])}
-                          className={`w-full flex items-center justify-between px-3 py-2 border ${on ? "border-[var(--ecl-blood-hi)] bg-[rgba(155,28,49,.15)]" : "border-[rgba(224,71,95,.2)] hover:border-[rgba(224,71,95,.45)]"}`}>
-                          <span><span className={`font-black text-sm ${on ? "ecl-blood" : ""}`}>{p.name}</span><span className="text-xs ecl-muted ml-2">{p.desc}</span></span>
-                          <span className={on ? "ecl-blood" : "ecl-muted"}>{on ? "✦" : "◇"}</span>
-                        </button>); })}
-                    </div>
-                  </div>
-                  <div className="ecl-frame p-6 text-sm leading-7">
-                    <div>初始：賽爾豆 <b className="ecl-gilt">120</b>・星晶 <b className="ecl-gilt">{startingShards}</b>・藥劑 <b className="ecl-gilt">{Math.max(0, 3 - (pacts.includes("no_potions") ? 2 : 0))}</b></div>
-                    <div className="ecl-muted text-xs">最深抵達第 3 章後星晶 +1；曾迎接黎明再 +1。</div>
-                  </div>
-                  <div className="flex justify-end">
-                    <button className="ecl-btn text-lg px-10" onClick={() => { localStorage.removeItem(E.RUN_KEY_V2); setMenu("in_run"); }}>點燃第一盞燈</button>
-                  </div>
+                <div className="ecl-frame p-6 text-sm leading-7" title="最深抵達第 3 章後星晶 +1；曾迎接黎明再 +1；N 等級另計。招募令只來自套裝特權">
+                  {(() => { const perk = lv.perksOff ? null : perkOf(equipType, equipId); return (
+                    <div>初始：賽爾豆 <b className="ecl-gilt">{Math.max(0, 120 + lv.startBeans + (perk?.beans ?? 0))}</b>・星晶 <b className="ecl-gilt">{Math.max(0, startingShards + lv.startShards)}</b>・招募令 <b className="ecl-gilt">{(perk?.anyTokens ?? 0) + (perk?.typeToken ? 1 : 0) + (perk?.dualToken ? 1 : 0) + (perk?.repeatTokens ?? 0)}</b>・藥劑 <b className="ecl-gilt">{Math.max(0, 3 - (pacts.includes("no_potions") ? 2 : 0) + lv.startPotions + (perk?.potions ?? 0))}</b></div>
+                  ); })()}
+                </div>
+                <div className="flex justify-between items-center">
+                  <button className="ecl-btn ecl-btn-ghost" onClick={() => setMenu("gear")}>上一步</button>
+                  <button className="ecl-btn text-lg px-10" disabled={!parsed} title={E.FAIL_RULE} onClick={() => { localStorage.removeItem(E.RUN_KEY_V2); setMenu("in_run"); }}>點燃第一盞燈</button>
                 </div>
               </div>
             </motion.section>

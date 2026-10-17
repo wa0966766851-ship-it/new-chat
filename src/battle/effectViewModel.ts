@@ -2,6 +2,7 @@ import type { Mark } from "./marks";
 import type { Timer, TimerKind } from "./timers";
 import { payloadPresentation } from './effectPresentation';
 import { effectIcon } from './effectIcons';
+import {statusCountAppearance, type StatusCountTone} from './statusImmunityCount';
 
 export type EffectViewCategory = "mark" | "turn" | "round" | "count" | "mechanism" | "protection";
 export type EffectMetricUnit = "層" | "道" | "點" | "篇" | "枚" | "株" | "回合" | "次";
@@ -23,6 +24,7 @@ export interface BattleEffectViewModel {
   priority: number;
   semanticId: string;
   icon: string;
+  tone?: StatusCountTone;
 }
 
 const TIMER_CATEGORY: Record<TimerKind, EffectViewCategory> = {
@@ -74,21 +76,23 @@ export function buildEffectViewModels(marks: Mark[] = [], timers: Timer[] = [], 
     }));
 
   const timerViews: BattleEffectViewModel[] = timers
-    .filter(timer => timer.remaining > 0 && (!timer.ownerBattleId || !activeBattleId || timer.ownerBattleId === activeBattleId))
+    .filter(timer => timer.remaining > 0 && (timer.scope === 'team' || !timer.ownerBattleId || !activeBattleId || timer.ownerBattleId === activeBattleId))
     .map(timer => {
       const category = TIMER_CATEGORY[timer.kind];
+      const count = timer.payload?.statusImmunityCount ? statusCountAppearance(timer.scope === 'team', timer.persistsOffField !== false, !!timer.payload.statusImmunityCount.reflect) : undefined;
       const presentation = timer.presentation || payloadPresentation(timer.payload);
       const polarity = timer.polarity || timer.payload?.polarity || timer.presentation?.polarity ? timerPolarity(timer) : presentation?.polarity || 'positive';
-      const label = presentation?.label || timer.name || (category === "count" ? "次數類效果" : "計時效果");
+      const label = count?.label || presentation?.label || timer.name || (category === "count" ? "次數類效果" : "計時效果");
       return {
         id: `timer:${timer.id}`,
         category,
         label,
         shortLabel: timer.displayChar || label.slice(0, 1),
-        description: presentation?.description || timer.description || timer.name || "啟用中的效果",
+        description: count?.description || presentation?.description || timer.description || timer.name || "啟用中的效果",
         source: presentation?.sourceName || timer.payload?.block?.src || ({ skill: '技能', soulmark: '魂印', trait: '特質', system: '系統' } as Record<string, string>)[timer.source] || timer.source,
         semanticId: presentation?.semanticId || `timer:${timer.id}`,
-        icon: effectIcon(presentation?.iconTag),
+        icon: effectIcon(count ? '免疫異常' : presentation?.iconTag),
+        ...(count ? {tone: count.tone} : {}),
         value: timer.remaining,
         maxValue: timer.payload?.maxLayers,
         unit: category === "count" ? "次" : "回合",

@@ -1,6 +1,15 @@
 import assert from 'node:assert/strict';
 import { gzipSync } from 'node:zlib';
 import { assertPackedDescriptions } from '../scripts/lib/packedDescriptions';
+import hamoSource from '../src/data/hamoSource.json';
+import {HAMO_SOURCE,HAMO_SKILLS_DATA,HAMO_SEED} from '../src/data/hamo';
+
+assert.equal(HAMO_SOURCE,hamoSource.soul,'哈莫魂印原文逐字保留，包括CRLF與版式');
+assert.deepEqual(HAMO_SKILLS_DATA,hamoSource.skills,'哈莫全部技能描述、數值、必中、先制與順序完整還原');
+assert.equal(HAMO_SEED.soulMark?.description,hamoSource.soul);
+assert.deepEqual(HAMO_SEED.skills,hamoSource.skills);
+assert.deepEqual(HAMO_SEED.skillPool,hamoSource.skills);
+assert.notEqual(HAMO_SEED.skills[0],HAMO_SEED.skillPool?.[0],'預備技能仍維持原本逐筆複製');
 
 const source = { elfSourceText: { soul: '吸取20%體力；汲取70點體力', skills: ['原技能', '轉化技能'] },
   skillReferences: { power: 120, enabled: true, optional: null }, newElves: Array.from({ length: 100 }, (_, n) => ({ n, text: '完整描述保留' })) };

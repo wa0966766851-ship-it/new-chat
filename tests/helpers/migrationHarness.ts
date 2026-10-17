@@ -32,7 +32,7 @@ export async function createHarness() {
    * 跑一個回合。selfSide 的 self 出 selfSkill，對手出 oppSkill。self 速度 200 先手、對手 100。
    * setup 可在開戰前改兩隻精靈；回傳回合後狀態與日誌。
    */
-  async function play(selfSide: 'p1' | 'p2', mk: { self: any; opp: any; selfBench?: any[]; oppBench?: any[]; turns?: (engine: any, turn: number) => [number | { switch: number }, number | { switch: number }] | null }, turns = 1) {
+  async function play(selfSide: 'p1' | 'p2', mk: { self: any; opp: any; selfBench?: any[]; oppBench?: any[]; turns?: (engine: any, turn: number) => [number | { switch: number }, number | { switch: number }] | Promise<[number | { switch: number }, number | { switch: number }]> | null }, turns = 1) {
     (globalThis as any).__BATTLE_SEED__ = 11;
     const other = selfSide === 'p1' ? 'p2' : 'p1';
     const p1 = selfSide === 'p1' ? mk.self : mk.opp, p2 = selfSide === 'p2' ? mk.self : mk.opp;
@@ -41,7 +41,7 @@ export async function createHarness() {
     const history: any[] = [];
     for (let t = 1; t <= turns; t++) {
       await engine.idle();
-      const pick = mk.turns?.(engine, t) ?? [0, 0];
+      const pick = await mk.turns?.(engine, t) ?? [0, 0];
       const st = engine.getState();
       const idx: Record<string, number | { switch: number }> = { [selfSide]: pick![0], [other]: pick![1] };
       for (const side of ['p1', 'p2'] as const) {

@@ -1,5 +1,7 @@
 import { BattleEventContext, BattleSkillHandler, EffectTiming, ElfDeconstructedProfile } from '../../types';
 import { Elf } from '../../../types';
+import type {InstantKillRequest} from '../../../battle/instantKill';
+import {checkElfDead} from '../../../battle/elfAlive';
 
 export const handleAnnihilationLordSoulMark = (ctx: BattleEventContext, event: EffectTiming | string, extraData?: any) => {
   const { self, actor, setPlayerState, getPlayerState, setOpponentState, addLog, applyHeal, applyTrueDamage, applyStatChange } = ctx;
@@ -10,6 +12,21 @@ export const handleAnnihilationLordSoulMark = (ctx: BattleEventContext, event: E
   const selfMarks = ctx.getMarks(actor) || [];
 
   switch (event) {
+    case EffectTiming.BEFORE_INSTANT_KILL: {
+      const request=extraData as InstantKillRequest;
+      if(!request?.targets||checkElfDead(self)||self.isVanished||self.isExtra)return;
+      if(request.targetSide===actor&&request.sourceSide!==actor){
+        request.blocked=true;
+        const grudge=selfMarks.find(m=>m.id==='demon_grudge'),count=grudge?.count||0;
+        ctx.setMark({...grudge,id:'demon_grudge',name:'魔王咒怨',count:count+1,displayChar:'魔',description:grudge?.description||'令對方秒殺失效，凝聚魔王咒怨'},actor);
+        addLog(`👿 【魔】：令對方秒殺失效，獲得1層魔王咒怨！`,'effect');
+      }else if(request.sourceSide===actor&&request.sourceBattleId===(self.battleId||self.id)&&selfMarks.some(m=>m.id==='demon_grudge'&&m.count>0)){
+        const original=request.targets.find(t=>t.id===request.targetBattleId&&t.side===request.targetSide);
+        if(original)for(const e of ctx.getFullTeam(request.targetSide)||[])if(!e.isExtra&&!e.isVanished&&!checkElfDead(e)&&e.currentHp===original.hpSnapshot)
+          request.targets.push({side:request.targetSide,id:e.battleId||e.id,hpSnapshot:e.currentHp});
+      }
+      return;
+    }
     case EffectTiming.ROUND_START: {
       // 1. 戰鬥開始時：獲得魔王咒怨（魔王咒怨初始 1 層，敵我背包每有 1 隻瞬殺額外獲得 1 層）
       const curseCalculated = getPlayerState("curseCalculated");

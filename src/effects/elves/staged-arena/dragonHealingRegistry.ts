@@ -38,12 +38,6 @@ export function handleDragonHealingSoulMark(c: ArenaContext, event: EffectTiming
     const count = awakeCount(read(c, 'dragons'));
     if (!d.isIncoming && d.damageCategory === 'skill_attack' && count) d.increasePercent += count * .5; // 每喚醒1龍攻擊傷害提升50%
     if (!d.isIncoming && d.damageCategory === 'skill_attack') {
-      // 剛莖棍壓：無視攻擊免疫成功時+100%；對手每有1個技能PP為0則+20%
-      if (c.skill?.name === '剛莖棍壓') {
-        if (c.getPlayerState('attackImmunityIgnoredThisAction')) d.increasePercent += 1;
-        const zero = (c.target.skills || []).filter((s: any) => (Number(s?.pp) || 0) <= 0).length;
-        if (zero) d.increasePercent += .2 * zero;
-      }
       // 但願不會是個怪物：每有1項異常未觸發，本技能傷害提升100%
       if (c.skill?.name === '但願不會是個怪物') {
         const missed = Number(c.getPlayerState('monsterStatusMissedThisAction')) || 0;
@@ -210,11 +204,7 @@ export function dragonTypeDamage(c: ArenaContext): number {
 }
 
 export const DRAGON_HEALING_SKILLS: Record<string, BattleSkillHandler> = {
-  '剛莖棍壓': c => {
-    // Own max HP is the value base. Category and immunity are percentage damage.
-    const value = Math.floor(c.self.maxHp * .2);
-    if (!percent(c, value, '剛莖棍壓') && c.target.currentHp > 0) c.applyTrueDamage(c.targetSide, value, '剛莖棍壓');
-  },
+  // '剛莖棍壓' 已遷移至 src/data/migratedArena16SkillKits.ts（真 Kit；DSH 20261017）。
   '挨打要立正': c => {
     write(c, 'dragonSoulSource', 1); modify(c, c.actor, 1);
     until(c, 'drain', 3); until(c, 'priority', 2);

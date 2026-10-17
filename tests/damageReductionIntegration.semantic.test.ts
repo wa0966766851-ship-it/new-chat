@@ -34,7 +34,7 @@ try {
     if (mode === 'dixin_ignore') {
       self.name = '天陣驗收者'; self.skills = [{ ...attack, name: '帝怒傾天', category: '物理' }];
       souls[self.name] = (c: any, ev: string, data: any) => {
-        if (ev === 'ON_ENTRANCE') c.setPlayerState('dixinBahuangStacks', 3);
+        if (ev === 'ON_ENTRANCE') c.setMark({id:'bahuang_mark',name:'八荒',count:3,ownerBattleId:c.self.battleId||c.self.id},c.actor);
         return handleDixinSoulMark(c, ev, data);
       };
     } else self.skills = [{ ...attack }];

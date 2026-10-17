@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo } from "react";
 import { ElfAvatar, TypeIcon, SkillTypeIcon } from "./SeerImages";
 import { skillDisplayType } from '../utils/skillPresentation';
 import { Elf, BattleMode } from "../types";
+import { bindInitialCounterparts } from "../battle/illusionPresentation";
 import { DestinyElfInstance, buildDestinyPool, pullFromDestinyPool, simulateAiBan, simulateAiPick } from "../utils/destinyGacha";
 import { motion, AnimatePresence } from "motion/react";
 import DestinyIntroRuleTable from "./DestinyIntroRuleTable";
@@ -245,16 +246,24 @@ export default function DestinyWheelScreen({
       };
     });
 
+    // 初始背包：出戰＝所選 6 隻；待命＝池中未選且未被禁用者（依池內原順序壓緊），供「指定背包內精靈」類幻化使用。
+    const toBag = (picked: Elf[], pool: typeof p1Pool, pickedIds: string[]): Elf[] => {
+      const standby = pool.filter(e => !pickedIds.includes(e.instanceId) && !e.isBanned)
+        .map(found => ({ ...found, battleId: found.instanceId, currentHp: found.maxHp, statStages: { atk: 0, def: 0, spatk: 0, spdef: 0, speed: 0, accuracy: 0 } }) as Elf);
+      return bindInitialCounterparts([...picked, ...standby], picked.length).slice(0, picked.length);
+    };
+    const p1Bag = toBag(p1TeamFinal, p1Pool, p1PickedIds), p2Bag = toBag(p2TeamFinal, p2Pool, p2PickedIds);
+
     // 找出首發 ID 在 Team 中的實際精靈 ID
     const starter1Elf = p1Pool.find(e => e.instanceId === p1StarterId);
     const starter2Elf = p2Pool.find(e => e.instanceId === p2StarterId);
 
     onStartBattle(
       battleMode,
-      p1TeamFinal,
-      p2TeamFinal,
-      starter1Elf ? starter1Elf.instanceId : p1TeamFinal[0].battleId!,
-      starter2Elf ? starter2Elf.instanceId : p2TeamFinal[0].battleId!,
+      p1Bag,
+      p2Bag,
+      starter1Elf ? starter1Elf.instanceId : p1Bag[0].battleId!,
+      starter2Elf ? starter2Elf.instanceId : p2Bag[0].battleId!,
       p1Suit,
       p1Eyewear,
       p2Suit,

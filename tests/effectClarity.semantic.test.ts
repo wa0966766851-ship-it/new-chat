@@ -76,7 +76,7 @@ check('所有43隻精靈（含 API 匯入的 4937）均能取得魂印／攜帶�
   for (const elf of DEFAULT_ELVES) {
     const soul = describeExecution({ elf }, handlers);
     // API 匯入的精靈只有 Kit（沒有 handler），其餘依 SOUL_MODE
-    assert.equal(soul.route, elf.soulMark?.effectMode === 'kit' ? 'kit' : SOUL_MODE[String(elf.id)] === 'blocks' ? 'blocks' : 'handler');
+    assert.equal(soul.route, soul.legacyWrapped || elf.soulMark?.effectMode === 'kit' ? 'kit' : SOUL_MODE[String(elf.id)] === 'blocks' ? 'blocks' : 'handler');
     for (const sk of [...elf.skills, ...(elf.skillPool || [])]) {
       const rows = auditProgram(describeExecution({ skill: sk }, handlers).program);
       assert.ok(rows.every(c => c.semanticVerification === 'pending'));

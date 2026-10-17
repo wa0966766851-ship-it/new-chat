@@ -26,7 +26,7 @@ export const handleBaphometSoulMark = (ctx: BattleEventContext, event: EffectTim
       const oppConfused = isStatusActive(ctx.target, "confused") || getOpponentState("suffocating");
       if ((selfConfused || oppConfused) && extraData?.isIncoming && !bypassesAttackDefense(extraData, 'block')) {
         addLog(`🔔 【亂】：冥界共鳴觸發！抵擋了攻擊傷害！`, "effect");
-        if (extraData) extraData.multiplier = 0;
+        if (extraData) {extraData.incomingDamageCancellation='block';extraData.multiplier = 0;}
       }
       break;
   }

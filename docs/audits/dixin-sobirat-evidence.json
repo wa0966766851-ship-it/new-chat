@@ -1,0 +1,595 @@
+{
+  "schemaVersion": 1,
+  "note": "交接草稿，尚未登錄正式證據。保留原作者19筆內容供逐筆審查；dixin-soul-9formation與sobirat-soul-defeat無法對應原句，其餘也未完成獨立語意審查。以下lastPassed為原作者陳述，不能當作本輪驗收或全句正確證明。不得自動刷新指紋後重新登錄。",
+  "evidence": [
+    {
+      "id": "lutai-fullstack",
+      "elfId": "5017",
+      "entry": "鹿台悲歌",
+      "fragment": "全屬性+1，若當前八荒大於3層則效果翻倍",
+      "testFile": "tests/migrate_dixinSkills.semantic.test.ts",
+      "anchor": "鹿台悲歌：狂暴3回合＋八荒+2＋先制+2計時器＋吸取139×層",
+      "lastPassed": "2026-10-15：本session該精靈全套引擎驗收通過；證據由測試實跑對應，仍屬部分情境證據",
+      "testSha256": "d9f9f7baec1f5926e2366283ef2b8d79f10be29c8229549253160a1d7f5c1713",
+      "inputs": [
+        {
+          "path": "src/data/migratedDixinSkillKits.ts",
+          "sha256": "9cf64b04be06a939d4d5196257b30b1c2fd7f77a17971203ced28c8938c645ef"
+        },
+        {
+          "path": "src/data/migratedDixinSoulKit.ts",
+          "sha256": "4e3f32e212e4a115c0f8cf423c18f7b07197017e075851c7a702c01010b6b8dc"
+        },
+        {
+          "path": "src/blocks/runtime.ts",
+          "sha256": "24e54cdd7cf996fb9d61bdfb13ac8f5a2d5e42fbf11896d04123a7c011363282"
+        },
+        {
+          "path": "src/effects/sequenceContract.ts",
+          "sha256": "67e34406a27137972d1ec4117aeb1dc4d25d6d26c8ffee90443a670ed5e7c20d"
+        }
+      ],
+      "scenario": "P1 帝辛真實種子單回合實戰",
+      "expected": "狂暴3回合、八荒淨+1（+2後魂印-1）、priorityBoostTurns=2/Value=2 registry 鍵",
+      "remaining": "封附加、神游交叉、八荒0層與9層邊界"
+    },
+    {
+      "id": "dinu-surehit",
+      "elfId": "5017",
+      "entry": "帝怒傾天",
+      "fragment": "■ 必中",
+      "testFile": "tests/migrate_dixinSkills.semantic.test.ts",
+      "anchor": "帝怒傾天：八荒≥3 無視減傷＋對手每提升1級威力+30",
+      "lastPassed": "2026-10-15：本session該精靈全套引擎驗收通過；證據由測試實跑對應，仍屬部分情境證據",
+      "testSha256": "d9f9f7baec1f5926e2366283ef2b8d79f10be29c8229549253160a1d7f5c1713",
+      "inputs": [
+        {
+          "path": "src/data/migratedDixinSkillKits.ts",
+          "sha256": "9cf64b04be06a939d4d5196257b30b1c2fd7f77a17971203ced28c8938c645ef"
+        },
+        {
+          "path": "src/data/migratedDixinSoulKit.ts",
+          "sha256": "4e3f32e212e4a115c0f8cf423c18f7b07197017e075851c7a702c01010b6b8dc"
+        },
+        {
+          "path": "src/blocks/runtime.ts",
+          "sha256": "24e54cdd7cf996fb9d61bdfb13ac8f5a2d5e42fbf11896d04123a7c011363282"
+        },
+        {
+          "path": "src/effects/sequenceContract.ts",
+          "sha256": "67e34406a27137972d1ec4117aeb1dc4d25d6d26c8ffee90443a670ed5e7c20d"
+        }
+      ],
+      "scenario": "P1 帝辛實戰一回合",
+      "expected": "必中命中、技能正常結算",
+      "remaining": "條件先制（自降/對升）邊界、無視減傷的具體乘區驗證"
+    },
+    {
+      "id": "xuanniao-clear",
+      "elfId": "5017",
+      "entry": "玄鳥天命",
+      "fragment": "消除對手回合類效果",
+      "testFile": "tests/migrate_dixinSkills.semantic.test.ts",
+      "anchor": "玄鳥天命：八荒層數先制＋消除回合類成功→疲憊",
+      "lastPassed": "2026-10-15：本session該精靈全套引擎驗收通過；證據由測試實跑對應，仍屬部分情境證據",
+      "testSha256": "d9f9f7baec1f5926e2366283ef2b8d79f10be29c8229549253160a1d7f5c1713",
+      "inputs": [
+        {
+          "path": "src/data/migratedDixinSkillKits.ts",
+          "sha256": "9cf64b04be06a939d4d5196257b30b1c2fd7f77a17971203ced28c8938c645ef"
+        },
+        {
+          "path": "src/data/migratedDixinSoulKit.ts",
+          "sha256": "4e3f32e212e4a115c0f8cf423c18f7b07197017e075851c7a702c01010b6b8dc"
+        },
+        {
+          "path": "src/blocks/runtime.ts",
+          "sha256": "24e54cdd7cf996fb9d61bdfb13ac8f5a2d5e42fbf11896d04123a7c011363282"
+        },
+        {
+          "path": "src/effects/sequenceContract.ts",
+          "sha256": "67e34406a27137972d1ec4117aeb1dc4d25d6d26c8ffee90443a670ed5e7c20d"
+        }
+      ],
+      "scenario": "P1 帝辛實戰一回合",
+      "expected": "八荒+2、消除→疲憊/害怕鏈",
+      "remaining": "mark_priority 逐層先制的精確值、1回合禁療讀取端"
+    },
+    {
+      "id": "yuyu-watchers",
+      "elfId": "5017",
+      "entry": "人皇御宇",
+      "fragment": "4回合內每回合結束時吸取對手1/3最大體力",
+      "testFile": "tests/migrate_dixinSkills.semantic.test.ts",
+      "anchor": "人皇御宇：臣服3回合或 fallback 星賜＋屬性封印監看",
+      "lastPassed": "2026-10-15：本session該精靈全套引擎驗收通過；證據由測試實跑對應，仍屬部分情境證據",
+      "testSha256": "d9f9f7baec1f5926e2366283ef2b8d79f10be29c8229549253160a1d7f5c1713",
+      "inputs": [
+        {
+          "path": "src/data/migratedDixinSkillKits.ts",
+          "sha256": "9cf64b04be06a939d4d5196257b30b1c2fd7f77a17971203ced28c8938c645ef"
+        },
+        {
+          "path": "src/data/migratedDixinSoulKit.ts",
+          "sha256": "4e3f32e212e4a115c0f8cf423c18f7b07197017e075851c7a702c01010b6b8dc"
+        },
+        {
+          "path": "src/blocks/runtime.ts",
+          "sha256": "24e54cdd7cf996fb9d61bdfb13ac8f5a2d5e42fbf11896d04123a7c011363282"
+        },
+        {
+          "path": "src/effects/sequenceContract.ts",
+          "sha256": "67e34406a27137972d1ec4117aeb1dc4d25d6d26c8ffee90443a670ed5e7c20d"
+        }
+      ],
+      "scenario": "P1 帝辛實戰一回合",
+      "expected": "臣服附加、兩個監看計時器（opp_status封印+round_end吸取）rem=3",
+      "remaining": "封附加時的固有分支、4回合到期遞減"
+    },
+    {
+      "id": "jiuding-nine-lock",
+      "elfId": "5017",
+      "entry": "九鼎震八荒",
+      "fragment": "使用後附加自身9層八荒，且9回合內自身八荒層數不再減少",
+      "testFile": "tests/migrate_jiuding.semantic.test.ts",
+      "anchor": "八荒層數: 9",
+      "lastPassed": "2026-10-15：本session該精靈全套引擎驗收通過；證據由測試實跑對應，仍屬部分情境證據",
+      "testSha256": "3a9cfdec760aa46cc77c3d419cd51f35a485174bc4c010b6bf4be8611058e317",
+      "inputs": [
+        {
+          "path": "src/data/migratedDixinSkillKits.ts",
+          "sha256": "9cf64b04be06a939d4d5196257b30b1c2fd7f77a17971203ced28c8938c645ef"
+        },
+        {
+          "path": "src/data/migratedDixinSoulKit.ts",
+          "sha256": "4e3f32e212e4a115c0f8cf423c18f7b07197017e075851c7a702c01010b6b8dc"
+        },
+        {
+          "path": "src/blocks/runtime.ts",
+          "sha256": "24e54cdd7cf996fb9d61bdfb13ac8f5a2d5e42fbf11896d04123a7c011363282"
+        },
+        {
+          "path": "src/effects/sequenceContract.ts",
+          "sha256": "67e34406a27137972d1ec4117aeb1dc4d25d6d26c8ffee90443a670ed5e7c20d"
+        }
+      ],
+      "scenario": "P1 帝辛九鼎使用回合",
+      "expected": "八荒=9、markLock remaining=8",
+      "remaining": "9鎖與魂印-1的並發順序、切換後鎖殘留"
+    },
+    {
+      "id": "jiuding-once-degrade",
+      "elfId": "5017",
+      "entry": "九鼎震八荒",
+      "fragment": "此技能使用成功後效果每場戰鬥只能生效一次，此後該技能失去必中效果且命中率歸0",
+      "testFile": "tests/migrate_jiuding.semantic.test.ts",
+      "anchor": "第二次使用九鼎應因命中率歸0而未命中",
+      "lastPassed": "2026-10-15：本session該精靈全套引擎驗收通過；證據由測試實跑對應，仍屬部分情境證據",
+      "testSha256": "3a9cfdec760aa46cc77c3d419cd51f35a485174bc4c010b6bf4be8611058e317",
+      "inputs": [
+        {
+          "path": "src/data/migratedDixinSkillKits.ts",
+          "sha256": "9cf64b04be06a939d4d5196257b30b1c2fd7f77a17971203ced28c8938c645ef"
+        },
+        {
+          "path": "src/data/migratedDixinSoulKit.ts",
+          "sha256": "4e3f32e212e4a115c0f8cf423c18f7b07197017e075851c7a702c01010b6b8dc"
+        },
+        {
+          "path": "src/blocks/runtime.ts",
+          "sha256": "24e54cdd7cf996fb9d61bdfb13ac8f5a2d5e42fbf11896d04123a7c011363282"
+        },
+        {
+          "path": "src/effects/sequenceContract.ts",
+          "sha256": "67e34406a27137972d1ec4117aeb1dc4d25d6d26c8ffee90443a670ed5e7c20d"
+        }
+      ],
+      "scenario": "P1 兩回合",
+      "expected": "第二回合 📜 once 旗標→💨 沒有命中→on_invalid 補償鏈",
+      "remaining": "屬性技能的 degrade 場景、神游免疫交叉"
+    },
+    {
+      "id": "jiuding-select-priority",
+      "elfId": "5017",
+      "entry": "九鼎震八荒",
+      "fragment": "但選擇該技能時令對方當回合先制-4",
+      "testFile": "tests/migrate_jiuding.semantic.test.ts",
+      "anchor": "X actionPriorityThisTurn (turn2): -4",
+      "lastPassed": "2026-10-15：本session該精靈全套引擎驗收通過；證據由測試實跑對應，仍屬部分情境證據",
+      "testSha256": "3a9cfdec760aa46cc77c3d419cd51f35a485174bc4c010b6bf4be8611058e317",
+      "inputs": [
+        {
+          "path": "src/data/migratedDixinSkillKits.ts",
+          "sha256": "9cf64b04be06a939d4d5196257b30b1c2fd7f77a17971203ced28c8938c645ef"
+        },
+        {
+          "path": "src/data/migratedDixinSoulKit.ts",
+          "sha256": "4e3f32e212e4a115c0f8cf423c18f7b07197017e075851c7a702c01010b6b8dc"
+        },
+        {
+          "path": "src/blocks/runtime.ts",
+          "sha256": "24e54cdd7cf996fb9d61bdfb13ac8f5a2d5e42fbf11896d04123a7c011363282"
+        },
+        {
+          "path": "src/effects/sequenceContract.ts",
+          "sha256": "67e34406a27137972d1ec4117aeb1dc4d25d6d26c8ffee90443a670ed5e7c20d"
+        }
+      ],
+      "scenario": "P1 degrade 回合",
+      "expected": "X 的 actionPriorityThisTurn=-4",
+      "remaining": "與其他先制修改的疊加順序"
+    },
+    {
+      "id": "jiuding-kill-close",
+      "elfId": "5017",
+      "entry": "九鼎震八荒",
+      "fragment": "若擊敗對手，會立刻關閉誅魔天陣並觸發關閉懲罰效果",
+      "testFile": "tests/migrate_jiuding.semantic.test.ts",
+      "anchor": "擊殺後天陣應立刻關閉",
+      "lastPassed": "2026-10-15：本session該精靈全套引擎驗收通過；證據由測試實跑對應，仍屬部分情境證據",
+      "testSha256": "3a9cfdec760aa46cc77c3d419cd51f35a485174bc4c010b6bf4be8611058e317",
+      "inputs": [
+        {
+          "path": "src/data/migratedDixinSkillKits.ts",
+          "sha256": "9cf64b04be06a939d4d5196257b30b1c2fd7f77a17971203ced28c8938c645ef"
+        },
+        {
+          "path": "src/data/migratedDixinSoulKit.ts",
+          "sha256": "4e3f32e212e4a115c0f8cf423c18f7b07197017e075851c7a702c01010b6b8dc"
+        },
+        {
+          "path": "src/blocks/runtime.ts",
+          "sha256": "24e54cdd7cf996fb9d61bdfb13ac8f5a2d5e42fbf11896d04123a7c011363282"
+        },
+        {
+          "path": "src/effects/sequenceContract.ts",
+          "sha256": "67e34406a27137972d1ec4117aeb1dc4d25d6d26c8ffee90443a670ed5e7c20d"
+        }
+      ],
+      "scenario": "P1 九鼎擊殺低血對手",
+      "expected": "close log、formation gone、體力→1、PP全歸0、鎖切換計時器",
+      "remaining": "天陣自然到期關閉（9回合後）"
+    },
+    {
+      "id": "jiuding-invalid-comp",
+      "elfId": "5017",
+      "entry": "九鼎震八荒",
+      "fragment": "技能無效時，消除對方回合類效果，100%令對方神遊",
+      "testFile": "tests/migrate_jiuding.semantic.test.ts",
+      "anchor": "第二次使用九鼎應因命中率歸0而未命中",
+      "lastPassed": "2026-10-15：本session該精靈全套引擎驗收通過；證據由測試實跑對應，仍屬部分情境證據",
+      "testSha256": "3a9cfdec760aa46cc77c3d419cd51f35a485174bc4c010b6bf4be8611058e317",
+      "inputs": [
+        {
+          "path": "src/data/migratedDixinSkillKits.ts",
+          "sha256": "9cf64b04be06a939d4d5196257b30b1c2fd7f77a17971203ced28c8938c645ef"
+        },
+        {
+          "path": "src/data/migratedDixinSoulKit.ts",
+          "sha256": "4e3f32e212e4a115c0f8cf423c18f7b07197017e075851c7a702c01010b6b8dc"
+        },
+        {
+          "path": "src/blocks/runtime.ts",
+          "sha256": "24e54cdd7cf996fb9d61bdfb13ac8f5a2d5e42fbf11896d04123a7c011363282"
+        },
+        {
+          "path": "src/effects/sequenceContract.ts",
+          "sha256": "67e34406a27137972d1ec4117aeb1dc4d25d6d26c8ffee90443a670ed5e7c20d"
+        }
+      ],
+      "scenario": "P1 Miss 回合",
+      "expected": "Miss→on_invalid→💫 神游附加",
+      "remaining": "神游被免疫時的 fallback"
+    },
+    {
+      "id": "dixin-soul-9formation",
+      "elfId": "5017",
+      "entry": "荒",
+      "fragment": "達到9層時觸發誅魔天陣，持續9回合",
+      "testFile": "tests/migrate_dixinSaveReload.semantic.test.ts",
+      "anchor": "九鼎9層應開啟過誅魔天陣（日誌為證）",
+      "lastPassed": "2026-10-15：本session該精靈全套引擎驗收通過；證據由測試實跑對應，仍屬部分情境證據",
+      "testSha256": "c41995d0090331297f0cef4b902ed85d9f7d8d7b34763e20a0b553be7e3168db",
+      "inputs": [
+        {
+          "path": "src/data/migratedDixinSkillKits.ts",
+          "sha256": "9cf64b04be06a939d4d5196257b30b1c2fd7f77a17971203ced28c8938c645ef"
+        },
+        {
+          "path": "src/data/migratedDixinSoulKit.ts",
+          "sha256": "4e3f32e212e4a115c0f8cf423c18f7b07197017e075851c7a702c01010b6b8dc"
+        },
+        {
+          "path": "src/blocks/runtime.ts",
+          "sha256": "24e54cdd7cf996fb9d61bdfb13ac8f5a2d5e42fbf11896d04123a7c011363282"
+        },
+        {
+          "path": "src/effects/sequenceContract.ts",
+          "sha256": "67e34406a27137972d1ec4117aeb1dc4d25d6d26c8ffee90443a670ed5e7c20d"
+        }
+      ],
+      "scenario": "P1 save/reload 後實戰",
+      "expected": "誅魔天陣開啟日誌+計時器 9",
+      "remaining": "8層翻倍、伏魔計算翻倍（已列升級項）"
+    },
+    {
+      "id": "dixin-soul-roundflow",
+      "elfId": "5017",
+      "entry": "荒",
+      "fragment": "對方當回合若使用技能則失去1層八荒",
+      "testFile": "tests/migrate_dixinSkills.semantic.test.ts",
+      "anchor": "玄鳥天命：八荒層數先制＋消除回合類成功→疲憊",
+      "lastPassed": "2026-10-15：本session該精靈全套引擎驗收通過；證據由測試實跑對應，仍屬部分情境證據",
+      "testSha256": "d9f9f7baec1f5926e2366283ef2b8d79f10be29c8229549253160a1d7f5c1713",
+      "inputs": [
+        {
+          "path": "src/data/migratedDixinSkillKits.ts",
+          "sha256": "9cf64b04be06a939d4d5196257b30b1c2fd7f77a17971203ced28c8938c645ef"
+        },
+        {
+          "path": "src/data/migratedDixinSoulKit.ts",
+          "sha256": "4e3f32e212e4a115c0f8cf423c18f7b07197017e075851c7a702c01010b6b8dc"
+        },
+        {
+          "path": "src/blocks/runtime.ts",
+          "sha256": "24e54cdd7cf996fb9d61bdfb13ac8f5a2d5e42fbf11896d04123a7c011363282"
+        },
+        {
+          "path": "src/effects/sequenceContract.ts",
+          "sha256": "67e34406a27137972d1ec4117aeb1dc4d25d6d26c8ffee90443a670ed5e7c20d"
+        }
+      ],
+      "scenario": "P1 多回合",
+      "expected": "回合結算層數流轉正常",
+      "remaining": "切換+2+墮魔分支的獨立驗收"
+    },
+    {
+      "id": "dixin-canvas-reload",
+      "elfId": "5017",
+      "entry": "九鼎震八荒",
+      "fragment": "攜帶此技能且使用成功後效果存在時若擊敗對手",
+      "testFile": "tests/migrate_dixinSaveReload.semantic.test.ts",
+      "anchor": "畫布保存重載不丟參數",
+      "lastPassed": "2026-10-15：本session該精靈全套引擎驗收通過；證據由測試實跑對應，仍屬部分情境證據",
+      "testSha256": "c41995d0090331297f0cef4b902ed85d9f7d8d7b34763e20a0b553be7e3168db",
+      "inputs": [
+        {
+          "path": "src/data/migratedDixinSkillKits.ts",
+          "sha256": "9cf64b04be06a939d4d5196257b30b1c2fd7f77a17971203ced28c8938c645ef"
+        },
+        {
+          "path": "src/data/migratedDixinSoulKit.ts",
+          "sha256": "4e3f32e212e4a115c0f8cf423c18f7b07197017e075851c7a702c01010b6b8dc"
+        },
+        {
+          "path": "src/blocks/runtime.ts",
+          "sha256": "24e54cdd7cf996fb9d61bdfb13ac8f5a2d5e42fbf11896d04123a7c011363282"
+        },
+        {
+          "path": "src/effects/sequenceContract.ts",
+          "sha256": "67e34406a27137972d1ec4117aeb1dc4d25d6d26c8ffee90443a670ed5e7c20d"
+        }
+      ],
+      "scenario": "五招+魂印 Blockly save→load→parse deepEqual",
+      "expected": "往返結構全等、P1/P2 實戰無待接通",
+      "remaining": "非 Blockly 編輯器人工操作驗收"
+    },
+    {
+      "id": "ansuo-clear-chain",
+      "elfId": "5001",
+      "entry": "黯索魂噬",
+      "fragment": "消除對手回合類效果",
+      "testFile": "tests/migrate_5001.semantic.test.ts",
+      "anchor": "黯索魂噬：兩段消除都成功",
+      "lastPassed": "2026-10-15：本session該精靈全套引擎驗收通過；證據由測試實跑對應，仍屬部分情境證據",
+      "testSha256": "2a7e8aa6ebf6943f4bf15cedcbae2ef2f4c4fd36dff332efd4cc85e25f8a91d0",
+      "inputs": [
+        {
+          "path": "src/data/migratedSobiratCageKit.ts",
+          "sha256": "c3018e3dca1dbf9caa200fa8ee2d2e384b7f3c8df859615ca511145cb1bf6dac"
+        },
+        {
+          "path": "src/data/migratedSobiratSoulKit.ts",
+          "sha256": "8937b6211fba60c6cade03d10ab97762185c86397f68a58849c7bfe8aa08b03b"
+        },
+        {
+          "path": "src/blocks/runtime.ts",
+          "sha256": "24e54cdd7cf996fb9d61bdfb13ac8f5a2d5e42fbf11896d04123a7c011363282"
+        },
+        {
+          "path": "src/effects/sequenceContract.ts",
+          "sha256": "67e34406a27137972d1ec4117aeb1dc4d25d6d26c8ffee90443a670ed5e7c20d"
+        }
+      ],
+      "scenario": "P1/P2 雙側六情境",
+      "expected": "害怕+全屬性-1、失敗不觸發、封附加僅傷害",
+      "remaining": "BOSS/未命中/下場交叉（列於測試 remaining）"
+    },
+    {
+      "id": "yuming-watchers",
+      "elfId": "5001",
+      "entry": "幽冥噬魂",
+      "fragment": "3回合內自身使用技能則100%令對手害怕",
+      "testFile": "tests/migrate_5001_yuming.semantic.test.ts",
+      "anchor": "fear: true | bind: true | invalid: true",
+      "lastPassed": "2026-10-15：本session該精靈全套引擎驗收通過；證據由測試實跑對應，仍屬部分情境證據",
+      "testSha256": "d244903a1b68717b0a3344bc9299cc0c256ab56d87aa3b16b5cfbe90fe36a787",
+      "inputs": [
+        {
+          "path": "src/data/migratedSobiratCageKit.ts",
+          "sha256": "c3018e3dca1dbf9caa200fa8ee2d2e384b7f3c8df859615ca511145cb1bf6dac"
+        },
+        {
+          "path": "src/data/migratedSobiratSoulKit.ts",
+          "sha256": "8937b6211fba60c6cade03d10ab97762185c86397f68a58849c7bfe8aa08b03b"
+        },
+        {
+          "path": "src/blocks/runtime.ts",
+          "sha256": "24e54cdd7cf996fb9d61bdfb13ac8f5a2d5e42fbf11896d04123a7c011363282"
+        },
+        {
+          "path": "src/effects/sequenceContract.ts",
+          "sha256": "67e34406a27137972d1ec4117aeb1dc4d25d6d26c8ffee90443a670ed5e7c20d"
+        }
+      ],
+      "scenario": "P1 一回合",
+      "expected": "三監看計時器+免疫反彈5回合+initial當回合害怕",
+      "remaining": "束縛實戰觸發、無效消除的實際命中"
+    },
+    {
+      "id": "cage-hpset",
+      "elfId": "5001",
+      "entry": "影之牢籠",
+      "fragment": "消耗自身全部體力",
+      "testFile": "tests/migrate_5001_cage.semantic.test.ts",
+      "anchor": "自身體力應降為1（未受攻擊）",
+      "lastPassed": "2026-10-15：本session該精靈全套引擎驗收通過；證據由測試實跑對應，仍屬部分情境證據",
+      "testSha256": "8e846ad8e81464c000eaa4e519abb4733b26acf9c12bff140309a0295c417193",
+      "inputs": [
+        {
+          "path": "src/data/migratedSobiratCageKit.ts",
+          "sha256": "c3018e3dca1dbf9caa200fa8ee2d2e384b7f3c8df859615ca511145cb1bf6dac"
+        },
+        {
+          "path": "src/data/migratedSobiratSoulKit.ts",
+          "sha256": "8937b6211fba60c6cade03d10ab97762185c86397f68a58849c7bfe8aa08b03b"
+        },
+        {
+          "path": "src/blocks/runtime.ts",
+          "sha256": "24e54cdd7cf996fb9d61bdfb13ac8f5a2d5e42fbf11896d04123a7c011363282"
+        },
+        {
+          "path": "src/effects/sequenceContract.ts",
+          "sha256": "67e34406a27137972d1ec4117aeb1dc4d25d6d26c8ffee90443a670ed5e7c20d"
+        }
+      ],
+      "scenario": "P1 一回合",
+      "expected": "體力調整至1、scarBonus pending+1、300固傷落地",
+      "remaining": "多次使用疊加、PP耗盡交叉"
+    },
+    {
+      "id": "cage-survive",
+      "elfId": "5001",
+      "entry": "影之牢籠",
+      "fragment": "若對手因此被擊敗則自身保留1點體力",
+      "testFile": "tests/migrate_5001_cage.semantic.test.ts",
+      "anchor": "同歸場景：300固傷擊敗低血對手 → 自身保留1點體力",
+      "lastPassed": "2026-10-15：本session該精靈全套引擎驗收通過；證據由測試實跑對應，仍屬部分情境證據",
+      "testSha256": "8e846ad8e81464c000eaa4e519abb4733b26acf9c12bff140309a0295c417193",
+      "inputs": [
+        {
+          "path": "src/data/migratedSobiratCageKit.ts",
+          "sha256": "c3018e3dca1dbf9caa200fa8ee2d2e384b7f3c8df859615ca511145cb1bf6dac"
+        },
+        {
+          "path": "src/data/migratedSobiratSoulKit.ts",
+          "sha256": "8937b6211fba60c6cade03d10ab97762185c86397f68a58849c7bfe8aa08b03b"
+        },
+        {
+          "path": "src/blocks/runtime.ts",
+          "sha256": "24e54cdd7cf996fb9d61bdfb13ac8f5a2d5e42fbf11896d04123a7c011363282"
+        },
+        {
+          "path": "src/effects/sequenceContract.ts",
+          "sha256": "67e34406a27137972d1ec4117aeb1dc4d25d6d26c8ffee90443a670ed5e7c20d"
+        }
+      ],
+      "scenario": "P1 同歸回合",
+      "expected": "Y 被擊敗、game_over、自身≥1",
+      "remaining": "對手未死時的分支"
+    },
+    {
+      "id": "sobirat-soul-quiet",
+      "elfId": "5001",
+      "entry": "黯",
+      "fragment": "回合結束若自身未受到技能傷害",
+      "testFile": "tests/migrate_5001_soul.semantic.test.ts",
+      "anchor": "未受技能傷害回合 → scarBonus+1（pending_counter）",
+      "lastPassed": "2026-10-15：本session該精靈全套引擎驗收通過；證據由測試實跑對應，仍屬部分情境證據",
+      "testSha256": "62f3ecee0b2245c8d756d742aed217bef5c70b9b3608d718db0bde77da31ae1f",
+      "inputs": [
+        {
+          "path": "src/data/migratedSobiratCageKit.ts",
+          "sha256": "c3018e3dca1dbf9caa200fa8ee2d2e384b7f3c8df859615ca511145cb1bf6dac"
+        },
+        {
+          "path": "src/data/migratedSobiratSoulKit.ts",
+          "sha256": "8937b6211fba60c6cade03d10ab97762185c86397f68a58849c7bfe8aa08b03b"
+        },
+        {
+          "path": "src/blocks/runtime.ts",
+          "sha256": "24e54cdd7cf996fb9d61bdfb13ac8f5a2d5e42fbf11896d04123a7c011363282"
+        },
+        {
+          "path": "src/effects/sequenceContract.ts",
+          "sha256": "67e34406a27137972d1ec4117aeb1dc4d25d6d26c8ffee90443a670ed5e7c20d"
+        }
+      ],
+      "scenario": "P1 安靜回合",
+      "expected": "pending log+registry 1、舊 handler 退場",
+      "remaining": "PP 吸取 fallback 的實際扣減"
+    },
+    {
+      "id": "sobirat-soul-fear",
+      "elfId": "5001",
+      "entry": "黯",
+      "fragment": "自身每次受到技能傷害時",
+      "testFile": "tests/migrate_5001_soul.semantic.test.ts",
+      "anchor": "受技能傷害 → 對手害怕（on_damaged 鏈）",
+      "lastPassed": "2026-10-15：本session該精靈全套引擎驗收通過；證據由測試實跑對應，仍屬部分情境證據",
+      "testSha256": "62f3ecee0b2245c8d756d742aed217bef5c70b9b3608d718db0bde77da31ae1f",
+      "inputs": [
+        {
+          "path": "src/data/migratedSobiratCageKit.ts",
+          "sha256": "c3018e3dca1dbf9caa200fa8ee2d2e384b7f3c8df859615ca511145cb1bf6dac"
+        },
+        {
+          "path": "src/data/migratedSobiratSoulKit.ts",
+          "sha256": "8937b6211fba60c6cade03d10ab97762185c86397f68a58849c7bfe8aa08b03b"
+        },
+        {
+          "path": "src/blocks/runtime.ts",
+          "sha256": "24e54cdd7cf996fb9d61bdfb13ac8f5a2d5e42fbf11896d04123a7c011363282"
+        },
+        {
+          "path": "src/effects/sequenceContract.ts",
+          "sha256": "67e34406a27137972d1ec4117aeb1dc4d25d6d26c8ffee90443a670ed5e7c20d"
+        }
+      ],
+      "scenario": "P1 受擊回合",
+      "expected": "💫 害怕附加",
+      "remaining": "免疫時的 PP 吸取分支"
+    },
+    {
+      "id": "sobirat-soul-defeat",
+      "elfId": "5001",
+      "entry": "黯",
+      "fragment": "為對方當前在場精靈附加黯痕印記",
+      "testFile": "tests/migrate_5001_soul.semantic.test.ts",
+      "anchor": "被擊敗 → 消除對手效果＋附加黯痕（DarkScarTurns 鍵＋可見異常）",
+      "lastPassed": "2026-10-15：本session該精靈全套引擎驗收通過；證據由測試實跑對應，仍屬部分情境證據",
+      "testSha256": "62f3ecee0b2245c8d756d742aed217bef5c70b9b3608d718db0bde77da31ae1f",
+      "inputs": [
+        {
+          "path": "src/data/migratedSobiratCageKit.ts",
+          "sha256": "c3018e3dca1dbf9caa200fa8ee2d2e384b7f3c8df859615ca511145cb1bf6dac"
+        },
+        {
+          "path": "src/data/migratedSobiratSoulKit.ts",
+          "sha256": "8937b6211fba60c6cade03d10ab97762185c86397f68a58849c7bfe8aa08b03b"
+        },
+        {
+          "path": "src/blocks/runtime.ts",
+          "sha256": "24e54cdd7cf996fb9d61bdfb13ac8f5a2d5e42fbf11896d04123a7c011363282"
+        },
+        {
+          "path": "src/effects/sequenceContract.ts",
+          "sha256": "67e34406a27137972d1ec4117aeb1dc4d25d6d26c8ffee90443a670ed5e7c20d"
+        }
+      ],
+      "scenario": "P1 被擊敗",
+      "expected": "p2 DarkScarTurns=3、💫黯痕狀態、消除對手效果",
+      "remaining": "3+累計的更多層數、命運攔截並行"
+    }
+  ]
+}

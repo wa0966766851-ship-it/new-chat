@@ -147,8 +147,16 @@ try {
   // 正式「星垂穹儀」使用正式一次轉化timer，不再僅寫死鍵。
   const conversionCalls: any[] = [], conversionContext: any = { actor: 'p1', self: make('beliente'), target: make('target'),
     addLog: () => {}, setPlayerState: () => {}, addTimerTo: (...args: any[]) => conversionCalls.push(args) };
-  skills['星垂穹儀'](conversionContext);
-  assert.equal(conversionCalls[0][1].payload.block.absorbToHeal, true);
+  // 星垂穹儀已改 Kit：執行實際的 Kit 程式中「下1次攻擊傷害轉體力」子句，仍須掛正式一次轉化timer。
+  const { DEFAULT_ELVES: kitElves } = await server.ssrLoadModule('/src/data/defaultElvesLoaded.ts');
+  const { compileEffectPlan: kitPlan } = await server.ssrLoadModule('/src/effects/effectConnection.ts');
+  const { runSkillProgram: runKitProgram } = await server.ssrLoadModule('/src/blocks/runtime.ts');
+  const vault = kitElves.find((e: any) => String(e.id) === '5027').skills.find((s: any) => s.name === '星垂穹儀');
+  assert.equal(vault.effectMode, 'kit'); assert.equal(skills['星垂穹儀'], undefined, '星垂穹儀不得再有舊 handler');
+  const vaultProgram = kitPlan(vault, 'skill', false).program;
+  runKitProgram(conversionContext, vaultProgram, 'use', [vaultProgram.clauses.findIndex((c: any) => String(c.raw).includes('令自身下1次受到的攻擊傷害轉化為體力'))]);
+  assert.equal(conversionCalls[0][1].payload.block.convertDamageToHeal, true); assert.equal(conversionCalls[0][1].payload.block.convertRatio, 1);
+  assert.equal(conversionCalls[0][1].remaining, 1); assert.equal(conversionCalls[0][1].payload.block.absorbToHeal, undefined);
   assert.equal(conversionCalls[0][1].payload.block.kind, '攻擊');
   console.log(`攻擊防護：分類/持有者/生存規則/積木斷言及${checks}個P1/P2真實引擎情境通過。`);
 } finally { await act(async () => root.unmount()); await server.close(); dom.window.close(); }

@@ -1,7 +1,7 @@
 // 賽爾號資源對應：精靈頭像/全身圖、屬性圖標（資料來源：SeerAPI api-data / seer-unity-assets）
 // 圖片一律經由本機伺服器 /seer/* 取得：public/seer → 使用者 pet/、系/ 資料夾 → 快取 → 遠端（自動快取）
 import type { Elf } from "../types";
-import { appearanceElf } from './illusion';
+import { appearanceElf } from './illusionPresentation';
 
 export interface SeerIndex {
   /** 正規化名稱 → [[寵物ID, 屬性組合ID, 圖片旗標(1=頭像,2=全身)]] */
@@ -138,6 +138,11 @@ const BODY_SOURCE_FACING: Record<string, SpriteFacing> = {
   "/elf-art/emperor_dixin_body.png": "left",
   "/elf-art/wuxu_liuren_body.png": "right",
   "/elf-art/wuxu_shiyan_body.png": "left",
+  // 已查看原始全身圖：墜星頭／槍口朝左，雷伊頭部斜朝左；直接path與幻化也共用此方向。
+  "/elf-art/wuxu_zhuixing_body.png": "left",
+  "/elf-art/otherworld_thunder_rey_body.png": "left",
+  // 已查看本機body快取：2648咤克斯頭／口朝左；備用圖也不能因直接path失去方向。
+  "/seer/body/2648.png": "left",
   "/elf-art/zhakesi_fear_body.png": "right",
   ...Object.fromEntries([10,1204,177,187,2647,2844,303,306,309,3098,3404,343,3432,3456,359,3626,3740,3886,4647,4648,4649,4762,5000,875].map(id => [`/seer/body/${id}.png`, "left" as SpriteFacing])),
   ...Object.fromEntries([300,3539,4586,4643,1536].map(id => [`/seer/body/${id}.png`, "left" as SpriteFacing])),

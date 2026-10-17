@@ -1,4 +1,6 @@
 import { queueActionPowerMultiplier } from '../../../battle/actionDamageModifiers';
+
+
 import { queueHpDrain } from '../../../battle/hpDrain';
 import { bypassesAttackDefense } from '../../../battle/attackDefense';
 import type { Elf, Skill, StatType } from "../../../types";
@@ -131,6 +133,7 @@ const benchHeal = (ctx: BattleEventContext, amount: number) => {
 
 export function handleOtherworldReySoulMark(ctx: BattleEventContext, event: EffectTiming, data?: any): boolean | void {
   const { self, target, actor, targetSide } = ctx;
+  const electricKit=self.alienTraits?.gen2Trait?.effectMode==='kit';
 
   // 這些節點由 BattleScreen 廣播給整隊；雷伊下場後保留神降資料，但不以場下 ctx 操作新上場精靈。
   if (!isReyActive(ctx) && (
@@ -145,7 +148,7 @@ export function handleOtherworldReySoulMark(ctx: BattleEventContext, event: Effe
   //  電氣纏繞：對手使用攻擊技能時，對手最終攻擊／特攻值變為面板原始值的70%。
   if (isReyActive(ctx) && (event === EffectTiming.ON_ENTRANCE || event === EffectTiming.BEFORE_SKILL || event === EffectTiming.OPPONENT_ACTION || event === EffectTiming.ROUND_START)) {
     ctx.setPlayerState("calcAtkDefMult", 1 + getLostHpRatio(self));
-    ctx.setPlayerState("opponentAtkPanelRatio", 0.7);
+    if(!electricKit)ctx.setPlayerState("opponentAtkPanelRatio", 0.7);
   }
   if (event === EffectTiming.BATTLE_PHASE_END) ctx.setPlayerState("calcAtkDefMult", 1);
 
@@ -154,11 +157,11 @@ export function handleOtherworldReySoulMark(ctx: BattleEventContext, event: Effe
     ctx.setMark({
       id: "rey_alien_energy",
       name: "異能值",
-      count: Number(ctx.getPlayerState(`${R}.alienEnergy`) || 0),
+      count: ctx.getMarks(actor).find(m=>m.id==='rey_alien_energy'&&m.ownerBattleId===elfIdentity(self))?.count ?? Number(ctx.getPlayerState(`${R}.alienEnergy`) || 0),
       displayChar: "異",
       ownerBattleId: elfIdentity(self),
       visibleWhenZero: true,
-      description: "異能值系統預留欄位；目前只顯示數值，不產生任何戰鬥效果。",
+      description: "個體異能值資源；可顯示及依技能扣除，特殊模式的登場消耗規則尚未接通。",
     }, actor);
     ctx.setPlayerState(`${R}.entered`, true);
   }
@@ -191,7 +194,7 @@ export function handleOtherworldReySoulMark(ctx: BattleEventContext, event: Effe
 
   if (event === EffectTiming.BEFORE_ACTION && ctx.skill) {
     if (ctx.skill.category !== "屬性") {
-      queueActionPowerMultiplier(ctx, 1.7);
+      if(!electricKit)queueActionPowerMultiplier(ctx, 1.7);
       if (self.useAtkSpAtkSumForAttacks) ctx.setPlayerState("blkAtkSpatkSum", true);
       const stageAmount = sumAbsoluteStatStages(self, target) * 70;
       if (isAbnormal(ctx, self)) {
@@ -210,8 +213,6 @@ export function handleOtherworldReySoulMark(ctx: BattleEventContext, event: Effe
       if (scope === "non_true" ? isNonTrueDamageType(comp.damageCategory) : isSkillDamageType(comp.damageCategory)) {
         comp.increasePercent += Number(ctx.getPlayerState(`${R}.currentDamageIncrease`) || 0);
       }
-      const floor = Number(ctx.getPlayerState(`${R}.currentDamageFloor`) || 0);
-      if (isSkillDamageType(comp.damageCategory) && floor > 0) comp.floor = Math.max(comp.floor || 0, floor);
     } else {
       // 電氣纏繞與雷神的雙攻／雙防改由傷害公式的能力值處理（calcAtkDefMult／opponentAtkPanelRatio），不在此用增減傷代替。
       if (isGodDescent(ctx) && isNonTrueDamageType(comp.damageCategory) && !bypassesAttackDefense(comp, 'block')) comp.multiplier = 0;
@@ -234,11 +235,10 @@ export function handleOtherworldReySoulMark(ctx: BattleEventContext, event: Effe
   // 本次行動的增傷／保底：未命中或無效時也要清掉，避免殘留到下一次攻擊
   if (event === EffectTiming.ACTION_FAILED) {
     setCurrentDamageIncrease(ctx, 0);
-    ctx.setPlayerState(`${R}.currentDamageFloor`, 0);
   }
 
   if (event === EffectTiming.AFTER_ACTION && ctx.skill) {
-    addParalysis(ctx, targetSide, 1); // 電氣纏繞
+    if(!electricKit)addParalysis(ctx, targetSide, 1); // 電氣纏繞Kit自行執行，未註明期限沿用3回合
     if (ctx.skill.category === "物理") {
       const actual = Math.min(70, Math.max(0, self.maxHp - self.currentHp));
       ctx.applyHeal(actor, 70);
@@ -249,7 +249,6 @@ export function handleOtherworldReySoulMark(ctx: BattleEventContext, event: Effe
         payload: { block: { prio: -1 } } }, false);
     }
     setCurrentDamageIncrease(ctx, 0);
-    ctx.setPlayerState(`${R}.currentDamageFloor`, 0);
   }
 
   if (event === EffectTiming.BATTLE_PHASE_END && isAbnormal(ctx, self)) addPp(ctx, 7);
@@ -257,11 +256,6 @@ export function handleOtherworldReySoulMark(ctx: BattleEventContext, event: Effe
   if (event === EffectTiming.ROUND_END) {
     if (isGodDescent(ctx) && !ctx.getPlayerState(`${R}.tookNonTrueInGodDescent`)) {
       ctx.adjustHp(actor, Math.floor(self.maxHp * 0.07));
-    }
-    const drainTurns = Number(ctx.getPlayerState(`${R}.stormDrainTurns`) || 0);
-    if (drainTurns > 0 && target.currentHp > 0) {
-      queueHpDrain(ctx, targetSide, Math.floor(target.maxHp / 3), 'percent');
-      ctx.setPlayerState(`${R}.stormDrainTurns`, drainTurns - 1);
     }
     const priorityTurns = Number(ctx.getPlayerState(`${R}.priorityTurns`) || 0);
     if (priorityTurns > 0) ctx.setPlayerState(`${R}.priorityTurns`, priorityTurns - 1);
@@ -315,53 +309,7 @@ export const OTHERWORLD_REY_SKILL_TRANSFORMS: Record<string, (ctx: BattleEventCo
   },
 };
 
-const starVoid: BattleSkillHandler = (ctx) => {
-  boostOpponentStages(ctx);
-  ctx.setPlayerState(`${R}.pendingStarAbsorb`, 0.7 * skillDamageBoostFactor(ctx));
-  ctx.setOpponentState("attackPowerDivisorTurns", 7);
-  ctx.setOpponentState("attackPowerDivisor", 70);
-  ctx.setOpponentState("attackSkillInvalidTurns", 2);
-};
 
-const otherworldThunder: BattleSkillHandler = (ctx) => {
-  boostOpponentStages(ctx);
-  const elem = pickBestReyElement(ctx.target.type);
-  ctx.setPlayerState(`${R}.currentDamageFloor`, 300 * getTypeMatchup(elem, ctx.target.type));
-  queueHpDrain(ctx, ctx.targetSide, Math.floor(ctx.target.maxHp / 2), 'percent');
-  ctx.setPlayerState(`${R}.stormDrainTurns`, 5);
-  ctx.addTimerTo(ctx.actor, {
-    id: 'non_true_next_boost', name: '下2回合非真實傷害提升210%', kind: 'turn_effect', source: 'skill',
-    remaining: 2, tickAt: 'round_end', pendingActivation: true,
-    payload: { applyMode: 'gate', damageIncreasePercent: 2.1, damageTypes: ['non_true'] },
-    description: '下2回合造成非真實傷害提升210%；排除真實傷害及體力調整。',
-  }, false);
-  ctx.setPlayerState(`${R}.priorityTurns`, 2);
-  ctx.setPlayerState(`${R}.priorityValue`, 3);
-};
-
-const sameDustRite: BattleSkillHandler = (ctx) => {
-  const base = ctx.self.statStages || { atk: 0, def: 0, spatk: 0, spdef: 0, speed: 0, accuracy: 0 };
-  const next = { ...base };
-  for (const stat of STATS) next[stat] = Math.max(next[stat] || 0, ctx.target.statStages?.[stat] || 0);
-  const weightLoss = Math.min(70, Math.floor(ctx.getBody?.(ctx.targetSide).weight ?? ctx.target.weight ?? 0));
-  // 「體力調整為1」不是恢復效果：即使目前為0或負體力，也直接設定為1，
-  // 不經治療倍率、禁療或神降的恢復量替換規則。
-  ctx.updateElf(ctx.actor, { statStages: next, currentHp: 1 });
-  ctx.addTimerTo(ctx.targetSide, { id: 'rey_pp_cost', name: 'PP消耗7倍', kind: 'turn_effect', source: 'skill',
-    remaining: 7, tickAt: 'round_end', payload: { block: { ppMult: 7 } } }, ctx.moveIndex === 1);
-  ctx.updateElf(ctx.targetSide, {
-    maxHp: Math.max(1, ctx.target.maxHp - weightLoss),
-    currentHp: Math.min(ctx.target.currentHp, Math.max(1, ctx.target.maxHp - weightLoss)),
-  });
-  ctx.setOpponentState("alienEnergy", Math.max(0, Number(ctx.getOpponentState("alienEnergy") || 0) - weightLoss));
-};
-
-const thunderExecution: BattleSkillHandler = (ctx) => {
-  boostOpponentStages(ctx);
-  setCurrentDamageIncrease(ctx, 0.7 * skillDamageBoostFactor(ctx), "non_true");
-  queueHpDrain(ctx, ctx.targetSide, 70, 'fixed');
-  ctx.setOpponentState("utilitySkillInvalidTurns", 2);
-};
 
 const forbiddenThunderOrder: BattleSkillHandler = (ctx) => {
   const trueDamage = ctx.self.currentHp < 0
@@ -381,10 +329,8 @@ const forbiddenThunderOrder: BattleSkillHandler = (ctx) => {
 };
 
 export const OTHERWORLD_REY_SKILLS: Record<string, BattleSkillHandler> = {
-  "空墟赫星": starVoid,
-  "異境神霆": otherworldThunder,
-  "同塵祭": sameDustRite,
-  "天雷誅殺": thunderExecution,
+
+
   "霆·禁雷敕令": forbiddenThunderOrder,
   "霆·禁雷敕令·神罰": forbiddenThunderOrder,
   "霆·禁雷敕令·神譴": forbiddenThunderOrder,

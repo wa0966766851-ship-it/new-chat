@@ -16,7 +16,8 @@ try {
   const { getElfAdvancedMechanics } = await server.ssrLoadModule('/src/data/traitsRegistry.ts');
   const { effectDefinitionEntries } = await server.ssrLoadModule('/src/battle/effectSources.ts');
   const { elfForViewer, visibleSkills, viewerMaskTerms, maskViewerText } = await server.ssrLoadModule('/src/battle/viewerPerspective.ts');
-  const { isZeroPpExempt, BATTLE_ITEMS } = await server.ssrLoadModule('/src/utils/battleHelpers.ts');
+  const {BATTLE_ITEMS}=await server.ssrLoadModule('/src/utils/battleHelpers.ts');
+const {isZeroPpExempt}=await server.ssrLoadModule('/src/battle/ppExemptions.ts');
   const { applyBattleItem } = await server.ssrLoadModule('/src/battle/itemInventory.ts');
   const { restorePP, ppOf, key } = await server.ssrLoadModule('/src/effects/elves/staged-arena/shared.ts');
   const { acquiredEffectContext } = await server.ssrLoadModule('/src/battle/acquiredEffectContext.ts');

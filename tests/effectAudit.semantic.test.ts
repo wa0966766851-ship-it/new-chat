@@ -3,6 +3,8 @@ import { mkdtempSync, readFileSync, writeFileSync, rmSync, mkdirSync } from 'nod
 import { tmpdir } from 'node:os';
 import { resolve } from 'node:path';
 import { clauseIdentity, clauseExecution, digest, evidenceState, findTextSources, normalizeSourceText, isPresentationOnly, type AuditEvidence } from '../scripts/lib/effectAudit';
+import {MIGRATED_SEQUENCE_SKILL_KITS} from '../src/data/migratedSequenceSkillKits';
+import {isLegacyWrappedKit} from '../src/blocks/ops/legacyHandler';
 
 let checks = 0;
 function check(name: string, run: () => void) { run(); checks++; console.log('✓ ' + name); }
@@ -80,13 +82,18 @@ check('逐句統計與模式統計不同分母，部分測試證據不得變成�
   assert.equal(s.pending + s.partialEvidence + s.staleEvidence, s.clauses);
   assert.equal(s.fullyAccepted, 0);
   assert.ok(s.clauses > blocks.summary.total.total);
-  assert.deepEqual(blocks.summary.explicitModes, { allBlockSkills: 31, hybridSkills: 2, allBlockSouls: 6, hybridSouls: 0 });
+  assert.deepEqual(blocks.summary.explicitModes, { allBlockSkills: 30, hybridSkills: 2, allBlockSouls: 6, hybridSouls: 0 });
   assert.ok(report.elves.flatMap((e: any) => e.entries).flatMap((e: any) => e.clauses).filter((c: any) => !c.parsed).every((c: any) => c.raw && c.id));
 });
-check('競技場五隻讀取正式子目錄註冊入口，不再被誤記成generic或自動積木', () => {
+check('競技場五隻依整份已登記圖紙區分Kit與專屬入口，不誤記成generic或自動積木', () => {
+  assert.equal(report.elves.filter((e:any)=>e.id.startsWith('arena_')).length,5);
   for (const e of report.elves.filter((e: any) => e.id.startsWith('arena_'))) {
-    assert.equal(e.entries.find((x: any) => x.kind === '魂印').route, 'handler');
-    assert.ok(e.entries.filter((x: any) => x.kind === '技能').every((x: any) => x.route === 'handler'));
+    // arena_13 龍錄天鋒魂印已遷真 Kit（migratedArena13SoulKit；DSH 20261017）——唯一例外。
+    assert.equal(e.entries.find((x: any) => x.kind === '魂印').route, e.id === 'arena_13' ? 'kit' : 'handler');
+    for(const entry of e.entries.filter((x:any)=>x.kind==='技能')){
+      const authored=MIGRATED_SEQUENCE_SKILL_KITS.find(d=>d.elfIds.includes(e.id)&&d.name===entry.name&&d.description===entry.sourceText);
+      assert.equal(entry.route,authored&&!isLegacyWrappedKit(authored.kit)?'kit':'handler',`${e.id}/${entry.name}`);
+    }
   }
 });
 console.log(`稽核治理 ${checks} 個情境通過。`);

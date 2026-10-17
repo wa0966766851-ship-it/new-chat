@@ -135,7 +135,8 @@ for (const side of ['p1', 'p2'] as const) {
     const trueComp = comp('true'); handleKeerhodeSoulMark(f.c, 'BEFORE_DAMAGE', trueComp); assert.equal(trueComp.afterDamage, undefined);
   });
   check(`${side}/帝辛天陣9回合、源綁體力限制及關閉代價`, () => {
-    const f = fixture(side, { dixinBahuangStacks: 9 });
+    const f = fixture(side);
+    f.c.setMark({id:'bahuang_mark',count:9,scope:'elf',ownerBattleId:f.c.self.battleId||f.c.self.id},side);
     runDixinFormation(f.c, 'CHECK_FORMATION'); assert.equal(f.reg.dixinFormationRounds, 9);
     f.c.self.skills = [{ name: 'a', pp: 5, currentPp: 5 }];
     f.c.target.currentHp = 600;

@@ -24,19 +24,31 @@ function editableClause(clause:Clause):Clause {
   const stmt=(s:Stmt):Stmt=>({...s,acts:s.acts.map(act),...(s.elseActs?{elseActs:s.elseActs.map(act)}:{})});
   return sequenceClause({...clause,body:clause.body.map(stmt)});
 }
-function propertyEntry(clause:any,kind:'skill'|'soul',order:number): KitEntry | null {
+function propertyEntries(clause:any,kind:'skill'|'soul',order:number): KitEntry[] | null {
   if(kind!=='skill'||clause.body.length!==1||clause.body[0].acts.length!==1||clause.body[0].chain||clause.body[0].elseActs?.length)return null;
-  const a=clause.body[0].acts[0];if(a.op!=='noop')return null;
+  const a=clause.body[0].acts[0];
+  // 「■ 命中率N%」解析器標成說明用 note；它其實是技能固有命中率，只在固有分句才轉換。
+  const acc=clause.marker==='■'&&a.op==='note'?String(a.p.text||'').match(/^命中率\s*(\d+)%$/):null;
+  if(acc)return [{codeId:'skill_property',node:'before_skill',source:'skill',role:'innate',order,customText:clause.raw,
+    params:{property:'base_accuracy',value:Number(acc[1]),conditions:[...(clause.cond || []),...(clause.body[0].cond || [])]}}];
+  if(a.op!=='noop')return null;
   let tag=String(a.p.tag||'');const extra:any[]=[];
   // 「X時先制+N」：把前綴交給既有條件解析；解析不了就不轉換，不能留在標籤裡當空動作。
-  const lead=tag.match(/^(.+?時)((?:額外)?先制\s*[+＋-]\s*\d+)$/);
+  const lead=tag.match(/^(.+?時)((?:額外)?先制\s*[+＋-]\s*\d+(?:且必定命中)?)$/);
   if(lead&&!/(額外)/.test(lead[2])){const c=matchCond(lead[1]);if(!c)return null;extra.push(c);tag=lead[2];}
-  const match=tag.match(/^(?:該技能(?:為)?)?先制\s*([+＋-])\s*(\d+)$/);
-  const sure=/^(?:該技能(?:為)?)?必中$/.test(tag);if(!sure&&!match)return null;
+  // 「先制+N且必定命中」是同一句的兩個固有屬性：各自成為獨立查詢，不合成單一動作，也不互相取代。
+  const both=tag.match(/^(?:該技能(?:為)?)?先制\s*([+＋-])\s*(\d+)\s*且必定命中$/);
+  const match=both || tag.match(/^(?:該技能(?:為)?)?先制\s*([+＋-])\s*(\d+)$/);
+  const sure=both ? true : /^(?:該技能(?:為)?)?必中$/.test(tag);if(!sure&&!match)return null;
   // 只辨識技能固有，不把附加句自動提升成無法封印的本體屬性。
   if(clause.marker!=='■')return null;
-  return {codeId:'skill_property',node:sure?'before_skill':'modify_priority',source:'skill',role:'innate',order,customText:clause.raw,
-    params:{property:sure?'sure_hit':'base_priority',value:sure?true:(match![1]==='-'?-1:1)*Number(match![2]),conditions:[...(clause.cond || []),...(clause.body[0].cond || []),...extra]}};
+  const conditions=[...(clause.cond || []),...(clause.body[0].cond || []),...extra];
+  const out:KitEntry[]=[];
+  if(match)out.push({codeId:'skill_property',node:'modify_priority',source:'skill',role:'innate',order:order+out.length,customText:clause.raw,
+    params:{property:'base_priority',value:(match[1]==='-'?-1:1)*Number(match[2]),conditions}});
+  if(sure)out.push({codeId:'skill_property',node:'before_skill',source:'skill',role:'innate',order:order+out.length,customText:clause.raw,
+    params:{property:'sure_hit',value:true,conditions}});
+  return out;
 }
 
 /** 只轉換可完全保留語意的動作；範圍、成功分支、特殊公式等不允許近似降級。 */
@@ -141,10 +153,12 @@ export function distillEffect(definition: EffectDefinition, kind: 'skill' | 'sou
     for(const [index,clause] of plan.program.clauses.entries()) {
       if(clause.marker==='§')continue;
       if(!clause.parsed)continue;
-      const property=propertyEntry(clause,kind,sequenceKit.length);
-      if(property) {
-        const reason=kitEntryIssue(property);
-        if(reason)sequenceIssues.push({index,text:clause.raw,reason});else sequenceKit.push(property);
+      const properties=propertyEntries(clause,kind,sequenceKit.length);
+      if(properties) {
+        // 兩個固有屬性必須整組可通過才採用；任一被拒時整句不轉換，不留半套。
+        // 注意：不可直接 map(kitEntryIssue)，否則索引會被當成 gateContext 傳入。
+        const reason=properties.map(entry=>kitEntryIssue(entry)).find(Boolean);
+        if(reason)sequenceIssues.push({index,text:clause.raw,reason});else sequenceKit.push(...properties);
         continue;
       }
       const clean=editableClause(clause),node=SEQUENCE_TRIGGERS[clause.trig] as Node;

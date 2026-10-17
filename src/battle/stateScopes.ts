@@ -16,6 +16,16 @@ export function setBattleSideMarks(state: BattleState, side: Side, marks: Mark[]
   return { ...state, [teamKey]: team, [side]: team[state[`${side}ActiveIndex`]], [`${side}Marks`]: marks };
 }
 
+/** 精靈更新中的marks是持有者視圖，不能拿來覆蓋含場下持有者的完整側清單。 */
+export function replaceBattleElfMarks(state: BattleState, side: Side, holder: Elf, marks: Mark[]): BattleState {
+  const next=(state[`${side}Marks`]||[]).filter(mark=>!markAppliesToElf(mark,holder));
+  for(const mark of marks)if(markAppliesToElf(mark,holder)){
+    const bound=bindMarkToElf(mark,holder),index=next.findIndex(m=>m.id===bound.id&&m.ownerBattleId===bound.ownerBattleId);
+    if(index<0)next.push(bound);else next[index]=bound;
+  }
+  return setBattleSideMarks(state,side,next);
+}
+
 /** 明文的陣營、指定下一隻、及追蹤上場者資料；其他 RegistryState 預設個體。 */
 export function isTeamRegistryKey(key: string): boolean {
   const plain = key.replace(/^p[12]_/, "");

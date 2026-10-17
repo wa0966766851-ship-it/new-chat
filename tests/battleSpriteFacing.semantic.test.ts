@@ -5,7 +5,39 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { JSDOM } from "jsdom";
 import { readFileSync } from "node:fs";
 import { ElfAvatar } from "../src/components/SeerImages";
+import { startIllusion, endIllusion } from "../src/battle/illusion";
 import { battleSpriteScale, hasRenderableElfImagePath, shouldMirrorBattleSprite, mirrorSourceFacing, loadSeerIndex } from "../src/battle/seerAssets.ts";
+
+test("illusion copies the original asset, then faces its own opponent for explicit paths and both sides", async () => {
+  await loadSeerIndex();
+  for (const [name, path, facing] of [
+    ['無序.墜星', '/elf-art/wuxu_zhuixing_body.png', 'left'],
+    ['異境神霆·雷伊', '/elf-art/otherworld_thunder_rey_body.png', 'left'],
+    ['無序.六刃', '/elf-art/wuxu_liuren_body.png', 'right'],
+    ['星光·雷納多', '/seer/body/4937.png', 'left'],
+    ['恐懼的化身·咤克斯', '/seer/body/2648.png', 'left'],
+    ['變革·馬爾修斯', '/seer/body/3393.png', 'front'],
+    ['未知圖', '/custom/unverified.png', 'front'],
+  ] as const) for (const side of ['p1', 'p2'] as const) {
+    const stats = { hp: 100, atk: 100, def: 100, spatk: 100, spdef: 100, speed: 100 };
+    const owner: any = { id: 'owner', battleId: 'owner', name: '原精靈', path: '/custom/owner.png', calculatedStats: stats, maxHp: 100, currentHp: 100, skills: [] };
+    const target: any = { ...owner, id: 'target', battleId: 'target', name, path };
+    const ctx: any = { actor: side, get self() { return owner; }, updateElf: (_s: string, p: any) => Object.assign(owner, p), addLog() {} };
+    assert.equal(startIllusion(ctx, target, '朝向測試'), true);
+    const render = (elf: any, kind = 'body', battleSide = side) => new JSDOM(renderToStaticMarkup(React.createElement(ElfAvatar, { elf, kind, battleSide } as any))).window.document;
+    const mirror = mirrorSourceFacing(facing, side);
+    const ownDoc = render(owner), img = ownDoc.querySelector('img')!;
+    assert.equal(img.getAttribute('src'), path);
+    assert.equal(img.style.transform, mirror ? 'scaleX(-1)' : '', `${name}/${side}`);
+    assert.equal(ownDoc.querySelectorAll('[style*="scaleX"]').length, mirror ? 1 : 0);
+    if (facing !== 'front') assert.notEqual(img.style.transform, render(target, 'body', side === 'p1' ? 'p2' : 'p1').querySelector('img')!.style.transform);
+    assert.equal(render(owner, 'head').querySelector('img')!.style.transform, '');
+    // URL direction remains authoritative even if a copied appearance is renamed.
+    assert.equal(render({ ...target, name: '任意改名' }).querySelector('img')!.style.transform, mirror ? 'scaleX(-1)' : '');
+    assert.equal(endIllusion(ctx), true);
+    assert.equal(render(owner).querySelector('img')!.getAttribute('src'), '/custom/owner.png');
+  }
+});
 
 test("coordinate contract: P1 faces screen-right, P2 faces screen-left, exactly one mirror", () => {
   for (const original of ["left", "right"] as const) {

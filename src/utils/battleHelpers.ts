@@ -1,8 +1,6 @@
 // src/utils/battleHelpers.ts
 import { Elf, Skill, BattleItem } from "../types";
-import { effectSourceViews } from '../battle/effectSources';
-import { skillSlot } from '../battle/skillSlot';
-import { isStoneThrower, isSkillStone, stoneBasePp, hasStoneThrowerMythic } from "../data/skillStones";
+import { isStoneThrower, isSkillStone, stoneBasePp } from "../data/skillStones";
 import { StatusRegistry } from "../effects/statusRegistry";
 import { STATUS_NAMES_MAP } from '../effects/statusAliases';
 import { canonicalStatusName, sameStatus } from '../effects/statusIdentity';
@@ -126,111 +124,6 @@ export const isCthyaat = (elf: Elf | undefined | null): boolean => {
 };
 
 // ── PP 值限制
-// isZeroPpExempt：PP 為 0 時仍可選擇（「不受PP值限制」）
-// isPpCostFree：使用時不消耗 PP（「不消耗PP值」）
-
-const hasStatDown = (elf: Elf) => Object.values(elf.statStages || {}).some(v => (v as number) < 0);
-const hasAnyStatus = (elf: Elf) => Object.entries(getStatuses(elf)).some(([k, v]) => !!v && !AUXILIARY_STATUSES.includes(k));
-const isSerene = (elf: Elf) => {
-  const st = getStatuses(elf);
-  return (st["serenity"] || 0) > 0 || (st["平靜"] || 0) > 0 || elf.battleStatus === "serenity" || elf.battleStatus === "平靜";
-};
-const poemStacks = (elf: Elf) => {
-  const m = (elf.marks || []).find((x: any) => x.id === "poem_chapter") as any;
-  return m?.effects?.poemHpSnapshots?.length || 0;
-};
-const isCanglan = (elf: Elf) => !!(elf.name?.includes("滄嵐") || elf.soulMark?.name === "瀾" || elf.id === "canglan");
-/** 滄嵐：場上存在不擁有護盾者則使用技能不受PP值限制、不消耗技能PP值 */
-const canglanActive = (elf: Elf, opp?: Elf | null) => {
-  const field = [elf, opp].filter(Boolean) as Elf[];
-  return field.some(e => !((e.shield || 0) > 0));
-};
-
-/** 描述中「不受PP值限制」的條件判定（例：自身處於能力下降狀態時…不受PP值限制） */
-const textPpExempt = (elf: Elf, text?: string): boolean => {
-  if (!text) return false;
-  for (const seg of text.split(/[；;\n]/)) {
-    const k = seg.search(/不受\s*(技能)?\s*PP/);
-    if (k < 0) continue;
-    const pre = seg.slice(0, k);
-    if (/能力下降狀態時/.test(pre)) { if (hasStatDown(elf)) return true; continue; }
-    if (/異常狀態時/.test(pre)) { if (hasAnyStatus(elf)) return true; continue; }
-    if (/時/.test(pre) && !/選擇技能時|使用技能時/.test(pre)) continue; // 其他條件無法判定時不給豁免
-    return true;
-  }
-  return false;
-};
-
-const nativeZeroPpExempt = (elf: Elf, sk: Skill, opp?: Elf | null): boolean => {
-  if (!elf || !sk || !elf.name) return false;
-
-  // 1. 專屬機制
-  if (elf.name === "變革·馬爾修斯") return true; // 充能系統
-  if (isCanglan(elf) && canglanActive(elf, opp)) return true;
-  if (hasStoneThrowerMythic(elf)) return true;
-  if (isDimensionalDragon(elf) && poemStacks(elf) >= 2) return true; // 詩章 2：使用技能無視PP值限制
-  if (sk.name === "星光·光合作用" || sk.name === "星光·花草能量") return true;
-  if ((elf.ppLimitIgnoredWhenParalyzedTurns || 0) > 0) {
-    const st = getStatuses(elf);
-    const turns = Math.max(st["麻痺"] || 0, st["麻痹"] || 0, st.paralyzed || 0);
-    if (turns >= (elf.ppLimitIgnoredWhenParalyzedTurns || 0)) return true;
-  }
-  // 深潛者盛宴：自身處於能力下降狀態時使用技能不受PP值限制
-  if (!elf.isInherentInvalid && sk.name === "深潛者盛宴" && Object.values(elf.statStages || {}).some((v: any) => typeof v === "number" && v < 0)) return true;
-
-  // 通用：技能本身被效果標記為「不受PP值限制」（例如英雄之耀達到3層）
-  if ((sk as any).ignorePpLimit === true) return true;
-
-  // 2. 平靜：不受PP值限制且不消耗PP值
-  if (isSerene(elf)) return true;
-  if (elf.soulMark && (elf.soulMark as any).ignorePpLimit === true) return true;
-
-  // 3. 奧丁 ᚱᚷ 符文：激活後所有技能選擇時不受PP值限制；附有 ᚱᚷ 的技能選擇時即激活
-  const isRG = (s: Skill) => s.skillRune === 'ᚱᚷ' || s.specialBadge?.text === 'ᚱᚷ' || !!s.specialBadge?.id?.includes('ᚱᚷ');
-  if ((elf.skills || []).some(s => isRG(s) && s.isRuneActive === true)) return true;
-  if (isRG(sk)) return true;
-
-  // 4. 已激活標記中的「不受PP」
-  const hasPpExemptBadge = (elf.skills || []).some(s => {
-    const badge = s.specialBadge;
-    if (!badge?.description) return false;
-    if (!/不受\s*(技能)?\s*PP/.test(badge.description)) return false;
-    if (s.isRuneActive === false || badge.description.includes("【未激活】")) return false;
-    return true;
-  });
-  if (hasPpExemptBadge) return true;
-
-  // 5. 技能描述（含條件判定）
-  if (!elf.isInherentInvalid && textPpExempt(elf, sk.description)) return true;
-
-  // 6. PP 下限透支
-  if (sk.isPpPenalized) return false;
-  const minPp = getMinPp(sk, elf);
-  if (minPp < 0 && (sk.pp || 0) > minPp) return true;
-  return false;
-};
-
-/** 使用技能時不消耗 PP */
-const nativePpCostFree = (elf: Elf, sk: Skill, opp?: Elf | null): boolean => {
-  if (!elf || !sk) return false;
-  if (hasStoneThrowerMythic(elf)) return true;
-  if (elf.name === "變革·馬爾修斯") return true;               // 充能系統另計
-  if (elf.name?.includes("奧佩婭")) return true;               // 自身使用技能時：不消耗技能PP值
-  if (isCanglan(elf) && canglanActive(elf, opp)) return true;
-  if (isSerene(elf)) return true;                               // 平靜
-  if (sk.name === "星光·光合作用" || sk.name === "星光·花草能量") return true;
-  if (sk.description && /不消耗\s*(技能)?\s*PP/.test(sk.description) && textPpExempt(elf, sk.description.replace(/不消耗\s*(技能)?\s*PP/g, "不受PP"))) return true;
-  return false;
-};
-
-/** 選招及扣PP都保留自身來源，並納入幻化取得的效果定義。 */
-export const isZeroPpExempt = (elf: Elf, sk: Skill, opp?: Elf | null): boolean =>
-  !!elf && !!sk && effectSourceViews(elf).some((source, i) => nativeZeroPpExempt(source,
-    i ? { ...(elf.illusion?.target.skills[skillSlot(elf, sk)] || sk), pp: sk.pp } : sk, opp));
-export const isPpCostFree = (elf: Elf, sk: Skill, opp?: Elf | null): boolean =>
-  !!elf && !!sk && effectSourceViews(elf).some((source, i) => nativePpCostFree(source,
-    i ? { ...(elf.illusion?.target.skills[skillSlot(elf, sk)] || sk), pp: sk.pp } : sk, opp));
-
 export const BATTLE_ITEMS: BattleItem[] = [
   { id: 'hp_330', name: '全滿體力藥劑', description: '回復 330 點體力。不受減療影響。', type: 'hp', value: 330 },
   { id: 'hp_300', name: '超級體力藥劑', description: '回復 300 點體力。不受減療影響。', type: 'hp', value: 300 },
@@ -247,6 +140,9 @@ export const BATTLE_ITEMS: BattleItem[] = [
   { id: 'hybrid_150_2', name: '復甦藥劑', description: '回復 150 點體力與 2 點 PP 值。', type: 'hybrid', value: 150, ppValue: 2 },
   { id: 'special_170_clear', name: '淨化藥劑', description: '回復 170 點體力並解除異常狀態。', type: 'special', value: 170, effect: 'clear_status' },
   { id: 'special_5_debuff', name: '解弱化藥劑', description: '回復 5 點 PP 值並解除能力下降。', type: 'special', ppValue: 5, effect: 'clear_debuff' },
+  // 只能由稱號等效果放入道具欄位（grantOnly）；使用前先選擇雙方背包內一隻精靈。
+  { id: 'illusion_command', name: '幻化指令', description: '使用成功則恢復在場精靈 200 點體力與所有技能 1 點 PP 值；選擇雙方背包內任一隻精靈，己方下次執行幻化效果時取消原有指定對象改為指定該精靈，無法對消逝的對象執行。',
+    type: 'special', value: 200, ppValue: 1, effect: 'set_illusion_target', pickTarget: 'bag_elf', grantOnly: true },
 ];
 
 // 藥劑分類：恢復體力 / PP值 / 解除異常與弱化 / 複合型 / 特殊

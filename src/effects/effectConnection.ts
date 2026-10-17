@@ -1,5 +1,6 @@
 /** 編輯、顯示、儲存與戰鬥共用的來源合約。未知語意保留，不以近似模板代替。 */
 import type { KitEntry } from './effectSystem.schema';
+import { discardedParentheticalMechanics } from './parentheticalSemantics';
 import type { Program } from '../blocks/model';
 import { parseSkill, parseSoulMark } from '../blocks/parse';
 import { validateKit } from './kitValidation';
@@ -7,11 +8,13 @@ import { BoundedCache } from '../utils/boundedCache';
 import { EFFECT_NODES, EFFECT_NODE_LABELS } from './effectNodes';
 import { sequenceIssue, skillPropertyIssue } from './sequenceContract';
 import { soulPropertyIssue } from './soulProperty';
+import { isLegacyWrappedKit, legacyWrappedClause } from '../blocks/ops/legacyHandler';
 export { EFFECT_NODE_LABELS } from './effectNodes';
 
 export type EffectExecutionMode = 'auto' | 'description' | 'kit' | 'registry';
 export interface EffectDefinition {
   name: string;
+  priority?: number;
   description?: string;
   kit?: KitEntry[];
   effectMode?: EffectExecutionMode;
@@ -71,6 +74,8 @@ function uncachedKitEntryIssue(entry: KitEntry, gateContext: boolean): string | 
 }
 
 export function effectRoute(definition: EffectDefinition, hasHandler = false): EffectRoute {
+  // legacy_handler 包裝的通用例外：舊 handler 照原路徑執行一次，Kit 只供顯示／稽核；即使 effectMode 誤設為 kit 也不跳過舊 handler。
+  if (isLegacyWrappedKit(definition.kit)) return 'registry';
   if (definition.effectMode && definition.effectMode !== 'auto') return definition.effectMode;
   if (hasHandler) return 'registry';
   return definition.kit?.length ? 'kit' : 'description';
@@ -78,7 +83,7 @@ export function effectRoute(definition: EffectDefinition, hasHandler = false): E
 
 const planCache = new BoundedCache<string, ReturnType<typeof buildEffectPlan>>(512);
 export function compileEffectPlan(definition: EffectDefinition, kind: 'skill' | 'soul', hasHandler = false) {
-  const key = JSON.stringify([kind, hasHandler, definition.name, definition.description, definition.effectMode, definition.kit]);
+  const key = JSON.stringify([kind, hasHandler, definition.name, definition.description, definition.effectMode, definition.kit,definition.priority]);
   const cached = planCache.get(key);
   if (cached) return cached;
   const plan = buildEffectPlan(definition, kind, hasHandler);
@@ -97,7 +102,12 @@ function buildEffectPlan(definition: EffectDefinition, kind: 'skill' | 'soul', h
       ? { ...clause, trig: 'after_hit' as const } : clause) } : parsed;
   const issues: ConnectionIssue[] = [];
   let program: Program = descriptionProgram;
-  if (route === 'kit') {
+  const wrapped = legacyWrappedClause(definition.kit);
+  if (wrapped) {
+    // 唯讀顯示「專屬機制」區塊；不解析描述文字、不回報未接通（由原 handler 執行）。
+    if (!hasHandler && kind === 'skill') issues.push({ index: -1, text: definition.name, reason: '沒有對應專屬註冊表。' });
+    program = { title: definition.name, kind, clauses: [{ ...wrapped, parsed: true, rest: [] }] };
+  } else if (route === 'kit') {
     program = { title: definition.name, kind, clauses: (definition.kit || []).map((entry, index) => {
       const reason = kitEntryIssue(entry);
       if (reason) issues.push({ index, text: entry.customText || entry.codeId, reason });
@@ -123,6 +133,8 @@ function buildEffectPlan(definition: EffectDefinition, kind: 'skill' | 'soul', h
         if (acts.some(a => a.op === 'noop' && a.p.tag && !/^(?:該技能(?:為)?)?必中$|^(?:.+?時)?(?:額外)?先制\s*[+＋-]\s*\d+(?:且必定命中)?$|^無特殊效果$|^（無特殊效果）$/.test(a.p.tag))) reason = '僅辨認說明標籤，尚無符合此行為的執行查詢。';
         if (kind === 'soul' && acts.some(a => a.op === 'noop' && /必中|先制/.test(a.p.tag || ''))) reason = '魂印／特質的此常駐命中或先制標籤尚無查詢入口；不能沿用技能自身的查詢。';
       }
+      const discarded=discardedParentheticalMechanics(clause.raw,clause,kind==='skill'?definition.priority:undefined);
+      if(clause.marker!=='§'&&discarded.length)reason=[reason,`括號內機制尚未結構化：${discarded.join('；')}`].filter(Boolean).join('；');
       const result = reason ? { ...clause, parsed: false, rest: [...(clause.rest || []), reason] } : clause;
       if (!result.parsed && result.marker !== '§') issues.push({ index, text: result.raw, reason: (result.rest || ['未完整解析']).join('；') });
       return result;

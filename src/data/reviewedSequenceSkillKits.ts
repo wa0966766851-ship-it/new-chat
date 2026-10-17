@@ -3,8 +3,8 @@ import type { Clause, Stmt } from '../blocks/model';
 
 /** 第二批明確定義。原文完整相同才套入；不在載入時解析、借用原主handler或批量相信候選。 */
 export interface ReviewedSequenceSkill {elfIds:string[];name:string;description:string;kit:KitEntry[]}
-export const property=(text:string,property:'sure_hit'|'base_priority',value:boolean|number,order:number):KitEntry=>({
-  codeId:'skill_property',node:property==='sure_hit'?'before_skill':'modify_priority',source:'skill',role:'innate',order,customText:text,params:{property,value,conditions:[]},
+export const property=(text:string,property:'sure_hit'|'base_priority'|'base_accuracy'|'base_power'|'hit_requirement'|'forced_first',value:boolean|number,order:number):KitEntry=>({
+  codeId:'skill_property',node:['base_priority','forced_first'].includes(property)?'modify_priority':'before_skill',source:'skill',role:'innate',order,customText:text,params:{property,value,conditions:[]},
 });
 export const action=(op:string,p:Record<string,any>)=>({op,p,label:op});
 export const sequence=(raw:string,body:Stmt[],order:number):KitEntry=>({codeId:'effect_sequence',node:'on_skill_use',source:'skill',role:'attached',order,customText:raw,

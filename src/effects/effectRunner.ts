@@ -46,7 +46,7 @@ export const ATOMS: AtomTable = {
     if (p.dmgType === "true") {
       ctx.applyTrueDamage(side, amt, p.label || "追加真實傷害");
     } else if (p.dmgType === "fixed") {
-      ctx.applyFixedDamage(side, amt, p.label || "追加固定傷害");
+      ctx.applyFixedDamage(side, amt, p.label || "追加固定傷害", { unscaled: p.amountMode === 'max_hp_percent' }); // 由最大體力百分比換算者已含縮放
     } else if (p.dmgType === "percent") {
       ctx.applyPercentDamage(side, p.ratio ?? amt / 100);
     } else if (p.dmgType === 'skill' || p.dmgType === 'skill_attribute') {

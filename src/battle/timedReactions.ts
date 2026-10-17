@@ -15,8 +15,9 @@ export function reactToTimedAttack(ctx: BattleEventContext, damageType: string):
 }
 
 /** 恢復量減少不同於禁止執行恢復；神降等體力調整仍由生存規則處理。 */
-export function timedRecoveryMultiplier(timers: BattleEventContext['p1Timers'], elf: BattleEventContext['self']): number {
+export function timedRecoveryMultiplier(timers: BattleEventContext['p1Timers'], elf: BattleEventContext['self'], isPotion = false): number {
   const reductions = activeConstraints(timers, elf)
+    .filter(p => !isPotion || p.recoveryReductionIncludesPotions === true)
     .map(p => p.recoveryReductionPercent).filter((n): n is number => typeof n === 'number');
   return Math.max(0, 1 - reductions.reduce((sum, n) => sum + Math.max(0, n), 0));
 }

@@ -13,10 +13,13 @@ import { createPortal } from "react-dom";
 import { useState, useEffect, lazy, Suspense } from "react";
 import { Elf, BattleMode } from "./types";
 import { DEFAULT_ELVES } from "./data/defaultElves";
+import {applySavedSkillCorrections} from './data/savedSkillCorrections';
 import { SKILL_STONE_ATTRIBUTES, PERFECT_SKILL_STONE_EFFECTS, createSkillStone, isStoneThrower } from "./data/skillStones";
 import { calculateElfStats, resetElfStateForBattle, setDynamicMatchups } from "./utils/statCalculator";
 import { applyElfOverrides } from "./data/elfRegistry";
-import StartScreen from "./components/StartScreen";
+// 首頁瘦身（DSH 20261017）：StartScreen 含完整 motion 動畫庫（~128KB）——改為 lazy 載入，
+// 首屏僅 TechLoadingScreen（無 motion 依賴），功能與動畫完全一致（TechLoading 期間並行載入）。
+const StartScreen = lazy(() => import("./components/StartScreen"));
 import { ElfAvatar } from "./components/SeerImages";
 import { ImageCopyMenu } from "./components/ImageCopyMenu";
 import { PageErrorBoundary } from "./components/PageErrorBoundary";
@@ -24,10 +27,10 @@ import { PageErrorBoundary } from "./components/PageErrorBoundary";
 import TechLoadingScreen from "./components/TechLoadingScreen";
 import { SiteUpdateNotice } from "./components/SiteUpdateNotice";
 
-import ControlHub from "./components/ControlHub";
+// 首頁瘦身（DSH 20261017）：ControlHub（側邊功能面板）非首屏必需——lazy 載入，功能不變。
+const ControlHub = lazy(() => import("./components/ControlHub"));
 import { ThemeBackground } from "./components/ThemeController";
 import { Sparkles, HelpCircle, Book, Disc, ChevronUp, ChevronDown, ChevronLeft, ChevronRight, Menu, Home, Settings, Database, Swords, TestTubes, Puzzle } from "lucide-react";
-import { AnimatePresence, motion } from "motion/react";
 import { GameDataProvider, useGameData } from "./contexts/GameDataContext";
 const ElfEditor = lazy(() => import("./components/ElfEditor"));
 const PerformanceProbe = lazy(() => import('./components/PerformanceProbe'));
@@ -40,6 +43,8 @@ const InterstellarHub = lazy(() => import("./components/InterstellarExploration/
 export default function App() {
   return (
     <GameDataProvider>
+      {/* 首頁瘦身（DSH 20261017）：App 級殘餘動畫改 CSS keyframes——motion 庫移出首屏初始區塊 */}
+      <style>{`@keyframes appHeaderBtnIn{from{opacity:0;transform:translateX(-20px)}to{opacity:1;transform:translateX(0)}}`}</style>
       <AppContent />
     </GameDataProvider>
   );
@@ -174,7 +179,7 @@ function AppContent() {
       updated.maxHp = calc.hp;
       updated.currentHp = calc.hp;
     }
-    return updated;
+    return applySavedSkillCorrections(updated,DEFAULT_ELVES);
   }), [allElves, deletedElfIds, customSkillsMap, customInscriptionsMap, customResistancesMap]);
   elvesRef.current = allElvesCombined;
 
@@ -223,14 +228,14 @@ function AppContent() {
 
   return (
     <div className="h-screen w-full flex relative bg-transparent text-slate-100 overflow-hidden" id="app-wrapper">
-      <ControlHub currentScene={showEncyclopedia ? "encyclopedia" : view} canApplyUpdates={view === 'start' && !editingElf && !showEncyclopedia} />
+      <Suspense fallback={null}>
+        <ControlHub currentScene={showEncyclopedia ? "encyclopedia" : view} canApplyUpdates={view === 'start' && !editingElf && !showEncyclopedia} />
+      </Suspense>
       
       {/* Sidebar Navigation */}
       {/* 以寬度收合：內容區立即接手空間，不會留下空白 */}
-      <motion.aside
-        initial={false}
-        animate={{ width: showHeader ? 256 : 0 }}
-        transition={{ duration: 0.22, ease: "easeOut" }}
+      <aside
+        style={{ width: showHeader ? 256 : 0, transition: "width 220ms ease-out" }}
         className={`ios-sidebar shrink-0 h-full shadow-2xl overflow-hidden ${isCompactLayout ? "fixed inset-y-0 left-0 z-[100]" : "relative z-[50]"} ${showHeader ? "border-r" : "border-r-0"}`}
         aria-hidden={!showHeader}
       >
@@ -362,7 +367,7 @@ function AppContent() {
               </div>
             </div>
           </div>
-      </motion.aside>
+      </aside>
 
       {isCompactLayout && showHeader && (
         <button
@@ -374,16 +379,14 @@ function AppContent() {
       )}
 
       {!showHeader && (
-        <motion.button
-          initial={{ opacity: 0, x: -20 }}
-          animate={{ opacity: 1, x: 0 }}
+        <button
           onClick={() => setShowHeader(true)}
-          className="fixed top-4 left-0 z-[90] p-3 bg-slate-900/80 backdrop-blur-md border border-l-0 border-slate-700 rounded-r-xl text-slate-400 hover:text-white hover:bg-slate-800 transition-all shadow-lg flex items-center justify-center group"
+          className="fixed top-4 left-0 z-[90] p-3 bg-slate-900/80 backdrop-blur-md border border-l-0 border-slate-700 rounded-r-xl text-slate-400 hover:text-white hover:bg-slate-800 transition-all shadow-lg rounded-r-xl" style={{ animation: "appHeaderBtnIn 220ms ease-out" }}
           title="展開側邊欄"
         >
           <div className="absolute top-1 right-1 w-1.5 h-1.5 bg-blue-500 rounded-full animate-pulse" />
           <Menu className="w-5 h-5 group-hover:scale-110 transition-transform" />
-        </motion.button>
+        </button>
       )}
 
       {/* Main Content Area Wrapper */}
@@ -482,6 +485,7 @@ function AppContent() {
               hostPlayer={hostPlayer}
               onHostPlayerChange={setHostPlayer}
               interstellarOptions={interstellarOptions}
+              randomSeed={interstellarOptions?.battleSeed}
               preparedTeams={!!interstellarOptions}
               specialMode={specialMode}
               onBattleEnd={(winner, team) => interstellarOptions?.onBattleEnd?.(winner, team)}
@@ -517,7 +521,7 @@ function AppContent() {
         {view !== "battle" && <footer className={`bg-slate-900/85 backdrop-blur-md border-t border-slate-800 py-3 sm:py-0 sm:h-10 flex flex-col sm:flex-row items-center px-4 sm:px-8 text-[10px] text-slate-400 gap-2 sm:gap-8 font-mono shrink-0 select-none relative z-10`}>
           <span>計算公式: [(攻擊方LV×0.4+2)×技能威力×攻擊/防禦/50+2]×修正</span>
           <span className="hidden md:inline">屬性係數: 本系修正(1.5x) / 克制係數(0.5x-4.0x)</span>
-          <span className="sm:ml-auto">© 2026 AI 賽爾號對戰模擬器 - 繁體中文版</span>
+          <span className="hidden sm:ml-auto">© 2026 AI 賽爾號對戰模擬器 - 繁體中文版</span>
         </footer>}
       </div>
     </div>

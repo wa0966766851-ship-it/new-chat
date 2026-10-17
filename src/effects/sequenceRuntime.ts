@@ -12,13 +12,18 @@ export function prepareSequenceFrame(entries: KitEntry[], node: Node, ctx: Battl
   snapshotConditions(ctx,clauses,state);
   // 連鎖版技能的「每次使用增加」計數：每次使用技能（附加效果未被封印而實際執行時）記一次。
   if(node==='on_skill_use'&&entries[0]?.source==='skill'&&ctx.skill?.name&&clauses.some(c=>c.trig==='use')) {
-    const ramps=clauses.flatMap(c=>c.body.flatMap(b=>[...b.acts,...(b.elseActs||[])])).filter(a=>a.p?.rampInc!==undefined);
+    // 「每次使用增加」的遞增動作可位於同一技能的其他時點（例如傷害結算後的附加傷害）：計數仍在使用當下記一次，
+    // 讓後續時點讀到的次數與使用時點的句子一致。
+    const wholeKit=((ctx.skill as any)?.kit as KitEntry[]|undefined)?.filter(e=>e.codeId==='effect_sequence'&&e.params?.clause).map(e=>e.params.clause as Clause)||[];
+    const ramps=[...clauses,...wholeKit].flatMap(c=>c.body.flatMap(b=>[...b.acts,...(b.elseActs||[])])).filter(a=>a.p?.rampInc!==undefined);
     if(ramps.length)recordSkillUse(ctx,ramps.some(a=>a.p.rampReset==='switch'));
   }
   return state;
 }
 export function runEffectSequence(clause: Clause, ctx: BattleEventContext & {effectNode?: Node;sequenceFrame?: RunState;damageComp?: DamageComputation;damageType?: string;typedSkill?: boolean;effectEntrySource?: KitEntry['source']}) {
+  if(ctx.effectNode==='on_opponent_damaged'&&!eventTriggers(ctx,EffectTiming.ON_DAMAGED,(ctx as any).effectEventData).includes(clause.trig))return;
   const issue=sequenceIssue(clause,ctx.effectNode);if(issue)throw new Error(issue);
+  if(ctx.effectNode==='modify_power'&&!eventTriggers(ctx,EffectTiming.MODIFY_POWER,(ctx as any).effectEventData).includes(clause.trig))return;
   if(ctx.effectNode==='before_damage'&&!eventTriggers(ctx,EffectTiming.BEFORE_DAMAGE,{damageComp:ctx.damageComp}).includes(clause.trig))return;
   if(ctx.effectNode==='on_damaged'&&!eventTriggers(ctx,EffectTiming.ON_DAMAGED,{targetSide:ctx.actor,damageType:ctx.damageType,typedSkill:ctx.typedSkill}).includes(clause.trig))return;
   const category=ctx.skill?.category;

@@ -1,4 +1,5 @@
 import { traitNames } from '../effects/traitEffects';
+import { readStatPercent } from '../effects/soulProperty';
 import { specialDamageFormula } from '../effects/specialDamageFormulaRegistry';
 import { skillTypeMultiplier } from '../battle/skillTypeOverride';
 import { Elf, Skill } from "../types";
@@ -12,6 +13,8 @@ import { skillStageView } from '../battle/skillStageView';
 import { isStoneThrower, isSkillStone } from '../data/skillStones';
 import { getElfAdvancedMechanics } from '../data/traitsRegistry';
 import { equipmentDamageFactors } from '../battle/damagePipeline';
+import { hpPowerScale } from '../battle/actionDamageModifiers';
+import {readIncomingPanelAttack} from '../battle/panelAttack';
 
 export const calculateDamage = (
   actor: Elf,
@@ -24,7 +27,7 @@ export const calculateDamage = (
   isCritOverride?: boolean,
   p1Team?: Elf[],
   p2Team?: Elf[],
-  options?: { ignoreSpDefPercent?: number, ignoreDefPercent?: number, ignoreOppBuff?: boolean, hitCount?: number, critChanceBonus?: number },
+  options?: { ignoreSpDefPercent?: number, ignoreDefPercent?: number, ignoreOppBuff?: boolean, hitCount?: number, critChanceBonus?: number, actionId?: number, inherentInvalid?: boolean },
   p1Title?: string,
   p2Title?: string,
   p1RegistryState?: any,
@@ -47,7 +50,7 @@ export const calculateDamage = (
   // opponentAtkPanelRatio＝對手攻擊時其最終攻擊／特攻變為面板原始值的比例（忽略能力等級）。
   const statRegA = side === "p1" ? p1RegistryState : p2RegistryState;
   const statRegT = side === "p1" ? p2RegistryState : p1RegistryState;
-  const atkPanelRatio = Number(statRegT?.opponentAtkPanelRatio) > 0 ? Number(statRegT.opponentAtkPanelRatio) : 0;
+  const atkPanelRatio = readIncomingPanelAttack(statRegT,actor,options?.actionId) || (Number(statRegT?.opponentAtkPanelRatio) > 0 ? Number(statRegT.opponentAtkPanelRatio) : 0);
   if (Number(statRegA?.calcAtkDefMult) > 0) atk = atk * Number(statRegA.calcAtkDefMult);
   if (Number(statRegT?.calcAtkDefMult) > 0) def = def * Number(statRegT.calcAtkDefMult);
   if (atkPanelRatio) atk = (isPhys ? actor.calculatedStats.atk : actor.calculatedStats.spatk) * atkPanelRatio;
@@ -81,8 +84,9 @@ export const calculateDamage = (
     def = Math.max(0, def - suit.effects.ignoreDefSpdefFlat);
   }
   
-  const rawAtkS = skillStageView(actor, skill, isPhys ? 'atk' : 'spatk');
-  const rawDefS = skillStageView({ statStages: target.statStages, isInherentInvalid: actor.isInherentInvalid }, skill, isPhys ? 'def' : 'spdef', true);
+  const inherentInvalid=actor.isInherentInvalid || options?.inherentInvalid;
+  const rawAtkS = skillStageView({statStages:actor.statStages,isInherentInvalid:inherentInvalid}, skill, isPhys ? 'atk' : 'spatk');
+  const rawDefS = skillStageView({ statStages: target.statStages, isInherentInvalid: inherentInvalid }, skill, isPhys ? 'def' : 'spdef', true);
 
   const actorMarks = side === "p1" ? p1Marks : p2Marks;
   const oppSide = side === "p1" ? "p2" : "p1";
@@ -109,6 +113,8 @@ export const calculateDamage = (
   // 無視對手能力提升（列星安辰、魯斯王、積木「無視能力提升」等）；視為下降優先。
   const stageReg = side === "p1" ? p1RegistryState : p2RegistryState;
   if (stageReg?.oppBoostAsDropThisAction && defS > 0) defS = -defS;
+  // 通用：「無視自身能力下降」（寂殺之魄1道等；行動鍵）——自身下降等級歸零。
+  if (stageReg?.selfDropIgnoredThisAction && atkS < 0) atkS = 0;
   else if (options?.ignoreOppBuff && defS > 0) defS = 0;
   // 將自身能力下降視為對手的能力下降
   if (stageReg?.selfDropAsOppDropThisAction && atkS < 0) { defS = Math.max(-6, defS + atkS); atkS = 0; }
@@ -119,8 +125,9 @@ export const calculateDamage = (
   if (formula) return { ...formula, damage: Math.floor(formula.damage), hitCount: Math.max(1, Math.floor(options?.hitCount || 1)), formulaReplaced: true, equipmentMultiplier: 1 };
 
   // 積木：能力下降視為同級全屬性提升
-  if ((side === "p1" ? p1RegistryState : p2RegistryState)?.blkStageAsBoost) atkS = Math.max(atkS, (side === "p1" ? p1RegistryState : p2RegistryState).blkStageAsBoost);
-  const powerMultiplier = (side === "p1" ? p1RegistryState : p2RegistryState)?.powerMultiplierThisAction ?? 1;
+  if (!atkPanelRatio && (side === "p1" ? p1RegistryState : p2RegistryState)?.blkStageAsBoost) atkS = Math.max(atkS, (side === "p1" ? p1RegistryState : p2RegistryState).blkStageAsBoost);
+  const powerRegistry = side === 'p1' ? p1RegistryState : p2RegistryState;
+  const powerMultiplier = (powerRegistry?.powerMultiplierThisAction ?? 1) * hpPowerScale(powerRegistry, actor, target, options?.actionId);
   const powerAdd = Number((side === "p1" ? p1RegistryState : p2RegistryState)?.powerAddThisAction) || 0;
   // 官方公式：[(等級×0.4+2)×威力×攻÷防÷50+2]×本系×克制 → 取整 → ×浮動(217~255)/255 → 取整 → ×暴擊 → 取整 → ×連擊次數。
   // 方括號內為整體不拆分（不先取整）；能力等級換算後的面板值已於 calculateEffectiveStat 取整。
@@ -132,14 +139,15 @@ export const calculateDamage = (
   const atkMech = getElfAdvancedMechanics(actor);
   if (Number(statRegA?.weakPointDefenseTurns) > 0 || atkMech.alwaysWeaknessDamage) {
     const otherKey = isPhys ? 'spdef' : 'def';
-    const otherS = skillStageView({ statStages: target.statStages, isInherentInvalid: actor.isInherentInvalid }, skill, otherKey, true);
+    const otherS = skillStageView({ statStages: target.statStages, isInherentInvalid: inherentInvalid }, skill, otherKey, true);
     const otherEff = calculateEffectiveStat(target.calculatedStats[otherKey], otherS);
     let ratio = Number(statRegA?.weakPointDefenseRatio) > 0 ? Number(statRegA.weakPointDefenseRatio) : 0.6;
     if (atkMech.alwaysWeaknessDamage && atkMech.weaknessShieldReductionPercent) ratio = Math.max(0.01, ratio - (Number(target.shield) || 0) * atkMech.weaknessShieldReductionPercent / 100);
     effDef = Math.max(1, Math.floor(Math.min(effDef, otherEff) * ratio));
   }
   // 通用特性「亂舞」：攻擊／特攻提升12%（能力值，屬公式輸入）
-  const atkTraitMult = (actor.trait?.name === "亂舞" || traitNames(actor).includes("亂舞")) ? 1.12 : 1;
+  // 通用特性「亂舞」：kit 模式改讀 soul_property.stat_percent；其餘舊路徑保留名字判定。
+  const atkTraitMult = ((actor.trait?.name === "亂舞" && actor.trait?.effectMode !== 'kit') || traitNames(actor).includes("亂舞") ? 1.12 : 1) + readStatPercent(actor, isPhys ? 'atk' : 'spatk') / 100;
   const base = ((levelFactor * Math.floor(calculateEffectiveStat(atk, atkS) * atkTraitMult) * (skill.power + powerAdd) * powerMultiplier / Math.max(1, effDef)) / 50 + 2);
   
   const actorReg = side === "p1" ? p1RegistryState : p2RegistryState;

@@ -56,8 +56,8 @@ export function handleMoiraiSoulMark(c: ArenaContext, event: EffectTiming, data?
     }
   }
   if (event === EffectTiming.AFTER_ATTACK_HIT && data?.skill && data.additionalEffectsEnabled !== false) {
-    if (data.skill.name === '陰陽三合') settleYinYangHit(c);
-    if (data.skill.name === '恆·蒼穹斗轉') { bump(c, 'fifthDamage', Math.max(0, Number(data.damage) || 0)); write(c, 'fifthPending', 1); }
+    if (data.skill.name === '陰陽三合' && data.skill.effectMode !== 'kit') settleYinYangHit(c);
+    if (data.skill.name === '恆·蒼穹斗轉' && data.skill.effectMode !== 'kit') { bump(c, 'fifthDamage', Math.max(0, Number(data.damage) || 0)); write(c, 'fifthPending', 1); }
   }
   if (event === EffectTiming.AFTER_ACTION && read(c, 'fifthPending')) {
     const total = read(c, 'fifthDamage');
@@ -71,7 +71,7 @@ export function handleMoiraiSoulMark(c: ArenaContext, event: EffectTiming, data?
     const from = read(c, 'critFrom');
     if (from && read(c, 'round') >= from && read(c, 'round') <= from + 1) c.setPlayerState('mustCrit', true);
   }
-  if (event === EffectTiming.MODIFY_PRIORITY && c.skill?.name === '九轉輪迴天' && hasDrop(c.self) && data?.priorityComp) data.priorityComp.bonus += 3;
+  if (event === EffectTiming.MODIFY_PRIORITY && c.skill?.effectMode !== 'kit' && c.skill?.name === '九轉輪迴天' && hasDrop(c.self) && data?.priorityComp) data.priorityComp.bonus += 3;
 }
 
 /** 日月安屬：抵擋下一次攻擊傷害，並對攻擊者附加該次攻擊傷害 100% 的百分比傷害。 */
@@ -118,7 +118,7 @@ export const MOIRAI_SKILLS: Record<string, BattleSkillHandler> = {
     if (!chance(c, .8) || !status(c, '沉默', 1)) write(c, 'counter', read(c, 'counter') + 1);
   },
   '陰陽三合': c => {
-    if (hasBoost(c.target)) { transferBoosts(c); c.setOpponentState('priorityPenaltyTurns', 1); }
+    if (hasBoost(c.target)) { if(transferBoosts(c))c.setOpponentState('priorityPenaltyTurns', 1); }
     else modify(c, c.targetSide, -1);
     // 一回合攻擊 5～10 次；每次實際命中後由 AFTER_ATTACK_HIT 獨立判定 20%。
     c.setPlayerState('attackHitCountThisAction', 5 + Math.floor((c.rng?.() ?? Math.random()) * 6));

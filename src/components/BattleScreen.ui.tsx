@@ -2,10 +2,11 @@ import { SpecialBattleEndDialog } from "./BattleEndDialog";
 import { BattleResult } from "./battle/BattleResult";
 import { summarizeLedger, type DamageLedger } from "../battle/damageLedger";
 import { damagePopupStyle, damagePopupLabel } from '../battle/damagePopupStyle';
-import { appearanceElf } from '../battle/illusion';
+import { appearanceElf } from '../battle/illusionPresentation';
 import { skillSlot } from '../battle/skillSlot';
 import { hasBattleItem } from '../battle/itemInventory';
-import React, { useState, useContext, useEffect, useMemo, useRef } from "react";
+const BagElfPickerModal = lazy(() => import("./battle/BagElfPickerModal"));
+import React, { useState, useContext, useEffect, useMemo, useRef, lazy, Suspense } from "react";
 import { ElfReadOnlyProfile } from "./ElfReadOnlyProfile";
 import { createPortal } from "react-dom";
 import { 
@@ -44,6 +45,7 @@ import { ShieldBarrierPanel } from "./ShieldBarrierPanel";
 import { Elf, Skill, BattleLog, BattleItem } from "../types";
 import { BattleEffectViewModel, describeEffectMeta } from "../battle/effectViewModel";
 import { activeEffectViews, visibleEffectSourceText } from '../battle/activeEffectViews';
+import {statusCountClasses} from '../battle/statusImmunityCount';
 import { getHpBarColor } from "./BattleComponents";
 import { StatusInspector } from "./StatusInspector";
 import { getTypeMatchup, getAttributeBadgeColor, getEffectiveBody } from "../utils/statCalculator";
@@ -61,7 +63,8 @@ import { StatusRegistry } from "../effects/statusRegistry";
 import { EFFECT_CATALOG } from "../data/effectCatalog";
 import { SkillResources } from './SkillResources';
 import { formatCompactHud, formatFullNumber } from '../utils/formatBigNumber';
-import { BATTLE_ITEMS, ITEM_CATEGORIES, getItemCategory, ItemCategory, isZeroPpExempt, isElfSkillSelectionDisabled } from "../utils/battleHelpers";
+import { BATTLE_ITEMS, ITEM_CATEGORIES, getItemCategory, ItemCategory, isElfSkillSelectionDisabled } from "../utils/battleHelpers";
+import { isZeroPpExempt } from '../battle/ppExemptions';
 
 interface BattleScreenUIProps {
   specialMode?: "destiny" | "interstellar";
@@ -145,6 +148,9 @@ export function BattleScreenUI(props: BattleScreenUIProps) {
   const totalDamage = useMemo(() => chartData.reduce((acc, curr) => acc + curr.value, 0), [chartData]);
 
   const [tacticalTab, setTacticalTab] = useState<"SKILLS" | "TEAM" | "ITEMS" | "EFFECTS">("SKILLS");
+  const [pickingItem, setPickingItem] = useState<BattleItem | null>(null);
+  // 只能被放入的道具（如幻化指令）持有數為 0 時不顯示。
+  const shownItems = useMemo(() => BATTLE_ITEMS.filter(it => !it.grantOnly || (battle.p1ItemInventory?.[it.id]?.left || 0) > 0), [battle.p1ItemInventory]);
   const [hoveredSkill, setHoveredSkill] = useState<Skill | null>(null);
   const [hoveredSkillAnchor, setHoveredSkillAnchor] = useState<{ x: number; y: number; top?: number; bottom?: number } | null>(null);
   const [hoveredSoulMark, setHoveredSoulMark] = useState<{name: string, desc: string} | null>(null);
@@ -300,7 +306,7 @@ export function BattleScreenUI(props: BattleScreenUIProps) {
               key={effect.id}
               onClick={() => setModalContent({ title: fog(effect.label), content: fog(describeEffectMeta(effect)) })}
               className={`px-1.5 py-0.5 rounded border text-[9px] font-bold transition-colors hover:brightness-125 ${
-                effect.polarity === "negative"
+                effect.tone ? statusCountClasses(effect.tone) : effect.polarity === "negative"
                   ? "bg-rose-950/60 border-rose-500/30 text-rose-200"
                   : effect.category === "count"
                     ? "bg-violet-950/60 border-violet-500/30 text-violet-200"
@@ -417,7 +423,7 @@ export function BattleScreenUI(props: BattleScreenUIProps) {
               {panelTab[side] === 'STATUSES' && sectionVisibility.statusAndImmunity && (
                 <div>
                     <span className="text-[10px] text-rose-500 font-black uppercase tracking-widest block mb-1">異常狀態與免疫:</span>
-                    <StatusBadgePanel elf={elf} disguiseAbnormalStatuses={disguiseBattleStates} categoryFilter={["CONTROL", "WEAKENING", "RESTRICTIVE", "EVOLUTIONARY", "AUXILIARY", "BOSS_ONLY"]} emptyHint="無異常狀態" />
+                    <StatusBadgePanel elf={elf} registryState={isP1 ? battle.p1RegistryState : battle.p2RegistryState} disguiseAbnormalStatuses={disguiseBattleStates} categoryFilter={["CONTROL", "WEAKENING", "RESTRICTIVE", "EVOLUTIONARY", "AUXILIARY", "BOSS_ONLY"]} emptyHint="無異常狀態" />
                 </div>
               )}
 
@@ -684,7 +690,7 @@ export function BattleScreenUI(props: BattleScreenUIProps) {
                       )}
                       <div className="flex items-center gap-1.5 flex-wrap" title="使用道具消耗一回合">
                         {[{ key: "all", label: "全部" }, ...ITEM_CATEGORIES].map(c => {
-                          const n = c.key === "all" ? BATTLE_ITEMS.length : BATTLE_ITEMS.filter(it => getItemCategory(it) === c.key).length;
+                          const n = c.key === "all" ? shownItems.length : shownItems.filter(it => getItemCategory(it) === c.key).length;
                           return (
                             <button key={c.key} onClick={() => setItemCat(c.key as any)} disabled={n === 0}
                               className={`px-2.5 py-0.5 rounded-full text-[11px] font-bold border transition-colors disabled:opacity-30 ${itemCat === c.key ? "bg-amber-500/20 text-amber-200 border-amber-500/60" : "bg-slate-900/60 text-slate-400 border-slate-700 hover:text-slate-200"}`}>
@@ -694,7 +700,7 @@ export function BattleScreenUI(props: BattleScreenUIProps) {
                         })}
                       </div>
                       <div className="grid grid-cols-[repeat(auto-fill,minmax(190px,1fr))] gap-2">
-                        {BATTLE_ITEMS.filter(it => itemCat === "all" || getItemCategory(it) === itemCat).map((item, idx) => {
+                        {shownItems.filter(it => itemCat === "all" || getItemCategory(it) === itemCat).map((item, idx) => {
                           const stock = battle.p1ItemInventory?.[item.id];
                           const cat = getItemCategory(item);
                           const tone = cat === "hp" ? "text-emerald-400 border-emerald-500/30 bg-emerald-500/10"
@@ -705,7 +711,7 @@ export function BattleScreenUI(props: BattleScreenUIProps) {
                           return (
                             <button
                               key={item.id || idx}
-                              onClick={() => { props.onUseItem("p1", item as any); setTacticalTab("SKILLS"); }}
+                              onClick={() => { if (item.pickTarget) { setPickingItem(item); return; } props.onUseItem("p1", item as any); setTacticalTab("SKILLS"); }}
                               title={item.description}
                               className="group flex items-center gap-2.5 bg-slate-900/60 border border-slate-800 hover:border-amber-500/40 rounded-xl px-2.5 py-2 transition-all hover:bg-slate-800 disabled:opacity-40 text-left"
                               disabled={phase !== "p1_select" || !hasBattleItem(battle.p1ItemInventory, item.id) || (!!props.potionLimit && props.potionLimit.left <= 0 && item.type !== "special")}
@@ -715,7 +721,7 @@ export function BattleScreenUI(props: BattleScreenUIProps) {
                               </div>
                               <div className="flex-1 min-w-0">
                                 <div className="text-xs font-black text-white truncate">{item.name}</div>
-                                {stock && <div className="text-[11px] font-bold text-amber-200 tabular-nums" data-item-stock={item.id}>{stock.left}/{stock.max}</div>}
+                                {stock && Number.isFinite(stock.max) && <div className="text-[11px] font-bold text-amber-200 tabular-nums" data-item-stock={item.id}>{item.grantOnly ? `持有 ×${stock.left}` : `${stock.left}/${stock.max}`}</div>}
                                 <div className="text-[10px] text-slate-400 leading-tight truncate">{item.description}</div>
                               </div>
                             </button>
@@ -808,7 +814,7 @@ export function BattleScreenUI(props: BattleScreenUIProps) {
           cls: effect.polarity === 'negative' ? "bg-rose-950/70 text-rose-200 border-rose-500/40" : "bg-yellow-950/70 text-yellow-200 border-yellow-500/40", desc: describeEffectMeta(effect), icon: effect.icon,
         });
       } else {
-        const cls = effect.polarity === "negative" ? "bg-rose-950/70 text-rose-200 border-rose-500/40"
+        const cls = effect.tone ? statusCountClasses(effect.tone) : effect.polarity === "negative" ? "bg-rose-950/70 text-rose-200 border-rose-500/40"
           : effect.category === "count" ? "bg-violet-950/70 text-violet-200 border-violet-500/40"
             : effect.polarity === 'neutral' ? "bg-slate-950/70 text-slate-200 border-slate-500/40"
             : "bg-cyan-950/70 text-cyan-200 border-cyan-500/40";
@@ -1051,7 +1057,7 @@ export function BattleScreenUI(props: BattleScreenUIProps) {
           const original = { ...p1.skills[slot], battleSlot: slot };
           const isFifth = !!original.isFifthSkill || slot === 4;
           const uses = skill.charge !== undefined ? skill.charge : skill.pp;
-          const disabled = phase !== "p1_select" || isElfSkillSelectionDisabled(p1) || (uses <= 0 && !isZeroPpExempt(p1, skill, p2));
+          const disabled = phase !== "p1_select" || original.isAbolished || isElfSkillSelectionDisabled(p1) || (uses <= 0 && !isZeroPpExempt(p1, skill, p2));
           const selected = skillSlot(p1, p1SelectedSkill) === slot;
           const hover = p1.illusion && !p1.isInherentInvalid ? { ...skill, name: `${original.name} → ${skill.name}`,
             description: `【原技能】${original.name}\n${original.description}\n\n【轉化後】${skill.name}\n${skill.description}` } : skill;
@@ -1201,6 +1207,14 @@ export function BattleScreenUI(props: BattleScreenUIProps) {
         )}
       </AnimatePresence>
 
+      {pickingItem && (
+        <Suspense fallback={null}>
+          <BagElfPickerModal teams={{ p1: p1Team, p2: p2Team }} title={`${pickingItem.name}：選擇背包內的精靈`}
+            onClose={() => setPickingItem(null)}
+            onPick={(side, battleId) => { const item = pickingItem; setPickingItem(null); props.onUseItem("p1", { ...item, picked: { side, battleId } }); setTacticalTab("SKILLS"); }} />
+        </Suspense>
+      )}
+
       {/* Global Skill Tooltip - Moved to root level with dynamic positioning */}
       {createPortal(<AnimatePresence>
         {hoveredSkill && hoveredSkillAnchor && (
@@ -1276,7 +1290,7 @@ export function BattleScreenUI(props: BattleScreenUIProps) {
 
                 <div className="flex justify-between items-center text-[11px] font-black uppercase tracking-widest">
                   <div className="flex gap-5">
-                    <span className="flex items-center gap-2 text-emerald-400"><div className="w-2 h-2 bg-emerald-500 rounded-full shadow-[0_0_8px_rgba(16,185,129,0.5)]" /> 命中率: {(() => { const c = computeHitChance(p1, p2, hoveredSkill, (e) => getStatuses(e), battle.p2RegistryState); return c >= 1 && (hoveredSkill.isSureHit || /必中/.test(hoveredSkill.description || "")) ? "必中" : `${Math.round(c * 100)}%`; })()}</span>
+                    <span className="flex items-center gap-2 text-emerald-400"><div className="w-2 h-2 bg-emerald-500 rounded-full shadow-[0_0_8px_rgba(16,185,129,0.5)]" /> 命中率: {(() => { const c = computeHitChance(p1, p2, hoveredSkill, (e) => getStatuses(e), battle.p2RegistryState, battle.p1RegistryState); return c >= 1 && (hoveredSkill.isSureHit || /必中/.test(hoveredSkill.description || "")) ? "必中" : `${Math.round(c * 100)}%`; })()}</span>
                     <span className="flex items-center gap-2 text-cyan-400"><div className="w-2 h-2 bg-cyan-500 rounded-full shadow-[0_0_8px_rgba(6,182,212,0.5)]" /> 先制級: {hoveredSkill.priority || 0}</span>
                   </div>
                   {hoveredSkill.category !== "屬性" && (
@@ -1398,7 +1412,7 @@ export function BattleScreenUI(props: BattleScreenUIProps) {
                   </section>
                   <section className="bt-sub p-4 space-y-3">
                     <h3 className="text-sm font-semibold text-rose-300">異常狀態與效果</h3>
-                    <StatusBadgePanel elf={elf} emptyHint="無任何異常狀態或效果" disguiseAbnormalStatuses={disguiseBattleStates} />
+                    <StatusBadgePanel elf={elf} registryState={isActive ? (selectedElfDetail.side === 'p1' ? battle.p1RegistryState : battle.p2RegistryState) : (selectedElfDetail.side === 'p1' ? battle.p1ElfState : battle.p2ElfState)?.[elf.battleId || elf.id]?.registry} emptyHint="無任何異常狀態或效果" disguiseAbnormalStatuses={disguiseBattleStates} />
                   </section>
                   {marks.length > 0 && <section className="bt-sub p-4 space-y-3">
                     <h3 className="text-sm font-semibold text-amber-300">目前印記</h3>

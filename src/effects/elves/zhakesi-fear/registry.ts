@@ -201,7 +201,7 @@ export const handleFearIncarnationSoulMark = (ctx: BattleEventContext, event: Ef
         // Defending
         const hasShield = getPlayerState("shieldBlockNextAtk");
         if (hasShield && !bypassesAttackDefense(extraData, 'block')) {
-          extraData.multiplier = 0;
+          extraData.incomingDamageCancellation='block';extraData.multiplier = 0;
           setPlayerState("shieldBlockNextAtk", false);
           const dmg = Math.floor(ctx.target.maxHp / 3);
           ctx.applyTrueDamage(oppSide, dmg, "萬念歸墟反傷");
@@ -219,25 +219,6 @@ export const handleFearIncarnationSoulMark = (ctx: BattleEventContext, event: Ef
         } else if (typeof extraData.bonus === "number") {
           extraData.bonus += 2;
         }
-      }
-      break;
-    }
-
-    case EffectTiming.ON_KILL: {
-      const nextKillFear = getPlayerState("nextKillFearNextElf");
-      if (nextKillFear) {
-        setOpponentState("incomingElfFear", true);
-        setPlayerState("nextKillFearNextElf", false);
-      }
-      break;
-    }
-
-    case "OPPONENT_SWITCH": {
-      const incomingFear = ctx.getOpponentState("incomingElfFear");
-      if (incomingFear) {
-        ctx.applyStatusWithImmunityCheck(oppSide, "害怕", 1);
-        addLog(`🦇 【懼噬・虛實逆寫】：對手新精靈首回合陷入害怕！`, "effect");
-        setOpponentState("incomingElfFear", false);
       }
       break;
     }
@@ -314,53 +295,6 @@ export const ZHAKESI_FEAR_SKILLS: Record<string, BattleSkillHandler> = {
     ctx.setPlayerState("ignoreSpDefCount", 3);
     ctx.setPlayerState("ignoreSpDefPercent", 0.6);
     ctx.setPlayerState("ignoreSpDefSource", "幽幕折返");
-  },
-
-  "懼噬.虛實逆寫": (ctx) => {
-    const { self, actor, addLog } = ctx;
-    const oppSide = actor === "p1" ? "p2" : "p1";
-    const oppElf = ctx.target;
-    addLog(`🦇 【懼噬.虛實逆寫】：逆寫虛與實的境界！`, "effect");
-
-    const newSelfStages = { ...self.statStages };
-    let inverted = false;
-    for (const [k, v] of Object.entries(newSelfStages)) {
-      if ((v as number) < 0) {
-        newSelfStages[k as any] = -(v as number);
-        inverted = true;
-      }
-    }
-    if (inverted) {
-      ctx.updateElf(actor, { id: self.id, statStages: newSelfStages });
-      addLog(`反轉自身能力下降！令對手害怕！`, "status");
-      ctx.applyStatusWithImmunityCheck(oppSide, "害怕", 1);
-    } else {
-      const oppStages = { ...oppElf.statStages };
-      for (const [k, v] of Object.entries(newSelfStages)) {
-        if ((v as number) > 0) {
-          oppStages[k as any] = -(v as number);
-        }
-      }
-      ctx.updateElf(oppSide, { id: oppElf.id, statStages: oppStages });
-    }
-
-    let diffCount = 0;
-    let sameCount = 0;
-    const keys = ["atk", "def", "spatk", "spdef", "speed", "accuracy"];
-    keys.forEach(k => {
-      const selfLvl = self.statStages?.[k as any] || 0;
-      const oppLvl = oppElf.statStages?.[k as any] || 0;
-      if (selfLvl === oppLvl) sameCount++;
-      else diffCount++;
-    });
-
-    if (diffCount > 0) {
-      const drainAmt = diffCount * 120;
-      ctx.applyTrueDamage(oppSide, drainAmt, "虛實逆寫汲取");
-      ctx.applyHeal(actor, drainAmt);
-    }
-
-    ctx.setPlayerState("nextKillFearNextElf", true);
   },
 
   "劫數.萬念歸墟": (ctx) => {

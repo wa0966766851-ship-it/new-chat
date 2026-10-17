@@ -313,6 +313,12 @@ export const StatusRegistry: Record<string, StatusRegistryEntry> = {
       { type: 'DAMAGE_TICK', params: { dmgType: 'PERCENT', valueType: 'PERCENT', value: 0.125, timing: 'END' } }
     ]
   },
+  '黯痕': {
+    name: '黯痕',
+    categories: ['AUXILIARY'],
+    description: '附屬類異常；黯魂印標記；實際效果由黯痕回合鍵結算：持有者每次技能傷害無法超過1點、造成的百分比與固定傷害減半（對方無視傷害限制時改為本次技能傷害減半）、期間無法附加雙方任一方異常狀態、受到攻擊技能傷害翻倍',
+    mechanics: []
+  },
   '遲鈍': {
     name: '遲鈍',
     categories: ['WEAKENING'],

@@ -70,7 +70,8 @@ const first = E.movesFrom(r).find(n => n.kind === 'combat')!; r = E.moveTo(r, fi
   for (const i of [5, 6]) big = E.toggleStorage(big, i);
   assert.equal(E.benchOf(big).length, 3, '倉庫→待命');
   assert.equal(E.toggleStorage(big, 7), big, '待命滿不可再放');
-  { const pre = { ...big, scene: { kind: 'prelude' } } as E.RunV2; assert.equal(E.toggleStorage(pre, 5), pre, '倉庫只在地圖'); }
+  { const pre = { ...big, scene: { kind: 'prelude' } } as E.RunV2; assert.notEqual(E.toggleStorage(pre, 5), pre, '倉庫不再只限地圖，迎戰前也能存取');
+    const fighting = { ...pre, pendingBattle: { id: 'x', nodeId: null, encounter: (pre.scene as any).encounter } } as E.RunV2; assert.equal(E.toggleStorage(fighting, 5), fighting, '戰鬥結算中不可整理背包'); }
   big = E.toggleStorage(big, 5); assert.equal(E.benchOf(big).length, 2, '待命→倉庫');
   const hurt: E.RunV2 = { ...big, team: big.team.map(e => ({ ...e, currentHp: 1 })), scene: { kind: 'rest' } as any };
   const healed = E.restAction(hurt, 'mend');

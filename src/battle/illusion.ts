@@ -7,16 +7,12 @@ import { changePp } from '../effects/newElfOperations';
 import { trackIllusionStatWrite } from './illusionStats';
 import { projectIllusionSkill } from './illusionSkillProjection';
 import { releaseAcquiredRegistry } from './acquiredEffectContext';
+import { correspondingBagElf, findBagElf } from './bagTargets';
 
-/** 只取外觀；精靈戰鬥身分、體力與技能持有者均保持原本精靈。 */
-export function appearanceElf<T extends Pick<Elf, 'name' | 'id'>>(elf: T & { illusion?: Elf['illusion'] }): T {
-  return elf.illusion ? { ...elf, name: elf.illusion.target.name,
-    seerId: elf.illusion.target.seerId, path: elf.illusion.target.path,
-    height: elf.illusion.target.height, weight: elf.illusion.target.weight,
-    artPresentation: elf.illusion.target.artPresentation, illusion: undefined } : elf;
-}
+export {appearanceElf,bindInitialCounterparts} from './illusionPresentation';
 
-export function startIllusion(ctx: BattleEventContext, target: Elf, source: string, ppBonus = 0): boolean {
+export function startIllusion(ctx: BattleEventContext, defaultTarget: Elf | undefined, source: string, ppBonus = 0): boolean {
+  const target = takeIllusionOverride(ctx) ?? defaultTarget;
   if (!target || identity(target) === identity(ctx.self)) return false;
   if (ctx.self.illusion) endIllusion(ctx);
   const self = ctx.self;
@@ -64,18 +60,37 @@ export function illusionSkill(elf: Elf, skill: Skill): Skill {
   return target && original ? projectIllusionSkill(original, target, index) : skill;
 }
 
-/** 初始出戰／待命背包相同位数，不從經過召喚、死亡或消逝的動態清單重編。 */
+/** 初始出戰／待命背包相同位數；位數、禁用後壓緊與消逝順延規則見 bagTargets.ts。 */
 export function correspondingInitialElf(team: Elf[], self: Elf): Elf | undefined {
-  if (self.initialCounterpart) return self.initialCounterpart;
-  const original = team.filter(e => !e.summonerId);
-  const own = original.filter(e => Boolean(e.isExtra) === Boolean(self.isExtra));
-  const other = original.filter(e => Boolean(e.isExtra) !== Boolean(self.isExtra));
-  return other[own.findIndex(e => identity(e) === identity(self))];
+  return correspondingBagElf(team, self);
 }
 
-export function bindInitialCounterparts(roster: Elf[], activeCount: number): Elf[] {
-  return roster.map((elf, index) => {
-    const peer = roster[index < activeCount ? index + activeCount : index - activeCount];
-    return { ...elf, initialCounterpart: peer ? structuredClone({ ...peer, initialCounterpart: undefined, illusion: undefined }) : undefined };
-  });
+/* ── 幻化指定對象覆寫（幻化指令）：己方「下次」幻化改指定所選精靈，執行一次即清除 ── */
+/** team 開頭＝陣營層級狀態（stateScopes.isTeamRegistryKey）：換人後仍保留，由「下次幻化」消耗。 */
+export const ILLUSION_OVERRIDE_KEY = 'teamIllusionTargetOverride';
+export interface IllusionOverride { side: 'p1' | 'p2'; battleId: string }
+const bagTeams = (ctx: BattleEventContext) => ({ p1: ctx.getFullTeam('p1'), p2: ctx.getFullTeam('p2') });
+
+/** 所選精靈是否仍在當前雙方背包內且未消逝。 */
+export function resolveIllusionPick(ctx: BattleEventContext, pick: IllusionOverride | undefined): Elf | undefined {
+  return pick ? findBagElf(bagTeams(ctx), pick.side, pick.battleId) : undefined;
 }
+export function setIllusionOverride(ctx: BattleEventContext, pick: IllusionOverride): boolean {
+  if (!resolveIllusionPick(ctx, pick)) return false;
+  ctx.setPlayerState(ILLUSION_OVERRIDE_KEY, { ...pick });
+  return true;
+}
+/** 取走（並清除）己方的覆寫；所選精靈已消逝／不在背包／就是自己時回傳 undefined，改用原本指定對象。 */
+function takeIllusionOverride(ctx: BattleEventContext): Elf | undefined {
+  const pick: IllusionOverride | undefined = ctx.getPlayerState?.(ILLUSION_OVERRIDE_KEY);
+  if (!pick) return undefined;
+  ctx.setPlayerState(ILLUSION_OVERRIDE_KEY, undefined);
+  const elf = resolveIllusionPick(ctx, pick);
+  if (!elf || identity(elf) === identity(ctx.self)) {
+    ctx.addLog('【幻化指令】：指定的精靈已無法選取，改用原本的幻化對象。', 'effect');
+    return undefined;
+  }
+  ctx.addLog(`【幻化指令】：幻化對象改為【${elf.name}】。`, 'effect');
+  return elf;
+}
+

@@ -5,6 +5,8 @@ import { buildEffectViewModels, type BattleEffectViewModel } from './effectViewM
 import { effectIcon, STATE_SIGNS } from './effectIcons';
 import { marsMechanismEffects, MARS_MECHA_CATALOG } from '../effects/elves/mars/presentation';
 import { elfForViewer, hiddenFromViewer } from './viewerPerspective';
+import {statusCountAppearance} from './statusImmunityCount';
+import {displayTurnValue} from './displayTurnValue';
 
 export function visibleEffectSourceText(source: Elf | undefined, side: 'p1' | 'p2'): string {
   return !source || hiddenFromViewer(source, side) ? '' : elfForViewer(source, side).soulMark?.description || '';
@@ -18,12 +20,21 @@ export function activeEffectViews(elf: Elf, marks: Mark[] = [], timers: Timer[] 
     if (shadowOf && views.some(v => v.semanticId === shadowOf && v.value === view.value)) return;
     views.push(view);
   };
+  for (const key of ['blkImmuneStatusCount', 'blkReflectStatusCount']) {
+    const value = Number(registry[key] || 0);
+    if (!(value > 0)) continue;
+    const appearance = statusCountAppearance(false, true, key === 'blkReflectStatusCount');
+    append({id: `registry:${key}`, semanticId: key, category: 'count', ...appearance,
+      shortLabel: '免', source: '持有者次數狀態', value, unit: '次', clearable: false,
+      persistsOffField: true, triggerNode: '受到異常時消耗', polarity: 'positive',
+      icon: effectIcon('免疫異常'), priority: 70});
+  }
   for (const [field, semanticId, label, iconTag, polarity] of [
     ['statusImmuneTurns', 'status_guard', '異常免疫', '免疫異常', 'positive'],
     ['cannotUseAttrSkillsTurns', 'invalid:屬性', '屬性技能封鎖', '技能無效', 'negative'],
     ['cannotUseAttackSkillsTurns', 'invalid:攻擊', '攻擊技能失效', '技能無效', 'negative'],
   ] as const) {
-    const value = Number((elf as any)[field] || 0);
+    const value = displayTurnValue(elf,registry,field);
     if (value > 0) append({ id: `field:${field}`, semanticId, category: 'turn', label, shortLabel: label[0],
       description: label, source: '戰鬥狀態欄位', value, unit: '回合', clearable: true,
       polarity, icon: effectIcon(iconTag), priority: 80 }, semanticId);

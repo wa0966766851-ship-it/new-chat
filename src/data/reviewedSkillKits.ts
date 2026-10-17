@@ -2,6 +2,7 @@ import type { Elf, Skill } from '../types';
 import type { KitEntry } from '../effects/effectSystem.schema';
 import { REVIEWED_SEQUENCE_SKILL_KITS } from './reviewedSequenceSkillKits';
 import { MIGRATED_SEQUENCE_SKILL_KITS } from './migratedSequenceSkillKits';
+import { isLegacyWrappedKit } from '../blocks/ops/legacyHandler';
 
 /** 人工逐句核對的第一批；不是以解析成功率批量切換。原文變更即停止套用。 */
 export const REVIEWED_SKILL_KITS: { elfIds: string[]; name: string; description: string; kit: KitEntry[] }[] = [
@@ -36,7 +37,7 @@ export function applyReviewedSkillKits(elf: Elf): Elf {
     if (skill.effectMode && skill.effectMode !== 'auto' || skill.kit?.length) return skill;
     const reviewed = [...REVIEWED_SKILL_KITS,...REVIEWED_SEQUENCE_SKILL_KITS,...MIGRATED_SEQUENCE_SKILL_KITS].find(item => item.elfIds.includes(String(elf.id)) &&
       item.name === skill.name && item.description === skill.description);
-    return reviewed ? { ...skill, effectMode: 'kit', kit: structuredClone(reviewed.kit) } : skill;
+    return reviewed ? { ...skill, effectMode: isLegacyWrappedKit(reviewed.kit) ? 'registry' : 'kit', kit: structuredClone(reviewed.kit) } : skill;
   };
   return { ...elf, skills: elf.skills.map(apply), skillPool: elf.skillPool?.map(apply) };
 }

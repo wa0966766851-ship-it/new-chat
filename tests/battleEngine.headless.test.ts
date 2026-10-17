@@ -34,6 +34,12 @@ const use = (side: 'p1' | 'p2', i: number) => (e: BattleEngine) => e.onSkillSele
 const ids = (nodes: { id: string }[]) => nodes.map(n => n.id);
 const sub = (seq: string[], want: string[]) => { let i = 0; for (const x of seq) if (x === want[i]) i++; return i === want.length; };
 
+await check('1.1正式開局逐隻通知完整背包，先於雙方首發1.3；官方節點不增添偽節點',async()=>{
+  const events:string[]=[];
+  for(const name of ['A','B','X','Y'])S[name]=(_:any,e:any)=>{if(e===EffectTiming.BATTLE_START)events.push(`${name}:start`);if(e===EffectTiming.ON_ENTRANCE)events.push(`${name}:enter`);};
+  try{const {engine,nodes}=battle([elf('A',5000,[skill('等')]),elf('B',5000,[skill('等')])],[elf('X',5000,[skill('等')]),elf('Y',5000,[skill('等')])]);await engine.idle();assert.deepEqual(events,['A:start','B:start','X:start','Y:start','A:enter','X:enter']);assert.deepEqual(ids(nodes),['1.1','1.3','1.3']);engine.unmount();}finally{for(const name of ['A','B','X','Y'])delete S[name];}
+});
+
 await check('不經 React 跑完一個回合；雙方出手流程與回合結束依官方順序', async () => {
   const { engine, nodes } = battle([elf('A', 5000, [skill('打', 60)], 200)], [elf('X', 5000, [skill('打', 60)], 100)]);
   await turn(engine, use('p1', 0), use('p2', 0));

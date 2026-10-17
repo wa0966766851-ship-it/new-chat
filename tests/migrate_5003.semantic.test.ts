@@ -140,7 +140,7 @@ try {
       const hist = await lockRun(side, { n: 5, pick: t => [t === 1 ? 0 : 1, 0] });
       assert.deepEqual(hist.map((r: any) => r.self.currentHp), [33000, 63000, 90000, 90000, 90000], '第3回合只實際恢復27000（體力上限）');
       assert.deepEqual(hist.map((r: any) => r.opp.currentHp), [85000, 70000, 56500, 56500, 56500], '傷害＝實際恢復量×50%：15000、15000、13500、0、0');
-      const timedRecovery = (state: any) => state[`${side}Timers`].find((t: any) => t.id.startsWith(`blk_${side}_殘軀鎖命_持續效果_round_end|program=`)&&t.payload.block.body[0].acts[0].op==='heal');
+      const timedRecovery = (state: any) => state[`${side}Timers`].find((t: any) => t.id.startsWith(`blk_${side}_殘軀鎖命_持續效果_self_skill|program=`)&&t.payload.block.body[0].acts[0].op==='heal');
       assert.equal(timedRecovery(hist[2].state)?.remaining, 1, h.timers(hist[2].state, side).join());
       assert.equal(timedRecovery(hist[3].state), undefined, '第4回合結束後到期；驗證穩定ID而非舊佔位名稱');
       assert.ok(hasTimer(hist[1].state, side, '受傷上限200:2'));

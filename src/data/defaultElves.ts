@@ -13,7 +13,7 @@ import { LIUJIE_SEED } from "./liujie";
 import { NEW_ELF_SEEDS } from "./newElves";
 import { HAMO_SEED } from './hamo';
 import { isSkillStone, stoneBasePp } from './skillStones';
-import { applyReviewedSkillKits } from './reviewedKitCatalogue';
+import { applyReviewedSkillKits,loadDeferredReviewedKits } from './reviewedKitCatalogue';
 
 function createRefSkill(
   elfId: string,
@@ -2023,7 +2023,7 @@ const SEED_ELVES: (Omit<Elf, "id" | "calculatedStats" | "currentHp" | "maxHp"> &
         priority: 3,
         accuracy: 100,
         isSureHit: true,
-        description: "先制+1；必中；消除對手回合類效果，消除成功則令對手疲憊，未觸發則100%令對手詛咒；消除對手能力提升狀態，消除成功則令對手害怕，未觸發則100%令對手詛咒；2回合內令對手使用的屬性技能無效；恢復自身最大體力1/1並附加對手等量百分比傷害",
+        description: "先制+3；必中；消除對手回合類效果，消除成功則令對手疲憊，未觸發則100%令對手詛咒；消除對手能力提升狀態，消除成功則令對手害怕，未觸發則100%令對手詛咒；2回合內令對手使用的屬性技能無效；恢復自身最大體力1/1並附加對手等量百分比傷害",
         effectType: "dispel",
         effectDetail: "wuxian_xushu_yanmie"
       },
@@ -2798,7 +2798,7 @@ export const getDefaultElvesRevision = () => revision;
 export function subscribeDefaultElves(listener: () => void): () => void { listeners.add(listener); return () => { listeners.delete(listener); }; }
 export function loadImportedElves(): Promise<void> {
   // 順序與先前靜態載入相同：階段競技場精靈（原本在 SEED_ELVES 尾端）→ API 匯入精靈，皆追加在清單尾端。
-  importedLoad ??= Promise.all([import("./stagedArenaElves"), import("./importedElves")]).then(([{ STAGED_ARENA_ELVES }, { IMPORTED_ELF_SEEDS }]) => {
+  importedLoad ??= Promise.all([import("./stagedArenaElves"), import("./importedElves"),loadDeferredReviewedKits()]).then(([{ STAGED_ARENA_ELVES }, { IMPORTED_ELF_SEEDS }]) => {
     const start = DEFAULT_ELVES.length;
     DEFAULT_ELVES.push(...prepareSeeds([...STAGED_ARENA_ELVES, ...IMPORTED_ELF_SEEDS] as any).map((item, i) => finalizeSeed(item, start + i)));
     revision++;

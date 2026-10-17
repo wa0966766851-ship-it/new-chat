@@ -7,6 +7,8 @@ import { runSkillProgram, runSoulProgram, runStmts, runSideTimers, eventTriggers
 import { CUSTOM } from '../src/blocks/custom';
 import { clearTurnEffects } from '../src/battle/timers';
 import { EffectTiming } from '../src/effects/types';
+import { compileEffectPlan } from '../src/effects/effectConnection';
+import { skillStageView } from '../src/battle/skillStageView';
 import { resetPrd } from '../src/utils/prd';
 
 let pass = 0, fail = 0;
@@ -217,10 +219,13 @@ t('究極吸取：等量取實際攻擊傷害，不讀上一句的300護盾', ()
 });
 
 console.log('\n=== G11 戰鬥開始 ===');
-t('首發登場映射 battle_start（每方一次）', () => {
+t('戰鬥開始事件映射 battle_start（每方一次）；首發登場只映射 entrance', () => {
+  // 正式設計（PC 同步 4）：開局 1.1 另發 BATTLE_START 通知，先於首發登場；登場事件不再兼帶 battle_start。
   const h = mock();
-  assert.ok(eventTriggers(h.p1, EffectTiming.ON_ENTRANCE, {}).includes('battle_start'));
-  assert.ok(!eventTriggers(h.p1, EffectTiming.ON_ENTRANCE, {}).includes('battle_start'));
+  assert.ok(eventTriggers(h.p1, EffectTiming.BATTLE_START, {}).includes('battle_start'));
+  assert.ok(!eventTriggers(h.p1, EffectTiming.BATTLE_START, {}).includes('battle_start'));
+  const entrance = eventTriggers(h.p1, EffectTiming.ON_ENTRANCE, {});
+  assert.ok(entrance.includes('entrance')); assert.ok(!entrance.includes('battle_start'));
 });
 
 console.log('\n=== 個別精靈 ===');
@@ -247,23 +252,27 @@ t('5006 不滅之火：附加後對手體力未減少以實際扣血（hpReduced
   const sk = skillByName('星光·不滅之火'); const h = mock(); h.p1.skill = sk;
   runSkillProgram(h.p1, getSkillProgram(sk), 'use', [4]);
   const tm = h.timers.p1.find(x => x.payload?.block?.trig === 'self_skill')!;
-  runSideTimers(h.p1, ['self_skill'], {});
-  assert.equal(h.dmg.fixed, 400); assert.equal(h.dmg.true, 0, '未結算前不判定');
+  // 持續效果「N回合內每回合使用技能時」包含本次使用：初次命中啟動時補本次（initial），不等下一次使用才附加。
+  assert.equal(h.dmg.fixed, 400, '本次使用即附加400（initial 補本次）'); assert.equal(h.dmg.true, 0, '未結算前不判定');
   settleNoDmgFollowUps(h.p1, { damageType: 'fixed', targetSide: 'p2', hpReduced: 0 });
   assert.equal(h.dmg.true, 400);
-  runSideTimers(h.p1, ['self_skill'], {});
+  runSideTimers(h.p1, ['self_skill'], {}); // 下一次使用技能
+  assert.equal(h.dmg.fixed, 800, '下一次使用再附加400');
   settleNoDmgFollowUps(h.p1, { damageType: 'fixed', targetSide: 'p2', hpReduced: 400 });
   assert.equal(h.dmg.true, 400, '有扣血則不追加'); void tm;
 });
-t('5007 深潛者盛宴：能力下降視為2倍同級提升寫入 blkStageAsBoost；計時器 id 帶方位；技能結束清除待決', () => {
+t('5007 深潛者盛宴：能力下降視為2倍同級提升（Kit 階段檢視）；增傷計時器每次傷害動態判定異常；吸取只走 Kit 通用動作', () => {
   const h = mock({ statStages: { ...stages(), def: -2 } }); h.p1.skill = skillByName('深潛者盛宴');
-  CUSTOM['自身處於能力下降狀態時先制+3且使用技能不受PP值限制、將自身任意能力下降狀態視為至少2倍同等級的全屬性能力提升'].run(h.p1, { last: null, lastAmount: 0 });
-  assert.equal(h.reg.p1.blkStageAsBoost, 4);
-  runSkillProgram(h.p1, getSkillProgram(h.p1.skill), 'use', [4, 5]);
-  assert.ok(h.timers.p1.some(x => x.id === 'blk_p1_brinkk_feast_damage'));
-  assert.equal(h.reg.p1.brinkkFeastAbsorbFallbackPending, true);
-  runSideTimers(h.p1, ['self_after_skill'], {});
-  assert.equal(h.reg.p1.brinkkFeastAbsorbFallbackPending, false);
+  assert.equal(skillStageView(h.self, h.p1.skill, 'atk'), 4, '下降2級視為4級提升（原 blkStageAsBoost=4）');
+  assert.equal(skillStageView(h.self, h.p1.skill, 'speed'), 4);
+  assert.equal(h.reg.p1.blkStageAsBoost, undefined, '不再寫舊 blkStageAsBoost 狀態');
+  const program = compileEffectPlan(h.p1.skill, 'skill', false).program;
+  const at = (text: string) => program.clauses.findIndex((c: any) => String(c.raw).includes(text));
+  runSkillProgram(h.p1, program, 'use', [at('吸取對手300點體力'), at('3回合內自身造成技能傷害提升50%')]);
+  const feast = h.timers.p1.find(x => x.payload?.block?.doubleIfAnyStatus);
+  assert.ok(feast, '3回合增傷計時器帶「雙方異常則翻倍」動態旗標');
+  assert.equal(feast.remaining, 3);
+  assert.equal(h.reg.p1.brinkkFeastAbsorbFallbackPending, undefined, '不再有舊專屬待決旗標');
 });
 t('5008 魂印：抵擋隨異常提前解除而結束；轉化混亂同步 battleStatuses；鎖魂曲護罩也算', () => {
   const h = mock({ battleStatuses: { 混亂: 2 } });

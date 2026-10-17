@@ -15,11 +15,11 @@ import { readBasePriority } from '../effects/skillProperty';
 type StatusGetter = (e: any) => Record<string, number>;
 
 /** 基礎先制與条件式先制共用來源合約；Kit 不借用舊描述，欄位先制不再被描述重複加算。 */
-export function skillBasePriority(skill: any, self: any, opp: any, getStatuses: StatusGetter, inherentRestricted = false): number {
+export function skillBasePriority(skill: any, self: any, opp: any, getStatuses: StatusGetter, inherentRestricted = false, battleContext?:any): number {
   if (!skill || inherentRestricted) return 0;
   const hasHandler = hasConnectedSkillHandler(skill.name);
   if (usesAuthoredSkill(skill, hasHandler, self)) {
-    if(effectRoute(skill,hasHandler)==='kit')return readBasePriority(skill,{self,target:opp,getStatuses,getPlayerState:()=>undefined,getOpponentState:()=>undefined,actor:'p1',targetSide:'p2',skill}) ?? skill.priority ?? 0;
+    if(effectRoute(skill,hasHandler)==='kit')return readBasePriority(skill,battleContext??{self,target:opp,getStatuses,getPlayerState:()=>undefined,getOpponentState:()=>undefined,getMarks:(side:string)=>side==='p1'?(self.marks||[]):(opp.marks||[]),actor:'p1',targetSide:'p2',skill}) ?? skill.priority ?? 0;
     if (effectRoute(skill, hasHandler) !== 'description') return skill.priority || 0;
     const plan = compileEffectPlan(skill, 'skill', hasHandler);
     const unconditional = plan.program.clauses.filter(c => c.parsed && !c.cond?.length)

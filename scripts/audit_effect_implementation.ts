@@ -15,24 +15,36 @@ try {
   const { describeExecution, auditProgram } = await server.ssrLoadModule('/src/blocks/audit.ts');
   const { getElfTraitEntries } = await server.ssrLoadModule('/src/components/ElfTraitCards.tsx');
   const { SKILL_MODE, SOUL_MODE } = await server.ssrLoadModule('/src/blocks/specs.ts');
+  const { getSkillProgram, getSoulProgram } = await server.ssrLoadModule('/src/blocks/registry.ts');
+  const { parseSoulMark } = await server.ssrLoadModule('/src/blocks/parse.ts');
   const { getBattleSkillRegistry, getSoulMarkRegistry } = await server.ssrLoadModule('/src/effects/battleEventRegistry.ts');
   const skillsRegistry = getBattleSkillRegistry(), soulsRegistry = getSoulMarkRegistry();
   const handlers = { skill: (name: string) => typeof skillsRegistry[name] === 'function', soul: (name: string) => typeof soulsRegistry[name] === 'function' };
+  // legacy_handler 包裝的定義仍由原專屬程式執行：稽核以原文逐句列出（不因包裝折成單一子句而少算），入口記為 handler，逐句仍待核對。
+  const describe = (input: any) => {
+    const described = describeExecution(input, handlers);
+    if (!described.legacyWrapped) return described;
+    const program = input.skill ? getSkillProgram(input.skill) : input.trait ? parseSoulMark(input.trait.name, input.trait.description || '') : getSoulProgram(input.elf);
+    return { ...described, program, route: 'handler' };
+  };
   const monkeyBaphometEvidence = JSON.parse(readFileSync('docs/audits/monkey-baphomet-evidence.json', 'utf8'));
+  const gapEvidence = JSON.parse(readFileSync('docs/audits/gap-skill-evidence.json', 'utf8'));
   const evidence: AuditEvidence[] = [
     ...JSON.parse(readFileSync('docs/audits/semantic-evidence.json', 'utf8')).evidence,
     ...JSON.parse(readFileSync('docs/audits/reviewed-skill-evidence.json', 'utf8')).evidence,
+    // dixin-sobirat-evidence.json 是交接草稿：兩筆未對應原句且尚缺逐句語意審查，不登錄為正式證據。
     ...monkeyBaphometEvidence.evidence.map(proof => ({ ...proof, testFile: monkeyBaphometEvidence.testFile,
       testSha256: monkeyBaphometEvidence.testSha256, lastPassed: monkeyBaphometEvidence.lastPassed, inputs: monkeyBaphometEvidence.inputs })),
+    ...gapEvidence.evidence.map(proof => ({...proof,testFile:gapEvidence.testFile,testSha256:gapEvidence.testSha256,lastPassed:gapEvidence.lastPassed,inputs:gapEvidence.inputs})),
   ];
   const sources = findTextSources(root, DEFAULT_ELVES);
   const usedEvidence = new Set<string>();
   const rows = DEFAULT_ELVES.map((elf: any) => {
     const skills = [...(elf.skills || []), ...(elf.skillPool || [])].filter((s, i, all) => all.findIndex(other => other.name === s.name && other.description === s.description) === i);
     const entries = [
-      { kind: '魂印', name: elf.soulMark?.name || '無魂印', sourceText: elf.soulMark?.description || '', ...describeExecution({ elf }, handlers) },
-      ...getElfTraitEntries(elf).filter((t: any) => t.kind !== '專屬特性／魂印').map((trait: any) => ({ kind: trait.kind, name: trait.name, sourceText: trait.description, ...describeExecution({ trait }, handlers) })),
-      ...skills.map(skill => ({ kind: '技能', name: skill.name, sourceText: skill.description || '', ...describeExecution({ elf, skill }, handlers) })),
+      { kind: '魂印', name: elf.soulMark?.name || '無魂印', sourceText: elf.soulMark?.description || '', ...describe({ elf }) },
+      ...getElfTraitEntries(elf).filter((t: any) => t.kind !== '專屬特性／魂印').map((trait: any) => ({ kind: trait.kind, name: trait.name, sourceText: trait.description, ...describe({ trait }) })),
+      ...skills.map(skill => ({ kind: '技能', name: skill.name, sourceText: skill.description || '', ...describe({ elf, skill }) })),
     ];
     const textSources = sources.get(elf.id) || [];
     return { id: elf.id, name: elf.name, sourceFiles: textSources.map(({ path, sha256 }) => ({ path, sha256 })),
@@ -58,6 +70,7 @@ try {
   assert.equal(new Set(rows.flatMap((row: any) => row.entries.flatMap((entry: any) => entry.clauses.map((c: any) => c.id)))).size,
     rows.reduce((n: number, row: any) => n + row.entries.reduce((m: number, entry: any) => m + entry.clauses.length, 0), 0), '子句 ID 必須唯一');
   const unmapped = evidence.filter(proof => !usedEvidence.has(proof.id)).map(proof => proof.id);
+  if (process.argv.includes('--write')) console.log('UNMAPPED:', JSON.stringify(unmapped));
   assert.deepEqual(unmapped, [], '測試證據對應的原句已改動，須人工重新核對，不能自動轉移');
   const records = rows.flatMap((r: any) => r.entries.flatMap((e: any) => e.clauses)).filter((c: any) => !c.explanation);
   const all = records.filter((c: any) => !c.presentationOnly);

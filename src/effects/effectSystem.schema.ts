@@ -6,14 +6,18 @@
 
 // ── 引擎既有節點(對齊 EffectTiming)。技能=隱含節點；魂印=顯式節點 ──────────
 export type Node =
-  | "battle_start" | "on_entered" | "before_action" | "before_skill"
-  | "before_damage" | "on_hit" | "on_damaged" | "after_action"
+  | "on_opponent_damaged"
+  | "on_skill_selected"
+  | "modify_power"
+  | "on_resource_changed"
+  | "battle_start" | "on_entered" | "before_action" | "before_skill" | "before_instant_kill"
+  | "before_damage" | "on_hit" | "after_attack_hit" | "on_damaged" | "after_action"
   | "round_start" | "round_end" | "battle_phase_end"
-  | "on_kill" | "self_fatal" | "cthyaat_death" | "battle_end"
+  | "on_kill" | "on_not_killed" | "self_fatal" | "cthyaat_death" | "battle_end"
   | "on_skill_use" | "on_attacked" | "any_battle_node" | "passive_always" | "modify_priority"
   | "on_invalid" | "before_switch_out" | "on_switch_out" | "opponent_after_action" | "pp_consumed"
   | "extra_action_start" | "extra_action_end" | "before_status_apply" | "opponent_entered"
-  | "on_status_ended" | "on_status_received" | "on_status_immunized" | "before_status_tick";
+  | "on_status_ended" | "on_status_received" | "on_status_immunized" | "before_status_tick" | "on_turn_effects_cleared" | "on_stat_boost_cleared";
 
 // ── 三分類軸(前面談定的)──────────────────────────────────────────────
 export type Role = "innate" | "attached" | "carried";          // ■ 🎯 ◇

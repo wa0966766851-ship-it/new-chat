@@ -1,14 +1,15 @@
-import type { AtomId } from './effectSystem.schema';
+import type { AtomId, Node } from './effectSystem.schema';
+import {EFFECT_NODES as NODE_CONTRACTS} from './effectNodes';
 import { canonicalStatusName } from './statusIdentity';
 import { StatusRegistry } from './statusRegistry';
 import { sequenceIssue, skillPropertyIssue } from './sequenceContract';
 import { soulPropertyIssue } from './soulProperty';
 
-export const EFFECT_NODES = ['battle_start','on_entered','before_action','before_skill','before_damage','on_hit','on_damaged','after_action','round_start','round_end','battle_phase_end','on_kill','self_fatal','cthyaat_death','battle_end','on_skill_use','on_attacked','any_battle_node','passive_always','modify_priority','on_invalid','before_switch_out','on_switch_out','opponent_after_action','pp_consumed','extra_action_start','extra_action_end','before_status_apply','opponent_entered','on_status_ended','on_status_received','on_status_immunized','before_status_tick'] as const;
+export const EFFECT_NODES:readonly Node[] = Object.keys(NODE_CONTRACTS) as Node[];
 export const ATOM_PARAMETER_FIELDS: Record<AtomId, string[]> = {
   effect_sequence: ['clause'],
-  skill_property: ['property','value','conditions','pct'],
-  soul_property:['property','chance','kind'],
+  skill_property: ['property','value','conditions','pct','perMark','perStage','perPPDiff'],
+  soul_property:['property','chance','kind','stats','percent'],
   extra_damage: ['amount','ratio','dmgType','damageType','amountMode','elem','damageNode','incremental','label'],
   damage_multiplier: ['multiplier','value','damageTypes'], damage_reduce: ['percent','amount','damageTypes'],
   damage_reflect: ['ratio','percent','damageType','dmgType','elem'], heal: ['amount','ratio','mode'],
@@ -42,9 +43,9 @@ export function validateAtomParams(atom: string, p: unknown, path = 'params', de
       for(const condition of statement.cond || [])if(condition.c==='has_status'&&!StatusRegistry[canonicalStatusName(condition.p.status)])bad(path,`條件異常${condition.p.status}尚未登記`);
       for(const condition of statement.cond || [])if(condition.c==='event_status')for(const status of condition.p.statuses)if(!StatusRegistry[canonicalStatusName(status)])bad(path,`本次異常${status}尚未登記`);
       for(const action of [...statement.acts,...(statement.elseActs||[])]) {
-        const statuses=['status','status_replace','next_entry_status'].includes(action.op)?[action.p.status]:action.op==='status_seq'?action.p.list:[];
+        const statuses=['status','status_replace','next_entry_status'].includes(action.op)?[action.p.status]:action.op==='convert_status'?[action.p.status,...(action.p.from?[action.p.from]:[])]:action.op==='status_seq'?action.p.list:[];
         for(const status of statuses) if(!StatusRegistry[canonicalStatusName(status)])bad(path,`異常${status}尚未登記`);
-        if(['timed','once','watch','at_round_end'].includes(action.op))inspect(action.p.body);
+        if(['timed','timed_uses','once','watch','at_round_end','next_ally_entry'].includes(action.op))inspect(action.p.body);
         if(action.op==='mark_program')for(const rule of action.p.rules){inspect([{cond:rule.cond||[],acts:[]}]);inspect(rule.body);}
       }
     }};
@@ -56,10 +57,12 @@ export function validateAtomParams(atom: string, p: unknown, path = 'params', de
     if(issue)bad(path,issue);return;
   }
   if (atom === 'skill_property') {
-    choice(p.property, `${path}.property`, ['sure_hit','base_priority','base_accuracy','stage_view','conditional_sure_hit','chance_priority','conditional_priority']);
+    choice(p.property, `${path}.property`, ['ignore_pp_limit','sure_hit','base_priority','mark_priority','stage_power','attack_hits','ignore_damage_reduction','ignore_positive_priority','base_accuracy','base_power','hit_requirement','stage_view','conditional_sure_hit','chance_priority','conditional_priority','forced_first']);
     if (p.property === 'chance_priority') { num(p.value, `${path}.value`, 1, 100); num(p.pct, `${path}.pct`, 0, 100); return; }
-    if (p.property === 'sure_hit'||p.property==='conditional_sure_hit') { if (p.value !== true) bad(path, '必中需為true'); }
-    else if(p.property==='stage_view') { choice(p.value, `${path}.value`, ['opp_up_as_down','self_down_as_opp_down','self_down_as_up']); }
+    if (p.property==='ignore_pp_limit'||p.property === 'sure_hit'||p.property==='conditional_sure_hit'||p.property==='hit_requirement'||p.property==='forced_first'||p.property==='ignore_damage_reduction'||p.property==='ignore_positive_priority') { if (p.value !== true) bad(path, '布林公式查詢需為true'); }
+    else if(['base_power','stage_power'].includes(p.property)){num(p.value,`${path}.value`,p.property==='stage_power'?1:0,1000000);if(!Number.isInteger(p.value))bad(path,'固有威力需為整數');}
+    else if(p.property==='stage_view') { choice(p.value, `${path}.value`, ['opp_up_as_down','self_down_as_opp_down','self_down_as_up','self_down_as_double_up']); }
+    else if(p.property==='attack_hits') { if(!p.value||typeof p.value!=='object'||Object.keys(p.value).some(k=>!['min','max'].includes(k))||!Number.isInteger(p.value.min)||!Number.isInteger(p.value.max)||p.value.min<1||p.value.max<p.value.min||p.value.max>100)bad(path,'攻擊次數需1至100整數範圍'); }
     else { num(p.value, `${path}.value`, -100, 100); if (!Number.isInteger(p.value)) bad(path, '公式前查詢需為整數'); }
     const issue=sequenceIssue({raw:'固有查詢',trig:'use',parsed:true,cond:p.conditions ?? [],body:[{acts:[{op:'heal_flat',p:{amount:0},label:''}]}]});
     if(issue)bad(path,issue);

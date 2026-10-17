@@ -54,7 +54,9 @@ interface BattleScreenProps {
   battleFormat?: "normal_6v6" | "solo_1v1" | "peak_6v6" | "peak_3v3";
   /** 重來（非首次進入）：入戰動畫播縮短版 */
   introReplay?: boolean;
-  interstellarOptions?: {onPotionUse?:()=>boolean;onBattleEnd?:Function;relics?:string[];enemyRelics?:string[]};
+  interstellarOptions?: {onPotionUse?:()=>boolean;onBattleEnd?:Function;relics?:string[];enemyRelics?:string[];battleSeed?:number};
+  /** 固定戰鬥亂數種子（可重現的對局；缺省為隨機） */
+  randomSeed?: number;
   onDriverInit?: (driver: {
     getState: () => any;
     getSyncState?: () => any;

@@ -9,7 +9,7 @@ const identity=(elf:Elf)=>elf.battleId || elf.id;
 
 /** 所有技能槽逐槽結算：上限、恢復限制、星護及PP事件走同一管道，不以模板直接覆寫。 */
 /** only：只處理符合條件的技能（例如只限攻擊技能）；未符合的技能PP不變。 */
-export function applyKitPpOperation(ctx:BattleEventContext,side:'p1'|'p2',mode:KitPpMode,amount=0,only?:(skill:any)=>boolean,report?:{emptied:number[]}):boolean {
+export function applyKitPpOperation(ctx:BattleEventContext,side:'p1'|'p2',mode:KitPpMode,amount=0,only?:(skill:any)=>boolean,report?:{emptied?:number[];restored?:number}):boolean {
   const current=(s:'p1'|'p2')=>{
     const base=s===ctx.actor?ctx.self:s===ctx.targetSide?ctx.target:s==='p1'?ctx.activeP1:ctx.activeP2;
     return ctx.getFullTeam?.(s)?.find(e=>identity(e)===identity(base)) || base;
@@ -24,7 +24,7 @@ export function applyKitPpOperation(ctx:BattleEventContext,side:'p1'|'p2',mode:K
   const recovery=mode==='recover'||mode==='add';
   const result=changePp(adapter,side,elf,s=>only&&!only(s)?s.pp:mode==='zero'?0:mode==='recover'?getMaxPp(s,elf):recovery?
     Math.min(getMaxPp(s,elf),s.pp+amount):Math.max(0,s.pp-amount),recovery,mode==='zero'?'clear':recovery?'restore':'drain');
-  if(report)report.emptied=result.emptied;
+  if(report){report.emptied=result.emptied;report.restored=result.restored;}
   let changed=before!==JSON.stringify(current(side).skills);
   if(mode==='drain') {
     const self=current(ctx.actor),old=JSON.stringify(self.skills);

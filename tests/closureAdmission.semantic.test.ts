@@ -1,0 +1,13 @@
+import assert from 'node:assert/strict';
+import { sequenceIssue } from '../src/effects/sequenceContract';
+const issue=(op:string,p:Record<string,unknown>)=>sequenceIssue({raw:'合約驗證',trig:'use',parsed:true,body:[{acts:[{op,p,label:op}]}]});
+assert.match(issue('mark_turns',{side:'self',name:'自訂印記',turns:3})!,/原施放者文本/);
+assert.match(issue('mark_turns',{side:'opp',name:'自訂印記',turns:3})!,/原施放者文本/);
+assert.match(issue('status_chance_turns',{side:'opp',status:'冰封',chance:80,turns:4})!,/僅附加一次/);
+assert.equal(issue('status_chance_turns',{side:'opp',status:'冰封',chance:80}),null);
+assert.match(issue('ignore_def_turns',{turns:2,ratio:.25,stat:'防禦'})!,/僅有雙防/);
+assert.equal(issue('ignore_def_turns',{turns:2,ratio:.25,stat:'雙防'}),null);
+assert.match(issue('dmg_of_event',{ratio:.5,type:'真實'})!,/正式傷害資料/);
+assert.equal(sequenceIssue({raw:'受傷後',trig:'damaged_fixed',parsed:true,body:[{acts:[{op:'dmg_of_event',p:{ratio:.5,type:'真實'},label:'事件傷害'}]}]}),null);
+assert.equal(issue('timed',{turns:4,from:'now',trig:'round_end',body:[{acts:[{op:'status',p:{side:'opp',status:'冰封',chance:80},label:'冰封'}]}]}),null);
+console.log('✓ 不接受原文回查印記、未讀取期限或未讀取防禦範圍；通用計時連鎖保持可用');

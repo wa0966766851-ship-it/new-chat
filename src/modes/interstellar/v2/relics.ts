@@ -15,6 +15,8 @@ export interface RelicDef {
   panel?: Partial<BaseStats>;
   /** 面板百分比加成（全隊，0.1=+10%） */
   panelPct?: Partial<BaseStats>;
+  /** 面板倍增（全隊；在百分比與定值加成之後乘算，見 applyRelicPanel） */
+  panelMul?: Partial<BaseStats>;
   /** 局內修正 */
   run?: {
     beansMult?: number;        // 戰鬥賽爾豆 +x
@@ -29,6 +31,7 @@ export interface RelicDef {
   };
 }
 
+const ALL_MUL = (m: number): Partial<BaseStats> => ({ hp: m, atk: m, def: m, spatk: m, spdef: m, speed: m });
 export const RELICS: RelicDef[] = [
   // ── 普通 ──
   { id: "atk_bead", name: "攻擊能量珠", rarity: "common", glyph: "攻", desc: "全隊攻擊 +50", panel: { atk: 50 } },
@@ -45,6 +48,8 @@ export const RELICS: RelicDef[] = [
   { id: "black_cat_bell", name: "黑貓的鈴", rarity: "common", glyph: "鈴", desc: "商店價格 −15%", run: { shopMult: 0.85 } },
   { id: "gold_tooth", name: "金牙", rarity: "common", glyph: "牙", desc: "戰鬥獲得賽爾豆 +30%", run: { beansMult: 0.3 } },
   { id: "potion_belt", name: "藥劑腰帶", rarity: "common", glyph: "藥", desc: "取得時藥劑 +2", run: { potions: 2 } },
+  { id: "mul_prism", name: "倍率稜鏡", rarity: "common", glyph: "稜", desc: "全隊全能力 ×1.15", lore: "光穿過它，會多出一道。", panelMul: ALL_MUL(1.15) },
+  { id: "substitute_doll", name: "替身人偶", rarity: "common", glyph: "偶", desc: "保命（一次）：戰敗將被結算時，失去一半賽爾豆與一件隨機遺物（不含保命遺物），全隊以 40% 體力繼續；用後碎裂", lore: "它替你死過一次，順手拿走了一些東西。" },
   { id: "apothecary_lamp", name: "藥師的提燈", rarity: "rare", glyph: "藥", desc: "取得時藥劑 +1；每次進入新章額外藥劑 +2", run: { potions: 1 } },
 
   // ── 稀有 ──
@@ -69,7 +74,9 @@ export const RELICS: RelicDef[] = [
   { id: "star_chart", name: "星圖殘頁", rarity: "rare", glyph: "圖", desc: "看穿所有「？」節點", run: { revealMystery: true } },
   { id: "old_key", name: "舊日之鑰", rarity: "rare", glyph: "鑰", desc: "精英遺物多 1 個選項", run: { eliteRelicChoice: 1 } },
   { id: "six_wing", name: "六翼獵手", rarity: "rare", glyph: "翼", desc: "擊敗對手後恢復 20% 最大體力" },
-  { id: "void_shield_gen", name: "虛空護盾發生器", rarity: "rare", glyph: "盾", desc: "戰鬥開始時全隊獲得 500 點護盾" },
+  { id: "void_shield_gen", name: "虛空護盾發生器", rarity: "rare", glyph: "盾", desc: "戰鬥開始時全隊獲得 500 點護盾（隨層數縮放）" },
+  { id: "undying_core", name: "不滅星核", rarity: "rare", glyph: "核", desc: "保命（一次）：戰敗將被結算時，全隊回復至 50% 體力，留在原節點重戰；用後碎裂", lore: "裂開之前，它一直在替你的心跳數拍子。" },
+  { id: "mul_cluster", name: "增殖晶簇", rarity: "rare", glyph: "簇", desc: "全隊全能力 ×1.5", lore: "它長得比你放下它的時候大。", panelMul: ALL_MUL(1.5) },
 
   // ── 傳說 ──
   { id: "silver_wing", name: "銀翼獵手", rarity: "legendary", glyph: "銀", desc: "攻擊傷害 +20%" },
@@ -79,6 +86,8 @@ export const RELICS: RelicDef[] = [
   { id: "thousand_eyes", name: "千眼聖骸", rarity: "legendary", glyph: "瞳", desc: "攻擊傷害 +20%，對手每有 1 級能力提升再 +5%" },
   { id: "faceless_mask", name: "無面者面具", rarity: "legendary", glyph: "面", desc: "受到的非真實傷害 −30%；回合結束失去 3% 最大體力", lore: "你還記得自己的臉嗎？" },
   { id: "gaia_fist", name: "戰神之拳", rarity: "legendary", glyph: "拳", desc: "全隊攻擊 +250、防禦 −50", panel: { atk: 250, def: -50 } },
+  { id: "twin_core", name: "雙生之核", rarity: "legendary", glyph: "核", desc: "全隊全能力 ×2", lore: "有兩顆心跳，只有一個是你的。", panelMul: ALL_MUL(2) },
+  { id: "reverse_hourglass", name: "逆時沙漏", rarity: "legendary", glyph: "沙", desc: "保命（一次）：戰敗將被結算時，回到戰前狀態（體力、PP、藥劑）可改隊重戰，蝕度 +10；用後碎裂", lore: "沙粒往上落的時候，所有人都假裝沒看見。" },
   { id: "lantern_heart", name: "提燈者之心", rarity: "legendary", glyph: "燈", desc: "出戰與待命上限各 +1（最多各 6）；星爐修復 +50%", run: { lineupBonus: 1, restHealMult: 1.5 } },
 
   // ── 詛咒 ──
@@ -91,6 +100,7 @@ export const RELICS: RelicDef[] = [
   // ── 王座（首領掉落） ──
   { id: "throne_shard", name: "王座碎片", rarity: "boss", glyph: "座", desc: "全隊全能力 +8%", panelPct: { hp: .08, atk: .08, def: .08, spatk: .08, spdef: .08, speed: .08 } },
   { id: "black_sun", name: "黑太陽", rarity: "boss", glyph: "日", desc: "攻擊傷害 +30%；每次移動蝕度 +2", run: { eclipsePerMove: 2 } },
+  { id: "black_sun_heart", name: "黑日之心", rarity: "boss", glyph: "曜", desc: "全隊攻擊、特攻 ×3；防禦、特防 ×0.5", lore: "它很重，因為它把光都吃進去了。", panelMul: { atk: 3, spatk: 3, def: .5, spdef: .5 } },
   { id: "abyss_cradle", name: "深淵搖籃", rarity: "boss", glyph: "淵", desc: "回合結束恢復 8% 最大體力" },
   { id: "pale_contract", name: "蒼白契約", rarity: "boss", glyph: "契", desc: "受到的攻擊傷害 −20%，戰鬥賽爾豆 −30%", run: { beansMult: -0.3 } },
 ];
@@ -118,7 +128,18 @@ export function runMods(relics: readonly string[]) {
   return mods;
 }
 
-/** 面板加成：先百分比後定值 */
+/** 倍增遺物的軟上限：單項總倍率超過 64 的部分以 √ 計（M > 64 → 64·√(M/64)）。 */
+export const MUL_SOFT_CAP = 64;
+export const softCapMul = (m: number): number => m <= MUL_SOFT_CAP ? m : MUL_SOFT_CAP * Math.sqrt(m / MUL_SOFT_CAP);
+export const isMulRelic = (id: string) => !!RELIC_BY_ID[id]?.panelMul;
+/** 各能力的倍增遺物總倍率（已套軟上限；沒有倍增遺物的能力不列出）。 */
+export function relicMulTotals(relics: readonly string[]): Partial<Record<keyof BaseStats, number>> {
+  const keys = ["hp", "atk", "def", "spatk", "spdef", "speed"] as const, mul: Partial<Record<keyof BaseStats, number>> = {};
+  for (const id of relics) { const r = RELIC_BY_ID[id]; if (!r?.panelMul) continue; for (const k of keys) if (r.panelMul[k] !== undefined) mul[k] = (mul[k] ?? 1) * r.panelMul[k]!; }
+  for (const k of keys) if (mul[k] !== undefined) mul[k] = softCapMul(mul[k]!);
+  return mul;
+}
+/** 面板加成：先百分比、再定值，最後乘算倍增遺物（加算先結算，再乘） */
 export function applyRelicPanel(stats: BaseStats, relics: readonly string[]): BaseStats {
   const out = { ...stats };
   const keys = ["hp", "atk", "def", "spatk", "spdef", "speed"] as const;
@@ -130,5 +151,16 @@ export function applyRelicPanel(stats: BaseStats, relics: readonly string[]): Ba
     const r = RELIC_BY_ID[id]; if (!r?.panel) continue;
     for (const k of keys) if (r.panel[k]) out[k] = Math.max(1, out[k] + r.panel[k]!);
   }
+  const mul: Record<string, number> = {};
+  for (const id of relics) { const r = RELIC_BY_ID[id]; if (!r?.panelMul) continue; for (const k of keys) if (r.panelMul[k] !== undefined) mul[k] = (mul[k] ?? 1) * r.panelMul[k]!; }
+  for (const k of keys) if (mul[k] !== undefined) out[k] = Math.max(1, Math.floor(out[k] * softCapMul(mul[k])));
   return out;
 }
+
+/**
+ * 保命遺物：戰敗將被結算（全隊陣亡／首領戰敗）時才會觸發，每件只能用一次，用後碎裂。
+ * 同時持有時依此順序消耗（弱的先用，強的留到最後）；套裝「戰敗保留隊伍」特權排在最前面。
+ */
+export const RESCUE_ORDER = ["substitute_doll", "undying_core", "reverse_hourglass"] as const;
+export type RescueRelicId = typeof RESCUE_ORDER[number];
+export const isRescueRelic = (id: string): id is RescueRelicId => (RESCUE_ORDER as readonly string[]).includes(id);

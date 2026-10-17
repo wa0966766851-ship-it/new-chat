@@ -1,0 +1,14 @@
+import assert from 'node:assert/strict';
+import {gzipSync} from 'node:zlib';
+import {packJson} from '../scripts/lib/packJson';
+import {unpackReviewedKits} from '../src/data/packedReviewedKits';
+const source=[{elfIds:['同名','另一隻'],name:'原文保持',description:'先制+3；提升35點',kit:[{codeId:'effect_sequence',node:'on_kill',order:0,source:'soulmark',role:'innate',params:{clause:{raw:'提升35點',parsed:true,trig:'kill',body:[{acts:[{op:'stat_value',label:'固定能力點數',p:{amount:35,ratio:.35,stats:['hp','atk'],negative:-1,enabled:false,optional:null}}]}]}}}]}];
+const packed=(value:any,version:number)=>({schemaVersion:version,gzip:gzipSync(JSON.stringify(value)).toString('base64')});
+for(const version of [1,2])assert.deepEqual(unpackReviewedKits(packed(version===1?source:packJson(source),version)),source);
+assert.deepEqual(unpackReviewedKits(packed(packJson(source,'long-first'),2)),source);
+const changed=structuredClone(source);changed[0].kit[0].params.clause.body[0].acts[0].p.amount=70;
+assert.notDeepEqual(unpackReviewedKits(packed(packJson(changed),2)),source);
+assert.throws(()=>unpackReviewedKits(packed(source,3)),/版本不相容/);
+for(const invalid of [undefined,NaN,()=>0])assert.throws(()=>packJson(invalid));
+assert.throws(()=>unpackReviewedKits({schemaVersion:2,gzip:'not gzip'}));
+console.log('積木封裝：新舊版本原文／數字與索引／布林／null／陣列順序完整還原；改值可辨識，非法資料拒絕。');

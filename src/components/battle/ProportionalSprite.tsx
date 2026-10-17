@@ -1,7 +1,7 @@
 import React from "react";
 import { motion } from "motion/react";
 import type { Elf } from "../../types";
-import { appearanceElf } from "../../battle/illusion";
+import { appearanceElf } from "../../battle/illusionPresentation";
 import { ElfAvatar } from "../SeerImages";
 import { opaqueBoxFromPixels, placeSprite, spriteHeightRatio, type OpaqueBox } from "../../battle/spriteMetrics";
 

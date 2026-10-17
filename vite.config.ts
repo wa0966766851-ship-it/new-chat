@@ -45,6 +45,8 @@ export default defineConfig(() => {
           // 資料／精靈註冊模組／通用引擎依既有模組邊界分塊。
           // 初始化順序與跨塊相容性由正式Worker測試鎖定，不改寫任何handler。
           if (file.includes('/src/effects/elves/')) return 'ai-elf-effects';
+          if (/\/src\/effects\/(sequenceContract|sequenceClosureContract|astralContract)\.ts$/.test(file)) return 'ai-kit-contracts';
+          if (/\/src\/blocks\/runtime\.ts$/.test(file)) return 'ai-block-runtime';
           if (/\/src\/data\/(blockLibraryData\.ts|blockLibrary\.packed\.json|packedJson\.ts)$/.test(file)) return 'ai-data-blocks';
           if (file.includes('/src/data/elfProfiles/')) return 'ai-data-profiles';
           if (/\/src\/data\/(reviewedSkillKits|reviewedSequenceSkillKits|migratedSequenceSkillKits)\.ts$/.test(file)) return 'ai-data-kits';

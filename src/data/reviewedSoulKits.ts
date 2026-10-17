@@ -1,9 +1,28 @@
 import type { KitEntry } from '../effects/effectSystem.schema';
 import { action } from './reviewedSequenceSkillKits';
 import { BAPHOMET_SOUL_KIT } from './baphometSoulKit';
+import { MIGRATED_MARK_SOUL_KITS } from './migratedMarkSoulKits';
+import { MIGRATED_RESOURCE_SOUL_KITS } from './migratedResourceSoulKits';
+import { MIGRATED_DIXIN_SOUL_KIT } from './migratedDixinSoulKit';
+import { MIGRATED_SOBIRAT_SOUL_KIT } from './migratedSobiratSoulKit';
+// 5032/5033/5034 魂印 Kit（DSH 20261015 接線）：核（寰宇星幻）／格（思維固化）／邪（魂珠三態）
+import { MIGRATED_ASTRAL_AESFIA_SOUL_KIT } from './migratedAstralAesfiaSoulKit';
+import { MIGRATED_ASTRAL_AESFIG_SOUL_KIT } from './migratedAstralAesfigSoulKit';
+import { MIGRATED_MOGOS_SOUL_KIT } from './migratedMogosSoulKit';
+import { MIGRATED_STAGE_KIND_SOUL_KIT } from './migratedStageKindSoulKit';
+import {MIGRATED_STONE_SOUL_KIT} from './migratedStoneSoulKit';
+// 5012 冰魄·柯爾德 魂印「冰」（DSH 20261017 第七批；keldSoul 通用件）
+import { MIGRATED_KELD_SOUL_KIT } from './migratedKeldSoulKit';
+// 5013 柯爾霍德 魂印「凕」（DSH 20261017 第八批）
+import { MIGRATED_KEERHODE_SOUL_KIT } from './migratedKeerhodeSoulKit';
+// arena_13 龍錄天鋒 魂印（DSH 20261017 第九批）
+import { MIGRATED_ARENA13_SOUL_KIT } from './migratedArena13SoulKit';
+// 5002 帝皇之盾 魂印「盾」（DSH 20261018 第十一批·第一波）
+import { MIGRATED_IMPERIAL_SHIELD_SOUL_KIT } from './migratedImperialShieldSoulKit';
 const entry=(node:KitEntry['node'],trig:string,raw:string,body:any[],order:number):KitEntry=>({codeId:'effect_sequence',source:'soulmark',role:'innate',node,order,customText:raw,params:{clause:{raw,trig,parsed:true,body}}});
 /** 整份魂印才切換；獨立命中查詢與一次性致死，不借舊handler。 */
-export const REVIEWED_SOUL_KITS=[BAPHOMET_SOUL_KIT,{
+export const REVIEWED_SOUL_KITS=[BAPHOMET_SOUL_KIT,...MIGRATED_MARK_SOUL_KITS,...MIGRATED_RESOURCE_SOUL_KITS,MIGRATED_DIXIN_SOUL_KIT,MIGRATED_SOBIRAT_SOUL_KIT,
+  MIGRATED_ASTRAL_AESFIA_SOUL_KIT,MIGRATED_ASTRAL_AESFIG_SOUL_KIT,MIGRATED_MOGOS_SOUL_KIT,MIGRATED_STAGE_KIND_SOUL_KIT,MIGRATED_STONE_SOUL_KIT,MIGRATED_KELD_SOUL_KIT,MIGRATED_KEERHODE_SOUL_KIT,MIGRATED_ARENA13_SOUL_KIT,MIGRATED_IMPERIAL_SHIELD_SOUL_KIT,{
   kind:'soul' as const,elfIds:['300'],name:'聖',description:'天生免疫每次受到的異常狀態\n每回合結束時恢復最大體力25%與所有技能1點PP值',kit:[
     entry('before_status_apply','before_status','天生免疫每次受到的異常狀態',[{acts:[action('status_guard',{cls:''})]}],0),
     entry('round_end','round_end','每回合結束恢復最大體力25%與所有技能1點PP',[{acts:[action('heal',{side:'self',ratio:.25}),action('pp_op',{side:'self',mode:'add',amount:1})]}],1),

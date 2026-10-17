@@ -56,7 +56,8 @@ export function instantiateEffectPreset(preset: EffectPreset, kind: EffectKind):
   for (const entry of kit) {
     const issue = kitEntryIssue(entry);
     if (issue) throw new Error(issue);
-    entry.source = kind === 'skill' ? 'skill' : 'soulmark';
+    // 特質類預設（source:'mechanic'）保留來源；其餘非技能效果一律歸魂印。執行端只區分「技能／非技能」。
+    entry.source = kind === 'skill' ? 'skill' : entry.source === 'mechanic' ? 'mechanic' : 'soulmark';
   }
   return { description: preset.definition.description || '', kit, effectMode: 'kit' };
 }

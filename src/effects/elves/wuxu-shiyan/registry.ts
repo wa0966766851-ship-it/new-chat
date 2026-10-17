@@ -1,4 +1,5 @@
 import { isAlienElf } from '../../../battle/advancedDamageModifiers';
+import { getElfAdvancedMechanics } from '../../../data/traitsRegistry';
 import type { BattleEventContext as C, BattleSkillHandler } from '../../types';
 import type { Skill } from '../../../types';
 import { EffectTiming as E } from '../../types';
@@ -19,13 +20,7 @@ const carried: Record<string, (c: C) => void> = {
     c.applyStatChange(c.targetSide, allStages(-1));
     drain(c, c.target.maxHp / 4 * (c.self.currentHp < c.self.maxHp / 2 ? 2 : 1), 'percent');
   },
-  '械律·置換': c => {
-    const amount = Math.floor(((c.self.shield || 0) + (c.self.barrier || 0) + (c.target.shield || 0) + (c.target.barrier || 0)) * .7);
-    c.updateElf(c.actor, { shield: 0, barrier: 0 }); c.updateElf(c.targetSide, { shield: 0, barrier: 0 });
-    drain(c, amount, 'fixed'); restorePp(c, c.actor, c.self);
-    timed(c, c.targetSide, 'pp_skill_switch_lock', 2, { lockSwitch: true }, true);
-    c.useBattleItem?.(c.targetSide, 'hp_150', c.actor);
-  },
+  // '械律·置換' 已遷移至 src/data/migratedWuxuShiyanSkillKits.ts（真 Kit；DSH 20261017）。
   '血稅迴轉': c => {
     c.applyStatChange(c.actor, { def: 2, spdef: 2, speed: 2, accuracy: 2, atk: -1, spatk: -1 });
     timed(c, c.actor, 'round_drain_ratio', 4, { roundDrainSpec: { ratio: 1 / 3, doubleBelowHalf: true, benchHealIfNoLoss: 200 } }, false, 'skill', false);
@@ -47,16 +42,13 @@ const carried: Record<string, (c: C) => void> = {
     c.setPlayerState('nextKillStatus', { status: '詛咒', duration: 3 });
   },
 };
-export const SHIYAN_SKILLS: Record<string, BattleSkillHandler> = Object.fromEntries(Object.keys(carried).map(name => [name, () => {}]));
+export const SHIYAN_SKILLS: Record<string, BattleSkillHandler> = Object.fromEntries(Object.keys(carried).map(name => [name, () => {}])); // 械律·置換已移除（真 Kit）
 export const SHIYAN_SKILL_TRANSFORMS: Record<string, (c: C, s: Skill) => Skill> = {
   '影契·噬滅': (c, s) => {
     if (!c.self.isInherentInvalid) c.setPlayerState('oppBoostAsDropThisAction', true);
     return s;
   },
-  '械律·置換': (c, s) => {
-    if (!c.self.isInherentInvalid) c.setPlayerState('oppBoostAsDropThisAction', true);
-    return s;
-  },
+  // '械律·置換' transform 已由 Kit stage_view{opp_up_as_down} 屬性表達（DSH 20261017）。
   '安息契': (c, s) => {
     if (!c.self.isInherentInvalid) c.setPlayerState('selfDropAsOppDropThisAction', true);
     return s;
@@ -147,7 +139,7 @@ function runShiyanSoul(ctx: C, event: E, extraData?: any): any {
 
     }
 
-    if (event === EffectTiming.ON_KILL && extraData?.defeatedElf) {
+    if (event === EffectTiming.ON_KILL && extraData?.defeatedElf && getElfAdvancedMechanics(self).killAlienElfVanish) {
        const deadElf = extraData.defeatedElf;
        const isDeadAlien = isAlienElf(deadElf);
        if (isDeadAlien) {

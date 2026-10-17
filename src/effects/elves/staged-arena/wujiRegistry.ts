@@ -128,7 +128,7 @@ export function handleWujiSoulMark(c: ArenaContext, event: EffectTiming, data?: 
     // 引擎登場事件沿用模板／隊員id，印記與結算採battleId；兩者不能直接比較。
     if (!entered || (entered.id !== data.enteredId && idOf(entered) !== data.enteredId)) return;
     const owner = idOf(entered);
-    const res = c.applyStatusWithImmunityCheck(side, '砥礪', 1);
+    const res = c.applyStatusWithImmunityCheck(side, '砥礪', 1, undefined, owner);
     if (res.success) c.setPlayerState(PENDING, [...pendingList(c).filter(p => p.owner !== owner), { side, owner }]);
     else giveWujiMark(c, side, owner, WEIYUE, 3);
     return;
@@ -142,7 +142,7 @@ export function handleWujiSoulMark(c: ArenaContext, event: EffectTiming, data?: 
       write(c, 'hero', Math.max(0, layers)); write(c, 'initialized', 1);
       applyHeroGloryStats(c, read(c, 'hero'));
       // 英雄之耀達到 3 層：烈武天徵、亂武天傀、鋭武銘戈不受 PP 值限制。
-      if (read(c, 'hero') >= 3) c.updateElf(c.actor, { skills: c.self.skills.map(s => HERO_FREE_SKILLS.includes(s.name) ? { ...s, ignorePpLimit: true } as any : s) });
+      if (read(c, 'hero') >= 3) c.updateElf(c.actor, { skills: c.self.skills.map(s => s.effectMode!=='kit'&&HERO_FREE_SKILLS.includes(s.name) ? { ...s, ignorePpLimit: true } as any : s) });
     }
     c.setMark({ id: HERO, name: '英雄之耀', displayChar: '耀', source: '無極聖武', ownerBattleId: idOf(c.self), count: read(c, 'hero'),
       unit: '層', persistsOffField: true, clearable: false, polarity: 'positive',
@@ -151,7 +151,7 @@ export function handleWujiSoulMark(c: ArenaContext, event: EffectTiming, data?: 
     if (read(c, 'hero') && c.target.currentHp > 0) giveWujiMark(c, c.targetSide, idOf(c.target), WUZHU, read(c, 'hero'));
   }
   if (event === EffectTiming.ROUND_START) bump(c, 'round');
-  if (event === EffectTiming.MODIFY_PRIORITY && c.skill?.name === '鋭武銘戈' && read(c, 'hero') >= 3 && data?.priorityComp) data.priorityComp.bonus += 1;
+  if (event === EffectTiming.MODIFY_PRIORITY && c.skill?.name === '鋭武銘戈' && c.skill.effectMode !== 'kit' && read(c, 'hero') >= 3 && data?.priorityComp) data.priorityComp.bonus += 1;
   if (event === EffectTiming.BEFORE_SKILL && c.skill && c.skill.category !== '屬性') {
     // 自身攻擊無視對手的能力提升效果、護盾效果與攻擊技能免疫效果。
     c.setPlayerState('ignoreAttackImmunityThisAction', true);

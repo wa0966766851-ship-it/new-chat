@@ -4,9 +4,18 @@ export type Side = "self" | "opp" | "both";
 
 /** 觸發時點（魂印標頭、N回合內的持續效果） */
 export type Trigger =
+  | "opp_damaged_skill"
+  | "skill_selected"
+  | "outgoing_power" | "incoming_power" // 正式公式前的攻方／受方威力修正
+  | "resource_changed" // 資源積木實際改變指定持有者層數後
   | "use" // 技能使用（技能本身的效果）
+  | "before_action" // 行動方出手流程開始（先後手已定；魂印先手/後手分支）
+  | "before_skill" // 自身本次技能前置時點（PP成本修正、必中查詢；早於命中與傷害）
+  | "modify_priority" // 先制判定（priorityComp 修正；尚未決定出手順序）
+  | "before_instant_kill" // 秒殺修正前；在場與存活背包持有者共同攔截
   | "extra_action_start" | "extra_action_end" // 額外行動獨立節點（不等同再次使用技能）
   | "after_hit" // 技能傷害結算後（擊敗／未擊敗、造成傷害量相關）
+  | "attack_hit" // 每次攻擊命中後，含連擊的逐擊事件
   | "on_invalid" // 技能無效（含未命中）時
   | "self_invalid" // 自身技能無效（持續效果用）
   | "battle_start"
@@ -24,9 +33,12 @@ export type Trigger =
   | "outgoing" | "outgoing_skill" | "outgoing_attack" // 造成傷害時（可修正傷害）
   | "defeated" // 自身被擊敗時
   | "kill" // 擊敗對手時
+  | "not_killed" // 正式出手流程結束後未擊敗，含額外行動後死亡節點一
   | "fatal" // 受到致命傷害時
   | "before_status" // 受方異常附加前，可阻止或替換本次異常
   | "pp_consumed" // 本技能槽的PP確實被消耗，同一因果鏈每槽一次
+  | "turn_effects_cleared" // 本持有者的回合效果實際被消除
+  | "stat_boost_cleared" // 他方實際消除／吸取本持有者的能力提升
   | "status_end" | "status_immune" | "status_tick" // 持有者異常結束、免疫結果及扣減前
   | "switch_out"
   | "status_received" // 自身受到異常狀態時

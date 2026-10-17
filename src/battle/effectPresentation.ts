@@ -18,6 +18,12 @@ export function payloadPresentation(payload: Record<string, any> = {}): EffectPr
   const add = (semanticId: string, label: string, iconTag?: string, description?: string) =>
     parts.push({ semanticId, label, iconTag, description: description || label });
   const block = payload.block || {};
+  if(block.typeDamageFloor){const f=block.typeDamageFloor;add('type_damage_floor',`受到技能傷害至少${f.base}×最高克制倍率`,'傷害保底',`在${f.list.join('／')}中取對持有者當前屬性最高的克制倍率；僅限技能傷害。`);}
+  if (Number.isFinite(block.powerRatio)) {
+    const ratio=block.powerRatio,reciprocal=1/ratio;
+    const text=ratio>0&&ratio<1&&Math.abs(reciprocal-Math.round(reciprocal))<1e-10?`1/${Math.round(reciprocal)}`:String(ratio);
+    add('power_ratio', `攻擊威力×${text}`, ratio<1?'威力降低':'威力提升', `攻擊技能威力乘以${text}；不是傷害比例，不改屬性技能。`);
+  }
   if (block.prio !== undefined) add('priority', `先制${block.prio >= 0 ? '+' : ''}${block.prio}`, block.prio < 0 ? '先制降低' : '先制');
   if (payload.disablePriority) add('priority_disabled', '先制效果失效', '先制效果失效');
   if (block.invalid) add(`invalid:${block.invalid}`, `${block.invalid === 'all' ? '所有' : block.invalid}技能無效`, '技能無效');

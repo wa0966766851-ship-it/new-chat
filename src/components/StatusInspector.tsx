@@ -8,6 +8,7 @@ import { EffectDescription } from './EffectDescription';
 import { effectDefinitionEntries } from '../battle/effectSources';
 import { elfForViewer, hiddenFromViewer, UNKNOWN_ELF, maskViewerText, viewerMaskTerms } from '../battle/viewerPerspective';
 import { activeEffectViews, visibleEffectSourceText } from '../battle/activeEffectViews';
+import {statusCountClasses, type StatusCountTone} from '../battle/statusImmunityCount';
 import { getStatuses } from '../utils/battleHelpers';
 import { statusVisual, UNKNOWN_EFFECT_ICON } from '../battle/effectIcons';
 import { ChainImage } from './SeerImages';
@@ -25,6 +26,7 @@ export interface ActiveEffect {
   stackUnit?: string;
   icon?: string;
   source?: string;
+  tone?: StatusCountTone;
 }
 
 function translateStatus(status: string): string {
@@ -79,7 +81,7 @@ export function getActiveEffects(side: "p1" | "p2", state: any): ActiveEffect[] 
   const categories: Record<string, StateCategory> = { mark: '印記', turn: '回合類', round: '其他計時', count: '次數類', mechanism: '常駐', protection: '防護' };
   for (const view of activeEffectViews(elf, marks, timers, (side === 'p1' ? state.p1RegistryState : state.p2RegistryState) || {}, visibleEffectSourceText(side === 'p1' ? state.p2 : state.p1, side === 'p1' ? 'p2' : 'p1'))) {
     const metricIsStack = view.category === 'mark' || view.category === 'protection';
-    effects.push({ name: mask(view.label), desc: mask(view.description), category: categories[view.category], icon: view.icon, source: mask(view.source),
+    effects.push({ name: mask(view.label), desc: mask(view.description), category: categories[view.category], icon: view.icon, source: mask(view.source), tone: view.tone,
       polarity: view.polarity.toUpperCase() as ActiveEffect['polarity'],
       ...(metricIsStack ? { stacks: view.value, stackUnit: view.unit } : { remaining: view.value, unit: view.unit as '回合' | '次' | undefined }) });
   }
@@ -138,7 +140,7 @@ export function StatusInspector({ state }: { state: any }) {
         ) : (
           <div className="grid grid-cols-1 gap-2.5 md:grid-cols-2">
             {items.map((effect, index) => {
-              const tone = effect.polarity === "NEGATIVE" ? "border-rose-900/40 bg-rose-950/20 text-rose-100"
+              const tone = effect.tone ? statusCountClasses(effect.tone) : effect.polarity === "NEGATIVE" ? "border-rose-900/40 bg-rose-950/20 text-rose-100"
                 : effect.polarity === "POSITIVE" ? "border-emerald-900/40 bg-emerald-950/20 text-emerald-100"
                   : "border-slate-800 bg-slate-900/60 text-slate-200";
               return (

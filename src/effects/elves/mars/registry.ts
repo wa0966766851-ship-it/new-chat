@@ -312,31 +312,6 @@ export const MARS_SKILLS: Record<string, BattleSkillHandler> = {
     ctx.addLog(`⚙️ 【核心重構】自檢完成：清空異常狀態，啟動 5 回合生命自愈與充能掠奪！`, "effect");
   },
   
-  '王·肅正協議': (ctx) => {
-    const isP1 = ctx.actor === "p1";
-    const self = ctx.self;
-    const target = ctx.target;
-    
-    // 2回合內對手屬性技能附加效果失效且攻擊技能PP值消耗量提升20倍
-    ctx.setOpponentState("statusSkillInvalidTurns", 2);
-    ctx.setOpponentState("attackPpCostMultiplierTurns", 2);
-    
-    // 造成技能傷害提升70%，每次使用額外提升35%，最高170% (在毀滅組合時最高300%)
-    let boost = ctx.getPlayerState("marsProtocolDamageBoost") || 0.7;
-    const mode = ctx.getPlayerState("marsMechaMode") || "speed";
-    const maxBoost = mode === "destroy" ? 3.0 : 1.7;
-    // 此技能 PP 值為滿時效果翻倍（使用時 PP＝目前+1）
-    const ppFull = ctx.skill && ctx.skill.maxPp !== undefined && (Number(ctx.skill.pp) || 0) + 1 >= Number(ctx.skill.maxPp);
-    const applied = Math.min(maxBoost, ppFull ? boost * 2 : boost);
-    ctx.setPlayerState("marsProtocolBoostThisAction", applied);
-    
-    // Increment boost
-    const nextBoost = Math.min(maxBoost, boost + 0.35);
-    ctx.setPlayerState("marsProtocolDamageBoost", nextBoost);
-    
-    ctx.addLog(`💥 【王·肅正協議】執行：使對手屬性技能失效、PP消耗翻倍，當前傷害提升 ${Math.round(applied * 100)}%！`, "effect");
-  },
-  
   '王·超限共頻': (ctx) => {
     const isP1 = ctx.actor === "p1";
     const self = ctx.self;

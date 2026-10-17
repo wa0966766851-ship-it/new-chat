@@ -3,7 +3,7 @@ import type { ReviewedSequenceSkill } from './reviewedSequenceSkillKits';
 import { action as a,property as prop,sequence as seq } from './reviewedSequenceSkillKits';
 const c=(id:string,p:any)=>({c:id,p,label:id});
 const hit=(raw:string,body:any[],order:number):KitEntry=>({...seq(raw,body,order),node:'on_hit',params:{clause:{raw,marker:'🎯',trig:'after_hit',parsed:true,body}}});
-const timed=(turns:number,trig:string,body:any[],from='now',initial=false)=>a('timed',{turns,trig,body,from,...(initial?{initial:true}:{})});
+const timed=(turns:number,trig:string,body:any[],from='now',initial=from==='now'&&['self_skill','self_attack','self_status'].includes(trig))=>a('timed',{turns,trig,body,from,...(initial?{initial:true}:{})});
 export const MIGRATED_SHARED_SKILL_KITS:ReviewedSequenceSkill[]=[
   {elfIds:['5011'],name:'星光·光合作用',description:'■ 必中\n🎯 4回合內免疫並反彈所有受到的異常狀態\n🎯 4回合內每回合使用技能恢復自身最大體力的1/2並造成等量百分比傷害\n🎯 3回合內每回合使用技能則造成傷害前隨機吸取對手3項能力值-1\n🎯 3回合內對手使用技能消耗的PP值變為3倍',kit:[
     prop('■ 必中','sure_hit',true,0),seq('🎯 4回合內免疫並反彈所有受到的異常狀態',[{acts:[a('immune_status_turns',{turns:4,reflect:true,cls:''})]}],1),
@@ -14,7 +14,7 @@ export const MIGRATED_SHARED_SKILL_KITS:ReviewedSequenceSkill[]=[
   {elfIds:['5004'],name:'千鳥俱寂',description:'■ 必中\n🎯 全屬性+1，自身處於能力提升狀態時強化效果翻倍\n🎯 消除對手回合類效果\n🎯 4回合內每回合恢復自身最大體力1/3並附加等量固定傷害\n🎯 下2回合自身攻擊技能必定令對手麻痺\n🎯 下2回合所有技能先制+2',kit:[
     prop('■ 必中','sure_hit',true,0),seq('🎯 全屬性+1，自身處於能力提升狀態時強化效果翻倍',[{acts:[a('stat',{side:'self',stats:['全屬性'],v:1,x2If:c('stage',{side:'self',kind:'up'})})]}],1),
     seq('🎯 消除對手回合類效果',[{acts:[a('clear_turn',{side:'opp'})]}],2),
-    hit('🎯 4回合內每回合恢復自身最大體力1/3並附加等量固定傷害',[{acts:[timed(4,'round_end',[{acts:[a('heal',{side:'self',ratio:1/3}),a('dmg_equal',{type:'固定'})]}])]}],3),
+    hit('🎯 4回合內每回合恢復自身最大體力1/3並附加等量固定傷害',[{acts:[timed(4,'self_skill',[{acts:[a('heal',{side:'self',ratio:1/3}),a('dmg_equal',{type:'固定'})]}])]}],3),
     hit('🎯 下2回合自身攻擊技能必定令對手麻痺',[{acts:[timed(2,'self_attack',[{acts:[a('status',{side:'opp',status:'麻痺',turns:3,chance:100})]}],'next')]}],4),
     seq('🎯 下2回合所有技能先制+2',[{acts:[a('prio_turns',{turns:2,v:2})]}],5),
   ]},
@@ -56,7 +56,7 @@ export const MIGRATED_SHARED_SKILL_KITS:ReviewedSequenceSkill[]=[
   ]},
   {elfIds:['5031'],name:'升臨恩澤',description:'■ 必中\n🎯 5回合內免疫並反彈異常狀態\n🎯 3回合內每回合附加200點固定傷害，若自身體力低於對手則固定傷害翻倍\n🎯 免疫下1次受到的攻擊\n🎯 下2回合自身所有技能先制+3',kit:[
     prop('■ 必中','sure_hit',true,0),seq('🎯 5回合內免疫並反彈異常狀態',[{acts:[a('immune_status_turns',{turns:5,reflect:true,cls:''})]}],1),
-    hit('🎯 3回合內每回合附加200點固定傷害，若自身體力低於對手則固定傷害翻倍',[{acts:[timed(3,'round_end',[{acts:[a('dmg',{flat:200,type:'固定',x2If:c('hp_cmp',{side:'self',op:'低於'})})]}])]}],2),
+    hit('🎯 3回合內每回合附加200點固定傷害，若自身體力低於對手則固定傷害翻倍',[{acts:[timed(3,'self_skill',[{acts:[a('dmg',{flat:200,type:'固定',x2If:c('hp_cmp',{side:'self',op:'低於'})})]}])]}],2),
     seq('🎯 免疫下1次受到的攻擊',[{acts:[a('immune_attack_count',{count:1})]}],3),seq('🎯 下2回合自身所有技能先制+3',[{acts:[a('prio_turns',{turns:2,v:3})]}],4),
   ]},
   {elfIds:['5031'],name:'超界審判',description:'■ 必中\n🎯 當回合處於能力下降狀態則先制+3\n🎯 反轉自身能力下降狀態\n🎯 使對手隨機2個技能PP歸零\n🎯 造成攻擊傷害提升50%，自身處於能力提升狀態時效果翻倍',kit:[
@@ -66,7 +66,7 @@ export const MIGRATED_SHARED_SKILL_KITS:ReviewedSequenceSkill[]=[
   ]},
   {elfIds:['5024'],name:'絕滅死亡',description:'全屬性+1，對手處於異常狀態時強化效果翻倍；4回合內，每回合吸取對手最大體力的1/3，自身體力低於1/2時吸取效果翻倍；4回合內免疫並反彈異常狀態',kit:[
     seq('全屬性+1，對手處於異常狀態時強化效果翻倍',[{acts:[a('stat',{side:'self',stats:['全屬性'],v:1,x2If:c('abnormal',{side:'opp'})})]}],0),
-    hit('4回合內，每回合吸取對手最大體力的1/3，自身體力低於1/2時吸取效果翻倍',[{acts:[timed(4,'round_end',[{acts:[a('drain',{ratio:1/3,true:false,x2If:c('hp_ratio',{side:'self',op:'低於',ratio:.5})})]}])]}],1),
+    hit('4回合內，每回合吸取對手最大體力的1/3，自身體力低於1/2時吸取效果翻倍',[{acts:[timed(4,'self_skill',[{acts:[a('drain',{ratio:1/3,true:false,x2If:c('hp_ratio',{side:'self',op:'低於',ratio:.5})})]}])]}],1),
     seq('4回合內免疫並反彈異常狀態',[{acts:[a('immune_status_turns',{turns:4,cls:'',reflect:true})]}],2),
   ]},
   ...['吸取','強力吸取'].map(name=>({elfIds:['5011'],name,description:'給予對方損傷的一半會回復自己的體力。',kit:[seq('給予對方損傷的一半會回復自己的體力。',[{acts:[a('vampire',{ratio:.5,kind:'攻擊'})]}],0)]})),

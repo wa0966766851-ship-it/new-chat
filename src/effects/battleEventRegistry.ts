@@ -19,15 +19,26 @@ import { activeConstraints } from '../battle/timedConstraints';
 import { runNewElfLifecycle, innateDisabled } from './newElfLifecycle';
 import { executeAstralMemory } from './elves/astral-twins/registry';
 import { runMogosTeamEffects } from './elves/mogos/registry';
-import { usesAuthoredSkill, usesAuthoredSoul, soulDefinition, setConnectedSkillHandlerProvider } from './connectedEffects';
+import { usesAuthoredSkill, usesAuthoredSoul, soulDefinition, setConnectedSkillHandlerProvider,hasOpponentDamageObserver } from './connectedEffects';
+import { setLegacyHandlerResolver } from '../blocks/ops/legacyHandler';
 import { effectRoute } from './effectConnection';
 import { withPpConsumptionChain } from './ppConsumptionChain';
-import { applyFormulaProperties } from './skillProperty';
+import { applyFormulaProperties,applyPowerProperties, readOnceDegraded } from './skillProperty';
 setSoulHandlerProvider(elf => !!getSoulMarkRegistry()[elf?.name]);
 setConnectedSkillHandlerProvider(hasSkillHandler);
+setLegacyHandlerResolver((_elf, key, kind) => {
+  // 技能／攜帶：技能註冊表；魂印：以精靈名稱為鍵的魂印註冊表；特質：特質引擎依名稱驅動，無獨立函式。
+  // 純 node（無 vite import.meta.glob）環境無法載入註冊表：契約驗證放行，由 audit_block_migration 在完整環境全量核對。
+  if (typeof (import.meta as any).glob !== 'function') return key ? (kind === 'skill' || kind === 'carry' ? { drive: 'call', call: () => undefined } : { drive: 'engine' }) : null;
+  if (kind === 'skill' || kind === 'carry') { const h = getBattleSkillRegistry()[key]; return h ? { drive: 'call', call: h } : null; }
+  if (kind === 'soul') return key in getSoulMarkRegistry() ? { drive: 'engine' } : null;
+  return key ? { drive: 'engine' } : null;
+});
 
 export function mapTimingToNode(event: EffectTiming): Node | null {
   switch (event) {
+    case EffectTiming.STAT_BOOST_CLEARED:return 'on_stat_boost_cleared';
+    case EffectTiming.TURN_EFFECTS_CLEARED:return 'on_turn_effects_cleared';
     case EffectTiming.ON_ENTRANCE:
     case EffectTiming.ELF_ENTERED:
       return "on_entered";
@@ -47,6 +58,8 @@ export function mapTimingToNode(event: EffectTiming): Node | null {
       return "modify_priority";
     case EffectTiming.ON_SKILL_HIT:
       return "on_hit";
+    case EffectTiming.BEFORE_INSTANT_KILL:
+      return 'before_instant_kill';
     case EffectTiming.ON_DAMAGED:
       return "on_damaged";
     case EffectTiming.AFTER_ACTION:
@@ -54,6 +67,7 @@ export function mapTimingToNode(event: EffectTiming): Node | null {
       return "after_action";
     case EffectTiming.ON_KILL:
       return "on_kill";
+    case EffectTiming.NOT_KILLED:return 'on_not_killed';
     case EffectTiming.FATAL_RESIST:
     case EffectTiming.DEATH_NODE_1:
     case EffectTiming.DEATH_NODE_2:
@@ -90,9 +104,7 @@ export const SOUL_MARK_MAPPING: Record<string, string> = {
   "悲歌.索比拉特": "handleSobiratSoulMark",
   "索比拉特": "handleSobiratSoulMark",
   
-  "5002": "handleImperialShieldSoulMark",
-  "1002": "handleImperialShieldSoulMark",
-  "帝皇之盾": "handleImperialShieldSoulMark",
+  // 1002（帝皇之盾）：魂印已遷移為真 Kit（migratedImperialShieldSoulKit；DSH 20261018）——映射移除。
   
   "5003": "handleBajieSoulMark",
   "1003": "handleBajieSoulMark",
@@ -142,16 +154,9 @@ export const SOUL_MARK_MAPPING: Record<string, string> = {
   "星光·麗莎布布": "handleLisaSoulMark",
   "麗莎布布": "handleLisaSoulMark",
   
-  "5012": "handleKeldSoulMark",
-  "1009": "handleKeldSoulMark",
-  "1034": "handleKeldSoulMark",
-  "冰魄·柯爾德": "handleKeldSoulMark",
-  "冰魄.柯爾德": "handleKeldSoulMark",
-  "柯爾德": "handleKeldSoulMark",
+  // 5012 冰魄·柯爾德 魂印「冰」已遷移為真 Kit（migratedKeldSoulKit；DSH 20261017）——舊 handler 映射移除。
   
-  "5013": "handleKeerhodeSoulMark",
-  "1010": "handleKeerhodeSoulMark",
-  "柯爾霍德": "handleKeerhodeSoulMark",
+  // 5013 魂印「凕」已遷移為真 Kit（migratedKeerhodeSoulKit；DSH 20261017）——映射移除。
   "柯爾德(舊)": "handleKeerhodeSoulMark",
   
   "5014": "handleScarlettSoulMark",
@@ -254,8 +259,7 @@ export const SOUL_MARK_MAPPING: Record<string, string> = {
 
   "arena_12": "handleWuweiSoulMark",
   "無為龍者": "handleWuweiSoulMark",
-  "arena_13": "handleTianfengSoulMark",
-  "龍錄天鋒": "handleTianfengSoulMark",
+  // arena_13 龍錄天鋒魂印已遷移為真 Kit（migratedArena13SoulKit；DSH 20261017）——映射移除。
   "arena_14": "handleWujiSoulMark",
   "無極聖武": "handleWujiSoulMark",
   "arena_15": "handleMoiraiSoulMark",
@@ -326,8 +330,8 @@ function initializeRegistries() {
 
 // 會在「對手受到技能攻擊」時被通知 ON_DAMAGED 的魂印（handler 內以 extraData.targetSide 區分自身／對手受擊）
 const ON_DAMAGED_OBSERVER_HANDLERS = new Set(["handleMonkeySoulMark", "handleLisaSoulMark", "handleStarlightRusSoulMark", "handleOtherworldReySoulMark", "handleHolyMilesSoulMark", "handleWuxuSoulMark"]);
-export function observesOpponentDamage(elfName: string): boolean {
-  return ON_DAMAGED_OBSERVER_HANDLERS.has(SOUL_MARK_MAPPING[elfName]);
+export function observesOpponentDamage(elfName: string,elf?:Elf): boolean {
+  return !!elf&&hasOpponentDamageObserver(elf)||ON_DAMAGED_OBSERVER_HANDLERS.has(SOUL_MARK_MAPPING[elfName]);
 }
 
 // 隊伍觀察者：魂印效果涵蓋「己方在場精靈」（自身不在場時也生效）的 handler。
@@ -365,6 +369,10 @@ export function hasSkillHandler(name: string): boolean {
 export function transformSkillBeforeResolve(context: BattleEventContext, skill: Skill): Skill {
   initializeRegistries();
   if (!innateDisabled(context)) skill = illusionSkill(context.self, skill);
+  // once_used_degrade：每場一次用後，失去必中且命中率歸0（原文「此後該技能失去必中效果且命中率歸0」）。
+  // 必須同時移除 Kit 內的 sure_hit 條目，否則 computeHitChance 的 blockSkillTransform 會把它讀回來。
+  if (readOnceDegraded(skill, context)) skill = { ...skill, isSureHit: false, alwaysHit: false, accuracy: 0,
+    kit: (skill.kit || []).filter((e: any) => !(e.codeId === 'skill_property' && e.params?.property === 'sure_hit')) } as Skill;
   if (context.self.isInherentInvalid || innateDisabled(context)) skill = { ...skill, priority: 0, isSureHit: false,
     alwaysHit: false, ignoreImmunity: false, ignoreShield: false, ignoreAttackImmunity: false } as Skill;
   if (isSkillStone(skill)) return transformStone(context, skill);
@@ -376,7 +384,7 @@ export function transformSkillBeforeResolve(context: BattleEventContext, skill: 
 export function transformSkillBeforeDamage(context: BattleEventContext, skill: Skill): Skill {
   initializeRegistries();
   const authored = usesAuthoredSkill(skill, hasSkillHandler(skill.name), context.self) && effectRoute(skill, hasSkillHandler(skill.name)) !== 'registry';
-  const transformed = isSkillStone(skill) ? stoneBeforeDamage(context, skill) : authored ? skill : cachedDamageTransforms?.[skill.name]?.(context, skill) || skill;
+  const transformed = isSkillStone(skill) ? stoneBeforeDamage(context, skill) : authored ? applyPowerProperties(skill,context) : cachedDamageTransforms?.[skill.name]?.(context, skill) || skill;
   const powerComp = { power: transformed.power || 0 };
   SoulMarkRegistry[context.self.name]?.(context, EffectTiming.MODIFY_POWER, { skill: transformed, powerComp });
   const opposingContext = deriveContext(context, { self: context.target, target: context.self, actor: context.targetSide, targetSide: context.actor,

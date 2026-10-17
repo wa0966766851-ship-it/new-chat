@@ -3,10 +3,14 @@ export type RecoveryOrigin = {kind:'skill'|'soul'|'trait';sourceSide:'p1'|'p2';s
 /** 回復分類由執行容器決定，不從技能名字／日誌或當前選招猜測。 */
 export function withRecoveryOrigin(ctx:BattleEventContext,kind:RecoveryOrigin['kind']):BattleEventContext {
   const current=(ctx as any).recoveryOrigin;
-  if(current?.kind===kind&&current.sourceSide===ctx.actor&&current.sourceBattleId===String(ctx.self?.battleId||ctx.self?.id||''))return ctx;
+  if(!(ctx as any).effectSource&&current?.kind===kind&&current.sourceSide===ctx.actor&&current.sourceBattleId===String(ctx.self?.battleId||ctx.self?.id||''))return ctx;
   const next=Object.create(ctx);
-  const origin=():RecoveryOrigin=>({kind,sourceSide:ctx.actor,sourceBattleId:String(ctx.self?.battleId||ctx.self?.id||'')});
+  const origin=():RecoveryOrigin=>(ctx as any).effectSource?.kind===kind?(ctx as any).effectSource:
+    {kind,sourceSide:ctx.actor,sourceBattleId:String(ctx.self?.battleId||ctx.self?.id||'')};
   Object.defineProperty(next,'recoveryOrigin',{get:origin,configurable:true});
+  // 同一容器也給異常附加明確來源，避免讀目前選招來猜魂印／技能。
+  next.applyStatusWithImmunityCheck=(side,status,duration,ignoreImmune,targetId,statusOrigin)=>ctx.applyStatusWithImmunityCheck(side,status,duration,ignoreImmune,targetId,
+    statusOrigin??{...origin(),skillCategory:ctx.skill?.category});
   const options=(opts:any)=>{const source=opts?.recoveryOrigin??origin();return source.sourceBattleId?{...opts,recoveryOrigin:source}:opts;};
   next.applyHeal=(side:any,amount:number,opts:any)=>{const result=options(opts);return result===undefined?ctx.applyHeal(side,amount):ctx.applyHeal(side,amount,result);};
   if(ctx.applyHealToElf)next.applyHealToElf=(side:any,id:string,amount:number,opts:any)=>{const result=options(opts);return result===undefined?ctx.applyHealToElf!(side,id,amount):ctx.applyHealToElf!(side,id,amount,result);};

@@ -1,7 +1,8 @@
 import { TeamSetupTools } from "./TeamSetupTools";
-import { bindInitialCounterparts } from '../battle/illusion';
+import { bindInitialCounterparts } from '../battle/illusionPresentation';
 import React, { useState, useEffect, useMemo, lazy, Suspense } from "react";
 import { matchesElfQuery } from '../utils/elfSearch';
+import { swapSlots } from '../utils/slotSwap';
 import { createPortal } from 'react-dom';
 import { Elf, BattleMode, Inscription } from "../types";
 import { SEER_TYPES, calculateElfStats, getDefaultEvs, getAttributeBadgeColor } from "../utils/statCalculator";
@@ -30,6 +31,8 @@ const LazyBlockProgramView = lazy(() => import("./LazyBlockProgramView"));
 const BattleAIQuickSettings = lazy(() => import('./BattleAIQuickSettings').then(m=>({default:m.BattleAIQuickSettings})));
 const EffectLibraryModal = lazy(() => import("./EffectLibraryModal").then(m => ({ default: m.EffectLibraryModal })));
 const SkillStonePicker = lazy(() => import('./SkillStonePicker'));
+// 與星蝕回廊共用的搜尋＋屬性篩選挑選器；只在開啟「選擇精靈」視窗時才載入（首頁初始 JS 預算 950 kB）。
+const ElfPicker = lazy(() => import("./shared/ElfPicker").then(m => ({ default: m.ElfPicker as React.ComponentType<any> })));
 const detailLoading = <p role="status" className="p-3 text-sm text-slate-400">載入效果資料…</p>;
 const detailPanelLoading = <p role="status" className="ios-card min-h-24 p-4 text-sm text-slate-400">載入詳細面板…</p>;
 
@@ -62,9 +65,11 @@ interface TeamInstance extends Elf {
 }
 
 import { useGameData } from "../contexts/GameDataContext";
+import {applySavedSkillCorrections} from '../data/savedSkillCorrections';
 
 /** 已保存陣容的預設精靈：技能 PP／PP上限以目前資料為準（避免舊存檔的 PP 值殘留） */
 function syncSavedSkillPp(e: any) {
+  Object.assign(e,applySavedSkillCorrections(e,DEFAULT_ELVES));
   const def: any = DEFAULT_ELVES.find((d: any) => d.name === e?.name);
   if (!def || !Array.isArray(e?.skills)) return;
   const all = [...(def.skills || []), ...(def.skillPool || [])];
@@ -594,15 +599,7 @@ export default function StartScreen({
 
     if (fromIdx >= team.length) return;
 
-    const newTeam = [...team];
-    if (toIdx >= team.length) {
-      const [moved] = newTeam.splice(fromIdx, 1);
-      newTeam.push(moved);
-    } else {
-      const temp = newTeam[fromIdx];
-      newTeam[fromIdx] = newTeam[toIdx];
-      newTeam[toIdx] = temp;
-    }
+    const newTeam = swapSlots<TeamInstance>(team, fromIdx, toIdx);
     setTeam(newTeam);
 
     const newStarterIdx = newTeam.findIndex(e => e.battleId === starterId);
@@ -797,8 +794,6 @@ export default function StartScreen({
       setP2StarterId("");
     }
   };
-
-  const [showTypeFilter, setShowTypeFilter] = useState<boolean>(false);
 
   const renderTeamGrid = (player: "p1" | "p2", team: TeamInstance[], starterId: string, startIndex: number, type: "active" | "standby") => {
     const selectedIdx = player === "p1" ? p1SelectedIdx : p2SelectedIdx;
@@ -3554,124 +3549,48 @@ export default function StartScreen({
               </button>
             </div>
 
-            <div className="p-6 space-y-6 overflow-y-auto custom-scrollbar">
-              {/* Modal Filter Bar */}
-              <div className="space-y-3">
-                <div className="flex flex-col md:flex-row gap-4 items-center">
-                  <div className="relative flex-1 w-full">
-                    <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
-                    <input
-                      type="text"
-                      placeholder="名稱、ID、屬性（可用空白組合）"
-                      value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
-                      className="w-full bg-[#050608] border border-slate-800 focus:border-blue-500/50 rounded-xl pl-10 pr-4 py-2.5 text-sm text-slate-200 focus:outline-none transition-all shadow-inner"
-                    />
-                  </div>
-                  <div className="flex items-center gap-2 w-full md:w-auto">
-                    <button
-                      onClick={() => setShowTypeFilter(!showTypeFilter)}
-                      className={`flex-1 md:flex-none flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl border font-bold text-xs transition-all cursor-pointer ${
-                        showTypeFilter || selectedTypes.length > 0
-                          ? "bg-blue-600/10 border-blue-500/50 text-blue-400"
-                          : "bg-slate-900 border-slate-800 text-slate-400 hover:text-slate-200 hover:border-slate-700"
-                      }`}
-                    >
-                      <Filter className="w-3.5 h-3.5" />
-                      屬性篩選 {selectedTypes.length > 0 && `(${selectedTypes.length})`}
-                      {showTypeFilter ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
-                    </button>
-                    {selectedTypes.length > 0 && (
-                      <button
-                        onClick={() => setSelectedTypes([])}
-                        className="p-2.5 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-400 hover:bg-rose-500/20 transition-all cursor-pointer"
-                        title="清除所有篩選"
-                      >
-                        <X className="w-4 h-4" />
-                      </button>
-                    )}
-                  </div>
-                </div>
-
-                {showTypeFilter && (
-                  <motion.div
-                    initial={{ opacity: 0, height: 0 }}
-                    animate={{ opacity: 1, height: 'auto' }}
-                    className="p-4 bg-slate-900/40 border border-slate-800/60 rounded-2xl"
-                  >
-                    <div className="flex flex-wrap gap-2">
-                      <button
-                        onClick={() => setSelectedTypes([])}
-                        className={`px-3 py-1.5 rounded-lg text-[10px] font-bold transition-all border cursor-pointer ${
-                          selectedTypes.length === 0
-                            ? "bg-blue-600 border-blue-500 text-white shadow-lg shadow-blue-500/20"
-                            : "bg-slate-950 border-slate-800 text-slate-500 hover:text-slate-300"
-                        }`}
-                      >
-                        全部
-                      </button>
-                      {SEER_TYPES.map(type => (
-                        <button
-                          key={type}
-                          onClick={() => toggleTypeFilter(type)}
-                          className={`px-3 py-1.5 rounded-lg text-[10px] font-bold transition-all border cursor-pointer ${
-                            selectedTypes.includes(type)
-                              ? "bg-blue-600 border-blue-500 text-white shadow-lg shadow-blue-500/20"
-                              : "bg-slate-950 border-slate-800 text-slate-500 hover:text-slate-300"
-                          }`}
-                        >
-                          <TypeIcon type={type} size={18} showLabelWhenMissing={false} /> {type}
-                        </button>
-                      ))}
+            <div className="p-6 overflow-y-auto custom-scrollbar">
+              <Suspense fallback={detailLoading}><ElfPicker
+                elves={allElves}
+                getKey={(elf, index) => `${elf.id}-${index}`}
+                itemClassName="group bg-[#050608] border border-slate-800 hover:border-blue-500/50 rounded-2xl p-4 text-left transition-all hover:shadow-[0_0_20px_rgba(59,130,246,0.1)] flex items-center gap-4 cursor-pointer"
+                onPick={elf => {
+                  const newElf = createInstance(elf);
+                  if (showSelectionModal.player === "p1") {
+                    const newTeam = [...p1Team];
+                    newTeam[showSelectionModal.slotIndex] = newElf;
+                    setP1Team(newTeam.filter(Boolean));
+                    if (!p1StarterId) setP1StarterId(newElf.battleId);
+                  } else {
+                    const newTeam = [...p2Team];
+                    newTeam[showSelectionModal.slotIndex] = newElf;
+                    setP2Team(newTeam.filter(Boolean));
+                    if (!p2StarterId) setP2StarterId(newElf.battleId);
+                  }
+                  setShowSelectionModal(null);
+                }}
+                renderItem={elf => (
+                  <>
+                    <div className="w-12 h-12 rounded-xl bg-slate-900 flex items-center justify-center shrink-0 border border-slate-800 group-hover:border-blue-500/30 overflow-hidden text-slate-500 font-bold">
+                      <ElfAvatar elf={elf} kind="head" className="w-full h-full object-cover" fallbackClassName="w-full h-full flex items-center justify-center text-slate-500 font-bold" />
                     </div>
-                  </motion.div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex justify-between items-center mb-0.5">
+                        <span className="font-bold text-slate-200 text-sm truncate">{elf.name}</span>
+                        <span className={`text-[9px] px-1.5 py-0.5 rounded font-bold ${getAttributeBadgeColor(elf.type)} inline-flex items-center gap-0.5`}>
+                          <TypeIcon type={elf.type} size={12} showLabelWhenMissing={false} />{elf.type}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2 mb-1 text-[8px] text-slate-500">
+                        <span>📏 {elf.height ?? 0}cm</span>
+                        <span>⚖️ {elf.weight ?? 0}kg</span>
+                        {getElfDestinyRank(elf) && <span className="text-cyan-400 font-bold">🎡 {getElfDestinyRank(elf)}</span>}
+                      </div>
+                      <p className="text-[10px] text-slate-500 truncate italic">{elf.soulMark.name}</p>
+                    </div>
+                  </>
                 )}
-              </div>
-
-              {/* Modal Elf Grid */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                {allElves
-                  .filter(e => matchesElfQuery(e, searchQuery, selectedTypes))
-                  .map((elf, index) => (
-                    <button
-                      key={`${elf.id}-${index}`}
-                      onClick={() => {
-                        const newElf = createInstance(elf);
-                        if (showSelectionModal.player === "p1") {
-                          const newTeam = [...p1Team];
-                          newTeam[showSelectionModal.slotIndex] = newElf;
-                          setP1Team(newTeam.filter(Boolean));
-                          if (!p1StarterId) setP1StarterId(newElf.battleId);
-                        } else {
-                          const newTeam = [...p2Team];
-                          newTeam[showSelectionModal.slotIndex] = newElf;
-                          setP2Team(newTeam.filter(Boolean));
-                          if (!p2StarterId) setP2StarterId(newElf.battleId);
-                        }
-                        setShowSelectionModal(null);
-                      }}
-                      className="group bg-[#050608] border border-slate-800 hover:border-blue-500/50 rounded-2xl p-4 text-left transition-all hover:shadow-[0_0_20px_rgba(59,130,246,0.1)] flex items-center gap-4 cursor-pointer"
-                    >
-                      <div className="w-12 h-12 rounded-xl bg-slate-900 flex items-center justify-center shrink-0 border border-slate-800 group-hover:border-blue-500/30 overflow-hidden text-slate-500 font-bold">
-                        <ElfAvatar elf={elf} kind="head" className="w-full h-full object-cover" fallbackClassName="w-full h-full flex items-center justify-center text-slate-500 font-bold" />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex justify-between items-center mb-0.5">
-                          <span className="font-bold text-slate-200 text-sm truncate">{elf.name}</span>
-                          <span className={`text-[9px] px-1.5 py-0.5 rounded font-bold ${getAttributeBadgeColor(elf.type)} inline-flex items-center gap-0.5`}>
-                            <TypeIcon type={elf.type} size={12} showLabelWhenMissing={false} />{elf.type}
-                          </span>
-                        </div>
-                        <div className="flex items-center gap-2 mb-1 text-[8px] text-slate-500">
-                          <span>📏 {elf.height ?? 0}cm</span>
-                          <span>⚖️ {elf.weight ?? 0}kg</span>
-                          {getElfDestinyRank(elf) && <span className="text-cyan-400 font-bold">🎡 {getElfDestinyRank(elf)}</span>}
-                        </div>
-                        <p className="text-[10px] text-slate-500 truncate italic">{elf.soulMark.name}</p>
-                      </div>
-                    </button>
-                  ))}
-              </div>
+              /></Suspense>
             </div>
 
             <div className="p-6 border-t border-slate-800 bg-slate-900/30 flex justify-between items-center">

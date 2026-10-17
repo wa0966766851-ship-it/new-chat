@@ -1,10 +1,10 @@
 // 積木程式快取與戰鬥接點
 import type { Program, Trigger } from "./model";
-import type { BattleEventContext } from "../effects/types";
+import type { BattleEventContext, ActionResultInfo } from "../effects/types";
 import { EffectTiming } from "../effects/types";
 import { parseSkill, parseSoulMark, matchCond } from "./parse";
 import { CUSTOM } from "./custom";
-import { eventTriggers, runSideTimers, runSkillProgram, runSoulProgram, runAct, passiveEvade, runHolderMarks, setSoulProgramProvider, findBlockTimer, evalCond, statusTriggers, settleNoDmgFollowUps, surviveAt1 } from "./runtime";
+import { eventTriggers, runSideTimers, runSkillProgram, runSoulProgram, runAct, runStmts, passiveEvade, runHolderMarks, setSoulProgramProvider, findBlockTimer, evalCond, statusTriggers, settleNoDmgFollowUps, surviveAt1 } from "./runtime";
 import { isSkillDamageType } from "../battle/damageSemantics";
 export { blockStatusGuard } from "./runtime";
 import { SKILL_MODE, SOUL_MODE } from "./specs";
@@ -16,6 +16,8 @@ import { readSkillProperty, readAttachedSureHit, readListedPriority } from '../e
 import { recordConsecutiveUse } from '../effects/sequenceClosureOperations';
 import { readSoulEvade } from '../effects/soulProperty';
 import { checkElfDead } from '../battle/elfAlive';
+import {runDeferredAllyEntry} from '../effects/deferredEntryEffects';
+import {runConditionalRebirth} from '../effects/conditionalRebirth';
 
 const skillCache = new BoundedCache<string, Program>(1024);
 setSoulProgramProvider((elf) => getSoulProgram(elf));
@@ -80,9 +82,12 @@ const ACTIVE_ONLY = new Set<string>([EffectTiming.ROUND_START, EffectTiming.ROUN
 
 /** 魂印事件：側邊持續效果 + 精靈魂印積木（依 SOUL_MODE） */
 export function runBlockEvent(ctx: BattleEventContext, event: string, data: any, elf: any, hasHandler = false): boolean {
+  runConditionalRebirth(ctx,event);
+  if(event===EffectTiming.ON_ENTRANCE)runDeferredAllyEntry(ctx,runStmts);
   if (event === EffectTiming.ON_ENTRANCE) runBenchOnOppEntrance(ctx);
   recordBattleFacts(ctx, event, data);
   const trigs = eventTriggers(ctx, event, data);
+  if(event===EffectTiming.BATTLE_START&&!trigs.length)return false;
   const connectedSurvived=!!elf && runConnectedLifecycle(ctx, event as EffectTiming, data, elf, hasHandler, trigs.includes('battle_start'));
   if (!trigs.length) return connectedSurvived === true;
   const active = (ctx.actor === "p1" ? ctx.activeP1 : ctx.activeP2) as any;
@@ -114,9 +119,22 @@ export function runBlockEvent(ctx: BattleEventContext, event: string, data: any,
 function recordBattleFacts(ctx: BattleEventContext, event: string, data: any) {
   if (event === EffectTiming.AFTER_ATTACK_HIT && data && (data.hitIndex ?? 0) === 0) ctx.setPlayerState("blkLastHitDamage", Number(data.totalDamage ?? data.damage ?? 0));
   if (event === EffectTiming.OPPONENT_DAMAGE) settleNoDmgFollowUps(ctx, data);
+  if(event===EffectTiming.ON_DAMAGED&&data&&(!data.targetSide||data.targetSide===ctx.actor)&&Number(data.amount)>0){
+    const previous=ctx.getPlayerState('receivedDamageThisRound'),round=ctx.roundNumber??0,ownerBattleId=ctx.self.battleId||ctx.self.id;
+    ctx.setPlayerState('receivedDamageThisRound',{round,ownerBattleId,amount:(previous?.round===round&&previous.ownerBattleId===ownerBattleId?Number(previous.amount)||0:0)+Number(data.amount)});
+  }
   if (event === EffectTiming.ON_DAMAGED && data && (!data.targetSide || data.targetSide === ctx.actor) && (data.amount ?? 0) > 0 && isSkillDamageType(String(data.damageType || ""))) {
+    const previous=ctx.getPlayerState('receivedSkillDamageThisRound'),round=ctx.roundNumber??0,ownerBattleId=ctx.self.battleId||ctx.self.id;
+    ctx.setPlayerState('receivedSkillDamageThisRound',{round,ownerBattleId,
+      amount:(previous?.round===round&&previous.ownerBattleId===ownerBattleId?Number(previous.amount)||0:0)+Number(data.amount)});
     ctx.setPlayerState("blkSkillDmgTakenRound", ctx.roundNumber ?? 0);
     if (!data.typedSkill) ctx.setPlayerState("blkAttackDmgTakenRound", ctx.roundNumber ?? 0);
+  }
+  // 當回合固定／百分比受傷事實（殞星衝擊「未受到固定傷害」判定；與 blkSkillDmgTakenRound 同模式）。
+  if (event === EffectTiming.ON_DAMAGED && data && (!data.targetSide || data.targetSide === ctx.actor) && (data.amount ?? 0) > 0) {
+    const dt = String(data.damageType || "");
+    if (dt === "fixed") ctx.setPlayerState("blkFixedDmgTakenRound", ctx.roundNumber ?? 0);
+    if (dt === "percent") ctx.setPlayerState("blkPercentDmgTakenRound", ctx.roundNumber ?? 0);
   }
 }
 
@@ -176,12 +194,12 @@ function runBenchOnOppEntrance(ctx: BattleEventContext) {
 }
 
 /** 技能使用／使用後（引擎直接呼叫，雙方各一次） */
-export function emitSkillUse(actorCtx: BattleEventContext, oppCtx: BattleEventContext, skill: any, after: boolean) {
+export function emitSkillUse(actorCtx: BattleEventContext, oppCtx: BattleEventContext, skill: any, after: boolean, result?: ActionResultInfo) {
   const cat = skill?.category;
   const kind = cat === "屬性" ? "status" : "attack";
   const selfT = (after ? [`self_after_use`, `self_after_skill`, `self_after_${kind}`, ...(cat === "物理" ? ["self_after_physical"] : cat === "特殊" ? ["self_after_special"] : [])] : [`self_skill`, `self_${kind}`]) as Trigger[];
   const oppT = (after ? [`opp_after_skill`, `opp_after_${kind}`] : [`opp_skill`, `opp_${kind}`]) as Trigger[];
-  const data = { skill };
+  const data = { ...result, skill };
   if (!after) {
     const definition = soulDefinition(actorCtx.self);
     if (usesAuthoredSoul(actorCtx.self, soulHandlerProvider(actorCtx.self)) && effectRoute(definition) === 'kit') runConnectedKit('on_skill_use', definition, actorCtx);
@@ -229,7 +247,7 @@ function authoredSkillProgram(skill: any, elf: any): Program | null {
 /** 積木模式（覆寫手寫程式）的技能：條件式先制「…時先制+N」 */
 export function blockCondPriority(skill: any, self: any, opp: any, getStatuses: (e: any) => Record<string, number>, conditionalOnly = false): number {
   if (!skill) return 0;
-  if(skill.effectMode==='kit')return readListedPriority(skill,{self,target:opp,getStatuses,getPlayerState:()=>undefined,getMarks:()=>[],actor:'p1',targetSide:'p2',skill},conditionalOnly);
+  if(skill.effectMode==='kit')return readListedPriority(skill,{self,target:opp,getStatuses,getPlayerState:()=>undefined,getMarks:(side:string)=>side==='p1'?(self.marks||[]):(opp.marks||[]),actor:'p1',targetSide:'p2',skill},conditionalOnly);
   const prog = authoredSkillProgram(skill, self);
   if (!prog) return 0;
   const ctxLike: any = { self, target: opp, getStatuses, getPlayerState: () => undefined, getMarks: () => [], actor: "p1", targetSide: "p2", skill };
@@ -284,9 +302,14 @@ export function emitStatusApplied(ctxs: [BattleEventContext, BattleEventContext]
 }
 
 /** 自身技能無效（含未命中）時：側邊持續效果 */
-export function emitSelfInvalid(ctx: BattleEventContext) { runSideTimers(ctx, ["self_invalid" as Trigger], {}); }
+export function emitSelfInvalid(ctx: BattleEventContext, invalid = false) { runSideTimers(ctx, ["self_invalid" as Trigger], { skill: ctx.skill, invalid }); }
 
-/** 失敗收尾僅補「使用級」持續效果，不重播成功／命中級魂印與技能。 */
-export function emitFailedSkillUse(ctx: BattleEventContext) {
-  runSideTimers(ctx, ["self_after_use"], { skill: ctx.skill });
+/** 已使用技能但無效／未命中的收尾；未出手不呼叫，重算只在最終結果呼叫一次。 */
+export function emitFailedSkillUse(ctx: BattleEventContext, oppCtx: BattleEventContext, result: ActionResultInfo) {
+  const data={...result,skill:ctx.skill};
+  // 自身成功級AFTER_ACTION不補發；既有使用級收尾保留。
+  runSideTimers(ctx, ["self_after_use"], data);
+  const trigs:Trigger[]=['opp_after_skill',ctx.skill?.category==='屬性'?'opp_after_status':'opp_after_attack'];
+  runSideTimers(oppCtx,trigs,data);
+  emitCurrentSouls(oppCtx,trigs,data);
 }

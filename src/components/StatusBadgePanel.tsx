@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { EFFECT_CATALOG, EffectInstance } from '../data/effectCatalog';
 import { Elf } from '../types';
@@ -6,17 +6,22 @@ import { getStatuses } from '../utils/battleHelpers';
 import { StatusRegistry } from '../effects/statusRegistry';
 import { statusVisual, catalogEffectIcon } from '../battle/effectIcons';
 import { ChainImage } from './SeerImages';
+import {displayTurnValue} from '../battle/displayTurnValue';
 
 interface StatusBadgePanelProps {
   elf: Elf;
+  registryState?: Record<string,any>;
   otherEffects?: EffectInstance[];
   emptyHint?: string;
   categoryFilter?: string[];
   disguiseAbnormalStatuses?: boolean;
 }
 
-export const StatusBadgePanel: React.FC<StatusBadgePanelProps> = ({ elf, otherEffects = [], emptyHint, categoryFilter, disguiseAbnormalStatuses = false }) => {
-  const [selectedEffect, setSelectedEffect] = useState<any | null>(null);
+export const StatusBadgePanel: React.FC<StatusBadgePanelProps> = ({ elf, registryState = {}, otherEffects = [], emptyHint, categoryFilter, disguiseAbnormalStatuses = false }) => {
+  const [selection, setSelection] = useState<{owner:string;key:string}|null>(null);
+  const effectKey=(inst:any)=>`${!!inst.isStandardStatus}:${inst.id??inst.catalogId}`;
+  const owner=elf.battleId||elf.id;
+  const setSelectedEffect=(inst:any)=>setSelection(inst?{owner,key:effectKey(inst)}:null);
   
   // 1. Convert standard statuses from StatusRegistry
   const mergedStatuses = getStatuses(elf);
@@ -51,16 +56,19 @@ export const StatusBadgePanel: React.FC<StatusBadgePanelProps> = ({ elf, otherEf
 
   // 3. Add an immunity indicator if immune
   const extraEffects: any[] = [];
-  if (elf.statusImmuneTurns && elf.statusImmuneTurns > 0) {
+  const immuneTurns=displayTurnValue(elf,registryState,'statusImmuneTurns');
+  if (immuneTurns > 0) {
     extraEffects.push({
-      catalogId: 'status_immune',
-      remainingTurns: elf.statusImmuneTurns,
+      catalogId: 'immune_status_turns',
+      remainingTurns: immuneTurns,
       isStandardStatus: false
     });
   }
 
   // Combine all
   const allEffects = [...registryStatuses, ...catalogEffects, ...extraEffects, ...(otherEffects || [])];
+  const selectedEffect=selection?.owner===owner?allEffects.find(inst=>effectKey(inst)===selection.key):undefined;
+  useEffect(()=>{if(selection&&!selectedEffect)setSelection(null);},[selection,selectedEffect]);
   
   const getCategoryStyle = (categories: string[], name?: string) => {
     if (categories.includes('BOSS_ONLY')) return name === '神話'

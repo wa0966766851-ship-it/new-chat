@@ -4,6 +4,7 @@ import type { Act, Clause, Cond, Program, Stmt } from "../blocks/model";
 import { TRIG_LABEL } from "../blocks/parse";
 import { suggestDamageTypes, damageChoiceLabel } from '../effects/damageChoices';
 import { sequenceActionLabel } from '../effects/sequencePresentation';
+import { LEGACY_TOOLTIP } from '../blocks/ops/legacyHandler';
 
 const OP_TONE: Record<string, string> = {
   status: "bg-fuchsia-600/80", status_seq: "bg-fuchsia-600/80", status_random: "bg-fuchsia-600/80", status_chance_turns: "bg-fuchsia-600/80", convert_status: "bg-fuchsia-600/80",
@@ -20,6 +21,7 @@ const OP_TONE: Record<string, string> = {
 };
 
 const ActBlock: React.FC<{ a: Act }> = ({ a }) => {
+  if(a.op==='legacy_handler')return <div title={LEGACY_TOOLTIP} className="rounded-md border border-purple-400/40 bg-purple-600/60 px-2 py-1 text-[12px] font-medium text-white shadow-sm">🔒 {a.label || `專屬機制：${a.p.key}`}</div>;
   if(a.op==='mark_program')return <div className="rounded-lg border border-yellow-400/40 bg-yellow-500/10 p-2"><p className="text-xs font-semibold text-yellow-200">{sequenceActionLabel(a)}</p><p className="text-xs text-slate-300">{a.p.description}</p>{(a.p.rules||[]).map((c:Clause,i:number)=><div key={i} className="border-l-2 border-yellow-400/50 pl-2 mt-2"><p className="text-xs text-yellow-100">{TRIG_LABEL[c.trig]||c.trig}：{c.raw}</p>{(c.cond||[]).map((cond,j)=><CondChip key={j} c={cond}/>)}<StmtList body={c.body}/></div>)}</div>;
   if (a.op === "timed" || a.op === "once") {
     const p = a.p;

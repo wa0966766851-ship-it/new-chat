@@ -83,7 +83,7 @@ export const RelicEffectRegistry: Record<string, RelicHandler> = {
   affix_sapping: (ctx, event) => {
     if (event === EffectTiming.ROUND_END && alive(ctx) && (ctx.target?.currentHp ?? 0) > 0) {
       const n = Math.max(1, Math.floor((ctx.target.maxHp || 0) * 0.05));
-      ctx.applyFixedDamage(ctx.targetSide, n, "汲魂");
+      ctx.applyFixedDamage(ctx.targetSide, n, "汲魂", { unscaled: true });
     }
   },
 };
@@ -102,6 +102,11 @@ export function runRelicEffects(relics: readonly string[] | undefined, ctx: Batt
   }
 }
 
+/** 星蝕回廊固定值倍率（"fixed_mul:3.16" 由回廊在開戰時寫入雙方遺物清單；沒有則為 1）。 */
+export function fixedValueMul(relics: readonly string[] | undefined): number {
+  for (const entry of relics || []) { const [id, v] = parse(entry); if (id === "fixed_mul" && v > 0) return v; }
+  return 1;
+}
 export const hasRelic = (relics: readonly string[] | undefined, id: string) => !!relics?.some(r => parse(r)[0] === id);
 
 /** 藏品對攻擊公式的靜態修正：物理攻擊額外無視對手防禦的比例（原寫在戰鬥引擎，2026-10-10 搬入）。 */

@@ -15,8 +15,18 @@ import { getElfAdvancedMechanics } from '../src/data/traitsRegistry';
 let count = 0;
 const check = (name: string, run: () => void) => { run(); console.log(`✓ ${name}`); count++; };
 const entry = (node: KitEntry['node'], amount = 70): KitEntry => ({ codeId: 'heal', params: { amount }, node, source: 'skill', order: 0 });
-check('33節點同一合約；含異常前防護、場下登場及四種持有者異常事件', () => {
-  assert.equal(Object.keys(EFFECT_NODES).length,33);
+check('42節點同一合約；含逐擊、額外行動、資源變動、擊敗未擊敗與持有者消除事件', () => {
+  assert.equal(Object.keys(EFFECT_NODES).length,42);
+  assert.equal(eventEffectNode(EffectTiming.AFTER_ATTACK_HIT),'after_attack_hit');
+  assert.equal(EFFECT_NODES.after_attack_hit.trigger,'attack_hit');
+  assert.equal(eventEffectNode(EffectTiming.EXTRA_ACTION_START),'extra_action_start');
+  assert.equal(eventEffectNode(EffectTiming.EXTRA_ACTION_END),'extra_action_end');
+  assert.equal(eventEffectNode(EffectTiming.RESOURCE_CHANGED),'on_resource_changed');
+  assert.equal(eventEffectNode(EffectTiming.BATTLE_START),'battle_start');
+  assert.equal(eventEffectNode(EffectTiming.NOT_KILLED),'on_not_killed');
+  assert.equal(eventEffectNode(EffectTiming.BEFORE_INSTANT_KILL),'before_instant_kill');
+  assert.equal(eventEffectNode(EffectTiming.STAT_BOOST_CLEARED),'on_stat_boost_cleared');
+  assert.equal(eventEffectNode(EffectTiming.TURN_EFFECTS_CLEARED),'on_turn_effects_cleared');
   assert.equal(eventEffectNode(EffectTiming.ON_STATUS_ENDED),'on_status_ended');
   assert.equal(eventEffectNode(EffectTiming.SELF_STATUS_APPLIED),'on_status_received');
   assert.equal(eventEffectNode(EffectTiming.ON_STATUS_IMMUNIZED),'on_status_immunized');
@@ -26,6 +36,7 @@ check('33節點同一合約；含異常前防護、場下登場及四種持有�
   for(const [node,contract] of Object.entries(EFFECT_NODES)) {
     if(contract.event) assert.equal(eventEffectNode(contract.event),node);
     else assert.ok(contract.derived);
+    assert.equal(kitEntryIssue(entry(node as KitEntry['node'])),null,`${node}需通過正式圖紙驗證`);
     const plan=compileEffectPlan({name:'節點核對',kit:[entry(node as KitEntry['node'])]},'soul');
     assert.equal(plan.program.clauses[0].trig,contract.trigger);
   }

@@ -2,7 +2,8 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { SKILL_STONE_ATTRIBUTES as attrs, SKILL_STONE_GRADES as grades, PERFECT_SKILL_STONE_EFFECTS as effects,
   createSkillStone, toSSStone, stoneBasePp, distinctStoneCount, isStoneThrower, equipSkillStone, stoneIconUrl } from '../src/data/skillStones';
-import { getMaxPp, isPpCostFree, isZeroPpExempt } from '../src/utils/battleHelpers';
+import { getMaxPp } from '../src/utils/battleHelpers';
+import { isPpCostFree, isZeroPpExempt } from '../src/battle/ppExemptions';
 import { resetElfStateForBattle, getTypeMatchup } from '../src/utils/statCalculator';
 import { stoneAfterHit, stoneBeforeDamage, stonePriorityBonus } from '../src/effects/skillStoneEffects';
 import { handleStoneThrowerSoul } from '../src/effects/elves/wuxu/stoneThrowerSoul';

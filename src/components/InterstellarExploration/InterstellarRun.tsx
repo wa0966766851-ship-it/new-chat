@@ -7,6 +7,7 @@ import MapView from "./eclipse/MapView";
 import { SCENES } from "./eclipse/Scenes";
 import { EclipseMoon, NpcArt, alive } from "./eclipse/parts";
 import Ledger, { type LedgerTab } from "./eclipse/Ledger";
+import { RELIC_BY_ID } from "../../modes/interstellar/v2/relics";
 
 interface InterstellarRunProps {
   allElves: Elf[];
@@ -14,6 +15,8 @@ interface InterstellarRunProps {
   initialEquipType: "suit" | "title";
   initialEquipId: string;
   selectedModifiers: string[];
+  /** 局種子、N 等級、禁用名單（只在新開一局時使用） */
+  seed?: number; nLevel?: number; bans?: string[];
   onEndRun: (act: number, earnedExp: number) => void;
   onStartBattle: (p1: Elf[], p2: Elf[], mode: any, options?: any) => void;
   /** 暫離：保留存檔回到大廳 */
@@ -39,20 +42,20 @@ function Resource({ icon, label, value }: { icon: string; label: string; value: 
   );
 }
 
-function LedgerButton({ label, count, warn, onClick }: { label: string; count?: string; warn?: boolean; onClick: () => void }) {
+function LedgerButton({ label, count, warn, onClick, title }: { label: string; count?: string; warn?: boolean; onClick: () => void; title?: string }) {
   return (
-    <button onClick={onClick} className="px-4 py-2 border border-[rgba(217,180,90,.45)] hover:bg-[rgba(217,180,90,.1)] font-black tracking-widest text-sm">
+    <button onClick={onClick} title={title} className="px-4 py-2 border border-[rgba(217,180,90,.45)] hover:bg-[rgba(217,180,90,.1)] font-black tracking-widest text-sm">
       {label}{count !== undefined && <span className={`ml-1.5 text-xs tabular-nums ${warn ? "ecl-blood" : "ecl-muted"}`}>{count}</span>}
     </button>
   );
 }
 
-export default function InterstellarRun({ allElves, startingDiamonds, initialEquipType, initialEquipId, selectedModifiers, onEndRun, onStartBattle, onLeave }: InterstellarRunProps) {
+export default function InterstellarRun({ allElves, startingDiamonds, initialEquipType, initialEquipId, selectedModifiers, seed, nLevel, bans, onEndRun, onStartBattle, onLeave }: InterstellarRunProps) {
   const pool = allElves;
   const [run, setRun] = React.useState<E.RunV2>(() => {
     const saved = E.resumeRunV2(localStorage,pool);
     if (saved) return saved;
-    const fresh = E.createRun({ pool, equipType: initialEquipType, equipId: initialEquipId, modifiers: selectedModifiers, startingShards: startingDiamonds });
+    const fresh = E.createRun({ pool, equipType: initialEquipType, equipId: initialEquipId, modifiers: selectedModifiers, startingShards: startingDiamonds, seed, nLevel, bans });
     return E.saveRunV2(localStorage, fresh);
   });
   const runRef = React.useRef(run); runRef.current = run;
@@ -74,7 +77,7 @@ export default function InterstellarRun({ allElves, startingDiamonds, initialEqu
 
   const fight = () => {
     const cur = runRef.current;
-    const battleId = globalThis.crypto?.randomUUID?.() ?? `b-${Date.now()}`;
+    const battleId = E.battleIdOf(cur);
     const b = E.startBattle(cur, pool, battleId);
     if (!b) return;
     busy.current = true;
@@ -87,7 +90,7 @@ export default function InterstellarRun({ allElves, startingDiamonds, initialEqu
       title1: saved.equipType === "title" ? saved.equipId : undefined,
       format: b.p2.length === 1 ? "solo_1v1" : "normal_6v6", preparedTeams: true, specialMode: "interstellar",
       interstellarOptions: {
-        runId, battleId, potionUsage: 0, maxPotionUsage: saved.potions, relics: b.relics, enemyRelics: b.enemyRelics,
+        runId, battleId, battleSeed: b.battleSeed, potionUsage: 0, maxPotionUsage: saved.potions, relics: b.relics, enemyRelics: b.enemyRelics,
         onPotionUse: () => E.consumePotionV2(localStorage, runId, battleId),
         onBattleEnd: (winner: string, team?: Elf[]) => E.settleStoredBattleV2(localStorage, runId, battleId, winner, team, pool),
       },
@@ -99,6 +102,7 @@ export default function InterstellarRun({ allElves, startingDiamonds, initialEqu
   const Scene = run.scene.kind !== "map" ? SCENES[run.scene.kind] : null;
   const lineup = E.lineupOf(run);
   const note = run.scene.kind === "map" ? run.scene.note : undefined;
+  const rescues = E.rescueSources(run);
 
   return (
     <div className="ecl-root w-full h-full min-h-[100vh] flex flex-col" style={{ ["--ecl-hue" as any]: act.hue }}>
@@ -120,11 +124,14 @@ export default function InterstellarRun({ allElves, startingDiamonds, initialEqu
         <div className="flex items-center gap-6">
           <Resource icon="_beans" label="賽爾豆" value={run.beans} />
           <Resource icon="_shard" label="星晶" value={run.shards} />
+          <Resource icon="_shard" label="招募令" value={run.tokens.length} />
           <Resource icon="_potion" label="藥劑" value={run.potions} />
           <EclipseMoon value={run.eclipse} />
         </div>
         <div className="ml-auto flex items-center gap-2">
-          <LedgerButton label="隊伍" count={`${lineup.filter(alive).length}/${E.lineupSlots(run)}`} warn={lineup.some(e => !alive(e))} onClick={() => setLedger("team")} />
+          <LedgerButton label="隊伍" count={`${lineup.filter(alive).length}/${E.lineupSlots(run)}`} warn={lineup.some(e => !alive(e))} onClick={() => setLedger("team")} title={`${E.FAIL_RULE}\n全隊存活 ${run.team.filter(alive).length}/${run.team.length}`} />
+          {rescues.length > 0 && <LedgerButton label="保命" count={String(rescues.length)} onClick={() => setLedger("relics")} title={`戰敗將被結算時依序消耗，各一次：${rescues.map(id => id === "perk:fate_defier" ? "逆命者特權" : RELIC_BY_ID[id]?.name).join(" → ")}`} />}
+          <LedgerButton label="招募" count={String(run.shards)} onClick={() => setLedger("recruit")} />
           <LedgerButton label="遺物" count={String(run.relics.length)} onClick={() => setLedger("relics")} />
           <LedgerButton label="紀事" onClick={() => setLedger("chronicle")} />
           {onLeave && <button className="ecl-btn ecl-btn-ghost text-xs px-4 py-2" onClick={onLeave} title="保留進度，回到大廳">暫離</button>}
@@ -149,7 +156,7 @@ export default function InterstellarRun({ allElves, startingDiamonds, initialEqu
       </AnimatePresence>
 
       <AnimatePresence>
-        {ledger && (run.scene.kind === "map" || run.scene.kind === "prelude") && <Ledger run={run} tab={ledger} onTab={setLedger} onClose={() => setLedger(null)} dispatch={dispatch} />}
+        {ledger && run.scene.kind !== "draft" && <Ledger run={run} pool={pool} tab={ledger} onTab={setLedger} onClose={() => setLedger(null)} dispatch={dispatch} />}
       </AnimatePresence>
 
       {/* 場景覆蓋層 */}
@@ -157,7 +164,8 @@ export default function InterstellarRun({ allElves, startingDiamonds, initialEqu
         {Scene && (
           <motion.div key={run.scene.kind} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
             className="absolute inset-0 z-40 overflow-y-auto bg-[rgba(4,3,8,.82)] backdrop-blur-[3px] p-4 md:p-10 flex items-start md:items-center">
-            <Scene run={run} pool={pool} dispatch={dispatch} onFight={fight} onExit={() => onEndRun(run.act, run.exp)} onOpenTeam={() => setLedger("team")} />
+            <button className="fixed right-4 top-4 z-[44] px-3 py-1.5 border border-[rgba(217,180,90,.45)] bg-black/60 hover:bg-[rgba(217,180,90,.12)] font-black tracking-widest text-xs" onClick={() => setLedger("team")} title="整理背包與倉庫">背包</button>
+            <Scene run={run} pool={pool} dispatch={dispatch} onFight={fight} onExit={() => onEndRun(run.act, run.exp)} onOpenTeam={() => setLedger("team")} onOpenRecruit={() => setLedger("recruit")} />
           </motion.div>
         )}
       </AnimatePresence>

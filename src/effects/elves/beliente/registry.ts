@@ -12,14 +12,6 @@ export const handleBelienteSoulMark = (ctx: BattleEventContext, event: EffectTim
       ctx.setPlayerState("belienteStarBearer", true);
       break;
 
-    case "BEFORE_SWITCH_OUT":
-      if (getPlayerState("BelienteVaultTurns") > 0) {
-        addLog(`✨ 【蓓】：星河祈願，為下一位同伴降下祝福！`, "effect");
-        setPlayerState("nextElfStarGift", true);
-        setPlayerState("BelienteVaultTurns", 0);
-      }
-      break;
-
     // 星河入眸：4回合內每回合使用技能時恢復最大體力½並造成等量百分比傷害（過去誤在回合結束造成真實傷害）
     case EffectTiming.BEFORE_SKILL:
       if (getPlayerState("BelienteRegenTurns") > 0 && !getPlayerState("BelienteRegenUsedThisTurn")) {
@@ -42,29 +34,6 @@ export const handleBelienteSoulMark = (ctx: BattleEventContext, event: EffectTim
 };
 
 export const BELIENTE_SKILLS: Record<string, BattleSkillHandler> = {
-  "星垂穹儀": (context) => {
-    const { self, target, actor, setPlayerState, getPlayerState, addLog } = context;
-    // ... (保持原有的技能邏輯，但確保符合規範)
-    addLog(`✨ 【星垂穹儀】：星辰運轉，命運干涉！`, "effect");
-    setPlayerState("ImmuneStatDebuffTurns", 5);
-    // 攻擊傷害轉體力是結算防護，不是攻擊免疫；被無視時不消耗。
-    context.addTimerTo(actor, { id: 'beliente_damage_conversion', name: '星光倒流', kind: 'use_counter',
-      source: 'skill', remaining: 1, tickAt: 'never', payload: { block: { absorbToHeal: true, kind: '攻擊' } } }, false);
-    setPlayerState("BelienteVaultTurns", 1);
-    // 🎯 反轉自身能力下降狀態，反轉成功則使對手隨機2個技能PP歸零
-    const stages: Record<string, number> = { ...(self.statStages || {}) } as any;
-    const neg = Object.keys(stages).filter(k => (stages[k] || 0) < 0);
-    if (neg.length > 0) {
-      const delta: Record<string, number> = {};
-      neg.forEach(k => { delta[k] = -2 * stages[k]; });
-      context.applyStatChange(actor, delta);
-      const rnd = context.rng ?? Math.random;
-      const idx = (target.skills || []).map((_, i) => i).filter(i => (target.skills[i].pp ?? 0) > 0);
-      for (let i = idx.length - 1; i > 0; i--) { const j = Math.floor(rnd() * (i + 1)); [idx[i], idx[j]] = [idx[j], idx[i]]; }
-      idx.slice(0, 2).forEach(i => { target.skills[i].pp = 0; });
-      addLog(`✨ 【星垂穹儀】：反轉自身能力下降狀態，令對手隨機 ${Math.min(2, idx.length)} 個技能 PP 歸零！`, "effect");
-    }
-  },
   "星河入眸": (context) => {
     const { self, setPlayerState, addLog } = context;
     addLog(`✨ 【星河入眸】：萬千星辰，皆入我眸！`, "effect");

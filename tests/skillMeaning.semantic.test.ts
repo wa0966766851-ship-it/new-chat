@@ -4,10 +4,12 @@ import { DEFAULT_ELVES } from '../src/data/defaultElves';
 import { calculateDamage } from '../src/utils/damageCalculator';
 import { getTypeMatchup } from '../src/utils/statCalculator';
 import { skillStageView } from '../src/battle/skillStageView';
+import { readBasePriority } from '../src/effects/skillProperty';
+import { compileEffectPlan } from '../src/effects/effectConnection';
 import { computeHitChance } from '../src/effects/genericSkillText';
 import { parseSkill } from '../src/blocks/parse';
 import { runSkillProgram } from '../src/blocks/runtime';
-import { isPpCostFree, isZeroPpExempt } from '../src/utils/battleHelpers';
+import { isPpCostFree, isZeroPpExempt } from '../src/battle/ppExemptions';
 import { EffectTiming } from '../src/effects/types';
 import { clearTurnEffects, tickTimers } from '../src/battle/timers';
 
@@ -80,19 +82,20 @@ for (const side of ['p1', 'p2'] as const) {
 
   const c = setup(side, '不淨者之約');
   const enemy = ['草', '聖靈', '自然', '光'].find(type => getTypeMatchup(type, c.self.type) > 1)!; c.target.type = enemy;
-  const comp = { bonus: 0 }; handleBrinkkSoulMark(c.ctx, EffectTiming.MODIFY_PRIORITY, { priorityComp: comp }); assert.equal(comp.bonus, 3);
-  c.self.isInherentInvalid = true; comp.bonus = 0; handleBrinkkSoulMark(c.ctx, EffectTiming.MODIFY_PRIORITY, { priorityComp: comp }); assert.equal(comp.bonus, 0);
+  // 不淨者之約已改 Kit：天敵先制+3由 skill_property(base_priority) 條件值提供；固有無效時不生效。
+  assert.equal(readBasePriority(c.ctx.skill, c.ctx), 3);
+  c.self.isInherentInvalid = true; assert.equal(readBasePriority(c.ctx.skill, c.ctx), 0);
   assert.ok(c.ctx.skill.description.includes('■ 對手為自身天敵時額外先制+3'));
 
   const f = setup(side, '深潛者盛宴'); f.self.statStages = { atk: -2, speed: -1, accuracy: -1 }; f.ctx.skill.isSureHit = false;
   assert.equal(skillStageView(f.self, f.ctx.skill, 'atk'), 4); assert.equal(skillStageView(f.self, f.ctx.skill, 'speed'), 4);
   assert.deepEqual(f.self.statStages, { atk: -2, speed: -1, accuracy: -1 });
   assert.equal(isZeroPpExempt(f.self, { ...f.ctx.skill, pp: 0 }), true); assert.equal(isPpCostFree(f.self, f.ctx.skill), false);
-  runSkillProgram(f.ctx, parseSkill(f.ctx.skill.name, f.ctx.skill.description), 'use');
+  runSkillProgram(f.ctx, compileEffectPlan(f.ctx.skill, 'skill', false).program, 'use'); // 深潛者盛宴已改 Kit：跑實際執行的 Kit 程式
   assert.deepEqual(f.damages.map(x => [x.kind, x.amount]), [['fixed',40],['fixed',40],['fixed',40],['fixed',40],['fixed',40],['fixed',300]], '每次吸取獨立固定傷害；雙方5種變化');
   assert.deepEqual(f.heals.map(x => x.amount), [40,40,40,40,40,300], '各筆依結算值提出等量恢復');
   assert.equal(f.absorbs.length, 0, '不再使用舊的真傷吸取API');
-  assert.ok(f.timers.some(t => t.id === `blk_${side}_brinkk_feast_damage`));
+  assert.ok(f.timers.some(t => t.payload?.block?.dmgOut === 0.5 && t.payload.block.doubleIfAnyStatus), '3回合技能增傷50%並帶動態異常翻倍');
 
   const extra = setup(side, '不淨者之約');
   extra.state.cthyaatInitialized = false;

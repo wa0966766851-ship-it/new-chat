@@ -2,7 +2,7 @@ import { BattleEventContext, BattleSkillHandler, EffectTiming } from "../../type
 import { abilityKeys, abilityLevels, absorbBoosts, currentElf, clearStatuses } from '../../semanticOperations';
 import { sameStatus } from '../../statusIdentity';
 import { getMaxPp } from '../../../utils/battleHelpers';
-import { opeiaHasType as isType, opeiaAlive, opeiaSwarm, opeiaCrown, opeiaTimer, runOpeiaTimedEffects } from '../../opeiaTimedEffects';
+import { opeiaHasType as isType, opeiaAlive, opeiaSwarm, opeiaTimer, runOpeiaTimedEffects } from '../../opeiaTimedEffects';
 import { benchSkip } from '../../fieldGuard';
 import { isOpeiaToxicAttack, opeiaToxicAttack, opeiaRustAttack, finishOpeiaAttack } from '../../opeiaAttackSkills';
 
@@ -19,21 +19,13 @@ export const handleOpeiaSoulMark = (ctx: BattleEventContext, event: EffectTiming
   if (benchSkip(ctx, event)) return false;
   runOpeiaTimedEffects(ctx, event, data);
   const { self, target, actor, targetSide, getPlayerState, setPlayerState } = ctx;
-  if (event === EffectTiming.MODIFY_PRIORITY && data?.priorityComp) {
-    data.priorityComp.bonus += getPlayerState('opeiaRustEntranceBonus') || 0;
-  }
+  // 王·鏽腑喰心（真 Kit；DSH 20261017）：登場疊層先制改由 entranceStackPrioBonus 引擎讀取端，
+  // 條件先制+3 由 Kit conditional_priority 表達。僅保留王·噬心毒蝕低血強制先手。
   if (event === EffectTiming.MODIFY_PRIORITY && data?.priorityComp && !self.isInherentInvalid) {
-    if (isOpeiaToxicAttack(ctx.skill?.name) && self.currentHp < 200) data.priorityComp.forcedFirst = true;
-    if (ctx.skill?.name === '王·鏽腑喰心' && abilityLevels(self, false) > 0) data.priorityComp.bonus += 3;
+    if (ctx.skill?.effectMode !== 'kit' && isOpeiaToxicAttack(ctx.skill?.name) && self.currentHp < 200) data.priorityComp.forcedFirst = true;
   }
   if (event === EffectTiming.ON_ENTRANCE) {
-    setPlayerState('opeiaKilledThisEntrance', false);
-    if (getPlayerState('opeiaRustActive')) {
-      const history = getPlayerState('teamEntranceHistory') || {};
-      const count = (history[self.battleId || self.id] || 0) + 1;
-      setPlayerState('opeiaRustEntranceBonus', count);
-      setPlayerState('ignoreSpDefPercentUntilSwitch', Math.min(1, count * 0.25));
-    }
+    // 王·鏽腑喰心登場疊層已由 Kit（carried on_entered：entrance_stack_buff）表達（DSH 20261017）。
     const n = countOpeiaTeam(ctx.getFullTeam(actor));
     setPlayerState('opeiaBonusHitsLeft', n);
     setPlayerState('opeiaEnemyPowerCount', countOpeiaTeam(ctx.getFullTeam(targetSide), true));
@@ -64,12 +56,7 @@ export const handleOpeiaSoulMark = (ctx: BattleEventContext, event: EffectTiming
     } : null);
   }
   if (event === EffectTiming.ON_SWITCH_OUT) {
-    if (getPlayerState('opeiaRustActive') && !getPlayerState('opeiaKilledThisEntrance')) {
-      setPlayerState('teamEntranceHistory', {});
-      ctx.setOpponentState('teamEntranceHistory', {});
-    }
-    setPlayerState('opeiaRustEntranceBonus', 0);
-    setPlayerState('ignoreSpDefPercentUntilSwitch', 0);
+    // 王·鏽腑喰心未擊敗重置已由 Kit（carried on_switch_out：entrance_reset）表達（DSH 20261017）。
     const original = getPlayerState('opeiaOriginalStats');
     const originalMaxHp = getPlayerState('opeiaOriginalMaxHp');
     if (original) ctx.updateElf(actor, { calculatedStats: original,
@@ -84,8 +71,7 @@ export const handleOpeiaSoulMark = (ctx: BattleEventContext, event: EffectTiming
   }
   if (event === EffectTiming.BEFORE_SKILL) {
     setPlayerState('opeiaToxicAfterAction', null);
-    setPlayerState('opeiaRustAfterAction', null);
-    setPlayerState('noResistedThisAction', ctx.skill?.name === '王·鏽腑喰心' && !self.isInherentInvalid);
+    setPlayerState('noResistedThisAction', false); // 王·鏽腑喰心微弱→普通已由 Kit no_resist 表達（DSH 20261017）
     setPlayerState('targetTypeThisAction', null);
     const insects = getPlayerState('opeiaTreatInsectAttacks') || 0;
     if (insects > 0 && ctx.skill?.category !== '屬性') {
@@ -129,7 +115,7 @@ export const handleOpeiaSoulMark = (ctx: BattleEventContext, event: EffectTiming
     }
   }
   if (event === EffectTiming.AFTER_ACTION) finishOpeiaAttack(ctx);
-  if (event === EffectTiming.ON_KILL) setPlayerState('opeiaKilledThisEntrance', true);
+  // 王·鏽腑喰心擊敗旗標已由 Kit pending_counter(killsSinceEntrance) 表達（DSH 20261017）。
   if (event === EffectTiming.OPPONENT_ACTION && data?.skill) {
     const attack = data.skill.category !== '屬性';
     ctx.addTimerTo(targetSide, { id: 'opeia_next_additional_' + (attack ? 'status' : 'attack'), name: '后', kind: 'use_counter', source: 'soulmark', remaining: 1, tickAt: 'never', persistsOffField: true, payload: { block: { addInvalid: attack ? '屬性' : '攻擊', src: '后' } } }, false);
@@ -148,7 +134,8 @@ export const handleOpeiaSoulMark = (ctx: BattleEventContext, event: EffectTiming
       setPlayerState('opeiaPpSealSkill', null);
     }
   }
-  if (event === EffectTiming.SKILL_INVALID && !data?.isIncoming && data?.skill?.name === '毒噬魂絲') {
+  // 已遷移技能由自己的 on_invalid Kit 執行；魂印不能再回復／建立舊專屬次數。
+  if (event === EffectTiming.SKILL_INVALID && !data?.isIncoming && data?.skill?.name === '毒噬魂絲' && data.skill.effectMode !== 'kit') {
     ctx.applyHeal(actor, Math.floor(self.maxHp / 2));
     setPlayerState('opeiaTreatInsectAttacks', 2);
   }
@@ -166,10 +153,9 @@ export const OPEIA_SKILLS: Record<string, BattleSkillHandler> = {
     ctx.applyHeal(ctx.actor, dealt);
   },
   "蟲群庇護": opeiaSwarm,
-  "蟲后之冠": opeiaCrown,
   "王.噬心毒蝕": opeiaToxicAttack,
   "王·噬心毒蝕": opeiaToxicAttack,
-  "王·鏽腑喰心": opeiaRustAttack,
+  // "王·鏽腑喰心" 已遷移為真 Kit（migratedOpeiaSkillKits；DSH 20261017）。
 };
 
 export { OpeiaDeconstructedProfile } from "../../../data/elfProfiles/opeiaRegistry";

@@ -2,71 +2,11 @@ import { multiplyDamageReduction } from '../../../battle/damageReduction';
 import { BattleEventContext, BattleSkillHandler, EffectTiming, ElfDeconstructedProfile } from '../../types';
 import { combineSettlementCallbacks } from '../../../battle/settlementReceipt';
 
-export const handleKeldSoulMark = (ctx: BattleEventContext, event: EffectTiming | string, extraData?: any) => {
-  const { self, actor, setPlayerState, getPlayerState, addLog, applyTrueDamage, applyHeal } = ctx;
-  const oppSide = actor === "p1" ? "p2" : "p1";
-
-  switch (event) {
-    case EffectTiming.BEFORE_DAMAGE:
-      // 自身受到的非真實傷害額外減少 60%
-      if (extraData?.isIncoming && extraData?.damageCategory !== "true" && !extraData.pure) {
-        (extraData.beforeFinalDamage ||= []).push(() => {
-          const before = Math.max(0, extraData.base * (1 + extraData.increasePercent) * Math.max(0, 1 - extraData.decreasePercent) * extraData.multiplier - (extraData.flatReduction || 0));
-          const rate = multiplyDamageReduction(extraData, 0.4);
-          if (!rate) return; // 被無視減傷時不誤觸發「以此法減少」的副作用。
-          const after = Math.max(0, extraData.base * (1 + extraData.increasePercent) * Math.max(0, 1 - extraData.decreasePercent) * extraData.multiplier - (extraData.flatReduction || 0));
-          const reduced = Math.max(0, Math.floor(before) - Math.floor(after));
-          if (reduced <= 0) return;
-          extraData.afterDamage = combineSettlementCallbacks(extraData.afterDamage, () => {
-            if (reduced <= 200) setPlayerState('keldBacklashCount', (getPlayerState('keldBacklashCount') || 0) + 1);
-            if (reduced >= 200 && (getPlayerState('keldSoulStacks') || 0) > 0) {
-              const result = ctx.applyStatusWithImmunityCheck(oppSide, '凍傷', 3);
-              if (!result.success) {
-                ctx.clearTurnEffectsOf(oppSide);
-                ctx.setNextTurns(oppSide, 'lockSwitchTurns', 2);
-              }
-            }
-          });
-        });
-      }
-      break;
-
-    case EffectTiming.AFTER_DAMAGE:
-      // 自身受到真實傷害時獲得 1 道寂殺之魄
-      if (extraData?.isIncoming && extraData?.damageType === "true") {
-        const souls = Math.min(3, (getPlayerState("keldSoulStacks") || 0) + 1);
-        setPlayerState("keldSoulStacks", souls);
-        ctx.setMark({
-          id: "keld_soul",
-          displayChar: "魄",
-          count: souls,
-          name: "寂殺之魄",
-          description: "異常狀態時無視對手不高於層數的先制（異常時3倍），最高3層下場保留。",
-          source: "冰魄·柯爾德 / 冰"
-        });
-        addLog(`❄️ 【冰】：魂魄凝聚，寂殺之魄提升至 ${souls} 層！`, "effect");
-      }
-      break;
-
-    case EffectTiming.BATTLE_PHASE_END:
-      if (getPlayerState("keldBacklashCount")) {
-        const backlashDmg = Math.floor(self.maxHp * 0.25) * getPlayerState('keldBacklashCount');
-        applyTrueDamage(actor, backlashDmg, "冰魄反噬");
-        setPlayerState("keldBacklashCount", 0);
-      }
-      break;
-
-    case EffectTiming.FATAL_RESIST:
-      if (extraData?.damageType === "true") {
-        self.currentHp = 1;
-        addLog(`❄️ 【冰】：受到致死真實傷害，強制存活恢復1點體力！`, "effect");
-        return true;
-      }
-      return false;
-  }
-
-  return false;
-};
+// 5012 魂印「冰」已遷移為真 Kit（migratedKeldSoulKit.ts；DSH 20261017）——舊 handler 整份移除（規則3.3）。
+// 全部子句由 Kit 通用件表達：incoming_reduction_branch／backlash_percent／resource_mark_add(keld_soul)／
+// drain{event_damage}／event_damage_type+survive／ignore 層數矩陣／first_hit 冰封-肅霜／
+// damage_cap_by_mark／opp_priority_ceiling{perMark}。
+export const handleKeldSoulMark = (_ctx: any, _event: any, _extra?: any) => false;
 
 export const KELD_SKILLS: Record<string, BattleSkillHandler> = {
   "凝寒止喧": (ctx) => {

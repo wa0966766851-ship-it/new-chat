@@ -5,7 +5,7 @@ const c=(id:string,p:any)=>({c:id,p,label:id});
 const at=(node:KitEntry['node'],trig:string,raw:string,body:any[],order:number,role:KitEntry['role']='attached'):KitEntry=>({
   codeId:'effect_sequence',node,source:'skill',role,order,customText:raw,params:{clause:{raw,trig,parsed:true,body}}});
 const hit=(raw:string,body:any[],order:number)=>at('on_hit','after_hit',raw,body,order);
-const timed=(turns:number,trig:string,body:any[],from='now')=>a('timed',{turns,trig,body,from});
+const timed=(turns:number,trig:string,body:any[],from='now')=>a('timed',{turns,trig,body,from,...(from==='now'&&['self_skill','self_attack','self_status'].includes(trig)?{initial:true}:{})});
 const query=(raw:string,property:string,value:any,order:number,conditions:any[]=[]):KitEntry=>({
   codeId:'skill_property',node:property==='stage_view'?'before_damage':property==='base_priority'?'modify_priority':'before_skill',
   source:'skill',role:'innate',order,customText:raw,params:{property,value,conditions}});
@@ -62,11 +62,12 @@ export const MIGRATED_EVENT_SKILL_KITS:ReviewedSequenceSkill[]=[
     hit('命中後中毒，未觸發附加200固定傷害',[{acts:[a('status',{side:'opp',status:'中毒',turns:3,chance:100})]},{chain:'fail',acts:[a('dmg',{flat:200,type:'固定'})]}],1),
   ]},
   {elfIds:['5011'],name:'寄生種子',description:'5回合吸取對方最大體力的1/8（對草系無效）。',kit:[
-    hit('非草系對手5回合每回合吸取1/8',[{cond:[c('type_is',{side:'opp',type:'草',neg:true})],acts:[timed(5,'round_end',[{acts:[a('drain',{ratio:1/8,true:false})]}])]}],0),
+    hit('非草系對手5回合每回合吸取1/8',[{cond:[c('type_is',{side:'opp',type:'草',neg:true})],acts:[timed(5,'self_skill',[{acts:[a('drain',{ratio:1/8,true:false})]}])]}],0),
   ]},
   {elfIds:['5034'],name:'妖靈天性',description:'■ 必中\r\n🎯 全屬性+1，對手處於異常狀態時強化狀態翻倍\r\n🎯 4回合內吸取對手最大體力的1/3，自身體力低於1/2時吸取效果翻倍\r\n🎯 下2回合自身所有技能先制+2',kit:[
     prop('■ 必中','sure_hit',true,0),seq('全屬性+1，對手異常時翻倍',[{acts:[a('stat',{side:'self',stats:['全屬性'],v:1,x2If:c('abnormal',{side:'opp'})})]}],1),
-    hit('4回合吸取1/3，低於半血即時翻倍',[{acts:[timed(4,'round_end',[{acts:[a('drain',{ratio:1/3,true:false,x2If:c('hp_ratio',{side:'self',op:'低於',ratio:.5})})]}])]}],2),
+    // 妖靈天性為屬性技能（威力0），不會「命中」；原本誤用 hit(on_hit) 使該句永不觸發，改為正式使用時點。
+    seq('4回合吸取1/3，低於半血即時翻倍',[{acts:[timed(4,'self_skill',[{acts:[a('drain',{ratio:1/3,true:false,x2If:c('hp_ratio',{side:'self',op:'低於',ratio:.5})})]}])]}],2),
     seq('下2回合先制+2',[{acts:[a('prio_turns',{turns:2,v:2})]}],3),
   ]},
   {elfIds:['5031'],name:'界・裁決之劍',description:'■ 先制+3\n■ 命中率99%\n🎯 若自身處於能力下降狀態則先制+1且必定命中\n🎯 消除對手回合類效果，消除成功則令對手疲憊\n🎯 消除對手能力提升狀態，消除成功則對手失明\n🎯 反轉自身能力下降狀態，反轉成功則恢復自身最大體力1/3',kit:[

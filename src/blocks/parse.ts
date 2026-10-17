@@ -1,6 +1,7 @@
 // 精靈描述 → 積木（Program）。純文字解析，不依賴戰鬥狀態，可在 UI 與執行端共用。
 import type { Act, Clause, Cond, Program, Stmt, Trigger } from "./model";
 import { CUSTOM, CUSTOM_HEADERS } from "./custom";
+import { canonicalStatusName } from '../effects/statusIdentity';
 
 // ───────── 數值 ─────────
 const FRAC: Record<string, number> = { "½": 1 / 2, "⅓": 1 / 3, "¼": 1 / 4, "⅕": 1 / 5, "⅙": 1 / 6, "⅛": 1 / 8, "⅔": 2 / 3, "¾": 3 / 4, 一半: 1 / 2 };
@@ -38,6 +39,9 @@ interface ActDef { op: string; re: RegExp; p: (m: RegExpMatchArray, s: string) =
 const A = (op: string, re: RegExp, p: ActDef["p"], label: ActDef["label"]): ActDef => ({ op, re, p, label });
 
 export const ACTS: ActDef[] = [
+  A('dmg',/^自身每損失(\d+)點體力[，,]則?附加對手(\d+)點(固定|百分比|真實)傷害[，,]每損失(\d+)點[，,]則?額外附加(\d+)點\3傷害$/,
+    m=>({base:'已損失體力',of:'self',ratio:Number(m[2])/Number(m[1]),type:m[3],stepUnit:Number(m[4]),stepBonus:Number(m[5])}),
+    p=>`自身已損失體力×${p.ratio}；每滿${p.stepUnit}點再附加${p.stepBonus}點${p.type}傷害`),
   // 純標記（由技能欄位處理）
   A("noop", /^(必中|先制\s*[+＋-]\s*\d+|先手攻擊|必定先手|__RAMP__|無特殊效果|（無特殊效果）|造成(?:物理|特殊|攻擊|技能)?傷害|攻擊技能|屬性技能)$/, (m) => ({ tag: m[0] }), (p) => p.tag),
   A("noop", /^該技能(?:為)?(?:必中|先制\s*[+＋-]\s*\d+)$/, (m) => ({ tag: m[0] }), (p) => p.tag),
@@ -51,7 +55,7 @@ export const ACTS: ActDef[] = [
     (m) => ({ chance: m[1] ? n(m[1]) : 100, side: who(m[2]), status: m[4], turns: m[3] ? n(m[3]) : undefined }),
     (p) => `${whoLabel(p.side)} ${p.status}${p.turns ? ` ${p.turns}回合` : ""}${p.chance < 100 ? ` (${p.chance}%)` : ""}`),
   A("status_random", /^(?:令|使)?對[手方]隨機進入(兩|二|\d+)?種?(非附屬類|弱化類|控制類)?異常(?:狀態)?$/, (m) => ({ count: m[1] ? n(m[1]) : 1, cls: m[2] || "" }), (p) => `對手隨機 ${p.count} 種${p.cls}異常`),
-  A("cure_status", /^(?:解除|消除)(自身|雙方|對[手方])(?:所有|的|所處的)?(?:異常|異常狀態)(?:狀態)?$/, (m) => ({ side: who(m[1]) }), (p) => `解除${whoLabel(p.side)}異常`),
+  A("cure_status", /^(?:解除|消除)(自身|雙方|對[手方])(?:所有|的|所處的)?(非附屬類|附屬類|控制類|弱化類|限制類|衍化類)?(?:異常|異常狀態)(?:狀態)?$/, (m) => ({ side: who(m[1]),...(m[2]?{cls:m[2]}:{}) }), (p) => `解除${whoLabel(p.side)}${p.cls||''}異常`),
   A("convert_status", new RegExp(`^將(自身|對[手方])(?:所處的?)?(?:異常|異常狀態)(?:狀態)?轉化為${ST}(?:異常)?(?:狀態)?$`), (m) => ({ side: who(m[1]), status: m[2], turns: 3 }), (p) => `${whoLabel(p.side)}異常轉化為 ${p.status}（${p.turns}回合）`),
   A("immune_status_count", /^(?:令)?(自身)?免疫(?:並反彈)?下\s*(\d+|[一二兩三])\s*次(?:受到的)?(?:異常|異常狀態)(?:狀態)?$/, (m) => ({ count: n(m[2]), reflect: /反彈/.test(m[0]) }), (p) => `免疫${p.reflect ? "並反彈" : ""}下 ${p.count} 次異常`),
 
@@ -59,8 +63,13 @@ export const ACTS: ActDef[] = [
   A("stat_clear", /^消除(對[手方]|自身|雙方|敵我雙方)(?:的)?(?:所有)?能力(提升|上升|下降)(?:、(?:下降|提升|上升))?(?:狀態)?$/, (m) => ({ side: who(m[1]), kind: /下降/.test(m[2]) && !/[、]/.test(m[0]) ? "down" : /[、]/.test(m[0]) ? "all" : "up" }), (p) => `消除${whoLabel(p.side)}能力${p.kind === "up" ? "提升" : p.kind === "down" ? "下降" : "變化"}`),
   A("stat_clear", /^(?:解除|清除)(自身|對[手方])(?:的)?(?:所有)?能力下降(?:狀態)?$/, (m) => ({ side: who(m[1]), kind: "down" }), (p) => `解除${whoLabel(p.side)}能力下降`),
   A("stat_steal", /^(雙倍)?(吸取|複製)對[手方](?:的)?能力提升(?:狀態)?$/, (m) => ({ mode: m[2], double: !!m[1] }), (p) => `${p.mode}對手能力提升${p.double ? "×2" : ""}`),
+  // 「吸取並反轉」是兩個語意：自身獲得提升，對手同一項由 +N 變為 -N；不可降級成只清零的「吸取」。
+  A("stat_steal", /^吸取並反轉對[手方](?:的)?能力提升(?:狀態)?$/, () => ({ mode: "吸取", double: false, reverse: true }), () => "吸取並反轉對手能力提升"),
   A("stat_reverse", /^反轉(自身|對[手方])(?:的)?能力(下降|提升)(?:狀態)?$/, (m) => ({ side: who(m[1]), kind: m[2] === "下降" ? "down" : "up" }), (p) => `反轉${whoLabel(p.side)}能力${p.kind === "down" ? "下降" : "提升"}`),
   A("stat_transfer", /^將自身(?:的)?能力下降(?:狀態)?(?:轉移|回饋|反饋)給對[手方]$/, () => ({}), () => `自身能力下降轉移給對手`),
+  A("stat", new RegExp(`^(?:令)?自身${STATS}\\+([1-6])[，,]自身體力每高於對手(\\d+)點(?:效果)?額外\\1\\+1$`),
+    m=>({side:'self',stats:statList(m[1]),v:n(m[2]),hpGapUnit:n(m[3])}),
+    p=>`自身${p.stats.join('、')}+${p.v}，體力每高於對手${p.hpGapUnit}點額外+1`),
   A("stat", new RegExp(`^(?:(\\d+)%\\s*(?:機率)?)?(?:令|使|改變)?\\s*(自身|對[手方]|雙方|敵我雙方)?\\s*(?:的)?\\s*${STATS}\\s*(?:等級)?\\s*([+＋-]\\s*\\d+)$`),
     (m) => ({ chance: m[1] ? n(m[1]) : 100, side: m[2] ? who(m[2]) : "auto", stats: statList(m[3]), v: Number(m[4].replace(/[＋\s]/g, "").replace("+", "")) }),
     (p) => `${p.side === "auto" ? "" : whoLabel(p.side) + " "}${p.stats.join("、")} ${p.v > 0 ? "+" : ""}${p.v}${p.chance < 100 ? ` (${p.chance}%)` : ""}`),
@@ -77,7 +86,7 @@ export const ACTS: ActDef[] = [
   A("atk_sum_calc", /^計算傷害時令攻擊、特攻等於原本二者總和$/, () => ({}), () => `本次計算：攻擊、特攻＝二者總和`),
   A("vampire", new RegExp(`^(?:造成的?|給予對[手方])?(?:攻擊)?(?:傷害|損傷)(?:的)?\\s*${RATIO}\\s*(?:恢復|回復)(?:自身)?(?:的)?體力$`), (m) => ({ ratio: ratio(m[1]), kind: "攻擊" }), (p) => `吸血 ${pct(p.ratio)}`),
   A("vampire", new RegExp(`^(?:恢復|回復)(?:自身)?(?:等同於)?(?:造成|本次)(?:的)?(?:攻擊)?傷害(?:值)?(?:的)?\\s*${RATIO}(?:的)?體力(?:值)?$`), (m) => ({ ratio: ratio(m[1]), kind: "攻擊" }), (p) => `吸血 ${pct(p.ratio)}`),
-  A("maxhp", new RegExp(`^(?:令)?(自身|對[手方])(?:的)?體力上限(提升|增加|減少|降低)\\s*${RATIO}$`), (m) => ({ side: who(m[1]), ratio: ratio(m[3]) * (/減少|降低/.test(m[2]) ? -1 : 1) }), (p) => `${whoLabel(p.side)}體力上限 ${p.ratio > 0 ? "+" : ""}${pct(p.ratio)}`),
+  A("maxhp", new RegExp(`^(?:令)?(自身|對[手方])(?:的)?體力上限(提升|增加|減少|降低)\\s*${RATIO}$`), (m) => ({ side: who(m[1]), ratio: ratio(m[3]), ...(/減少|降低/.test(m[2]) ? {direction:'decrease'} : {}) }), (p) => `${whoLabel(p.side)}體力上限 ${p.direction==='decrease'?'-':'+'}${pct(p.ratio)}`),
 
   // ── 傷害
   A("dmg", new RegExp(`^(?:附加|造成)(?:對[手方])?(?:等同於)?(自身|對[手方])?(最大體力|當前體力|已損失體力)(?:的)?\\s*${RATIO}\\s*(?:的)?(固定|百分比|真實)傷害$`),
@@ -111,6 +120,8 @@ export const ACTS: ActDef[] = [
 
   // ── 先制
   A("prio_turns", /^下\s*(\d+)\s*回合(?:令)?(?:自身)?(?:令自身)?所有(攻擊)?技能先制\s*[+＋]\s*(\d+)$/, (m) => ({ turns: n(m[1]), attackOnly: !!m[2], v: n(m[3]) }), (p) => `下${p.turns}回合 ${p.attackOnly ? "攻擊" : ""}技能先制 +${p.v}`),
+  // 「下N回合…使用所有技能時先制+N」為同義語序（"使用…時" 只是贅語，不改變期限與對象）。
+  A("prio_turns", /^下\s*(\d+)\s*回合(?:令)?(?:自身)?(?:自身使用)?(?:使用)?所有(攻擊)?技能(?:時)?先制\s*[+＋]\s*(\d+)$/, (m) => ({ turns: n(m[1]), attackOnly: !!m[2], v: n(m[3]) }), (p) => `下${p.turns}回合 ${p.attackOnly ? "攻擊" : ""}技能先制 +${p.v}`),
   A("prio_turns", /^對[手方]下\s*(\d+)\s*回合(?:所有)?(攻擊)?技能先制\s*-\s*(\d+)$/, (m) => ({ turns: n(m[1]), attackOnly: !!m[2], v: -n(m[3]), side: "opp" }), (p) => `下${p.turns}回合 對手先制 ${p.v}`),
   A("prio_turns", /^下\s*(\d+)\s*回合對[手方]所有(攻擊)?技能先制\s*-\s*(\d+)$/, (m) => ({ turns: n(m[1]), attackOnly: !!m[2], v: -n(m[3]), side: "opp" }), (p) => `下${p.turns}回合 對手先制 ${p.v}`),
   A("prio_next", /^(?:自身)?下(?:\s*(\d+|[一二兩三])\s*次|次)(?:使用)?(攻擊)?技能(?:額外)?先制\s*[+＋]\s*(\d+)$/, (m) => ({ uses: m[1] ? n(m[1]) : 1, attackOnly: !!m[2], v: n(m[3]) }), (p) => `下${p.uses}次${p.attackOnly ? "攻擊" : ""}技能 先制 +${p.v}`),
@@ -128,6 +139,7 @@ export const ACTS: ActDef[] = [
   A("invalid_turns", /^(\d+)\s*回合內(?:令)?對[手方](?:使用的)?(?:所有)?(攻擊|屬性)?技能無效$/, (m) => ({ turns: n(m[1]), kind: m[2] || "" }), (p) => `${p.turns}回合 對手${p.kind}技能無效`),
   A("invalid_turns", /^對[手方]\s*(\d+)\s*回合內(攻擊|屬性)?技能無效$/, (m) => ({ turns: n(m[1]), kind: m[2] || "" }), (p) => `${p.turns}回合 對手${p.kind}技能無效`),
   A("add_invalid_turns", /^(\d+)\s*回合內(?:令)?對[手方](?:使用的)?(攻擊|屬性)?技能(?:的)?附加效果失效$/, (m) => ({ turns: n(m[1]), kind: m[2] || "" }), (p) => `${p.turns}回合 對手${p.kind}技能附加效果失效`),
+  A("add_invalid_turns", /^對[手方]\s*(\d+)\s*回合(?:內)?使用(攻擊|屬性)?技能(?:的)?附加效果失效$/, (m) => ({turns:n(m[1]),kind:m[2]||''}), (p)=>`${p.turns}回合 對手${p.kind}技能附加效果失效`),
   A("add_invalid_next", /^(?:令)?對[手方]下(?:\s*(\d+|[一二兩三])\s*次|次)(攻擊|屬性)?技能(?:的)?附加效果失效$/, (m) => ({ uses: m[1] ? n(m[1]) : 1, kind: m[2] || "" }), (p) => `對手下${p.uses}次${p.kind}技能附加效果失效`),
   A("no_switch", /^(?:下\s*)?(\d+)\s*回合(?:內)?對[手方]無法主動切換(?:精靈)?$/, (m) => ({ turns: n(m[1]), next: /^下/.test(m[0]) }), (p) => `${p.next ? "下" : ""}${p.turns}回合 對手無法主動切換`),
   A("no_heal", /^(?:下\s*)?(\d+)\s*回合(?:內)?對[手方](?:無法(?:通過自身技能)?恢復體力|體力恢復量(?:降低|下降)100%)$/, (m) => ({ turns: n(m[1]), next: /^下/.test(m[0]) }), (p) => `${p.turns}回合 對手無法恢復體力`),
@@ -158,6 +170,7 @@ export const ACTS: ActDef[] = [
   A("pp_restore", /^(?:恢復|回復)自身(?:所有技能)?(?:所有|全部)PP值?$/, () => ({ mode: "recover" }), () => `恢復自身所有 PP`),
   A("stat_clear", /^消除對[方手](?:的)?能力提升(?:效果|狀態)$/, () => ({ side: "opp", kind: "up" }), () => `消除對手能力提升`),
   A("clear_turn", /^消除回合類效果$/, () => ({ side: "opp" }), () => `消除對手回合類效果`),
+  A("immune_status_turns", /^(\d+)\s*回合內(?:自身)?免疫(並反彈)?除(.+?)外所有(?:受到的)?異常狀態$/, (m) => ({ turns: n(m[1]), reflect: !!m[2], cls: "", exclude:m[3].split(/[、和與]/).map(canonicalStatusName) }), (p) => `${p.turns}回合 免疫${p.reflect ? "並反彈" : ""}除${p.exclude.join('、')}外異常`),
   A("immune_status_turns", /^(\d+)\s*回合內(?:自身)?免疫(並反彈)?(?:所有)?(?:受到的)?(?:異常|異常狀態)(?:狀態)?$/, (m) => ({ turns: n(m[1]), reflect: !!m[2], cls: "" }), (p) => `${p.turns}回合 免疫${p.reflect ? "並反彈" : ""}異常`),
   A("immune_status_perm", /^(?:天生)?免疫(?:所有|每次受到的)異常狀態$/, () => ({}), () => `免疫所有異常`),
   A("crit_turns", /^接下來\s*(\d+)\s*回合(?:攻擊|技能)?必定(?:致命一擊|暴擊)$/, (m) => ({ turns: n(m[1]), now: true }), (p) => `${p.turns}回合 必定致命一擊`),
@@ -241,7 +254,8 @@ export const CONDS: CondDef[] = [
   C("has_status", new RegExp(`^(對[手方]|自身|雙方任一方)(?:處於|存在)${ST}(?:狀態)?$`), (m) => `${m[1]}處於${m[2]}`, (m) => ({ side: who(m[1]), status: m[2] })),
   C("abnormal", /^(對[手方]|自身|場上|雙方(?:任一方)?)(不)?(?:處於|存在)(?:異常|異常狀態)(?:狀態)?$/, (m) => `${m[1]}${m[2] || ""}處於異常`, (m) => ({ side: /場上|雙方/.test(m[1]) ? "any" : who(m[1]), neg: !!m[2] })),
   C("abnormal", /^場上存在異常狀態$/, () => "場上存在異常", () => ({ side: "any" })),
-  C("stage", /^(對[手方]|自身)(不)?處於能力(提升|上升|下降)狀態$/, (m) => `${m[1]}${m[2] || ""}處於能力${m[3]}`, (m) => ({ side: who(m[1]), kind: m[3] === "下降" ? "down" : "up", neg: !!m[2] })),
+  // 「狀態」後綴在原文常省略（例：「自身處於能力下降時先制+1」）；省略不改變語意，只放寬比對。
+  C("stage", /^(對[手方]|自身)(不)?處於能力(提升|上升|下降)(?:狀態)?$/, (m) => `${m[1]}${m[2] || ""}處於能力${m[3]}`, (m) => ({ side: who(m[1]), kind: m[3] === "下降" ? "down" : "up", neg: !!m[2] })),
   C("hp_ratio", new RegExp(`^(自身|對[手方])(?:當前)?體力(高於|大於|低於|小於|不高於|不低於|不大於|不小於)(?:最大體力(?:的)?)?${RATIO}$`), (m) => `${m[1]}體力${m[2]}${m[3]}`, (m) => ({ side: who(m[1]), op: m[2], ratio: ratio(m[3]) })),
   C("hp_cmp", /^(自身|對[手方])(?:當前)?體力(高於|大於|低於|小於|不高於|不低於)(對[手方]|自身)$/, (m) => `${m[1]}體力${m[2]}${m[3]}`, (m) => ({ side: who(m[1]), op: m[2] })),
   C("shield", /^(對[手方]|自身)(不)?(?:擁有|存在|有|處於)護盾(?:、護罩)?(?:狀態)?$/, (m) => `${m[1]}${m[2] || ""}擁有護盾`, (m) => ({ side: who(m[1]), neg: !!m[2] })),
@@ -264,6 +278,8 @@ export const CONDS: CondDef[] = [
 
 // ───────── 觸發時點（魂印標頭 / 持續效果） ─────────
 const TRIG: [RegExp, Trigger, string][] = [
+  [/^自身能力(?:強化|提升)狀態被(?:消除(?:或|、)吸取|消除|吸取)(?:時)?$/, 'stat_boost_cleared', '自身能力提升被消除／吸取時'],
+  [/^自身回合類效果被消除(?:時)?$/, 'turn_effects_cleared', '自身回合類效果被消除時'],
   [/^戰鬥開始時?$/, "battle_start", "戰鬥開始時"],
   [/^(?:每次|自身每次|自身)?登場時$|^每次登場時$|^自身每次出戰時$|^出戰時$/, "entrance", "登場時"],
   [/^(?:每)?回合開始(?:時)?$/, "round_start", "回合開始時"],
@@ -370,7 +386,8 @@ export function matchActs(s: string): { acts: Act[]; rest: string[] } {
 }
 
 export function matchCond(s: string): Cond | null {
-  const t = s.replace(/^(?:若|如果|當回合|當|在)\s*/, "").replace(/時$/, "").trim();
+  // 「若X則」「X時」是同一條件語意的兩種連接詞；尾綴的「則」「時」都不改變條件本身。
+  const t = s.replace(/^(?:若|如果|當回合|當|在)\s*/, "").replace(/[時則]$/, "").trim();
   for (const d of CONDS) {
     const m = t.match(d.re);
     if (m) return { c: d.c, p: d.p ? d.p(m) : {}, label: d.label(m) };
@@ -414,8 +431,10 @@ function parseSegment(seg: string, rest: string[]): Stmt | null {
 
 /** 持續效果前綴：「N回合內，自身使用技能則…」「N回合內每回合結束…」 */
 const TIMED_EACH_RE = /^(下)?\s*(\d+)\s*回合(?:內)?[，,]?\s*每回合(?!結束|開始|使用|自身使用)(.+)$/;
-const TIMED_RE = /^(下)?\s*(\d+)\s*回合(?:內)?[，,]?\s*(?:每回合)?(?:若)?(自身每次使用技能|自身使用技能|每回合使用技能|使用技能(?!後)|自身每次使用攻擊技能|自身使用攻擊技能|自身使用屬性技能|對[手方](?:每次)?使用攻擊技能|對[手方](?:每次)?使用屬性技能|對[手方](?:每次)?使用技能|自身(?:每次)?受到攻擊|自身(?:每次)?受到(?:技能)?傷害|每回合結束|回合結束|每回合開始|回合開始|使用技能後|自身使用技能後)(?:時|後)?(?:則|時)?[，,]?(.+)$/;
+const TIMED_RE = /^(下)?\s*(\d+)\s*回合(?:內)?[，,]?\s*(?:每回合)?(?:若)?(自身能力(?:強化|提升)狀態被(?:消除(?:或|、)吸取|消除|吸取)|自身回合類效果被消除|自身每次使用技能|自身使用技能|每回合使用技能|使用技能(?!後)|自身每次使用攻擊技能|自身使用攻擊技能|自身使用屬性技能|對[手方](?:每次)?使用攻擊技能|對[手方](?:每次)?使用屬性技能|對[手方](?:每次)?使用技能|自身(?:每次)?受到攻擊|自身(?:每次)?受到(?:技能)?傷害|每回合結束|回合結束|每回合開始|回合開始|使用技能後|自身使用技能後)(?:時|後)?(?:則|時)?[，,]?(.+)$/;
 const TIMED_TRIG: [RegExp, Trigger][] = [
+  [/能力(?:強化|提升)狀態被(?:消除|吸取)/,'stat_boost_cleared'],
+  [/回合類效果被消除/,'turn_effects_cleared'],
   [/使用攻擊技能/, "self_attack"], [/使用屬性技能/, "self_status"], [/使用技能後/, "self_after_skill"], [/使用技能/, "self_skill"],
   [/受到攻擊/, "damaged_attack"], [/受到/, "damaged_skill"], [/結束/, "round_end"], [/開始/, "round_start"],
 ];
@@ -438,7 +457,7 @@ function tryTimed(text: string): { act: Act; rest: string[] } | null {
   if (/^對[手方]/.test(phrase)) tt = (/攻擊/.test(phrase) ? "opp_attack" : /屬性/.test(phrase) ? "opp_status" : "opp_skill") as Trigger;
   const inner = parseBody(tm[4], rest);
   if (!inner.length) return null;
-  return { act: { op: "timed", p: { turns: Number(tm[2]), from: tm[1] ? "next" : "now", trig: tt, body: inner }, label: `${tm[1] ? "下" : ""}${tm[2]}回合內・${TRIG_LABEL[tt] || tt}` }, rest };
+  return { act: { op: "timed", p: { turns: Number(tm[2]), from: tm[1] ? "next" : "now", trig: tt, ...(!tm[1]&&['self_skill','self_attack','self_status'].includes(tt)?{initial:true}:{}), body: inner }, label: `${tm[1] ? "下" : ""}${tm[2]}回合內・${TRIG_LABEL[tt] || tt}` }, rest };
 }
 
 export function parseLine(line: string, trig: Trigger = "use"): Clause {
@@ -456,8 +475,8 @@ export function parseLine(line: string, trig: Trigger = "use"): Clause {
   const te = text.match(TIMED_EACH_RE);
   if (te) {
     const inner = parseBody(te[3], rest);
-    const label = `${te[1] ? "下" : ""}${te[2]}回合內・每回合結束`;
-    body.push({ acts: [{ op: "timed", p: { turns: Number(te[2]), from: te[1] ? "next" : "now", trig: "round_end", body: inner }, label }] });
+    const label = `${te[1] ? "下" : ""}${te[2]}回合內・使用技能時`;
+    body.push({ acts: [{ op: "timed", p: { turns: Number(te[2]), from: te[1] ? "next" : "now", trig: "self_skill", ...(!te[1]?{initial:true}:{}), body: inner }, label }] });
     return { raw, marker, trig, body, parsed: rest.length === 0 && inner.length > 0, rest };
   }
   const tm = text.match(TIMED_RE);
@@ -468,7 +487,7 @@ export function parseLine(line: string, trig: Trigger = "use"): Clause {
     if (/^對[手方]/.test(phrase)) tt = (/攻擊/.test(phrase) ? "opp_attack" : /屬性/.test(phrase) ? "opp_status" : "opp_skill") as Trigger;
     const inner = parseBody(tm[4], rest);
     const label = `${tm[1] ? "下" : ""}${tm[2]}回合內・${TRIG_LABEL[tt] || tt}`;
-    body.push({ acts: [{ op: "timed", p: { turns: Number(tm[2]), from: tm[1] ? "next" : "now", trig: tt, body: inner }, label }] });
+    body.push({ acts: [{ op: "timed", p: { turns: Number(tm[2]), from: tm[1] ? "next" : "now", trig: tt, ...(!tm[1]&&['self_skill','self_attack','self_status'].includes(tt)?{initial:true}:{}), body: inner }, label }] });
     return { raw, marker, trig, body, parsed: rest.length === 0 && inner.length > 0, rest };
   }
   if (!text) return { raw, marker, trig, body: [{ acts: [{ op: "noop", p: {}, label: "無特殊效果" }] }], parsed: true, rest };

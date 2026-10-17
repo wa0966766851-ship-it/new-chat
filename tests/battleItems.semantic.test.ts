@@ -4,7 +4,13 @@ import { createBattleItemInventory, consumeBattleItem, hasBattleItem, applyBattl
 import { battleReducer } from '../src/components/BattleManager';
 
 const original = createBattleItemInventory();
-for (const item of BATTLE_ITEMS) {
+// 只能被放入的道具（grantOnly，如幻化指令）開場為 0，不在預設庫存內。
+for (const item of BATTLE_ITEMS.filter(i => i.grantOnly)) {
+  assert.deepEqual(original[item.id], { left: 0, max: 99 });
+  assert.equal(hasBattleItem(original, item.id), false);
+  assert.equal(consumeBattleItem(original, item.id), undefined);
+}
+for (const item of BATTLE_ITEMS.filter(i => !i.grantOnly)) {
   const max = item.type === 'special' ? 5 : item.type === 'hybrid' ? 50 : 100;
   assert.deepEqual(original[item.id], { left: max, max });
   let inventory = original;

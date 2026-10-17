@@ -1,5 +1,5 @@
-// 5002 帝皇之盾：盾先鋒制裁、聖盾裁決、帝·永恆守護 轉成連鎖 Kit 的語意驗收（P1／P2 正式戰鬥）。
-// 帝永壁令現由eventSkillKits.semantic.test.ts驗證完整Kit；盾碎同歸與魂印「盾」仍未轉。
+﻿// 5002 帝皇之盾：盾先鋒制裁、聖盾裁決、帝·永恆守護 轉成連鎖 Kit 的語意驗收（P1／P2 正式戰鬥）。
+// 帝永壁令現由eventSkillKits.semantic.test.ts驗證完整Kit；盾碎同歸已於migratedQuerySkillKits轉為Kit；魂印「盾」仍未轉。
 import assert from 'node:assert/strict';
 import { createHarness } from './helpers/migrationHarness';
 
@@ -13,7 +13,7 @@ try {
   const vanguard = h.find('5002', '盾先鋒制裁'), verdict = h.find('5002', '聖盾裁決'), eternal = h.find('5002', '帝·永恆守護');
   for (const s of [vanguard, verdict, eternal]) h.assertKitOnly(s);
   assert.equal(h.find('5002','帝永壁令').effectMode,'kit','已完成整份遷移，不再被舊待辦鎖住');
-  assert.equal(h.find('5002','盾碎同歸').effectMode === 'kit',false,'盾碎同歸 未轉');
+  assert.equal(h.find('5002','盾碎同歸').effectMode,'kit','盾碎同歸 已完成整份遷移');
   const prop = (s: any) => s.kit.filter((e: any) => e.codeId === 'skill_property').map((e: any) => `${e.params.property}=${e.params.value}`);
   await check('固有屬性與節點對應原文', async () => {
     assert.deepEqual(prop(vanguard), ['base_priority=3', 'sure_hit=true']);

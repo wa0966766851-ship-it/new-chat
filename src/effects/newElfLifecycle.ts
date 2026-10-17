@@ -12,6 +12,7 @@ import { endIllusion } from '../battle/illusion';
 import { skillSlot } from '../battle/skillSlot';
 import { bypassesAttackDefense } from '../battle/attackDefense';
 import { getMaxPp } from '../utils/battleHelpers';
+import { applyKitPpOperation } from './ppOperations';
 
 /** 效果綁持有者：施加者下場後仍由受方執行，不依賴特定精靈 handler。 */
 export function runNewElfLifecycle(ctx: BattleEventContext, event: EffectTiming, data?: any): void {
@@ -28,6 +29,13 @@ export function runNewElfLifecycle(ctx: BattleEventContext, event: EffectTiming,
     ctx.setPlayerState('fieldPpSnapshot', ctx.self.skills.map(s => s.pp));
     ctx.setPlayerState('fieldDamageCounts', {});
     ctx.setPlayerState('fieldStatusCount', 0);
+    const nextPp=ctx.getPlayerState('nextElfPpZero');
+    if(nextPp){
+      ctx.setPlayerState('nextElfPpZero',undefined);
+      const source=ctx.getFullTeam(nextPp.sourceSide).find(e=>identity(e)===nextPp.sourceBattleId)||active(ctx,nextPp.sourceSide);
+      const sourceCtx=ctx.contextForElf?.(nextPp.sourceSide,source);
+      applyKitPpOperation(sourceCtx || ctx,ctx.actor,'zero');
+    }
     const nextStatus = ctx.getPlayerState('nextElfStatus');
     if (nextStatus) {
       ctx.setPlayerState('nextElfStatus', undefined);
@@ -39,6 +47,11 @@ export function runNewElfLifecycle(ctx: BattleEventContext, event: EffectTiming,
       else ctx.applyStatusWithImmunityCheck(ctx.actor, nextStatus.status, nextStatus.duration);
     }
     const priority = ctx.getPlayerState('nextElfAstralPriority');
+    const entryPriority=ctx.getPlayerState('nextElfPriorityConstraint');
+    if(entryPriority){
+      ctx.setPlayerState('nextElfPriorityConstraint',undefined);
+      timed(ctx,ctx.actor,'next_entry_priority',entryPriority.turns,{disablePriority:true},!!ctx.currentPhase?.startsWith('forced_switch')&&ctx.roundNumber===entryPriority.sourceRound,'skill',false);
+    }
     if (priority !== undefined) {
       timed(ctx, ctx.actor, 'astral_next_entry', 2, priority === 'disabled' ? { disablePriority: true } : { block: { prio: -2 } }, false, 'skill', false);
       ctx.setPlayerState('nextElfAstralPriority', undefined);
@@ -51,7 +64,11 @@ export function runNewElfLifecycle(ctx: BattleEventContext, event: EffectTiming,
     ctx.setPlayerState('fieldPpSnapshot', ctx.self.skills.map(s => s.pp));
   }
   const payloads = activeConstraints(timersFor(ctx, ctx.actor), ctx.self);
-  if (event === EffectTiming.OPPONENT_ACTION && onField) ctx.setPlayerState('blockedSkillDamageThisAction', false);
+  if (event === EffectTiming.OPPONENT_ACTION && onField) {
+    ctx.setPlayerState('blockedSkillDamageThisAction', false);
+    // 記錄正式使用事件；回合末的上下文不保證仍帶著對手所選技能。
+    if (data?.skill) ctx.setPlayerState('opponentSkillUsedRound', ctx.roundNumber ?? 0);
+  }
   if (event === EffectTiming.ON_KILL) {
     const next = ctx.getPlayerState('nextKillStatus');
     if (next) {
@@ -94,6 +111,11 @@ export function runNewElfLifecycle(ctx: BattleEventContext, event: EffectTiming,
       if (timer.payload?.nextAttackSkillBoost) {
         queueActionDamageModifier(ctx, timer.payload.nextAttackSkillBoost, '技能');
         ctx.consumeTimer(ctx.actor, timer.id);
+      }
+      const modifier=timer.payload?.nextAttackDamageModifier;
+      if(modifier){
+        queueActionDamageModifier(ctx,modifier.multiplier,modifier.kind);
+        ctx.consumeTimer(ctx.actor,timer.id);
       }
     }
   }

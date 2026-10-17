@@ -96,7 +96,7 @@ try {
       const [r]=await h.play(side,{self:h.unit('S',4000,[sk]),opp:h.unit('E',10000,[h.wait()],{extra:{soulMark:guard}})});
       assert.equal(r.opp.currentHp,8800);assert.deepEqual(h.statuses(r.opp),[]);
     });
-    await check(`${side} 寄生種子含使用回合結束共5次吸取；草/草雙系不生效`,async()=>{
+    await check(`${side} 寄生種子含首次使用共5次用技吸取；草/草雙系不生效`,async()=>{
       const sk={...h.find('5011','寄生種子'),isSureHit:true};
       const hist=await h.play(side,{self:h.unit('S',10000,[sk,h.wait()],{maxHp:100000}),opp:h.unit('E',80000,[h.wait()]),turns:(_e,t)=>[t===1?0:1,0]},6);
       assert.equal(hist[4].opp.currentHp,30000);assert.equal(hist[5].opp.currentHp,30000);assert.equal(hist[4].self.currentHp,60000);

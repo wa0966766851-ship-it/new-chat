@@ -77,7 +77,7 @@ export function runMogosTeamEffects(c: C, event: E, data?: any): void {
     const n = stacks(c, c.actor), amount = data.receipt?.settledAmount ?? data.damage;
     if (n && amount > 0) {
       const natural = c.target.name === NAME || getTypeMatchup(c.target.type, c.self.type) > 1;
-      for (let i = 0; i < n; i++) c.applyDamageToElf?.(c.actor, identity(c.self), Math.floor(amount / 2), 'percent', { reaction: true,
+      for (let i = 0; i < n; i++) c.applyDamageToElf?.(c.actor, identity(c.self), Math.floor(amount / 2), 'percent', { reaction: true, pure: true,
         onSettled: r => { if (natural) c.applyHeal(c.targetSide, r.settledAmount); } });
       const threshold = (data.skillPower ?? c.opponentSkill?.power ?? 0) * (1 + n);
       if (amount !== threshold) c.applyStatusWithImmunityCheck(c.actor, '害怕', 3);
@@ -112,8 +112,10 @@ export function runMogosTeamEffects(c: C, event: E, data?: any): void {
     c.setPlayerState('forceHitEffectsThisAction', !!c.getPlayerState('teamMogosForceHit'));
   }
   if (!orb(c)) return;
-  if (event === E.BEFORE_SKILL) markOnMogosEnemy(c, c.skill);
-  if (event === E.OPPONENT_ACTION) markOnMogosEnemy(reversed(c), data?.skill, c.targetSide, c);
+  // 魂印切成 Kit 時，附加埒殘銜闕改由 Kit 條款（before_action／on_attacked）執行，此處退位避免雙重附加。
+  const kitSoul = (c.self as any)?.soulMark?.effectMode === 'kit';
+  if (event === E.BEFORE_SKILL && !kitSoul) markOnMogosEnemy(c, c.skill);
+  if (event === E.OPPONENT_ACTION && !kitSoul) markOnMogosEnemy(reversed(c), data?.skill, c.targetSide, c);
   if (event === E.BEFORE_DAMAGE && data?.damageComp?.isIncoming && data.damageComp.damageCategory === 'skill_attack' && constraint(c, c.actor, 'orbAttackConversion') && !bypassesAttackDefense(data.damageComp, 'conversion')) {
     const comp = data.damageComp;
     let recovery = 0;

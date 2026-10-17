@@ -22,7 +22,7 @@ try {
       const current = describeExecution(routeArgs), distilled = distillEffect(definition,kind);
       return { name:definition.name, category, original:definition.description || '',
         sourceSha256:createHash('sha256').update(definition.description || '').digest('hex'),
-        currentSource:current.source,currentRoute:current.route,semanticVerification:'pending',
+        currentSource:current.source,currentRoute:current.route,legacyWrapped:current.legacyWrapped===true,semanticVerification:'pending',
         conversionCandidate:distilled.complete, candidateKit:distilled.complete ? distilled.kit : [],
         partialDraftKit:distilled.complete ? [] : distilled.kit,
         convertedClauses:distilled.kit.length,unresolved:distilled.issues,
@@ -33,6 +33,8 @@ try {
   assert.equal(JSON.stringify(DEFAULT_ELVES),baseline,'稽核不得改寫精靈');
   const entries=rows.flatMap((r:any)=>r.entries), summary={elves:rows.length,effectDefinitions:entries.length,
     activeAuthoredKitDefinitions:entries.filter((e:any)=>e.currentRoute === 'kit').length,
+    // legacy_handler 包裝：已計入接通（kit），但屬未拆解的過渡，不計 semanticallyAccepted。
+    legacyWrapped:entries.filter((e:any)=>e.legacyWrapped).length,
     conversionCandidates:entries.filter((e:any)=>e.conversionCandidate).length,
     blockedDefinitions:entries.filter((e:any)=>!e.conversionCandidate).length,
     unconnectedDefinitions:entries.filter((e:any)=>e.currentRoute!=='kit').length,
@@ -80,7 +82,7 @@ try {
     '「可轉換」代表嚴格轉換器能表達整份效果，不等於與TXT相符、已逐句測試或戰鬥正確。專屬註冊表與未解析分支保留。詳見同名JSON的原句、來源、候選Kit與每一個阻擋原因。','',
     '| ID | 精靈 | 定義 | 可轉換候選 | 待補語意／原子 |','|---|---|---:|---:|---:|',
     ...rows.map((r:any)=>`| ${r.id} | [${cell(r.name)}](elves/${r.id}.md) | ${r.entries.length} | ${r.entries.filter((e:any)=>e.conversionCandidate).length} | ${r.entries.filter((e:any)=>!e.conversionCandidate).length} |`),'',
-    `統計：${summary.elves}隻，${summary.effectDefinitions}份定義；候選${summary.conversionCandidates}，待補${summary.blockedDefinitions}；現行手動Kit定義${summary.activeAuthoredKitDefinitions}。候選與現行Kit可能重疊，不相加成進度；本清單不新增任何語意通過證據。`,'',
+    `統計：${summary.elves}隻，${summary.effectDefinitions}份定義；候選${summary.conversionCandidates}，待補${summary.blockedDefinitions}；現行手動Kit定義${summary.activeAuthoredKitDefinitions}（其中專屬機制包裝${summary.legacyWrapped}份，未拆解、不計語意通過）。候選與現行Kit可能重疊，不相加成進度；本清單不新增任何語意通過證據。`,'',
     '## 集中阻擋清單','',
     '同一份定義可有多個原因，下列數量不能相加作為完成率。既有handler可能已實作；這裡記錄的是未能完整轉成可編輯Kit，不等同未實裝。','',
     '| 阻擋原因 | 涉及定義 |','|---|---:|',

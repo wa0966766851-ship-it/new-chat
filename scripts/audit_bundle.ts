@@ -25,6 +25,7 @@ for (const key of initial) {
   assert.ok(!text.includes("匯入精靈資料版本不相容"), `首頁初始區塊不應內含匯入精靈資料模組：${key}`);
   assert.ok(!text.includes("staged_arena_"), `首頁初始區塊不應內含階段競技場精靈資料模組：${key}`);
 }
+assert.ok(Object.entries(manifest).some(([key,chunk])=>/reviewedKits\.deferred/.test(key)&&!initial.has(key)&&chunk.isDynamicEntry),'競技場圖紙應隨精靈延後載入');
 assert.ok(Object.entries(manifest).some(([key, chunk]) => /stagedArenaElves/.test(key) && !initial.has(key) && chunk.isDynamicEntry), "階段競技場精靈應為獨立的延後載入區塊");
 assert.ok(Object.entries(manifest).some(([key, chunk]) => /importedElves/.test(key) && !initial.has(key) && chunk.isDynamicEntry), "匯入精靈應為獨立的延後載入區塊");
 const entryBytes = statSync(resolve(dist, entry[1].file)).size;

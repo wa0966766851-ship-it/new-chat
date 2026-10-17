@@ -15,7 +15,8 @@ try {
   h.assertKitOnly(void_);
   const noAtk = { ...void_, power: 0, category: '屬性' };
   await check('固有屬性與連鎖節點與原文逐句對應', async () => {
-    assert.deepEqual(void_.kit.filter((e: any) => e.codeId === 'skill_property').map((e: any) => `${e.params.property}=${e.params.value}`), ['base_priority=1', 'sure_hit=true']);
+    assert.deepEqual(void_.kit.filter((e: any) => e.codeId === 'skill_property').map((e: any) => `${e.params.property}=${e.params.value}`), ['base_priority=3', 'sure_hit=true']);
+    assert.equal(void_.priority,3);assert.ok(void_.description.startsWith('■ 先制+3'));
     assert.equal(void_.kit.length, 6);
   });
   const strike = { ...h.wait(), name: '重擊', category: '物理', power: 100, isSureHit: true };
@@ -71,8 +72,9 @@ try {
       const [f] = await duel(side, [noAtk, h.wait()], { selfHp: HP, n: 1, pick: () => [0, 0] });
       assert.equal(f.opp.currentHp, OPP, '實際恢復量 0 → 不造成傷害');
     });
-    await check(`${side} 先制+1（速度較慢仍先出手）；附加效果失效時整份連鎖不生效`, async () => {
-      const hist = await duel(side, [void_, h.wait()], { selfSpeed: 50, oppSkills: [strike, h.wait()], n: 1, pick: () => [0, 0] });
+    await check(`${side} 使用者回調先制+3，速度較慢仍先於對手+2出手；附加效果失效不封固有先制`, async () => {
+      const priority2={...strike,effectMode:'kit',kit:[{...void_.kit[0],params:{property:'base_priority',value:2,conditions:[]}}]};
+      const hist = await duel(side, [void_, h.wait()], { selfSpeed: 50, oppSkills: [priority2, h.wait()], n: 1, pick: () => [0, 0] });
       const l = hist[0].logs.filter((x: string) => /使用了【/.test(x));
       assert.ok(l[0].includes('虛數湮滅'), '自身先出手：' + l.join(' / '));
       const [s] = await duel(side, [noAtk, h.wait()], { selfHp: 40000, oppStages: { atk: 2 }, sealed: true, n: 1, pick: () => [0, 0] });

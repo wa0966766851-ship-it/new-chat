@@ -132,6 +132,9 @@ try {
       for (const skill of seed.skills) assert.equal(typeof getBattleSkillRegistry()[skill.name], 'function', `註冊技能 ${skill.name}`);
       for (let slot = 0; slot < 5; slot++) {
         const self = elf(id); self.name = `技能獨立驗收-${id}-${slot}`; self.skills.push({ ...wait });
+        // 5032/5033/5034 魂印已 Kit 化（不再依賴精靈名 handler）：改名不足以停用，
+        // 需明確停用魂印，否則思維固化／寰宇星幻會把本次技能轉化掉，測不到原技能。
+        self.soulMark = { ...self.soulMark, effectMode: undefined, kit: undefined, effectType: 'none' };
         self.skills[slot].isSureHit = true;
         const foe = make(`foe-${id}-${slot}`); foe.skills[0].priority = -10;
         await mount(`skills-${side}-${id}-${slot}`, side, self, foe, [make('skill-bench')], [make('target-bench')]);
@@ -139,7 +142,9 @@ try {
         assert.ok(state.logs.some((l: any) => (l.text || '').includes(self.skills[slot].name)), `${id}槽${slot}使用實際技能`);
         if (id === '5034' && slot === 1) {
           assert.equal(100000 - state[other].currentHp, 80, '背隳誓盟同次使用後讀取40%能力總和');
-          assert.ok(state[`${side}Timers`].some((t: any) => t.payload?.immuneStatus));
+          // Kit 化（migratedReactionSkillKits）後免疫以 immune_status_turns{cls:'非附屬類',reflect:true}
+          // 表達——引擎寫入 statusGuard payload（blockStatusGuard 分類判定），非舊 immuneStatus 直鍵。
+          assert.ok(state[`${side}Timers`].some((t: any) => t.payload?.block?.statusGuard?.reflect === true), '非附屬類免疫反彈計時器（payload.block.statusGuard）');
         }
         if (id === '5032' && slot === 1) assert.ok(100000 - state[other].currentHp >= 300, '星霧迷境使用後固定吸取真正在管線執行');
         if (id === '5033' && slot === 0) assert.ok(state.logs.some((l: any) => /連擊/.test(l.text || '')), '連擊不是額外行動');
@@ -149,11 +154,14 @@ try {
     const mogos = elf('5034'), mob = make('mogos-enemy'), bench = make('mogos-bench'); bench.currentHp = 100;
     await mount(`orb-${side}`, side, mogos, mob, [bench]);
     assert.equal(driver.getSyncState()[`${side}RegistryState`].teamMogosOrb.phase, '豐腴期');
-    await turn(side, 2); state = driver.getSyncState();
+    // 魂珠／殘留印記／350吸取都由魂印在戰鬥階段結束時觸發，與出招無關。第3招（妖靈天性）已是正式Kit，使用當次即吸取對手最大體力1/3並受魂印倍率，
+    // 會在第1回合就擊敗此測試的對手；改選不造成傷害的第2招，魂印斷言一字不改。
+    await turn(side, 1); state = driver.getSyncState();
     assert.equal(state[`${other}Marks`].find((m: any) => m.id === 'mogos_residual').ownerBattleId, state[other].battleId);
     assert.ok(state[`${side}RegistryState`].teamOrbHpBonuses['mogos-bench'] > 0);
     assert.ok(state[`${other}Timers`].some((t: any) => t.payload?.stripEntrance), '豐腴期剝奪不是只有日誌');
     assert.ok(100000 - state[other].currentHp >= 350, '350固定吸取實際結算');
+    assert.ok(state.logs.some((l: any) => /吸取對手 350 點固定體力/.test(l.text || l.message || '')), '350固定吸取在日誌中真正執行');
     checks++;
 
     for (const type of ['fixed', 'percent', 'true', 'skill_extra_action']) {

@@ -13,7 +13,11 @@ export function recordConsecutiveUse(ctx: BattleEventContext) {
   const previous = ctx.getPlayerState('skillUseSequence');
   if(ctx.actionId!==undefined && previous?.actionId===ctx.actionId)return;
   const resolvedName=ctx.skill?.name;
-  ctx.setPlayerState('skillUseSequence', { slot,resolvedName, actionId:ctx.actionId, count: previous?.slot === slot && previous?.resolvedName===resolvedName ? previous.count + 1 : 1 });
+  const key=JSON.stringify([slot,resolvedName]);
+  const totals={...(ctx.getPlayerState('skillUsageCounts') || {})};
+  const totalUses=(Number(totals[key]) || 0)+1;totals[key]=totalUses;
+  ctx.setPlayerState('skillUsageCounts',totals);
+  ctx.setPlayerState('skillUseSequence', { slot,resolvedName, actionId:ctx.actionId,totalUses, count: previous?.slot === slot && previous?.resolvedName===resolvedName ? previous.count + 1 : 1 });
 }
 export function closureOperations(helpers: { liveElf: (ctx: BattleEventContext, side: 'p1' | 'p2') => any;
   addTimer: (...args: any[]) => void; damage: (ctx: BattleEventContext, side: 'p1' | 'p2', amount: number, type: string, elem?: string, state?: RunState) => number }) {
@@ -26,6 +30,17 @@ export function closureOperations(helpers: { liveElf: (ctx: BattleEventContext, 
     return amount!==0;
   };
   return {
+    stat_transfer:(ctx:BattleEventContext)=>{
+      const from=helpers.liveElf(ctx,ctx.actor),changes:Record<string,number>={};
+      for(const [key,value] of Object.entries(from.statStages || {}))if(Number(value)<0)changes[key]=Number(value);
+      if(!Object.keys(changes).length)return false;
+      const applied=ctx.applyStatChange(ctx.targetSide,changes)?.applied || {};
+      const stages={...helpers.liveElf(ctx,ctx.actor).statStages};let moved=false;
+      // 只轉移實際通過免疫／上下限的等級；未轉走的弱化仍留在來源。
+      for(const key of Object.keys(changes))if(Number(applied[key])<0){stages[key]=Math.min(0,Number(stages[key] || 0)-Number(applied[key]));moved=true;}
+      if(moved){ctx.updateElf(ctx.actor,{statStages:stages});ctx.addLog('🔄 能力下降狀態已轉移給對手！','status');}
+      return moved;
+    },
     hp_match:(ctx:BattleEventContext,p:any)=>{
       const side=p.side==='self'?ctx.actor:ctx.targetSide,other=side===ctx.actor?ctx.targetSide:ctx.actor;
       const elf=helpers.liveElf(ctx,side),value=helpers.liveElf(ctx,other).currentHp,delta=value-elf.currentHp;

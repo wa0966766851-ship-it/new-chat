@@ -5,6 +5,7 @@ import { getDefaultElvesRevision, subscribeDefaultElves } from "../data/defaultE
 import { syncOtherworldReyDescriptions } from "../data/otherworldReyDescriptions";
 import { ELF_ID_MAPPING } from "../data/elfRegistry";
 import { normalizeElfStats, normalizeStoredElfStats } from "../utils/elfStats";
+import {applySavedSkillCorrections} from '../data/savedSkillCorrections';
 
 interface GameDataContextProps {
   allElves: Elf[];
@@ -272,9 +273,9 @@ export const GameDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     // 優先使用自訂精靈數據 (customElves)，其後才是系統預設精靈 (GLOBAL_ELVES)，並且套用 override
     const overriddenGlobalElves = GLOBAL_ELVES.map(elf => {
       const override = defaultElvesOverrides[elf.id!];
-      return syncOtherworldReyDescriptions(override ? normalizeStoredElfStats({ ...elf, ...override }) : elf);
+      return syncOtherworldReyDescriptions(override ? normalizeStoredElfStats(applySavedSkillCorrections({ ...elf, ...override },GLOBAL_ELVES)) : elf);
     });
-    const combined = [...customElves.map(elf => syncOtherworldReyDescriptions(normalizeStoredElfStats(elf))), ...overriddenGlobalElves];
+    const combined = [...customElves.map(elf => syncOtherworldReyDescriptions(normalizeStoredElfStats(applySavedSkillCorrections(elf,GLOBAL_ELVES)))), ...overriddenGlobalElves];
     const uniqueMap = new Map();
     combined.forEach(elf => {
       const key = elf.id || elf.name; // id優先，只有真的沒有id時才退回用名字

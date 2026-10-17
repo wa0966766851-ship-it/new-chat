@@ -5,6 +5,7 @@ import { usesAuthoredSkill, hasConnectedSkillHandler } from './connectedEffects'
 import { blockSkillTransform } from '../blocks/registry';
 import { getStatMultiplier } from "../utils/statCalculator";
 import { skillStageView } from '../battle/skillStageView';
+import { skillHitRequirementsMet } from './skillProperty';
 /**
  * 通用技能描述執行器（無專屬註冊表 handler、無 kit 的技能使用）
  *
@@ -752,8 +753,9 @@ const ACC_TRAIT = (elf: any, name: string) => {
  * - 基準命中率（accuracy，100% ≠ 必中）：會被命中等級、混亂（攻擊技能 −80%）、易燃（攻擊技能 −30%）、閃避降低。
  * - 精準：與基準命中率乘法疊加（×1.14）；迴避：−14%。
  */
-export function computeHitChance(actor: any, target: any, skill: any, getStatuses: StatusGetter, targetReg?: Record<string, any>): number {
+export function computeHitChance(actor: any, target: any, skill: any, getStatuses: StatusGetter, targetReg?: Record<string, any>, actorReg?: Record<string, any>): number {
   if (!skill || skill.name === "切換精靈" || skill.name === "使用道具") return 1;
+  if(!skillHitRequirementsMet(skill,pseudoCtx(actor,target,getStatuses)))return 0;
   // 前置完整上下文讀取的附加條件必中不屬於固有必中；固有失效不可連帶抹去。
   if(skill.isSureHitByAttached && !actor?.isAdditionalInvalid)return 1;
   const inherentOff = !!actor?.isInherentInvalid; // 固有效果失效：必中不生效
@@ -772,6 +774,8 @@ export function computeHitChance(actor: any, target: any, skill: any, getStatuse
     }
     }
   }
+  // 攻擊方的限時未命中與受方閃避分開讀取；必中仍沿既有優先順序。
+  if (skill.category !== "屬性" && (actorReg?.attackMissTurns || 0) > 0) return 0;
   // 閃避對手所有攻擊（evadeAttackTurns，設在閃避方）：只對非必中技能有效
   if (skill.category !== "屬性" && (targetReg?.evadeAttackTurns || 0) > 0) return 0;
   let base = (typeof skill.accuracy === "number" ? skill.accuracy : 100) / 100;
@@ -789,8 +793,8 @@ export function computeHitChance(actor: any, target: any, skill: any, getStatuse
 }
 
 /** 命中判定（偽隨機：以「未命中機率」計數，避免連續 MISS） */
-export function rollSkillHit(actor: any, target: any, skill: any, getStatuses: StatusGetter, _rng: () => number, targetReg?: Record<string, any>): { hit: boolean; chance: number } {
-  const chance = computeHitChance(actor, target, skill, getStatuses, targetReg);
+export function rollSkillHit(actor: any, target: any, skill: any, getStatuses: StatusGetter, _rng: () => number, targetReg?: Record<string, any>, actorReg?: Record<string, any>): { hit: boolean; chance: number } {
+  const chance = computeHitChance(actor, target, skill, getStatuses, targetReg, actorReg);
   if (chance >= 1) return { hit: true, chance: 1 };
   if (chance <= 0) return { hit: false, chance: 0 };
   const miss = prdChance(`hit:${actor?.id}:${skill?.name}`, 1 - chance);

@@ -1,6 +1,8 @@
 import type { Clause } from '../blocks/model';
 import type { Mark } from '../battle/marks';
 import type { BattleEventContext } from './types';
+import { markRecoveryReductionIssue } from '../battle/markRecovery';
+import {markDamageReductionIssue} from '../battle/markDamageReduction';
 
 /** 印記內的程式以持有者為self。只開放已由持有者事件實際派發的節點。 */
 export const MARK_PROGRAM_TRIGGERS = new Set([
@@ -11,7 +13,7 @@ export const MARK_PROGRAM_TRIGGERS = new Set([
 ]);
 export const MARK_PROGRAM_FIELDS = [
   'id','name','side','mode','count','maxCount','scope','persistsOffField','turns',
-  'displayChar','unit','description','rules',
+  'displayChar','unit','description','rules','recoveryReduction','incomingDamageReduction',
 ] as const;
 export function markProgramIssue(p:any):string|null {
   if(!['self','opp'].includes(p.side)||!['elf','team'].includes(p.scope))return '印記需明確目標與精靈／陣營作用域';
@@ -21,7 +23,9 @@ export function markProgramIssue(p:any):string|null {
   for(const key of ['id','name','displayChar','description'])if(typeof p[key]!=='string'||!p[key]||p[key].length>(key==='description'?100000:200))return `印記${key}需有限非空文字`;
   if(!['層','道','點','篇','枚','株','回合'].includes(p.unit))return '印記單位不明';
   if(p.turns!==undefined&&(!Number.isInteger(p.turns)||p.turns<1||p.turns>10000))return '印記期限需正整數；未填才代表不按回合到期';
-  if(!Array.isArray(p.rules)||!p.rules.length||p.rules.length>30)return '印記需1至30份可執行規則';
+  if(p.recoveryReduction!==undefined){const issue=markRecoveryReductionIssue(p.recoveryReduction);if(issue)return issue;}
+  if(p.incomingDamageReduction!==undefined){const issue=markDamageReductionIssue(p.incomingDamageReduction);if(issue)return issue;}
+  if(!Array.isArray(p.rules)||p.rules.length>30||(!p.rules.length&&p.recoveryReduction===undefined&&p.incomingDamageReduction===undefined))return '印記需明確規則陣列；空陣列時需已接通的持有者限制';
   for(const rule of p.rules)if(!MARK_PROGRAM_TRIGGERS.has(rule?.trig))return '印記規則缺少已接通的持有者節點';
   return null;
 }
@@ -35,7 +39,9 @@ export function applyMarkProgram(ctx:BattleEventContext,p:any,holder:any):boolea
     id:p.id,name:p.name,displayChar:p.displayChar,description:p.description,
     count,maxCount:p.maxCount,unit:p.unit,scope:p.scope,ownerBattleId,
     persistsOffField:p.persistsOffField,clearable:false,remainingRounds:p.turns,
-    effects:{blockProgram:structuredClone(p.rules) as Clause[],...(p.turns!==undefined?{blkTurns:p.turns}:{})},
+    effects:{blockProgram:structuredClone(p.rules) as Clause[],...(p.turns!==undefined?{blkTurns:p.turns}:{}),
+      ...(p.recoveryReduction!==undefined?{recoveryReduction:structuredClone(p.recoveryReduction)}:{}),
+      ...(p.incomingDamageReduction!==undefined?{incomingDamageReduction:structuredClone(p.incomingDamageReduction)}:{})},
   };
   ctx.setMark(mark,side);return true;
 }

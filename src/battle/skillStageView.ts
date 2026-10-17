@@ -6,9 +6,13 @@ export function skillStageView(elf: Pick<Elf, 'statStages' | 'isInherentInvalid'
   const original = elf.statStages?.[stat] || 0;
   if (!skill || elf.isInherentInvalid) return original;
   if(skill.effectMode==='kit') {
-    const mode=skill.kit?.find(e=>e.codeId==='skill_property'&&e.params.property==='stage_view'&&!skillPropertyIssue(e))?.params.value;
-    if(opponent&&mode==='opp_up_as_down'&&original>0)return -original;
-    if(!opponent&&mode==='self_down_as_up'&&original<0)return -original;
+    const modes=skill.kit?.filter(e=>e.codeId==='skill_property'&&e.params.property==='stage_view'&&!skillPropertyIssue(e)).map(e=>e.params.value)||[];
+    if(opponent&&modes.includes('opp_up_as_down')&&original>0)return -original;
+    if(!opponent&&modes.includes('self_down_as_up')&&original<0)return -original;
+    if(!opponent&&modes.includes('self_down_as_double_up')){
+      const negatives=Object.values(elf.statStages||{}).filter(v=>v<0);
+      if(negatives.length)return Math.max(original,Math.min(6,-2*Math.min(...negatives)));
+    }
     return original; // 積木模式不偷偷再解析原文，修改圖紙後立即按參數生效。
   }
   const text = skill.description || '';

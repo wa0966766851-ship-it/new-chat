@@ -171,6 +171,11 @@ export interface StatChange {
 export interface Elf {
   /** 開局背包另一區相同位數的快照；不把待命精靈加入勝敗判定隊伍。 */
   initialCounterpart?: Elf;
+  /** 開局背包資料（出戰／待命兩區各自的原始位數）。待命快照在所有出戰精靈間共享同一份參考，
+   *  不受換人、召喚、死亡、消逝後的動態隊伍重排影響；詳見 battle/bagTargets.ts。 */
+  initialBagGroup?: 'active' | 'standby';
+  initialBagSlot?: number;
+  initialBench?: Elf[];
   /** 同一持有者重複取得效果時，隔離上一次幻化的私有計數。 */
   illusionGeneration?: number;
   /** 幻化保持戰鬥身分與自身技能欄位；外觀／同槽轉化與原始快照分開。 */
@@ -384,7 +389,13 @@ export interface BattleItem {
   type: 'hp' | 'pp' | 'hybrid' | 'special';
   value?: number;
   ppValue?: number;
-  effect?: 'clear_status' | 'clear_debuff';
+  effect?: 'clear_status' | 'clear_debuff' | 'set_illusion_target';
+  /** 不在預設藥劑庫存內，只能由效果（稱號、魂印…）放入；庫存為 0 時不顯示。 */
+  grantOnly?: boolean;
+  /** 使用前需先選一隻精靈：bag_elf＝雙方背包（出戰＋待命）內未消逝的任一隻。 */
+  pickTarget?: 'bag_elf';
+  /** 使用時由 UI 帶入的所選精靈（side + battleId）；不屬於目錄定義。 */
+  picked?: { side: 'p1' | 'p2'; battleId: string };
 }
 
 export interface BattleLog {

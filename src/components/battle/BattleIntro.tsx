@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from "react";
 import type { Elf } from "../../types";
 import { ElfAvatar, TypeIcon } from "../SeerImages";
 import { hiddenFromViewer } from "../../battle/viewerPerspective";
-import { appearanceElf } from "../../battle/illusion";
+import { appearanceElf } from "../../battle/illusionPresentation";
 import type { IntroPlan } from "../../battle/introPlan";
 
 const PARTICLES = Array.from({ length: 26 }, (_, i) => ({ left: (i * 37 + 11) % 100, delay: ((i * 53) % 100) / 100 * 1.6, dur: 1.2 + ((i * 29) % 10) / 10 }));

@@ -2,7 +2,7 @@ import { hiddenFromViewer } from "../battle/viewerPerspective";
 import React, { useEffect, useState } from "react";
 import type { Elf, Skill } from "../types";
 import { skillDisplayType } from '../utils/skillPresentation';
-import { appearanceElf } from "../battle/illusion";
+import { appearanceElf } from "../battle/illusionPresentation";
 import { IMAGE_COPY_EVENT } from "./ImageCopyMenu";
 import { shouldMirrorBattleSprite, hasRenderableElfImagePath, getSeerIndex, loadSeerIndex, onSeerIndexLoaded, petImageUrls, splitTypes, typeIconUrls, isNoneType } from "../battle/seerAssets";
 

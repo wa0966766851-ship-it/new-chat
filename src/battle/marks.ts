@@ -1,5 +1,7 @@
 
 import type { EffectPresentation } from './effectPresentation';
+import type { MarkRecoveryReduction } from './markRecovery';
+import type { MarkDamageReduction } from './markDamageReduction';
 
 export interface Mark {
   presentation?: EffectPresentation;
@@ -21,6 +23,7 @@ export interface Mark {
   polarity?: "positive" | "negative" | "neutral";
   iconTag?: string;
   effects?: {
+    incomingDamageReduction?: MarkDamageReduction;
     damageTakenIncreasePercentPerStack?: number; // 每層造成受到傷害提升的百分比(如0.02代表2%)
     nonTrueDamageDealtMultiplier?: number;   // 自身造成非真實傷害(固定/百分比/真實)的倍率，如0.8代表降低20%
     nonTrueDamageTakenMultiplier?: number;   // 自身受到非真實傷害的倍率，如1.4代表提升40%
@@ -35,6 +38,8 @@ export interface Mark {
     /** 積木印記定義的來源精靈。 */
     blkDef?: string;
     blkTurns?: number;
+    /** 可編輯印記的持有者恢復限制，不依賴來源精靈定義。 */
+    recoveryReduction?: MarkRecoveryReduction;
     [key: string]: any;
   };
   /** 精靈專屬印記的持有者；未填代表隊伍／陣營級印記。 */
@@ -84,13 +89,13 @@ export const MARK_DEFINITIONS: Record<string, Partial<Mark>> = {
   rey_alien_energy: {
     displayChar: "異", name: "異能值", unit: "點",
     clearable: false, persistsOffField: true, polarity: "neutral", visibleWhenZero: true,
-    description: "異能值系統預留欄位；目前只顯示數值，不產生任何戰鬥效果。",
+    description: "個體異能值資源；可顯示及依技能扣除，特殊模式的登場消耗規則尚未接通。",
   },
   scarlett_holy_light: { scope: "team", unit: "層", maxCount: 3, clearable: false, persistsOffField: true, polarity: "positive" },
   // 魔王咒怨是「達到5層」而非「上限5層」；部分技能明確要求高於5層，不能截斷。
-  demon_grudge: { scope: "team", persistsOffField: true, unit: "層", clearable: false, polarity: "positive" },
-  fear_seed: { scope: "team", persistsOffField: true, unit: "層", maxCount: 5, clearable: false, polarity: "negative" },
-  fear_flower: { scope: "team", persistsOffField: true, unit: "株", maxCount: 1, clearable: false, polarity: "negative" },
+  demon_grudge: { scope: "team", persistsOffField: true, unit: "層", clearable: false, polarity: "positive",effects:{incomingDamageReduction:{kind:'攻擊',ratio:.05,perStack:true}} },
+  fear_seed: { scope: "team", persistsOffField: true, unit: "層", maxCount: 5, clearable: false, polarity: "negative",effects:{instantKillDisabled:true} },
+  fear_flower: { scope: "team", persistsOffField: true, unit: "株", maxCount: 1, clearable: false, polarity: "negative",effects:{instantKillDisabled:true} },
 };
 
 export function normalizeMark(mark: Mark): Mark {

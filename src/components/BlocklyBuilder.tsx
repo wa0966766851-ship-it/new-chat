@@ -8,6 +8,7 @@ import { validateKit } from '../effects/kitValidation';
 import { EFFECT_NODE_LABELS, kitEntryIssue } from '../effects/effectConnection';
 import { EFFECT_NODES } from '../effects/effectNodes';
 import { canvasParams, mergeCanvasParams } from '../effects/blockCanvasParams';
+import { legacyActOf, LEGACY_TOOLTIP } from '../blocks/ops/legacyHandler';
 import { Puzzle, Play, Code2, Trash2, RefreshCw, Layers, Sparkles, Check, Copy, BookmarkPlus, Download, Plus, Search } from "lucide-react";
 
 // Ensure custom blocks are defined once
@@ -25,8 +26,8 @@ export function defineCustomBlocks() {
 
   Core.defineBlocksWithJsonArray([
     {type:'soul_property',message0:'常駐閃避 %1 %% 範圍 %2（必中除外）',args0:[{type:'field_number',name:'CHANCE',value:100,min:1,max:100},{type:'field_dropdown',name:'KIND',options:[['所有技能','all'],['攻擊技能','攻擊'],['屬性技能','屬性']]}],previousStatement:null,nextStatement:null,colour:45},
-    {type:'skill_property',message0:'公式前查詢 %1 數值 %2 條件 %3 機率 %4',args0:[{type:'field_dropdown',name:'PROPERTY',options:[['固有必中','sure_hit'],['固有命中率','base_accuracy'],['固有能力視圖','stage_view'],['固有基礎先制','base_priority'],['附加條件必中','conditional_sure_hit'],['附加條件先制','conditional_priority'],['附加機率先制','chance_priority']]},
-      {type:'field_input',name:'VALUE',text:'true'},{type:'field_input',name:'CONDITIONS',text:'[]'},{type:'field_number',name:'PCT',value:100,min:1,max:100}],previousStatement:null,nextStatement:null,colour:45},
+    {type:'skill_property',message0:'公式前查詢 %1 數值 %2 條件 %3 機率 %4 逐層資源 %5 能力等級 %6',args0:[{type:'field_dropdown',name:'PROPERTY',options:[['條件PP豁免','ignore_pp_limit'],['固有必中','sure_hit'],['固有命中率','base_accuracy'],['固有威力','base_power'],['固有攻擊次數','attack_hits'],['命中必要條件','hit_requirement'],['固有能力視圖','stage_view'],['固有基礎先制','base_priority'],['固有逐層先制','mark_priority'],['逐能力等級威力','stage_power'],['無視受方減傷','ignore_damage_reduction'],['無視對手正先制','ignore_positive_priority'],['條件必定先手','forced_first'],['附加條件必中','conditional_sure_hit'],['附加條件先制','conditional_priority'],['附加機率先制','chance_priority']]},
+      {type:'field_input',name:'VALUE',text:'true'},{type:'field_input',name:'CONDITIONS',text:'[]'},{type:'field_number',name:'PCT',value:100,min:1,max:100},{type:'field_input',name:'PER_MARK',text:'{"side":"self","id":"resource"}'},{type:'field_input',name:'PER_STAGE',text:'{"side":"opp","kind":"up"}'}],previousStatement:null,nextStatement:null,colour:45},
     {type:'effect_sequence',message0:'🔗 條件／結果連鎖 %1 %2 %3',args0:[{type:'field_input',name:'CONDITIONS',text:'[]'},{type:'input_dummy'},{type:'input_statement',name:'BODY'}],previousStatement:null,nextStatement:null,colour:230,
       tooltip:'同一事件的條件快照及成功／失敗連鎖。條件使用明確JSON，不執行文字或腳本。'},
     {type:'sequence_statement',message0:'分支 %1 即時條件 %2 前置快照 %3 條件 %4 %5 執行 %6 否則 %7',args0:[
@@ -754,7 +755,7 @@ export function createKitBlockParser(currentSource: KitEntry['source']) {
     const metadata = block.data ? JSON.parse(block.data) : null;
     if (metadata?.opaqueEntry) return { ...metadata.opaqueEntry, node, order, source: currentSource };
     if(block.type==='soul_property')return {...metadata.entry,node,order,source:currentSource,params:{property:'evade',chance:Number(block.getFieldValue('CHANCE')),kind:block.getFieldValue('KIND')}};
-    if(block.type==='skill_property')return {...metadata.entry,node,order,source:currentSource,params:{property:block.getFieldValue('PROPERTY'),value:JSON.parse(block.getFieldValue('VALUE')),conditions:JSON.parse(block.getFieldValue('CONDITIONS')),...(block.getFieldValue('PROPERTY')==='chance_priority'?{pct:Number(block.getFieldValue('PCT'))}:{})}};
+    if(block.type==='skill_property')return {...metadata.entry,node,order,source:currentSource,params:{property:block.getFieldValue('PROPERTY'),value:JSON.parse(block.getFieldValue('VALUE')),conditions:JSON.parse(block.getFieldValue('CONDITIONS')),...(block.getFieldValue('PROPERTY')==='chance_priority'?{pct:Number(block.getFieldValue('PCT'))}:{}),...(block.getFieldValue('PROPERTY')==='mark_priority'?{perMark:JSON.parse(block.getFieldValue('PER_MARK'))}:{}),...(block.getFieldValue('PROPERTY')==='stage_power'?{perStage:JSON.parse(block.getFieldValue('PER_STAGE'))}:{})}};
     if(block.type==='effect_sequence') {
       const readActions=(first: Blockly.Block | null)=>{const acts:any[]=[];for(let b=first;b;b=b.getNextBlock()) {
         if(b.type!=='sequence_action')throw new Error('連鎖分支內只允許明確動作積木');
@@ -1278,7 +1279,18 @@ export function createKitBlockParser(currentSource: KitEntry['source']) {
       const b=ws.newBlock('skill_property') as Blockly.BlockSvg;b.data=JSON.stringify({entry:item});
       setFieldSafe(b,'PROPERTY',p.property);setFieldSafe(b,'VALUE',JSON.stringify(p.value));setFieldSafe(b,'CONDITIONS',JSON.stringify(p.conditions||[]));
       setFieldSafe(b,'PCT',p.pct ?? 100);
+      setFieldSafe(b,'PER_MARK',JSON.stringify(p.perMark||{side:'self',id:'resource'}));
+      setFieldSafe(b,'PER_STAGE',JSON.stringify(p.perStage||{side:'opp',kind:'up'}));
       (b as any).initSvg?.();(b as any).render?.();return b;
+    }
+    const legacyAct=legacyActOf(item);
+    if(legacyAct) {
+      // 原專屬程式包裝：唯讀、不可細調（沿用 native_effect_reference，原資料整份保留）。
+      const b = ws.newBlock('native_effect_reference') as Blockly.BlockSvg;
+      b.data = JSON.stringify({ opaqueEntry: item });
+      setFieldSafe(b, 'LABEL', legacyAct.label || `專屬機制：${legacyAct.p.key}`);
+      b.setTooltip(LEGACY_TOOLTIP);
+      (b as any).initSvg?.(); (b as any).render?.(); return b;
     }
     if(item.codeId==='effect_sequence' && !kitEntryIssue(item)) {
       const make=(type:string,data:any)=>{const b=ws.newBlock(type) as Blockly.BlockSvg;b.data=JSON.stringify(data);return b;};

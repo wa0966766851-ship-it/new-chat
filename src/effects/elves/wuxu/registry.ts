@@ -1,8 +1,8 @@
 import { isAlienElf } from '../../../battle/advancedDamageModifiers';
+import { getElfAdvancedMechanics } from '../../../data/traitsRegistry';
 import { getTypeMatchup } from "../../../utils/statCalculator";
 import { BattleEventContext, BattleSkillHandler, EffectTiming, ElfDeconstructedProfile } from '../../types';
 import { liurenSurvivalRule } from '../../../battle/survivalRules';
-import { handleStoneThrowerSoul } from './stoneThrowerSoul';
 
 export const handleWuxuSoulMark = (ctx: BattleEventContext, event: EffectTiming | string, extraData?: any) => {
   const { self, actor, setPlayerState, getPlayerState, addLog, applyTrueDamage, applyHeal } = ctx;
@@ -101,7 +101,7 @@ export const handleWuxuSoulMark = (ctx: BattleEventContext, event: EffectTiming 
         ctx.updateElf(actor, { id: nextElf.id, skills: restoredSkills, isConcealed: true });
       }
 
-      if (extraData?.incomingElf) {
+      if (extraData?.incomingElf && self.skills.some(s => s.name === '蟄刃復歸' && s.effectMode !== 'kit')) {
         setPlayerState("wuxuBladeReviveTrackingElf", extraData.incomingElf.name);
         setPlayerState("wuxuBladeReviveTrackingTurns", 0);
         setPlayerState("wuxuBladeReviveTrackingActive", true);
@@ -138,7 +138,7 @@ export const handleWuxuSoulMark = (ctx: BattleEventContext, event: EffectTiming 
         ctx.applyPinkDamage(oppSide, healAmt, "無序追擊", ctx.activeP1, ctx.activeP2, "percent");
       }
       
-      if (self.trait?.name === "亂舞" && ctx.skill && ctx.skill.category !== "屬性") {
+      if (self.trait?.name === "亂舞" && self.trait.effectMode !== 'kit' && ctx.skill && ctx.skill.category !== "屬性") {
         const eligibleOppTeam = ctx.getEligibleTeam(oppSide).filter((e: any) => e.currentHp > 0 && e !== (oppSide === "p1" ? ctx.activeP1 : ctx.activeP2)); // 已陣亡者不會被波及（不會被拉回 1 血）
         if (eligibleOppTeam.length > 0) {
           const randomTarget = eligibleOppTeam[Math.floor(Math.random() * eligibleOppTeam.length)];
@@ -154,7 +154,7 @@ export const handleWuxuSoulMark = (ctx: BattleEventContext, event: EffectTiming 
       addLog(`🌑 【死亡條件不受體力限制】：無序·六刃觸發真實傷害庇護！(下場後保留效果且不因此降低效果回合數)`, "effect");
     }
 
-    if (event === EffectTiming.ON_KILL && extraData?.defeatedElf) {
+    if (event === EffectTiming.ON_KILL && extraData?.defeatedElf && getElfAdvancedMechanics(self).killAlienElfVanish) {
       const deadElf = extraData.defeatedElf;
       const isDeadAlien = isAlienElf(deadElf); // Check if it's an alien elf
       if (isDeadAlien) {
@@ -164,7 +164,7 @@ export const handleWuxuSoulMark = (ctx: BattleEventContext, event: EffectTiming 
     }
 
     if (event === EffectTiming.ROUND_END) {
-      if (getPlayerState("wuxuBladeReviveTrackingActive")) {
+      if (getPlayerState("wuxuBladeReviveTrackingActive") && self.skills.some(s => s.name === '蟄刃復歸' && s.effectMode !== 'kit')) {
         const trackedName = getPlayerState("wuxuBladeReviveTrackingElf");
         const activeElf = actor === "p1" ? ctx.activeP1 : ctx.activeP2;
         const stillOnField = activeElf && activeElf.name === trackedName && activeElf.currentHp > 0 && !activeElf.isVanished;
@@ -193,7 +193,7 @@ export const handleWuxuSoulMark = (ctx: BattleEventContext, event: EffectTiming 
 
     if (event === EffectTiming.MODIFY_PRIORITY && extraData?.priorityComp) {
       const skill = ctx.skill;
-      if (skill && (skill.name === "靜刃止水" || skill.name === "蟄刃復歸" || skill.name === "六刃碎界斷")) {
+      if (skill && skill.effectMode !== 'kit' && (skill.name === "靜刃止水" || skill.name === "蟄刃復歸" || skill.name === "六刃碎界斷")) {
         const realSkill = self.skills.find(sk => sk.name === skill.name);
         if (realSkill) {
           extraData.priorityComp.bonus += (realSkill.pp ?? 0);
@@ -206,9 +206,8 @@ export const handleWuxuSoulMark = (ctx: BattleEventContext, event: EffectTiming 
 
   // 無序·墜星 (Wuxu Zhuixing)
   if ((self.id || "").includes("zhuixing") || self.name.includes("墜星")) {
-    handleStoneThrowerSoul(ctx, event, extraData);
     
-    if (event === EffectTiming.ON_KILL && extraData?.defeatedElf) {
+    if (event === EffectTiming.ON_KILL && extraData?.defeatedElf && getElfAdvancedMechanics(self).killAlienElfVanish) {
        const deadElf = extraData.defeatedElf;
        const isDeadAlien = isAlienElf(deadElf);
        if (isDeadAlien) {
@@ -368,11 +367,11 @@ export const WUXU_SKILLS: Record<string, BattleSkillHandler> = {
 
     if (clearedAny) {
       const oppSide = actor === "p1" ? "p2" : "p1";
-      // 3回合對手所有技能附加效果失效
-      setPlayerState(`${oppSide}_sealSkillAdditionalEffects`, 3);
-      // 無法附加敵我雙方任一方異常狀態
-      setPlayerState(`p1_preventStatusInflict`, 3);
-      setPlayerState(`p2_preventStatusInflict`, 3);
+      // 3回合對手所有技能附加效果失效：掛在受影響者（對手）身上，其行動時才讀得到、特質引擎才會遞減。
+      ctx.setOpponentState(`${oppSide}_sealSkillAdditionalEffects`, 3);
+      // 無法附加敵我雙方任一方異常狀態：雙方各自掛在自己 registry 的帶邊前綴鍵。
+      setPlayerState(`${actor}_preventStatusInflict`, 3);
+      ctx.setOpponentState(`${oppSide}_preventStatusInflict`, 3);
       addLog(`🧘 【靜刃止水】：異常解除成功！使對手 3 回合內所有技能附加效果失效，且雙方 3 回合內無法被附加任何異常狀態！`, "effect");
     } else {
       addLog(`🧘 【靜刃止水】：雙方均無異常狀態可解除。`, "effect");
@@ -393,9 +392,9 @@ export const WUXU_SKILLS: Record<string, BattleSkillHandler> = {
     ctx.setPlayerState("attackHitCountThisAction", comboHits);
     addLog(`⚔️ 【六刃碎界斷】連擊！使用時 PP ${ppAtUse}，連擊 ${comboHits} 次！`, "effect");
 
-    // 6回合內對手體力恢復量下降100%
-    setPlayerState(`${targetSide}_noHealTurns`, 6);
-    setPlayerState(`${targetSide}_noHealReason`, "受【六刃碎界斷】限制");
+    // 6回合內對手體力恢復量下降100%：掛在受影響者（對手）身上；無前綴鍵由特質引擎每回合遞減。
+    ctx.setOpponentState(`${targetSide}_noHealTurns`, 6);
+    ctx.setOpponentState(`${targetSide}_noHealReason`, "受【六刃碎界斷】限制");
     addLog(`🚫 【六刃碎界斷】：使對手 6 回合內體力恢復量下降 100%！`, "status");
 
     // 2. 附加自身雙攻值總和66%的百分比傷害
@@ -414,9 +413,10 @@ export const WUXU_SKILLS: Record<string, BattleSkillHandler> = {
       addLog(`📉 【六刃碎界斷】：對手防禦、特防下降 -1 階！`, "effect");
     } else {
       // 未觸發則2回合內對手攻擊技能無效且當回合結束時受到當前雙防值總和66%的百分比傷害
-      setPlayerState(`${targetSide}_attackInvalidTurns`, 2);
-      setPlayerState(`${targetSide}_attackSkillInvalidTurns`, 2);
-      setPlayerState(`${targetSide}_attackSkillInvalidReason`, "【六刃碎界斷】");
+      // 掛在受影響者（對手）registry：引擎出手時讀行動方自己的鍵（battleEngine:2752），特質引擎每回合遞減。
+      // attackInvalidTurns 是無讀取端的死鍵，改為只寫有效鍵，不重複計數。
+      ctx.setOpponentState("attackSkillInvalidTurns", 2);
+      ctx.setOpponentState("attackSkillInvalidReason", "【六刃碎界斷】");
       const def = target.calculatedStats?.def || target.baseStats.def;
       const spdef = target.calculatedStats?.spdef || target.baseStats.spdef;
       const sumDef = def + spdef;

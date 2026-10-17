@@ -34,17 +34,6 @@ export const BRINKK_DAMAGE_TRANSFORMS = {
     ...skill, power: (skill.power || 0) + Math.floor(ctx.target.maxHp / 3) + (ctx.self.ivs?.hp ?? 31),
   },
 };
-export const BRINKK_SKILL_TRANSFORMS = {
-  "深潛者盛宴": (ctx: BattleEventContext, skill: Skill): Skill => {
-    if (!ctx.self.isInherentInvalid) {
-      ctx.setPlayerState("blkTypeOverride", ["水", "混沌", "水.混沌", "普通"]);
-      ctx.setPlayerState("blkTypeOverrideUses", 1);
-      ctx.setPlayerState("blkTypeOverrideCurrentAction", true);
-      ctx.setPlayerState("blkTypeOverrideExtend", 2);
-    }
-    return skill;
-  },
-};
 
 /**
  * 混濁海妖·布林克克 (Brinkk)
@@ -196,7 +185,6 @@ export const handleBrinkkSoulMark = (ctx: BattleEventContext, event: EffectTimin
     case EffectTiming.MODIFY_PRIORITY: {
       const comp = extraData?.priorityComp;
       if (!comp || self.isInherentInvalid) break;
-      if (ctx.skill?.name === "不淨者之約" && isNaturalEnemy(target.type)) comp.bonus += 3;
       break;
     }
     case EffectTiming.BEFORE_ACTION: {
@@ -208,10 +196,6 @@ export const handleBrinkkSoulMark = (ctx: BattleEventContext, event: EffectTimin
     }
     case EffectTiming.OPPONENT_DAMAGE: {
       if (extraData?.hpReduced === 0 && extraData?.label === "深海働哭·持續吸取") applyTrueDamage(oppSide, 300, "深海働哭·吸取未減少");
-      if (extraData?.hpReduced === 0 && extraData?.label === "深潛者盛宴·獨立吸取" && getPlayerState("brinkkFeastAbsorbFallbackPending")) {
-        setPlayerState("brinkkFeastAbsorbFallbackPending", false);
-        ctx.applyAbsorb(oppSide, Math.floor(target.currentHp / 4), "深潛者盛宴·吸取未減少");
-      }
       break;
     }
     case EffectTiming.OPPONENT_ACTION: {
@@ -406,31 +390,8 @@ export const handleBrinkkSoulMark = (ctx: BattleEventContext, event: EffectTimin
     }
 
     case EffectTiming.FATAL_RESIST: {
-      const hasContractSkill = self.skills.some(s => s.name === "不淨者之約");
-      if (hasContractSkill) {
-        if (cthyaatActive && cthyaatHp > 0) {
-          const cost = Math.floor(cthyaatMaxHp * 0.4);
-          if (cthyaatHp >= cost) {
-            const newCthHp = cthyaatHp - cost;
-            setPlayerState("cthyaatHp", newCthHp);
-            const cthyaatElf = getFullTeam(oppSide).find(e => e.isExtra && e.name === "克塔亞特");
-            if (cthyaatElf) { cthyaatElf.currentHp = newCthHp; }
-            self.currentHp = self.maxHp;
-            // 解除異常狀態
-            clearBrinkkStatuses(ctx, self, name => name !== "normal");
-            if (newCthHp <= 0) onCthyaatDeath();
-            addLog(`🔮 【不淨者之約】：古神之約重組軀殼！消耗克塔亞特 40% 體力 (${cost} HP)，布林克克滿血重生！`, "effect");
-          } else {
-            onCthyaatDeath();
-            self.currentHp = self.maxHp;
-            // 解除異常狀態
-            clearBrinkkStatuses(ctx, self, name => name !== "normal");
-            addLog(`🔮 【不淨者之約】：克塔亞特殘存生命燃燒殆盡！古神消逝，布林克克借屍重生！`, "effect");
-          }
-          if (extraData) extraData.cancelFatal = true;
-          return true;
-        }
-      }
+      // 不淨者之約的重生已改為技能攜帶效果（kit）；已攜帶且啟用時由 kit 決定，這裡不先消逝。
+      if (self.skills.some(s => s.name === "不淨者之約" && s.effectMode === "kit")) break;
 
       // 自身死亡時消逝
       addLog(`💀 【濁】：混濁海妖·布林克克被擊敗而消逝！`, "defeat");
@@ -538,33 +499,6 @@ export const BRINKK_SKILLS: Record<string, BattleSkillHandler> = {
     // 解除自身異常狀態
     clearBrinkkStatuses(ctx, self, name => !!StatusRegistry[name] && !StatusRegistry[name].categories.includes("AUXILIARY"));
     addLog(`🌊 【深海働哭】：淨化全身！解除自身所有的非附屬異常狀態。`, "effect");
-  },
-
-  "不淨者之約": (ctx) => {
-    const { self, target, actor, setPlayerState, setOpponentState, applyStatChange, applyStatusWithImmunityCheck, addLog } = ctx;
-    const oppSide = actor === "p1" ? "p2" : "p1";
-
-    addLog(`🔮 布林克克締結【不淨者之約】！`, "info");
-
-    // 1. 5回合內自身免疫並反彈所有非附屬類異常狀態
-    setPlayerState("immuneAndReflectStatusTurns", 5);
-
-    // 2. 對手為自身天敵時額外先制+3
-    if (isNaturalEnemy(target.type)) {
-      addLog(`🔮 【不淨者之約】：對手為天敵屬性！先制力突破！`, "effect");
-    }
-
-    // 3. 令對手全屬性-1、凍傷，任一項未觸發或均觸發則100%令對手冰封
-    applyStatChange(oppSide, { atk: -1, def: -1, spatk: -1, spdef: -1, speed: -1, accuracy: -1 });
-    applyStatusWithImmunityCheck(oppSide, "凍傷", 3);
-    applyStatusWithImmunityCheck(oppSide, "冰封", 3); // 描述未寫回合數：預設 3
-
-    // 4. 令自身100%狂暴
-    applyStatusWithImmunityCheck(actor, "狂暴", 3);
-
-    // 5. 下2回合對手所有技能先制-2，若對手當前速度高於自身則改為先制-3
-    ctx.addTimerTo(oppSide, { id: "brinkk_contract_priority", name: "不淨者之約·先制下降", kind: "turn_effect", source: "skill", remaining: 2, tickAt: "round_end", pendingActivation: true,
-      payload: { block: { prio: target.calculatedStats.speed > self.calculatedStats.speed ? -3 : -2, src: "不淨者之約" }, polarity: "negative" } }, false);
-    addLog(`🔮 【不淨者之約】：詛咒契約已成！下 2 回合對手技能先制降低！`, "effect");
   }
+
 };
