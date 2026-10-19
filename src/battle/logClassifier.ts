@@ -88,3 +88,70 @@ export function toTraditional(text: string): string {
   for (const [re, to] of SIMP_MAP) out = out.replace(re, to);
   return out;
 }
+
+
+/* ══════ 進階資訊欄能力（DSH 20261019 第二批）══════ */
+
+export interface BattleLogRow { turn: number; text: string; type?: string; sourceCode?: string }
+
+export function extractAmount(text: string): number | null {
+  const m = text.match(/(-?\d[\d,]{0,11})\s*(?:點|HP|體力)/);
+  if (!m) return null;
+  const n = Number(m[1].replace(/,/g, ''));
+  return Number.isFinite(n) ? n : null;
+}
+
+/** 傷害量級分色：回傳 tailwind 色階（null＝不用上色）。 */
+export function damageTone(amount: number | null): string | null {
+  if (amount == null) return null;
+  if (amount >= 100000) return 'text-amber-300 font-bold';
+  if (amount >= 20000) return 'text-rose-300';
+  if (amount >= 4000) return 'text-rose-100';
+  return null;
+}
+
+/** 回合摘要：對一頁 logs 聚合每回合的總傷害與擊敗數。 */
+export interface TurnDigest { turn: number; totalDamage: number; defeats: number }
+export function turnDigests(logs: BattleLogRow[]): Map<number, TurnDigest> {
+  const map = new Map<number, TurnDigest>();
+  for (const l of logs) {
+    if (classifyLog(l.text, l.type) !== 'damage') continue;
+    let d = map.get(l.turn);
+    if (!d) { d = { turn: l.turn, totalDamage: 0, defeats: 0 }; map.set(l.turn, d); }
+    if (l.type === 'defeat' || /擊敗|倒下|陣亡/.test(l.text)) d.defeats++;
+    const n = extractAmount(l.text);
+    if (n != null && n > 0 && /造成|受到|吸取|傷害/.test(l.text)) d.totalDamage += n;
+  }
+  return map;
+}
+
+/** 精靈名抽取：文案中所有【XXX】的清單（去重）。 */
+export function elfNamesIn(text: string): string[] {
+  const out = new Set<string>();
+  for (const m of text.matchAll(/【([^】]{1,24})】/g)) {
+    // 排除效果名（技能/異常等短標籤）——效果名通常後接冒號或「狀態」
+    const name = m[1];
+    if (!/:|：|狀態|印記|效果|額外|藥劑|抗性|護盾|護罩/.test(name)) out.add(name);
+  }
+  return [...out];
+}
+
+/** 精靈過濾：只留包含該精靈名的行（原文匹配，fog 之前）。 */
+export function filterByElf(logs: BattleLogRow[], elfName: string | null): BattleLogRow[] {
+  if (!elfName) return logs;
+  return logs.filter(l => l.text.includes(elfName));
+}
+
+/** 文字查詢：大小寫不敏感的子串匹配。 */
+export function filterByQuery(logs: BattleLogRow[], query: string | null): BattleLogRow[] {
+  const q = (query || '').trim().toLowerCase();
+  if (!q) return logs;
+  // 支援「5 火」——首 token 回合數，其餘為文字
+  const m = q.match(/^(\d+)\s+(.*)$/);
+  if (m) {
+    const turn = Number(m[1]);
+    const rest = m[2];
+    return logs.filter(l => l.turn === turn && (!rest || l.text.toLowerCase().includes(rest)));
+  }
+  return logs.filter(l => l.text.toLowerCase().includes(q));
+}

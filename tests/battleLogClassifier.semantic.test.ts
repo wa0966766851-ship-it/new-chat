@@ -1,6 +1,6 @@
 // 對戰資訊欄詳略分級（DSH 20261019）：分類器純函數 + 顯示端三模式。
 import assert from 'node:assert/strict';
-import { classifyLog, filterByMode, mergeExtraActions, toTraditional, scribeMainAction } from '../src/battle/logClassifier';
+import { classifyLog, filterByMode, mergeExtraActions, toTraditional, scribeMainAction, turnDigests, filterByElf, filterByQuery, damageTone, extractAmount, elfNamesIn } from '../src/battle/logClassifier';
 
 // ── 純函數 ──
 assert.equal(classifyLog('【皮卡丘】使用了【十萬伏特】！', 'p1'), 'main');
@@ -39,4 +39,28 @@ assert.ok(/進行了 3 次額外行動/.test(extraLine!.text), '三次連續額�
 assert.equal(toTraditional('攻击力提升'), '攻擊力提升');
 assert.equal(toTraditional('毕當护'), '畢當護');
 
-console.log('對戰資訊欄詳略分級：分類器與三模式 ' + 5 + ' 組情境通過。');
+// ── 第二批：回合摘要／精靈過濾／量級分色／查詢（DSH 20261019）──
+const round = [
+  { turn: 2, text: '【甲】使用了【斬】！', type: 'p1' },
+  { turn: 2, text: '造成 15000 點傷害', type: 'damage' },
+  { turn: 2, text: '【甲】擊敗了【丙】！', type: 'defeat' },
+  { turn: 2, text: '造成 5000 點傷害', type: 'damage' },
+];
+const dg = turnDigests(round).get(2)!
+assert.equal(dg.totalDamage, 20000, '回合摘要：傷害合計');
+assert.equal(dg.defeats, 1, '回合摘要：擊敗計數');
+
+assert.equal(extractAmount('造成 25,000 點傷害'), 25000, '千分位數字抽取');
+assert.ok(damageTone(150000)!.includes('amber'), '十萬級亮金');
+assert.ok(damageTone(25000)!.includes('rose-300'), '兩萬級玫瑰');
+assert.equal(damageTone(50), null, '小額不上色');
+
+assert.equal(filterByElf(round, '甲').length, 2, '精靈過濾：只留含【甲】的主行動與擊敗行');
+assert.equal(filterByElf(round, '丙').length, 1, '精靈過濾：丙只在擊敗行');
+assert.equal(filterByElf(round, null).length, 4, '精靈過濾：null 不過濾');
+
+assert.equal(filterByQuery(round, '擊敗').length, 1, '文字查詢');
+assert.equal(filterByQuery(round, '2 傷害').length, 2, '回合+文字複合查詢');
+assert.ok(elfNamesIn('【甲】使用了【斬擊】！').includes('甲'), '精靈名抽取');
+
+console.log('對戰資訊欄詳略分級：分類器與三模式 ' + 5 + ' 組情境通過；進階四項（摘要/精靈/量級/查詢）9 組情境通過。');
