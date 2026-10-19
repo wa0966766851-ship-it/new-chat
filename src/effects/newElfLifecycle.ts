@@ -6,7 +6,7 @@ import { activeConstraints } from '../battle/timedConstraints';
 import { getStatuses } from '../utils/battleHelpers';
 import { StatusRegistry } from './statusRegistry';
 import { isSkillDamageType } from '../battle/damageSemantics';
-import { addDamageReduction } from '../battle/damageReduction';
+import { addDamageReduction, multiplyDamageReduction } from '../battle/damageReduction';
 import { combineSettlementCallbacks } from '../battle/settlementReceipt';
 import { queueActionDamageModifier } from '../battle/actionDamageModifiers';
 import { endIllusion } from '../battle/illusion';
@@ -174,7 +174,8 @@ export function runNewElfLifecycle(ctx: BattleEventContext, event: EffectTiming,
       for (const timer of timersFor(ctx, ctx.actor)) {
         if (timer.remaining <= 0 || timer.pendingActivation || (timer.ownerBattleId && timer.ownerBattleId !== identity(ctx.self))) continue;
         if (timer.payload?.incomingPhysicalSkillMultiplier) {
-          comp.multiplier *= timer.payload.incomingPhysicalSkillMultiplier;
+          const factor=timer.payload.incomingPhysicalSkillMultiplier;
+          if(factor<1)multiplyDamageReduction(comp,factor);else comp.multiplier*=factor;
           if (timer.kind === 'use_counter') ctx.consumeTimer?.(ctx.actor, timer.id);
         }
       }

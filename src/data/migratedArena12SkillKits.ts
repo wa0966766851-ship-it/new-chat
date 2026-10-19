@@ -92,12 +92,13 @@ const SKILLS: ReviewedSequenceSkill[] = [
         { cond: [c('hp_ratio', { side: 'self', op: '不低於', ratio: 1 }, '自身滿體力')], acts: [a('stat', { side: 'self', stats: ['全屬性'], v: 2 })] },
         { cond: [c('hp_ratio', { side: 'self', op: '低於', ratio: 1 }, '自身非滿體力')], acts: [a('stat', { side: 'self', stats: ['全屬性'], v: 1 })] },
       ], 1),
-      seq('🎯 4 回合內，每次使用技能吸取對手最大體力的 1/3；自身低於一半體力時吸取翻倍', [
-        { acts: [a('turn_key_set', { key: 'baifaDrainTurns', turns: 4, side: 'self', reason: '百法拜', label: '4回合內每次技能吸取對手1/3' })] },
+      seq('🎯 4回合內每次使用技能吸取對手最大體力1/3，低於半血翻倍；對手免疫百分比時追加300真傷', [
+        {acts:[a('timed',{turns:4,from:'now',trig:'self_skill',initial:true,label:'百法拜吸取',body:[
+          {cond:[c('hp_ratio',{side:'self',op:'低於',ratio:0.5})],acts:[a('drain',{ratio:2/3})]},
+          {cond:[c('hp_ratio',{side:'self',op:'不低於',ratio:0.5})],acts:[a('drain',{ratio:1/3})]},
+          {cond:[c('last_damage_immune',{})],acts:[a('dmg',{flat:300,type:'真實'})]},
+        ]})]},
       ], 2),
-      seq('> 若對手免疫百分比傷害，額外附加 300 點真實傷害', [
-        { cond: [c('no_damage_kind', { kind: '百分比' }, '百分比傷害未生效（免疫）')], acts: [a('dmg', { flat: 300, type: '真實' })] },
-      ], 3),
       seq('🎯 下 2 回合自身所有技能先制 +2', [
         { acts: [a('prio_turns', { v: 2, turns: 2, next: true })] },
       ], 4),
@@ -121,7 +122,13 @@ const SKILLS: ReviewedSequenceSkill[] = [
         ] },
       ], 1),
       seq('🎯 4 回合內，對手使用屬性技能後，自身恢復最大體力的 1/3 並造成等量百分比傷害；對手使用攻擊技能後，100% 使其【束縛】', [
-        { acts: [a('turn_key_set', { key: 'shixuanTurns', turns: 4, side: 'self', reason: '十玄釋', label: '4回合內回應對手技能類型' })] },
+        {acts:[
+          a('timed',{turns:4,from:'now',trig:'opp_after_status',label:'十玄釋屬性回應',body:[{acts:[
+            a('heal',{side:'self',ratio:1/3}),
+            a('dmg',{base:'最大體力',of:'self',ratio:1/3,type:'百分比'}),
+          ]}]}),
+          a('timed',{turns:4,from:'now',trig:'opp_after_attack',label:'十玄釋攻擊回應',body:[{acts:[a('status',{side:'opp',status:'束縛',chance:100,turns:3})]}]}),
+        ]},
       ], 2),
       seq('◇ 無為：未行動時，消耗此技能全部 PP，使對手所有技能 PP −2', [
         { cond: [c('unacted', {}, '未使用技能')], acts: [

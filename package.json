@@ -129,7 +129,7 @@
     "build:exe-keep": "tsx tools/build_exe.ts --keep-version",
     "prepare:share": "tsx tools/prepare_share.ts --force",
     "electron:dev": "npm run build && electron electron/main.cjs",
-    "package:electron": "npm run build:electron && electron-builder --config electron-builder.yml --publish never",
+    "package:electron": "node scripts/package_electron.mjs",
     "test:electron": "node tests/electronLauncher.semantic.test.mjs && node tests/electronUpdates.semantic.test.mjs && node tests/electronServerPackaging.semantic.test.mjs",
     "test:updates": "node --import tsx tests/updates.semantic.test.ts && node tests/electronUpdates.semantic.test.mjs && node tests/electronSlimming.semantic.test.mjs && node tests/assetCache.semantic.test.mjs",
     "prepare:electron-lite": "node scripts/prepare_light_assets.mjs",
@@ -201,7 +201,13 @@
     "test:resource-panel": "node --import tsx tests/resourcePanel.semantic.test.ts",
     "test:resource-hits": "node --import tsx tests/resourceHits.semantic.test.ts",
     "test:final-remaining-closure": "node --import tsx tests/finalRemainingClosure.semantic.test.ts",
-    "test:migration-release": "node scripts/check_migration_release.mjs"
+    "test:migration-release": "node scripts/check_migration_release.mjs",
+    "test:damage-reduction-reward": "node --import tsx tests/damageReductionReward.semantic.test.ts",
+    "test:resource-attack-bypass": "node --import tsx tests/resourceAttackBypass.semantic.test.ts",
+    "test:wuwei-timed-skills": "node --import tsx tests/wuweiTimedSkills.semantic.test.ts",
+    "package:electron:inspect": "node scripts/package_electron.mjs --keep-work",
+    "clean:build-artifacts": "node scripts/cleanup_build_artifacts.mjs",
+    "test:build-workspace": "node tests/buildWorkspace.semantic.test.mjs"
   },
   "dependencies": {
     "@google/genai": "^2.4.0",

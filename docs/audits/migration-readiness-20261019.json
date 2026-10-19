@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "generatedAt": "2026-10-19T03:26:47.496Z",
+  "generatedAt": "2026-10-19T03:50:35.356Z",
   "note": "nonWrappedKitRoutes只是路由分類，不是完整遷移或正確率；flags必須人工查證，不能當錯誤份數。semanticAccuracy=null代表尚無全來源代表性驗收數據。",
   "summary": {
     "definitions": 397,
@@ -151,38 +151,6 @@
           "key": "yutianPowerBoost",
           "text": "🎯 技能威力提升150%，後出手效果翻倍",
           "path": "kit[10].clause.body[1].acts[0]"
-        }
-      ]
-    },
-    {
-      "elfId": "arena_12",
-      "elf": "無為龍者",
-      "name": "百法拜",
-      "route": "kit",
-      "legacyWrapped": false,
-      "flags": [
-        {
-          "category": "reader-review",
-          "reason": "持續狀態寫入須另查事件讀取端；本標記不是判定缺失",
-          "key": "baifaDrainTurns",
-          "text": "🎯 4 回合內，每次使用技能吸取對手最大體力的 1/3；自身低於一半體力時吸取翻倍",
-          "path": "kit[2].clause.body[0].acts[0]"
-        }
-      ]
-    },
-    {
-      "elfId": "arena_12",
-      "elf": "無為龍者",
-      "name": "十玄釋",
-      "route": "kit",
-      "legacyWrapped": false,
-      "flags": [
-        {
-          "category": "reader-review",
-          "reason": "持續狀態寫入須另查事件讀取端；本標記不是判定缺失",
-          "key": "shixuanTurns",
-          "text": "🎯 4 回合內，對手使用屬性技能後，自身恢復最大體力的 1/3 並造成等量百分比傷害；對手使用攻擊技能後，100% 使其【束縛】",
-          "path": "kit[2].clause.body[0].acts[0]"
         }
       ]
     },

@@ -490,6 +490,7 @@ export const OPS: Record<string, OpFn> = {
     st.lastAmount=dealDamage(ctx,ctx.targetSide,amount,p.type,undefined,st);return true;
   },
   attack_type_view_uses:(ctx,p)=>grantAttackTypeView(ctx,p),
+  damage_reduction_steps:(ctx,p,st)=>{st.lastAmount=Math.floor(Math.max(0,ctx.mainSkillReduction?.reduced||0)/p.unit);return st.lastAmount>0;},
   match_max_hp:(ctx,p,st)=>{const side=sideOf(ctx,p.side),e=liveElf(ctx,side),source=liveElf(ctx,sideOf(ctx,p.source)),n=Math.max(0,source.maxHp-e.maxHp);st.lastAmount=n;if(!n)return false;const stats={...e.calculatedStats,hp:source.maxHp};if(p.reduceStats)for(const k of ['atk','def','spatk','spdef','speed'])stats[k]=Math.max(1,stats[k]-n);ctx.updateElf(side,{maxHp:source.maxHp,calculatedStats:stats});return true;},
   peel_types:(ctx,p,st)=>{const side=sideOf(ctx,p.side),elf=liveElf(ctx,side);const n=elf.typePeeled?0:String(elf.type||'').split(/[.·・]/).filter((t:string)=>t&&t!=='普通'&&t!=='無屬性').length;(st as any).peeledTypes=n;st.lastAmount=n;if(!n)return false;ctx.updateElf(side,{type:'普通',typePeeled:true,originalType:elf.originalType||elf.type,typeChangedUntilSwitch:true} as any);return true;},
   change_type:(ctx,p)=>{

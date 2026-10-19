@@ -187,7 +187,7 @@ try {
     check(`${side}/真正API狀態減傷99包含X系、額外行動`, () => {
       const st = state(), effects: any[] = []; st[other].battleStatuses = { 星佑: 2 };
       st[`${other}Timers`] = [{ id: '99', remaining: 2, payload: { damageReductionOverridePercent: 99 } }];
-      const api = buildDamageAPIs({ side, self: st[side], syncStateRef: { current: st }, pushEffect: (e: any) => effects.push(e), getBattleEventContext: () => ({}) });
+      const api = buildDamageAPIs({ side, self: st[side], syncStateRef: { current: st }, pushEffect: (e: any) => effects.push(e), getBattleEventContext: (owner:any) => {const f=fixture(owner);f.st=st;return {...f.c,getFullTeam:(s:string)=>[st[s]]};} });
       for (const kind of ['skill_attribute', 'skill_extra_action']) {
         effects.length = 0; api.applySkillTypeDamage(other, 1000, 'API驗收', { elem: '普通', category: kind });
         const e = effects.find(e => e.type === 'damage'); assert.equal(e.data.damageType, kind); assert.equal(e.data.amount, 10);

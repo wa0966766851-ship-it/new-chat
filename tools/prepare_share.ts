@@ -26,7 +26,7 @@ if (!FORCE) {
 
 // 永不帶走的東西（對照 SeerBot：帳號/路徑/pet_bags/截圖/log）
 const DROP_DIRS = new Set([
-  "node_modules", "dist", "release", ".git",
+  "node_modules", "dist", "release", ".git", "build", "dist-electron",
   ".seer-cache", "_修正前備份", "_asset_backup",
   "release", "dist_release",
 ]);
@@ -50,7 +50,8 @@ function copyClean(srcDir: string, destDir: string): { dirs: number; files: numb
       skipped++;
       return;
     }
-    const st = fs.statSync(cur);
+    const st = fs.lstatSync(cur);
+    if(st.isSymbolicLink()){skipped++;return;}
     if (st.isDirectory()) {
       const target = path.join(destDir, rel);
       fs.mkdirSync(target, { recursive: true });
@@ -71,6 +72,18 @@ function copyClean(srcDir: string, destDir: string): { dirs: number; files: numb
   return { dirs, files, skipped };
 }
 
+// 先驗證來源與輸出，不能在清除／複製之後才發現自己位於分享副本。
+if (fs.existsSync(path.join(SRC, '.share_copy'))) throw new Error('Refusing: source is a share copy.');
+const rel = path.relative(SRC, OUT);
+const back = path.relative(OUT, SRC);
+const inside = (r: string) => !!r && r !== '..' && !r.startsWith('..' + path.sep) && !path.isAbsolute(r);
+if (!rel || inside(back) || (inside(rel) && rel.split(path.sep)[0] !== 'build')) throw new Error('Source/output must not overlap outside excluded build/.');
+for (const target of [SRC, OUT]) for (let cur = target;; cur = path.dirname(cur)) {
+  if (fs.existsSync(cur) && fs.lstatSync(cur).isSymbolicLink()) throw new Error('Source/output must not use directory links.');
+  if (cur === path.dirname(cur)) break;
+}
+if (OUT === path.parse(OUT).root) throw new Error('Output cannot be a drive root.');
+if (fs.existsSync(OUT) && fs.readdirSync(OUT).length && !fs.existsSync(path.join(OUT,'.share_copy'))) throw new Error('Refusing to overwrite an unmarked directory.');
 if (fs.existsSync(OUT)) fs.rmSync(OUT, { recursive: true, force: true });
 fs.mkdirSync(OUT, { recursive: true });
 const stat = copyClean(SRC, OUT);

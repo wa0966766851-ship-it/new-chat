@@ -1,3 +1,4 @@
+import {rm} from 'node:fs/promises';
 import assert from 'node:assert/strict';
 import { createRequire } from 'node:module';
 import { mkdtemp, readFile, writeFile, mkdir, readdir } from 'node:fs/promises';
@@ -14,6 +15,7 @@ const asset = parseRelease(release, '1.0.0', 'portable');
 let passed = 0;
 const check = async (name, run) => { await run(); passed++; console.log(`✓ ${name}`); };
 await mkdir(resolve('build'), { recursive: true }); const temp = await mkdtemp(resolve('build/update-tests-'));
+try {
 await check('semver 數字比較、舊版與同版不下載', () => { assert.equal(compareVersion('1.10.0', '1.2.0'), 1); assert.equal(parseRelease(release, '1.0.1', 'portable').status, 'latest'); });
 for (const mutation of [{ prerelease: true }, { draft: true }, { tag_name: 'main' }, { assets: [] }, { assets: [{ ...release.assets[0], digest: '' }] }])
   await check('拒絕草稿／預覽／缺檔／缺校驗資訊', () => assert.throws(() => parseRelease({ ...release, ...mutation }, '1.0.0', 'portable')));
@@ -55,4 +57,6 @@ await check('真正另存新版、舊 EXE 核對備份、存檔備份、原檔�
   assert.equal(await readFile(join(result.folder, 'player-backup.json'), 'utf8'), snapshot); assert.equal(await readFile(originalExe, 'utf8'), 'OLD EXE');
   assert.equal(JSON.parse(await readFile(join(result.folder, 'receipt.json'), 'utf8')).release.sha256, sha256);
 });
-console.log(`桌面更新安全語意：${passed} 項通過；測試副本保留於 ${temp}`);
+console.log(`桌面更新安全語意：${passed} 項通過；測試暫存已排程清理`);
+
+} finally { await rm(temp,{recursive:true,force:true}); }

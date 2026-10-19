@@ -53,6 +53,7 @@ export const SEQUENCE_ACTION_FIELDS: Record<string, readonly string[]> = {
   next_power_nonfull:['perElf','scope','aliveOnly'],heal_main_settled:['ratio'],
   checked_percent_drain:['ratio','failTrue','ofSelf','replaceWithTrue'],
   type_damage_floor_turns:['side','base','list','turns'],
+  damage_reduction_steps:['unit'],
   match_max_hp:['side','source','reduceStats'],
   stat_floor_opponent:[],body_maxhp_resource_loss:['side','unit','cap','resourceId'],
   power_ratio_turns:['side','ratio','turns','bound'],
@@ -680,6 +681,7 @@ export function sequenceIssue(value: unknown, node?: string, depth=0, inMark=fal
       if(act.op==='instant_kill_same_hp_targets'&&value.trig!=='before_instant_kill')return '等體力秒殺目標需正式秒殺前置快照';
       if(act.op==='heal_main_settled'&&(!['self_after_attack','self_after_skill'].includes(value.trig)||!(act.p.ratio>0)||act.p.ratio>100||inMark))return '主技能結算量恢復限成功行動後正比例，不能置於印記';
       if(act.op==='next_power_nonfull'&&(value.trig!=='opp_damaged_skill'||!Number.isFinite(act.p.perElf)||act.p.perElf<=0||act.p.perElf>100||!['team','bench'].includes(act.p.scope)||typeof act.p.aliveOnly!=='boolean'||inMark))return '下次威力需正式對手技能受傷事件、正比例、隊伍範圍與存活選項';
+      if(act.op==='damage_reduction_steps'&&(!['after_hit','self_after_attack','self_after_skill'].includes(value.trig)||!Number.isSafeInteger(act.p.unit)||act.p.unit<1||act.p.unit>1e6))return '減傷步數需正式主技能結算後與有限正整數單位';
       if(act.op==='match_max_hp'&&(!['self','opp'].includes(act.p.side)||!['self','opp'].includes(act.p.source)||act.p.side===act.p.source||typeof act.p.reduceStats!=='boolean'))return '體力上限對齊需不同來源與受方及明確能力點數扣減選項';
       if(act.op==='status_seq'&&act.p.countFailures!==undefined&&typeof act.p.countFailures!=='boolean')return '異常未觸發數回執需布林值';
       if(act.op==='boost'&&act.p.perLastAmount!==undefined&&(!Number.isFinite(act.p.perLastAmount)||act.p.perLastAmount<=0||act.p.perLastAmount>100))return '逐回執增傷需有限正倍率';

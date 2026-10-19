@@ -24,7 +24,7 @@ export const FINAL_MARS_LAN_DRAGON_ACTION_FIELDS: Record<string, readonly string
   shield_power_steps: ['step', 'powerPerGroup'],
   receipt_shields: ['ratio', 'shield', 'barrier'],
   hp_difference_damage: ['ratio', 'type'],
-  resource_query_rule: ['id', 'min', 'ignorePpLimit', 'selfDownAsUp', 'oppUpAsDown'],
+  resource_query_rule: ['id', 'min', 'ignorePpLimit', 'selfDownAsUp', 'oppUpAsDown', 'ignoreDamageLimit', 'ignoreDamageBlock', 'ignoreAttackImmunity'],
   flag_set: ['key', 'value'],
   resource_drain: ['id', 'baseRatio', 'bonusPerGroup', 'step'],
   next_skill_reduction: ['ratio'],
@@ -36,7 +36,7 @@ export function finalMarsLanDragonActionIssue(op: string, p: any, nested?: (body
   if (op === 'consume_skill_reduction' && trig !== 'incoming') return '下次技能減傷消耗需正式受傷修正入口';
   if (op === 'resource_drain' && (typeof p.id !== 'string' || !(p.baseRatio > 0) || !(p.bonusPerGroup > 0) || !Number.isInteger(p.step) || p.step < 1)) return '印記比例吸取需明確基礎比例、階梯和增幅';
   if (op === 'next_skill_reduction' && (!(p.ratio > 0) || p.ratio > 1)) return '下次技能減傷需0至100%正比例';
-  if (op === 'resource_query_rule' && (trig !== 'battle_start' || typeof p.id !== 'string' || !Number.isInteger(p.min) || p.min < 1 || !['ignorePpLimit', 'selfDownAsUp', 'oppUpAsDown'].every(k => typeof p[k] === 'boolean'))) return '資源查詢需明確印記門檻與PP/能力視圖旗標';
+  if (op === 'resource_query_rule' && (!['battle_start','use','self_skill'].includes(trig) || typeof p.id !== 'string' || !p.id || !Number.isInteger(p.min) || p.min < 1 || !['ignorePpLimit', 'selfDownAsUp', 'oppUpAsDown'].every(k => typeof p[k] === 'boolean') || !['ignoreDamageLimit','ignoreDamageBlock','ignoreAttackImmunity'].every(k=>p[k]===undefined||typeof p[k]==='boolean'))) return '資源查詢需明確印記門檻與PP/能力視圖旗標';
   if (op === 'flag_set' && (typeof p.key !== 'string' || !p.key || p.key.length > 100 || typeof p.value !== 'boolean')) return '旗標需明確有限鍵與布林值';
   if (op === 'snapshot_resource_rule') {
     if (trig !== 'battle_start' || !['id', 'name', 'displayChar', 'snapshotKey', 'receiverKey'].every(k => typeof p[k] === 'string' && p[k].length > 0 && p[k].length <= 100) || !Number.isInteger(p.perRound) || p.perRound < 1 || p.perRound > 10) return '資源快照規則需戰鬥開始、明確個體集合鍵與1至10份數';

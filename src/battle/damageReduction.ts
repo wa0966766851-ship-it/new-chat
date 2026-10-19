@@ -10,7 +10,7 @@ import { isNonTrueDamageType, isSkillDamageType, normalizeDamageType } from './d
 import {markDamageReductionRate} from './markDamageReduction';
 
 export interface ReductionPolicy { override?: number; attenuation: number }
-type ReductionComp = Pick<DamageComputation, 'damageCategory' | 'multiplier' | 'decreasePercent' | 'pure'> & { incomingDamageImmunity?:boolean; reductionPolicy?: ReductionPolicy; reductionSources?: Record<string, number> };
+type ReductionComp = Pick<DamageComputation, 'damageCategory' | 'multiplier' | 'decreasePercent' | 'pure'> & { trackReduction?:boolean; multiplierReductionProduct?:number; incomingDamageImmunity?:boolean; reductionPolicy?: ReductionPolicy; reductionSources?: Record<string, number> };
 
 /** 僅改寫「持有者受到傷害降低」；不改造成傷害降低、抵擋、攻擊值、上限或護盾。 */
 export function reductionPolicy(state: Pick<BattleState, 'p1Timers' | 'p2Timers' | 'p1Marks' | 'p2Marks'>, side: 'p1' | 'p2', elf: Elf, category: string): ReductionPolicy {
@@ -55,7 +55,13 @@ export function addDamageReduction(comp: ReductionComp, rate: number, incoming =
 export function multiplyDamageReduction(comp: ReductionComp, multiplier: number, incoming = true): number {
   const effective = effectiveReduction(comp, 1 - multiplier, incoming);
   if(incoming&&effective===1)comp.incomingDamageImmunity=true;
-  comp.multiplier *= 1 - effective;
+  // 記錄正式減傷乘區；100%改以decreasePercent表示，保留非減傷乘區供結算回執讀取。
+  // 舊的純資料呼叫者未啟用trackReduction時維持既有表示。
+  if(comp.trackReduction && effective===1) comp.decreasePercent=1;
+  else {
+    comp.multiplier *= 1 - effective;
+    if(comp.trackReduction)comp.multiplierReductionProduct=(comp.multiplierReductionProduct??1)*(1-effective);
+  }
   return effective;
 }
 

@@ -35,7 +35,7 @@ export const FINAL_ODB_ACTION_FIELDS: Record<string, readonly string[]> = {
   energy_form_spend: ['key', 'ratio', 'minimum', 'mode', 'conversionReward'],
   team_status_replace: ['key', 'recordKey', 'status', 'turns', 'loseUniversalResistance'],
   energy_conversion_reward: ['key'],
-  stat_points_scale: ['side', 'ratio', 'stats'],
+  stat_points_scale: ['side', 'ratio', 'stats','perLastAmount'],
   battle_mark_grant: ['side', 'id', 'name', 'displayChar', 'statRatio', 'duel'],
   battle_mark_to_last_ally: ['id', 'name', 'displayChar', 'statRatio', 'duel'],
   battle_mark_entrance: [],
@@ -89,6 +89,7 @@ export function finalOdbActionIssue(op: string, p: any): string | null {
   if (op === 'energy_form_ally_defeat' && (!Number.isInteger(p.amount) || p.amount < 1)) return '隊員死亡能量需正整數';
   if (op === 'energy_form_spend' && (!(p.ratio > 0 && p.ratio <= 1) || !Number.isInteger(p.minimum) || p.minimum < 1 || !Number.isInteger(p.conversionReward) || p.conversionReward < 0 || !['damage', 'heal'].includes(p.mode))) return '能量消耗需正比例、最低整數、明確用途與後續轉化獎勵';
   if (op === 'team_status_replace' && (!p.recordKey || !p.status || !Number.isInteger(p.turns) || p.turns < 1 || typeof p.loseUniversalResistance !== 'boolean')) return '隊伍轉化需記錄鍵、狀態、回合、全免抗性規則';
+  if(op==='stat_points_scale'&&p.perLastAmount!==undefined&&(!Number.isFinite(p.perLastAmount)||p.perLastAmount<0||p.perLastAmount>10))return '逐回執能力點數增幅需0至1000%有限比例';
   if (op === 'stat_points_scale' && (!['self', 'opp'].includes(p.side) || !(p.ratio > 0) || !Array.isArray(p.stats) || !p.stats.length || p.stats.some((k: string) => !['atk', 'def', 'spatk', 'spdef', 'speed'].includes(k)))) return '能力點數倍率需單一目標、正倍率與明確能力清單';
   if (['battle_mark_grant', 'battle_mark_to_last_ally'].includes(op) && (!p.id || !p.name || !p.displayChar || !(p.statRatio > 0) || typeof p.duel !== 'boolean' || op === 'battle_mark_grant' && !['self', 'opp'].includes(p.side))) return '常駐戰鬥印記需識別、文字、正能力倍率及決鬥宣告';
   if (op === 'status_bound_round_end' && (p.side !== 'opp' || !Array.isArray(p.body) || !p.body.length)) return '異常結束監控需明確對手與非空子流程';
@@ -303,9 +304,9 @@ export function finalOdbOperations(addTimer: (ctx: BattleEventContext, side: Sid
       if (active?.currentHp > 0) (ctx.contextForElf?.(ctx.actor, active) || ctx).applyHeal(ctx.actor, amount);
       return true;
     },
-    stat_points_scale(ctx: BattleEventContext, p: any) {
+    stat_points_scale(ctx: BattleEventContext, p: any, st: RunState) {
       const side = sideOf(ctx, p.side), elf = elfOf(ctx, side), stats = { ...elf.calculatedStats };
-      for (const key of p.stats) stats[key] = Math.max(1, Math.floor((Number(stats[key]) || 0) * p.ratio));
+      for (const key of p.stats) stats[key] = Math.max(1, Math.floor((Number(stats[key]) || 0) * (p.ratio+(p.perLastAmount||0)*Math.max(0,st.lastAmount))));
       ctx.updateElf(side, { id: elf.id, calculatedStats: stats }); return true;
     },
     battle_mark_grant(ctx: BattleEventContext, p: any) { const side = sideOf(ctx, p.side); return grantBattleMark(ctx, p, side, elfOf(ctx, side)); },

@@ -28,6 +28,11 @@
 | `dist/`、`build/`、`dist-electron/`、`release/`、`node_modules/`、`.seer-cache/` | 生成或快取，不是需要手改的精靈實裝檔 |
 | `_修正前備份/`、`_備份_20250927_還債前/`、`_asset_backup/` | 原有備份，保留不動 |
 | `logs/legacy/20261008/` | 從根目錄歸檔的舊log及可逆搬移清單 |
+| `build/.work/exe-*/source/` | 一次打包專用的乾淨原始碼副本與node_modules；成功／失敗皆清理，`--keep-work`才保留 |
+| `build/electron-app/`、`dist-electron/win-unpacked/` | Electron中繼封裝；正常打包結束清理，檢查模式保留 |
+| `dist-electron/*.exe`、`dist-electron/nsis-web/` | 正式成品及網路安裝必要payload；不得當暫存刪除 |
+| `dist_release/<版本>/`、`release/*.zip` | 版本工具或舊免安裝流程的正式成品，與中繼副本分開 |
+| `docs/開發日誌.md` | 最新開發紀錄與歷史索引的統一入口；舊原文證據不重複複製 |
 
 ## 已完成專屬註冊表收斂（2026-10-08）
 

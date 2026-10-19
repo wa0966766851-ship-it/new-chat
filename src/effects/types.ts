@@ -190,6 +190,8 @@ export interface DamageComputation {
   beforeFinalDamage?: Array<() => void>; // 條件減傷等全部增減傷就緒後再判斷，不以未加成base決定門檻
   afterDamage?: import('../battle/settlementReceipt').SettlementCallback;
   reductionPolicy?: import("../battle/damageReduction").ReductionPolicy;
+  trackReduction?:boolean;
+  multiplierReductionProduct?:number;
   reductionSources?: Record<string, number>; // 明確同源可加算；不同來源合成剩餘傷害比例
   attackDefenseBypass?: import('../battle/attackDefense').AttackDefenseBypass;
   base: number;              // Stage 0 結果，唯讀
@@ -250,6 +252,9 @@ export interface BattleEventContext {
   goesFirst?: boolean;
   /** 僅本次命中後入口提供：主技能傷害實際扣除的HP，不含附加傷害。 */
   mainSkillHpReduced?: number;
+  /** 本次固有使用條款已在命中閘門前執行，技能runner不得重播。 */
+  innateSkillUseHandled?: boolean;
+  mainSkillReduction?: import("../battle/damageReductionReceipt").DamageReductionReceipt;
   isEntranceTurn?: boolean;
   currentPhase?: string;
   skill: any;

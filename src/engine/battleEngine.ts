@@ -1,3 +1,4 @@
+import {damageReductionReceipt} from '../battle/damageReductionReceipt';
 import {portableSkillCapabilities,redirectedSelectedSkill} from '../battle/portableSkillMarks';
 // 戰鬥引擎：與 React 無關的回合結算。BattleScreen 只負責輸入與播放。
 // 由 BattleScreen.tsx 抽出（2026-10-10）；節點順序見 ./nodes.ts。
@@ -26,7 +27,7 @@ import { readScopedRegistry, scopedTimers } from '../battle/stateScopes';
 import { actionDefenseIgnore } from '../battle/actionDefenseModifiers';
 import { queueSkillLifesteal } from '../battle/lifesteal';
 import { isRecoveryBlocked, resolveRecoveryEffect } from '../battle/recovery';
-import {blocksOwnSkillRecovery,blocksTimedRecovery} from '../battle/recoveryOrigin';
+import {blocksOwnSkillRecovery,blocksTimedRecovery,withRecoveryOrigin} from '../battle/recoveryOrigin';
 import { Elf, Skill, BattleLog, BattleMode, BattleItem, BattleEffect, StatChange } from "../types";
 import { BattleEventContext, EffectTiming, DamageComputation, PriorityComputation, ActionResultInfo } from "../effects/types";
 import { resolveDamageBlocking } from '../battle/damageBlocking';
@@ -2950,6 +2951,9 @@ case 'switch': {
       }
 
       pushEffect({ type: 'log', side: s, data: { text: `【${displayName}】使用了【${displaySkill}】！`, type: s, sourceCode: `src/effects/${actor.name}Registry.ts:${activeSkill.name}` } });
+      // 固有使用條款在公式快照之後、命中／攻擊免疫之前執行；附加條款仍待命中閘門。
+      if (!retryFailureKind) runSkillBlocks(withRecoveryOrigin(getBattleEventContext(s, true, mIdx),'skill'), 'use', hasSkillHandler(activeSkill.name), false, 'innate');
+      ctx.innateSkillUseHandled = !retryFailureKind;
       if (!retryFailureKind) try { emitSkillUse(getBattleEventContext(s, true, mIdx), getBattleEventContext(oppSide, true, mIdx), activeSkill, false); } catch (e) { console.error("[blocks]", e); }
       const animCategory = activeSkill.category === "屬性" ? "property" : activeSkill.category === "物理" ? "physical" : "special";
       pushEffect({ type: 'animation', side: s, data: { anim: { side: s, category: animCategory, skillName: activeSkill.name, targetSide: s === "p1" ? "p2" : "p1" }, duration: 400 } });
@@ -3032,7 +3036,7 @@ case 'switch': {
         const sourceCtx = getBattleEventContext(s, true, mIdx);
         sourceCtx.skill = activeSkill;
         (sourceCtx as any).additionalEffectsEnabled = false;
-        runSkillBlocks(sourceCtx, "use", hasSkillHandler(activeSkill.name));
+        runSkillBlocks(sourceCtx, "use", hasSkillHandler(activeSkill.name), false, "attached");
       } else if (!addEffectsInvalid && BattleSkillRegistry[activeSkill.name]) {
         BattleSkillRegistry[activeSkill.name](ctx);
       }
@@ -3055,6 +3059,7 @@ case 'switch': {
       (ctx as any).skill = activeSkill;
       
       let mainDamageDealt = 0;
+      let mainReduction:ReturnType<typeof damageReductionReceipt>|undefined;
       let mainSettledDamageForAction = 0;
       let mainIsCrit = false;
       let traced37 = false;
@@ -3370,6 +3375,7 @@ case 'switch': {
             isCrit: dmgRes.isCrit, effectiveness: effectivenessLabel(dmgRes.typeMultiplier), sourceSide: s, skillName: displaySkill });
           break;
         }
+        mainReduction=damageReductionReceipt(damageComp);
         mainHitRef.current = { hpReduced: 0 };
         const ignoreShieldThisAction = !!(damageComp.attackDefenseBypass?.shield || syncStateRef.current[actorRegKey]?.ignoreImmunityAndShield || syncStateRef.current[actorRegKey]?.blkIgnoreShield || syncStateRef.current[actorRegKey]?.ignoreShieldThisAction);
         pushEffect({ type: 'damage', side: oppSide, data: { amount: finalDamage, onSettled: damageComp.afterDamage, popup: true, isCrit: dmgRes.isCrit, label: [dmgRes.isCrit ? "暴擊" : "", hitCount > 1 ? `${hitCount}連擊` : ""].filter(Boolean).join(" "), sourceElfName: currentActor.name, sourceSide:s, sourceBattleId:currentActor.battleId||currentActor.id, skillName: displaySkill, skillPower: activeSkill.power, typeMultiplier: dmgRes.typeMultiplier, damageType: "skill_attack", attackDefenseBypass: damageComp.attackDefenseBypass, reductionPolicy: damageComp.reductionPolicy, ignoreShield: ignoreShieldThisAction, mainSkillHit: true, ledger: { kind: 'skill', label: activeSkill.name } } });
@@ -3483,6 +3489,7 @@ case 'switch': {
         const sourceCtx = getBattleEventContext(s, true, mIdx);
         sourceCtx.skill = activeSkill;
         sourceCtx.mainSkillHpReduced = mainDamageDealt;
+        sourceCtx.mainSkillReduction=mainReduction;
         (sourceCtx as any).additionalEffectsEnabled = false;
         runSkillBlocks(sourceCtx, "after_hit", hasSkillHandler(activeSkill.name));
       }
@@ -3490,6 +3497,7 @@ case 'switch': {
         const ahCtx = getBattleEventContext(s, true, mIdx);
         ahCtx.skill = activeSkill;
         ahCtx.mainSkillHpReduced = mainDamageDealt;
+        ahCtx.mainSkillReduction=mainReduction;
         const hasH = isSkillStone(activeSkill) || hasSkillHandler(activeSkill.name);
         const { unparsedLines } = runSkillBlocks(ahCtx, "after_hit", hasH);
         if (!hasH && unparsedLines.length) {

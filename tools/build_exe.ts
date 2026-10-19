@@ -7,6 +7,7 @@
 //   4. 搬到 dist_release/<APP_NAME><VERSION>/ + 驗證 + 產生更新包 zip
 // 用法：
 //   npx tsx tools/build_exe.ts [--version X.Y.Z | --bump | --keep-version]
+import { createBuildWorkspace, removeBuildWorkspace } from '../scripts/lib/buildWorkspace.mjs';
 import * as fs from "node:fs";
 import * as path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -72,11 +73,13 @@ if (fs.existsSync(path.join(ROOT, ".share_copy"))) {
 }
 
 // 步驟1：乾淨副本
-const shareDir = path.join(ROOT, "..", "SeerSim_share");
+const workspace = createBuildWorkspace(ROOT,'exe');
+const shareDir = path.join(workspace,'source');
+try {
 run(`npx tsx tools/prepare_share.ts --force --src "${ROOT}" --out "${shareDir}"`, ROOT);
 
 // 步驟2：在副本上安裝 + 驗證 + 建置
-run("npm install", shareDir);
+run("npm ci", shareDir);
 run("npm run lint", shareDir);
 run("npm test", shareDir);
 
@@ -85,7 +88,7 @@ run("npm test", shareDir);
 // 真正的安裝包一定要再跑 electron-builder，所以這裡分兩段跑。
 run("npm run build:electron", shareDir);
 // 乾淨副本預設沒有 electron / electron-builder，先補上才打得動
-run("npm install -D electron electron-builder", shareDir);
+// 已由 npm ci 按鎖定版本安裝，不另改依賴版本。
 // Electron 本體約 110MB，GitHub 直連慢時容易 600s 超時。
 // 預設走 npmmirror 鏡像加速，失敗自動重試 3 次；也可用環境變數覆寫。
 if (!process.env.ELECTRON_MIRROR) {
@@ -114,17 +117,7 @@ if (!built) throw lastErr;
 const appName = "賽爾對戰模擬器";
 const outDir = path.join(ROOT, "dist_release", `${appName}${version}`);
 fs.mkdirSync(outDir, { recursive: true });
-const shareDist = path.join(shareDir, "dist");
-const copyRecursive = (src: string, dest: string) => {
-  fs.mkdirSync(dest, { recursive: true });
-  for (const name of fs.readdirSync(src)) {
-    const s = path.join(src, name);
-    const d = path.join(dest, name);
-    const st = fs.statSync(s);
-    if (st.isDirectory()) copyRecursive(s, d);
-    else fs.copyFileSync(s, d);
-  }
-};
+
 // electron-builder 會把安裝包吐到 dist-electron/（已在 yml 用 directories.output 分開，
 // 避免跟 vite 的 dist/ 混在一起自己包自己），全部搬過去
 for (const cand of [path.join(shareDir, "dist-electron"), shareDir]) {
@@ -151,7 +144,7 @@ const info = {
 fs.writeFileSync(path.join(outDir, "打包資訊.json"), JSON.stringify(info, null, 2));
 
 // 步驟5：驗證（對等 SeerBot verify_release）
-const mustDirs = ["dist", "electron"];
+const mustDirs = ["electron"];
 for (const d of mustDirs) mustExist(path.join(ROOT, d), d);
 mustExist(path.join(ROOT, "index.html"), "index.html");
 mustExist(path.join(ROOT, "electron-builder.yml"), "electron-builder.yml");
@@ -159,3 +152,8 @@ const exes = fs.existsSync(outDir) ? fs.readdirSync(outDir).filter((n) => n.ends
 if (!exes.length) throw new Error(`verify failed: no exe in ${outDir}`);
 console.log(`verify ok: ${exes.join(", ")}`);
 console.log(`done: ${outDir}`);
+
+} finally {
+  if(args.includes('--keep-work')) console.log('保留工作副本：'+workspace);
+  else removeBuildWorkspace(ROOT,workspace);
+}

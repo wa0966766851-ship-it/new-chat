@@ -3,6 +3,7 @@
 // - 可被「無視攻擊免疫效果」貫穿。
 // - 次數型：只有實際擋下攻擊時才消耗；被無視或攻擊本身未命中時不消耗。
 // - 與「免疫／抵擋／轉化受到的攻擊傷害」是不同系統（那些在傷害階段處理）。
+import { resourceQueryActive } from './resourceQueryRules';
 import { getElfAdvancedMechanics } from "../data/traitsRegistry";
 
 export type AttackImmunity = { kind: "count" | "turns"; key: string; left: number };
@@ -32,6 +33,7 @@ export function ignoresAttackImmunity(
   opts: { addEffectsInvalid?: boolean; poemChapters?: number } = {}
 ): string | null {
   const r = actorReg || {};
+  if(actor && resourceQueryActive(actor,'ignoreAttackImmunity')) return "持有資源無視攻擊免疫";
   for (const c of clauses(skill?.description)) {
     if (IGNORE_LINE.test(c)) {
       if (c.startsWith("🎯") && opts.addEffectsInvalid) continue;

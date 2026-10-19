@@ -1,20 +1,29 @@
-param(
+﻿param(
   [string]$OutputDir = "release",
-  [switch]$SkipExe
+  [switch]$SkipExe,
+  [switch]$KeepWork
 )
 
 $ErrorActionPreference = "Stop"
 $root = (Resolve-Path (Join-Path $PSScriptRoot "..")).Path
-$out = Join-Path $root $OutputDir
-$stage = Join-Path $out "portable"
+$out = [IO.Path]::GetFullPath((Join-Path $root $OutputDir))
+if (-not $out.StartsWith($root + [IO.Path]::DirectorySeparatorChar, [StringComparison]::OrdinalIgnoreCase)) { throw 'OutputDir must stay inside the project.' }
+for ($candidate = $out; $candidate; $candidate = Split-Path -Parent $candidate) {
+  if ((Test-Path -LiteralPath $candidate) -and ((Get-Item -LiteralPath $candidate -Force).Attributes -band [IO.FileAttributes]::ReparsePoint)) { throw 'OutputDir cannot use directory links.' }
+}
+$work = Join-Path $out ('.work-' + [Guid]::NewGuid().ToString('N'))
+$stage = Join-Path $work "portable"
+$asciiRoot = $null
 
-if (Test-Path -LiteralPath $out) { Remove-Item -LiteralPath $out -Recurse -Force }
+try {
 New-Item -ItemType Directory -Path $stage -Force | Out-Null
 
 Push-Location $root
 try {
   npm run build
+  if ($LASTEXITCODE -ne 0) { throw "Build failed: $LASTEXITCODE" }
   npx esbuild server.ts --bundle --platform=node --format=cjs --packages=bundle --sourcemap --outfile=dist/server.single.cjs
+  if ($LASTEXITCODE -ne 0) { throw "Server bundling failed: $LASTEXITCODE" }
 } finally { Pop-Location }
 
 Copy-Item (Join-Path $root "dist") $stage -Recurse -Force
@@ -30,9 +39,9 @@ Copy-Item (Join-Path $root "packaging\launch-portable.cmd") (Join-Path $stage "l
 Copy-Item (Join-Path $root "packaging\stop-portable.cmd") (Join-Path $stage "stop-portable.cmd") -Force
 
 $zip = Join-Path $out "seer-battle-simulator-portable.zip"
-Compress-Archive -Path (Join-Path $stage "*") -DestinationPath $zip -CompressionLevel Optimal
+Compress-Archive -Path (Join-Path $stage "*") -DestinationPath $zip -CompressionLevel Optimal -Force
 
-$iexpress = Join-Path $out "seer-battle-simulator-portable.sed"
+$iexpress = Join-Path $work "seer-battle-simulator-portable.sed"
 $sed = @"
 [Version]
 Class=IEXPRESS
@@ -55,9 +64,8 @@ SourceFiles0=$stage
 [SourceFiles0]
 "@
 if (-not $SkipExe) {
-  $asciiRoot = Join-Path $env:TEMP "seer_build"
+  $asciiRoot = Join-Path ([IO.Path]::GetTempPath()) ('seer-build-' + [Guid]::NewGuid().ToString('N'))
   $asciiStage = Join-Path $asciiRoot "portable"
-  if (Test-Path -LiteralPath $asciiRoot) { Remove-Item -LiteralPath $asciiRoot -Recurse -Force }
   New-Item -ItemType Directory -Path $asciiStage -Force | Out-Null
   $allFiles = Get-ChildItem -LiteralPath $stage -Recurse -File
   $asciiFiles = @($allFiles | Where-Object {
@@ -115,3 +123,16 @@ $sedFileList
 Write-Host ('Created ZIP: ' + $zip)
 $finalExeMsg = Join-Path $out 'seer-battle-simulator.exe'
 Write-Host ('IExpress output (if available): ' + $finalExeMsg)
+} finally {
+  if (-not $KeepWork) {
+    $resolvedWork = [IO.Path]::GetFullPath($work)
+    if (-not $resolvedWork.StartsWith($out + [IO.Path]::DirectorySeparatorChar, [StringComparison]::OrdinalIgnoreCase)) { throw 'Work cleanup escaped output.' }
+    if (Test-Path -LiteralPath $resolvedWork) { Remove-Item -LiteralPath $resolvedWork -Recurse -Force }
+    if ($asciiRoot) {
+      $tempBase = [IO.Path]::GetFullPath([IO.Path]::GetTempPath()).TrimEnd([IO.Path]::DirectorySeparatorChar)
+      $resolvedAscii = [IO.Path]::GetFullPath($asciiRoot)
+      if (-not $resolvedAscii.StartsWith($tempBase + [IO.Path]::DirectorySeparatorChar, [StringComparison]::OrdinalIgnoreCase) -or (Split-Path -Leaf $resolvedAscii) -notmatch '^seer-build-[0-9a-f]{32}$') { throw 'ASCII cleanup escaped temp.' }
+      if (Test-Path -LiteralPath $resolvedAscii) { Remove-Item -LiteralPath $resolvedAscii -Recurse -Force }
+    }
+  } else { Write-Host ('Work kept: ' + $work) }
+}

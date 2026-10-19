@@ -1,4 +1,5 @@
 import fs from 'node:fs/promises';
+import { assertBuildChild } from './lib/buildWorkspace.mjs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -7,6 +8,8 @@ const destination = path.join(root, 'build', 'electron-app');
 const source = JSON.parse(await fs.readFile(path.join(root, 'package.json'), 'utf8'));
 await fs.access(path.join(root, 'dist', 'server.cjs'));
 await fs.access(path.join(root, 'dist', 'index.html'));
+assertBuildChild(root, destination);
+await fs.rm(destination, { recursive: true, force: true });
 await fs.mkdir(path.join(destination, 'electron'), { recursive: true });
 // A separate runtime package avoids shipping build tools, node_modules and .env.
 // Server dependencies are already included in the isolated, smoke-tested bundle.

@@ -33,7 +33,7 @@ export function createDamageComp<T extends Partial<DamageComputation>>(init: T):
   const add = { total: 0 };
   const incValue = () => tidy([...inc.values()].reduce((p, g) => p * (1 + g), 1) - 1 + add.total);
   const decValue = () => tidy(1 - [...dec.values()].reduce((p, g) => p * (1 - clamp01(g)), 1));
-  const comp: any = { multiplier: 1, ...init };
+  const comp: any = { multiplier: 1, trackReduction:true, multiplierReductionProduct:1, ...init };
   const startInc = Number(comp.increasePercent) || 0, startDec = Number(comp.decreasePercent) || 0;
   delete comp.increasePercent; delete comp.decreasePercent;
   Object.defineProperty(comp, INC, { value: inc, enumerable: false });

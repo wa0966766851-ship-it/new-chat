@@ -57,26 +57,29 @@ export function skillMode(name: string, hasHandler: boolean): "handler" | "block
 }
 
 /** 技能效果（使用時／傷害結算後） */
-export function runSkillBlocks(ctx: BattleEventContext, phase: "use" | "after_hit" | "on_invalid", hasHandler: boolean, invalid = false): { unparsedLines: string[] } {
+export function runSkillBlocks(ctx: BattleEventContext, phase: "use" | "after_hit" | "on_invalid", hasHandler: boolean, invalid = false, role?: "innate" | "attached"): { unparsedLines: string[] } {
   // 失敗入口也涵蓋未命中、閃避、免疫；只有真正技能無效可要求公式重算。
   if (phase === 'on_invalid') ctx = Object.assign(Object.create(ctx), { invalid });
   else if (hasForcedHitEffects(ctx)) ctx = Object.assign(Object.create(ctx), { forcedHitEffects: true });
   const sk = ctx.skill;
+  const useRole = role ?? (ctx.innateSkillUseHandled ? 'attached' : undefined);
   if (!sk) return { unparsedLines: [] };
-  if (phase === 'use' || phase === 'on_invalid') recordConsecutiveUse(ctx);
+  if (useRole !== 'innate' && (phase === 'use' || phase === 'on_invalid')) recordConsecutiveUse(ctx);
   if (usesAuthoredSkill(sk, hasHandler, ctx.self)) {
     const plan = compileEffectPlan(sk, 'skill', hasHandler);
     if (plan.route === 'kit') {
-      runConnectedKit(phase === 'use' ? 'on_skill_use' : phase === 'after_hit' ? 'on_hit' : 'on_invalid', sk, ctx);
+      const definition = phase === 'use' && useRole ? { ...sk, kit: sk.kit?.filter(e => useRole === 'innate' ? e.role === 'innate' : e.role !== 'innate') } : sk;
+      runConnectedKit(phase === 'use' ? 'on_skill_use' : phase === 'after_hit' ? 'on_hit' : 'on_invalid', definition, ctx);
       return { unparsedLines: [] };
     }
+    if (useRole === 'innate') return { unparsedLines: [] };
     if (plan.route === 'registry') return { unparsedLines: [] };
     const program = (ctx as any).additionalEffectsEnabled === false ? { ...plan.program, clauses: plan.program.clauses.filter(c => c.marker === '■' || c.marker === '◇') } : plan.program;
     runSkillProgram(ctx, program, phase);
     if (phase === 'use') for (const issue of plan.issues) ctx.addLog(`【效果待接通】${sk.name}：${issue.text}；${issue.reason}`, 'effect');
     return { unparsedLines: [] };
   }
-  if ((ctx as any).additionalEffectsEnabled === false) return { unparsedLines: [] };
+  if (useRole === 'innate' || (ctx as any).additionalEffectsEnabled === false) return { unparsedLines: [] };
   const mode = skillMode(sk.name, hasHandler);
   if (mode === "handler") return { unparsedLines: [] };
   const prog = getSkillProgram(sk);
