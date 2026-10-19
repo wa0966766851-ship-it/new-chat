@@ -25,9 +25,8 @@ export const CTHYAAT_CLAUSES: KitEntry[] = [
     { acts: [a('vanish_on_death_maxhp_share', { ratio: 0.5, side: 'opp' })] },
   ], 2),
 ];
-registerExtraElfKit('克塔亞特', CTHYAAT_CLAUSES);
-// 雙保險：模組載入順序不同步時，op 端可從全域表取得。
-((globalThis as any).__SEER_EXTRA_ELF_KITS__ ||= {})['克塔亞特'] = CTHYAAT_CLAUSES;
+// 註冊已改由 ops/brinkk.ts 同模組內聯完成（CTHYAAT_SELF_KIT），此處不再重複註冊；
+// 保留 CTHYAAT_CLAUSES 導出供審計與打包深比較。
 
 export const MIGRATED_5007_BRINKK_SOUL_KIT = {
   kind: 'soul' as const,
@@ -61,18 +60,5 @@ export const MIGRATED_5007_BRINKK_SOUL_KIT = {
         a('pp_op', { side: 'self', mode: 'recover', amount: 99 }),
       ] },
     ], 3),
-    // 克塔亞特：己方（＝克塔亞特所在的敵方）精靈每次出戰令其漸凍1回合；未觸發則3回合內非真實傷害減半 n 次
-    e('ally_entered', 'custom', '克塔亞特：己方精靈每次出戰時令其漸凍1回合，未觸發則3回合內造成非真實傷害減半n次（n=本次在場期間所受到真實傷害次數）', [
-      { acts: [a('status', { side: 'opp', status: '漸凍', turns: 1, chance: 100 })] },
-      { chain: 'fail', acts: [a('dmg_mod_turns', { side: 'self', dir: 'out_reduce', kind: '非真實', reduce: 0.5, turns: 3 })] },
-    ], 4),
-    // 克塔亞特：任意戰鬥階段節點結算時額外汲取己方在場精靈當前體力¼
-    e('battle_phase_end', 'phase_end', '克塔亞特：己方精靈任意戰鬥階段節點結算時自身額外汲取己方在場精靈當前體力¼', [
-      { acts: [a('extra_elf_heal_owner', { ratio: 0.25, side: 'opp' })] },
-    ], 5),
-    // 自身死亡時消逝，並令己方所有精靈失去自身當前體力上限⅛
-    e('self_fatal', 'fatal', '克塔亞特：自身死亡時消逝，並令己方所有精靈失去自身當前體力上限⅛的體力上限', [
-      { acts: [a('vanish_on_death_maxhp_share', { ratio: 0.125, side: 'opp' })] },
-    ], 6),
   ],
 };

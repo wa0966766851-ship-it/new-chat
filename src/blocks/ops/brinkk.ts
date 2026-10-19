@@ -12,6 +12,31 @@ type S = 'p1' | 'p2';
 const EXTRA_ELF_KITS = new Map<string, any[]>();
 export function registerExtraElfKit(name: string, kit: any[]): void { EXTRA_ELF_KITS.set(name, kit); }
 export function extraElfKitByName(name: string): any[] | undefined { return EXTRA_ELF_KITS.get(name); }
+
+/**
+ * 克塔亞特（5007 濁的額外精靈）自身條款——定義在 op 同模組，避免模組載入順序問題（DSH 20261020）。
+ * node 對應引擎廣播：ally_entered（隊友出戰）、battle_phase_end、self_fatal。
+ * 己方＝克塔亞特所在陣營（使用者裁定 2026-10-18），故漸凍施加對象為 opp 視角。
+ */
+export const CTHYAAT_SELF_KIT: any[] = [
+  { codeId: 'effect_sequence', source: 'soulmark', role: 'innate', node: 'ally_entered', order: 0,
+    customText: '克塔亞特：己方精靈每次出戰時令其漸凍1回合，未觸發則3回合內造成非真實傷害減半n次（n=本次在場期間所受到真實傷害次數）',
+    params: { clause: { raw: '克塔亞特：己方精靈每次出戰時令其漸凍1回合，未觸發則3回合內造成非真實傷害減半n次', trig: 'ally_entered', parsed: true, body: [
+      { acts: [{ op: 'status', p: { side: 'self', status: '漸凍', turns: 1, chance: 100 } }] },
+    ] } } },
+  { codeId: 'effect_sequence', source: 'soulmark', role: 'innate', node: 'battle_phase_end', order: 1,
+    customText: '克塔亞特：己方精靈任意戰鬥階段節點結算時自身額外汲取己方在場精靈當前體力¼',
+    params: { clause: { raw: '克塔亞特：己方精靈任意戰鬥階段節點結算時自身額外汲取己方在場精靈當前體力¼', trig: 'phase_end', parsed: true, body: [
+      { acts: [{ op: 'extra_elf_heal_owner', p: { ratio: 0.25, side: 'opp' } }] },
+    ] } } },
+  { codeId: 'effect_sequence', source: 'soulmark', role: 'innate', node: 'self_fatal', order: 2,
+    customText: '克塔亞特：被擊敗時將自身最大體力上限的50%平均分給己方存活精靈',
+    params: { clause: { raw: '克塔亞特：被擊敗時將自身最大體力上限的50%平均分給己方存活精靈', trig: 'fatal', parsed: true, body: [
+      { acts: [{ op: 'vanish_on_death_maxhp_share', p: { ratio: 0.5, side: 'opp' } }] },
+    ] } } },
+];
+// 模組載入即註冊（同模組常數，無順序問題）。
+EXTRA_ELF_KITS.set('克塔亞特', CTHYAAT_SELF_KIT);
 const idOf = (e: any) => String(e?.battleId || e?.id || '');
 
 export const BRINKK_ACTION_FIELDS: Record<string, readonly string[]> = {

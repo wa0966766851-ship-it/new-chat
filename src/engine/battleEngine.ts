@@ -1384,13 +1384,17 @@ case 'switch': {
     for (const side of ["p1", "p2"] as const) {
       const team = side === "p1" ? cur.p1Team : cur.p2Team;
       team.forEach(elf => {
+        // DSH 20261020：隊友登場節點（ally_entered）——積木層表達「己方精靈每次出戰時」。
+        // 額外精靈（如克塔亞特）沒有註冊 handler，但有自己的 kit；派發移出 handler 門外。
+        if (elf && (elf as any).kit?.length) {
+          // ctx.self＝該側在場精靈（出戰者）——「令其漸凍」的「其」是出戰者而非持有者；
+          // 持有者資料經 extraData.enteredId 傳遞，讀取端可用 ctx.effectEventData 拿到。
+          const ctx0 = getBattleEventContext(side, false, 0);
+          try { runNode('ally_entered', (elf as any).kit.filter((x: any) => x.source !== 'skill'), CODEX, Object.assign(Object.create(ctx0), { enteredSide, enteredId })); } catch (err) { console.error('[ally_entered]', err); }
+        }
         if (SoulMarkRegistry[elf.name]) {
           const ctx = getBattleEventContext(side, false, 0, elf);
           SoulMarkRegistry[elf.name](ctx, EffectTiming.ELF_ENTERED, { enteredSide, enteredId });
-          // DSH 20261020：隊友登場節點（ally_entered）——積木層表達「己方精靈每次出戰時」。
-          if (elf && (elf as any).kit?.length) {
-            try { runNode('ally_entered', (elf as any).kit.filter((x: any) => x.source !== 'skill'), CODEX, ctx); } catch (err) { console.error('[ally_entered]', err); }
-          }
         }
       });
     }

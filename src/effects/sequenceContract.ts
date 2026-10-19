@@ -302,7 +302,7 @@ export const SEQUENCE_TRIGGERS: Record<string,string> = {
   fatal:'self_fatal',before_status:'before_status_apply',bench:'opponent_entered',team_round_start:'round_start',
   // 能力等級變更前攔截（引擎 contextBuilders.applyStatChange 派發；5035 藍色龍鱗免疫能力下降）。
   before_stat_change:'before_stat_change',
-  use:'on_skill_use', after_hit:'on_hit', on_invalid:'on_invalid', entrance:'on_entered',
+  use:'on_skill_use', after_hit:'on_hit', on_invalid:'on_invalid', entrance:'on_entered', ally_entered:'ally_entered',
   before_action:'before_action', before_skill:'before_skill', modify_priority:'modify_priority',
   battle_start:'battle_start', round_start:'round_start', round_end:'round_end', phase_end:'battle_phase_end',
   kill:'on_kill',not_killed:'on_not_killed', defeated:'cthyaat_death', switch_out:'on_switch_out', damaged:'on_damaged',
