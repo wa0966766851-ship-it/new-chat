@@ -32,7 +32,10 @@ try{
  run([npmCli,'run','build:electron']);
  const require=createRequire(import.meta.url);
  run([require.resolve('electron-builder/cli.js'),'--config','electron-builder.yml','--publish','never']);
- const files=fs.readdirSync(path.join(root,'dist-electron')).filter(n=>n.endsWith('.exe')&&n.includes(`-${version}-`)).map(n=>path.join(root,'dist-electron',n));
+ const files=['','nsis-web'].flatMap(sub=>{
+  const dir=path.join(root,'dist-electron',sub);
+  return fs.existsSync(dir)?fs.readdirSync(dir).filter(n=>n.endsWith('.exe')&&n.includes(`-${version}-`)&&!n.endsWith('.__uninstaller.exe')).map(n=>path.join(dir,n)):[];
+ });
  if(!files.length)throw Error('封裝完成但沒有EXE，保留診斷資訊');
  console.log('EXE ZIP：'+zip(root,files,version));
  succeeded=true;

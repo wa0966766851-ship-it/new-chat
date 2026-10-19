@@ -1,0 +1,70 @@
+{
+  "version": "1.0.2",
+  "generatedAt": "2026-10-19T09:28:55.9317770Z",
+  "sourceCommit": "65a473b2b5b4627260e4e9b3cf528d8d3d09401b",
+  "buildId": "a5bb935cb86d1f0ccaf16c95427cdc3ee3c0290f03c4124faae4d59bac3c17be",
+  "artifacts": [
+    {
+      "path": "dist-electron/賽爾對戰模擬器-1.0.2-portable.exe",
+      "bytes": 182445724,
+      "sha256": "7b3208a7306e7ca1331ed6cf371278bea88098d35282c3705b4303c257bbbfb7",
+      "zipEntryVerified": true
+    },
+    {
+      "path": "dist-electron/賽爾對戰模擬器-1.0.2-win-x64.exe",
+      "bytes": 182783792,
+      "sha256": "eb8f168b729318b59a07e8be55f6e48ed9dae24059ec32d32aa00174b03fba66",
+      "zipEntryVerified": true
+    },
+    {
+      "path": "dist-electron/nsis-web/賽爾對戰模擬器-1.0.2-web-setup.exe",
+      "bytes": 934314,
+      "sha256": "2832e9ed68777042fa2ded68a8626139584aff7084d0619ce36b0781af17aebc",
+      "zipEntryVerified": true
+    }
+  ],
+  "zip": {
+    "path": "dist-electron/seer-battle-simulator-1.0.2-exe.zip",
+    "bytes": 365541794,
+    "sha256": "b1ce72baa3f24f4e782ee728de53759633528911802d198eb4bc8620dd7b253d",
+    "finalExeCount": 3,
+    "contentHashesVerified": true
+  },
+  "verified": [
+    "P1/P2 reader gaps and Blockly round trip",
+    "35 release checks: 34 first-pass plus effectAudit recheck",
+    "test:audit",
+    "typecheck",
+    "build and bundle budget: homepage 705.74 kB",
+    "build workspace cleanup/version/ZIP lifecycle",
+    "bag map/prelude UI with multiple defeated members",
+    "eclipse engine and defeat rules",
+    "P1/P2 sprite facing and actual ElfAvatar DOM",
+    "actual artifact ASAR/source/resource/icon consistency",
+    "all three final EXEs match ZIP entry SHA256"
+  ],
+  "nativeStartupVerified": false,
+  "startupDiagnostics": {
+    "portableExitCode": 2147483651,
+    "unpackedExitCode": 2147483651,
+    "olderElectronBaseline": "44.4.5 minimal sandboxed app also exits 2147483651",
+    "alternateLaunch": "renderer target not found before timeout",
+    "interpretation": "Environment or Chromium sandbox compatibility suspected; not proven. No sandbox disabling shipped.",
+    "note": "Failed/timeout smoke logs remain in build/diagnostics and isolated smoke profiles. No real player saves used."
+  },
+  "humanBattleVerified": false,
+  "websitePublished": false,
+  "githubReleasePublished": false,
+  "semanticAccuracy": null,
+  "cleanupVerified": true,
+  "cleanedIntermediateDirectories": [
+    "build/electron-app",
+    "dist-electron/win-unpacked"
+  ],
+  "diagnosticCopyCleanupBlocked": {
+    "path": "build/electron-compat",
+    "bytes": 385243397,
+    "reason": "Automatic approval review rejected recursive deletion: blocked by policy. Kept without bypass.",
+    "remainingAction": "User may delete this isolated older-Electron diagnostic copy manually."
+  }
+}

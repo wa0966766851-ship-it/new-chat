@@ -21,7 +21,8 @@ export function prepareReleaseVersion(root, keep=false) {
 /** EXE已是壓縮封裝；仍以.NET串流再製作ZIP，避免把數百MB全讀進JS記憶體。 */
 export function zipExecutables(root, files, version) {
   const output=path.join(root,'dist-electron');
-  if(!files.length || files.some(file=>path.dirname(path.resolve(file))!==path.resolve(output)||!path.basename(file).endsWith('.exe')))throw Error('ZIP只接受本次輸出目錄的EXE');
+  const allowed=new Set([path.resolve(output),path.resolve(output,'nsis-web')]);
+  if(!files.length || files.some(file=>!allowed.has(path.dirname(path.resolve(file)))||!path.basename(file).endsWith('.exe')) || new Set(files.map(file=>path.basename(file))).size!==files.length)throw Error('ZIP只接受本次輸出目錄的不同名EXE');
   const destination=path.join(output,`seer-battle-simulator-${version}-exe.zip`), temporary=path.join(output,`.exe-zip-${randomUUID()}.zip`);
   const command=`$ErrorActionPreference='Stop'; Add-Type -AssemblyName System.IO.Compression; Add-Type -AssemblyName System.IO.Compression.FileSystem; $zip=[IO.Compression.ZipFile]::Open($env:SEER_ZIP_TEMP,[IO.Compression.ZipArchiveMode]::Create); try { foreach($file in (ConvertFrom-Json -InputObject $env:SEER_ZIP_FILES)) { [IO.Compression.ZipFileExtensions]::CreateEntryFromFile($zip,$file,[IO.Path]::GetFileName($file),[IO.Compression.CompressionLevel]::Optimal) | Out-Null } } finally { $zip.Dispose() }`;
   try {

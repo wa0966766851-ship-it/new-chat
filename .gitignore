@@ -17,8 +17,6 @@ _asset_backup/
 # 系/ 是屬性圖標（171張約6MB，多為幾KB小圖，僅神秘.電系.png 4MB 例外）
 # 全部跟倉庫走：Codex 與 clone 下來直接有圖，不用等遠端
 # public/seer/ 是官方圖快照，不進版控，靠 SeerAPI 遠端補
-# public/elf-art 是 AI 自繪圖，跟著倉庫走（雷伊、無序三隻）
-# public/elf-art 是 AI 自繪圖，跟著倉庫走（雷伊、無序三隻）
-# public/seer/ 是官方圖快照，不進版控，靠 SeerAPI 遠端補
+# public/elf-art 跟著倉庫走；原有自繪圖與套裝素材並存，官方新素材附 source.json
 launcher/settings.json
 launcher/settings.json.tmp

@@ -43,6 +43,8 @@ try{
    for(const directory of ['build/electron-app','dist-electron/win-unpacked/resources','dist-electron/nsis-web'])fs.mkdirSync(path.join(project,directory),{recursive:true});
    fs.writeFileSync(path.join(project,'dist-electron','old.exe'),'original installer');
    fs.writeFileSync(path.join(project,'dist-electron','sim-1.2.4-portable.exe'),'new executable');
+   fs.writeFileSync(path.join(project,'dist-electron','nsis-web','sim-1.2.4-web-setup.exe'),'web installer');
+   fs.writeFileSync(path.join(project,'dist-electron','nsis-web','sim-1.2.4-web-setup.__uninstaller.exe'),'internal only');
    fs.writeFileSync(path.join(project,'dist-electron','nsis-web','payload.7z'),'required payload');
    fs.writeFileSync(path.join(project,'dist-electron','win-unpacked','resources','resource-slimming.json'),'{}');
    if(outcome==='failure')throw Error('mock failure');
@@ -58,7 +60,7 @@ try{
   if(outcome!=='failure')assert.ok(fs.existsSync(path.join(project,'dist-electron','seer-battle-simulator-1.2.4-exe.zip')));
   if(outcome!=='failure'){
    const files=unzipSync(fs.readFileSync(path.join(project,'dist-electron','seer-battle-simulator-1.2.4-exe.zip')));
-   assert.deepEqual(Object.keys(files),['sim-1.2.4-portable.exe'],'ZIP只收本次版本EXE，舊成品不收進');
+   assert.deepEqual(Object.keys(files),['sim-1.2.4-portable.exe','sim-1.2.4-web-setup.exe'],'ZIP包含本版巢狀網路安裝EXE，排除舊成品與中繼解除安裝器');
    assert.equal(Buffer.from(files['sim-1.2.4-portable.exe']).toString(),'new executable');
   }
   if(outcome==='keep'){cleanupElectronWork(project);assert.equal(fs.existsSync(path.join(project,'dist-electron','win-unpacked')),false);}
