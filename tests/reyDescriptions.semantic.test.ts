@@ -9,7 +9,16 @@ const txt = readFileSync(new URL('../elf_source_files/elf_files/5029_異境神�
 const block = (a: string, b: string) => txt.split(a)[1].split(b)[0].trim();
 assert.equal(OTHERWORLD_REY_SEED.soulMark.description, block('◆ 專屬特性/魂印：異', '---'));
 assert.equal(OTHERWORLD_REY_SEED.alienTraits?.gen2Trait?.description, block('◆ 特質2.0：電氣纏繞', '---'));
-for (const [name, until] of [['神明', '◆ 專屬特質：雷神'], ['雷神', '---']]) {
+// DSH 20261020（使用者裁定）：神降效果歸屬「神明」特質展示。原文排版在雷神區尾部，
+// 故神明描述＝神明原文段＋雷神區內的神降段；雷神描述＝到【神降效果】前。
+{
+  const godHead = block('神明', '◆ 專屬特質：雷神');
+  const sdIdx = txt.indexOf('【神降效果】');
+  const sdEnd = txt.indexOf('---', sdIdx);
+  const godDescend = txt.slice(sdIdx, sdEnd).trim();
+  assert.equal(OTHERWORLD_REY_TEXT.god, godHead + '\n\n' + godDescend);
+}
+for (const [name, until] of [['雷神', '【神降效果】']]) {
   assert.equal(OTHERWORLD_REY_SEED.alienTraits?.exclusiveTraits?.find(t => t.name === name)?.description, block('◆ 專屬特質：' + name, until));
 }
 for (const s of OTHERWORLD_REY_SKILL_LIST) {

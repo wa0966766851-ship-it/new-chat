@@ -41,8 +41,8 @@ test("二代特質與神明、雷神兩個專屬特質完整分開保存", () =>
   assert.match(OTHERWORLD_REY_SEED.alienTraits?.gen2Trait?.description || "", /面板原始值的70%/);
   assert.deepEqual(OTHERWORLD_REY_SEED.alienTraits?.exclusiveTraits?.map((trait) => trait.name), ["神明", "雷神"]);
   assert.match(OTHERWORLD_REY_SEED.alienTraits?.exclusiveTraits?.[0].description || "", /體力歸0時進入「神降」/);
-  assert.match(OTHERWORLD_REY_SEED.alienTraits?.exclusiveTraits?.[1].description || "", /體力下限不再為0/);
-  assert.match(OTHERWORLD_REY_SEED.alienTraits?.exclusiveTraits?.[1].description || "", /神降狀態下場後保留/);
+  assert.match(OTHERWORLD_REY_SEED.alienTraits?.exclusiveTraits?.[0].description || "", /體力下限不再為0/);  // DSH 20261020：神降歸神明特質（使用者裁定）
+  assert.match(OTHERWORLD_REY_SEED.alienTraits?.exclusiveTraits?.[0].description || "", /神降狀態下場後保留/);
 });
 
 test("負血雷伊的延遲技能更新不會覆蓋新上場精靈技能", () => {
