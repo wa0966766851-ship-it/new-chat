@@ -2141,6 +2141,8 @@ case 'switch': {
     return false;
   }, [getBattleEventContext, processQueue, pushEffect]);
 
+    // DSH 20261020：第 1 回合的「回合開始時」在開局（start）派發後，resolveTurn 首輪跳過，防止雙跑。
+  const openingRoundStartDoneRef = { done: false };
   const resolveTurn = stable(async () => {
     if (!battleAliveRef.current) return;
     presentation.setInAction(false); // 回合開始等節點：技能傷害延後
@@ -2277,6 +2279,8 @@ case 'switch': {
 
     // §39-1: Trigger ROUND_START and ENFORCE for all team members
     // 全局規則：回合開始（例：次元龍在場時所有精靈累積詩章）
+    // DSH 20261020：開局已派發首回合 ROUND_START（見 start），此處首輪跳過防雙跑。
+    if (openingRoundStartDoneRef.done) { openingRoundStartDoneRef.done = false; } else {
     for (const rule of battleRules()) rule.roundStart?.(ruleApi, cur);
 
     // 先同時更新雙方的在場計數，再派發任何回合開始事件；避免P1讀到P2上一回合的值。
@@ -2297,6 +2301,7 @@ case 'switch': {
         }
       });
       triggerSuitEffect(side, EffectTiming.ROUND_START);
+    }
     }
 
     const selectedState=syncStateRef.current;
@@ -3851,6 +3856,26 @@ syncStateRef.current = { ...syncStateRef.current, [actorRegKey]: { ...rg, attack
         triggerSuitEffect(side, EffectTiming.ON_ENTRANCE);
         broadcastElfEntered(side, starter.id);
       }
+      // DSH 20261020 修復：第 1 回合的「回合開始時」必須在開局派發（與 resolveTurn 相同的
+      // 全隊 ROUND_START/ENFORCE 廣播＋turnsInBattle 初始化，不含回合結束的狀態 tick）。
+      // 雷伊「回合開始複製強化」、次元龍詩章等首回合觸發由此恢復；resolveTurn 首輪跳過防雙跑。
+      for (const rule of battleRules()) rule.roundStart?.(ruleApi, syncStateRef.current);
+      for (const side0 of ["p1", "p2"] as const) {
+        const cur0 = syncStateRef.current;
+        const fieldCtx0 = getBattleEventContext(side0, false, 0, cur0[side0]);
+        fieldCtx0.setPlayerState(`${side0}_turnsInBattle`, 1);
+        const team0 = side0 === "p1" ? cur0.p1Team : cur0.p2Team;
+        team0.forEach(elf0 => {
+          if (checkElfDead(elf0) && !hasLivingSummonedExtra(team0, elf0)) return;
+          if (SoulMarkRegistry[elf0.name]) {
+            const ctx0 = getBattleEventContext(side0, false, 0, elf0);
+            SoulMarkRegistry[elf0.name](ctx0, EffectTiming.ROUND_START);
+            SoulMarkRegistry[elf0.name](ctx0, EffectTiming.ENFORCE);
+          }
+          triggerSuitEffect(side0, EffectTiming.ROUND_START);
+        });
+      }
+      openingRoundStartDoneRef.done = true;
       await processQueue();
     })();
   };

@@ -37,14 +37,17 @@ try{
       if(t===3){st[side].skills[4].skillRune=undefined;st[other].skills[4].skillRune=undefined;}
       return [t===1?0:1,t===1?0:1];
     }},3);
-    // 引擎回合開始在雙方選招後，第一輪附加不能追溯激活已完成的選招。
+    // DSH 20261020：第 1 回合 ROUND_START 已移至開局（先於選招）——T1 附加符文後，當回合所選槽即激活。
     assert.deepEqual(snapshots[1].self.map((s:any)=>s.skillRune),['ᚨ','ᛉ','ᚱᚷ','ᛇ','ᛖ']);
     assert.deepEqual(snapshots[1].opp.map((s:any)=>s.skillRune),['ᛈ','ᛁ','ᚦᚺ','ᚾ','ᛃ']);
-    assert.ok(snapshots[1].self.every((s:any)=>s.isRuneActive===false));
-    assert.ok(snapshots[1].opp.every((s:any)=>s.isRuneActive===false));
+    assert.ok(snapshots[1].self[0].isRuneActive === true, 'T1 開局附加先於選招，所選槽符文即時激活');
+    assert.ok(snapshots[1].self.slice(1).every((s:any)=>s.isRuneActive===false));
+    assert.ok(snapshots[1].opp[0].isRuneActive === true, '敵方同時序激活');
+    assert.ok(snapshots[1].opp.slice(1).every((s:any)=>s.isRuneActive===false));
     assert.equal(history[1].self.skills[1].isRuneActive,true,'附加後合法選招才激活自身所選槽');
     assert.equal(history[1].opp.skills[1].isRuneActive,true,'敵方所選槽於敵方選招激活');
-    assert.equal(history[1].self.skills[0].isRuneActive,false,'未再次選擇的槽不能提前激活');
+    assert.equal(history[1].self.skills[0].isRuneActive, true, 'T1 已合法激活的符文持續至剝離（DSH 20261020 新時序）');
+    assert.ok(history[1].self.skills.slice(2).every((s:any)=>!s.isRuneActive), '未選擇過的槽不能激活');
     assert.equal(history[2].self.skills[4].skillRune,undefined,'第三回合不補符文');
     assert.equal(history[2].opp.skills[4].skillRune,undefined);
     for(const first of [side,other,undefined])for(const neg of [false,true])assert.equal(evalCond({actor:side,getPlayerState:()=>first} as any,{c:'first_move',p:{neg}} as any,{} as any),!!first&&((first===side)!==neg));
