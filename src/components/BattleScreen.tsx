@@ -20,6 +20,8 @@ export interface BattleContextProps extends BattleState {
   addLog: (text: string, logType?: string) => void;
   trackCodeExec: (side: "p1" | "p2", code: string, metadata: any) => void;
   pushEffect: (effect: EffectItem) => void;
+  /** 雙人同屏：目前由哪一側操作（PVE 恆 p1） */
+  activeControlSide?: "p1" | "p2";
   onSkillSelect: (skill: Skill) => void;
   onSwitchElf: (index: number) => void;
   onUseItem: (item: any) => void;
@@ -175,10 +177,22 @@ export default function BattleScreen(props: BattleScreenProps) {
     dispatch, pushEffect,
     addLog: (text, type) => pushEffect({ type: 'log', side: 'p1', data: { text, type } }),
     trackCodeExec: () => {},
-    onSkillSelect: (skill) => onSkillSelect('p1', skill),
-    onSwitchElf: (index) => onSwitchElf('p1', index),
-    onUseItem: (item) => onUseItem('p1', item)
-  }), [state, presentationVersion]);
+    // 雙人同屏（DSH 20261019）：Context 暴露當前操作側——PVP 依 phase 推導，PVE 恆 p1。
+    activeControlSide: props.battleMode === 'PVP' ? (state.phase === 'p2_select' ? 'p2' : 'p1') : 'p1',
+    // 操作接口保留單側簽名（既有 UI 元件依賴），但依 activeControlSide 分流：
+    onSkillSelect: (skill) => {
+      const side = props.battleMode === 'PVP' && state.phase === 'p2_select' ? 'p2' : 'p1';
+      onSkillSelect(side, skill);
+    },
+    onSwitchElf: (index) => {
+      const side = props.battleMode === 'PVP' && state.phase === 'p2_select' ? 'p2' : 'p1';
+      onSwitchElf(side, index);
+    },
+    onUseItem: (item) => {
+      const side = props.battleMode === 'PVP' && state.phase === 'p2_select' ? 'p2' : 'p1';
+      onUseItem(side, item);
+    }
+  }), [state, presentationVersion, props.battleMode]);
 
   return (
     <BattleContext.Provider value={contextValue}>

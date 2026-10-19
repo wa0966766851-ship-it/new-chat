@@ -111,6 +111,10 @@ const PHASE_LABEL: Record<string, string> = {
   p1_select: "選擇指令", p2_select: "對手選擇", resolving: "結算中",
   forced_switch_p1: "請換人", forced_switch_p2: "對手換人", forced_switch_both: "雙方換人", game_over: "戰鬥結束",
 };
+/** 雙人同屏（DSH 20261019）：PVP 下雙方都是玩家——p2 不是「對手」而是玩家二。 */
+const PHASE_LABEL_PVP: Record<string, string> = {
+  ...PHASE_LABEL, p2_select: "P2 選擇指令", forced_switch_p2: "P2 請換人",
+};
 
 export function BattleScreenUI(props: BattleScreenUIProps) {
   const battle = useContext(BattleContext);
@@ -118,11 +122,22 @@ export function BattleScreenUI(props: BattleScreenUIProps) {
 
   const { 
     p1, p2, p1Team, p2Team, turnNumber, logs, phase, isAutoBattle, 
-    p1ActiveIndex, winner,
+    p1ActiveIndex, p2ActiveIndex, winner,
     p1SelectedSkill, p1LastDamage, p2LastDamage, lastDamage, p1TurnStats, p2TurnStats,
     p1StartHp, p2StartHp, lastActionInfo,
     damageDealt, p1Marks, p2Marks, p1Timers, p2Timers
   } = battle;
+  // 雙人同屏（DSH 20261019）：當前操作側——PVP 依 phase，PVE 恆 p1。
+  const actSide: "p1" | "p2" = props.battleMode === 'PVP' && phase === 'p2_select' ? 'p2' : 'p1';
+  const isLocalPvp = props.battleMode === 'PVP';
+  // 操作側的活體資料（技能列/隊伍/藥劑都讀這組，不再硬編碼 p1）
+  const actElf = actSide === 'p2' ? p2 : p1;
+  const actTeam = actSide === 'p2' ? (p2Team || []) : (p1Team || []);
+  const actActiveIndex = actSide === 'p2' ? p2ActiveIndex : p1ActiveIndex;
+  const actSelectedSkill = actSide === 'p2' ? (battle as any).p2SelectedSkill : p1SelectedSkill;
+  const actInventory = actSide === 'p2' ? (battle as any).p2ItemInventory : (battle as any).p1ItemInventory;
+  const actPhaseSelect = actSide === 'p2' ? 'p2_select' : 'p1_select';
+
   // 隱匿：敵方隱匿精靈的名稱、技能、魂印與特質名稱在所有文字中改為未知。
   const fogTerms = useMemo(() => viewerMaskTerms(p2Team || []), [p2Team]);
   // 本地對戰畫面以 P1 為己方視角：魘味只改顯示，不觸碰戰鬥狀態資料。
@@ -617,19 +632,19 @@ export function BattleScreenUI(props: BattleScreenUIProps) {
                         <div className="w-1 h-4 bg-cyan-500" />
                         <span className="text-xs font-black text-cyan-500 uppercase tracking-widest">點擊精靈頭像以進行切換 (消耗一回合)</span>
                       </div>
-                      <div className="grid grid-cols-[repeat(auto-fill,minmax(130px,1fr))] gap-2.5">
-                        {p1Team.map((elf, idx) => {
+                      <div className="grid grid-cols-[repeat(auto-fill,minmax(130px,1fr))] gap-2.5" data-team-side={actSide}>
+                        {actTeam.map((elf, idx) => {
                           const isExtra = idx >= 6 || !!elf.isExtra;
                           const isDead = !elf || (!isAliveBySurvivalRule(elf.currentHp, elf.survivalRule) && !(elf.deathImmunity && elf.deathImmunity.deathImmuneTurns > 0));
                           const isDeathImmuneActive = !!(elf && elf.currentHp <= 0 && elf.deathImmunity && elf.deathImmunity.deathImmuneTurns > 0);
                           return (
                             <button
-                              key={`p1-team-${idx}-${elf.name}`}
+                              key={`${actSide}-team-${idx}-${elf.name}`}
                               onClick={() => {
                                 if (isExtra) {
-                                  setSelectedElfDetail({ elf, side: "p1", idx });
-                                } else if (phase === "p1_select" || phase.includes("forced_switch")) {
-                                  props.onSwitchElf("p1", idx);
+                                  setSelectedElfDetail({ elf, side: actSide, idx });
+                                } else if (phase === actPhaseSelect || phase.includes("forced_switch")) {
+                                  props.onSwitchElf(actSide, idx);
                                   setTacticalTab("SKILLS");
                                 }
                               }}
@@ -640,9 +655,9 @@ export function BattleScreenUI(props: BattleScreenUIProps) {
                               }}
                               onMouseLeave={() => setHoveredSoulMark(null)}
                               className={`group relative flex items-center gap-2 text-left bg-slate-900/60 border rounded-xl px-2 py-1.5 transition-all cursor-pointer
-                                ${idx === p1ActiveIndex ? 'border-cyan-500 bg-cyan-950/20 shadow-[0_0_15px_rgba(6,182,212,0.1)] opacity-100 grayscale-0' : isExtra ? 'border-amber-500/40 bg-amber-950/10 shadow-[0_0_10px_rgba(245,158,11,0.05)] hover:border-amber-400' : 'border-slate-800 hover:border-slate-600'} 
+                                ${idx === actActiveIndex ? 'border-cyan-500 bg-cyan-950/20 shadow-[0_0_15px_rgba(6,182,212,0.1)] opacity-100 grayscale-0' : isExtra ? 'border-amber-500/40 bg-amber-950/10 shadow-[0_0_10px_rgba(245,158,11,0.05)] hover:border-amber-400' : 'border-slate-800 hover:border-slate-600'} 
                                 ${isDead || elf.isVanished ? 'opacity-40 grayscale' : ''}`}
-                              disabled={!isExtra && (idx === p1ActiveIndex || isDead || (phase !== "p1_select" && !phase.includes("forced_switch")))}
+                              disabled={!isExtra && (idx === actActiveIndex || isDead || (phase !== actPhaseSelect && !phase.includes("forced_switch")))}
                             >
                                <div className="w-10 h-10 shrink-0 rounded-full overflow-hidden border border-cyan-500/40 bg-slate-900"><ElfAvatar elf={elf} battleSide="p1" kind="head" className="w-full h-full object-cover" fallbackClassName="w-full h-full flex items-center justify-center text-xl font-black text-slate-300" /></div>
                                <div className="flex-1 min-w-0 flex flex-col gap-0.5">
@@ -653,7 +668,7 @@ export function BattleScreenUI(props: BattleScreenUIProps) {
                                </div>
                                <span className="text-[9px] font-bold text-slate-400 leading-none truncate" title={`${formatFullNumber(elf.currentHp)}/${formatFullNumber(elf.maxHp)}`}>{formatCompactHud(elf.currentHp)}/{formatCompactHud(elf.maxHp)}</span>
                                </div>
-                               {idx === p1ActiveIndex && (
+                               {idx === actActiveIndex && (
                                  <div className="absolute -top-1 -right-1 px-1.5 py-0.5 bg-cyan-500 text-[8px] font-black text-white rounded rounded-bl-none">出場中</div>
                                )}
                                {isExtra && (
@@ -701,7 +716,7 @@ export function BattleScreenUI(props: BattleScreenUIProps) {
                       </div>
                       <div className="grid grid-cols-[repeat(auto-fill,minmax(190px,1fr))] gap-2">
                         {shownItems.filter(it => itemCat === "all" || getItemCategory(it) === itemCat).map((item, idx) => {
-                          const stock = battle.p1ItemInventory?.[item.id];
+                          const stock = (actInventory ?? (battle as any).p1ItemInventory)?.[item.id];
                           const cat = getItemCategory(item);
                           const tone = cat === "hp" ? "text-emerald-400 border-emerald-500/30 bg-emerald-500/10"
                             : cat === "pp" ? "text-sky-400 border-sky-500/30 bg-sky-500/10"
@@ -711,10 +726,10 @@ export function BattleScreenUI(props: BattleScreenUIProps) {
                           return (
                             <button
                               key={item.id || idx}
-                              onClick={() => { if (item.pickTarget) { setPickingItem(item); return; } props.onUseItem("p1", item as any); setTacticalTab("SKILLS"); }}
+                              onClick={() => { if (item.pickTarget) { setPickingItem(item); return; } props.onUseItem(actSide, item as any); setTacticalTab("SKILLS"); }}
                               title={item.description}
                               className="group flex items-center gap-2.5 bg-slate-900/60 border border-slate-800 hover:border-amber-500/40 rounded-xl px-2.5 py-2 transition-all hover:bg-slate-800 disabled:opacity-40 text-left"
-                              disabled={phase !== "p1_select" || !hasBattleItem(battle.p1ItemInventory, item.id) || (!!props.potionLimit && props.potionLimit.left <= 0 && item.type !== "special")}
+                              disabled={phase !== actPhaseSelect || !hasBattleItem((actInventory ?? (battle as any).p1ItemInventory), item.id) || (!!props.potionLimit && props.potionLimit.left <= 0 && item.type !== "special")}
                             >
                               <div className={`w-8 h-8 shrink-0 rounded-lg flex items-center justify-center border ${tone}`}>
                                 <FlaskConical className="w-4 h-4" />
@@ -1048,29 +1063,31 @@ export function BattleScreenUI(props: BattleScreenUIProps) {
   };
 
   const renderSkillRow = () => {
-    const baseSkills = visibleSkills(p1);
+    // 雙人同屏（DSH 20261019）：依 actSide 渲染當前操作側的技能（PVE 恆 p1，行為不變）。
+    const baseSkills = visibleSkills(actElf);
     const displaySkills = baseSkills.length >= 5 ? [baseSkills[4], baseSkills[0], baseSkills[1], baseSkills[2], baseSkills[3]] : baseSkills;
     return (
-      <div className="grid grid-cols-3 sm:grid-cols-5 gap-1.5 sm:gap-2.5">
+      <div className="grid grid-cols-3 sm:grid-cols-5 gap-1.5 sm:gap-2.5" data-act-side={actSide}>
         {displaySkills.map((skill, i) => {
           const slot = skill.battleSlot!;
-          const original = { ...p1.skills[slot], battleSlot: slot };
+          const original = { ...actElf.skills[slot], battleSlot: slot };
           const isFifth = !!original.isFifthSkill || slot === 4;
           const uses = skill.charge !== undefined ? skill.charge : skill.pp;
-          const disabled = phase !== "p1_select" || original.isAbolished || isElfSkillSelectionDisabled(p1) || (uses <= 0 && !isZeroPpExempt(p1, skill, p2));
-          const selected = skillSlot(p1, p1SelectedSkill) === slot;
-          const hover = p1.illusion && !p1.isInherentInvalid ? { ...skill, name: `${original.name} → ${skill.name}`,
+          const oppForAct = actSide === 'p2' ? p1 : p2;
+          const disabled = phase !== actPhaseSelect || original.isAbolished || isElfSkillSelectionDisabled(actElf) || (uses <= 0 && !isZeroPpExempt(actElf, skill, oppForAct));
+          const selected = skillSlot(actElf, actSelectedSkill) === slot;
+          const hover = actElf.illusion && !actElf.isInherentInvalid ? { ...skill, name: `${original.name} → ${skill.name}`,
             description: `【原技能】${original.name}\n${original.description}\n\n【轉化後】${skill.name}\n${skill.description}` } : skill;
           return (
             <button
               key={i}
               onClick={(e) => {
                 // 手機端：沒有 hover，點已選中的技能彈說明浮窗，再點收起；點未選中的照常選招。
-                if (phase === "p1_select" && selected && hoveredSkill?.battleSlot === slot) {
+                if (phase === actPhaseSelect && selected && hoveredSkill?.battleSlot === slot) {
                   setHoveredSkill(null); setHoveredSkillAnchor(null); return;
                 }
-                if (phase === "p1_select") {
-                  props.onSkillSelect("p1", original);
+                if (phase === actPhaseSelect) {
+                  props.onSkillSelect(actSide, original);
                   // 手機 tap 同步彈說明（無 hover 環境下看得到技能描述）
                   try {
                     const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
@@ -1150,7 +1167,7 @@ export function BattleScreenUI(props: BattleScreenUIProps) {
               </button>
             ))}
             <span className="flex-1 min-w-0 truncate px-2 text-xs bt-muted max-sm:hidden">
-              {phase === "p1_select" ? "請選擇指令" : phase.includes("forced_switch") ? "請選擇出戰精靈" : PHASE_LABEL[phase] || ""}
+              {phase === actPhaseSelect ? (isLocalPvp && actSide === "p2" ? "P2 請選擇指令" : "請選擇指令") : phase.includes("forced_switch") ? (isLocalPvp && (phase === "forced_switch_p2" || phase === "forced_switch_both") ? "P2 請選擇出戰精靈" : "請選擇出戰精靈") : (isLocalPvp ? PHASE_LABEL_PVP[phase] : PHASE_LABEL[phase]) || ""}
             </span>
             <button onClick={() => setLogOpen(v => !v)} className="bt-btn shrink-0" data-active={logOpen} data-log-toggle>{logOpen ? "收起對戰訊息" : "打開對戰訊息"}</button>
             <span className="flex-1 max-sm:hidden" />
