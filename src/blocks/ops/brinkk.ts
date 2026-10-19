@@ -27,7 +27,7 @@ export const CTHYAAT_SELF_KIT: any[] = [
   { codeId: 'effect_sequence', source: 'soulmark', role: 'innate', node: 'battle_phase_end', order: 1,
     customText: '克塔亞特：己方精靈任意戰鬥階段節點結算時自身額外汲取己方在場精靈當前體力¼',
     params: { clause: { raw: '克塔亞特：己方精靈任意戰鬥階段節點結算時自身額外汲取己方在場精靈當前體力¼', trig: 'phase_end', parsed: true, body: [
-      { acts: [{ op: 'extra_elf_heal_owner', p: { ratio: 0.25, side: 'opp' } }] },
+      { acts: [{ op: 'extra_elf_heal_owner', p: { ratio: 0.25, side: 'self' } }] },
     ] } } },
   { codeId: 'effect_sequence', source: 'soulmark', role: 'innate', node: 'self_fatal', order: 2,
     customText: '克塔亞特：被擊敗時將自身最大體力上限的50%平均分給己方存活精靈',
@@ -127,12 +127,18 @@ export function brinkkOperations(helpers: { liveElf: (ctx: BattleEventContext, s
     },
     // 「己方」＝克塔亞特（額外精靈）所在的那一方，不是魂印持有者方。
     extra_elf_heal_owner: (ctx: BattleEventContext, p: any): boolean => {
+      // 己方＝額外精靈所在方（DSH 20261020：side 依發起者視角）。
       const ownerSide: S = p.side === 'self' ? ctx.actor : ctx.targetSide;
       const active = helpers.liveElf(ctx, ownerSide);
       if (!active) return false;
+      // 規格：汲取量＝計算當下的當前體力（非最大體力、非節點開始快照）。
       const amount = Math.floor((Number(active.currentHp) || 0) * p.ratio);
       if (amount <= 0) return false;
       (ctx as any).adjustHp?.(ownerSide, -amount);
+      // 「自身額外汲取」：吸取量回填給發起的額外精靈。
+      const team = ((ctx as any).getFullTeam?.(ownerSide) || []) as any[];
+      const extraSelf = team.find((e: any) => e.isExtra && (ctx.self?.battleId === e.battleId || ctx.self?.id === e.id));
+      if (extraSelf) (ctx as any).updateElf?.(ownerSide, { id: extraSelf.id, currentHp: Math.min(extraSelf.maxHp, (Number(extraSelf.currentHp) || 0) + amount) });
       return true;
     },
     // 「己方」＝克塔亞特所在方。

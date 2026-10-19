@@ -173,7 +173,8 @@ export default function BattleScreen(props: BattleScreenProps) {
     p2: { ...state.p2, currentHp: presentation.hp.get(`p2:${state.p2.battleId || state.p2.id}`) ?? state.p2.currentHp },
     floatingDamagePopups: presentation.popups,
     lastActionInfo: null,
-    consoleShake: { p1: false, p2: false },
+    // DSH 20261020：受擊晃動由播放層 shakeSide 驅動（收尾幀與體變化同幀）。
+    consoleShake: { p1: presentation.shakeSide === 'p1', p2: presentation.shakeSide === 'p2' },
     dispatch, pushEffect,
     addLog: (text, type) => pushEffect({ type: 'log', side: 'p1', data: { text, type } }),
     trackCodeExec: () => {},

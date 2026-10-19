@@ -37,6 +37,8 @@ export class BattlePresentation {
   view: any = null;
   /** 出招動畫（原本寫在 BattleState.activeSkillAnim）。 */
   skillAnim: any = null;
+  /** 受擊晃動側（DSH 20261020 規格：非致命受擊晃動延到收尾與體變化同幀播放）。 */
+  shakeSide: 'p1' | 'p2' | null = null;
   /** 時間軸上尚未播完的段數；> 0 代表畫面還落後於引擎。 */
   private pending = 0;
   get busy() { return this.pending > 0; }
@@ -141,8 +143,10 @@ export class BattlePresentation {
     }
     if (instant) return this.enqueue([{ ...e, channel: e.immediate && e.type === 'heal' ? 'potion' : 'damage' }]);
     this.deferred.push(e);
-    if (fatal && this.inAction) { this.fatalPending = true; return Promise.resolve(); }
-    return fatal ? this.flush() : Promise.resolve();
+    // DSH 20261020（使用者規格）：擊倒當下立即結算顯示——先出手方打死對手時，
+    // 體力淨變化（粉）與真實傷害（白）累計立刻播出，不再等雙方出手收尾。
+    if (fatal) { this.fatalPending = true; return this.flush(); }
+    return Promise.resolve();
   }
   /** 同一收尾節點的體力淨變化（綠／粉）與真實傷害（白）同步播；不重排戰鬥結算。 */
   flush(_chronological = false): Promise<void> {
@@ -220,6 +224,8 @@ export class BattlePresentation {
             this.hp.set(key, fatal ? e.after : e.after > 0 ? Math.min(e.maxHp, Math.max(1, cur + e.delta)) : cur + e.delta);
           }
           if (fatal) this.dead.add(key);
+          // DSH 20261020 规格非美术描述：非致命受击晃动——净变化为负的精灵本帧晃动（skill 红字即播已有攻击表现）。
+          if (!fatal && e.delta < 0 && e.type !== 'skill') this.shakeSide = e.side;
           if (e.silent || !this.visible(e)) continue;
           const id = `presentation_${++this.sequence}`;
           popups.push({ ...e, label: damagePopupLabel(e.label), id,
