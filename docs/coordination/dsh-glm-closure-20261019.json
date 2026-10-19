@@ -1,0 +1,9 @@
+{
+  "model": "our-free-model/z-ai/glm-5.3",
+  "contracts": "session-223fa7f7-5572-46a9-bcf3-d73d31586a93",
+  "mech": "session-e79a5c66-4800-430f-8ac0-d8b5eb56ce89",
+  "contractsModel": "cline/cline-free/muse-spark-1.3-contributor",
+  "mechModel": "cline/cline-free/muse-spark-1.3-contributor",
+  "status": "cancelled-root-integrated",
+  "notes": "子代理交付須正式引擎審核；兩會話均已取消，最終修改由主控整合，未使用付費子模型。"
+}

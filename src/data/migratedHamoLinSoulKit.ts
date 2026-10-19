@@ -30,7 +30,7 @@ export const MIGRATED_HAMO_LIN_SOUL_KIT = {
       {acts:[a('resource_pending_reset',{keys:colouredIds}),...protectScales()]},
       { acts: [a('resource_mark_add', { id: 'hamo_scale_無色', name: '無色龍鱗', displayChar: '鱗', unit: '枚', side: 'self', scope: 'elf', persistsOffField: false, amount: 3, maxCount: 3, description: '無色龍鱗；2回合內免疫龍鱗消失' })] },
     ], 0),
-    entry('before_damage','incoming','對手每次造成技能傷害時，需依水、火、草循環；符合則重複減半並依序染色，不符合則無法造成該傷害、己方龍系能力上限提升20%且減半次數+1',[
+    entry('before_damage','incoming','對手每次造成技能傷害時，需依水、火、草循環；符合則重複減半並依序染色，不符吇則無法造成該傷害、提升己方所有龍系精靈所有能力上限20%且減半次數+1',[
       {acts:[a('typed_damage_cycle',{id:'scale_sequence',types:['水','火','草'],ratio:0.5,initialReductions:1,
         onMatch:[{acts:[a('resource_dye_first',{fromId:'hamo_scale_無色',choices:[
           {id:'hamo_scale_藍色',name:'藍色龍鱗',displayChar:'藍'},
@@ -62,7 +62,7 @@ export const MIGRATED_HAMO_LIN_SOUL_KIT = {
       {cond:[lowHealth(true)],acts:[a('damage_cap_now',{cap:250,types:['skill']})]},
     ],3),
     // 回合開始：無色龍鱗且在場不足2回合→消雙方回合類＋能力提升＋令對手害怕
-    entry('round_start','round_start','無色龍鱗：2回合內免疫龍鱗消失；持有無色龍鱗期間每回合重置保護',[
+    entry('round_start','round_start','無色龍鱗：持有精靈2回合內免疫龍鱗的消失；持有無色龍鱗期間每回合重置保護',[
       {cond:[scale('無色')],acts:protectScales()},
     ],3),
     entry('round_start', 'round_start', '無色龍鱗：回合開始時若本次在場回合數不足累計2回合，消除雙方回合類效果、能力提升狀態並100%令對手害怕', [
