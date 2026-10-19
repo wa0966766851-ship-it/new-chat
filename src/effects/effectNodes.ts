@@ -21,6 +21,7 @@ export const EFFECT_NODES: Record<Node, NodeContract> = {
   opponent_entered:{label:'對手切換登場（自身場下）',phase:'切換與陣亡',trigger:'bench',derived:'對手ON_ENTRANCE通知存活的場下持有者',help:'僅對手換人後觸發，首發登場不算。使用場下持有者上下文，不改在場己方。'},
   battle_start:{label:'戰鬥開始',phase:'開局',trigger:'battle_start',event:EffectTiming.BATTLE_START,help:'開局1.1通知雙方所有存活背包持有者，先於首發登場；換人不重播。'},
   on_entered:{label:'登場',phase:'開局',trigger:'entrance',event:EffectTiming.ON_ENTRANCE,help:'每次登場，不能同時訂閱ELF_ENTERED造成重複。'},
+  ally_entered:{label:'隊友登場',phase:'開局',trigger:'custom',event:EffectTiming.ELF_ENTERED,help:'己方任一精靈登場時觸發（含額外精靈加入）；與 on_entered 互斥，不可同時訂閱。'},
   modify_priority:{label:'先制判定',phase:'選擇與出手',trigger:'custom',event:EffectTiming.MODIFY_PRIORITY,help:'尚未決定出手順序，先制原子僅在此讀取。'},
   modify_power:{label:'攻擊威力計算',phase:'傷害結算',trigger:'outgoing_power',event:EffectTiming.MODIFY_POWER,help:'命中效果結算後、傷害公式前讀取當下印記與威力；攻方與受方分流，並非傷害倍率。'},
   before_action:{label:'出手流程前',phase:'選擇與出手',trigger:'before_action',event:EffectTiming.BEFORE_ACTION,help:'行動方出手流程開始，不代表已命中。'},

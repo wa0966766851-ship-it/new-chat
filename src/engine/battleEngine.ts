@@ -1,4 +1,6 @@
 import {damageReductionReceipt} from '../battle/damageReductionReceipt';
+import { runNode } from '../effects/effectRunner';
+import { CODEX } from '../data/codexRegistry';
 import {portableSkillCapabilities,redirectedSelectedSkill} from '../battle/portableSkillMarks';
 // 戰鬥引擎：與 React 無關的回合結算。BattleScreen 只負責輸入與播放。
 // 由 BattleScreen.tsx 抽出（2026-10-10）；節點順序見 ./nodes.ts。
@@ -1385,6 +1387,10 @@ case 'switch': {
         if (SoulMarkRegistry[elf.name]) {
           const ctx = getBattleEventContext(side, false, 0, elf);
           SoulMarkRegistry[elf.name](ctx, EffectTiming.ELF_ENTERED, { enteredSide, enteredId });
+          // DSH 20261020：隊友登場節點（ally_entered）——積木層表達「己方精靈每次出戰時」。
+          if (elf && (elf as any).kit?.length) {
+            try { runNode('ally_entered', (elf as any).kit.filter((x: any) => x.source !== 'skill'), CODEX, ctx); } catch (err) { console.error('[ally_entered]', err); }
+          }
         }
       });
     }

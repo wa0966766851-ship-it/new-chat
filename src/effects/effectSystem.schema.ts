@@ -17,7 +17,7 @@ export type Node =
   | "on_skill_use" | "on_attacked" | "any_battle_node" | "passive_always" | "modify_priority"
   | "on_invalid" | "before_switch_out" | "on_switch_out" | "opponent_after_action" | "pp_consumed" | "pp_cleared"
   | "extra_action_start" | "extra_action_end" | "before_status_apply" | "opponent_entered"
-  | "on_status_ended" | "on_status_received" | "on_status_immunized" | "before_status_tick" | "on_turn_effects_cleared" | "on_stat_boost_cleared" | "before_stat_change";
+  | "ally_entered" | "on_status_ended" | "on_status_received" | "on_status_immunized" | "before_status_tick" | "on_turn_effects_cleared" | "on_stat_boost_cleared" | "before_stat_change";
 
 // ── 三分類軸(前面談定的)──────────────────────────────────────────────
 export type Role = "innate" | "attached" | "carried";          // ■ 🎯 ◇

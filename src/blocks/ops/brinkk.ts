@@ -4,10 +4,18 @@ import type { BattleEventContext } from '../../effects/types';
 import { createExtraElf } from '../../utils/extraElf';
 
 type S = 'p1' | 'p2';
+
+/**
+ * 額外精靈專屬 Kit 註冊表（DSH 20261020）。
+ * params 無法攜帶 KitEntry 陣列（序列化會丟失），故由資料層註冊、op 執行時按名查找。
+ */
+const EXTRA_ELF_KITS = new Map<string, any[]>();
+export function registerExtraElfKit(name: string, kit: any[]): void { EXTRA_ELF_KITS.set(name, kit); }
+export function extraElfKitByName(name: string): any[] | undefined { return EXTRA_ELF_KITS.get(name); }
 const idOf = (e: any) => String(e?.battleId || e?.id || '');
 
 export const BRINKK_ACTION_FIELDS: Record<string, readonly string[]> = {
-  summon_extra_elf: ['name', 'type', 'statFromTeamRatio', 'side'],
+  summon_extra_elf: ['name', 'type', 'statFromTeamRatio', 'side', 'kit'],
   true_damage_stack: ['key', 'stackStep', 'maxStacks', 'dir', 'kind'],
   off_field_hp_drain: ['ratio', 'key', 'maxStacks'],
   extra_elf_heal_owner: ['ratio', 'side'],
@@ -62,7 +70,10 @@ export function brinkkOperations(helpers: { liveElf: (ctx: BattleEventContext, s
       }, { atk: 0, def: 0, spatk: 0, spdef: 0, speed: 0, hp: 0 });
       const scaled: any = {};
       for (const k of Object.keys(sum)) scaled[k] = Math.max(1, Math.floor(sum[k] * p.statFromTeamRatio));
-      const extra = createExtraElf(base, { name: p.name, type: p.type, calculatedStats: scaled, maxHp: scaled.hp, currentHp: scaled.hp } as any);
+      // DSH 20261020：額外精靈的專屬 Kit 由註冊表按名字取得（Kit 參數無法通過 params 序列化）。
+      const extraKit = extraElfKitByName(p.name);
+      const extra = createExtraElf(base, { name: p.name, type: p.type, calculatedStats: scaled, maxHp: scaled.hp, currentHp: scaled.hp,
+        ...(extraKit?.length ? { kit: extraKit } : {}) } as any);
       (ctx as any).addExtraElf(side, extra);
       (ctx as any).addLog?.('召喚額外精靈：' + p.name, 'effect');
       return true;

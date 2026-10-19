@@ -4,11 +4,30 @@ import type { KitEntry } from '../effects/effectSystem.schema';
 import { action as a, sequence as seq } from './reviewedSequenceSkillKits';
 import type { ReviewedSequenceSkill } from './reviewedSequenceSkillKits';
 import brinkkText from './brinkkSoulText.json';
+import { registerExtraElfKit } from '../blocks/ops/brinkk';
 
 const c = (id: string, p: any, label?: string) => ({ c: id, p, label: label || id });
 const e = (node: KitEntry['node'], trig: string, raw: string, body: any[], order: number): KitEntry => ({
   codeId: 'effect_sequence', source: 'soulmark', role: 'innate', node, order, customText: raw,
   params: { clause: { raw, trig, parsed: true, body } } });
+
+// DSH 20261020：克塔亞特（額外精靈）自己的 Kit——由召喚時明確掛上，
+// 否則 createExtraElf 不繼承召喚者 Kit，其「己方精靈每次出戰令其漸凍」等條款永不執行。
+export const CTHYAAT_CLAUSES: KitEntry[] = [
+  e('ally_entered', 'custom', '克塔亞特：己方精靈每次出戰時令其漸凍1回合，未觸發則3回合內造成非真實傷害減半n次（n=本次在場期間所受到真實傷害次數）', [
+    { acts: [a('status', { side: 'opp', status: '漸凍', turns: 1, chance: 100 })] },
+    { chain: 'fail', acts: [a('dmg_mod_turns', { side: 'self', dir: 'out_reduce', kind: '非真實', reduce: 0.5, turns: 3 })] },
+  ], 0),
+  e('battle_phase_end', 'phase_end', '克塔亞特：己方精靈任意戰鬥階段節點結算時自身額外汲取己方在場精靈當前體力¼', [
+    { acts: [a('extra_elf_heal_owner', { ratio: 0.25, side: 'opp' })] },
+  ], 1),
+  e('self_fatal', 'fatal', '克塔亞特：被擊敗時將自身最大體力上限的50%平均分給己方存活精靈', [
+    { acts: [a('vanish_on_death_maxhp_share', { ratio: 0.5, side: 'opp' })] },
+  ], 2),
+];
+registerExtraElfKit('克塔亞特', CTHYAAT_CLAUSES);
+// 雙保險：模組載入順序不同步時，op 端可從全域表取得。
+((globalThis as any).__SEER_EXTRA_ELF_KITS__ ||= {})['克塔亞特'] = CTHYAAT_CLAUSES;
 
 export const MIGRATED_5007_BRINKK_SOUL_KIT = {
   kind: 'soul' as const,
@@ -43,7 +62,7 @@ export const MIGRATED_5007_BRINKK_SOUL_KIT = {
       ] },
     ], 3),
     // 克塔亞特：己方（＝克塔亞特所在的敵方）精靈每次出戰令其漸凍1回合；未觸發則3回合內非真實傷害減半 n 次
-    e('on_entered', 'entrance', '克塔亞特：己方精靈每次出戰時令其漸凍1回合，未觸發則3回合內造成非真實傷害減半n次（n=本次在場期間所受到真實傷害次數）', [
+    e('ally_entered', 'custom', '克塔亞特：己方精靈每次出戰時令其漸凍1回合，未觸發則3回合內造成非真實傷害減半n次（n=本次在場期間所受到真實傷害次數）', [
       { acts: [a('status', { side: 'opp', status: '漸凍', turns: 1, chance: 100 })] },
       { chain: 'fail', acts: [a('dmg_mod_turns', { side: 'self', dir: 'out_reduce', kind: '非真實', reduce: 0.5, turns: 3 })] },
     ], 4),
