@@ -25,7 +25,7 @@ export const FINAL_ODB_ACTION_FIELDS: Record<string, readonly string[]> = {
   hp_gate_snapshot: ['key', 'ratio', 'latch'],
   hp_gate_clear: ['keys'],
   incoming_health_floor: ['ratio'],
-  consume_current_health: ['side'],
+  consume_current_health: ['side', 'ratio'],
   self_health_damage: ['ratio', 'type'],
   opponent_incoming_floor_turns: ['ratio', 'turns'],
   fatal_survival_window: ['turns', 'cure'],
@@ -81,6 +81,7 @@ export function finalOdbActionIssue(op: string, p: any): string | null {
   if (op === 'hp_gate_clear' && (!Array.isArray(p.keys) || !p.keys.length || p.keys.some((k: any) => typeof k !== 'string' || !k))) return '旗標清理需鍵名清單';
   if (op === 'incoming_health_floor' && !(p.ratio > 0)) return '受傷保底需正體力比例';
   if (op === 'consume_current_health' && !['self', 'opp'].includes(p.side)) return '體力消耗需明確目標';
+  if (op === 'consume_current_health' && p.ratio !== undefined && (!Number.isFinite(p.ratio) || p.ratio <= 0 || p.ratio > 1)) return '目前體力消耗比例需大於0且不超過1';
   if (op === 'self_health_damage' && (!(p.ratio > 0) || !['真實', '百分比', '固定'].includes(p.type))) return '自身體力比例傷害需正比例與傷害分類';
   if (op === 'opponent_incoming_floor_turns' && (!(p.ratio > 0) || !Number.isInteger(p.turns) || p.turns < 1)) return '受傷保底需正比例與回合期限';
   if (op === 'fatal_survival_window' && (!Number.isInteger(p.turns) || p.turns < 1 || typeof p.cure !== 'boolean')) return '存活窗口需正回合與明確是否解除異常';
@@ -226,9 +227,10 @@ export function finalOdbOperations(addTimer: (ctx: BattleEventContext, side: Sid
       if (!comp?.isIncoming || !Number.isFinite(comp.base)) return false;
       comp.floor = Math.max(Number(comp.floor) || 0, Math.floor(ctx.self.maxHp * p.ratio)); return true;
     },
-    consume_current_health(ctx: BattleEventContext, p: any) {
-      const side = sideOf(ctx, p.side), elf = elfOf(ctx, side), amount = Math.max(0, elf.currentHp);
-      ctx.adjustHp(side, -consumedHealthAmount(ctx,amount)); return amount > 0;
+    consume_current_health(ctx: BattleEventContext, p: any, st: RunState) {
+      const side = sideOf(ctx, p.side), elf = elfOf(ctx, side);
+      const amount = Math.min(elf.currentHp, consumedHealthAmount(ctx, Math.floor(Math.max(0, elf.currentHp) * (p.ratio ?? 1))));
+      ctx.adjustHp(side, -amount); st.lastAmount = amount; return amount > 0;
     },
     self_health_damage(ctx: BattleEventContext, p: any) {
       const amount = Math.floor(ctx.self.maxHp * p.ratio);

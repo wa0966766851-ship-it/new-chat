@@ -1,10 +1,10 @@
 {
-  "generatedAt": "2026-10-19T03:54:02.056Z",
+  "generatedAt": "2026-10-19T09:08:28.553Z",
   "tests": [
     {
       "file": "arena12Readiness.semantic",
       "exitCode": 0,
-      "seconds": 19
+      "seconds": 14
     },
     {
       "file": "battleEngine.headless",
@@ -14,167 +14,185 @@
     {
       "file": "damageReduction.semantic",
       "exitCode": 0,
-      "seconds": 47
+      "seconds": 57
     },
     {
       "file": "damageReductionReward.semantic",
       "exitCode": 0,
-      "seconds": 31
+      "seconds": 38
     },
     {
       "file": "effectAudit.semantic",
-      "exitCode": 0,
+      "exitCode": 1,
       "seconds": 1
     },
     {
       "file": "effectConnection.semantic",
       "exitCode": 0,
-      "seconds": 11
+      "seconds": 13
     },
     {
       "file": "elfRegistryModules.semantic",
       "exitCode": 0,
-      "seconds": 7
+      "seconds": 8
     },
     {
       "file": "finalDelu.semantic",
       "exitCode": 0,
-      "seconds": 13
+      "seconds": 19
     },
     {
       "file": "finalExtraTraits.semantic",
       "exitCode": 0,
-      "seconds": 14
+      "seconds": 20
     },
     {
       "file": "finalMarsLanDragon.semantic",
       "exitCode": 0,
-      "seconds": 12
+      "seconds": 18
     },
     {
       "file": "finalRemainingClosure.semantic",
       "exitCode": 0,
-      "seconds": 18
+      "seconds": 19
     },
     {
       "file": "forcedHitEffects.semantic",
       "exitCode": 0,
-      "seconds": 14
+      "seconds": 16
     },
     {
       "file": "hamoFormulaProperties.semantic",
       "exitCode": 0,
-      "seconds": 13
+      "seconds": 16
     },
     {
       "file": "hamoPassiveMode.semantic",
       "exitCode": 0,
-      "seconds": 15
+      "seconds": 17
     },
     {
       "file": "hamoRecalculation.semantic",
       "exitCode": 0,
-      "seconds": 13
+      "seconds": 16
     },
     {
       "file": "hamoRemovedEffects.semantic",
       "exitCode": 0,
-      "seconds": 16
+      "seconds": 19
     },
     {
       "file": "hamoShiyanIntegration.semantic",
       "exitCode": 0,
-      "seconds": 23
+      "seconds": 24
     },
     {
       "file": "marsCharge.semantic",
       "exitCode": 0,
-      "seconds": 24
+      "seconds": 47
     },
     {
       "file": "mechChargeSettlement.semantic",
       "exitCode": 0,
-      "seconds": 13
+      "seconds": 20
     },
     {
       "file": "mechDestroy.semantic",
       "exitCode": 0,
-      "seconds": 14
+      "seconds": 18
     },
     {
       "file": "mechModeTiming.semantic",
       "exitCode": 0,
-      "seconds": 13
+      "seconds": 20
     },
     {
       "file": "mechSpeed.semantic",
       "exitCode": 0,
-      "seconds": 13
+      "seconds": 17
     },
     {
       "file": "mechSupport.semantic",
       "exitCode": 0,
-      "seconds": 13
+      "seconds": 16
     },
     {
       "file": "migrate_5019_pp.semantic",
       "exitCode": 0,
-      "seconds": 12
+      "seconds": 14
     },
     {
       "file": "migrate_5019.semantic",
       "exitCode": 0,
-      "seconds": 19
+      "seconds": 22
     },
     {
       "file": "migrationClosure.semantic",
       "exitCode": 0,
-      "seconds": 15
+      "seconds": 25
     },
     {
       "file": "odinNextSkill.semantic",
       "exitCode": 0,
-      "seconds": 14
+      "seconds": 15
     },
     {
       "file": "portableSkillMarks.semantic",
       "exitCode": 0,
-      "seconds": 15
+      "seconds": 17
     },
     {
       "file": "remainingMechanismCorrections.semantic",
       "exitCode": 0,
-      "seconds": 15
+      "seconds": 17
     },
     {
       "file": "repeatedSkillUse.semantic",
       "exitCode": 0,
-      "seconds": 14
+      "seconds": 17
     },
     {
       "file": "resourceAttackBypass.semantic",
       "exitCode": 0,
-      "seconds": 26
+      "seconds": 28
     },
     {
       "file": "resourceHits.semantic",
       "exitCode": 0,
-      "seconds": 14
+      "seconds": 19
     },
     {
       "file": "resourcePanel.semantic",
       "exitCode": 0,
-      "seconds": 12
+      "seconds": 17
     },
     {
       "file": "storedDamage.semantic",
       "exitCode": 0,
-      "seconds": 13
+      "seconds": 15
     },
     {
       "file": "wuweiTimedSkills.semantic",
       "exitCode": 0,
-      "seconds": 24
+      "seconds": 23
     }
+  ],
+  "rechecks": [
+    {
+      "file": "effectAudit.semantic",
+      "exitCode": 0,
+      "verifiedAt": "2026-10-19T09:14:16.138Z",
+      "command": "node --import tsx tests/effectAudit.semantic.test.ts",
+      "reason": "Replaced stale denominator inequality and pre-migration handler expectations with exact source/route validation."
+    }
+  ],
+  "additionalChecks": [
+    "test:reader-gaps",
+    "test:audit",
+    "test:build-workspace",
+    "battleSpriteFacing.semantic",
+    "eclipseEngine.semantic",
+    "eclipseDefeat.semantic",
+    "eclipseBagSuitSeed.ui"
   ]
 }

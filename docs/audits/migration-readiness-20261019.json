@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "generatedAt": "2026-10-19T03:50:35.356Z",
+  "generatedAt": "2026-10-19T09:12:24.544Z",
   "note": "nonWrappedKitRoutes只是路由分類，不是完整遷移或正確率；flags必須人工查證，不能當錯誤份數。semanticAccuracy=null代表尚無全來源代表性驗收數據。",
   "summary": {
     "definitions": 397,
@@ -137,20 +137,6 @@
           "key": "minimumTypeMultiplierThisAction",
           "text": "■ 攻擊時造成的傷害不會出現微弱（克制關係為微弱時都變成普通）",
           "path": "kit[5].clause.body[0].acts[0]"
-        },
-        {
-          "category": "reader-review",
-          "reason": "持續狀態寫入須另查事件讀取端；本標記不是判定缺失",
-          "key": "yutianPowerBoost",
-          "text": "🎯 技能威力提升150%，後出手效果翻倍",
-          "path": "kit[10].clause.body[0].acts[0]"
-        },
-        {
-          "category": "reader-review",
-          "reason": "持續狀態寫入須另查事件讀取端；本標記不是判定缺失",
-          "key": "yutianPowerBoost",
-          "text": "🎯 技能威力提升150%，後出手效果翻倍",
-          "path": "kit[10].clause.body[1].acts[0]"
         }
       ]
     },
@@ -167,36 +153,6 @@
           "key": "tfHitOver300",
           "text": "本回合未造成高於300的攻擊傷害：特攻、速度各提升1個等級",
           "path": "kit[12].clause.body[1].acts[0]"
-        }
-      ]
-    },
-    {
-      "elfId": "arena_13",
-      "elf": "龍錄天鋒",
-      "name": "鋒毫浸血雨",
-      "route": "kit",
-      "legacyWrapped": false,
-      "flags": [
-        {
-          "category": "reader-review",
-          "reason": "持續狀態寫入須另查事件讀取端；本標記不是判定缺失",
-          "key": "fenghaoBloodRainArmed",
-          "text": "🎯 下 1 回合攻擊命中時，消耗自身目前體力的 1/2，並對對手造成等量百分比傷害",
-          "path": "kit[1].clause.body[0].acts[0]"
-        },
-        {
-          "category": "reader-review",
-          "reason": "持續狀態寫入須另查事件讀取端；本標記不是判定缺失",
-          "key": "fenghaoPressureTurns",
-          "text": "🎯 2 回合內每回合使用技能時，令對手攻擊、特攻、速度各 −1",
-          "path": "kit[3].clause.body[0].acts[0]"
-        },
-        {
-          "category": "reader-review",
-          "reason": "持續狀態寫入須另查事件讀取端；本標記不是判定缺失",
-          "key": "fenghaoPressureFallback",
-          "text": "> 若該回合未觸發，則令對手下 2 回合攻擊技能無效",
-          "path": "kit[4].clause.body[0].acts[0]"
         }
       ]
     },

@@ -46,6 +46,7 @@ export function validateAtomParams(atom: string, p: unknown, path = 'params', de
         const statuses=['status','status_replace','next_entry_status'].includes(action.op)?[action.p.status]:action.op==='convert_status'?[action.p.status,...(action.p.from?[action.p.from]:[])]:action.op==='status_seq'?action.p.list:[];
         for(const status of statuses) if(!StatusRegistry[canonicalStatusName(status)])bad(path,`異常${status}尚未登記`);
         if(['timed','timed_uses','once','watch','at_round_end','next_ally_entry','resource_resolve_pending'].includes(action.op))inspect(action.p.body);
+        if(action.op==='timed'&&action.p.onRoundMiss)inspect(action.p.onRoundMiss);
         if(action.op==='typed_damage_cycle'){inspect(action.p.onMatch);inspect(action.p.onMismatch);}
         if(action.op==='mark_program')for(const rule of action.p.rules){inspect([{cond:rule.cond||[],acts:[]}]);inspect(rule.body);}
       }

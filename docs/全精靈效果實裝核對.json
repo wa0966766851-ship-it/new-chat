@@ -3,12 +3,12 @@
   "note": "parsed ≠ executable route ≠ semantic acceptance",
   "summary": {
     "elves": 43,
-    "sourceRecords": 1709,
+    "sourceRecords": 1707,
     "presentationOnly": 0,
-    "clauses": 1709,
-    "parsed": 1709,
+    "clauses": 1707,
+    "parsed": 1707,
     "unparsed": 0,
-    "pending": 1663,
+    "pending": 1661,
     "partialEvidence": 0,
     "staleEvidence": 46,
     "fullyAccepted": 0
@@ -84635,7 +84635,7 @@
             {
               "index": 10,
               "raw": "🎯 技能威力提升150%，後出手效果翻倍",
-              "trigger": "use",
+              "trigger": "outgoing_power",
               "parsed": true,
               "explanation": false,
               "unresolved": [],
@@ -84647,14 +84647,10 @@
                   {
                     "acts": [
                       {
-                        "label": "turn_key_set",
-                        "op": "turn_key_set",
+                        "label": "power_mod",
+                        "op": "power_mod",
                         "p": {
-                          "reason": "龍神·御天陣",
-                          "label": "威力+300%（後出手）",
-                          "turns": 1,
-                          "side": "self",
-                          "key": "yutianPowerBoost"
+                          "boost": 3
                         }
                       }
                     ],
@@ -84671,14 +84667,10 @@
                   {
                     "acts": [
                       {
-                        "label": "turn_key_set",
-                        "op": "turn_key_set",
+                        "label": "power_mod",
+                        "op": "power_mod",
                         "p": {
-                          "reason": "龍神·御天陣",
-                          "label": "威力+150%",
-                          "turns": 1,
-                          "side": "self",
-                          "key": "yutianPowerBoost"
+                          "boost": 1.5
                         }
                       }
                     ],
@@ -86927,14 +86919,41 @@
                   {
                     "acts": [
                       {
-                        "label": "turn_key_set",
-                        "op": "turn_key_set",
+                        "label": "timed",
+                        "op": "timed",
                         "p": {
-                          "reason": "鋒毫浸血雨",
-                          "label": "下1回合攻擊命中時消耗體力½",
+                          "label": "血雨命中消耗",
                           "turns": 1,
-                          "side": "self",
-                          "key": "fenghaoBloodRainArmed"
+                          "body": [
+                            {
+                              "acts": [
+                                {
+                                  "label": "consume_current_health",
+                                  "op": "consume_current_health",
+                                  "p": {
+                                    "ratio": 0.5,
+                                    "side": "self"
+                                  }
+                                },
+                                {
+                                  "label": "dmg_equal",
+                                  "op": "dmg_equal",
+                                  "p": {
+                                    "type": "百分比"
+                                  }
+                                }
+                              ],
+                              "cond": [
+                                {
+                                  "label": "event_hit",
+                                  "c": "event_hit",
+                                  "p": {}
+                                }
+                              ]
+                            }
+                          ],
+                          "from": "next",
+                          "trig": "self_after_attack"
                         }
                       }
                     ]
@@ -87000,14 +87019,48 @@
                   {
                     "acts": [
                       {
-                        "label": "turn_key_set",
-                        "op": "turn_key_set",
+                        "label": "timed",
+                        "op": "timed",
                         "p": {
-                          "reason": "鋒毫浸血雨",
-                          "label": "2回合內每回合使用技能壓制",
+                          "onRoundMiss": [
+                            {
+                              "acts": [
+                                {
+                                  "label": "invalid_turns",
+                                  "op": "invalid_turns",
+                                  "p": {
+                                    "turns": 2,
+                                    "kind": "攻擊",
+                                    "next": true
+                                  }
+                                }
+                              ]
+                            }
+                          ],
+                          "initial": true,
+                          "label": "血雨壓制",
                           "turns": 2,
-                          "side": "self",
-                          "key": "fenghaoPressureTurns"
+                          "body": [
+                            {
+                              "acts": [
+                                {
+                                  "label": "stat",
+                                  "op": "stat",
+                                  "p": {
+                                    "stats": [
+                                      "攻擊",
+                                      "特攻",
+                                      "速度"
+                                    ],
+                                    "side": "opp",
+                                    "v": -1
+                                  }
+                                }
+                              ]
+                            }
+                          ],
+                          "from": "now",
+                          "trig": "self_skill"
                         }
                       }
                     ]
@@ -87025,46 +87078,8 @@
             },
             {
               "index": 4,
-              "raw": "> 若該回合未觸發，則令對手下 2 回合攻擊技能無效",
-              "trigger": "use",
-              "parsed": true,
-              "explanation": false,
-              "unresolved": [],
-              "damage": null,
-              "semanticVerification": "pending",
-              "blocks": {
-                "conditions": [],
-                "statements": [
-                  {
-                    "acts": [
-                      {
-                        "label": "turn_key_set",
-                        "op": "turn_key_set",
-                        "p": {
-                          "reason": "鋒毫浸血雨",
-                          "label": "未觸發時改為下2回合攻擊技能無效",
-                          "turns": 1,
-                          "side": "self",
-                          "key": "fenghaoPressureFallback"
-                        }
-                      }
-                    ]
-                  }
-                ]
-              },
-              "id": "arena_13:技能:鋒毫浸血雨:3f70dc2fc1c8:1",
-              "presentationOnly": false,
-              "execution": "authored-block-runtime",
-              "textCorrespondence": {
-                "state": "no-matching-txt",
-                "files": []
-              },
-              "evidence": []
-            },
-            {
-              "index": 5,
-              "raw": "🎯 未擊敗對手時令其全屬性 −1",
-              "trigger": "use",
+              "raw": "🎯 未擊敗對手時令其全屬性 −1\n> 未擊敗且對手未受到此全屬性下降效果時，令其 2 回合內無法主動切換精靈",
+              "trigger": "not_killed",
               "parsed": true,
               "explanation": false,
               "unresolved": [],
@@ -87087,31 +87102,9 @@
                         }
                       }
                     ]
-                  }
-                ]
-              },
-              "id": "arena_13:技能:鋒毫浸血雨:7992bf783996:1",
-              "presentationOnly": false,
-              "execution": "authored-block-runtime",
-              "textCorrespondence": {
-                "state": "no-matching-txt",
-                "files": []
-              },
-              "evidence": []
-            },
-            {
-              "index": 6,
-              "raw": "> 未擊敗且對手未受到此全屬性下降效果時，令其 2 回合內無法主動切換精靈",
-              "trigger": "use",
-              "parsed": true,
-              "explanation": false,
-              "unresolved": [],
-              "damage": null,
-              "semanticVerification": "pending",
-              "blocks": {
-                "conditions": [],
-                "statements": [
+                  },
                   {
+                    "chain": "fail",
                     "acts": [
                       {
                         "label": "no_switch",
@@ -87124,7 +87117,7 @@
                   }
                 ]
               },
-              "id": "arena_13:技能:鋒毫浸血雨:d6fffef369e3:1",
+              "id": "arena_13:技能:鋒毫浸血雨:a1eefa4ee8e1:1",
               "presentationOnly": false,
               "execution": "authored-block-runtime",
               "textCorrespondence": {
@@ -87134,9 +87127,9 @@
               "evidence": []
             },
             {
-              "index": 7,
+              "index": 5,
               "raw": "■ 若本技能無效，消除對手回合類效果，並免疫對手下一次攻擊",
-              "trigger": "use",
+              "trigger": "on_invalid",
               "parsed": true,
               "explanation": false,
               "unresolved": [],

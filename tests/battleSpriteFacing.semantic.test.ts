@@ -16,7 +16,7 @@ test("illusion copies the original asset, then faces its own opponent for explic
     ['無序.六刃', '/elf-art/wuxu_liuren_body.png', 'right'],
     ['星光·雷納多', '/seer/body/4937.png', 'left'],
     ['恐懼的化身·咤克斯', '/seer/body/2648.png', 'left'],
-    ['變革·馬爾修斯', '/seer/body/3393.png', 'front'],
+    ['變革·馬爾修斯', '/seer/body/3393.png', 'left'],
     ['未知圖', '/custom/unverified.png', 'front'],
   ] as const) for (const side of ['p1', 'p2'] as const) {
     const stats = { hp: 100, atk: 100, def: 100, spatk: 100, spdef: 100, speed: 100 };
@@ -84,6 +84,7 @@ test("4937 actual ElfAvatar DOM: P1 body flips once, P2 and portraits remain unt
 
 test("known left-facing battle art faces the opponent on both sides", () => {
   const leftFacing = [
+      "變革·馬爾修斯",
     "悲歌.索比拉特",
     "皮特薩拉羅",
     "帝皇之盾",
@@ -126,7 +127,7 @@ test("known left-facing battle art faces the opponent on both sides", () => {
 
 test("front-facing art and unclassified user paths are never mirrored", () => {
   const frontFacing = [
-    "變革·馬爾修斯",
+    "六界神王",
   ];
 
   for (const name of frontFacing) {

@@ -2,11 +2,16 @@
 
 React + Vite + Express + Electron 的賽爾號對戰模擬器：組隊、戰鬥結算、魂印 Registry、Blockly 技能編輯、圖鑑 Codex、桌面打包。
 
-遠端：https://github.com/wa0966766851-ship-it/new-chat.git（分支 `main`）
-版本單一來源：`version.ts`（目前 `1.0.0`，須符合 semver，electron-builder 要用）。
+遠端：https://github.com/wa0966766851-ship-it/new-chat.git。`main`為主線，待驗收修改先保存在`codex/`工作分支。
+版本來源：`version.ts`；同步`package.json`及`package-lock.json`的根版本，保持Electron與更新標記一致。
 入口：`index.html` → `src/main.tsx` → `src/App.tsx`。
 
 現況／稽核／檔案分類從 [文件入口](docs/README.md) 開始；[檔案地圖](docs/PROJECT_STRUCTURE.md) 區分原文、執行程式、生成產物與備份。
+
+- 開發與工具：[維護腳本分類](scripts/README.md)、[測試入口](tests/README.md)
+- 桌面版：[EXE建置與驗收](docs/guides/desktop-packaging.md)
+- 接續工作：[最新交接地圖](docs/coordination/本輪收尾交接_20261019.md)、[整合開發日誌](docs/開發日誌.md)
+- 歷史規劃：[歸檔索引](docs/archive/README.md)
 
 ## 關於本倉庫（給 AI 搜尋的判讀用）
 
@@ -16,7 +21,7 @@ React + Vite + Express + Electron 的賽爾號對戰模擬器：組隊、戰鬥�
 
 ## 系統需求
 
-- Node.js 20+、npm
+- Node.js 24、npm（與網站建置及CI一致）
 - Windows PowerShell（另有 `.bat` 一鍵腳本）
 - 可選：`GEMINI_API_KEY`（沒有也能跑，只是 AI 生成類 API 會停用）
 
@@ -83,7 +88,8 @@ npm start      # node dist/server.cjs
 | `npm run build:exe` / `build:exe-keep` | 產生 exe（前者 `--bump` 升版） |
 | `npm run prepare:share` | 準備分享包（`tools/prepare_share.ts --force`） |
 | `npm run electron:dev` | `build` 後用 `electron/main.cjs` 起桌面殼 |
-| `npm run package:electron` | `electron-builder --config electron-builder.yml`（nsis + portable） |
+| `npm run package:electron` | 建置並封裝安裝版、免安裝版及網路安裝版；自動清理中間副本 |
+| `npm run package:electron:inspect` | 同上，保留中間副本供成品驗收，驗收後再清理 |
 
 Windows 另有：`啟動對戰模擬器.bat`、`停止對戰模擬器.bat`、`Build_EXE.bat`、`rebuild-portable-exe.bat`、`賽爾模擬器一鍵工具.bat`、`setup-env.bat`。
 

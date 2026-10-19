@@ -162,7 +162,7 @@ export const SEQUENCE_ACTION_FIELDS: Record<string, readonly string[]> = {
   clear_shield: ['side','kind'], clear_turn: ['side'],
   invalid_turns: ['kind','turns','next','perMarkTurns'], invalid_next: ['kind','uses','followupRounds','followupSameCategory','timerId'],
   no_heal: ['turns','next','scope','perStageKinds'], no_switch: ['turns','next'],
-  timed: ['turns','from','trig','body','label','initial','once','onExpire','skillKind'],
+  timed: ['turns','from','trig','body','label','initial','once','onExpire','skillKind','onRoundMiss'],
   dmg_mod: ['dir','kind','boost','reduce','perMark'],
   dmg_mod_turns: ['side','dir','kind','boost','reduce','chance','turns','next','lateCompensation','doubleIfAnyStatus'],
   boost: ['mult','power','kind','chance','add','per','perInc','perLastAmount'], ignore: ['what'], no_resist: [],
@@ -337,7 +337,7 @@ function paramsIssue(value: unknown, fields: readonly string[], path: string, nu
     if (['ids','stats','stats2','list','statuses','exclude','fields','phase'].includes(key) && (!Array.isArray(v)||!v.length||v.length>30||v.some(x=>typeof x!=='string'||x.length>200))) return `${path}.${key}需為有限名稱陣列`;
     if (key==='cls' && (typeof v!=='string'||!['','控制類','弱化類','限制類','衍化類','附屬類','非附屬類'].includes(v))) return `${path}.cls異常分類不明`;
     if (['label','text'].includes(key) && (typeof v!=='string'||v.length>100000)) return `${path}.${key}需為有限文字`;
-    if (typeof v === 'object' && !['ids','terms','stats','stats2','list','statuses','exclude','fields','phase','effects','body','bodyLow','bodyHigh','onMatch','onMismatch','choices','onExpire','branches','perStageDown','from','onClose','onBlock','rules','marks','recoveryReduction','incomingDamageReduction','perMark','perMarkTurns','perStage','perStageKinds','perStageLevel','perMarkHits','scaleByMarks','perNonFullPp','keys','sides','types','resources','pool','repeat','fallback'].includes(key)) return `${path}.${key}不接受程式或巢狀行為`;
+    if (typeof v === 'object' && !['ids','terms','stats','stats2','list','statuses','exclude','fields','phase','effects','body','bodyLow','bodyHigh','onMatch','onMismatch','choices','onExpire','onRoundMiss','branches','perStageDown','from','onClose','onBlock','rules','marks','recoveryReduction','incomingDamageReduction','perMark','perMarkTurns','perStage','perStageKinds','perStageLevel','perMarkHits','scaleByMarks','perNonFullPp','keys','sides','types','resources','pool','repeat','fallback'].includes(key)) return `${path}.${key}不接受程式或巢狀行為`;
   }
   return null;
 }
@@ -629,6 +629,11 @@ export function sequenceIssue(value: unknown, node?: string, depth=0, inMark=fal
         if(issue)return `陣形關閉：${issue}`;
       }
       if(act.op==='timed') {
+        if(act.p.onRoundMiss!==undefined){
+          if(act.p.once || !['self_skill','self_attack','self_status'].includes(act.p.trig))return '每回合未成功分支限重複自身使用監控';
+          const missed=sequenceIssue({raw:'本回合未成功',trig:'round_end',parsed:true,body:act.p.onRoundMiss},undefined,depth+1);
+          if(missed)return `本回合未成功：${missed}`;
+        }
         if(act.p.skillKind!==undefined&&!['攻擊','屬性'].includes(act.p.skillKind))return '監控技能類型限攻擊或屬性';
         if(act.p.initial&&act.p.once)return '一次性監控不支援建立時立即觸發';
         if(act.p.initial && (act.p.from==='next'||!['self_skill','self_attack','self_status'].includes(act.p.trig)))return '初次觸發只適用於當回合起的自身使用監控';

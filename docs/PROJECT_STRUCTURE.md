@@ -14,6 +14,7 @@
 | `src/modes/` | 命運之輪、星際探索 | 模式專用結算與庫存，避免混入普通戰 |
 | `elf_source_files/elf_files/` | 使用者TXT原文 | 保留原位置；未命名檔案也須看首行，不只猜檔名 |
 | `docs/audits/` | 模式統計及人工對應的部分語意證據 | 報告可重建，證據不能自動冒充驗收 |
+| `docs/guides/`、`docs/archive/2026-10/` | 現行操作指南、歷史階段報告 | 開發日誌為單一入口；歸檔不刪待驗原文 |
 | `tests/`、`src/tests/` | 語意、正式戰鬥入口、UI、打包回歸 | 指令分類以package.json為準 |
 
 ## 程式與產物
@@ -31,6 +32,7 @@
 | `build/.work/exe-*/source/` | 一次打包專用的乾淨原始碼副本與node_modules；成功／失敗皆清理，`--keep-work`才保留 |
 | `build/electron-app/`、`dist-electron/win-unpacked/` | Electron中繼封裝；正常打包結束清理，檢查模式保留 |
 | `dist-electron/*.exe`、`dist-electron/nsis-web/` | 正式成品及網路安裝必要payload；不得當暫存刪除 |
+| `dist-electron/*-exe.zip` | 本版最後生成的EXE壓縮檔；不含來源或中繼副本 |
 | `dist_release/<版本>/`、`release/*.zip` | 版本工具或舊免安裝流程的正式成品，與中繼副本分開 |
 | `docs/開發日誌.md` | 最新開發紀錄與歷史索引的統一入口；舊原文證據不重複複製 |
 

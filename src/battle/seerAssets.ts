@@ -103,7 +103,8 @@ const BATTLE_SPRITE_FACING: Record<string, SpriteFacing> = {
   [normalizeName("柯爾霍德")]: "left",
   [normalizeName("聖光斯嘉麗")]: "left",
   [normalizeName("混沌·布萊克")]: "left",
-  [normalizeName("變革·馬爾修斯")]: "front",
+  // 已重新查看3393原始全身圖：頭部鼻／眼／口朝畫面左，P1需鏡射。
+  [normalizeName("變革·馬爾修斯")]: "left",
   [normalizeName("人皇·帝辛")]: "left",
   [normalizeName("蟲后·奧佩婭")]: "left",
   [normalizeName("眾神之父·奧丁")]: "left",
@@ -146,7 +147,8 @@ const BODY_SOURCE_FACING: Record<string, SpriteFacing> = {
   "/elf-art/zhakesi_fear_body.png": "right",
   ...Object.fromEntries([10,1204,177,187,2647,2844,303,306,309,3098,3404,343,3432,3456,359,3626,3740,3886,4647,4648,4649,4762,5000,875].map(id => [`/seer/body/${id}.png`, "left" as SpriteFacing])),
   ...Object.fromEntries([300,3539,4586,4643,1536].map(id => [`/seer/body/${id}.png`, "left" as SpriteFacing])),
-  ...Object.fromEntries([3105,3393,4032,2882].map(id => [`/seer/body/${id}.png`, "front" as SpriteFacing])),
+  "/seer/body/3393.png": "left",
+  ...Object.fromEntries([3105,4032,2882].map(id => [`/seer/body/${id}.png`, "front" as SpriteFacing])),
   ...Object.fromEntries([3045].map(id => [`/seer/body/${id}.png`, "front" as SpriteFacing])),
   ...Object.fromEntries([79,418,3809,3561].map(id => [`/seer/body/${id}.png`, "left" as SpriteFacing])),
   // 幻域競技場暫用圖（2026-10-03 使用者確認）：四張皆以朝左處理，P1 鏡射、P2 原圖。

@@ -2,9 +2,10 @@ import assert from 'node:assert/strict';
 import { spawn, execFile } from 'node:child_process';
 import { promisify } from 'node:util';
 import { createServer } from 'node:net';
-import { mkdir, mkdtemp, readFile } from 'node:fs/promises';
+import { mkdir, mkdtemp, readFile, rm } from 'node:fs/promises';
 import { join, resolve } from 'node:path';
 const version = JSON.parse(await readFile('package.json', 'utf8')).version;
+let passed=false;
 const exe = resolve(process.argv[2] || `dist-electron/賽爾對戰模擬器-${version}-portable.exe`);
 async function port() { const s = createServer(); await new Promise(done => s.listen(0, '127.0.0.1', done)); const p = s.address().port; await new Promise(done => s.close(done)); return p; }
 await mkdir(resolve('build'), { recursive: true }); const profile = await mkdtemp(resolve('build/renderer-smoke-'));
@@ -44,8 +45,11 @@ try {
   await until("!!document.querySelector('[data-update-settings]')");
   assert.equal(await evaluate("[...document.querySelectorAll('button')].find(b=>b.textContent==='檢查網站更新').disabled"), true);
   assert.equal(await evaluate("!![...document.querySelectorAll('button')].find(b=>b.textContent==='檢查桌面更新')"), true);
-  console.log(`真正 Electron 畫面：首頁、控制中心、更新分類、IPC 版本、網頁檢查停用、Node 隔離通過。存檔副本：${profile}`);
+  passed=true;
+  console.log('真正 Electron 畫面：首頁、控制中心、更新分類、IPC 版本、網頁檢查停用、Node 隔離通過。');
 } finally {
   socket?.close();
   if (child.pid && child.exitCode === null) await promisify(execFile)('taskkill.exe', ['/PID', String(child.pid), '/T', '/F'], { windowsHide: true });
+  if(passed){assert.ok(profile.startsWith(resolve('build/renderer-smoke-')));await rm(profile,{recursive:true,force:true,maxRetries:5,retryDelay:300});}
+  else console.log(`失敗診斷保留於：${profile}`);
 }

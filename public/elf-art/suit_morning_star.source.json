@@ -1,0 +1,15 @@
+{
+  "suitId": 447,
+  "name": "晨曦之星戰甲",
+  "metadataUrl": "https://api.seerapi.com/v1/suit/447",
+  "equipmentIds": [
+    1301035,
+    1301036,
+    1301037,
+    1301038
+  ],
+  "imageUrl": "https://raw.githubusercontent.com/SeerAPI/seer-unity-assets/main/newseer/assets/art/ui/assets/item/cloth/suiticon/447.png",
+  "retrievedAt": "2026-10-19T09:10:36.115Z",
+  "sha256": "ad29b3c3030f7fab47429ec3b4ae743f563adb0abd54e90ac0cdf9efe252a7a7",
+  "note": "SeerAPI public asset; inspected full suit portrait, no AI generation or redraw."
+}

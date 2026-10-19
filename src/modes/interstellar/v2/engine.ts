@@ -319,16 +319,18 @@ export function bagZoneOf(run: RunV2, id: string): { zone: BagZone; index: numbe
  * - 指定 index 且該位有人 → 兩者交換（跨區亦然，倉庫也可以互換）；
  * - 未指定 index（或超出末端）→ 放到該區末端，區滿則不動；
  * - 同區拖到另一位 → 兩者互換位置；
- * 出戰區至少 1 人、陣亡者不能進出戰區。違規一律回傳原局面。
+ * 出戰區至少 1 人；陣亡者不能從其他區進入出戰區，原本的陣亡者可逐隻換下。
  */
-export function moveBagMember(run: RunV2, id: string, zone: BagZone, index?: number): RunV2 {
-  if (!canEditBag(run)) return run;
+function planBagMove(run: RunV2, id: string, zone: BagZone, index?: number): { lists: Record<BagZone, string[]> } | { issue: string } {
+  if (!canEditBag(run)) return { issue: "目前不能整理背包" };
+  if (!["lineup", "bench", "storage"].includes(zone) || (index !== undefined && (!Number.isInteger(index) || index < 0))) return { issue: "無效的背包位置" };
   const lists = bagLists(run);
-  const from = bagZoneOf(run, id); if (!from) return run;
+  const previousLineup = new Set(lists.lineup);
+  const from = bagZoneOf(run, id); if (!from) return { issue: "找不到精靈" };
   const src = lists[from.zone], dst = lists[zone];
   if (zone === from.zone) {
-    if (zone === "storage" || index === undefined) return run;
-    const j = Math.min(index, dst.length - 1); if (j === from.index || j < 0) return run;
+    if (zone === "storage" || index === undefined) return { issue: "精靈已在此區" };
+    const j = Math.min(index, dst.length - 1); if (j === from.index || j < 0) return { issue: "精靈已在此位置" };
     [dst[from.index], dst[j]] = [dst[j], dst[from.index]];
   } else {
     const occupant = index !== undefined && index < dst.length ? dst[index] : undefined;
@@ -336,9 +338,19 @@ export function moveBagMember(run: RunV2, id: string, zone: BagZone, index?: num
     else { src.splice(from.index, 1); dst.push(id); }
   }
   const byId = new Map(run.team.map(e => [bid(e), e]));
-  if (!lists.lineup.length || lists.lineup.length > lineupSlots(run) || lists.bench.length > benchSlots(run)) return run;
-  if (lists.lineup.some(x => !byId.get(x) || !isAlive(byId.get(x)!))) return run;
-  return { ...run, lineup: lists.lineup, bench: lists.bench };
+  if (!lists.lineup.length) return { issue: "出戰區至少保留一隻精靈" };
+  if (lists.lineup.length > lineupSlots(run) || lists.bench.length > benchSlots(run)) return { issue: "背包位置已滿" };
+  if (lists.lineup.some(x => !byId.get(x) || (!previousLineup.has(x) && !isAlive(byId.get(x)!)))) return { issue: "陣亡者不能進入出戰區，需在星爐復甦" };
+  return { lists };
+}
+/** 更換視窗與拖拉共用相同判定，避免清單可選卻換不成功。 */
+export function bagMoveIssue(run: RunV2, id: string, zone: BagZone, index?: number): string | false {
+  const plan = planBagMove(run, id, zone, index);
+  return "issue" in plan ? plan.issue : false;
+}
+export function moveBagMember(run: RunV2, id: string, zone: BagZone, index?: number): RunV2 {
+  const plan = planBagMove(run, id, zone, index);
+  return "issue" in plan ? run : { ...run, lineup: plan.lists.lineup, bench: plan.lists.bench };
 }
 /** 兩名成員互換位置（拖拉／點選互換用）。 */
 export function swapBagMembers(run: RunV2, a: string, b: string): RunV2 {

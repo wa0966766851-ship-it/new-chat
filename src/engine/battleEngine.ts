@@ -2426,6 +2426,8 @@ case 'switch': {
     if (p1Priority === p2Priority && p1Speed < p2Speed) actors.reverse();
     // 先制與速度皆相同時，被挑戰方優先；未指定或雙方相同則保留原排序。
     if(p1Priority===p2Priority&&p1Speed===p2Speed&&p2Res.tieRole==='challenged'&&p1Res.tieRole!=='challenged')actors.reverse();
+    // 操作階段只按速度排序；技能的先／後出手必須改讀先制與強制先手結算後的正式順序。
+    for (const side of actors) getBattleEventContext(side, true, 0).setPlayerState('blkFirstMoverThisRound', actors[0]);
 
     // ── 出手流程結束（含選擇技能因故未能出手）：ACTION_END 與額外行動
     const endOfAction = async (side: "p1" | "p2", idx: number) => {

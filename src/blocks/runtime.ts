@@ -1187,7 +1187,9 @@ export const OPS: Record<string, OpFn> = {
     p={...p,turns};
     // 「下N回合…技能無效」：附加當回合不啟用，下回合起 N 回合（回合類效果，可被消除）
     if (p.next) {
-      addBlockTimer(ctx, ctx.targetSide, `${p.kind || ""}技能無效`, p.turns, "turns", { invalid: p.kind || "all" }, true, isSkillCtx(st) ? "turn_effect" : "round_counter");
+      // ROUND_END通知在本輪timer扣減之後；此處再設pending會整整晚一回合才啟用。
+      const afterTick=st.event?.trig==='round_end';
+      addBlockTimer(ctx, ctx.targetSide, `${p.kind || ""}技能無效`, p.turns, "turns", { invalid: p.kind || "all" }, !afterTick, isSkillCtx(st) ? "turn_effect" : "round_counter", afterTick);
       ctx.addLog(`🚫 下 ${p.turns} 回合對手${p.kind}技能無效！`, "effect");
       return true;
     }
@@ -1590,7 +1592,7 @@ export const OPS: Record<string, OpFn> = {
     // 「N回合內」包含啟動當回合，即使該回合的監控事件已經過去也不補一回合。
     // 起算與事件獨立：self_attack／opp_attack／round_start都不能因後手而變N+1。
     const thisTurnCounts = p.from !== 'next';
-    const payload={ trig: p.trig, body: p.body,sourceKind:st.sourceKind,...(p.skillKind?{skillKind:p.skillKind}:{}),...(p.once?{once:true}:{}),...(p.onExpire?{expireBody:p.onExpire}:{}) };
+    const payload={ trig: p.trig, body: p.body,sourceKind:st.sourceKind,...(p.skillKind?{skillKind:p.skillKind}:{}),...(p.once?{once:true}:{}),...(p.onExpire?{expireBody:p.onExpire}:{}),...(p.onRoundMiss?{roundMissBody:p.onRoundMiss}:{}) };
     const timerId=`blk_${ctx.actor}_${ctx.skill?.name || ctx.self?.name || 'src'}_${p.label||'持續效果'}_${p.trig}${timerProgramIdentity(payload)}`;
     const firedKey=`blockTimerFired:${timerId}`;
     const firedThisAction=ctx.actionId!==undefined&&ctx.getPlayerState(firedKey)===ctx.actionId;
@@ -1600,6 +1602,7 @@ export const OPS: Record<string, OpFn> = {
       if(ctx.actionId!==undefined)ctx.setPlayerState(firedKey,ctx.actionId);
       const frame:RunState={last:null,lastAmount:0,sourceKind:st.sourceKind,event:{trig:p.trig,data:{skill:ctx.skill}}};
       runStmts(ctx,p.body,frame);
+      if(p.onRoundMiss && frame.last===true)ctx.setPlayerState(`blockTimerSuccess:${timerId}`,ctx.roundNumber??0);
     }
     return true;
   },
@@ -1931,7 +1934,13 @@ export function runSideTimers(baseCtx: BattleEventContext, trigs: Trigger[], dat
       if (b.once)for(let count=0;count<t.remaining;count++)ctx.consumeTimer?.(ctx.actor,t.id);
       else if(b.consumeOnFire)ctx.consumeTimer?.(ctx.actor,t.id);
       runStmts(ctx, b.body || [], st);
+      if(b.roundMissBody && st.last===true)ctx.setPlayerState(`blockTimerSuccess:${t.id}`,ctx.roundNumber??0);
       fired=true;
+    }
+    // 同一回合沒有成功執行監控內容（含未能使用技能），於回合末執行一次後備分支。
+    if(b.roundMissBody && trigs.includes('round_end') && ctx.getPlayerState(`blockTimerSuccess:${t.id}`)!==(ctx.roundNumber??0) && ctx.getPlayerState(`blockTimerMiss:${t.id}`)!==(ctx.roundNumber??0)){
+      ctx.setPlayerState(`blockTimerMiss:${t.id}`,ctx.roundNumber??0);
+      runStmts(ctx,b.roundMissBody,{last:null,lastAmount:0,sourceKind:b.sourceKind||'skill',event:{trig:'round_end',data}});
     }
     // 自然到期分支只在真正扣最後一回合前执行；消除、下場與待啟用不是到期。
     if(!fired&&b.expireBody&&trigs.includes('round_end')&&t.remaining===1&&!t.lateMoverPending&&t.tickAt==='round_end'){

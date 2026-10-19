@@ -2,7 +2,7 @@
 // 舊 handler：src/effects/elves/hamo/registry.ts HAMO_SKILLS['龍神·御天陣'] 已空殼化；
 // 其屬性層效果（無視傷害限制／攻擊免疫／最低克制倍率）原由 HAMO_SKILL_TRANSFORMS 承擔，
 // 本批以通用 ignore{what} 條款表達；威力+150%（後出手翻倍）原由 HAMO_DAMAGE_TRANSFORMS 承擔，
-// 以 turn_key_set＋dmg_mod_turns 表達。
+// 以 modify_power 查詢與通用 power_mod 表達，讀取實際優先序決定的先後手。
 import type { KitEntry } from '../effects/effectSystem.schema';
 import { action as a, property as prop, sequence as seq } from './reviewedSequenceSkillKits';
 import type { ReviewedSequenceSkill } from './reviewedSequenceSkillKits';
@@ -54,12 +54,12 @@ export const MIGRATED_HAMO_YUTIANZHEN_SKILL_KIT: ReviewedSequenceSkill[] = [{
       ] },
     ], 9),
     // 技能威力提升150%，後出手效果翻倍
-    seq('🎯 技能威力提升150%，後出手效果翻倍', [
+    entry('modify_power', 'outgoing_power', '🎯 技能威力提升150%，後出手效果翻倍', [
       { cond: [c('first_move', { neg: true }, '後出手')], acts: [
-        a('turn_key_set', { key: 'yutianPowerBoost', turns: 1, side: 'self', reason: '龍神·御天陣', label: '威力+300%（後出手）' }),
+        a('power_mod', { boost: 3 }),
       ] },
       { cond: [c('first_move', {}, '先出手')], acts: [
-        a('turn_key_set', { key: 'yutianPowerBoost', turns: 1, side: 'self', reason: '龍神·御天陣', label: '威力+150%' }),
+        a('power_mod', { boost: 1.5 }),
       ] },
     ], 10),
   ],

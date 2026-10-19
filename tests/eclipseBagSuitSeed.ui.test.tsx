@@ -1,5 +1,7 @@
 import assert from 'node:assert/strict';
 import { JSDOM } from 'jsdom';
+import { readFileSync } from 'node:fs';
+import { createHash } from 'node:crypto';
 import React, { act } from 'react';
 const dom = new JSDOM('<div id="root"></div>', { url: 'http://localhost/' });
 Object.assign(globalThis, { window: dom.window, document: dom.window.document, localStorage: dom.window.localStorage, sessionStorage: dom.window.sessionStorage,
@@ -42,6 +44,30 @@ const mount = async (el: React.ReactElement) => { await act(async () => root.ren
 const slot = (id: string) => q(`[data-member="${id}"]`);
 
 try {
+  // 部分戰敗後仍能逐隻換下：另一格陣亡不能阻止倉庫整理或替換。
+  for (const sceneKind of ['map', 'prelude'] as const) {
+    localStorage.clear();
+    const base = seededRun(sceneKind);
+    const fallen = E.bagLists(base).lineup.slice(0, 2);
+    const seeded = { ...base, team: base.team.map(e => fallen.includes(E.bagIdOf(e)) ? { ...e, currentHp: 0 } : e) };
+    localStorage.setItem(E.RUN_KEY_V2, JSON.stringify(seeded));
+    await mount(React.createElement(Run, runProps));
+    await click(button(/^隊伍/));
+    await click(qa(`[data-member="${fallen[0]}"] button`).find(b => b.textContent === '更換'));
+    const dlg = q('[role=dialog][aria-label=更換精靈]')!;
+    const replacement = seeded.team.find(e => e.battleId === 'st-0')!;
+    const pick = [...dlg.querySelectorAll('button')].find(b => b.textContent!.includes(replacement.name!));
+    assert.ok(pick && !pick.disabled, '另一格陣亡時倉庫存活者仍可選');
+    await click(pick);
+    assert.equal(E.bagLists(stored()).lineup[0], 'st-0');
+    assert.ok(E.bagLists(stored()).lineup.includes(fallen[1]), '尚未更換的陣亡者仍在原格');
+    await click(qa('[data-member="st-2"] button').find(b => b.textContent === '放入背包'));
+    assert.ok(E.bagLists(stored()).bench.includes('st-2'), '出戰有陣亡者仍可整理待命與倉庫');
+    await fire(slot('st-1')!, 'dragstart'); await fire(slot(fallen[1])!, 'dragover'); await fire(slot(fallen[1])!, 'drop');
+    assert.equal(E.bagLists(stored()).lineup[1], 'st-1', '第二隻陣亡者亦可拖拉換下');
+    assert.ok(fallen.every(id => E.bagLists(stored()).storage.includes(id)));
+    assert.ok(stored().team.filter(e => fallen.includes(E.bagIdOf(e))).every(e => e.currentHp === 0), '換人不復活或重設體力');
+  }
   // ───────── 背包／倉庫（迎戰前也可存取）
   for (const sceneKind of ['map', 'prelude'] as const) {
     localStorage.clear(); const seeded = seededRun(sceneKind); localStorage.setItem(E.RUN_KEY_V2, JSON.stringify(seeded));
@@ -90,6 +116,13 @@ try {
   await mount(React.createElement(Hub, hubProps));
   await click(button('啟程'), '啟程'); await until(() => !!q('[data-testid=suit-rail]'), '套裝頁');
   const cards = qa('[role=option][data-suit]'); assert.equal(cards.length, Object.keys(SUIT_CATALOG).length, '每個套裝一張卡');
+  const morningPortrait = q<HTMLImageElement>('[data-suit="morning_star"] img')!;
+  assert.equal(morningPortrait.getAttribute('src'), '/elf-art/suit_morning_star.png');
+  const portrait = readFileSync('public/elf-art/suit_morning_star.png');
+  assert.equal(portrait.subarray(1, 4).toString(), 'PNG');
+  const provenance = JSON.parse(readFileSync('public/elf-art/suit_morning_star.source.json', 'utf8'));
+  assert.equal(provenance.suitId, 447);
+  assert.equal(createHash('sha256').update(portrait).digest('hex'), provenance.sha256, '官方素材須與來源回執一致');
   assert.ok(cards.every(c => c.textContent!.includes('CORRIDOR PERK') || c.textContent!.includes('Corridor Perk') || /✦/.test(c.textContent!)), '每張卡顯示回廊特權');
   assert.equal(cards.filter(c => c.getAttribute('aria-selected') === 'true').length, 1);
   const sel0 = cards.find(c => c.getAttribute('aria-selected') === 'true')!.dataset.suit;

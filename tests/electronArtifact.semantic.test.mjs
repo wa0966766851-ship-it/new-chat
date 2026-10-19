@@ -10,12 +10,12 @@ const version = JSON.parse(await fs.readFile('package.json', 'utf8')).version;
 const archive = path.join(resources, 'app.asar');
 const entries = asar.listPackage(archive).map(name => name.replaceAll('\\', '/')).sort();
 assert.deepEqual(entries, [
-  '/electron', '/electron/main.cjs', '/electron/preload.cjs',
+  '/electron', '/electron/desktopShortcut.cjs', '/electron/main.cjs', '/electron/preload.cjs',
   '/electron/serverProcess.cjs', '/electron/update', '/electron/update/releaseClient.cjs',
   '/electron/update/updateService.cjs', '/package.json',
 ]);
 assert.deepEqual(JSON.parse(asar.extractFile(archive, 'package.json').toString()).dependencies, {});
-for (const file of ['main.cjs', 'preload.cjs', 'serverProcess.cjs']) {
+for (const file of ['main.cjs', 'preload.cjs', 'serverProcess.cjs', 'desktopShortcut.cjs']) {
   assert.equal(asar.extractFile(archive, `electron/${file}`).toString(),
     await fs.readFile(path.join('electron', file), 'utf8'), `不得打包舊版 ${file}`);
 }

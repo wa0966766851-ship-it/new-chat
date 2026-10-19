@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { spawn, execFile } from 'node:child_process';
 import { promisify } from 'node:util';
 import { createServer } from 'node:net';
-import { mkdir, mkdtemp, readFile, writeFile } from 'node:fs/promises';
+import { mkdir, mkdtemp, readFile, writeFile, rm } from 'node:fs/promises';
 import { resolve, join } from 'node:path';
 
 assert.equal(process.platform, 'win32', '此驗收僅適用 Windows EXE');
@@ -24,6 +24,7 @@ const child = spawn(executable, [], { env, windowsHide: true, stdio: ['ignore', 
 child.stdout.on('data', data => { logs += data.toString(); });
 child.stderr.on('data', data => { logs += data.toString(); });
 let spawnError;
+let passed=false;
 child.once('error', error => { spawnError = error; });
 try {
   const url = `http://127.0.0.1:${port}`;
@@ -47,6 +48,7 @@ try {
   assert.ok(asset, '首頁需載入正式 JavaScript');
   assert.equal((await fetch(new URL(asset[1], url))).status, 200);
   assert.ok((await fetch(`${url}/api/ai-status`)).ok);
+  passed=true;
   console.log(`免安裝 EXE 已實際啟動：首頁、正式資源、版本與無金鑰 API 通過（${url}）。`);
 } finally {
   await writeFile(join(profile, 'smoke.log'), logs);
@@ -54,5 +56,6 @@ try {
   if (child.pid && child.exitCode === null) {
     await promisify(execFile)('taskkill.exe', ['/PID', String(child.pid), '/T', '/F'], { windowsHide: true });
   }
-  console.log(`本次測試存檔與日誌留在：${profile}`);
+  if(passed){assert.ok(profile.startsWith(resolve('build')+'\\portable-smoke-'));await rm(profile,{recursive:true,force:true,maxRetries:5,retryDelay:300});}
+  else console.log(`失敗診斷保留於：${profile}`);
 }

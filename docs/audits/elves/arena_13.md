@@ -31,9 +31,7 @@ TXT來源：未找到ID／名稱精確匹配的TXT，須核對嵌入資料或另
 | 🎯 下 1 回合攻擊命中時，消耗自身目前體力的 1/2，並對對手造成等量百分比傷害 | 已解析／authored-block-runtime | 待核對 | 缺精確TXT來源 |
 | 🎯 2 回合內令對手使用的屬性技能無效 | 已解析／authored-block-runtime | 待核對 | 缺精確TXT來源 |
 | 🎯 2 回合內每回合使用技能時，令對手攻擊、特攻、速度各 −1 | 已解析／authored-block-runtime | 待核對 | 缺精確TXT來源 |
-| > 若該回合未觸發，則令對手下 2 回合攻擊技能無效 | 已解析／authored-block-runtime | 待核對 | 缺精確TXT來源 |
-| 🎯 未擊敗對手時令其全屬性 −1 | 已解析／authored-block-runtime | 待核對 | 缺精確TXT來源 |
-| > 未擊敗且對手未受到此全屬性下降效果時，令其 2 回合內無法主動切換精靈 | 已解析／authored-block-runtime | 待核對 | 缺精確TXT來源 |
+| 🎯 未擊敗對手時令其全屬性 −1 > 未擊敗且對手未受到此全屬性下降效果時，令其 2 回合內無法主動切換精靈 | 已解析／authored-block-runtime | 待核對 | 缺精確TXT來源 |
 | ■ 若本技能無效，消除對手回合類效果，並免疫對手下一次攻擊 | 已解析／authored-block-runtime | 待核對 | 缺精確TXT來源 |
 
 

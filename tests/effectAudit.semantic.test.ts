@@ -3,8 +3,9 @@ import { mkdtempSync, readFileSync, writeFileSync, rmSync, mkdirSync } from 'nod
 import { tmpdir } from 'node:os';
 import { resolve } from 'node:path';
 import { clauseIdentity, clauseExecution, digest, evidenceState, findTextSources, normalizeSourceText, isPresentationOnly, type AuditEvidence } from '../scripts/lib/effectAudit';
-import {MIGRATED_SEQUENCE_SKILL_KITS} from '../src/data/migratedSequenceSkillKits';
+import { applyReviewedSkillKits } from '../src/data/reviewedSkillKits';
 import {isLegacyWrappedKit} from '../src/blocks/ops/legacyHandler';
+import { REVIEWED_SOUL_KITS } from '../src/data/reviewedSoulKits';
 
 let checks = 0;
 function check(name: string, run: () => void) { run(); checks++; console.log('✓ ' + name); }
@@ -81,19 +82,25 @@ check('逐句統計與模式統計不同分母，部分測試證據不得變成�
   assert.equal(s.sourceRecords - s.presentationOnly, s.clauses);
   assert.equal(s.pending + s.partialEvidence + s.staleEvidence, s.clauses);
   assert.equal(s.fullyAccepted, 0);
-  assert.ok(s.clauses > blocks.summary.total.total);
+  // Kit 遷移後兩份報告可能恰好涵蓋相同效果；不能以分母必須較大判斷治理正確性。
+  const clauses = report.elves.flatMap((e: any) => e.entries).flatMap((e: any) => e.clauses);
+  assert.equal(s.clauses, clauses.filter((c: any) => !c.explanation && !c.presentationOnly).length);
+  assert.equal(blocks.summary.total.total, blocks.summary.skills.total + blocks.summary.souls.total);
+  assert.equal(blocks.summary.total.nonPresentationTotal, blocks.summary.total.total - blocks.summary.total.presentationOnly);
   assert.deepEqual(blocks.summary.explicitModes, { allBlockSkills: 30, hybridSkills: 2, allBlockSouls: 6, hybridSouls: 0 });
   assert.ok(report.elves.flatMap((e: any) => e.entries).flatMap((e: any) => e.clauses).filter((c: any) => !c.parsed).every((c: any) => c.raw && c.id));
 });
 check('競技場五隻依整份已登記圖紙區分Kit與專屬入口，不誤記成generic或自動積木', () => {
   assert.equal(report.elves.filter((e:any)=>e.id.startsWith('arena_')).length,5);
   for (const e of report.elves.filter((e: any) => e.id.startsWith('arena_'))) {
-    // arena_13 龍錄天鋒魂印已遷真 Kit（migratedArena13SoulKit；DSH 20261017）——唯一例外。
-    // arena_13／arena_15 魂印已遷真 Kit（migratedArena13SoulKit／migratedMoiraiSoulKit；DSH 20261018）。
-    assert.equal(e.entries.find((x: any) => x.kind === '魂印').route, ['arena_13', 'arena_15'].includes(e.id) ? 'kit' : 'handler');
+    const soul = e.entries.find((x: any) => x.kind === '魂印');
+    const authoredSoul = REVIEWED_SOUL_KITS.find(d => d.elfIds.includes(e.id) && d.name === soul.name && d.description === soul.sourceText);
+    assert.ok(authoredSoul && authoredSoul.kit.length && !isLegacyWrappedKit(authoredSoul.kit), `${e.id} 須有原文吻合的完整魂印圖紙`);
+    assert.equal(soul.route, 'kit', `${e.id} 魂印不得回退 handler`);
     for(const entry of e.entries.filter((x:any)=>x.kind==='技能')){
-      const authored=MIGRATED_SEQUENCE_SKILL_KITS.find(d=>d.elfIds.includes(e.id)&&d.name===entry.name&&d.description===entry.sourceText);
-      assert.equal(entry.route,authored&&!isLegacyWrappedKit(authored.kit)?'kit':'handler',`${e.id}/${entry.name}`);
+      const [authored] = applyReviewedSkillKits({ id: e.id, skills: [{ name: entry.name, description: entry.sourceText }] } as any).skills;
+      assert.ok(authored.kit?.length && !isLegacyWrappedKit(authored.kit), `${e.id}/${entry.name} 須有完整圖紙`);
+      assert.equal(entry.route, authored.effectMode, `${e.id}/${entry.name}`);
     }
   }
 });

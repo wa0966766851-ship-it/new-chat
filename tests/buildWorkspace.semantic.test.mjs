@@ -4,7 +4,9 @@ import path from 'node:path';
 import os from 'node:os';
 import {spawnSync} from 'node:child_process';
 import {createBuildWorkspace,removeBuildWorkspace,assertBuildChild} from '../scripts/lib/buildWorkspace.mjs';
-import {packageElectron} from '../scripts/package_electron.mjs';
+import {packageElectron,cleanupElectronWork} from '../scripts/package_electron.mjs';
+import {prepareReleaseVersion} from '../scripts/lib/releaseArtifacts.mjs';
+import {unzipSync} from 'fflate';
 const temp=fs.mkdtempSync(path.join(os.tmpdir(),'seer-build-lifecycle-'));
 const script=path.resolve('tools/prepare_share.ts');
 try{
@@ -34,9 +36,13 @@ try{
  assert.equal(fs.readFileSync(path.join(root,'src','actual.ts'),'utf8'),'source preserved');
  for(const outcome of ['success','failure','keep']){
   const project=path.join(temp,outcome);fs.mkdirSync(project);
+  fs.writeFileSync(path.join(project,'package.json'),JSON.stringify({version:'1.2.3'}));
+  fs.writeFileSync(path.join(project,'package-lock.json'),JSON.stringify({version:'1.2.3',packages:{'':{version:'1.2.3'}}}));
+  fs.writeFileSync(path.join(project,'version.ts'),'export const VERSION = "1.2.3";');
   const execute=()=>{
    for(const directory of ['build/electron-app','dist-electron/win-unpacked/resources','dist-electron/nsis-web'])fs.mkdirSync(path.join(project,directory),{recursive:true});
    fs.writeFileSync(path.join(project,'dist-electron','old.exe'),'original installer');
+   fs.writeFileSync(path.join(project,'dist-electron','sim-1.2.4-portable.exe'),'new executable');
    fs.writeFileSync(path.join(project,'dist-electron','nsis-web','payload.7z'),'required payload');
    fs.writeFileSync(path.join(project,'dist-electron','win-unpacked','resources','resource-slimming.json'),'{}');
    if(outcome==='failure')throw Error('mock failure');
@@ -47,6 +53,15 @@ try{
   assert.equal(fs.readFileSync(path.join(project,'dist-electron','old.exe'),'utf8'),'original installer');
   assert.equal(fs.readFileSync(path.join(project,'dist-electron','nsis-web','payload.7z'),'utf8'),'required payload');
   assert.equal(fs.existsSync(path.join(project,'build','.electron-package.lock')),false,'所有出口釋放打包鎖');
+  assert.equal(JSON.parse(fs.readFileSync(path.join(project,'package.json'),'utf8')).version,'1.2.4');
+  assert.equal(prepareReleaseVersion(project,true),'1.2.4','關閉遞增仍保持三個來源一致');
+  if(outcome!=='failure')assert.ok(fs.existsSync(path.join(project,'dist-electron','seer-battle-simulator-1.2.4-exe.zip')));
+  if(outcome!=='failure'){
+   const files=unzipSync(fs.readFileSync(path.join(project,'dist-electron','seer-battle-simulator-1.2.4-exe.zip')));
+   assert.deepEqual(Object.keys(files),['sim-1.2.4-portable.exe'],'ZIP只收本次版本EXE，舊成品不收進');
+   assert.equal(Buffer.from(files['sim-1.2.4-portable.exe']).toString(),'new executable');
+  }
+  if(outcome==='keep'){cleanupElectronWork(project);assert.equal(fs.existsSync(path.join(project,'dist-electron','win-unpacked')),false);}
  }
  console.log('封裝工作區：實際分享複製排除舊產物、來源/上層/未標記輸出保護、連結拒絕及失敗清理通過。');
 }finally{

@@ -128,13 +128,10 @@ export default function BagPage({ run, dispatch }: { run: E.RunV2; dispatch: Dis
   const pickerElves = picker ? run.team.filter(e => E.bagIdOf(e) !== picker.occupant) : [];
   const pickerDisabled = (e: Elf): string | false => {
     if (!picker) return false;
-    if (picker.zone === "lineup" && !alive(e)) return "陣亡，需在星爐復甦";
-    const occ = picker.occupant ? byId.get(picker.occupant) : undefined;
-    if (occ && !alive(occ) && E.bagZoneOf(run, E.bagIdOf(e))?.zone === "lineup") return "換下後陣亡者會上場，需先在星爐復甦";
-    return false;
+    return E.bagMoveIssue(run, E.bagIdOf(e), picker.zone, picker.index);
   };
   const applyPick = (e: Elf) => {
-    if (!picker) return;
+    if (!picker || pickerDisabled(e)) return;
     const id = E.bagIdOf(e);
     dispatch(r => picker.occupant ? E.swapBagMembers(r, id, picker.occupant) : E.moveBagMember(r, id, picker.zone, picker.index));
     setPicker(null);

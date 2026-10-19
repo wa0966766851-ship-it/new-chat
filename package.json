@@ -1,7 +1,7 @@
 {
   "name": "react-example",
   "private": true,
-  "version": "1.0.1",
+  "version": "1.0.2",
   "type": "module",
   "main": "electron/main.cjs",
   "scripts": {
@@ -207,7 +207,10 @@
     "test:wuwei-timed-skills": "node --import tsx tests/wuweiTimedSkills.semantic.test.ts",
     "package:electron:inspect": "node scripts/package_electron.mjs --keep-work",
     "clean:build-artifacts": "node scripts/cleanup_build_artifacts.mjs",
-    "test:build-workspace": "node tests/buildWorkspace.semantic.test.mjs"
+    "test:build-workspace": "node tests/buildWorkspace.semantic.test.mjs",
+    "test:reader-gaps": "node --import tsx tests/readerGapClosure.semantic.test.ts",
+    "package:electron:keep-version": "node scripts/package_electron.mjs --keep-version",
+    "clean:electron-work": "node scripts/package_electron.mjs --clean-work"
   },
   "dependencies": {
     "@google/genai": "^2.4.0",
