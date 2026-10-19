@@ -65,6 +65,7 @@ import { SkillResources } from './SkillResources';
 import { formatCompactHud, formatFullNumber } from '../utils/formatBigNumber';
 import { BATTLE_ITEMS, ITEM_CATEGORIES, getItemCategory, ItemCategory, isElfSkillSelectionDisabled } from "../utils/battleHelpers";
 import { isZeroPpExempt } from '../battle/ppExemptions';
+import { classifyLog, filterByMode, mergeExtraActions, toTraditional, type LogMode } from '../battle/logClassifier';
 
 interface BattleScreenUIProps {
   specialMode?: "destiny" | "interstellar";
@@ -229,6 +230,8 @@ export function BattleScreenUI(props: BattleScreenUIProps) {
   const [logPage, setLogPage] = useState(1);
   const [logFollow, setLogFollow] = useState(true);
   const [logCopied, setLogCopied] = useState(false);
+  const [logMode, setLogMode] = useState<LogMode>(() => { try { return (localStorage.getItem("battleLogMode") as LogMode) || "full"; } catch { return "full"; } });
+  const applyLogMode = (m: LogMode) => { setLogMode(m); try { localStorage.setItem("battleLogMode", m); } catch {} setLogPage(1); setLogFollow(true); };
   const [itemCat, setItemCat] = useState<ItemCategory | "all">("all");
   const [spriteMode, setSpriteMode] = useState<"show" | "dim" | "hide">(() => { try { return (localStorage.getItem("battleSpriteMode") as any) || "show"; } catch { return "show"; } });
   useEffect(() => { try { localStorage.setItem("battleSpriteMode", spriteMode); } catch {} }, [spriteMode]);
@@ -567,7 +570,7 @@ export function BattleScreenUI(props: BattleScreenUIProps) {
   };
 
   const LOG_PAGE_SIZE = 40;
-  const logPages = Math.max(1, Math.ceil(logs.length / LOG_PAGE_SIZE));
+  const logPages = Math.max(1, Math.ceil(Math.max(1, filterByMode(logs, logMode).length) / LOG_PAGE_SIZE));
   const shownPage = logFollow ? logPages : Math.min(logPage, logPages);
   const copyLogs = async () => {
     const text = logs.map(l => `第${l.turn}回合　${fog(l.text)}`).join("\n");
@@ -591,14 +594,23 @@ export function BattleScreenUI(props: BattleScreenUIProps) {
     type === "p2" ? "border-l-fuchsia-400 text-fuchsia-50" : "border-l-slate-500 text-slate-200";
   /** 對戰訊息公告欄：分頁、至頂／至底、複製成文字。 */
   const renderBattleLog = () => {
+    // 詳略管線（DSH 20261019）：先依模式過濾 → 合併額外行動 → 分頁。
+    const pipeline = filterByMode(logs, logMode);
     const start = (shownPage - 1) * LOG_PAGE_SIZE;
-    const pageLogs = logs.slice(start, start + LOG_PAGE_SIZE);
+    let pageLogs: { text: string; type?: string; turn: number }[] = pipeline.slice(start, start + LOG_PAGE_SIZE);
+    if (logMode === 'brief') pageLogs = mergeExtraActions(pageLogs, actElf?.name || '');
     let lastTurn = -1;
     return (
       <div className="bt-panel flex flex-col h-full min-h-0 overflow-hidden" data-battle-log>
         <div className="flex items-center gap-1 px-2.5 py-1.5 border-b whitespace-nowrap [&_.bt-btn]:px-1.5" style={{ borderColor: "var(--bt-line-soft)" }}>
           <span className="bt-title text-sm">對戰訊息</span>
           <span className="text-[11px] bt-muted tabular-nums">{logs.length}</span>
+          <span className="flex gap-0.5">
+            {([['brief','簡潔'],['damage','傷害'],['full','完整']] as [LogMode,string][]).map(([m,lb]) => (
+              <button key={m} className={`bt-btn text-[10px] px-1.5 ${logMode===m?'text-amber-300':'bt-muted'}`} data-log-mode={m}
+                onClick={() => applyLogMode(m)} title={m==='brief'?'只顯示主行動':m==='damage'?'主行動＋傷害數值':'全部訊息'}>{lb}</button>
+            ))}
+          </span>
           <span className="flex-1" />
           <button className="bt-btn" onClick={copyLogs} title="複製全部對戰訊息為文字"><Copy className="w-3.5 h-3.5" />{logCopied ? "已複製" : ""}</button>
           <button className="bt-btn" onClick={() => gotoLogPage(1, "top")} title="至頂">至頂</button>
@@ -614,7 +626,7 @@ export function BattleScreenUI(props: BattleScreenUIProps) {
             return (
               <React.Fragment key={start + idx}>
                 {head && <div className="text-[11px] font-black bt-accent pt-1 tracking-widest">第 {log.turn} 回合</div>}
-                <div className={`bt-log-line ${logTone(log.type)}`}>{fog(log.text)}</div>
+                <div className={`bt-log-line ${logTone(log.type)}`} data-log-level={classifyLog(log.text, log.type)}>{fog(toTraditional(log.text))}</div>
               </React.Fragment>
             );
           })}
