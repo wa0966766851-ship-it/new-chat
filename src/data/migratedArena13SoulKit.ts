@@ -33,10 +33,11 @@ export const MIGRATED_ARENA13_SOUL_KIT = {
         a('cure_status', { side: 'self', cls: '' }),
       ] },
     ], 7),
-    // 血<½ 常駐：先制+1（modify_priority 事中判讀）
+    // 血<½ 常駐：先制+1——prio_bonus 事中查詢（prio_next 計時器在 calcPriority 讀取後才建立、
+    // 當次行動收尾即被消耗，事中先制不生效；子代理A 第十一批發現，DSH 20261018 修正）。
     entry('modify_priority', 'modify_priority', '體力低於½時所有技能先制+1', [
       { cond: [c('hp_ratio', { side: 'self', op: '低於', ratio: 0.5 }, '體力低於½')], acts: [
-        a('prio_next', { uses: 1, v: 1 }),
+        a('prio_bonus', { v: 1 }),
       ] },
     ], 8),
     // 血<½：攻擊傷害×2（使用時條件）

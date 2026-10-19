@@ -6,6 +6,7 @@ import { parseSkill, parseSoulMark, matchCond } from "./parse";
 import { CUSTOM } from "./custom";
 import { eventTriggers, runSideTimers, runSkillProgram, runSoulProgram, runAct, runStmts, passiveEvade, runHolderMarks, setSoulProgramProvider, findBlockTimer, evalCond, statusTriggers, settleNoDmgFollowUps, surviveAt1 } from "./runtime";
 import { isSkillDamageType } from "../battle/damageSemantics";
+import {hasForcedHitEffects} from '../battle/forcedHitRules';
 export { blockStatusGuard } from "./runtime";
 import { SKILL_MODE, SOUL_MODE } from "./specs";
 import { BoundedCache } from '../utils/boundedCache';
@@ -16,6 +17,10 @@ import { readSkillProperty, readAttachedSureHit, readListedPriority } from '../e
 import { recordConsecutiveUse } from '../effects/sequenceClosureOperations';
 import { readSoulEvade } from '../effects/soulProperty';
 import { checkElfDead } from '../battle/elfAlive';
+import {portableMarkLifecycle} from '../effects/portableSkillMarkLifecycle';
+import {runClause} from './runtime';
+import {portableSkillCapabilities} from '../battle/portableSkillMarks';
+import {runPortableSkillMarkPrograms,resistFatalFromWindow} from './ops/finalOdinDeluBeliente';
 import {runDeferredAllyEntry} from '../effects/deferredEntryEffects';
 import {runConditionalRebirth} from '../effects/conditionalRebirth';
 
@@ -52,7 +57,10 @@ export function skillMode(name: string, hasHandler: boolean): "handler" | "block
 }
 
 /** 技能效果（使用時／傷害結算後） */
-export function runSkillBlocks(ctx: BattleEventContext, phase: "use" | "after_hit" | "on_invalid", hasHandler: boolean): { unparsedLines: string[] } {
+export function runSkillBlocks(ctx: BattleEventContext, phase: "use" | "after_hit" | "on_invalid", hasHandler: boolean, invalid = false): { unparsedLines: string[] } {
+  // 失敗入口也涵蓋未命中、閃避、免疫；只有真正技能無效可要求公式重算。
+  if (phase === 'on_invalid') ctx = Object.assign(Object.create(ctx), { invalid });
+  else if (hasForcedHitEffects(ctx)) ctx = Object.assign(Object.create(ctx), { forcedHitEffects: true });
   const sk = ctx.skill;
   if (!sk) return { unparsedLines: [] };
   if (phase === 'use' || phase === 'on_invalid') recordConsecutiveUse(ctx);
@@ -82,11 +90,14 @@ const ACTIVE_ONLY = new Set<string>([EffectTiming.ROUND_START, EffectTiming.ROUN
 
 /** 魂印事件：側邊持續效果 + 精靈魂印積木（依 SOUL_MODE） */
 export function runBlockEvent(ctx: BattleEventContext, event: string, data: any, elf: any, hasHandler = false): boolean {
+  portableMarkLifecycle(ctx,event,data,runAct);
+  const trigs:Trigger[]=event===EffectTiming.SKILL_SELECTED?['skill_selected']:eventTriggers(ctx,event,data);
+  const current=ctx.actor==='p1'?ctx.activeP1:ctx.activeP2;
+  if((ctx.self.battleId||ctx.self.id)===(current.battleId||current.id))runPortableSkillMarkPrograms(ctx,trigs,data,runClause);
   runConditionalRebirth(ctx,event);
   if(event===EffectTiming.ON_ENTRANCE)runDeferredAllyEntry(ctx,runStmts);
   if (event === EffectTiming.ON_ENTRANCE) runBenchOnOppEntrance(ctx);
   recordBattleFacts(ctx, event, data);
-  const trigs = eventTriggers(ctx, event, data);
   if(event===EffectTiming.BATTLE_START&&!trigs.length)return false;
   const connectedSurvived=!!elf && runConnectedLifecycle(ctx, event as EffectTiming, data, elf, hasHandler, trigs.includes('battle_start'));
   if (!trigs.length) return connectedSurvived === true;
@@ -101,6 +112,7 @@ export function runBlockEvent(ctx: BattleEventContext, event: string, data: any,
   if (ACTIVE_ONLY.has(event) && !isActive) return false;
   if (isActive) { runSideTimers(ctx, trigs, data); runHolderMarks(ctx, trigs, data, event === EffectTiming.ROUND_END); }
   if (event === EffectTiming.FATAL_RESIST) {
+    if(resistFatalFromWindow(ctx))return true;
     const timers = ctx.actor === "p1" ? ctx.p1Timers : ctx.p2Timers;
     const rb = findBlockTimer(timers, b => b.rebirth);
     if (rb) {
@@ -162,6 +174,7 @@ export function runCopiedSoulEvent(ctx: BattleEventContext, event: string, data:
 }
 
 function emitCurrentSouls(ctx: BattleEventContext, trigs: Trigger[], data: any): void {
+  runPortableSkillMarkPrograms(ctx,trigs,data,runClause);
   emitSoul(ctx, trigs, data, ctx.self, true);
   const source = ctx.self?.illusion?.target;
   if (source) emitSoul(acquiredEffectContext(ctx), trigs, data, source, true);
@@ -272,6 +285,7 @@ export function blockCondPriority(skill: any, self: any, opp: any, getStatuses: 
 
 /** 積木技能：條件式「…時先制+N且必定命中」→ 條件成立時本次視為必中（引擎於命中判定前轉換技能） */
 export function blockSkillTransform(ctx: BattleEventContext, skill: any): any {
+  if(portableSkillCapabilities(ctx.self).sureHit)return {...skill,isSureHit:true,isSureHitByAttached:true};
   if(readAttachedSureHit(skill,ctx))return {...skill,isSureHit:true,isSureHitByAttached:true};
   if (!skill || skill.isSureHit || ctx.self?.isInherentInvalid) return skill;
   if(readSkillProperty(skill,'sure_hit',ctx)===true)return {...skill,isSureHit:true};

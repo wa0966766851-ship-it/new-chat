@@ -1,3 +1,4 @@
+import {portableSkillCapabilities,redirectedSelectedSkill} from '../battle/portableSkillMarks';
 // 戰鬥引擎：與 React 無關的回合結算。BattleScreen 只負責輸入與播放。
 // 由 BattleScreen.tsx 抽出（2026-10-10）；節點順序見 ./nodes.ts。
 import { matchesDamageTypes } from '../effects/damageChoices';
@@ -46,6 +47,7 @@ import { consumeSkillTypeOverride } from '../battle/skillTypeOverride';
 import { executeGenericSkillTextAfterHit, rollSkillHit } from "../effects/genericSkillText";
 import { getAttackImmunity, ignoresAttackImmunity, grantsNextIgnoreOnSuccess } from "../battle/attackImmunity";
 import { runSkillBlocks, emitSkillUse, soulPassiveEvade, emitSelfInvalid, emitFailedSkillUse } from "../blocks/registry";
+import {hasForcedHitEffects,runForcedHitEffects} from '../effects/forcedHitEffects';
 import { skillBasePriority } from "../battle/conditionalPriority";
 import { drainExtraActionQueue } from "../battle/extraActions";
 import { findBlockTimer } from "../blocks/runtime";
@@ -1155,12 +1157,21 @@ case 'switch': {
 
   // 通用：在場精靈護盾由 >0 變 0（打破或消除）→ SHIELD_BROKEN（每個效果結算後檢查一次）
   const shieldSeenRef = ref(new Map<string, number>());
+  const resourceSeenRef=ref(new Map<string,{shield:number,barrier:number}>());
   const checkShieldTransitions = () => {
     for (const side of ["p1", "p2"] as const) {
       const elf = syncStateRef.current[side];
       if (!elf) continue;
       const id = String(elf.battleId || elf.id), now = Number(elf.shield) || 0, before = shieldSeenRef.current.get(id) ?? 0;
       shieldSeenRef.current.set(id, now);
+      const previous=resourceSeenRef.current.get(id),current={shield:Number(elf.shield)||0,barrier:Number(elf.barrier)||0};
+      resourceSeenRef.current.set(id,current);
+      const resources=previous?(['shield','barrier'] as const).filter(k=>previous[k]>0&&current[k]<=0):[];
+      if(resources.length&&!checkElfDead(elf)){
+        const resourceCtx=getBattleEventContext(side,true,0);
+        SoulMarkRegistry[elf.name]?.(resourceCtx,EffectTiming.HELD_RESOURCE_LOST,{resources,before:previous});
+        dispatchModeEvent(resourceCtx,EffectTiming.HELD_RESOURCE_LOST,{resources,before:previous});
+      }
       if (before > 0 && now <= 0 && !checkElfDead(elf)) {
         try {
           const sCtx = getBattleEventContext(side, true, 0);
@@ -1202,6 +1213,7 @@ case 'switch': {
         executingEffectRef.current = true;
         effectChainRef.current = effect.chainId;
         try {
+          checkShieldTransitions();
           pending = executeEffect(effect);
         } finally {
           executingEffectRef.current = false;
@@ -1253,6 +1265,7 @@ case 'switch': {
     const targetSide = isP1 ? "p2" : "p1";
 
     const shared: SharedContextDeps = {
+      checkResourceTransitions:checkShieldTransitions,
       side,
       isHit,
       moveIndex,
@@ -2146,7 +2159,12 @@ case 'switch': {
       const st0 = syncStateRef.current;
       const opSpeed = (side: "p1" | "p2") => calculateEffectiveStat(st0[side].calculatedStats.speed, skillStageView(st0[side], st0[`${side}SelectedSkill`], 'speed'));
       const opOrder: ("p1" | "p2")[] = opSpeed("p1") >= opSpeed("p2") ? ["p1", "p2"] : ["p2", "p1"];
+      // 通用寫入端：本回合先出手方（無為龍者「先出手／未行動」等條件的引擎讀取來源；不含精靈專屬常數）。
+      try {
+        for (const side of opOrder) getBattleEventContext(side, true, 0).setPlayerState('blkFirstMoverThisRound', opOrder[0]);
+      } catch { /* 隔離環境無事件 context */ }
       for (const [mIdx, s] of opOrder.entries()) {
+        try { getBattleEventContext(s, true, mIdx).setPlayerState('blkActedThisRound', s); } catch { /* 隔離環境 */ }
         const mid = syncStateRef.current;
         const skill = s === 'p1' ? mid.p1SelectedSkill : mid.p2SelectedSkill;
         if (!skill || (skill.name !== "切換精靈" && skill.name !== "使用道具")) continue;
@@ -2161,6 +2179,10 @@ case 'switch': {
         }
         node('1.2', { side: s, action: skill.name });
         if (skill.name === "切換精靈") {
+          // 通用寫入端：記錄本回合有哪一方切換過精靈（「對手本回合切換精靈」等條件的讀取來源）。
+          try {
+            for (const sd of ["p1","p2"] as const) getBattleEventContext(sd, true, mIdx).setPlayerState('blkSwitchedThisRound', s);
+          } catch { /* 隔離環境 */ }
           const idx = s === 'p1' ? mid.p1SwitchIndex : mid.p2SwitchIndex;
           if (idx !== null) {
             const outgoingElf = mid[s];
@@ -2246,6 +2268,13 @@ case 'switch': {
     // 全局規則：回合開始（例：次元龍在場時所有精靈累積詩章）
     for (const rule of battleRules()) rule.roundStart?.(ruleApi, cur);
 
+    // 先同時更新雙方的在場計數，再派發任何回合開始事件；避免P1讀到P2上一回合的值。
+    for (const side of ["p1", "p2"] as const) {
+      const fieldCtx = getBattleEventContext(side, false, 0, syncStateRef.current[side]);
+      const fieldKey = `${side}_turnsInBattle`;
+      const curField = Number(fieldCtx.getPlayerState(fieldKey));
+      fieldCtx.setPlayerState(fieldKey, Number.isFinite(curField) ? curField + 1 : 1);
+    }
     for (const side of ["p1", "p2"] as const) {
       const team = side === "p1" ? cur.p1Team : cur.p2Team;
       team.forEach(elf => {
@@ -2259,22 +2288,26 @@ case 'switch': {
       triggerSuitEffect(side, EffectTiming.ROUND_START);
     }
 
-    const p1Skill = cur.p1SelectedSkill;
-    const p2Skill = cur.p2SelectedSkill;
+    const selectedState=syncStateRef.current;
+    const original1=selectedState.p1SelectedSkill,original2=selectedState.p2SelectedSkill;
+    const p1Skill=redirectedSelectedSkill(selectedState.p1,original1,selectedState.p2,original2);
+    const p2Skill=redirectedSelectedSkill(selectedState.p2,original2,selectedState.p1,original1);
+    cur.p1SelectedSkill=p1Skill;cur.p2SelectedSkill=p2Skill;
+    syncStateRef.current={...syncStateRef.current,p1SelectedSkill:p1Skill,p2SelectedSkill:p2Skill};
 
     // ── 2.2 戰鬥階段開始時：判斷雙方先手權 ──
     node('2.2');
     // §38-4: Registry-based Priority Calculation
-    const calcPriority = (side: "p1" | "p2", skill: any): { priority: number, forcedFirst: boolean } => {
+    const calcPriority = (side: "p1" | "p2", skill: any): { priority: number, forcedFirst: boolean; tieRole?: 'challenger' | 'challenged' } => {
       if (!skill) return { priority: 0, forcedFirst: false };
       skill = illusionSkill(cur[side], skill);
-      const inherentRestricted = cur[side].isInherentInvalid || activeConstraints(cur[`${side}Timers`], cur[side]).some(p => p.inherentInvalid);
+      const inherentRestricted = portableSkillCapabilities(syncStateRef.current[side],skill).innateDisabled || cur[side].isInherentInvalid || activeConstraints(cur[`${side}Timers`], cur[side]).some(p => p.inherentInvalid);
       const regState = cur[`${side}RegistryState`] || {};
       const nextPriorityCount = regState.nextPriorityCount || 0;
       const comp: PriorityComputation = {
         base: skillBasePriority(skill, cur[side], cur[side === 'p1' ? 'p2' : 'p1'], getStatuses, !!inherentRestricted, getBattleEventContext(side, true, 0)),
         bonus: (regState.nextTurnPriority || 0) + (nextPriorityCount > 0 ? 2 : 0) + priorityBonus(side === "p1" ? cur.p1 : cur.p2, skill, rng)
-          + (isSkillStone(skill) ? stonePriorityBonus(getBattleEventContext(side, true, 0), skill) : skill.effectMode === 'kit' && skill.kit?.some((e: any) => e.params?.property === 'chance_priority') ? readChancePriority(skill, getBattleEventContext(side, true, 0)) : 0)
+          + (isSkillStone(skill) ? stonePriorityBonus(getBattleEventContext(side, true, 0), skill) : skill.effectMode === 'kit' && skill.kit?.some((e: any) => e.params?.property === 'chance_priority' || e.params?.property === 'conditional_priority') ? readChancePriority(skill, getBattleEventContext(side, true, 0)) : 0)
           + ((regState.priorityBoostTurns || 0) > 0 && !(regState.priorityBoostAttackOnly && skill.category === "屬性") ? (regState.priorityBoostValue || 0) : 0)
           // 通用讀取端：登場計數疊層先制（blocks/ops/entranceStack.entrance_stack_buff 寫入；下場由 entrance_reset 清零）。
           + (regState.entranceStackPrioBonus || 0),
@@ -2344,7 +2377,8 @@ case 'switch': {
       }
       return {
         priority: Math.floor((comp.base + comp.bonus) * multiplier),
-        forcedFirst: comp.forcedFirst
+        forcedFirst: comp.forcedFirst,
+        tieRole: comp.tieRole
       };
     };
 
@@ -2389,6 +2423,8 @@ case 'switch': {
 
     const actors: ("p1" | "p2")[] = p1Priority >= p2Priority ? ["p1", "p2"] : ["p2", "p1"];
     if (p1Priority === p2Priority && p1Speed < p2Speed) actors.reverse();
+    // 先制與速度皆相同時，被挑戰方優先；未指定或雙方相同則保留原排序。
+    if(p1Priority===p2Priority&&p1Speed===p2Speed&&p2Res.tieRole==='challenged'&&p1Res.tieRole!=='challenged')actors.reverse();
 
     // ── 出手流程結束（含選擇技能因故未能出手）：ACTION_END 與額外行動
     const endOfAction = async (side: "p1" | "p2", idx: number) => {
@@ -2448,7 +2484,7 @@ case 'switch': {
         blkIgnoreLimit: false, blkIgnoreBlock: false, blkIgnoreShield: false, ignoreDamageLimitThisAction: false, fixedTypeMultThisAction: 0,
         ignoreAttackImmunityThisAction: false, ignoreShieldThisAction: false, ignoreOppBuffThisAction: false, oppBoostAsDropThisAction: false, oppPriorityCeiling: null, selfDropIgnoredThisAction: false,
         selfDropAsOppDropThisAction: false, noResistedThisAction: false, mercyThisAction: false, blkAtkSpatkSum: false, blkAtkSpAtkSum: false,
-        grantStabThisAction: false, minimumTypeMultiplierThisAction: undefined, skillRecalculationUsedThisAction: false, skillRecalculationRequest: undefined,
+        grantStabThisAction: false, minimumTypeMultiplierThisAction: undefined, skillRecalculationUsedThisAction: false, skillRecalculationRequest: undefined, forceHitEffectsThisAction: false, forcedHitThisAction: false,
         blkStageAsBoost: 0, blkTypeOverrideCurrentAction: false };
       const changed = Object.keys(clean).filter(k => k in rg && JSON.stringify(rg[k]) !== JSON.stringify(clean[k]));
       if (!changed.length) return;
@@ -2457,30 +2493,25 @@ case 'switch': {
       dispatch({ type: 'UPDATE_REGISTRY_STATE', side, state: patch });
     };
     const failAction = (side: "p1" | "p2", idx: number, usedSkill: any, kind: "invalid" | "miss" | "evade" | "immune", reason: string) => {
-      const forced = !!getBattleEventContext(side, true, idx).getPlayerState('forceHitEffectsThisAction');
+      const forced = hasForcedHitEffects(getBattleEventContext(side, true, idx));
       const h = usedSkill?.name ? getBattleSkillOnInvalidRegistry()[usedSkill.name] : undefined;
       if (h) {
         try { const c = getBattleEventContext(side, true, idx); (c as any).skill = usedSkill; h(c, { reason, kind }); } catch (e) { console.error("[ON_INVALID]", e); }
       }
-      const retry = takeSkillRecalculation(getBattleEventContext(side, true, idx));
-      if (retry) return retry; // 共用主傷害流程接手；PP、使用技能效果與無效鉤子不重跑。
       if (forced) {
         const c = getBattleEventContext(side, true, idx); c.skill = usedSkill;
-        BattleSkillRegistry[usedSkill.name]?.(c);
-        getBattleSkillAfterHitRegistry()[usedSkill.name]?.(c, { damageDealt: 0, killed: false, hit: true });
+        runForcedHitEffects(c,usedSkill);
       }
+      const retry = takeSkillRecalculation(getBattleEventContext(side, true, idx));
+      if (retry) return retry; // 共用主傷害流程接手；PP、使用技能效果與無效鉤子不重跑。
       const result = { actor: side, skill: usedSkill, category: usedSkill?.category, damageDealt: 0, isCrit: false, hit: false, additionalEffectsEnabled: false, invalid: kind === "invalid", killed: false, failKind: kind };
       notifyActionResult(side, idx, result, true);
       const usedCtx = getBattleEventContext(side, false, idx); usedCtx.skill = usedSkill;
       emitFailedSkillUse(usedCtx, getBattleEventContext(side === 'p1' ? 'p2' : 'p1', false, idx), result);
       clearPerActionFlags(side);
     };
-    for (const [mIdx, s] of actors.entries()) {
-      if (operated.has(s)) continue; // 已在 1.2 操作階段切換／使用藥劑
-      await processQueue();
-      presentation.setInAction(true); // 出手流程：紅字即時播
-      // 3.1–3.7：本次出手（"partial"＝未成功出手或提前結束；"full"＝走完整個出手與收尾）
-      const outcome = await (async (): Promise<"partial" | "full"> => {
+    // 一般與額外使用共用同一套命中、效果、傷害與結果結算；重播不額外扣PP。
+    const executeSkillUse=async(s:"p1"|"p2",mIdx:number,replaying=false):Promise<"partial"|"full">=>{
       actionSerialRef.current++;
       const mid = syncStateRef.current;
 
@@ -2540,10 +2571,10 @@ case 'switch': {
       ctx.setPlayerState('attackHitCountThisAction', 0);
       ctx.setPlayerState('attackBonusHitCountThisAction', 0);
       const ppCostComp = {
-        base: skill.name === "掙扎" ? 0 : 1,
+        base: replaying || skill.name === "掙扎" ? 0 : 1,
         additionalCost: 0,
         extraAllSkills: 0,
-        multiplier: 1,
+        multiplier: replaying ? 0 : 1,
       };
 
       // ── 3.1 出手流程開始時 ──
@@ -2661,6 +2692,7 @@ case 'switch': {
       // PP Consumption Logic
       {
         const pm = findBlockTimer((syncStateRef.current as any)[`${s}Timers`], b => b.ppMult && (!b.kind || (b.kind === "攻擊") === (skill.category !== "屬性")));
+        ((globalThis as any).__FE ||= []).push({ s, timers: ((syncStateRef.current as any)[`${s}Timers`] || []).map((x: any) => ({ id: x.id, rem: x.remaining, pend: x.pendingActivation })), pm: pm?.id });
         if (pm) ppCostComp.multiplier *= pm.payload.block.ppMult;
       }
       const finalPpCost = Math.floor((ppCostComp.base + ppCostComp.additionalCost) * ppCostComp.multiplier);
@@ -2910,7 +2942,7 @@ case 'switch': {
         SoulMarkRegistry[syncStateRef.current[oppSide].name]?.(getBattleEventContext(oppSide, false, mIdx), EffectTiming.SKILL_INVALID, { skill: activeSkill, reason: invalidationReason, kind: "invalid", isIncoming: true });
         pushEffect({ type: 'log', side: s, data: { text: `🚫 【技能無效】：受${invalidationReason}限制，【${displayName}】使用的【${displaySkill}】無效！`, type: "info" } });
         showPopup(oppSide, "技能無效-0", "invalid");
-        try { runSkillBlocks(getBattleEventContext(s, true, mIdx), "on_invalid", hasSkillHandler(activeSkill.name)); emitSelfInvalid(getBattleEventContext(s, true, mIdx), true); } catch (e) { console.error("[blocks]", e); }
+        try { runSkillBlocks(getBattleEventContext(s, true, mIdx), "on_invalid", hasSkillHandler(activeSkill.name), true); emitSelfInvalid(getBattleEventContext(s, true, mIdx), true); } catch (e) { console.error("[blocks]", e); }
         const retry = failAction(s, mIdx, activeSkill, "invalid", invalidationReason);
         await processQueue();
         if (!retry) return "partial";
@@ -3026,7 +3058,7 @@ case 'switch': {
       let mainSettledDamageForAction = 0;
       let mainIsCrit = false;
       let traced37 = false;
-      if (activeSkill.category !== "屬性" && activeSkill.power) {
+      if (activeSkill.category !== "屬性" && (activeSkill.power || Number(syncStateRef.current[actorRegKey]?.powerAddThisAction) > 0)) {
         const hitCount = Math.max(1, Math.floor(syncStateRef.current[actorRegKey]?.attackHitCountThisAction || 1)) +
           Math.max(0, Math.floor(syncStateRef.current[actorRegKey]?.attackBonusHitCountThisAction || 0));
         syncStateRef.current = { ...syncStateRef.current, [actorRegKey]: { ...syncStateRef.current[actorRegKey], attackHitCountThisAction: 0, attackBonusHitCountThisAction: 0 } };
@@ -3128,6 +3160,7 @@ case 'switch': {
         // Apply 5-stage damage computation
         // 增減傷分層見 battle/damagePipeline.ts：每個增傷來源各自相乘、翻倍為獨立乘區、減傷各自相乘。
         const damageComp: DamageComputation = createDamageComp({
+          sourceSide: s,
           base: dmgRes.damage,
           increasePercent: 0,
           decreasePercent: 0,
@@ -3446,7 +3479,7 @@ case 'switch': {
       await processQueue();
       // ── 3.7 使用技能後（屬性技能／未造成傷害時在此標記） ──
       if (!traced37) node('3.7', { side: s, order: mIdx });
-      if (addEffectsInvalid) {
+      if (addEffectsInvalid && !retryFailureKind) {
         const sourceCtx = getBattleEventContext(s, true, mIdx);
         sourceCtx.skill = activeSkill;
         sourceCtx.mainSkillHpReduced = mainDamageDealt;
@@ -3538,7 +3571,24 @@ syncStateRef.current = { ...syncStateRef.current, [actorRegKey]: { ...rg, attack
         }
       }
       return "full";
-      })();
+
+    };
+    for (const [mIdx, s] of actors.entries()) {
+      if (operated.has(s)) continue; // 已在 1.2 操作階段切換／使用藥劑
+      await processQueue();
+      presentation.setInAction(true); // 出手流程：紅字即時播
+      // 3.1–3.7：本次出手（"partial"＝未成功出手或提前結束；"full"＝走完整個出手與收尾）
+      const outcome=await executeSkillUse(s,mIdx);
+
+      const replayContext=getBattleEventContext(s,true,mIdx),request=replayContext.getPlayerState('pendingSkillRepeats');
+      replayContext.setPlayerState('pendingSkillRepeats',undefined);
+      if(request&&request.actionId===actionSerialRef.current&&request.ownerBattleId===(syncStateRef.current[s].battleId||syncStateRef.current[s].id)){
+        replayContext.setPlayerState('executingSkillRepeat',true);
+        try{for(let i=0;i<Math.min(10,request.times);i++){
+          if(checkElfDead(syncStateRef.current[s])||checkElfDead(syncStateRef.current[s==='p1'?'p2':'p1']))break;
+          await executeSkillUse(s,mIdx,true);await processQueue();
+        }}finally{getBattleEventContext(s,true,mIdx).setPlayerState('executingSkillRepeat',false);}
+      }
       resolutionSkillRef.current=null;
       // 3.8 出手流程結束時／3.9 出手流程結束後（額外行動；對手已倒下仍執行＝可鞭屍）
       await endOfAction(s, mIdx);
@@ -3589,7 +3639,7 @@ syncStateRef.current = { ...syncStateRef.current, [actorRegKey]: { ...rg, attack
          dispatch({
            type: 'UPDATE_REGISTRY_STATE',
            side: s,
-           state: { vampireDamageTypesThisAction: undefined, damageModifiersThisAction: [], powerMultiplierThisAction: 1, powerAddThisAction: 0, vampireRatio: 0, nextTurnPriority: 0, nextTurnCrit: false, ignoreImmunityAndShield: false }
+           state: { vampireDamageTypesThisAction: undefined, damageModifiersThisAction: [], powerMultiplierThisAction: 1, powerAddThisAction: 0, forceHitEffectsThisAction: false, forcedHitThisAction: false, vampireRatio: 0, nextTurnPriority: 0, nextTurnCrit: false, ignoreImmunityAndShield: false }
          });
        }
 

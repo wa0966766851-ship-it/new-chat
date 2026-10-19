@@ -26,6 +26,8 @@ function createRefSkill(
   options: {
     isSureHit?: boolean;
     isFifthSkill?: boolean;
+    /** 原廠 PP 0/0：選招不受 PP 限制且使用不消耗 PP（見 battle/ppExemptions）。 */
+    ppUnlimited?: boolean;
     accuracy?: number;
     fallbackDesc?: string;
     effectType?: Skill['effectType'];
@@ -85,6 +87,7 @@ function createRefSkill(
     accuracy: resolvedAccuracy,
     isSureHit: resolvedSureHit,
     isFifthSkill: resolvedFifthSkill,
+    ...(options.ppUnlimited ? { ppUnlimited: true } : {}),
     description,
     effectType: options.effectType || 'none',
     effectDetail: options.effectDetail || '',
@@ -1526,17 +1529,17 @@ const SEED_ELVES: (Omit<Elf, "id" | "calculatedStats" | "currentHp" | "maxHp"> &
     },
     skills: [
       createRefSkill('odin', 'ᚷᚢᚾᚷᚾᛁᚱ ᚦᚱᛖᚢᛗᚨᛞᚱ', '遠古', '物理', 90, 20, 3, { isSureHit: true, accuracy: 100 }),
-      createRefSkill('odin', 'ᛉᛖᛚᛃᚨ ᛟᚾ ᛁᚷᚷᛞᚱᚨᛋᛁᛚ', "無屬性", '屬性', 0, 5, 0, { isSureHit: true, accuracy: 100 }),
+      createRefSkill('odin', 'ᛉᛖᛚᛃᚨ ᛟᚾ ᛁᚷᚷᛞᚱᚨᛋᛁᛚ', "無屬性", '屬性', 0, 0, 0, { isSureHit: true, accuracy: 100, ppUnlimited: true }),
       createRefSkill('odin', 'ᚺᚢᚷᛁᚾ ᛟᚲ ᛗᚢᚾᛁᚾ', "無屬性", '屬性', 0, 5, 0, { isSureHit: true, accuracy: 100 }),
       createRefSkill('odin', 'ᛟᛞᛁᚾᛋ ᚨᚾᛋᚢᛉ', '遠古', '物理', 160, 5, 0, { isSureHit: true, accuracy: 100 }),
-      createRefSkill('odin', 'ᚱᚨᚷᚾᚨᚱᛟᚲ', '遠古', '特殊', 140, 0, 0, { isSureHit: true, accuracy: 100, isFifthSkill: true })
+      createRefSkill('odin', 'ᚱᚨᚷᚾᚨᚱᛟᚲ', '遠古', '特殊', 140, 1, 0, { isSureHit: true, accuracy: 100, isFifthSkill: true })
     ],
     skillPool: [
       createRefSkill('odin', 'ᚷᚢᚾᚷᚾᛁᚱ ᚦᚱᛖᚢᛗᚨᛞᚱ', '遠古', '物理', 90, 20, 3, { isSureHit: true, accuracy: 100 }),
-      createRefSkill('odin', 'ᛉᛖᛚᛃᚨ ᛟᚾ ᛁᚷᚷᛞᚱᚨᛋᛁᛚ', "無屬性", '屬性', 0, 5, 0, { isSureHit: true, accuracy: 100 }),
+      createRefSkill('odin', 'ᛉᛖᛚᛃᚨ ᛟᚾ ᛁᚷᚷᛞᚱᚨᛋᛁᛚ', "無屬性", '屬性', 0, 0, 0, { isSureHit: true, accuracy: 100, ppUnlimited: true }),
       createRefSkill('odin', 'ᚺᚢᚷᛁᚾ ᛟᚲ ᛗᚢᚾᛁᚾ', "無屬性", '屬性', 0, 5, 0, { isSureHit: true, accuracy: 100 }),
       createRefSkill('odin', 'ᛟᛞᛁᚾᛋ ᚨᚾᛋᚢᛉ', '遠古', '物理', 160, 5, 0, { isSureHit: true, accuracy: 100 }),
-      createRefSkill('odin', 'ᚱᚨᚷᚾᚨᚱᛟᚲ', '遠古', '特殊', 140, 0, 0, { isSureHit: true, accuracy: 100, isFifthSkill: true })
+      createRefSkill('odin', 'ᚱᚨᚷᚾᚨᚱᛟᚲ', '遠古', '特殊', 140, 1, 0, { isSureHit: true, accuracy: 100, isFifthSkill: true })
     ]
   },
 

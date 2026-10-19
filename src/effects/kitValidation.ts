@@ -45,7 +45,8 @@ export function validateAtomParams(atom: string, p: unknown, path = 'params', de
       for(const action of [...statement.acts,...(statement.elseActs||[])]) {
         const statuses=['status','status_replace','next_entry_status'].includes(action.op)?[action.p.status]:action.op==='convert_status'?[action.p.status,...(action.p.from?[action.p.from]:[])]:action.op==='status_seq'?action.p.list:[];
         for(const status of statuses) if(!StatusRegistry[canonicalStatusName(status)])bad(path,`異常${status}尚未登記`);
-        if(['timed','timed_uses','once','watch','at_round_end','next_ally_entry'].includes(action.op))inspect(action.p.body);
+        if(['timed','timed_uses','once','watch','at_round_end','next_ally_entry','resource_resolve_pending'].includes(action.op))inspect(action.p.body);
+        if(action.op==='typed_damage_cycle'){inspect(action.p.onMatch);inspect(action.p.onMismatch);}
         if(action.op==='mark_program')for(const rule of action.p.rules){inspect([{cond:rule.cond||[],acts:[]}]);inspect(rule.body);}
       }
     }};
@@ -57,11 +58,17 @@ export function validateAtomParams(atom: string, p: unknown, path = 'params', de
     if(issue)bad(path,issue);return;
   }
   if (atom === 'skill_property') {
-    choice(p.property, `${path}.property`, ['ignore_pp_limit','sure_hit','base_priority','mark_priority','stage_power','attack_hits','ignore_damage_reduction','ignore_positive_priority','base_accuracy','base_power','hit_requirement','stage_view','conditional_sure_hit','chance_priority','conditional_priority','forced_first']);
+    choice(p.property, `${path}.property`, ['combat_stat_extrema','fixed_type_multiplier','cap_opponent_priority','attack_stat_sum','preferred_types','force_stab','ignore_pp_limit','sure_hit','base_priority','mark_priority','stage_power','attack_hits','ignore_damage_reduction','ignore_positive_priority','base_accuracy','base_power','hit_requirement','stage_view','conditional_sure_hit','chance_priority','conditional_priority','forced_first','skill_transform']);
+    if(['combat_stat_extrema','fixed_type_multiplier','cap_opponent_priority'].includes(p.property)){const issue=skillPropertyIssue({codeId:'skill_property',source:'skill',role:'innate',node:p.property==='cap_opponent_priority'?'modify_priority':'before_skill',order:0,params:p});if(issue)bad(path,issue);return;}
+    if(['attack_stat_sum','preferred_types','force_stab'].includes(p.property)){
+      const issue=skillPropertyIssue({codeId:'skill_property',source:'skill',role:'innate',node:'before_skill',order:0,params:p});
+      if(issue)bad(path,issue);return;
+    }
     if (p.property === 'chance_priority') { num(p.value, `${path}.value`, 1, 100); num(p.pct, `${path}.pct`, 0, 100); return; }
     if (p.property==='ignore_pp_limit'||p.property === 'sure_hit'||p.property==='conditional_sure_hit'||p.property==='hit_requirement'||p.property==='forced_first'||p.property==='ignore_damage_reduction'||p.property==='ignore_positive_priority') { if (p.value !== true) bad(path, '布林公式查詢需為true'); }
     else if(['base_power','stage_power'].includes(p.property)){num(p.value,`${path}.value`,p.property==='stage_power'?1:0,1000000);if(!Number.isInteger(p.value))bad(path,'固有威力需為整數');}
-    else if(p.property==='stage_view') { choice(p.value, `${path}.value`, ['opp_up_as_down','self_down_as_opp_down','self_down_as_up','self_down_as_double_up']); }
+    else if(p.property==='skill_transform') { /* 內容由 skillPropertyIssue（sequenceContract）逐欄檢查 */ }
+    else if(p.property==='stage_view') { choice(p.value, `${path}.value`, ['opp_up_as_down','self_down_as_opp_down','self_down_as_up','self_down_as_double_up','self_down_ignore']); }
     else if(p.property==='attack_hits') { if(!p.value||typeof p.value!=='object'||Object.keys(p.value).some(k=>!['min','max'].includes(k))||!Number.isInteger(p.value.min)||!Number.isInteger(p.value.max)||p.value.min<1||p.value.max<p.value.min||p.value.max>100)bad(path,'攻擊次數需1至100整數範圍'); }
     else { num(p.value, `${path}.value`, -100, 100); if (!Number.isInteger(p.value)) bad(path, '公式前查詢需為整數'); }
     const issue=sequenceIssue({raw:'固有查詢',trig:'use',parsed:true,cond:p.conditions ?? [],body:[{acts:[{op:'heal_flat',p:{amount:0},label:''}]}]});

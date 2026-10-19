@@ -7,6 +7,7 @@ import { runNode } from './effectRunner';
 import { eventEffectNode } from './effectNodes';
 import { checkElfDead } from '../battle/elfAlive';
 import { isPpConsumption, claimPpCarriedSlot } from './ppConsumptionChain';
+import { TEAM_KIT_TRIGGERS } from './teamKitContract';
 let skillHandlerProvider: (name: string) => boolean = () => false;
 export function setConnectedSkillHandlerProvider(provider: (name: string) => boolean) { skillHandlerProvider = provider; }
 export function hasConnectedSkillHandler(name: string) { return skillHandlerProvider(name); }
@@ -29,9 +30,10 @@ export function runConnectedKit(node: Node, definition: EffectDefinition, ctx: B
   const runnable: KitEntry[] = [];
   for (const entry of definition.kit || []) {
     if (entry.node !== node) continue;
+    if (!!TEAM_KIT_TRIGGERS[entry.params?.clause?.trig] !== !!(ctx as any).teamKitObserver) continue;
     if (entry.source === 'skill') {
       if (entry.role === 'innate' && ctx.self.isInherentInvalid) continue;
-      if ((entry.role || 'attached') === 'attached' && ((ctx as any).additionalEffectsEnabled === false || ctx.self.isAdditionalInvalid || ctx.getPlayerState?.('additionalEffectsSealed') || ctx.getPlayerState?.(`${ctx.actor}_sealSkillAdditionalEffects`))) continue;
+      if ((entry.role || 'attached') === 'attached' && !(ctx as any).forcedHitEffects && ((ctx as any).additionalEffectsEnabled === false || ctx.self.isAdditionalInvalid || ctx.getPlayerState?.('additionalEffectsSealed') || ctx.getPlayerState?.(`${ctx.actor}_sealSkillAdditionalEffects`))) continue;
     }
     const issue = kitEntryIssue(entry);
     if (issue) ctx.addLog(`【效果待接通】${definition.name}：${entry.customText || entry.codeId}；${issue}`, 'effect');
@@ -46,6 +48,7 @@ export function connectedEventNodes(event: EffectTiming, data: any, battleStart 
   const node = eventEffectNode(event);
   const nodes: Node[] = node ? [node, 'any_battle_node'] : [];
   if (event === EffectTiming.PP_CHANGED && isPpConsumption(event,data)) nodes.push('pp_consumed');
+  if(event===EffectTiming.PP_CHANGED&&data?.reason==='clear'&&data.emptied?.length)nodes.push('pp_cleared');
   if (event === EffectTiming.ON_PP_CONSUME && !isPpConsumption(event,data)) return [];
   if (battleStart&&!nodes.includes('battle_start')) nodes.unshift('battle_start');
   if (event === EffectTiming.BEFORE_DAMAGE) nodes.push('passive_always');

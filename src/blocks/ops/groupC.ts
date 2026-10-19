@@ -41,11 +41,15 @@ export function groupCOperations(h: { liveElf: (ctx: BattleEventContext, side: S
       for (const side of p.sides as ('self' | 'opp')[]) {
         const real: S = side === 'self' ? ctx.actor : ctx.targetSide;
         const active = h.liveElf(ctx, real);
+        const typeHit = (e: any) => p.types.some((t: string) => hasType(e, t));
         for (const e of ctx.getFullTeam(real) || []) {
           if (e.isVanished || (p.scope === 'bench' && idOf(e) === idOf(active))) continue;
+          // OR 篩選（5018 后「存活或識別帶蟲系／陣亡或識別帶蟲系」）：存活條件與屬性條件取聯集，不重複計數。
+          if (p.filter === 'alive_or_type') { if (dead(e) && !typeHit(e)) continue; count++; continue; }
+          if (p.filter === 'dead_or_type') { if (!dead(e) && !typeHit(e)) continue; count++; continue; }
           if (p.filter === 'alive' && dead(e)) continue;
           if (p.filter === 'dead' && !dead(e)) continue;
-          if (p.types.length && !p.types.some((t: string) => hasType(e, t))) continue;
+          if (p.types.length && !typeHit(e)) continue;
           count++;
         }
       }

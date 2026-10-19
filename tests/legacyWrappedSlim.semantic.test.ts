@@ -7,7 +7,8 @@ import {isLegacyWrappedKit} from '../src/blocks/ops/legacyHandler';
 import {validateKit} from '../src/effects/kitValidation';
 const isDeferred=(id:string)=>/^(arena_|wiki_)/.test(id);
 const homeDefs=MIGRATED_LEGACY_WRAPPED_KITS.filter(d=>d.elfIds.every(id=>!isDeferred(id)));
-assert.ok(homeDefs.length>=30,'首頁包裝定義不應為空');
+// 包裝份數會隨遷移（拆成真 Kit）持續減少，不能釘死固定下限；只要還有首頁包裝，就逐份驗證（下方迴圈）。全部遷完時此檢查自然不再有對象。
+assert.ok(homeDefs.length>0||MIGRATED_LEGACY_WRAPPED_KITS.length===0,'首頁包裝定義不應為空（除非整份包裝清單已全部遷移完）');
 const pick=(elf:any,d:any):any=>d.kind==='soul'?elf.soulMark:d.kind==='trait'
   ?[elf.trait,elf.alienTraits?.gen2Trait,elf.alienTraits?.exclusiveTrait,...(elf.alienTraits?.exclusiveTraits||[]),elf.alienTraits?.alienTrait,elf.alienTraits?.generalTrait].filter(Boolean).find((t:any)=>t.name===d.name&&t.description===d.description)
   :[...elf.skills,...(elf.skillPool||[])].find((s:any)=>s.name===d.name&&s.description===d.description);

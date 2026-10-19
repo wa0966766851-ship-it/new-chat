@@ -35,3 +35,19 @@ MIGRATED_REY_SKILL_KITS.push({elfIds:['5029'],name:'異境神霆',description:OT
  sequence('令自身下2回合造成非真實傷害提升210%',[{acts:[a('dmg_mod_turns',{dir:'out',kind:'非真實',boost:2.1,turns:2,next:true})]}],4),
  sequence('下2回合自身所有技能先制+3',[{acts:[a('prio_turns',{turns:2,v:3,next:true})]}],5),
 ]});
+const reyParalyzed={c:'has_status',p:{side:'self',status:'麻痺'},label:'自身處於麻痺狀態'};
+const forbiddenText=OTHERWORLD_REY_TEXT.skills['霆·禁雷敕令'];
+MIGRATED_REY_SKILL_KITS.push({elfIds:['5029'],name:'霆·禁雷敕令',description:forbiddenText,kit:[
+ {...property('■ 自身體力低於210則必定先手','forced_first',true,0),params:{property:'forced_first',value:true,conditions:[{c:'hp_value',p:{side:'self',op:'低於',amount:210},label:'自身體力低於210點'}]}},
+ {...property('■ 自身處於麻痺狀態時轉化為威力210的攻擊技能且無視對手免疫效果，對手每擁有70點重量則攻擊威力額外提升70，攻擊類型為雙攻中較高者，兩者相同則效果失效，轉化技能屬性取電系/神秘系/電神秘系中克制倍數最高的值','forced_first',true,1),
+  params:{property:'skill_transform',value:{power:210,perWeight:70,perPower:70,types:['電','神秘','神秘.電'],names:{物理:'霆·禁雷敕令·神罰',特殊:'霆·禁雷敕令·神譴'},ignoreAttackImmunity:true},conditions:[reyParalyzed]},node:'before_skill'},
+ sequence('🎯 附加對手自身已損失體力70%的真實傷害，附加時若體力低於0則改為附加自身體力上限70%的真實傷害',[
+  {cond:[{c:'hp_value',p:{side:'self',op:'低於',amount:0},label:'自身體力低於0'}],acts:[a('dmg',{base:'最大體力',of:'self',ratio:.7,type:'真實'})],elseActs:[a('dmg',{base:'已損失體力',of:'opp',ratio:.7,type:'真實'})]},
+ ],2),
+ sequence('🎯 消除對手回合類效果，消除成功則下2回合受到傷害翻倍',[
+  {acts:[a('clear_turn',{side:'opp'})]},
+  {chain:'success',acts:[a('damage_multiplier_turns',{side:'opp',dir:'in',kind:'攻擊',mult:2,turns:2,next:true})]},
+ ],3),
+ sequence('🎯 自身體力低於最大體力⅓時則造成技能傷害提升3倍',[{cond:[{c:'hp_ratio',p:{side:'self',op:'低於',ratio:1/3},label:'自身體力低於最大體力⅓'}],acts:[a('dmg_mod',{dir:'out',kind:'技能',boost:2})]}],4),
+ (()=>{const raw='🎯 未擊敗對手則下2回合自身所有技能先制+2',body=[{cond:[{c:'nokill',p:{},label:'未擊敗對手'}],acts:[a('prio_turns',{turns:2,v:2,next:true})]}];return {...sequence(raw,body,5),node:'on_hit' as const,params:{clause:{raw,trig:'after_hit',parsed:true,body}}};})(),
+]});

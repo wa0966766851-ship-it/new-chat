@@ -84,6 +84,7 @@ try {
    await mount(`fifth-real-${side}-${first}`, side, hamo, target);
    await turn(side, 5); await turn(side, 5); executions = 0; outcomes.length = 0;
    await turn(side, 4);
+    console.log('__T3:', JSON.stringify(driver.getSyncState()[`${other}Timers`].map((x: any) => ({ id: x.id, rem: x.remaining, pend: x.pendingActivation }))));
    let state = driver.getSyncState();
    assert.equal(executions, first ? 0 : 1, '先手當次阻止附加handler；後手不能回溯已使用技能');
    assert.equal(outcomes.filter(d => d.event === 'ON_SKILL_HIT').length, first ? 0 : 1);
@@ -92,6 +93,7 @@ try {
    outcomes.length = 0; executions = 0;
    await turn(side, 5);
    state = driver.getSyncState();
+    console.log('__TM:', JSON.stringify(driver.getSyncState()[`${other}Timers`].map((x: any) => ({ id: x.id, rem: x.remaining, pend: x.pendingActivation, kind: x.kind, addInv: x.payload?.block?.addInvalid }))));
    assert.equal(executions, 0, first ? '同類附加失效但主攻擊仍可使用' : '下一回合確實阻止整招');
    assert.equal(outcomes.filter(d => d.event === 'ON_SKILL_HIT').length, first ? 1 : 0);
    assert.equal(outcomes.filter(d => d.event === 'ACTION_FAILED' && d.invalid).length, first ? 0 : 1);
@@ -189,7 +191,7 @@ try {
   }; // 中毒可附加但不控制，這個獨立情境才應消耗20倍PP。
   await mount('hamo-root-pp-' + side, side, rootHamo, ppTarget);
   await turn(side, 3);
-  assert.equal(driver.getSyncState()[other].skills[0].pp, 9, '正常出招消耗20PP，回合末再被吸取1PP');
+   assert.equal(driver.getSyncState()[other].skills[0].pp, 9, '正常出招消耗20PP，回合末再被吸取1PP');
   assert.equal(driver.getSyncState()[side].skills[3].pp, 20, '本槽扣1後吸取恢復1，其他技能不得替代此槽');
   checks++;
   // 真正BattleScreen／魂印入口：敵方只用測試技能提供已知傷害，哈莫不替換handler。
@@ -222,8 +224,10 @@ try {
   await mount('hamo-cycle-full-' + side, side, cycleHamo, caster, [dragon, neutral]);
   for (let i = 0; i < probes.length; i++) await turn(side, 0, i);
   let cycleState = driver.getSyncState(), reg = cycleState[`${side}RegistryState`];
-  assert.deepEqual(reg.hamoScales, ['藍色', '紅色', '綠色']);
-  assert.equal(reg.hamoCycle, 3); assert.equal(reg.hamoHalvingCount, 3);
+  const coloursOf=()=>cycleState[`${side}Marks`].filter((m:any)=>m.ownerBattleId===(cycleState[side].battleId||cycleState[side].id)&&m.count>0&&m.id.startsWith('hamo_scale_')).flatMap((m:any)=>Array(m.count).fill(m.id.slice('hamo_scale_'.length)));
+  assert.deepEqual(coloursOf(), ['藍色', '紅色', '綠色']);
+  const cycle=reg.typedDamageCycles[`${cycleState[side].battleId||cycleState[side].id}:scale_sequence`];
+  assert.equal(cycle.index, 3); assert.equal(cycle.reductions, 3);
   assert.deepEqual(incoming.slice(0, 2).map(h => h.amount), [0, 0]);
   for (let i = 2; i < probes.length; i++) assert.equal(incoming[i].amount,
    Math.floor(Math.floor(1000 * getTypeMatchup(probes[i], '龍')) * .125), '正式X系傷害須套三次減半，不能當固定傷害');
@@ -233,13 +237,13 @@ try {
   checks++;
   const hpBefore = cycleState[side].currentHp;
   await turn(side, 0, 5); cycleState = driver.getSyncState(); reg = cycleState[`${side}RegistryState`];
-  assert.ok(reg.hamoScales.includes('藍色') && reg.hamoScales.includes('紅色'), '最後無色鱗染色的下一回合仍在2回合保護內');
+  assert.ok(coloursOf().includes('藍色') && coloursOf().includes('紅色'), '最後無色鱗染色的下一回合仍在2回合保護內');
   assert.equal(cycleState[other].shield || 0, 0, '保護內保留鱗片但仍執行藍鱗削除護盾效果');
   checks++;
   await turn(side, 0, 5); cycleState = driver.getSyncState(); reg = cycleState[`${side}RegistryState`];
   assert.equal(cycleState[side].statStages.atk || 0, 0); assert.equal(cycleState[side].statStages.accuracy || 0, 0, '藍鱗免下降含命中');
-  assert.ok(!reg.hamoScales.includes('藍色')); assert.ok(!reg.hamoScales.includes('紅色'), '全染色保護到期後，受觸發者回合末消失');
-  assert.ok(reg.hamoScales.includes('綠色'), '未觸發綠鱗不可跟著清空');
+  assert.ok(!coloursOf().includes('藍色')); assert.ok(!coloursOf().includes('紅色'), '全染色保護到期後，受觸發者回合末消失');
+  assert.ok(coloursOf().includes('綠色'), '未觸發綠鱗不可跟著清空');
   assert.equal(cycleState[side].currentHp, hpBefore, '固定百分比皆被紅鱗擋；真傷扣1000後魂印回滿');
   assert.deepEqual(incoming.slice(-3), [{ type: 'fixed', amount: 0 }, { type: 'percent', amount: 0 }, { type: 'true', amount: 1000 }]);
   assert.equal(cycleState[other].shield || 0, 0);
@@ -249,7 +253,7 @@ try {
   assert.equal(cycleState[side].skills[0].pp, 29, '綠鱗重置後哈莫仍須正常出招扣1PP');
   assert.equal(cycleState[side].skills[1].pp, 30, '原本耗盡且未出招槽也重置回滿，不只回復本槽');
   assert.equal(cycleState[side].currentHp, cycleState[side].maxHp);
-  assert.ok(!reg.hamoScales.includes('綠色'));
+  assert.ok(!coloursOf().includes('綠色'));
   assert.equal(cycleState[other].maxHp, 80000, '綠鱗消失削減敵方體力上限20%而非真實傷害');
   checks++;
   const stolen = seed('5023'); stolen.skills = [stolen.skills.find((s: any) => s.name === '械律·置換')];
@@ -276,7 +280,7 @@ try {
   checks++;
   for (const replacement of [false, true]) {
    const hits: any[] = []; const outcomes: string[] = [];
-   const own = seed('5035'); own.name = '重算驗收'; own.skills = [{ ...own.skills[1], power: 100, pp: 20, maxPp: 20 }];
+   const own = seed('5035'); own.name = '重算驗收'; own.soulMark = undefined; own.skills = [{ ...own.skills[1], power: 100, pp: 20, maxPp: 20 }];
    souls[own.name] = (_c: any, event: string) => { if (['ON_SKILL_HIT', 'AFTER_ACTION', 'ACTION_FAILED'].includes(event)) outcomes.push(event); };
    const foe = make('重算受方'); foe.skills[0].priority = -10;
    souls[foe.name] = (c: any, event: string, data: any) => {
@@ -322,4 +326,6 @@ try {
  }
  assert.equal(errors.length, 0, '正式戰鬥handler錯誤不能被吞掉後宣稱通過');
  console.log('正式戰鬥註冊／公式重算／蝕言怨靈 ' + checks + ' 情境通過。');
-} finally { console.error = originalError; await act(async () => root.unmount()); await server.close(); dom.window.close(); }
+} finally { console.error = originalError; await act(async () => root.unmount()); console.log('__FC:', JSON.stringify((globalThis as any).__FC || []), 'FC2:', JSON.stringify((globalThis as any).__FC2 || []));
+  console.log('__HG:', JSON.stringify((globalThis as any).__HG || []), 'PM:', JSON.stringify((globalThis as any).__PM || []), 'PM2:', JSON.stringify((globalThis as any).__PM2 || []), 'FE:', JSON.stringify((globalThis as any).__FE || []).slice(0, 600), 'TK:', JSON.stringify((globalThis as any).__TK || []).slice(0, 400), 'AT:', JSON.stringify((globalThis as any).__AT || []));
+  await server.close(); dom.window.close(); }

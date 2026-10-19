@@ -1,3 +1,4 @@
+import {hasPortableDuel} from '../battle/portableSkillMarks';
 // src/utils/battleHelpers.ts
 import { Elf, Skill, BattleItem } from "../types";
 import { isStoneThrower, isSkillStone, stoneBasePp } from "../data/skillStones";
@@ -337,6 +338,7 @@ export const getNoSwitchTurns = (state: any, side: "p1" | "p2"): number => {
 };
 
 export const isElfSwitchDisabled = (elf: any, oppElf: any, isTyrDuelField: boolean, noSwitchTurns: number) => {
+  if(hasPortableDuel(elf,oppElf))return true;
   if (!elf) return false;
   if (noSwitchTurns > 0) return true;
   if ((elf.odinNoSwitch2Turns || 0) > 0) return true;

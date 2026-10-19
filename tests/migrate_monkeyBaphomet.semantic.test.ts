@@ -148,6 +148,8 @@ try {
     for (const side of ['p1', 'p2']) {
       const target = { battleStatuses: { 中毒: 4, 神話: 1 }, effects: [{ id: '中毒', duration: 4 }, { id: '神話', duration: 1 }, { id: '技能增益', duration: 2 }], marks: [{ id: 'mark', count: 2 }] };
       const ctx: any = { actor: side, targetSide: side === 'p1' ? 'p2' : 'p1', self: {}, target, getStatuses,
+        // convert_status 現讀 status_conversion_ban 常駐狀態（5015 夜）：mock 補玩家／對手狀態查詢，未設保護即回傳 undefined。
+        getPlayerState: (_k: string) => undefined, getOpponentState: (_k: string) => undefined,
         updateElf: (_s: string, changes: any) => Object.assign(target, changes), addLog: () => {},
         applyStatusWithImmunityCheck: (_s: string, status: string, turns: number) => { addStatusEffect(target, status, turns); return { success: true }; } };
       assert.equal(runAct(ctx, { op: 'convert_status', p: { side: 'opp', status: '害怕', turns: 3 }, label: 'x' }, { last: null, lastAmount: 0 }), true);

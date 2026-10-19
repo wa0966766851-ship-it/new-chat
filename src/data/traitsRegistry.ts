@@ -1,5 +1,6 @@
 import { Elf } from '../types';
 import { effectSourceViews } from '../battle/effectSources';
+import { finalExtraTraitActionIssue } from '../blocks/ops/finalExtraTraits';
 
 export interface AdvancedTraitMechanics {
   // 豪邁
@@ -173,9 +174,33 @@ export function getElfAdvancedMechanics(elf: Elf): AdvancedTraitMechanics {
   if (!elf) return {};
   return Object.assign({}, ...effectSourceViews(elf).map(nativeAdvancedMechanics));
 }
+export function hasAuthoredAdvancedMechanic(elf:Elf,key:string):boolean {
+  return effectSourceViews(elf).some(e=>[e.alienTraits?.gen2Trait,e.alienTraits?.exclusiveTrait,
+    ...(e.alienTraits?.exclusiveTraits||[]),e.alienTraits?.alienTrait,e.alienTraits?.generalTrait]
+    .some(d=>d?.effectMode==='kit'&&(d.kit||[]).some(k=>!(k as any).disabled&&k.node==='passive_always'&&
+      k.params?.clause?.body?.some((b:any)=>!b.cond?.length&&!b.chain&&(b.acts||[]).some((a:any)=>a.op==='advanced_mechanic'&&a.p?.key===key&&!finalExtraTraitActionIssue(a.op,a.p))))));
+}
 function nativeAdvancedMechanics(elf: Elf): AdvancedTraitMechanics {
   const merged: AdvancedTraitMechanics = {};
   if (!elf) return merged;
+  // Kit 模式不借用名稱或舊 profile。只讀取受合約限制、無條件的獨立常駐宣告。
+  const definitions = [elf.alienTraits?.gen2Trait,elf.alienTraits?.exclusiveTrait,
+    ...(elf.alienTraits?.exclusiveTraits||[]),elf.alienTraits?.alienTrait,elf.alienTraits?.generalTrait];
+  for(const def of definitions){
+    if(def?.effectMode!=='kit')continue;
+    for(const entry of def.kit||[]){
+      if((entry as any).disabled||entry.node!=='passive_always'||entry.codeId!=='effect_sequence')continue;
+      const clause=entry.params?.clause;
+      if(clause?.trig!=='passive'||!clause.parsed)continue;
+      for(const segment of clause.body||[]){
+        if(segment.cond?.length||segment.chain||segment.elseActs?.length)continue;
+        for(const action of segment.acts||[]){
+          if(action.op==='advanced_mechanic'&&!finalExtraTraitActionIssue(action.op,action.p))
+            (merged as Record<string,unknown>)[action.p.key]=action.p.value;
+        }
+      }
+    }
+  }
   const overriddenNames = new Set([elf.alienTraits?.gen2Trait,elf.alienTraits?.exclusiveTrait,
     ...(elf.alienTraits?.exclusiveTraits || []),elf.alienTraits?.alienTrait,elf.alienTraits?.generalTrait]
     .filter(trait=>trait && ['kit','description'].includes(trait.effectMode || 'auto'))

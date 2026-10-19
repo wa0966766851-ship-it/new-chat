@@ -19,6 +19,7 @@ import { MIGRATED_FINAL_A_KITS } from './migratedFinalAKits';
 import { MIGRATED_MONKEY_BAPHOMET_SKILL_KITS } from './migratedMonkeyBaphometSkillKits';
 import { REMAINING_SIMPLE_SKILL_KITS } from './remainingSimpleSkillKits';
 import { MIGRATED_LEGACY_WRAPPED_KITS } from './migratedLegacyWrappedKits';
+import { MIGRATED_EXTRA_ELF_SKILL_KITS } from './migratedExtraElfKits';
 import { MIGRATED_CLOSURE_SKILL_KITS } from './migratedClosureSkillKits';
 import { MIGRATED_SHARED_SKILL_KITS } from './migratedSharedSkillKits';
 import { MIGRATED_EVENT_SKILL_KITS } from './migratedEventSkillKits';
@@ -374,5 +375,6 @@ export const MIGRATED_SEQUENCE_SKILL_KITS: ReviewedSequenceSkill[] = [
   ...MIGRATED_MONKEY_BAPHOMET_SKILL_KITS,
   ...REMAINING_SIMPLE_SKILL_KITS,
   // legacy_handler 過渡包裝（技能／魂印／特質混合；pack 依 kind 區分）。
+  ...MIGRATED_EXTRA_ELF_SKILL_KITS,
   ...MIGRATED_LEGACY_WRAPPED_KITS,
 ];

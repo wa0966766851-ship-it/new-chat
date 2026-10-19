@@ -13,6 +13,11 @@ function setSkillCharge(ctx: BattleEventContext, charge: number): void {
   ctx.updateElf(ctx.actor, { id: ctx.self.id, battleId: ctx.self.battleId, skills });
 }
 
+// 5016 魂印「械」已遷真 Kit（migrated5016MechSoulKit.ts；DSH 20261019）。
+// 舊 handler 的效果條款全部改由 Kit 表達；此處僅保留映射鍵，讓 SoulMarkRegistry 的 Proxy
+// 仍執行 sharedSoulLifecycle（通用生命週期），避免通用讀取端失效（規則3.3）。
+export const handleMarsSoulMarkNoop = (_ctx: BattleEventContext, _event: EffectTiming, _extraData?: any): void => {};
+
 export const handleMarsSoulMark = (ctx: BattleEventContext, event: EffectTiming, extraData?: any) => {
   if (benchSkip(ctx, event)) return; // 場下不觸發回合節點效果（例：聖・回合結束回復）
   const isP1 = ctx.actor === "p1";

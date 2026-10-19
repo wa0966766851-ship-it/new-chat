@@ -36,6 +36,8 @@ export enum EffectTiming {
   OPPONENT_AFTER_ACTION = "OPPONENT_AFTER_ACTION",
   /** 在場精靈的護盾由 >0 變為 0（被打破或被消除）：派發給持有方。data: { before } */
   SHIELD_BROKEN = "SHIELD_BROKEN",
+  /** 護盾或護罩由正值歸零；不改變舊護盾事件範圍。 */
+  HELD_RESOURCE_LOST = "HELD_RESOURCE_LOST",
   /**
    * 自身技能未成功出手（技能無效／未命中／被閃避／攻擊免疫）：派發給行動方魂印，取代 AFTER_ACTION，
    * 用於清理 BEFORE_SKILL／BEFORE_ACTION 設下的「本次行動」旗標。data: ActionResultInfo（hit=false）
@@ -135,6 +137,7 @@ export interface StatChangeResult {
 }
 
 export interface PriorityComputation {
+  tieRole?: 'challenger' | 'challenged';
   base: number;
   bonus: number;
   forcedFirst: boolean;
@@ -176,6 +179,8 @@ export type DamageCategory = "skill_attack" | "skill_attribute" | "skill_extra_a
 export type DamageNode = "attack_damage" | "skill_effect" | "extra_action";
 
 export interface DamageComputation {
+  /** 實際造成傷害的一方；供受方效果區分敵方傷害與自身傷害。 */
+  sourceSide?: 'p1' | 'p2';
   incomingDamageImmunity?:boolean; // 正式受方100%免傷；不同於抵擋、上限、取整或造成者傷害歸零。
   incomingDamageCancellation?:'block'|'conversion'; // 明確抵擋／轉化不以倍率0冒充免疫。
   damageBlocks?:Map<string,(amount:number)=>void>;

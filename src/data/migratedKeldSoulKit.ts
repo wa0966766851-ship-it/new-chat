@@ -35,6 +35,11 @@ export const MIGRATED_KELD_SOUL_KIT = {
             a('clear_turn', { side: 'opp' }),
             a('switch_lock', { side: 'opp', turns: 2, next: true }),
           ] },
+          // 持有寂殺之魄但凍傷未觸發（對手免疫／附加失敗）：同樣視為「未觸發」，消除回合類效果＋下2回合無法主動切換。
+          { chain: 'fail', cond: [c('mark_count', { side: 'self', id: 'keld_soul', op: '不小於', amount: 1 }, '擁有寂殺之魄')], acts: [
+            a('clear_turn', { side: 'opp' }),
+            a('switch_lock', { side: 'opp', turns: 2, next: true }),
+          ] },
         ],
       })] },
     ], 0),

@@ -4,7 +4,8 @@
 //   shield／status_guard／stat／stat_clear／turn_key_set 皆既有。
 // 守護印記的層數曲線（25%＋每層10%，上限55%）與 4 回合期限由 effects/guardianMarkRegistry ＋
 //   elves/imperial-shield/battleRule 的通用規格承擔（維持原讀取端，未改寫）。
-// 封技攔截是「命運之輪 C 級攔截卡」效果（destinyInterceptors），非魂印條目——不進本 Kit。
+// 封技攔截是「命運之輪 C 級攔截卡」效果（destinyInterceptors），非魂印條目——不進本 Kit
+//   （原文末段【命運之輪 C 級專屬攔截】僅附註於 description；魂印本身不封技，一般戰鬥不得封鎖對手攻擊技能）。
 import type { KitEntry, Node } from '../effects/effectSystem.schema';
 import { action as a } from './reviewedSequenceSkillKits';
 
@@ -40,8 +41,4 @@ export const MIGRATED_IMPERIAL_SHIELD_SOUL_KIT = {
         a('turn_key_set', { key: 'attackPpMultiplierValue', turns: 2, side: 'opp', reason: '盾·盾碎倍率', label: 'PP消耗提升倍率' }),
       ] },
     ], 3),
-    // 【命運之輪 C 級專屬攔截：封技攔截】登場時使對手當前精靈下1回合無法選擇使用攻擊技能。
-    // （原文屬魂印描述的一部分；destinyInterceptors 另有同名 C 級攔截卡效果，兩者互不衝突。）
-    e('on_entered', 'entrance', '【命運之輪 C 級專屬攔截：封技攔截】登場時使對手當前精靈下1回合無法選擇使用攻擊技能',
-      [{ acts: [a('invalid_turns', { kind: '攻擊', turns: 1 })] }], 4),
   ] };

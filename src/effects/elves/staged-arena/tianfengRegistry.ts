@@ -23,28 +23,13 @@ export function handleTianfengSoulMark(_c: any, _event: any, _data?: any): void 
 // 鋒毫浸血雨「下 1 回合攻擊命中時消耗自身目前體力½並造成等量百分比傷害」——結算點原掛魂印
 // handler 的 AFTER_ATTACK_HIT（隨魂印遷 Kit 移除）；同批（規則3.4）併入技能表自身導出。
 export const TIANFENG_AFTER_HIT: Record<string, (c: any, info?: any) => number> = {
-  '鋒毫浸血雨': (c, info) => {
-    if ((info?.hitIndex ?? 0) !== 0) return 0;
-    return settleBloodRain(c);
-  },
+  // 鋒毫浸血雨已遷真 Kit（migratedArena13FenghaoKit.ts；DSH 20261018）——命中後結算由 Kit 條款處理。
 };
 
 export const TIANFENG_SKILLS: Record<string, BattleSkillHandler> = {
-  '鋒毫浸血雨': c => {
-    // 原 write('bloodRainRound', round+1) 依賴魂印的 round 計數（隨魂印遷 Kit 移除）——
-    // 改為武裝標記制：本次行動不觸發，下一次（不同行動）命中時觸發（規則3.4 同批修正）。
-    write(c, 'bloodRainArmed', 1); write(c, 'bloodRainArmedAction', Number((c as any).moveIndex ?? 0) + 1000 * (read(c, 'round') || 0) + 1);
-    until(c, 'attrNull', 2); until(c, 'pressure', 2);
-    if (c.target.currentHp > 0) {
-      modify(c, c.targetSide, -1);
-      if (!hasDrop(c.target)) c.setOpponentState('cannotSwitchTurns', 2);
-    }
-  },
-  // 艷羅劍典已遷移為真 Kit（migratedArena13SkillKits；DSH 20261017）。
+  // 鋒毫浸血雨已遷真 Kit（migratedArena13FenghaoKit.ts；DSH 20261018）——規則3.3 由技能表移除。
+  // 艷羅劍典／敕赦千銘／萬蒼書帝錄已遷真 Kit（migratedArena13SkillKits；DSH 20261017）。
   '法咒共鳴斬': c => { c.setPlayerState('ignoreDamageLimitThisAction', true); c.setPlayerState('ignoreAttackImmunityThisAction', true); },
-  // 敕赦千銘已遷移為真 Kit（migratedArena13SkillKits；DSH 20261017）。
-  // 萬蒼書帝錄已遷移為真 Kit（migratedArena13SkillKits；DSH 20261017）。
-
 };
 
 /** 鋒毫浸血雨：下 1 回合攻擊命中時（僅一次），消耗自身目前體力 1/2 並造成等量百分比傷害。 */

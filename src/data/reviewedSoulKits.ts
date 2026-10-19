@@ -19,10 +19,39 @@ import { MIGRATED_KEERHODE_SOUL_KIT } from './migratedKeerhodeSoulKit';
 import { MIGRATED_ARENA13_SOUL_KIT } from './migratedArena13SoulKit';
 // 5002 帝皇之盾 魂印「盾」（DSH 20261018 第十一批·第一波）
 import { MIGRATED_IMPERIAL_SHIELD_SOUL_KIT } from './migratedImperialShieldSoulKit';
+// arena_15 命運龍輪 莫伊萊 專屬特性（DSH 20261018 第十二批）
+import { MIGRATED_MOIRAI_SOUL_KIT } from './migratedMoiraiSoulKit';
+// 5015 混沌·布萊克 魂印「夜」（DSH 20261018 第十一批·第一波；statusSovereignty 通用件）
+import { MIGRATED_NIGHT_SOUL_KIT } from './migratedNightSoulKit';
+// 5025 恐懼的化身·咤克斯 魂印「懼」（DSH 20261018 第十三批·第一波；fearSeed 通用件）
+import { MIGRATED_ZHAKESI_FEAR_SOUL_KIT } from './migratedZhakesiFearSoulKit';
+// 5031 六界神王 魂印「界」（DSH 20261018 讀法B；realmSecrets＝既有 random_branch/資源印記）
+import { MIGRATED_LIUJIE_SOUL_KIT } from './migratedLiujieSoulKit';
+// 5030 聖靈邁爾斯 魂印「聖」（DSH 20261018 第十三批；holyMiles 通用件）
+import { MIGRATED_HOLY_MILES_SOUL_KIT } from './migratedHolyMilesKits';
+// arena_12 無為龍者 魂印「無為之境」＋五技（DSH 20261018 第十六批）
+import { MIGRATED_ARENA12_WUWEI_SOUL_KIT } from './migratedArena12SkillKits';
+import { MIGRATED_HAMO_LIN_SOUL_KIT } from './migratedHamoLinSoulKit';
+import { MIGRATED_FINAL_DELU_SOUL_KIT, MIGRATED_FINAL_BELIENTE_SOUL_KIT } from './migratedFinalOdinDeluBelienteKits';
+import { MIGRATED_FINAL_DRAGON_SOUL_KIT } from './migratedFinalMarsLanDragonKits';
+import { MIGRATED_ARENA16_DRAGON_HEALING_SOUL_KIT } from './migratedArena16DragonHealingSoulKit';
+import { MIGRATED_ARENA14_WUJI_SOUL_KIT } from './migratedArena14WujiSoulKit';
+import { MIGRATED_5028_LAN_SOUL_KIT } from './migrated5028LanSoulKit';
+import { MIGRATED_5014_CAN_SOUL_KIT } from './migrated5014CanSoulKit';
+import { MIGRATED_5007_BRINKK_SOUL_KIT } from './migrated5007BrinkkSoulKit';
+import { MIGRATED_5019_TIWAZ_SOUL_KIT } from './migrated5019TiwazSoulKit';
+import { MIGRATED_5016_MECH_SOUL_KIT } from './migrated5016MechSoulKit';
+import { MIGRATED_FINAL_EXTRA_SOUL_KITS } from './migratedFinalExtraTraitKits';
+// 5018 蟲后·奧佩婭 魂印「后」（DSH 20261018 第十三批·第一波；rosterStats 通用件）
+import { MIGRATED_OPEIA_SOUL_KIT } from './migratedOpeiaSoulKit';
+// 組 5（龍魂雜項；DSH 20261018 最後衝刺）
+import { MIGRATED_GROUP5_SEA_SOUL_KIT } from './migratedGroup5SeaSoulKit';
+import { MIGRATED_GROUP5_HOLY_PUNI_SOUL_KIT } from './migratedGroup5HolyPuniSoulKit';
+import { MIGRATED_REY_SOUL_KIT } from './migratedReyKits';
 const entry=(node:KitEntry['node'],trig:string,raw:string,body:any[],order:number):KitEntry=>({codeId:'effect_sequence',source:'soulmark',role:'innate',node,order,customText:raw,params:{clause:{raw,trig,parsed:true,body}}});
 /** 整份魂印才切換；獨立命中查詢與一次性致死，不借舊handler。 */
-export const REVIEWED_SOUL_KITS=[BAPHOMET_SOUL_KIT,...MIGRATED_MARK_SOUL_KITS,...MIGRATED_RESOURCE_SOUL_KITS,MIGRATED_DIXIN_SOUL_KIT,MIGRATED_SOBIRAT_SOUL_KIT,
-  MIGRATED_ASTRAL_AESFIA_SOUL_KIT,MIGRATED_ASTRAL_AESFIG_SOUL_KIT,MIGRATED_MOGOS_SOUL_KIT,MIGRATED_STAGE_KIND_SOUL_KIT,MIGRATED_STONE_SOUL_KIT,MIGRATED_KELD_SOUL_KIT,MIGRATED_KEERHODE_SOUL_KIT,MIGRATED_ARENA13_SOUL_KIT,MIGRATED_IMPERIAL_SHIELD_SOUL_KIT,{
+export const REVIEWED_SOUL_KITS=[BAPHOMET_SOUL_KIT,MIGRATED_REY_SOUL_KIT,...MIGRATED_MARK_SOUL_KITS,...MIGRATED_RESOURCE_SOUL_KITS,MIGRATED_DIXIN_SOUL_KIT,MIGRATED_SOBIRAT_SOUL_KIT,
+  MIGRATED_ASTRAL_AESFIA_SOUL_KIT,MIGRATED_ASTRAL_AESFIG_SOUL_KIT,MIGRATED_MOGOS_SOUL_KIT,MIGRATED_STAGE_KIND_SOUL_KIT,MIGRATED_STONE_SOUL_KIT,MIGRATED_KELD_SOUL_KIT,MIGRATED_KEERHODE_SOUL_KIT,MIGRATED_ARENA13_SOUL_KIT,MIGRATED_IMPERIAL_SHIELD_SOUL_KIT,MIGRATED_MOIRAI_SOUL_KIT,MIGRATED_NIGHT_SOUL_KIT,MIGRATED_LIUJIE_SOUL_KIT,MIGRATED_ZHAKESI_FEAR_SOUL_KIT,MIGRATED_OPEIA_SOUL_KIT,MIGRATED_HOLY_MILES_SOUL_KIT,MIGRATED_ARENA12_WUWEI_SOUL_KIT,MIGRATED_HAMO_LIN_SOUL_KIT,MIGRATED_FINAL_DELU_SOUL_KIT,MIGRATED_FINAL_BELIENTE_SOUL_KIT,MIGRATED_FINAL_DRAGON_SOUL_KIT,MIGRATED_ARENA16_DRAGON_HEALING_SOUL_KIT,MIGRATED_ARENA14_WUJI_SOUL_KIT,MIGRATED_5028_LAN_SOUL_KIT,MIGRATED_5014_CAN_SOUL_KIT,MIGRATED_5007_BRINKK_SOUL_KIT,MIGRATED_5019_TIWAZ_SOUL_KIT,MIGRATED_5016_MECH_SOUL_KIT,...MIGRATED_FINAL_EXTRA_SOUL_KITS,MIGRATED_GROUP5_SEA_SOUL_KIT,MIGRATED_GROUP5_HOLY_PUNI_SOUL_KIT,{
   kind:'soul' as const,elfIds:['300'],name:'聖',description:'天生免疫每次受到的異常狀態\n每回合結束時恢復最大體力25%與所有技能1點PP值',kit:[
     entry('before_status_apply','before_status','天生免疫每次受到的異常狀態',[{acts:[action('status_guard',{cls:''})]}],0),
     entry('round_end','round_end','每回合結束恢復最大體力25%與所有技能1點PP',[{acts:[action('heal',{side:'self',ratio:.25}),action('pp_op',{side:'self',mode:'add',amount:1})]}],1),

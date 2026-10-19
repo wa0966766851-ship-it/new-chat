@@ -82,19 +82,22 @@ for(const side of ['p1','p2'] as const){
  assert.equal(returned[`${side}RegistryState`].powerMultiplierThisAction,undefined);
 }
 console.log('文字指定範圍、本次倍率、威力公式、換回不復活通過');
-import { handleOtherworldReySoulMark } from '../src/effects/elves/otherworld-rey/registry';
-import { EffectTiming } from '../src/effects/types';
+// 雷神已損失體力增傷／麻痺技能增傷／神降免疫已拆成 Kit 通用 op（blocks/ops/thunderGod.ts），直接以 op 驗證傷害範圍矩陣。
 for(const side of ['p1','p2'] as const){
  const self:any={...elf('rey'),currentHp:500,survivalRule:{mode:'god_descent',active:true,minHp:-70000}};
- const reg:any={};const ctx:any={actor:side,targetSide:side==='p1'?'p2':'p1',self,target:elf('opp'),activeP1:self,activeP2:self,getStatuses:()=>({麻痺:2}),getPlayerState:(k:string)=>reg[k],getOpponentState:()=>0};
- for(const category of categories){const d=comp(category);handleOtherworldReySoulMark(ctx,EffectTiming.BEFORE_DAMAGE,{damageComp:d});assert.ok(Math.abs(d.increasePercent-(isSkill(category)?1.2:['fixed','percent'].includes(category)?0.5:0))<1e-9,category);}
+ const ctx:any={actor:side,targetSide:side==='p1'?'p2':'p1',self,target:elf('opp'),getStatuses:()=>({麻痺:2})};
+ for(const category of categories){const d=comp(category);const st:any={event:{data:{damageComp:d}}};OPS.dmg_scale_by_lost_hp(ctx,{kind:'非真實',cap:.7},st);OPS.dmg_mod(ctx,{dir:'out',kind:'技能',boost:.7},st);assert.ok(Math.abs(d.increasePercent-(isSkill(category)?1.2:['fixed','percent'].includes(category)?0.5:0))<1e-9,category);}
  self.currentHp=-100;
- for(const category of categories){const d=comp(category,true);handleOtherworldReySoulMark(ctx,EffectTiming.BEFORE_DAMAGE,{damageComp:d});assert.equal(d.multiplier,matchesDamageTypes(['non_true'],category)?0:1,`神降/${category}`);}
+ for(const category of categories){const d=comp(category,true);OPS.nullify_incoming(ctx,{kind:'非真實'},{event:{data:{damageComp:d}}} as any);assert.equal(d.multiplier,matchesDamageTypes(['non_true'],category)?0:1,`神降/${category}`);}
 }
 function isSkill(category:string){return matchesDamageTypes(['skill'],category);}
 const engine=await createServer({server:{middlewareMode:true,hmr:false,watch:null},appType:'custom'});
 try{
  const {buildDamageAPIs}=await engine.ssrLoadModule('/src/battle/contextBuilders.ts');
+ // 雷神增傷已是 Kit op：以測試用魂印註冊表入口（舊 handler 已空殼）轉呼叫同一組 op，驗證真正造成方入口的乘算組合。
+ const {getSoulMarkRegistry}=await engine.ssrLoadModule('/src/battle/../effects/battleEventRegistry.ts');
+ const {EffectTiming:ET}=await engine.ssrLoadModule('/src/effects/types.ts');
+ getSoulMarkRegistry()['異境神霆·雷伊']=(c:any,e:any,d:any)=>{if(e===ET.BEFORE_DAMAGE&&d?.damageComp){const st:any={event:{data:d}};OPS.dmg_scale_by_lost_hp(c,{kind:'非真實',cap:.7},st);OPS.dmg_mod(c,{dir:'out',kind:'技能',boost:.7},st);}};
  for(const side of ['p1','p2'] as const){
   const target=side==='p1'?'p2':'p1';
   const s:any={p1:elf('a'),p2:elf('b'),p1Marks:[],p2Marks:[],p1Timers:[],p2Timers:[],p1RegistryState:{},p2RegistryState:{}};

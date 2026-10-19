@@ -1,3 +1,6 @@
+import {resourcePanelOperations} from '../effects/resourcePanelOperations';
+import {supportOperations,consumedHealthAmount} from '../effects/mechSupportLifecycle';
+import {portableSkillCapabilities} from '../battle/portableSkillMarks';
 import { addDamageReduction, multiplyDamageReduction } from '../battle/damageReduction';
 import {stageOperationBlocked} from '../effects/stageProtection';
 import {hasAllStageDirection} from '../effects/stageQueries';
@@ -68,7 +71,31 @@ import { powerStatOperations, powerStatEvalCond } from './ops/powerStat';
 import { entranceStackOperations, entranceStackEvalCond } from './ops/entranceStack';
 import { stageDamageOperations, stageDamageEvalCond } from './ops/stageDamage';
 import { keldSoulOperations, keldSoulEvalCond } from './ops/keldSoul';
+import { statusSovereigntyOperations } from './ops/statusSovereignty';
+import { priorityBonusOperations } from './ops/priorityBonus';
 import { fifthPpDiff, arenaDrainAmount } from './ops/arenaShared';
+import { arenaSharedOperations } from './ops/arenaShared';
+import { holyMilesOperations } from './ops/holyMiles';
+import { dragonHealingOperations } from './ops/dragonHealing';
+import { shieldMarkOperations } from './ops/shieldMark';
+import { canOperations } from './ops/can';
+import { brinkkOperations } from './ops/brinkk';
+import { odinOperations } from './ops/odinRune';
+import { mechOperations } from './ops/mech';
+import { ppAbsorbOperations } from './ops/ppAbsorb';
+import { fearSeedOperations } from './ops/fearSeed';
+import { rosterStatsOperations } from './ops/rosterStats';
+import { group1Operations } from './ops/group1';
+import { finalExtraTraitOperations } from './ops/finalExtraTraits';
+import { finalMarsLanDragonOperations } from './ops/finalMarsLanDragon';
+import {typedCycleOperations} from './ops/typedDamageCycle';
+import {resourceDefenseOperations} from './ops/resourceDefenses';
+import {missingHpScalingOperations} from './ops/missingHpScaling';
+import {removedEffectOperations} from './ops/removedEffects';
+import { finalOdbOperations, finalOdbEvalCond } from './ops/finalOdinDeluBeliente';
+import { extraElfOperations } from './ops/extraElf';
+import { thunderGodOperations, thunderGodEvalCond } from './ops/thunderGod';
+import { group5Operations } from './ops/group5';
 
 type S = "p1" | "p2";
 export interface RunState {
@@ -97,7 +124,7 @@ export interface RunState {
   deferredDamageSerial?:number;
 }
 
-const DYNAMIC_CONDS = new Set(["success", "triggered", "fail", "kill", "nokill", "crit", "dmg_cmp", "last_amount", "last_no_dmg", "invalid", "weak", "event_crit","selected_pp","last_damage_immune","mark_count","mark_chance","death_node","last_hp_lost"]);
+const DYNAMIC_CONDS = new Set(["success", "triggered", "fail", "kill", "nokill", "crit", "dmg_cmp", "last_amount", "last_no_dmg", "invalid", "weak", "event_crit","selected_pp","last_damage_immune","mark_count","mark_chance","death_node","last_hp_lost","last_typed_damage_weak"]);
 const condKey = (c: Cond) => `${c.c}:${JSON.stringify(c.p || {})}`;
 export function snapshotConditions(ctx: BattleEventContext, clauses: Clause[], st: RunState) {
   st.conditionSnapshots ||= new Map();
@@ -150,6 +177,8 @@ function cmp(a: number, op: string, b: number): boolean {
 
 // ───────── 條件 ─────────
 export function evalCond(ctx: BattleEventContext, c: Cond, st: RunState): boolean | undefined {
+  const finalCondition = finalOdbEvalCond(ctx,c,st);
+  if (finalCondition !== undefined) return finalCondition;
   const p = c.p || {};
   const self: any = liveElf(ctx, ctx.actor), opp: any = liveElf(ctx, ctx.targetSide);
   const pick = (w: string) => (w === "self" ? self : opp);
@@ -173,6 +202,7 @@ export function evalCond(ctx: BattleEventContext, c: Cond, st: RunState): boolea
       return p.neg ? !r : r;
     }
     case "stage": { const r = hasStage(pick(p.side), p.kind === "up"); return p.neg ? !r : r; }
+    case 'stage_value': {const value=pick(p.side)?.statStages?.[p.stat]??0;return Number.isFinite(value)&&cmp(value,p.op,p.amount);}
     case 'stage_all': {const r=hasAllStageDirection(pick(p.side),p.kind);return p.neg?!r:r;}
     case "hp_ratio": { const e = pick(p.side); return cmp(e.currentHp, p.op, e.maxHp * p.ratio); }
     case 'hp_value':return cmp(pick(p.side).currentHp,p.op,p.amount);
@@ -184,6 +214,21 @@ export function evalCond(ctx: BattleEventContext, c: Cond, st: RunState): boolea
     // 當回合未受到指定類（固定／百分比）傷害（殞星衝擊；recordBattleFacts 寫入）。
     case "no_damage_kind": return ctx.getPlayerState(p.kind === "百分比" ? "blkPercentDmgTakenRound" : "blkFixedDmgTakenRound") !== (ctx.roundNumber ?? 0);
     // 對手在場期間 PP 曾變化（newElfLifecycle:61 寫入；殞星衝擊/念力傾瀉變思遷憶）。
+        // arena_12 條件（DSH 20261018）：先出手／未行動／對手切換／同屬性。
+    case "first_move": {const side=ctx.getPlayerState?.('blkFirstMoverThisRound');return (side==='p1'||side==='p2')&&((side===ctx.actor)!==!!p.neg);}
+    case "unacted": return (ctx.getPlayerState?.('actionPreventedRound') === (ctx.roundNumber ?? 0))
+      || (ctx.getPlayerState?.('blkActedThisRound') !== undefined && ctx.getPlayerState?.('blkActedThisRound') !== ctx.actor);
+    case "opp_switched": return ctx.getPlayerState?.('blkSwitchedThisRound') === ctx.targetSide;
+    case "same_type": {
+      const side = p.side === 'opp' ? ctx.targetSide : ctx.actor;
+      const elf = liveElf(ctx, side);
+      const sk = side === ctx.actor ? ctx.skill : (ctx as any).opponentSkill;
+      if (!elf || !sk) return false;
+      const et = String(elf.type || ''), st = String(sk.type || '');
+      if (!et || !st) return false;
+      const parts = et.split(/[·.、／/]/).map((x: string) => x.trim()).filter(Boolean);
+      return parts.some((x: string) => st.includes(x)) || et === st;
+    }
     case "opp_pp_changed": return ctx.getOpponentState('fieldPpChanged') === true;
     case "invalid": return st.event?.trig === "on_invalid" || st.event?.trig === "self_invalid";
     case "weak": {
@@ -193,6 +238,12 @@ export function evalCond(ctx: BattleEventContext, c: Cond, st: RunState): boolea
     }
     case "text": { const re = matchCondText(p.text); return re ? evalCond(ctx, re, st) : false; }
     case "pp_full": { const sk = ctx.skill; const r = !!sk && (sk.pp ?? 0) >= getMaxPp(sk,self); return p.neg ? !r : r; }
+    case 'selected_charge':{
+      const elf=pick(p.side),selected=p.side==='self'?ctx.skill:ctx.opponentSkill;
+      const slot=skillSlot(elf,selected);if(slot<0)return false;
+      const value=elf.skills[slot]?.charge;
+      return Number.isFinite(value)&&cmp(value,p.op,p.amount);
+    }
     case 'selected_pp':{
       const elf=pick(p.side),selected=p.side==='self'?ctx.skill:ctx.opponentSkill;
       const slot=skillSlot(elf,selected);if(slot<0)return false;
@@ -205,8 +256,35 @@ export function evalCond(ctx: BattleEventContext, c: Cond, st: RunState): boolea
     // 「攻擊與特攻差值高於N」（5035 破曉：|atk-spatk|>200 → 附加200固定傷害）。
     case 'atk_gap':{const e=pick(p.side||'self');const d=Math.abs((e?.calculatedStats?.atk??0)-(e?.calculatedStats?.spatk??0));return cmp(d,p.op,p.amount);}
     case 'skill_kind': { const category = st.event?.data?.skill?.category || ctx.skill?.category; return p.kind === '攻擊' ? !!category && category !== '屬性' : category === p.kind; }
+    case 'skill_fifth': return (ctx.skill?.isFifthSkill===true)!==!!p.neg;
     case 'skill_invalid': return st.event?.data?.invalid === true;
+    // 本次行動失敗原因（引擎 failAction／notifyActionResult 的 failKind：invalid／miss／evade／immune）。
+    case 'fail_kind': { const failResult = st.event?.data?.effectEventData || st.event?.data; const failedAs = failResult?.failKind === p.kind; return p.neg ? !failedAs : failedAs; }
     // 「當自身處於龍魂時」（5021 次元龍系技能的龍魂覺醒分支）：讀 dimensionalDragonSoul 覺醒鍵。
+    case "player_state": {
+      const raw = (ctx as any).getPlayerState?.(p.key);
+      const v = raw === undefined ? p.fallback : raw;
+      return v === p.equals;
+    }
+    case "field_rounds": {
+      const turns = Number((ctx as any).getPlayerState?.(`${ctx.actor}_turnsInBattle`) || 1);
+      const n = Number(p.amount);
+      switch (p.op) {
+        case '低於': return turns < n;
+        case '不高於': return turns <= n;
+        case '高於': return turns > n;
+        case '不小於': return turns >= n;
+        case '等於': return turns === n;
+        default: return false;
+      }
+    }
+    case "skill_slot": {
+      const sk = (ctx as any).skill;
+      if (!sk) return false;
+      const elf = liveElf(ctx, ctx.actor);
+      const idx = (elf?.skills || []).findIndex((s: any) => s.name === sk.name);
+      return idx === Number(p.index);
+    }
     case "dragon_soul": return ctx.getPlayerState?.("dimensionalDragonSoul") === true;
     case 'event_crit':return (st.event?.data?.effectEventData || st.event?.data)?.isCrit === true;
     case 'event_hit': {
@@ -241,7 +319,7 @@ export function evalCond(ctx: BattleEventContext, c: Cond, st: RunState): boolea
     }
     case "last_no_dmg": return st.lastDealt === 0;
     // 依正式出手通知判斷，不能將「選過技能」或缺少選招快照當作使用結果。
-    case "opp_used_skill": return ctx.getPlayerState('opponentSkillUsedRound') === (ctx.roundNumber ?? 0);
+    case "opp_used_skill": { const r = ctx.getPlayerState('opponentSkillUsedRound') === (ctx.roundNumber ?? 0); return p.neg ? !r : r; }
     case 'resource_crossed': {
       const data=(ctx as any).effectEventData||st.event?.data?.effectEventData||st.event?.data;
       return data?.id===p.id&&Number.isFinite(data.before)&&Number.isFinite(data.after)
@@ -271,7 +349,7 @@ export function evalCond(ctx: BattleEventContext, c: Cond, st: RunState): boolea
       const hit = (ctx.getMarks(p.side === "self" ? ctx.actor : ctx.targetSide) || []).some((m: any) => markAppliesToElf(m,pick(p.side)) && (m.name === p.name || m.id === p.name || m.id === `blk_${p.name}`) && (m.count || 0) > 0);
       return p.neg ? !hit : hit;
     }
-    default: return entranceStackEvalCond(ctx, c) ?? keldSoulEvalCond(ctx, c) ?? stageDamageEvalCond(ctx, c) ?? powerStatEvalCond(ctx, c) ?? groupAEvalCond(ctx, c);
+    default: return entranceStackEvalCond(ctx, c) ?? keldSoulEvalCond(ctx, c) ?? stageDamageEvalCond(ctx, c) ?? powerStatEvalCond(ctx, c) ?? groupAEvalCond(ctx, c) ?? thunderGodEvalCond(ctx, c, liveElf);
   }
 }
 
@@ -387,6 +465,7 @@ export function statusInClass(status: string, cls: string): boolean {
 }
 /** 引擎附加異常前查詢：積木「N回合內免疫(並反彈)X類異常」→ "reflect" | "immune" | null */
 export function blockStatusGuard(timers: any[] | undefined, elf: any, status: string): "reflect" | "immune" | null {
+  if(portableSkillCapabilities(elf).statusImmune)return 'immune';
   let res: "reflect" | "immune" | null = null;
   for (const t of timers || []) {
     const g = t.payload?.block?.statusGuard;
@@ -411,6 +490,8 @@ export const OPS: Record<string, OpFn> = {
     st.lastAmount=dealDamage(ctx,ctx.targetSide,amount,p.type,undefined,st);return true;
   },
   attack_type_view_uses:(ctx,p)=>grantAttackTypeView(ctx,p),
+  match_max_hp:(ctx,p,st)=>{const side=sideOf(ctx,p.side),e=liveElf(ctx,side),source=liveElf(ctx,sideOf(ctx,p.source)),n=Math.max(0,source.maxHp-e.maxHp);st.lastAmount=n;if(!n)return false;const stats={...e.calculatedStats,hp:source.maxHp};if(p.reduceStats)for(const k of ['atk','def','spatk','spdef','speed'])stats[k]=Math.max(1,stats[k]-n);ctx.updateElf(side,{maxHp:source.maxHp,calculatedStats:stats});return true;},
+  peel_types:(ctx,p,st)=>{const side=sideOf(ctx,p.side),elf=liveElf(ctx,side);const n=elf.typePeeled?0:String(elf.type||'').split(/[.·・]/).filter((t:string)=>t&&t!=='普通'&&t!=='無屬性').length;(st as any).peeledTypes=n;st.lastAmount=n;if(!n)return false;ctx.updateElf(side,{type:'普通',typePeeled:true,originalType:elf.originalType||elf.type,typeChangedUntilSwitch:true} as any);return true;},
   change_type:(ctx,p)=>{
     const side=sideOf(ctx,p.side),elf=liveElf(ctx,side);
     ctx.updateElf(side,{type:p.type,originalType:elf.originalType||elf.type,typeChangedUntilSwitch:true} as any);
@@ -446,7 +527,7 @@ export const OPS: Record<string, OpFn> = {
   // 印記層數鎖：遞減動作依目前持有者讀取；包含啟動當回合。
   mark_lock_turns:(ctx,p,st)=>{
     if(!(p.turns>0)||typeof p.id!=='string'||!p.id)return false;
-    addBlockTimer(ctx,ctx.actor,`印記鎖`,p.turns,'turns',{markLock:{id:p.id}},false,isSkillCtx(st)?'turn_effect':'round_counter',true);
+    addBlockTimer(ctx,ctx.actor,`印記鎖`,p.turns,'turns',{markLock:{id:p.id}},false,isSkillCtx(st)?'turn_effect':'round_counter',true,'elf',`markLock:${st.sourceKind||'skill'}:${isSkillCtx(st)?ctx.skill?.name||'skill':'passive'}:${ctx.self.battleId||ctx.self.id}:${p.id}`);
     ctx.addLog(`🔒 ${p.turns} 回合內【${p.id}】層數不再減少！`,'effect');
     return true;
   },
@@ -548,7 +629,10 @@ export const OPS: Record<string, OpFn> = {
   status: (ctx, p, st) => {
     const sides: S[] = p.side === "both" ? [ctx.targetSide, ctx.actor] : [sideOf(ctx, p.side)];
     let ok = false;
-    const pct=increasingStatusChance(ctx,p);
+    // chanceHpRatio：以自身體力當前百分比作為機率（「有等同於自身體力當前百分比機率…」）；100% 不消耗亂數。
+    const pct = p.chanceHpRatio === true
+      ? Math.max(0, Math.min(100, ((liveElf(ctx, ctx.actor)?.currentHp ?? 0) / (liveElf(ctx, ctx.actor)?.maxHp || 1)) * 100))
+      : increasingStatusChance(ctx, p);
     if (statusChanceBlocked(ctx, pct) || !chance(ctx, `st:${p.status}`, pct)) return false;
     for (const s of sides) ok = applyStatus(ctx, s, p.status, p.turns) || ok;
     return ok;
@@ -559,24 +643,25 @@ export const OPS: Record<string, OpFn> = {
     for(const side of sides)any=applyOrExtendStatus(ctx,side,liveElf(ctx,side),p.status,p.turns,p.extend)||any;return any;
   },
   status_chance_turns: (ctx, p, st) => OPS.status(ctx, p, st),
-  status_seq: (ctx, p) => {
+  status_seq: (ctx, p, st) => {
     if (p.chance != null && (statusChanceBlocked(ctx, p.chance) || !chance(ctx, `seq:${p.list}`, p.chance))) return false;
     const sides:S[]=p.side==='both'?[ctx.actor,ctx.targetSide]:[p.side==='self'?ctx.actor:ctx.targetSide];
     // 「隨機附加其中 N 種」：count 指定抽取數（'fifth_pp_diff'＝第五技能PP差；競技場通用讀取端）。
     const pool = p.countFrom ? [...p.list] : null;
     if (pool) {
-      const n = p.countFrom === 'fifth_pp_diff' ? fifthPpDiff(ctx) : Math.min(Number(p.countFrom) || 0, pool.length);
-      let any = false;
+      const n = p.countFrom === 'peeledTypes' ? Number((st as any).peeledTypes)||0 : p.countFrom === 'fifth_pp_diff' ? fifthPpDiff(ctx) : Math.min(Number(p.countFrom) || 0, pool.length);
+      let any = false,failed=0;
       for (const side of sides) {
         const local = [...pool];
         for (let i = 0; i < Math.min(n, local.length); i++) {
           const idx = Math.floor((ctx.rng?.() ?? Math.random()) * local.length);
-          any = applyStatus(ctx, side, local.splice(idx, 1)[0], p.turns) || any;
+          const ok=applyStatus(ctx, side, local.splice(idx, 1)[0], p.turns);if(!ok)failed++;any=ok||any;
         }
       }
+      if(p.countFrom==='peeledTypes')st.lastAmount=failed;
       return any;
     }
-    let any=false;for(const side of sides)for(const name of p.list)any=applyStatus(ctx,side,name,p.turns)||any;return any;
+    let any=false,failed=0;for(const side of sides)for(const name of p.list){const ok=applyStatus(ctx,side,name,p.turns);if(!ok)failed++;any=ok||any;}if(p.countFailures)st.lastAmount=failed;return any;
   },
   status_random: (ctx, p) => {
     // 候選池一律取自正式 StatusRegistry 分類，不用手寫清單（避免漏掉新異常或分類錯誤）。
@@ -600,7 +685,8 @@ export const OPS: Record<string, OpFn> = {
     for (const s of bag) { if (picked.size >= Math.min(p.count, pool.length)) break; picked.add(s); }
     let any = false; picked.forEach(s => { any = applyStatus(ctx, ctx.targetSide, s) || any; }); return any;
   },
-  cure_status: (ctx, p) => {
+  cure_status: (ctx, p, st) => {
+    st.lastAmount=0;
     const sides: S[] = p.side === "both" ? [ctx.actor, ctx.targetSide] : [sideOf(ctx, p.side)];
     let any = false;
     for (const s of sides) {
@@ -616,6 +702,7 @@ export const OPS: Record<string, OpFn> = {
         }
       }else clearAllStatuses(updated);
       if(JSON.stringify(before)!==JSON.stringify(ctx.getStatuses(updated) || {})) {
+        st.lastAmount+=Object.keys(before).filter(id=>!(id in (ctx.getStatuses(updated)||{}))).length;
         ctx.updateElf(s,{effects:updated.effects,battleStatuses:updated.battleStatuses,battleStatus:updated.battleStatus,battleStatusDuration:updated.battleStatusDuration} as any);any=true;
       }
     }
@@ -625,8 +712,10 @@ export const OPS: Record<string, OpFn> = {
   convert_status: (ctx, p) => {
     const side = sideOf(ctx, p.side); const e = liveElf(ctx, side);
     const before = ctx.getStatuses(e) || {};
+    // 常駐主權（status_conversion_ban）：持有者列入保護的異常不可被轉化為其他異常狀態（5015 夜）。
+    const conversionBanned=((side===ctx.actor?ctx.getPlayerState:ctx.getOpponentState)('blkStatusConversionBan')||[]).map((n:string)=>canonicalStatusName(n));
     if(p.from!==undefined){
-      const matched=Object.keys(before).filter(id=>canonicalStatusName(id)===canonicalStatusName(p.from)&&!StatusRegistry[canonicalStatusName(id)]?.categories.includes('BOSS_ONLY'));
+      const matched=Object.keys(before).filter(id=>canonicalStatusName(id)===canonicalStatusName(p.from)&&!conversionBanned.includes(canonicalStatusName(id))&&!StatusRegistry[canonicalStatusName(id)]?.categories.includes('BOSS_ONLY'));
       if(!matched.length||!applyStatus(ctx,side,p.status,p.turns))return false;
       // 附加失敗時保留來源；成功後只移除指定異常，避免清掉無關異常與新附加的目標。
       const current=liveElf(ctx,side),updated={...current,effects:[...(current.effects||[])],battleStatuses:{...(ctx.getStatuses(current)||{})}};
@@ -635,7 +724,7 @@ export const OPS: Record<string, OpFn> = {
     }
     const convertible = Object.keys(before).filter(id => {
       const entry = StatusRegistry[canonicalStatusName(id)];
-      return entry && !entry.categories.includes('BOSS_ONLY');
+      return entry && !entry.categories.includes('BOSS_ONLY') && !conversionBanned.includes(canonicalStatusName(id));
     });
     if (!convertible.length) return false;
     // 只移除真正被轉化的異常，不把計時效果／其他增益及BOSS特性一起清空。
@@ -847,7 +936,7 @@ export const OPS: Record<string, OpFn> = {
   drain: (ctx, p, st) => {
     const t: any = liveElf(ctx, ctx.targetSide);
     const durationSides:S[]=p.perStatusTurns==='both'?[ctx.actor,ctx.targetSide]:p.perStatusTurns?[sideOf(ctx,p.perStatusTurns)]:[];
-    const amt = p.basis==='attack_damage'?Math.floor(Math.max(0,ctx.mainSkillHpReduced||0)*p.ratio):p.basis==='event_damage'?Math.floor(Math.max(0,Number((ctx as any).damageDealt ?? (ctx as any).settledDamage ?? (ctx as any).damage) || 0)*(p.ratio ?? 1)):p.flat != null ? p.flat*(p.perMark?readMarkStacks(ctx,p.perMark):p.perStatusTurns?statusDurationSum(ctx,durationSides.map(side=>liveElf(ctx,side))):1) : p.cur ? Math.floor(t.currentHp * p.ratioCur) : Math.floor(t.maxHp * p.ratio);
+    const amt = p.basis==='attack_damage'?Math.floor(Math.max(0,ctx.mainSkillHpReduced||0)*p.ratio):p.basis==='event_damage'?Math.floor(Math.max(0,Number((ctx as any).damageDealt ?? (ctx as any).settledDamage ?? st.event?.data?.settledDamage ?? (ctx as any).damage) || 0)*(p.ratio ?? 1)):p.flat != null ? p.flat*(p.perMark?readMarkStacks(ctx,p.perMark):p.perStatusTurns?statusDurationSum(ctx,durationSides.map(side=>liveElf(ctx,side))):1) : p.cur ? Math.floor(t.currentHp * p.ratioCur) : p.ofSelf ? Math.floor(liveElf(ctx, ctx.actor).maxHp * p.ratio) : Math.floor(t.maxHp * p.ratio);
     // 競技場通用（arenaShared）：每級能力下降吸取（點數＝固定型）／第五技能PP差翻倍。
     const perStageAmt = p.perStageDown ? arenaDrainAmount(ctx, p, 0) : 0;
     const kind = p.true ? "true" : (p.flat != null || p.perStageDown) ? "fixed" : "percent";
@@ -949,6 +1038,18 @@ export const OPS: Record<string, OpFn> = {
     ctx.addTimerTo(side,{id:`power_ratio:${ctx.actor}:${idOf(ctx.self)}:${ctx.skill?.name}:${side}:${idOf(owner)}`,name:`攻擊威力×${p.ratio}`,kind:'turn_effect',source:'skill',remaining:p.turns,tickAt:'round_end',scope:'elf',ownerBattleId:idOf(owner),persistsOffField:p.bound,payload:{block:{powerRatio:p.ratio}}},false);
     return true;
   },
+  power_growth_add:(ctx,p)=>{
+    if(!ctx.skill||ctx.skill.category==='屬性')return false;
+    const key=`powerGrowth:${p.key}`,prev=ctx.getPlayerState(key);
+    const action=`${ctx.roundNumber}:${ctx.actionId}`;
+    if(prev?.action===action)return false;
+    ctx.setPlayerState(key,{action,value:Math.min(p.cap,Math.round(((prev?.value||0)+p.step)*1e8)/1e8)});return true;
+  },
+  power_growth_apply:(ctx,p,st)=>{
+    const comp=(ctx as any).powerComp||st.event?.data?.powerComp;
+    if(!comp||!Number.isFinite(comp.power)||ctx.skill?.category==='屬性')return false;
+    comp.power*=1+p.baseBoost+(ctx.getPlayerState(`powerGrowth:${p.key}`)?.value||0);return true;
+  },
   power_mod:(ctx,p,st)=>{
     const comp=(ctx as any).powerComp||st.event?.data?.powerComp;
     if(!comp||!Number.isFinite(comp.power)||ctx.skill?.category==='屬性')return false;
@@ -960,7 +1061,7 @@ export const OPS: Record<string, OpFn> = {
     }
     const levels=p.perMark?readMarkStacks(ctx,p.perMark):1;
     if(levels<=0)return false;
-    comp.power*=1+p.boost*levels;return true;
+    if(p.flat!==undefined)comp.power+=p.flat*levels;else comp.power*=1+p.boost*levels;return true;
   },
   damage_scale:(ctx,p,st)=>{
     const comp=(ctx as any).effectEventData?.damageComp || st.event?.data?.damageComp || (ctx as any).damageComp;
@@ -986,6 +1087,7 @@ export const OPS: Record<string, OpFn> = {
   },
   boost: (ctx, p, st) => {
     const comp = st.event?.data?.damageComp || (st.event?.data?.base != null ? st.event.data : null);
+    if(p.perLastAmount!==undefined)return queueActionDamageModifier(ctx,p.mult+Math.max(0,st.lastAmount)*p.perLastAmount,p.kind||'攻擊');
     if (p.power && comp) return false; // 威力需在公式前處理，不能當傷害倍率。
     if (p.power && p.add != null) { if (p.add > 0) queueActionPowerAdd(ctx, p.add); return p.add > 0; }
     if (p.perInc != null) {
@@ -1072,7 +1174,12 @@ export const OPS: Record<string, OpFn> = {
     setTurnKey(ctx,ctx.actor,st,'免疫攻擊',{immuneAttackTurns:Math.max(turns,ctx.getPlayerState('immuneAttackTurns')||0)},'immuneAttackTurns');ctx.addLog(`🛡️ ${turns} 回合內免疫受到的攻擊！`,'effect');return true;
   },
   block_attack: (ctx, p) => { addBlockTimer(ctx, ctx.actor, `抵擋攻擊`, p.count, "uses", { blockAttack: true }); ctx.addLog(`🛡️ 抵擋下 ${p.count} 次攻擊傷害！`, "effect"); return true; },
-  invalid_next: (ctx, p) => { addBlockTimer(ctx, ctx.targetSide, `技能無效`, p.uses, "uses", { invalid: p.kind || "all" }); ctx.addLog(`🚫 對手下 ${p.uses} 次${p.kind}技能無效！`, "effect"); return true; },
+  invalid_next: (ctx, p) => {
+    // invalidFollowup：技能無效成功後追加「同類型技能附加效果失效」（引擎 newElfLifecycle 既有讀取端）。
+    const payload: any = { invalid: p.kind || "all" };
+    if (p.followupRounds) payload.invalidFollowup = { rounds: p.followupRounds, sameCategory: p.followupSameCategory !== false };
+    addBlockTimer(ctx, ctx.targetSide, `技能無效`, p.uses, "uses", payload, false, undefined, false, 'elf', p.timerId);
+    ctx.addLog(`🚫 對手下 ${p.uses} 次${p.kind}技能無效！`, "effect"); return true; },
   invalid_turns: (ctx, p, st) => {
     const turns=p.turns*(p.perMarkTurns?readMarkRemainingTurns(ctx,p.perMarkTurns):1);
     if(!(turns>0))return false;
@@ -1149,7 +1256,7 @@ export const OPS: Record<string, OpFn> = {
     for (const s of [ctx.actor, ctx.targetSide] as S[]) { const e = elfOf(ctx, s); ctx.updateElf(s, { skills: (e.skills || []).map((k: any) => ({ ...k, pp: 0 })) }); }
     return true;
   },
-  pp_zero_random: (ctx, p) => {
+  pp_zero_random: (ctx, p, st) => {
     // 通用語義：隨機 N 個「不同」技能（去重）。與盾碎同歸 custom 的「N 次獨立隨機、可重複」不同。
     // 保留 Set 去重，避免訣別之二等「隨機2」變成可能只中1個。
     const pool = [...(liveElf(ctx, ctx.targetSide)?.skills || [])].filter((sk: any) => (sk.pp || 0) > 0);
@@ -1159,7 +1266,11 @@ export const OPS: Record<string, OpFn> = {
       const index = Math.min(pool.length - 1, Math.floor(r() * pool.length));
       selected.add(pool.splice(index, 1)[0]);
     }
-    return applyKitPpOperation(ctx, ctx.targetSide, 'zero', 0, sk => selected.has(sk));
+    // 「被消除的PP」（歸零前各技能PP合計）寫入 lastAmount——供「被消除的PP不高於N」條件讀取（DSH 20261018）。
+    const totalZeroed = [...selected].reduce((sum: number, sk: any) => sum + (sk.pp || 0), 0);
+    const changed = applyKitPpOperation(ctx, ctx.targetSide, 'zero', 0, sk => selected.has(sk));
+    if (st) st.lastAmount = totalZeroed;
+    return changed;
   },
   // PP 一律走 applyKitPpOperation：恢復限制、星護與 PP_CHANGED 事件同一管道，不直接寫 skills。
   pp_drain: (ctx, p) => applyKitPpOperation(ctx, ctx.targetSide, p.steal ? "drain" : "reduce", p.v),
@@ -1209,7 +1320,7 @@ export const OPS: Record<string, OpFn> = {
   watch: (ctx, p, st) => {
     if(p.actionOnly&&ctx.actionId===undefined)return false;
     addBlockTimer(ctx, ctx.actor, p.text || "事件監看", 1, "uses", { trig: p.trig, body: p.body, once: true,sourceKind:st.sourceKind,
-      ...(p.actionOnly?{boundActionId:ctx.actionId,targetBattleId:idOf(ctx.target),actionOnly:true}:{}) });return true;
+      ...(p.actionOnly?{boundActionId:ctx.actionId,targetBattleId:idOf(ctx.target),actionOnly:true}:{}) },false,st.sourceKind==='skill'?undefined:'round_counter',false,'elf',p.key?`watch:${idOf(ctx.self)}:${p.key}`:undefined);return true;
   },
   next_entry_status:(ctx,p)=>{ctx.setOpponentState('nextElfStatus',{status:p.status,duration:p.turns,sourceSide:ctx.actor,sourceBattleId:idOf(ctx.self)});return true;},
   stop_status_tick:(_ctx,_p,st)=>{const data=st.event?.data?.effectEventData||st.event?.data;if(!data?.status)return false;data.skipTick=true;return true;},
@@ -1258,7 +1369,8 @@ export const OPS: Record<string, OpFn> = {
     st.lastAmount=heal(ctx,ctx.actor,Math.floor(amount*p.ratio));
     if(p.consume)ctx.setPlayerState(key,0);return st.lastAmount>0;
   },
-  pp_cost_mult: (ctx, p) => { addBlockTimer(ctx, ctx.targetSide, `PP消耗×${p.mult}`, p.turns, "turns", { ppMult: p.mult, kind: p.kind },false,undefined,true); return true; },
+  pp_cost_mult: (ctx, p) => { ((globalThis as any).__PM ||= []).push({ t: ctx.targetSide, a: ctx.actor }); addBlockTimer(ctx, ctx.targetSide, `PP消耗×${p.mult}`, p.turns, "turns", { ppMult: p.mult, kind: p.kind },false,undefined,true);
+    ((globalThis as any).__PM2 ||= []).push((ctx.p2Timers||[]).map((x:any)=>x.id)); return true; },
   dmg_to_heal_turns: (ctx, p) => {
     // 下回合：pendingActivation（本回合不生效，回合結束啟用、下回合結束到期）
     if (p.next) addBlockTimer(ctx, ctx.actor, "下回合傷害轉體力", 1, "turns", { absorbToHeal: true }, true);
@@ -1292,7 +1404,7 @@ export const OPS: Record<string, OpFn> = {
   evade_turns: (ctx, p, st) => { addBlockTimer(ctx, ctx.actor, `閃避${p.chance}%`, p.turns, "turns", { evade: p.chance, kind: p.kind, ...(p.onExpire ? { expireBody: p.onExpire } : {}), sourceKind: isSkillCtx(st) ? 'skill' : 'soul' },false,undefined,true); return true; },
   survive_turns: (ctx, p) => { addBlockTimer(ctx, ctx.actor, `死亡時保留1體力`, p.turns, "turns", { survive: true },false,undefined,true); return true; },
   no_pos_prio_turns: (ctx, p, st) => { setTurnKey(ctx, ctx.targetSide, st, "正先制失效", { blkNoPosPrioTurns: p.turns + (p.next ? 1 : 0) }, "blkNoPosPrioTurns"); return true; },
-  consume_hp_all: (ctx) => { ctx.adjustHp(ctx.actor, -ctx.self.currentHp); return true; },
+  consume_hp_all: (ctx) => { ctx.adjustHp(ctx.actor, -consumedHealthAmount(ctx,ctx.self.currentHp)); return true; },
   // 體力設定（調整至指定值；非傷害非恢復，不受禁療影響）。影之牢籠「消耗全部體力（降為1）」等。
   hp_set: (ctx, p) => {
     const side = sideOf(ctx, p.side || 'self');
@@ -1498,6 +1610,32 @@ export const OPS: Record<string, OpFn> = {
   ...entranceStackOperations(addBlockTimer),
   ...stageDamageOperations({ liveElf, dealDamage }),
   ...keldSoulOperations({ runStmts, dealDamage }),
+  ...statusSovereigntyOperations(),
+  ...priorityBonusOperations(),
+  ...arenaSharedOperations({ runStmts, liveElf }),
+  ...holyMilesOperations({ runStmts }),
+  ...dragonHealingOperations({ liveElf }),
+  ...supportOperations(),
+  ...resourcePanelOperations(),
+  ...shieldMarkOperations({ liveElf }),
+  ...canOperations({ liveElf }),
+  ...brinkkOperations({ liveElf }),
+  ...odinOperations({ liveElf }),
+  ...mechOperations({ liveElf,runAct }),
+  ...ppAbsorbOperations(),
+  ...fearSeedOperations(),
+  ...rosterStatsOperations(),
+  ...group1Operations({ runStmts, liveElf, dealDamage }),
+  ...finalExtraTraitOperations(),
+  ...finalMarsLanDragonOperations({ liveElf, runStmts, dealDamage }),
+  ...typedCycleOperations(runStmts),
+  ...resourceDefenseOperations(runStmts),
+  ...missingHpScalingOperations,
+  ...removedEffectOperations,
+  ...finalOdbOperations(addBlockTimer,runStmts),
+  ...extraElfOperations(),
+  ...thunderGodOperations({ liveElf }),
+  ...group5Operations({ runStmts, liveElf }),
   once:(ctx,p,st)=>{
     const key=`blockOnce:${(ctx as any).illusionEffectKey || ''}:${p.key}`;
     if(ctx.getPlayerState(key))return false;
@@ -1715,6 +1853,7 @@ export function eventTriggers(ctx: BattleEventContext, ev: string, data: any): T
     case EffectTiming.STAT_BOOST_CLEARED:return data?.sourceSide&&data.sourceSide!==ctx.actor&&Object.values(data.removedStages||{}).some(v=>typeof v==='number'&&v>0)?['stat_boost_cleared']:[];
     case EffectTiming.TURN_EFFECTS_CLEARED:return data?.cleared>0&&data.side===ctx.actor?['turn_effects_cleared']:[];
     case EffectTiming.BEFORE_STATUS_APPLY:return !data?.targetSide||data.targetSide===ctx.actor?['before_status']:[];
+    case EffectTiming.BEFORE_STAT_CHANGE:return ['before_stat_change'];
     case EffectTiming.ON_STATUS_ENDED:return ['status_end'];
     case EffectTiming.SELF_STATUS_APPLIED:return ['status_received'];
     case EffectTiming.ON_STATUS_IMMUNIZED:return ['status_immune'];
@@ -1737,6 +1876,7 @@ export function eventTriggers(ctx: BattleEventContext, ev: string, data: any): T
     case EffectTiming.ON_KILL: return ["kill"];
     case EffectTiming.NOT_KILLED:return ['not_killed'];
     case EffectTiming.ON_SWITCH_OUT: return ["switch_out"];
+    case EffectTiming.HELD_RESOURCE_LOST:return ['held_resource_lost'];
     case EffectTiming.SHIELD_BROKEN: return ["shield_broken" as Trigger];
     case EffectTiming.FATAL_RESIST: return ["fatal"];
     case EffectTiming.ON_DAMAGED: {
@@ -1881,7 +2021,7 @@ export function runSideTimers(baseCtx: BattleEventContext, trigs: Trigger[], dat
 }
 
 /** 魂印程式：依事件觸發 */
-const PASSIVE_OPS = new Set(["dmg_mod", "boost", "note", "noop"]);
+const PASSIVE_OPS = new Set(["dmg_mod", "boost", "note", "noop", "advanced_mechanic", "team_stat_anchor", "special_attack_panel_formula"]);
 export function runSoulProgram(ctx: BattleEventContext, prog: Program, trigs: Trigger[], data: any, only?: number[]): boolean {
   const st: RunState = { last: null, lastAmount: 0, sourceKind:'soul',event: { trig: trigs[0], data } };
   snapshotConditions(ctx, prog.clauses.filter((c, i) => (!only || only.includes(i)) && c.parsed && trigs.includes(c.trig)), st);

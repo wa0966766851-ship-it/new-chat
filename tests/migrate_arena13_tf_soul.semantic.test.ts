@@ -52,5 +52,18 @@ try {
   }
   console.log('OK 血≤½ 重觸發（段1~出戰次數，觸發計數獨立）');
 
+  // 體力低於½：所有技能先制+1（prio_bonus 事中查詢；prio_next 缺陷修正後的行為斷言）
+  {
+    const self = tfUnit('SP', 10000, [h.wait(), h.wait()]);
+    self.currentHp = 3000; // 低於½
+    const opp = h.unit('EP', 100000, [h.wait(), h.wait()], { speed: 300 });
+    const r = await h.play('p1', { self, opp, turns: () => [0, 0] }, 2);
+    const logs = r[1].logs || [];
+    const acts = logs.filter((l: string) => /使用了【等待】/.test(l)).map((l: string) => /【EP】/.test(l) ? 'E' : 'TF');
+    assert.ok(acts.length >= 2 && acts[0] === 'TF', '低血先手：自方（速度100）應先於速度300對手（序：' + acts.join('→') + '）');
+    checks++;
+  }
+  console.log('OK 體力低於½先制+1');
+
   console.log('arena_13 魂印：' + checks + ' 項通過');
 } finally { await h.close(); }

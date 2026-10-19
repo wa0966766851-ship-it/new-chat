@@ -1,7 +1,9 @@
 import type {Elf,Skill} from '../types';
+import {correctSavedOdinPp} from './savedOdinPpCorrection';
 
 /** 只修正已知舊版內建定義；圖紙或全文有其他改動時保留使用者版本。 */
 export function applySavedSkillCorrections(elf:Elf,defaults:Elf[]):Elf{
+  if(elf && Array.isArray(elf.skills) && String(elf.id)==='5019')return correctSavedOdinPp(elf);
   if(!elf || !Array.isArray(elf.skills) || String(elf.id)!=='5024')return elf;
   const canonical=defaults.find(e=>String(e.id)==='5024');
   const name='無限・虛數湮滅',current=[...(canonical?.skills||[]),...(canonical?.skillPool||[])].find(s=>s.name===name);

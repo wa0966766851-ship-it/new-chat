@@ -1,3 +1,4 @@
+import {portableSkillCapabilities} from '../battle/portableSkillMarks';
 import type { KitEntry } from './effectSystem.schema';
 import { fifthPpDiff } from '../blocks/ops/arenaShared';
 import { evalCond } from '../blocks/runtime';
@@ -7,6 +8,8 @@ import { prdPercent } from '../utils/prd';
 import { readMarkStacks } from './markQueries';
 import {readStageLevels} from './stageQueries';
 import type {ReductionPolicy} from '../battle/damageReduction';
+import {skillTransformPatch} from '../blocks/ops/thunderGod';
+import {getTypeMatchup} from '../utils/statCalculator';
 export { skillPropertyIssue } from './sequenceContract';
 
 export function readAttachedSureHit(skill:any,ctx:any):boolean {
@@ -20,17 +23,25 @@ export function readAttachedSureHit(skill:any,ctx:any):boolean {
 export function applyFormulaProperties(skill:any,ctx:any) {
   const hits=readSkillProperty(skill,'attack_hits',ctx);
   if(hits){const r=hits.min===hits.max?0:(ctx.rng||Math.random)();ctx.setPlayerState('attackHitCountThisAction',hits.min+Math.min(hits.max-hits.min,Math.max(0,Math.floor(r*(hits.max-hits.min+1)))));}
+  const extrema=readSkillProperty(skill,'combat_stat_extrema',ctx);
+  const values=extrema?[ctx.self,ctx.target].flatMap(e=>['atk','def','spatk','spdef','speed'].map(k=>Number(e.calculatedStats[k]))):[];
+  const resolvedCombatStats=extrema?{attack:Math.max(...values)*extrema.attackScale,defense:Math.min(...values)*extrema.defenseScale}:undefined;
+  const resolvedTypeMultiplier=readSkillProperty(skill,'fixed_type_multiplier',ctx);
   const accuracy=readSkillProperty(skill,'base_accuracy',ctx);
   const power=readSkillProperty(skill,'base_power',ctx);
-  const stage=readSkillProperty(skill,'stage_view',ctx);
-  if(stage==='opp_up_as_down')ctx.setPlayerState('oppBoostAsDropThisAction',true);
-  if(stage==='self_down_as_opp_down')ctx.setPlayerState('selfDropAsOppDropThisAction',true);
-  return {...skill,...(accuracy===undefined?{}:{accuracy}),...(power===undefined?{}:{power})};
+  const resolvedAttackStats=readSkillProperty(skill,'attack_stat_sum',ctx);
+  const resolvedForceStab=readSkillProperty(skill,'force_stab',ctx)===true;
+  const preferred=readSkillProperty(skill,'preferred_types',ctx) as string[]|undefined;
+  const type=preferred?.reduce((best,next)=>getTypeMatchup(next,ctx.target.type)>getTypeMatchup(best,ctx.target.type)?next:best);
+  const resolvedStageViews=!innateAllowed(ctx)?[]:(skill.kit||[]).filter((e:KitEntry)=>e.codeId==='skill_property'&&e.params.property==='stage_view'&&!skillPropertyIssue(e)&&e.params.conditions.every((c:any)=>evalCond(ctx,c,{last:null,lastAmount:0})===true)).map((e:KitEntry)=>e.params.value);
+  if(resolvedStageViews.includes('opp_up_as_down'))ctx.setPlayerState('oppBoostAsDropThisAction',true);
+  if(resolvedStageViews.includes('self_down_as_opp_down'))ctx.setPlayerState('selfDropAsOppDropThisAction',true);
+  return {...skill,resolvedCombatStats,resolvedTypeMultiplier,resolvedStageViews,resolvedAttackStats,resolvedForceStab,...(type?{type}:{}),...(accuracy===undefined?{}:{accuracy}),...(power===undefined?{}:{power}),...(skillTransformPatch(skill,ctx,evalCond)||{})};
 }
 
 /** 「只有…才能命中」先於必中判定；條件不符時不能被必中繞過。 */
 export function skillHitRequirementsMet(skill:any,ctx:any):boolean {
-  if(skill?.effectMode!=='kit'||ctx.self?.isInherentInvalid)return true;
+  if(skill?.effectMode!=='kit'||!innateAllowed(ctx))return true;
   return (skill.kit || []).filter((e:KitEntry)=>e.codeId==='skill_property'&&e.params.property==='hit_requirement'&&!skillPropertyIssue(e))
     .every((e:KitEntry)=>e.params.conditions.every((c:any)=>evalCond(ctx,c,{last:null,lastAmount:0})===true));
 }
@@ -48,7 +59,9 @@ export function readSkillProperty(skill:any,property:string,ctx:any) {
 export function resolveSelectedPriorityPolicies(p1:number,p2:number,s1:any,s2:any,c1:any,c2:any):[number,number]{
   const ignore1=readSkillProperty(s1,'ignore_positive_priority',c1)===true;
   const ignore2=readSkillProperty(s2,'ignore_positive_priority',c2)===true;
-  return [ignore2?Math.min(0,p1):p1,ignore1?Math.min(0,p2):p2];
+  if(readSkillProperty(s1,'cap_opponent_priority',c1)===true)p2=Math.min(p2,p1);
+  if(readSkillProperty(s2,'cap_opponent_priority',c2)===true)p1=Math.min(p1,p2);
+  return [Math.min(ignore2?Math.min(0,p1):p1,portableSkillCapabilities(c2.self).priorityCeiling??Infinity),Math.min(ignore1?Math.min(0,p2):p2,portableSkillCapabilities(c1.self).priorityCeiling??Infinity)];
 }
 
 /** 每場一次用後的衰變讀取：once_used_degrade 已用過則回傳其參數（v＝對方先制懲罰），否則 null。 */
@@ -112,7 +125,7 @@ export function readListedPriority(skill:any,ctx:any,conditionalOnly=false):numb
 export function readChancePriority(skill:any,ctx:any,roll:(key:string,percent:number)=>boolean=prdPercent):number {
   if(skill?.effectMode!=='kit'||!additionalAllowed(ctx))return 0;
   const conditional=(skill.kit || []).filter((e:KitEntry)=>e.codeId==='skill_property'&&e.params.property==='conditional_priority'&&!skillPropertyIssue(e))
-    .reduce((sum:number,e:KitEntry)=>sum+(e.params.conditions.every((c:any)=>evalCond(ctx,c,{last:null,lastAmount:0})===true)?e.params.value:0),0);
+    .reduce((sum:number,e:KitEntry)=>sum+((e.params.conditions||[]).length&&e.params.conditions.every((c:any)=>evalCond(ctx,c,{last:null,lastAmount:0})===true)?e.params.value:0),0); // 無 conditions 者（如 perPPDiff 第五技能PP差）由其自身讀取端處理，此處不重複計入也不得拋錯
   const entry:KitEntry|undefined=(skill.kit || []).filter((e:KitEntry)=>e.codeId==='skill_property'&&e.params.property==='chance_priority'&&!skillPropertyIssue(e))
     .sort((a:KitEntry,b:KitEntry)=>a.order-b.order)[0];
   if(!entry)return conditional;

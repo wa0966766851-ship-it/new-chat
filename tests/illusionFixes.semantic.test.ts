@@ -12,6 +12,7 @@ try {
   const { SoulMarkRegistry, transformSkillBeforeResolve, getSoulMarkRegistry } = await server.ssrLoadModule('/src/effects/battleEventRegistry.ts');
   const { buildStateAPIs } = await server.ssrLoadModule('/src/battle/contextBuilders.ts');
   const { battleReducer } = await server.ssrLoadModule('/src/components/BattleManager.ts');
+  const { DEFAULT_ELVES } = await server.ssrLoadModule('/src/data/defaultElvesLoaded.ts');
   const { STAGED_ARENA_ELVES } = await server.ssrLoadModule('/src/data/stagedArenaElves.ts');
   const { getElfAdvancedMechanics } = await server.ssrLoadModule('/src/data/traitsRegistry.ts');
   const { effectDefinitionEntries } = await server.ssrLoadModule('/src/battle/effectSources.ts');
@@ -148,7 +149,10 @@ const {isZeroPpExempt}=await server.ssrLoadModule('/src/battle/ppExemptions.ts')
     delete getSoulMarkRegistry()[acquired.name];
 
     // 真實帝皇之盾條件被動：既有護盾符合條件時，弱化是對手，不是持有者。
-    startIllusion(ctx, { ...make('5002', 200), name: '帝皇之盾' }, '盾之取得');
+    // 5002 已遷真 Kit（舊 handler 空殼）：取得來源改用 DEFAULT_ELVES 的真實帝皇之盾，經取得魂印路徑跑 Kit 的 round_start 子句。
+    const realShield: any = structuredClone(DEFAULT_ELVES.find((e: any) => String(e.id) === '5002'));
+    Object.assign(realShield, { battleId: '5002', currentHp: 200, maxHp: 200, calculatedStats: stat(200), baseStats: stat(200), statStages: {}, effects: [], battleStatuses: {} });
+    startIllusion(ctx, realShield, '盾之取得');
     apis.updateElf(side, { shield: 60 });
     const changes: any[] = [];
     ctx.applyStatChange = (s: string, delta: any) => { changes.push({ side: s, delta }); };

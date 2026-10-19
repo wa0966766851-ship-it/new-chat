@@ -2,6 +2,20 @@ import type { Elf, Skill } from '../types';
 import type { KitEntry } from '../effects/effectSystem.schema';
 import { REVIEWED_SEQUENCE_SKILL_KITS } from './reviewedSequenceSkillKits';
 import { MIGRATED_SEQUENCE_SKILL_KITS } from './migratedSequenceSkillKits';
+// 5030 聖靈邁爾斯 技能「淨世洗禮頌」（DSH 20261018 第十三批；保底值翻倍裁定）
+import { MIGRATED_HOLY_MILES_SKILL_KITS } from './migratedHolyMilesKits';
+import { MIGRATED_ARENA12_SKILL_KITS } from './migratedArena12SkillKits';
+import { MIGRATED_ARENA13_FENGHAO_SKILL_KIT } from './migratedArena13FenghaoKit';
+import { MIGRATED_ARENA16_YOUMO_SKILL_KIT } from './migratedArena16YoumoKit';
+import { MIGRATED_ARENA16_AIDA_SKILL_KIT } from './migratedArena16AidaKit';
+import { MIGRATED_ARENA16_YARAN_SKILL_KIT } from './migratedArena16YaranKit';
+import { MIGRATED_ARENA16_MONSTER_SKILL_KIT } from './migratedArena16MonsterKit';
+import { MIGRATED_HAMO_YUTIANZHEN_SKILL_KIT } from './migratedHamoYutianzhenKit';
+import { MIGRATED_HAMO_ELEMENTAL_SKILL_KITS } from './migratedHamoElementalKits';
+import { MIGRATED_DIMENSIONAL_WANGSHI_SKILL_KIT } from './migratedDimensionalWangshiKit';
+import { MIGRATED_FINAL_ODIN_RAVEN_KIT } from './migratedFinalOdinDeluBelienteKits';
+import { MIGRATED_FINAL_MARS_SKILL_KITS } from './migratedFinalMarsLanDragonKits';
+import { MIGRATED_ODIN_RAGNAROK_SKILL_KIT } from './migratedOdinRagnarokKit';
 import { isLegacyWrappedKit } from '../blocks/ops/legacyHandler';
 
 /** 人工逐句核對的第一批；不是以解析成功率批量切換。原文變更即停止套用。 */
@@ -35,7 +49,7 @@ export function applyReviewedSkillKits(elf: Elf): Elf {
   const apply = (skill: Skill): Skill => {
     // 不覆蓋使用者已選模式／自訂積木；相同名稱但不同原句也不得套用。
     if (skill.effectMode && skill.effectMode !== 'auto' || skill.kit?.length) return skill;
-    const reviewed = [...REVIEWED_SKILL_KITS,...REVIEWED_SEQUENCE_SKILL_KITS,...MIGRATED_SEQUENCE_SKILL_KITS].find(item => item.elfIds.includes(String(elf.id)) &&
+    const reviewed = [...REVIEWED_SKILL_KITS,...REVIEWED_SEQUENCE_SKILL_KITS,...MIGRATED_SEQUENCE_SKILL_KITS,...MIGRATED_HOLY_MILES_SKILL_KITS,...MIGRATED_ARENA12_SKILL_KITS,...MIGRATED_ARENA13_FENGHAO_SKILL_KIT,...MIGRATED_ARENA16_YOUMO_SKILL_KIT,...MIGRATED_ARENA16_AIDA_SKILL_KIT,...MIGRATED_ARENA16_YARAN_SKILL_KIT,...MIGRATED_ARENA16_MONSTER_SKILL_KIT,...MIGRATED_HAMO_YUTIANZHEN_SKILL_KIT,...MIGRATED_HAMO_ELEMENTAL_SKILL_KITS,...MIGRATED_DIMENSIONAL_WANGSHI_SKILL_KIT,MIGRATED_FINAL_ODIN_RAVEN_KIT,...MIGRATED_FINAL_MARS_SKILL_KITS,...MIGRATED_ODIN_RAGNAROK_SKILL_KIT].find(item => item.elfIds.includes(String(elf.id)) &&
       item.name === skill.name && item.description === skill.description);
     return reviewed ? { ...skill, effectMode: isLegacyWrappedKit(reviewed.kit) ? 'registry' : 'kit', kit: structuredClone(reviewed.kit) } : skill;
   };

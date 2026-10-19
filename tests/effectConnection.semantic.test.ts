@@ -16,7 +16,7 @@ let count = 0;
 const check = (name: string, run: () => void) => { run(); console.log(`✓ ${name}`); count++; };
 const entry = (node: KitEntry['node'], amount = 70): KitEntry => ({ codeId: 'heal', params: { amount }, node, source: 'skill', order: 0 });
 check('42節點同一合約；含逐擊、額外行動、資源變動、擊敗未擊敗與持有者消除事件', () => {
-  assert.equal(Object.keys(EFFECT_NODES).length,42);
+  assert.equal(Object.keys(EFFECT_NODES).length,44); // 2026-10-18 before_stat_change；2026-10-19 cthyaat_death（5007 克塔亞特被擊敗事件；正式被擊敗節點）
   assert.equal(eventEffectNode(EffectTiming.AFTER_ATTACK_HIT),'after_attack_hit');
   assert.equal(EFFECT_NODES.after_attack_hit.trigger,'attack_hit');
   assert.equal(eventEffectNode(EffectTiming.EXTRA_ACTION_START),'extra_action_start');

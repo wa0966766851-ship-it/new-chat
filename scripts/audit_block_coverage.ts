@@ -121,7 +121,9 @@ if (check) {
   // 20261003-2：無極聖武補英雄之耀／武誅／亮節／威怯官方定義、龍之治癒補赤龍與四龍追加效果：449 → 456，已解析 104 → 105。
   // 20261004 P1 積木修正：轉化異常等正則補 $ 錨定，5023「將自身異常轉化為詛咒異常狀態且令自身詛咒回合數翻倍」後半句不再被吞掉，誠實標為未解析：105 → 104。
   // 20261012：4937 魂印 +4 子句（全部解析）：115/623 → 119/627。
-  if (souls.parsed < 119 || souls.total !== 627) failures.push(`魂印覆蓋率退步或資料集改變：${souls.parsed}/${souls.total}`);
+  // 20261018：5030 淨世洗禮頌■行保底語改寫、5031 六界神王·界魂印文句重排（並行批次之資料更新，
+  // 非 5025 批次）：119/627 → 120/629。
+  if (souls.parsed < 120 || souls.total !== 629) failures.push(`魂印覆蓋率退步或資料集改變：${souls.parsed}/${souls.total}`);
 
   for (const name of Object.keys(SKILL_MODE)) {
     const skill = DEFAULT_ELVES.flatMap(elf => elf.skills || []).find(item => item.name === name);

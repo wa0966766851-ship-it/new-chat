@@ -23,8 +23,9 @@ try {
   const { default: Battle } = await server.ssrLoadModule('/src/components/BattleScreen.tsx');
   const { getSoulMarkRegistry, getBattleSkillRegistry } = await server.ssrLoadModule('/src/effects/battleEventRegistry.ts');
   const { handleDixinSoulMark } = await server.ssrLoadModule('/src/effects/elves/dixin/registry.ts');
-  const { handleKeldSoulMark } = await server.ssrLoadModule('/src/effects/elves/keld/registry.ts');
-  const { handleKeerhodeSoulMark } = await server.ssrLoadModule('/src/effects/elves/keerhode/registry.ts');
+  // 5012 冰／5013 凕 已遷真 Kit（舊 handler 空殼）：keld_reduce／keerhode_reduce 改以真實精靈的魂印 Kit 掛在防守方，由引擎走 Kit 路徑。
+  const { DEFAULT_ELVES } = await server.ssrLoadModule('/src/data/defaultElvesLoaded.ts');
+  const kitSoul = (id: string) => structuredClone(DEFAULT_ELVES.find((e: any) => String(e.id) === id).soulMark);
   const souls = getSoulMarkRegistry(), skills = getBattleSkillRegistry();
   let driver: any;
   for (const side of ['p1', 'p2'] as const) for (const mode of ['status', 'gate', 'mark', 'trait', 'resistance', 'dixin_ignore', 'hp_ceiling', 'keld_reduce', 'keerhode_reduce']) {
@@ -40,19 +41,31 @@ try {
     } else self.skills = [{ ...attack }];
     if (mode === 'trait') enemy.alienTraits = { generalTrait: { name: '堅硬' } };
     if (mode === 'keerhode_reduce') enemy.currentHp = 2000;
-    souls[enemy.name] = (c: any, ev: string, data: any) => {
-      if (ev === 'ON_ENTRANCE') {
-        c.addTimerTo(c.actor, { id: '99', name: '99%驗收', kind: 'round_counter', source: 'soulmark', remaining: 3, tickAt: 'never', payload: { damageReductionOverridePercent: 99 } }, false);
-        if (['status', 'dixin_ignore'].includes(mode)) c.updateElf(c.actor, { battleStatuses: { 星佑: 3 } });
-        if (mode === 'mark') c.setMark({ id: 'guardian_shield_mark', name: '守護', count: 1, effects: { nonTrueDamageTakenMultiplier: .75, damageTakenTypes: ['attack'] } });
-        if (mode === 'gate') c.addTimerTo(c.actor, { id: 'half', name: '減半', kind: 'turn_effect', source: 'skill', remaining: 3, tickAt: 'never', payload: { applyMode: 'gate', wraps: 'damage_reduce', params: { percent: 50, damageTypes: ['attack'] } } }, false);
-        if (mode === 'resistance') c.updateElf(c.actor, { resistances: { damageResist: { fixed: 50 } } });
-        if (mode === 'hp_ceiling') c.addTimerTo(c.targetSide, { id: 'test_formation', name: '源綁天陣', kind: 'round_counter', source: 'soulmark', remaining: 1, tickAt: 'never', payload: { opponentDamageHpCeiling: true } }, false);
-      }
+    const kitMode = mode === 'keld_reduce' || mode === 'keerhode_reduce';
+    const setupEnemy = (c: any) => {
+      c.addTimerTo(c.actor, { id: '99', name: '99%驗收', kind: 'round_counter', source: 'soulmark', remaining: 3, tickAt: 'never', payload: { damageReductionOverridePercent: 99 } }, false);
+      if (['status', 'dixin_ignore'].includes(mode)) c.updateElf(c.actor, { battleStatuses: { 星佑: 3 } });
+      if (mode === 'mark') c.setMark({ id: 'guardian_shield_mark', name: '守護', count: 1, effects: { nonTrueDamageTakenMultiplier: .75, damageTakenTypes: ['attack'] } });
+      if (mode === 'gate') c.addTimerTo(c.actor, { id: 'half', name: '減半', kind: 'turn_effect', source: 'skill', remaining: 3, tickAt: 'never', payload: { applyMode: 'gate', wraps: 'damage_reduce', params: { percent: 50, damageTypes: ['attack'] } } }, false);
+      if (mode === 'resistance') c.updateElf(c.actor, { resistances: { damageResist: { fixed: 50 } } });
+      if (mode === 'hp_ceiling') c.addTimerTo(c.targetSide, { id: 'test_formation', name: '源綁天陣', kind: 'round_counter', source: 'soulmark', remaining: 1, tickAt: 'never', payload: { opponentDamageHpCeiling: true } }, false);
+    };
+    const observe = (ev: string, data: any) => {
       if (ev === 'BEFORE_DAMAGE' && data.damageCategory === 'skill_attack') base = data.base;
       if (ev === 'ON_DAMAGED') receipts.push(data.receipt);
-      if (mode === 'keld_reduce') return handleKeldSoulMark(c, ev, data);
-      if (mode === 'keerhode_reduce') return handleKeerhodeSoulMark(c, ev, data);
+    };
+    if (kitMode) {
+      // Kit 精靈的魂印不走名稱 handler：99% 政策與觀測改由攻擊方魂印 handler 在登場時寫到防守方／觀測事件。
+      enemy.soulMark = kitSoul(mode === 'keld_reduce' ? '5012' : '5013');
+      const attackerSoul = souls[self.name];
+      souls[self.name] = (c: any, ev: string, data: any) => {
+        if (ev === 'ON_ENTRANCE') c.addTimerTo(c.targetSide, { id: '99', name: '99%驗收', kind: 'round_counter', source: 'soulmark', remaining: 3, tickAt: 'never', payload: { damageReductionOverridePercent: 99 } }, false);
+        if (!data?.isIncoming) { observe(ev === 'AFTER_DAMAGE' ? 'ON_DAMAGED' : ev, data || {}); } // 防守方走 Kit、無名稱 handler：回饋由造成方的 AFTER_DAMAGE 取得
+        return attackerSoul ? attackerSoul(c, ev, data) : false;
+      };
+    } else souls[enemy.name] = (c: any, ev: string, data: any) => {
+      if (ev === 'ON_ENTRANCE') setupEnemy(c);
+      observe(ev, data);
       return false;
     };
     if (mode === 'resistance') {
@@ -79,7 +92,7 @@ try {
     if (mode === 'resistance') assert.equal(r.settledAmount, 10, '99%讀取到抗性舊入口');
     else if (mode === 'hp_ceiling') assert.equal(driver.getSyncState()[other].currentHp, 80000, '真傷快照同時限制回血及體力調整，不改maxHp');
     else assert.equal(r.settledAmount, Math.floor(base * (mode === 'dixin_ignore' ? 1 : 1 - .99)), `${side}/${mode}主傷害管線讀取減傷政策`);
-    delete souls[self.name]; delete souls[enemy.name]; delete skills['減傷驗收固傷']; delete skills['天陣快照驗收']; checks++;
+    delete souls[self.name]; delete souls[enemy.name]; /* kit 模式下 souls[self.name] 為本場臨時包裝 */ delete skills['減傷驗收固傷']; delete skills['天陣快照驗收']; checks++;
   }
 } finally { await act(async () => root.unmount()); await server.close(); dom.window.close(); }
 console.log(`實際對戰減傷 ${checks} 場通過。`);

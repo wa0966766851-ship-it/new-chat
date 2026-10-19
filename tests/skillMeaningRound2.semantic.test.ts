@@ -63,7 +63,8 @@ for(const side of ['p1','p2']as const){
   const beforeInvalidHeals=o.heals.length;
   handleOpeiaSoulMark(o.ctx,E.SKILL_INVALID,{skill:{...o.ctx.skill,effectMode:'kit'},isIncoming:false});
   assert.equal(o.state.opeiaTreatInsectAttacks,undefined);assert.equal(o.heals.length,beforeInvalidHeals,'Kit無效由圖紙執行，舊魂印不重播');
-  handleOpeiaSoulMark(o.ctx,E.SKILL_INVALID,{skill:{...o.ctx.skill,effectMode:'registry'},isIncoming:false});assert.equal(o.state.opeiaTreatInsectAttacks,2);assert.equal(o.heals.at(-1).n,600);
+  // 5018 后已遷真 Kit、舊魂印空殼：原「registry 模式失效→回復1/2最大體力＋2次視為蟲系攻擊」改於檔尾以真引擎驅動 Kit 毒噬魂絲驗證同一行為。
+  assert.equal(handleOpeiaSoulMark(o.ctx,E.SKILL_INVALID,{skill:{...o.ctx.skill,effectMode:'registry'},isIncoming:false}),false);assert.equal(o.state.opeiaTreatInsectAttacks,undefined,'空殼不再建立舊專屬次數');assert.equal(o.heals.length,beforeInvalidHeals);
 
   const c=setup(side,'5028','王·洛浦凌波');c.self.statStages={spatk:-2,accuracy:-1};c.self.shield=100;c.self.barrier=200;c.target.shield=300;c.target.barrier=400;
   CANGLAN_SKILLS['王·洛浦凌波'](c.ctx);assert.equal(c.self.statStages.spatk,2);assert.equal(c.target.statStages.spatk,-2);assert.equal(c.target.statStages.accuracy,-1);
@@ -109,3 +110,17 @@ extension=consumeSkillTypeOverride(extension,'percent',10);assert.equal(extensio
 extension=consumeSkillTypeOverride(extension,'skill_extra_action',0);assert.equal(extension.blkTypeOverrideUses,1);
 extension=consumeSkillTypeOverride(extension,'skill_extra_action',10);assert.equal(extension.blkTypeOverrideUses,0);
 assert.equal(skillTypeMultiplier(extension,'火','草'),getTypeMatchup('火','草'));
+// 毒噬魂絲失效（原 registry 模式分支）的真 Kit 行為：自身失效時回復1/2最大體力、接下來2次攻擊視為蟲系（attackTypeOverrideUses=2），雙側各一次，魂印不重播。
+{
+  const {createHarness}=await import('./helpers/migrationHarness');
+  const h=await createHarness();
+  try{
+    const trait={name:'起始無效一次',effectMode:'kit',kit:[{codeId:'effect_sequence',source:'mechanic',node:'on_entered',order:0,params:{clause:{raw:'測試用無效一次',trig:'entrance',parsed:true,body:[{acts:[{op:'invalid_next',p:{kind:'all',uses:1},label:'無效一次'}]}]}}}]};
+    for(const side of ['p1','p2'] as const){
+      const [r]=await h.play(side,{self:h.unit('S',100,[structuredClone(h.find('5018','毒噬魂絲')),h.wait()],{maxHp:1200}),opp:h.unit('E',1000000,[h.wait()],{extra:{trait}})});
+      assert.equal(r.self.currentHp,100+600,side+' 失效回復1/2最大體力(600)，只回復一次');
+      assert.equal(r.state[side+'RegistryState'].attackTypeOverrideUses,2,side+' 接下來2次攻擊視為蟲系');
+      assert.equal(r.state[side+'RegistryState'].opeiaTreatInsectAttacks||0,0,side+' 不建立舊專屬次數');
+    }
+  }finally{await h.close();}
+}

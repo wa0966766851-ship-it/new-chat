@@ -1,3 +1,4 @@
+import {hasPortableDuel} from '../battle/portableSkillMarks';
 import { StatusRegistry } from './statusRegistry';
 import { BattleEventContext } from './types';
 import { canonicalStatusName } from './statusIdentity';
@@ -58,7 +59,7 @@ export function checkControlImmunity(
   // 1. 奧丁 / 決鬥場地 (Duel Field)
   const isOdin = targetElf?.name?.includes("奧丁");
   const isDuelActive = ctx.getPlayerState(`${targetSideKey}_duelActive`) || ctx.getPlayerState("duelActive");
-  if (isOdin || isDuelActive) {
+  if (hasPortableDuel(targetElf,targetSide==='p1'?ctx.activeP2:ctx.activeP1) || isOdin && targetElf.soulMark?.effectMode!=='kit' || isDuelActive) {
     return {
       immune: true,
       reason: `⚡ 【眾神之父·奧丁】：神聖決鬥戰場下，免疫控制類異常【${statusName}】！`

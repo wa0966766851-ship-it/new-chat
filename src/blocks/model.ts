@@ -4,6 +4,8 @@ export type Side = "self" | "opp" | "both";
 
 /** 觸發時點（魂印標頭、N回合內的持續效果） */
 export type Trigger =
+  | "team_battle_start" | "team_entrance" | "team_after_action" | "team_round_end"
+  | "team_before_status" | "team_status_received" | "team_defeated"
   | "opp_damaged_skill"
   | "skill_selected"
   | "outgoing_power" | "incoming_power" // 正式公式前的攻方／受方威力修正
@@ -11,6 +13,7 @@ export type Trigger =
   | "use" // 技能使用（技能本身的效果）
   | "before_action" // 行動方出手流程開始（先後手已定；魂印先手/後手分支）
   | "before_skill" // 自身本次技能前置時點（PP成本修正、必中查詢；早於命中與傷害）
+  | "before_stat_change" // 他方即將改變自身能力等級前（可移除本次變更或阻止）
   | "modify_priority" // 先制判定（priorityComp 修正；尚未決定出手順序）
   | "before_instant_kill" // 秒殺修正前；在場與存活背包持有者共同攔截
   | "extra_action_start" | "extra_action_end" // 額外行動獨立節點（不等同再次使用技能）
@@ -37,6 +40,7 @@ export type Trigger =
   | "fatal" // 受到致命傷害時
   | "before_status" // 受方異常附加前，可阻止或替換本次異常
   | "pp_consumed" // 本技能槽的PP確實被消耗，同一因果鏈每槽一次
+  | "pp_cleared" // 原持有者至少一槽正PP被清除為0；不包含普通出招或削PP
   | "turn_effects_cleared" // 本持有者的回合效果實際被消除
   | "stat_boost_cleared" // 他方實際消除／吸取本持有者的能力提升
   | "status_end" | "status_immune" | "status_tick" // 持有者異常結束、免疫結果及扣減前
@@ -47,6 +51,7 @@ export type Trigger =
   | "any_status" // 雙方任一方受到異常時
   | "holder_damaged_attack" | "holder_damaged" | "holder_passive" // 印記持有者
   | "passive" // 常駐（顯示用；由條件式修正在各時點生效）
+  | "held_resource_lost"
   | "custom"; // 無法對應（顯示原文）
 
 export interface Cond {
@@ -90,6 +95,8 @@ export interface Clause {
   raw: string; // 原文（含標記）
   marker?: string; // ■ 🎯 ◇ > >>
   trig: Trigger;
+  /** 出戰背包觀察者；明確指定死亡後仍生效，不傳遞持有者身分。 */
+  observer?: { includeDead: boolean };
   /** 標頭條件（例如「回合開始時自身擁有護盾：」） */
   cond?: Cond[];
   body: Stmt[];

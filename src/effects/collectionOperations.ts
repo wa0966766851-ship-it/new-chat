@@ -12,8 +12,8 @@ export function collectionOperations(helpers:{liveElf:(ctx:BattleEventContext,si
       const candidates=ctx.getFullTeam(side).filter(e=>!e.isVanished&&!e.isExtra&&(p.scope==='team'||identity(e)!==identity(active))&&(p.state==='any'||(p.state==='dead'?checkElfDead(e):!checkElfDead(e))));
       if(p.orderBy==='max_hp')candidates.sort((a,b)=>(p.direction==='asc'?1:-1)*(a.maxHp-b.maxHp));
       else if(p.direction==='desc')candidates.reverse();
-      const elf=candidates[0];if(!elf)return false;
-      helpers.run(ctx,p.body,{last:null,lastAmount:0,sourceKind:st.sourceKind,event:st.event,selectedElf:{side,id:identity(elf)}});return true;
+      const chosen=p.all?candidates:candidates.slice(0,1);if(!chosen.length)return false;
+      for(const elf of chosen)helpers.run(ctx,p.body,{last:null,lastAmount:0,sourceKind:st.sourceKind,event:st.event,selectedElf:{side,id:identity(elf)}});return true;
     },
     raise_max_hp:(ctx:BattleEventContext,p:any,st:RunState)=>{
       const elf=selected(ctx,st);st.lastAmount=0;if(!elf)return false;

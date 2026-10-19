@@ -1,6 +1,8 @@
+import {portableSkillCapabilities} from './portableSkillMarks';
 // PP選招與扣費查詢；戰鬥頁與AI載入時才需要，不拖入首頁共用狀態工具。
 import type {Elf,Skill} from '../types';
-import {getStatuses,getMinPp,AUXILIARY_STATUSES,isDimensionalDragon} from '../utils/battleHelpers';
+import {getStatuses,getMinPp,AUXILIARY_STATUSES} from '../utils/battleHelpers';
+import {resourceQueryActive} from './resourceQueryRules';
 import {effectSourceViews} from './effectSources';
 import {skillSlot} from './skillSlot';
 import {hasStoneThrowerMythic} from '../data/skillStones';
@@ -14,10 +16,6 @@ const hasAnyStatus = (elf: Elf) => Object.entries(getStatuses(elf)).some(([k, v]
 const isSerene = (elf: Elf) => {
   const st = getStatuses(elf);
   return (st["serenity"] || 0) > 0 || (st["平靜"] || 0) > 0 || elf.battleStatus === "serenity" || elf.battleStatus === "平靜";
-};
-const poemStacks = (elf: Elf) => {
-  const m = (elf.marks || []).find((x: any) => x.id === "poem_chapter") as any;
-  return m?.effects?.poemHpSnapshots?.length || 0;
 };
 const isCanglan = (elf: Elf) => !!(elf.name?.includes("滄嵐") || elf.soulMark?.name === "瀾" || elf.id === "canglan");
 /** 滄嵐：場上存在不擁有護盾者則使用技能不受PP值限制、不消耗技能PP值 */
@@ -43,13 +41,16 @@ const textPpExempt = (elf: Elf, text?: string): boolean => {
 
 const nativeZeroPpExempt = (elf: Elf, sk: Skill, opp?: Elf | null): boolean => {
   if (!elf || !sk || !elf.name) return false;
+  if((elf as any).ppLimitIgnoredUntilSwitch===true)return true;
   if(authoredPpExemption(elf,sk,opp))return true;
+  if(portableSkillCapabilities(elf).ppUnrestricted||(sk as any).portableSkillMark?.capabilities?.ppUnrestricted)return true;
+  if(sk.ppUnlimited===true)return true; // 原廠 PP 0/0
 
   // 1. 專屬機制
   if (elf.name === "變革·馬爾修斯") return true; // 充能系統
   if (isCanglan(elf) && canglanActive(elf, opp)) return true;
   if (hasStoneThrowerMythic(elf)) return true;
-  if (isDimensionalDragon(elf) && poemStacks(elf) >= 2) return true; // 詩章 2：使用技能無視PP值限制
+  if (resourceQueryActive(elf,'ignorePpLimit')) return true;
   if (sk.name === "星光·光合作用" || sk.name === "星光·花草能量") return true;
   if ((elf.ppLimitIgnoredWhenParalyzedTurns || 0) > 0) {
     const st = getStatuses(elf);
@@ -65,12 +66,13 @@ const nativeZeroPpExempt = (elf: Elf, sk: Skill, opp?: Elf | null): boolean => {
   if (elf.soulMark && (elf.soulMark as any).ignorePpLimit === true) return true;
 
   // 3. 奧丁 ᚱᚷ 符文：激活後所有技能選擇時不受PP值限制；附有 ᚱᚷ 的技能選擇時即激活
-  const isRG = (s: Skill) => s.skillRune === 'ᚱᚷ' || s.specialBadge?.text === 'ᚱᚷ' || !!s.specialBadge?.id?.includes('ᚱᚷ');
+  const isRG = (s: Skill) => !(s as any).portableSkillMark&&(s.skillRune === 'ᚱᚷ' || s.specialBadge?.text === 'ᚱᚷ' || !!s.specialBadge?.id?.includes('ᚱᚷ'));
   if ((elf.skills || []).some(s => isRG(s) && s.isRuneActive === true)) return true;
   if (isRG(sk)) return true;
 
   // 4. 已激活標記中的「不受PP」
   const hasPpExemptBadge = (elf.skills || []).some(s => {
+    if((s as any).portableSkillMark)return false;
     const badge = s.specialBadge;
     if (!badge?.description) return false;
     if (!/不受\s*(技能)?\s*PP/.test(badge.description)) return false;
@@ -92,6 +94,7 @@ const nativeZeroPpExempt = (elf: Elf, sk: Skill, opp?: Elf | null): boolean => {
 /** 使用技能時不消耗 PP */
 const nativePpCostFree = (elf: Elf, sk: Skill, opp?: Elf | null): boolean => {
   if (!elf || !sk) return false;
+  if (sk.ppUnlimited === true) return true; // 原廠 PP 0/0：使用不消耗PP
   if (hasStoneThrowerMythic(elf)) return true;
   if (elf.name === "變革·馬爾修斯") return true;               // 充能系統另計
   if (elf.name?.includes("奧佩婭")) return true;               // 自身使用技能時：不消耗技能PP值

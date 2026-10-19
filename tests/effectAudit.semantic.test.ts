@@ -89,7 +89,8 @@ check('競技場五隻依整份已登記圖紙區分Kit與專屬入口，不誤�
   assert.equal(report.elves.filter((e:any)=>e.id.startsWith('arena_')).length,5);
   for (const e of report.elves.filter((e: any) => e.id.startsWith('arena_'))) {
     // arena_13 龍錄天鋒魂印已遷真 Kit（migratedArena13SoulKit；DSH 20261017）——唯一例外。
-    assert.equal(e.entries.find((x: any) => x.kind === '魂印').route, e.id === 'arena_13' ? 'kit' : 'handler');
+    // arena_13／arena_15 魂印已遷真 Kit（migratedArena13SoulKit／migratedMoiraiSoulKit；DSH 20261018）。
+    assert.equal(e.entries.find((x: any) => x.kind === '魂印').route, ['arena_13', 'arena_15'].includes(e.id) ? 'kit' : 'handler');
     for(const entry of e.entries.filter((x:any)=>x.kind==='技能')){
       const authored=MIGRATED_SEQUENCE_SKILL_KITS.find(d=>d.elfIds.includes(e.id)&&d.name===entry.name&&d.description===entry.sourceText);
       assert.equal(entry.route,authored&&!isLegacyWrappedKit(authored.kit)?'kit':'handler',`${e.id}/${entry.name}`);

@@ -1,6 +1,5 @@
 import { isAlienElf } from '../../../battle/advancedDamageModifiers';
-import { getElfAdvancedMechanics } from '../../../data/traitsRegistry';
-import { getTypeMatchup } from "../../../utils/statCalculator";
+import { getElfAdvancedMechanics,hasAuthoredAdvancedMechanic } from '../../../data/traitsRegistry';
 import { BattleEventContext, BattleSkillHandler, EffectTiming, ElfDeconstructedProfile } from '../../types';
 import { liurenSurvivalRule } from '../../../battle/survivalRules';
 
@@ -54,7 +53,7 @@ export const handleWuxuSoulMark = (ctx: BattleEventContext, event: EffectTiming 
 
     if (event === EffectTiming.ON_ENTRANCE) {
       addLog(`🌑 【無序】：六刃出陣，原始體力共鳴！`, "effect");
-      ctx.updateElf(actor, { isConcealed: true, survivalRule: liurenSurvivalRule() });
+      ctx.updateElf(actor, { ...(!hasAuthoredAdvancedMechanic(self,'enterGainConceal')?{isConcealed:true}:{}), survivalRule: liurenSurvivalRule() });
       if (!getPlayerState("wuxuLiurenOriginalMaxHp")) {
         setPlayerState("wuxuLiurenOriginalMaxHp", self.maxHp);
       }
@@ -90,7 +89,7 @@ export const handleWuxuSoulMark = (ctx: BattleEventContext, event: EffectTiming 
       // 原文：「自身下場後若己方隱匿精靈不超過3個」
       // 這裡計算包含自己在內的所有隱匿精靈（因為此時尚未清除自己的隱匿）
       const concealCount = team.filter(e => e.isConcealed).length;
-      if (concealCount <= 3 && extraData?.incomingElf) {
+      if (!hasAuthoredAdvancedMechanic(self,'switchOutInheritConceal') && concealCount <= 3 && extraData?.incomingElf) {
         addLog(`🌑 【隱匿傳承】：虛無之志傳遞給下一位！`, "effect");
         const nextElf = extraData.incomingElf;
         // 恢復下隻出戰精靈所有技能PP值
@@ -109,7 +108,7 @@ export const handleWuxuSoulMark = (ctx: BattleEventContext, event: EffectTiming 
       }
 
       // 自己下場，清除隱匿狀態（避免背包內一直保持隱匿，依據通用的「下場清除」邏輯，但若有特殊需求可調整）
-      ctx.updateElf(actor, { isConcealed: false });
+      if(!hasAuthoredAdvancedMechanic(self,'switchOutInheritConceal'))ctx.updateElf(actor, { isConcealed: false });
     }
     
 
@@ -221,48 +220,7 @@ export const handleWuxuSoulMark = (ctx: BattleEventContext, event: EffectTiming 
 };
 
 export const WUXU_SKILLS: Record<string, BattleSkillHandler> = {
-  "終焉·六花斬": (ctx) => {
-    const { self, actor, target, targetSide, addLog } = ctx;
-    addLog(`🌑 【終焉·六花斬】：穿透虛空的六重連斬！`, "effect");
-    // 🎯 雙方每有1個技能（PP值為滿／不為滿）吸取對手1次66點體力（每次獨立），吸取後對手體力未減少則該次改為汲取
-    const n = (self.skills || []).length + (target.skills || []).length;
-    for (let i = 0; i < n; i++) {
-      const dealt = ctx.applyPinkDamage(targetSide, 66, "吸取", undefined, undefined, "percent");
-      if (dealt > 0) ctx.applyHeal(actor, dealt);
-      else ctx.applyAbsorb(targetSide, 66);
-    }
-    // 🎯 進行6次額外行動（邪靈→戰鬥→邪靈.戰鬥→邪靈→戰鬥→邪靈.戰鬥），每次66點技能傷害；行動期間不造成傷害，
-    //    行動結束時對方所有精靈受到6次總和的技能傷害；場下精靈死亡時令其消逝並轉化其能力值總和20%給予自身
-    const seq = ["邪靈", "戰鬥", "邪靈.戰鬥", "邪靈", "戰鬥", "邪靈.戰鬥"];
-    ctx.queueExtraAction?.(actor, {
-      label: "終焉·六花斬 ×6",
-      run: (c) => {
-        const opp = c.actor === "p1" ? "p2" : "p1";
-        const total = (elf: any) => seq.reduce((a, t) => a + Math.floor(66 * getTypeMatchup(t, elf.type)), 0);
-        // 在場：六次按序以各自系別單獨結算（每次管線只乘一次正確克制）。
-        // 舊寫法先 total（含六系克制）再 elem:"普通" 進管線，會被普通系克制二次污染。
-        for (let i = 0; i < seq.length; i++) {
-          c.applySkillTypeDamage(opp, 66, `終焉·六花斬(${i + 1}/6·${seq[i]})`, { elem: seq[i], category: "skill_extra_action" });
-        }
-        const active: any = opp === "p1" ? c.activeP1 : c.activeP2;
-        for (const m of c.getFullTeam(opp) as any[]) {
-          if (!m || m === active || (m.battleId && m.battleId === active?.battleId) || m.currentHp <= 0 || m.isConcealed) continue;
-          const hp = Math.max(0, m.currentHp - total(m));
-          c.updateAnyElf(opp, m.battleId, { currentHp: hp } as any);
-          c.addLog(`🌑 【終焉·六花斬】：場下【${m.name}】受到 ${total(m)} 點技能傷害！`, "damage");
-          if (hp <= 0) {
-            c.vanishElf(opp, m);
-            const cs: any = (c.self as any).calculatedStats || {};
-            const ms: any = m.calculatedStats || {};
-            const next: any = { ...cs };
-            for (const k of ["atk", "def", "spatk", "spdef", "speed"]) next[k] = (cs[k] || 0) + Math.floor((ms[k] || 0) * 0.2);
-            c.updateElf(c.actor, { calculatedStats: next } as any);
-            c.addLog(`🌑 【終焉】：【${m.name}】消逝，其能力值 20% 轉化給自身！`, "effect");
-          }
-        }
-      },
-    });
-  },
+  // '終焉·六花斬' 已遷移為真 Kit（src/data/migratedExtraElfKits.ts；組 3，blocks/ops/extraElf.ts）。
   "狂刃無生": (ctx) => {
     ctx.addLog(`🌑 【狂刃無生】：洗滌萬物，唯餘狂氣！`, "effect");
     

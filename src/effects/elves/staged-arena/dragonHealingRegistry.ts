@@ -205,51 +205,7 @@ export function dragonTypeDamage(c: ArenaContext): number {
 
 export const DRAGON_HEALING_SKILLS: Record<string, BattleSkillHandler> = {
   // '剛莖棍壓' 已遷移至 src/data/migratedArena16SkillKits.ts（真 Kit；DSH 20261017）。
-  '挨打要立正': c => {
-    write(c, 'dragonSoulSource', 1); modify(c, c.actor, 1);
-    until(c, 'drain', 3); until(c, 'priority', 2);
-    peelTypes(c);
-  },
-  '幽魔相嘯': c => {
-    const hadBoost = hasBoost(c.self) || hasBoost(c.target);
-    const hadDrop = hasDrop(c.self) || hasDrop(c.target);
-    const removedShield = (c.self.shield || 0) + (c.self.barrier || 0) + (c.target.shield || 0) + (c.target.barrier || 0);
-    for (const side of [c.actor, c.targetSide]) {
-      const e = side === c.actor ? c.self : c.target;
-      c.applyStatChange(side, Object.fromEntries(STATS.map(s => [s, -(e.statStages?.[s] || 0)])));
-      c.clearTurnEffectsOf(side);
-      c.updateElf(side, { shield: 0, barrier: 0 });
-    }
-    if (hadBoost) { c.applyStatusWithImmunityCheck(c.actor, '狂暴', 3); status(c, '狂暴', 3); }
-    if (hadDrop) write(c, 'redTrue', 1);
-    if (c.self.currentHp < c.self.maxHp) {
-      const amount = c.self.maxHp - c.self.currentHp;
-      c.applyHeal(c.actor, amount);
-      percent(c, amount * (c.self.currentHp < c.self.maxHp / 2 ? 2 : 1), '幽魔相嘯');
-    }
-    if (removedShield) c.applyFixedDamage(c.targetSide, removedShield, '幽魔相嘯');
-  },
-  '雅髯獅嘯': c => {
-    const absorbed = transferBoosts(c);
-    if (absorbed) c.applyStatusWithImmunityCheck(c.actor, '狂暴', 3);
-    const selfCleansed = Object.values(c.getStatuses(c.self)).filter(n => n > 0).length;
-    if (selfCleansed) { c.updateElf(c.actor, { battleStatuses: {}, battleStatus: 'normal' }); c.setOpponentState('allHitEffectNullTurns', 2); }
-    const removed = Object.values(c.getStatuses(c.target)).filter(n => n > 0).length;
-    if (removed) {
-      c.updateElf(c.targetSide, { battleStatuses: {}, battleStatus: 'normal' });
-      c.applyFixedDamage(c.targetSide, removed * 200 * (c.self.currentHp > c.target.currentHp ? 2 : 1), '雅髯獅嘯');
-    }
-  },
-  '但願不會是個怪物': c => {
-    const already = !!read(c, 'soulPower');
-    write(c, 'soulPower', 1);
-    applySoulPower(c);
-    // 使用前已擁有龍魂之力：本技能固定按最高克制倍率（4 倍）計算；對手先制上限於 MODIFY_PRIORITY 處理。
-    if (already) c.setPlayerState('fixedTypeMultThisAction', 4);
-    let missed = 0;
-    if (c.clearTurnEffectsOf(c.targetSide)) {
-      for (const name of ['疲憊', '害怕', '睡眠']) if (!status(c, name, 3)) missed++;
-    }
-    c.setPlayerState('monsterStatusMissedThisAction', missed);
-  },
+  // 挨打要立正已遷真 Kit（DSH 20261018）——規則3.3 由技能表移除。
+  // 雅髯獅嘯已遷真 Kit（DSH 20261018）——規則3.3 由技能表移除。
+  // 但願不會是個怪物已遷真 Kit（migratedArena16MonsterKit.ts；DSH 20261018）——規則3.3 由技能表移除。
 };

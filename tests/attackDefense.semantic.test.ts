@@ -61,7 +61,12 @@ let checks = 0;
 try {
   const { default: Battle } = await server.ssrLoadModule('/src/components/BattleScreen.tsx');
   const { getSoulMarkRegistry, getBattleSkillRegistry } = await server.ssrLoadModule('/src/effects/battleEventRegistry.ts');
-  const { handleShenglingPuniSoulMark } = await server.ssrLoadModule('/src/effects/elves/puni/registry.ts');
+  // 5000 魂印「神」虛無已遷真 Kit（DSH 20261018 組 5）：免疫旗標改為引擎通用鍵 blockAttackCount（Kit op immune_attack_count 寫入）。
+  // 5018 魂印「后」已遷真 Kit（migratedOpeiaSoulKit；DSH 20261018）——無視鍵改由 Kit 於登場寫入：
+  // 合成精靈帶真 soulMark（structuredClone 後僅改身份／技能／數值），行為由真 Kit 驅動。
+  const { DEFAULT_ELVES: QUEEN_ELVES } = await server.ssrLoadModule('/src/data/defaultElvesLoaded.ts');
+  const queenSoulMark = structuredClone(QUEEN_ELVES.find((e: any) => String(e.id) === '5018').soulMark);
+  assert.equal(queenSoulMark.effectMode, 'kit', '5018 魂印已是真 Kit');
   const souls = getSoulMarkRegistry(), skills = getBattleSkillRegistry();
   let driver: any;
   async function finish(before: number) {
@@ -81,7 +86,7 @@ try {
     const other = side === 'p1' ? 'p2' : 'p1';
     let baseline = 0;
     for (const mode of modes) {
-      const self = { ...make('opeia-instance'), name: '蟲后·奧佩婭', type: '蟲', skills: [{ ...attack }, { ...wait }] };
+      const self = { ...make('opeia-instance'), name: '蟲后·奧佩婭', type: '蟲', soulMark: structuredClone(queenSoulMark), skills: [{ ...attack }, { ...wait }] };
       const enemy = make(`defense-${mode}-${side}`), bench = { ...make('chaos-bench'), type: chaos ? '混沌' : '普通' };
       enemy.skills.push({ ...wait, name: '防護驗收備用等待' });
       const receipts: any[] = [];
@@ -90,7 +95,7 @@ try {
         if (ev === 'ON_ENTRANCE') {
           if (mode === 'immune') c.setPlayerState('blockAttackCount', 1);
           if (mode === 'cap') { c.setPlayerState('incomingSkillDmgCapTurns', 3); c.setPlayerState('incomingSkillDmgCap', 1); }
-          if (mode === 'puni') c.setPlayerState('puniNextAttackImmune', true);
+          if (mode === 'puni') c.setPlayerState('blockAttackCount', 1);
           if (mode === 'shield') c.updateElf(c.actor, { shield: 99999, barrier: 99999 });
           if (mode === 'guard') c.applyDeathImmunity(c.actor, { guardTurns: 3, deathImmuneTurns: 3, fixedPercentCap: 60 });
           if (mode === 'invalid') c.setOpponentState('allSkillInvalidTurns', 3);
@@ -101,7 +106,6 @@ try {
             remaining: 1, tickAt: 'never', payload: { block } }, false);
         }
         if (ev === 'BEFORE_DAMAGE' && data.isIncoming) {
-          if (mode === 'puni') handleShenglingPuniSoulMark(c, ev, data);
           if (mode === 'reduce') data.decreasePercent += .5;
         }
         if (ev === 'ON_DAMAGED') receipts.push(data.receipt);
@@ -127,7 +131,7 @@ try {
         assert.equal(state[other].shield, chaos ? 99999 : 99999 - baseline);
         assert.equal(state[other].barrier, 99999);
       }
-      if (mode === 'puni') assert.equal(state[`${other}RegistryState`].puniNextAttackImmune, chaos);
+      if (mode === 'puni') assert.equal(state[`${other}RegistryState`].blockAttackCount, chaos ? 1 : 0);
       if (mode === 'reduce') assert.equal(settled, Math.floor(baseline * .5), '一般50%減傷不能被無視抵擋抹掉');
       if (['actorStop', 'invalid'].includes(mode)) assert.equal(settled, 0, '不是无視自身傷害失效或技能無效');
       if (!chaos && ['immune', 'block', 'skillBlock', 'conversion', 'guard', 'puni'].includes(mode)) assert.equal(settled, 0);

@@ -134,7 +134,13 @@ await check('結算不等動畫：慢速播放下引擎仍立即算完整回合�
 await check('全局規則（搬出引擎）：次元龍詩章、下一隻上場的守護印記、通用忽略對手速度', async () => {
   // 次元龍在場：回合開始所有存活精靈各記一篇詩章
   {
-    const { engine } = battle([elf('測試次元龍', 5000, [skill('等')], 200)], [elf('X', 5000, [skill('等')], 100)]);
+    // 詩章由 Kit 的 snapshot_resource_rule 安裝（不再依精靈名稱自動生效）——
+    // 合成精靈需帶該規則才能驗證引擎的「回合開始全體累積」行為。
+    const poemRule = { id: 'poem_chapter', name: '詩章', displayChar: '詩', snapshotKey: 'poemHpSnapshots',
+      perRound: 1, receiverKey: 'all', unit: '篇', persistsOffField: true };
+    const owner = elf('測試次元龍', 5000, [skill('等')], 200);
+    owner.snapshotResourceRules = { poem_chapter: poemRule };
+    const { engine } = battle([owner], [elf('X', 5000, [skill('等')], 100)]);
     await turn(engine, use('p1', 0), use('p2', 0));
     const st = engine.getState();
     assert.equal(st.p1Marks.find((m: any) => m.id === 'poem_chapter')?.count, 1);

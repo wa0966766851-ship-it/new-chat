@@ -65,5 +65,19 @@ try {
   }
   console.log('OK 未暝之夜計層');
 
+  // 未暝之夜：技能先制+1（prio_bonus 事中查詢；prio_next 缺陷修正後的行為斷言）
+  {
+    const self = mingUnit('SP', 9000, [h.wait(), h.wait()]);
+    const opp = h.unit('EP', 100000, [h.kitSkill('真襲', [{ op: 'dmg', p: { flat: 500, type: '真實' } }]), h.wait()], { speed: 300 });
+    // 對手先手給自身上一層未暝之夜，之後自身所有技能先制+1
+    const r = await h.play('p1', { self, opp, turns: (_e, t) => [t === 1 ? 0 : 1, 0] }, 2);
+    const logs = r[1].logs || [];
+    const acts = logs.filter((l: string) => /使用了【(等待|真襲)】/.test(l)).map((l: string) => /【EP】/.test(l) ? 'E' : 'TF');
+    // 回合2起自方持有未暝之夜（+1先制）應先於速度300對手——累積快照中回合2首個行動是第3筆
+    assert.ok(acts.length >= 4 && acts[2] === 'TF', '未暝之夜先手：回合2自方應先手（序：' + acts.join('→') + '）');
+    checks++;
+  }
+  console.log('OK 未暝之夜先制+1');
+
   console.log('5013 魂印「凕」：' + checks + ' 項通過');
 } finally { await h.close(); }

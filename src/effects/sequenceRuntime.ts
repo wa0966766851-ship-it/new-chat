@@ -34,6 +34,11 @@ export function runEffectSequence(clause: Clause, ctx: BattleEventContext & {eff
   if(ctx.effectNode==='passive_always'&&!ctx.damageComp)return;
   const state=ctx.sequenceFrame || prepareSequenceFrame([{codeId:'effect_sequence',params:{clause},node:ctx.effectNode!,source:'skill',order:0}],ctx.effectNode!,ctx);
   if(ctx.effectEntrySource)state.sourceKind=ctx.effectEntrySource==='skill'?'skill':ctx.effectEntrySource==='soulmark'?'soul':'trait';
-  state.event={trig:clause.trig,data:ctx};
+  const eventData=(ctx as any).teamKitObserver ? (ctx as any).effectEventData : ctx;
+  if((ctx as any).teamKitObserver&&eventData){
+    eventData.eventSide=(ctx as any).eventSide;
+    eventData.eventOwnerBattleId=(ctx as any).eventOwnerBattleId;
+  }
+  state.event={trig:clause.trig,data:eventData};
   runClause(ctx,clause,state);
 }

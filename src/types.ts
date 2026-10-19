@@ -36,12 +36,18 @@ export interface SkillBadge {
   bg?: string;    // e.g. "bg-cyan-950/80"
   border?: string;// e.g. "border-cyan-500/50"
   animate?: string; // e.g. "animate-pulse"
+  polarity?: 'positive' | 'negative'; // 效果面板色調（缺省：激活→正面、未激活→中性）
 }
 
 export interface Skill {
   effectMode?: EffectExecutionMode;
   /** 僅本次選擇快照使用，不覆寫背包技能。 */
   battleSlot?: number;
+  /** 固有積木產生的本次公式視圖，不回寫背包能力或技能。 */
+  resolvedCombatStats?: {attack:number;defense:number};
+  resolvedTypeMultiplier?:number;
+  resolvedAttackStats?: ('atk'|'spatk')[];
+  resolvedForceStab?: boolean;
   name: string;
   type: string; // e.g. "電", "火", "草", "水", "無屬性"
   category: '物理' | '特殊' | '屬性';
@@ -49,6 +55,7 @@ export interface Skill {
   pp: number;
   currentPp?: number;
   maxPp?: number;
+  ppUnlimited?: boolean; // 原廠 PP 0/0：選招不受PP限制、使用不消耗PP
   charge?: number; // 充能 (馬爾修斯專屬機制)
   accuracy?: number; // 命中率 (0-100), default 100
   isSureHit?: boolean; // 是否必中

@@ -36,10 +36,10 @@ export function sequenceActionLabel(a: Act, triggerLabels: Record<string, string
     case 'pp_combo_hits':return `扣PP前本次技能每1點PP連擊+${p.perPp}`;
     case 'attack_type_view_uses':return `下${p.uses}次攻擊${p.attackType?`自身攻擊視為${p.attackType}系`:''}${p.attackType&&p.targetType?'，':''}${p.targetType?`對手視為${p.targetType}系`:''}（下場清除）`;
     case 'change_type':return `${side}屬性轉變為${p.type}系，直到下場`;
-    case 'power_mod':return `當次攻擊威力提升${pct(p.boost)}${p.perMark?`×${p.perMark.side==='self'?'自身':'對手'}「${p.perMark.id}」層數`:''}`;
+    case 'power_mod':return `當次攻擊威力提升${p.flat===undefined?pct(p.boost):p.flat+'點'}${p.perMark?`×${p.perMark.side==='self'?'自身':'對手'}「${p.perMark.id}」層數`:''}`;
     case 'mark_lock_turns':return `自身「${p.id}」${p.turns}回合內層數不再遞減（含當回合）`;
     case 'stat_steal':return `${p.mode}對手能力提升${p.v===undefined?'全部':`每項最多${p.v}${p.perMark?`×${p.perMark.side==='self'?'自身':'對手'}「${p.perMark.id}」層數`:''}級`}${p.double?'，自身獲得量翻倍':''}${p.reverse?'並反轉對手提升':''}`;
-    case 'select_elf':return `選取${side}${p.scope==='bench'?'場下':'背包'}${p.state==='dead'?'陣亡':p.state==='alive'?'存活':'所有'}隊員，依${p.orderBy==='max_hp'?'體力上限':'隊伍順序'}${p.direction==='asc'?'由小到大':'由大到小'}取首位`;
+    case 'select_elf':return `選取${side}${p.scope==='bench'?'場下':'背包'}${p.state==='dead'?'陣亡':p.state==='alive'?'存活':'所有'}隊員，依${p.orderBy==='max_hp'?'體力上限':'隊伍順序'}${p.direction==='asc'?'由小到大':'由大到小'}${p.all?'全選':'取首位'}`;
     case 'shield':return `自身獲得${p.flat??`${p.base||'最大體力'}×${pct(p.ratio)}`}${p.kind==='barrier'?'護罩':'護盾'}`;
     case 'stat_value':return `${side}${p.stats.join('／')}能力值${p.direction==='decrease'?'減少':'增加'}${p.amount}點，最低${p.floor}（體力值修改上限）`;
     case 'maxhp':return `${side}體力上限${p.direction==='decrease'?'減少':'增加'}${Math.round(p.ratio*100)}%`;

@@ -368,53 +368,7 @@ export const DIMENSIONAL_SKILLS: Record<string, BattleSkillHandler> = {
     }
   },
 
-  "遺典.妄世律裁": (ctx) => {
-    const { self, target, actor, setPlayerState, getPlayerState, addLog, applyTrueDamage, applyPinkDamage, applyHeal, getMarks } = ctx;
-    const oppSide = actor === "p1" ? "p2" : "p1";
-    const isDragonSoul = getPlayerState("dimensionalDragonSoul") || false;
-
-    addLog(`🐉 使用【遺典.妄世律裁】：最終妄言之律，裁決降臨！`, "effect");
-    // 自身每有1篇詩章攻擊傷害提升20%
-    {
-      const chapters = getMark(getMarks(actor), "poem_chapter")?.effects?.poemHpSnapshots?.length || 0;
-      if (chapters > 0) setPlayerState("dragonSkillBoostsThisAction", [0.2 * chapters]);
-    }
-
-    // 5技能必觸發效果: 對方每有1種PP為滿則附加當前體力20%的傷害
-    let oppFullPp = 0;
-    target.skills.forEach(s => { if (s.pp === s.maxPp) oppFullPp++; });
-    if (oppFullPp > 0) {
-      const percentDmg = Math.floor(target.currentHp * 0.2 * oppFullPp);
-      applyPinkDamage(oppSide, percentDmg, "妄世律裁百分比傷害");
-    }
-
-    // 若詩章大於2，每有1篇附加100點真實傷害
-    const poemMark = getMark(getMarks(actor), "poem_chapter");
-    const selfPoem = poemMark?.effects?.poemHpSnapshots?.length || 0;
-    if (selfPoem > 2) {
-      applyTrueDamage(oppSide, selfPoem * 100, "詩章額外真傷");
-    }
-
-    // 令對手下2回合先制-1，自身不為滿體力時令對手3回合內屬性技能附加效果失效
-    setPlayerState("priorityDebuffTurns", 2);
-    if (self.currentHp < self.maxHp) {
-      ctx.setOpponentState("utilitySkillAddEffectInvalidTurns", 3); // 描述為「屬性技能附加效果失效」
-    }
-
-    if (isDragonSoul) {
-      // 龍魂：雙方每存在 1 個 PP 值為滿的技能則翻倍 7 次（每個都套用：×2^(7n)）。
-      let full = 0;
-      for (const sk of [...self.skills, ...target.skills]) if ((sk.currentPp ?? sk.pp) === (sk.maxPp ?? sk.pp)) full++;
-      const factor = 2 ** (7 * full);
-      if (self.currentHp > target.currentHp) {
-        // 攻擊傷害的 100% 回復自身體力：攻擊結算後（AFTER_ATTACK_HIT）依實際攻擊傷害計算。
-        setPlayerState("wangshiHealFactor", factor);
-      } else if (self.currentHp < target.currentHp) {
-        const trueDmg = Math.floor(Math.abs(self.currentHp - target.currentHp) * 0.7 * factor);
-        applyTrueDamage(oppSide, trueDmg, "妄世律裁(龍魂)");
-      }
-    }
-  }
+  // 遺典.妄世律裁已遷真 Kit（migratedDimensionalWangshiKit.ts；DSH 20261018）——規則3.3 由技能表移除。
 };
 
 export const DIMENSIONAL_SKILLS_SKILLS = DIMENSIONAL_SKILLS;

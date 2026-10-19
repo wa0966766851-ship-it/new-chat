@@ -1,7 +1,7 @@
 # 本批342份效果定義追蹤
 
 固定任務開始時的342份來源；新增可轉換候選不移出本表，不將解析率當成實裝率。正常／失敗／P1P2／場下／期限及傷害分類均須有情境證據才可驗收。
-待補定義234，候選待驗107，原文已變1，來源缺失0；本表未授予整份語意通過。
+待補定義259，候選待驗80，原文已變3，來源缺失0；本表未授予整份語意通過。
 
 | # | ID | 精靈 | 效果 | 狀態 | 未解分支數 |
 |---:|---|---|---|---|---:|
@@ -64,7 +64,7 @@
 | 57 | 5006 | 星光·魔焰猩猩 | 星光·壓迫 | needs-definition | 1 |
 | 58 | 5006 | 星光·魔焰猩猩 | 星光·靈絕擊 | candidate-unverified | 0 |
 | 59 | 5006 | 星光·魔焰猩猩 | 星光·絕命火焰 | needs-definition | 1 |
-| 60 | 5007 | 混濁海妖.布林克克 | 濁 | candidate-unverified | 0 |
+| 60 | 5007 | 混濁海妖.布林克克 | 濁 | needs-definition | 11 |
 | 61 | 5007 | 混濁海妖.布林克克 | 溺咒之握 | needs-definition | 2 |
 | 62 | 5007 | 混濁海妖.布林克克 | 癡愚之觸 | needs-definition | 1 |
 | 63 | 5007 | 混濁海妖.布林克克 | 深海働哭 | needs-definition | 1 |
@@ -76,13 +76,13 @@
 | 69 | 5008 | 鎮魂.巴弗洛 | 鎖魂曲 | needs-definition | 4 |
 | 70 | 5008 | 鎮魂.巴弗洛 | 引魂咏 | candidate-unverified | 0 |
 | 71 | 5008 | 鎮魂.巴弗洛 | 訣別 | needs-definition | 3 |
-| 72 | 5009 | 誑獅魔軀.魔獅迪露 | 獅 | candidate-unverified | 0 |
+| 72 | 5009 | 誑獅魔軀.魔獅迪露 | 獅 | needs-definition | 20 |
 | 73 | 5009 | 誑獅魔軀.魔獅迪露 | 狻猊噬 | needs-definition | 4 |
 | 74 | 5009 | 誑獅魔軀.魔獅迪露 | 負岳勢 | needs-definition | 1 |
 | 75 | 5009 | 誑獅魔軀.魔獅迪露 | 目瘴淵禁 | needs-definition | 2 |
 | 76 | 5009 | 誑獅魔軀.魔獅迪露 | 劫盡歸塵 | needs-definition | 4 |
 | 77 | 5009 | 誑獅魔軀.魔獅迪露 | 辟冥·鎮獄斷 | needs-definition | 6 |
-| 78 | 5000 | 聖靈譜尼 | 神 | candidate-unverified | 0 |
+| 78 | 5000 | 聖靈譜尼 | 神 | needs-definition | 7 |
 | 79 | 5000 | 聖靈譜尼 | 神靈之觸 | candidate-unverified | 0 |
 | 80 | 5000 | 聖靈譜尼 | 聖光吟誦 | needs-definition | 1 |
 | 81 | 5000 | 聖靈譜尼 | 神聖復甦 | needs-definition | 1 |
@@ -105,7 +105,7 @@
 | 98 | 5000 | 聖靈譜尼 | 落芳天華 | candidate-unverified | 0 |
 | 99 | 5000 | 聖靈譜尼 | 聖靈悲魂曲 | needs-definition | 1 |
 | 100 | 5000 | 聖靈譜尼 | 聖光氣 | candidate-unverified | 0 |
-| 101 | 5010 | 星光·魯斯王 | 海 | candidate-unverified | 0 |
+| 101 | 5010 | 星光·魯斯王 | 海 | needs-definition | 11 |
 | 102 | 5010 | 星光·魯斯王 | 星光·閃擊 | needs-definition | 1 |
 | 103 | 5010 | 星光·魯斯王 | 星光·隨風逐浪 | needs-definition | 2 |
 | 104 | 5010 | 星光·魯斯王 | 克制 | needs-definition | 1 |
@@ -152,43 +152,43 @@
 | 145 | 5013 | 柯爾霍德 | 寒夜未央 | needs-definition | 1 |
 | 146 | 5013 | 柯爾霍德 | 王·夜予寒吟 | needs-definition | 4 |
 | 147 | 5013 | 柯爾霍德 | 王·凜冬葬歌 | needs-definition | 1 |
-| 148 | 5014 | 聖光斯嘉麗 | 燦 | candidate-unverified | 0 |
+| 148 | 5014 | 聖光斯嘉麗 | 燦 | needs-definition | 24 |
 | 149 | 5014 | 聖光斯嘉麗 | 純白聖翎 | needs-definition | 2 |
 | 150 | 5014 | 聖光斯嘉麗 | 晨曦昭世 | needs-definition | 2 |
 | 151 | 5014 | 聖光斯嘉麗 | 暮光舞動 | needs-definition | 4 |
 | 152 | 5014 | 聖光斯嘉麗 | 王·凰歌盡霄 | needs-definition | 4 |
 | 153 | 5014 | 聖光斯嘉麗 | 王·聖璨天潔 | needs-definition | 2 |
-| 154 | 5015 | 混沌·布萊克 | 夜 | candidate-unverified | 0 |
+| 154 | 5015 | 混沌·布萊克 | 夜 | needs-definition | 9 |
 | 155 | 5015 | 混沌·布萊克 | 蒼茫幽魂舞 | needs-definition | 3 |
 | 156 | 5015 | 混沌·布萊克 | 狂影逆命沖 | needs-definition | 2 |
 | 157 | 5015 | 混沌·布萊克 | 孑然孤夢 | needs-definition | 5 |
 | 158 | 5015 | 混沌·布萊克 | 暗耀明滅 | needs-definition | 2 |
 | 159 | 5015 | 混沌·布萊克 | 夜·冥昭瞢闇 | needs-definition | 3 |
 | 160 | 5015 | 混沌·布萊克 | 夜洛烏澤 | needs-definition | 1 |
-| 161 | 5016 | 變革·馬爾修斯 | 械 | candidate-unverified | 0 |
+| 161 | 5016 | 變革·馬爾修斯 | 械 | needs-definition | 28 |
 | 162 | 5016 | 變革·馬爾修斯 | 革新已至 | needs-definition | 1 |
 | 163 | 5016 | 變革·馬爾修斯 | 源生壁壘 | needs-definition | 3 |
-| 164 | 5016 | 變革·馬爾修斯 | 核心重構 | needs-definition | 1 |
+| 164 | 5016 | 變革·馬爾修斯 | 核心重構 | needs-definition | 4 |
 | 165 | 5016 | 變革·馬爾修斯 | 王·肅正協議 | needs-definition | 2 |
-| 166 | 5016 | 變革·馬爾修斯 | 王·超限共頻 | needs-definition | 1 |
+| 166 | 5016 | 變革·馬爾修斯 | 王·超限共頻 | needs-definition | 4 |
 | 167 | 5017 | 人皇·帝辛 | 荒 | needs-definition | 17 |
 | 168 | 5017 | 人皇·帝辛 | 鹿台悲歌 | needs-definition | 2 |
 | 169 | 5017 | 人皇·帝辛 | 人皇御宇 | needs-definition | 4 |
 | 170 | 5017 | 人皇·帝辛 | 帝怒傾天 | needs-definition | 5 |
 | 171 | 5017 | 人皇·帝辛 | 玄鳥天命 | needs-definition | 3 |
 | 172 | 5017 | 人皇·帝辛 | 九鼎震八荒 | needs-definition | 4 |
-| 173 | 5018 | 蟲后·奧佩婭 | 后 | candidate-unverified | 0 |
+| 173 | 5018 | 蟲后·奧佩婭 | 后 | needs-definition | 17 |
 | 174 | 5018 | 蟲后·奧佩婭 | 毒噬魂絲 | needs-definition | 2 |
 | 175 | 5018 | 蟲后·奧佩婭 | 蟲群庇護 | needs-definition | 2 |
 | 176 | 5018 | 蟲后·奧佩婭 | 蟲后之冠 | needs-definition | 4 |
 | 177 | 5018 | 蟲后·奧佩婭 | 王.噬心毒蝕 | needs-definition | 2 |
 | 178 | 5018 | 蟲后·奧佩婭 | 王·鏽腑喰心 | needs-definition | 4 |
-| 179 | 5019 | 眾神之父·奧丁 | ᛏ | candidate-unverified | 0 |
+| 179 | 5019 | 眾神之父·奧丁 | ᛏ | needs-definition | 33 |
 | 180 | 5019 | 眾神之父·奧丁 | ᚷᚢᚾᚷᚾᛁᚱ ᚦᚱᛖᚢᛗᚨᛞᚱ | candidate-unverified | 0 |
 | 181 | 5019 | 眾神之父·奧丁 | ᛉᛖᛚᛃᚨ ᛟᚾ ᛁᚷᚷᛞᚱᚨᛋᛁᛚ | candidate-unverified | 0 |
-| 182 | 5019 | 眾神之父·奧丁 | ᚺᚢᚷᛁᚾ ᛟᚲ ᛗᚢᚾᛁᚾ | needs-definition | 1 |
+| 182 | 5019 | 眾神之父·奧丁 | ᚺᚢᚷᛁᚾ ᛟᚲ ᛗᚢᚾᛁᚾ | needs-definition | 2 |
 | 183 | 5019 | 眾神之父·奧丁 | ᛟᛞᛁᚾᛋ ᚨᚾᛋᚢᛉ | needs-definition | 3 |
-| 184 | 5019 | 眾神之父·奧丁 | ᚱᚨᚷᚾᚨᚱᛟᚲ | needs-definition | 1 |
+| 184 | 5019 | 眾神之父·奧丁 | ᚱᚨᚷᚾᚨᚱᛟᚲ | needs-definition | 5 |
 | 185 | 5020 | 皮皮 | 無 | needs-definition | 1 |
 | 186 | 5020 | 皮皮 | 撞擊 | candidate-unverified | 0 |
 | 187 | 5020 | 皮皮 | 鳴叫 | candidate-unverified | 0 |
@@ -204,24 +204,24 @@
 | 197 | 5020 | 皮皮 | 測試·衍化類 | needs-definition | 1 |
 | 198 | 5020 | 皮皮 | 測試·附屬類 | needs-definition | 1 |
 | 199 | 5020 | 皮皮 | 同生共死 | needs-definition | 2 |
-| 200 | 5021 | 治癒.龍魂再臨 次元龍 | 龍 | candidate-unverified | 0 |
+| 200 | 5021 | 治癒.龍魂再臨 次元龍 | 龍 | needs-definition | 20 |
 | 201 | 5021 | 治癒.龍魂再臨 次元龍 | 閱世 | needs-definition | 2 |
 | 202 | 5021 | 治癒.龍魂再臨 次元龍 | 敕界歸元 | needs-definition | 4 |
 | 203 | 5021 | 治癒.龍魂再臨 次元龍 | 告命詩途 | needs-definition | 4 |
 | 204 | 5021 | 治癒.龍魂再臨 次元龍 | 神懺福音之章 | needs-definition | 3 |
-| 205 | 5021 | 治癒.龍魂再臨 次元龍 | 遺典.妄世律裁 | needs-definition | 1 |
-| 206 | 5022 | 無序.六刃 | 專屬特性 | candidate-unverified | 0 |
+| 205 | 5021 | 治癒.龍魂再臨 次元龍 | 遺典.妄世律裁 | needs-definition | 4 |
+| 206 | 5022 | 無序.六刃 | 專屬特性 | needs-definition | 12 |
 | 207 | 5022 | 無序.六刃 | 亂舞 | needs-definition | 1 |
-| 208 | 5022 | 無序.六刃 | 無我 / 戰士 | candidate-unverified | 0 |
+| 208 | 5022 | 無序.六刃 | 無我 / 戰士 | needs-definition | 2 |
 | 209 | 5022 | 無序.六刃 | 無序星魂使徒 | needs-definition | 1 |
 | 210 | 5022 | 無序.六刃 | 狂刃無生 | needs-definition | 1 |
 | 211 | 5022 | 無序.六刃 | 靜刃止水 | needs-definition | 2 |
 | 212 | 5022 | 無序.六刃 | 蟄刃復歸 | needs-definition | 5 |
 | 213 | 5022 | 無序.六刃 | 六刃碎界斷 | needs-definition | 3 |
-| 214 | 5022 | 無序.六刃 | 終焉·六花斬 | needs-definition | 1 |
-| 215 | 5023 | 無序·蝕言 | 蝕言 | candidate-unverified | 0 |
+| 214 | 5022 | 無序.六刃 | 終焉·六花斬 | needs-definition | 4 |
+| 215 | 5023 | 無序·蝕言 | 蝕言 | needs-definition | 7 |
 | 216 | 5023 | 無序·蝕言 | 亂舞 | needs-definition | 1 |
-| 217 | 5023 | 無序·蝕言 | 修復 / 咒術師 | candidate-unverified | 0 |
+| 217 | 5023 | 無序·蝕言 | 修復 / 咒術師 | needs-definition | 13 |
 | 218 | 5023 | 無序·蝕言 | 無序星魂使徒 | needs-definition | 1 |
 | 219 | 5023 | 無序·蝕言 | 影契·噬滅 | needs-definition | 4 |
 | 220 | 5023 | 無序·蝕言 | 械律·置換 | needs-definition | 5 |
@@ -239,7 +239,7 @@
 | 232 | 5024 | 湮滅之主・咤克斯 | 絕滅死亡 | needs-definition | 1 |
 | 233 | 5024 | 湮滅之主・咤克斯 | 魔王天權震 | needs-definition | 1 |
 | 234 | 5024 | 湮滅之主・咤克斯 | 毀傷湧進 | candidate-unverified | 0 |
-| 235 | 5025 | 恐懼的化身·咤克斯 | 懼 | candidate-unverified | 0 |
+| 235 | 5025 | 恐懼的化身·咤克斯 | 懼 | needs-definition | 23 |
 | 236 | 5025 | 恐懼的化身·咤克斯 | 懼噬・恐源浸染 | needs-definition | 2 |
 | 237 | 5025 | 恐懼的化身·咤克斯 | 深淵凝視 | needs-definition | 4 |
 | 238 | 5025 | 恐懼的化身·咤克斯 | 幽幕折返 | needs-definition | 3 |
@@ -247,7 +247,7 @@
 | 240 | 5025 | 恐懼的化身·咤克斯 | 劫數.萬念歸墟 | needs-definition | 2 |
 | 241 | 5026 | 無序.墜星 | 專屬特性 | needs-definition | 2 |
 | 242 | 5026 | 無序.墜星 | 亂舞 | needs-definition | 1 |
-| 243 | 5026 | 無序.墜星 | 豪邁 / 投石者 | candidate-unverified | 0 |
+| 243 | 5026 | 無序.墜星 | 豪邁 / 投石者 | needs-definition | 2 |
 | 244 | 5026 | 無序.墜星 | 無序星魂使徒 | needs-definition | 1 |
 | 245 | 5026 | 無序.墜星 | 自然石之力-S | needs-definition | 1 |
 | 246 | 5026 | 無序.墜星 | 四象崩壞砲 | needs-definition | 3 |
@@ -260,34 +260,34 @@
 | 253 | 5026 | 無序.墜星 | 聖靈石之力-S | candidate-unverified | 0 |
 | 254 | 5026 | 無序.墜星 | 邪靈石之力-S | needs-definition | 1 |
 | 255 | 5026 | 無序.墜星 | 蟲石之力-S | needs-definition | 3 |
-| 256 | 5027 | 蓓麗安特 | 蓓 | candidate-unverified | 0 |
+| 256 | 5027 | 蓓麗安特 | 蓓 | needs-definition | 14 |
 | 257 | 5027 | 蓓麗安特 | 曙天 | needs-definition | 3 |
 | 258 | 5027 | 蓓麗安特 | 星垂穹儀 | needs-definition | 4 |
 | 259 | 5027 | 蓓麗安特 | 星河入眸 | needs-definition | 1 |
 | 260 | 5027 | 蓓麗安特 | 星祈·繞指星瀾 | needs-definition | 2 |
 | 261 | 5027 | 蓓麗安特 | 星執·浩邃星幕 | needs-definition | 3 |
-| 262 | 5028 | 怒濤·滄嵐 | 瀾 | candidate-unverified | 0 |
+| 262 | 5028 | 怒濤·滄嵐 | 瀾 | needs-definition | 19 |
 | 263 | 5028 | 怒濤·滄嵐 | 滄海永存 | needs-definition | 2 |
 | 264 | 5028 | 怒濤·滄嵐 | 弱水三千 | needs-definition | 1 |
 | 265 | 5028 | 怒濤·滄嵐 | 永恆誓約 | needs-definition | 3 |
 | 266 | 5028 | 怒濤·滄嵐 | 王·洛浦凌波 | needs-definition | 3 |
 | 267 | 5028 | 怒濤·滄嵐 | 王·深海之吻 | needs-definition | 2 |
-| 268 | 5029 | 異境神霆·雷伊 | 異 | candidate-unverified | 0 |
+| 268 | 5029 | 異境神霆·雷伊 | 異 | needs-definition | 17 |
 | 269 | 5029 | 異境神霆·雷伊 | 電氣纏繞 | needs-definition | 3 |
-| 270 | 5029 | 異境神霆·雷伊 | 神明 | candidate-unverified | 0 |
-| 271 | 5029 | 異境神霆·雷伊 | 雷神 | candidate-unverified | 0 |
+| 270 | 5029 | 異境神霆·雷伊 | 神明 | needs-definition | 3 |
+| 271 | 5029 | 異境神霆·雷伊 | 雷神 | needs-definition | 17 |
 | 272 | 5029 | 異境神霆·雷伊 | 空墟赫星 | needs-definition | 2 |
 | 273 | 5029 | 異境神霆·雷伊 | 異境神霆 | needs-definition | 3 |
 | 274 | 5029 | 異境神霆·雷伊 | 同塵祭 | needs-definition | 4 |
 | 275 | 5029 | 異境神霆·雷伊 | 天雷誅殺 | needs-definition | 1 |
-| 276 | 5029 | 異境神霆·雷伊 | 霆·禁雷敕令 | needs-definition | 1 |
-| 277 | 5030 | 聖靈邁爾斯 | 聖 | candidate-unverified | 0 |
+| 276 | 5029 | 異境神霆·雷伊 | 霆·禁雷敕令 | needs-definition | 5 |
+| 277 | 5030 | 聖靈邁爾斯 | 聖 | needs-definition | 4 |
 | 278 | 5030 | 聖靈邁爾斯 | 八荒憫淚 | needs-definition | 1 |
 | 279 | 5030 | 聖靈邁爾斯 | 天佑聖障 | needs-definition | 3 |
 | 280 | 5030 | 聖靈邁爾斯 | 四象靈獸 | needs-definition | 3 |
-| 281 | 5030 | 聖靈邁爾斯 | 淨世洗禮頌 | needs-definition | 1 |
+| 281 | 5030 | 聖靈邁爾斯 | 淨世洗禮頌 | source-changed | 2 |
 | 282 | 5030 | 聖靈邁爾斯 | 聖靈乾坤斷 | needs-definition | 1 |
-| 283 | 5031 | 六界神王 | 界 | needs-definition | 1 |
+| 283 | 5031 | 六界神王 | 界 | source-changed | 18 |
 | 284 | 5031 | 六界神王 | 界・裁決之劍 | needs-definition | 1 |
 | 285 | 5031 | 六界神王 | 禁靈領域 | needs-definition | 1 |
 | 286 | 5031 | 六界神王 | 升臨恩澤 | needs-definition | 1 |
@@ -311,41 +311,41 @@
 | 304 | 5034 | 邪靈主宰·摩哥斯 | 妖靈天性 | needs-definition | 2 |
 | 305 | 5034 | 邪靈主宰·摩哥斯 | 王·墮落絕語 | needs-definition | 6 |
 | 306 | 5034 | 邪靈主宰·摩哥斯 | 王·潰墮妖族 | needs-definition | 5 |
-| 307 | 5035 | 御天龍神·哈莫 | 鱗 | candidate-unverified | 0 |
+| 307 | 5035 | 御天龍神·哈莫 | 鱗 | needs-definition | 44 |
 | 308 | 5035 | 御天龍神·哈莫 | 破曉 | needs-definition | 3 |
-| 309 | 5035 | 御天龍神·哈莫 | 逐波 | needs-definition | 1 |
-| 310 | 5035 | 御天龍神·哈莫 | 燼世 | needs-definition | 1 |
-| 311 | 5035 | 御天龍神·哈莫 | 纏根 | needs-definition | 1 |
-| 312 | 5035 | 御天龍神·哈莫 | 龍神·御天陣 | needs-definition | 1 |
-| 313 | arena_12 | 無為龍者 | 無為之境 | candidate-unverified | 0 |
-| 314 | arena_12 | 無為龍者 | 千秋虔 | needs-definition | 1 |
-| 315 | arena_12 | 無為龍者 | 百法拜 | needs-definition | 1 |
-| 316 | arena_12 | 無為龍者 | 十玄釋 | needs-definition | 1 |
-| 317 | arena_12 | 無為龍者 | 孑身誡 | needs-definition | 1 |
-| 318 | arena_12 | 無為龍者 | 無相諦 | needs-definition | 1 |
+| 309 | 5035 | 御天龍神·哈莫 | 逐波 | needs-definition | 4 |
+| 310 | 5035 | 御天龍神·哈莫 | 燼世 | needs-definition | 4 |
+| 311 | 5035 | 御天龍神·哈莫 | 纏根 | needs-definition | 5 |
+| 312 | 5035 | 御天龍神·哈莫 | 龍神·御天陣 | needs-definition | 6 |
+| 313 | arena_12 | 無為龍者 | 無為之境 | needs-definition | 1 |
+| 314 | arena_12 | 無為龍者 | 千秋虔 | needs-definition | 5 |
+| 315 | arena_12 | 無為龍者 | 百法拜 | needs-definition | 3 |
+| 316 | arena_12 | 無為龍者 | 十玄釋 | needs-definition | 3 |
+| 317 | arena_12 | 無為龍者 | 孑身誡 | needs-definition | 4 |
+| 318 | arena_12 | 無為龍者 | 無相諦 | needs-definition | 6 |
 | 319 | arena_13 | 龍錄天鋒 | 專屬特性 | needs-definition | 3 |
-| 320 | arena_13 | 龍錄天鋒 | 鋒毫浸血雨 | needs-definition | 1 |
+| 320 | arena_13 | 龍錄天鋒 | 鋒毫浸血雨 | needs-definition | 6 |
 | 321 | arena_13 | 龍錄天鋒 | 艷羅劍典 | needs-definition | 3 |
 | 322 | arena_13 | 龍錄天鋒 | 法咒共鳴斬 | needs-definition | 2 |
 | 323 | arena_13 | 龍錄天鋒 | 敕赦千銘 | needs-definition | 3 |
 | 324 | arena_13 | 龍錄天鋒 | 萬蒼書帝錄 | needs-definition | 3 |
-| 325 | arena_14 | 無極聖武 | 無極聖武 | candidate-unverified | 0 |
+| 325 | arena_14 | 無極聖武 | 無極聖武 | needs-definition | 12 |
 | 326 | arena_14 | 無極聖武 | 極武稜殺 | needs-definition | 3 |
 | 327 | arena_14 | 無極聖武 | 烈武天徵 | needs-definition | 2 |
 | 328 | arena_14 | 無極聖武 | 亂武天傀 | needs-definition | 4 |
 | 329 | arena_14 | 無極聖武 | 鋭武銘戈 | needs-definition | 4 |
 | 330 | arena_14 | 無極聖武 | 聖武·虛極拓世 | needs-definition | 4 |
-| 331 | arena_15 | 命運龍輪 莫伊萊 | 命運龍輪 | candidate-unverified | 0 |
+| 331 | arena_15 | 命運龍輪 莫伊萊 | 命運龍輪 | needs-definition | 5 |
 | 332 | arena_15 | 命運龍輪 莫伊萊 | 九轉輪迴天 | needs-definition | 2 |
 | 333 | arena_15 | 命運龍輪 莫伊萊 | 列星安辰 | needs-definition | 2 |
 | 334 | arena_15 | 命運龍輪 莫伊萊 | 日月安屬 | needs-definition | 4 |
 | 335 | arena_15 | 命運龍輪 莫伊萊 | 陰陽三合 | needs-definition | 4 |
 | 336 | arena_15 | 命運龍輪 莫伊萊 | 恆·蒼穹斗轉 | needs-definition | 3 |
-| 337 | arena_16 | 鎮世龍魂・龍之治癒 | 龍之治癒 | candidate-unverified | 0 |
+| 337 | arena_16 | 鎮世龍魂・龍之治癒 | 龍之治癒 | needs-definition | 4 |
 | 338 | arena_16 | 鎮世龍魂・龍之治癒 | 剛莖棍壓 | needs-definition | 3 |
-| 339 | arena_16 | 鎮世龍魂・龍之治癒 | 挨打要立正 | needs-definition | 1 |
-| 340 | arena_16 | 鎮世龍魂・龍之治癒 | 幽魔相嘯 | needs-definition | 1 |
-| 341 | arena_16 | 鎮世龍魂・龍之治癒 | 雅髯獅嘯 | needs-definition | 1 |
-| 342 | arena_16 | 鎮世龍魂・龍之治癒 | 但願不會是個怪物 | needs-definition | 1 |
+| 339 | arena_16 | 鎮世龍魂・龍之治癒 | 挨打要立正 | needs-definition | 6 |
+| 340 | arena_16 | 鎮世龍魂・龍之治癒 | 幽魔相嘯 | needs-definition | 6 |
+| 341 | arena_16 | 鎮世龍魂・龍之治癒 | 雅髯獅嘯 | needs-definition | 5 |
+| 342 | arena_16 | 鎮世龍魂・龍之治癒 | 但願不會是個怪物 | needs-definition | 8 |
 
 逐句原文及問題詳見同名JSON，完整原文及部分積木草稿在block-migration.json；不將只有日誌或借用專屬handler的資料算成可用原子。

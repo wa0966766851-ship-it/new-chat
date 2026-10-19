@@ -1,5 +1,5 @@
 import { isAlienElf } from '../../../battle/advancedDamageModifiers';
-import { getElfAdvancedMechanics } from '../../../data/traitsRegistry';
+import { getElfAdvancedMechanics,hasAuthoredAdvancedMechanic } from '../../../data/traitsRegistry';
 import type { BattleEventContext as C, BattleSkillHandler } from '../../types';
 import type { Skill } from '../../../types';
 import { EffectTiming as E } from '../../types';
@@ -83,7 +83,7 @@ function runShiyanSoul(ctx: C, event: E, extraData?: any): any {
       && (!e.summonerId || String(e.summonerId) === identity(self)));
     const isWraithActive = !!(wraithElf && wraithElf.currentHp > 0);
 
-    if (event === EffectTiming.ON_ENTRANCE) {
+    if (event === EffectTiming.ON_ENTRANCE && !hasAuthoredAdvancedMechanic(self,'cyberWraithSummon')) {
       setPlayerState(`${actor}_cyberWraithRegistryManaged`, true);
       addLog(`🌑 【咒術師】：召喚與自身能力值相等的賽博怨靈作為額外精靈加入己方！`, "effect");
       const adjustedSpdef = Math.ceil((getPlayerState('shiyanOriginalSpdef')?.[self.battleId || self.id] ?? self.calculatedStats.spdef) / 10);
@@ -112,7 +112,7 @@ function runShiyanSoul(ctx: C, event: E, extraData?: any): any {
       setPlayerState(`${actor}_wraithDamageDoubled`, false);
     }
 
-    if (event === EffectTiming.ON_SWITCH_OUT) {
+    if (event === EffectTiming.ON_SWITCH_OUT && !hasAuthoredAdvancedMechanic(self,'cyberWraithSummon')) {
       if (wraithElf) {
         addLog(`🌑 【咒術師】：自身下場，賽博怨靈死亡並消逝...`, "effect");
         ctx.vanishElf(actor, wraithElf);
@@ -122,7 +122,7 @@ function runShiyanSoul(ctx: C, event: E, extraData?: any): any {
       setPlayerState(`${actor}_wraithCastSpellPending`, false);
     }
 
-    if (event === EffectTiming.FATAL_RESIST) {
+    if (event === EffectTiming.FATAL_RESIST && !hasAuthoredAdvancedMechanic(self,'cyberWraithSummon')) {
       // 1. 賽博怨靈替死
       const subUsed = !!getPlayerState(`${actor}_wraithSubUsed`);
       if (isWraithActive && !subUsed) {
@@ -161,7 +161,7 @@ function runShiyanSoul(ctx: C, event: E, extraData?: any): any {
       }
     }
 
-    if (event === EffectTiming.BEFORE_STATUS_TICK && wraithElf && /詛咒|curse/i.test(extraData?.status || '')) extraData.skipTick = true;
+    if (event === EffectTiming.BEFORE_STATUS_TICK && !hasAuthoredAdvancedMechanic(self,'wraithExistCurseNoReduce') && wraithElf && /詛咒|curse/i.test(extraData?.status || '')) extraData.skipTick = true;
     if (event === EffectTiming.BATTLE_PHASE_END) {
       const active = actor === 'p1' ? ctx.activeP1 : ctx.activeP2;
       if ((active.battleId || active.id) !== (self.battleId || self.id) || self.currentHp <= 0) return false;

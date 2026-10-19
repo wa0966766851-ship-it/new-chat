@@ -1,4 +1,5 @@
 import { Elf, BaseStats, Skill } from "../types";
+import { getElfDisplayRank } from "./elfDisplayRank";
 import { calculateElfStats } from "./statCalculator";
 import { LIUJIE_SEED } from '../data/liujie';
 
@@ -72,40 +73,11 @@ export const CLASSIC_INTERCEPTORS: Partial<Elf>[] = [
  * 判定精靈在命運之輪模式中的稀有度等級 (S / A / B / C)
  */
 export function getElfDestinyRank(elf: Elf): DestinyRank {
-  if (elf.destinyRank) return elf.destinyRank;
-  const name = elf.name || "";
-  
-  // S級·真神天花板
-  const sRankNames = [
-    "聖靈譜尼", "人皇·帝辛", "眾神之父·奧丁", "治癒.龍魂再臨 次元龍", 
-    "混濁海妖.布林克克", "柯爾霍德", "聖光斯嘉麗", "變革·馬爾修斯",
-    "次元龍", "星皇", "混沌魔君索倫森", "湮滅之主・咤克斯"
-  ];
-  if (sRankNames.some(n => name.includes(n))) return 'S';
-
-  // A級·巔峰主力
-  const aRankNames = [
-    "鎮魂.巴弗洛", "冰魄·柯爾德", "混沌·布萊克", "蟲后·奧佩婭", 
-    "誑獅魔軀.魔獅迪露", "星光·魯斯王", "星光·魔焰猩猩", "星光·麗莎布布", 
-    "譜尼", "王·雷伊", "王·卡修斯", "王·布萊克", "王·蓋亞", "王·繆斯"
-  ];
-  if (aRankNames.some(n => name.includes(n))) return 'A';
-
-  // 判斷 C 級攔截或經典老精靈
-  const cRankNames = [
-    "皮皮", "帝皇之盾", "天蓬元帥", "六界神王", "索比斯", "表哥", "八戒"
-  ];
-  if (cRankNames.some(n => name.includes(n))) return 'C';
-
-  // 自訂或未記錄精靈根據屬性總值與權重判定
-  const stats = elf.baseStats || { hp: 100, atk: 100, def: 100, spatk: 100, spdef: 100, speed: 100 };
-  const totalStats = stats.hp + stats.atk + stats.def + stats.spatk + stats.spdef + stats.speed;
-  
-  if (totalStats >= 730 || (elf.skills && elf.skills.length >= 6)) return 'S';
-  if (totalStats >= 680 || (elf.skills && elf.skills.some(s => s.isFifthSkill))) return 'A';
-  if (totalStats <= 600 || name === "雷伊" || name === "蓋亞" || name === "卡修斯" || name === "布萊克") return 'B';
-
-  return 'B';
+  // 2026-10-18 使用者裁定後重構：分級唯一事實源＝getElfDisplayRank（此前兩版分叉——本版殘留
+  // 「種族值≥730 或技能≥6 自動升 S」舊規則，導致悲歌.索比拉特／皮特薩拉羅（總和 735）被誤升 S、
+  // 且缺「命運之輪 C 級專屬攔截→C」文本檢查，被 AI 反覆復原成錯誤結果。委託後兩版永遠一致，
+  // 命運之輪卡池的 S/A/B/C 標籤與一般圖鑑同源。
+  return getElfDisplayRank(elf);
 }
 
 /**

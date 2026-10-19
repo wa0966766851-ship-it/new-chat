@@ -57,7 +57,9 @@ try {
   const { getSoulMarkRegistry, getBattleSkillRegistry } = await server.ssrLoadModule('/src/effects/battleEventRegistry.ts');
   const { getStatuses } = await server.ssrLoadModule('/src/utils/battleHelpers.ts');
   const souls = getSoulMarkRegistry(), skills = getBattleSkillRegistry();
-  const original = souls['蟲后·奧佩婭'];
+  // 5018 魂印「后」已遷真 Kit（migratedOpeiaSoulKit；DSH 20261018）——舊 handler 映射移除（規則3.2），
+  // 以下全部情境以真 DEFAULT_ELVES 模板（structuredClone 後僅改技能／數值）由真 Kit 驅動驗收。
+  assert.ok(!('蟲后·奧佩婭' in souls), '5018 不得再有舊魂印 handler 分支');
   let driver: any;
   const wait = { name: '庇護驗收等待', category: '屬性', type: '普通', power: 0, pp: 30, maxPp: 30, description: '' };
   const make = (id: string): any => ({ id, name: id, battleId: id, type: '普通', level: 100,
@@ -220,12 +222,8 @@ try {
 
     const combo = opeia('蟲群庇護'), comboEnemy = make('combo-enemy');
     combo.skills = [{ ...wait, name: '蟲后連擊合成驗收', category: '特殊', power: 1, isSureHit: true }];
-    const hits: number[] = [], damages: any[] = [];
+    const damages: any[] = [];
     skills['蟲后連擊合成驗收'] = (c: any) => c.setPlayerState('attackHitCountThisAction', 5);
-    souls['蟲后·奧佩婭'] = (c: any, event: string, data: any) => {
-      if (event === 'AFTER_ATTACK_HIT') hits.push(data.hitCount);
-      return original(c, event, data);
-    };
     souls[comboEnemy.name] = (_ctx: any, event: string, data: any) => {
       if (event === 'BEFORE_STATUS_APPLY') data.prevented = true;
       if (event === 'ON_DAMAGED') damages.push(data);
@@ -233,11 +231,13 @@ try {
     };
     await mount(`combo-${side}`, side, combo, comboEnemy);
     await turn(side, 0);
-    assert.deepEqual(hits, [6, 6, 6, 6, 6, 6], '5連擊＋1，不是直接覆寫成2');
+    // 連擊+1 由真 Kit 的 use_counter 容器（combo_add 寫引擎 attackBonusHitCountThisAction）驅動：
+    // 5＋1＝6 連擊合併為一次主傷害結算（規則3.2——不再包裝舊 handler，以引擎日誌與結算receipt驗收）。
+    const comboLogs = driver.getSyncState().logs.map((l: any) => String(l.text ?? l.message ?? ''));
+    assert.ok(comboLogs.some(l => l.includes('蟲后連擊合成驗收】：6連擊')), '5連擊＋1＝6連擊，不是直接覆寫成2');
     assert.equal(damages.filter(e => e.damageType === 'skill_attack').length, 1, '6連擊仍然只有一次主傷害結算');
-    souls['蟲后·奧佩婭'] = original; delete skills['蟲后連擊合成驗收']; delete souls[comboEnemy.name]; checks++;
+    delete skills['蟲后連擊合成驗收']; delete souls[comboEnemy.name]; checks++;
   }
-  souls['蟲后·奧佩婭'] = original;
   delete skills['庇護反彈測試'];
   console.log(`蟲后剩餘效果：共同分類/期限斷言及${checks}個P1/P2真實引擎情境通過。`);
 } finally { await act(async () => root.unmount()); await server.close(); dom.window.close(); }

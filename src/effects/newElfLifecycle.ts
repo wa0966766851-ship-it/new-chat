@@ -1,3 +1,4 @@
+import {portableSkillCapabilities} from '../battle/portableSkillMarks';
 import type { BattleEventContext } from './types';
 import { EffectTiming } from './types';
 import { active, alive, constraint, identity, timersFor, changePp, restorePp, drain, timed } from './newElfOperations';
@@ -13,11 +14,14 @@ import { skillSlot } from '../battle/skillSlot';
 import { bypassesAttackDefense } from '../battle/attackDefense';
 import { getMaxPp } from '../utils/battleHelpers';
 import { applyKitPpOperation } from './ppOperations';
+import {teamForcedHitLifecycle} from '../battle/forcedHitRules';
 
 /** 效果綁持有者：施加者下場後仍由受方執行，不依賴特定精靈 handler。 */
 export function runNewElfLifecycle(ctx: BattleEventContext, event: EffectTiming, data?: any): void {
+  teamForcedHitLifecycle(ctx,event,data);
   const onField = identity(ctx.self) === identity(active(ctx, ctx.actor));
   if (event === EffectTiming.ON_SWITCH_OUT) {
+    if((ctx.self as any).ppLimitIgnoredUntilSwitch)ctx.updateElf(ctx.actor,{ppLimitIgnoredUntilSwitch:false} as any);
     endIllusion(ctx); ctx.setPlayerState('fieldPpChanged', false);
     if (ctx.getPlayerState('timedInherentWasActive')) {
       ctx.updateElf(ctx.actor, { isInherentInvalid: ctx.getPlayerState('timedInherentOriginal') });
@@ -76,9 +80,18 @@ export function runNewElfLifecycle(ctx: BattleEventContext, event: EffectTiming,
       ctx.setOpponentState('nextElfStatus', next);
     }
   }
-  if (event === EffectTiming.SKILL_INVALID && !data?.isIncoming && data?.consumedInvalidation?.payload?.invalidFollowup) {
-    const followup = data.consumedInvalidation.payload.invalidFollowup;
-    timed(ctx, ctx.actor, 'invalid_same_category_followup', followup.rounds, { block: { addInvalid: followup.sameCategory ? data.skill.category : 'all' } }, true);
+  // invalidFollowup 由 addBlockTimer 寫入 payload.block（舊 uses() 寫 payload 頂層）——兩種都認。
+  // invalidFollowup：技能無效成功後追加「同類型附加效果失效」。
+  // 舊 uses() 寫在 payload 頂層；新 addBlockTimer 寫在 payload.block——兩種位置都認（DSH 20261019）。
+  if (event === EffectTiming.SKILL_INVALID && !data?.isIncoming) {
+    const followup = data?.consumedInvalidation?.payload?.block?.invalidFollowup
+      || data?.consumedInvalidation?.payload?.invalidFollowup;
+    if (followup) {
+      ((globalThis as any).__FC ||= []).push({ actor: ctx.actor, hasAdd: typeof ctx.addTimerTo, p2len: (ctx.p2Timers || []).length });
+      timed(ctx, ctx.actor, 'invalid_same_category_followup', followup.rounds,
+        { block: { addInvalid: followup.sameCategory ? data.skill.category : 'all' } }, true);
+      ((globalThis as any).__FC2 ||= []).push({ afterIds: ((ctx.actor === 'p1' ? ctx.p1Timers : ctx.p2Timers) || []).map((x: any) => x.id) });
+    }
   }
   if ([EffectTiming.ENFORCE, EffectTiming.ROUND_START, EffectTiming.BEFORE_SKILL].includes(event) && onField) {
     const disabled = payloads.some(p => p.inherentInvalid);
@@ -268,5 +281,5 @@ export function runNewElfLifecycle(ctx: BattleEventContext, event: EffectTiming,
 }
 
 export function innateDisabled(ctx: BattleEventContext): boolean {
-  return !!constraint(ctx, ctx.actor, 'inherentInvalid');
+  return portableSkillCapabilities(ctx.self,ctx.skill).innateDisabled===true||!!constraint(ctx, ctx.actor, 'inherentInvalid');
 }

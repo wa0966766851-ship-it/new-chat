@@ -73,7 +73,9 @@ MIGRATED_OPEIA_SKILL_KITS.push({
       { acts: [a('dmg', { flat: 400, type: '固定' }), a('stat_clear', { side: 'self', kind: 'down' })] },
     ], 3),
     // 🎯 消除對手回合類效果，消除成功則己方免疫下1次所受到的異常狀態
-    sequence('🎯 消除對手回合類效果，消除成功則己方免疫下1次所受到的異常狀態', [
+    // 時點：使用技能時先消除（原文順序在本技能自身效果之前）——不可放在 after_action，
+    // 否則會清到本技能剛綁定給對手的 30% 真傷 timer，導致「消除成功」恆真而無條件給免疫。
+    entryW('on_skill_use', 'use', '🎯 消除對手回合類效果，消除成功則己方免疫下1次所受到的異常狀態', [
       { acts: [a('clear_turn', { side: 'opp' })] },
       { chain: 'success', acts: [a('immune_status_count', { count: 1, reflect: false })] },
     ], 4),

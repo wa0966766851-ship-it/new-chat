@@ -10,6 +10,7 @@ export const EFFECT_NODES: Record<Node, NodeContract> = {
   on_skill_selected:{label:'合法選擇技能後',phase:'選擇與出手',trigger:'skill_selected',event:EffectTiming.SKILL_SELECTED,help:'通過選招合法性後立即通知一次，先於另一方選招、排序與行動受控；重複提交不重播。'},
   on_resource_changed:{label:'資源層數改變後',phase:'事件監控',trigger:'resource_changed',event:EffectTiming.RESOURCE_CHANGED,help:'資源積木確實改變層數後，通知原持有者；含場下，封頂沒有變動不重播。'},
   before_instant_kill:{label:'秒殺修正前',phase:'事件監控',trigger:'before_instant_kill',event:EffectTiming.BEFORE_INSTANT_KILL,help:'同一正式請求通知在場與存活背包持有者；可攔截或擴展目標，體力快照先於修正。'},
+  before_stat_change:{label:'能力等級變更前',phase:'事件監控',trigger:'before_stat_change',event:EffectTiming.BEFORE_STAT_CHANGE,help:'他方即將改變自身能力等級前通知原持有者；可移除本次變更（回寫 data.changes）或阻止（data.prevented）。'},
   on_stat_boost_cleared:{label:'自身能力提升被消除／吸取',phase:'事件監控',trigger:'stat_boost_cleared',event:EffectTiming.STAT_BOOST_CLEARED,help:'他方真正移除自身正能力等級後通知原持有者；免疫阻止、普通弱化、自身清除與換人不算。'},
   on_turn_effects_cleared:{label:'自身回合效果被消除',phase:'事件監控',trigger:'turn_effects_cleared',event:EffectTiming.TURN_EFFECTS_CLEARED,help:'實際消除後通知原持有者；含監控本身被清除，使用消除前快照，不含到期或換人。'},
   on_status_ended:{label:'自身異常結束／解除',phase:'事件監控',trigger:'status_end',event:EffectTiming.ON_STATUS_ENDED,help:'期限結束、解除或轉化移除的實際異常名稱；下場清除不觸發。'},
@@ -46,6 +47,7 @@ export const EFFECT_NODES: Record<Node, NodeContract> = {
   before_switch_out:{label:'主動切換前',phase:'切換與陣亡',trigger:'custom',event:EffectTiming.BEFORE_SWITCH_OUT,help:'主動切換的前置通知，不當成所有死亡強制切換的通知。'},
   on_switch_out:{label:'下場',phase:'切換與陣亡',trigger:'switch_out',event:EffectTiming.ON_SWITCH_OUT,help:'操作下場持有者；下場保留不代表傳給下一隻。'},
   pp_consumed:{label:'本技能槽PP被消耗',phase:'事件監控',trigger:'pp_consumed',event:EffectTiming.ON_PP_CONSUME,help:'出招及削PP皆按實際消耗槽通知；只執行攜帶效果，同一連鎖每槽一次，恢復PP不觸發。'},
+  pp_cleared:{label:'自身PP被清除',phase:'事件監控',trigger:'pp_cleared',derived:'PP_CHANGED的clear原因與實際歸零槽',help:'只有清除令正PP歸零才觸發原持有者；普通消耗、削PP、恢復與原本0PP不觸發。'},
   battle_end:{label:'戰鬥結束',phase:'回合收尾',trigger:'custom',event:EffectTiming.BATTLE_END,help:'整場結束，不是每回合結束。'},
   any_battle_node:{label:'所有已接通事件',phase:'事件監控',trigger:'custom',derived:'上述正式事件的監控',help:'只監控此合約列出的事件；沒有列出的枚舉不是已接通入口。'},
 };

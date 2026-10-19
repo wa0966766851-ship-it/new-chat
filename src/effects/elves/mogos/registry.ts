@@ -109,7 +109,6 @@ export function runMogosTeamEffects(c: C, event: E, data?: any): void {
   if (event === E.BEFORE_SKILL) {
     const t = (c.actor === 'p1' ? c.p1Timers : c.p2Timers)?.find(t => t.payload?.priorityAtMost && t.remaining > 0 && (!t.ownerBattleId || t.ownerBattleId === identity(c.self)));
     if (t) c.consumeTimer(c.actor, t.id);
-    c.setPlayerState('forceHitEffectsThisAction', !!c.getPlayerState('teamMogosForceHit'));
   }
   if (!orb(c)) return;
   // 魂印切成 Kit 時，附加埒殘銜闕改由 Kit 條款（before_action／on_attacked）執行，此處退位避免雙重附加。
@@ -234,12 +233,10 @@ export const MOGOS_SKILLS: Record<string, BattleSkillHandler> = {
 };
 export const MOGOS_AFTER_HIT: Record<string, BattleSkillAfterHitHandler> = {
   '王·潰墮妖族': (c, info) => {
-    c.setPlayerState('teamMogosForceHit', false);
     if (info.killed) { c.applyStatChange(c.actor, allStages(1)); c.setPlayerState('nextElfMogosEntrance', true); }
     else uses(c, c.actor, 'mogos_next_halves', 1, { nextAttackHalves: 1 + stacks(c) });
   },
 };
-export const MOGOS_ON_INVALID = { '王·墮落絕語': (c: C) => c.setPlayerState('teamMogosForceHit', true) };
-export const MOGOS_DAMAGE_TRANSFORMS = {
-  '王·潰墮妖族': (c: C, s: any) => c.getPlayerState('teamMogosForceHit') ? { ...s, power: s.power + 50 + 25 * stacks(c) } : s,
-};
+// 全隊共享、固定威力與成功使用第五技能解除，均由 team_force_hit 積木及通用生命週期處理。
+export const MOGOS_ON_INVALID = {};
+export const MOGOS_DAMAGE_TRANSFORMS = {};

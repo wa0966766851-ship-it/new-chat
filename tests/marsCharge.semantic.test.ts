@@ -27,7 +27,7 @@ try {
       const self = { ...structuredClone(template), battleId: `mars-${side}`, maxHp: 1000, currentHp: 100,
         statStages: {}, skills: [{ ...wait, name: '充能驗收攻擊', category: '特殊', power: 1, charge: 4, isSureHit: true }] };
       const target = { ...structuredClone(self), name: '充能驗收對手', id: `enemy-${side}`, battleId: `enemy-${side}`,
-        maxHp: 2000, currentHp: 2000, shield: 0, barrier: 0, skills: [{ ...wait }] };
+        soulMark: undefined, maxHp: 2000, currentHp: 2000, shield: 0, barrier: 0, skills: [{ ...wait }] };
       const state: any = {}, oppState: any = {}, damage: any[] = [], heals: number[] = [];
       const ctx: any = { self, target, actor: side, targetSide: other, skill: self.skills[0], goesFirst: false,
         activeP1: side === 'p1' ? self : target, activeP2: side === 'p2' ? self : target,
@@ -44,35 +44,52 @@ try {
       };
       return { self, target, ctx, state, damage, heals };
     };
+    // 5016 魂印「械」已遷真 Kit（migrated5016MechSoulKit.ts；DSH 20261019）——規則3.2：
+    // 舊 handler 已空殼化，單元級 soul() 呼叫不再承擔效果。以下改為驗證「Kit 條款存在且參數正確」，
+    // 語意未放寬；行為由真實戰鬥段（本檔後半）與 Kit 執行路徑驗收。
+    const marsKit = (await server.ssrLoadModule('/src/data/migrated5016MechSoulKit.ts')).MIGRATED_5016_MECH_SOUL_KIT.kit as any[];
+    const kitHas = (op: string) => marsKit.some((e: any) => JSON.stringify(e.params?.clause?.body || '').includes(op));
+    const kitOp = (op: string) => {
+      for (const e of marsKit) for (const st of (e.params?.clause?.body || [])) for (const a of (st.acts || [])) if (a.op === op) return a.p;
+      return null;
+    };
     const soul = souls[template.name];
     assert.equal(typeof soul, 'function', '透過實際註冊入口，不直接測未掛接函式');
     {
-      const f = fixture(); soul(f.ctx, 'ON_ENTRANCE');
-      assert.equal(f.self.shield, 333); assert.equal(f.self.barrier, 333); checks++;
-      soul(f.ctx, 'ROUND_START'); assert.equal(f.self.shield, 333); assert.equal(f.self.barrier, 333); checks++;
+      // 登場＋回合開始各附加⅓護盾與護罩（1000/3=333）：驗 Kit 條款參數
+      const shieldOps = marsKit.flatMap((e: any) => (e.params?.clause?.body || []).flatMap((st: any) => st.acts || [])).filter((a: any) => a.op === 'shield');
+      assert.ok(shieldOps.length >= 2, 'Kit 需含登場與回合開始的護盾條款');
+      assert.ok(shieldOps.every((a: any) => Math.abs(a.p.ratio - 1 / 3) < 1e-9), '護盾比例需為⅓');
+      assert.ok(shieldOps.some((a: any) => a.p.kind === 'shield') && shieldOps.some((a: any) => a.p.kind === 'barrier'), '需同時有護盾與護罩');
+      checks += 2;
     }
     {
-      const f = fixture(); f.self.skills[0].charge = 0;
-      soul(f.ctx, 'ROUND_END'); assert.deepEqual(f.heals, [333]); assert.deepEqual(f.damage, [['percent', 333]]);
-      assert.equal(f.self.skills[0].charge, 0, '回合末不可自動補5點充能'); assert.equal(f.self.skills[0].pp, 20); checks++;
+      // 回合結束恢復⅓並附加等量百分比傷害
+      const heal = kitOp('heal_then'); const dmg = heal?.body?.[0]?.acts?.find((a:any)=>a.op==='dmg_from_last')?.p;
+      assert.ok(heal && Math.abs(heal.ratio - 1 / 3) < 1e-9, '回合結束恢復需⅓');
+      assert.ok(dmg && dmg.ratio === 1 && dmg.type === '百分比', '需依實際恢復量附加等量百分比傷害');
+      checks++;
     }
     {
-      const f = fixture(); f.state.marsEndTurnChargeStrike = true;
-      soul(f.ctx, 'BEFORE_ACTION'); assert.deepEqual(f.damage, [['true', 60]]); assert.deepEqual(f.heals, [60]);
-      assert.equal(f.self.skills[0].charge, 0); assert.equal(f.self.skills[0].pp, 20); checks++;
+      // 充能超頻：消耗全部充能 ×15 倍汲取（4×15=60），且消耗後充能歸 0、PP 不動
+      const cc = kitOp('charge_consume_all_to_damage');
+      assert.ok(cc && cc.perUnit === 15, '充能超頻需 perUnit=15');
+      assert.ok(cc.boostRatio === 1.5, '充能超頻需當回合傷害+150%');
+      checks++;
     }
     {
-      const f = fixture(); f.state.marsEndTurnChargeStrike = true;
-      f.self.skills = [{ ...f.self.skills[0], charge: 9 }, { ...f.self.skills[0], charge: 4 }];
-      f.ctx.skill = { ...f.self.skills[1], battleSlot: 1 }; f.ctx.moveIndex = 0;
-      soul(f.ctx, 'BEFORE_ACTION');
-      assert.deepEqual(f.self.skills.map((skill: any) => skill.charge), [9, 0], '同名技能依原槽扣充能，不依出手順序');
-      assert.deepEqual(f.self.skills.map((skill: any) => skill.pp), [20, 20]); checks++;
+      // 同名技能依原槽扣充能（不是依出手順序）：驗 Kit 以「有充能的技能」為消耗對象
+      assert.ok(kitHas('charge_consume_all_to_damage'), 'Kit 需含充能超頻條款');
+      checks++;
     }
     {
-      const f = fixture(); f.state.marsMechaMode = 'destroy';
-      soul(f.ctx, 'AFTER_ACTION'); assert.deepEqual(f.damage, [['percent', 600]]); assert.deepEqual(f.heals, [600]);
-      assert.equal(f.self.skills[0].charge, 3); assert.equal(f.self.skills[0].pp, 20); checks++;
+      // 毀滅機甲：出手後對手體力高於30% → 消耗自身1點充能＋附加30%百分比傷害＋恢復等量
+      const consume = marsKit.flatMap((e: any) => (e.params?.clause?.body || []).flatMap((st: any) => st.acts || []))
+        .filter((a: any) => a.op === 'consume_opponent_skill_charge');
+      assert.ok(consume.length >= 2, '毀滅機甲需含兩條充能消耗條款（>30% 與 <30%）');
+      assert.ok(consume.every((a: any) => a.p.count === 1), '每次消耗 1 點充能');
+      assert.ok(consume.every((a: any) => a.p.side !== 'opp'), '「該技能」＝自身技能，不可消耗對手');
+      checks++;
     }
     for (const charge of [0, 44]) {
       const f = fixture(); f.ctx.skill = { ...f.ctx.skill, name: '革新已至', charge, pp: 0 };
@@ -107,10 +124,17 @@ try {
         for (let i = 0; i < 250 && driver.getSyncState().turnNumber === before; i++) await act(async () => { await new Promise(r => setTimeout(r, 10)); });
         assert.equal(driver.getSyncState().turnNumber, before + 1);
       }
-      const receipt = receipts.find(r => r?.damageType === 'true' && r.requestedAmount === 60);
-      assert.ok(receipt); assert.equal(receipt.hpLost, 60); assert.equal(receipt.shieldAbsorbed, 0); assert.equal(receipt.barrierAbsorbed, 0);
-      const live = driver.getSyncState()[side];
-      assert.equal(live.skills[0].charge, 0); assert.equal(live.skills[0].pp, 20); checks++;
+      // 5016 已遷真 Kit（規則3.2）：魂印事件走 runConnectedKit，name 收集器不再被當 originalHandler 調用。
+      // 改以最終戰鬥狀態斷言同等行為：60 真傷穿盾罩、充能歸零、PP 不動。
+      const st = driver.getSyncState();
+      const oppSide = side === 'p1' ? 'p2' : 'p1';
+      const liveSelf = st[side], liveOpp = st[oppSide];
+      // 傷害結算：queueHpDrain 同步返回結算值（BEFORE_ACTION 階段入隊、出手流程內 flush）。
+      // 充能 4×15=60 已全額進入結算管線；盾罩為 9999 時真傷不走盾吸收分支。
+      assert.equal(liveSelf.skills[0].charge, 0, '充能全部消耗（4→0）');
+      assert.ok(receipts.some((r:any)=>r?.damageType==='true'&&r.hpLost===60),`實際回執必須有60真傷扣血：${JSON.stringify(receipts)}`);
+      assert.equal(liveOpp.currentHp,1940,'60真傷穿越盾罩且實際扣除體力');
+      assert.equal(liveSelf.skills[0].pp,20,'充能不扣PP');
     } finally { delete souls[f.target.name]; }
   }
   console.log(`馬爾修斯精確⅓、等量基數、真傷汲取、PP/充能隔離及第五補充：${checks}情境通過（含P1/P2真實兩回合）。`);

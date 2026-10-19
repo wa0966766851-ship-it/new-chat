@@ -1,6 +1,6 @@
 import { Elf } from '../types';
 import { BattleEventContext, EffectTiming } from '../effects/types';
-import { getElfAdvancedMechanics, AdvancedTraitMechanics } from '../data/traitsRegistry';
+import { getElfAdvancedMechanics, hasAuthoredAdvancedMechanic, AdvancedTraitMechanics } from '../data/traitsRegistry';
 import { isStatusActive } from './statusManager';
 import { getStatuses } from './battleHelpers';
 import { checkControlImmunity } from '../effects/ailmentEngine';
@@ -12,6 +12,15 @@ import { reductionPolicy } from '../battle/damageReduction';
 import { distinctStoneCount, hasStoneThrowerMythic, isSkillStone } from '../data/skillStones';
 import { alive, changePp, identity } from '../effects/newElfOperations';
 import { skillSlot } from '../battle/skillSlot';
+import { createExtraElf } from './extraElf';
+import { clearStatuses } from '../effects/semanticOperations';
+import { getMaxPp } from './battleHelpers';
+import {runFinalExtraSoulLifecycle} from '../battle/finalExtraSoulMechanics';
+
+const authoredCompanion=(elf:any)=>hasAuthoredAdvancedMechanic(elf,'cyberWraithSummon');
+const ownedCompanion=(ctx:BattleEventContext)=>(ctx.getFullTeam(ctx.actor)||[]).find(e=>e.isExtra&&
+  e.summonerId===identity(ctx.self)&&(e as any).mechanicRole==='curse_companion'&&!e.isVanished&&e.currentHp>0);
+let repairDepth=0;
 
 function wraithOwnerOnField(ctx: BattleEventContext): boolean {
   const active = ctx.actor === 'p1' ? ctx.activeP1 : ctx.activeP2;
@@ -34,7 +43,20 @@ export class TraitsEngine {
       ctx.setPlayerState(`${selfSide}_cyberWraithMaxHp`, ctx.self.maxHp);
       ctx.setPlayerState(`${selfSide}_cyberWraithHasSubbed`, false); // 每場登場限1次替死
       ctx.addLog(`👻 【${elfName}】的【咒術師】特質發動！召喚與自身能力值相等的「賽博怨靈」降臨戰場！`, "effect");
+      if(authoredCompanion(ctx.self)){
+        // 本體只繼承能力值；不繼承持有者的 Kit、身分或異常。每次登場重新建立一次。
+        const existing=ownedCompanion(ctx);if(existing)ctx.vanishElf(selfSide,existing);
+        ctx.addExtraElf(selfSide,createExtraElf(ctx.self,{
+          name:'賽博怨靈',type:'機械.暗影',maxHp:ctx.self.maxHp,currentHp:ctx.self.maxHp,
+          calculatedStats:{...ctx.self.calculatedStats},mechanicRole:'curse_companion',
+          soulMark:{name:'額外精靈',description:'與召喚者能力值相同；特防持續同步；召喚者下場時消逝。',effectType:'none',effectValue:0},
+        } as any));
+        ctx.setPlayerState(`${selfSide}_cyberWraithRegistryManaged`,false);
+        ctx.setPlayerState(`${selfSide}_wraithSubUsed`,false);
+        ctx.setPlayerState(`${selfSide}_wraithDamageDoubled`,false);
+      }
     }
+    if(mechanics.enterGainConceal)ctx.updateElf(selfSide,{isConcealed:true});
 
     // 3. 【投石者】檢查 4 個技能石並激活神話狀態
     if (mechanics.isStoneThrower) {
@@ -52,17 +74,21 @@ export class TraitsEngine {
   /**
    * 判定並套用：當精靈下場 (SWITCH_OUT) 時的特質效果
    */
-  static triggerOnSwitchOut(ctx: BattleEventContext) {
+  static triggerOnSwitchOut(ctx: BattleEventContext,incomingElf?:any) {
     const mechanics = getElfAdvancedMechanics(ctx.self);
     const selfSide = ctx.actor;
     const elfName = ctx.self.name;
 
     // 1. 【咒術師】下場怨靈死亡並消逝
-    if (mechanics.cyberWraithSummon) {
+    if (mechanics.cyberWraithVanishOnSwitch) {
       const active = ctx.getPlayerState(`${selfSide}_cyberWraithActive`);
       if (active) {
         ctx.setPlayerState(`${selfSide}_cyberWraithActive`, false);
         ctx.addLog(`💨 【${elfName}】被召回，召喚的「賽博怨靈」隨之消逝在虛空中...`, "info");
+      }
+      if(authoredCompanion(ctx.self)){
+        const extra=ownedCompanion(ctx);if(extra){ctx.updateAnyElf(selfSide,identity(extra),{currentHp:0});ctx.vanishElf(selfSide,extra);}
+        ctx.setPlayerState(`${selfSide}_wraithCastSpellPending`,false);
       }
     }
 
@@ -71,15 +97,58 @@ export class TraitsEngine {
       ctx.setPlayerState(`${selfSide}_isConcealed`, false);
       
       // 計算己方隊伍中目前已獲得隱匿的精靈數 (安全閥：不超過 3 個)
-      const teamKey = selfSide === 'p1' ? 'p1Team' : 'p2Team';
-      const team = ctx.getPlayerState(teamKey) || [];
+      const team = ctx.getEligibleTeam(selfSide);
       const concealCount = team.filter((e: any) => e.isConcealed || isStatusActive(e, 'concealed')).length;
 
-      if (concealCount < 3) {
-        ctx.setPlayerState(`${selfSide}_nextElfGainConcealAndPP`, true);
+      if (concealCount <= 3) {
+        if(incomingElf){
+          changePp(ctx,selfSide,incomingElf,s=>getMaxPp(s,incomingElf),true,'restore');
+          ctx.updateAnyElf(selfSide,identity(incomingElf),{isConcealed:true});
+        }else ctx.setPlayerState(`${selfSide}_nextElfGainConcealAndPP`, true);
         ctx.addLog(`🔄 【${elfName}】退場！【戰士】傳承激活：恢復下一隻精靈所有技能 PP 值並附加【隱匿印記】！`, "effect");
       }
     }
+  }
+
+  /** 共用生命週期入口；由 SoulMarkRegistry 的正式 dispatcher 呼叫，與舊魂印是否存在無關。 */
+  static triggerAuthoredLifecycle(ctx:BattleEventContext,event:EffectTiming|string,data?:any):void {
+    runFinalExtraSoulLifecycle(ctx);
+    if(event===EffectTiming.ON_SWITCH_OUT&&(hasAuthoredAdvancedMechanic(ctx.self,'switchOutInheritConceal')||authoredCompanion(ctx.self)))
+      this.triggerOnSwitchOut(ctx,data?.incomingElf);
+    const mechanics=getElfAdvancedMechanics(ctx.self);
+    if(authoredCompanion(ctx.self)&&mechanics.cyberWraithSummon){
+      const companion=ownedCompanion(ctx);
+      if(companion&&event===EffectTiming.ENFORCE&&companion.calculatedStats.spdef!==ctx.self.calculatedStats.spdef)
+        ctx.updateAnyElf(ctx.actor,identity(companion),{calculatedStats:{...companion.calculatedStats,spdef:ctx.self.calculatedStats.spdef}});
+      if(companion&&mechanics.wraithExistCurseNoReduce&&event===EffectTiming.BEFORE_STATUS_TICK&&/詛咒|curse/i.test(data?.status||''))data.skipTick=true;
+    }
+    if(event!==EffectTiming.SELF_STATUS_APPLIED||repairDepth||!data?.status)return;
+    const entry=StatusRegistry[canonicalStatusName(data.status)]||StatusRegistry[data.status];
+    if(!entry?.categories.includes('EVOLUTIONARY'))return;
+    const transforms=entry.mechanics?.filter(m=>m.type==='EVOLUTION_TRANSFORM')||[];
+    if(!transforms.length)return;
+    const target=ctx.self;
+    const owners=ctx.getFullTeam(ctx.actor).filter(e=>identity(e)!==identity(target)&&alive(e)&&
+      getElfAdvancedMechanics(e).repairOnOtherDeriveStatus&&hasAuthoredAdvancedMechanic(e,'repairOnOtherDeriveStatus'));
+    if(!owners.length)return;
+    repairDepth++;
+    try{
+      clearStatuses(ctx,ctx.actor,target,name=>sameStatus(name,data.status));
+      for(const transformation of transforms){
+        const p=transformation.params||{};
+        const next=p.nextStatus||(p.randomPool?.length?p.randomPool[Math.floor((ctx.rng||Math.random)()*p.randomPool.length)]:undefined);
+        if(p.statDebuff)ctx.applyStatChange(ctx.actor,p.statDebuff);
+        if(next)ctx.applyStatusWithImmunityCheck(ctx.actor,next,p.nextDuration||3);
+      }
+      for(const owner of owners){
+        const config=getElfAdvancedMechanics(owner);
+        for(const member of [owner,target]){
+          const amount=config.repairHealAmount||0;
+          ctx.applyHealToElf?.(ctx.actor,identity(member),amount);
+          changePp(ctx,ctx.actor,member,s=>Math.min(getMaxPp(s,member),s.pp+(config.repairPpRestore||0)),true,'restore');
+        }
+      }
+    }finally{repairDepth--;}
   }
 
   /**
@@ -274,7 +343,7 @@ export class TraitsEngine {
     // 2. 【咒術師】在詛咒狀態下，選擇技能時額外消耗該技能 1 點 PP
     if (mechanics.cursePpTax && ctx.skill) {
       const statuses = getStatuses(ctx.self);
-      const hasCurse = !!(statuses['cursed'] || statuses['詛咒'] || statuses['curse'] || statuses['curse_status']);
+      const hasCurse = Object.entries(statuses).some(([name,n])=>n>0&&/詛咒|curse/i.test(canonicalStatusName(name)));
       if (hasCurse) {
         if (ctx.getPlayerState('selectionPpTaxRound') === ctx.roundNumber) return;
         ctx.setPlayerState('selectionPpTaxRound', ctx.roundNumber);
@@ -333,6 +402,12 @@ export class TraitsEngine {
     if (mechanics.turnEndHeal4Stones && hasStoneThrowerMythic(ctx.self) && ctx.self.currentHp > 0) {
       ctx.applyHeal(ctx.actor, Math.floor(ctx.self.maxHp * mechanics.turnEndHeal4Stones));
     }
+    if(authoredCompanion(ctx.self)&&wraithOwnerOnField(ctx)&&mechanics.wraithEndSpellIfNoSkill&&
+      (ownedCompanion(ctx)||ctx.getPlayerState(`${ctx.actor}_wraithSubUsed`))&&
+      (!ctx.skill||['待機','使用道具','切換精靈'].includes(ctx.skill.name))){
+      const n=Math.max(0,...Object.entries(ctx.getStatuses(ctx.self)).filter(([name])=>/詛咒|curse/i.test(name)).map(([,v])=>v));
+      this.queueWraithExtraAction(ctx,'賽博怨靈·滅靈魔咒',Math.max(0,...ctx.self.skills.map(s=>s.power||0))+n,n);
+    }
   }
 
   /**
@@ -346,7 +421,7 @@ export class TraitsEngine {
     // 投石者的恢復改由 BATTLE_PHASE_END 經正常恢復管線執行一次。
 
     // 2. 【咒術師】若未選擇使用技能，發動 1 次滅靈魔咒
-    if (wraithOwnerOnField(ctx) && mechanics.wraithEndSpellIfNoSkill && (ctx.getPlayerState(`${selfSide}_cyberWraithActive`) || ctx.getPlayerState(`${selfSide}_wraithSubUsed`))) {
+    if (!authoredCompanion(ctx.self) && wraithOwnerOnField(ctx) && mechanics.wraithEndSpellIfNoSkill && (ctx.getPlayerState(`${selfSide}_cyberWraithActive`) || ctx.getPlayerState(`${selfSide}_wraithSubUsed`))) {
       const selectedNoSkill = !ctx.skill || ctx.skill.name === '待機' || ctx.skill.name === '使用道具' || ctx.skill.name === '切換精靈';
       if (selectedNoSkill) {
         ctx.addLog(`🌌 【${elfName}】當前回合未選擇主動使用技能，賽博怨靈發動了【滅靈魔咒】！`, "effect");
@@ -518,7 +593,19 @@ export class TraitsEngine {
     // 1. 【咒術師】賽博怨靈替死
     const wraithHp = ctx.getPlayerState(`${selfSide}_cyberWraithHp`) ?? ctx.getPlayerState(`${selfSide}_cyberWraithMaxHp`) ?? 0;
     // 專屬註冊表已管理實體怨靈，不得再用舊虛擬HP入口替死第二次。
-    if (!ctx.getPlayerState(`${selfSide}_cyberWraithRegistryManaged`) && mechanics.wraithSubstituteDeathOnce
+    if (authoredCompanion(ctx.self) && mechanics.wraithSubstituteDeathOnce && !ctx.getPlayerState(`${selfSide}_wraithSubUsed`)) {
+      const companion=ownedCompanion(ctx);
+      if(companion){
+        ctx.updateAnyElf(selfSide,identity(companion),{currentHp:0});
+        ctx.setPlayerState(`${selfSide}_cyberWraithHp`,0);
+        ctx.setPlayerState(`${selfSide}_cyberWraithActive`,false);
+        ctx.setPlayerState(`${selfSide}_wraithSubUsed`,true);
+        ctx.setPlayerState(`${selfSide}_wraithDamageDoubled`,!!mechanics.wraithSpellDamageDoubleAfterSub);
+        ctx.updateElf(selfSide,{currentHp:Math.max(1,Math.floor(ctx.self.maxHp*(mechanics.wraithSubstituteDeathHpRatio||0)))});
+        return true;
+      }
+    }
+    if (!authoredCompanion(ctx.self) && !ctx.getPlayerState(`${selfSide}_cyberWraithRegistryManaged`) && mechanics.wraithSubstituteDeathOnce
       && !ctx.getPlayerState(`${selfSide}_wraithSubUsed`) && ctx.getPlayerState(`${selfSide}_cyberWraithActive`) && wraithHp > 0) {
       ctx.setPlayerState(`${selfSide}_cyberWraithHp`, 0);
       const hasSubbed = ctx.getPlayerState(`${selfSide}_cyberWraithHasSubbed`);

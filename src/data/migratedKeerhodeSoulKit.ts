@@ -58,7 +58,12 @@ export const MIGRATED_KEERHODE_SOUL_KIT = {
       { cond: [c('mark_count', { side: 'self', id: 'dark_night', op: '不小於', amount: 1 }, '擁有未暝之夜')], acts: [
         a('ignore', { what: '能力提升' }),
         a('vampire', { ratio: 1, kind: '技能' }),
-        a('prio_next', { uses: 1, v: 1 }),
+      ] },
+    ], 5),
+    // F2. 未暝之夜：技能先制+1——prio_bonus 事中查詢（prio_next 事中寫入不生效；子代理A 發現，DSH 20261018 修正）。
+    entry('modify_priority', 'modify_priority', '未暝之夜：技能先制+1', [
+      { cond: [c('mark_count', { side: 'self', id: 'dark_night', op: '不小於', amount: 1 }, '擁有未暝之夜')], acts: [
+        a('prio_bonus', { v: 1 }),
       ] },
     ], 5),
     // G. 造成傷害+150%（modify_power）

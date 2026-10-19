@@ -1,0 +1,160 @@
+{
+  "generatedAt": "2026-10-19T03:29:29.664Z",
+  "tests": [
+    {
+      "file": "arena12Readiness.semantic",
+      "exitCode": 0,
+      "seconds": 14
+    },
+    {
+      "file": "battleEngine.headless",
+      "exitCode": 0,
+      "seconds": 18
+    },
+    {
+      "file": "effectAudit.semantic",
+      "exitCode": 0,
+      "seconds": 1
+    },
+    {
+      "file": "effectConnection.semantic",
+      "exitCode": 0,
+      "seconds": 11
+    },
+    {
+      "file": "elfRegistryModules.semantic",
+      "exitCode": 0,
+      "seconds": 6
+    },
+    {
+      "file": "finalDelu.semantic",
+      "exitCode": 0,
+      "seconds": 13
+    },
+    {
+      "file": "finalExtraTraits.semantic",
+      "exitCode": 0,
+      "seconds": 14
+    },
+    {
+      "file": "finalMarsLanDragon.semantic",
+      "exitCode": 0,
+      "seconds": 13
+    },
+    {
+      "file": "finalRemainingClosure.semantic",
+      "exitCode": 0,
+      "seconds": 19
+    },
+    {
+      "file": "forcedHitEffects.semantic",
+      "exitCode": 0,
+      "seconds": 14
+    },
+    {
+      "file": "hamoFormulaProperties.semantic",
+      "exitCode": 0,
+      "seconds": 14
+    },
+    {
+      "file": "hamoPassiveMode.semantic",
+      "exitCode": 0,
+      "seconds": 15
+    },
+    {
+      "file": "hamoRecalculation.semantic",
+      "exitCode": 0,
+      "seconds": 14
+    },
+    {
+      "file": "hamoRemovedEffects.semantic",
+      "exitCode": 0,
+      "seconds": 16
+    },
+    {
+      "file": "hamoShiyanIntegration.semantic",
+      "exitCode": 0,
+      "seconds": 23
+    },
+    {
+      "file": "marsCharge.semantic",
+      "exitCode": 0,
+      "seconds": 25
+    },
+    {
+      "file": "mechChargeSettlement.semantic",
+      "exitCode": 0,
+      "seconds": 17
+    },
+    {
+      "file": "mechDestroy.semantic",
+      "exitCode": 0,
+      "seconds": 23
+    },
+    {
+      "file": "mechModeTiming.semantic",
+      "exitCode": 0,
+      "seconds": 17
+    },
+    {
+      "file": "mechSpeed.semantic",
+      "exitCode": 0,
+      "seconds": 21
+    },
+    {
+      "file": "mechSupport.semantic",
+      "exitCode": 0,
+      "seconds": 16
+    },
+    {
+      "file": "migrate_5019_pp.semantic",
+      "exitCode": 0,
+      "seconds": 13
+    },
+    {
+      "file": "migrate_5019.semantic",
+      "exitCode": 0,
+      "seconds": 20
+    },
+    {
+      "file": "migrationClosure.semantic",
+      "exitCode": 0,
+      "seconds": 16
+    },
+    {
+      "file": "odinNextSkill.semantic",
+      "exitCode": 0,
+      "seconds": 14
+    },
+    {
+      "file": "portableSkillMarks.semantic",
+      "exitCode": 0,
+      "seconds": 16
+    },
+    {
+      "file": "remainingMechanismCorrections.semantic",
+      "exitCode": 0,
+      "seconds": 16
+    },
+    {
+      "file": "repeatedSkillUse.semantic",
+      "exitCode": 0,
+      "seconds": 15
+    },
+    {
+      "file": "resourceHits.semantic",
+      "exitCode": 0,
+      "seconds": 15
+    },
+    {
+      "file": "resourcePanel.semantic",
+      "exitCode": 0,
+      "seconds": 14
+    },
+    {
+      "file": "storedDamage.semantic",
+      "exitCode": 0,
+      "seconds": 14
+    }
+  ]
+}

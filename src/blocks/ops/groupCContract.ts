@@ -3,6 +3,7 @@ export const GROUP_C_ACTION_FIELDS: Record<string, readonly string[]> = {
   // 造成技能傷害後，額外隨機選擇對方場下／額外精靈作為攻擊目標（同一技能以該目標的屬性與雙防另算一次傷害）。
   extra_random_target: ['pool', 'count'],
   // 背包／全隊名單查詢：符合條件的精靈數寫入「上一數值」，供其後動作使用。
+  // filter: any／alive／dead／alive_or_type（存活或識別帶 types 之一）／dead_or_type（陣亡或識別帶 types 之一）。
   roster_query: ['sides', 'types', 'filter', 'scope'],
   // 以上一數值為等級，改變能力（全屬性／指定項）。
   stat_by_last: ['side', 'stats'],
@@ -22,7 +23,7 @@ export const GROUP_C_CONDITION_FIELDS: Record<string, readonly string[]> = {
 
 const compare = ['低於', '小於', '高於', '大於', '不低於', '不小於', '不高於', '不大於'];
 const POOLS = ['foe_bench', 'foe_extra'];
-const FILTERS = ['any', 'alive', 'dead'];
+const FILTERS = ['any', 'alive', 'dead', 'alive_or_type', 'dead_or_type'];
 const STAT_NAMES = ['全屬性', '全能力', '所有能力', '雙攻', '雙防', '攻擊', '防禦', '特攻', '特防', '速度', '命中'];
 
 export function groupCActionIssue(op: string, p: any, trig: string, inMark: boolean): string | null {

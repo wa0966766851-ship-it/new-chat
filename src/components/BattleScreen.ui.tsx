@@ -1090,7 +1090,7 @@ export function BattleScreenUI(props: BattleScreenUIProps) {
             >
               {isFifth && <span className="absolute -top-2 left-2 px-1.5 rounded bg-gradient-to-r from-amber-500 to-yellow-400 text-[10px] font-black text-slate-900 shadow">第五</span>}
               {skill.specialBadge && (
-                <span className={`absolute -top-2 right-2 px-1.5 rounded text-[9px] font-black border ${skill.specialBadge.bg || "bg-purple-900/90"} ${skill.specialBadge.color || "text-purple-200"} ${skill.specialBadge.border || "border-purple-500/40"}`}>{skill.specialBadge.text}</span>
+                <span title={skill.specialBadge.description} data-skill-badge={skill.specialBadge.text} data-badge-active={skill.isRuneActive ? "true" : "false"} className={`absolute -top-2.5 right-1.5 px-1.5 rounded text-[12px] leading-4 font-black border ${skill.specialBadge.bg || "bg-purple-900/90"} ${skill.specialBadge.color || "text-purple-200"} ${skill.specialBadge.border || "border-purple-500/40"} ${skill.isRuneActive ? skill.specialBadge.animate || "" : ""}`}>{skill.specialBadge.text}{skill.isRuneActive ? <span className="ml-0.5 text-[8px] align-middle">●</span> : null}</span>
               )}
               <div className="flex items-center gap-1.5 min-w-0">
                 <SkillTypeIcon skill={original} size={20} />
