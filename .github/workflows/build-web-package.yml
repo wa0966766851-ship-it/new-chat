@@ -8,6 +8,11 @@ on:
         type: boolean
         required: true
         default: false
+      diagnose_audit:
+        description: '只診斷跨平台稽核快照，不發布網站'
+        type: boolean
+        required: false
+        default: false
 
 permissions:
   contents: read
@@ -17,7 +22,31 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  audit-diagnostics:
+    if: ${{ inputs.diagnose_audit }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+      - run: npm ci
+      - run: npm run audit:implementation
+      - name: Check tracked snapshot
+        run: git diff --exit-code -- docs/全精靈效果實裝核對.json docs/全精靈效果實裝核對.md docs/audits/elves
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: audit-platform-snapshot
+          path: |
+            docs/全精靈效果實裝核對.json
+            docs/全精靈效果實裝核對.md
+            docs/audits/elves
+          retention-days: 3
   build:
+    if: ${{ !inputs.diagnose_audit }}
     runs-on: ubuntu-latest
     # 完整積木遷移測試包含逐份 P1/P2 引擎驗收，不能在建置前被舊的30分鐘上限中止。
     timeout-minutes: 120
