@@ -35,6 +35,7 @@ import { GameDataProvider, useGameData } from "./contexts/GameDataContext";
 const ElfEditor = lazy(() => import("./components/ElfEditor"));
 const PerformanceProbe = lazy(() => import('./components/PerformanceProbe'));
 const Encyclopedia = lazy(() => import("./components/Encyclopedia"));
+const UpdatesPage = lazy(() => import('./components/UpdatesPage'));
 const DestinyWheelScreen = lazy(() => import("./components/DestinyWheelScreen"));
 const TestRunnerPage = lazy(() => import("./components/TestRunnerPage"));
 const BattleScreen = lazy(() => import("./components/BattleScreen"));
@@ -52,7 +53,7 @@ export default function App() {
 
 function AppContent() {
   const { allElves, customElves, addCustomElf, updateElf, deleteCustomElf, restoreDeletedElves, deletedCount } = useGameData();
-  const [view, setView] = useState<"start" | "custom" | "battle" | "destiny_wheel" | "interstellar_exploration" | "test_runner">("start");
+  const [view, setView] = useState<"start" | "custom" | "battle" | "destiny_wheel" | "interstellar_exploration" | "test_runner" | "updates">("start");
   const [isCompactLayout, setIsCompactLayout] = useState(() =>
     typeof window !== "undefined" && window.matchMedia("(max-width: 767px)").matches
   );
@@ -340,6 +341,19 @@ function AppContent() {
               </button>
 
 
+              <button
+                type="button"
+                onClick={() => setView('updates')}
+                aria-current={view === 'updates' ? 'page' : undefined}
+                className={`flex items-center gap-3 px-4 py-3 rounded-xl font-medium text-sm transition-all w-full text-left border ${
+                  view === 'updates'
+                    ? 'bg-blue-600/10 text-blue-400 border-blue-500/20'
+                    : 'text-slate-400 hover:bg-slate-800/50 hover:text-slate-200 border-transparent'
+                }`}
+              >
+                <Book className="w-5 h-5" />
+                更新與精靈
+              </button>
             </nav>
 
             <div className="p-4 border-t border-slate-800 flex flex-col gap-4 pr-6">
@@ -423,6 +437,18 @@ function AppContent() {
               setEditingElf(elf);
               setEditorTab(undefined);
               setView("custom");
+            }}
+          />
+        )}
+
+        {view === 'updates' && (
+          <UpdatesPage
+            elves={allElvesCombined}
+            onBack={() => setView('start')}
+            onEditElf={(elf, tab) => {
+              setEditingElf(elf);
+              setEditorTab(tab);
+              setView('custom');
             }}
           />
         )}
