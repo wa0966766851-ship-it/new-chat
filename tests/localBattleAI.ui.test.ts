@@ -25,7 +25,7 @@ try {
   await pick('AI難度','hard');
   assert.equal(readAISettings().difficulty,'hard');
   const change=pick;
-  assert.equal(select('首頁敵方AI風格').options.length,5);
+  assert.equal(select('首頁敵方AI風格').options.length,6);
   assert.equal(select('首頁敵方AI風險').options.length,3);
   await change('首頁敵方AI風格','disruptive');await change('首頁我方託管風格','defensive');
   await change('首頁敵方AI風險','reckless');await change('首頁我方託管風險','conservative');

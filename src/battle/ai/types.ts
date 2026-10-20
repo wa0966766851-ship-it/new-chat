@@ -1,7 +1,7 @@
 import type { BattleState } from '../../components/BattleManager';
 
 export type AISide = 'p1' | 'p2';
-export type AIStyle = 'balanced' | 'aggressive' | 'defensive' | 'disruptive' | 'sustain';
+export type AIStyle = 'balanced' | 'aggressive' | 'defensive' | 'disruptive' | 'sustain' | 'attrition';
 export type AIRisk = 'conservative' | 'balanced' | 'reckless';
 /** 傳輸只用槽位／ID，不把投影技能寫回真正持有者。 */
 export type PlannedAction =

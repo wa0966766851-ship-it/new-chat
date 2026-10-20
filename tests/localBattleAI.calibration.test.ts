@@ -58,10 +58,11 @@ try {
     const foe=elf('B',[skill('AI校準等待')]);foe.calculatedStats.speed=100;
     const engine=createBattleEngine({initialP1Team:side==='p1'?[own]:[foe],initialP2Team:side==='p2'?[own]:[foe],p1StarterId:side==='p1'?'A':'B',p2StarterId:side==='p2'?'A':'B',preparedTeams:true,battleMode:'PVP',isFast:()=>true});
     const st=structuredClone(engine.getState());engine.unmount();st.p1ItemInventory={};st.p2ItemInventory={};
-    const expected:Record<string,number>={balanced:0,aggressive:0,defensive:1,disruptive:2,sustain:3};
+    const expected:Record<string,number>={balanced:0,aggressive:0,defensive:1,disruptive:2,sustain:3,attrition:2};
     for(const style of Object.keys(AI_STYLES)){
       const report=await planDecision({state:decisionKnowledge(st,side).state,side,seed:17,settings:{...DEFAULT_AI_SETTINGS,style,difficulty:'hard',budgetMs:2000}},simulateAction);
-      const pass=report.mode==='planner'&&report.action.slot===expected[style];
+      const pass = report.mode === 'planner' && (report.action as any).slot === expected[style];
+      console.log('MODE-DBG', style, '->', report.mode, JSON.stringify(report.action), 'reason:', JSON.stringify((report as any).fallbackReason || ''), 'sweeps:', (report as any).completedSweeps);
       console.log(`${pass?'✓':'✗'} ${side}/${style}: ${report.candidates.map((v:any)=>`${v.label}=${v.score.toFixed(2)}`).join(', ')}`);
       if(!audit)assert.ok(pass,`${side}/${style}不同風格必須有實際選招差異`);
     }

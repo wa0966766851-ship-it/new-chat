@@ -7,6 +7,7 @@ import { isZeroPpExempt } from '../ppExemptions';
 import { StatusRegistry } from '../../effects/statusRegistry';
 import { canonicalStatusName } from '../../effects/statusIdentity';
 import { ppMissing } from './legalActions';
+import { PEAK_TURN_LIMIT, countedAlive } from '../turnLimit';
 import type { Elf } from '../../types';
 import { visibleSkills } from '../viewerPerspective';
 import { metricPreference } from './styles';
@@ -86,5 +87,18 @@ export function evaluatePosition(state: BattleState, side: AISide, settings: AIS
     value: (own.parts.find(p => p.key === key)?.value || 0) * metricPreference(settings.style,key,true) -
       (enemy.parts.find(p => p.key === key)?.value || 0) * metricPreference(settings.style,key,false) }));
   if (state.winner) parts.push({ key: 'terminal', label: '勝敗', value: state.winner === side ? 10000 : state.winner === opposite(side) ? -10000 : 0 });
+  // DSH 20261020（磨盤時鐘）：巔峰 6v6 的 50 回合判定按存活精靈數——
+  // 回合越接近上限，存活數差越大分；讓求穩風格在拖後期自然傾向「保存活 + 控場」而非換命。
+  const fmt = (state as any).battleFormat || (state as any).format;
+  if (fmt === 'peak_6v6' && !state.winner) {
+    const turn = Number((state as any).turnNumber) || 0;
+    if (turn >= PEAK_TURN_LIMIT - 10) {
+      const isDead = (e: Elf) => checkElfDead(e);
+      const mine = countedAlive(state[`${side}Team`], isDead), theirs = countedAlive(state[`${opposite(side)}Team`], isDead);
+      const urgency = clamp((turn - (PEAK_TURN_LIMIT - 10)) / 10, 0, 1); // 40 回合起線性升溫，50 滿格
+      const delta = (mine - theirs) * 400 * urgency;
+      parts.push({ key: 'clock', label: '回合時鐘（存活數）', value: delta * (settings.style === 'attrition' ? 2 : 1) });
+    }
+  }
   return { total: parts.reduce((n, p) => n + p.value, 0), parts };
 }
