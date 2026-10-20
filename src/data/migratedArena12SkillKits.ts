@@ -51,6 +51,10 @@ export const MIGRATED_ARENA12_WUWEI_SOUL_KIT = {
         a('resource_mark_add', { id: 'wuweiCancelled', name: '萬相乖離', displayChar: '離', unit: '層', side: 'self', scope: 'elf', persistsOffField: false, amount: 1, maxCount: 6, description: '已取消的觸發條件數（每層使無相諦威力+50）' }),
       ] },
     ], 4),
+    // 已使用但未命中／無效仍屬技能使用後；無法出手不會進此正式節點。
+    entry('on_invalid', 'self_invalid', '技能使用後，不扣除固定 PP，改為互換該技能的目前 PP 與已損失 PP', [
+      { acts: [a('pp_swap_selected', {})] },
+    ], 5),
   ],
 };
 

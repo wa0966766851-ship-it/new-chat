@@ -52,10 +52,19 @@ try {
   await check('真實傷害不受傷害上限與保底影響', () => {
     const s: any = { p1: elf('a'), p2: elf('b'), p1Marks: [], p2Marks: [], p1Timers: [], p2Timers: [], p1RegistryState: {}, p2RegistryState: {} };
     const events: any[] = [];
-    const ctx: any = { actor: 'p1', targetSide: 'p2', self: s.p1, target: s.p2, getMarks: () => [], getStatuses: () => ({}), getPlayerState: () => 0, getOpponentState: () => 0, addLog() {} };
-    const api = buildDamageAPIs({ side: 'p1', self: s.p1, opp: s.p2, syncStateRef: { current: s }, pushEffect: (e: any) => events.push(e), getBattleEventContext: () => ctx } as any);
+    const context = (side: 'p1' | 'p2'): any => {
+      const other = side === 'p1' ? 'p2' : 'p1';
+      return { actor: side, targetSide: other, self: s[side], target: s[other], activeP1: s.p1, activeP2: s.p2,
+        p1Timers: s.p1Timers, p2Timers: s.p2Timers, getFullTeam: (which: string) => [s[which]],
+        getMarks: () => [], getStatuses: () => ({}), getPlayerState: () => 0, getOpponentState: () => 0, addLog() {} };
+    };
+    const api = buildDamageAPIs({ side: 'p1', self: s.p1, opp: s.p2, syncStateRef: { current: s }, pushEffect: (e: any) => events.push(e), getBattleEventContext: context } as any);
     s.p2Timers = [{ id: 'cap', remaining: 3, kind: 'turn_effect', payload: { applyMode: 'gate', wraps: 'damage_limit', params: { limit: 10 } } }];
-    assert.equal(api.applyTrueDamage('p2', 500), 500);
+    const errors: unknown[][] = [], originalError = console.error;
+    console.error = (...args) => { errors.push(args); originalError(...args); };
+    try { assert.equal(api.applyTrueDamage('p2', 500), 500); }
+    finally { console.error = originalError; }
+    assert.deepEqual(errors, [], '雙方正式積木傷害掛鉤不得報錯後仍當通過');
   });
   await check('六刃：滿血造成非真實傷害 ×2.2（過去 ×1.2）；損失 0.1% 體力後 ×3.4', () => {
     const run = (hp: number) => {

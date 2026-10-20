@@ -17,6 +17,7 @@ TXT來源：未找到ID／名稱精確匹配的TXT，須核對嵌入資料或另
 | 技能使用後，不扣除固定 PP，改為互換該技能的目前 PP 與已損失 PP | 已解析／authored-block-runtime | 待核對 | 缺精確TXT來源 |
 | 以非 0 PP 使用技能時，解除自身異常狀態並免疫下一次異常狀態 | 已解析／authored-block-runtime | 待核對 | 缺精確TXT來源 |
 | 以 0 PP 使用時必定命中、強制執行命中效果並觸發【萬相乖離】 | 已解析／authored-block-runtime | 待核對 | 缺精確TXT來源 |
+| 技能使用後，不扣除固定 PP，改為互換該技能的目前 PP 與已損失 PP | 已解析／authored-block-runtime | 待核對 | 缺精確TXT來源 |
 
 
 ## 技能：千秋虔

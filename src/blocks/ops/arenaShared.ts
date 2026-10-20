@@ -2,6 +2,8 @@
 // fifthPpDiff：自身第五技能目前 PP − 對手第五技能目前 PP（下限 0）——「每多 1 點」句式基準。
 // arenaDrainAmount：drain 擴充（每級自身能力下降吸取／PP差翻倍）。
 import type { BattleEventContext } from '../../effects/types';
+import { skillSlot } from '../../battle/skillSlot';
+import { getMaxPp } from '../../utils/battleHelpers';
 
 const idOf = (e: any) => String(e?.battleId || e?.id || '');
 
@@ -168,10 +170,10 @@ export function arenaSharedOperations(helpers: {
       const elf = helpers.liveElf(ctx, ctx.actor);
       const skill = (ctx as any).skill;
       if (!elf || !skill) return false;
-      const idx = (elf.skills || []).findIndex((x: any) => x.name === skill.name);
+      const idx = skillSlot(elf, skill);
       if (idx < 0) return false;
-      const cur = Number(elf.skills[idx].currentPp ?? elf.skills[idx].pp) || 0;
-      const max = Number(elf.skills[idx].maxPp ?? elf.skills[idx].pp) || 0;
+      const cur = Number(elf.skills[idx].pp ?? elf.skills[idx].currentPp) || 0;
+      const max = getMaxPp(elf.skills[idx], elf);
       const lost = Math.max(0, max - cur);
       const next = (elf.skills || []).map((x: any, i: number) => i === idx ? { ...x, pp: lost, currentPp: lost } : x);
       (ctx as any).updateElf?.(ctx.actor, { skills: next });

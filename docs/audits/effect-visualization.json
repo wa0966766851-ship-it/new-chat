@@ -2,8 +2,8 @@
   "summary": {
     "elves": 43,
     "definitions": 397,
-    "kitEntries": 1724,
-    "parameterFields": 32019,
+    "kitEntries": 1725,
+    "parameterFields": 32031,
     "allFieldsVisible": true,
     "incompleteDefinitions": 0,
     "semanticAccuracy": null,
@@ -4083,9 +4083,9 @@
       "elfName": "無為龍者",
       "name": "無為之境",
       "category": "專屬特性／魂印",
-      "entries": 5,
-      "fields": 87,
-      "visibleFields": 87,
+      "entries": 6,
+      "fields": 99,
+      "visibleFields": 99,
       "complete": true,
       "issues": [],
       "allFieldsVisible": true

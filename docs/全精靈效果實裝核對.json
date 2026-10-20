@@ -3,12 +3,12 @@
   "note": "parsed ≠ executable route ≠ semantic acceptance",
   "summary": {
     "elves": 43,
-    "sourceRecords": 1724,
+    "sourceRecords": 1725,
     "presentationOnly": 0,
-    "clauses": 1724,
-    "parsed": 1724,
+    "clauses": 1725,
+    "parsed": 1725,
     "unparsed": 0,
-    "pending": 1672,
+    "pending": 1673,
     "partialEvidence": 6,
     "staleEvidence": 46,
     "fullyAccepted": 0
@@ -86593,6 +86593,38 @@
                 ]
               },
               "id": "arena_12:魂印:無為之境:f39818c0e45e:1",
+              "presentationOnly": false,
+              "execution": "authored-block-runtime",
+              "textCorrespondence": {
+                "state": "no-matching-txt",
+                "files": []
+              },
+              "evidence": []
+            },
+            {
+              "index": 5,
+              "raw": "技能使用後，不扣除固定 PP，改為互換該技能的目前 PP 與已損失 PP",
+              "trigger": "self_invalid",
+              "parsed": true,
+              "explanation": false,
+              "unresolved": [],
+              "damage": null,
+              "semanticVerification": "pending",
+              "blocks": {
+                "conditions": [],
+                "statements": [
+                  {
+                    "acts": [
+                      {
+                        "label": "pp_swap_selected",
+                        "op": "pp_swap_selected",
+                        "p": {}
+                      }
+                    ]
+                  }
+                ]
+              },
+              "id": "arena_12:魂印:無為之境:4690580f6a14:2",
               "presentationOnly": false,
               "execution": "authored-block-runtime",
               "textCorrespondence": {
