@@ -39,6 +39,18 @@ export class BattlePresentation {
   skillAnim: any = null;
   /** 受擊晃動側（DSH 20261020 規格：非致命受擊晃動延到收尾與體變化同幀播放）。 */
   shakeSide: 'p1' | 'p2' | null = null;
+  /** 出手期間的真實傷害：先收集，同精靈合併為一筆白字後再播（DSH 20261020：多筆統一，避免逐筆串行卡頓）。 */
+  private truePending: PresentationEvent[] = [];
+  private mergeTruePending(): PresentationEvent[] {
+    const merged = new Map<string, PresentationEvent>();
+    for (const e of this.truePending) {
+      const k = this.key(e);
+      const prev = merged.get(k);
+      merged.set(k, prev ? { ...prev, amount: prev.amount + e.amount, delta: prev.delta + e.delta, after: e.after, maxHp: e.maxHp, alive: e.alive } : { ...e });
+    }
+    this.truePending = [];
+    return [...merged.values()];
+  }
   /** 時間軸上尚未播完的段數；> 0 代表畫面還落後於引擎。 */
   private pending = 0;
   get busy() { return this.pending > 0; }
@@ -81,7 +93,8 @@ export class BattlePresentation {
   private fatalPending = false;
   setInAction(v: boolean) {
     this.inAction = v;
-    if (!v && this.fatalPending) { this.fatalPending = false; void this.flush(); }
+    // DSH 20261020：出手結束——真傷合併池清空（併入 flush 一次播出）。
+    if (!v && (this.fatalPending || this.truePending.length)) { this.fatalPending = false; void this.flush(); }
   }
   /**
    * 出招時目標已被前置傷害擊敗：技能傷害不落地、不修改戰鬥體力。
@@ -143,7 +156,15 @@ export class BattlePresentation {
       // 額外行動中擊倒：立即播出合併的額外行動紅字
       return fatal ? this.enqueue(this.mergeExtra()) : Promise.resolve();
     }
-    if (instant) return this.enqueue([{ ...e, channel: e.immediate && e.type === 'heal' ? 'potion' : 'damage' }]);
+    if (e.type === 'true' && this.inAction) {
+      // DSH 20261020：出手期間的真實傷害進合併池；遇到非真傷事件或收尾時一次播出（每精靈一筆累計白字）。
+      this.truePending.push(e);
+      return Promise.resolve();
+    }
+    if (instant) {
+      const flushTrue = this.truePending.length ? this.mergeTruePending() : [];
+      return this.enqueue([...flushTrue.map(x => ({ ...x, channel: 'damage' as const })), { ...e, channel: e.immediate && e.type === 'heal' ? 'potion' : 'damage' }]);
+    }
     this.deferred.push(e);
     // DSH 20261020（使用者規格）：擊倒當下立即結算顯示——先出手方打死對手時，
     // 體力淨變化（粉）與真實傷害（白）累計立刻播出，不再等雙方出手收尾。
@@ -153,7 +174,7 @@ export class BattlePresentation {
   /** 同一收尾節點的體力淨變化（綠／粉）與真實傷害（白）同步播；不重排戰鬥結算。 */
   flush(_chronological = false): Promise<void> {
     this.fatalPending = false;
-    const events = this.deferred.splice(0);
+    const events = [...this.mergeTruePending(), ...this.deferred.splice(0)];
     // 出手外的技能傷害（回合開始等）：紅字先播（保留克制標示），再播體力淨變化與真傷
     const skills = events.filter(e => e.type === 'skill');
     const rest = events.filter(e => e.type !== 'skill');

@@ -67,7 +67,7 @@ try {
       const numbers = [...seen.values()];
       assert.equal(numbers.filter(n => n.type === 'skill').length, 1 + (group ? 1 : extraCount),
         '一般額外行動按筆播放；單筆run內六段邏輯只播一次，不是六次連擊動畫');
-      assert.ok(numbers.filter(n => n.type === 'true').length >= 2 && numbers.some(n => n.type === 'true' && n.text.includes('-5')) && numbers.some(n => n.type === 'true' && n.text.includes('-7')), '真傷與技能傷害同通道：出手期間各自即時顯示（DSH 20261020 規格），數字不遺漏');
+      assert.ok(numbers.filter(n => n.type === 'true').length === 1 && numbers.some(n => n.type === 'true' && n.text.includes('-12')), 'DSH 20261020 規格：出手期間兩筆真傷合併為一筆白字（即時通道但不逐筆串行），數字不遺漏');
       assert.ok(numbers.some(n => n.type === 'fixed' && n.text.includes('-10')), '明確類型優先，標籤不得把固定傷害變成真傷');
       assert.ok(!numbers.some(n => /吸取|汲取/.test(n.text)), '演出隱藏吸取／汲取用語，日誌仍可保留');
       assert.ok(simultaneousClosingNumbers, '同一收尾節點粉／綠同時出現（真傷已隨技能傷害即時化），不驗收舊版先後播放順序');
@@ -129,8 +129,8 @@ try {
     assert.equal(st[targetSide].shield, 999); assert.equal(st[targetSide].barrier, 999, '真傷不被防護資源吸收');
     assert.equal(st[targetSide].skills[0].pp, 4, '0 HP 仍可正常出手，不是假陣亡');
     if (!fast) {
-      assert.equal(seen.size, 2, 'DSH 20261020 規格：0 體力存活者的真傷仍各自即時顯示（傷害不影響血條，獨立事件）');
-      assert.ok([...seen.values()].some(n => n.text.includes('-127')) && [...seen.values()].some(n => n.text.includes('-53')), '兩筆白傷各自顯示，數字不遺漏');
+      assert.equal(seen.size, 1, '0 體力存活：兩筆白傷合併為一筆（跳字照常，血條凍結不變）');
+      assert.ok([...seen.values()].some(n => n.text.includes('-180')), '兩筆白傷合併為一筆，數字不遺漏');
       assert.ok(![...seen.values()].some(n => n.text.includes('-0')), '不出現-0');
       assert.ok(![...seen.values()].some(n => (n as any).hp < 0), '0 體力存活：跳字照常，血條不因傷害變動');
     }
