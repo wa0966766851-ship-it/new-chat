@@ -30,10 +30,18 @@ export const MIGRATED_ARENA14_WUJI_SOUL_KIT = {
     // （每有1隻不含低機率異常特性→+1層；每有1隻含有→-1層）
     e('battle_start', 'battle_start', '戰鬥開始時，己方每有 1 隻通用特性不含「機率不高於 50% 的異常狀態附加效果」的其他精靈，自身獲得 1 層【英雄之耀】；每有 1 隻通用特性含有該類效果的其他精靈，自身失去 1 層英雄之耀', [
       { acts: [
-        a('count_team_trait', { side: 'self', state: 'alive', traitText: 'lowChanceStatus' }),
-        a('resource_mark_add', { id: 'heroGlory', name: '英雄之耀', displayChar: '耀', unit: '層', side: 'self', scope: 'elf', persistsOffField: true, ratio: 1, maxCount: 99, description: '每層提升自身其他能力值（雙攻差15%）並於登場時為對手附加1回合武誅' }),
+        a('count_team_trait', { side: 'self', state: 'any', traitText: 'lowChanceStatus', excludeSelf:true, matchedWeight:-1, unmatchedWeight:1, traitSources:['soul','general'] }),
+        a('resource_mark_add', { id: 'arena.heroGlory', name: '英雄之耀', displayChar: '耀', unit: '層', side: 'self', scope: 'elf', persistsOffField: true, ratio: 1, maxCount: 99, description: '每層提升自身其他能力值（雙攻差15%）並於登場時為對手附加1回合武誅' }),
       ] },
     ], 0),
+    e('on_entered','entrance','【英雄之耀】：自身登場時為對手附加等同層數回合的武誅',[{acts:[a('mark_program',{
+      id:'arena.wuzhu',name:'武誅',displayChar:'誅',description:'對手為無極聖武時所有技能先制-2；體力高於1/2時受到攻擊傷害提升50%，低於1/2時造成攻擊傷害減少50%',
+      side:'opp',scope:'elf',persistsOffField:true,mode:'add',unit:'回合',count:1,maxCount:99,countFromMark:{side:'self',id:'arena.heroGlory'},turnsFromCount:true,
+      priorityBonus:-2,vsOpponentName:'無極聖武',rules:[
+        {raw:'體力高於一半受到攻擊傷害提升50%',trig:'incoming_attack',parsed:true,body:[{cond:[c('hp_ratio',{side:'self',op:'高於',ratio:.5})],acts:[a('dmg_mod',{dir:'in_boost',kind:'攻擊',boost:.5})]}]},
+        {raw:'體力低於一半造成攻擊傷害減少50%',trig:'outgoing_attack',parsed:true,body:[{cond:[c('hp_ratio',{side:'self',op:'低於',ratio:.5})],acts:[a('dmg_mod',{dir:'out_reduce',kind:'攻擊',reduce:.5})]}]},
+      ],
+    })]}],6),
     // 任意一方精靈登場：僅令該次登場精靈受 1 回合【砥礪】；成功→3回合【亮節】，失敗→3回合【威怯】
     e('opponent_entered', 'bench', '自身位於出戰背包時，任意一方精靈登場，僅令該次登場的精靈受到 1 回合附屬類異常狀態【砥礪】。砥礪判定成功時賦予該精靈 3 回合【亮節】；判定未成功時為其附加 3 回合【威怯】', [
       { acts: [a('status', { side: 'opp', status: '砥礪', chance: 100, turns: 1 })] },

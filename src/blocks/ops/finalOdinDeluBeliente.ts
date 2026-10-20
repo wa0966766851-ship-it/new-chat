@@ -51,13 +51,17 @@ export const FINAL_ODB_ACTION_FIELDS: Record<string, readonly string[]> = {
   skill_mark_inherit_arm: ['when', 'mode'],
   combat_record_reset: ['side', 'stages', 'shields', 'clearUses', 'fieldRounds'],
 };
-export const FINAL_ODB_CONDITION_FIELDS: Record<string, readonly string[]> = { stored_flag: ['key', 'neg'], event_damage_kind: ['kind'], last_typed_damage_weak: [] };
+export const FINAL_ODB_CONDITION_FIELDS: Record<string, readonly string[]> = { stored_flag: ['key', 'neg'], event_damage_kind: ['kind'], event_hp_unchanged: [], last_typed_damage_weak: [] };
 export function finalOdbConditionIssue(c: any): string | undefined {
   if (c.c === 'event_damage_kind') return ['真實', '固定', '百分比', '技能', '攻擊'].includes(c.p?.kind) ? undefined : '傷害事件種類不明';
   if (c.c !== 'stored_flag') return undefined;
   return typeof c.p?.key === 'string' && c.p.key.length > 0 && c.p.key.length < 160 ? undefined : '旗標必須有有限鍵名';
 }
 export function finalOdbEvalCond(ctx: BattleEventContext, c: any, st?: RunState): boolean | undefined {
+  if (c.c === 'event_hp_unchanged') {
+    const data: any = (ctx as any).effectEventData || st?.event?.data;
+    return Number.isFinite(data?.hpReduced) && data.hpReduced === 0;
+  }
   if (c.c === 'last_typed_damage_weak') return (st as any)?.lastTypedDamageWeak === true;
   if (c.c === 'event_damage_kind') {
     const data: any = st?.event?.data || (ctx as any).effectEventData;

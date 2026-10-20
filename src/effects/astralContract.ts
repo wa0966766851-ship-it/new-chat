@@ -11,7 +11,7 @@ export const ASTRAL_ACTION_FIELDS: Record<string, readonly string[]> = {
   illusion_start: ['source', 'ppBonus', 'pick'],
   illusion_end: [],
   // 通用條件性額外行動容器（變思遷憶等）：body 由 sequenceIssue 遞迴驗證。
-  queue_extra_action: ['label', 'body', 'onceKey'],
+  queue_extra_action: ['label', 'body', 'onceKey', 'damageRatio', 'elem'],
   // 回合類效果攜帶引擎 payload 鍵（白名單）；期限由通用掃描遞減。
   effect_turns: ['keys', 'turns', 'side', 'label'],
   // 能力值拉平（差值總和寫 lastAmount）與技能傷害¼反彈（殞星衝擊；引擎 reflectSkillQuarter 讀取端）。
@@ -100,6 +100,8 @@ export function astralActionIssue(op: string, p: any, _trig: string, inMark: boo
     return null;
   }
   if (op === 'queue_extra_action') {
+    if (p.damageRatio !== undefined && (!Number.isFinite(p.damageRatio) || p.damageRatio <= 0 || p.damageRatio > 10 || typeof p.elem !== 'string' || !p.elem)) return '額外行動傷害需正體力比例與明確屬性';
+    if (p.elem !== undefined && p.damageRatio === undefined) return '額外行動屬性需同時指定傷害比例';
     if (inMark) return '額外行動容器不可在印記程式內執行';
     if (typeof p.label !== 'string' || !p.label) return '額外行動需明確標籤';
     if (p.onceKey !== undefined && (typeof p.onceKey !== 'string' || !p.onceKey || p.onceKey.length > 200)) return '每場一次鍵需有限文字';

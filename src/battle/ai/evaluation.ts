@@ -11,6 +11,8 @@ import { PEAK_TURN_LIMIT, countedAlive } from '../turnLimit';
 import type { Elf } from '../../types';
 import { visibleSkills } from '../viewerPerspective';
 import { metricPreference } from './styles';
+import { abnormalSideEffectsSuppressed } from './mechanicAwareness';
+import { pendingIllusionValue } from './illusionPlanning';
 import { opposite, type AISettings, type AISide, type DecisionRequest, type PositionScore, type ScorePart } from './types';
 
 /** 僅決策評價，不參與傷害、恢復、機率或真實體力結算。 */
@@ -61,7 +63,7 @@ function sideScore(state: BattleState, side: AISide): PositionScore {
     const charge = e.skills.filter(s => s.charge !== undefined);
     if (charge.length) add('charge', body * charge.reduce((n, s) => n + clamp(Number(s.charge) / Math.max(1, Number((s as any).maxCharge || s.maxPp || 20)), 0, 1), 0) / charge.length * POSITION_WEIGHTS.charge);
     for (const [name, remaining] of Object.entries(getStatuses(e))) {
-      if (!(remaining > 0)) continue;
+      if (!(remaining > 0) || abnormalSideEffectsSuppressed(e)) continue;
       const entry = StatusRegistry[canonicalStatusName(name)];
       const value = entry?.categories.includes('BOSS_ONLY') ? POSITION_WEIGHTS.boss
         : entry?.categories.includes('AUXILIARY') ? 0
@@ -76,8 +78,9 @@ function sideScore(state: BattleState, side: AISide): PositionScore {
     }
   }
   const inventory = state[`${side}ItemInventory`];
+  add('illusion', pendingIllusionValue(state, side));
   if (inventory) add('inventory', Object.values(inventory).reduce((n, item) => n + clamp(item.left / Math.max(1, item.max), 0, 1), 0) * POSITION_WEIGHTS.inventory);
-  const parts = Object.entries(totals).map(([key, value]) => ({ key, label: WEIGHT_LABELS[key] || ({ status: '異常狀態', restriction: '行動限制', charge: '充能' }[key]) || key, value }));
+  const parts = Object.entries(totals).map(([key, value]) => ({ key, label: WEIGHT_LABELS[key] || ({ status: '異常狀態', restriction: '行動限制', charge: '充能', illusion: '下次幻化潛力' }[key]) || key, value }));
   return { total: parts.reduce((n, p) => n + p.value, 0), parts };
 }
 export function evaluatePosition(state: BattleState, side: AISide, settings: AISettings, battleFormat?: DecisionRequest['battleFormat']): PositionScore {

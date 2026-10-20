@@ -3,13 +3,13 @@
   "note": "parsed ≠ executable route ≠ semantic acceptance",
   "summary": {
     "elves": 43,
-    "sourceRecords": 1707,
+    "sourceRecords": 1724,
     "presentationOnly": 0,
-    "clauses": 1707,
-    "parsed": 1707,
+    "clauses": 1724,
+    "parsed": 1724,
     "unparsed": 0,
-    "pending": 1661,
-    "partialEvidence": 0,
+    "pending": 1672,
+    "partialEvidence": 6,
     "staleEvidence": 46,
     "fullyAccepted": 0
   },
@@ -12505,136 +12505,6 @@
                 "files": [
                   "elf_source_files/elf_files/5007_混濁海妖布林克克.txt"
                 ]
-              },
-              "evidence": []
-            },
-            {
-              "index": 4,
-              "raw": "克塔亞特：己方精靈每次出戰時令其漸凍1回合，未觸發則3回合內造成非真實傷害減半n次（n=本次在場期間所受到真實傷害次數）",
-              "trigger": "entrance",
-              "parsed": true,
-              "explanation": false,
-              "unresolved": [],
-              "damage": {
-                "types": [
-                  "true",
-                  "non_true"
-                ],
-                "inferred": false,
-                "reason": "文本指定；同句多段傷害仍須逐段核對。"
-              },
-              "semanticVerification": "pending",
-              "blocks": {
-                "conditions": [],
-                "statements": [
-                  {
-                    "acts": [
-                      {
-                        "label": "status",
-                        "op": "status",
-                        "p": {
-                          "chance": 100,
-                          "status": "漸凍",
-                          "turns": 1,
-                          "side": "opp"
-                        }
-                      }
-                    ]
-                  },
-                  {
-                    "chain": "fail",
-                    "acts": [
-                      {
-                        "label": "dmg_mod_turns",
-                        "op": "dmg_mod_turns",
-                        "p": {
-                          "reduce": 0.5,
-                          "turns": 3,
-                          "kind": "非真實",
-                          "side": "self",
-                          "dir": "out_reduce"
-                        }
-                      }
-                    ]
-                  }
-                ]
-              },
-              "id": "5007:魂印:濁:2a4774c832be:1",
-              "presentationOnly": false,
-              "execution": "authored-block-runtime",
-              "textCorrespondence": {
-                "state": "needs-source-review",
-                "files": []
-              },
-              "evidence": []
-            },
-            {
-              "index": 5,
-              "raw": "克塔亞特：己方精靈任意戰鬥階段節點結算時自身額外汲取己方在場精靈當前體力¼",
-              "trigger": "phase_end",
-              "parsed": true,
-              "explanation": false,
-              "unresolved": [],
-              "damage": null,
-              "semanticVerification": "pending",
-              "blocks": {
-                "conditions": [],
-                "statements": [
-                  {
-                    "acts": [
-                      {
-                        "label": "extra_elf_heal_owner",
-                        "op": "extra_elf_heal_owner",
-                        "p": {
-                          "ratio": 0.25,
-                          "side": "opp"
-                        }
-                      }
-                    ]
-                  }
-                ]
-              },
-              "id": "5007:魂印:濁:ddcb244885a2:1",
-              "presentationOnly": false,
-              "execution": "authored-block-runtime",
-              "textCorrespondence": {
-                "state": "needs-source-review",
-                "files": []
-              },
-              "evidence": []
-            },
-            {
-              "index": 6,
-              "raw": "克塔亞特：自身死亡時消逝，並令己方所有精靈失去自身當前體力上限⅛的體力上限",
-              "trigger": "fatal",
-              "parsed": true,
-              "explanation": false,
-              "unresolved": [],
-              "damage": null,
-              "semanticVerification": "pending",
-              "blocks": {
-                "conditions": [],
-                "statements": [
-                  {
-                    "acts": [
-                      {
-                        "label": "vanish_on_death_maxhp_share",
-                        "op": "vanish_on_death_maxhp_share",
-                        "p": {
-                          "ratio": 0.125,
-                          "side": "opp"
-                        }
-                      }
-                    ]
-                  }
-                ]
-              },
-              "id": "5007:魂印:濁:c51247854ba4:1",
-              "presentationOnly": false,
-              "execution": "authored-block-runtime",
-              "textCorrespondence": {
-                "state": "needs-source-review",
-                "files": []
               },
               "evidence": []
             }
@@ -33583,15 +33453,227 @@
           "clauses": [
             {
               "index": 0,
-              "raw": "自身每次受到非真實傷害時：降低至原始傷害的⅓；每次降低成功則令己方附加1層燦界聖芒；同時恢復最大體力1/3於當回合結束時造成對手等同於恢復量的百分比傷害",
-              "trigger": "damaged_nontrue",
+              "raw": "自身被擊敗時記錄背包重生：4回合，每層聖芒縮短1回合，須珀妮與可出戰隊友存活",
+              "trigger": "team_defeated",
+              "parsed": true,
+              "explanation": false,
+              "unresolved": [],
+              "damage": null,
+              "semanticVerification": "pending",
+              "blocks": {
+                "conditions": [],
+                "statements": [
+                  {
+                    "acts": [
+                      {
+                        "label": "delayed_rebirth_arm",
+                        "op": "delayed_rebirth_arm",
+                        "p": {
+                          "requireExtra": "珀妮",
+                          "perMark": {
+                            "mult": 1,
+                            "side": "self",
+                            "id": "canGlory"
+                          },
+                          "rounds": 4,
+                          "ratio": 1
+                        }
+                      },
+                      {
+                        "label": "on_next_switch_in",
+                        "op": "on_next_switch_in",
+                        "p": {
+                          "resource": "none",
+                          "after": "now",
+                          "label": "聖光護體",
+                          "ratio": 1,
+                          "body": [
+                            {
+                              "acts": [
+                                {
+                                  "label": "timed",
+                                  "op": "timed",
+                                  "p": {
+                                    "perMark": {
+                                      "mult": 1,
+                                      "side": "self",
+                                      "id": "canGlory"
+                                    },
+                                    "label": "聖光護體",
+                                    "turns": 1,
+                                    "body": [
+                                      {
+                                        "acts": [
+                                          {
+                                            "label": "incoming_reduction_branch",
+                                            "op": "incoming_reduction_branch",
+                                            "p": {
+                                              "threshold": 0,
+                                              "bodyHigh": [
+                                                {
+                                                  "acts": [
+                                                    {
+                                                      "label": "heal_as_percent_damage",
+                                                      "op": "heal_as_percent_damage",
+                                                      "p": {
+                                                        "ratio": 0.3333333333333333,
+                                                        "next": false
+                                                      }
+                                                    }
+                                                  ]
+                                                }
+                                              ],
+                                              "ratio": 0.6666666666666666
+                                            }
+                                          }
+                                        ]
+                                      }
+                                    ],
+                                    "from": "now",
+                                    "trig": "incoming_nontrue"
+                                  }
+                                }
+                              ]
+                            }
+                          ],
+                          "side": "self"
+                        }
+                      }
+                    ],
+                    "cond": [
+                      {
+                        "label": "event_is_holder",
+                        "c": "event_is_holder",
+                        "p": {}
+                      }
+                    ]
+                  }
+                ]
+              },
+              "id": "5014:魂印:燦:137a7eb566a4:1",
+              "presentationOnly": false,
+              "execution": "authored-block-runtime",
+              "textCorrespondence": {
+                "state": "needs-source-review",
+                "files": []
+              },
+              "evidence": []
+            },
+            {
+              "index": 1,
+              "raw": "斯嘉麗死亡後在背包內倒數，珀妮存活且有可出戰隊友時重生，死亡當回合不在場復活",
+              "trigger": "team_round_end",
+              "parsed": true,
+              "explanation": false,
+              "unresolved": [],
+              "damage": null,
+              "semanticVerification": "partial-evidence",
+              "blocks": {
+                "conditions": [],
+                "statements": [
+                  {
+                    "acts": [
+                      {
+                        "label": "delayed_rebirth_tick",
+                        "op": "delayed_rebirth_tick",
+                        "p": {}
+                      }
+                    ]
+                  }
+                ]
+              },
+              "id": "5014:魂印:燦:d207d9c25ca5:1",
+              "presentationOnly": false,
+              "execution": "authored-block-runtime",
+              "textCorrespondence": {
+                "state": "needs-source-review",
+                "files": []
+              },
+              "evidence": [
+                {
+                  "id": "can-rebirth-20261021",
+                  "elfId": "5014",
+                  "entry": "燦",
+                  "fragment": "背包內倒數",
+                  "testFile": "tests/canCompanion.semantic.test.ts",
+                  "anchor": "死亡當回合不復活",
+                  "scenario": "P1/P2聖芒0/3層；珀妮與可出戰隊友存活",
+                  "expected": "死亡當回合不復活；場下4/1回合後滿血回到背包，隊友仍在場",
+                  "remaining": "僅覆蓋列出情境；尚待其他異常／BOSS／換人／消除／免疫／交叉效果與全文逐句驗收，不能當成整隻精靈100%正確。",
+                  "lastPassed": "2026-10-21：目前引擎 canSettlement、canCompanion、holyMiles P1/P2正式結算重跑 exit0；只證明所列部分情境。",
+                  "testSha256": "45fbb86415763ac4e03b637b967b197d71d48d4c9d16ae25d3c617f9c54ee370",
+                  "inputs": [
+                    {
+                      "path": "src/engine/battleEngine.ts",
+                      "sha256": "c4579c38bf3dd8c43ca16b81f37a87a87e1392b5251c174d6df4342000c699bb"
+                    },
+                    {
+                      "path": "src/battle/contextBuilders.ts",
+                      "sha256": "bb3249e9d472ccabe62042122de4386d3da40bbee4b51565186a8e50a85c994e"
+                    },
+                    {
+                      "path": "src/blocks/runtime.ts",
+                      "sha256": "43c8ec93c19b3b183d4fae9e850be86fbb4c52af4c971f13f340eaf8a43b24fb"
+                    },
+                    {
+                      "path": "src/effects/sequenceContract.ts",
+                      "sha256": "49c7d9313d7d7419600377d00c5be7bc51424f6f50622cd5897797ccbd09ba5d"
+                    },
+                    {
+                      "path": "src/effects/sequenceRuntime.ts",
+                      "sha256": "b0ba1d528f140bf13f9de9a830999e76edb5b5e7f54130dec673bc768d6deb67"
+                    },
+                    {
+                      "path": "src/effects/connectedEffects.ts",
+                      "sha256": "fcebc82f5669407d9e5f09bfd9a80658ccfa138e9716b6ff56ffa1f29eb0e037"
+                    },
+                    {
+                      "path": "tests/helpers/migrationHarness.ts",
+                      "sha256": "6391fba09cd1eeec0323bcae77c1f9fb6067fdd31b92c4ccce8419e71be901fb"
+                    },
+                    {
+                      "path": "src/data/reviewedKitCatalogue.ts",
+                      "sha256": "68fc6de9c33b211ed9dde090a5e2ed49040d56acaccd74286e8dab8c12f1b6b9"
+                    },
+                    {
+                      "path": "src/data/reviewedKits.homepage.json",
+                      "sha256": "45b730258759f6d87da837ec4c8a5c87428c3b22fba546345452a549a912d578"
+                    },
+                    {
+                      "path": "src/blocks/ops/can.ts",
+                      "sha256": "610cbdab74ab8e6d0ea070a2bdd1322d200b219875ce73704111cce6e401ebd4"
+                    },
+                    {
+                      "path": "src/data/migrated5014CanSoulKit.ts",
+                      "sha256": "9c7e76b961a6ee692fe127e45184c89a02cce1c1309c3b80d5e0028eb2972412"
+                    },
+                    {
+                      "path": "src/effects/teamKitObservers.ts",
+                      "sha256": "4796f8797db5c66aa8ac8e08143e7fce6639028b2ecf8e71b84744ea7de08d1f"
+                    },
+                    {
+                      "path": "src/effects/astralOperations.ts",
+                      "sha256": "5ab24b8f20fb9a692175201dcf730f5265465173ce0608e72cef4b95a42bcfa7"
+                    },
+                    {
+                      "path": "src/blocks/ops/brinkk.ts",
+                      "sha256": "8116cf7702a24fd7b7110a11edfa16b206b82b56558b6e23fb8b69c0857cd965"
+                    }
+                  ],
+                  "state": "partial-evidence"
+                }
+              ]
+            },
+            {
+              "index": 2,
+              "raw": "斯嘉麗在場且珀妮存活，每次出手流程結束（含未出手）額外造成對手最大體力⅓光系傷害，失明或未觸發時清除回合效果，自身下2次攻擊增傷150%",
+              "trigger": "team_action_end",
               "parsed": true,
               "explanation": false,
               "unresolved": [],
               "damage": {
                 "types": [
-                  "percent",
-                  "non_true"
+                  "skill"
                 ],
                 "inferred": false,
                 "reason": "文本指定；同句多段傷害仍須逐段核對。"
@@ -33603,39 +33685,113 @@
                   {
                     "acts": [
                       {
-                        "label": "non_true_damage_third",
-                        "op": "non_true_damage_third",
+                        "label": "queue_extra_action",
+                        "op": "queue_extra_action",
+                        "p": {
+                          "damageRatio": 0.3333333333333333,
+                          "label": "珀妮：光系傷害",
+                          "body": [
+                            {
+                              "acts": [
+                                {
+                                  "label": "status",
+                                  "op": "status",
+                                  "p": {
+                                    "chance": 100,
+                                    "status": "失明",
+                                    "turns": 2,
+                                    "side": "opp"
+                                  }
+                                }
+                              ],
+                              "cond": [
+                                {
+                                  "label": "has_status",
+                                  "c": "has_status",
+                                  "p": {
+                                    "status": "失明",
+                                    "side": "opp",
+                                    "neg": true
+                                  }
+                                }
+                              ]
+                            },
+                            {
+                              "acts": [
+                                {
+                                  "label": "clear_turn",
+                                  "op": "clear_turn",
+                                  "p": {
+                                    "side": "opp"
+                                  }
+                                }
+                              ],
+                              "cond": [
+                                {
+                                  "label": "fail",
+                                  "c": "fail",
+                                  "p": {}
+                                }
+                              ]
+                            },
+                            {
+                              "acts": [
+                                {
+                                  "label": "clear_turn",
+                                  "op": "clear_turn",
+                                  "p": {
+                                    "side": "opp"
+                                  }
+                                }
+                              ],
+                              "cond": [
+                                {
+                                  "label": "has_status",
+                                  "c": "has_status",
+                                  "p": {
+                                    "status": "失明",
+                                    "side": "opp"
+                                  }
+                                }
+                              ]
+                            },
+                            {
+                              "acts": [
+                                {
+                                  "label": "dmg_mod_uses",
+                                  "op": "dmg_mod_uses",
+                                  "p": {
+                                    "attackOnly": true,
+                                    "boost": 1.5,
+                                    "kind": "攻擊",
+                                    "uses": 2
+                                  }
+                                }
+                              ]
+                            }
+                          ],
+                          "elem": "光"
+                        }
+                      }
+                    ],
+                    "cond": [
+                      {
+                        "label": "holder_active",
+                        "c": "holder_active",
                         "p": {}
                       },
                       {
-                        "label": "resource_mark_add",
-                        "op": "resource_mark_add",
+                        "label": "summoned_extra_alive",
+                        "c": "summoned_extra_alive",
                         "p": {
-                          "persistsOffField": true,
-                          "description": "受到失明時將當前異常轉化為星贖；能力上升不可消除；降低控制類異常回合／降低對手PP",
-                          "displayChar": "芒",
-                          "maxCount": 3,
-                          "amount": 1,
-                          "scope": "elf",
-                          "name": "燦界聖芒",
-                          "side": "self",
-                          "unit": "層",
-                          "id": "canGlory"
-                        }
-                      },
-                      {
-                        "label": "heal_as_percent_damage",
-                        "op": "heal_as_percent_damage",
-                        "p": {
-                          "ratio": 0.3333333333333333,
-                          "next": false
+                          "name": "珀妮"
                         }
                       }
                     ]
                   }
                 ]
               },
-              "id": "5014:魂印:燦:c9fc892c98e7:1",
+              "id": "5014:魂印:燦:13a8bf1123a8:1",
               "presentationOnly": false,
               "execution": "authored-block-runtime",
               "textCorrespondence": {
@@ -33645,7 +33801,313 @@
               "evidence": []
             },
             {
-              "index": 1,
+              "index": 3,
+              "raw": "戰鬥開始時珀妮作為額外精靈加入己方，光系，所有能力值為斯嘉麗⅓",
+              "trigger": "team_battle_start",
+              "parsed": true,
+              "explanation": false,
+              "unresolved": [],
+              "damage": null,
+              "semanticVerification": "pending",
+              "blocks": {
+                "conditions": [],
+                "statements": [
+                  {
+                    "acts": [
+                      {
+                        "label": "summon_extra_elf",
+                        "op": "summon_extra_elf",
+                        "p": {
+                          "statFromTeamRatio": 0.3333333333333333,
+                          "statSource": "holder",
+                          "name": "珀妮",
+                          "side": "self",
+                          "type": "光"
+                        }
+                      }
+                    ]
+                  }
+                ]
+              },
+              "id": "5014:魂印:燦:0f7e8c0ea415:1",
+              "presentationOnly": false,
+              "execution": "authored-block-runtime",
+              "textCorrespondence": {
+                "state": "needs-source-review",
+                "files": []
+              },
+              "evidence": []
+            },
+            {
+              "index": 4,
+              "raw": "珀妮存活時，己方在場精靈受到麻痺，當前異常及該次麻痺合併為星贖，回合類效果保護至階段末",
+              "trigger": "team_before_status",
+              "parsed": true,
+              "explanation": false,
+              "unresolved": [],
+              "damage": null,
+              "semanticVerification": "pending",
+              "blocks": {
+                "conditions": [],
+                "statements": [
+                  {
+                    "acts": [
+                      {
+                        "label": "statuses_merge",
+                        "op": "statuses_merge",
+                        "p": {
+                          "includeIncoming": true,
+                          "status": "星贖"
+                        }
+                      },
+                      {
+                        "label": "phase_protect",
+                        "op": "phase_protect",
+                        "p": {
+                          "kind": "turn"
+                        }
+                      }
+                    ],
+                    "cond": [
+                      {
+                        "label": "summoned_extra_alive",
+                        "c": "summoned_extra_alive",
+                        "p": {
+                          "name": "珀妮"
+                        }
+                      },
+                      {
+                        "label": "event_status",
+                        "c": "event_status",
+                        "p": {
+                          "statuses": [
+                            "麻痺"
+                          ]
+                        }
+                      }
+                    ]
+                  }
+                ]
+              },
+              "id": "5014:魂印:燦:76282a43cc64:1",
+              "presentationOnly": false,
+              "execution": "authored-block-runtime",
+              "textCorrespondence": {
+                "state": "needs-source-review",
+                "files": []
+              },
+              "evidence": []
+            },
+            {
+              "index": 5,
+              "raw": "己方持有燦界聖芒時，己方在場精靈受到失明後，全部異常合併為星贖，能力上升保護至階段末",
+              "trigger": "team_status_received",
+              "parsed": true,
+              "explanation": false,
+              "unresolved": [],
+              "damage": null,
+              "semanticVerification": "pending",
+              "blocks": {
+                "conditions": [],
+                "statements": [
+                  {
+                    "acts": [
+                      {
+                        "label": "statuses_merge",
+                        "op": "statuses_merge",
+                        "p": {
+                          "includeIncoming": false,
+                          "status": "星贖"
+                        }
+                      },
+                      {
+                        "label": "phase_protect",
+                        "op": "phase_protect",
+                        "p": {
+                          "kind": "stat"
+                        }
+                      }
+                    ],
+                    "cond": [
+                      {
+                        "label": "mark_count",
+                        "c": "mark_count",
+                        "p": {
+                          "amount": 1,
+                          "side": "self",
+                          "id": "canGlory",
+                          "op": "不小於"
+                        }
+                      },
+                      {
+                        "label": "event_status",
+                        "c": "event_status",
+                        "p": {
+                          "statuses": [
+                            "失明"
+                          ]
+                        }
+                      }
+                    ]
+                  }
+                ]
+              },
+              "id": "5014:魂印:燦:93259f03301f:1",
+              "presentationOnly": false,
+              "execution": "authored-block-runtime",
+              "textCorrespondence": {
+                "state": "needs-source-review",
+                "files": []
+              },
+              "evidence": []
+            },
+            {
+              "index": 6,
+              "raw": "自身每次受到非真實傷害時降低至原始傷害的⅓；降低成功後聖芒+1，恢復最大體力⅓，回合末造成實際恢復量的百分比傷害",
+              "trigger": "incoming_nontrue",
+              "parsed": true,
+              "explanation": false,
+              "unresolved": [],
+              "damage": {
+                "types": [
+                  "percent",
+                  "non_true"
+                ],
+                "inferred": false,
+                "reason": "文本指定；同句多段傷害仍須逐段核對。"
+              },
+              "semanticVerification": "partial-evidence",
+              "blocks": {
+                "conditions": [],
+                "statements": [
+                  {
+                    "acts": [
+                      {
+                        "label": "incoming_reduction_branch",
+                        "op": "incoming_reduction_branch",
+                        "p": {
+                          "threshold": 0,
+                          "bodyHigh": [
+                            {
+                              "acts": [
+                                {
+                                  "label": "resource_mark_add",
+                                  "op": "resource_mark_add",
+                                  "p": {
+                                    "persistsOffField": true,
+                                    "description": "受到失明時將當前異常轉化為星贖；能力上升不可消除；降低控制類異常回合／降低對手PP",
+                                    "displayChar": "芒",
+                                    "maxCount": 3,
+                                    "amount": 1,
+                                    "scope": "team",
+                                    "name": "燦界聖芒",
+                                    "side": "self",
+                                    "unit": "層",
+                                    "id": "canGlory"
+                                  }
+                                },
+                                {
+                                  "label": "heal_as_percent_damage",
+                                  "op": "heal_as_percent_damage",
+                                  "p": {
+                                    "ratio": 0.3333333333333333,
+                                    "next": false
+                                  }
+                                }
+                              ]
+                            }
+                          ],
+                          "ratio": 0.6666666666666666
+                        }
+                      }
+                    ]
+                  }
+                ]
+              },
+              "id": "5014:魂印:燦:a0d24e9be91f:1",
+              "presentationOnly": false,
+              "execution": "authored-block-runtime",
+              "textCorrespondence": {
+                "state": "needs-source-review",
+                "files": []
+              },
+              "evidence": [
+                {
+                  "id": "can-settlement-20261021",
+                  "elfId": "5014",
+                  "entry": "燦",
+                  "fragment": "降低至原始傷害的⅓",
+                  "testFile": "tests/canSettlement.semantic.test.ts",
+                  "anchor": "禁療不產生等量傷害",
+                  "scenario": "P1/P2固定、百分比、連續結算、溢補、禁療、真傷及致死",
+                  "expected": "非真實降低至1/3；回合末只造成實際恢復總量；禁療及死亡不產生虛構恢復",
+                  "remaining": "僅覆蓋列出情境；尚待其他異常／BOSS／換人／消除／免疫／交叉效果與全文逐句驗收，不能當成整隻精靈100%正確。",
+                  "lastPassed": "2026-10-21：目前引擎 canSettlement、canCompanion、holyMiles P1/P2正式結算重跑 exit0；只證明所列部分情境。",
+                  "testSha256": "67322e1e810ff75a2a5de2abc51fbf76c032f232b48e8c66c718652396526fb5",
+                  "inputs": [
+                    {
+                      "path": "src/engine/battleEngine.ts",
+                      "sha256": "c4579c38bf3dd8c43ca16b81f37a87a87e1392b5251c174d6df4342000c699bb"
+                    },
+                    {
+                      "path": "src/battle/contextBuilders.ts",
+                      "sha256": "bb3249e9d472ccabe62042122de4386d3da40bbee4b51565186a8e50a85c994e"
+                    },
+                    {
+                      "path": "src/blocks/runtime.ts",
+                      "sha256": "43c8ec93c19b3b183d4fae9e850be86fbb4c52af4c971f13f340eaf8a43b24fb"
+                    },
+                    {
+                      "path": "src/effects/sequenceContract.ts",
+                      "sha256": "49c7d9313d7d7419600377d00c5be7bc51424f6f50622cd5897797ccbd09ba5d"
+                    },
+                    {
+                      "path": "src/effects/sequenceRuntime.ts",
+                      "sha256": "b0ba1d528f140bf13f9de9a830999e76edb5b5e7f54130dec673bc768d6deb67"
+                    },
+                    {
+                      "path": "src/effects/connectedEffects.ts",
+                      "sha256": "fcebc82f5669407d9e5f09bfd9a80658ccfa138e9716b6ff56ffa1f29eb0e037"
+                    },
+                    {
+                      "path": "tests/helpers/migrationHarness.ts",
+                      "sha256": "6391fba09cd1eeec0323bcae77c1f9fb6067fdd31b92c4ccce8419e71be901fb"
+                    },
+                    {
+                      "path": "src/data/reviewedKitCatalogue.ts",
+                      "sha256": "68fc6de9c33b211ed9dde090a5e2ed49040d56acaccd74286e8dab8c12f1b6b9"
+                    },
+                    {
+                      "path": "src/data/reviewedKits.homepage.json",
+                      "sha256": "45b730258759f6d87da837ec4c8a5c87428c3b22fba546345452a549a912d578"
+                    },
+                    {
+                      "path": "src/blocks/ops/can.ts",
+                      "sha256": "610cbdab74ab8e6d0ea070a2bdd1322d200b219875ce73704111cce6e401ebd4"
+                    },
+                    {
+                      "path": "src/data/migrated5014CanSoulKit.ts",
+                      "sha256": "9c7e76b961a6ee692fe127e45184c89a02cce1c1309c3b80d5e0028eb2972412"
+                    },
+                    {
+                      "path": "src/effects/teamKitObservers.ts",
+                      "sha256": "4796f8797db5c66aa8ac8e08143e7fce6639028b2ecf8e71b84744ea7de08d1f"
+                    },
+                    {
+                      "path": "src/effects/astralOperations.ts",
+                      "sha256": "5ab24b8f20fb9a692175201dcf730f5265465173ce0608e72cef4b95a42bcfa7"
+                    },
+                    {
+                      "path": "src/blocks/ops/brinkk.ts",
+                      "sha256": "8116cf7702a24fd7b7110a11edfa16b206b82b56558b6e23fb8b69c0857cd965"
+                    }
+                  ],
+                  "state": "partial-evidence"
+                }
+              ]
+            },
+            {
+              "index": 7,
               "raw": "自身下場後，1回合內令己方下隻出戰精靈登場前1回合獲得上述降低傷害效果與回合結束時恢復效果，每有1層燦界聖芒則延長1回合",
               "trigger": "switch_out",
               "parsed": true,
@@ -33656,17 +34118,70 @@
                 "inferred": true,
                 "reason": "請選固定／百分比／X 系技能／真實類別。"
               },
-              "semanticVerification": "pending",
+              "semanticVerification": "partial-evidence",
               "blocks": {
                 "conditions": [],
                 "statements": [
                   {
                     "acts": [
                       {
-                        "label": "next_elf_pending",
-                        "op": "next_elf_pending",
+                        "label": "on_next_switch_in",
+                        "op": "on_next_switch_in",
                         "p": {
-                          "immunityTurns": 1
+                          "resource": "none",
+                          "after": "now",
+                          "label": "聖光護體",
+                          "ratio": 1,
+                          "body": [
+                            {
+                              "acts": [
+                                {
+                                  "label": "timed",
+                                  "op": "timed",
+                                  "p": {
+                                    "perMark": {
+                                      "mult": 1,
+                                      "side": "self",
+                                      "id": "canGlory"
+                                    },
+                                    "label": "聖光護體",
+                                    "turns": 1,
+                                    "body": [
+                                      {
+                                        "acts": [
+                                          {
+                                            "label": "incoming_reduction_branch",
+                                            "op": "incoming_reduction_branch",
+                                            "p": {
+                                              "threshold": 0,
+                                              "bodyHigh": [
+                                                {
+                                                  "acts": [
+                                                    {
+                                                      "label": "heal_as_percent_damage",
+                                                      "op": "heal_as_percent_damage",
+                                                      "p": {
+                                                        "ratio": 0.3333333333333333,
+                                                        "next": false
+                                                      }
+                                                    }
+                                                  ]
+                                                }
+                                              ],
+                                              "ratio": 0.6666666666666666
+                                            }
+                                          }
+                                        ]
+                                      }
+                                    ],
+                                    "from": "now",
+                                    "trig": "incoming_nontrue"
+                                  }
+                                }
+                              ]
+                            }
+                          ],
+                          "side": "self"
                         }
                       }
                     ]
@@ -33682,10 +34197,83 @@
                   "elf_source_files/elf_files/5014_聖光斯嘉麗.txt"
                 ]
               },
-              "evidence": []
+              "evidence": [
+                {
+                  "id": "can-inherit-20261021",
+                  "elfId": "5014",
+                  "entry": "燦",
+                  "fragment": "自身下場後",
+                  "testFile": "tests/canSettlement.semantic.test.ts",
+                  "anchor": "下場後繼承",
+                  "scenario": "P1/P2聖芒0/1/3層、下場交付與到期",
+                  "expected": "下一位登場者分別持有1/2/4回合；到期恢復原傷害，不重複獲得聖芒",
+                  "remaining": "僅覆蓋列出情境；尚待其他異常／BOSS／換人／消除／免疫／交叉效果與全文逐句驗收，不能當成整隻精靈100%正確。",
+                  "lastPassed": "2026-10-21：目前引擎 canSettlement、canCompanion、holyMiles P1/P2正式結算重跑 exit0；只證明所列部分情境。",
+                  "testSha256": "67322e1e810ff75a2a5de2abc51fbf76c032f232b48e8c66c718652396526fb5",
+                  "inputs": [
+                    {
+                      "path": "src/engine/battleEngine.ts",
+                      "sha256": "c4579c38bf3dd8c43ca16b81f37a87a87e1392b5251c174d6df4342000c699bb"
+                    },
+                    {
+                      "path": "src/battle/contextBuilders.ts",
+                      "sha256": "bb3249e9d472ccabe62042122de4386d3da40bbee4b51565186a8e50a85c994e"
+                    },
+                    {
+                      "path": "src/blocks/runtime.ts",
+                      "sha256": "43c8ec93c19b3b183d4fae9e850be86fbb4c52af4c971f13f340eaf8a43b24fb"
+                    },
+                    {
+                      "path": "src/effects/sequenceContract.ts",
+                      "sha256": "49c7d9313d7d7419600377d00c5be7bc51424f6f50622cd5897797ccbd09ba5d"
+                    },
+                    {
+                      "path": "src/effects/sequenceRuntime.ts",
+                      "sha256": "b0ba1d528f140bf13f9de9a830999e76edb5b5e7f54130dec673bc768d6deb67"
+                    },
+                    {
+                      "path": "src/effects/connectedEffects.ts",
+                      "sha256": "fcebc82f5669407d9e5f09bfd9a80658ccfa138e9716b6ff56ffa1f29eb0e037"
+                    },
+                    {
+                      "path": "tests/helpers/migrationHarness.ts",
+                      "sha256": "6391fba09cd1eeec0323bcae77c1f9fb6067fdd31b92c4ccce8419e71be901fb"
+                    },
+                    {
+                      "path": "src/data/reviewedKitCatalogue.ts",
+                      "sha256": "68fc6de9c33b211ed9dde090a5e2ed49040d56acaccd74286e8dab8c12f1b6b9"
+                    },
+                    {
+                      "path": "src/data/reviewedKits.homepage.json",
+                      "sha256": "45b730258759f6d87da837ec4c8a5c87428c3b22fba546345452a549a912d578"
+                    },
+                    {
+                      "path": "src/blocks/ops/can.ts",
+                      "sha256": "610cbdab74ab8e6d0ea070a2bdd1322d200b219875ce73704111cce6e401ebd4"
+                    },
+                    {
+                      "path": "src/data/migrated5014CanSoulKit.ts",
+                      "sha256": "9c7e76b961a6ee692fe127e45184c89a02cce1c1309c3b80d5e0028eb2972412"
+                    },
+                    {
+                      "path": "src/effects/teamKitObservers.ts",
+                      "sha256": "4796f8797db5c66aa8ac8e08143e7fce6639028b2ecf8e71b84744ea7de08d1f"
+                    },
+                    {
+                      "path": "src/effects/astralOperations.ts",
+                      "sha256": "5ab24b8f20fb9a692175201dcf730f5265465173ce0608e72cef4b95a42bcfa7"
+                    },
+                    {
+                      "path": "src/blocks/ops/brinkk.ts",
+                      "sha256": "8116cf7702a24fd7b7110a11edfa16b206b82b56558b6e23fb8b69c0857cd965"
+                    }
+                  ],
+                  "state": "partial-evidence"
+                }
+              ]
             },
             {
-              "index": 2,
+              "index": 8,
               "raw": "自身使用技能時：令自身特攻、速度+2、命中+1；附加對手特防、速度-2、命中-1",
               "trigger": "before_skill",
               "parsed": true,
@@ -33745,6 +34333,39 @@
                         }
                       }
                     ]
+                  },
+                  {
+                    "acts": [
+                      {
+                        "label": "weakness_damage_turns",
+                        "op": "weakness_damage_turns",
+                        "p": {
+                          "turns": 2
+                        }
+                      },
+                      {
+                        "label": "status_or_extend",
+                        "op": "status_or_extend",
+                        "p": {
+                          "extend": 1,
+                          "status": "星贖",
+                          "turns": 1,
+                          "side": "opp"
+                        }
+                      }
+                    ],
+                    "cond": [
+                      {
+                        "label": "stage_total",
+                        "c": "stage_total",
+                        "p": {
+                          "amount": 10,
+                          "side": "both",
+                          "op": "不高於"
+                        }
+                      }
+                    ],
+                    "live": true
                   }
                 ]
               },
@@ -33758,7 +34379,7 @@
               "evidence": []
             },
             {
-              "index": 3,
+              "index": 9,
               "raw": "對手使用技能時：令對手雙攻、速度-2、命中-1；附加自身雙防、速度、命中+1",
               "trigger": "opp_skill",
               "parsed": true,
@@ -33808,34 +34429,7 @@
                         }
                       }
                     ]
-                  }
-                ]
-              },
-              "id": "5014:魂印:燦:bde7846fadeb:1",
-              "presentationOnly": false,
-              "execution": "authored-block-runtime",
-              "textCorrespondence": {
-                "state": "needs-source-review",
-                "files": []
-              },
-              "evidence": []
-            },
-            {
-              "index": 4,
-              "raw": "前述效果執行時若雙方能力等級變化不高於10：2回合內自身攻擊技能計算傷害時以弱點傷害計算；附加對手星贖1回合，已存在星贖則改為回合數+1",
-              "trigger": "self_after_skill",
-              "parsed": true,
-              "explanation": false,
-              "unresolved": [],
-              "damage": {
-                "types": [],
-                "inferred": true,
-                "reason": "請選固定／百分比／X 系技能／真實類別。"
-              },
-              "semanticVerification": "pending",
-              "blocks": {
-                "conditions": [],
-                "statements": [
+                  },
                   {
                     "acts": [
                       {
@@ -33858,18 +34452,20 @@
                     ],
                     "cond": [
                       {
-                        "label": "能力等級變化不高於10",
-                        "c": "last_amount",
+                        "label": "stage_total",
+                        "c": "stage_total",
                         "p": {
                           "amount": 10,
+                          "side": "both",
                           "op": "不高於"
                         }
                       }
-                    ]
+                    ],
+                    "live": true
                   }
                 ]
               },
-              "id": "5014:魂印:燦:5e8508c6c833:1",
+              "id": "5014:魂印:燦:bde7846fadeb:1",
               "presentationOnly": false,
               "execution": "authored-block-runtime",
               "textCorrespondence": {
@@ -33879,9 +34475,9 @@
               "evidence": []
             },
             {
-              "index": 5,
-              "raw": "己方戰鬥階段結束時敵我雙方每有1回合星贖則己方在場精靈控制類異常狀態的回合數降低燦界聖芒層數2倍，異常回合數最高降至1回合",
-              "trigger": "phase_end",
+              "index": 10,
+              "raw": "觀察對方本回合實際使用技能，供階段末PP條款判定",
+              "trigger": "team_opponent_skill",
               "parsed": true,
               "explanation": false,
               "unresolved": [],
@@ -33893,14 +34489,55 @@
                   {
                     "acts": [
                       {
-                        "label": "status_collection",
-                        "op": "status_collection",
+                        "label": "turn_key_set",
+                        "op": "turn_key_set",
                         "p": {
-                          "scope": "active",
                           "turns": 1,
-                          "mode": "class",
                           "side": "self",
-                          "cls": "控制類"
+                          "key": "observedOpponentSkillTurns"
+                        }
+                      }
+                    ]
+                  }
+                ]
+              },
+              "id": "5014:魂印:燦:0dceab752dda:1",
+              "presentationOnly": false,
+              "execution": "authored-block-runtime",
+              "textCorrespondence": {
+                "state": "needs-source-review",
+                "files": []
+              },
+              "evidence": []
+            },
+            {
+              "index": 11,
+              "raw": "己方戰鬥階段結束時敵我雙方每有1回合星贖則己方在場精靈控制類異常狀態的回合數降低燦界聖芒層數2倍，異常回合數最高降至1回合",
+              "trigger": "team_phase_end",
+              "parsed": true,
+              "explanation": false,
+              "unresolved": [],
+              "damage": null,
+              "semanticVerification": "pending",
+              "blocks": {
+                "conditions": [],
+                "statements": [
+                  {
+                    "acts": [
+                      {
+                        "label": "status_turns_count",
+                        "op": "status_turns_count",
+                        "p": {
+                          "markId": "canGlory",
+                          "status": "星贖",
+                          "mult": 2
+                        }
+                      },
+                      {
+                        "label": "control_duration_reduce",
+                        "op": "control_duration_reduce",
+                        "p": {
+                          "min": 1
                         }
                       }
                     ],
@@ -33931,9 +34568,9 @@
               "evidence": []
             },
             {
-              "index": 6,
+              "index": 12,
               "raw": "對方技能戰鬥階段結束時敵我雙方每有1回合星贖降低對手等同於燦界聖芒層數所有技能等量技能PP值，最多降低至1點PP值；若對手被降低後PP值不大於1時額外令對手PP值該技能PP值上限歸1",
-              "trigger": "phase_end",
+              "trigger": "team_phase_end",
               "parsed": true,
               "explanation": false,
               "unresolved": [],
@@ -33945,20 +34582,21 @@
                   {
                     "acts": [
                       {
-                        "label": "pp_op",
-                        "op": "pp_op",
+                        "label": "status_turns_count",
+                        "op": "status_turns_count",
                         "p": {
-                          "stopIfEmpty": true,
-                          "amount": 1,
-                          "mode": "reduce",
-                          "side": "opp"
+                          "markId": "canGlory",
+                          "status": "星贖",
+                          "mult": 1
                         }
                       },
                       {
-                        "label": "pp_max_to_one",
-                        "op": "pp_max_to_one",
+                        "label": "pp_reduce_floor",
+                        "op": "pp_reduce_floor",
                         "p": {
-                          "side": "opp"
+                          "capAtFloor": true,
+                          "side": "opp",
+                          "min": 1
                         }
                       }
                     ],
@@ -33971,6 +34609,13 @@
                           "side": "self",
                           "id": "canGlory",
                           "op": "不小於"
+                        }
+                      },
+                      {
+                        "label": "stored_flag",
+                        "c": "stored_flag",
+                        "p": {
+                          "key": "observedOpponentSkillTurns"
                         }
                       }
                     ]
@@ -67630,10 +68275,10 @@
         {
           "kind": "專屬異能特質",
           "name": "神明",
-          "sourceText": "戰鬥中被視為異能精靈。\n自身存活條件不受當前體力限制。\n自身當前體力歸0時進入「神降」。",
+          "sourceText": "戰鬥中被視為異能精靈。\n自身存活條件不受當前體力限制。\n自身當前體力歸0時進入「神降」。\n\n【神降效果】\n\n令自身死亡時的體力下限不再為0，改為70乘以（-自身體力上限）為體力下限。\n自身恢復體力量降低100%，改為每次執行恢復體力效果時令自身增加等同於自身最大體力的70%。\n自身每次受到非真實傷害時免疫此傷害，並令扣除自身體力上限70%的體力值。\n自身每次受到真實傷害時，正常結算傷害。\n回合結束時若當回合未受到非真實傷害，則增加自身最大體力7%的體力值。\n並開始觸發上列效果，直到自身體力恢復為正數時結束神降。\n神降狀態下場後保留。",
           "route": "kit",
           "source": "特質統一來源：kit；未接通 0 項",
-          "sourceSha256": "92533f65320b1b6199507db415ae6ce1d4e88c69e19b09c24c5cb83ae4fc847e",
+          "sourceSha256": "2cf0374a06bf3a77cd1f78c75521d865d7076d631101804066a9914e341c6ddd",
           "clauses": [
             {
               "index": 0,
@@ -67786,16 +68431,256 @@
                 ]
               },
               "evidence": []
+            },
+            {
+              "index": 4,
+              "raw": "令自身死亡時的體力下限不再為0，改為70乘以（-自身體力上限）為體力下限。\n自身恢復體力量降低100%，改為每次執行恢復體力效果時令自身增加等同於自身最大體力的70%。\n自身每次受到非真實傷害時免疫此傷害，並令扣除自身體力上限70%的體力值。\n自身每次受到真實傷害時，正常結算傷害。",
+              "trigger": "battle_start",
+              "parsed": true,
+              "explanation": false,
+              "unresolved": [],
+              "damage": {
+                "types": [
+                  "true",
+                  "non_true"
+                ],
+                "inferred": false,
+                "reason": "文本指定；同句多段傷害仍須逐段核對。"
+              },
+              "semanticVerification": "pending",
+              "blocks": {
+                "conditions": [],
+                "statements": [
+                  {
+                    "acts": [
+                      {
+                        "label": "survival_rule",
+                        "op": "survival_rule",
+                        "p": {
+                          "floorMult": 70,
+                          "mode": "god_descent"
+                        }
+                      }
+                    ]
+                  }
+                ]
+              },
+              "id": "5029:專屬異能特質:神明:c19934afcb7c:1",
+              "presentationOnly": false,
+              "execution": "authored-block-runtime",
+              "textCorrespondence": {
+                "state": "text-fragment-found",
+                "files": [
+                  "elf_source_files/elf_files/5029_異境神霆雷伊.txt"
+                ]
+              },
+              "evidence": []
+            },
+            {
+              "index": 5,
+              "raw": "令自身死亡時的體力下限不再為0，改為70乘以（-自身體力上限）為體力下限。\n自身恢復體力量降低100%，改為每次執行恢復體力效果時令自身增加等同於自身最大體力的70%。\n自身每次受到非真實傷害時免疫此傷害，並令扣除自身體力上限70%的體力值。\n自身每次受到真實傷害時，正常結算傷害。",
+              "trigger": "entrance",
+              "parsed": true,
+              "explanation": false,
+              "unresolved": [],
+              "damage": {
+                "types": [
+                  "true",
+                  "non_true"
+                ],
+                "inferred": false,
+                "reason": "文本指定；同句多段傷害仍須逐段核對。"
+              },
+              "semanticVerification": "pending",
+              "blocks": {
+                "conditions": [],
+                "statements": [
+                  {
+                    "acts": [
+                      {
+                        "label": "survival_rule",
+                        "op": "survival_rule",
+                        "p": {
+                          "floorMult": 70,
+                          "mode": "god_descent"
+                        }
+                      }
+                    ]
+                  }
+                ]
+              },
+              "id": "5029:專屬異能特質:神明:c19934afcb7c:2",
+              "presentationOnly": false,
+              "execution": "authored-block-runtime",
+              "textCorrespondence": {
+                "state": "text-fragment-found",
+                "files": [
+                  "elf_source_files/elf_files/5029_異境神霆雷伊.txt"
+                ]
+              },
+              "evidence": []
+            },
+            {
+              "index": 6,
+              "raw": "自身每次受到非真實傷害時免疫此傷害，並令扣除自身體力上限70%的體力值。",
+              "trigger": "incoming_nontrue",
+              "parsed": true,
+              "explanation": false,
+              "unresolved": [],
+              "damage": {
+                "types": [
+                  "non_true"
+                ],
+                "inferred": false,
+                "reason": "文本指定；同句多段傷害仍須逐段核對。"
+              },
+              "semanticVerification": "pending",
+              "blocks": {
+                "conditions": [],
+                "statements": [
+                  {
+                    "acts": [
+                      {
+                        "label": "nullify_incoming",
+                        "op": "nullify_incoming",
+                        "p": {
+                          "kind": "非真實"
+                        }
+                      }
+                    ],
+                    "cond": [
+                      {
+                        "label": "自身處於神降",
+                        "c": "god_descent",
+                        "p": {
+                          "side": "self"
+                        }
+                      }
+                    ]
+                  }
+                ]
+              },
+              "id": "5029:專屬異能特質:神明:4e557b7d899e:1",
+              "presentationOnly": false,
+              "execution": "authored-block-runtime",
+              "textCorrespondence": {
+                "state": "text-fragment-found",
+                "files": [
+                  "elf_source_files/elf_files/5029_異境神霆雷伊.txt"
+                ]
+              },
+              "evidence": []
+            },
+            {
+              "index": 7,
+              "raw": "回合結束時若當回合未受到非真實傷害，則增加自身最大體力7%的體力值。",
+              "trigger": "damaged_nontrue",
+              "parsed": true,
+              "explanation": false,
+              "unresolved": [],
+              "damage": {
+                "types": [
+                  "non_true"
+                ],
+                "inferred": false,
+                "reason": "文本指定；同句多段傷害仍須逐段核對。"
+              },
+              "semanticVerification": "pending",
+              "blocks": {
+                "conditions": [],
+                "statements": [
+                  {
+                    "acts": [
+                      {
+                        "label": "round_fact",
+                        "op": "round_fact",
+                        "p": {
+                          "key": "nonTrueDamaged"
+                        }
+                      }
+                    ]
+                  }
+                ]
+              },
+              "id": "5029:專屬異能特質:神明:f29073fc80ee:1",
+              "presentationOnly": false,
+              "execution": "authored-block-runtime",
+              "textCorrespondence": {
+                "state": "text-fragment-found",
+                "files": [
+                  "elf_source_files/elf_files/5029_異境神霆雷伊.txt"
+                ]
+              },
+              "evidence": []
+            },
+            {
+              "index": 8,
+              "raw": "回合結束時若當回合未受到非真實傷害，則增加自身最大體力7%的體力值。",
+              "trigger": "round_end",
+              "parsed": true,
+              "explanation": false,
+              "unresolved": [],
+              "damage": {
+                "types": [
+                  "non_true"
+                ],
+                "inferred": false,
+                "reason": "文本指定；同句多段傷害仍須逐段核對。"
+              },
+              "semanticVerification": "pending",
+              "blocks": {
+                "conditions": [],
+                "statements": [
+                  {
+                    "acts": [
+                      {
+                        "label": "hp_adjust",
+                        "op": "hp_adjust",
+                        "p": {
+                          "direction": "add",
+                          "ratio": 0.07,
+                          "base": "最大體力",
+                          "side": "self"
+                        }
+                      }
+                    ],
+                    "cond": [
+                      {
+                        "label": "自身處於神降",
+                        "c": "god_descent",
+                        "p": {
+                          "side": "self"
+                        }
+                      },
+                      {
+                        "label": "當回合未受到非真實傷害",
+                        "c": "no_nontrue_damage",
+                        "p": {}
+                      }
+                    ]
+                  }
+                ]
+              },
+              "id": "5029:專屬異能特質:神明:f29073fc80ee:2",
+              "presentationOnly": false,
+              "execution": "authored-block-runtime",
+              "textCorrespondence": {
+                "state": "text-fragment-found",
+                "files": [
+                  "elf_source_files/elf_files/5029_異境神霆雷伊.txt"
+                ]
+              },
+              "evidence": []
             }
           ]
         },
         {
           "kind": "專屬異能特質",
           "name": "雷神",
-          "sourceText": "【自身為滿體力時】\n\n登場異能值消耗降低70%（特殊模式生效）。\n\n【自身不為滿體力時】\n\n若當前處於麻痺狀態且不小於7回合時自身使用技能不受PP值限制。\n體力每降低1%則雙攻值與雙防值在雙方計算傷害時額外提升1%，當回合戰鬥階段結束時失去該加成，最高70%。\n體力每降低1%則自身造成非真實傷害提升1%，最高70%。\n使用攻擊技能會以雙攻值總和視為當前攻擊/特攻值計算傷害。\n\n物理攻擊時恢復己方至少70點體力值，自身每增加1點體力，己方不在場精靈額外恢復1體力。\n特殊攻擊時令對手先制-1。\n\n【神降效果】\n\n令自身死亡時的體力下限不再為0，改為70乘以（-自身體力上限）為體力下限。\n自身恢復體力量降低100%，改為每次執行恢復體力效果時令自身增加等同於自身最大體力的70%。\n自身每次受到非真實傷害時免疫此傷害，並令扣除自身體力上限70%的體力值。\n自身每次受到真實傷害時，正常結算傷害。\n回合結束時若當回合未受到非真實傷害，則增加自身最大體力7%的體力值。\n並開始觸發上列效果，直到自身體力恢復為正數時結束神降。\n神降狀態下場後保留。",
+          "sourceText": "【自身為滿體力時】\n\n登場異能值消耗降低70%（特殊模式生效）。\n\n【自身不為滿體力時】\n\n若當前處於麻痺狀態且不小於7回合時自身使用技能不受PP值限制。\n體力每降低1%則雙攻值與雙防值在雙方計算傷害時額外提升1%，當回合戰鬥階段結束時失去該加成，最高70%。\n體力每降低1%則自身造成非真實傷害提升1%，最高70%。\n使用攻擊技能會以雙攻值總和視為當前攻擊/特攻值計算傷害。\n\n物理攻擊時恢復己方至少70點體力值，自身每增加1點體力，己方不在場精靈額外恢復1體力。\n特殊攻擊時令對手先制-1。",
           "route": "kit",
           "source": "特質統一來源：kit；未接通 0 項",
-          "sourceSha256": "2af0b91585b4083f66e61a5904430674a48dd8caa890408b731fa3f4aaca3ea0",
+          "sourceSha256": "8b97b357a70361b45269876ae4bd3a2a77c26daa363ff45ca072c2c43bb5e252",
           "clauses": [
             {
               "index": 0,
@@ -68247,246 +69132,6 @@
                 ]
               },
               "id": "5029:專屬異能特質:雷神:3781ef4c4132:1",
-              "presentationOnly": false,
-              "execution": "authored-block-runtime",
-              "textCorrespondence": {
-                "state": "text-fragment-found",
-                "files": [
-                  "elf_source_files/elf_files/5029_異境神霆雷伊.txt"
-                ]
-              },
-              "evidence": []
-            },
-            {
-              "index": 11,
-              "raw": "令自身死亡時的體力下限不再為0，改為70乘以（-自身體力上限）為體力下限。\n自身恢復體力量降低100%，改為每次執行恢復體力效果時令自身增加等同於自身最大體力的70%。\n自身每次受到非真實傷害時免疫此傷害，並令扣除自身體力上限70%的體力值。\n自身每次受到真實傷害時，正常結算傷害。",
-              "trigger": "battle_start",
-              "parsed": true,
-              "explanation": false,
-              "unresolved": [],
-              "damage": {
-                "types": [
-                  "true",
-                  "non_true"
-                ],
-                "inferred": false,
-                "reason": "文本指定；同句多段傷害仍須逐段核對。"
-              },
-              "semanticVerification": "pending",
-              "blocks": {
-                "conditions": [],
-                "statements": [
-                  {
-                    "acts": [
-                      {
-                        "label": "survival_rule",
-                        "op": "survival_rule",
-                        "p": {
-                          "floorMult": 70,
-                          "mode": "god_descent"
-                        }
-                      }
-                    ]
-                  }
-                ]
-              },
-              "id": "5029:專屬異能特質:雷神:c19934afcb7c:1",
-              "presentationOnly": false,
-              "execution": "authored-block-runtime",
-              "textCorrespondence": {
-                "state": "text-fragment-found",
-                "files": [
-                  "elf_source_files/elf_files/5029_異境神霆雷伊.txt"
-                ]
-              },
-              "evidence": []
-            },
-            {
-              "index": 12,
-              "raw": "令自身死亡時的體力下限不再為0，改為70乘以（-自身體力上限）為體力下限。\n自身恢復體力量降低100%，改為每次執行恢復體力效果時令自身增加等同於自身最大體力的70%。\n自身每次受到非真實傷害時免疫此傷害，並令扣除自身體力上限70%的體力值。\n自身每次受到真實傷害時，正常結算傷害。",
-              "trigger": "entrance",
-              "parsed": true,
-              "explanation": false,
-              "unresolved": [],
-              "damage": {
-                "types": [
-                  "true",
-                  "non_true"
-                ],
-                "inferred": false,
-                "reason": "文本指定；同句多段傷害仍須逐段核對。"
-              },
-              "semanticVerification": "pending",
-              "blocks": {
-                "conditions": [],
-                "statements": [
-                  {
-                    "acts": [
-                      {
-                        "label": "survival_rule",
-                        "op": "survival_rule",
-                        "p": {
-                          "floorMult": 70,
-                          "mode": "god_descent"
-                        }
-                      }
-                    ]
-                  }
-                ]
-              },
-              "id": "5029:專屬異能特質:雷神:c19934afcb7c:2",
-              "presentationOnly": false,
-              "execution": "authored-block-runtime",
-              "textCorrespondence": {
-                "state": "text-fragment-found",
-                "files": [
-                  "elf_source_files/elf_files/5029_異境神霆雷伊.txt"
-                ]
-              },
-              "evidence": []
-            },
-            {
-              "index": 13,
-              "raw": "自身每次受到非真實傷害時免疫此傷害，並令扣除自身體力上限70%的體力值。",
-              "trigger": "incoming_nontrue",
-              "parsed": true,
-              "explanation": false,
-              "unresolved": [],
-              "damage": {
-                "types": [
-                  "non_true"
-                ],
-                "inferred": false,
-                "reason": "文本指定；同句多段傷害仍須逐段核對。"
-              },
-              "semanticVerification": "pending",
-              "blocks": {
-                "conditions": [],
-                "statements": [
-                  {
-                    "acts": [
-                      {
-                        "label": "nullify_incoming",
-                        "op": "nullify_incoming",
-                        "p": {
-                          "kind": "非真實"
-                        }
-                      }
-                    ],
-                    "cond": [
-                      {
-                        "label": "自身處於神降",
-                        "c": "god_descent",
-                        "p": {
-                          "side": "self"
-                        }
-                      }
-                    ]
-                  }
-                ]
-              },
-              "id": "5029:專屬異能特質:雷神:4e557b7d899e:1",
-              "presentationOnly": false,
-              "execution": "authored-block-runtime",
-              "textCorrespondence": {
-                "state": "text-fragment-found",
-                "files": [
-                  "elf_source_files/elf_files/5029_異境神霆雷伊.txt"
-                ]
-              },
-              "evidence": []
-            },
-            {
-              "index": 14,
-              "raw": "回合結束時若當回合未受到非真實傷害，則增加自身最大體力7%的體力值。",
-              "trigger": "damaged_nontrue",
-              "parsed": true,
-              "explanation": false,
-              "unresolved": [],
-              "damage": {
-                "types": [
-                  "non_true"
-                ],
-                "inferred": false,
-                "reason": "文本指定；同句多段傷害仍須逐段核對。"
-              },
-              "semanticVerification": "pending",
-              "blocks": {
-                "conditions": [],
-                "statements": [
-                  {
-                    "acts": [
-                      {
-                        "label": "round_fact",
-                        "op": "round_fact",
-                        "p": {
-                          "key": "nonTrueDamaged"
-                        }
-                      }
-                    ]
-                  }
-                ]
-              },
-              "id": "5029:專屬異能特質:雷神:f29073fc80ee:1",
-              "presentationOnly": false,
-              "execution": "authored-block-runtime",
-              "textCorrespondence": {
-                "state": "text-fragment-found",
-                "files": [
-                  "elf_source_files/elf_files/5029_異境神霆雷伊.txt"
-                ]
-              },
-              "evidence": []
-            },
-            {
-              "index": 15,
-              "raw": "回合結束時若當回合未受到非真實傷害，則增加自身最大體力7%的體力值。",
-              "trigger": "round_end",
-              "parsed": true,
-              "explanation": false,
-              "unresolved": [],
-              "damage": {
-                "types": [
-                  "non_true"
-                ],
-                "inferred": false,
-                "reason": "文本指定；同句多段傷害仍須逐段核對。"
-              },
-              "semanticVerification": "pending",
-              "blocks": {
-                "conditions": [],
-                "statements": [
-                  {
-                    "acts": [
-                      {
-                        "label": "hp_adjust",
-                        "op": "hp_adjust",
-                        "p": {
-                          "direction": "add",
-                          "ratio": 0.07,
-                          "base": "最大體力",
-                          "side": "self"
-                        }
-                      }
-                    ],
-                    "cond": [
-                      {
-                        "label": "自身處於神降",
-                        "c": "god_descent",
-                        "p": {
-                          "side": "self"
-                        }
-                      },
-                      {
-                        "label": "當回合未受到非真實傷害",
-                        "c": "no_nontrue_damage",
-                        "p": {}
-                      }
-                    ]
-                  }
-                ]
-              },
-              "id": "5029:專屬異能特質:雷神:f29073fc80ee:2",
               "presentationOnly": false,
               "execution": "authored-block-runtime",
               "textCorrespondence": {
@@ -70129,9 +70774,656 @@
           "name": "聖",
           "sourceText": "【四象】自身專屬特性中每次額外執行效果觸發時若自身同時處於異常狀態則下次執行回合開始時效果則額外解除其中的控制類、弱化類異常且當回合對手先制效果失效；\n【八荒】自身每次受到非真實傷害時減半1次，回合開始時自身每有最大體力10%的當前體力值則額外減半1次；\n【天佑】回合結束時恢復自身最大體力10%並造成對手等量百分比傷害，自身已損失體力每有最大體力10%則額外執行1次；\n【聖怒】自身使用攻擊技能時吸取對手等同於自身最大體力10%的體力值，若對手受到百分比傷害後體力未減少則本回合受到攻擊技能所造成的技能傷害翻倍1次，對方所有精靈中體力比例最高的精靈最大體力每有10%的當前體力值則額外翻倍1次。",
           "route": "kit",
-          "source": "統一魂印來源：kit；未接通 1 項",
+          "source": "統一魂印來源：kit；未接通 0 項",
           "sourceSha256": "01f949a7edf9df330184964e4767cc2b5109d69e847d5fbbd8ab8e32d1be2a89",
-          "clauses": []
+          "clauses": [
+            {
+              "index": 0,
+              "raw": "【四象】若上次額外執行時自身處於異常，則本次回合開始額外解除控制類、弱化類異常且當回合對手先制效果失效",
+              "trigger": "round_start",
+              "parsed": true,
+              "explanation": false,
+              "unresolved": [],
+              "damage": null,
+              "semanticVerification": "pending",
+              "blocks": {
+                "conditions": [],
+                "statements": [
+                  {
+                    "acts": [
+                      {
+                        "label": "cure_status",
+                        "op": "cure_status",
+                        "p": {
+                          "side": "self",
+                          "cls": "控制類"
+                        }
+                      },
+                      {
+                        "label": "cure_status",
+                        "op": "cure_status",
+                        "p": {
+                          "side": "self",
+                          "cls": "弱化類"
+                        }
+                      },
+                      {
+                        "label": "no_pos_prio_turns",
+                        "op": "no_pos_prio_turns",
+                        "p": {
+                          "turns": 1
+                        }
+                      },
+                      {
+                        "label": "resource_mark_remove",
+                        "op": "resource_mark_remove",
+                        "p": {
+                          "scope": "elf",
+                          "side": "self",
+                          "id": "holyCleansePending"
+                        }
+                      }
+                    ],
+                    "cond": [
+                      {
+                        "label": "有待解除的異常",
+                        "c": "mark_count",
+                        "p": {
+                          "amount": 1,
+                          "side": "self",
+                          "id": "holyCleansePending",
+                          "op": "不小於"
+                        }
+                      }
+                    ]
+                  }
+                ]
+              },
+              "id": "5030:魂印:聖:f43636349b3c:1",
+              "presentationOnly": false,
+              "execution": "authored-block-runtime",
+              "textCorrespondence": {
+                "state": "no-matching-txt",
+                "files": []
+              },
+              "evidence": []
+            },
+            {
+              "index": 1,
+              "raw": "【八荒】回合開始時自身每有最大體力10%的當前體力值則額外減半1次（每次受到非真實傷害減半1次）",
+              "trigger": "round_start",
+              "parsed": true,
+              "explanation": false,
+              "unresolved": [],
+              "damage": {
+                "types": [
+                  "non_true"
+                ],
+                "inferred": false,
+                "reason": "文本指定；同句多段傷害仍須逐段核對。"
+              },
+              "semanticVerification": "pending",
+              "blocks": {
+                "conditions": [],
+                "statements": [
+                  {
+                    "acts": [
+                      {
+                        "label": "hp_steps",
+                        "op": "hp_steps",
+                        "p": {
+                          "basis": "current",
+                          "base": 1,
+                          "side": "self",
+                          "cap": 11
+                        }
+                      },
+                      {
+                        "label": "resource_mark_set",
+                        "op": "resource_mark_set",
+                        "p": {
+                          "persistsOffField": false,
+                          "fromLastAmount": true,
+                          "description": "受到非真實傷害時逐次減半的層數",
+                          "displayChar": "荒",
+                          "scope": "elf",
+                          "name": "八荒減半",
+                          "side": "self",
+                          "unit": "層",
+                          "id": "holyHalves"
+                        }
+                      }
+                    ]
+                  }
+                ]
+              },
+              "id": "5030:魂印:聖:aaee15547d9b:1",
+              "presentationOnly": false,
+              "execution": "authored-block-runtime",
+              "textCorrespondence": {
+                "state": "no-matching-txt",
+                "files": []
+              },
+              "evidence": []
+            },
+            {
+              "index": 2,
+              "raw": "【八荒】自身每次受到非真實傷害時減半1次（依層數逐次減半）",
+              "trigger": "incoming_nontrue",
+              "parsed": true,
+              "explanation": false,
+              "unresolved": [],
+              "damage": {
+                "types": [
+                  "non_true"
+                ],
+                "inferred": false,
+                "reason": "文本指定；同句多段傷害仍須逐段核對。"
+              },
+              "semanticVerification": "pending",
+              "blocks": {
+                "conditions": [],
+                "statements": [
+                  {
+                    "acts": [
+                      {
+                        "label": "incoming_halve_per_mark",
+                        "op": "incoming_halve_per_mark",
+                        "p": {
+                          "id": "holyHalves"
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "chain": "success",
+                    "acts": [
+                      {
+                        "label": "resource_mark_add",
+                        "op": "resource_mark_add",
+                        "p": {
+                          "persistsOffField": false,
+                          "description": "下次回合開始解除控制與弱化異常並令對手正先制失效",
+                          "displayChar": "象",
+                          "maxCount": 1,
+                          "amount": 1,
+                          "scope": "elf",
+                          "name": "四象待解除",
+                          "side": "self",
+                          "unit": "層",
+                          "id": "holyCleansePending"
+                        }
+                      }
+                    ],
+                    "cond": [
+                      {
+                        "label": "mark_count",
+                        "c": "mark_count",
+                        "p": {
+                          "amount": 2,
+                          "side": "self",
+                          "id": "holyHalves",
+                          "op": "不小於"
+                        }
+                      },
+                      {
+                        "label": "abnormal",
+                        "c": "abnormal",
+                        "p": {
+                          "side": "self"
+                        }
+                      }
+                    ],
+                    "live": true
+                  }
+                ]
+              },
+              "id": "5030:魂印:聖:e147b78fc1f1:1",
+              "presentationOnly": false,
+              "execution": "authored-block-runtime",
+              "textCorrespondence": {
+                "state": "no-matching-txt",
+                "files": []
+              },
+              "evidence": []
+            },
+            {
+              "index": 3,
+              "raw": "【天佑】回合結束時恢復自身最大體力10%並造成對手等量百分比傷害，自身已損失體力每有最大體力10%則額外執行1次",
+              "trigger": "round_end",
+              "parsed": true,
+              "explanation": false,
+              "unresolved": [],
+              "damage": {
+                "types": [
+                  "percent"
+                ],
+                "inferred": false,
+                "reason": "文本指定；同句多段傷害仍須逐段核對。"
+              },
+              "semanticVerification": "partial-evidence",
+              "blocks": {
+                "conditions": [],
+                "statements": [
+                  {
+                    "acts": [
+                      {
+                        "label": "hp_steps",
+                        "op": "hp_steps",
+                        "p": {
+                          "basis": "lost",
+                          "base": 1,
+                          "side": "self",
+                          "cap": 11
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "acts": [
+                      {
+                        "label": "resource_mark_add",
+                        "op": "resource_mark_add",
+                        "p": {
+                          "persistsOffField": false,
+                          "description": "下次回合開始解除控制與弱化異常並令對手正先制失效",
+                          "displayChar": "象",
+                          "maxCount": 1,
+                          "amount": 1,
+                          "scope": "elf",
+                          "name": "四象待解除",
+                          "side": "self",
+                          "unit": "層",
+                          "id": "holyCleansePending"
+                        }
+                      }
+                    ],
+                    "cond": [
+                      {
+                        "label": "last_amount",
+                        "c": "last_amount",
+                        "p": {
+                          "amount": 2,
+                          "op": "不小於"
+                        }
+                      },
+                      {
+                        "label": "abnormal",
+                        "c": "abnormal",
+                        "p": {
+                          "side": "self"
+                        }
+                      }
+                    ],
+                    "live": true
+                  },
+                  {
+                    "acts": [
+                      {
+                        "label": "repeat_body",
+                        "op": "repeat_body",
+                        "p": {
+                          "body": [
+                            {
+                              "acts": [
+                                {
+                                  "label": "heal",
+                                  "op": "heal",
+                                  "p": {
+                                    "ratio": 0.1,
+                                    "side": "self"
+                                  }
+                                }
+                              ]
+                            },
+                            {
+                              "acts": [
+                                {
+                                  "label": "dmg",
+                                  "op": "dmg",
+                                  "p": {
+                                    "ratio": 0.1,
+                                    "base": "最大體力",
+                                    "type": "百分比",
+                                    "of": "self"
+                                  }
+                                }
+                              ]
+                            }
+                          ],
+                          "from": "lastAmount",
+                          "cap": 11
+                        }
+                      }
+                    ]
+                  }
+                ]
+              },
+              "id": "5030:魂印:聖:333a101910a5:1",
+              "presentationOnly": false,
+              "execution": "authored-block-runtime",
+              "textCorrespondence": {
+                "state": "no-matching-txt",
+                "files": []
+              },
+              "evidence": [
+                {
+                  "id": "holy-repeat-20261021",
+                  "elfId": "5030",
+                  "entry": "聖",
+                  "fragment": "【天佑】回合結束時",
+                  "testFile": "tests/holyMiles.semantic.test.ts",
+                  "anchor": "天佑六次各100",
+                  "scenario": "P1/P2自身500/1000，對手5000體力",
+                  "expected": "六次各恢復100、造成100百分比，自己最後1000、對手4400",
+                  "remaining": "僅覆蓋列出情境；尚待其他異常／BOSS／換人／消除／免疫／交叉效果與全文逐句驗收，不能當成整隻精靈100%正確。",
+                  "lastPassed": "2026-10-21：目前引擎 canSettlement、canCompanion、holyMiles P1/P2正式結算重跑 exit0；只證明所列部分情境。",
+                  "testSha256": "5ac51734e6a96aca4a250547b2aa6bebf7e78b3b79ce2928f805766ce4c85efc",
+                  "inputs": [
+                    {
+                      "path": "src/engine/battleEngine.ts",
+                      "sha256": "c4579c38bf3dd8c43ca16b81f37a87a87e1392b5251c174d6df4342000c699bb"
+                    },
+                    {
+                      "path": "src/battle/contextBuilders.ts",
+                      "sha256": "bb3249e9d472ccabe62042122de4386d3da40bbee4b51565186a8e50a85c994e"
+                    },
+                    {
+                      "path": "src/blocks/runtime.ts",
+                      "sha256": "43c8ec93c19b3b183d4fae9e850be86fbb4c52af4c971f13f340eaf8a43b24fb"
+                    },
+                    {
+                      "path": "src/effects/sequenceContract.ts",
+                      "sha256": "49c7d9313d7d7419600377d00c5be7bc51424f6f50622cd5897797ccbd09ba5d"
+                    },
+                    {
+                      "path": "src/effects/sequenceRuntime.ts",
+                      "sha256": "b0ba1d528f140bf13f9de9a830999e76edb5b5e7f54130dec673bc768d6deb67"
+                    },
+                    {
+                      "path": "src/effects/connectedEffects.ts",
+                      "sha256": "fcebc82f5669407d9e5f09bfd9a80658ccfa138e9716b6ff56ffa1f29eb0e037"
+                    },
+                    {
+                      "path": "tests/helpers/migrationHarness.ts",
+                      "sha256": "6391fba09cd1eeec0323bcae77c1f9fb6067fdd31b92c4ccce8419e71be901fb"
+                    },
+                    {
+                      "path": "src/data/reviewedKitCatalogue.ts",
+                      "sha256": "68fc6de9c33b211ed9dde090a5e2ed49040d56acaccd74286e8dab8c12f1b6b9"
+                    },
+                    {
+                      "path": "src/data/reviewedKits.homepage.json",
+                      "sha256": "45b730258759f6d87da837ec4c8a5c87428c3b22fba546345452a549a912d578"
+                    },
+                    {
+                      "path": "src/data/holyMiles.ts",
+                      "sha256": "df7aefe64125de332c2fb869ce1fa8ba3e3e6a11c98191f93b4e1c306c321069"
+                    },
+                    {
+                      "path": "src/data/migratedHolyMilesKits.ts",
+                      "sha256": "8000bf302c02792112fbcf0ee2f5c1e71c3dd72709d4da5500db327300ef8c7e"
+                    },
+                    {
+                      "path": "src/blocks/ops/holyMiles.ts",
+                      "sha256": "15fadd6f96f61b7b93b83480dba34fc56d4434142634a1f349a07b2f785e6dcd"
+                    },
+                    {
+                      "path": "src/blocks/ops/groupB.ts",
+                      "sha256": "99aa599da051640f03896bb107de2aa09ca99944b10f4302c15510c94cf97131"
+                    },
+                    {
+                      "path": "src/blocks/ops/finalOdinDeluBeliente.ts",
+                      "sha256": "39ff83985c78db657b99ab88701db638a6e3ed54ef8e1c9c504af8e0f7394862"
+                    },
+                    {
+                      "path": "src/effects/effectNodes.ts",
+                      "sha256": "a20f71f2f822cd01cbc769d63eacfcc1e1d8335ef72ab0f8a6922ee5cfd7ea84"
+                    }
+                  ],
+                  "state": "partial-evidence"
+                }
+              ]
+            },
+            {
+              "index": 4,
+              "raw": "【聖怒】自身使用攻擊技能時吸取對手等同於自身最大體力10%的體力值",
+              "trigger": "before_skill",
+              "parsed": true,
+              "explanation": false,
+              "unresolved": [],
+              "damage": null,
+              "semanticVerification": "pending",
+              "blocks": {
+                "conditions": [],
+                "statements": [
+                  {
+                    "acts": [
+                      {
+                        "label": "drain",
+                        "op": "drain",
+                        "p": {
+                          "ofSelf": true,
+                          "ratio": 0.1
+                        }
+                      }
+                    ],
+                    "cond": [
+                      {
+                        "label": "skill_kind",
+                        "c": "skill_kind",
+                        "p": {
+                          "kind": "攻擊"
+                        }
+                      }
+                    ]
+                  }
+                ]
+              },
+              "id": "5030:魂印:聖:bf9743ca05a6:1",
+              "presentationOnly": false,
+              "execution": "authored-block-runtime",
+              "textCorrespondence": {
+                "state": "no-matching-txt",
+                "files": []
+              },
+              "evidence": []
+            },
+            {
+              "index": 5,
+              "raw": "【聖怒】若對手受到百分比傷害後體力未減少則本回合受到攻擊技能所造成的技能傷害翻倍1次，對方體力比例最高的精靈最大體力每有10%額外翻倍1次",
+              "trigger": "opp_damage_settled",
+              "parsed": true,
+              "explanation": false,
+              "unresolved": [],
+              "damage": {
+                "types": [
+                  "percent",
+                  "skill"
+                ],
+                "inferred": false,
+                "reason": "文本指定；同句多段傷害仍須逐段核對。"
+              },
+              "semanticVerification": "partial-evidence",
+              "blocks": {
+                "conditions": [],
+                "statements": [
+                  {
+                    "acts": [
+                      {
+                        "label": "hp_steps",
+                        "op": "hp_steps",
+                        "p": {
+                          "basis": "current",
+                          "scope": "teamMax",
+                          "base": 1,
+                          "side": "opp",
+                          "cap": 11
+                        }
+                      },
+                      {
+                        "label": "damage_multiplier_steps",
+                        "op": "damage_multiplier_steps",
+                        "p": {
+                          "base": 2,
+                          "kind": "攻擊"
+                        }
+                      }
+                    ],
+                    "cond": [
+                      {
+                        "label": "event_damage_kind",
+                        "c": "event_damage_kind",
+                        "p": {
+                          "kind": "百分比"
+                        }
+                      },
+                      {
+                        "label": "event_hp_unchanged",
+                        "c": "event_hp_unchanged",
+                        "p": {}
+                      }
+                    ]
+                  },
+                  {
+                    "acts": [
+                      {
+                        "label": "resource_mark_add",
+                        "op": "resource_mark_add",
+                        "p": {
+                          "persistsOffField": false,
+                          "description": "下次回合開始解除控制與弱化異常並令對手正先制失效",
+                          "displayChar": "象",
+                          "maxCount": 1,
+                          "amount": 1,
+                          "scope": "elf",
+                          "name": "四象待解除",
+                          "side": "self",
+                          "unit": "層",
+                          "id": "holyCleansePending"
+                        }
+                      }
+                    ],
+                    "cond": [
+                      {
+                        "label": "event_damage_kind",
+                        "c": "event_damage_kind",
+                        "p": {
+                          "kind": "百分比"
+                        }
+                      },
+                      {
+                        "label": "event_hp_unchanged",
+                        "c": "event_hp_unchanged",
+                        "p": {}
+                      },
+                      {
+                        "label": "last_amount",
+                        "c": "last_amount",
+                        "p": {
+                          "amount": 2,
+                          "op": "不小於"
+                        }
+                      },
+                      {
+                        "label": "abnormal",
+                        "c": "abnormal",
+                        "p": {
+                          "side": "self"
+                        }
+                      }
+                    ],
+                    "live": true
+                  }
+                ]
+              },
+              "id": "5030:魂印:聖:9dc64a4258d7:1",
+              "presentationOnly": false,
+              "execution": "authored-block-runtime",
+              "textCorrespondence": {
+                "state": "no-matching-txt",
+                "files": []
+              },
+              "evidence": [
+                {
+                  "id": "holy-wrath-20261021",
+                  "elfId": "5030",
+                  "entry": "聖",
+                  "fragment": "對手受到百分比傷害後體力未減少",
+                  "testFile": "tests/holyMiles.semantic.test.ts",
+                  "anchor": "聖怒倍率",
+                  "scenario": "P1/P2真正百分比免疫0扣血事件，對手在場10%／場下80%兩種比例",
+                  "expected": "攻擊倍率分別4／512，計時器當回合結束到期；不把零扣血猜成傷害類型",
+                  "remaining": "僅覆蓋列出情境；尚待其他異常／BOSS／換人／消除／免疫／交叉效果與全文逐句驗收，不能當成整隻精靈100%正確。",
+                  "lastPassed": "2026-10-21：目前引擎 canSettlement、canCompanion、holyMiles P1/P2正式結算重跑 exit0；只證明所列部分情境。",
+                  "testSha256": "5ac51734e6a96aca4a250547b2aa6bebf7e78b3b79ce2928f805766ce4c85efc",
+                  "inputs": [
+                    {
+                      "path": "src/engine/battleEngine.ts",
+                      "sha256": "c4579c38bf3dd8c43ca16b81f37a87a87e1392b5251c174d6df4342000c699bb"
+                    },
+                    {
+                      "path": "src/battle/contextBuilders.ts",
+                      "sha256": "bb3249e9d472ccabe62042122de4386d3da40bbee4b51565186a8e50a85c994e"
+                    },
+                    {
+                      "path": "src/blocks/runtime.ts",
+                      "sha256": "43c8ec93c19b3b183d4fae9e850be86fbb4c52af4c971f13f340eaf8a43b24fb"
+                    },
+                    {
+                      "path": "src/effects/sequenceContract.ts",
+                      "sha256": "49c7d9313d7d7419600377d00c5be7bc51424f6f50622cd5897797ccbd09ba5d"
+                    },
+                    {
+                      "path": "src/effects/sequenceRuntime.ts",
+                      "sha256": "b0ba1d528f140bf13f9de9a830999e76edb5b5e7f54130dec673bc768d6deb67"
+                    },
+                    {
+                      "path": "src/effects/connectedEffects.ts",
+                      "sha256": "fcebc82f5669407d9e5f09bfd9a80658ccfa138e9716b6ff56ffa1f29eb0e037"
+                    },
+                    {
+                      "path": "tests/helpers/migrationHarness.ts",
+                      "sha256": "6391fba09cd1eeec0323bcae77c1f9fb6067fdd31b92c4ccce8419e71be901fb"
+                    },
+                    {
+                      "path": "src/data/reviewedKitCatalogue.ts",
+                      "sha256": "68fc6de9c33b211ed9dde090a5e2ed49040d56acaccd74286e8dab8c12f1b6b9"
+                    },
+                    {
+                      "path": "src/data/reviewedKits.homepage.json",
+                      "sha256": "45b730258759f6d87da837ec4c8a5c87428c3b22fba546345452a549a912d578"
+                    },
+                    {
+                      "path": "src/data/holyMiles.ts",
+                      "sha256": "df7aefe64125de332c2fb869ce1fa8ba3e3e6a11c98191f93b4e1c306c321069"
+                    },
+                    {
+                      "path": "src/data/migratedHolyMilesKits.ts",
+                      "sha256": "8000bf302c02792112fbcf0ee2f5c1e71c3dd72709d4da5500db327300ef8c7e"
+                    },
+                    {
+                      "path": "src/blocks/ops/holyMiles.ts",
+                      "sha256": "15fadd6f96f61b7b93b83480dba34fc56d4434142634a1f349a07b2f785e6dcd"
+                    },
+                    {
+                      "path": "src/blocks/ops/groupB.ts",
+                      "sha256": "99aa599da051640f03896bb107de2aa09ca99944b10f4302c15510c94cf97131"
+                    },
+                    {
+                      "path": "src/blocks/ops/finalOdinDeluBeliente.ts",
+                      "sha256": "39ff83985c78db657b99ab88701db638a6e3ed54ef8e1c9c504af8e0f7394862"
+                    },
+                    {
+                      "path": "src/effects/effectNodes.ts",
+                      "sha256": "a20f71f2f822cd01cbc769d63eacfcc1e1d8335ef72ab0f8a6922ee5cfd7ea84"
+                    }
+                  ],
+                  "state": "partial-evidence"
+                }
+              ]
+            }
+          ]
         },
         {
           "kind": "技能",
@@ -70834,9 +72126,399 @@
           "name": "淨世洗禮頌",
           "sourceText": "■ 先制+4\n■ 必中\n■ 本次造成技能傷害不少於280，對方在場精靈體力每有10%則保底值額外翻倍1次，技能無效時保底值再翻倍1次\n🎯 給對手造成技能傷害時，傷害數值的100%恢復自身體力，若對手處於異常狀態則附加對手等量百分比傷害\n🎯 3回合內若對手使用屬性技能100%燒傷",
           "route": "kit",
-          "source": "統一效果來源：kit；未接通 1 項",
+          "source": "統一效果來源：kit；未接通 0 項",
           "sourceSha256": "b605e3e4db0c2d22b0db103d1b1f4b59af8f5b9b12b06d28f75022947d29f5a4",
-          "clauses": []
+          "clauses": [
+            {
+              "index": 0,
+              "raw": "先制+4",
+              "trigger": "custom",
+              "parsed": true,
+              "explanation": false,
+              "unresolved": [],
+              "damage": null,
+              "semanticVerification": "pending",
+              "blocks": {
+                "conditions": [],
+                "statements": [
+                  {
+                    "acts": [
+                      {
+                        "op": "skill_property",
+                        "p": {
+                          "node": "modify_priority",
+                          "conditions": [],
+                          "property": "base_priority",
+                          "value": 4
+                        },
+                        "label": "先制判定 · 先制+4"
+                      }
+                    ]
+                  }
+                ]
+              },
+              "id": "5030:技能:淨世洗禮頌:96bc369df8f2:1",
+              "presentationOnly": false,
+              "execution": "authored-block-runtime",
+              "textCorrespondence": {
+                "state": "no-matching-txt",
+                "files": []
+              },
+              "evidence": []
+            },
+            {
+              "index": 1,
+              "raw": "必中",
+              "trigger": "before_skill",
+              "parsed": true,
+              "explanation": false,
+              "unresolved": [],
+              "damage": null,
+              "semanticVerification": "pending",
+              "blocks": {
+                "conditions": [],
+                "statements": [
+                  {
+                    "acts": [
+                      {
+                        "op": "skill_property",
+                        "p": {
+                          "node": "before_skill",
+                          "conditions": [],
+                          "property": "sure_hit",
+                          "value": true
+                        },
+                        "label": "使用技能前 · 必中"
+                      }
+                    ]
+                  }
+                ]
+              },
+              "id": "5030:技能:淨世洗禮頌:3e76e6d438f9:1",
+              "presentationOnly": false,
+              "execution": "authored-block-runtime",
+              "textCorrespondence": {
+                "state": "no-matching-txt",
+                "files": []
+              },
+              "evidence": []
+            },
+            {
+              "index": 2,
+              "raw": "■ 本次造成技能傷害不少於280，對方在場精靈體力每有10%則保底值額外翻倍1次，技能無效時保底值再翻倍1次",
+              "trigger": "outgoing_attack",
+              "parsed": true,
+              "explanation": false,
+              "unresolved": [],
+              "damage": {
+                "types": [
+                  "skill"
+                ],
+                "inferred": false,
+                "reason": "文本指定；同句多段傷害仍須逐段核對。"
+              },
+              "semanticVerification": "partial-evidence",
+              "blocks": {
+                "conditions": [],
+                "statements": [
+                  {
+                    "acts": [
+                      {
+                        "label": "damage_floor_flat",
+                        "op": "damage_floor_flat",
+                        "p": {
+                          "pureIfFloor": true,
+                          "doubleBy": "foe_hp_deciles",
+                          "amount": 280
+                        }
+                      }
+                    ]
+                  }
+                ]
+              },
+              "id": "5030:技能:淨世洗禮頌:bec3ea60bf38:1",
+              "presentationOnly": false,
+              "execution": "authored-block-runtime",
+              "textCorrespondence": {
+                "state": "no-matching-txt",
+                "files": []
+              },
+              "evidence": [
+                {
+                  "id": "holy-baptism-20261021",
+                  "elfId": "5030",
+                  "entry": "淨世洗禮頌",
+                  "fragment": "本次造成技能傷害不少於280",
+                  "testFile": "tests/holyMiles.semantic.test.ts",
+                  "anchor": "無效補償技能傷害也須恢復等量",
+                  "scenario": "P1/P2正常80%體力、異常等量附加、滿血技能無效",
+                  "expected": "正常保底280×2^8，異常再附加等量百分比，無效保底280×2^11並恢復等量，保留技能傷害分類",
+                  "remaining": "僅覆蓋列出情境；尚待其他異常／BOSS／換人／消除／免疫／交叉效果與全文逐句驗收，不能當成整隻精靈100%正確。",
+                  "lastPassed": "2026-10-21：目前引擎 canSettlement、canCompanion、holyMiles P1/P2正式結算重跑 exit0；只證明所列部分情境。",
+                  "testSha256": "5ac51734e6a96aca4a250547b2aa6bebf7e78b3b79ce2928f805766ce4c85efc",
+                  "inputs": [
+                    {
+                      "path": "src/engine/battleEngine.ts",
+                      "sha256": "c4579c38bf3dd8c43ca16b81f37a87a87e1392b5251c174d6df4342000c699bb"
+                    },
+                    {
+                      "path": "src/battle/contextBuilders.ts",
+                      "sha256": "bb3249e9d472ccabe62042122de4386d3da40bbee4b51565186a8e50a85c994e"
+                    },
+                    {
+                      "path": "src/blocks/runtime.ts",
+                      "sha256": "43c8ec93c19b3b183d4fae9e850be86fbb4c52af4c971f13f340eaf8a43b24fb"
+                    },
+                    {
+                      "path": "src/effects/sequenceContract.ts",
+                      "sha256": "49c7d9313d7d7419600377d00c5be7bc51424f6f50622cd5897797ccbd09ba5d"
+                    },
+                    {
+                      "path": "src/effects/sequenceRuntime.ts",
+                      "sha256": "b0ba1d528f140bf13f9de9a830999e76edb5b5e7f54130dec673bc768d6deb67"
+                    },
+                    {
+                      "path": "src/effects/connectedEffects.ts",
+                      "sha256": "fcebc82f5669407d9e5f09bfd9a80658ccfa138e9716b6ff56ffa1f29eb0e037"
+                    },
+                    {
+                      "path": "tests/helpers/migrationHarness.ts",
+                      "sha256": "6391fba09cd1eeec0323bcae77c1f9fb6067fdd31b92c4ccce8419e71be901fb"
+                    },
+                    {
+                      "path": "src/data/reviewedKitCatalogue.ts",
+                      "sha256": "68fc6de9c33b211ed9dde090a5e2ed49040d56acaccd74286e8dab8c12f1b6b9"
+                    },
+                    {
+                      "path": "src/data/reviewedKits.homepage.json",
+                      "sha256": "45b730258759f6d87da837ec4c8a5c87428c3b22fba546345452a549a912d578"
+                    },
+                    {
+                      "path": "src/data/holyMiles.ts",
+                      "sha256": "df7aefe64125de332c2fb869ce1fa8ba3e3e6a11c98191f93b4e1c306c321069"
+                    },
+                    {
+                      "path": "src/data/migratedHolyMilesKits.ts",
+                      "sha256": "8000bf302c02792112fbcf0ee2f5c1e71c3dd72709d4da5500db327300ef8c7e"
+                    },
+                    {
+                      "path": "src/blocks/ops/holyMiles.ts",
+                      "sha256": "15fadd6f96f61b7b93b83480dba34fc56d4434142634a1f349a07b2f785e6dcd"
+                    },
+                    {
+                      "path": "src/blocks/ops/groupB.ts",
+                      "sha256": "99aa599da051640f03896bb107de2aa09ca99944b10f4302c15510c94cf97131"
+                    },
+                    {
+                      "path": "src/blocks/ops/finalOdinDeluBeliente.ts",
+                      "sha256": "39ff83985c78db657b99ab88701db638a6e3ed54ef8e1c9c504af8e0f7394862"
+                    },
+                    {
+                      "path": "src/effects/effectNodes.ts",
+                      "sha256": "a20f71f2f822cd01cbc769d63eacfcc1e1d8335ef72ab0f8a6922ee5cfd7ea84"
+                    }
+                  ],
+                  "state": "partial-evidence"
+                }
+              ]
+            },
+            {
+              "index": 3,
+              "raw": "技能無效時保底值再翻倍1次，仍按技能傷害結算",
+              "trigger": "self_invalid",
+              "parsed": true,
+              "explanation": false,
+              "unresolved": [],
+              "damage": {
+                "types": [
+                  "skill"
+                ],
+                "inferred": false,
+                "reason": "文本指定；同句多段傷害仍須逐段核對。"
+              },
+              "semanticVerification": "pending",
+              "blocks": {
+                "conditions": [],
+                "statements": [
+                  {
+                    "acts": [
+                      {
+                        "label": "damage_floor_flat",
+                        "op": "damage_floor_flat",
+                        "p": {
+                          "doublings": 1,
+                          "healRatio": 1,
+                          "doubleBy": "foe_hp_deciles",
+                          "amount": 280
+                        }
+                      }
+                    ]
+                  }
+                ]
+              },
+              "id": "5030:技能:淨世洗禮頌:f4ac683a74ea:1",
+              "presentationOnly": false,
+              "execution": "authored-block-runtime",
+              "textCorrespondence": {
+                "state": "no-matching-txt",
+                "files": []
+              },
+              "evidence": []
+            },
+            {
+              "index": 4,
+              "raw": "🎯 給對手造成技能傷害時，傷害數值的100%恢復自身體力，若對手處於異常狀態則附加對手等量百分比傷害",
+              "trigger": "use",
+              "parsed": true,
+              "explanation": false,
+              "unresolved": [],
+              "damage": {
+                "types": [
+                  "percent",
+                  "skill"
+                ],
+                "inferred": false,
+                "reason": "文本指定；同句多段傷害仍須逐段核對。"
+              },
+              "semanticVerification": "pending",
+              "blocks": {
+                "conditions": [],
+                "statements": [
+                  {
+                    "acts": [
+                      {
+                        "label": "vampire",
+                        "op": "vampire",
+                        "p": {
+                          "ratio": 1,
+                          "kind": "技能"
+                        }
+                      }
+                    ]
+                  }
+                ]
+              },
+              "id": "5030:技能:淨世洗禮頌:53f519a00c11:1",
+              "presentationOnly": false,
+              "execution": "authored-block-runtime",
+              "textCorrespondence": {
+                "state": "no-matching-txt",
+                "files": []
+              },
+              "evidence": []
+            },
+            {
+              "index": 5,
+              "raw": "對手處於異常時附加實際技能傷害等量百分比傷害",
+              "trigger": "after_hit",
+              "parsed": true,
+              "explanation": false,
+              "unresolved": [],
+              "damage": {
+                "types": [
+                  "percent",
+                  "skill"
+                ],
+                "inferred": false,
+                "reason": "文本指定；同句多段傷害仍須逐段核對。"
+              },
+              "semanticVerification": "pending",
+              "blocks": {
+                "conditions": [],
+                "statements": [
+                  {
+                    "acts": [
+                      {
+                        "label": "vampire",
+                        "op": "vampire",
+                        "p": {
+                          "ratio": 1,
+                          "kind": "技能"
+                        }
+                      },
+                      {
+                        "label": "dmg_from_last",
+                        "op": "dmg_from_last",
+                        "p": {
+                          "ratio": 1,
+                          "type": "百分比"
+                        }
+                      }
+                    ],
+                    "cond": [
+                      {
+                        "label": "abnormal",
+                        "c": "abnormal",
+                        "p": {
+                          "side": "opp"
+                        }
+                      }
+                    ]
+                  }
+                ]
+              },
+              "id": "5030:技能:淨世洗禮頌:420fc64b396c:1",
+              "presentationOnly": false,
+              "execution": "authored-block-runtime",
+              "textCorrespondence": {
+                "state": "no-matching-txt",
+                "files": []
+              },
+              "evidence": []
+            },
+            {
+              "index": 6,
+              "raw": "🎯 3回合內若對手使用屬性技能100%燒傷",
+              "trigger": "use",
+              "parsed": true,
+              "explanation": false,
+              "unresolved": [],
+              "damage": null,
+              "semanticVerification": "pending",
+              "blocks": {
+                "conditions": [],
+                "statements": [
+                  {
+                    "acts": [
+                      {
+                        "label": "timed",
+                        "op": "timed",
+                        "p": {
+                          "turns": 3,
+                          "body": [
+                            {
+                              "acts": [
+                                {
+                                  "label": "status",
+                                  "op": "status",
+                                  "p": {
+                                    "chance": 100,
+                                    "status": "燒傷",
+                                    "turns": 3,
+                                    "side": "opp"
+                                  }
+                                }
+                              ]
+                            }
+                          ],
+                          "from": "now",
+                          "trig": "opp_status"
+                        }
+                      }
+                    ]
+                  }
+                ]
+              },
+              "id": "5030:技能:淨世洗禮頌:541e3e0e734a:1",
+              "presentationOnly": false,
+              "execution": "authored-block-runtime",
+              "textCorrespondence": {
+                "state": "no-matching-txt",
+                "files": []
+              },
+              "evidence": []
+            }
+          ]
         },
         {
           "kind": "技能",
@@ -88035,8 +89717,15 @@
                         "label": "count_team_trait",
                         "op": "count_team_trait",
                         "p": {
+                          "unmatchedWeight": 1,
+                          "matchedWeight": -1,
+                          "traitSources": [
+                            "soul",
+                            "general"
+                          ],
+                          "excludeSelf": true,
                           "traitText": "lowChanceStatus",
-                          "state": "alive",
+                          "state": "any",
                           "side": "self"
                         }
                       },
@@ -88053,7 +89742,7 @@
                           "name": "英雄之耀",
                           "side": "self",
                           "unit": "層",
-                          "id": "heroGlory"
+                          "id": "arena.heroGlory"
                         }
                       }
                     ]
@@ -88071,6 +89760,121 @@
             },
             {
               "index": 1,
+              "raw": "【英雄之耀】：自身登場時為對手附加等同層數回合的武誅",
+              "trigger": "entrance",
+              "parsed": true,
+              "explanation": false,
+              "unresolved": [],
+              "damage": null,
+              "semanticVerification": "pending",
+              "blocks": {
+                "conditions": [],
+                "statements": [
+                  {
+                    "acts": [
+                      {
+                        "label": "mark_program",
+                        "op": "mark_program",
+                        "p": {
+                          "persistsOffField": true,
+                          "turnsFromCount": true,
+                          "vsOpponentName": "無極聖武",
+                          "countFromMark": {
+                            "side": "self",
+                            "id": "arena.heroGlory"
+                          },
+                          "priorityBonus": -2,
+                          "description": "對手為無極聖武時所有技能先制-2；體力高於1/2時受到攻擊傷害提升50%，低於1/2時造成攻擊傷害減少50%",
+                          "displayChar": "誅",
+                          "maxCount": 99,
+                          "count": 1,
+                          "rules": [
+                            {
+                              "parsed": true,
+                              "body": [
+                                {
+                                  "acts": [
+                                    {
+                                      "label": "dmg_mod",
+                                      "op": "dmg_mod",
+                                      "p": {
+                                        "boost": 0.5,
+                                        "kind": "攻擊",
+                                        "dir": "in_boost"
+                                      }
+                                    }
+                                  ],
+                                  "cond": [
+                                    {
+                                      "label": "hp_ratio",
+                                      "c": "hp_ratio",
+                                      "p": {
+                                        "ratio": 0.5,
+                                        "side": "self",
+                                        "op": "高於"
+                                      }
+                                    }
+                                  ]
+                                }
+                              ],
+                              "trig": "incoming_attack",
+                              "raw": "體力高於一半受到攻擊傷害提升50%"
+                            },
+                            {
+                              "parsed": true,
+                              "body": [
+                                {
+                                  "acts": [
+                                    {
+                                      "label": "dmg_mod",
+                                      "op": "dmg_mod",
+                                      "p": {
+                                        "reduce": 0.5,
+                                        "kind": "攻擊",
+                                        "dir": "out_reduce"
+                                      }
+                                    }
+                                  ],
+                                  "cond": [
+                                    {
+                                      "label": "hp_ratio",
+                                      "c": "hp_ratio",
+                                      "p": {
+                                        "ratio": 0.5,
+                                        "side": "self",
+                                        "op": "低於"
+                                      }
+                                    }
+                                  ]
+                                }
+                              ],
+                              "trig": "outgoing_attack",
+                              "raw": "體力低於一半造成攻擊傷害減少50%"
+                            }
+                          ],
+                          "scope": "elf",
+                          "mode": "add",
+                          "name": "武誅",
+                          "side": "opp",
+                          "unit": "回合",
+                          "id": "arena.wuzhu"
+                        }
+                      }
+                    ]
+                  }
+                ]
+              },
+              "id": "arena_14:魂印:無極聖武:fc7db9468872:1",
+              "presentationOnly": false,
+              "execution": "authored-block-runtime",
+              "textCorrespondence": {
+                "state": "no-matching-txt",
+                "files": []
+              },
+              "evidence": []
+            },
+            {
+              "index": 2,
               "raw": "自身位於出戰背包時，任意一方精靈登場，僅令該次登場的精靈受到 1 回合附屬類異常狀態【砥礪】。砥礪判定成功時賦予該精靈 3 回合【亮節】；判定未成功時為其附加 3 回合【威怯】",
               "trigger": "bench",
               "parsed": true,
@@ -88149,7 +89953,7 @@
               "evidence": []
             },
             {
-              "index": 2,
+              "index": 3,
               "raw": "自身攻擊無視對手的能力提升效果、護盾效果與攻擊技能免疫效果",
               "trigger": "self_attack",
               "parsed": true,
@@ -88197,7 +90001,7 @@
               "evidence": []
             },
             {
-              "index": 3,
+              "index": 4,
               "raw": "自身使用攻擊技能時，若對手沒有【武誅】，技能使用後為對手附加等同於英雄之耀層數的武誅",
               "trigger": "self_after_skill",
               "parsed": true,
@@ -88331,7 +90135,7 @@
               "evidence": []
             },
             {
-              "index": 4,
+              "index": 5,
               "raw": "【亮節】：自身機率不高於50%的異常狀態附加效果機率下降至0；每回合結束時，為對手PP值為0的技能恢復5點PP值",
               "trigger": "round_end",
               "parsed": true,
@@ -88379,7 +90183,7 @@
               "evidence": []
             },
             {
-              "index": 5,
+              "index": 6,
               "raw": "【威怯】：自身造成的非真實傷害額外減少60%",
               "trigger": "outgoing",
               "parsed": true,

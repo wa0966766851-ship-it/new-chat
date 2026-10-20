@@ -203,7 +203,10 @@ function AppContent() {
     options?: any
   ) => {
     if (team1.length > 0 && team2.length > 0) {
-      const resetTeam = (team: Elf[], suit?: string, starterId?: string) => options?.preparedTeams ? team : team.map(e => resetElfStateForBattle(e, e.id === starterId || (e as any).battleId === starterId, suit));
+      const resetTeam = (team: Elf[], suit?: string, starterId?: string) => team.map(saved => {
+        const elf = applySavedSkillCorrections(saved, DEFAULT_ELVES);
+        return options?.preparedTeams ? elf : resetElfStateForBattle(elf, elf.id === starterId || elf.battleId === starterId, suit);
+      });
       setP1Team(resetTeam(team1, suit1, starter1Id));
       setP2Team(resetTeam(team2, suit2, starter2Id));
       setP1StarterId(starter1Id);

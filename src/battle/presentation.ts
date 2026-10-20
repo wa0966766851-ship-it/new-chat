@@ -159,16 +159,18 @@ export class BattlePresentation {
     if (e.type === 'true' && this.inAction) {
       // DSH 20261020：出手期間的真實傷害進合併池；遇到非真傷事件或收尾時一次播出（每精靈一筆累計白字）。
       this.truePending.push(e);
+      if (fatal) this.fatalPending = true;
       return Promise.resolve();
     }
     if (instant) {
-      const flushTrue = this.truePending.length ? this.mergeTruePending() : [];
+      // 前置傷害致死時仍先顯示本次技能紅字；白字保留到該出手收尾，不能搶在紅字前。
+      const flushTrue = this.truePending.length && !this.fatalPending ? this.mergeTruePending() : [];
       return this.enqueue([...flushTrue.map(x => ({ ...x, channel: 'damage' as const })), { ...e, channel: e.immediate && e.type === 'heal' ? 'potion' : 'damage' }]);
     }
     this.deferred.push(e);
     // DSH 20261020（使用者規格）：擊倒當下立即結算顯示——先出手方打死對手時，
     // 體力淨變化（粉）與真實傷害（白）累計立刻播出，不再等雙方出手收尾。
-    if (fatal) { this.fatalPending = true; return this.flush(); }
+    if (fatal) { this.fatalPending = true; return this.inAction ? Promise.resolve() : this.flush(); }
     return Promise.resolve();
   }
   /** 同一收尾節點的體力淨變化（綠／粉）與真實傷害（白）同步播；不重排戰鬥結算。 */

@@ -12,6 +12,7 @@ import { legalActions, skillSelectable, actionLabel } from './legalActions';
 import { actionKey, opposite, type CandidateReport, type DecisionRequest, type PlannedAction } from './types';
 import { makeRng } from '../../utils/rng';
 import { AI_STYLES } from './styles';
+import { illusionItemAdjustment } from './illusionPlanning';
 
 export function heuristicRanking(request: DecisionRequest): CandidateReport[] {
   const { state, side } = request;
@@ -57,9 +58,11 @@ export function heuristicRanking(request: DecisionRequest): CandidateReport[] {
     return [actionKey(action), c];
   }));
   return legal.map(action => {
-    const score = map.get(actionKey(action));
-    const value = request.forced && action.kind === 'switch' ? (action.index === preferredSwitch ? 100 : 0) : score?.score ?? 0;
+    const score = map.get(actionKey(action)) || (action.kind === 'item' ? map.get(actionKey({kind:'item', id:action.id})) : undefined);
+    const deferred = illusionItemAdjustment(state, side, action);
+    const value = request.forced && action.kind === 'switch' ? (action.index === preferredSwitch ? 100 : 0)
+      : (score?.score ?? (action.kind === 'item' ? -30 : 0)) + deferred;
     return { action, label: actionLabel(state, side, action), score: value, positionDelta: 0, strategyBonus: 0,
-      reason: score?.reason || (request.forced ? '合法存活替補' : '合法候選，尚未推演'), samples: 0, worst: value, parts: [] };
+      reason: deferred > 0 ? `指定下次幻化對象的長期潛力；${score?.reason || '本回合無需補血'}` : score?.reason || (request.forced ? '合法存活替補' : '合法候選，尚未推演'), samples: 0, worst: value, parts: [] };
   }).sort((a, b) => b.score - a.score || actionKey(a.action).localeCompare(actionKey(b.action)));
 }

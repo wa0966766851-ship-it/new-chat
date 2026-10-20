@@ -11,7 +11,10 @@ export interface AIAction { type: 'skill' | 'switch' | 'item'; skill?: Skill; sw
 export function materializeAiAction(state: BattleState, side: 'p1' | 'p2', action: PlannedAction): AIAction {
   if (action.kind === 'skill') return { type: 'skill', skill: state[side].skills[action.slot] };
   if (action.kind === 'switch') return { type: 'switch', switchIndex: action.index };
-  if (action.kind === 'item') return { type: 'item', item: BATTLE_ITEMS.find(i => i.id === action.id) };
+  if (action.kind === 'item') {
+    const item = BATTLE_ITEMS.find(i => i.id === action.id);
+    return {type: 'item', item: item ? {...item, ...(action.picked ? {picked: {...action.picked}} : {})} : undefined};
+  }
   return { type: 'skill', skill: { name: '等待', type: '無', category: '屬性', power: 0, pp: 0, priority: 0, description: '沒有可用行動，等待本回合結束。', effectType: 'none', effectDetail: '' } };
 }
 function fallbackRequest(state: BattleState, side: 'p1' | 'p2', p1Suit?: string, p2Suit?: string, rng: () => number = Math.random, forced = false): DecisionRequest {

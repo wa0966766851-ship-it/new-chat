@@ -171,6 +171,15 @@ export function astralOperations(helpers: {
       }
       const ownerId = identity(ctx.self);
       const label = p.label || '額外行動';
+      if (p.damageRatio !== undefined) {
+        ctx.queueExtraAction(ctx.actor, { label, amount: Math.floor(ctx.target.maxHp * p.damageRatio), elem: p.elem,
+          after: (c, dealt) => {
+            if (identity(c.self) !== ownerId || !alive(c.self)) return;
+            helpers.run(c, p.body, { last: null, lastAmount: dealt, sourceKind: st.sourceKind,
+              event: { trig: 'extra_action_end', data: { dealt } } } as RunState);
+          } });
+        return true;
+      }
       ctx.queueExtraAction(ctx.actor, { label, run: (c: BattleEventContext) => {
         if (identity(c.self) !== ownerId || !alive(c.self)) return 0;
         helpers.run(c, p.body, { last: null, lastAmount: 0, sourceKind: st.sourceKind, event: { trig: 'extra_action_start', data: c } } as RunState);

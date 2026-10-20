@@ -6,6 +6,7 @@ import type { Trigger } from '../blocks/model';
 type Phase = '開局' | '選擇與出手' | '傷害結算' | '行動收尾' | '回合收尾' | '切換與陣亡' | '事件監控';
 interface NodeContract { label: string; phase: Phase; trigger: Trigger; event?: EffectTiming; derived?: string; help: string }
 export const EFFECT_NODES: Record<Node, NodeContract> = {
+  on_opponent_settlement:{label:'對手傷害扣血結算後',phase:'傷害結算',trigger:'opp_damage_settled',event:EffectTiming.OPPONENT_DAMAGE,help:'所有傷害扣血結算後通知來源側在場持有者，包含被免疫而未扣血的請求；讀取實際hpReduced，不重播技能受傷事件。'},
   on_opponent_damaged:{label:'對手受到技能傷害後',phase:'傷害結算',trigger:'opp_damaged_skill',derived:'ON_DAMAGED通知對手側在場觀察者',help:'正式技能傷害結算後通知另一側在場的積木持有者；不重播自身受傷節點，不包含固定／百分比／真傷。'},
   on_skill_selected:{label:'合法選擇技能後',phase:'選擇與出手',trigger:'skill_selected',event:EffectTiming.SKILL_SELECTED,help:'通過選招合法性後立即通知一次，先於另一方選招、排序與行動受控；重複提交不重播。'},
   on_resource_changed:{label:'資源層數改變後',phase:'事件監控',trigger:'resource_changed',event:EffectTiming.RESOURCE_CHANGED,help:'資源積木確實改變層數後，通知原持有者；含場下，封頂沒有變動不重播。'},

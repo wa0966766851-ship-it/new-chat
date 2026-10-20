@@ -1236,6 +1236,444 @@
       ],
       "lastPassed": "2026-10-09：本輪25個單元情境通過；註冊接點與原斷言人工核對，仍僅部分證據",
       "testSha256": "fb82cb387bb74d125f755c11f32a59e04e42c41058d7605e57f73e0414227495"
+    },
+    {
+      "id": "can-settlement-20261021",
+      "elfId": "5014",
+      "entry": "燦",
+      "fragment": "降低至原始傷害的⅓",
+      "testFile": "tests/canSettlement.semantic.test.ts",
+      "anchor": "禁療不產生等量傷害",
+      "scenario": "P1/P2固定、百分比、連續結算、溢補、禁療、真傷及致死",
+      "expected": "非真實降低至1/3；回合末只造成實際恢復總量；禁療及死亡不產生虛構恢復",
+      "remaining": "僅覆蓋列出情境；尚待其他異常／BOSS／換人／消除／免疫／交叉效果與全文逐句驗收，不能當成整隻精靈100%正確。",
+      "lastPassed": "2026-10-21：目前引擎 canSettlement、canCompanion、holyMiles P1/P2正式結算重跑 exit0；只證明所列部分情境。",
+      "testSha256": "67322e1e810ff75a2a5de2abc51fbf76c032f232b48e8c66c718652396526fb5",
+      "inputs": [
+        {
+          "path": "src/engine/battleEngine.ts",
+          "sha256": "c4579c38bf3dd8c43ca16b81f37a87a87e1392b5251c174d6df4342000c699bb"
+        },
+        {
+          "path": "src/battle/contextBuilders.ts",
+          "sha256": "bb3249e9d472ccabe62042122de4386d3da40bbee4b51565186a8e50a85c994e"
+        },
+        {
+          "path": "src/blocks/runtime.ts",
+          "sha256": "43c8ec93c19b3b183d4fae9e850be86fbb4c52af4c971f13f340eaf8a43b24fb"
+        },
+        {
+          "path": "src/effects/sequenceContract.ts",
+          "sha256": "49c7d9313d7d7419600377d00c5be7bc51424f6f50622cd5897797ccbd09ba5d"
+        },
+        {
+          "path": "src/effects/sequenceRuntime.ts",
+          "sha256": "b0ba1d528f140bf13f9de9a830999e76edb5b5e7f54130dec673bc768d6deb67"
+        },
+        {
+          "path": "src/effects/connectedEffects.ts",
+          "sha256": "fcebc82f5669407d9e5f09bfd9a80658ccfa138e9716b6ff56ffa1f29eb0e037"
+        },
+        {
+          "path": "tests/helpers/migrationHarness.ts",
+          "sha256": "6391fba09cd1eeec0323bcae77c1f9fb6067fdd31b92c4ccce8419e71be901fb"
+        },
+        {
+          "path": "src/data/reviewedKitCatalogue.ts",
+          "sha256": "68fc6de9c33b211ed9dde090a5e2ed49040d56acaccd74286e8dab8c12f1b6b9"
+        },
+        {
+          "path": "src/data/reviewedKits.homepage.json",
+          "sha256": "45b730258759f6d87da837ec4c8a5c87428c3b22fba546345452a549a912d578"
+        },
+        {
+          "path": "src/blocks/ops/can.ts",
+          "sha256": "610cbdab74ab8e6d0ea070a2bdd1322d200b219875ce73704111cce6e401ebd4"
+        },
+        {
+          "path": "src/data/migrated5014CanSoulKit.ts",
+          "sha256": "9c7e76b961a6ee692fe127e45184c89a02cce1c1309c3b80d5e0028eb2972412"
+        },
+        {
+          "path": "src/effects/teamKitObservers.ts",
+          "sha256": "4796f8797db5c66aa8ac8e08143e7fce6639028b2ecf8e71b84744ea7de08d1f"
+        },
+        {
+          "path": "src/effects/astralOperations.ts",
+          "sha256": "5ab24b8f20fb9a692175201dcf730f5265465173ce0608e72cef4b95a42bcfa7"
+        },
+        {
+          "path": "src/blocks/ops/brinkk.ts",
+          "sha256": "8116cf7702a24fd7b7110a11edfa16b206b82b56558b6e23fb8b69c0857cd965"
+        }
+      ]
+    },
+    {
+      "id": "can-inherit-20261021",
+      "elfId": "5014",
+      "entry": "燦",
+      "fragment": "自身下場後",
+      "testFile": "tests/canSettlement.semantic.test.ts",
+      "anchor": "下場後繼承",
+      "scenario": "P1/P2聖芒0/1/3層、下場交付與到期",
+      "expected": "下一位登場者分別持有1/2/4回合；到期恢復原傷害，不重複獲得聖芒",
+      "remaining": "僅覆蓋列出情境；尚待其他異常／BOSS／換人／消除／免疫／交叉效果與全文逐句驗收，不能當成整隻精靈100%正確。",
+      "lastPassed": "2026-10-21：目前引擎 canSettlement、canCompanion、holyMiles P1/P2正式結算重跑 exit0；只證明所列部分情境。",
+      "testSha256": "67322e1e810ff75a2a5de2abc51fbf76c032f232b48e8c66c718652396526fb5",
+      "inputs": [
+        {
+          "path": "src/engine/battleEngine.ts",
+          "sha256": "c4579c38bf3dd8c43ca16b81f37a87a87e1392b5251c174d6df4342000c699bb"
+        },
+        {
+          "path": "src/battle/contextBuilders.ts",
+          "sha256": "bb3249e9d472ccabe62042122de4386d3da40bbee4b51565186a8e50a85c994e"
+        },
+        {
+          "path": "src/blocks/runtime.ts",
+          "sha256": "43c8ec93c19b3b183d4fae9e850be86fbb4c52af4c971f13f340eaf8a43b24fb"
+        },
+        {
+          "path": "src/effects/sequenceContract.ts",
+          "sha256": "49c7d9313d7d7419600377d00c5be7bc51424f6f50622cd5897797ccbd09ba5d"
+        },
+        {
+          "path": "src/effects/sequenceRuntime.ts",
+          "sha256": "b0ba1d528f140bf13f9de9a830999e76edb5b5e7f54130dec673bc768d6deb67"
+        },
+        {
+          "path": "src/effects/connectedEffects.ts",
+          "sha256": "fcebc82f5669407d9e5f09bfd9a80658ccfa138e9716b6ff56ffa1f29eb0e037"
+        },
+        {
+          "path": "tests/helpers/migrationHarness.ts",
+          "sha256": "6391fba09cd1eeec0323bcae77c1f9fb6067fdd31b92c4ccce8419e71be901fb"
+        },
+        {
+          "path": "src/data/reviewedKitCatalogue.ts",
+          "sha256": "68fc6de9c33b211ed9dde090a5e2ed49040d56acaccd74286e8dab8c12f1b6b9"
+        },
+        {
+          "path": "src/data/reviewedKits.homepage.json",
+          "sha256": "45b730258759f6d87da837ec4c8a5c87428c3b22fba546345452a549a912d578"
+        },
+        {
+          "path": "src/blocks/ops/can.ts",
+          "sha256": "610cbdab74ab8e6d0ea070a2bdd1322d200b219875ce73704111cce6e401ebd4"
+        },
+        {
+          "path": "src/data/migrated5014CanSoulKit.ts",
+          "sha256": "9c7e76b961a6ee692fe127e45184c89a02cce1c1309c3b80d5e0028eb2972412"
+        },
+        {
+          "path": "src/effects/teamKitObservers.ts",
+          "sha256": "4796f8797db5c66aa8ac8e08143e7fce6639028b2ecf8e71b84744ea7de08d1f"
+        },
+        {
+          "path": "src/effects/astralOperations.ts",
+          "sha256": "5ab24b8f20fb9a692175201dcf730f5265465173ce0608e72cef4b95a42bcfa7"
+        },
+        {
+          "path": "src/blocks/ops/brinkk.ts",
+          "sha256": "8116cf7702a24fd7b7110a11edfa16b206b82b56558b6e23fb8b69c0857cd965"
+        }
+      ]
+    },
+    {
+      "id": "can-rebirth-20261021",
+      "elfId": "5014",
+      "entry": "燦",
+      "fragment": "背包內倒數",
+      "testFile": "tests/canCompanion.semantic.test.ts",
+      "anchor": "死亡當回合不復活",
+      "scenario": "P1/P2聖芒0/3層；珀妮與可出戰隊友存活",
+      "expected": "死亡當回合不復活；場下4/1回合後滿血回到背包，隊友仍在場",
+      "remaining": "僅覆蓋列出情境；尚待其他異常／BOSS／換人／消除／免疫／交叉效果與全文逐句驗收，不能當成整隻精靈100%正確。",
+      "lastPassed": "2026-10-21：目前引擎 canSettlement、canCompanion、holyMiles P1/P2正式結算重跑 exit0；只證明所列部分情境。",
+      "testSha256": "45fbb86415763ac4e03b637b967b197d71d48d4c9d16ae25d3c617f9c54ee370",
+      "inputs": [
+        {
+          "path": "src/engine/battleEngine.ts",
+          "sha256": "c4579c38bf3dd8c43ca16b81f37a87a87e1392b5251c174d6df4342000c699bb"
+        },
+        {
+          "path": "src/battle/contextBuilders.ts",
+          "sha256": "bb3249e9d472ccabe62042122de4386d3da40bbee4b51565186a8e50a85c994e"
+        },
+        {
+          "path": "src/blocks/runtime.ts",
+          "sha256": "43c8ec93c19b3b183d4fae9e850be86fbb4c52af4c971f13f340eaf8a43b24fb"
+        },
+        {
+          "path": "src/effects/sequenceContract.ts",
+          "sha256": "49c7d9313d7d7419600377d00c5be7bc51424f6f50622cd5897797ccbd09ba5d"
+        },
+        {
+          "path": "src/effects/sequenceRuntime.ts",
+          "sha256": "b0ba1d528f140bf13f9de9a830999e76edb5b5e7f54130dec673bc768d6deb67"
+        },
+        {
+          "path": "src/effects/connectedEffects.ts",
+          "sha256": "fcebc82f5669407d9e5f09bfd9a80658ccfa138e9716b6ff56ffa1f29eb0e037"
+        },
+        {
+          "path": "tests/helpers/migrationHarness.ts",
+          "sha256": "6391fba09cd1eeec0323bcae77c1f9fb6067fdd31b92c4ccce8419e71be901fb"
+        },
+        {
+          "path": "src/data/reviewedKitCatalogue.ts",
+          "sha256": "68fc6de9c33b211ed9dde090a5e2ed49040d56acaccd74286e8dab8c12f1b6b9"
+        },
+        {
+          "path": "src/data/reviewedKits.homepage.json",
+          "sha256": "45b730258759f6d87da837ec4c8a5c87428c3b22fba546345452a549a912d578"
+        },
+        {
+          "path": "src/blocks/ops/can.ts",
+          "sha256": "610cbdab74ab8e6d0ea070a2bdd1322d200b219875ce73704111cce6e401ebd4"
+        },
+        {
+          "path": "src/data/migrated5014CanSoulKit.ts",
+          "sha256": "9c7e76b961a6ee692fe127e45184c89a02cce1c1309c3b80d5e0028eb2972412"
+        },
+        {
+          "path": "src/effects/teamKitObservers.ts",
+          "sha256": "4796f8797db5c66aa8ac8e08143e7fce6639028b2ecf8e71b84744ea7de08d1f"
+        },
+        {
+          "path": "src/effects/astralOperations.ts",
+          "sha256": "5ab24b8f20fb9a692175201dcf730f5265465173ce0608e72cef4b95a42bcfa7"
+        },
+        {
+          "path": "src/blocks/ops/brinkk.ts",
+          "sha256": "8116cf7702a24fd7b7110a11edfa16b206b82b56558b6e23fb8b69c0857cd965"
+        }
+      ]
+    },
+    {
+      "id": "holy-repeat-20261021",
+      "elfId": "5030",
+      "entry": "聖",
+      "fragment": "【天佑】回合結束時",
+      "testFile": "tests/holyMiles.semantic.test.ts",
+      "anchor": "天佑六次各100",
+      "scenario": "P1/P2自身500/1000，對手5000體力",
+      "expected": "六次各恢復100、造成100百分比，自己最後1000、對手4400",
+      "remaining": "僅覆蓋列出情境；尚待其他異常／BOSS／換人／消除／免疫／交叉效果與全文逐句驗收，不能當成整隻精靈100%正確。",
+      "lastPassed": "2026-10-21：目前引擎 canSettlement、canCompanion、holyMiles P1/P2正式結算重跑 exit0；只證明所列部分情境。",
+      "testSha256": "5ac51734e6a96aca4a250547b2aa6bebf7e78b3b79ce2928f805766ce4c85efc",
+      "inputs": [
+        {
+          "path": "src/engine/battleEngine.ts",
+          "sha256": "c4579c38bf3dd8c43ca16b81f37a87a87e1392b5251c174d6df4342000c699bb"
+        },
+        {
+          "path": "src/battle/contextBuilders.ts",
+          "sha256": "bb3249e9d472ccabe62042122de4386d3da40bbee4b51565186a8e50a85c994e"
+        },
+        {
+          "path": "src/blocks/runtime.ts",
+          "sha256": "43c8ec93c19b3b183d4fae9e850be86fbb4c52af4c971f13f340eaf8a43b24fb"
+        },
+        {
+          "path": "src/effects/sequenceContract.ts",
+          "sha256": "49c7d9313d7d7419600377d00c5be7bc51424f6f50622cd5897797ccbd09ba5d"
+        },
+        {
+          "path": "src/effects/sequenceRuntime.ts",
+          "sha256": "b0ba1d528f140bf13f9de9a830999e76edb5b5e7f54130dec673bc768d6deb67"
+        },
+        {
+          "path": "src/effects/connectedEffects.ts",
+          "sha256": "fcebc82f5669407d9e5f09bfd9a80658ccfa138e9716b6ff56ffa1f29eb0e037"
+        },
+        {
+          "path": "tests/helpers/migrationHarness.ts",
+          "sha256": "6391fba09cd1eeec0323bcae77c1f9fb6067fdd31b92c4ccce8419e71be901fb"
+        },
+        {
+          "path": "src/data/reviewedKitCatalogue.ts",
+          "sha256": "68fc6de9c33b211ed9dde090a5e2ed49040d56acaccd74286e8dab8c12f1b6b9"
+        },
+        {
+          "path": "src/data/reviewedKits.homepage.json",
+          "sha256": "45b730258759f6d87da837ec4c8a5c87428c3b22fba546345452a549a912d578"
+        },
+        {
+          "path": "src/data/holyMiles.ts",
+          "sha256": "df7aefe64125de332c2fb869ce1fa8ba3e3e6a11c98191f93b4e1c306c321069"
+        },
+        {
+          "path": "src/data/migratedHolyMilesKits.ts",
+          "sha256": "8000bf302c02792112fbcf0ee2f5c1e71c3dd72709d4da5500db327300ef8c7e"
+        },
+        {
+          "path": "src/blocks/ops/holyMiles.ts",
+          "sha256": "15fadd6f96f61b7b93b83480dba34fc56d4434142634a1f349a07b2f785e6dcd"
+        },
+        {
+          "path": "src/blocks/ops/groupB.ts",
+          "sha256": "99aa599da051640f03896bb107de2aa09ca99944b10f4302c15510c94cf97131"
+        },
+        {
+          "path": "src/blocks/ops/finalOdinDeluBeliente.ts",
+          "sha256": "39ff83985c78db657b99ab88701db638a6e3ed54ef8e1c9c504af8e0f7394862"
+        },
+        {
+          "path": "src/effects/effectNodes.ts",
+          "sha256": "a20f71f2f822cd01cbc769d63eacfcc1e1d8335ef72ab0f8a6922ee5cfd7ea84"
+        }
+      ]
+    },
+    {
+      "id": "holy-wrath-20261021",
+      "elfId": "5030",
+      "entry": "聖",
+      "fragment": "對手受到百分比傷害後體力未減少",
+      "testFile": "tests/holyMiles.semantic.test.ts",
+      "anchor": "聖怒倍率",
+      "scenario": "P1/P2真正百分比免疫0扣血事件，對手在場10%／場下80%兩種比例",
+      "expected": "攻擊倍率分別4／512，計時器當回合結束到期；不把零扣血猜成傷害類型",
+      "remaining": "僅覆蓋列出情境；尚待其他異常／BOSS／換人／消除／免疫／交叉效果與全文逐句驗收，不能當成整隻精靈100%正確。",
+      "lastPassed": "2026-10-21：目前引擎 canSettlement、canCompanion、holyMiles P1/P2正式結算重跑 exit0；只證明所列部分情境。",
+      "testSha256": "5ac51734e6a96aca4a250547b2aa6bebf7e78b3b79ce2928f805766ce4c85efc",
+      "inputs": [
+        {
+          "path": "src/engine/battleEngine.ts",
+          "sha256": "c4579c38bf3dd8c43ca16b81f37a87a87e1392b5251c174d6df4342000c699bb"
+        },
+        {
+          "path": "src/battle/contextBuilders.ts",
+          "sha256": "bb3249e9d472ccabe62042122de4386d3da40bbee4b51565186a8e50a85c994e"
+        },
+        {
+          "path": "src/blocks/runtime.ts",
+          "sha256": "43c8ec93c19b3b183d4fae9e850be86fbb4c52af4c971f13f340eaf8a43b24fb"
+        },
+        {
+          "path": "src/effects/sequenceContract.ts",
+          "sha256": "49c7d9313d7d7419600377d00c5be7bc51424f6f50622cd5897797ccbd09ba5d"
+        },
+        {
+          "path": "src/effects/sequenceRuntime.ts",
+          "sha256": "b0ba1d528f140bf13f9de9a830999e76edb5b5e7f54130dec673bc768d6deb67"
+        },
+        {
+          "path": "src/effects/connectedEffects.ts",
+          "sha256": "fcebc82f5669407d9e5f09bfd9a80658ccfa138e9716b6ff56ffa1f29eb0e037"
+        },
+        {
+          "path": "tests/helpers/migrationHarness.ts",
+          "sha256": "6391fba09cd1eeec0323bcae77c1f9fb6067fdd31b92c4ccce8419e71be901fb"
+        },
+        {
+          "path": "src/data/reviewedKitCatalogue.ts",
+          "sha256": "68fc6de9c33b211ed9dde090a5e2ed49040d56acaccd74286e8dab8c12f1b6b9"
+        },
+        {
+          "path": "src/data/reviewedKits.homepage.json",
+          "sha256": "45b730258759f6d87da837ec4c8a5c87428c3b22fba546345452a549a912d578"
+        },
+        {
+          "path": "src/data/holyMiles.ts",
+          "sha256": "df7aefe64125de332c2fb869ce1fa8ba3e3e6a11c98191f93b4e1c306c321069"
+        },
+        {
+          "path": "src/data/migratedHolyMilesKits.ts",
+          "sha256": "8000bf302c02792112fbcf0ee2f5c1e71c3dd72709d4da5500db327300ef8c7e"
+        },
+        {
+          "path": "src/blocks/ops/holyMiles.ts",
+          "sha256": "15fadd6f96f61b7b93b83480dba34fc56d4434142634a1f349a07b2f785e6dcd"
+        },
+        {
+          "path": "src/blocks/ops/groupB.ts",
+          "sha256": "99aa599da051640f03896bb107de2aa09ca99944b10f4302c15510c94cf97131"
+        },
+        {
+          "path": "src/blocks/ops/finalOdinDeluBeliente.ts",
+          "sha256": "39ff83985c78db657b99ab88701db638a6e3ed54ef8e1c9c504af8e0f7394862"
+        },
+        {
+          "path": "src/effects/effectNodes.ts",
+          "sha256": "a20f71f2f822cd01cbc769d63eacfcc1e1d8335ef72ab0f8a6922ee5cfd7ea84"
+        }
+      ]
+    },
+    {
+      "id": "holy-baptism-20261021",
+      "elfId": "5030",
+      "entry": "淨世洗禮頌",
+      "fragment": "本次造成技能傷害不少於280",
+      "testFile": "tests/holyMiles.semantic.test.ts",
+      "anchor": "無效補償技能傷害也須恢復等量",
+      "scenario": "P1/P2正常80%體力、異常等量附加、滿血技能無效",
+      "expected": "正常保底280×2^8，異常再附加等量百分比，無效保底280×2^11並恢復等量，保留技能傷害分類",
+      "remaining": "僅覆蓋列出情境；尚待其他異常／BOSS／換人／消除／免疫／交叉效果與全文逐句驗收，不能當成整隻精靈100%正確。",
+      "lastPassed": "2026-10-21：目前引擎 canSettlement、canCompanion、holyMiles P1/P2正式結算重跑 exit0；只證明所列部分情境。",
+      "testSha256": "5ac51734e6a96aca4a250547b2aa6bebf7e78b3b79ce2928f805766ce4c85efc",
+      "inputs": [
+        {
+          "path": "src/engine/battleEngine.ts",
+          "sha256": "c4579c38bf3dd8c43ca16b81f37a87a87e1392b5251c174d6df4342000c699bb"
+        },
+        {
+          "path": "src/battle/contextBuilders.ts",
+          "sha256": "bb3249e9d472ccabe62042122de4386d3da40bbee4b51565186a8e50a85c994e"
+        },
+        {
+          "path": "src/blocks/runtime.ts",
+          "sha256": "43c8ec93c19b3b183d4fae9e850be86fbb4c52af4c971f13f340eaf8a43b24fb"
+        },
+        {
+          "path": "src/effects/sequenceContract.ts",
+          "sha256": "49c7d9313d7d7419600377d00c5be7bc51424f6f50622cd5897797ccbd09ba5d"
+        },
+        {
+          "path": "src/effects/sequenceRuntime.ts",
+          "sha256": "b0ba1d528f140bf13f9de9a830999e76edb5b5e7f54130dec673bc768d6deb67"
+        },
+        {
+          "path": "src/effects/connectedEffects.ts",
+          "sha256": "fcebc82f5669407d9e5f09bfd9a80658ccfa138e9716b6ff56ffa1f29eb0e037"
+        },
+        {
+          "path": "tests/helpers/migrationHarness.ts",
+          "sha256": "6391fba09cd1eeec0323bcae77c1f9fb6067fdd31b92c4ccce8419e71be901fb"
+        },
+        {
+          "path": "src/data/reviewedKitCatalogue.ts",
+          "sha256": "68fc6de9c33b211ed9dde090a5e2ed49040d56acaccd74286e8dab8c12f1b6b9"
+        },
+        {
+          "path": "src/data/reviewedKits.homepage.json",
+          "sha256": "45b730258759f6d87da837ec4c8a5c87428c3b22fba546345452a549a912d578"
+        },
+        {
+          "path": "src/data/holyMiles.ts",
+          "sha256": "df7aefe64125de332c2fb869ce1fa8ba3e3e6a11c98191f93b4e1c306c321069"
+        },
+        {
+          "path": "src/data/migratedHolyMilesKits.ts",
+          "sha256": "8000bf302c02792112fbcf0ee2f5c1e71c3dd72709d4da5500db327300ef8c7e"
+        },
+        {
+          "path": "src/blocks/ops/holyMiles.ts",
+          "sha256": "15fadd6f96f61b7b93b83480dba34fc56d4434142634a1f349a07b2f785e6dcd"
+        },
+        {
+          "path": "src/blocks/ops/groupB.ts",
+          "sha256": "99aa599da051640f03896bb107de2aa09ca99944b10f4302c15510c94cf97131"
+        },
+        {
+          "path": "src/blocks/ops/finalOdinDeluBeliente.ts",
+          "sha256": "39ff83985c78db657b99ab88701db638a6e3ed54ef8e1c9c504af8e0f7394862"
+        },
+        {
+          "path": "src/effects/effectNodes.ts",
+          "sha256": "a20f71f2f822cd01cbc769d63eacfcc1e1d8335ef72ab0f8a6922ee5cfd7ea84"
+        }
+      ]
     }
   ]
 }

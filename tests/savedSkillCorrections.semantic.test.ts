@@ -32,4 +32,45 @@ try{
     assert.match(document.getElementById('root')!.textContent!,/^■ 先制\+3\n/);assert.match(document.getElementById('root')!.textContent!,/先制級：3$/);assert.deepEqual(shown.skills[0].kit,s.kit);assert.equal(shown.skills[0].currentPp,2);
   }
   console.log('Saved source correction: exact old native/Kit, reserve pool, custom protection, immutable/idempotent and both real React storage routes passed');
+  const {syncOtherworldReyDescriptions:syncRey}=await server.ssrLoadModule('/src/data/otherworldReyDescriptions.ts');
+  const {createBattleEngine}=await server.ssrLoadModule('/src/engine/battleEngine.ts');
+  const rey=defaults.find((e:any)=>e.id==='5029');
+  const oldRey=structuredClone(rey);
+  for(const definition of [oldRey.soulMark,oldRey.alienTraits.gen2Trait,...oldRey.alienTraits.exclusiveTraits]){
+    delete definition.kit;delete definition.effectMode;
+  }
+  oldRey.skills[0].pp=3;oldRey.evs={hp:252,atk:0,def:0,spatk:0,spdef:0,speed:0};
+  const restored=syncRey(correct(oldRey,defaults));
+  assert.deepEqual(restored.soulMark.kit,rey.soulMark.kit);
+  assert.deepEqual(restored.alienTraits.exclusiveTraits,rey.alienTraits.exclusiveTraits,'同步文字不得丟棄特質積木');
+  assert.equal(restored.skills[0].pp,3);assert.deepEqual(restored.evs,oldRey.evs);
+  const once=correct(oldRey,defaults);assert.equal(correct(once,defaults),once);
+  assert.deepEqual(correct({...oldRey,isCustom:true},defaults).soulMark.kit,rey.soulMark.kit,'內建精靈只改配裝也會標 isCustom，不應漏遷移');
+  for(const protectedElf of [{...oldRey,isCustom:true,name:'我的自訂精靈'},{...oldRey,id:'custom_5029'},
+    {...oldRey,soulMark:{...oldRey.soulMark,description:'自訂魂印'}},
+    {...oldRey,soulMark:{...oldRey.soulMark,effectMode:'registry'}}]){
+    assert.equal(correct(protectedElf,defaults).soulMark,protectedElf.soulMark);
+  }
+  for(const store of ['seer_default_elves_overrides','seer_custom_elves']){
+    let loaded:any;
+    function ReiDisplay(){loaded=useGameData().allElves.find((e:any)=>e.id==='5029');return React.createElement('span',null,loaded.name);}
+    localStorage.clear();localStorage.setItem(store,JSON.stringify(store==='seer_custom_elves'?[oldRey]:{'5029':oldRey}));
+    await act(async()=>root.render(React.createElement(GameDataProvider,{key:'rey'+store},React.createElement(ReiDisplay))));
+    assert.deepEqual(loaded.soulMark.kit,rey.soulMark.kit);
+    assert.deepEqual(loaded.alienTraits.exclusiveTraits,rey.alienTraits.exclusiveTraits);
+    for(const side of ['p1','p2']){
+      const self=structuredClone(loaded);self.battleId='saved-rey';
+      const enemy=structuredClone(defaults.find((e:any)=>e.id==='5001'));
+      Object.assign(enemy,{id:'copy-target',battleId:'copy-target',name:'複製對象',soulMark:undefined,trait:undefined,alienTraits:undefined,statStages:{atk:2,def:3}});
+      const p1=side==='p1'?self:enemy,p2=side==='p2'?self:enemy;
+      const engine=createBattleEngine({initialP1Team:[p1],initialP2Team:[p2],p1StarterId:p1.battleId,p2StarterId:p2.battleId,preparedTeams:true,battleMode:'PVP',isFast:()=>true});
+      try{engine.mount();engine.start();await engine.idle();const actual=engine.getState()[side];
+        assert.equal(actual.statStages.atk,2,`${store}/${side}選招前複製攻擊`);
+        assert.equal(actual.statStages.def,3,`${store}/${side}選招前複製防禦`);
+        assert.equal(actual.suppressAbnormalSideEffectsWhenParalyzed,true,'正式魂印旗標');
+        assert.ok(actual.survivalRule?.active,'正式神明特質已執行');
+      }finally{engine.unmount();}
+    }
+  }
+  console.log('Rey saved data: both real React storage routes × P1/P2 copy before selection, soul flags and god trait passed');
 }finally{await act(async()=>root.unmount());await server.close();dom.window.close();}

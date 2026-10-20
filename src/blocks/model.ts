@@ -6,7 +6,10 @@ export type Side = "self" | "opp" | "both";
 export type Trigger =
   | "team_battle_start" | "team_entrance" | "team_after_action" | "team_round_end"
   | "team_before_status" | "team_status_received" | "team_defeated"
+  | "team_phase_end" | "team_opponent_skill"
+  | "team_action_end"
   | "opp_damaged_skill"
+  | "opp_damage_settled"
   | "skill_selected"
   | "outgoing_power" | "incoming_power" // 正式公式前的攻方／受方威力修正
   | "resource_changed" // 資源積木實際改變指定持有者層數後

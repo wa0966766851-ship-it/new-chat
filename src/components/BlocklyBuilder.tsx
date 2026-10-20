@@ -9,6 +9,8 @@ import { EFFECT_NODE_LABELS, kitEntryIssue } from '../effects/effectConnection';
 import { EFFECT_NODES } from '../effects/effectNodes';
 import { canvasParams, mergeCanvasParams } from '../effects/blockCanvasParams';
 import { legacyActOf, LEGACY_TOOLTIP } from '../blocks/ops/legacyHandler';
+import { EffectParameterTree } from './EffectParameterTree';
+import { replaceEffectValue } from '../effects/effectVisualTree';
 import { Puzzle, Play, Code2, Trash2, RefreshCw, Layers, Sparkles, Check, Copy, BookmarkPlus, Download, Plus, Search } from "lucide-react";
 
 // Ensure custom blocks are defined once
@@ -1396,6 +1398,7 @@ export const BlocklyBuilder: React.FC<BlocklyBuilderProps> = ({
   const [copied, setCopied] = useState<boolean>(false);
   const [savedMacros, setSavedMacros] = useState<CustomMacro[]>([]);
   const [parameterDraft, setParameterDraft] = useState<string | null>(null);
+  const parameterBaseRef = useRef<string | null>(null);
   const [parameterError, setParameterError] = useState('');
 
   const currentSource = (source || "skill") as "skill" | "soulmark" | "mechanic" | "item";
@@ -1636,6 +1639,17 @@ export const BlocklyBuilder: React.FC<BlocklyBuilderProps> = ({
 
   const presetBtn = "px-3 py-1.5 bg-white/[0.06] hover:bg-white/[0.12] text-slate-200 rounded-lg transition";
 
+  const applyParameterDraft = () => {
+    if (editingBlockedReason || parameterDraft === null || !onChange) return;
+    try {
+      if (parameterBaseRef.current !== jsonOutput) throw new Error('畫布已在參數編輯期間變更；請先保留需要的修改，取消參數草稿後重新編輯，避免覆蓋新畫布。');
+      const kit = JSON.parse(parameterDraft); validateKit(kit);
+      const issue = (kit as KitEntry[]).map(e => kitEntryIssue(e)).find(Boolean); if (issue) throw new Error(issue);
+      loadKitToWorkspace(kit); onChangeRef.current?.(kit); setJsonOutput(JSON.stringify(kit,null,2));
+      setParameterDraft(null); setParameterError(''); parameterPendingRef.current=false;canvasPendingRef.current=false;pendingRef.current?.(false);
+    } catch(error) {setParameterError((error as Error).message);}
+  };
+
   return (
     <div data-effect-workspace className={`ios-card flex flex-col text-slate-100 overflow-hidden ${fullPageMode ? "h-full w-full" : "min-h-[620px]"}`}>
       {/* Toolbar */}
@@ -1726,22 +1740,31 @@ export const BlocklyBuilder: React.FC<BlocklyBuilderProps> = ({
             }) : <div className="text-[13px] text-slate-500">從左側拖入「觸發時點」，再把效果積木接在裡面</div>; } catch { return <p role="alert" className="text-xs text-amber-200">{jsonOutput}</p>; } })()}
           </div>
 
+          <details open className="rounded-xl bg-black/30 p-2.5">
+            <summary className="text-xs text-cyan-200 cursor-pointer">樹狀積木編輯（所有條件、目標與巢狀流程）</summary>
+            <p className="my-2 text-xs text-slate-400">展開分支即可逐欄修改；套用時通過相同的執行合約檢查，再同步到畫布與草稿。</p>
+            <div className="max-h-[60vh] overflow-auto">{(() => {try {
+              const kit = JSON.parse(parameterDraft ?? jsonOutput);
+              return <EffectParameterTree value={kit} disabled={!!editingBlockedReason || !onChange} onChange={(path,value)=>{
+                if(parameterDraft===null)parameterBaseRef.current=jsonOutput;
+                setParameterDraft(JSON.stringify(replaceEffectValue(kit,path,value),null,2));setParameterError('');parameterPendingRef.current=true;pendingRef.current?.(true);
+              }}/>;
+            } catch {return <p role="status" className="text-xs text-amber-200">進階參數尚未形成合法 JSON；修正或取消後可繼續樹狀編輯。</p>;}})()}</div>
+            {parameterError && <p role="alert" className="text-xs text-amber-200">{parameterError}</p>}
+            <div className="flex gap-2 mt-2">
+              <button type="button" className="ios-button-secondary text-xs p-2" onClick={()=>{setParameterDraft(null);setParameterError('');parameterPendingRef.current=false;pendingRef.current?.(canvasPendingRef.current);}}>取消參數修改</button>
+              <button type="button" disabled={!!editingBlockedReason || parameterDraft===null || !onChange} className="ios-button-primary text-xs p-2 disabled:opacity-40" onClick={applyParameterDraft}>套用樹狀積木到草稿</button>
+            </div>
+          </details>
           <details className="flex-grow flex flex-col rounded-xl bg-black/30 p-2.5 overflow-hidden">
             <summary className="text-[12px] text-slate-400 cursor-pointer">進階參數編輯（含保留機制／巢狀條件）</summary>
             <p className="my-2 text-xs text-slate-400">完整參數與畫布共用同一份資料；不支援或無執行端的選項會拒絕套用，不會只存下日誌。</p>
-            <textarea aria-label="積木完整參數" value={parameterDraft ?? jsonOutput} onChange={event => {setParameterDraft(event.target.value);setParameterError('');parameterPendingRef.current=true;pendingRef.current?.(true);}}
+            <textarea aria-label="積木完整參數" value={parameterDraft ?? jsonOutput} onChange={event => {if(parameterDraft===null)parameterBaseRef.current=jsonOutput;setParameterDraft(event.target.value);setParameterError('');parameterPendingRef.current=true;pendingRef.current?.(true);}}
               className="w-full h-56 mt-1 bg-transparent text-cyan-300 font-mono text-[11px] resize-y focus:outline-none overflow-y-auto leading-relaxed" />
             {parameterError && <p role="alert" className="text-xs text-amber-200">{parameterError}</p>}
             <div className="flex gap-2 mt-2">
               <button type="button" className="ios-button-secondary text-xs p-2" onClick={() => {setParameterDraft(null);setParameterError('');parameterPendingRef.current=false;pendingRef.current?.(canvasPendingRef.current);}}>取消參數修改</button>
-              <button type="button" disabled={!!editingBlockedReason || parameterDraft === null || !onChange} className="ios-button-primary text-xs p-2 disabled:opacity-40" onClick={() => {
-                try {
-                  const kit = JSON.parse(parameterDraft!); validateKit(kit);
-                  const issue = (kit as KitEntry[]).map(e => kitEntryIssue(e)).find(Boolean); if (issue) throw new Error(issue);
-                  loadKitToWorkspace(kit); onChangeRef.current?.(kit); setJsonOutput(JSON.stringify(kit,null,2));
-                  setParameterDraft(null); setParameterError(''); parameterPendingRef.current=false;canvasPendingRef.current=false;pendingRef.current?.(false);
-                } catch(error) {setParameterError((error as Error).message);}
-              }}>套用參數到草稿</button>
+              <button type="button" disabled={!!editingBlockedReason || parameterDraft === null || !onChange} className="ios-button-primary text-xs p-2 disabled:opacity-40" onClick={applyParameterDraft}>套用參數到草稿</button>
             </div>
           </details>
 

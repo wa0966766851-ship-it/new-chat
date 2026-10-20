@@ -40,7 +40,7 @@ EXTRA_ELF_KITS.set('克塔亞特', CTHYAAT_SELF_KIT);
 const idOf = (e: any) => String(e?.battleId || e?.id || '');
 
 export const BRINKK_ACTION_FIELDS: Record<string, readonly string[]> = {
-  summon_extra_elf: ['name', 'type', 'statFromTeamRatio', 'side', 'kit'],
+  summon_extra_elf: ['name', 'type', 'statFromTeamRatio', 'side', 'kit', 'statSource'],
   true_damage_stack: ['key', 'stackStep', 'maxStacks', 'dir', 'kind'],
   off_field_hp_drain: ['ratio', 'key', 'maxStacks'],
   extra_elf_heal_owner: ['ratio', 'side'],
@@ -49,6 +49,7 @@ export const BRINKK_ACTION_FIELDS: Record<string, readonly string[]> = {
 
 export function brinkkActionIssue(op: string, p: any): string | null {
   if (op === 'summon_extra_elf') {
+    if (p.statSource !== undefined && !['team', 'holder'].includes(p.statSource)) return '召喚能力來源需全隊或持有者';
     if (typeof p.name !== 'string' || !p.name) return '召喚額外精靈需名稱';
     if (typeof p.type !== 'string' || !p.type) return '召喚額外精靈需屬性';
     if (!(p.statFromTeamRatio > 0 && p.statFromTeamRatio <= 1)) return '召喚額外精靈能力來源需0至100%比例';
@@ -88,16 +89,19 @@ export function brinkkOperations(helpers: { liveElf: (ctx: BattleEventContext, s
       const team = ((ctx as any).getFullTeam?.(side) || []) as any[];
       const base = helpers.liveElf(ctx, side) || team[0];
       if (!base) return false;
-      const sum = team.filter(e => e && !e.isVanished).reduce((acc: any, e: any) => {
+      const sources = p.statSource === 'holder' ? [base] : team.filter(e => e && !e.isVanished);
+      const sum = sources.reduce((acc: any, e: any) => {
         const st = e.calculatedStats || {};
         for (const k of ['atk', 'def', 'spatk', 'spdef', 'speed', 'hp']) acc[k] += st[k] || 0;
         return acc;
       }, { atk: 0, def: 0, spatk: 0, spdef: 0, speed: 0, hp: 0 });
+      if (p.statSource === 'holder') sum.hp = base.maxHp;
       const scaled: any = {};
       for (const k of Object.keys(sum)) scaled[k] = Math.max(1, Math.floor(sum[k] * p.statFromTeamRatio));
       // DSH 20261020：額外精靈的專屬 Kit 由註冊表按名字取得（Kit 參數無法通過 params 序列化）。
       const extraKit = extraElfKitByName(p.name);
       const extra = createExtraElf(base, { name: p.name, type: p.type, calculatedStats: scaled, maxHp: scaled.hp, currentHp: scaled.hp,
+        ...(p.statSource === 'holder' ? { baseStats: Object.fromEntries(Object.entries(base.baseStats || {}).map(([k, v]) => [k, Math.max(1, Math.floor(Number(v) * p.statFromTeamRatio))])) } : {}),
         ...(extraKit?.length ? { kit: extraKit } : {}) } as any);
       (ctx as any).addExtraElf(side, extra);
       (ctx as any).addLog?.('召喚額外精靈：' + p.name, 'effect');

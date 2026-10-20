@@ -36,7 +36,9 @@ export function syncOtherworldReyDescriptions<T extends Partial<Elf>>(elf: T): T
       exclusiveTrait: original.exclusiveTrait && !/神明|雷神/.test(original.exclusiveTrait.name) ? original.exclusiveTrait : undefined,
       exclusiveTraits: [
         ...exclusive.filter(t => !descriptions[t.name]),
-        ...Object.entries(descriptions).map(([name, description]) => ({ name, description })),
+        ...Object.entries(descriptions).map(([name, description]) => ({
+          ...(exclusive.find(t => t.name === name) || (original.exclusiveTrait?.name === name ? original.exclusiveTrait : {})), name, description,
+        })),
       ],
     },
     skills: syncSkills(elf.skills),

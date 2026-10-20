@@ -38,9 +38,7 @@ try{
  // ── A：S4／S5／S6、K3、K1、K2 真實傷害、K5 未觸發分支
  await start([scarlett()],[mk('X',5_000_000,[sk('T增益'),sk('等待'),sk('打','物理',50)],10)]); dismissPuni();
  let L=await turn('暮光舞動','T增益');
- assert.match(L,/【燦】：自身特攻、速度\+2、命中\+1/,'S4');
- assert.match(L,/【燦】：對手雙攻、速度-2、命中-1/,'S5');
- assert.match(L,/弱點傷害/,'S6 觸發');
+ // S4/S5 以以下實際六維數值驗證，避免要求已除名 handler 的專屬日誌。
  assert.ok(fx('p2')['星贖']>0,'S6 對手星贖');
  assert.equal(st().p1RegistryState.weakPointDefenseTurns,1,'S6 弱點傷害 2 回合（回合結束剩1）');
  assert.equal(st().p1.statStages.spatk,4,'S4+K3 特攻 +4');
@@ -59,14 +57,14 @@ try{
  // K5 的「未消除」分支獨立開局：K1 留在對手身上的無效計時器本來就可清除，不能把它當成無效果對手。
  await start([scarlett()],[mk('X',5_000_000,[sk('等待'),sk('打','物理',50)],10)]); dismissPuni();
  L=await turn('晨曦昭世','等待');
- assert.ok(st().p1RegistryState.immuneAttackTurns>=2,'K2 攻擊免疫');
+ assert.equal(st().p1RegistryState.immuneAttackTurns,2,'K2 基礎2回合加星贖延長1回合，回合末剩2');
  assert.equal(st().p1RegistryState.reflectStatusTurns,4,'K2 5回合反彈異常');
  const hpBefore=st().p2.currentHp;
  L=await turn('王·聖璨天潔','等待');
  assert.ok(st().p1Timers.some((t:any)=>t.payload?.block?.trig==='self_skill'&&t.payload.block.body?.some((s:any)=>s.acts?.some((a:any)=>a.op==='dmg'&&a.p.type==='真實'&&a.p.ratio===0.2))),'K2 20%真傷積木監控仍在；精確數值及期限由migrationExpiryReaction驗證');
  assert.equal(st().p1RegistryState.blkImmuneStatusCount,1,'K5 未觸發分支真正授予一次異常免疫');
  assert.ok(hpBefore-st().p2.currentHp>=Math.floor(st().p1.maxHp*.5)+Math.floor(st().p2.maxHp/3),'K2 20%真傷與K5 30%自身上限及對手⅓百分比傷害真正扣血');
- assert.match(L,/未擊敗對手，恢復 \d+ 體力/,'K5 擊後⅓百分比傷害＋恢復');
+ assert.equal(st().p1.currentHp,st().p1.maxHp,'K5 未擊敗時保持滿血；實際傷害量由上方數值斷言驗證');
  assert.ok(st().p2.currentHp<hpBefore);
  console.log('A 通過');
 
@@ -75,10 +73,7 @@ try{
  L=await turn('晨曦昭世','打');
  assert.match(L,/免疫了【打】/,'K2 免疫攻擊');
  L=await turn('王·凰歌盡霄','T百分比');
- assert.match(L,/【燦】：傷害降至⅓/,'S2 降傷');
- assert.match(L,/回合結束造成等同恢復量 \d+ 的百分比傷害/,'S2 回合結束百分比傷害');
- assert.equal(st().p1RegistryState.chanStacks,1,'燦界聖芒 +1');
- assert.equal((st().p1Marks||[]).find((m:any)=>m.id==='scarlett_holy_light')?.count,1);
+ assert.equal((st().p1Marks||[]).find((m:any)=>m.id==='canGlory')?.count,1,'實際降低傷害才授予1層聖芒；精確HP結算另由canSettlement雙側測試驗證\n'+L);
  console.log('B 通過');
 
  // ── C：K4 交換／威力／無效下次攻擊、K5 消除回合類效果→麻痺
@@ -104,13 +99,12 @@ try{
  await start([scarlett(),T],[mk('W',5_000_000,[sk('T麻痺術'),sk('T百分比')],10)]);
  L=await turn('暮光舞動','T麻痺術');
  assert.ok(!fx('p1')['麻痺'] && fx('p1')['星贖']>0,'P2 麻痺轉化為星贖');
- assert.match(L,/麻痺轉化為星贖/);
  const tIdx=st().p1Team.findIndex((e:any)=>e.battleId==='T');
+ const inheritedTargetHp=st().p2.currentHp;
  L=await turn({switchTo:tIdx},'T百分比');
  assert.equal(st().p1.battleId,'T');
- assert.match(L,/斯嘉麗下場，下一隻出戰精靈 \d 回合內獲得聖光護體/,'S3 下場');
- assert.match(L,/【燦】：傷害降至⅓/,'S3 繼承降傷');
- assert.match(L,/回合結束造成等同恢復量/,'S3 繼承回合結束百分比傷害');
+ assert.equal(st().p1.currentHp,100000,'S3 30%百分比傷害降至10%，再實際恢復10000');
+ assert.equal(inheritedTargetHp-st().p2.currentHp,10000,'S3 繼承回合末實際恢復等量百分比傷害');
  console.log('D 通過');
 
  // ── 弱點傷害（通用鍵 weakPointDefenseTurns）：以對手雙防較低者的60%計算
@@ -129,11 +123,12 @@ try{
  {
    // E1：斯嘉麗在場死亡（滿層倒數1）→ 死亡當回合不得原地復活（否則無限復活）
    const T2=mk('T2',100000,[sk('等待')],10);
-   R['T必殺真傷']=(c:any)=>{ c.applyTrueDamage(c.targetSide,99999999); };  // 須在 start 前註冊；真傷繞過屬性技能無效
-   const killer=mk('K',1_000_000_000,[sk('T必殺真傷','物理',1),sk('等待')],1);   // 斯嘉麗先出手，對手後手擊殺
+   const fatal={...sk('T必殺真傷','物理',1,100),effectMode:'kit',kit:[{codeId:'effect_sequence',node:'on_skill_use',source:'skill',role:'attached',order:0,
+     params:{clause:{raw:'測試致死真傷',trig:'use',parsed:true,body:[{acts:[{op:'dmg',p:{flat:100000,type:'真實'},label:'致死真傷'}]}]}}}]};
+   const killer=mk('K',1_000_000_000,[fatal,sk('等待')],99999); // 高先制擊殺，避免珀妮失明干擾死亡倒數測試
    await start([scarlett(),T2],[killer]);
    let L2=await turn('純白聖翎','T必殺真傷');
-   assert.match(L2,/倒下/,'E1 斯嘉麗死亡');
+   assert.equal(st().p1Team[0].currentHp,0,`E1 斯嘉麗確實死亡\n${L2}`);
    // 等待強制換人階段到來（死亡結算非同步）
    for(let w=0;w<40 && st().phase!==('forced_switch_p1' as any) && st().phase!=='game_over';w++) await wait(3);
    const t0=st().p1Team[0];
@@ -148,7 +143,7 @@ try{
      else { await wait(3); }
    }
    const logs2=(st().logs||[]).map((x:any)=>x.text).join('\n');
-   assert.match(logs2,/重生時間到！斯嘉麗於背包內重生/,'E2 背包內重生');
+   assert.match(logs2,/於背包內重生/,'E2 背包內重生');
    assert.ok(st().p1Team[0].currentHp>0,'E2 重生後體力>0');
    assert.ok(st().p1.battleId!=='S' || st().p1Team[0].currentHp>0,'E2 重生位置在背包');
    console.log('E 通過（重生條件：場下＋可出戰精靈；死亡當回合不在場復活）');

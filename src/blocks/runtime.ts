@@ -78,7 +78,7 @@ import { arenaSharedOperations } from './ops/arenaShared';
 import { holyMilesOperations } from './ops/holyMiles';
 import { dragonHealingOperations } from './ops/dragonHealing';
 import { shieldMarkOperations } from './ops/shieldMark';
-import { canOperations } from './ops/can';
+import { canOperations, canEvalCond } from './ops/can';
 import { brinkkOperations } from './ops/brinkk';
 import { odinOperations } from './ops/odinRune';
 import { mechOperations } from './ops/mech';
@@ -177,6 +177,8 @@ function cmp(a: number, op: string, b: number): boolean {
 
 // ───────── 條件 ─────────
 export function evalCond(ctx: BattleEventContext, c: Cond, st: RunState): boolean | undefined {
+  const companionCondition = canEvalCond(ctx, c);
+  if (companionCondition !== undefined) return companionCondition;
   const finalCondition = finalOdbEvalCond(ctx,c,st);
   if (finalCondition !== undefined) return finalCondition;
   const p = c.p || {};
@@ -1596,7 +1598,8 @@ export const OPS: Record<string, OpFn> = {
     const timerId=`blk_${ctx.actor}_${ctx.skill?.name || ctx.self?.name || 'src'}_${p.label||'持續效果'}_${p.trig}${timerProgramIdentity(payload)}`;
     const firedKey=`blockTimerFired:${timerId}`;
     const firedThisAction=ctx.actionId!==undefined&&ctx.getPlayerState(firedKey)===ctx.actionId;
-    addBlockTimer(ctx, ctx.actor, (p.label || "持續效果"), p.turns, "turns", payload, p.from === 'next', isSkillCtx(st)?'turn_effect':'round_counter', thisTurnCounts,'elf',timerId);
+    const extraTurns = p.perMark ? readMarkStacks(ctx, p.perMark) * p.perMark.mult : 0;
+    addBlockTimer(ctx, ctx.actor, (p.label || "持續效果"), p.turns + extraTurns, "turns", payload, p.from === 'next', isSkillCtx(st)?'turn_effect':'round_counter', thisTurnCounts,'elf',timerId);
     // 使用通知在新timer建立前已發出：初次命中啟動時明確補本次，不額外延長一回合。
     if(p.initial && !firedThisAction && ctx.skill && (p.trig==='self_skill'||(p.trig==='self_attack'?ctx.skill.category!=='屬性':ctx.skill.category==='屬性'))) {
       if(ctx.actionId!==undefined)ctx.setPlayerState(firedKey,ctx.actionId);
@@ -1817,14 +1820,20 @@ export function runClause(ctx: BattleEventContext, c: Clause, st: RunState, opts
 export function recordSkillUse(ctx: BattleEventContext, resetOnSwitch = false) {
   const nm = ctx.skill?.name;
   if (!nm) return;
-  ctx.setPlayerState(`blkUses:${nm}`, (ctx.getPlayerState(`blkUses:${nm}`) || 0) + 1);
-  const streak = ctx.getPlayerState("blkLastSkill") === nm ? (ctx.getPlayerState(`blkStreak:${nm}`) || 0) + 1 : 1;
-  ctx.setPlayerState(`blkStreak:${nm}`, streak); ctx.setPlayerState("blkLastSkill", nm);
   if (resetOnSwitch) {
     const keep: string[] = ctx.getPlayerState("clearOnSwitch") || [];
     const add = [`blkUses:${nm}`, `blkStreak:${nm}`].filter(k => !keep.includes(k));
     if (add.length) ctx.setPlayerState("clearOnSwitch", [...keep, ...add]);
   }
+  // 固有／附加入口可各建立一個frame；同一正式行動仍只能增加一次使用計數。
+  if (ctx.actionId !== undefined) {
+    const actionKey = `blkUseAction:${nm}`;
+    if (ctx.getPlayerState(actionKey) === ctx.actionId) return;
+    ctx.setPlayerState(actionKey, ctx.actionId);
+  }
+  ctx.setPlayerState(`blkUses:${nm}`, (ctx.getPlayerState(`blkUses:${nm}`) || 0) + 1);
+  const streak = ctx.getPlayerState("blkLastSkill") === nm ? (ctx.getPlayerState(`blkStreak:${nm}`) || 0) + 1 : 1;
+  ctx.setPlayerState(`blkStreak:${nm}`, streak); ctx.setPlayerState("blkLastSkill", nm);
 }
 
 /** 技能：使用時 / 傷害結算後 */
@@ -1851,6 +1860,7 @@ export function runSkillProgram(ctx: BattleEventContext, prog: Program, phase: "
 // ───────── 事件 → 觸發時點 ─────────
 export function eventTriggers(ctx: BattleEventContext, ev: string, data: any): Trigger[] {
   switch (ev) {
+    case EffectTiming.OPPONENT_DAMAGE:return ['opp_damage_settled'];
     case EffectTiming.MODIFY_POWER:return Number.isFinite(data?.powerComp?.power)&&(data?.skill||ctx.skill)?.category!=='屬性'?[data?.isIncoming?'incoming_power':'outgoing_power']:[];
     case EffectTiming.RESOURCE_CHANGED:return data?.side===ctx.actor&&data?.targetBattleId===idOf(ctx.self)&&data.after!==data.before?['resource_changed']:[];
     case EffectTiming.BEFORE_INSTANT_KILL:return ['before_instant_kill'];

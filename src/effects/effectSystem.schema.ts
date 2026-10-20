@@ -7,6 +7,7 @@
 // ── 引擎既有節點(對齊 EffectTiming)。技能=隱含節點；魂印=顯式節點 ──────────
 export type Node =
   | "on_opponent_damaged"
+  | "on_opponent_settlement"
   | "on_skill_selected"
   | "modify_power"
   | "on_resource_changed"

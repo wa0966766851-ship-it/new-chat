@@ -6,11 +6,13 @@
 //   天佑「已損失體力每有最大體力10%則額外執行1次」的迴圈端（每輪結算：heal 10%＋等量百分比傷害）。
 import type { BattleEventContext } from '../../effects/types';
 import type { RunState } from '../runtime';
+import { multiplyDamageReduction } from '../../battle/damageReduction';
 
 type S = 'p1' | 'p2';
 const idOf = (e: any) => String(e?.battleId || e?.id || '');
 
 export const HOLY_MILES_ACTION_FIELDS: Record<string, readonly string[]> = {
+  damage_multiplier_steps: ['base', 'kind'],
   incoming_halve_per_mark: ['id'],
   repeat_body: ['from', 'key', 'cap', 'body'],
   // 登場時快照（體力＋各技能PP）／下場時還原為登場時狀態。
@@ -25,6 +27,7 @@ export const HOLY_MILES_ACTION_FIELDS: Record<string, readonly string[]> = {
 };
 
 export function holyMilesActionIssue(op: string, p: any, nested?: (body: any[], trig: string) => string | null, trig?: string): string | null {
+  if (op === 'damage_multiplier_steps') return Number.isFinite(p.base) && p.base >= 1 && p.base <= 10 && ['攻擊', '技能'].includes(p.kind) ? null : '階梯倍率需1至10基數及技能範圍';
   if (op === 'incoming_halve_per_mark') {
     if (typeof p.id !== 'string' || !p.id || p.id.length > 200) return '逐次減半需明確印記ID';
     return null;
@@ -67,6 +70,12 @@ const resolveSelf = (ctx: BattleEventContext): any =>
 
 export function holyMilesOperations(helpers: { runStmts: (ctx: BattleEventContext, body: any[], st: RunState) => void }) {
   return {
+    damage_multiplier_steps: (ctx: BattleEventContext, p: any, st: RunState): boolean => {
+      const steps = Math.min(20, Math.max(0, Math.floor(st.lastAmount)));
+      ctx.addTimerTo(ctx.actor, { id: `block_step_multiplier:${idOf(ctx.self)}`, name: '本回合階梯傷害倍率', kind: 'round_counter', source: 'soulmark', remaining: 1, tickAt: 'round_end',
+        payload: { block: { dmgOutMult: Math.pow(p.base, steps), kind: p.kind } } }, false);
+      return true;
+    },
     // 登場時快照：目前體力＋各技能 PP（個體鍵；重複登場覆寫為新的登場狀態）。
     entry_state_snapshot: (ctx: BattleEventContext): boolean => {
       const self = resolveSelf(ctx);
@@ -94,17 +103,12 @@ export function holyMilesOperations(helpers: { runStmts: (ctx: BattleEventContex
     incoming_halve_per_mark: (ctx: BattleEventContext, p: any, st: RunState): boolean => {
       const comp = (st.event?.data?.damageComp || st.event?.data) as any;
       if (!comp || !comp.isIncoming) return false;
-      if (comp.damageCategory === 'true' || comp.pure) return false;
+      if (comp.damageCategory === 'true' || comp.pure || comp.noReduction) return false;
       const marks = ((ctx as any).getMarks?.(ctx.actor) || []) as any[];
       const mark = marks.find((m: any) => m.id === p.id);
       const count = Math.max(0, Math.min(20, Number(mark?.count) || 0));
       if (count <= 0) return false;
-      comp.beforeFinalDamage ||= [];
-      (comp.beforeFinalDamage as Array<() => void>).push(() => {
-        if (comp.multiplier == null) comp.multiplier = 1;
-        comp.multiplier *= Math.pow(0.5, count);
-        ctx.addLog?.('🌀 逐次減半：依 ' + count + ' 層印記，本次傷害 ×' + Math.pow(0.5, count).toFixed(4), 'effect');
-      });
+      multiplyDamageReduction(comp, Math.pow(0.5, count));
       return true;
     },
     // 以 lastAmount 設定印記層數（階梯型層數：八荒「1＋每10%體力」）。

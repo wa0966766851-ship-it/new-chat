@@ -61,7 +61,7 @@ await check('稱號：超能兄弟在目錄內，體力+110、雙攻+30、速度
   assert.deepEqual(applyEquipmentToElfStats(stats, undefined, undefined, undefined, TITLE), { hp: 410, atk: 230, def: 150, spatk: 230, spdef: 150, speed: 210 });
   assert.ok(Object.values(TITLE_CATALOG).filter((x: any) => x.category === t.category).length > 1, '與既有稱號同類，首頁／回廊的稱號清單自動列出');
 });
-await check('道具：幻化指令為特殊道具、只能放入、未持有不可用、AI 不會自選', () => {
+await check('道具：幻化指令為特殊道具、只能放入、未持有不可用、AI 列出背包目標', () => {
   const item = BATTLE_ITEMS.find((i: any) => i.id === CMD);
   assert.equal(item.name, '幻化指令'); assert.equal(getItemCategory(item), 'special');
   assert.equal(item.value, 200); assert.equal(item.ppValue, 1); assert.equal(item.pickTarget, 'bag_elf'); assert.equal(item.grantOnly, true);
@@ -71,7 +71,8 @@ await check('道具：幻化指令為特殊道具、只能放入、未持有不�
   const g = grantBattleItem(createBattleItemInventory(), CMD, 1)!; assert.equal(g[CMD].left, 1); assert.equal(hasBattleItem(g, CMD), true);
   assert.equal(grantBattleItem(createBattleItemInventory(), CMD, 500)![CMD].left, 99, '持有上限');
   const st: any = { p1: guard('a'), p2: guard('b'), p1Team: [guard('a')], p2Team: [guard('b')], p1Timers: [], p2Timers: [], p1ItemInventory: g, p2ItemInventory: g };
-  assert.ok(!legalActions(st, 'p1').some((a: any) => a.kind === 'item' && a.id === CMD));
+  const choices=legalActions(st, 'p1').filter((a: any) => a.kind === 'item' && a.id === CMD);
+  assert.deepEqual(choices,[{kind:'item',id:CMD,picked:{side:'p2',battleId:'b'}}]);
 });
 
 for (const side of ['p1', 'p2'] as const) {

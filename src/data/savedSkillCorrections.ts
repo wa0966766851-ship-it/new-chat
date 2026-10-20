@@ -3,6 +3,7 @@ import {correctSavedOdinPp} from './savedOdinPpCorrection';
 
 /** 只修正已知舊版內建定義；圖紙或全文有其他改動時保留使用者版本。 */
 export function applySavedSkillCorrections(elf:Elf,defaults:Elf[]):Elf{
+  elf = restoreSavedBuiltinKits(elf, defaults);
   if(elf && Array.isArray(elf.skills) && String(elf.id)==='5019')return correctSavedOdinPp(elf);
   if(!elf || !Array.isArray(elf.skills) || String(elf.id)!=='5024')return elf;
   const canonical=defaults.find(e=>String(e.id)==='5024');
@@ -23,4 +24,31 @@ export function applySavedSkillCorrections(elf:Elf,defaults:Elf[]):Elf{
   };
   const skills=elf.skills.map(correct),skillPool=elf.skillPool?.map(correct);
   return changed?{...elf,skills,...(skillPool?{skillPool}:{})}:elf;
+}
+
+/** 同名同全文的舊內建存檔補回積木；保留既有積木、明確模式、自訂原文與配裝。 */
+function restoreSavedBuiltinKits(elf: Elf, defaults: Elf[]): Elf {
+  if (!elf || String(elf.id).startsWith('custom_')) return elf;
+  const canonical = defaults.find(e => String(e.id) === String(elf.id));
+  if (!canonical || elf.name !== canonical.name) return elf;
+  const restore = <T extends {name: string; description?: string; effectMode?: string; kit?: unknown[]}>(value: T | undefined, source: T | undefined): T | undefined => {
+    if (!value || !source?.kit?.length || value.kit?.length || value.name !== source.name ||
+      value.description !== source.description || (value.effectMode && value.effectMode !== 'auto')) return value;
+    return {...value, effectMode: source.effectMode, kit: structuredClone(source.kit)};
+  };
+  const soulMark = elf.kit?.some(e => e.source !== 'skill') ? elf.soulMark : restore(elf.soulMark, canonical.soulMark);
+  const trait = restore(elf.trait, canonical.trait);
+  const skills = elf.skills?.map(s => restore(s, [...canonical.skills, ...(canonical.skillPool || [])].find(n => n.name === s.name))!);
+  const skillPool = elf.skillPool?.map(s => restore(s, [...canonical.skills, ...(canonical.skillPool || [])].find(n => n.name === s.name))!);
+  const traits = elf.alienTraits, native = canonical.alienTraits;
+  const gen2Trait = restore(traits?.gen2Trait, native?.gen2Trait);
+  const exclusiveTrait = restore(traits?.exclusiveTrait, native?.exclusiveTrait);
+  const alienTrait = restore(traits?.alienTrait, native?.alienTrait);
+  const generalTrait = restore(traits?.generalTrait, native?.generalTrait);
+  const exclusiveTraits = traits?.exclusiveTraits?.map(t => restore(t, native?.exclusiveTraits?.find(n => n.name === t.name))!);
+  if (soulMark === elf.soulMark && trait === elf.trait && !skills?.some((s,i) => s !== elf.skills[i]) &&
+    !skillPool?.some((s,i) => s !== elf.skillPool?.[i]) && gen2Trait === traits?.gen2Trait && exclusiveTrait === traits?.exclusiveTrait &&
+    alienTrait === traits?.alienTrait && generalTrait === traits?.generalTrait &&
+    !exclusiveTraits?.some((t,i) => t !== traits?.exclusiveTraits?.[i])) return elf;
+  return {...elf, soulMark, trait, skills, ...(skillPool ? {skillPool} : {}), ...(traits ? {alienTraits: {...traits, gen2Trait, exclusiveTrait, exclusiveTraits, alienTrait, generalTrait}} : {})};
 }

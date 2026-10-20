@@ -12,6 +12,8 @@ const events: Record<string, string> = {
   [EffectTiming.AFTER_ACTION]: 'team_after_action', [EffectTiming.ROUND_END]: 'team_round_end',
   [EffectTiming.BEFORE_STATUS_APPLY]: 'team_before_status', [EffectTiming.SELF_STATUS_APPLIED]: 'team_status_received',
   [EffectTiming.DEATH_NODE_1]: 'team_defeated',
+  [EffectTiming.BATTLE_PHASE_END]: 'team_phase_end', [EffectTiming.OPPONENT_ACTION]: 'team_opponent_skill',
+  [EffectTiming.ACTION_END]: 'team_action_end',
 };
 const idOf = (elf: any) => String(elf?.battleId || elf?.id || '');
 const executing = new Set<string>();

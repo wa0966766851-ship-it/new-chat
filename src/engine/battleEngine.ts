@@ -78,7 +78,7 @@ import { checkStatusDrivenFatalResist } from "../utils/statusFatalResist";
 import {settleInstantKill} from '../battle/instantKill';
 
 import { pickAiAction, pickAiForcedSwitch, materializeAiAction } from "../utils/ai";
-import type { AISettings, DecisionReport, DecisionRequest, AISide } from '../battle/ai/types';
+import { actionKey, type AISettings, type DecisionReport, type DecisionRequest, type AISide } from '../battle/ai/types';
 import { legalActions, skillSelectable } from '../battle/ai/legalActions';
 import { readAISettings, settingsForSide } from '../battle/ai/settings';
 import { calculateDamage } from "../utils/damageCalculator";
@@ -387,8 +387,7 @@ export function createBattleEngine(props: BattleEngineOptions): BattleEngine {
         const latest = syncStateRef.current;
         if (!battleAliveRef.current || latest.winner || latest.turnNumber !== turn || (latest[side].battleId || latest[side].id) !== actorId) return null;
         const legal = legalActions(latest, side, forced, props.potionRemaining?.());
-        const key = (a: any) => a.kind === 'skill' ? `s${a.slot}` : a.kind === 'switch' ? `c${a.index}` : a.kind === 'item' ? `i${a.id}` : 'w';
-        if (legal.some(a => key(a) === key(report.action))) {
+        if (legal.some(a => actionKey(a) === actionKey(report.action))) {
           props.onAIDecision?.(report);
           return materializeAiAction(latest, side, report.action);
         }

@@ -34,17 +34,19 @@ export function resourceSnapshotOperations(helpers:{liveElf:(ctx:BattleEventCont
       // traitText：依「特性描述是否含指定效果文字」統計（通用特性判定；5035/arena_14 的
       // 「機率不高於50%的異常狀態附加效果」句式）。以既有的低機率異常偵測規則比對描述。
       if(p.traitText==='lowChanceStatus'){
-        const traitTexts=(elf:any)=>[elf.soulMark?.description,elf.trait?.description,
-          elf.alienTraits?.gen2Trait?.description,elf.alienTraits?.exclusiveTrait?.description,
-          ...(elf.alienTraits?.exclusiveTraits||[]).map((t:any)=>t?.description),
-          elf.alienTraits?.alienTrait?.description,elf.alienTraits?.generalTrait?.description]
-          .filter((x:any)=>typeof x==='string'&&x);
+        const traitTexts=(elf:any)=>{
+          const groups:Record<string,unknown[]>={soul:[elf.soulMark?.description],general:[elf.trait?.description,elf.alienTraits?.generalTrait?.description],
+            gen2:[elf.alienTraits?.gen2Trait?.description],exclusive:[elf.alienTraits?.exclusiveTrait?.description,...(elf.alienTraits?.exclusiveTraits||[]).map((t:any)=>t?.description)],alien:[elf.alienTraits?.alienTrait?.description]};
+          return (p.traitSources||Object.keys(groups)).flatMap((key:string)=>groups[key]).filter((x:any)=>typeof x==='string'&&x) as string[];
+        };
         st.lastAmount=sides.flatMap(side=>ctx.getFullTeam(side as 'p1'|'p2'))
           .filter(elf=>!elf.isExtra&&!elf.isVanished&&(p.state==='any'||(p.state==='dead'?checkElfDead(elf):!checkElfDead(elf))))
-          .filter(elf=>traitTexts(elf).some((t:string)=>lowChanceStatusInText(t))).length;
+          .filter(elf=>!p.excludeSelf||id(elf)!==id(ctx.self))
+          .reduce((sum,elf)=>sum+(traitTexts(elf).some((t:string)=>lowChanceStatusInText(t))?(p.matchedWeight??1):(p.unmatchedWeight??0)),0);
         return true;
       }
       st.lastAmount=sides.flatMap(side=>ctx.getFullTeam(side as 'p1'|'p2')).filter(elf=>!elf.isExtra&&!elf.isVanished&&(p.state==='any'||(p.state==='dead'?checkElfDead(elf):!checkElfDead(elf))))
+        .filter(elf=>!p.excludeSelf||id(elf)!==id(ctx.self))
         .filter(elf=>[elf.trait,elf.alienTraits?.gen2Trait,elf.alienTraits?.exclusiveTrait,...(elf.alienTraits?.exclusiveTraits||[]),elf.alienTraits?.alienTrait,elf.alienTraits?.generalTrait].some(trait=>trait?.name===p.name)).length;
       return true;
     },

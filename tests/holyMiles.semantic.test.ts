@@ -1,162 +1,129 @@
-import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
-import { test } from "node:test";
-import { HOLY_MILES_SEED, HOLY_MILES_SKILLS } from "../src/data/holyMiles";
-import { HOLY_MILES_SKILLS as handlers, handleHolyMilesSoulMark } from "../src/effects/elves/holy-miles/registry";
-import { CUSTOM } from "../src/blocks/custom";
-import { EffectTiming } from "../src/effects/types";
-import type { BattleEventContext } from "../src/effects/types";
+import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
+import { createHarness } from './helpers/migrationHarness';
+import { HOLY_MILES_SEED, HOLY_MILES_SKILLS } from '../src/data/holyMiles';
+import { MIGRATED_HOLY_MILES_SOUL_KIT as holy } from '../src/data/migratedHolyMilesKits';
+import { sequenceIssue } from '../src/effects/sequenceContract';
+import * as Blockly from '../src/vendor/blockly/index.js';
+import { buildEntryBlock, createKitBlockParser, defineCustomBlocks } from '../src/components/BlocklyBuilder';
 
-const makeContext = () => {
-  const own: Record<string, any> = {};
-  const opp: Record<string, any> = {};
-  const events: string[] = [];
-  const timers: any[] = [];
-  const self = { ...HOLY_MILES_SEED, currentHp: 500, maxHp: 1000, calculatedStats: { def: 200, spdef: 200 }, statStages: {}, battleStatuses: {}, effects: [], skills: HOLY_MILES_SKILLS.map(s => ({ ...s })) } as any;
-  const target = { id: "enemy", currentHp: 800, maxHp: 1000, statStages: {}, skills: [{ name: "敵方技能", pp: 2, currentPp: 2 }] } as any;
-  const ctx = {
-    self, target, actor: "p1", targetSide: "p2", activeP1: self, activeP2: target,
-    skill: HOLY_MILES_SKILLS[0], opponentSkill: target.skills[0],
-    getPlayerState: (k: string) => own[k], setPlayerState: (k: string, v: any) => { own[k] = v; },
-    getOpponentState: (k: string) => opp[k], setOpponentState: (k: string, v: any) => { opp[k] = v; },
-    getFullTeam: (s: string) => s === "p1" ? [self] : [target],
-    getStatuses: (e: any) => e.battleStatuses || {},
-    applyAbsorb: (_: string, v: number) => { events.push(`absorb:${v}`); },
-    applyTrueDamage: (_: string, v: number) => { events.push(`true:${v}`); return v; },
-    applyPinkDamage: (_: string, v: number) => { events.push(`pink:${v}`); return v; },
-    applyHeal: (_: string, v: number) => { events.push(`heal:${v}`); },
-    applyPercentDamage: (_: string, v: number) => { events.push(`percent:${v}`); },
-    applyStatusWithImmunityCheck: (_: string, s: string) => { events.push(`status:${s}`); return { success: true, immune: false }; },
-    applyStatChange: (_: string, v: object) => { events.push(`stats:${JSON.stringify(v)}`); },
-    clearTurnEffectsOf: () => true,
-    updateElf: (_: string, v: object) => { Object.assign(target, v); },
-    addTimerTo: (_: string, t: any) => { timers.push(t); },
-    consumeTimer: (_: string, id: string) => { const i = timers.findIndex((t: any) => t.id === id); if (i >= 0) timers.splice(i, 1); },
-    addLog: () => {},
-  } as unknown as BattleEventContext;
-  return { ctx, own, opp, events, timers, self, target };
-};
-
-test("base stats, skills and original-form sprite files", () => {
+// 以正式 Kit 與 P1/P2 引擎取代已除名的 handler；保留數值與傷害分類要求。
+const h = await createHarness();
+try {
   assert.equal(Object.values(HOLY_MILES_SEED.baseStats).reduce((a, b) => a + b, 0), 815);
   assert.equal(HOLY_MILES_SEED.seerId, 1204);
   assert.deepEqual([HOLY_MILES_SEED.height, HOLY_MILES_SEED.weight], [178, 87]);
   assert.equal(HOLY_MILES_SKILLS.length, 5);
-  for (const skill of HOLY_MILES_SKILLS) assert.ok(handlers[skill.name], skill.name);
-  for (const kind of ["head", "body"]) assert.ok(readFileSync(`public/seer/${kind}/1204.png`).subarray(0, 8).equals(Buffer.from([137,80,78,71,13,10,26,10])));
-});
-
-test("八荒憫淚 blocks attack and punishes two opposing utility moves", () => {
-  const { ctx, own, events } = makeContext();
-  handlers["八荒憫淚"](ctx);
-  assert.equal(own.blockAttackCount, 1);
-  for (let i = 0; i < 3; i++) handleHolyMilesSoulMark(ctx, EffectTiming.OPPONENT_ACTION, { skill: { category: "屬性" } });
-  assert.deepEqual(events.filter(x => x === "true:300"), ["true:300", "true:300"]);
-});
-
-test("八荒 halves nontrue damage by current HP steps and 天佑 repeats at round end", () => {
-  const { ctx, events } = makeContext();
-  handleHolyMilesSoulMark(ctx, EffectTiming.ROUND_START);
-  const damageComp = { multiplier: 1, damageCategory: "skill_attack", isIncoming: true };
-  handleHolyMilesSoulMark(ctx, EffectTiming.BEFORE_DAMAGE, { damageComp });
-  assert.equal(damageComp.multiplier, 1 / 64); // base half plus five 10% steps
-  handleHolyMilesSoulMark(ctx, EffectTiming.ROUND_END);
-  assert.equal(events.filter(x => x === "heal:100").length, 6);
-  assert.equal(events.filter(x => x === "pink:100").length, 6, "天佑：等量（=恢復量）百分比傷害");
-});
-
-test("淨世洗禮頌 adds percent damage equal to actual skill damage against an abnormal opponent", () => {
-  const { ctx, events, target } = makeContext();
-  ctx.skill = HOLY_MILES_SKILLS[3];
-  target.battleStatuses = { 燒傷: 2 };
-  handleHolyMilesSoulMark(ctx, EffectTiming.ON_DAMAGED, { targetSide: "p2", amount: 345, damageType: "skill_attack" });
-  assert.ok(events.includes("pink:345"));
-});
-
-test("聖怒：自身百分比傷害未令對手體力減少時，本回合對手受到的攻擊傷害翻倍", () => {
-  const { ctx, self, target } = makeContext();
-  target.currentHp = 100;
-  self.currentHp = 100;
-  handleHolyMilesSoulMark(ctx, EffectTiming.ROUND_START);
-  handleHolyMilesSoulMark(ctx, EffectTiming.OPPONENT_DAMAGE, { damageType: "percent", sourceElfName: self.name, hpReduced: 0 });
-  const damageComp = { multiplier: 1, damageCategory: "skill_attack", isIncoming: false };
-  handleHolyMilesSoulMark(ctx, EffectTiming.BEFORE_DAMAGE, { damageComp });
-  assert.equal(damageComp.multiplier, 4); // 聖怒：翻倍1次＋對方最高體力比例每10%額外1次（此情境共2次）
-  const incoming = { multiplier: 1, damageCategory: "skill_attack", isIncoming: true };
-  handleHolyMilesSoulMark(ctx, EffectTiming.BEFORE_DAMAGE, { damageComp: incoming });
-  assert.equal(incoming.multiplier, 0.25, "邁爾斯自己受到的傷害只吃八荒減半，不再被聖怒翻倍");
-});
-
-test("fifth skill accumulates drain, removes one PP from every enemy move and locks depleted choice", () => {
-  const { ctx, own, opp, target, events } = makeContext();
-  target.skills[0].pp = 1; target.skills[0].currentPp = 1;
-  handlers["聖靈乾坤斷"](ctx);
-  assert.equal(opp.nextSkillInvalid, true);
-  assert.equal(target.skills[0].pp, 0);
-  assert.ok(events.includes("true:300"));
-  assert.ok(events.includes("absorb:200"));
-  for (let i = 0; i < 4; i++) handlers["聖靈乾坤斷"](ctx);
-  assert.equal(own["holyMiles.fifthUses"], 5);
-  assert.ok(events.includes("absorb:500"));
-});
-
-test("淨世洗禮頌：ROUND_START預掛無效重結算timer＋handler快照HP%翻倍", () => {
-  const { ctx, own, timers } = makeContext();
-  handleHolyMilesSoulMark(ctx, EffectTiming.ROUND_START);
-  const t = timers.find((x: any) => x.id === "blk_p1_baptism_invalid");
-  assert.ok(t, "應預掛 baptism_invalid timer");
-  assert.equal(t.payload.block.trig, "self_invalid");
-  ctx.skill = HOLY_MILES_SKILLS[3];
-  handlers["淨世洗禮頌"](ctx);
-  assert.equal(own["holyMiles.baptismDoubles"], 8); // 對手800/1000
-});
-
-test("淨世洗禮頌：正常命中吃HP%翻倍（BEFORE_DAMAGE主乘區）", () => {
-  const { ctx, own, timers } = makeContext();
-  ctx.skill = HOLY_MILES_SKILLS[3];
-  handlers["淨世洗禮頌"](ctx); // 快照 doubles=8
-  const damageComp: any = { base: 500, multiplier: 1, floor: 0, damageCategory: "skill_attack", isIncoming: false };
-  handleHolyMilesSoulMark(ctx, EffectTiming.BEFORE_DAMAGE, { damageComp });
-  assert.equal(damageComp.floor, 280 * 2 ** 8, "保底 280 本身翻倍（每 10% 一次）");
-  assert.equal(damageComp.multiplier, 1, "攻擊傷害本身不翻倍");
-  assert.equal(damageComp.pure, true); // 原始未超過保底：獨立乘區
-  assert.ok(!timers.some((t: any) => t.id === "blk_p1_baptism_invalid"), "正常命中應消耗預掛timer");
-});
-
-test("淨世洗禮頌：原始沒超280走獨立乘區（pure）", () => {
-  const { ctx } = makeContext();
-  ctx.skill = HOLY_MILES_SKILLS[3];
-  handlers["淨世洗禮頌"](ctx); // 快照 doubles=8
-  const damageComp: any = { base: 100, multiplier: 1, floor: 0, damageCategory: "skill_attack", isIncoming: false };
-  handleHolyMilesSoulMark(ctx, EffectTiming.BEFORE_DAMAGE, { damageComp });
-  assert.equal(damageComp.pure, true); // 原始沒超過保底：獨立乘區
-  assert.equal(damageComp.floor, 280 * 2 ** 8);
-  assert.equal(damageComp.multiplier, 1);
-});
-
-test("淨世洗禮頌：無效重結算只認淨世，非淨世不消耗", () => {
-  const { ctx, events } = makeContext();
-  (ctx as any).skill = { name: "八荒憫淚" };
-  const r = CUSTOM["__baptism_invalid_hit"].run(ctx, { last: null, lastAmount: 0 });
-  assert.equal(r, false);
-  assert.ok(!events.some(e => e.startsWith("pink:")), "非淨世不應打出粉傷");
-});
-
-test("淨世洗禮頌：無效重結算打出保底粉傷（無效1次＋滿血10次，不封頂）", () => {
-  const { ctx, own, events } = makeContext();
-  (ctx as any).skill = { name: "淨世洗禮頌" };
-  own["holyMiles.baptismDoubles"] = 10;
-  const r = CUSTOM["__baptism_invalid_hit"].run(ctx, { last: null, lastAmount: 0 });
-  assert.equal(r, true);
-  assert.ok(events.includes(`pink:${280 * 2 ** 11}`), `實際=${events}`);
-});
-
-test("四象：cleansePending觸發先制失效（blkNoPosPrioTurns）", () => {
-  const { ctx, own, opp, self } = makeContext();
-  self.battleStatuses = { 燒傷: 2 };
-  own["holyMiles.cleansePending"] = 1;
-  opp["priorityBoostTurns"] = 3;
-  handleHolyMilesSoulMark(ctx, EffectTiming.ROUND_START);
-  assert.equal(opp["priorityBoostTurns"], 0);
-  assert.equal(opp["blkNoPosPrioTurns"], 2);
-});
+  for (const kind of ['head', 'body']) assert.ok(readFileSync(`public/seer/${kind}/1204.png`).subarray(0, 8).equals(Buffer.from([137,80,78,71,13,10,26,10])));
+  for (const skill of HOLY_MILES_SKILLS) h.assertKitOnly(h.find('5030', skill.name));
+  for (const e of holy.kit) assert.equal(sequenceIssue(e.params.clause, e.node), null, e.customText);
+  const soul = (orders: number[]) => ({ name: holy.name, description: holy.description, effectMode: 'kit', kit: holy.kit.filter(e => orders.includes(e.order!)) });
+  const { addStatusEffect, getStatuses } = await h.server.ssrLoadModule('/src/utils/battleHelpers.ts');
+  const { DEFAULT_ELVES } = await h.server.ssrLoadModule('/src/data/defaultElvesLoaded.ts');
+  const loaded = DEFAULT_ELVES.find((e: any) => e.id === '5030');
+  assert.equal(loaded.soulMark.effectMode, 'kit');
+  assert.equal(loaded.soulMark.kit.length, holy.kit.length, '正式載入魂印完整圖紙，不允許空kit標記攔住套用');
+  defineCustomBlocks();
+  for (const [source, kit] of [['soul', loaded.soulMark.kit], ['skill', h.find('5030', '淨世洗禮頌').kit]] as const) {
+    const ws = new Blockly.Workspace(), reload = new Blockly.Workspace();
+    try {
+      const sequences = kit.filter((e: any) => e.codeId === 'effect_sequence');
+      for (const e of sequences) { const b = buildEntryBlock(ws as any, e); assert.ok(b); assert.notEqual(b.type, 'native_effect_reference'); }
+      Blockly.serialization.workspaces.load(Blockly.serialization.workspaces.save(ws), reload);
+      const restored = reload.getTopBlocks(false).map(b => { const e = JSON.parse(b.data!).entry; return createKitBlockParser(source)(b, e.node, e.order); }).sort((a, b) => a!.order - b!.order);
+      assert.deepEqual(restored, sequences.map((e: any) => ({ ...e, source })).sort((a: any, b: any) => a.order - b.order), '魂印／淨世新結算節點和參數完整保存重載');
+    } finally { ws.dispose(); reload.dispose(); }
+  }
+  for (const side of ['p1', 'p2'] as const) {
+    {
+      const self = h.unit('holy', 500, [h.wait()], { maxHp: 1000, extra: { soulMark: soul([3]) } });
+      const [r] = await h.play(side, { self, opp: h.unit('enemy', 5000, [h.wait()]) });
+      assert.equal(r.self.currentHp, 1000);
+      assert.equal(r.opp.currentHp, 4400, '天佑六次各100，不能使用對手最大體力');
+    }
+    for (const type of ['固定', '真實']) {
+      const self = h.unit('holy', 500, [h.wait()], { maxHp: 1000, extra: { soulMark: soul([1, 2]) } });
+      const hit = h.kitSkill('測試傷害', [{ op: 'dmg', p: { flat: type === '固定' ? 640 : 64, type } }]);
+      const [r] = await h.play(side, { self, opp: h.unit('enemy', 5000, [hit]) });
+      assert.equal(r.self.currentHp, type === '固定' ? 490 : 436, '基礎1+5次減半＝1/64；真傷不減半');
+    }
+    for (const abnormal of [false, true]) {
+      const skill = structuredClone(h.find('5030', '淨世洗禮頌'));
+      const self = h.unit('holy', 1000, [skill], { maxHp: 1_000_000, speed: 300 });
+      const opp = h.unit('enemy', 800000, [h.wait()], { maxHp: 1_000_000 });
+      if (abnormal) addStatusEffect(opp, '疲憊', 2);
+      const [r] = await h.play(side, { self, opp });
+      const floor = 280 * 2 ** 8;
+      assert.equal(r.self.currentHp, 1000 + floor, '淨世恢復實際技能傷害');
+      assert.equal(r.opp.currentHp, 800000 - floor * (abnormal ? 2 : 1), `正常保底及附加等量百分比\n${r.logs.join('\n')}`);
+      if (!abnormal) assert.ok(getStatuses(r.opp)['燒傷'] > 0, '持續效果須有實際屬性技能事件讀取端');
+    }
+    {
+      const skill = structuredClone(h.find('5030', '淨世洗禮頌'));
+      const invalid = h.kitSkill('先封攻擊', [{ op: 'invalid_next', p: { kind: '攻擊', uses: 1 } }], { priority: 10 });
+      const self = h.unit('holy', 1000, [skill], { maxHp: 1_000_000 });
+      const [r] = await h.play(side, { self, opp: h.unit('enemy', 1_000_000, [invalid], { speed: 500 }) });
+      const floor = 280 * 2 ** 11;
+      assert.equal(r.opp.currentHp, 1_000_000 - floor, `無效保底\n${r.logs.join('\n')}`);
+      assert.equal(r.self.currentHp, 1000 + floor, '無效補償技能傷害也須恢復等量');
+      assert.ok(r.logs.some((x: string) => x.includes('無效')), '確實走技能無效入口');
+    }
+    {
+      const self = h.unit('holy', 500, [h.wait()], { maxHp: 1000, extra: { soulMark: soul([0, 1, 2]) } });
+      addStatusEffect(self, '疲憊', 5);
+      const hit = h.kitSkill('固定64', [{ op: 'dmg', p: { flat: 64, type: '固定' } }]);
+      const history = await h.play(side, { self, opp: h.unit('enemy', 5000, [hit, h.wait()]), turns: (_engine: any, turn: number) => [0, turn === 1 ? 0 : 1] }, 2);
+      assert.ok(getStatuses(history[0].self)['疲憊'] > 0, '不在獲得效果當下提前解除');
+      assert.equal(getStatuses(history[1].self)['疲憊'] || 0, 0, '下一回合開始解除');
+    }
+    // 真正百分比傷害被免疫，來源側收到扣血0事件；隊伍最高比例決定2的次方。
+    for (const bench of [false, true]) {
+      const losses: number[] = [];
+      for (const enabled of [false, true]) {
+        const skill = { ...h.wait(), name: '普通攻擊', category: '物理', power: 50 };
+        const s: any = soul(enabled ? [5] : []);
+        s.kit = [...s.kit, { codeId: 'effect_sequence', node: 'before_skill', source: 'soulmark', role: 'innate', order: 100,
+          params: { clause: { raw: '測試百分比結算', trig: 'before_skill', parsed: true, body: [{ acts: [{ op: 'dmg', p: { flat: 10, type: '百分比' }, label: '百分比' }] }] } } }];
+        const guard: any = { name: '免疫百分比', effectMode: 'kit', kit: [{ codeId: 'effect_sequence', node: 'before_damage', source: 'soulmark', role: 'innate', order: 0,
+          params: { clause: { raw: '測試免疫', trig: 'incoming_nontrue', parsed: true, body: [{ cond: [{ c: 'event_damage_kind', p: { kind: '百分比' } }], acts: [{ op: 'dmg_mod', p: { dir: 'in', kind: '百分比', reduce: 1 }, label: '免疫' }] }] } } }] };
+        const self = h.unit('holy', 1000, [skill], { speed: 300, extra: { soulMark: s } });
+        const opp = h.unit('enemy', 100000, [h.wait()], { maxHp: 1_000_000, extra: { soulMark: guard } });
+        const [r] = await h.play(side, { self, opp, oppBench: bench ? [h.unit('bench', 800000, [h.wait()], { maxHp: 1_000_000 })] : [] });
+        losses.push(100000 - r.opp.currentHp);
+        assert.ok(!(r.state[`${side}Timers`] || []).some((t: any) => t.name === '本回合階梯傷害倍率' && t.remaining > 0), '聖怒不延續至下一回合');
+      }
+      const mult = bench ? 2 ** 9 : 4;
+      assert.ok(losses[0] > 0);
+      assert.ok(Math.abs(losses[1] - losses[0] * mult) <= mult, `聖怒倍率${mult}，傷害${losses}`);
+    }
+    // 第五技能使用計數只加一次，依序200/300/400/500/500；保留原先累進與全技能扣PP驗收。
+    {
+      const skill = structuredClone(h.find('5030', '聖靈乾坤斷'));
+      skill.power = 0;
+      const self = h.unit('holy', 1000, [skill], { maxHp: 10000, speed: 300 });
+      const opp = h.unit('enemy', 100000, [h.wait(), { ...h.wait(), name: '未使用' }]);
+      const history = await h.play(side, { self, opp }, 5);
+      assert.deepEqual(history.map((r: any) => r.self.currentHp), [1200, 1500, 1900, 2400, 2900]);
+      assert.equal(history[4].opp.skills[1].pp, 94, '對手未選用技能也須吸取PP');
+    }
+    {
+      const skill = structuredClone(h.find('5030', '聖靈乾坤斷'));
+      skill.power = 0;
+      const self = h.unit('holy', 1000, [skill], { maxHp: 10000, speed: 300 });
+      const selected = { ...h.wait(), pp: 1, maxPp: 1 };
+      const [r] = await h.play(side, { self, opp: h.unit('enemy', 100000, [selected, { ...h.wait(), name: '未使用' }]) });
+      assert.equal(r.opp.skills[0].pp, 0);
+      assert.equal(r.opp.skills[1].pp, 98);
+      assert.equal(r.opp.currentHp, 99500, '吸取200加選招PP歸零300真傷');
+      assert.ok(!r.logs.some((x: string) => x.includes('【enemy】使用了')), 'PP歸零當回合不得行動');
+    }
+    {
+      const skill = structuredClone(h.find('5030', '八荒憫淚'));
+      const self = h.unit('holy', 1000, [skill, h.wait()], { speed: 300 });
+      const history = await h.play(side, { self, opp: h.unit('enemy', 5000, [h.wait()]), turns: (_e: any, n: number) => [n === 1 ? 0 : 1, 0] }, 3);
+      assert.deepEqual(history.map((r: any) => r.opp.currentHp), [4700, 4400, 4400], '只懲罰下兩次屬性技能');
+      assert.equal(history[0].state[`${side}RegistryState`].blockAttackCount, 1, '八荒仍有下一次攻擊免疫');
+    }
+    console.log(`✓ ${side} 邁爾斯：天佑、八荒、真傷、淨世正常／異常／無效及四象`);
+  }
+} finally { await h.close(); }

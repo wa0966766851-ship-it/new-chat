@@ -14,6 +14,7 @@ import { isAbnormal } from "../../utils/battleHelpers";
 import { checkElfDead } from '../elfAlive';
 import { resolveDamageTransition } from '../survivalRules';
 import { elfHint } from './hooks';
+import { abnormalSideEffectsSuppressed, itemRecoveryGain, survivalMargin } from './mechanicAwareness';
 
 /* ────────────────────────────────────────────────────────────
  * 1. 行動空間
@@ -103,7 +104,7 @@ const anyBuff = (e: Elf) => Object.values(e.statStages || {}).some(v => (v as nu
 const buffCount = (e: Elf) =>
   Object.values(e.statStages || {}).reduce((s: number, v) => s + ((v as number) > 0 ? (v as number) : 0), 0);
 const anyDebuff = (e: Elf) => Object.values(e.statStages || {}).some(v => (v as number) < 0);
-const hpRatio = (e: Elf) => (e.maxHp ? Math.max(0, Math.min(1, e.currentHp / e.maxHp)) : 0);
+const hpRatio = survivalMargin;
 // 估傷不足以穿透護盾／復活；回退只做保守斬殺判定，完整結果由推演確認。
 const estimatedKO = (e: Elf, amount: number) => amount > 0 && e.currentHp > 0
   && !((e.deathImmunity?.deathImmuneTurns || 0) > 0)
@@ -260,7 +261,7 @@ function scoreSwitches(c: AIContext, d: AIDeps, cfg: AIConfig, th: Threat): Scor
 
     // 我方陷入控制且無法作為 → 換人止血
     const st = d.getStatuses(c.self);
-    const controlled = Object.keys(st).some(k => d.isControlStatus(k));
+    const controlled = !abnormalSideEffectsSuppressed(c.self) && Object.keys(st).some(k => st[k] > 0 && d.isControlStatus(k));
     if (controlled) { score += 30; reasons.push("自身受控,換人止損"); }
 
     // 我方被弱化嚴重 → 換人洗掉
@@ -293,7 +294,7 @@ function scoreItems(c: AIContext, d: AIDeps, cfg: AIConfig, th: Threat): ScoredA
   const out: ScoredAction[] = [];
   const hp = hpRatio(c.self);
   const st = d.getStatuses(c.self);
-  const statusKeys = Object.keys(st);
+  const statusKeys = abnormalSideEffectsSuppressed(c.self) ? [] : Object.keys(st).filter(k => st[k] > 0);
   const controlled = statusKeys.some(k => d.isControlStatus(k));
 
   for (const item of c.items) {
@@ -306,19 +307,21 @@ function scoreItems(c: AIContext, d: AIDeps, cfg: AIConfig, th: Threat): ScoredA
       if (missing <= 0) continue;
 
       // 只在真的需要時吃,且不浪費大藥(溢療懲罰)
-      const effective = Math.min(heal, missing);
-      const waste = heal - effective;
-      score = 10 + (effective / c.self.maxHp) * 90 - (waste / c.self.maxHp) * 45;
+      const effective = itemRecoveryGain(c.self, heal);
+      const marginGain = survivalMargin({...c.self, currentHp: c.self.currentHp + effective}) - hp;
+      const waste = Math.max(0, heal - effective);
+      score = effective > 0 ? 10 + marginGain * 90 - (waste / c.self.maxHp) * 45 : -100;
 
       if (hp < 0.35) { score += 45; reason = `體力僅剩 ${Math.round(hp * 100)}%,補血續戰`; }
       else if (hp < 0.6) { score += 12; reason = "中度受損,補血"; }
       else score -= 35;
 
       // ★ 吃藥不能防秒:對手能 KO 我且補完仍會死 → 這藥沒意義
-      if (th.opponentCanKO && c.self.currentHp + effective <= th.incomingMax) {
+      const afterHeal = resolveDamageTransition(c.self.currentHp + effective, c.self.maxHp, th.incomingMax, 'non_true', c.self.survivalRule);
+      if (th.opponentCanKO && !afterHeal.alive) {
         score -= 70;
         reason = "補血也擋不住對手斬殺,不值得";
-      } else if (th.opponentCanKO && c.self.currentHp + effective > th.incomingMax) {
+      } else if (th.opponentCanKO && afterHeal.alive) {
         score += 50;
         reason = "補血後可撐過對手攻擊";
       }

@@ -7,7 +7,7 @@ export type AIRisk = 'conservative' | 'balanced' | 'reckless';
 export type PlannedAction =
   | { kind: 'skill'; slot: number }
   | { kind: 'switch'; index: number }
-  | { kind: 'item'; id: string }
+  | { kind: 'item'; id: string; picked?: {side: AISide; battleId: string} }
   | { kind: 'wait' };
 export interface AISettings {
   mode: 'planner' | 'heuristic';
@@ -69,4 +69,4 @@ export interface DecisionRequest {
   runtime?: { deathHandled: string[]; pendingFinalize: boolean };
 }
 export const opposite = (side: AISide): AISide => side === 'p1' ? 'p2' : 'p1';
-export const actionKey = (a: PlannedAction) => a.kind === 'skill' ? `skill:${a.slot}` : a.kind === 'switch' ? `switch:${a.index}` : a.kind === 'item' ? `item:${a.id}` : 'wait';
+export const actionKey = (a: PlannedAction) => a.kind === 'skill' ? `skill:${a.slot}` : a.kind === 'switch' ? `switch:${a.index}` : a.kind === 'item' ? `item:${a.id}${a.picked ? `:${a.picked.side}:${JSON.stringify(a.picked.battleId)}` : ''}` : 'wait';

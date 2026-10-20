@@ -7,7 +7,7 @@ export function readMarkRemainingTurns(ctx:BattleEventContext,p:MarkQuery):numbe
   const side=p.side==='self'?ctx.actor:ctx.targetSide;
   const holder=p.side==='self'?ctx.self:ctx.target;
   return Math.max(0,...(ctx.getMarks(side)||[]).filter(m=>m.id===p.id&&m.unit==='回合'&&markAppliesToElf(m,holder))
-    .map(m=>Number.isInteger(m.count)&&m.count>0?m.count:0));
+    .map(m=>{const turns=m.remainingRounds??m.count;return Number.isInteger(turns)&&turns>0?turns:0;}));
 }
 /** 每次查詢當下的正式印記；不保存舊層數，不借同隊另一持有者。 */
 export function readMarkStacks(ctx:BattleEventContext,p:MarkQuery):number{

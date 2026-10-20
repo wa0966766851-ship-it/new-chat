@@ -21,7 +21,7 @@ export const GROUP_B_ACTION_FIELDS: Record<string, readonly string[]> = {
   on_next_switch_in: ['side', 'after', 'resource', 'ratio', 'body', 'label'],
   first_next: ['uses'],
   add_invalid_own: ['uses', 'kind'],
-  damage_floor_flat: ['amount', 'doublings', 'doubleBy', 'healRatio'],
+  damage_floor_flat: ['amount', 'doublings', 'doubleBy', 'healRatio', 'pureIfFloor'],
   // 陣亡轉贈：把目前護盾值（與守護印記旗標）交給下一隻上場己方。
   // 讀取端 effects/rules/nextElfPending（nextElfShield）＋ imperial-shield/battleRule（守護印記層數曲線）。
   defer_shield_to_next: ['guardianMark', 'min'],
@@ -76,6 +76,7 @@ export function groupBActionIssue(op: string, p: any, trig: string, nested: (bod
   if (op === 'damage_floor_flat') {
     if (!['outgoing_attack', 'on_invalid', 'self_invalid'].includes(trig)) return '傷害保底需攻擊傷害公式前事件，或技能無效事件作補償';
     if (!(p.amount > 0 && p.amount <= 1e6)) return '傷害保底需正數基數';
+    if (p.pureIfFloor !== undefined && typeof p.pureIfFloor !== 'boolean') return '保底獨立乘區需明確布林值';
     if (p.doublings !== undefined && (!Number.isInteger(p.doublings) || p.doublings < 0 || p.doublings > 20)) return '保底翻倍次數需0至20的整數';
     if (p.doubleBy !== undefined && !DECILE_SOURCES.includes(p.doubleBy)) return '保底翻倍來源不明';
     if (p.healRatio !== undefined && (!(p.healRatio > 0 && p.healRatio <= 10) || trig === 'outgoing_attack')) return '補償吸血比例只用於技能無效時的補償傷害，且需為正數';
@@ -170,6 +171,7 @@ export function groupBOperations(helpers: {
       if (comp) {
         if (comp.isIncoming || comp.damageCategory !== 'skill_attack') return false;
         comp.floor = Math.max(comp.floor || 0, amount);
+        if (p.pureIfFloor && comp.base <= amount) comp.pure = true;
         return true;
       }
       if (st.event?.trig !== 'self_invalid' && st.event?.trig !== 'on_invalid') return false;

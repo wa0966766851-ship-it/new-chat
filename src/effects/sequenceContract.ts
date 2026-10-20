@@ -70,7 +70,7 @@ export const SEQUENCE_ACTION_FIELDS: Record<string, readonly string[]> = {
   select_elf:['all','side','scope','state','orderBy','direction','body'],raise_max_hp:['source','ratio'],
   heal_selected_then:['ratio','body'],stat_points:['stats','direction','ratio','cap','floor'],vanish_selected:[],
   stat_apply_last:['side','direction'],next_entry_priority:['turns'],
-  snapshot_value:['side','key','fields'],heal_snapshot:['key','ratio','consume'],count_team_trait:['side','name','state','traitText'],
+  snapshot_value:['side','key','fields'],heal_snapshot:['key','ratio','consume'],count_team_trait:['side','name','state','traitText','excludeSelf','matchedWeight','unmatchedWeight','traitSources'],
   resource_mark_add:['id','name','side','scope','displayChar','unit','persistsOffField','description','ratio','amount','maxCount','incomingDamageReduction'],
   damage_floor:['side','base','ratio'],
   ...CLOSURE_ACTION_FIELDS,
@@ -162,9 +162,10 @@ export const SEQUENCE_ACTION_FIELDS: Record<string, readonly string[]> = {
   clear_shield: ['side','kind'], clear_turn: ['side'],
   invalid_turns: ['kind','turns','next','perMarkTurns'], invalid_next: ['kind','uses','followupRounds','followupSameCategory','timerId'],
   no_heal: ['turns','next','scope','perStageKinds'], no_switch: ['turns','next'],
-  timed: ['turns','from','trig','body','label','initial','once','onExpire','skillKind','onRoundMiss'],
+  timed: ['turns','from','trig','body','label','initial','once','onExpire','skillKind','onRoundMiss','perMark'],
   dmg_mod: ['dir','kind','boost','reduce','perMark'],
   dmg_mod_turns: ['side','dir','kind','boost','reduce','chance','turns','next','lateCompensation','doubleIfAnyStatus'],
+  dmg_mod_uses:['uses','boost','kind','attackOnly'],
   boost: ['mult','power','kind','chance','add','per','perInc','perLastAmount'], ignore: ['what'], no_resist: [],
   heal_equal: [], dmg_equal: ['type'], dmg_from_last: ['ratio','type','elem','basis'],
   maxhp: ['side','ratio','direction','perStageKinds'],stat_value:['side','stats','amount','direction','floor'],
@@ -265,6 +266,9 @@ export const SEQUENCE_CONDITION_FIELDS: Record<string, readonly string[]> = {
   last_amount:['op','amount'],
   last_damage_immune:[],
   event_status:['statuses'],
+  summoned_extra_alive:['name'],
+  holder_active:[],
+  event_is_holder:[],
   event_crit:[],
   event_hit:['requireAdditional'],
   mark_count:['side','id','op','amount'],mark_chance:['side','id','pct'],death_node:['node'],
@@ -288,6 +292,7 @@ const AFTER_RESULT_TRIGS = new Set(['after_hit','kill','not_killed','self_after_
 export const SEQUENCE_TRIGGERS: Record<string,string> = {
   ...TEAM_KIT_TRIGGERS,
   opp_damaged_skill:'on_opponent_damaged',
+  opp_damage_settled:'on_opponent_settlement',
   skill_selected:'on_skill_selected',
   attack_hit:'after_attack_hit',
   outgoing_power:'modify_power',incoming_power:'modify_power',
@@ -337,7 +342,7 @@ function paramsIssue(value: unknown, fields: readonly string[], path: string, nu
     if (['ids','stats','stats2','list','statuses','exclude','fields','phase'].includes(key) && (!Array.isArray(v)||!v.length||v.length>30||v.some(x=>typeof x!=='string'||x.length>200))) return `${path}.${key}需為有限名稱陣列`;
     if (key==='cls' && (typeof v!=='string'||!['','控制類','弱化類','限制類','衍化類','附屬類','非附屬類'].includes(v))) return `${path}.cls異常分類不明`;
     if (['label','text'].includes(key) && (typeof v!=='string'||v.length>100000)) return `${path}.${key}需為有限文字`;
-    if (typeof v === 'object' && !['ids','terms','stats','stats2','list','statuses','exclude','fields','phase','effects','body','bodyLow','bodyHigh','onMatch','onMismatch','choices','onExpire','onRoundMiss','branches','perStageDown','from','onClose','onBlock','rules','marks','recoveryReduction','incomingDamageReduction','perMark','perMarkTurns','perStage','perStageKinds','perStageLevel','perMarkHits','scaleByMarks','perNonFullPp','keys','sides','types','resources','pool','repeat','fallback'].includes(key)) return `${path}.${key}不接受程式或巢狀行為`;
+    if (typeof v === 'object' && !['ids','terms','stats','stats2','list','statuses','exclude','fields','phase','effects','body','bodyLow','bodyHigh','onMatch','onMismatch','choices','onExpire','onRoundMiss','branches','perStageDown','from','onClose','onBlock','rules','marks','recoveryReduction','incomingDamageReduction','perMark','perMarkTurns','perStage','perStageKinds','perStageLevel','perMarkHits','scaleByMarks','perNonFullPp','keys','sides','types','resources','pool','repeat','fallback','traitSources','countFromMark'].includes(key)) return `${path}.${key}不接受程式或巢狀行為`;
   }
   return null;
 }
@@ -393,7 +398,9 @@ export function sequenceIssue(value: unknown, node?: string, depth=0, inMark=fal
       if(c.c==='resource_crossed'&&(value.trig!=='resource_changed'||typeof c.p?.id!=='string'||!c.p.id||!Number.isInteger(c.p.threshold)||c.p.threshold<=0))return '資源跨越需正式變動事件、資源ID及正整數門檻';
       if(c.c==='mark_locked'&&(typeof c.p?.id!=='string'||!c.p.id))return '印記遞減鎖查詢需資源ID';
       if(c.c==='chance' && !(typeof c.p?.pct==='number'&&c.p.pct>0&&c.p.pct<=100)) return '機率條件需為大於0、不超過100的百分比';
-      if(c.c==='event_status'&&(!['before_status','status_end','status_received','status_immune','status_tick'].includes(value.trig)||!Array.isArray(c.p?.statuses)))return '本次異常查詢需正式異常事件及明確名稱';
+      if(c.c==='summoned_extra_alive'&&(typeof c.p?.name!=='string'||!c.p.name||c.p.name.length>200))return '額外精靈存活查詢需明確名稱';
+      if(c.c==='event_status'&&(!['before_status','status_end','status_received','status_immune','status_tick','team_before_status','team_status_received'].includes(value.trig)||!Array.isArray(c.p?.statuses)))return '本次異常查詢需正式異常事件及明確名稱';
+      if(c.c==='event_hp_unchanged'&&value.trig!=='opp_damage_settled')return '扣血未減少需正式對手扣血結算事件';
       if(c.c==='ignore_success'&&!['攻擊免疫','傷害限制'].includes(c.p?.what))return '無視成功查詢需明確攻擊免疫或傷害限制';
     }
     return null;
@@ -451,6 +458,7 @@ export function sequenceIssue(value: unknown, node?: string, depth=0, inMark=fal
       if(act.op==='incoming_panel_attack'&&(inMark||value.trig!=='incoming_power'||!Number.isFinite(act.p.ratio)||act.p.ratio<=0||act.p.ratio>100))return '受方公式面板攻擊值需正式受方威力事件與有限正比例';
       if(['pp_max_offset_selected','damage_selected','heal_selected_pp'].includes(act.op)&&!inSelected)return '選取者動作必須位於明確隊員選取子流程';
       if(['astral_select','queue_extra_action'].includes(act.op)){
+        if(act.op==='queue_extra_action'&&act.p.elem!==undefined&&!isKnownBattleType(act.p.elem))return '額外行動傷害屬性需已登記類型';
         // 額外行動使用獨立frame，不能繼承排隊時的selectedElf；集合子流程才提供選定目標。
         const child=sequenceIssue({raw:'集合／額外行動子流程',trig:value.trig,parsed:true,body:act.p.body},undefined,depth+1,inMark,act.op==='astral_select');
         if(child)return `集合／額外行動：${child}`;
@@ -466,6 +474,10 @@ export function sequenceIssue(value: unknown, node?: string, depth=0, inMark=fal
       // traitText 模式：依「特性描述是否含指定效果」統計（不需精確名稱）；其餘需精確名稱。
       if(act.op==='count_team_trait'){
         if(!['self','opp','both'].includes(act.p.side)||!['any','alive','dead'].includes(act.p.state))return '特質計數需背包陣營與存活範圍';
+        if(act.p.excludeSelf!==undefined&&typeof act.p.excludeSelf!=='boolean')return '排除持有者需布林值';
+        for(const key of ['matchedWeight','unmatchedWeight'])if(act.p[key]!==undefined&&(!Number.isInteger(act.p[key])||Math.abs(act.p[key])>100))return '特質計數權重需-100至100整數';
+        if(act.p.traitSources!==undefined&&(!Array.isArray(act.p.traitSources)||!act.p.traitSources.length||new Set(act.p.traitSources).size!==act.p.traitSources.length||act.p.traitSources.some((s:string)=>!['soul','general','gen2','exclusive','alien'].includes(s))))return '特質計數來源需明確且不重複';
+        if(act.p.traitText===undefined&&['matchedWeight','unmatchedWeight','traitSources'].some(k=>act.p[k]!==undefined))return '特質文字權重與來源需文字判定模式';
         if(act.p.traitText!==undefined){
           if(act.p.traitText!=='lowChanceStatus')return '特質文字判定僅支援低機率異常附加';
         }else if(typeof act.p.name!=='string'||!act.p.name||act.p.name.length>200)return '特質計數需精確特質名稱';
@@ -525,6 +537,8 @@ export function sequenceIssue(value: unknown, node?: string, depth=0, inMark=fal
       if(POWER_STAT_ACTION_FIELDS[act.op]){const issue=powerStatActionIssue(act.op,act.p);if(issue)return issue;}
       if(ENTRANCE_STACK_ACTION_FIELDS[act.op]){const issue=entranceStackActionIssue(act.op,act.p);if(issue)return issue;}
       if(STAGE_DAMAGE_ACTION_FIELDS[act.op]){const issue=stageDamageActionIssue(act.op,act.p);if(issue)return issue;}
+      if(CAN_ACTION_FIELDS[act.op]){const issue=canActionIssue(act.op,act.p,value.trig);if(issue)return issue;}
+      if(act.op==='summon_extra_elf'){const issue=brinkkActionIssue(act.op,act.p);if(issue)return issue;}
       if(KELD_SOUL_ACTION_FIELDS[act.op]){const issue=keldSoulActionIssue(act.op,act.p,(body,trig)=>sequenceIssue({raw:'減免分支主體',trig,parsed:true,body},undefined,depth+1,inMark));if(issue)return issue;}
       const sovereigntyIssue=statusSovereigntyActionIssue(act.op,act.p);if(sovereigntyIssue)return sovereigntyIssue;
       const priorityBonusIssue=priorityBonusActionIssue(act.op,act.p,value.trig);if(priorityBonusIssue)return priorityBonusIssue;
@@ -629,6 +643,7 @@ export function sequenceIssue(value: unknown, node?: string, depth=0, inMark=fal
         if(issue)return `陣形關閉：${issue}`;
       }
       if(act.op==='timed') {
+        if(act.p.perMark!==undefined&&(!['self','opp'].includes(act.p.perMark.side)||typeof act.p.perMark.id!=='string'||!act.p.perMark.id||!Number.isSafeInteger(act.p.perMark.mult)||act.p.perMark.mult<1||act.p.perMark.mult>100))return '印記延長期限需明確目標、印記ID及正整數每層回合';
         if(act.p.onRoundMiss!==undefined){
           if(act.p.once || !['self_skill','self_attack','self_status'].includes(act.p.trig))return '每回合未成功分支限重複自身使用監控';
           const missed=sequenceIssue({raw:'本回合未成功',trig:'round_end',parsed:true,body:act.p.onRoundMiss},undefined,depth+1);
@@ -698,6 +713,7 @@ export function sequenceIssue(value: unknown, node?: string, depth=0, inMark=fal
         const issue=stageQueryIssue(act.p.perStage);if(issue)return issue;
         if(!(Number.isFinite(act.p.flat)&&act.p.flat>0)||['both','base','of','ratio','stepUnit','stepBonus'].some(k=>act.p[k]!==undefined))return '逐能力等級傷害需正固定量及單一查詢基數';
       }
+      if(act.op==='dmg_mod_uses'&&(!Number.isSafeInteger(act.p.uses)||act.p.uses<1||act.p.uses>10000||!Number.isFinite(act.p.boost)||act.p.boost<0||act.p.boost>100||act.p.attackOnly!==undefined&&typeof act.p.attackOnly!=='boolean'))return '次數增傷需正次數、有限增幅及有效僅攻擊規則';
       if(act.op.startsWith('dmg_mod')&&!['攻擊','技能','非真實','固定','百分比','真實',''].includes(act.p.kind??''))return '增減傷範圍不明';
       if(['dmg_mod','dmg_mod_turns'].includes(act.op)&&!['in','in_boost','out','out_reduce','taken'].includes(act.p.dir))return '增減傷方向不明';
       if(act.op==='dmg_mod'&&act.p.dir==='taken')return '即時受到增傷需選in_boost；taken只用於持續效果';

@@ -45,7 +45,7 @@ export function sequenceActionLabel(a: Act, triggerLabels: Record<string, string
     case 'maxhp':return `${side}體力上限${p.direction==='decrease'?'減少':'增加'}${Math.round(p.ratio*100)}%`;
     case 'snapshot_value':return `回合開始記錄${side}${p.fields.join('＋')}至${p.key}`;
     case 'heal_snapshot':return `恢復本回合${p.key}快照量×${p.ratio}${p.consume?'並消耗快照':''}`;
-    case 'count_team_trait':return `計算${p.side==='both'?'雙方':side}背包${p.state==='alive'?'存活':p.state==='dead'?'陣亡':'所有'}精靈擁有「${p.name}」的人數`;
+    case 'count_team_trait':return p.traitText ? `統計${side}背包低機率異常特性${p.excludeSelf?'（排除自身）':''}：符合${p.matchedWeight??1}、不符合${p.unmatchedWeight??0}` : `計算${p.side==='both'?'雙方':side}背包${p.state==='alive'?'存活':p.state==='dead'?'陣亡':'所有'}精靈擁有「${p.name}」的人數`;
     case 'raise_max_hp':return `選定隊員體力上限提升至${p.source==='self'?'自身':'對手'}最大體力×${pct(p.ratio)}，記錄實際提升量`;
     case 'heal_selected_then':return `選定隊員恢復上次結算量×${p.ratio}，正式恢復後執行子流程`;
     case 'stat_points':return `選定隊員${p.stats.join('／')}能力值${p.direction==='decrease'?'減少':'增加'}上次結算量×${p.ratio}，最多${p.cap}點，至少${p.floor}`;
@@ -96,7 +96,7 @@ export function sequenceActionLabel(a: Act, triggerLabels: Record<string, string
     case 'once_per_round': return `每回合僅執行一次（${p.key}）`;
     case 'stat_steal_random': return `隨機吸取對手${p.count}項不同能力${p.v}級（免疫／下限後實際下降量）`;
     case 'shield_from_last': return `上一結算量的${pct(p.ratio)}轉化為自身護盾`;
-    case 'mark_program': return `${side}${p.mode==='add'?'增加':'設定'}${p.count}${p.unit}「${p.name}」（上限${p.maxCount}；${p.scope==='team'?'陣營':'持有者'}；${p.persistsOffField?'下場保留':'下場消失'}${p.recoveryReduction?`；${p.recoveryReduction.perStack?'每層':''}恢復減少${pct(p.recoveryReduction.ratio)}，${p.recoveryReduction.includePotions?'包含':'不含'}藥劑`:''}${p.incomingDamageReduction?`；${markDamageReductionText(p.incomingDamageReduction)}`:''}）`;
+    case 'mark_program': return `${side}${p.mode==='add'?'增加':'設定'}${p.count}${p.countFromMark?`×印記${p.countFromMark.id}數量`:''}${p.unit}「${p.name}」（上限${p.maxCount}；${p.scope==='team'?'陣營':'持有者'}；${p.persistsOffField?'下場保留':'下場消失'}${p.recoveryReduction?`；${p.recoveryReduction.perStack?'每層':''}恢復減少${pct(p.recoveryReduction.ratio)}，${p.recoveryReduction.includePotions?'包含':'不含'}藥劑`:''}${p.incomingDamageReduction?`；${markDamageReductionText(p.incomingDamageReduction)}`:''}）`;
     case 'mark_remove_current': return '移除此持有者目前執行的印記';
     case 'recoil': return `本次造成的實際體力傷害×${pct(p.ratio)}反作用扣減自身體力`;
     case 'incoming_utility_invalid_turns': return `${p.turns}回合內對自身使用的屬性技能無效`;

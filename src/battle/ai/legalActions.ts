@@ -1,6 +1,7 @@
 import type { BattleState } from '../../components/BattleManager';
 import type { Elf, Skill } from '../../types';
 import { checkElfDead } from '../elfAlive';
+import { listBagElves } from '../bagTargets';
 import { activeConstraints } from '../timedConstraints';
 import { hasBattleItem } from '../itemInventory';
 import { BATTLE_ITEMS, getMaxPp, getNoSwitchTurns, isElfItemDisabled, isElfSkillSelectionDisabled, isElfSwitchDisabled } from '../../utils/battleHelpers';
@@ -31,9 +32,15 @@ export function legalActions(state: BattleState, side: AISide, forced = false, p
     if (!isElfItemDisabled(self)) {
       for (const item of BATTLE_ITEMS) {
         if (!hasBattleItem(state[`${side}ItemInventory`], item.id)) continue;
-        if (item.pickTarget) continue; // 需要先選對象的道具，AI 不自行選擇
         if (side === 'p1' && potionRemaining !== undefined && potionRemaining <= 0 && item.type !== 'special') continue;
-        actions.push({ kind: 'item', id: item.id });
+        if (item.pickTarget === 'bag_elf') {
+          const teams = {p1: state.p1Team.map((e,i) => i === state.p1ActiveIndex ? state.p1 : e),
+            p2: state.p2Team.map((e,i) => i === state.p2ActiveIndex ? state.p2 : e)};
+          for (const {side: targetSide, elf} of listBagElves(teams)) {
+            if (elf.isVanished || (targetSide === side && (elf.battleId || elf.id) === (self.battleId || self.id))) continue;
+            actions.push({kind: 'item', id: item.id, picked: {side: targetSide, battleId: elf.battleId || elf.id}});
+          }
+        } else if (!item.pickTarget) actions.push({ kind: 'item', id: item.id });
       }
     }
   }
@@ -47,6 +54,10 @@ export function legalActions(state: BattleState, side: AISide, forced = false, p
 export function actionLabel(state: BattleState, side: AISide, action: PlannedAction): string {
   if (action.kind === 'skill') return state[side].skills[action.slot]?.name || '未知技能';
   if (action.kind === 'switch') return `換上 ${state[`${side}Team`][action.index]?.name || '未知精靈'}`;
-  if (action.kind === 'item') return BATTLE_ITEMS.find(i => i.id === action.id)?.name || '未知道具';
+  if (action.kind === 'item') {
+    const name = BATTLE_ITEMS.find(i => i.id === action.id)?.name || '未知道具';
+    const target = action.picked && listBagElves({p1: state.p1Team, p2: state.p2Team}).find(e => e.side === action.picked!.side && (e.elf.battleId || e.elf.id) === action.picked!.battleId);
+    return target ? `${name} → ${target.side === side ? '己方' : '對方'} ${target.elf.isConcealed && target.side !== side ? '隱匿精靈' : target.elf.name}` : name;
+  }
   return '等待';
 }

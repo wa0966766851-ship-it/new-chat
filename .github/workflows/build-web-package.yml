@@ -19,7 +19,8 @@ concurrency:
 jobs:
   build:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    # 完整積木遷移測試包含逐份 P1/P2 引擎驗收，不能在建置前被舊的30分鐘上限中止。
+    timeout-minutes: 120
     steps:
       - uses: actions/checkout@v6
       - uses: actions/setup-node@v4

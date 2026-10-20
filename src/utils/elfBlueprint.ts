@@ -5,6 +5,8 @@ import { StatusRegistry } from '../effects/statusRegistry';
 import { canonicalStatusName } from '../effects/statusIdentity';
 import { SKILL_STONE_GRADES, SKILL_STONE_ATTRIBUTES, getPerfectEffectsForAttribute, validateSkillStoneLoadout, isSkillStone } from '../data/skillStones';
 export const MAX_BLUEPRINT_BYTES = 2_000_000;
+// 序列每層包含 body/acts/params 等 JSON 容器；語意巢狀限制仍由 validateKit 檢查。
+export const MAX_BLUEPRINT_JSON_DEPTH = 64;
 const stats = ['hp', 'atk', 'def', 'spatk', 'spdef', 'speed'] as const;
 const object = (v: unknown): v is Record<string, any> => !!v && typeof v === 'object' && !Array.isArray(v);
 function fail(message: string): never { throw new Error(`圖紙格式錯誤：${message}`); }
@@ -48,7 +50,7 @@ export function parseElfBlueprint(json: string): { elf: Elf; warnings: string[];
   if (!object(doc)) fail('根節點需為物件');
   let count = 0;
   const checkTree = (value: any, depth = 0) => {
-    if (++count > 100000 || depth > 25) fail('資料過深或過多');
+    if (++count > 100000 || depth > MAX_BLUEPRINT_JSON_DEPTH) fail('資料過深或過多');
     if (typeof value === 'number' && !Number.isFinite(value)) fail('非有限數值');
     if (value && typeof value === 'object') for (const child of Object.values(value)) checkTree(child, depth + 1);
   };
