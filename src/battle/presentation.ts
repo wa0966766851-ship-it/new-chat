@@ -133,7 +133,9 @@ export class BattlePresentation {
   record(e: PresentationEvent): Promise<void> {
     if (!this.active) return Promise.resolve();
     if (!this.hp.has(this.key(e))) this.hp.set(this.key(e), e.before);
-    const instant = (e.type === 'skill' && this.inAction) || e.type === 'notice' || e.immediate;
+    // DSH 20261020（使用者規格）：真實傷害與技能傷害同通道——出手期間即時顯示實際傷害並影響血條；
+    // 不再延到收尾合併白字（收尾合併僅保留給出手外的真傷與粉傷理論值）。
+    const instant = ((e.type === 'skill' || e.type === 'true') && this.inAction) || e.type === 'notice' || e.immediate;
     const extra = this.extraDepth > 0 && e.type === 'skill';
     const fatal = e.alive !== true && e.after <= 0 && e.delta < 0;
     if (extra) {
@@ -218,9 +220,13 @@ export class BattlePresentation {
           if (alreadyDead.has(key) && e.type !== 'skill' && e.before <= 0 && e.alive !== true) continue;
           const cur = this.hp.get(key) ?? e.before;
           const fatal = e.alive !== true && e.after <= 0;
+          // DSH 20261020（使用者規格）：體力不受上限者（HP已為0／負數仍存活）——跳字照常，血條不因後續傷害變動。
+          const nonPositiveAlive = e.alive === true && e.after <= 0 && cur <= 0;
           // 致命：直接顯示真實結果；非致命：相對變化，不製造假陣亡。
           // 生前事件延後播放時，已陣亡者只顯示數字，不回放其舊HP而製造假復活。
-          if (!alreadyDead.has(key) || fatal || e.before <= 0 && e.after > 0 && e.delta > 0) {
+          if (nonPositiveAlive && e.delta < 0) {
+            // 負血存活的傷害：只跳字，血條凍結。
+          } else if (!alreadyDead.has(key) || fatal || e.before <= 0 && e.after > 0 && e.delta > 0) {
             this.hp.set(key, fatal ? e.after : e.after > 0 ? Math.min(e.maxHp, Math.max(1, cur + e.delta)) : cur + e.delta);
           }
           if (fatal) this.dead.add(key);

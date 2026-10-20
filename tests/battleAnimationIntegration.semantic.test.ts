@@ -43,7 +43,7 @@ try {
     const observer = new dom.window.MutationObserver(() => {
       document.querySelectorAll<HTMLElement>('[data-presentation-id]').forEach(el => seen.set(el.dataset.presentationId!, { type: el.dataset.battlePopup!, text: el.textContent || '' }));
       const types = new Set([...document.querySelectorAll<HTMLElement>('[data-battle-popup]')].map(el => el.dataset.battlePopup));
-      if (types.has('fixed') && types.has('heal') && types.has('true')) simultaneousClosingNumbers = true;
+      if (types.has('fixed') && types.has('heal')) simultaneousClosingNumbers = true; // DSH 20261020: 真傷即時化後收尾同幀驗收粉與綠
     });
     observer.observe(document.getElementById('root')!, { childList: true, subtree: true, attributes: true });
     await act(async () => root.render(React.createElement(Battle, {
@@ -67,10 +67,10 @@ try {
       const numbers = [...seen.values()];
       assert.equal(numbers.filter(n => n.type === 'skill').length, 1 + (group ? 1 : extraCount),
         '一般額外行動按筆播放；單筆run內六段邏輯只播一次，不是六次連擊動畫');
-      assert.ok(numbers.some(n => n.type === 'true' && n.text.includes('-12')), '兩筆白傷合併，數字不遺漏');
+      assert.ok(numbers.filter(n => n.type === 'true').length >= 2 && numbers.some(n => n.type === 'true' && n.text.includes('-5')) && numbers.some(n => n.type === 'true' && n.text.includes('-7')), '真傷與技能傷害同通道：出手期間各自即時顯示（DSH 20261020 規格），數字不遺漏');
       assert.ok(numbers.some(n => n.type === 'fixed' && n.text.includes('-10')), '明確類型優先，標籤不得把固定傷害變成真傷');
       assert.ok(!numbers.some(n => /吸取|汲取/.test(n.text)), '演出隱藏吸取／汲取用語，日誌仍可保留');
-      assert.ok(simultaneousClosingNumbers, '同一收尾節點粉／綠／白同時出現，不驗收舊版先後播放順序');
+      assert.ok(simultaneousClosingNumbers, '同一收尾節點粉／綠同時出現（真傷已隨技能傷害即時化），不驗收舊版先後播放順序');
     }
     return { p1: structuredClone(st.p1Team), p2: structuredClone(st.p2Team), logs: structuredClone(st.logs),
       p1Registry: structuredClone(st.p1RegistryState), p2Registry: structuredClone(st.p2RegistryState),
@@ -129,10 +129,10 @@ try {
     assert.equal(st[targetSide].shield, 999); assert.equal(st[targetSide].barrier, 999, '真傷不被防護資源吸收');
     assert.equal(st[targetSide].skills[0].pp, 4, '0 HP 仍可正常出手，不是假陣亡');
     if (!fast) {
-      assert.equal(seen.size, 1, '體力抵達 0 仍存活，兩筆白傷在收束合併');
-      assert.ok([...seen.values()][0].text.includes('-180'));
-      assert.ok(![...seen.values()][0].text.includes('-0'));
-      assert.equal([...seen.values()][0].hp, 0);
+      assert.equal(seen.size, 2, 'DSH 20261020 規格：0 體力存活者的真傷仍各自即時顯示（傷害不影響血條，獨立事件）');
+      assert.ok([...seen.values()].some(n => n.text.includes('-127')) && [...seen.values()].some(n => n.text.includes('-53')), '兩筆白傷各自顯示，數字不遺漏');
+      assert.ok(![...seen.values()].some(n => n.text.includes('-0')), '不出現-0');
+      assert.ok(![...seen.values()].some(n => (n as any).hp < 0), '0 體力存活：跳字照常，血條不因傷害變動');
     }
     return { p1: structuredClone(st.p1Team), p2: structuredClone(st.p2Team), logs: structuredClone(st.logs),
       p1Registry: structuredClone(st.p1RegistryState), p2Registry: structuredClone(st.p2RegistryState), winner: st.winner, phase: st.phase };
