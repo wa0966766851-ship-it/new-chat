@@ -7,6 +7,7 @@ const OWNER = 'wa0966766851-ship-it';
 const REPO = 'new-chat';
 const RELEASES = `https://github.com/${OWNER}/${REPO}/releases`;
 const API = `https://api.github.com/repos/${OWNER}/${REPO}/releases/latest`;
+const MANIFEST = `${RELEASES}/latest/download/update-manifest.json`;
 
 function compareVersion(a, b) {
   const parse = v => { if (!/^\d+\.\d+\.\d+$/.test(v)) throw new Error('版本格式錯誤'); return v.split('.').map(Number); };
@@ -49,8 +50,30 @@ function parseRelease(data, current, kind) {
 async function checkRelease(current, kind, fetcher = fetch) {
   const response = await fetcher(API, { headers: { Accept: 'application/vnd.github+json', 'User-Agent': 'SeerBattleUpdater', 'X-GitHub-Api-Version': '2022-11-28' }, signal: AbortSignal.timeout(12000), redirect: 'error' });
   if (response.status === 404) return { status: 'unpublished', releaseUrl: RELEASES };
-  if (response.status === 403 || response.status === 429) throw new Error('GitHub 暫時限制查詢，請稍後重試；目前版本仍可使用');
+  if (response.status === 403 || response.status === 429) {
+    await response.body?.cancel();
+    try { return await checkManifest(current, kind, fetcher); }
+    catch { throw new Error('GitHub 暫時限制查詢，備援版本清單也無法核對；請稍後重試，目前版本仍可使用'); }
+  }
   return parseRelease(await limitedJson(response), current, kind);
+}
+// Public release attachment avoids the shared unauthenticated API quota. Keep
+// exactly the same stable-version, project URL, size and SHA-256 requirements.
+async function checkManifest(current, kind, fetcher) {
+  let url = MANIFEST;
+  const signal = AbortSignal.timeout(12000);
+  for (let hops = 0; hops <= 5; hops++) {
+    const response = await fetcher(url, { signal, redirect: 'manual', cache: 'no-store' });
+    if ([301, 302, 303, 307, 308].includes(response.status)) {
+      const location = response.headers.get('location'); await response.body?.cancel();
+      if (!location || hops === 5) throw new Error('版本清單重新導向過多');
+      url = trustedUrl(new URL(location, url).href); continue;
+    }
+    const data = await limitedJson(response, 128 * 1024);
+    if (data.schemaVersion !== 1 || data.draft !== false || data.prerelease !== false) throw new Error('備援版本清單格式錯誤');
+    return parseRelease(data, current, kind);
+  }
+  throw new Error('無法讀取版本清單');
 }
 async function hashFile(file) {
   const hash = createHash('sha256'); for await (const chunk of fs.createReadStream(file)) hash.update(chunk); return hash.digest('hex');
