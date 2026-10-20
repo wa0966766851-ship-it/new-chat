@@ -6,7 +6,7 @@ export const AI_STYLES: Record<AIStyle, {label:string;description:string;aggress
   defensive:{label:'穩守',description:'偏向存活、護盾與抵擋，在威脅下先保住戰力。',aggression:0.3,own:{hp:1.4,shield:1.4,barrier:1.4,protection:1.5},enemy:{hp:0.7}},
   disruptive:{label:'干擾',description:'偏向控制、封鎖與削弱對手PP，再建立進攻機會。',aggression:0.45,own:{protection:1.2},enemy:{status:2.4,restriction:2,pp:2,stage:1.2,hp:0.8}},
   sustain:{label:'續航',description:'偏向體力與PP恢復，避免無效回復及浪費藥劑。',aggression:0.4,own:{hp:1.6,pp:1.8,inventory:1.5,stage:0.6,shield:0.8,barrier:0.8},enemy:{hp:0.8}},
-  attrition:{label:'磨盤',description:'巀峰拖時：控場到底、防禦最穩，50回合到期以存活數定勝負，不以擊殺為目標。',aggression:0.2,own:{hp:1.6,shield:1.6,barrier:1.6,protection:1.6,inventory:1.2},enemy:{status:3,restriction:2.6,pp:2.2,hp:0.5,shield:0.8,barrier:0.8}},
+  attrition:{label:'磨盤',description:'巔峰拖時：優先控場與生存，爭取50回合到期時的存活數優勢。',aggression:0.2,own:{hp:1.6,shield:1.6,barrier:1.6,protection:1.6,inventory:1.2},enemy:{status:3,restriction:2.6,pp:2.2,hp:0.5,shield:0.8,barrier:0.8}},
 };
 export function metricPreference(style:AIStyle,key:string,own:boolean):number {
   if(key==='death'||key==='terminal')return 1;

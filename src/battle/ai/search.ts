@@ -16,7 +16,7 @@ export async function planDecision(request: DecisionRequest, simulate: Simulator
   const begin = performance.now(), deadline = begin + request.settings.budgetMs;
   let result = fallbackDecision(request, undefined, assumptions);
   if (request.settings.mode === 'heuristic' || request.state.winner) return result;
-  const limits = searchLimits(request.settings), base = evaluatePosition(request.state, request.side, request.settings);
+  const limits = searchLimits(request.settings), base = evaluatePosition(request.state, request.side, request.settings, request.battleFormat);
   if (request.settings.risk && request.settings.risk !== 'balanced') limits.seeds = Math.max(2, limits.seeds);
   const candidates = result.candidates;
   const opponentKnowledge = decisionKnowledge(request.state, opposite(request.side));
@@ -35,7 +35,7 @@ export async function planDecision(request: DecisionRequest, simulate: Simulator
         if (performance.now() >= deadline) { interrupted = true; break; }
         const after = await simulate(request, candidate.action, replies[Math.floor(sample / limits.seeds)], seed, deadline);
         simulations++;
-        sweep.push(evaluatePosition(after, request.side, request.settings));
+        sweep.push(evaluatePosition(after, request.side, request.settings, request.battleFormat));
       }
     } catch (error) {
       result.fallbackReason = '推演分支未完成：' + (error instanceof Error ? error.message : String(error));

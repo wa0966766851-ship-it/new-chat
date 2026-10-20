@@ -41,7 +41,7 @@
     "start": "node dist/server.cjs",
     "clean": "rm -rf dist server.js",
     "lint": "tsc --noEmit",
-    "test": "node --import tsx src/tests/battle.units.test.ts && node --import tsx tests/battleSpriteFacing.semantic.test.ts && node --import tsx tests/battleLayout.semantic.test.ts && node --import tsx tests/deathSwitchRoundEnd.semantic.test.ts && node --import tsx tests/deathSwitchCatchUp.semantic.test.ts && node --import tsx tests/scarlettFull.semantic.test.ts && node --import tsx tests/blocksFixes.semantic.test.ts && node --import tsx tests/engineHooks.semantic.test.ts && node --import tsx src/tests/blocks.semantic.test.ts && node --import tsx tests/otherworldRey.semantic.test.ts && node --import tsx tests/holyMiles.semantic.test.ts && node --import tsx scripts/gen-handled-skills.ts --check && node --import tsx scripts/audit_block_coverage.ts --check && npm run test:loading",
+    "test": "node --import tsx src/tests/battle.units.test.ts && npm run test:ai-clock && node --import tsx tests/battleSpriteFacing.semantic.test.ts && node --import tsx tests/battleLayout.semantic.test.ts && node --import tsx tests/deathSwitchRoundEnd.semantic.test.ts && node --import tsx tests/deathSwitchCatchUp.semantic.test.ts && node --import tsx tests/scarlettFull.semantic.test.ts && node --import tsx tests/blocksFixes.semantic.test.ts && node --import tsx tests/engineHooks.semantic.test.ts && node --import tsx src/tests/blocks.semantic.test.ts && node --import tsx tests/otherworldRey.semantic.test.ts && node --import tsx tests/holyMiles.semantic.test.ts && node --import tsx scripts/gen-handled-skills.ts --check && node --import tsx scripts/audit_block_coverage.ts --check && npm run test:loading",
     "test:loading": "node --import tsx tests/codexLoading.semantic.test.ts && node --import tsx tests/profileLoading.semantic.test.ts && npm run test:data && npm run test:ui && npm run test:scopes && npm run test:updates",
     "test:ui": "node --import tsx tests/formatBigNumber.semantic.test.ts && node --import tsx tests/battlePresentation.semantic.test.ts && node --import tsx tests/battleResult.ui.test.tsx && node --import tsx tests/battleIntro.ui.test.tsx && node --import tsx tests/uiFoundation.semantic.test.ts && node --import tsx tests/elfEditorLayout.semantic.test.ts && node --import tsx tests/pageRecovery.semantic.test.ts && node --import tsx tests/editorWorkflow.semantic.test.ts && node --import tsx tests/reyDescriptions.semantic.test.ts && node --import tsx tests/homepageLoading.semantic.test.ts && npm run test:animation && npm run test:audio",
     "test:audio": "node --import tsx tests/musicPlayback.semantic.test.ts",
@@ -210,7 +210,8 @@
     "test:build-workspace": "node tests/buildWorkspace.semantic.test.mjs",
     "test:reader-gaps": "node --import tsx tests/readerGapClosure.semantic.test.ts",
     "package:electron:keep-version": "node scripts/package_electron.mjs --keep-version",
-    "clean:electron-work": "node scripts/package_electron.mjs --clean-work"
+    "clean:electron-work": "node scripts/package_electron.mjs --clean-work",
+    "test:ai-clock": "node --import tsx tests/localBattleAI.clock.semantic.test.ts"
   },
   "dependencies": {
     "@google/genai": "^2.4.0",

@@ -11,7 +11,7 @@ import { PEAK_TURN_LIMIT, countedAlive } from '../turnLimit';
 import type { Elf } from '../../types';
 import { visibleSkills } from '../viewerPerspective';
 import { metricPreference } from './styles';
-import { opposite, type AISettings, type AISide, type PositionScore, type ScorePart } from './types';
+import { opposite, type AISettings, type AISide, type DecisionRequest, type PositionScore, type ScorePart } from './types';
 
 /** 僅決策評價，不參與傷害、恢復、機率或真實體力結算。 */
 export const POSITION_WEIGHTS = {
@@ -80,7 +80,7 @@ function sideScore(state: BattleState, side: AISide): PositionScore {
   const parts = Object.entries(totals).map(([key, value]) => ({ key, label: WEIGHT_LABELS[key] || ({ status: '異常狀態', restriction: '行動限制', charge: '充能' }[key]) || key, value }));
   return { total: parts.reduce((n, p) => n + p.value, 0), parts };
 }
-export function evaluatePosition(state: BattleState, side: AISide, settings: AISettings): PositionScore {
+export function evaluatePosition(state: BattleState, side: AISide, settings: AISettings, battleFormat?: DecisionRequest['battleFormat']): PositionScore {
   const own = sideScore(state, side), enemy = sideScore(state, opposite(side));
   const keys = new Set([...own.parts, ...enemy.parts].map(p => p.key));
   const parts: ScorePart[] = [...keys].map(key => ({ key, label: own.parts.find(p => p.key === key)?.label || enemy.parts.find(p => p.key === key)!.label,
@@ -89,12 +89,14 @@ export function evaluatePosition(state: BattleState, side: AISide, settings: AIS
   if (state.winner) parts.push({ key: 'terminal', label: '勝敗', value: state.winner === side ? 10000 : state.winner === opposite(side) ? -10000 : 0 });
   // DSH 20261020（磨盤時鐘）：巔峰 6v6 的 50 回合判定按存活精靈數——
   // 回合越接近上限，存活數差越大分；讓求穩風格在拖後期自然傾向「保存活 + 控場」而非換命。
-  const fmt = (state as any).battleFormat || (state as any).format;
-  if (fmt === 'peak_6v6' && !state.winner) {
-    const turn = Number((state as any).turnNumber) || 0;
+  // 模式屬於決策請求，不存在 BattleState；推演前後必須使用同一模式。
+  if (battleFormat === 'peak_6v6' && !state.winner) {
+    const turn = state.turnNumber;
     if (turn >= PEAK_TURN_LIMIT - 10) {
       const isDead = (e: Elf) => checkElfDead(e);
-      const mine = countedAlive(state[`${side}Team`], isDead), theirs = countedAlive(state[`${opposite(side)}Team`], isDead);
+      // 在場個體是即時狀態來源，隊伍快照可能尚未寫回本次傷亡。
+      const living = (s: AISide) => countedAlive(state[`${s}Team`].map((e, i) => i === state[`${s}ActiveIndex`] ? state[s] : e), isDead);
+      const mine = living(side), theirs = living(opposite(side));
       const urgency = clamp((turn - (PEAK_TURN_LIMIT - 10)) / 10, 0, 1); // 40 回合起線性升溫，50 滿格
       const delta = (mine - theirs) * 400 * urgency;
       parts.push({ key: 'clock', label: '回合時鐘（存活數）', value: delta * (settings.style === 'attrition' ? 2 : 1) });

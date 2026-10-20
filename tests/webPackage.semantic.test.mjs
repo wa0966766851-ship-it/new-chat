@@ -10,6 +10,14 @@ assert.match(manifest.commit, /^[a-f0-9]{40}$/); assert.match(manifest.buildId, 
 const files = await listFiles(root);
 assert.deepEqual(files.sort(), [...manifest.files.map(f => f.path), 'web-package-manifest.json'].sort());
 assert.ok(files.includes('images/img_018.png'));
+// Express 的官方素材下載快取不會隨靜態網站發布；正式匯入精靈需自帶圖檔。
+const importedArt = JSON.parse(await readFile(join(root, 'seer/4937.source.json'), 'utf8'));
+for (const art of importedArt.files) {
+  assert.ok(files.includes(art.path), `星光雷納多網站素材缺漏：${art.path}`);
+  const image = await readFile(join(root, art.path));
+  assert.equal(image.subarray(0, 8).toString('hex'), '89504e470d0a1a0a');
+  assert.equal(createHash('sha256').update(image).digest('hex'), art.sha256);
+}
 assert.ok(!files.some(f => /server\.cjs|\.env|node_modules|\.map$/.test(f)));
 for (const file of manifest.files) {
   const bytes = await readFile(join(root, file.path));
