@@ -3,6 +3,7 @@ import React, { act } from 'react';
 import { JSDOM } from 'jsdom';
 import { createServer } from 'vite';
 import { fileURLToPath } from 'node:url';
+import { AI_STYLES } from '../src/battle/ai/styles';
 
 const dom = new JSDOM('<div id="root"></div>', { url: 'http://localhost/' });
 Object.assign(globalThis, {
@@ -44,7 +45,8 @@ try {
   assert.equal(document.querySelector('iframe'), null, '未播放音樂不得建立播放器');
   await waitFor(()=>!!document.querySelector('[data-testid="homepage-ai-settings"]'),'真正首頁有AI設定入口');
   const enemyStyle=document.querySelector<HTMLElement>('[aria-label="首頁敵方AI風格"]')!;
-  assert.equal(enemyStyle.querySelectorAll('button').length,5,'五種打法可見');
+  assert.deepEqual([...enemyStyle.querySelectorAll('button')].map(b => b.dataset.value).sort(),
+    Object.keys(AI_STYLES).sort(), '正式登記的每種打法均可見，且沒有多餘選項');
   assert.equal(document.querySelector('[aria-label="首頁敵方AI風險"]')!.querySelectorAll('button').length,3,'風險獨立選擇');
   await click(enemyStyle.querySelector<HTMLElement>('button[data-value="disruptive"]')!,'選擇干擾風格');
   assert.equal(JSON.parse(localStorage.getItem('seer_local_battle_ai_v1')!).style,'disruptive');

@@ -1,5 +1,6 @@
 // 入戰動畫：規劃（開關／特殊模式／重來／減少動態）、顯示、跳過、行動閘門。
 import assert from 'node:assert/strict';
+import { mock } from 'node:test';
 import React, { act } from 'react';
 import { JSDOM } from 'jsdom';
 import { planIntro, createActionGate, formatLabel, INTRO_MS } from '../src/battle/introPlan';
@@ -41,7 +42,9 @@ const { createRoot } = await import('react-dom/client');
 const { BattleIntro } = await import('../src/components/battle/BattleIntro');
 const elf = (id: string, name: string, extra: any = {}): any => ({ id, battleId: id, name, type: '火', currentHp: 1, maxHp: 1, ...extra });
 const root = createRoot(document.getElementById('root')!);
-const sleep = (ms: number) => new Promise(r => setTimeout(r, ms));
+// 只控制元件的計時器，避免載入圖片或忙碌的 CI 讓 80ms 在斷言前流逝。
+mock.timers.enable({ apis: ['setTimeout'] });
+const advance = async (ms: number) => act(async () => { mock.timers.tick(ms); });
 try {
   let done = 0;
   let seq = 0;
@@ -54,20 +57,26 @@ try {
   assert.equal(document.querySelector('[data-testid="intro-format"]')!.textContent, '單挑 1V1');
   assert.ok(el.textContent!.includes('BATTLE START') && el.textContent!.includes('戰鬥開始'));
   assert.equal(done, 0);
-  await act(async () => { await sleep(140); });
+  await advance(79);
+  assert.equal(done, 0, '期限前不能提前結束');
+  await advance(1);
   assert.equal(done, 1, '時間到自然結束，只通知一次');
+  await advance(500);
+  assert.equal(done, 1, '期限後不重複通知');
   console.log('✓ 顯示雙方名稱、賽制、BATTLE START，時間到結束一次');
 
   done = 0;
   await show({ play: true, ms: 5000, variant: 'full' });
   await act(async () => { document.querySelector('[data-testid="battle-intro"]')!.dispatchEvent(new dom.window.Event('pointerdown', { bubbles: true })); });
-  await act(async () => { await sleep(260); });
+  await advance(169);
+  assert.equal(done, 0, '跳過動畫播放完才通知');
+  await advance(1);
   assert.equal(done, 1, '點擊跳過');
   for (const key of ['Escape', 'a']) {
     done = 0; await act(async () => root.render(<></>));
     await show({ play: true, ms: 5000, variant: 'full' });
     await act(async () => { dom.window.dispatchEvent(new dom.window.KeyboardEvent('keydown', { key, bubbles: true })); });
-    await act(async () => { await sleep(260); });
+    await advance(170);
     assert.equal(done, 1, `按 ${key} 跳過`);
   }
   console.log('✓ 點擊、Esc、任意鍵跳過，且只通知一次');
@@ -94,7 +103,32 @@ try {
   await loadImg(arts[0], 4000, 1000);
   assert.equal(arts[0].style.getPropertyValue('--bi-fit'), '1.45', '上限 1.45');
   console.log('✓ 入戰動畫立繪比例補償');
+
+  // 真正 Suspense 載入期間：依 battleId 選首發、等待再久也不可提前關閉或跳過。
+  const { BattleLoadingScreen } = await import('../src/components/battle/BattleLoadingScreen');
+  let release!: (m: { default: React.ComponentType }) => void;
+  const PendingBattle = React.lazy(() => new Promise<{ default: React.ComponentType }>(r => { release = r; }));
+  const p1Team = [elf('bench', '場下'), elf('chosen', '正確首發', { battleId: 'chosen-battle' })];
+  const p2Team = [elf('hidden', '不可洩露', { isConcealed: true })];
+  await act(async () => root.render(<React.Suspense fallback={<BattleLoadingScreen p1Team={p1Team} p2Team={p2Team}
+    p1StarterId="chosen-battle" p2StarterId="hidden" format="peak_3v3" />}><PendingBattle /></React.Suspense>));
+  assert.equal(document.querySelector('[data-testid="intro-name-p1"]')!.textContent, '正確首發');
+  assert.equal(document.querySelector('[data-testid="intro-name-p2"]')!.textContent, '？？？');
+  assert.equal(document.querySelector('[data-testid="intro-format"]')!.textContent, '巔峰 3V3');
+  assert.ok(document.querySelector('[role="status"][aria-busy="true"]'));
+  assert.equal(document.querySelector('.bi-skiptip'), null, '尚未就緒不能假裝可跳過');
+  await act(async () => {
+    document.querySelector('[data-testid="battle-intro"]')!.dispatchEvent(new dom.window.Event('pointerdown', { bubbles: true }));
+    dom.window.dispatchEvent(new dom.window.KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+  });
+  await advance(60_000);
+  assert.ok(document.querySelector('[aria-label="正在載入對戰"]'), '慢速載入仍保留對決畫面');
+  await act(async () => { release({ default: () => <div data-testid="battle-ready">戰場就緒</div> }); });
+  assert.equal(document.querySelector('[data-testid="battle-intro"]'), null, '真正就緒才移除覆蓋');
+  assert.equal(document.querySelector('[data-testid="battle-ready"]')?.textContent, '戰場就緒');
+  console.log('✓ 對決載入覆蓋：首發／隱匿／賽制、慢速等待、不可提前跳過、就緒自動交接');
 } finally {
   await act(async () => root.unmount());
+  mock.timers.reset();
   dom.window.close();
 }

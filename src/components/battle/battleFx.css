@@ -1,4 +1,4 @@
-/* 入戰動畫（bi-）與結算畫面（br-）。只在戰鬥 chunk 載入。P1＝青、P2＝紅橙，雙方顏色固定。 */
+/* 入戰動畫／載入封面（bi-）與結算畫面（br-）。由應用入口載入，供戰鬥 chunk 載入前使用。P1＝青、P2＝紅橙。 */
 .bi-root, .br-root {
   --c1: #22d3ee; --c1d: #0e7490; --c2: #fb7144; --c2d: #9a2a12; --gold: #fcd34d;
   --ink: #020617; --panel: rgba(2, 8, 20, .82); --line: rgba(148, 163, 184, .22);
@@ -111,6 +111,16 @@
 .bi-root[data-variant="reduced"] .bi-start, .bi-root[data-variant="reduced"] .bi-flash, .bi-root[data-variant="reduced"] .bi-parts, .bi-root[data-variant="reduced"] .bi-ring { display: none; }
 .bi-root[data-variant="reduced"] .bi-vs .ring { display: none; }
 .bi-root[data-variant="reduced"] .bi-vs svg { opacity: 1; }
+
+/* 載入時保留對決定格，不能在模組尚未就緒前按動畫期限淡出。 */
+.bi-root[data-loading="true"] { animation: none; cursor: progress; }
+.bi-root[data-loading="true"] *, .bi-root[data-loading="true"] *::before,
+.bi-root[data-loading="true"] *::after { animation: none !important; }
+.bi-root[data-loading="true"] .bi-seam polyline { stroke-dashoffset: 0; }
+.bi-root[data-loading="true"] .bi-vs svg { opacity: 1; }
+.bi-loading-label { position: absolute; bottom: 12px; left: 50%; transform: translateX(-50%); width: min(90%, 500px); padding: 12px; text-align: center; background: rgba(2, 6, 23, .88); border-radius: 12px; }
+.bi-loading-label strong, .bi-loading-label span { display: block; }
+.bi-loading-label span { margin-top: 4px; font-size: 12px; color: #cbd5e1; }
 
 @media (max-width: 640px) {
   .bi-side { width: 64%; top: 20%; }

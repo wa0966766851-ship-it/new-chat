@@ -83,14 +83,16 @@ try {
       initialP2Team:[side==='p2'?self:other],p1StarterId:side==='p1'?self.id:other.id,p2StarterId:side==='p2'?self.id:other.id,
       battleMode:'PVP',preparedTeams:true,onBackToMenu:()=>{},onDriverInit:(d: any)=>driver=d})));
     const before=driver.getSyncState()[side].currentHp;
+    assert.equal(before,430,`${side}/${sealed} 開局回合開始恢復30，選招前即生效且只一次`);
     (globalThis as any).__BATTLE_SEED__=19;
     await act(async()=>{driver.onSkillSelect('p1',driver.getSyncState().p1.skills[0]);driver.onSkillSelect('p2',driver.getSyncState().p2.skills[0]);});
     for(let i=0;i<150 && !(driver.getSyncState().turnNumber===2 && driver.getSyncState().phase==='p1_select');i++)
       await act(async()=>{await new Promise(r=>setTimeout(r,20));});
     const state=driver.getSyncState();
     assert.equal(state.turnNumber,2);assert.equal(state.phase,'p1_select');
-    // 回合開始30、固有使用5、命中附加70、特質回合末40，各一次；不以不崩潰代替數值驗收。
-    assert.equal(state[side].currentHp-before,sealed?75:145,`${side}/${sealed} 回復量／來源不得重複`);
+    // 首回合開始30已在start派發；出手不可再重播。固有5、命中70、回合末40各一次。
+    assert.equal(state[side].currentHp-before,sealed?45:115,`${side}/${sealed} 出手及回合末回復量／來源不得重複`);
+    assert.equal(state[side].currentHp-400,sealed?75:145,`${side}/${sealed} 含開局回合開始的完整回復量`);
     assert.ok(state[side==='p1'?'p2':'p1'].currentHp<1000,'主攻擊傷害仍然執行');
     assert.equal(state[side].skills[0].pp,9); count++;
   }

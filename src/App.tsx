@@ -25,6 +25,8 @@ import { ImageCopyMenu } from "./components/ImageCopyMenu";
 import { PageErrorBoundary } from "./components/PageErrorBoundary";
 
 import TechLoadingScreen from "./components/TechLoadingScreen";
+import { BattleLoadingScreen } from './components/battle/BattleLoadingScreen';
+import './components/battle/battleFx.css';
 import { SiteUpdateNotice } from "./components/SiteUpdateNotice";
 
 // 首頁瘦身（DSH 20261017）：ControlHub（側邊功能面板）非首屏必需——lazy 載入，功能不變。
@@ -412,9 +414,13 @@ function AppContent() {
         {/* Decorative Grid BG */}
         <div className="absolute inset-0 bg-[linear-gradient(to_right,#1e293b_1px,transparent_1px),linear-gradient(to_bottom,#1e293b_1px,transparent_1px)] bg-[size:4rem_4rem] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_50%,#000_70%,transparent_100%)] opacity-15 pointer-events-none -z-10"></div>
 
-        {isTransitioning && <TechLoadingScreen />}
+        {isTransitioning && <BattleLoadingScreen p1Team={p1Team} p2Team={p2Team}
+          p1StarterId={p1StarterId} p2StarterId={p2StarterId} format={battleFormat} />}
         <PageErrorBoundary key={view} onBack={() => setView("start")}>
-        <Suspense fallback={<TechLoadingScreen />}>
+        <Suspense fallback={view === 'battle'
+          ? <BattleLoadingScreen p1Team={p1Team} p2Team={p2Team}
+              p1StarterId={p1StarterId} p2StarterId={p2StarterId} format={battleFormat} />
+          : <TechLoadingScreen />}>
 
         {view === "start" && (
           <StartScreen
@@ -493,7 +499,8 @@ function AppContent() {
         )}
 
         {view === "battle" && p1Team.length > 0 && p2Team.length > 0 && (
-          <Suspense fallback={<TechLoadingScreen />}>
+          <Suspense fallback={<BattleLoadingScreen p1Team={p1Team} p2Team={p2Team}
+            p1StarterId={p1StarterId} p2StarterId={p2StarterId} format={battleFormat} />}>
             <BattleScreen
               key={battleKey}
               initialP1Team={p1Team}

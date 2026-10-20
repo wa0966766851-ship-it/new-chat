@@ -5,7 +5,6 @@ import { damagePopupStyle, damagePopupLabel } from '../battle/damagePopupStyle';
 import { appearanceElf } from '../battle/illusionPresentation';
 import { skillSlot } from '../battle/skillSlot';
 import { hasBattleItem } from '../battle/itemInventory';
-const BagElfPickerModal = lazy(() => import("./battle/BagElfPickerModal"));
 import React, { useState, useContext, useEffect, useMemo, useRef, lazy, Suspense } from "react";
 import { ElfReadOnlyProfile } from "./ElfReadOnlyProfile";
 import { createPortal } from "react-dom";
@@ -66,6 +65,8 @@ import { formatCompactHud, formatFullNumber } from '../utils/formatBigNumber';
 import { BATTLE_ITEMS, ITEM_CATEGORIES, getItemCategory, ItemCategory, isElfSkillSelectionDisabled } from "../utils/battleHelpers";
 import { isZeroPpExempt } from '../battle/ppExemptions';
 import { classifyLog, filterByMode, mergeExtraActions, toTraditional, turnDigests, filterByElf, filterByQuery, damageTone, extractAmount, elfNamesIn, type LogMode, type BattleLogRow } from '../battle/logClassifier';
+
+const BagElfPickerModal = lazy(() => import("./battle/BagElfPickerModal"));
 
 interface BattleScreenUIProps {
   specialMode?: "destiny" | "interstellar";

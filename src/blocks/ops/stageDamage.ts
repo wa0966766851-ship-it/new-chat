@@ -16,9 +16,13 @@ export const STAGE_DAMAGE_ACTION_FIELDS: Record<string, readonly string[]> = {
 };
 export const STAGE_DAMAGE_CONDITION_FIELDS: Record<string, readonly string[]> = {
   stage_any: ['side', 'kind'],
+  stage_total: ['side', 'op', 'amount'],
 };
 
-const stageLevels = (elf: any): number => STAGE_KEYS.reduce((n, k) => n + Math.abs(Number(elf?.statStages?.[k]) || 0), 0);
+const stageLevels = (elf: any): number => STAGE_KEYS.reduce((n, k) => {
+  const v = Number(elf?.statStages?.[k]);
+  return n + (Number.isFinite(v) ? Math.abs(v) : 0);
+}, 0);
 const hasDirection = (elf: any, kind: string): boolean =>
   STAGE_KEYS.some(k => {
     const v = Number(elf?.statStages?.[k]) || 0;
@@ -39,6 +43,13 @@ export function stageDamageActionIssue(op: string, p: any): string | null {
   return null;
 }
 export function stageDamageConditionIssue(c: Record<string, any>): string | undefined {
+  if (c?.c === 'stage_total') {
+    const p = c.p || {};
+    if (!['self', 'opp', 'both'].includes(p.side)) return '能力等級總和需明確計值方';
+    if (!['低於', '不高於', '高於', '不小於', '等於'].includes(p.op)) return '能力等級總和比較不明';
+    if (!Number.isSafeInteger(p.amount) || p.amount < 0 || p.amount > 72) return '六維等級總和需0至72整數';
+    return undefined;
+  }
   if (c?.c !== 'stage_any') return undefined;
   const p = c.p || {};
   if (!['self', 'opp', 'both'].includes(p.side)) return '能力等級存在查詢需明確持有者';
@@ -82,6 +93,19 @@ export function stageDamageOperations(helpers: {
 
 /** 條件求值；無法辨識回傳 undefined 交還 runtime 預設分支。 */
 export function stageDamageEvalCond(ctx: BattleEventContext, c: Record<string, any>): boolean | undefined {
+  if (c?.c === 'stage_total') {
+    const p = c.p || {};
+    const active = (s: 'p1' | 'p2') => {
+      const e = s === 'p1' ? ctx.activeP1 : ctx.activeP2;
+      return ctx.getFullTeam?.(s)?.find(m => idOf(m) === idOf(e)) || e
+        || (s === ctx.actor ? ctx.self : ctx.target);
+    };
+    const sides = p.side === 'both' ? [ctx.actor, ctx.targetSide] : [p.side === 'self' ? ctx.actor : ctx.targetSide];
+    const sum = sides.reduce((n, s) => n + stageLevels(active(s)), 0);
+    return p.op === '低於' ? sum < p.amount : p.op === '不高於' ? sum <= p.amount
+      : p.op === '高於' ? sum > p.amount : p.op === '不小於' ? sum >= p.amount
+        : p.op === '等於' && sum === p.amount;
+  }
   if (c?.c !== 'stage_any') return undefined;
   const p = c.p || {};
   const elfs = p.side === 'both'

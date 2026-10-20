@@ -359,7 +359,7 @@ export function sequenceIssue(value: unknown, node?: string, depth=0, inMark=fal
       if(c.label !== undefined && typeof c.label !== 'string')return '條件名稱需為文字';
       const finalIssue=finalOdbConditionIssue(c);if(finalIssue)return finalIssue;
       const issue=paramsIssue(c.p || {},SEQUENCE_CONDITION_FIELDS[c.c],'condition')||groupAConditionIssue(c)||powerStatConditionIssue(c)||stageDamageConditionIssue(c)||keldSoulConditionIssue(c)||entranceStackConditionIssue(c);if(issue)return issue;
-      const conditionSides=c.c==='has_status'?['self','opp','both']:c.c==='abnormal'?['self','opp','any']:c.c==='stage_any'?['self','opp','both']:['self','opp'];
+      const conditionSides=c.c==='has_status'?['self','opp','both']:c.c==='abnormal'?['self','opp','any']:['stage_any','stage_total'].includes(c.c)?['self','opp','both']:['self','opp'];
       if(SEQUENCE_CONDITION_FIELDS[c.c].includes('side')&&!conditionSides.includes(c.p?.side))return '條件缺少明確持有者';
       if(c.c.startsWith('hp') && c.p?.op && !compare.includes(c.p.op)) return '體力比較運算不明';
       if(c.c==='stage_all'&&!['up','down'].includes(c.p?.kind))return '全部能力查詢需明確上升／下降方向';

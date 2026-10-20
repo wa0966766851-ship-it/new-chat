@@ -34,8 +34,8 @@ function Side({ elf, side }: { elf: Elf; side: "p1" | "p2" }) {
 }
 
 /** 入戰動畫：純展示。結束（含跳過）時呼叫 onDone 一次；不碰引擎。 */
-export function BattleIntro({ p1, p2, format, plan, onDone }: {
-  p1: Elf; p2: Elf; format: string; plan: IntroPlan; onDone: () => void;
+export function BattleIntro({ p1, p2, format, plan, onDone, loading = false }: {
+  p1: Elf; p2: Elf; format: string; plan: IntroPlan; onDone: () => void; loading?: boolean;
 }) {
   const [skipping, setSkipping] = useState(false);
   const doneRef = useRef(false);
@@ -45,11 +45,13 @@ export function BattleIntro({ p1, p2, format, plan, onDone }: {
   const finish = () => { if (!doneRef.current) { doneRef.current = true; doneCb.current(); } };
 
   useEffect(() => {
+    if (loading) return;
     const timer = setTimeout(finish, plan.ms);
     return () => clearTimeout(timer);
-  }, [plan.ms]);
+  }, [plan.ms, loading]);
 
   useEffect(() => {
+    if (loading) return;
     let timer: ReturnType<typeof setTimeout> | undefined;
     const skip = (event?: Event) => {
       event?.stopPropagation();
@@ -61,11 +63,11 @@ export function BattleIntro({ p1, p2, format, plan, onDone }: {
     window.addEventListener("keydown", onKey, true);
     skipRef.current = () => skip();
     return () => { window.removeEventListener("keydown", onKey, true); skipRef.current = () => {}; if (timer) clearTimeout(timer); };
-  }, []);
+  }, [loading]);
 
   const seamPoints = "59,0 54.5,18 57.5,22 50.5,48 53.5,52 47,78 49.5,81 41,100";
   return (
-    <div className="bi-root" data-testid="battle-intro" data-variant={plan.variant} data-skipping={skipping} role="presentation"
+    <div className="bi-root" data-testid="battle-intro" data-variant={plan.variant} data-skipping={skipping} data-loading={loading || undefined} role={loading ? 'status' : 'presentation'} aria-label={loading ? '正在載入對戰' : undefined} aria-busy={loading || undefined}
       onPointerDown={event => { event.stopPropagation(); skipRef.current(); }}>
       <div className="bi-bg" />
       <div className="bi-shake">
@@ -109,7 +111,7 @@ export function BattleIntro({ p1, p2, format, plan, onDone }: {
       <div className="bi-start" aria-hidden><span className="en">BATTLE START</span><span className="zh">戰鬥開始</span></div>
       <div className="bi-flash" aria-hidden />
       <div className="bi-scan" aria-hidden />
-      <div className="bi-skiptip" aria-hidden>SKIP</div>
+      {loading ? <div className="bi-loading-label"><strong>正在載入對戰</strong><span>雙方已就位，載入完成後進入戰場。</span></div> : <div className="bi-skiptip" aria-hidden>SKIP</div>}
     </div>
   );
 }
