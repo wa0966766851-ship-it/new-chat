@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { mkdtempSync, readFileSync, writeFileSync, rmSync, mkdirSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { resolve } from 'node:path';
-import { clauseIdentity, clauseExecution, digest, evidenceState, findTextSources, normalizeSourceText, isPresentationOnly, type AuditEvidence } from '../scripts/lib/effectAudit';
+import { clauseIdentity, clauseExecution, digest, serializeAuditJson, evidenceState, findTextSources, normalizeSourceText, isPresentationOnly, type AuditEvidence } from '../scripts/lib/effectAudit';
 import { applyReviewedSkillKits } from '../src/data/reviewedSkillKits';
 import {isLegacyWrappedKit} from '../src/blocks/ops/legacyHandler';
 import { REVIEWED_SOUL_KITS } from '../src/data/reviewedSoulKits';
@@ -13,6 +13,15 @@ check('文字指紋跨 Windows/Linux 換行一致，數值與空白修改仍失�
   assert.equal(digest('const n = 1;\n'), digest(Buffer.from('const n = 1;\r\n')));
   assert.notEqual(digest('const n = 1;\n'), digest('const n = 2;\n'));
   assert.notEqual(digest('const n = 1;\n'), digest('const n=1;\n'));
+});
+check('稽核JSON原文與巢狀子句跨換行一致，數值及其他空白仍嚴格比對', () => {
+  const windows = { sourceText: '先制+3\r\n恢復150點', clauses: [{ raw: '技能\r\n命中', amount: 150 }] };
+  const linux = { sourceText: '先制+3\n恢復150點', clauses: [{ raw: '技能\n命中', amount: 150 }] };
+  assert.equal(serializeAuditJson(windows), serializeAuditJson(linux));
+  assert.notEqual(serializeAuditJson(linux), serializeAuditJson({ ...linux, sourceText: '先制+1\n恢復150點' }));
+  assert.notEqual(serializeAuditJson(linux), serializeAuditJson({ ...linux, clauses: [{ raw: '技能\n命中', amount: 151 }] }));
+  assert.notEqual(serializeAuditJson(linux), serializeAuditJson({ ...linux, sourceText: '先制+3\n 恢復150點' }));
+  assert.equal(windows.sourceText.includes('\r\n'), true, '序列化不得改寫來源物件');
 });
 check('子句ID不依賴索引或Markdown空白，但保留數值與重複出現次序', () => {
   assert.equal(clauseIdentity('1', '技能', '甲', '> **造成100點傷害**', 1), clauseIdentity('1', '技能', '甲', '造成 100點傷害', 1));

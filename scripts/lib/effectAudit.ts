@@ -5,6 +5,9 @@ import { resolve, relative, sep, isAbsolute } from 'node:path';
 /** 文字證據統一 CRLF/LF；不忽略任何其他內容，且不供二進位發布校驗使用。 */
 export const digest = (text: string | Buffer) => createHash('sha256')
   .update(text.toString().replace(/\r\n/g, '\n')).digest('hex');
+/** 稽核JSON包含原文：巢狀字串也統一換行，不刪空白或更動任何數值。 */
+export const serializeAuditJson = (value: unknown): string => JSON.stringify(value,
+  (_key, item) => typeof item === 'string' ? item.replace(/\r\n/g, '\n') : item, 2) + '\n';
 /** 僅去展示標記和空白；不轉繁簡、不改數值、不把相似效果當相同。 */
 export const normalizeSourceText = (text: string) => text
   .replace(/^\s*>+\s*/gm, '').replace(/^\s*#{1,6}\s+/gm, '').replace(/\*\*/g, '')

@@ -2,7 +2,7 @@ import { writeFileSync, readFileSync, mkdirSync } from 'node:fs';
 import assert from 'node:assert/strict';
 import { createServer } from 'vite';
 import { resolve } from 'node:path';
-import { digest, normalizeSourceText, isPresentationOnly, clauseIdentity, clauseExecution, findTextSources, evidenceState, type AuditEvidence } from './lib/effectAudit';
+import { digest, serializeAuditJson, normalizeSourceText, isPresentationOnly, clauseIdentity, clauseExecution, findTextSources, evidenceState, type AuditEvidence } from './lib/effectAudit';
 
 const root = resolve('.');
 // 使用正式 Vite 註冊入口，包括子目錄 stagedArena；不再另造不完整的 Node 掃描表。
@@ -107,11 +107,11 @@ try {
     '## 已記錄的部分情境', '',
     ...evidence.map(proof => `- ${proof.elfId}／${proof.entry}：${proof.scenario}；預期：${proof.expected}。尚未覆蓋：${proof.remaining}。證據：\`${proof.testFile}\`（${proof.lastPassed}，${evidenceState(root, proof)}）。`), '',
     '更新：`npm run audit:implementation`；一致性驗證：`npm run test:audit`。證據只可在實際測試通過後人工新增；不得由解析／handler 存在自動升級。', ''].join('\n');
-  const json = JSON.stringify({ schemaVersion: 2, note: 'parsed ≠ executable route ≠ semantic acceptance', summary, elves: rows }, null, 2) + '\n';
+  const json = serializeAuditJson({ schemaVersion: 2, note: 'parsed ≠ executable route ≠ semantic acceptance', summary, elves: rows });
   if (process.argv.includes('--check')) {
-    assert.ok(readFileSync('docs/全精靈效果實裝核對.json', 'utf8') === json, '核對 JSON 需重新產生：npm run audit:implementation');
-    assert.ok(readFileSync('docs/全精靈效果實裝核對.md', 'utf8') === markdown, '核對 MD 需重新產生：npm run audit:implementation');
-    for (const file of elfDocuments) assert.ok(readFileSync(file.path, 'utf8') === file.content, `逐隻核對文件已過期：${file.path}`);
+    assert.ok(readFileSync('docs/全精靈效果實裝核對.json', 'utf8').replace(/\r\n/g, '\n') === json, '核對 JSON 需重新產生：npm run audit:implementation');
+    assert.ok(readFileSync('docs/全精靈效果實裝核對.md', 'utf8').replace(/\r\n/g, '\n') === markdown, '核對 MD 需重新產生：npm run audit:implementation');
+    for (const file of elfDocuments) assert.ok(readFileSync(file.path, 'utf8').replace(/\r\n/g, '\n') === file.content, `逐隻核對文件已過期：${file.path}`);
   }
   if (process.argv.includes('--write')) {
     writeFileSync('docs/全精靈效果實裝核對.json', json);
