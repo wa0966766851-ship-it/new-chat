@@ -33,7 +33,7 @@ try{
   });
   await check(`${side} 真實六刃魂印不再給Kit額外先制；技能PP2只先制2`,async()=>{
    h.S['無序·六刃']=(c:any,e:any,d:any)=>{if(e===T.MODIFY_PRIORITY)handleWuxuSoulMark(c,e,d);};
-   try{const [r]=await h.play(side,{self:h.unit('S',10000,[{...sk(),pp:2}],{speed:200,extra:{name:'無序·六刃'}}),opp:h.unit('E',1000000,[{...h.wait(),priority:3}])});const own=r.logs.findIndex((l:string)=>l.includes('【無序·六刃】使用了')),opp=r.logs.findIndex((l:string)=>l.includes('【E】使用了'));assert.ok(own>=0&&opp>=0&&opp<own);assert.equal(r.state[`${side}RegistryState`]['wuxuComboPp:六刃碎界斷']??0,0);}finally{delete h.S['無序·六刃'];}
+   try{const [r]=await h.play(side,{self:h.unit('S',10000,[{...sk(),pp:2}],{speed:200,extra:{name:'無序·六刃'}}),opp:h.unit('E',1000000,[{...h.wait(),priority:3}])});const used=(l:any)=>/^【.*】使用了【/.test(l.text||"");const own=r.state.logs.findIndex((l:any)=>l.type===side&&used(l)),opp=r.state.logs.findIndex((l:any)=>l.type!==side&&used(l));assert.ok(own>=0&&opp>=0&&opp<own,JSON.stringify({side,logs:r.logs}));assert.equal(r.state[`${side}RegistryState`]['wuxuComboPp:六刃碎界斷']??0,0);}finally{delete h.S['無序·六刃'];}
   });
   await check(`${side} 三回合使用級弱化含當次，到第四回合停止；改兩回合可編輯`,async()=>{
    for(const [s,n] of [[sk(),3],[edited,2]] as any){const r=await h.play(side,{self:h.unit('S',10000,[s,h.wait()],{speed:200}),opp:h.unit('E',1000000,[h.wait()]),turns:(_,t)=>[t===1?0:1,0]},4);for(let i=0;i<4;i++)for(const k of ['def','spdef'])assert.equal(r[i].opp.statStages[k],-Math.min(i+1,n));}

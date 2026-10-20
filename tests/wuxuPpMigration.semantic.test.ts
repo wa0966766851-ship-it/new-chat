@@ -31,8 +31,9 @@ try{
   });
   for(const op of ['pp_priority','pp_combo_hits'])for(const v of [0,-1,1.5,'1',101])assert.throws(()=>validateKit([{...defs[0].kit[op==='pp_priority'?1:2],params:{clause:{raw:'壞參數',trig:op==='pp_priority'?'modify_priority':'before_skill',parsed:true,body:[{acts:[{op,p:{perPp:v},label:op}]}]}}}]));
   await check(`${side} 真實六刃魂印先制分支不重播Kit；PP6先制6低於敵方7，改倍率2才先手`,async()=>{
+   // P2隱匿時會遮蔽角色與技能名稱；以正式出手日誌的side判序，仍要求雙方真正使用技能。
    h.S['無序·六刃']=(c:any,e:any,d:any)=>{if(e===T.MODIFY_PRIORITY)handleWuxuSoulMark(c,e,d);};
-   try{for(const [s,first] of [[sk(),false],[edited,true]] as any){const [r]=await h.play(side,{self:h.unit('S',10000,[s],{speed:200,extra:{name:'無序·六刃'}}),opp:h.unit('E',1000000,[{...h.wait(),priority:7}])});const own=r.logs.findIndex((l:string)=>l.includes('【無序·六刃】使用了')),opp=r.logs.findIndex((l:string)=>l.includes('【E】使用了'));assert.ok(own>=0&&opp>=0);assert.equal(own<opp,first);assert.equal(r.state[`${side}RegistryState`]['wuxuComboPp:靜刃止水']??0,0);}}
+   try{for(const [s,first] of [[sk(),false],[edited,true]] as any){const [r]=await h.play(side,{self:h.unit('S',10000,[s],{speed:200,extra:{name:'無序·六刃'}}),opp:h.unit('E',1000000,[{...h.wait(),priority:7}])});const used=(l:any)=>/^【.*】使用了【/.test(l.text||"");const own=r.state.logs.findIndex((l:any)=>l.type===side&&used(l)),opp=r.state.logs.findIndex((l:any)=>l.type!==side&&used(l));assert.ok(own>=0&&opp>=0,JSON.stringify({side,first,logs:r.logs}));assert.equal(own<opp,first);assert.equal(r.state[`${side}RegistryState`]['wuxuComboPp:靜刃止水']??0,0);}}
    finally{delete h.S['無序·六刃'];}
   });
   await check(`${side} 固定傷害僅結算一次，改值與附加封印實際有效`,async()=>{
