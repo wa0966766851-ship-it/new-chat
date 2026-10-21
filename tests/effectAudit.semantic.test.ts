@@ -2,7 +2,8 @@ import assert from 'node:assert/strict';
 import { mkdtempSync, readFileSync, writeFileSync, rmSync, mkdirSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { resolve } from 'node:path';
-import { clauseIdentity, clauseExecution, digest, serializeAuditJson, evidenceState, findTextSources, normalizeSourceText, isPresentationOnly, type AuditEvidence } from '../scripts/lib/effectAudit';
+import { gzipSync } from 'node:zlib';
+import { clauseIdentity, clauseExecution, digest, reviewedKitDigest, serializeAuditJson, evidenceState, findTextSources, normalizeSourceText, isPresentationOnly, type AuditEvidence } from '../scripts/lib/effectAudit';
 import { applyReviewedSkillKits } from '../src/data/reviewedSkillKits';
 import {isLegacyWrappedKit} from '../src/blocks/ops/legacyHandler';
 import { REVIEWED_SOUL_KITS } from '../src/data/reviewedSoulKits';
@@ -65,6 +66,25 @@ try {
     assert.equal(evidenceState(temp, portableProof), 'stale-evidence');
     writeFileSync(resolve(temp, 'test.ts'), 'assert.equal(actual, expected);');
     writeFileSync(resolve(temp, 'runtime.ts'), 'export const n = 1;');
+  });
+  check('完整解碼積木證據接受等價重新壓縮，數值、節點、角色及陣列順序變動仍過期', () => {
+    const data = [{ name: '測試技能', kit: [{ node: 'after_action', role: 'innate', params: { amount: 150, targets: ['self', 'opp'] } }] }];
+    const pack = (value: unknown, level: number) => JSON.stringify({ schemaVersion: 1, gzip: gzipSync(JSON.stringify(value), { level }).toString('base64') });
+    const original = pack(data, 9);
+    const packedProof: AuditEvidence = { ...proof, inputs: [{ path: 'kit.json', format: 'reviewed-kits', sha256: reviewedKitDigest(original) }] };
+    const repacked = pack(data, 1); assert.notEqual(original, repacked);
+    writeFileSync(resolve(temp, 'kit.json'), repacked);
+    assert.equal(evidenceState(temp, packedProof), 'partial-evidence');
+    for (const change of [
+      (x: any) => x[0].kit[0].params.amount++, (x: any) => x[0].kit[0].node = 'on_invalid',
+      (x: any) => x[0].kit[0].role = 'attached', (x: any) => x[0].kit[0].params.targets.reverse(),
+    ]) {
+      const changed = structuredClone(data); change(changed);
+      writeFileSync(resolve(temp, 'kit.json'), pack(changed, 1));
+      assert.equal(evidenceState(temp, packedProof), 'stale-evidence');
+    }
+    writeFileSync(resolve(temp, 'kit.json'), '{broken');
+    assert.equal(evidenceState(temp, packedProof), 'stale-evidence');
   });
   check('測試檔改動使證據過期', () => assert.equal(evidenceState(temp, { ...proof, testSha256: 'old' }), 'stale-evidence'));
   check('實裝依賴改動使證據過期', () => assert.equal(evidenceState(temp, { ...proof, inputs: [{ path: 'runtime.ts', sha256: 'old' }] }), 'stale-evidence'));

@@ -33637,7 +33637,8 @@
                     },
                     {
                       "path": "src/data/reviewedKits.homepage.json",
-                      "sha256": "45b730258759f6d87da837ec4c8a5c87428c3b22fba546345452a549a912d578"
+                      "sha256": "6246c32be8a61b991768da2272db51e3f7dba45fbd50419af3b4d0abbf073ac0",
+                      "format": "reviewed-kits"
                     },
                     {
                       "path": "src/blocks/ops/can.ts",
@@ -34079,7 +34080,8 @@
                     },
                     {
                       "path": "src/data/reviewedKits.homepage.json",
-                      "sha256": "45b730258759f6d87da837ec4c8a5c87428c3b22fba546345452a549a912d578"
+                      "sha256": "6246c32be8a61b991768da2272db51e3f7dba45fbd50419af3b4d0abbf073ac0",
+                      "format": "reviewed-kits"
                     },
                     {
                       "path": "src/blocks/ops/can.ts",
@@ -34245,7 +34247,8 @@
                     },
                     {
                       "path": "src/data/reviewedKits.homepage.json",
-                      "sha256": "45b730258759f6d87da837ec4c8a5c87428c3b22fba546345452a549a912d578"
+                      "sha256": "6246c32be8a61b991768da2272db51e3f7dba45fbd50419af3b4d0abbf073ac0",
+                      "format": "reviewed-kits"
                     },
                     {
                       "path": "src/blocks/ops/can.ts",
@@ -71154,7 +71157,8 @@
                     },
                     {
                       "path": "src/data/reviewedKits.homepage.json",
-                      "sha256": "45b730258759f6d87da837ec4c8a5c87428c3b22fba546345452a549a912d578"
+                      "sha256": "6246c32be8a61b991768da2272db51e3f7dba45fbd50419af3b4d0abbf073ac0",
+                      "format": "reviewed-kits"
                     },
                     {
                       "path": "src/data/holyMiles.ts",
@@ -71392,7 +71396,8 @@
                     },
                     {
                       "path": "src/data/reviewedKits.homepage.json",
-                      "sha256": "45b730258759f6d87da837ec4c8a5c87428c3b22fba546345452a549a912d578"
+                      "sha256": "6246c32be8a61b991768da2272db51e3f7dba45fbd50419af3b4d0abbf073ac0",
+                      "format": "reviewed-kits"
                     },
                     {
                       "path": "src/data/holyMiles.ts",
@@ -72291,7 +72296,8 @@
                     },
                     {
                       "path": "src/data/reviewedKits.homepage.json",
-                      "sha256": "45b730258759f6d87da837ec4c8a5c87428c3b22fba546345452a549a912d578"
+                      "sha256": "6246c32be8a61b991768da2272db51e3f7dba45fbd50419af3b4d0abbf073ac0",
+                      "format": "reviewed-kits"
                     },
                     {
                       "path": "src/data/holyMiles.ts",
