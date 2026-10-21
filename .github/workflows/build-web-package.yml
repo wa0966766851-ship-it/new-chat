@@ -13,9 +13,15 @@ on:
         type: boolean
         required: false
         default: false
+      resume_publish_run:
+        description: '僅重試已通過完整驗證、只有發布失敗的既有run；留空正常建置'
+        type: string
+        required: false
+        default: ''
 
 permissions:
   contents: read
+  actions: read
 
 concurrency:
   group: web-package-${{ github.ref }}
@@ -23,7 +29,7 @@ concurrency:
 
 jobs:
   audit-diagnostics:
-    if: ${{ inputs.diagnose_audit }}
+    if: ${{ inputs.diagnose_audit && inputs.resume_publish_run == '' }}
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
@@ -47,7 +53,7 @@ jobs:
             docs/audits/elves
           retention-days: 3
   build:
-    if: ${{ !inputs.diagnose_audit }}
+    if: ${{ !inputs.diagnose_audit && inputs.resume_publish_run == '' }}
     runs-on: ubuntu-latest
     # 完整積木遷移測試包含逐份 P1/P2 引擎驗收，不能在建置前被舊的30分鐘上限中止。
     timeout-minutes: 120
@@ -88,6 +94,41 @@ jobs:
           retention-days: 30
       - name: Publish verified package to original protected site
         if: ${{ inputs.publish }}
+        env:
+          SEER_SITE_SERVICE_TOKEN: ${{ secrets.SEER_SITE_SERVICE_TOKEN }}
+          SEER_SITE_PUBLISH_KEY: ${{ secrets.SEER_SITE_PUBLISH_KEY }}
+        run: node scripts/publish_site_package.mjs
+  resume-publication:
+    if: ${{ !inputs.diagnose_audit && inputs.publish && inputs.resume_publish_run != '' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - run: node tests/verifiedWebRun.semantic.test.mjs
+      - name: Verify original full validation
+        id: verified
+        env:
+          RESUME_RUN_ID: ${{ inputs.resume_publish_run }}
+          GITHUB_TOKEN: ${{ github.token }}
+        run: node scripts/verified_web_run.mjs
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ steps.verified.outputs.commit }}
+      - uses: actions/download-artifact@v4
+        with:
+          name: ${{ steps.verified.outputs.artifact_name }}
+          run-id: ${{ inputs.resume_publish_run }}
+          github-token: ${{ github.token }}
+          path: build/web-package
+      - run: node tests/webPackage.semantic.test.mjs
+      - name: Match verified source revision
+        env:
+          VERIFIED_COMMIT: ${{ steps.verified.outputs.commit }}
+        run: node -e "const m=JSON.parse(require('node:fs').readFileSync('build/web-package/web-package-manifest.json','utf8'));if(m.commit!==process.env.VERIFIED_COMMIT)throw Error('成品與驗證版本不符')"
+      - name: Publish existing verified package to original protected site
         env:
           SEER_SITE_SERVICE_TOKEN: ${{ secrets.SEER_SITE_SERVICE_TOKEN }}
           SEER_SITE_PUBLISH_KEY: ${{ secrets.SEER_SITE_PUBLISH_KEY }}

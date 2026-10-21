@@ -132,7 +132,7 @@
     "electron:dev": "npm run build && electron electron/main.cjs",
     "package:electron": "node scripts/package_electron.mjs",
     "test:electron": "node tests/electronLauncher.semantic.test.mjs && node tests/electronUpdates.semantic.test.mjs && node tests/electronServerPackaging.semantic.test.mjs",
-    "test:updates": "node --import tsx tests/updates.semantic.test.ts && npm run test:updates-page && node tests/electronUpdates.semantic.test.mjs && node tests/electronSlimming.semantic.test.mjs && node tests/assetCache.semantic.test.mjs",
+    "test:updates": "node --import tsx tests/updates.semantic.test.ts && npm run test:updates-page && node tests/electronUpdates.semantic.test.mjs && node tests/electronSlimming.semantic.test.mjs && node tests/assetCache.semantic.test.mjs && node tests/verifiedWebRun.semantic.test.mjs",
     "test:updates-page": "node --import tsx tests/updatesPage.semantic.test.tsx",
     "prepare:electron-lite": "node scripts/prepare_light_assets.mjs",
     "test:electron-artifact": "node tests/electronArtifact.semantic.test.mjs && node tests/electronPortable.smoke.test.mjs",
