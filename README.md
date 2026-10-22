@@ -1,6 +1,6 @@
-# 賽爾對戰模擬器 Seer Battle Simulator
+# 對戰模擬器 Battle Simulator
 
-React + Vite + Express + Electron 製作的賽爾號對戰模擬器：組隊編成、戰鬥結算、魂印 Registry、Blockly 技能編輯、圖鑑 Codex、桌面打包。
+React + Vite + Express + Electron 製作的對戰模擬器：組隊編成、戰鬥結算、魂印 Registry、Blockly 技能編輯、圖鑑 Codex、桌面打包。
 
 | | |
 |---|---|
@@ -90,9 +90,9 @@ npm run package:electron
 
 | 檔案 | 說明 |
 |---|---|
-| `賽爾對戰模擬器-<版本>-win-x64.exe` | NSIS 安裝版 |
-| `賽爾對戰模擬器-<版本>-portable.exe` | 免安裝版 |
-| `賽爾對戰模擬器-<版本>-web-setup.exe` | 網路安裝版（需保留 `nsis-web` 資源） |
+| `battle-simulator-<版本>-win-x64.exe` | NSIS 安裝版 |
+| `battle-simulator-<版本>-portable.exe` | 免安裝版 |
+| `battle-simulator-<版本>-web-setup.exe` | 網路安裝版（需保留 `nsis-web` 資源） |
 | `seer-battle-simulator-<版本>-exe.zip` | 上述 EXE 的打包 |
 
 打包會自動遞增修訂號並同步三個版本來源；要沿用目前版本，加上 `-- --keep-version`。
