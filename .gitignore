@@ -20,3 +20,10 @@ _asset_backup/
 # public/elf-art 跟著倉庫走；原有自繪圖與套裝素材並存，官方新素材附 source.json
 launcher/settings.json
 launcher/settings.json.tmp
+
+# 2026-10-23: 建置暫存與臨時截圖不入版控（避免 git add -A 帶進雜物）
+.tmp-esbuild/
+_corner.png
+
+# 驗收截圖（不進 repo）
+_shots/

@@ -109,7 +109,8 @@ function Test-NeedBuild {
 }
 
 $useDev = $env:SEER_DEV -eq '1'
-if (-not $useDev -and -not (Test-Server) -and (Test-NeedBuild)) {
+# 既有伺服器仍會讀取 dist；不能因 HTTP 可連線就跳過來源更新檢查。
+if (-not $useDev -and (Test-NeedBuild)) {
   Set-Splash '偵測到原始碼更新，正在建置正式版；完成與否以建置行程結果為準。' 3
   $b = Start-Process -FilePath 'cmd.exe' -ArgumentList '/c', "npx vite build > `"$logDir\build.log`" 2>&1" -WorkingDirectory $root -WindowStyle Hidden -PassThru
   if ((Wait-StartupProcess $b '建置中；可最小化，不會置頂。紀錄：launcher/build.log' 3) -ne 0) {

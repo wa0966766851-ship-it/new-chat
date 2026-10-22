@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import React,{act} from 'react';
 import {JSDOM} from 'jsdom';
 import {createServer} from 'vite';
+import legacyRey from '../src/data/legacyReyDescriptions.json';
 const dom=new JSDOM('<div id="root"></div>',{url:'http://localhost/'});
 Object.assign(globalThis,{window:dom.window,document:dom.window.document,localStorage:dom.window.localStorage,HTMLElement:dom.window.HTMLElement,IS_REACT_ACT_ENVIRONMENT:true});
 Object.defineProperty(globalThis,'navigator',{value:dom.window.navigator,configurable:true});
@@ -22,7 +23,7 @@ try{
   assert.equal(fixed.skills[0].pp,7);assert.equal(fixed.skills[0].currentPp,2);assert.deepEqual(fixed.evs,evs);assert.equal(fixed.shield,333);assert.deepEqual(old,snapshot);assert.equal(correct(fixed,defaults),fixed);
   const native={...old,skills:[{...oldSkill,kit:undefined,effectMode:undefined}],skillPool:[]};assert.deepEqual(correct(native,defaults).skills[0].kit,s.kit);
   const edited=structuredClone(old);edited.skills[0].kit[2].params.clause.body[0].acts[0].p.side='self';edited.skillPool=[];
-  for(const protectedElf of [edited,{...old,id:'custom_5024'},{...old,id:'5023'},{...old,skills:[{...oldSkill,effectMode:'registry'}],skillPool:[]},{...old,skills:[{...oldSkill,description:oldSkill.description+'自訂'}],skillPool:[]}])assert.equal(correct(protectedElf,defaults),protectedElf);
+  for(const protectedElf of [edited,{...old,id:'custom_5024'},{...old,id:'5023'},{...old,skills:[{...oldSkill,effectMode:'registry'}],skillPool:[]},{...old,skills:[{...oldSkill,description:oldSkill.description+'自訂'}],skillPool:[]}]){ const result=correct(protectedElf,defaults); assert.deepEqual({...result,builtinEffectBindings:undefined},{...protectedElf,builtinEffectBindings:undefined},'自訂效果與配裝不變；允許其他內建效果登記來源'); }
   const {GameDataProvider,useGameData}=await server.ssrLoadModule('/src/contexts/GameDataContext.tsx');
   let shown:any;
   function Display(){shown=useGameData().allElves.find((e:any)=>e.id==='5024');return React.createElement('span',null,`${shown.skills[0].description}\n先制級：${shown.skills[0].priority}`);}
@@ -38,6 +39,8 @@ try{
   const oldRey=structuredClone(rey);
   for(const definition of [oldRey.soulMark,oldRey.alienTraits.gen2Trait,...oldRey.alienTraits.exclusiveTraits]){
     delete definition.kit;delete definition.effectMode;
+    const old=legacyRey.definitions.find(d=>d.name===definition.name);
+    if(old)definition.description=old.description;
   }
   oldRey.skills[0].pp=3;oldRey.evs={hp:252,atk:0,def:0,spatk:0,spdef:0,speed:0};
   const restored=syncRey(correct(oldRey,defaults));

@@ -1,0 +1,73 @@
+/*
+ * Aegis 動效開關（Phase 5）
+ *
+ * 為什麼需要它：
+ *   Aegis 目前有 6 處動畫（軌道環旋轉、掃描線、抽屜升起…），
+ *   全部都沒有 respects prefers-reduced-motion。
+ *   這不是「打磨」，是無障礙底線：前庭功能敏感者會因持續動態不適。
+ *
+ * 原則（與 Legacy 的 index.css 一致）：
+ *   reduce 時「保留狀態變化，取消位移與循環」——
+ *   不是整個關掉，是讓它不晃。
+ */
+
+@media (prefers-reduced-motion: reduce) {
+  /* 1. 所有 Aegis 動畫：取消循環，只保留最終狀態 */
+  #aegis-shell *,
+  #aegis-shell *::before,
+  #aegis-shell *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    animation-delay: 0ms !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  /* 2. 軌道環：不要旋轉（停在原位，仍然可見） */
+  #aegis-shell svg g[style*="aegisSpin"],
+  #aegis-shell svg circle[style*="aegisSpin"] {
+    animation: none !important;
+    transform: none !important;
+  }
+
+  /* 3. 掃描線：隱藏（它是純裝飾，reduce 時沒有存在必要） */
+  #aegis-shell [style*="aegisScan"] {
+    display: none !important;
+  }
+
+  /* 3.5 場景轉場：不要滑動，直接出現（只保留極短的淡入） */
+  #aegis-shell .aegis-scene-enter {
+    animation: none !important;
+    transform: none !important;
+    opacity: 1 !important;
+  }
+
+  /* 4. 抽屜：不要從底部滑入，直接出現 */
+  #aegis-shell [style*="drawerUp"] {
+    animation: none !important;
+    transform: none !important;
+  }
+
+  /* 5. 按壓縮放：取消（避免手指移動時畫面跟著晃） */
+  #aegis-shell button:active,
+  #aegis-shell [class*="active:scale"]:active {
+    transform: none !important;
+  }
+
+  /* 6. 脈衝光點：停止閃爍 */
+  #aegis-shell .animate-pulse {
+    animation: none !important;
+    opacity: 1 !important;
+  }
+}
+
+/*
+ * 低耗電模式（部分 Android 會回報 prefers-reduced-motion 以外的訊號）
+ * 這裡只處理「動畫很多」的情境：使用者可透過設定關閉裝飾動畫。
+ */
+@media (prefers-reduced-data: reduce) {
+  #aegis-shell [style*="aegisScan"],
+  #aegis-shell [style*="aegisSpin"] {
+    animation: none !important;
+  }
+}

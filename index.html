@@ -2,13 +2,27 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>賽爾對戰模擬器</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <title>賽爾號對戰模擬器</title>
     <link rel="icon" type="image/png" href="/favicon.png" />
+
+    <!-- PWA：加到主畫面即可像 App 一樣全螢幕執行 -->
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <meta name="theme-color" content="#0A0C10" />
+    <meta name="color-scheme" content="dark" />
+    <meta name="description" content="6V6 精靈對戰模擬器：自訂陣容、AI 對戰、命運之輪與星際探索。" />
+
+    <!-- iOS：Safari 不讀 manifest，需要這些 apple 專屬標籤 -->
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="賽爾模擬器" />
+    <link rel="apple-touch-icon" href="/icons/icon-192.png" />
+
+    <!-- Android：可安裝的體驗 -->
+    <meta name="mobile-web-app-capable" content="yes" />
   </head>
   <body>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
-

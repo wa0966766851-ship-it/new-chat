@@ -21,6 +21,7 @@ export function sequenceActionLabel(a: Act, triggerLabels: Record<string, string
   const groupB = groupBPresentation(a.op, p, side);
   if (groupB) return groupB;
   switch (a.op) {
+    case 'stat_points_add_gap':return `${p.stats.join('／')}各增加｜${p.stats2.join('－')}｜×${pct(p.ratio)}×「${p.markId}」層數（向下取整）`;
     case 'prio_turns':return `${p.next===false?'當回合起':'下'}${p.turns}回合${side}${p.attackOnly?'攻擊':'所有'}技能先制${p.v>0?'+':''}${p.v}`;
     case 'heal_main_settled':return `成功行動後恢復本次主技能結算量${pct(p.ratio)}（含護盾吸收，不含附加傷害）`;
     case 'next_power_nonfull':return `記錄己方${p.scope==='bench'?'場下':'背包全隊'}${p.aliveOnly?'存活':''}非滿體力精靈數，每隻令下次攻擊威力+${pct(p.perElf)}（只用一次，下場清除）`;

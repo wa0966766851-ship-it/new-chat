@@ -188,6 +188,11 @@ export const CUSTOM_ART: Record<string, string> = {
   "無序蝕言": "wuxu_shiyan",
   "無序六刃": "wuxu_liuren",
   "異境神霆雷伊": "otherworld_thunder_rey",
+  // 2026-10-22：帝辛原本不在這裡，導致 petImageUrls 取不到 emperor_dixin_head.png，
+  // 頭像位置只好退回「無圖」或全身圖。
+  // 注意：這裡的 key 是 normalizeName 之後的名字（會去掉 · 與空白），
+  // 所以寫「人皇帝辛」而不是「人皇·帝辛」。
+  "人皇帝辛": "emperor_dixin",
 };
 
 /** 只替換戰鬥全身立繪；恐懼化身的頭像維持既有來源。 */
@@ -227,7 +232,8 @@ export function resolvePetIds(elf: Pick<Elf, "name" | "id"> & { seerId?: number 
 export function petImageUrls(elf: Pick<Elf, "name" | "id"> & { seerId?: number | string }, kind: "head" | "body" = "head"): string[] {
   elf = appearanceElf(elf);
   const name = normalizeName(elf.name || "");
-  if (kind === "head" && name === normalizeName("人皇·帝辛")) return ["/elf-art/emperor_dixin_body.png", ...resolvePetIds(elf, kind).map(id => `/seer/head/${id}.png`)];
+  // 2026-10-22：帝辛已補上 _head.png，移除「頭像用全身圖」的特例。
+  // 那個特例會讓頭像位置顯示整張立繪，看起來像破圖。
   const art = kind === "body" ? (CUSTOM_BODY_ART[name] || CUSTOM_ART[name]) : CUSTOM_ART[name];
   const urls = [...(art ? [`/elf-art/${art}_${kind}.png`] : []), ...resolvePetIds(elf, kind).map(id => `/seer/${kind}/${id}.png`)];
   // 全身圖缺圖時退回頭像

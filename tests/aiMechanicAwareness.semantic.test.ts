@@ -100,6 +100,14 @@ try {
       const action=choices.find((a:any)=>a.picked.battleId==='high');
       const item=materializeAiAction(state,side,action).item;assert.deepEqual(item.picked,action.picked);
       assert.ok(illusionOverrideValue(state,side,action.picked)>0,'高能力待命對象可提升下次幻化潛力');
+      const staleRoot=structuredClone(state);
+      for(const elf of staleRoot[`${side}Team`]){
+        elf.kit=structuredClone(elf.soulMark?.kit||[]);
+        if(elf.soulMark)elf.soulMark.kit=[];
+        elf.skills=[];elf.trait=undefined;elf.alienTraits=undefined;
+      }
+      staleRoot[side]=staleRoot[`${side}Team`][staleRoot[`${side}ActiveIndex`]];
+      assert.equal(illusionOverrideValue(staleRoot,side,action.picked),0,'明確移除魂印後，AI不得讀取殘留根積木而誤用幻化藥');
       const hidden=structuredClone(state),hiddenOther=structuredClone(state);
       for(const [st,amount] of [[hidden,1],[hiddenOther,999999]] as const){
         const target=st[foe].initialBench.find((elf:any)=>elf.battleId==='high');

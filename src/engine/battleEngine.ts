@@ -252,8 +252,9 @@ export function createBattleEngine(props: BattleEngineOptions): BattleEngine {
   const { initialP1Team, initialP2Team, p1StarterId, p2StarterId, p1Suit, p2Suit, p1Title, p2Title, battleMode } = props;
   const state: BattleState = (() => {
     if (props.initialState) return syncActiveIntoTeam(structuredClone(props.initialState));
-    const p1Team = props.preparedTeams ? structuredClone(initialP1Team) : applyEquipmentToTeam(initialP1Team, p1Suit).map(e => resetElfStateForBattle(e, (e.battleId || e.id) === p1StarterId, p1Suit));
-    const p2Team = props.preparedTeams ? structuredClone(initialP2Team) : applyEquipmentToTeam(initialP2Team, p2Suit).map(e => resetElfStateForBattle(e, (e.battleId || e.id) === p2StarterId, p2Suit));
+    // 一般開局須帶齊配裝；preparedTeams 已完成能力結算，不得重加。對手套裝減益由事件處理。
+    const p1Team = props.preparedTeams ? structuredClone(initialP1Team) : applyEquipmentToTeam(initialP1Team, p1Suit, props.p1Eyewear, undefined, p1Title).map(e => resetElfStateForBattle(e, (e.battleId || e.id) === p1StarterId, p1Suit));
+    const p2Team = props.preparedTeams ? structuredClone(initialP2Team) : applyEquipmentToTeam(initialP2Team, p2Suit, props.p2Eyewear, undefined, p2Title).map(e => resetElfStateForBattle(e, (e.battleId || e.id) === p2StarterId, p2Suit));
     const p1Idx = Math.max(0, p1Team.findIndex(e => (e.battleId || e.id) === p1StarterId || e.id === p1StarterId));
     const p2Idx = Math.max(0, p2Team.findIndex(e => (e.battleId || e.id) === p2StarterId || e.id === p2StarterId));
     

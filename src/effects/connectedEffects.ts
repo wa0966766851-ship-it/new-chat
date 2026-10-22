@@ -8,15 +8,14 @@ import { eventEffectNode } from './effectNodes';
 import { checkElfDead } from '../battle/elfAlive';
 import { isPpConsumption, claimPpCarriedSlot } from './ppConsumptionChain';
 import { TEAM_KIT_TRIGGERS } from './teamKitContract';
+import { soulDefinition } from './soulDefinitionSource';
+export { soulDefinition } from './soulDefinitionSource';
 let skillHandlerProvider: (name: string) => boolean = () => false;
 export function setConnectedSkillHandlerProvider(provider: (name: string) => boolean) { skillHandlerProvider = provider; }
 export function hasConnectedSkillHandler(name: string) { return skillHandlerProvider(name); }
 
-export function soulDefinition(elf: Elf): EffectDefinition {
-  return { ...elf.soulMark, name: elf.soulMark?.name || elf.name, kit: elf.soulMark?.kit ?? elf.kit?.filter(e => e.source !== 'skill') };
-}
 export function hasOpponentDamageObserver(elf:Elf):boolean{
-  const definitions=[elf.soulMark,elf.trait,elf.alienTraits?.gen2Trait,elf.alienTraits?.exclusiveTrait,...(elf.alienTraits?.exclusiveTraits||[]),elf.alienTraits?.alienTrait,elf.alienTraits?.generalTrait];
+  const definitions=[soulDefinition(elf),elf.trait,elf.alienTraits?.gen2Trait,elf.alienTraits?.exclusiveTrait,...(elf.alienTraits?.exclusiveTraits||[]),elf.alienTraits?.alienTrait,elf.alienTraits?.generalTrait];
   return definitions.some(d=>d?.effectMode==='kit'&&d.kit?.some(e=>e.node==='on_opponent_damaged'&&!kitEntryIssue(e)))||elf.skills.some(s=>s.effectMode==='kit'&&s.kit?.some(e=>e.node==='on_opponent_damaged'&&e.role==='carried'&&!kitEntryIssue(e)));
 }
 export function usesAuthoredSoul(elf: Elf, hasHandler: boolean): boolean {

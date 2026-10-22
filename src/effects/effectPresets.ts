@@ -3,6 +3,7 @@ import type { KitEntry } from './effectSystem.schema';
 import type { EffectDefinition } from './effectConnection';
 import { kitEntryIssue } from './effectConnection';
 import { distillEffect } from './distillEffect';
+import { soulDefinition } from './soulDefinitionSource';
 
 export type EffectKind = 'skill' | 'soul';
 /** 查看只產生草稿，不替換資料來源；部分轉換不能整份覆蓋原程式。 */
@@ -24,7 +25,7 @@ export interface EffectPreset {
 function* presetDefinitions(elves: readonly Elf[]) {
   for (const elf of elves) {
     const definitions: Array<[string, string, EffectKind, EffectDefinition | undefined]> = [
-      ['soul', '魂印', 'soul', elf.soulMark && { ...elf.soulMark, kit: elf.soulMark.kit ?? elf.kit }],
+      ['soul', '魂印', 'soul', elf.soulMark && soulDefinition(elf)],
       ['trait', '特性', 'soul', elf.trait],
       ...(['gen2Trait', 'exclusiveTrait', 'alienTrait', 'generalTrait'] as const).map(key => [key, '特質', 'soul', elf.alienTraits?.[key]] as [string, string, EffectKind, EffectDefinition | undefined]),
       ...(elf.alienTraits?.exclusiveTraits || []).map((t, i) => [`exclusive.${i}`, '專屬特質', 'soul', t] as [string, string, EffectKind, EffectDefinition]),

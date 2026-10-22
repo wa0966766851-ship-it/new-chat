@@ -108,7 +108,16 @@ export default defineConfig(() => {
       // Disable file watching when DISABLE_HMR is true to save CPU during agent edits.
       watch: process.env.DISABLE_HMR === 'true' ? null : {
         // 驗收報告、截圖與封裝產物不應造成正在編輯的頁面被整頁重載。
-        ignored: ['**/docs/**', '**/release/**', '**/releases/**', '**/dist/**', '**/build/**', '**/dist-electron/**', '**/.seer-cache/**', '**/_備份*/**'],
+        // 編輯器（含 AI 代理）存檔時會在來源目錄留下暫存目錄，被 watcher 抓到會 EBUSY 直接讓 dev server 崩潰，
+        // 因此一併忽略所有以點開頭的暫存檔／暫存目錄。
+        ignored: [
+          '**/docs/**', '**/release/**', '**/releases/**', '**/dist/**', '**/build/**',
+          '**/dist-electron/**', '**/.seer-cache/**', '**/_備份*/**',
+          '**/.*.tmpdir/**', '**/*.tmpdir/**', '**/.*.tmp', '**/*.tmp', '**/.~*',
+          // public 下的靜態圖只在啟動時掃描；大量／大檔寫入時被 watcher 抓到會 EBUSY 打死 dev server。
+          '**/public/aegis/**', '**/public/elf-art/**', '**/public/elf-skins/**',
+          '**/public/seer/**', '**/public/bg-thumbs/**', '**/public/eclipse/**',
+        ],
       },
     },
   };

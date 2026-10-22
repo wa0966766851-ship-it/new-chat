@@ -1,0 +1,118 @@
+{
+  "revision": "0e340a43e48bd05ebbe144a2c4237b522c0c66e8",
+  "file": "src/data/defaultElves.ts",
+  "definitions": [
+    {
+      "elfId": "300",
+      "elfName": "譜尼",
+      "soulName": "聖",
+      "kit": [
+        {
+          "codeId": "puni_base_m1",
+          "params": {},
+          "node": "passive_always",
+          "source": "soulmark",
+          "order": 1
+        },
+        {
+          "codeId": "puni_base_m2",
+          "params": {},
+          "node": "round_end",
+          "source": "soulmark",
+          "order": 2
+        },
+        {
+          "codeId": "puni_base_m3",
+          "params": {},
+          "node": "round_end",
+          "source": "soulmark",
+          "order": 3
+        }
+      ]
+    },
+    {
+      "elfId": "5000",
+      "elfName": "聖靈譜尼",
+      "soulName": "神",
+      "kit": [
+        {
+          "codeId": "puni_holy_void",
+          "params": {},
+          "node": "on_damaged",
+          "source": "soulmark",
+          "order": 1
+        },
+        {
+          "codeId": "puni_holy_element_a",
+          "params": {},
+          "node": "on_entered",
+          "source": "soulmark",
+          "order": 2
+        },
+        {
+          "codeId": "puni_holy_element_b",
+          "params": {},
+          "node": "on_entered",
+          "source": "soulmark",
+          "order": 3
+        },
+        {
+          "codeId": "puni_holy_energy",
+          "params": {},
+          "node": "battle_phase_end",
+          "source": "soulmark",
+          "order": 4
+        },
+        {
+          "codeId": "puni_holy_life_a",
+          "params": {},
+          "node": "battle_phase_end",
+          "source": "soulmark",
+          "order": 5
+        },
+        {
+          "codeId": "puni_holy_life_b",
+          "params": {},
+          "node": "battle_phase_end",
+          "source": "soulmark",
+          "order": 6
+        },
+        {
+          "codeId": "puni_holy_reincarn_a",
+          "params": {},
+          "node": "self_fatal",
+          "source": "soulmark",
+          "order": 7
+        },
+        {
+          "codeId": "puni_holy_reincarn_b",
+          "params": {},
+          "node": "round_end",
+          "source": "soulmark",
+          "order": 8
+        },
+        {
+          "codeId": "puni_holy_eternal",
+          "params": {},
+          "node": "round_start",
+          "source": "soulmark",
+          "order": 9
+        },
+        {
+          "codeId": "puni_holy_sacred_a",
+          "params": {},
+          "node": "passive_always",
+          "source": "soulmark",
+          "order": 10
+        },
+        {
+          "codeId": "puni_holy_sacred_b",
+          "params": {},
+          "node": "passive_always",
+          "source": "soulmark",
+          "order": 11
+        }
+      ]
+    }
+  ]
+}

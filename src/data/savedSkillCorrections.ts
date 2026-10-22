@@ -1,8 +1,26 @@
 import type {Elf,Skill} from '../types';
 import {correctSavedOdinPp} from './savedOdinPpCorrection';
+import legacyRey from './legacyReyDescriptions.json';
+import legacyBuiltin from './legacyBuiltinDescriptions.json';
+import legacySoulKits from './legacySoulKitFingerprints.json';
+import {synchronizeBuiltinEffectBindings,modifiedBuiltinDefinitions} from './builtinEffectBindings';
+
+// 早期 Elf.kit 是描述詞條；只認領 Git 歷史逐項完全相同的資料，不能把使用者的頂層積木當成舊版。
+function knownLegacySoulKit(elf:Elf):boolean {
+  const entries=elf.kit?.filter(e=>e.source!=='skill');
+  if(!entries?.length)return false;
+  const stable=(v:any):string=>JSON.stringify(v,(_key,value)=>value&&typeof value==='object'&&!Array.isArray(value)
+    ?Object.fromEntries(Object.keys(value).sort().map(k=>[k,value[k]])):value);
+  return legacySoulKits.definitions.some(d=>d.elfId===String(elf.id)&&d.elfName===elf.name&&d.soulName===elf.soulMark?.name&&stable(d.kit)===stable(entries));
+}
 
 /** 只修正已知舊版內建定義；圖紙或全文有其他改動時保留使用者版本。 */
 export function applySavedSkillCorrections(elf:Elf,defaults:Elf[]):Elf{
+  return synchronizeBuiltinEffectBindings(correctKnownSavedDefinitions(elf,defaults),defaults);
+}
+
+function correctKnownSavedDefinitions(elf:Elf,defaults:Elf[]):Elf{
+  const protectedDefinitions=modifiedBuiltinDefinitions(elf,defaults);
   elf = restoreSavedBuiltinKits(elf, defaults);
   if(elf && Array.isArray(elf.skills) && String(elf.id)==='5019')return correctSavedOdinPp(elf);
   if(!elf || !Array.isArray(elf.skills) || String(elf.id)!=='5024')return elf;
@@ -11,6 +29,7 @@ export function applySavedSkillCorrections(elf:Elf,defaults:Elf[]):Elf{
   if(!current || current.priority!==3 || !current.description.startsWith('■ 先制+3\n'))return elf;
   let changed=false;
   const correct=(skill:Skill):Skill=>{
+    if(protectedDefinitions.has(skill))return skill;
     if(skill.name!==name || skill.priority!==1 ||
       skill.description!==current.description.replace('■ 先制+3\n','■ 先制+1\n'))return skill;
     if(skill.effectMode && !['auto','kit'].includes(skill.effectMode))return skill;
@@ -31,21 +50,29 @@ function restoreSavedBuiltinKits(elf: Elf, defaults: Elf[]): Elf {
   if (!elf || String(elf.id).startsWith('custom_')) return elf;
   const canonical = defaults.find(e => String(e.id) === String(elf.id));
   if (!canonical || elf.name !== canonical.name) return elf;
-  const restore = <T extends {name: string; description?: string; effectMode?: string; kit?: unknown[]}>(value: T | undefined, source: T | undefined): T | undefined => {
-    if (!value || !source?.kit?.length || value.kit?.length || value.name !== source.name ||
-      value.description !== source.description || (value.effectMode && value.effectMode !== 'auto')) return value;
-    return {...value, effectMode: source.effectMode, kit: structuredClone(source.kit)};
+  const protectedDefinitions=modifiedBuiltinDefinitions(elf,defaults);
+  const sameText = (a?: string,b?: string) => a?.replace(/\r\n?/g,'\n') === b?.replace(/\r\n?/g,'\n');
+  const restore = <T extends {name: string; description?: string; effectMode?: string; kit?: unknown[]}>(value: T | undefined, source: T | undefined,kind:'soul'|'trait'|'skill'): T | undefined => {
+    if (!value || protectedDefinitions.has(value) || !source?.kit?.length || value.kit?.length || value.name !== source.name ||
+      (value.effectMode && value.effectMode !== 'auto')) return value;
+    // 只認領實際舊版內建原文，不能用移除空白／模糊相似度吞掉使用者改句。
+    const knownLegacy = (String(elf.id) === legacyRey.elfId && elf.name === legacyRey.elfName &&
+      legacyRey.definitions.some(d=>d.kind===kind && d.name===value.name && sameText(d.description,value.description))) ||
+      legacyBuiltin.some(d=>d.elfId===String(elf.id) && d.elfName===elf.name && d.kind===kind && d.name===value.name && sameText(d.description,value.description));
+    if (!sameText(value.description,source.description) && !knownLegacy) return value;
+    return {...value, description:source.description, effectMode: source.effectMode, kit: structuredClone(source.kit)};
   };
-  const soulMark = elf.kit?.some(e => e.source !== 'skill') ? elf.soulMark : restore(elf.soulMark, canonical.soulMark);
-  const trait = restore(elf.trait, canonical.trait);
-  const skills = elf.skills?.map(s => restore(s, [...canonical.skills, ...(canonical.skillPool || [])].find(n => n.name === s.name))!);
-  const skillPool = elf.skillPool?.map(s => restore(s, [...canonical.skills, ...(canonical.skillPool || [])].find(n => n.name === s.name))!);
+  const soulMark = elf.kit?.some(e => e.source !== 'skill') && !knownLegacySoulKit(elf)
+    ? elf.soulMark : restore(elf.soulMark, canonical.soulMark,'soul');
+  const trait = restore(elf.trait, canonical.trait,'trait');
+  const skills = elf.skills?.map(s => restore(s, [...canonical.skills, ...(canonical.skillPool || [])].find(n => n.name === s.name),'skill')!);
+  const skillPool = elf.skillPool?.map(s => restore(s, [...canonical.skills, ...(canonical.skillPool || [])].find(n => n.name === s.name),'skill')!);
   const traits = elf.alienTraits, native = canonical.alienTraits;
-  const gen2Trait = restore(traits?.gen2Trait, native?.gen2Trait);
-  const exclusiveTrait = restore(traits?.exclusiveTrait, native?.exclusiveTrait);
-  const alienTrait = restore(traits?.alienTrait, native?.alienTrait);
-  const generalTrait = restore(traits?.generalTrait, native?.generalTrait);
-  const exclusiveTraits = traits?.exclusiveTraits?.map(t => restore(t, native?.exclusiveTraits?.find(n => n.name === t.name))!);
+  const gen2Trait = restore(traits?.gen2Trait, native?.gen2Trait,'trait');
+  const exclusiveTrait = restore(traits?.exclusiveTrait, native?.exclusiveTrait,'trait');
+  const alienTrait = restore(traits?.alienTrait, native?.alienTrait,'trait');
+  const generalTrait = restore(traits?.generalTrait, native?.generalTrait,'trait');
+  const exclusiveTraits = traits?.exclusiveTraits?.map(t => restore(t, native?.exclusiveTraits?.find(n => n.name === t.name),'trait')!);
   if (soulMark === elf.soulMark && trait === elf.trait && !skills?.some((s,i) => s !== elf.skills[i]) &&
     !skillPool?.some((s,i) => s !== elf.skillPool?.[i]) && gen2Trait === traits?.gen2Trait && exclusiveTrait === traits?.exclusiveTrait &&
     alienTrait === traits?.alienTrait && generalTrait === traits?.generalTrait &&

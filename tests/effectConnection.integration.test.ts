@@ -33,6 +33,7 @@ try {
   const entry = (node: string,amount: number,source='soulmark',role='attached') => ({codeId:'heal',node,params:{amount},source,role,order:0});
   const initial: any = structuredClone(DEFAULT_ELVES[0]);
   initial.name='連接驗收精靈'; initial.id='connection-elf'; initial.isCustom=true;
+  initial.builtinEffectBindings={schemaVersion:1,elfId:initial.id,definitions:{soul:'1:42:abc:123'}};
   initial.soulMark={name:'連接魂印',description:'回合開始恢復30點',effectMode:'kit',effectType:'none',effectValue:0,kit:[entry('round_start',30)]};
   initial.kit=[];
   initial.trait=undefined;
@@ -64,11 +65,14 @@ try {
   await act(async () => root.render(React.createElement(Editor,{initialElf:initial,onSaveElf:(elf: any)=>saved=elf,onBack:()=>{}})));
   const save = [...document.querySelectorAll('button')].find(b=>b.textContent?.trim()==='儲存精靈修改')!;
   assert.ok(save); await act(async()=>save.click()); assert.ok(saved);
-  assert.equal(saved.soulMark.effectMode,'kit'); assert.deepEqual(saved.soulMark.kit ?? saved.kit,initial.soulMark.kit);
+  assert.equal(saved.soulMark.effectMode,'kit'); assert.deepEqual(saved.soulMark.kit,initial.soulMark.kit,'儲存正式魂印欄位，不再只有根 kit');
   assert.deepEqual(saved.skills[0].kit,initial.skills[0].kit);
   assert.deepEqual(saved.alienTraits.gen2Trait.kit,initial.alienTraits.gen2Trait.kit); count++;
   const restored = parseElfBlueprint(JSON.stringify({schemaVersion:2,manualElf:saved})).elf;
   assert.deepEqual(restored.skills[0].kit,saved.skills[0].kit); count++;
+  assert.deepEqual(saved.builtinEffectBindings,initial.builtinEffectBindings,'編輯保存不得丟來源版本');
+  assert.deepEqual(restored.builtinEffectBindings,saved.builtinEffectBindings,'圖紙往返保留來源版本');
+  assert.throws(()=>parseElfBlueprint(JSON.stringify({schemaVersion:2,manualElf:{...saved,builtinEffectBindings:{schemaVersion:1,elfId:'wrong-owner',definitions:{}}}})),/builtinEffectBindings/);
 
   let driver: any;
   const make = (id: string,speed: number): any => ({id,battleId:id,name:id,type:'普通',level:100,

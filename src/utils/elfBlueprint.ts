@@ -151,7 +151,15 @@ export function parseElfBlueprint(json: string): { elf: Elf; warnings: string[];
     if (slots !== undefined) { if (!Array.isArray(slots) || slots.length > 20) fail('resistance slots'); for (const slot of slots) { if (!object(slot)) fail('slot'); text(slot.id, 'slot.id', 200); text(slot.status, 'slot.status', 200); if (!['control', 'weakening'].includes(slot.category)) fail('slot.category'); number(slot.rate, 'slot.rate', 0, 100); } }
   }
   // 僅接收編輯配置，不匯入戰鬥中狀態、存活規則、印記及 currentHp。
-  const allowed = ['id','name','type','baseStats','evs','ivs','natureModifiers','guildBonuses','inscriptions','resistances','isAlienElf','hasAnnualBonus','height','weight','gender','path','specialModeRating','destinyRank','description','soulMark','trait','alienTraits','skills','skillPool','kit','imageUrl','avatarUrl','seerId','badge','critValue','category','rawPrompt'];
+  if(source.builtinEffectBindings!==undefined){
+    const binding=source.builtinEffectBindings;
+    if(!object(binding)||binding.schemaVersion!==1||binding.elfId!==String(source.id)||!object(binding.definitions)||Object.keys(binding.definitions).length>1000)fail('builtinEffectBindings');
+    for(const [key,value] of Object.entries(binding.definitions)){
+      text(key,'builtinEffectBindings key',1000);
+      if(typeof value!=='string'||!/^1:\d+:[0-9a-f]{1,8}:[0-9a-f]{1,8}$/.test(value))fail('builtinEffectBindings signature');
+    }
+  }
+  const allowed = ['id','name','type','baseStats','evs','ivs','natureModifiers','guildBonuses','inscriptions','resistances','isAlienElf','hasAnnualBonus','height','weight','gender','path','specialModeRating','destinyRank','description','soulMark','trait','alienTraits','skills','skillPool','kit','imageUrl','avatarUrl','seerId','badge','critValue','category','rawPrompt','builtinEffectBindings'];
   const skipped = Object.keys(source).filter(k => !allowed.includes(k) && !['level','isCustom','calculatedStats','currentHp','maxHp'].includes(k));
   if (skipped.length) warnings.push(`未匯入戰鬥狀態或尚不支援欄位：${skipped.join('、')}。請保留原始圖紙。`);
   const elf: any = Object.fromEntries(allowed.filter(k => source[k] !== undefined).map(k => [k, source[k]]));

@@ -1,52 +1,31 @@
-import React from "react";
-import { createPortal } from "react-dom";
+import React, { useState, useEffect, lazy, Suspense } from "react";
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
  */
 
-/**
- * @license
- * SPDX-License-Identifier: Apache-2.0
- */
-
-import { useState, useEffect, lazy, Suspense } from "react";
 import { Elf, BattleMode } from "./types";
 import { DEFAULT_ELVES } from "./data/defaultElves";
-import {applySavedSkillCorrections} from './data/savedSkillCorrections';
-import { SKILL_STONE_ATTRIBUTES, PERFECT_SKILL_STONE_EFFECTS, createSkillStone, isStoneThrower } from "./data/skillStones";
+import { applySavedSkillCorrections } from './data/savedSkillCorrections';
 import { calculateElfStats, resetElfStateForBattle, setDynamicMatchups } from "./utils/statCalculator";
 import { applyElfOverrides } from "./data/elfRegistry";
-// 首頁瘦身（DSH 20261017）：StartScreen 含完整 motion 動畫庫（~128KB）——改為 lazy 載入，
-// 首屏僅 TechLoadingScreen（無 motion 依賴），功能與動畫完全一致（TechLoading 期間並行載入）。
-const StartScreen = lazy(() => import("./components/StartScreen"));
-import { ElfAvatar } from "./components/SeerImages";
-import { ImageCopyMenu } from "./components/ImageCopyMenu";
-import { PageErrorBoundary } from "./components/PageErrorBoundary";
-
-import TechLoadingScreen from "./components/TechLoadingScreen";
-import { BattleLoadingScreen } from './components/battle/BattleLoadingScreen';
-import './components/battle/battleFx.css';
-import { SiteUpdateNotice } from "./components/SiteUpdateNotice";
-
-// 首頁瘦身（DSH 20261017）：ControlHub（側邊功能面板）非首屏必需——lazy 載入，功能不變。
-const ControlHub = lazy(() => import("./components/ControlHub"));
-import { ThemeBackground } from "./components/ThemeController";
-import { Sparkles, HelpCircle, Book, Disc, ChevronUp, ChevronDown, ChevronLeft, ChevronRight, Menu, Home, Settings, Database, Swords, TestTubes, Puzzle } from "lucide-react";
+import { useShellMode } from "./shell/shellMode";
+import { LegacyShell, ShellSwitchButton } from "./shell/LegacyShell";
+import { AegisShell } from "./shell/AegisShell";
+import type { ShellBridge, AppView, BattleFormat } from "./shell/bridge";
 import { GameDataProvider, useGameData } from "./contexts/GameDataContext";
-const ElfEditor = lazy(() => import("./components/ElfEditor"));
 const PerformanceProbe = lazy(() => import('./components/PerformanceProbe'));
-const Encyclopedia = lazy(() => import("./components/Encyclopedia"));
-const UpdatesPage = lazy(() => import('./components/UpdatesPage'));
-const DestinyWheelScreen = lazy(() => import("./components/DestinyWheelScreen"));
-const TestRunnerPage = lazy(() => import("./components/TestRunnerPage"));
-const BattleScreen = lazy(() => import("./components/BattleScreen"));
-const InterstellarHub = lazy(() => import("./components/InterstellarExploration/InterstellarHub"));
+
+/**
+ * 雙殼架構（Aegis Shell）：
+ *   - 這裡只負責「狀態 + 兩個殼共用的介面」，不再負責畫面。
+ *   - LegacyShell / AegisShell 各自只是外框；內容一律來自 LegacyScenes。
+ *   - 新功能請先登記到 src/shell/features.ts，兩殼會同時看得到。
+ */
 
 export default function App() {
   return (
     <GameDataProvider>
-      {/* 首頁瘦身（DSH 20261017）：App 級殘餘動畫改 CSS keyframes——motion 庫移出首屏初始區塊 */}
       <style>{`@keyframes appHeaderBtnIn{from{opacity:0;transform:translateX(-20px)}to{opacity:1;transform:translateX(0)}}`}</style>
       <AppContent />
     </GameDataProvider>
@@ -55,22 +34,26 @@ export default function App() {
 
 function AppContent() {
   const { allElves, customElves, addCustomElf, updateElf, deleteCustomElf, restoreDeletedElves, deletedCount } = useGameData();
-  const [view, setView] = useState<"start" | "custom" | "battle" | "destiny_wheel" | "interstellar_exploration" | "test_runner" | "updates">("start");
+  const { mode: shellMode, toggle: toggleShell } = useShellMode();
+
+  const [view, setView] = useState<AppView>("start");
   const [isCompactLayout, setIsCompactLayout] = useState(() =>
     typeof window !== "undefined" && window.matchMedia("(max-width: 767px)").matches
   );
   const [showHeader, setShowHeader] = useState(() =>
     typeof window === "undefined" || !window.matchMedia("(max-width: 767px)").matches
   );
-  // 對戰畫面在矮螢幕（手機橫放）或窄螢幕自動收起側邊欄，讓出戰場空間
+
   useEffect(() => {
     if (view === "battle" && typeof window !== "undefined" && (window.innerHeight <= 560 || window.innerWidth < 1100)) setShowHeader(false);
   }, [view]);
+
   const [showEncyclopedia, setShowEncyclopedia] = useState(false);
   const [showPerformanceProbe, setShowPerformanceProbe] = useState(false);
   useEffect(() => { const open = () => setShowPerformanceProbe(true); window.addEventListener('open-performance-probe', open); return () => window.removeEventListener('open-performance-probe', open); }, []);
+
   const [battleMode, setBattleMode] = useState<BattleMode>("PVE");
-  const [battleFormat, setBattleFormat] = useState<"normal_6v6" | "solo_1v1" | "peak_6v6" | "peak_3v3">("normal_6v6");
+  const [battleFormat, setBattleFormat] = useState<BattleFormat>("normal_6v6");
   const [battleKey, setBattleKey] = useState<number>(0);
   const restartedRef = React.useRef(false);
   const [isTransitioning, setIsTransitioning] = useState<boolean>(false);
@@ -88,9 +71,9 @@ function AppContent() {
   const [editingElf, setEditingElf] = useState<Elf | null>(null);
   const [specialMode, setSpecialMode] = useState<"destiny" | "interstellar" | undefined>();
   const [interstellarOptions, setInterstellarOptions] = useState<any>(null);
-  const [customSkillsMap, setCustomSkillsMap] = useState<Record<string, any>>({});
-  const [customInscriptionsMap, setCustomInscriptionsMap] = useState<Record<string, any>>({});
-  const [customResistancesMap, setCustomResistancesMap] = useState<Record<string, any>>({});
+  const [customSkillsMap] = useState<Record<string, any>>({});
+  const [customInscriptionsMap] = useState<Record<string, any>>({});
+  const [customResistancesMap] = useState<Record<string, any>>({});
   const elvesRef = React.useRef<Elf[]>([]);
   const [editorTab, setEditorTab] = useState<"ai" | "manual" | "blockly" | undefined>(undefined);
 
@@ -124,7 +107,7 @@ function AppContent() {
     return () => window.removeEventListener("edit-elf", onEditElf);
   }, []);
 
-  const [deletedElfIds, setDeletedElfIds] = useState<string[]>(() => {
+  const [deletedElfIds] = useState<string[]>(() => {
     try {
       const saved = localStorage.getItem("seer_deleted_elves");
       return saved ? JSON.parse(saved) : [];
@@ -133,48 +116,30 @@ function AppContent() {
     }
   });
 
-  // Load custom matchups from localStorage on mount
   useEffect(() => {
     try {
       const storedMatchups = localStorage.getItem("seer_custom_matchups");
-      if (storedMatchups) {
-        setDynamicMatchups(JSON.parse(storedMatchups));
-      }
+      if (storedMatchups) setDynamicMatchups(JSON.parse(storedMatchups));
     } catch (e) {
       console.error("讀取本地數據失敗:", e);
     }
   }, []);
 
-  // Save new elf to localStorage
   const allElvesCombined = React.useMemo(() => allElves.filter((elf, index, self) => {
     if (!elf) return false;
     const key = elf.id || elf.name;
-    if (deletedElfIds.includes(key) || deletedElfIds.includes(elf.name) || (elf.id && deletedElfIds.includes(elf.id))) {
-      return false;
-    }
-    // Priority to the first appearance (which will be customElves due to spread order)
-    // Correctly filter out duplicate IDs and names using findIndex
+    if (deletedElfIds.includes(key) || deletedElfIds.includes(elf.name) || (elf.id && deletedElfIds.includes(elf.id))) return false;
     return index === self.findIndex((t) => (t.id && elf.id && t.id === elf.id) || t.name === elf.name);
   }).map(elf => {
     const key = elf.id || elf.name;
-    
     let { updated, needsRecalc } = applyElfOverrides(elf, DEFAULT_ELVES);
 
-    // Apply custom overrides if they exist in external maps (legacy support)
-    // Only apply to default elfs that haven't been fully customized/saved yet
     if (!elf.isCustom) {
-      if (customSkillsMap[key]) {
-        updated.skills = customSkillsMap[key];
-      }
-      if (customInscriptionsMap[key]) {
-        updated.inscriptions = customInscriptionsMap[key];
-        needsRecalc = true;
-      }
-      if (customResistancesMap[key]) {
-        updated.resistances = customResistancesMap[key];
-      }
+      if (customSkillsMap[key]) updated.skills = customSkillsMap[key];
+      if (customInscriptionsMap[key]) { updated.inscriptions = customInscriptionsMap[key]; needsRecalc = true; }
+      if (customResistancesMap[key]) updated.resistances = customResistancesMap[key];
     }
-    
+
     if (needsRecalc) {
       const calc = calculateElfStats(updated.baseStats, updated.level || 100, updated.ivs, updated.evs,
         updated.natureModifiers, updated.inscriptions, updated.guildBonuses, updated.hasAnnualBonus);
@@ -182,25 +147,14 @@ function AppContent() {
       updated.maxHp = calc.hp;
       updated.currentHp = calc.hp;
     }
-    return applySavedSkillCorrections(updated,DEFAULT_ELVES);
+    return applySavedSkillCorrections(updated, DEFAULT_ELVES);
   }), [allElves, deletedElfIds, customSkillsMap, customInscriptionsMap, customResistancesMap]);
   elvesRef.current = allElvesCombined;
 
-
   const handleStartBattle = (
-    mode: BattleMode,
-    team1: Elf[],
-    team2: Elf[],
-    starter1Id: string,
-    starter2Id: string,
-    suit1?: string,
-    eyewear1?: string,
-    suit2?: string,
-    eyewear2?: string,
-    title1?: string,
-    title2?: string,
-    format?: "normal_6v6" | "solo_1v1" | "peak_6v6" | "peak_3v3",
-    options?: any
+    mode: BattleMode, team1: Elf[], team2: Elf[], starter1Id: string, starter2Id: string,
+    suit1?: string, eyewear1?: string, suit2?: string, eyewear2?: string,
+    title1?: string, title2?: string, format?: BattleFormat, options?: any
   ) => {
     if (team1.length > 0 && team2.length > 0) {
       const resetTeam = (team: Elf[], suit?: string, starterId?: string) => team.map(saved => {
@@ -221,7 +175,7 @@ function AppContent() {
       setBattleMode(mode);
       setSpecialMode(options?.specialMode);
       setInterstellarOptions(options?.interstellarOptions || null);
-      
+
       restartedRef.current = false;
       setIsTransitioning(true);
       setTimeout(() => {
@@ -232,334 +186,42 @@ function AppContent() {
     }
   };
 
+  const handleRestartBattle = () => setBattleKey(k => k + 1);
+
+  const bridge: ShellBridge = {
+    view, setView,
+    allElves, allElvesCombined, updateElf,
+    handleStartBattle, battleMode, setBattleMode, battleFormat, setBattleFormat, battleKey, restartedRef, handleRestartBattle,
+    isTransitioning,
+    p1Team, p2Team, p1StarterId, p2StarterId,
+    p1Suit, p1Eyewear, p2Suit, p2Eyewear, p1Title, p2Title,
+    hostPlayer, setHostPlayer,
+    specialMode, interstellarOptions, setInterstellarOptions,
+    editingElf, setEditingElf, editorTab, setEditorTab,
+    showEncyclopedia, setShowEncyclopedia,
+    showPerformanceProbe, setShowPerformanceProbe,
+  };
+
   return (
-    <div className="h-screen w-full flex relative bg-transparent text-slate-100 overflow-hidden" id="app-wrapper">
-      <Suspense fallback={null}>
-        <ControlHub currentScene={showEncyclopedia ? "encyclopedia" : view} canApplyUpdates={view === 'start' && !editingElf && !showEncyclopedia} />
-      </Suspense>
-      
-      {/* Sidebar Navigation */}
-      {/* 以寬度收合：內容區立即接手空間，不會留下空白 */}
-      <aside
-        style={{ width: showHeader ? 256 : 0, transition: "width 220ms ease-out" }}
-        className={`ios-sidebar shrink-0 h-full shadow-2xl overflow-hidden ${isCompactLayout ? "fixed inset-y-0 left-0 z-[100]" : "relative z-[50]"} ${showHeader ? "border-r" : "border-r-0"}`}
-        aria-hidden={!showHeader}
-      >
-          <div className="w-64 h-full flex flex-col relative">
-            {/* 邊緣收合把手 */}
-            <div
-              onClick={() => setShowHeader(false)}
-              className="absolute right-0 top-0 bottom-0 w-3 cursor-pointer flex items-center justify-center text-slate-600 hover:text-white hover:bg-white/5 transition-colors z-20"
-              title="隱藏側邊欄"
-            >
-              <ChevronLeft className="w-3.5 h-3.5" />
-            </div>
+    <>
+      {shellMode === "aegis" && view !== "battle"
+        ? <AegisShell b={bridge} onSwitchShell={toggleShell} />
+        : <LegacyShell
+            b={bridge}
+            showHeader={showHeader}
+            setShowHeader={setShowHeader}
+            isCompactLayout={isCompactLayout}
+          />}
 
-            <div className="p-5 border-b border-slate-800 flex items-center justify-between pr-8">
-              <button
-                onClick={() => setView("start")}
-                className="flex items-center gap-3 text-slate-100 hover:text-white select-none cursor-pointer font-display"
-              >
-                <div className="w-11 h-11 rounded-full overflow-hidden ring-1 ring-blue-400/30 bg-blue-950/20 shrink-0" title="聖靈譜尼 · 右鍵可複製圖片">
-                  <ElfAvatar elf={DEFAULT_ELVES.find(elf => elf.name === "聖靈譜尼") || DEFAULT_ELVES[0]} className="w-full h-full object-cover" />
-                </div>
-                <div className="flex flex-col items-start overflow-hidden">
-                  <h1 className="text-base font-bold tracking-tight text-blue-400 flex items-center whitespace-nowrap">
-                    賽爾號模擬器
-                  </h1>
-                  <span className="text-[10px] font-normal text-slate-500 uppercase bg-slate-900 border border-slate-800 px-1.5 py-0.5 rounded mt-1">v1.0 Beta</span>
-                </div>
-              </button>
-            </div>
-
-            <nav className="flex-1 overflow-y-auto flex flex-col gap-2 p-4">
-              <div className="text-xs font-semibold text-slate-500 mb-2 uppercase tracking-wider">選單</div>
-              
-              <button
-                onClick={() => setView("start")}
-                className={`flex items-center gap-3 px-4 py-3 rounded-xl font-medium text-sm transition-all cursor-pointer w-full text-left ${
-                  view === "start"
-                    ? "bg-blue-600/10 text-blue-400 border border-blue-500/20 shadow-inner"
-                    : "text-slate-400 hover:bg-slate-800/50 hover:text-slate-200 border border-transparent"
-                }`}
-              >
-                <Home className="w-5 h-5" />
-                首頁 / 模式
-              </button>
-              
-              <button
-                onClick={() => setView("custom")}
-                className={`flex items-center gap-3 px-4 py-3 rounded-xl font-medium text-sm transition-all cursor-pointer w-full text-left ${
-                  view === "custom"
-                    ? "bg-blue-600/10 text-blue-400 border border-blue-500/20 shadow-inner"
-                    : "text-slate-400 hover:bg-slate-800/50 hover:text-slate-200 border border-transparent"
-                }`}
-              >
-                <Settings className="w-5 h-5" />
-                精靈自定
-              </button>
-              
-              <button
-                onClick={() => setShowEncyclopedia(true)}
-                className={`flex items-center gap-3 px-4 py-3 rounded-xl font-medium text-sm transition-all cursor-pointer w-full text-left ${
-                  showEncyclopedia
-                    ? "bg-blue-600/10 text-blue-400 border border-blue-500/20 shadow-inner"
-                    : "text-slate-400 hover:bg-slate-800/50 hover:text-slate-200 border border-transparent"
-                }`}
-              >
-                <Book className="w-5 h-5" />
-                戰鬥百科
-              </button>
-              
-              <button
-                onClick={() => {
-                  if (p1Team.length > 0 && p2Team.length > 0) {
-                    setView("battle");
-                  } else {
-                    const t1 = allElves[0] ? [allElves[0]] : [];
-                    const t2 = allElves[1] ? [allElves[1]] : (allElves[0] ? [allElves[0]] : []);
-                    if (t1.length > 0 && t2.length > 0) {
-                      handleStartBattle(battleMode, t1, t2, t1[0].id, t2[0].id);
-                    }
-                  }
-                }}
-                className={`flex items-center gap-3 px-4 py-3 rounded-xl font-medium text-sm transition-all cursor-pointer w-full text-left ${
-                  view === "battle"
-                    ? "bg-blue-600/10 text-blue-400 border border-blue-500/20 shadow-inner"
-                    : "text-slate-400 hover:bg-slate-800/50 hover:text-slate-200 border border-transparent"
-                }`}
-              >
-                <Swords className="w-5 h-5" />
-                實戰演練
-              </button>
-              
-              <button
-                onClick={() => setView("test_runner")}
-                className={`flex items-center gap-3 px-4 py-3 rounded-xl font-medium text-sm transition-all cursor-pointer w-full text-left pr-8 ${
-                  view === "test_runner"
-                    ? "bg-blue-600/10 text-blue-400 border border-blue-500/20 shadow-inner pr-8"
-                    : "text-slate-400 hover:bg-slate-800/50 hover:text-slate-200 border border-transparent pr-8"
-                }`}
-              >
-                <TestTubes className="w-5 h-5" />
-                自動測試
-              </button>
-
-
-              <button
-                type="button"
-                onClick={() => setView('updates')}
-                aria-current={view === 'updates' ? 'page' : undefined}
-                className={`flex items-center gap-3 px-4 py-3 rounded-xl font-medium text-sm transition-all w-full text-left border ${
-                  view === 'updates'
-                    ? 'bg-blue-600/10 text-blue-400 border-blue-500/20'
-                    : 'text-slate-400 hover:bg-slate-800/50 hover:text-slate-200 border-transparent'
-                }`}
-              >
-                <Book className="w-5 h-5" />
-                更新與精靈
-              </button>
-            </nav>
-
-            <div className="p-4 border-t border-slate-800 flex flex-col gap-4 pr-6">
-              <button 
-                onClick={() => window.dispatchEvent(new CustomEvent('open-settings'))}
-                className="flex items-center gap-3 px-4 py-3 rounded-xl font-medium text-sm transition-all cursor-pointer w-full text-left text-slate-400 hover:bg-slate-800 hover:text-white border border-slate-700/50 group"
-              >
-                <Settings className="w-5 h-5 text-blue-400 group-hover:rotate-90 transition-transform" />
-                系統控制中心
-              </button>
-
-              <div className="flex items-center justify-between">
-                <span className="text-emerald-400 font-medium text-xs flex items-center gap-2 bg-emerald-400/10 px-2.5 py-1.5 rounded-md border border-emerald-400/20">
-                  <span className="h-1.5 w-1.5 bg-emerald-400 rounded-full animate-pulse"></span>
-                  連線就緒
-                </span>
-                
-                <button 
-                  onClick={() => setShowHeader(false)}
-                  className="p-2 rounded-lg bg-slate-800 text-slate-400 hover:text-white hover:bg-slate-700 transition-colors"
-                  title="隱藏側邊欄"
-                >
-                  <ChevronLeft className="w-4 h-4" />
-                </button>
-              </div>
-            </div>
-          </div>
-      </aside>
-
-      {isCompactLayout && showHeader && (
-        <button
-          type="button"
-          aria-label="關閉側邊欄"
-          onClick={() => setShowHeader(false)}
-          className="fixed inset-0 z-[95] bg-black/55 backdrop-blur-[1px]"
-        />
+      {/* Legacy 殼的切換鈕：掛在 body，不受任何 overflow 裁切 */}
+      {shellMode === "legacy" && (
+        <ShellSwitchButton onClick={toggleShell} target="aegis" />
       )}
-
-      {!showHeader && (
-        <button
-          onClick={() => setShowHeader(true)}
-          className="fixed top-4 left-0 z-[90] p-3 bg-slate-900/80 backdrop-blur-md border border-l-0 border-slate-700 rounded-r-xl text-slate-400 hover:text-white hover:bg-slate-800 transition-all shadow-lg rounded-r-xl" style={{ animation: "appHeaderBtnIn 220ms ease-out" }}
-          title="展開側邊欄"
-        >
-          <div className="absolute top-1 right-1 w-1.5 h-1.5 bg-blue-500 rounded-full animate-pulse" />
-          <Menu className="w-5 h-5 group-hover:scale-110 transition-transform" />
-        </button>
-      )}
-
-      {/* Main Content Area Wrapper */}
-      <div className="flex-grow flex flex-col h-full overflow-hidden relative z-[60]">
-        <SiteUpdateNotice active={view === "start" && !editingElf} />
-        <main className="flex-grow flex flex-col bg-transparent relative overflow-y-auto overflow-x-hidden w-full">
-          {/* 專屬渲染於一般頁面的背景圖層 */}
-        <ThemeBackground currentScene={showEncyclopedia ? "encyclopedia" : view} />
-        {/* Decorative Grid BG */}
-        <div className="absolute inset-0 bg-[linear-gradient(to_right,#1e293b_1px,transparent_1px),linear-gradient(to_bottom,#1e293b_1px,transparent_1px)] bg-[size:4rem_4rem] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_50%,#000_70%,transparent_100%)] opacity-15 pointer-events-none -z-10"></div>
-
-        {isTransitioning && <BattleLoadingScreen p1Team={p1Team} p2Team={p2Team}
-          p1StarterId={p1StarterId} p2StarterId={p2StarterId} format={battleFormat} />}
-        <PageErrorBoundary key={view} onBack={() => setView("start")}>
-        <Suspense fallback={view === 'battle'
-          ? <BattleLoadingScreen p1Team={p1Team} p2Team={p2Team}
-              p1StarterId={p1StarterId} p2StarterId={p2StarterId} format={battleFormat} />
-          : <TechLoadingScreen />}>
-
-        {view === "start" && (
-          <StartScreen
-            hostPlayer={hostPlayer}
-            onHostPlayerChange={setHostPlayer}
-            onStartBattle={handleStartBattle}
-            onNavigateToDestinyWheel={(mode) => {
-              if (mode) setBattleMode(mode);
-              setView("destiny_wheel");
-            }}
-            onNavigateToInterstellar={() => {
-              setView("interstellar_exploration");
-            }}
-            onNavigateToCustom={() => {
-              setEditingElf(null);
-              setEditorTab(undefined);
-              setView("custom");
-            }}
-            onEditElf={(elf) => {
-              setEditingElf(elf);
-              setEditorTab(undefined);
-              setView("custom");
-            }}
-          />
-        )}
-
-        {view === 'updates' && (
-          <UpdatesPage
-            elves={allElvesCombined}
-            onBack={() => setView('start')}
-            onEditElf={(elf, tab) => {
-              setEditingElf(elf);
-              setEditorTab(tab);
-              setView('custom');
-            }}
-          />
-        )}
-
-        {view === "custom" && (
-          <React.Fragment key={(editingElf?.id || "new") + (editorTab || "")}>
-          <ElfEditor
-            initialElf={editingElf || undefined}
-            initialTab={editorTab}
-            onSaveElf={(elf) => {
-              updateElf(elf);
-              setEditingElf(null);
-              setView("start");
-            }}
-            onBack={() => setView("start")}
-          />
-          </React.Fragment>
-        )}
-
-        {view === "destiny_wheel" && (
-          <DestinyWheelScreen
-            initialBattleMode={battleMode}
-            allElves={allElvesCombined}
-            onStartBattle={(mode, team1, team2, starter1Id, starter2Id, s1, e1, s2, e2, t1, t2, fmt) => {
-              handleStartBattle(mode || "PVE", team1, team2, starter1Id, starter2Id, s1 || "destiny_armor", e1 || "", s2 || "destiny_armor", e2 || "", t1 || "命運之神", t2 || "宿命之敵", fmt || "normal_6v6", {specialMode:"destiny"});
-            }}
-            onBack={() => setView("start")}
-          />
-        )}
-
-        {view === "interstellar_exploration" && (
-          <InterstellarHub
-            allElves={allElvesCombined}
-            onBack={() => setView("start")}
-            onStartBattle={(p1, p2, mode, options) => {
-              handleStartBattle(mode, p1, p2, p1[0]?.battleId || p1[0]?.id, p2[0]?.battleId || p2[0]?.id, options?.suit1, options?.eyewear1, options?.suit2, options?.eyewear2, options?.title1, options?.title2, options?.format, options);
-              if (options?.interstellarOptions) {
-                setInterstellarOptions(options.interstellarOptions);
-              }
-            }}
-          />
-        )}
-
-        {view === "battle" && p1Team.length > 0 && p2Team.length > 0 && (
-          <Suspense fallback={<BattleLoadingScreen p1Team={p1Team} p2Team={p2Team}
-            p1StarterId={p1StarterId} p2StarterId={p2StarterId} format={battleFormat} />}>
-            <BattleScreen
-              key={battleKey}
-              initialP1Team={p1Team}
-              initialP2Team={p2Team}
-              p1StarterId={p1StarterId}
-              p2StarterId={p2StarterId}
-              p1Suit={p1Suit}
-              p1Eyewear={p1Eyewear}
-              p2Suit={p2Suit}
-              p2Eyewear={p2Eyewear}
-              p1Title={p1Title}
-              p2Title={p2Title}
-              battleMode={battleMode}
-              battleFormat={battleFormat}
-              hostPlayer={hostPlayer}
-              onHostPlayerChange={setHostPlayer}
-              interstellarOptions={interstellarOptions}
-              randomSeed={interstellarOptions?.battleSeed}
-              preparedTeams={!!interstellarOptions}
-              specialMode={specialMode}
-              onBattleEnd={(winner, team) => interstellarOptions?.onBattleEnd?.(winner, team)}
-              onBackToMenu={() => {
-                if (interstellarOptions) {
-                  setView("interstellar_exploration");
-                } else {
-                  setView("start");
-                }
-                setInterstellarOptions(null);
-              }}
-              introReplay={battleKey > 0 && restartedRef.current}
-              onRestartBattle={() => { restartedRef.current = true; setBattleKey(k => k + 1); }}
-            />
-          </Suspense>
-        )}
-
-        {view === "test_runner" && (
-          <TestRunnerPage />
-        )}
-
-
+      {showPerformanceProbe && (
+        <Suspense fallback={null}>
+          <PerformanceProbe onClose={() => setShowPerformanceProbe(false)} />
         </Suspense>
-        </PageErrorBoundary>
-        {showEncyclopedia && createPortal(<PageErrorBoundary onBack={() => setShowEncyclopedia(false)}><Suspense fallback={<TechLoadingScreen />}><Encyclopedia onClose={() => setShowEncyclopedia(false)} /></Suspense></PageErrorBoundary>, document.body)}
-        <ImageCopyMenu />
-        {showPerformanceProbe && <Suspense fallback={null}><PerformanceProbe onClose={() => setShowPerformanceProbe(false)} /></Suspense>}
-
-
-        </main>
-
-        {/* Bottom Bar: Stats Quick View */}
-        {view !== "battle" && <footer className={`bg-slate-900/85 backdrop-blur-md border-t border-slate-800 py-3 sm:py-0 sm:h-10 flex flex-col sm:flex-row items-center px-4 sm:px-8 text-[10px] text-slate-400 gap-2 sm:gap-8 font-mono shrink-0 select-none relative z-10`}>
-          <span>計算公式: [(攻擊方LV×0.4+2)×技能威力×攻擊/防禦/50+2]×修正</span>
-          <span className="hidden md:inline">屬性係數: 本系修正(1.5x) / 克制係數(0.5x-4.0x)</span>
-          <span className="hidden sm:ml-auto">© 2026 AI 賽爾號對戰模擬器 - 繁體中文版</span>
-        </footer>}
-      </div>
-    </div>
+      )}
+    </>
   );
 }

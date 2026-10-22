@@ -55,10 +55,61 @@ export function ElfAvatar({ elf, battleSide, kind = "head", className, fallbackC
   elf = appearanceElf(elf);
   const own = elf.path && /^(\/|https?:|data:)/.test(elf.path) ? [elf.path] : [];
   const urls = ready ? [...own, ...petImageUrls(elf as any, kind)] : own;
+  /*
+    預設佔位圖（2026-10-22 使用者要求「調整預設圖片比例」）：
+      無圖精靈（例：鎮世龍魂・龍之治癒，索引查不到 ID）會顯示單一漢字徽記。
+      原本用固定 text-2xl（24px），在小格子裡溢出、在大格子裡太小。
+      cqw 寫法又需要 container-type，呼叫端沒設所以無效（這是「龍之治癒比例異常」的根因）。
+    改用 SVG viewBox：
+      viewBox="0 0 100 100" 讓文字永遠按容器等比縮放，
+      不需要 container query，任何尺寸的格子都填得剛剛好。
+  */
+  const badgeChar = concealed ? "?" : ((elf as any).badge || elf.soulMark?.badgeChar || (elf.name || "?").slice(-1));
+  /*
+    2026-10-22（使用者回報「龍之治癒的頭像讓整體變形」）：
+      沒有頭像/立繪的精靈（索引查不到 ID，例：鎮世龍魂・龍之治癒）
+      之前 head 模式落到「單一漢字徽記」，body 模式用 1184x1328 的縱向全身圖硬塞，
+      兩者都讓格子比例失調。
+    修法：
+      head → 用從全身圖切出的正方形 unknown_myth_ghost_head.png（256x256）
+      body → 維持原全身圖（body 場景本來就要全身）
+  */
   const fb = (
-    <div className={fallbackClassName || "w-full h-full flex items-center justify-center text-2xl font-black text-slate-200"}>
-      {concealed ? "?" : ((elf as any).badge || elf.soulMark?.badgeChar || (elf.name || "?").slice(-1))}
-    </div>
+    <svg
+      viewBox="0 0 100 100"
+      preserveAspectRatio="xMidYMid meet"
+      className={fallbackClassName || "w-full h-full"}
+      style={{ display: "block" }}
+      role="img"
+      aria-label={elf.name || "未知精靈"}
+    >
+      <text
+        x="50"
+        y="54"
+        textAnchor="middle"
+        dominantBaseline="middle"
+        fontSize="52"
+        fontWeight="900"
+        fill="#e2e8f0"
+        opacity="0.9"
+      >
+        {badgeChar}
+      </text>
+    </svg>
+  );
+  /*
+    2026-10-22（使用者回報「龍之治癒的頭像讓整體變形」）：
+      沒有頭像/立繪的精靈（索引查不到 ID，例：鎮世龍魂・龍之治癒）
+      head 模式改用從全身圖切出的正方形 ghost 頭像，不再用漢字徽記。
+  */
+  const ghostHead = (
+    <ChainImage
+      urls={["/elf-art/unknown_myth_ghost_head.png"]}
+      fallback={fb}
+      alt={elf.name || "未知精靈"}
+      className={className || "w-full h-full object-cover"}
+      style={style}
+    />
   );
   if (concealed) {
     // 身份隱藏期間只載入共用鬼影，不能使用真實立繪或頭像當備用圖。
@@ -87,6 +138,8 @@ export function ElfAvatar({ elf, battleSide, kind = "head", className, fallbackC
     maskImage: "radial-gradient(circle at 50% 48%, #000 82%, transparent 100%)",
     objectPosition: "50% 44%",
   } as React.CSSProperties : undefined;
+  if (!urls.length && !ready) return ghostHead;
+  if (!urls.length) return ghostHead;
   return <ChainImage urls={urls} fallback={fb} className={`${className || ""} ${isOtherworldRey ? "rounded-full" : ""}`} style={{ ...portraitMask, ...style }}
     sourceStyle={src => src === "/elf-art/emperor_dixin_body.png" ? { objectPosition: "50% 4%", transform: "scale(2.5)", transformOrigin: "50% 8%" } : {}}
     alt={elf.name} />;

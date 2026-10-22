@@ -2,6 +2,7 @@
 // 雙側（P1/P2）正式 headless 引擎實戰；合成精靈帶真名與真 soulMark。
 import assert from 'node:assert/strict';
 import { createHarness } from './helpers/migrationHarness';
+import legacySoulKits from '../src/data/legacySoulKitFingerprints.json';
 const h = await createHarness();
 let checks = 0;
 try {
@@ -30,9 +31,61 @@ try {
   };
   const hit = (name = '打', power = 100, extra: any = {}) => ({ name, category: '物理', type: '普通', power, pp: 99, maxPp: 99, isSureHit: true, description: '', ...extra });
   const wait = () => h.wait();
+  const {applySavedSkillCorrections:correct}=await h.server.ssrLoadModule('/src/data/savedSkillCorrections.ts');
+  // 舊背包真的含有頂層描述積木，不能只刪除 soulMark.kit 假裝舊存檔。
+  const old = structuredClone(puni);
+  delete old.soulMark.kit; delete old.soulMark.effectMode;
+  old.kit=structuredClone(legacySoulKits.definitions.find(d=>d.elfId==='5000')!.kit);
+  const original=structuredClone(old),fixed=correct(old,[puni]);
+  assert.equal(fixed.soulMark.effectMode,'kit','真實舊描述積木必須升級到可執行魂印');
+  assert.deepEqual(old,original,'不修改輸入存檔');
+  assert.deepEqual(fixed.kit,old.kit,'保留頂層原始資料');
+  assert.equal(correct(fixed,[puni]),fixed,'重複修復不重建物件');
+  const edited=structuredClone(old);edited.kit[0].params={userChanged:true};
+  assert.equal(correct(edited,[puni]).soulMark,edited.soulMark,'改過的頂層積木不可覆寫');
+  const explicit=structuredClone(old);explicit.soulMark.effectMode='none';
+  assert.equal(correct(explicit,[puni]).soulMark,explicit.soulMark,'明確停用的魂印不可覆寫');
 
   for (const side of ['p1', 'p2'] as const) {
     const other = side === 'p1' ? 'p2' : 'p1';
+    {
+      const self = puniUnit('5000',100000,[wait()]);
+      self.soulMark=structuredClone(old.soulMark);self.kit=structuredClone(old.kit);
+      const inflict=h.kitSkill('沉睡與弱化',[
+        {op:'status',p:{side:'opp',status:'沉睡',turns:3,chance:100}},
+        {op:'stat',p:{side:'opp',stats:['攻擊','防禦'],v:-2}},
+      ]);
+      const opp=h.unit('E',90000,[inflict],{maxHp:100000,speed:300});
+      const [broken]=await h.play(side,{self:structuredClone(self),opp:structuredClone(opp),turns:()=>[0,0]},1);
+      assert.ok(h.statuses(broken.self).includes('沉睡'),'舊頂層描述積木重現免控失效');
+      assert.equal(broken.self.statStages.atk,-2,'舊頂層描述積木重現免弱化失效');
+      const [repaired]=await h.play(side,{self:correct(self,[puni]),opp,turns:()=>[0,0]},1);
+      assert.ok(!h.statuses(repaired.self).includes('沉睡'),side+' 舊背包修復後免沉睡');
+      assert.equal(repaired.self.statStages.atk||0,0,side+' 舊背包修復後免弱化');
+      checks++;
+    }
+    // 已有非空 kit 的舊版本也要升級；先前只補缺漏的修復涵蓋不到。
+    {
+      const previous=structuredClone(puni);
+      previous.soulMark.description+=' 舊版本測試';
+      previous.soulMark.kit=previous.soulMark.kit.filter((entry:any)=>!['before_status_apply','on_entered'].includes(entry.node));
+      const self=puniUnit('5000',100000,[wait()]);self.soulMark=previous.soulMark;
+      const linked=correct(self,[previous]);
+      assert.ok(linked.builtinEffectBindings,'記錄上次來源');
+      const inflict=h.kitSkill('新版防護驗證',[
+        {op:'status',p:{side:'opp',status:'沉睡',turns:3,chance:100}},
+        {op:'stat',p:{side:'opp',stats:['攻擊','防禦'],v:-2}},
+      ]);
+      const opp=h.unit('E',90000,[inflict],{maxHp:100000,speed:300});
+      const [before]=await h.play(side,{self:structuredClone(linked),opp:structuredClone(opp),turns:()=>[0,0]},1);
+      assert.ok(h.statuses(before.self).includes('沉睡'),side+' 有 kit 的舊版重現缺少防護');
+      assert.equal(before.self.statStages.atk,-2);
+      const upgraded=correct(linked,[puni]);
+      const [after]=await h.play(side,{self:upgraded,opp,turns:()=>[0,0]},1);
+      assert.ok(!h.statuses(after.self).includes('沉睡'),side+' 來源版本升級後免控');
+      assert.equal(after.self.statStages.atk||0,0,side+' 來源版本升級後免弱化');
+      checks++;
+    }
     // ① 虛無：受到攻擊傷害後，免疫下 1 次受到的攻擊傷害（受傷→免疫→受傷→免疫 交替）
     {
       // 自身最大體力 1e8、體力 20000：每回合「生命」固定回復 25000000，受傷量＝25000000 −（本回合體力淨變化）。
@@ -131,6 +184,20 @@ try {
       assert.ok(!h.statuses(r[0].self).includes('麻痺'), side + ' 免疫麻痺');
       assert.equal(r[1].self.statStages.atk || 0, 0, side + ' 免疫能力下降（攻擊）');
       assert.equal(r[1].self.statStages.def || 0, 0, side + ' 免疫能力下降（防禦）');
+      checks++;
+    }
+    // 天生防護不能被消除回合類效果拿走；雙側、真實結算，不只檢查積木存在。
+    {
+      const self = puniUnit('S', 100000, [wait()]);
+      const clear = h.kitSkill('清回合', [{op:'clear_turn',p:{side:'opp'}}]);
+      const inflict = h.kitSkill('沉睡弱化', [
+        {op:'status',p:{side:'opp',status:'沉睡',turns:3,chance:100}},
+        {op:'stat',p:{side:'opp',stats:['攻擊','防禦'],v:-2}},
+      ]);
+      const opp = h.unit('E',90000,[clear,inflict],{maxHp:100000,speed:300});
+      const r = await h.play(side,{self,opp,turns:(_e,t)=>[0,t===1?0:1]},2);
+      assert.ok(!h.statuses(r[1].self).includes('沉睡'),side+' 清回合後仍天生免控');
+      assert.equal(r[1].self.statStages.atk||0,0,side+' 清回合後仍天生免弱化');
       checks++;
     }
   }

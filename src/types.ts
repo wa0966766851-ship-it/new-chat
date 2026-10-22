@@ -176,6 +176,8 @@ export interface StatChange {
 }
 
 export interface Elf {
+  /** 內建效果版本指紋；只供讀檔升級，戰鬥不依此執行。 */
+  builtinEffectBindings?: { schemaVersion: 1; elfId: string; definitions: Record<string, string> };
   /** 開局背包另一區相同位數的快照；不把待命精靈加入勝敗判定隊伍。 */
   initialCounterpart?: Elf;
   /** 開局背包資料（出戰／待命兩區各自的原始位數）。待命快照在所有出戰精靈間共享同一份參考，

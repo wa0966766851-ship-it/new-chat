@@ -1,0 +1,1074 @@
+{
+  "scope": "saved-snapshot",
+  "input": "build/wuji-current",
+  "elves": 108,
+  "definitions": 1319,
+  "kitEntries": 5804,
+  "counts": {
+    "current": 1252,
+    "untracked": 54,
+    "source-missing": 13
+  },
+  "issues": [
+    {
+      "path": "root.store-seer_default_elves_overrides.json.5007",
+      "elfId": "5007",
+      "elfName": "混濁海妖.布林克克",
+      "key": "soul",
+      "name": "濁",
+      "status": "untracked",
+      "differences": [
+        "effectMode",
+        "kit"
+      ],
+      "kitDifferences": [
+        "kit.0.node",
+        "kit.0.customText",
+        "kit.0.params.clause.raw",
+        "kit.0.params.clause.trig",
+        "kit.0.params.clause.body.0.acts.0.op",
+        "kit.0.params.clause.body.0.acts.0.p.elf",
+        "kit.0.params.clause.body.0.acts.0.p.key",
+        "kit.0.params.clause.body.0.acts.0.p.kind",
+        "kit.0.params.clause.body.0.acts.0.p.statFromTeamRatio",
+        "kit.0.params.clause.body.0.acts.0.p.name",
+        "kit.0.params.clause.body.0.acts.0.p.side",
+        "kit.0.params.clause.body.0.acts.0.p.type",
+        "kit.0.params.clause.body.0.acts.0.label",
+        "kit.1",
+        "kit.2",
+        "kit.3"
+      ]
+    },
+    {
+      "path": "root.store-seer_default_elves_overrides.json.5007",
+      "elfId": "5007",
+      "elfName": "混濁海妖.布林克克",
+      "key": "generalTrait",
+      "name": "亂舞",
+      "status": "source-missing"
+    },
+    {
+      "path": "root.store-seer_default_elves_overrides.json.5007",
+      "elfId": "5007",
+      "definition": "5007:soul",
+      "status": "non-kit-route",
+      "route": "registry"
+    },
+    {
+      "path": "root.store-seer_default_elves_overrides.json.5007",
+      "elfId": "5007",
+      "definition": "5007:generalTrait",
+      "status": "non-kit-route",
+      "route": "description"
+    },
+    {
+      "path": "root.store-seer_default_elves_overrides.json.5015",
+      "elfId": "5015",
+      "elfName": "混沌·布萊克",
+      "key": "skill:\"孑然孤夢\":0",
+      "name": "孑然孤夢",
+      "status": "untracked",
+      "differences": [
+        "kit"
+      ],
+      "kitDifferences": [
+        "kit.2.params.clause.body.0.acts.0.p.trig",
+        "kit.2.params.clause.body.0.acts.0.p.initial"
+      ]
+    },
+    {
+      "path": "root.store-seer_default_elves_overrides.json.5019",
+      "elfId": "5019",
+      "elfName": "眾神之父·奧丁",
+      "key": "soul",
+      "name": "ᛏ",
+      "status": "untracked",
+      "differences": [
+        "effectMode",
+        "kit"
+      ],
+      "kitDifferences": [
+        "kit.0.node",
+        "kit.0.customText",
+        "kit.0.params.clause.raw",
+        "kit.0.params.clause.trig",
+        "kit.0.params.clause.body.0.acts.0.op",
+        "kit.0.params.clause.body.0.acts.0.p.elf",
+        "kit.0.params.clause.body.0.acts.0.p.key",
+        "kit.0.params.clause.body.0.acts.0.p.kind",
+        "kit.0.params.clause.body.0.acts.0.p.displayChar",
+        "kit.0.params.clause.body.0.acts.0.p.statRatio",
+        "kit.0.params.clause.body.0.acts.0.p.duel",
+        "kit.0.params.clause.body.0.acts.0.p.name",
+        "kit.0.params.clause.body.0.acts.0.p.id",
+        "kit.0.params.clause.body.0.acts.0.label",
+        "kit.1",
+        "kit.2",
+        "kit.3",
+        "kit.4",
+        "kit.5"
+      ]
+    },
+    {
+      "path": "root.store-seer_default_elves_overrides.json.5019",
+      "elfId": "5019",
+      "elfName": "眾神之父·奧丁",
+      "key": "skill:\"ᚺᚢᚷᛁᚾ ᛟᚲ ᛗᚢᚾᛁᚾ\":0",
+      "name": "ᚺᚢᚷᛁᚾ ᛟᚲ ᛗᚢᚾᛁᚾ",
+      "status": "untracked",
+      "differences": [
+        "effectMode",
+        "kit"
+      ],
+      "kitDifferences": [
+        "kit.0.codeId",
+        "kit.0.node",
+        "kit.0.customText",
+        "kit.0.params.clause",
+        "kit.0.params.conditions",
+        "kit.0.params.property",
+        "kit.0.params.value",
+        "kit.1",
+        "kit.2",
+        "kit.3",
+        "kit.4"
+      ]
+    },
+    {
+      "path": "root.store-seer_default_elves_overrides.json.5019",
+      "elfId": "5019",
+      "elfName": "眾神之父·奧丁",
+      "key": "skill:\"ᚱᚨᚷᚾᚨᚱᛟᚲ\":0",
+      "name": "ᚱᚨᚷᚾᚨᚱᛟᚲ",
+      "status": "untracked",
+      "differences": [
+        "effectMode",
+        "kit"
+      ],
+      "kitDifferences": [
+        "kit.0.codeId",
+        "kit.0.node",
+        "kit.0.customText",
+        "kit.0.params.clause",
+        "kit.0.params.conditions",
+        "kit.0.params.property",
+        "kit.0.params.value",
+        "kit.1",
+        "kit.2",
+        "kit.3",
+        "kit.4",
+        "kit.5"
+      ]
+    },
+    {
+      "path": "root.store-seer_default_elves_overrides.json.5019",
+      "elfId": "5019",
+      "elfName": "眾神之父·奧丁",
+      "key": "pool:\"ᚺᚢᚷᛁᚾ ᛟᚲ ᛗᚢᚾᛁᚾ\":0",
+      "name": "ᚺᚢᚷᛁᚾ ᛟᚲ ᛗᚢᚾᛁᚾ",
+      "status": "untracked",
+      "differences": [
+        "effectMode",
+        "kit"
+      ],
+      "kitDifferences": [
+        "kit.0.codeId",
+        "kit.0.node",
+        "kit.0.customText",
+        "kit.0.params.clause",
+        "kit.0.params.conditions",
+        "kit.0.params.property",
+        "kit.0.params.value",
+        "kit.1",
+        "kit.2",
+        "kit.3",
+        "kit.4"
+      ]
+    },
+    {
+      "path": "root.store-seer_default_elves_overrides.json.5019",
+      "elfId": "5019",
+      "elfName": "眾神之父·奧丁",
+      "key": "pool:\"ᚱᚨᚷᚾᚨᚱᛟᚲ\":0",
+      "name": "ᚱᚨᚷᚾᚨᚱᛟᚲ",
+      "status": "untracked",
+      "differences": [
+        "effectMode",
+        "kit"
+      ],
+      "kitDifferences": [
+        "kit.0.codeId",
+        "kit.0.node",
+        "kit.0.customText",
+        "kit.0.params.clause",
+        "kit.0.params.conditions",
+        "kit.0.params.property",
+        "kit.0.params.value",
+        "kit.1",
+        "kit.2",
+        "kit.3",
+        "kit.4",
+        "kit.5"
+      ]
+    },
+    {
+      "path": "root.store-seer_default_elves_overrides.json.5019",
+      "elfId": "5019",
+      "elfName": "眾神之父·奧丁",
+      "key": "generalTrait",
+      "name": "亂舞",
+      "status": "source-missing"
+    },
+    {
+      "path": "root.store-seer_default_elves_overrides.json.5019",
+      "elfId": "5019",
+      "definition": "5019:soul",
+      "status": "non-kit-route",
+      "route": "registry"
+    },
+    {
+      "path": "root.store-seer_default_elves_overrides.json.5019",
+      "elfId": "5019",
+      "definition": "5019:generalTrait",
+      "status": "non-kit-route",
+      "route": "description"
+    },
+    {
+      "path": "root.store-seer_default_elves_overrides.json.5019",
+      "elfId": "5019",
+      "definition": "5019:skill.2",
+      "status": "non-kit-route",
+      "route": "registry"
+    },
+    {
+      "path": "root.store-seer_default_elves_overrides.json.5019",
+      "elfId": "5019",
+      "definition": "5019:skill.4",
+      "status": "non-kit-route",
+      "route": "registry"
+    },
+    {
+      "path": "root.store-seer_default_elves_overrides.json.5019",
+      "elfId": "5019",
+      "definition": "5019:pool.2",
+      "status": "non-kit-route",
+      "route": "registry"
+    },
+    {
+      "path": "root.store-seer_default_elves_overrides.json.5019",
+      "elfId": "5019",
+      "definition": "5019:pool.4",
+      "status": "non-kit-route",
+      "route": "registry"
+    },
+    {
+      "path": "root.store-seer_default_elves_overrides.json.5021",
+      "elfId": "5021",
+      "elfName": "治癒.龍魂再臨 次元龍",
+      "key": "soul",
+      "name": "龍",
+      "status": "untracked",
+      "differences": [
+        "effectMode",
+        "kit"
+      ],
+      "kitDifferences": [
+        "kit.0.node",
+        "kit.0.customText",
+        "kit.0.params.clause.raw",
+        "kit.0.params.clause.trig",
+        "kit.0.params.clause.body.0.acts.0.op",
+        "kit.0.params.clause.body.0.acts.0.p.elf",
+        "kit.0.params.clause.body.0.acts.0.p.key",
+        "kit.0.params.clause.body.0.acts.0.p.kind",
+        "kit.0.params.clause.body.0.acts.0.p.displayChar",
+        "kit.0.params.clause.body.0.acts.0.p.receiverKey",
+        "kit.0.params.clause.body.0.acts.0.p.snapshotKey",
+        "kit.0.params.clause.body.0.acts.0.p.perRound",
+        "kit.0.params.clause.body.0.acts.0.p.name",
+        "kit.0.params.clause.body.0.acts.0.p.id",
+        "kit.0.params.clause.body.0.acts.0.label",
+        "kit.1",
+        "kit.2",
+        "kit.3",
+        "kit.4",
+        "kit.5"
+      ]
+    },
+    {
+      "path": "root.store-seer_default_elves_overrides.json.5021",
+      "elfId": "5021",
+      "elfName": "治癒.龍魂再臨 次元龍",
+      "key": "skill:\"遺典.妄世律裁\":0",
+      "name": "遺典.妄世律裁",
+      "status": "untracked",
+      "differences": [
+        "effectMode",
+        "kit"
+      ],
+      "kitDifferences": [
+        "kit.0.codeId",
+        "kit.0.node",
+        "kit.0.customText",
+        "kit.0.params.clause",
+        "kit.0.params.conditions",
+        "kit.0.params.property",
+        "kit.0.params.value",
+        "kit.1",
+        "kit.2",
+        "kit.3",
+        "kit.4",
+        "kit.5"
+      ]
+    },
+    {
+      "path": "root.store-seer_default_elves_overrides.json.5021",
+      "elfId": "5021",
+      "elfName": "治癒.龍魂再臨 次元龍",
+      "key": "generalTrait",
+      "name": "亂舞",
+      "status": "source-missing"
+    },
+    {
+      "path": "root.store-seer_default_elves_overrides.json.5021",
+      "elfId": "5021",
+      "definition": "5021:soul",
+      "status": "non-kit-route",
+      "route": "registry"
+    },
+    {
+      "path": "root.store-seer_default_elves_overrides.json.5021",
+      "elfId": "5021",
+      "definition": "5021:generalTrait",
+      "status": "non-kit-route",
+      "route": "description"
+    },
+    {
+      "path": "root.store-seer_default_elves_overrides.json.5021",
+      "elfId": "5021",
+      "definition": "5021:skill.4",
+      "status": "non-kit-route",
+      "route": "registry"
+    },
+    {
+      "path": "root.store-seer_default_elves_overrides.json.5026",
+      "elfId": "5026",
+      "elfName": "無序.墜星",
+      "key": "gen2Trait",
+      "name": "豪邁 / 投石者",
+      "status": "untracked",
+      "differences": [
+        "effectMode",
+        "kit"
+      ],
+      "kitDifferences": [
+        "kit.0.customText",
+        "kit.0.params.clause.raw",
+        "kit.0.params.clause.body.0.acts.0.op",
+        "kit.0.params.clause.body.0.acts.0.p.elf",
+        "kit.0.params.clause.body.0.acts.0.p.key",
+        "kit.0.params.clause.body.0.acts.0.p.kind",
+        "kit.0.params.clause.body.0.acts.0.p.value",
+        "kit.0.params.clause.body.0.acts.0.label",
+        "kit.1",
+        "kit.2",
+        "kit.3",
+        "kit.4",
+        "kit.5",
+        "kit.6",
+        "kit.7",
+        "kit.8",
+        "kit.9",
+        "kit.10"
+      ]
+    },
+    {
+      "path": "root.store-seer_default_elves_overrides.json.5026",
+      "elfId": "5026",
+      "definition": "5026:gen2Trait",
+      "status": "non-kit-route",
+      "route": "registry"
+    },
+    {
+      "path": "root.store-seer_default_elves_overrides.json.5029",
+      "elfId": "5029",
+      "elfName": "異境神霆·雷伊",
+      "key": "alienTrait",
+      "name": "強化",
+      "status": "source-missing"
+    },
+    {
+      "path": "root.store-seer_default_elves_overrides.json.5029",
+      "elfId": "5029",
+      "elfName": "異境神霆·雷伊",
+      "key": "generalTrait",
+      "name": "亂舞",
+      "status": "source-missing"
+    },
+    {
+      "path": "root.store-seer_default_elves_overrides.json.5029",
+      "elfId": "5029",
+      "definition": "5029:alienTrait",
+      "status": "non-kit-route",
+      "route": "description"
+    },
+    {
+      "path": "root.store-seer_default_elves_overrides.json.5029",
+      "elfId": "5029",
+      "definition": "5029:generalTrait",
+      "status": "non-kit-route",
+      "route": "description"
+    },
+    {
+      "path": "root.store-seer_default_elves_overrides.json.5034",
+      "elfId": "5034",
+      "elfName": "邪靈主宰·摩哥斯",
+      "key": "skill:\"王·墮落絕語\":0",
+      "name": "王·墮落絕語",
+      "status": "untracked",
+      "differences": [
+        "kit"
+      ],
+      "kitDifferences": [
+        "kit.4.customText",
+        "kit.4.params.clause.body.0.acts.0.label",
+        "kit.4.params.clause.body.0.acts.0.op",
+        "kit.4.params.clause.body.0.acts.0.p.amount",
+        "kit.4.params.clause.body.0.acts.0.p.label",
+        "kit.4.params.clause.body.0.acts.0.p.key",
+        "kit.4.params.clause.body.0.acts.0.p.perMarkAdd",
+        "kit.4.params.clause.body.0.acts.0.p.untilSkill",
+        "kit.4.params.clause.body.0.acts.0.p.perMarkId",
+        "kit.4.params.clause.body.0.acts.0.p.powerAdd",
+        "kit.4.params.clause.body.0.cond",
+        "kit.4.params.clause.trig",
+        "kit.4.params.clause.raw"
+      ]
+    },
+    {
+      "path": "root.store-seer_default_elves_overrides.json.5034",
+      "elfId": "5034",
+      "elfName": "邪靈主宰·摩哥斯",
+      "key": "pool:\"王·墮落絕語\":0",
+      "name": "王·墮落絕語",
+      "status": "untracked",
+      "differences": [
+        "kit"
+      ],
+      "kitDifferences": [
+        "kit.4.customText",
+        "kit.4.params.clause.body.0.acts.0.label",
+        "kit.4.params.clause.body.0.acts.0.op",
+        "kit.4.params.clause.body.0.acts.0.p.amount",
+        "kit.4.params.clause.body.0.acts.0.p.label",
+        "kit.4.params.clause.body.0.acts.0.p.key",
+        "kit.4.params.clause.body.0.acts.0.p.perMarkAdd",
+        "kit.4.params.clause.body.0.acts.0.p.untilSkill",
+        "kit.4.params.clause.body.0.acts.0.p.perMarkId",
+        "kit.4.params.clause.body.0.acts.0.p.powerAdd",
+        "kit.4.params.clause.body.0.cond",
+        "kit.4.params.clause.trig",
+        "kit.4.params.clause.raw"
+      ]
+    },
+    {
+      "path": "root.store-seer_default_elves_overrides.json.5034",
+      "elfId": "5034",
+      "elfName": "邪靈主宰·摩哥斯",
+      "key": "generalTrait",
+      "name": "亂舞",
+      "status": "source-missing"
+    },
+    {
+      "path": "root.store-seer_default_elves_overrides.json.5034",
+      "elfId": "5034",
+      "definition": "5034:generalTrait",
+      "status": "non-kit-route",
+      "route": "description"
+    },
+    {
+      "path": "root.store-seer_default_elves_overrides.json.arena_12",
+      "elfId": "arena_12",
+      "elfName": "無為龍者",
+      "key": "skill:\"百法拜\":0",
+      "name": "百法拜",
+      "status": "untracked",
+      "differences": [
+        "type"
+      ]
+    },
+    {
+      "path": "root.store-seer_default_elves_overrides.json.arena_12",
+      "elfId": "arena_12",
+      "elfName": "無為龍者",
+      "key": "skill:\"十玄釋\":0",
+      "name": "十玄釋",
+      "status": "untracked",
+      "differences": [
+        "type"
+      ]
+    },
+    {
+      "path": "root.store-seer_default_elves_overrides.json.arena_12",
+      "elfId": "arena_12",
+      "elfName": "無為龍者",
+      "key": "pool:\"百法拜\":0",
+      "name": "百法拜",
+      "status": "untracked",
+      "differences": [
+        "type"
+      ]
+    },
+    {
+      "path": "root.store-seer_default_elves_overrides.json.arena_12",
+      "elfId": "arena_12",
+      "elfName": "無為龍者",
+      "key": "pool:\"十玄釋\":0",
+      "name": "十玄釋",
+      "status": "untracked",
+      "differences": [
+        "type"
+      ]
+    },
+    {
+      "path": "root.store-seer_default_elves_overrides.json.arena_12",
+      "elfId": "arena_12",
+      "elfName": "無為龍者",
+      "key": "generalTrait",
+      "name": "吸血",
+      "status": "source-missing"
+    },
+    {
+      "path": "root.store-seer_default_elves_overrides.json.arena_12",
+      "elfId": "arena_12",
+      "definition": "arena_12:generalTrait",
+      "status": "non-kit-route",
+      "route": "description"
+    },
+    {
+      "path": "root.store-seer_last_used_p1_team.json.team.4",
+      "elfId": "5000",
+      "elfName": "聖靈譜尼",
+      "key": "pool:\"璨靈聖光\":0",
+      "name": "璨靈聖光",
+      "status": "untracked",
+      "differences": [
+        "statusEffects"
+      ]
+    },
+    {
+      "path": "root.store-seer_last_used_p2_team.json.team.0",
+      "elfId": "arena_12",
+      "elfName": "無為龍者",
+      "key": "skill:\"百法拜\":0",
+      "name": "百法拜",
+      "status": "untracked",
+      "differences": [
+        "type"
+      ]
+    },
+    {
+      "path": "root.store-seer_last_used_p2_team.json.team.0",
+      "elfId": "arena_12",
+      "elfName": "無為龍者",
+      "key": "skill:\"十玄釋\":0",
+      "name": "十玄釋",
+      "status": "untracked",
+      "differences": [
+        "type"
+      ]
+    },
+    {
+      "path": "root.store-seer_last_used_p2_team.json.team.0",
+      "elfId": "arena_12",
+      "elfName": "無為龍者",
+      "key": "pool:\"百法拜\":0",
+      "name": "百法拜",
+      "status": "untracked",
+      "differences": [
+        "type"
+      ]
+    },
+    {
+      "path": "root.store-seer_last_used_p2_team.json.team.0",
+      "elfId": "arena_12",
+      "elfName": "無為龍者",
+      "key": "pool:\"十玄釋\":0",
+      "name": "十玄釋",
+      "status": "untracked",
+      "differences": [
+        "type"
+      ]
+    },
+    {
+      "path": "root.store-seer_last_used_p2_team.json.team.0",
+      "elfId": "arena_12",
+      "elfName": "無為龍者",
+      "key": "generalTrait",
+      "name": "吸血",
+      "status": "source-missing"
+    },
+    {
+      "path": "root.store-seer_last_used_p2_team.json.team.0",
+      "elfId": "arena_12",
+      "definition": "arena_12:generalTrait",
+      "status": "non-kit-route",
+      "route": "description"
+    },
+    {
+      "path": "root.store-seer_last_used_p2_team.json.team.1",
+      "elfId": "arena_16",
+      "elfName": "鎮世龍魂・龍之治癒",
+      "key": "skill:\"挨打要立正\":0",
+      "name": "挨打要立正",
+      "status": "untracked",
+      "differences": [
+        "type"
+      ]
+    },
+    {
+      "path": "root.store-seer_last_used_p2_team.json.team.1",
+      "elfId": "arena_16",
+      "elfName": "鎮世龍魂・龍之治癒",
+      "key": "skill:\"幽魔相嘯\":0",
+      "name": "幽魔相嘯",
+      "status": "untracked",
+      "differences": [
+        "type"
+      ]
+    },
+    {
+      "path": "root.store-seer_last_used_p2_team.json.team.1",
+      "elfId": "arena_16",
+      "elfName": "鎮世龍魂・龍之治癒",
+      "key": "pool:\"挨打要立正\":0",
+      "name": "挨打要立正",
+      "status": "untracked",
+      "differences": [
+        "type"
+      ]
+    },
+    {
+      "path": "root.store-seer_last_used_p2_team.json.team.1",
+      "elfId": "arena_16",
+      "elfName": "鎮世龍魂・龍之治癒",
+      "key": "pool:\"幽魔相嘯\":0",
+      "name": "幽魔相嘯",
+      "status": "untracked",
+      "differences": [
+        "type"
+      ]
+    },
+    {
+      "path": "root.store-seer_last_used_p2_team.json.team.2",
+      "elfId": "arena_15",
+      "elfName": "命運龍輪 莫伊萊",
+      "key": "skill:\"列星安辰\":0",
+      "name": "列星安辰",
+      "status": "untracked",
+      "differences": [
+        "type"
+      ]
+    },
+    {
+      "path": "root.store-seer_last_used_p2_team.json.team.2",
+      "elfId": "arena_15",
+      "elfName": "命運龍輪 莫伊萊",
+      "key": "skill:\"日月安屬\":0",
+      "name": "日月安屬",
+      "status": "untracked",
+      "differences": [
+        "type",
+        "isSureHit"
+      ]
+    },
+    {
+      "path": "root.store-seer_last_used_p2_team.json.team.2",
+      "elfId": "arena_15",
+      "elfName": "命運龍輪 莫伊萊",
+      "key": "pool:\"列星安辰\":0",
+      "name": "列星安辰",
+      "status": "untracked",
+      "differences": [
+        "type"
+      ]
+    },
+    {
+      "path": "root.store-seer_last_used_p2_team.json.team.2",
+      "elfId": "arena_15",
+      "elfName": "命運龍輪 莫伊萊",
+      "key": "pool:\"日月安屬\":0",
+      "name": "日月安屬",
+      "status": "untracked",
+      "differences": [
+        "type",
+        "isSureHit"
+      ]
+    },
+    {
+      "path": "root.store-seer_last_used_p2_team.json.team.3",
+      "elfId": "arena_14",
+      "elfName": "無極聖武",
+      "key": "skill:\"烈武天徵\":0",
+      "name": "烈武天徵",
+      "status": "untracked",
+      "differences": [
+        "type"
+      ]
+    },
+    {
+      "path": "root.store-seer_last_used_p2_team.json.team.3",
+      "elfId": "arena_14",
+      "elfName": "無極聖武",
+      "key": "skill:\"亂武天傀\":0",
+      "name": "亂武天傀",
+      "status": "untracked",
+      "differences": [
+        "type"
+      ]
+    },
+    {
+      "path": "root.store-seer_last_used_p2_team.json.team.3",
+      "elfId": "arena_14",
+      "elfName": "無極聖武",
+      "key": "pool:\"烈武天徵\":0",
+      "name": "烈武天徵",
+      "status": "untracked",
+      "differences": [
+        "type"
+      ]
+    },
+    {
+      "path": "root.store-seer_last_used_p2_team.json.team.3",
+      "elfId": "arena_14",
+      "elfName": "無極聖武",
+      "key": "pool:\"亂武天傀\":0",
+      "name": "亂武天傀",
+      "status": "untracked",
+      "differences": [
+        "type"
+      ]
+    },
+    {
+      "path": "root.store-seer_last_used_p2_team.json.team.4",
+      "elfId": "arena_13",
+      "elfName": "龍錄天鋒",
+      "key": "skill:\"艷羅劍典\":0",
+      "name": "艷羅劍典",
+      "status": "untracked",
+      "differences": [
+        "type"
+      ]
+    },
+    {
+      "path": "root.store-seer_last_used_p2_team.json.team.4",
+      "elfId": "arena_13",
+      "elfName": "龍錄天鋒",
+      "key": "pool:\"艷羅劍典\":0",
+      "name": "艷羅劍典",
+      "status": "untracked",
+      "differences": [
+        "type"
+      ]
+    },
+    {
+      "path": "root.store-seer_p1_backpack_presets.json.1.team.0",
+      "elfId": "5029",
+      "elfName": "異境神霆·雷伊",
+      "key": "alienTrait",
+      "name": "強化",
+      "status": "source-missing"
+    },
+    {
+      "path": "root.store-seer_p1_backpack_presets.json.1.team.0",
+      "elfId": "5029",
+      "elfName": "異境神霆·雷伊",
+      "key": "generalTrait",
+      "name": "亂舞",
+      "status": "source-missing"
+    },
+    {
+      "path": "root.store-seer_p1_backpack_presets.json.1.team.0",
+      "elfId": "5029",
+      "definition": "5029:alienTrait",
+      "status": "non-kit-route",
+      "route": "description"
+    },
+    {
+      "path": "root.store-seer_p1_backpack_presets.json.1.team.0",
+      "elfId": "5029",
+      "definition": "5029:generalTrait",
+      "status": "non-kit-route",
+      "route": "description"
+    },
+    {
+      "path": "root.store-seer_p1_backpack_presets.json.2.team.4",
+      "elfId": "5000",
+      "elfName": "聖靈譜尼",
+      "key": "pool:\"璨靈聖光\":0",
+      "name": "璨靈聖光",
+      "status": "untracked",
+      "differences": [
+        "statusEffects"
+      ]
+    },
+    {
+      "path": "root.store-seer_p1_backpack_presets.json.2.team.7",
+      "elfId": "arena_12",
+      "elfName": "無為龍者",
+      "key": "pool:\"百法拜\":0",
+      "name": "百法拜",
+      "status": "untracked",
+      "differences": [
+        "type"
+      ]
+    },
+    {
+      "path": "root.store-seer_p1_backpack_presets.json.2.team.7",
+      "elfId": "arena_12",
+      "elfName": "無為龍者",
+      "key": "pool:\"十玄釋\":0",
+      "name": "十玄釋",
+      "status": "untracked",
+      "differences": [
+        "type"
+      ]
+    },
+    {
+      "path": "root.store-seer_p1_backpack_presets.json.2.team.7",
+      "elfId": "arena_12",
+      "elfName": "無為龍者",
+      "key": "generalTrait",
+      "name": "吸血",
+      "status": "source-missing"
+    },
+    {
+      "path": "root.store-seer_p1_backpack_presets.json.2.team.7",
+      "elfId": "arena_12",
+      "definition": "arena_12:generalTrait",
+      "status": "non-kit-route",
+      "route": "description"
+    },
+    {
+      "path": "root.store-seer_p1_backpack_presets.json.3.team.0",
+      "elfId": "5012",
+      "elfName": "冰魄·柯爾德",
+      "key": "pool:\"霜凍之錮\":0",
+      "name": "霜凍之錮",
+      "status": "untracked",
+      "differences": [
+        "kit"
+      ],
+      "kitDifferences": [
+        "kit.3.params.clause.body.0.acts.0.p.trig",
+        "kit.3.params.clause.body.0.acts.0.p.initial"
+      ]
+    },
+    {
+      "path": "root.store-seer_p2_backpack_presets.json.1.team.1",
+      "elfId": "5006",
+      "elfName": "星光·魔焰猩猩",
+      "key": "pool:\"星光·壓迫\":0",
+      "name": "星光·壓迫",
+      "status": "untracked",
+      "differences": [
+        "kit"
+      ],
+      "kitDifferences": [
+        "kit.0.params.clause.body.0.acts.0.p.trig",
+        "kit.0.params.clause.body.0.acts.0.p.initial"
+      ]
+    },
+    {
+      "path": "root.store-seer_p2_backpack_presets.json.1.team.2",
+      "elfId": "5011",
+      "elfName": "星光·麗莎布布",
+      "key": "pool:\"寄生種子\":0",
+      "name": "寄生種子",
+      "status": "untracked",
+      "differences": [
+        "kit"
+      ],
+      "kitDifferences": [
+        "kit.0.params.clause.body.0.acts.0.p.trig",
+        "kit.0.params.clause.body.0.acts.0.p.initial"
+      ]
+    },
+    {
+      "path": "root.store-seer_p2_backpack_presets.json.1.team.4",
+      "elfId": "arena_12",
+      "elfName": "無為龍者",
+      "key": "pool:\"百法拜\":0",
+      "name": "百法拜",
+      "status": "untracked",
+      "differences": [
+        "type"
+      ]
+    },
+    {
+      "path": "root.store-seer_p2_backpack_presets.json.1.team.4",
+      "elfId": "arena_12",
+      "elfName": "無為龍者",
+      "key": "pool:\"十玄釋\":0",
+      "name": "十玄釋",
+      "status": "untracked",
+      "differences": [
+        "type"
+      ]
+    },
+    {
+      "path": "root.store-seer_p2_backpack_presets.json.1.team.4",
+      "elfId": "arena_12",
+      "elfName": "無為龍者",
+      "key": "generalTrait",
+      "name": "吸血",
+      "status": "source-missing"
+    },
+    {
+      "path": "root.store-seer_p2_backpack_presets.json.1.team.4",
+      "elfId": "arena_12",
+      "definition": "arena_12:generalTrait",
+      "status": "non-kit-route",
+      "route": "description"
+    },
+    {
+      "path": "root.store-seer_p2_backpack_presets.json.2.team.0",
+      "elfId": "arena_12",
+      "elfName": "無為龍者",
+      "key": "pool:\"百法拜\":0",
+      "name": "百法拜",
+      "status": "untracked",
+      "differences": [
+        "type"
+      ]
+    },
+    {
+      "path": "root.store-seer_p2_backpack_presets.json.2.team.0",
+      "elfId": "arena_12",
+      "elfName": "無為龍者",
+      "key": "pool:\"十玄釋\":0",
+      "name": "十玄釋",
+      "status": "untracked",
+      "differences": [
+        "type"
+      ]
+    },
+    {
+      "path": "root.store-seer_p2_backpack_presets.json.2.team.0",
+      "elfId": "arena_12",
+      "elfName": "無為龍者",
+      "key": "generalTrait",
+      "name": "吸血",
+      "status": "source-missing"
+    },
+    {
+      "path": "root.store-seer_p2_backpack_presets.json.2.team.0",
+      "elfId": "arena_12",
+      "definition": "arena_12:generalTrait",
+      "status": "non-kit-route",
+      "route": "description"
+    },
+    {
+      "path": "root.store-seer_p2_backpack_presets.json.2.team.1",
+      "elfId": "arena_16",
+      "elfName": "鎮世龍魂・龍之治癒",
+      "key": "pool:\"挨打要立正\":0",
+      "name": "挨打要立正",
+      "status": "untracked",
+      "differences": [
+        "type"
+      ]
+    },
+    {
+      "path": "root.store-seer_p2_backpack_presets.json.2.team.1",
+      "elfId": "arena_16",
+      "elfName": "鎮世龍魂・龍之治癒",
+      "key": "pool:\"幽魔相嘯\":0",
+      "name": "幽魔相嘯",
+      "status": "untracked",
+      "differences": [
+        "type"
+      ]
+    },
+    {
+      "path": "root.store-seer_p2_backpack_presets.json.2.team.2",
+      "elfId": "arena_15",
+      "elfName": "命運龍輪 莫伊萊",
+      "key": "skill:\"日月安屬\":0",
+      "name": "日月安屬",
+      "status": "untracked",
+      "differences": [
+        "isSureHit"
+      ]
+    },
+    {
+      "path": "root.store-seer_p2_backpack_presets.json.2.team.2",
+      "elfId": "arena_15",
+      "elfName": "命運龍輪 莫伊萊",
+      "key": "pool:\"列星安辰\":0",
+      "name": "列星安辰",
+      "status": "untracked",
+      "differences": [
+        "type"
+      ]
+    },
+    {
+      "path": "root.store-seer_p2_backpack_presets.json.2.team.2",
+      "elfId": "arena_15",
+      "elfName": "命運龍輪 莫伊萊",
+      "key": "pool:\"日月安屬\":0",
+      "name": "日月安屬",
+      "status": "untracked",
+      "differences": [
+        "type",
+        "isSureHit"
+      ]
+    },
+    {
+      "path": "root.store-seer_p2_backpack_presets.json.2.team.3",
+      "elfId": "arena_14",
+      "elfName": "無極聖武",
+      "key": "pool:\"烈武天徵\":0",
+      "name": "烈武天徵",
+      "status": "untracked",
+      "differences": [
+        "type"
+      ]
+    },
+    {
+      "path": "root.store-seer_p2_backpack_presets.json.2.team.3",
+      "elfId": "arena_14",
+      "elfName": "無極聖武",
+      "key": "pool:\"亂武天傀\":0",
+      "name": "亂武天傀",
+      "status": "untracked",
+      "differences": [
+        "type"
+      ]
+    },
+    {
+      "path": "root.store-seer_p2_backpack_presets.json.2.team.4",
+      "elfId": "arena_13",
+      "elfName": "龍錄天鋒",
+      "key": "pool:\"艷羅劍典\":0",
+      "name": "艷羅劍典",
+      "status": "untracked",
+      "differences": [
+        "type"
+      ]
+    },
+    {
+      "path": "root.store-seer_p2_backpack_presets.json.3.team.4",
+      "elfId": "5000",
+      "elfName": "聖靈譜尼",
+      "key": "pool:\"璨靈聖光\":0",
+      "name": "璨靈聖光",
+      "status": "untracked",
+      "differences": [
+        "statusEffects"
+      ]
+    }
+  ],
+  "note": "只驗證修復後來源版本與差異，不代表積木合約或戰鬥語意正確率。技能池與出戰技能分別計數。輸入不修改。"
+}

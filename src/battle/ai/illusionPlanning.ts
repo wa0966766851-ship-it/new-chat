@@ -5,6 +5,7 @@ import { ILLUSION_OVERRIDE_KEY } from '../illusion';
 import { checkElfDead } from '../elfAlive';
 import { opposite, type AISide, type PlannedAction } from './types';
 import { BATTLE_ITEMS } from '../../utils/battleHelpers';
+import { soulDefinition } from '../../effects/soulDefinitionSource';
 
 function illusionPicks(value: unknown): string[] {
   if (!value || typeof value !== 'object') return [];
@@ -31,7 +32,7 @@ export function illusionOverrideValue(state: BattleState, side: AISide, pick?: {
   let best = 0;
   for (const elf of teams[side]) {
     if (checkElfDead(elf) || (elf.battleId || elf.id) === (target.battleId || target.id) && side === pick.side) continue;
-    const kits = [elf.kit, elf.soulMark?.kit, elf.trait?.kit, elf.alienTraits?.gen2Trait?.kit,
+    const kits = [soulDefinition(elf).kit, elf.trait?.kit, elf.alienTraits?.gen2Trait?.kit,
       elf.alienTraits?.exclusiveTrait?.kit, ...elf.alienTraits?.exclusiveTraits?.map(t => t.kit) || [], ...elf.skills.map(s => s.kit)];
     for (const mode of illusionPicks(kits)) {
       const normal = mode === 'paired_initial' ? correspondingBagElf(teams[side], elf) : state[opposite(side)];

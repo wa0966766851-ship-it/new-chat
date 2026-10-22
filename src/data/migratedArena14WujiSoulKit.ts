@@ -32,6 +32,7 @@ export const MIGRATED_ARENA14_WUJI_SOUL_KIT = {
       { acts: [
         a('count_team_trait', { side: 'self', state: 'any', traitText: 'lowChanceStatus', excludeSelf:true, matchedWeight:-1, unmatchedWeight:1, traitSources:['soul','general'] }),
         a('resource_mark_add', { id: 'arena.heroGlory', name: '英雄之耀', displayChar: '耀', unit: '層', side: 'self', scope: 'elf', persistsOffField: true, ratio: 1, maxCount: 99, description: '每層提升自身其他能力值（雙攻差15%）並於登場時為對手附加1回合武誅' }),
+        a('stat_points_add_gap',{stats:['hp','def','spdef','speed'],stats2:['atk','spatk'],ratio:.15,markId:'arena.heroGlory'}),
       ] },
     ], 0),
     e('on_entered','entrance','【英雄之耀】：自身登場時為對手附加等同層數回合的武誅',[{acts:[a('mark_program',{

@@ -89782,6 +89782,24 @@
                           "unit": "層",
                           "id": "arena.heroGlory"
                         }
+                      },
+                      {
+                        "label": "stat_points_add_gap",
+                        "op": "stat_points_add_gap",
+                        "p": {
+                          "markId": "arena.heroGlory",
+                          "stats2": [
+                            "atk",
+                            "spatk"
+                          ],
+                          "ratio": 0.15,
+                          "stats": [
+                            "hp",
+                            "def",
+                            "spdef",
+                            "speed"
+                          ]
+                        }
                       }
                     ]
                   }

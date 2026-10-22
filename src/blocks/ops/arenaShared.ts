@@ -143,9 +143,17 @@ export function hpStepsCompute(ctx: any, p: any, liveElf: (ctx: any, side: any) 
 export const ARENA_SHARED_ACTION_FIELDS: Record<string, readonly string[]> = {
   // branches：語句陣列的陣列——擲一次骰，等機率執行其中一個分支的主體。
   random_branch: ['branches'],
+  stat_points_add_gap: ['stats','stats2','ratio','markId'],
 };
 
 export function arenaSharedActionIssue(op: string, p: any, nested: (body: any[], trig: string) => string | null): string | null {
+  if(op==='stat_points_add_gap'){
+    const keys=['hp','atk','spatk','def','spdef','speed'];
+    if(!Array.isArray(p.stats)||!p.stats.length||new Set(p.stats).size!==p.stats.length||p.stats.some((k:string)=>!keys.includes(k))||
+      !Array.isArray(p.stats2)||p.stats2.length!==2||p.stats2[0]===p.stats2[1]||p.stats2.some((k:string)=>!keys.includes(k))||
+      !Number.isFinite(p.ratio)||p.ratio<0||p.ratio>10||typeof p.markId!=='string'||!p.markId)return '能力差值加算需明確能力清單、兩個不同基數、有限比例與資源印記';
+    return null;
+  }
   if (op === 'random_branch') {
     if (!Array.isArray(p.branches) || p.branches.length < 2 || p.branches.length > 10) return '隨機分支需2至10個分支主體';
     for (const b of p.branches) {
@@ -190,6 +198,21 @@ export function arenaSharedOperations(helpers: {
       const half = Math.floor(sum / 2);
       (ctx as any).updateElf?.(ctx.actor, { calculatedStats: { ...stats, ...Object.fromEntries(keys.map(k => [k, half])) } });
       ctx.addLog?.('⚖️ 能力重設：六維全部變為總和的一半（' + half + '）', 'effect');
+      return true;
+    },
+    stat_points_add_gap: (ctx: Ctx2,p:any,st:St2): boolean => {
+      const elf=helpers.liveElf(ctx,ctx.actor);
+      if(!elf?.calculatedStats)return false;
+      const marks=ctx.getMarks(ctx.actor).filter(m=>m.id===p.markId);
+      const count=marks.reduce((n,m)=>Math.max(n,Number(m.count)||0),0);
+      const stats={...elf.calculatedStats};
+      const gap=Math.abs((Number(stats[p.stats2[0] as keyof typeof stats])||0)-(Number(stats[p.stats2[1] as keyof typeof stats])||0));
+      const gain=Math.floor(gap*p.ratio*Math.max(0,count));
+      st.lastAmount=gain;
+      if(!gain)return false;
+      for(const key of p.stats as (keyof typeof stats)[])stats[key]=(Number(stats[key])||0)+gain;
+      ctx.updateElf(ctx.actor,{calculatedStats:stats,...(p.stats.includes('hp')?{maxHp:elf.maxHp+gain,currentHp:elf.currentHp+gain}:{})});
+      ctx.addLog(`能力差值加算：${p.stats.join('／')}各+${gain}（差值${gap}×${p.ratio}×${count}層）`,'effect');
       return true;
     },
     // 必定命中並強制執行命中效果（0 PP 使用技能時）。

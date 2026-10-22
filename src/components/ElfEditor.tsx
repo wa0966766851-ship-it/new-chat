@@ -10,6 +10,7 @@ import { BlueprintImportButton } from './BlueprintImportButton';
 import { Elf, Skill, BaseStats, Inscription, DecompositionReport } from "../types";
 import { KitEntry } from "../effects/effectSystem.schema";
 import type { EffectDefinition, EffectExecutionMode } from '../effects/effectConnection';
+import {soulDefinition} from '../effects/soulDefinitionSource';
 import { calculateElfStats, SEER_TYPES, getDefaultEvs, getAttributeBadgeColor } from "../utils/statCalculator";
 import { getElfDisplayRank as getElfDestinyRank } from "../utils/elfDisplayRank";
 import { validateSeerNature, getDefaultNatureModifiers } from "../utils/seerNatures";
@@ -1091,7 +1092,7 @@ export default function ElfEditor({ initialElf: suppliedElf, onSaveElf, onBack, 
   const [soulMarkEffectType, setSoulMarkEffectType] = useState<any>("paralyze_chance");
   const [soulMarkValue, setSoulMarkValue] = useState<number>(30);
   const [soulMarkCustomCode, setSoulMarkCustomCode] = useState<string>("");
-  const [kit, setKit] = useState<KitEntry[]>(initialElf?.soulMark?.kit ?? initialElf?.kit ?? []);
+  const [kit, setKit] = useState<KitEntry[]>(initialElf ? soulDefinition(initialElf).kit ?? [] : []);
   const [soulEffectMode, setSoulEffectMode] = useState<EffectExecutionMode>(initialElf?.soulMark?.effectMode || 'auto');
   const [traitEffectConfigs, setTraitEffectConfigs] = useState<Record<string, Partial<EffectDefinition>>>({});
   const [guildBonuses, setGuildBonuses] = useState<BaseStats>(initialElf?.guildBonuses || {
@@ -1204,7 +1205,7 @@ export default function ElfEditor({ initialElf: suppliedElf, onSaveElf, onBack, 
       setSoulMarkEffectType(initialElf.soulMark?.effectType || "none");
       setSoulMarkValue(initialElf.soulMark?.effectValue || 0);
       setSoulMarkCustomCode(initialElf.soulMark?.customCode || "");
-      setKit(initialElf.soulMark?.kit ?? initialElf.kit ?? []);
+      setKit(soulDefinition(initialElf).kit ?? []);
       setSoulEffectMode(initialElf.soulMark?.effectMode || 'auto');
       setTraitEffectConfigs({});
       if (initialElf.guildBonuses) {
@@ -1457,7 +1458,7 @@ export default function ElfEditor({ initialElf: suppliedElf, onSaveElf, onBack, 
         badgeChar: soulMarkBadgeChar,
         customCode: soulMarkCustomCode,
         effectMode: soulEffectMode,
-        kit: undefined, // 編輯器以根 kit 為唯一魂印儲存位置，兼容舊根欄位。
+        kit, // 正式魂印欄位與執行／版本追蹤一致；根 kit 只保留相容別名。
       },
       kit: kit,
       alienTraits: (!isZhakesi && (gen2TraitName || exTraitName || alienTraitName || generalTraitName || exclusiveTraits.length)) ? {
@@ -2249,7 +2250,7 @@ export default function ElfEditor({ initialElf: suppliedElf, onSaveElf, onBack, 
     level: 100, path: path || undefined, baseStats, calculatedStats: calculatedManualStats,
     currentHp: calculatedManualStats.hp, maxHp: calculatedManualStats.hp, skills, skillPool,
     soulMark: { ...initialElf?.soulMark, name: soulMarkName, description: soulMarkDesc,
-      effectType: soulMarkEffectType, effectValue: soulMarkValue, effectMode: soulEffectMode, kit: undefined }, kit,
+      effectType: soulMarkEffectType, effectValue: soulMarkValue, effectMode: soulEffectMode, kit }, kit,
     trait: initialElf?.trait ? { ...initialElf.trait, ...traitEffectConfigs.trait } : undefined,
     alienTraits: {
       gen2Trait: gen2TraitName ? { ...initialElf?.alienTraits?.gen2Trait, ...traitEffectConfigs.gen2Trait, name: gen2TraitName, description: gen2TraitDesc } : undefined,

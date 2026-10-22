@@ -33,10 +33,19 @@ const EffectLibraryModal = lazy(() => import("./EffectLibraryModal").then(m => (
 const SkillStonePicker = lazy(() => import('./SkillStonePicker'));
 // 與星蝕回廊共用的搜尋＋屬性篩選挑選器；只在開啟「選擇精靈」視窗時才載入（首頁初始 JS 預算 950 kB）。
 const ElfPicker = lazy(() => import("./shared/ElfPicker").then(m => ({ default: m.ElfPicker as React.ComponentType<any> })));
+/** Aegis 殼的「背包與編成」獨立版面（2026-10-22 重建） */
+const LegacyTeamWorkspace = lazy(() => import("../shell/scenes/LegacyTeamWorkspace").then(m => ({ default: m.LegacyTeamWorkspace })));
 const detailLoading = <p role="status" className="p-3 text-sm text-slate-400">載入效果資料…</p>;
 const detailPanelLoading = <p role="status" className="ios-card min-h-24 p-4 text-sm text-slate-400">載入詳細面板…</p>;
 
 interface StartScreenProps {
+  /** Aegis 殼：背包與編成頁用自己的版面（2026-10-22） */
+  presentation?: "legacy" | "aegis";
+  /** 返回首頁（Aegis 的背包與編成頁需要自己的返回鈕） */
+  onBackToLobby?: () => void;
+  /** 2026-10-22 補回：沒這個 prop 時巔峰/3V3 進背包會被重設成自由戰 */
+  initialBattleFormat?: "normal_6v6" | "solo_1v1" | "peak_6v6" | "peak_3v3";
+  initialBattleMode?: BattleMode;
   allElves?: Elf[];
   onStartBattle: (
     mode: BattleMode,
@@ -84,6 +93,10 @@ function syncSavedSkillPp(e: any) {
 
 
 export default function StartScreen({
+  presentation = "legacy",
+  onBackToLobby,
+  initialBattleFormat,
+  initialBattleMode,
   hostPlayer = "p1",
   onHostPlayerChange,
   onStartBattle,
@@ -99,7 +112,8 @@ export default function StartScreen({
   const onDeleteCustomElf = deleteCustomElf;
   const onRestoreDeletedElves = restoreDeletedElves;
 
-  const [battleMode, setBattleMode] = useState<BattleMode>("PVE");
+  const [battleMode, setBattleMode] = useState<BattleMode>(initialBattleMode ?? "PVE");
+  const [showOriginalManagement, setShowOriginalManagement] = useState(false);
   const [selectedTypes, setSelectedTypes] = useState<string[]>([]);
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [isAnalyzing, setIsAnalyzing] = useState<string | null>(null);
@@ -240,7 +254,7 @@ export default function StartScreen({
   };
 
   // Peak Arena BP & Format States
-  const [battleFormat, setBattleFormat] = useState<"normal_6v6" | "solo_1v1" | "peak_6v6" | "peak_3v3">("normal_6v6");
+  const [battleFormat, setBattleFormat] = useState<"normal_6v6" | "solo_1v1" | "peak_6v6" | "peak_3v3">(initialBattleFormat ?? "normal_6v6");
   const [banCount, setBanCount] = useState<number>(1);
   const [pickCount, setPickCount] = useState<number>(6);
   const [bpPhase, setBpPhase] = useState<"closed" | "ban_p1" | "ban_p2" | "pick_p1" | "pick_p2" | "pick_standby_p1" | "pick_standby_p2">("closed");
@@ -1281,6 +1295,43 @@ export default function StartScreen({
       setShowAnalyzeModal(null);
     }
   };
+
+  /*
+    Aegis 殼的「背包與編成」走獨立版面（2026-10-22 重建）。
+    賽制由 initialBattleFormat 傳入，不再被重設成自由戰。
+  */
+  if (presentation === "aegis") {
+    return (
+      <div className="h-full min-h-0 w-full" id="start-screen-container">
+        <Suspense fallback={null}>
+          <LegacyTeamWorkspace
+            back={onBackToLobby ?? (() => {})}
+            manageLibrary={() => {}}
+            elves={allElves ?? []} message={saveSuccessMsg} detail={setShowDetailModal} create={onNavigateToCustom}
+            start={handleStart} swapTeams={handleSwapTeams} mode={battleMode} setMode={setBattleMode}
+            host={hostPlayer} setHost={h => onHostPlayerChange?.(h)} format={battleFormat} setFormat={setBattleFormat}
+            banCount={banCount} setBanCount={setBanCount} pickCount={pickCount} setPickCount={setPickCount}
+            sides={{
+              p1: { team:p1Team, starterId:p1StarterId, annual:p1AnnualBonus, suit:p1Suit, eyewear:p1Eyewear, title:p1Title,
+                presets:backpackPresets, hasRecord:!!lastUsedRecord?.team?.length, setAnnual:setP1AnnualBonus,
+                setSuit:handleSetP1Suit, setEyewear:handleSetP1Eyewear, setTitle:handleSetP1Title,
+                starter:handleSetP1Starter, remove:handleRemoveP1, choose:index=>setShowSelectionModal({player:'p1',slotIndex:index}),
+                swap:(from,to)=>handleSlotSwap('p1',from,to), swapStandby:()=>handleSwapAllActiveStandby('p1'),
+                clear:handleClearP1Team, randomize:handleRandomizeP1, copyOther:handleCopyAIToP1,
+                save:handleSaveLastUsed, load:handleLoadLastUsed, savePreset:handleSavePreset, loadPreset:handleLoadPreset, add:handleAddP1 },
+              p2: { team:p2Team, starterId:p2StarterId, annual:p2AnnualBonus, suit:p2Suit, eyewear:p2Eyewear, title:p2Title,
+                presets:backpackPresetsP2, hasRecord:!!lastUsedRecordP2?.team?.length, setAnnual:setP2AnnualBonus,
+                setSuit:handleSetP2Suit, setEyewear:handleSetP2Eyewear, setTitle:handleSetP2Title,
+                starter:handleSetP2Starter, remove:handleRemoveP2, choose:index=>setShowSelectionModal({player:'p2',slotIndex:index}),
+                swap:(from,to)=>handleSlotSwap('p2',from,to), swapStandby:()=>handleSwapAllActiveStandby('p2'),
+                clear:handleClearP2Team, randomize:handleRandomizeAI, copyOther:handleCopyP1ToAI,
+                save:handleSaveLastUsedP2, load:handleLoadLastUsedP2, savePreset:handleSavePresetP2, loadPreset:handleLoadPresetP2, add:handleAddP2 },
+            }}
+          />
+        </Suspense>
+      </div>
+    );
+  }
 
   return (
     <div className="w-full max-w-7xl mx-auto px-4 pb-8 pt-20 sm:px-6 sm:py-8" id="start-screen-container">

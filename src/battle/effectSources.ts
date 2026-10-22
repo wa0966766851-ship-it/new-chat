@@ -1,18 +1,19 @@
 import type { Elf } from '../types';
 import type { EffectDefinition } from '../effects/effectConnection';
+import { soulDefinition } from '../effects/soulDefinitionSource';
 
 /** 取得效果只借用定義，不能借用目標戰鬥身分、體力、印記或存活規則。 */
 export function effectSourceViews(elf: Elf): Elf[] {
   const own = { ...elf, illusion: undefined };
   const source = elf.illusion?.target;
-  return source ? [own, { ...own, name: source.name, soulMark: source.soulMark,
+  return source ? [own, { ...own, name: source.name, soulMark: source.soulMark, kit: source.kit,
     trait: source.trait, alienTraits: source.alienTraits }] : [own];
 }
 
 export function effectDefinitionEntries(elf: Elf) {
   return effectSourceViews(elf).flatMap((sourceElf, i) => {
     const entries = [
-      sourceElf.soulMark && { kind: '專屬特性／魂印', soul: true, ...sourceElf.soulMark },
+      sourceElf.soulMark && { kind: '專屬特性／魂印', soul: true, ...soulDefinition(sourceElf) },
       sourceElf.trait && { kind: '通用特性', ...sourceElf.trait },
       sourceElf.alienTraits?.gen2Trait && { kind: '二代異能特質', ...sourceElf.alienTraits.gen2Trait },
       sourceElf.alienTraits?.exclusiveTrait && { kind: '專屬異能特質', ...sourceElf.alienTraits.exclusiveTrait },
