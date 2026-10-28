@@ -1,0 +1,18 @@
+{
+  "seerId": 3809,
+  "source": "SeerAPI/seer-unity-assets",
+  "verified": "sha256 與上游一致（2026-10-29 核對）",
+  "retrievedAt": "2026-10-29T02:00:00.000Z",
+  "files": [
+    {
+      "path": "seer/body/3809.png",
+      "source": "https://raw.githubusercontent.com/SeerAPI/seer-unity-assets/main/newseer/assets/art/ui/assets/pet/body/3809.png",
+      "sha256": "c0ec3d13110ea88bdd3b2a3fa079530bc4ab988855ad1a89965f8b8181833e65"
+    },
+    {
+      "path": "seer/head/3809.png",
+      "source": "https://raw.githubusercontent.com/SeerAPI/seer-unity-assets/main/newseer/assets/art/ui/assets/pet/head/3809.png",
+      "sha256": "e158592ce69539980038ab79686f38c0d595733147dae9cf6e4ed72d6408b69d"
+    }
+  ]
+}
