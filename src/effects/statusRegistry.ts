@@ -451,14 +451,14 @@ export const StatusRegistry: Record<string, StatusRegistryEntry> = {
   },
   '神話': {
     name: '神話',
-    categories: ['BOSS_ONLY'],
-    description: 'BOSS 專用異常狀態（黃色圖標）；免疫能力下降與異常狀態、PP 無限、所有技能必中（命中率強制 100%）。免弱免控在我方當回合出手後才啟用。無回合數且不會隨回合遞減，下場後保留。',
+    categories: ['AUXILIARY', 'BOSS_ONLY'],
+    description: '附屬類異常；BOSS 類異常；處於該異常狀態則免疫能力下降與異常狀態、PP 無限、所有技能必中（命中率強制 100%）。免弱免控在我方當回合出手後才啟用。無回合數且不會隨回合遞減，下場後保留。',
     mechanics: [{ type: 'SPECIAL_BUFF', params: { immuneStatDebuff: true, immuneStatus: true, infinitePP: true, sureHit: true } }]
   },
   '免疫': {
     name: '免疫',
-    categories: ['BOSS_ONLY'],
-    description: 'BOSS 專用異常狀態（藍色圖標）；免疫異常狀態、PP 無限。無回合數且不會隨回合遞減，下場後保留。',
+    categories: ['AUXILIARY', 'BOSS_ONLY'],
+    description: '附屬類異常；BOSS 類異常；處於該異常狀態則免疫異常狀態、PP 無限。無回合數且不會隨回合遞減，下場後保留。',
     mechanics: [{ type: 'SPECIAL_BUFF', params: { immuneStatus: true, infinitePP: true } }]
   },
   '異常抵抗': {

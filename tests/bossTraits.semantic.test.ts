@@ -34,7 +34,7 @@ await check('37 條特性：id／狀態／名稱不重複，BWIKI 名稱逐一�
 await check('每條特性都是 BOSS_ONLY 狀態（神話沿用既有），含說明、參數預設與圖示', () => {
   for (const t of BOSS_TRAITS) {
     const entry = StatusRegistry[t.status];
-    assert.ok(entry, `${t.name}：已登記`); assert.deepEqual(entry.categories, ['BOSS_ONLY'], `${t.name}：BOSS_ONLY`);
+    assert.ok(entry, `${t.name}：已登記`); assert.deepEqual(entry.categories, ['AUXILIARY', 'BOSS_ONLY'], `${t.name}：附屬類 + BOSS_ONLY`);
     assert.ok(entry.description.length > 10, `${t.name}：有說明`); assert.ok(!/\{[xys]\}/.test(bossTraitText(t)), `${t.name}：說明沒有殘留佔位`);
     if (t.conf === 'existing') { assert.equal(t.status, '神話'); continue; }
     assert.equal(entry.name, t.status); assert.equal((entry.mechanics[0].params as any).bossTrait, t.id);
@@ -48,10 +48,13 @@ await check('每條特性都是 BOSS_ONLY 狀態（神話沿用既有），含�
   assert.deepEqual(StatusRegistry['神話'].mechanics[0].params, { immuneStatDebuff: true, immuneStatus: true, infinitePP: true, sureHit: true }, '神話機制不變');
   assert.deepEqual(StatusRegistry['特性·力量'].categories, ['AUXILIARY'], '覺醒的力量是有回合數的附屬類');
 });
-await check('圖示對應：30 枚原廠圖各用一次、確定／推測／無圖數量與文件一致，圖檔與徽記存在', () => {
+  await check('圖示對應：依官方 bossEffectIcon 一對一、確定／推測／無圖數量與文件一致，圖檔與徽記存在', () => {
   const withIcon = BOSS_TRAITS.filter(t => t.conf === 'sure' || t.conf === 'guess');
-  assert.equal(withIcon.length, 30); assert.deepEqual(withIcon.map(t => t.icon).sort((a, b) => a! - b!), Array.from({ length: 30 }, (_, i) => i));
-  assert.deepEqual(['sure', 'guess', 'none', 'existing'].map(c => BOSS_TRAITS.filter(t => t.conf === c).length), [5, 25, 6, 1]);
+    // 2026-10-29：依官方 F 端 bossEffectIcon config 修正後，每個 iconId 只用一次（不再有 4/10/17/23 衝突）。
+    assert.equal(withIcon.length, 27, '有圖特性數');
+    const ids = withIcon.map(t => t.icon!).sort((a, b) => a - b);
+    assert.equal(new Set(ids).size, ids.length, '每個 iconId 只能用一次');
+    assert.deepEqual(['sure', 'guess', 'none', 'existing'].map(c => BOSS_TRAITS.filter(t => t.conf === c).length), [15, 12, 9, 1]);
   const doc = fs.readFileSync(path.join(root, 'docs/data/seerapi/boss_trait_icons.md'), 'utf8');
   for (const t of BOSS_TRAITS) assert.ok(doc.includes(`| ${t.name} |`), `${t.name} 在對應表`);
   for (const t of BOSS_TRAITS) {
