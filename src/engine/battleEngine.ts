@@ -3075,6 +3075,21 @@ case 'switch': {
         }
       }
 
+      // ── 失明 blockSureHitDamage（2026-10-29）：必中技能也會「無法造成傷害且附加效果失效」。
+      // 原本這個參數只寫在 statusRegistry，引擎完全沒讀取端，導致失明的必中分支無效。
+      if (!retryFailureKind && activeSkill.category !== "屬性" && (activeSkill.isSureHit || activeSkill.alwaysHit)) {
+        const blindSt = getStatuses(syncStateRef.current[s]) || {};
+        const blindP = blindSt["失明"] ? StatusRegistry["失明"]?.mechanics?.find(m => m.type === "SPECIAL_BUFF")?.params : undefined;
+        if (blindP?.blockSureHitDamage) {
+          pushEffect({ type: "log", side: oppSide, data: { text: `🛡️ 【失明】：必中技能【${displaySkill}】無法造成傷害且附加效果失效！`, type: "effect" } });
+          showPopup(oppSide, "Miss-0", "miss");
+          addEffectsInvalid = true;
+          try { runSkillBlocks(getBattleEventContext(s, true, mIdx), "on_invalid", hasSkillHandler(activeSkill.name)); emitSelfInvalid(getBattleEventContext(s, true, mIdx)); } catch (e) { console.error("[blocks]", e); }
+          await processQueue();
+          return "partial";
+        }
+      }
+
       // ── 攻擊免疫（攻擊技能未命中；必中無效；可被無視攻擊免疫貫穿；次數型只在擋下時消耗）
       if (!retryFailureKind && activeSkill.category !== "屬性") {
         const actorReg0 = syncStateRef.current[actorRegKey] || {};
