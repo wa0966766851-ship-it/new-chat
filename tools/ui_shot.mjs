@@ -608,7 +608,7 @@ if (args.measure) {
       const r = el.getBoundingClientRect();
       const cs = getComputedStyle(el);
       return { x: Math.round(r.x), y: Math.round(r.y), w: Math.round(r.width), h: Math.round(r.height),
-               display: cs.display, gridArea: cs.gridArea, maxHeight: cs.maxHeight, flex: cs.flex };
+               scrollHeight:el.scrollHeight,clientHeight:el.clientHeight,overflowY:el.scrollHeight>el.clientHeight+1, panels:[...el.querySelectorAll(".spot-prose,.spot-skill-list")].map(x=>({class:x.className,scrollHeight:x.scrollHeight,clientHeight:x.clientHeight,overflowY:x.scrollHeight>x.clientHeight+1})),display: cs.display, gridArea: cs.gridArea, maxHeight: cs.maxHeight, flex: cs.flex };
     })()`,
     returnByValue: true,
   });

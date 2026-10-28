@@ -12,6 +12,7 @@ $appName = '賽爾對戰模擬器'
 $ownedProcesses = New-Object System.Collections.Generic.List[System.Diagnostics.Process]
 Set-Location $root
 . (Join-Path $PSScriptRoot 'startupWindow.ps1')
+. (Join-Path $PSScriptRoot 'serverIdentity.ps1')
 
 function Stop-OwnedProcesses {
   foreach ($process in $ownedProcesses) {
@@ -34,7 +35,12 @@ trap {
 function Test-Server {
   try {
     $r = Invoke-WebRequest -UseBasicParsing -Uri $probe -TimeoutSec 2
-    return $r.StatusCode -eq 200
+    if ($r.StatusCode -ne 200) { return $false }
+    $identity = Invoke-RestMethod -Uri "$probe/api/launcher/identity" -TimeoutSec 2
+    $mode = if ($useDev) { 'development' } else { 'production' }
+    $expectedBuild = if ($useDev) { '' } else { $activeRelease.buildId }
+    if (-not (Test-LauncherServerIdentity $identity $root $mode $expectedBuild)) { throw '伺服器身分或版本不符' }
+    return $true
   } catch { return $false }
 }
 
@@ -86,46 +92,37 @@ if (-not (Test-Path (Join-Path $root 'node_modules\tsx'))) {
   }
 }
 
-# ── 正式版建置（比開發模式快數倍）：dist 不存在或原始碼有更新時重新建置
-function Test-NeedBuild {
-  $index = Join-Path $root 'dist\index.html'
-  if (-not (Test-Path $index)) { return $true }
-  $built = (Get-Item $index).LastWriteTime
-  foreach ($d in @('src', 'public')) {
-    $dir = Join-Path $root $d
-    if (Test-Path $dir) {
-      foreach ($file in Get-ChildItem -LiteralPath $dir -Recurse -File -ErrorAction SilentlyContinue) {
-        [System.Windows.Forms.Application]::DoEvents()
-        if ($startup.Cancelled) { throw [System.OperationCanceledException]::new() }
-        if ($file.LastWriteTime -gt $built) { return $true }
-      }
-    }
-  }
-  foreach ($f in @('index.html', 'vite.config.ts', 'package.json')) {
-    $fp = Join-Path $root $f
-    if ((Test-Path $fp) -and ((Get-Item $fp).LastWriteTime -gt $built)) { return $true }
-  }
-  return $false
-}
-
+# 固定載入最後一次完整驗收成功的版本。來源編輯不會自動發布。
 $useDev = $env:SEER_DEV -eq '1'
-# 既有伺服器仍會讀取 dist；不能因 HTTP 可連線就跳過來源更新檢查。
-if (-not $useDev -and (Test-NeedBuild)) {
-  Set-Splash '偵測到原始碼更新，正在建置正式版；完成與否以建置行程結果為準。' 3
-  $b = Start-Process -FilePath 'cmd.exe' -ArgumentList '/c', "npx vite build > `"$logDir\build.log`" 2>&1" -WorkingDirectory $root -WindowStyle Hidden -PassThru
-  if ((Wait-StartupProcess $b '建置中；可最小化，不會置頂。紀錄：launcher/build.log' 3) -ne 0) {
-    $useDev = $true
-    Set-Splash '正式版建置失敗，改用開發模式啟動；錯誤保留在 build.log。' 3
+$releaseRoot = Join-Path $root '.desktop-releases'
+$activeFile = Join-Path $releaseRoot 'active.json'
+if (-not $useDev) {
+  if (-not (Test-Path -LiteralPath $activeFile)) { throw '尚無桌面完成版本。請在專案執行 npm run desktop:update。' }
+  $activeRelease = Get-Content -LiteralPath $activeFile -Raw | ConvertFrom-Json
+  if ($activeRelease.id -notmatch '^\d+$') { throw '桌面版本識別錯誤' }
+  $releaseDir = Join-Path $releaseRoot $activeRelease.id
+  foreach ($file in @('index.html','server.cjs','version.json','completion.json')) {
+    if (-not (Test-Path -LiteralPath (Join-Path $releaseDir $file))) { throw '桌面版本不完整，請重新執行 desktop:update' }
   }
+  $version = Get-Content -LiteralPath (Join-Path $releaseDir 'version.json') -Raw | ConvertFrom-Json
+  $completion = Get-Content -LiteralPath (Join-Path $releaseDir 'completion.json') -Raw | ConvertFrom-Json
+  if (-not $activeRelease.buildId -or $version.buildId -ne $activeRelease.buildId -or $completion.version.buildId -ne $activeRelease.buildId) { throw '桌面完成紀錄與版本不一致' }
+  $env:SEER_DIST_DIR = $releaseDir
+  $env:SEER_RELEASE_ID = $activeRelease.buildId
+} else {
+  Remove-Item Env:SEER_DIST_DIR,Env:SEER_RELEASE_ID -ErrorAction SilentlyContinue
 }
 
 # ── 伺服器
 $server = $null
 if (-not (Test-Server)) {
+  # 不佔用其他服務的埠，也不把來源不明／舊模式的HTTP 200當成可用版本。
+  $busy = Get-NetTCPConnection -LocalPort 3000 -State Listen -ErrorAction SilentlyContinue
+  if ($busy) { throw '3000埠已有其他模式或舊版服務。請先關閉舊模擬器服務再開啟；啟動器未終止該服務。' }
   Set-Splash '啟動伺服器，等待實際連線成功…' 4
   $env:SEER_LAUNCHER = '1'
   $env:SEER_HOST = '127.0.0.1'
-  $cmd = if ($useDev) { "npm run dev > `"$log`" 2>&1" } else { "set NODE_ENV=production&& npx tsx server.ts > `"$log`" 2>&1" }
+  $cmd = if ($useDev) { "npm run dev > `"$log`" 2>&1" } else { "set NODE_ENV=production&& node `"$releaseDir\server.cjs`" > `"$log`" 2>&1" }
   $server = Start-Process -FilePath 'cmd.exe' -ArgumentList '/c', $cmd -WorkingDirectory $root -WindowStyle Hidden -PassThru
   $ownedProcesses.Add($server)
   $ok = $false
