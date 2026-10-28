@@ -44,6 +44,7 @@ const fetcher = async (url, init) => {
   const before = env.BUCKET.operations;
   const response = await worker.fetch(new Request(url, { ...init, body }), env);
   if (path === '/_updates/manifest') manifestOperations = env.BUCKET.operations - before;
+  if (path.startsWith('/_updates/verify/') || path === '/_updates/manifest') assert.ok(env.BUCKET.operations - before <= 210, '每次核對最多 200 個檔案與少量版本記錄');
   return response;
 };
 const read = (path, headers = {}) => worker.fetch(new Request(site + path, { headers }), env);
