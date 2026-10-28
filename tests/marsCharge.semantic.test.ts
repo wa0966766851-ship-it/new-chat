@@ -53,8 +53,10 @@ try {
       for (const e of marsKit) for (const st of (e.params?.clause?.body || [])) for (const a of (st.acts || [])) if (a.op === op) return a.p;
       return null;
     };
-    const soul = souls[template.name];
-    assert.equal(typeof soul, 'function', '透過實際註冊入口，不直接測未掛接函式');
+    // 魂印已遷真 Kit：正式註冊表不得再有 5016 的 handler 入口，效果只由 Kit 驅動（Kit 內容與行為見下方斷言與真實戰鬥段）
+    assert.equal(souls[template.name], undefined, '5016 魂印 handler 已除名，不得殘留舊入口');
+    assert.equal(template.soulMark?.effectMode, 'kit', '5016 魂印必須是真 Kit');
+    assert.ok(marsKit.length > 0 && marsKit.length === template.soulMark.kit.length, '資料中的魂印 Kit 與遷移檔一致');
     {
       // 登場＋回合開始各附加⅓護盾與護罩（1000/3=333）：驗 Kit 條款參數
       const shieldOps = marsKit.flatMap((e: any) => (e.params?.clause?.body || []).flatMap((st: any) => st.acts || [])).filter((a: any) => a.op === 'shield');

@@ -27,3 +27,11 @@ _corner.png
 
 # 驗收截圖（不進 repo）
 _shots/
+
+# 可回復的本機桌面完成版本
+.desktop-releases/
+launcher/animation-source.local.json
+launcher/animation-source.local.json.bak
+
+# 2026-10-29: 建置與測試暫存 log 不入版控
+.tmp-testlogs/

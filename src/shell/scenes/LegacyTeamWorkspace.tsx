@@ -7,6 +7,7 @@ import { SUIT_CATALOG, EYEWEAR_CATALOG } from '../../data/suitsAndEyewears';
 import { TITLE_CATALOG } from '../../data/titles';
 import { SuitRail } from '../art/SuitRail';
 import { ElfCardSheet } from '../art/ElfCardSheet';
+import { newestElfKeys } from '../elfPool';
 import { AegisBackdrop } from '../art/backdrop';
 import { Swords, Shield, Package, Shirt, Glasses, Award, ArrowLeftRight, Move, Star, Layers, X, ArrowLeft, Library, Settings2, Plus, Save, FolderOpen, Copy, Dices, Trash2, ShieldOff } from 'lucide-react';
 
@@ -20,6 +21,7 @@ export interface LegacyTeamSide {
   setSuit: (value: string) => void; setEyewear: (value: string) => void; setTitle: (value: string) => void;
   starter: (id: string) => void; remove: (id: string) => void;
   choose: (index: number) => void; swap: (from: number, to: number) => void;
+  replace?: (index: number, elf: Elf) => void;
   swapStandby: () => void; clear: () => void; randomize: () => void; copyOther: () => void;
   save: () => void; load: () => void; savePreset: (slot: number) => void; loadPreset: (slot: number) => void;
   add: (elf: Elf) => void;
@@ -44,6 +46,9 @@ export function LegacyTeamWorkspace(p: LegacyTeamWorkspaceProps) {
   const [library, setLibrary] = useState(false);
   const [libraryAction, setLibraryAction] = useState<'detail' | WorkspaceSide>('detail');
   const [cardElf, setCardElf] = useState<Elf | null>(null);
+  const fresh = React.useMemo(() => newestElfKeys(p.elves), [p.elves]);
+  /** 從倉庫直接換精靈：先記住要換入的精靈，再選要換掉隊伍中的哪一格。 */
+  const [swapIncoming, setSwapIncoming] = useState<Elf | null>(null);
   // 手機單欄：用 P1/P2 切換（使用者要求 2026-10-22）
   const [mobileSide, setMobileSide] = useState<WorkspaceSide>('p1');
   const [gear, setGear] = useState<{side: WorkspaceSide; slot: 'suit' | 'eyewear' | 'title'} | null>(null);
@@ -75,7 +80,7 @@ export function LegacyTeamWorkspace(p: LegacyTeamWorkspaceProps) {
     {p.message && <p role="status" className="text-sm text-emerald-300">{p.message}</p>}
     {moving && <p role="status" className="text-sm text-cyan-200">已選 {moving.side.toUpperCase()} 第 {moving.index+1} 格，請點同隊目標格交換。<button className={btn} onClick={()=>setMoving(null)}>取消移動</button></p>}
     <div className="workspace-scroll flex-1 min-h-0 overflow-y-auto">
-      {library ? <><label className="block text-sm mb-2">點選精靈時：<select className="bg-slate-900 p-2" value={libraryAction} onChange={e=>setLibraryAction(e.target.value as typeof libraryAction)}><option value="detail">查看資料／編輯</option><option value="p1">加入 P1</option><option value="p2">加入 P2</option></select></label><ElfPicker elves={p.elves} onPick={e=>libraryAction==='detail'?p.detail(e):p.sides[libraryAction].add(e)} isDisabled={()=>libraryAction!=='detail'&&p.sides[libraryAction].team.length>=12?'隊伍已滿，請使用隊伍格的替換功能':undefined} getKey={(e,i)=>`${e.id}-${i}`} renderItem={e=><span className="flex items-center gap-2"><ElfAvatar elf={e} kind="head" className="w-12 h-12"/><span>{e.name}<TypeIcon type={e.type} size={16}/></span></span>}/></> :
+      {library ? <><label className="block text-sm mb-2">點選精靈時：<select className="bg-slate-900 p-2" value={libraryAction} onChange={e=>setLibraryAction(e.target.value as typeof libraryAction)}><option value="detail">查看資料／編輯</option><option value="p1">加入 P1</option><option value="p2">加入 P2</option></select></label><ElfPicker elves={p.elves} onPick={e=>libraryAction==='detail'?p.detail(e):p.sides[libraryAction].add(e)} isDisabled={()=>libraryAction!=='detail'&&p.sides[libraryAction].team.length>=12?'隊伍已滿，請使用隊伍格的替換功能':undefined} getKey={(e,i)=>`${e.id}-${i}`} renderItem={(e,i)=><span className="flex items-center gap-2 w-full"><ElfAvatar elf={e} kind="head" className="w-12 h-12"/><span className="flex-1 min-w-0 truncate">{fresh.has(String(e.id??e.name))&&<span data-new-elf className="mr-1 px-1 text-[10px] font-black" style={{borderRadius:4,background:"var(--p-accent)",color:"#06121C"}}>新</span>}{e.name}<TypeIcon type={e.type} size={16}/></span>{/* 直接從倉庫換精靈（使用者要求 2026-10-23） */}<span role="button" tabIndex={0} title={`用 ${e.name} 換掉隊伍中的精靈`} aria-label={`用 ${e.name} 換掉隊伍中的精靈`} className="workspace-icon-button shrink-0 inline-flex items-center justify-center" onClick={(ev)=>{ev.stopPropagation();setSwapIncoming(e);}} onKeyDown={(ev)=>{if(ev.key==="Enter"||ev.key===" "){ev.stopPropagation();setSwapIncoming(e);}}}><ArrowLeftRight size={15}/></span></span>}/></> :
 
       <div>
       <div className="workspace-side-switch" role="tablist" aria-label="切換編輯隊伍">
@@ -131,6 +136,28 @@ export function LegacyTeamWorkspace(p: LegacyTeamWorkspaceProps) {
       <header className="flex items-center justify-between"><h2>{gear.side.toUpperCase()} 配裝（全隊生效）</h2><button className={btn} onClick={()=>setGear(null)}>完成</button></header>
       <button className={btn} onClick={()=>setGearValue('')}>卸下目前裝備</button>
       <SuitRail kind={gear.slot} equippedId={gearSide[gear.slot]} onEquip={id=>setGearValue(id===gearSide[gear.slot]?'':id)} />
+    </div>, document.body)}
+    {swapIncoming&&createPortal(<div role="dialog" aria-modal="true" aria-label="選擇要替換的精靈" className="fixed inset-0 z-[240] flex flex-col justify-end" style={{background:'rgba(2,6,12,.72)'}}>
+      <div className="workspace-panel p-3 flex flex-col gap-2" style={{maxHeight:'70dvh',borderRadius:'16px 16px 0 0'}}>
+        <header className="flex items-center justify-between gap-2">
+          <h2 className="text-sm font-bold">用「{swapIncoming.name}」換掉誰？</h2>
+          <button className={iconBtn} title="關閉" aria-label="關閉" onClick={()=>setSwapIncoming(null)}><X size={15}/></button>
+        </header>
+        {(['p1','p2'] as const).map(sideKey=>{
+          const s = p.sides[sideKey];
+          return <div key={sideKey} className="flex flex-col gap-1">
+            <h3 className="text-xs font-bold text-slate-300">{sideKey.toUpperCase()} · 第 1-12 格</h3>
+            <div className="grid grid-cols-4 gap-1">
+              {Array.from({length:12},(_,index)=>{
+                const cur = s.team[index];
+                return <button key={index} type="button" disabled={index>s.team.length} className="workspace-slot p-1 text-left min-w-0 disabled:opacity-30" onClick={()=>{ if(s.replace)s.replace(index,swapIncoming);else s.choose(index);setSwapIncoming(null); }}>
+                  <span className="block text-[10px] font-bold truncate">{index+1}. {cur?cur.name:'空'}</span>
+                </button>;
+              })}
+            </div>
+          </div>;
+        })}
+      </div>
     </div>, document.body)}
   </section>;
 }

@@ -625,12 +625,18 @@ export class TraitsEngine {
     }
 
     // 投石者 TXT 沒有「首次」限制；每次致死保留1。只走此入口，不再由魂印重複抵擋。
-    if (mechanics.firstFatalSurviveAt1Hp) {
-      ctx.updateElf(selfSide, { currentHp: 1 });
-      ctx.addLog(`🌟 【${elfName}】的【投石者】：承受致死傷害，保留 1 點體力！`, "effect");
-      return true;
-    }
-
+// 2026-10-28 使用者裁定：根性只在「該段傷害 >= 當前體力」時才保留 1 點；
+// 小於當前體力的多段傷害、以及消耗體力（非傷害）都不觸發。ctx.fatalDamage 由引擎在致死判定時帶入。
+if (mechanics.firstFatalSurviveAt1Hp) {
+const dmg = Number((ctx as any).fatalDamage);
+const hp = Number(ctx.self.currentHp);
+const isDamage = (ctx as any).fatalIsDamage !== false;
+if (isDamage && (!Number.isFinite(dmg) || !Number.isFinite(hp) || dmg >= hp)) {
+ctx.updateElf(selfSide, { currentHp: 1 });
+ctx.addLog(`🌟 【${elfName}】的【投石者】：承受致死傷害（${Number.isFinite(dmg)?dmg:"?"} ≥ ${Number.isFinite(hp)?hp:"?"}），保留 1 點體力！`, "effect");
+return true;
+}
+}
     return false;
   }
 }

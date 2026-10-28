@@ -1,0 +1,260 @@
+[
+  {
+    "side": "data",
+    "name": "主技能數／技能池數",
+    "expected": [
+      5,
+      9
+    ],
+    "observed": [
+      5,
+      9
+    ],
+    "matches": true
+  },
+  {
+    "side": "data",
+    "name": "戰鬥顯示順序",
+    "expected": [
+      "清璨星辰落",
+      "生塵眷盼",
+      "如日方升",
+      "遂心快意",
+      "蒼靈銜樂"
+    ],
+    "observed": [
+      "清璨星辰落",
+      "生塵眷盼",
+      "如日方升",
+      "遂心快意",
+      "蒼靈銜樂"
+    ],
+    "matches": true
+  },
+  {
+    "side": "p1",
+    "name": "第五附加傷害成長",
+    "expected": [
+      2550,
+      3570,
+      4590
+    ],
+    "observed": [
+      12750,
+      12750,
+      12750
+    ],
+    "matches": false
+  },
+  {
+    "side": "p1",
+    "name": "原本有強化且消除成功，不應同時禁療",
+    "expected": false,
+    "observed": false,
+    "matches": true
+  },
+  {
+    "side": "p1",
+    "name": "防禦補償第二回合恢復量／傷害量應相等且大於0",
+    "expected": [
+      3333,
+      3333
+    ],
+    "observed": [
+      3333,
+      0
+    ],
+    "matches": false
+  },
+  {
+    "side": "p1",
+    "name": "連擊不可依PP降為2次",
+    "expected": false,
+    "observed": true,
+    "matches": false
+  },
+  {
+    "side": "p1",
+    "name": "低體力百分比傷害與恢復只翻倍一次",
+    "expected": [
+      6000,
+      6000
+    ],
+    "observed": [
+      6000,
+      6000
+    ],
+    "matches": true
+  },
+  {
+    "side": "p1",
+    "name": "雙方已出手不應獲得均未出手的三項強化",
+    "expected": {},
+    "observed": {
+      "atk": 1,
+      "spatk": 1,
+      "speed": 1
+    },
+    "matches": false
+  },
+  {
+    "side": "p1",
+    "name": "自身先出手獲得降能力免疫",
+    "expected": true,
+    "observed": false,
+    "matches": false
+  },
+  {
+    "side": "p1",
+    "name": "召喚固定能力額外精靈",
+    "expected": [
+      "旭",
+      "清"
+    ],
+    "observed": [
+      "旭",
+      "清"
+    ],
+    "matches": true
+  },
+  {
+    "side": "p1",
+    "name": "清存活時自身攻擊不應消除自身回合效果",
+    "expected": true,
+    "observed": false,
+    "matches": false
+  },
+  {
+    "side": "p1",
+    "name": "清存活時對手攻擊應消除對手回合效果",
+    "expected": true,
+    "observed": false,
+    "matches": false
+  },
+  {
+    "side": "p1",
+    "name": "九青抵擋致死仍存活時，額外精靈不得連動死亡",
+    "expected": [
+      true,
+      2
+    ],
+    "observed": [
+      true,
+      0
+    ],
+    "matches": false
+  },
+  {
+    "side": "p2",
+    "name": "第五附加傷害成長",
+    "expected": [
+      2550,
+      3570,
+      4590
+    ],
+    "observed": [
+      12750,
+      12750,
+      12750
+    ],
+    "matches": false
+  },
+  {
+    "side": "p2",
+    "name": "原本有強化且消除成功，不應同時禁療",
+    "expected": false,
+    "observed": false,
+    "matches": true
+  },
+  {
+    "side": "p2",
+    "name": "防禦補償第二回合恢復量／傷害量應相等且大於0",
+    "expected": [
+      3333,
+      3333
+    ],
+    "observed": [
+      3333,
+      0
+    ],
+    "matches": false
+  },
+  {
+    "side": "p2",
+    "name": "連擊不可依PP降為2次",
+    "expected": false,
+    "observed": true,
+    "matches": false
+  },
+  {
+    "side": "p2",
+    "name": "低體力百分比傷害與恢復只翻倍一次",
+    "expected": [
+      6000,
+      6000
+    ],
+    "observed": [
+      6000,
+      6000
+    ],
+    "matches": true
+  },
+  {
+    "side": "p2",
+    "name": "雙方已出手不應獲得均未出手的三項強化",
+    "expected": {},
+    "observed": {
+      "atk": 1,
+      "spatk": 1,
+      "speed": 1
+    },
+    "matches": false
+  },
+  {
+    "side": "p2",
+    "name": "自身先出手獲得降能力免疫",
+    "expected": true,
+    "observed": false,
+    "matches": false
+  },
+  {
+    "side": "p2",
+    "name": "召喚固定能力額外精靈",
+    "expected": [
+      "旭",
+      "清"
+    ],
+    "observed": [
+      "旭",
+      "清"
+    ],
+    "matches": true
+  },
+  {
+    "side": "p2",
+    "name": "清存活時自身攻擊不應消除自身回合效果",
+    "expected": true,
+    "observed": false,
+    "matches": false
+  },
+  {
+    "side": "p2",
+    "name": "清存活時對手攻擊應消除對手回合效果",
+    "expected": true,
+    "observed": false,
+    "matches": false
+  },
+  {
+    "side": "p2",
+    "name": "九青抵擋致死仍存活時，額外精靈不得連動死亡",
+    "expected": [
+      true,
+      2
+    ],
+    "observed": [
+      true,
+      0
+    ],
+    "matches": false
+  }
+]

@@ -1,0 +1,2925 @@
+[
+  {
+    "id": "7070",
+    "name": "魔化.雷伊",
+    "soulMark": {
+      "name": "專屬特性",
+      "description": "戰鬥開始時\n> 展開魔化.雷光之翼\n>> 降低敵方背包內所有精靈基礎能力值20%，每降低70點則提升自身所有能力值提升70點\n\n回合開始時\n> 若對手處於能力提升狀態則100%令對手麻痺並反轉對手能力提升狀態\n> 對手不處於能力提升狀態則自身先制+1且使用技能後100%令對手繳械\n\n戰鬥階段結束時:\n> 若敵我雙方在場精靈存在回合類效果則恢復自身最大體力⅓並造成等量百分比傷害\n> 令雙方回合類效果變為1回合\n\n繳械:弱化類異常，限制類異常，無法選擇使用藥劑，選擇技能階段令選擇的技能PP值歸0，觸發成功後若該技能PP值為0則當回合無法行動\n麻痺:控制類異常，無法行動",
+      "effectType": "none",
+      "effectValue": 0,
+      "effectMode": "kit",
+      "kit": [
+        {
+          "codeId": "effect_sequence",
+          "node": "battle_start",
+          "source": "soulmark",
+          "role": "innate",
+          "order": 0,
+          "customText": "> 展開魔化.雷光之翼",
+          "params": {
+            "clause": {
+              "raw": "> 展開魔化.雷光之翼",
+              "marker": ">",
+              "trig": "battle_start",
+              "parsed": true,
+              "body": [
+                {
+                  "acts": [
+                    {
+                      "op": "panel_pool_transfer",
+                      "p": {
+                        "ratio": 0.2,
+                        "unit": 70,
+                        "gain": 70
+                      },
+                      "label": "panel_pool_transfer"
+                    }
+                  ]
+                }
+              ]
+            }
+          }
+        },
+        {
+          "codeId": "effect_sequence",
+          "node": "round_start",
+          "source": "soulmark",
+          "role": "innate",
+          "order": 1,
+          "customText": ">> 降低敵方背包內所有精靈基礎能力值20%，每降低70點則提升自身所有能力值提升70點",
+          "params": {
+            "clause": {
+              "raw": ">> 降低敵方背包內所有精靈基礎能力值20%，每降低70點則提升自身所有能力值提升70點",
+              "marker": ">",
+              "trig": "round_start",
+              "parsed": true,
+              "body": [
+                {
+                  "cond": [
+                    {
+                      "c": "stage",
+                      "p": {
+                        "side": "opp",
+                        "kind": "up"
+                      },
+                      "label": "stage"
+                    }
+                  ],
+                  "acts": [
+                    {
+                      "op": "status",
+                      "p": {
+                        "side": "opp",
+                        "status": "麻痺"
+                      },
+                      "label": "status"
+                    },
+                    {
+                      "op": "stat_reverse",
+                      "p": {
+                        "side": "opp",
+                        "kind": "up"
+                      },
+                      "label": "stat_reverse"
+                    }
+                  ],
+                  "elseActs": [
+                    {
+                      "op": "prio_turns",
+                      "p": {
+                        "turns": 1,
+                        "v": 1,
+                        "current": true
+                      },
+                      "label": "prio_turns"
+                    },
+                    {
+                      "op": "timed",
+                      "p": {
+                        "turns": 1,
+                        "from": "now",
+                        "trig": "self_after_use",
+                        "body": [
+                          {
+                            "acts": [
+                              {
+                                "op": "status",
+                                "p": {
+                                  "side": "opp",
+                                  "status": "繳械"
+                                },
+                                "label": "status"
+                              }
+                            ]
+                          }
+                        ]
+                      },
+                      "label": "timed"
+                    }
+                  ]
+                }
+              ]
+            }
+          }
+        },
+        {
+          "codeId": "effect_sequence",
+          "node": "battle_phase_end",
+          "source": "soulmark",
+          "role": "innate",
+          "order": 2,
+          "customText": "> 若對手處於能力提升狀態則100%令對手麻痺並反轉對手能力提升狀態",
+          "params": {
+            "clause": {
+              "raw": "> 若對手處於能力提升狀態則100%令對手麻痺並反轉對手能力提升狀態",
+              "marker": ">",
+              "trig": "phase_end",
+              "parsed": true,
+              "body": [
+                {
+                  "cond": [
+                    {
+                      "c": "either_turn_effect",
+                      "p": {},
+                      "label": "either_turn_effect"
+                    }
+                  ],
+                  "acts": [
+                    {
+                      "op": "heal",
+                      "p": {
+                        "side": "self",
+                        "ratio": 0.3333333333333333
+                      },
+                      "label": "heal"
+                    },
+                    {
+                      "op": "dmg",
+                      "p": {
+                        "base": "最大體力",
+                        "of": "self",
+                        "ratio": 0.3333333333333333,
+                        "type": "百分比"
+                      },
+                      "label": "dmg"
+                    }
+                  ]
+                }
+              ]
+            }
+          }
+        },
+        {
+          "codeId": "effect_sequence",
+          "node": "battle_phase_end",
+          "source": "soulmark",
+          "role": "innate",
+          "order": 3,
+          "customText": "> 對手不處於能力提升狀態則自身先制+1且使用技能後100%令對手繳械",
+          "params": {
+            "clause": {
+              "raw": "> 對手不處於能力提升狀態則自身先制+1且使用技能後100%令對手繳械",
+              "marker": ">",
+              "trig": "phase_end",
+              "parsed": true,
+              "body": [
+                {
+                  "acts": [
+                    {
+                      "op": "compress_turn_effects",
+                      "p": {
+                        "side": "both",
+                        "remaining": 1
+                      },
+                      "label": "compress_turn_effects"
+                    }
+                  ]
+                }
+              ]
+            }
+          }
+        },
+        {
+          "codeId": "effect_sequence",
+          "node": "battle_start",
+          "source": "soulmark",
+          "role": "innate",
+          "order": 4,
+          "customText": "> 若敵我雙方在場精靈存在回合類效果則恢復自身最大體力⅓並造成等量百分比傷害",
+          "params": {
+            "clause": {
+              "raw": "> 若敵我雙方在場精靈存在回合類效果則恢復自身最大體力⅓並造成等量百分比傷害",
+              "marker": ">",
+              "trig": "battle_start",
+              "parsed": true,
+              "body": [
+                {
+                  "acts": [
+                    {
+                      "op": "noop",
+                      "p": {
+                        "tag": "無特殊效果"
+                      },
+                      "label": "noop"
+                    }
+                  ]
+                }
+              ]
+            }
+          }
+        },
+        {
+          "codeId": "effect_sequence",
+          "node": "battle_start",
+          "source": "soulmark",
+          "role": "innate",
+          "order": 5,
+          "customText": "> 令雙方回合類效果變為1回合",
+          "params": {
+            "clause": {
+              "raw": "> 令雙方回合類效果變為1回合",
+              "marker": ">",
+              "trig": "battle_start",
+              "parsed": true,
+              "body": [
+                {
+                  "acts": [
+                    {
+                      "op": "noop",
+                      "p": {
+                        "tag": "無特殊效果"
+                      },
+                      "label": "noop"
+                    }
+                  ]
+                }
+              ]
+            }
+          }
+        },
+        {
+          "codeId": "effect_sequence",
+          "node": "battle_start",
+          "source": "soulmark",
+          "role": "innate",
+          "order": 6,
+          "customText": "繳械:弱化類異常，限制類異常，無法選擇使用藥劑，選擇技能階段令選擇的技能PP值歸0，觸發成功後若該技能PP值為0則當回合無法行動\n麻痺:控制類異常，無法行動",
+          "params": {
+            "clause": {
+              "raw": "繳械:弱化類異常，限制類異常，無法選擇使用藥劑，選擇技能階段令選擇的技能PP值歸0，觸發成功後若該技能PP值為0則當回合無法行動\n麻痺:控制類異常，無法行動",
+              "marker": ">",
+              "trig": "battle_start",
+              "parsed": true,
+              "body": [
+                {
+                  "acts": [
+                    {
+                      "op": "noop",
+                      "p": {
+                        "tag": "無特殊效果"
+                      },
+                      "label": "noop"
+                    }
+                  ]
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    "skills": [
+      {
+        "name": "蝕雷",
+        "type": "電·暗影",
+        "category": "物理",
+        "power": 90,
+        "pp": 20,
+        "maxPp": 20,
+        "currentPp": 20,
+        "accuracy": 100,
+        "priority": 3,
+        "isSureHit": false,
+        "isFifthSkill": false,
+        "description": "■ 先制+3\n🎯 吸取對手能力提升狀態，吸取成功則對手下次屬性技能無效\n🎯 吸取對手270點固定體力\n🎯 2回合內對手攻擊技能無效",
+        "effectDetail": "",
+        "effectType": "none",
+        "effectMode": "kit",
+        "kit": [
+          {
+            "codeId": "skill_property",
+            "node": "modify_priority",
+            "source": "skill",
+            "role": "innate",
+            "order": 0,
+            "customText": "■ 先制+3",
+            "params": {
+              "property": "base_priority",
+              "value": 3,
+              "conditions": []
+            }
+          },
+          {
+            "codeId": "effect_sequence",
+            "node": "on_skill_use",
+            "source": "skill",
+            "role": "attached",
+            "order": 1,
+            "customText": "🎯 吸取對手能力提升狀態，吸取成功則對手下次屬性技能無效",
+            "params": {
+              "clause": {
+                "raw": "🎯 吸取對手能力提升狀態，吸取成功則對手下次屬性技能無效",
+                "marker": "🎯",
+                "trig": "use",
+                "parsed": true,
+                "body": [
+                  {
+                    "acts": [
+                      {
+                        "op": "stat_steal",
+                        "p": {
+                          "mode": "吸取"
+                        },
+                        "label": "stat_steal"
+                      }
+                    ]
+                  },
+                  {
+                    "chain": "success",
+                    "acts": [
+                      {
+                        "op": "invalid_next",
+                        "p": {
+                          "kind": "屬性",
+                          "uses": 1
+                        },
+                        "label": "invalid_next"
+                      }
+                    ]
+                  }
+                ]
+              }
+            }
+          },
+          {
+            "codeId": "effect_sequence",
+            "node": "on_skill_use",
+            "source": "skill",
+            "role": "attached",
+            "order": 2,
+            "customText": "🎯 吸取對手270點固定體力",
+            "params": {
+              "clause": {
+                "raw": "🎯 吸取對手270點固定體力",
+                "marker": "🎯",
+                "trig": "use",
+                "parsed": true,
+                "body": [
+                  {
+                    "acts": [
+                      {
+                        "op": "drain",
+                        "p": {
+                          "flat": 270
+                        },
+                        "label": "drain"
+                      }
+                    ]
+                  }
+                ]
+              }
+            }
+          },
+          {
+            "codeId": "effect_sequence",
+            "node": "on_skill_use",
+            "source": "skill",
+            "role": "attached",
+            "order": 3,
+            "customText": "🎯 2回合內對手攻擊技能無效",
+            "params": {
+              "clause": {
+                "raw": "🎯 2回合內對手攻擊技能無效",
+                "marker": "🎯",
+                "trig": "use",
+                "parsed": true,
+                "body": [
+                  {
+                    "acts": [
+                      {
+                        "op": "invalid_turns",
+                        "p": {
+                          "kind": "攻擊",
+                          "turns": 2
+                        },
+                        "label": "invalid_turns"
+                      }
+                    ]
+                  }
+                ]
+              }
+            }
+          }
+        ]
+      },
+      {
+        "name": "墮魔雷翼",
+        "type": "無屬性",
+        "category": "屬性",
+        "power": 0,
+        "pp": 5,
+        "maxPp": 5,
+        "currentPp": 5,
+        "accuracy": 100,
+        "priority": 0,
+        "isSureHit": true,
+        "isFifthSkill": false,
+        "description": "■ 必中\n🎯 全屬性+1\n🎯 2回合內使用技能後恢復自身最大體力的1/1並造成等量百分比傷害\n🎯 2回合內，自身回合類效果結束或被消除時，使自身免疫下兩次異常狀態\n🎯 下2回合對手所有技能先制-2",
+        "effectDetail": "",
+        "effectType": "none",
+        "effectMode": "kit",
+        "kit": [
+          {
+            "codeId": "skill_property",
+            "node": "before_skill",
+            "source": "skill",
+            "role": "innate",
+            "order": 0,
+            "customText": "■ 必中",
+            "params": {
+              "property": "sure_hit",
+              "value": true,
+              "conditions": []
+            }
+          },
+          {
+            "codeId": "effect_sequence",
+            "node": "on_skill_use",
+            "source": "skill",
+            "role": "attached",
+            "order": 1,
+            "customText": "🎯 全屬性+1",
+            "params": {
+              "clause": {
+                "raw": "🎯 全屬性+1",
+                "marker": "🎯",
+                "trig": "use",
+                "parsed": true,
+                "body": [
+                  {
+                    "acts": [
+                      {
+                        "op": "stat",
+                        "p": {
+                          "side": "self",
+                          "stats": [
+                            "全屬性"
+                          ],
+                          "v": 1
+                        },
+                        "label": "stat"
+                      }
+                    ]
+                  }
+                ]
+              }
+            }
+          },
+          {
+            "codeId": "effect_sequence",
+            "node": "on_skill_use",
+            "source": "skill",
+            "role": "attached",
+            "order": 2,
+            "customText": "🎯 2回合內使用技能後恢復自身最大體力的1/1並造成等量百分比傷害",
+            "params": {
+              "clause": {
+                "raw": "🎯 2回合內使用技能後恢復自身最大體力的1/1並造成等量百分比傷害",
+                "marker": "🎯",
+                "trig": "use",
+                "parsed": true,
+                "body": [
+                  {
+                    "acts": [
+                      {
+                        "op": "timed",
+                        "p": {
+                          "turns": 2,
+                          "from": "now",
+                          "trig": "self_after_use",
+                          "body": [
+                            {
+                              "acts": [
+                                {
+                                  "op": "heal",
+                                  "p": {
+                                    "side": "self",
+                                    "ratio": 1
+                                  },
+                                  "label": "heal"
+                                },
+                                {
+                                  "op": "dmg",
+                                  "p": {
+                                    "base": "最大體力",
+                                    "of": "self",
+                                    "ratio": 1,
+                                    "type": "百分比"
+                                  },
+                                  "label": "dmg"
+                                }
+                              ]
+                            }
+                          ]
+                        },
+                        "label": "timed"
+                      }
+                    ]
+                  }
+                ]
+              }
+            }
+          },
+          {
+            "codeId": "effect_sequence",
+            "node": "on_skill_use",
+            "source": "skill",
+            "role": "attached",
+            "order": 3,
+            "customText": "🎯 2回合內，自身回合類效果結束或被消除時，使自身免疫下兩次異常狀態",
+            "params": {
+              "clause": {
+                "raw": "🎯 2回合內，自身回合類效果結束或被消除時，使自身免疫下兩次異常狀態",
+                "marker": "🎯",
+                "trig": "use",
+                "parsed": true,
+                "body": [
+                  {
+                    "acts": [
+                      {
+                        "op": "effect_end_watch",
+                        "p": {
+                          "turns": 2,
+                          "mode": "immune",
+                          "count": 2
+                        },
+                        "label": "effect_end_watch"
+                      }
+                    ]
+                  }
+                ]
+              }
+            }
+          },
+          {
+            "codeId": "effect_sequence",
+            "node": "on_skill_use",
+            "source": "skill",
+            "role": "attached",
+            "order": 4,
+            "customText": "🎯 下2回合對手所有技能先制-2",
+            "params": {
+              "clause": {
+                "raw": "🎯 下2回合對手所有技能先制-2",
+                "marker": "🎯",
+                "trig": "use",
+                "parsed": true,
+                "body": [
+                  {
+                    "acts": [
+                      {
+                        "op": "prio_turns",
+                        "p": {
+                          "side": "opp",
+                          "v": -2,
+                          "turns": 2,
+                          "next": true
+                        },
+                        "label": "prio_turns"
+                      }
+                    ]
+                  }
+                ]
+              }
+            }
+          }
+        ]
+      },
+      {
+        "name": "暗蝕雷驅",
+        "type": "無屬性",
+        "category": "屬性",
+        "power": 0,
+        "pp": 5,
+        "maxPp": 5,
+        "currentPp": 5,
+        "accuracy": 100,
+        "priority": 0,
+        "isSureHit": true,
+        "isFifthSkill": false,
+        "description": "■ 必中\n■ 自身處於能力下降狀態時先制+3\n🎯 2回合內自身免疫並反彈所有異常狀態\n🎯 解除自身所有異常狀態，解除成功則2回合內對手技能附加效果失效\n🎯 消除雙方能力上升、下降狀態與護盾、護罩效果，並附加自身最大體力50%的電·暗影系傷害\n🎯 抵擋下次受到的攻擊，抵擋成功則附加對手等同抵擋傷害100%的真實傷害",
+        "effectDetail": "",
+        "effectType": "none",
+        "effectMode": "kit",
+        "kit": [
+          {
+            "codeId": "skill_property",
+            "node": "before_skill",
+            "source": "skill",
+            "role": "innate",
+            "order": 0,
+            "customText": "■ 必中",
+            "params": {
+              "property": "sure_hit",
+              "value": true,
+              "conditions": []
+            }
+          },
+          {
+            "codeId": "effect_sequence",
+            "node": "modify_priority",
+            "source": "skill",
+            "role": "innate",
+            "order": 1,
+            "customText": "■ 自身處於能力下降狀態時先制+3",
+            "params": {
+              "clause": {
+                "raw": "■ 自身處於能力下降狀態時先制+3",
+                "marker": "■",
+                "trig": "modify_priority",
+                "parsed": true,
+                "body": [
+                  {
+                    "cond": [
+                      {
+                        "c": "stage",
+                        "p": {
+                          "side": "self",
+                          "kind": "down"
+                        },
+                        "label": "stage"
+                      }
+                    ],
+                    "acts": [
+                      {
+                        "op": "prio_bonus",
+                        "p": {
+                          "v": 3
+                        },
+                        "label": "prio_bonus"
+                      }
+                    ]
+                  }
+                ]
+              }
+            }
+          },
+          {
+            "codeId": "effect_sequence",
+            "node": "on_skill_use",
+            "source": "skill",
+            "role": "attached",
+            "order": 2,
+            "customText": "🎯 2回合內自身免疫並反彈所有異常狀態",
+            "params": {
+              "clause": {
+                "raw": "🎯 2回合內自身免疫並反彈所有異常狀態",
+                "marker": "🎯",
+                "trig": "use",
+                "parsed": true,
+                "body": [
+                  {
+                    "acts": [
+                      {
+                        "op": "immune_status_turns",
+                        "p": {
+                          "turns": 2,
+                          "reflect": true
+                        },
+                        "label": "immune_status_turns"
+                      }
+                    ]
+                  }
+                ]
+              }
+            }
+          },
+          {
+            "codeId": "effect_sequence",
+            "node": "on_skill_use",
+            "source": "skill",
+            "role": "attached",
+            "order": 3,
+            "customText": "🎯 解除自身所有異常狀態，解除成功則2回合內對手技能附加效果失效",
+            "params": {
+              "clause": {
+                "raw": "🎯 解除自身所有異常狀態，解除成功則2回合內對手技能附加效果失效",
+                "marker": "🎯",
+                "trig": "use",
+                "parsed": true,
+                "body": [
+                  {
+                    "acts": [
+                      {
+                        "op": "cure_status",
+                        "p": {
+                          "side": "self"
+                        },
+                        "label": "cure_status"
+                      }
+                    ]
+                  },
+                  {
+                    "chain": "success",
+                    "acts": [
+                      {
+                        "op": "add_invalid_turns",
+                        "p": {
+                          "turns": 2,
+                          "kind": "all"
+                        },
+                        "label": "add_invalid_turns"
+                      }
+                    ]
+                  }
+                ]
+              }
+            }
+          },
+          {
+            "codeId": "effect_sequence",
+            "node": "on_skill_use",
+            "source": "skill",
+            "role": "attached",
+            "order": 4,
+            "customText": "🎯 消除雙方能力上升、下降狀態與護盾、護罩效果，並附加自身最大體力50%的電·暗影系傷害",
+            "params": {
+              "clause": {
+                "raw": "🎯 消除雙方能力上升、下降狀態與護盾、護罩效果，並附加自身最大體力50%的電·暗影系傷害",
+                "marker": "🎯",
+                "trig": "use",
+                "parsed": true,
+                "body": [
+                  {
+                    "acts": [
+                      {
+                        "op": "stat_clear",
+                        "p": {
+                          "side": "both",
+                          "kind": "all"
+                        },
+                        "label": "stat_clear"
+                      },
+                      {
+                        "op": "clear_shield",
+                        "p": {
+                          "side": "both",
+                          "kind": "both"
+                        },
+                        "label": "clear_shield"
+                      },
+                      {
+                        "op": "dmg",
+                        "p": {
+                          "base": "最大體力",
+                          "of": "self",
+                          "ratio": 0.5,
+                          "type": "技能",
+                          "elem": "電·暗影"
+                        },
+                        "label": "dmg"
+                      }
+                    ]
+                  }
+                ]
+              }
+            }
+          },
+          {
+            "codeId": "effect_sequence",
+            "node": "on_skill_use",
+            "source": "skill",
+            "role": "attached",
+            "order": 5,
+            "customText": "🎯 抵擋下次受到的攻擊，抵擋成功則附加對手等同抵擋傷害100%的真實傷害",
+            "params": {
+              "clause": {
+                "raw": "🎯 抵擋下次受到的攻擊，抵擋成功則附加對手等同抵擋傷害100%的真實傷害",
+                "marker": "🎯",
+                "trig": "use",
+                "parsed": true,
+                "body": [
+                  {
+                    "acts": [
+                      {
+                        "op": "block_damage_uses",
+                        "p": {
+                          "uses": 1,
+                          "kind": "攻擊",
+                          "key": "counterAttack",
+                          "sealOpponentAdded": false,
+                          "onBlock": [
+                            {
+                              "acts": [
+                                {
+                                  "op": "damage_from_counter",
+                                  "p": {
+                                    "key": "counterAttack",
+                                    "ratio": 1,
+                                    "type": "真實",
+                                    "consume": true
+                                  },
+                                  "label": "damage_from_counter"
+                                }
+                              ]
+                            }
+                          ]
+                        },
+                        "label": "block_damage_uses"
+                      }
+                    ]
+                  }
+                ]
+              }
+            }
+          }
+        ]
+      },
+      {
+        "name": "暗影墮霆閃",
+        "type": "電·暗影",
+        "category": "物理",
+        "power": 160,
+        "pp": 5,
+        "maxPp": 5,
+        "currentPp": 5,
+        "accuracy": 100,
+        "priority": 0,
+        "isSureHit": true,
+        "isFifthSkill": false,
+        "description": "■ 必中\n🎯 免疫下次受到的攻擊\n🎯 命中後100%令對手繳械，未觸發則2回合內PP值消耗量提升20倍\n🎯 3回合內自身使用技能吸取對手270點固定體力，對手體力未減少則附加170點真實傷害與2回合繳械",
+        "effectDetail": "",
+        "effectType": "none",
+        "effectMode": "kit",
+        "kit": [
+          {
+            "codeId": "skill_property",
+            "node": "before_skill",
+            "source": "skill",
+            "role": "innate",
+            "order": 0,
+            "customText": "■ 必中",
+            "params": {
+              "property": "sure_hit",
+              "value": true,
+              "conditions": []
+            }
+          },
+          {
+            "codeId": "effect_sequence",
+            "node": "on_skill_use",
+            "source": "skill",
+            "role": "attached",
+            "order": 1,
+            "customText": "🎯 免疫下次受到的攻擊",
+            "params": {
+              "clause": {
+                "raw": "🎯 免疫下次受到的攻擊",
+                "marker": "🎯",
+                "trig": "use",
+                "parsed": true,
+                "body": [
+                  {
+                    "acts": [
+                      {
+                        "op": "immune_attack_count",
+                        "p": {
+                          "count": 1
+                        },
+                        "label": "immune_attack_count"
+                      }
+                    ]
+                  }
+                ]
+              }
+            }
+          },
+          {
+            "codeId": "effect_sequence",
+            "node": "on_hit",
+            "source": "skill",
+            "role": "attached",
+            "order": 2,
+            "customText": "🎯 命中後100%令對手繳械，未觸發則2回合內PP值消耗量提升20倍",
+            "params": {
+              "clause": {
+                "raw": "🎯 命中後100%令對手繳械，未觸發則2回合內PP值消耗量提升20倍",
+                "marker": "🎯",
+                "trig": "after_hit",
+                "parsed": true,
+                "body": [
+                  {
+                    "acts": [
+                      {
+                        "op": "status",
+                        "p": {
+                          "side": "opp",
+                          "status": "繳械"
+                        },
+                        "label": "status"
+                      }
+                    ]
+                  },
+                  {
+                    "chain": "fail",
+                    "acts": [
+                      {
+                        "op": "pp_cost_mult",
+                        "p": {
+                          "mult": 20,
+                          "turns": 2
+                        },
+                        "label": "pp_cost_mult"
+                      }
+                    ]
+                  }
+                ]
+              }
+            }
+          },
+          {
+            "codeId": "effect_sequence",
+            "node": "on_skill_use",
+            "source": "skill",
+            "role": "attached",
+            "order": 3,
+            "customText": "🎯 3回合內自身使用技能吸取對手270點固定體力，對手體力未減少則附加170點真實傷害與2回合繳械",
+            "params": {
+              "clause": {
+                "raw": "🎯 3回合內自身使用技能吸取對手270點固定體力，對手體力未減少則附加170點真實傷害與2回合繳械",
+                "marker": "🎯",
+                "trig": "use",
+                "parsed": true,
+                "body": [
+                  {
+                    "acts": [
+                      {
+                        "op": "timed",
+                        "p": {
+                          "turns": 3,
+                          "from": "now",
+                          "trig": "self_skill",
+                          "initial": true,
+                          "body": [
+                            {
+                              "acts": [
+                                {
+                                  "op": "drain",
+                                  "p": {
+                                    "flat": 270
+                                  },
+                                  "label": "drain"
+                                }
+                              ]
+                            },
+                            {
+                              "cond": [
+                                {
+                                  "c": "last_no_dmg",
+                                  "p": {},
+                                  "label": "last_no_dmg"
+                                }
+                              ],
+                              "acts": [
+                                {
+                                  "op": "dmg",
+                                  "p": {
+                                    "flat": 170,
+                                    "type": "真實"
+                                  },
+                                  "label": "dmg"
+                                },
+                                {
+                                  "op": "status",
+                                  "p": {
+                                    "side": "opp",
+                                    "status": "繳械",
+                                    "turns": 2
+                                  },
+                                  "label": "status"
+                                }
+                              ]
+                            }
+                          ]
+                        },
+                        "label": "timed"
+                      }
+                    ]
+                  }
+                ]
+              }
+            }
+          }
+        ]
+      },
+      {
+        "name": "墮影噬雷決",
+        "type": "電·暗影",
+        "category": "物理",
+        "power": 170,
+        "pp": 5,
+        "maxPp": 5,
+        "currentPp": 5,
+        "accuracy": 100,
+        "priority": 1,
+        "isSureHit": true,
+        "isFifthSkill": true,
+        "description": "■ 必中\n■ 先制+1\n🎯 消除對手回合類效果；對手回合類效果無法被消除時，當回合無法恢復體力與行動\n🎯 造成技能傷害提升50%，對手每處於1回合異常則提升7%\n🎯 附加自身最大體力40%的百分比傷害，對手體力高於最大體力1/3時效果翻倍\n🎯 未擊敗對手則對手下2回合先制-2",
+        "effectDetail": "",
+        "effectType": "none",
+        "effectMode": "kit",
+        "kit": [
+          {
+            "codeId": "skill_property",
+            "node": "before_skill",
+            "source": "skill",
+            "role": "innate",
+            "order": 0,
+            "customText": "■ 必中",
+            "params": {
+              "property": "sure_hit",
+              "value": true,
+              "conditions": []
+            }
+          },
+          {
+            "codeId": "skill_property",
+            "node": "modify_priority",
+            "source": "skill",
+            "role": "innate",
+            "order": 1,
+            "customText": "■ 先制+1",
+            "params": {
+              "property": "base_priority",
+              "value": 1,
+              "conditions": []
+            }
+          },
+          {
+            "codeId": "effect_sequence",
+            "node": "on_skill_use",
+            "source": "skill",
+            "role": "attached",
+            "order": 2,
+            "customText": "🎯 消除對手回合類效果；對手回合類效果無法被消除時，當回合無法恢復體力與行動",
+            "params": {
+              "clause": {
+                "raw": "🎯 消除對手回合類效果；對手回合類效果無法被消除時，當回合無法恢復體力與行動",
+                "marker": "🎯",
+                "trig": "use",
+                "parsed": true,
+                "body": [
+                  {
+                    "cond": [
+                      {
+                        "c": "has_turn_effect",
+                        "p": {
+                          "side": "opp"
+                        },
+                        "label": "has_turn_effect"
+                      }
+                    ],
+                    "acts": [
+                      {
+                        "op": "clear_turn",
+                        "p": {
+                          "side": "opp"
+                        },
+                        "label": "clear_turn"
+                      }
+                    ]
+                  },
+                  {
+                    "chain": "fail",
+                    "cond": [
+                      {
+                        "c": "has_turn_effect",
+                        "p": {
+                          "side": "opp"
+                        },
+                        "label": "has_turn_effect"
+                      }
+                    ],
+                    "acts": [
+                      {
+                        "op": "no_heal",
+                        "p": {
+                          "turns": 1
+                        },
+                        "label": "no_heal"
+                      },
+                      {
+                        "op": "stop_action",
+                        "p": {
+                          "side": "opp"
+                        },
+                        "label": "stop_action"
+                      }
+                    ]
+                  }
+                ]
+              }
+            }
+          },
+          {
+            "codeId": "effect_sequence",
+            "node": "before_damage",
+            "source": "skill",
+            "role": "attached",
+            "order": 3,
+            "customText": "🎯 造成技能傷害提升50%，對手每處於1回合異常則提升7%",
+            "params": {
+              "clause": {
+                "raw": "🎯 造成技能傷害提升50%，對手每處於1回合異常則提升7%",
+                "marker": "🎯",
+                "trig": "outgoing_skill",
+                "parsed": true,
+                "body": [
+                  {
+                    "acts": [
+                      {
+                        "op": "damage_scale_by_status",
+                        "p": {
+                          "side": "opp",
+                          "base": 1.5,
+                          "perTurn": 0.07,
+                          "kind": "技能"
+                        },
+                        "label": "damage_scale_by_status"
+                      }
+                    ]
+                  }
+                ]
+              }
+            }
+          },
+          {
+            "codeId": "effect_sequence",
+            "node": "on_skill_use",
+            "source": "skill",
+            "role": "attached",
+            "order": 4,
+            "customText": "🎯 附加自身最大體力40%的百分比傷害，對手體力高於最大體力1/3時效果翻倍",
+            "params": {
+              "clause": {
+                "raw": "🎯 附加自身最大體力40%的百分比傷害，對手體力高於最大體力1/3時效果翻倍",
+                "marker": "🎯",
+                "trig": "use",
+                "parsed": true,
+                "body": [
+                  {
+                    "cond": [
+                      {
+                        "c": "hp_ratio",
+                        "p": {
+                          "side": "opp",
+                          "op": "高於",
+                          "ratio": 0.3333333333333333
+                        },
+                        "label": "hp_ratio"
+                      }
+                    ],
+                    "acts": [
+                      {
+                        "op": "dmg",
+                        "p": {
+                          "base": "最大體力",
+                          "of": "self",
+                          "ratio": 0.8,
+                          "type": "百分比"
+                        },
+                        "label": "dmg"
+                      }
+                    ],
+                    "elseActs": [
+                      {
+                        "op": "dmg",
+                        "p": {
+                          "base": "最大體力",
+                          "of": "self",
+                          "ratio": 0.4,
+                          "type": "百分比"
+                        },
+                        "label": "dmg"
+                      }
+                    ]
+                  }
+                ]
+              }
+            }
+          },
+          {
+            "codeId": "effect_sequence",
+            "node": "on_not_killed",
+            "source": "skill",
+            "role": "attached",
+            "order": 5,
+            "customText": "🎯 未擊敗對手則對手下2回合先制-2",
+            "params": {
+              "clause": {
+                "raw": "🎯 未擊敗對手則對手下2回合先制-2",
+                "marker": "🎯",
+                "trig": "not_killed",
+                "parsed": true,
+                "body": [
+                  {
+                    "acts": [
+                      {
+                        "op": "prio_turns",
+                        "p": {
+                          "side": "opp",
+                          "v": -2,
+                          "turns": 2,
+                          "next": true
+                        },
+                        "label": "prio_turns"
+                      }
+                    ]
+                  }
+                ]
+              }
+            }
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "707070",
+    "name": "墜霆.雷伊",
+    "soulMark": {
+      "name": "墜",
+      "description": "每次登場時\n> 展開混沌雷翼令自身入魔3回合且直到本次入魔結束前自身抵擋受到的所有技能傷害\n>> 降低敵方背包內所有精靈基礎能力值7%\n>>> 每降低7點則提升自身所有能力值提升70點\n\n回合開始時\n> 若對手處於能力提升狀態則100%令對手麻痺並反轉對手能力提升狀態\n>> 反轉失敗則消除對手能力提升狀態\n> 對手不處於能力提升狀態則自身所有技能先制+2且使用技能後100%令對手繳械\n>> 未觸發則7回合內屬性技能附加效果失效且攻擊技能PP值消耗量提升20倍(該效果為綁定對手回合類效果)\n\n戰鬥階段結束時:\n> 若敵我雙方在場精靈存在回合類效果則恢復自身最大體力1/1並造成等量百分比傷害\n> 若敵我雙方在場精靈存在回合類效果則恢復自身所有技能全部PP值\n> 令雙方回合類效果變為1回合\n>> 每變化n回合\n>>> 則令額外自身入魔n回合(已處於入魔則回合數改為+n)\n>>> 自身下次使用攻擊技能時額外附加自身最大體力70%*n的百分比傷害\n\n繳械:弱化類異常，限制類異常，無法選擇使用藥劑，選擇技能階段令選擇的技能PP值歸0，觸發成功後若該技能PP值為0則當回合無法行動\n麻痺:控制類異常，無法行動\n入魔：附屬類異常，自身攻擊時克制倍數歸1並乘以神靈系、聖靈系、光系中對自身克制倍數之和，回合結束時若當回合未選擇攻擊技能則失去體力上限20%令自身所有附屬類異常回合數+1，反之減少當回合所選擇的攻擊技能1點PP值",
+      "effectType": "none",
+      "effectValue": 0,
+      "effectMode": "kit",
+      "kit": [
+        {
+          "codeId": "effect_sequence",
+          "node": "on_entered",
+          "source": "soulmark",
+          "role": "innate",
+          "order": 0,
+          "customText": "> 展開混沌雷翼令自身入魔3回合且直到本次入魔結束前自身抵擋受到的所有技能傷害",
+          "params": {
+            "clause": {
+              "raw": "> 展開混沌雷翼令自身入魔3回合且直到本次入魔結束前自身抵擋受到的所有技能傷害",
+              "marker": ">",
+              "trig": "entrance",
+              "parsed": true,
+              "body": [
+                {
+                  "acts": [
+                    {
+                      "op": "status",
+                      "p": {
+                        "side": "self",
+                        "status": "入魔",
+                        "turns": 3
+                      },
+                      "label": "status"
+                    },
+                    {
+                      "op": "status_guard_instance",
+                      "p": {
+                        "status": "入魔",
+                        "kind": "技能"
+                      },
+                      "label": "status_guard_instance"
+                    },
+                    {
+                      "op": "panel_pool_transfer",
+                      "p": {
+                        "ratio": 0.07,
+                        "unit": 7,
+                        "gain": 70
+                      },
+                      "label": "panel_pool_transfer"
+                    }
+                  ]
+                }
+              ]
+            }
+          }
+        },
+        {
+          "codeId": "effect_sequence",
+          "node": "round_start",
+          "source": "soulmark",
+          "role": "innate",
+          "order": 1,
+          "customText": ">> 降低敵方背包內所有精靈基礎能力值7%",
+          "params": {
+            "clause": {
+              "raw": ">> 降低敵方背包內所有精靈基礎能力值7%",
+              "marker": ">",
+              "trig": "round_start",
+              "parsed": true,
+              "body": [
+                {
+                  "cond": [
+                    {
+                      "c": "stage",
+                      "p": {
+                        "side": "opp",
+                        "kind": "up"
+                      },
+                      "label": "stage"
+                    }
+                  ],
+                  "acts": [
+                    {
+                      "op": "status",
+                      "p": {
+                        "side": "opp",
+                        "status": "麻痺"
+                      },
+                      "label": "status"
+                    },
+                    {
+                      "op": "stat_reverse",
+                      "p": {
+                        "side": "opp",
+                        "kind": "up",
+                        "failClear": true
+                      },
+                      "label": "stat_reverse"
+                    }
+                  ],
+                  "elseActs": [
+                    {
+                      "op": "prio_turns",
+                      "p": {
+                        "turns": 1,
+                        "v": 2,
+                        "current": true
+                      },
+                      "label": "prio_turns"
+                    },
+                    {
+                      "op": "timed",
+                      "p": {
+                        "turns": 1,
+                        "from": "now",
+                        "trig": "self_after_use",
+                        "body": [
+                          {
+                            "acts": [
+                              {
+                                "op": "status",
+                                "p": {
+                                  "side": "opp",
+                                  "status": "繳械"
+                                },
+                                "label": "status"
+                              }
+                            ]
+                          },
+                          {
+                            "chain": "fail",
+                            "acts": [
+                              {
+                                "op": "bound_penalty",
+                                "p": {
+                                  "turns": 7,
+                                  "ppMultiplier": 20,
+                                  "ppKind": "攻擊",
+                                  "sealKind": "屬性"
+                                },
+                                "label": "bound_penalty"
+                              }
+                            ]
+                          }
+                        ]
+                      },
+                      "label": "timed"
+                    }
+                  ]
+                }
+              ]
+            }
+          }
+        },
+        {
+          "codeId": "effect_sequence",
+          "node": "battle_phase_end",
+          "source": "soulmark",
+          "role": "innate",
+          "order": 2,
+          "customText": ">>> 每降低7點則提升自身所有能力值提升70點",
+          "params": {
+            "clause": {
+              "raw": ">>> 每降低7點則提升自身所有能力值提升70點",
+              "marker": ">",
+              "trig": "phase_end",
+              "parsed": true,
+              "body": [
+                {
+                  "cond": [
+                    {
+                      "c": "either_turn_effect",
+                      "p": {},
+                      "label": "either_turn_effect"
+                    }
+                  ],
+                  "acts": [
+                    {
+                      "op": "heal",
+                      "p": {
+                        "side": "self",
+                        "ratio": 1
+                      },
+                      "label": "heal"
+                    },
+                    {
+                      "op": "dmg",
+                      "p": {
+                        "base": "最大體力",
+                        "of": "self",
+                        "ratio": 1,
+                        "type": "百分比"
+                      },
+                      "label": "dmg"
+                    },
+                    {
+                      "op": "pp_op",
+                      "p": {
+                        "side": "self",
+                        "mode": "recover",
+                        "amount": 1
+                      },
+                      "label": "pp_op"
+                    }
+                  ]
+                }
+              ]
+            }
+          }
+        },
+        {
+          "codeId": "effect_sequence",
+          "node": "battle_phase_end",
+          "source": "soulmark",
+          "role": "innate",
+          "order": 3,
+          "customText": "> 若對手處於能力提升狀態則100%令對手麻痺並反轉對手能力提升狀態",
+          "params": {
+            "clause": {
+              "raw": "> 若對手處於能力提升狀態則100%令對手麻痺並反轉對手能力提升狀態",
+              "marker": ">",
+              "trig": "phase_end",
+              "parsed": true,
+              "body": [
+                {
+                  "acts": [
+                    {
+                      "op": "compress_turn_effects",
+                      "p": {
+                        "side": "both",
+                        "remaining": 1
+                      },
+                      "label": "compress_turn_effects"
+                    }
+                  ]
+                },
+                {
+                  "chain": "success",
+                  "acts": [
+                    {
+                      "op": "pending_damage_write",
+                      "p": {
+                        "key": "durationCompression",
+                        "ratio": 0.7
+                      },
+                      "label": "pending_damage_write"
+                    },
+                    {
+                      "op": "status_extend_by_last",
+                      "p": {
+                        "status": "入魔"
+                      },
+                      "label": "status_extend_by_last"
+                    }
+                  ]
+                }
+              ]
+            }
+          }
+        },
+        {
+          "codeId": "effect_sequence",
+          "node": "on_skill_use",
+          "source": "soulmark",
+          "role": "innate",
+          "order": 4,
+          "customText": ">> 反轉失敗則消除對手能力提升狀態",
+          "params": {
+            "clause": {
+              "raw": ">> 反轉失敗則消除對手能力提升狀態",
+              "marker": ">",
+              "trig": "self_attack",
+              "parsed": true,
+              "body": [
+                {
+                  "acts": [
+                    {
+                      "op": "pending_damage_use",
+                      "p": {
+                        "key": "durationCompression",
+                        "type": "百分比"
+                      },
+                      "label": "pending_damage_use"
+                    }
+                  ]
+                }
+              ]
+            }
+          }
+        },
+        {
+          "codeId": "effect_sequence",
+          "node": "battle_start",
+          "source": "soulmark",
+          "role": "innate",
+          "order": 5,
+          "customText": "> 對手不處於能力提升狀態則自身所有技能先制+2且使用技能後100%令對手繳械",
+          "params": {
+            "clause": {
+              "raw": "> 對手不處於能力提升狀態則自身所有技能先制+2且使用技能後100%令對手繳械",
+              "marker": ">",
+              "trig": "battle_start",
+              "parsed": true,
+              "body": [
+                {
+                  "acts": [
+                    {
+                      "op": "noop",
+                      "p": {
+                        "tag": "無特殊效果"
+                      },
+                      "label": "noop"
+                    }
+                  ]
+                }
+              ]
+            }
+          }
+        },
+        {
+          "codeId": "effect_sequence",
+          "node": "battle_start",
+          "source": "soulmark",
+          "role": "innate",
+          "order": 6,
+          "customText": ">> 未觸發則7回合內屬性技能附加效果失效且攻擊技能PP值消耗量提升20倍(該效果為綁定對手回合類效果)",
+          "params": {
+            "clause": {
+              "raw": ">> 未觸發則7回合內屬性技能附加效果失效且攻擊技能PP值消耗量提升20倍(該效果為綁定對手回合類效果)",
+              "marker": ">",
+              "trig": "battle_start",
+              "parsed": true,
+              "body": [
+                {
+                  "acts": [
+                    {
+                      "op": "noop",
+                      "p": {
+                        "tag": "無特殊效果"
+                      },
+                      "label": "noop"
+                    }
+                  ]
+                }
+              ]
+            }
+          }
+        },
+        {
+          "codeId": "effect_sequence",
+          "node": "battle_start",
+          "source": "soulmark",
+          "role": "innate",
+          "order": 7,
+          "customText": "> 若敵我雙方在場精靈存在回合類效果則恢復自身最大體力1/1並造成等量百分比傷害",
+          "params": {
+            "clause": {
+              "raw": "> 若敵我雙方在場精靈存在回合類效果則恢復自身最大體力1/1並造成等量百分比傷害",
+              "marker": ">",
+              "trig": "battle_start",
+              "parsed": true,
+              "body": [
+                {
+                  "acts": [
+                    {
+                      "op": "noop",
+                      "p": {
+                        "tag": "無特殊效果"
+                      },
+                      "label": "noop"
+                    }
+                  ]
+                }
+              ]
+            }
+          }
+        },
+        {
+          "codeId": "effect_sequence",
+          "node": "battle_start",
+          "source": "soulmark",
+          "role": "innate",
+          "order": 8,
+          "customText": "> 若敵我雙方在場精靈存在回合類效果則恢復自身所有技能全部PP值",
+          "params": {
+            "clause": {
+              "raw": "> 若敵我雙方在場精靈存在回合類效果則恢復自身所有技能全部PP值",
+              "marker": ">",
+              "trig": "battle_start",
+              "parsed": true,
+              "body": [
+                {
+                  "acts": [
+                    {
+                      "op": "noop",
+                      "p": {
+                        "tag": "無特殊效果"
+                      },
+                      "label": "noop"
+                    }
+                  ]
+                }
+              ]
+            }
+          }
+        },
+        {
+          "codeId": "effect_sequence",
+          "node": "battle_start",
+          "source": "soulmark",
+          "role": "innate",
+          "order": 9,
+          "customText": "> 令雙方回合類效果變為1回合",
+          "params": {
+            "clause": {
+              "raw": "> 令雙方回合類效果變為1回合",
+              "marker": ">",
+              "trig": "battle_start",
+              "parsed": true,
+              "body": [
+                {
+                  "acts": [
+                    {
+                      "op": "noop",
+                      "p": {
+                        "tag": "無特殊效果"
+                      },
+                      "label": "noop"
+                    }
+                  ]
+                }
+              ]
+            }
+          }
+        },
+        {
+          "codeId": "effect_sequence",
+          "node": "battle_start",
+          "source": "soulmark",
+          "role": "innate",
+          "order": 10,
+          "customText": ">> 每變化n回合",
+          "params": {
+            "clause": {
+              "raw": ">> 每變化n回合",
+              "marker": ">",
+              "trig": "battle_start",
+              "parsed": true,
+              "body": [
+                {
+                  "acts": [
+                    {
+                      "op": "noop",
+                      "p": {
+                        "tag": "無特殊效果"
+                      },
+                      "label": "noop"
+                    }
+                  ]
+                }
+              ]
+            }
+          }
+        },
+        {
+          "codeId": "effect_sequence",
+          "node": "battle_start",
+          "source": "soulmark",
+          "role": "innate",
+          "order": 11,
+          "customText": ">>> 則令額外自身入魔n回合(已處於入魔則回合數改為+n)",
+          "params": {
+            "clause": {
+              "raw": ">>> 則令額外自身入魔n回合(已處於入魔則回合數改為+n)",
+              "marker": ">",
+              "trig": "battle_start",
+              "parsed": true,
+              "body": [
+                {
+                  "acts": [
+                    {
+                      "op": "noop",
+                      "p": {
+                        "tag": "無特殊效果"
+                      },
+                      "label": "noop"
+                    }
+                  ]
+                }
+              ]
+            }
+          }
+        },
+        {
+          "codeId": "effect_sequence",
+          "node": "battle_start",
+          "source": "soulmark",
+          "role": "innate",
+          "order": 12,
+          "customText": ">>> 自身下次使用攻擊技能時額外附加自身最大體力70%*n的百分比傷害",
+          "params": {
+            "clause": {
+              "raw": ">>> 自身下次使用攻擊技能時額外附加自身最大體力70%*n的百分比傷害",
+              "marker": ">",
+              "trig": "battle_start",
+              "parsed": true,
+              "body": [
+                {
+                  "acts": [
+                    {
+                      "op": "noop",
+                      "p": {
+                        "tag": "無特殊效果"
+                      },
+                      "label": "noop"
+                    }
+                  ]
+                }
+              ]
+            }
+          }
+        },
+        {
+          "codeId": "effect_sequence",
+          "node": "battle_start",
+          "source": "soulmark",
+          "role": "innate",
+          "order": 13,
+          "customText": "繳械:弱化類異常，限制類異常，無法選擇使用藥劑，選擇技能階段令選擇的技能PP值歸0，觸發成功後若該技能PP值為0則當回合無法行動\n麻痺:控制類異常，無法行動\n入魔：附屬類異常，自身攻擊時克制倍數歸1並乘以神靈系、聖靈系、光系中對自身克制倍數之和，回合結束時若當回合未選擇攻擊技能則失去體力上限20%令自身所有附屬類異常回合數+1，反之減少當回合所選擇的攻擊技能1點PP值",
+          "params": {
+            "clause": {
+              "raw": "繳械:弱化類異常，限制類異常，無法選擇使用藥劑，選擇技能階段令選擇的技能PP值歸0，觸發成功後若該技能PP值為0則當回合無法行動\n麻痺:控制類異常，無法行動\n入魔：附屬類異常，自身攻擊時克制倍數歸1並乘以神靈系、聖靈系、光系中對自身克制倍數之和，回合結束時若當回合未選擇攻擊技能則失去體力上限20%令自身所有附屬類異常回合數+1，反之減少當回合所選擇的攻擊技能1點PP值",
+              "marker": ">",
+              "trig": "battle_start",
+              "parsed": true,
+              "body": [
+                {
+                  "acts": [
+                    {
+                      "op": "noop",
+                      "p": {
+                        "tag": "無特殊效果"
+                      },
+                      "label": "noop"
+                    }
+                  ]
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    "skills": [
+      {
+        "name": "怨雷",
+        "type": "混沌·電",
+        "category": "物理",
+        "power": 90,
+        "pp": 20,
+        "maxPp": 20,
+        "currentPp": 20,
+        "accuracy": 100,
+        "priority": 3,
+        "isSureHit": true,
+        "isFifthSkill": false,
+        "description": "■ 必中\n■ 先制+3\n🎯 消除雙方能力上升、下降狀態並附加等同於消除前雙方能力等級總和×70點真實傷害\n🎯 抵擋下次受到的攻擊傷害，抵擋成功則附加對手等量真實傷害；直到抵擋觸發前或自身下場，對手所有技能附加效果失效\n🎯 下次死亡時令自身強制存活並保留1點體力",
+        "effectDetail": "",
+        "effectType": "none",
+        "effectMode": "kit",
+        "kit": [
+          {
+            "codeId": "skill_property",
+            "node": "before_skill",
+            "source": "skill",
+            "role": "innate",
+            "order": 0,
+            "customText": "■ 必中",
+            "params": {
+              "property": "sure_hit",
+              "value": true,
+              "conditions": []
+            }
+          },
+          {
+            "codeId": "skill_property",
+            "node": "modify_priority",
+            "source": "skill",
+            "role": "innate",
+            "order": 1,
+            "customText": "■ 先制+3",
+            "params": {
+              "property": "base_priority",
+              "value": 3,
+              "conditions": []
+            }
+          },
+          {
+            "codeId": "effect_sequence",
+            "node": "on_skill_use",
+            "source": "skill",
+            "role": "attached",
+            "order": 2,
+            "customText": "🎯 消除雙方能力上升、下降狀態並附加等同於消除前雙方能力等級總和×70點真實傷害",
+            "params": {
+              "clause": {
+                "raw": "🎯 消除雙方能力上升、下降狀態並附加等同於消除前雙方能力等級總和×70點真實傷害",
+                "marker": "🎯",
+                "trig": "use",
+                "parsed": true,
+                "body": [
+                  {
+                    "acts": [
+                      {
+                        "op": "stat_clear",
+                        "p": {
+                          "side": "both",
+                          "kind": "all",
+                          "captureLevels": true
+                        },
+                        "label": "stat_clear"
+                      },
+                      {
+                        "op": "dmg_from_last",
+                        "p": {
+                          "ratio": 70,
+                          "type": "真實"
+                        },
+                        "label": "dmg_from_last"
+                      }
+                    ]
+                  }
+                ]
+              }
+            }
+          },
+          {
+            "codeId": "effect_sequence",
+            "node": "on_skill_use",
+            "source": "skill",
+            "role": "attached",
+            "order": 3,
+            "customText": "🎯 抵擋下次受到的攻擊傷害，抵擋成功則附加對手等量真實傷害；直到抵擋觸發前或自身下場，對手所有技能附加效果失效",
+            "params": {
+              "clause": {
+                "raw": "🎯 抵擋下次受到的攻擊傷害，抵擋成功則附加對手等量真實傷害；直到抵擋觸發前或自身下場，對手所有技能附加效果失效",
+                "marker": "🎯",
+                "trig": "use",
+                "parsed": true,
+                "body": [
+                  {
+                    "acts": [
+                      {
+                        "op": "block_damage_uses",
+                        "p": {
+                          "uses": 1,
+                          "kind": "攻擊",
+                          "key": "counterAttack",
+                          "sealOpponentAdded": true,
+                          "onBlock": [
+                            {
+                              "acts": [
+                                {
+                                  "op": "damage_from_counter",
+                                  "p": {
+                                    "key": "counterAttack",
+                                    "ratio": 1,
+                                    "type": "真實",
+                                    "consume": true
+                                  },
+                                  "label": "damage_from_counter"
+                                }
+                              ]
+                            }
+                          ]
+                        },
+                        "label": "block_damage_uses"
+                      }
+                    ]
+                  }
+                ]
+              }
+            }
+          },
+          {
+            "codeId": "effect_sequence",
+            "node": "on_skill_use",
+            "source": "skill",
+            "role": "attached",
+            "order": 4,
+            "customText": "🎯 下次死亡時令自身強制存活並保留1點體力",
+            "params": {
+              "clause": {
+                "raw": "🎯 下次死亡時令自身強制存活並保留1點體力",
+                "marker": "🎯",
+                "trig": "use",
+                "parsed": true,
+                "body": [
+                  {
+                    "acts": [
+                      {
+                        "op": "survive_uses",
+                        "p": {
+                          "uses": 1
+                        },
+                        "label": "survive_uses"
+                      }
+                    ]
+                  }
+                ]
+              }
+            }
+          }
+        ]
+      },
+      {
+        "name": "失控霆魔",
+        "type": "無屬性",
+        "category": "屬性",
+        "power": 0,
+        "pp": 5,
+        "maxPp": 5,
+        "currentPp": 5,
+        "accuracy": 100,
+        "priority": 0,
+        "isSureHit": true,
+        "isFifthSkill": false,
+        "description": "■ 必中\n🎯 全屬性+1，自身每有1回合入魔狀態時強化效果翻倍\n🎯 7回合內使用技能後恢復自身最大體力的1/1並造成等量百分比傷害\n🎯 7回合內，自身回合類效果結束或被消除時，使自身下兩次受到異常狀態時轉化為入魔\n🎯 7回合內免疫並反彈異常狀態\n🎯 下2回合對手所有技能先制-2",
+        "effectDetail": "",
+        "effectType": "none",
+        "effectMode": "kit",
+        "kit": [
+          {
+            "codeId": "skill_property",
+            "node": "before_skill",
+            "source": "skill",
+            "role": "innate",
+            "order": 0,
+            "customText": "■ 必中",
+            "params": {
+              "property": "sure_hit",
+              "value": true,
+              "conditions": []
+            }
+          },
+          {
+            "codeId": "effect_sequence",
+            "node": "on_skill_use",
+            "source": "skill",
+            "role": "attached",
+            "order": 1,
+            "customText": "🎯 全屬性+1，自身每有1回合入魔狀態時強化效果翻倍",
+            "params": {
+              "clause": {
+                "raw": "🎯 全屬性+1，自身每有1回合入魔狀態時強化效果翻倍",
+                "marker": "🎯",
+                "trig": "use",
+                "parsed": true,
+                "body": [
+                  {
+                    "acts": [
+                      {
+                        "op": "stat_by_status_duration",
+                        "p": {
+                          "status": "入魔",
+                          "base": 1,
+                          "factor": 2
+                        },
+                        "label": "stat_by_status_duration"
+                      }
+                    ]
+                  }
+                ]
+              }
+            }
+          },
+          {
+            "codeId": "effect_sequence",
+            "node": "on_skill_use",
+            "source": "skill",
+            "role": "attached",
+            "order": 2,
+            "customText": "🎯 7回合內使用技能後恢復自身最大體力的1/1並造成等量百分比傷害",
+            "params": {
+              "clause": {
+                "raw": "🎯 7回合內使用技能後恢復自身最大體力的1/1並造成等量百分比傷害",
+                "marker": "🎯",
+                "trig": "use",
+                "parsed": true,
+                "body": [
+                  {
+                    "acts": [
+                      {
+                        "op": "timed",
+                        "p": {
+                          "turns": 7,
+                          "from": "now",
+                          "trig": "self_after_use",
+                          "body": [
+                            {
+                              "acts": [
+                                {
+                                  "op": "heal",
+                                  "p": {
+                                    "side": "self",
+                                    "ratio": 1
+                                  },
+                                  "label": "heal"
+                                },
+                                {
+                                  "op": "dmg",
+                                  "p": {
+                                    "base": "最大體力",
+                                    "of": "self",
+                                    "ratio": 1,
+                                    "type": "百分比"
+                                  },
+                                  "label": "dmg"
+                                }
+                              ]
+                            }
+                          ]
+                        },
+                        "label": "timed"
+                      }
+                    ]
+                  }
+                ]
+              }
+            }
+          },
+          {
+            "codeId": "effect_sequence",
+            "node": "on_skill_use",
+            "source": "skill",
+            "role": "attached",
+            "order": 3,
+            "customText": "🎯 7回合內，自身回合類效果結束或被消除時，使自身下兩次受到異常狀態時轉化為入魔",
+            "params": {
+              "clause": {
+                "raw": "🎯 7回合內，自身回合類效果結束或被消除時，使自身下兩次受到異常狀態時轉化為入魔",
+                "marker": "🎯",
+                "trig": "use",
+                "parsed": true,
+                "body": [
+                  {
+                    "acts": [
+                      {
+                        "op": "effect_end_watch",
+                        "p": {
+                          "turns": 7,
+                          "mode": "convert",
+                          "count": 2,
+                          "status": "入魔"
+                        },
+                        "label": "effect_end_watch"
+                      }
+                    ]
+                  }
+                ]
+              }
+            }
+          },
+          {
+            "codeId": "effect_sequence",
+            "node": "on_skill_use",
+            "source": "skill",
+            "role": "attached",
+            "order": 4,
+            "customText": "🎯 7回合內免疫並反彈異常狀態",
+            "params": {
+              "clause": {
+                "raw": "🎯 7回合內免疫並反彈異常狀態",
+                "marker": "🎯",
+                "trig": "use",
+                "parsed": true,
+                "body": [
+                  {
+                    "acts": [
+                      {
+                        "op": "immune_status_turns",
+                        "p": {
+                          "turns": 7,
+                          "reflect": true
+                        },
+                        "label": "immune_status_turns"
+                      }
+                    ]
+                  }
+                ]
+              }
+            }
+          },
+          {
+            "codeId": "effect_sequence",
+            "node": "on_skill_use",
+            "source": "skill",
+            "role": "attached",
+            "order": 5,
+            "customText": "🎯 下2回合對手所有技能先制-2",
+            "params": {
+              "clause": {
+                "raw": "🎯 下2回合對手所有技能先制-2",
+                "marker": "🎯",
+                "trig": "use",
+                "parsed": true,
+                "body": [
+                  {
+                    "acts": [
+                      {
+                        "op": "prio_turns",
+                        "p": {
+                          "side": "opp",
+                          "v": -2,
+                          "turns": 2,
+                          "next": true
+                        },
+                        "label": "prio_turns"
+                      }
+                    ]
+                  }
+                ]
+              }
+            }
+          }
+        ]
+      },
+      {
+        "name": "魔化雷驅",
+        "type": "無屬性",
+        "category": "屬性",
+        "power": 0,
+        "pp": 5,
+        "maxPp": 5,
+        "currentPp": 5,
+        "accuracy": 100,
+        "priority": 0,
+        "isSureHit": true,
+        "isFifthSkill": false,
+        "description": "■ 必中\n■ 自身處於異常狀態時先制+3\n🎯 解除自身所有異常狀態，解除成功則7回合內對手技能附加效果失效\n🎯 直接造成對手自身最大體力50%的混沌·電系傷害\n🎯 技能無效時，上述傷害提升150%\n🎯 7回合內，對手若使用屬性技能則下7回合造成非真實傷害不超過70\n🎯 下7回合對手受到的非真實傷害提升170%",
+        "effectDetail": "",
+        "effectType": "none",
+        "effectMode": "kit",
+        "kit": [
+          {
+            "codeId": "skill_property",
+            "node": "before_skill",
+            "source": "skill",
+            "role": "innate",
+            "order": 0,
+            "customText": "■ 必中",
+            "params": {
+              "property": "sure_hit",
+              "value": true,
+              "conditions": []
+            }
+          },
+          {
+            "codeId": "effect_sequence",
+            "node": "modify_priority",
+            "source": "skill",
+            "role": "innate",
+            "order": 1,
+            "customText": "■ 自身處於異常狀態時先制+3",
+            "params": {
+              "clause": {
+                "raw": "■ 自身處於異常狀態時先制+3",
+                "marker": "■",
+                "trig": "modify_priority",
+                "parsed": true,
+                "body": [
+                  {
+                    "cond": [
+                      {
+                        "c": "abnormal",
+                        "p": {
+                          "side": "self"
+                        },
+                        "label": "abnormal"
+                      }
+                    ],
+                    "acts": [
+                      {
+                        "op": "prio_bonus",
+                        "p": {
+                          "v": 3
+                        },
+                        "label": "prio_bonus"
+                      }
+                    ]
+                  }
+                ]
+              }
+            }
+          },
+          {
+            "codeId": "effect_sequence",
+            "node": "on_skill_use",
+            "source": "skill",
+            "role": "attached",
+            "order": 2,
+            "customText": "🎯 解除自身所有異常狀態，解除成功則7回合內對手技能附加效果失效",
+            "params": {
+              "clause": {
+                "raw": "🎯 解除自身所有異常狀態，解除成功則7回合內對手技能附加效果失效",
+                "marker": "🎯",
+                "trig": "use",
+                "parsed": true,
+                "body": [
+                  {
+                    "acts": [
+                      {
+                        "op": "cure_status",
+                        "p": {
+                          "side": "self"
+                        },
+                        "label": "cure_status"
+                      }
+                    ]
+                  },
+                  {
+                    "chain": "success",
+                    "acts": [
+                      {
+                        "op": "add_invalid_turns",
+                        "p": {
+                          "turns": 7,
+                          "kind": "all"
+                        },
+                        "label": "add_invalid_turns"
+                      }
+                    ]
+                  }
+                ]
+              }
+            }
+          },
+          {
+            "codeId": "effect_sequence",
+            "node": "on_skill_use",
+            "source": "skill",
+            "role": "attached",
+            "order": 3,
+            "customText": "🎯 直接造成對手自身最大體力50%的混沌·電系傷害",
+            "params": {
+              "clause": {
+                "raw": "🎯 直接造成對手自身最大體力50%的混沌·電系傷害",
+                "marker": "🎯",
+                "trig": "use",
+                "parsed": true,
+                "body": [
+                  {
+                    "acts": [
+                      {
+                        "op": "dmg",
+                        "p": {
+                          "base": "最大體力",
+                          "of": "opp",
+                          "ratio": 0.5,
+                          "type": "技能",
+                          "elem": "混沌·電"
+                        },
+                        "label": "dmg"
+                      }
+                    ]
+                  }
+                ]
+              }
+            }
+          },
+          {
+            "codeId": "effect_sequence",
+            "node": "on_invalid",
+            "source": "skill",
+            "role": "attached",
+            "order": 4,
+            "customText": "🎯 技能無效時，上述傷害提升150%",
+            "params": {
+              "clause": {
+                "raw": "🎯 技能無效時，上述傷害提升150%",
+                "marker": "🎯",
+                "trig": "on_invalid",
+                "parsed": true,
+                "body": [
+                  {
+                    "acts": [
+                      {
+                        "op": "dmg",
+                        "p": {
+                          "base": "最大體力",
+                          "of": "opp",
+                          "ratio": 1.25,
+                          "type": "技能",
+                          "elem": "混沌·電"
+                        },
+                        "label": "dmg"
+                      }
+                    ]
+                  }
+                ]
+              }
+            }
+          },
+          {
+            "codeId": "effect_sequence",
+            "node": "on_skill_use",
+            "source": "skill",
+            "role": "attached",
+            "order": 5,
+            "customText": "🎯 7回合內，對手若使用屬性技能則下7回合造成非真實傷害不超過70",
+            "params": {
+              "clause": {
+                "raw": "🎯 7回合內，對手若使用屬性技能則下7回合造成非真實傷害不超過70",
+                "marker": "🎯",
+                "trig": "use",
+                "parsed": true,
+                "body": [
+                  {
+                    "acts": [
+                      {
+                        "op": "timed",
+                        "p": {
+                          "turns": 7,
+                          "from": "now",
+                          "trig": "opp_used_status",
+                          "body": [
+                            {
+                              "acts": [
+                                {
+                                  "op": "damage_cap_turns",
+                                  "p": {
+                                    "side": "opp",
+                                    "dir": "out",
+                                    "kind": "非真實",
+                                    "cap": 70,
+                                    "turns": 7,
+                                    "next": true
+                                  },
+                                  "label": "damage_cap_turns"
+                                }
+                              ]
+                            }
+                          ]
+                        },
+                        "label": "timed"
+                      }
+                    ]
+                  }
+                ]
+              }
+            }
+          },
+          {
+            "codeId": "effect_sequence",
+            "node": "on_skill_use",
+            "source": "skill",
+            "role": "attached",
+            "order": 6,
+            "customText": "🎯 下7回合對手受到的非真實傷害提升170%",
+            "params": {
+              "clause": {
+                "raw": "🎯 下7回合對手受到的非真實傷害提升170%",
+                "marker": "🎯",
+                "trig": "use",
+                "parsed": true,
+                "body": [
+                  {
+                    "acts": [
+                      {
+                        "op": "damage_multiplier_turns",
+                        "p": {
+                          "side": "opp",
+                          "dir": "in",
+                          "kind": "非真實",
+                          "mult": 2.7,
+                          "turns": 7,
+                          "next": true
+                        },
+                        "label": "damage_multiplier_turns"
+                      }
+                    ]
+                  }
+                ]
+              }
+            }
+          }
+        ]
+      },
+      {
+        "name": "混沌墜霆閃",
+        "type": "混沌·電",
+        "category": "物理",
+        "power": 160,
+        "pp": 5,
+        "maxPp": 5,
+        "currentPp": 5,
+        "accuracy": 100,
+        "priority": 1,
+        "isSureHit": true,
+        "isFifthSkill": false,
+        "description": "■ 必中\n■ 先制+1\n🎯 免疫下次受到的攻擊\n🎯 3回合內自身使用技能吸取對手370點固定體力，對手體力未減少則附加270點真實傷害與7回合繳械\n🎯 吸取對手所有技能1點PP值並恢復給自身\n🎯 每有一個自身技能PP值為滿，則技能威力提升160",
+        "effectDetail": "",
+        "effectType": "none",
+        "effectMode": "kit",
+        "kit": [
+          {
+            "codeId": "skill_property",
+            "node": "before_skill",
+            "source": "skill",
+            "role": "innate",
+            "order": 0,
+            "customText": "■ 必中",
+            "params": {
+              "property": "sure_hit",
+              "value": true,
+              "conditions": []
+            }
+          },
+          {
+            "codeId": "skill_property",
+            "node": "modify_priority",
+            "source": "skill",
+            "role": "innate",
+            "order": 1,
+            "customText": "■ 先制+1",
+            "params": {
+              "property": "base_priority",
+              "value": 1,
+              "conditions": []
+            }
+          },
+          {
+            "codeId": "effect_sequence",
+            "node": "on_skill_use",
+            "source": "skill",
+            "role": "attached",
+            "order": 2,
+            "customText": "🎯 免疫下次受到的攻擊",
+            "params": {
+              "clause": {
+                "raw": "🎯 免疫下次受到的攻擊",
+                "marker": "🎯",
+                "trig": "use",
+                "parsed": true,
+                "body": [
+                  {
+                    "acts": [
+                      {
+                        "op": "immune_attack_count",
+                        "p": {
+                          "count": 1
+                        },
+                        "label": "immune_attack_count"
+                      }
+                    ]
+                  }
+                ]
+              }
+            }
+          },
+          {
+            "codeId": "effect_sequence",
+            "node": "on_skill_use",
+            "source": "skill",
+            "role": "attached",
+            "order": 3,
+            "customText": "🎯 3回合內自身使用技能吸取對手370點固定體力，對手體力未減少則附加270點真實傷害與7回合繳械",
+            "params": {
+              "clause": {
+                "raw": "🎯 3回合內自身使用技能吸取對手370點固定體力，對手體力未減少則附加270點真實傷害與7回合繳械",
+                "marker": "🎯",
+                "trig": "use",
+                "parsed": true,
+                "body": [
+                  {
+                    "acts": [
+                      {
+                        "op": "timed",
+                        "p": {
+                          "turns": 3,
+                          "from": "now",
+                          "trig": "self_skill",
+                          "initial": true,
+                          "body": [
+                            {
+                              "acts": [
+                                {
+                                  "op": "drain",
+                                  "p": {
+                                    "flat": 370
+                                  },
+                                  "label": "drain"
+                                }
+                              ]
+                            },
+                            {
+                              "cond": [
+                                {
+                                  "c": "last_no_dmg",
+                                  "p": {},
+                                  "label": "last_no_dmg"
+                                }
+                              ],
+                              "acts": [
+                                {
+                                  "op": "dmg",
+                                  "p": {
+                                    "flat": 270,
+                                    "type": "真實"
+                                  },
+                                  "label": "dmg"
+                                },
+                                {
+                                  "op": "status",
+                                  "p": {
+                                    "side": "opp",
+                                    "status": "繳械",
+                                    "turns": 7
+                                  },
+                                  "label": "status"
+                                }
+                              ]
+                            }
+                          ]
+                        },
+                        "label": "timed"
+                      }
+                    ]
+                  }
+                ]
+              }
+            }
+          },
+          {
+            "codeId": "effect_sequence",
+            "node": "on_skill_use",
+            "source": "skill",
+            "role": "attached",
+            "order": 4,
+            "customText": "🎯 吸取對手所有技能1點PP值並恢復給自身",
+            "params": {
+              "clause": {
+                "raw": "🎯 吸取對手所有技能1點PP值並恢復給自身",
+                "marker": "🎯",
+                "trig": "use",
+                "parsed": true,
+                "body": [
+                  {
+                    "acts": [
+                      {
+                        "op": "pp_op",
+                        "p": {
+                          "side": "opp",
+                          "mode": "drain",
+                          "amount": 1
+                        },
+                        "label": "pp_op"
+                      }
+                    ]
+                  }
+                ]
+              }
+            }
+          },
+          {
+            "codeId": "effect_sequence",
+            "node": "modify_power",
+            "source": "skill",
+            "role": "attached",
+            "order": 5,
+            "customText": "🎯 每有一個自身技能PP值為滿，則技能威力提升160",
+            "params": {
+              "clause": {
+                "raw": "🎯 每有一個自身技能PP值為滿，則技能威力提升160",
+                "marker": "🎯",
+                "trig": "outgoing_power",
+                "parsed": true,
+                "body": [
+                  {
+                    "acts": [
+                      {
+                        "op": "power_per_full_pp",
+                        "p": {
+                          "amount": 160
+                        },
+                        "label": "power_per_full_pp"
+                      }
+                    ]
+                  }
+                ]
+              }
+            }
+          }
+        ]
+      },
+      {
+        "name": "沉淪混沌決",
+        "type": "混沌·電",
+        "category": "物理",
+        "power": 170,
+        "pp": 5,
+        "maxPp": 5,
+        "currentPp": 5,
+        "accuracy": 100,
+        "priority": 1,
+        "isSureHit": true,
+        "isFifthSkill": true,
+        "description": "■ 必中\n■ 先制+1\n🎯 對手存在回合類效果時造成傷害提升170%\n🎯 消除對手回合類效果；對手回合類效果無法被消除時，當回合無法恢復體力與行動\n🎯 造成技能傷害提升70%，對手每處於1回合異常則提升7%\n🎯 附加自身最大體力70%的百分比傷害，對手體力高於最大體力1/7時效果翻倍\n🎯 未擊敗對手則對手下2回合先制-7",
+        "effectDetail": "",
+        "effectType": "none",
+        "effectMode": "kit",
+        "kit": [
+          {
+            "codeId": "skill_property",
+            "node": "before_skill",
+            "source": "skill",
+            "role": "innate",
+            "order": 0,
+            "customText": "■ 必中",
+            "params": {
+              "property": "sure_hit",
+              "value": true,
+              "conditions": []
+            }
+          },
+          {
+            "codeId": "skill_property",
+            "node": "modify_priority",
+            "source": "skill",
+            "role": "innate",
+            "order": 1,
+            "customText": "■ 先制+1",
+            "params": {
+              "property": "base_priority",
+              "value": 1,
+              "conditions": []
+            }
+          },
+          {
+            "codeId": "effect_sequence",
+            "node": "on_skill_use",
+            "source": "skill",
+            "role": "attached",
+            "order": 2,
+            "customText": "🎯 對手存在回合類效果時造成傷害提升170%",
+            "params": {
+              "clause": {
+                "raw": "🎯 對手存在回合類效果時造成傷害提升170%",
+                "marker": "🎯",
+                "trig": "use",
+                "parsed": true,
+                "body": [
+                  {
+                    "cond": [
+                      {
+                        "c": "has_turn_effect",
+                        "p": {
+                          "side": "opp"
+                        },
+                        "label": "has_turn_effect"
+                      }
+                    ],
+                    "acts": [
+                      {
+                        "op": "boost",
+                        "p": {
+                          "kind": "技能",
+                          "mult": 2.7
+                        },
+                        "label": "boost"
+                      }
+                    ]
+                  }
+                ]
+              }
+            }
+          },
+          {
+            "codeId": "effect_sequence",
+            "node": "on_skill_use",
+            "source": "skill",
+            "role": "attached",
+            "order": 3,
+            "customText": "🎯 消除對手回合類效果；對手回合類效果無法被消除時，當回合無法恢復體力與行動",
+            "params": {
+              "clause": {
+                "raw": "🎯 消除對手回合類效果；對手回合類效果無法被消除時，當回合無法恢復體力與行動",
+                "marker": "🎯",
+                "trig": "use",
+                "parsed": true,
+                "body": [
+                  {
+                    "cond": [
+                      {
+                        "c": "has_turn_effect",
+                        "p": {
+                          "side": "opp"
+                        },
+                        "label": "has_turn_effect"
+                      }
+                    ],
+                    "acts": [
+                      {
+                        "op": "clear_turn",
+                        "p": {
+                          "side": "opp"
+                        },
+                        "label": "clear_turn"
+                      }
+                    ]
+                  },
+                  {
+                    "chain": "fail",
+                    "cond": [
+                      {
+                        "c": "has_turn_effect",
+                        "p": {
+                          "side": "opp"
+                        },
+                        "label": "has_turn_effect"
+                      }
+                    ],
+                    "acts": [
+                      {
+                        "op": "no_heal",
+                        "p": {
+                          "turns": 1
+                        },
+                        "label": "no_heal"
+                      },
+                      {
+                        "op": "stop_action",
+                        "p": {
+                          "side": "opp"
+                        },
+                        "label": "stop_action"
+                      }
+                    ]
+                  }
+                ]
+              }
+            }
+          },
+          {
+            "codeId": "effect_sequence",
+            "node": "before_damage",
+            "source": "skill",
+            "role": "attached",
+            "order": 4,
+            "customText": "🎯 造成技能傷害提升70%，對手每處於1回合異常則提升7%",
+            "params": {
+              "clause": {
+                "raw": "🎯 造成技能傷害提升70%，對手每處於1回合異常則提升7%",
+                "marker": "🎯",
+                "trig": "outgoing_skill",
+                "parsed": true,
+                "body": [
+                  {
+                    "acts": [
+                      {
+                        "op": "damage_scale_by_status",
+                        "p": {
+                          "side": "opp",
+                          "base": 1.7,
+                          "perTurn": 0.07,
+                          "kind": "技能"
+                        },
+                        "label": "damage_scale_by_status"
+                      }
+                    ]
+                  }
+                ]
+              }
+            }
+          },
+          {
+            "codeId": "effect_sequence",
+            "node": "on_skill_use",
+            "source": "skill",
+            "role": "attached",
+            "order": 5,
+            "customText": "🎯 附加自身最大體力70%的百分比傷害，對手體力高於最大體力1/7時效果翻倍",
+            "params": {
+              "clause": {
+                "raw": "🎯 附加自身最大體力70%的百分比傷害，對手體力高於最大體力1/7時效果翻倍",
+                "marker": "🎯",
+                "trig": "use",
+                "parsed": true,
+                "body": [
+                  {
+                    "cond": [
+                      {
+                        "c": "hp_ratio",
+                        "p": {
+                          "side": "opp",
+                          "op": "高於",
+                          "ratio": 0.14285714285714285
+                        },
+                        "label": "hp_ratio"
+                      }
+                    ],
+                    "acts": [
+                      {
+                        "op": "dmg",
+                        "p": {
+                          "base": "最大體力",
+                          "of": "self",
+                          "ratio": 1.4,
+                          "type": "百分比"
+                        },
+                        "label": "dmg"
+                      }
+                    ],
+                    "elseActs": [
+                      {
+                        "op": "dmg",
+                        "p": {
+                          "base": "最大體力",
+                          "of": "self",
+                          "ratio": 0.7,
+                          "type": "百分比"
+                        },
+                        "label": "dmg"
+                      }
+                    ]
+                  }
+                ]
+              }
+            }
+          },
+          {
+            "codeId": "effect_sequence",
+            "node": "on_not_killed",
+            "source": "skill",
+            "role": "attached",
+            "order": 6,
+            "customText": "🎯 未擊敗對手則對手下2回合先制-7",
+            "params": {
+              "clause": {
+                "raw": "🎯 未擊敗對手則對手下2回合先制-7",
+                "marker": "🎯",
+                "trig": "not_killed",
+                "parsed": true,
+                "body": [
+                  {
+                    "acts": [
+                      {
+                        "op": "prio_turns",
+                        "p": {
+                          "side": "opp",
+                          "v": -7,
+                          "turns": 2,
+                          "next": true
+                        },
+                        "label": "prio_turns"
+                      }
+                    ]
+                  }
+                ]
+              }
+            }
+          }
+        ]
+      }
+    ]
+  }
+]

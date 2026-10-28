@@ -37,12 +37,16 @@ MIGRATED_REY_SKILL_KITS.push({elfIds:['5029'],name:'異境神霆',description:OT
 ]});
 const reyParalyzed={c:'has_status',p:{side:'self',status:'麻痺'},label:'自身處於麻痺狀態'};
 const forbiddenText=OTHERWORLD_REY_TEXT.skills['霆·禁雷敕令'];
+// 子句文字一律取自規格原文，不另外手打：手打曾把「神秘電系」寫成「電神秘系」，
+// 造成報告的 TXT 對照永遠對不上，也讓顯示文字與規格不一致。
+const forbiddenLines=forbiddenText.split('\n').map(line=>line.trim()).filter(Boolean);
+const forbiddenClause=(needle:string)=>forbiddenLines.find(line=>line.includes(needle)) ?? needle;
 MIGRATED_REY_SKILL_KITS.push({elfIds:['5029'],name:'霆·禁雷敕令',description:forbiddenText,kit:[
- {...property('■ 自身體力低於210則必定先手','forced_first',true,0),params:{property:'forced_first',value:true,conditions:[{c:'hp_value',p:{side:'self',op:'低於',amount:210},label:'自身體力低於210點'}]}},
- {...property('■ 自身處於麻痺狀態時轉化為威力210的攻擊技能且無視對手免疫效果，對手每擁有70點重量則攻擊威力額外提升70，攻擊類型為雙攻中較高者，兩者相同則效果失效，轉化技能屬性取電系/神秘系/電神秘系中克制倍數最高的值','forced_first',true,1),
+ {...property(forbiddenClause('體力低於210'),'forced_first',true,0),params:{property:'forced_first',value:true,conditions:[{c:'hp_value',p:{side:'self',op:'低於',amount:210},label:'自身體力低於210點'}]}},
+ {...property(forbiddenClause('轉化為威力210'),'forced_first',true,1),
   params:{property:'skill_transform',value:{power:210,perWeight:70,perPower:70,types:['電','神秘','神秘.電'],names:{物理:'霆·禁雷敕令·神罰',特殊:'霆·禁雷敕令·神譴'},ignoreAttackImmunity:true},conditions:[reyParalyzed]},node:'before_skill'},
  sequence('🎯 附加對手自身已損失體力70%的真實傷害，附加時若體力低於0則改為附加自身體力上限70%的真實傷害',[
-  {cond:[{c:'hp_value',p:{side:'self',op:'低於',amount:0},label:'自身體力低於0'}],acts:[a('dmg',{base:'最大體力',of:'self',ratio:.7,type:'真實'})],elseActs:[a('dmg',{base:'已損失體力',of:'opp',ratio:.7,type:'真實'})]},
+  {cond:[{c:'hp_value',p:{side:'self',op:'低於',amount:0},label:'自身體力低於0'}],acts:[a('dmg',{base:'最大體力',of:'self',ratio:.7,type:'真實'})],elseActs:[a('dmg',{base:'已損失體力',of:'self',ratio:.7,type:'真實'})]},
  ],2),
  sequence('🎯 消除對手回合類效果，消除成功則下2回合受到傷害翻倍',[
   {acts:[a('clear_turn',{side:'opp'})]},

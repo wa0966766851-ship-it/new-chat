@@ -4,10 +4,14 @@ import type { Elf } from '../../types';
 import type { ShellBridge } from '../bridge';
 import type { TeamSummary } from '../lastTeam';
 import { ElfAvatar } from '../../components/SeerImages';
+import {HomePetFigure} from '../art/HomePetFigure';
 import { typeColor } from '../art/figure';
 import { readHeroLayout, writeHeroLayout, heroImageStyle, HeroLayoutPanel, type HeroLayout } from '../art/heroLayout';
 import { isHapticsEnabled, toggleHaptics, haptic } from '../haptics';
 import { cueCss } from '../../design/cues';
+
+/** 換立繪抽屜只在點擊後才需要：獨立延後載入，搜尋規則與清單排序不進首頁初始 JS。 */
+const HeroPicker = React.lazy(() => import('./HeroPicker'));
 
 export function HeroStage({ summary, isPreview, onEdit, b }: {
   summary: TeamSummary;
@@ -70,10 +74,8 @@ export function HeroStage({ summary, isPreview, onEdit, b }: {
             立繪四角是透明的（A=0），中央是角色本身的深色煙霧。
             不要再加 mask —— 加了反而會製造橢圓邊界（實測更糟）。
           */}
-          <ElfAvatar
+          <HomePetFigure
             elf={starter}
-            kind="body"
-            className="absolute inset-0 w-full h-full"
             style={heroImageStyle(layout)}
           />
         </div>
@@ -122,89 +124,17 @@ export function HeroStage({ summary, isPreview, onEdit, b }: {
 
       {/* 換立繪：精靈選擇 */}
       {pickOpen && (
-        <HeroPicker
+        <React.Suspense fallback={null}><HeroPicker
           b={b}
           current={starter}
           onClose={() => setPickOpen(false)}
           onPick={(elf) => { setOverrideId(elf.id); try { localStorage.setItem('seer_aegis_lobby_hero', elf.id); } catch {} setPickOpen(false); }}
-        />
+        /></React.Suspense>
       )}
     </>
   );
 }
 
-/** 換立繪用的精靈選擇抽屜 */
-function HeroPicker({
-  b, current, onClose, onPick,
-}: {
-  b: ShellBridge;
-  current: Elf;
-  onClose: () => void;
-  onPick: (elf: Elf) => void;
-}) {
-  const [q, setQ] = React.useState("");
-  const list = React.useMemo(() => {
-    const s = q.trim();
-    return b.allElvesCombined
-      .filter(e => !s || e.name.includes(s) || String(e.id ?? "").includes(s))
-      .slice(0, 120);
-  }, [b.allElvesCombined, q]);
-
-  return (
-    <div className="fixed inset-0 z-50 flex flex-col justify-end" role="dialog" aria-label="換立繪">
-      <button type="button" aria-label="關閉" onClick={onClose} className="absolute inset-0 bg-black/70" />
-      <div
-        className="relative p-3 flex flex-col gap-2"
-        style={{
-          background: "linear-gradient(180deg, #0B1620, #060D14)",
-          borderTop: "1px solid var(--p-accent)",
-          borderRadius: "20px 20px 0 0",
-          paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 78px)",
-          maxHeight: "75dvh",
-        }}
-      >
-        <div className="flex items-center gap-2">
-          <span className="text-[13px] font-black flex-1" style={{ color: "#F8FAFC" }}>
-            換立繪（目前：{current.name}）
-          </span>
-          <button type="button" onClick={onClose} className="p-1.5" style={{ borderRadius: 8, background: "rgba(255,255,255,0.08)" }}>
-            <X className="w-4 h-4" style={{ color: "#CBD5E1" }} />
-          </button>
-        </div>
-
-        <input
-          value={q}
-          onChange={e => setQ(e.target.value)}
-          placeholder="搜尋精靈名稱或 ID"
-          className="w-full px-2.5 py-1.5 text-[11px] outline-none"
-          style={{ borderRadius: 8, background: "rgba(6,16,26,0.82)", border: "1px solid rgba(148,163,184,0.22)", color: "#F1F5F9" }}
-        />
-
-        <div className="flex-1 min-h-0 overflow-y-auto">
-          <div className="grid grid-cols-4 gap-1.5">
-            {list.map(elf => (
-              <button
-                key={elf.id || elf.name}
-                type="button"
-                onClick={() => onPick(elf)}
-                className="flex flex-col items-center gap-0.5 active:scale-95 transition-transform"
-                title={elf.name}
-              >
-                <div className="w-full aspect-square overflow-hidden" style={{ borderRadius: 8, background: "rgba(10,20,30,0.9)" }}>
-                  <ElfAvatar elf={elf} kind="head" className="w-full h-full object-cover" />
-                </div>
-                <span className="text-[7px] truncate w-full text-center" style={{ color: "rgba(203,213,225,0.72)" }}>{elf.name}</span>
-              </button>
-            ))}
-          </div>
-          {!list.length && (
-            <p className="text-center text-[10px] py-6" style={{ color: "rgba(148,163,184,0.6)" }}>沒有符合條件的精靈</p>
-          )}
-        </div>
-      </div>
-    </div>
-  );
-}
 
 export function SettingsDrawer({ b, onClose, onSetup }: { b: ShellBridge; onClose: () => void; onSetup: () => void }) {
   return (

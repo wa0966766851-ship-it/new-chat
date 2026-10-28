@@ -6,7 +6,8 @@ type S = 'p1' | 'p2';
 const idOf = (e: any) => String(e?.battleId || e?.id || '');
 
 export const DRAGON_HEALING_ACTION_FIELDS: Record<string, readonly string[]> = {
-  attack_absorb_store: ['capRatio','key'],
+  immune_success_bonus: ['kind'],
+attack_absorb_store: ['capRatio','key'],
   stored_damage_release:['key','type'],
   stored_damage_reset:['key'],
   stored_damage_convert_next:['key','type'],
@@ -16,7 +17,8 @@ export const DRAGON_HEALING_ACTION_FIELDS: Record<string, readonly string[]> = {
 
 export function dragonHealingActionIssue(op: string, p: any): string | null {
   if(['attack_absorb_store','stored_damage_release','stored_damage_convert_next','stored_damage_reset'].includes(op)&&p.key!==undefined&&(typeof p.key!=='string'||!p.key.trim()))return '儲存傷害需明確鍵';
-  if(op==='stored_damage_reset'&&!p.key)return '傷害儲存清除需識別鍵';
+  if(op==='immune_success_bonus'&&!['gold','mystic','azure'].includes(p.kind))return '免疫成功追加需指定金龍／玄龍／蒼龍';
+if(op==='stored_damage_reset'&&!p.key)return '傷害儲存清除需識別鍵';
   if(['stored_damage_release','stored_damage_convert_next'].includes(op)&&(!p.key||!['固定','真實'].includes(p.type)))return '儲存傷害釋放需明確鍵與固定或真實分類';
   if (op === 'attack_absorb_store') {
     if (!(p.capRatio > 0 && p.capRatio <= 10)) return '攻擊累計需0至1000%上限比例';
@@ -33,7 +35,32 @@ export function dragonHealingActionIssue(op: string, p: any): string | null {
 export function dragonHealingOperations(helpers: { liveElf: (ctx: BattleEventContext, side: S) => any }) {
   return {
     // 通用抵擋／儲存，於正式傷害增減與上限之後記錄實際被抵擋量。
-    attack_absorb_store: (ctx: BattleEventContext, p: any,st:RunState): boolean => {
+    // 2026-10-28 四龍追加效果：由 DAMAGE_IMMUNIZED 事件觸發（引擎在真正 100% 免傷時派發）。
+  immune_success_bonus: (ctx: BattleEventContext, p: any): boolean => {
+    const kind = String(p.kind || '');
+    if (kind === 'gold') {
+      ctx.clearTurnEffectsOf?.(ctx.targetSide);
+      ctx.addLog?.('🐉 【金龍】：免疫成功，消除對手回合類效果！', 'effect');
+      return true;
+    }
+    if (kind === 'mystic') {
+      ctx.setPlayerState('mysticDmgBoostTurns', 3);
+      ctx.addLog?.('🐉 【玄龍】：免疫成功，下 3 回合固定與百分比傷害 +50%！', 'effect');
+      return true;
+    }
+    if (kind === 'azure') {
+      const stamp = String(ctx.roundNumber) + ':' + String(ctx.skill?.name || '');
+      if (ctx.getPlayerState('azureDrainRound') === stamp) return false;
+      ctx.setPlayerState('azureDrainRound', stamp);
+      const oppElf = ctx.actor === 'p1' ? ctx.activeP2 : ctx.activeP1;
+      const amount = Math.floor((oppElf?.maxHp || 0) * 0.5);
+      if (amount > 0) { ctx.applyTrueDamage(ctx.targetSide, amount, '蒼龍吸取'); ctx.applyHeal(ctx.actor, amount); }
+      ctx.addLog?.('🐉 【蒼龍】：免疫能力下降成功，吸取對手最大體力 1/2！', 'effect');
+      return true;
+    }
+    return false;
+  },
+  attack_absorb_store: (ctx: BattleEventContext, p: any,st:RunState): boolean => {
       const elf=helpers.liveElf(ctx,ctx.actor),comp=st.event?.data?.damageComp;
       if(!elf||!comp?.isIncoming||comp.damageCategory!=='skill_attack')return false;
       const key='damageStore:'+(p.key||'arena.red');

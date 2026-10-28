@@ -5,6 +5,7 @@ import { Elf } from '../types';
 import { getStatuses } from '../utils/battleHelpers';
 import { StatusRegistry } from '../effects/statusRegistry';
 import { statusVisual, catalogEffectIcon } from '../battle/effectIcons';
+import { bossTraitInstanceText } from '../data/bossTraits';
 import { ChainImage } from './SeerImages';
 import {displayTurnValue} from '../battle/displayTurnValue';
 
@@ -240,7 +241,7 @@ export const StatusBadgePanel: React.FC<StatusBadgePanelProps> = ({ elf, registr
           label = selectedEffect.data.name;
           color = style.color;
           displayValue = !selectedEffect.data.categories.includes('BOSS_ONLY') && selectedEffect.remainingTurns > 0 ? `${selectedEffect.remainingTurns}回合` : '';
-          description = selectedEffect.data.description || statusVisual(label)?.desc || '';
+          description = bossTraitInstanceText(elf, selectedEffect.catalogId) || selectedEffect.data.description || statusVisual(label)?.desc || '';
           catLabels = selectedEffect.data.categories.join(' / ');
         } else {
           const template = EFFECT_CATALOG[selectedEffect.catalogId];

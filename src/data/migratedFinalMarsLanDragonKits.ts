@@ -10,7 +10,7 @@ const fifthRaw = '■ 先制+3\n■ 必中\n■ 此技能PP值為滿時無視自
 export const MIGRATED_FINAL_MARS_SKILL_KITS: ReviewedSequenceSkill[] = [
   { elfIds: ['5016'], name: '核心重構', description: coreRaw, kit: [
     property('■ 必中', 'sure_hit', true, 0),
-    sequence('解除自身異常狀態，解除成功則解析並記錄此異常狀態', [{ acts: [a('archive_cure', { key: 'mechanismStatusArchive' })] }], 1),
+    sequence('解除自身異常狀態，解除成功則解析並記錄此異常狀態', [{ acts: [a('archive_cure', { key: 'mechArchivedStatuses' })] }], 1),
     sequence('5回合內自身使用技能恢復自身體力1/3並附加對手等量百分比傷害，自身體力低於1/2時效果翻倍', [{ acts: [timed(5, 'self_skill', [
       { acts: [a('heal', { side: 'self', ratio: 1 / 3, x2If: c('hp_ratio', { side: 'self', op: '低於', ratio: 0.5 }) }), a('dmg_equal', { type: '百分比' })] },
     ], '核心重構·恢復與反饋')] }], 2),
@@ -70,7 +70,7 @@ export const MIGRATED_FINAL_DRAGON_SOUL_KIT = {
     soulEntry('on_skill_use', 'self_attack', '8：無視對手攻擊免疫與傷害限制', [{ cond: [count(8)], acts: [a('ignore', { what: '攻擊免疫' }), a('ignore', { what: '傷害限制' })] }], 11),
     soulEntry('before_damage', 'outgoing', '8：無視攻擊免疫成功時技能傷害提升100%', [{ cond: [count(8), c('ignore_success', { what: '攻擊免疫' })], acts: [a('dmg_mod', { dir: 'out', kind: '技能', boost: 1 })] }], 12),
     soulEntry('after_attack_hit', 'attack_hit', '9：按實際攻擊傷害等量附加護盾與護罩', [{ cond: [count(9)], acts: [a('receipt_shields', { ratio: 1, shield: true, barrier: true })] }], 13),
-    soulEntry('after_action', 'self_after_attack', '10：攻擊附加對手最大體力的技能傷害', [{ cond: [count(10)], acts: [a('dmg', { of: 'opp', base: '最大體力', ratio: 1, type: '技能', elem: '龍' })] }], 14),
+    soulEntry('on_skill_use', 'self_attack', '10：攻擊附加對手最大體力的技能傷害', [{ cond: [count(10)], acts: [a('dmg', { of: 'opp', base: '最大體力', ratio: 1, type: '技能', elem: '次元龍', appendToAttack: true })] }], 14),
     soulEntry('self_fatal', 'fatal', '每場首次死亡強制存活；當回合保留1點、免疫異常，進入龍魂直到戰鬥結束', [{ acts: [a('once', { key: 'poemDragonAwakening', body: [{ acts: [a('cure_status', { side: 'self', cls: '' }), a('survive', {}), a('survive_turns', { turns: 1 }), a('immune_status_turns', { turns: 1, cls: '', reflect: false }), a('flag_set', { key: 'dimensionalDragonSoul', value: true })] }] })] }], 15),
   ],
 };

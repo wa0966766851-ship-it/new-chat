@@ -1,6 +1,6 @@
 import { addDamageReduction, multiplyDamageReduction } from '../battle/damageReduction';
 /**
- * 通用特性（generalTrait）與異能特質（alienTrait）的戰鬥效果
+ * 通用特性（generalTrait）與異能（alienTrait）的戰鬥效果
  *
  * 過去這兩類特性只能在編輯器裡選擇、在介面上顯示，戰鬥引擎完全沒有讀取（除了「亂舞」「瞬殺」少數被個別魂印引用）。
  * 這裡依 src/data/generalTraits.ts、src/data/alienTraits.ts 的描述逐條實作，資料驅動、不依精靈名稱判斷。

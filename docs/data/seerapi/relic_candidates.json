@@ -1,0 +1,203 @@
+{
+ "missing_relics": [
+  {
+   "relic_id": "mul_prism",
+   "name_tw": "倍率稜鏡",
+   "why": "綠色寶石底座，意象為稜鏡／倍率",
+   "candidates": [
+    {
+     "item_id": 300066,
+     "name_cn": "通用刻印激活水晶",
+     "name_tw": "通用刻印啟用水晶",
+     "desc_cn": "开启单一精灵的刻印通用孔，只能使用一次。",
+     "icon": "seerapi/relic/300066.png",
+     "source": "https://api.seerapi.com/v1/item/300066",
+     "icon_source": "seer-unity-assets item/petitem/icon/300066.png"
+    },
+    {
+     "item_id": 300053,
+     "name_cn": "特性开启晶片",
+     "name_tw": "特性開啟晶片",
+     "desc_cn": "给非融合精灵添加特性。注意：必须该精灵为非融合精灵，且没有特性",
+     "icon": "seerapi/relic/300053.png",
+     "source": "https://api.seerapi.com/v1/item/300053",
+     "icon_source": "seer-unity-assets item/petitem/icon/300053.png"
+    }
+   ]
+  },
+  {
+   "relic_id": "mul_cluster",
+   "name_tw": "增殖晶簇",
+   "why": "紫色／冰藍晶簇，意象為晶簇",
+   "candidates": [
+    {
+     "item_id": 1200734,
+     "name_cn": "极寒元素",
+     "name_tw": "極寒元素",
+     "desc_cn": "冰火岛的神秘元素，有了它，岛上的寒冰在烈火中才不至于融化。!",
+     "icon": "seerapi/relic/1200734.png",
+     "source": "https://api.seerapi.com/v1/item/1200734",
+     "icon_source": "seer-unity-assets item/petitem/icon/1200734.png"
+    },
+    {
+     "item_id": 1200736,
+     "name_cn": "六芒冰花",
+     "name_tw": "六芒冰花",
+     "desc_cn": "小小的精灵身上怀揣着漂亮的六芒冰花，这可是合成极寒元素的关键!",
+     "icon": "seerapi/relic/1200736.png",
+     "source": "https://api.seerapi.com/v1/item/1200736",
+     "icon_source": "seer-unity-assets item/petitem/icon/1200736.png"
+    }
+   ]
+  },
+  {
+   "relic_id": "substitute_doll",
+   "name_tw": "替身人偶",
+   "why": "雕像（替身人偶）／保護罩球",
+   "candidates": [
+    {
+     "item_id": 1715412,
+     "name_cn": "塔兰度斯圣像",
+     "name_tw": "塔蘭度斯聖像",
+     "desc_cn": null,
+     "icon": "seerapi/relic/1715412.png",
+     "source": "https://api.seerapi.com/v1/item/1715412",
+     "icon_source": "seer-unity-assets item/petitem/icon/1715412.png"
+    },
+    {
+     "item_id": 401001,
+     "name_cn": "精灵蛋保护罩Ω",
+     "name_tw": "精靈蛋保護罩Ω",
+     "desc_cn": null,
+     "icon": "seerapi/relic/401001.png",
+     "source": "https://api.seerapi.com/v1/item/401001",
+     "icon_source": "seer-unity-assets item/petitem/icon/401001.png"
+    }
+   ]
+  },
+  {
+   "relic_id": "undying_core",
+   "name_tw": "不滅星核",
+   "why": "機甲核心（圓形核心）",
+   "candidates": [
+    {
+     "item_id": 1714643,
+     "name_cn": "机甲核心",
+     "name_tw": "機甲核心",
+     "desc_cn": null,
+     "icon": "seerapi/relic/1714643.png",
+     "source": "https://api.seerapi.com/v1/item/1714643",
+     "icon_source": "seer-unity-assets item/petitem/icon/1714643.png"
+    },
+    {
+     "item_id": 401001,
+     "name_cn": "精灵蛋保护罩Ω",
+     "name_tw": "精靈蛋保護罩Ω",
+     "desc_cn": null,
+     "icon": "seerapi/relic/401001.png",
+     "source": "https://api.seerapi.com/v1/item/401001",
+     "icon_source": "seer-unity-assets item/petitem/icon/401001.png"
+    }
+   ]
+  },
+  {
+   "relic_id": "twin_core",
+   "name_tw": "雙生之核",
+   "why": "圓球核心裝甲",
+   "candidates": [
+    {
+     "item_id": 1712157,
+     "name_cn": "北冥之甲",
+     "name_tw": "北冥之甲",
+     "desc_cn": "蕴含万世北溟·玄武力量的碎片，是获得万世北溟·玄武不可或缺的道具",
+     "icon": "seerapi/relic/1712157.png",
+     "source": "https://api.seerapi.com/v1/item/1712157",
+     "icon_source": "seer-unity-assets item/petitem/icon/1712157.png"
+    },
+    {
+     "item_id": 1714643,
+     "name_cn": "机甲核心",
+     "name_tw": "機甲核心",
+     "desc_cn": null,
+     "icon": "seerapi/relic/1714643.png",
+     "source": "https://api.seerapi.com/v1/item/1714643",
+     "icon_source": "seer-unity-assets item/petitem/icon/1714643.png"
+    }
+   ]
+  },
+  {
+   "relic_id": "reverse_hourglass",
+   "name_tw": "逆時沙漏",
+   "why": "還原藥劑（圓筒，意象為回溯）；官方無沙漏圖，建議自製",
+   "candidates": [
+    {
+     "item_id": 300024,
+     "name_cn": "精灵还原药剂",
+     "name_tw": "精靈還原藥劑",
+     "desc_cn": "精灵还原药剂帮您将精灵还原成1级，学习力将重置，并重新随机生成性格和天赋值",
+     "icon": "seerapi/relic/300024.png",
+     "source": "https://api.seerapi.com/v1/item/300024",
+     "icon_source": "seer-unity-assets item/petitem/icon/300024.png"
+    },
+    {
+     "item_id": 300075,
+     "name_cn": "精灵还原药剂Ω",
+     "name_tw": "精靈還原藥劑Ω",
+     "desc_cn": "使用后还原精灵至1级，重新生成学习力、天赋值、性格",
+     "icon": "seerapi/relic/300075.png",
+     "source": "https://api.seerapi.com/v1/item/300075",
+     "icon_source": "seer-unity-assets item/petitem/icon/300075.png"
+    }
+   ]
+  },
+  {
+   "relic_id": "black_sun_heart",
+   "name_tw": "黑日之心",
+   "why": "碎星（寶石手套）／月之靈能（新月＋光焰）",
+   "candidates": [
+    {
+     "item_id": 540004,
+     "name_cn": "碎星",
+     "name_tw": "碎星",
+     "desc_cn": null,
+     "icon": "seerapi/relic/540004.png",
+     "source": "https://api.seerapi.com/v1/item/540004",
+     "icon_source": "seer-unity-assets item/petitem/icon/540004.png"
+    },
+    {
+     "item_id": 1705182,
+     "name_cn": "月之灵能",
+     "name_tw": "月之靈能",
+     "desc_cn": null,
+     "icon": "seerapi/relic/1705182.png",
+     "source": "https://api.seerapi.com/v1/item/1705182",
+     "icon_source": "seer-unity-assets item/petitem/icon/1705182.png"
+    }
+   ]
+  }
+ ],
+ "note": "缺圖遺物共7個；現有59個遺物圖已存在 public/eclipse/relic。其餘候選圖片已一併下載(20張)於 seerapi/relic/",
+ "scanned_items": 171,
+ "all_downloaded": [
+  300024,
+  300026,
+  300044,
+  300052,
+  300053,
+  300065,
+  300066,
+  300071,
+  300075,
+  401001,
+  540004,
+  1200734,
+  1200736,
+  1705182,
+  1711875,
+  1712157,
+  1712359,
+  1713065,
+  1714643,
+  1715412
+ ]
+}

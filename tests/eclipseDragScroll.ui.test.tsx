@@ -11,6 +11,7 @@ const { createRoot } = await import('react-dom/client');
 const { default: SuitSelect } = await import('../src/components/InterstellarExploration/eclipse/SuitSelect');
 const { default: Run } = await import('../src/components/InterstellarExploration/InterstellarRun');
 const { SUIT_CATALOG } = await import('../src/data/suitsAndEyewears');
+const { SUIT_ART, suitPortraitUrls } = await import('../src/data/suitArt');
 const { DEFAULT_ELVES } = await import('../src/data/defaultElvesLoaded');
 const E = await import('../src/modes/interstellar/v2/engine');
 const { BARTER_RECIPES, barterLimit } = await import('../src/modes/interstellar/v2/barter');
@@ -104,8 +105,11 @@ try {
   assert.ok(!/w-full|h-full/.test(img(first)!.className), '不撐滿容器（避免小圖放大糊掉）');
   if (ids.includes('morning_star')) {
     const ms = () => q<HTMLImageElement>('[data-suit="morning_star"] img');
-    for (let i = 0; i < 2 && ms(); i++) await act(async () => { ms()!.dispatchEvent(new dom.window.Event('error')); });
-    assert.equal(ms(), null, '沒有圖：兩個來源都失敗後不再有 img');
+    const chain = suitPortraitUrls('morning_star');
+    assert.ok(chain.length === 3 && chain[2] === SUIT_ART.morning_star && SUIT_ART.morning_star.endsWith('/suiticon/447.png'), '晨曦之星：兩個舊來源後接對照表的原廠圖');
+    assert.ok(ms()!.getAttribute('src')!.endsWith('/elf-art/suit_morning_star.png'), '既有 suit_<id>.png 仍優先');
+    for (let i = 0; i < chain.length && ms(); i++) await act(async () => { ms()!.dispatchEvent(new dom.window.Event('error')); });
+    assert.equal(ms(), null, '沒有圖：所有來源都失敗後不再有 img');
     assert.ok(q('[data-suit="morning_star"]')!.textContent!.includes(SUIT_CATALOG.morning_star.badge ?? SUIT_CATALOG.morning_star.name.slice(0, 2)), '改顯示徽記大字');
   }
 
@@ -128,7 +132,7 @@ try {
   localStorage.setItem(E.RUN_KEY_V2, JSON.stringify(run));
   await mount(<Run {...props} onEndRun={() => {}} />);
   // 失敗條件在隊伍鈕 tooltip（draft 場景下仍在 header）
-  assert.ok(qa('header button').some(b => b.title.includes('全隊') && b.title.includes('陣亡')), '隊伍鈕 tooltip：失敗條件');
+  assert.ok(qa('header button').some(b => b.title.includes('生命歸 0') && b.title.includes('倒下')), '隊伍鈕 tooltip：失敗條件');
   // 保命遺物提示
   const armed = E.gainRelic(E.gainRelic({ ...run, scene: { kind: 'map' } as any }, 'undying_core'), 'substitute_doll');
   localStorage.setItem(E.RUN_KEY_V2, JSON.stringify(armed));
@@ -137,7 +141,8 @@ try {
   assert.ok(chip.title.includes('替身人偶') && chip.title.includes('不滅星核') && chip.title.indexOf('替身人偶') < chip.title.indexOf('不滅星核'), 'tooltip 說明消耗順序');
   // 保命觸發後的橫幅
   const fought = E.startBattle({ ...armed, scene: { kind: 'prelude', encounter: { kind: 'boss', title: '測試首領', enemies: [{ id: String(pool[3].id), affixes: [] }], scale: 1.2, hpScale: 2.5 } } as any }, pool, 'ui-b')!;
-  const rescued = E.settleBattleV2(fought.run, 'ui-b', 'p2', fought.p1.map(e => ({ ...e, currentHp: 0 })), pool);
+  // 生命制：生命剛好等於倒下數才算致命，保命才會觸發
+  const rescued = E.settleBattleV2({ ...fought.run, lives: fought.p1.length, tempLives: 0 }, 'ui-b', 'p2', fought.p1.map(e => ({ ...e, currentHp: 0 })), pool);
   localStorage.setItem(E.RUN_KEY_V2, JSON.stringify(rescued));
   await mount(<Run {...props} onEndRun={() => {}} />);
   assert.ok(q('[data-testid="rescue-banner"]')!.textContent!.includes('替身人偶'), '重回戰前時顯示保命橫幅');

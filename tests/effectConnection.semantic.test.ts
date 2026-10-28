@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 import { createServer } from 'vite';
 import { compileEffectPlan, kitEntryIssue } from '../src/effects/effectConnection';
 import { parseEffectDescriptionLocal } from '../src/utils/aiTextParser';
@@ -15,8 +16,13 @@ import { getElfAdvancedMechanics } from '../src/data/traitsRegistry';
 let count = 0;
 const check = (name: string, run: () => void) => { run(); console.log(`✓ ${name}`); count++; };
 const entry = (node: KitEntry['node'], amount = 70): KitEntry => ({ codeId: 'heal', params: { amount }, node, source: 'skill', order: 0 });
-check('42節點同一合約；含逐擊、額外行動、資源變動、擊敗未擊敗與持有者消除事件', () => {
-  assert.equal(Object.keys(EFFECT_NODES).length,46);
+check('全部節點同一合約（節點清單取自 Node 型別宣告）；含逐擊、額外行動、資源變動、擊敗未擊敗與持有者消除事件', () => {
+  // 期望值不寫死：由 effectSystem.schema.ts 的 Node 聯集動態取得，EFFECT_NODES 必須與之逐一對應（不多不少）。
+  const schemaSource = readFileSync('src/effects/effectSystem.schema.ts', 'utf8');
+  const union = schemaSource.slice(schemaSource.indexOf('export type Node ='), schemaSource.indexOf(';', schemaSource.indexOf('export type Node =')));
+  const declared = [...union.matchAll(/"([a-z_]+)"/g)].map(m => m[1]);
+  assert.ok(declared.length >= 40 && new Set(declared).size === declared.length, 'Node 型別宣告可解析且無重複');
+  assert.deepEqual(Object.keys(EFFECT_NODES).sort(), [...declared].sort(), 'EFFECT_NODES 與 Node 型別逐一對應');
   assert.equal(eventEffectNode(EffectTiming.OPPONENT_DAMAGE),'on_opponent_settlement');
   assert.equal(eventEffectNode(EffectTiming.AFTER_ATTACK_HIT),'after_attack_hit');
   assert.equal(EFFECT_NODES.after_attack_hit.trigger,'attack_hit');

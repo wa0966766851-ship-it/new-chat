@@ -14,10 +14,12 @@ let foeCtx:any,holderCtx:any,checks=0;
 const snapshots:{side:'p1'|'p2';tone:string;state:any}[]=[];
 h.S.foe=(ctx:any,t:any)=>{if(t===T.ON_ENTRANCE)foeCtx=ctx;};
 h.S.holder=(ctx:any,t:any)=>{if(t===T.ON_ENTRANCE)holderCtx=ctx;};
+// 2026-10-28 新色系：自身不保留＝黃、自身保留＝亮紅、己方全隊＝亮橘、反彈＝亮粉紅
+// 純免疫（不反彈）→ 官方原色：自身切換消失＝黃、自身切換保留＝藍、己方全隊＝青
 const modes=[
   {scope:'self',persistsOffField:false,tone:'yellow'},
-  {scope:'self',persistsOffField:true,tone:'cyan'},
-  {scope:'team',persistsOffField:true,tone:'blue'},
+  {scope:'self',persistsOffField:true,tone:'blue'},
+  {scope:'team',persistsOffField:true,tone:'cyan'},
 ];
 const skill=({tone,...p}:any)=>h.kitSkill('可編輯免疫',[{op:'immune_status_count',p:{count:2,...p}}]);
 const views=(s:any,side:string)=>activeEffectViews(s[side],s[`${side}Marks`],s[`${side}Timers`],s[`${side}RegistryState`]).filter(v=>v.category==='count');
@@ -43,7 +45,8 @@ try{
           if(t===2){
             snapshots.push({side,tone:mode.tone,state:s});
             const v=views(s,side);assert.equal(v.length,1);assert.equal(v[0].value,2);assert.equal(v[0].tone,mode.tone);
-            assert.equal(v[0].icon,'/seer/buff/22.png');assert.ok(statusCountClasses(v[0].tone).includes(`border-${mode.tone}`));
+            assert.ok(v[0].icon.startsWith('/seer/signbuff/'),'次數免疫使用專屬盾牌圖');
+            assert.ok(statusCountClasses(v[0].tone).includes(`border-${mode.tone}`));
             assert.match(describeEffectMeta(v[0]),/下場後保留/);
             assert.equal(foeCtx.applyStatusWithImmunityCheck(side,'中毒',3).immune,true);
             assert.equal(views(e.getState(),side)[0].value,1,'消耗即同步畫面');
@@ -52,7 +55,7 @@ try{
           if(t===3){
             assert.equal(s[side].id,'reserve');
             if(mode.scope==='team'){
-              assert.equal(views(s,side)[0].value,1);assert.equal(views(s,side)[0].tone,'blue');
+              assert.equal(views(s,side)[0].value,1);assert.equal(views(s,side)[0].tone,'cyan');
               assert.equal(foeCtx.applyStatusWithImmunityCheck(side,'中毒',3).immune,true);
               assert.equal(views(e.getState(),side).length,0,'全隊用完立即消失');
             }else assert.equal(views(s,side).length,0,'不把原持有者免疫借給隊友');
@@ -86,7 +89,7 @@ try{
         }},2);checks++;
     }
     await h.play(side,{self:h.unit('holder',100000,[skill({}),h.wait()]),opp:h.unit('foe',100000,[h.wait()]),turns:(e:any,t:number)=>{
-      if(t===2){assert.equal(e.getState()[`${side}RegistryState`].blkImmuneStatusCount,2);assert.equal(views(e.getState(),side)[0].tone,'cyan');}
+      if(t===2){assert.equal(e.getState()[`${side}RegistryState`].blkImmuneStatusCount,2);assert.equal(views(e.getState(),side)[0].tone,'blue');}
       return [t===1?0:1,0];
     }},2);checks++;
     await h.play(side,{self:h.unit('holder',100000,[skill(modes[0]),h.wait()]),opp:h.unit('foe',100000,[h.wait()]),turns:(e:any,t:number)=>{
@@ -102,7 +105,7 @@ try{
         assert.equal(foeCtx.applyStatusWithImmunityCheck(side,'中毒',3).immune,true);
         assert.ok(h.statuses(e.getState()[other]).includes('中毒'),'反彈優先於純免疫');
         assert.equal(e.getState()[`${side}RegistryState`].blkReflectStatusCount,0);
-        assert.equal(views(e.getState(),side).find(v=>v.tone==='blue')?.value,2,'不多扣另一份免疫');
+        assert.equal(views(e.getState(),side).find(v=>v.tone==='cyan')?.value,2,'不多扣另一份免疫');
       }
       return [t===1?0:1,0];
     }},2);checks++;
@@ -120,7 +123,7 @@ try{
       await click('次數類');
       const card=document.querySelector('article');assert.ok(card);
       assert.ok(card.className.includes(`border-${tone}`));
-      assert.equal(card.querySelector('img')?.getAttribute('src'),'/seer/buff/22.png');
+      assert.ok((card.querySelector('img')?.getAttribute('src')||'').startsWith('/seer/signbuff/'),'卡片使用專屬盾牌圖');
       assert.match(card.textContent||'',/2\s*次/);checks++;
     }
   }finally{await act(async()=>root.unmount());dom.window.close();}

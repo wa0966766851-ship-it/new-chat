@@ -10,7 +10,7 @@ Object.assign(globalThis, { window: dom.window, document: dom.window.document, l
   requestAnimationFrame: (f: any) => setTimeout(f, 0), cancelAnimationFrame: clearTimeout });
 const { createRoot } = await import('react-dom/client');
 const root = createRoot(document.getElementById('root')!);
-const server = await createServer({ server: { middlewareMode: true }, appType: 'custom' });
+const server = await createServer({ optimizeDeps: { noDiscovery: true, include: [] }, server: { middlewareMode: true, hmr: false, watch: null }, appType: 'custom' });
 try {
   const { default: Battle } = await server.ssrLoadModule('/src/components/BattleScreen.tsx');
   const { getBattleSkillRegistry } = await server.ssrLoadModule('/src/effects/battleEventRegistry.ts');

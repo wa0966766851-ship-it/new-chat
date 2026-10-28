@@ -2,6 +2,7 @@ import type { DamageComputation } from '../effects/types';
 import { bypassesAttackDefense } from './attackDefense';
 /** 抵擋／轉化在完整增減傷、上限／保底之後，護盾與致死之前。 */
 export function resolveDamageBlocking(comp:DamageComputation,amount:number):number {
+  if(comp.reductionPolicy?.skillDefenseDisabled)return amount;
   const blocks=!comp.ignoreDamageBlocking&&!bypassesAttackDefense(comp,'block')?[...(comp.damageBlocks?.values()||[])]:[];
   const conversions=!bypassesAttackDefense(comp,'conversion')?[...(comp.damageConversions?.values()||[])]:[];
   if(blocks.length)comp.damageBlocks!.clear();

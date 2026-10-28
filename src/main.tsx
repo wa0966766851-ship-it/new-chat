@@ -4,6 +4,7 @@ import App from './App.tsx';
 import { DEFAULT_ELVES,loadImportedElves } from './data/defaultElves';
 import {repairSavedBuiltinStorage} from './data/savedBuiltinStorage';
 import './index.css';
+import './components/ElfSpotlight.css';
 import { registerServiceWorker } from './pwa/registerServiceWorker';
 
 // 匯入精靈（延後載入的資料區塊）在第一次繪製前取得：精靈清單從第一幀就完整，

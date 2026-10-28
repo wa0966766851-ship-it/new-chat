@@ -129,18 +129,19 @@ const mkRun = (o: any = {}) => {
 }
 
 // ───────── 遺物倍增：加算先結算再乘、軟上限、黑日之心
+// （2026-10-24 遺物數值翻倍：能量珠 +50→+100、稜鏡 ×1.15→×2.3、晶簇 ×1.5→×3、雙生之核 ×2→×4、黑日之心 ×3/×0.5→×6/×0.25；斷言隨之改寫，行為規則不變）
 {
   const s = { hp: 1000, atk: 100, def: 100, spatk: 100, spdef: 100, speed: 100 };
-  assert.equal(Rel.applyRelicPanel(s, ['atk_bead']).atk, 150);
-  assert.equal(Rel.applyRelicPanel(s, ['atk_bead', 'twin_core']).atk, 300, '先 +50 再 ×2');
-  assert.equal(Rel.applyRelicPanel(s, ['twin_core']).hp, 2000);
-  assert.equal(Rel.applyRelicPanel(s, ['mul_prism', 'mul_cluster']).atk, Math.floor(100 * 1.15 * 1.5));
-  const sun = Rel.applyRelicPanel(s, ['black_sun_heart']); assert.deepEqual([sun.atk, sun.spatk, sun.def, sun.spdef, sun.hp], [300, 300, 50, 50, 1000]);
+  assert.equal(Rel.applyRelicPanel(s, ['atk_bead']).atk, 200);
+  assert.equal(Rel.applyRelicPanel(s, ['atk_bead', 'twin_core']).atk, 800, '先 +100 再 ×4');
+  assert.equal(Rel.applyRelicPanel(s, ['twin_core']).hp, 4000);
+  assert.equal(Rel.applyRelicPanel(s, ['mul_prism', 'mul_cluster']).atk, Math.floor(100 * 2.3 * 3 + 1e-9));
+  const sun = Rel.applyRelicPanel(s, ['black_sun_heart']); assert.deepEqual([sun.atk, sun.spatk, sun.def, sun.spdef, sun.hp], [600, 600, 25, 25, 1000]);
   assert.equal(Rel.softCapMul(64), 64); assert.ok(Math.abs(Rel.softCapMul(256) - 128) < 1e-9, '超過 64 的部分以 √ 計'); assert.ok(Rel.softCapMul(100) < 100 && Rel.softCapMul(100) > 64);
-  const stack = Rel.applyRelicPanel(s, Array(40).fill('twin_core')); assert.equal(stack.atk, Math.floor(100 * Rel.softCapMul(2 ** 40)));
+  const stack = Rel.applyRelicPanel(s, Array(40).fill('twin_core')); assert.equal(stack.atk, Math.floor(100 * Rel.softCapMul(4 ** 40)));
   assert.ok(Rel.RELICS.filter((r: any) => r.panelMul).length === 4);
   // 帳冊用的總倍率
-  assert.equal(Rel.relicMulTotals(['twin_core']).atk, 2);
+  assert.equal(Rel.relicMulTotals(['twin_core']).atk, 4);
 }
 
 // ───────── 敵方深度曲線與 N 疊乘
@@ -188,9 +189,9 @@ const mkRun = (o: any = {}) => {
   const b = E.startBattle(deep(), pool, 'x')!;
   assert.deepEqual(b.relics.filter((r: string) => r.startsWith('fixed_mul')), ['fixed_mul:10'], '我方帶固定值倍率');
   assert.ok(b.enemyRelics.includes('fixed_mul:10') && b.enemyRelics.includes('affix_sapping'), '敵方同一曲線');
-  assert.equal(b.p1[0].shield, 5000, '虛空護盾 500 × √100');
+  assert.equal(b.p1[0].shield, 10000, '虛空護盾 1000（2026-10-24 由 500 翻倍）× √100');
   const shallow = E.startBattle({ ...deep(), scene: { kind: 'prelude', encounter: { kind: 'combat', title: 't', enemies: [{ id: String(usable[12].id), affixes: [] }], scale: 1, depth: 1 } } }, pool, 'y')!;
-  assert.equal(shallow.p1[0].shield, 500); assert.deepEqual(shallow.relics.filter((r: string) => r.startsWith('fixed_mul')), ['fixed_mul:1']);
+  assert.equal(shallow.p1[0].shield, 1000); assert.deepEqual(shallow.relics.filter((r: string) => r.startsWith('fixed_mul')), ['fixed_mul:1']);
 
   // 戰鬥內：固定傷害、藥劑回復隨倍率；由最大體力百分比換算者（汲魂）不重複縮放
   const wait = { name: '等', category: '屬性', type: '普通', power: 0, pp: 99, maxPp: 99, isSureHit: true, description: '' };
@@ -272,8 +273,8 @@ const mkRun = (o: any = {}) => {
   assert.ok(hb.p1.every((e: any) => e.currentHp === e.maxHp) && hb.p1[0].skills[0].pp === (hb.p1[0].skills[0].maxPp ?? 1), '首領戰前回滿');
   const nb = E.startBattle({ ...hurt(mk('')), scene: { kind: 'prelude', encounter: bossEnc } } as any, pool, 'n')!;
   assert.ok(nb.p1.every((e: any) => e.currentHp < e.maxHp), '無特權不回滿');
-  // 戰敗保留隊伍：每局一次
-  const doomed = (equipId: string, used = false) => { const r = { ...hurt(mk(equipId)), lifelineUsed: used, scene: { kind: 'prelude', encounter: bossEnc } } as any; const bb = E.startBattle(r, pool, 'l')!; return E.settleBattleV2(bb.run, 'l', 'p2', bb.p1.map((e: any) => ({ ...e, currentHp: 0 })), pool); };
+  // 致命時不扣生命（生命制 2026-10-24：生命只剩 3、本場倒下 3 隻＝將歸零；逆命者特權每局一次）
+  const doomed = (equipId: string, used = false) => { const r = { ...hurt(mk(equipId)), lives: 3, tempLives: 0, lifelineUsed: used, scene: { kind: 'prelude', encounter: bossEnc } } as any; const bb = E.startBattle(r, pool, 'l')!; return E.settleBattleV2(bb.run, 'l', 'p2', bb.p1.map((e: any) => ({ ...e, currentHp: 0 })), pool); };
   const kept = doomed('fate_defier'); assert.notEqual(kept.scene.kind, 'end'); assert.equal(kept.lifelineUsed, true); assert.ok(kept.team.every((e: any) => e.currentHp >= Math.floor(e.maxHp * .3)));
   assert.equal(kept.scene.kind, 'prelude', '首領戰敗北後回到戰前');
   assert.equal(doomed('fate_defier', true).scene.kind, 'end', '第二次不再保留'); assert.equal(doomed('').scene.kind, 'end');

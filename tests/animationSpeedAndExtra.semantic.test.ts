@@ -1,0 +1,32 @@
+import assert from 'node:assert/strict';
+import {animationSpeed,normalizeAnimationSettings,DEFAULT_BATTLE_ANIMATION} from '../src/battle/animationSettings';
+import {BattlePresentation} from '../src/battle/presentation';
+import {petExtraSequence,registerPetPlayer,registerPetTimings,reportPetPlayback} from '../src/battle/petAnimationRegistry';
+for(const [input,expected] of [[undefined,1],[NaN,1],[Infinity,1],[0,1],[11,10],[2.5,2.5],[true,1]])assert.equal(animationSpeed(input),expected);
+assert.equal(normalizeAnimationSettings({speed:true}).speed,1);
+assert.equal(normalizeAnimationSettings({speed:5}).speed,5);
+assert.equal(petExtraSequence(['standby','attack','cp']),'cp');
+assert.equal(petExtraSequence(['cp','extra']),'extra');
+assert.equal(petExtraSequence(['cp','add1'],'add1'),'add1');
+assert.equal(petExtraSequence(['cp'],'missing'),'cp');
+const elf:any={id:'extra-test',name:'額外行動測試',battleId:'extra-test'};
+const off=registerPetPlayer('p1',elf),untiming=registerPetTimings('p1',elf,{extra:{duration:2000,hit:500}});
+const ticks=async()=>{for(let i=0;i<12;i++)await Promise.resolve();};
+const p=new BattlePresentation(()=>{},()=>false,()=>({...DEFAULT_BATTLE_ANIMATION,speed:10}));
+try{
+ await p.stage({p1Team:[elf],p1ActiveIndex:0});
+ const action=p.animate({side:'p1',category:'extra',skillName:'額外行動'},400);await ticks();
+ assert.equal(p.skillAnim.category,'extra');
+ let hit=false;void action.then(()=>hit=true);
+ reportPetPlayback('p1',elf,{sequence:'attack',type:'marker',marker:{name:'action_hit'}});await ticks();assert.equal(hit,false,'物攻標記不能放行額外行動');
+ reportPetPlayback('p1',elf,{sequence:'extra',type:'marker',marker:{name:'action_hit'}});await action;
+ p.beginExtra();await p.record({side:'p2',elfId:'target',sourceSide:'p1',type:'skill',amount:123,delta:-123,before:1000,after:877,maxHp:1000});
+ const started=performance.now(),red=p.endExtra();await ticks();
+ assert.equal(p.hp.get('p2:target'),877,'倍率不改結算');
+ assert.equal(p.popups[0]?.channel,'extra');
+ assert.equal(p.skillAnim.category,'extra','命中後仍繼續收招');
+ reportPetPlayback('p1',elf,{sequence:'extra',type:'complete'});await red;await p.wait();
+ const elapsed=performance.now()-started;
+ assert.ok(elapsed<1000,`10倍跳字不應等待原本1640ms：${elapsed}`);
+ console.log(`額外行動獨立命中／收招、10倍飄字與傷害不變通過（本機 ${Math.round(elapsed)}ms）`);
+}finally{p.dispose();off();untiming();}

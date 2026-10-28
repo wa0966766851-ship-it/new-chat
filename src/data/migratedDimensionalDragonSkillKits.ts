@@ -57,14 +57,14 @@ MIGRATED_DIMENSIONAL_DRAGON_SKILL_KITS.push(
       { acts: [a('status', { side: 'opp', status: '害怕', chance: 100, turns: 3 })] },
       { chain: 'fail', acts: [
         a('resource_mark_add', { id: 'poem_chapter', name: '詩章', displayChar: '詩', unit: '篇', side: 'self',
-          scope: 'elf', persistsOffField: true, amount: 1, maxCount: 999,
+          scope: 'elf', persistsOffField: true, amount: 1, snapshotKey: 'poemHpSnapshots',
           description: '紀錄持有者精靈的體力上限，當持有精靈死亡時轉移給存活的治癒.龍魂再臨次元龍。' }),
       ] },
     ], 2),
     // 3回合內對手使用攻擊技能 → 其後2回合屬性技能附加效果失效（掛對手）
     sequence('3回合內對手使用攻擊技能，使用攻擊技能後的下2回合屬性技能附加效果失效', [
       { acts: [a('timed', { turns: 3, from: 'now', trig: 'opp_attack', skillKind: '攻擊', body: [
-        { acts: [a('add_invalid_turns', { kind: '屬性', turns: 2 })] },
+        { acts: [a('add_invalid_turns', { kind: '屬性', turns: 2, next: true })] },
       ] })] },
     ], 3),
     // 3回合內對手使用屬性技能後 → 自身吸取對手最大體力的1/3
@@ -96,7 +96,7 @@ MIGRATED_DIMENSIONAL_DRAGON_SKILL_KITS.push(
         x2If: c('has_mark', { side: 'self', name: 'poem_chapter' }, '持有詩章') })] },
       { cond: [c('has_mark', { side: 'self', name: 'poem_chapter', neg: true }, '不存在詩章')], acts: [
         a('resource_mark_add', { id: 'poem_chapter', name: '詩章', displayChar: '詩', unit: '篇', side: 'self',
-          scope: 'elf', persistsOffField: true, amount: 4, maxCount: 999,
+          scope: 'elf', persistsOffField: true, amount: 4, snapshotKey: 'poemHpSnapshots',
           description: '紀錄持有者精靈的體力上限，當持有精靈死亡時轉移給存活的治癒.龍魂再臨次元龍。' }),
       ] },
     ], 1),
@@ -110,7 +110,7 @@ MIGRATED_DIMENSIONAL_DRAGON_SKILL_KITS.push(
     ], 2),
     // 下2回合先制+2；持有詩章（先制等級>0）提升為+3
     sequence('下2回合先制+2，自身先制等級大於0時提升為先制+3', [
-      { cond: [c('mark_count', { side: 'self', id: 'poem_chapter', op: '高於', amount: 0 }, '先制等級大於0')], acts: [
+      { cond: [c('action_priority', { side: 'self', op: '高於', amount: 0 }, '先制等級大於0')], acts: [
         a('prio_turns', { turns: 2, v: 3 }),
       ], elseActs: [
         a('prio_turns', { turns: 2, v: 2 }),
@@ -118,13 +118,13 @@ MIGRATED_DIMENSIONAL_DRAGON_SKILL_KITS.push(
     ], 3),
     // 下2回合對手受到的攻擊傷害提升150%
     sequence('下2回合對手受到的攻擊傷害提升150%', [
-      { acts: [a('dmg_mod_turns', { side: 'opp', dir: 'taken', kind: '攻擊', boost: 1.5, turns: 2 })] },
+      { acts: [a('dmg_mod_turns', { side: 'opp', dir: 'taken', kind: '攻擊', boost: 1.5, turns: 2, next: true })] },
     ], 4),
     // 龍魂：對手每1點PP附加50點次元龍技能傷害（per 計數）＋雙方每滿PP技能翻倍1次（×2^n）＋2回合鎖切換
     sequence('龍魂：當自身處於龍魂時發動，對手每有1點PP值附加50點次元龍系技能傷害且下2回合對手無法主動切換精靈，雙方每存在1個PP值為滿的技能則翻倍1次', [
       { cond: [c('dragon_soul', {}, '龍魂')], acts: [
-        a('dmg', { flat: 50, type: '技能', elem: '次元龍', per: 'opp_pp_sum' }),
-        a('no_switch', { turns: 2, next: false }),
+        a('dmg', { flat: 50, type: '技能', elem: '次元龍', appendToAttack: true, per: 'opp_pp_sum', doublePer: 'sides_full_pp_skills' }),
+        a('no_switch', { turns: 2, next: true }),
       ] },
     ], 5),
   ] },

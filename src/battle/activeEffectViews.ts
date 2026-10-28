@@ -4,13 +4,13 @@ import type { Timer } from './timers';
 import { buildEffectViewModels, type BattleEffectViewModel } from './effectViewModel';
 import { effectIcon, STATE_SIGNS } from './effectIcons';
 import { marsMechanismEffects, MARS_MECHA_CATALOG } from '../effects/elves/mars/presentation';
-import { elfForViewer, hiddenFromViewer } from './viewerPerspective';
+import { elfForViewer, hiddenFromViewer, type BattleViewMode } from './viewerPerspective';
 import {statusCountAppearance} from './statusImmunityCount';
 import {displayTurnValue} from './displayTurnValue';
 import {skillBadgeViews} from './skillBadgeViews';
 
-export function visibleEffectSourceText(source: Elf | undefined, side: 'p1' | 'p2'): string {
-  return !source || hiddenFromViewer(source, side) ? '' : elfForViewer(source, side).soulMark?.description || '';
+export function visibleEffectSourceText(source: Elf | undefined, side: 'p1' | 'p2', mode: BattleViewMode = 'PVE'): string {
+  return !source || hiddenFromViewer(source, side, mode) ? '' : elfForViewer(source, side).soulMark?.description || '';
 }
 
 /** One read-only projection for HUD, avatar details and inspector. No state is created here. */
@@ -28,7 +28,7 @@ export function activeEffectViews(elf: Elf, marks: Mark[] = [], timers: Timer[] 
     append({id: `registry:${key}`, semanticId: key, category: 'count', ...appearance,
       shortLabel: '免', source: '持有者次數狀態', value, unit: '次', clearable: false,
       persistsOffField: true, triggerNode: '受到異常時消耗', polarity: 'positive',
-      icon: effectIcon('免疫異常'), priority: 70});
+      icon: appearance.icon, priority: 70});
   }
   for (const [field, semanticId, label, iconTag, polarity] of [
     ['statusImmuneTurns', 'status_guard', '異常免疫', '免疫異常', 'positive'],

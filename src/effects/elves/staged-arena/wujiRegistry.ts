@@ -63,7 +63,7 @@ export function hasLowChanceStatusTrait(desc: string): boolean {
   return false;
 }
 
-/** 英雄之耀檢測的「特性」：專屬特性（魂印）與通用特性；不含二代／專屬／異能特質。 */
+/** 英雄之耀檢測的「特性」：專屬特性與通用特性；不含二代特質、專屬特質與異能。 */
 export function heroGloryTraitTexts(e: { soulMark?: { description?: string }; trait?: { description?: string }; alienTraits?: { generalTrait?: { description?: string } } }): string[] {
   return [e.soulMark?.description, e.trait?.description, e.alienTraits?.generalTrait?.description].filter((d): d is string => !!d);
 }
@@ -135,7 +135,7 @@ export function handleWujiSoulMark(c: ArenaContext, event: EffectTiming, data?: 
   }
   if (event === EffectTiming.ROUND_END) roundEnd(c);
   if (!live(c)) return;
-  if (event === EffectTiming.ON_ENTRANCE) {
+  if (event === EffectTiming.ON_ENTRANCE || event === EffectTiming.BATTLE_START) {
     if (!read(c, 'initialized')) {
       const own = c.getFullTeam(c.actor).filter(e => idOf(e) !== idOf(c.self));
       const layers = own.reduce((n, e) => n + (countsAgainstHeroGlory(e) ? -1 : 1), 0);

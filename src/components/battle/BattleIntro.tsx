@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from "react";
 import type { Elf } from "../../types";
 import { ElfAvatar, TypeIcon } from "../SeerImages";
 import { hiddenFromViewer } from "../../battle/viewerPerspective";
+import { useBattleViewMode } from "../../battle/viewerMode";
 import { appearanceElf } from "../../battle/illusionPresentation";
 import type { IntroPlan } from "../../battle/introPlan";
 
@@ -10,7 +11,7 @@ const PARTICLES = Array.from({ length: 26 }, (_, i) => ({ left: (i * 37 + 11) % 
 function Side({ elf, side }: { elf: Elf; side: "p1" | "p2" }) {
   // 立繪長寬比不同時，窄螢幕上寬圖會顯得小：依圖片比例放大（上限 1.45），讓雙方視覺份量接近。
   const [fit, setFit] = useState(1);
-  const hidden = hiddenFromViewer(elf, side);
+  const hidden = hiddenFromViewer(elf, side, useBattleViewMode());
   const shown = appearanceElf(elf);
   return (
     <section className={`bi-side bi-side-${side === "p1" ? 1 : 2}`} data-side={side}>

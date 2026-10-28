@@ -8,12 +8,12 @@ import * as E from "../../modes/interstellar/v2/engine";
 import { ACTS, START_PACTS } from "../../modes/interstellar/v2/content";
 import { RELICS } from "../../modes/interstellar/v2/relics";
 import { EVENTS } from "../../modes/interstellar/v2/content";
-import { Ornament, NpcArt } from "./eclipse/parts";
+import { Ornament, NpcArt, RelicIcon, useEclRootRef } from "./eclipse/parts";
 import SuitSelect from "./eclipse/SuitSelect";
 import { SeedField, LevelPicker, BanPicker } from "./eclipse/SetupPanels";
 import { newSeed } from "../../modes/interstellar/v2/rng";
 import { encodeRunCode, parseSeedInput } from "../../modes/interstellar/v2/seed";
-import { clampN, nEffects } from "../../modes/interstellar/v2/levels";
+import { clampN, nEffects, startLivesFor } from "../../modes/interstellar/v2/levels";
 import { perkOf } from "../../modes/interstellar/v2/suitPerks";
 
 interface InterstellarHubProps {
@@ -34,6 +34,7 @@ function readMeta(): Meta {
 const LEVEL_EXP = 1000;
 
 export default function InterstellarHub({ allElves, onBack, onStartBattle }: InterstellarHubProps) {
+  const rootRef = useEclRootRef();
   const [active, setActive] = React.useState(() => E.loadRunV2(localStorage));
   // 從戰鬥返回（有待結算或剛結算）直接進入回廊
   const [menu, setMenu] = React.useState<Menu>(() => {
@@ -95,21 +96,21 @@ export default function InterstellarHub({ allElves, onBack, onStartBattle }: Int
   }
 
   return (
-    <div className="ecl-root w-full h-full min-h-[100vh] overflow-y-auto" style={{ ["--ecl-hue" as any]: "#fbbf24" }}>
+    <div ref={rootRef} className="ecl-root w-full h-full min-h-[100vh] overflow-y-auto" style={{ ["--ecl-hue" as any]: "#fbbf24" }}>
       <div className="ecl-sky" />
       <div className="ecl-stars" />
       <div className="ecl-grain" />
       <img src="/eclipse/bg_throne.webp" alt="" aria-hidden className="absolute inset-0 w-full h-full object-cover opacity-40 -z-[1] pointer-events-none" />
 
-      <div className={`relative z-10 mx-auto px-6 pt-16 md:pt-8 pb-24 md:pb-10 ${menu === "gear" ? "max-w-[1680px] md:pr-24" : "max-w-6xl md:pr-56"}`}>
+      <div className="relative z-10 mx-auto px-6 pt-16 ecl-md:pt-8 pb-24 ecl-md:pb-10 max-w-[1680px] ecl-md:pr-24">
         <button className="ecl-btn ecl-btn-ghost text-xs px-4 py-2" onClick={() => menu === "title" ? onBack() : menu === "setup" ? setMenu("gear") : setMenu("title")}>{menu === "title" ? "返回首頁" : "返回"}</button>
 
         <AnimatePresence mode="wait">
           {menu === "title" && (
-            <motion.section key="title" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="mt-10 grid md:grid-cols-[1fr_auto] gap-10 items-center">
+            <motion.section key="title" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="mt-10 grid ecl-md:grid-cols-[1fr_auto] gap-10 items-center">
               <div>
                 <div className="ecl-roman text-xs ecl-muted">Interstellar Expedition</div>
-                <h1 className="ecl-title text-5xl md:text-7xl ecl-gilt mt-2 leading-tight">星蝕回廊</h1>
+                <h1 className="ecl-title text-5xl ecl-md:text-7xl ecl-gilt mt-2 leading-tight">星蝕回廊</h1>
                 <Ornament className="my-5" />
                 <p className="max-w-xl leading-8 text-[15px]">
                   某一天，太陽開始被什麼東西一口一口地吃掉。航道扭曲成一條回廊，六個章節，六張王座。
@@ -135,7 +136,7 @@ export default function InterstellarHub({ allElves, onBack, onStartBattle }: Int
                   </div>
                 )}
               </div>
-              <div className="ecl-frame p-6 w-full md:w-72">
+              <div className="ecl-frame p-6 w-full ecl-md:w-72">
                 <div className="flex items-center gap-4">
                   <img src="/eclipse/emblem_gold.png" alt="" className="w-16 h-16 object-contain" />
                   <div>
@@ -161,14 +162,21 @@ export default function InterstellarHub({ allElves, onBack, onStartBattle }: Int
           )}
 
           {menu === "setup" && (
-            <motion.section key="setup" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="mt-8 max-w-3xl">
+            <motion.section key="setup" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="mt-8 max-w-6xl">
               <h2 className="ecl-title text-4xl ecl-gilt">啟程之前</h2>
               <Ornament className="my-4" />
-              <div className="space-y-6">
+              <div className="grid gap-6 ecl-lg:grid-cols-2 ecl-lg:items-start">
+                <div className="space-y-6">
                 <div className="ecl-frame p-6 space-y-5">
                   <SeedField value={seedText} onChange={onSeedText} onRandom={() => { setSeedText(String(newSeed())); setCopied(false); }} onCopy={copyCode} note={seedNote} copied={copied} />
                   <LevelPicker value={nLevel} onChange={setLevel} />
                   <BanPicker bans={bans} pool={pool} cap={cap} onChange={setBans} />
+                </div>
+                <div className="ecl-frame p-6 text-sm leading-7" title="最深抵達第 3 章後星晶 +1；曾迎接黎明再 +1；N 等級另計。招募令只來自套裝特權">
+                  {(() => { const perk = lv.perksOff ? null : perkOf(equipType, equipId); return (
+                    <div>初始：<span title={E.LIFE_RULE}>生命 <b className="ecl-gilt">{startLivesFor(nLevel) + (perk?.lives ?? 0)}{perk?.tempLifePerAct ? `＋臨時 ${perk.tempLifePerAct}` : ""}</b>・</span>賽爾豆 <b className="ecl-gilt">{Math.max(0, 120 + lv.startBeans + (perk?.beans ?? 0))}</b>・星晶 <b className="ecl-gilt">{Math.max(0, startingShards + lv.startShards)}</b>・招募令 <b className="ecl-gilt">{(perk?.anyTokens ?? 0) + (perk?.typeToken ? 1 : 0) + (perk?.dualToken ? 1 : 0) + (perk?.repeatTokens ?? 0)}</b>・藥劑 <b className="ecl-gilt">{Math.max(0, 3 - (pacts.includes("no_potions") ? 2 : 0) + lv.startPotions + (perk?.potions ?? 0))}</b></div>
+                  ); })()}
+                </div>
                 </div>
                 <div className="ecl-frame ecl-frame-blood p-6">
                   <div className="flex items-center justify-between mb-3">
@@ -184,12 +192,7 @@ export default function InterstellarHub({ allElves, onBack, onStartBattle }: Int
                       </button>); })}
                   </div>
                 </div>
-                <div className="ecl-frame p-6 text-sm leading-7" title="最深抵達第 3 章後星晶 +1；曾迎接黎明再 +1；N 等級另計。招募令只來自套裝特權">
-                  {(() => { const perk = lv.perksOff ? null : perkOf(equipType, equipId); return (
-                    <div>初始：賽爾豆 <b className="ecl-gilt">{Math.max(0, 120 + lv.startBeans + (perk?.beans ?? 0))}</b>・星晶 <b className="ecl-gilt">{Math.max(0, startingShards + lv.startShards)}</b>・招募令 <b className="ecl-gilt">{(perk?.anyTokens ?? 0) + (perk?.typeToken ? 1 : 0) + (perk?.dualToken ? 1 : 0) + (perk?.repeatTokens ?? 0)}</b>・藥劑 <b className="ecl-gilt">{Math.max(0, 3 - (pacts.includes("no_potions") ? 2 : 0) + lv.startPotions + (perk?.potions ?? 0))}</b></div>
-                  ); })()}
-                </div>
-                <div className="flex justify-between items-center">
+                <div className="flex justify-between items-center ecl-lg:col-span-2">
                   <button className="ecl-btn ecl-btn-ghost" onClick={() => setMenu("gear")}>上一步</button>
                   <button className="ecl-btn text-lg px-10" disabled={!parsed} title={E.FAIL_RULE} onClick={() => { localStorage.removeItem(E.RUN_KEY_V2); setMenu("in_run"); }}>點燃第一盞燈</button>
                 </div>
@@ -204,7 +207,7 @@ export default function InterstellarHub({ allElves, onBack, onStartBattle }: Int
                 <Ornament className="my-4" />
                 <p className="ecl-muted text-sm">遺物 {RELICS.length} 件・異兆 {EVENTS.length} 則・章節 {ACTS.length}。</p>
               </div>
-              <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              <div className="grid ecl-sm:grid-cols-2 ecl-lg:grid-cols-3 ecl-xl:grid-cols-6 gap-4">
                 {ACTS.map(a => (
                   <div key={a.id} className="ecl-frame p-4 flex items-center gap-4" style={{ ["--ecl-hue" as any]: a.hue }}>
                     <div className="w-20 h-24 shrink-0"><NpcArt id={a.npc} className="w-full h-full" /></div>
@@ -223,12 +226,10 @@ export default function InterstellarHub({ allElves, onBack, onStartBattle }: Int
 
 function CodexRelics() {
   return (
-    <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-2">
+    <div className="grid ecl-sm:grid-cols-2 ecl-lg:grid-cols-3 ecl-xl:grid-cols-4 gap-2">
       {RELICS.map(r => (
         <div key={r.id} className="flex items-center gap-3 px-3 py-2 border border-[rgba(217,180,90,.15)] bg-black/30">
-          <span className="ecl-sigil relative shrink-0" data-rarity={r.rarity} style={{ width: "2.6rem", height: "2.6rem" }}>
-            <img src={`/eclipse/relic/${r.id}.webp`} alt="" className="absolute inset-[12%] w-[76%] h-[76%] object-contain" />
-          </span>
+          <span className="shrink-0"><RelicIcon id={r.id} rarity={r.rarity} glyph={r.glyph} dim="2.6rem" fontSize="1.1rem" /></span>
           <div className="min-w-0"><div className="font-black text-sm truncate">{r.name}</div><div className="text-[11px] ecl-muted leading-snug">{r.desc}</div></div>
         </div>
       ))}

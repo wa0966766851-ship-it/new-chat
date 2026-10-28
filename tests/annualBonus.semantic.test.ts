@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { calculateElfStats, normalizeElfStats } from '../src/utils/elfStats';
+import { calculateElfStats, normalizeElfStats, withAnnualBonus } from '../src/utils/elfStats';
 
 const base = { hp: 150, atk: 125, def: 110, spatk: 80, spdef: 110, speed: 125 };
 const evs = { hp: 255, atk: 255, def: 0, spatk: 0, spdef: 0, speed: 0 };
@@ -16,6 +16,9 @@ for (const level of [1, 50, 100]) {
   const again = normalizeElfStats(first);
   assert.deepEqual(first.calculatedStats, on);
   assert.deepEqual(again.calculatedStats, on, 'recalculating must not stack annual bonus');
-  checks += 2;
+  assert.deepEqual(withAnnualBonus(first, true).calculatedStats, on, 'preview and launch share the same calculation');
+  assert.deepEqual(withAnnualBonus(first, false).calculatedStats, off, 'turning off removes exactly the annual bonus');
+  assert.deepEqual(withAnnualBonus(withAnnualBonus(first, false), true).calculatedStats, on, 'off/on must not stack');
+  checks += 5;
 }
 console.log(`annual bonus: ${checks} assertions passed (+10 points, no percentage or duplicate addition)`);

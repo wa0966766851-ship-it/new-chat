@@ -42,7 +42,7 @@ export function AdvanceChoice({ run, target, dispatch, onDone }: { run: E.RunV2;
         <div className="min-w-0"><div className="font-black text-lg">{target.name}</div><div className="text-xs ecl-muted">強化 {info.layers} / {info.cap} 層{d.pp ? "・PP×2 已選" : ""}</div></div>
         <div className="ml-auto text-xs ecl-muted self-start tabular-nums" title="進階與招募共用的貨幣">星晶 <b className="ecl-gilt">{run.shards}</b></div>
       </div>
-      <div className="grid sm:grid-cols-2 gap-3">
+      <div className="grid ecl-sm:grid-cols-2 gap-3">
         <button type="button" disabled={!can(info.stat)} onClick={() => go("stat")} data-dup="stat" className="text-left p-4 border border-[rgba(217,180,90,.4)] hover:bg-[rgba(217,180,90,.08)] disabled:opacity-35 disabled:hover:bg-transparent"
           title={info.stat == null ? "強化層數已達上限" : !can(info.stat) ? `星晶不足（需要 ${info.stat}）` : `第 ${info.layers + 1} 層：全能力 ×${(1 + DUP_STAT_PER_LAYER * (info.layers + 1)).toFixed(1)}`}>
           <div className="flex items-center justify-between gap-2"><span className="font-black ecl-gilt">強化　全能力 +40%</span>{info.stat != null && <ShardPrice price={info.stat} have={run.shards} free={free} />}</div>
@@ -61,8 +61,8 @@ export function AdvanceChoice({ run, target, dispatch, onDone }: { run: E.RunV2;
 /** 背包卡的進階視窗 */
 export function AdvanceDialog({ run, target, dispatch, onClose }: { run: E.RunV2; target: Elf; dispatch: Dispatch; onClose: () => void }) {
   return portalToRoot(
-    <div className="fixed inset-0 z-[70] bg-black/80 backdrop-blur-[2px] p-4 pt-16 md:p-10 overflow-y-auto" role="dialog" aria-label="進階" data-testid="advance-dialog" onClick={onClose}>
-      <div className="mx-auto max-w-2xl ecl-frame p-5 md:p-7 bg-[var(--ecl-ink-2)]" onClick={ev => ev.stopPropagation()}>
+    <div className="fixed inset-0 z-[70] bg-black/80 backdrop-blur-[2px] p-4 pt-16 ecl-md:p-10 overflow-y-auto" role="dialog" aria-label="進階" data-testid="advance-dialog" onClick={onClose}>
+      <div className="mx-auto max-w-2xl ecl-frame p-5 ecl-md:p-7 bg-[var(--ecl-ink-2)]" onClick={ev => ev.stopPropagation()}>
         <div className="flex items-center justify-between mb-3 gap-3">
           <h3 className="ecl-title text-xl ecl-gilt" title="對已持有的同一隻精靈消耗星晶；持有重複招募令可免費進階一次">進階</h3>
           <button className="ecl-btn ecl-btn-ghost text-xs px-4 py-1.5" onClick={onClose}>關閉</button>
@@ -92,8 +92,8 @@ export function RecruitPicker({ run, pool, token, advance, dispatch, onClose }: 
   const tip = adv ? "對已持有的同一隻精靈消耗星晶；重複招募令可免費進階一次" : token ? tokenHint(token) : "任選一隻精靈。基價 2，每次星晶招募 +1，每兩章 +1，Ⅲ +1、Ⅳ +2；持令招募免費且不推高價格";
   const live = target ? run.team.find(e => E.bagIdOf(e) === E.bagIdOf(target)) ?? target : null;
   return portalToRoot(
-    <div className="fixed inset-0 z-[70] bg-black/80 backdrop-blur-[2px] p-4 pt-16 md:p-10 overflow-y-auto" role="dialog" aria-label="招募" data-testid="recruit-picker" onClick={onClose}>
-      <div className="mx-auto max-w-5xl ecl-frame p-5 md:p-7 bg-[var(--ecl-ink-2)]" onClick={ev => ev.stopPropagation()}>
+    <div className="fixed inset-0 z-[70] bg-black/80 backdrop-blur-[2px] p-4 pt-16 ecl-md:p-10 overflow-y-auto" role="dialog" aria-label="招募" data-testid="recruit-picker" onClick={onClose}>
+      <div className="mx-auto max-w-5xl ecl-frame p-5 ecl-md:p-7 bg-[var(--ecl-ink-2)]" onClick={ev => ev.stopPropagation()}>
         <div className="flex items-center justify-between mb-3 gap-3">
           <h3 className="ecl-title text-xl ecl-gilt" title={tip}>{title}<span className="ml-3 text-sm ecl-muted tabular-nums">{elves.length} 隻可選</span>{!token && <span className="ml-3 text-sm ecl-muted tabular-nums" data-testid="picker-shards">星晶 <b className="ecl-gilt">{run.shards}</b></span>}</h3>
           <button className="ecl-btn ecl-btn-ghost text-xs px-4 py-1.5" onClick={onClose}>關閉</button>
@@ -107,7 +107,7 @@ export function RecruitPicker({ run, pool, token, advance, dispatch, onClose }: 
           <ElfPicker<Elf> variant="eclipse" elves={elves} getKey={e => E.bagIdOf(e)} onPick={pick}
             isDisabled={e => !adv && !token && run.shards < priceOf(e) ? `星晶不足（需要 ${priceOf(e)}）` : false}
             emptyText={adv ? "沒有可進階的精靈" : "沒有符合的精靈（可能已被持有或禁用）"}
-            gridClassName="grid sm:grid-cols-2 lg:grid-cols-3 gap-2 max-h-[62vh] overflow-y-auto pr-1" itemClassName={`text-left flex gap-3 p-2.5 border ${line} bg-black/30 hover:border-[var(--ecl-gold)] disabled:opacity-40 disabled:hover:border-[rgba(217,180,90,.2)]`}
+            gridClassName="grid ecl-sm:grid-cols-2 ecl-lg:grid-cols-3 gap-2 max-h-[62vh] overflow-y-auto pr-1" itemClassName={`text-left flex gap-3 p-2.5 border ${line} bg-black/30 hover:border-[var(--ecl-gold)] disabled:opacity-40 disabled:hover:border-[rgba(217,180,90,.2)]`}
             renderItem={e => { const dd = dupOf(e); return (<>
               <div className={`w-11 h-12 shrink-0 rounded-[50%] overflow-hidden border border-[rgba(217,180,90,.45)] bg-black/60 ${alive(e) ? "" : "grayscale"}`}><ElfAvatar elf={e} kind="head" className="w-full h-full object-cover" fallbackClassName="w-full h-full grid place-items-center font-black ecl-gilt" /></div>
               <div className="min-w-0 flex-1">
@@ -152,7 +152,7 @@ export default function RecruitPage({ run, pool, dispatch }: { run: E.RunV2; poo
         <button className="ecl-btn ecl-btn-ghost text-sm px-4 py-1.5" data-testid="advance-open" disabled={!editable || !canAdvance} title={lock ?? (canAdvance ? "對已持有的精靈進階：強化或 PP×2" : "沒有可進階的精靈")} onClick={() => setMode("advance")}>進階</button>
       </div>
       {groups.length ? (
-        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
+        <div className="grid ecl-sm:grid-cols-2 ecl-lg:grid-cols-3 gap-3">
           {groups.map(g => { const t = g[0]; const n = t.repeat ? run.team.filter(e => { const o = E.dupOptions(run, e); return o.stat || o.pp; }).length : E.eligibleElves(run, pool, t).length; return (
             <div key={t.id} className={`p-3 border ${line} bg-black/30 flex items-center gap-3`}>
               <div className="min-w-0 flex-1">

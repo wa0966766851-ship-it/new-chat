@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { Search, Check, Package, Shirt, Glasses, Award, Gem, X, Users, Layers } from "lucide-react";
+import { Check, Package, Shirt, Glasses, Award, Gem, X, Users, Layers } from "lucide-react";
 import type { ShellBridge } from "../bridge";
 import type { Elf } from "../../types";
 import { ElfAvatar, TypeIcon, SkillTypeIcon } from "../../components/SeerImages";
@@ -11,7 +11,9 @@ import { AegisBackdrop } from "../art/backdrop";
 import { typeColor } from "../art/figure";
 import { readEquipment, writeEquipment, clearEquipment, type EquipmentSlot } from "../equipment";
 import { readLastUsedRecord, summarizeTeam } from "../lastTeam";
-import { TeamBoard } from "../art/TeamPanel";
+import { createBattleInstance, saveDraft } from "../teamDraft";
+import { TeamBoard, ElfPickerDrawer, type SlotAction } from "../art/TeamPanel";
+import { ElfFilterBar, useElfFilter } from "../../components/shared/ElfPicker";
 import { SuitRail } from "../art/SuitRail";
 import { ElfCardSheet } from "../art/ElfCardSheet";
 import { haptic } from "../haptics";
@@ -46,11 +48,18 @@ export function BagScene({ b, onSetup }: { b: ShellBridge; onSetup?: () => void 
   const [tab, setTab] = useState<BagTab>("team");
   // 精靈卡牌倉庫：選中的精靈（null = 關閉）
   const [cardElf, setCardElf] = React.useState<Elf | null>(null);
-  const [query, setQuery] = useState("");
+  const [query] = useState("");
+  const f = useElfFilter();
   const [side, setSide] = useState<"p1" | "p2">("p1");
   const [equipError, setEquipError] = useState('');
   const [picked, setPicked] = useState<string | null>(b.allElvesCombined[0]?.id ?? null);
   const [detail, setDetail] = useState<{ name: string; badge?: string; desc: string; tone: string; elf?: Elf } | null>(null);
+  /** 從倉庫直接換掉指定槽位的精靈（沿用舊版 ElfPickerDrawer 流程）。 */
+  const [swapTarget, setSwapTarget] = useState<{ side: "p1" | "p2"; index: number; elf: Elf } | null>(null);
+  const [swapError, setSwapError] = useState("");
+  /** 從倉庫按下「換精靈」後，先選要換掉隊伍中的哪一隻。 */
+  const [swapIncoming, setSwapIncoming] = useState<Elf | null>(null);
+  const [teamVersion, setTeamVersion] = useState(0);
 
   /**
    * 裝備在 Legacy 是「隊伍層級」的 localStorage（seer_p1_suit / eyewear / title），
@@ -63,6 +72,35 @@ export function BagScene({ b, onSetup }: { b: ShellBridge; onSetup?: () => void 
   /** 目前分頁對應的裝備欄位；精靈分頁不適用 */
   const slotForTab: EquipmentSlot | null =
     tab === "suit" ? "suit" : tab === "eyewear" ? "eyewear" : tab === "title" ? "title" : null;
+
+  /**
+   * 把倉庫裡的精靈換進指定槽位。
+   * 沿用舊版 TeamPanel.handleReplace：同隊不可重複、保留先發、寫回草稿。
+   */
+  const handleSwap = (slotIndex: number, next: Elf) => {
+    const rec = readLastUsedRecord(side);
+    const current = summarizeTeam(rec);
+    const team = [...current.members];
+    const slotElf = current.members[slotIndex];
+    if (!slotElf) { setSwapError("找不到要替換的隊伍欄位。"); return; }
+    if (team.some((elf, i) => i !== slotIndex && elf.id === next.id)) {
+      setSwapError("這隻精靈已在此隊伍中，請選擇其他精靈。");
+      return;
+    }
+    const replacement = createBattleInstance(next);
+    team[slotIndex] = replacement;
+    const wasStarter = slotElf.battleId === current.starter?.battleId;
+    const starterBattleId = wasStarter ? replacement.battleId! : (rec?.starterId || current.starter?.battleId || team[0]?.battleId || "");
+    if (!saveDraft(side, { members: team, starterBattleId })) {
+      setSwapError("隊伍未能儲存，請檢查可用儲存空間。");
+      return;
+    }
+    setSwapError("");
+    haptic("medium");
+    setSwapIncoming(null);
+    setDetail(null);
+    setTeamVersion(v => v + 1);
+  };
 
   /** 點物品：已裝備 → 卸下；未裝備 → 裝備上 */
   const toggleEquip = (id: string) => {
@@ -109,8 +147,7 @@ export function BagScene({ b, onSetup }: { b: ShellBridge; onSetup?: () => void 
     }
     if (tab === "elf") {
       // 精靈倉庫：全部精靈，顯示屬性與等級；點開看詳情
-      return b.allElvesCombined
-        .filter(e => match(e.name, e.type))
+      return f.filter(b.allElvesCombined)
         .map(e => ({
           key: String(e.id ?? e.name),
           name: e.name,
@@ -121,7 +158,7 @@ export function BagScene({ b, onSetup }: { b: ShellBridge; onSetup?: () => void 
         }));
     }
     return [];
-  }, [tab, query, b.allElvesCombined]);
+  }, [tab, query, b.allElvesCombined, f.filter]);
 
   return (
     <section data-scene="bag" className="relative w-full flex flex-col overflow-hidden" style={{ height: "100%", minHeight: 0 }}>
@@ -198,22 +235,7 @@ export function BagScene({ b, onSetup }: { b: ShellBridge; onSetup?: () => void 
 
         {/* ── 搜尋（只有精靈分頁用；裝備分頁的搜尋在 SuitRail 內） ── */}
         {tab === "elf" && (
-        <div className="shrink-0 relative">
-          <Search className="w-3 h-3 absolute left-2 top-1/2 -translate-y-1/2" style={{ color: "rgba(148,163,184,0.7)" }} />
-          <input
-            value={query}
-            onChange={e => setQuery(e.target.value)}
-            placeholder="搜尋名稱或說明"
-            className="w-full pl-7 pr-7 py-1.5 text-[10px] outline-none"
-            style={{ borderRadius: 8, background: "rgba(6,16,26,0.82)", border: "1px solid rgba(148,163,184,0.22)", color: "#F1F5F9" }}
-          />
-          {query && (
-            <button type="button" onClick={() => setQuery("")} className="absolute right-2 top-1/2 -translate-y-1/2">
-              <X className="w-3 h-3" style={{ color: "rgba(148,163,184,0.7)" }} />
-            </button>
-          )}
-        </div>
-
+        <div className="shrink-0"><ElfFilterBar state={f} variant="shell" placeholder="搜尋名稱、ID、屬性" count={`${items.length}`} /></div>
         )}
         {/* ── 隊伍分頁：雙方並排（手機上下、桌面左右） ── */}
         {tab === "team" && (
@@ -260,7 +282,8 @@ export function BagScene({ b, onSetup }: { b: ShellBridge; onSetup?: () => void 
                 title={slotForTab ? (isEquipped ? "點擊卸下" : "點擊裝備") : "點擊查看詳情"}
                 onClick={() => {
                   if (slotForTab) toggleEquip(it.key);
-                  else setDetail({ name: it.name, badge: it.badge, desc: it.desc, tone: it.tone, elf: it.elf });
+                  else if(it.elf) setCardElf(it.elf);
+                  else setDetail({ name: it.name, badge: it.badge, desc: it.desc, tone: it.tone });
                 }}
                 className="w-full flex items-start gap-1.5 p-1.5 pr-9 text-left active:scale-[0.98] transition-transform"
                 style={{
@@ -306,12 +329,29 @@ export function BagScene({ b, onSetup }: { b: ShellBridge; onSetup?: () => void 
               {isElf && (
                 <button
                   type="button"
-                  title={`查看 ${it.name} 的卡牌倉庫`}
+                  title={`查看 ${it.name} 的精靈介紹`}
                   onClick={(ev) => { ev.stopPropagation(); haptic("light"); setCardElf(it.elf!); }}
-                  className="absolute right-1 top-1/2 -translate-y-1/2 flex items-center justify-center active:scale-90 transition-transform"
+                  className="absolute right-9 top-1/2 -translate-y-1/2 flex items-center justify-center active:scale-90 transition-transform"
                   style={{ width: 26, height: 26, borderRadius: 7, background: "rgba(6,16,26,0.9)", border: "1px solid rgba(148,163,184,0.3)" }}
                 >
                   <Layers className="w-3 h-3" style={{ color: it.tone }} />
+                </button>
+              )}
+              {/* 直接從倉庫換精靈：沿用舊版選精靈抽屜 */}
+              {isElf && (
+                <button
+                  type="button"
+                  title={`用 ${it.name} 換掉隊伍中的精靈`}
+                  onClick={(ev) => {
+                    ev.stopPropagation();
+                    haptic("light");
+                    setSwapError("");
+                    setSwapIncoming(it.elf!);
+                  }}
+                  className="absolute right-1 top-1/2 -translate-y-1/2 flex items-center justify-center active:scale-90 transition-transform"
+                  style={{ width: 26, height: 26, borderRadius: 7, background: "rgba(6,16,26,0.9)", border: "1px solid rgba(34,211,238,0.55)" }}
+                >
+                  <Users className="w-3 h-3" style={{ color: "#22D3EE" }} />
                 </button>
               )}
               </div>
@@ -421,6 +461,54 @@ export function BagScene({ b, onSetup }: { b: ShellBridge; onSetup?: () => void 
         </div>
       </div>
       {cardElf && <ElfCardSheet elf={cardElf} onClose={() => setCardElf(null)} />}
+      {/* 從倉庫換精靈：先選要換掉隊伍中的哪一隻（使用者要求 2026-10-23） */}
+      {swapIncoming && (
+        <div className="fixed inset-0 z-50 flex flex-col justify-end" role="dialog" aria-label="選擇要替換的精靈">
+          <button type="button" aria-label="關閉" onClick={() => { setSwapIncoming(null); setSwapError(""); }} className="absolute inset-0 bg-black/70" />
+          <div
+            className="relative p-3 flex flex-col gap-2"
+            style={{
+              background: "linear-gradient(180deg, #0B1620, #060D14)",
+              borderTop: "1px solid var(--p-accent)",
+              borderRadius: "20px 20px 0 0",
+              paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 78px)",
+              maxHeight: "70dvh",
+            }}
+          >
+            {swapError && <p role="alert" className="text-amber-200 text-[11px]">{swapError}</p>}
+            <div className="flex items-center gap-2">
+              <span className="text-[13px] font-black flex-1" style={{ color: "#F8FAFC" }}>
+                用「{swapIncoming.name}」換掉誰？
+              </span>
+              <button type="button" onClick={() => { setSwapIncoming(null); setSwapError(""); }} className="p-1.5" style={{ borderRadius: 8, background: "rgba(255,255,255,0.08)" }}>
+                <X className="w-4 h-4" style={{ color: "#CBD5E1" }} />
+              </button>
+            </div>
+            <div className="flex-1 min-h-0 overflow-y-auto">
+              <div className="grid grid-cols-2 gap-1">
+                {summarizeTeam(readLastUsedRecord(side)).members.map((member, i) => (
+                  <button
+                    key={member.battleId || member.id || i}
+                    type="button"
+                    onClick={() => handleSwap(i, swapIncoming)}
+                    className="flex items-center gap-1.5 p-1.5 text-left active:scale-95 transition-transform"
+                    style={{ borderRadius: 9, background: "rgba(6,16,26,0.9)", boxShadow: "inset 0 0 0 1px rgba(148,163,184,0.22)" }}
+                  >
+                    <span className="shrink-0 flex items-center justify-center" style={{ width: 34, height: 34, borderRadius: 6, background: "rgba(10,20,30,0.9)" }}>
+                      <ElfAvatar elf={member} kind="head" className="w-8 h-8 object-contain" />
+                    </span>
+                    <span className="flex flex-col min-w-0">
+                      <span className="text-[9px] font-bold truncate" style={{ color: "#F1F5F9" }}>{member.name}</span>
+                      <span className="text-[7.5px]" style={{ color: "rgba(148,163,184,0.75)" }}>{i < 6 ? "出戰 " + (i + 1) : "待命 " + (i - 5)}</span>
+                    </span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
     </section>
   );
 }

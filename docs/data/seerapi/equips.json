@@ -1,0 +1,1046 @@
+{
+ "source": "https://api.seerapi.com/v1/suit,equip（圖：seer-unity-assets item/cloth/{icon,suiticon}）",
+ "suits": [
+  {
+   "suit_id": 448,
+   "name_cn": "漆黑天使",
+   "name_tw": "漆黑天使",
+   "project_suit_id": "dark_angel",
+   "icon": "seerapi/suiticon/448.png",
+   "source": "https://api.seerapi.com/v1/suit/448",
+   "equips": [
+    {
+     "id": 1301043,
+     "name_cn": "漆黑之假面",
+     "name_tw": "漆黑之假面",
+     "part": "head",
+     "part_type": 0,
+     "icon": "seerapi/equip/1301043.png",
+     "source": "https://api.seerapi.com/v1/equip/1301043"
+    },
+    {
+     "id": 1301044,
+     "name_cn": "漆黑之正义",
+     "name_tw": "漆黑之正義",
+     "part": "hand",
+     "part_type": 3,
+     "icon": "seerapi/equip/1301044.png",
+     "source": "https://api.seerapi.com/v1/equip/1301044"
+    },
+    {
+     "id": 1301045,
+     "name_cn": "漆黑之缚",
+     "name_tw": "漆黑之縛",
+     "part": "waist",
+     "part_type": 2,
+     "icon": "seerapi/equip/1301045.png",
+     "source": "https://api.seerapi.com/v1/equip/1301045"
+    },
+    {
+     "id": 1301046,
+     "name_cn": "漆黑之刺",
+     "name_tw": "漆黑之刺",
+     "part": "foot",
+     "part_type": 4,
+     "icon": "seerapi/equip/1301046.png",
+     "source": "https://api.seerapi.com/v1/equip/1301046"
+    }
+   ]
+  },
+  {
+   "suit_id": 447,
+   "name_cn": "晨曦之星战甲",
+   "name_tw": "晨曦之星戰甲",
+   "project_suit_id": "morning_star",
+   "icon": "seerapi/suiticon/447.png",
+   "source": "https://api.seerapi.com/v1/suit/447",
+   "equips": [
+    {
+     "id": 1301035,
+     "name_cn": "晨曦战盔",
+     "name_tw": "晨曦戰盔",
+     "part": "head",
+     "part_type": 0,
+     "icon": "seerapi/equip/1301035.png",
+     "source": "https://api.seerapi.com/v1/equip/1301035"
+    },
+    {
+     "id": 1301036,
+     "name_cn": "晨曦机甲",
+     "name_tw": "晨曦機甲",
+     "part": "hand",
+     "part_type": 3,
+     "icon": "seerapi/equip/1301036.png",
+     "source": "https://api.seerapi.com/v1/equip/1301036"
+    },
+    {
+     "id": 1301037,
+     "name_cn": "晨曦束腰",
+     "name_tw": "晨曦束腰",
+     "part": "waist",
+     "part_type": 2,
+     "icon": "seerapi/equip/1301037.png",
+     "source": "https://api.seerapi.com/v1/equip/1301037"
+    },
+    {
+     "id": 1301038,
+     "name_cn": "晨曦战靴",
+     "name_tw": "晨曦戰靴",
+     "part": "foot",
+     "part_type": 4,
+     "icon": "seerapi/equip/1301038.png",
+     "source": "https://api.seerapi.com/v1/equip/1301038"
+    }
+   ]
+  },
+  {
+   "suit_id": 446,
+   "name_cn": "天光云影战甲",
+   "name_tw": "天光雲影戰甲",
+   "project_suit_id": "sky_cloud",
+   "icon": "seerapi/suiticon/446.png",
+   "source": "https://api.seerapi.com/v1/suit/446",
+   "equips": [
+    {
+     "id": 1301031,
+     "name_cn": "天光云影头盔",
+     "name_tw": "天光雲影頭盔",
+     "part": "head",
+     "part_type": 0,
+     "icon": "seerapi/equip/1301031.png",
+     "source": "https://api.seerapi.com/v1/equip/1301031"
+    },
+    {
+     "id": 1301032,
+     "name_cn": "天光云影护手",
+     "name_tw": "天光雲影護手",
+     "part": "hand",
+     "part_type": 3,
+     "icon": "seerapi/equip/1301032.png",
+     "source": "https://api.seerapi.com/v1/equip/1301032"
+    },
+    {
+     "id": 1301033,
+     "name_cn": "天光云影腰带",
+     "name_tw": "天光雲影腰帶",
+     "part": "waist",
+     "part_type": 2,
+     "icon": "seerapi/equip/1301033.png",
+     "source": "https://api.seerapi.com/v1/equip/1301033"
+    },
+    {
+     "id": 1301034,
+     "name_cn": "天光云影护靴",
+     "name_tw": "天光雲影護靴",
+     "part": "foot",
+     "part_type": 4,
+     "icon": "seerapi/equip/1301034.png",
+     "source": "https://api.seerapi.com/v1/equip/1301034"
+    }
+   ]
+  },
+  {
+   "suit_id": 404,
+   "name_cn": "毒液战甲",
+   "name_tw": "毒液戰甲",
+   "project_suit_id": "venom_armor",
+   "icon": "seerapi/suiticon/404.png",
+   "source": "https://api.seerapi.com/v1/suit/404",
+   "equips": [
+    {
+     "id": 1300843,
+     "name_cn": "毒液战盔",
+     "name_tw": "毒液戰盔",
+     "part": "head",
+     "part_type": 0,
+     "icon": "seerapi/equip/1300843.png",
+     "source": "https://api.seerapi.com/v1/equip/1300843"
+    },
+    {
+     "id": 1300844,
+     "name_cn": "毒液战剑",
+     "name_tw": "毒液戰劍",
+     "part": "hand",
+     "part_type": 3,
+     "icon": "seerapi/equip/1300844.png",
+     "source": "https://api.seerapi.com/v1/equip/1300844"
+    },
+    {
+     "id": 1300845,
+     "name_cn": "毒液战腰",
+     "name_tw": "毒液戰腰",
+     "part": "waist",
+     "part_type": 2,
+     "icon": "seerapi/equip/1300845.png",
+     "source": "https://api.seerapi.com/v1/equip/1300845"
+    },
+    {
+     "id": 1300846,
+     "name_cn": "毒液战靴",
+     "name_tw": "毒液戰靴",
+     "part": "foot",
+     "part_type": 4,
+     "icon": "seerapi/equip/1300846.png",
+     "source": "https://api.seerapi.com/v1/equip/1300846"
+    }
+   ]
+  },
+  {
+   "suit_id": 403,
+   "name_cn": "未来战甲",
+   "name_tw": "未來戰甲",
+   "project_suit_id": "future_armor",
+   "icon": "seerapi/suiticon/403.png",
+   "source": "https://api.seerapi.com/v1/suit/403",
+   "equips": [
+    {
+     "id": 1300839,
+     "name_cn": "未来战盔",
+     "name_tw": "未來戰盔",
+     "part": "head",
+     "part_type": 0,
+     "icon": "seerapi/equip/1300839.png",
+     "source": "https://api.seerapi.com/v1/equip/1300839"
+    },
+    {
+     "id": 1300840,
+     "name_cn": "未来肩甲",
+     "name_tw": "未來肩甲",
+     "part": "hand",
+     "part_type": 3,
+     "icon": "seerapi/equip/1300840.png",
+     "source": "https://api.seerapi.com/v1/equip/1300840"
+    },
+    {
+     "id": 1300841,
+     "name_cn": "未来腰带",
+     "name_tw": "未來腰帶",
+     "part": "waist",
+     "part_type": 2,
+     "icon": "seerapi/equip/1300841.png",
+     "source": "https://api.seerapi.com/v1/equip/1300841"
+    },
+    {
+     "id": 1300842,
+     "name_cn": "未来战靴",
+     "name_tw": "未來戰靴",
+     "part": "foot",
+     "part_type": 4,
+     "icon": "seerapi/equip/1300842.png",
+     "source": "https://api.seerapi.com/v1/equip/1300842"
+    }
+   ]
+  },
+  {
+   "suit_id": 387,
+   "name_cn": "腐蚀者套装",
+   "name_tw": "腐蝕者套裝",
+   "project_suit_id": "corrupter",
+   "icon": "seerapi/suiticon/387.png",
+   "source": "https://api.seerapi.com/v1/suit/387",
+   "equips": [
+    {
+     "id": 1300768,
+     "name_cn": "腐蚀者头盔",
+     "name_tw": "腐蝕者頭盔",
+     "part": "head",
+     "part_type": 0,
+     "icon": "seerapi/equip/1300768.png",
+     "source": "https://api.seerapi.com/v1/equip/1300768"
+    },
+    {
+     "id": 1300769,
+     "name_cn": "腐蚀者面具",
+     "name_tw": "腐蝕者面具",
+     "part": "eye",
+     "part_type": 1,
+     "icon": "seerapi/equip/1300769.png",
+     "source": "https://api.seerapi.com/v1/equip/1300769"
+    },
+    {
+     "id": 1300770,
+     "name_cn": "腐蚀者机甲",
+     "name_tw": "腐蝕者機甲",
+     "part": "hand",
+     "part_type": 3,
+     "icon": "seerapi/equip/1300770.png",
+     "source": "https://api.seerapi.com/v1/equip/1300770"
+    },
+    {
+     "id": 1300771,
+     "name_cn": "腐蚀者束带",
+     "name_tw": "腐蝕者束帶",
+     "part": "waist",
+     "part_type": 2,
+     "icon": "seerapi/equip/1300771.png",
+     "source": "https://api.seerapi.com/v1/equip/1300771"
+    },
+    {
+     "id": 1300772,
+     "name_cn": "腐蚀者胫甲",
+     "name_tw": "腐蝕者脛甲",
+     "part": "foot",
+     "part_type": 4,
+     "icon": "seerapi/equip/1300772.png",
+     "source": "https://api.seerapi.com/v1/equip/1300772"
+    }
+   ]
+  },
+  {
+   "suit_id": 391,
+   "name_cn": "时空战甲套装",
+   "name_tw": "時空戰甲套裝",
+   "project_suit_id": "space_time",
+   "icon": "seerapi/suiticon/391.png",
+   "source": "https://api.seerapi.com/v1/suit/391",
+   "equips": [
+    {
+     "id": 1300786,
+     "name_cn": "时空战甲头盔",
+     "name_tw": "時空戰甲頭盔",
+     "part": "head",
+     "part_type": 0,
+     "icon": "seerapi/equip/1300786.png",
+     "source": "https://api.seerapi.com/v1/equip/1300786"
+    },
+    {
+     "id": 1300787,
+     "name_cn": "时空战甲护手",
+     "name_tw": "時空戰甲護手",
+     "part": "hand",
+     "part_type": 3,
+     "icon": "seerapi/equip/1300787.png",
+     "source": "https://api.seerapi.com/v1/equip/1300787"
+    },
+    {
+     "id": 1300788,
+     "name_cn": "时空战甲护腰",
+     "name_tw": "時空戰甲護腰",
+     "part": "waist",
+     "part_type": 2,
+     "icon": "seerapi/equip/1300788.png",
+     "source": "https://api.seerapi.com/v1/equip/1300788"
+    },
+    {
+     "id": 1300789,
+     "name_cn": "时空战甲护靴",
+     "name_tw": "時空戰甲護靴",
+     "part": "foot",
+     "part_type": 4,
+     "icon": "seerapi/equip/1300789.png",
+     "source": "https://api.seerapi.com/v1/equip/1300789"
+    }
+   ]
+  },
+  {
+   "suit_id": 393,
+   "name_cn": "笑傲巅峰套装",
+   "name_tw": "笑傲巔峰套裝",
+   "project_suit_id": "proud_peak",
+   "icon": "seerapi/suiticon/393.png",
+   "source": "https://api.seerapi.com/v1/suit/393",
+   "equips": [
+    {
+     "id": 1300794,
+     "name_cn": "笑傲巅峰头盔",
+     "name_tw": "笑傲巔峰頭盔",
+     "part": "head",
+     "part_type": 0,
+     "icon": "seerapi/equip/1300794.png",
+     "source": "https://api.seerapi.com/v1/equip/1300794"
+    },
+    {
+     "id": 1300795,
+     "name_cn": "笑傲巅峰护手",
+     "name_tw": "笑傲巔峰護手",
+     "part": "hand",
+     "part_type": 3,
+     "icon": "seerapi/equip/1300795.png",
+     "source": "https://api.seerapi.com/v1/equip/1300795"
+    },
+    {
+     "id": 1300796,
+     "name_cn": "笑傲巅峰护腰",
+     "name_tw": "笑傲巔峰護腰",
+     "part": "waist",
+     "part_type": 2,
+     "icon": "seerapi/equip/1300796.png",
+     "source": "https://api.seerapi.com/v1/equip/1300796"
+    },
+    {
+     "id": 1300797,
+     "name_cn": "笑傲巅峰护靴",
+     "name_tw": "笑傲巔峰護靴",
+     "part": "foot",
+     "part_type": 4,
+     "icon": "seerapi/equip/1300797.png",
+     "source": "https://api.seerapi.com/v1/equip/1300797"
+    }
+   ]
+  },
+  {
+   "suit_id": 382,
+   "name_cn": "浴火之翼套装",
+   "name_tw": "浴火之翼套裝",
+   "project_suit_id": "phoenix_wings",
+   "icon": "seerapi/suiticon/382.png",
+   "source": "https://api.seerapi.com/v1/suit/382",
+   "equips": [
+    {
+     "id": 1300744,
+     "name_cn": "浴火之冠",
+     "name_tw": "浴火之冠",
+     "part": "head",
+     "part_type": 0,
+     "icon": "seerapi/equip/1300744.png",
+     "source": "https://api.seerapi.com/v1/equip/1300744"
+    },
+    {
+     "id": 1300745,
+     "name_cn": "浴火之手",
+     "name_tw": "浴火之手",
+     "part": "hand",
+     "part_type": 3,
+     "icon": "seerapi/equip/1300745.png",
+     "source": "https://api.seerapi.com/v1/equip/1300745"
+    },
+    {
+     "id": 1300746,
+     "name_cn": "浴火之束",
+     "name_tw": "浴火之束",
+     "part": "waist",
+     "part_type": 2,
+     "icon": "seerapi/equip/1300746.png",
+     "source": "https://api.seerapi.com/v1/equip/1300746"
+    },
+    {
+     "id": 1300747,
+     "name_cn": "浴火之靴",
+     "name_tw": "浴火之靴",
+     "part": "foot",
+     "part_type": 4,
+     "icon": "seerapi/equip/1300747.png",
+     "source": "https://api.seerapi.com/v1/equip/1300747"
+    }
+   ]
+  },
+  {
+   "suit_id": 377,
+   "name_cn": "皇帝战铠套装",
+   "name_tw": "皇帝戰鎧套裝",
+   "project_suit_id": "emperor_armor",
+   "icon": "seerapi/suiticon/377.png",
+   "source": "https://api.seerapi.com/v1/suit/377",
+   "equips": [
+    {
+     "id": 1300724,
+     "name_cn": "皇帝的勇武战盔",
+     "name_tw": "皇帝的勇武戰盔",
+     "part": "head",
+     "part_type": 0,
+     "icon": "seerapi/equip/1300724.png",
+     "source": "https://api.seerapi.com/v1/equip/1300724"
+    },
+    {
+     "id": 1300725,
+     "name_cn": "皇帝的勇武肩铠",
+     "name_tw": "皇帝的勇武肩鎧",
+     "part": "hand",
+     "part_type": 3,
+     "icon": "seerapi/equip/1300725.png",
+     "source": "https://api.seerapi.com/v1/equip/1300725"
+    },
+    {
+     "id": 1300726,
+     "name_cn": "皇帝的勇武腰铠",
+     "name_tw": "皇帝的勇武腰鎧",
+     "part": "waist",
+     "part_type": 2,
+     "icon": "seerapi/equip/1300726.png",
+     "source": "https://api.seerapi.com/v1/equip/1300726"
+    },
+    {
+     "id": 1300727,
+     "name_cn": "皇帝的勇武战靴",
+     "name_tw": "皇帝的勇武戰靴",
+     "part": "foot",
+     "part_type": 4,
+     "icon": "seerapi/equip/1300727.png",
+     "source": "https://api.seerapi.com/v1/equip/1300727"
+    }
+   ]
+  },
+  {
+   "suit_id": 365,
+   "name_cn": "银翼骑士套装",
+   "name_tw": "銀翼騎士套裝",
+   "project_suit_id": "silver_knight",
+   "icon": "seerapi/suiticon/365.png",
+   "source": "https://api.seerapi.com/v1/suit/365",
+   "equips": [
+    {
+     "id": 1300670,
+     "name_cn": "银翼骑士巨盔",
+     "name_tw": "銀翼騎士巨盔",
+     "part": "head",
+     "part_type": 0,
+     "icon": "seerapi/equip/1300670.png",
+     "source": "https://api.seerapi.com/v1/equip/1300670"
+    },
+    {
+     "id": 1300671,
+     "name_cn": "银翼骑士光剑",
+     "name_tw": "銀翼騎士光劍",
+     "part": "hand",
+     "part_type": 3,
+     "icon": "seerapi/equip/1300671.png",
+     "source": "https://api.seerapi.com/v1/equip/1300671"
+    },
+    {
+     "id": 1300672,
+     "name_cn": "银翼骑士护腰",
+     "name_tw": "銀翼騎士護腰",
+     "part": "waist",
+     "part_type": 2,
+     "icon": "seerapi/equip/1300672.png",
+     "source": "https://api.seerapi.com/v1/equip/1300672"
+    },
+    {
+     "id": 1300673,
+     "name_cn": "银翼骑士长靴",
+     "name_tw": "銀翼騎士長靴",
+     "part": "foot",
+     "part_type": 4,
+     "icon": "seerapi/equip/1300673.png",
+     "source": "https://api.seerapi.com/v1/equip/1300673"
+    }
+   ]
+  },
+  {
+   "suit_id": 435,
+   "name_cn": "胜天之命战甲",
+   "name_tw": "勝天之命戰甲",
+   "project_suit_id": "destiny_armor",
+   "icon": "seerapi/suiticon/435.png",
+   "source": "https://api.seerapi.com/v1/suit/435",
+   "equips": [
+    {
+     "id": 1300981,
+     "name_cn": "胜天战盔",
+     "name_tw": "勝天戰盔",
+     "part": "head",
+     "part_type": 0,
+     "icon": "seerapi/equip/1300981.png",
+     "source": "https://api.seerapi.com/v1/equip/1300981"
+    },
+    {
+     "id": 1300982,
+     "name_cn": "胜天之翼",
+     "name_tw": "勝天之翼",
+     "part": "hand",
+     "part_type": 3,
+     "icon": "seerapi/equip/1300982.png",
+     "source": "https://api.seerapi.com/v1/equip/1300982"
+    },
+    {
+     "id": 1300983,
+     "name_cn": "胜天束腰",
+     "name_tw": "勝天束腰",
+     "part": "waist",
+     "part_type": 2,
+     "icon": "seerapi/equip/1300983.png",
+     "source": "https://api.seerapi.com/v1/equip/1300983"
+    },
+    {
+     "id": 1300984,
+     "name_cn": "胜天底座",
+     "name_tw": "勝天底座",
+     "part": "foot",
+     "part_type": 4,
+     "icon": "seerapi/equip/1300984.png",
+     "source": "https://api.seerapi.com/v1/equip/1300984"
+    }
+   ]
+  },
+  {
+   "suit_id": 429,
+   "name_cn": "皇御神临战甲",
+   "name_tw": "皇御神臨戰甲",
+   "project_suit_id": "imperial_armor",
+   "icon": "seerapi/suiticon/429.png",
+   "source": "https://api.seerapi.com/v1/suit/429",
+   "equips": [
+    {
+     "id": 1300955,
+     "name_cn": "皇御头盔",
+     "name_tw": "皇御頭盔",
+     "part": "head",
+     "part_type": 0,
+     "icon": "seerapi/equip/1300955.png",
+     "source": "https://api.seerapi.com/v1/equip/1300955"
+    },
+    {
+     "id": 1300956,
+     "name_cn": "皇御机甲",
+     "name_tw": "皇御機甲",
+     "part": "hand",
+     "part_type": 3,
+     "icon": "seerapi/equip/1300956.png",
+     "source": "https://api.seerapi.com/v1/equip/1300956"
+    },
+    {
+     "id": 1300957,
+     "name_cn": "皇御腰带",
+     "name_tw": "皇御腰帶",
+     "part": "waist",
+     "part_type": 2,
+     "icon": "seerapi/equip/1300957.png",
+     "source": "https://api.seerapi.com/v1/equip/1300957"
+    },
+    {
+     "id": 1300958,
+     "name_cn": "皇御战靴",
+     "name_tw": "皇御戰靴",
+     "part": "foot",
+     "part_type": 4,
+     "icon": "seerapi/equip/1300958.png",
+     "source": "https://api.seerapi.com/v1/equip/1300958"
+    }
+   ]
+  },
+  {
+   "suit_id": 462,
+   "name_cn": "影翼裁决",
+   "name_tw": "影翼裁決",
+   "project_suit_id": "shadow_judgment",
+   "icon": "seerapi/suiticon/462.png",
+   "source": "https://api.seerapi.com/v1/suit/462",
+   "equips": [
+    {
+     "id": 1301099,
+     "name_cn": "裁决之盔",
+     "name_tw": "裁決之盔",
+     "part": "head",
+     "part_type": 0,
+     "icon": "seerapi/equip/1301099.png",
+     "source": "https://api.seerapi.com/v1/equip/1301099"
+    },
+    {
+     "id": 1301100,
+     "name_cn": "裁决之刃",
+     "name_tw": "裁決之刃",
+     "part": "hand",
+     "part_type": 3,
+     "icon": "seerapi/equip/1301100.png",
+     "source": "https://api.seerapi.com/v1/equip/1301100"
+    },
+    {
+     "id": 1301101,
+     "name_cn": "裁决腰带",
+     "name_tw": "裁決腰帶",
+     "part": "waist",
+     "part_type": 2,
+     "icon": "seerapi/equip/1301101.png",
+     "source": "https://api.seerapi.com/v1/equip/1301101"
+    },
+    {
+     "id": 1301102,
+     "name_cn": "裁决战靴",
+     "name_tw": "裁決戰靴",
+     "part": "foot",
+     "part_type": 4,
+     "icon": "seerapi/equip/1301102.png",
+     "source": "https://api.seerapi.com/v1/equip/1301102"
+    }
+   ]
+  },
+  {
+   "suit_id": 476,
+   "name_cn": "圣芒佑界套装",
+   "name_tw": "聖芒佑界套裝",
+   "project_suit_id": "holy_sanctuary",
+   "icon": "seerapi/suiticon/476.png",
+   "source": "https://api.seerapi.com/v1/suit/476",
+   "equips": [
+    {
+     "id": 1301154,
+     "name_cn": "圣芒佑界战盔",
+     "name_tw": "聖芒佑界戰盔",
+     "part": "head",
+     "part_type": 0,
+     "icon": "seerapi/equip/1301154.png",
+     "source": "https://api.seerapi.com/v1/equip/1301154"
+    },
+    {
+     "id": 1301155,
+     "name_cn": "圣芒佑界臂铠",
+     "name_tw": "聖芒佑界臂鎧",
+     "part": "hand",
+     "part_type": 3,
+     "icon": "seerapi/equip/1301155.png",
+     "source": "https://api.seerapi.com/v1/equip/1301155"
+    },
+    {
+     "id": 1301156,
+     "name_cn": "圣芒佑界腰带",
+     "name_tw": "聖芒佑界腰帶",
+     "part": "waist",
+     "part_type": 2,
+     "icon": "seerapi/equip/1301156.png",
+     "source": "https://api.seerapi.com/v1/equip/1301156"
+    },
+    {
+     "id": 1301157,
+     "name_cn": "圣芒佑界战靴",
+     "name_tw": "聖芒佑界戰靴",
+     "part": "foot",
+     "part_type": 4,
+     "icon": "seerapi/equip/1301157.png",
+     "source": "https://api.seerapi.com/v1/equip/1301157"
+    }
+   ]
+  },
+  {
+   "suit_id": 452,
+   "name_cn": "星光海啸战甲",
+   "name_tw": "星光海嘯戰甲",
+   "project_suit_id": null,
+   "icon": "seerapi/suiticon/452.png",
+   "source": "https://api.seerapi.com/v1/suit/452",
+   "equips": [
+    {
+     "id": 1301059,
+     "name_cn": "星光海啸战盔",
+     "name_tw": "星光海嘯戰盔",
+     "part": "head",
+     "part_type": 0,
+     "icon": "seerapi/equip/1301059.png",
+     "source": "https://api.seerapi.com/v1/equip/1301059"
+    },
+    {
+     "id": 1301060,
+     "name_cn": "星光海啸战臂",
+     "name_tw": "星光海嘯戰臂",
+     "part": "hand",
+     "part_type": 3,
+     "icon": "seerapi/equip/1301060.png",
+     "source": "https://api.seerapi.com/v1/equip/1301060"
+    },
+    {
+     "id": 1301061,
+     "name_cn": "星光海啸束腰",
+     "name_tw": "星光海嘯束腰",
+     "part": "waist",
+     "part_type": 2,
+     "icon": "seerapi/equip/1301061.png",
+     "source": "https://api.seerapi.com/v1/equip/1301061"
+    },
+    {
+     "id": 1301062,
+     "name_cn": "星光海啸战靴",
+     "name_tw": "星光海嘯戰靴",
+     "part": "foot",
+     "part_type": 4,
+     "icon": "seerapi/equip/1301062.png",
+     "source": "https://api.seerapi.com/v1/equip/1301062"
+    }
+   ]
+  },
+  {
+   "suit_id": 454,
+   "name_cn": "星光烈焰战甲",
+   "name_tw": "星光烈焰戰甲",
+   "project_suit_id": null,
+   "icon": "seerapi/suiticon/454.png",
+   "source": "https://api.seerapi.com/v1/suit/454",
+   "equips": [
+    {
+     "id": 1301067,
+     "name_cn": "星光烈焰战盔",
+     "name_tw": "星光烈焰戰盔",
+     "part": "head",
+     "part_type": 0,
+     "icon": "seerapi/equip/1301067.png",
+     "source": "https://api.seerapi.com/v1/equip/1301067"
+    },
+    {
+     "id": 1301068,
+     "name_cn": "星光烈焰战臂",
+     "name_tw": "星光烈焰戰臂",
+     "part": "hand",
+     "part_type": 3,
+     "icon": "seerapi/equip/1301068.png",
+     "source": "https://api.seerapi.com/v1/equip/1301068"
+    },
+    {
+     "id": 1301069,
+     "name_cn": "星光烈焰束腰",
+     "name_tw": "星光烈焰束腰",
+     "part": "waist",
+     "part_type": 2,
+     "icon": "seerapi/equip/1301069.png",
+     "source": "https://api.seerapi.com/v1/equip/1301069"
+    },
+    {
+     "id": 1301070,
+     "name_cn": "星光烈焰战靴",
+     "name_tw": "星光烈焰戰靴",
+     "part": "foot",
+     "part_type": 4,
+     "icon": "seerapi/equip/1301070.png",
+     "source": "https://api.seerapi.com/v1/equip/1301070"
+    }
+   ]
+  },
+  {
+   "suit_id": 456,
+   "name_cn": "星光绿光战甲",
+   "name_tw": "星光綠光戰甲",
+   "project_suit_id": null,
+   "icon": "seerapi/suiticon/456.png",
+   "source": "https://api.seerapi.com/v1/suit/456",
+   "equips": [
+    {
+     "id": 1301075,
+     "name_cn": "星光绿光战盔",
+     "name_tw": "星光綠光戰盔",
+     "part": "head",
+     "part_type": 0,
+     "icon": "seerapi/equip/1301075.png",
+     "source": "https://api.seerapi.com/v1/equip/1301075"
+    },
+    {
+     "id": 1301076,
+     "name_cn": "星光绿光战臂",
+     "name_tw": "星光綠光戰臂",
+     "part": "hand",
+     "part_type": 3,
+     "icon": "seerapi/equip/1301076.png",
+     "source": "https://api.seerapi.com/v1/equip/1301076"
+    },
+    {
+     "id": 1301077,
+     "name_cn": "星光绿光束腰",
+     "name_tw": "星光綠光束腰",
+     "part": "waist",
+     "part_type": 2,
+     "icon": "seerapi/equip/1301077.png",
+     "source": "https://api.seerapi.com/v1/equip/1301077"
+    },
+    {
+     "id": 1301078,
+     "name_cn": "星光绿光战靴",
+     "name_tw": "星光綠光戰靴",
+     "part": "foot",
+     "part_type": 4,
+     "icon": "seerapi/equip/1301078.png",
+     "source": "https://api.seerapi.com/v1/equip/1301078"
+    }
+   ]
+  },
+  {
+   "suit_id": 479,
+   "name_cn": "帝皇战甲",
+   "name_tw": "帝皇戰甲",
+   "project_suit_id": null,
+   "icon": "seerapi/suiticon/479.png",
+   "source": "https://api.seerapi.com/v1/suit/479",
+   "equips": [
+    {
+     "id": 1301167,
+     "name_cn": "帝皇战盔",
+     "name_tw": "帝皇戰盔",
+     "part": "head",
+     "part_type": 0,
+     "icon": "seerapi/equip/1301167.png",
+     "source": "https://api.seerapi.com/v1/equip/1301167"
+    },
+    {
+     "id": 1301168,
+     "name_cn": "帝皇臂铠",
+     "name_tw": "帝皇臂鎧",
+     "part": "hand",
+     "part_type": 3,
+     "icon": "seerapi/equip/1301168.png",
+     "source": "https://api.seerapi.com/v1/equip/1301168"
+    },
+    {
+     "id": 1301169,
+     "name_cn": "帝皇战靴",
+     "name_tw": "帝皇戰靴",
+     "part": "foot",
+     "part_type": 4,
+     "icon": "seerapi/equip/1301169.png",
+     "source": "https://api.seerapi.com/v1/equip/1301169"
+    }
+   ]
+  },
+  {
+   "suit_id": 442,
+   "name_cn": "空元战甲",
+   "name_tw": "空元戰甲",
+   "project_suit_id": null,
+   "icon": "seerapi/suiticon/442.png",
+   "source": "https://api.seerapi.com/v1/suit/442",
+   "equips": [
+    {
+     "id": 1301015,
+     "name_cn": "空元战盔",
+     "name_tw": "空元戰盔",
+     "part": "head",
+     "part_type": 0,
+     "icon": "seerapi/equip/1301015.png",
+     "source": "https://api.seerapi.com/v1/equip/1301015"
+    },
+    {
+     "id": 1301016,
+     "name_cn": "空元护甲",
+     "name_tw": "空元護甲",
+     "part": "hand",
+     "part_type": 3,
+     "icon": "seerapi/equip/1301016.png",
+     "source": "https://api.seerapi.com/v1/equip/1301016"
+    },
+    {
+     "id": 1301017,
+     "name_cn": "空元腰带",
+     "name_tw": "空元腰帶",
+     "part": "waist",
+     "part_type": 2,
+     "icon": "seerapi/equip/1301017.png",
+     "source": "https://api.seerapi.com/v1/equip/1301017"
+    },
+    {
+     "id": 1301018,
+     "name_cn": "空元战靴",
+     "name_tw": "空元戰靴",
+     "part": "foot",
+     "part_type": 4,
+     "icon": "seerapi/equip/1301018.png",
+     "source": "https://api.seerapi.com/v1/equip/1301018"
+    }
+   ]
+  },
+  {
+   "suit_id": 437,
+   "name_cn": "苍星战甲",
+   "name_tw": "蒼星戰甲",
+   "project_suit_id": null,
+   "icon": "seerapi/suiticon/437.png",
+   "source": "https://api.seerapi.com/v1/suit/437",
+   "equips": [
+    {
+     "id": 1300989,
+     "name_cn": "苍星战盔",
+     "name_tw": "蒼星戰盔",
+     "part": "head",
+     "part_type": 0,
+     "icon": "seerapi/equip/1300989.png",
+     "source": "https://api.seerapi.com/v1/equip/1300989"
+    },
+    {
+     "id": 1300990,
+     "name_cn": "苍星束腰",
+     "name_tw": "蒼星束腰",
+     "part": "waist",
+     "part_type": 2,
+     "icon": "seerapi/equip/1300990.png",
+     "source": "https://api.seerapi.com/v1/equip/1300990"
+    },
+    {
+     "id": 1300991,
+     "name_cn": "苍星之甲",
+     "name_tw": "蒼星之甲",
+     "part": "hand",
+     "part_type": 3,
+     "icon": "seerapi/equip/1300991.png",
+     "source": "https://api.seerapi.com/v1/equip/1300991"
+    },
+    {
+     "id": 1300992,
+     "name_cn": "苍星战靴",
+     "name_tw": "蒼星戰靴",
+     "part": "foot",
+     "part_type": 4,
+     "icon": "seerapi/equip/1300992.png",
+     "source": "https://api.seerapi.com/v1/equip/1300992"
+    },
+    {
+     "id": 1300993,
+     "name_cn": "苍星目镜",
+     "name_tw": "蒼星目鏡",
+     "part": "eye",
+     "part_type": 1,
+     "icon": "seerapi/equip/1300993.png",
+     "source": "https://api.seerapi.com/v1/equip/1300993"
+    }
+   ]
+  },
+  {
+   "suit_id": 428,
+   "name_cn": "耀世战铠",
+   "name_tw": "耀世戰鎧",
+   "project_suit_id": null,
+   "icon": "seerapi/suiticon/428.png",
+   "source": "https://api.seerapi.com/v1/suit/428",
+   "equips": [
+    {
+     "id": 1300950,
+     "name_cn": "耀世之冠",
+     "name_tw": "耀世之冠",
+     "part": "head",
+     "part_type": 0,
+     "icon": "seerapi/equip/1300950.png",
+     "source": "https://api.seerapi.com/v1/equip/1300950"
+    },
+    {
+     "id": 1300951,
+     "name_cn": "耀世腰带",
+     "name_tw": "耀世腰帶",
+     "part": "waist",
+     "part_type": 2,
+     "icon": "seerapi/equip/1300951.png",
+     "source": "https://api.seerapi.com/v1/equip/1300951"
+    },
+    {
+     "id": 1300952,
+     "name_cn": "耀世战甲",
+     "name_tw": "耀世戰甲",
+     "part": "hand",
+     "part_type": 3,
+     "icon": "seerapi/equip/1300952.png",
+     "source": "https://api.seerapi.com/v1/equip/1300952"
+    },
+    {
+     "id": 1300953,
+     "name_cn": "耀世战靴",
+     "name_tw": "耀世戰靴",
+     "part": "foot",
+     "part_type": 4,
+     "icon": "seerapi/equip/1300953.png",
+     "source": "https://api.seerapi.com/v1/equip/1300953"
+    }
+   ]
+  }
+ ],
+ "project_unmatched": [
+  "星光永恆套裝",
+  "星光守護者",
+  "狂暴者套裝",
+  "虛空旅者戰甲",
+  "核能機甲",
+  "影之獵殺者",
+  "水晶之盾套裝",
+  "烈焰機甲",
+  "深淵漫步者",
+  "逆命者戰甲"
+ ],
+ "eyewear_unmatched": [
+  "漫遊者-AS",
+  "漫遊者-AH",
+  "漫遊者-S",
+  "倒吊的假面",
+  "魔界之風"
+ ],
+ "note": "未配對者在 SeerAPI suit 名稱中查無同名（可能為專案原創）；眼部裝備僅腐蝕者面具、苍星目镜為套裝內眼鏡"
+}

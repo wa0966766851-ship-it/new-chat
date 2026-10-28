@@ -20,6 +20,22 @@ try {
       checks++;
     } finally { work.dispose(); reload.dispose(); }
   }
+  const { DEFAULT_ELVES } = await h.server.ssrLoadModule('/src/data/defaultElvesLoaded.ts');
+  const canonical = DEFAULT_ELVES.find((elf: any) => elf.id === '5021');
+  assert.equal(canonical.soulMark.effectMode, 'kit', '正式精靈必須接到實際魂印積木');
+  for (const side of ['p1', 'p2'] as const) {
+    const source = structuredClone(canonical);
+    source.battleId = 'canonical-dragon';
+    const rounds = await h.play(side, { self: h.unit('ally', 10000, [h.wait()]), opp: h.unit('enemy', 10000, [h.wait()]), selfBench: [source], turns: (engine: any, turn: number) => { console.log('canonical source', side, turn, engine.getState().phase); return [0, 0]; } }, 16);
+    const state = rounds.at(-1)!.state;
+    for (const elf of [...state.p1Team, ...state.p2Team]) {
+      const mark = elf.marks.find((m: any) => m.id === 'poem_chapter');
+      assert.equal(mark.count, 16, '正式次元龍在後備仍逐回合發放；16回合不能只保留登場補的1篇');
+      assert.equal(mark.effects.poemHpSnapshots.length, 16);
+      assert.equal(mark.ownerBattleId, elf.battleId);
+    }
+    checks++;
+  }
   const rawSkill = (name: string) => {
     const def = skills.find((s: any) => s.name === name);
     return { ...h.wait(), name, effectMode: 'kit', kit: structuredClone(def.kit), description: def.description, pp: 10, maxPp: 10 };
@@ -62,6 +78,13 @@ try {
     const own = death[0].state[side + 'Team'];
     assert.equal(own[0].maxHp, 12000, '死亡者兩篇1000快照各轉給在場接收者，不能死亡節點重播');
     assert.equal(own[1].maxHp, 17000, '同一份數量也轉給場下接收者');
+    for (const receiver of own) {
+      const mark = receiver.marks.find((m: any) => m.id === 'poem_chapter');
+      assert.equal(mark.count, 4, '轉移必須同時增加篇數，不能只有體力上限增加');
+      assert.equal(mark.effects.poemHpSnapshots.length, 4);
+      assert.deepEqual(mark.effects.poemHpSnapshots.slice(-2), [1000, 1000], '轉移保留每篇取得時的體力快照');
+      assert.equal(receiver.calculatedStats.hp, receiver.maxHp, '當前能力面板與最大體力同步');
+    }
     assert.ok(!death[0].opp.marks.some((m: any) => m.id === 'poem_chapter'), '轉移後消耗死亡原持有者快照');
     checks++;
   }

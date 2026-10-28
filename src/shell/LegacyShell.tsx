@@ -165,7 +165,7 @@ export function LegacyShell({ b, showHeader, setShowHeader, isCompactLayout }: L
 
           {b.isTransitioning && (
             <BattleLoadingScreen p1Team={b.p1Team} p2Team={b.p2Team}
-              p1StarterId={b.p1StarterId} p2StarterId={b.p2StarterId} format={b.battleFormat} />
+              p1StarterId={b.p1StarterId} p2StarterId={b.p2StarterId} format={b.battleFormat} battleMode={b.battleMode} />
           )}
 
           <LegacyScenes b={b} />

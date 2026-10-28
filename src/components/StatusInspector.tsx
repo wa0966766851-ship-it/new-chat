@@ -1,3 +1,4 @@
+import { bossTraitInstanceText } from "../data/bossTraits";
 import React from "react";
 import { Elf } from "../types";
 import { Timer } from "../battle/timers";
@@ -6,7 +7,8 @@ import { canonicalStatusName } from '../effects/statusIdentity';
 import { plainDescription } from '../utils/descFormat';
 import { EffectDescription } from './EffectDescription';
 import { effectDefinitionEntries } from '../battle/effectSources';
-import { elfForViewer, hiddenFromViewer, UNKNOWN_ELF, maskViewerText, viewerMaskTerms } from '../battle/viewerPerspective';
+import { elfForViewer, hiddenFromViewer, UNKNOWN_ELF, maskViewerText, viewerMaskTermsForMode, type BattleViewMode } from '../battle/viewerPerspective';
+import { useBattleViewMode } from '../battle/viewerMode';
 import { activeEffectViews, visibleEffectSourceText } from '../battle/activeEffectViews';
 import {statusCountClasses, type StatusCountTone} from '../battle/statusImmunityCount';
 import { getStatuses } from '../utils/battleHelpers';
@@ -38,14 +40,14 @@ function translateStatus(status: string): string {
   return canonicalStatusName(map[status] || status);
 }
 
-export function getActiveEffects(side: "p1" | "p2", state: any): ActiveEffect[] {
+export function getActiveEffects(side: "p1" | "p2", state: any, mode: BattleViewMode = 'PVE'): ActiveEffect[] {
   if (!state) return [];
   const source: Elf | null = side === "p1" ? state.p1 : state.p2;
-  if (!source || hiddenFromViewer(source, side)) return [];
+  if (!source || hiddenFromViewer(source, side, mode)) return [];
   const elf = elfForViewer(source, side);
 
   const effects: ActiveEffect[] = [];
-  const hiddenTerms = viewerMaskTerms(state.p2Team || [state.p2]);
+  const hiddenTerms = viewerMaskTermsForMode(state.p1Team || [state.p1], state.p2Team || [state.p2], mode);
   const mask = (text: string | undefined) => maskViewerText(text, hiddenTerms);
   for (const entry of effectDefinitionEntries(elf)) effects.push({ name: `${entry.kind} · ${entry.name}`,
     desc: entry.description || '固有效果與被動技能', category: '常駐', polarity: 'POSITIVE' });
@@ -60,7 +62,7 @@ export function getActiveEffects(side: "p1" | "p2", state: any): ActiveEffect[] 
     const remaining = Number(turns);
     const visual = statusVisual(status);
     if (remaining > 0) effects.push({
-      name: translateStatus(status), desc: visual?.desc || "目前生效中的異常狀態。", category: "異常", remaining: visual?.category === 'BOSS_ONLY' ? undefined : remaining, unit: "回合", polarity: "NEGATIVE", icon: visual?.icon || UNKNOWN_EFFECT_ICON
+      name: translateStatus(status), desc: bossTraitInstanceText(elf, status) || visual?.desc || "目前生效中的異常狀態。", category: "異常", remaining: visual?.category === 'BOSS_ONLY' ? undefined : remaining, unit: "回合", polarity: "NEGATIVE", icon: visual?.icon || UNKNOWN_EFFECT_ICON
     });
   }
 
@@ -79,7 +81,7 @@ export function getActiveEffects(side: "p1" | "p2", state: any): ActiveEffect[] 
   const marks: Mark[] = side === "p1" ? (state.p1Marks || []) : (state.p2Marks || []);
   const timers: Timer[] = side === "p1" ? (state.p1Timers || []) : (state.p2Timers || []);
   const categories: Record<string, StateCategory> = { mark: '印記', turn: '回合類', round: '其他計時', count: '次數類', mechanism: '常駐', protection: '防護' };
-  for (const view of activeEffectViews(elf, marks, timers, (side === 'p1' ? state.p1RegistryState : state.p2RegistryState) || {}, visibleEffectSourceText(side === 'p1' ? state.p2 : state.p1, side === 'p1' ? 'p2' : 'p1'))) {
+  for (const view of activeEffectViews(elf, marks, timers, (side === 'p1' ? state.p1RegistryState : state.p2RegistryState) || {}, visibleEffectSourceText(side === 'p1' ? state.p2 : state.p1, side === 'p1' ? 'p2' : 'p1', mode))) {
     const metricIsStack = view.category === 'mark' || view.category === 'protection';
     effects.push({ name: mask(view.label), desc: mask(view.description), category: categories[view.category], icon: view.icon, source: mask(view.source), tone: view.tone,
       polarity: view.polarity.toUpperCase() as ActiveEffect['polarity'],
@@ -95,8 +97,9 @@ export function StatusInspector({ state }: { state: any }) {
   const [category, setCategory] = React.useState<StateCategory>("異常");
   const [expandedPermanent, setExpandedPermanent] = React.useState<Record<string, boolean>>({});
   const elf: Elf | null = side === "p1" ? state?.p1 : state?.p2;
-  const visibleName = elf ? hiddenFromViewer(elf, side) ? UNKNOWN_ELF : elfForViewer(elf, side).name : '';
-  const all = getActiveEffects(side, state);
+  const mode = useBattleViewMode();
+  const visibleName = elf ? hiddenFromViewer(elf, side, mode) ? UNKNOWN_ELF : elfForViewer(elf, side).name : '';
+  const all = getActiveEffects(side, state, mode);
 
   if (!elf) return <div className="p-6 text-center text-xs font-bold text-slate-500">目前沒有出戰精靈資訊</div>;
 

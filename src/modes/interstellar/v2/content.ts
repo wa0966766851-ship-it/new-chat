@@ -81,6 +81,10 @@ export interface EventOps {
   /** 獲得一張指定款式的招募令（單屬性／雙屬性／任一屬性／任意） */
   recruitToken(want: "has" | "exact" | "either" | "any"): void;
   battle(kind: "combat" | "elite", reward?: "relic" | "legendary"): void;
+  /** 永久生命 +n */
+  lives(n: number): void;
+  /** 臨時生命 +n（只在當章有效） */
+  tempLives(n: number): void;
   reveal(): void;
   sacrifice(): string | null;
 }
@@ -225,6 +229,24 @@ export const EVENTS: EventDef[] = [
       { label: "獻上一隻精靈", hint: "失去一隻精靈：獲得傳說遺物", require: r => (r.team?.length ?? 0) > 1 ? null : "隊伍只剩一隻", apply: o => { const n = o.sacrifice(); const r = o.relic("legendary"); return `【${n}】走進蛾群，再也沒有出來。燈座上留下了【${r}】。`; } },
       { label: "獻上賽爾豆", hint: "150 賽爾豆：稀有遺物", require: needBeans(150), apply: o => { o.beans(-150); return `蛾群散開，燈座上是【${o.relic("rare")}】。`; } },
       { label: "什麼都不給", apply: () => "蛾群撲上來又散去，只帶走了你的一點體溫。" },
+    ],
+  },
+  {
+    id: "night_watch", title: "守夜人的燭台", npc: 4620,
+    text: "石臺上排著幾十支燭，每一支代表一條還沒被吹熄的命。守夜人把火柴遞給你，沒有說話。",
+    choices: [
+      { label: "點一支燭", hint: "100 賽爾豆：臨時生命 +2（當章有效）", require: needBeans(100), apply: o => { o.beans(-100); o.tempLives(2); return "兩支燭同時亮起。它們只肯為這一章燒。"; } },
+      { label: "獻上星晶", hint: "2 星晶：永久生命 +1", require: needShards(2), apply: o => { o.shards(-2); o.lives(1); return "星晶化成燭芯。這一支，不會再熄了。"; } },
+      { label: "離開", apply: () => "守夜人把火柴收回去，像是早就知道。" },
+    ],
+  },
+  {
+    id: "stitch_crone", title: "縫命婆婆", npc: 3623,
+    text: "老婆婆坐在針線堆裡，膝上是一件看不出形狀的東西。「命這玩意兒，扯斷了可以再縫。就是疼。」",
+    choices: [
+      { label: "讓她縫", hint: "全隊失去 15% 體力；蝕度 +8：永久生命 +1", apply: o => { o.hurtTeam(.15); o.eclipse(8); o.lives(1); return "針尖穿過的地方不流血，只流出光。你感到身體裡多了一條線。"; } },
+      { label: "請她補一補", hint: "全隊恢復 25% 體力；臨時生命 +1", apply: o => { o.healTeam(.25); o.tempLives(1); return "她三兩下就縫好了傷口。「只補這一陣子，」她說。"; } },
+      { label: "走開", apply: () => "針線聲跟了你一段路，然後停了。" },
     ],
   },
   {

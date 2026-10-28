@@ -320,6 +320,10 @@ TRIG_LABEL.pp_consumed = "本技能槽PP被消耗時（同一連鎖每槽一次�
 TRIG_LABEL.status_end = "自身異常結束／解除時";
 TRIG_LABEL.status_immune = "自身免疫異常成功時";
 TRIG_LABEL.status_tick = "自身異常扣減前";
+Object.assign(TRIG_LABEL,{
+  opp_before_skill:'對手出手流程前',opp_before_attack:'對手攻擊技能出手前',opp_before_status:'對手屬性技能出手前',
+  opp_used_skill:'對手真正使用技能時',opp_used_attack:'對手真正使用攻擊技能時',opp_used_status:'對手真正使用屬性技能時',
+});
 for (const h of Object.values(CUSTOM_HEADERS)) TRIG_LABEL[h.trig] = TRIG_LABEL[h.trig] || h.label;
 TRIG_LABEL.custom = "（未分類）";
 

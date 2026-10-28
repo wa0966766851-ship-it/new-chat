@@ -1,0 +1,3926 @@
+{
+  "scope": {
+    "rosterIds": 47,
+    "nativeAssets": 40,
+    "uniqueNativeRosterIds": 38,
+    "staticSources": 73,
+    "staticOnlyRoster": 9,
+    "effectScreens": 240
+  },
+  "sourceHashes": {
+    "src/battle/petAnimationAssets.ts": "7e922d0239b4bb0c025fb7b8ea40ce8bc229b6c84907e7aac41b007757cc421e",
+    "src/battle/seerAssets.ts": "31c6ad464ab231f49ae4c6505ef11386441da7b188a89241947f1a89363fa740",
+    "src/battle/spriteMetrics.ts": "bbd8eaca86fc73dffb77d61360b2933a95fb96afe8562d1b256403f324f9ff9d",
+    "src/components/battle/ProportionalSprite.tsx": "8d0c28c120d3f494c56132dbd078d51c181faa1d962ba6f36434f0f71922d119"
+  },
+  "categories": {
+    "保留": [
+      "sobira",
+      "bajie",
+      "starFlame",
+      "delu",
+      "kold",
+      "chaosBlake",
+      "opeia",
+      "zhakesi4762",
+      "canglan",
+      "rey70",
+      "holyMiles",
+      "astralAesfig",
+      "hamo"
+    ],
+    "修正": [
+      "emperorShield",
+      "baflo",
+      "starRuth",
+      "marthus",
+      "odin",
+      "moyilai"
+    ],
+    "待確認": [
+      "petersala",
+      "blake",
+      "puni",
+      "brink",
+      "holyPuni",
+      "starLisa",
+      "koldhord",
+      "scarlett",
+      "pipi",
+      "dimensionDragon",
+      "zhakesi15008",
+      "zhakesi15009",
+      "zhakesi15010",
+      "belliant",
+      "sixKing",
+      "astralAesfia",
+      "mogos",
+      "wuxuLong",
+      "wujiShengwu",
+      "jiuqing",
+      "diluTianfeng"
+    ]
+  },
+  "changedNativeFacing": [
+    {
+      "id": "emperorShield",
+      "from": "left",
+      "to": "right"
+    },
+    {
+      "id": "brink",
+      "from": "left",
+      "to": "right"
+    },
+    {
+      "id": "baflo",
+      "from": "left",
+      "to": "front"
+    },
+    {
+      "id": "starRuth",
+      "from": "left",
+      "to": "right"
+    },
+    {
+      "id": "starLisa",
+      "from": "right",
+      "to": "left"
+    },
+    {
+      "id": "scarlett",
+      "from": "right",
+      "to": "left"
+    },
+    {
+      "id": "marthus",
+      "from": "left",
+      "to": "right"
+    },
+    {
+      "id": "odin",
+      "from": "left",
+      "to": "right"
+    },
+    {
+      "id": "astralAesfia",
+      "from": "right",
+      "to": "front"
+    },
+    {
+      "id": "mogos",
+      "from": "left",
+      "to": "right"
+    },
+    {
+      "id": "wuxuLong",
+      "from": "left",
+      "to": "right"
+    },
+    {
+      "id": "wujiShengwu",
+      "from": "left",
+      "to": "right"
+    },
+    {
+      "id": "moyilai",
+      "from": "left",
+      "to": "right"
+    },
+    {
+      "id": "diluTianfeng",
+      "from": "left",
+      "to": "right"
+    }
+  ],
+  "rows": [
+    {
+      "id": "sobira",
+      "name": "悲歌.索比拉特",
+      "status": "保留",
+      "facing": "P1→／P2←",
+      "color": "紅髮、酒紅服裝同套；未見異色雙本體",
+      "fx": "粉白粗橫光束射出右框；原始mesh已有長光束。",
+      "sourceFacing": "right",
+      "previousFacing": "right",
+      "changed": false,
+      "geometry": "p1 419.2px／底665.6；p2 419.2px／底665.6",
+      "maxima": "attack：5.67×寬/2.75×高；sa：7.99×寬/1.79×高；cp：1.77×寬/1.23×高",
+      "shots": [
+        "sobira-static-pair.png",
+        "sobira-actions-pair.png",
+        "sobira-attack-50-field.png",
+        "sobira-attack-75-field.png",
+        "sobira-sa-50-field.png",
+        "sobira-sa-75-field.png",
+        "sobira-cp-50-field.png",
+        "sobira-cp-75-field.png"
+      ],
+      "shotLinks": [
+        "[靜態雙方](<../../.seer-cache/anim-inspect/review-20261026/sobira-static-pair.png>)",
+        "[動畫雙方](<../../.seer-cache/anim-inspect/review-20261026/sobira-actions-pair.png>)",
+        "[普攻50%](<../../.seer-cache/anim-inspect/review-20261026/sobira-attack-50-field.png>)",
+        "[普攻75%](<../../.seer-cache/anim-inspect/review-20261026/sobira-attack-75-field.png>)",
+        "[特殊50%](<../../.seer-cache/anim-inspect/review-20261026/sobira-sa-50-field.png>)",
+        "[特殊75%](<../../.seer-cache/anim-inspect/review-20261026/sobira-sa-75-field.png>)",
+        "[屬性50%](<../../.seer-cache/anim-inspect/review-20261026/sobira-cp-50-field.png>)",
+        "[屬性75%](<../../.seer-cache/anim-inspect/review-20261026/sobira-cp-75-field.png>)"
+      ],
+      "tintCounts": [
+        {
+          "name": "standby",
+          "variants": 1
+        },
+        {
+          "name": "attack",
+          "variants": 1
+        },
+        {
+          "name": "sa",
+          "variants": 1
+        },
+        {
+          "name": "cp",
+          "variants": 1
+        },
+        {
+          "name": "hited",
+          "variants": 1
+        }
+      ]
+    },
+    {
+      "id": "emperorShield",
+      "name": "帝皇之盾",
+      "status": "修正",
+      "facing": "P1→／P2←，人物與龍首同向",
+      "color": "銀白金甲與深紫龍為不同構件，非異色分身",
+      "fx": "藍色大旋流及金色晶柱；大範圍原始招式，不是整體縮放錯誤。",
+      "sourceFacing": "right",
+      "previousFacing": "left",
+      "changed": true,
+      "geometry": "p1 408.6px／底665.6；p2 408.6px／底665.6",
+      "maxima": "attack：1.76×寬/2.35×高；sa：2.80×寬/3.19×高；cp：0.97×寬/1.88×高",
+      "shots": [
+        "emperorShield-static-pair.png",
+        "emperorShield-actions-pair.png",
+        "emperorShield-attack-50-field.png",
+        "emperorShield-attack-75-field.png",
+        "emperorShield-sa-50-field.png",
+        "emperorShield-sa-75-field.png",
+        "emperorShield-cp-50-field.png",
+        "emperorShield-cp-75-field.png"
+      ],
+      "shotLinks": [
+        "[靜態雙方](<../../.seer-cache/anim-inspect/review-20261026/emperorShield-static-pair.png>)",
+        "[動畫雙方](<../../.seer-cache/anim-inspect/review-20261026/emperorShield-actions-pair.png>)",
+        "[普攻50%](<../../.seer-cache/anim-inspect/review-20261026/emperorShield-attack-50-field.png>)",
+        "[普攻75%](<../../.seer-cache/anim-inspect/review-20261026/emperorShield-attack-75-field.png>)",
+        "[特殊50%](<../../.seer-cache/anim-inspect/review-20261026/emperorShield-sa-50-field.png>)",
+        "[特殊75%](<../../.seer-cache/anim-inspect/review-20261026/emperorShield-sa-75-field.png>)",
+        "[屬性50%](<../../.seer-cache/anim-inspect/review-20261026/emperorShield-cp-50-field.png>)",
+        "[屬性75%](<../../.seer-cache/anim-inspect/review-20261026/emperorShield-cp-75-field.png>)"
+      ],
+      "tintCounts": [
+        {
+          "name": "standby",
+          "variants": 1
+        },
+        {
+          "name": "attack",
+          "variants": 1
+        },
+        {
+          "name": "sa",
+          "variants": 1
+        },
+        {
+          "name": "cp",
+          "variants": 1
+        },
+        {
+          "name": "hited",
+          "variants": 1
+        }
+      ]
+    },
+    {
+      "id": "bajie",
+      "name": "天蓬元帥八戒",
+      "status": "保留",
+      "facing": "斜正面，無明確朝外",
+      "color": "藍、銀甲同套；沒有異色重複本體",
+      "fx": "肩背與錘頭局部紫粉噴射；取樣未見全場覆蓋。",
+      "sourceFacing": "right",
+      "previousFacing": "right",
+      "changed": false,
+      "geometry": "p1 478.5px／底665.6；p2 478.5px／底665.6",
+      "maxima": "attack：1.18×寬/1.44×高；sa：1.20×寬/1.35×高；cp：1.15×寬/1.35×高",
+      "shots": [
+        "bajie-static-pair.png",
+        "bajie-actions-pair.png",
+        "bajie-attack-50-field.png",
+        "bajie-attack-75-field.png",
+        "bajie-sa-50-field.png",
+        "bajie-sa-75-field.png",
+        "bajie-cp-50-field.png",
+        "bajie-cp-75-field.png"
+      ],
+      "shotLinks": [
+        "[靜態雙方](<../../.seer-cache/anim-inspect/review-20261026/bajie-static-pair.png>)",
+        "[動畫雙方](<../../.seer-cache/anim-inspect/review-20261026/bajie-actions-pair.png>)",
+        "[普攻50%](<../../.seer-cache/anim-inspect/review-20261026/bajie-attack-50-field.png>)",
+        "[普攻75%](<../../.seer-cache/anim-inspect/review-20261026/bajie-attack-75-field.png>)",
+        "[特殊50%](<../../.seer-cache/anim-inspect/review-20261026/bajie-sa-50-field.png>)",
+        "[特殊75%](<../../.seer-cache/anim-inspect/review-20261026/bajie-sa-75-field.png>)",
+        "[屬性50%](<../../.seer-cache/anim-inspect/review-20261026/bajie-cp-50-field.png>)",
+        "[屬性75%](<../../.seer-cache/anim-inspect/review-20261026/bajie-cp-75-field.png>)"
+      ],
+      "tintCounts": [
+        {
+          "name": "standby",
+          "variants": 1
+        },
+        {
+          "name": "attack",
+          "variants": 1
+        },
+        {
+          "name": "sa",
+          "variants": 1
+        },
+        {
+          "name": "cp",
+          "variants": 1
+        },
+        {
+          "name": "hited",
+          "variants": 1
+        }
+      ]
+    },
+    {
+      "id": "petersala",
+      "name": "皮特薩拉羅",
+      "status": "待確認",
+      "facing": "翼龍頭P1→／P2←",
+      "color": "普攻48幀是空mesh，不能判該幀配色通過；特殊為同套紫翼",
+      "fx": "特殊為紫色錐狀吐息；普攻空幀屬原始序列內容，非已證實缺貼圖。",
+      "sourceFacing": "right",
+      "previousFacing": "right",
+      "changed": false,
+      "geometry": "p1 450.4px／底665.6；p2 450.4px／底665.6",
+      "maxima": "attack：1.44×寬/2.08×高；sa：2.40×寬/0.99×高；cp：1.52×寬/0.92×高",
+      "shots": [
+        "petersala-static-pair.png",
+        "petersala-actions-pair.png",
+        "petersala-attack-50-field.png",
+        "petersala-attack-75-field.png",
+        "petersala-sa-50-field.png",
+        "petersala-sa-75-field.png",
+        "petersala-cp-50-field.png",
+        "petersala-cp-75-field.png"
+      ],
+      "shotLinks": [
+        "[靜態雙方](<../../.seer-cache/anim-inspect/review-20261026/petersala-static-pair.png>)",
+        "[動畫雙方](<../../.seer-cache/anim-inspect/review-20261026/petersala-actions-pair.png>)",
+        "[普攻50%](<../../.seer-cache/anim-inspect/review-20261026/petersala-attack-50-field.png>)",
+        "[普攻75%](<../../.seer-cache/anim-inspect/review-20261026/petersala-attack-75-field.png>)",
+        "[特殊50%](<../../.seer-cache/anim-inspect/review-20261026/petersala-sa-50-field.png>)",
+        "[特殊75%](<../../.seer-cache/anim-inspect/review-20261026/petersala-sa-75-field.png>)",
+        "[屬性50%](<../../.seer-cache/anim-inspect/review-20261026/petersala-cp-50-field.png>)",
+        "[屬性75%](<../../.seer-cache/anim-inspect/review-20261026/petersala-cp-75-field.png>)"
+      ],
+      "tintCounts": [
+        {
+          "name": "standby",
+          "variants": 2
+        },
+        {
+          "name": "attack",
+          "variants": 2
+        },
+        {
+          "name": "sa",
+          "variants": 2
+        },
+        {
+          "name": "cp",
+          "variants": 2
+        },
+        {
+          "name": "hited",
+          "variants": 2
+        }
+      ]
+    },
+    {
+      "id": "blake",
+      "name": "布萊克",
+      "status": "待確認",
+      "facing": "近正面朝內姿態，非純側臉",
+      "color": "特殊為黑紫同套；普攻50%本體在場地右外，不能判中間幀通過",
+      "fx": "普攻原生位移未適配場地：screen x=1633–2124（取樣寬1599）；不是素材檔不存在。",
+      "sourceFacing": "right",
+      "previousFacing": "right",
+      "changed": false,
+      "geometry": "p1 469.9px／底665.6；p2 469.9px／底665.6",
+      "maxima": "attack：1.44×寬/1.23×高；sa：1.74×寬/1.20×高；cp：1.05×寬/1.57×高",
+      "shots": [
+        "blake-static-pair.png",
+        "blake-actions-pair.png",
+        "blake-attack-50-field.png",
+        "blake-attack-75-field.png",
+        "blake-sa-50-field.png",
+        "blake-sa-75-field.png",
+        "blake-cp-50-field.png",
+        "blake-cp-75-field.png"
+      ],
+      "shotLinks": [
+        "[靜態雙方](<../../.seer-cache/anim-inspect/review-20261026/blake-static-pair.png>)",
+        "[動畫雙方](<../../.seer-cache/anim-inspect/review-20261026/blake-actions-pair.png>)",
+        "[普攻50%](<../../.seer-cache/anim-inspect/review-20261026/blake-attack-50-field.png>)",
+        "[普攻75%](<../../.seer-cache/anim-inspect/review-20261026/blake-attack-75-field.png>)",
+        "[特殊50%](<../../.seer-cache/anim-inspect/review-20261026/blake-sa-50-field.png>)",
+        "[特殊75%](<../../.seer-cache/anim-inspect/review-20261026/blake-sa-75-field.png>)",
+        "[屬性50%](<../../.seer-cache/anim-inspect/review-20261026/blake-cp-50-field.png>)",
+        "[屬性75%](<../../.seer-cache/anim-inspect/review-20261026/blake-cp-75-field.png>)"
+      ],
+      "tintCounts": [
+        {
+          "name": "standby",
+          "variants": 2
+        },
+        {
+          "name": "attack",
+          "variants": 2
+        },
+        {
+          "name": "sa",
+          "variants": 2
+        },
+        {
+          "name": "cp",
+          "variants": 2
+        },
+        {
+          "name": "hited",
+          "variants": 2
+        }
+      ]
+    },
+    {
+      "id": "puni",
+      "name": "譜尼",
+      "status": "待確認",
+      "facing": "光體無可辨側臉；不捏造眼睛",
+      "color": "金白、金褐同套；無可確認異色分身",
+      "fx": "金色光芒及半透明甲片形殘影，取樣屬局部；體型較冰王小且寬扁。",
+      "sourceFacing": "front",
+      "previousFacing": "front",
+      "changed": false,
+      "geometry": "p1 499.8px／底665.6；p2 499.8px／底665.6",
+      "maxima": "attack：2.51×寬/2.35×高；sa：1.52×寬/1.84×高；cp：1.27×寬/1.11×高",
+      "shots": [
+        "puni-static-pair.png",
+        "puni-actions-pair.png",
+        "puni-attack-50-field.png",
+        "puni-attack-75-field.png",
+        "puni-sa-50-field.png",
+        "puni-sa-75-field.png",
+        "puni-cp-50-field.png",
+        "puni-cp-75-field.png"
+      ],
+      "shotLinks": [
+        "[靜態雙方](<../../.seer-cache/anim-inspect/review-20261026/puni-static-pair.png>)",
+        "[動畫雙方](<../../.seer-cache/anim-inspect/review-20261026/puni-actions-pair.png>)",
+        "[普攻50%](<../../.seer-cache/anim-inspect/review-20261026/puni-attack-50-field.png>)",
+        "[普攻75%](<../../.seer-cache/anim-inspect/review-20261026/puni-attack-75-field.png>)",
+        "[特殊50%](<../../.seer-cache/anim-inspect/review-20261026/puni-sa-50-field.png>)",
+        "[特殊75%](<../../.seer-cache/anim-inspect/review-20261026/puni-sa-75-field.png>)",
+        "[屬性50%](<../../.seer-cache/anim-inspect/review-20261026/puni-cp-50-field.png>)",
+        "[屬性75%](<../../.seer-cache/anim-inspect/review-20261026/puni-cp-75-field.png>)"
+      ],
+      "tintCounts": [
+        {
+          "name": "standby",
+          "variants": 2
+        },
+        {
+          "name": "attack",
+          "variants": 2
+        },
+        {
+          "name": "sa",
+          "variants": 2
+        },
+        {
+          "name": "cp",
+          "variants": 2
+        },
+        {
+          "name": "hited",
+          "variants": 2
+        }
+      ]
+    },
+    {
+      "id": "starFlame",
+      "name": "星光·魔焰猩猩",
+      "status": "保留",
+      "facing": "主要猿首P1→／P2←",
+      "color": "紅橙火身、黑灰甲同套；後方模糊殘影非清晰異色本體",
+      "fx": "黃白爪痕、火焰旋帶與火星；衝擊線原始mesh出右框。",
+      "sourceFacing": "right",
+      "previousFacing": "right",
+      "changed": false,
+      "geometry": "p1 461.4px／底665.6；p2 461.4px／底665.6",
+      "maxima": "attack：2.62×寬/1.65×高；sa：2.98×寬/1.33×高；cp：2.00×寬/1.52×高",
+      "shots": [
+        "starFlame-static-pair.png",
+        "starFlame-actions-pair.png",
+        "starFlame-attack-50-field.png",
+        "starFlame-attack-75-field.png",
+        "starFlame-sa-50-field.png",
+        "starFlame-sa-75-field.png",
+        "starFlame-cp-50-field.png",
+        "starFlame-cp-75-field.png"
+      ],
+      "shotLinks": [
+        "[靜態雙方](<../../.seer-cache/anim-inspect/review-20261026/starFlame-static-pair.png>)",
+        "[動畫雙方](<../../.seer-cache/anim-inspect/review-20261026/starFlame-actions-pair.png>)",
+        "[普攻50%](<../../.seer-cache/anim-inspect/review-20261026/starFlame-attack-50-field.png>)",
+        "[普攻75%](<../../.seer-cache/anim-inspect/review-20261026/starFlame-attack-75-field.png>)",
+        "[特殊50%](<../../.seer-cache/anim-inspect/review-20261026/starFlame-sa-50-field.png>)",
+        "[特殊75%](<../../.seer-cache/anim-inspect/review-20261026/starFlame-sa-75-field.png>)",
+        "[屬性50%](<../../.seer-cache/anim-inspect/review-20261026/starFlame-cp-50-field.png>)",
+        "[屬性75%](<../../.seer-cache/anim-inspect/review-20261026/starFlame-cp-75-field.png>)"
+      ],
+      "tintCounts": [
+        {
+          "name": "standby",
+          "variants": 18
+        },
+        {
+          "name": "attack",
+          "variants": 18
+        },
+        {
+          "name": "sa",
+          "variants": 18
+        },
+        {
+          "name": "cp",
+          "variants": 18
+        },
+        {
+          "name": "hited",
+          "variants": 18
+        }
+      ]
+    },
+    {
+      "id": "brink",
+      "name": "混濁海妖.布林克克",
+      "status": "待確認",
+      "facing": "近正面略斜，不硬判純側向",
+      "color": "青灰紫同套；普攻本體部分出右框，僅可核對可見部分",
+      "fx": "青白波紋與局部紫霧；本體出框屬位移適配待查，非全圖光束。",
+      "sourceFacing": "right",
+      "previousFacing": "left",
+      "changed": true,
+      "geometry": "p1 483.9px／底665.6；p2 483.9px／底665.6",
+      "maxima": "attack：2.13×寬/1.32×高；sa：1.01×寬/1.04×高；cp：1.11×寬/1.27×高",
+      "shots": [
+        "brink-static-pair.png",
+        "brink-actions-pair.png",
+        "brink-attack-50-field.png",
+        "brink-attack-75-field.png",
+        "brink-sa-50-field.png",
+        "brink-sa-75-field.png",
+        "brink-cp-50-field.png",
+        "brink-cp-75-field.png"
+      ],
+      "shotLinks": [
+        "[靜態雙方](<../../.seer-cache/anim-inspect/review-20261026/brink-static-pair.png>)",
+        "[動畫雙方](<../../.seer-cache/anim-inspect/review-20261026/brink-actions-pair.png>)",
+        "[普攻50%](<../../.seer-cache/anim-inspect/review-20261026/brink-attack-50-field.png>)",
+        "[普攻75%](<../../.seer-cache/anim-inspect/review-20261026/brink-attack-75-field.png>)",
+        "[特殊50%](<../../.seer-cache/anim-inspect/review-20261026/brink-sa-50-field.png>)",
+        "[特殊75%](<../../.seer-cache/anim-inspect/review-20261026/brink-sa-75-field.png>)",
+        "[屬性50%](<../../.seer-cache/anim-inspect/review-20261026/brink-cp-50-field.png>)",
+        "[屬性75%](<../../.seer-cache/anim-inspect/review-20261026/brink-cp-75-field.png>)"
+      ],
+      "tintCounts": [
+        {
+          "name": "standby",
+          "variants": 4
+        },
+        {
+          "name": "attack",
+          "variants": 4
+        },
+        {
+          "name": "sa",
+          "variants": 4
+        },
+        {
+          "name": "cp",
+          "variants": 4
+        },
+        {
+          "name": "hited",
+          "variants": 4
+        }
+      ]
+    },
+    {
+      "id": "baflo",
+      "name": "鎮魂.巴弗洛",
+      "status": "修正",
+      "facing": "原生正面；兩側不猜翻轉",
+      "color": "淡青、深藍、紫同套；無異色完整分身",
+      "fx": "局部電弧與背部鋸齒輪廓；非全場特效。",
+      "sourceFacing": "front",
+      "previousFacing": "left",
+      "changed": true,
+      "geometry": "p1 466.9px／底665.6；p2 466.9px／底665.6",
+      "maxima": "attack：1.04×寬/0.94×高；sa：1.00×寬/0.94×高；cp：1.01×寬/0.98×高",
+      "shots": [
+        "baflo-static-pair.png",
+        "baflo-actions-pair.png",
+        "baflo-attack-50-field.png",
+        "baflo-attack-75-field.png",
+        "baflo-sa-50-field.png",
+        "baflo-sa-75-field.png",
+        "baflo-cp-50-field.png",
+        "baflo-cp-75-field.png"
+      ],
+      "shotLinks": [
+        "[靜態雙方](<../../.seer-cache/anim-inspect/review-20261026/baflo-static-pair.png>)",
+        "[動畫雙方](<../../.seer-cache/anim-inspect/review-20261026/baflo-actions-pair.png>)",
+        "[普攻50%](<../../.seer-cache/anim-inspect/review-20261026/baflo-attack-50-field.png>)",
+        "[普攻75%](<../../.seer-cache/anim-inspect/review-20261026/baflo-attack-75-field.png>)",
+        "[特殊50%](<../../.seer-cache/anim-inspect/review-20261026/baflo-sa-50-field.png>)",
+        "[特殊75%](<../../.seer-cache/anim-inspect/review-20261026/baflo-sa-75-field.png>)",
+        "[屬性50%](<../../.seer-cache/anim-inspect/review-20261026/baflo-cp-50-field.png>)",
+        "[屬性75%](<../../.seer-cache/anim-inspect/review-20261026/baflo-cp-75-field.png>)"
+      ],
+      "tintCounts": [
+        {
+          "name": "standby",
+          "variants": 2
+        },
+        {
+          "name": "attack",
+          "variants": 2
+        },
+        {
+          "name": "sa",
+          "variants": 2
+        },
+        {
+          "name": "cp",
+          "variants": 2
+        },
+        {
+          "name": "hited",
+          "variants": 2
+        }
+      ]
+    },
+    {
+      "id": "delu",
+      "name": "誑獅魔軀.魔獅迪露",
+      "status": "保留",
+      "facing": "P1→／P2←",
+      "color": "白、綠、紅同套材質色，無異色分身",
+      "fx": "抬肢前傾與局部動作，取樣未見光束或全場覆蓋。",
+      "sourceFacing": "right",
+      "previousFacing": "right",
+      "changed": false,
+      "geometry": "p1 489.3px／底665.6；p2 489.3px／底665.6",
+      "maxima": "attack：1.67×寬/1.22×高；sa：1.71×寬/1.21×高；cp：1.14×寬/1.00×高",
+      "shots": [
+        "delu-static-pair.png",
+        "delu-actions-pair.png",
+        "delu-attack-50-field.png",
+        "delu-attack-75-field.png",
+        "delu-sa-50-field.png",
+        "delu-sa-75-field.png",
+        "delu-cp-50-field.png",
+        "delu-cp-75-field.png"
+      ],
+      "shotLinks": [
+        "[靜態雙方](<../../.seer-cache/anim-inspect/review-20261026/delu-static-pair.png>)",
+        "[動畫雙方](<../../.seer-cache/anim-inspect/review-20261026/delu-actions-pair.png>)",
+        "[普攻50%](<../../.seer-cache/anim-inspect/review-20261026/delu-attack-50-field.png>)",
+        "[普攻75%](<../../.seer-cache/anim-inspect/review-20261026/delu-attack-75-field.png>)",
+        "[特殊50%](<../../.seer-cache/anim-inspect/review-20261026/delu-sa-50-field.png>)",
+        "[特殊75%](<../../.seer-cache/anim-inspect/review-20261026/delu-sa-75-field.png>)",
+        "[屬性50%](<../../.seer-cache/anim-inspect/review-20261026/delu-cp-50-field.png>)",
+        "[屬性75%](<../../.seer-cache/anim-inspect/review-20261026/delu-cp-75-field.png>)"
+      ],
+      "tintCounts": [
+        {
+          "name": "standby",
+          "variants": 1
+        },
+        {
+          "name": "attack",
+          "variants": 1
+        },
+        {
+          "name": "sa",
+          "variants": 1
+        },
+        {
+          "name": "cp",
+          "variants": 1
+        },
+        {
+          "name": "hited",
+          "variants": 1
+        }
+      ]
+    },
+    {
+      "id": "holyPuni",
+      "name": "聖靈譜尼",
+      "status": "待確認",
+      "facing": "無可辨側臉，維持無側向原貌",
+      "color": "金白同套；強光遮擋部分材質，不能宣稱所有部位均已核色",
+      "fx": "金色落雷及大型環形法陣；符號有矩形暈片，仍需查混合模式。",
+      "sourceFacing": "front",
+      "previousFacing": "front",
+      "changed": false,
+      "geometry": "p1 553.6px／底665.6；p2 553.6px／底665.6",
+      "maxima": "attack：3.60×寬/3.61×高；sa：3.17×寬/1.94×高；cp：1.17×寬/1.24×高",
+      "shots": [
+        "holyPuni-static-pair.png",
+        "holyPuni-actions-pair.png",
+        "holyPuni-attack-50-field.png",
+        "holyPuni-attack-75-field.png",
+        "holyPuni-sa-50-field.png",
+        "holyPuni-sa-75-field.png",
+        "holyPuni-cp-50-field.png",
+        "holyPuni-cp-75-field.png"
+      ],
+      "shotLinks": [
+        "[靜態雙方](<../../.seer-cache/anim-inspect/review-20261026/holyPuni-static-pair.png>)",
+        "[動畫雙方](<../../.seer-cache/anim-inspect/review-20261026/holyPuni-actions-pair.png>)",
+        "[普攻50%](<../../.seer-cache/anim-inspect/review-20261026/holyPuni-attack-50-field.png>)",
+        "[普攻75%](<../../.seer-cache/anim-inspect/review-20261026/holyPuni-attack-75-field.png>)",
+        "[特殊50%](<../../.seer-cache/anim-inspect/review-20261026/holyPuni-sa-50-field.png>)",
+        "[特殊75%](<../../.seer-cache/anim-inspect/review-20261026/holyPuni-sa-75-field.png>)",
+        "[屬性50%](<../../.seer-cache/anim-inspect/review-20261026/holyPuni-cp-50-field.png>)",
+        "[屬性75%](<../../.seer-cache/anim-inspect/review-20261026/holyPuni-cp-75-field.png>)"
+      ],
+      "tintCounts": [
+        {
+          "name": "standby",
+          "variants": 2
+        },
+        {
+          "name": "attack",
+          "variants": 2
+        },
+        {
+          "name": "sa",
+          "variants": 2
+        },
+        {
+          "name": "cp",
+          "variants": 2
+        },
+        {
+          "name": "hited",
+          "variants": 2
+        }
+      ]
+    },
+    {
+      "id": "starRuth",
+      "name": "星光·魯斯王",
+      "status": "修正",
+      "facing": "主要龍頭P1→／P2←；附屬正面頭另論",
+      "color": "藍、白、冰青同套，無異色分身",
+      "fx": "青白大爆光與光帶出右框；為原始mesh擴展。",
+      "sourceFacing": "right",
+      "previousFacing": "left",
+      "changed": true,
+      "geometry": "p1 414.4px／底665.6；p2 414.4px／底665.6",
+      "maxima": "attack：2.03×寬/3.15×高；sa：2.16×寬/2.58×高；cp：1.75×寬/3.08×高",
+      "shots": [
+        "starRuth-static-pair.png",
+        "starRuth-actions-pair.png",
+        "starRuth-attack-50-field.png",
+        "starRuth-attack-75-field.png",
+        "starRuth-sa-50-field.png",
+        "starRuth-sa-75-field.png",
+        "starRuth-cp-50-field.png",
+        "starRuth-cp-75-field.png"
+      ],
+      "shotLinks": [
+        "[靜態雙方](<../../.seer-cache/anim-inspect/review-20261026/starRuth-static-pair.png>)",
+        "[動畫雙方](<../../.seer-cache/anim-inspect/review-20261026/starRuth-actions-pair.png>)",
+        "[普攻50%](<../../.seer-cache/anim-inspect/review-20261026/starRuth-attack-50-field.png>)",
+        "[普攻75%](<../../.seer-cache/anim-inspect/review-20261026/starRuth-attack-75-field.png>)",
+        "[特殊50%](<../../.seer-cache/anim-inspect/review-20261026/starRuth-sa-50-field.png>)",
+        "[特殊75%](<../../.seer-cache/anim-inspect/review-20261026/starRuth-sa-75-field.png>)",
+        "[屬性50%](<../../.seer-cache/anim-inspect/review-20261026/starRuth-cp-50-field.png>)",
+        "[屬性75%](<../../.seer-cache/anim-inspect/review-20261026/starRuth-cp-75-field.png>)"
+      ],
+      "tintCounts": [
+        {
+          "name": "standby",
+          "variants": 3
+        },
+        {
+          "name": "attack",
+          "variants": 3
+        },
+        {
+          "name": "sa",
+          "variants": 3
+        },
+        {
+          "name": "cp",
+          "variants": 3
+        },
+        {
+          "name": "hited",
+          "variants": 3
+        }
+      ]
+    },
+    {
+      "id": "starLisa",
+      "name": "星光·麗莎布布",
+      "status": "待確認",
+      "facing": "人物近正面，原生left與靜態left分別保存",
+      "color": "普攻移出左框而空白；特殊見同套花葉材質，不能完整判通過",
+      "fx": "特殊光束朝左出框；原生位移與出招方向仍需場地適配，不列正常通過。",
+      "sourceFacing": "left",
+      "previousFacing": "right",
+      "changed": true,
+      "geometry": "p1 443.1px／底665.6；p2 443.1px／底665.6",
+      "maxima": "attack：2.57×寬/1.57×高；sa：3.53×寬/2.19×高；cp：1.32×寬/1.21×高",
+      "shots": [
+        "starLisa-static-pair.png",
+        "starLisa-actions-pair.png",
+        "starLisa-attack-50-field.png",
+        "starLisa-attack-75-field.png",
+        "starLisa-sa-50-field.png",
+        "starLisa-sa-75-field.png",
+        "starLisa-cp-50-field.png",
+        "starLisa-cp-75-field.png"
+      ],
+      "shotLinks": [
+        "[靜態雙方](<../../.seer-cache/anim-inspect/review-20261026/starLisa-static-pair.png>)",
+        "[動畫雙方](<../../.seer-cache/anim-inspect/review-20261026/starLisa-actions-pair.png>)",
+        "[普攻50%](<../../.seer-cache/anim-inspect/review-20261026/starLisa-attack-50-field.png>)",
+        "[普攻75%](<../../.seer-cache/anim-inspect/review-20261026/starLisa-attack-75-field.png>)",
+        "[特殊50%](<../../.seer-cache/anim-inspect/review-20261026/starLisa-sa-50-field.png>)",
+        "[特殊75%](<../../.seer-cache/anim-inspect/review-20261026/starLisa-sa-75-field.png>)",
+        "[屬性50%](<../../.seer-cache/anim-inspect/review-20261026/starLisa-cp-50-field.png>)",
+        "[屬性75%](<../../.seer-cache/anim-inspect/review-20261026/starLisa-cp-75-field.png>)"
+      ],
+      "tintCounts": [
+        {
+          "name": "standby",
+          "variants": 14
+        },
+        {
+          "name": "attack",
+          "variants": 14
+        },
+        {
+          "name": "sa",
+          "variants": 14
+        },
+        {
+          "name": "cp",
+          "variants": 14
+        },
+        {
+          "name": "hited",
+          "variants": 14
+        }
+      ]
+    },
+    {
+      "id": "kold",
+      "name": "冰魄·柯爾德",
+      "status": "保留",
+      "facing": "主要冰獸頭P1→／P2←；小人物側向不強判",
+      "color": "冰藍、白、深紫同套，沒有異色人形複製",
+      "fx": "冰晶向上、爆裂向右下出框；原始冰晶特效。一般大小校正基準。",
+      "sourceFacing": "right",
+      "previousFacing": "right",
+      "changed": false,
+      "geometry": "p1 486.2px／底665.6；p2 486.2px／底665.6",
+      "maxima": "attack：2.87×寬/3.64×高；sa：2.97×寬/2.73×高；cp：2.69×寬/2.11×高",
+      "shots": [
+        "kold-static-pair.png",
+        "kold-actions-pair.png",
+        "kold-attack-50-field.png",
+        "kold-attack-75-field.png",
+        "kold-sa-50-field.png",
+        "kold-sa-75-field.png",
+        "kold-cp-50-field.png",
+        "kold-cp-75-field.png"
+      ],
+      "shotLinks": [
+        "[靜態雙方](<../../.seer-cache/anim-inspect/review-20261026/kold-static-pair.png>)",
+        "[動畫雙方](<../../.seer-cache/anim-inspect/review-20261026/kold-actions-pair.png>)",
+        "[普攻50%](<../../.seer-cache/anim-inspect/review-20261026/kold-attack-50-field.png>)",
+        "[普攻75%](<../../.seer-cache/anim-inspect/review-20261026/kold-attack-75-field.png>)",
+        "[特殊50%](<../../.seer-cache/anim-inspect/review-20261026/kold-sa-50-field.png>)",
+        "[特殊75%](<../../.seer-cache/anim-inspect/review-20261026/kold-sa-75-field.png>)",
+        "[屬性50%](<../../.seer-cache/anim-inspect/review-20261026/kold-cp-50-field.png>)",
+        "[屬性75%](<../../.seer-cache/anim-inspect/review-20261026/kold-cp-75-field.png>)"
+      ],
+      "tintCounts": [
+        {
+          "name": "standby",
+          "variants": 1
+        },
+        {
+          "name": "attack",
+          "variants": 1
+        },
+        {
+          "name": "sa",
+          "variants": 1
+        },
+        {
+          "name": "cp",
+          "variants": 1
+        },
+        {
+          "name": "hited",
+          "variants": 1
+        }
+      ]
+    },
+    {
+      "id": "koldhord",
+      "name": "柯爾霍德",
+      "status": "待確認",
+      "facing": "巨獸與人物多為近正面，左右側向不夠明確",
+      "color": "人形白黑金、獸形白藍紫各自同套，並非同一本體換色",
+      "fx": "冰晶簇、落地冰霧局部；不能單憑人物小就認定整組太小。",
+      "sourceFacing": "right",
+      "previousFacing": "right",
+      "changed": false,
+      "geometry": "p1 476.6px／底665.6；p2 476.6px／底665.6",
+      "maxima": "attack：3.45×寬/1.85×高；sa：2.04×寬/2.33×高；cp：1.41×寬/1.26×高",
+      "shots": [
+        "koldhord-static-pair.png",
+        "koldhord-actions-pair.png",
+        "koldhord-attack-50-field.png",
+        "koldhord-attack-75-field.png",
+        "koldhord-sa-50-field.png",
+        "koldhord-sa-75-field.png",
+        "koldhord-cp-50-field.png",
+        "koldhord-cp-75-field.png"
+      ],
+      "shotLinks": [
+        "[靜態雙方](<../../.seer-cache/anim-inspect/review-20261026/koldhord-static-pair.png>)",
+        "[動畫雙方](<../../.seer-cache/anim-inspect/review-20261026/koldhord-actions-pair.png>)",
+        "[普攻50%](<../../.seer-cache/anim-inspect/review-20261026/koldhord-attack-50-field.png>)",
+        "[普攻75%](<../../.seer-cache/anim-inspect/review-20261026/koldhord-attack-75-field.png>)",
+        "[特殊50%](<../../.seer-cache/anim-inspect/review-20261026/koldhord-sa-50-field.png>)",
+        "[特殊75%](<../../.seer-cache/anim-inspect/review-20261026/koldhord-sa-75-field.png>)",
+        "[屬性50%](<../../.seer-cache/anim-inspect/review-20261026/koldhord-cp-50-field.png>)",
+        "[屬性75%](<../../.seer-cache/anim-inspect/review-20261026/koldhord-cp-75-field.png>)"
+      ],
+      "tintCounts": [
+        {
+          "name": "standby",
+          "variants": 1
+        },
+        {
+          "name": "attack",
+          "variants": 1
+        },
+        {
+          "name": "sa",
+          "variants": 1
+        },
+        {
+          "name": "cp",
+          "variants": 1
+        },
+        {
+          "name": "hited",
+          "variants": 1
+        }
+      ]
+    },
+    {
+      "id": "scarlett",
+      "name": "聖光斯嘉麗",
+      "status": "待確認",
+      "facing": "主白毛獸頭已朝內；小人物及其他獸頭反向",
+      "color": "普攻與特殊調用不同主體形態／主色；不能判全段同一套本體配色通過",
+      "fx": "金色光門與出左框光帶；不把原廠多形態切換誤當同幀異色分身。",
+      "sourceFacing": "left",
+      "previousFacing": "right",
+      "changed": true,
+      "geometry": "p1 483.4px／底665.6；p2 483.4px／底665.6",
+      "maxima": "attack：2.99×寬/2.57×高；sa：5.35×寬/2.91×高；cp：0.98×寬/1.27×高",
+      "shots": [
+        "scarlett-static-pair.png",
+        "scarlett-actions-pair.png",
+        "scarlett-attack-50-field.png",
+        "scarlett-attack-75-field.png",
+        "scarlett-sa-50-field.png",
+        "scarlett-sa-75-field.png",
+        "scarlett-cp-50-field.png",
+        "scarlett-cp-75-field.png"
+      ],
+      "shotLinks": [
+        "[靜態雙方](<../../.seer-cache/anim-inspect/review-20261026/scarlett-static-pair.png>)",
+        "[動畫雙方](<../../.seer-cache/anim-inspect/review-20261026/scarlett-actions-pair.png>)",
+        "[普攻50%](<../../.seer-cache/anim-inspect/review-20261026/scarlett-attack-50-field.png>)",
+        "[普攻75%](<../../.seer-cache/anim-inspect/review-20261026/scarlett-attack-75-field.png>)",
+        "[特殊50%](<../../.seer-cache/anim-inspect/review-20261026/scarlett-sa-50-field.png>)",
+        "[特殊75%](<../../.seer-cache/anim-inspect/review-20261026/scarlett-sa-75-field.png>)",
+        "[屬性50%](<../../.seer-cache/anim-inspect/review-20261026/scarlett-cp-50-field.png>)",
+        "[屬性75%](<../../.seer-cache/anim-inspect/review-20261026/scarlett-cp-75-field.png>)"
+      ],
+      "tintCounts": [
+        {
+          "name": "standby",
+          "variants": 6
+        },
+        {
+          "name": "attack",
+          "variants": 2
+        },
+        {
+          "name": "sa",
+          "variants": 6
+        },
+        {
+          "name": "cp",
+          "variants": 2
+        },
+        {
+          "name": "hited",
+          "variants": 2
+        }
+      ]
+    },
+    {
+      "id": "chaosBlake",
+      "name": "混沌·布萊克",
+      "status": "保留",
+      "facing": "人形P1→／P2←；兩側面具近正面",
+      "color": "黑紫、白銀、桃紫同套，無異色人物分身",
+      "fx": "巨型紫紅球及刃狀物，局部大範圍且下緣可出框；非整體尺寸跳變。",
+      "sourceFacing": "right",
+      "previousFacing": "right",
+      "changed": false,
+      "geometry": "p1 467.5px／底665.6；p2 467.5px／底665.6",
+      "maxima": "attack：2.74×寬/3.89×高；sa：2.58×寬/2.17×高；cp：1.07×寬/1.71×高",
+      "shots": [
+        "chaosBlake-static-pair.png",
+        "chaosBlake-actions-pair.png",
+        "chaosBlake-attack-50-field.png",
+        "chaosBlake-attack-75-field.png",
+        "chaosBlake-sa-50-field.png",
+        "chaosBlake-sa-75-field.png",
+        "chaosBlake-cp-50-field.png",
+        "chaosBlake-cp-75-field.png"
+      ],
+      "shotLinks": [
+        "[靜態雙方](<../../.seer-cache/anim-inspect/review-20261026/chaosBlake-static-pair.png>)",
+        "[動畫雙方](<../../.seer-cache/anim-inspect/review-20261026/chaosBlake-actions-pair.png>)",
+        "[普攻50%](<../../.seer-cache/anim-inspect/review-20261026/chaosBlake-attack-50-field.png>)",
+        "[普攻75%](<../../.seer-cache/anim-inspect/review-20261026/chaosBlake-attack-75-field.png>)",
+        "[特殊50%](<../../.seer-cache/anim-inspect/review-20261026/chaosBlake-sa-50-field.png>)",
+        "[特殊75%](<../../.seer-cache/anim-inspect/review-20261026/chaosBlake-sa-75-field.png>)",
+        "[屬性50%](<../../.seer-cache/anim-inspect/review-20261026/chaosBlake-cp-50-field.png>)",
+        "[屬性75%](<../../.seer-cache/anim-inspect/review-20261026/chaosBlake-cp-75-field.png>)"
+      ],
+      "tintCounts": [
+        {
+          "name": "standby",
+          "variants": 1
+        },
+        {
+          "name": "attack",
+          "variants": 1
+        },
+        {
+          "name": "sa",
+          "variants": 1
+        },
+        {
+          "name": "cp",
+          "variants": 1
+        },
+        {
+          "name": "hited",
+          "variants": 1
+        }
+      ]
+    },
+    {
+      "id": "marthus",
+      "name": "變革·馬爾修斯",
+      "status": "修正",
+      "facing": "人形P1→／P2←，機械翼不是獸首",
+      "color": "藍、銀、橙金同套，無異色雙本體",
+      "fx": "大型機械刃與青白電流，上端出框；原始武裝特效。",
+      "sourceFacing": "right",
+      "previousFacing": "left",
+      "changed": true,
+      "geometry": "p1 456.8px／底665.6；p2 456.8px／底665.6",
+      "maxima": "attack：1.88×寬/1.89×高；sa：2.71×寬/4.04×高；cp：1.47×寬/1.96×高",
+      "shots": [
+        "marthus-static-pair.png",
+        "marthus-actions-pair.png",
+        "marthus-attack-50-field.png",
+        "marthus-attack-75-field.png",
+        "marthus-sa-50-field.png",
+        "marthus-sa-75-field.png",
+        "marthus-cp-50-field.png",
+        "marthus-cp-75-field.png"
+      ],
+      "shotLinks": [
+        "[靜態雙方](<../../.seer-cache/anim-inspect/review-20261026/marthus-static-pair.png>)",
+        "[動畫雙方](<../../.seer-cache/anim-inspect/review-20261026/marthus-actions-pair.png>)",
+        "[普攻50%](<../../.seer-cache/anim-inspect/review-20261026/marthus-attack-50-field.png>)",
+        "[普攻75%](<../../.seer-cache/anim-inspect/review-20261026/marthus-attack-75-field.png>)",
+        "[特殊50%](<../../.seer-cache/anim-inspect/review-20261026/marthus-sa-50-field.png>)",
+        "[特殊75%](<../../.seer-cache/anim-inspect/review-20261026/marthus-sa-75-field.png>)",
+        "[屬性50%](<../../.seer-cache/anim-inspect/review-20261026/marthus-cp-50-field.png>)",
+        "[屬性75%](<../../.seer-cache/anim-inspect/review-20261026/marthus-cp-75-field.png>)"
+      ],
+      "tintCounts": [
+        {
+          "name": "standby",
+          "variants": 1
+        },
+        {
+          "name": "attack",
+          "variants": 1
+        },
+        {
+          "name": "sa",
+          "variants": 1
+        },
+        {
+          "name": "cp",
+          "variants": 1
+        },
+        {
+          "name": "hited",
+          "variants": 1
+        },
+        {
+          "name": "transform",
+          "variants": 1
+        }
+      ]
+    },
+    {
+      "id": "opeia",
+      "name": "蟲后·奧佩婭",
+      "status": "保留",
+      "facing": "主蟲首朝內；人形近正面略朝內",
+      "color": "紅髮、黑灰、青藍同套；強光時遮住部分構件",
+      "fx": "分節環圈與兩道白藍粗光束出右框；原始mesh含長束。屬性為局部青藍法陣。",
+      "sourceFacing": "right",
+      "previousFacing": "right",
+      "changed": false,
+      "geometry": "p1 482.5px／底665.6；p2 482.5px／底665.6",
+      "maxima": "attack：3.67×寬/4.10×高；sa：3.73×寬/2.71×高；cp：3.95×寬/4.41×高",
+      "shots": [
+        "opeia-static-pair.png",
+        "opeia-actions-pair.png",
+        "opeia-attack-50-field.png",
+        "opeia-attack-75-field.png",
+        "opeia-sa-50-field.png",
+        "opeia-sa-75-field.png",
+        "opeia-cp-50-field.png",
+        "opeia-cp-75-field.png"
+      ],
+      "shotLinks": [
+        "[靜態雙方](<../../.seer-cache/anim-inspect/review-20261026/opeia-static-pair.png>)",
+        "[動畫雙方](<../../.seer-cache/anim-inspect/review-20261026/opeia-actions-pair.png>)",
+        "[普攻50%](<../../.seer-cache/anim-inspect/review-20261026/opeia-attack-50-field.png>)",
+        "[普攻75%](<../../.seer-cache/anim-inspect/review-20261026/opeia-attack-75-field.png>)",
+        "[特殊50%](<../../.seer-cache/anim-inspect/review-20261026/opeia-sa-50-field.png>)",
+        "[特殊75%](<../../.seer-cache/anim-inspect/review-20261026/opeia-sa-75-field.png>)",
+        "[屬性50%](<../../.seer-cache/anim-inspect/review-20261026/opeia-cp-50-field.png>)",
+        "[屬性75%](<../../.seer-cache/anim-inspect/review-20261026/opeia-cp-75-field.png>)"
+      ],
+      "tintCounts": [
+        {
+          "name": "standby",
+          "variants": 3
+        },
+        {
+          "name": "attack",
+          "variants": 3
+        },
+        {
+          "name": "sa",
+          "variants": 3
+        },
+        {
+          "name": "cp",
+          "variants": 3
+        },
+        {
+          "name": "hited",
+          "variants": 3
+        }
+      ]
+    },
+    {
+      "id": "odin",
+      "name": "眾神之父·奧丁",
+      "status": "修正",
+      "facing": "人形P1→／P2←，羽翼不是獨立獸頭",
+      "color": "藍銀、紫甲、金翼同套，無異色分身",
+      "fx": "金色新月斬及粉白長束；取樣長束在右框前收束，非全圖覆蓋。",
+      "sourceFacing": "right",
+      "previousFacing": "left",
+      "changed": true,
+      "geometry": "p1 485.2px／底665.6；p2 485.2px／底665.6",
+      "maxima": "attack：1.86×寬/1.53×高；sa：4.75×寬/1.07×高；cp：1.24×寬/1.58×高",
+      "shots": [
+        "odin-static-pair.png",
+        "odin-actions-pair.png",
+        "odin-attack-50-field.png",
+        "odin-attack-75-field.png",
+        "odin-sa-50-field.png",
+        "odin-sa-75-field.png",
+        "odin-cp-50-field.png",
+        "odin-cp-75-field.png"
+      ],
+      "shotLinks": [
+        "[靜態雙方](<../../.seer-cache/anim-inspect/review-20261026/odin-static-pair.png>)",
+        "[動畫雙方](<../../.seer-cache/anim-inspect/review-20261026/odin-actions-pair.png>)",
+        "[普攻50%](<../../.seer-cache/anim-inspect/review-20261026/odin-attack-50-field.png>)",
+        "[普攻75%](<../../.seer-cache/anim-inspect/review-20261026/odin-attack-75-field.png>)",
+        "[特殊50%](<../../.seer-cache/anim-inspect/review-20261026/odin-sa-50-field.png>)",
+        "[特殊75%](<../../.seer-cache/anim-inspect/review-20261026/odin-sa-75-field.png>)",
+        "[屬性50%](<../../.seer-cache/anim-inspect/review-20261026/odin-cp-50-field.png>)",
+        "[屬性75%](<../../.seer-cache/anim-inspect/review-20261026/odin-cp-75-field.png>)"
+      ],
+      "tintCounts": [
+        {
+          "name": "standby",
+          "variants": 2
+        },
+        {
+          "name": "attack",
+          "variants": 2
+        },
+        {
+          "name": "sa",
+          "variants": 2
+        },
+        {
+          "name": "cp",
+          "variants": 2
+        },
+        {
+          "name": "hited",
+          "variants": 2
+        }
+      ]
+    },
+    {
+      "id": "pipi",
+      "name": "皮皮",
+      "status": "待確認",
+      "facing": "斜正面略朝內，無明確朝外",
+      "color": "普攻本體移至x=1835–2427，不能判該中間幀通過；特殊為同套淡粉色",
+      "fx": "原生位移未適配取樣場地；特殊無大光束，不是本外觀動畫缺檔。",
+      "sourceFacing": "right",
+      "previousFacing": "right",
+      "changed": false,
+      "geometry": "p1 363.6px／底665.6；p2 363.6px／底665.6",
+      "maxima": "attack：1.83×寬/1.64×高；sa：1.27×寬/1.16×高；cp：1.95×寬/1.79×高",
+      "shots": [
+        "pipi-static-pair.png",
+        "pipi-actions-pair.png",
+        "pipi-attack-50-field.png",
+        "pipi-attack-75-field.png",
+        "pipi-sa-50-field.png",
+        "pipi-sa-75-field.png",
+        "pipi-cp-50-field.png",
+        "pipi-cp-75-field.png"
+      ],
+      "shotLinks": [
+        "[靜態雙方](<../../.seer-cache/anim-inspect/review-20261026/pipi-static-pair.png>)",
+        "[動畫雙方](<../../.seer-cache/anim-inspect/review-20261026/pipi-actions-pair.png>)",
+        "[普攻50%](<../../.seer-cache/anim-inspect/review-20261026/pipi-attack-50-field.png>)",
+        "[普攻75%](<../../.seer-cache/anim-inspect/review-20261026/pipi-attack-75-field.png>)",
+        "[特殊50%](<../../.seer-cache/anim-inspect/review-20261026/pipi-sa-50-field.png>)",
+        "[特殊75%](<../../.seer-cache/anim-inspect/review-20261026/pipi-sa-75-field.png>)",
+        "[屬性50%](<../../.seer-cache/anim-inspect/review-20261026/pipi-cp-50-field.png>)",
+        "[屬性75%](<../../.seer-cache/anim-inspect/review-20261026/pipi-cp-75-field.png>)"
+      ],
+      "tintCounts": [
+        {
+          "name": "standby",
+          "variants": 1
+        },
+        {
+          "name": "attack",
+          "variants": 1
+        },
+        {
+          "name": "sa",
+          "variants": 1
+        },
+        {
+          "name": "cp",
+          "variants": 1
+        },
+        {
+          "name": "hited",
+          "variants": 1
+        }
+      ]
+    },
+    {
+      "id": "dimensionDragon",
+      "name": "治癒.龍魂再臨 次元龍",
+      "status": "待確認",
+      "facing": "多頭混合，找不到能讓所有頭同時朝內的整組翻轉",
+      "color": "普攻部分出左框；特殊本體不可見，不能完整核色",
+      "fx": "斜向長光束、白底黑裂紋大矩形；矩形在未統色輸出也存在，解析/混合模式待查，不能標正常原廠特效。",
+      "sourceFacing": "left",
+      "previousFacing": "left",
+      "changed": false,
+      "geometry": "p1 490.9px／底665.6；p2 490.9px／底665.6",
+      "maxima": "attack：2.35×寬/2.56×高；sa：3.78×寬/6.25×高；cp：1.29×寬/1.68×高",
+      "shots": [
+        "dimensionDragon-static-pair.png",
+        "dimensionDragon-actions-pair.png",
+        "dimensionDragon-attack-50-field.png",
+        "dimensionDragon-attack-75-field.png",
+        "dimensionDragon-sa-50-field.png",
+        "dimensionDragon-sa-75-field.png",
+        "dimensionDragon-cp-50-field.png",
+        "dimensionDragon-cp-75-field.png"
+      ],
+      "shotLinks": [
+        "[靜態雙方](<../../.seer-cache/anim-inspect/review-20261026/dimensionDragon-static-pair.png>)",
+        "[動畫雙方](<../../.seer-cache/anim-inspect/review-20261026/dimensionDragon-actions-pair.png>)",
+        "[普攻50%](<../../.seer-cache/anim-inspect/review-20261026/dimensionDragon-attack-50-field.png>)",
+        "[普攻75%](<../../.seer-cache/anim-inspect/review-20261026/dimensionDragon-attack-75-field.png>)",
+        "[特殊50%](<../../.seer-cache/anim-inspect/review-20261026/dimensionDragon-sa-50-field.png>)",
+        "[特殊75%](<../../.seer-cache/anim-inspect/review-20261026/dimensionDragon-sa-75-field.png>)",
+        "[屬性50%](<../../.seer-cache/anim-inspect/review-20261026/dimensionDragon-cp-50-field.png>)",
+        "[屬性75%](<../../.seer-cache/anim-inspect/review-20261026/dimensionDragon-cp-75-field.png>)"
+      ],
+      "tintCounts": [
+        {
+          "name": "standby",
+          "variants": 9
+        },
+        {
+          "name": "attack",
+          "variants": 9
+        },
+        {
+          "name": "sa",
+          "variants": 9
+        },
+        {
+          "name": "cp",
+          "variants": 9
+        },
+        {
+          "name": "hited",
+          "variants": 9
+        },
+        {
+          "name": "add1",
+          "variants": 9
+        },
+        {
+          "name": "add2",
+          "variants": 9
+        }
+      ]
+    },
+    {
+      "id": "zhakesi4762",
+      "name": "湮滅之主・咤克斯",
+      "status": "保留",
+      "facing": "巨型獸首P1→／P2←；維持專用裁切",
+      "color": "暗紫黑甲、洋紅角與核心同套，無異色本體",
+      "fx": "紫黑旋渦、光環與短束為原始特效；巨型展示下緣裁切是設計。",
+      "sourceFacing": "right",
+      "previousFacing": "right",
+      "changed": false,
+      "geometry": "p1 668.1px／底686.0；p2 668.1px／底686.0",
+      "maxima": "attack：1.53×寬/1.02×高；sa：2.11×寬/1.59×高；cp：1.83×寬/1.14×高",
+      "shots": [
+        "zhakesi4762-static-pair.png",
+        "zhakesi4762-actions-pair.png",
+        "zhakesi4762-attack-50-field.png",
+        "zhakesi4762-attack-75-field.png",
+        "zhakesi4762-sa-50-field.png",
+        "zhakesi4762-sa-75-field.png",
+        "zhakesi4762-cp-50-field.png",
+        "zhakesi4762-cp-75-field.png"
+      ],
+      "shotLinks": [
+        "[靜態雙方](<../../.seer-cache/anim-inspect/review-20261026/zhakesi4762-static-pair.png>)",
+        "[動畫雙方](<../../.seer-cache/anim-inspect/review-20261026/zhakesi4762-actions-pair.png>)",
+        "[普攻50%](<../../.seer-cache/anim-inspect/review-20261026/zhakesi4762-attack-50-field.png>)",
+        "[普攻75%](<../../.seer-cache/anim-inspect/review-20261026/zhakesi4762-attack-75-field.png>)",
+        "[特殊50%](<../../.seer-cache/anim-inspect/review-20261026/zhakesi4762-sa-50-field.png>)",
+        "[特殊75%](<../../.seer-cache/anim-inspect/review-20261026/zhakesi4762-sa-75-field.png>)",
+        "[屬性50%](<../../.seer-cache/anim-inspect/review-20261026/zhakesi4762-cp-50-field.png>)",
+        "[屬性75%](<../../.seer-cache/anim-inspect/review-20261026/zhakesi4762-cp-75-field.png>)"
+      ],
+      "tintCounts": [
+        {
+          "name": "standby",
+          "variants": 37
+        },
+        {
+          "name": "attack",
+          "variants": 37
+        },
+        {
+          "name": "sa",
+          "variants": 37
+        },
+        {
+          "name": "cp",
+          "variants": 37
+        },
+        {
+          "name": "hited",
+          "variants": 37
+        }
+      ]
+    },
+    {
+      "id": "zhakesi15008",
+      "name": "憤怒的化身·咤克斯",
+      "status": "待確認",
+      "facing": "獸首朝內；巨型獨立比例不套一般倍率",
+      "color": "憤怒形態酒紅同套，無異色雙本體；灰層會沖淡本體",
+      "fx": "巨大長肢上下出框；灰矩形未統色輸出也有，統色後更亮，仍需查混合模式。",
+      "sourceFacing": "right",
+      "previousFacing": "right",
+      "changed": false,
+      "geometry": "p1 668.1px／底686.0；p2 668.1px／底686.0",
+      "maxima": "attack：3.69×寬/4.17×高；sa：1.94×寬/1.02×高；cp：2.53×寬/1.80×高",
+      "shots": [
+        "zhakesi15008-static-pair.png",
+        "zhakesi15008-actions-pair.png",
+        "zhakesi15008-attack-50-field.png",
+        "zhakesi15008-attack-75-field.png",
+        "zhakesi15008-sa-50-field.png",
+        "zhakesi15008-sa-75-field.png",
+        "zhakesi15008-cp-50-field.png",
+        "zhakesi15008-cp-75-field.png"
+      ],
+      "shotLinks": [
+        "[靜態雙方](<../../.seer-cache/anim-inspect/review-20261026/zhakesi15008-static-pair.png>)",
+        "[動畫雙方](<../../.seer-cache/anim-inspect/review-20261026/zhakesi15008-actions-pair.png>)",
+        "[普攻50%](<../../.seer-cache/anim-inspect/review-20261026/zhakesi15008-attack-50-field.png>)",
+        "[普攻75%](<../../.seer-cache/anim-inspect/review-20261026/zhakesi15008-attack-75-field.png>)",
+        "[特殊50%](<../../.seer-cache/anim-inspect/review-20261026/zhakesi15008-sa-50-field.png>)",
+        "[特殊75%](<../../.seer-cache/anim-inspect/review-20261026/zhakesi15008-sa-75-field.png>)",
+        "[屬性50%](<../../.seer-cache/anim-inspect/review-20261026/zhakesi15008-cp-50-field.png>)",
+        "[屬性75%](<../../.seer-cache/anim-inspect/review-20261026/zhakesi15008-cp-75-field.png>)"
+      ],
+      "tintCounts": [
+        {
+          "name": "standby",
+          "variants": 1
+        },
+        {
+          "name": "attack",
+          "variants": 1
+        },
+        {
+          "name": "sa",
+          "variants": 1
+        },
+        {
+          "name": "cp",
+          "variants": 1
+        },
+        {
+          "name": "hited",
+          "variants": 1
+        }
+      ]
+    },
+    {
+      "id": "zhakesi15009",
+      "name": "貪婪的化身·咤克斯",
+      "status": "待確認",
+      "facing": "獸首朝內；巨型獨立比例",
+      "color": "貪婪形態暗紫同套，無異色雙本體；有灰層",
+      "fx": "巨大長肢與胸前電絲；共用15008模型的灰矩形列待查，不當正常特效。",
+      "sourceFacing": "right",
+      "previousFacing": "right",
+      "changed": false,
+      "geometry": "p1 668.1px／底686.0；p2 668.1px／底686.0",
+      "maxima": "attack：3.69×寬/4.17×高；sa：1.94×寬/1.02×高；cp：2.53×寬/1.80×高",
+      "shots": [
+        "zhakesi15009-static-pair.png",
+        "zhakesi15009-actions-pair.png",
+        "zhakesi15009-attack-50-field.png",
+        "zhakesi15009-attack-75-field.png",
+        "zhakesi15009-sa-50-field.png",
+        "zhakesi15009-sa-75-field.png",
+        "zhakesi15009-cp-50-field.png",
+        "zhakesi15009-cp-75-field.png"
+      ],
+      "shotLinks": [
+        "[靜態雙方](<../../.seer-cache/anim-inspect/review-20261026/zhakesi15009-static-pair.png>)",
+        "[動畫雙方](<../../.seer-cache/anim-inspect/review-20261026/zhakesi15009-actions-pair.png>)",
+        "[普攻50%](<../../.seer-cache/anim-inspect/review-20261026/zhakesi15009-attack-50-field.png>)",
+        "[普攻75%](<../../.seer-cache/anim-inspect/review-20261026/zhakesi15009-attack-75-field.png>)",
+        "[特殊50%](<../../.seer-cache/anim-inspect/review-20261026/zhakesi15009-sa-50-field.png>)",
+        "[特殊75%](<../../.seer-cache/anim-inspect/review-20261026/zhakesi15009-sa-75-field.png>)",
+        "[屬性50%](<../../.seer-cache/anim-inspect/review-20261026/zhakesi15009-cp-50-field.png>)",
+        "[屬性75%](<../../.seer-cache/anim-inspect/review-20261026/zhakesi15009-cp-75-field.png>)"
+      ],
+      "tintCounts": [
+        {
+          "name": "standby",
+          "variants": 1
+        },
+        {
+          "name": "attack",
+          "variants": 1
+        },
+        {
+          "name": "sa",
+          "variants": 1
+        },
+        {
+          "name": "cp",
+          "variants": 1
+        },
+        {
+          "name": "hited",
+          "variants": 1
+        }
+      ]
+    },
+    {
+      "id": "zhakesi15010",
+      "name": "恐懼的化身·咤克斯",
+      "status": "待確認",
+      "facing": "獸首朝內；巨型獨立比例",
+      "color": "恐懼形態墨綠灰同套，無異色雙本體；有灰層",
+      "fx": "巨大長肢及胸前電絲；同模型矩形底片待查，不以灰色外觀誤報整隻缺圖。",
+      "sourceFacing": "right",
+      "previousFacing": "right",
+      "changed": false,
+      "geometry": "p1 668.1px／底686.0；p2 668.1px／底686.0",
+      "maxima": "attack：3.69×寬/4.17×高；sa：1.94×寬/1.02×高；cp：2.53×寬/1.80×高",
+      "shots": [
+        "zhakesi15010-static-pair.png",
+        "zhakesi15010-actions-pair.png",
+        "zhakesi15010-attack-50-field.png",
+        "zhakesi15010-attack-75-field.png",
+        "zhakesi15010-sa-50-field.png",
+        "zhakesi15010-sa-75-field.png",
+        "zhakesi15010-cp-50-field.png",
+        "zhakesi15010-cp-75-field.png"
+      ],
+      "shotLinks": [
+        "[靜態雙方](<../../.seer-cache/anim-inspect/review-20261026/zhakesi15010-static-pair.png>)",
+        "[動畫雙方](<../../.seer-cache/anim-inspect/review-20261026/zhakesi15010-actions-pair.png>)",
+        "[普攻50%](<../../.seer-cache/anim-inspect/review-20261026/zhakesi15010-attack-50-field.png>)",
+        "[普攻75%](<../../.seer-cache/anim-inspect/review-20261026/zhakesi15010-attack-75-field.png>)",
+        "[特殊50%](<../../.seer-cache/anim-inspect/review-20261026/zhakesi15010-sa-50-field.png>)",
+        "[特殊75%](<../../.seer-cache/anim-inspect/review-20261026/zhakesi15010-sa-75-field.png>)",
+        "[屬性50%](<../../.seer-cache/anim-inspect/review-20261026/zhakesi15010-cp-50-field.png>)",
+        "[屬性75%](<../../.seer-cache/anim-inspect/review-20261026/zhakesi15010-cp-75-field.png>)"
+      ],
+      "tintCounts": [
+        {
+          "name": "standby",
+          "variants": 1
+        },
+        {
+          "name": "attack",
+          "variants": 1
+        },
+        {
+          "name": "sa",
+          "variants": 1
+        },
+        {
+          "name": "cp",
+          "variants": 1
+        },
+        {
+          "name": "hited",
+          "variants": 1
+        }
+      ]
+    },
+    {
+      "id": "belliant",
+      "name": "蓓麗安特",
+      "status": "待確認",
+      "facing": "多頭不同向、人形近正面，不能宣稱整組面對面",
+      "color": "普攻大部分出左框；可見部分與特殊同套，不能完整核色",
+      "fx": "紫白大旋渦及黑色矩形底板；未統色輸出也有，原生位移/混合模式均待查。",
+      "sourceFacing": "left",
+      "previousFacing": "left",
+      "changed": false,
+      "geometry": "p1 485.8px／底665.6；p2 485.8px／底665.6",
+      "maxima": "attack：1.81×寬/1.86×高；sa：4.07×寬/3.48×高；cp：1.82×寬/2.18×高",
+      "shots": [
+        "belliant-static-pair.png",
+        "belliant-actions-pair.png",
+        "belliant-attack-50-field.png",
+        "belliant-attack-75-field.png",
+        "belliant-sa-50-field.png",
+        "belliant-sa-75-field.png",
+        "belliant-cp-50-field.png",
+        "belliant-cp-75-field.png"
+      ],
+      "shotLinks": [
+        "[靜態雙方](<../../.seer-cache/anim-inspect/review-20261026/belliant-static-pair.png>)",
+        "[動畫雙方](<../../.seer-cache/anim-inspect/review-20261026/belliant-actions-pair.png>)",
+        "[普攻50%](<../../.seer-cache/anim-inspect/review-20261026/belliant-attack-50-field.png>)",
+        "[普攻75%](<../../.seer-cache/anim-inspect/review-20261026/belliant-attack-75-field.png>)",
+        "[特殊50%](<../../.seer-cache/anim-inspect/review-20261026/belliant-sa-50-field.png>)",
+        "[特殊75%](<../../.seer-cache/anim-inspect/review-20261026/belliant-sa-75-field.png>)",
+        "[屬性50%](<../../.seer-cache/anim-inspect/review-20261026/belliant-cp-50-field.png>)",
+        "[屬性75%](<../../.seer-cache/anim-inspect/review-20261026/belliant-cp-75-field.png>)"
+      ],
+      "tintCounts": [
+        {
+          "name": "standby",
+          "variants": 6
+        },
+        {
+          "name": "attack",
+          "variants": 6
+        },
+        {
+          "name": "sa",
+          "variants": 6
+        },
+        {
+          "name": "cp",
+          "variants": 6
+        },
+        {
+          "name": "hited",
+          "variants": 6
+        }
+      ]
+    },
+    {
+      "id": "canglan",
+      "name": "怒濤·滄嵐",
+      "status": "保留",
+      "facing": "主藍龍頭朝內；人形與巨獸側向不同",
+      "color": "深藍、青白同套，無異色人形分身",
+      "fx": "特殊水紋橫跨全場下部約1/3且左右出框；原始mesh的水波，不是錯誤全圖放大。",
+      "sourceFacing": "right",
+      "previousFacing": "right",
+      "changed": false,
+      "geometry": "p1 480.5px／底665.6；p2 480.5px／底665.6",
+      "maxima": "attack：2.06×寬/2.36×高；sa：4.07×寬/2.02×高；cp：1.21×寬/1.31×高",
+      "shots": [
+        "canglan-static-pair.png",
+        "canglan-actions-pair.png",
+        "canglan-attack-50-field.png",
+        "canglan-attack-75-field.png",
+        "canglan-sa-50-field.png",
+        "canglan-sa-75-field.png",
+        "canglan-cp-50-field.png",
+        "canglan-cp-75-field.png"
+      ],
+      "shotLinks": [
+        "[靜態雙方](<../../.seer-cache/anim-inspect/review-20261026/canglan-static-pair.png>)",
+        "[動畫雙方](<../../.seer-cache/anim-inspect/review-20261026/canglan-actions-pair.png>)",
+        "[普攻50%](<../../.seer-cache/anim-inspect/review-20261026/canglan-attack-50-field.png>)",
+        "[普攻75%](<../../.seer-cache/anim-inspect/review-20261026/canglan-attack-75-field.png>)",
+        "[特殊50%](<../../.seer-cache/anim-inspect/review-20261026/canglan-sa-50-field.png>)",
+        "[特殊75%](<../../.seer-cache/anim-inspect/review-20261026/canglan-sa-75-field.png>)",
+        "[屬性50%](<../../.seer-cache/anim-inspect/review-20261026/canglan-cp-50-field.png>)",
+        "[屬性75%](<../../.seer-cache/anim-inspect/review-20261026/canglan-cp-75-field.png>)"
+      ],
+      "tintCounts": [
+        {
+          "name": "standby",
+          "variants": 2
+        },
+        {
+          "name": "attack",
+          "variants": 2
+        },
+        {
+          "name": "sa",
+          "variants": 2
+        },
+        {
+          "name": "cp",
+          "variants": 2
+        },
+        {
+          "name": "hited",
+          "variants": 2
+        }
+      ]
+    },
+    {
+      "id": "rey70",
+      "name": "普通雷伊",
+      "status": "保留",
+      "facing": "P1→／P2←，單次鏡射",
+      "color": "黃、白灰、橙同套，無異色分身",
+      "fx": "所看中間幀為局部動作；全段原始mesh幾何範圍另列，不以兩幀否定其他時點特效。",
+      "sourceFacing": "right",
+      "previousFacing": "right",
+      "changed": false,
+      "geometry": "p1 490.5px／底665.6；p2 490.5px／底665.6",
+      "maxima": "attack：3.77×寬/0.97×高；sa：1.73×寬/0.97×高；cp：1.47×寬/1.01×高",
+      "shots": [
+        "rey70-static-pair.png",
+        "rey70-actions-pair.png",
+        "rey70-attack-50-field.png",
+        "rey70-attack-75-field.png",
+        "rey70-sa-50-field.png",
+        "rey70-sa-75-field.png",
+        "rey70-cp-50-field.png",
+        "rey70-cp-75-field.png"
+      ],
+      "shotLinks": [
+        "[靜態雙方](<../../.seer-cache/anim-inspect/review-20261026/rey70-static-pair.png>)",
+        "[動畫雙方](<../../.seer-cache/anim-inspect/review-20261026/rey70-actions-pair.png>)",
+        "[普攻50%](<../../.seer-cache/anim-inspect/review-20261026/rey70-attack-50-field.png>)",
+        "[普攻75%](<../../.seer-cache/anim-inspect/review-20261026/rey70-attack-75-field.png>)",
+        "[特殊50%](<../../.seer-cache/anim-inspect/review-20261026/rey70-sa-50-field.png>)",
+        "[特殊75%](<../../.seer-cache/anim-inspect/review-20261026/rey70-sa-75-field.png>)",
+        "[屬性50%](<../../.seer-cache/anim-inspect/review-20261026/rey70-cp-50-field.png>)",
+        "[屬性75%](<../../.seer-cache/anim-inspect/review-20261026/rey70-cp-75-field.png>)"
+      ],
+      "tintCounts": [
+        {
+          "name": "standby",
+          "variants": 1
+        },
+        {
+          "name": "attack",
+          "variants": 1
+        },
+        {
+          "name": "sa",
+          "variants": 1
+        },
+        {
+          "name": "cp",
+          "variants": 1
+        },
+        {
+          "name": "hited",
+          "variants": 1
+        }
+      ]
+    },
+    {
+      "id": "holyMiles",
+      "name": "聖靈邁爾斯",
+      "status": "保留",
+      "facing": "獸頭P1→／P2←",
+      "color": "紫、金黃、乳白同套，無異色分身",
+      "fx": "局部角尖星芒，取樣未見全圖特效。",
+      "sourceFacing": "right",
+      "previousFacing": "right",
+      "changed": false,
+      "geometry": "p1 487.1px／底665.6；p2 487.1px／底665.6",
+      "maxima": "attack：1.46×寬/1.02×高；sa：1.04×寬/1.03×高；cp：1.21×寬/1.29×高",
+      "shots": [
+        "holyMiles-static-pair.png",
+        "holyMiles-actions-pair.png",
+        "holyMiles-attack-50-field.png",
+        "holyMiles-attack-75-field.png",
+        "holyMiles-sa-50-field.png",
+        "holyMiles-sa-75-field.png",
+        "holyMiles-cp-50-field.png",
+        "holyMiles-cp-75-field.png"
+      ],
+      "shotLinks": [
+        "[靜態雙方](<../../.seer-cache/anim-inspect/review-20261026/holyMiles-static-pair.png>)",
+        "[動畫雙方](<../../.seer-cache/anim-inspect/review-20261026/holyMiles-actions-pair.png>)",
+        "[普攻50%](<../../.seer-cache/anim-inspect/review-20261026/holyMiles-attack-50-field.png>)",
+        "[普攻75%](<../../.seer-cache/anim-inspect/review-20261026/holyMiles-attack-75-field.png>)",
+        "[特殊50%](<../../.seer-cache/anim-inspect/review-20261026/holyMiles-sa-50-field.png>)",
+        "[特殊75%](<../../.seer-cache/anim-inspect/review-20261026/holyMiles-sa-75-field.png>)",
+        "[屬性50%](<../../.seer-cache/anim-inspect/review-20261026/holyMiles-cp-50-field.png>)",
+        "[屬性75%](<../../.seer-cache/anim-inspect/review-20261026/holyMiles-cp-75-field.png>)"
+      ],
+      "tintCounts": [
+        {
+          "name": "standby",
+          "variants": 1
+        },
+        {
+          "name": "attack",
+          "variants": 1
+        },
+        {
+          "name": "sa",
+          "variants": 1
+        },
+        {
+          "name": "cp",
+          "variants": 1
+        },
+        {
+          "name": "hited",
+          "variants": 1
+        }
+      ]
+    },
+    {
+      "id": "sixKing",
+      "name": "六界神王",
+      "status": "待確認",
+      "facing": "雙龍頭分朝兩側，中央人形近正面",
+      "color": "普攻主體幾乎出左框，不能完整核色；特殊為金白甲",
+      "fx": "局部黃環、紫色爆光；原生位移待適配，多頭不能靠整組翻轉同時相向。",
+      "sourceFacing": "left",
+      "previousFacing": "left",
+      "changed": false,
+      "geometry": "p1 452.4px／底665.6；p2 452.4px／底665.6",
+      "maxima": "attack：1.73×寬/1.18×高；sa：3.18×寬/2.24×高；cp：1.61×寬/1.20×高",
+      "shots": [
+        "sixKing-static-pair.png",
+        "sixKing-actions-pair.png",
+        "sixKing-attack-50-field.png",
+        "sixKing-attack-75-field.png",
+        "sixKing-sa-50-field.png",
+        "sixKing-sa-75-field.png",
+        "sixKing-cp-50-field.png",
+        "sixKing-cp-75-field.png"
+      ],
+      "shotLinks": [
+        "[靜態雙方](<../../.seer-cache/anim-inspect/review-20261026/sixKing-static-pair.png>)",
+        "[動畫雙方](<../../.seer-cache/anim-inspect/review-20261026/sixKing-actions-pair.png>)",
+        "[普攻50%](<../../.seer-cache/anim-inspect/review-20261026/sixKing-attack-50-field.png>)",
+        "[普攻75%](<../../.seer-cache/anim-inspect/review-20261026/sixKing-attack-75-field.png>)",
+        "[特殊50%](<../../.seer-cache/anim-inspect/review-20261026/sixKing-sa-50-field.png>)",
+        "[特殊75%](<../../.seer-cache/anim-inspect/review-20261026/sixKing-sa-75-field.png>)",
+        "[屬性50%](<../../.seer-cache/anim-inspect/review-20261026/sixKing-cp-50-field.png>)",
+        "[屬性75%](<../../.seer-cache/anim-inspect/review-20261026/sixKing-cp-75-field.png>)"
+      ],
+      "tintCounts": [
+        {
+          "name": "standby",
+          "variants": 2
+        },
+        {
+          "name": "attack",
+          "variants": 2
+        },
+        {
+          "name": "sa",
+          "variants": 2
+        },
+        {
+          "name": "cp",
+          "variants": 2
+        },
+        {
+          "name": "hited",
+          "variants": 2
+        }
+      ]
+    },
+    {
+      "id": "astralAesfia",
+      "name": "星核寰宇·艾斯菲亞",
+      "status": "待確認",
+      "facing": "原生正面，不猜側向翻轉",
+      "color": "普攻/特殊未見異色雙本體；屬性50%/75%側翼內片有青綠/桃紅局部差異，不能判嚴格單色通過",
+      "fx": "所看屬性幀沒有全場特效；幾何峰值極大但峰值幀未做逐格視覺確認，不宣稱不存在覆屏招式。",
+      "sourceFacing": "front",
+      "previousFacing": "right",
+      "changed": true,
+      "geometry": "p1 487.8px／底665.6；p2 487.8px／底665.6",
+      "maxima": "attack：3.66×寬/3.55×高；sa：5.68×寬/2.95×高；cp：8.13×寬/10.66×高",
+      "shots": [
+        "astralAesfia-static-pair.png",
+        "astralAesfia-actions-pair.png",
+        "astralAesfia-attack-50-field.png",
+        "astralAesfia-attack-75-field.png",
+        "astralAesfia-sa-50-field.png",
+        "astralAesfia-sa-75-field.png",
+        "astralAesfia-cp-50-field.png",
+        "astralAesfia-cp-75-field.png"
+      ],
+      "shotLinks": [
+        "[靜態雙方](<../../.seer-cache/anim-inspect/review-20261026/astralAesfia-static-pair.png>)",
+        "[動畫雙方](<../../.seer-cache/anim-inspect/review-20261026/astralAesfia-actions-pair.png>)",
+        "[普攻50%](<../../.seer-cache/anim-inspect/review-20261026/astralAesfia-attack-50-field.png>)",
+        "[普攻75%](<../../.seer-cache/anim-inspect/review-20261026/astralAesfia-attack-75-field.png>)",
+        "[特殊50%](<../../.seer-cache/anim-inspect/review-20261026/astralAesfia-sa-50-field.png>)",
+        "[特殊75%](<../../.seer-cache/anim-inspect/review-20261026/astralAesfia-sa-75-field.png>)",
+        "[屬性50%](<../../.seer-cache/anim-inspect/review-20261026/astralAesfia-cp-50-field.png>)",
+        "[屬性75%](<../../.seer-cache/anim-inspect/review-20261026/astralAesfia-cp-75-field.png>)"
+      ],
+      "tintCounts": [
+        {
+          "name": "standby",
+          "variants": 1
+        },
+        {
+          "name": "attack",
+          "variants": 1
+        },
+        {
+          "name": "sa",
+          "variants": 1
+        },
+        {
+          "name": "cp",
+          "variants": 1
+        },
+        {
+          "name": "hited",
+          "variants": 1
+        }
+      ]
+    },
+    {
+      "id": "astralAesfig",
+      "name": "星軌重構·艾斯菲格",
+      "status": "保留",
+      "facing": "原生正面，兩側不翻",
+      "color": "銀灰、青藍、綠眼同套；原生有同色多分身，非異色分身",
+      "fx": "屬性放射閃光上下出框；原始幀已有多本體/閃光，不因數量多判bug。",
+      "sourceFacing": "front",
+      "previousFacing": "front",
+      "changed": false,
+      "geometry": "p1 489.8px／底665.6；p2 489.8px／底665.6",
+      "maxima": "attack：7.69×寬/6.51×高；sa：3.09×寬/1.05×高；cp：7.26×寬/3.49×高",
+      "shots": [
+        "astralAesfig-static-pair.png",
+        "astralAesfig-actions-pair.png",
+        "astralAesfig-attack-50-field.png",
+        "astralAesfig-attack-75-field.png",
+        "astralAesfig-sa-50-field.png",
+        "astralAesfig-sa-75-field.png",
+        "astralAesfig-cp-50-field.png",
+        "astralAesfig-cp-75-field.png"
+      ],
+      "shotLinks": [
+        "[靜態雙方](<../../.seer-cache/anim-inspect/review-20261026/astralAesfig-static-pair.png>)",
+        "[動畫雙方](<../../.seer-cache/anim-inspect/review-20261026/astralAesfig-actions-pair.png>)",
+        "[普攻50%](<../../.seer-cache/anim-inspect/review-20261026/astralAesfig-attack-50-field.png>)",
+        "[普攻75%](<../../.seer-cache/anim-inspect/review-20261026/astralAesfig-attack-75-field.png>)",
+        "[特殊50%](<../../.seer-cache/anim-inspect/review-20261026/astralAesfig-sa-50-field.png>)",
+        "[特殊75%](<../../.seer-cache/anim-inspect/review-20261026/astralAesfig-sa-75-field.png>)",
+        "[屬性50%](<../../.seer-cache/anim-inspect/review-20261026/astralAesfig-cp-50-field.png>)",
+        "[屬性75%](<../../.seer-cache/anim-inspect/review-20261026/astralAesfig-cp-75-field.png>)"
+      ],
+      "tintCounts": [
+        {
+          "name": "standby",
+          "variants": 1
+        },
+        {
+          "name": "attack",
+          "variants": 1
+        },
+        {
+          "name": "sa",
+          "variants": 1
+        },
+        {
+          "name": "cp",
+          "variants": 1
+        },
+        {
+          "name": "hited",
+          "variants": 1
+        }
+      ]
+    },
+    {
+      "id": "mogos",
+      "name": "邪靈主宰·摩哥斯",
+      "status": "待確認",
+      "facing": "主臉近正面；單張判向有分歧，不列嚴格面對面通過",
+      "color": "青綠、深藍黑、金橙同套，未見異色分身",
+      "fx": "青藍法陣、紫黑柱與大型紫白能量團；局部大範圍，非取樣全場覆蓋。",
+      "sourceFacing": "right",
+      "previousFacing": "left",
+      "changed": true,
+      "geometry": "p1 404.2px／底665.6；p2 404.2px／底665.6",
+      "maxima": "attack：2.76×寬/4.69×高；sa：2.76×寬/3.25×高；cp：1.96×寬/2.79×高",
+      "shots": [
+        "mogos-static-pair.png",
+        "mogos-actions-pair.png",
+        "mogos-attack-50-field.png",
+        "mogos-attack-75-field.png",
+        "mogos-sa-50-field.png",
+        "mogos-sa-75-field.png",
+        "mogos-cp-50-field.png",
+        "mogos-cp-75-field.png"
+      ],
+      "shotLinks": [
+        "[靜態雙方](<../../.seer-cache/anim-inspect/review-20261026/mogos-static-pair.png>)",
+        "[動畫雙方](<../../.seer-cache/anim-inspect/review-20261026/mogos-actions-pair.png>)",
+        "[普攻50%](<../../.seer-cache/anim-inspect/review-20261026/mogos-attack-50-field.png>)",
+        "[普攻75%](<../../.seer-cache/anim-inspect/review-20261026/mogos-attack-75-field.png>)",
+        "[特殊50%](<../../.seer-cache/anim-inspect/review-20261026/mogos-sa-50-field.png>)",
+        "[特殊75%](<../../.seer-cache/anim-inspect/review-20261026/mogos-sa-75-field.png>)",
+        "[屬性50%](<../../.seer-cache/anim-inspect/review-20261026/mogos-cp-50-field.png>)",
+        "[屬性75%](<../../.seer-cache/anim-inspect/review-20261026/mogos-cp-75-field.png>)"
+      ],
+      "tintCounts": [
+        {
+          "name": "standby",
+          "variants": 1
+        },
+        {
+          "name": "attack",
+          "variants": 1
+        },
+        {
+          "name": "sa",
+          "variants": 1
+        },
+        {
+          "name": "cp",
+          "variants": 1
+        },
+        {
+          "name": "hited",
+          "variants": 1
+        }
+      ]
+    },
+    {
+      "id": "hamo",
+      "name": "御天龍神·哈莫",
+      "status": "保留",
+      "facing": "主要龍頭P1→／P2←",
+      "color": "銀灰黑、紅甲、橙焰同套，無異色分身",
+      "fx": "局部火焰刃、分區符文柱；非取樣全場光束。靜態3809 left鎖定不動。",
+      "sourceFacing": "right",
+      "previousFacing": "right",
+      "changed": false,
+      "geometry": "p1 475.6px／底665.6；p2 475.6px／底665.6",
+      "maxima": "attack：2.18×寬/2.21×高；sa：2.57×寬/1.77×高；cp：1.21×寬/1.10×高",
+      "shots": [
+        "hamo-static-pair.png",
+        "hamo-actions-pair.png",
+        "hamo-attack-50-field.png",
+        "hamo-attack-75-field.png",
+        "hamo-sa-50-field.png",
+        "hamo-sa-75-field.png",
+        "hamo-cp-50-field.png",
+        "hamo-cp-75-field.png"
+      ],
+      "shotLinks": [
+        "[靜態雙方](<../../.seer-cache/anim-inspect/review-20261026/hamo-static-pair.png>)",
+        "[動畫雙方](<../../.seer-cache/anim-inspect/review-20261026/hamo-actions-pair.png>)",
+        "[普攻50%](<../../.seer-cache/anim-inspect/review-20261026/hamo-attack-50-field.png>)",
+        "[普攻75%](<../../.seer-cache/anim-inspect/review-20261026/hamo-attack-75-field.png>)",
+        "[特殊50%](<../../.seer-cache/anim-inspect/review-20261026/hamo-sa-50-field.png>)",
+        "[特殊75%](<../../.seer-cache/anim-inspect/review-20261026/hamo-sa-75-field.png>)",
+        "[屬性50%](<../../.seer-cache/anim-inspect/review-20261026/hamo-cp-50-field.png>)",
+        "[屬性75%](<../../.seer-cache/anim-inspect/review-20261026/hamo-cp-75-field.png>)"
+      ],
+      "tintCounts": [
+        {
+          "name": "standby",
+          "variants": 1
+        },
+        {
+          "name": "attack",
+          "variants": 1
+        },
+        {
+          "name": "sa",
+          "variants": 1
+        },
+        {
+          "name": "cp",
+          "variants": 1
+        },
+        {
+          "name": "hited",
+          "variants": 1
+        }
+      ]
+    },
+    {
+      "id": "wuxuLong",
+      "name": "無為龍者",
+      "status": "待確認",
+      "facing": "人形朝內、下方巨獸頭反向；複合原圖不能同時全相向",
+      "color": "白、深藍灰、金同套，無異色分身",
+      "fx": "金光與爆焰原始mesh出下框；煙塵硬直灰矩形邊在未統色輸出也存在，混合模式待查。",
+      "sourceFacing": "right",
+      "previousFacing": "left",
+      "changed": true,
+      "geometry": "p1 478.2px／底665.6；p2 478.2px／底665.6",
+      "maxima": "attack：2.13×寬/2.06×高；sa：2.78×寬/1.90×高；cp：2.26×寬/1.78×高",
+      "shots": [
+        "wuxuLong-static-pair.png",
+        "wuxuLong-actions-pair.png",
+        "wuxuLong-attack-50-field.png",
+        "wuxuLong-attack-75-field.png",
+        "wuxuLong-sa-50-field.png",
+        "wuxuLong-sa-75-field.png",
+        "wuxuLong-cp-50-field.png",
+        "wuxuLong-cp-75-field.png"
+      ],
+      "shotLinks": [
+        "[靜態雙方](<../../.seer-cache/anim-inspect/review-20261026/wuxuLong-static-pair.png>)",
+        "[動畫雙方](<../../.seer-cache/anim-inspect/review-20261026/wuxuLong-actions-pair.png>)",
+        "[普攻50%](<../../.seer-cache/anim-inspect/review-20261026/wuxuLong-attack-50-field.png>)",
+        "[普攻75%](<../../.seer-cache/anim-inspect/review-20261026/wuxuLong-attack-75-field.png>)",
+        "[特殊50%](<../../.seer-cache/anim-inspect/review-20261026/wuxuLong-sa-50-field.png>)",
+        "[特殊75%](<../../.seer-cache/anim-inspect/review-20261026/wuxuLong-sa-75-field.png>)",
+        "[屬性50%](<../../.seer-cache/anim-inspect/review-20261026/wuxuLong-cp-50-field.png>)",
+        "[屬性75%](<../../.seer-cache/anim-inspect/review-20261026/wuxuLong-cp-75-field.png>)"
+      ],
+      "tintCounts": [
+        {
+          "name": "standby",
+          "variants": 1
+        },
+        {
+          "name": "attack",
+          "variants": 1
+        },
+        {
+          "name": "sa",
+          "variants": 1
+        },
+        {
+          "name": "cp",
+          "variants": 1
+        },
+        {
+          "name": "hited",
+          "variants": 1
+        }
+      ]
+    },
+    {
+      "id": "wujiShengwu",
+      "name": "無極聖武",
+      "status": "待確認",
+      "facing": "暗部巨像與小人物側向無法可靠辨清",
+      "color": "藍紫、銀白、金與橙紅同套，無異色雙本體",
+      "fx": "長刃光與星空矩形/黑底片；未統色輸出也有，並有待機灰小塊，需查材質/混合模式。靜態4800 left不動。",
+      "sourceFacing": "right",
+      "previousFacing": "left",
+      "changed": true,
+      "geometry": "p1 470.5px／底665.6；p2 470.5px／底665.6",
+      "maxima": "attack：3.17×寬/3.75×高；sa：2.08×寬/1.53×高；cp：1.71×寬/1.73×高",
+      "shots": [
+        "wujiShengwu-static-pair.png",
+        "wujiShengwu-actions-pair.png",
+        "wujiShengwu-attack-50-field.png",
+        "wujiShengwu-attack-75-field.png",
+        "wujiShengwu-sa-50-field.png",
+        "wujiShengwu-sa-75-field.png",
+        "wujiShengwu-cp-50-field.png",
+        "wujiShengwu-cp-75-field.png"
+      ],
+      "shotLinks": [
+        "[靜態雙方](<../../.seer-cache/anim-inspect/review-20261026/wujiShengwu-static-pair.png>)",
+        "[動畫雙方](<../../.seer-cache/anim-inspect/review-20261026/wujiShengwu-actions-pair.png>)",
+        "[普攻50%](<../../.seer-cache/anim-inspect/review-20261026/wujiShengwu-attack-50-field.png>)",
+        "[普攻75%](<../../.seer-cache/anim-inspect/review-20261026/wujiShengwu-attack-75-field.png>)",
+        "[特殊50%](<../../.seer-cache/anim-inspect/review-20261026/wujiShengwu-sa-50-field.png>)",
+        "[特殊75%](<../../.seer-cache/anim-inspect/review-20261026/wujiShengwu-sa-75-field.png>)",
+        "[屬性50%](<../../.seer-cache/anim-inspect/review-20261026/wujiShengwu-cp-50-field.png>)",
+        "[屬性75%](<../../.seer-cache/anim-inspect/review-20261026/wujiShengwu-cp-75-field.png>)"
+      ],
+      "tintCounts": [
+        {
+          "name": "standby",
+          "variants": 46
+        },
+        {
+          "name": "attack",
+          "variants": 46
+        },
+        {
+          "name": "sa",
+          "variants": 46
+        },
+        {
+          "name": "cp",
+          "variants": 46
+        },
+        {
+          "name": "hited",
+          "variants": 46
+        }
+      ]
+    },
+    {
+      "id": "moyilai",
+      "name": "命運龍輪 莫伊萊",
+      "status": "修正",
+      "facing": "人形P1→／P2←，輪盤不是獸首",
+      "color": "白黑、金同套，無異色本體",
+      "fx": "局部金電與右半場大輪盤/法陣，下緣出框；屬原始招式構件。",
+      "sourceFacing": "right",
+      "previousFacing": "left",
+      "changed": true,
+      "geometry": "p1 477.3px／底665.6；p2 477.3px／底665.6",
+      "maxima": "attack：1.74×寬/1.56×高；sa：2.39×寬/2.26×高；cp：1.25×寬/1.18×高",
+      "shots": [
+        "moyilai-static-pair.png",
+        "moyilai-actions-pair.png",
+        "moyilai-attack-50-field.png",
+        "moyilai-attack-75-field.png",
+        "moyilai-sa-50-field.png",
+        "moyilai-sa-75-field.png",
+        "moyilai-cp-50-field.png",
+        "moyilai-cp-75-field.png"
+      ],
+      "shotLinks": [
+        "[靜態雙方](<../../.seer-cache/anim-inspect/review-20261026/moyilai-static-pair.png>)",
+        "[動畫雙方](<../../.seer-cache/anim-inspect/review-20261026/moyilai-actions-pair.png>)",
+        "[普攻50%](<../../.seer-cache/anim-inspect/review-20261026/moyilai-attack-50-field.png>)",
+        "[普攻75%](<../../.seer-cache/anim-inspect/review-20261026/moyilai-attack-75-field.png>)",
+        "[特殊50%](<../../.seer-cache/anim-inspect/review-20261026/moyilai-sa-50-field.png>)",
+        "[特殊75%](<../../.seer-cache/anim-inspect/review-20261026/moyilai-sa-75-field.png>)",
+        "[屬性50%](<../../.seer-cache/anim-inspect/review-20261026/moyilai-cp-50-field.png>)",
+        "[屬性75%](<../../.seer-cache/anim-inspect/review-20261026/moyilai-cp-75-field.png>)"
+      ],
+      "tintCounts": [
+        {
+          "name": "standby",
+          "variants": 3
+        },
+        {
+          "name": "attack",
+          "variants": 3
+        },
+        {
+          "name": "sa",
+          "variants": 3
+        },
+        {
+          "name": "cp",
+          "variants": 3
+        },
+        {
+          "name": "hited",
+          "variants": 3
+        }
+      ]
+    },
+    {
+      "id": "jiuqing",
+      "name": "九青",
+      "status": "待確認",
+      "facing": "人形與機械前端P1→／P2←",
+      "color": "棕、黃白、金灰同套，無異色分身",
+      "fx": "金白粗束與金環出右框；右下灰矩形在未統色輸出也存在，混合模式待查。",
+      "sourceFacing": "right",
+      "previousFacing": "right",
+      "changed": false,
+      "geometry": "p1 413.8px／底665.6；p2 413.8px／底665.6",
+      "maxima": "attack：2.36×寬/3.00×高；sa：2.85×寬/1.62×高；cp：1.41×寬/2.03×高",
+      "shots": [
+        "jiuqing-static-pair.png",
+        "jiuqing-actions-pair.png",
+        "jiuqing-attack-50-field.png",
+        "jiuqing-attack-75-field.png",
+        "jiuqing-sa-50-field.png",
+        "jiuqing-sa-75-field.png",
+        "jiuqing-cp-50-field.png",
+        "jiuqing-cp-75-field.png"
+      ],
+      "shotLinks": [
+        "[靜態雙方](<../../.seer-cache/anim-inspect/review-20261026/jiuqing-static-pair.png>)",
+        "[動畫雙方](<../../.seer-cache/anim-inspect/review-20261026/jiuqing-actions-pair.png>)",
+        "[普攻50%](<../../.seer-cache/anim-inspect/review-20261026/jiuqing-attack-50-field.png>)",
+        "[普攻75%](<../../.seer-cache/anim-inspect/review-20261026/jiuqing-attack-75-field.png>)",
+        "[特殊50%](<../../.seer-cache/anim-inspect/review-20261026/jiuqing-sa-50-field.png>)",
+        "[特殊75%](<../../.seer-cache/anim-inspect/review-20261026/jiuqing-sa-75-field.png>)",
+        "[屬性50%](<../../.seer-cache/anim-inspect/review-20261026/jiuqing-cp-50-field.png>)",
+        "[屬性75%](<../../.seer-cache/anim-inspect/review-20261026/jiuqing-cp-75-field.png>)"
+      ],
+      "tintCounts": [
+        {
+          "name": "standby",
+          "variants": 6
+        },
+        {
+          "name": "attack",
+          "variants": 6
+        },
+        {
+          "name": "sa",
+          "variants": 6
+        },
+        {
+          "name": "cp",
+          "variants": 6
+        },
+        {
+          "name": "hited",
+          "variants": 6
+        }
+      ]
+    },
+    {
+      "id": "diluTianfeng",
+      "name": "龍錄天鋒",
+      "status": "待確認",
+      "facing": "主金獸頭朝內；小人物偏朝外，來源複合方向相反",
+      "color": "金髮、藍黑、銀灰、紅同套，無異色分身",
+      "fx": "巨劍插地、金白直柱出上框及地裂為原始特效；4903原生動畫已實際載入，不缺檔。",
+      "sourceFacing": "right",
+      "previousFacing": "left",
+      "changed": true,
+      "geometry": "p1 471.8px／底665.6；p2 471.8px／底665.6",
+      "maxima": "attack：1.80×寬/1.56×高；sa：2.04×寬/2.37×高；cp：1.27×寬/1.67×高",
+      "shots": [
+        "diluTianfeng-static-pair.png",
+        "diluTianfeng-actions-pair.png",
+        "diluTianfeng-attack-50-field.png",
+        "diluTianfeng-attack-75-field.png",
+        "diluTianfeng-sa-50-field.png",
+        "diluTianfeng-sa-75-field.png",
+        "diluTianfeng-cp-50-field.png",
+        "diluTianfeng-cp-75-field.png"
+      ],
+      "shotLinks": [
+        "[靜態雙方](<../../.seer-cache/anim-inspect/review-20261026/diluTianfeng-static-pair.png>)",
+        "[動畫雙方](<../../.seer-cache/anim-inspect/review-20261026/diluTianfeng-actions-pair.png>)",
+        "[普攻50%](<../../.seer-cache/anim-inspect/review-20261026/diluTianfeng-attack-50-field.png>)",
+        "[普攻75%](<../../.seer-cache/anim-inspect/review-20261026/diluTianfeng-attack-75-field.png>)",
+        "[特殊50%](<../../.seer-cache/anim-inspect/review-20261026/diluTianfeng-sa-50-field.png>)",
+        "[特殊75%](<../../.seer-cache/anim-inspect/review-20261026/diluTianfeng-sa-75-field.png>)",
+        "[屬性50%](<../../.seer-cache/anim-inspect/review-20261026/diluTianfeng-cp-50-field.png>)",
+        "[屬性75%](<../../.seer-cache/anim-inspect/review-20261026/diluTianfeng-cp-75-field.png>)"
+      ],
+      "tintCounts": [
+        {
+          "name": "standby",
+          "variants": 4
+        },
+        {
+          "name": "attack",
+          "variants": 4
+        },
+        {
+          "name": "sa",
+          "variants": 4
+        },
+        {
+          "name": "cp",
+          "variants": 4
+        },
+        {
+          "name": "hited",
+          "variants": 4
+        }
+      ]
+    }
+  ],
+  "staticRows": [
+    {
+      "source": "/elf-skins/rey-thunder-dragon-v1.png",
+      "registered": "right",
+      "judgment": "混合",
+      "locked": false,
+      "evidence": "[P1/P2實圖](<../../.seer-cache/anim-inspect/review-20261026/source-rey-thunder-dragon-v1-pair.png>)",
+      "file": "source-rey-thunder-dragon-v1-pair.png"
+    },
+    {
+      "source": "/seer/body/70.png",
+      "registered": "left",
+      "judgment": "朝內",
+      "locked": false,
+      "evidence": "[P1/P2實圖](<../../.seer-cache/anim-inspect/review-20261026/source-70-pair.png>)",
+      "file": "source-70-pair.png"
+    },
+    {
+      "source": "/elf-art/jiuqing_body.png",
+      "registered": "left",
+      "judgment": "朝內",
+      "locked": false,
+      "evidence": "[P1/P2實圖](<../../.seer-cache/anim-inspect/review-20261026/source-jiuqing_body-pair.png>)",
+      "file": "source-jiuqing_body-pair.png"
+    },
+    {
+      "source": "/seer/body/4937.png",
+      "registered": "left",
+      "judgment": "朝內",
+      "locked": false,
+      "evidence": "[P1/P2實圖](<../../.seer-cache/anim-inspect/review-20261026/source-4937-pair.png>)",
+      "file": "source-4937-pair.png"
+    },
+    {
+      "source": "/elf-art/unknown_myth_ghost_body.png",
+      "registered": "front",
+      "judgment": "正面",
+      "locked": false,
+      "evidence": "[P1/P2實圖](<../../.seer-cache/anim-inspect/review-20261026/source-unknown_myth_ghost_body-pair.png>)",
+      "file": "source-unknown_myth_ghost_body-pair.png"
+    },
+    {
+      "source": "/elf-art/emperor_dixin_body.png",
+      "registered": "left",
+      "judgment": "朝內",
+      "locked": false,
+      "evidence": "[P1/P2實圖](<../../.seer-cache/anim-inspect/review-20261026/source-emperor_dixin_body-pair.png>)",
+      "file": "source-emperor_dixin_body-pair.png"
+    },
+    {
+      "source": "/elf-art/wuxu_liuren_body.png",
+      "registered": "right",
+      "judgment": "朝內（聚焦鼻口複核）",
+      "locked": false,
+      "evidence": "[P1/P2實圖](<../../.seer-cache/anim-inspect/review-20261026/source-wuxu_liuren_body-pair.png>)",
+      "file": "source-wuxu_liuren_body-pair.png"
+    },
+    {
+      "source": "/elf-art/wuxu_shiyan_body.png",
+      "registered": "left",
+      "judgment": "正面",
+      "locked": false,
+      "evidence": "[P1/P2實圖](<../../.seer-cache/anim-inspect/review-20261026/source-wuxu_shiyan_body-pair.png>)",
+      "file": "source-wuxu_shiyan_body-pair.png"
+    },
+    {
+      "source": "/elf-art/wuxu_zhuixing_body.png",
+      "registered": "left",
+      "judgment": "朝內（聚焦鼻口複核）",
+      "locked": false,
+      "evidence": "[P1/P2實圖](<../../.seer-cache/anim-inspect/review-20261026/source-wuxu_zhuixing_body-pair.png>)",
+      "file": "source-wuxu_zhuixing_body-pair.png"
+    },
+    {
+      "source": "/elf-art/otherworld_thunder_rey_body.png",
+      "registered": "left",
+      "judgment": "混合",
+      "locked": false,
+      "evidence": "[P1/P2實圖](<../../.seer-cache/anim-inspect/review-20261026/source-otherworld_thunder_rey_body-pair.png>)",
+      "file": "source-otherworld_thunder_rey_body-pair.png"
+    },
+    {
+      "source": "/seer/body/2648.png",
+      "registered": "left",
+      "judgment": "朝內",
+      "locked": false,
+      "evidence": "[P1/P2實圖](<../../.seer-cache/anim-inspect/review-20261026/source-2648-pair.png>)",
+      "file": "source-2648-pair.png"
+    },
+    {
+      "source": "/seer/body/3809.png",
+      "registered": "left",
+      "judgment": "朝內",
+      "locked": true,
+      "evidence": "[P1/P2實圖](<../../.seer-cache/anim-inspect/review-20261026/source-3809-pair.png>)",
+      "file": "source-3809-pair.png"
+    },
+    {
+      "source": "/seer/body/3665.png",
+      "registered": "left",
+      "judgment": "近正面",
+      "locked": true,
+      "evidence": "[P1/P2實圖](<../../.seer-cache/anim-inspect/review-20261026/source-3665-pair.png>)",
+      "file": "source-3665-pair.png"
+    },
+    {
+      "source": "/elf-art/zhakesi_fear_body.png",
+      "registered": "right",
+      "judgment": "巨型朝內、下緣刻意裁切",
+      "locked": true,
+      "evidence": "[P1/P2實圖](<../../.seer-cache/anim-inspect/review-20261026/source-zhakesi_fear_body-pair.png>)",
+      "file": "source-zhakesi_fear_body-pair.png"
+    },
+    {
+      "source": "/seer/body/10.png",
+      "registered": "left",
+      "judgment": "近正面",
+      "locked": false,
+      "evidence": "[P1/P2實圖](<../../.seer-cache/anim-inspect/review-20261026/source-10-pair.png>)",
+      "file": "source-10-pair.png"
+    },
+    {
+      "source": "/seer/body/1204.png",
+      "registered": "left",
+      "judgment": "朝內",
+      "locked": false,
+      "evidence": "[P1/P2實圖](<../../.seer-cache/anim-inspect/review-20261026/source-1204-pair.png>)",
+      "file": "source-1204-pair.png"
+    },
+    {
+      "source": "/seer/body/177.png",
+      "registered": "left",
+      "judgment": "朝內",
+      "locked": false,
+      "evidence": "[P1/P2實圖](<../../.seer-cache/anim-inspect/review-20261026/source-177-pair.png>)",
+      "file": "source-177-pair.png"
+    },
+    {
+      "source": "/seer/body/187.png",
+      "registered": "left",
+      "judgment": "朝內",
+      "locked": true,
+      "evidence": "[P1/P2實圖](<../../.seer-cache/anim-inspect/review-20261026/source-187-pair.png>)",
+      "file": "source-187-pair.png"
+    },
+    {
+      "source": "/seer/body/2647.png",
+      "registered": "left",
+      "judgment": "朝內",
+      "locked": false,
+      "evidence": "[P1/P2實圖](<../../.seer-cache/anim-inspect/review-20261026/source-2647-pair.png>)",
+      "file": "source-2647-pair.png"
+    },
+    {
+      "source": "/seer/body/2844.png",
+      "registered": "left",
+      "judgment": "混合",
+      "locked": false,
+      "evidence": "[P1/P2實圖](<../../.seer-cache/anim-inspect/review-20261026/source-2844-pair.png>)",
+      "file": "source-2844-pair.png"
+    },
+    {
+      "source": "/seer/body/303.png",
+      "registered": "left",
+      "judgment": "朝內",
+      "locked": false,
+      "evidence": "[P1/P2實圖](<../../.seer-cache/anim-inspect/review-20261026/source-303-pair.png>)",
+      "file": "source-303-pair.png"
+    },
+    {
+      "source": "/seer/body/306.png",
+      "registered": "left",
+      "judgment": "朝內",
+      "locked": false,
+      "evidence": "[P1/P2實圖](<../../.seer-cache/anim-inspect/review-20261026/source-306-pair.png>)",
+      "file": "source-306-pair.png"
+    },
+    {
+      "source": "/seer/body/309.png",
+      "registered": "left",
+      "judgment": "朝內",
+      "locked": false,
+      "evidence": "[P1/P2實圖](<../../.seer-cache/anim-inspect/review-20261026/source-309-pair.png>)",
+      "file": "source-309-pair.png"
+    },
+    {
+      "source": "/seer/body/3098.png",
+      "registered": "left",
+      "judgment": "朝內",
+      "locked": false,
+      "evidence": "[P1/P2實圖](<../../.seer-cache/anim-inspect/review-20261026/source-3098-pair.png>)",
+      "file": "source-3098-pair.png"
+    },
+    {
+      "source": "/seer/body/3404.png",
+      "registered": "left",
+      "judgment": "混合",
+      "locked": false,
+      "evidence": "[P1/P2實圖](<../../.seer-cache/anim-inspect/review-20261026/source-3404-pair.png>)",
+      "file": "source-3404-pair.png"
+    },
+    {
+      "source": "/seer/body/343.png",
+      "registered": "left",
+      "judgment": "朝內",
+      "locked": false,
+      "evidence": "[P1/P2實圖](<../../.seer-cache/anim-inspect/review-20261026/source-343-pair.png>)",
+      "file": "source-343-pair.png"
+    },
+    {
+      "source": "/seer/body/3432.png",
+      "registered": "left",
+      "judgment": "朝內",
+      "locked": false,
+      "evidence": "[P1/P2實圖](<../../.seer-cache/anim-inspect/review-20261026/source-3432-pair.png>)",
+      "file": "source-3432-pair.png"
+    },
+    {
+      "source": "/seer/body/3456.png",
+      "registered": "left",
+      "judgment": "混合",
+      "locked": false,
+      "evidence": "[P1/P2實圖](<../../.seer-cache/anim-inspect/review-20261026/source-3456-pair.png>)",
+      "file": "source-3456-pair.png"
+    },
+    {
+      "source": "/seer/body/359.png",
+      "registered": "left",
+      "judgment": "近正面",
+      "locked": false,
+      "evidence": "[P1/P2實圖](<../../.seer-cache/anim-inspect/review-20261026/source-359-pair.png>)",
+      "file": "source-359-pair.png"
+    },
+    {
+      "source": "/seer/body/3626.png",
+      "registered": "left",
+      "judgment": "側向判讀有分歧",
+      "locked": true,
+      "evidence": "[P1/P2實圖](<../../.seer-cache/anim-inspect/review-20261026/source-3626-pair.png>)",
+      "file": "source-3626-pair.png"
+    },
+    {
+      "source": "/seer/body/3740.png",
+      "registered": "left",
+      "judgment": "混合",
+      "locked": false,
+      "evidence": "[P1/P2實圖](<../../.seer-cache/anim-inspect/review-20261026/source-3740-pair.png>)",
+      "file": "source-3740-pair.png"
+    },
+    {
+      "source": "/seer/body/3886.png",
+      "registered": "left",
+      "judgment": "混合",
+      "locked": false,
+      "evidence": "[P1/P2實圖](<../../.seer-cache/anim-inspect/review-20261026/source-3886-pair.png>)",
+      "file": "source-3886-pair.png"
+    },
+    {
+      "source": "/seer/body/4647.png",
+      "registered": "left",
+      "judgment": "混合",
+      "locked": false,
+      "evidence": "[P1/P2實圖](<../../.seer-cache/anim-inspect/review-20261026/source-4647-pair.png>)",
+      "file": "source-4647-pair.png"
+    },
+    {
+      "source": "/seer/body/4648.png",
+      "registered": "left",
+      "judgment": "朝內",
+      "locked": false,
+      "evidence": "[P1/P2實圖](<../../.seer-cache/anim-inspect/review-20261026/source-4648-pair.png>)",
+      "file": "source-4648-pair.png"
+    },
+    {
+      "source": "/seer/body/4649.png",
+      "registered": "left",
+      "judgment": "朝內",
+      "locked": true,
+      "evidence": "[P1/P2實圖](<../../.seer-cache/anim-inspect/review-20261026/source-4649-pair.png>)",
+      "file": "source-4649-pair.png"
+    },
+    {
+      "source": "/seer/body/4762.png",
+      "registered": "left",
+      "judgment": "朝內",
+      "locked": false,
+      "evidence": "[P1/P2實圖](<../../.seer-cache/anim-inspect/review-20261026/source-4762-pair.png>)",
+      "file": "source-4762-pair.png"
+    },
+    {
+      "source": "/seer/body/5000.png",
+      "registered": "left",
+      "judgment": "近正面",
+      "locked": false,
+      "evidence": "[P1/P2實圖](<../../.seer-cache/anim-inspect/review-20261026/source-5000-pair.png>)",
+      "file": "source-5000-pair.png"
+    },
+    {
+      "source": "/seer/body/875.png",
+      "registered": "left",
+      "judgment": "朝內",
+      "locked": false,
+      "evidence": "[P1/P2實圖](<../../.seer-cache/anim-inspect/review-20261026/source-875-pair.png>)",
+      "file": "source-875-pair.png"
+    },
+    {
+      "source": "/seer/body/300.png",
+      "registered": "left",
+      "judgment": "無可辨側臉光體",
+      "locked": false,
+      "evidence": "[P1/P2實圖](<../../.seer-cache/anim-inspect/review-20261026/source-300-pair.png>)",
+      "file": "source-300-pair.png"
+    },
+    {
+      "source": "/seer/body/3539.png",
+      "registered": "left",
+      "judgment": "朝內",
+      "locked": false,
+      "evidence": "[P1/P2實圖](<../../.seer-cache/anim-inspect/review-20261026/source-3539-pair.png>)",
+      "file": "source-3539-pair.png"
+    },
+    {
+      "source": "/seer/body/4586.png",
+      "registered": "left",
+      "judgment": "混合",
+      "locked": false,
+      "evidence": "[P1/P2實圖](<../../.seer-cache/anim-inspect/review-20261026/source-4586-pair.png>)",
+      "file": "source-4586-pair.png"
+    },
+    {
+      "source": "/seer/body/4643.png",
+      "registered": "left",
+      "judgment": "混合",
+      "locked": false,
+      "evidence": "[P1/P2實圖](<../../.seer-cache/anim-inspect/review-20261026/source-4643-pair.png>)",
+      "file": "source-4643-pair.png"
+    },
+    {
+      "source": "/seer/body/1536.png",
+      "registered": "left",
+      "judgment": "朝內",
+      "locked": true,
+      "evidence": "[P1/P2實圖](<../../.seer-cache/anim-inspect/review-20261026/source-1536-pair.png>)",
+      "file": "source-1536-pair.png"
+    },
+    {
+      "source": "/seer/body/3393.png",
+      "registered": "left",
+      "judgment": "疑似朝外、待聚焦複核",
+      "locked": false,
+      "evidence": "[P1/P2實圖](<../../.seer-cache/anim-inspect/review-20261026/source-3393-pair.png>)",
+      "file": "source-3393-pair.png"
+    },
+    {
+      "source": "/seer/body/3105.png",
+      "registered": "left",
+      "judgment": "混合",
+      "locked": true,
+      "evidence": "[P1/P2實圖](<../../.seer-cache/anim-inspect/review-20261026/source-3105-pair.png>)",
+      "file": "source-3105-pair.png"
+    },
+    {
+      "source": "/seer/body/4032.png",
+      "registered": "left",
+      "judgment": "近正面",
+      "locked": true,
+      "evidence": "[P1/P2實圖](<../../.seer-cache/anim-inspect/review-20261026/source-4032-pair.png>)",
+      "file": "source-4032-pair.png"
+    },
+    {
+      "source": "/seer/body/2882.png",
+      "registered": "left",
+      "judgment": "混合",
+      "locked": true,
+      "evidence": "[P1/P2實圖](<../../.seer-cache/anim-inspect/review-20261026/source-2882-pair.png>)",
+      "file": "source-2882-pair.png"
+    },
+    {
+      "source": "/seer/body/3045.png",
+      "registered": "left",
+      "judgment": "混合",
+      "locked": true,
+      "evidence": "[P1/P2實圖](<../../.seer-cache/anim-inspect/review-20261026/source-3045-pair.png>)",
+      "file": "source-3045-pair.png"
+    },
+    {
+      "source": "/seer/body/79.png",
+      "registered": "left",
+      "judgment": "朝內",
+      "locked": false,
+      "evidence": "[P1/P2實圖](<../../.seer-cache/anim-inspect/review-20261026/source-79-pair.png>)",
+      "file": "source-79-pair.png"
+    },
+    {
+      "source": "/seer/body/418.png",
+      "registered": "left",
+      "judgment": "正面",
+      "locked": false,
+      "evidence": "[P1/P2實圖](<../../.seer-cache/anim-inspect/review-20261026/source-418-pair.png>)",
+      "file": "source-418-pair.png"
+    },
+    {
+      "source": "/seer/body/3561.png",
+      "registered": "left",
+      "judgment": "朝內",
+      "locked": false,
+      "evidence": "[P1/P2實圖](<../../.seer-cache/anim-inspect/review-20261026/source-3561-pair.png>)",
+      "file": "source-3561-pair.png"
+    },
+    {
+      "source": "/seer/body/1000.png",
+      "registered": "left",
+      "judgment": "朝內",
+      "locked": true,
+      "evidence": "[P1/P2實圖](<../../.seer-cache/anim-inspect/review-20261026/source-1000-pair.png>)",
+      "file": "source-1000-pair.png"
+    },
+    {
+      "source": "/seer/body/2656.png",
+      "registered": "left",
+      "judgment": "朝內",
+      "locked": true,
+      "evidence": "[P1/P2實圖](<../../.seer-cache/anim-inspect/review-20261026/source-2656-pair.png>)",
+      "file": "source-2656-pair.png"
+    },
+    {
+      "source": "/seer/body/3005.png",
+      "registered": "left",
+      "judgment": "近正面",
+      "locked": true,
+      "evidence": "[P1/P2實圖](<../../.seer-cache/anim-inspect/review-20261026/source-3005-pair.png>)",
+      "file": "source-3005-pair.png"
+    },
+    {
+      "source": "/seer/body/3020.png",
+      "registered": "left",
+      "judgment": "混合",
+      "locked": false,
+      "evidence": "[P1/P2實圖](<../../.seer-cache/anim-inspect/review-20261026/source-3020-pair.png>)",
+      "file": "source-3020-pair.png"
+    },
+    {
+      "source": "/seer/body/3580.png",
+      "registered": "left",
+      "judgment": "混合",
+      "locked": false,
+      "evidence": "[P1/P2實圖](<../../.seer-cache/anim-inspect/review-20261026/source-3580-pair.png>)",
+      "file": "source-3580-pair.png"
+    },
+    {
+      "source": "/seer/body/3808.png",
+      "registered": "left",
+      "judgment": "朝內",
+      "locked": false,
+      "evidence": "[P1/P2實圖](<../../.seer-cache/anim-inspect/review-20261026/source-3808-pair.png>)",
+      "file": "source-3808-pair.png"
+    },
+    {
+      "source": "/seer/body/3870.png",
+      "registered": "left",
+      "judgment": "朝內",
+      "locked": true,
+      "evidence": "[P1/P2實圖](<../../.seer-cache/anim-inspect/review-20261026/source-3870-pair.png>)",
+      "file": "source-3870-pair.png"
+    },
+    {
+      "source": "/seer/body/4188.png",
+      "registered": "left",
+      "judgment": "近正面",
+      "locked": false,
+      "evidence": "[P1/P2實圖](<../../.seer-cache/anim-inspect/review-20261026/source-4188-pair.png>)",
+      "file": "source-4188-pair.png"
+    },
+    {
+      "source": "/seer/body/4249.png",
+      "registered": "left",
+      "judgment": "近正面",
+      "locked": true,
+      "evidence": "[P1/P2實圖](<../../.seer-cache/anim-inspect/review-20261026/source-4249-pair.png>)",
+      "file": "source-4249-pair.png"
+    },
+    {
+      "source": "/seer/body/4313.png",
+      "registered": "left",
+      "judgment": "朝內",
+      "locked": false,
+      "evidence": "[P1/P2實圖](<../../.seer-cache/anim-inspect/review-20261026/source-4313-pair.png>)",
+      "file": "source-4313-pair.png"
+    },
+    {
+      "source": "/seer/body/4432.png",
+      "registered": "left",
+      "judgment": "疑似朝外、待聚焦複核",
+      "locked": false,
+      "evidence": "[P1/P2實圖](<../../.seer-cache/anim-inspect/review-20261026/source-4432-pair.png>)",
+      "file": "source-4432-pair.png"
+    },
+    {
+      "source": "/seer/body/4557.png",
+      "registered": "left",
+      "judgment": "朝內",
+      "locked": false,
+      "evidence": "[P1/P2實圖](<../../.seer-cache/anim-inspect/review-20261026/source-4557-pair.png>)",
+      "file": "source-4557-pair.png"
+    },
+    {
+      "source": "/seer/body/4590.png",
+      "registered": "left",
+      "judgment": "朝內",
+      "locked": false,
+      "evidence": "[P1/P2實圖](<../../.seer-cache/anim-inspect/review-20261026/source-4590-pair.png>)",
+      "file": "source-4590-pair.png"
+    },
+    {
+      "source": "/seer/body/4620.png",
+      "registered": "left",
+      "judgment": "混合",
+      "locked": false,
+      "evidence": "[P1/P2實圖](<../../.seer-cache/anim-inspect/review-20261026/source-4620-pair.png>)",
+      "file": "source-4620-pair.png"
+    },
+    {
+      "source": "/seer/body/4621.png",
+      "registered": "left",
+      "judgment": "混合",
+      "locked": false,
+      "evidence": "[P1/P2實圖](<../../.seer-cache/anim-inspect/review-20261026/source-4621-pair.png>)",
+      "file": "source-4621-pair.png"
+    },
+    {
+      "source": "/seer/body/4642.png",
+      "registered": "left",
+      "judgment": "疑似朝外、待聚焦複核",
+      "locked": false,
+      "evidence": "[P1/P2實圖](<../../.seer-cache/anim-inspect/review-20261026/source-4642-pair.png>)",
+      "file": "source-4642-pair.png"
+    },
+    {
+      "source": "/seer/body/4891.png",
+      "registered": "left",
+      "judgment": "混合",
+      "locked": true,
+      "evidence": "[P1/P2實圖](<../../.seer-cache/anim-inspect/review-20261026/source-4891-pair.png>)",
+      "file": "source-4891-pair.png"
+    },
+    {
+      "source": "/seer/body/4940.png",
+      "registered": "left",
+      "judgment": "疑似朝外、待聚焦複核",
+      "locked": false,
+      "evidence": "[P1/P2實圖](<../../.seer-cache/anim-inspect/review-20261026/source-4940-pair.png>)",
+      "file": "source-4940-pair.png"
+    },
+    {
+      "source": "/seer/body/4661.png",
+      "registered": "left",
+      "judgment": "朝內",
+      "locked": true,
+      "evidence": "[P1/P2實圖](<../../.seer-cache/anim-inspect/review-20261026/source-4661-pair.png>)",
+      "file": "source-4661-pair.png"
+    },
+    {
+      "source": "/seer/body/4800.png",
+      "registered": "left",
+      "judgment": "人物/巨像側向判讀有分歧",
+      "locked": true,
+      "evidence": "[P1/P2實圖](<../../.seer-cache/anim-inspect/review-20261026/source-4800-pair.png>)",
+      "file": "source-4800-pair.png"
+    },
+    {
+      "source": "/seer/body/4275.png",
+      "registered": "left",
+      "judgment": "近正面",
+      "locked": true,
+      "evidence": "[P1/P2實圖](<../../.seer-cache/anim-inspect/review-20261026/source-4275-pair.png>)",
+      "file": "source-4275-pair.png"
+    },
+    {
+      "source": "/seer/body/4903.png",
+      "registered": "left",
+      "judgment": "人物/主獸側向有分歧",
+      "locked": true,
+      "evidence": "[P1/P2實圖](<../../.seer-cache/anim-inspect/review-20261026/source-4903-pair.png>)",
+      "file": "source-4903-pair.png"
+    }
+  ],
+  "staticOnly": [
+    {
+      "id": "5017",
+      "name": "人皇·帝辛",
+      "height": 190,
+      "skins": [
+        {
+          "id": "",
+          "binding": null
+        }
+      ],
+      "binding": null,
+      "file": "roster-5017-static-pair.png",
+      "probe": [
+        {
+          "side": "p1",
+          "rect": {
+            "x": 351.765625,
+            "y": 665.609375,
+            "width": 0,
+            "height": 0,
+            "top": 665.609375,
+            "right": 351.765625,
+            "bottom": 665.609375,
+            "left": 351.765625
+          },
+          "ratio": "1.02",
+          "visible": "491.6",
+          "sink": "0.0",
+          "opaque": "-166.6,166.6,0.0,491.6",
+          "image": "/elf-art/emperor_dixin_body.png",
+          "mirror": "scaleX(-1)"
+        },
+        {
+          "side": "p2",
+          "rect": {
+            "x": 1247.21875,
+            "y": 665.609375,
+            "width": 0,
+            "height": 0,
+            "top": 665.609375,
+            "right": 1247.21875,
+            "bottom": 665.609375,
+            "left": 1247.21875
+          },
+          "ratio": "1.02",
+          "visible": "491.6",
+          "sink": "0.0",
+          "opaque": "-166.6,166.6,0.0,491.6",
+          "image": "/elf-art/emperor_dixin_body.png",
+          "mirror": ""
+        }
+      ],
+      "diagnostics": {
+        "degraded": [],
+        "leases": [
+          {
+            "id": "mogos",
+            "users": 0,
+            "rgbaBytes": 33554432,
+            "stage": "就緒",
+            "loadMs": 933,
+            "elapsedMs": 10260
+          }
+        ],
+        "state": "p1_select"
+      }
+    },
+    {
+      "id": "5022",
+      "name": "無序.六刃",
+      "height": 266,
+      "skins": [
+        {
+          "id": "",
+          "binding": null
+        }
+      ],
+      "binding": null,
+      "file": "roster-5022-static-pair.png",
+      "probe": [
+        {
+          "side": "p1",
+          "rect": {
+            "x": 351.765625,
+            "y": 666.453125,
+            "width": 0,
+            "height": 0,
+            "top": 666.453125,
+            "right": 351.765625,
+            "bottom": 666.453125,
+            "left": 351.765625
+          },
+          "ratio": "0.99",
+          "visible": "461.3",
+          "sink": "0.0",
+          "opaque": "-171.5,171.5,0.0,461.3",
+          "image": "/elf-art/unknown_myth_ghost_body.png",
+          "mirror": ""
+        },
+        {
+          "side": "p2",
+          "rect": {
+            "x": 1247.21875,
+            "y": 666.453125,
+            "width": 0,
+            "height": 0,
+            "top": 666.453125,
+            "right": 1247.21875,
+            "bottom": 666.453125,
+            "left": 1247.21875
+          },
+          "ratio": "0.99",
+          "visible": "461.3",
+          "sink": "0.0",
+          "opaque": "-171.5,171.5,0.0,461.3",
+          "image": "/elf-art/unknown_myth_ghost_body.png",
+          "mirror": ""
+        }
+      ],
+      "diagnostics": {
+        "degraded": [],
+        "leases": [
+          {
+            "id": "mogos",
+            "users": 0,
+            "rgbaBytes": 33554432,
+            "stage": "就緒",
+            "loadMs": 933,
+            "elapsedMs": 12139
+          }
+        ],
+        "state": "p1_select"
+      }
+    },
+    {
+      "id": "5023",
+      "name": "無序·蝕言",
+      "height": 190,
+      "skins": [
+        {
+          "id": "",
+          "binding": null
+        }
+      ],
+      "binding": null,
+      "file": "roster-5023-static-pair.png",
+      "probe": [
+        {
+          "side": "p1",
+          "rect": {
+            "x": 351.765625,
+            "y": 665.609375,
+            "width": 0,
+            "height": 0,
+            "top": 665.609375,
+            "right": 351.765625,
+            "bottom": 665.609375,
+            "left": 351.765625
+          },
+          "ratio": "1.02",
+          "visible": "491.9",
+          "sink": "0.0",
+          "opaque": "-155.7,155.7,0.0,491.9",
+          "image": "/elf-art/wuxu_shiyan_body.png",
+          "mirror": "scaleX(-1)"
+        },
+        {
+          "side": "p2",
+          "rect": {
+            "x": 1247.21875,
+            "y": 665.609375,
+            "width": 0,
+            "height": 0,
+            "top": 665.609375,
+            "right": 1247.21875,
+            "bottom": 665.609375,
+            "left": 1247.21875
+          },
+          "ratio": "1.02",
+          "visible": "491.9",
+          "sink": "0.0",
+          "opaque": "-155.7,155.7,0.0,491.9",
+          "image": "/elf-art/wuxu_shiyan_body.png",
+          "mirror": ""
+        }
+      ],
+      "diagnostics": {
+        "degraded": [],
+        "leases": [
+          {
+            "id": "mogos",
+            "users": 0,
+            "rgbaBytes": 33554432,
+            "stage": "就緒",
+            "loadMs": 933,
+            "elapsedMs": 14077
+          }
+        ],
+        "state": "p1_select"
+      }
+    },
+    {
+      "id": "5026",
+      "name": "無序.墜星",
+      "height": 195,
+      "skins": [
+        {
+          "id": "",
+          "binding": null
+        }
+      ],
+      "binding": null,
+      "file": "roster-5026-static-pair.png",
+      "probe": [
+        {
+          "side": "p1",
+          "rect": {
+            "x": 351.765625,
+            "y": 665.609375,
+            "width": 0,
+            "height": 0,
+            "top": 665.609375,
+            "right": 351.765625,
+            "bottom": 665.609375,
+            "left": 351.765625
+          },
+          "ratio": "1.03",
+          "visible": "492.3",
+          "sink": "0.0",
+          "opaque": "-187.6,187.6,0.0,492.3",
+          "image": "/elf-art/wuxu_zhuixing_body.png",
+          "mirror": "scaleX(-1)"
+        },
+        {
+          "side": "p2",
+          "rect": {
+            "x": 1247.21875,
+            "y": 665.609375,
+            "width": 0,
+            "height": 0,
+            "top": 665.609375,
+            "right": 1247.21875,
+            "bottom": 665.609375,
+            "left": 1247.21875
+          },
+          "ratio": "1.03",
+          "visible": "492.3",
+          "sink": "0.0",
+          "opaque": "-187.6,187.6,0.0,492.3",
+          "image": "/elf-art/wuxu_zhuixing_body.png",
+          "mirror": ""
+        }
+      ],
+      "diagnostics": {
+        "degraded": [],
+        "leases": [
+          {
+            "id": "mogos",
+            "users": 0,
+            "rgbaBytes": 33554432,
+            "stage": "就緒",
+            "loadMs": 933,
+            "elapsedMs": 16055
+          }
+        ],
+        "state": "p1_select"
+      }
+    },
+    {
+      "id": "5029",
+      "name": "異境神霆·雷伊",
+      "height": 185,
+      "skins": [
+        {
+          "id": "",
+          "binding": null
+        },
+        {
+          "id": "rey-thunder-dragon-v1",
+          "binding": null
+        },
+        {
+          "id": "rey-original",
+          "binding": "rey70"
+        }
+      ],
+      "binding": null,
+      "file": "roster-5029-static-pair.png",
+      "probe": [
+        {
+          "side": "p1",
+          "rect": {
+            "x": 351.765625,
+            "y": 666.734375,
+            "width": 0,
+            "height": 0,
+            "top": 666.734375,
+            "right": 351.765625,
+            "bottom": 666.734375,
+            "left": 351.765625
+          },
+          "ratio": "1.02",
+          "visible": "459.4",
+          "sink": "0.0",
+          "opaque": "-262.4,262.4,0.0,459.4",
+          "image": "/elf-art/otherworld_thunder_rey_body.png",
+          "mirror": "scaleX(-1)"
+        },
+        {
+          "side": "p2",
+          "rect": {
+            "x": 1247.21875,
+            "y": 666.734375,
+            "width": 0,
+            "height": 0,
+            "top": 666.734375,
+            "right": 1247.21875,
+            "bottom": 666.734375,
+            "left": 1247.21875
+          },
+          "ratio": "1.02",
+          "visible": "459.4",
+          "sink": "0.0",
+          "opaque": "-262.4,262.4,0.0,459.4",
+          "image": "/elf-art/otherworld_thunder_rey_body.png",
+          "mirror": ""
+        }
+      ],
+      "diagnostics": {
+        "degraded": [],
+        "leases": [],
+        "state": "p1_select"
+      }
+    },
+    {
+      "id": "7070",
+      "name": "魔化.雷伊",
+      "source": 70,
+      "skins": [
+        {
+          "id": "",
+          "binding": null
+        },
+        {
+          "id": "rey-original",
+          "binding": "rey70"
+        }
+      ],
+      "binding": null,
+      "file": "roster-7070-static-pair.png",
+      "probe": [
+        {
+          "side": "p1",
+          "rect": {
+            "x": 351.765625,
+            "y": 665.609375,
+            "width": 0,
+            "height": 0,
+            "top": 665.609375,
+            "right": 351.765625,
+            "bottom": 665.609375,
+            "left": 351.765625
+          },
+          "ratio": "0.99",
+          "visible": "484.4",
+          "sink": "0.0",
+          "opaque": "-122.0,122.0,0.0,484.4",
+          "image": "/seer/body/70.png",
+          "mirror": "scaleX(-1)"
+        },
+        {
+          "side": "p2",
+          "rect": {
+            "x": 1247.21875,
+            "y": 665.609375,
+            "width": 0,
+            "height": 0,
+            "top": 665.609375,
+            "right": 1247.21875,
+            "bottom": 665.609375,
+            "left": 1247.21875
+          },
+          "ratio": "0.99",
+          "visible": "484.4",
+          "sink": "0.0",
+          "opaque": "-122.0,122.0,0.0,484.4",
+          "image": "/seer/body/70.png",
+          "mirror": ""
+        }
+      ],
+      "diagnostics": {
+        "degraded": [],
+        "leases": [],
+        "state": "p1_select"
+      }
+    },
+    {
+      "id": "707070",
+      "name": "墜霆.雷伊",
+      "source": 70,
+      "skins": [
+        {
+          "id": "",
+          "binding": null
+        },
+        {
+          "id": "rey-original",
+          "binding": "rey70"
+        }
+      ],
+      "binding": null,
+      "file": "roster-707070-static-pair.png",
+      "probe": [
+        {
+          "side": "p1",
+          "rect": {
+            "x": 351.765625,
+            "y": 665.609375,
+            "width": 0,
+            "height": 0,
+            "top": 665.609375,
+            "right": 351.765625,
+            "bottom": 665.609375,
+            "left": 351.765625
+          },
+          "ratio": "0.99",
+          "visible": "484.4",
+          "sink": "0.0",
+          "opaque": "-122.0,122.0,0.0,484.4",
+          "image": "/seer/body/70.png",
+          "mirror": "scaleX(-1)"
+        },
+        {
+          "side": "p2",
+          "rect": {
+            "x": 1247.21875,
+            "y": 665.609375,
+            "width": 0,
+            "height": 0,
+            "top": 665.609375,
+            "right": 1247.21875,
+            "bottom": 665.609375,
+            "left": 1247.21875
+          },
+          "ratio": "0.99",
+          "visible": "484.4",
+          "sink": "0.0",
+          "opaque": "-122.0,122.0,0.0,484.4",
+          "image": "/seer/body/70.png",
+          "mirror": ""
+        }
+      ],
+      "diagnostics": {
+        "degraded": [],
+        "leases": [],
+        "state": "p1_select"
+      }
+    },
+    {
+      "id": "arena_16",
+      "name": "鎮世龍魂・龍之治癒",
+      "skins": [
+        {
+          "id": "",
+          "binding": null
+        }
+      ],
+      "binding": null,
+      "file": "roster-arena_16-static-pair.png",
+      "probe": [
+        {
+          "side": "p1",
+          "rect": {
+            "x": 351.765625,
+            "y": 665.609375,
+            "width": 0,
+            "height": 0,
+            "top": 665.609375,
+            "right": 351.765625,
+            "bottom": 665.609375,
+            "left": 351.765625
+          },
+          "ratio": "0.99",
+          "visible": "229.5",
+          "sink": "0.0"
+        },
+        {
+          "side": "p2",
+          "rect": {
+            "x": 1247.21875,
+            "y": 665.609375,
+            "width": 0,
+            "height": 0,
+            "top": 665.609375,
+            "right": 1247.21875,
+            "bottom": 665.609375,
+            "left": 1247.21875
+          },
+          "ratio": "0.99",
+          "visible": "229.5",
+          "sink": "0.0"
+        }
+      ],
+      "diagnostics": {
+        "degraded": [],
+        "leases": [],
+        "state": "p1_select"
+      }
+    },
+    {
+      "id": "wiki_4937",
+      "name": "星光·雷納多",
+      "height": 89,
+      "source": 4937,
+      "skins": [
+        {
+          "id": "",
+          "binding": null
+        }
+      ],
+      "binding": null,
+      "file": "roster-wiki_4937-static-pair.png",
+      "probe": [
+        {
+          "side": "p1",
+          "rect": {
+            "x": 351.765625,
+            "y": 665.609375,
+            "width": 0,
+            "height": 0,
+            "top": 665.609375,
+            "right": 351.765625,
+            "bottom": 665.609375,
+            "left": 351.765625
+          },
+          "ratio": "0.91",
+          "visible": "435.6",
+          "sink": "0.0",
+          "opaque": "-253.0,253.0,0.0,435.6",
+          "image": "/seer/body/4937.png",
+          "mirror": "scaleX(-1)"
+        },
+        {
+          "side": "p2",
+          "rect": {
+            "x": 1247.21875,
+            "y": 665.609375,
+            "width": 0,
+            "height": 0,
+            "top": 665.609375,
+            "right": 1247.21875,
+            "bottom": 665.609375,
+            "left": 1247.21875
+          },
+          "ratio": "0.91",
+          "visible": "435.6",
+          "sink": "0.0",
+          "opaque": "-253.0,253.0,0.0,435.6",
+          "image": "/seer/body/4937.png",
+          "mirror": ""
+        }
+      ],
+      "diagnostics": {
+        "degraded": [],
+        "leases": [],
+        "state": "p1_select"
+      }
+    }
+  ],
+  "screenshotFiles": [
+    ".seer-cache/anim-inspect/review-20261026/sobira-static-pair.png",
+    ".seer-cache/anim-inspect/review-20261026/sobira-actions-pair.png",
+    ".seer-cache/anim-inspect/review-20261026/sobira-attack-50-field.png",
+    ".seer-cache/anim-inspect/review-20261026/sobira-attack-75-field.png",
+    ".seer-cache/anim-inspect/review-20261026/sobira-sa-50-field.png",
+    ".seer-cache/anim-inspect/review-20261026/sobira-sa-75-field.png",
+    ".seer-cache/anim-inspect/review-20261026/sobira-cp-50-field.png",
+    ".seer-cache/anim-inspect/review-20261026/sobira-cp-75-field.png",
+    ".seer-cache/anim-inspect/review-20261026/emperorShield-static-pair.png",
+    ".seer-cache/anim-inspect/review-20261026/emperorShield-actions-pair.png",
+    ".seer-cache/anim-inspect/review-20261026/emperorShield-attack-50-field.png",
+    ".seer-cache/anim-inspect/review-20261026/emperorShield-attack-75-field.png",
+    ".seer-cache/anim-inspect/review-20261026/emperorShield-sa-50-field.png",
+    ".seer-cache/anim-inspect/review-20261026/emperorShield-sa-75-field.png",
+    ".seer-cache/anim-inspect/review-20261026/emperorShield-cp-50-field.png",
+    ".seer-cache/anim-inspect/review-20261026/emperorShield-cp-75-field.png",
+    ".seer-cache/anim-inspect/review-20261026/bajie-static-pair.png",
+    ".seer-cache/anim-inspect/review-20261026/bajie-actions-pair.png",
+    ".seer-cache/anim-inspect/review-20261026/bajie-attack-50-field.png",
+    ".seer-cache/anim-inspect/review-20261026/bajie-attack-75-field.png",
+    ".seer-cache/anim-inspect/review-20261026/bajie-sa-50-field.png",
+    ".seer-cache/anim-inspect/review-20261026/bajie-sa-75-field.png",
+    ".seer-cache/anim-inspect/review-20261026/bajie-cp-50-field.png",
+    ".seer-cache/anim-inspect/review-20261026/bajie-cp-75-field.png",
+    ".seer-cache/anim-inspect/review-20261026/petersala-static-pair.png",
+    ".seer-cache/anim-inspect/review-20261026/petersala-actions-pair.png",
+    ".seer-cache/anim-inspect/review-20261026/petersala-attack-50-field.png",
+    ".seer-cache/anim-inspect/review-20261026/petersala-attack-75-field.png",
+    ".seer-cache/anim-inspect/review-20261026/petersala-sa-50-field.png",
+    ".seer-cache/anim-inspect/review-20261026/petersala-sa-75-field.png",
+    ".seer-cache/anim-inspect/review-20261026/petersala-cp-50-field.png",
+    ".seer-cache/anim-inspect/review-20261026/petersala-cp-75-field.png",
+    ".seer-cache/anim-inspect/review-20261026/blake-static-pair.png",
+    ".seer-cache/anim-inspect/review-20261026/blake-actions-pair.png",
+    ".seer-cache/anim-inspect/review-20261026/blake-attack-50-field.png",
+    ".seer-cache/anim-inspect/review-20261026/blake-attack-75-field.png",
+    ".seer-cache/anim-inspect/review-20261026/blake-sa-50-field.png",
+    ".seer-cache/anim-inspect/review-20261026/blake-sa-75-field.png",
+    ".seer-cache/anim-inspect/review-20261026/blake-cp-50-field.png",
+    ".seer-cache/anim-inspect/review-20261026/blake-cp-75-field.png",
+    ".seer-cache/anim-inspect/review-20261026/puni-static-pair.png",
+    ".seer-cache/anim-inspect/review-20261026/puni-actions-pair.png",
+    ".seer-cache/anim-inspect/review-20261026/puni-attack-50-field.png",
+    ".seer-cache/anim-inspect/review-20261026/puni-attack-75-field.png",
+    ".seer-cache/anim-inspect/review-20261026/puni-sa-50-field.png",
+    ".seer-cache/anim-inspect/review-20261026/puni-sa-75-field.png",
+    ".seer-cache/anim-inspect/review-20261026/puni-cp-50-field.png",
+    ".seer-cache/anim-inspect/review-20261026/puni-cp-75-field.png",
+    ".seer-cache/anim-inspect/review-20261026/starFlame-static-pair.png",
+    ".seer-cache/anim-inspect/review-20261026/starFlame-actions-pair.png",
+    ".seer-cache/anim-inspect/review-20261026/starFlame-attack-50-field.png",
+    ".seer-cache/anim-inspect/review-20261026/starFlame-attack-75-field.png",
+    ".seer-cache/anim-inspect/review-20261026/starFlame-sa-50-field.png",
+    ".seer-cache/anim-inspect/review-20261026/starFlame-sa-75-field.png",
+    ".seer-cache/anim-inspect/review-20261026/starFlame-cp-50-field.png",
+    ".seer-cache/anim-inspect/review-20261026/starFlame-cp-75-field.png",
+    ".seer-cache/anim-inspect/review-20261026/brink-static-pair.png",
+    ".seer-cache/anim-inspect/review-20261026/brink-actions-pair.png",
+    ".seer-cache/anim-inspect/review-20261026/brink-attack-50-field.png",
+    ".seer-cache/anim-inspect/review-20261026/brink-attack-75-field.png",
+    ".seer-cache/anim-inspect/review-20261026/brink-sa-50-field.png",
+    ".seer-cache/anim-inspect/review-20261026/brink-sa-75-field.png",
+    ".seer-cache/anim-inspect/review-20261026/brink-cp-50-field.png",
+    ".seer-cache/anim-inspect/review-20261026/brink-cp-75-field.png",
+    ".seer-cache/anim-inspect/review-20261026/baflo-static-pair.png",
+    ".seer-cache/anim-inspect/review-20261026/baflo-actions-pair.png",
+    ".seer-cache/anim-inspect/review-20261026/baflo-attack-50-field.png",
+    ".seer-cache/anim-inspect/review-20261026/baflo-attack-75-field.png",
+    ".seer-cache/anim-inspect/review-20261026/baflo-sa-50-field.png",
+    ".seer-cache/anim-inspect/review-20261026/baflo-sa-75-field.png",
+    ".seer-cache/anim-inspect/review-20261026/baflo-cp-50-field.png",
+    ".seer-cache/anim-inspect/review-20261026/baflo-cp-75-field.png",
+    ".seer-cache/anim-inspect/review-20261026/delu-static-pair.png",
+    ".seer-cache/anim-inspect/review-20261026/delu-actions-pair.png",
+    ".seer-cache/anim-inspect/review-20261026/delu-attack-50-field.png",
+    ".seer-cache/anim-inspect/review-20261026/delu-attack-75-field.png",
+    ".seer-cache/anim-inspect/review-20261026/delu-sa-50-field.png",
+    ".seer-cache/anim-inspect/review-20261026/delu-sa-75-field.png",
+    ".seer-cache/anim-inspect/review-20261026/delu-cp-50-field.png",
+    ".seer-cache/anim-inspect/review-20261026/delu-cp-75-field.png",
+    ".seer-cache/anim-inspect/review-20261026/holyPuni-static-pair.png",
+    ".seer-cache/anim-inspect/review-20261026/holyPuni-actions-pair.png",
+    ".seer-cache/anim-inspect/review-20261026/holyPuni-attack-50-field.png",
+    ".seer-cache/anim-inspect/review-20261026/holyPuni-attack-75-field.png",
+    ".seer-cache/anim-inspect/review-20261026/holyPuni-sa-50-field.png",
+    ".seer-cache/anim-inspect/review-20261026/holyPuni-sa-75-field.png",
+    ".seer-cache/anim-inspect/review-20261026/holyPuni-cp-50-field.png",
+    ".seer-cache/anim-inspect/review-20261026/holyPuni-cp-75-field.png",
+    ".seer-cache/anim-inspect/review-20261026/starRuth-static-pair.png",
+    ".seer-cache/anim-inspect/review-20261026/starRuth-actions-pair.png",
+    ".seer-cache/anim-inspect/review-20261026/starRuth-attack-50-field.png",
+    ".seer-cache/anim-inspect/review-20261026/starRuth-attack-75-field.png",
+    ".seer-cache/anim-inspect/review-20261026/starRuth-sa-50-field.png",
+    ".seer-cache/anim-inspect/review-20261026/starRuth-sa-75-field.png",
+    ".seer-cache/anim-inspect/review-20261026/starRuth-cp-50-field.png",
+    ".seer-cache/anim-inspect/review-20261026/starRuth-cp-75-field.png",
+    ".seer-cache/anim-inspect/review-20261026/starLisa-static-pair.png",
+    ".seer-cache/anim-inspect/review-20261026/starLisa-actions-pair.png",
+    ".seer-cache/anim-inspect/review-20261026/starLisa-attack-50-field.png",
+    ".seer-cache/anim-inspect/review-20261026/starLisa-attack-75-field.png",
+    ".seer-cache/anim-inspect/review-20261026/starLisa-sa-50-field.png",
+    ".seer-cache/anim-inspect/review-20261026/starLisa-sa-75-field.png",
+    ".seer-cache/anim-inspect/review-20261026/starLisa-cp-50-field.png",
+    ".seer-cache/anim-inspect/review-20261026/starLisa-cp-75-field.png",
+    ".seer-cache/anim-inspect/review-20261026/kold-static-pair.png",
+    ".seer-cache/anim-inspect/review-20261026/kold-actions-pair.png",
+    ".seer-cache/anim-inspect/review-20261026/kold-attack-50-field.png",
+    ".seer-cache/anim-inspect/review-20261026/kold-attack-75-field.png",
+    ".seer-cache/anim-inspect/review-20261026/kold-sa-50-field.png",
+    ".seer-cache/anim-inspect/review-20261026/kold-sa-75-field.png",
+    ".seer-cache/anim-inspect/review-20261026/kold-cp-50-field.png",
+    ".seer-cache/anim-inspect/review-20261026/kold-cp-75-field.png",
+    ".seer-cache/anim-inspect/review-20261026/koldhord-static-pair.png",
+    ".seer-cache/anim-inspect/review-20261026/koldhord-actions-pair.png",
+    ".seer-cache/anim-inspect/review-20261026/koldhord-attack-50-field.png",
+    ".seer-cache/anim-inspect/review-20261026/koldhord-attack-75-field.png",
+    ".seer-cache/anim-inspect/review-20261026/koldhord-sa-50-field.png",
+    ".seer-cache/anim-inspect/review-20261026/koldhord-sa-75-field.png",
+    ".seer-cache/anim-inspect/review-20261026/koldhord-cp-50-field.png",
+    ".seer-cache/anim-inspect/review-20261026/koldhord-cp-75-field.png",
+    ".seer-cache/anim-inspect/review-20261026/scarlett-static-pair.png",
+    ".seer-cache/anim-inspect/review-20261026/scarlett-actions-pair.png",
+    ".seer-cache/anim-inspect/review-20261026/scarlett-attack-50-field.png",
+    ".seer-cache/anim-inspect/review-20261026/scarlett-attack-75-field.png",
+    ".seer-cache/anim-inspect/review-20261026/scarlett-sa-50-field.png",
+    ".seer-cache/anim-inspect/review-20261026/scarlett-sa-75-field.png",
+    ".seer-cache/anim-inspect/review-20261026/scarlett-cp-50-field.png",
+    ".seer-cache/anim-inspect/review-20261026/scarlett-cp-75-field.png",
+    ".seer-cache/anim-inspect/review-20261026/chaosBlake-static-pair.png",
+    ".seer-cache/anim-inspect/review-20261026/chaosBlake-actions-pair.png",
+    ".seer-cache/anim-inspect/review-20261026/chaosBlake-attack-50-field.png",
+    ".seer-cache/anim-inspect/review-20261026/chaosBlake-attack-75-field.png",
+    ".seer-cache/anim-inspect/review-20261026/chaosBlake-sa-50-field.png",
+    ".seer-cache/anim-inspect/review-20261026/chaosBlake-sa-75-field.png",
+    ".seer-cache/anim-inspect/review-20261026/chaosBlake-cp-50-field.png",
+    ".seer-cache/anim-inspect/review-20261026/chaosBlake-cp-75-field.png",
+    ".seer-cache/anim-inspect/review-20261026/marthus-static-pair.png",
+    ".seer-cache/anim-inspect/review-20261026/marthus-actions-pair.png",
+    ".seer-cache/anim-inspect/review-20261026/marthus-attack-50-field.png",
+    ".seer-cache/anim-inspect/review-20261026/marthus-attack-75-field.png",
+    ".seer-cache/anim-inspect/review-20261026/marthus-sa-50-field.png",
+    ".seer-cache/anim-inspect/review-20261026/marthus-sa-75-field.png",
+    ".seer-cache/anim-inspect/review-20261026/marthus-cp-50-field.png",
+    ".seer-cache/anim-inspect/review-20261026/marthus-cp-75-field.png",
+    ".seer-cache/anim-inspect/review-20261026/opeia-static-pair.png",
+    ".seer-cache/anim-inspect/review-20261026/opeia-actions-pair.png",
+    ".seer-cache/anim-inspect/review-20261026/opeia-attack-50-field.png",
+    ".seer-cache/anim-inspect/review-20261026/opeia-attack-75-field.png",
+    ".seer-cache/anim-inspect/review-20261026/opeia-sa-50-field.png",
+    ".seer-cache/anim-inspect/review-20261026/opeia-sa-75-field.png",
+    ".seer-cache/anim-inspect/review-20261026/opeia-cp-50-field.png",
+    ".seer-cache/anim-inspect/review-20261026/opeia-cp-75-field.png",
+    ".seer-cache/anim-inspect/review-20261026/odin-static-pair.png",
+    ".seer-cache/anim-inspect/review-20261026/odin-actions-pair.png",
+    ".seer-cache/anim-inspect/review-20261026/odin-attack-50-field.png",
+    ".seer-cache/anim-inspect/review-20261026/odin-attack-75-field.png",
+    ".seer-cache/anim-inspect/review-20261026/odin-sa-50-field.png",
+    ".seer-cache/anim-inspect/review-20261026/odin-sa-75-field.png",
+    ".seer-cache/anim-inspect/review-20261026/odin-cp-50-field.png",
+    ".seer-cache/anim-inspect/review-20261026/odin-cp-75-field.png",
+    ".seer-cache/anim-inspect/review-20261026/pipi-static-pair.png",
+    ".seer-cache/anim-inspect/review-20261026/pipi-actions-pair.png",
+    ".seer-cache/anim-inspect/review-20261026/pipi-attack-50-field.png",
+    ".seer-cache/anim-inspect/review-20261026/pipi-attack-75-field.png",
+    ".seer-cache/anim-inspect/review-20261026/pipi-sa-50-field.png",
+    ".seer-cache/anim-inspect/review-20261026/pipi-sa-75-field.png",
+    ".seer-cache/anim-inspect/review-20261026/pipi-cp-50-field.png",
+    ".seer-cache/anim-inspect/review-20261026/pipi-cp-75-field.png",
+    ".seer-cache/anim-inspect/review-20261026/dimensionDragon-static-pair.png",
+    ".seer-cache/anim-inspect/review-20261026/dimensionDragon-actions-pair.png",
+    ".seer-cache/anim-inspect/review-20261026/dimensionDragon-attack-50-field.png",
+    ".seer-cache/anim-inspect/review-20261026/dimensionDragon-attack-75-field.png",
+    ".seer-cache/anim-inspect/review-20261026/dimensionDragon-sa-50-field.png",
+    ".seer-cache/anim-inspect/review-20261026/dimensionDragon-sa-75-field.png",
+    ".seer-cache/anim-inspect/review-20261026/dimensionDragon-cp-50-field.png",
+    ".seer-cache/anim-inspect/review-20261026/dimensionDragon-cp-75-field.png",
+    ".seer-cache/anim-inspect/review-20261026/zhakesi4762-static-pair.png",
+    ".seer-cache/anim-inspect/review-20261026/zhakesi4762-actions-pair.png",
+    ".seer-cache/anim-inspect/review-20261026/zhakesi4762-attack-50-field.png",
+    ".seer-cache/anim-inspect/review-20261026/zhakesi4762-attack-75-field.png",
+    ".seer-cache/anim-inspect/review-20261026/zhakesi4762-sa-50-field.png",
+    ".seer-cache/anim-inspect/review-20261026/zhakesi4762-sa-75-field.png",
+    ".seer-cache/anim-inspect/review-20261026/zhakesi4762-cp-50-field.png",
+    ".seer-cache/anim-inspect/review-20261026/zhakesi4762-cp-75-field.png",
+    ".seer-cache/anim-inspect/review-20261026/zhakesi15008-static-pair.png",
+    ".seer-cache/anim-inspect/review-20261026/zhakesi15008-actions-pair.png",
+    ".seer-cache/anim-inspect/review-20261026/zhakesi15008-attack-50-field.png",
+    ".seer-cache/anim-inspect/review-20261026/zhakesi15008-attack-75-field.png",
+    ".seer-cache/anim-inspect/review-20261026/zhakesi15008-sa-50-field.png",
+    ".seer-cache/anim-inspect/review-20261026/zhakesi15008-sa-75-field.png",
+    ".seer-cache/anim-inspect/review-20261026/zhakesi15008-cp-50-field.png",
+    ".seer-cache/anim-inspect/review-20261026/zhakesi15008-cp-75-field.png",
+    ".seer-cache/anim-inspect/review-20261026/zhakesi15009-static-pair.png",
+    ".seer-cache/anim-inspect/review-20261026/zhakesi15009-actions-pair.png",
+    ".seer-cache/anim-inspect/review-20261026/zhakesi15009-attack-50-field.png",
+    ".seer-cache/anim-inspect/review-20261026/zhakesi15009-attack-75-field.png",
+    ".seer-cache/anim-inspect/review-20261026/zhakesi15009-sa-50-field.png",
+    ".seer-cache/anim-inspect/review-20261026/zhakesi15009-sa-75-field.png",
+    ".seer-cache/anim-inspect/review-20261026/zhakesi15009-cp-50-field.png",
+    ".seer-cache/anim-inspect/review-20261026/zhakesi15009-cp-75-field.png",
+    ".seer-cache/anim-inspect/review-20261026/zhakesi15010-static-pair.png",
+    ".seer-cache/anim-inspect/review-20261026/zhakesi15010-actions-pair.png",
+    ".seer-cache/anim-inspect/review-20261026/zhakesi15010-attack-50-field.png",
+    ".seer-cache/anim-inspect/review-20261026/zhakesi15010-attack-75-field.png",
+    ".seer-cache/anim-inspect/review-20261026/zhakesi15010-sa-50-field.png",
+    ".seer-cache/anim-inspect/review-20261026/zhakesi15010-sa-75-field.png",
+    ".seer-cache/anim-inspect/review-20261026/zhakesi15010-cp-50-field.png",
+    ".seer-cache/anim-inspect/review-20261026/zhakesi15010-cp-75-field.png",
+    ".seer-cache/anim-inspect/review-20261026/belliant-static-pair.png",
+    ".seer-cache/anim-inspect/review-20261026/belliant-actions-pair.png",
+    ".seer-cache/anim-inspect/review-20261026/belliant-attack-50-field.png",
+    ".seer-cache/anim-inspect/review-20261026/belliant-attack-75-field.png",
+    ".seer-cache/anim-inspect/review-20261026/belliant-sa-50-field.png",
+    ".seer-cache/anim-inspect/review-20261026/belliant-sa-75-field.png",
+    ".seer-cache/anim-inspect/review-20261026/belliant-cp-50-field.png",
+    ".seer-cache/anim-inspect/review-20261026/belliant-cp-75-field.png",
+    ".seer-cache/anim-inspect/review-20261026/canglan-static-pair.png",
+    ".seer-cache/anim-inspect/review-20261026/canglan-actions-pair.png",
+    ".seer-cache/anim-inspect/review-20261026/canglan-attack-50-field.png",
+    ".seer-cache/anim-inspect/review-20261026/canglan-attack-75-field.png",
+    ".seer-cache/anim-inspect/review-20261026/canglan-sa-50-field.png",
+    ".seer-cache/anim-inspect/review-20261026/canglan-sa-75-field.png",
+    ".seer-cache/anim-inspect/review-20261026/canglan-cp-50-field.png",
+    ".seer-cache/anim-inspect/review-20261026/canglan-cp-75-field.png",
+    ".seer-cache/anim-inspect/review-20261026/rey70-static-pair.png",
+    ".seer-cache/anim-inspect/review-20261026/rey70-actions-pair.png",
+    ".seer-cache/anim-inspect/review-20261026/rey70-attack-50-field.png",
+    ".seer-cache/anim-inspect/review-20261026/rey70-attack-75-field.png",
+    ".seer-cache/anim-inspect/review-20261026/rey70-sa-50-field.png",
+    ".seer-cache/anim-inspect/review-20261026/rey70-sa-75-field.png",
+    ".seer-cache/anim-inspect/review-20261026/rey70-cp-50-field.png",
+    ".seer-cache/anim-inspect/review-20261026/rey70-cp-75-field.png",
+    ".seer-cache/anim-inspect/review-20261026/holyMiles-static-pair.png",
+    ".seer-cache/anim-inspect/review-20261026/holyMiles-actions-pair.png",
+    ".seer-cache/anim-inspect/review-20261026/holyMiles-attack-50-field.png",
+    ".seer-cache/anim-inspect/review-20261026/holyMiles-attack-75-field.png",
+    ".seer-cache/anim-inspect/review-20261026/holyMiles-sa-50-field.png",
+    ".seer-cache/anim-inspect/review-20261026/holyMiles-sa-75-field.png",
+    ".seer-cache/anim-inspect/review-20261026/holyMiles-cp-50-field.png",
+    ".seer-cache/anim-inspect/review-20261026/holyMiles-cp-75-field.png",
+    ".seer-cache/anim-inspect/review-20261026/sixKing-static-pair.png",
+    ".seer-cache/anim-inspect/review-20261026/sixKing-actions-pair.png",
+    ".seer-cache/anim-inspect/review-20261026/sixKing-attack-50-field.png",
+    ".seer-cache/anim-inspect/review-20261026/sixKing-attack-75-field.png",
+    ".seer-cache/anim-inspect/review-20261026/sixKing-sa-50-field.png",
+    ".seer-cache/anim-inspect/review-20261026/sixKing-sa-75-field.png",
+    ".seer-cache/anim-inspect/review-20261026/sixKing-cp-50-field.png",
+    ".seer-cache/anim-inspect/review-20261026/sixKing-cp-75-field.png",
+    ".seer-cache/anim-inspect/review-20261026/astralAesfia-static-pair.png",
+    ".seer-cache/anim-inspect/review-20261026/astralAesfia-actions-pair.png",
+    ".seer-cache/anim-inspect/review-20261026/astralAesfia-attack-50-field.png",
+    ".seer-cache/anim-inspect/review-20261026/astralAesfia-attack-75-field.png",
+    ".seer-cache/anim-inspect/review-20261026/astralAesfia-sa-50-field.png",
+    ".seer-cache/anim-inspect/review-20261026/astralAesfia-sa-75-field.png",
+    ".seer-cache/anim-inspect/review-20261026/astralAesfia-cp-50-field.png",
+    ".seer-cache/anim-inspect/review-20261026/astralAesfia-cp-75-field.png",
+    ".seer-cache/anim-inspect/review-20261026/astralAesfig-static-pair.png",
+    ".seer-cache/anim-inspect/review-20261026/astralAesfig-actions-pair.png",
+    ".seer-cache/anim-inspect/review-20261026/astralAesfig-attack-50-field.png",
+    ".seer-cache/anim-inspect/review-20261026/astralAesfig-attack-75-field.png",
+    ".seer-cache/anim-inspect/review-20261026/astralAesfig-sa-50-field.png",
+    ".seer-cache/anim-inspect/review-20261026/astralAesfig-sa-75-field.png",
+    ".seer-cache/anim-inspect/review-20261026/astralAesfig-cp-50-field.png",
+    ".seer-cache/anim-inspect/review-20261026/astralAesfig-cp-75-field.png",
+    ".seer-cache/anim-inspect/review-20261026/mogos-static-pair.png",
+    ".seer-cache/anim-inspect/review-20261026/mogos-actions-pair.png",
+    ".seer-cache/anim-inspect/review-20261026/mogos-attack-50-field.png",
+    ".seer-cache/anim-inspect/review-20261026/mogos-attack-75-field.png",
+    ".seer-cache/anim-inspect/review-20261026/mogos-sa-50-field.png",
+    ".seer-cache/anim-inspect/review-20261026/mogos-sa-75-field.png",
+    ".seer-cache/anim-inspect/review-20261026/mogos-cp-50-field.png",
+    ".seer-cache/anim-inspect/review-20261026/mogos-cp-75-field.png",
+    ".seer-cache/anim-inspect/review-20261026/hamo-static-pair.png",
+    ".seer-cache/anim-inspect/review-20261026/hamo-actions-pair.png",
+    ".seer-cache/anim-inspect/review-20261026/hamo-attack-50-field.png",
+    ".seer-cache/anim-inspect/review-20261026/hamo-attack-75-field.png",
+    ".seer-cache/anim-inspect/review-20261026/hamo-sa-50-field.png",
+    ".seer-cache/anim-inspect/review-20261026/hamo-sa-75-field.png",
+    ".seer-cache/anim-inspect/review-20261026/hamo-cp-50-field.png",
+    ".seer-cache/anim-inspect/review-20261026/hamo-cp-75-field.png",
+    ".seer-cache/anim-inspect/review-20261026/wuxuLong-static-pair.png",
+    ".seer-cache/anim-inspect/review-20261026/wuxuLong-actions-pair.png",
+    ".seer-cache/anim-inspect/review-20261026/wuxuLong-attack-50-field.png",
+    ".seer-cache/anim-inspect/review-20261026/wuxuLong-attack-75-field.png",
+    ".seer-cache/anim-inspect/review-20261026/wuxuLong-sa-50-field.png",
+    ".seer-cache/anim-inspect/review-20261026/wuxuLong-sa-75-field.png",
+    ".seer-cache/anim-inspect/review-20261026/wuxuLong-cp-50-field.png",
+    ".seer-cache/anim-inspect/review-20261026/wuxuLong-cp-75-field.png",
+    ".seer-cache/anim-inspect/review-20261026/wujiShengwu-static-pair.png",
+    ".seer-cache/anim-inspect/review-20261026/wujiShengwu-actions-pair.png",
+    ".seer-cache/anim-inspect/review-20261026/wujiShengwu-attack-50-field.png",
+    ".seer-cache/anim-inspect/review-20261026/wujiShengwu-attack-75-field.png",
+    ".seer-cache/anim-inspect/review-20261026/wujiShengwu-sa-50-field.png",
+    ".seer-cache/anim-inspect/review-20261026/wujiShengwu-sa-75-field.png",
+    ".seer-cache/anim-inspect/review-20261026/wujiShengwu-cp-50-field.png",
+    ".seer-cache/anim-inspect/review-20261026/wujiShengwu-cp-75-field.png",
+    ".seer-cache/anim-inspect/review-20261026/moyilai-static-pair.png",
+    ".seer-cache/anim-inspect/review-20261026/moyilai-actions-pair.png",
+    ".seer-cache/anim-inspect/review-20261026/moyilai-attack-50-field.png",
+    ".seer-cache/anim-inspect/review-20261026/moyilai-attack-75-field.png",
+    ".seer-cache/anim-inspect/review-20261026/moyilai-sa-50-field.png",
+    ".seer-cache/anim-inspect/review-20261026/moyilai-sa-75-field.png",
+    ".seer-cache/anim-inspect/review-20261026/moyilai-cp-50-field.png",
+    ".seer-cache/anim-inspect/review-20261026/moyilai-cp-75-field.png",
+    ".seer-cache/anim-inspect/review-20261026/jiuqing-static-pair.png",
+    ".seer-cache/anim-inspect/review-20261026/jiuqing-actions-pair.png",
+    ".seer-cache/anim-inspect/review-20261026/jiuqing-attack-50-field.png",
+    ".seer-cache/anim-inspect/review-20261026/jiuqing-attack-75-field.png",
+    ".seer-cache/anim-inspect/review-20261026/jiuqing-sa-50-field.png",
+    ".seer-cache/anim-inspect/review-20261026/jiuqing-sa-75-field.png",
+    ".seer-cache/anim-inspect/review-20261026/jiuqing-cp-50-field.png",
+    ".seer-cache/anim-inspect/review-20261026/jiuqing-cp-75-field.png",
+    ".seer-cache/anim-inspect/review-20261026/diluTianfeng-static-pair.png",
+    ".seer-cache/anim-inspect/review-20261026/diluTianfeng-actions-pair.png",
+    ".seer-cache/anim-inspect/review-20261026/diluTianfeng-attack-50-field.png",
+    ".seer-cache/anim-inspect/review-20261026/diluTianfeng-attack-75-field.png",
+    ".seer-cache/anim-inspect/review-20261026/diluTianfeng-sa-50-field.png",
+    ".seer-cache/anim-inspect/review-20261026/diluTianfeng-sa-75-field.png",
+    ".seer-cache/anim-inspect/review-20261026/diluTianfeng-cp-50-field.png",
+    ".seer-cache/anim-inspect/review-20261026/diluTianfeng-cp-75-field.png",
+    ".seer-cache/anim-inspect/review-20261026/source-rey-thunder-dragon-v1-pair.png",
+    ".seer-cache/anim-inspect/review-20261026/source-70-pair.png",
+    ".seer-cache/anim-inspect/review-20261026/source-jiuqing_body-pair.png",
+    ".seer-cache/anim-inspect/review-20261026/source-4937-pair.png",
+    ".seer-cache/anim-inspect/review-20261026/source-unknown_myth_ghost_body-pair.png",
+    ".seer-cache/anim-inspect/review-20261026/source-emperor_dixin_body-pair.png",
+    ".seer-cache/anim-inspect/review-20261026/source-wuxu_liuren_body-pair.png",
+    ".seer-cache/anim-inspect/review-20261026/source-wuxu_shiyan_body-pair.png",
+    ".seer-cache/anim-inspect/review-20261026/source-wuxu_zhuixing_body-pair.png",
+    ".seer-cache/anim-inspect/review-20261026/source-otherworld_thunder_rey_body-pair.png",
+    ".seer-cache/anim-inspect/review-20261026/source-2648-pair.png",
+    ".seer-cache/anim-inspect/review-20261026/source-3809-pair.png",
+    ".seer-cache/anim-inspect/review-20261026/source-3665-pair.png",
+    ".seer-cache/anim-inspect/review-20261026/source-zhakesi_fear_body-pair.png",
+    ".seer-cache/anim-inspect/review-20261026/source-10-pair.png",
+    ".seer-cache/anim-inspect/review-20261026/source-1204-pair.png",
+    ".seer-cache/anim-inspect/review-20261026/source-177-pair.png",
+    ".seer-cache/anim-inspect/review-20261026/source-187-pair.png",
+    ".seer-cache/anim-inspect/review-20261026/source-2647-pair.png",
+    ".seer-cache/anim-inspect/review-20261026/source-2844-pair.png",
+    ".seer-cache/anim-inspect/review-20261026/source-303-pair.png",
+    ".seer-cache/anim-inspect/review-20261026/source-306-pair.png",
+    ".seer-cache/anim-inspect/review-20261026/source-309-pair.png",
+    ".seer-cache/anim-inspect/review-20261026/source-3098-pair.png",
+    ".seer-cache/anim-inspect/review-20261026/source-3404-pair.png",
+    ".seer-cache/anim-inspect/review-20261026/source-343-pair.png",
+    ".seer-cache/anim-inspect/review-20261026/source-3432-pair.png",
+    ".seer-cache/anim-inspect/review-20261026/source-3456-pair.png",
+    ".seer-cache/anim-inspect/review-20261026/source-359-pair.png",
+    ".seer-cache/anim-inspect/review-20261026/source-3626-pair.png",
+    ".seer-cache/anim-inspect/review-20261026/source-3740-pair.png",
+    ".seer-cache/anim-inspect/review-20261026/source-3886-pair.png",
+    ".seer-cache/anim-inspect/review-20261026/source-4647-pair.png",
+    ".seer-cache/anim-inspect/review-20261026/source-4648-pair.png",
+    ".seer-cache/anim-inspect/review-20261026/source-4649-pair.png",
+    ".seer-cache/anim-inspect/review-20261026/source-4762-pair.png",
+    ".seer-cache/anim-inspect/review-20261026/source-5000-pair.png",
+    ".seer-cache/anim-inspect/review-20261026/source-875-pair.png",
+    ".seer-cache/anim-inspect/review-20261026/source-300-pair.png",
+    ".seer-cache/anim-inspect/review-20261026/source-3539-pair.png",
+    ".seer-cache/anim-inspect/review-20261026/source-4586-pair.png",
+    ".seer-cache/anim-inspect/review-20261026/source-4643-pair.png",
+    ".seer-cache/anim-inspect/review-20261026/source-1536-pair.png",
+    ".seer-cache/anim-inspect/review-20261026/source-3393-pair.png",
+    ".seer-cache/anim-inspect/review-20261026/source-3105-pair.png",
+    ".seer-cache/anim-inspect/review-20261026/source-4032-pair.png",
+    ".seer-cache/anim-inspect/review-20261026/source-2882-pair.png",
+    ".seer-cache/anim-inspect/review-20261026/source-3045-pair.png",
+    ".seer-cache/anim-inspect/review-20261026/source-79-pair.png",
+    ".seer-cache/anim-inspect/review-20261026/source-418-pair.png",
+    ".seer-cache/anim-inspect/review-20261026/source-3561-pair.png",
+    ".seer-cache/anim-inspect/review-20261026/source-1000-pair.png",
+    ".seer-cache/anim-inspect/review-20261026/source-2656-pair.png",
+    ".seer-cache/anim-inspect/review-20261026/source-3005-pair.png",
+    ".seer-cache/anim-inspect/review-20261026/source-3020-pair.png",
+    ".seer-cache/anim-inspect/review-20261026/source-3580-pair.png",
+    ".seer-cache/anim-inspect/review-20261026/source-3808-pair.png",
+    ".seer-cache/anim-inspect/review-20261026/source-3870-pair.png",
+    ".seer-cache/anim-inspect/review-20261026/source-4188-pair.png",
+    ".seer-cache/anim-inspect/review-20261026/source-4249-pair.png",
+    ".seer-cache/anim-inspect/review-20261026/source-4313-pair.png",
+    ".seer-cache/anim-inspect/review-20261026/source-4432-pair.png",
+    ".seer-cache/anim-inspect/review-20261026/source-4557-pair.png",
+    ".seer-cache/anim-inspect/review-20261026/source-4590-pair.png",
+    ".seer-cache/anim-inspect/review-20261026/source-4620-pair.png",
+    ".seer-cache/anim-inspect/review-20261026/source-4621-pair.png",
+    ".seer-cache/anim-inspect/review-20261026/source-4642-pair.png",
+    ".seer-cache/anim-inspect/review-20261026/source-4891-pair.png",
+    ".seer-cache/anim-inspect/review-20261026/source-4940-pair.png",
+    ".seer-cache/anim-inspect/review-20261026/source-4661-pair.png",
+    ".seer-cache/anim-inspect/review-20261026/source-4800-pair.png",
+    ".seer-cache/anim-inspect/review-20261026/source-4275-pair.png",
+    ".seer-cache/anim-inspect/review-20261026/source-4903-pair.png",
+    ".seer-cache/anim-inspect/review-20261026/baseline-kold-actions.png",
+    ".seer-cache/anim-inspect/review-20261026/zhakesi15008-attack-50-field-original.png",
+    ".seer-cache/anim-inspect/review-20261026/belliant-sa-75-field-original.png",
+    ".seer-cache/anim-inspect/review-20261026/dimensionDragon-sa-75-field-original.png",
+    ".seer-cache/anim-inspect/review-20261026/wuxuLong-attack-50-field-original.png",
+    ".seer-cache/anim-inspect/review-20261026/jiuqing-sa-75-field-original.png",
+    ".seer-cache/anim-inspect/review-20261026/wujiShengwu-attack-50-field-original.png",
+    ".seer-cache/anim-inspect/review-20261026/roster-5017-static-pair.png",
+    ".seer-cache/anim-inspect/review-20261026/roster-5017-fallback-pair.png",
+    ".seer-cache/anim-inspect/review-20261026/roster-5022-static-pair.png",
+    ".seer-cache/anim-inspect/review-20261026/roster-5022-fallback-pair.png",
+    ".seer-cache/anim-inspect/review-20261026/roster-5023-static-pair.png",
+    ".seer-cache/anim-inspect/review-20261026/roster-5023-fallback-pair.png",
+    ".seer-cache/anim-inspect/review-20261026/roster-5026-static-pair.png",
+    ".seer-cache/anim-inspect/review-20261026/roster-5026-fallback-pair.png",
+    ".seer-cache/anim-inspect/review-20261026/roster-5029-static-pair.png",
+    ".seer-cache/anim-inspect/review-20261026/roster-5029-fallback-pair.png",
+    ".seer-cache/anim-inspect/review-20261026/roster-7070-static-pair.png",
+    ".seer-cache/anim-inspect/review-20261026/roster-7070-fallback-pair.png",
+    ".seer-cache/anim-inspect/review-20261026/roster-707070-static-pair.png",
+    ".seer-cache/anim-inspect/review-20261026/roster-707070-fallback-pair.png",
+    ".seer-cache/anim-inspect/review-20261026/roster-arena_16-static-pair.png",
+    ".seer-cache/anim-inspect/review-20261026/roster-arena_16-fallback-pair.png",
+    ".seer-cache/anim-inspect/review-20261026/roster-wiki_4937-static-pair.png",
+    ".seer-cache/anim-inspect/review-20261026/roster-wiki_4937-fallback-pair.png"
+  ]
+}

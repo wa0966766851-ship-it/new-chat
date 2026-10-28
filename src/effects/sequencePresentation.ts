@@ -3,6 +3,8 @@ import { groupBPresentation } from '../blocks/ops/groupB';
 import {markDamageReductionText} from '../battle/markDamageReduction';
 /** 只處理顯示：不改儲存label、PRD鍵或執行參數。已有人工名稱完整保留。 */
 export function sequenceActionLabel(a: Act, triggerLabels: Record<string, string> = {}): string {
+  if(a.p?.appendToAttack){const {appendToAttack,...p}=a.p;return `${sequenceActionLabel({...a,p},triggerLabels)}；攻擊技能獨立結算後合併同一擊`; }
+  if(a.p?.doublePer){const {doublePer,...p}=a.p;return `${sequenceActionLabel({...a,p},triggerLabels)}；雙方每個滿PP技能再翻倍`; }
   if(a.p?.perStatusTurns){const {perStatusTurns,...p}=a.p;return `${sequenceActionLabel({...a,p},triggerLabels)}×${perStatusTurns==='both'?'雙方':perStatusTurns==='self'?'自身':'對手'}異常剩餘回合總和`;}
   if(a.p?.perStageKinds){
     const {perStageKinds:q,...p}=a.p;
@@ -21,8 +23,27 @@ export function sequenceActionLabel(a: Act, triggerLabels: Record<string, string
   const groupB = groupBPresentation(a.op, p, side);
   if (groupB) return groupB;
   switch (a.op) {
+    case 'panel_pool_transfer':return `敵方背包六項面板降低${pct(p.ratio)}，實際降低合計每${p.unit}點，自身六項各增加${p.gain}點`;
+    case 'compress_turn_effects':return `${side}回合類效果縮短至${p.remaining}回合，記錄合計縮短量`;
+    case 'pending_damage_write':return `覆寫待用追加傷害：縮短回合數×最大體力${pct(p.ratio)}`;
+    case 'pending_damage_use':return `消費最近一次待用${p.type}傷害`;
+    case 'status_extend_by_last':return `「${p.status}」回合數增加上一數值`;
+    case 'stat_by_status_duration':return `全屬性+${p.base}，每回合「${p.status}」乘以${p.factor}`;
+    case 'damage_scale_by_status':return `${side}異常回合總和×${pct(p.perTurn)}＋基礎${p.base}倍${p.kind}傷害`;
+    case 'power_per_full_pp':return `自身每個滿PP技能令威力+${p.amount}`;
+    case 'effect_end_watch':return `${p.turns}回合內自身回合類效果結束／被消除時，取得${p.count}次${p.mode==='immune'?'異常免疫':`異常轉化為「${p.status}」`}`;
+    case 'status_convert_uses':return `下${p.count}次異常轉化為「${p.status}」`;
+    case 'bound_penalty':return `綁定對手${p.turns}回合：${p.sealKind}附加效果失效；${p.ppKind}PP消耗×${p.ppMultiplier}`;
+    case 'stop_action':return `${side}當回合無法行動`;
+    case 'status_guard_instance':return `本次「${p.status}」結束前抵擋${p.kind}傷害`;
+    case 'query_number':return `查詢${side}${p.kind==='full_pp'?'滿PP技能數':`${p.status||'全部異常'}剩餘回合總和`}`;
+    case 'survive_uses':return `下${p.uses}次受到致死傷害時強制存活，保留1點體力`;
+    case 'summon_fixed_extra':return `召喚${p.gender}、${p.type}系額外精靈「${p.name}」，六項面板各${p.value}`;
+    case 'retire_summoned_extra':return `確認召喚者陣亡後令「${p.name}」${p.trueDamage?`受到${p.trueDamage}真實傷害並`:''}${p.gender?`轉為${p.gender}並`:''}陣亡`;
+    case 'combine_panel_stats':return `${p.stats.join('／')}面板${p.mode==='restore'?'還原原值':`各設為原值${p.mode==='sum'?'總和':'最大值'}`}（快照：${p.key}）`;
+    case 'record_round_user':return `記錄${side}真正出招為本回合首次使用者（${p.key}）`;
     case 'stat_points_add_gap':return `${p.stats.join('／')}各增加｜${p.stats2.join('－')}｜×${pct(p.ratio)}×「${p.markId}」層數（向下取整）`;
-    case 'prio_turns':return `${p.next===false?'當回合起':'下'}${p.turns}回合${side}${p.attackOnly?'攻擊':'所有'}技能先制${p.v>0?'+':''}${p.v}`;
+    case 'prio_turns':if(p.current)return `${p.turns}回合內${side}先制${p.v>0?'+':''}${p.v}`;return `${p.next===false?'當回合起':'下'}${p.turns}回合${side}${p.attackOnly?'攻擊':'所有'}技能先制${p.v>0?'+':''}${p.v}`;
     case 'heal_main_settled':return `成功行動後恢復本次主技能結算量${pct(p.ratio)}（含護盾吸收，不含附加傷害）`;
     case 'next_power_nonfull':return `記錄己方${p.scope==='bench'?'場下':'背包全隊'}${p.aliveOnly?'存活':''}非滿體力精靈數，每隻令下次攻擊威力+${pct(p.perElf)}（只用一次，下場清除）`;
     case 'checked_percent_drain':return `吸取對手最大體力${pct(p.ratio)}；結算後對手未扣血或自身體力未增加則追加${p.failTrue}真實傷害（一次）`;
@@ -60,7 +81,7 @@ export function sequenceActionLabel(a: Act, triggerLabels: Record<string, string
     case 'dmg_mod':return `${p.dir.startsWith('in')?'受到':'造成'}的${p.kind||'全部'}傷害${['in','out_reduce'].includes(p.dir)?'減少':'提升'}${pct(p.reduce??p.boost)}${p.perMark?`×${p.perMark.side==='self'?'自身':'對手'}「${p.perMark.id}」當下層數`:''}`;
     case 'damage_floor':return `本次攻擊傷害不低於${side}${p.base}×${pct(p.ratio)}`;
     case 'damage_to_heal_turns':return `${p.next?'下':'當回合起'}${p.turns}回合受到的${p.kind}傷害轉化為自身體力（正式最終量）`;
-    case 'block_damage_uses':return `抵擋下${p.uses}次${p.kind}傷害，記錄正式抵擋量${p.onBlock?'並執行成功反應':''}`;
+    case 'block_damage_uses':return `抵擋下${p.uses}次${p.kind}傷害，記錄正式抵擋量${p.onBlock?'並執行成功反應':''}${p.sealOpponentAdded?'；抵擋觸發前或下場前對手附加效果失效':''}`;
     case 'instant_kill':return `${p.chance}%機率秒殺對手（獨立體力修正及免死攔截）`;
     case 'prevent_instant_kill':return `使${p.scope==='team'?'本方所有精靈':'本持有者'}${p.dir==='in'?'受到':'觸發'}的秒殺失效`;
     case 'instant_kill_same_hp_targets':return '秒殺前選取對方所有同體力存活精靈，逐一結算';

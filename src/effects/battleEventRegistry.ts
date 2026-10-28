@@ -87,13 +87,8 @@ export type SoulMarkHandler = (context: BattleEventContext, event: EffectTiming,
 
 
 export const SOUL_MARK_MAPPING: Record<string, string> = {
-  // 5035 魂印「鱗」已遷真 Kit（migratedHamoLinSoulKit.ts；DSH 20261018）——handler 已空殼化。
-  // ⚠️ 映射必須保留：SoulMarkRegistry 的 Proxy 以「映射存在」為前提才會執行 sharedSoulLifecycle
-  // （通用生命週期 newElfLifecycle／mogosTeamEffects 等），刪掉映射會讓通用讀取端全部失效。
-  '5035': 'handleHamoSoulMark',
-  '御天龍神·哈莫': 'handleHamoSoulMark',
-  "5030": "handleHolyMilesSoulMark",
-  "聖靈邁爾斯": "handleHolyMilesSoulMark",
+  // 5035 魂印「鱗」、5030 魂印「聖」已遷真 Kit（migratedHamoLinSoulKit.ts／migratedHolyMilesKits.ts）——
+  // 空殼 handler 與映射移除；sharedSoulLifecycle 由 SoulMarkRegistry Proxy 對任何名稱執行，不依賴映射。
   "5032": "handleAstralAesfiaSoulMark",
   "星核寰宇·艾斯菲亞": "handleAstralAesfiaSoulMark",
   "星核寰宇.艾斯菲亞": "handleAstralAesfiaSoulMark",
@@ -172,22 +167,8 @@ export const SOUL_MARK_MAPPING: Record<string, string> = {
   // 5015 魂印「夜」已遷移為真 Kit（migratedNightSoulKit；DSH 20261018）——映射移除。
   "1012": "handleChaosBlakeSoulMark",
   
-  // 5016 魂印「械」已遷真 Kit（migrated5016MechSoulKit.ts；DSH 20261019）——規則3.3 映射停用。
-  // ⚠️ 但映射必須保留一個空殼鍵讓 sharedSoulLifecycle 仍執行：見下方 noop。
-  "5016": "handleMarsSoulMarkNoop",
-  // 5016 魂印「械」已遷真 Kit（migrated5016MechSoulKit.ts；DSH 20261019）——規則3.3 映射停用。
-  // ⚠️ 但映射必須保留一個空殼鍵讓 sharedSoulLifecycle 仍執行：見下方 noop。
-  "1013": "handleMarsSoulMarkNoop",
-  // 5016 魂印「械」已遷真 Kit（migrated5016MechSoulKit.ts；DSH 20261019）——規則3.3 映射停用。
-  // ⚠️ 但映射必須保留一個空殼鍵讓 sharedSoulLifecycle 仍執行：見下方 noop。
-  "變革·馬爾修斯": "handleMarsSoulMarkNoop",
-  // 5016 魂印「械」已遷真 Kit（migrated5016MechSoulKit.ts；DSH 20261019）——規則3.3 映射停用。
-  // ⚠️ 但映射必須保留一個空殼鍵讓 sharedSoulLifecycle 仍執行：見下方 noop。
-  "馬爾修斯": "handleMarsSoulMarkNoop",
-  // 5016 魂印「械」已遷真 Kit（migrated5016MechSoulKit.ts；DSH 20261019）——規則3.3 映射停用。
-  // ⚠️ 但映射必須保留一個空殼鍵讓 sharedSoulLifecycle 仍執行：見下方 noop。
-  "mars_reform": "handleMarsSoulMarkNoop",
-  
+  // 5016／1013 魂印「械」走正式 Kit；共用生命週期由 Proxy 無條件執行，無須空殼登記。
+
   "5017": "handleDixinSoulMark",
   "1014": "handleDixinSoulMark",
   "1031": "handleDixinSoulMark",
@@ -331,7 +312,7 @@ function initializeRegistries() {
 }
 
 // 會在「對手受到技能攻擊」時被通知 ON_DAMAGED 的魂印（handler 內以 extraData.targetSide 區分自身／對手受擊）
-const ON_DAMAGED_OBSERVER_HANDLERS = new Set(["handleMonkeySoulMark", "handleLisaSoulMark", "handleStarlightRusSoulMark", "handleOtherworldReySoulMark", "handleHolyMilesSoulMark", "handleWuxuSoulMark"]);
+const ON_DAMAGED_OBSERVER_HANDLERS = new Set(["handleMonkeySoulMark", "handleLisaSoulMark", "handleStarlightRusSoulMark", "handleOtherworldReySoulMark", "handleWuxuSoulMark"]);
 export function observesOpponentDamage(elfName: string,elf?:Elf): boolean {
   return !!elf&&hasOpponentDamageObserver(elf)||ON_DAMAGED_OBSERVER_HANDLERS.has(SOUL_MARK_MAPPING[elfName]);
 }

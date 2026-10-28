@@ -1,11 +1,10 @@
-import { lazy, Suspense, useEffect, useRef, useState } from 'react';
+import { ElfSpotlight } from './ElfSpotlight';
+import { useState } from 'react';
 import type { Elf } from '../types';
-import { RELEASE_NOTES, FEATURED_ELVES } from '../data/releaseNotes';
+import { RELEASE_NOTES } from '../data/releaseNotes';
 import { createElfUpdateBlueprint, createElfUpdateHandoff } from '../utils/elfUpdateWorkflow';
 import { BlueprintImportButton } from './BlueprintImportButton';
-import { ElfAvatar } from './SeerImages';
 
-const Profile = lazy(() => import('./ElfReadOnlyProfile').then(m => ({ default: m.ElfReadOnlyProfile })));
 type Tab = 'news' | 'elves' | 'workflow';
 type Props = { elves: Elf[]; onBack: () => void; onEditElf: (elf: Elf, tab: 'blockly') => void };
 
@@ -20,24 +19,7 @@ export default function UpdatesPage({ elves, onBack, onEditElf }: Props) {
   const [selectedId, setSelectedId] = useState('wiki_4937');
   const [request, setRequest] = useState('');
   const [feedback, setFeedback] = useState('');
-  const [profileId, setProfileId] = useState<string | null>(null);
-  const dialog = useRef<HTMLDivElement>(null);
   const selected = elves.find(elf => elf.id === selectedId);
-  const profile = elves.find(elf => elf.id === profileId);
-  useEffect(() => {
-    if (!profile || !dialog.current) return;
-    const previous = document.activeElement as HTMLElement | null;
-    const surface = dialog.current; surface.focus();
-    const onKey = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') { event.preventDefault(); setProfileId(null); }
-      if (event.key !== 'Tab') return;
-      const items = [...surface.querySelectorAll<HTMLElement>('button:not(:disabled), a[href], input:not(:disabled), select:not(:disabled), textarea:not(:disabled), [tabindex="0"]')];
-      const next = event.shiftKey ? items.at(-1) : items[0];
-      if (!items.length || document.activeElement === surface || document.activeElement === (event.shiftKey ? items[0] : items.at(-1))) { event.preventDefault(); next?.focus(); }
-    };
-    surface.addEventListener('keydown', onKey);
-    return () => { surface.removeEventListener('keydown', onKey); if (previous?.isConnected) previous.focus(); };
-  }, [profile]);
   const run = async (task: () => void | Promise<void>) => {
     setFeedback('');
     try { await task(); } catch (error) { setFeedback(error instanceof Error ? error.message : '操作未完成，請重試。'); }
@@ -48,6 +30,7 @@ export default function UpdatesPage({ elves, onBack, onEditElf }: Props) {
     catch { throw new Error('無法存取剪貼簿，請改用「下載任務文字檔」。'); }
     setFeedback('任務已複製，貼到你選擇的 AI 對話即可。');
   };
+  if(tab==='elves')return <ElfSpotlight elves={elves} onClose={onBack} onBack={()=>setTab('news')} onEdit={elf=>{setSelectedId(elf.id);setTab('workflow');}}/>;
   return <section className="w-full max-w-5xl mx-auto p-4 sm:p-8 space-y-6 text-slate-200" aria-label="更新與精靈">
     <header className="flex flex-wrap items-center justify-between gap-3">
       <div><h1 className="text-2xl font-bold">更新與精靈</h1><p className="text-sm text-slate-400 mt-2">查看本版本內容、認識新精靈，或開始修改你的精靈。</p></div>
@@ -63,17 +46,6 @@ export default function UpdatesPage({ elves, onBack, onEditElf }: Props) {
         <h2 className="text-lg font-semibold">{note.title}</h2>
         <ul className="list-disc pl-5 space-y-2 text-sm text-slate-300">{note.items.map(item => <li key={item}>{item}</li>)}</ul>
       </article>)}
-    </div>}
-    {tab === 'elves' && <div className="space-y-4">
-      {FEATURED_ELVES.map(feature => {
-        const elf = elves.find(item => item.id === feature.id);
-        return <article key={feature.id} className="ios-card p-5 space-y-4">
-          <header className="flex items-center gap-4">{elf && <ElfAvatar elf={elf} className="w-20 h-20 shrink-0" />}<div><p className="text-xs text-sky-300">本次介紹 · {feature.date}</p><h2 className="text-xl font-semibold">{feature.name}</h2><p className="text-sm text-slate-400 mt-2">{feature.summary}</p></div></header>
-          <ul className="list-disc pl-5 text-sm space-y-2">{feature.highlights.map(text => <li key={text}>{text}</li>)}</ul>
-          <p className="text-xs text-slate-400">介紹以內建版本為準；詳細資料會顯示你目前使用的版本，包含本機修改。</p>
-          {elf ? <div className="flex flex-wrap gap-3"><button type="button" className="ios-button" onClick={() => setProfileId(elf.id)}>查看魂印與技能</button><button type="button" className="ios-button" onClick={() => { setSelectedId(elf.id); setTab('workflow'); }}>修改這隻精靈</button></div> : <p role="status">目前清單沒有這隻精靈；若曾刪除，可至精靈管理還原後查看。</p>}
-        </article>;
-      })}
     </div>}
     {tab === 'workflow' && <div className="space-y-5">
       <div className="ios-card p-5 space-y-3">
@@ -106,7 +78,8 @@ export default function UpdatesPage({ elves, onBack, onEditElf }: Props) {
       </div>
       <section className="ios-card p-5 space-y-3"><h2 className="font-semibold">讓所有玩家取得更新</h2><p className="text-sm text-slate-300">本機圖紙儲存只影響這台裝置。公開版本須由維護者整合到 GitHub，補上必要的雙方戰鬥測試並通過發布檢查，再更新網站或發布新 EXE。玩家之後可在控制中心檢查與套用新版。</p><p className="text-sm text-slate-400">若原文需要的行為尚無積木支援，請保留原文與預期範例交給維護者；不要用空動作當成完成。</p></section>
     </div>}
+    {tab === 'news' && <aside className="ios-card p-4"><h2 className="font-semibold mb-2">外部資源</h2><p className="text-sm text-slate-300">需要直接查看精靈的官方動作素材（待機／出招／受擊），可使用社群維護的線上查看器 <a className="text-blue-300 underline" href="https://nattsu39.github.io/seer-pet-viewer/" target="_blank" rel="noopener noreferrer">賽爾號精靈動畫查看器（seer-pet-viewer）</a>；輸入精靈編號即可預覽原生動畫。本模擬器的播放核心亦基於其開源渲染套件。</p></aside>}
     {feedback && <p role="status" className="text-sm text-sky-200 whitespace-pre-wrap">{feedback}</p>}
-    {profile && <div ref={dialog} tabIndex={-1} role="dialog" aria-modal="true" aria-label={`${profile.name}介紹`} className="fixed inset-0 z-[100] bg-slate-950/95 overflow-y-auto p-4 sm:p-8"><div className="max-w-3xl mx-auto"><Suspense fallback={<p role="status">載入精靈資料…</p>}><Profile elf={profile} onClose={() => setProfileId(null)} subtitle="目前使用的精靈資料" /></Suspense></div></div>}
+
   </section>;
 }

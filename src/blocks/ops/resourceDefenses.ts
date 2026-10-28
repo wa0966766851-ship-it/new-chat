@@ -1,3 +1,4 @@
+import {markCapability} from '../../battle/markCapabilities';
 import type {BattleEventContext} from '../../effects/types';
 import {EffectTiming} from '../../effects/types';
 import type {RunState} from '../runtime';
@@ -34,6 +35,7 @@ export function resourceDefenseOperations(runStmts:(ctx:BattleEventContext,body:
   damage_reduce_first:(ctx:BattleEventContext,p:any,st:RunState)=>{
     const comp=st.event?.data?.damageComp||(ctx as any).damageComp||st.event?.data;
     if(!comp?.isIncoming||!matchesDamageTypes(p.types,comp.damageCategory)||comp.pure)return false;
+    if(markCapability(ctx.self,'shieldSideEffectsDisabled'))return false;
     const owner=holder(ctx),key=`firstDamageReduction:${p.id}:${owner}`;
     const current=()=>ctx.getFullTeam(ctx.actor).find(e=>String(e.battleId||e.id)===owner)||ctx.self;
     if(ctx.getPlayerState(key)===ctx.roundNumber||!p.resources.every((r:string)=>Number((current() as any)[r])>0))return false;

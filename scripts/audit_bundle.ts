@@ -47,6 +47,43 @@ for (const file of jsAssets) {
   assert.ok(statSync(resolve(dist, "assets", file)).size < 500_000, `頁面／Worker JS 區塊超過500 kB預算：${file}`);
 }
 console.log(`全部 ${jsAssets.length} 個頁面／Worker JS 區塊均低於500 kB。`);
+
+// 精靈動作（pixi／Unity 解碼／圖像編解碼／@seer-pet-anim）只在使用者切到「精靈動作」且真的要播放時才動態載入：
+// 首頁初始區塊不得含它們，也不得靜態引入它們。500 kB 上限不設例外：最大的 vendor-pet-pixi 已拆為獨立區塊。
+for (const key of initial) {
+  assert.ok(!/vendor-pet|PetActionSprite|HomePetActionLayer|swf-renderer|swf-bundle/.test(`${key} ${manifest[key].file}`), `首頁初始區塊不得含精靈動作依賴：${key}`);
+}
+assert.ok(Object.entries(manifest).some(([key, chunk]) => /PetActionSprite/.test(key) && chunk.isDynamicEntry && !initial.has(key)), "PetActionSprite 應為獨立的延後載入區塊");
+
+// 區塊之間不得有「靜態引入循環」：manualChunks 把互相依賴的套件拆到不同區塊時，ES 模組循環會讓先求值的區塊
+// 在對方尚未初始化前就使用它（Cannot access 'x' before initialization），精靈動作會永遠載入失敗。
+{
+  const deps = new Map<string, string[]>();
+  for (const file of jsAssets) {
+    const text = readFileSync(resolve(dist, "assets", file), "utf8");
+    const list = new Set<string>();
+    for (const match of text.matchAll(/(?:from|import)\s*"\.\/([^"]+\.js)"/g)) if (jsAssets.includes(match[1])) list.add(match[1]);
+    deps.set(file, [...list]);
+  }
+  const state = new Map<string, 1 | 2>();
+  const stack: string[] = [];
+  const visitChunk = (file: string) => {
+    if (state.get(file) === 2) return;
+    if (state.get(file) === 1) assert.fail(`區塊間存在靜態引入循環：${[...stack.slice(stack.indexOf(file)), file].join(" -> ")}`);
+    state.set(file, 1); stack.push(file);
+    for (const dep of deps.get(file) || []) visitChunk(dep);
+    stack.pop(); state.set(file, 2);
+  };
+  for (const file of jsAssets) visitChunk(file);
+  console.log("區塊間無靜態引入循環。");
+}
+
+// buffer-setup（把 Buffer 設到 globalThis）必須與 buffer 同在最先求值的共用塊；@jimp 等模組求值時就讀全域 Buffer。
+for (const pattern of [/^vendor-pet-shared-/, /^ai-vendor-(?!image)/]) {
+  const file = jsAssets.find(name => pattern.test(name));
+  assert.ok(file, `找不到 ${pattern} 區塊`);
+  assert.ok(/\.Buffer\|\|\(\w+\.Buffer=\w+\.Buffer\)/.test(readFileSync(resolve(dist, "assets", file), "utf8")), `${file} 必須含 buffer-setup（全域 Buffer 設定），否則 image 區塊先求值時 Buffer 未定義`);
+}
 let initialBytes = 0;
 for (const key of initial) {
   const bytes = readFileSync(resolve(dist, manifest[key].file));

@@ -125,7 +125,7 @@ export function runBlockEvent(ctx: BattleEventContext, event: string, data: any,
       ctx.addLog(`✨ 【${ctx.self?.name}】重生了！`, "effect"); return true;
     }
     const t = findBlockTimer(timers, b => b.survive);
-    if (t) { surviveAt1(ctx); ctx.addLog(`💀 【${ctx.self?.name}】強制存活，保留 1 點體力！`, "effect"); return true; }
+    if (t) { if(t.kind==='use_counter')ctx.consumeTimer?.(ctx.actor,t.id);surviveAt1(ctx); ctx.addLog(`💀 【${ctx.self?.name}】強制存活，保留 1 點體力！`, "effect"); return true; }
   }
   return emitSoul(ctx, trigs, data, elf, isActive || event === EffectTiming.FATAL_RESIST) || connectedSurvived === true;
 }
@@ -217,6 +217,22 @@ export function emitSkillUse(actorCtx: BattleEventContext, oppCtx: BattleEventCo
   const oppT = (after ? [`opp_after_skill`, `opp_after_${kind}`] : [`opp_skill`, `opp_${kind}`]) as Trigger[];
   const data = { ...result, skill };
   if (!after) {
+    // 共用戰鬥事實：只在真正出招時記錄；選招順序、排序或受控都不算。
+    for(const ctx of [actorCtx,oppCtx]) {
+      const saved=ctx.getPlayerState('roundSkillUseOrder');
+      if(saved?.round!==ctx.roundNumber)ctx.setPlayerState('roundSkillUseOrder',{round:ctx.roundNumber,first:actorCtx.actor});
+    }
+    const opponentUseCtx=Object.create(oppCtx);
+    Object.defineProperty(opponentUseCtx,'skill',{value:skill,configurable:true});
+    const opponentDefinition=soulDefinition(oppCtx.self);
+    if(usesAuthoredSoul(oppCtx.self,soulHandlerProvider(oppCtx.self))&&effectRoute(opponentDefinition)==='kit')runConnectedKit('on_opponent_skill_use',opponentDefinition,opponentUseCtx);
+    for(const trait of [oppCtx.self.trait,oppCtx.self.alienTraits?.gen2Trait,oppCtx.self.alienTraits?.exclusiveTrait,...(oppCtx.self.alienTraits?.exclusiveTraits||[]),oppCtx.self.alienTraits?.alienTrait,oppCtx.self.alienTraits?.generalTrait])
+      if(trait?.effectMode==='kit')runConnectedKit('on_opponent_skill_use',trait,opponentUseCtx);
+    for(const equipped of oppCtx.self.skills){
+      const handler=hasConnectedSkillHandler(equipped.name);
+      if(usesAuthoredSkill(equipped,handler,oppCtx.self)&&effectRoute(equipped,handler)==='kit')
+        runConnectedKit('on_opponent_skill_use',{...equipped,kit:equipped.kit?.filter(e=>e.role==='carried')},opponentUseCtx);
+    }
     const definition = soulDefinition(actorCtx.self);
     if (usesAuthoredSoul(actorCtx.self, soulHandlerProvider(actorCtx.self)) && effectRoute(definition) === 'kit') runConnectedKit('on_skill_use', definition, actorCtx);
     for (const trait of [actorCtx.self.trait, actorCtx.self.alienTraits?.gen2Trait, actorCtx.self.alienTraits?.exclusiveTrait, ...(actorCtx.self.alienTraits?.exclusiveTraits || []), actorCtx.self.alienTraits?.alienTrait, actorCtx.self.alienTraits?.generalTrait])

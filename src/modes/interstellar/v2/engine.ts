@@ -5,8 +5,10 @@
 import { bindBag } from "../../../battle/bagTargets";
 import type { BaseStats, Elf } from "../../../types";
 import { Dice, newSeed } from "./rng";
-import { clampN, nEffects, banCap, type NEffects } from "./levels";
+import { clampN, nEffects, banCap, startLivesFor, type NEffects } from "./levels";
 import { deriveSeed, encodeRunCode, poolSignature } from "./seed";
+import { drawBossTraits, traitDice } from "./bossTraitDraw";
+import { attachBossTraits, type BossTraitSpec } from "../../../data/bossTraits";
 import { OPEN_SHIELD_BASE, perkOf, type Perk } from "./suitPerks";
 import {
   ADVANCE_PP_PRICE, DUP_BASE_CAP, RELIC_PRICE, tokenBasePrice, SHARD_INCOME, SHARD_SHOP_PRICE, advanceStatPrice, applyDupPp, depthMul, depthOf, dupOf, dupStatMul, elfTypes, fixedMulAt, fixedMulEntry, foldDupPp, recruitPriceOf, repeatDropChance, tierRank, tokenLabel, tokenMatches,
@@ -28,11 +30,11 @@ type Storage = Pick<globalThis.Storage, "getItem" | "setItem" | "removeItem">;
 
 export type { Tier, RecruitToken, TokenSpec } from "./recruit";
 export { tokenBasePrice } from "./recruit";
-export interface EnemySpec { id: string; affixes: string[]; }
+export interface EnemySpec { id: string; affixes: string[]; /** 原廠 BOSS 特性（夢魘／王座；見 bossTraitDraw.ts） */ traits?: BossTraitSpec[]; }
 export interface Encounter { kind: "combat" | "elite" | "boss"; title: string; enemies: EnemySpec[]; reward?: "relic" | "legendary"; scale: number; /** 體力倍率（遠高於其他能力，確保敵方體力明顯超越玩家） */ hpScale?: number; /** 層數 L（1…72）；固定值倍率 √depthMul(L) 由此決定 */ depth?: number; }
-export interface ShopItem { kind: "relic" | "elf" | "potion" | "purge" | "mend" | "token" | "shard"; ref?: string; /** 招募令商品 */ token?: TokenSpec; /** 星晶商品的數量 */ qty?: number; price: number; currency: "beans" | "shards"; sold?: boolean; }
+export interface ShopItem { kind: "relic" | "elf" | "potion" | "purge" | "mend" | "token" | "shard" | "life"; ref?: string; /** 招募令商品 */ token?: TokenSpec; /** 星晶商品的數量 */ qty?: number; price: number; currency: "beans" | "shards"; sold?: boolean; }
 export interface Reward {
-  beans: number; /** 本次獲得的星晶（已入帳） */ shards?: number; /** 本次獲得的招募令（已入帳） */ tokens?: RecruitToken[]; potions: number; exp: number;
+  beans: number; /** 本次獲得的永久生命（首領獎勵） */ lives?: number; /** 本次獲得的星晶（已入帳） */ shards?: number; /** 本次獲得的招募令（已入帳） */ tokens?: RecruitToken[]; potions: number; exp: number;
   /** 舊存檔：系統給的 3 選 1 */ relicChoices: string[]; recruitChoices: string[];
   relicTaken?: string; recruitTaken?: string; isBoss?: boolean; isFinal?: boolean;
 }
@@ -47,14 +49,19 @@ export type Scene =
   | { kind: "prelude"; encounter: Encounter }
   | { kind: "reward"; reward: Reward; title: string }
   | { kind: "recruit"; offer: string[]; note: string }
-  | { kind: "end"; result: "victory" | "wiped"; /** 敗因：全隊陣亡／首領戰敗／放棄戰鬥 */ cause?: DefeatCause; /** 擊倒你的遭遇名稱 */ by?: string };
-export type DefeatCause = "wipe" | "boss" | "exit";
+  | { kind: "end"; result: "victory" | "wiped"; /** 敗因：生命耗盡（舊存檔：全隊陣亡／首領戰敗／放棄戰鬥） */ cause?: DefeatCause; /** 擊倒你的遭遇名稱 */ by?: string };
+export type DefeatCause = "wipe" | "boss" | "exit" | "lives";
 /** 敗因的一行說明（敗北結算畫面與紀事共用） */
-export const DEFEAT_TEXT: Record<DefeatCause, string> = { wipe: "全隊陣亡", boss: "首領戰敗", exit: "放棄首領戰" };
+export const DEFEAT_TEXT: Record<DefeatCause, string> = { wipe: "全隊陣亡", boss: "首領戰敗", exit: "放棄首領戰", lives: "生命耗盡" };
 /** 失敗條件（資源列 tooltip 與開局說明共用） */
-export const FAIL_RULE = "失敗條件：全隊（含待命與倉庫）陣亡，或首領戰敗。戰敗但仍有存活者時，自動由存活者補上出戰。保命遺物與套裝特權會在失敗結算前依序觸發。";
+export const FAIL_RULE = "失敗條件：生命歸 0。每場戰鬥結束時，依我方倒下的精靈數扣生命（臨時生命優先）；首領戰敗或放棄也只扣生命。全隊倒下但生命未歸 0 時，全員以 30% 體力復甦。保命遺物與套裝特權會在生命將歸 0 時依序觸發（本場不扣生命）。";
+/** 生命制規則（資源列 tooltip 用） */
+export const LIFE_RULE = "生命：每場戰鬥結束時，依我方倒下的精靈數扣除；臨時生命（只在當章有效、換章清空）優先扣除；歸 0 即失敗。來源：遺物、事件、首領獎勵、商店、套裝特權。";
+/** 一場戰鬥的生命結算（戰後結算與紀事顯示用） */
+export interface LifeLoss { lost: number; fromTemp: number; fromPerm: number; /** 本場倒下的精靈 */ fallen: string[]; /** 觸發的保命來源（本場不扣生命） */ saved?: string; /** 發生時已完成的戰鬥數 */ fights: number }
+export const lifeLossText = (l: LifeLoss): string => l.saved ? `本場不扣生命（${l.saved === "perk:fate_defier" ? "逆命者" : RELIC_BY_ID[l.saved]?.name ?? l.saved}）` : l.lost > 0 ? `生命 −${l.lost}（${[l.fromTemp ? `臨時 −${l.fromTemp}` : "", l.fromPerm ? `永久 −${l.fromPerm}` : ""].filter(Boolean).join("、")}）：${l.fallen.join("、")}倒下` : "無人倒下，不扣生命";
 
-export interface PreBattle { team: Elf[]; lineup?: string[]; bench?: string[]; potions: number; eclipse: number; shieldAct?: number }
+export interface PreBattle { team: Elf[]; lineup?: string[]; bench?: string[]; potions: number; eclipse: number; shieldAct?: number; lives?: number; tempLives?: number }
 export interface RunV2 {
   schemaVersion: 2; runId: string; revision: number; seed: number; nonce: number;
   /** 進階難度 N0–N18（舊存檔缺省為 0） */ nLevel?: number;
@@ -66,6 +73,7 @@ export interface RunV2 {
   /** 星晶：招募與進階的貨幣 */ shards: number; /** 已用星晶招募的次數（推高下次招募價格；持令招募不計） */ recruitCount?: number;
   /** 限定招募券（招募令）：持有時可免費招募符合條件者／免費進階一次 */ tokens: RecruitToken[]; tokenSeq?: number;
   /** 已套用「星晶保留為貨幣」的存檔格式（舊存檔載入時補上） */ shardsV3?: boolean;
+  /** 生命制：永久生命（歸 0＝失敗）、臨時生命（只在當章有效，優先扣除，換章清空）、已在商店買過的永久生命數（價格遞增） */ lives: number; tempLives: number; lifeBought?: number; /** 最近一場戰鬥的生命結算 */ lastLifeLoss?: LifeLoss | null;
   /** 套裝特權：最近一次使用「每章首戰護盾」的章節；戰敗保留隊伍是否已用 */ shieldAct?: number; lifelineUsed?: boolean;
   equipType: "suit" | "title"; equipId: string; modifiers: string[];
   scene: Scene; pendingBattle: null | { id: string; nodeId: string | null; encounter: Encounter; /** 由局種子衍生的戰鬥亂數種子 */ battleSeed?: number; /** 持有逆時沙漏時：戰前狀態（戰敗將結算時用來回溯） */ pre?: PreBattle };
@@ -117,6 +125,7 @@ export function createRun(opts: CreateRunOpts): RunV2 {
   const potions = Math.max(0, 3 - (opts.modifiers.includes("no_potions") ? 2 : 0) + n.startPotions + (perk?.potions ?? 0));
   let run: RunV2 = prerollMysteries({
     schemaVersion: 2, runId: `run-${seed.toString(36)}-${nLevel}`, revision: 0, seed, nonce: dice.nonce, nLevel, bans, poolSig: poolSigOf(opts.pool),
+    lives: startLivesFor(nLevel) + (perk?.lives ?? 0), tempLives: perk?.tempLifePerAct ?? 0, lifeBought: 0, lastLifeLoss: null,
     act: 1, map, at: map.nodes.find(n => n.col === 0)!.id, team: [], relics: [], beans: Math.max(0, 120 + n.startBeans + (perk?.beans ?? 0)),
     shards: Math.max(0, opts.startingShards + n.startShards), recruitCount: 0, shardsV3: true, tokens: [], tokenSeq: 0, potions, eclipse: 0,
     equipType: opts.equipType, equipId: opts.equipId, modifiers: opts.modifiers,
@@ -161,7 +170,11 @@ export function migrateRun(r: any): RunV2 {
   }
   const sc: any = r.scene;
   const scene = sc?.kind === "shop" && Array.isArray(sc.stock) ? { ...sc, stock: sc.stock.filter((x: ShopItem) => x.sold || x.currency !== "shards" || x.kind === "shard") } : r.scene;
-  return { ...r, shards, recruitCount: Math.max(0, Math.floor(Number(r.recruitCount) || 0)), shardsV3: true, tokens, tokenSeq: r.tokenSeq ?? tokens.length, scene } as RunV2;
+  // 生命制（2026-10-24）：舊存檔沒有生命欄位，給該 N 等級的預設生命（含套裝特權），臨時生命 0
+  const n = clampN(r.nLevel), hasLives = Number.isFinite(Number(r.lives)) && r.lives !== null;
+  const lives = hasLives ? Math.max(0, Math.floor(Number(r.lives))) : startLivesFor(n) + (runPerk({ equipType: r.equipType, equipId: r.equipId, nLevel: n })?.lives ?? 0);
+  const tempLives = Number.isFinite(Number(r.tempLives)) ? Math.max(0, Math.floor(Number(r.tempLives))) : 0;
+  return { ...r, shards, recruitCount: Math.max(0, Math.floor(Number(r.recruitCount) || 0)), shardsV3: true, tokens, tokenSeq: r.tokenSeq ?? tokens.length, scene, lives, tempLives, lifeBought: Math.max(0, Math.floor(Number(r.lifeBought) || 0)), lastLifeLoss: r.lastLifeLoss ?? null } as RunV2;
 }
 /** 只在非戰鬥中更新定義；未結算的戰鬥必須沿用原快照，不能在中途換魂印／技能。 */
 export function syncRunDefinitions(run:RunV2,pool:readonly Elf[]):RunV2 {
@@ -199,13 +212,15 @@ export function saveRunV2(storage: Storage, run: RunV2): RunV2 {
 /* ───────── 局面工具 ───────── */
 const withDice = <T,>(run: RunV2, f: (d: Dice) => T): [T, number] => { const d = new Dice(run.seed, run.nonce); const v = f(d); return [v, d.nonce]; };
 const log = (run: RunV2, line: string): RunV2 => ({ ...run, chronicle: [line, ...run.chronicle].slice(0, 40) });
+/** 遺物與套裝特權的商店折扣下限（價格倍率 ≥ 0.5）：開放折扣疊加的套利玩法，兌換表本身數值不變 */
+export const SHOP_DISCOUNT_FLOOR = .5;
 /** 局內修正：遺物＋套裝特權＋N 等級。 */
 export const mods = (run: RunV2) => {
   const m = runMods(run.relics), n = levelOf(run), p = perkFor(run.equipType, run.equipId, n);
   return {
     ...m,
     beansMult: Math.max(0, m.beansMult + (p?.beansMult ?? 0)),
-    shopMult: m.shopMult * (p?.shopMult ?? 1) * n.shopMult,
+    shopMult: Math.max(SHOP_DISCOUNT_FLOOR, m.shopMult * (p?.shopMult ?? 1)) * n.shopMult,
     eclipsePerMove: m.eclipsePerMove + (p?.eclipsePerMove ?? 0) + n.eclipsePerMove,
     restHealMult: m.restHealMult * (p?.restHealMult ?? 1) * n.restHealMult,
     revealMystery: m.revealMystery || !!p?.revealMystery,
@@ -597,6 +612,8 @@ export function gainRelic(run: RunV2, id: string): RunV2 {
   const def = RELIC_BY_ID[id]; if (!def) return run;
   let next: RunV2 = { ...run, relics: [...run.relics, id] };
   if (def.run?.potions) next = { ...next, potions: next.potions + def.run.potions };
+  if (def.run?.lives) next = { ...next, lives: next.lives + def.run.lives };
+  if (def.run?.tempLivesPerAct) next = { ...next, tempLives: next.tempLives + def.run.tempLivesPerAct };
   return syncTeam(log(next, `${def.rarity === "cursed" ? "被纏上" : "取得"}【${def.name}】。`));
 }
 
@@ -613,7 +630,12 @@ function rollEncounter(run: RunV2, kind: "combat" | "elite" | "boss", pool: Elf[
   const picked = d.sample(candidates, Math.min(count, candidates.length));
   const lv = levelOf(run);
   const affixCount = (kind === "boss" ? 2 + (a >= 5 ? 1 : 0) + (run.modifiers.includes("strong_boss") ? 1 : 0) : kind === "elite" ? 1 + (e >= 50 ? 1 : 0) + (a >= 4 ? 1 : 0) : e >= 75 ? 1 : 0) + (kind === "combat" ? 0 : lv.affixBonus);
-  const enemies = picked.map((el, i) => ({ id: elfKey(el), affixes: d.sample(AFFIXES.map(x => x.id), kind === "boss" && i > 0 ? Math.max(0, affixCount - 1) : affixCount) }));
+  const enemies: EnemySpec[] = picked.map((el, i) => ({ id: elfKey(el), affixes: d.sample(AFFIXES.map(x => x.id), kind === "boss" && i > 0 ? Math.max(0, affixCount - 1) : affixCount) }));
+  // 原廠 BOSS 特性：獨立種子亂數（不消耗主亂數流）；固定點數依層數乘 √depthMul
+  if (kind !== "combat") {
+    const fm = fixedMulAt(depthOf(a, currentNode(run).col)), nonce0 = d.nonce;
+    enemies.forEach((en, i) => { const traits = drawBossTraits(traitDice(run.seed, a, run.at, nonce0, i), kind, a, run.nLevel ?? 0, fm, kind === "boss" && i > 0); if (traits.length) en.traits = traits; });
+  }
   // 深度曲線：敵方能力＝depthMul(L) × 類型加成（夢魘 ×1.15、王座 ×1.3）× 蝕度階段 × (1+N)；
   // 體力＝depthMul(L) × 類型體力係數（一般 2.5、夢魘 4、王座 7）× 蝕度 × (1+N)。L＝(章−1)×12 + min(欄,12)。
   const depth = depthOf(a, currentNode(run).col);
@@ -644,9 +666,14 @@ export function buildEnemies(enc: Encounter, pool: Elf[], minHp = 0): Elf[] {
     for (const a of spec.affixes) for (const [k, v] of Object.entries(AFFIX_BY_ID[a]?.stat ?? {})) statMul[k] = (statMul[k] ?? 1) * Number(v);
     const panel = (s: BaseStats): BaseStats => Object.fromEntries(Object.entries(s).map(([k, v]) => [k, Math.floor(Number(v) * (k === "hp" ? (enc.hpScale ?? enc.scale) : enc.scale) * (statMul[k] ?? 1))])) as unknown as BaseStats;
     const panelWithFloor = (st: BaseStats): BaseStats => { const p = panel(st); return minHp > p.hp ? { ...p, hp: minHp } : p; };
-    return { ...buildExplorationSnapshot(base, base.baseStats, undefined, undefined, panelWithFloor), battleId: `foe-${i}-${spec.id}` } as Elf;
+    const built = { ...buildExplorationSnapshot(base, base.baseStats, undefined, undefined, panelWithFloor), battleId: `foe-${i}-${spec.id}` } as Elf;
+    return spec.traits?.length ? attachBossTraits(built, spec.traits) : built;
   });
 }
+/** 章末首領的「神話」異常：由戰鬥端的敵方遺物清單掛上，任一方首次出手時激活（見 relicEffectRegistry） */
+/** 擊敗章末首領：永久生命 +1 */
+export const BOSS_LIFE_REWARD = 1;
+export const BOSS_MYTH_RELIC = "boss_myth";
 export const enemyAffixRelics = (enc: Encounter) => [...new Set(enc.enemies.flatMap(e => e.affixes).filter(a => !AFFIX_BY_ID[a]?.stat))];
 
 /** 開戰：寫入 pendingBattle，回傳雙方隊伍與給 BattleScreen 的遺物清單。 */
@@ -670,7 +697,7 @@ export function startBattle(run: RunV2, pool: Elf[], battleId: string): { run: R
   const lineupAll = lineupOf(run);
   const bag = bindBag([...lineupAll, ...benchOf(run)].map(e => snapshotElf(run, e)), lineupAll.length);
   const p1 = lineupAll.flatMap((e, i) => isAlive(e) ? [applyDupPp(bag[i])] : []).map(e => {
-    const gain = (run.relics.includes("void_shield_gen") ? Math.round(500 * fm) : 0) + (openShield ? Math.round(OPEN_SHIELD_BASE * fm) : 0);
+    const gain = (run.relics.includes("void_shield_gen") ? Math.round(1000 * fm) : 0) + (openShield ? Math.round(OPEN_SHIELD_BASE * fm) : 0);
     return gain ? { ...e, shield: (e.shield || 0) + gain } : e;
   });
   if (!p1.length) return null;
@@ -678,8 +705,8 @@ export function startBattle(run: RunV2, pool: Elf[], battleId: string): { run: R
   const p2 = buildEnemies(enc, pool, enemyHpFloor(run, enc));
   const relics = [...run.relics.map(id => id === "eclipse_crown" ? `eclipse_crown:${run.eclipse}` : id), fixedMulEntry(L)];
   // 逆時沙漏：記下戰前狀態（含首領戰前回滿、尚未加護盾），戰敗將結算時回溯
-  const pre: PreBattle | undefined = run.relics.includes("reverse_hourglass") ? { team: run.team, lineup: run.lineup, bench: run.bench, potions: run.potions, eclipse: run.eclipse, shieldAct: run.shieldAct } : undefined;
-  return { run: { ...run, lastRescue: null, shieldAct: openShield ? run.act : run.shieldAct, pendingBattle: { id: battleId, nodeId: run.at, encounter: enc, battleSeed: battleSeedOf(run), ...(pre ? { pre } : {}) } }, p1: ordered, p2, relics, enemyRelics: [...enemyAffixRelics(enc), fixedMulEntry(L)], battleSeed: battleSeedOf(run) };
+  const pre: PreBattle | undefined = run.relics.includes("reverse_hourglass") ? { team: run.team, lineup: run.lineup, bench: run.bench, potions: run.potions, eclipse: run.eclipse, shieldAct: run.shieldAct, lives: run.lives, tempLives: run.tempLives } : undefined;
+  return { run: { ...run, lastRescue: null, lastLifeLoss: null, shieldAct: openShield ? run.act : run.shieldAct, pendingBattle: { id: battleId, nodeId: run.at, encounter: enc, battleSeed: battleSeedOf(run), ...(pre ? { pre } : {}) } }, p1: ordered, p2, relics, enemyRelics: [...enemyAffixRelics(enc), ...(enc.kind === "boss" ? [BOSS_MYTH_RELIC] : []), fixedMulEntry(L)], battleSeed: battleSeedOf(run) };
 }
 /** 撤離（只限一般遭遇）：失去 15% 賽爾豆，蝕度 +5 */
 export function fleeEncounter(run: RunV2): RunV2 {
@@ -705,43 +732,60 @@ export function rescueSources(run: RunV2): string[] {
   return out;
 }
 const healTo = (team: Elf[], p: number): Elf[] => team.map(e => ({ ...e, currentHp: Math.max(isAlive(e) ? e.currentHp : 0, Math.floor(e.maxHp * p)) }) as Elf);
-/** 戰敗將被結算時觸發保命。回傳新局面；沒有任何保命時回傳 null。每次只消耗一個來源。 */
-function rescueRun(next: RunV2, pb: NonNullable<RunV2["pendingBattle"]>): RunV2 | null {
-  const src = rescueSources(next)[0]; if (!src) return null;
+/** 生命總數（永久＋臨時） */
+export const livesOf = (run: Pick<RunV2, "lives" | "tempLives">): number => Math.max(0, run.lives ?? 0) + Math.max(0, run.tempLives ?? 0);
+/** 獲得生命：永久直接加；臨時只在當章有效 */
+export function gainLives(run: RunV2, n: number, temp: boolean): RunV2 {
+  const v = Math.max(0, Math.floor(n)); if (!v) return run;
+  return temp ? { ...run, tempLives: (run.tempLives ?? 0) + v } : { ...run, lives: (run.lives ?? 0) + v };
+}
+/** 扣生命：臨時優先，再扣永久；回傳扣除明細 */
+function loseLives(run: RunV2, n: number, fallen: string[]): { run: RunV2; loss: LifeLoss } {
+  const fromTemp = Math.min(Math.max(0, run.tempLives ?? 0), n), fromPerm = Math.min(Math.max(0, run.lives ?? 0), n - fromTemp);
+  return { run: { ...run, tempLives: (run.tempLives ?? 0) - fromTemp, lives: (run.lives ?? 0) - fromPerm }, loss: { lost: fromTemp + fromPerm, fromTemp, fromPerm, fallen, fights: run.stats.fights } };
+}
+/**
+ * 生命將歸零時觸發保命（本場不扣生命）。回傳新局面與後續：
+ * reward＝若本場是勝利就照常進獎勵；map＝回地圖；retry＝回到迎戰前重戰。沒有任何保命時回傳 null。每次只消耗一個來源。
+ */
+type RescueThen = "reward" | "map" | "retry";
+function rescueRun(next: RunV2, pb: NonNullable<RunV2["pendingBattle"]>, win: boolean): { run: RunV2; then: RescueThen; id: string } | null {
+  const src = rescueSources(next).find(id => !(win && id === "reverse_hourglass")); if (!src) return null; // 逆時沙漏只在打輸時倒轉（勝利不倒轉）
   const enc = pb.encounter, retry = (r: RunV2): RunV2 => ({ ...r, nonce: r.nonce + 1, scene: { kind: "prelude", encounter: enc } });
   const mark = (r: RunV2, id: string, text: string): RunV2 => log({ ...r, lastRescue: { id, text }, rescues: [...(r.rescues ?? []), id] }, text);
   const drop = (r: RunV2, id: string): RunV2 => syncTeam({ ...r, relics: r.relics.filter((x, i) => i !== r.relics.indexOf(id)) });
+  /** 勝利：照常結算獎勵；失敗：首領戰回迎戰前，其餘回地圖 */
+  const after = (r: RunV2): { run: RunV2; then: RescueThen; id: string } => win ? { run: r, then: "reward", id: src } : enc.kind === "boss" ? { run: retry(r), then: "retry", id: src } : { run: r, then: "map", id: src };
   if (src === "perk:fate_defier") {
-    // 套裝特權「戰敗保留隊伍」：每局一次，全隊以 30% 體力回到原地（首領戰敗則重回戰前）
-    const kept = mark({ ...next, team: healTo(next.team, .3), lifelineUsed: true, eclipse: next.eclipse + 6 }, src, "逆命者：燈幾乎熄了，又被誰護住。全隊 30% 體力，蝕度 +6。");
-    return enc.kind === "boss" ? retry(kept) : backToMap(ensureFighters(kept), "戰敗，隊伍被保下：全隊 30% 體力，蝕度 +6。");
+    // 套裝特權「致命時不扣生命」：每局一次，全隊 30% 體力，蝕度 +6
+    return after(mark({ ...next, team: healTo(next.team, .3), lifelineUsed: true, eclipse: next.eclipse + 6 }, src, "逆命者：燈幾乎熄了，又被誰護住。本場不扣生命，全隊 30% 體力，蝕度 +6。"));
   }
   if (src === "substitute_doll") {
-    // 替身人偶：失去一半賽爾豆與一件隨機遺物，全隊 40% 體力繼續
+    // 替身人偶：本場不扣生命；失去一半賽爾豆與一件隨機遺物，全隊 80% 體力
     let r = drop(next, src);
     const d = new Dice(r.seed, r.nonce), cands = r.relics.filter(x => !(RESCUE_ORDER as readonly string[]).includes(x)), lost = cands.length ? d.pick(cands) : null; // 其他保命遺物不會被當成代價
     r = { ...r, nonce: d.nonce, beans: Math.floor(r.beans / 2) };
     if (lost) r = drop(r, lost);
-    r = { ...r, team: healTo(r.team, .4) };
-    r = mark(r, src, `替身人偶碎了：失去一半賽爾豆${lost ? `與【${RELIC_BY_ID[lost]?.name ?? lost}】` : ""}，全隊 40% 體力。`);
-    return enc.kind === "boss" ? retry(r) : backToMap(ensureFighters(r), "替身人偶代你死了一次：全隊 40% 體力。");
+    r = { ...r, team: healTo(r.team, .8) };
+    return after(mark(r, src, `替身人偶碎了：本場不扣生命；失去一半賽爾豆${lost ? `與【${RELIC_BY_ID[lost]?.name ?? lost}】` : ""}，全隊 80% 體力。`));
   }
   if (src === "undying_core") {
-    // 不滅星核：全隊 50% 體力，留在原節點重戰
-    const r = mark({ ...drop(next, src), team: healTo(next.team, .5) }, src, "不滅星核碎裂：全隊回復至 50% 體力，原地重戰。");
-    return retry(r);
+    // 不滅星核：本場不扣生命，全隊回滿；戰敗則留在原節點重戰（勝利照常結算）
+    const r = mark({ ...drop(next, src), team: healTo(next.team, 1) }, src, "不滅星核碎裂：本場不扣生命，全隊回復至 100% 體力。");
+    return win ? { run: r, then: "reward", id: src } : { run: retry(r), then: "retry", id: src };
   }
-  // 逆時沙漏：回到戰前狀態（體力、PP、藥劑、背包編排），蝕度 +10，可改隊重戰
+  // 逆時沙漏：回到戰前狀態（體力、PP、藥劑、生命、背包編排），蝕度 +10，可改隊重戰（只在打輸時倒轉，勝利不觸發）
   const pre = pb.pre;
   if (!pre) return null;
-  const r = mark({ ...drop(next, src), team: pre.team, lineup: pre.lineup, bench: pre.bench, potions: pre.potions, shieldAct: pre.shieldAct, eclipse: pre.eclipse + 10 }, src, "逆時沙漏倒轉：回到戰前，蝕度 +10。可改隊重戰。");
-  return retry(r);
+  const r = mark({ ...drop(next, src), team: pre.team, lineup: pre.lineup, bench: pre.bench, potions: pre.potions, shieldAct: pre.shieldAct, lives: pre.lives ?? next.lives, tempLives: pre.tempLives ?? next.tempLives, eclipse: pre.eclipse + 10 }, src, "逆時沙漏倒轉：回到戰前，蝕度 +10。可改隊重戰。");
+  return { run: retry(r), then: "retry", id: src };
 }
 
 export function settleBattleV2(run: RunV2, battleId: string, winner: string, team: Elf[] | undefined, pool: Elf[]): RunV2 {
   const pb = run.pendingBattle;
   if (!pb || pb.id !== battleId) return run;
   const win = winner === "p1";
+  const wasAlive = new Set(run.team.filter(isAlive).map(bid));
   // 隊伍延續：體力、PP（以 battleId 對應）
   let next: RunV2 = { ...run, pendingBattle: null, lastBattle: { win, outcome: winner },
     team: run.team.map(e => {
@@ -749,25 +793,44 @@ export function settleBattleV2(run: RunV2, battleId: string, winner: string, tea
       return { ...e, maxHp: after.maxHp, currentHp: Math.min(after.maxHp, Math.max(0, after.currentHp)), survivalRule: after.survivalRule,
         skills: e.skills.map((s, i) => ({ ...s, pp: foldDupPp(e, after.skills?.[i]?.pp, s.pp, s.maxPp) })), explorationVitals: true } as Elf;
     }) };
-  const fatal = !next.team.some(isAlive) || (!win && pb.encounter.kind === "boss");
+  // ── 生命結算：依「本場倒下」的我方精靈數扣生命（臨時優先）；扣完歸 0＝失敗 ──
+  const fallen = next.team.filter(e => wasAlive.has(bid(e)) && !isAlive(e)).map(e => e.name);
+  const fatal = fallen.length > 0 && fallen.length >= livesOf(next);
+  let reward0: { run: RunV2; then: RescueThen } | null = null;
   if (fatal) {
-    // 失敗將被結算：先依序嘗試保命（套裝特權 → 替身人偶 → 不滅星核 → 逆時沙漏），都沒有才結算敗北
-    const saved = rescueRun(next, pb);
-    if (saved) return saved;
-    const cause: DefeatCause = winner === "exit" ? "exit" : pb.encounter.kind === "boss" && next.team.some(isAlive) ? "boss" : "wipe";
-    return log({ ...next, lastRescue: null, scene: { kind: "end", result: "wiped", cause, by: pb.encounter.title } }, `敗北：${DEFEAT_TEXT[cause]}（${pb.encounter.title}）。燈熄了。`);
+    // 生命將歸零：先依序嘗試保命（套裝特權 → 替身人偶 → 不滅星核 → 逆時沙漏），都沒有才結算敗北
+    const saved = rescueRun(next, pb, win);
+    if (saved) {
+      const withLoss = { ...saved.run, lastLifeLoss: { lost: 0, fromTemp: 0, fromPerm: 0, fallen, saved: saved.id, fights: run.stats.fights } as LifeLoss };
+      if (saved.then !== "reward") return saved.then === "map" ? backToMap(ensureFighters(withLoss), "生命將歸零，隊伍被保下：本場不扣生命。") : withLoss;
+      reward0 = { run: withLoss, then: "reward" };
+    } else {
+      const loss: LifeLoss = { lost: livesOf(next), fromTemp: next.tempLives, fromPerm: next.lives, fallen, fights: run.stats.fights };
+      return log({ ...next, lives: 0, tempLives: 0, lastLifeLoss: loss, lastRescue: null, scene: { kind: "end", result: "wiped", cause: "lives", by: pb.encounter.title } }, `敗北：${DEFEAT_TEXT.lives}（${pb.encounter.title}；${fallen.join("、")}倒下）。燈熄了。`);
+    }
   }
+  if (reward0) next = reward0.run;
+  else {
+    const r = loseLives(next, fallen.length, fallen); next = { ...r.run, lastLifeLoss: r.loss };
+    if (r.loss.lost > 0) next = log(next, `${lifeLossText(r.loss)}。剩餘生命 ${next.lives}${next.tempLives ? `＋臨時 ${next.tempLives}` : ""}。`);
+  }
+  // 全隊（含待命與倉庫）倒下但生命未歸 0：以生命換回隊伍，全員 30% 體力復甦
+  if (!next.team.some(isAlive)) next = log({ ...next, team: healTo(next.team, .3) }, "全隊倒下，生命換回了隊伍：全員以 30% 體力復甦。");
   if (!win) {
-    // 撤退／失敗（非首領、仍有存活者）：蝕度 +6，回到地圖；出戰名單全滅時由存活者補上
-    const reformed = ensureFighters(next);
-    return backToMap(log({ ...reformed, eclipse: reformed.eclipse + 6 }, `敗走於【${pb.encounter.title}】。`), reformed !== next ? "戰敗撤離：蝕度 +6。出戰全滅，已由存活者補位。" : "戰敗撤離：蝕度 +6。");
+    const reformed = ensureFighters(next), enc0 = pb.encounter;
+    if (enc0.kind === "boss") {
+      // 首領戰敗／放棄首領戰：只扣生命（上面已扣），回到迎戰前可改隊重戰；蝕度 +6
+      return log({ ...reformed, nonce: reformed.nonce + 1, eclipse: reformed.eclipse + 6, scene: { kind: "prelude", encounter: enc0 } }, `${winner === "exit" ? "放棄" : "敗於"}首領戰【${enc0.title}】。`);
+    }
+    // 撤退／失敗（非首領）：蝕度 +6，回到地圖；出戰名單全滅時由存活者補上
+    return backToMap(log({ ...reformed, eclipse: reformed.eclipse + 6 }, `敗走於【${enc0.title}】。`), `戰敗撤離：蝕度 +6。${next.lastLifeLoss ? lifeLossText(next.lastLifeLoss) + "。" : ""}${reformed !== next ? "出戰全滅，已由存活者補位。" : ""}`);
   }
   const enc = pb.encounter; const a = run.act; const m = mods(run);
   const eclipseBonus = run.eclipse >= 100 ? 1.5 : run.eclipse >= 50 ? 1.25 : 1;
   const baseBeans = enc.kind === "boss" ? 180 + a * 50 : enc.kind === "elite" ? 90 + a * 30 : 40 + a * 15;
   const modMult = (1 + next.modifiers.length * .1) * m.expMult;
   const reward: Reward = {
-    beans: Math.floor(baseBeans * m.beansMult * eclipseBonus), tokens: [],
+    beans: Math.floor(baseBeans * m.beansMult * eclipseBonus), tokens: [], lives: enc.kind === "boss" ? BOSS_LIFE_REWARD : 0,
     potions: 0, exp: Math.floor((enc.kind === "boss" ? 150 : enc.kind === "elite" ? 60 : 20) * modMult),
     relicChoices: [], recruitChoices: [], isBoss: enc.kind === "boss", isFinal: enc.kind === "boss" && a >= FINAL_ACT,
   };
@@ -799,7 +862,7 @@ export function settleBattleV2(run: RunV2, battleId: string, winner: string, tea
   // 令入帳（id 在此由局序號決定）
   for (const t of rolled.tokens ?? []) next = mintToken(next, t);
   rolled.tokens = next.tokens.slice(next.tokens.length - (rolled.tokens?.length ?? 0));
-  next = { ...next, nonce, beans: next.beans + rolled.beans, shards: next.shards + (rolled.shards ?? 0), potions: next.potions + rolled.potions, exp: next.exp + rolled.exp,
+  next = { ...next, nonce, lives: next.lives + (rolled.lives ?? 0), beans: next.beans + rolled.beans, shards: next.shards + (rolled.shards ?? 0), potions: next.potions + rolled.potions, exp: next.exp + rolled.exp,
     stats: { ...next.stats, fights: next.stats.fights + 1, elites: next.stats.elites + (enc.kind === "elite" ? 1 : 0), bosses: next.stats.bosses + (enc.kind === "boss" ? 1 : 0) } };
   return log({ ...next, scene: { kind: "reward", reward: rolled, title: enc.kind === "boss" ? "王座傾倒" : enc.kind === "elite" ? "夢魘消散" : "戰鬥結束" } }, `擊敗【${enc.title}】。`);
 }
@@ -844,8 +907,10 @@ function advanceAct(run: RunV2, _pool: Elf[]): RunV2 {
   const act = run.act + 1;
   const [map, nonce] = withDice(run, d => generateActMap(act, d));
   const team = run.team.map(e => ({ ...e, currentHp: isAlive(e) ? e.maxHp : levelOf(run).noRevive ? e.currentHp : Math.floor(e.maxHp * .5), skills: e.skills.map(s => ({ ...s, pp: s.maxPp ?? s.pp })) }) as Elf);
-  const potions = Math.max(run.potions, 3) + (run.relics.includes("apothecary_lamp") ? 2 : 0);
-  const next = prerollMysteries({ ...run, act, map, nonce, at: map.nodes.find(n => n.col === 0)!.id, team, potions, eclipse: Math.max(0, run.eclipse - 15), scene: { kind: "map", note: `第 ${act} 章：${ACTS[act - 1]?.name}・背包 ${Math.min(6, 3 + (act - 1) + mods(run).lineupBonus)} 出戰＋${Math.min(6, 3 + (act - 1) + mods(run).lineupBonus)} 待命` } });
+  const potions = Math.max(run.potions, 3) + (run.relics.includes("apothecary_lamp") ? 4 : 0);
+  // 臨時生命只在當章有效：換章清空，再依遺物／套裝特權重新給予
+  const tempLives = mods(run).tempLivesPerAct + (runPerk(run)?.tempLifePerAct ?? 0);
+  const next = prerollMysteries({ ...run, act, map, nonce, tempLives, at: map.nodes.find(n => n.col === 0)!.id, team, potions, eclipse: Math.max(0, run.eclipse - 15), scene: { kind: "map", note: `第 ${act} 章：${ACTS[act - 1]?.name}・背包 ${Math.min(6, 3 + (act - 1) + mods(run).lineupBonus)} 出戰＋${Math.min(6, 3 + (act - 1) + mods(run).lineupBonus)} 待命` } });
   // 出戰上限提高：以待命中的夥伴依序補上空位
   return log(refillBag(next), `進入【${ACTS[act - 1]?.name}】。`);
 }
@@ -873,6 +938,8 @@ export function chooseEvent(run: RunV2, idx: number, pool: Elf[]): RunV2 {
     removeCurse: () => { const c = cur.relics.find(r => r.startsWith("curse_")); if (!c) return null; cur = syncTeam({ ...cur, relics: cur.relics.filter((r, i) => i !== cur.relics.indexOf(c)) }); return RELIC_BY_ID[c]?.name ?? c; },
     empowerRandom: p => { const alive = cur.team.filter(isAlive); if (!alive.length) return null; const t = alive[Math.floor(dice.next() * alive.length)]; cur = syncTeam({ ...cur, team: cur.team.map(e => e === t ? { ...e, runBoost: (Number((e as any).runBoost) || 0) + p } as Elf : e) }); return t.name; },
     battle: (kind, reward) => { pendingScene = { kind: "prelude", encounter: rollEncounter({ ...cur, nonce: dice.nonce }, kind, pool, dice, reward) }; },
+    lives: n => { cur = gainLives(cur, n, false); },
+    tempLives: n => { cur = gainLives(cur, n, true); },
     reveal: () => { cur = { ...cur, revealAct: cur.act }; },
     sacrifice: () => { if (cur.team.length <= 1) return null; const t = cur.team[Math.floor(dice.next() * cur.team.length)]; cur = { ...cur, team: cur.team.filter(e => e !== t) }; return t.name; },
   };
@@ -905,8 +972,13 @@ function rollShop(run: RunV2, pool: Elf[], d: Dice): ShopItem[] {
     { kind: "potion", price: Math.round(45 * f), currency: "beans" },
     { kind: "mend", price: Math.round(60 * f), currency: "beans" },
     { kind: "purge", price: Math.round(100 * f), currency: "beans" },
+    // 生命：臨時（當章有效）便宜；永久每買一次貴 50%
+    { kind: "life", ref: "temp", qty: 1, price: Math.round(LIFE_TEMP_PRICE * f), currency: "beans" },
+    { kind: "life", ref: "perm", qty: 1, price: Math.round(LIFE_PERM_PRICE * f * (1 + .5 * (run.lifeBought ?? 0))), currency: "beans" },
   ];
 }
+/** 商店：臨時生命（當章有效）80 豆；永久生命 240 豆，每買一次 +50%（均乘章節與價格係數） */
+export const LIFE_TEMP_PRICE = 80, LIFE_PERM_PRICE = 240;
 export function shopBuy(run: RunV2, idx: number, pool: Elf[], _replaceIdx = -1): RunV2 {
   if (run.scene.kind !== "shop") return run;
   const item = run.scene.stock[idx]; if (!item || item.sold) return run;
@@ -916,6 +988,7 @@ export function shopBuy(run: RunV2, idx: number, pool: Elf[], _replaceIdx = -1):
   let next = run;
   if (item.kind === "relic") next = gainRelic(pay(run), item.ref!);
   else if (item.kind === "shard") next = log({ ...pay(run), shards: run.shards + (item.qty ?? 1) }, `購入 ${item.qty ?? 1} 星晶。`);
+  else if (item.kind === "life") { const temp = item.ref === "temp"; next = log(gainLives(pay(run), item.qty ?? 1, temp), `購入${temp ? "臨時" : "永久"}生命 +${item.qty ?? 1}。`); if (!temp) next = { ...next, lifeBought: (run.lifeBought ?? 0) + 1 }; }
   else if (item.kind === "token") { if (!item.token) return run; next = log(mintToken(pay(run), item.token), `購入【${tokenLabel({ ...item.token, id: "" })}】。`); }
   else if (item.kind === "potion") next = pay({ ...run, potions: run.potions + 1 });
   else if (item.kind === "mend") next = pay({ ...run, team: run.team.map(e => isAlive(e) ? { ...e, currentHp: Math.min(e.maxHp, e.currentHp + Math.floor(e.maxHp * .3)) } : e) });

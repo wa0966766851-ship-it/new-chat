@@ -27,8 +27,8 @@ export default function Ledger({ run, pool, tab, onTab, onClose, dispatch }: { r
 
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-      className="absolute inset-0 z-[45] overflow-y-auto bg-[rgba(4,3,8,.9)] backdrop-blur-[3px] p-4 md:p-8" role="dialog" aria-label="帳冊">
-      <div className="mx-auto max-w-6xl ecl-frame p-5 md:p-8">
+      className="absolute inset-0 z-[45] overflow-y-auto bg-[rgba(4,3,8,.9)] backdrop-blur-[3px] p-4 ecl-md:p-8" role="dialog" aria-label="帳冊">
+      <div className="mx-auto max-w-6xl ecl-xl:max-w-[88rem] ecl-frame p-5 ecl-md:p-8">
         <div className="flex flex-wrap items-end justify-between gap-4">
           <div>
             <div className="ecl-roman text-[10px] ecl-muted">Ledger</div>
@@ -37,7 +37,7 @@ export default function Ledger({ run, pool, tab, onTab, onClose, dispatch }: { r
           <div className="flex items-center gap-1" role="tablist">
             {tabs.map(t => (
               <button key={t.key} role="tab" aria-selected={tab === t.key} onClick={() => onTab(t.key)}
-                className={`px-2.5 sm:px-4 py-2 border-b-2 whitespace-nowrap font-black tracking-widest transition-colors ${tab === t.key ? "border-[var(--ecl-gold)] ecl-gilt" : "border-transparent ecl-muted hover:text-[var(--ecl-bone)]"}`}>
+                className={`px-2.5 ecl-sm:px-4 py-2 border-b-2 whitespace-nowrap font-black tracking-widest transition-colors ${tab === t.key ? "border-[var(--ecl-gold)] ecl-gilt" : "border-transparent ecl-muted hover:text-[var(--ecl-bone)]"}`}>
                 {t.label}<span className="ml-1.5 text-xs tabular-nums opacity-70">{t.count}</span>
               </button>
             ))}
@@ -94,7 +94,7 @@ function RelicPage({ run }: { run: E.RunV2 }) {
         return (
           <section key={rarity}>
             <h3 className={`font-black tracking-widest mb-2 ${rarity === "cursed" ? "ecl-blood" : "ecl-gilt"}`}>{RARITY_LABEL[rarity]}<span className="ml-2 text-xs ecl-muted">{ids.length}</span></h3>
-            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            <div className="grid ecl-sm:grid-cols-2 ecl-lg:grid-cols-3 gap-3">
               {ids.map(id => { const r = RELIC_BY_ID[id]; const n = counts.get(id) ?? 1; return (
                 <div key={id} className={`flex gap-3 p-3 border ${rarity === "cursed" ? "border-[rgba(224,71,95,.35)]" : "border-[rgba(217,180,90,.2)]"} bg-black/30`}>
                   <RelicIcon id={id} rarity={r.rarity} glyph={r.glyph} dim="3.2rem" fontSize="1.4rem" />

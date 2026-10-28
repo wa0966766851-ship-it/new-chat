@@ -54,7 +54,7 @@ export interface AdvancedTraitMechanics {
 
 export interface AdvancedTrait {
   name: string;
-  category: '二代異能特質' | '專屬異能特質' | '特殊特質';
+  category: '二代特質' | '專屬特質' | '特殊特質';
   description: string;
   mechanics: AdvancedTraitMechanics;
 }
@@ -62,7 +62,7 @@ export interface AdvancedTrait {
 export const ADVANCED_TRAITS_REGISTRY: Record<string, AdvancedTrait> = {
   豪邁: {
     name: '豪邁',
-    category: '二代異能特質',
+    category: '二代特質',
     description: '自身攻擊時忽略對手 50% 雙防值。',
     mechanics: {
       ignoreDefPercent: 0.5
@@ -70,7 +70,7 @@ export const ADVANCED_TRAITS_REGISTRY: Record<string, AdvancedTrait> = {
   },
   投石者: {
     name: '投石者',
-    category: '二代異能特質',
+    category: '二代特質',
     description: '戰鬥中被視為異能精靈；技能位可攜帶4種不同屬性的技能石且使用任意技能石時轉化為使用同屬系的SS級技能石，威力變為240；若自身攜帶4個技能石技能則在戰鬥中擁有神話(免疫異常狀態、能力下降狀態、PP值無限)且造成攻擊傷害提升50%，受到攻擊傷害降低50%且戰鬥階段結束時恢復自身最大體力25%；裝備的技能石擁有本系加乘且PP值上限+10；若該技能石為完美技能石則機率效果觸發概率提升為100%；每次使用技能石時令對手背包內所有精靈受到傷害值25%*該技能石對受到傷害精靈當前克制倍數的真實傷害；遭受致死傷害時保留1點體力。',
     mechanics: {
       isStoneThrower: true,
@@ -87,7 +87,7 @@ export const ADVANCED_TRAITS_REGISTRY: Record<string, AdvancedTrait> = {
   },
   修復: {
     name: '修復',
-    category: '二代異能特質',
+    category: '二代特質',
     description: '己方其他精靈受到任意衍化類異常時，當回合戰鬥階段時會立即衍化並恢復自身與該精靈所有技能1點PP值與250點體力。',
     mechanics: {
       repairOnOtherDeriveStatus: true,
@@ -97,7 +97,7 @@ export const ADVANCED_TRAITS_REGISTRY: Record<string, AdvancedTrait> = {
   },
   咒術師: {
     name: '咒術師',
-    category: '二代異能特質',
+    category: '二代特質',
     description: '戰鬥中被視為異能精靈；每次登場時召喚與自身能力值相等的賽博怨靈作為額外精靈加入己方，下場後則怨靈死亡並消逝。常駐效果：賽博怨靈存在時自身詛咒類異常回合數不會減少；自身選擇技能時：若自身處於詛咒類狀態則選擇技能時消耗該技能1點PP值並由賽博怨靈於行動階段發動1次魔咒；若戰鬥階段結束時若未選擇使用技能則改為賽博怨靈於該階段發動1次滅靈魔咒；自身死亡時若存在怨靈會代替自身死亡以保留20%體力，此後賽博怨靈額外行動對敵方場下造成真實傷害翻倍。',
     mechanics: {
       cyberWraithSummon: true,
@@ -113,7 +113,7 @@ export const ADVANCED_TRAITS_REGISTRY: Record<string, AdvancedTrait> = {
   },
   無我: {
     name: '無我',
-    category: '二代異能特質',
+    category: '二代特質',
     description: '每次受到異常狀態時立即轉化為平靜，若轉化的異常中帶有狂暴則轉化觸發後令自身平靜異常回合數翻倍。',
     mechanics: {
       convertStatusToSerenity: true,
@@ -122,7 +122,7 @@ export const ADVANCED_TRAITS_REGISTRY: Record<string, AdvancedTrait> = {
   },
   戰士: {
     name: '戰士',
-    category: '二代異能特質',
+    category: '二代特質',
     description: '戰鬥中始終被視為異能精靈；自身戰鬥開始時與每次登場時獲得隱匿；自身下場後若己方隱匿精靈不超過3個，則恢復下隻出戰精靈所有技能PP值並附加隱匿印記；自身造成攻擊傷害時計算傷害始終以弱點傷害計算，計算弱點時若對方每存在1點護盾、1%傷害減少時弱點傷害則計算傷害時對手剩餘雙防值60%效果額外降低1%，最低降低至1；自身攻擊克制倍數取技能擁有的屬性中攻擊對手的最優克制系別計算傷害；自身攻擊無視對手攻擊免疫效果、傷害限制效果、免疫、抵擋、轉化傷害效果與護盾承傷效果。',
     mechanics: {
       alwaysAlienElf: true,
@@ -136,7 +136,7 @@ export const ADVANCED_TRAITS_REGISTRY: Record<string, AdvancedTrait> = {
   },
   無序星魂使徒: {
     name: '無序星魂使徒',
-    category: '專屬異能特質',
+    category: '專屬特質',
     description: '對異能精靈造成傷害翻倍且擊敗後令其消逝。',
     mechanics: {
       doubleDamageToAlienElf: true,
@@ -146,7 +146,7 @@ export const ADVANCED_TRAITS_REGISTRY: Record<string, AdvancedTrait> = {
 };
 
 /**
- * 根據名稱獲取異能特質定義
+ * 根據名稱獲取特質定義
  */
 export function getAdvancedTrait(name: string): AdvancedTrait | undefined {
   if (!name) return undefined;

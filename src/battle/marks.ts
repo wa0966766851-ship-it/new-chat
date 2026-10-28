@@ -60,11 +60,11 @@ export const MARK_DEFINITIONS: Record<string, Partial<Mark>> = {
   },
   "blk_永恆之水": {
     displayChar: "水", name: "永恆之水", unit: "道", maxCount: 8,
-    clearable: false, persistsOffField: true, polarity: "positive",
+    clearable: false, persistsOffField: true, polarity: "positive",effects:{statusChanceFloor:100,shieldRetention:0.3},
   },
   "blk_千秋一淚": {
     displayChar: "淚", name: "千秋一淚", unit: "道", maxCount: 4,
-    clearable: false, persistsOffField: true, polarity: "negative",
+    clearable: false, persistsOffField: true, polarity: "negative",effects:{recoveryReduction:{ratio:0.25,perStack:true,includePotions:true},shieldSideEffectsDisabled:{at:3,value:1},skillDefenseDisabled:{at:4,value:1}},
   },
   guardian_shield_mark: { unit: "層", maxCount: 4, clearable: false, polarity: "positive", triggerNode: "round_end" },
   poem_chapter: { unit: "篇", clearable: false, persistsOffField: true, polarity: "positive" },

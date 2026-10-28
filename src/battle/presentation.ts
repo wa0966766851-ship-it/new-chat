@@ -1,7 +1,12 @@
+import {battleFormAsset} from './battleFormPresentation';
+import {appearanceElf} from './illusionPresentation';
+import {waitPetFormTransition} from './petFormTransitions';
+import {animationModeFor} from './animationSettings';
 /** 播放層只保存已結算的紀錄，永遠不寫回 BattleState。 */
-import { DEFAULT_BATTLE_ANIMATION, type BattleAnimationSettings } from './animationSettings';
+import { DEFAULT_BATTLE_ANIMATION, effectiveAnimationSettings, animationSpeed, type BattleAnimationSettings } from './animationSettings';
 import { damagePopupLabel } from './damagePopupStyle';
 import { formatCompactHud } from '../utils/formatBigNumber';
+import {readyPetTiming,observePetPlayback,petRecoveryTimeout,degradePet,type PetAction} from './petAnimationRegistry';
 export type PresentationKind = 'skill' | 'fixed' | 'percent' | 'heal' | 'true' | 'adjust_up' | 'adjust_down' | 'notice';
 export interface PresentationEvent {
   side: 'p1' | 'p2'; elfId: string; type: PresentationKind;
@@ -53,7 +58,7 @@ export class BattlePresentation {
   }
   /** 時間軸上尚未播完的段數；> 0 代表畫面還落後於引擎。 */
   private pending = 0;
-  get busy() { return this.pending > 0; }
+  get busy() { return this.pending > 0 || this.skillAnim !== null; }
   /** 排入時間軸：前面的演出播完才執行（不等待也不阻擋引擎）。 */
   private schedule(step: () => void | Promise<void>): Promise<void> {
     this.pending++;
@@ -64,17 +69,51 @@ export class BattlePresentation {
   stage(state: any): Promise<void> {
     if (!this.active) return Promise.resolve();
     if (this.view === null) { this.view = state; this.notify(); return this.tail; }
-    return this.schedule(() => { this.view = state; this.notify(); });
+    return this.schedule(async () => {
+      await this.recovery;if(!this.active)return;
+      const changed=(['p1','p2'] as const).filter(side=>{
+        const before=this.view?.[side+'Team']?.[this.view?.[side+'ActiveIndex']],after=state?.[side+'Team']?.[state?.[side+'ActiveIndex']];
+        if(!before||!after||(before.battleId||before.id)!==(after.battleId||after.id)||animationModeFor(this.settings(),after)!=='actions')return false;
+        const source=(elf:any,s:any)=>battleFormAsset(appearanceElf(elf),elf.illusion?undefined:s?.[side+'RegistryState']);
+        return source(before,this.view)!==source(after,state);
+      });
+      this.view = state; this.notify();
+      await Promise.all(changed.map(side=>waitPetFormTransition(side,state[side+'Team'][state[side+'ActiveIndex']])));
+    });
   }
   /** 出招動畫：排在前面的演出之後；duration 毫秒（快速模式為 0）。 */
   animate(anim: any, duration: number, enabled = true): Promise<void> {
     if (!this.active || !enabled) return Promise.resolve();
-    return this.schedule(async () => {
+    return this.schedule(()=>this.playAnimation(anim,duration));
+  }
+  private async playAnimation(anim:any,duration:number):Promise<void> {
+      await this.recovery;
+      if(!this.active)return;
+      const owner=this.view?.[`${anim.side}Team`]?.[this.view?.[`${anim.side}ActiveIndex`]];
+      const sequence:PetAction=anim.category==='extra'?'extra':anim.category==='property'?'cp':anim.category==='special'?'sa':'attack';
+      const timing=owner?readyPetTiming(anim.side,owner,sequence):undefined;
+      if(timing&&!this.fast()) {
+        // 先訂閱再通知 React：命中放行紅字，收招則阻擋下一次出手。
+        let hit!:()=>void,complete!:()=>void;
+        const impact=new Promise<void>(r=>{hit=r;});
+        this.recovery=new Promise<void>(r=>{complete=r;});
+        let settled=false;
+        const finish=()=>{if(settled)return;settled=true;clearTimeout(endTimer);off();this.animationCancels.delete(finish);hit();complete();if(this.active&&this.skillAnim===anim){this.skillAnim=null;this.notify();}};
+        const off=observePetPlayback(anim.side,owner,event=>{if(event.sequence!==sequence)return;if(event.type==='marker'&&event.marker?.name==='action_hit')hit();if(event.type==='complete'||event.type==='cancel')finish();});
+        // 收招等待上限＝片段長度＋寬限（petRecoveryTimeout）。逾時代表播放器停住：降級為靜態圖並記錄，戰鬥繼續，
+        // 不再被動畫無限鎖住。背景分頁暫停播放屬正常，只放行不降級。標記只控制演出，不執行戰鬥積木。
+        const endTimer=setTimeout(()=>{if(!settled&&!(typeof document!=='undefined'&&document.hidden))degradePet(anim.side,owner,'timeout');finish();},petRecoveryTimeout(timing.duration));
+        this.animationCancels.add(finish);
+        this.skillAnim=anim;this.notify();
+        await impact;
+        return;
+      }
       this.skillAnim = anim; this.notify();
       if (!this.fast()) await this.pause(duration);
       this.skillAnim = null; this.notify();
-    });
   }
+  private recovery:Promise<void>=Promise.resolve();
+  private animationCancels=new Set<()=>void>();
   /** 回合數顯示：播到回合收尾才換。 */
   setTurn(n: number): Promise<void> { return this.schedule(() => { this.turnNumber = n; this.notify(); }); }
   private deferred: PresentationEvent[] = [];
@@ -112,7 +151,9 @@ export class BattlePresentation {
   constructor(private notify: () => void, private fast: () => boolean,
     private settings: () => BattleAnimationSettings = () => DEFAULT_BATTLE_ANIMATION) {}
   private visible(e: PresentationEvent) {
-    const s = this.settings();
+    const team=this.view?.[`${e.side}Team`];
+    const elf=team?.find((elf:any)=>(elf.battleId||elf.id)===e.elfId);
+    const s = effectiveAnimationSettings(this.settings(),elf);
     return e.channel === 'extra' ? s.extra : e.channel === 'potion' ? s.potion : e.channel === 'roundEnd' ? s.roundEnd : s.damage;
   }
   /** 開始額外行動節點；期間的紅字合併成一筆，不論額外行動幾次。 */
@@ -206,7 +247,7 @@ export class BattlePresentation {
     }
     return this.enqueue(out.map(e => ({ ...e, channel: 'roundEnd' as const })), true);
   }
-  wait() { return this.tail; }
+  async wait() { await this.tail;await this.recovery; }
   /**
    * 回合末對帳：有些效果直接改體力而沒有留下紀錄（例如部分魂印回血）。
    * 預定體力（已排入＋待播）與實際不符時，差額補成一筆體力調整，併入回合末淨變化。
@@ -231,6 +272,7 @@ export class BattlePresentation {
     }
     this.pending++;
     const play = async () => {
+      if(simultaneous)await this.recovery;
       const frames = simultaneous ? [events] : events.map(e => [e]);
       for (const frame of frames) {
         if (!this.active) return;
@@ -254,7 +296,8 @@ export class BattlePresentation {
           }
           if (fatal) this.dead.add(key);
           // DSH 20261020 规格非美术描述：非致命受击晃动——净变化为负的精灵本帧晃动（skill 红字即播已有攻击表现）。
-          if (!fatal && e.delta < 0 && e.type !== 'skill') this.shakeSide = e.side;
+          if (this.settings().staticMode) this.shakeSide = null;
+          else if (!fatal && e.delta < 0 && e.type !== 'skill') this.shakeSide = e.side;
           if (e.silent || !this.visible(e)) continue;
           const id = `presentation_${++this.sequence}`;
           popups.push({ ...e, label: damagePopupLabel(e.label), id,
@@ -276,8 +319,11 @@ export class BattlePresentation {
   }
   private pause(ms: number) {
     return new Promise<void>(resolve => {
-      const timer = setTimeout(() => { this.cancelWait = undefined; resolve(); }, ms);
-      this.cancelWait = () => { clearTimeout(timer); resolve(); };
+      let remaining=ms,last=performance.now(),timer:ReturnType<typeof setTimeout>;
+      const finish=()=>{clearTimeout(timer);this.cancelWait=undefined;resolve();};
+      const tick=()=>{const now=performance.now();remaining-=(now-last)*animationSpeed(this.settings().speed);last=now;if(remaining<=0)finish();else timer=setTimeout(tick,Math.min(16,remaining));};
+      timer=setTimeout(tick,0);
+      this.cancelWait=finish;
     });
   }
   /** 以戰鬥狀態校正顯示體力（換人、回合收尾）。排進時間軸，不提前顯示尚未播放的結果。 */
@@ -294,6 +340,7 @@ export class BattlePresentation {
   }
   dispose() {
     this.active = false;
+    for(const cancel of this.animationCancels)cancel();
     this.deferred = [];
     this.extraPending = [];
     this.extraDepth = 0;

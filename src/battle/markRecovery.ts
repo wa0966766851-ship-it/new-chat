@@ -1,4 +1,4 @@
-import { markAppliesToElf, type Mark } from './marks';
+import { MARK_DEFINITIONS,markAppliesToElf, type Mark } from './marks';
 
 /** 持有者自帶的恢復限制；期限由印記統一管理，藥劑範圍明確宣告。 */
 export interface MarkRecoveryReduction {
@@ -21,7 +21,7 @@ export function markRecoveryReduction(marks: readonly Mark[], elf: { battleId?: 
   let reduction = 0;
   for (const mark of marks) {
     if (!markAppliesToElf(mark, elf)) continue;
-    const p = mark.effects?.recoveryReduction;
+    const p = mark.effects?.recoveryReduction??MARK_DEFINITIONS[mark.id]?.effects?.recoveryReduction;
     if (p !== undefined) {
       // 已宣告新格式但資料損壞時，不另套用不相符的舊限制。
       if (!markRecoveryReductionIssue(p) && (!isPotion || p.includePotions)) reduction += p.ratio * (p.perStack ? mark.count : 1);

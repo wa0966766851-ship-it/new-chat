@@ -33,6 +33,8 @@ export type Trigger =
   | "self_after_skill" | "self_after_attack" | "self_after_status" | "self_after_physical" | "self_after_special" // 自身使用技能後
   | "self_after_use" // 已使用技能後，包含未命中／技能無效；行動前被打斷不觸發
   | "opp_skill" | "opp_attack" | "opp_status" // 對手使用技能時
+  | "opp_used_skill" | "opp_used_attack" | "opp_used_status" // 對手確實使用，通過行動閘門後
+  | "opp_before_skill" | "opp_before_attack" | "opp_before_status" // 對手出手流程前，可攔截當次行動
   | "opp_after_skill" | "opp_after_attack" | "opp_after_status"
   | "damaged" | "damaged_skill" | "damaged_attack" | "damaged_true" | "damaged_fixed" | "damaged_percent" | "damaged_nontrue" // 自身受到傷害後
   | "incoming" | "incoming_skill" | "incoming_attack" | "incoming_nontrue" // 受到傷害時（可修正傷害）
@@ -55,7 +57,7 @@ export type Trigger =
   | "holder_damaged_attack" | "holder_damaged" | "holder_passive" // 印記持有者
   | "passive" // 常駐（顯示用；由條件式修正在各時點生效）
   | "held_resource_lost"
-  | "custom"; // 無法對應（顯示原文）
+  | "custom" | 'damage_immune'; // 無法對應（顯示原文）
 
 export interface Cond {
   c: string; // 條件 id
@@ -95,6 +97,8 @@ export interface Timed {
 }
 
 export interface Clause {
+  /** 具資源消耗的重生可重複觸發。 */
+  repeatable?: boolean;
   raw: string; // 原文（含標記）
   marker?: string; // ■ 🎯 ◇ > >>
   trig: Trigger;

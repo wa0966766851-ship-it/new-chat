@@ -9,6 +9,8 @@ import { prepareSavedBattleRoster } from '../../data/prepareSavedBattleRoster';
 import { readAnnualBonus } from '../../battle/annualBonusPreference';
 import { createBattleInstance, saveDraft } from '../teamDraft';
 import { haptic } from "../haptics";
+import {ElfCardSheet} from './ElfCardSheet';
+import { ElfFilterBar, useElfFilter } from '../../components/shared/ElfPicker';
 
 /**
  * TeamBoard — 雙方隊伍並排（P1 左、P2 右）
@@ -26,7 +28,7 @@ import { haptic } from "../haptics";
  *   抽屜內可「換精靈」→ 開啟精靈倉庫選人
  */
 
-interface SlotAction {
+export interface SlotAction {
   side: "p1" | "p2";
   index: number;
   elf: Elf;
@@ -37,6 +39,7 @@ export function TeamBoard({ b }: { b: ShellBridge }) {
   const [picking, setPicking] = useState<SlotAction | null>(null);
   const [version, setVersion] = useState(0); // 換人後強制重讀
   const [error, setError] = useState('');
+  const [profile,setProfile]=useState<Elf|null>(null);
 
   const teams = useMemo(() => ({
     p1: loadTeam(b, "p1"),
@@ -82,6 +85,7 @@ export function TeamBoard({ b }: { b: ShellBridge }) {
         />
       </div>
 
+      {profile&&<ElfCardSheet elf={profile} onClose={()=>setProfile(null)}/>}
       {/* 精靈資訊抽屜 */}
       {selected && !picking && (
         <ElfInfoDrawer
@@ -89,6 +93,7 @@ export function TeamBoard({ b }: { b: ShellBridge }) {
           onClose={() => setSelected(null)}
           onReplace={() => setPicking(selected)}
           onEdit={() => { b.setEditingElf(selected.elf); b.setEditorTab(undefined); b.setView('custom'); }}
+          onDetail={()=>setProfile(selected.elf)}
         />
       )}
 
@@ -195,12 +200,13 @@ function SideColumn({
 
 /** 精靈資訊抽屜 */
 function ElfInfoDrawer({
-  slot, onClose, onReplace, onEdit,
+  slot, onClose, onReplace, onEdit, onDetail,
 }: {
   slot: SlotAction;
   onClose: () => void;
   onReplace: () => void;
   onEdit: () => void;
+  onDetail: () => void;
 }) {
   const { elf, side, index } = slot;
   const tone = side === "p1" ? "#38BDF8" : "#FB7185";
@@ -281,6 +287,7 @@ function ElfInfoDrawer({
           </div>
         )}
 
+        <button type="button" className="py-2 text-cyan-200" onClick={onDetail}>完整精靈介紹</button>
         <button type="button" className="py-2 text-cyan-200" onClick={onEdit}>開啟精靈卡牌／編輯技能</button>
         <button
           type="button"
@@ -297,7 +304,7 @@ function ElfInfoDrawer({
 }
 
 /** 精靈倉庫：選一隻替換 */
-function ElfPickerDrawer({
+export function ElfPickerDrawer({
   b, current, onClose, onPick, error,
 }: {
   b: ShellBridge;
@@ -306,11 +313,8 @@ function ElfPickerDrawer({
   onClose: () => void;
   onPick: (elf: Elf) => void;
 }) {
-  const [q, setQ] = useState("");
-  const list = useMemo(() => {
-    const s = q.trim();
-    return b.allElvesCombined.filter(e => !s || e.name.includes(s) || String(e.id ?? "").includes(s)).slice(0, 120);
-  }, [b.allElvesCombined, q]);
+  const f = useElfFilter();
+  const list = useMemo(() => f.filter(b.allElvesCombined), [f.filter, b.allElvesCombined]);
 
   return (
     <div className="fixed inset-0 z-50 flex flex-col justify-end" role="dialog" aria-label="選擇精靈">
@@ -335,13 +339,7 @@ function ElfPickerDrawer({
           </button>
         </div>
 
-        <input
-          value={q}
-          onChange={e => setQ(e.target.value)}
-          placeholder="搜尋精靈名稱或 ID"
-          className="w-full px-2.5 py-1.5 text-[11px] outline-none"
-          style={{ borderRadius: 8, background: "rgba(6,16,26,0.82)", border: "1px solid rgba(148,163,184,0.22)", color: "#F1F5F9" }}
-        />
+        <ElfFilterBar state={f} variant="shell" placeholder="搜尋精靈名稱或 ID" count={`${list.length}`} />
 
         <div className="flex-1 min-h-0 overflow-y-auto">
           <div className="grid grid-cols-4 gap-1">

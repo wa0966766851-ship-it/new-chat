@@ -1,5 +1,5 @@
 import React, { useMemo, useState, useRef } from "react";
-import { X, Check, Search, Crown, Plus, Trash2, ChevronLeft, ChevronRight, Sparkles, Package } from "lucide-react";
+import { X, Check, Crown, Plus, Trash2, ChevronLeft, ChevronRight, Sparkles, Package } from "lucide-react";
 import type { ShellBridge } from "../bridge";
 import type { Elf } from "../../types";
 import { ElfAvatar, TypeIcon, SkillTypeIcon } from "../../components/SeerImages";
@@ -12,6 +12,7 @@ import {
 import { readLastUsedRecord } from "../lastTeam";
 import { haptic } from "../haptics";
 import { AegisBackdrop } from "../art/backdrop";
+import { ElfFilterBar, useElfFilter } from "../../components/shared/ElfPicker";
 
 /**
  * TeamScene — Aegis 原生編成（Phase 3）
@@ -31,8 +32,7 @@ export function TeamScene({ b, onSetup }: { b: ShellBridge; onSetup?: () => void
   const [draft, setDraft] = useState<TeamDraft>(() =>
     draftFromRecord(readLastUsedRecord("p1"))
   );
-  const [query, setQuery] = useState("");
-  const [typeFilter, setTypeFilter] = useState<string>("");
+  const f = useElfFilter();
   const [saved, setSaved] = useState(false);
 
   const drafts = useRef<Partial<Record<Side, TeamDraft>>>({});
@@ -45,20 +45,8 @@ export function TeamScene({ b, onSetup }: { b: ShellBridge; onSetup?: () => void
     setSaved(false);
   };
 
-  const allTypes = useMemo(() => {
-    const set = new Set<string>();
-    b.allElvesCombined.forEach(e => e.type && set.add(e.type));
-    return [...set];
-  }, [b.allElvesCombined]);
-
-  const library = useMemo(() => {
-    const q = query.trim();
-    return b.allElvesCombined.filter(e => {
-      if (typeFilter && e.type !== typeFilter) return false;
-      if (!q) return true;
-      return e.name.includes(q) || String(e.id ?? "").includes(q);
-    }).slice(0, 120);
-  }, [b.allElvesCombined, query, typeFilter]);
+  const teamKeys = useMemo(() => new Set(draft.members.flatMap(m => [String(m.id ?? m.name), String(m.name)])), [draft.members]);
+  const library = useMemo(() => f.filter(b.allElvesCombined, { inTeam: teamKeys }), [f.filter, b.allElvesCombined, teamKeys]);
 
   const inTeam = (elf: Elf) =>
     draft.members.some(m => (m.id || m.name) === (elf.id || elf.name));
@@ -259,56 +247,9 @@ export function TeamScene({ b, onSetup }: { b: ShellBridge; onSetup?: () => void
           </div>
         )}
 
-        {/* ── 搜尋 + 屬性篩選 ── */}
-        <div className="shrink-0 flex items-center gap-1">
-          <div className="relative flex-1">
-            <Search className="w-3 h-3 absolute left-2 top-1/2 -translate-y-1/2" style={{ color: "rgba(148,163,184,0.7)" }} />
-            <input
-              value={query}
-              onChange={e => setQuery(e.target.value)}
-              placeholder="搜尋名稱或 ID"
-              className="w-full pl-7 pr-2 py-1.5 text-[10px] outline-none"
-              style={{
-                borderRadius: 8,
-                background: "rgba(6,16,26,0.82)",
-                border: "1px solid rgba(148,163,184,0.22)",
-                color: "#F1F5F9",
-              }}
-            />
-          </div>
-          <button
-            type="button"
-            onClick={() => setTypeFilter("")}
-            className="px-2 py-1.5 text-[9px] font-bold shrink-0"
-            style={{
-              borderRadius: 8,
-              background: typeFilter ? "rgba(6,16,26,0.82)" : "color-mix(in srgb, var(--p-accent) 22%, transparent)",
-              border: "1px solid rgba(148,163,184,0.22)",
-              color: typeFilter ? "rgba(203,213,225,0.6)" : "var(--p-accent-hot)",
-            }}
-          >
-            全部
-          </button>
-        </div>
-
-        {/* 屬性快篩 */}
-        <div className="shrink-0 flex gap-1 overflow-x-auto" style={{ scrollbarWidth: "none" }}>
-          {allTypes.map(t => (
-            <button
-              key={t}
-              type="button"
-              onClick={() => setTypeFilter(prev => prev === t ? "" : t)}
-              className="px-1.5 py-0.5 text-[8px] font-bold shrink-0 active:scale-95 transition-transform"
-              style={{
-                borderRadius: 5,
-                background: typeFilter === t ? `color-mix(in srgb, ${typeColor(t)} 34%, transparent)` : "rgba(6,16,26,0.7)",
-                border: `1px solid ${typeFilter === t ? typeColor(t) : "rgba(148,163,184,0.18)"}`,
-                color: typeFilter === t ? typeColor(t) : "rgba(203,213,225,0.6)",
-              }}
-            >
-              <span className="inline-flex items-center gap-1"><TypeIcon type={t} size={16} />{t}</span>
-            </button>
-          ))}
+        {/* ── 搜尋 + 屬性／分級／特徵篩選 + 排序 ── */}
+        <div className="shrink-0">
+          <ElfFilterBar state={f} variant="shell" placeholder="搜尋名稱或 ID" showInTeam count={`${library.length}`} />
         </div>
 
         {/* ── 角色庫 ── */}

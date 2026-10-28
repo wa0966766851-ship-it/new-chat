@@ -74,7 +74,7 @@ export default function BagPage({ run, dispatch }: { run: E.RunV2; dispatch: Dis
           {STAT_LABEL.map(([k, label]) => <div key={k} className="bg-black/40 py-0.5"><div className="text-[9px] ecl-muted">{label}</div><div className="text-[11px] font-black tabular-nums" title={formatFullNumber(Number(snap.calculatedStats?.[k]) || 0)}>{formatBigNumber(Number(snap.calculatedStats?.[k]) || 0)}</div></div>)}
         </div>
         <div className="flex flex-wrap gap-1 mt-1.5">
-          {e.skills.map((sk, j) => (
+          {e.skills.slice(0, 5).map((sk, j) => (
             <span key={j} title={sk.name} className={`text-[10px] px-1 border ${(sk.pp ?? 0) <= 0 ? "border-[rgba(224,71,95,.4)] ecl-blood" : `${line} ecl-muted`}`}>
               {sk.name.length > 5 ? sk.name.slice(0, 5) + "…" : sk.name} {sk.pp ?? 0}/{sk.maxPp ?? sk.pp}
             </span>
@@ -149,11 +149,11 @@ export default function BagPage({ run, dispatch }: { run: E.RunV2; dispatch: Dis
       </div>
       <section>
         <h3 className="font-black tracking-widest ecl-gilt mb-2">出戰<span className="ml-2 text-xs ecl-muted tabular-nums">{lists.lineup.length} / {slots}</span></h3>
-        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3" data-zone="lineup">{zoneCells("lineup", lists.lineup, slots)}</div>
+        <div className="grid ecl-sm:grid-cols-2 ecl-lg:grid-cols-3 gap-3" data-zone="lineup">{zoneCells("lineup", lists.lineup, slots)}</div>
       </section>
       <section>
         <h3 className="font-black tracking-widest mb-2">待命<span className="ml-2 text-xs ecl-muted tabular-nums">{lists.bench.length} / {bslots}</span></h3>
-        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3" data-zone="bench">{zoneCells("bench", lists.bench, bslots)}</div>
+        <div className="grid ecl-sm:grid-cols-2 ecl-lg:grid-cols-3 gap-3" data-zone="bench">{zoneCells("bench", lists.bench, bslots)}</div>
       </section>
       <section data-zone="storage" {...(editable ? mover.target({ kind: "zone", zone: "storage" }) : {})} className={mover.dragging ? "outline outline-1 outline-dashed outline-[rgba(217,180,90,.45)] outline-offset-4" : ""}>
         <div className="flex items-baseline justify-between mb-2 gap-4 flex-wrap">
@@ -162,20 +162,20 @@ export default function BagPage({ run, dispatch }: { run: E.RunV2; dispatch: Dis
         </div>
         {lists.storage.length > 0 && <div className="mb-3"><ElfFilterBar state={filter} variant="eclipse" count={`${storageList.length} / ${lists.storage.length}`} /></div>}
         {storageList.length
-          ? <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">{storageList.map(storageCard)}</div>
+          ? <div className="grid ecl-sm:grid-cols-2 ecl-lg:grid-cols-3 gap-3">{storageList.map(storageCard)}</div>
           : <p className="text-sm ecl-muted">{lists.storage.length ? "沒有符合的精靈" : "空。拖拉精靈到這裡，或背包滿時新夥伴會送進來。"}</p>}
       </section>
 
       {advancing && byId.get(advancing) && <AdvanceDialog run={run} target={byId.get(advancing)!} dispatch={dispatch} onClose={() => setAdvancing(null)} />}
       {picker && portalToRoot(
-        <div className="fixed inset-0 z-[60] bg-black/80 backdrop-blur-[2px] p-4 pt-16 md:p-10 overflow-y-auto" role="dialog" aria-label="更換精靈" onClick={() => setPicker(null)}>
-          <div className="mx-auto max-w-4xl ecl-frame p-5 md:p-7 bg-[var(--ecl-ink-2)]" onClick={ev => ev.stopPropagation()}>
+        <div className="fixed inset-0 z-[60] bg-black/80 backdrop-blur-[2px] p-4 pt-16 ecl-md:p-10 overflow-y-auto" role="dialog" aria-label="更換精靈" onClick={() => setPicker(null)}>
+          <div className="mx-auto max-w-4xl ecl-frame p-5 ecl-md:p-7 bg-[var(--ecl-ink-2)]" onClick={ev => ev.stopPropagation()}>
             <div className="flex items-center justify-between mb-3">
               <h3 className="ecl-title text-xl ecl-gilt">{ZONE_LABEL[picker.zone]} 第 {picker.index + 1} 格・{picker.occupant ? "更換" : "放入"}</h3>
               <button className="ecl-btn ecl-btn-ghost text-xs px-4 py-1.5" onClick={() => setPicker(null)}>關閉</button>
             </div>
             <ElfPicker<Elf> variant="eclipse" elves={pickerElves} getKey={e => E.bagIdOf(e)} isDisabled={pickerDisabled} onPick={applyPick}
-              gridClassName="grid sm:grid-cols-2 lg:grid-cols-3 gap-2 max-h-[55vh] overflow-y-auto pr-1" itemClassName={`text-left flex gap-3 p-2.5 border ${line} bg-black/30 hover:border-[var(--ecl-gold)] disabled:opacity-40`}
+              gridClassName="grid ecl-sm:grid-cols-2 ecl-lg:grid-cols-3 gap-2 max-h-[55vh] overflow-y-auto pr-1" itemClassName={`text-left flex gap-3 p-2.5 border ${line} bg-black/30 hover:border-[var(--ecl-gold)] disabled:opacity-40`}
               renderItem={e => (<>
                 {avatar(e, "w-11 h-12")}
                 <div className="min-w-0 flex-1">

@@ -41,37 +41,47 @@ function lose(run: E.RunV2, winner = 'p2') {
   const move = E.movesFrom(next)[0]; const afterMove = E.moveTo(next, move.id, pool);
   if (afterMove.scene.kind === 'prelude') assert.ok(E.startBattle(afterMove, pool, 'b-next'), '補位後下一場戰鬥可以開打');
 }
-// 2. 全隊（含待命與倉庫）陣亡 → 敗北結算，記敗因，存檔標記為結算畫面
+// 2. 規則改變（2026-10-24 生命制：失敗＝生命歸 0，不再是全隊陣亡）：全隊倒下但生命夠 → 扣生命、全員 30% 體力復甦；生命不夠 → 敗北
 {
   const run = setup(22, 0); // 只有 3 隻，全在出戰
-  const { next } = lose(run);
+  const { next: soft } = lose(run);
+  assert.equal(soft.scene.kind, 'map'); assert.equal(soft.lives, run.lives - 3, '倒下 3 隻扣 3 命'); assert.ok(soft.team.every(alive), '全隊倒下但生命未歸 0：全員復甦');
+  const { next } = lose({ ...run, lives: 3 });
   assert.equal(next.scene.kind, 'end'); assert.equal((next.scene as any).result, 'wiped');
-  assert.equal((next.scene as any).cause, 'wipe', '敗因：全隊陣亡');
+  assert.equal((next.scene as any).cause, 'lives', '敗因：生命耗盡');
   assert.ok(next.chronicle[0].includes('敗北'), '紀事寫入敗北');
   // 存檔：結算畫面寫進存檔（收起殘燭才清除）
-  const b = E.startBattle(run, pool, 'b-store')!; const st2 = store(); st2.setItem(E.RUN_KEY_V2, JSON.stringify({ ...b.run, revision: 1 }));
+  const r3 = { ...run, lives: 3 };
+  const b = E.startBattle(r3, pool, 'b-store')!; const st2 = store(); st2.setItem(E.RUN_KEY_V2, JSON.stringify({ ...b.run, revision: 1 }));
   const after = E.settleStoredBattleV2(st2, run.runId, 'b-store', 'p2', b.p1.map(e => ({ ...e, currentHp: 0 })), pool)!;
   assert.equal(after.scene.kind, 'end'); assert.equal(E.loadRunV2(st2)!.scene.kind, 'end', '敗北結算已寫入存檔');
 }
-// 3. 首領戰敗＝失敗（即使仍有存活者），敗因為首領戰敗
+// 3. 首領戰敗：依倒下數扣生命，回到迎戰前（不再直接失敗）；生命不夠才敗北
 {
   const run = setup(23, 3, 'boss');
   const { next } = lose(run);
-  assert.equal(next.scene.kind, 'end'); assert.equal((next.scene as any).cause, 'boss');
+  assert.equal(next.scene.kind, 'prelude', '首領戰敗只扣生命，回迎戰前'); assert.equal(next.lives, run.lives - 3); assert.ok(next.team.some(alive), '尚有存活者');
+  const fatal = lose({ ...run, lives: 3 }).next;
+  assert.equal(fatal.scene.kind, 'end'); assert.equal((fatal.scene as any).cause, 'lives');
 }
-// 4. 放棄首領戰（離開戰鬥）＝失敗，敗因記為放棄
+// 4. 放棄首領戰（離開戰鬥）：照扣倒下數（無人倒下則不扣），回迎戰前；生命歸 0 才失敗
 {
   const run = setup(24, 2, 'boss');
   const b = E.startBattle(run, pool, 'b-exit')!;
   const next = E.settleBattleV2(b.run, 'b-exit', 'exit', b.p1, pool);
-  assert.equal(next.scene.kind, 'end'); assert.equal((next.scene as any).cause, 'exit');
+  assert.equal(next.scene.kind, 'prelude'); assert.equal(next.lives, run.lives, '無人倒下不扣生命');
+  const hurt = b.p1.map((e, i) => ({ ...e, currentHp: i < 2 ? 0 : e.currentHp }));
+  const next2 = E.settleBattleV2(b.run, 'b-exit', 'exit', hurt, pool);
+  assert.equal(next2.scene.kind, 'prelude'); assert.equal(next2.lives, run.lives - 2, '放棄時倒下 2 隻扣 2 命');
+  const dead = E.settleBattleV2({ ...b.run, lives: 2 }, 'b-exit', 'exit', hurt, pool);
+  assert.equal(dead.scene.kind, 'end'); assert.equal((dead.scene as any).cause, 'lives');
 }
-// 5. 一般遭遇戰敗、仍有存活者：不結算，蝕度 +6
+// 5. 一般遭遇戰敗、仍有存活者：不結算，蝕度 +6，倒下 1 隻扣 1 命
 {
   const run = setup(25, 3);
   const b = E.startBattle(run, pool, 'b-part')!;
   const hurt = b.p1.map((e, i) => ({ ...e, currentHp: i === 0 ? 0 : e.currentHp }));
   const next = E.settleBattleV2(b.run, 'b-part', 'p2', hurt, pool);
-  assert.equal(next.scene.kind, 'map'); assert.equal(next.eclipse, run.eclipse + 6);
+  assert.equal(next.scene.kind, 'map'); assert.equal(next.eclipse, run.eclipse + 6); assert.equal(next.lives, run.lives - 1);
 }
-console.log('失敗判定：出戰全滅補位、全隊陣亡、首領戰敗、放棄、存檔結算通過');
+console.log('失敗判定（生命制）：出戰全滅補位、全隊倒下復甦、首領戰敗／放棄只扣生命、生命歸 0 敗北、存檔結算通過');

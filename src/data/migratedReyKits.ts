@@ -7,12 +7,8 @@
 //   nullify_incoming＋條件 god_descent／no_nontrue_damage＋技能固有查詢 skill_transform）。
 // 引擎既有讀取端不動：精靈旗標（treatOpponentBoostAsDoubleDrop 等 7 個，由 elf_trait 於戰鬥開始寫入，不再放在精靈種子資料）、
 //   survivalRules（神降規則）、damageCalculator（calcAtkDefMult／blkAtkSpatkSum）。
-// 與舊 handler 的可見差異（機制優先，依原文／使用者規則）：
-//   1. 舊 handler 對雷神的分段標題「【自身不為滿體力時】」不設閘（PP 不受限、雙攻總和、物理回復、特殊先制-1 均無條件）；
-//      本 Kit 維持同樣不設閘（沿用既有行為），標題隸屬關係已列入待確認。
-//   2. 「雙攻值總和」沿用既有積木 atk_sum_calc（Hamo／Delu 同款，寫 blkAtkSpatkSum），不依賴組 1 的 stat_sum_as。
-//   3. 物理攻擊的場下隊友恢復量＝出手前自身可增加量（≤70）——與舊 handler 相同。
-//   4. 神降「回合結束+7%最大體力」改讀正式事實（當回合是否發生 damaged_nontrue 事件）；舊 handler 用 ON_DAMAGED 旗標，語意相同。
+// G4：雷神非滿體力段落設閘；至少70點恢復，場下隊友按實際體力增加量分享。
+// 雙攻總和沿用 atk_sum_calc，先制讀取回合開始條件快照。
 import type { KitEntry } from '../effects/effectSystem.schema';
 import { action as a } from './reviewedSequenceSkillKits';
 import { OTHERWORLD_REY_TEXT } from './otherworldReyDescriptions';
@@ -44,6 +40,8 @@ export const MIGRATED_REY_SOUL_KIT = {
   kit: [
     // 【回合開始時】（在場）
     entry(SOUL, 'round_start', 'round_start', copyRaw, [
+      { acts: [a('flag_set',{key:'roundPriorityBranch',value:false,thisRound:true})] },
+      { cond:[c('stage',{side:'opp',kind:'up',neg:true})],acts:[a('flag_set',{key:'roundPriorityBranch',value:true,thisRound:true})] },
       { acts: [a('stage_copy_up', {})] },
       { chain: 'success', acts: [a('status_or_extend', { side: 'self', status: '麻痺', turns: 1, extend: 1 })] },
       { cond: [c('stage', { side: 'opp', kind: 'up', neg: true }, '對手不處於能力提升')], acts: [
@@ -68,9 +66,9 @@ export const MIGRATED_REY_SOUL_KIT = {
       { cond: [attackSkill, selfAbnormal], acts: [a('drain_body_weight', {}), a('drain_stage_sum', { unit: 70, kind: 'true' })] },
       { cond: [attackSkill, c('abnormal', { side: 'self', neg: true }, '自身不處於異常狀態')], acts: [a('drain_stage_sum', { unit: 70, kind: 'fixed' })] },
     ], 8),
-    // 「當回合自身所有技能先制+1」＝先制判定事中查詢（prio_bonus）：對手不處於能力提升時才加，不建立跨回合計時器
+    // 先制讀當回合開始的條件快照，不因排序前對手能力改變而切換分支。
     entry(SOUL, 'modify_priority', 'modify_priority', '若對手不處於能力提升狀態，則令自身攻擊、速度、命中+2，當回合自身所有技能先制+1。', [
-      { cond: [c('stage', { side: 'opp', kind: 'up', neg: true }, '對手不處於能力提升')], acts: [a('prio_bonus', { v: 1 })] },
+      { cond: [c('player_state', {key:'roundPriorityBranch',equals:true,fallback:false,thisRound:true}, '回合開始時對手不處於能力提升')], acts: [a('prio_bonus', { v: 1 })] },
     ], 9),
   ] as KitEntry[],
 };
@@ -122,16 +120,21 @@ export const MIGRATED_REY_THUNDER_KIT = {
       { cond: [c('hp_full', { side: 'self' }, '自身為滿體力')], acts: [a('alien_entry_cost', { ratio: 0.7 })] },
     ], 0),
     // 【自身不為滿體力時】
-    entry(T, 'battle_start', 'battle_start', '若當前處於麻痺狀態且不小於7回合時自身使用技能不受PP值限制。', [{ acts: [trait('ppLimitIgnoredWhenParalyzedTurns', 7)] }], 1),
+    entry(T, 'battle_start', 'battle_start', '若當前處於麻痺狀態且不小於7回合時自身使用技能不受PP值限制。', [{ acts: [trait('ppLimitIgnoredWhenParalyzedTurns', 7),trait('ppLimitIgnoredRequiresNonFull')] }], 1),
     statMult('on_entered', 'entrance', 2),
     statMult('round_start', 'round_start', 3),
     statMult('before_skill', 'before_skill', 4),
     statMult('on_attacked', 'opp_skill', 5),
     entry(T, 'battle_phase_end', 'phase_end', statMultRaw, [{ acts: [a('calc_stat_mult', { mode: 'reset' })] }], 6),
     entry(T, 'before_damage', 'outgoing', '體力每降低1%則自身造成非真實傷害提升1%，最高70%。', [{ acts: [a('dmg_scale_by_lost_hp', { kind: '非真實', cap: 0.7 })] }], 7),
-    entry(T, 'on_skill_use', 'use', '使用攻擊技能會以雙攻值總和視為當前攻擊/特攻值計算傷害。', [{ cond: [attackSkill], acts: [a('atk_sum_calc', {})] }], 8),
-    entry(T, 'after_action', 'self_after_physical', '物理攻擊時恢復己方至少70點體力值，自身每增加1點體力，己方不在場精靈額外恢復1體力。', [{ acts: [a('heal_share_bench', { amount: 70 })] }], 9),
-    entry(T, 'after_action', 'self_after_special', '特殊攻擊時令對手先制-1。', [{ acts: [a('prio_turns', { side: 'opp', turns: 1, v: -1 })] }], 10),
+    entry(T, 'on_skill_use', 'use', '使用攻擊技能會以雙攻值總和視為當前攻擊/特攻值計算傷害。', [{ cond: [attackSkill,c('hp_ratio',{side:'self',op:'低於',ratio:1})], acts: [a('atk_sum_calc', {})] }], 8),
+    entry(T, 'after_action', 'self_after_physical', '物理攻擊時恢復己方至少70點體力值，自身每增加1點體力，己方不在場精靈額外恢復1體力。', [{ cond:[c('hp_ratio',{side:'self',op:'低於',ratio:1})],acts: [a('heal_share_bench', { amount: 70 })] }], 9),
+    // 「自身不為滿體力」以出手前（使用技能前）為準：魂印吸取在使用時才補血，不能讓補滿後的體力吃掉這句。
+    entry(T, 'after_action', 'self_after_special', '特殊攻擊時令對手先制-1。', [{ cond:[c('player_state',{key:'reyNotFullAtUse',equals:true,fallback:false,thisRound:true},'出手前自身不為滿體力')],acts: [a('prio_turns', { side: 'opp', turns: 1, v: -1 })] }], 10),
+    entry(T, 'before_skill', 'before_skill', '【自身不為滿體力時】', [
+      { acts: [a('flag_set', { key: 'reyNotFullAtUse', value: false, thisRound: true })] },
+      { cond: [c('hp_ratio', { side: 'self', op: '低於', ratio: 1 }, '自身不為滿體力')], acts: [a('flag_set', { key: 'reyNotFullAtUse', value: true, thisRound: true })] },
+    ], 11),
   ] as KitEntry[],
 };
 

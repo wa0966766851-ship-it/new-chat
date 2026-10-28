@@ -1,0 +1,213 @@
+{
+  "generatedAt": "2026-10-23T00:28:44.637Z",
+  "scope": "結構與路由稽核；不代表原文、事件順序、數值或畫面驗收",
+  "elves": [
+    {
+      "id": "5036",
+      "name": "九青",
+      "definitions": [
+        {
+          "kind": "技能",
+          "name": "生塵眷盼",
+          "route": "kit",
+          "mode": "kit",
+          "entries": 4,
+          "nodes": [
+            "modify_priority",
+            "on_skill_use",
+            "before_damage"
+          ],
+          "operations": [
+            "stat_clear",
+            "damage_cap_turns",
+            "recovery_reduce_turns",
+            "damage_scale"
+          ],
+          "issues": [],
+          "semantic": "需原文逐句及P1/P2正式引擎數值證據"
+        },
+        {
+          "kind": "技能",
+          "name": "如日方升",
+          "route": "kit",
+          "mode": "kit",
+          "entries": 5,
+          "nodes": [
+            "before_skill",
+            "on_skill_use"
+          ],
+          "operations": [
+            "immune_status_turns",
+            "timed",
+            "status",
+            "heal",
+            "dmg",
+            "invalid_next",
+            "prio_turns"
+          ],
+          "issues": [],
+          "semantic": "需原文逐句及P1/P2正式引擎數值證據"
+        },
+        {
+          "kind": "技能",
+          "name": "遂心快意",
+          "route": "kit",
+          "mode": "kit",
+          "entries": 5,
+          "nodes": [
+            "before_skill",
+            "on_skill_use"
+          ],
+          "operations": [
+            "stat_reverse",
+            "stat",
+            "timed",
+            "drain",
+            "damage_multiplier_turns"
+          ],
+          "issues": [],
+          "semantic": "需原文逐句及P1/P2正式引擎數值證據"
+        },
+        {
+          "kind": "技能",
+          "name": "蒼靈銜樂",
+          "route": "kit",
+          "mode": "kit",
+          "entries": 3,
+          "nodes": [
+            "on_skill_use"
+          ],
+          "operations": [
+            "ignore",
+            "dmg",
+            "heal",
+            "低於",
+            "不低於"
+          ],
+          "issues": [],
+          "semantic": "需原文逐句及P1/P2正式引擎數值證據"
+        },
+        {
+          "kind": "技能",
+          "name": "清璨星辰落",
+          "route": "kit",
+          "mode": "kit",
+          "entries": 5,
+          "nodes": [
+            "before_skill",
+            "on_hit",
+            "on_not_killed",
+            "on_kill",
+            "on_skill_use"
+          ],
+          "operations": [
+            "status",
+            "高於",
+            "crit_uses",
+            "invalid_next",
+            "dmg"
+          ],
+          "issues": [],
+          "semantic": "需原文逐句及P1/P2正式引擎數值證據"
+        },
+        {
+          "kind": "技能",
+          "name": "安魂曲",
+          "route": "kit",
+          "mode": "kit",
+          "entries": 1,
+          "nodes": [
+            "on_skill_use"
+          ],
+          "operations": [
+            "status"
+          ],
+          "issues": [],
+          "semantic": "需原文逐句及P1/P2正式引擎數值證據"
+        },
+        {
+          "kind": "技能",
+          "name": "誅神巨闕",
+          "route": "kit",
+          "mode": "kit",
+          "entries": 2,
+          "nodes": [
+            "before_skill",
+            "on_skill_use"
+          ],
+          "operations": [
+            "timed",
+            "dmg"
+          ],
+          "issues": [],
+          "semantic": "需原文逐句及P1/P2正式引擎數值證據"
+        },
+        {
+          "kind": "技能",
+          "name": "永世相約",
+          "route": "kit",
+          "mode": "kit",
+          "entries": 2,
+          "nodes": [
+            "before_skill",
+            "after_attack_hit"
+          ],
+          "operations": [
+            "dmg"
+          ],
+          "issues": [],
+          "semantic": "需原文逐句及P1/P2正式引擎數值證據"
+        },
+        {
+          "kind": "技能",
+          "name": "聖鈞無雙隕",
+          "route": "kit",
+          "mode": "kit",
+          "entries": 2,
+          "nodes": [
+            "before_skill",
+            "on_skill_use"
+          ],
+          "operations": [
+            "evade_turns",
+            "timed",
+            "status_random"
+          ],
+          "issues": [],
+          "semantic": "需原文逐句及P1/P2正式引擎數值證據"
+        },
+        {
+          "kind": "專屬特性／魂印",
+          "name": "汨",
+          "route": "kit",
+          "mode": "kit",
+          "entries": 15,
+          "nodes": [
+            "battle_start",
+            "on_entered",
+            "round_start",
+            "before_action",
+            "on_attacked",
+            "on_switch_out",
+            "cthyaat_death",
+            "on_skill_use",
+            "on_opponent_skill_use",
+            "round_end"
+          ],
+          "operations": [
+            "summon_fixed_extra",
+            "combine_panel_stats",
+            "clear_turn",
+            "drain",
+            "immune_status_turns",
+            "immune_statdown_turns",
+            "stat",
+            "retire_summoned_extra"
+          ],
+          "issues": [],
+          "semantic": "需原文逐句及P1/P2正式引擎數值證據"
+        }
+      ]
+    }
+  ]
+}

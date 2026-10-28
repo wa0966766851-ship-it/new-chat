@@ -103,6 +103,8 @@ export enum EffectTiming {
   STAT_BOOST_CLEARED = 'STAT_BOOST_CLEARED',
   RESOURCE_CHANGED = 'RESOURCE_CHANGED',
   BEFORE_INSTANT_KILL = 'BEFORE_INSTANT_KILL',
+  /** 真正免疫一段傷害後（固定／百分比／技能皆可；data: { damageType, blockedAmount, kinds }）。 */
+  DAMAGE_IMMUNIZED = 'DAMAGE_IMMUNIZED',
 }
 
 /** AFTER_ACTION／OPPONENT_AFTER_ACTION／ACTION_FAILED 的 extraData */
@@ -278,7 +280,7 @@ export interface BattleEventContext {
   getStatuses: (elf: Elf) => Record<string, number>;
   applyPinkDamage: (side: "p1" | "p2", amount: number, label?: string, activeP1?: Elf, activeP2?: Elf, dmgType?: string, opts?: { pure?: boolean } & import('../battle/damageCalculation').DamageCalculationOptions) => number;
   applyTrueDamage: (side: "p1" | "p2", amount: number, label?: string, activeP1?: Elf, activeP2?: Elf, opts?: SettlementOptions) => number;
-  applySkillTypeDamage: (side: "p1" | "p2", amount: number, label?: string, opts?: { ignoreBlock?: boolean; ignoreLimit?: boolean; ignoreShield?: boolean; floor?: number; elem?: string; category?: "skill_attack" | "skill_attribute" | "skill_extra_action"; node?: DamageNode; pure?: boolean; applyTypeMatchup?: boolean }) => number;
+  applySkillTypeDamage: (side: "p1" | "p2", amount: number, label?: string, opts?: { ignoreBlock?: boolean; ignoreLimit?: boolean; ignoreShield?: boolean; floor?: number; elem?: string; category?: "skill_attack" | "skill_attribute" | "skill_extra_action"; node?: DamageNode; pure?: boolean; applyTypeMatchup?: boolean; appendToAttack?: boolean }) => number;
   /** 舊汲取入口（真實傷害）。吸取請使用明確 fixed／percent 的 queueHpDrain。 */
   applyAbsorb: (side: "p1" | "p2", amount: number, label?: string, opts?: SettlementOptions) => void;
   

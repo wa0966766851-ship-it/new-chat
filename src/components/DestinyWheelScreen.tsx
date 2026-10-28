@@ -958,24 +958,24 @@ export default function DestinyWheelScreen({
                 {inspectElf.soulMark?.description || "（無記載）"}
               </div>
 
-              {/* 異能特質 */}
+              {/* 特質 */}
               {inspectElf.alienTraits && (
                 <div className="space-y-2 mb-4">
                   {inspectElf.alienTraits.gen2Trait && (
                     <div className="bg-amber-950/30 p-3 rounded-xl border border-amber-500/40 text-xs text-amber-100 leading-relaxed">
-                      <div className="font-bold text-amber-300 mb-1">🌟 二代異能特質：【{inspectElf.alienTraits.gen2Trait.name}】</div>
+                      <div className="font-bold text-amber-300 mb-1">🌟 二代特質：【{inspectElf.alienTraits.gen2Trait.name}】</div>
                       {inspectElf.alienTraits.gen2Trait.description}
                     </div>
                   )}
                   {inspectElf.alienTraits.exclusiveTrait && (
                     <div className="bg-red-950/30 p-3 rounded-xl border border-red-500/40 text-xs text-red-100 leading-relaxed">
-                      <div className="font-bold text-red-300 mb-1">🔥 專屬異能特質：【{inspectElf.alienTraits.exclusiveTrait.name}】</div>
+                      <div className="font-bold text-red-300 mb-1">🔥 專屬特質：【{inspectElf.alienTraits.exclusiveTrait.name}】</div>
                       {inspectElf.alienTraits.exclusiveTrait.description}
                     </div>
                   )}
                   {(inspectElf.alienTraits.exclusiveTraits || []).map((trait) => (
                     <div key={trait.name} className="text-red-200">
-                      <div className="font-bold text-red-300 mb-1">🔥 專屬異能特質：【{trait.name}】</div>
+                      <div className="font-bold text-red-300 mb-1">🔥 專屬特質：【{trait.name}】</div>
                       <div className="whitespace-pre-wrap">{trait.description}</div>
                     </div>
                   ))}

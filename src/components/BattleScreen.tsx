@@ -1,7 +1,7 @@
 import React, { useReducer, useEffect, useRef, useMemo } from "react";
 import { Skill, BattleItem } from "../types";
 import { BattleState, BattleAction, EffectItem } from "./BattleManager";
-import { BATTLE_ANIMATION_EVENT, readAnimationSettings, type BattleAnimationSettings } from '../battle/animationSettings';
+import { BATTLE_ANIMATION_EVENT, readAnimationSettings, effectiveAnimationSettings, type BattleAnimationSettings } from '../battle/animationSettings';
 import { BattleScreenUI } from "./BattleScreen.ui.tsx";
 import { createBattleEngine, type BattleEngine } from "../engine/battleEngine";
 import { Elf, BattleMode } from "../types";
@@ -9,6 +9,7 @@ import { createLocalAIClient } from '../battle/ai/client';
 import { readAISettings, publishDecision, clearDecisions } from '../battle/ai/settings';
 import './battle/battleFx.css';
 import { BattleIntro } from './battle/BattleIntro';
+import { BattleViewModeContext, toViewMode } from '../battle/viewerMode';
 import { planIntro, prefersReducedMotion, createActionGate, formatLabel } from '../battle/introPlan';
 
 export { normalizeDamageType } from "../battle/damageSemantics";
@@ -100,7 +101,7 @@ export default function BattleScreen(props: BattleScreenProps) {
   propsRef.current = props;
 
   // 入戰動畫：純展示；動畫期間行動閘門關閉（AI／托管等到結束才出手），引擎照常建立。
-  const [intro] = React.useState(() => planIntro({ enabled: readAnimationSettings().intro !== false, specialMode: props.specialMode, replay: props.introReplay, reducedMotion: prefersReducedMotion() }));
+  const [intro] = React.useState(() => planIntro({ enabled: effectiveAnimationSettings(readAnimationSettings()).intro !== false, specialMode: props.specialMode, replay: props.introReplay, reducedMotion: prefersReducedMotion() }));
   const [introOn, setIntroOn] = React.useState(intro.play);
   const gateRef = useRef<ReturnType<typeof createActionGate>>(null as any);
   if (!gateRef.current) { gateRef.current = createActionGate(); if (intro.play) gateRef.current.hold(); }
@@ -197,6 +198,7 @@ export default function BattleScreen(props: BattleScreenProps) {
 
   return (
     <BattleContext.Provider value={contextValue}>
+      <BattleViewModeContext.Provider value={toViewMode(props.battleMode)}>
       <BattleScreenUI 
         onSkillSelect={onSkillSelect}
         onSwitchElf={onSwitchElf}
@@ -216,6 +218,7 @@ export default function BattleScreen(props: BattleScreenProps) {
       />
       {introOn && <BattleIntro p1={state.p1} p2={state.p2} format={formatLabel(props.battleFormat)} plan={intro}
         onDone={() => { gateRef.current.open(); setIntroOn(false); }} />}
+      </BattleViewModeContext.Provider>
     </BattleContext.Provider>
   );
 }

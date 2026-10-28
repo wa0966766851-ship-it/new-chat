@@ -12,6 +12,7 @@ import { parseMusicSource } from '../utils/musicSource';
 import { playAudioTestTone } from '../utils/audioTestTone';
 import { BattleAISettingsPanel } from './BattleAISettingsPanel';
 import { LauncherSettingsPanel } from './LauncherSettingsPanel';
+import {GlobalAnimationMode} from './AnimationModeSettings';
 
 const TAB_ICONS: Record<ControlSectionId, React.ComponentType<{ className?: string }>> = {
   background: ImageIcon, audio: Music, visual: Palette, battle: Swords, system: Sliders,
@@ -331,11 +332,16 @@ export default function ControlHubPanel(model: ControlHubPanelModel) {
         {activeTab === 'battle' && (<>
           <BattleAISettingsPanel />
           <Section title="動畫播放" hint="關閉的項目直接略過動畫，不影響結算">
+            <GlobalAnimationMode settings={animationSettings} onChange={next=>{setAnimationSettings(next);writeAnimationSettings(next);}}/>
+            <label className="flex items-center justify-between gap-3 rounded-lg border border-cyan-900 bg-slate-950 p-3 mb-3">
+              <span><span className="block text-sm font-bold text-cyan-200">靜態模式</span><span className="text-xs text-slate-400">略過出招與登場動畫，飄字保留。</span></span>
+              <input aria-label="靜態模式" type="checkbox" checked={!!animationSettings.staticMode} onChange={e=>{const next={...animationSettings,mode:e.target.checked?'static' as const:'simple' as const,staticMode:e.target.checked};setAnimationSettings(next);writeAnimationSettings(next);}}/>
+            </label>
             <div className="grid grid-cols-2 gap-2" data-testid="battle-animation-settings">
               {BATTLE_ANIMATION_OPTIONS.map(option => (
                 <label key={option.key} title={option.tip} className="flex items-center justify-between gap-2 rounded-lg bg-slate-900 border border-slate-800 px-3 py-2 cursor-pointer select-none">
                   <span className="text-xs font-bold text-slate-200">{option.label}</span>
-                  <input type="checkbox" className="w-4 h-4 accent-blue-500" checked={animationSettings[option.key]}
+                  <input type="checkbox" disabled={!!animationSettings.staticMode&&(option.key==='skill'||option.key==='intro')} className="w-4 h-4 accent-blue-500" checked={animationSettings[option.key]}
                     onChange={e => { const next = { ...animationSettings, [option.key]: e.target.checked }; setAnimationSettings(next); writeAnimationSettings(next); }} />
                 </label>
               ))}

@@ -16,6 +16,7 @@ import { equipmentDamageFactors } from '../battle/damagePipeline';
 import { hpPowerScale } from '../battle/actionDamageModifiers';
 import {readIncomingPanelAttack} from '../battle/panelAttack';
 import {activeResourceQueryRules} from '../battle/resourceQueryRules';
+import {statusTypeMultiplier} from '../effects/statusMechanics';
 
 export const calculateDamage = (
   actor: Elf,
@@ -161,6 +162,7 @@ export const calculateDamage = (
     for (const part of parts) typeMult = Math.max(typeMult, skillTypeMultiplier(actorReg, part, targetType));
   }
   if (actorReg?.minimumTypeMultiplierThisAction !== undefined) typeMult = Math.max(typeMult, actorReg.minimumTypeMultiplierThisAction);
+  typeMult=statusTypeMultiplier(actor,typeMult);
   // 積木：克制倍數取指定屬性中最高者
   // 本系加成 1.5 倍：技能屬性（含雙屬性技能的任一屬性）為自身系別中含有的屬性
   const splitT = (t?: string) => (t || "").replace(/系$/, "").split(/[.·・]/).filter(Boolean);

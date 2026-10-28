@@ -1,8 +1,11 @@
 import type {Elf,Skill} from '../types';
+import {correctSavedCorruptedRey} from './savedCorruptedReyCorrection';
 import {correctSavedOdinPp} from './savedOdinPpCorrection';
 import legacyRey from './legacyReyDescriptions.json';
 import legacyBuiltin from './legacyBuiltinDescriptions.json';
 import legacySoulKits from './legacySoulKitFingerprints.json';
+import { correctSavedJiuqing } from './savedJiuqingCorrection';
+import { restoreBuiltinFifthFlags } from '../battle/skillSlot';
 import {synchronizeBuiltinEffectBindings,modifiedBuiltinDefinitions} from './builtinEffectBindings';
 
 // 早期 Elf.kit 是描述詞條；只認領 Git 歷史逐項完全相同的資料，不能把使用者的頂層積木當成舊版。
@@ -16,7 +19,16 @@ function knownLegacySoulKit(elf:Elf):boolean {
 
 /** 只修正已知舊版內建定義；圖紙或全文有其他改動時保留使用者版本。 */
 export function applySavedSkillCorrections(elf:Elf,defaults:Elf[]):Elf{
-  return synchronizeBuiltinEffectBindings(correctKnownSavedDefinitions(elf,defaults),defaults);
+  return synchronizeBuiltinEffectBindings(correctKnownSavedDefinitions(correctSavedJiuqing(correctSavedCorruptedRey(correctSavedFifthFlags(elf,defaults),defaults),defaults),defaults),defaults);
+}
+
+/** 第五技能旗標：內建精靈存檔缺旗標（例如 10/23 前未標記的魔獅迪露）時，依預設資料補回；規則見 docs/rules/技能欄與第五技能規則.md。 */
+function correctSavedFifthFlags(elf:Elf,defaults:Elf[]):Elf{
+  if(!elf||!Array.isArray(elf.skills)||String(elf.id).startsWith('custom_'))return elf;
+  const canonical=defaults.find(e=>String(e.id)===String(elf.id));
+  if(!canonical||canonical.name!==elf.name)return elf;
+  const skills=restoreBuiltinFifthFlags(elf.skills,canonical.skills);
+  return skills?{...elf,skills}:elf;
 }
 
 function correctKnownSavedDefinitions(elf:Elf,defaults:Elf[]):Elf{

@@ -74,10 +74,6 @@ function captureRemoved(c: C, event: E, data: any): void {
     c.setPlayerState('hamoRemovedTimers', [...before, ...(data.removed || []).filter((t: Timer) => !t.ownerBattleId || t.ownerBattleId === identity(c.self))]);
   }
 }
-export function handleHamoSoulMark(c: C, event: E, data?: any): void {
-  // 5035 魂印「鱗」已遷真 Kit（migratedHamoLinSoulKit.ts；DSH 20261018）——規則3.3 空殼化。
-  return;
-}
 
 /** 龍鱗三系的屬性／異常對照（逐波=水/藍、燼世=火/紅、纏根=草/綠）。 */
 const elemental = new Map<string, { colour: Colour; type: string; hit: string; fallback: string }>([

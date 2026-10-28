@@ -1,0 +1,726 @@
+{
+  "checkedAt": "2026-10-23T16:30:23.284Z",
+  "scope": "read-only metadata; no visual playback verified",
+  "manifests": [
+    {
+      "package": "PetAnimPackage",
+      "version": "20260507094947",
+      "assetCount": 6137,
+      "bundleCount": 6146,
+      "present": 6146,
+      "missing": []
+    },
+    {
+      "package": "DefaultPackage",
+      "version": "20261016112447",
+      "assetCount": 61001,
+      "bundleCount": 7161,
+      "present": 7148,
+      "missing": [
+        "game_dll_core_dll_bytes",
+        "game_dll_ddebug_dll_bytes",
+        "game_dll_dotween_dll_bytes",
+        "game_dll_gamelogic_dll_bytes",
+        "game_dll_metahotfix_dll_bytes",
+        "game_dll_mscorlib_dll_bytes",
+        "game_dll_newtonsoft_json_dll_bytes",
+        "game_dll_system_core_dll_bytes",
+        "game_dll_system_dll_bytes",
+        "game_dll_unitask_dll_bytes",
+        "game_dll_vuplex_dll_bytes",
+        "game_dll_weeklyupdate_dll_bytes",
+        "game_dll_yooasset_dll_bytes"
+      ]
+    }
+  ],
+  "assets": [
+    {
+      "package": "PetAnimPackage",
+      "bundle": "ppets_70",
+      "file": "D:\\影片\\bilibili\\新建文件夹\\TWSeerLauncher\\Games\\NewSeer\\Seer_Data\\yoo\\PetAnimPackage\\CacheBundleFiles\\45\\455c66ff461d4188dd53cbd9fff4944e\\__data",
+      "size": 579315,
+      "types": {
+        "GameObject": 1,
+        "MonoScript": 3,
+        "MeshFilter": 1,
+        "MonoBehaviour": 3,
+        "Transform": 1,
+        "Sprite": 1,
+        "AssetBundle": 1,
+        "Texture2D": 1,
+        "SortingGroup": 1,
+        "MeshRenderer": 1
+      },
+      "containers": [
+        "assets/pets/70.prefab"
+      ],
+      "clips": [],
+      "matches": [],
+      "textures": [
+        {
+          "name": "70._Atlas_",
+          "width": 2048,
+          "height": 1024,
+          "format": "25"
+        }
+      ],
+      "sequences": [
+        {
+          "name": "standby",
+          "frames": 29
+        },
+        {
+          "name": "attack",
+          "frames": 75
+        },
+        {
+          "name": "sa",
+          "frames": 75
+        },
+        {
+          "name": "cp",
+          "frames": 75
+        },
+        {
+          "name": "hited",
+          "frames": 8
+        }
+      ],
+      "frameRate": 24
+    },
+    {
+      "package": "PetAnimPackage",
+      "bundle": "ppets_5029",
+      "file": "D:\\影片\\bilibili\\新建文件夹\\TWSeerLauncher\\Games\\NewSeer\\Seer_Data\\yoo\\PetAnimPackage\\CacheBundleFiles\\72\\726372a4793a2746ccba4840c998774a\\__data",
+      "size": 405363,
+      "types": {
+        "GameObject": 1,
+        "MonoBehaviour": 3,
+        "MonoScript": 3,
+        "MeshFilter": 1,
+        "Transform": 1,
+        "MeshRenderer": 1,
+        "AssetBundle": 1,
+        "Sprite": 1,
+        "Texture2D": 1,
+        "SortingGroup": 1
+      },
+      "containers": [
+        "assets/pets/5029.prefab"
+      ],
+      "clips": [],
+      "matches": [],
+      "textures": [
+        {
+          "name": "5029._Atlas_",
+          "width": 2048,
+          "height": 2048,
+          "format": "25"
+        }
+      ],
+      "sequences": [
+        {
+          "name": "standby",
+          "frames": 16
+        },
+        {
+          "name": "attack",
+          "frames": 77
+        },
+        {
+          "name": "sa",
+          "frames": 58
+        },
+        {
+          "name": "cp",
+          "frames": 59
+        },
+        {
+          "name": "hited",
+          "frames": 8
+        }
+      ],
+      "frameRate": 25
+    },
+    {
+      "package": "PetAnimPackage",
+      "bundle": "ppets_5036",
+      "file": "D:\\影片\\bilibili\\新建文件夹\\TWSeerLauncher\\Games\\NewSeer\\Seer_Data\\yoo\\PetAnimPackage\\CacheBundleFiles\\ba\\ba8cd5c03eee85d3853da1fdd77a94eb\\__data",
+      "size": 277845,
+      "types": {
+        "MonoScript": 3,
+        "MonoBehaviour": 3,
+        "SortingGroup": 1,
+        "Transform": 1,
+        "MeshFilter": 1,
+        "AssetBundle": 1,
+        "Sprite": 1,
+        "MeshRenderer": 1,
+        "GameObject": 1,
+        "Texture2D": 1
+      },
+      "containers": [
+        "assets/pets/5036.prefab"
+      ],
+      "clips": [],
+      "matches": [],
+      "textures": [
+        {
+          "name": "5036._Atlas_",
+          "width": 1024,
+          "height": 1024,
+          "format": "25"
+        }
+      ],
+      "sequences": [
+        {
+          "name": "standby",
+          "frames": 16
+        },
+        {
+          "name": "attack",
+          "frames": 76
+        },
+        {
+          "name": "sa",
+          "frames": 55
+        },
+        {
+          "name": "cp",
+          "frames": 57
+        },
+        {
+          "name": "hited",
+          "frames": 8
+        }
+      ],
+      "frameRate": 25
+    },
+    {
+      "package": "DefaultPackage",
+      "bundle": "game_prefabs_year2025_gun",
+      "file": "D:\\影片\\bilibili\\新建文件夹\\TWSeerLauncher\\Games\\NewSeer\\Seer_Data\\yoo\\DefaultPackage\\CacheBundleFiles\\85\\8565931889819994a75afb31bee15c38\\__data",
+      "size": 33943,
+      "types": {
+        "GameObject": 25,
+        "ParticleSystemRenderer": 23,
+        "ParticleSystem": 23,
+        "Transform": 25,
+        "AssetBundle": 1
+      },
+      "containers": [
+        "assets/game/prefabs/year2025/gun/gunshot_normal_a.prefab",
+        "assets/game/prefabs/year2025/gun/gunshot_crit_b_1.prefab",
+        "assets/game/prefabs/year2025/gun/gunshot_crit_b.prefab",
+        "assets/game/prefabs/year2025/gun/gunshot_crit_a.prefab",
+        "assets/game/prefabs/year2025/gun/gunshot_normal_b.prefab"
+      ],
+      "clips": [],
+      "matches": [
+        {
+          "type": "GameObject",
+          "name": "Gunshot_crit_B"
+        },
+        {
+          "type": "GameObject",
+          "name": "Gunshot_crit_A"
+        },
+        {
+          "type": "GameObject",
+          "name": "Gunshot_crit_B_1"
+        }
+      ],
+      "textures": []
+    },
+    {
+      "package": "DefaultPackage",
+      "bundle": "game_prefabs_year2025_hit",
+      "file": "D:\\影片\\bilibili\\新建文件夹\\TWSeerLauncher\\Games\\NewSeer\\Seer_Data\\yoo\\DefaultPackage\\CacheBundleFiles\\13\\13a66f81a2243f1937c3889def30c3b0\\__data",
+      "size": 49327,
+      "types": {
+        "Transform": 44,
+        "ParticleSystem": 35,
+        "GameObject": 44,
+        "SpriteRenderer": 6,
+        "Animation": 1,
+        "ParticleSystemRenderer": 35,
+        "Material": 2,
+        "AnimationClip": 2,
+        "CanvasRenderer": 6,
+        "AssetBundle": 1
+      },
+      "containers": [
+        "assets/game/prefabs/year2025/hit/speedline.prefab",
+        "assets/game/prefabs/year2025/hit/lockon_shiny.prefab",
+        "assets/game/prefabs/year2025/hit/npc_spawn.prefab",
+        "assets/game/prefabs/year2025/hit/hit_normal_b.prefab",
+        "assets/game/prefabs/year2025/hit/hit_crit_a.prefab",
+        "assets/game/prefabs/year2025/hit/hit_normal_a.prefab",
+        "assets/game/prefabs/year2025/hit/hit_crit_b.prefab",
+        "assets/game/prefabs/year2025/hit/lockon.prefab"
+      ],
+      "clips": [
+        {
+          "name": "lockon_hide",
+          "sampleRate": 60
+        },
+        {
+          "name": "lockon",
+          "sampleRate": 60
+        }
+      ],
+      "matches": [
+        {
+          "type": "GameObject",
+          "name": "hit_crit_B"
+        },
+        {
+          "type": "GameObject",
+          "name": "hit_crit_A"
+        }
+      ],
+      "textures": []
+    },
+    {
+      "package": "DefaultPackage",
+      "bundle": "game_prefabs_year2025_soundeffect",
+      "file": "D:\\影片\\bilibili\\新建文件夹\\TWSeerLauncher\\Games\\NewSeer\\Seer_Data\\yoo\\DefaultPackage\\CacheBundleFiles\\85\\85f43147728931dea9185a56b49bff3b\\__data",
+      "size": 432220,
+      "types": {
+        "AudioClip": 11,
+        "AssetBundle": 1
+      },
+      "containers": [
+        "assets/game/prefabs/year2025/soundeffect/speed_up.mp3",
+        "assets/game/prefabs/year2025/soundeffect/normal_attack.mp3",
+        "assets/game/prefabs/year2025/soundeffect/overkill.mp3",
+        "assets/game/prefabs/year2025/soundeffect/light_skill.mp3",
+        "assets/game/prefabs/year2025/soundeffect/qte_trigger.mp3",
+        "assets/game/prefabs/year2025/soundeffect/hu_xing_skill.mp3",
+        "assets/game/prefabs/year2025/soundeffect/player_hited.mp3",
+        "assets/game/prefabs/year2025/soundeffect/qte_mark.mp3",
+        "assets/game/prefabs/year2025/soundeffect/critical_accumulate.mp3",
+        "assets/game/prefabs/year2025/soundeffect/critical.mp3",
+        "assets/game/prefabs/year2025/soundeffect/melee_skill.mp3"
+      ],
+      "clips": [],
+      "matches": [],
+      "textures": []
+    },
+    {
+      "package": "DefaultPackage",
+      "bundle": "game_ui_battle",
+      "file": "D:\\影片\\bilibili\\新建文件夹\\TWSeerLauncher\\Games\\NewSeer\\Seer_Data\\yoo\\DefaultPackage\\CacheBundleFiles\\67\\6744b2b0a9ecc870a097a2e1a9f34f4b\\__data",
+      "size": 5012742,
+      "types": {
+        "CanvasRenderer": 2592,
+        "MonoBehaviour": 3329,
+        "GameObject": 3246,
+        "RectTransform": 3236,
+        "CanvasGroup": 90,
+        "Sprite": 287,
+        "Texture2D": 6,
+        "MonoScript": 48,
+        "AnimationClip": 13,
+        "Animation": 39,
+        "Transform": 10,
+        "ParticleSystem": 4,
+        "ParticleSystemRenderer": 4,
+        "AssetBundle": 1,
+        "VideoPlayer": 3,
+        "Camera": 3,
+        "SpriteAtlas": 1,
+        "Animator": 1,
+        "AnimatorController": 1
+      },
+      "containers": [
+        "assets/game/ui/battle/anim/battleconditionexpand.anim",
+        "assets/game/ui/battle/recordermainfightui.prefab",
+        "assets/game/ui/battle/petcrit.prefab",
+        "assets/game/ui/battle/battleabnormaleffectcomponent.prefab",
+        "assets/game/ui/battle/battlemsg.prefab",
+        "assets/game/ui/battle/battlechangehptext.prefab",
+        "assets/game/ui/battle/battleemoticon.prefab",
+        "assets/game/ui/battle/newbattleabnormalicon.prefab",
+        "assets/game/ui/battle/skillitem.prefab",
+        "assets/game/ui/battle/anim/texturemove.anim",
+        "assets/game/ui/battle/roundinfo.prefab",
+        "assets/game/ui/battle/battleskilltip.prefab",
+        "assets/game/ui/battle/battlelvicon.prefab",
+        "assets/game/ui/battle/anim/autofight.anim",
+        "assets/game/ui/battle/bossskillitem.prefab",
+        "assets/game/ui/battle/crit.prefab",
+        "assets/game/ui/battle/fightloadingpetitem.prefab",
+        "assets/game/ui/battle/anim/battleconditionfold.anim",
+        "assets/game/ui/battle/battlecondition.prefab",
+        "assets/game/ui/battle/anim/battlepet_imgselected_arrow.anim",
+        "assets/game/ui/battle/images.spriteatlas",
+        "assets/game/ui/battle/mainfightui.prefab",
+        "assets/game/ui/battle/newmainfightui.prefab",
+        "assets/game/ui/battle/bobemoticon.prefab",
+        "assets/game/ui/battle/anim/textmove.anim",
+        "assets/game/ui/battle/fightingpetorbossinfopet.prefab",
+        "assets/game/ui/battle/battlefieldeffect.prefab",
+        "assets/game/ui/battle/battlepet.prefab",
+        "assets/game/ui/battle/anim/newbufficon_chuxian.anim",
+        "assets/game/ui/battle/pphuifu.prefab",
+        "assets/game/ui/battle/battlesignbuffinfopop.prefab",
+        "assets/game/ui/battle/fifthskillitem.prefab",
+        "assets/game/ui/battle/jiechuzhuangtai.prefab",
+        "assets/game/ui/battle/anim/newbufficon_xiaoshi.anim",
+        "assets/game/ui/battle/skillbarbaoji.prefab"
+      ],
+      "clips": [
+        {
+          "name": "TextureMove",
+          "sampleRate": 60
+        },
+        {
+          "name": "NewBufficon_chuxian",
+          "sampleRate": 60
+        },
+        {
+          "name": "NewBufficon_xiaoshi",
+          "sampleRate": 60
+        },
+        {
+          "name": "AutoFight",
+          "sampleRate": 60
+        },
+        {
+          "name": "BattleConditionExpand",
+          "sampleRate": 60
+        },
+        {
+          "name": "TextMove",
+          "sampleRate": 60
+        },
+        {
+          "name": "BattlePet_imgSelected_Arrow",
+          "sampleRate": 60
+        },
+        {
+          "name": "NewBufficon_zengjia",
+          "sampleRate": 60
+        },
+        {
+          "name": "BattleConditionFold",
+          "sampleRate": 60
+        },
+        {
+          "name": "SkillItem_Vfx_Selected",
+          "sampleRate": 60
+        },
+        {
+          "name": "TextMove_Crit",
+          "sampleRate": 60
+        },
+        {
+          "name": "BattlePetInfoView_Open",
+          "sampleRate": 60
+        },
+        {
+          "name": "NewBufficon_shanshuo",
+          "sampleRate": 60
+        }
+      ],
+      "matches": [
+        {
+          "type": "GameObject",
+          "name": "baojishanghaijianmian"
+        },
+        {
+          "type": "GameObject",
+          "name": "SkillBarBaoji"
+        },
+        {
+          "type": "GameObject",
+          "name": "BattleCritHpText"
+        },
+        {
+          "type": "GameObject",
+          "name": "Crit"
+        },
+        {
+          "type": "GameObject",
+          "name": "PetCrit"
+        },
+        {
+          "type": "GameObject",
+          "name": "BattleCritHpText"
+        },
+        {
+          "type": "AnimationClip",
+          "name": "TextMove_Crit"
+        },
+        {
+          "type": "GameObject",
+          "name": "txtCrit"
+        }
+      ],
+      "textures": [
+        {
+          "name": "battle_bg",
+          "width": 1136,
+          "height": 640,
+          "format": "4"
+        },
+        {
+          "name": "sactx-1-2048x1024-BC7-images-ea2aa81a",
+          "width": 2048,
+          "height": 1024,
+          "format": "25"
+        },
+        {
+          "name": "sactx-0-2048x2048-BC7-images-ea2aa81a",
+          "width": 2048,
+          "height": 2048,
+          "format": "25"
+        },
+        {
+          "name": "UIMask",
+          "width": 32,
+          "height": 32,
+          "format": "4"
+        },
+        {
+          "name": "battle_loding_rightBg",
+          "width": 762,
+          "height": 640,
+          "format": "4"
+        },
+        {
+          "name": "battle_loding_leftBg",
+          "width": 764,
+          "height": 640,
+          "format": "25"
+        }
+      ]
+    }
+  ],
+  "spine": {
+    "bundle": {
+      "name": "game_spinedata_battle",
+      "crc": 0,
+      "hash": "3549cf04672a16286d27fcda601e8c7f",
+      "fileCrc": "08ec1d8a",
+      "size": 1197916,
+      "encrypted": false,
+      "tags": [],
+      "deps": [],
+      "file": "D:\\影片\\bilibili\\新建文件夹\\TWSeerLauncher\\Games\\NewSeer\\Seer_Data\\yoo\\DefaultPackage\\CacheBundleFiles\\35\\3549cf04672a16286d27fcda601e8c7f\\__data",
+      "exists": true
+    },
+    "types": {
+      "MonoBehaviour": 16,
+      "TextAsset": 16,
+      "Material": 8,
+      "Texture2D": 8,
+      "AssetBundle": 1,
+      "MonoScript": 2
+    },
+    "assets": [
+      {
+        "type": "MonoBehaviour",
+        "name": "catch_mv_Atlas"
+      },
+      {
+        "type": "TextAsset",
+        "name": "jinruduizhan.atlas",
+        "length": 1002
+      },
+      {
+        "type": "TextAsset",
+        "name": "catch_mv.skel",
+        "length": 3023
+      },
+      {
+        "type": "MonoBehaviour",
+        "name": "baoji_SkeletonData"
+      },
+      {
+        "type": "Texture2D",
+        "name": "zhiliao",
+        "width": 512,
+        "height": 1024
+      },
+      {
+        "type": "TextAsset",
+        "name": "jinruduizhan.skel",
+        "length": 8748
+      },
+      {
+        "type": "MonoBehaviour",
+        "name": "baoji_Atlas"
+      },
+      {
+        "type": "TextAsset",
+        "name": "jiechuzhuangtai.atlas",
+        "length": 388
+      },
+      {
+        "type": "TextAsset",
+        "name": "duizhanjindutiao.skel",
+        "length": 9992
+      },
+      {
+        "type": "MonoBehaviour",
+        "name": "jinruduizhan_Atlas"
+      },
+      {
+        "type": "Texture2D",
+        "name": "PPhuifu",
+        "width": 512,
+        "height": 1024
+      },
+      {
+        "type": "Texture2D",
+        "name": "jinruduizhan",
+        "width": 2048,
+        "height": 1024
+      },
+      {
+        "type": "Texture2D",
+        "name": "duizhanjindutiao",
+        "width": 512,
+        "height": 128
+      },
+      {
+        "type": "Texture2D",
+        "name": "baoji",
+        "width": 2048,
+        "height": 512
+      },
+      {
+        "type": "TextAsset",
+        "name": "jiechuzhuangtai.skel",
+        "length": 5866
+      },
+      {
+        "type": "TextAsset",
+        "name": "duizhanjindutiao.atlas",
+        "length": 378
+      },
+      {
+        "type": "TextAsset",
+        "name": "crisit2.atlas",
+        "length": 1135
+      },
+      {
+        "type": "Texture2D",
+        "name": "crisit2",
+        "width": 2048,
+        "height": 512
+      },
+      {
+        "type": "TextAsset",
+        "name": "zhiliao.atlas",
+        "length": 380
+      },
+      {
+        "type": "MonoBehaviour",
+        "name": "crisit2_Atlas"
+      },
+      {
+        "type": "MonoBehaviour",
+        "name": "zhiliao_SkeletonData"
+      },
+      {
+        "type": "MonoBehaviour",
+        "name": "duizhanjindutiao_SkeletonData"
+      },
+      {
+        "type": "TextAsset",
+        "name": "PPhuifu.atlas",
+        "length": 380
+      },
+      {
+        "type": "TextAsset",
+        "name": "baoji.atlas",
+        "length": 713
+      },
+      {
+        "type": "TextAsset",
+        "name": "catch_mv.atlas",
+        "length": 551
+      },
+      {
+        "type": "TextAsset",
+        "name": "crisit2.skel",
+        "length": 1298
+      },
+      {
+        "type": "MonoBehaviour",
+        "name": "jiechuzhuangtai_Atlas"
+      },
+      {
+        "type": "MonoBehaviour",
+        "name": "crisit2_SkeletonData"
+      },
+      {
+        "type": "Texture2D",
+        "name": "catch_mv",
+        "width": 512,
+        "height": 256
+      },
+      {
+        "type": "Texture2D",
+        "name": "jiechuzhuangtai",
+        "width": 512,
+        "height": 1024
+      },
+      {
+        "type": "MonoBehaviour",
+        "name": "jinruduizhan_SkeletonData"
+      },
+      {
+        "type": "TextAsset",
+        "name": "PPhuifu.skel",
+        "length": 5861
+      },
+      {
+        "type": "MonoBehaviour",
+        "name": "duizhanjindutiao_Atlas"
+      },
+      {
+        "type": "MonoBehaviour",
+        "name": "PPhuifu_SkeletonData"
+      },
+      {
+        "type": "MonoBehaviour",
+        "name": "zhiliao_Atlas"
+      },
+      {
+        "type": "TextAsset",
+        "name": "baoji",
+        "spine": "4.0.64",
+        "animations": [
+          "baojiframe"
+        ]
+      },
+      {
+        "type": "TextAsset",
+        "name": "zhiliao.skel",
+        "length": 5858
+      },
+      {
+        "type": "MonoBehaviour",
+        "name": "PPhuifu_Atlas"
+      },
+      {
+        "type": "MonoBehaviour",
+        "name": "jiechuzhuangtai_SkeletonData"
+      },
+      {
+        "type": "MonoBehaviour",
+        "name": "catch_mv_SkeletonData"
+      }
+    ]
+  },
+  "critReference": {
+    "gameObject": "Crit",
+    "skeletonPathId": "861739453062322768",
+    "skeletonName": "crisit2_SkeletonData"
+  },
+  "identityCaveat": "Official ppets_5029 is NOT the custom artwork elf 異境神霆·雷伊. Numeric project IDs are not animation bindings. ppets_5036 species identity also remains unverified. No custom artwork animation was established."
+}

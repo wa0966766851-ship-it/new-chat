@@ -1,3 +1,5 @@
+import {OWNER_LINK_ACTION_FIELDS,OWNER_LINK_CONDITION_FIELDS,ownerLinkActionIssue,ownerLinkConditionIssue} from '../blocks/ops/ownerLinks';
+import {PANEL_DURATION_FIELDS,panelDurationIssue} from '../blocks/ops/panelAndDuration';
 import {RESOURCE_PANEL_FIELDS,resourcePanelIssue} from './resourcePanelOperations';
 /** 可編輯的條件／結果連鎖合約。只放已知結算動作，不接受專屬 handler、腳本或文字 fallback。 */
 import {SUPPORT_ACTION_FIELDS,supportActionIssue} from './mechSupportLifecycle';
@@ -46,10 +48,13 @@ import {MISSING_HP_SCALING_FIELDS,missingHpScalingIssue} from '../blocks/ops/mis
 import {REMOVED_EFFECT_FIELDS,removedEffectIssue} from '../blocks/ops/removedEffects';
 import {FINAL_ODB_ACTION_FIELDS,FINAL_ODB_CONDITION_FIELDS,finalOdbActionIssue,finalOdbConditionIssue} from '../blocks/ops/finalOdinDeluBeliente';
 import {EXTRA_ELF_ACTION_FIELDS,extraElfActionIssue} from '../blocks/ops/extraElf';
+import {BOSS_TRAIT_ACTION_FIELDS,bossTraitActionIssue} from '../blocks/ops/bossTraits';
 import {THUNDER_GOD_ACTION_FIELDS,THUNDER_GOD_CONDITION_FIELDS,thunderGodActionIssue,skillTransformIssue} from '../blocks/ops/thunderGod';
 import {GROUP5_ACTION_FIELDS,group5ActionIssue} from '../blocks/ops/group5';
 import {GROUP_C_ACTION_FIELDS,GROUP_C_CONDITION_FIELDS,groupCActionIssue,groupCConditionIssue} from '../blocks/ops/groupCContract';
 export const SEQUENCE_ACTION_FIELDS: Record<string, readonly string[]> = {
+  ...PANEL_DURATION_FIELDS,
+  ...OWNER_LINK_ACTION_FIELDS,
   next_power_nonfull:['perElf','scope','aliveOnly'],heal_main_settled:['ratio'],
   checked_percent_drain:['ratio','failTrue','ofSelf','replaceWithTrue'],
   type_damage_floor_turns:['side','base','list','turns'],
@@ -64,14 +69,14 @@ export const SEQUENCE_ACTION_FIELDS: Record<string, readonly string[]> = {
   stage_guard_turns:['kind','turns'],
   instant_kill:['chance'], prevent_instant_kill:['dir','scope'], instant_kill_same_hp_targets:[],
   damage_to_heal_turns:['turns','kind','next'],
-  block_damage_uses:['uses','kind','key','onBlock'],
+  block_damage_uses:['uses','kind','key','onBlock','sealOpponentAdded'],
   abolish_selected:['side'],consume_selected_pp:['side'],
   heal_then:['side','ratio','body'],
   select_elf:['all','side','scope','state','orderBy','direction','body'],raise_max_hp:['source','ratio'],
   heal_selected_then:['ratio','body'],stat_points:['stats','direction','ratio','cap','floor'],vanish_selected:[],
   stat_apply_last:['side','direction'],next_entry_priority:['turns'],
   snapshot_value:['side','key','fields'],heal_snapshot:['key','ratio','consume'],count_team_trait:['side','name','state','traitText','excludeSelf','matchedWeight','unmatchedWeight','traitSources'],
-  resource_mark_add:['id','name','side','scope','displayChar','unit','persistsOffField','description','ratio','amount','maxCount','incomingDamageReduction'],
+  resource_mark_add:['id','name','side','scope','displayChar','unit','persistsOffField','description','ratio','amount','maxCount','incomingDamageReduction','snapshotKey'],
   damage_floor:['side','base','ratio'],
   ...CLOSURE_ACTION_FIELDS,
   ...SUPPORT_ACTION_FIELDS,
@@ -127,6 +132,7 @@ export const SEQUENCE_ACTION_FIELDS: Record<string, readonly string[]> = {
   ...REMOVED_EFFECT_FIELDS,
   ...FINAL_ODB_ACTION_FIELDS,
   ...EXTRA_ELF_ACTION_FIELDS,
+  ...BOSS_TRAIT_ACTION_FIELDS,
   ...THUNDER_GOD_ACTION_FIELDS,
   ...GROUP5_ACTION_FIELDS,
   mark_program: MARK_PROGRAM_FIELDS,
@@ -158,19 +164,19 @@ export const SEQUENCE_ACTION_FIELDS: Record<string, readonly string[]> = {
   heal_collection:['side','scope','amount'],
   pp_op: ['side','mode','amount','stopIfEmpty','kind','captureRestored'],
   drain_from_last:['ratio','type'],
-  dmg: ['flat','both','type','elem','base','of','ratio','stepUnit','stepBonus','perStage','perMark','per'], drain: ['flat','cur','ratioCur','ratio','true','ofSelf','perMark','perStatusTurns','basis','per','perStageDown','ppDiffDouble'],
+  dmg: ['flat','both','type','elem','base','of','ratio','stepUnit','stepBonus','perStage','perMark','per','doublePer','appendToAttack'], drain: ['flat','cur','ratioCur','ratio','true','ofSelf','perMark','perStatusTurns','basis','per','perStageDown','ppDiffDouble'],
   clear_shield: ['side','kind'], clear_turn: ['side'],
-  invalid_turns: ['kind','turns','next','perMarkTurns'], invalid_next: ['kind','uses','followupRounds','followupSameCategory','timerId'],
+  invalid_turns: ['kind','turns','next','perMarkTurns'], invalid_next: ['kind','uses','followupRounds','followupSameCategory','timerId','powerAbove','scope'],
   no_heal: ['turns','next','scope','perStageKinds'], no_switch: ['turns','next'],
   timed: ['turns','from','trig','body','label','initial','once','onExpire','skillKind','onRoundMiss','perMark'],
   dmg_mod: ['dir','kind','boost','reduce','perMark'],
   dmg_mod_turns: ['side','dir','kind','boost','reduce','chance','turns','next','lateCompensation','doubleIfAnyStatus'],
   dmg_mod_uses:['uses','boost','kind','attackOnly'],
-  boost: ['mult','power','kind','chance','add','per','perInc','perLastAmount'], ignore: ['what'], no_resist: [],
+  boost: ['perMark','mult','power','kind','chance','add','per','perInc','perLastAmount'], ignore: ['what'], no_resist: [],
   heal_equal: [], dmg_equal: ['type'], dmg_from_last: ['ratio','type','elem','basis'],
   maxhp: ['side','ratio','direction','perStageKinds'],stat_value:['side','stats','amount','direction','floor'],
   // P2：已實作且有讀取端的先制／免疫 op，補上參數合約後放行。
-  prio_turns: ['turns','v','attackOnly','side','per','next'],
+  prio_turns: ['turns','v','attackOnly','side','per','next','current'],
   noop: ['tag'],
   immune_status_turns: ['turns','reflect','cls','exclude'], immune_status_count: ['count','reflect','scope','persistsOffField'],
   // 「該技能每有1點PP值則先制+N／連擊+N」（使用前PP；5022 無序系）。
@@ -220,12 +226,14 @@ export const SEQUENCE_ACTION_FIELDS: Record<string, readonly string[]> = {
   ...GROUP_C_ACTION_FIELDS,
 };
 export const SEQUENCE_CONDITION_FIELDS: Record<string, readonly string[]> = {
+  ...OWNER_LINK_CONDITION_FIELDS,
   ...FINAL_ODB_CONDITION_FIELDS,
   first: [],
   // 無為龍者（arena_12）條件（blocks/ops/arenaShared.ts；DSH 20261018）
   ...ARENA12_CONDITION_FIELDS, last: [], success: [], triggered: [], fail: [],
   has_status: ['side','status','neg'], abnormal: ['side','neg','cls'], stage: ['side','kind','neg'],stage_all:['side','kind','neg'],
   hp_ratio: ['side','op','ratio'], hp_cmp: ['side','op'], hp_full: ['side'], shield: ['side','neg'],
+  field_shield:['absent'],
   hp_value:['side','op','amount'],alive:['side'],
   invalid: [], weak: [], type_is: ['side','type','neg'], enemy: ['above'], self_enemy: [],
   // P2 第二批：結果類條件只在傷害結算後的事件可用（見 AFTER_RESULT_TRIGS）；印記層數任何時點可查
@@ -238,7 +246,7 @@ export const SEQUENCE_CONDITION_FIELDS: Record<string, readonly string[]> = {
   // 目前所用技能的槽位序（0 起；引擎 skillSlot(elf, skill) 既有讀取端）
   skill_slot: ['index'],
   // 讀取 playerState 的布林／數值鍵（flag_set 等寫入端；通用）
-  player_state: ['key', 'equals', 'fallback'],
+  player_state: ['key', 'equals', 'fallback','thisRound'],
   // 本回合未受到指定類技能傷害（讀取端 blocks/runtime evalCond：blkSkillDmgTakenRound／blkAttackDmgTakenRound）
   no_skill_dmg: ['kind'],
   // 本回合未受到指定類（固定／百分比）傷害（recordBattleFacts 寫入；殞星衝擊）。
@@ -247,6 +255,7 @@ export const SEQUENCE_CONDITION_FIELDS: Record<string, readonly string[]> = {
   opp_pp_changed: [],
   // 「處於回合類效果」＝該側存在回合類計時器（5032 變思遷憶／星核脈衝；blocks/runtime hasTurnEffectOn）
   has_turn_effect: ['side','neg'],
+  either_turn_effect: [],
   // 本次在場回合數（引擎 âturnsInBattle 計數；op：低於/不高於/高於/不小於/等於）
   field_rounds: ['op', 'amount'],
   // 空間躍遷反擊事實（blockedSkillDamageThisAction）與 payload 布林鍵計時器存在（5032 魂印核）。
@@ -257,7 +266,7 @@ export const SEQUENCE_CONDITION_FIELDS: Record<string, readonly string[]> = {
   // 「N%機率」：偽隨機（PRD），使用技能時擲一次
   chance: ['pct'],
   pp_full:['neg'],
-  stage_value:['side','stat','op','amount'],selected_charge:['side','op','amount'],selected_pp:['side','op','amount'],skill_pp_any:['side','op','amount'], skill_pp_all:['side'],
+  action_priority:['side','op','amount'],stage_value:['side','stat','op','amount'],selected_charge:['side','op','amount'],selected_pp:['side','op','amount'],skill_pp_any:['side','op','amount'], skill_pp_all:['side'],
   atk_gap:['side','op','amount'],
   skill_kind:['kind'],skill_invalid:[],skill_fifth:['neg'],
   // 本次行動失敗原因（invalid／miss／evade／immune；引擎 failAction 寫入 ActionResultInfo.failKind）。
@@ -303,7 +312,7 @@ export const SEQUENCE_TRIGGERS: Record<string,string> = {
   pp_consumed:'pp_consumed',
   pp_cleared:'pp_cleared',
   self_invalid:'on_invalid',
-  status_end:'on_status_ended',status_received:'on_status_received',status_immune:'on_status_immunized',status_tick:'before_status_tick',
+  status_end:'on_status_ended',status_received:'on_status_received',status_immune:'on_status_immunized',damage_immune:'on_damage_immunized',status_tick:'before_status_tick',
   fatal:'self_fatal',before_status:'before_status_apply',bench:'opponent_entered',team_round_start:'round_start',
   // 能力等級變更前攔截（引擎 contextBuilders.applyStatChange 派發；5035 藍色龍鱗免疫能力下降）。
   before_stat_change:'before_stat_change',
@@ -312,6 +321,8 @@ export const SEQUENCE_TRIGGERS: Record<string,string> = {
   battle_start:'battle_start', round_start:'round_start', round_end:'round_end', phase_end:'battle_phase_end',
   kill:'on_kill',not_killed:'on_not_killed', defeated:'cthyaat_death', switch_out:'on_switch_out', damaged:'on_damaged',
   self_skill:'on_skill_use', opp_skill:'on_attacked', opp_after_skill:'opponent_after_action',
+  opp_used_skill:'on_opponent_skill_use',opp_used_attack:'on_opponent_skill_use',opp_used_status:'on_opponent_skill_use',
+  opp_before_skill:'on_attacked',opp_before_attack:'on_attacked',opp_before_status:'on_attacked',
   self_after_use:'after_action', self_after_skill:'after_action', passive:'passive_always', incoming:'before_damage',
   self_attack:'on_skill_use', self_status:'on_skill_use',
   self_after_attack:'after_action',self_after_status:'after_action',self_after_physical:'after_action',self_after_special:'after_action',
@@ -324,20 +335,20 @@ export const SEQUENCE_TRIGGERS: Record<string,string> = {
 const object = (v: any): v is Record<string,any> => !!v && typeof v === 'object' && !Array.isArray(v);
 const sides = ['self','opp','both','auto','any'];
 const compare = ['低於','小於','高於','大於','不低於','不小於','不高於','不大於'];
-const timerTriggers=['self_invalid','before_status','round_start','round_end','phase_end','self_skill','self_attack','self_status','self_after_skill','self_after_attack','self_after_status','self_after_physical','self_after_special','opp_skill','opp_attack','opp_status','opp_after_skill','opp_after_attack','opp_after_status','damaged','damaged_attack','damaged_skill','damaged_true','damaged_fixed','damaged_percent','damaged_nontrue','incoming','incoming_attack','incoming_skill','incoming_nontrue','outgoing','outgoing_attack','outgoing_skill','switch_out','kill','defeated','extra_action_start','extra_action_end','turn_effects_cleared','stat_boost_cleared'];
+const timerTriggers=['opp_used_skill','opp_used_attack','opp_used_status','opp_before_skill','opp_before_attack','opp_before_status','self_invalid','before_status','round_start','round_end','phase_end','self_skill','self_attack','self_status','self_after_skill','self_after_attack','self_after_status','self_after_physical','self_after_special','opp_skill','opp_attack','opp_status','opp_after_skill','opp_after_attack','opp_after_status','damaged','damaged_attack','damaged_skill','damaged_true','damaged_fixed','damaged_percent','damaged_nontrue','incoming','incoming_attack','incoming_skill','incoming_nontrue','outgoing','outgoing_attack','outgoing_skill','switch_out','kill','defeated','extra_action_start','extra_action_end','turn_effects_cleared','stat_boost_cleared'];
 function paramsIssue(value: unknown, fields: readonly string[], path: string, numberLimit=1e6): string | null {
   if (!object(value)) return `${path}需為參數物件`;
   for (const [key,v] of Object.entries(value)) {
     if (!fields.includes(key)) return `${path}.${key}尚無已核對的參數合約`;
     if (v === undefined) continue;
     if (typeof v === 'number' && (!Number.isFinite(v) || Math.abs(v)>(key==='value'?numberLimit:1e6))) return `${path}.${key}需為有限數值`;
-    if (['side','side2','of'].includes(key) && !sides.includes(v)) return `${path}.${key}目標不明`;
+    if (['side','side2','of'].includes(key) && !sides.includes(v) && !(key==='side' && v==='none')) return `${path}.${key}目標不明`;
     if (['turns','uses','count','chance','ratio','ratioCur','flat','amount','boost','reduce','mult','cap','rampInc','rampCap','bonus','pct'].includes(key) && (typeof v !== 'number' || v<0)) return `${path}.${key}需為非負數值`;
     if (key === 'chance' && v>100) return `${path}.chance超過100`;
     if (['turns','uses','count'].includes(key) && (!Number.isInteger(v)||v>10000)) return `${path}.${key}需為有限整數期限`;
-    if (['v','v2'].includes(key) && path !== 'condition' && (typeof v !== 'number'||!Number.isInteger(v)||Math.abs(v)>6)) return `${path}.${key}需為-6至6能力等級`;
+    if (['v','v2'].includes(key) && path !== 'condition' && (typeof v !== 'number'||!Number.isInteger(v)||Math.abs(v)>(fields.includes('attackOnly')?100:6))) return `${path}.${key}能力等級或先制超出允許範圍`;
     // next 允許 'auto'（原廠先後手規則：先出手＝當回合生效；後出手＝補償+1回合；20261017 使用者澄清）。
-    if (['neg','both','cur','ofSelf','true','double','now','power','attackOnly','reflect','rampStreak','stopIfEmpty','initial','persistsOffField','perStack','consume','lateCompensation','originalTarget','once','requireAdditional','actionOnly','captureLevels','captureRestored','chanceHpRatio'].includes(key) && typeof v !== 'boolean') return `${path}.${key}需為布林值`;
+    if (['neg','both','cur','ofSelf','true','double','now','power','attackOnly','reflect','rampStreak','stopIfEmpty','initial','persistsOffField','perStack','consume','lateCompensation','originalTarget','once','requireAdditional','actionOnly','captureLevels','captureRestored','chanceHpRatio','current','sealOpponentAdded'].includes(key) && typeof v !== 'boolean') return `${path}.${key}需為布林值`;
     if (key==='next' && !(typeof v === 'boolean' || v === 'auto')) return `${path}.next需為布林值或auto`;
     if (['ids','stats','stats2','list','statuses','exclude','fields','phase'].includes(key) && (!Array.isArray(v)||!v.length||v.length>30||v.some(x=>typeof x!=='string'||x.length>200))) return `${path}.${key}需為有限名稱陣列`;
     if (key==='cls' && (typeof v!=='string'||!['','控制類','弱化類','限制類','衍化類','附屬類','非附屬類'].includes(v))) return `${path}.cls異常分類不明`;
@@ -350,7 +361,8 @@ function paramsIssue(value: unknown, fields: readonly string[], path: string, nu
 export function sequenceIssue(value: unknown, node?: string, depth=0, inMark=false,inSelected=false): string | null {
   if(depth>8)return '持續連鎖超過8層';
   if (!object(value)) return '連鎖需為子句物件';
-  if (Object.keys(value).some(k=>!['raw','marker','trig','cond','body','parsed','observer'].includes(k))) return '連鎖包含未支援的子句欄位';
+  if (Object.keys(value).some(k=>!['raw','marker','trig','cond','body','parsed','observer','repeatable'].includes(k))) return '連鎖包含未支援的子句欄位';
+  if(value.repeatable!==undefined&&(value.repeatable!==true||value.trig!=='fatal'||!Array.isArray(value.body)||!value.body.some((b:any)=>b.acts?.some((a:any)=>a.op==='mark_pair_rebirth'))))return '重複致死觸發需明確印記消耗重生';
   if (value.observer !== undefined && (!TEAM_KIT_TRIGGERS[value.trig] || !object(value.observer) || Object.keys(value.observer).some(k=>k!=='includeDead') || typeof value.observer.includeDead !== 'boolean')) return '隊伍觀察者需已接通事件及明確死亡後規則';
   if (value.parsed !== true || !SEQUENCE_TRIGGERS[value.trig] || (node && SEQUENCE_TRIGGERS[value.trig]!==node)) return '連鎖觸發尚無等價事件或與節點不符';
   if (typeof value.raw !== 'string'||value.raw.length>100000) return '連鎖原文格式不符';
@@ -362,15 +374,17 @@ export function sequenceIssue(value: unknown, node?: string, depth=0, inMark=fal
       // 既有條件引擎只對p.neg作反向；不把未實作的頂層neg吞掉。
       if(c.neg !== undefined && c.neg !== false) return '頂層反向條件尚未接通';
       if(c.label !== undefined && typeof c.label !== 'string')return '條件名稱需為文字';
+      const linkIssue=ownerLinkConditionIssue(c);if(linkIssue)return linkIssue;
       const finalIssue=finalOdbConditionIssue(c);if(finalIssue)return finalIssue;
       const issue=paramsIssue(c.p || {},SEQUENCE_CONDITION_FIELDS[c.c],'condition')||groupAConditionIssue(c)||powerStatConditionIssue(c)||stageDamageConditionIssue(c)||keldSoulConditionIssue(c)||entranceStackConditionIssue(c);if(issue)return issue;
       const conditionSides=c.c==='has_status'?['self','opp','both']:c.c==='abnormal'?['self','opp','any']:['stage_any','stage_total'].includes(c.c)?['self','opp','both']:['self','opp'];
-      if(SEQUENCE_CONDITION_FIELDS[c.c].includes('side')&&!conditionSides.includes(c.p?.side))return '條件缺少明確持有者';
+      if(SEQUENCE_CONDITION_FIELDS[c.c].includes('side')&&!(c.c==='round_first_user'?['self','opp','none']:conditionSides).includes(c.p?.side))return '條件缺少明確持有者';
       if(c.c.startsWith('hp') && c.p?.op && !compare.includes(c.p.op)) return '體力比較運算不明';
       if(c.c==='stage_all'&&!['up','down'].includes(c.p?.kind))return '全部能力查詢需明確上升／下降方向';
       if(['hp_ratio','hp_cmp','hp_value'].includes(c.c) && (!['self','opp'].includes(c.p?.side)||!compare.includes(c.p?.op)))return '體力比較缺少目標或運算';
       if(c.c==='hp_value'&&(!Number.isFinite(c.p?.amount)||c.p.amount<0))return '體力比較需非負有限點數';
       if(c.c==='alive'&&!['self','opp'].includes(c.p?.side))return '存活判定需明確目標';
+      if(c.c==='action_priority'&&(!['self','opp'].includes(c.p?.side)||!compare.includes(c.p.op)||!Number.isInteger(c.p.amount)))return '先制查詢需明確陣營、比較與整數';
       if(c.c==='selected_pp'&&(!compare.includes(c.p?.op)||!Number.isInteger(c.p?.amount)||c.p.amount<0))return '所選技能PP比較需明確運算與非負整數';
       if(c.c==='selected_charge'&&(!['self','opp'].includes(c.p?.side)||!compare.includes(c.p.op)||!Number.isInteger(c.p.amount)||c.p.amount<0))return '所選槽充能需明確目標、比較與非負整數';
       if(c.c==='stage_value'&&(!['atk','def','spatk','spdef','speed','accuracy'].includes(c.p?.stat)||!compare.includes(c.p.op)||!Number.isInteger(c.p.amount)||Math.abs(c.p.amount)>6))return '單項能力等級需正式能力名稱、比較及-6至6整數';
@@ -444,6 +458,7 @@ export function sequenceIssue(value: unknown, node?: string, depth=0, inMark=fal
         if(act.p.perStageLevel.side!=='opp'||act.p.perStageLevel.kind!=='up')return '威力逐級加成僅支援對手能力提升等級';
       }
       if(act.op==='heal'&&act.p.missingRatio!==undefined&&(!Number.isFinite(act.p.missingRatio)||act.p.missingRatio<0||act.p.missingRatio>1000000))return '同次恢復的已損失體力比例需有限非負數';
+      const linkActionIssue=ownerLinkActionIssue(act.op,act.p,value.trig);if(linkActionIssue)return linkActionIssue;
       const closureIssue=closureActionIssue(act.op,act.p);if(closureIssue)return closureIssue;
       const astralIssue=astralActionIssue(act.op,act.p,value.trig,inMark);if(astralIssue)return astralIssue;
       const legacyIssue=legacyActionIssue(act.op,act.p,value,stmt,depth,inMark);if(legacyIssue)return legacyIssue;
@@ -517,6 +532,7 @@ export function sequenceIssue(value: unknown, node?: string, depth=0, inMark=fal
         const issue=sequenceIssue({raw:'恢復結算後連鎖',trig:value.trig,parsed:true,body:act.p.body},undefined,depth+1,inMark);if(issue)return `恢復結算後連鎖：${issue}`;
       }
       if(act.op==='resource_mark_add'){
+        if(act.p.snapshotKey!==undefined&&!/^[a-zA-Z][a-zA-Z0-9]{0,79}$/.test(act.p.snapshotKey))return '快照需合法鍵名';
         if(value.trig==='resource_changed')return '資源變動反應不能直接遞迴增加資源';
         if(act.p.maxCount!==undefined&&(!Number.isSafeInteger(act.p.maxCount)||act.p.maxCount<1||act.p.maxCount>1000000))return '資源上限需1至1000000整數';
         const literal=act.p.amount!==undefined;
@@ -548,6 +564,7 @@ export function sequenceIssue(value: unknown, node?: string, depth=0, inMark=fal
       if(HOLY_MILES_ACTION_FIELDS[act.op]){const issue=holyMilesActionIssue(act.op,act.p,(body,trig)=>sequenceIssue({raw:'迴圈主體',trig,parsed:true,body},undefined,depth+1,inMark),value.trig);if(issue)return issue;}
       if(FEAR_SEED_ACTION_FIELDS[act.op]){const issue=fearSeedActionIssue(act.op,act.p);if(issue)return issue;}
       if(ROSTER_STATS_ACTION_FIELDS[act.op]){const issue=rosterStatsActionIssue(act.op,act.p,value.trig);if(issue)return issue;}
+      if(PANEL_DURATION_FIELDS[act.op]){const issue=panelDurationIssue(act.op,act.p,value.trig);if(issue)return issue;}
       if(GROUP1_ACTION_FIELDS[act.op]){const issue=group1ActionIssue(act.op,act.p,value.trig,(body,trig)=>sequenceIssue({raw:'組1子流程',trig,parsed:true,body},undefined,depth+1,inMark));if(issue)return issue;}
       if(FINAL_EXTRA_TRAIT_ACTION_FIELDS[act.op]){const issue=finalExtraTraitActionIssue(act.op,act.p);if(issue)return issue;}
       if(FINAL_MARS_LAN_DRAGON_ACTION_FIELDS[act.op]){const issue=finalMarsLanDragonActionIssue(act.op,act.p,(body,trig)=>sequenceIssue({raw:'末批子流程',trig,parsed:true,body},undefined,depth+1,inMark),value.trig);if(issue)return issue;}
@@ -568,11 +585,13 @@ export function sequenceIssue(value: unknown, node?: string, depth=0, inMark=fal
         for(const rule of mark.rules){const {activationOnly,...clause}=rule;if(activationOnly!==undefined&&(typeof activationOnly!=='boolean'||rule.trig!=='skill_selected'))return '激活限定規則需選招事件';const issue=sequenceIssue(clause,undefined,depth+1,true);if(issue)return issue;}
       }
       if(act.op==='portable_mark')for(const rule of act.p.rules||[]){const issue=sequenceIssue(rule,undefined,depth+1,true);if(issue)return issue;}
+      if(BOSS_TRAIT_ACTION_FIELDS[act.op as keyof typeof BOSS_TRAIT_ACTION_FIELDS]){const issue=bossTraitActionIssue(act.op,act.p);if(issue)return issue;}
       if(EXTRA_ELF_ACTION_FIELDS[act.op]){const issue=extraElfActionIssue(act.op,act.p);if(issue)return issue;}
+      if(SHIELD_MARK_ACTION_FIELDS[act.op]){const issue=shieldMarkActionIssue(act.op,act.p);if(issue)return issue;}
       if(THUNDER_GOD_ACTION_FIELDS[act.op]){const issue=thunderGodActionIssue(act.op,act.p,value.trig);if(issue)return issue;}
       if(GROUP5_ACTION_FIELDS[act.op]){const issue=group5ActionIssue(act.op,act.p,(body,trig)=>sequenceIssue({raw:'子流程主體',trig,parsed:true,body},undefined,depth+1,inMark),value.trig);if(issue)return issue;}
       if(act.op==='block_damage_uses') {
-        if(!(act.p.uses>0)||!['攻擊','技能'].includes(act.p.kind)||typeof act.p.key!=='string'||!act.p.key||act.p.key.length>200||!['use','self_skill','self_attack','self_status','on_invalid','entrance'].includes(value.trig))return '次數抵擋需正次數、攻擊／技能範圍、計數鍵及使用時入口';
+        if(!(act.p.uses>0)||!['攻擊','技能'].includes(act.p.kind)||typeof act.p.key!=='string'||!act.p.key||act.p.key.length>200||!['use','self_skill','self_attack','self_status','on_invalid','entrance','damaged_skill'].includes(value.trig))return '次數抵擋需正次數、攻擊／技能範圍、計數鍵及使用時入口';
         if(act.p.onBlock!==undefined){const issue=sequenceIssue({raw:'抵擋成功反應',trig:act.p.kind==='攻擊'?'incoming_attack':'incoming_skill',parsed:true,body:act.p.onBlock},undefined,depth+1);if(issue)return `抵擋成功反應：${issue}`;}
       }
       if(act.op==='status_replace'&&value.trig!=='before_status')return '替換本次異常只能在附加前執行';
@@ -717,7 +736,7 @@ export function sequenceIssue(value: unknown, node?: string, depth=0, inMark=fal
       if(act.op.startsWith('dmg_mod')&&!['攻擊','技能','非真實','固定','百分比','真實',''].includes(act.p.kind??''))return '增減傷範圍不明';
       if(['dmg_mod','dmg_mod_turns'].includes(act.op)&&!['in','in_boost','out','out_reduce','taken'].includes(act.p.dir))return '增減傷方向不明';
       if(act.op==='dmg_mod'&&act.p.dir==='taken')return '即時受到增傷需選in_boost；taken只用於持續效果';
-      if(['dmg_mod','drain','dmg','shield','stat_steal','power_mod'].includes(act.op)&&act.p.perMark!==undefined){
+      if(['boost','dmg_mod','drain','dmg','shield','stat_steal','power_mod'].includes(act.op)&&act.p.perMark!==undefined){
         const q=act.p.perMark;
         if(!object(q)||Object.keys(q).some(k=>!['side','id'].includes(k))||!['self','opp'].includes(q.side)||typeof q.id!=='string'||!q.id||q.id.length>200)return '逐層增減傷需明確印記識別碼及單一持有者';
         if(act.op==='drain'&&(!Number.isFinite(act.p.flat)||act.p.flat<=0||['cur','ratio','ratioCur'].some(k=>act.p[k]!==undefined)))return '逐層吸取需正固定量，不能混用百分比基數';
@@ -734,7 +753,9 @@ export function sequenceIssue(value: unknown, node?: string, depth=0, inMark=fal
       if(['invalid_turns','invalid_next'].includes(act.op)&&!['攻擊','屬性','all',''].includes(act.p.kind??''))return '技能無效範圍不明';
       if(['invalid_turns','no_heal','no_switch'].includes(act.op)&&!(act.p.turns>0))return '持續效果缺少期限';
       if(act.op==='no_heal'&&act.p.scope!==undefined&&!['all','own_skill'].includes(act.p.scope))return '禁療範圍需全部回復或自身技能回復';
+      if(act.op==='invalid_next'&&act.p.powerAbove!==undefined&&(!Number.isFinite(act.p.powerAbove)||act.p.powerAbove<0))return '條件無效的威力門檻需有限非負數';
       if(act.op==='invalid_next'&&!(act.p.uses>0))return '次數型無效缺少次數';
+      if(act.op==='invalid_next'&&act.p.scope!==undefined&&!['elf','team'].includes(act.p.scope))return '次數型無效需個體或陣營作用域';
       if(act.op==='noop'&&act.p.tag!==undefined&&!/^[（(]?無特殊效果[）)]?$/.test(String(act.p.tag)))return '空動作只允許「無特殊效果」；必中／先制等技能屬性不能用空動作冒充';
       if(act.op==='prio_turns'&&(!(act.p.turns>0)||!Number.isInteger(act.p.v)||act.p.v===0||(act.p.side!==undefined&&act.p.side!=='opp')||(act.p.next!==undefined&&typeof act.p.next!=='boolean')))return '先制回合效果需有期限、非零整數與明確對象';
       if(['immune_status_turns','immune_statdown_turns'].includes(act.op)&&!(act.p.turns>0))return '免疫效果缺少期限';
@@ -750,7 +771,9 @@ export function sequenceIssue(value: unknown, node?: string, depth=0, inMark=fal
         if(act.p.persistsOffField!==undefined&&typeof act.p.persistsOffField!=='boolean')return '下場保留需布林值';
         if(act.p.scope==='team'&&act.p.persistsOffField===false)return '己方全隊免疫不能下場清除';
       }
-      if(act.p.per!==undefined&&!['self_up_kinds','opp_down_kinds','sides_priority_zero','sides_pp_below_one','sides_lock_switch_effects','opp_pp_sum','sides_pp_sum','sides_full_pp_skills','opp_pp_zero_skills',...GROUP_B_PER_NAMES].includes(act.p.per))return '計數來源不明';
+      if(act.p.appendToAttack!==undefined&&(act.op!=='dmg'||act.p.type!=='技能'||act.p.appendToAttack!==true))return '合併攻擊只接受技能傷害';
+      if(act.p.doublePer!==undefined&&(act.op!=='dmg'||act.p.doublePer!=='sides_full_pp_skills'))return '逐次翻倍需明確滿PP技能計數';
+      if(act.p.per!==undefined&&!['self_up_kinds','opp_down_kinds','sides_priority_zero','sides_pp_below_one','sides_lock_switch_effects','opp_pp_sum','sides_pp_sum','sides_full_pp_skills','opp_full_pp_skills','opp_pp_zero_skills',...GROUP_B_PER_NAMES].includes(act.p.per))return '計數來源不明';
       if(act.p.perInc!==undefined&&(!['sides_pp_below_one','sides_lock_switch_effects','stat_level_unequal_kinds','stat_level_equal_kinds','opp_pp_zero_skills'].includes(act.p.per||'')||!(act.p.perInc>0)||!Number.isFinite(act.p.perInc)))return '每計數增量需計數來源為雙方PP低於1技能數或雙方鎖切換效果數';
       if(act.op==='boost'&&act.p.add!==undefined&&(!act.p.power||!Number.isInteger(act.p.add)||act.p.add<=0||act.p.add>1000))return '威力加值需為威力且為正整數';
       if(act.op==='vampire'&&(!(act.p.ratio>0)||!['攻擊','技能'].includes(act.p.kind)))return '吸血需比例與傷害範圍（攻擊／技能）';

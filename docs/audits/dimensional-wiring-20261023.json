@@ -1,0 +1,169 @@
+{
+  "generatedAt": "2026-10-22T20:46:35.134Z",
+  "scope": "結構與路由稽核；不代表原文、事件順序、數值或畫面驗收",
+  "elves": [
+    {
+      "id": "5021",
+      "name": "治癒.龍魂再臨 次元龍",
+      "definitions": [
+        {
+          "kind": "技能",
+          "name": "閱世",
+          "route": "kit",
+          "mode": "kit",
+          "entries": 6,
+          "nodes": [
+            "modify_priority",
+            "on_skill_use",
+            "on_invalid"
+          ],
+          "operations": [
+            "boost",
+            "clear_turn",
+            "stat_steal",
+            "invalid_next",
+            "stat",
+            "status"
+          ],
+          "issues": [],
+          "semantic": "需原文逐句及P1/P2正式引擎數值證據"
+        },
+        {
+          "kind": "技能",
+          "name": "敕界歸元",
+          "route": "kit",
+          "mode": "kit",
+          "entries": 6,
+          "nodes": [
+            "before_skill",
+            "on_skill_use"
+          ],
+          "operations": [
+            "immune_status_turns",
+            "status",
+            "resource_mark_add",
+            "timed",
+            "add_invalid_turns",
+            "drain",
+            "immune_status_count",
+            "dmg_mod_turns"
+          ],
+          "issues": [],
+          "semantic": "需原文逐句及P1/P2正式引擎數值證據"
+        },
+        {
+          "kind": "技能",
+          "name": "告命詩途",
+          "route": "kit",
+          "mode": "kit",
+          "entries": 6,
+          "nodes": [
+            "before_skill",
+            "on_skill_use"
+          ],
+          "operations": [
+            "stat",
+            "resource_mark_add",
+            "drain",
+            "高於",
+            "prio_turns",
+            "dmg_mod_turns",
+            "dmg",
+            "no_switch"
+          ],
+          "issues": [],
+          "semantic": "需原文逐句及P1/P2正式引擎數值證據"
+        },
+        {
+          "kind": "技能",
+          "name": "神懺福音之章",
+          "route": "kit",
+          "mode": "kit",
+          "entries": 6,
+          "nodes": [
+            "before_skill",
+            "modify_priority",
+            "on_skill_use"
+          ],
+          "operations": [
+            "invalid_next",
+            "watch",
+            "prio_turns",
+            "dmg",
+            "heal",
+            "pp_op"
+          ],
+          "issues": [],
+          "semantic": "需原文逐句及P1/P2正式引擎數值證據"
+        },
+        {
+          "kind": "技能",
+          "name": "遺典.妄世律裁",
+          "route": "kit",
+          "mode": "kit",
+          "entries": 6,
+          "nodes": [
+            "before_skill",
+            "on_skill_use"
+          ],
+          "operations": [
+            "boost",
+            "不小於",
+            "dmg",
+            "高於",
+            "prio_turns",
+            "invalid_turns",
+            "低於",
+            "vampire",
+            "hp_difference_damage"
+          ],
+          "issues": [],
+          "semantic": "需原文逐句及P1/P2正式引擎數值證據"
+        },
+        {
+          "kind": "專屬特性／魂印",
+          "name": "龍",
+          "route": "kit",
+          "mode": "kit",
+          "entries": 17,
+          "nodes": [
+            "battle_start",
+            "modify_priority",
+            "on_skill_use",
+            "round_start",
+            "before_damage",
+            "modify_power",
+            "after_action",
+            "after_attack_hit",
+            "self_fatal"
+          ],
+          "operations": [
+            "snapshot_resource_rule",
+            "resource_query_rule",
+            "resource_priority",
+            "不小於",
+            "pp_drain",
+            "cure_status",
+            "immune_status_turns",
+            "resource_drain",
+            "next_skill_reduction",
+            "resource_damage_modifier",
+            "consume_skill_reduction",
+            "shield_power_steps",
+            "hp_difference_damage",
+            "ignore",
+            "dmg_mod",
+            "receipt_shields",
+            "dmg",
+            "once",
+            "survive",
+            "survive_turns",
+            "flag_set"
+          ],
+          "issues": [],
+          "semantic": "需原文逐句及P1/P2正式引擎數值證據"
+        }
+      ]
+    }
+  ]
+}

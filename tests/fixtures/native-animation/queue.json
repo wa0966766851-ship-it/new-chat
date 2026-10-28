@@ -1,0 +1,528 @@
+{
+  "indexVersion": "20261022142543",
+  "items": [
+    {
+      "owner": "5001",
+      "name": "悲歌.索比拉特",
+      "nativeId": 3435,
+      "bytes": 877907,
+      "textures": [
+        {
+          "width": 2048,
+          "height": 2048
+        }
+      ],
+      "local": true
+    },
+    {
+      "owner": "5002",
+      "name": "帝皇之盾",
+      "nativeId": 3404,
+      "bytes": 1809383,
+      "textures": [
+        {
+          "width": 2048,
+          "height": 2048
+        }
+      ],
+      "local": true
+    },
+    {
+      "owner": "5003",
+      "name": "天蓬元帥八戒",
+      "nativeId": 1536,
+      "bytes": 279138,
+      "textures": [
+        {
+          "width": 1024,
+          "height": 1024
+        }
+      ],
+      "local": true
+    },
+    {
+      "owner": "5004",
+      "name": "皮特薩拉羅",
+      "nativeId": 3098,
+      "bytes": 733414,
+      "textures": [
+        {
+          "width": 2048,
+          "height": 2048
+        }
+      ],
+      "local": true
+    },
+    {
+      "owner": "5005",
+      "name": "布萊克",
+      "nativeId": 875,
+      "bytes": 256157,
+      "textures": [
+        {
+          "width": 1024,
+          "height": 1024
+        }
+      ],
+      "local": true
+    },
+    {
+      "owner": "300",
+      "name": "譜尼",
+      "nativeId": 300,
+      "bytes": 1243585,
+      "textures": [
+        {
+          "width": 2048,
+          "height": 2048
+        }
+      ],
+      "local": true
+    },
+    {
+      "owner": "5006",
+      "name": "星光·魔焰猩猩",
+      "nativeId": 4649,
+      "bytes": 3285852,
+      "textures": [
+        {
+          "width": 4096,
+          "height": 2048
+        }
+      ],
+      "local": true
+    },
+    {
+      "owner": "5007",
+      "name": "混濁海妖.布林克克",
+      "nativeId": 359,
+      "bytes": 243645,
+      "textures": [
+        {
+          "width": 1024,
+          "height": 1024
+        }
+      ],
+      "local": true
+    },
+    {
+      "owner": "5008",
+      "name": "鎮魂.巴弗洛",
+      "nativeId": 177,
+      "bytes": 956511,
+      "textures": [
+        {
+          "width": 2048,
+          "height": 2048
+        }
+      ],
+      "local": true
+    },
+    {
+      "owner": "5009",
+      "name": "誑獅魔軀.魔獅迪露",
+      "nativeId": 187,
+      "bytes": 181920,
+      "textures": [
+        {
+          "width": 512,
+          "height": 512
+        }
+      ],
+      "local": true
+    },
+    {
+      "owner": "5000",
+      "name": "聖靈譜尼",
+      "nativeId": 5000,
+      "bytes": 12785509,
+      "textures": [
+        {
+          "width": 8192,
+          "height": 8192
+        }
+      ],
+      "local": true
+    },
+    {
+      "owner": "5010",
+      "name": "星光·魯斯王",
+      "nativeId": 4648,
+      "bytes": 4009084,
+      "textures": [
+        {
+          "width": 4096,
+          "height": 2048
+        }
+      ],
+      "local": true
+    },
+    {
+      "owner": "5011",
+      "name": "星光·麗莎布布",
+      "nativeId": 4647,
+      "bytes": 2851191,
+      "textures": [
+        {
+          "width": 4096,
+          "height": 2048
+        }
+      ],
+      "local": true
+    },
+    {
+      "owner": "5012",
+      "name": "冰魄·柯爾德",
+      "nativeId": 3886,
+      "bytes": 5034023,
+      "textures": [
+        {
+          "width": 8192,
+          "height": 4096
+        }
+      ],
+      "local": true
+    },
+    {
+      "owner": "5013",
+      "name": "柯爾霍德",
+      "nativeId": 3432,
+      "bytes": 1960507,
+      "textures": [
+        {
+          "width": 2048,
+          "height": 2048
+        }
+      ],
+      "local": true
+    },
+    {
+      "owner": "5014",
+      "name": "聖光斯嘉麗",
+      "nativeId": 3456,
+      "bytes": 2668459,
+      "textures": [
+        {
+          "width": 4096,
+          "height": 2048
+        }
+      ],
+      "local": true
+    },
+    {
+      "owner": "5015",
+      "name": "混沌·布萊克",
+      "nativeId": 3539,
+      "bytes": 1789946,
+      "textures": [
+        {
+          "width": 2048,
+          "height": 2048
+        }
+      ],
+      "local": true
+    },
+    {
+      "owner": "5016",
+      "name": "變革·馬爾修斯",
+      "nativeId": 3393,
+      "bytes": 2606047,
+      "textures": [
+        {
+          "width": 4096,
+          "height": 2048
+        }
+      ],
+      "local": true
+    },
+    {
+      "owner": "5018",
+      "name": "蟲后·奧佩婭",
+      "nativeId": 3626,
+      "bytes": 3013784,
+      "textures": [
+        {
+          "width": 4096,
+          "height": 4096
+        }
+      ],
+      "local": true
+    },
+    {
+      "owner": "5019",
+      "name": "眾神之父·奧丁",
+      "nativeId": 2647,
+      "bytes": 2123682,
+      "textures": [
+        {
+          "width": 4096,
+          "height": 2048
+        }
+      ],
+      "local": true
+    },
+    {
+      "owner": "5020",
+      "name": "皮皮",
+      "nativeId": 10,
+      "bytes": 767772,
+      "textures": [
+        {
+          "width": 2048,
+          "height": 2048
+        }
+      ],
+      "local": true
+    },
+    {
+      "owner": "5021",
+      "name": "治癒.龍魂再臨 次元龍",
+      "nativeId": 4586,
+      "bytes": 3640558,
+      "textures": [
+        {
+          "width": 2048,
+          "height": 2048
+        }
+      ],
+      "local": true
+    },
+    {
+      "owner": "5024",
+      "name": "湮滅之主・咤克斯",
+      "nativeId": 4762,
+      "bytes": 10216534,
+      "textures": [
+        {
+          "width": 8192,
+          "height": 4096
+        }
+      ],
+      "local": true
+    },
+    {
+      "owner": "5025",
+      "name": "恐懼的化身·咤克斯",
+      "nativeId": 15010,
+      "bytes": 3733359,
+      "textures": [
+        {
+          "width": 8192,
+          "height": 8192
+        }
+      ],
+      "local": true
+    },
+    {
+      "owner": "5027",
+      "name": "蓓麗安特",
+      "nativeId": 4643,
+      "bytes": 11680820,
+      "textures": [
+        {
+          "width": 8192,
+          "height": 4096
+        }
+      ],
+      "local": true
+    },
+    {
+      "owner": "5028",
+      "name": "怒濤·滄嵐",
+      "nativeId": 3740,
+      "bytes": 2334413,
+      "textures": [
+        {
+          "width": 2048,
+          "height": 2048
+        }
+      ],
+      "local": true
+    },
+    {
+      "owner": "5029",
+      "name": "異境神霆·雷伊",
+      "nativeId": 70,
+      "bytes": 579315,
+      "textures": [
+        {
+          "width": 2048,
+          "height": 1024
+        }
+      ],
+      "local": true
+    },
+    {
+      "owner": "5030",
+      "name": "聖靈邁爾斯",
+      "nativeId": 1204,
+      "bytes": 325788,
+      "textures": [
+        {
+          "width": 2048,
+          "height": 2048
+        }
+      ],
+      "local": true
+    },
+    {
+      "owner": "5031",
+      "name": "六界神王",
+      "nativeId": 3045,
+      "bytes": 2142771,
+      "textures": [
+        {
+          "width": 4096,
+          "height": 2048
+        }
+      ],
+      "local": true
+    },
+    {
+      "owner": "5032",
+      "name": "星核寰宇·艾斯菲亞",
+      "nativeId": 79,
+      "bytes": 168426,
+      "textures": [
+        {
+          "width": 1024,
+          "height": 1024
+        }
+      ],
+      "local": true
+    },
+    {
+      "owner": "5033",
+      "name": "星軌重構·艾斯菲格",
+      "nativeId": 418,
+      "bytes": 867560,
+      "textures": [
+        {
+          "width": 2048,
+          "height": 2048
+        }
+      ],
+      "local": true
+    },
+    {
+      "owner": "5034",
+      "name": "邪靈主宰·摩哥斯",
+      "nativeId": 3561,
+      "bytes": 2213332,
+      "textures": [
+        {
+          "width": 4096,
+          "height": 2048
+        }
+      ],
+      "local": true
+    },
+    {
+      "owner": "5035",
+      "name": "御天龍神·哈莫",
+      "nativeId": 3809,
+      "bytes": 1806218,
+      "textures": [
+        {
+          "width": 2048,
+          "height": 2048
+        }
+      ],
+      "local": true
+    },
+    {
+      "owner": "7070",
+      "name": "魔化.雷伊",
+      "nativeId": 70,
+      "bytes": 579315,
+      "textures": [
+        {
+          "width": 2048,
+          "height": 1024
+        }
+      ],
+      "local": true
+    },
+    {
+      "owner": "707070",
+      "name": "墜霆.雷伊",
+      "nativeId": 70,
+      "bytes": 579315,
+      "textures": [
+        {
+          "width": 2048,
+          "height": 1024
+        }
+      ],
+      "local": true
+    },
+    {
+      "owner": "arena12",
+      "name": "無為龍者",
+      "nativeId": 4661,
+      "bytes": 6394969,
+      "textures": [
+        {
+          "width": 4096,
+          "height": 4096
+        }
+      ],
+      "local": true
+    },
+    {
+      "owner": "arena13",
+      "name": "龍錄天鋒",
+      "nativeId": 4903,
+      "bytes": 5742307,
+      "textures": [],
+      "local": false
+    },
+    {
+      "owner": "arena14",
+      "name": "無極聖武",
+      "nativeId": 4800,
+      "bytes": 10683382,
+      "textures": [
+        {
+          "width": 8192,
+          "height": 4096
+        }
+      ],
+      "local": true
+    },
+    {
+      "owner": "arena15",
+      "name": "命運龍輪 莫伊萊",
+      "nativeId": 4275,
+      "bytes": 1243453,
+      "textures": [
+        {
+          "width": 2048,
+          "height": 2048
+        }
+      ],
+      "local": true
+    },
+    {
+      "owner": "wiki4937",
+      "name": "星光·雷納多",
+      "nativeId": 4937,
+      "bytes": 6704942,
+      "textures": [],
+      "local": false
+    },
+    {
+      "owner": "5036",
+      "name": "九青",
+      "nativeId": 4543,
+      "bytes": 2472749,
+      "textures": [
+        {
+          "width": 2048,
+          "height": 2048
+        }
+      ],
+      "local": true
+    }
+  ]
+}

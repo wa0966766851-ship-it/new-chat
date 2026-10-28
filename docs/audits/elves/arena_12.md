@@ -20,6 +20,20 @@ TXT來源：未找到ID／名稱精確匹配的TXT，須核對嵌入資料或另
 | 技能使用後，不扣除固定 PP，改為互換該技能的目前 PP 與已損失 PP | 已解析／authored-block-runtime | 待核對 | 缺精確TXT來源 |
 
 
+## 專屬特性：無為之境
+
+目前入口：特質統一來源：kit；未接通 0 項（kit）。
+
+| 原文 | 解析／執行候選 | 語意登記 | TXT片段 |
+|---|---|---|---|
+| 戰鬥開始時，自身所有能力值變為全部能力值之和的一半 | 已解析／authored-block-runtime | 待核對 | 缺精確TXT來源 |
+| 使用技能不受 PP 限制 | 已解析／authored-block-runtime | 待核對 | 缺精確TXT來源 |
+| 技能使用後，不扣除固定 PP，改為互換該技能的目前 PP 與已損失 PP | 已解析／authored-block-runtime | 待核對 | 缺精確TXT來源 |
+| 以非 0 PP 使用技能時，解除自身異常狀態並免疫下一次異常狀態 | 已解析／authored-block-runtime | 待核對 | 缺精確TXT來源 |
+| 以 0 PP 使用時必定命中、強制執行命中效果並觸發【萬相乖離】 | 已解析／authored-block-runtime | 待核對 | 缺精確TXT來源 |
+| 技能使用後，不扣除固定 PP，改為互換該技能的目前 PP 與已損失 PP | 已解析／authored-block-runtime | 待核對 | 缺精確TXT來源 |
+
+
 ## 技能：千秋虔
 
 目前入口：統一效果來源：kit；未接通 0 項（kit）。

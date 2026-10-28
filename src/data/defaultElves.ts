@@ -243,7 +243,7 @@ const SEED_ELVES: (Omit<Elf, "id" | "calculatedStats" | "currentHp" | "maxHp"> &
       createRefSkill('puni_base', '璨靈聖光', "無屬性", '屬性', 0, 5, 0, { isSureHit: true }),
       createRefSkill('puni_base', '落芳天華', '聖靈', '特殊', 80, 5, 3),
       createRefSkill('puni_base', '聖靈悲魂曲', '聖靈', '特殊', 150, 5, 1),
-      createRefSkill('puni_base', '聖影流光破', '聖靈', '特殊', 160, 5, 0, { isSureHit: true })
+      createRefSkill('puni_base', '聖影流光破', '聖靈', '特殊', 160, 5, 0, { isSureHit: true, isFifthSkill: true })
     ],
     kit: [
       // ── 魂印「聖」(carried 永久) ──
@@ -398,6 +398,7 @@ const SEED_ELVES: (Omit<Elf, "id" | "calculatedStats" | "currentHp" | "maxHp"> &
       },
       {
         name: "深潛者盛宴",
+        isFifthSkill: true,
         type: "水.混沌",
         category: "物理",
         power: 160,
@@ -472,6 +473,7 @@ const SEED_ELVES: (Omit<Elf, "id" | "calculatedStats" | "currentHp" | "maxHp"> &
       },
       {
         name: "訣別",
+        isFifthSkill: true,
         type: "飛行.超能",
         category: "物理",
         power: 160,
@@ -550,6 +552,7 @@ const SEED_ELVES: (Omit<Elf, "id" | "calculatedStats" | "currentHp" | "maxHp"> &
       },
       {
         name: "辟冥·鎮獄斷",
+        isFifthSkill: true,
         type: "普通",
         category: "物理",
         power: 187,
@@ -1619,7 +1622,9 @@ const SEED_ELVES: (Omit<Elf, "id" | "calculatedStats" | "currentHp" | "maxHp"> &
         description: "技能使用後100%改變對方命中等級-1",
         effectType: "stat_down",
         effectDetail: "accuracy-1"
-      },
+      }
+    ],
+    skillPool: [
       {
         name: "手下留情",
         type: "普通",
@@ -1631,9 +1636,7 @@ const SEED_ELVES: (Omit<Elf, "id" | "calculatedStats" | "currentHp" | "maxHp"> &
         description: "威力40 傷害大於對方體力時，對方會餘下1體力",
         effectType: "mercy",
         effectDetail: ""
-      }
-    ],
-    skillPool: [
+      },
       {
         name: "異常測試",
         type: "飛行",
@@ -2223,6 +2226,7 @@ const SEED_ELVES: (Omit<Elf, "id" | "calculatedStats" | "currentHp" | "maxHp"> &
       },
       {
         name: "劫數.萬念歸墟",
+        isFifthSkill: true,
         type: "混沌·暗影",
         category: "特殊",
         power: 180,

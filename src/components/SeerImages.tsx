@@ -1,8 +1,10 @@
 import { hiddenFromViewer } from "../battle/viewerPerspective";
+import { useBattleViewMode } from "../battle/viewerMode";
 import React, { useEffect, useState } from "react";
 import type { Elf, Skill } from "../types";
 import { skillDisplayType } from '../utils/skillPresentation';
 import { appearanceElf } from "../battle/illusionPresentation";
+import {selectedElfSkin} from '../data/elfSkins';
 import { IMAGE_COPY_EVENT } from "./ImageCopyMenu";
 import { shouldMirrorBattleSprite, hasRenderableElfImagePath, getSeerIndex, loadSeerIndex, onSeerIndexLoaded, petImageUrls, splitTypes, typeIconUrls, isNoneType } from "../battle/seerAssets";
 
@@ -49,12 +51,14 @@ export function ElfAvatar({ elf, battleSide, kind = "head", className, fallbackC
   elf: Elf; battleSide?: "p1" | "p2"; kind?: "head" | "body"; className?: string; fallbackClassName?: string; style?: React.CSSProperties;
 }) {
   const ready = useSeerIndexReady();
-  const concealed = hiddenFromViewer(elf, battleSide);
+  const concealed = hiddenFromViewer(elf, battleSide, useBattleViewMode());
   // 所有呼叫端一致使用幻化外觀，不能讓原本自訂path蓋過目標圖片。
   // 戰鬥身分與隱匿仍屬於原持有者；只替換圖片、朝向及素材呈現方式。
   elf = appearanceElf(elf);
   const own = elf.path && /^(\/|https?:|data:)/.test(elf.path) ? [elf.path] : [];
-  const urls = ready ? [...own, ...petImageUrls(elf as any, kind)] : own;
+  const skin=selectedElfSkin(elf);
+  const skinUrl=skin&&(kind==='body'?skin.body:skin.head||skin.body);
+  const urls = [...(skinUrl?[skinUrl]:[]),...own,...(ready?petImageUrls(elf as any, kind):[])].filter((u,i,a)=>a.indexOf(u)===i);
   /*
     預設佔位圖（2026-10-22 使用者要求「調整預設圖片比例」）：
       無圖精靈（例：鎮世龍魂・龍之治癒，索引查不到 ID）會顯示單一漢字徽記。
@@ -81,7 +85,7 @@ export function ElfAvatar({ elf, battleSide, kind = "head", className, fallbackC
       className={fallbackClassName || "w-full h-full"}
       style={{ display: "block" }}
       role="img"
-      aria-label={elf.name || "未知精靈"}
+      aria-label={concealed ? "未知精靈" : (elf.name || "未知精靈")}
     >
       <text
         x="50"
@@ -106,7 +110,7 @@ export function ElfAvatar({ elf, battleSide, kind = "head", className, fallbackC
     <ChainImage
       urls={["/elf-art/unknown_myth_ghost_head.png"]}
       fallback={fb}
-      alt={elf.name || "未知精靈"}
+      alt={concealed ? "未知精靈" : (elf.name || "未知精靈")}
       className={className || "w-full h-full object-cover"}
       style={style}
     />
@@ -141,7 +145,7 @@ export function ElfAvatar({ elf, battleSide, kind = "head", className, fallbackC
   if (!urls.length && !ready) return ghostHead;
   if (!urls.length) return ghostHead;
   return <ChainImage urls={urls} fallback={fb} className={`${className || ""} ${isOtherworldRey ? "rounded-full" : ""}`} style={{ ...portraitMask, ...style }}
-    sourceStyle={src => src === "/elf-art/emperor_dixin_body.png" ? { objectPosition: "50% 4%", transform: "scale(2.5)", transformOrigin: "50% 8%" } : {}}
+    sourceStyle={src => skinUrl&&src===skinUrl ? {objectFit:'cover',objectPosition:skin?.portrait?.position||'50% 50%',...(skin?.portrait?.scale?{transform:`scale(${skin.portrait.scale})`,transformOrigin:skin.portrait.origin||'50% 50%'}:{})} : src === "/elf-art/emperor_dixin_body.png" ? { objectPosition: "50% 4%", transform: "scale(2.5)", transformOrigin: "50% 8%" } : {}}
     alt={elf.name} />;
 }
 

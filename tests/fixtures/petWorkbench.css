@@ -1,0 +1,12 @@
+.pet-workbench{position:fixed;z-index:1000;right:12px;top:190px;width:min(410px,calc(100vw - 24px));color:#d7e6f7;font:13px/1.5 system-ui,sans-serif;pointer-events:none}
+.pet-workbench button,.pet-workbench select,.pet-workbench input,.pet-workbench section{pointer-events:auto}
+.pet-workbench button{padding:7px 10px;border:1px solid #236579;border-radius:8px;background:#0b2332;color:#dcf7ff;cursor:pointer}
+.pet-workbench button:disabled{opacity:.45;cursor:wait}.pet-workbench-toggle{float:right;font-size:12px}
+.pet-workbench section{clear:both;max-height:calc(100dvh - 240px);overflow:auto;padding:15px;border:1px solid #27687c;border-radius:12px;background:rgba(5,15,27,.97);box-shadow:0 10px 40px #0008}
+.pet-workbench h1{font-size:16px;font-weight:700}.pet-workbench p,.pet-workbench output{display:block;color:#99adc4;margin:8px 0;font-size:12px}
+.pet-workbench fieldset{border:1px solid #233f52;border-radius:9px;padding:9px;margin:10px 0}.pet-workbench legend{color:#58d8eb;padding:0 5px}
+.pet-workbench label{display:block;margin:6px 0}.pet-workbench select,.pet-workbench input{display:block;width:100%;background:#0d1b2e;color:#e4f6ff;border:1px solid #2a4b65;border-radius:6px;padding:6px}
+.pet-workbench-row{display:grid;grid-template-columns:1fr 1fr;gap:8px}.pet-workbench-actions{display:flex;flex-wrap:wrap;gap:7px;margin:10px 0}
+.pet-workbench details{border-top:1px solid #254154;margin-top:12px;padding-top:10px}.pet-workbench summary{cursor:pointer}.pet-workbench li{margin:8px 0}.pet-workbench small{display:block;color:#9aadc2}
+@media(max-width:639px){.pet-workbench{top:110px}.pet-workbench section{max-height:calc(100dvh - 155px)}}
+

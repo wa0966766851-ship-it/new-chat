@@ -85,7 +85,11 @@ const maps = [1, 2, 3, 4].map(s => E.createRun({ pool, equipType: 'suit', equipI
 assert.ok(new Set(maps.map(m => m.nodes.length)).size > 1, '每局路網不同');
 assert.ok(maps.every(m => m.nodes.length >= 30), '路網夠複雜');
 const dead = bt.p1.map(e => ({ ...e, currentHp: 0 }));
-const lost = E.settleBattleV2(bt.run, 'x', 'p2', dead, pool);
-assert.equal((lost.scene as any).result, 'wiped');
+// 規則改變（2026-10-24 生命制）：全隊倒下不再直接失敗，改依倒下數扣生命（5 − 3 = 2），全隊以 30% 體力復甦回地圖
+const soft = E.settleBattleV2(bt.run, 'x', 'p2', dead, pool);
+assert.equal(soft.scene.kind, 'map'); assert.equal(soft.lives, 2); assert.ok(soft.team.every(e => e.currentHp > 0), '全隊倒下但生命未歸 0：全員復甦');
+// 生命只剩 3 而本場倒下 3 隻 → 生命歸 0 → 敗北結算
+const lost = E.settleBattleV2({ ...bt.run, lives: 3 }, 'x', 'p2', dead, pool);
+assert.equal((lost.scene as any).result, 'wiped'); assert.equal((lost.scene as any).cause, 'lives');
 assert.equal(E.settleBattleV2(lost, 'x', 'p1', dead, pool), lost, '已結算不重複');
 console.log(`星蝕回廊引擎：六章通關、種子重現、滅團結算通過（${a.trail.length} 步，遺物 ${a.run.relics.length}）`);

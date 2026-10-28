@@ -59,7 +59,7 @@ try {
     const lost = 10000000 - r.opp.currentHp; assert.ok(lost > 0 && r.opp.currentHp > 0);
     // 對手已損失體力70%真實傷害：對手先掉到5M，再用霆（無再損失基準=5M→真實3.5M）
     [r] = await h.play(side, { self: withKits('R', 1000000, [thunderSkill()], { speed: 200 }), opp: h.unit('E', 5000000, [h.wait()], { maxHp: 10000000 }) });
-    assert.ok(r.opp.currentHp <= 1500000 && r.opp.currentHp > 0, '附加對手已損失體力70%真實傷害 ' + r.opp.currentHp);
+    assert.ok(r.opp.currentHp > 4900000 && r.opp.currentHp < 5000000, '自身滿體力時不附加對手已損失體力傷害 ' + r.opp.currentHp);
     assert.ok(h.timers(r.state, side).some((t: string) => t.startsWith('下2回合先制2')), '未擊敗→下2回合先制+2');
     assert.ok(!h.timers(r.state, side === 'p1' ? 'p2' : 'p1').some((t: string) => t.includes('傷害')), '消除失敗不加翻倍');
     // 消除成功：對手回合類效果被消除，下2回合受到傷害翻倍

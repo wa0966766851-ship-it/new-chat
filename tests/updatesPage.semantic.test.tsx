@@ -40,15 +40,9 @@ try {
   assert.ok(document.querySelector('h1')?.textContent?.includes('更新與精靈'));
   assert.ok(document.body.textContent?.includes('精靈更新入口整合'));
   await click('新精靈介紹'); assert.ok(document.body.textContent?.includes('星光·雷納多'));
-  await click('查看魂印與技能'); await waitFor(() => !!document.querySelector('[role="dialog"] h2'));
-  assert.ok(document.querySelector('[role="dialog"]')?.textContent?.includes('目前使用的精靈資料'));
-  // The existing read-only profile closes without touching saved data.
-  await act(async () => (document.querySelector('[role="dialog"] button') as HTMLButtonElement).click());
-  assert.equal(document.querySelector('[role="dialog"]'), null);
-  button('查看魂印與技能').focus(); await click('查看魂印與技能');
-  assert.equal(document.activeElement, document.querySelector('[role="dialog"]'));
-  await act(async () => { document.activeElement!.dispatchEvent(new dom.window.KeyboardEvent('keydown', { key: 'Escape', bubbles: true })); });
-  assert.equal(document.querySelector('[role="dialog"]'), null); assert.equal(document.activeElement, button('查看魂印與技能'));
+  assert.ok(document.querySelector('[aria-label="新精靈介紹"]'));
+  assert.ok(document.body.textContent?.includes('技能全覽'));
+  assert.ok(document.body.textContent?.includes(elf.skills[0].description));
   await click('修改這隻精靈'); await click('用積木編輯');
   assert.equal(edited.elf.id, elf.id); assert.equal(edited.tab, 'blockly');
   const input = document.querySelector<HTMLTextAreaElement>('#elf-update-request')!;

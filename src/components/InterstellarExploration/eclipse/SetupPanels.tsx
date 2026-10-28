@@ -59,15 +59,15 @@ export function BanPicker({ bans, pool, cap, onChange }: { bans: string[]; pool:
         {!bans.length && <span className="text-xs ecl-muted self-center">未禁用</span>}
       </div>
       {open && (
-        <div className="fixed inset-0 z-[60] bg-black/80 backdrop-blur-[2px] p-4 pt-16 md:p-10 overflow-y-auto" role="dialog" aria-label="選擇禁用精靈" onClick={() => setOpen(false)}>
-          <div className="mx-auto max-w-5xl ecl-frame p-5 md:p-7 bg-[var(--ecl-ink-2)]" onClick={ev => ev.stopPropagation()}>
+        <div className="fixed inset-0 z-[60] bg-black/80 backdrop-blur-[2px] p-4 pt-16 ecl-md:p-10 overflow-y-auto" role="dialog" aria-label="選擇禁用精靈" onClick={() => setOpen(false)}>
+          <div className="mx-auto max-w-5xl ecl-frame p-5 ecl-md:p-7 bg-[var(--ecl-ink-2)]" onClick={ev => ev.stopPropagation()}>
             <div className="flex items-center justify-between mb-3">
               <h3 className="ecl-title text-xl ecl-gilt">禁用精靈<span className="ml-3 text-sm ecl-muted tabular-nums">{bans.length} / {cap}</span></h3>
               <button className="ecl-btn ecl-btn-ghost text-xs px-4 py-1.5" onClick={() => setOpen(false)}>完成</button>
             </div>
             <ElfPicker<Elf> variant="eclipse" elves={pool.filter(e => !bans.includes(String(e.id)))} getKey={e => String(e.id)}
               onPick={e => { const next = [...bans, String(e.id)]; onChange(next); if (next.length >= cap) setOpen(false); }}
-              gridClassName="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2 max-h-[60vh] overflow-y-auto pr-1"
+              gridClassName="grid grid-cols-2 ecl-sm:grid-cols-3 ecl-lg:grid-cols-4 gap-2 max-h-[60vh] overflow-y-auto pr-1"
               itemClassName="text-left flex items-center gap-2.5 p-2 border border-[rgba(217,180,90,.2)] bg-black/30 hover:border-[rgba(224,71,95,.7)]"
               renderItem={e => (<>
                 <span className="w-10 h-11 shrink-0 rounded-[50%] overflow-hidden border border-[rgba(217,180,90,.4)] bg-black/60"><ElfAvatar elf={e} kind="head" className="w-full h-full object-cover" fallbackClassName="w-full h-full grid place-items-center text-xs ecl-gilt" /></span>

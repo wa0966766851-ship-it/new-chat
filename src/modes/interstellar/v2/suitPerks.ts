@@ -16,6 +16,8 @@ export interface Perk {
   /** 商店每層免費刷新 1 次 */ freeReroll?: boolean;
   /** 首領戰前全隊回滿體力與 PP */ bossHeal?: boolean;
   /** 戰敗一次保留隊伍（每局一次） */ lifeline?: boolean;
+  /** 開局永久生命 +n */ lives?: number;
+  /** 每章開始臨時生命 +n（當章有效） */ tempLifePerAct?: number;
   shopMult?: number; restHealMult?: number; eclipsePerMove?: number;
   revealMystery?: boolean; eliteRelicChoice?: number; extraRewardChoice?: number;
   expMult?: number; beansMult?: number;
@@ -28,7 +30,7 @@ export const OPEN_SHIELD_BASE = 400;
 export function perkCost(p: Perk): number {
   return (p.anyTokens ?? 0) * 1 + (p.typeToken ? .5 : 0) + (p.dualToken ? .75 : 0) + (p.repeatTokens ?? 0) * 1.5 + (p.tokenTierUp ? .75 : 0)
     + (p.dupCap ?? 0) * .5 + (p.banBonus ?? 0) * .5 + (p.openShield ? .75 : 0) + (p.freeReroll ? .5 : 0) + (p.bossHeal ? 1 : 0) + (p.lifeline ? 1.5 : 0)
-    + (p.potions ?? 0) * .5 + (p.beans ?? 0) / 60 * .5
+    + (p.lives ?? 0) * .75 + (p.tempLifePerAct ?? 0) * 1 + (p.potions ?? 0) * .5 + (p.beans ?? 0) / 60 * .5
     + (p.shopMult ? (1 - p.shopMult) / .1 : 0) + (p.restHealMult ? (p.restHealMult - 1) / .25 * .75 : 0)
     + (p.eclipsePerMove ? -p.eclipsePerMove : 0) + (p.revealMystery ? 1.5 : 0)
     + (p.eliteRelicChoice ?? 0) + (p.extraRewardChoice ?? 0) * 1.5 + (p.expMult ? p.expMult / .15 * .5 : 0) + (p.beansMult ? p.beansMult / .15 * .5 : 0);
@@ -41,7 +43,7 @@ export function perkKeys(p: Perk): string[] {
   if (p.dualToken) k.push(`dualToken:${[...p.dualToken].sort().join("+")}`);
   if (p.repeatTokens) k.push(`repeatTokens:${p.repeatTokens}`);
   for (const f of ["tokenTierUp", "openShield", "freeReroll", "bossHeal", "lifeline", "revealMystery"] as const) if (p[f]) k.push(f);
-  for (const f of ["dupCap", "banBonus", "eliteRelicChoice", "extraRewardChoice", "shopMult", "restHealMult", "eclipsePerMove", "expMult", "beansMult", "potions", "beans"] as const) if (p[f]) k.push(`${f}:${p[f]}`);
+  for (const f of ["lives", "tempLifePerAct", "dupCap", "banBonus", "eliteRelicChoice", "extraRewardChoice", "shopMult", "restHealMult", "eclipsePerMove", "expMult", "beansMult", "potions", "beans"] as const) if (p[f]) k.push(`${f}:${p[f]}`);
   return k;
 }
 /** 簡短標籤＋說明（說明放 tooltip，不佔介面）。 */
@@ -58,7 +60,9 @@ export function perkItems(p: Perk): { text: string; tip?: string }[] {
   if (p.openShield) add("每章首戰全隊護盾", PERK_TIPS.openShield);
   if (p.freeReroll) add("商店每層免費刷新 1 次", PERK_TIPS.freeReroll);
   if (p.bossHeal) add("首領戰前全隊回滿", PERK_TIPS.bossHeal);
-  if (p.lifeline) add("戰敗保留隊伍（每局一次）", PERK_TIPS.lifeline);
+  if (p.lifeline) add("致命時不扣生命（每局一次）", PERK_TIPS.lifeline);
+  if (p.lives) add(`初始生命 +${p.lives}`, PERK_TIPS.lives);
+  if (p.tempLifePerAct) add(`每章臨時生命 +${p.tempLifePerAct}`, PERK_TIPS.tempLifePerAct);
   if (p.potions) add(`起始藥劑 +${p.potions}`);
   if (p.beans) add(`起始賽爾豆 +${p.beans}`);
   if (p.shopMult) add(`商店價格 ×${p.shopMult}`);
@@ -80,7 +84,9 @@ export const PERK_TIPS: Record<string, string> = {
   openShield: `每章第一場戰鬥開始時，我方全隊獲得 ${OPEN_SHIELD_BASE} 點護盾（隨層數縮放）`,
   freeReroll: "每次進商店，第一次刷新商品免費",
   bossHeal: "迎戰章末首領前，出戰全隊體力與 PP 回滿",
-  lifeline: "全隊倒下或首領戰敗北時，改為全隊以 30% 體力回到地圖；每局一次",
+  lifeline: "生命將歸零時，本場不扣生命，全隊以 30% 體力繼續；每局一次",
+  lives: "開局永久生命多 1（上限不變，戰鬥倒下仍會扣除）",
+  tempLifePerAct: "每章開始獲得臨時生命（優先扣除，換章清空）",
 };
 export const SUIT_PERKS: Record<string, { tier: PerkTier; perk: Perk }> = {
   dark_angel: { tier: "strong", perk: { typeToken: "暗影", beans: 60 } },
@@ -90,7 +96,7 @@ export const SUIT_PERKS: Record<string, { tier: PerkTier; perk: Perk }> = {
   berserker: { tier: "strong", perk: { openShield: true } },
   shadow_judgment: { tier: "strong", perk: { dupCap: 1, potions: 1 } },
   destiny_armor: { tier: "strong", perk: { freeReroll: true, beans: 60 } },
-  inferno_mecha: { tier: "strong", perk: { typeToken: "火", potions: 1 } },
+  inferno_mecha: { tier: "strong", perk: { lives: 1 } },
   proud_peak: { tier: "strong", perk: { banBonus: 1, expMult: .15 } },
   morning_star: { tier: "mid", perk: { eclipsePerMove: -1, typeToken: "光" } },
   venom_armor: { tier: "mid", perk: { shopMult: .9, typeToken: "草" } },
@@ -102,7 +108,7 @@ export const SUIT_PERKS: Record<string, { tier: PerkTier; perk: Perk }> = {
   shadow_slayer: { tier: "mid", perk: { eclipsePerMove: -1, typeToken: "戰鬥" } },
   void_traveler: { tier: "mid", perk: { dualToken: ["神秘", "電"], potions: 1 } },
   eternal_starlight: { tier: "mid", perk: { anyTokens: 1, beans: 60 } },
-  starlight_guardian: { tier: "support", perk: { restHealMult: 1.25, typeToken: "聖靈", beans: 60 } },
+  starlight_guardian: { tier: "support", perk: { restHealMult: 1.25, tempLifePerAct: 1 } },
   crystal_barrier: { tier: "support", perk: { shopMult: .9, dualToken: ["冰", "暗影"] } },
   nuclear_armor: { tier: "support", perk: { repeatTokens: 1, potions: 1 } },
   abyssal_walker: { tier: "support", perk: { eclipsePerMove: -1, dualToken: ["水", "混沌"] } },

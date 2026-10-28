@@ -1,0 +1,626 @@
+{
+ "source": "BWIKI 赛尔号PVE概论 ==BOSS特性== (SeerAPI 無此資源；僅彙整名稱與說明)",
+ "items": [
+  {
+   "key": "wiki-00",
+   "category_cn": "基本",
+   "category_tw": "基本",
+   "name_cn": "神话",
+   "name_tw": "神話",
+   "desc_cn": "免疫异常状态和能力下降状态，所有技能必中且PP值无限；免弱免控在我方当回合出手后才激活，必中为强制命中率100%",
+   "desc_tw": "免疫異常狀態和能力下降狀態，所有技能必中且PP值無限；免弱免控在我方當回合出手後才啟用，必中為強制命中率100%",
+   "source": "https://wiki.biligame.com/seer/ 赛尔号PVE概论 ==BOSS特性==",
+   "visible_trait": false
+  },
+  {
+   "key": "wiki-01",
+   "category_cn": "先制",
+   "category_tw": "先制",
+   "name_cn": "迅捷",
+   "name_tw": "迅捷",
+   "desc_cn": "所有技能先制+X（1/2/3/6）",
+   "desc_tw": "所有技能先制+X（1/2/3/6）",
+   "source": "https://wiki.biligame.com/seer/ 赛尔号PVE概论 ==BOSS特性==",
+   "visible_trait": false
+  },
+  {
+   "key": "wiki-02",
+   "category_cn": "先制",
+   "category_tw": "先制",
+   "name_cn": "疾行",
+   "name_tw": "疾行",
+   "desc_cn": "所有技能必定先手，免疫瞬杀与束缚（实为高先制）",
+   "desc_tw": "所有技能必定先手，免疫瞬殺與束縛（實為高先制）",
+   "source": "https://wiki.biligame.com/seer/ 赛尔号PVE概论 ==BOSS特性==",
+   "visible_trait": false
+  },
+  {
+   "key": "wiki-03",
+   "category_cn": "增伤",
+   "category_tw": "增傷",
+   "name_cn": "增伤",
+   "name_tw": "增傷",
+   "desc_cn": "自身造成的伤害增加X%（多为100%-500%）",
+   "desc_tw": "自身造成的傷害增加X%（多為100%-500%）",
+   "source": "https://wiki.biligame.com/seer/ 赛尔号PVE概论 ==BOSS特性==",
+   "visible_trait": false
+  },
+  {
+   "key": "wiki-04",
+   "category_cn": "增伤",
+   "category_tw": "增傷",
+   "name_cn": "减伤",
+   "name_tw": "減傷",
+   "desc_cn": "自身受到的伤害减少X%（常见25/30/50%，最高95%）",
+   "desc_tw": "自身受到的傷害減少X%（常見25/30/50%，最高95%）",
+   "source": "https://wiki.biligame.com/seer/ 赛尔号PVE概论 ==BOSS特性==",
+   "visible_trait": false
+  },
+  {
+   "key": "wiki-05",
+   "category_cn": "增伤",
+   "category_tw": "增傷",
+   "name_cn": "要害探寻",
+   "name_tw": "要害探尋",
+   "desc_cn": "自身攻击技能有X%概率造成Y倍伤害（初始伤害变Y倍）",
+   "desc_tw": "自身攻擊技能有X%機率造成Y倍傷害（初始傷害變Y倍）",
+   "source": "https://wiki.biligame.com/seer/ 赛尔号PVE概论 ==BOSS特性==",
+   "visible_trait": false
+  },
+  {
+   "key": "wiki-06",
+   "category_cn": "闪避",
+   "category_tw": "閃避",
+   "name_cn": "致盲",
+   "name_tw": "致盲",
+   "desc_cn": "闪避率提升X%／任何技能对自身命中率下降X%（乘法計算，可見特性）",
+   "desc_tw": "閃避率提升X%／任何技能對自身命中率下降X%（乘法計算，可見特性）",
+   "source": "https://wiki.biligame.com/seer/ 赛尔号PVE概论 ==BOSS特性==",
+   "visible_trait": true
+  },
+  {
+   "key": "wiki-07",
+   "category_cn": "免疫",
+   "category_tw": "免疫",
+   "name_cn": "封魔",
+   "name_tw": "封魔",
+   "desc_cn": "X%令对手属性技能失效（封属）",
+   "desc_tw": "X%令對手屬性技能失效（封屬）",
+   "source": "https://wiki.biligame.com/seer/ 赛尔号PVE概论 ==BOSS特性==",
+   "visible_trait": false
+  },
+  {
+   "key": "wiki-08",
+   "category_cn": "免疫",
+   "category_tw": "免疫",
+   "name_cn": "格挡",
+   "name_tw": "格擋",
+   "desc_cn": "免疫物理/特殊攻击伤害（判定为挡伤，技能效果仍生效）",
+   "desc_tw": "免疫物理/特殊攻擊傷害（判定為擋傷，技能效果仍生效）",
+   "source": "https://wiki.biligame.com/seer/ 赛尔号PVE概论 ==BOSS特性==",
+   "visible_trait": true
+  },
+  {
+   "key": "wiki-09",
+   "category_cn": "免疫",
+   "category_tw": "免疫",
+   "name_cn": "技能无效",
+   "name_tw": "技能無效",
+   "desc_cn": "免疫物理/特殊攻击，伤害与附加效果皆无效（狮盔判定）；亦有令先制/先后手技能无效的龙威型",
+   "desc_tw": "免疫物理/特殊攻擊，傷害與附加效果皆無效（獅盔判定）；亦有令先制/先後手技能無效的龍威型",
+   "source": "https://wiki.biligame.com/seer/ 赛尔号PVE概论 ==BOSS特性==",
+   "visible_trait": false
+  },
+  {
+   "key": "wiki-10",
+   "category_cn": "免疫",
+   "category_tw": "免疫",
+   "name_cn": "戒备",
+   "name_tw": "戒備",
+   "desc_cn": "若对手未使用先手技能则不受伤害（只吃先制）",
+   "desc_tw": "若對手未使用先手技能則不受傷害（只吃先制）",
+   "source": "https://wiki.biligame.com/seer/ 赛尔号PVE概论 ==BOSS特性==",
+   "visible_trait": false
+  },
+  {
+   "key": "wiki-11",
+   "category_cn": "免疫",
+   "category_tw": "免疫",
+   "name_cn": "消除回合",
+   "name_tw": "消除回合",
+   "desc_cn": "所有技能消除对手回合类效果（断回合）",
+   "desc_tw": "所有技能消除對手回合類效果（斷回合）",
+   "source": "https://wiki.biligame.com/seer/ 赛尔号PVE概论 ==BOSS特性==",
+   "visible_trait": false
+  },
+  {
+   "key": "wiki-12",
+   "category_cn": "免疫",
+   "category_tw": "免疫",
+   "name_cn": "坚毅",
+   "name_tw": "堅毅",
+   "desc_cn": "自身免疫固定伤害（和百分比伤害）",
+   "desc_tw": "自身免疫固定傷害（和百分比傷害）",
+   "source": "https://wiki.biligame.com/seer/ 赛尔号PVE概论 ==BOSS特性==",
+   "visible_trait": false
+  },
+  {
+   "key": "wiki-13",
+   "category_cn": "免疫",
+   "category_tw": "免疫",
+   "name_cn": "免伤",
+   "name_tw": "免傷",
+   "desc_cn": "先/后出手、威力高低、伤害大小、属性等条件下免疫攻击伤害",
+   "desc_tw": "先/後出手、威力高低、傷害大小、屬性等條件下免疫攻擊傷害",
+   "source": "https://wiki.biligame.com/seer/ 赛尔号PVE概论 ==BOSS特性==",
+   "visible_trait": false
+  },
+  {
+   "key": "wiki-14",
+   "category_cn": "免疫",
+   "category_tw": "免疫",
+   "name_cn": "反伤",
+   "name_tw": "反傷",
+   "desc_cn": "反弹X%受到的伤害；亦有免疫并反弹致命一击伤害",
+   "desc_tw": "反彈X%受到的傷害；亦有免疫並反彈致命一擊傷害",
+   "source": "https://wiki.biligame.com/seer/ 赛尔号PVE概论 ==BOSS特性==",
+   "visible_trait": false
+  },
+  {
+   "key": "wiki-15",
+   "category_cn": "强化弱化",
+   "category_tw": "強化弱化",
+   "name_cn": "进化",
+   "name_tw": "進化",
+   "desc_cn": "每回合自身全属性+1（要求BOSS出手）",
+   "desc_tw": "每回合自身全屬性+1（要求BOSS出手）",
+   "source": "https://wiki.biligame.com/seer/ 赛尔号PVE概论 ==BOSS特性==",
+   "visible_trait": false
+  },
+  {
+   "key": "wiki-16",
+   "category_cn": "强化弱化",
+   "category_tw": "強化弱化",
+   "name_cn": "腐化",
+   "name_tw": "腐化",
+   "desc_cn": "对手使用技能后全属性-1",
+   "desc_tw": "對手使用技能後全屬性-1",
+   "source": "https://wiki.biligame.com/seer/ 赛尔号PVE概论 ==BOSS特性==",
+   "visible_trait": false
+  },
+  {
+   "key": "wiki-17",
+   "category_cn": "强化弱化",
+   "category_tw": "強化弱化",
+   "name_cn": "强化",
+   "name_tw": "強化",
+   "desc_cn": "每回合使对手随机X项属性-Y；或复制我方高于自身的能力提升等级",
+   "desc_tw": "每回合使對手隨機X項屬性-Y；或複製我方高於自身的能力提升等級",
+   "source": "https://wiki.biligame.com/seer/ 赛尔号PVE概论 ==BOSS特性==",
+   "visible_trait": false
+  },
+  {
+   "key": "wiki-18",
+   "category_cn": "强化弱化",
+   "category_tw": "強化弱化",
+   "name_cn": "弱化",
+   "name_tw": "弱化",
+   "desc_cn": "每回合开始时随机吸取对手X项属性-Y并附加给自己",
+   "desc_tw": "每回合開始時隨機吸取對手X項屬性-Y並附加給自己",
+   "source": "https://wiki.biligame.com/seer/ 赛尔号PVE概论 ==BOSS特性==",
+   "visible_trait": false
+  },
+  {
+   "key": "wiki-19",
+   "category_cn": "强化弱化",
+   "category_tw": "強化弱化",
+   "name_cn": "驱散",
+   "name_tw": "驅散",
+   "desc_cn": "对手使用技能后消除对手的能力提升（封强化）",
+   "desc_tw": "對手使用技能後消除對手的能力提升（封強化）",
+   "source": "https://wiki.biligame.com/seer/ 赛尔号PVE概论 ==BOSS特性==",
+   "visible_trait": false
+  },
+  {
+   "key": "wiki-20",
+   "category_cn": "强化弱化",
+   "category_tw": "強化弱化",
+   "name_cn": "消除强化",
+   "name_tw": "消除強化",
+   "desc_cn": "自身所有攻击吞噬对手的能力强化状态（偷强）",
+   "desc_tw": "自身所有攻擊吞噬對手的能力強化狀態（偷強）",
+   "source": "https://wiki.biligame.com/seer/ 赛尔号PVE概论 ==BOSS特性==",
+   "visible_trait": false
+  },
+  {
+   "key": "wiki-21",
+   "category_cn": "强化弱化",
+   "category_tw": "強化弱化",
+   "name_cn": "嫉妒",
+   "name_tw": "嫉妒",
+   "desc_cn": "对手处于能力提升时将之视为能力下降；对手处于回合类效果时造成伤害提升100%（可見特性，2026-10-16更新後PVP亦生效）",
+   "desc_tw": "對手處於能力提升時將之視為能力下降；對手處於回合類效果時造成傷害提升100%（可見特性，2026-10-16更新後PVP亦生效）",
+   "source": "https://wiki.biligame.com/seer/ 赛尔号PVE概论 ==BOSS特性==",
+   "visible_trait": true
+  },
+  {
+   "key": "wiki-22",
+   "category_cn": "强化弱化",
+   "category_tw": "強化弱化",
+   "name_cn": "贪婪",
+   "name_tw": "貪婪",
+   "desc_cn": "回合开始时吸取对手的能力提升效果；若对手不处于能力提升状态则随机3项属性-2并附加给自身；每回合回复500点体力，对手受到500点固定伤害",
+   "desc_tw": "回合開始時吸取對手的能力提升效果；若對手不處於能力提升狀態則隨機3項屬性-2並附加給自身；每回合回覆500點體力，對手受到500點固定傷害",
+   "source": "https://wiki.biligame.com/seer/ 赛尔号PVE概论 ==BOSS特性==",
+   "visible_trait": false
+  },
+  {
+   "key": "wiki-23",
+   "category_cn": "暴击",
+   "category_tw": "暴擊",
+   "name_cn": "硬化",
+   "name_tw": "硬化",
+   "desc_cn": "抵挡未打出致命一击的攻击（只吃暴击）",
+   "desc_tw": "抵擋未打出致命一擊的攻擊（只吃暴擊）",
+   "source": "https://wiki.biligame.com/seer/ 赛尔号PVE概论 ==BOSS特性==",
+   "visible_trait": false
+  },
+  {
+   "key": "wiki-24",
+   "category_cn": "暴击",
+   "category_tw": "暴擊",
+   "name_cn": "恢复",
+   "name_tw": "恢復",
+   "desc_cn": "当回合受到致命一击则回合结束时恢复自身所有体力；另有每回合/体力低于X时恢复体力的变体",
+   "desc_tw": "當回合受到致命一擊則回合結束時恢復自身所有體力；另有每回合/體力低於X時恢復體力的變體",
+   "source": "https://wiki.biligame.com/seer/ 赛尔号PVE概论 ==BOSS特性==",
+   "visible_trait": false
+  },
+  {
+   "key": "wiki-25",
+   "category_cn": "暴击",
+   "category_tw": "暴擊",
+   "name_cn": "锁定",
+   "name_tw": "鎖定",
+   "desc_cn": "自身致命一击的概率为X/16",
+   "desc_tw": "自身致命一擊的機率為X/16",
+   "source": "https://wiki.biligame.com/seer/ 赛尔号PVE概论 ==BOSS特性==",
+   "visible_trait": false
+  },
+  {
+   "key": "wiki-26",
+   "category_cn": "暴击",
+   "category_tw": "暴擊",
+   "name_cn": "秒杀",
+   "name_tw": "秒殺",
+   "desc_cn": "自身受到致命一击时直接将对方体力降至0（真实伤害）；另有概率秒/定回合秒/天敌秒/低血秒",
+   "desc_tw": "自身受到致命一擊時直接將對方體力降至0（真實傷害）；另有機率秒/定回合秒/天敵秒/低血秒",
+   "source": "https://wiki.biligame.com/seer/ 赛尔号PVE概论 ==BOSS特性==",
+   "visible_trait": false
+  },
+  {
+   "key": "wiki-27",
+   "category_cn": "暴击",
+   "category_tw": "暴擊",
+   "name_cn": "觉醒",
+   "name_tw": "覺醒",
+   "desc_cn": "回合结束时若自身体力低于最大体力30%，获得3回合“力量”（无视强化弱化、攻击必暴、消除回合、造成伤害回血）",
+   "desc_tw": "回合結束時若自身體力低於最大體力30%，獲得3回合“力量”（無視強化弱化、攻擊必暴、消除回合、造成傷害回血）",
+   "source": "https://wiki.biligame.com/seer/ 赛尔号PVE概论 ==BOSS特性==",
+   "visible_trait": false
+  },
+  {
+   "key": "wiki-28",
+   "category_cn": "固伤回血",
+   "category_tw": "固傷回血",
+   "name_cn": "锋锐",
+   "name_tw": "鋒銳",
+   "desc_cn": "每回合附加X点固定伤害（多为220，BOSS不出手也触发）",
+   "desc_tw": "每回合附加X點固定傷害（多為220，BOSS不出手也觸發）",
+   "source": "https://wiki.biligame.com/seer/ 赛尔号PVE概论 ==BOSS特性==",
+   "visible_trait": false
+  },
+  {
+   "key": "wiki-29",
+   "category_cn": "固伤回血",
+   "category_tw": "固傷回血",
+   "name_cn": "吸血",
+   "name_tw": "吸血",
+   "desc_cn": "每回合汲取对手X点体力（真实伤害）；或造成伤害的X%恢复自身",
+   "desc_tw": "每回合汲取對手X點體力（真實傷害）；或造成傷害的X%恢復自身",
+   "source": "https://wiki.biligame.com/seer/ 赛尔号PVE概论 ==BOSS特性==",
+   "visible_trait": false
+  },
+  {
+   "key": "wiki-30",
+   "category_cn": "固伤回血",
+   "category_tw": "固傷回血",
+   "name_cn": "生命汲取",
+   "name_tw": "生命汲取",
+   "desc_cn": "每回合汲取对手X点体力（真实伤害，不能被盾罩与抗性减免）",
+   "desc_tw": "每回合汲取對手X點體力（真實傷害，不能被盾罩與抗性減免）",
+   "source": "https://wiki.biligame.com/seer/ 赛尔号PVE概论 ==BOSS特性==",
+   "visible_trait": false
+  },
+  {
+   "key": "wiki-31",
+   "category_cn": "固伤回血",
+   "category_tw": "固傷回血",
+   "name_cn": "愈合",
+   "name_tw": "癒合",
+   "desc_cn": "每回合回合结束时恢复1/X最大体力",
+   "desc_tw": "每回合回合結束時恢復1/X最大體力",
+   "source": "https://wiki.biligame.com/seer/ 赛尔号PVE概论 ==BOSS特性==",
+   "visible_trait": false
+  },
+  {
+   "key": "wiki-32",
+   "category_cn": "体力上限",
+   "category_tw": "體力上限",
+   "name_cn": "暴食",
+   "name_tw": "暴食",
+   "desc_cn": "每回合增加10%体力上限（最高99999999），每回合恢复自身已损失体力的30%",
+   "desc_tw": "每回合增加10%體力上限（最高99999999），每回合恢復自身已損失體力的30%",
+   "source": "https://wiki.biligame.com/seer/ 赛尔号PVE概论 ==BOSS特性==",
+   "visible_trait": false
+  },
+  {
+   "key": "wiki-33",
+   "category_cn": "控场",
+   "category_tw": "控場",
+   "name_cn": "减PP",
+   "name_tw": "減PP",
+   "desc_cn": "攻击命中后有X%使对手Y个技能PP值归零",
+   "desc_tw": "攻擊命中後有X%使對手Y個技能PP值歸零",
+   "source": "https://wiki.biligame.com/seer/ 赛尔号PVE概论 ==BOSS特性==",
+   "visible_trait": false
+  },
+  {
+   "key": "wiki-34",
+   "category_cn": "控场",
+   "category_tw": "控場",
+   "name_cn": "施加异常",
+   "name_tw": "施加異常",
+   "desc_cn": "自身攻击技能/每回合有X%概率使对手陷入某异常",
+   "desc_tw": "自身攻擊技能/每回合有X%機率使對手陷入某異常",
+   "source": "https://wiki.biligame.com/seer/ 赛尔号PVE概论 ==BOSS特性==",
+   "visible_trait": false
+  },
+  {
+   "key": "wiki-35",
+   "category_cn": "控场",
+   "category_tw": "控場",
+   "name_cn": "系别变化",
+   "name_tw": "系別變化",
+   "desc_cn": "与对方精灵互换战斗属性（所有攻击技能自带属性反转）",
+   "desc_tw": "與對方精靈互換戰鬥屬性（所有攻擊技能自帶屬性反轉）",
+   "source": "https://wiki.biligame.com/seer/ 赛尔号PVE概论 ==BOSS特性==",
+   "visible_trait": false
+  },
+  {
+   "key": "wiki-36",
+   "category_cn": "多命",
+   "category_tw": "多命",
+   "name_cn": "复苏",
+   "name_tw": "復甦",
+   "desc_cn": "死亡后恢复全部体力，一局可触发X次（X+1命）；可附带全属性强化",
+   "desc_tw": "死亡後恢復全部體力，一局可觸發X次（X+1命）；可附帶全屬性強化",
+   "source": "https://wiki.biligame.com/seer/ 赛尔号PVE概论 ==BOSS特性==",
+   "visible_trait": false
+  }
+ ],
+ "note": "圖示見 icons；名稱與圖示 id 無官方對應表",
+ "icons": [
+  {
+   "id": 0,
+   "file": "seerapi/bosseffect/0.png",
+   "visual_tw": "怪物剪影",
+   "source": "seer-unity-assets battleeffect/bosseffect/0.png",
+   "trait_name": null
+  },
+  {
+   "id": 1,
+   "file": "seerapi/bosseffect/1.png",
+   "visual_tw": "螺旋翅",
+   "source": "seer-unity-assets battleeffect/bosseffect/1.png",
+   "trait_name": null
+  },
+  {
+   "id": 2,
+   "file": "seerapi/bosseffect/2.png",
+   "visual_tw": "羽翼",
+   "source": "seer-unity-assets battleeffect/bosseffect/2.png",
+   "trait_name": null
+  },
+  {
+   "id": 3,
+   "file": "seerapi/bosseffect/3.png",
+   "visual_tw": "六芒星(實心)",
+   "source": "seer-unity-assets battleeffect/bosseffect/3.png",
+   "trait_name": null
+  },
+  {
+   "id": 4,
+   "file": "seerapi/bosseffect/4.png",
+   "visual_tw": "六芒星(線框)",
+   "source": "seer-unity-assets battleeffect/bosseffect/4.png",
+   "trait_name": null
+  },
+  {
+   "id": 5,
+   "file": "seerapi/bosseffect/5.png",
+   "visual_tw": "盾",
+   "source": "seer-unity-assets battleeffect/bosseffect/5.png",
+   "trait_name": null
+  },
+  {
+   "id": 6,
+   "file": "seerapi/bosseffect/6.png",
+   "visual_tw": "十字盾",
+   "source": "seer-unity-assets battleeffect/bosseffect/6.png",
+   "trait_name": null
+  },
+  {
+   "id": 7,
+   "file": "seerapi/bosseffect/7.png",
+   "visual_tw": "星紋盾",
+   "source": "seer-unity-assets battleeffect/bosseffect/7.png",
+   "trait_name": null
+  },
+  {
+   "id": 8,
+   "file": "seerapi/bosseffect/8.png",
+   "visual_tw": "菱形盾",
+   "source": "seer-unity-assets battleeffect/bosseffect/8.png",
+   "trait_name": null
+  },
+  {
+   "id": 9,
+   "file": "seerapi/bosseffect/9.png",
+   "visual_tw": "十字翼",
+   "source": "seer-unity-assets battleeffect/bosseffect/9.png",
+   "trait_name": null
+  },
+  {
+   "id": 10,
+   "file": "seerapi/bosseffect/10.png",
+   "visual_tw": "破碎之心",
+   "source": "seer-unity-assets battleeffect/bosseffect/10.png",
+   "trait_name": null
+  },
+  {
+   "id": 11,
+   "file": "seerapi/bosseffect/11.png",
+   "visual_tw": "像素方塊",
+   "source": "seer-unity-assets battleeffect/bosseffect/11.png",
+   "trait_name": null
+  },
+  {
+   "id": 12,
+   "file": "seerapi/bosseffect/12.png",
+   "visual_tw": "眼睛(斜線)",
+   "source": "seer-unity-assets battleeffect/bosseffect/12.png",
+   "trait_name": null
+  },
+  {
+   "id": 13,
+   "file": "seerapi/bosseffect/13.png",
+   "visual_tw": "準星",
+   "source": "seer-unity-assets battleeffect/bosseffect/13.png",
+   "trait_name": null
+  },
+  {
+   "id": 14,
+   "file": "seerapi/bosseffect/14.png",
+   "visual_tw": "火焰精靈",
+   "source": "seer-unity-assets battleeffect/bosseffect/14.png",
+   "trait_name": null
+  },
+  {
+   "id": 15,
+   "file": "seerapi/bosseffect/15.png",
+   "visual_tw": "鎖",
+   "source": "seer-unity-assets battleeffect/bosseffect/15.png",
+   "trait_name": null
+  },
+  {
+   "id": 16,
+   "file": "seerapi/bosseffect/16.png",
+   "visual_tw": "劍",
+   "source": "seer-unity-assets battleeffect/bosseffect/16.png",
+   "trait_name": null
+  },
+  {
+   "id": 17,
+   "file": "seerapi/bosseffect/17.png",
+   "visual_tw": "菱形爪",
+   "source": "seer-unity-assets battleeffect/bosseffect/17.png",
+   "trait_name": null
+  },
+  {
+   "id": 18,
+   "file": "seerapi/bosseffect/18.png",
+   "visual_tw": "治療十字",
+   "source": "seer-unity-assets battleeffect/bosseffect/18.png",
+   "trait_name": null
+  },
+  {
+   "id": 19,
+   "file": "seerapi/bosseffect/19.png",
+   "visual_tw": "天秤",
+   "source": "seer-unity-assets battleeffect/bosseffect/19.png",
+   "trait_name": null
+  },
+  {
+   "id": 20,
+   "file": "seerapi/bosseffect/20.png",
+   "visual_tw": "星盾",
+   "source": "seer-unity-assets battleeffect/bosseffect/20.png",
+   "trait_name": null
+  },
+  {
+   "id": 21,
+   "file": "seerapi/bosseffect/21.png",
+   "visual_tw": "怪獸頭",
+   "source": "seer-unity-assets battleeffect/bosseffect/21.png",
+   "trait_name": null
+  },
+  {
+   "id": 22,
+   "file": "seerapi/bosseffect/22.png",
+   "visual_tw": "火焰骷髏",
+   "source": "seer-unity-assets battleeffect/bosseffect/22.png",
+   "trait_name": null
+  },
+  {
+   "id": 23,
+   "file": "seerapi/bosseffect/23.png",
+   "visual_tw": "龍骷髏",
+   "source": "seer-unity-assets battleeffect/bosseffect/23.png",
+   "trait_name": null
+  },
+  {
+   "id": 24,
+   "file": "seerapi/bosseffect/24.png",
+   "visual_tw": "爆裂",
+   "source": "seer-unity-assets battleeffect/bosseffect/24.png",
+   "trait_name": null
+  },
+  {
+   "id": 25,
+   "file": "seerapi/bosseffect/25.png",
+   "visual_tw": "倒三角盾",
+   "source": "seer-unity-assets battleeffect/bosseffect/25.png",
+   "trait_name": null
+  },
+  {
+   "id": 26,
+   "file": "seerapi/bosseffect/26.png",
+   "visual_tw": "三角盾",
+   "source": "seer-unity-assets battleeffect/bosseffect/26.png",
+   "trait_name": null
+  },
+  {
+   "id": 27,
+   "file": "seerapi/bosseffect/27.png",
+   "visual_tw": "菱形盾2",
+   "source": "seer-unity-assets battleeffect/bosseffect/27.png",
+   "trait_name": null
+  },
+  {
+   "id": 28,
+   "file": "seerapi/bosseffect/28.png",
+   "visual_tw": "圓盾",
+   "source": "seer-unity-assets battleeffect/bosseffect/28.png",
+   "trait_name": null
+  },
+  {
+   "id": 29,
+   "file": "seerapi/bosseffect/29.png",
+   "visual_tw": "劍與星",
+   "source": "seer-unity-assets battleeffect/bosseffect/29.png",
+   "trait_name": null
+  }
+ ],
+ "icons_note": "原廠 battleeffect/bosseffect 共 30 枚 68x68 圖示；SeerAPI 無 boss 特性資源，圖示 id 與特性名稱的官方對應未知（trait_name 待人工指定，建議：神話=專案已用 abnormal/17）"
+}

@@ -4,6 +4,12 @@
 @import "./components/battle/battleSkin.css";
 /* 矮螢幕（手機橫放）：高度 ≤ 560px */
 @custom-variant short (@media (max-height: 560px));
+/* 星蝕回廊：依「回廊根節點的實際寬度」切換版面，而不是視窗寬度（左側欄、嵌入殼會佔掉寬度）。
+   data-ecl 由 parts.tsx 的 useEclRootRef 依容器寬度寫入，例如 "sm md lg"；ecl-md: 等於「容器 ≥ 760px」。 */
+@custom-variant ecl-sm (:where([data-ecl~="sm"]) &);
+@custom-variant ecl-md (:where([data-ecl~="md"]) &);
+@custom-variant ecl-lg (:where([data-ecl~="lg"]) &);
+@custom-variant ecl-xl (:where([data-ecl~="xl"]) &);
 
 @theme {
   --font-sans: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Inter", "PingFang TC", "Microsoft JhengHei UI", "Noto Sans TC", "Noto Sans Runic", "Noto Sans Symbols", "Segoe UI Historic", "Segoe UI Symbol", "Apple Symbols", ui-sans-serif, system-ui, sans-serif;

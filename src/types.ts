@@ -140,6 +140,8 @@ export interface BattleEffect {
   binding?: "SELF" | "OPPONENT" | string;
   statusCategory?: string;
   statChanges?: any[];
+  /** 轉化產生的異常帶明確回合數：同名合併時以此為準，不再相加（2026-10-28）。 */
+  durationFixed?: boolean;
 }
 
 export interface StatusEffect {
@@ -218,6 +220,7 @@ export interface Elf {
   openingSpDef?: number; // 戰鬥開始時的基礎面板特防值快照
   currentHp: number; // active HP during battle
   path?: string; // image path or name
+  skinId?: string; // 純外觀皮膚；與自訂圖片及戰鬥定義分開保存
   seerId?: number | string; // 賽爾號官方寵物ID（頭像/全身圖對應；未填則依名稱自動比對）
   description?: string; // text description that can be adjusted
   rawPrompt?: string; // 原始文本 (不經結構化拆解的真實用戶輸入文本)
@@ -271,7 +274,7 @@ export interface Elf {
     exclusiveTrait?: { name: string; description: string; mechanics?: Record<string, any>; kit?: KitEntry[]; effectMode?: EffectExecutionMode }; // 專屬特質
     /** 同一精靈擁有複數專屬特質時使用；舊資料仍可沿用 exclusiveTrait。 */
     exclusiveTraits?: Array<{ name: string; description: string; mechanics?: Record<string, any>; kit?: KitEntry[]; effectMode?: EffectExecutionMode }>;
-    alienTrait?: { name: string; description: string; kit?: KitEntry[]; effectMode?: EffectExecutionMode }; // 異能特質
+    alienTrait?: { name: string; description: string; kit?: KitEntry[]; effectMode?: EffectExecutionMode }; // 異能
     generalTrait?: { name: string; description: string; kit?: KitEntry[]; effectMode?: EffectExecutionMode }; // 通用特性
   };
   isConcealed?: boolean; // 隱匿：印記狀態 (立繪黑影，技能顯示為未知技能)

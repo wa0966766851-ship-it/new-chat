@@ -3,6 +3,7 @@ import { Search, X, Check } from "lucide-react";
 import { SUIT_CATALOG } from "../../data/suitsAndEyewears";
 import { EYEWEAR_CATALOG } from "../../data/suitsAndEyewears";
 import { TITLE_CATALOG } from "../../data/titles";
+import { suitPortraitUrls } from "../../data/suitArt";
 import { ChainImage } from "../../components/SeerImages";
 import { haptic } from "../haptics";
 import { useDragScroll } from "../../components/shared/useDragScroll";
@@ -34,10 +35,7 @@ export interface RailItem {
   stats?: string;
 }
 
-/** 立繪路徑：先找 elf-art，再找 seer/suit；都沒有就退回徽記 */
-export function suitPortraitUrls(id: string): string[] {
-  return [`/elf-art/suit_${id}.png`, `/seer/suit/${id}.png`];
-}
+export { suitPortraitUrls };
 
 export function SuitRail({
   kind, equippedId, onEquip,

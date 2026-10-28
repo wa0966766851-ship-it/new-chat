@@ -1,3 +1,4 @@
+import {markCapability} from './markCapabilities';
 import type { Elf } from '../types';
 import type { BattleState } from '../components/BattleManager';
 import type { DamageComputation } from '../effects/types';
@@ -9,7 +10,7 @@ import { activeConstraints } from './timedConstraints';
 import { isNonTrueDamageType, isSkillDamageType, normalizeDamageType } from './damageSemantics';
 import {markDamageReductionRate} from './markDamageReduction';
 
-export interface ReductionPolicy { override?: number; attenuation: number }
+export interface ReductionPolicy { override?: number; attenuation: number; skillDefenseDisabled?:boolean }
 type ReductionComp = Pick<DamageComputation, 'damageCategory' | 'multiplier' | 'decreasePercent' | 'pure'> & { trackReduction?:boolean; multiplierReductionProduct?:number; incomingDamageImmunity?:boolean; reductionPolicy?: ReductionPolicy; reductionSources?: Record<string, number> };
 
 /** 僅改寫「持有者受到傷害降低」；不改造成傷害降低、抵擋、攻擊值、上限或護盾。 */
@@ -22,11 +23,12 @@ export function reductionPolicy(state: Pick<BattleState, 'p1Timers' | 'p2Timers'
   if (isSkillDamageType(type)) for (const mark of state[`${side}Marks`] || []) {
     if (mark.id === 'blk_千秋一淚' && markAppliesToElf(mark, elf)) attenuation *= 0.5 ** Math.floor(Math.max(0, mark.count) / 2);
   }
-  return { override: overrides.length ? Math.max(...overrides) / 100 : undefined, attenuation };
+  return { skillDefenseDisabled:isSkillDamageType(type)&&!!markCapability(elf,"skillDefenseDisabled",state[`${side}Marks`]), override: overrides.length ? Math.max(...overrides) / 100 : undefined, attenuation };
 }
 
 export function effectiveReduction(comp: ReductionComp, rate: number, incoming = true): number {
   if (comp.pure || normalizeDamageType({ damageType: comp.damageCategory }) === 'true') return 0;
+  if(incoming&&rate>=1&&comp.reductionPolicy?.skillDefenseDisabled)return 0;
   if (!Number.isFinite(rate) || rate <= 0) return 0; // 無減傷觸發時不能憑空生出99%。
   return Math.min(1, Math.max(0, (incoming ? comp.reductionPolicy?.override ?? rate : rate)
     * (incoming ? comp.reductionPolicy?.attenuation ?? 1 : 1)));

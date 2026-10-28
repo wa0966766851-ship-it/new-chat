@@ -4,7 +4,7 @@ import { bindBag } from './bagTargets';
 /** 只取外觀；精靈戰鬥身分、體力與技能持有者均保持原本精靈。 */
 export function appearanceElf<T extends Pick<Elf, 'name' | 'id'>>(elf: T & { illusion?: Elf['illusion'] }): T {
   return elf.illusion ? { ...elf, name: elf.illusion.target.name,
-    seerId: elf.illusion.target.seerId, path: elf.illusion.target.path,
+    seerId: elf.illusion.target.seerId, path: elf.illusion.target.path, skinId: elf.illusion.target.skinId,
     height: elf.illusion.target.height, weight: elf.illusion.target.weight,
     artPresentation: elf.illusion.target.artPresentation, illusion: undefined } : elf;
 }

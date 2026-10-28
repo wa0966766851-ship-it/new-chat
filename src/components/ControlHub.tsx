@@ -3,7 +3,7 @@ import { normalizePlaylist, readControlSetting, resolveControlSection, type Cont
 import { Volume2, VolumeX, Settings2 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { useSceneResources, saveSceneResources, DEFAULT_SCENE_RESOURCES, SceneResourceMap } from "../utils/resourceManager";
-import { readAnimationSettings } from "../battle/animationSettings";
+import { readAnimationSettings,BATTLE_ANIMATION_EVENT } from "../battle/animationSettings";
 import { parseMusicSource, musicWatchUrl } from "../utils/musicSource";
 import { useMusicPlayer } from "./useMusicPlayer";
 import { PageErrorBoundary } from "./PageErrorBoundary";
@@ -112,6 +112,7 @@ function useControlHubModel(currentScene: string, canApplyUpdates: boolean) {
   const [tacticalPanel, setTacticalPanel] = useState(() => readControlSetting('tacticalPanel', DEFAULT_TACTICAL_LAYOUT, validPanel));
   const [hudOpacity, setHudOpacity] = useState(() => parseFloat(localStorage.getItem('hudOpacity') || "0.95"));
   const [animationSettings, setAnimationSettings] = useState(() => readAnimationSettings());
+  useEffect(()=>{const refresh=()=>setAnimationSettings(readAnimationSettings());window.addEventListener(BATTLE_ANIMATION_EVENT,refresh);window.addEventListener('storage',refresh);return()=>{window.removeEventListener(BATTLE_ANIMATION_EVENT,refresh);window.removeEventListener('storage',refresh);};},[]);
   const [customLayout, setCustomLayout] = useState(() => { try { return localStorage.getItem('battleCustomLayout') === '1'; } catch { return false; } });
 
   useEffect(() => {

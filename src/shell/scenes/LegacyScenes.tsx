@@ -23,7 +23,7 @@ export function LegacyScenes({ b, workspace = false }: { b: ShellBridge; workspa
   const workspaceEditor = workspace && b.view === 'custom' && !!(b.editingElf || b.editorTab);
   const loading = b.view === "battle"
     ? <BattleLoadingScreen p1Team={b.p1Team} p2Team={b.p2Team}
-        p1StarterId={b.p1StarterId} p2StarterId={b.p2StarterId} format={b.battleFormat} />
+        p1StarterId={b.p1StarterId} p2StarterId={b.p2StarterId} format={b.battleFormat} battleMode={b.battleMode} />
     : <TechLoadingScreen />;
 
   return (

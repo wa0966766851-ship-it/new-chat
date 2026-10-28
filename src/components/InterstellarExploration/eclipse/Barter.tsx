@@ -56,7 +56,7 @@ export default function Barter({ run, pool, dispatch }: { run: E.RunV2; pool: El
         <h3 className="ecl-title text-xl ecl-gilt" title="以物易物：遺物、藥劑、賽爾豆、星晶、招募令互換。每家商店限次，每次兌換都會吃虧，換來換去只會變少。">失與得</h3>
         <span className="text-xs ecl-muted tabular-nums" title="本店剩餘兌換次數（N 等級越高越少）">剩餘 {left} 次</span>
       </div>
-      <div className="grid grid-cols-[minmax(0,1fr)] md:grid-cols-2 gap-3">
+      <div className="grid grid-cols-[minmax(0,1fr)] ecl-md:grid-cols-2 gap-3">
         {recipes.map(r => <Row key={r.id} run={run} r={r} pool={pool} dispatch={dispatch} />)}
       </div>
     </section>

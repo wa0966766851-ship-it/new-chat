@@ -4,6 +4,7 @@ import { JSDOM } from 'jsdom';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { auditEffectVisualization } from '../scripts/lib/effectVisualizationAudit';
 import { DEFAULT_ELVES } from '../src/data/defaultElvesLoaded';
+import { effectDefinitionEntries } from '../src/battle/effectSources';
 import { EffectParameterTree } from '../src/components/EffectParameterTree';
 import { effectValueLeaves, replaceEffectValue, type EffectValuePath } from '../src/effects/effectVisualTree';
 import { validateKit } from '../src/effects/kitValidation';
@@ -12,7 +13,12 @@ import { buildEntryBlock, createKitBlockParser, defineCustomBlocks } from '../sr
 import { parseElfBlueprint } from '../src/utils/elfBlueprint';
 
 const report = auditEffectVisualization(DEFAULT_ELVES);
-assert.equal(report.summary.definitions,397);
+// 期望定義數不寫死：每隻精靈的魂印／特質入口 + 去重後的技能（含預備技能），由來源資料逐隻累加；稽核報告必須逐一涵蓋。
+const expectedDefinitions = DEFAULT_ELVES.reduce((n, elf) => n + effectDefinitionEntries(elf).length
+  + [...elf.skills, ...(elf.skillPool || [])].filter((s, i, all) => all.findIndex(t => t.name === s.name && t.description === s.description) === i).length, 0);
+assert.ok(expectedDefinitions >= 397, '定義數不得少於上次確認的 397');
+assert.equal(report.summary.definitions, expectedDefinitions);
+assert.equal(report.summary.elves, DEFAULT_ELVES.length);
 assert.equal(report.summary.allFieldsVisible,true);
 assert.equal(report.summary.incompleteDefinitions,0);
 assert.ok(report.summary.parameterFields>30000);

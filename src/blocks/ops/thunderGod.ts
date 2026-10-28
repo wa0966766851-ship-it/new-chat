@@ -41,6 +41,7 @@ export const ELF_TRAIT_FLAGS: Record<string, 'boolean' | 'turns'> = {
   suppressAbnormalSideEffectsWhenParalyzed: 'boolean',
   // battle/ppExemptions：麻痺回合數不小於 N 時使用技能不受 PP 限制。
   ppLimitIgnoredWhenParalyzedTurns: 'turns',
+  ppLimitIgnoredRequiresNonFull: 'boolean',
   // 攻擊技能以雙攻值總和計算（engine 於行動前寫 blkAtkSpatkSum）。
   useAtkSpAtkSumForAttacks: 'boolean',
 };
@@ -240,14 +241,14 @@ export function thunderGodOperations(deps: { liveElf: (ctx: BattleEventContext, 
     },
     heal_share_bench: (ctx: BattleEventContext, p: any): boolean => {
       const self = liveElf(ctx, ctx.actor);
-      const actual = Math.min(p.amount, Math.max(0, self.maxHp - self.currentHp));
-      ctx.applyHeal(ctx.actor, p.amount);
-      if (actual <= 0) return true;
       const activeId = idOf(self);
-      for (const ally of ctx.getFullTeam(ctx.actor)) {
-        if (idOf(ally) === activeId || ally.currentHp <= 0 || ally.isVanished) continue;
-        ctx.updateAnyElf(ctx.actor, idOf(ally), { currentHp: Math.min(ally.maxHp, ally.currentHp + actual) });
-      }
+      ctx.applyHeal(ctx.actor,p.amount,{minimum:p.amount,onSettled:r=>{
+        if(r.hpGained<=0)return;
+        for(const ally of ctx.getFullTeam(ctx.actor)){
+          if(idOf(ally)===activeId||ally.currentHp<=0||ally.isVanished)continue;
+          ctx.applyHealToElf?.(ctx.actor,idOf(ally),r.hpGained);
+        }
+      }});
       return true;
     },
     alien_entry_cost: (ctx: BattleEventContext, p: any): boolean => {

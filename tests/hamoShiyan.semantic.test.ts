@@ -8,7 +8,7 @@ import { addTimer, consumeUse, clearTurnEffects } from '../src/battle/timers';
 import { setMark, markAppliesToElf } from '../src/battle/marks';
 import { settlementReceipt } from '../src/battle/settlementReceipt';
 import { EffectTiming as E } from '../src/effects/types';
-import { handleHamoSoulMark, hamoRoundRecovery, HAMO_ON_INVALID, HAMO_SKILL_TRANSFORMS } from '../src/effects/elves/hamo/registry';
+import { hamoRoundRecovery, HAMO_ON_INVALID, HAMO_SKILL_TRANSFORMS } from '../src/effects/elves/hamo/registry';
 import { handleShiyanSoulMark, SHIYAN_SKILLS, SHIYAN_SKILL_TRANSFORMS } from '../src/effects/elves/wuxu-shiyan/registry';
 import { MIGRATED_HAMO_LIN_SOUL_KIT } from '../src/data/migratedHamoLinSoulKit';
 import { runNewElfLifecycle } from '../src/effects/newElfLifecycle';

@@ -55,7 +55,7 @@ const nativeZeroPpExempt = (elf: Elf, sk: Skill, opp?: Elf | null): boolean => {
   if ((elf.ppLimitIgnoredWhenParalyzedTurns || 0) > 0) {
     const st = getStatuses(elf);
     const turns = Math.max(st["麻痺"] || 0, st["麻痹"] || 0, st.paralyzed || 0);
-    if (turns >= (elf.ppLimitIgnoredWhenParalyzedTurns || 0)) return true;
+    if (turns >= (elf.ppLimitIgnoredWhenParalyzedTurns || 0) && (!(elf as any).ppLimitIgnoredRequiresNonFull || elf.currentHp < elf.maxHp)) return true;
   }
 
   // 通用：技能本身被效果標記為「不受PP值限制」（例如英雄之耀達到3層）

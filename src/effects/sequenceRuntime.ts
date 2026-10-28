@@ -27,8 +27,8 @@ export function runEffectSequence(clause: Clause, ctx: BattleEventContext & {eff
   if(ctx.effectNode==='before_damage'&&!eventTriggers(ctx,EffectTiming.BEFORE_DAMAGE,{damageComp:ctx.damageComp}).includes(clause.trig))return;
   if(ctx.effectNode==='on_damaged'&&!eventTriggers(ctx,EffectTiming.ON_DAMAGED,{targetSide:ctx.actor,damageType:ctx.damageType,typedSkill:ctx.typedSkill}).includes(clause.trig))return;
   const category=ctx.skill?.category;
-  if(/(?:self|opp)(?:_after)?_attack$/.test(clause.trig)&&(!category||category==='屬性'))return;
-  if(/(?:self|opp)(?:_after)?_status$/.test(clause.trig)&&category!=='屬性')return;
+  if(/(?:self|opp)(?:_after|_used|_before)?_attack$/.test(clause.trig)&&(!category||category==='屬性'))return;
+  if(/(?:self|opp)(?:_after|_used|_before)?_status$/.test(clause.trig)&&category!=='屬性')return;
   if(clause.trig==='self_after_physical'&&category!=='物理')return;
   if(clause.trig==='self_after_special'&&category!=='特殊')return;
   if(ctx.effectNode==='passive_always'&&!ctx.damageComp)return;
