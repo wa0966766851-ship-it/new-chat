@@ -783,6 +783,22 @@ export function computeHitChance(actor: any, target: any, skill: any, getStatuse
     const st = getStatuses(actor) || {};
     if (st["混亂"]) base -= 0.8;   // 混亂：攻擊技能初始命中率降低80%（減法）
     if (st["易燃"]) base -= 0.3;   // 易燃：攻擊技能初始命中率降低30%（減法）
+    // 失明（2026-10-29）：SPECIAL_BUFF 的 missChance / blockSureHitDamage 原本無人讀取，
+    // 導致失明只有圖示沒有實際效果。此處以「額外丟失機率」形式併入命中率。
+    // 通用：任何狀態的 accuracyMultiplier（乘法）與 missChance（減法）都生效。
+    // 混亂／易燃 已在上面以減法處理，這裡只補「其他狀態」的通用參數，避免重複計算。
+    for (const stName of Object.keys(st)) {
+      if (!(Number(st[stName]) > 0)) continue;
+      if (stName === '混亂' || stName === '易燃') continue;
+      const sp = StatusRegistry[stName]?.mechanics?.find(m => m.type === 'SPECIAL_BUFF')?.params;
+      if (!sp) continue;
+      if (typeof sp.accuracyMultiplier === 'number' && sp.accuracyMultiplier >= 0 && sp.accuracyMultiplier < 1) {
+        base *= sp.accuracyMultiplier;
+      }
+      if (typeof sp.missChance === 'number' && sp.missChance > 0) {
+        base -= sp.missChance;
+      }
+    }
   }
   const stage = Math.max(-6, Math.min(6, skillStageView(actor, skill, 'accuracy')));
   const mult = getStatMultiplier(stage, true); // 命中等級（下降採使用者規則表）

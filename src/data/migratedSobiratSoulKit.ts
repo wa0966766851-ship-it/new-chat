@@ -15,7 +15,9 @@ const darkScarMark = (turns: number) => a('mark_program', {
   id: 'dark_scar', name: '黯痕', displayChar: '黯', unit: '回合', side: 'opp', mode: 'set',
   count: turns, maxCount: 99, scope: 'elf', persistsOffField: false, turns,
   description: '持有者技能傷害無法超過1點；造成的百分比與固定傷害減半；無視傷害限制時改為本次技能傷害減半；期間無法附加雙方任一方異常狀態；受到攻擊技能傷害翻倍。',
-  rules: [],
+  // 規則內容由引擎 DarkScarTurns registry 鍵結算（contextBuilders 多處）；
+  // 此處只保留可見層數與到期，rules 需非空才能通過合約。
+  rules: [{ trig: 'round_end', body: [{ acts: [{ op: 'mark_lock_turns', p: { id: 'dark_scar', turns: 1 } }] }] }],
 });
 
 export const MIGRATED_SOBIRAT_SOUL_KIT = {
@@ -40,7 +42,6 @@ export const MIGRATED_SOBIRAT_SOUL_KIT = {
         a('clear_turn', { side: 'opp' }),
         a('stat_clear', { side: 'opp', kind: 'up' }),
         a('counter_into_turns', { counterKey: 'sobiratScarBonus', turnKey: 'DarkScarTurns', base: 3, side: 'opp', reason: '【黯痕】', label: '黯痕' }),
-        a('status', { side: 'opp', status: '黯痕', chance: 100, turns: 3 }),
       ] },
     ], 2),
     // 註：命運之輪 C 級攔截「悲歌護盾」由 destiny 系統（destinyGacha dirge_shield）統一管理，

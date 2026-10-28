@@ -23,8 +23,6 @@ const CUSTOM_STATUS_ICONS: Record<string, string> = {
   窒息: "/status-icons/窒息.png",
   平靜: "/status-icons/平靜.png",
   入魔: "/status-icons/入魔.png",
-  // 黯痕無官方圖示：以專屬向量素材補上（僅呈現，不改狀態規則）。
-  黯痕: "/status-icons/黯痕.svg",
 };
 // User-provided battle UI artwork; these are intentionally not SeerAPI buff ids.
 const CUSTOM_BUFF_ICONS: Record<string, string> = {

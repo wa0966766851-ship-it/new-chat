@@ -780,6 +780,31 @@ Object.assign(fCtx as any, { fatalDamage: effectiveAmount, fatalIsDamage: true }
               }
             }
 
+            // 2026-10-29：易燃 transformOnFire（原本參數只寫在 statusRegistry，引擎完全沒讀取端）。
+            // 受到火系攻擊技能命中時，把「易燃」轉化為指定狀態（預設燒傷）。
+            const fireHitElem = (data as any)?.type || (data as any)?.elem || (data as any)?.skillType || (data as any)?.skill?.type;
+            if (dmg > 0 && typeof fireHitElem === 'string' && fireHitElem.includes('火')) {
+              const fireElf = syncStateRef.current[targetSide];
+              const fireEffects = [...(fireElf.effects || [])];
+              let fireTransformed = false;
+              for (let i = 0; i < fireEffects.length; i++) {
+                const fe = fireEffects[i];
+                const fEntry = StatusRegistry[fe.id];
+                const fParams = fEntry?.mechanics?.find(m => m.type === 'SPECIAL_BUFF')?.params;
+                const nextName = fParams?.transformOnFire;
+                if (!nextName) continue;
+                const nEntry = StatusRegistry[nextName];
+                fireEffects[i] = { id: nextName, name: nEntry?.name || nextName, duration: 3, isLateMover: false, stacks: 1 } as any;
+                fireTransformed = true;
+                dispatch({ type: 'ADD_LOG', side: targetSide, log: { turn: cur.turnNumber, text: `🔥 受到火系攻擊！【${fEntry?.name || fe.id}】轉化為【${nextName}】！`, type: "effect" } });
+              }
+              if (fireTransformed) {
+                const mergedFire = mergeSameStatus(fireEffects);
+                syncStateRef.current = { ...syncStateRef.current, [targetSide]: { ...fireElf, effects: mergedFire } };
+                dispatch({ type: 'UPDATE_ELF', side: targetSide, elf: { effects: mergedFire } });
+              }
+            }
+
 
             const statsUpdates: Partial<TurnDamageStats> = {
               hpChange: (currentStats.hpChange || 0) + (nextHp - hpBefore),

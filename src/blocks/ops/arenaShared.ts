@@ -53,7 +53,7 @@ export const ARENA12_ACTION_FIELDS: Record<string, readonly string[]> = {
   // 必定命中並強制執行命中效果（0 PP 使用時）。
   sure_hit_force: [],
   // 本回合所選技能 PP 歸零時無法行動（標記行動受阻）。
-  action_prevent_on_empty: ['kind'],
+  action_prevent_on_empty: ['kind', 'side'],
   // 免疫能力下降（回合類）。
   stat_drop_immune_turns: ['turns'],
   // 清除指定回合鍵（無為效果消耗後清旗標）。
@@ -103,6 +103,7 @@ export function arena12ActionIssue(op: string, p: any): string | null {
   if (op === 'stat_drop_immune_turns' && (!Number.isInteger(p?.turns) || p.turns < 1 || p.turns > 99)) return '能力下降免疫需1至99回合';
   if (op === 'turn_key_clear' && (typeof p?.key !== 'string' || !p.key)) return '回合鍵清除需明確鍵名';
   if (op === 'action_prevent_on_empty' && p.kind !== undefined && !['攻擊', '屬性'].includes(p.kind)) return '行動受阻需明確技能類型';
+  if (op === 'action_prevent_on_empty' && p.side !== undefined && !['self', 'opp'].includes(p.side)) return '行動受阻需指定自身或對手';
   return null;
 }
 
@@ -225,9 +226,14 @@ export function arenaSharedOperations(helpers: {
       return true;
     },
     // 所選技能 PP 歸零則無法行動（引擎既有 actionPreventedRound 讀取端）。
+    // 2026-10-29 修正：原本一律寫 setPlayerState，導致「對手所選技能 PP 歸零」記在自己身上，
+    // 對手實際仍可行動。改為依 p.side（預設 opp，即「讓對手無法行動」）寫到正確的一方。
     action_prevent_on_empty: (ctx: Ctx2, p: any): boolean => {
-      (ctx as any).setPlayerState?.('actionPreventedRound', ctx.roundNumber);
-      ctx.addLog?.('⛔ 所選技能 PP 為 0，無法行動！', 'effect');
+      const side = p.side === 'self' ? 'self' : 'opp';
+      const setter = side === 'opp' ? (ctx as any).setOpponentState : (ctx as any).setPlayerState;
+      setter?.call(ctx, 'actionPreventedRound', ctx.roundNumber);
+      const target = side === 'opp' ? (ctx as any).target?.name : ctx.self?.name;
+      ctx.addLog?.(`⛔ ${target ? '【' + target + '】' : ''}所選技能 PP 為 0，無法行動！`, 'effect');
       return true;
     },
     // 免疫能力下降（回合類）。
