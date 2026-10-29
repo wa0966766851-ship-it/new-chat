@@ -7,6 +7,7 @@ import { DestinyElfInstance, buildDestinyPool, pullFromDestinyPool, simulateAiBa
 import { motion, AnimatePresence } from "motion/react";
 import DestinyIntroRuleTable from "./DestinyIntroRuleTable";
 import { PaperDestinyBackdrop } from "./PaperDestinyBackdrop";
+import { ring as skRing, blade as skBlade } from "../design/sketchStroke";
 import { Sparkles, Shield, Swords, AlertCircle, RefreshCw, CheckCircle2, XCircle, ChevronRight, Crown, Zap, Flame, Trophy, HelpCircle, ArrowLeft, RotateCcw } from "lucide-react";
 
 interface DestinyWheelScreenProps {
@@ -281,7 +282,30 @@ export default function DestinyWheelScreen({
   };
 
   // 渲染稀有度邊框顏色
+  /**
+   * 2026-10-29：getRankStyle 支援紙本態。
+   * 紙本版不用霓虹漸層與光暈，改用「墨線邊框 + 紙底 + 手寫感標籤」，
+   * 配色沿用拾光行記的鈷藍／暖橘／墨藍。
+   */
   const getRankStyle = (rank: 'S' | 'A' | 'B' | 'C') => {
+    if (isPaperStyle) {
+      const paper = '#F2EDE4', ink = '#16307A', cobalt = '#1F4FD8', warm = '#E8622B', pale = '#7C9BE8';
+      switch (rank) {
+        case 'S':
+          return { border: '', badgeBg: '', glow: '', title: 'S級·真神',
+            paper: { frame: warm, badgeBg: warm, badgeText: paper, titleColor: warm } };
+        case 'A':
+          return { border: '', badgeBg: '', glow: '', title: 'A級·主力',
+            paper: { frame: cobalt, badgeBg: cobalt, badgeText: paper, titleColor: cobalt } };
+        case 'C':
+          return { border: '', badgeBg: '', glow: '', title: 'C級·攔截特化',
+            paper: { frame: ink, badgeBg: ink, badgeText: paper, titleColor: ink } };
+        case 'B':
+        default:
+          return { border: '', badgeBg: '', glow: '', title: 'B級·常規',
+            paper: { frame: pale, badgeBg: pale, badgeText: '#1a1a1a', titleColor: ink } };
+      }
+    }
     switch (rank) {
       case 'S':
         return {
@@ -462,11 +486,32 @@ export default function DestinyWheelScreen({
       {/* ================= 階段二：抽卡中動畫 ================= */}
       {phase === 'pulling' && (
         <div className="flex-1 flex flex-col items-center justify-center z-10">
-          <motion.div
-            animate={{ rotate: 360 }}
-            transition={{ repeat: Infinity, duration: 1, ease: "linear" }}
-            className="w-32 h-32 rounded-full border-4 border-t-amber-400 border-r-purple-500 border-b-indigo-500 border-l-emerald-400 mb-8 shadow-[0_0_40px_rgba(168,85,247,0.8)]"
-          />
+          {isPaperStyle ? (
+            /* 2026-10-29：紙本態用手繪圓盤（SVG，拾光行記的 sk.ring 筆法） */
+            <svg width={180} height={180} viewBox="-90 -90 180 180" className="mb-8" aria-hidden="true">
+              <circle cx={0} cy={0} r={82} fill="#F2EDE4" stroke="#7C9BE8" strokeWidth={1} strokeDasharray="4 6" />
+              <path d={skRing(0, 0, 76, 3301)} fill="none" stroke="#1F4FD8" strokeWidth={2.2} strokeLinecap="round">
+                <animateTransform attributeName="transform" type="rotate" from="0 0 0" to="360 0 0" dur="6s" repeatCount="indefinite" />
+              </path>
+              <path d={skRing(0, 0, 58, 7717)} fill="none" stroke="#16307A" strokeWidth={1.6} strokeLinecap="round">
+                <animateTransform attributeName="transform" type="rotate" from="360 0 0" to="0 0 0" dur="8s" repeatCount="indefinite" />
+              </path>
+              <path d={skRing(0, 0, 38, 9109)} fill="none" stroke="#7C9BE8" strokeWidth={1.3} strokeLinecap="round">
+                <animateTransform attributeName="transform" type="rotate" from="0 0 0" to="360 0 0" dur="4s" repeatCount="indefinite" />
+              </path>
+              {[0, 1, 2, 3, 4, 5].map(i => (
+                <path key={i} d={skBlade(26, 0, 14, 0, 3.5)} fill="#E8622B" opacity={0.78}
+                  transform={`rotate(${i * 60})`} />
+              ))}
+              <circle cx={0} cy={0} r={5} fill="#E8622B" />
+            </svg>
+          ) : (
+            <motion.div
+              animate={{ rotate: 360 }}
+              transition={{ repeat: Infinity, duration: 1, ease: "linear" }}
+              className="w-32 h-32 rounded-full border-4 border-t-amber-400 border-r-purple-500 border-b-indigo-500 border-l-emerald-400 mb-8 shadow-[0_0_40px_rgba(168,85,247,0.8)]"
+            />
+          )}
           <h3 className="text-2xl font-black bg-gradient-to-r from-amber-300 via-purple-300 to-white bg-clip-text text-transparent animate-pulse">
             🎡 命運之輪轉動中... 正在自全圖鑑抽獎卡池配置 S/A/B/C 階級卡！
           </h3>
@@ -524,10 +569,28 @@ export default function DestinyWheelScreen({
                       <div
                         key={elf.instanceId}
                         onClick={() => handleNextReveal(elf.instanceId)}
-                        className="aspect-[3/4] rounded-xl bg-gradient-to-tr from-slate-900 via-indigo-950 to-purple-950 border-2 border-dashed border-indigo-500/40 flex flex-col items-center justify-center cursor-pointer hover:border-amber-400 transition animate-pulse"
+                        className={`aspect-[3/4] flex flex-col items-center justify-center cursor-pointer transition ${
+                          isPaperStyle
+                            ? "rounded-[10px]"
+                            : "rounded-xl bg-gradient-to-tr from-slate-900 via-indigo-950 to-purple-950 border-2 border-dashed border-indigo-500/40 hover:border-amber-400 animate-pulse"
+                        }`}
+                        style={
+                          isPaperStyle
+                            ? {
+                                background: "#F2EDE4",
+                                border: "2px dashed #7C9BE8",
+                                boxShadow: "inset 0 0 0 1px rgba(22,48,122,0.06)",
+                              }
+                            : undefined
+                        }
                       >
-                        <span className="text-2xl mb-1">🎡</span>
-                        <span className="text-[10px] text-amber-300 font-bold">點擊翻開此牌</span>
+                        <span className="text-2xl mb-1" style={isPaperStyle ? { opacity: 0.55 } : undefined}>🎡</span>
+                        <span
+                          className="text-[10px] font-bold"
+                          style={isPaperStyle ? { color: "#16307A", letterSpacing: "0.05em" } : undefined}
+                        >
+                          {isPaperStyle ? "點擊翻牌" : "點擊翻開此牌"}
+                        </span>
                       </div>
                     );
                   }
@@ -535,22 +598,26 @@ export default function DestinyWheelScreen({
                   return (
                     <motion.div
                       key={elf.instanceId}
-                      initial={{ scale: 0.8, rotateY: 90 }}
-                      animate={{ scale: 1, rotateY: 0 }}
+                      initial={isPaperStyle ? { opacity: 0, y: 26, scale: 0.94 } : { scale: 0.8, rotateY: 90 }}
+                      animate={isPaperStyle ? { opacity: 1, y: 0, scale: 1 } : { scale: 1, rotateY: 0 }}
+                      transition={isPaperStyle ? { duration: 0.42, ease: [0.22, 1, 0.36, 1], delay: Math.min(0.36, (revealedIds.indexOf(elf.instanceId) >= 0 ? revealedIds.indexOf(elf.instanceId) : 0) * 0.055) } : undefined}
                       onClick={() => setInspectElf(elf)}
-                      className={`aspect-[3/4] rounded-xl bg-slate-950 border-2 ${style.border} p-2 flex flex-col justify-between relative overflow-hidden cursor-pointer hover:scale-105 transition group`}
+                      className={`aspect-[3/4] p-2 flex flex-col justify-between relative overflow-hidden cursor-pointer hover:scale-105 transition group ${isPaperStyle ? "rounded-[10px]" : "rounded-xl bg-slate-950 border-2 " + style.border}`}
+                      style={isPaperStyle ? { background: "#F2EDE4", border: `2px solid ${(style as any).paper?.frame ?? "#1F4FD8"}`, boxShadow: "0 2px 0 rgba(22,48,122,0.10)" } : undefined}
                     >
-                      <div className={`absolute top-0 left-0 right-0 text-[10px] text-center py-0.5 ${style.badgeBg}`}>
+                      <div
+                        className={`absolute top-0 left-0 right-0 text-[10px] text-center py-0.5 ${isPaperStyle ? "" : style.badgeBg}`}
+                        style={isPaperStyle ? { background: (style as any).paper?.badgeBg, color: (style as any).paper?.badgeText, letterSpacing: "0.08em", fontWeight: 700 } : undefined}
+                      >
                         {style.title}
                       </div>
-
                       <div className="flex-1 flex items-center justify-center my-4 overflow-hidden">
                         <ElfAvatar elf={elf} kind="body" className="max-w-full max-h-full object-contain group-hover:scale-110 transition duration-300" />
                       </div>
 
                       <div className="text-center z-10">
-                        <div className="text-xs font-bold text-white truncate">{elf.name}</div>
-                        <div className="text-[10px] text-slate-400 inline-flex items-center gap-0.5"><TypeIcon type={elf.type} size={12} showLabelWhenMissing={false} />{elf.type}</div>
+                        <div className={`text-xs font-bold truncate ${isPaperStyle ? "" : "text-white"}`} style={isPaperStyle ? { color: (style as any).paper?.titleColor } : undefined}>{elf.name}</div>
+                        <div className={`text-[10px] inline-flex items-center gap-0.5 ${isPaperStyle ? "" : "text-slate-400"}`} style={isPaperStyle ? { color: "#16307A", opacity: 0.75 } : undefined}><TypeIcon type={elf.type} size={12} showLabelWhenMissing={false} />{elf.type}</div>
                       </div>
 
                       {elf.destinyRank === 'C' && elf.interceptorEffect && !elf.name.includes("六界神王") && (
