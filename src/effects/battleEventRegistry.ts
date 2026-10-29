@@ -189,10 +189,10 @@ export const SOUL_MARK_MAPPING: Record<string, string> = {
   "5020": "handlePipiSoulMark",
   "皮皮": "handlePipiSoulMark",
   
-  "5021": "handleDimensionalSoulMark",
-  "治癒.龍魂再臨 次元龍": "handleDimensionalSoulMark",
-  "治癒·龍魂再臨 次元龍": "handleDimensionalSoulMark",
-  "次元龍": "handleDimensionalSoulMark",
+  // 2026-10-30：5021 次元龍魂印「龍」已由 MIGRATED_FINAL_DRAGON_SOUL_KIT 真 Kit 完整實作
+  // （含 snapshot_resource_rule 安裝詩章規則）。原本這裡還留著 handleDimensionalSoulMark 對應，
+  // 導致 effectRoute(definition, hasHandler=true) 回傳 registry，Kit 永遠不會執行 ——
+  // 詩章完全消失就是這個原因。移除對應後改走 kit 通道。
   
   "5022": "handleWuxuSoulMark",
   "1017": "handleWuxuSoulMark",
