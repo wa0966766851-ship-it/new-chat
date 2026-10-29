@@ -1010,22 +1010,16 @@ export default function StartScreen({
       result.push(createInstance(allElves[0]));
     }
     const activeLimit = customPick !== undefined ? customPick : (format === "solo_1v1" ? 1 : format === "peak_6v6" ? 6 : format === "peak_3v3" ? 3 : 6);
-    /**
-     * 2026-10-30：不再為了「Ban 位 + 3」自動把隊伍補到 10 隻。
-     *
-     * 原本 minNeeded = activeLimit + banCount + 3，預設 pickCount=6、banCount=1 → 10 隻，
-     * 於是 6 人隊伍會被硬塞 4 隻雜牌，並把 idx>=6 的全部標成「額外精靈」，
-     * 造成「怒濤滄嵐莫名變成額外精靈」這類顯示混亂。
-     *
-     * 現在：只保證不超過上限、且至少 1 隻；不足就照使用者選的隊伍直接開戰，
-     * 需要 Ban 位時由 BP 流程自己處理，不靠塞人。
-     */
-    const cap = Math.max(1, activeLimit);
-    // 使用者已選的隊伍優先，超額才截斷；不足不補。
-    result = result.slice(0, Math.max(cap, result.length));
+    const minNeeded = Math.max(activeLimit + banCount + 3, format === "solo_1v1" ? 1 : format === "peak_6v6" ? 12 : format === "peak_3v3" ? 8 : 6);
+    let i = 0;
+    while (result.length < minNeeded && allElves.length > 0) {
+      const source = allElves[i % allElves.length];
+      result.push(createInstance(source));
+      i++;
+    }
     result = result.map((e, idx) => ({
       ...e,
-      isExtra: idx >= cap
+      isExtra: idx >= activeLimit
     }));
     const st = result.find(e => e.battleId === defaultStarterId)?.battleId || result[0]?.battleId || "";
     return { team: result, starterId: st };
