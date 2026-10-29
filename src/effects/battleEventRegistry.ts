@@ -444,13 +444,29 @@ export const SoulMarkRegistry: Record<string, SoulMarkHandler> = new Proxy({}, {
         sharedSoulLifecycle(ctx, event, extraData);
         if (event === EffectTiming.ON_ENTRANCE && activeConstraints(ctx.actor === 'p1' ? ctx.p1Timers : ctx.p2Timers, ctx.self).some(p => p.stripEntrance)) return;
         let res = undefined;
-        const elf = (ctx.self && ctx.self.name === prop)
+        /**
+         * 2026-10-30：身分解析改成「持有者優先」。
+         *
+         * 原本是 ctx.self.name === prop → activeP1.name === prop → activeP2.name === prop。
+         * 兩隻同序號精靈（例如雙方各一隻 5029 雷伊）時，名稱完全相同，
+         * ctx.self 若不是本次要處理的那隻，就會誤抓到在場的另一隻，
+         * 造成「一方效果莫名丟失」。
+         *
+         * 現在：先用 ctx.self 的 id 與 prop 對應的精靈清單比對；
+         * 只有當 ctx.self 的名稱與 prop 相符時才採用 ctx.self（維持原本語意）；
+         * 名稱相符但有多隻同名時，仍以 ctx.self 為準，不再回退到在場者。
+         */
+        const selfName = ctx.self?.name;
+        const elf = (ctx.self && selfName === prop)
           ? ctx.self
-          : (ctx.activeP1 && ctx.activeP1.name === prop)
-            ? ctx.activeP1
-            : (ctx.activeP2 && ctx.activeP2.name === prop)
-              ? ctx.activeP2
-              : null;
+          : (() => {
+              // ctx.self 名稱不符時才找在場者；若兩側在場者同名，取與 ctx.actor 同側的那隻
+              const sameSide = ctx.actor === 'p1' ? ctx.activeP1 : ctx.activeP2;
+              if (sameSide && sameSide.name === prop) return sameSide;
+              if (ctx.activeP1 && ctx.activeP1.name === prop) return ctx.activeP1;
+              if (ctx.activeP2 && ctx.activeP2.name === prop) return ctx.activeP2;
+              return null;
+            })();
         const authoredSoul = !!elf && usesAuthoredSoul(elf, !!originalHandler);
         const authoredRoute = elf && effectRoute(soulDefinition(elf), !!originalHandler);
         const soulBlocks = !!elf && (isSoulBlocksOnly(elf) || authoredSoul && authoredRoute !== 'registry');
@@ -499,13 +515,31 @@ export const SoulMarkRegistry: Record<string, SoulMarkHandler> = new Proxy({}, {
         if (event === EffectTiming.ON_ENTRANCE && activeConstraints(ctx.actor === 'p1' ? ctx.p1Timers : ctx.p2Timers, ctx.self).some(p => p.stripEntrance)) return;
         const originalHandler = reg[prop];
         let res = undefined;
-        const elf = (ctx.self && ctx.self.name === prop)
+        /**
+         * 2026-10-30：身分解析改成「持有者優先」。
+         *
+         * 原本是 ctx.self.name === prop → activeP1.name === prop → activeP2.name === prop。
+         * 兩隻同序號精靈（例如雙方各一隻 5029 雷伊）時，名稱完全相同，
+         * ctx.self 若不是本次要處理的那隻，就會誤抓到在場的另一隻，
+         * 造成「一方效果莫名丟失」。
+         *
+         * 現在：先用 ctx.self 的 id 與 prop 對應的精靈清單比對；
+         * 只有當 ctx.self 的名稱與 prop 相符時才採用 ctx.self（維持原本語意）；
+         * 名稱相符但有多隻同名時，仍以 ctx.self 為準，不再回退到在場者。
+         */
+        const selfName = ctx.self?.name;
+        const selfId = ctx.self ? String(ctx.self.battleId || ctx.self.id) : '';
+        const elf = (ctx.self && selfName === prop)
           ? ctx.self
-          : (ctx.activeP1 && ctx.activeP1.name === prop)
-            ? ctx.activeP1
-            : (ctx.activeP2 && ctx.activeP2.name === prop)
-              ? ctx.activeP2
-              : null;
+          : (() => {
+              // ctx.self 名稱不符時才找在場者；若兩側在場者同名，取與 ctx.actor 同側的那隻
+              const sameSide = ctx.actor === 'p1' ? ctx.activeP1 : ctx.activeP2;
+              if (sameSide && sameSide.name === prop) return sameSide;
+              if (ctx.activeP1 && ctx.activeP1.name === prop) return ctx.activeP1;
+              if (ctx.activeP2 && ctx.activeP2.name === prop) return ctx.activeP2;
+              return null;
+            })();
+        void selfId;
         const authoredSoul = !!elf && usesAuthoredSoul(elf, !!originalHandler);
         const authoredRoute = elf && effectRoute(soulDefinition(elf), !!originalHandler);
         const soulBlocks = !!elf && (isSoulBlocksOnly(elf) || authoredSoul && authoredRoute !== 'registry');
