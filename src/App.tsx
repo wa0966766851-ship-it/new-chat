@@ -36,6 +36,22 @@ function AppContent() {
   const { mode: shellMode, toggle: toggleShell } = useShellMode();
 
   const [view, setView] = useState<AppView>("start");
+  /**
+   * 2026-10-29：記錄「進入 bag 之前在哪」。
+   * 背包已從主導航隱藏，只能從編成（custom）或大廳（start）進入；
+   * 原本返回一律回首頁，從編成進背包後按返回會跳過編成。
+   */
+  const previousViewRef = React.useRef<AppView>("start");
+  const navigate = React.useCallback((v: AppView) => {
+    setView(prev => {
+      if (v !== prev) previousViewRef.current = prev;
+      return v;
+    });
+  }, []);
+  const goBackFromBag = React.useCallback(() => {
+    const target = previousViewRef.current === "bag" ? "start" : previousViewRef.current;
+    setView(target);
+  }, []);
   const [isCompactLayout, setIsCompactLayout] = useState(() =>
     typeof window !== "undefined" && window.matchMedia("(max-width: 767px)").matches
   );
@@ -154,7 +170,7 @@ function AppContent() {
   const handleRestartBattle = () => setBattleKey(k => k + 1);
 
   const bridge: ShellBridge = {
-    view, setView,
+    view, setView: navigate, goBackFromBag,
     allElves, allElvesCombined, updateElf,
     handleStartBattle, battleMode, setBattleMode, battleFormat, setBattleFormat, battleKey, restartedRef, handleRestartBattle,
     isTransitioning,

@@ -146,7 +146,7 @@ export function AegisShell({ b, onSwitchShell }: { b: ShellBridge; onSwitchShell
           返回鈕改由該頁面內部渲染，避免和標題擠在一起。 */}
       {canGoBack && (
         <div className="shell-back-slot absolute left-2 z-40" style={{ top: "max(8px, env(safe-area-inset-top))" }}>
-          <AegisBackButton onBack={() => b.setView("start")} />
+          <AegisBackButton onBack={() => (b.view === "bag" && b.goBackFromBag ? b.goBackFromBag() : b.setView("start"))} />
         </div>
       )}
 
@@ -213,7 +213,7 @@ export function AegisShell({ b, onSwitchShell }: { b: ShellBridge; onSwitchShell
       {/* 直向：底部導航（戰鬥中隱藏，讓出戰場空間） */}
       {isVertical && b.view !== "battle" && (
         <BottomBar
-          items={railItems.slice(0, 5)}
+          items={railItems}
           activeId={activeId}
           onSelect={go}
         />

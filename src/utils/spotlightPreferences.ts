@@ -9,3 +9,15 @@ export function saveSpotlightTextSize(value: number): number {
   try { localStorage.setItem(SPOTLIGHT_TEXT_SIZE_KEY, String(size)); } catch { /* 私密瀏覽仍可調整本次字級 */ }
   return size;
 }
+
+const FIELDS_KEY = 'seer_spotlight_field_sizes';
+export function readSpotlightFieldSizes(): Record<string, number> {
+  try {
+    const value = JSON.parse(localStorage.getItem(FIELDS_KEY) || '{}');
+    if (!value || typeof value !== 'object' || Array.isArray(value)) return {};
+    return Object.fromEntries(Object.entries(value).filter(([,v])=>typeof v==='number' && Number.isFinite(v)).map(([k,v])=>[k,clamp(v as number)]));
+  } catch { return {}; }
+}
+export function saveSpotlightFieldSizes(sizes: Record<string, number>): void {
+  try { localStorage.setItem(FIELDS_KEY, JSON.stringify(sizes)); } catch { /* 本次仍可閱讀 */ }
+}

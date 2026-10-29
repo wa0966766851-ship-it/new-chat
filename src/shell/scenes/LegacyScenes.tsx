@@ -152,10 +152,10 @@ export function LegacyScenes({ b, workspace = false }: { b: ShellBridge; workspa
             背包管理已整合在首頁的隊伍格（出戰 6 ＋ 待命 6）。
             <button
               type="button"
-              onClick={() => b.setView("start")}
+              onClick={() => (b.goBackFromBag ? b.goBackFromBag() : b.setView("start"))}
               className="ml-2 px-3 py-1 rounded bg-blue-600 text-white text-xs"
             >
-              回首頁
+              返回上一頁
             </button>
           </div>
         )}

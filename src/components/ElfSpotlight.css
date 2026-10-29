@@ -25,3 +25,13 @@
 .spot-picker>.space-y-3{flex-shrink:0}.spot-choices{min-height:80px;overflow:auto}.spot-choices span{min-width:0;overflow-wrap:anywhere}
 @media(min-width:1001px){.spot-prose,.spot-skill-list{font-size:calc(clamp(10.5px,1.24vh,12px) * var(--spot-text-scale,1))}.spot-skill h3{font-size:calc(12px * var(--spot-text-scale,1))}}
 @media(max-width:600px){.spot-top{flex-wrap:wrap}.spot-actions{width:100%;justify-content:flex-start}.spot-prose,.spot-skill-list{font-size:calc(13px * var(--spot-text-scale,1))}.spot-picker{max-height:94dvh;padding:14px}.spot-picker-backdrop{padding:10px}}
+
+.spot-prose article,.spot-skill{font-size:calc(clamp(11px,1.34vh,14px) * var(--spot-text-scale,1))}
+.spot-field-controls{display:flex;flex-wrap:wrap;align-items:center;gap:5px;padding:6px 0;margin-bottom:8px;border-bottom:1px dashed #ffffff25;font-size:11px!important;color:#a6bdd1;flex-shrink:0}
+.spot-field-controls>span{margin-right:auto}.spot-field-controls button{padding:3px 7px;font-size:11px}.spot-field-controls output{font-size:11px;font-variant-numeric:tabular-nums}
+.spot-identity .spot-name h2{font-size:calc(clamp(20px,2vw,30px) * var(--spot-text-scale,1))}
+.spot-identity .spot-name>span,.spot-stats h3{font-size:calc(12px * var(--spot-text-scale,1))}
+.spot-stats>div>div{font-size:calc(11px * var(--spot-text-scale,1))}.spot-stats strong{font-size:calc(14px * var(--spot-text-scale,1))}
+@media(min-width:1001px){.spot-prose article,.spot-skill{font-size:calc(clamp(10.5px,1.24vh,12px) * var(--spot-text-scale,1))}}
+@media(max-width:1000px){.spot-identity>.spot-field-controls{grid-column:1/-1}.spot-identity:has(>.spot-field-controls) .spot-art{grid-row:2/4}.spot-identity:has(>.spot-field-controls) .spot-stats{grid-row:2/4}}
+@media(max-width:600px){.spot-prose article,.spot-skill{font-size:calc(13px * var(--spot-text-scale,1))}.spot-identity:has(>.spot-field-controls) .spot-stats{grid-row:3}}

@@ -8,8 +8,31 @@ import {selectedElfSkin} from '../data/elfSkins';
 import { IMAGE_COPY_EVENT } from "./ImageCopyMenu";
 import { shouldMirrorBattleSprite, hasRenderableElfImagePath, getSeerIndex, loadSeerIndex, onSeerIndexLoaded, petImageUrls, splitTypes, typeIconUrls, isNoneType } from "../battle/seerAssets";
 
-// 已知失敗的網址（避免重複請求）
-const failed = new Set<string>();
+/**
+ * 已知失敗的網址（避免重複請求）。
+ *
+ * 2026-10-29 修正：原本這是模組層級的永久 Set —— 一旦某張圖在載入途中失敗
+ * （例如 dev server 剛啟動、Vite 還在轉檔、或網路一瞬中斷），該網址就永遠
+ * 不再重試，造成「精靈圖片經常無法顯示」，即使檔案其實存在。
+ *
+ * 改成「有時效的失敗紀錄」：同一網址失敗後 8 秒內不再重試，之後自動放行。
+ * 另外在視窗重新聚焦（visibilitychange / focus）時整批清空，讓切回頁面時重試。
+ */
+const failed = new Map<string, number>();
+const FAIL_RETRY_MS = 8000;
+function hasFailed(url: string): boolean {
+  const at = failed.get(url);
+  if (at === undefined) return false;
+  if (Date.now() - at < FAIL_RETRY_MS) return true;
+  failed.delete(url);
+  return false;
+}
+function markFailed(url: string): void { failed.set(url, Date.now()); }
+if (typeof window !== "undefined") {
+  const clear = () => failed.clear();
+  window.addEventListener("focus", clear);
+  document.addEventListener("visibilitychange", () => { if (!document.hidden) clear(); });
+}
 
 function useSeerIndexReady() {
   const [ready, setReady] = useState(!!getSeerIndex());
@@ -27,7 +50,7 @@ export function ChainImage({ urls, fallback, className, style, alt, sourceStyle 
   sourceStyle?: (src: string) => React.CSSProperties; urls: string[]; fallback?: React.ReactNode; className?: string; style?: React.CSSProperties; alt?: string;
 }) {
   const [, refresh] = useState(0);
-  const src = urls.find(u => !failed.has(u));
+  const src = urls.find(u => !hasFailed(u));
   if (!src) return <>{fallback ?? null}</>;
   return (
     <img
@@ -42,7 +65,7 @@ export function ChainImage({ urls, fallback, className, style, alt, sourceStyle 
           src: event.currentTarget.src, name: alt || "圖片", x: event.clientX, y: event.clientY,
         } }));
       }}
-      onError={() => { failed.add(src); refresh(n => n + 1); }}
+      onError={() => { markFailed(src); refresh(n => n + 1); }}
     />
   );
 }

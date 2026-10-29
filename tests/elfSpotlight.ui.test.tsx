@@ -18,13 +18,23 @@ try{
  assert.equal(document.querySelectorAll('.spot-identity').length,1);
  assert.ok(document.querySelector('.spot-name h2')?.textContent?.includes('次元龍'));
  for(const s of elves.find((e:any)=>e.id==='5021').skills)assert.ok(document.querySelector('.spot-skills')?.textContent?.includes(s.description));
- assert.equal(document.querySelector('output')?.textContent,'100%');
- await click('A＋');assert.equal(document.querySelector('output')?.textContent,'110%');
+ assert.equal(document.querySelector('.spot-text-controls'),null,'預設隱藏字級控制');
+ await click('字級設定');
+ assert.equal(document.querySelector('.spot-text-controls output')?.textContent,'100%');
+ await click('放大介紹文字');assert.equal(document.querySelector('.spot-text-controls output')?.textContent,'110%');
  assert.equal((document.querySelector('.elf-spotlight') as HTMLElement).style.getPropertyValue('--spot-text-scale'),'1.1');
- for(let n=0;n<8;n++)await click('A＋');assert.equal(document.querySelector('output')?.textContent,'160%');
+ for(let n=0;n<8;n++)await click('放大介紹文字');assert.equal(document.querySelector('.spot-text-controls output')?.textContent,'160%');
  assert.equal((document.querySelector('[aria-label="放大介紹文字"]') as HTMLButtonElement).disabled,true);
  assert.equal(localStorage.getItem('seer_spotlight_text_size'),'160');
  await click('重設字級');
+ const firstSkill=document.querySelector<HTMLElement>('.spot-skill')!;
+ const originalSecond=document.querySelectorAll<HTMLElement>('.spot-skill')[1].style.getPropertyValue('--spot-text-scale');
+ await click('放大'+firstSkill.querySelector('h3')!.textContent+'文字');
+ assert.equal(firstSkill.style.getPropertyValue('--spot-text-scale'),'1.1');
+ assert.equal(document.querySelectorAll<HTMLElement>('.spot-skill')[1].style.getPropertyValue('--spot-text-scale'),originalSecond,'每招獨立字級');
+ assert.equal(document.querySelector('.spot-traits')?.getAttribute('style')?.includes('1.1'),false,'魂印未被技能調整影響');
+ await click('字級設定');assert.equal(document.querySelector('.spot-field-controls'),null);
+
  await click('替換展示精靈');assert.equal(document.activeElement,document.querySelector('.spot-picker input'));
  const search=document.querySelector<HTMLInputElement>('.spot-picker input[aria-label="搜尋精靈"]')!;
  const enterQuery=async(value:string)=>act(async()=>{Object.getOwnPropertyDescriptor(dom.window.HTMLInputElement.prototype,'value')!.set!.call(search,value);search.dispatchEvent(new dom.window.Event('input',{bubbles:true}));});

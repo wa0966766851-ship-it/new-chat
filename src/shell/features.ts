@@ -135,10 +135,11 @@ export const SHELL_FEATURES: readonly ShellFeature[] = [
     short: "效能",
     kind: "overlay",
     group: "system",
-    // 2026-10-23 核對：兩殼目前都沒有實體入口（幽靈條目）。
-    // 保留登記以免 parity 測試變動，等效能面板實作後再接。
-    legacy: false,
-    aegis: { status: "planned", phase: 7 },
+    // 2026-10-29 核對：入口在控制中心「效能診斷」→「開啟本機效能量測」，
+    // 派發 window 事件 open-performance-probe，由 App.tsx 監聽開啟。
+    // 兩殼共用同一個 ControlHub，因此 legacy / aegis 都算已接通。
+    legacy: true,
+    aegis: { status: "delegated" },
   },
 ] as const;
 

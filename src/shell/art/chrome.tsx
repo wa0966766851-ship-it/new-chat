@@ -1,5 +1,5 @@
 import React from "react";
-import { Settings, BookOpen, ScrollText, Wifi, ChevronDown } from "lucide-react";
+import { Settings, BookOpen, ScrollText, Wifi, ChevronDown, MoreHorizontal } from "lucide-react";
 
 /**
  * 手遊外殼元件 — 頂部列與側邊導航
@@ -66,21 +66,24 @@ export function TopUtilityBar({
         )}
       </div>
 
-      {/* 殼切換：縮成圖示，不搶版面 */}
+      {/* 殼切換：2026-10-29 放大到 40x40 最小觸控熱區（原本 13px 圖示 + 9px 文字，手機點不到） */}
       <button
         type="button"
         onClick={onSwitchShell}
-        className="shrink-0 flex items-center gap-1 px-1 h-8 active:scale-95 transition-transform"
+        className="shrink-0 flex items-center justify-center gap-1 active:scale-95 transition-transform"
         style={{
-          // 2026-10-22：去掉外框（使用者要求「不要框」）
+          minWidth: 40,
+          minHeight: 40,
+          padding: "0 4px",
+          borderRadius: 10,
           color: "var(--p-accent-hot)",
           textShadow: "0 1px 4px rgba(0,0,0,0.9)",
         }}
-        title={shellLabel}
-        aria-label={shellLabel}
+        title={`切換到 ${shellLabel} 介面`}
+        aria-label={`切換到 ${shellLabel} 介面`}
       >
-        <Wifi className="w-[13px] h-[13px]" />
-        <span className="text-[9px] font-bold leading-none">{shellLabel}</span>
+        <Wifi className="w-[18px] h-[18px]" />
+        <span className="text-[11px] font-bold leading-none">{shellLabel}</span>
       </button>
     </header>
   );
@@ -248,6 +251,17 @@ export function BottomBar({
   activeId: string;
   onSelect: (id: string) => void;
 }) {
+  /**
+   * 2026-10-29：手機底部欄原本硬砍 slice(0, 5)，導覽 7 項時「測試」「更新」完全到不了。
+   * 改成：前 4 項固定 + 第 5 格「更多」，點開列出剩餘項目。
+   */
+  const [moreOpen, setMoreOpen] = React.useState(false);
+  const MAX_VISIBLE = 4;
+  const overflow = items.length > MAX_VISIBLE + 1 ? items.slice(MAX_VISIBLE) : [];
+  const visible = overflow.length ? items.slice(0, MAX_VISIBLE) : items;
+  const overflowActive = overflow.some(f => f.id === activeId);
+  React.useEffect(() => { if (!moreOpen) return; const on = () => setMoreOpen(false);
+    window.addEventListener("pointerdown", on); return () => window.removeEventListener("pointerdown", on); }, [moreOpen]);
   return (
     <nav
       className="flex items-stretch justify-around shrink-0 relative z-20"
@@ -258,7 +272,7 @@ export function BottomBar({
         borderTop: "1px solid rgba(148,163,184,0.12)",
       }}
     >
-      {items.map(f => {
+      {visible.map(f => {
         const active = activeId === f.id;
         return (
           <button
@@ -296,6 +310,56 @@ export function BottomBar({
           </button>
         );
       })}
+      {overflow.length > 0 && (
+        <button
+          type="button"
+          onClick={(e) => { e.stopPropagation(); setMoreOpen(v => !v); }}
+          className="flex-1 flex flex-col items-center justify-center gap-0.5 py-1 min-h-[50px] active:scale-95 transition-transform"
+          style={{ color: moreOpen || overflowActive ? "var(--p-accent-hot)" : "rgba(148,163,184,0.66)" }}
+          aria-label="更多功能"
+          aria-expanded={moreOpen}
+        >
+          <span className="flex items-center justify-center transition-all relative" style={{ width: 34, height: 24 }}>
+            {(moreOpen || overflowActive) && (
+              <span className="absolute inset-0" style={{ borderRadius: 8,
+                background: "color-mix(in srgb, var(--p-accent) 20%, transparent)",
+                boxShadow: "inset 0 0 0 1px color-mix(in srgb, var(--p-accent) 38%, transparent)" }} />
+            )}
+            <span className="relative"><MoreHorizontal className="w-[17px] h-[17px]" /></span>
+          </span>
+          <span className="text-[9.5px] leading-none font-bold">更多</span>
+          {(moreOpen || overflowActive) && (
+            <span style={{ width: 14, height: 2, borderRadius: 999,
+              background: "var(--p-accent)", boxShadow: "0 0 6px var(--p-accent)" }} />
+          )}
+        </button>
+      )}
+      {moreOpen && overflow.length > 0 && (
+        <div
+          className="absolute right-2 z-30 flex flex-col gap-1 p-1.5"
+          style={{ bottom: "calc(100% + 8px)", borderRadius: 12,
+            background: "rgba(6,14,24,0.97)", border: "1px solid rgba(148,163,184,0.22)",
+            boxShadow: "0 8px 28px rgba(0,0,0,0.55)" }}
+          onPointerDown={(e) => e.stopPropagation()}
+        >
+          {overflow.map(f => (
+            <button
+              key={f.id}
+              type="button"
+              onClick={() => { setMoreOpen(false); onSelect(f.id); }}
+              className="flex items-center gap-2 px-3 py-2 active:scale-95 transition-transform"
+              style={{ borderRadius: 8, minHeight: 40, minWidth: 110,
+                color: activeId === f.id ? "var(--p-accent-hot)" : "rgba(203,213,225,0.9)",
+                background: activeId === f.id ? "color-mix(in srgb, var(--p-accent) 18%, transparent)" : "transparent" }}
+            >
+              <span className="flex items-center justify-center" style={{ width: 20, height: 20 }}>
+                {React.cloneElement(f.icon as React.ReactElement, { className: "w-[16px] h-[16px]" })}
+              </span>
+              <span className="text-[12px] font-bold leading-none">{f.short}</span>
+            </button>
+          ))}
+        </div>
+      )}
     </nav>
   );
 }

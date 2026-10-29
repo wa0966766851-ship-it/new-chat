@@ -41,6 +41,8 @@ export interface ShellBridge {
   // ── 導航 ──
   view: AppView;
   setView: (v: AppView) => void;
+  /** 2026-10-29：從背包返回時回到進入前的畫面（編成／大廳），而不是一律回首頁。 */
+  goBackFromBag?: () => void;
 
   // ── 資料 ──
   allElves: Elf[];
