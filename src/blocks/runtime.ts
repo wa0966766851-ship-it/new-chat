@@ -591,6 +591,22 @@ export const OPS: Record<string, OpFn> = {
       ...(p.incomingDamageReduction?{effects:{...previous?.effects,incomingDamageReduction:{...p.incomingDamageReduction}}}:{})},side);
     const after=ctx.getMarks(side).find(m=>m.id===p.id&&m.ownerBattleId===owner)?.count||0;
     if(after===before)return false;
+    /**
+     * 2026-10-30：詩章（snapshotKey）的體力上限吸收。
+     *
+     * 原本只把體力上限寫進 effects[snapshotKey] 陣列，但引擎從來沒有讀它，
+     * 所以「吸收體力上限」完全沒有效果，看起來就像被鎖在 1 層。
+     * 這裡在印記層數實際增加後，把新增篇數對應的體力上限加到持有者身上。
+     */
+    if(p.snapshotKey){
+      const gained=after-before;
+      const holder=liveElf(ctx,side);
+      const per=(previous?.effects?.[p.snapshotKey]?.slice(-gained)||[]).reduce((n:number,v:number)=>n+(Number(v)||0),0);
+      if(gained>0&&per>0){
+        ctx.updateElf?.(side,{maxHp:(holder.maxHp||0)+per});
+        ctx.addLog?.(`📜 【${p.name}】新增 ${gained} 篇，體力上限 +${per}（共 ${after} 篇）`,'effect');
+      }
+    }
     ctx.emitElfEvent?.(side,liveElf(ctx,side),EffectTiming.RESOURCE_CHANGED,{side,targetBattleId:idOf(liveElf(ctx,side)),id:p.id,before,after});return true;
   },
   type_damage_floor_turns:(ctx,p)=>grantTypeDamageFloor(ctx,p),
