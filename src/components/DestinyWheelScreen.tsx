@@ -6,6 +6,7 @@ import { bindInitialCounterparts } from "../battle/illusionPresentation";
 import { DestinyElfInstance, buildDestinyPool, pullFromDestinyPool, simulateAiBan, simulateAiPick } from "../utils/destinyGacha";
 import { motion, AnimatePresence } from "motion/react";
 import DestinyIntroRuleTable from "./DestinyIntroRuleTable";
+import { PaperDestinyBackdrop } from "./PaperDestinyBackdrop";
 import { Sparkles, Shield, Swords, AlertCircle, RefreshCw, CheckCircle2, XCircle, ChevronRight, Crown, Zap, Flame, Trophy, HelpCircle, ArrowLeft, RotateCcw } from "lucide-react";
 
 interface DestinyWheelScreenProps {
@@ -53,6 +54,11 @@ export default function DestinyWheelScreen({
   const [phase, setPhase] = useState<DraftPhase>('intro');
   const [battleMode, setBattleMode] = useState<BattleMode>(initialBattleMode);
   const [isMathStyle, setIsMathStyle] = useState<boolean>(true);
+  /**
+   * 2026-10-29：第三種視覺風格「紙本」（移植拾光行記的手繪筆法）。
+   * 不取代既有兩種 —— 三態可切換，預設仍是原本的數理 HUD。
+   */
+  const [isPaperStyle, setIsPaperStyle] = useState<boolean>(false);
   
   useEffect(() => {
     if (initialBattleMode) {
@@ -310,16 +316,32 @@ export default function DestinyWheelScreen({
   };
 
   return (
-    <div 
-      className={`min-h-screen h-auto w-full ${isMathStyle ? 'text-slate-100' : 'bg-gradient-to-br from-slate-950 via-indigo-950/90 to-slate-950 text-slate-100'} p-4 md:p-8 flex flex-col relative overflow-y-auto`}
-      style={isMathStyle ? { 
-        backgroundImage: "url('/images/img_018.png')", 
-        backgroundSize: 'cover', 
-        backgroundPosition: 'center',
-        backgroundRepeat: 'no-repeat',
-        backgroundColor: '#050c21'
-      } : {}}
+    <div
+      className={`min-h-screen h-auto w-full ${
+        isPaperStyle
+          ? "text-[#16307A]"
+          : isMathStyle
+            ? "text-slate-100"
+            : "bg-gradient-to-br from-slate-950 via-indigo-950/90 to-slate-950 text-slate-100"
+      } p-4 md:p-8 flex flex-col relative overflow-y-auto`}
+      style={
+        isPaperStyle
+          ? { backgroundColor: "#F2EDE4" }
+          : isMathStyle
+            ? {
+                backgroundImage: "url('/images/img_018.png')",
+                backgroundSize: "cover",
+                backgroundPosition: "center",
+                backgroundRepeat: "no-repeat",
+                backgroundColor: "#050c21",
+              }
+            : {}
+      }
     >
+      {/* 2026-10-29：紙本主題的 Canvas 手繪背景層（純裝飾，pointer-events:none） */}
+      {isPaperStyle && (
+        <PaperDestinyBackdrop phase={phase} revealed={revealedIds.length} total={12} />
+      )}
       {pullError && <p role="alert" className="text-rose-300 p-4">{pullError}</p>}
       {/* 命運之輪 · 數理分析矩陣與量子機率網格背景 (Analytical Math HUD Theme) */}
       {isMathStyle && (
@@ -390,13 +412,31 @@ export default function DestinyWheelScreen({
         </div>
 
         <div className="flex items-center gap-2 whitespace-nowrap">
+          {/* 2026-10-29：三態樣式循環 —— 數理 HUD → 標準 → 紙本 → 數理 HUD */}
           <button
-            onClick={() => setIsMathStyle(!isMathStyle)}
+            onClick={() => {
+              if (isPaperStyle) { setIsPaperStyle(false); setIsMathStyle(true); }
+              else if (isMathStyle) { setIsMathStyle(false); }
+              else { setIsPaperStyle(true); }
+            }}
             className={`px-3 py-1.5 rounded-lg text-xs font-bold border transition flex items-center gap-1 ${
-              isMathStyle ? 'bg-[#36B2BC]/20 border-[#36B2BC] text-[#36B2BC] shadow-[0_0_12px_rgba(54,178,188,0.3)]' : 'bg-slate-800 border-slate-600 text-slate-300'
+              isPaperStyle
+                ? "bg-[#F2EDE4] border-[#1F4FD8] text-[#1F4FD8] shadow-[0_0_12px_rgba(31,79,216,0.35)]"
+                : isMathStyle
+                  ? "bg-[#36B2BC]/20 border-[#36B2BC] text-[#36B2BC] shadow-[0_0_12px_rgba(54,178,188,0.3)]"
+                  : "bg-slate-800 border-slate-600 text-slate-300"
             }`}
+            title={
+              isPaperStyle
+                ? "紙本手繪風（拾光行記筆法）"
+                : isMathStyle
+                  ? "命運數理矩陣（MATH HUD）"
+                  : "標準科技風"
+            }
           >
-            <span title={isMathStyle ? '命運數理矩陣（MATH HUD）' : '標準科技風'}>📐 {isMathStyle ? '數理 HUD' : '標準'}</span>
+            <span>
+              {isPaperStyle ? "📜 紙本" : isMathStyle ? "📐 數理 HUD" : "🎨 標準"}
+            </span>
           </button>
           <button
             onClick={() => setBattleMode(m => m === 'PVE' ? 'PVP' : 'PVE')}
