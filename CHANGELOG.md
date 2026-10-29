@@ -2,6 +2,32 @@
 
 本專案的版本紀錄。版本號唯一來源是 `version.ts`，`package.json` 會同步。
 
+## 1.3.0 — 2026-10-30
+
+### 命運之輪：紙本主題（第三種視覺風格）
+- 移植「拾光行記 · GLEANERS OF LIGHT」的手繪筆法到 `src/design/sketchStroke.ts`：
+  `ring`（會起伏、收筆越過起點的圓環）、`rule`（中段微拱的標線）、
+  `brush`（兩端漸細的筆刷）、`blade`（柳葉形光刃）、`sparkle`（星芒）、
+  `makeHalftone`（半調網點）。全部是純函式、決定性、零依賴。
+- 色票沿用原模板：紙白 `#F2EDE4` / 墨藍 `#16307A` / 鈷藍 `#1F4FD8` / 淡藍 `#7C9BE8` / 暖橘 `#E8622B`。
+- 新增 `PaperDestinyBackdrop.tsx`：Canvas 背景層（三層手繪圓環、12 道放射細線、中心光刃、十字標線、星芒碎片、半調網點）。
+  `pointer-events: none`，`ResizeObserver` + `devicePixelRatio`，`prefers-reduced-motion` 時停掉動畫。
+- 樣式鈕改三態循環：**數理 HUD → 標準 → 紙本**，預設仍是數理 HUD（不取代既有風格）。
+- 紙本態的卡片改用墨線邊框與紙底（S 暖橘 / A 鈷藍 / C 墨藍 / B 淡藍）。
+- `pulling` 階段改 SVG 手繪三層圓環（6s / 8s 反向 / 4s）+ 六道暖橘光刃。
+- `reveal` 階段改「由遠而近依次拼入」（opacity + y + scale，每張延遲 55ms）。
+
+### 介面可用性
+- **手機底部導覽不再漏項**：原本 `slice(0, 5)` 硬砍，「測試」「更新」完全到不了；改為前 4 項固定 + 第 5 格「更多」彈出選單。
+- **背包返回**改為回到進入前的畫面（編成或大廳），不再一律回首頁；`ShellBridge` 新增 `goBackFromBag`。
+- **殼切換鈕**放大到 40×40 最小觸控熱區（原本 13px 圖示 + 9px 文字）。
+- **效能探針**登記修正：入口在控制中心「效能診斷」，原本誤標為未實作（`legacy: false` → `true`）。
+
+### 精靈圖片
+- `SeerImages.tsx` 的失敗紀錄原本是模組層級永久 `Set` —— 一次載入失敗就永不再試，
+  造成「精靈圖片經常無法顯示」。改為有時效的失敗紀錄（8 秒後自動放行），
+  並在視窗 `focus` / `visibilitychange` 時整批清空重試。
+
 ## 1.2.0 — 2026-10-29
 
 ### 次數免疫
