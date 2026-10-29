@@ -1030,14 +1030,31 @@ export default function StartScreen({
     try { for (const elf of [...p1Team, ...p2Team]) validateSkillStoneLoadout(elf, elf.skills); }
     catch (error) { alert(`隊伍技能石配置不合法：${(error as Error).message}。請先更換多餘技能石；原背包不會被刪除。`); return; }
     if (battleFormat === "normal_6v6" || battleFormat === "solo_1v1") {
+      /**
+       * 2026-10-30：開戰時重置 isExtra。
+       *
+       * 「額外精靈」只由戰鬥中的被動效果召喚（blocks/ops/extraElf.ts 設 isExtra: true），
+       * 組隊階段上場的 6 隻一律不是額外精靈。
+       *
+       * 但隊列資料會被上一場「巔峰模式」汙染：
+       * ensureBattleTeam 在 peak_3v3 會補人到 8 隻並把 idx >= pickCount(3) 的全標 isExtra: true，
+       * 再 setP1Team 存回狀態。之後切回 normal_6v6 時，前 6 隻仍帶著那些 true，
+       * 於是怒濤滄嵐這類正常精靈被誤標成「額外精靈」。
+       *
+       * 這裡在送入戰鬥前統一把上場隊員的 isExtra 清為 false。
+       */
       let p1Active = p1Team.map(e => {
         return withAnnualBonus({ ...e }, p1AnnualBonus);
       });
       let p2Active = p2Team.map(e => {
         return withAnnualBonus({ ...e }, p2AnnualBonus);
       });
-      p1Active = bindInitialCounterparts(p1Active, 6).slice(0, 6);
-      p2Active = bindInitialCounterparts(p2Active, 6).slice(0, 6);
+      // 2026-10-30：上場的 6 隻一律不是「額外精靈」。
+      // isExtra 只由戰鬥中的被動效果召喚時設 true（blocks/ops/extraElf.ts）。
+      // 但隊列資料會被上一場巔峰模式汙染（ensureBattleTeam 把 idx >= pickCount 標 true 後存回），
+      // 導致怒濤滄嵐這類正常精靈被誤標。這裡在送入戰鬥前清掉。
+      p1Active = bindInitialCounterparts(p1Active, 6).slice(0, 6).map(e => ({ ...e, isExtra: false }));
+      p2Active = bindInitialCounterparts(p2Active, 6).slice(0, 6).map(e => ({ ...e, isExtra: false }));
       const st1 = p1Active.find(e => e.battleId === p1StarterId)?.battleId || p1Active[0]?.battleId || p1StarterId;
       const st2 = p2Active.find(e => e.battleId === p2StarterId)?.battleId || p2Active[0]?.battleId || p2StarterId;
       if (battleFormat === "solo_1v1") {
