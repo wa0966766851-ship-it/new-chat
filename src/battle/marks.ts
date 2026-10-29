@@ -67,7 +67,7 @@ export const MARK_DEFINITIONS: Record<string, Partial<Mark>> = {
     clearable: false, persistsOffField: true, polarity: "negative",effects:{recoveryReduction:{ratio:0.25,perStack:true,includePotions:true},shieldSideEffectsDisabled:{at:3,value:1},skillDefenseDisabled:{at:4,value:1}},
   },
   guardian_shield_mark: { unit: "層", maxCount: 4, clearable: false, polarity: "positive", triggerNode: "round_end" },
-  poem_chapter: { unit: "篇", clearable: false, persistsOffField: true, polarity: "positive" },
+  poem_chapter: { displayChar: "詩", name: "詩章", unit: "篇", clearable: false, persistsOffField: true, polarity: "positive" },
   keld_soul: { unit: "道", maxCount: 3, clearable: false, persistsOffField: true, polarity: "positive" },
   delu_shackles: { unit: "道", maxCount: 5, clearable: false, persistsOffField: true, polarity: "negative" },
   tiwaz_rune: { unit: "枚", maxCount: 1, clearable: false, persistsOffField: true, polarity: "positive" },

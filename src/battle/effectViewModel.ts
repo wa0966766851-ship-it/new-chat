@@ -59,9 +59,10 @@ export function buildEffectViewModels(marks: Mark[] = [], timers: Timer[] = [], 
     .map(mark => ({
       id: `mark:${mark.id}`,
       category: "mark",
-      label: mark.presentation?.label || mark.name,
-      shortLabel: mark.displayChar || mark.name.slice(0, 1),
-      description: mark.presentation?.description || mark.description || mark.name,
+      label: mark.presentation?.label || mark.name || mark.id,
+      // 2026-10-30：任何印記缺 displayChar 與 name 時不可讓整個清單崩潰。
+      shortLabel: mark.displayChar || mark.name?.slice(0, 1) || "印",
+      description: mark.presentation?.description || mark.description || mark.name || mark.id,
       source: mark.presentation?.sourceName || mark.source || "印記",
       semanticId: mark.presentation?.semanticId || `mark:${mark.id}`,
       icon: effectIcon(mark.presentation?.iconTag || mark.iconTag, mark.name),
