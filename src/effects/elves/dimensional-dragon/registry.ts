@@ -7,7 +7,7 @@ import { getMark } from "../../../battle/marks";
 const POEM_DESCRIPTION = "紀錄持有者精靈的體力上限，當持有精靈死亡時，詩章將轉移給存活狀態的治癒.龍魂再臨 次元龍以增加其等量體力上限，治癒.龍魂再臨 次元龍若存在複數精靈則會同時轉移相同數量給予所有治癒.龍魂再臨 次元龍(每篇詩章獨立計算且無上限，下場後保留)";
 
 export const handleDimensionalSoulMark = (ctx: BattleEventContext, event: EffectTiming | string, extraData?: any) => {
-  const { self, target, actor, setPlayerState, getPlayerState, addLog, applyTrueDamage, applyPinkDamage, applySkillTypeDamage, applyHeal, setMark, getMarks } = ctx;
+  const { self, target, actor, setPlayerState, getPlayerState, addLog, applyTrueDamage, applyPinkDamage, applySkillTypeDamage, applyHeal, setMark, getMarks, getAllMarks } = ctx;
   const oppSide = actor === "p1" ? "p2" : "p1";
 
   const curMarks = getMarks ? getMarks(actor) : [];
@@ -65,37 +65,19 @@ export const handleDimensionalSoulMark = (ctx: BattleEventContext, event: Effect
 
     case EffectTiming.ROUND_START: {
       /**
-       * 2026-10-30：每回合疊加詩章。
+       * 2026-10-30：回合開始只做「依詩章篇數」的被動判定。
        *
-       * 魂印描述：「自身位於出戰背包內（無論是否為出戰/場下/額外精靈），
-       * 敵我雙方所有精靈（無論是否為出戰/場下/額外精靈）所有回合開始效果時額外所有精靈附加 1 篇詩章」。
+       * 詩章的「每回合疊加 1 篇」「每篇獨立快照」「死亡轉交」「原持有精靈消逝」
+       * 一律由積木 snapshot_resource_rule 安裝、引擎 rules/snapshotResources.ts 執行
+       * （MIGRATED_FINAL_DRAGON_SOUL_KIT 已為 5021 安裝）。
        *
-       * 原本完全沒有這段，所以詩章永遠停在 1 篇（看起來像被鎖上限）。
-       * 這裡在回合開始時，為雙方每一隻存活精靈各加 1 篇獨立詩章，
-       * 並同步把該篇的體力上限加到持有者身上。
+       * 這裡原本手寫了一套 setMark + updateAnyElf 的疊加，
+       * 與引擎通道重複，且因為讀不到場下精靈的舊詩章、又把已改過的 maxHp 當快照相加，
+       * 造成「層數永遠 1」與「體力上限每回合暴漲」。已移除。
        */
-      for (const sd of ["p1", "p2"] as const) {
-        for (const e of ctx.getFullTeam?.(sd) || []) {
-          if (e.isVanished || (e.currentHp || 0) <= 0) continue;
-          const bid = String(e.battleId || e.id);
-          const exist = (getMarks(sd) || []).find(m => m.id === "poem_chapter" && m.ownerBattleId === bid);
-          const oldSnaps: number[] = exist?.effects?.poemHpSnapshots || [];
-          const nextSnaps = [...oldSnaps, e.maxHp || 1000];
-          ctx.setMark?.({
-            id: "poem_chapter", displayChar: "詩", name: "詩章",
-            count: nextSnaps.length,
-            description: POEM_DESCRIPTION, source: self.name,
-            scope: "elf", persistsOffField: true, clearable: false,
-            ownerBattleId: bid,
-            effects: { poemHpSnapshots: nextSnaps },
-          } as any, sd);
-          ctx.updateAnyElf?.(sd, bid, { maxHp: (e.maxHp || 0) + (e.maxHp || 1000) });
-        }
-      }
-      // 重算自身詩章數（剛加過）
-      const liveMarks = getMarks(actor) || [];
-      const livePoem = getMark(liveMarks, "poem_chapter");
-      const liveStacks = livePoem?.effects?.poemHpSnapshots?.length || 0;
+      const liveMarks = getAllMarks ? getAllMarks(actor) : (getMarks(actor) || []);
+      const livePoem = getMark(liveMarks, "poem_chapter", String(self.battleId || self.id));
+      const liveStacks = livePoem?.effects?.poemHpSnapshots?.length || Number(livePoem?.count) || 0;
 
       // 3:回合開始時解除自身所處的異常狀態，詩章大於3則自身免疫所有異常狀態
       if (liveStacks >= 3) {
@@ -221,51 +203,11 @@ export const handleDimensionalSoulMark = (ctx: BattleEventContext, event: Effect
      *
      * 原本完全沒有這段實作，所以死亡時詩章不會轉交、原持有精靈也不會消逝。
      */
-    case EffectTiming.DEATH_NODE_1: {
-      const deadMarks = getMarks(actor) || [];
-      const deadPoem = getMark(deadMarks, "poem_chapter");
-      const snapshots: number[] = deadPoem?.effects?.poemHpSnapshots || [];
-      if (!snapshots.length) return false;
-
-      const deadName = self.name;
-      // 找出所有「治癒.龍魂再臨 次元龍」接收者（含場下存活）
-      const receivers: { side: "p1" | "p2"; elf: any }[] = [];
-      for (const sd of ["p1", "p2"] as const) {
-        for (const e of ctx.getFullTeam?.(sd) || []) {
-          if (e === self || e.isVanished) continue;
-          if ((e.currentHp || 0) <= 0) continue;
-          const n = String(e.name || "");
-          if (n.includes("次元龍") || n.includes("龍魂再臨")) receivers.push({ side: sd, elf: e });
-        }
-      }
-
-      if (receivers.length) {
-        const total = snapshots.reduce((n, v) => n + (Number(v) || 0), 0);
-        for (const r of receivers) {
-          // 每篇詩章獨立計算：逐篇加到接收者的體力上限
-          ctx.updateAnyElf?.(r.side, String(r.elf.battleId || r.elf.id), { maxHp: (r.elf.maxHp || 0) + total });
-          const exist = (getMarks(r.side) || []).find(m => m.id === "poem_chapter" && m.ownerBattleId === String(r.elf.battleId || r.elf.id));
-          const old = exist?.effects?.poemHpSnapshots || [];
-          ctx.setMark?.({
-            id: "poem_chapter", displayChar: "詩", name: "詩章",
-            count: old.length + snapshots.length,
-            description: POEM_DESCRIPTION, source: deadName,
-            scope: "elf", persistsOffField: true, clearable: false,
-            ownerBattleId: String(r.elf.battleId || r.elf.id),
-            effects: { poemHpSnapshots: [...old, ...snapshots] },
-          } as any, r.side);
-          addLog(`🐉 【詩章】：${deadName} 陣亡，${snapshots.length} 篇詩章轉交 ${r.elf.name}，體力上限 +${total}！`, "effect");
-        }
-      }
-
-      // 轉交後原持有精靈消逝（只清詩章，避免波及其他印記）
-      ctx.clearMark?.("poem_chapter", actor, String(self.battleId || self.id));
-      if (receivers.length) {
-        ctx.updateAnyElf?.(actor, String(self.battleId || self.id), { isVanished: true } as any);
-        addLog(`🐉 【詩章】：詩章已轉交，${deadName} 消逝。`, "effect");
-      }
-      return true;
-    }
+    /**
+     * 2026-10-30：死亡轉交與消逝由引擎 rules/snapshotResources.ts 的 faint 規則處理
+     * （snapshot_resource_rule 的 vanishSourceOnTransfer: true）。
+     * 這裡原本手寫了一套轉交，會與引擎重複執行造成上限重複累加，已移除。
+     */
   }
 
   return false;

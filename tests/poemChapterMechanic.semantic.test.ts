@@ -4,65 +4,84 @@ import { readFileSync } from 'node:fs';
 
 // 2026-10-30：次元龍「詩章」機制。
 //
-// 修的是三個一直沒接上的通路：
-// 1. poemHpSnapshots 只被寫進印記，引擎從來沒讀 → 吸收體力上限永遠無效
-// 2. 死亡轉交與消逝完全沒有實作
-// 3. 每回合疊加詩章完全沒有實作
-// 4. 直接 setMark 沒帶 ownerBattleId → 同一精靈會出現多個同名詩章
+// 正確架構（已查證）：
+//   積木 snapshot_resource_rule 安裝參數（MIGRATED_FINAL_DRAGON_SOUL_KIT, elfIds 5021）
+//     → src/effects/rules/snapshotResources.ts 執行（roundStart 疊加 / faint 轉交）
+//     → 由 src/effects/elves/dimensional-dragon/battleRule.ts import 完成註冊
+//     → 由 src/effects/battleRules.index.ts 匯入
+//     → 引擎在 battleEngine.ts:2339 / 3952 呼叫 roundStart、1577 呼叫 faint
+//
+// 曾經的錯誤：registry.ts 手寫一套 setMark + updateAnyElf 疊加，
+// 讀不到場下精靈舊詩章（層數永遠 1）、又把已改過的 maxHp 當快照相加（上限暴漲）。
+// 該手寫版本已移除。
 
 const REGISTRY = 'src/effects/elves/dimensional-dragon/registry.ts';
-const RUNTIME = 'src/blocks/runtime.ts';
-
+const SNAPSHOT = 'src/effects/rules/snapshotResources.ts';
+const DRAGON_RULE = 'src/effects/elves/dimensional-dragon/battleRule.ts';
+const INDEX = 'src/effects/battleRules.index.ts';
+const SOUL_KIT = 'src/data/migratedFinalMarsLanDragonKits.ts';
 const read = (p: string) => readFileSync(p, 'utf8');
 
-test('resource_mark_add 會把 snapshotKey 的新增量實際加到 maxHp', () => {
-  const src = read(RUNTIME);
-  assert.match(src, /if\(p\.snapshotKey\)\{/, '必須有 snapshotKey 的後處理');
-  assert.match(src, /ctx\.updateElf\?\.\(side,\{maxHp:/, '必須呼叫 updateElf 提高 maxHp');
-  assert.match(src, /const gained=after-before/, '必須用實際增加篇數計算');
+test('詩章由積木 snapshot_resource_rule 安裝（5021）', () => {
+  const src = read(SOUL_KIT);
+  assert.match(src, /elfIds: \['5021'\]/, '必須掛在 5021');
+  assert.match(src, /a\('snapshot_resource_rule'/, '必須用積木安裝');
+  assert.match(src, /id: 'poem_chapter'/, '印記 id');
+  assert.match(src, /snapshotKey: 'poemHpSnapshots'/, '快照鍵');
+  assert.match(src, /perRound: 1/, '每回合 1 篇');
+  assert.match(src, /receiverKey: 'poem_chapter'/, '接收者鍵');
+  assert.match(src, /vanishSourceOnTransfer: true/, '轉交後原持有者消逝');
 });
 
-test('詩章會在回合開始時為雙方所有存活精靈疊加', () => {
+test('引擎規則檔已註冊（battleRules.index 有匯入）', () => {
+  assert.match(read(INDEX), /import '\.\/elves\/dimensional-dragon\/battleRule';/, 'index 必須匯入次元龍規則');
+  assert.match(read(DRAGON_RULE), /import '\.\.\/\.\.\/rules\/snapshotResources';/, '規則檔必須匯入 snapshotResources');
+});
+
+test('每篇快照獨立累積，不覆蓋', () => {
+  const src = read(SNAPSHOT);
+  assert.match(src, /snapshots = \[\.\.\.\(old\?\.effects\?\.\[cfg\.snapshotKey\] \|\| \[\]\), \.\.\.incoming\]/, '必須附加不覆蓋');
+  assert.match(src, /count: snapshots\.length/, '層數＝篇數');
+});
+
+test('回合開始為雙方所有存活精靈各加 perRound 篇', () => {
+  const src = read(SNAPSHOT);
+  assert.match(src, /for \(const side of \['p1', 'p2'\] as const\)/, '必須雙方都處理');
+  assert.match(src, /appendSnapshots\(elf, cfg, Array\.from\(\{ length: cfg\.perRound \}/, '每隻精靈都附加');
+  assert.match(src, /if \(!elf \|\| checkElfDead\(elf\)\) continue;/, '跳過已死亡');
+});
+
+test('死亡時每篇獨立加總後疊加到接收者體力上限', () => {
+  const src = read(SNAPSHOT);
+  assert.match(src, /const total = snapshots\.reduce\(/, '必須逐篇加總');
+  assert.match(src, /receiver\.maxHp \+= total/, '接收者上限 += 總和');
+  assert.match(src, /receiver\.calculatedStats = \{ \.\.\.receiver\.calculatedStats, hp: receiver\.maxHp \}/, '計算值同步');
+});
+
+test('轉交後呼叫 vanishElf 令原持有精靈消逝', () => {
+  const src = read(SNAPSHOT);
+  assert.match(src, /if \(cfg\.vanishSourceOnTransfer\) api\.ctx\(side, true, undefined, elf\)\.vanishElf\(side, elf\)/, '必須消逝');
+  assert.match(src, /先消耗原持有者，避免死亡節點重播時重複轉交/, '必須先清再轉，避免重播');
+});
+
+test('雙方次元龍都能收到（不分敵我）', () => {
+  const src = read(SNAPSHOT);
+  assert.match(src, /\[\.\.\.state\.p1Team, \.\.\.state\.p2Team\]/, 'owners 必須掃雙方');
+  assert.match(src, /receivers = sources\.filter\(\(e: any\) => e\.snapshotResourceRules\?\.\[cfg\.id\]\?\.receiverKey === cfg\.receiverKey\)/, '接收者按 receiverKey 比對');
+});
+
+test('registry 不再手寫疊加或轉交（避免與引擎重複）', () => {
   const src = read(REGISTRY);
-  assert.match(src, /case EffectTiming\.ROUND_START: \{/, 'ROUND_START 必須是區塊');
-  assert.match(src, /for \(const sd of \["p1", "p2"\] as const\)/, '必須雙方都處理');
-  assert.match(src, /nextSnaps = \[\.\.\.oldSnaps, e\.maxHp \|\| 1000\]/, '必須追加一篇獨立快照');
-  assert.match(src, /updateAnyElf\?\.\(sd, bid, \{ maxHp:/, '必須同步提高體力上限');
+  assert.ok(!/nextSnaps = \[\.\.\.oldSnaps, e\.maxHp/.test(src), '不可再手寫 maxHp 快照疊加');
+  assert.ok(!/updateAnyElf\?\.\(sd, bid, \{ maxHp: \(e\.maxHp/.test(src), '不可再手寫上限提高');
+  assert.ok(!/isVanished: true/.test(src), '不可再手寫消逝');
+  assert.match(src, /一律由積木 snapshot_resource_rule 安裝/, '需保留說明註解');
 });
 
-test('詩章會在持有者死亡時轉交並令原持有精靈消逝', () => {
-  const src = read(REGISTRY);
-  assert.match(src, /case EffectTiming\.DEATH_NODE_1: \{/, '必須處理死亡節點');
-  assert.match(src, /deadPoem = getMark\(deadMarks, "poem_chapter"\)/, '必須讀死亡者的詩章');
-  assert.match(src, /receivers\.push/, '必須找接收者');
-  assert.match(src, /isVanished: true/, '轉交後原持有精靈必須消逝');
-  assert.match(src, /clearMark\?\.\("poem_chapter"/, '消逝時清掉詩章');
+test('引擎確實在 roundStart 與 faint 節點呼叫規則', () => {
+  const src = read('src/engine/battleEngine.ts');
+  assert.match(src, /for \(const rule of battleRules\(\)\) rule\.roundStart\?\.\(ruleApi, cur\)/, 'roundStart 呼叫');
+  assert.match(src, /for \(const rule of battleRules\(\)\) rule\.faint\?\.\(ruleApi, mid\)/, 'faint 呼叫');
 });
 
-test('詩章轉交時每篇獨立計算，加到接收者體力上限', () => {
-  const src = read(REGISTRY);
-  assert.match(src, /const total = snapshots\.reduce/, '必須逐篇加總');
-  assert.match(src, /maxHp: \(r\.elf\.maxHp \|\| 0\) \+ total/, '接收者上限必須提高');
-});
-
-test('直接 setMark 的詩章都帶 ownerBattleId（避免同名印記重複）', () => {
-  const src = read(REGISTRY);
-  // 兩處直接 setMark（敕界歸元、告命詩途）都必須帶 ownerBattleId
-  const blocks = src.split('id: "poem_chapter"');
-  assert.ok(blocks.length >= 3, '至少三處建立詩章');
-  // 檢查所有 setMark({ ... }) 區塊內都有 ownerBattleId
-  const setMarks = [...src.matchAll(/setMark\(\{[\s\S]{0,600}?\}, actor\)/g)].map(m => m[0]);
-  assert.ok(setMarks.length >= 2, `找到 ${setMarks.length} 個直接 setMark`);
-  for (const blk of setMarks) {
-    assert.ok(blk.includes('ownerBattleId'), '每個直接 setMark 都必須帶 ownerBattleId');
-    assert.ok(blk.includes('persistsOffField: true'), '詩章下場後保留');
-  }
-});
-
-test('詩章印記定義為不可清除且下場保留', () => {
-  const src = read('src/battle/marks.ts');
-  assert.match(src, /poem_chapter: \{ unit: "篇", clearable: false, persistsOffField: true/);
-  assert.match(src, /poemHpSnapshots\?: number\[\]/, 'effects 需宣告 poemHpSnapshots');
-});
-
-console.log('詩章機制：吸收／疊加／轉交／消逝／去重 全部通過');
+console.log('詩章機制：積木安裝／引擎執行／獨立快照／死亡轉交／消逝 全部通過');
