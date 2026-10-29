@@ -249,7 +249,7 @@ export function TeamScene({ b, onSetup }: { b: ShellBridge; onSetup?: () => void
 
         {/* ── 搜尋 + 屬性／分級／特徵篩選 + 排序 ── */}
         <div className="shrink-0">
-          <ElfFilterBar state={f} variant="shell" placeholder="搜尋名稱或 ID" showInTeam count={`${library.length}`} />
+          <ElfFilterBar state={f} variant="shell" showInTeam count={`${library.length}`} />
         </div>
 
         {/* ── 角色庫 ── */}

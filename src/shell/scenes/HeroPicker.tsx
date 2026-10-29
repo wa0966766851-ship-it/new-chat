@@ -42,7 +42,7 @@ export default function HeroPicker({
           </button>
         </div>
 
-        <ElfFilterBar state={f} variant="shell" placeholder="搜尋精靈名稱或 ID" count={`${list.length}`} />
+        <ElfFilterBar state={f} variant="shell" count={`${list.length}`} />
 
         <div className="flex-1 min-h-0 overflow-y-auto">
           <div className="grid grid-cols-4 gap-1.5">

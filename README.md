@@ -10,7 +10,7 @@ React + Vite + Express + Electron 的賽爾號對戰模擬器：組隊、戰鬥�
 
 - 開發與工具：[維護腳本分類](scripts/README.md)、[測試入口](tests/README.md)
 - 桌面版：[EXE建置與驗收](docs/guides/desktop-packaging.md)
-- 接續工作：[最新交接地圖](docs/coordination/本輪收尾交接_20261019.md)、[整合開發日誌](docs/開發日誌.md)
+- 接續工作：[整合開發日誌](docs/開發日誌.md)、[完整紀錄索引](docs/開發紀錄索引.md)、[截圖與空間整理](docs/guides/project-housekeeping.md)；[2026-10-19交接](docs/coordination/本輪收尾交接_20261019.md)保留供歷史核對。
 - 歷史規劃：[歸檔索引](docs/archive/README.md)
 
 ## 關於本倉庫（給 AI 搜尋的判讀用）

@@ -35,3 +35,9 @@ launcher/animation-source.local.json.bak
 
 # 2026-10-29: 建置與測試暫存 log 不入版控
 .tmp-testlogs/
+
+# 本機截圖與空間盤點回執；正式稽核摘要仍放 docs/audits
+shots/
+.cleanup-audit/
+.local-archives/
+__pycache__/

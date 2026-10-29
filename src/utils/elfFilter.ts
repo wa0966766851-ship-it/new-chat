@@ -1,6 +1,6 @@
 import type { Elf } from "../types";
 import { SEER_TYPES } from "./statCalculator";
-import { matchesElfQuery } from "./elfSearch";
+import { matchesElfQuery, normalizeElfSearch } from "./elfSearch";
 import { getElfDisplayRank, type ElfDisplayRank } from "./elfDisplayRank";
 import { fifthSkillSlot } from "../battle/skillSlot";
 import { newestElfKeys, newestFirst } from "../shell/elfPool";
@@ -40,18 +40,18 @@ const KNOWN = [...SEER_TYPES].sort((a, b) => b.length - a.length);
 /** 屬性字串拆成各屬性：「地面.戰鬥」「混沌·暗影」→ 兩項；「次元龍」→ 次元＋龍。 */
 export function elfTypeParts(type: unknown): string[] {
   const out: string[] = [];
-  for (const tok of String(type ?? "").split(/[.·・‧、/／+＋\s]+/).filter(Boolean)) {
+  for (const tok of String(type ?? "").normalize("NFKC").split(/[.·・‧、/／+＋\s]+/).filter(Boolean)) {
     if ((SEER_TYPES as readonly string[]).includes(tok)) { out.push(tok); continue; }
-    const pieces: string[] = []; let rest = tok;
-    while (rest) { const hit = KNOWN.find(k => rest.startsWith(k)); if (!hit) { pieces.length = 0; break; } pieces.push(hit); rest = rest.slice(hit.length); }
+    const pieces: string[] = []; let rest = normalizeElfSearch(tok);
+    while (rest) { const hit = KNOWN.find(k => rest.startsWith(normalizeElfSearch(k))); if (!hit) { pieces.length = 0; break; } pieces.push(hit); rest = rest.slice(normalizeElfSearch(hit).length); }
     out.push(...(pieces.length ? pieces : [tok]));
   }
-  return out;
+  return [...new Set(out)];
 }
 
 const isCustom = (e: Partial<Elf>) => String(e.id ?? "").startsWith("custom_") || !!e.isCustom;
 export const elfBaseTotal = (e: Partial<Elf>) => Object.values(e.baseStats || {}).reduce((s: number, v) => s + (Number(v) || 0), 0);
-const idNumber = (e: Partial<Elf>) => { if (isCustom(e)) return Number.MAX_SAFE_INTEGER; const n = Number(e.seerId ?? String(e.id ?? "").replace(/\D/g, "")); return Number.isFinite(n) && n > 0 ? n : Number.MAX_SAFE_INTEGER; };
+const idNumber = (e: Partial<Elf>) => { if (isCustom(e)) return Number.MAX_SAFE_INTEGER; const n = Number((Number(e.seerId)>0 ? e.seerId : undefined) ?? String(e.id ?? "").replace(/\D/g, "")); return Number.isFinite(n) && n > 0 ? n : Number.MAX_SAFE_INTEGER; };
 
 export interface ElfFilterContext {
   /** 「新精靈」的鍵；省略時由傳入清單推算 */
@@ -69,7 +69,7 @@ export function matchesElfSpec(e: Elf, s: ElfFilterSpec, ctx: ElfFilterContext &
   if (!matchesElfQuery(e, s.query)) return false;
   const parts = elfTypeParts(e.type);
   if (s.types.length) {
-    const has = (t: string) => parts.includes(t);
+    const has = (t: string) => parts.some(part=>normalizeElfSearch(part)===normalizeElfSearch(t));
     if (!(s.typeMode === "all" ? s.types.every(has) : s.types.some(has))) return false;
   }
   if (s.kind === "single" && parts.length !== 1) return false;

@@ -3,6 +3,8 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 
+const ownedProfiles = new Set();
+
 /** 找可用的 Chromium 系瀏覽器：PET_TEST_BROWSER → Windows Edge／Chrome → Linux/Mac 常見位置 → Playwright 內建 Chromium。找不到回 null（呼叫端應跳過，不是失敗）。 */
 export function findPetTestBrowser() {
  const candidates=[process.env.PET_TEST_BROWSER,
@@ -13,7 +15,18 @@ export function findPetTestBrowser() {
  return candidates.find(file=>file&&fs.existsSync(file))||null;
 }
 /** 每次測試唯一的 user-data-dir；Windows 用 %TEMP%，其他平台用系統暫存目錄。 */
-export function petTestProfile() {return path.join(process.env.TEMP||os.tmpdir(),'seer-pet-test-'+Date.now()+'-'+Math.floor(Math.random()*1e6));}
+export function petTestProfile() {
+ const profile=path.join(process.env.TEMP||os.tmpdir(),'seer-pet-test-'+Date.now()+'-'+Math.floor(Math.random()*1e6));
+ ownedProfiles.add(path.resolve(profile));return profile;
+}
+/** 只回收本次程式自己配置的測試資料夾；瀏覽器必須已經關閉。 */
+export function removeClosedPetTestProfile(profile) {
+ const target=path.resolve(profile),parent=path.resolve(process.env.TEMP||os.tmpdir());
+ if(!ownedProfiles.has(target)||path.dirname(target)!==parent||!/^seer-pet-test-\d+-\d+$/.test(path.basename(target)))throw Error('拒絕清理非本次建立的測試資料夾');
+ if(fs.existsSync(target)&&fs.lstatSync(target).isSymbolicLink())throw Error('測試資料夾不可為連結');
+ try{fs.rmSync(target,{recursive:true,force:true,maxRetries:3,retryDelay:200});ownedProfiles.delete(target);return true;}
+ catch{return false;} // Windows 尚未釋放檔案時保留，不能讓清理掩蓋原測試結果。
+}
 /** 啟動 headless 瀏覽器並開 DevTools 埠。root 帳號下的 Chromium 需 --no-sandbox。 */
 export function launchPetTestBrowser(browser,port,profile) {
  const sandbox=process.platform!=='win32'&&typeof process.getuid==='function'&&process.getuid()===0?['--no-sandbox']:[];
@@ -23,6 +36,8 @@ export function launchPetTestBrowser(browser,port,profile) {
 }
 /** Edge 可重新啟動為另一 PID；只終止本次唯一測試 profile，不碰一般瀏覽器。 */
 export function closePetTestBrowser(proc,profile) {
+ if(!ownedProfiles.has(path.resolve(profile)))throw Error('拒絕關閉非本次建立的測試瀏覽器');
  if(process.platform!=='win32'){proc.kill();try{fs.rmSync(profile,{recursive:true,force:true});}catch{}return;}
- spawnSync('powershell.exe',['-NoProfile','-Command',"Get-CimInstance Win32_Process -Filter \"Name='msedge.exe'\" | Where-Object { $_.CommandLine -and $_.CommandLine.Contains($env:SEER_TEST_PROFILE) -and $_.CommandLine -notlike '*--type=*' } | ForEach-Object { & taskkill.exe /PID $_.ProcessId /T /F | Out-Null }"],{windowsHide:true,stdio:'ignore',env:{...process.env,SEER_TEST_PROFILE:profile}});
+ const closed=spawnSync('powershell.exe',['-NoProfile','-Command',"$ErrorActionPreference='Stop'; Get-CimInstance Win32_Process | Where-Object { $_.Name -in @('msedge.exe','chrome.exe') -and $_.CommandLine -and $_.CommandLine.Contains($env:SEER_TEST_PROFILE) -and $_.CommandLine -notlike '*--type=*' } | ForEach-Object { & taskkill.exe /PID $_.ProcessId /T /F | Out-Null }; $remaining=Get-CimInstance Win32_Process | Where-Object { $_.Name -in @('msedge.exe','chrome.exe') -and $_.CommandLine -and $_.CommandLine.Contains($env:SEER_TEST_PROFILE) }; if($remaining){exit 1}"],{windowsHide:true,stdio:'ignore',env:{...process.env,SEER_TEST_PROFILE:profile}});
+ if(closed.status===0&&!closed.error)removeClosedPetTestProfile(profile);
 }

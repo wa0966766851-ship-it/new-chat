@@ -86,6 +86,13 @@ try {
   await render('legacy');
   await waitFor(() => !!document.querySelector('[aria-label="查看 九青 的詳情"]'));
   await click(document.querySelector('[aria-label="查看 九青 的詳情"]'));
+  await click([...document.querySelectorAll('button')].find(b=>b.textContent?.includes('新版精靈介紹')));
+  await waitFor(()=>!!document.querySelector('.elf-spotlight'));
+  assert.equal(document.querySelector('.elf-spotlight')?.getAttribute('aria-label'),'精靈介紹');
+  assert.equal(document.querySelector('.spot-name h2')?.textContent,'九青');
+  assert.equal(document.querySelectorAll('.spot-skill').length,5);
+  await click(document.querySelector('[aria-label="關閉精靈介紹"]'));
+  assert.ok(document.querySelector('[aria-label="精靈配置詳情"]'),'關閉介紹保留原詳情');
   const skillButtons=[...document.querySelectorAll<HTMLButtonElement>('[aria-label^="替換技能 "]')];
   assert.deepEqual(skillButtons.map(b=>b.getAttribute('aria-label')),['生塵眷盼','如日方升','遂心快意','蒼靈銜樂','清璨星辰落'].map(name=>`替換技能 ${name}`),'倉庫四普通在前、第五在最後，只有五格');
   assert.deepEqual(skillButtons.map(b=>b.closest('div.p-4')!.textContent!.includes('第五技能')),[false,false,false,false,true]);

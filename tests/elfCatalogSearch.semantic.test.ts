@@ -1,0 +1,17 @@
+import assert from 'node:assert/strict';
+import { matchesElfQuery } from '../src/utils/elfSearch';
+import { applyElfFilter, DEFAULT_ELF_FILTER, elfTypeParts } from '../src/utils/elfFilter';
+import { resolveElfCatalog } from '../src/utils/elfCatalog';
+const elf:any={id:'5036',seerId:4543,name:'聖靈·九青',type:'聖靈.地面',soulMark:{name:'汨'},skills:[{name:'清璨星辰落'}],skillPool:[{name:'安魂曲'}]};
+for(const query of ['５０３６','＃４５４３','ＩＤ：５０３６','圣灵 九青','type:地面 汨','skill:安魂曲','技能：清璨'])assert.ok(matchesElfQuery(elf,query),query);
+assert.ok(!matchesElfQuery({...elf,id:'15036',seerId:0},'５０３６'),'全形數字也必須精確匹配');
+assert.ok(!matchesElfQuery(elf,'type:火'));
+assert.deepEqual(elfTypeParts('电＋圣灵'),['電','聖靈']);
+assert.equal(applyElfFilter([{...elf,type:'电.圣灵'}],{...DEFAULT_ELF_FILTER,types:['電']}).length,1);
+assert.deepEqual(applyElfFilter([{...elf,id:'5036',seerId:0},{...elf,id:'5021',seerId:0}],{...DEFAULT_ELF_FILTER,sort:'id'}).map(e=>e.id),['5021','5036']);
+const source=[{...elf,id:'5007',soulMark:{name:'契',badgeChar:'契'}},{...elf,id:'other'},{...elf,id:'other'}];
+const before=JSON.stringify(source);const list=resolveElfCatalog(source,[],[]);
+assert.deepEqual(list.map(e=>e.id),['5007','other'],'不同ID同名精靈保留，相同ID去重');
+assert.equal(list[0].soulMark.name,'濁');assert.equal(JSON.stringify(source),before,'目錄整備不可修改原始魂印');
+assert.equal(resolveElfCatalog(source,[],['other']).length,1);
+console.log('共用搜尋：全形精確編號、技能池、簡繁、屬性與目錄去重／來源保護通過');

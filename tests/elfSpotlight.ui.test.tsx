@@ -13,12 +13,25 @@ try{
  const {ElfSpotlight}=await server.ssrLoadModule('/src/components/ElfSpotlight.tsx');
  const elves=DEFAULT_ELVES.filter((e:any)=>['5021','wiki_4937'].includes(e.id));
  const render=async(data=elves)=>act(async()=>{root.render(<ElfSpotlight elves={data} onClose={()=>closed++}/>);});
- const click=async(text:string)=>{const b=[...document.querySelectorAll('button')].find(b=>b.textContent?.includes(text));assert.ok(b,text);await act(async()=>b!.click());};
+ const click=async(text:string)=>{const b=[...document.querySelectorAll('button')].find(b=>b.textContent?.includes(text)||b.getAttribute('aria-label')===text);assert.ok(b,text);await act(async()=>b!.click());};
  localStorage.setItem('unrelated','preserve');await render();
  assert.equal(document.querySelectorAll('.spot-identity').length,1);
  assert.ok(document.querySelector('.spot-name h2')?.textContent?.includes('次元龍'));
  for(const s of elves.find((e:any)=>e.id==='5021').skills)assert.ok(document.querySelector('.spot-skills')?.textContent?.includes(s.description));
+ assert.equal(document.querySelector('output')?.textContent,'100%');
+ await click('A＋');assert.equal(document.querySelector('output')?.textContent,'110%');
+ assert.equal((document.querySelector('.elf-spotlight') as HTMLElement).style.getPropertyValue('--spot-text-scale'),'1.1');
+ for(let n=0;n<8;n++)await click('A＋');assert.equal(document.querySelector('output')?.textContent,'160%');
+ assert.equal((document.querySelector('[aria-label="放大介紹文字"]') as HTMLButtonElement).disabled,true);
+ assert.equal(localStorage.getItem('seer_spotlight_text_size'),'160');
+ await click('重設字級');
  await click('替換展示精靈');assert.equal(document.activeElement,document.querySelector('.spot-picker input'));
+ const search=document.querySelector<HTMLInputElement>('.spot-picker input[aria-label="搜尋精靈"]')!;
+ const enterQuery=async(value:string)=>act(async()=>{Object.getOwnPropertyDescriptor(dom.window.HTMLInputElement.prototype,'value')!.set!.call(search,value);search.dispatchEvent(new dom.window.Event('input',{bubbles:true}));});
+ await enterQuery('skill:'+elves.find((e:any)=>e.id==='wiki_4937').skills[0].name);
+ assert.equal(document.querySelectorAll('.spot-choices>button').length,1,'替換選單也能搜尋技能');
+ await enterQuery('找不到的名稱');assert.equal(document.querySelectorAll('.spot-choices>button').length,0);
+ await click('清除搜尋');assert.equal(document.querySelectorAll('.spot-choices>button').length,elves.length);
  await click('星光·雷納多');assert.equal(document.querySelector('.spot-picker'),null);assert.equal(localStorage.getItem('seer_featured_elf'),'wiki_4937');
  assert.ok(document.querySelector('.spot-name h2')?.textContent?.includes('星光·雷納多'));
  const changed=structuredClone(elves);changed.find((e:any)=>e.id==='wiki_4937').skills[0].description='已同步的新技能全文';await render(changed);assert.ok(document.querySelector('.spot-skills')?.textContent?.includes('已同步的新技能全文'));
@@ -72,3 +85,4 @@ try{
  console.log('單隻完整展示、替換持久化、資料更新、重開、空清單、焦點與Escape通過');
 }finally{await act(async()=>root.unmount());await server.close();dom.window.close();}
 process.exit(0);
+

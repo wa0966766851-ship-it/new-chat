@@ -3,6 +3,7 @@ import { Elf, Skill } from "../types";
 import { GLOBAL_ELVES } from "../data/gameData";
 import { getDefaultElvesRevision, subscribeDefaultElves } from "../data/defaultElves";
 import { syncOtherworldReyDescriptions } from "../data/otherworldReyDescriptions";
+import { resolveElfCatalog } from "../utils/elfCatalog";
 import { ELF_ID_MAPPING } from "../data/elfRegistry";
 import { normalizeElfStats, normalizeStoredElfStats } from "../utils/elfStats";
 import {applySavedSkillCorrections} from '../data/savedSkillCorrections';
@@ -98,6 +99,10 @@ export const GameDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     }
   });
 
+  // 相容舊版的隱藏清單；所有目錄入口都套用，避免新版與舊版數量不同。
+  const [legacyDeletedIds] = useState<string[]>(() => {
+    try { const value = JSON.parse(localStorage.getItem('seer_deleted_elves') || '[]'); return Array.isArray(value) ? value.filter(v=>typeof v==='string') : []; } catch { return []; }
+  });
   const [deletedElves, setDeletedElves] = useState<Elf[]>([]);
 
   // 預設清單在掛載後才補入匯入精靈時（正常流程由 main.tsx 在首次繪製前載入完成）重算 allElves。
@@ -283,8 +288,8 @@ export const GameDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         uniqueMap.set(key, elf);
       }
     });
-    return Array.from(uniqueMap.values());
-  }, [customElves, defaultElvesOverrides, defaultElvesRevision]);
+    return resolveElfCatalog(Array.from(uniqueMap.values()), GLOBAL_ELVES, legacyDeletedIds);
+  }, [customElves, defaultElvesOverrides, defaultElvesRevision, legacyDeletedIds]);
 
   const addCustomElf = (elf: Elf) => {
     setCustomElves(prev => [...prev, normalizeElfStats({ ...elf, id: `custom_${Date.now()}` })]);

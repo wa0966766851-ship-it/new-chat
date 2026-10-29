@@ -6,7 +6,7 @@
 import * as fs from "node:fs";
 import * as path from "node:path";
 import { fileURLToPath } from "node:url";
-import { shouldDropShareFile } from './shareFilePolicy';
+import { shouldDropShareFile, shouldDropShareDirectory } from './shareFilePolicy';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -25,16 +25,8 @@ if (!FORCE) {
 }
 
 // 永不帶走的東西（對照 SeerBot：帳號/路徑/pet_bags/截圖/log）
-const DROP_DIRS = new Set([
-  "node_modules", "dist", "release", ".git", "build", "dist-electron",
-  ".seer-cache", "_修正前備份", "_asset_backup",
-  "release", "dist_release",
-]);
-
 function shouldDropDir(rel: string): boolean {
-  const parts = rel.split(path.sep).filter(Boolean);
-  if (parts.some((p) => p.startsWith("_備份"))) return true;
-  return parts.some((p) => DROP_DIRS.has(p));
+  return shouldDropShareDirectory(rel);
 }
 function shouldDropFile(rel: string): boolean {
   return shouldDropShareFile(rel);

@@ -1,5 +1,11 @@
 # 維護腳本分類
 
+本機封存：`archive_workspace_artifacts.py`先預覽，`--apply`才壓縮、核對並移除已備份來源，`--restore`還原到新的測試目錄，`--apply --resume`接續中斷批次；`archive_historical_releases.py`核對ZIP再去除舊EXE副本，保留目前版與上一版；`index_local_archives.mjs`生成本機復原索引。本次固定批次與保護邊界見[執行報告](../docs/audits/2026-10-29_第三輪封存與瘦身執行.md)，不要盲目重跑已完成批次。
+
+空間研究：`node scripts/audit_workspace_storage.mjs`唯讀盤點，`--hash --budget-mib=64`加上限量內容比對，輸出在`.cleanup-audit/storage-analysis.json`。不刪除檔案。範圍與不完整核對的判讀見[檔案分區指南](../docs/guides/storage-layout.md)。
+
+2026-10-29 新增：`cleanup_development_artifacts.mjs` 預覽指定舊快取與桌面副本；`compress_development_screenshots.py` 無損壓縮開發截圖（兩者加 `--apply` 才寫入）；`index_development_records.mjs` 重建文件日期索引。範圍及保留規則見[整理指南](../docs/guides/project-housekeeping.md)。
+
 保留既有腳本路徑，避免破壞package指令、CI與外部接續工具。從專案根目錄執行，正式指令以`package.json`為準。
 
 | 類別 | 入口 | 用途 |

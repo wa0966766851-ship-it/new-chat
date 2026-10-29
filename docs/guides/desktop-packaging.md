@@ -2,6 +2,8 @@
 
 ## 日常建置
 
+只在本機反覆測試EXE且不需要交付ZIP時，可用`npm run package:electron -- --no-zip`，仍保留EXE與網路安裝payload。預設正式建置繼續生成ZIP。歷史版本封存與還原見[2026-10-29執行結果](../audits/2026-10-29_第三輪封存與瘦身執行.md)。
+
 在內層`對戰模擬器`根目錄，使用Node.js 24和鎖定依賴：
 
 ```powershell

@@ -1,10 +1,11 @@
 import { ElfSpotlight } from './ElfSpotlight';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import type { Elf } from '../types';
 import { RELEASE_NOTES } from '../data/releaseNotes';
 import { createElfUpdateBlueprint, createElfUpdateHandoff } from '../utils/elfUpdateWorkflow';
 import { BlueprintImportButton } from './BlueprintImportButton';
 
+import { ElfFilterBar, useElfFilter } from './shared/ElfPicker';
 type Tab = 'news' | 'elves' | 'workflow';
 type Props = { elves: Elf[]; onBack: () => void; onEditElf: (elf: Elf, tab: 'blockly') => void };
 
@@ -19,6 +20,8 @@ export default function UpdatesPage({ elves, onBack, onEditElf }: Props) {
   const [selectedId, setSelectedId] = useState('wiki_4937');
   const [request, setRequest] = useState('');
   const [feedback, setFeedback] = useState('');
+  const filter = useElfFilter();
+  const choices = useMemo(()=>filter.filter(elves),[filter.filter,elves]);
   const selected = elves.find(elf => elf.id === selectedId);
   const run = async (task: () => void | Promise<void>) => {
     setFeedback('');
@@ -50,9 +53,11 @@ export default function UpdatesPage({ elves, onBack, onEditElf }: Props) {
     {tab === 'workflow' && <div className="space-y-5">
       <div className="ios-card p-5 space-y-3">
         <h2 className="font-semibold text-lg">選擇要更新的精靈</h2>
+        <ElfFilterBar state={filter} count={`${choices.length} / ${elves.length}`}/>
+        {!choices.length && <p role="status">找不到符合的精靈，請清除搜尋或篩選。</p>}
         <label className="block text-sm" htmlFor="update-elf-select">目前精靈</label>
         <select id="update-elf-select" className="w-full bg-slate-950 border border-slate-700 rounded-xl p-3" value={selected ? selectedId : ''} onChange={e => { setSelectedId(e.target.value); setFeedback(''); }}>
-          <option value="" disabled>請選擇精靈</option>{elves.map(elf => <option value={elf.id} key={elf.id}>{elf.name} · {elf.id}</option>)}
+          <option value="" disabled>請選擇精靈</option>{selected && !choices.some(e=>e.id===selected.id) && <option value={selected.id}>{selected.name} · 目前選取（不在篩選結果）</option>}{choices.map(elf => <option value={elf.id} key={elf.id}>{elf.name} · {elf.id}</option>)}
         </select>
         <p className="text-sm text-slate-400">修改前先匯出圖紙備份。兩種途徑都會回到編輯器確認，按下儲存後才修改本機資料。</p>
         <button type="button" className="ios-button" disabled={!selected} onClick={() => void run(() => { downloadText(createElfUpdateBlueprint(selected!), `seer-elf-${selected!.id}.json`, 'application/json'); setFeedback('已送出圖紙備份下載，請確認檔案已儲存。'); })}>匯出目前圖紙</button>
@@ -60,7 +65,7 @@ export default function UpdatesPage({ elves, onBack, onEditElf }: Props) {
       <div className="grid gap-5 lg:grid-cols-2">
         <article className="ios-card p-5 space-y-4">
           <h2 className="text-lg font-semibold">途徑一：透過積木整合</h2>
-          <ol className="list-decimal pl-5 text-sm space-y-3"><li>開啟所選精靈的積木編輯頁。</li><li>依原文設定觸發、條件、目標、行為及期限，同步更新說明。</li><li>確認技能、魂印與特質的積木內容，儲存後在實戰演練測試雙方結果。</li><li>匯出完成的圖紙，供他人匯入或交由維護者整合。</li></ol>
+          <ol className="list-decimal pl-5 text-sm space-y-3"><li>開啟所選精靈的積木編輯頁。</li><li>依原文設定觸發、條件、目標、行為及期限，同步更新說明。</li><li>保留正式原文；魂印是被動總稱，分清專屬特性、特質與異能，通用特性獨立配置。確認五個主要技能與明確的第五技能標記，儲存後在實戰演練測試雙方結果。</li><li>匯出完成的圖紙；逐句核對原文、積木、實際事件與數值測試，再交由維護者整合。</li></ol>
           <button type="button" className="ios-button-primary" disabled={!selected} onClick={() => onEditElf(selected!, 'blockly')}>用積木編輯</button>
         </article>
         <article className="ios-card p-5 space-y-4">

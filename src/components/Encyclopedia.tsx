@@ -364,7 +364,7 @@ const Encyclopedia: React.FC<EncyclopediaProps> = ({ onClose, initialTab = 'elve
               <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
                 {shownElves.map((elf, index) => <ElfRosterCard key={`${elf.id}-${index}`} elf={elf} onDetail={() => setSelectedElf(elf)} />)}
               </div>
-              {selectedElf && <ElfSpotlight elves={[selectedElf]} selectedElf={selectedElf} onClose={()=>setSelectedElf(null)}/>}
+              {selectedElf && <ElfSpotlight elves={allElves} selectedElf={allElves.find(e=>e.id===selectedElf.id) ?? selectedElf} onClose={()=>setSelectedElf(null)}/>}
             </div>
           )}
 

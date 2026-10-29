@@ -235,7 +235,7 @@ export function BagScene({ b, onSetup }: { b: ShellBridge; onSetup?: () => void 
 
         {/* ── 搜尋（只有精靈分頁用；裝備分頁的搜尋在 SuitRail 內） ── */}
         {tab === "elf" && (
-        <div className="shrink-0"><ElfFilterBar state={f} variant="shell" placeholder="搜尋名稱、ID、屬性" count={`${items.length}`} /></div>
+        <div className="shrink-0"><ElfFilterBar state={f} variant="shell" count={`${items.length}`} /></div>
         )}
         {/* ── 隊伍分頁：雙方並排（手機上下、桌面左右） ── */}
         {tab === "team" && (

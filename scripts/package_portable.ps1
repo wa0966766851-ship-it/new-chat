@@ -29,10 +29,12 @@ try {
 Copy-Item (Join-Path $root "dist") $stage -Recurse -Force
 Copy-Item (Join-Path $root "images") $stage -Recurse -Force
 Copy-Item (Join-Path $root "public") $stage -Recurse -Force
-foreach ($optional in @(([char]0x7CFB), "pet", ".seer-cache")) {
+foreach ($optional in @(([char]0x7CFB), "pet")) {
   $source = Join-Path $root $optional
   if (Test-Path -LiteralPath $source) { Copy-Item $source $stage -Recurse -Force }
 }
+. (Join-Path $root 'packaging\copy-asset-cache.ps1')
+Copy-PortableAssetCache -SourceRoot $root -DestinationRoot $stage
 $node = (Get-Command node.exe).Source
 Copy-Item $node (Join-Path $stage "node.exe") -Force
 Copy-Item (Join-Path $root "packaging\launch-portable.cmd") (Join-Path $stage "launch-portable.cmd") -Force

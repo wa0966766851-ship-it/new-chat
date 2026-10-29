@@ -1,4 +1,5 @@
 import React from "react";
+import { ELF_SEARCH_PLACEHOLDER, ELF_SEARCH_HINT } from "../../utils/elfSearch";
 import { Search, Filter, ChevronDown, ChevronUp, X } from "lucide-react";
 import type { Elf } from "../../types";
 import { SEER_TYPES } from "../../utils/statCalculator";
@@ -60,7 +61,7 @@ export function useElfFilter(initial: Partial<typeof DEFAULT_ELF_FILTER> = {}) {
 }
 export type ElfFilterState = ReturnType<typeof useElfFilter>;
 
-export function ElfFilterBar({ state, variant = "slate", placeholder = "名稱、ID、屬性（可用空白組合）", count, showInTeam = false }: { state: ElfFilterState; variant?: PickerVariant; placeholder?: string; count?: React.ReactNode; showInTeam?: boolean }) {
+export function ElfFilterBar({ state, variant = "slate", placeholder = ELF_SEARCH_PLACEHOLDER, count, showInTeam = false }: { state: ElfFilterState; variant?: PickerVariant; placeholder?: string; count?: React.ReactNode; showInTeam?: boolean }) {
   const [open, setOpen] = React.useState(false);
   const t = T[variant];
   const shell = variant === "shell";
@@ -78,7 +79,8 @@ export function ElfFilterBar({ state, variant = "slate", placeholder = "名稱�
       <div className={shell ? "flex items-center gap-1" : "flex flex-col md:flex-row gap-3 md:items-center"}>
         <div className={`relative ${shell ? "flex-1 min-w-0" : "flex-1 w-full"}`}>
           <Search className={`${shell ? "w-3 h-3 left-2" : "w-4 h-4 left-3"} absolute top-1/2 -translate-y-1/2 ${t.icon}`} />
-          <input type="text" aria-label="搜尋精靈" placeholder={placeholder} value={state.query} onChange={e => state.setQuery(e.target.value)} className={t.input} />
+          <input type="text" aria-label="搜尋精靈" title={ELF_SEARCH_HINT} placeholder={placeholder} value={state.query} onChange={e => state.setQuery(e.target.value)} className={`${t.input} !pr-9`} />
+          {state.query && <button type="button" aria-label="清除搜尋" title="清除搜尋，保留篩選" onClick={() => state.setQuery('')} className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400"><X className="w-3.5 h-3.5" /></button>}
         </div>
         <div className={`flex items-center gap-1.5 ${shell ? "shrink-0" : "w-full md:w-auto"}`}>
           <select aria-label="排序" title="排序" value={state.sort} onChange={e => state.setSort(e.target.value as ElfSortKey)} className={`${SEL} ${t.icon} ${shell ? "border-[rgba(148,163,184,0.22)] bg-[rgba(6,16,26,0.82)]" : "border-slate-700"}`}>

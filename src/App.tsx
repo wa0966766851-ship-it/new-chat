@@ -7,8 +7,7 @@ import React, { useState, useEffect, lazy, Suspense } from "react";
 import { Elf, BattleMode } from "./types";
 import { DEFAULT_ELVES } from "./data/defaultElves";
 import { applySavedSkillCorrections } from './data/savedSkillCorrections';
-import { calculateElfStats, resetElfStateForBattle, setDynamicMatchups } from "./utils/statCalculator";
-import { applyElfOverrides } from "./data/elfRegistry";
+import { resetElfStateForBattle, setDynamicMatchups } from "./utils/statCalculator";
 import { useShellMode } from "./shell/shellMode";
 import { LegacyShell, ShellSwitchButton } from "./shell/LegacyShell";
 import { AegisShell } from "./shell/AegisShell";
@@ -71,9 +70,6 @@ function AppContent() {
   const [editingElf, setEditingElf] = useState<Elf | null>(null);
   const [specialMode, setSpecialMode] = useState<"destiny" | "interstellar" | undefined>();
   const [interstellarOptions, setInterstellarOptions] = useState<any>(null);
-  const [customSkillsMap] = useState<Record<string, any>>({});
-  const [customInscriptionsMap] = useState<Record<string, any>>({});
-  const [customResistancesMap] = useState<Record<string, any>>({});
   const elvesRef = React.useRef<Elf[]>([]);
   const [editorTab, setEditorTab] = useState<"ai" | "manual" | "blockly" | undefined>(undefined);
 
@@ -107,15 +103,6 @@ function AppContent() {
     return () => window.removeEventListener("edit-elf", onEditElf);
   }, []);
 
-  const [deletedElfIds] = useState<string[]>(() => {
-    try {
-      const saved = localStorage.getItem("seer_deleted_elves");
-      return saved ? JSON.parse(saved) : [];
-    } catch {
-      return [];
-    }
-  });
-
   useEffect(() => {
     try {
       const storedMatchups = localStorage.getItem("seer_custom_matchups");
@@ -125,30 +112,8 @@ function AppContent() {
     }
   }, []);
 
-  const allElvesCombined = React.useMemo(() => allElves.filter((elf, index, self) => {
-    if (!elf) return false;
-    const key = elf.id || elf.name;
-    if (deletedElfIds.includes(key) || deletedElfIds.includes(elf.name) || (elf.id && deletedElfIds.includes(elf.id))) return false;
-    return index === self.findIndex((t) => (t.id && elf.id && t.id === elf.id) || t.name === elf.name);
-  }).map(elf => {
-    const key = elf.id || elf.name;
-    let { updated, needsRecalc } = applyElfOverrides(elf, DEFAULT_ELVES);
-
-    if (!elf.isCustom) {
-      if (customSkillsMap[key]) updated.skills = customSkillsMap[key];
-      if (customInscriptionsMap[key]) { updated.inscriptions = customInscriptionsMap[key]; needsRecalc = true; }
-      if (customResistancesMap[key]) updated.resistances = customResistancesMap[key];
-    }
-
-    if (needsRecalc) {
-      const calc = calculateElfStats(updated.baseStats, updated.level || 100, updated.ivs, updated.evs,
-        updated.natureModifiers, updated.inscriptions, updated.guildBonuses, updated.hasAnnualBonus);
-      updated.calculatedStats = calc;
-      updated.maxHp = calc.hp;
-      updated.currentHp = calc.hp;
-    }
-    return applySavedSkillCorrections(updated, DEFAULT_ELVES);
-  }), [allElves, deletedElfIds, customSkillsMap, customInscriptionsMap, customResistancesMap]);
+  // 目錄整備集中在 GameDataProvider，新舊殼、圖鑑與介紹共用同一份資料。
+  const allElvesCombined = allElves;
   elvesRef.current = allElvesCombined;
 
   const handleStartBattle = (

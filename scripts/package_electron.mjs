@@ -18,7 +18,7 @@ export function cleanupElectronWork(root){
  fs.mkdirSync(path.dirname(lock),{recursive:true});const fd=fs.openSync(lock,'wx');
  try{cleanWork(root);}finally{fs.closeSync(fd);fs.unlinkSync(lock);}
 }
-export function packageElectron(root,{keep=false,keepVersion=false,npmCli=process.env.npm_execpath,execute,zip=zipExecutables}={}) {
+export function packageElectron(root,{keep=false,keepVersion=false,makeZip=true,npmCli=process.env.npm_execpath,execute,zip=zipExecutables}={}) {
 if(!npmCli)throw Error('請使用 npm run package:electron 啟動');
 const run=execute || (args=>{const r=spawnSync(process.execPath,args,{cwd:root,stdio:'inherit',windowsHide:true});if(r.error)throw r.error;if(r.status!==0)throw Error('封裝程序失敗，exit '+r.status);});
 let succeeded=false;
@@ -37,7 +37,8 @@ try{
   return fs.existsSync(dir)?fs.readdirSync(dir).filter(n=>n.endsWith('.exe')&&n.includes(`-${version}-`)&&!n.endsWith('.__uninstaller.exe')).map(n=>path.join(dir,n)):[];
  });
  if(!files.length)throw Error('封裝完成但沒有EXE，保留診斷資訊');
- console.log('EXE ZIP：'+zip(root,files,version));
+ if(makeZip)console.log('EXE ZIP：'+zip(root,files,version));
+ else console.log('本機建置略過額外EXE ZIP；安裝器與payload仍保留。');
  succeeded=true;
 }finally{
  try {
@@ -54,5 +55,5 @@ try{
 if(process.argv[1]&&path.resolve(process.argv[1])===fileURLToPath(import.meta.url)){
  const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'..');
  if(process.argv.includes('--clean-work'))cleanupElectronWork(root);
- else packageElectron(root,{keep:process.argv.includes('--keep-work'),keepVersion:process.argv.includes('--keep-version')});
+ else packageElectron(root,{keep:process.argv.includes('--keep-work'),keepVersion:process.argv.includes('--keep-version'),makeZip:!process.argv.includes('--no-zip')});
 }
