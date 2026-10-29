@@ -138,7 +138,7 @@ export function HeroStage({ summary, isPreview, onEdit, b }: {
 
 export function SettingsDrawer({ b, onClose, onSetup }: { b: ShellBridge; onClose: () => void; onSetup: () => void }) {
   return (
-    <div className="fixed inset-0 z-40 flex flex-col justify-end" role="dialog" aria-label="設定">
+    <div className="fixed inset-0 z-40 flex flex-col justify-end" role="dialog" data-shell-drawer aria-label="設定">
       <button type="button" aria-label="關閉" onClick={onClose} className="absolute inset-0 bg-black/70" />
       <div
         className="relative p-4 flex flex-col gap-3 max-h-[80dvh] overflow-y-auto"

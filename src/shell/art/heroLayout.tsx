@@ -71,7 +71,7 @@ export function HeroLayoutPanel({
 
 
   return (
-    <div className="fixed inset-0 z-50 flex flex-col justify-end" role="dialog" aria-label="立繪位置與大小">
+    <div className="fixed inset-0 z-50 flex flex-col justify-end" role="dialog" data-shell-drawer aria-label="立繪位置與大小">
       <button type="button" aria-label="關閉" onClick={onClose} className="absolute inset-0 bg-black/60" />
       <div
         className="relative p-3.5 flex flex-col gap-3"

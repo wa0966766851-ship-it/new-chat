@@ -55,7 +55,7 @@ try {
   const { appearanceElf, startIllusion, endIllusion } = await server.ssrLoadModule('/src/battle/illusion.ts');
   const { ElfReadOnlyProfile } = await server.ssrLoadModule('/src/components/ElfReadOnlyProfile.tsx');
   const { loadSeerIndex } = await server.ssrLoadModule('/src/battle/seerAssets.ts');
-  const { spriteHeightRatio } = await server.ssrLoadModule('/src/battle/spriteMetrics.ts');
+  const { battleSpriteSizeRatio } = await server.ssrLoadModule('/src/battle/spriteMetrics.ts');
   await loadSeerIndex();
   const wait = { name: '幻化圖片驗收等待', category: '屬性', type: '普通', power: 0, pp: 30, maxPp: 30, isSureHit: true, description: '' };
   const make = (id: string): any => ({ id, battleId: id, name: id, type: '普通', level: 100,
@@ -106,7 +106,7 @@ try {
     await act(async () => root.render(React.createElement(ProportionalSprite, spriteProps)));
     await loaded();
     const wrapper = document.querySelector<HTMLElement>('[data-sprite-side]')!;
-    assert.equal(wrapper.dataset.spriteRatio, spriteHeightRatio(500).toFixed(2));
+    assert.equal(wrapper.dataset.spriteRatio, '1.65');
     const targetWidth = image().parentElement!.style.width;
     // 同圖換陣營，非對稱透明邊界也需重新計算錨點。
     const leftBefore = image().parentElement!.style.left;
@@ -127,7 +127,7 @@ try {
     await loaded();
     assert.ok(image().src.endsWith(original.path), '同一戰鬥身分解除後還原原立繪');
     assert.equal(image().alt, original.name);
-    assert.equal(wrapper.dataset.spriteRatio, spriteHeightRatio(50).toFixed(2));
+    assert.equal(wrapper.dataset.spriteRatio, battleSpriteSizeRatio(50).toFixed(2));
     assert.notEqual(image().parentElement!.style.width, targetWidth, '解除重新計算原身高比例');
     assert.ok(image().style.maskImage.includes('radial-gradient'), '還原原場景遮罩（瀏覽器可正規化省略ellipse關鍵字）');
     await act(async () => root.render(React.createElement(ElfAvatar, { elf: owner, kind: 'head', battleSide: side })));
@@ -173,8 +173,9 @@ try {
     let state = driver.getSyncState(); assert.ok(state[side].illusion);
     const head = `[data-hud="${side}"] button img`, body = `[data-sprite-side="${side}"] img`;
     assert.ok(image(head).src.endsWith(target.path)); assert.ok(image(body).src.endsWith(target.path));
+    await loaded(body); // 素材載入後才套用 URL 專用的巨型取景，不能驗到載入前的身高備援值。
     assert.equal(image(body).style.transform, side === 'p2' ? 'scaleX(-1)' : '');
-    assert.equal(document.querySelector<HTMLElement>(`[data-sprite-side="${side}"]`)!.dataset.spriteRatio, spriteHeightRatio(500).toFixed(2));
+    assert.equal(document.querySelector<HTMLElement>(`[data-sprite-side="${side}"]`)!.dataset.spriteRatio, '1.65');
     if (id === '5033') {
       assert.equal(state[side].globalPpMaxOffset, 10);
       // 只設解除前置條件，正式ENFORCE派發及endIllusion仍由引擎處理。
@@ -202,7 +203,7 @@ try {
     assert.ok(image(head).src.endsWith(`/seer/head/${art}.png`), `${id}頭像還原原圖`);
     assert.ok(image(body).src.endsWith(`/seer/body/${art}.png`), `${id}立繪還原原圖`);
     assert.equal(image(body).style.transform, side === 'p1' ? 'scaleX(-1)' : '', '還原朝左原圖：P1朝右、P2朝左');
-    assert.equal(document.querySelector<HTMLElement>(`[data-sprite-side="${side}"]`)!.dataset.spriteRatio, spriteHeightRatio(50).toFixed(2));
+    assert.equal(document.querySelector<HTMLElement>(`[data-sprite-side="${side}"]`)!.dataset.spriteRatio, battleSpriteSizeRatio(50).toFixed(2));
     await act(async () => {
       // PVP依序選指令；P2換人須等P1已提交，不可從p1_select硬呼叫冒充實際UI。
       if (side === 'p2') driver.onSkillSelect(other, driver.getSyncState()[other].skills[0]);

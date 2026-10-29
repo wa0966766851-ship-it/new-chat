@@ -212,7 +212,7 @@ function ElfInfoDrawer({
   const tone = side === "p1" ? "#38BDF8" : "#FB7185";
 
   return (
-    <div className="fixed inset-0 z-50 flex flex-col justify-end" role="dialog" aria-label="精靈資訊">
+    <div className="fixed inset-0 z-50 flex flex-col justify-end" role="dialog" data-shell-drawer aria-label="精靈資訊">
       <button type="button" aria-label="關閉" onClick={onClose} className="absolute inset-0 bg-black/70" />
       <div
         className="relative p-4 flex flex-col gap-3"
@@ -317,7 +317,7 @@ export function ElfPickerDrawer({
   const list = useMemo(() => f.filter(b.allElvesCombined), [f.filter, b.allElvesCombined]);
 
   return (
-    <div className="fixed inset-0 z-50 flex flex-col justify-end" role="dialog" aria-label="選擇精靈">
+    <div className="fixed inset-0 z-50 flex flex-col justify-end" role="dialog" data-shell-drawer aria-label="選擇精靈">
       {error && <p role="alert" className="absolute top-4 inset-x-4 z-10 bg-slate-950 p-3 text-amber-200">{error}</p>}
       <button type="button" aria-label="關閉" onClick={onClose} className="absolute inset-0 bg-black/70" />
       <div

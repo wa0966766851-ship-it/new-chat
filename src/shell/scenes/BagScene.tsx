@@ -402,7 +402,7 @@ export function BagScene({ b, onSetup }: { b: ShellBridge; onSetup?: () => void 
 
         {/* ── 詳情抽屜 ── */}
         {detail && (
-          <div className="fixed inset-0 z-40 flex flex-col justify-end" role="dialog" aria-label="物品詳情">
+          <div className="fixed inset-0 z-40 flex flex-col justify-end" role="dialog" data-shell-drawer aria-label="物品詳情">
             <button type="button" aria-label="關閉" onClick={() => setDetail(null)} className="absolute inset-0 bg-black/70" />
             <div
               className="relative p-4 pb-8 flex flex-col gap-2.5"
@@ -463,7 +463,7 @@ export function BagScene({ b, onSetup }: { b: ShellBridge; onSetup?: () => void 
       {cardElf && <ElfCardSheet elf={cardElf} onClose={() => setCardElf(null)} />}
       {/* 從倉庫換精靈：先選要換掉隊伍中的哪一隻（使用者要求 2026-10-23） */}
       {swapIncoming && (
-        <div className="fixed inset-0 z-50 flex flex-col justify-end" role="dialog" aria-label="選擇要替換的精靈">
+        <div className="fixed inset-0 z-50 flex flex-col justify-end" role="dialog" data-shell-drawer aria-label="選擇要替換的精靈">
           <button type="button" aria-label="關閉" onClick={() => { setSwapIncoming(null); setSwapError(""); }} className="absolute inset-0 bg-black/70" />
           <div
             className="relative p-3 flex flex-col gap-2"

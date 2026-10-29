@@ -14,7 +14,7 @@ export function NoticeSheet({ onClose, elves = [] }: { onClose: () => void; elve
   if(tab==='elves')return <ElfSpotlight elves={elves} onClose={onClose} onBack={()=>setTab('news')}/>;
 
   return (
-    <div className="fixed inset-0 z-50 flex flex-col" role="dialog" aria-label="航行日誌">
+    <div className="fixed inset-0 z-50 flex flex-col" role="dialog" data-shell-drawer aria-label="航行日誌">
       <button type="button" aria-label="關閉" onClick={onClose} className="absolute inset-0 bg-black/70" />
       <div
         className="relative flex flex-col flex-1 min-h-0 mt-12"

@@ -21,7 +21,7 @@ export default function HeroPicker({
   const list = React.useMemo(() => f.filter(b.allElvesCombined, { fresh }), [f.filter, b.allElvesCombined, fresh]);
 
   return (
-    <div className="fixed inset-0 z-50 flex flex-col justify-end" role="dialog" aria-label="換立繪">
+    <div className="fixed inset-0 z-50 flex flex-col justify-end" role="dialog" data-shell-drawer aria-label="換立繪">
       <button type="button" aria-label="關閉" onClick={onClose} className="absolute inset-0 bg-black/70" />
       <div
         className="relative p-3 flex flex-col gap-2"
