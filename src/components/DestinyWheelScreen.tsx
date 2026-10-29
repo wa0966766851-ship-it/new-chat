@@ -436,32 +436,36 @@ export default function DestinyWheelScreen({
         </div>
 
         <div className="flex items-center gap-2 whitespace-nowrap">
-          {/* 2026-10-29：三態樣式循環 —— 數理 HUD → 標準 → 紙本 → 數理 HUD */}
-          <button
-            onClick={() => {
-              if (isPaperStyle) { setIsPaperStyle(false); setIsMathStyle(true); }
-              else if (isMathStyle) { setIsMathStyle(false); }
-              else { setIsPaperStyle(true); }
-            }}
-            className={`px-3 py-1.5 rounded-lg text-xs font-bold border transition flex items-center gap-1 ${
-              isPaperStyle
-                ? "bg-[#F2EDE4] border-[#1F4FD8] text-[#1F4FD8] shadow-[0_0_12px_rgba(31,79,216,0.35)]"
-                : isMathStyle
-                  ? "bg-[#36B2BC]/20 border-[#36B2BC] text-[#36B2BC] shadow-[0_0_12px_rgba(54,178,188,0.3)]"
-                  : "bg-slate-800 border-slate-600 text-slate-300"
-            }`}
-            title={
-              isPaperStyle
-                ? "紙本手繪風（拾光行記筆法）"
-                : isMathStyle
-                  ? "命運數理矩陣（MATH HUD）"
-                  : "標準科技風"
-            }
-          >
-            <span>
-              {isPaperStyle ? "📜 紙本" : isMathStyle ? "📐 數理 HUD" : "🎨 標準"}
-            </span>
-          </button>
+          {/* 2026-10-30：三種風格並列，直接點選（原本是循環鈕，要點兩下才到紙本，不好發現） */}
+          <div className="flex items-center rounded-lg overflow-hidden" style={{ border: "1px solid rgba(148,163,184,0.35)" }}>
+            {([
+              { id: "math", label: "📐 數理", title: "命運數理矩陣（MATH HUD）",
+                on: "bg-[#36B2BC]/25 text-[#36B2BC]",
+                active: isMathStyle && !isPaperStyle },
+              { id: "plain", label: "🎨 標準", title: "標準科技風",
+                on: "bg-slate-700/80 text-slate-200",
+                active: !isMathStyle && !isPaperStyle },
+              { id: "paper", label: "📜 紙本", title: "紙本手繪風（拾光行記筆法）",
+                on: "bg-[#F2EDE4] text-[#1F4FD8]",
+                active: isPaperStyle },
+            ] as const).map((opt) => (
+              <button
+                key={opt.id}
+                type="button"
+                onClick={() => {
+                  if (opt.id === "paper") { setIsPaperStyle(true); setIsMathStyle(false); }
+                  else if (opt.id === "math") { setIsPaperStyle(false); setIsMathStyle(true); }
+                  else { setIsPaperStyle(false); setIsMathStyle(false); }
+                }}
+                title={opt.title}
+                aria-pressed={opt.active}
+                className={`px-2.5 py-1.5 text-[11px] font-bold transition ${opt.active ? opt.on : "text-slate-400 hover:text-slate-200"}`}
+                style={{ background: opt.active ? undefined : "rgba(15,23,42,0.6)" }}
+              >
+                {opt.label}
+              </button>
+            ))}
+          </div>
           <button
             onClick={() => setBattleMode(m => m === 'PVE' ? 'PVP' : 'PVE')}
             className={`px-3 py-1.5 rounded-lg text-xs font-bold border transition flex items-center gap-1 ${
