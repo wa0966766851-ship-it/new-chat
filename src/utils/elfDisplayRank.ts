@@ -12,6 +12,8 @@ export function getElfDisplayRank(elf: Elf): ElfDisplayRank {
   if (["聖靈譜尼", "人皇·帝辛", "眾神之父·奧丁", "次元龍", "混濁海妖.布林克克", "柯爾霍德", "聖光斯嘉麗", "變革·馬爾修斯", "星皇", "混沌魔君索倫森", "湮滅之主・咤克斯", "異境神霆·雷伊"].some(n => name.includes(n))) return "S";
   if (["鎮魂.巴弗洛", "冰魄·柯爾德", "混沌·布萊克", "蟲后·奧佩婭", "魔獅迪露", "星光·", "譜尼", "王·"].some(n => name.includes(n))) return "A";
   // 未經逐隻語意／強度驗證的精靈不因技能數量或第五技能而自動升 S。
+  // 使用者 2026-10-18 裁定：皮特薩拉羅為 B 級（未列名精靈不得因種族值 735 誤升 A/S）。
+  if (name.includes("皮特薩拉羅")) return "B";
   const total = Object.values(elf.baseStats || {}).reduce((sum, value) => sum + (Number(value) || 0), 0);
   return total >= 680 ? "A" : "B";
 }

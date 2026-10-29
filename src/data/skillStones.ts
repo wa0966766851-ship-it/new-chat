@@ -118,7 +118,19 @@ export function toSSStone(skill: Skill, ssText?: Record<string, string>): Skill 
   const name = skill.name.replace(/-[A-Z]+$/, "") + "-SS";
   // 保留玩家選定的效果；普通石不憑空新增效果。SS 的 PP 從原級技能扣除。
   const desc = (skill.description || "").replace(/\d+%機率/g, "100%機率").replace(/（[^）]*投石者[^）]*）/g, "");
-  return { ...skill, name, power: 240, skillStoneOriginalGrade: stoneGrade(skill), maxPp: stoneBasePp(skill), skillStoneGrade: "SS", description: desc };
+  return { ...skill, name, power: 240, skillStoneOriginalGrade: stoneGrade(skill), maxPp: stoneBasePp(skill), skillStoneGrade: "SS", description: desc,
+    ...(skill.kit ? { kit: certainChance(skill.kit) } : {}) };
+}
+
+/** 投石者的 SS 轉化「機率100%」：技能石自帶 Kit 時，把機率條件（chance）及機率先制的百分比改為 100。其餘欄位原樣保留。 */
+function certainChance<T>(value: T): T {
+  if (Array.isArray(value)) return value.map(certainChance) as unknown as T;
+  if (!value || typeof value !== 'object') return value;
+  const node: any = value, out: any = {};
+  for (const [key, child] of Object.entries(node)) out[key] = certainChance(child);
+  if (node.c === 'chance' && out.p) out.p = { ...out.p, pct: 100 };
+  if (node.codeId === 'skill_property' && node.params?.property === 'chance_priority') out.params = { ...out.params, pct: 100 };
+  return out;
 }
 
 export function isSkillStone(skill?: Skill): boolean {

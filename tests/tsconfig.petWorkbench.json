@@ -1,0 +1,5 @@
+{
+  "extends": "../tsconfig.json",
+  "compilerOptions": { "types": ["vite/client", "node"], "resolveJsonModule": true },
+  "include": ["fixtures/petBattlePreview.tsx", "fixtures/PetPerformancePanel.tsx", "helpers/petWorkbench.ts", "fixtures/petAnimation.vite.config.ts"]
+}

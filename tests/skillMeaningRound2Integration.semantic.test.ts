@@ -23,7 +23,6 @@ try {
   for(const side of ['p1','p2'])for(const scenario of ['five','ten','fatal','rebirth','backlash','sealed']){
     const hits:any[]=[];let rolled=0,reborn=false;
     const skills=getBattleSkillRegistry(), souls=getSoulMarkRegistry();
-    skills['星光·浪打千擊']=(ctx:any)=>STARLIGHT_RUS_SKILLS['星光·浪打千擊']({...ctx,rng:()=>scenario==='ten'?0.999:0});
     souls['連擊附帶次數觀測者']=(ctx:any,event:string,data:any)=>{
       if(event==='AFTER_ATTACK_HIT'){
         rolled++;
@@ -38,6 +37,8 @@ try {
       return false;
     };
     const skill=structuredClone(DEFAULT_ELVES.find((e:any)=>e.id==='5010').skills.find((s:any)=>s.name==='星光·浪打千擊'));
+    // 浪打千擊已是正式Kit（舊 handler 不再執行，無法再用 handler 包裝控制 rng）：把 multi_hit 的 5~10 釘成固定次數（原控制為 rng=0→5、rng=0.999→10）。
+    {const pinned=scenario==='ten'?10:5;let found=0;for(const entry of skill.kit)for(const stmt of entry.params?.clause?.body||[])for(const act of stmt.acts||[])if(act.op==='multi_hit'){act.p={...act.p,min:pinned,max:pinned};found++;}assert.equal(found,1,'Kit 內恰有一個 multi_hit');}
     const a=make('連擊附帶次數觀測者',200);a.skills=[skill];a.isAdditionalInvalid=scenario==='sealed';
     const b=make('受擊觀測者',100);if(scenario==='fatal'||scenario==='rebirth')b.currentHp=1;
     await act(async()=>root.render(React.createElement(Battle,{key:side+scenario,

@@ -4,9 +4,24 @@ export type Side = "self" | "opp" | "both";
 
 /** 觸發時點（魂印標頭、N回合內的持續效果） */
 export type Trigger =
+  | "team_battle_start" | "team_entrance" | "team_after_action" | "team_round_end"
+  | "team_before_status" | "team_status_received" | "team_defeated"
+  | "team_phase_end" | "team_opponent_skill"
+  | "team_action_end"
+  | "opp_damaged_skill"
+  | "opp_damage_settled"
+  | "skill_selected"
+  | "outgoing_power" | "incoming_power" // 正式公式前的攻方／受方威力修正
+  | "resource_changed" // 資源積木實際改變指定持有者層數後
   | "use" // 技能使用（技能本身的效果）
+  | "before_action" // 行動方出手流程開始（先後手已定；魂印先手/後手分支）
+  | "before_skill" // 自身本次技能前置時點（PP成本修正、必中查詢；早於命中與傷害）
+  | "before_stat_change" // 他方即將改變自身能力等級前（可移除本次變更或阻止）
+  | "modify_priority" // 先制判定（priorityComp 修正；尚未決定出手順序）
+  | "before_instant_kill" // 秒殺修正前；在場與存活背包持有者共同攔截
   | "extra_action_start" | "extra_action_end" // 額外行動獨立節點（不等同再次使用技能）
   | "after_hit" // 技能傷害結算後（擊敗／未擊敗、造成傷害量相關）
+  | "attack_hit" // 每次攻擊命中後，含連擊的逐擊事件
   | "on_invalid" // 技能無效（含未命中）時
   | "self_invalid" // 自身技能無效（持續效果用）
   | "battle_start"
@@ -16,14 +31,24 @@ export type Trigger =
   | "phase_end"
   | "self_skill" | "self_attack" | "self_status" // 自身使用技能／攻擊技能／屬性技能時
   | "self_after_skill" | "self_after_attack" | "self_after_status" | "self_after_physical" | "self_after_special" // 自身使用技能後
+  | "self_after_use" // 已使用技能後，包含未命中／技能無效；行動前被打斷不觸發
   | "opp_skill" | "opp_attack" | "opp_status" // 對手使用技能時
+  | "opp_used_skill" | "opp_used_attack" | "opp_used_status" // 對手確實使用，通過行動閘門後
+  | "opp_before_skill" | "opp_before_attack" | "opp_before_status" // 對手出手流程前，可攔截當次行動
   | "opp_after_skill" | "opp_after_attack" | "opp_after_status"
   | "damaged" | "damaged_skill" | "damaged_attack" | "damaged_true" | "damaged_fixed" | "damaged_percent" | "damaged_nontrue" // 自身受到傷害後
   | "incoming" | "incoming_skill" | "incoming_attack" | "incoming_nontrue" // 受到傷害時（可修正傷害）
   | "outgoing" | "outgoing_skill" | "outgoing_attack" // 造成傷害時（可修正傷害）
   | "defeated" // 自身被擊敗時
   | "kill" // 擊敗對手時
+  | "not_killed" // 正式出手流程結束後未擊敗，含額外行動後死亡節點一
   | "fatal" // 受到致命傷害時
+  | "before_status" // 受方異常附加前，可阻止或替換本次異常
+  | "pp_consumed" // 本技能槽的PP確實被消耗，同一因果鏈每槽一次
+  | "pp_cleared" // 原持有者至少一槽正PP被清除為0；不包含普通出招或削PP
+  | "turn_effects_cleared" // 本持有者的回合效果實際被消除
+  | "stat_boost_cleared" // 他方實際消除／吸取本持有者的能力提升
+  | "status_end" | "status_immune" | "status_tick" // 持有者異常結束、免疫結果及扣減前
   | "switch_out"
   | "status_received" // 自身受到異常狀態時
   | "bench" // 自身位於背包時
@@ -31,7 +56,8 @@ export type Trigger =
   | "any_status" // 雙方任一方受到異常時
   | "holder_damaged_attack" | "holder_damaged" | "holder_passive" // 印記持有者
   | "passive" // 常駐（顯示用；由條件式修正在各時點生效）
-  | "custom"; // 無法對應（顯示原文）
+  | "held_resource_lost"
+  | "custom" | 'damage_immune'; // 無法對應（顯示原文）
 
 export interface Cond {
   c: string; // 條件 id
@@ -71,9 +97,13 @@ export interface Timed {
 }
 
 export interface Clause {
+  /** 具資源消耗的重生可重複觸發。 */
+  repeatable?: boolean;
   raw: string; // 原文（含標記）
   marker?: string; // ■ 🎯 ◇ > >>
   trig: Trigger;
+  /** 出戰背包觀察者；明確指定死亡後仍生效，不傳遞持有者身分。 */
+  observer?: { includeDead: boolean };
   /** 標頭條件（例如「回合開始時自身擁有護盾：」） */
   cond?: Cond[];
   body: Stmt[];

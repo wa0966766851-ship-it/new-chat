@@ -1,0 +1,2401 @@
+{
+  "schemaVersion": 1,
+  "baselineCount": 342,
+  "note": "本次任務開始時342份待補定義。固定身份及原文指紋，不因候選增加而刪去待驗項目。",
+  "items": [
+    {
+      "elfId": "5001",
+      "elfName": "悲歌.索比拉特",
+      "name": "黯",
+      "category": "專屬特性／魂印",
+      "sourceSha256": "ae6fa3f4f56b87fe12774f0a236e954c8736e71912882406757091c168dc8e10"
+    },
+    {
+      "elfId": "5001",
+      "elfName": "悲歌.索比拉特",
+      "name": "黯索魂噬",
+      "category": "技能",
+      "sourceSha256": "0ab0fd6bc00b7b4dacc976542f862903c90951306c8a38485bbdaae8b35214e2"
+    },
+    {
+      "elfId": "5001",
+      "elfName": "悲歌.索比拉特",
+      "name": "陰世遊靈",
+      "category": "技能",
+      "sourceSha256": "4c68f1c37a7156c4a630421c30292a2d61b7cb1ececc2167b832b2507b0818a2"
+    },
+    {
+      "elfId": "5001",
+      "elfName": "悲歌.索比拉特",
+      "name": "影之牢籠",
+      "category": "技能",
+      "sourceSha256": "eb2edf03691dc00879ba88006b8b1db7a188edc06935c06cb2bcfc47f55cdaff"
+    },
+    {
+      "elfId": "5001",
+      "elfName": "悲歌.索比拉特",
+      "name": "幽冥噬魂",
+      "category": "技能",
+      "sourceSha256": "f7a72999a77d515dcb46a2de2495a0a7ad4481b65b81283f82b16c220267fcf4"
+    },
+    {
+      "elfId": "5001",
+      "elfName": "悲歌.索比拉特",
+      "name": "黯·萬魂歸寂",
+      "category": "技能",
+      "sourceSha256": "00e786a4e1b0e235cfeeadfe29453e547a4ee2696d8646d135e76e490fdef121"
+    },
+    {
+      "elfId": "5002",
+      "elfName": "帝皇之盾",
+      "name": "盾",
+      "category": "專屬特性／魂印",
+      "sourceSha256": "c70dcdf5f27cb1c0c39b2947b28351b1ef0343f56dfecc8b2aef9d4f44502221"
+    },
+    {
+      "elfId": "5002",
+      "elfName": "帝皇之盾",
+      "name": "盾先鋒制裁",
+      "category": "技能",
+      "sourceSha256": "d55a8cfe683b662984ae20b31f3d793298c5f7c2fe3919afdc7c5b8325be33a7"
+    },
+    {
+      "elfId": "5002",
+      "elfName": "帝皇之盾",
+      "name": "帝永壁令",
+      "category": "技能",
+      "sourceSha256": "413374b6a67e0c292ebe542b92ec2bf99b5794bf9a0bddad2632d4c2a35944ad"
+    },
+    {
+      "elfId": "5002",
+      "elfName": "帝皇之盾",
+      "name": "盾碎同歸",
+      "category": "技能",
+      "sourceSha256": "cb669dda894fa4f0a8f8d2df7444af04305bc6b7c21bb5d7f2ca2abb1d35b8a9"
+    },
+    {
+      "elfId": "5002",
+      "elfName": "帝皇之盾",
+      "name": "聖盾裁決",
+      "category": "技能",
+      "sourceSha256": "df6f39855203d74df5191e43c9388ff4bb329a4d552a26d8544ee5bd1d2aebe4"
+    },
+    {
+      "elfId": "5002",
+      "elfName": "帝皇之盾",
+      "name": "帝·永恆守護",
+      "category": "技能",
+      "sourceSha256": "cdebc94daa852e1b568b66cd361735d08dfe0f906f891d65a094537d32091c86"
+    },
+    {
+      "elfId": "5003",
+      "elfName": "天蓬元帥八戒",
+      "name": "淨",
+      "category": "專屬特性／魂印",
+      "sourceSha256": "f78dc614417797bb9124f1a4b0a18b0ad12bdc60c4c2677debbc9767bcd5c58c"
+    },
+    {
+      "elfId": "5003",
+      "elfName": "天蓬元帥八戒",
+      "name": "天河衝擊",
+      "category": "技能",
+      "sourceSha256": "bd5c866c796dc359ce267d5ac0fa4e7967083244898474c2a6399c652e3c9233"
+    },
+    {
+      "elfId": "5003",
+      "elfName": "天蓬元帥八戒",
+      "name": "殘軀鎖命",
+      "category": "技能",
+      "sourceSha256": "ff26a21e380825731dd7fa43fcad058380b40561ff579fecee60195a2fa4ee59"
+    },
+    {
+      "elfId": "5003",
+      "elfName": "天蓬元帥八戒",
+      "name": "萬鈞鎮魂",
+      "category": "技能",
+      "sourceSha256": "f26cc33fc621f790a5c7bd6829c993a92647e48fee88060cc1e41d9a20cd0e10"
+    },
+    {
+      "elfId": "5003",
+      "elfName": "天蓬元帥八戒",
+      "name": "混元護體",
+      "category": "技能",
+      "sourceSha256": "b1336b8ad37f3f62e53175b481b82ac8d818b7f8e8efd7cb513a8b4d850f5f4b"
+    },
+    {
+      "elfId": "5003",
+      "elfName": "天蓬元帥八戒",
+      "name": "淨·天河倒懸",
+      "category": "技能",
+      "sourceSha256": "24db7d017586b050ec8ed34fee93406ec5f234e1e5041a109e2fe055c3445f57"
+    },
+    {
+      "elfId": "5004",
+      "elfName": "皮特薩拉羅",
+      "name": "翎",
+      "category": "專屬特性／魂印",
+      "sourceSha256": "1e68242b790e46e21b0d87a604ec9de22782d5666257beb1a0b3ae0a2d4d0314"
+    },
+    {
+      "elfId": "5004",
+      "elfName": "皮特薩拉羅",
+      "name": "翎封禁之羽",
+      "category": "技能",
+      "sourceSha256": "4d1beb62ee8df615acc87a8a4f687e3d69be656c3d82b89554cd9f7de03129c5"
+    },
+    {
+      "elfId": "5004",
+      "elfName": "皮特薩拉羅",
+      "name": "千鳥俱寂",
+      "category": "技能",
+      "sourceSha256": "6752759d0275d25612c7cda4b16c2c1385158554a66b7f47d9b1acbc7373d79d"
+    },
+    {
+      "elfId": "5004",
+      "elfName": "皮特薩拉羅",
+      "name": "翎羽風暴",
+      "category": "技能",
+      "sourceSha256": "13d319d7491416184947c1256f697463ee1e80a38dcb9df69bbd535b63b0fcd2"
+    },
+    {
+      "elfId": "5004",
+      "elfName": "皮特薩拉羅",
+      "name": "千翎破陣",
+      "category": "技能",
+      "sourceSha256": "d3bab9dac0a2c06726ac5a1ec48ef406b2c60b3ce60df5a97a62a15abd13fd03"
+    },
+    {
+      "elfId": "5004",
+      "elfName": "皮特薩拉羅",
+      "name": "翎萬羽歸宗",
+      "category": "技能",
+      "sourceSha256": "6453a789a89f0395c6026ca70350a6e500c7baeb70e0686aedcfbe20ba8320cc"
+    },
+    {
+      "elfId": "5005",
+      "elfName": "布萊克",
+      "name": "魔",
+      "category": "專屬特性／魂印",
+      "sourceSha256": "eda821b9449127d9b07e3c08512a23217bddbbf456048230b50af4a57c0d19a6"
+    },
+    {
+      "elfId": "5005",
+      "elfName": "布萊克",
+      "name": "夜魔之球",
+      "category": "技能",
+      "sourceSha256": "05481432724ccb6b252d83f9604bd691bd1b0e00f7f4480c6cce95536a0c2afb"
+    },
+    {
+      "elfId": "5005",
+      "elfName": "布萊克",
+      "name": "幽冥頓悟",
+      "category": "技能",
+      "sourceSha256": "272bd1055588272b946cefcbf0aeab17cd96e3b593b7ae1f610f2df0aab2caaa"
+    },
+    {
+      "elfId": "5005",
+      "elfName": "布萊克",
+      "name": "狂夜屠戮",
+      "category": "技能",
+      "sourceSha256": "72aebec70f9366314e777fefed6359781dbc48cf6336071956e16c0a94864ee1"
+    },
+    {
+      "elfId": "5005",
+      "elfName": "布萊克",
+      "name": "夜魔神襲",
+      "category": "技能",
+      "sourceSha256": "3aa5229fd0670a99f299e3d164d362c3e97269a4514af34047124e2d569aea95"
+    },
+    {
+      "elfId": "300",
+      "elfName": "譜尼",
+      "name": "聖",
+      "category": "專屬特性／魂印",
+      "sourceSha256": "f9cebafb32575c8a9c871e70119f4d3cde2a1abdb0ef5aa73b826196d4c1f54a"
+    },
+    {
+      "elfId": "300",
+      "elfName": "譜尼",
+      "name": "旋滅裂空陣",
+      "category": "技能",
+      "sourceSha256": "7fc41327de299dee6e82ede290c88aa748021629c1be76aea4099999e5a6e56f"
+    },
+    {
+      "elfId": "300",
+      "elfName": "譜尼",
+      "name": "聖影流光破",
+      "category": "技能",
+      "sourceSha256": "c697f9a329fe0f749a920bc70e99e077340f2d3859974d33e1a1fab2cd3c6737"
+    },
+    {
+      "elfId": "300",
+      "elfName": "譜尼",
+      "name": "極光",
+      "category": "技能",
+      "sourceSha256": "72aebec70f9366314e777fefed6359781dbc48cf6336071956e16c0a94864ee1"
+    },
+    {
+      "elfId": "300",
+      "elfName": "譜尼",
+      "name": "虛無",
+      "category": "技能",
+      "sourceSha256": "e034d1de39b716cbcb81b03758818aab68640a0f60ab42bb68b32879a3e32bbb"
+    },
+    {
+      "elfId": "300",
+      "elfName": "譜尼",
+      "name": "神聖之光",
+      "category": "技能",
+      "sourceSha256": "6f96d17db26adfc136a4e5cf1cc800f8fca73767e8b9fa5611d83769f9cc7cc4"
+    },
+    {
+      "elfId": "300",
+      "elfName": "譜尼",
+      "name": "能量",
+      "category": "技能",
+      "sourceSha256": "a4ba01cad57700db697e25d823e2668b114ca7aaeef2ecc3d8a15d9e49e9a0cd"
+    },
+    {
+      "elfId": "300",
+      "elfName": "譜尼",
+      "name": "靈光之怒",
+      "category": "技能",
+      "sourceSha256": "a97fdc2ee2069f86e29397be6dcfba960ecf950efb88c995fa03d518e4c3710d"
+    },
+    {
+      "elfId": "300",
+      "elfName": "譜尼",
+      "name": "生命",
+      "category": "技能",
+      "sourceSha256": "ab22a141600de213b5c59af002dbe988d01a69abaae93d3cec83ca847c815ed9"
+    },
+    {
+      "elfId": "300",
+      "elfName": "譜尼",
+      "name": "輪迴",
+      "category": "技能",
+      "sourceSha256": "f8d4d1634d53c27dda979c822d73d85d3f2da317d41d19c0d7933fa423a71be6"
+    },
+    {
+      "elfId": "300",
+      "elfName": "譜尼",
+      "name": "靈魂干涉",
+      "category": "技能",
+      "sourceSha256": "2597b25a1142f2a483829322e3adbd51ca2663d16be3f400d3795f9e65c29f64"
+    },
+    {
+      "elfId": "300",
+      "elfName": "譜尼",
+      "name": "永恆",
+      "category": "技能",
+      "sourceSha256": "f9dc7a23855dbe92d9a81899fbf85df02a75a26deb743b2e99f9846e624dadba"
+    },
+    {
+      "elfId": "300",
+      "elfName": "譜尼",
+      "name": "聖潔",
+      "category": "技能",
+      "sourceSha256": "c3f7a082f8a7d9b8e7d75a1e78a26a74984e7bc852f4ac8ebf0ab35c91c2969c"
+    },
+    {
+      "elfId": "300",
+      "elfName": "譜尼",
+      "name": "聖光氣",
+      "category": "技能",
+      "sourceSha256": "899283351700e7ad1bc0be52c6c48b777cb309e6e9049725891c94b9983d3809"
+    },
+    {
+      "elfId": "300",
+      "elfName": "譜尼",
+      "name": "璨靈聖光",
+      "category": "技能",
+      "sourceSha256": "b7609514bf138e74e0af0f074e36163cf994e461a50d744ed887cee86f0cbb96"
+    },
+    {
+      "elfId": "300",
+      "elfName": "譜尼",
+      "name": "落芳天華",
+      "category": "技能",
+      "sourceSha256": "d15943f7b0f4ea9e6fbc18cb4306758d0f475dde91bb411feea3d946fab713b8"
+    },
+    {
+      "elfId": "300",
+      "elfName": "譜尼",
+      "name": "聖靈悲魂曲",
+      "category": "技能",
+      "sourceSha256": "b7487ac2d3fa3efc1c45aab28c716a9a9e00c969cc267e4858ca1e1555b0754e"
+    },
+    {
+      "elfId": "5006",
+      "elfName": "星光·魔焰猩猩",
+      "name": "灼",
+      "category": "專屬特性／魂印",
+      "sourceSha256": "acffda4c20eda859ef7c62c5f1214c0a344e7f253f45e2ea74bd701eeced640a"
+    },
+    {
+      "elfId": "5006",
+      "elfName": "星光·魔焰猩猩",
+      "name": "星光·音速火拳",
+      "category": "技能",
+      "sourceSha256": "75df774282983c3d3a82289ab8cf306eb4dd91161928de495b2b31a029ceb99d"
+    },
+    {
+      "elfId": "5006",
+      "elfName": "星光·魔焰猩猩",
+      "name": "星光·冥想",
+      "category": "技能",
+      "sourceSha256": "49982ee78d7e8fb92f451e9d05a3b94b378d8a613f8178acb7dfe99cda22528b"
+    },
+    {
+      "elfId": "5006",
+      "elfName": "星光·魔焰猩猩",
+      "name": "星光·不滅之火",
+      "category": "技能",
+      "sourceSha256": "21a913251e4cbb480b22ef50d0dea014f081a076d3aac2b3a8ddcca8a6cb3f2a"
+    },
+    {
+      "elfId": "5006",
+      "elfName": "星光·魔焰猩猩",
+      "name": "星光·覺醒",
+      "category": "技能",
+      "sourceSha256": "ecd794589b90c1934805c354dd7dd9d6bb6a3fa1ebd441121d8ef78bf18aa745"
+    },
+    {
+      "elfId": "5006",
+      "elfName": "星光·魔焰猩猩",
+      "name": "星光·魔焰裂空",
+      "category": "技能",
+      "sourceSha256": "40fbb885fb485704d6cd36d5404cf0c8bbbe9a2b746cee3d74ec5c66437a6c57"
+    },
+    {
+      "elfId": "5006",
+      "elfName": "星光·魔焰猩猩",
+      "name": "衝頂",
+      "category": "技能",
+      "sourceSha256": "72aebec70f9366314e777fefed6359781dbc48cf6336071956e16c0a94864ee1"
+    },
+    {
+      "elfId": "5006",
+      "elfName": "星光·魔焰猩猩",
+      "name": "縮頭",
+      "category": "技能",
+      "sourceSha256": "6ede9e1f7b20f005189ad2d0f1b7d9cbfce411c3e810d9f5a9782fac20ba2d7c"
+    },
+    {
+      "elfId": "5006",
+      "elfName": "星光·魔焰猩猩",
+      "name": "灰燼",
+      "category": "技能",
+      "sourceSha256": "a44cfa4350e02f9ade6104a7aed2e8280bddf71456b0c271c2f464bf9bd47e9b"
+    },
+    {
+      "elfId": "5006",
+      "elfName": "星光·魔焰猩猩",
+      "name": "熱量集合",
+      "category": "技能",
+      "sourceSha256": "57486dab2599a95d1ad6b894e0e5c3ad5f0a02d061bf064a2ed1fee1112471b3"
+    },
+    {
+      "elfId": "5006",
+      "elfName": "星光·魔焰猩猩",
+      "name": "星光·壓迫",
+      "category": "技能",
+      "sourceSha256": "3d5bdbe481da49f9d2d5524829d482d852629bc3811c80f8cd514cf1fd3798c4"
+    },
+    {
+      "elfId": "5006",
+      "elfName": "星光·魔焰猩猩",
+      "name": "星光·靈絕擊",
+      "category": "技能",
+      "sourceSha256": "260faba95bd460da63fa4334c953285392e70459113399e644a5272fe7ff6949"
+    },
+    {
+      "elfId": "5006",
+      "elfName": "星光·魔焰猩猩",
+      "name": "星光·絕命火焰",
+      "category": "技能",
+      "sourceSha256": "1d838736b41a6f36db4b69f572fc002fbc8d76c8e621f7ccab5f5e37beeab0a7"
+    },
+    {
+      "elfId": "5007",
+      "elfName": "混濁海妖.布林克克",
+      "name": "濁",
+      "category": "專屬特性／魂印",
+      "sourceSha256": "812c6f55fcd9521cb98c000ea68e7cfbea2a91186ad9ef37eba6fcc8f29dce67"
+    },
+    {
+      "elfId": "5007",
+      "elfName": "混濁海妖.布林克克",
+      "name": "溺咒之握",
+      "category": "技能",
+      "sourceSha256": "aec31f3cf48acc10456615d871b31980992b3bad78a8af02d7517e6757dc08cd"
+    },
+    {
+      "elfId": "5007",
+      "elfName": "混濁海妖.布林克克",
+      "name": "癡愚之觸",
+      "category": "技能",
+      "sourceSha256": "2346e74eb3e92311c5412983ca6c46b02751d9f8695ed2027bfe360e6d86387c"
+    },
+    {
+      "elfId": "5007",
+      "elfName": "混濁海妖.布林克克",
+      "name": "深海働哭",
+      "category": "技能",
+      "sourceSha256": "bb88cb19a73d8d1fa59c3bc0e2dea8bb094c78986a3a729dfaf712475c455322"
+    },
+    {
+      "elfId": "5007",
+      "elfName": "混濁海妖.布林克克",
+      "name": "不淨者之約",
+      "category": "技能",
+      "sourceSha256": "6016e8da9e8a647eb15cd4f043d4d8e34c1edc4932dd6d133247313bb5f43af8"
+    },
+    {
+      "elfId": "5007",
+      "elfName": "混濁海妖.布林克克",
+      "name": "深潛者盛宴",
+      "category": "技能",
+      "sourceSha256": "c20cae2e937693f6a35c21c3d8bd5d65f3f6768c3a462d5f929c09d5b3982bfc"
+    },
+    {
+      "elfId": "5008",
+      "elfName": "鎮魂.巴弗洛",
+      "name": "鎮",
+      "category": "專屬特性／魂印",
+      "sourceSha256": "4d8fb06d38f179845451a3e2f8483eab4db4b58ca26a49fc3400cbb95e78e637"
+    },
+    {
+      "elfId": "5008",
+      "elfName": "鎮魂.巴弗洛",
+      "name": "贖魂讚詩",
+      "category": "技能",
+      "sourceSha256": "2327e4b8e3c92cbd88f87636e3544887f189dda97fd7694b2ebfd24b2e66924f"
+    },
+    {
+      "elfId": "5008",
+      "elfName": "鎮魂.巴弗洛",
+      "name": "亂魂舞",
+      "category": "技能",
+      "sourceSha256": "324757ec9ef07fdeb551a55b2ac48c4d2625707129d9822a378979023e352ea6"
+    },
+    {
+      "elfId": "5008",
+      "elfName": "鎮魂.巴弗洛",
+      "name": "鎖魂曲",
+      "category": "技能",
+      "sourceSha256": "ab3cff14de8bff16023b44113853eff6115e29bf094e495edf67d04c0959089a"
+    },
+    {
+      "elfId": "5008",
+      "elfName": "鎮魂.巴弗洛",
+      "name": "引魂咏",
+      "category": "技能",
+      "sourceSha256": "7e8954ec81b77e93f52d337a27c11715bfedef47763fa0ac7e11fb987f515677"
+    },
+    {
+      "elfId": "5008",
+      "elfName": "鎮魂.巴弗洛",
+      "name": "訣別",
+      "category": "技能",
+      "sourceSha256": "bb141e771f8447079f45ad9ec15fbfb98df822a6755031bd77263345413ffe93"
+    },
+    {
+      "elfId": "5009",
+      "elfName": "誑獅魔軀.魔獅迪露",
+      "name": "獅",
+      "category": "專屬特性／魂印",
+      "sourceSha256": "fba664e9b04189e4d46cf1c686eb474d6bf2b2034e60184a6737941df069fabe"
+    },
+    {
+      "elfId": "5009",
+      "elfName": "誑獅魔軀.魔獅迪露",
+      "name": "狻猊噬",
+      "category": "技能",
+      "sourceSha256": "f69431fc6a1b40dbffd8bdb8ce1516e5c0619dcb7050fbae55d8fb3e528d0990"
+    },
+    {
+      "elfId": "5009",
+      "elfName": "誑獅魔軀.魔獅迪露",
+      "name": "負岳勢",
+      "category": "技能",
+      "sourceSha256": "056257a0467a1eada24351ea17f9d9f835e39be84054eab7f766ea7e3e563dc0"
+    },
+    {
+      "elfId": "5009",
+      "elfName": "誑獅魔軀.魔獅迪露",
+      "name": "目瘴淵禁",
+      "category": "技能",
+      "sourceSha256": "6976378199eaa3d9615373038ae3539679c5e728ea66f6dedc5087c18ff2668a"
+    },
+    {
+      "elfId": "5009",
+      "elfName": "誑獅魔軀.魔獅迪露",
+      "name": "劫盡歸塵",
+      "category": "技能",
+      "sourceSha256": "6fcc9653d5d7c71ecff2fc100b8c91ddd8006c5c6100217cc03d3254911b9a3a"
+    },
+    {
+      "elfId": "5009",
+      "elfName": "誑獅魔軀.魔獅迪露",
+      "name": "辟冥·鎮獄斷",
+      "category": "技能",
+      "sourceSha256": "d21ab27714778676b43b150b0e4c29ca9a83351b2d818dc268aa78e6aae5a288"
+    },
+    {
+      "elfId": "5000",
+      "elfName": "聖靈譜尼",
+      "name": "神",
+      "category": "專屬特性／魂印",
+      "sourceSha256": "ab13cf1fc78a8c19119c00e584cc8987536e428546abdb08d406caef854d8c57"
+    },
+    {
+      "elfId": "5000",
+      "elfName": "聖靈譜尼",
+      "name": "神靈之觸",
+      "category": "技能",
+      "sourceSha256": "8a2f47d72a6927616ed6c8b58bc996c449960ffb3818f44ca7998c9e3998d4cc"
+    },
+    {
+      "elfId": "5000",
+      "elfName": "聖靈譜尼",
+      "name": "聖光吟誦",
+      "category": "技能",
+      "sourceSha256": "3e7de979b768b7b671d2c43396c869c4e934f269d0779f2a6e2bd45ef7f7fe08"
+    },
+    {
+      "elfId": "5000",
+      "elfName": "聖靈譜尼",
+      "name": "神聖復甦",
+      "category": "技能",
+      "sourceSha256": "c94316a7e1553028b93bb07c167d8f8d2c72be27654f387639b707eb064baa45"
+    },
+    {
+      "elfId": "5000",
+      "elfName": "聖靈譜尼",
+      "name": "光榮之夢",
+      "category": "技能",
+      "sourceSha256": "976963ee172960bf41558ce8b353e5b286ce0a3369c94bc507be63addc9400f0"
+    },
+    {
+      "elfId": "5000",
+      "elfName": "聖靈譜尼",
+      "name": "神靈救世光",
+      "category": "技能",
+      "sourceSha256": "2adb2809d2af40c76a37a1335b4280136702d687a28a77b7015a251cdcfdfd27"
+    },
+    {
+      "elfId": "5000",
+      "elfName": "聖靈譜尼",
+      "name": "旋滅裂空陣",
+      "category": "技能",
+      "sourceSha256": "7fc41327de299dee6e82ede290c88aa748021629c1be76aea4099999e5a6e56f"
+    },
+    {
+      "elfId": "5000",
+      "elfName": "聖靈譜尼",
+      "name": "聖影流光破",
+      "category": "技能",
+      "sourceSha256": "c697f9a329fe0f749a920bc70e99e077340f2d3859974d33e1a1fab2cd3c6737"
+    },
+    {
+      "elfId": "5000",
+      "elfName": "聖靈譜尼",
+      "name": "極光",
+      "category": "技能",
+      "sourceSha256": "72aebec70f9366314e777fefed6359781dbc48cf6336071956e16c0a94864ee1"
+    },
+    {
+      "elfId": "5000",
+      "elfName": "聖靈譜尼",
+      "name": "虛無",
+      "category": "技能",
+      "sourceSha256": "e034d1de39b716cbcb81b03758818aab68640a0f60ab42bb68b32879a3e32bbb"
+    },
+    {
+      "elfId": "5000",
+      "elfName": "聖靈譜尼",
+      "name": "神聖之光",
+      "category": "技能",
+      "sourceSha256": "6f96d17db26adfc136a4e5cf1cc800f8fca73767e8b9fa5611d83769f9cc7cc4"
+    },
+    {
+      "elfId": "5000",
+      "elfName": "聖靈譜尼",
+      "name": "能量",
+      "category": "技能",
+      "sourceSha256": "a4ba01cad57700db697e25d823e2668b114ca7aaeef2ecc3d8a15d9e49e9a0cd"
+    },
+    {
+      "elfId": "5000",
+      "elfName": "聖靈譜尼",
+      "name": "靈光之怒",
+      "category": "技能",
+      "sourceSha256": "a97fdc2ee2069f86e29397be6dcfba960ecf950efb88c995fa03d518e4c3710d"
+    },
+    {
+      "elfId": "5000",
+      "elfName": "聖靈譜尼",
+      "name": "生命",
+      "category": "技能",
+      "sourceSha256": "ab22a141600de213b5c59af002dbe988d01a69abaae93d3cec83ca847c815ed9"
+    },
+    {
+      "elfId": "5000",
+      "elfName": "聖靈譜尼",
+      "name": "輪迴",
+      "category": "技能",
+      "sourceSha256": "f8d4d1634d53c27dda979c822d73d85d3f2da317d41d19c0d7933fa423a71be6"
+    },
+    {
+      "elfId": "5000",
+      "elfName": "聖靈譜尼",
+      "name": "靈魂干涉",
+      "category": "技能",
+      "sourceSha256": "2597b25a1142f2a483829322e3adbd51ca2663d16be3f400d3795f9e65c29f64"
+    },
+    {
+      "elfId": "5000",
+      "elfName": "聖靈譜尼",
+      "name": "聖潔",
+      "category": "技能",
+      "sourceSha256": "c3f7a082f8a7d9b8e7d75a1e78a26a74984e7bc852f4ac8ebf0ab35c91c2969c"
+    },
+    {
+      "elfId": "5000",
+      "elfName": "聖靈譜尼",
+      "name": "永恆",
+      "category": "技能",
+      "sourceSha256": "f9dc7a23855dbe92d9a81899fbf85df02a75a26deb743b2e99f9846e624dadba"
+    },
+    {
+      "elfId": "5000",
+      "elfName": "聖靈譜尼",
+      "name": "神聖啟示歌",
+      "category": "技能",
+      "sourceSha256": "364e884b7671a2b662a16d8f81f4c41a6d830ed001bbd53b127660bff5576fff"
+    },
+    {
+      "elfId": "5000",
+      "elfName": "聖靈譜尼",
+      "name": "璨靈聖光",
+      "category": "技能",
+      "sourceSha256": "b7609514bf138e74e0af0f074e36163cf994e461a50d744ed887cee86f0cbb96"
+    },
+    {
+      "elfId": "5000",
+      "elfName": "聖靈譜尼",
+      "name": "落芳天華",
+      "category": "技能",
+      "sourceSha256": "d15943f7b0f4ea9e6fbc18cb4306758d0f475dde91bb411feea3d946fab713b8"
+    },
+    {
+      "elfId": "5000",
+      "elfName": "聖靈譜尼",
+      "name": "聖靈悲魂曲",
+      "category": "技能",
+      "sourceSha256": "b7487ac2d3fa3efc1c45aab28c716a9a9e00c969cc267e4858ca1e1555b0754e"
+    },
+    {
+      "elfId": "5000",
+      "elfName": "聖靈譜尼",
+      "name": "聖光氣",
+      "category": "技能",
+      "sourceSha256": "899283351700e7ad1bc0be52c6c48b777cb309e6e9049725891c94b9983d3809"
+    },
+    {
+      "elfId": "5010",
+      "elfName": "星光·魯斯王",
+      "name": "海",
+      "category": "專屬特性／魂印",
+      "sourceSha256": "b7a78721ea843bad7088d8d9edbee43adcf47977362790cef6bbe930b2b94871"
+    },
+    {
+      "elfId": "5010",
+      "elfName": "星光·魯斯王",
+      "name": "星光·閃擊",
+      "category": "技能",
+      "sourceSha256": "6d1aa23977ed0fc6e46b266b0e730b0ac20745d9333fe8f2ac2a2b452ad6ff9b"
+    },
+    {
+      "elfId": "5010",
+      "elfName": "星光·魯斯王",
+      "name": "星光·隨風逐浪",
+      "category": "技能",
+      "sourceSha256": "9b19a6c9e3fb1ddde751a40476607ec19228651b881045467f5d7acdd743b871"
+    },
+    {
+      "elfId": "5010",
+      "elfName": "星光·魯斯王",
+      "name": "克制",
+      "category": "技能",
+      "sourceSha256": "a4ba01cad57700db697e25d823e2668b114ca7aaeef2ecc3d8a15d9e49e9a0cd"
+    },
+    {
+      "elfId": "5010",
+      "elfName": "星光·魯斯王",
+      "name": "星光·排山倒海",
+      "category": "技能",
+      "sourceSha256": "9daea038b7bb949bc493b853675e220ad0ebe34a80dea5c6dce6cc12352a4529"
+    },
+    {
+      "elfId": "5010",
+      "elfName": "星光·魯斯王",
+      "name": "星光·浪打千擊",
+      "category": "技能",
+      "sourceSha256": "8c30f6df82e5e2873e850d0c4621f5591bbeffe25adc31f6d7996b96cacfc50b"
+    },
+    {
+      "elfId": "5010",
+      "elfName": "星光·魯斯王",
+      "name": "閃擊",
+      "category": "技能",
+      "sourceSha256": "5772c0f28f56bb7818e7eb9122f3286e6a150d4aefed45b8c390a6972932a0d3"
+    },
+    {
+      "elfId": "5010",
+      "elfName": "星光·魯斯王",
+      "name": "玩水",
+      "category": "技能",
+      "sourceSha256": "72aebec70f9366314e777fefed6359781dbc48cf6336071956e16c0a94864ee1"
+    },
+    {
+      "elfId": "5010",
+      "elfName": "星光·魯斯王",
+      "name": "水流噴射",
+      "category": "技能",
+      "sourceSha256": "5772c0f28f56bb7818e7eb9122f3286e6a150d4aefed45b8c390a6972932a0d3"
+    },
+    {
+      "elfId": "5010",
+      "elfName": "星光·魯斯王",
+      "name": "虛張聲勢",
+      "category": "技能",
+      "sourceSha256": "146795045fac878bfbccc60942e12b2c7ac1efc77a5b849e7400bde18d3997ec"
+    },
+    {
+      "elfId": "5010",
+      "elfName": "星光·魯斯王",
+      "name": "劍舞",
+      "category": "技能",
+      "sourceSha256": "14137f5247d180bc6bb35e554e60b5991c5750c3e50e914b8d5ad6c562c8e04b"
+    },
+    {
+      "elfId": "5010",
+      "elfName": "星光·魯斯王",
+      "name": "龍之牙",
+      "category": "技能",
+      "sourceSha256": "72aebec70f9366314e777fefed6359781dbc48cf6336071956e16c0a94864ee1"
+    },
+    {
+      "elfId": "5010",
+      "elfName": "星光·魯斯王",
+      "name": "星光·劍舞",
+      "category": "技能",
+      "sourceSha256": "ca5f0dc42bf5a33c50fffbe7fa62604d8b6d22ca384df19c4bfcfc4b64943a53"
+    },
+    {
+      "elfId": "5010",
+      "elfName": "星光·魯斯王",
+      "name": "星光·克制",
+      "category": "技能",
+      "sourceSha256": "0220b9142b5dffb98d9d28980ccc5d94ba2553a1a39652ad499f977cbe9ba6f6"
+    },
+    {
+      "elfId": "5010",
+      "elfName": "星光·魯斯王",
+      "name": "星光·水天一色",
+      "category": "技能",
+      "sourceSha256": "748b817a1306a98ddb4228fbab14dd6c015d2c1b8b4f993ac4ec59c5fec572e9"
+    },
+    {
+      "elfId": "5010",
+      "elfName": "星光·魯斯王",
+      "name": "星光·驚濤駭浪",
+      "category": "技能",
+      "sourceSha256": "8217a336185843b31c4b93d3d48d0a6c99992331d2802ccb87b28bd8e5e9293c"
+    },
+    {
+      "elfId": "5010",
+      "elfName": "星光·魯斯王",
+      "name": "星光·怒濤狂湧",
+      "category": "技能",
+      "sourceSha256": "61e029c98c3dba004f2987c1dfcb91511b76babb2fdcf17dc8b24f4c75a58cdb"
+    },
+    {
+      "elfId": "5011",
+      "elfName": "星光·麗莎布布",
+      "name": "芳",
+      "category": "專屬特性／魂印",
+      "sourceSha256": "7accbf9b867d6d0720b0e8598eb575d451fab328ecc38af97812221888fda6b0"
+    },
+    {
+      "elfId": "5011",
+      "elfName": "星光·麗莎布布",
+      "name": "星光·究極吸取",
+      "category": "技能",
+      "sourceSha256": "a2a1201cf3785a0edca50c36b361a682ed8c62c30e722d52c406146aecfa01fc"
+    },
+    {
+      "elfId": "5011",
+      "elfName": "星光·麗莎布布",
+      "name": "星光·光合作用",
+      "category": "技能",
+      "sourceSha256": "6ea23755d3225075964bb7df86e6904b4c782067090ec7f0b6a8be7e81d70478"
+    },
+    {
+      "elfId": "5011",
+      "elfName": "星光·麗莎布布",
+      "name": "星光·花草能量",
+      "category": "技能",
+      "sourceSha256": "b5a0789406020a8764c99cc53da6ea048fb8c7a23f66ddeab7fbe9fb2efb831a"
+    },
+    {
+      "elfId": "5011",
+      "elfName": "星光·麗莎布布",
+      "name": "星光·飛葉風暴",
+      "category": "技能",
+      "sourceSha256": "fffab7e94163cfac527d71c449ecad61fd4d6ecd00041f1a76297f9e6572115b"
+    },
+    {
+      "elfId": "5011",
+      "elfName": "星光·麗莎布布",
+      "name": "星光·金光綠葉",
+      "category": "技能",
+      "sourceSha256": "8f2a2ff5511ea248cce99881b508c38282f003e386f72e81c691ee8c7c88e84b"
+    },
+    {
+      "elfId": "5011",
+      "elfName": "星光·麗莎布布",
+      "name": "撞擊",
+      "category": "技能",
+      "sourceSha256": "72aebec70f9366314e777fefed6359781dbc48cf6336071956e16c0a94864ee1"
+    },
+    {
+      "elfId": "5011",
+      "elfName": "星光·麗莎布布",
+      "name": "縮頭",
+      "category": "技能",
+      "sourceSha256": "6ede9e1f7b20f005189ad2d0f1b7d9cbfce411c3e810d9f5a9782fac20ba2d7c"
+    },
+    {
+      "elfId": "5011",
+      "elfName": "星光·麗莎布布",
+      "name": "吸取",
+      "category": "技能",
+      "sourceSha256": "ca9a595b45fd2f3b9611f16a17ed15f6a8407f078c66cc99a96cc914e1f19fde"
+    },
+    {
+      "elfId": "5011",
+      "elfName": "星光·麗莎布布",
+      "name": "疾風刃",
+      "category": "技能",
+      "sourceSha256": "72aebec70f9366314e777fefed6359781dbc48cf6336071956e16c0a94864ee1"
+    },
+    {
+      "elfId": "5011",
+      "elfName": "星光·麗莎布布",
+      "name": "詛咒",
+      "category": "技能",
+      "sourceSha256": "648969ac0b0fcd59e2c0648d972fede18866774d3c54c46bd1d99d6c4202789f"
+    },
+    {
+      "elfId": "5011",
+      "elfName": "星光·麗莎布布",
+      "name": "強力吸取",
+      "category": "技能",
+      "sourceSha256": "ca9a595b45fd2f3b9611f16a17ed15f6a8407f078c66cc99a96cc914e1f19fde"
+    },
+    {
+      "elfId": "5011",
+      "elfName": "星光·麗莎布布",
+      "name": "寄生種子",
+      "category": "技能",
+      "sourceSha256": "008f062c09bc3aebc31bae9668ec3f1ffc598720ed458ae61662897045db4564"
+    },
+    {
+      "elfId": "5011",
+      "elfName": "星光·麗莎布布",
+      "name": "捨身撞擊",
+      "category": "技能",
+      "sourceSha256": "f567295c3980a724f403b2f05fa784194c7b5e0e8d651f0ebab286123b089fb4"
+    },
+    {
+      "elfId": "5011",
+      "elfName": "星光·麗莎布布",
+      "name": "星光·花草護體",
+      "category": "技能",
+      "sourceSha256": "13b89d37b96da8302316beffcb65bb1936e5cc9e291e0a9c0c04d81167ce6d9b"
+    },
+    {
+      "elfId": "5011",
+      "elfName": "星光·麗莎布布",
+      "name": "星光·粉末擊打",
+      "category": "技能",
+      "sourceSha256": "c21357bc7b8fccbf0fe85dc59a9768b9d0e9be04a1a8d6d9e6128565a5e6c09c"
+    },
+    {
+      "elfId": "5011",
+      "elfName": "星光·麗莎布布",
+      "name": "星光·捨身撞擊",
+      "category": "技能",
+      "sourceSha256": "d1d6d61c866ca9c1525b5bdd557e414e69887d5fd072786bcc192c650c8620e4"
+    },
+    {
+      "elfId": "5012",
+      "elfName": "冰魄·柯爾德",
+      "name": "冰",
+      "category": "專屬特性／魂印",
+      "sourceSha256": "f1bd720306ca78a805e7ac719f3b0c53a60f994cfffbceaad90feeccdb803fa2"
+    },
+    {
+      "elfId": "5012",
+      "elfName": "冰魄·柯爾德",
+      "name": "傲視千川",
+      "category": "技能",
+      "sourceSha256": "267155cb2405e151f47c5b4149980554db57fad775296de134f689142f7d5cbd"
+    },
+    {
+      "elfId": "5012",
+      "elfName": "冰魄·柯爾德",
+      "name": "凝寒止喧",
+      "category": "技能",
+      "sourceSha256": "b41806f8da688a6fc399c4faee17c56dc2ea573da8e16a2cebf197ca6fd83900"
+    },
+    {
+      "elfId": "5012",
+      "elfName": "冰魄·柯爾德",
+      "name": "冰天花葬",
+      "category": "技能",
+      "sourceSha256": "60faad682a6ee3cee4674fa7dd5dbdf42c6ae18ef4b16945f176f63af95ad596"
+    },
+    {
+      "elfId": "5012",
+      "elfName": "冰魄·柯爾德",
+      "name": "王·蒼銀之棺",
+      "category": "技能",
+      "sourceSha256": "b22be39310064990c9b01fe36fc5ad519bd9edb22bab8ba34521c2092ea47a0e"
+    },
+    {
+      "elfId": "5012",
+      "elfName": "冰魄·柯爾德",
+      "name": "王·霜祲霞罰",
+      "category": "技能",
+      "sourceSha256": "e41d9d44686ee1ca8c37a3b67e1defaa51ab4ab4d272a6920ff804856f37a32c"
+    },
+    {
+      "elfId": "5012",
+      "elfName": "冰魄·柯爾德",
+      "name": "霜凍之錮",
+      "category": "技能",
+      "sourceSha256": "c49e4212aea2d328697666934934f6810811cad4cd271617692764dc4eb4c133"
+    },
+    {
+      "elfId": "5013",
+      "elfName": "柯爾霍德",
+      "name": "凕",
+      "category": "專屬特性／魂印",
+      "sourceSha256": "a0ce1e28d66aaa617e886b1ff2041493bf59166bc9db32aac5a9e53d3c0c77a1"
+    },
+    {
+      "elfId": "5013",
+      "elfName": "柯爾霍德",
+      "name": "寒淵之殤",
+      "category": "技能",
+      "sourceSha256": "1d8ca133cb3e22be21d31963d61c003f9347d0dae6aea0de2984d3d102285593"
+    },
+    {
+      "elfId": "5013",
+      "elfName": "柯爾霍德",
+      "name": "蒼白冥步",
+      "category": "技能",
+      "sourceSha256": "cc48e729d9168317b85c852ee9cd586be46633490493770c3773e64e82a561cb"
+    },
+    {
+      "elfId": "5013",
+      "elfName": "柯爾霍德",
+      "name": "寒夜未央",
+      "category": "技能",
+      "sourceSha256": "f609eedb08797925b6bfe1632194b3af3890710759610ef407e3cda8c3adb100"
+    },
+    {
+      "elfId": "5013",
+      "elfName": "柯爾霍德",
+      "name": "王·夜予寒吟",
+      "category": "技能",
+      "sourceSha256": "8647f478247b78a8761ab70d84422a5d51dd64df5f61540aa4085bbb26ab97ce"
+    },
+    {
+      "elfId": "5013",
+      "elfName": "柯爾霍德",
+      "name": "王·凜冬葬歌",
+      "category": "技能",
+      "sourceSha256": "1a8ada1fcf6b7f75a6d0b623e69dd24691d9f6720ece4e12c6edb0b9cefa4f8a"
+    },
+    {
+      "elfId": "5014",
+      "elfName": "聖光斯嘉麗",
+      "name": "燦",
+      "category": "專屬特性／魂印",
+      "sourceSha256": "e60dc886204af654f48b76a1a1b61a62b4d07d5012af73abc10b1b93363f2b2b"
+    },
+    {
+      "elfId": "5014",
+      "elfName": "聖光斯嘉麗",
+      "name": "純白聖翎",
+      "category": "技能",
+      "sourceSha256": "70d41cad2b7a610a67abd560bc1c4f89c57adc60388096e5b4ebca2d2988d43d"
+    },
+    {
+      "elfId": "5014",
+      "elfName": "聖光斯嘉麗",
+      "name": "晨曦昭世",
+      "category": "技能",
+      "sourceSha256": "28d2792d91401f0c11083efda7230978d12823db97f4b04ae5599452d6027cbf"
+    },
+    {
+      "elfId": "5014",
+      "elfName": "聖光斯嘉麗",
+      "name": "暮光舞動",
+      "category": "技能",
+      "sourceSha256": "6969d8865c505d3a8f0abe73771deadbc0885c84d73382ebf82e0d2fbc5aa4d0"
+    },
+    {
+      "elfId": "5014",
+      "elfName": "聖光斯嘉麗",
+      "name": "王·凰歌盡霄",
+      "category": "技能",
+      "sourceSha256": "8e6d715a02217eeb2175c5c38223b7f10dd4dd84fd0feb518bce264b16f2c3cc"
+    },
+    {
+      "elfId": "5014",
+      "elfName": "聖光斯嘉麗",
+      "name": "王·聖璨天潔",
+      "category": "技能",
+      "sourceSha256": "e94804780f5db3dcc7d57ec1c24866845609509b8b30335857f4a421105e4f4d"
+    },
+    {
+      "elfId": "5015",
+      "elfName": "混沌·布萊克",
+      "name": "夜",
+      "category": "專屬特性／魂印",
+      "sourceSha256": "76b463ff14e1eda05bb715f01f4d1f083043a782ca6df752334e69a04f40c53f"
+    },
+    {
+      "elfId": "5015",
+      "elfName": "混沌·布萊克",
+      "name": "蒼茫幽魂舞",
+      "category": "技能",
+      "sourceSha256": "17ff9591f6397d68c02411f943a22b2bdb1778fb5dbec1b5f1e2a0f0f48b184b"
+    },
+    {
+      "elfId": "5015",
+      "elfName": "混沌·布萊克",
+      "name": "狂影逆命沖",
+      "category": "技能",
+      "sourceSha256": "6e6d5e4645872601cb12d33511234ddc69e89bacbbf04de8c1b092d3cf16fd56"
+    },
+    {
+      "elfId": "5015",
+      "elfName": "混沌·布萊克",
+      "name": "孑然孤夢",
+      "category": "技能",
+      "sourceSha256": "11709888115ac7513d10a8c4e22467cfd6c9619ce27a19c4062f220d90719549"
+    },
+    {
+      "elfId": "5015",
+      "elfName": "混沌·布萊克",
+      "name": "暗耀明滅",
+      "category": "技能",
+      "sourceSha256": "23a0d1e8b126b4b259dd90fc1eea9f63e8d662482df5ed7f86d173590227cb46"
+    },
+    {
+      "elfId": "5015",
+      "elfName": "混沌·布萊克",
+      "name": "夜·冥昭瞢闇",
+      "category": "技能",
+      "sourceSha256": "6fd050598bd1f45c8b4dd327d771000593ec287c81721c5f0e463d9c4e9d530a"
+    },
+    {
+      "elfId": "5015",
+      "elfName": "混沌·布萊克",
+      "name": "夜洛烏澤",
+      "category": "技能",
+      "sourceSha256": "10e0a70978c54e1f21bc41b6ed4eee373b5f72f25a9d8fbede906665204ef5c6"
+    },
+    {
+      "elfId": "5016",
+      "elfName": "變革·馬爾修斯",
+      "name": "械",
+      "category": "專屬特性／魂印",
+      "sourceSha256": "b063e379ed320d13cc475428857df4bb58d7fae88b66d3e7fc22af7635b0b482"
+    },
+    {
+      "elfId": "5016",
+      "elfName": "變革·馬爾修斯",
+      "name": "革新已至",
+      "category": "技能",
+      "sourceSha256": "f8150821881e7bae66975ad1fa8a61d0f6a530000703143730259763c6dadc31"
+    },
+    {
+      "elfId": "5016",
+      "elfName": "變革·馬爾修斯",
+      "name": "源生壁壘",
+      "category": "技能",
+      "sourceSha256": "5c40678bbb9c62af047b9c9606a500d19d7222b3008fda87f724eb8a596113eb"
+    },
+    {
+      "elfId": "5016",
+      "elfName": "變革·馬爾修斯",
+      "name": "核心重構",
+      "category": "技能",
+      "sourceSha256": "e161ee7851f51636ce1e413400f613e399f320ff4de64b4b9ba475c7137b4350"
+    },
+    {
+      "elfId": "5016",
+      "elfName": "變革·馬爾修斯",
+      "name": "王·肅正協議",
+      "category": "技能",
+      "sourceSha256": "dd1415935cff07fa9ade79336e2e61565920dfe7c1696c7c8fd49c492ac2e55d"
+    },
+    {
+      "elfId": "5016",
+      "elfName": "變革·馬爾修斯",
+      "name": "王·超限共頻",
+      "category": "技能",
+      "sourceSha256": "1bcb54aa2d4fb5e14e7b630597cc37054b4bee57624ba562dad4af0fe2d70072"
+    },
+    {
+      "elfId": "5017",
+      "elfName": "人皇·帝辛",
+      "name": "荒",
+      "category": "專屬特性／魂印",
+      "sourceSha256": "95969a58b5304d89e01f85f88059d58e0146cfab631f1749ce43b52812a21a12"
+    },
+    {
+      "elfId": "5017",
+      "elfName": "人皇·帝辛",
+      "name": "鹿台悲歌",
+      "category": "技能",
+      "sourceSha256": "e62a682909db70289a2da836bea2c38716b9c591aab794fc07147e7878b9d23a"
+    },
+    {
+      "elfId": "5017",
+      "elfName": "人皇·帝辛",
+      "name": "人皇御宇",
+      "category": "技能",
+      "sourceSha256": "b52d63bb2798728f2e5ec1657b0303af2e2a314add433244a1c9e12ebb7c6762"
+    },
+    {
+      "elfId": "5017",
+      "elfName": "人皇·帝辛",
+      "name": "帝怒傾天",
+      "category": "技能",
+      "sourceSha256": "69da2e81fba4e2a91fb8b255e4fb2410e8de83632242afb0fb30a0732e8fbf3e"
+    },
+    {
+      "elfId": "5017",
+      "elfName": "人皇·帝辛",
+      "name": "玄鳥天命",
+      "category": "技能",
+      "sourceSha256": "67d39c6e32caffd534c134cf6a5eaa73e0addc44f80c008eed641f0a36ba8858"
+    },
+    {
+      "elfId": "5017",
+      "elfName": "人皇·帝辛",
+      "name": "九鼎震八荒",
+      "category": "技能",
+      "sourceSha256": "f78fc95e51570158374d5000bdcc2be923d926076a84b82f10795b9f7bae1313"
+    },
+    {
+      "elfId": "5018",
+      "elfName": "蟲后·奧佩婭",
+      "name": "后",
+      "category": "專屬特性／魂印",
+      "sourceSha256": "b2700c23333e40d4f9999defe9cc51defe4454903986330b5db6ce2e39155527"
+    },
+    {
+      "elfId": "5018",
+      "elfName": "蟲后·奧佩婭",
+      "name": "毒噬魂絲",
+      "category": "技能",
+      "sourceSha256": "afd042a0371090a3007963a4ee7dcaf7d0687b245424b31accadf9ceec79000b"
+    },
+    {
+      "elfId": "5018",
+      "elfName": "蟲后·奧佩婭",
+      "name": "蟲群庇護",
+      "category": "技能",
+      "sourceSha256": "572d59c8dfb5f722bc495c46afa0a24a9760150a3562bdd7ccef6be07e254356"
+    },
+    {
+      "elfId": "5018",
+      "elfName": "蟲后·奧佩婭",
+      "name": "蟲后之冠",
+      "category": "技能",
+      "sourceSha256": "890017cfbbf35c59955ce3d99c5e4583498765a0373749936ee90dbd61acff13"
+    },
+    {
+      "elfId": "5018",
+      "elfName": "蟲后·奧佩婭",
+      "name": "王.噬心毒蝕",
+      "category": "技能",
+      "sourceSha256": "fdd382176dede984e036cae345d431baa3a8392bb2375a23cfe48579ef9d1b64"
+    },
+    {
+      "elfId": "5018",
+      "elfName": "蟲后·奧佩婭",
+      "name": "王·鏽腑喰心",
+      "category": "技能",
+      "sourceSha256": "441628c32c9c78ac3b3d54501c991ef7a31aeafa33c86d7a415de1b8e3d07836"
+    },
+    {
+      "elfId": "5019",
+      "elfName": "眾神之父·奧丁",
+      "name": "ᛏ",
+      "category": "專屬特性／魂印",
+      "sourceSha256": "c861ea25dd3d36cfd88e779fa938fcb7cf4d3cbf8ee88812f01ee0cdcf4e2aad"
+    },
+    {
+      "elfId": "5019",
+      "elfName": "眾神之父·奧丁",
+      "name": "ᚷᚢᚾᚷᚾᛁᚱ ᚦᚱᛖᚢᛗᚨᛞᚱ",
+      "category": "技能",
+      "sourceSha256": "b531466b06fe23c686d51391a1a7ff1d1ca6f74059e4d7ed2b8275ff95bd80aa"
+    },
+    {
+      "elfId": "5019",
+      "elfName": "眾神之父·奧丁",
+      "name": "ᛉᛖᛚᛃᚨ ᛟᚾ ᛁᚷᚷᛞᚱᚨᛋᛁᛚ",
+      "category": "技能",
+      "sourceSha256": "a9af334c172b0f1e89e4eb75006672216950d438b57bff29ec4081df1cc9d3c3"
+    },
+    {
+      "elfId": "5019",
+      "elfName": "眾神之父·奧丁",
+      "name": "ᚺᚢᚷᛁᚾ ᛟᚲ ᛗᚢᚾᛁᚾ",
+      "category": "技能",
+      "sourceSha256": "4fab5ea2647180ef984017ffc7b74e0f6a280054663721ecb4ab54606507f363"
+    },
+    {
+      "elfId": "5019",
+      "elfName": "眾神之父·奧丁",
+      "name": "ᛟᛞᛁᚾᛋ ᚨᚾᛋᚢᛉ",
+      "category": "技能",
+      "sourceSha256": "00557c7bdb166253fa989a4551fe93cc65b3add279a2dba6980185e9c20b3612"
+    },
+    {
+      "elfId": "5019",
+      "elfName": "眾神之父·奧丁",
+      "name": "ᚱᚨᚷᚾᚨᚱᛟᚲ",
+      "category": "技能",
+      "sourceSha256": "031d65ddb3640688b47c7f77b7d228d16cc33ade66cb2279c886edee3efaf5dc"
+    },
+    {
+      "elfId": "5020",
+      "elfName": "皮皮",
+      "name": "無",
+      "category": "專屬特性／魂印",
+      "sourceSha256": "64a563f17c32119e29e19a7802532e877ac8b0309e2fd0121e976246a15171ac"
+    },
+    {
+      "elfId": "5020",
+      "elfName": "皮皮",
+      "name": "撞擊",
+      "category": "技能",
+      "sourceSha256": "72aebec70f9366314e777fefed6359781dbc48cf6336071956e16c0a94864ee1"
+    },
+    {
+      "elfId": "5020",
+      "elfName": "皮皮",
+      "name": "鳴叫",
+      "category": "技能",
+      "sourceSha256": "e21e1e8d85c449963fb990bd197f3926ab83fa38ff6b8d6f97ab861bd995cd84"
+    },
+    {
+      "elfId": "5020",
+      "elfName": "皮皮",
+      "name": "電光火石",
+      "category": "技能",
+      "sourceSha256": "0cdaf4821a5b18ba6967b26f0ae7cc50d098af7808da91ca5e43e0c8e3fe9650"
+    },
+    {
+      "elfId": "5020",
+      "elfName": "皮皮",
+      "name": "飛翼拍擊",
+      "category": "技能",
+      "sourceSha256": "72aebec70f9366314e777fefed6359781dbc48cf6336071956e16c0a94864ee1"
+    },
+    {
+      "elfId": "5020",
+      "elfName": "皮皮",
+      "name": "誘惑",
+      "category": "技能",
+      "sourceSha256": "d68ec480916b936bdf478bf0fe4e32a26e533ce096b011b07c1f7c6859948e74"
+    },
+    {
+      "elfId": "5020",
+      "elfName": "皮皮",
+      "name": "手下留情",
+      "category": "技能",
+      "sourceSha256": "2ff7a569473c48896e6176c1a69ef5a196002f4c5be5bc356aaec4b422046587"
+    },
+    {
+      "elfId": "5020",
+      "elfName": "皮皮",
+      "name": "異常測試",
+      "category": "技能",
+      "sourceSha256": "466c075b82a33bbc969813329999110c67a30645c892efa0adce332353fca2db"
+    },
+    {
+      "elfId": "5020",
+      "elfName": "皮皮",
+      "name": "測試異常用2",
+      "category": "技能",
+      "sourceSha256": "6f1052434b83e9be4f1ce34d6c3744e89dccafc9bbfd28cb0f7e4e60caaf0329"
+    },
+    {
+      "elfId": "5020",
+      "elfName": "皮皮",
+      "name": "測試·控制類",
+      "category": "技能",
+      "sourceSha256": "5b0dc1e4f0d741ed7b8b3fcb8bc9c4f82510aa7c91a570d44afca86a56fbfce1"
+    },
+    {
+      "elfId": "5020",
+      "elfName": "皮皮",
+      "name": "測試·弱化類",
+      "category": "技能",
+      "sourceSha256": "4fa55af495259d9a2f2b637aeac4b828f43e040033073926239b5ef577c8b8e8"
+    },
+    {
+      "elfId": "5020",
+      "elfName": "皮皮",
+      "name": "測試·限制類",
+      "category": "技能",
+      "sourceSha256": "9e4685a69ecaf559399143356267a270ce25aeee119ccc2d2916e073194a93c2"
+    },
+    {
+      "elfId": "5020",
+      "elfName": "皮皮",
+      "name": "測試·衍化類",
+      "category": "技能",
+      "sourceSha256": "0ccad7cb98c021179b2d9197d550bc56bbcaf45c7451c939f2de3e9c8a35d94d"
+    },
+    {
+      "elfId": "5020",
+      "elfName": "皮皮",
+      "name": "測試·附屬類",
+      "category": "技能",
+      "sourceSha256": "412d9ff5d5bcc96a544bddf7a080488f58e4f70d71fde68591206f7e9ae80ffd"
+    },
+    {
+      "elfId": "5020",
+      "elfName": "皮皮",
+      "name": "同生共死",
+      "category": "技能",
+      "sourceSha256": "16a102dbd5facadab5cda06692fc9d4c6afa2d8ce46108634c3f757fa196f819"
+    },
+    {
+      "elfId": "5021",
+      "elfName": "治癒.龍魂再臨 次元龍",
+      "name": "龍",
+      "category": "專屬特性／魂印",
+      "sourceSha256": "327d3d01f34a50ce22e8890a47c9e637485275feb34465303f8acd6356d23c82"
+    },
+    {
+      "elfId": "5021",
+      "elfName": "治癒.龍魂再臨 次元龍",
+      "name": "閱世",
+      "category": "技能",
+      "sourceSha256": "47513dcfe272cc914565379ab70be93c2a1eaa656f5a79ee730fe6d9036e8f66"
+    },
+    {
+      "elfId": "5021",
+      "elfName": "治癒.龍魂再臨 次元龍",
+      "name": "敕界歸元",
+      "category": "技能",
+      "sourceSha256": "7085d190bc39b3e43a2a6c9f23ade382a1e3bc1e6c08b5b4b866a899de855770"
+    },
+    {
+      "elfId": "5021",
+      "elfName": "治癒.龍魂再臨 次元龍",
+      "name": "告命詩途",
+      "category": "技能",
+      "sourceSha256": "8379190e565fedf495974fe0ca65969b9f0875980865a14126fe20cdff715a7e"
+    },
+    {
+      "elfId": "5021",
+      "elfName": "治癒.龍魂再臨 次元龍",
+      "name": "神懺福音之章",
+      "category": "技能",
+      "sourceSha256": "167524c47875a2c7f71556f9e77ddbfef1a208a8cf20a11c1e1d402870d06bd6"
+    },
+    {
+      "elfId": "5021",
+      "elfName": "治癒.龍魂再臨 次元龍",
+      "name": "遺典.妄世律裁",
+      "category": "技能",
+      "sourceSha256": "c4f8e1b530bacbfb1b69feda7f4f54dab5eb9239afe3a125e2d3505320874d1d"
+    },
+    {
+      "elfId": "5022",
+      "elfName": "無序.六刃",
+      "name": "專屬特性",
+      "category": "專屬特性／魂印",
+      "sourceSha256": "1f771546444b18145950450683da27d4a9881528b0216354d71648681ed80c88"
+    },
+    {
+      "elfId": "5022",
+      "elfName": "無序.六刃",
+      "name": "亂舞",
+      "category": "通用特性",
+      "sourceSha256": "f7cf7d126f8567418c0312d8b42827eb89c42a5807768beb2848fbbb79eb91be"
+    },
+    {
+      "elfId": "5022",
+      "elfName": "無序.六刃",
+      "name": "無我 / 戰士",
+      "category": "二代異能特質",
+      "sourceSha256": "108c66d611a6123c81cc89fd09025aff609e2e6b4d416e4eb5bdafc848105089"
+    },
+    {
+      "elfId": "5022",
+      "elfName": "無序.六刃",
+      "name": "無序星魂使徒",
+      "category": "專屬異能特質",
+      "sourceSha256": "0c948dbf8103363dc201e1e245d347fa0d1fb9aa933bb57fef186b4e8bcd9b8d"
+    },
+    {
+      "elfId": "5022",
+      "elfName": "無序.六刃",
+      "name": "狂刃無生",
+      "category": "技能",
+      "sourceSha256": "c40988a895398a82e9f913b674412255f803df4a0dc3f512d6506bee88dceaa8"
+    },
+    {
+      "elfId": "5022",
+      "elfName": "無序.六刃",
+      "name": "靜刃止水",
+      "category": "技能",
+      "sourceSha256": "1d2fef9f6280a4367780ba306726478801ef3de866ae42e256d6844073aaaa26"
+    },
+    {
+      "elfId": "5022",
+      "elfName": "無序.六刃",
+      "name": "蟄刃復歸",
+      "category": "技能",
+      "sourceSha256": "0293e337fca6ca96c41714ff488ce887a08e3473a72d21a74c423ed9a27880e7"
+    },
+    {
+      "elfId": "5022",
+      "elfName": "無序.六刃",
+      "name": "六刃碎界斷",
+      "category": "技能",
+      "sourceSha256": "17afa274612447e9ef3266195d5f34401a276e2aabb5069283d4575e83c4aec0"
+    },
+    {
+      "elfId": "5022",
+      "elfName": "無序.六刃",
+      "name": "終焉·六花斬",
+      "category": "技能",
+      "sourceSha256": "c34726b1a274ba1de006a27522b88637fb235b91704fd0c4b99e43aedd45503c"
+    },
+    {
+      "elfId": "5023",
+      "elfName": "無序·蝕言",
+      "name": "蝕言",
+      "category": "專屬特性／魂印",
+      "sourceSha256": "20e34a14a5790c68e3847d085f3ead88d07dfe5ec9aaae1d63720ff09a15348d"
+    },
+    {
+      "elfId": "5023",
+      "elfName": "無序·蝕言",
+      "name": "亂舞",
+      "category": "通用特性",
+      "sourceSha256": "f7cf7d126f8567418c0312d8b42827eb89c42a5807768beb2848fbbb79eb91be"
+    },
+    {
+      "elfId": "5023",
+      "elfName": "無序·蝕言",
+      "name": "修復 / 咒術師",
+      "category": "二代異能特質",
+      "sourceSha256": "5c41b986dbb3b246f0e3ff98755e67fd9bca02ba360247b02d32e54bc5e6b31f"
+    },
+    {
+      "elfId": "5023",
+      "elfName": "無序·蝕言",
+      "name": "無序星魂使徒",
+      "category": "專屬異能特質",
+      "sourceSha256": "0c948dbf8103363dc201e1e245d347fa0d1fb9aa933bb57fef186b4e8bcd9b8d"
+    },
+    {
+      "elfId": "5023",
+      "elfName": "無序·蝕言",
+      "name": "影契·噬滅",
+      "category": "技能",
+      "sourceSha256": "83daaf0f636ea4cb07c716ba374f6eebccfeb28c5090ecc6ab2a2773482dfc8c"
+    },
+    {
+      "elfId": "5023",
+      "elfName": "無序·蝕言",
+      "name": "械律·置換",
+      "category": "技能",
+      "sourceSha256": "91d9d96294e41f97924d4932b8d0ab6611681cab76204cf43a7881ba285c1bc2"
+    },
+    {
+      "elfId": "5023",
+      "elfName": "無序·蝕言",
+      "name": "血稅迴轉",
+      "category": "技能",
+      "sourceSha256": "392b5935c70d3990f5e15648fbe7adcf87ecc9a42e8dd21fa1fc9ff1d50d921e"
+    },
+    {
+      "elfId": "5023",
+      "elfName": "無序·蝕言",
+      "name": "啟蟄·冥土荒蕪",
+      "category": "技能",
+      "sourceSha256": "69c802e063b182ff1d30c77c8b546732e1da0a55d662019a426c7234ca6c8239"
+    },
+    {
+      "elfId": "5023",
+      "elfName": "無序·蝕言",
+      "name": "安息契",
+      "category": "技能",
+      "sourceSha256": "1feafbbd6b6a488e585a78743052c21f2db7a18b575446312243bbe848dfdced"
+    },
+    {
+      "elfId": "5024",
+      "elfName": "湮滅之主・咤克斯",
+      "name": "咤",
+      "category": "專屬特性／魂印",
+      "sourceSha256": "e336c12cd6e4b0b7302fd5eb803b9ab28fee1e7d56df27bc5de3b31c41be11a2"
+    },
+    {
+      "elfId": "5024",
+      "elfName": "湮滅之主・咤克斯",
+      "name": "無限・虛數湮滅",
+      "category": "技能",
+      "sourceSha256": "95e6ce3b4af2ef2d9ba0fa631517ef75f8751709056a7033fbda32eb601e0f56"
+    },
+    {
+      "elfId": "5024",
+      "elfName": "湮滅之主・咤克斯",
+      "name": "沉寂・永夜悼亡",
+      "category": "技能",
+      "sourceSha256": "3e00cab8fdecdbb9170528a0df8b32bdf517f903db347a814b0ffff867314c1b"
+    },
+    {
+      "elfId": "5024",
+      "elfName": "湮滅之主・咤克斯",
+      "name": "崩解・萬念劫灰",
+      "category": "技能",
+      "sourceSha256": "0172925f2aeba822bbffc98e2729f60e47901a9027159c9182ef7590891e21d8"
+    },
+    {
+      "elfId": "5024",
+      "elfName": "湮滅之主・咤克斯",
+      "name": "劫數・限界歸無",
+      "category": "技能",
+      "sourceSha256": "e422bfd97360b9886659df6401cf92b628608fe31b8940d61c3a47e8951c9f87"
+    },
+    {
+      "elfId": "5024",
+      "elfName": "湮滅之主・咤克斯",
+      "name": "絕滅・萬物哀鳴",
+      "category": "技能",
+      "sourceSha256": "2b59f7a118a9bab845de10419b656f7172dcd218631f12339c3965e2c9e40ee9"
+    },
+    {
+      "elfId": "5024",
+      "elfName": "湮滅之主・咤克斯",
+      "name": "超重力壓迫",
+      "category": "技能",
+      "sourceSha256": "9af930db7158c61a4701615f663ae7c0651fb9e03e0876c7c9866efcd5ac587b"
+    },
+    {
+      "elfId": "5024",
+      "elfName": "湮滅之主・咤克斯",
+      "name": "無盡入侵",
+      "category": "技能",
+      "sourceSha256": "b3c328c199e0454bbbcfd4f29d07d616412f8f1819bacbf01cfed8a665e014af"
+    },
+    {
+      "elfId": "5024",
+      "elfName": "湮滅之主・咤克斯",
+      "name": "絕滅死亡",
+      "category": "技能",
+      "sourceSha256": "feb505d2d03e5b1df8e305f0237b62ece5f230c24b84830980fc114da51ecd3a"
+    },
+    {
+      "elfId": "5024",
+      "elfName": "湮滅之主・咤克斯",
+      "name": "魔王天權震",
+      "category": "技能",
+      "sourceSha256": "41f332c87ccf37741d804557c3928007896f5cf24ea1dea36c6aefada958f48b"
+    },
+    {
+      "elfId": "5024",
+      "elfName": "湮滅之主・咤克斯",
+      "name": "毀傷湧進",
+      "category": "技能",
+      "sourceSha256": "e25966d60997a0333299a61fd855d60f157074e1bb197e80233ff9f8b8f7a2c7"
+    },
+    {
+      "elfId": "5025",
+      "elfName": "恐懼的化身·咤克斯",
+      "name": "懼",
+      "category": "專屬特性／魂印",
+      "sourceSha256": "89251df3ac769695aa7ed18d92281dcbfd90ea19e8c2def8e930e5db58269ed3"
+    },
+    {
+      "elfId": "5025",
+      "elfName": "恐懼的化身·咤克斯",
+      "name": "懼噬・恐源浸染",
+      "category": "技能",
+      "sourceSha256": "e8aa6864704bfeae8759fc914cb292ffd15a90693db85c6407a5006c1dedaac4"
+    },
+    {
+      "elfId": "5025",
+      "elfName": "恐懼的化身·咤克斯",
+      "name": "深淵凝視",
+      "category": "技能",
+      "sourceSha256": "8139cecfc641108405f5bd15e46eb8c9d98a39896229b6df414d03b6bc3a81a1"
+    },
+    {
+      "elfId": "5025",
+      "elfName": "恐懼的化身·咤克斯",
+      "name": "幽幕折返",
+      "category": "技能",
+      "sourceSha256": "fa70a4114f7b1ea0b14c45c81d9e5c8df483d675c437132a149cc83d534e2b45"
+    },
+    {
+      "elfId": "5025",
+      "elfName": "恐懼的化身·咤克斯",
+      "name": "懼噬.虛實逆寫",
+      "category": "技能",
+      "sourceSha256": "7a4cf768dc1391bbc424a4eca7e2ddca3b6f5353596e3058caf55bb5adce5a62"
+    },
+    {
+      "elfId": "5025",
+      "elfName": "恐懼的化身·咤克斯",
+      "name": "劫數.萬念歸墟",
+      "category": "技能",
+      "sourceSha256": "fbde5551bea2c002e253dc2fa2be16aed7765f152fdeaa6263b9efa2be8f51d2"
+    },
+    {
+      "elfId": "5026",
+      "elfName": "無序.墜星",
+      "name": "專屬特性",
+      "category": "專屬特性／魂印",
+      "sourceSha256": "75c9de75a9f582202f502856be47437811ba0825e48fd5f7125a510e902bf090"
+    },
+    {
+      "elfId": "5026",
+      "elfName": "無序.墜星",
+      "name": "亂舞",
+      "category": "通用特性",
+      "sourceSha256": "f7cf7d126f8567418c0312d8b42827eb89c42a5807768beb2848fbbb79eb91be"
+    },
+    {
+      "elfId": "5026",
+      "elfName": "無序.墜星",
+      "name": "豪邁 / 投石者",
+      "category": "二代異能特質",
+      "sourceSha256": "6cd96eb87398199bcbf992e367b54d33b9659a4d8453ef63ad95c38914df29bc"
+    },
+    {
+      "elfId": "5026",
+      "elfName": "無序.墜星",
+      "name": "無序星魂使徒",
+      "category": "專屬異能特質",
+      "sourceSha256": "0c948dbf8103363dc201e1e245d347fa0d1fb9aa933bb57fef186b4e8bcd9b8d"
+    },
+    {
+      "elfId": "5026",
+      "elfName": "無序.墜星",
+      "name": "自然石之力-S",
+      "category": "技能",
+      "sourceSha256": "b8b0cf3106ebc8c5ce9ba2a0a278c7cf5c76e8f1a81c0df87df4c17d8d773611"
+    },
+    {
+      "elfId": "5026",
+      "elfName": "無序.墜星",
+      "name": "四象崩壞砲",
+      "category": "技能",
+      "sourceSha256": "ddddbf84238bdb8c83b079757eb92da0ff1c3d3b94af5f1002d5fbd526089017"
+    },
+    {
+      "elfId": "5026",
+      "elfName": "無序.墜星",
+      "name": "飛行石之力-S",
+      "category": "技能",
+      "sourceSha256": "2f8fcdbfe740316d63c5478832d5ae5cc4961f0bd375dc1172981b82f7657913"
+    },
+    {
+      "elfId": "5026",
+      "elfName": "無序.墜星",
+      "name": "機械石之力-S",
+      "category": "技能",
+      "sourceSha256": "5bee42fe52929d9484b132aa0297ded158b1bc7cde44aee890f8ed99454764a2"
+    },
+    {
+      "elfId": "5026",
+      "elfName": "無序.墜星",
+      "name": "地面石之力-S",
+      "category": "技能",
+      "sourceSha256": "e41bbfadd86fe7ec8a668e74163659eca4bf5e4f6b22c3d28c9c93355d5215bb"
+    },
+    {
+      "elfId": "5026",
+      "elfName": "無序.墜星",
+      "name": "普通石之力-S",
+      "category": "技能",
+      "sourceSha256": "44bae77ef936981a13fe3808d2aa3f9a7f523e93f874ebc1e4b1b71be59595e9"
+    },
+    {
+      "elfId": "5026",
+      "elfName": "無序.墜星",
+      "name": "戰鬥石之力-S",
+      "category": "技能",
+      "sourceSha256": "26e1d0e8279553386de048d2579f1b118d1f5825bd23a7dcae5c7a6b630d8a53"
+    },
+    {
+      "elfId": "5026",
+      "elfName": "無序.墜星",
+      "name": "龍石之力-S",
+      "category": "技能",
+      "sourceSha256": "76551c386c329ff9a5151ebf195057926d16d7581a669b5cf99447936a8d6bda"
+    },
+    {
+      "elfId": "5026",
+      "elfName": "無序.墜星",
+      "name": "聖靈石之力-S",
+      "category": "技能",
+      "sourceSha256": "e2e5a0c81f028f711deb3dfcf129dded5af015fc1c364087ed9c68c8d9186071"
+    },
+    {
+      "elfId": "5026",
+      "elfName": "無序.墜星",
+      "name": "邪靈石之力-S",
+      "category": "技能",
+      "sourceSha256": "ed509fa4c6e79edb6d5b5d5987ea86315604e58878cc4024e7399f7e586c29ce"
+    },
+    {
+      "elfId": "5026",
+      "elfName": "無序.墜星",
+      "name": "蟲石之力-S",
+      "category": "技能",
+      "sourceSha256": "8807389a3ac720fd36d1da73618fe7e8c1dd3bf2c5093843e89aa42f03f150d2"
+    },
+    {
+      "elfId": "5027",
+      "elfName": "蓓麗安特",
+      "name": "蓓",
+      "category": "專屬特性／魂印",
+      "sourceSha256": "3cd2ec5492ef366802895ce1812edacb8c71d1a7816f3f240e2f7b3092e52f1c"
+    },
+    {
+      "elfId": "5027",
+      "elfName": "蓓麗安特",
+      "name": "曙天",
+      "category": "技能",
+      "sourceSha256": "1c51bc07229c9c0da5b4749ca33a6a95931abac57bd0613e741a7cb1b074e9cb"
+    },
+    {
+      "elfId": "5027",
+      "elfName": "蓓麗安特",
+      "name": "星垂穹儀",
+      "category": "技能",
+      "sourceSha256": "05a735165c9ffee510034fe271663090ff1688a8755e178dc8c6708047b095c8"
+    },
+    {
+      "elfId": "5027",
+      "elfName": "蓓麗安特",
+      "name": "星河入眸",
+      "category": "技能",
+      "sourceSha256": "96edba4518bc76fec7363beaa1de71c3c4960d112f2953e4af08f910ea3badfb"
+    },
+    {
+      "elfId": "5027",
+      "elfName": "蓓麗安特",
+      "name": "星祈·繞指星瀾",
+      "category": "技能",
+      "sourceSha256": "e3690a4cb4193b32b95eae84bec2c46db959346b3fe7ac52e649ea1970635521"
+    },
+    {
+      "elfId": "5027",
+      "elfName": "蓓麗安特",
+      "name": "星執·浩邃星幕",
+      "category": "技能",
+      "sourceSha256": "39d9fe9dba1e18332a2103b0025605fbaaeff77bb8a035964d37ecaea31630f7"
+    },
+    {
+      "elfId": "5028",
+      "elfName": "怒濤·滄嵐",
+      "name": "瀾",
+      "category": "專屬特性／魂印",
+      "sourceSha256": "48fbc88886f24081054ae8b49c4cd1eab8098f158ffa166f43ee197f1d04f43e"
+    },
+    {
+      "elfId": "5028",
+      "elfName": "怒濤·滄嵐",
+      "name": "滄海永存",
+      "category": "技能",
+      "sourceSha256": "c6e8ddcced606a9f2f08b955f84f4460340b693d8db81751e0199ec7af7609fd"
+    },
+    {
+      "elfId": "5028",
+      "elfName": "怒濤·滄嵐",
+      "name": "弱水三千",
+      "category": "技能",
+      "sourceSha256": "2b14b5f7bfa5682c9e82625653b7d4a875df1a382b63c6faffbdb1659df17e67"
+    },
+    {
+      "elfId": "5028",
+      "elfName": "怒濤·滄嵐",
+      "name": "永恆誓約",
+      "category": "技能",
+      "sourceSha256": "87ae2efc89d0ca866c2ff0d5e2d7c6930c0687882876a4784fef47a02097b378"
+    },
+    {
+      "elfId": "5028",
+      "elfName": "怒濤·滄嵐",
+      "name": "王·洛浦凌波",
+      "category": "技能",
+      "sourceSha256": "e80accb2bb913d0f708a8c22e67fadb5ee8569154237b0c20ad9d84e508d3d7c"
+    },
+    {
+      "elfId": "5028",
+      "elfName": "怒濤·滄嵐",
+      "name": "王·深海之吻",
+      "category": "技能",
+      "sourceSha256": "4cc8b83b38bb9e1b23842254aa9d6e01d11d238d7a15b3f0e0b8d1e13727a2d0"
+    },
+    {
+      "elfId": "5029",
+      "elfName": "異境神霆·雷伊",
+      "name": "異",
+      "category": "專屬特性／魂印",
+      "sourceSha256": "9ddef4267d529e458ae5b69222370fa707d53da759d7f45ec3378e35d215c2ab"
+    },
+    {
+      "elfId": "5029",
+      "elfName": "異境神霆·雷伊",
+      "name": "電氣纏繞",
+      "category": "二代異能特質",
+      "sourceSha256": "605e47495252b36ea97c790ffbdf861230e401e351641ef3a49f98855df70bb1"
+    },
+    {
+      "elfId": "5029",
+      "elfName": "異境神霆·雷伊",
+      "name": "神明",
+      "category": "專屬異能特質",
+      "sourceSha256": "92533f65320b1b6199507db415ae6ce1d4e88c69e19b09c24c5cb83ae4fc847e"
+    },
+    {
+      "elfId": "5029",
+      "elfName": "異境神霆·雷伊",
+      "name": "雷神",
+      "category": "專屬異能特質",
+      "sourceSha256": "2af0b91585b4083f66e61a5904430674a48dd8caa890408b731fa3f4aaca3ea0"
+    },
+    {
+      "elfId": "5029",
+      "elfName": "異境神霆·雷伊",
+      "name": "空墟赫星",
+      "category": "技能",
+      "sourceSha256": "91f095530f7a2f44997a50f9f6867ac7329a45016d0302ed99c292c7bc930f2f"
+    },
+    {
+      "elfId": "5029",
+      "elfName": "異境神霆·雷伊",
+      "name": "異境神霆",
+      "category": "技能",
+      "sourceSha256": "8b4473c5d3d41bf33f6bb469d6d72536dcff104239d1c41f80c5fc4dbf95e699"
+    },
+    {
+      "elfId": "5029",
+      "elfName": "異境神霆·雷伊",
+      "name": "同塵祭",
+      "category": "技能",
+      "sourceSha256": "fadfb255f1be38fdb15d997bcb0c3e95837e360a415c710437ce18073ba041e5"
+    },
+    {
+      "elfId": "5029",
+      "elfName": "異境神霆·雷伊",
+      "name": "天雷誅殺",
+      "category": "技能",
+      "sourceSha256": "d00740e1b28830c20fd8bd29495419915b299d1d59f58edd8d3c36e80d2e9555"
+    },
+    {
+      "elfId": "5029",
+      "elfName": "異境神霆·雷伊",
+      "name": "霆·禁雷敕令",
+      "category": "技能",
+      "sourceSha256": "0fcf14443ad79c4fe1edd4c02a7794dfac319fc0219f8d7916a5ce0e93c6711f"
+    },
+    {
+      "elfId": "5030",
+      "elfName": "聖靈邁爾斯",
+      "name": "聖",
+      "category": "專屬特性／魂印",
+      "sourceSha256": "01f949a7edf9df330184964e4767cc2b5109d69e847d5fbbd8ab8e32d1be2a89"
+    },
+    {
+      "elfId": "5030",
+      "elfName": "聖靈邁爾斯",
+      "name": "八荒憫淚",
+      "category": "技能",
+      "sourceSha256": "56e40c0ffb06ceffd2229ae2e524efa0b2b772bb50ce27337a7ca6386b5c52a9"
+    },
+    {
+      "elfId": "5030",
+      "elfName": "聖靈邁爾斯",
+      "name": "天佑聖障",
+      "category": "技能",
+      "sourceSha256": "a199d8c166d0af7c3447f50c319f24468801a5bc46a3df45726a6e69eb7881c6"
+    },
+    {
+      "elfId": "5030",
+      "elfName": "聖靈邁爾斯",
+      "name": "四象靈獸",
+      "category": "技能",
+      "sourceSha256": "0c7c7fbbada54530f17043e87a9d4dc63d5f820aa9365d5590aa287fcf75568c"
+    },
+    {
+      "elfId": "5030",
+      "elfName": "聖靈邁爾斯",
+      "name": "淨世洗禮頌",
+      "category": "技能",
+      "sourceSha256": "88aac40a05b61a09d7cbdd187302d6f9ac76e9c84e7a70fb86b2dc7a5b38b317"
+    },
+    {
+      "elfId": "5030",
+      "elfName": "聖靈邁爾斯",
+      "name": "聖靈乾坤斷",
+      "category": "技能",
+      "sourceSha256": "2291340d9f0870c95cb3b2b7188c819a0b3046e5841e69fc36d37204b45f14f0"
+    },
+    {
+      "elfId": "5031",
+      "elfName": "六界神王",
+      "name": "界",
+      "category": "專屬特性／魂印",
+      "sourceSha256": "bbb2a255fe0c09b64053b5a82ae3070db2db46d23236b7fbfda0108d57472811"
+    },
+    {
+      "elfId": "5031",
+      "elfName": "六界神王",
+      "name": "界・裁決之劍",
+      "category": "技能",
+      "sourceSha256": "c0396f6a736693f1784479f1b3ae8d2c49ffc0c4a515ebf30aaa6a73292af097"
+    },
+    {
+      "elfId": "5031",
+      "elfName": "六界神王",
+      "name": "禁靈領域",
+      "category": "技能",
+      "sourceSha256": "0ea944dd7d88fd675a123d148c4c730195ac15d103777ecc015c47ccc14545de"
+    },
+    {
+      "elfId": "5031",
+      "elfName": "六界神王",
+      "name": "升臨恩澤",
+      "category": "技能",
+      "sourceSha256": "099e5ab2e64ed77201a070ede1b867ef20e049ba500e1200997e7c473f2432d5"
+    },
+    {
+      "elfId": "5031",
+      "elfName": "六界神王",
+      "name": "超界審判",
+      "category": "技能",
+      "sourceSha256": "af6ab628840bb8e336c70521fa3255b0b31d488af0dbe0b3d1161b6943fa5608"
+    },
+    {
+      "elfId": "5031",
+      "elfName": "六界神王",
+      "name": "界·六神歸一",
+      "category": "技能",
+      "sourceSha256": "8b025b4ffbd96b241dbba47e3fa85fe3310cde6923127bb97ba6b2ff51c0a40f"
+    },
+    {
+      "elfId": "5032",
+      "elfName": "星核寰宇·艾斯菲亞",
+      "name": "核",
+      "category": "專屬特性／魂印",
+      "sourceSha256": "dacabc0cd8e1efe84e10a203583860532d899c6946f8282dba363e4da247c18b"
+    },
+    {
+      "elfId": "5032",
+      "elfName": "星核寰宇·艾斯菲亞",
+      "name": "星核脈衝",
+      "category": "技能",
+      "sourceSha256": "7339baa9e1e968d24a42824db90ad0c63036af3aada5e964794913a41c0fce7a"
+    },
+    {
+      "elfId": "5032",
+      "elfName": "星核寰宇·艾斯菲亞",
+      "name": "星霧迷境",
+      "category": "技能",
+      "sourceSha256": "1f14b45c1a94bdcdd5ac16c9eec3698dce6ed1c34550e153d5c8010171820a3e"
+    },
+    {
+      "elfId": "5032",
+      "elfName": "星核寰宇·艾斯菲亞",
+      "name": "星核幻舞",
+      "category": "技能",
+      "sourceSha256": "87ed425801700e313fe747024511645f3f4d5bb09fbd37fbbdb4c1029bebaf61"
+    },
+    {
+      "elfId": "5032",
+      "elfName": "星核寰宇·艾斯菲亞",
+      "name": "殞星衝擊",
+      "category": "技能",
+      "sourceSha256": "e585aa75dc68e8bb8dec14b167876343da5c4cbf4d15bd4057e3e988ac57276b"
+    },
+    {
+      "elfId": "5032",
+      "elfName": "星核寰宇·艾斯菲亞",
+      "name": "寰宇幻影閃",
+      "category": "技能",
+      "sourceSha256": "49ce60750f8b7d06fb7541d1f428c48fea662f7a4ccf36844932af2d5227af9d"
+    },
+    {
+      "elfId": "5033",
+      "elfName": "星軌重構·艾斯菲格",
+      "name": "格",
+      "category": "專屬特性／魂印",
+      "sourceSha256": "dd04b08bed87925c29db7774c9ff6c73a5524b79693fab9003a1d6f3023541f9"
+    },
+    {
+      "elfId": "5033",
+      "elfName": "星軌重構·艾斯菲格",
+      "name": "星軌念刃",
+      "category": "技能",
+      "sourceSha256": "91ff39caf359b36416d0100ded8b2c02cd4df9cb262f54e9c7b1761ddfc16ad1"
+    },
+    {
+      "elfId": "5033",
+      "elfName": "星軌重構·艾斯菲格",
+      "name": "幻象帷幔",
+      "category": "技能",
+      "sourceSha256": "493008fa80c11c0d37d0ef989730b865e27961e254d4af8ac5d53130a8772af6"
+    },
+    {
+      "elfId": "5033",
+      "elfName": "星軌重構·艾斯菲格",
+      "name": "心像重構",
+      "category": "技能",
+      "sourceSha256": "22a49541321e64f102c0df527704e51f08fd4f8bacd0e2ffd9692b8b5ee3a2f1"
+    },
+    {
+      "elfId": "5033",
+      "elfName": "星軌重構·艾斯菲格",
+      "name": "念力傾瀉",
+      "category": "技能",
+      "sourceSha256": "eaf34d9e4dd5946e363723621755f7e9eb1796530a38c2838921546d8a06cdef"
+    },
+    {
+      "elfId": "5033",
+      "elfName": "星軌重構·艾斯菲格",
+      "name": "寰宇星軌陣",
+      "category": "技能",
+      "sourceSha256": "5f653177b434d9605c3b9c04cdac804138d34fea009a99e1acea2abeec5259f2"
+    },
+    {
+      "elfId": "5034",
+      "elfName": "邪靈主宰·摩哥斯",
+      "name": "邪",
+      "category": "專屬特性／魂印",
+      "sourceSha256": "2b832906b57a77d58efb4ba714240f1a4b9628748bc52590b4a7288b16e2f812"
+    },
+    {
+      "elfId": "5034",
+      "elfName": "邪靈主宰·摩哥斯",
+      "name": "摧妖斬",
+      "category": "技能",
+      "sourceSha256": "c7638c87de51c44f73951cfc7e5487d4af098f938ba0da9eb5f179654b2e6f9a"
+    },
+    {
+      "elfId": "5034",
+      "elfName": "邪靈主宰·摩哥斯",
+      "name": "背隳誓盟",
+      "category": "技能",
+      "sourceSha256": "9e8176bf780931ecd7d82aaeaa86e9f0c90df1827ad47e5aa340ffd1500b629d"
+    },
+    {
+      "elfId": "5034",
+      "elfName": "邪靈主宰·摩哥斯",
+      "name": "妖靈天性",
+      "category": "技能",
+      "sourceSha256": "8330842da15675562ef0a27592f0bcc81c2e3ea1e300497efd35d04dfc732d33"
+    },
+    {
+      "elfId": "5034",
+      "elfName": "邪靈主宰·摩哥斯",
+      "name": "王·墮落絕語",
+      "category": "技能",
+      "sourceSha256": "209516a6b14b935405cafabe0c96aec70b35a202c8078b049cb87d7a41e602c7"
+    },
+    {
+      "elfId": "5034",
+      "elfName": "邪靈主宰·摩哥斯",
+      "name": "王·潰墮妖族",
+      "category": "技能",
+      "sourceSha256": "541081970468907417c7b2c24d11694399df5ea639ee258efd9bb991155cea29"
+    },
+    {
+      "elfId": "5035",
+      "elfName": "御天龍神·哈莫",
+      "name": "鱗",
+      "category": "專屬特性／魂印",
+      "sourceSha256": "5044e1ef1d21a6cb5201dced7dbd61961c2b95de111406d92f89878510a4822a"
+    },
+    {
+      "elfId": "5035",
+      "elfName": "御天龍神·哈莫",
+      "name": "破曉",
+      "category": "技能",
+      "sourceSha256": "8145c455c94fa8e9018bc3092eb30444285ad249da6dab770842178f70dcf621"
+    },
+    {
+      "elfId": "5035",
+      "elfName": "御天龍神·哈莫",
+      "name": "逐波",
+      "category": "技能",
+      "sourceSha256": "175e504a5fc5cdb6659c3bf4366fffb09611266af50c1b83df37bc59945842e5"
+    },
+    {
+      "elfId": "5035",
+      "elfName": "御天龍神·哈莫",
+      "name": "燼世",
+      "category": "技能",
+      "sourceSha256": "4e9d72d0fbb62d766e77ecabc9f9c0a8affb1ee0f8b513f63090d4f03475b5ec"
+    },
+    {
+      "elfId": "5035",
+      "elfName": "御天龍神·哈莫",
+      "name": "纏根",
+      "category": "技能",
+      "sourceSha256": "60b947ee0b53b29630caed8209a2e57ca472b78665175957cf11f5399e6e73d4"
+    },
+    {
+      "elfId": "5035",
+      "elfName": "御天龍神·哈莫",
+      "name": "龍神·御天陣",
+      "category": "技能",
+      "sourceSha256": "68015c9c6a592eef98c97d7c615e1b8ea9b491f1b4f30a96c9ef1ff0d928294e"
+    },
+    {
+      "elfId": "arena_12",
+      "elfName": "無為龍者",
+      "name": "無為之境",
+      "category": "專屬特性／魂印",
+      "sourceSha256": "26e3eaeaf66f3e85c73527a90707008c922c874b3f7f11c0a00e5cc322946718"
+    },
+    {
+      "elfId": "arena_12",
+      "elfName": "無為龍者",
+      "name": "千秋虔",
+      "category": "技能",
+      "sourceSha256": "09078a63cd0b9ff6289f14288d125ab79e82d5b44889fe8b55f417e6785edade"
+    },
+    {
+      "elfId": "arena_12",
+      "elfName": "無為龍者",
+      "name": "百法拜",
+      "category": "技能",
+      "sourceSha256": "ff32ffe0a768c41a7d9ebcd9512ba8b7783e0fc6ebdfa7b38c733d26700c75f5"
+    },
+    {
+      "elfId": "arena_12",
+      "elfName": "無為龍者",
+      "name": "十玄釋",
+      "category": "技能",
+      "sourceSha256": "466147408433fcf306f86234ee79e536c1e7f056e82313cace731fb775dcd8f3"
+    },
+    {
+      "elfId": "arena_12",
+      "elfName": "無為龍者",
+      "name": "孑身誡",
+      "category": "技能",
+      "sourceSha256": "e1720dba10b227d0ec9b65c7133eea41e2605a58fa105648f543da5f4134df73"
+    },
+    {
+      "elfId": "arena_12",
+      "elfName": "無為龍者",
+      "name": "無相諦",
+      "category": "技能",
+      "sourceSha256": "b78df7e845d0865eeb38c14fb4e549c4a82fda8b3fe6958236ec9caa81a9ad32"
+    },
+    {
+      "elfId": "arena_13",
+      "elfName": "龍錄天鋒",
+      "name": "專屬特性",
+      "category": "專屬特性／魂印",
+      "sourceSha256": "8adfc1aadaa67b364ef829a97077532853689aafb1d033bac9583c8a759ee673"
+    },
+    {
+      "elfId": "arena_13",
+      "elfName": "龍錄天鋒",
+      "name": "鋒毫浸血雨",
+      "category": "技能",
+      "sourceSha256": "3f7b22b23118999bec4999afbd53b1dbc3f50752ddf74e088ad427aeaceb384b"
+    },
+    {
+      "elfId": "arena_13",
+      "elfName": "龍錄天鋒",
+      "name": "艷羅劍典",
+      "category": "技能",
+      "sourceSha256": "86ff6caf24386c79747321c0f0733d965ef48fadd97aa0f95d92a2a0ae7b90a6"
+    },
+    {
+      "elfId": "arena_13",
+      "elfName": "龍錄天鋒",
+      "name": "法咒共鳴斬",
+      "category": "技能",
+      "sourceSha256": "50c948a016db80491f3634b032b82f8ec6e4136d27a5cc4c125c362c79111ad2"
+    },
+    {
+      "elfId": "arena_13",
+      "elfName": "龍錄天鋒",
+      "name": "敕赦千銘",
+      "category": "技能",
+      "sourceSha256": "3ab78ec13003af267dd8f8291c3e0c015f6ddb782bdaab723932030a44e38639"
+    },
+    {
+      "elfId": "arena_13",
+      "elfName": "龍錄天鋒",
+      "name": "萬蒼書帝錄",
+      "category": "技能",
+      "sourceSha256": "19e01a3c5580a6fc597d0c9dfeadd758f6df7b517f6cb709429ccf7ef86da4ff"
+    },
+    {
+      "elfId": "arena_14",
+      "elfName": "無極聖武",
+      "name": "無極聖武",
+      "category": "專屬特性／魂印",
+      "sourceSha256": "92135c150cff97566326e3a539583bb44c250a81d0d09575f574985932b1bb2b"
+    },
+    {
+      "elfId": "arena_14",
+      "elfName": "無極聖武",
+      "name": "極武稜殺",
+      "category": "技能",
+      "sourceSha256": "e9184034a075bd550c099a11194c302e2588bb866399d28c9a149f0d467ead46"
+    },
+    {
+      "elfId": "arena_14",
+      "elfName": "無極聖武",
+      "name": "烈武天徵",
+      "category": "技能",
+      "sourceSha256": "59ef0a214ffc6c0a397ab340bb59c4f78e62d2caf87551bc3467576ed4b51819"
+    },
+    {
+      "elfId": "arena_14",
+      "elfName": "無極聖武",
+      "name": "亂武天傀",
+      "category": "技能",
+      "sourceSha256": "3ff9e9847ee3df0db7515f7fe961e65deeebbe7defc5362e9647a28642979885"
+    },
+    {
+      "elfId": "arena_14",
+      "elfName": "無極聖武",
+      "name": "鋭武銘戈",
+      "category": "技能",
+      "sourceSha256": "5b64b4241a9391340b39fadc8c26c3292a097d522f5d8a1ba40c3cab3fdc53c8"
+    },
+    {
+      "elfId": "arena_14",
+      "elfName": "無極聖武",
+      "name": "聖武·虛極拓世",
+      "category": "技能",
+      "sourceSha256": "ec95dca0cb0530c4a71088f43a090876388f8d2cd1b3b2f30ab45c21bef1000a"
+    },
+    {
+      "elfId": "arena_15",
+      "elfName": "命運龍輪 莫伊萊",
+      "name": "命運龍輪",
+      "category": "專屬特性／魂印",
+      "sourceSha256": "2c0c138d9925ca7820028c68c486cd6f338c45fbcca2fd2bfbda6fd0e97c8d13"
+    },
+    {
+      "elfId": "arena_15",
+      "elfName": "命運龍輪 莫伊萊",
+      "name": "九轉輪迴天",
+      "category": "技能",
+      "sourceSha256": "2ea3a904d2fe6efc9bf885bda501ab07ed25485797160763d63f7929219cb1e6"
+    },
+    {
+      "elfId": "arena_15",
+      "elfName": "命運龍輪 莫伊萊",
+      "name": "列星安辰",
+      "category": "技能",
+      "sourceSha256": "4fae5e37df77aafc84b0679cd6bffeb446dadae76e761827e3d34434b93f63ff"
+    },
+    {
+      "elfId": "arena_15",
+      "elfName": "命運龍輪 莫伊萊",
+      "name": "日月安屬",
+      "category": "技能",
+      "sourceSha256": "03886ad83a1304ba32f3b9887cadccb2acda0992535eff8d67d3025b1fe7fa5e"
+    },
+    {
+      "elfId": "arena_15",
+      "elfName": "命運龍輪 莫伊萊",
+      "name": "陰陽三合",
+      "category": "技能",
+      "sourceSha256": "3ba600d398a452791c312230f997ccb4a87e8b02aebfdbef61f9ef4c200b629b"
+    },
+    {
+      "elfId": "arena_15",
+      "elfName": "命運龍輪 莫伊萊",
+      "name": "恆·蒼穹斗轉",
+      "category": "技能",
+      "sourceSha256": "fb5a7e04bf773be9450baf246a670a4950680b420951a06196ac194f45c51be1"
+    },
+    {
+      "elfId": "arena_16",
+      "elfName": "鎮世龍魂・龍之治癒",
+      "name": "龍之治癒",
+      "category": "專屬特性／魂印",
+      "sourceSha256": "89d58d775135bdca87bd71064fc519ae34fe2e1df018b62a2ae4d56b7b0f9558"
+    },
+    {
+      "elfId": "arena_16",
+      "elfName": "鎮世龍魂・龍之治癒",
+      "name": "剛莖棍壓",
+      "category": "技能",
+      "sourceSha256": "274bb7afbd0556a18e30f25b98da73892aeb2888b1a4fe6d31c6327cdbdb1408"
+    },
+    {
+      "elfId": "arena_16",
+      "elfName": "鎮世龍魂・龍之治癒",
+      "name": "挨打要立正",
+      "category": "技能",
+      "sourceSha256": "6f6408d92dbcc8bd5b53c336ec38be20e67ada309e40356d3262b751c51847b0"
+    },
+    {
+      "elfId": "arena_16",
+      "elfName": "鎮世龍魂・龍之治癒",
+      "name": "幽魔相嘯",
+      "category": "技能",
+      "sourceSha256": "785c978533f1be7f9248daae8dafc069572329368e924c2fa193306cc00db23c"
+    },
+    {
+      "elfId": "arena_16",
+      "elfName": "鎮世龍魂・龍之治癒",
+      "name": "雅髯獅嘯",
+      "category": "技能",
+      "sourceSha256": "e076d3d3444e012e48c71b735bbc6ffd1d45a765c17accbf15c6fc0bccd26024"
+    },
+    {
+      "elfId": "arena_16",
+      "elfName": "鎮世龍魂・龍之治癒",
+      "name": "但願不會是個怪物",
+      "category": "技能",
+      "sourceSha256": "cdaf99794879032c8f3a232f7d70adb7301675ae59ffb4d63425d39df8de3690"
+    }
+  ]
+}

@@ -36,7 +36,7 @@ export function normalizeBlockAtom(atom: string, raw: Record<string, any> = {}):
       p.type = raw.type || (raw.statType === "boost" ? "buff" : raw.statType === "drop" ? "debuff" : "all");
       break;
     case "pp_op":
-      p.op = raw.op || (raw.mode === "recover" ? "add" : raw.mode === "drain" ? "drain" : "reduce");
+      p.op = raw.op || (raw.mode === "recover" ? "add" : raw.mode === "zero" ? "zero" : raw.mode === "drain" ? "drain" : raw.mode === 'add' ? 'add' : 'reduce');
       break;
     case "priority":
       p.bonus = Number(raw.bonus ?? raw.level ?? 1);

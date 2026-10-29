@@ -13,6 +13,9 @@ import { settlementReceipt } from '../src/battle/settlementReceipt';
 import { EffectTiming as E } from '../src/effects/types';
 import { ASTRAL_SKILLS, ASTRAL_AFTER_HIT, executeAstralMemory, handleAstralAesfiaSoulMark, handleAstralAesfigSoulMark } from '../src/effects/elves/astral-twins/registry';
 import { MOGOS_SKILLS, MOGOS_ON_INVALID, MOGOS_DAMAGE_TRANSFORMS, handleMogosSoulMark, runMogosTeamEffects, drawMogosOrb } from '../src/effects/elves/mogos/registry';
+import {MIGRATED_MOGOS_SKILLS} from '../src/data/migratedMogosSkillKits';
+import {runConnectedKit} from '../src/effects/connectedEffects';
+import {applyTeamForcedHitPower} from '../src/battle/forcedHitRules';
 import { runNewElfLifecycle } from '../src/effects/newElfLifecycle';
 import { getTypeMatchup } from '../src/utils/statCalculator';
 import { finalizeDamageReductions } from '../src/battle/damageReduction';
@@ -291,8 +294,14 @@ for (const side of ['p1', 'p2'] as const) {
   check(`${side} 百分比值取特攻速度總和40%／無效鎖至第五成功`, () => {
     const f = fixture(M, side); MOGOS_SKILLS['背隳誓盟'](f.c); runNewElfLifecycle(f.c, E.AFTER_ACTION, { skill: f.c.skill });
     assert.equal(f.damage[0].type, 'percent'); assert.equal(f.damage[0].amount, 80);
-    MOGOS_ON_INVALID['王·墮落絕語'](f.c); assert.equal(f.registries[side].teamMogosForceHit, true);
-    const move = MOGOS_DAMAGE_TRANSFORMS['王·潰墮妖族'](f.c, { power: 160 }); assert.equal(move.power, 210);
+    assert.equal((MOGOS_ON_INVALID as any)['王·墮落絕語'],undefined);
+    assert.equal((MOGOS_DAMAGE_TRANSFORMS as any)['王·潰墮妖族'],undefined);
+    const def=MIGRATED_MOGOS_SKILLS.find(s=>s.name==='王·墮落絕語')!;
+    runConnectedKit('on_invalid',def as any,Object.assign(Object.create(f.c),{invalid:true}));
+    assert.ok(f.registries[side].teamForcedHitRule);
+    f.c.skill={...f.c.skill,name:'王·潰墮妖族',power:160};
+    applyTeamForcedHitPower(f.c);
+    assert.equal(160+f.registries[side].powerAddThisAction,210,'積木共享規則附加50威力，原數值斷言保留');
   });
   check(`${side} 睡眠致命一擊分支／反彈按來源HP封頂`, () => {
     const f = fixture(G, side); f.registries[side].actualCritThisAction = true; ASTRAL_AFTER_HIT['念力傾瀉'](f.c, {} as any);

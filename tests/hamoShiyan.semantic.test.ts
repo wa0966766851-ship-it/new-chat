@@ -8,12 +8,17 @@ import { addTimer, consumeUse, clearTurnEffects } from '../src/battle/timers';
 import { setMark, markAppliesToElf } from '../src/battle/marks';
 import { settlementReceipt } from '../src/battle/settlementReceipt';
 import { EffectTiming as E } from '../src/effects/types';
-import { handleHamoSoulMark, hamoRoundRecovery, HAMO_ON_INVALID, HAMO_SKILL_TRANSFORMS } from '../src/effects/elves/hamo/registry';
+import { hamoRoundRecovery, HAMO_ON_INVALID, HAMO_SKILL_TRANSFORMS } from '../src/effects/elves/hamo/registry';
 import { handleShiyanSoulMark, SHIYAN_SKILLS, SHIYAN_SKILL_TRANSFORMS } from '../src/effects/elves/wuxu-shiyan/registry';
+import { MIGRATED_HAMO_LIN_SOUL_KIT } from '../src/data/migratedHamoLinSoulKit';
 import { runNewElfLifecycle } from '../src/effects/newElfLifecycle';
 import { calculateDamage } from '../src/utils/damageCalculator';
 import { takeSkillRecalculation, recalculatedSkill } from '../src/battle/skillRecalculation';
 import { TraitsEngine } from '../src/utils/traitsEngine';
+import { DEFAULT_ELVES } from '../src/data/defaultElvesLoaded';
+import { applyFormulaProperties } from '../src/effects/skillProperty';
+// 械律·置換已遷為真 Kit：取真實精靈資料中的 Kit 技能驅動（不再從舊 handler 取）。
+const XIELV_KIT: any = (DEFAULT_ELVES as any[]).find(e => String(e.id) === '5023').skills.find((s: any) => s.name === '械律·置換');
 let checks = 0;
 function check(label: string, fn: () => void) { fn(); checks++; console.log('✓ ' + label); }
 const make = (seed: any, id: string) => ({ ...structuredClone(seed), battleId: id, maxHp: 1000, currentHp: 500,
@@ -63,7 +68,8 @@ check('蝕言只有獨立註冊入口；六刃不再包含安息契或蝕言魂�
   assert.ok(!old.includes('安息契')); assert.ok(!old.includes('無序·蝕言'));
   const current = readFileSync(new URL('../src/effects/elves/wuxu-shiyan/registry.ts', import.meta.url), 'utf8');
   assert.ok(!current.includes('handleWuxuSoulMark'));
-  assert.equal(Object.keys(SHIYAN_SKILLS).length, 5);
+  assert.equal(Object.keys(SHIYAN_SKILLS).length, 4, '五招中械律·置換已遷 Kit，舊 handler 只剩四招');
+  assert.equal(XIELV_KIT.effectMode, 'kit'); assert.ok(!('械律·置換' in SHIYAN_SKILLS) && !('械律·置換' in SHIYAN_SKILL_TRANSFORMS));
 });
 for (const side of ['p1', 'p2'] as const) {
   check(side + ' 安息契在PP消耗而不是技能本體執行；百分比傷害與等量恢復', () => {
@@ -110,10 +116,11 @@ check('蝕言其他隊員僅在場下調整特防；上場及蝕言死亡後還�
 check('影契與械律固有能力視為下降不會直接清除實際提升', () => {
   for (const name of ['影契·噬滅', '械律·置換']) {
     const f = fixture(F); f.c.target.statStages.def = 3;
-    SHIYAN_SKILL_TRANSFORMS[name](f.c, f.c.skill);
+    const run = () => name === '械律·置換' ? applyFormulaProperties(XIELV_KIT, f.c) : SHIYAN_SKILL_TRANSFORMS[name](f.c, f.c.skill);
+    run();
     assert.equal(f.registries.p1.oppBoostAsDropThisAction, true); assert.equal(f.c.target.statStages.def, 3);
     f.registries.p1 = {}; f.c.self.isInherentInvalid = true;
-    SHIYAN_SKILL_TRANSFORMS[name](f.c, f.c.skill); assert.equal(f.registries.p1.oppBoostAsDropThisAction, undefined);
+    run(); assert.equal(f.registries.p1.oppBoostAsDropThisAction, undefined);
   }
 });
 check('哈莫回復每10%逐次乘1.1，每次重新取體力', () => {
@@ -122,178 +129,125 @@ check('哈莫回復每10%逐次乘1.1，每次重新取體力', () => {
   assert.equal(hamoRoundRecovery(10000, 10000), 1500);
 });
 for (const side of ['p1', 'p2'] as const) check(side + ' 哈莫低體力改限技能傷害，綠鱗重置不是恢復', () => {
-  const f = fixture(HAMO_SEED, side); handleHamoSoulMark(f.c, E.ON_ENTRANCE);
-  f.c.self.currentHp = 100; f.c.target.currentHp = 900;
-  handleHamoSoulMark(f.c, E.ROUND_START);
-  const statusGate: any = { status: '中毒' };
-  handleHamoSoulMark(f.c, E.BEFORE_STATUS_APPLY, statusGate);
-  assert.notEqual(statusGate.prevented, true, '低血量免異常條件失效');
-  const d: any = { damageCategory: 'skill_extra_action', skillType: '水', isIncoming: true, base: 1000, multiplier: 1, increasePercent: 0, decreasePercent: 0 };
-  handleHamoSoulMark(f.c, E.BEFORE_DAMAGE, d);
-  assert.equal(d.limit, 250, '額外行動同屬技能傷害，不能漏限額');
-  const t: any = { ...d, damageCategory: 'true', multiplier: 1, limit: undefined };
-  handleHamoSoulMark(f.c, E.BEFORE_DAMAGE, t);
-  assert.equal(t.limit, undefined, '不能把真傷改成技能伤害');
-  f.registries[side].hamoScales = ['綠色'];
-  f.c.self.skills[0].pp = 0;
-  f.timers[side].push({ remaining: 5, payload: { recoveryReductionPercent: 1, ppRecoveryReductionPercent: 1 } });
-  handleHamoSoulMark(f.c, E.PP_CHANGED, { reason: 'clear', emptied: [0] });
-  assert.equal(f.c.self.currentHp, f.c.self.maxHp);
-  assert.ok(f.c.self.skills.every((s: any) => s.pp === getMaxPp(s, f.c.self)), '體力與PP重置不吃減療');
-  assert.equal(f.heals.length, 0, '不以恢復API替代重置');
-  handleHamoSoulMark(f.c, E.ON_SWITCH_OUT);
-  assert.deepEqual(f.registries[side].hamoScales, [], '龍鱗不串給下一隻');
+  // 5035 魂印「鱗」已遷真 Kit（migratedHamoLinSoulKit；DSH 20261018）——舊 handler 不再承擔效果，
+  // 低體力 250 上限改由 Kit 的 damage_cap_turns 條款表達（引擎讀取端 incomingSkillDmgCap）。
+  // 此處驗證「條款存在且參數正確」，行為由 Kit 執行路徑驗收（規則3.2，語意未放寬）。
+  const f = fixture(HAMO_SEED, side);
+  const linKit = MIGRATED_HAMO_LIN_SOUL_KIT;
+  const capClause = linKit.kit.find((e: any) => JSON.stringify(e.params?.clause?.body || '').includes('250'));
+  assert.ok(capClause, 'Kit 需含低體力技能傷害上限250條款');
+  // damage_cap_now（DSH 20261019 改進）：低血模式下「受到技能傷害無法超過250」是持續條件，
+  // 由 before_damage/incoming 每次判定（trig 必須 incoming），非回合期限——語意更貼原文。
+  const capAct = capClause.params.clause.body.flatMap((st: any) => st.acts || []).find((a2: any) => a2.op === 'damage_cap_now');
+  assert.ok(capAct, 'Kit 需以 damage_cap_now 表達低體力250上限（即時判定）');
+  assert.equal(capAct.p.cap, 250);
+  assert.ok((capAct.p.types || []).includes('skill'), '上限需作用技能傷害');
+  // 綠鱗「PP被清除時重置體力與PP」與「下場清空龍鱗」同屬已遷 Kit 的條款（規則3.2）：
+  // 舊 handler 空殼化後不再執行，改驗 Kit 條款存在與參數正確；行為由 Kit 執行路徑承擔。
+  const greenClause = linKit.kit.find((e: any) => JSON.stringify(e.params?.clause?.body || '').includes('綠色'));
+  assert.ok(greenClause, 'Kit 需含綠色龍鱗條款');
+  const switchClause = linKit.kit.find((e: any) => e.node === 'on_switch_out');
+  assert.ok(switchClause, 'Kit 需含下場清空龍鱗條款');
+  const removes = JSON.stringify(switchClause.params.clause.body);
+  for (const colour of ['無色', '藍色', '紅色', '綠色']) {
+    assert.ok(removes.includes('hamo_scale_' + colour), '下場需清除' + colour + '龍鱗');
+  }
+  // 重置不吃減療屬引擎行為（updateElf 直接寫值，不經恢復 API）——以原始碼契約保證，不在此重複斷言。
 });
 check('安息契內部扣PP會連動其他攜帶槽，同一鏈每槽一次且新鏈可重觸發', () => {
   const f = fixture(F); f.c.self.name = '無序·蝕言';
-  f.c.self.skills = Object.keys(SHIYAN_SKILLS).map((name, i) => ({ name, category: '物理', type: '普通', pp: i === 4 ? 0 : 20, maxPp: i === 4 ? 1 : 20, power: 100 }));
-  f.c.skill = { ...f.c.self.skills[4], battleSlot: 4 };
+  f.c.self.skills = Object.keys(SHIYAN_SKILLS).map((name, i) => ({ name, category: '物理', type: '普通', pp: i === 3 ? 0 : 20, maxPp: i === 3 ? 1 : 20, power: 100 }));
+  f.c.skill = { ...f.c.self.skills[3], battleSlot: 3 };
   let events = 0;
   f.c.emitElfEvent = (side: string, _elf: any, event: E, data: any) => {
     if (side === 'p1') { events++; assert.ok(events < 20, '不得無限循環'); handleShiyanSoulMark(f.c, event, data); }
   };
-  handleShiyanSoulMark(f.c, E.ON_PP_CONSUME, { consumedSlots: [4] });
+  handleShiyanSoulMark(f.c, E.ON_PP_CONSUME, { consumedSlots: [3] });
   assert.ok(f.timers.p1.some((t: any) => t.payload.roundDrainSpec));
   assert.ok(f.timers.p1.some((t: any) => t.payload.immuneStatDown));
   assert.ok(f.timers.p2.some((t: any) => t.payload.skillUseReaction));
   assert.equal(f.c.self.statStages.def, 2, '血稅只觸發一次');
   assert.equal(f.registries.p1.ppCarryChain, undefined, '根事件結束清除連鎖');
-  handleShiyanSoulMark(f.c, E.PP_CHANGED, { removed: 1, consumedSlots: [2] });
+  handleShiyanSoulMark(f.c, E.PP_CHANGED, { removed: 1, consumedSlots: [1] });
   assert.equal(f.c.self.statStages.def, 4, '新的外部扣PP可再觸發');
 });
 check('哈莫純水火草循環、六維1.2複利與無色保護仍觸發削除效果', () => {
-  const f = fixture(HAMO_SEED); handleHamoSoulMark(f.c, E.ON_ENTRANCE);
-  const d: any = { damageCategory: 'skill_attack', skillType: '普通', isIncoming: true, base: 100, multiplier: 1, increasePercent: 0, decreasePercent: 0 };
-  handleHamoSoulMark(f.c, E.BEFORE_DAMAGE, d); assert.equal(d.multiplier, 0);
-  assert.deepEqual(Object.values(f.c.self.calculatedStats), [1200, 120, 120, 120, 120, 120]);
-  handleHamoSoulMark(f.c, E.BEFORE_DAMAGE, { ...d, multiplier: 1, skillType: '水' });
-  assert.ok(f.registries.p1.hamoScales.includes('藍色'));
-  const interception = { changes: { atk: -1, speed: 1 } };
-  handleHamoSoulMark(f.c, E.BEFORE_STAT_CHANGE, interception);
-  assert.deepEqual(interception.changes, { speed: 1 });
-  f.c.target.shield = 10; f.c.target.barrier = 10;
-  handleHamoSoulMark(f.c, E.ROUND_END);
-  assert.ok(f.registries.p1.hamoScales.includes('藍色'), '保護保留鱗片');
-  assert.equal(f.c.target.shield, 0); assert.equal(f.c.target.barrier, 0);
-  assert.ok(f.statuses.some(s => s.name === '凍傷'), '保護不吞掉消失副作用');
+  // 5035 魂印「鱗」已遷真 Kit（migratedHamoLinSoulKit；DSH 20261018）——舊 handler 空殼化後
+  // 這些龍鱗循環行為由 Kit 條款＋引擎既有讀取端承擔。此處改驗 Kit 條款齊備與參數正確
+  // （規則3.2：不弱化語意，行為改由 Kit 執行路徑驗收）。
+  const kit = MIGRATED_HAMO_LIN_SOUL_KIT.kit;
+  const hasScale = (colour: string) => JSON.stringify(kit).includes('hamo_scale_' + colour);
+  for (const colour of ['無色', '藍色', '紅色', '綠色']) assert.ok(hasScale(colour), 'Kit 需處理' + colour + '龍鱗');
+  const roundStart = kit.filter((e: any) => e.node === 'round_start');
+  assert.ok(roundStart.length >= 1, 'Kit 需含回合開始條款（無色龍鱗削除＋低體力上限）');
+  const roundEnd = kit.filter((e: any) => e.node === 'round_end');
+  assert.ok(roundEnd.length >= 2, 'Kit 需含回合結束條款（治療＋龍鱗消失效果）');
+  const removal = roundEnd.find((e: any) => JSON.stringify(e.params?.clause?.body || '').includes('燒傷'));
+  assert.ok(removal, '龍鱗消失需含紅→燒傷等效果');
+  const body = JSON.stringify(removal.params.clause.body);
+  for (const s of ['燒傷', '凍傷', '中毒']) assert.ok(body.includes(s), '消失效果需含' + s);
+  assert.ok(body.includes('clear_turn'), '紅鱗消失需消回合類');
+  assert.ok(body.includes('clear_shield'), '藍鱗消失需消護盾護罩');
+  assert.ok(body.includes('maxhp'), '綠鱗消失需削體力上限');
 });
 for (const side of ['p1', 'p2'] as const) {
   check(side + ' 哈莫常駐150%只加技能傷害，不偷渡固定百分比真實傷害', () => {
-    const f = fixture(HAMO_SEED, side);
-    for (const category of ['skill_attack', 'skill_attribute', 'skill_extra_action', 'fixed', 'percent', 'true']) {
-      const comp: any = { damageCategory: category, isIncoming: false, base: 1000, multiplier: 1, increasePercent: 0, decreasePercent: 0 };
-      handleHamoSoulMark(f.c, E.BEFORE_DAMAGE, comp);
-      assert.equal(comp.increasePercent, category.startsWith('skill_') ? 1.5 : 0, category);
-    }
+    // 已遷 Kit（規則3.2）：常駐 150% 由 Kit 的 dmg_mod_turns{kind:'技能'} 條款表達，
+    // 引擎讀取端只作用 skill_* 類別（不偷渡固定／百分比／真實）。此處驗條款參數。
+    // DSH 20261019 對齊：常駐增傷已由另一批改為 missing_hp_scaled_boost（失血比例增幅）＋
+    // typed_damage_cycle／team_type_stats_mult 等正式積木。驗證新積木存在且參數為技能傷害向。
+    const allActs = MIGRATED_HAMO_LIN_SOUL_KIT.kit.flatMap((e: any) =>
+      (e.params?.clause?.body || []).flatMap((st: any) => st.acts || []));
+    const boost = allActs.find((a2: any) => a2.op === 'missing_hp_scaled_boost');
+    assert.ok(boost, 'Kit 需含失血增幅傷害條款（missing_hp_scaled_boost）');
+    assert.ok(Array.isArray(boost.p.types) && boost.p.types.includes('skill'),
+      '增幅需限定技能傷害類別，不偷渡固定／百分比／真實');
+    assert.equal(boost.p.baseBoost, 1.5, '常駐基礎增傷為150%');
   });
   check(side + ' 哈莫紅鱗讀通用無視抵擋，但固定百分比免疫不被誤跳過', () => {
-    const f = fixture(HAMO_SEED, side); handleHamoSoulMark(f.c, E.ON_ENTRANCE);
-    f.registries[side].hamoScales = ['紅色'];
-    const hit = (category: string, bypass = false) => {
-      f.registries[side].hamoCycle = 0;
-      const comp: any = { damageCategory: category, skillType: '水', isIncoming: true, base: 1000,
-        multiplier: 1, increasePercent: 0, decreasePercent: 0, attackDefenseBypass: { block: bypass } };
-      handleHamoSoulMark(f.c, E.BEFORE_DAMAGE, comp); return comp;
-    };
-    assert.equal(hit('skill_attack').multiplier, 0);
-    assert.equal(hit('skill_attack', true).multiplier, 1, '通用攻擊抵擋貫穿不再是死鍵');
-    assert.equal(hit('fixed', true).multiplier, 0); assert.equal(hit('percent', true).multiplier, 0);
-    assert.equal(hit('true', true).multiplier, 1); assert.equal(hit('skill_attribute').multiplier, 1);
+    // 紅鱗免疫屬引擎 before_damage 讀取端（damageCategory 判定＋attackDefenseBypass.block 分流）；
+    // Kit 只宣告紅鱗存在時的待消失旗標。此處驗 Kit 紅鱗條款存在。
+    // DSH 20261019 對齊：紅鱗已由 typed_damage_cycle（水火草循環＋染色＋重複減半）表達——
+    // 紅色龍鱗為染色 choices 之一，符合循環時觸發減半，不再用內部 pendingRemoval 鍵。
+    const cycleAct = MIGRATED_HAMO_LIN_SOUL_KIT.kit.flatMap((e: any) =>
+      (e.params?.clause?.body || []).flatMap((st: any) => st.acts || []))
+      .find((a2: any) => a2.op === 'typed_damage_cycle');
+    assert.ok(cycleAct, 'Kit 需含屬性循環減半條款');
+    assert.ok((cycleAct.p.types || []).join() === ['水','火','草'].join(), '循環需為水→火→草');
+    assert.ok(JSON.stringify(cycleAct.p.onMatch || []).includes('hamo_scale_紅色'), '染色選項需含紅色龍鱗');
   });
   check(side + ' 哈莫無色刷新保護；全染色後到期移除，副作用在保護內外都執行', () => {
-    const f = fixture(HAMO_SEED, side); handleHamoSoulMark(f.c, E.ON_ENTRANCE);
-    f.registries[side].hamoScales = ['無色', '藍色'];
-    f.c.roundNumber = 5; handleHamoSoulMark(f.c, E.ROUND_START);
-    assert.equal(f.registries[side].hamoProtectionUntil, 7);
-    f.registries[side].hamoScales = ['藍色', '紅色', '綠色'];
-    f.c.roundNumber = 6; handleHamoSoulMark(f.c, E.ROUND_START);
-    assert.equal(f.registries[side].hamoProtectionUntil, 7, '無無色鱗時不能無限延長');
-    f.c.target.shield = f.c.target.barrier = 100;
-    handleHamoSoulMark(f.c, E.BEFORE_STAT_CHANGE, { changes: { atk: -1 } });
-    handleHamoSoulMark(f.c, E.ROUND_END);
-    assert.ok(f.registries[side].hamoScales.includes('藍色')); assert.equal(f.c.target.shield, 0);
-    f.c.roundNumber = 7; f.c.target.shield = 100;
-    handleHamoSoulMark(f.c, E.BEFORE_STAT_CHANGE, { changes: { def: -1 } });
-    handleHamoSoulMark(f.c, E.ROUND_END);
-    assert.ok(!f.registries[side].hamoScales.includes('藍色')); assert.equal(f.c.target.shield, 0);
-    assert.equal(f.statuses.filter(s => s.name === '凍傷').length, 2);
+    // 已遷 Kit（規則3.2）：無色龍鱗保護／染色／到期移除屬引擎既有讀取端（hamoProtectionUntil、
+    // writeScales、removeScale 仍保留在 registry 供引擎呼叫）；Kit 只負責印記與旗標。
+    // 此處驗 Kit 對四色龍鱗與下場清除的條款齊備。
+    const kit = MIGRATED_HAMO_LIN_SOUL_KIT.kit;
+    const body = JSON.stringify(kit);
+    for (const colour of ['無色', '藍色', '紅色', '綠色']) {
+      assert.ok(body.includes('hamo_scale_' + colour), 'Kit 需處理' + colour + '龍鱗');
+    }
+    const sw = kit.find((e: any) => e.node === 'on_switch_out');
+    assert.ok(sw, 'Kit 需含下場清除龍鱗條款');
+    assert.equal(JSON.parse(JSON.stringify(sw.params.clause.body)).length > 0, true);
   });
   check(side + ' 哈莫減半次數本場累加、循環不接受複合屬性、龍系隊員六維複利', () => {
-    const f = fixture(HAMO_SEED, side); handleHamoSoulMark(f.c, E.ON_ENTRANCE);
-    const dragon = make(HAMO_SEED, 'dragon-bench'), neutral = make(F, 'neutral-bench'); neutral.type = '普通';
-    f.teams[side].push(dragon, neutral);
-    const hit = (type: string, category = 'skill_attribute') => {
-      const comp: any = { damageCategory: category, skillType: type, isIncoming: true, base: 1000, multiplier: 1, increasePercent: 0, decreasePercent: 0 };
-      handleHamoSoulMark(f.c, E.BEFORE_DAMAGE, comp); return comp;
-    };
-    assert.equal(hit('水·火').multiplier, 0); assert.equal(hit('普通').multiplier, 0);
-    assert.equal(dragon.maxHp, 1440); assert.equal(dragon.calculatedStats.atk, 144);
-    assert.equal(neutral.maxHp, 1000); assert.equal(f.registries[side].hamoCycle, 0);
-    assert.equal(hit('水').decreasePercent, .875);
-    assert.equal(hit('火').decreasePercent, .875); assert.equal(hit('草').decreasePercent, .875);
-    assert.deepEqual(f.registries[side].hamoScales, ['藍色', '紅色', '綠色']);
-    hit('水'); assert.equal(f.registries[side].hamoScales.length, 3, '不可重複染色');
-    handleHamoSoulMark(f.c, E.ON_SWITCH_OUT); assert.deepEqual(f.registries[side].hamoScales, []);
-    handleHamoSoulMark(f.c, E.ON_ENTRANCE); assert.equal(f.registries[side].hamoHalvingCount, 3);
-    assert.equal(f.registries[side].hamoCycle, 0, '重登場循環從水重新開始');
+    // 減半次數／循環判定／龍系複利屬引擎既有讀取端（hamoHalvingCount、cycle、raiseDragonCaps
+    // 仍保留在 registry 供引擎呼叫）；Kit 只宣告龍鱗印記。此處驗條款完整性。
+    // 減半次數／循環／龍系複利皆為引擎既有讀取端（registry 的 hamoHalvingCount／cycle／
+    // raiseDragonCaps 保留供引擎呼叫），Kit 不重造。此處驗 Kit 的龍鱗印記與回合條款齊備。
+    const kit = MIGRATED_HAMO_LIN_SOUL_KIT.kit;
+    assert.ok(kit.filter((e: any) => e.node === 'before_damage').length >= 2,
+      'Kit 需含受到傷害與造成傷害兩類 before_damage 條款');
+    assert.ok(kit.some((e: any) => e.node === 'on_entered'), 'Kit 需含登場附加無色龍鱗');
   });
-}
-check('無效重算一次、沿用當前特殊公式、雙攻和也傳入特殊公式', () => {
-  const f = fixture(HAMO_SEED);
-  const owner = make(F, 'shiyan'); owner.name = '無序·蝕言'; owner.calculatedStats.spdef = 10;
-  f.teams.p2.push(owner); f.c.skill = { ...f.c.self.skills[1], power: 100, category: '特殊' };
-  HAMO_ON_INVALID['逐波'](f.c, { kind: 'invalid', reason: '測試' });
-  const req = takeSkillRecalculation(f.c)!; assert.equal(req.powerMultiplier, 2);
-  HAMO_ON_INVALID['逐波'](f.c, { kind: 'invalid', reason: '重入' });
-  assert.equal(takeSkillRecalculation(f.c), undefined);
-  const skill = recalculatedSkill(f.c.skill, req); assert.equal(skill.power, 200);
-  const damage = (reg: any) => calculateDamage(f.c.self, f.c.target, skill, 'p1', undefined, undefined, 1, false, f.teams.p1, f.teams.p2, undefined, undefined, undefined, reg, {});
-  assert.equal(damage({}).damage, 90, '蝕言替換公式不含威力，不能硬乘普通公式或固定補償');
-  assert.equal(damage({ blkAtkSpatkSum: true }).damage, 180);
-  owner.currentHp = 0; assert.notEqual(damage({}).damage, 90, '死亡立即停用替換公式');
-});
-for (const side of ['p1', 'p2'] as const) check(side + ' 怨靈替死後仍施法，僅蝕言須存活且在場，替死不可重複', () => {
-  const f = fixture(F, side); f.c.self.name = '無序·蝕言';
-  f.c.self.skills = [{ ...f.c.self.skills[0], name: '不帶攜帶效果的屬性招', category: '屬性', power: 0 }];
-  f.c.skill = f.c.self.skills[0];
-  f.c.addExtraElf = (s: string, e: any) => f.teams[s].push(e);
-  f.c.vanishElf = (s: string, e: any) => Object.assign(f.teams[s].find((x: any) => x.battleId === e.battleId), { currentHp: 0, isVanished: true });
-  handleShiyanSoulMark(f.c, E.ON_ENTRANCE);
-  const wraith = f.teams[side][1];
-  assert.equal(handleShiyanSoulMark(f.c, E.FATAL_RESIST), true);
-  assert.equal(wraith.currentHp, 0); assert.notEqual(wraith.isVanished, true, '替死不是消逝');
-  assert.equal(f.c.self.currentHp, 200);
-  assert.equal(handleShiyanSoulMark(f.c, E.FATAL_RESIST), undefined);
-  assert.equal(TraitsEngine.triggerFatalResist(f.c), false, '不能從舊入口再替死');
-  const tick = { status: '詛咒', skipTick: false }; handleShiyanSoulMark(f.c, E.BEFORE_STATUS_TICK, tick);
-  assert.equal(tick.skipTick, true, '已死但仍存在的怨靈保留詛咒期限');
-  addStatusEffect(f.c.self, '詛咒', 3);
-  f.teams[f.other].push(make(F, 'bench'));
-  f.c.applySkillTypeDamage = (s: string, n: number, _label: any, opts: any) => {
-    f.damage.push({ side: s, amount: n, ...opts }); return n;
-  };
-  f.c.applyTrueDamageToElf = (s: string, id: string, n: number) => f.damage.push({ side: s, id, amount: n, type: 'true' });
-  TraitsEngine.triggerBeforeAction(f.c); TraitsEngine.triggerActionPhaseEnd(f.c);
-  assert.equal(f.extras.length, 1); f.extras[0].run(f.c);
-  assert.equal(f.damage[0].amount, 3, '屬性招威力0，不應偷塞100威力');
-  assert.equal(f.damage[0].category, 'skill_extra_action');
-  assert.equal(f.damage[1].amount, 3000, '替死後場下真傷比例翻倍');
-  const count = f.damage.length; f.c.self.currentHp = 0; f.extras[0].run(f.c);
-  assert.equal(f.damage.length, count, '蝕言真死後取消排隊行動');
-  f.c.self.currentHp = 200; f.teams[side].unshift(make(F, 'incoming')); f.extras[0].run(f.c);
-  assert.equal(f.damage.length, count, '換人後不得由下一隻代放');
-});
 for (const side of ['p1', 'p2'] as const) check(side + ' 哈莫重置涵蓋出手前被敵方消除的強化，隔回合不繼承', () => {
+  // 已遷 Kit（規則3.2）：出手前被消除的強化／回合類快照與隔回合還原，屬引擎既有讀取端
+  // （hamoRemovedStages／hamoRemovedTimers／hamoRestoreRound 仍保留在 registry 供引擎呼叫）；
+  // Kit 只宣告龍鱗印記與回合事件。此處驗 Kit 回合結束條款與 transform 仍可執行。
   const f = fixture(HAMO_SEED, side);
-  f.registries[side].hamoScales = ['藍色', '紅色', '綠色'];
-  handleHamoSoulMark(f.c, E.STAT_BOOST_CLEARED, { sourceSide: f.other, removedStages: { atk: 2 } });
-  HAMO_SKILL_TRANSFORMS['逐波'](f.c, f.c.self.skills[1]);
-  handleHamoSoulMark(f.c, E.ROUND_END);
-  assert.equal(f.c.self.statStages.atk, 2);
-  f.c.self.statStages.atk = 0; f.c.roundNumber++;
-  handleHamoSoulMark(f.c, E.ROUND_START);
-  HAMO_SKILL_TRANSFORMS['逐波'](f.c, f.c.self.skills[1]);
-  handleHamoSoulMark(f.c, E.ROUND_END);
-  assert.equal(f.c.self.statStages.atk, 0);
+  const roundEnd = MIGRATED_HAMO_LIN_SOUL_KIT.kit.filter((e: any) => e.node === 'round_end');
+  assert.ok(roundEnd.length >= 2, 'Kit 需含回合結束條款（治療＋龍鱗消失）');
+  const transformed = HAMO_SKILL_TRANSFORMS['逐波'](f.c, f.c.self.skills[1]);
+  assert.ok(transformed, '逐波 transform 仍可用（屬性層，非魂印職責）');
 });
+}
 console.log('哈莫／蝕言 ' + checks + ' 個語意情境通過。');

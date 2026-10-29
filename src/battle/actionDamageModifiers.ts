@@ -1,6 +1,25 @@
 import type { BattleEventContext, DamageComputation } from '../effects/types';
 import { matchesDamageTypes, damageScopeLabel } from '../effects/damageChoices';
 import { multiplyDamageReduction } from './damageReduction';
+import type { Elf } from '../types';
+
+/** 在正式威力公式讀取當下體力；使用行動身份防止殘留到下一次出手。 */
+export function queueHpPowerScale(ctx: BattleEventContext, params: { side: 'self'|'opp'; unit: number; boost: number }): boolean {
+  if (ctx.actionId === undefined) return false;
+  const previous = ctx.getPlayerState('actionPowerScales');
+  const items = previous?.actionId === ctx.actionId ? previous.items : [];
+  ctx.setPlayerState('actionPowerScales', { actionId: ctx.actionId, ownerBattleId: ctx.self.battleId || ctx.self.id, items: [...items, params] });
+  return true;
+}
+export function hpPowerScale(registry: any, actor: Elf, target: Elf, actionId?: number): number {
+  const record = registry?.actionPowerScales;
+  if (actionId === undefined || record?.actionId !== actionId || record.ownerBattleId !== (actor.battleId || actor.id)) return 1;
+  return record.items.reduce((mult: number, p: { side: string; unit: number; boost: number }) => {
+    const elf = p.side === 'self' ? actor : target;
+    const ratio = elf.maxHp > 0 ? Math.max(0, Math.min(1, elf.currentHp / elf.maxHp)) : 0;
+    return mult * (1 + Math.floor(ratio / p.unit + 1e-9) * p.boost);
+  }, 1);
+}
 
 export const ACTION_DAMAGE_KEY = 'damageModifiersThisAction';
 export const ACTION_POWER_KEY = 'powerMultiplierThisAction';
@@ -18,6 +37,12 @@ export function queueActionDamageModifier(ctx: BattleEventContext, multiplier: n
 export function queueActionPowerMultiplier(ctx: BattleEventContext, multiplier: number): void {
   ctx.setPlayerState(ACTION_POWER_KEY, (ctx.getPlayerState(ACTION_POWER_KEY) ?? 1) * multiplier);
   ctx.addLog(`⚡ 本次攻擊威力 ×${multiplier}！`, 'effect');
+}
+/** 「技能威力提升N」：加在原威力上（先於威力倍率）。 */
+export const ACTION_POWER_ADD_KEY = 'powerAddThisAction';
+export function queueActionPowerAdd(ctx: BattleEventContext, amount: number): void {
+  ctx.setPlayerState(ACTION_POWER_ADD_KEY, (Number(ctx.getPlayerState(ACTION_POWER_ADD_KEY)) || 0) + amount);
+  ctx.addLog(`⚡ 本次攻擊威力 +${amount}！`, 'effect');
 }
 export function applyActionDamageModifiers(registry: any, comp: DamageComputation): void {
   if (comp.pure) return;

@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from 'react';
-import { TypeIcon } from "./SeerImages";
+import { ElfAvatar, TypeIcon, SkillTypeIcon } from "./SeerImages";
+import { skillDisplayType } from '../utils/skillPresentation';
 import { matchesElfQuery } from '../utils/elfSearch';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
@@ -408,7 +409,7 @@ export default function DestinyIntroRuleTable({
                   <th className="py-3 px-2 font-bold text-center text-purple-400">特攻</th>
                   <th className="py-3 px-2 font-bold text-center text-teal-400">特防</th>
                   <th className="py-3 px-2 font-bold text-center text-emerald-400">速度</th>
-                  <th className="py-3 px-3.5 font-bold">專屬特性 / 魂印機制</th>
+                  <th className="py-3 px-3.5 font-bold">魂印機制</th>
                   <th className="py-3 px-2 font-bold text-right">操作</th>
                 </tr>
               </thead>
@@ -430,11 +431,7 @@ export default function DestinyIntroRuleTable({
                       </td>
                       <td className="py-2.5 px-3.5 font-bold text-white font-sans flex items-center gap-2 whitespace-nowrap">
                         <div className="w-6 h-6 rounded bg-slate-950 border border-slate-700 overflow-hidden shrink-0 flex items-center justify-center">
-                          {elf.path ? (
-                            <img src={elf.path} alt={elf.name} className="w-full h-full object-contain" />
-                          ) : (
-                            <span className="text-[10px]">{elf.name.substring(0, 1)}</span>
-                          )}
+                          <ElfAvatar elf={elf} className="w-full h-full object-contain"/>
                         </div>
                         <span>{elf.name}</span>
                       </td>
@@ -506,11 +503,7 @@ export default function DestinyIntroRuleTable({
 
                   <div className="flex-1 flex flex-col items-center justify-center pt-4 pb-1">
                     <div className="w-14 h-14 rounded-full bg-slate-900 border border-slate-700 flex items-center justify-center overflow-hidden mb-2 shadow-inner group-hover:border-amber-400 transition">
-                      {elf.path ? (
-                        <img src={elf.path} alt={elf.name} className="w-full h-full object-contain" />
-                      ) : (
-                        <span className="text-lg font-black">{elf.name.substring(0, 1)}</span>
-                      )}
+                      <ElfAvatar elf={elf} className="w-full h-full object-contain"/>
                     </div>
                     <div className="font-bold text-xs text-white text-center truncate w-full">{elf.name}</div>
                     <div className="text-[10px] text-slate-400 text-center mt-0.5"><span className="inline-flex items-center gap-0.5"><TypeIcon type={elf.type} size={12} showLabelWhenMissing={false} />{elf.type}</span> · 總值 {totalStats}</div>
@@ -571,11 +564,7 @@ export default function DestinyIntroRuleTable({
 
               <div className="flex items-center gap-4 mb-6 pb-4 border-b border-slate-800">
                 <div className="w-16 h-16 rounded-2xl bg-slate-950 border border-slate-700 flex items-center justify-center overflow-hidden shrink-0">
-                  {inspectingElf.path ? (
-                    <img src={inspectingElf.path} alt={inspectingElf.name} className="w-full h-full object-contain" />
-                  ) : (
-                    <span className="text-2xl font-black">{inspectingElf.name.substring(0, 1)}</span>
-                  )}
+                  <ElfAvatar elf={inspectingElf} className="w-full h-full object-contain"/>
                 </div>
 
                 <div>
@@ -649,12 +638,12 @@ export default function DestinyIntroRuleTable({
                 <h3 className="text-xs font-bold text-slate-300 mb-3">攜帶招式技能池 ({inspectingElf.skills?.length || 0} 招)：</h3>
                 <div className="space-y-2 max-h-56 overflow-y-auto pr-1">
                   {inspectingElf.skills && inspectingElf.skills.length > 0 ? (
-                    inspectingElf.skills.map((skill, idx) => (
+                    inspectingElf.skills.slice(0, 5).map((skill, idx) => (
                       <div key={idx} className="bg-slate-950/80 border border-slate-800 rounded-lg p-2.5 text-xs">
                         <div className="flex items-center justify-between mb-1">
                           <div className="flex items-center gap-2">
                             <span className="font-bold text-white">{skill.name}</span>
-                            <span className="px-1.5 py-0.2 rounded bg-slate-800 text-[10px] text-slate-300 inline-flex items-center gap-0.5"><TypeIcon type={skill.type} size={11} showLabelWhenMissing={false} />{skill.type}</span>
+                            <span className="px-1.5 py-0.2 rounded bg-slate-800 text-[10px] text-slate-300 inline-flex items-center gap-0.5"><SkillTypeIcon skill={skill} size={11} showLabelWhenMissing={false} />{skillDisplayType(skill)}</span>
                             <span className={`px-1.5 py-0.2 rounded text-[10px] ${skill.category === '物理' ? 'bg-amber-950 text-amber-300 border border-amber-800' : skill.category === '特殊' ? 'bg-purple-950 text-purple-300 border border-purple-800' : 'bg-slate-800 text-slate-300'}`}>
                               {skill.category}
                             </span>

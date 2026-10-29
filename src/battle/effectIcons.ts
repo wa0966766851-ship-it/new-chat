@@ -1,6 +1,7 @@
 // 異常狀態／效果圖標與說明（資料來源：SeerAPI battle_effect、buff；圖檔：seer-unity-assets battleeffect）
 import data from "../data/seerEffects.json";
 import { getStatMultiplier } from "../utils/statCalculator";
+import { BOSS_TRAIT_BY_STATUS, bossTraitIcon, bossTraitText, BOSS_TRAIT_BADGE_DIR, BOSS_TRAIT_ICON_DIR } from "../data/bossTraits";
 
 type StatusRow = [number, string, string]; // [圖標ID, 類別, 官方說明]
 const STATUS = (data as any).status as Record<string, StatusRow>;
@@ -40,6 +41,10 @@ export function statusVisual(name?: string): EffectVisual | null {
   if (CUSTOM_STATUS_ICONS[n]) {
     return { icon: CUSTOM_STATUS_ICONS[n], category: STATUS[n]?.[1] || "" };
   }
+  // 原廠 BOSS 特性：有圖用 battleeffect/bosseffect，無圖用文字徽記（神話沿用既有 abnormal/17）
+  const trait = BOSS_TRAIT_BY_STATUS[name];
+  if (trait && trait.conf !== "existing") return { icon: bossTraitIcon(trait), category: 'BOSS_ONLY', desc: bossTraitText(trait) };
+  if (name === "特性·力量") return { icon: `${BOSS_TRAIT_BADGE_DIR}power.svg`, category: 'AUXILIARY' };
   if (BOSS_STATUS_ICON_IDS[name] !== undefined) {
     return { icon: `/seer/abnormal/${BOSS_STATUS_ICON_IDS[name]}.png`, category: 'BOSS_ONLY' };
   }
@@ -65,6 +70,9 @@ const KEYWORDS: [RegExp, string][] = [
 /** 依效果名稱／說明推斷通用效果圖標（找不到回傳 undefined） */
 export function buffIconFor(text?: string): string | undefined {
   if (!text) return undefined;
+  // 2026-10-28：嫉妒是 BOSS 特性（官方 bossEffectIcon iconId 19），
+  // 原本 seerEffects.json 的 buffTags.嫉妒→19 會指到 seer/buff/19.png（那是「恢復」圖）。
+  if (/嫉妒/.test(text)) return `${BOSS_TRAIT_ICON_DIR}19.png`;
   if (/護盾/.test(text)) return CUSTOM_BUFF_ICONS.護盾;
   if (/護罩/.test(text)) return CUSTOM_BUFF_ICONS.護罩;
   for (const [re, tag] of KEYWORDS) {
@@ -85,15 +93,74 @@ export function stageDesc(key: string, v: number): string {
 const SIGN_ICON_IDS: Record<string, number> = {
   精靈護盾: 2, 護盾: 2, 精靈護罩: 3, 護罩: 3,
   星芳之纏: 96, 星芳之缠: 96, 星海之浸: 97, 星火之灼: 98,
+  // 無極聖武專屬印記（SeerAPI sign 133–137，圖檔 battleeffect/signbuff/<id>.png）
+  英雄之耀: 133, 亮節: 134, 亮节: 134, 威怯: 135, 武誅: 136, 武诛: 136, 英雄之誡: 137, 英雄之诫: 137,
+  // 其他精靈印記（名稱與 SeerAPI sign 完全一致才收錄）
+  永恆之水: 108, 永恒之水: 108,
+  寂殺之魄: 110, 寂杀之魄: 110,
+  肅霜之禁: 111, 肃霜之禁: 111,
+  魔王咒怨: 121,
+  嫉妒: 225,
+  // 哈莫林 龍鱗（官方 sign 48–51）
+  紅色龍鱗: 48, 红色龙鳞: 48, 黃色龍鱗: 49, 黄色龙鳞: 49,
+  藍色龍鱗: 50, 蓝色龙鳞: 50, 白色龍鱗: 51, 白色龙鳞: 51,
+};
+
+/**
+ * 專案自製印記圖（不是官方 sign id，直接給路徑）。
+ * - 無色龍鱗：以官方白色龍鱗為底，把彩色部分挖空成半透明。
+ * - 綠色龍鱗：以官方藍色龍鱗為底，色相轉綠（官方沒有綠色龍鱗）。
+ */
+const CUSTOM_MARK_ICONS: Record<string, string> = {
+  無色龍鱗: '/seer/signbuff/custom/無色龍鱗.png',
+  无色龙鳞: '/seer/signbuff/custom/無色龍鱗.png',
+  綠色龍鱗: '/seer/signbuff/custom/綠色龍鱗.png',
+  绿色龙鳞: '/seer/signbuff/custom/綠色龍鱗.png',
+  // 官方 sign 表無同名條目的專屬印記 → 文字徽記 SVG（2026-10-29）
+  八荒: '/seer/signbuff/custom/印記_八荒.svg',
+  四象待解除: '/seer/signbuff/custom/印記_四象待解除.svg',
+  未暝之夜: '/seer/signbuff/custom/印記_未暝之夜.svg',
+  伏魔印記: '/seer/signbuff/custom/印記_伏魔印記.svg',
+  埒殘銜闕: '/seer/signbuff/custom/印記_埒殘銜闕.svg',
+  '真龍・治癒': '/seer/signbuff/custom/印記_真龍治癒.svg',
+  真龍治癒: '/seer/signbuff/custom/印記_真龍治癒.svg',
+  能量: '/seer/signbuff/custom/印記_能量.svg',
+  堅壁解析: '/seer/signbuff/custom/印記_堅壁解析.svg',
+  萬相乖離: '/seer/signbuff/custom/印記_萬相乖離.svg',
+  詩章: '/seer/signbuff/custom/印記_詩章.svg',
+  墮魔印記: '/seer/signbuff/custom/印記_墮魔印記.svg',
+  龍魂之力: '/seer/signbuff/custom/印記_龍魂之力.svg',
+  龍魂之源: '/seer/signbuff/custom/印記_龍魂之源.svg',
+  龍魂印記: '/seer/signbuff/custom/印記_龍魂印記.svg',
+  燦界聖芒: '/seer/signbuff/custom/印記_燦界聖芒.svg',
+  霜寒幽光: '/seer/signbuff/custom/印記_霜寒幽光.svg',
+  魔軀枷鎖: '/seer/signbuff/custom/印記_魔軀枷鎖.svg',
+  'ᛏ 戰神符文': '/seer/signbuff/custom/印記_戰神符文.svg',
+  戰神符文: '/seer/signbuff/custom/印記_戰神符文.svg',
 };
 export function signIconFor(name?: string): string | undefined {
   if (!name) return undefined;
-  const key = Object.keys(SIGN_ICON_IDS).find(k => name.includes(k));
-  return key ? `/seer/signbuff/${SIGN_ICON_IDS[key]}.png` : undefined;
+  if (CUSTOM_MARK_ICONS[name]) return CUSTOM_MARK_ICONS[name];
+  const id = SIGN_ICON_IDS[name];
+  return id !== undefined ? `/seer/signbuff/${id}.png` : undefined;
 }
-/** 以戰鬥狀態鍵記錄、沒有計時器實體的專屬印記（三主寵星光型態）。 */
-export const STATE_SIGNS: { key: string; name: string }[] = [
-  { key: "starFangTurns", name: "星芳之纏" },
-  { key: "starSeaSoakTurns", name: "星海之浸" },
-  { key: "starfireBurnTurns", name: "星火之灼" },
-];
+
+export const UNKNOWN_EFFECT_ICON = '/status-icons/effect-placeholder.svg';
+/** Exact, explicitly selected tag only. A composite description must never pick its first keyword. */
+export function effectIcon(iconTag?: string, markName?: string): string {
+  if (iconTag && CUSTOM_BUFF_ICONS[iconTag]) return CUSTOM_BUFF_ICONS[iconTag];
+  if (iconTag && SIGN_ICON_IDS[iconTag] !== undefined) return `/seer/signbuff/${SIGN_ICON_IDS[iconTag]}.png`;
+  if (iconTag && BUFF_TAGS[iconTag] !== undefined) return `/seer/buff/${BUFF_TAGS[iconTag]}.png`;
+  return signIconFor(markName) || UNKNOWN_EFFECT_ICON;
+}
+
+const CATALOG_ICON_TAGS: Record<string, string> = {
+  immune_status_turns: '免疫異常', status_immune: '免疫異常', immune_drop_turns: '免疫弱化',
+  seal_support_turns: '技能無效', prop_invalid_turns: '技能無效', attack_invalid_turns: '技能無效',
+  negate_attack_turns: '免傷', dodge_turns: '閃避', vampire_turns: '吸血',
+  shield_active: '護盾', barrier_active: '護罩', true_dmg_turns: '附加傷害',
+};
+export function catalogEffectIcon(id: string, label?: string): string {
+  return effectIcon(CATALOG_ICON_TAGS[id], label);
+}
+export { STATE_SIGNS } from "./stateSigns";

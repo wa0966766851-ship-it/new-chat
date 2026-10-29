@@ -6,6 +6,7 @@ import { activeConstraints } from '../battle/timedConstraints';
 import { settlePpChanges, withPp } from '../battle/ppTransitions';
 import { isAliveBySurvivalRule } from '../battle/survivalRules';
 import type { Timer } from '../battle/timers';
+import { makeEffectPresentation } from '../battle/effectPresentation';
 import { EffectTiming } from './types';
 import type { PpTransitionReason } from '../battle/ppTransitions';
 
@@ -43,20 +44,23 @@ export function constraint(ctx: BattleEventContext, side: Side, key: string): an
 
 export function timed(ctx: BattleEventContext, side: Side, id: string, rounds: number,
   payload: Timer['payload'], next = false, source: 'skill' | 'soulmark' = 'skill', missed = true): void {
-  ctx.addTimerTo(side, { id, name: ctx.skill?.name || id, remaining: rounds, tickAt: 'round_end',
+  const presentation = makeEffectPresentation(payload, source === 'skill' ? ctx.skill?.name : ctx.self.soulMark?.name || ctx.self.name);
+  ctx.addTimerTo(side, { id, name: presentation.label, presentation, description: presentation.description, remaining: rounds, tickAt: 'round_end',
     kind: source === 'skill' ? 'turn_effect' : 'round_counter', source, scope: 'elf',
     persistsOffField: false, pendingActivation: next, payload }, ctx.goesFirst === false && missed);
 }
 export function uses(ctx: BattleEventContext, side: Side, id: string, count: number, payload: Timer['payload'],
   preserve = false): void {
-  ctx.addTimerTo(side, { id, name: ctx.skill?.name || id, remaining: count, tickAt: 'never',
+  const presentation = makeEffectPresentation(payload, ctx.skill?.name);
+  ctx.addTimerTo(side, { id, name: presentation.label, presentation, description: presentation.description, remaining: count, tickAt: 'never',
     kind: 'use_counter', source: 'skill', scope: 'elf', persistsOffField: preserve, payload }, false);
 }
 
 /** 欄位按slot改PP；同名技能不可互相覆寫。削PP也必須通過星護耗盡處理。 */
 export function changePp(ctx: BattleEventContext, side: Side, elf: Elf,
-  change: (skill: Skill, index: number) => number, recovery = false, reason: PpTransitionReason = recovery ? 'restore' : 'drain'): { removed: number; emptied: number[] } {
+  change: (skill: Skill, index: number) => number, recovery = false, reason: PpTransitionReason = recovery ? 'restore' : 'drain'): { removed: number; restored: number; emptied: number[] } {
   const current = ctx.getFullTeam(side).find(e => identity(e) === identity(elf)) || elf;
+  const beforePp=current.skills.map(s=>s.pp);
   const reductions = activeConstraints(timersFor(ctx, side), current).reduce((n, p) => n + (p.ppRecoveryReductionPercent || 0), 0);
   let removed = 0;
   const skills = current.skills.map((skill, i) => {
@@ -69,9 +73,11 @@ export function changePp(ctx: BattleEventContext, side: Side, elf: Elf,
   const consumedSlots = current.skills.flatMap((s, i) => skills[i].pp < s.pp ? [i] : []);
   const changed = current.skills.some((s, i) => s.pp !== result.patch.skills?.[i]?.pp) || removed > 0;
   ctx.updateAnyElf(side, identity(current), result.patch);
+  const settled=ctx.getFullTeam(side).find(e=>identity(e)===identity(current))||current;
+  const restored=beforePp.reduce((n,pp,i)=>n+Math.max(0,(settled.skills[i]?.pp??pp)-pp),0);
   if (changed) ctx.emitElfEvent?.(side, current, EffectTiming.PP_CHANGED, { reason, emptied: result.emptied, removed, consumedSlots, changed: true, sourceSide: ctx.actor });
   const after = ctx.getFullTeam(side).find(e => identity(e) === identity(current)) || current;
-  return { removed, emptied: result.emptied.filter(i => (after.skills?.[i]?.pp || 0) <= 0) };
+  return { removed, restored, emptied: result.emptied.filter(i => (after.skills?.[i]?.pp || 0) <= 0) };
 }
 export function restorePp(ctx: BattleEventContext, side: Side, elf: Elf, amount = Infinity): void {
   changePp(ctx, side, elf, skill => Math.min(getMaxPp(skill, elf), skill.pp + amount), true);

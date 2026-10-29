@@ -4,7 +4,7 @@
  * 通用描述執行器（genericSkillText）會略過它們，避免效果重複套用。
  * 用法：npx vite-node scripts/gen-handled-skills.ts
  */
-import { DEFAULT_ELVES } from "../src/data/defaultElves";
+import { DEFAULT_ELVES } from "../src/data/defaultElvesLoaded";
 import * as fs from "fs";
 import ts from "typescript";
 const dir = "src/effects";

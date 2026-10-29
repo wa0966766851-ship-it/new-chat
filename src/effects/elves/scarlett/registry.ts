@@ -3,6 +3,7 @@ import { BattleEventContext, BattleSkillHandler, EffectTiming } from '../../type
 import { createExtraElf } from '../../../utils/extraElf';
 import { Elf } from '../../../types';
 import { getStatuses, isAuxiliaryStatus, isControlStatus, removeStatusEffect, addStatusEffect } from '../../../utils/battleHelpers';
+import { checkElfDead } from '../../../battle/elfAlive';
 
 // ───────── 聖光斯嘉麗（5014）：魂印【燦】＋ 珀妮 ＋ 燦界聖芒 ＋ 五技能 ─────────
 // 詳細子句對照見 docs/聖光斯嘉麗實裝_20261004.md
@@ -229,9 +230,16 @@ function onRoundEnd(ctx: BattleEventContext) {
       ctx.addLog(`✨ 【聖光斯嘉麗】：珀妮已不在，重生中斷。`, "info");
       return;
     }
+    // 使用者裁定（2026-10-16）：復活的正確條件是——
+    // 1. 斯嘉麗必須「已在場下」（不在場上）：死亡後仍佔在場位（尚未換人）時不得復活，
+    //    否則疊滿3層倒數=1的場合會在死亡當回合原地滿血復活（無限復活）。
+    // 2. 隊伍需存在可被選擇出戰的精靈（非額外、存活），全滅等待期不觸發。
+    // 3. 時點不指定：條件滿足即可觸發，不限定特定結算節點。
     const activeElf = actor === "p1" ? ctx.activeP1 : ctx.activeP2;
-    const isMeActive = activeElf.id === self.id;
-    if (!isMeActive || self.currentHp <= 0) {
+    const isMeActive = activeElf && String(activeElf.battleId || activeElf.id) === String(self.battleId || self.id);
+    const hasSelectable = (ctx.getFullTeam(actor) || []).some(
+      (e: any) => !e.isExtra && !e.isVanished && !checkElfDead(e));
+    if (!isMeActive && hasSelectable) {
       const countdown = (ctx.getPlayerState("scarlettReviveCountdown") || 0) - 1;
       ctx.setPlayerState("scarlettReviveCountdown", countdown);
       if (countdown <= 0) {
@@ -359,7 +367,7 @@ export const handleScarlettSoulMark = (ctx: BattleEventContext, event: EffectTim
 
     case EffectTiming.MODIFY_PRIORITY: {
       // K4：自身處於能力下降時當回合先制+3
-      if (ctx.skill?.name === "王·凰歌盡霄" && STAT_KEYS.some(k => (Number((self.statStages as any)?.[k]) || 0) < 0) && extraData?.priorityComp) {
+      if (ctx.skill?.name === "王·凰歌盡霄" && ctx.skill.effectMode !== 'kit' && STAT_KEYS.some(k => (Number((self.statStages as any)?.[k]) || 0) < 0) && extraData?.priorityComp) {
         extraData.priorityComp.bonus += 3;
       }
       break;

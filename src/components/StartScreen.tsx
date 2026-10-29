@@ -1,13 +1,21 @@
+import { fifthSkillSlot } from '../battle/skillSlot';
+import {ElfSkinPicker} from './ElfSkinPicker';
 import { TeamSetupTools } from "./TeamSetupTools";
-import { bindInitialCounterparts } from '../battle/illusion';
+import { bindInitialCounterparts } from '../battle/illusionPresentation';
 import React, { useState, useEffect, useMemo, lazy, Suspense } from "react";
-import { matchesElfQuery } from '../utils/elfSearch';
+import { ElfFilterBar, useElfFilter } from './shared/ElfPicker';
+const ElfSpotlight = lazy(() => import('./ElfSpotlight').then(m=>({default:m.ElfSpotlight})));
+import { withAnnualBonus } from '../utils/elfStats';
+import { readAnnualBonus, writeAnnualBonus } from '../battle/annualBonusPreference';
+import { swapSlots } from '../utils/slotSwap';
 import { createPortal } from 'react-dom';
 import { Elf, BattleMode, Inscription } from "../types";
 import { SEER_TYPES, calculateElfStats, getDefaultEvs, getAttributeBadgeColor } from "../utils/statCalculator";
-import { ElfAvatar, TypeIcon } from "./SeerImages";
+import { ElfAvatar, TypeIcon, SkillTypeIcon } from "./SeerImages";
+import { skillDisplayType, skillDisplayTypeLabel } from '../utils/skillPresentation';
 import { isStoneThrower, validateSkillStoneLoadout, skillConfigurationKey } from "../data/skillStones";
-import { formatEffectText, plainDescription } from "../utils/descFormat";
+import { plainDescription } from "../utils/descFormat";
+import { EffectDescription } from './EffectDescription';
 import { getElfDisplayRank as getElfDestinyRank } from "../utils/elfDisplayRank";
 import { InfoHint } from "./InfoHint";
 import { getNatureFromModifiers, getDefaultNatureModifiers } from "../utils/seerNatures";
@@ -25,12 +33,24 @@ const TypeMatchupPanel = lazy(() => import("./TypeMatchupPanel").then(m => ({ de
 const ResistancePanel = lazy(() => import("./ResistancePanel"));
 const InscriptionModal = lazy(() => import("./InscriptionModal").then(m => ({ default: m.InscriptionModal })));
 const LazyBlockProgramView = lazy(() => import("./LazyBlockProgramView"));
+const BattleAIQuickSettings = lazy(() => import('./BattleAIQuickSettings').then(m=>({default:m.BattleAIQuickSettings})));
 const EffectLibraryModal = lazy(() => import("./EffectLibraryModal").then(m => ({ default: m.EffectLibraryModal })));
 const SkillStonePicker = lazy(() => import('./SkillStonePicker'));
+// 與星蝕回廊共用的搜尋＋屬性篩選挑選器；只在開啟「選擇精靈」視窗時才載入（首頁初始 JS 預算 950 kB）。
+const ElfPicker = lazy(() => import("./shared/ElfPicker").then(m => ({ default: m.ElfPicker as React.ComponentType<any> })));
+/** Aegis 殼的「背包與編成」獨立版面（2026-10-22 重建） */
+const LegacyTeamWorkspace = lazy(() => import("../shell/scenes/LegacyTeamWorkspace").then(m => ({ default: m.LegacyTeamWorkspace })));
 const detailLoading = <p role="status" className="p-3 text-sm text-slate-400">載入效果資料…</p>;
 const detailPanelLoading = <p role="status" className="ios-card min-h-24 p-4 text-sm text-slate-400">載入詳細面板…</p>;
 
 interface StartScreenProps {
+  /** Aegis 殼：背包與編成頁用自己的版面（2026-10-22） */
+  presentation?: "legacy" | "aegis";
+  /** 返回首頁（Aegis 的背包與編成頁需要自己的返回鈕） */
+  onBackToLobby?: () => void;
+  /** 2026-10-22 補回：沒這個 prop 時巔峰/3V3 進背包會被重設成自由戰 */
+  initialBattleFormat?: "normal_6v6" | "solo_1v1" | "peak_6v6" | "peak_3v3";
+  initialBattleMode?: BattleMode;
   allElves?: Elf[];
   onStartBattle: (
     mode: BattleMode,
@@ -59,9 +79,11 @@ interface TeamInstance extends Elf {
 }
 
 import { useGameData } from "../contexts/GameDataContext";
+import {applySavedSkillCorrections} from '../data/savedSkillCorrections';
 
 /** 已保存陣容的預設精靈：技能 PP／PP上限以目前資料為準（避免舊存檔的 PP 值殘留） */
 function syncSavedSkillPp(e: any) {
+  Object.assign(e,applySavedSkillCorrections(e,DEFAULT_ELVES));
   const def: any = DEFAULT_ELVES.find((d: any) => d.name === e?.name);
   if (!def || !Array.isArray(e?.skills)) return;
   const all = [...(def.skills || []), ...(def.skillPool || [])];
@@ -76,6 +98,10 @@ function syncSavedSkillPp(e: any) {
 
 
 export default function StartScreen({
+  presentation = "legacy",
+  onBackToLobby,
+  initialBattleFormat,
+  initialBattleMode,
   hostPlayer = "p1",
   onHostPlayerChange,
   onStartBattle,
@@ -91,11 +117,12 @@ export default function StartScreen({
   const onDeleteCustomElf = deleteCustomElf;
   const onRestoreDeletedElves = restoreDeletedElves;
 
-  const [battleMode, setBattleMode] = useState<BattleMode>("PVE");
-  const [selectedTypes, setSelectedTypes] = useState<string[]>([]);
-  const [searchQuery, setSearchQuery] = useState<string>("");
+  const [battleMode, setBattleMode] = useState<BattleMode>(initialBattleMode ?? "PVE");
+  const [showOriginalManagement, setShowOriginalManagement] = useState(false);
+  const libraryFilter = useElfFilter();
+  const filteredLibrary = useMemo(()=>libraryFilter.filter(allElves),[libraryFilter.filter,allElves]);
+  const [showIntroduction,setShowIntroduction] = useState(false);
   const [isAnalyzing, setIsAnalyzing] = useState<string | null>(null);
-  const [showTypeFilters, setShowTypeFilters] = useState<boolean>(false);
   const [replacingSlotIndex, setReplacingSlotIndex] = useState<number | null>(null);
   const [deleteConfirmState, setDeleteConfirmState] = useState<Record<string, number>>({});
 
@@ -143,22 +170,10 @@ export default function StartScreen({
     alert("資料重新載入與清理流程執行成功！");
   };
 
-  const toggleTypeFilter = (type: string) => {
-    if (type === "全部") {
-      setSelectedTypes([]);
-      return;
-    }
-    setSelectedTypes((prev) => {
-      if (prev.includes(type)) {
-        return prev.filter((t) => t !== type);
-      } else {
-        return [...prev, type];
-      }
-    });
-  };
   const [analyzeText, setAnalyzeText] = useState<string>("");
   const [showAnalyzeModal, setShowAnalyzeModal] = useState<Elf | null>(null);
   const [showDetailModal, setShowDetailModal] = useState<Elf | null>(null);
+  useEffect(()=>{if(!showDetailModal)setShowIntroduction(false);},[showDetailModal]);
   const detailStats = useMemo(() => showDetailModal ? calculateElfStats(
     showDetailModal.baseStats, showDetailModal.level || 100, showDetailModal.ivs,
     showDetailModal.evs, showDetailModal.natureModifiers,
@@ -199,8 +214,12 @@ export default function StartScreen({
   const [p1SelectedIdx, setP1SelectedIdx] = useState<number | null>(null);
   const [p2SelectedIdx, setP2SelectedIdx] = useState<number | null>(null);
   const [showSelectionModal, setShowSelectionModal] = useState<{ player: "p1" | "p2"; slotIndex: number } | null>(null);
-  const [p1AnnualBonus, setP1AnnualBonus] = useState<boolean>(false);
-  const [p2AnnualBonus, setP2AnnualBonus] = useState<boolean>(false);
+  const [p1AnnualBonus, setP1AnnualBonus] = useState<boolean>(() => readAnnualBonus('p1'));
+  const [p2AnnualBonus, setP2AnnualBonus] = useState<boolean>(() => readAnnualBonus('p2'));
+  useEffect(() => writeAnnualBonus('p1', p1AnnualBonus), [p1AnnualBonus]);
+  useEffect(() => writeAnnualBonus('p2', p2AnnualBonus), [p2AnnualBonus]);
+  const p1Preview = useMemo(() => p1Team.map(e => withAnnualBonus(e, p1AnnualBonus)), [p1Team, p1AnnualBonus]);
+  const p2Preview = useMemo(() => p2Team.map(e => withAnnualBonus(e, p2AnnualBonus)), [p2Team, p2AnnualBonus]);
   const [draggedSlot, setDraggedSlot] = useState<{ player: "p1" | "p2"; index: number } | null>(null);
 
   const handleSwapTeams = () => {
@@ -232,7 +251,7 @@ export default function StartScreen({
   };
 
   // Peak Arena BP & Format States
-  const [battleFormat, setBattleFormat] = useState<"normal_6v6" | "solo_1v1" | "peak_6v6" | "peak_3v3">("normal_6v6");
+  const [battleFormat, setBattleFormat] = useState<"normal_6v6" | "solo_1v1" | "peak_6v6" | "peak_3v3">(initialBattleFormat ?? "normal_6v6");
   const [banCount, setBanCount] = useState<number>(1);
   const [pickCount, setPickCount] = useState<number>(6);
   const [bpPhase, setBpPhase] = useState<"closed" | "ban_p1" | "ban_p2" | "pick_p1" | "pick_p2" | "pick_standby_p1" | "pick_standby_p2">("closed");
@@ -542,6 +561,21 @@ export default function StartScreen({
     });
   };
 
+  const handleReplaceSlot = (player:'p1'|'p2',index:number,elf:Elf) => {
+    if(!Number.isInteger(index)||index<0||index>=12)return;
+    const nextElf=createInstance(elf),team=player==='p1'?p1Team:p2Team;
+    // 空格只能接在現有隊伍末端，避免稀疏陣列壓縮後換錯欄位。
+    if(index>team.length)return;
+    const next=[...team];next[index]=nextElf;
+    if(player==='p1'){
+      setP1Team(next);
+      if(!p1StarterId||team[index]?.battleId===p1StarterId)setP1StarterId(nextElf.battleId);
+    }else{
+      setP2Team(next);
+      if(!p2StarterId||team[index]?.battleId===p2StarterId)setP2StarterId(nextElf.battleId);
+    }
+  };
+
   const handleAddP2 = (elf: Elf) => {
     if (p2Team.length >= 12) return;
     const inst = createInstance(elf);
@@ -591,15 +625,7 @@ export default function StartScreen({
 
     if (fromIdx >= team.length) return;
 
-    const newTeam = [...team];
-    if (toIdx >= team.length) {
-      const [moved] = newTeam.splice(fromIdx, 1);
-      newTeam.push(moved);
-    } else {
-      const temp = newTeam[fromIdx];
-      newTeam[fromIdx] = newTeam[toIdx];
-      newTeam[toIdx] = temp;
-    }
+    const newTeam = swapSlots<TeamInstance>(team, fromIdx, toIdx);
     setTeam(newTeam);
 
     const newStarterIdx = newTeam.findIndex(e => e.battleId === starterId);
@@ -794,8 +820,6 @@ export default function StartScreen({
       setP2StarterId("");
     }
   };
-
-  const [showTypeFilter, setShowTypeFilter] = useState<boolean>(false);
 
   const renderTeamGrid = (player: "p1" | "p2", team: TeamInstance[], starterId: string, startIndex: number, type: "active" | "standby") => {
     const selectedIdx = player === "p1" ? p1SelectedIdx : p2SelectedIdx;
@@ -1007,22 +1031,10 @@ export default function StartScreen({
     catch (error) { alert(`隊伍技能石配置不合法：${(error as Error).message}。請先更換多餘技能石；原背包不會被刪除。`); return; }
     if (battleFormat === "normal_6v6" || battleFormat === "solo_1v1") {
       let p1Active = p1Team.map(e => {
-        const bonusElf = { ...e, hasAnnualBonus: p1AnnualBonus };
-        bonusElf.calculatedStats = calculateElfStats(
-          bonusElf.baseStats, 100, bonusElf.ivs, bonusElf.evs, bonusElf.natureModifiers, bonusElf.inscriptions, bonusElf.guildBonuses, bonusElf.hasAnnualBonus
-        );
-        bonusElf.maxHp = bonusElf.calculatedStats.hp;
-        bonusElf.currentHp = bonusElf.calculatedStats.hp;
-        return bonusElf;
+        return withAnnualBonus({ ...e }, p1AnnualBonus);
       });
       let p2Active = p2Team.map(e => {
-        const bonusElf = { ...e, hasAnnualBonus: p2AnnualBonus };
-        bonusElf.calculatedStats = calculateElfStats(
-          bonusElf.baseStats, 100, bonusElf.ivs, bonusElf.evs, bonusElf.natureModifiers, bonusElf.inscriptions, bonusElf.guildBonuses, bonusElf.hasAnnualBonus
-        );
-        bonusElf.maxHp = bonusElf.calculatedStats.hp;
-        bonusElf.currentHp = bonusElf.calculatedStats.hp;
-        return bonusElf;
+        return withAnnualBonus({ ...e }, p2AnnualBonus);
       });
       p1Active = bindInitialCounterparts(p1Active, 6).slice(0, 6);
       p2Active = bindInitialCounterparts(p2Active, 6).slice(0, 6);
@@ -1125,23 +1137,11 @@ export default function StartScreen({
     try { for (const elf of [...p1Team, ...p2Team]) validateSkillStoneLoadout(elf, elf.skills); }
     catch (error) { alert(`隊伍技能石配置不合法：${(error as Error).message}。請先更換多餘技能石；原背包不會被刪除。`); return; }
     const finalP1Active = p1Team.filter(e => p1PickedIds.includes(e.battleId)).map(e => {
-      const bonusElf = { ...e, isExtra: false, hasAnnualBonus: p1AnnualBonus };
-      bonusElf.calculatedStats = calculateElfStats(
-        bonusElf.baseStats, 100, bonusElf.ivs, bonusElf.evs, bonusElf.natureModifiers, bonusElf.inscriptions, bonusElf.guildBonuses, bonusElf.hasAnnualBonus
-      );
-      bonusElf.maxHp = bonusElf.calculatedStats.hp;
-      bonusElf.currentHp = bonusElf.calculatedStats.hp;
-      return bonusElf;
+      return withAnnualBonus({ ...e, isExtra: false }, p1AnnualBonus);
     });
 
     const finalP2Active = p2Team.filter(e => p2PickedIds.includes(e.battleId)).map(e => {
-      const bonusElf = { ...e, isExtra: false, hasAnnualBonus: p2AnnualBonus };
-      bonusElf.calculatedStats = calculateElfStats(
-        bonusElf.baseStats, 100, bonusElf.ivs, bonusElf.evs, bonusElf.natureModifiers, bonusElf.inscriptions, bonusElf.guildBonuses, bonusElf.hasAnnualBonus
-      );
-      bonusElf.maxHp = bonusElf.calculatedStats.hp;
-      bonusElf.currentHp = bonusElf.calculatedStats.hp;
-      return bonusElf;
+      return withAnnualBonus({ ...e, isExtra: false }, p2AnnualBonus);
     });
 
     setBpPhase("closed");
@@ -1167,6 +1167,7 @@ export default function StartScreen({
 
   const [copiedSection, setCopiedSection] = useState<string | null>(null);
   const [blockView, setBlockView] = useState(false);
+  useEffect(() => { setBlockView(false); }, [showDetailModal?.id]);
 
   const handleCopyText = (type: 'full' | 'soulMark' | 'skill', data?: any) => {
     if (!showDetailModal) return;
@@ -1181,7 +1182,7 @@ export default function StartScreen({
       }
       textToCopy += `【基礎種族值】：體力 ${showDetailModal.baseStats.hp} / 攻擊 ${showDetailModal.baseStats.atk} / 防禦 ${showDetailModal.baseStats.def} / 特攻 ${showDetailModal.baseStats.spatk} / 特防 ${showDetailModal.baseStats.spdef} / 速度 ${showDetailModal.baseStats.speed}\n\n`;
       if (showDetailModal.soulMark) {
-        textToCopy += `【魂印 / 專屬特性】 - ${showDetailModal.soulMark.name}\n${showDetailModal.soulMark.description.replace(/([；;])\s*/g, '$1\n')}\n\n`;
+        textToCopy += `【魂印】 - ${showDetailModal.soulMark.name}\n${showDetailModal.soulMark.description.replace(/([；;])\s*/g, '$1\n')}\n\n`;
       }
       if (showDetailModal.alienTraits) {
         if (showDetailModal.alienTraits.gen2Trait) {
@@ -1194,7 +1195,7 @@ export default function StartScreen({
           textToCopy += `【專屬刻印 / 特質】 - ${trait.name}\n${plainDescription(trait.description)}\n\n`;
         }
         if (showDetailModal.alienTraits.alienTrait) {
-          textToCopy += `【異能特質】 - ${showDetailModal.alienTraits.alienTrait.name}\n${showDetailModal.alienTraits.alienTrait.description}\n\n`;
+          textToCopy += `【異能】 - ${showDetailModal.alienTraits.alienTrait.name}\n${showDetailModal.alienTraits.alienTrait.description}\n\n`;
         }
         if (showDetailModal.alienTraits.generalTrait) {
           textToCopy += `【通用特性】 - ${showDetailModal.alienTraits.generalTrait.name}\n${showDetailModal.alienTraits.generalTrait.description}\n\n`;
@@ -1216,15 +1217,15 @@ export default function StartScreen({
       if (showDetailModal.skills && showDetailModal.skills.length > 0) {
         textToCopy += `【核心技能組】\n`;
         showDetailModal.skills.forEach(sk => {
-          const typeStr = sk.type && sk.type !== '無屬性' ? `${sk.type}系` : '';
+          const typeStr = skillDisplayTypeLabel(sk);
           const fifthStr = sk.isFifthSkill ? ' (第五技能)' : '';
           textToCopy += `[${sk.name}] ${typeStr} ${sk.category}技能${fifthStr}\n威力：${sk.power} | PP：${sk.pp}\n效果：${sk.description.replace(/([；;])\s*/g, '$1\n')}\n\n`;
         });
       }
     } else if (type === 'soulMark' && showDetailModal.soulMark) {
-      textToCopy = `【魂印 / 專屬特性】 - ${showDetailModal.soulMark.name}\n${showDetailModal.soulMark.description.replace(/([；;])\s*/g, '$1\n')}`;
+      textToCopy = `【魂印】 - ${showDetailModal.soulMark.name}\n${showDetailModal.soulMark.description.replace(/([；;])\s*/g, '$1\n')}`;
     } else if (type === 'skill' && data) {
-      const typeStr = data.type && data.type !== '無屬性' ? `${data.type}系` : '';
+      const typeStr = skillDisplayTypeLabel(data);
       const fifthStr = data.isFifthSkill ? ' (第五技能)' : '';
       textToCopy = `[${data.name}] ${typeStr} ${data.category}技能${fifthStr}\n威力：${data.power} | PP：${data.pp}\n效果：${data.description.replace(/([；;])\s*/g, '$1\n')}`;
     }
@@ -1283,8 +1284,44 @@ export default function StartScreen({
     }
   };
 
+  /*
+    Aegis 殼的「背包與編成」走獨立版面（2026-10-22 重建）。
+    賽制由 initialBattleFormat 傳入，不再被重設成自由戰。
+  */
+  const workspace = (
+        <Suspense fallback={null}>
+          <LegacyTeamWorkspace
+            back={onBackToLobby ?? (() => {})}
+            manageLibrary={() => {}}
+            elves={allElves ?? []} message={saveSuccessMsg} detail={setShowDetailModal} create={onNavigateToCustom}
+            start={handleStart} swapTeams={handleSwapTeams} mode={battleMode} setMode={setBattleMode}
+            host={hostPlayer} setHost={h => onHostPlayerChange?.(h)} format={battleFormat} setFormat={setBattleFormat}
+            banCount={banCount} setBanCount={setBanCount} pickCount={pickCount} setPickCount={setPickCount}
+            sides={{
+              p1: { team:p1Preview, starterId:p1StarterId, annual:p1AnnualBonus, suit:p1Suit, eyewear:p1Eyewear, title:p1Title,
+                presets:backpackPresets, hasRecord:!!lastUsedRecord?.team?.length, setAnnual:setP1AnnualBonus,
+                setSuit:handleSetP1Suit, setEyewear:handleSetP1Eyewear, setTitle:handleSetP1Title,
+                starter:handleSetP1Starter, remove:handleRemoveP1, choose:index=>setShowSelectionModal({player:'p1',slotIndex:index}),
+                replace:(index,elf)=>handleReplaceSlot('p1',index,elf),
+                swap:(from,to)=>handleSlotSwap('p1',from,to), swapStandby:()=>handleSwapAllActiveStandby('p1'),
+                clear:handleClearP1Team, randomize:handleRandomizeP1, copyOther:handleCopyAIToP1,
+                save:handleSaveLastUsed, load:handleLoadLastUsed, savePreset:handleSavePreset, loadPreset:handleLoadPreset, add:handleAddP1 },
+              p2: { team:p2Preview, starterId:p2StarterId, annual:p2AnnualBonus, suit:p2Suit, eyewear:p2Eyewear, title:p2Title,
+                presets:backpackPresetsP2, hasRecord:!!lastUsedRecordP2?.team?.length, setAnnual:setP2AnnualBonus,
+                setSuit:handleSetP2Suit, setEyewear:handleSetP2Eyewear, setTitle:handleSetP2Title,
+                starter:handleSetP2Starter, remove:handleRemoveP2, choose:index=>setShowSelectionModal({player:'p2',slotIndex:index}),
+                replace:(index,elf)=>handleReplaceSlot('p2',index,elf),
+                swap:(from,to)=>handleSlotSwap('p2',from,to), swapStandby:()=>handleSwapAllActiveStandby('p2'),
+                clear:handleClearP2Team, randomize:handleRandomizeAI, copyOther:handleCopyP1ToAI,
+                save:handleSaveLastUsedP2, load:handleLoadLastUsedP2, savePreset:handleSavePresetP2, loadPreset:handleLoadPresetP2, add:handleAddP2 },
+            }}
+          />
+        </Suspense>
+    );
+
   return (
-    <div className="w-full max-w-7xl mx-auto px-4 pb-8 pt-20 sm:px-6 sm:py-8" id="start-screen-container">
+    <div className={presentation === "aegis" ? "h-full min-h-0 w-full" : "w-full max-w-7xl mx-auto px-4 pb-8 pt-20 sm:px-6 sm:py-8"} id="start-screen-container">
+      {presentation === "aegis" ? workspace : <>
       {/* 標題 */}
       <motion.div initial={{ opacity: 0, y: -12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }} className="mb-6">
         <h1 className="text-[28px] sm:text-[34px] font-bold tracking-tight text-slate-50">賽爾號對戰模擬器</h1>
@@ -1303,6 +1340,7 @@ export default function StartScreen({
             </div>
           </div>
 
+          {battleMode === 'PVE' && <Suspense fallback={<p className="px-4 py-3 text-xs text-slate-500">載入本地 AI 策略…</p>}><BattleAIQuickSettings pve /></Suspense>}
           {/* 賽制 */}
           <div className="flex flex-wrap items-center justify-between gap-3 px-4 py-3 border-b border-white/[0.06]">
             <span className="text-[15px] text-slate-100" title="巔峰賽制會先進行 BP 禁選與首發盲選">賽制</span>
@@ -1452,7 +1490,7 @@ export default function StartScreen({
               <span>出戰</span>
               <span className="text-xs text-slate-500 font-normal">拖曳可調整順序</span>
             </div>
-            {renderTeamGrid("p1", p1Team, p1StarterId, 0, "active")}
+            {renderTeamGrid("p1", p1Preview, p1StarterId, 0, "active")}
 
             {/* Middle Swap Bar */}
             <div className="my-2 py-2 px-3 bg-slate-900/90 border border-slate-800 rounded-xl flex flex-col sm:flex-row items-center justify-between gap-2 text-xs">
@@ -1488,7 +1526,7 @@ export default function StartScreen({
               <span className="flex items-center gap-1.5">🛡️ 待命背包 (後 6 格 - 巔峰BP備用池)</span>
               <span className="text-[10px] text-cyan-300/80 font-normal">巔峰對決一併入戰</span>
             </div>
-            {renderTeamGrid("p1", p1Team, p1StarterId, 6, "standby")}
+            {renderTeamGrid("p1", p1Preview, p1StarterId, 6, "standby")}
           </div>
           {p1Team.length === 0 && (
             <div className="text-center p-4 bg-blue-950/10 border border-blue-900/30 rounded-2xl flex items-center justify-center gap-2 text-xs text-blue-300">
@@ -1626,7 +1664,7 @@ export default function StartScreen({
               <span>出戰</span>
               <span className="text-xs text-slate-500 font-normal">拖曳可調整順序</span>
             </div>
-            {renderTeamGrid("p2", p2Team, p2StarterId, 0, "active")}
+            {renderTeamGrid("p2", p2Preview, p2StarterId, 0, "active")}
 
             {/* Middle Swap Bar */}
             <div className="my-2 py-2 px-3 bg-slate-900/90 border border-slate-800 rounded-xl flex flex-col sm:flex-row items-center justify-between gap-2 text-xs">
@@ -1662,7 +1700,7 @@ export default function StartScreen({
               <span className="flex items-center gap-1.5">🛡️ 待命背包 (後 6 格 - 巔峰BP備用池)</span>
               <span className="text-[10px] text-cyan-300/80 font-normal">巔峰對決一併入戰</span>
             </div>
-            {renderTeamGrid("p2", p2Team, p2StarterId, 6, "standby")}
+            {renderTeamGrid("p2", p2Preview, p2StarterId, 6, "standby")}
           </div>
 
           {/* P2 Equipment Section */}
@@ -1774,97 +1812,8 @@ export default function StartScreen({
                   </button>
                 </div>
               </div>
-              {/* 名稱搜尋框 */}
-              <div className="relative w-full sm:w-64">
-                <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
-                <input
-                  type="text"
-                  placeholder="名稱、ID、屬性（可用空白組合）"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full bg-[#050608] border border-slate-800 focus:border-blue-500/50 rounded-xl pl-8 pr-8 py-1.5 text-xs text-slate-200 placeholder-slate-600 focus:outline-none transition-all shadow-inner"
-                />
-                {searchQuery && (
-                  <button
-                    onClick={() => setSearchQuery("")}
-                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300 cursor-pointer"
-                  >
-                    <X className="w-3.5 h-3.5" />
-                  </button>
-                )}
-              </div>
             </div>
-            {/* 雙屬性多選過濾標籤 - 最小化設計 */}
-            <div className="flex flex-wrap items-center gap-2 mt-3">
-              <button
-                onClick={() => setShowTypeFilters(!showTypeFilters)}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[11px] font-bold transition-all border cursor-pointer ${
-                  showTypeFilters || selectedTypes.length > 0
-                    ? "bg-blue-900/40 border-blue-500/50 text-blue-300 shadow-[0_0_15px_rgba(59,130,246,0.15)]"
-                    : "bg-slate-900/60 border-slate-800 text-slate-500 hover:text-slate-300"
-                }`}
-              >
-                <Filter className="w-3.5 h-3.5" />
-                屬性過濾器 {selectedTypes.length > 0 && `(${selectedTypes.length})`}
-                {showTypeFilters ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
-              </button>
-
-              {selectedTypes.length > 0 && !showTypeFilters && (
-                <div className="flex items-center gap-2">
-                  <span className="text-[10px] text-blue-400 font-bold bg-blue-500/10 px-2 py-1 rounded-lg border border-blue-500/20">
-                    已過濾 {selectedTypes.length} 種屬性
-                  </span>
-                  <button
-                    onClick={() => setSelectedTypes([])}
-                    className="text-[10px] text-rose-400 hover:text-rose-300 font-bold cursor-pointer flex items-center gap-1"
-                  >
-                    <X className="w-3 h-3" /> 清除
-                  </button>
-                </div>
-              )}
-            </div>
-
-            <AnimatePresence>
-              {showTypeFilters && (
-                <motion.div
-                  initial={{ height: 0, opacity: 0 }}
-                  animate={{ height: "auto", opacity: 1 }}
-                  exit={{ height: 0, opacity: 0 }}
-                  className="overflow-hidden w-full"
-                >
-                  <div className="flex flex-wrap items-center gap-2 mt-3 pb-3 border-b border-white/[0.06]">
-                    <button
-                      onClick={() => setSelectedTypes([])}
-                      className={`px-3.5 py-1.5 rounded-full text-[13px] font-medium transition-colors cursor-pointer ${
-                        selectedTypes.length === 0
-                          ? "bg-blue-600 text-white"
-                          : "bg-white/[0.06] text-slate-300 hover:bg-white/[0.1]"
-                      }`}
-                    >
-                      全部
-                    </button>
-                    {SEER_TYPES.map(type => {
-                      const isSelected = selectedTypes.includes(type);
-                      return (
-                        <button
-                          key={type}
-                          onClick={() => toggleTypeFilter(type)}
-                          className={`pl-2 pr-3 py-1.5 rounded-full text-[13px] font-medium transition-colors cursor-pointer flex items-center gap-1.5 ${
-                            isSelected
-                              ? "bg-blue-600 text-white"
-                              : "bg-white/[0.06] text-slate-300 hover:bg-white/[0.1]"
-                          }`}
-                        >
-                          <TypeIcon type={type} size={18} showLabelWhenMissing={false} />
-                          {type}
-                          {isSelected && <Check className="w-3.5 h-3.5" />}
-                        </button>
-                      );
-                    })}
-                  </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
+            <ElfFilterBar state={libraryFilter} count={`${filteredLibrary.length} / ${allElves.length}`} />
           </div>
           <div className="flex items-center gap-2 self-start md:self-center shrink-0">
             {onRestoreDeletedElves && deletedCount > 0 && (
@@ -1890,8 +1839,7 @@ export default function StartScreen({
 
         {/* Elf list cards */}
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 max-h-[580px] overflow-y-auto pr-2 custom-scrollbar">
-          {allElves
-            .filter(e => matchesElfQuery(e, searchQuery, selectedTypes))
+          {filteredLibrary
             .map((elf, index) => (
             <div
               key={`${elf.id}-${index}`}
@@ -1940,9 +1888,7 @@ export default function StartScreen({
                         <span className="ml-auto px-1.5 rounded-full bg-amber-500/15 text-amber-300 text-[10px]">異能</span>
                       )}
                     </div>
-                    <p className="mt-1 text-[11px] text-slate-400 leading-relaxed select-none line-clamp-3">
-                      {plainDescription(elf.soulMark.description).split("【命運之輪")[0].trim()}
-                    </p>
+                    <p className="mt-1 text-[11px] text-slate-400 leading-relaxed select-none line-clamp-3">{plainDescription(elf.soulMark.description).split("【命運之輪")[0].trim()}</p>
                   </div>
                   {elf.alienTraits && (
                     <div className="mt-1.5 pt-1 border-t border-slate-800/60 space-y-1">
@@ -2091,6 +2037,10 @@ export default function StartScreen({
         </div>
       </div>
 
+      </>}
+
+      {/* 兩種版面共用所有操作視窗，避免新版提早 return 後只更新狀態卻無視窗。 */}
+      {showIntroduction && showDetailModal && <Suspense fallback={detailPanelLoading}><ElfSpotlight elves={[showDetailModal]} selectedElf={showDetailModal} onClose={()=>setShowIntroduction(false)}/></Suspense>}
       {/* Elf Detail Modal */}
       {createPortal(<AnimatePresence>
         {showDetailModal && (
@@ -2106,6 +2056,7 @@ export default function StartScreen({
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.9, y: 20 }}
               onClick={(e) => e.stopPropagation()}
+              role="dialog" aria-modal="true" aria-label="精靈配置詳情"
               className="ios-panel w-[min(1320px,96vw)] h-[92vh] overflow-hidden flex flex-col"
             >
               {/* Header：大頭像＋基本資訊 */}
@@ -2127,7 +2078,8 @@ export default function StartScreen({
                     <span>{showDetailModal.height ?? 0} cm · {showDetailModal.weight || "—"} kg · {showDetailModal.gender || "無性別"}</span>
                   </div>
                 </div>
-                <div className="flex items-center gap-2 shrink-0">
+                <div className="flex items-center gap-2 shrink-0 flex-wrap">
+                  <button type="button" className="ios-button" onClick={()=>setShowIntroduction(true)}>新版精靈介紹 ↗</button>
                   {onEditElf && (
                     <button
                       onClick={() => {
@@ -2230,6 +2182,7 @@ export default function StartScreen({
                       />
                     </div>
 
+                    <div className="col-span-2 sm:col-span-full"><ElfSkinPicker elf={showDetailModal} onChange={updated=>{onUpdateElf?.(updated);setShowDetailModal(updated);}} /></div>
                     {/* Gender */}
                     <div className="flex flex-col gap-1">
                       <span className="text-slate-500 text-xs uppercase flex items-center gap-1">🚻 性別</span>
@@ -2399,14 +2352,16 @@ export default function StartScreen({
                       </button>
                     </div>
                   </div>
+                  <nav aria-label="魂印呈現方式" className="ios-segment inline-flex mb-3 relative z-10">
+                    <button type="button" data-active={!blockView} onClick={() => setBlockView(false)}>魂印描述</button>
+                    <button type="button" data-active={blockView} onClick={() => setBlockView(true)}>魂印積木／實裝核對</button>
+                  </nav>
                   {blockView && showDetailModal.soulMark ? (
                     <div className="relative z-10">
                       <Suspense fallback={detailLoading}><LazyBlockProgramView elf={showDetailModal} /></Suspense>
                     </div>
                   ) : (
-                  <p className="text-left text-slate-200 text-[14px] leading-[1.75] font-sans antialiased whitespace-pre-wrap selection:bg-violet-500/40 tracking-wide relative z-10">
-                    {formatEffectText(showDetailModal.soulMark?.description)}
-                  </p>
+                  <EffectDescription description={showDetailModal.soulMark?.description} className="text-left text-slate-200 text-[14px] leading-[1.75] font-sans antialiased  selection:bg-violet-500/40 tracking-wide relative z-10" />
                   )}
                 </div>
 
@@ -2416,33 +2371,27 @@ export default function StartScreen({
                     <div className="bg-amber-500/5 border border-amber-500/20 rounded-2xl p-4 relative overflow-hidden">
                       <div className="flex items-center gap-2 mb-2">
                         <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse" />
-                        <h4 className="text-xs font-bold text-amber-300">二代異能特質 / {showDetailModal.alienTraits.gen2Trait.name}</h4>
+                        <h4 className="text-xs font-bold text-amber-300">二代特質 / {showDetailModal.alienTraits.gen2Trait.name}</h4>
                       </div>
-                      <EffectBlockToggle trait={showDetailModal.alienTraits.gen2Trait}><p className="text-amber-100/90 text-[14px] leading-[1.75] font-sans whitespace-pre-wrap">
-                        {formatEffectText(showDetailModal.alienTraits.gen2Trait.description)}
-                      </p></EffectBlockToggle>
+                      <EffectBlockToggle trait={showDetailModal.alienTraits.gen2Trait}><EffectDescription description={showDetailModal.alienTraits.gen2Trait.description} className="text-amber-100/90 text-[14px] leading-[1.75] font-sans" /></EffectBlockToggle>
                     </div>
                   )}
                   {showDetailModal.alienTraits?.exclusiveTrait && (
                     <div className="bg-red-500/5 border border-red-500/20 rounded-2xl p-4 relative overflow-hidden">
                       <div className="flex items-center gap-2 mb-2">
                         <span className="w-2 h-2 rounded-full bg-red-400 animate-pulse" />
-                        <h4 className="text-xs font-bold text-red-300">專屬異能特質 / {showDetailModal.alienTraits.exclusiveTrait.name}</h4>
+                        <h4 className="text-xs font-bold text-red-300">專屬特質 / {showDetailModal.alienTraits.exclusiveTrait.name}</h4>
                       </div>
-                      <EffectBlockToggle trait={showDetailModal.alienTraits.exclusiveTrait}><p className="text-red-100/90 text-[14px] leading-[1.75] font-sans whitespace-pre-wrap">
-                        {formatEffectText(showDetailModal.alienTraits.exclusiveTrait.description)}
-                      </p></EffectBlockToggle>
+                      <EffectBlockToggle trait={showDetailModal.alienTraits.exclusiveTrait}><EffectDescription description={showDetailModal.alienTraits.exclusiveTrait.description} className="text-red-100/90 text-[14px] leading-[1.75] font-sans" /></EffectBlockToggle>
                     </div>
                   )}
                   {(showDetailModal.alienTraits?.exclusiveTraits || []).map((trait) => (
                     <div key={trait.name} className="bg-red-500/5 border border-red-500/20 rounded-2xl p-4 relative overflow-hidden">
                       <div className="flex items-center gap-2 mb-2">
                         <span className="w-2 h-2 rounded-full bg-red-400 animate-pulse" />
-                        <h4 className="text-xs font-bold text-red-300">專屬異能特質 / {trait.name}</h4>
+                        <h4 className="text-xs font-bold text-red-300">專屬特質 / {trait.name}</h4>
                       </div>
-                      <EffectBlockToggle trait={trait}><p className="text-red-100/90 text-[14px] leading-[1.75] font-sans whitespace-pre-wrap">
-                        {formatEffectText(trait.description)}
-                      </p></EffectBlockToggle>
+                      <EffectBlockToggle trait={trait}><EffectDescription description={trait.description} className="text-red-100/90 text-[14px] leading-[1.75] font-sans" /></EffectBlockToggle>
                     </div>
                   ))}
                   {showDetailModal.isAlienElf && (
@@ -2450,7 +2399,7 @@ export default function StartScreen({
                       <div className="flex flex-col gap-2 mb-2">
                         <div className="flex items-center gap-2">
                           <Sparkles className="w-4 h-4 text-blue-400 animate-pulse" />
-                          <h4 className="text-[15px] font-semibold text-blue-200">一代通用特質 (異能精靈限定)</h4>
+                          <h4 className="text-[15px] font-semibold text-blue-200">異能（異能精靈限定）</h4>
                         </div>
                         {onUpdateElf ? (
                           <select
@@ -2476,14 +2425,12 @@ export default function StartScreen({
                           </select>
                         ) : (
                           <div className="text-xs text-blue-400 font-bold">
-                            【{showDetailModal.alienTraits?.alienTrait?.name || "無特質"}】
+                            【{showDetailModal.alienTraits?.alienTrait?.name || "無異能"}】
                           </div>
                         )}
                       </div>
                       {showDetailModal.alienTraits?.alienTrait && (
-                        <EffectBlockToggle trait={showDetailModal.alienTraits.alienTrait}><p className="text-blue-100/90 text-[14px] leading-[1.75] font-sans whitespace-pre-wrap mt-2 pt-2 border-t border-blue-500/20">
-                          {formatEffectText(showDetailModal.alienTraits.alienTrait.description)}
-                        </p></EffectBlockToggle>
+                        <EffectBlockToggle trait={showDetailModal.alienTraits.alienTrait}><EffectDescription description={showDetailModal.alienTraits.alienTrait.description} className="text-blue-100/90 text-[14px] leading-[1.75] font-sans  mt-2 pt-2 border-t border-blue-500/20" /></EffectBlockToggle>
                       )}
                     </div>
                   )}
@@ -2518,9 +2465,7 @@ export default function StartScreen({
                           </select>
                         </div>
                         {showDetailModal.alienTraits?.generalTrait && (
-                          <EffectBlockToggle trait={showDetailModal.alienTraits.generalTrait}><p className="text-blue-100/90 text-[14px] leading-[1.75] font-sans whitespace-pre-wrap mt-2 pt-2 border-t border-blue-500/20">
-                            {formatEffectText(showDetailModal.alienTraits.generalTrait.description)}
-                          </p></EffectBlockToggle>
+                          <EffectBlockToggle trait={showDetailModal.alienTraits.generalTrait}><EffectDescription description={showDetailModal.alienTraits.generalTrait.description} className="text-blue-100/90 text-[14px] leading-[1.75] font-sans  mt-2 pt-2 border-t border-blue-500/20" /></EffectBlockToggle>
                         )}
                       </div>
                     ) : showDetailModal.alienTraits?.generalTrait && (
@@ -2529,9 +2474,7 @@ export default function StartScreen({
                           <span className="w-2 h-2 rounded-full bg-blue-400 animate-pulse" />
                           <h4 className="text-[15px] font-semibold text-blue-200">通用特性 / {showDetailModal.alienTraits.generalTrait.name} ({showDetailModal.alienTraits.generalTrait.description})</h4>
                         </div>
-                        <EffectBlockToggle trait={showDetailModal.alienTraits.generalTrait}><p className="text-blue-100/90 text-[14px] leading-[1.75] font-sans whitespace-pre-wrap">
-                          {formatEffectText(showDetailModal.alienTraits.generalTrait.description)}
-                        </p></EffectBlockToggle>
+                        <EffectBlockToggle trait={showDetailModal.alienTraits.generalTrait}><EffectDescription description={showDetailModal.alienTraits.generalTrait.description} className="text-blue-100/90 text-[14px] leading-[1.75] font-sans" /></EffectBlockToggle>
                       </div>
                     )}
                   </div>
@@ -2573,8 +2516,8 @@ export default function StartScreen({
                   </div>
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    {showDetailModal.skills?.map((s, i) => {
-                      const isFifth = i === 4 || s.isFifthSkill;
+                    {showDetailModal.skills?.slice(0, 5).map((s, i) => {
+                      const isFifth = i === fifthSkillSlot(showDetailModal.skills);
                       return (
                         <div
                           key={i}
@@ -2602,13 +2545,13 @@ export default function StartScreen({
                               }`}>
                                 {s.category}
                               </span>
-                              <span className={`text-[11px] px-1.5 py-0.5 rounded font-bold ${getAttributeBadgeColor(s.type)} inline-flex items-center gap-1`}>
-                                <TypeIcon type={s.type} size={14} showLabelWhenMissing={false} />{s.type}
+                              <span className={`text-[11px] px-1.5 py-0.5 rounded font-bold ${getAttributeBadgeColor(skillDisplayType(s))} inline-flex items-center gap-1`}>
+                                <SkillTypeIcon skill={s} size={14} showLabelWhenMissing={false} />{skillDisplayType(s)}
                               </span>
                             </div>
                           </div>
                           
-                          {blockView ? <Suspense fallback={detailLoading}><LazyBlockProgramView skill={s} /></Suspense> : <p className="text-slate-200 text-[13px] leading-[1.7] font-sans antialiased whitespace-pre-wrap tracking-wide">{formatEffectText(s.description)}</p>}
+                          {blockView ? <Suspense fallback={detailLoading}><LazyBlockProgramView elf={showDetailModal} skill={s} /></Suspense> : <EffectDescription description={s.description} className="text-slate-200 text-[13px] leading-[1.7] font-sans antialiased  tracking-wide" />}
                           
                           <div className="flex justify-between items-center text-xs text-slate-500 font-mono w-full border-t border-slate-900 pt-2 mt-auto">
                             <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5">
@@ -2659,7 +2602,7 @@ export default function StartScreen({
                             const latestElf = allElves.find(e => e && ((e.id && e.id === showDetailModal.id) || e.name === showDetailModal.name)) || showDetailModal;
                             const defMatch = DEFAULT_ELVES.find(e => e && ((e.id && e.id === showDetailModal.id) || e.name === showDetailModal.name));
                             const currentSkills = latestElf.skills && latestElf.skills.length >= 5 ? latestElf.skills : showDetailModal.skills;
-                            const isFifthSlot = replacingSlotIndex === 4 || currentSkills[replacingSlotIndex]?.isFifthSkill;
+                            const isFifthSlot = replacingSlotIndex === fifthSkillSlot(currentSkills);
 
                             const allKnownSkills = [
                               ...(latestElf.skillPool || []),
@@ -2773,7 +2716,7 @@ export default function StartScreen({
                                         >
                                           <div className="flex items-center justify-between">
                                             <span className={`font-bold text-[15px] flex items-center gap-2 ${isFifthSlot ? "text-amber-300" : isEquipped ? "text-purple-300" : "text-blue-400"}`}>
-                                              {sk?.type && <TypeIcon type={sk.type} size={18} showLabelWhenMissing={false} />}
+                                              {sk && <SkillTypeIcon skill={sk} size={18} showLabelWhenMissing={false} />}
                                               {sk?.name || "無技能"}
                                               {isCurrent && <span className="text-[11px] bg-blue-500/20 text-blue-300 px-1.5 py-0.5 rounded">當前裝備</span>}
                                               {isEquipped && <span className="text-[11px] bg-purple-500/20 text-purple-300 border border-purple-500/30 px-1.5 py-0.5 rounded flex items-center gap-0.5"><Shuffle className="w-2.5 h-2.5" />點擊與第 {equippedIdx + 1} 格互換</span>}
@@ -2785,7 +2728,7 @@ export default function StartScreen({
                                               <span>PP: <strong className="text-slate-300">{sk.pp}/{sk.maxPp !== undefined ? sk.maxPp : sk.pp}</strong></span>
                                             </div>
                                           </div>
-                                          <p className="text-[13px] text-slate-200 leading-[1.7] whitespace-pre-wrap">{formatEffectText(sk.description)}</p>
+                                          <EffectDescription description={sk.description} className="text-[13px] text-slate-200 leading-[1.7]" />
                                         </div>
                                       );
                                     })
@@ -3538,8 +3481,8 @@ export default function StartScreen({
         onClose={() => setIsEffectModalOpen(false)}
         onSelectModule={(mod) => setAnalyzeText((prev) => prev ? prev + "\n[引用系統庫-" + mod.name + "]: " + mod.standardSyntax : mod.standardSyntax)}
       /></Suspense>}
-      {showSelectionModal && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm animate-in fade-in duration-200">
+      {showSelectionModal && createPortal(
+        <div role="dialog" aria-modal="true" aria-label="選擇替換精靈" className="fixed inset-0 z-[230] flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm animate-in fade-in duration-200">
           <motion.div
             initial={{ opacity: 0, scale: 0.95, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -3561,124 +3504,48 @@ export default function StartScreen({
               </button>
             </div>
 
-            <div className="p-6 space-y-6 overflow-y-auto custom-scrollbar">
-              {/* Modal Filter Bar */}
-              <div className="space-y-3">
-                <div className="flex flex-col md:flex-row gap-4 items-center">
-                  <div className="relative flex-1 w-full">
-                    <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
-                    <input
-                      type="text"
-                      placeholder="名稱、ID、屬性（可用空白組合）"
-                      value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
-                      className="w-full bg-[#050608] border border-slate-800 focus:border-blue-500/50 rounded-xl pl-10 pr-4 py-2.5 text-sm text-slate-200 focus:outline-none transition-all shadow-inner"
-                    />
-                  </div>
-                  <div className="flex items-center gap-2 w-full md:w-auto">
-                    <button
-                      onClick={() => setShowTypeFilter(!showTypeFilter)}
-                      className={`flex-1 md:flex-none flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl border font-bold text-xs transition-all cursor-pointer ${
-                        showTypeFilter || selectedTypes.length > 0
-                          ? "bg-blue-600/10 border-blue-500/50 text-blue-400"
-                          : "bg-slate-900 border-slate-800 text-slate-400 hover:text-slate-200 hover:border-slate-700"
-                      }`}
-                    >
-                      <Filter className="w-3.5 h-3.5" />
-                      屬性篩選 {selectedTypes.length > 0 && `(${selectedTypes.length})`}
-                      {showTypeFilter ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
-                    </button>
-                    {selectedTypes.length > 0 && (
-                      <button
-                        onClick={() => setSelectedTypes([])}
-                        className="p-2.5 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-400 hover:bg-rose-500/20 transition-all cursor-pointer"
-                        title="清除所有篩選"
-                      >
-                        <X className="w-4 h-4" />
-                      </button>
-                    )}
-                  </div>
-                </div>
-
-                {showTypeFilter && (
-                  <motion.div
-                    initial={{ opacity: 0, height: 0 }}
-                    animate={{ opacity: 1, height: 'auto' }}
-                    className="p-4 bg-slate-900/40 border border-slate-800/60 rounded-2xl"
-                  >
-                    <div className="flex flex-wrap gap-2">
-                      <button
-                        onClick={() => setSelectedTypes([])}
-                        className={`px-3 py-1.5 rounded-lg text-[10px] font-bold transition-all border cursor-pointer ${
-                          selectedTypes.length === 0
-                            ? "bg-blue-600 border-blue-500 text-white shadow-lg shadow-blue-500/20"
-                            : "bg-slate-950 border-slate-800 text-slate-500 hover:text-slate-300"
-                        }`}
-                      >
-                        全部
-                      </button>
-                      {SEER_TYPES.map(type => (
-                        <button
-                          key={type}
-                          onClick={() => toggleTypeFilter(type)}
-                          className={`px-3 py-1.5 rounded-lg text-[10px] font-bold transition-all border cursor-pointer ${
-                            selectedTypes.includes(type)
-                              ? "bg-blue-600 border-blue-500 text-white shadow-lg shadow-blue-500/20"
-                              : "bg-slate-950 border-slate-800 text-slate-500 hover:text-slate-300"
-                          }`}
-                        >
-                          <TypeIcon type={type} size={18} showLabelWhenMissing={false} /> {type}
-                        </button>
-                      ))}
+            <div className="p-6 overflow-y-auto custom-scrollbar">
+              <Suspense fallback={detailLoading}><ElfPicker
+                elves={allElves}
+                getKey={(elf, index) => `${elf.id}-${index}`}
+                itemClassName="group bg-[#050608] border border-slate-800 hover:border-blue-500/50 rounded-2xl p-4 text-left transition-all hover:shadow-[0_0_20px_rgba(59,130,246,0.1)] flex items-center gap-4 cursor-pointer"
+                onPick={elf => {
+                  const newElf = createInstance(elf);
+                  if (showSelectionModal.player === "p1") {
+                    const newTeam = [...p1Team];
+                    newTeam[showSelectionModal.slotIndex] = newElf;
+                    setP1Team(newTeam.filter(Boolean));
+                    if (!p1StarterId || p1Team[showSelectionModal.slotIndex]?.battleId === p1StarterId) setP1StarterId(newElf.battleId);
+                  } else {
+                    const newTeam = [...p2Team];
+                    newTeam[showSelectionModal.slotIndex] = newElf;
+                    setP2Team(newTeam.filter(Boolean));
+                    if (!p2StarterId || p2Team[showSelectionModal.slotIndex]?.battleId === p2StarterId) setP2StarterId(newElf.battleId);
+                  }
+                  setShowSelectionModal(null);
+                }}
+                renderItem={elf => (
+                  <>
+                    <div className="w-12 h-12 rounded-xl bg-slate-900 flex items-center justify-center shrink-0 border border-slate-800 group-hover:border-blue-500/30 overflow-hidden text-slate-500 font-bold">
+                      <ElfAvatar elf={elf} kind="head" className="w-full h-full object-cover" fallbackClassName="w-full h-full flex items-center justify-center text-slate-500 font-bold" />
                     </div>
-                  </motion.div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex justify-between items-center mb-0.5">
+                        <span className="font-bold text-slate-200 text-sm truncate">{elf.name}</span>
+                        <span className={`text-[9px] px-1.5 py-0.5 rounded font-bold ${getAttributeBadgeColor(elf.type)} inline-flex items-center gap-0.5`}>
+                          <TypeIcon type={elf.type} size={12} showLabelWhenMissing={false} />{elf.type}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2 mb-1 text-[8px] text-slate-500">
+                        <span>📏 {elf.height ?? 0}cm</span>
+                        <span>⚖️ {elf.weight ?? 0}kg</span>
+                        {getElfDestinyRank(elf) && <span className="text-cyan-400 font-bold">🎡 {getElfDestinyRank(elf)}</span>}
+                      </div>
+                      <p className="text-[10px] text-slate-500 truncate italic">{elf.soulMark.name}</p>
+                    </div>
+                  </>
                 )}
-              </div>
-
-              {/* Modal Elf Grid */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                {allElves
-                  .filter(e => matchesElfQuery(e, searchQuery, selectedTypes))
-                  .map((elf, index) => (
-                    <button
-                      key={`${elf.id}-${index}`}
-                      onClick={() => {
-                        const newElf = createInstance(elf);
-                        if (showSelectionModal.player === "p1") {
-                          const newTeam = [...p1Team];
-                          newTeam[showSelectionModal.slotIndex] = newElf;
-                          setP1Team(newTeam.filter(Boolean));
-                          if (!p1StarterId) setP1StarterId(newElf.battleId);
-                        } else {
-                          const newTeam = [...p2Team];
-                          newTeam[showSelectionModal.slotIndex] = newElf;
-                          setP2Team(newTeam.filter(Boolean));
-                          if (!p2StarterId) setP2StarterId(newElf.battleId);
-                        }
-                        setShowSelectionModal(null);
-                      }}
-                      className="group bg-[#050608] border border-slate-800 hover:border-blue-500/50 rounded-2xl p-4 text-left transition-all hover:shadow-[0_0_20px_rgba(59,130,246,0.1)] flex items-center gap-4 cursor-pointer"
-                    >
-                      <div className="w-12 h-12 rounded-xl bg-slate-900 flex items-center justify-center shrink-0 border border-slate-800 group-hover:border-blue-500/30 overflow-hidden text-slate-500 font-bold">
-                        <ElfAvatar elf={elf} kind="head" className="w-full h-full object-cover" fallbackClassName="w-full h-full flex items-center justify-center text-slate-500 font-bold" />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex justify-between items-center mb-0.5">
-                          <span className="font-bold text-slate-200 text-sm truncate">{elf.name}</span>
-                          <span className={`text-[9px] px-1.5 py-0.5 rounded font-bold ${getAttributeBadgeColor(elf.type)} inline-flex items-center gap-0.5`}>
-                            <TypeIcon type={elf.type} size={12} showLabelWhenMissing={false} />{elf.type}
-                          </span>
-                        </div>
-                        <div className="flex items-center gap-2 mb-1 text-[8px] text-slate-500">
-                          <span>📏 {elf.height ?? 0}cm</span>
-                          <span>⚖️ {elf.weight ?? 0}kg</span>
-                          {getElfDestinyRank(elf) && <span className="text-cyan-400 font-bold">🎡 {getElfDestinyRank(elf)}</span>}
-                        </div>
-                        <p className="text-[10px] text-slate-500 truncate italic">{elf.soulMark.name}</p>
-                      </div>
-                    </button>
-                  ))}
-              </div>
+              /></Suspense>
             </div>
 
             <div className="p-6 border-t border-slate-800 bg-slate-900/30 flex justify-between items-center">
@@ -3694,7 +3561,7 @@ export default function StartScreen({
             </div>
           </motion.div>
         </div>
-      )}
+      , document.body)}
     </div>
   );
 }

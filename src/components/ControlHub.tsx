@@ -3,9 +3,10 @@ import { normalizePlaylist, readControlSetting, resolveControlSection, type Cont
 import { Volume2, VolumeX, Settings2 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { useSceneResources, saveSceneResources, DEFAULT_SCENE_RESOURCES, SceneResourceMap } from "../utils/resourceManager";
-import { readAnimationSettings } from "../battle/animationSettings";
+import { readAnimationSettings,BATTLE_ANIMATION_EVENT } from "../battle/animationSettings";
 import { parseMusicSource, musicWatchUrl } from "../utils/musicSource";
 import { useMusicPlayer } from "./useMusicPlayer";
+import { PageErrorBoundary } from "./PageErrorBoundary";
 
 // --- Theme Types & Config ---
 
@@ -111,6 +112,7 @@ function useControlHubModel(currentScene: string, canApplyUpdates: boolean) {
   const [tacticalPanel, setTacticalPanel] = useState(() => readControlSetting('tacticalPanel', DEFAULT_TACTICAL_LAYOUT, validPanel));
   const [hudOpacity, setHudOpacity] = useState(() => parseFloat(localStorage.getItem('hudOpacity') || "0.95"));
   const [animationSettings, setAnimationSettings] = useState(() => readAnimationSettings());
+  useEffect(()=>{const refresh=()=>setAnimationSettings(readAnimationSettings());window.addEventListener(BATTLE_ANIMATION_EVENT,refresh);window.addEventListener('storage',refresh);return()=>{window.removeEventListener(BATTLE_ANIMATION_EVENT,refresh);window.removeEventListener('storage',refresh);};},[]);
   const [customLayout, setCustomLayout] = useState(() => { try { return localStorage.getItem('battleCustomLayout') === '1'; } catch { return false; } });
 
   useEffect(() => {
@@ -269,11 +271,29 @@ export default function ControlHub({ currentScene, canApplyUpdates = false }: { 
 
       <AnimatePresence>
         {isOpen && (
+          <>
+          {/*
+            2026-10-22：點擊面板外關閉（使用者要求）。
+            背板 z-[150]，面板本身 z-[200] 在其上；點到背板 = 關閉。
+            背板可見但不全黑：輕微壓暗，讓使用者知道「點旁邊可退出」。
+          */}
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.15 }}
+            onClick={() => setIsOpen(false)}
+            aria-hidden
+            className="fixed inset-0 z-[150] bg-slate-950/60"
+          />
+          <PageErrorBoundary onBack={() => setIsOpen(false)} backLabel="關閉控制中心">
           <Suspense fallback={<div role="status" className="ios-card p-4 text-slate-200">
             載入控制中心… <button type="button" className="ios-button ml-2" onClick={() => setIsOpen(false)}>取消</button>
           </div>}>
             <ControlHubPanel {...model} />
           </Suspense>
+          </PageErrorBoundary>
+          </>
         )}
       </AnimatePresence>
     </div>

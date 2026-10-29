@@ -63,7 +63,7 @@ export function hasLowChanceStatusTrait(desc: string): boolean {
   return false;
 }
 
-/** 英雄之耀檢測的「特性」：專屬特性（魂印）與通用特性；不含二代／專屬／異能特質。 */
+/** 英雄之耀檢測的「特性」：專屬特性與通用特性；不含二代特質、專屬特質與異能。 */
 export function heroGloryTraitTexts(e: { soulMark?: { description?: string }; trait?: { description?: string }; alienTraits?: { generalTrait?: { description?: string } } }): string[] {
   return [e.soulMark?.description, e.trait?.description, e.alienTraits?.generalTrait?.description].filter((d): d is string => !!d);
 }
@@ -121,26 +121,28 @@ function roundEnd(c: ArenaContext): void {
 
 export function handleWujiSoulMark(c: ArenaContext, event: EffectTiming, data?: any): void {
   if (event === EffectTiming.ELF_ENTERED && data?.enteredSide) {
-    // 自身位於出戰背包時，任意一方精靈登場：僅令該次登場的精靈受到 1 回合【砥礪】。
+    // 出戰背包包含在場及場下隊員；只套用到這次實際登場的個體。
     const side = data.enteredSide as Side;
-    if (c.self.currentHp <= 0 || data.enteredId === idOf(c.self)) return;
+    if (c.self.currentHp <= 0) return;
     const entered = activeOf(c, side);
-    if (!entered || idOf(entered) !== data.enteredId) return;
-    const res = c.applyStatusWithImmunityCheck(side, '砥礪', 1);
-    if (res.success) c.setPlayerState(PENDING, [...pendingList(c).filter(p => p.owner !== data.enteredId), { side, owner: data.enteredId }]);
-    else giveWujiMark(c, side, data.enteredId, WEIYUE, 3);
+    // 引擎登場事件沿用模板／隊員id，印記與結算採battleId；兩者不能直接比較。
+    if (!entered || (entered.id !== data.enteredId && idOf(entered) !== data.enteredId)) return;
+    const owner = idOf(entered);
+    const res = c.applyStatusWithImmunityCheck(side, '砥礪', 1, undefined, owner);
+    if (res.success) c.setPlayerState(PENDING, [...pendingList(c).filter(p => p.owner !== owner), { side, owner }]);
+    else giveWujiMark(c, side, owner, WEIYUE, 3);
     return;
   }
   if (event === EffectTiming.ROUND_END) roundEnd(c);
   if (!live(c)) return;
-  if (event === EffectTiming.ON_ENTRANCE) {
+  if (event === EffectTiming.ON_ENTRANCE || event === EffectTiming.BATTLE_START) {
     if (!read(c, 'initialized')) {
       const own = c.getFullTeam(c.actor).filter(e => idOf(e) !== idOf(c.self));
       const layers = own.reduce((n, e) => n + (countsAgainstHeroGlory(e) ? -1 : 1), 0);
       write(c, 'hero', Math.max(0, layers)); write(c, 'initialized', 1);
       applyHeroGloryStats(c, read(c, 'hero'));
       // 英雄之耀達到 3 層：烈武天徵、亂武天傀、鋭武銘戈不受 PP 值限制。
-      if (read(c, 'hero') >= 3) c.updateElf(c.actor, { skills: c.self.skills.map(s => HERO_FREE_SKILLS.includes(s.name) ? { ...s, ignorePpLimit: true } as any : s) });
+      if (read(c, 'hero') >= 3) c.updateElf(c.actor, { skills: c.self.skills.map(s => s.effectMode!=='kit'&&HERO_FREE_SKILLS.includes(s.name) ? { ...s, ignorePpLimit: true } as any : s) });
     }
     c.setMark({ id: HERO, name: '英雄之耀', displayChar: '耀', source: '無極聖武', ownerBattleId: idOf(c.self), count: read(c, 'hero'),
       unit: '層', persistsOffField: true, clearable: false, polarity: 'positive',
@@ -149,7 +151,7 @@ export function handleWujiSoulMark(c: ArenaContext, event: EffectTiming, data?: 
     if (read(c, 'hero') && c.target.currentHp > 0) giveWujiMark(c, c.targetSide, idOf(c.target), WUZHU, read(c, 'hero'));
   }
   if (event === EffectTiming.ROUND_START) bump(c, 'round');
-  if (event === EffectTiming.MODIFY_PRIORITY && c.skill?.name === '鋭武銘戈' && read(c, 'hero') >= 3 && data?.priorityComp) data.priorityComp.bonus += 1;
+  if (event === EffectTiming.MODIFY_PRIORITY && c.skill?.name === '鋭武銘戈' && c.skill.effectMode !== 'kit' && read(c, 'hero') >= 3 && data?.priorityComp) data.priorityComp.bonus += 1;
   if (event === EffectTiming.BEFORE_SKILL && c.skill && c.skill.category !== '屬性') {
     // 自身攻擊無視對手的能力提升效果、護盾效果與攻擊技能免疫效果。
     c.setPlayerState('ignoreAttackImmunityThisAction', true);

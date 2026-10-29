@@ -8,78 +8,94 @@ TXT來源：未找到ID／名稱精確匹配的TXT，須核對嵌入資料或另
 
 ## 魂印：無為之境
 
-目前入口：專屬程式（積木僅供語意對照）（handler）。
+目前入口：統一魂印來源：kit；未接通 0 項（kit）。
 
 | 原文 | 解析／執行候選 | 語意登記 | TXT片段 |
 |---|---|---|---|
-| 自身所有能力值變為全部能力值之和的一半。使用技能不受 PP 限制；技能使用後，不扣除固定 PP，改為互換該技能的目前 PP 與已損失 PP。以非 0 PP 使用技能時，解除自身異常狀態並免疫下一次異常狀態；以 0 PP 使用時必定命中、強制執行命中效果並觸發【萬相乖離】。未使用技能的回合結束時，依技能條件觸發【無為】效果。 | 未解析／handler-review | 待核對 | 缺精確TXT來源 |
+| 戰鬥開始時，自身所有能力值變為全部能力值之和的一半 | 已解析／authored-block-runtime | 待核對 | 缺精確TXT來源 |
+| 使用技能不受 PP 限制 | 已解析／authored-block-runtime | 待核對 | 缺精確TXT來源 |
+| 技能使用後，不扣除固定 PP，改為互換該技能的目前 PP 與已損失 PP | 已解析／authored-block-runtime | 待核對 | 缺精確TXT來源 |
+| 以非 0 PP 使用技能時，解除自身異常狀態並免疫下一次異常狀態 | 已解析／authored-block-runtime | 待核對 | 缺精確TXT來源 |
+| 以 0 PP 使用時必定命中、強制執行命中效果並觸發【萬相乖離】 | 已解析／authored-block-runtime | 待核對 | 缺精確TXT來源 |
+| 技能使用後，不扣除固定 PP，改為互換該技能的目前 PP 與已損失 PP | 已解析／authored-block-runtime | 待核對 | 缺精確TXT來源 |
+
+
+## 專屬特性：無為之境
+
+目前入口：特質統一來源：kit；未接通 0 項（kit）。
+
+| 原文 | 解析／執行候選 | 語意登記 | TXT片段 |
+|---|---|---|---|
+| 戰鬥開始時，自身所有能力值變為全部能力值之和的一半 | 已解析／authored-block-runtime | 待核對 | 缺精確TXT來源 |
+| 使用技能不受 PP 限制 | 已解析／authored-block-runtime | 待核對 | 缺精確TXT來源 |
+| 技能使用後，不扣除固定 PP，改為互換該技能的目前 PP 與已損失 PP | 已解析／authored-block-runtime | 待核對 | 缺精確TXT來源 |
+| 以非 0 PP 使用技能時，解除自身異常狀態並免疫下一次異常狀態 | 已解析／authored-block-runtime | 待核對 | 缺精確TXT來源 |
+| 以 0 PP 使用時必定命中、強制執行命中效果並觸發【萬相乖離】 | 已解析／authored-block-runtime | 待核對 | 缺精確TXT來源 |
+| 技能使用後，不扣除固定 PP，改為互換該技能的目前 PP 與已損失 PP | 已解析／authored-block-runtime | 待核對 | 缺精確TXT來源 |
 
 
 ## 技能：千秋虔
 
-目前入口：專屬程式（積木僅供語意對照）（handler）。
+目前入口：統一效果來源：kit；未接通 0 項（kit）。
 
 | 原文 | 解析／執行候選 | 語意登記 | TXT片段 |
 |---|---|---|---|
-| ■ 必中 | 已解析／handler-review | 待核對 | 缺精確TXT來源 |
-| 🎯 100% 恢復自身所有技能 4 PP | 未解析／handler-review | 待核對 | 缺精確TXT來源 |
-| 🎯 解除自身能力下降，成功時令對手【臣服】 | 未解析／handler-review | 待核對 | 缺精確TXT來源 |
-| 🎯 若對手本回合切換精靈，令其【臣服】；否則令其【束縛】 | 未解析／handler-review | 待核對 | 缺精確TXT來源 |
-| 🎯 若擊敗臣服的對手，下一隻出場的對手也進入臣服 | 未解析／handler-review | 待核對 | 缺精確TXT來源 |
-| ◇ 無為：自身未滿體力時，消耗此技能全部 PP，使對手下回合先制 −2 | 未解析／handler-review | 待核對 | 缺精確TXT來源 |
+| 必中 | 已解析／authored-block-runtime | 待核對 | 缺精確TXT來源 |
+| 🎯 100% 恢復自身所有技能 4 PP | 已解析／authored-block-runtime | 待核對 | 缺精確TXT來源 |
+| 🎯 解除自身能力下降，成功時令對手【臣服】 | 已解析／authored-block-runtime | 待核對 | 缺精確TXT來源 |
+| 🎯 若對手本回合切換精靈，令其【臣服】；否則令其【束縛】 | 已解析／authored-block-runtime | 待核對 | 缺精確TXT來源 |
+| 🎯 若擊敗臣服的對手，下一隻出場的對手也進入臣服 | 已解析／authored-block-runtime | 待核對 | 缺精確TXT來源 |
+| ◇ 無為：自身未滿體力時，消耗此技能全部 PP，使對手下回合先制 −2 | 已解析／authored-block-runtime | 待核對 | 缺精確TXT來源 |
 
 
 ## 技能：百法拜
 
-目前入口：專屬程式（積木僅供語意對照）（handler）。
+目前入口：統一效果來源：kit；未接通 0 項（kit）。
 
 | 原文 | 解析／執行候選 | 語意登記 | TXT片段 |
 |---|---|---|---|
-| ■ 必中 | 已解析／handler-review | 待核對 | 缺精確TXT來源 |
-| 🎯 全屬性 +1；自身滿體力時強化效果翻倍 | 已解析／handler-review | 待核對 | 缺精確TXT來源 |
-| 🎯 4 回合內，每次使用技能吸取對手最大體力的 1/3；自身低於一半體力時吸取翻倍 | 未解析／handler-review | 待核對 | 缺精確TXT來源 |
-| > 若對手免疫百分比傷害，額外附加 300 點真實傷害 | 未解析／handler-review | 待核對 | 缺精確TXT來源 |
-| 🎯 下 2 回合自身所有技能先制 +2 | 已解析／handler-review | 待核對 | 缺精確TXT來源 |
-| ◇ 無為：對手具有能力提升時，消耗此技能全部 PP，消除對手回合類效果 | 未解析／handler-review | 待核對 | 缺精確TXT來源 |
+| 必中 | 已解析／authored-block-runtime | 待核對 | 缺精確TXT來源 |
+| 🎯 全屬性 +1；自身滿體力時強化效果翻倍 | 已解析／authored-block-runtime | 待核對 | 缺精確TXT來源 |
+| 🎯 4回合內每次使用技能吸取對手最大體力1/3，低於半血翻倍；對手免疫百分比時追加300真傷 | 已解析／authored-block-runtime | 待核對 | 缺精確TXT來源 |
+| 🎯 下 2 回合自身所有技能先制 +2 | 已解析／authored-block-runtime | 待核對 | 缺精確TXT來源 |
+| ◇ 無為：對手具有能力提升時，消耗此技能全部 PP，消除對手回合類效果 | 已解析／authored-block-runtime | 待核對 | 缺精確TXT來源 |
 
 
 ## 技能：十玄釋
 
-目前入口：專屬程式（積木僅供語意對照）（handler）。
+目前入口：統一效果來源：kit；未接通 0 項（kit）。
 
 | 原文 | 解析／執行候選 | 語意登記 | TXT片段 |
 |---|---|---|---|
-| ■ 必中 | 已解析／handler-review | 待核對 | 缺精確TXT來源 |
-| 🎯 5 回合內免疫所有異常狀態及能力下降 | 未解析／handler-review | 待核對 | 缺精確TXT來源 |
-| 🎯 4 回合內，對手使用屬性技能後，自身恢復最大體力的 1/3 並造成等量百分比傷害；對手使用攻擊技能後，100% 使其【束縛】 | 未解析／handler-review | 待核對 | 缺精確TXT來源 |
-| ◇ 無為：未行動時，消耗此技能全部 PP，使對手所有技能 PP −2 | 未解析／handler-review | 待核對 | 缺精確TXT來源 |
+| 必中 | 已解析／authored-block-runtime | 待核對 | 缺精確TXT來源 |
+| 🎯 5 回合內免疫所有異常狀態及能力下降 | 已解析／authored-block-runtime | 待核對 | 缺精確TXT來源 |
+| 🎯 4 回合內，對手使用屬性技能後，自身恢復最大體力的 1/3 並造成等量百分比傷害；對手使用攻擊技能後，100% 使其【束縛】 | 已解析／authored-block-runtime | 待核對 | 缺精確TXT來源 |
+| ◇ 無為：未行動時，消耗此技能全部 PP，使對手所有技能 PP −2 | 已解析／authored-block-runtime | 待核對 | 缺精確TXT來源 |
 
 
 ## 技能：孑身誡
 
-目前入口：專屬程式（積木僅供語意對照）（handler）。
+目前入口：統一效果來源：kit；未接通 0 項（kit）。
 
 | 原文 | 解析／執行候選 | 語意登記 | TXT片段 |
 |---|---|---|---|
-| ■ 先制 +3 | 已解析／handler-review | 待核對 | 缺精確TXT來源 |
-| 🎯 消除對手回合類效果 | 已解析／handler-review | 待核對 | 缺精確TXT來源 |
-| > 若無法消除，令對手所有技能 PP 歸零 | 未解析／handler-review | 待核對 | 缺精確TXT來源 |
-| 🎯 吸取對手能力提升 | 已解析／handler-review | 待核對 | 缺精確TXT來源 |
-| > 成功時令對手所有技能 PP 歸零 | 未解析／handler-review | 待核對 | 缺精確TXT來源 |
-| 🎯 對手所有技能 PP −1；若其本回合所選技能 PP 變為 0，則無法行動 | 未解析／handler-review | 待核對 | 缺精確TXT來源 |
-| ◇ 無為：自身處於異常狀態時，消耗此技能全部 PP，使對手下一回合無法主動切換精靈 | 未解析／handler-review | 待核對 | 缺精確TXT來源 |
+| 先制 +3 | 已解析／authored-block-runtime | 待核對 | 缺精確TXT來源 |
+| 🎯 消除對手回合類效果 > 若無法消除，令對手所有技能 PP 歸零 | 已解析／authored-block-runtime | 待核對 | 缺精確TXT來源 |
+| 🎯 吸取對手能力提升 > 成功時令對手所有技能 PP 歸零 | 已解析／authored-block-runtime | 待核對 | 缺精確TXT來源 |
+| 🎯 對手所有技能 PP −1；若其本回合所選技能 PP 變為 0，則無法行動 | 已解析／authored-block-runtime | 待核對 | 缺精確TXT來源 |
+| ◇ 無為：自身處於異常狀態時，消耗此技能全部 PP，使對手下一回合無法主動切換精靈 | 已解析／authored-block-runtime | 待核對 | 缺精確TXT來源 |
 
 
 ## 技能：無相諦
 
-目前入口：專屬程式（積木僅供語意對照）（handler）。
+目前入口：統一效果來源：kit；未接通 0 項（kit）。
 
 | 原文 | 解析／執行候選 | 語意登記 | TXT片段 |
 |---|---|---|---|
-| ■ 必中 | 已解析／handler-review | 待核對 | 缺精確TXT來源 |
-| ■ 威力 0、PP 0 | 未解析／handler-review | 待核對 | 缺精確TXT來源 |
-| ■ 自身與技能同屬性時威力 +170 | 未解析／handler-review | 待核對 | 缺精確TXT來源 |
-| 🎯 先出手時令對手所有技能 PP −1，後出手時消除對手回合類效果 | 未解析／handler-review | 待核對 | 缺精確TXT來源 |
-| 🎯 對手無異常時吸取其最大體力 1/3，有異常時令其【臣服】 | 未解析／handler-review | 待核對 | 缺精確TXT來源 |
-| 🎯 對手體力不足 300 時直接秒殺 | 未解析／handler-review | 待核對 | 缺精確TXT來源 |
-| > 萬相乖離會依此順序永久取消下一條尚未取消的觸發條件，並使本技能威力 +50；六項條件全部取消後不再增加威力；自身擊敗對手後，令對方全部陣亡精靈消逝 | 未解析／handler-review | 待核對 | 缺精確TXT來源 |
+| 必中 | 已解析／authored-block-runtime | 待核對 | 缺精確TXT來源 |
+| 自身與技能同屬性時威力 +170 | 已解析／authored-block-runtime | 待核對 | 缺精確TXT來源 |
+| 🎯 先出手時令對手所有技能 PP −1，後出手時消除對手回合類效果 | 已解析／authored-block-runtime | 待核對 | 缺精確TXT來源 |
+| 🎯 對手無異常時吸取其最大體力 1/3，有異常時令其【臣服】 | 已解析／authored-block-runtime | 待核對 | 缺精確TXT來源 |
+| 🎯 對手體力不足 300 時直接秒殺 | 已解析／authored-block-runtime | 待核對 | 缺精確TXT來源 |
+| > 萬相乖離使本技能威力 +50（每層，讀已取消層數），六項全部取消後不再增加威力 | 已解析／authored-block-runtime | 待核對 | 缺精確TXT來源 |
+| > 自身擊敗對手後，令對方全部陣亡精靈消逝 | 已解析／authored-block-runtime | 待核對 | 缺精確TXT來源 |

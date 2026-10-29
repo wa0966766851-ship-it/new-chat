@@ -1,3 +1,5 @@
+import { isAlienElf } from '../../../battle/advancedDamageModifiers';
+import { getElfAdvancedMechanics,hasAuthoredAdvancedMechanic } from '../../../data/traitsRegistry';
 import type { BattleEventContext as C, BattleSkillHandler } from '../../types';
 import type { Skill } from '../../../types';
 import { EffectTiming as E } from '../../types';
@@ -18,13 +20,7 @@ const carried: Record<string, (c: C) => void> = {
     c.applyStatChange(c.targetSide, allStages(-1));
     drain(c, c.target.maxHp / 4 * (c.self.currentHp < c.self.maxHp / 2 ? 2 : 1), 'percent');
   },
-  '械律·置換': c => {
-    const amount = Math.floor(((c.self.shield || 0) + (c.self.barrier || 0) + (c.target.shield || 0) + (c.target.barrier || 0)) * .7);
-    c.updateElf(c.actor, { shield: 0, barrier: 0 }); c.updateElf(c.targetSide, { shield: 0, barrier: 0 });
-    drain(c, amount, 'fixed'); restorePp(c, c.actor, c.self);
-    timed(c, c.targetSide, 'pp_skill_switch_lock', 2, { lockSwitch: true }, true);
-    c.useBattleItem?.(c.targetSide, 'hp_150', c.actor);
-  },
+  // '械律·置換' 已遷移至 src/data/migratedWuxuShiyanSkillKits.ts（真 Kit；DSH 20261017）。
   '血稅迴轉': c => {
     c.applyStatChange(c.actor, { def: 2, spdef: 2, speed: 2, accuracy: 2, atk: -1, spatk: -1 });
     timed(c, c.actor, 'round_drain_ratio', 4, { roundDrainSpec: { ratio: 1 / 3, doubleBelowHalf: true, benchHealIfNoLoss: 200 } }, false, 'skill', false);
@@ -46,16 +42,13 @@ const carried: Record<string, (c: C) => void> = {
     c.setPlayerState('nextKillStatus', { status: '詛咒', duration: 3 });
   },
 };
-export const SHIYAN_SKILLS: Record<string, BattleSkillHandler> = Object.fromEntries(Object.keys(carried).map(name => [name, () => {}]));
+export const SHIYAN_SKILLS: Record<string, BattleSkillHandler> = Object.fromEntries(Object.keys(carried).map(name => [name, () => {}])); // 械律·置換已移除（真 Kit）
 export const SHIYAN_SKILL_TRANSFORMS: Record<string, (c: C, s: Skill) => Skill> = {
   '影契·噬滅': (c, s) => {
     if (!c.self.isInherentInvalid) c.setPlayerState('oppBoostAsDropThisAction', true);
     return s;
   },
-  '械律·置換': (c, s) => {
-    if (!c.self.isInherentInvalid) c.setPlayerState('oppBoostAsDropThisAction', true);
-    return s;
-  },
+  // '械律·置換' transform 已由 Kit stage_view{opp_up_as_down} 屬性表達（DSH 20261017）。
   '安息契': (c, s) => {
     if (!c.self.isInherentInvalid) c.setPlayerState('selfDropAsOppDropThisAction', true);
     return s;
@@ -90,7 +83,7 @@ function runShiyanSoul(ctx: C, event: E, extraData?: any): any {
       && (!e.summonerId || String(e.summonerId) === identity(self)));
     const isWraithActive = !!(wraithElf && wraithElf.currentHp > 0);
 
-    if (event === EffectTiming.ON_ENTRANCE) {
+    if (event === EffectTiming.ON_ENTRANCE && !hasAuthoredAdvancedMechanic(self,'cyberWraithSummon')) {
       setPlayerState(`${actor}_cyberWraithRegistryManaged`, true);
       addLog(`🌑 【咒術師】：召喚與自身能力值相等的賽博怨靈作為額外精靈加入己方！`, "effect");
       const adjustedSpdef = Math.ceil((getPlayerState('shiyanOriginalSpdef')?.[self.battleId || self.id] ?? self.calculatedStats.spdef) / 10);
@@ -119,7 +112,7 @@ function runShiyanSoul(ctx: C, event: E, extraData?: any): any {
       setPlayerState(`${actor}_wraithDamageDoubled`, false);
     }
 
-    if (event === EffectTiming.ON_SWITCH_OUT) {
+    if (event === EffectTiming.ON_SWITCH_OUT && !hasAuthoredAdvancedMechanic(self,'cyberWraithSummon')) {
       if (wraithElf) {
         addLog(`🌑 【咒術師】：自身下場，賽博怨靈死亡並消逝...`, "effect");
         ctx.vanishElf(actor, wraithElf);
@@ -129,7 +122,7 @@ function runShiyanSoul(ctx: C, event: E, extraData?: any): any {
       setPlayerState(`${actor}_wraithCastSpellPending`, false);
     }
 
-    if (event === EffectTiming.FATAL_RESIST) {
+    if (event === EffectTiming.FATAL_RESIST && !hasAuthoredAdvancedMechanic(self,'cyberWraithSummon')) {
       // 1. 賽博怨靈替死
       const subUsed = !!getPlayerState(`${actor}_wraithSubUsed`);
       if (isWraithActive && !subUsed) {
@@ -146,9 +139,9 @@ function runShiyanSoul(ctx: C, event: E, extraData?: any): any {
 
     }
 
-    if (event === EffectTiming.ON_KILL && extraData?.defeatedElf) {
+    if (event === EffectTiming.ON_KILL && extraData?.defeatedElf && getElfAdvancedMechanics(self).killAlienElfVanish) {
        const deadElf = extraData.defeatedElf;
-       const isDeadAlien = deadElf.isAlienElf || (deadElf.soulMark?.trait_warrior);
+       const isDeadAlien = isAlienElf(deadElf);
        if (isDeadAlien) {
          addLog(`🌑 【無序星魂使徒】：徹底終結了異能精靈 【${deadElf.name}】！`, "effect");
          ctx.vanishElf(oppSide, deadElf);
@@ -168,7 +161,7 @@ function runShiyanSoul(ctx: C, event: E, extraData?: any): any {
       }
     }
 
-    if (event === EffectTiming.BEFORE_STATUS_TICK && wraithElf && /詛咒|curse/i.test(extraData?.status || '')) extraData.skipTick = true;
+    if (event === EffectTiming.BEFORE_STATUS_TICK && !hasAuthoredAdvancedMechanic(self,'wraithExistCurseNoReduce') && wraithElf && /詛咒|curse/i.test(extraData?.status || '')) extraData.skipTick = true;
     if (event === EffectTiming.BATTLE_PHASE_END) {
       const active = actor === 'p1' ? ctx.activeP1 : ctx.activeP2;
       if ((active.battleId || active.id) !== (self.battleId || self.id) || self.currentHp <= 0) return false;
@@ -202,6 +195,8 @@ function runCarriedPpChain(c: C, slots: number[]): void {
   if (!existing) c.setPlayerState('ppCarryChain', chain);
   try {
     for (const slot of slots) {
+      // 積木版攜帶槽由共用PP節點執行，不能再借原精靈名稱重播。
+      if(c.self.skills[slot]?.effectMode==='kit')continue;
       const action = carried[c.self.skills[slot]?.name];
       if (!action || chain.seen.includes(slot)) continue;
       chain.seen.push(slot);

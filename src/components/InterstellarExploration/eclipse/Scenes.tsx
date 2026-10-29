@@ -6,20 +6,25 @@ import { AFFIX_BY_ID, EVENT_BY_ID, NPC } from "../../../modes/interstellar/v2/co
 import { RELIC_BY_ID, RARITY_LABEL } from "../../../modes/interstellar/v2/relics";
 import { ElfTarot, NpcArt, Ornament, RelicIcon, RelicSigil, TeamStrip, alive } from "./parts";
 import { ElfAvatar } from "../../SeerImages";
+import { formatBigNumber, formatFullNumber } from "../../../utils/formatBigNumber";
+import { fixedMulAt, tokenBrief, tokenHint, tokenLabel } from "../../../modes/interstellar/v2/recruit";
+import { TokenChip } from "./Recruit";
+import Barter from "./Barter";
+import { BOSS_TRAIT_BY_ID, bossTraitIcon, bossTraitText } from "../../../data/bossTraits";
 
 type Dispatch = (f: (r: E.RunV2) => E.RunV2) => void;
-interface SceneProps { run: E.RunV2; pool: Elf[]; dispatch: Dispatch; onFight: () => void; onExit: () => void; onOpenTeam?: () => void; }
+interface SceneProps { run: E.RunV2; pool: Elf[]; dispatch: Dispatch; onFight: () => void; onExit: () => void; onOpenTeam?: () => void; onOpenRecruit?: () => void; }
 
 /** 場景外框：左立繪、右文字 */
 function Stage({ npc, kicker, title, children, wide }: { npc?: number; kicker: string; title: string; children: React.ReactNode; wide?: boolean }) {
   return (
     <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: .35 }}
-      className={`relative mx-auto w-full ${wide ? "max-w-6xl" : "max-w-5xl"} ecl-frame p-6 md:p-10`}>
-      <div className={`grid gap-8 ${npc ? "md:grid-cols-[minmax(0,2fr)_minmax(0,3fr)]" : ""}`}>
-        {npc ? <div className="relative min-h-56 md:min-h-[26rem] flex items-end justify-center"><NpcArt id={npc} className="max-h-[26rem] w-full" /></div> : null}
+      className={`relative mx-auto w-full ${wide ? "max-w-6xl ecl-xl:max-w-7xl" : "max-w-5xl ecl-xl:max-w-6xl"} ecl-frame p-6 ecl-md:p-10`}>
+      <div className={`grid gap-8 ${npc ? "ecl-md:grid-cols-[minmax(0,2fr)_minmax(0,3fr)]" : ""}`}>
+        {npc ? <div className="relative min-h-56 ecl-md:min-h-[26rem] flex items-end justify-center"><NpcArt id={npc} className="max-h-[26rem] w-full" /></div> : null}
         <div className="min-w-0">
           <div className="ecl-roman text-[11px] ecl-muted">{kicker}</div>
-          <h2 className="ecl-title text-3xl md:text-4xl ecl-gilt mt-1">{title}</h2>
+          <h2 className="ecl-title text-3xl ecl-md:text-4xl ecl-gilt mt-1">{title}</h2>
           <Ornament className="my-4" />
           {children}
         </div>
@@ -41,7 +46,7 @@ const Choice: React.FC<{ label: string; hint?: string; disabled?: boolean; reaso
   );
 };
 
-function Prose({ text }: { text: string }) { return <div className="ecl-prose text-[15px] md:text-base"><p>{text}</p></div>; }
+function Prose({ text }: { text: string }) { return <div className="ecl-prose text-[15px] ecl-md:text-base"><p>{text}</p></div>; }
 
 /* ───────── 各場景 ───────── */
 export function DraftScene({ run, pool, dispatch }: SceneProps) {
@@ -50,7 +55,7 @@ export function DraftScene({ run, pool, dispatch }: SceneProps) {
   return (
     <Stage kicker="The Lantern Bearers" title="選擇持燈者" wide>
       <p className="ecl-muted mb-5">回廊只容得下三盞燈。選出三隻精靈與你同行；之後的夥伴，要在黑暗裡找。</p>
-      <div className="grid grid-cols-3 md:grid-cols-6 gap-3">
+      <div className="grid grid-cols-3 ecl-md:grid-cols-6 gap-3">
         {sc.offer.map(id => { const e = E.findElf(pool, id); if (!e) return null; const picked = sc.picks.includes(id);
           return <ElfTarot key={id} elf={e} picked={picked} onClick={() => dispatch(r => E.toggleDraft(r, id))}
             footer={<div className="text-[10px] ecl-roman mt-1" style={{ color: "var(--ecl-gold)" }}>{tierText(E.tierOf(pool, e))}</div>} />; })}
@@ -99,31 +104,36 @@ export function ShopScene({ run, pool, dispatch }: SceneProps) {
   const stock = run.scene.stock;
   const full = false; // 隊伍無上限：新成員一律加入（出戰名單滿則待命）
   const buy = (i: number, replaceIdx = -1) => dispatch(r => E.shopBuy(r, i, pool, replaceIdx));
-  const label = (s: E.ShopItem) => s.kind === "relic" ? RELIC_BY_ID[s.ref!]?.name : s.kind === "elf" ? E.findElf(pool, s.ref!)?.name : s.kind === "potion" ? "藥劑" : s.kind === "mend" ? "縫合（全隊恢復 30%）" : "淨化（移除一個詛咒）";
+  const label = (s: E.ShopItem) => s.kind === "relic" ? RELIC_BY_ID[s.ref!]?.name : s.kind === "token" ? tokenLabel({ ...s.token!, id: "" }) : s.kind === "shard" ? `星晶 ×${s.qty ?? 1}` : s.kind === "elf" ? E.findElf(pool, s.ref!)?.name : s.kind === "potion" ? "藥劑" : s.kind === "mend" ? "縫合（全隊恢復 30%）" : s.kind === "life" ? (s.ref === "temp" ? "命燈（臨時生命 +1）" : "命晶（永久生命 +1）") : "淨化（移除一個詛咒）";
+  const rerollCost = E.shopRerollCost(run);
   return (
     <Stage kicker="Guild of Pupils" title="瞳孔商會" wide>
-      <div className="absolute right-4 top-4 w-40 h-48 md:w-56 md:h-64 opacity-80 pointer-events-none"><NpcArt id={NPC.shop} className="w-full h-full" /></div>
-      <p className="ecl-muted mb-4 pr-44 md:pr-60">「每一件都看過很多主人。你會是最後一個嗎？」</p>
-      <div className="grid md:grid-cols-2 gap-3 relative">
+      <div className="absolute right-4 top-4 w-40 h-48 ecl-md:w-56 ecl-md:h-64 opacity-80 pointer-events-none"><NpcArt id={NPC.shop} className="w-full h-full" /></div>
+      <p className="ecl-muted mb-4 pr-44 ecl-md:pr-60">「每一件都看過很多主人。你會是最後一個嗎？」</p>
+      <div className="grid grid-cols-[minmax(0,1fr)] ecl-md:grid-cols-2 gap-3 relative">
         {stock.map((s, i) => {
-          const can = (s.currency === "beans" ? run.beans : run.shards) >= s.price && !s.sold && !(s.kind === "purge" && !run.relics.some(r => r.startsWith("curse_")));
+          const can = s.currency === "beans" && run.beans >= s.price && !s.sold && !(s.kind === "purge" && !run.relics.some(r => r.startsWith("curse_")));
           const elf = s.kind === "elf" ? E.findElf(pool, s.ref!) : null;
           return (
             <div key={i} className={`relative p-3 border ${s.sold ? "opacity-35" : ""} border-[rgba(217,180,90,.3)] bg-black/35 flex items-center gap-3`}>
-              <span className="shrink-0">{s.kind === "relic" ? <RelicSigil id={s.ref!} size="lg" /> : elf ? <ElfHeadMini elf={elf} /> : <RelicIcon id={s.kind === "potion" ? "_potion" : s.kind === "mend" ? "_mend" : "_purge"} rarity="common" glyph={s.kind === "potion" ? "藥" : s.kind === "mend" ? "縫" : "淨"} dim="3rem" fontSize="1.3rem" />}</span>
+              <span className="shrink-0">{s.kind === "relic" ? <RelicSigil id={s.ref!} size="lg" /> : s.kind === "token" ? <RelicIcon id="_shard" rarity={s.token!.repeat ? "cursed" : s.token!.kind === "any" ? "legendary" : "rare"} glyph="令" dim="3rem" fontSize="1.3rem" /> : s.kind === "shard" ? <RelicIcon id="_shard" rarity="rare" glyph="晶" dim="3rem" fontSize="1.3rem" /> : s.kind === "life" ? <span className={`w-12 h-12 grid place-items-center text-3xl ${s.ref === "temp" ? "text-[var(--ecl-teal)]" : "text-[var(--ecl-blood-hi)]"}`} aria-hidden>♥</span> : elf ? <ElfHeadMini elf={elf} /> : <RelicIcon id={s.kind === "potion" ? "_potion" : s.kind === "mend" ? "_mend" : "_purge"} rarity="common" glyph={s.kind === "potion" ? "藥" : s.kind === "mend" ? "縫" : "淨"} dim="3rem" fontSize="1.3rem" />}</span>
               <div className="min-w-0 flex-1">
                 <div className="font-black truncate">{label(s)}</div>
-                <div className="text-xs ecl-muted truncate">{s.kind === "relic" ? `${RARITY_LABEL[RELIC_BY_ID[s.ref!].rarity]}・${RELIC_BY_ID[s.ref!].desc}` : s.kind === "elf" ? "契約：加入隊伍" : s.kind === "potion" ? "戰鬥中使用" : ""}</div>
+                <div className="text-xs ecl-muted truncate" title={s.kind === "token" ? tokenHint({ ...s.token!, id: "" }) : s.kind === "life" ? E.LIFE_RULE : undefined}>{s.kind === "relic" ? `${RARITY_LABEL[RELIC_BY_ID[s.ref!].rarity]}・${RELIC_BY_ID[s.ref!].desc}` : s.kind === "token" ? tokenBrief({ ...s.token!, id: "" }) : s.kind === "shard" ? "招募與進階" : s.kind === "elf" ? "契約：加入隊伍" : s.kind === "potion" ? "戰鬥中使用" : s.kind === "life" ? (s.ref === "temp" ? "當章有效" : "永久") : ""}</div>
               </div>
               <button className="ecl-btn text-sm px-3 py-1.5 shrink-0 whitespace-nowrap" disabled={!can} onClick={() => s.kind === "elf" && full ? setReplace(i) : buy(i)}>
-                {s.sold ? "已售" : `${s.price}${s.currency === "beans" ? " 豆" : " 晶"}`}
+                {s.sold ? "已售" : `${formatBigNumber(s.price)} 豆`}
               </button>
             </div>
           );
         })}
       </div>
+      <Barter run={run} pool={pool} dispatch={dispatch} />
       {replace !== null && <ReplacePicker run={run} incoming={label(stock[replace]) ?? ""} onPick={i => { buy(replace, i); setReplace(null); }} onCancel={() => setReplace(null)} />}
-      <div className="pt-6"><button className="ecl-btn" onClick={() => dispatch(r => E.backToMap(r))}>離開商會</button></div>
+      <div className="pt-6 flex flex-wrap items-center gap-3">
+        <button className="ecl-btn" onClick={() => dispatch(r => E.backToMap(r))}>離開商會</button>
+        <button className="ecl-btn ecl-btn-ghost" data-testid="shop-reroll" disabled={run.beans < rerollCost} title={rerollCost === 0 ? "套裝特權：每層第一次免費" : "重新進貨；每次價格 +20"} onClick={() => dispatch(r => E.shopReroll(r, pool))}>刷新{rerollCost === 0 ? "（免費）" : ` ${formatBigNumber(rerollCost)} 豆`}</button>
+      </div>
     </Stage>
   );
 }
@@ -162,7 +172,7 @@ export function RestScene({ run, dispatch }: SceneProps) {
 
 function RelicChoice({ ids, taken, onTake }: { ids: string[]; taken?: string; onTake: (id: string) => void }) {
   return (
-    <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+    <div className="grid grid-cols-2 ecl-md:grid-cols-3 gap-4">
       {ids.map(id => { const r = RELIC_BY_ID[id]; if (!r) return null; const picked = taken === id;
         return (
           <button key={id} type="button" className="ecl-card !aspect-auto min-h-60 text-center p-5 flex flex-col items-center justify-center gap-3 disabled:opacity-30" data-rarity={r.rarity} data-picked={picked ? "true" : "false"} disabled={!!taken && !picked} onClick={() => onTake(id)}>
@@ -216,30 +226,33 @@ export function PreludeScene({ run, pool, dispatch, onFight, onOpenTeam }: Scene
     <Stage kicker={boss ? "Throne" : enc.kind === "elite" ? "Nightmare" : "Encounter"} title={enc.title} wide>
       <div className="flex flex-wrap gap-4 justify-center">
         {foes.map((f, i) => (
-          <div key={i} className="w-40 md:w-48">
+          <div key={i} className="w-40 ecl-md:w-48">
             <ElfTarot elf={f} footer={
               <div className="mt-1 space-y-1">
-                <div className="text-[11px] ecl-muted tabular-nums">體力 {f.maxHp}・攻 {f.calculatedStats.atk}・特攻 {f.calculatedStats.spatk}</div>
+                <div className="text-[11px] ecl-muted tabular-nums" title={`體力 ${formatFullNumber(f.maxHp)}・攻擊 ${formatFullNumber(f.calculatedStats.atk)}・特攻 ${formatFullNumber(f.calculatedStats.spatk)}`}>體力 {formatBigNumber(f.maxHp)}・攻 {formatBigNumber(f.calculatedStats.atk)}・特攻 {formatBigNumber(f.calculatedStats.spatk)}</div>
+                {!!enc.enemies[i]?.traits?.length && <div className="flex flex-wrap gap-1" data-testid="boss-traits" aria-label="BOSS 特性">{enc.enemies[i].traits!.map(t => { const def = BOSS_TRAIT_BY_ID[t.id]; return def ? <span key={t.id} data-testid="boss-trait" title={`${def.name}：${bossTraitText(def, t)}`} className="inline-flex items-center gap-0.5 text-[10px] pr-1.5 border border-[rgba(217,180,90,.55)] ecl-gilt"><img src={bossTraitIcon(def)} alt="" className="w-5 h-5 object-contain" loading="lazy" />{def.name}</span> : null; })}</div>}
                 <div className="flex flex-wrap gap-1">{enc.enemies[i]?.affixes.map(a => <span key={a} title={AFFIX_BY_ID[a]?.desc} className="text-[10px] px-1.5 border border-[rgba(224,71,95,.6)] ecl-blood">{AFFIX_BY_ID[a]?.name}</span>)}</div>
               </div>} />
           </div>
         ))}
       </div>
-      <div className="mt-4 text-center text-sm ecl-muted">體力 ×{enc.hpScale ?? enc.scale}・其他能力 ×{enc.scale}{enc.reward ? `・勝利可得${enc.reward === "legendary" ? "傳說" : "稀有"}遺物` : ""}</div>
+      {run.lastLifeLoss && (run.lastLifeLoss.lost > 0 || run.lastLifeLoss.saved) && <div className="mt-4 text-center text-sm ecl-blood" data-testid="life-loss" title={E.LIFE_RULE}>{E.lifeLossText(run.lastLifeLoss)}。剩餘生命 {run.lives}{(run.tempLives ?? 0) > 0 ? `＋臨時 ${run.tempLives}` : ""}</div>}
+      {run.lastRescue && <div className="mt-4 mx-auto max-w-2xl border border-[var(--ecl-gold)] bg-[rgba(217,180,90,.1)] px-4 py-2 text-center text-sm ecl-gilt" data-testid="rescue-banner" role="status">{run.lastRescue.text}</div>}
+      <div className="mt-4 text-center text-sm ecl-muted tabular-nums" title={enc.depth ? `第 ${enc.depth} 層・固定值（護盾、固定傷害、藥劑）×${fixedMulAt(enc.depth).toFixed(2)}` : undefined}>體力 ×{formatBigNumber(enc.hpScale ?? enc.scale, { sig: 3 })}・其他能力 ×{formatBigNumber(enc.scale, { sig: 3 })}{enc.depth ? `・第 ${enc.depth} 層` : ""}{enc.reward ? `・勝利可得${enc.reward === "legendary" ? "傳說" : "稀有"}遺物` : ""}</div>
       <div className="mt-6 flex flex-wrap items-center justify-center gap-2 text-sm">
         <span className="ecl-muted mr-1">出戰 {E.lineupOf(run).filter(alive).length}/{E.lineupSlots(run)}：</span>
         {E.lineupOf(run).map((e, i) => <span key={e.battleId || i} className={`px-2 py-0.5 border ${alive(e) ? "border-[rgba(217,180,90,.35)]" : "border-[rgba(224,71,95,.4)] ecl-blood line-through"}`}>{e.name}</span>)}
         {onOpenTeam && <button className="text-xs ml-2 px-3 py-1 border border-[rgba(217,180,90,.5)] hover:bg-[rgba(217,180,90,.1)]" onClick={onOpenTeam}>調整出戰</button>}
       </div>
       <div className="flex justify-center gap-4 pt-4">
-        <button className={`ecl-btn ${boss ? "ecl-btn-blood" : ""}`} disabled={!E.lineupOf(run).some(alive)} title={E.lineupOf(run).some(alive) ? "" : "出戰名單沒有存活的精靈"} onClick={onFight}>迎戰</button>
+        <button className={`ecl-btn ${boss ? "ecl-btn-blood" : ""}`} disabled={!run.team.some(alive)} title={run.team.some(alive) ? (E.lineupOf(run).some(alive) ? E.LIFE_RULE : "出戰名單沒有存活者，開戰時自動由其他存活者補位") : "全隊陣亡"} onClick={onFight}>迎戰</button>
         {!boss && <button className="ecl-btn ecl-btn-ghost" onClick={() => dispatch(r => E.fleeEncounter(r))}>撤離</button>}
       </div>
     </Stage>
   );
 }
 
-export function RewardScene({ run, pool, dispatch }: SceneProps) {
+export function RewardScene({ run, pool, dispatch, onOpenRecruit }: SceneProps) {
   const [replace, setReplace] = React.useState<string | null>(null);
   if (run.scene.kind !== "reward") return null;
   const { reward, title } = run.scene;
@@ -248,10 +261,19 @@ export function RewardScene({ run, pool, dispatch }: SceneProps) {
     <Stage kicker="Spoils" title={title} wide>
       <div className="flex flex-wrap gap-6 mb-6 text-lg">
         <span>賽爾豆 <b className="ecl-gilt">+{reward.beans}</b></span>
-        {reward.shards > 0 && <span>星晶 <b className="ecl-gilt">+{reward.shards}</b></span>}
+        {(reward.shards ?? 0) > 0 && <span>星晶 <b className="ecl-gilt">+{reward.shards}</b></span>}
         {reward.potions > 0 && <span>藥劑 <b className="ecl-gilt">+{reward.potions}</b></span>}
+        {(reward.lives ?? 0) > 0 && <span data-testid="reward-lives" title="擊敗章末首領：永久生命 +1">生命 <b className="ecl-gilt">+{reward.lives}</b></span>}
         <span className="ecl-muted text-sm self-end">經驗 +{reward.exp}</span>
       </div>
+      {run.lastLifeLoss && <div className={`mb-5 text-sm ${run.lastLifeLoss.lost > 0 ? "ecl-blood" : "ecl-muted"}`} data-testid="life-loss" title={E.LIFE_RULE}>{E.lifeLossText(run.lastLifeLoss)}。剩餘生命 {run.lives}{(run.tempLives ?? 0) > 0 ? `＋臨時 ${run.tempLives}` : ""}</div>}
+      {(reward.tokens?.length ?? 0) > 0 && (
+        <div className="flex flex-wrap items-center gap-2 mb-6" data-testid="reward-tokens">
+          <span className="ecl-roman text-xs ecl-muted mr-1">Tokens</span>
+          {reward.tokens!.map(t => <TokenChip key={t.id} token={t} />)}
+          {onOpenRecruit && <button className="text-xs ml-2 px-3 py-1 border border-[rgba(217,180,90,.5)] hover:bg-[rgba(217,180,90,.1)]" onClick={onOpenRecruit}>前往招募</button>}
+        </div>
+      )}
       {reward.relicChoices.length > 0 && (<>
         <div className="ecl-roman text-xs ecl-muted mb-2">Choose a relic</div>
         <RelicChoice ids={reward.relicChoices} taken={reward.relicTaken} onTake={id => dispatch(r => E.takeRewardRelic(r, id))} />
@@ -290,17 +312,24 @@ export function RecruitScene({ run, pool, dispatch }: SceneProps) {
 export function EndScene({ run, onExit }: SceneProps) {
   if (run.scene.kind !== "end") return null;
   const win = run.scene.result === "victory";
+  const cause = run.scene.cause, by = run.scene.by;
+  const rescues = run.rescues ?? [];
   return (
     <Stage npc={win ? NPC.victory : NPC.defeat} kicker={win ? "Dawn" : "Extinguished"} title={win ? "太陽重新升起" : "燈熄了"}>
+      {!win && <div className="mb-4 border border-[rgba(224,71,95,.55)] bg-[rgba(155,28,49,.14)] px-4 py-2" data-testid="defeat-banner" role="status" title={E.FAIL_RULE}>
+        <b className="ecl-blood">敗北</b>・{E.DEFEAT_TEXT[cause ?? "lives"]}{by ? `・${by}` : ""}{run.lastLifeLoss?.fallen.length ? `・${run.lastLifeLoss.fallen.join("、")}倒下` : ""}
+      </div>}
       <Prose text={win ? "王座空了。你回頭看，來時的路一盞一盞亮起，像是有人替你點的。" : "黑暗沒有聲音。等你醒來，回廊的門已經關上，只剩下這份紀錄。"} />
-      <div className="grid grid-cols-2 gap-3 my-6 text-sm">
+      <div className="grid grid-cols-2 gap-3 my-6 text-sm" data-testid="end-stats">
         <div>抵達章節 <b className="ecl-gilt text-lg">{run.act}</b></div>
         <div>戰鬥 <b className="ecl-gilt text-lg">{run.stats.fights}</b>　精英 {run.stats.elites}　首領 {run.stats.bosses}</div>
         <div>遺物 <b className="ecl-gilt text-lg">{run.relics.length}</b></div>
         <div>經驗 <b className="ecl-gilt text-lg">{run.exp}</b></div>
+        {rescues.length > 0 && <div className="col-span-2" title="本局觸發過的保命">保命 <b className="ecl-gilt">{rescues.map(id => id === "perk:fate_defier" ? "逆命者" : RELIC_BY_ID[id]?.name ?? id).join("、")}</b></div>}
       </div>
       <div className="flex flex-wrap gap-1.5 mb-6">{run.relics.map((id, i) => <RelicSigil key={`${id}-${i}`} id={id} size="sm" />)}</div>
-      <button className="ecl-btn" onClick={onExit}>{win ? "記下這段旅程" : "收起殘燭"}</button>
+      {!win && <ol className="mb-6 text-xs ecl-muted space-y-0.5 max-h-28 overflow-y-auto" aria-label="最近的紀事">{run.chronicle.slice(0, 6).map((c, i) => <li key={i}>{c}</li>)}</ol>}
+      <button className="ecl-btn" onClick={onExit} title={win ? undefined : "清除這局存檔並記入戰績"}>{win ? "記下這段旅程" : "收起殘燭"}</button>
     </Stage>
   );
 }

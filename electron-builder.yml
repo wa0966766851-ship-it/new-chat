@@ -43,12 +43,14 @@ win:
     - nsis-web
 nsis:
   oneClick: false
+  createDesktopShortcut: false
   perMachine: false
   allowToChangeInstallationDirectory: true
 portable:
   artifactName: 賽爾對戰模擬器-${version}-portable.exe
 nsisWeb:
   oneClick: false
+  createDesktopShortcut: false
   perMachine: false
   allowToChangeInstallationDirectory: true
   artifactName: 賽爾對戰模擬器-${version}-web-setup.exe

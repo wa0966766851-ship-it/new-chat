@@ -82,19 +82,22 @@ for(const side of ['p1','p2'] as const){
  assert.equal(returned[`${side}RegistryState`].powerMultiplierThisAction,undefined);
 }
 console.log('文字指定範圍、本次倍率、威力公式、換回不復活通過');
-import { handleOtherworldReySoulMark } from '../src/effects/elves/otherworld-rey/registry';
-import { EffectTiming } from '../src/effects/types';
+// 雷神已損失體力增傷／麻痺技能增傷／神降免疫已拆成 Kit 通用 op（blocks/ops/thunderGod.ts），直接以 op 驗證傷害範圍矩陣。
 for(const side of ['p1','p2'] as const){
  const self:any={...elf('rey'),currentHp:500,survivalRule:{mode:'god_descent',active:true,minHp:-70000}};
- const reg:any={};const ctx:any={actor:side,targetSide:side==='p1'?'p2':'p1',self,target:elf('opp'),activeP1:self,activeP2:self,getStatuses:()=>({麻痺:2}),getPlayerState:(k:string)=>reg[k],getOpponentState:()=>0};
- for(const category of categories){const d=comp(category);handleOtherworldReySoulMark(ctx,EffectTiming.BEFORE_DAMAGE,{damageComp:d});assert.ok(Math.abs(d.increasePercent-(isSkill(category)?1.2:['fixed','percent'].includes(category)?0.5:0))<1e-9,category);}
+ const ctx:any={actor:side,targetSide:side==='p1'?'p2':'p1',self,target:elf('opp'),getStatuses:()=>({麻痺:2})};
+ for(const category of categories){const d=comp(category);const st:any={event:{data:{damageComp:d}}};OPS.dmg_scale_by_lost_hp(ctx,{kind:'非真實',cap:.7},st);OPS.dmg_mod(ctx,{dir:'out',kind:'技能',boost:.7},st);assert.ok(Math.abs(d.increasePercent-(isSkill(category)?1.2:['fixed','percent'].includes(category)?0.5:0))<1e-9,category);}
  self.currentHp=-100;
- for(const category of categories){const d=comp(category,true);handleOtherworldReySoulMark(ctx,EffectTiming.BEFORE_DAMAGE,{damageComp:d});assert.equal(d.multiplier,matchesDamageTypes(['non_true'],category)?0:1,`神降/${category}`);}
+ for(const category of categories){const d=comp(category,true);OPS.nullify_incoming(ctx,{kind:'非真實'},{event:{data:{damageComp:d}}} as any);assert.equal(d.multiplier,matchesDamageTypes(['non_true'],category)?0:1,`神降/${category}`);}
 }
 function isSkill(category:string){return matchesDamageTypes(['skill'],category);}
 const engine=await createServer({server:{middlewareMode:true,hmr:false,watch:null},appType:'custom'});
 try{
  const {buildDamageAPIs}=await engine.ssrLoadModule('/src/battle/contextBuilders.ts');
+ // 雷神增傷已是 Kit op：以測試用魂印註冊表入口（舊 handler 已空殼）轉呼叫同一組 op，驗證真正造成方入口的乘算組合。
+ const {getSoulMarkRegistry}=await engine.ssrLoadModule('/src/battle/../effects/battleEventRegistry.ts');
+ const {EffectTiming:ET}=await engine.ssrLoadModule('/src/effects/types.ts');
+ getSoulMarkRegistry()['異境神霆·雷伊']=(c:any,e:any,d:any)=>{if(e===ET.BEFORE_DAMAGE&&d?.damageComp){const st:any={event:{data:d}};OPS.dmg_scale_by_lost_hp(c,{kind:'非真實',cap:.7},st);OPS.dmg_mod(c,{dir:'out',kind:'技能',boost:.7},st);}};
  for(const side of ['p1','p2'] as const){
   const target=side==='p1'?'p2':'p1';
   const s:any={p1:elf('a'),p2:elf('b'),p1Marks:[],p2Marks:[],p1Timers:[],p2Timers:[],p1RegistryState:{},p2RegistryState:{}};
@@ -102,28 +105,34 @@ try{
   const ctx:any={actor:side,targetSide:target,self:s[side],target:s[target],activeP1:s.p1,activeP2:s.p2,getMarks:()=>[],p1Timers:[],p2Timers:[],getStatuses:()=>({麻痺:2}),getPlayerState:()=>0,getOpponentState:()=>0};
   const events:any[]=[];
   const api=buildDamageAPIs({side,self:s[side],opp:s[target],syncStateRef:{current:s},pushEffect:(e:any)=>events.push(e),getBattleEventContext:()=>ctx});
-  assert.equal(api.applySkillTypeDamage(target,100,'X系',{elem:'普通'}),220,'實際API通知造成方技能增傷');
-  assert.equal(api.applySkillTypeDamage(target,100,'額外行動',{elem:'普通',category:'skill_extra_action'}),220);
+  // 兩個增傷來源（失去體力 50%、麻痺 70%）各自相乘：100×1.5×1.7＝255（使用者確認全部乘算，2026-10-11）
+  assert.equal(api.applySkillTypeDamage(target,100,'X系',{elem:'普通'}),255,'實際API通知造成方技能增傷');
+  assert.equal(api.applySkillTypeDamage(target,100,'額外行動',{elem:'普通',category:'skill_extra_action'}),255); // 兩個增傷來源相乘 1.5×1.7
   assert.equal(api.applyFixedDamage(target,100),150);
   assert.equal(api.applyTrueDamage(target,100),100);
   s[`${side}RegistryState`].vampireRatio=0.5;
   s[target].shield=999; s[target].currentHp=10; events.length=0;
-  assert.equal(api.applySkillTypeDamage(target,100,'吸血',{elem:'普通'}),220);
-  assert.equal(events.find((e:any)=>e.type==='heal').data.amount,110,'實際API吸血不按護盾或10HP限縮');
+  assert.equal(api.applySkillTypeDamage(target,100,'吸血',{elem:'普通'}),255); // 兩個增傷來源相乘 1.5×1.7
+  assert.equal(events.find((e:any)=>e.type==='heal').data.amount,127,'實際API吸血不按護盾或10HP限縮（255×50%）');
  }
 }finally{await engine.close();}
 console.log('雷伊技能／非真實／免疫範圍與真正造成方入口通過');
 import { tickTimers, addTimer } from '../src/battle/timers';
-import { OTHERWORLD_REY_SKILLS } from '../src/effects/elves/otherworld-rey/registry';
+import { runSideTimers } from '../src/blocks/runtime';
+import { MIGRATED_REY_SKILL_KITS } from '../src/data/migratedReySkillKits';
+// 異境神霆已遷移為正式Kit（handler 除名）：改執行Kit內「下2回合造成非真實傷害提升210%」那一格的真正動作，期限／啟用／到期斷言不變。
+const reyStormBoost:any=MIGRATED_REY_SKILL_KITS.find((k:any)=>k.name==='異境神霆')!.kit.find((e:any)=>e.order===4)!.params.clause.body[0].acts[0];
+assert.equal(reyStormBoost.op,'dmg_mod_turns');
 for(const side of ['p1','p2'] as const){
  const target=side==='p1'?'p2':'p1';let timers:any[]=[];
  const c:any={actor:side,targetSide:target,self:elf('rey'),target:elf('opp'),getPlayerState:()=>0,setPlayerState:()=>{},applyStatChange:()=>{},
   applyPinkDamage:(s:string,amount:number,_l:any,_p1:any,_p2:any,type:string)=>{assert.equal(s,target);assert.equal(type,'percent');return amount;},
   applyHeal:(s:string)=>assert.equal(s,side),addTimerTo:(_s:string,t:any)=>{timers=addTimer(timers,t,{isLateMover:true});}};
- OTHERWORLD_REY_SKILLS['異境神霆'](c);
+ OPS.dmg_mod_turns({...c,skill:{name:'異境神霆'},moveIndex:0},reyStormBoost.p,{last:null,lastAmount:0,sourceKind:'skill'} as any);
  assert.equal(timers[0].remaining,2);assert.equal(timers[0].lateMoverPending,undefined);
  const state:any={p1:elf('a'),p2:elf('b'),p1RegistryState:{},p2RegistryState:{},p1Timers:[],p2Timers:[]};
- const value=(category:string)=>{state[`${side}Timers`]=timers;const d=comp(category);applyActiveGateTimersToDamage(side,target,d,()=>{},{current:state});return (1+d.increasePercent)*d.multiplier;};
+ // Kit 的 dmgOut 計時器由積木側邊計時器讀取端（runSideTimers，OUTGOING 傷害時點）套用，不經舊 gate 讀取端。
+ const value=(category:string)=>{state[`${side}Timers`]=timers;const d=comp(category);const rc:any={actor:side,targetSide:target,self:state[side],target:state[target],activeP1:state.p1,activeP2:state.p2,p1Timers:side==='p1'?timers:[],p2Timers:side==='p2'?timers:[],getStatuses:()=>({}),getPlayerState:()=>0,setPlayerState:()=>{},addLog:()=>{},consumeTimer:()=>{}};runSideTimers(rc,['passive','outgoing'] as any,{damageComp:d});return (1+d.increasePercent)*d.multiplier;};
  assert.equal(value('fixed'),1,'附加當回合未啟用');
  timers=tickTimers(timers,'round_end');assert.equal(timers[0].remaining,2);
  for(const category of categories)assert.equal(value(category),matchesDamageTypes(['non_true'],category)?3.1:1);

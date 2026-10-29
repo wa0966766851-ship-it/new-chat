@@ -24,8 +24,8 @@ function pack(source: unknown): PackedJson {
   return { strings, root };
 }
 
-// 三個編輯來源共用字典。原始檔保留，執行時完整還原；不以壓縮改寫技能語意。
-const descriptions = Object.fromEntries(['elfSourceText', 'skillReferences.generated', 'newElfSources']
+// 描述編輯來源統一封裝。原始檔保留，執行時完整還原；不以壓縮改寫技能語意。
+const descriptions = Object.fromEntries(['elfSourceText', 'skillReferences.generated', 'newElfSources', 'hamoSource']
   .map(name => [name, JSON.parse(readFileSync(`src/data/${name}.json`, 'utf8'))]));
 const descriptionBytes = Buffer.from(JSON.stringify(descriptions));
 const compressed = gzipSync(descriptionBytes, { level: 9 });

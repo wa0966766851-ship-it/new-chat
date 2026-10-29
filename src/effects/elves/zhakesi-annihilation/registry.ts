@@ -1,5 +1,7 @@
 import { BattleEventContext, BattleSkillHandler, EffectTiming, ElfDeconstructedProfile } from '../../types';
 import { Elf } from '../../../types';
+import type {InstantKillRequest} from '../../../battle/instantKill';
+import {checkElfDead} from '../../../battle/elfAlive';
 
 export const handleAnnihilationLordSoulMark = (ctx: BattleEventContext, event: EffectTiming | string, extraData?: any) => {
   const { self, actor, setPlayerState, getPlayerState, setOpponentState, addLog, applyHeal, applyTrueDamage, applyStatChange } = ctx;
@@ -10,6 +12,21 @@ export const handleAnnihilationLordSoulMark = (ctx: BattleEventContext, event: E
   const selfMarks = ctx.getMarks(actor) || [];
 
   switch (event) {
+    case EffectTiming.BEFORE_INSTANT_KILL: {
+      const request=extraData as InstantKillRequest;
+      if(!request?.targets||checkElfDead(self)||self.isVanished||self.isExtra)return;
+      if(request.targetSide===actor&&request.sourceSide!==actor){
+        request.blocked=true;
+        const grudge=selfMarks.find(m=>m.id==='demon_grudge'),count=grudge?.count||0;
+        ctx.setMark({...grudge,id:'demon_grudge',name:'魔王咒怨',count:count+1,displayChar:'魔',description:grudge?.description||'令對方秒殺失效，凝聚魔王咒怨'},actor);
+        addLog(`👿 【魔】：令對方秒殺失效，獲得1層魔王咒怨！`,'effect');
+      }else if(request.sourceSide===actor&&request.sourceBattleId===(self.battleId||self.id)&&selfMarks.some(m=>m.id==='demon_grudge'&&m.count>0)){
+        const original=request.targets.find(t=>t.id===request.targetBattleId&&t.side===request.targetSide);
+        if(original)for(const e of ctx.getFullTeam(request.targetSide)||[])if(!e.isExtra&&!e.isVanished&&!checkElfDead(e)&&e.currentHp===original.hpSnapshot)
+          request.targets.push({side:request.targetSide,id:e.battleId||e.id,hpSnapshot:e.currentHp});
+      }
+      return;
+    }
     case EffectTiming.ROUND_START: {
       // 1. 戰鬥開始時：獲得魔王咒怨（魔王咒怨初始 1 層，敵我背包每有 1 隻瞬殺額外獲得 1 層）
       const curseCalculated = getPlayerState("curseCalculated");
@@ -80,6 +97,15 @@ export const handleAnnihilationLordSoulMark = (ctx: BattleEventContext, event: E
       break;
     }
 
+    case EffectTiming.BEFORE_DAMAGE: {
+      // 魔王咒怨：每層造成的攻擊傷害提升5%（受到的減傷見 damageReduction.ts）
+      if (extraData && !extraData.isIncoming && extraData.damageCategory === "skill_attack") {
+        const layers = (selfMarks.find((m: any) => m.id === "demon_grudge")?.count) || 0;
+        if (layers > 0) extraData.increasePercent += 0.05 * layers;
+      }
+      break;
+    }
+
     case EffectTiming.ROUND_END: {
       // 4. 當回合戰鬥階段結束時：恢復回合開始時自身所擁有護盾、護罩之和的體力
       const initialShieldSum = getPlayerState("lordInitialShieldSum") || 0;
@@ -141,87 +167,6 @@ export const handleAnnihilationLordSoulMark = (ctx: BattleEventContext, event: E
 };
 
 export const ZHAKESI_ANNIHILATION_SKILLS: Record<string, BattleSkillHandler> = {
-  "無限・虛數湮滅": (ctx) => {
-    const { self, actor, addLog, applyHeal, applyPercentDamage } = ctx;
-    const oppSide = actor === "p1" ? "p2" : "p1";
-    addLog(`👿 【無限・虛數湮滅】：釋放虛數湮滅之波！`, "effect");
-
-    // Helper for tryInstantKill
-    const tryInstantKill = (chance: number, reason: string): boolean => {
-      const actorMarks = ctx.getMarks(actor) || [];
-      const hasSeed = actorMarks.some(m => m.id === "fear_seed");
-      const hasFlower = actorMarks.some(m => m.id === "fear_flower");
-      if (hasSeed || hasFlower) {
-        addLog(`🦇 【恐懼限制】：處於恐懼狀態，無法觸發秒殺效果！`, "effect");
-        return false;
-      }
-      const oppTeam = ctx.getFullTeam(oppSide) || [];
-      const activeOpp = oppSide === "p1" ? ctx.activeP1 : ctx.activeP2;
-      const isLordInBackpack = oppTeam.some(e => e.name.includes("湮滅之主") && e.id !== activeOpp?.id && e.currentHp > 0 && !e.isVanished);
-      if (isLordInBackpack) {
-        addLog(`🛡️ 【湮滅之主】：對手背包內的湮滅之主令秒殺效果失效！並為其凝聚魔王咒怨！`, "effect");
-        const oppMarks = ctx.getMarks(oppSide) || [];
-        const grudge = oppMarks.find(m => m.id === "demon_grudge");
-        const count = grudge ? (grudge.count || 1) : 0;
-        ctx.setMark({ id: "demon_grudge", name: "魔王咒怨", count: count + 1, displayChar: "魔", description: "魔王咒怨：每層受到的攻擊傷害減少5%、造成的攻擊傷害提升5%、自身攻擊有3%機率造成不低於對手最大體力的傷害，最高5層附加免疫控制" }, oppSide);
-        return false;
-      }
-      const roll = ctx.rng ? ctx.rng() : Math.random();
-      if (roll < chance) {
-        addLog(`💀 【秒殺觸發】：${reason}觸發成功！秒殺對手！`, "effect");
-        const grudgeMark = actorMarks.find(m => m.id === "demon_grudge");
-        if (grudgeMark && (grudgeMark.count || 0) >= 1) {
-          addLog(`👿 【魔王咒怨】：連鎖反應！選擇對方所有體力與秒殺目標相同的精靈一同秒殺！`, "effect");
-          const targetHp = ctx.target.currentHp;
-          oppTeam.forEach(elf => {
-            if (elf && elf.currentHp === targetHp && !elf.isVanished) {
-              ctx.applyTrueDamage(oppSide, elf.currentHp, "咒怨連鎖秒殺");
-            }
-          });
-        } else {
-          ctx.applyTrueDamage(oppSide, ctx.target.currentHp, "秒殺");
-        }
-        return true;
-      }
-      return false;
-    };
-
-    // 1. 消除對手回合類效果，消除成功則令對手疲憊，未觸發則 100% 令對手詛咒
-    const clearedTurns = ctx.clearTurnEffectsOf(oppSide);
-    if (clearedTurns) {
-      addLog(`👿 【無限・虛數湮滅】：消除對手回合類效果成功！令對手疲憊！`, "status");
-      ctx.applyStatusWithImmunityCheck(oppSide, "疲憊", 1);
-    } else {
-      ctx.applyStatusWithImmunityCheck(oppSide, "詛咒", 1);
-    }
-
-    // 2. 消除對手能力提升狀態，消除成功則令對手害怕，未觸發則 100% 令對手詛咒
-    const oppElf = ctx.target;
-    const nextStages = { ...oppElf.statStages };
-    let hasBuff = false;
-    for (const [k, v] of Object.entries(nextStages)) {
-      if ((v as number) > 0) {
-        nextStages[k as any] = 0;
-        hasBuff = true;
-      }
-    }
-    if (hasBuff) {
-      ctx.updateElf(oppSide, { id: oppElf.id, statStages: nextStages });
-      addLog(`👿 【無限・虛數湮滅】：消除對手能力提升狀態成功！令對手害怕！`, "status");
-      ctx.applyStatusWithImmunityCheck(oppSide, "害怕", 1);
-    } else {
-      ctx.applyStatusWithImmunityCheck(oppSide, "詛咒", 1);
-    }
-
-    // 3. 2 回合內令對手使用的屬性技能無效
-    ctx.setOpponentState("utilitySkillInvalidTurns", 2);
-    ctx.setOpponentState("utilitySkillInvalidReason", "無限・虛數湮滅屬性封鎖");
-
-    // 4. 恢復自身最大體力 1/1 並附加對手等量百分比傷害
-    applyHeal(actor, self.maxHp);
-    applyPercentDamage(oppSide, 1.0);
-  },
-
   "沉寂・永夜悼亡": (ctx) => {
     const { self, actor, addLog, applyHeal } = ctx;
     const oppSide = actor === "p1" ? "p2" : "p1";
@@ -234,12 +179,15 @@ export const ZHAKESI_ANNIHILATION_SKILLS: Record<string, BattleSkillHandler> = {
     const res = ctx.applyStatusWithImmunityCheck(oppSide, "詛咒", 3);
     if (!res.success) {
       applyHeal(actor, self.maxHp);
-      ctx.setPlayerState("dmgLimit200Turns", 3);
+      // 引擎讀取：受到的攻擊傷害上限（incomingSkillDmgCap）
+      ctx.setPlayerState("incomingSkillDmgCapTurns", 3);
+      ctx.setPlayerState("incomingSkillDmgCap", 200);
       addLog(`🛡️ 【沉寂・永夜悼亡】：對手免疫詛咒！自身體力全滿，且 3 回合內受到的攻擊傷害不超過 200！`, "effect");
     }
 
     // 3. 下 2 回合造成的攻擊傷害額外提升 150%
-    ctx.setPlayerState("damageBoostTurns", 2);
+    ctx.setPlayerState("attackDamageBoostRate", 1.5);
+    ctx.setNextTurns?.("self", "attackDamageBoostTurns", 2);
 
     // 4. 3 回合內自身使用所有攻擊技能都附有 15% 的秒殺機率
     ctx.setPlayerState("instantKillChanceTurns", 3);
@@ -261,13 +209,16 @@ export const ZHAKESI_ANNIHILATION_SKILLS: Record<string, BattleSkillHandler> = {
     ctx.setPlayerState("drainHpTurns", 4);
 
     // 3. 2 回合內令自身無效對手的攻擊技能
-    ctx.setPlayerState("ignoreOppAttackTurns", 2);
+    ctx.setPlayerState("immuneAttackTurns", Math.max(2, Number(ctx.getPlayerState("immuneAttackTurns")) || 0));
 
     // 4. 下 2 回合攻擊忽略對手 34% 的雙防值
-    ctx.setPlayerState("ignoreDefPercentTurns", 2);
+    ctx.setNextTurns?.("self", "ignoreDefPercentTurns", 2);
+    ctx.setPlayerState("ignoreDefPercentValue", 0.34); // 原文：忽略對手34%的雙防值（引擎讀取）
 
     // 5. 下 2 回合令自身所有技能先制 +3
-    ctx.setPlayerState("nextTurnPriority", 3);
+    ctx.setPlayerState("priorityBoostValue", 3);
+    ctx.setPlayerState("priorityBoostAttackOnly", false);
+    ctx.setNextTurns?.("self", "priorityBoostTurns", 2);
   },
 
   "劫數・限界歸無": (ctx) => {

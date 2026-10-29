@@ -57,7 +57,9 @@ try {
   const { getSoulMarkRegistry, getBattleSkillRegistry } = await server.ssrLoadModule('/src/effects/battleEventRegistry.ts');
   const { getStatuses } = await server.ssrLoadModule('/src/utils/battleHelpers.ts');
   const souls = getSoulMarkRegistry(), skills = getBattleSkillRegistry();
-  const original = souls['蟲后·奧佩婭'];
+  // 5018 魂印「后」已遷真 Kit（migratedOpeiaSoulKit；DSH 20261018）——舊 handler 映射移除（規則3.2），
+  // 以下全部情境以真 DEFAULT_ELVES 模板（structuredClone 後僅改技能／數值）由真 Kit 驅動驗收。
+  assert.ok(!('蟲后·奧佩婭' in souls), '5018 不得再有舊魂印 handler 分支');
   let driver: any;
   const wait = { name: '庇護驗收等待', category: '屬性', type: '普通', power: 0, pp: 30, maxPp: 30, description: '' };
   const make = (id: string): any => ({ id, name: id, battleId: id, type: '普通', level: 100,
@@ -114,7 +116,7 @@ try {
     assert.ok(!getStatuses(st[side])['凍傷'], '免疫敵方施加的凍傷');
     assert.ok(getStatuses(st[other])['凍傷'] > 0, '反彈必須實際把凍傷施加给對手，不以日誌當證據');
     assert.ok(st.logs.some((l: any) => /反彈/.test(l.message || l.text || '')), JSON.stringify({ logs: st.logs, timers: st[`${side}Timers`], enemy: st[other] }));
-    assert.equal(st[`${side}Timers`].find((t: any) => t.id === 'opeia_swarm_priority').remaining, 2, '下2回合不在附加當回合扣除');
+    assert.equal(st[`${side}Timers`].find((t: any) => t.payload?.mirrorRegistryKeys?.includes('priorityBoostTurns')).remaining, 2, '下2回合不在附加當回合扣除（Kit：先制+2 回合鏡像）');
     // 鎖切是技能回合效果；若繼續免疫中毒，蟲后魂印會合法把鎖切消除。
     // 此段改為允許中毒，單獨驗證鎖切讀取與側別，不能為測試改成不可清除。
     const denyPoison = souls[enemy.name];
@@ -123,20 +125,22 @@ try {
     st = driver.getSyncState();
     assert.equal(Object.values(st[other].statStages).filter((v: any) => v < 0).length, 3, '隨機三個不同能力下降');
     assert.equal(Object.values(st[side].statStages).filter((v: any) => v > 0).length, 3, '實際下降量附加給自身');
-    const lock = st[`${other}Timers`].find((t: any) => t.id === 'opeia_swarm_switch_lock');
-    assert.ok(lock?.payload?.lockSwitch, '對手未全能力下降，對手受到鎖切限制');
+    const isLock = (t: any) => !!(t.payload?.lockSwitch || t.payload?.block?.lockSwitch); // Kit 的 switch_lock 計時器把旗標放在 payload.block
+    const lock = st[`${other}Timers`].find(isLock);
+    assert.ok(lock, '對手未全能力下降，對手受到鎖切限制');
     assert.equal(lock.remaining, 2, '下2回合在本回合結束啟用而不扣期限');
     assert.equal(lock.pendingActivation, false);
     assert.equal(lock.ownerBattleId, st[other].battleId || st[other].id, '鎖定對手個體，不串位');
-    assert.ok(!st[`${side}Timers`].some((t: any) => t.payload?.lockSwitch), '蟲后自己不受該句限制');
+    assert.ok(!st[`${side}Timers`].some(isLock), '蟲后自己不受該句限制');
     await act(async () => driver.onSwitchElf(other, 1));
     assert.equal(driver.getSyncState()[`${other}SwitchIndex`], null, '對手主動切換確實被拒絕');
     souls[enemy.name] = denyPoison;
     await turn(side, 1, 2);
-    assert.ok(!driver.getSyncState()[`${other}Timers`].some((t: any) => t.id === 'opeia_swarm_switch_lock'),
+    assert.ok(!driver.getSyncState()[`${other}Timers`].some(isLock),
       '中毒被免疫後魂印依法消除回合效果，鎖切也一併消除，不改為不可清除');
     for (let i = 3; i <= 5; i++) await turn(side, 1, i);
-    assert.ok(!driver.getSyncState()[`${side}Timers`].some((t: any) => t.id === 'opeia_swarm_status'), '免疫反彈5回合後到期，不永久保留');
+    assert.ok(!driver.getSyncState()[`${side}Timers`].some((t: any) => t.payload?.mirrorRegistryKeys?.includes('reflectStatusTurns')), '免疫反彈5回合後到期，不永久保留');
+    assert.ok(!(driver.getSyncState()[`${side}RegistryState`].reflectStatusTurns > 0), '免疫反彈回合鍵歸零');
     checks++;
     delete souls[enemy.name];
     // 繳械會令選中技能PP歸0並阻止該次行動，不能要求同一次還執行反彈測試技能。
@@ -166,9 +170,13 @@ try {
       await mount(`crown-${side}-${barrier}`, side, self, enemy, [bench]);
       await turn(side, 0);
       const st = driver.getSyncState();
-      assert.equal(st[`${side}Timers`].find((t: any) => t.id === 'opeia_crown_drain').remaining, 4,
+      // 蟲后之冠已改 Kit：兩個持續效果是 Kit 的 timed 計時器（id 由正式 Kit 產生），依其內容辨識。
+      const crownTimers = (state: any) => (state[`${side}Timers`] || []).filter((t: any) => String(t.id).includes('蟲后之冠'));
+      const crownDrain = crownTimers(st).find((t: any) => JSON.stringify(t.payload?.block?.body).includes('"drain"') && !JSON.stringify(t.payload.block.body).includes('"flat":300'));
+      const crownFixed = crownTimers(st).find((t: any) => JSON.stringify(t.payload?.block?.body).includes('"flat":300'));
+      assert.equal(crownDrain.remaining, 4,
         '吸取當回合已有收益，先手與後手均扣一次，不額外延長');
-      assert.equal(st[`${side}Timers`].find((t: any) => t.id === 'opeia_crown_fixed').remaining, 3);
+      assert.equal(crownFixed.remaining, 3);
       assert.equal(st[other].type, '蟲', '执行前真正轉屬性');
       assert.equal(st[side].statStages.atk, 3, '基礎+1及己方蟲與轉化後敵方蟲各+1');
       assert.equal(st[`${side}Team`][1].currentHp, 90200, '高於半血同時恢復場下200');
@@ -195,7 +203,7 @@ try {
         for (let i = 0; i < 250 && driver.getSyncState().turnNumber === round; i++) await act(async () => { await new Promise(r => setTimeout(r, 10)); });
         assert.equal(driver.getSyncState().turnNumber, round + 1);
         assert.equal(driver.getSyncState()[side].id, bench.id, '正常切換確實完成');
-        assert.ok(!driver.getSyncState()[`${side}Timers`].some((t: any) => t.id.startsWith('opeia_crown')), '蟲冠計時不串給下一隻');
+        assert.ok(!driver.getSyncState()[`${side}Timers`].some((t: any) => String(t.id).includes('蟲后之冠')), '蟲冠計時不串給下一隻');
         assert.equal(driver.getSyncState()[other].currentHp, hp, '下一隻出手不繼承蟲冠附加傷害');
         checks++;
       }
@@ -214,12 +222,8 @@ try {
 
     const combo = opeia('蟲群庇護'), comboEnemy = make('combo-enemy');
     combo.skills = [{ ...wait, name: '蟲后連擊合成驗收', category: '特殊', power: 1, isSureHit: true }];
-    const hits: number[] = [], damages: any[] = [];
+    const damages: any[] = [];
     skills['蟲后連擊合成驗收'] = (c: any) => c.setPlayerState('attackHitCountThisAction', 5);
-    souls['蟲后·奧佩婭'] = (c: any, event: string, data: any) => {
-      if (event === 'AFTER_ATTACK_HIT') hits.push(data.hitCount);
-      return original(c, event, data);
-    };
     souls[comboEnemy.name] = (_ctx: any, event: string, data: any) => {
       if (event === 'BEFORE_STATUS_APPLY') data.prevented = true;
       if (event === 'ON_DAMAGED') damages.push(data);
@@ -227,11 +231,13 @@ try {
     };
     await mount(`combo-${side}`, side, combo, comboEnemy);
     await turn(side, 0);
-    assert.deepEqual(hits, [6, 6, 6, 6, 6, 6], '5連擊＋1，不是直接覆寫成2');
+    // 連擊+1 由真 Kit 的 use_counter 容器（combo_add 寫引擎 attackBonusHitCountThisAction）驅動：
+    // 5＋1＝6 連擊合併為一次主傷害結算（規則3.2——不再包裝舊 handler，以引擎日誌與結算receipt驗收）。
+    const comboLogs = driver.getSyncState().logs.map((l: any) => String(l.text ?? l.message ?? ''));
+    assert.ok(comboLogs.some(l => l.includes('蟲后連擊合成驗收】：6連擊')), '5連擊＋1＝6連擊，不是直接覆寫成2');
     assert.equal(damages.filter(e => e.damageType === 'skill_attack').length, 1, '6連擊仍然只有一次主傷害結算');
-    souls['蟲后·奧佩婭'] = original; delete skills['蟲后連擊合成驗收']; delete souls[comboEnemy.name]; checks++;
+    delete skills['蟲后連擊合成驗收']; delete souls[comboEnemy.name]; checks++;
   }
-  souls['蟲后·奧佩婭'] = original;
   delete skills['庇護反彈測試'];
   console.log(`蟲后剩餘效果：共同分類/期限斷言及${checks}個P1/P2真實引擎情境通過。`);
 } finally { await act(async () => root.unmount()); await server.close(); dom.window.close(); }

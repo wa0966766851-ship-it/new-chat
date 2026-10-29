@@ -45,6 +45,11 @@ function beginRoundActionEffect(c: C, event: E): boolean {
 /** 轉化不覆寫技能欄；原技能固有記憶在獨立額外行動節點執行。 */
 export function executeAstralMemory(c: C): void {
   const skill: Skill | undefined = c.getPlayerState('sourceSkillThisAction');
+  // 已由可編輯積木排入額外行動的原技能，不再重播名稱表中的舊記憶。
+  if (skill?.effectMode === 'kit') {
+    c.setPlayerState('sourceSkillThisAction', undefined);
+    return;
+  }
   const kind = skill && memories.get(skill.name);
   if (kind === undefined || c.self.isInherentInvalid) return;
   const forced = c.getPlayerState('astralForceMemoryThisAction') || (c.getPlayerState('astralMemoryUses') || 0) > 0;
@@ -130,10 +135,10 @@ export function handleAstralAesfigSoulMark(c: C, event: E): boolean {
   if (c.self.name !== G || identity(c.self) !== identity(active(c, c.actor))) return false;
   if (event === E.ON_ENTRANCE) {
     c.setPlayerState('astralActionEffectRound', undefined);
-    const target = correspondingInitialElf(c.getFullTeam(c.actor), c.self);
-    if (target) startIllusion(c, target, '思維固化', 10);
-    else c.addLog('【思維固化】：初始另一背包對應欄位為空，未假造幻化目標。', 'effect');
-    return !!target;
+    // 目標＝當前這場戰鬥己方背包的對應位數（禁用／消逝依序順延）；幻化指令可覆寫一次。
+    const started = startIllusion(c, correspondingInitialElf(c.getFullTeam(c.actor), c.self), '思維固化', 10);
+    if (!started) c.addLog('【思維固化】：初始另一背包沒有可用的對應精靈，未假造幻化目標。', 'effect');
+    return started;
   }
   if (beginRoundActionEffect(c, event)) {
     if (c.goesFirst) timed(c, c.actor, 'astral_interference', 1, { halveReflectSkill: true }, false, 'soulmark', false);

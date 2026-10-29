@@ -1,5 +1,6 @@
 // src/effects/statusRegistry.ts
 import { StatusCategory } from './statusTypes';
+import { BOSS_TRAIT_STATUSES } from './bossTraitStatuses';
 
 export interface StatusRegistryEntry {
   name: string;
@@ -281,7 +282,7 @@ export const StatusRegistry: Record<string, StatusRegistryEntry> = {
   '繳械': {
     name: '繳械',
     categories: ['WEAKENING', 'RESTRICTIVE'],
-    description: '弱化類異常，限制類異常，無法選擇使用藥劑，選擇技能階段令選擇的技能PP值歸0，觸發成功時因該技能PP值為0則當回合無法行動',
+    description: '弱化類異常，限制類異常，無法選擇使用藥劑，選擇技能階段令選擇的技能PP值歸0，觸發成功後若該技能PP值為0則當回合無法行動',
     mechanics: [
       { type: 'MODIFIER_LIMIT', params: { disablePotions: true, drainSelectedPP: true } },
       { type: 'CANT_ACT', params: { condition: 'PP_ZERO' } }
@@ -326,7 +327,7 @@ export const StatusRegistry: Record<string, StatusRegistryEntry> = {
     categories: ['WEAKENING'],
     description: '弱化類異常狀態；處於該異常狀態時使用攻擊技能時轉化為撞擊（撞擊：威力 35，造成物理傷害）；異常結束或被解除時消耗自身全部體力令自身死亡',
     mechanics: [
-      { type: 'SPECIAL_BUFF', params: { overrideAttack: '撞擊', dieOnEnd: true } }
+      { type: 'SPECIAL_BUFF', params: { overrideAttack: '撞擊', overrideAttackPower:35,overrideAttackCategory:'物理',overrideAttackType:'普通',dieOnEnd: true } }
     ]
   },
 
@@ -376,7 +377,8 @@ export const StatusRegistry: Record<string, StatusRegistryEntry> = {
         type: 'TYPE_MATCHUP_OVERRIDE', 
         params: { 
           baseMultiplier: 1, 
-          multiplierSources: ['神靈系', '聖靈系', '光系'] 
+            multiplierSources: ['神靈系', '聖靈系', '光系'],
+            selectionRoundEnd:{noAttackHpLoss:.2,extendCategory:'AUXILIARY',extendTurns:1,attackPpCost:1}
         } 
       }
     ]
@@ -449,14 +451,14 @@ export const StatusRegistry: Record<string, StatusRegistryEntry> = {
   },
   '神話': {
     name: '神話',
-    categories: ['BOSS_ONLY'],
-    description: 'BOSS 專用異常狀態（黃色圖標）；免疫能力下降與異常狀態、PP 無限、所有技能必中。無回合數且不會隨回合遞減，下場後保留。',
+    categories: ['AUXILIARY', 'BOSS_ONLY'],
+    description: '附屬類異常；BOSS 類異常；處於該異常狀態則免疫能力下降與異常狀態、PP 無限、所有技能必中（命中率強制 100%）。免弱免控在我方當回合出手後才啟用。無回合數且不會隨回合遞減，下場後保留。',
     mechanics: [{ type: 'SPECIAL_BUFF', params: { immuneStatDebuff: true, immuneStatus: true, infinitePP: true, sureHit: true } }]
   },
   '免疫': {
     name: '免疫',
-    categories: ['BOSS_ONLY'],
-    description: 'BOSS 專用異常狀態（藍色圖標）；免疫異常狀態、PP 無限。無回合數且不會隨回合遞減，下場後保留。',
+    categories: ['AUXILIARY', 'BOSS_ONLY'],
+    description: '附屬類異常；BOSS 類異常；處於該異常狀態則免疫異常狀態、PP 無限。無回合數且不會隨回合遞減，下場後保留。',
     mechanics: [{ type: 'SPECIAL_BUFF', params: { immuneStatus: true, infinitePP: true } }]
   },
   '異常抵抗': {
@@ -465,4 +467,6 @@ export const StatusRegistry: Record<string, StatusRegistryEntry> = {
     description: '附屬類異常；無效果類異常；自身觸發異常狀態抗性抵抗時進行轉化產生的異常狀態；最多1回合且視為無效果異常',
     mechanics: [{ type: 'SPECIAL_BUFF' }]
   },
+  // 原廠 BOSS 特性（資料表：src/data/bossTraits.ts；效果：src/blocks/ops/bossTraits.ts）
+  ...BOSS_TRAIT_STATUSES,
 };

@@ -8,7 +8,6 @@ import { abilityKeys, absorbBoosts } from '../../semanticOperations';
 import { active, alive, allStages, clearStages, drain, identity, timed, timersFor, uses } from '../../newElfOperations';
 import { getMaxPp } from '../../../utils/battleHelpers';
 import { getTypeMatchup } from '../../../utils/statCalculator';
-import { requestSkillRecalculation } from '../../../battle/skillRecalculation';
 import { bypassesAttackDefense } from '../../../battle/attackDefense';
 
 type Colour = '無色' | '藍色' | '紅色' | '綠色';
@@ -75,100 +74,8 @@ function captureRemoved(c: C, event: E, data: any): void {
     c.setPlayerState('hamoRemovedTimers', [...before, ...(data.removed || []).filter((t: Timer) => !t.ownerBattleId || t.ownerBattleId === identity(c.self))]);
   }
 }
-export function handleHamoSoulMark(c: C, event: E, data?: any): void {
-  if (!onField(c)) return;
-  if (event === E.ON_ENTRANCE) {
-    writeScales(c, ['無色', '無色', '無色']);
-    c.setPlayerState('hamoFieldRounds', 0); c.setPlayerState('hamoCycle', 0);
-    c.setPlayerState('hamoPendingRemoval', []); c.setPlayerState('hamoProtectionUntil', c.roundNumber + 2);
-    c.setPlayerState('hamoHalvingCount', c.getPlayerState('hamoHalvingCount') || 1);
-    c.setPlayerState('hamoRemovalSnapshotRound', undefined);
-    c.setPlayerState('hamoRestoreRound', undefined); c.setPlayerState('hamoRemovedStages', {}); c.setPlayerState('hamoRemovedTimers', []);
-  }
-  if (event === E.ON_SWITCH_OUT) {
-    writeScales(c, []); c.setPlayerState('hamoPendingRemoval', []);
-    c.setPlayerState('hamoRestoreRound', undefined); c.setPlayerState('hamoRemovedStages', {}); c.setPlayerState('hamoRemovedTimers', []);
-    c.setPlayerState('hamoRemovalSnapshotRound', undefined);
-  }
-  if (event === E.ROUND_START) {
-    if (c.getPlayerState('hamoRemovalSnapshotRound') !== c.roundNumber) {
-      c.setPlayerState('hamoRemovedStages', {}); c.setPlayerState('hamoRemovedTimers', []);
-      c.setPlayerState('hamoRemovalSnapshotRound', c.roundNumber);
-    }
-    c.setPlayerState('hamoLowHealthMode', c.self.currentHp < c.target.currentHp && c.self.currentHp < c.self.maxHp / 2);
-    if (has(c, '無色')) {
-      c.setPlayerState('hamoProtectionUntil', c.roundNumber + 2);
-      if ((c.getPlayerState('hamoFieldRounds') || 0) < 2) {
-        c.clearTurnEffectsOf(c.actor); c.clearTurnEffectsOf(c.targetSide);
-        clearStages(c, c.actor, true); clearStages(c, c.targetSide, true);
-        c.applyStatusWithImmunityCheck(c.targetSide, '害怕', 3);
-      }
-    }
-  }
-  if (event === E.BEFORE_SKILL) c.setPlayerState('hamoDawnAbsorbed', false);
-  if (event === E.BEFORE_STATUS_APPLY && !c.getPlayerState('hamoLowHealthMode')) data.prevented = true;
-  if (event === E.BEFORE_STAT_CHANGE && has(c, '藍色')) {
-    const negative = Object.entries(data.changes || {}).filter(([, n]) => Number(n) < 0);
-    if (negative.length) {
-      data.changes = Object.fromEntries(Object.entries(data.changes).filter(([, n]) => Number(n) >= 0));
-      scheduleRemoval(c, '藍色');
-    }
-  }
-  if (event === E.PP_CHANGED && data?.reason === 'clear' && data.emptied?.length && has(c, '綠色')) {
-    // 重置不是恢復，不受恢復量降低與PP恢復限制影響。
-    c.updateElf(c.actor, { currentHp: c.self.maxHp, skills: c.self.skills.map(s => ({ ...s, pp: getMaxPp(s, c.self) })) });
-    scheduleRemoval(c, '綠色');
-  }
-  if (event === E.TURN_EFFECTS_CLEARED || event === E.STAT_BOOST_CLEARED) captureRemoved(c, event, data);
-  if (event === E.BEFORE_DAMAGE) {
-    const comp: DamageComputation = data?.damageComp || data;
-    if (!comp) return;
-    if (!comp.isIncoming) {
-      if (isSkillDamageType(comp.damageCategory)) comp.increasePercent += 1.5;
-      if (c.skill?.name === '龍神·御天陣' && !c.self.isInherentInvalid && comp.damageCategory === 'skill_attack') {
-        comp.reductionPolicy = { ...comp.reductionPolicy, attenuation: 0 };
-      }
-      return;
-    }
-    if (isSkillDamageType(comp.damageCategory)) {
-      const step = c.getPlayerState('hamoCycle') || 0;
-      if (comp.skillType !== cycle[step % 3]) {
-        comp.multiplier = 0; raiseDragonCaps(c);
-        c.setPlayerState('hamoHalvingCount', (c.getPlayerState('hamoHalvingCount') || 1) + 1);
-      } else {
-        addDamageReduction(comp, 1 - .5 ** (c.getPlayerState('hamoHalvingCount') || 1));
-        const colour = colours[step % 3], next = [...scales(c)];
-        if (!next.includes(colour) && next.includes('無色')) {
-          next[next.indexOf('無色')] = colour; writeScales(c, next); c.setPlayerState('hamoFieldRounds', 0);
-        }
-        c.setPlayerState('hamoCycle', step + 1);
-      }
-      if (c.getPlayerState('hamoLowHealthMode')) comp.limit = Math.min(comp.limit ?? Infinity, 250);
-    }
-    if (has(c, '紅色') && ['skill_attack', 'fixed', 'percent'].includes(comp.damageCategory)) {
-      if (bypassesAttackDefense(comp, 'block') || (comp.damageCategory === 'skill_attack' && c.getOpponentState('ignoreAttackImmunityThisAction'))) return;
-      if (comp.multiplier > 0 && comp.base > 0) { comp.multiplier = 0; scheduleRemoval(c, '紅色'); }
-    }
-  }
-  if (event === E.ROUND_END && alive(c.self)) {
-    const pending: Colour[] = c.getPlayerState('hamoPendingRemoval') || [];
-    c.setPlayerState('hamoPendingRemoval', []);
-    for (const colour of pending) if (colour !== '無色' && has(c, colour)) removeScale(c, colour);
-    if (c.getPlayerState('hamoRestoreRound') === c.roundNumber) {
-      const restored = { ...c.self.statStages }, saved = c.getPlayerState('hamoRemovedStages') || {};
-      for (const key of abilityKeys) if (saved[key]) restored[key] = Math.max(restored[key] || 0, saved[key]);
-      c.updateElf(c.actor, { statStages: restored });
-      for (const timer of c.getPlayerState('hamoRemovedTimers') || []) if (!timersFor(c, c.actor).some(t => t.id === timer.id && t.remaining > 0)) {
-        c.addTimerTo(c.actor, { ...timer, lateMoverPending: true }, false);
-      }
-      c.setPlayerState('hamoRemovedStages', {}); c.setPlayerState('hamoRemovedTimers', []); c.setPlayerState('hamoRestoreRound', undefined);
-    }
-    c.applyHeal(c.actor, hamoRoundRecovery(c.self.maxHp, c.self.currentHp));
-    c.setPlayerState('hamoFieldRounds', (c.getPlayerState('hamoFieldRounds') || 0) + 1);
-  }
-}
 
-/** Tokens: 固有(雙攻和/龍鱗選系/返還)與附加(條件/目標/行為)分開註冊。 */
+/** 龍鱗三系的屬性／異常對照（逐波=水/藍、燼世=火/紅、纏根=草/綠）。 */
 const elemental = new Map<string, { colour: Colour; type: string; hit: string; fallback: string }>([
   ['逐波', { colour: '藍色', type: '水', hit: '凍傷', fallback: '冰封' }],
   ['燼世', { colour: '紅色', type: '火', hit: '燒傷', fallback: '焚燼' }],
@@ -206,36 +113,11 @@ export const HAMO_SKILLS: Record<string, BattleSkillHandler> = {
     if (absorbBoosts(c)) uses(c, c.targetSide, 'physical_damage_double', 2, { incomingPhysicalSkillMultiplier: 2 });
     c.setPlayerState('hamoDawnAbsorbed', true); drain(c, c.target.maxHp / 3, 'percent');
   },
-  '逐波': c => {
-    c.applyStatChange(c.actor, allStages(has(c, '藍色') ? 2 : 1));
-    timed(c, c.actor, 'use_drain_ratio', 5, { afterUseDrainRatio: { ratio: 1 / 3, doubleBelowHalf: true } }, false, 'skill', false);
-    timed(c, c.actor, 'skill_priority', 2, { block: { prio: 3 } }, true);
-  },
-  '燼世': c => {
-    const before = { ...c.self.statStages }, drops = Object.fromEntries(abilityKeys.filter(k => (before[k] || 0) < 0).map(k => [k, before[k]]));
-    const cleared = clearStages(c, c.actor, false), result = c.applyStatChange(c.targetSide, drops);
-    if (!cleared || Object.entries(drops).some(([k, n]) => result?.applied[k] !== n)) c.updateElf(c.targetSide, { type: '龍' });
-    timed(c, c.targetSide, 'recovery_block', 3, { recoveryReductionPercent: 1 }, false, 'skill', false);
-  },
-  '纏根': c => {
-    timed(c, c.actor, 'use_heal_equal_damage', 5, { afterUseHealEqualPercent: 1 }, false, 'skill', false);
-    timed(c, c.targetSide, 'pp_cost_multiplier', 5, { block: { ppMult: 20 } }, false, 'skill', false);
-    // PP吸取使用可被消除的回合類timer，不把技能期限偷換成魂印私有計數。
-    timed(c, c.actor, 'round_pp_absorb', 3, { roundPpAbsorb: { amount: 1, doubleWhenLostHalf: true } }, false, 'skill', false);
-  },
-  '龍神·御天陣': c => {
-    if (c.clearTurnEffectsOf(c.targetSide)) drain(c, c.target.maxHp / 3, 'percent');
-    absorbBoosts(c, true);
-    uses(c, c.targetSide, 'next_skill_invalid', 1, { block: { invalid: 'all', src: '龍神·御天陣' }, invalidFollowup: { rounds: 2, sameCategory: true } });
-    const amount = Math.floor(c.self.maxHp * (c.self.currentHp < c.self.maxHp / 2 ? 1 : .5));
-    c.applyPinkDamage(c.targetSide, amount, undefined, undefined, undefined, 'percent'); c.applyHeal(c.actor, amount);
-  },
+  // 逐波已遷真 Kit（migratedHamoElementalKits.ts；DSH 20261018）——規則3.3 由技能表移除。
+  // 燼世已遷真 Kit（migratedHamoElementalKits.ts；DSH 20261018）——規則3.3 由技能表移除。
+  // 纏根已遷真 Kit（migratedHamoElementalKits.ts；DSH 20261018）——規則3.3 由技能表移除。
 };
-export const HAMO_AFTER_HIT: Record<string, BattleSkillAfterHitHandler> = Object.fromEntries([...elemental].map(([name, spec]) => [name, (c: C, info: {hit: boolean}) => {
-  if (info.hit && !c.applyStatusWithImmunityCheck(c.targetSide, spec.hit, 3).success) c.applyStatusWithImmunityCheck(c.targetSide, spec.fallback, 3);
-}]));
-export const HAMO_ON_INVALID: Record<string, BattleSkillOnInvalidHandler> = Object.fromEntries([...elemental].map(([name, spec]) => [name, (c: C) => {
-  if (!requestSkillRecalculation(c, { powerMultiplier: 2 })) return;
-  c.clearTurnEffectsOf(c.targetSide);
-  if (has(c, spec.colour)) c.applyStatusWithImmunityCheck(c.targetSide, spec.fallback, 3);
-}]));
+// 命中異常及失敗替代異常也已由技能 Kit 執行，禁止在傷害後重播一次。
+export const HAMO_AFTER_HIT: Record<string, BattleSkillAfterHitHandler> = {};
+// 三招無效分支由 on_invalid Kit 的 recalculate_skill 執行，不能再重播舊路徑。
+export const HAMO_ON_INVALID: Record<string, BattleSkillOnInvalidHandler> = {};

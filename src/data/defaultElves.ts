@@ -12,8 +12,8 @@ import { HOLY_MILES_SEED } from "./holyMiles";
 import { LIUJIE_SEED } from "./liujie";
 import { NEW_ELF_SEEDS } from "./newElves";
 import { HAMO_SEED } from './hamo';
-import { STAGED_ARENA_ELVES } from "./stagedArenaElves";
 import { isSkillStone, stoneBasePp } from './skillStones';
+import { applyReviewedSkillKits,loadDeferredReviewedKits } from './reviewedKitCatalogue';
 
 function createRefSkill(
   elfId: string,
@@ -26,6 +26,8 @@ function createRefSkill(
   options: {
     isSureHit?: boolean;
     isFifthSkill?: boolean;
+    /** 原廠 PP 0/0：選招不受 PP 限制且使用不消耗 PP（見 battle/ppExemptions）。 */
+    ppUnlimited?: boolean;
     accuracy?: number;
     fallbackDesc?: string;
     effectType?: Skill['effectType'];
@@ -85,6 +87,7 @@ function createRefSkill(
     accuracy: resolvedAccuracy,
     isSureHit: resolvedSureHit,
     isFifthSkill: resolvedFifthSkill,
+    ...(options.ppUnlimited ? { ppUnlimited: true } : {}),
     description,
     effectType: options.effectType || 'none',
     effectDetail: options.effectDetail || '',
@@ -240,7 +243,7 @@ const SEED_ELVES: (Omit<Elf, "id" | "calculatedStats" | "currentHp" | "maxHp"> &
       createRefSkill('puni_base', '璨靈聖光', "無屬性", '屬性', 0, 5, 0, { isSureHit: true }),
       createRefSkill('puni_base', '落芳天華', '聖靈', '特殊', 80, 5, 3),
       createRefSkill('puni_base', '聖靈悲魂曲', '聖靈', '特殊', 150, 5, 1),
-      createRefSkill('puni_base', '聖影流光破', '聖靈', '特殊', 160, 5, 0, { isSureHit: true })
+      createRefSkill('puni_base', '聖影流光破', '聖靈', '特殊', 160, 5, 0, { isSureHit: true, isFifthSkill: true })
     ],
     kit: [
       // ── 魂印「聖」(carried 永久) ──
@@ -395,6 +398,7 @@ const SEED_ELVES: (Omit<Elf, "id" | "calculatedStats" | "currentHp" | "maxHp"> &
       },
       {
         name: "深潛者盛宴",
+        isFifthSkill: true,
         type: "水.混沌",
         category: "物理",
         power: 160,
@@ -469,6 +473,7 @@ const SEED_ELVES: (Omit<Elf, "id" | "calculatedStats" | "currentHp" | "maxHp"> &
       },
       {
         name: "訣別",
+        isFifthSkill: true,
         type: "飛行.超能",
         category: "物理",
         power: 160,
@@ -547,6 +552,7 @@ const SEED_ELVES: (Omit<Elf, "id" | "calculatedStats" | "currentHp" | "maxHp"> &
       },
       {
         name: "辟冥·鎮獄斷",
+        isFifthSkill: true,
         type: "普通",
         category: "物理",
         power: 187,
@@ -1526,17 +1532,17 @@ const SEED_ELVES: (Omit<Elf, "id" | "calculatedStats" | "currentHp" | "maxHp"> &
     },
     skills: [
       createRefSkill('odin', 'ᚷᚢᚾᚷᚾᛁᚱ ᚦᚱᛖᚢᛗᚨᛞᚱ', '遠古', '物理', 90, 20, 3, { isSureHit: true, accuracy: 100 }),
-      createRefSkill('odin', 'ᛉᛖᛚᛃᚨ ᛟᚾ ᛁᚷᚷᛞᚱᚨᛋᛁᛚ', "無屬性", '屬性', 0, 5, 0, { isSureHit: true, accuracy: 100 }),
+      createRefSkill('odin', 'ᛉᛖᛚᛃᚨ ᛟᚾ ᛁᚷᚷᛞᚱᚨᛋᛁᛚ', "無屬性", '屬性', 0, 0, 0, { isSureHit: true, accuracy: 100, ppUnlimited: true }),
       createRefSkill('odin', 'ᚺᚢᚷᛁᚾ ᛟᚲ ᛗᚢᚾᛁᚾ', "無屬性", '屬性', 0, 5, 0, { isSureHit: true, accuracy: 100 }),
       createRefSkill('odin', 'ᛟᛞᛁᚾᛋ ᚨᚾᛋᚢᛉ', '遠古', '物理', 160, 5, 0, { isSureHit: true, accuracy: 100 }),
-      createRefSkill('odin', 'ᚱᚨᚷᚾᚨᚱᛟᚲ', '遠古', '特殊', 140, 0, 0, { isSureHit: true, accuracy: 100, isFifthSkill: true })
+      createRefSkill('odin', 'ᚱᚨᚷᚾᚨᚱᛟᚲ', '遠古', '特殊', 140, 1, 0, { isSureHit: true, accuracy: 100, isFifthSkill: true })
     ],
     skillPool: [
       createRefSkill('odin', 'ᚷᚢᚾᚷᚾᛁᚱ ᚦᚱᛖᚢᛗᚨᛞᚱ', '遠古', '物理', 90, 20, 3, { isSureHit: true, accuracy: 100 }),
-      createRefSkill('odin', 'ᛉᛖᛚᛃᚨ ᛟᚾ ᛁᚷᚷᛞᚱᚨᛋᛁᛚ', "無屬性", '屬性', 0, 5, 0, { isSureHit: true, accuracy: 100 }),
+      createRefSkill('odin', 'ᛉᛖᛚᛃᚨ ᛟᚾ ᛁᚷᚷᛞᚱᚨᛋᛁᛚ', "無屬性", '屬性', 0, 0, 0, { isSureHit: true, accuracy: 100, ppUnlimited: true }),
       createRefSkill('odin', 'ᚺᚢᚷᛁᚾ ᛟᚲ ᛗᚢᚾᛁᚾ', "無屬性", '屬性', 0, 5, 0, { isSureHit: true, accuracy: 100 }),
       createRefSkill('odin', 'ᛟᛞᛁᚾᛋ ᚨᚾᛋᚢᛉ', '遠古', '物理', 160, 5, 0, { isSureHit: true, accuracy: 100 }),
-      createRefSkill('odin', 'ᚱᚨᚷᚾᚨᚱᛟᚲ', '遠古', '特殊', 140, 0, 0, { isSureHit: true, accuracy: 100, isFifthSkill: true })
+      createRefSkill('odin', 'ᚱᚨᚷᚾᚨᚱᛟᚲ', '遠古', '特殊', 140, 1, 0, { isSureHit: true, accuracy: 100, isFifthSkill: true })
     ]
   },
 
@@ -1616,7 +1622,9 @@ const SEED_ELVES: (Omit<Elf, "id" | "calculatedStats" | "currentHp" | "maxHp"> &
         description: "技能使用後100%改變對方命中等級-1",
         effectType: "stat_down",
         effectDetail: "accuracy-1"
-      },
+      }
+    ],
+    skillPool: [
       {
         name: "手下留情",
         type: "普通",
@@ -1628,9 +1636,7 @@ const SEED_ELVES: (Omit<Elf, "id" | "calculatedStats" | "currentHp" | "maxHp"> &
         description: "威力40 傷害大於對方體力時，對方會餘下1體力",
         effectType: "mercy",
         effectDetail: ""
-      }
-    ],
-    skillPool: [
+      },
       {
         name: "異常測試",
         type: "飛行",
@@ -2023,7 +2029,7 @@ const SEED_ELVES: (Omit<Elf, "id" | "calculatedStats" | "currentHp" | "maxHp"> &
         priority: 3,
         accuracy: 100,
         isSureHit: true,
-        description: "先制+1；必中；消除對手回合類效果，消除成功則令對手疲憊，未觸發則100%令對手詛咒；消除對手能力提升狀態，消除成功則令對手害怕，未觸發則100%令對手詛咒；2回合內令對手使用的屬性技能無效；恢復自身最大體力1/1並附加對手等量百分比傷害",
+        description: "先制+3；必中；消除對手回合類效果，消除成功則令對手疲憊，未觸發則100%令對手詛咒；消除對手能力提升狀態，消除成功則令對手害怕，未觸發則100%令對手詛咒；2回合內令對手使用的屬性技能無效；恢復自身最大體力1/1並附加對手等量百分比傷害",
         effectType: "dispel",
         effectDetail: "wuxian_xushu_yanmie"
       },
@@ -2220,6 +2226,7 @@ const SEED_ELVES: (Omit<Elf, "id" | "calculatedStats" | "currentHp" | "maxHp"> &
       },
       {
         name: "劫數.萬念歸墟",
+        isFifthSkill: true,
         type: "混沌·暗影",
         category: "特殊",
         power: 180,
@@ -2735,7 +2742,6 @@ const SEED_ELVES: (Omit<Elf, "id" | "calculatedStats" | "currentHp" | "maxHp"> &
   LIUJIE_SEED,
   ...NEW_ELF_SEEDS,
   HAMO_SEED,
-  ...STAGED_ARENA_ELVES
 ];
 
 import { getNumericElfId } from './elfRegistry';
@@ -2771,7 +2777,8 @@ function applySourceText(item: Elf): Elf {
   return { ...item, soulMark, skills, skillPool };
 }
 
-export const DEFAULT_ELVES: Elf[] = SEED_ELVES.map(applySourceText).map((item, index) => {
+const prepareSeeds = (items: any[]): Elf[] => items.map(applySourceText).map(applyReviewedSkillKits);
+function finalizeSeed(item: Elf, index: number): Elf {
   const inscriptions = getEffectiveInscriptions(item.inscriptions);
   const calculated = calculateElfStats(item.baseStats, item.level, item.ivs, item.evs, item.natureModifiers, inscriptions);
   return {
@@ -2784,4 +2791,25 @@ export const DEFAULT_ELVES: Elf[] = SEED_ELVES.map(applySourceText).map((item, i
     currentHp: calculated.hp,
     maxHp: calculated.hp
   };
-});
+}
+
+/** 預設精靈清單（同一個陣列物件）。API 匯入的精靈在 loadImportedElves() 完成後才追加到尾端。 */
+export const DEFAULT_ELVES: Elf[] = prepareSeeds(SEED_ELVES).map(finalizeSeed);
+
+// ── 延後載入：API 匯入精靈與階段競技場精靈（stagedArenaElves＋heavyweights.json）的資料不進首頁初始 JS ──────────────────────────
+// 載入完成前清單不含匯入精靈；完成後以與其他精靈完全相同的流程（原文套用→審核 Kit→定稿）追加，並通知訂閱者。
+let importedLoad: Promise<void> | null = null;
+let revision = 0;
+const listeners = new Set<() => void>();
+export const getDefaultElvesRevision = () => revision;
+export function subscribeDefaultElves(listener: () => void): () => void { listeners.add(listener); return () => { listeners.delete(listener); }; }
+export function loadImportedElves(): Promise<void> {
+  // 順序與先前靜態載入相同：階段競技場精靈（原本在 SEED_ELVES 尾端）→ API 匯入精靈，皆追加在清單尾端。
+  importedLoad ??= Promise.all([import("./stagedArenaElves"), import("./importedElves"),loadDeferredReviewedKits()]).then(([{ STAGED_ARENA_ELVES }, { IMPORTED_ELF_SEEDS }]) => {
+    const start = DEFAULT_ELVES.length;
+    DEFAULT_ELVES.push(...prepareSeeds([...STAGED_ARENA_ELVES, ...IMPORTED_ELF_SEEDS] as any).map((item, i) => finalizeSeed(item, start + i)));
+    revision++;
+    listeners.forEach(listener => listener());
+  }).catch(error => { importedLoad = null; throw error; });
+  return importedLoad;
+}

@@ -18,7 +18,7 @@ export async function publishPackage(root, credentials, fetcher = fetch) {
   const before = await request('status');
   // Verify every local file BEFORE the first external write. No symlink/path
   // escapes, corruption, partial-package activation, or secret logging.
-  if (!Array.isArray(manifest.files) || manifest.files.length > 900) throw new Error('無效網站套件');
+  if (!Array.isArray(manifest.files) || !manifest.files.length || manifest.files.length > Math.min(before.maxFiles || 900, 2000)) throw new Error('網站套件超出發布端支援範圍；未上傳');
   for (const file of manifest.files) {
     if (typeof file.path !== 'string' || /[\\:%?#\x00-\x1f]/.test(file.path) || file.path.startsWith('/') || file.path.split('/').some(p => !p || p.startsWith('.'))) throw new Error('非法網站檔案路徑');
     let candidate = root;
@@ -39,7 +39,17 @@ export async function publishPackage(root, credentials, fetcher = fetch) {
       await request(`blob/${file.sha256}`, 'PUT', await readFile(join(root, file.path)));
     }
   }));
-  await request('manifest', 'POST', JSON.stringify(manifest));
+  const serialized = JSON.stringify(manifest);
+  if (before.verificationBatchSize) {
+    const batchSize = before.verificationBatchSize;
+    if (!Number.isSafeInteger(batchSize) || batchSize < 1 || batchSize > 200) throw new Error('發布端核對設定無效；未啟用');
+    if (unique.length > batchSize) for (let i = 0; i < Math.ceil(unique.length / batchSize); i++) {
+      const checked = await request(`verify/${i}`, 'POST', serialized);
+      if (!checked.verified || checked.buildId !== manifest.buildId || checked.batch !== i) throw new Error('分批核對未完成；未啟用');
+    }
+  }
+  const verified = await request('manifest', 'POST', serialized);
+  if (!verified.verified || verified.buildId !== manifest.buildId) throw new Error('套件核對未完成；未啟用');
   const result = await request('activate', 'POST', JSON.stringify({ buildId: manifest.buildId, expectedBuildId: before.buildId || null }));
   const current = await request('status');
   const live = await fetcher(`${SITE}/version.json`, { method: 'GET', redirect: 'error', signal: AbortSignal.timeout(120000),

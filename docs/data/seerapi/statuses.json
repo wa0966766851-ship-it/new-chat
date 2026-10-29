@@ -1,0 +1,808 @@
+{
+ "source": "https://api.seerapi.com/v1/battle_effect",
+ "count": 43,
+ "new_vs_project": [],
+ "note": "43 筆全部已在專案 seerEffects.json（id 與圖示一致）；API 無 id17/18（神話/免疫為專案自訂 BOSS 圖示 abnormal/17,18，原廠 bosseffect/ 另有 30 枚圖示見 boss_traits.json）",
+ "items": [
+  {
+   "id": 0,
+   "name": "麻痹",
+   "desc": "控制类异常状态，该状态下精灵无法行动",
+   "types": [
+    0
+   ],
+   "res": 0,
+   "name_tw": "麻痺",
+   "desc_tw": "控制類異常狀態，該狀態下精靈無法行動",
+   "in_project": true,
+   "project_icon_id": 0,
+   "categories_tw": [
+    "控制類"
+   ],
+   "icon": "seer/abnormal/0.png",
+   "source": "https://api.seerapi.com/v1/battle_effect/0"
+  },
+  {
+   "id": 1,
+   "name": "中毒",
+   "desc": "弱化类异常状态，该状态下每回合对手行动开始时都会扣除最大体力的1/8",
+   "types": [
+    1
+   ],
+   "res": 1,
+   "name_tw": "中毒",
+   "desc_tw": "弱化類異常狀態，該狀態下每回合對手行動開始時都會扣除最大體力的1/8",
+   "in_project": true,
+   "project_icon_id": 1,
+   "categories_tw": [
+    "弱化類"
+   ],
+   "icon": "seer/abnormal/1.png",
+   "source": "https://api.seerapi.com/v1/battle_effect/1"
+  },
+  {
+   "id": 2,
+   "name": "烧伤",
+   "desc": "弱化类异常状态，该状态下攻击技能的威力会减少50%且每回合对手行动开始时都会扣除最大体力的1/8",
+   "types": [
+    1
+   ],
+   "res": 1,
+   "name_tw": "燒傷",
+   "desc_tw": "弱化類異常狀態，該狀態下攻擊技能的威力會減少50%且每回合對手行動開始時都會扣除最大體力的1/8",
+   "in_project": true,
+   "project_icon_id": 2,
+   "categories_tw": [
+    "弱化類"
+   ],
+   "icon": "seer/abnormal/2.png",
+   "source": "https://api.seerapi.com/v1/battle_effect/2"
+  },
+  {
+   "id": 3,
+   "name": "寄生对手",
+   "desc": "弱化类异常状态，该状态下精灵每回合对手行动开始时扣除最大体力的1/8，同时对手会恢复等量的体力",
+   "types": [],
+   "res": 2,
+   "name_tw": "寄生對手",
+   "desc_tw": "弱化類異常狀態，該狀態下精靈每回合對手行動開始時扣除最大體力的1/8，同時對手會恢復等量的體力",
+   "in_project": true,
+   "project_icon_id": 3,
+   "categories_tw": [],
+   "icon": "seer/abnormal/3.png",
+   "source": "https://api.seerapi.com/v1/battle_effect/3"
+  },
+  {
+   "id": 4,
+   "name": "寄生",
+   "desc": "弱化类异常状态，该状态下每回合对手行动开始时都会扣除最大体力的1/8恢复至对手",
+   "types": [
+    1
+   ],
+   "res": 1,
+   "name_tw": "寄生",
+   "desc_tw": "弱化類異常狀態，該狀態下每回合對手行動開始時都會扣除最大體力的1/8恢復至對手",
+   "in_project": true,
+   "project_icon_id": 4,
+   "categories_tw": [
+    "弱化類"
+   ],
+   "icon": "seer/abnormal/4.png",
+   "source": "https://api.seerapi.com/v1/battle_effect/4"
+  },
+  {
+   "id": 5,
+   "name": "冻伤",
+   "desc": "弱化类异常状态，该状态下每回合对手行动开始时都会扣除最大体力的1/8",
+   "types": [
+    1
+   ],
+   "res": 1,
+   "name_tw": "凍傷",
+   "desc_tw": "弱化類異常狀態，該狀態下每回合對手行動開始時都會扣除最大體力的1/8",
+   "in_project": true,
+   "project_icon_id": 5,
+   "categories_tw": [
+    "弱化類"
+   ],
+   "icon": "seer/abnormal/5.png",
+   "source": "https://api.seerapi.com/v1/battle_effect/5"
+  },
+  {
+   "id": 6,
+   "name": "害怕",
+   "desc": "控制类异常状态，该状态下精灵无法行动",
+   "types": [
+    0
+   ],
+   "res": 0,
+   "name_tw": "害怕",
+   "desc_tw": "控制類異常狀態，該狀態下精靈無法行動",
+   "in_project": true,
+   "project_icon_id": 6,
+   "categories_tw": [
+    "控制類"
+   ],
+   "icon": "seer/abnormal/6.png",
+   "source": "https://api.seerapi.com/v1/battle_effect/6"
+  },
+  {
+   "id": 7,
+   "name": "疲惫",
+   "desc": "控制类异常状态，该状态下精灵无法行动",
+   "types": [
+    0
+   ],
+   "res": 0,
+   "name_tw": "疲憊",
+   "desc_tw": "控制類異常狀態，該狀態下精靈無法行動",
+   "in_project": true,
+   "project_icon_id": 7,
+   "categories_tw": [
+    "控制類"
+   ],
+   "icon": "seer/abnormal/7.png",
+   "source": "https://api.seerapi.com/v1/battle_effect/7"
+  },
+  {
+   "id": 8,
+   "name": "睡眠",
+   "desc": "控制类异常状态，该状态下精灵无法行动，对手使用攻击技能且未miss时睡眠解除",
+   "types": [
+    0
+   ],
+   "res": 0,
+   "name_tw": "睡眠",
+   "desc_tw": "控制類異常狀態，該狀態下精靈無法行動，對手使用攻擊技能且未miss時睡眠解除",
+   "in_project": true,
+   "project_icon_id": 8,
+   "categories_tw": [
+    "控制類"
+   ],
+   "icon": "seer/abnormal/8.png",
+   "source": "https://api.seerapi.com/v1/battle_effect/8"
+  },
+  {
+   "id": 9,
+   "name": "石化",
+   "desc": "控制类异常状态，该状态下精灵无法行动",
+   "types": [
+    0
+   ],
+   "res": 0,
+   "name_tw": "石化",
+   "desc_tw": "控制類異常狀態，該狀態下精靈無法行動",
+   "in_project": true,
+   "project_icon_id": 9,
+   "categories_tw": [
+    "控制類"
+   ],
+   "icon": "seer/abnormal/9.png",
+   "source": "https://api.seerapi.com/v1/battle_effect/9"
+  },
+  {
+   "id": 10,
+   "name": "混乱",
+   "desc": "弱化类异常状态，该状态下精灵攻击技能的命中率减少80%且每回合对手行动开始时5%扣除50点体力",
+   "types": [
+    1
+   ],
+   "res": 1,
+   "name_tw": "混亂",
+   "desc_tw": "弱化類異常狀態，該狀態下精靈攻擊技能的命中率減少80%且每回合對手行動開始時5%扣除50點體力",
+   "in_project": true,
+   "project_icon_id": 10,
+   "categories_tw": [
+    "弱化類"
+   ],
+   "icon": "seer/abnormal/10.png",
+   "source": "https://api.seerapi.com/v1/battle_effect/10"
+  },
+  {
+   "id": 11,
+   "name": "衰弱",
+   "desc": "弱化类异常状态，该状态下精灵若衰弱的回合数为1/2/3/4/5及以上，则受到的攻击伤害额外提升25%/50%/100%/250%/500%",
+   "types": [
+    1
+   ],
+   "res": 1,
+   "name_tw": "衰弱",
+   "desc_tw": "弱化類異常狀態，該狀態下精靈若衰弱的回合數為1/2/3/4/5及以上，則受到的攻擊傷害額外提升25%/50%/100%/250%/500%",
+   "in_project": true,
+   "project_icon_id": 11,
+   "categories_tw": [
+    "弱化類"
+   ],
+   "icon": "seer/abnormal/11.png",
+   "source": "https://api.seerapi.com/v1/battle_effect/11"
+  },
+  {
+   "id": 12,
+   "name": "山神守护",
+   "desc": "附属类异常状态，该状态下每回合对手受到的攻击伤害减少80%",
+   "types": [],
+   "res": 2,
+   "name_tw": "山神守護",
+   "desc_tw": "附屬類異常狀態，該狀態下每回合對手受到的攻擊傷害減少80%",
+   "in_project": true,
+   "project_icon_id": 12,
+   "categories_tw": [],
+   "icon": "seer/abnormal/12.png",
+   "source": "https://api.seerapi.com/v1/battle_effect/12"
+  },
+  {
+   "id": 13,
+   "name": "易燃",
+   "desc": "弱化类异常状态，该状态下精灵攻击技能命中率降低30%，被火系攻击技能命中时转化为烧伤",
+   "types": [
+    1
+   ],
+   "res": 1,
+   "name_tw": "易燃",
+   "desc_tw": "弱化類異常狀態，該狀態下精靈攻擊技能命中率降低30%，被火系攻擊技能命中時轉化為燒傷",
+   "in_project": true,
+   "project_icon_id": 13,
+   "categories_tw": [
+    "弱化類"
+   ],
+   "icon": "seer/abnormal/13.png",
+   "source": "https://api.seerapi.com/v1/battle_effect/13"
+  },
+  {
+   "id": 14,
+   "name": "狂暴",
+   "desc": "附属类异常状态，该状态下的精灵造成的攻击伤害翻倍",
+   "types": [
+    2
+   ],
+   "res": 2,
+   "name_tw": "狂暴",
+   "desc_tw": "附屬類異常狀態，該狀態下的精靈造成的攻擊傷害翻倍",
+   "in_project": true,
+   "project_icon_id": 14,
+   "categories_tw": [
+    "附屬類"
+   ],
+   "icon": "seer/abnormal/14.png",
+   "source": "https://api.seerapi.com/v1/battle_effect/14"
+  },
+  {
+   "id": 15,
+   "name": "冰封",
+   "desc": "控制类异常状态，该状态下精灵无法行动，冰封结束后会转化为冻伤与速度等级-1",
+   "types": [
+    0,
+    4
+   ],
+   "res": 0,
+   "name_tw": "冰封",
+   "desc_tw": "控制類異常狀態，該狀態下精靈無法行動，冰封結束後會轉化為凍傷與速度等級-1",
+   "in_project": true,
+   "project_icon_id": 15,
+   "categories_tw": [
+    "控制類",
+    "衍化類"
+   ],
+   "icon": "seer/abnormal/15.png",
+   "source": "https://api.seerapi.com/v1/battle_effect/15"
+  },
+  {
+   "id": 16,
+   "name": "流血",
+   "desc": "弱化类异常状态，该状态下每回合对手行动开始时都会扣除80点体力",
+   "types": [
+    1
+   ],
+   "res": 1,
+   "name_tw": "流血",
+   "desc_tw": "弱化類異常狀態，該狀態下每回合對手行動開始時都會扣除80點體力",
+   "in_project": true,
+   "project_icon_id": 16,
+   "categories_tw": [
+    "弱化類"
+   ],
+   "icon": "seer/abnormal/16.png",
+   "source": "https://api.seerapi.com/v1/battle_effect/16"
+  },
+  {
+   "id": 19,
+   "name": "瘫痪",
+   "desc": "控制类异常状态，限制类异常状态，该状态下精灵无法行动、主动切换",
+   "types": [
+    0,
+    3
+   ],
+   "res": 0,
+   "name_tw": "癱瘓",
+   "desc_tw": "控制類異常狀態，限制類異常狀態，該狀態下精靈無法行動、主動切換",
+   "in_project": true,
+   "project_icon_id": 19,
+   "categories_tw": [
+    "控制類",
+    "限制類"
+   ],
+   "icon": "seer/abnormal/19.png",
+   "source": "https://api.seerapi.com/v1/battle_effect/19"
+  },
+  {
+   "id": 20,
+   "name": "失明",
+   "desc": "弱化类异常状态，该状态下精灵使用攻击技能50%miss，若为必中技能则50%命中效果失效且无法造成攻击伤害",
+   "types": [
+    1
+   ],
+   "res": 1,
+   "name_tw": "失明",
+   "desc_tw": "弱化類異常狀態，該狀態下精靈使用攻擊技能50%miss，若為必中技能則50%命中效果失效且無法造成攻擊傷害",
+   "in_project": true,
+   "project_icon_id": 20,
+   "categories_tw": [
+    "弱化類"
+   ],
+   "icon": "seer/abnormal/20.png",
+   "source": "https://api.seerapi.com/v1/battle_effect/20"
+  },
+  {
+   "id": 21,
+   "name": "异常免疫",
+   "desc": "附属类异常状态，无效果",
+   "types": [
+    2
+   ],
+   "res": 2,
+   "name_tw": "異常免疫",
+   "desc_tw": "附屬類異常狀態，無效果",
+   "in_project": true,
+   "project_icon_id": 21,
+   "categories_tw": [
+    "附屬類"
+   ],
+   "icon": "seer/abnormal/21.png",
+   "source": "https://api.seerapi.com/v1/battle_effect/21"
+  },
+  {
+   "id": 22,
+   "name": "焚烬",
+   "desc": "控制类异常状态，该状态下精灵无法行动，焚烬结束后会转化为烧伤与命中等级-1",
+   "types": [
+    0,
+    4
+   ],
+   "res": 0,
+   "name_tw": "焚燼",
+   "desc_tw": "控制類異常狀態，該狀態下精靈無法行動，焚燼結束後會轉化為燒傷與命中等級-1",
+   "in_project": true,
+   "project_icon_id": 22,
+   "categories_tw": [
+    "控制類",
+    "衍化類"
+   ],
+   "icon": "seer/abnormal/22.png",
+   "source": "https://api.seerapi.com/v1/battle_effect/22"
+  },
+  {
+   "id": 23,
+   "name": "诅咒",
+   "desc": "控制类异常状态，该状态下精灵无法行动，诅咒结束后会随机转化为烈焰诅咒、致命诅咒、虚弱诅咒之一",
+   "types": [
+    0,
+    4
+   ],
+   "res": 0,
+   "name_tw": "詛咒",
+   "desc_tw": "控制類異常狀態，該狀態下精靈無法行動，詛咒結束後會隨機轉化為烈焰詛咒、致命詛咒、虛弱詛咒之一",
+   "in_project": true,
+   "project_icon_id": 23,
+   "categories_tw": [
+    "控制類",
+    "衍化類"
+   ],
+   "icon": "seer/abnormal/23.png",
+   "source": "https://api.seerapi.com/v1/battle_effect/23"
+  },
+  {
+   "id": 24,
+   "name": "烈焰诅咒",
+   "desc": "附属类异常状态，该状态下精灵每回合结束后受到最大体力1/8的百分比伤害",
+   "types": [
+    2
+   ],
+   "res": 2,
+   "name_tw": "烈焰詛咒",
+   "desc_tw": "附屬類異常狀態，該狀態下精靈每回合結束後受到最大體力1/8的百分比傷害",
+   "in_project": true,
+   "project_icon_id": 24,
+   "categories_tw": [
+    "附屬類"
+   ],
+   "icon": "seer/abnormal/24.png",
+   "source": "https://api.seerapi.com/v1/battle_effect/24"
+  },
+  {
+   "id": 25,
+   "name": "致命诅咒",
+   "desc": "附属类异常状态，该状态下精灵受到的攻击伤害额外提升50%",
+   "types": [
+    2
+   ],
+   "res": 2,
+   "name_tw": "致命詛咒",
+   "desc_tw": "附屬類異常狀態，該狀態下精靈受到的攻擊傷害額外提升50%",
+   "in_project": true,
+   "project_icon_id": 25,
+   "categories_tw": [
+    "附屬類"
+   ],
+   "icon": "seer/abnormal/25.png",
+   "source": "https://api.seerapi.com/v1/battle_effect/25"
+  },
+  {
+   "id": 26,
+   "name": "虚弱诅咒",
+   "desc": "附属类异常状态，该状态下精灵造成的攻击伤害额外降低50%",
+   "types": [
+    2
+   ],
+   "res": 2,
+   "name_tw": "虛弱詛咒",
+   "desc_tw": "附屬類異常狀態，該狀態下精靈造成的攻擊傷害額外降低50%",
+   "in_project": true,
+   "project_icon_id": 26,
+   "categories_tw": [
+    "附屬類"
+   ],
+   "icon": "seer/abnormal/26.png",
+   "source": "https://api.seerapi.com/v1/battle_effect/26"
+  },
+  {
+   "id": 27,
+   "name": "感染",
+   "desc": "控制类异常状态，该状态下精灵无法行动，感染结束后会转化为中毒与攻击、特攻等级-1",
+   "types": [
+    0,
+    4
+   ],
+   "res": 0,
+   "name_tw": "感染",
+   "desc_tw": "控制類異常狀態，該狀態下精靈無法行動，感染結束後會轉化為中毒與攻擊、特攻等級-1",
+   "in_project": true,
+   "project_icon_id": 27,
+   "categories_tw": [
+    "控制類",
+    "衍化類"
+   ],
+   "icon": "seer/abnormal/27.png",
+   "source": "https://api.seerapi.com/v1/battle_effect/27"
+  },
+  {
+   "id": 28,
+   "name": "束缚",
+   "desc": "弱化类异常状态，该状态下精灵的先制效果失效，束缚结束时受到最大体力1/8的百分比伤害",
+   "types": [
+    1
+   ],
+   "res": 1,
+   "name_tw": "束縛",
+   "desc_tw": "弱化類異常狀態，該狀態下精靈的先制效果失效，束縛結束時受到最大體力1/8的百分比傷害",
+   "in_project": true,
+   "project_icon_id": 28,
+   "categories_tw": [
+    "弱化類"
+   ],
+   "icon": "seer/abnormal/28.png",
+   "source": "https://api.seerapi.com/v1/battle_effect/28"
+  },
+  {
+   "id": 29,
+   "name": "失神",
+   "desc": "弱化类异常状态，该状态下精灵使用属性技能50%无效",
+   "types": [
+    1
+   ],
+   "res": 1,
+   "name_tw": "失神",
+   "desc_tw": "弱化類異常狀態，該狀態下精靈使用屬性技能50%無效",
+   "in_project": true,
+   "project_icon_id": 29,
+   "categories_tw": [
+    "弱化類"
+   ],
+   "icon": "seer/abnormal/29.png",
+   "source": "https://api.seerapi.com/v1/battle_effect/29"
+  },
+  {
+   "id": 30,
+   "name": "沉默",
+   "desc": "弱化类异常状态，该状态下精灵第五技能无效，且每回合结束后受到最大体力1/8的百分比伤害",
+   "types": [
+    1
+   ],
+   "res": 1,
+   "name_tw": "沉默",
+   "desc_tw": "弱化類異常狀態，該狀態下精靈第五技能無效，且每回合結束後受到最大體力1/8的百分比傷害",
+   "in_project": true,
+   "project_icon_id": 30,
+   "categories_tw": [
+    "弱化類"
+   ],
+   "icon": "seer/abnormal/30.png",
+   "source": "https://api.seerapi.com/v1/battle_effect/30"
+  },
+  {
+   "id": 31,
+   "name": "臣服",
+   "desc": "弱化类异常状态，该状态下精灵无法对对手造成攻击伤害、固定伤害、百分比伤害",
+   "types": [
+    1
+   ],
+   "res": 1,
+   "name_tw": "臣服",
+   "desc_tw": "弱化類異常狀態，該狀態下精靈無法對對手造成攻擊傷害、固定傷害、百分比傷害",
+   "in_project": true,
+   "project_icon_id": 31,
+   "categories_tw": [
+    "弱化類"
+   ],
+   "icon": "seer/abnormal/31.png",
+   "source": "https://api.seerapi.com/v1/battle_effect/31"
+  },
+  {
+   "id": 32,
+   "name": "凝滞",
+   "desc": "弱化类异常状态，限制类异常状态，该状态下精灵无法切换，同时免疫受到的控制类异常状态",
+   "types": [
+    1,
+    3
+   ],
+   "res": 1,
+   "name_tw": "凝滯",
+   "desc_tw": "弱化類異常狀態，限制類異常狀態，該狀態下精靈無法切換，同時免疫受到的控制類異常狀態",
+   "in_project": true,
+   "project_icon_id": 32,
+   "categories_tw": [
+    "弱化類",
+    "限制類"
+   ],
+   "icon": "seer/abnormal/32.png",
+   "source": "https://api.seerapi.com/v1/battle_effect/32"
+  },
+  {
+   "id": 33,
+   "name": "星赐",
+   "desc": "附属类异常状态，该状态下的精灵造成的攻击伤害提升30%，每回合结束时恢复2点PP值",
+   "types": [
+    2
+   ],
+   "res": 2,
+   "name_tw": "星賜",
+   "desc_tw": "附屬類異常狀態，該狀態下的精靈造成的攻擊傷害提升30%，每回合結束時恢復2點PP值",
+   "in_project": true,
+   "project_icon_id": 33,
+   "categories_tw": [
+    "附屬類"
+   ],
+   "icon": "seer/abnormal/33.png",
+   "source": "https://api.seerapi.com/v1/battle_effect/33"
+  },
+  {
+   "id": 34,
+   "name": "星哲",
+   "desc": "附属类异常状态，该状态下的精灵造成的固定伤害、百分比伤害提升30%，每回合结束时恢复最大体力的1/4",
+   "types": [
+    2
+   ],
+   "res": 2,
+   "name_tw": "星哲",
+   "desc_tw": "附屬類異常狀態，該狀態下的精靈造成的固定傷害、百分比傷害提升30%，每回合結束時恢復最大體力的1/4",
+   "in_project": true,
+   "project_icon_id": 34,
+   "categories_tw": [
+    "附屬類"
+   ],
+   "icon": "seer/abnormal/34.png",
+   "source": "https://api.seerapi.com/v1/battle_effect/34"
+  },
+  {
+   "id": 35,
+   "name": "超频",
+   "desc": "附属类异常状态，该状态下精灵的技能先制+1且行动开始时恢复所选择技能的全部PP值，超频结束后会转化为1~2回合的瘫痪",
+   "types": [
+    2
+   ],
+   "res": 2,
+   "name_tw": "超頻",
+   "desc_tw": "附屬類異常狀態，該狀態下精靈的技能先制+1且行動開始時恢復所選擇技能的全部PP值，超頻結束後會轉化為1~2回合的癱瘓",
+   "in_project": true,
+   "project_icon_id": 35,
+   "categories_tw": [
+    "附屬類"
+   ],
+   "icon": "seer/abnormal/35.png",
+   "source": "https://api.seerapi.com/v1/battle_effect/35"
+  },
+  {
+   "id": 36,
+   "name": "沸涌",
+   "desc": "弱化类异常状态，处于该状态的精灵受到的攻击伤害至少为其最大体力的30%，对手打出致命一击时效果提升至50%",
+   "types": [
+    1
+   ],
+   "res": 1,
+   "name_tw": "沸湧",
+   "desc_tw": "弱化類異常狀態，處於該狀態的精靈受到的攻擊傷害至少為其最大體力的30%，對手打出致命一擊時效果提升至50%",
+   "in_project": true,
+   "project_icon_id": 36,
+   "categories_tw": [
+    "弱化類"
+   ],
+   "icon": "seer/abnormal/36.png",
+   "source": "https://api.seerapi.com/v1/battle_effect/36"
+  },
+  {
+   "id": 37,
+   "name": "砥砺",
+   "desc": "附属类异常状态，处于该状态的精灵受到真实伤害后若本回合未执行过附加异常状态的效果则增加此伤害值80%的体力",
+   "types": [
+    2
+   ],
+   "res": 2,
+   "name_tw": "砥礪",
+   "desc_tw": "附屬類異常狀態，處於該狀態的精靈受到真實傷害後若本回合未執行過附加異常狀態的效果則增加此傷害值80%的體力",
+   "in_project": true,
+   "project_icon_id": 37,
+   "categories_tw": [
+    "附屬類"
+   ],
+   "icon": "seer/abnormal/37.png",
+   "source": "https://api.seerapi.com/v1/battle_effect/37"
+  },
+  {
+   "id": 38,
+   "name": "星赎",
+   "desc": "附属类异常状态，该状态下的精灵体力恢复效果提升30%，每回合结束时所有非限制类异常状态的回合数+1",
+   "types": [
+    2
+   ],
+   "res": 2,
+   "name_tw": "星贖",
+   "desc_tw": "附屬類異常狀態，該狀態下的精靈體力恢復效果提升30%，每回合結束時所有非限制類異常狀態的回合數+1",
+   "in_project": true,
+   "project_icon_id": 38,
+   "categories_tw": [
+    "附屬類"
+   ],
+   "icon": "seer/abnormal/38.png",
+   "source": "https://api.seerapi.com/v1/battle_effect/38"
+  },
+  {
+   "id": 39,
+   "name": "神游",
+   "desc": "控制类异常状态，该状态下精灵无法行动，神游结束后会转化为失神",
+   "types": [
+    0,
+    4
+   ],
+   "res": 0,
+   "name_tw": "神遊",
+   "desc_tw": "控制類異常狀態，該狀態下精靈無法行動，神遊結束後會轉化為失神",
+   "in_project": true,
+   "project_icon_id": 39,
+   "categories_tw": [
+    "控制類",
+    "衍化類"
+   ],
+   "icon": "seer/abnormal/39.png",
+   "source": "https://api.seerapi.com/v1/battle_effect/39"
+  },
+  {
+   "id": 40,
+   "name": "空定",
+   "desc": "控制类异常状态，该状态下精灵无法行动，空定结束后会转化为2回合沉默",
+   "types": [
+    0,
+    4
+   ],
+   "res": 0,
+   "name_tw": "空定",
+   "desc_tw": "控制類異常狀態，該狀態下精靈無法行動，空定結束後會轉化為2回合沉默",
+   "in_project": true,
+   "project_icon_id": 40,
+   "categories_tw": [
+    "控制類",
+    "衍化類"
+   ],
+   "icon": "seer/abnormal/40.png",
+   "source": "https://api.seerapi.com/v1/battle_effect/40"
+  },
+  {
+   "id": 41,
+   "name": "狂信",
+   "desc": "控制类异常状态，该状态下对手为信仰对象时自身无法行动；进入狂信状态时，若自身没有信仰对象，则本次狂信状态的来源成为自身信仰对象",
+   "types": [
+    0
+   ],
+   "res": 0,
+   "name_tw": "狂信",
+   "desc_tw": "控制類異常狀態，該狀態下對手為信仰物件時自身無法行動；進入狂信狀態時，若自身沒有信仰物件，則本次狂信狀態的來源成為自身信仰物件",
+   "in_project": true,
+   "project_icon_id": 41,
+   "categories_tw": [
+    "控制類"
+   ],
+   "icon": "seer/abnormal/41.png",
+   "source": "https://api.seerapi.com/v1/battle_effect/41"
+  },
+  {
+   "id": 42,
+   "name": "雷解",
+   "desc": "附属类异常状态，该状态下自身造成攻击伤害后，附加伤害值60%的真实伤害",
+   "types": [
+    2
+   ],
+   "res": 2,
+   "name_tw": "雷解",
+   "desc_tw": "附屬類異常狀態，該狀態下自身造成攻擊傷害後，附加傷害值60%的真實傷害",
+   "in_project": true,
+   "project_icon_id": 42,
+   "categories_tw": [
+    "附屬類"
+   ],
+   "icon": "seer/abnormal/42.png",
+   "source": "https://api.seerapi.com/v1/battle_effect/42"
+  },
+  {
+   "id": 43,
+   "name": "渐冻",
+   "desc": "附属类异常状态，渐冻结束后会转化为3回合冰封",
+   "types": [
+    2
+   ],
+   "res": 2,
+   "name_tw": "漸凍",
+   "desc_tw": "附屬類異常狀態，漸凍結束後會轉化為3回合冰封",
+   "in_project": true,
+   "project_icon_id": 43,
+   "categories_tw": [
+    "附屬類"
+   ],
+   "icon": "seer/abnormal/43.png",
+   "source": "https://api.seerapi.com/v1/battle_effect/43"
+  },
+  {
+   "id": 44,
+   "name": "魇昧",
+   "desc": "弱化类异常状态，限制类异常状态，场上的异常状态、能力等级状态对己方均展示为无回合的魇昧；最多5回合",
+   "types": [
+    1,
+    3
+   ],
+   "res": 1,
+   "name_tw": "魘昧",
+   "desc_tw": "弱化類異常狀態，限制類異常狀態，場上的異常狀態、能力等級狀態對己方均展示為無回合的魘昧；最多5回合",
+   "in_project": true,
+   "project_icon_id": 44,
+   "categories_tw": [
+    "弱化類",
+    "限制類"
+   ],
+   "icon": "seer/abnormal/44.png",
+   "source": "https://api.seerapi.com/v1/battle_effect/44"
+  }
+ ],
+ "field_effects": [
+  {
+   "id": 1,
+   "name_cn": "灵籁泳馆",
+   "name_tw": "靈籟泳館",
+   "desc_cn": "精灵战斗时所有技能必定命中且每回合结束时恢复自身300点体力",
+   "desc_tw": "精靈戰鬥時所有技能必定命中且每回合結束時恢復自身300點體力"
+  },
+  {
+   "id": 2,
+   "name_cn": "星璨舞台",
+   "name_tw": "星璨舞臺",
+   "desc_cn": "精灵战斗时造成的攻击伤害提升130%且每回合结束时会恢复自身所有技能1点PP值",
+   "desc_tw": "精靈戰鬥時造成的攻擊傷害提升130%且每回合結束時會恢復自身所有技能1點PP值"
+  }
+ ]
+}

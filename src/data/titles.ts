@@ -11,6 +11,10 @@ export interface TitleDefinition {
     damageDealtMultiplier?: number;  // 玲瓏用
     speedStageOnHitTaken?: number;   // 追風用：受到攻擊傷害時，速度等級+N
     fixedDamageOnSkillHit?: number;  // 清涼大使用：攻擊技能命中時附加固定傷害
+    /** 戰鬥開始時（每場一次）己方道具欄位放入道具。 */
+    battleStartItems?: { itemId: string; count: number }[];
+    /** 指定精靈每次登場（含戰鬥開始的首發、換人再登場）時，己方道具欄位放入道具。 */
+    entranceItems?: { elfNames: string[]; itemId: string; count: number }[];
   };
 }
 
@@ -595,6 +599,18 @@ export const TITLE_CATALOG: Record<string, TitleDefinition> = {
     category: "十、其他稱號",
     description: "攻擊技能命中時附加66點固定傷害",
     effects: { fixedDamageOnSkillHit: 66 },
+  },
+  chaoneng_xiongdi: {
+    id: "chaoneng_xiongdi",
+    name: "超能兄弟",
+    category: "十、其他稱號",
+    description: "體力+110、雙攻+30、速度+30；戰鬥開始時與超能兄弟(艾斯菲格、艾斯菲亞兩隻精靈)登場時己方道具欄位放入幻化指令*1",
+    statBonus: { hp: 110, atk: 30, spatk: 30, speed: 30 },
+    effects: {
+      battleStartItems: [{ itemId: "illusion_command", count: 1 }],
+      // 「登場時」＝每次登場都放入（換下再換上也算）；戰鬥開始的首發登場同樣計入。
+      entranceItems: [{ elfNames: ["星軌重構·艾斯菲格", "星核寰宇·艾斯菲亞"], itemId: "illusion_command", count: 1 }],
+    },
   },
   interstellar_pioneer: {
     id: "interstellar_pioneer",

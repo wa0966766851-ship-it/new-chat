@@ -2,6 +2,7 @@ import type { Elf, Skill } from '../../../types';
 import type { BattleEventContext } from '../../types';
 import { changePp } from '../../newElfOperations';
 import { getMaxPp, clampSkillPp } from '../../../utils/battleHelpers';
+import {stageOperationBlocked} from '../../stageProtection';
 
 export type ArenaContext = BattleEventContext;
 export const STATS = ['atk', 'spatk', 'def', 'spdef', 'speed', 'accuracy'] as const;
@@ -68,11 +69,12 @@ export function clearStatuses(c: ArenaContext, side: Side): number {
 }
 export function reverseDrops(c: ArenaContext, side: Side): number {
   const elf = side === c.actor ? c.self : c.target;
-  const changes = Object.fromEntries(STATS.filter(s => stages(elf)[s] < 0).map(s => [s, -2 * stages(elf)[s]]));
+  const changes = Object.fromEntries(STATS.filter(s => stages(elf)[s] < 0&&!stageOperationBlocked(c,side,stages(elf)[s],'reverse')).map(s => [s, -2 * stages(elf)[s]]));
   if (Object.keys(changes).length) c.applyStatChange(side, changes);
   return Object.keys(changes).length;
 }
 export function transferBoosts(c: ArenaContext): number {
+  if(stageOperationBlocked(c,c.targetSide,1,'steal'))return 0;
   const changes = Object.fromEntries(STATS.filter(s => stages(c.target)[s] > 0).map(s => [s, stages(c.target)[s]]));
   if (!Object.keys(changes).length) return 0;
   c.applyStatChange(c.actor, changes);

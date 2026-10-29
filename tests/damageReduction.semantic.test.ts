@@ -8,9 +8,7 @@ import { applyActiveGateTimersToDamage } from '../src/battle/damageGates';
 import { handleCanglanSoulMark } from '../src/effects/elves/canglan/registry';
 import { handleMarsSoulMark } from '../src/effects/elves/mars/registry';
 import { handleDimensionalSoulMark } from '../src/effects/elves/dimensional-dragon/registry';
-import { handleKeerhodeSoulMark } from '../src/effects/elves/keerhode/registry';
-import { handleKeldSoulMark } from '../src/effects/elves/keld/registry';
-import { EffectTiming } from '../src/effects/types';
+import { createHarness } from './helpers/migrationHarness';
 import { runDixinFormation } from '../src/effects/elves/dixin/formation';
 import { runSideTimers } from '../src/blocks/runtime';
 import { settlementReceipt } from '../src/battle/settlementReceipt';
@@ -119,23 +117,9 @@ for (const side of ['p1', 'p2'] as const) {
     const f = fixture(side); Object.assign(f.c.self, { shield: 1, barrier: 1 });
     const d = comp('true'); handleMarsSoulMark(f.c, 'BEFORE_DAMAGE', d); near(d.multiplier, 1); assert.ok(!f.reg.marsShieldDamageHalvedUsed);
   });
-  check(`${side}/柯爾霍德兩分支與60%汲取`, () => {
-    const f = fixture(side); f.c.self.currentHp = 900;
-    const high = comp('fixed'); high.base = 300; handleKeerhodeSoulMark(f.c, 'BEFORE_DAMAGE', high); finalizeDamageReductions(high, f.st, side, f.c.self); near(high.multiplier, .4);
-    assert.equal(f.st[`${f.other}Marks`][0].count, 180);
-    const low = comp('skill_attribute'); low.base = 299; handleKeerhodeSoulMark(f.c, 'BEFORE_DAMAGE', low); finalizeDamageReductions(low, f.st, side, f.c.self); near(low.multiplier, 1);
-    low.afterDamage(settlementReceipt({ operation: 'damage', targetBattleId: f.c.self.id, requestedAmount: 299, settledAmount: 299, hpBefore: 900, hpAfter: 601 }));
-    assert.deepEqual(f.calls, [['true', f.other, 179], ['heal', side, 179]]);
-    const boosted = comp('fixed'); boosted.base = 200; handleKeerhodeSoulMark(f.c, 'BEFORE_DAMAGE', boosted);
-    boosted.increasePercent = 1; finalizeDamageReductions(boosted, f.st, side, f.c.self); near(boosted.multiplier, .4);
-    assert.equal(boosted.afterDamage, undefined, '後續增傷超過門檻才選高傷分支');
-    const flat = comp('fixed'); flat.base = 400; flat.flatReduction = 150;
-    handleKeerhodeSoulMark(f.c, 'BEFORE_DAMAGE', flat); finalizeDamageReductions(flat, f.st, side, f.c.self);
-    near(flat.multiplier, 1); assert.equal(typeof flat.afterDamage, 'function', '固定點數減免後不足門檻，採低傷汲取');
-    const trueComp = comp('true'); handleKeerhodeSoulMark(f.c, 'BEFORE_DAMAGE', trueComp); assert.equal(trueComp.afterDamage, undefined);
-  });
   check(`${side}/帝辛天陣9回合、源綁體力限制及關閉代價`, () => {
-    const f = fixture(side, { dixinBahuangStacks: 9 });
+    const f = fixture(side);
+    f.c.setMark({id:'bahuang_mark',count:9,scope:'elf',ownerBattleId:f.c.self.battleId||f.c.self.id},side);
     runDixinFormation(f.c, 'CHECK_FORMATION'); assert.equal(f.reg.dixinFormationRounds, 9);
     f.c.self.skills = [{ name: 'a', pp: 5, currentPp: 5 }];
     f.c.target.currentHp = 600;
@@ -151,22 +135,6 @@ for (const side of ['p1', 'p2'] as const) {
     assert.ok(!f.st[`${side}Timers`].some((t: any) => t.id === 'dixin_formation'));
     near(capCurrentHp(f.st, f.other, f.c.target, 900), 900);
     assert.ok(f.st[`${side}Timers`].some((t: any) => t.pendingActivation && t.payload.lockSwitch));
-  });
-  check(`${side}/柯爾德減免值含後續增傷；戰鬥階段後反噬；無視不反噬`, () => {
-    const f = fixture(side, { keldSoulStacks: 1 }); const reactions: string[] = [];
-    f.c.applyStatusWithImmunityCheck = () => { reactions.push('frostbite'); return { success: false, immune: true }; };
-    f.c.clearTurnEffectsOf = () => reactions.push('clear');
-    f.c.setNextTurns = () => reactions.push('next2');
-    const d = comp('fixed'); d.base = 100; handleKeldSoulMark(f.c, EffectTiming.BEFORE_DAMAGE, d);
-    d.increasePercent = 9; finalizeDamageReductions(d, f.st, side, f.c.self); near(d.multiplier, .4);
-    d.afterDamage(settlementReceipt({ operation: 'damage', targetBattleId: f.c.self.id, requestedAmount: 1000, settledAmount: 400, hpBefore: 900, hpAfter: 500 }));
-    assert.deepEqual(reactions, ['frostbite', 'clear', 'next2']); assert.ok(!f.reg.keldBacklashCount);
-    const low = comp('fixed'); low.base = 100; handleKeldSoulMark(f.c, EffectTiming.BEFORE_DAMAGE, low); finalizeDamageReductions(low, f.st, side, f.c.self);
-    low.afterDamage(settlementReceipt({ operation: 'damage', targetBattleId: f.c.self.id, requestedAmount: 100, settledAmount: 40, hpBefore: 900, hpAfter: 860 }));
-    assert.equal(f.reg.keldBacklashCount, 1); handleKeldSoulMark(f.c, EffectTiming.ROUND_END); assert.equal(f.calls.length, 0);
-    handleKeldSoulMark(f.c, EffectTiming.BATTLE_PHASE_END); assert.deepEqual(f.calls, [['true', side, 250]]); assert.equal(f.reg.keldBacklashCount, 0);
-    const ignored = comp('fixed'); ignored.reductionPolicy = { attenuation: 0 }; handleKeldSoulMark(f.c, EffectTiming.BEFORE_DAMAGE, ignored);
-    finalizeDamageReductions(ignored, f.st, side, f.c.self); assert.equal(ignored.afterDamage, undefined);
   });
   check(`${side}/次數減傷僅觸發消耗且不跨種類`, () => {
     const f = fixture(side); f.c.addTimerTo(side, { id: 'once', remaining: 1, kind: 'use_counter', payload: { block: { dmgIn: -.5, kind: '技能' } } });
@@ -219,7 +187,7 @@ try {
     check(`${side}/真正API狀態減傷99包含X系、額外行動`, () => {
       const st = state(), effects: any[] = []; st[other].battleStatuses = { 星佑: 2 };
       st[`${other}Timers`] = [{ id: '99', remaining: 2, payload: { damageReductionOverridePercent: 99 } }];
-      const api = buildDamageAPIs({ side, self: st[side], syncStateRef: { current: st }, pushEffect: (e: any) => effects.push(e), getBattleEventContext: () => ({}) });
+      const api = buildDamageAPIs({ side, self: st[side], syncStateRef: { current: st }, pushEffect: (e: any) => effects.push(e), getBattleEventContext: (owner:any) => {const f=fixture(owner);f.st=st;return {...f.c,getFullTeam:(s:string)=>[st[s]]};} });
       for (const kind of ['skill_attribute', 'skill_extra_action']) {
         effects.length = 0; api.applySkillTypeDamage(other, 1000, 'API驗收', { elem: '普通', category: kind });
         const e = effects.find(e => e.type === 'damage'); assert.equal(e.data.damageType, kind); assert.equal(e.data.amount, 10);
@@ -240,4 +208,91 @@ try {
     });
   }
 } finally { await vite.close(); }
+
+// ── 5012 冰／5013 凕 已遷真 Kit（舊 handler 空殼）：原兩組單元斷言改以真引擎＋真實精靈魂印 Kit 驅動，斷言數值與原測試一致 ──
+{
+  const h = await createHarness();
+  try {
+    const { DEFAULT_ELVES } = await h.server.ssrLoadModule('/src/data/defaultElvesLoaded.ts');
+    const real = (id: string) => DEFAULT_ELVES.find((e: any) => String(e.id) === id);
+    const holder = (id: string, o: { cur?: number; skills?: any[]; extraSoulKit?: any[]; statuses?: any } = {}) => {
+      const u = structuredClone(real(id));
+      Object.assign(u, { id: 'S', battleId: 'S', name: '減傷驗收持有者', maxHp: 1000, currentHp: o.cur ?? 900, shield: 0, statStages: {}, battleStatuses: o.statuses || {},
+        baseStats: { hp: 100, atk: 100, def: 100, spatk: 100, spdef: 100, speed: 100 }, calculatedStats: { hp: 1000, atk: 300, def: 300, spatk: 300, spdef: 300, speed: 100 }, skills: o.skills || [h.wait(), h.wait()] });
+      u.soulMark = structuredClone(real(id).soulMark);
+      if (o.extraSoulKit) u.soulMark.kit = [...u.soulMark.kit, ...o.extraSoulKit];
+      return u;
+    };
+    const fixedHit = (n: number, type = '固定') => h.kitSkill('驗收傷害' + n, [{ op: 'dmg', p: { flat: n, type } }]);
+    const attacker = (skills: any[]) => h.unit('E', 100000, [...skills, h.wait()], { speed: 300 });
+    // 防守方追加的測試用條款：受到固定傷害 +100%（模擬原測試 increasePercent=1，於減免之後才加入的後續增傷）
+    const boostEntry = (boost: number) => ({ codeId: 'effect_sequence', source: 'soulmark', role: 'innate', node: 'before_damage', order: 90, customText: '測試用後續增傷',
+      params: { clause: { raw: '測試用後續增傷', trig: 'incoming', parsed: true, body: [{ acts: [{ label: 'dmg_mod', op: 'dmg_mod', p: { dir: 'in_boost', kind: '固定', boost } }] }] } } });
+    const marks = (st: any, side: string) => Object.fromEntries((st[side + 'Marks'] || []).map((m: any) => [m.id, m.count]));
+    for (const side of ['p1', 'p2'] as const) {
+      const other = side === 'p1' ? 'p2' : 'p1';
+      const run = async (self: any, opp: any, picks: (t: number) => [number, number] = () => [0, 0], turns = 1) => (await h.play(side, { self, opp, turns: (_e, t) => picks(t) }, turns));
+      // 柯爾霍德：≥當前體力⅓ → 減60%＋對手得等同減少量的霜寒幽光；不汲取
+      {
+        const r = (await run(holder('5013'), attacker([fixedHit(300)])))[0];
+        assert.equal(r.self.currentHp, 900 - 120, side + ' 高傷：受到 300×0.4=120'); assert.equal(marks(r.state, other).frost_glow, 180, side + ' 對手獲得霜寒幽光＝減少量180');
+        assert.equal(r.opp.currentHp, 100000, '高傷分支不汲取');
+      }
+      // 後續增傷超過門檻才選高傷分支（原 boosted：base200＋增傷100%＝400≥300）
+      {
+        const r = (await run(holder('5013', { extraSoulKit: [boostEntry(1)] }), attacker([fixedHit(200)])))[0];
+        assert.equal(r.self.currentHp, 900 - 160, side + ' 增傷後高傷：400×0.4'); assert.equal(r.opp.currentHp, 100000, '後續增傷超過門檻選高傷分支（不汲取）');
+        assert.equal(marks(r.state, other).frost_glow, 240);
+      }
+      // 低傷分支：<⅓ → 不減傷、汲取傷害值60%（原：299→乘數1、對手真傷179、自身回復179）
+      {
+        const r = (await run(holder('5013'), attacker([fixedHit(299)])))[0];
+        assert.equal(r.self.currentHp, 900 - 299 + 179, side + ' 低傷不減傷、回復60%'); assert.equal(r.opp.currentHp, 100000 - 179, side + ' 汲取對手179');
+        assert.equal(marks(r.state, other).frost_glow, undefined, '低傷不產生霜寒幽光');
+      }
+      // 固定點數減免後不足門檻採低傷汲取（原 flat：400-150=250<300）
+      {
+        const guard = h.kitSkill('固減', [{ op: 'flat_reduction_uses', p: { flat: 150, uses: 1, kind: '固定' } }]);
+        const r = (await run(holder('5013', { skills: [guard, h.wait()] }), attacker([fixedHit(400)]), t => t === 1 ? [0, 1] : [1, 0], 2))[1];
+        assert.equal(r.self.currentHp, 900 - 250 + 150, side + ' 固減後250<300：低傷分支汲取60%×250'); assert.equal(r.opp.currentHp, 100000 - 150);
+      }
+      // 真實傷害不進分流
+      {
+        const r = (await run(holder('5013'), attacker([fixedHit(299, '真實')])))[0];
+        assert.equal(r.self.currentHp, 900 - 299, side + ' 真傷不減免不汲取'); assert.equal(r.opp.currentHp, 100000);
+      }
+      checks += 5;
+      // 柯爾德：受非真實傷害減60%；減免量≥200且有寂殺之魄→凍傷對手；<200→戰鬥階段結束受25%真傷（反噬）；無視減傷不觸發
+      {
+        const gain = fixedHit(10, '真實'), big = fixedHit(1000);
+        const r = await run(holder('5012', { cur: 1000 }), attacker([gain, big]), t => [0, t === 1 ? 0 : 1], 2);
+        assert.equal(r[1].self.currentHp, 1000 - 400, side + ' 柯爾德減60%：1000→400'); assert.ok(r[1].opp.battleStatuses?.['凍傷'] > 0 || Object.keys(r[1].opp.battleStatuses || {}).includes('凍傷'), side + ' 擁有寂殺之魄：減免值600≥200→凍傷對手');
+        assert.equal(marks(r[1].state, side).keld_soul, 1, '高傷分支不反噬、不額外加魄');
+      }
+      {
+        // 凍傷未觸發（對手免疫異常）→ 消除對手回合類效果＋下2回合對手無法主動切換（原：frostbite 失敗後 clear／next2）
+        const gain = fixedHit(10, '真實'), big = fixedHit(1000), immune = h.kitSkill('免疫異常', [{ op: 'immune_status_turns', p: { turns: 4, cls: '', reflect: false } }]);
+        const picks: [number, number][] = [[0, 2], [0, 0], [0, 1]];
+        const r = await run(holder('5012', { cur: 1000 }), attacker([gain, big, immune]), t => picks[t - 1], 3);
+        const oppTimers = (r[2].state[other + 'Timers'] || []).map((t: any) => t.name);
+        assert.ok(!oppTimers.includes('免疫異常'), side + ' 凍傷未觸發：消除對手回合類效果（' + oppTimers + '）');
+        assert.ok(oppTimers.includes('無法主動切換'), side + ' 凍傷未觸發：下2回合對手無法主動切換（' + oppTimers + '）');
+      }
+      {
+        const boosted = holder('5012', { cur: 1000, extraSoulKit: [boostEntry(9)] });
+        const r = (await run(boosted, attacker([fixedHit(100)])))[0];
+        assert.equal(r.self.currentHp, 1000 - 400, side + ' 柯爾德減免值含後續增傷：(100×10)×0.4'); assert.equal(marks(r.state, side).keld_soul, undefined, '減免600≥200不反噬');
+      }
+      {
+        const r = (await run(holder('5012', { cur: 1000 }), attacker([fixedHit(100)])))[0];
+        assert.equal(marks(r.state, side).keld_soul, 1, side + ' 減免60<200：戰鬥階段結束受25%×1000=250真傷（獲得1道寂殺之魄）'); assert.equal(r.opp.currentHp, 100000 - 500, '反噬真傷觸發汲取對手2倍(500)');
+      }
+      {
+        const r = (await run(holder('5012', { cur: 1000, statuses: { 腐朽: 3 } }), attacker([{ ...h.wait(), name: '驗收物攻', category: '物理', power: 100, isSureHit: true }])))[0];
+        assert.equal(marks(r.state, side).keld_soul, undefined, side + ' 無視減傷（腐朽衰減0）：不觸發減免副作用／反噬'); assert.equal(r.opp.currentHp, 100000);
+      }
+      checks += 5;
+    }
+  } finally { await h.close(); }
+}
 console.log(`減傷语意 ${checks} 組通過。`);

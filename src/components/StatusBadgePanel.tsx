@@ -1,22 +1,28 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { EFFECT_CATALOG, EffectInstance } from '../data/effectCatalog';
 import { Elf } from '../types';
 import { getStatuses } from '../utils/battleHelpers';
 import { StatusRegistry } from '../effects/statusRegistry';
-import { statusVisual, buffIconFor } from '../battle/effectIcons';
+import { statusVisual, catalogEffectIcon } from '../battle/effectIcons';
+import { bossTraitInstanceText } from '../data/bossTraits';
 import { ChainImage } from './SeerImages';
+import {displayTurnValue} from '../battle/displayTurnValue';
 
 interface StatusBadgePanelProps {
   elf: Elf;
+  registryState?: Record<string,any>;
   otherEffects?: EffectInstance[];
   emptyHint?: string;
   categoryFilter?: string[];
   disguiseAbnormalStatuses?: boolean;
 }
 
-export const StatusBadgePanel: React.FC<StatusBadgePanelProps> = ({ elf, otherEffects = [], emptyHint, categoryFilter, disguiseAbnormalStatuses = false }) => {
-  const [selectedEffect, setSelectedEffect] = useState<any | null>(null);
+export const StatusBadgePanel: React.FC<StatusBadgePanelProps> = ({ elf, registryState = {}, otherEffects = [], emptyHint, categoryFilter, disguiseAbnormalStatuses = false }) => {
+  const [selection, setSelection] = useState<{owner:string;key:string}|null>(null);
+  const effectKey=(inst:any)=>`${!!inst.isStandardStatus}:${inst.id??inst.catalogId}`;
+  const owner=elf.battleId||elf.id;
+  const setSelectedEffect=(inst:any)=>setSelection(inst?{owner,key:effectKey(inst)}:null);
   
   // 1. Convert standard statuses from StatusRegistry
   const mergedStatuses = getStatuses(elf);
@@ -51,16 +57,19 @@ export const StatusBadgePanel: React.FC<StatusBadgePanelProps> = ({ elf, otherEf
 
   // 3. Add an immunity indicator if immune
   const extraEffects: any[] = [];
-  if (elf.statusImmuneTurns && elf.statusImmuneTurns > 0) {
+  const immuneTurns=displayTurnValue(elf,registryState,'statusImmuneTurns');
+  if (immuneTurns > 0) {
     extraEffects.push({
-      catalogId: 'status_immune',
-      remainingTurns: elf.statusImmuneTurns,
+      catalogId: 'immune_status_turns',
+      remainingTurns: immuneTurns,
       isStandardStatus: false
     });
   }
 
   // Combine all
   const allEffects = [...registryStatuses, ...catalogEffects, ...extraEffects, ...(otherEffects || [])];
+  const selectedEffect=selection?.owner===owner?allEffects.find(inst=>effectKey(inst)===selection.key):undefined;
+  useEffect(()=>{if(selection&&!selectedEffect)setSelection(null);},[selection,selectedEffect]);
   
   const getCategoryStyle = (categories: string[], name?: string) => {
     if (categories.includes('BOSS_ONLY')) return name === '神話'
@@ -204,7 +213,7 @@ export const StatusBadgePanel: React.FC<StatusBadgePanelProps> = ({ elf, otherEf
                         title={`點擊查看【${label}】詳細效果說明`}
                         className={`text-[9px] px-1.5 py-0.5 rounded border flex items-center gap-1 font-mono cursor-pointer select-none transition-all hover:brightness-125 hover:scale-105 active:scale-95 ${color}`}
                       >
-                        {(() => { const ic = statusVisual(label)?.icon || buffIconFor(label); return ic ? <ChainImage urls={[ic]} className="w-3.5 h-3.5 rounded-sm" fallback={<span className="font-extrabold">{badge}</span>} /> : <span className="font-extrabold">{badge}</span>; })()}
+                        {(() => { const ic = statusVisual(label)?.icon || catalogEffectIcon(inst.catalogId, label); return <ChainImage urls={[ic]} className="w-3.5 h-3.5 rounded-sm" fallback={<span className="font-extrabold">◇</span>} />; })()}
                         <span>{label}</span>
                         {displayValue && <span className="opacity-80 scale-90">{displayValue}</span>}
                       </span>
@@ -232,7 +241,7 @@ export const StatusBadgePanel: React.FC<StatusBadgePanelProps> = ({ elf, otherEf
           label = selectedEffect.data.name;
           color = style.color;
           displayValue = !selectedEffect.data.categories.includes('BOSS_ONLY') && selectedEffect.remainingTurns > 0 ? `${selectedEffect.remainingTurns}回合` : '';
-          description = selectedEffect.data.description || statusVisual(label)?.desc || '';
+          description = bossTraitInstanceText(elf, selectedEffect.catalogId) || selectedEffect.data.description || statusVisual(label)?.desc || '';
           catLabels = selectedEffect.data.categories.join(' / ');
         } else {
           const template = EFFECT_CATALOG[selectedEffect.catalogId];

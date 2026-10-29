@@ -33,3 +33,9 @@ export function resetPRNG() {
   for (const k in prngFailCountMap) delete prngFailCountMap[k];
 }
 
+export const snapshotPRNG = () => ({ ...prngFailCountMap });
+export function restorePRNG(snapshot: Record<string, number>) {
+  resetPRNG();
+  for (const [key, n] of Object.entries(snapshot)) if (Number.isFinite(n) && n >= 0) prngFailCountMap[key] = n;
+}
+

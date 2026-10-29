@@ -100,19 +100,8 @@ export const handleBajieSoulMark = (ctx: BattleEventContext, event: EffectTiming
  * 魂印：界
  */
 export const handleLiujieSoulMark = (ctx: BattleEventContext, event: EffectTiming, extraData?: any) => {
-  const self = ctx.self;
-  const opp = ctx.target;
-
-  switch (event) {
-    case EffectTiming.DEATH_NODE_1:
-      ctx.addLog("🎡【界】：神王隕落，萬界同悲！", "defeat");
-      opp.statStages = { atk: 0, def: 0, spatk: 0, spdef: 0, speed: 0, accuracy: 0 };
-      ctx.clearTurnEffectsOf(ctx.targetSide);
-      
-      // 令對手受到等量致命傷真實傷害
-      ctx.applyTrueDamage(ctx.targetSide, 300, "界·同歸", ctx.activeP1, ctx.activeP2);
-      break;
-  }
+  // 5031 魂印「界」已遷真 Kit（migratedLiujieSoulKit.ts；DSH 20261018 讀法B）——規則3.3 空殼化。
+  return false;
 };
 
 export const LIUJIE_SKILLS = {
@@ -134,12 +123,5 @@ export const IMPERIAL_SHIELD_SKILLS = {
     } else {
       applyStatChange(ctx.actor, { atk: 2, def: 2, spatk: 2, spdef: 2, speed: 2, accuracy: 2 });
     }
-  }
-};
-
-export const BAJIE_SKILLS = {
-  "天河衝擊": (ctx: BattleEventContext) => {
-    ctx.addLog("【天河衝擊】：震撼乾坤的一擊！", "effect");
-    ctx.applyStatusWithImmunityCheck(ctx.targetSide, "禁療", 2);
   }
 };

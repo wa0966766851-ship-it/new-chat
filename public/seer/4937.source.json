@@ -1,0 +1,18 @@
+{
+  "seerId": 4937,
+  "name": "星光·雷納多",
+  "source": "SeerAPI/seer-unity-assets",
+  "retrievedAt": "2026-10-20T09:12:52.599Z",
+  "files": [
+    {
+      "path": "seer/body/4937.png",
+      "source": "https://raw.githubusercontent.com/SeerAPI/seer-unity-assets/main/newseer/assets/art/ui/assets/pet/body/4937.png",
+      "sha256": "1c93ca9f3df83a011c0442b34512aaebb7a4745590ffd4ea7984fa18f9bf5ded"
+    },
+    {
+      "path": "seer/head/4937.png",
+      "source": "https://raw.githubusercontent.com/SeerAPI/seer-unity-assets/main/newseer/assets/art/ui/assets/pet/head/4937.png",
+      "sha256": "68172b3d1d9ee1a6362861cf00ad241c134098704d7313768478158a59dd0d35"
+    }
+  ]
+}

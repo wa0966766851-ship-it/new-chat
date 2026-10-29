@@ -33,20 +33,6 @@ export function finishOpeiaAttack(ctx: BattleEventContext): void {
     ctx.applyPinkDamage(ctx.targetSide, toxic.targetLost, '王·噬心毒蝕·對手失血', undefined, undefined, 'percent');
     ctx.applyPinkDamage(ctx.targetSide, toxic.selfLost, '王·噬心毒蝕·自身失血', undefined, undefined, 'percent');
   }
-  const rust = ctx.getPlayerState('opeiaRustAfterAction');
-  ctx.setPlayerState('opeiaRustAfterAction', null);
-  if (!rust || rust !== opeiaIdentity(ctx.target)) return;
-  ctx.applyPinkDamage(ctx.targetSide, 400, '王·鏽腑喰心', undefined, undefined, 'fixed');
-  const self = currentElf(ctx, ctx.actor, ctx.self);
-  const stages = { ...self.statStages };
-  for (const key of abilityKeys) if ((stages[key] || 0) < 0) stages[key] = 0;
-  ctx.updateElf(ctx.actor, { statStages: stages });
-  if (ctx.clearTurnEffectsOf(ctx.targetSide, ctx.target)) {
-    ctx.addTimerTo(ctx.actor, { id: 'opeia_rust_next_status', name: '王·鏽腑喰心', kind: 'use_counter',
-      source: 'skill', scope: 'elf', remaining: 1, tickAt: 'never', persistsOffField: false,
-      payload: { immuneStatus: true } }, false);
-  }
-  // 在技能使用後附加，不能讓施放這招的主傷害提前觸發30%真傷。
-  opeiaTimer(ctx, ctx.targetSide, 'opeia_rust_bound', 1,
-    { recoveryReductionPercent: 1, onAttackReceivedTruePercent: 0.3 }, false, 'skill', true);
+  // 王·鏽腑喰心（真 Kit；DSH 20261017）：400固定／解除下降／消回合→免疫下1次／
+  // 1回合禁療＋受擊30%真傷，全部改由 Kit 通用 op 表達（migratedOpeiaSkillKits）。
 }

@@ -16,8 +16,8 @@
 | 鎮世龍魂・龍之治癒 | 16 | 龍 | 5 | 四龍逐一喚醒、真龍額外出手、印記與免疫 |
 | 真神之神・聖靈譜尼 | 17 | 神靈 | **2** | 開戰獻祭隊友、聖潔領域、印記與輪迴；原站只有兩招 |
 
-- [`heavyweights.json`](./heavyweights.json)：原站的名字、屬性、種族值、魂印原文及各技能欄位；不收前 12 隻一般精靈，也不填造缺少的技能。
-- [`runtime-reference.js`](./runtime-reference.js)：從原站摘出的 65 個專屬效果／結算函式，附原始行號；依賴原站 `game`、`C`、`dealDamage` 等全域值，**不可直接 import 執行**。
+- [`heavyweights.json`](heavyweights.json)：原站的名字、屬性、種族值、魂印原文及各技能欄位；不收前 12 隻一般精靈，也不填造缺少的技能。
+- [`runtime-reference.js`](runtime-reference.js)：從原站摘出的 65 個專屬效果／結算函式，附原始行號；依賴原站 `game`、`C`、`dealDamage` 等全域值，**不可直接 import 執行**。
 
 ## 百分比傷害校正
 

@@ -5,6 +5,8 @@ import { StatusRegistry } from '../effects/statusRegistry';
 import { canonicalStatusName } from '../effects/statusIdentity';
 import { SKILL_STONE_GRADES, SKILL_STONE_ATTRIBUTES, getPerfectEffectsForAttribute, validateSkillStoneLoadout, isSkillStone } from '../data/skillStones';
 export const MAX_BLUEPRINT_BYTES = 2_000_000;
+// 序列每層包含 body/acts/params 等 JSON 容器；語意巢狀限制仍由 validateKit 檢查。
+export const MAX_BLUEPRINT_JSON_DEPTH = 64;
 const stats = ['hp', 'atk', 'def', 'spatk', 'spdef', 'speed'] as const;
 const object = (v: unknown): v is Record<string, any> => !!v && typeof v === 'object' && !Array.isArray(v);
 function fail(message: string): never { throw new Error(`圖紙格式錯誤：${message}`); }
@@ -18,6 +20,8 @@ function trait(value: unknown, label: string) {
   if (!object(value)) fail(label);
   text(value.name, `${label}.name`, 200); text(value.description, `${label}.description`);
   if (value.customCode !== undefined) text(value.customCode, `${label}.customCode`);
+  if (value.effectMode !== undefined && !['auto','description','kit','registry'].includes(value.effectMode)) fail(`${label}.effectMode`);
+  if (value.kit !== undefined) validateKit(value.kit, `${label}.kit`);
   if (value.mechanics !== undefined) {
     if (!object(value.mechanics) || Object.keys(value.mechanics).length > 200) fail(`${label}.mechanics`);
     let visited = 0;
@@ -46,7 +50,7 @@ export function parseElfBlueprint(json: string): { elf: Elf; warnings: string[];
   if (!object(doc)) fail('根節點需為物件');
   let count = 0;
   const checkTree = (value: any, depth = 0) => {
-    if (++count > 100000 || depth > 25) fail('資料過深或過多');
+    if (++count > 100000 || depth > MAX_BLUEPRINT_JSON_DEPTH) fail('資料過深或過多');
     if (typeof value === 'number' && !Number.isFinite(value)) fail('非有限數值');
     if (value && typeof value === 'object') for (const child of Object.values(value)) checkTree(child, depth + 1);
   };
@@ -118,6 +122,7 @@ export function parseElfBlueprint(json: string): { elf: Elf; warnings: string[];
         }
       }
       if (skill.kit !== undefined) kit(skill.kit, `${field}.kit`);
+      if (skill.effectMode !== undefined && !['auto','description','kit','registry'].includes(skill.effectMode)) fail(`${field}.effectMode`);
     }
   }
   if (source.soulMark) { trait(source.soulMark, 'soulMark'); if (source.soulMark.customCode) warnings.push('包含魂印自訂程式；匯入不會執行，請在實戰前審查程式與效果。'); }
@@ -146,7 +151,15 @@ export function parseElfBlueprint(json: string): { elf: Elf; warnings: string[];
     if (slots !== undefined) { if (!Array.isArray(slots) || slots.length > 20) fail('resistance slots'); for (const slot of slots) { if (!object(slot)) fail('slot'); text(slot.id, 'slot.id', 200); text(slot.status, 'slot.status', 200); if (!['control', 'weakening'].includes(slot.category)) fail('slot.category'); number(slot.rate, 'slot.rate', 0, 100); } }
   }
   // 僅接收編輯配置，不匯入戰鬥中狀態、存活規則、印記及 currentHp。
-  const allowed = ['id','name','type','baseStats','evs','ivs','natureModifiers','guildBonuses','inscriptions','resistances','isAlienElf','hasAnnualBonus','height','weight','gender','path','specialModeRating','destinyRank','description','soulMark','trait','alienTraits','skills','skillPool','kit','imageUrl','avatarUrl','seerId','badge','critValue','category','rawPrompt'];
+  if(source.builtinEffectBindings!==undefined){
+    const binding=source.builtinEffectBindings;
+    if(!object(binding)||binding.schemaVersion!==1||binding.elfId!==String(source.id)||!object(binding.definitions)||Object.keys(binding.definitions).length>1000)fail('builtinEffectBindings');
+    for(const [key,value] of Object.entries(binding.definitions)){
+      text(key,'builtinEffectBindings key',1000);
+      if(typeof value!=='string'||!/^1:\d+:[0-9a-f]{1,8}:[0-9a-f]{1,8}$/.test(value))fail('builtinEffectBindings signature');
+    }
+  }
+  const allowed = ['id','name','type','baseStats','evs','ivs','natureModifiers','guildBonuses','inscriptions','resistances','isAlienElf','hasAnnualBonus','height','weight','gender','path','specialModeRating','destinyRank','description','soulMark','trait','alienTraits','skills','skillPool','kit','imageUrl','avatarUrl','seerId','badge','critValue','category','rawPrompt','builtinEffectBindings'];
   const skipped = Object.keys(source).filter(k => !allowed.includes(k) && !['level','isCustom','calculatedStats','currentHp','maxHp'].includes(k));
   if (skipped.length) warnings.push(`未匯入戰鬥狀態或尚不支援欄位：${skipped.join('、')}。請保留原始圖紙。`);
   const elf: any = Object.fromEntries(allowed.filter(k => source[k] !== undefined).map(k => [k, source[k]]));

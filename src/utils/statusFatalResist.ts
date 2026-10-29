@@ -2,6 +2,7 @@ import { BattleEventContext } from "../effects/types";
 import { StatusRegistry } from "../effects/statusRegistry";
 import { isStatusActive } from "./statusManager";
 import { syncLegacy, getStatuses, removeStatusEffect } from "./battleHelpers";
+import { checkBossTraitFatalResist } from "../blocks/ops/bossTraits";
 
 export function checkStatusDrivenFatalResist(ctx: BattleEventContext): boolean {
   const self = ctx.self;
@@ -29,5 +30,5 @@ export function checkStatusDrivenFatalResist(ctx: BattleEventContext): boolean {
     ctx.addLog(`⭐ 【星佑】：體力歸零觸發重生！體力恢復至滿血，解除非控制類異常狀態！`, "effect");
     return true;
   }
-  return false;
+  return checkBossTraitFatalResist(ctx); // BOSS 特性「復甦」
 }

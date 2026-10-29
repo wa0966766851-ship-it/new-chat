@@ -4,6 +4,12 @@
 @import "./components/battle/battleSkin.css";
 /* 矮螢幕（手機橫放）：高度 ≤ 560px */
 @custom-variant short (@media (max-height: 560px));
+/* 星蝕回廊：依「回廊根節點的實際寬度」切換版面，而不是視窗寬度（左側欄、嵌入殼會佔掉寬度）。
+   data-ecl 由 parts.tsx 的 useEclRootRef 依容器寬度寫入，例如 "sm md lg"；ecl-md: 等於「容器 ≥ 760px」。 */
+@custom-variant ecl-sm (:where([data-ecl~="sm"]) &);
+@custom-variant ecl-md (:where([data-ecl~="md"]) &);
+@custom-variant ecl-lg (:where([data-ecl~="lg"]) &);
+@custom-variant ecl-xl (:where([data-ecl~="xl"]) &);
 
 @theme {
   --font-sans: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Inter", "PingFang TC", "Microsoft JhengHei UI", "Noto Sans TC", "Noto Sans Runic", "Noto Sans Symbols", "Segoe UI Historic", "Segoe UI Symbol", "Apple Symbols", ui-sans-serif, system-ui, sans-serif;
@@ -159,6 +165,29 @@ body {
   border-radius: 18px;
 }
 .ios-card:hover { background: rgba(255, 255, 255, 0.07); }
+/* 效果工作室：沿用首頁主題色與卡片，不影響戰鬥介面的資訊密度。 */
+[data-effect-workspace] .ios-button-primary,
+[data-effect-workspace] .ios-button-secondary {
+  display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+  min-height: 36px; border: 1px solid rgba(255,255,255,.14); border-radius: 12px;
+  line-height: 1.5; cursor: pointer; transition: background .15s, border-color .15s;
+}
+[data-effect-workspace] .ios-button-primary {
+  background: color-mix(in srgb, var(--accent-hex, #3b82f6) 45%, #0f172a);
+  border-color: var(--accent-hex, #3b82f6); color: #f8fafc;
+}
+[data-effect-workspace] .ios-button-secondary { background: rgba(255,255,255,.05); color: #e2e8f0; }
+[data-effect-workspace] .ios-button-primary:hover:not(:disabled),
+[data-effect-workspace] .ios-button-secondary:hover:not(:disabled) { border-color: var(--accent-hex, #3b82f6); filter: brightness(1.15); }
+[data-effect-workspace] button:disabled { cursor: not-allowed; }
+[data-effect-workspace] button:focus-visible,
+[data-effect-workspace] input:focus-visible,
+[data-effect-workspace] textarea:focus-visible,
+[data-effect-workspace] select:focus-visible { outline: 2px solid var(--accent-hex, #3b82f6); outline-offset: 2px; }
+[data-effect-workspace] .ios-input { border: 1px solid rgba(255,255,255,.14); border-radius: 12px; background: rgba(15,23,42,.6); color: #f8fafc; }
+@media (max-width: 640px) {
+  [data-effect-workspace] .ios-segment > button { padding: 8px 6px; font-size: 12px; }
+}
 /* 更新頁的操作須能辨識、可鍵盤聚焦；作用域僅限本面板。 */
 [data-update-settings] .ios-button,
 [data-update-settings] .ios-button-primary {
@@ -201,6 +230,30 @@ body {
   background: color-mix(in srgb, var(--accent-hex, #3b82f6) 28%, #1e293b); color: #fff;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
 }
+/* 設定列（SegmentRow）：寬版標籤與按鈕同排；視窗 ≤ 480px 時標籤在上、按鈕整列等寬（6 個＝3×2，5 個＝3＋2 滿寬）。 */
+.seg-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.seg-row-card { padding: 12px 16px; border-bottom: 1px solid rgba(255, 255, 255, 0.06); }
+.seg-row-compact { padding: 6px 0; gap: 8px; }
+.seg-row > .ios-segment { flex-wrap: wrap; max-width: 100%; }
+@media (max-width: 480px) {
+  .seg-row { flex-direction: column; align-items: stretch; gap: 6px; }
+  .seg-row > .ios-segment { display: grid; width: 100%; grid-template-columns: repeat(3, 1fr); }
+  .seg-row > .ios-segment[data-count="1"] { grid-template-columns: 1fr; }
+  .seg-row > .ios-segment[data-count="2"] { grid-template-columns: repeat(2, 1fr); }
+  .seg-row > .ios-segment[data-count="4"] { grid-template-columns: repeat(4, 1fr); }
+  .seg-row > .ios-segment[data-count="5"] { grid-template-columns: repeat(6, 1fr); }
+  .seg-row > .ios-segment[data-count="5"] > button { grid-column: span 2; }
+  .seg-row > .ios-segment[data-count="5"] > button:nth-child(n+4) { grid-column: span 3; }
+  .seg-row > .ios-segment > button { padding: 6px 4px; text-align: center; min-width: 0; }
+}
+.ios-chip { padding: 2px 10px; border-radius: 999px; background: rgba(118, 118, 128, 0.24); }
+.ai-collapse { display: grid; grid-template-rows: 0fr; opacity: 0; visibility: hidden;
+  transition: grid-template-rows .22s ease, opacity .18s ease, visibility 0s linear .22s; }
+.ai-collapse[data-open="true"] { grid-template-rows: 1fr; opacity: 1; visibility: visible; transition-delay: 0s; }
+.ai-collapse > div { overflow: hidden; min-height: 0; }
+@media (prefers-reduced-motion: reduce) { .ai-collapse, .ai-chevron { transition: none !important; } }
+.ai-chevron { transition: transform .2s ease; }
+[aria-expanded="true"] > .ai-chevron { transform: rotate(180deg); }
 .ios-search {
   background: rgba(118, 118, 128, 0.24);
   border-radius: 10px; border: none;

@@ -1,8 +1,9 @@
 import { applyActionDamageModifiers } from '../battle/actionDamageModifiers';
 import assert from "node:assert";
-import { DEFAULT_ELVES } from "../data/defaultElves";
+import { DEFAULT_ELVES } from "../data/defaultElvesLoaded";
 import { getSkillProgram, getSoulProgram } from "../blocks/registry";
 import { SKILL_MODE, SOUL_MODE } from "../blocks/specs";
+import { compileEffectPlan } from "../effects/effectConnection";
 import { runSkillProgram, runSoulProgram, runSideTimers } from "../blocks/runtime";
 import { resetPrd } from "../utils/prd";
 import {
@@ -111,7 +112,8 @@ function makeBlockContext(selfOverrides: Record<string, any> = {}, targetOverrid
       if (ppChanges?.all) elf.skills = elf.skills.map((skill: any) => ({ ...skill, pp: Math.max(0, Math.min(skill.maxPp ?? 99, (skill.pp || 0) + ppChanges.all)) }));
     },
     updateElf: (side: "p1" | "p2", patch: Record<string, any>) => Object.assign(elfAt(side), patch),
-    updateAnyElf: () => {},
+    // 與正式戰鬥一致：PP 等操作走 getFullTeam（下方已有）／updateAnyElf，模擬環境必須真的寫入。
+    updateAnyElf: (side: "p1" | "p2", _id: string, patch: Record<string, any>) => { Object.assign(elfAt(side), patch); },
     applyPinkDamage: (_side: string, amount: number) => (damage.pink += Math.floor(amount), Math.floor(amount)),
     applyFixedDamage: (_side: string, amount: number) => (damage.fixed += Math.floor(amount), Math.floor(amount)),
     applyTrueDamage: (_side: string, amount: number) => (damage.true += Math.floor(amount), Math.floor(amount)),
@@ -172,8 +174,8 @@ function skillByName(name: string) {
 
 console.log("\n=== 積木登記完整性 ===");
 
-t("33 個積木技能（31 全積木＋2 指定子句）的積木子句皆可解析", () => {
-  assert.strictEqual(Object.keys(SKILL_MODE).length, 33);
+t("32 個積木技能（30 全積木＋2 指定子句；深潛者盛宴已改 Kit）的積木子句皆可解析", () => {
+  assert.strictEqual(Object.keys(SKILL_MODE).length, 32);
   for (const name of Object.keys(SKILL_MODE)) {
     const program = getSkillProgram(skillByName(name));
     const mode = SKILL_MODE[name];
@@ -210,8 +212,10 @@ t("殘軀鎖命：強化翻倍、傷害上限、回復計時與易傷均寫入�
   assert.deepStrictEqual(h.self.statStages, { atk: 3, def: 2, spatk: 2, spdef: 2, speed: 2, accuracy: 2 });
   assert.strictEqual(h.playerState.incomingSkillDmgCapTurns, 4);
   assert.strictEqual(h.playerState.incomingSkillDmgCap, 200);
-  assert.strictEqual(h.opponentState.damageTakenBoostTurns, 3);
-  assert.ok(h.timers.p1.some(timer => timer.payload.block.trig === "round_end" && timer.remaining === 4));
+  // 全域規則：「受到傷害提升」未指明類型時只算攻擊傷害 → 對手身上為「攻擊傷害 +100%」計時器（不再是全傷害翻倍鍵）
+  assert.strictEqual(h.opponentState.damageTakenBoostTurns, undefined);
+  assert.ok(h.timers.p2.some(timer => timer.payload.block.dmgIn === 1 && timer.payload.block.kind === "攻擊" && timer.remaining === 2));
+  assert.ok(h.timers.p1.some(timer => timer.payload.block.trig === "self_skill" && timer.remaining === 4));
 });
 
 t("萬鈞鎮魂：高體力目標受到1/4固定傷害，未擊敗時全屬性-1", () => {
@@ -291,7 +295,11 @@ t("夜魔神襲：解除自身能力下降且吸血50%寫入狀態", () => {
 t("深潛者盛宴：異常存在時3回合技能增傷由50%翻倍為100%", () => {
   const h = makeBlockContext({ battleStatuses: { 混亂: 2 } });
   h.ctx.skill = skillByName("深潛者盛宴");
-  runSkillProgram(h.ctx, getSkillProgram(h.ctx.skill), "use", [5]);
+  // 深潛者盛宴已改 Kit 執行：依實際執行的 Kit 程式（非描述解析）找出「3回合增傷」子句。
+  const feastProgram = compileEffectPlan(h.ctx.skill as any, "skill", false).program;
+  const feastClause = feastProgram.clauses.findIndex(clause => String(clause.raw).includes("3回合內自身造成技能傷害提升50%"));
+  assert.ok(feastClause >= 0, "Kit 內找得到3回合增傷子句");
+  runSkillProgram(h.ctx, feastProgram, "use", [feastClause]);
   assert.strictEqual(h.timers.p1.length, 1);
   const damageComp = { base: 100, damageCategory: 'skill_attack', isIncoming: false, increasePercent: 0, decreasePercent: 0, multiplier: 1 };
   runSideTimers(h.ctx, ['outgoing'], { damageComp });
@@ -328,7 +336,7 @@ t("星光·不滅之火：消強固傷、星火增傷、暴擊回滿與持續追
   h.ctx.setMark({ id: "blk_星火之灼", name: "星火之灼", count: 1 }, "p2");
   runSkillProgram(h.ctx, getSkillProgram(h.ctx.skill), "use");
   assert.strictEqual(h.target.statStages.atk, 0);
-  assert.strictEqual(h.damage.fixed, 400);
+  assert.strictEqual(h.damage.fixed, 800); // 消強400＋本次使用啟動的持續追傷400。
   assert.strictEqual(actionAttackMultiplier(h.playerState), 2.5);
   assert.ok(h.timers.p1.some(timer => timer.remaining === 3 && timer.payload.block.trig === "self_skill"));
   h.playerState.blkLastCrit = true;
@@ -354,7 +362,7 @@ t("星光·魔焰裂空：消強回血、星火增傷、弱化計時、必暴與
   h.ctx.setMark({ id: "blk_星火之灼", name: "星火之灼", count: 1 }, "p2");
   runSkillProgram(h.ctx, getSkillProgram(h.ctx.skill), "use");
   assert.strictEqual(h.self.currentHp, 500);
-  assert.strictEqual(h.target.statStages.def, 0);
+  assert.strictEqual(h.target.statStages.def, -1); // 先消強，本次直接攻擊即弱化一次。
   assert.strictEqual(actionAttackMultiplier(h.playerState), 2.5);
   assert.ok(h.timers.p1.some(timer => timer.remaining === 3 && timer.payload.block.trig === "self_attack"));
   assert.strictEqual(h.opponentState.utilitySkillInvalidTurns, 2);
@@ -374,7 +382,7 @@ t("千鳥俱寂：全屬性提升且建立回血追傷與先制麻痺", () => {
   h.ctx.skill = skillByName("千鳥俱寂");
   runSkillProgram(h.ctx, getSkillProgram(h.ctx.skill), "use");
   assert.deepStrictEqual(h.self.statStages, { atk: 1, def: 1, spatk: 1, spdef: 1, speed: 1, accuracy: 1 });
-  assert.ok(h.timers.p1.some(timer => timer.payload.block.trig === "round_end"));
+  assert.ok(h.timers.p1.some(timer => timer.payload.block.trig === "self_skill"));
 });
 
 t("千翎破陣：消回合成功後對手攻擊無效且異常增傷寫入狀態", () => {

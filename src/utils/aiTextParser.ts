@@ -234,10 +234,11 @@ export function parseEffectDescriptionLocal(text: string): ParsedEffectResult {
     }
 
     if (matchedModule) {
-      suggestedTemplate = `[引用庫存-${matchedModule.name}]: ${matchedModule.standardSyntax}`;
+      // 比對只能推薦參考，不能以庫內預設數值／條件覆寫原文。
+      suggestedTemplate = segment + '；';
     } else if (isUnrecognized) {
       const term = unrec[0] || "未知機制";
-      suggestedTemplate = `回合開始時：觸發自訂機制【${term}】，令自身造成的傷害提升 50% 且附加 ${term} 標記；（已暫存至未識別詞典）`;
+      suggestedTemplate = segment + '；';
       templateSuggestions.push(`偵測到原創未識別詞彙「${term}」，已建立暫存，建議標準化為觸發式分號模板以利後續邏輯計算。`);
     }
 
@@ -274,7 +275,7 @@ export function parseEffectDescriptionLocal(text: string): ParsedEffectResult {
     .join("") || rawInput + "；";
 
   if (mappedModules.length > 0) {
-    templateSuggestions.unshift(`成功映射到 ${mappedModules.length} 個系統標準效果模組（例如：${mappedModules.map(m => m.name).join("、")}），可直接參與戰鬥引擎數值與邏輯計算。`);
+    templateSuggestions.unshift(`找到 ${mappedModules.length} 個參考模組（${mappedModules.map(m => m.name).join("、")}）；僅供參考，不代表原句完整實裝，請核對積木連接報告。`);
   }
 
   // 4. 偵測是否符合公共模板引擎 (Semantic Template Engine)

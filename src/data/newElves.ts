@@ -1,5 +1,6 @@
 import type { Elf, Skill } from '../types';
 import { NEW_ELF_SOURCES as sourceEntries } from './descriptionSources';
+import {CORRUPTED_REY_SEEDS} from './corruptedRey';
 
 /**
  * elf_source_files/elf_files 的新精靈資料入口。
@@ -23,6 +24,26 @@ function stripSoulHeading(description: string): string {
 }
 
 function skillsFor(entry: SourceEntry): Skill[] {
+  return entry.skills.filter(skill => !(skill as any).poolOnly).map(skill => ({
+    name: skill.name,
+    type: skill.type || '無屬性',
+    category: skill.category || '屬性',
+    power: Number(skill.power || 0),
+    pp: Number(skill.pp || 0),
+    currentPp: Number(skill.pp || 0),
+    maxPp: Number(skill.maxPp || skill.pp || 0),
+    accuracy: Number(skill.accuracy ?? 100),
+    isSureHit: Boolean(skill.isSureHit),
+    priority: Number(skill.priority || 0),
+    isFifthSkill: Boolean(skill.isFifthSkill),
+    effectType: skill.effectType || 'none',
+    effectDetail: skill.effectDetail || '',
+    description: skill.description,
+  }));
+}
+
+/** 全部技能（含 poolOnly 備選），供技能池使用。 */
+function entrySkills(entry: SourceEntry): Skill[] {
   return entry.skills.map(skill => ({
     name: skill.name,
     type: skill.type || '無屬性',
@@ -52,6 +73,7 @@ function makeSeed(args: {
   baseStats: Elf['baseStats'];
   path: string;
   source: SourceEntry;
+  destinyRank?: 'S' | 'A' | 'B' | 'C';
 }): Omit<Elf, 'calculatedStats' | 'currentHp' | 'maxHp'> {
   const skills = skillsFor(args.source);
   return {
@@ -64,16 +86,17 @@ function makeSeed(args: {
     ...(args.weight === undefined ? {} : { weight: args.weight }),
     gender: args.gender,
     path: args.path,
+    ...(args.destinyRank ? { destinyRank: args.destinyRank } : {}),
     baseStats: args.baseStats,
     description: `資料來源：elf_source_files/elf_files；${args.name} 的效果以原文為準。`,
     soulMark: {
-      name: args.name === '星核寰宇·艾斯菲亞' ? '核' : args.name === '星軌重構·艾斯菲格' ? '格' : '邪',
+      name: args.name === '九青' ? '汨' : args.name === '星核寰宇·艾斯菲亞' ? '核' : args.name === '星軌重構·艾斯菲格' ? '格' : '邪',
       description: stripSoulHeading(args.source.soulDescription),
       effectType: 'none',
       effectValue: 0,
     },
     skills,
-    skillPool: skills.map(skill => ({ ...skill })),
+    skillPool: entrySkills(args.source).map(skill => ({ ...skill })),
   };
 }
 
@@ -118,5 +141,19 @@ export const MOGOS_SEED = makeSeed({
   source: mogosSource,
 });
 
-export const NEW_ELF_SEEDS = [ASTRAL_AESFIA_SEED, ASTRAL_AESFIG_SEED, MOGOS_SEED] as const;
+const jiuqingSource = source('九青');
+
+export const JIUQING_SEED = makeSeed({
+  id: '5036',
+  name: '九青',
+  type: '聖靈·地面',
+  seerId: 4543,
+  gender: '雌性',
+  baseStats: { hp: 165, atk: 140, def: 110, spatk: 70, spdef: 110, speed: 130 },
+  path: 'jiuqing',
+  destinyRank: 'B',
+  source: jiuqingSource,
+});
+
+export const NEW_ELF_SEEDS = [ASTRAL_AESFIA_SEED, ASTRAL_AESFIG_SEED, MOGOS_SEED, JIUQING_SEED,...CORRUPTED_REY_SEEDS] as const;
 

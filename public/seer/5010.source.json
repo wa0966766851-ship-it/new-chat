@@ -1,0 +1,13 @@
+{
+  "seerId": 5010,
+  "source": "SeerAPI/seer-unity-assets",
+  "verified": "sha256 與上游一致（2026-10-29 核對）",
+  "retrievedAt": "2026-10-29T02:00:00.000Z",
+  "files": [
+    {
+      "path": "seer/head/5010.png",
+      "source": "https://raw.githubusercontent.com/SeerAPI/seer-unity-assets/main/newseer/assets/art/ui/assets/pet/head/5010.png",
+      "sha256": "95ed70116bdb7968bc8f358d01cc8d1e885c89cde555ca5fed8a934e823953f4"
+    }
+  ]
+}

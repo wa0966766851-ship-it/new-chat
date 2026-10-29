@@ -1,11 +1,11 @@
 import { Elf, Skill, BattleLog, BattleItem } from "../types";
 import { Timer } from "../battle/timers";
 import { Mark } from "../battle/marks";
-import { switchBattleSide, writeScopedRegistry, addScopedTimer, setBattleSideMarks, type ElfScopeSnapshot } from "../battle/stateScopes";
+import { switchBattleSide, writeScopedRegistry, addScopedTimer, setBattleSideMarks, replaceBattleElfMarks, type ElfScopeSnapshot } from "../battle/stateScopes";
 import type { AddContext } from "../battle/timers";
 import { skillSlot } from '../battle/skillSlot';
 import type { BattleItemInventory } from '../battle/itemInventory';
-import { createBattleItemInventory } from '../battle/itemInventory';
+import { createBattleItemInventory, isUnlimitedInventory } from '../battle/itemInventory';
 import { normalizePpPatch } from '../battle/ppTransitions';
 import { trackIllusionStatWrite } from '../battle/illusionStats';
 
@@ -38,7 +38,7 @@ export type BattlePhase =
   | "game_over";
 
 export interface EffectItem {
-  type: 'damage' | 'heal' | 'adjust_hp' | 'status' | 'stat_change' | 'log' | 'animation' | 'switch' | 'death';
+  type: 'damage' | 'heal' | 'adjust_hp' | 'instant_kill' | 'status' | 'stat_change' | 'log' | 'animation' | 'switch' | 'death';
   side: 'p1' | 'p2';
   data: any;
   delay?: number;
@@ -114,6 +114,7 @@ export type BattleAction =
   | { type: 'UPDATE_SCOPED_REGISTRY_STATE'; side: 'p1' | 'p2'; owner: Elf; state: Record<string, any> }
   | { type: 'SET_TIMERS'; side: 'p1' | 'p2'; timers: Timer[] }
   | { type: 'ADD_SCOPED_TIMER'; side: 'p1' | 'p2'; owner: Elf; timer: Timer; context?: AddContext }
+  | { type: 'SET_SCOPED_TIMERS'; side: 'p1' | 'p2'; ownerId:string; timers:Timer[]; ownerTimers?:Timer[] }
   | { type: 'SET_MARKS'; side: 'p1' | 'p2'; marks: Mark[] }
   | { type: 'SET_LAST_DAMAGE'; side: 'p1' | 'p2'; damage: number }
   | { type: 'SET_LAST_ACTION_INFO'; info: LastActionInfo | null }
@@ -145,12 +146,12 @@ export const battleReducer = (state: BattleState, action: BattleAction): BattleS
         const newElf = { ...before, ...normalizePpPatch(trackIllusionStatWrite(before, action.elf)) };
         newTeam[resolvedIndex] = newElf;
         const isActive = resolvedIndex === state.p1ActiveIndex;
-        return { 
+        const next = {
           ...state, 
           p1: isActive ? newElf : state.p1,
           p1Team: newTeam,
-          ...(isActive && action.elf.marks ? { p1Marks: action.elf.marks } : {})
         };
+        return action.elf.marks ? replaceBattleElfMarks(next,'p1',newElf,action.elf.marks) : next;
       } else {
         const newTeam = [...state.p2Team];
         const targetIndex = action.targetId
@@ -162,12 +163,12 @@ export const battleReducer = (state: BattleState, action: BattleAction): BattleS
         const newElf = { ...before, ...normalizePpPatch(trackIllusionStatWrite(before, action.elf)) };
         newTeam[resolvedIndex] = newElf;
         const isActive = resolvedIndex === state.p2ActiveIndex;
-        return { 
+        const next = {
           ...state, 
           p2: isActive ? newElf : state.p2,
           p2Team: newTeam,
-          ...(isActive && action.elf.marks ? { p2Marks: action.elf.marks } : {})
         };
+        return action.elf.marks ? replaceBattleElfMarks(next,'p2',newElf,action.elf.marks) : next;
       }
     case 'UPDATE_TEAM':
       return action.side === 'p1' 
@@ -223,6 +224,10 @@ case 'SET_ACTIVE_INDEX':
       return writeScopedRegistry(state, action.side, action.owner, action.state);
     case 'SET_TIMERS':
       return { ...state, [`${action.side}Timers`]: action.timers };
+    case 'SET_SCOPED_TIMERS': {
+      const key=`${action.side}ElfState` as const,bank=state[key]||{},snapshot=bank[action.ownerId];
+      return {...state,[`${action.side}Timers`]:action.timers,...(action.ownerTimers!==undefined?{[key]:{...bank,[action.ownerId]:{...(snapshot||{registry:{}}),timers:action.ownerTimers}}}:{})};
+    }
     case 'ADD_SCOPED_TIMER':
       return addScopedTimer(state, action.side, action.owner, action.timer, action.context);
     case 'SET_MARKS':
@@ -263,8 +268,8 @@ case 'FORCED_SWITCH': {
       return action.state;
     case 'RESET_BATTLE':
       return { ...state, p1ElfState: {}, p2ElfState: {},
-        p1ItemInventory: state.p1ItemInventory ? createBattleItemInventory() : undefined,
-        p2ItemInventory: state.p2ItemInventory ? createBattleItemInventory() : undefined,
+        p1ItemInventory: state.p1ItemInventory ? createBattleItemInventory(isUnlimitedInventory(state.p1ItemInventory)) : undefined,
+        p2ItemInventory: state.p2ItemInventory ? createBattleItemInventory(isUnlimitedInventory(state.p2ItemInventory)) : undefined,
         ...action.initialState };
     default:
       return state;

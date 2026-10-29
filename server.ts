@@ -4,21 +4,28 @@ import fs from "fs";
 import https from "https";
 import { GoogleGenAI, Type } from "@google/genai";
 import dotenv from "dotenv";
+import { registerLauncherPreferences } from './server/launcherPreferences';
+import { registerLauncherIdentity } from './server/launcherIdentity';
+import { registerPetAnimations } from './server/petAnimations';
 import { AssetCache } from './electron/update/assetCache.cjs';
 import { REAL_CARD_EFFECT_MODULES as AI_EFFECT_REFERENCE_LIBRARY, TEMPLATE_GRAMMAR_GUIDELINES } from "./src/data/cardTemplates";
 
 dotenv.config();
 
+const distRoot=path.resolve(process.env.SEER_DIST_DIR || path.join(process.cwd(),'dist'));
 const app = express();
 const PORT = Number(process.env.PORT || 3000);
 
 app.use(express.json());
+registerLauncherPreferences(app, process.cwd());
+registerPetAnimations(app, process.cwd());
+registerLauncherIdentity(app, process.cwd(), process.env.NODE_ENV === 'production' ? 'production' : 'development');
 // Lite builds carry a local, version-pinned manifest from the verified application package.
 // Full builds have no manifest and retain their original offline routes.
-const assetManifestFile = path.join(process.cwd(), 'dist', 'asset-manifest.json');
+const assetManifestFile = path.join(distRoot, 'asset-manifest.json');
 if (process.env.NODE_ENV === 'production' && fs.existsSync(assetManifestFile)) {
   const manifest = JSON.parse(fs.readFileSync(assetManifestFile, 'utf8'));
-  const version = JSON.parse(fs.readFileSync(path.join(process.cwd(), 'dist', 'version.json'), 'utf8')).version;
+  const version = JSON.parse(fs.readFileSync(path.join(distRoot, 'version.json'), 'utf8')).version;
   if (manifest.version !== version) throw new Error('素材與程式版本不一致');
   const assets = new AssetCache(manifest, path.join(process.env.SEER_CACHE_DIR || path.join(process.cwd(), '.seer-cache'), 'release-assets'));
   app.use(async (req, res, next) => {
@@ -492,7 +499,7 @@ async function startServer() {
   app.get('/version.json', (_req, res) => {
     res.setHeader('Cache-Control', 'no-store, max-age=0');
     if (process.env.NODE_ENV !== 'production') return res.json({ development: true });
-    const file = path.join(process.cwd(), 'dist', 'version.json');
+    const file = path.join(distRoot, 'version.json');
     if (!fs.existsSync(file)) return res.status(404).json({ error: '網站尚未提供版本資訊' });
     return res.sendFile(file);
   });
@@ -506,8 +513,8 @@ async function startServer() {
     });
     app.use(vite.middlewares);
   } else {
-    const distPath = path.join(process.cwd(), "dist");
-    app.use(express.static(distPath));
+    const distPath = distRoot;
+    app.use(express.static(distPath,{setHeaders(res,file){if(/(?:\.html|(?:^|[\\/])sw\.js)$/.test(file))res.setHeader('Cache-Control','no-store');}}));
     app.get("*", (req, res) => {
       res.sendFile(path.join(distPath, "index.html"));
     });

@@ -213,6 +213,18 @@ test("重開戰鬥會清空上一場個體銀行", () => {
   state.p1ElfState = { old: { registry: { count: 99 }, timers: [] } };
   assert.deepEqual(battleReducer(state, { type: "RESET_BATTLE", initialState: {} }).p1ElfState, {});
 });
+
+for(const side of ['p1','p2'] as const)test(`${side}整隻更新與場下更新只替換該持有者印記視圖，不抹掉同名其他持有者`,()=>{
+  let state=fixture();const holder=state[side],bench=state[`${side}Team`][1];
+  const own=bindMarkToElf(mark('same',{scope:'elf'}),holder),other=bindMarkToElf(mark('same',{scope:'elf',count:7}),bench),shared=bindMarkToElf(mark('shared',{scope:'team'}),holder);
+  state=battleReducer(state,{type:'SET_MARKS',side,marks:[own,other,shared]});
+  state=battleReducer(state,{type:'UPDATE_ELF',side,elf:{...state[side],currentHp:290,marks:[{...own,count:4},shared]}});
+  assert.deepEqual(state[`${side}Marks`].filter((m:any)=>m.id==='same').map((m:any)=>[m.ownerBattleId,m.count]).sort(),[[holder.battleId,4],[bench.battleId,7]].sort());
+  state=battleReducer(state,{type:'UPDATE_ELF',side,targetId:bench.battleId,elf:{marks:[shared]}});
+  assert.equal(state[`${side}Marks`].find((m:any)=>m.ownerBattleId===bench.battleId),undefined);
+  assert.equal(state[`${side}Marks`].find((m:any)=>m.ownerBattleId===holder.battleId).count,4);
+  assert.equal(state[side].marks.length,2);assert.equal(state[`${side}Team`][1].marks.length,1);
+});
 test("找不到延遲更新的身分時忽略，不能退回覆蓋當前技能", () => {
   for (const side of ["p1", "p2"] as const) {
     const state = fixture();
@@ -232,5 +244,18 @@ test("額外精靈不能複製召喚者戰鬥私有狀態，明確覆寫仍有�
   assert.equal(child.currentHp, 100);
   assert.notEqual(child.battleId, parent.battleId);
   assert.equal(createExtraElf(parent, { name: "指定", shield: 80 }).shield, 80);
+});
+test('Context新增次數只疊加一次；獨立reducer也可建立場下timer銀行',()=>{
+  for(const shared of [false,true])for(const bench of [false,true]){
+    let rendered=fixture();const ref={current:rendered};
+    const self=ref.current.p1Team[bench?1:0];
+    const api=buildStateAPIs({side:'p1',self,opp:ref.current.p2,isP1:true,targetSide:'p2',syncStateRef:ref,pushEffect:()=>{},
+      dispatch:(action:any)=>{if(shared)ref.current=battleReducer(ref.current,action);else rendered=battleReducer(rendered,action);}} as any);
+    for(let i=0;i<2;i++)api.addTimerTo('p1',timer('count','use_counter',{tickAt:'never',stackRule:'extend',scope:'elf',persistsOffField:true}),false);
+    const state=shared?ref.current:rendered;
+    const list=bench?state.p1ElfState.b.timers:state.p1Timers;
+    assert.equal(list[0].remaining,4,'兩筆2次不得變成8次');
+    if(bench){assert.deepEqual(state.p1Timers,[]);assert.deepEqual(state.p1ElfState.b.registry,{});}
+  }
 });
 console.log(`作用域語意測試：${passed}項通過`);

@@ -1,15 +1,17 @@
+import {markCapability} from './markCapabilities';
 import type { Elf } from '../types';
 import type { BattleState } from '../components/BattleManager';
 import type { DamageComputation } from '../effects/types';
 import { matchesDamageTypes } from '../effects/damageChoices';
 import { StatusRegistry } from '../effects/statusRegistry';
 import { getStatuses } from '../utils/battleHelpers';
-import { markAppliesToElf } from './marks';
+import { markAppliesToElf,MARK_DEFINITIONS } from './marks';
 import { activeConstraints } from './timedConstraints';
 import { isNonTrueDamageType, isSkillDamageType, normalizeDamageType } from './damageSemantics';
+import {markDamageReductionRate} from './markDamageReduction';
 
-export interface ReductionPolicy { override?: number; attenuation: number }
-type ReductionComp = Pick<DamageComputation, 'damageCategory' | 'multiplier' | 'decreasePercent' | 'pure'> & { reductionPolicy?: ReductionPolicy; reductionSources?: Record<string, number> };
+export interface ReductionPolicy { override?: number; attenuation: number; skillDefenseDisabled?:boolean }
+type ReductionComp = Pick<DamageComputation, 'damageCategory' | 'multiplier' | 'decreasePercent' | 'pure'> & { trackReduction?:boolean; multiplierReductionProduct?:number; incomingDamageImmunity?:boolean; reductionPolicy?: ReductionPolicy; reductionSources?: Record<string, number> };
 
 /** 僅改寫「持有者受到傷害降低」；不改造成傷害降低、抵擋、攻擊值、上限或護盾。 */
 export function reductionPolicy(state: Pick<BattleState, 'p1Timers' | 'p2Timers' | 'p1Marks' | 'p2Marks'>, side: 'p1' | 'p2', elf: Elf, category: string): ReductionPolicy {
@@ -21,11 +23,12 @@ export function reductionPolicy(state: Pick<BattleState, 'p1Timers' | 'p2Timers'
   if (isSkillDamageType(type)) for (const mark of state[`${side}Marks`] || []) {
     if (mark.id === 'blk_千秋一淚' && markAppliesToElf(mark, elf)) attenuation *= 0.5 ** Math.floor(Math.max(0, mark.count) / 2);
   }
-  return { override: overrides.length ? Math.max(...overrides) / 100 : undefined, attenuation };
+  return { skillDefenseDisabled:isSkillDamageType(type)&&!!markCapability(elf,"skillDefenseDisabled",state[`${side}Marks`]), override: overrides.length ? Math.max(...overrides) / 100 : undefined, attenuation };
 }
 
 export function effectiveReduction(comp: ReductionComp, rate: number, incoming = true): number {
   if (comp.pure || normalizeDamageType({ damageType: comp.damageCategory }) === 'true') return 0;
+  if(incoming&&rate>=1&&comp.reductionPolicy?.skillDefenseDisabled)return 0;
   if (!Number.isFinite(rate) || rate <= 0) return 0; // 無減傷觸發時不能憑空生出99%。
   return Math.min(1, Math.max(0, (incoming ? comp.reductionPolicy?.override ?? rate : rate)
     * (incoming ? comp.reductionPolicy?.attenuation ?? 1 : 1)));
@@ -34,6 +37,7 @@ export function effectiveReduction(comp: ReductionComp, rate: number, incoming =
 export function addDamageReduction(comp: ReductionComp, rate: number, incoming = true, sourceKey?: string): number {
   const effective = effectiveReduction(comp, rate, incoming);
   if (!effective) return 0;
+  if(incoming&&effective===1)comp.incomingDamageImmunity=true;
   const current = Math.min(1, Math.max(0, comp.decreasePercent || 0));
   if (sourceKey) {
     const sources = comp.reductionSources ||= {};
@@ -41,6 +45,7 @@ export function addDamageReduction(comp: ReductionComp, rate: number, incoming =
     const previous = effectiveReduction(comp, previousRaw, incoming);
     sources[sourceKey] = Math.min(1, previousRaw + rate);
     const combined = effectiveReduction(comp, sources[sourceKey], incoming);
+    if(incoming&&combined===1)comp.incomingDamageImmunity=true;
     comp.decreasePercent = previous >= 1 ? 1 : current === 0 ? combined : 1 - (1 - current) / (1 - previous) * (1 - combined);
   } else {
     // 不同来源不能累加至100%假免傷；各自作用於剩餘傷害。
@@ -51,7 +56,14 @@ export function addDamageReduction(comp: ReductionComp, rate: number, incoming =
 
 export function multiplyDamageReduction(comp: ReductionComp, multiplier: number, incoming = true): number {
   const effective = effectiveReduction(comp, 1 - multiplier, incoming);
-  comp.multiplier *= 1 - effective;
+  if(incoming&&effective===1)comp.incomingDamageImmunity=true;
+  // 記錄正式減傷乘區；100%改以decreasePercent表示，保留非減傷乘區供結算回執讀取。
+  // 舊的純資料呼叫者未啟用trackReduction時維持既有表示。
+  if(comp.trackReduction && effective===1) comp.decreasePercent=1;
+  else {
+    comp.multiplier *= 1 - effective;
+    if(comp.trackReduction)comp.multiplierReductionProduct=(comp.multiplierReductionProduct??1)*(1-effective);
+  }
   return effective;
 }
 
@@ -60,7 +72,10 @@ export function applyMarkDamageReductions(comp: DamageComputation, state: Pick<B
   if (comp.pure) return;
   for (const mark of state[`${side}Marks`] || []) {
     if (!markAppliesToElf(mark, elf) || mark.count <= 0) continue;
-    if (mark.id === 'demon_grudge' && comp.damageCategory === 'skill_attack') addDamageReduction(comp, mark.count * 0.05);
+    const rule=mark.effects?.incomingDamageReduction ?? MARK_DEFINITIONS[mark.id]?.effects?.incomingDamageReduction;
+    const scopes={攻擊:'attack',技能:'skill',非真實:'non_true',固定:'fixed',百分比:'percent'};
+    if(rule&&matchesDamageTypes([scopes[rule.kind]],comp.damageCategory))
+      addDamageReduction(comp,markDamageReductionRate(rule,mark.count));
   }
 }
 

@@ -25,10 +25,11 @@ try{
    let st=d.getSyncState(); if(st.phase.startsWith('forced_switch')){ const idx=st.p2Team.findIndex((e:any,i:number)=>i!==st.p2ActiveIndex&&e.currentHp>0); await act(async()=>d.onSwitchElf('p2',idx)); await wait(20);} };
  const fx=(n:string)=>{const e=d.getSyncState().p2Team.find((x:any)=>x.name===n); return (e.effects||[]).map((x:any)=>x.id+x.duration).join(',');};
  await turn(0,'skill'); assert.equal(fx('X'),'冰封2');
- await turn(1,1); assert.equal(d.getSyncState().p2.name,'Y'); assert.equal(fx('X'),'冰封2','場下不扣');
+ await turn(1,1); assert.equal(d.getSyncState().p2.name,'Y'); assert.equal(fx('X'),'','下場後異常消失（原廠設定）');
  await turn(2,'skill'); assert.equal(d.getSyncState().p2.name,'X','死切換回 X');
- assert.equal(fx('X'),'冰封2','死切上場的精靈不吃本回合的回合結束');
+ assert.equal(fx('X'),'','死切上場的精靈沒有殘留異常');
+ await turn(0,'skill'); assert.equal(fx('X'),'冰封2','死切上場後新附加的異常照常扣減');
  await turn(1,'skill'); assert.equal(fx('X'),'冰封1');
  await turn(1,'skill'); assert.equal(fx('X'),'凍傷3','到期才轉化');
  console.log('死亡換人：回合結束先於換人、新上場精靈異常不提前扣減／轉化通過');
-} finally { await server.close(); process.exit(0); }
+} catch (e) { console.error(e); process.exitCode = 1; } finally { await server.close(); process.exit(process.exitCode ?? 0); }

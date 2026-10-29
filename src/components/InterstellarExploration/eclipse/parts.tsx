@@ -7,6 +7,21 @@ import { isAliveBySurvivalRule } from "../../../battle/survivalRules";
 import { resolvePetIds } from "../../../battle/seerAssets";
 import { CARD_ART_IDS } from "../../../modes/interstellar/v2/cardIds";
 
+/** 回廊版面斷點（容器寬度，px）：ecl-sm／md／lg／xl 變體（見 index.css）。 */
+export const ECL_BREAKS = [["sm", 560], ["md", 760], ["lg", 1000], ["xl", 1400]] as const;
+export const eclTokens = (width: number): string => ECL_BREAKS.filter(([, min]) => width >= min).map(([k]) => k).join(" ");
+/** 掛在回廊根節點：以 ResizeObserver 追蹤實際寬度並寫入 data-ecl，讓版面隨容器而非視窗切換。 */
+export function useEclRootRef() {
+  const ro = React.useRef<ResizeObserver | null>(null);
+  return React.useCallback((el: HTMLElement | null) => {
+    ro.current?.disconnect(); ro.current = null;
+    if (!el) return;
+    const apply = () => el.setAttribute("data-ecl", eclTokens(el.clientWidth || (typeof window === "undefined" ? 1440 : window.innerWidth)));
+    apply();
+    if (typeof ResizeObserver !== "undefined") { ro.current = new ResizeObserver(apply); ro.current.observe(el); }
+  }, []);
+}
+
 /** 蝕月：黑影從右側吞沒金色月盤，蝕度 0–100+ */
 export function EclipseMoon({ value, size = 44 }: { value: number; size?: number }) {
   const v = Math.max(0, Math.min(100, value));
@@ -48,12 +63,16 @@ export const RelicSigil: React.FC<{ id: string; size?: "sm" | "md" | "lg"; showN
   );
 };
 
-/** 遺物圖示：官方道具圖（public/eclipse/relic）置於六角徽框中，缺圖時退回單字徽記 */
+/** 遺物圖示來源（依序嘗試）：官方道具圖 public/eclipse/relic → SeerAPI 抓取圖 public/seerapi/relic（由另一代理補圖）→ 單字徽記 */
+export const relicImageSources = (id: string): string[] => [`/eclipse/relic/${id}.webp`, `/seerapi/relic/${id}.png`];
+/** 遺物圖示：官方道具圖置於六角徽框中，缺圖時依序退回備用來源與單字徽記 */
 export function RelicIcon({ id, rarity, glyph, dim, fontSize }: { id: string; rarity: string; glyph: string; dim: string; fontSize?: string }) {
-  const [ok, setOk] = React.useState(true);
+  const srcs = relicImageSources(id);
+  const [i, setI] = React.useState(0);
+  React.useEffect(() => setI(0), [id]);
   return (
     <span className="ecl-sigil relative" data-rarity={rarity} style={{ width: dim, height: dim, fontSize }}>
-      {ok ? <img src={`/eclipse/relic/${id}.webp`} alt="" draggable={false} onError={() => setOk(false)} className="absolute inset-[12%] w-[76%] h-[76%] object-contain drop-shadow-[0_2px_3px_rgba(0,0,0,.8)]" /> : glyph}
+      {i < srcs.length ? <img key={srcs[i]} src={srcs[i]} alt="" draggable={false} onError={() => setI(n => n + 1)} className="absolute inset-[12%] w-[76%] h-[76%] object-contain drop-shadow-[0_2px_3px_rgba(0,0,0,.8)]" /> : glyph}
     </span>
   );
 }

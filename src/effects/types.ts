@@ -2,8 +2,12 @@ import { Elf, Skill, BattleLog, BattleItem, BattleEffect, EffectSubCategory } fr
 import { Timer } from "../battle/timers";
 import { Mark } from "../battle/marks";
 import type { SettlementOptions } from '../battle/settlementReceipt';
+import type {StatusOrigin} from '../battle/statusOrigin';
 
 export enum EffectTiming {
+  SKILL_SELECTED = "SKILL_SELECTED",
+  /** 開局1.1：通知雙方存活的完整出戰背包持有者，先於首發登場；每場一次。 */
+  BATTLE_START = "BATTLE_START",
   BEFORE_DAMAGE = "BEFORE_DAMAGE",
   /**
    * 受到傷害後（任何傷害類別，HP 結算之後）：派發給「受到傷害的精靈」魂印（ctx.actor＝受擊方）。
@@ -14,6 +18,8 @@ export enum EffectTiming {
   AFTER_ATTACK_HIT = "AFTER_ATTACK_HIT",
   MODIFY_POWER = "MODIFY_POWER",
   BEFORE_STATUS_TICK = "BEFORE_STATUS_TICK",
+  ON_STATUS_ENDED = "ON_STATUS_ENDED",
+  SELF_STATUS_APPLIED = "SELF_STATUS_APPLIED",
   ON_ENTRANCE = "ON_ENTRANCE",
   BEFORE_ACTION = "BEFORE_ACTION",
   /** 對手出手流程開始（技能結算前）：派發給非行動方魂印。data: { skill, side（行動方） } */
@@ -28,6 +34,10 @@ export enum EffectTiming {
    * 用於「對手使用攻擊技能後…」類效果。ctx.actor＝收到通知的一方。data: ActionResultInfo（actor＝對手）
    */
   OPPONENT_AFTER_ACTION = "OPPONENT_AFTER_ACTION",
+  /** 在場精靈的護盾由 >0 變為 0（被打破或被消除）：派發給持有方。data: { before } */
+  SHIELD_BROKEN = "SHIELD_BROKEN",
+  /** 護盾或護罩由正值歸零；不改變舊護盾事件範圍。 */
+  HELD_RESOURCE_LOST = "HELD_RESOURCE_LOST",
   /**
    * 自身技能未成功出手（技能無效／未命中／被閃避／攻擊免疫）：派發給行動方魂印，取代 AFTER_ACTION，
    * 用於清理 BEFORE_SKILL／BEFORE_ACTION 設下的「本次行動」旗標。data: ActionResultInfo（hit=false）
@@ -46,8 +56,21 @@ export enum EffectTiming {
   /** 受到傷害後（同 AFTER_DAMAGE 的 payload；damageType 一律正規化）。另會通知部分「對手受擊」觀察者。 */
   ON_DAMAGED = "ON_DAMAGED",
   OPPONENT_DAMAGE = "OPPONENT_DAMAGE",
+  /**
+   * 6.2 被擊敗時：派發給剛陣亡的在場精靈（及模式事件）。死亡節點一／二／三哪個先看到陣亡就由哪個派發，
+   * data.node＝1｜2｜3。歷史名稱保留，現有 handler 都以此為「被擊敗時」。
+   */
   DEATH_NODE_1 = "DEATH_NODE_1",
+  /** 舊名，引擎不派發（死亡節點二請讀 DEATH_NODE_1 的 data.node === 2）。 */
   DEATH_NODE_2 = "DEATH_NODE_2",
+  /** 6.1 未被擊敗：出手後的死亡節點，出手目標仍存活。data: { node, killerSide } */
+  NOT_DEFEATED = "NOT_DEFEATED",
+  /** 6.3 未擊敗對手：出手後的死亡節點，出手方未擊敗對手。data: { node } */
+  NOT_KILLED = "NOT_KILLED",
+  /** 6.5 被擊敗後（6.2 之後）。data: { node } */
+  AFTER_DEFEATED = "AFTER_DEFEATED",
+  /** 6.6 擊敗對手後（6.4 之後）。data: { defeatedElf, node } */
+  AFTER_KILL = "AFTER_KILL",
   BATTLE_PHASE_END = "BATTLE_PHASE_END",
   BEFORE_SKILL = "BEFORE_SKILL",
   /**
@@ -78,10 +101,16 @@ export enum EffectTiming {
   BEFORE_STAT_CHANGE = 'BEFORE_STAT_CHANGE',
   PP_CHANGED = 'PP_CHANGED',
   STAT_BOOST_CLEARED = 'STAT_BOOST_CLEARED',
+  RESOURCE_CHANGED = 'RESOURCE_CHANGED',
+  BEFORE_INSTANT_KILL = 'BEFORE_INSTANT_KILL',
+  /** 真正免疫一段傷害後（固定／百分比／技能皆可；data: { damageType, blockedAmount, kinds }）。 */
+  DAMAGE_IMMUNIZED = 'DAMAGE_IMMUNIZED',
 }
 
 /** AFTER_ACTION／OPPONENT_AFTER_ACTION／ACTION_FAILED 的 extraData */
 export interface ActionResultInfo {
+  /** 本次主技能正式結算量，包含護盾吸收；與實際HP減少分開。 */
+  settledDamage?:number;
   /** 行動方 */
   actor: "p1" | "p2";
   skill: Skill | any;
@@ -89,8 +118,12 @@ export interface ActionResultInfo {
   category: string;
   /** 本次主技能傷害實際造成的對手 HP 減少量（不含附加／固定／百分比等其他傷害） */
   damageDealt: number;
+  /** 本次主攻擊的致命一擊結果；屬性技能與失敗行動為 false。 */
+  isCrit?: boolean;
   /** 技能成功命中（未 Miss／未被閃避／未被攻擊免疫／未被無效）；屬性技能成功出手也為 true */
   hit: boolean;
+  /** 本次出手的技能附加效果是否可執行；不重查已消耗的封印次數。 */
+  additionalEffectsEnabled?: boolean;
   /** 技能被「技能無效」類效果擋下 */
   invalid: boolean;
   /** 對手於本次行動中倒下（HP≤0） */
@@ -106,6 +139,7 @@ export interface StatChangeResult {
 }
 
 export interface PriorityComputation {
+  tieRole?: 'challenger' | 'challenged';
   base: number;
   bonus: number;
   forcedFirst: boolean;
@@ -147,9 +181,19 @@ export type DamageCategory = "skill_attack" | "skill_attribute" | "skill_extra_a
 export type DamageNode = "attack_damage" | "skill_effect" | "extra_action";
 
 export interface DamageComputation {
+  /** 實際造成傷害的一方；供受方效果區分敵方傷害與自身傷害。 */
+  sourceSide?: 'p1' | 'p2';
+  incomingDamageImmunity?:boolean; // 正式受方100%免傷；不同於抵擋、上限、取整或造成者傷害歸零。
+  incomingDamageCancellation?:'block'|'conversion'; // 明確抵擋／轉化不以倍率0冒充免疫。
+  damageBlocks?:Map<string,(amount:number)=>void>;
+  damageConversions?:Map<string,(amount:number)=>void>;
+  /** 明文無視傷害抵擋，與一般減傷、轉化及技能無效分開。 */
+  ignoreDamageBlocking?:boolean;
   beforeFinalDamage?: Array<() => void>; // 條件減傷等全部增減傷就緒後再判斷，不以未加成base決定門檻
   afterDamage?: import('../battle/settlementReceipt').SettlementCallback;
   reductionPolicy?: import("../battle/damageReduction").ReductionPolicy;
+  trackReduction?:boolean;
+  multiplierReductionProduct?:number;
   reductionSources?: Record<string, number>; // 明確同源可加算；不同來源合成剩餘傷害比例
   attackDefenseBypass?: import('../battle/attackDefense').AttackDefenseBypass;
   base: number;              // Stage 0 結果，唯讀
@@ -181,26 +225,38 @@ export interface PpCostComputation {
 
 export interface BattleEventContext {
   /** 從指定陣營背包扣一瓶並立即使用；recipient預設自己，空庫存不偽造回復。 */
-  useBattleItem?: (inventorySide: 'p1' | 'p2', itemId: string, recipient?: 'p1' | 'p2') => boolean;
+  useBattleItem?: (inventorySide: 'p1' | 'p2', itemId: string, recipient?: 'p1' | 'p2', picked?: { side: 'p1' | 'p2'; battleId: string }) => boolean;
+  /** 通用：把道具放入指定陣營的道具欄位（不超過持有上限）。 */
+  grantBattleItem?: (inventorySide: 'p1' | 'p2', itemId: string, count?: number) => boolean;
   /** 指定持有者的通用事件，不偷換成當前操作方。 */
   emitElfEvent?: (side: 'p1' | 'p2', owner: Elf, event: EffectTiming, data: Record<string, unknown>) => void;
+  /** 指定持有者的正式上下文，保留個體狀態銀行；不能用場上精靈上下文冒充場下持有者。 */
+  contextForElf?: (side:'p1'|'p2',owner:Elf) => BattleEventContext;
   /** 所有傷害類型的指定精靈入口；場下不偷換成真實傷害。 */
   applyDamageToElf?: (side: 'p1' | 'p2', targetId: string, amount: number, type: DamageCategory,
-    opts?: { elem?: string; label?: string; onSettled?: import('../battle/settlementReceipt').SettlementCallback; reaction?: boolean }) => number;
+    opts?: { elem?: string; label?: string; onSettled?: import('../battle/settlementReceipt').SettlementCallback; onCalculated?:import('../battle/damageCalculation').DamageCalculationOptions['onCalculated']; reaction?: boolean; applyTypeMatchup?: boolean; pure?: boolean }) => number;
   /** 驅逐：以共用切換隔離狀態，但跳過主動／死亡／登場鉤子。 */
   expel?: (side: 'p1' | 'p2') => boolean;
   /** 當前傷害及其衍生反應收尾；不是下一次出招，不重跑傷害或PP。 */
   afterDamageChain?: (run: (ctx: BattleEventContext) => void) => void;
   roundNumber?: number;
+  /** 一次正式出手的識別碼；失效重算不變，另一個獨立出手另取新碼。 */
+  actionId?: number;
   specialMode?: 'destiny' | 'interstellar';
   applyTrueDamageToElf?: (side: "p1" | "p2", targetId: string, amount: number, label?: string) => void;
   applyHealToElf?: (side: 'p1' | 'p2', targetId: string, amount: number, opts?: SettlementOptions) => void;
+  adjustHpToElf?: (side:'p1'|'p2',targetId:string,amount:number) => void;
   p1FullTeam: Elf[];
   p2FullTeam: Elf[];
   self: Elf;
   target: Elf;
   actor: "p1" | "p2";
   goesFirst?: boolean;
+  /** 僅本次命中後入口提供：主技能傷害實際扣除的HP，不含附加傷害。 */
+  mainSkillHpReduced?: number;
+  /** 本次固有使用條款已在命中閘門前執行，技能runner不得重播。 */
+  innateSkillUseHandled?: boolean;
+  mainSkillReduction?: import("../battle/damageReductionReceipt").DamageReductionReceipt;
   isEntranceTurn?: boolean;
   currentPhase?: string;
   skill: any;
@@ -217,15 +273,16 @@ export interface BattleEventContext {
   /** 文字彈出（Miss／技能無效／附加效果失效） */
   showPopup?: (side: "p1" | "p2", text: string, type: string, label?: string) => void;
   addLog: (msg: string, type?: "info" | "damage" | "heal" | "status" | "effect" | "defeat", sourceCode?: string) => void;
-  applyStatusWithImmunityCheck: (side: "p1" | "p2", status: string, duration: number, ignoreDeluImmune?: boolean) => { success: boolean, immune: boolean };
+  applyStatusWithImmunityCheck: (side: "p1" | "p2", status: string, duration: number, ignoreDeluImmune?: boolean, targetBattleId?:string,origin?:StatusOrigin) => { success: boolean, immune: boolean };
   applyDeathImmunity: (side: "p1" | "p2", opts: { guardTurns: number; deathImmuneTurns: number; fixedPercentCap?: number; preserveOffField?: boolean }) => void;
+  applyInstantKill?: (side:'p1'|'p2',label?:string,opts?:import('../battle/instantKill').InstantKillOptions)=>boolean;
   applyPercentDamage: (side: "p1" | "p2", percent: number) => number | void;
   getStatuses: (elf: Elf) => Record<string, number>;
-  applyPinkDamage: (side: "p1" | "p2", amount: number, label?: string, activeP1?: Elf, activeP2?: Elf, dmgType?: string, opts?: { pure?: boolean } & SettlementOptions) => number;
+  applyPinkDamage: (side: "p1" | "p2", amount: number, label?: string, activeP1?: Elf, activeP2?: Elf, dmgType?: string, opts?: { pure?: boolean } & import('../battle/damageCalculation').DamageCalculationOptions) => number;
   applyTrueDamage: (side: "p1" | "p2", amount: number, label?: string, activeP1?: Elf, activeP2?: Elf, opts?: SettlementOptions) => number;
-  applySkillTypeDamage: (side: "p1" | "p2", amount: number, label?: string, opts?: { ignoreBlock?: boolean; ignoreLimit?: boolean; ignoreShield?: boolean; floor?: number; elem?: string; category?: "skill_attribute" | "skill_extra_action"; node?: DamageNode; pure?: boolean }) => number;
+  applySkillTypeDamage: (side: "p1" | "p2", amount: number, label?: string, opts?: { ignoreBlock?: boolean; ignoreLimit?: boolean; ignoreShield?: boolean; floor?: number; elem?: string; category?: "skill_attack" | "skill_attribute" | "skill_extra_action"; node?: DamageNode; pure?: boolean; applyTypeMatchup?: boolean; appendToAttack?: boolean }) => number;
   /** 舊汲取入口（真實傷害）。吸取請使用明確 fixed／percent 的 queueHpDrain。 */
-  applyAbsorb: (side: "p1" | "p2", amount: number, label?: string) => void;
+  applyAbsorb: (side: "p1" | "p2", amount: number, label?: string, opts?: SettlementOptions) => void;
   
   // Dynamic state accessors
   getPlayerState: (key: string) => any;
@@ -238,7 +295,7 @@ export interface BattleEventContext {
   /** 回傳實際變化量（舊呼叫端可忽略回傳值） */
   applyStatChange: (side: "p1" | "p2", changes: Record<string, number>, ppChanges?: Record<string, number>) => StatChangeResult;
   applyShield: (side: "p1" | "p2", amount: number) => void;
-  applyFixedDamage: (side: "p1" | "p2", amount: number, label?: string) => number | void;
+  applyFixedDamage: (side: "p1" | "p2", amount: number, label?: string, opts?: { unscaled?: boolean }) => number | void;
   updateElf: (side: "p1" | "p2", elfUpdates: Partial<Elf>) => void;
   updateAnyElf: (side: "p1" | "p2", battleId: string, patch: Partial<Elf>) => void;
   targetSide: "p1" | "p2";
@@ -262,8 +319,11 @@ export interface BattleEventContext {
   /** 額外行動：於該方出手流程結束後（後手出手前）逐一執行，每次為獨立的傷害節點（類別：額外行動傷害） */
   queueExtraAction?: (owner: "p1" | "p2", action: ExtraAction) => void;
   setMark: (mark: Omit<Mark, "source"> & { source?: string }, targetSide?: "p1" | "p2") => void;
-  clearMark: (id: string, targetSide?: "p1" | "p2") => void;
+  /** 第三參數指定單一印記實例：null僅陣營級；未填維持持有者可用印記的舊語義。 */
+  clearMark: (id: string, targetSide?: "p1" | "p2", ownerBattleId?: string|null) => void;
   getMarks: (side: "p1" | "p2") => Mark[];
+  /** 陣營生命週期使用；一般效果仍用持有者過濾的 getMarks。 */
+  getAllMarks?: (side: "p1" | "p2") => Mark[];
   shuffleArray: <T>(arr: T[]) => T[];
 
   // Position Coordinates & Vanish Utilities

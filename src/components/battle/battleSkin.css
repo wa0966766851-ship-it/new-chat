@@ -79,3 +79,7 @@
 }
 .bt-log-line { border-left: 3px solid var(--bt-line-soft); padding: .3rem .55rem; }
 }
+
+
+/* 對戰資訊欄詳略分級（DSH 20261019）：主行動加粗突出。 */
+.bt-log-line[data-log-level="main"] { font-weight: 700; }

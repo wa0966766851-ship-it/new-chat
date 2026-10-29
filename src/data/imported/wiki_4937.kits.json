@@ -1,0 +1,2078 @@
+{
+  "elfId": "wiki_4937",
+  "soul": {
+    "sourceSha256": "95f04c4913208940861bfcaa18f82afa034c69744accdb41ab29392adcfca265",
+    "kit": [
+      {
+        "codeId": "effect_sequence",
+        "params": {
+          "clause": {
+            "raw": "雙方使用技能時，令對手攻擊、特攻-1，未觸發則自身解除所處的異常狀態且本場戰鬥自身造成的攻擊傷害提升30%，最高150%",
+            "trig": "self_skill",
+            "body": [
+              {
+                "acts": [
+                  {
+                    "op": "stat",
+                    "p": {
+                      "chance": 100,
+                      "side": "opp",
+                      "stats": [
+                        "攻擊",
+                        "特攻"
+                      ],
+                      "v": -1
+                    },
+                    "label": "對手 攻擊、特攻 -1"
+                  }
+                ]
+              },
+              {
+                "chain": "fail",
+                "acts": [
+                  {
+                    "op": "cure_status",
+                    "p": {
+                      "side": "self"
+                    },
+                    "label": "解除自身異常"
+                  },
+                  {
+                    "op": "battle_boost",
+                    "p": {
+                      "inc": 0.3,
+                      "kind": "攻擊",
+                      "cap": 1.5
+                    },
+                    "label": "本場戰鬥攻擊傷害 +30%（累加）（最高150%）"
+                  }
+                ]
+              }
+            ],
+            "parsed": true
+          }
+        },
+        "node": "on_skill_use",
+        "source": "soulmark",
+        "order": 0,
+        "customText": "雙方使用技能時，令對手攻擊、特攻-1，未觸發則自身解除所處的異常狀態且本場戰鬥自身造成的攻擊傷害提升30%，最高150%",
+        "role": "attached"
+      },
+      {
+        "codeId": "effect_sequence",
+        "params": {
+          "clause": {
+            "raw": "雙方使用技能時，令對手攻擊、特攻-1，未觸發則自身解除所處的異常狀態且本場戰鬥自身造成的攻擊傷害提升30%，最高150%",
+            "trig": "opp_skill",
+            "body": [
+              {
+                "acts": [
+                  {
+                    "op": "stat",
+                    "p": {
+                      "chance": 100,
+                      "side": "opp",
+                      "stats": [
+                        "攻擊",
+                        "特攻"
+                      ],
+                      "v": -1
+                    },
+                    "label": "對手 攻擊、特攻 -1"
+                  }
+                ]
+              },
+              {
+                "chain": "fail",
+                "acts": [
+                  {
+                    "op": "cure_status",
+                    "p": {
+                      "side": "self"
+                    },
+                    "label": "解除自身異常"
+                  },
+                  {
+                    "op": "battle_boost",
+                    "p": {
+                      "inc": 0.3,
+                      "kind": "攻擊",
+                      "cap": 1.5
+                    },
+                    "label": "本場戰鬥攻擊傷害 +30%（累加）（最高150%）"
+                  }
+                ]
+              }
+            ],
+            "parsed": true
+          }
+        },
+        "node": "on_attacked",
+        "source": "soulmark",
+        "order": 1,
+        "customText": "雙方使用技能時，令對手攻擊、特攻-1，未觸發則自身解除所處的異常狀態且本場戰鬥自身造成的攻擊傷害提升30%，最高150%",
+        "role": "attached"
+      },
+      {
+        "codeId": "effect_sequence",
+        "params": {
+          "clause": {
+            "raw": "若對手處於能力下降狀態則令對手下回合屬性技能無效，若對手不處於能力下降狀態則恢復自身最大體力的1/3，每溢出10點自身下回合受到的攻擊傷害減少1%且獲得10點護盾",
+            "trig": "phase_end",
+            "body": [
+              {
+                "cond": [
+                  {
+                    "c": "stage",
+                    "p": {
+                      "side": "opp",
+                      "kind": "down",
+                      "neg": false
+                    },
+                    "label": "對手處於能力下降"
+                  }
+                ],
+                "acts": [
+                  {
+                    "op": "invalid_turns",
+                    "p": {
+                      "turns": 1,
+                      "kind": "屬性",
+                      "next": true
+                    },
+                    "label": "下回合 對手屬性技能無效"
+                  }
+                ]
+              },
+              {
+                "cond": [
+                  {
+                    "c": "stage",
+                    "p": {
+                      "side": "opp",
+                      "kind": "down",
+                      "neg": true
+                    },
+                    "label": "對手不處於能力下降"
+                  }
+                ],
+                "acts": [
+                  {
+                    "op": "heal",
+                    "p": {
+                      "side": "self",
+                      "ratio": 0.3333333333333333
+                    },
+                    "label": "恢復自身最大體力 33.33%"
+                  },
+                  {
+                    "op": "heal_overflow",
+                    "p": {
+                      "unit": 10,
+                      "reduce": 0.01,
+                      "shield": 10,
+                      "kind": "攻擊"
+                    },
+                    "label": "每溢出10點：下回合受攻擊傷害-1%、護盾+10"
+                  }
+                ]
+              }
+            ],
+            "parsed": true
+          }
+        },
+        "node": "battle_phase_end",
+        "source": "soulmark",
+        "order": 2,
+        "customText": "若對手處於能力下降狀態則令對手下回合屬性技能無效，若對手不處於能力下降狀態則恢復自身最大體力的1/3，每溢出10點自身下回合受到的攻擊傷害減少1%且獲得10點護盾",
+        "role": "attached"
+      },
+      {
+        "codeId": "effect_sequence",
+        "params": {
+          "clause": {
+            "raw": "護盾存在期間自身每次受到攻擊後消除對手能力提升狀態",
+            "trig": "damaged_attack",
+            "cond": [
+              {
+                "c": "shield",
+                "p": {
+                  "side": "self"
+                },
+                "label": "自身擁有護盾"
+              }
+            ],
+            "body": [
+              {
+                "acts": [
+                  {
+                    "op": "stat_clear",
+                    "p": {
+                      "side": "opp",
+                      "kind": "up"
+                    },
+                    "label": "消除對手能力提升"
+                  }
+                ]
+              }
+            ],
+            "parsed": true
+          }
+        },
+        "node": "on_damaged",
+        "source": "soulmark",
+        "order": 3,
+        "customText": "護盾存在期間自身每次受到攻擊後消除對手能力提升狀態",
+        "role": "attached"
+      }
+    ]
+  },
+  "skills": {
+    "星光·極速射線": {
+      "sourceSha256": "170228c42a3ee929cb898a6cb11ed8d5336dbc98239cb07e9b1f98a3bdc65c4a",
+      "kit": [
+        {
+          "codeId": "skill_property",
+          "node": "modify_priority",
+          "source": "skill",
+          "role": "innate",
+          "order": 0,
+          "customText": "■ 先制+3",
+          "params": {
+            "property": "base_priority",
+            "value": 3,
+            "conditions": []
+          }
+        },
+        {
+          "codeId": "effect_sequence",
+          "params": {
+            "clause": {
+              "raw": "🎯 消除對手回合類效果，消除成功則下1回合令對手使用的攻擊技能無效",
+              "marker": "🎯",
+              "trig": "use",
+              "body": [
+                {
+                  "acts": [
+                    {
+                      "op": "clear_turn",
+                      "p": {
+                        "side": "opp"
+                      },
+                      "label": "消除對手回合類效果"
+                    }
+                  ]
+                },
+                {
+                  "chain": "success",
+                  "acts": [
+                    {
+                      "op": "invalid_turns",
+                      "p": {
+                        "turns": 1,
+                        "kind": "攻擊",
+                        "next": true
+                      },
+                      "label": "下1回合 對手攻擊技能無效"
+                    }
+                  ]
+                }
+              ],
+              "parsed": true
+            }
+          },
+          "node": "on_skill_use",
+          "source": "skill",
+          "order": 1,
+          "customText": "🎯 消除對手回合類效果，消除成功則下1回合令對手使用的攻擊技能無效",
+          "role": "attached"
+        },
+        {
+          "codeId": "effect_sequence",
+          "params": {
+            "clause": {
+              "raw": "🎯 雙方每有1方精靈先制為0，對手下1回合技能先制-1",
+              "marker": "🎯",
+              "trig": "use",
+              "body": [
+                {
+                  "acts": [
+                    {
+                      "op": "prio_turns",
+                      "p": {
+                        "turns": 1,
+                        "attackOnly": false,
+                        "v": -1,
+                        "side": "opp",
+                        "per": "sides_priority_zero"
+                      },
+                      "label": "下1回合 對手先制 -1（×雙方每有1方精靈先制為0）"
+                    }
+                  ]
+                }
+              ],
+              "parsed": true
+            }
+          },
+          "node": "on_skill_use",
+          "source": "skill",
+          "order": 2,
+          "customText": "🎯 雙方每有1方精靈先制為0，對手下1回合技能先制-1",
+          "role": "attached"
+        }
+      ]
+    },
+    "星光·合金壁壘": {
+      "sourceSha256": "baace376735a051bf85265e7e26217bbb023ffd82d92847f269ed9a1a4413f81",
+      "kit": [
+        {
+          "codeId": "skill_property",
+          "node": "before_skill",
+          "source": "skill",
+          "role": "innate",
+          "order": 0,
+          "customText": "■ 必中",
+          "params": {
+            "property": "sure_hit",
+            "value": true,
+            "conditions": []
+          }
+        },
+        {
+          "codeId": "effect_sequence",
+          "params": {
+            "clause": {
+              "raw": "🎯 4回合內免疫並反彈所有受到的異常狀態",
+              "marker": "🎯",
+              "trig": "use",
+              "body": [
+                {
+                  "acts": [
+                    {
+                      "op": "immune_status_turns",
+                      "p": {
+                        "turns": 4,
+                        "reflect": true,
+                        "cls": ""
+                      },
+                      "label": "4回合 免疫並反彈異常"
+                    }
+                  ]
+                }
+              ],
+              "parsed": true
+            }
+          },
+          "node": "on_skill_use",
+          "source": "skill",
+          "order": 1,
+          "customText": "🎯 4回合內免疫並反彈所有受到的異常狀態",
+          "role": "attached"
+        },
+        {
+          "codeId": "effect_sequence",
+          "params": {
+            "clause": {
+              "raw": "🎯 獲得300點護盾，護盾消失時恢復自身最大體力的1/3",
+              "marker": "🎯",
+              "trig": "use",
+              "body": [
+                {
+                  "acts": [
+                    {
+                      "op": "shield",
+                      "p": {
+                        "flat": 300
+                      },
+                      "label": "護盾 300"
+                    }
+                  ]
+                },
+                {
+                  "acts": [
+                    {
+                      "op": "watch",
+                      "p": {
+                        "trig": "shield_broken",
+                        "body": [
+                          {
+                            "acts": [
+                              {
+                                "op": "heal",
+                                "p": {
+                                  "side": "self",
+                                  "ratio": 0.3333333333333333
+                                },
+                                "label": "恢復自身最大體力 33.33%"
+                              }
+                            ]
+                          }
+                        ],
+                        "text": "恢復自身最大體力的1/3"
+                      },
+                      "label": "護盾消失時：恢復自身最大體力的1/3"
+                    }
+                  ]
+                }
+              ],
+              "parsed": true
+            }
+          },
+          "node": "on_skill_use",
+          "source": "skill",
+          "order": 2,
+          "customText": "🎯 獲得300點護盾，護盾消失時恢復自身最大體力的1/3",
+          "role": "attached"
+        },
+        {
+          "codeId": "effect_sequence",
+          "params": {
+            "clause": {
+              "raw": "🎯 3回合內自身的能力提升狀態無法被消除或吸取",
+              "marker": "🎯",
+              "trig": "use",
+              "body": [
+                {
+                  "acts": [
+                    {
+                      "op": "stat_protect_turns",
+                      "p": {
+                        "turns": 3
+                      },
+                      "label": "3回合 能力提升不可消除／吸取"
+                    }
+                  ]
+                }
+              ],
+              "parsed": true
+            }
+          },
+          "node": "on_skill_use",
+          "source": "skill",
+          "order": 3,
+          "customText": "🎯 3回合內自身的能力提升狀態無法被消除或吸取",
+          "role": "attached"
+        },
+        {
+          "codeId": "effect_sequence",
+          "params": {
+            "clause": {
+              "raw": "🎯 3回合內每回合攻擊+1，防禦+1，特攻+1，特防+1，速度+1，命中+1",
+              "marker": "🎯",
+              "trig": "use",
+              "body": [
+                {
+                  "acts": [
+                    {
+                      "op": "timed",
+                      "p": {
+                        "turns": 3,
+                        "from": "now",
+                        "trig": "round_end",
+                        "body": [
+                          {
+                            "acts": [
+                              {
+                                "op": "stat",
+                                "p": {
+                                  "chance": 100,
+                                  "side": "auto",
+                                  "stats": [
+                                    "攻擊"
+                                  ],
+                                  "v": 1
+                                },
+                                "label": "攻擊 +1"
+                              }
+                            ]
+                          },
+                          {
+                            "acts": [
+                              {
+                                "op": "stat",
+                                "p": {
+                                  "chance": 100,
+                                  "side": "auto",
+                                  "stats": [
+                                    "防禦"
+                                  ],
+                                  "v": 1
+                                },
+                                "label": "防禦 +1"
+                              }
+                            ]
+                          },
+                          {
+                            "acts": [
+                              {
+                                "op": "stat",
+                                "p": {
+                                  "chance": 100,
+                                  "side": "auto",
+                                  "stats": [
+                                    "特攻"
+                                  ],
+                                  "v": 1
+                                },
+                                "label": "特攻 +1"
+                              }
+                            ]
+                          },
+                          {
+                            "acts": [
+                              {
+                                "op": "stat",
+                                "p": {
+                                  "chance": 100,
+                                  "side": "auto",
+                                  "stats": [
+                                    "特防"
+                                  ],
+                                  "v": 1
+                                },
+                                "label": "特防 +1"
+                              }
+                            ]
+                          },
+                          {
+                            "acts": [
+                              {
+                                "op": "stat",
+                                "p": {
+                                  "chance": 100,
+                                  "side": "auto",
+                                  "stats": [
+                                    "速度"
+                                  ],
+                                  "v": 1
+                                },
+                                "label": "速度 +1"
+                              }
+                            ]
+                          },
+                          {
+                            "acts": [
+                              {
+                                "op": "stat",
+                                "p": {
+                                  "chance": 100,
+                                  "side": "auto",
+                                  "stats": [
+                                    "命中"
+                                  ],
+                                  "v": 1
+                                },
+                                "label": "命中 +1"
+                              }
+                            ]
+                          }
+                        ]
+                      },
+                      "label": "3回合內・每回合結束"
+                    }
+                  ]
+                }
+              ],
+              "parsed": true
+            }
+          },
+          "node": "on_skill_use",
+          "source": "skill",
+          "order": 4,
+          "customText": "🎯 3回合內每回合攻擊+1，防禦+1，特攻+1，特防+1，速度+1，命中+1",
+          "role": "attached"
+        }
+      ]
+    },
+    "星光·渦輪增壓": {
+      "sourceSha256": "b991fcac446d9bc044379e256058dfd37b37206f88d3dd4038dfdffada9bc1ba",
+      "kit": [
+        {
+          "codeId": "skill_property",
+          "node": "before_skill",
+          "source": "skill",
+          "role": "innate",
+          "order": 0,
+          "customText": "■ 必中",
+          "params": {
+            "property": "sure_hit",
+            "value": true,
+            "conditions": []
+          }
+        },
+        {
+          "codeId": "effect_sequence",
+          "params": {
+            "clause": {
+              "raw": "🎯 全屬性+1，自身體力低於1/2時強化效果翻倍",
+              "marker": "🎯",
+              "trig": "use",
+              "body": [
+                {
+                  "acts": [
+                    {
+                      "op": "stat",
+                      "p": {
+                        "chance": 100,
+                        "side": "auto",
+                        "stats": [
+                          "全屬性"
+                        ],
+                        "v": 1,
+                        "x2If": {
+                          "c": "hp_ratio",
+                          "p": {
+                            "side": "self",
+                            "op": "低於",
+                            "ratio": 0.5
+                          },
+                          "label": "自身體力低於1/2"
+                        }
+                      },
+                      "label": "全屬性 +1（自身體力低於1/2時×2）"
+                    }
+                  ]
+                }
+              ],
+              "parsed": true
+            }
+          },
+          "node": "on_skill_use",
+          "source": "skill",
+          "order": 1,
+          "customText": "🎯 全屬性+1，自身體力低於1/2時強化效果翻倍",
+          "role": "attached"
+        },
+        {
+          "codeId": "effect_sequence",
+          "params": {
+            "clause": {
+              "raw": "🎯 4回合內每回合使用技能恢復自身最大體力的1/2並造成等量百分比傷害，恢復體力時若自身體力低於最大體力的1/3則恢復效果和百分比傷害翻倍",
+              "marker": "🎯",
+              "trig": "use",
+              "body": [
+                {
+                  "acts": [
+                    {
+                      "op": "timed",
+                      "p": {
+                        "turns": 4,
+                        "from": "now",
+                        "trig": "self_skill",
+                        "body": [
+                          {
+                            "acts": [
+                              {
+                                "op": "heal",
+                                "p": {
+                                  "side": "self",
+                                  "ratio": 0.5,
+                                  "x2If": {
+                                    "c": "hp_ratio",
+                                    "p": {
+                                      "side": "self",
+                                      "op": "低於",
+                                      "ratio": 0.3333333333333333
+                                    },
+                                    "label": "自身體力低於1/3"
+                                  }
+                                },
+                                "label": "恢復自身最大體力 50%（自身體力低於1/3時×2）"
+                              },
+                              {
+                                "op": "dmg_equal",
+                                "p": {
+                                  "type": "百分比"
+                                },
+                                "label": "【百分比傷害】等量"
+                              }
+                            ]
+                          }
+                        ]
+                      },
+                      "label": "4回合內・自身使用技能時"
+                    }
+                  ]
+                }
+              ],
+              "parsed": true
+            }
+          },
+          "node": "on_skill_use",
+          "source": "skill",
+          "order": 2,
+          "customText": "🎯 4回合內每回合使用技能恢復自身最大體力的1/2並造成等量百分比傷害，恢復體力時若自身體力低於最大體力的1/3則恢復效果和百分比傷害翻倍",
+          "role": "attached"
+        },
+        {
+          "codeId": "effect_sequence",
+          "params": {
+            "clause": {
+              "raw": "🎯 下1次攻擊技能無視攻擊免疫效果",
+              "marker": "🎯",
+              "trig": "use",
+              "body": [
+                {
+                  "acts": [
+                    {
+                      "op": "ignore_next",
+                      "p": {
+                        "what": "攻擊免疫"
+                      },
+                      "label": "下次攻擊無視攻擊免疫"
+                    }
+                  ]
+                }
+              ],
+              "parsed": true
+            }
+          },
+          "node": "on_skill_use",
+          "source": "skill",
+          "order": 3,
+          "customText": "🎯 下1次攻擊技能無視攻擊免疫效果",
+          "role": "attached"
+        },
+        {
+          "codeId": "effect_sequence",
+          "params": {
+            "clause": {
+              "raw": "🎯 下2回合令自身所有技能先制+2",
+              "marker": "🎯",
+              "trig": "use",
+              "body": [
+                {
+                  "acts": [
+                    {
+                      "op": "prio_turns",
+                      "p": {
+                        "turns": 2,
+                        "attackOnly": false,
+                        "v": 2
+                      },
+                      "label": "下2回合 技能先制 +2"
+                    }
+                  ]
+                }
+              ],
+              "parsed": true
+            }
+          },
+          "node": "on_skill_use",
+          "source": "skill",
+          "order": 4,
+          "customText": "🎯 下2回合令自身所有技能先制+2",
+          "role": "attached"
+        }
+      ]
+    },
+    "星光·能源吸收": {
+      "sourceSha256": "0f299fdf3d2ee35e4d1979e020fcf1feec8d7930c97f21c83b4730cef267c2bc",
+      "kit": [
+        {
+          "codeId": "effect_sequence",
+          "params": {
+            "clause": {
+              "raw": "🎯 吸取對手能力提升狀態，吸取成功則對手癱瘓",
+              "marker": "🎯",
+              "trig": "use",
+              "body": [
+                {
+                  "acts": [
+                    {
+                      "op": "stat_steal",
+                      "p": {
+                        "mode": "吸取",
+                        "double": false
+                      },
+                      "label": "吸取對手能力提升"
+                    }
+                  ]
+                },
+                {
+                  "chain": "success",
+                  "acts": [
+                    {
+                      "op": "status",
+                      "p": {
+                        "chance": 100,
+                        "side": "opp",
+                        "status": "癱瘓"
+                      },
+                      "label": "對手 癱瘓"
+                    }
+                  ]
+                }
+              ],
+              "parsed": true
+            }
+          },
+          "node": "on_skill_use",
+          "source": "skill",
+          "order": 0,
+          "customText": "🎯 吸取對手能力提升狀態，吸取成功則對手癱瘓",
+          "role": "attached"
+        },
+        {
+          "codeId": "effect_sequence",
+          "params": {
+            "clause": {
+              "raw": "🎯 吸取對手250點體力，體力低於對手時吸取效果翻倍",
+              "marker": "🎯",
+              "trig": "use",
+              "body": [
+                {
+                  "acts": [
+                    {
+                      "op": "drain",
+                      "p": {
+                        "flat": 250,
+                        "true": false,
+                        "x2If": {
+                          "c": "hp_cmp",
+                          "p": {
+                            "side": "self",
+                            "op": "低於"
+                          },
+                          "label": "自身體力低於對手"
+                        }
+                      },
+                      "label": "吸取對手 250 點（自身體力低於對手時×2）"
+                    }
+                  ]
+                }
+              ],
+              "parsed": true
+            }
+          },
+          "node": "on_skill_use",
+          "source": "skill",
+          "order": 1,
+          "customText": "🎯 吸取對手250點體力，體力低於對手時吸取效果翻倍",
+          "role": "attached"
+        },
+        {
+          "codeId": "effect_sequence",
+          "params": {
+            "clause": {
+              "raw": "🎯 吸取對手所有技能2點PP值",
+              "marker": "🎯",
+              "trig": "use",
+              "body": [
+                {
+                  "acts": [
+                    {
+                      "op": "pp_op",
+                      "p": {
+                        "side": "opp",
+                        "mode": "drain",
+                        "amount": 2
+                      },
+                      "label": "吸取對手所有技能 2 PP"
+                    }
+                  ]
+                }
+              ],
+              "parsed": true
+            }
+          },
+          "node": "on_skill_use",
+          "source": "skill",
+          "order": 2,
+          "customText": "🎯 吸取對手所有技能2點PP值",
+          "role": "attached"
+        }
+      ]
+    },
+    "星光·魔動能量": {
+      "sourceSha256": "bec3ac51d84c6bd9abea697c9c0fcadfbe9b48d056b91cb31a94b7c6e83eca20",
+      "kit": [
+        {
+          "codeId": "skill_property",
+          "node": "before_skill",
+          "source": "skill",
+          "role": "innate",
+          "order": 0,
+          "customText": "■ 必中",
+          "params": {
+            "property": "sure_hit",
+            "value": true,
+            "conditions": []
+          }
+        },
+        {
+          "codeId": "effect_sequence",
+          "params": {
+            "clause": {
+              "raw": "🎯 消除對手能力提升狀態，若對手不處於能力提升狀態則消除對手回合類效果",
+              "marker": "🎯",
+              "trig": "use",
+              "body": [
+                {
+                  "acts": [
+                    {
+                      "op": "stat_clear",
+                      "p": {
+                        "side": "opp",
+                        "kind": "up"
+                      },
+                      "label": "消除對手能力提升"
+                    }
+                  ]
+                },
+                {
+                  "cond": [
+                    {
+                      "c": "stage",
+                      "p": {
+                        "side": "opp",
+                        "kind": "up",
+                        "neg": true
+                      },
+                      "label": "對手不處於能力提升"
+                    }
+                  ],
+                  "acts": [
+                    {
+                      "op": "clear_turn",
+                      "p": {
+                        "side": "opp"
+                      },
+                      "label": "消除對手回合類效果"
+                    }
+                  ],
+                  "pre": true
+                }
+              ],
+              "parsed": true
+            }
+          },
+          "node": "on_skill_use",
+          "source": "skill",
+          "order": 1,
+          "customText": "🎯 消除對手能力提升狀態，若對手不處於能力提升狀態則消除對手回合類效果",
+          "role": "attached"
+        },
+        {
+          "codeId": "effect_sequence",
+          "params": {
+            "clause": {
+              "raw": "🎯 自身每處於一種能力提升狀態，此技能威力提升10",
+              "marker": "🎯",
+              "trig": "use",
+              "body": [
+                {
+                  "acts": [
+                    {
+                      "op": "boost",
+                      "p": {
+                        "mult": 1,
+                        "add": 10,
+                        "power": true,
+                        "kind": "攻擊",
+                        "per": "self_up_kinds"
+                      },
+                      "label": "本次攻擊威力 +10（×自身每處於一種能力提升狀態）"
+                    }
+                  ]
+                }
+              ],
+              "parsed": true
+            }
+          },
+          "node": "on_skill_use",
+          "source": "skill",
+          "order": 2,
+          "customText": "🎯 自身每處於一種能力提升狀態，此技能威力提升10",
+          "role": "attached"
+        },
+        {
+          "codeId": "effect_sequence",
+          "params": {
+            "clause": {
+              "raw": "🎯 對手不處於能力下降狀態則造成的傷害提高100%",
+              "marker": "🎯",
+              "trig": "use",
+              "body": [
+                {
+                  "cond": [
+                    {
+                      "c": "stage",
+                      "p": {
+                        "side": "opp",
+                        "kind": "down",
+                        "neg": true
+                      },
+                      "label": "對手不處於能力下降"
+                    }
+                  ],
+                  "acts": [
+                    {
+                      "op": "boost",
+                      "p": {
+                        "mult": 2,
+                        "kind": "攻擊",
+                        "power": false
+                      },
+                      "label": "本次【攻擊傷害】×2"
+                    }
+                  ]
+                }
+              ],
+              "parsed": true
+            }
+          },
+          "node": "on_skill_use",
+          "source": "skill",
+          "order": 3,
+          "customText": "🎯 對手不處於能力下降狀態則造成的傷害提高100%",
+          "role": "attached"
+        },
+        {
+          "codeId": "effect_sequence",
+          "params": {
+            "clause": {
+              "raw": "🎯 造成的攻擊傷害高於300時1回合內對手體力恢復效果減少100%",
+              "marker": "🎯",
+              "trig": "after_hit",
+              "body": [
+                {
+                  "cond": [
+                    {
+                      "c": "dmg_cmp",
+                      "p": {
+                        "op": "高於",
+                        "v": 300
+                      },
+                      "label": "傷害高於300"
+                    }
+                  ],
+                  "acts": [
+                    {
+                      "op": "heal_reduce_turns",
+                      "p": {
+                        "turns": 1,
+                        "ratio": 1
+                      },
+                      "label": "1回合 對手恢復效果 -100%"
+                    }
+                  ]
+                }
+              ],
+              "parsed": true
+            }
+          },
+          "node": "on_hit",
+          "source": "skill",
+          "order": 4,
+          "customText": "🎯 造成的攻擊傷害高於300時1回合內對手體力恢復效果減少100%",
+          "role": "attached"
+        }
+      ]
+    },
+    "叩擊": {
+      "sourceSha256": "69c644f1ed819f4f3ae082759913fbf7cafca87c1f36ab3200703a9003613835",
+      "kit": [
+        {
+          "codeId": "effect_sequence",
+          "params": {
+            "clause": {
+              "raw": "無特殊效果",
+              "trig": "use",
+              "body": [
+                {
+                  "acts": [
+                    {
+                      "op": "noop",
+                      "p": {
+                        "tag": "無特殊效果"
+                      },
+                      "label": "無特殊效果"
+                    }
+                  ]
+                }
+              ],
+              "parsed": true
+            }
+          },
+          "node": "on_skill_use",
+          "source": "skill",
+          "order": 0,
+          "customText": "無特殊效果",
+          "role": "attached"
+        }
+      ]
+    },
+    "堅硬": {
+      "sourceSha256": "40f3319a93f6353771344f8daba6e4efd90e6744c92c3173fee86716385038c5",
+      "kit": [
+        {
+          "codeId": "skill_property",
+          "node": "before_skill",
+          "source": "skill",
+          "role": "innate",
+          "order": 0,
+          "customText": "■ 必中",
+          "params": {
+            "property": "sure_hit",
+            "value": true,
+            "conditions": []
+          }
+        },
+        {
+          "codeId": "effect_sequence",
+          "params": {
+            "clause": {
+              "raw": "🎯 100%改變自身防禦等級+1",
+              "marker": "🎯",
+              "trig": "use",
+              "body": [
+                {
+                  "acts": [
+                    {
+                      "op": "stat",
+                      "p": {
+                        "chance": 100,
+                        "side": "self",
+                        "stats": [
+                          "防禦"
+                        ],
+                        "v": 1
+                      },
+                      "label": "自身 防禦 +1"
+                    }
+                  ]
+                }
+              ],
+              "parsed": true
+            }
+          },
+          "node": "on_skill_use",
+          "source": "skill",
+          "order": 1,
+          "customText": "🎯 100%改變自身防禦等級+1",
+          "role": "attached"
+        }
+      ]
+    },
+    "堅強": {
+      "sourceSha256": "71d1c8b6eebdc32874f9c6459db49be9970fe08077bd1bd5895523d377060ef7",
+      "kit": [
+        {
+          "codeId": "skill_property",
+          "node": "before_skill",
+          "source": "skill",
+          "role": "innate",
+          "order": 0,
+          "customText": "■ 必中",
+          "params": {
+            "property": "sure_hit",
+            "value": true,
+            "conditions": []
+          }
+        },
+        {
+          "codeId": "effect_sequence",
+          "params": {
+            "clause": {
+              "raw": "🎯 100%改變自身特防等級+1",
+              "marker": "🎯",
+              "trig": "use",
+              "body": [
+                {
+                  "acts": [
+                    {
+                      "op": "stat",
+                      "p": {
+                        "chance": 100,
+                        "side": "self",
+                        "stats": [
+                          "特防"
+                        ],
+                        "v": 1
+                      },
+                      "label": "自身 特防 +1"
+                    }
+                  ]
+                }
+              ],
+              "parsed": true
+            }
+          },
+          "node": "on_skill_use",
+          "source": "skill",
+          "order": 1,
+          "customText": "🎯 100%改變自身特防等級+1",
+          "role": "attached"
+        }
+      ]
+    },
+    "電光波": {
+      "sourceSha256": "69120b1f551f0b42a2eb7511779db8b2d7a2d38c8492de4bc4358ea4957febb5",
+      "kit": [
+        {
+          "codeId": "effect_sequence",
+          "params": {
+            "clause": {
+              "raw": "🎯 命中後5%令對方麻痺",
+              "marker": "🎯",
+              "trig": "after_hit",
+              "body": [
+                {
+                  "acts": [
+                    {
+                      "op": "status",
+                      "p": {
+                        "chance": 5,
+                        "side": "opp",
+                        "status": "麻痺"
+                      },
+                      "label": "對手 麻痺 (5%)"
+                    }
+                  ]
+                }
+              ],
+              "parsed": true
+            }
+          },
+          "node": "on_hit",
+          "source": "skill",
+          "order": 0,
+          "customText": "🎯 命中後5%令對方麻痺",
+          "role": "attached"
+        }
+      ]
+    },
+    "重力波": {
+      "sourceSha256": "9d2a291e8ad44f2b30f9da6ff87f630aaa363c4ed9ca532908c01897c4a63e75",
+      "kit": [
+        {
+          "codeId": "effect_sequence",
+          "params": {
+            "clause": {
+              "raw": "🎯 15%改變對手速度等級-1",
+              "marker": "🎯",
+              "trig": "use",
+              "body": [
+                {
+                  "acts": [
+                    {
+                      "op": "stat",
+                      "p": {
+                        "chance": 15,
+                        "side": "opp",
+                        "stats": [
+                          "速度"
+                        ],
+                        "v": -1
+                      },
+                      "label": "對手 速度 -1 (15%)"
+                    }
+                  ]
+                }
+              ],
+              "parsed": true
+            }
+          },
+          "node": "on_skill_use",
+          "source": "skill",
+          "order": 0,
+          "customText": "🎯 15%改變對手速度等級-1",
+          "role": "attached"
+        }
+      ]
+    },
+    "重擊": {
+      "sourceSha256": "69c644f1ed819f4f3ae082759913fbf7cafca87c1f36ab3200703a9003613835",
+      "kit": [
+        {
+          "codeId": "effect_sequence",
+          "params": {
+            "clause": {
+              "raw": "無特殊效果",
+              "trig": "use",
+              "body": [
+                {
+                  "acts": [
+                    {
+                      "op": "noop",
+                      "p": {
+                        "tag": "無特殊效果"
+                      },
+                      "label": "無特殊效果"
+                    }
+                  ]
+                }
+              ],
+              "parsed": true
+            }
+          },
+          "node": "on_skill_use",
+          "source": "skill",
+          "order": 0,
+          "customText": "無特殊效果",
+          "role": "attached"
+        }
+      ]
+    },
+    "虛弱光線": {
+      "sourceSha256": "800a6b357be40a74ecc0b45783cefaed3ddf7dd60acfa8cef2e07963ae5129e7",
+      "kit": [
+        {
+          "codeId": "effect_sequence",
+          "params": {
+            "clause": {
+              "raw": "🎯 100%改變對手攻擊等級-1",
+              "marker": "🎯",
+              "trig": "use",
+              "body": [
+                {
+                  "acts": [
+                    {
+                      "op": "stat",
+                      "p": {
+                        "chance": 100,
+                        "side": "opp",
+                        "stats": [
+                          "攻擊"
+                        ],
+                        "v": -1
+                      },
+                      "label": "對手 攻擊 -1"
+                    }
+                  ]
+                }
+              ],
+              "parsed": true
+            }
+          },
+          "node": "on_skill_use",
+          "source": "skill",
+          "order": 0,
+          "customText": "🎯 100%改變對手攻擊等級-1",
+          "role": "attached"
+        },
+        {
+          "codeId": "effect_sequence",
+          "params": {
+            "clause": {
+              "raw": "🎯 100%改變對手特攻等級-1",
+              "marker": "🎯",
+              "trig": "use",
+              "body": [
+                {
+                  "acts": [
+                    {
+                      "op": "stat",
+                      "p": {
+                        "chance": 100,
+                        "side": "opp",
+                        "stats": [
+                          "特攻"
+                        ],
+                        "v": -1
+                      },
+                      "label": "對手 特攻 -1"
+                    }
+                  ]
+                }
+              ],
+              "parsed": true
+            }
+          },
+          "node": "on_skill_use",
+          "source": "skill",
+          "order": 1,
+          "customText": "🎯 100%改變對手特攻等級-1",
+          "role": "attached"
+        }
+      ]
+    },
+    "激光掃射": {
+      "sourceSha256": "4dd9a5f7edcf058af48d86e965c3d1f5c09f21bd748f874919bab9457f13c432",
+      "kit": [
+        {
+          "codeId": "effect_sequence",
+          "params": {
+            "clause": {
+              "raw": "🎯 15%改變對手特防等級-1",
+              "marker": "🎯",
+              "trig": "use",
+              "body": [
+                {
+                  "acts": [
+                    {
+                      "op": "stat",
+                      "p": {
+                        "chance": 15,
+                        "side": "opp",
+                        "stats": [
+                          "特防"
+                        ],
+                        "v": -1
+                      },
+                      "label": "對手 特防 -1 (15%)"
+                    }
+                  ]
+                }
+              ],
+              "parsed": true
+            }
+          },
+          "node": "on_skill_use",
+          "source": "skill",
+          "order": 0,
+          "customText": "🎯 15%改變對手特防等級-1",
+          "role": "attached"
+        }
+      ]
+    },
+    "鐵臂撞擊": {
+      "sourceSha256": "69c644f1ed819f4f3ae082759913fbf7cafca87c1f36ab3200703a9003613835",
+      "kit": [
+        {
+          "codeId": "effect_sequence",
+          "params": {
+            "clause": {
+              "raw": "無特殊效果",
+              "trig": "use",
+              "body": [
+                {
+                  "acts": [
+                    {
+                      "op": "noop",
+                      "p": {
+                        "tag": "無特殊效果"
+                      },
+                      "label": "無特殊效果"
+                    }
+                  ]
+                }
+              ],
+              "parsed": true
+            }
+          },
+          "node": "on_skill_use",
+          "source": "skill",
+          "order": 0,
+          "customText": "無特殊效果",
+          "role": "attached"
+        }
+      ]
+    },
+    "機械重組": {
+      "sourceSha256": "4360407f89a5f982fef602ffc154d9064e4bdddf6f7fd76eabe027056af27ac0",
+      "kit": [
+        {
+          "codeId": "skill_property",
+          "node": "before_skill",
+          "source": "skill",
+          "role": "innate",
+          "order": 0,
+          "customText": "■ 必中",
+          "params": {
+            "property": "sure_hit",
+            "value": true,
+            "conditions": []
+          }
+        },
+        {
+          "codeId": "effect_sequence",
+          "params": {
+            "clause": {
+              "raw": "🎯 恢復自身最大體力的1/2",
+              "marker": "🎯",
+              "trig": "use",
+              "body": [
+                {
+                  "acts": [
+                    {
+                      "op": "heal",
+                      "p": {
+                        "side": "self",
+                        "ratio": 0.5
+                      },
+                      "label": "恢復自身最大體力 50%"
+                    }
+                  ]
+                }
+              ],
+              "parsed": true
+            }
+          },
+          "node": "on_skill_use",
+          "source": "skill",
+          "order": 1,
+          "customText": "🎯 恢復自身最大體力的1/2",
+          "role": "attached"
+        }
+      ]
+    },
+    "穿透光束": {
+      "sourceSha256": "f914e28cafb9030f27f88209a9ccde760215e096357538fdc44366df352f563e",
+      "kit": [
+        {
+          "codeId": "skill_property",
+          "node": "before_skill",
+          "source": "skill",
+          "role": "innate",
+          "order": 0,
+          "customText": "■ 必中",
+          "params": {
+            "property": "sure_hit",
+            "value": true,
+            "conditions": []
+          }
+        }
+      ]
+    },
+    "充能": {
+      "sourceSha256": "135684dfafc82f870199433a324a1c3788aa5a58e4dbd1fce0785c3df88b3b1f",
+      "kit": [
+        {
+          "codeId": "skill_property",
+          "node": "before_skill",
+          "source": "skill",
+          "role": "innate",
+          "order": 0,
+          "customText": "■ 必中",
+          "params": {
+            "property": "sure_hit",
+            "value": true,
+            "conditions": []
+          }
+        },
+        {
+          "codeId": "effect_sequence",
+          "params": {
+            "clause": {
+              "raw": "🎯 100%改變自身特攻等級+2",
+              "marker": "🎯",
+              "trig": "use",
+              "body": [
+                {
+                  "acts": [
+                    {
+                      "op": "stat",
+                      "p": {
+                        "chance": 100,
+                        "side": "self",
+                        "stats": [
+                          "特攻"
+                        ],
+                        "v": 2
+                      },
+                      "label": "自身 特攻 +2"
+                    }
+                  ]
+                }
+              ],
+              "parsed": true
+            }
+          },
+          "node": "on_skill_use",
+          "source": "skill",
+          "order": 1,
+          "customText": "🎯 100%改變自身特攻等級+2",
+          "role": "attached"
+        }
+      ]
+    },
+    "極速射線": {
+      "sourceSha256": "0cdaf4821a5b18ba6967b26f0ae7cc50d098af7808da91ca5e43e0c8e3fe9650",
+      "kit": [
+        {
+          "codeId": "skill_property",
+          "node": "modify_priority",
+          "source": "skill",
+          "role": "innate",
+          "order": 0,
+          "customText": "■ 先制+1",
+          "params": {
+            "property": "base_priority",
+            "value": 1,
+            "conditions": []
+          }
+        }
+      ]
+    },
+    "金剛擊": {
+      "sourceSha256": "04fbee6e9fe80bf48c834d11308684f8248659d4fb8ea27f436c81a2e27d964b",
+      "kit": [
+        {
+          "codeId": "effect_sequence",
+          "params": {
+            "clause": {
+              "raw": "🎯 15%改變對手防禦等級-1",
+              "marker": "🎯",
+              "trig": "use",
+              "body": [
+                {
+                  "acts": [
+                    {
+                      "op": "stat",
+                      "p": {
+                        "chance": 15,
+                        "side": "opp",
+                        "stats": [
+                          "防禦"
+                        ],
+                        "v": -1
+                      },
+                      "label": "對手 防禦 -1 (15%)"
+                    }
+                  ]
+                }
+              ],
+              "parsed": true
+            }
+          },
+          "node": "on_skill_use",
+          "source": "skill",
+          "order": 0,
+          "customText": "🎯 15%改變對手防禦等級-1",
+          "role": "attached"
+        }
+      ]
+    },
+    "液壓衝擊": {
+      "sourceSha256": "134ebe5467bb8dbaa012c1edf62952025831c05d0f612c861a74045b41c7311e",
+      "kit": [
+        {
+          "codeId": "effect_sequence",
+          "params": {
+            "clause": {
+              "raw": "🎯 15%改變自身速度等級+1",
+              "marker": "🎯",
+              "trig": "use",
+              "body": [
+                {
+                  "acts": [
+                    {
+                      "op": "stat",
+                      "p": {
+                        "chance": 15,
+                        "side": "self",
+                        "stats": [
+                          "速度"
+                        ],
+                        "v": 1
+                      },
+                      "label": "自身 速度 +1 (15%)"
+                    }
+                  ]
+                }
+              ],
+              "parsed": true
+            }
+          },
+          "node": "on_skill_use",
+          "source": "skill",
+          "order": 0,
+          "customText": "🎯 15%改變自身速度等級+1",
+          "role": "attached"
+        }
+      ]
+    },
+    "激光四射": {
+      "sourceSha256": "045bd8e536d01c75ee101ef96224a9cf047971e0e781f63664b381bed12d5c29",
+      "kit": [
+        {
+          "codeId": "effect_sequence",
+          "params": {
+            "clause": {
+              "raw": "🎯 15%改變對手命中等級-1",
+              "marker": "🎯",
+              "trig": "use",
+              "body": [
+                {
+                  "acts": [
+                    {
+                      "op": "stat",
+                      "p": {
+                        "chance": 15,
+                        "side": "opp",
+                        "stats": [
+                          "命中"
+                        ],
+                        "v": -1
+                      },
+                      "label": "對手 命中 -1 (15%)"
+                    }
+                  ]
+                }
+              ],
+              "parsed": true
+            }
+          },
+          "node": "on_skill_use",
+          "source": "skill",
+          "order": 0,
+          "customText": "🎯 15%改變對手命中等級-1",
+          "role": "attached"
+        }
+      ]
+    },
+    "野蠻橫掃": {
+      "sourceSha256": "53d9ef0daa92671bdeda13f7159ecaa744370b419daa5b9f656cee74372a84c4",
+      "kit": [
+        {
+          "codeId": "effect_sequence",
+          "params": {
+            "clause": {
+              "raw": "🎯 對方體力小於1/2時威力加倍",
+              "marker": "🎯",
+              "trig": "use",
+              "body": [
+                {
+                  "cond": [
+                    {
+                      "c": "hp_ratio",
+                      "p": {
+                        "side": "opp",
+                        "op": "小於",
+                        "ratio": 0.5
+                      },
+                      "label": "對方體力小於1/2"
+                    }
+                  ],
+                  "acts": [
+                    {
+                      "op": "boost",
+                      "p": {
+                        "mult": 2,
+                        "kind": "攻擊",
+                        "power": true
+                      },
+                      "label": "本次【攻擊威力】×2"
+                    }
+                  ]
+                }
+              ],
+              "parsed": true
+            }
+          },
+          "node": "on_skill_use",
+          "source": "skill",
+          "order": 0,
+          "customText": "🎯 對方體力小於1/2時威力加倍",
+          "role": "attached"
+        }
+      ]
+    },
+    "魔動能量": {
+      "sourceSha256": "69c644f1ed819f4f3ae082759913fbf7cafca87c1f36ab3200703a9003613835",
+      "kit": [
+        {
+          "codeId": "effect_sequence",
+          "params": {
+            "clause": {
+              "raw": "無特殊效果",
+              "trig": "use",
+              "body": [
+                {
+                  "acts": [
+                    {
+                      "op": "noop",
+                      "p": {
+                        "tag": "無特殊效果"
+                      },
+                      "label": "無特殊效果"
+                    }
+                  ]
+                }
+              ],
+              "parsed": true
+            }
+          },
+          "node": "on_skill_use",
+          "source": "skill",
+          "order": 0,
+          "customText": "無特殊效果",
+          "role": "attached"
+        }
+      ]
+    },
+    "渦輪增壓": {
+      "sourceSha256": "4f1c8f200dbc815d23890aea11f2b5e8ae79bd1a6a51c0b639f5b7f470f427f6",
+      "kit": [
+        {
+          "codeId": "skill_property",
+          "node": "before_skill",
+          "source": "skill",
+          "role": "innate",
+          "order": 0,
+          "customText": "■ 必中",
+          "params": {
+            "property": "sure_hit",
+            "value": true,
+            "conditions": []
+          }
+        },
+        {
+          "codeId": "effect_sequence",
+          "params": {
+            "clause": {
+              "raw": "🎯 100%改變自身特攻等級+2",
+              "marker": "🎯",
+              "trig": "use",
+              "body": [
+                {
+                  "acts": [
+                    {
+                      "op": "stat",
+                      "p": {
+                        "chance": 100,
+                        "side": "self",
+                        "stats": [
+                          "特攻"
+                        ],
+                        "v": 2
+                      },
+                      "label": "自身 特攻 +2"
+                    }
+                  ]
+                }
+              ],
+              "parsed": true
+            }
+          },
+          "node": "on_skill_use",
+          "source": "skill",
+          "order": 1,
+          "customText": "🎯 100%改變自身特攻等級+2",
+          "role": "attached"
+        },
+        {
+          "codeId": "effect_sequence",
+          "params": {
+            "clause": {
+              "raw": "🎯 100%改變自身命中等級+1",
+              "marker": "🎯",
+              "trig": "use",
+              "body": [
+                {
+                  "acts": [
+                    {
+                      "op": "stat",
+                      "p": {
+                        "chance": 100,
+                        "side": "self",
+                        "stats": [
+                          "命中"
+                        ],
+                        "v": 1
+                      },
+                      "label": "自身 命中 +1"
+                    }
+                  ]
+                }
+              ],
+              "parsed": true
+            }
+          },
+          "node": "on_skill_use",
+          "source": "skill",
+          "order": 2,
+          "customText": "🎯 100%改變自身命中等級+1",
+          "role": "attached"
+        }
+      ]
+    },
+    "能源吸取": {
+      "sourceSha256": "0b30a1e58f898985e4d698eb5e4219957f037cbb017a5220433f059e79ac0ee2",
+      "kit": [
+        {
+          "codeId": "effect_sequence",
+          "params": {
+            "clause": {
+              "raw": "🎯 造成傷害的1/4回覆自身體力，若屬性相同則造成傷害的1/2回覆自身體力",
+              "marker": "🎯",
+              "trig": "use",
+              "body": [
+                {
+                  "acts": [
+                    {
+                      "op": "vampire",
+                      "p": {
+                        "ratio": 0.25,
+                        "kind": "技能"
+                      },
+                      "label": "吸血 25%"
+                    }
+                  ]
+                },
+                {
+                  "cond": [
+                    {
+                      "c": "stab",
+                      "p": {},
+                      "label": "屬性相同（本系）"
+                    }
+                  ],
+                  "acts": [
+                    {
+                      "op": "vampire",
+                      "p": {
+                        "ratio": 0.5,
+                        "kind": "技能"
+                      },
+                      "label": "吸血 50%"
+                    }
+                  ]
+                }
+              ],
+              "parsed": true
+            }
+          },
+          "node": "on_skill_use",
+          "source": "skill",
+          "order": 0,
+          "customText": "🎯 造成傷害的1/4回覆自身體力，若屬性相同則造成傷害的1/2回覆自身體力",
+          "role": "attached"
+        }
+      ]
+    },
+    "合金壁壘": {
+      "sourceSha256": "833bacdd752ec4b9612cbd8af9f36ce75a05dfb6aba3d2000fdef54f60ea615d",
+      "kit": [
+        {
+          "codeId": "skill_property",
+          "node": "before_skill",
+          "source": "skill",
+          "role": "innate",
+          "order": 0,
+          "customText": "■ 必中",
+          "params": {
+            "property": "sure_hit",
+            "value": true,
+            "conditions": []
+          }
+        },
+        {
+          "codeId": "effect_sequence",
+          "params": {
+            "clause": {
+              "raw": "🎯 100%改變自身防禦等級+2",
+              "marker": "🎯",
+              "trig": "use",
+              "body": [
+                {
+                  "acts": [
+                    {
+                      "op": "stat",
+                      "p": {
+                        "chance": 100,
+                        "side": "self",
+                        "stats": [
+                          "防禦"
+                        ],
+                        "v": 2
+                      },
+                      "label": "自身 防禦 +2"
+                    }
+                  ]
+                }
+              ],
+              "parsed": true
+            }
+          },
+          "node": "on_skill_use",
+          "source": "skill",
+          "order": 1,
+          "customText": "🎯 100%改變自身防禦等級+2",
+          "role": "attached"
+        },
+        {
+          "codeId": "effect_sequence",
+          "params": {
+            "clause": {
+              "raw": "🎯 100%改變自身特防等級+2",
+              "marker": "🎯",
+              "trig": "use",
+              "body": [
+                {
+                  "acts": [
+                    {
+                      "op": "stat",
+                      "p": {
+                        "chance": 100,
+                        "side": "self",
+                        "stats": [
+                          "特防"
+                        ],
+                        "v": 2
+                      },
+                      "label": "自身 特防 +2"
+                    }
+                  ]
+                }
+              ],
+              "parsed": true
+            }
+          },
+          "node": "on_skill_use",
+          "source": "skill",
+          "order": 2,
+          "customText": "🎯 100%改變自身特防等級+2",
+          "role": "attached"
+        }
+      ]
+    },
+    "機械能量炮": {
+      "sourceSha256": "2038aedc8cea27f2098947a9ebca9df668c3013b8daaa7747202d7edd84e4bb5",
+      "kit": [
+        {
+          "codeId": "effect_sequence",
+          "params": {
+            "clause": {
+              "raw": "🎯 若屬性相同則技能威力提升20",
+              "marker": "🎯",
+              "trig": "use",
+              "body": [
+                {
+                  "cond": [
+                    {
+                      "c": "stab",
+                      "p": {},
+                      "label": "屬性相同（本系）"
+                    }
+                  ],
+                  "acts": [
+                    {
+                      "op": "boost",
+                      "p": {
+                        "mult": 1,
+                        "add": 20,
+                        "power": true,
+                        "kind": "攻擊"
+                      },
+                      "label": "本次攻擊威力 +20"
+                    }
+                  ]
+                }
+              ],
+              "parsed": true
+            }
+          },
+          "node": "on_skill_use",
+          "source": "skill",
+          "order": 0,
+          "customText": "🎯 若屬性相同則技能威力提升20",
+          "role": "attached"
+        }
+      ]
+    }
+  },
+  "blocked": [
+    {
+      "name": "屬性複製",
+      "issues": [
+        {
+          "reason": "5回合內使自身的屬性和對方的屬性相同",
+          "text": "🎯 5回合內使自身的屬性和對方的屬性相同"
+        }
+      ]
+    }
+  ]
+}

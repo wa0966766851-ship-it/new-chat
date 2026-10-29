@@ -1,5 +1,6 @@
 import { Elf } from '../types';
 import { effectSourceViews } from '../battle/effectSources';
+import { finalExtraTraitActionIssue } from '../blocks/ops/finalExtraTraits';
 
 export interface AdvancedTraitMechanics {
   // 豪邁
@@ -53,7 +54,7 @@ export interface AdvancedTraitMechanics {
 
 export interface AdvancedTrait {
   name: string;
-  category: '二代異能特質' | '專屬異能特質' | '特殊特質';
+  category: '二代特質' | '專屬特質' | '特殊特質';
   description: string;
   mechanics: AdvancedTraitMechanics;
 }
@@ -61,7 +62,7 @@ export interface AdvancedTrait {
 export const ADVANCED_TRAITS_REGISTRY: Record<string, AdvancedTrait> = {
   豪邁: {
     name: '豪邁',
-    category: '二代異能特質',
+    category: '二代特質',
     description: '自身攻擊時忽略對手 50% 雙防值。',
     mechanics: {
       ignoreDefPercent: 0.5
@@ -69,7 +70,7 @@ export const ADVANCED_TRAITS_REGISTRY: Record<string, AdvancedTrait> = {
   },
   投石者: {
     name: '投石者',
-    category: '二代異能特質',
+    category: '二代特質',
     description: '戰鬥中被視為異能精靈；技能位可攜帶4種不同屬性的技能石且使用任意技能石時轉化為使用同屬系的SS級技能石，威力變為240；若自身攜帶4個技能石技能則在戰鬥中擁有神話(免疫異常狀態、能力下降狀態、PP值無限)且造成攻擊傷害提升50%，受到攻擊傷害降低50%且戰鬥階段結束時恢復自身最大體力25%；裝備的技能石擁有本系加乘且PP值上限+10；若該技能石為完美技能石則機率效果觸發概率提升為100%；每次使用技能石時令對手背包內所有精靈受到傷害值25%*該技能石對受到傷害精靈當前克制倍數的真實傷害；遭受致死傷害時保留1點體力。',
     mechanics: {
       isStoneThrower: true,
@@ -86,7 +87,7 @@ export const ADVANCED_TRAITS_REGISTRY: Record<string, AdvancedTrait> = {
   },
   修復: {
     name: '修復',
-    category: '二代異能特質',
+    category: '二代特質',
     description: '己方其他精靈受到任意衍化類異常時，當回合戰鬥階段時會立即衍化並恢復自身與該精靈所有技能1點PP值與250點體力。',
     mechanics: {
       repairOnOtherDeriveStatus: true,
@@ -96,7 +97,7 @@ export const ADVANCED_TRAITS_REGISTRY: Record<string, AdvancedTrait> = {
   },
   咒術師: {
     name: '咒術師',
-    category: '二代異能特質',
+    category: '二代特質',
     description: '戰鬥中被視為異能精靈；每次登場時召喚與自身能力值相等的賽博怨靈作為額外精靈加入己方，下場後則怨靈死亡並消逝。常駐效果：賽博怨靈存在時自身詛咒類異常回合數不會減少；自身選擇技能時：若自身處於詛咒類狀態則選擇技能時消耗該技能1點PP值並由賽博怨靈於行動階段發動1次魔咒；若戰鬥階段結束時若未選擇使用技能則改為賽博怨靈於該階段發動1次滅靈魔咒；自身死亡時若存在怨靈會代替自身死亡以保留20%體力，此後賽博怨靈額外行動對敵方場下造成真實傷害翻倍。',
     mechanics: {
       cyberWraithSummon: true,
@@ -112,7 +113,7 @@ export const ADVANCED_TRAITS_REGISTRY: Record<string, AdvancedTrait> = {
   },
   無我: {
     name: '無我',
-    category: '二代異能特質',
+    category: '二代特質',
     description: '每次受到異常狀態時立即轉化為平靜，若轉化的異常中帶有狂暴則轉化觸發後令自身平靜異常回合數翻倍。',
     mechanics: {
       convertStatusToSerenity: true,
@@ -121,7 +122,7 @@ export const ADVANCED_TRAITS_REGISTRY: Record<string, AdvancedTrait> = {
   },
   戰士: {
     name: '戰士',
-    category: '二代異能特質',
+    category: '二代特質',
     description: '戰鬥中始終被視為異能精靈；自身戰鬥開始時與每次登場時獲得隱匿；自身下場後若己方隱匿精靈不超過3個，則恢復下隻出戰精靈所有技能PP值並附加隱匿印記；自身造成攻擊傷害時計算傷害始終以弱點傷害計算，計算弱點時若對方每存在1點護盾、1%傷害減少時弱點傷害則計算傷害時對手剩餘雙防值60%效果額外降低1%，最低降低至1；自身攻擊克制倍數取技能擁有的屬性中攻擊對手的最優克制系別計算傷害；自身攻擊無視對手攻擊免疫效果、傷害限制效果、免疫、抵擋、轉化傷害效果與護盾承傷效果。',
     mechanics: {
       alwaysAlienElf: true,
@@ -135,7 +136,7 @@ export const ADVANCED_TRAITS_REGISTRY: Record<string, AdvancedTrait> = {
   },
   無序星魂使徒: {
     name: '無序星魂使徒',
-    category: '專屬異能特質',
+    category: '專屬特質',
     description: '對異能精靈造成傷害翻倍且擊敗後令其消逝。',
     mechanics: {
       doubleDamageToAlienElf: true,
@@ -145,7 +146,7 @@ export const ADVANCED_TRAITS_REGISTRY: Record<string, AdvancedTrait> = {
 };
 
 /**
- * 根據名稱獲取異能特質定義
+ * 根據名稱獲取特質定義
  */
 export function getAdvancedTrait(name: string): AdvancedTrait | undefined {
   if (!name) return undefined;
@@ -173,27 +174,55 @@ export function getElfAdvancedMechanics(elf: Elf): AdvancedTraitMechanics {
   if (!elf) return {};
   return Object.assign({}, ...effectSourceViews(elf).map(nativeAdvancedMechanics));
 }
+export function hasAuthoredAdvancedMechanic(elf:Elf,key:string):boolean {
+  return effectSourceViews(elf).some(e=>[e.alienTraits?.gen2Trait,e.alienTraits?.exclusiveTrait,
+    ...(e.alienTraits?.exclusiveTraits||[]),e.alienTraits?.alienTrait,e.alienTraits?.generalTrait]
+    .some(d=>d?.effectMode==='kit'&&(d.kit||[]).some(k=>!(k as any).disabled&&k.node==='passive_always'&&
+      k.params?.clause?.body?.some((b:any)=>!b.cond?.length&&!b.chain&&(b.acts||[]).some((a:any)=>a.op==='advanced_mechanic'&&a.p?.key===key&&!finalExtraTraitActionIssue(a.op,a.p))))));
+}
 function nativeAdvancedMechanics(elf: Elf): AdvancedTraitMechanics {
   const merged: AdvancedTraitMechanics = {};
   if (!elf) return merged;
+  // Kit 模式不借用名稱或舊 profile。只讀取受合約限制、無條件的獨立常駐宣告。
+  const definitions = [elf.alienTraits?.gen2Trait,elf.alienTraits?.exclusiveTrait,
+    ...(elf.alienTraits?.exclusiveTraits||[]),elf.alienTraits?.alienTrait,elf.alienTraits?.generalTrait];
+  for(const def of definitions){
+    if(def?.effectMode!=='kit')continue;
+    for(const entry of def.kit||[]){
+      if((entry as any).disabled||entry.node!=='passive_always'||entry.codeId!=='effect_sequence')continue;
+      const clause=entry.params?.clause;
+      if(clause?.trig!=='passive'||!clause.parsed)continue;
+      for(const segment of clause.body||[]){
+        if(segment.cond?.length||segment.chain||segment.elseActs?.length)continue;
+        for(const action of segment.acts||[]){
+          if(action.op==='advanced_mechanic'&&!finalExtraTraitActionIssue(action.op,action.p))
+            (merged as Record<string,unknown>)[action.p.key]=action.p.value;
+        }
+      }
+    }
+  }
+  const overriddenNames = new Set([elf.alienTraits?.gen2Trait,elf.alienTraits?.exclusiveTrait,
+    ...(elf.alienTraits?.exclusiveTraits || []),elf.alienTraits?.alienTrait,elf.alienTraits?.generalTrait]
+    .filter(trait=>trait && ['kit','description'].includes(trait.effectMode || 'auto'))
+    .flatMap(trait=>trait!.name.split(/[\s/·]+/)).filter(Boolean));
   
   // 1. 從精靈的 alienTraits 屬性中提取
   const traitsToInquire: string[] = [];
   if (elf.alienTraits) {
-    if (elf.alienTraits.gen2Trait?.name) {
+    if (elf.alienTraits.gen2Trait?.name && !['kit','description'].includes(elf.alienTraits.gen2Trait.effectMode || 'auto')) {
       traitsToInquire.push(...elf.alienTraits.gen2Trait.name.split(/[\s/·]+/));
     }
-    if (elf.alienTraits.exclusiveTrait?.name) {
+    if (elf.alienTraits.exclusiveTrait?.name && !['kit','description'].includes(elf.alienTraits.exclusiveTrait.effectMode || 'auto')) {
       traitsToInquire.push(...elf.alienTraits.exclusiveTrait.name.split(/[\s/·]+/));
     }
     for (const trait of [...(elf.alienTraits.exclusiveTraits || []), elf.alienTraits.alienTrait, elf.alienTraits.generalTrait]) {
-      if (trait?.name) traitsToInquire.push(...trait.name.split(/[\s/·]+/));
+      if (trait?.name && !['kit','description'].includes(trait.effectMode || 'auto')) traitsToInquire.push(...trait.name.split(/[\s/·]+/));
     }
   }
   
   // 2. 輔助檢查解構 Profile 中是否定義了對應的 mechanics 標記
   // 例如，如果 elf 的名稱是無序三刃或擁有特定戰士/咒術師魂印，也可以直接關聯
-  const clean = (str: string) => str.replace(/[·\.\s]/g, '');
+  const clean = (str: string) => String(str ?? '').replace(/[·\.\s]/g, '');
   const elfName = clean(elf.name);
   
   if (elfName.includes('蝕言') || elf.id === 'wuxu_shiyan') {
@@ -207,7 +236,7 @@ function nativeAdvancedMechanics(elf: Elf): AdvancedTraitMechanics {
   }
   
   // 3. 遍歷並合併對應的 mechanics 屬性
-  const uniqueTraits = Array.from(new Set(traitsToInquire.map(t => t.trim()).filter(Boolean)));
+  const uniqueTraits = Array.from(new Set(traitsToInquire.map(t => t.trim()).filter(t=>t && !overriddenNames.has(t))));
   for (const t of uniqueTraits) {
     const tDef = getAdvancedTrait(t);
     if (tDef) {

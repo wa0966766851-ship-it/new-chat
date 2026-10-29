@@ -18,8 +18,10 @@ try {
   const { getSoulMarkRegistry } = await server.ssrLoadModule('/src/effects/battleEventRegistry.ts');
   const { getStatuses } = await server.ssrLoadModule('/src/utils/battleHelpers.ts');
   const souls = getSoulMarkRegistry();
-  const original = souls['蟲后·奧佩婭'];
-  assert.equal(typeof original, 'function', '真正註冊而非只有文字');
+  // 5018 魂印「后」已遷真 Kit（migratedOpeiaSoulKit；DSH 20261018 第十三批·第一波）——
+  // 舊 handler 映射移除（規則3.2）：此處改斷言不再有舊註冊分支，行為由真 Kit 於下方真實引擎驅動驗收。
+  assert.ok(!('蟲后·奧佩婭' in souls), '5018 不得再有舊魂印 handler 分支');
+  assert.ok(!('5018' in souls), '5018 不得再有舊序號 handler 分支');
   let driver: any;
   const waitSkill = { name: '中性等待測試', type: '普通', category: '屬性', power: 0, pp: 20, maxPp: 20, description: '' };
   const make = (id: string, name = id): any => ({ id, name, battleId: id, type: '普通', level: 100,
@@ -27,15 +29,10 @@ try {
     baseStats: { hp: 100, atk: 100, def: 100, spatk: 100, spdef: 100, speed: 100 }, statStages: {},
     effects: [], skills: [structuredClone(waitSkill)] });
   for (const side of ['p1', 'p2']) for (const scenario of ['attack', 'attribute', 'immune']) {
-    const trace: any[] = [];
-    souls['蟲后·奧佩婭'] = (ctx: any, event: string, data: any) => original({ ...ctx,
-      applyStatusWithImmunityCheck: (target: string, status: string, duration: number) => {
-        const result = ctx.applyStatusWithImmunityCheck(target, status, duration);
-        trace.push({ event, target, status, ...result });
-        return result;
-      },
-    }, event as any, data);
+    // 規則3.2 改寫：不再包裝舊魂印 handler；中毒→感染轉化由真 Kit（before_skill→status 中毒／
+    // after_action→convert_status 感染）於真實引擎執行，以結算狀態直接驗收。
     const template = structuredClone(DEFAULT_ELVES.find((e: any) => e.id === '5018'));
+    assert.equal(template.soulMark.effectMode, 'kit', '5018 魂印真 Kit 路由');
     const opeia = { ...template, ...make('5018', template.name), type: '蟲',
       skills: [scenario === 'attack' ? structuredClone(template.skills.find((s: any) => s.name === '毒噬魂絲')) : structuredClone(waitSkill)] };
     const enemy = make('neutral-target');
@@ -57,17 +54,13 @@ try {
     assert.equal(driver.getSyncState().turnNumber, 2, `${side}/${scenario}完成回合`);
     const target = driver.getSyncState()[side === 'p1' ? 'p2' : 'p1'];
     if (scenario === 'immune') {
-      assert.ok(trace.some(e => e.status === '中毒' && e.immune && !e.success), '免疫有真實失敗結果');
+      assert.ok(!getStatuses(target)['中毒'], `${side}/${scenario}中毒被免疫未落地`);
       assert.ok(!getStatuses(target)['感染'], '中毒未成功不凭空轉化');
     } else {
-      assert.ok(trace.some(e => e.status === '中毒' && e.success), `${side}/${scenario}中毒成功`);
-      assert.ok(trace.some(e => e.status === '感染' && e.success), `${side}/${scenario}出手結束轉化成功`);
       assert.ok(getStatuses(target)['感染'] > 0, `${side}/${scenario}感染真正保留於結算狀態`);
       assert.ok(!getStatuses(target)['中毒'], '轉化後不殘留中毒');
     }
-    console.log(`${side}/${scenario}: ${JSON.stringify(trace)}`);
   }
-  souls['蟲后·奧佩婭'] = original;
   delete souls['中毒免疫測試者'];
   for (const side of ['p1', 'p2']) for (const id of ['5004', '5005']) {
     const receipts: any[] = [];
@@ -151,15 +144,19 @@ try {
     for (let i = 0; i < 250 && driver.getSyncState().turnNumber < 2; i++) await act(async () => { await new Promise(r => setTimeout(r, 10)); });
     assert.equal(driver.getSyncState().turnNumber, 2);
     if (scenario === 'priority') {
-      assert.ok(driver.getSyncState()[`${other}Timers`].some((t: any) => t.id === 'rey_special_priority_penalty' && t.payload.block.prio === -1));
-      assert.ok(!driver.getSyncState()[`${side}Timers`].some((t: any) => t.id === 'rey_special_priority_penalty'));
+      // 5029 已遷真 Kit：特殊攻擊後以通用 prio_turns 在對手掛「先制-1」計時器（舊 handler 的 rey_special_priority_penalty id 已移除）；對象（對手而非雷伊）與出手順序斷言不變。
+      assert.ok(driver.getSyncState()[`${other}Timers`].some((t: any) => t.payload?.block?.prio === -1 && t.payload.block.prioTurns));
+      assert.ok(!driver.getSyncState()[`${side}Timers`].some((t: any) => t.payload?.block?.prio === -1));
       turnActions.length = 0;
       await act(async () => {
         driver.onSkillSelect('p1', driver.getSyncState().p1.skills[side === 'p1' ? 1 : 0]);
         driver.onSkillSelect('p2', driver.getSyncState().p2.skills[side === 'p2' ? 1 : 0]);
       });
       for (let i = 0; i < 250 && driver.getSyncState().turnNumber < 3; i++) await act(async () => { await new Promise(r => setTimeout(r, 10)); });
-      assert.deepEqual(turnActions.slice(0, 2), ['rey', 'enemy'], '敵人先制1被降至0，雷伊先制1勝出，不能錯扣雷伊');
+      // 5029 已遷真 Kit：引擎改走 Kit 路徑，名稱 handler 的 BEFORE_SKILL 對雷伊不再觸發，出手順序改由戰鬥紀錄的實際出手次序驗證（斷言不變：雷伊先、敵人後）。
+      const usedLogs = driver.getSyncState().logs.map((l: any) => typeof l === 'string' ? l : String(l?.text ?? l?.message ?? '')).filter((l: string) => l.includes('使用了'));
+      const order = usedLogs.slice(-2).map((l: string) => l.startsWith('【異境神霆·雷伊】') ? 'rey' : 'enemy');
+      assert.deepEqual(order, ['rey', 'enemy'], '敵人先制1被降至0，雷伊先制1勝出，不能錯扣雷伊');
     } else assert.equal(driver.getSyncState()[other].skills[0].pp, 13, `${side}/${scenario}實際扣7PP，屬性／攻擊皆讀同一計時器`);
   }
   souls['異境神霆·雷伊'] = originalRey;

@@ -1,4 +1,5 @@
 import { Elf, Skill, SoulMark, BaseStats } from "../types";
+import { canonicalSkillRow } from "../battle/skillSlot";
 
 /**
  * 完整、高容錯性地解析原始精靈文本，不省略任何條件與文字。
@@ -149,10 +150,6 @@ export function parseFullElfData(rawText: string): Partial<Elf> {
         skillDesc = lines.slice(1).filter(l => !l.includes('威力') && !l.includes('PP')).join('\n').trim();
       }
 
-      if (power >= 160) {
-        isFifth = true;
-      }
-
       const skill: Skill = {
         name: skillName,
         type: skillType,
@@ -183,6 +180,9 @@ export function parseFullElfData(rawText: string): Partial<Elf> {
       elf.skills!.push(skill);
     });
   }
+
+  // 規範化第五技能（單一旗標、滿 5 招時置於 skills[4]）
+  if (elf.skills) elf.skills = canonicalSkillRow(elf.skills);
 
   // 確保精靈有名字
   if (!elf.name && elf.skills && elf.skills.length > 0) {

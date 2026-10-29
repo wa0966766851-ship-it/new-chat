@@ -63,6 +63,18 @@ export const handleChaosBlakeSoulMark = (context: BattleEventContext, event: Eff
   return false;
 };
 
+/**
+ * 5015 混沌·布萊克 魂印「夜」——已遷移為真 Kit（migratedNightSoulKit.ts；DSH 20261018 第十一批·第一波）。
+ * 舊 handleChaosBlakeSoulMark 是另一個魂印「混」（舊 id 1012），維持原狀。
+ */
+export const handleChaosBlakeNightSoulMark = (_ctx: BattleEventContext, _event: EffectTiming | string, _extraData?: any) => {
+  // 5015 魂印「夜」已整份遷移為真 Kit（src/data/migratedNightSoulKit.ts；DSH 20261018 第十一批·第一波）。
+  // 舊 handler 語意由積木承接：狂暴主權（statusSovereignty）、消強反應（stat_boost_cleared）、狂暴先制、
+  // 屬性技免疫與無視、被動閃避（soul_property evade）、閃避充能／未閃避吸取（fail_kind）、死亡分支（fatal once）。
+  // 保留匯出名僅供舊引用解析；不再執行任何戰鬥行為。
+  return false;
+};
+
 export const CHAOS_BLAKE_SKILLS: Record<string, BattleSkillHandler> = {
   // 可以添加專屬技能邏輯
 };

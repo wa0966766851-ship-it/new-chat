@@ -1,7 +1,7 @@
-import { getTypeMatchup } from "../../../utils/statCalculator";
+import { isAlienElf } from '../../../battle/advancedDamageModifiers';
+import { getElfAdvancedMechanics,hasAuthoredAdvancedMechanic } from '../../../data/traitsRegistry';
 import { BattleEventContext, BattleSkillHandler, EffectTiming, ElfDeconstructedProfile } from '../../types';
 import { liurenSurvivalRule } from '../../../battle/survivalRules';
-import { handleStoneThrowerSoul } from './stoneThrowerSoul';
 
 export const handleWuxuSoulMark = (ctx: BattleEventContext, event: EffectTiming | string, extraData?: any) => {
   const { self, actor, setPlayerState, getPlayerState, addLog, applyTrueDamage, applyHeal } = ctx;
@@ -24,11 +24,11 @@ export const handleWuxuSoulMark = (ctx: BattleEventContext, event: EffectTiming 
         const fullTeam = ctx.getFullTeam(actor);
         const prevElf = fullTeam.find(e => e.id === previousId);
         if (prevElf) {
-          const healAmt = Math.min(totalTrueDmg, prevElf.maxHp - prevElf.currentHp);
-          if (healAmt > 0) {
-            const nextHp = prevElf.currentHp + healAmt;
-            ctx.updateElf(actor, { id: prevElf.id, currentHp: nextHp });
-            addLog(`🌑 【無序·六刃】：己方上一隻出戰精靈 【${prevElf.name}】 恢復了 ${healAmt} 點體力！`, "heal");
+          // 經恢復流程（受恢復限制、不復活陣亡精靈）
+          if (prevElf.currentHp > 0 && prevElf.currentHp < prevElf.maxHp) {
+            if (ctx.applyHealToElf) ctx.applyHealToElf(actor, prevElf.battleId || prevElf.id, totalTrueDmg);
+            else ctx.updateElf(actor, { id: prevElf.id, currentHp: Math.min(prevElf.maxHp, prevElf.currentHp + totalTrueDmg) });
+            addLog(`🌑 【無序·六刃】：己方上一隻出戰精靈 【${prevElf.name}】 恢復體力！`, "heal");
           }
         }
       }
@@ -41,7 +41,8 @@ export const handleWuxuSoulMark = (ctx: BattleEventContext, event: EffectTiming 
         const boost = totalTrueDmg * 6;
         setPlayerState("wuxuTempMaxHpBoost", boost);
         setPlayerState("wuxuTempMaxHpBoostIsPermanent", false);
-        ctx.updateElf(actor, { maxHp: self.maxHp + boost, currentHp: self.currentHp + boost, tempMaxHpBoost: boost });
+        // 只提高上限，不增加目前體力（自身體力無法增加超過原始體力上限）
+        ctx.updateElf(actor, { maxHp: self.maxHp + boost, tempMaxHpBoost: boost });
         addLog(`🌑 【無序·六刃】：自身獲得 ${boost} 點臨時體力上限！`, "effect");
       } else if (hasBoost && !isPermanent) {
         // 再次觸發出戰效果：原臨時體力上限變為永久體力上限
@@ -52,10 +53,12 @@ export const handleWuxuSoulMark = (ctx: BattleEventContext, event: EffectTiming 
 
     if (event === EffectTiming.ON_ENTRANCE) {
       addLog(`🌑 【無序】：六刃出陣，原始體力共鳴！`, "effect");
-      ctx.updateElf(actor, { isConcealed: true, survivalRule: liurenSurvivalRule() });
+      ctx.updateElf(actor, { ...(!hasAuthoredAdvancedMechanic(self,'enterGainConceal')?{isConcealed:true}:{}), survivalRule: liurenSurvivalRule() });
       if (!getPlayerState("wuxuLiurenOriginalMaxHp")) {
         setPlayerState("wuxuLiurenOriginalMaxHp", self.maxHp);
       }
+      // 通用個體鍵：恢復不得超過原始體力上限（戰鬥引擎 heal 讀取）
+      if (!getPlayerState("recoveryMaxHpCap")) setPlayerState("recoveryMaxHpCap", getPlayerState("wuxuLiurenOriginalMaxHp") || self.maxHp);
       triggerEntranceEffect();
       setPlayerState("wuxuBoost", true);
     }
@@ -86,7 +89,7 @@ export const handleWuxuSoulMark = (ctx: BattleEventContext, event: EffectTiming 
       // 原文：「自身下場後若己方隱匿精靈不超過3個」
       // 這裡計算包含自己在內的所有隱匿精靈（因為此時尚未清除自己的隱匿）
       const concealCount = team.filter(e => e.isConcealed).length;
-      if (concealCount <= 3 && extraData?.incomingElf) {
+      if (!hasAuthoredAdvancedMechanic(self,'switchOutInheritConceal') && concealCount <= 3 && extraData?.incomingElf) {
         addLog(`🌑 【隱匿傳承】：虛無之志傳遞給下一位！`, "effect");
         const nextElf = extraData.incomingElf;
         // 恢復下隻出戰精靈所有技能PP值
@@ -97,7 +100,7 @@ export const handleWuxuSoulMark = (ctx: BattleEventContext, event: EffectTiming 
         ctx.updateElf(actor, { id: nextElf.id, skills: restoredSkills, isConcealed: true });
       }
 
-      if (extraData?.incomingElf) {
+      if (extraData?.incomingElf && self.skills.some(s => s.name === '蟄刃復歸' && s.effectMode !== 'kit')) {
         setPlayerState("wuxuBladeReviveTrackingElf", extraData.incomingElf.name);
         setPlayerState("wuxuBladeReviveTrackingTurns", 0);
         setPlayerState("wuxuBladeReviveTrackingActive", true);
@@ -105,23 +108,23 @@ export const handleWuxuSoulMark = (ctx: BattleEventContext, event: EffectTiming 
       }
 
       // 自己下場，清除隱匿狀態（避免背包內一直保持隱匿，依據通用的「下場清除」邏輯，但若有特殊需求可調整）
-      ctx.updateElf(actor, { isConcealed: false });
+      if(!hasAuthoredAdvancedMechanic(self,'switchOutInheritConceal'))ctx.updateElf(actor, { isConcealed: false });
     }
     
 
     if (event === EffectTiming.BEFORE_DAMAGE && extraData?.damageComp && extraData.damageComp.isIncoming === false) {
       const damageComp = extraData.damageComp;
-      if (self.trait?.name === "亂舞") {
-        damageComp.multiplier = (damageComp.multiplier ?? 1.0) * 1.12;
-      }
+      // 亂舞（攻擊／特攻+12%）已移到攻擊公式的能力值（damageCalculator），這裡不再對所有傷害 ×1.12。
       
       const isNonTrue = damageComp.damageCategory === "skill_attack" || damageComp.damageCategory === "fixed" || damageComp.damageCategory === "percent";
       if (isNonTrue) {
         const hpLossPercent = (1 - self.currentHp / self.maxHp) * 100;
         const stacks = Math.floor(hpLossPercent / 0.1);
-        let boost = 1.2 + stacks * 1.2;
-        if (self.currentHp < self.maxHp / 2) boost *= 2;
-        damageComp.multiplier = (damageComp.multiplier ?? 1.0) * boost;
+        // 原文：造成非真實傷害提升120%；每降低0.1%體力上述效果提升120%；低於½時效果翻倍。
+        // 效果值＝120%×(1+層數)（翻倍作用在效果值），傷害×(1+效果值)。過去寫成×(1.2+層數×1.2)，滿血只有+20%（2026-10-11 修正）。
+        let effect = 1.2 * (1 + stacks);
+        if (self.currentHp < self.maxHp / 2) effect *= 2;
+        damageComp.multiplier = (damageComp.multiplier ?? 1.0) * (1 + effect);
       }
     }
 
@@ -134,7 +137,7 @@ export const handleWuxuSoulMark = (ctx: BattleEventContext, event: EffectTiming 
         ctx.applyPinkDamage(oppSide, healAmt, "無序追擊", ctx.activeP1, ctx.activeP2, "percent");
       }
       
-      if (self.trait?.name === "亂舞" && ctx.skill && ctx.skill.category !== "屬性") {
+      if (self.trait?.name === "亂舞" && self.trait.effectMode !== 'kit' && ctx.skill && ctx.skill.category !== "屬性") {
         const eligibleOppTeam = ctx.getEligibleTeam(oppSide).filter((e: any) => e.currentHp > 0 && e !== (oppSide === "p1" ? ctx.activeP1 : ctx.activeP2)); // 已陣亡者不會被波及（不會被拉回 1 血）
         if (eligibleOppTeam.length > 0) {
           const randomTarget = eligibleOppTeam[Math.floor(Math.random() * eligibleOppTeam.length)];
@@ -150,9 +153,9 @@ export const handleWuxuSoulMark = (ctx: BattleEventContext, event: EffectTiming 
       addLog(`🌑 【死亡條件不受體力限制】：無序·六刃觸發真實傷害庇護！(下場後保留效果且不因此降低效果回合數)`, "effect");
     }
 
-    if (event === EffectTiming.ON_KILL && extraData?.defeatedElf) {
+    if (event === EffectTiming.ON_KILL && extraData?.defeatedElf && getElfAdvancedMechanics(self).killAlienElfVanish) {
       const deadElf = extraData.defeatedElf;
-      const isDeadAlien = deadElf.isAlienElf || (deadElf.soulMark?.trait_warrior); // Check if it's an alien elf
+      const isDeadAlien = isAlienElf(deadElf); // Check if it's an alien elf
       if (isDeadAlien) {
         addLog(`🌑 【無序星魂使徒】：徹底終結了異能精靈 【${deadElf.name}】！`, "effect");
         ctx.vanishElf(oppSide, deadElf);
@@ -160,7 +163,7 @@ export const handleWuxuSoulMark = (ctx: BattleEventContext, event: EffectTiming 
     }
 
     if (event === EffectTiming.ROUND_END) {
-      if (getPlayerState("wuxuBladeReviveTrackingActive")) {
+      if (getPlayerState("wuxuBladeReviveTrackingActive") && self.skills.some(s => s.name === '蟄刃復歸' && s.effectMode !== 'kit')) {
         const trackedName = getPlayerState("wuxuBladeReviveTrackingElf");
         const activeElf = actor === "p1" ? ctx.activeP1 : ctx.activeP2;
         const stillOnField = activeElf && activeElf.name === trackedName && activeElf.currentHp > 0 && !activeElf.isVanished;
@@ -189,7 +192,7 @@ export const handleWuxuSoulMark = (ctx: BattleEventContext, event: EffectTiming 
 
     if (event === EffectTiming.MODIFY_PRIORITY && extraData?.priorityComp) {
       const skill = ctx.skill;
-      if (skill && (skill.name === "靜刃止水" || skill.name === "蟄刃復歸" || skill.name === "六刃碎界斷")) {
+      if (skill && skill.effectMode !== 'kit' && (skill.name === "靜刃止水" || skill.name === "蟄刃復歸" || skill.name === "六刃碎界斷")) {
         const realSkill = self.skills.find(sk => sk.name === skill.name);
         if (realSkill) {
           extraData.priorityComp.bonus += (realSkill.pp ?? 0);
@@ -202,11 +205,10 @@ export const handleWuxuSoulMark = (ctx: BattleEventContext, event: EffectTiming 
 
   // 無序·墜星 (Wuxu Zhuixing)
   if ((self.id || "").includes("zhuixing") || self.name.includes("墜星")) {
-    handleStoneThrowerSoul(ctx, event, extraData);
     
-    if (event === EffectTiming.ON_KILL && extraData?.defeatedElf) {
+    if (event === EffectTiming.ON_KILL && extraData?.defeatedElf && getElfAdvancedMechanics(self).killAlienElfVanish) {
        const deadElf = extraData.defeatedElf;
-       const isDeadAlien = deadElf.isAlienElf || (deadElf.soulMark?.trait_warrior);
+       const isDeadAlien = isAlienElf(deadElf);
        if (isDeadAlien) {
          addLog(`🌑 【無序星魂使徒】：徹底終結了異能精靈 【${deadElf.name}】！`, "effect");
          ctx.vanishElf(oppSide, deadElf);
@@ -218,48 +220,7 @@ export const handleWuxuSoulMark = (ctx: BattleEventContext, event: EffectTiming 
 };
 
 export const WUXU_SKILLS: Record<string, BattleSkillHandler> = {
-  "終焉·六花斬": (ctx) => {
-    const { self, actor, target, targetSide, addLog } = ctx;
-    addLog(`🌑 【終焉·六花斬】：穿透虛空的六重連斬！`, "effect");
-    // 🎯 雙方每有1個技能（PP值為滿／不為滿）吸取對手1次66點體力（每次獨立），吸取後對手體力未減少則該次改為汲取
-    const n = (self.skills || []).length + (target.skills || []).length;
-    for (let i = 0; i < n; i++) {
-      const dealt = ctx.applyPinkDamage(targetSide, 66, "吸取", undefined, undefined, "percent");
-      if (dealt > 0) ctx.applyHeal(actor, dealt);
-      else ctx.applyAbsorb(targetSide, 66);
-    }
-    // 🎯 進行6次額外行動（邪靈→戰鬥→邪靈.戰鬥→邪靈→戰鬥→邪靈.戰鬥），每次66點技能傷害；行動期間不造成傷害，
-    //    行動結束時對方所有精靈受到6次總和的技能傷害；場下精靈死亡時令其消逝並轉化其能力值總和20%給予自身
-    const seq = ["邪靈", "戰鬥", "邪靈.戰鬥", "邪靈", "戰鬥", "邪靈.戰鬥"];
-    ctx.queueExtraAction?.(actor, {
-      label: "終焉·六花斬 ×6",
-      run: (c) => {
-        const opp = c.actor === "p1" ? "p2" : "p1";
-        const total = (elf: any) => seq.reduce((a, t) => a + Math.floor(66 * getTypeMatchup(t, elf.type)), 0);
-        // 在場：六次按序以各自系別單獨結算（每次管線只乘一次正確克制）。
-        // 舊寫法先 total（含六系克制）再 elem:"普通" 進管線，會被普通系克制二次污染。
-        for (let i = 0; i < seq.length; i++) {
-          c.applySkillTypeDamage(opp, 66, `終焉·六花斬(${i + 1}/6·${seq[i]})`, { elem: seq[i], category: "skill_extra_action" });
-        }
-        const active: any = opp === "p1" ? c.activeP1 : c.activeP2;
-        for (const m of c.getFullTeam(opp) as any[]) {
-          if (!m || m === active || (m.battleId && m.battleId === active?.battleId) || m.currentHp <= 0 || m.isConcealed) continue;
-          const hp = Math.max(0, m.currentHp - total(m));
-          c.updateAnyElf(opp, m.battleId, { currentHp: hp } as any);
-          c.addLog(`🌑 【終焉·六花斬】：場下【${m.name}】受到 ${total(m)} 點技能傷害！`, "damage");
-          if (hp <= 0) {
-            c.vanishElf(opp, m);
-            const cs: any = (c.self as any).calculatedStats || {};
-            const ms: any = m.calculatedStats || {};
-            const next: any = { ...cs };
-            for (const k of ["atk", "def", "spatk", "spdef", "speed"]) next[k] = (cs[k] || 0) + Math.floor((ms[k] || 0) * 0.2);
-            c.updateElf(c.actor, { calculatedStats: next } as any);
-            c.addLog(`🌑 【終焉】：【${m.name}】消逝，其能力值 20% 轉化給自身！`, "effect");
-          }
-        }
-      },
-    });
-  },
+  // '終焉·六花斬' 已遷移為真 Kit（src/data/migratedExtraElfKits.ts；組 3，blocks/ops/extraElf.ts）。
   "狂刃無生": (ctx) => {
     ctx.addLog(`🌑 【狂刃無生】：洗滌萬物，唯餘狂氣！`, "effect");
     
@@ -364,11 +325,11 @@ export const WUXU_SKILLS: Record<string, BattleSkillHandler> = {
 
     if (clearedAny) {
       const oppSide = actor === "p1" ? "p2" : "p1";
-      // 3回合對手所有技能附加效果失效
-      setPlayerState(`${oppSide}_sealSkillAdditionalEffects`, 3);
-      // 無法附加敵我雙方任一方異常狀態
-      setPlayerState(`p1_preventStatusInflict`, 3);
-      setPlayerState(`p2_preventStatusInflict`, 3);
+      // 3回合對手所有技能附加效果失效：掛在受影響者（對手）身上，其行動時才讀得到、特質引擎才會遞減。
+      ctx.setOpponentState(`${oppSide}_sealSkillAdditionalEffects`, 3);
+      // 無法附加敵我雙方任一方異常狀態：雙方各自掛在自己 registry 的帶邊前綴鍵。
+      setPlayerState(`${actor}_preventStatusInflict`, 3);
+      ctx.setOpponentState(`${oppSide}_preventStatusInflict`, 3);
       addLog(`🧘 【靜刃止水】：異常解除成功！使對手 3 回合內所有技能附加效果失效，且雙方 3 回合內無法被附加任何異常狀態！`, "effect");
     } else {
       addLog(`🧘 【靜刃止水】：雙方均無異常狀態可解除。`, "effect");
@@ -389,9 +350,9 @@ export const WUXU_SKILLS: Record<string, BattleSkillHandler> = {
     ctx.setPlayerState("attackHitCountThisAction", comboHits);
     addLog(`⚔️ 【六刃碎界斷】連擊！使用時 PP ${ppAtUse}，連擊 ${comboHits} 次！`, "effect");
 
-    // 6回合內對手體力恢復量下降100%
-    setPlayerState(`${targetSide}_noHealTurns`, 6);
-    setPlayerState(`${targetSide}_noHealReason`, "受【六刃碎界斷】限制");
+    // 6回合內對手體力恢復量下降100%：掛在受影響者（對手）身上；無前綴鍵由特質引擎每回合遞減。
+    ctx.setOpponentState(`${targetSide}_noHealTurns`, 6);
+    ctx.setOpponentState(`${targetSide}_noHealReason`, "受【六刃碎界斷】限制");
     addLog(`🚫 【六刃碎界斷】：使對手 6 回合內體力恢復量下降 100%！`, "status");
 
     // 2. 附加自身雙攻值總和66%的百分比傷害
@@ -410,9 +371,10 @@ export const WUXU_SKILLS: Record<string, BattleSkillHandler> = {
       addLog(`📉 【六刃碎界斷】：對手防禦、特防下降 -1 階！`, "effect");
     } else {
       // 未觸發則2回合內對手攻擊技能無效且當回合結束時受到當前雙防值總和66%的百分比傷害
-      setPlayerState(`${targetSide}_attackInvalidTurns`, 2);
-      setPlayerState(`${targetSide}_attackSkillInvalidTurns`, 2);
-      setPlayerState(`${targetSide}_attackSkillInvalidReason`, "【六刃碎界斷】");
+      // 掛在受影響者（對手）registry：引擎出手時讀行動方自己的鍵（battleEngine:2752），特質引擎每回合遞減。
+      // attackInvalidTurns 是無讀取端的死鍵，改為只寫有效鍵，不重複計數。
+      ctx.setOpponentState("attackSkillInvalidTurns", 2);
+      ctx.setOpponentState("attackSkillInvalidReason", "【六刃碎界斷】");
       const def = target.calculatedStats?.def || target.baseStats.def;
       const spdef = target.calculatedStats?.spdef || target.baseStats.spdef;
       const sumDef = def + spdef;

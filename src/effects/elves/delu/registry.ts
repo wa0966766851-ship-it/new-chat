@@ -30,7 +30,37 @@ export const handleDeluSoulMark = (context: BattleEventContext, event: EffectTim
     }
   }
 
-  
+
+  // 回合開始：體力不低於對手 → 當回合造成非真實傷害提升50%；體力低於¼ → 直到下場前每回合開始受到最大體力75%真實傷害
+  if (event === EffectTiming.ROUND_START) {
+    const low = self.currentHp < self.maxHp / 4;
+    setPlayerState("deluRoundStartLow", low);
+    if (self.currentHp >= (target?.currentHp ?? Infinity)) {
+      setPlayerState("DeluNonTrueDmgBoostTurns", 1); // 回合結束通用遞減
+      addLog(`🦁 【獅】：體力不低於對手，本回合造成的非真實傷害提升50%！`, "effect");
+    }
+    if (low) setPlayerState("deluLowHpBleed", true);
+    if (getPlayerState("deluLowHpBleed")) context.applyTrueDamage(actor, Math.floor(self.maxHp * 0.75), "【獅】反噬");
+  }
+  if (event === EffectTiming.ON_SWITCH_OUT) setPlayerState("deluLowHpBleed", false);
+
+  if (event === EffectTiming.BEFORE_DAMAGE && extraData && !extraData.isIncoming) {
+    if ((getPlayerState("DeluNonTrueDmgBoostTurns") || 0) > 0 && extraData.damageCategory !== "true") extraData.increasePercent += 0.5;
+    // 回合開始時體力低於¼：自身使用技能時1回合內對手受到傷害不小於對手體力上限
+    if (getPlayerState("deluFloorThisTurn") && extraData.damageCategory !== "true") extraData.floor = Math.max(extraData.floor || 0, target?.maxHp || 0);
+  }
+
+  if (event === EffectTiming.BEFORE_SKILL && getPlayerState("deluRoundStartLow")) {
+    setPlayerState("deluFloorThisTurn", true);
+    setOpponentState(`${oppSide}_noHealTurns`, 1);
+    context.applyTrueDamage(oppSide, target.maxHp, "【獅】");
+    if ((context.getMarks(oppSide) || []).some(m => m.id === "delu_shackles" && (m.count || 0) > 0)) {
+      const left = context.target?.currentHp || 0;
+      if (left > 0) context.applyTrueDamage(oppSide, left, "【獅】魔軀枷鎖");
+    }
+  }
+  if (event === EffectTiming.ROUND_END) setPlayerState("deluFloorThisTurn", false);
+
   if (event === EffectTiming.ON_STATUS_IMMUNIZED) {
      const count = getPlayerState("DeluNextStatusImmuneCount") || 0;
      if (count > 0) {
@@ -50,13 +80,7 @@ export const handleDeluSoulMark = (context: BattleEventContext, event: EffectTim
      }
   }
 
-  if (event === EffectTiming.MODIFY_PRIORITY) {
-     if (getPlayerState("DeluNextSkillPriorityBoost2")) {
-        extraData?.priorityComp && (extraData.priorityComp.bonus += 2);
-        setPlayerState("DeluNextSkillPriorityBoost2", false);
-        addLog(`⚡ 【辟冥·鎮獄斷】：先制額外 +2！`, "effect");
-     }
-  }
+  // 辟冥·鎮獄斷「未擊敗→下次先制+2」已由 Kit prio_next 表達（20261017 DSH）；分支移除。
 
   // 2. 受到傷害後：受到真實傷害時轉移 1 道枷鎖給對手 (ON_DAMAGED)
   if (event === EffectTiming.ON_DAMAGED && extraData?.damageType === "true") {
@@ -221,8 +245,9 @@ export const DELU_SKILLS: Record<string, BattleSkillHandler> = {
     self.statStages = newStages as any;
     addLog(`📈 【負岳勢】山岳：全屬性提升 ${boost} 級！`, "effect");
     
-    setPlayerState("DamageBoostTurns", 2);
-    setPlayerState("dmgDoubleTurns", 2);
+    // 原文：下2回合自身攻擊技能造成傷害提升100%。過去另寫了 DamageBoostTurns（引擎視為「持有者受到傷害×2」），
+    // 等於讓迪露自己受到的傷害翻倍；已刪除（2026-10-11）。
+    ctx.setNextTurns?.("self", "dmgDoubleTurns", 2);
     ctx.addTimerTo(actor, turnEffect("delu_damage_boost", "負岳勢-增傷", 2, { 
       payload: { double: true },
       displayChar: "增",
@@ -263,65 +288,6 @@ export const DELU_SKILLS: Record<string, BattleSkillHandler> = {
     addLog(`🩸 【目瘴淵禁】餘威：下 3 回合使用技能將吸取對手 ⅓ 體力！`, "effect");
   },
   
-  "劫盡歸塵": (ctx) => {
-    const { self, target, actor, setPlayerState, setOpponentState, addLog, applyStatusWithImmunityCheck, clearTurnEffectsOf, shuffleArray } = ctx;
-    
-    clearTurnEffectsOf(actor);
-    clearTurnEffectsOf(actor === "p1" ? "p2" : "p1");
-    addLog(`🧹 【劫盡歸塵】萬物歸塵：清除了雙方的回合類效果！`, "effect");
-    
-    const statuses: Array<"poisoned" | "frostbite" | "burned"> = ["poisoned", "frostbite", "burned"];
-    statuses.forEach(s => {
-      applyStatusWithImmunityCheck(actor === "p1" ? "p1" : "p2", s, 2, true);
-      const res = applyStatusWithImmunityCheck(actor === "p1" ? "p2" : "p1", s, 2);
-      if (res.immune) {
-        addLog(`🛡️ 對手免疫「${s}」，【劫盡歸塵】觸發補償：令其「感染」！`, "status");
-        applyStatusWithImmunityCheck(actor === "p1" ? "p2" : "p1", "infected", 2);
-      }
-    });
-    addLog(`🔥 【劫盡歸塵】：使雙方同時陷入「中毒」、「凍傷」、「燒傷」！`, "status");
-    
-    setPlayerState("DeluStatusEndHeal", true);
-    setPlayerState("immuneStatusCount", 2);
-    setPlayerState("DeluNextStatusImmuneCount", 2);
-    addLog(`🛡️ 【劫盡歸塵】：自身免疫下 2 次異常，免疫成功時恢復體力並造成傷害！`, "effect");
-    
-    if (target.skills) {
-      let drained = 0;
-      const shuffled = shuffleArray ? shuffleArray([...target.skills]) : [...target.skills].sort(() => Math.random() - 0.5);
-      shuffled.forEach(s => {
-        if (s.pp !== undefined && s.pp > 0 && drained < 3) {
-          s.pp = 0;
-          drained++;
-        }
-      });
-      addLog(`📉 【劫盡歸塵】凋零：隨機扣除了對手 3 個技能的全部 PP！`, "effect");
-    }
-  },
-  
-  "辟冥·鎮獄斷": (ctx) => {
-    const { self, target, actor, setPlayerState, addLog, applyStatusWithImmunityCheck } = ctx;
-    
-    const oppStages = { ...target.statStages };
-    let cleared = false;
-    for (const key in oppStages) {
-      if ((oppStages[key as keyof typeof oppStages] || 0) > 0) {
-        oppStages[key as keyof typeof oppStages] = 0;
-        cleared = true;
-      }
-    }
-    if (cleared) {
-      target.statStages = oppStages as any;
-      addLog(`🧹 【辟冥·鎮獄斷】破極：消除對手能力提升！`, "effect");
-      const targetSide = actor === "p1" ? "p2" : "p1";
-      applyStatusWithImmunityCheck(targetSide, "infected", 2);
-      applyStatusWithImmunityCheck(targetSide, "ice_sealed", 2);
-      applyStatusWithImmunityCheck(targetSide, "incinerated", 2);
-      addLog(`🦠 【辟冥·鎮獄斷】威靈：依序為對手施加「感染」、「冰封」與「焚燼」狀態！`, "status");
-    }
-    
-    if (target.currentHp > 0) {
-      setPlayerState("DeluNextSkillPriorityBoost2", true);
-    }
-  }
+  // 「劫盡歸塵」「辟冥·鎮獄斷」均已遷移至 src/data/migratedDeluSkillKits.ts（真 Kit；20261017 DSH）。
+  // 舊 handler 僅實作「消提升→三異常／未擊敗→下次先制+2」，其餘 ■ 句由 Kit 依原文補實。
 };

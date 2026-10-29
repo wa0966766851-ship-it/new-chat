@@ -18,7 +18,7 @@ export const MarsDeconstructedProfile: ElfDeconstructedProfile = {
         energySystem: true,
         mechaModes: ['堅壁', '極速', '毀滅'],
         analyzeAndImmuneStatus: true,
-        shieldRatio: 0.33,
+        shieldRatio: 1 / 3,
         priorityBonus: 2
       }
     }
@@ -54,7 +54,7 @@ export const MarsDeconstructedProfile: ElfDeconstructedProfile = {
           name: '核心重構特效',
           description: '必中；解除自身異常狀態，解除成功則令堅壁機甲解析並記錄此異常狀態；5回合內自身使用技能恢復自身體力1/3並附加對手等量百分比傷害，自身體力低於1/2時效果翻倍；5回合內自身使用技能吸取對手350點固定體力，對手受到固定傷害後體力未減少則附加300點真實傷害；3回合內若對手使用攻擊技能則100%令對手隨機2個技能PP值不為0的技能歸0並將降低的PP值總和轉變為自身技能補充等量充能'
         },
-        mechanics: { priority: 0, alwaysHit: true, clearStatusAndAnalyze: true, healAndDamageTurns: 5, healRatio: 0.33, absorbFixedHpTurns: 5, absorbFixedHp: 350 }
+        mechanics: { priority: 0, alwaysHit: true, clearStatusAndAnalyze: true, healAndDamageTurns: 5, healRatio: 1 / 3, absorbFixedHpTurns: 5, absorbFixedHp: 350 }
       }
     ],
     '王·肅正協議': [

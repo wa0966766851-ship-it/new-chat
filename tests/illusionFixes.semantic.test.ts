@@ -12,11 +12,12 @@ try {
   const { SoulMarkRegistry, transformSkillBeforeResolve, getSoulMarkRegistry } = await server.ssrLoadModule('/src/effects/battleEventRegistry.ts');
   const { buildStateAPIs } = await server.ssrLoadModule('/src/battle/contextBuilders.ts');
   const { battleReducer } = await server.ssrLoadModule('/src/components/BattleManager.ts');
-  const { STAGED_ARENA_ELVES } = await server.ssrLoadModule('/src/data/stagedArenaElves.ts');
+  const { DEFAULT_ELVES } = await server.ssrLoadModule('/src/data/defaultElvesLoaded.ts');
   const { getElfAdvancedMechanics } = await server.ssrLoadModule('/src/data/traitsRegistry.ts');
   const { effectDefinitionEntries } = await server.ssrLoadModule('/src/battle/effectSources.ts');
   const { elfForViewer, visibleSkills, viewerMaskTerms, maskViewerText } = await server.ssrLoadModule('/src/battle/viewerPerspective.ts');
-  const { isZeroPpExempt, BATTLE_ITEMS } = await server.ssrLoadModule('/src/utils/battleHelpers.ts');
+  const {BATTLE_ITEMS}=await server.ssrLoadModule('/src/utils/battleHelpers.ts');
+const {isZeroPpExempt}=await server.ssrLoadModule('/src/battle/ppExemptions.ts');
   const { applyBattleItem } = await server.ssrLoadModule('/src/battle/itemInventory.ts');
   const { restorePP, ppOf, key } = await server.ssrLoadModule('/src/effects/elves/staged-arena/shared.ts');
   const { acquiredEffectContext } = await server.ssrLoadModule('/src/battle/acquiredEffectContext.ts');
@@ -58,7 +59,7 @@ try {
     assert.deepEqual(reduced[side].calculatedStats, ctx.self.calculatedStats, '同步狀態與React reducer還原結果一致'); checks++;
 
     // 真實無為龍者魂印：舊名稱的技能選擇→同槽轉化→完成／失敗均交換原槽PP。
-    const target = structuredClone(STAGED_ARENA_ELVES.find((e: any) => e.name === '無為龍者'));
+    const target = structuredClone(DEFAULT_ELVES.find((e: any) => e.name === '無為龍者'));
     target.calculatedStats = stat(300); target.maxHp = 300; target.currentHp = 300;
     apis.updateElf(side, { calculatedStats: stat(100), maxHp: 100 });
     startIllusion(ctx, target, '真實無為取得', 10);
@@ -78,7 +79,7 @@ try {
       ctx.skill = { ...ctx.self.skills[0], battleSlot: 0 };
       const ppCostComp = { base: 1 };
       SoulMarkRegistry[ctx.self.name](ctx, 'BEFORE_SKILL', { ppCostComp });
-      assert.equal(ppCostComp.base, 0);
+      assert.equal(ppCostComp.base * ((ppCostComp as any).multiplier ?? 1), 0);
       ctx.skill = transformSkillBeforeResolve(ctx, ctx.skill);
       assert.equal(ctx.skill.name, target.skills[0].name);
       assert.equal(ctx.skill.pp, 3, '轉化使用持有者PP，不用目標快照PP');
@@ -147,7 +148,10 @@ try {
     delete getSoulMarkRegistry()[acquired.name];
 
     // 真實帝皇之盾條件被動：既有護盾符合條件時，弱化是對手，不是持有者。
-    startIllusion(ctx, { ...make('5002', 200), name: '帝皇之盾' }, '盾之取得');
+    // 5002 已遷真 Kit（舊 handler 空殼）：取得來源改用 DEFAULT_ELVES 的真實帝皇之盾，經取得魂印路徑跑 Kit 的 round_start 子句。
+    const realShield: any = structuredClone(DEFAULT_ELVES.find((e: any) => String(e.id) === '5002'));
+    Object.assign(realShield, { battleId: '5002', currentHp: 200, maxHp: 200, calculatedStats: stat(200), baseStats: stat(200), statStages: {}, effects: [], battleStatuses: {} });
+    startIllusion(ctx, realShield, '盾之取得');
     apis.updateElf(side, { shield: 60 });
     const changes: any[] = [];
     ctx.applyStatChange = (s: string, delta: any) => { changes.push({ side: s, delta }); };
@@ -173,6 +177,47 @@ try {
     SoulMarkRegistry[ctx.self.name](ctx, 'FATAL_RESIST');
     assert.equal(ctx.self.currentHp, 0, '同一取得世代首次不能重複觸發'); checks++;
     endIllusion(ctx);
+  }
+  // 正式引擎：同名原技能、幻化改名、過期 currentPp 與暫時上限一起驗證。
+  const { createBattleEngine } = await server.ssrLoadModule('/src/engine/battleEngine.ts');
+  const souls = getSoulMarkRegistry();
+  for (const side of ['p1', 'p2'] as const) {
+    const other = side === 'p1' ? 'p2' : 'p1';
+    for (const outcome of ['used', 'invalid', 'disabled']) {
+      const owner = make(`引擎幻化PP-${side}-${outcome}`, 1000);
+      owner.skills = owner.skills.slice(0, 2).map((s: any, i: number) => ({ ...s, name: '同名原技能', pp: i ? 3 : 8 }));
+      if (outcome === 'disabled') owner.battleStatuses = { 睡眠: 3 };
+      const source = structuredClone(DEFAULT_ELVES.find((e: any) => e.name === '無為龍者'));
+      source.skills = owner.skills.map((s: any, i: number) => ({ ...s, name: `幻化後技能${i}`, isSureHit: true }));
+      const enemy = make(`引擎PP對手-${side}-${outcome}`, 1000);
+      enemy.skills = [{ ...enemy.skills[0], name: '引擎等待', priority: 100 }];
+      if (outcome === 'invalid') Object.assign(enemy.skills[0], { effectMode: 'kit', kit: [{
+        codeId: 'effect_sequence', source: 'skill', role: 'attached', node: 'on_skill_use', order: 0,
+        params: { clause: { raw: '測試無效一次', trig: 'use', parsed: true, body: [{ acts: [
+          { op: 'invalid_next', p: { kind: 'all', uses: 1 }, label: '無效一次' },
+        ] }] } },
+      }] });
+      souls[owner.name] = (ctx: any, timing: string) => {
+        if (timing === 'ON_ENTRANCE') startIllusion(ctx, source, '引擎PP取得', 10);
+      };
+      const e = createBattleEngine({ initialP1Team: [side === 'p1' ? owner : enemy], initialP2Team: [side === 'p2' ? owner : enemy],
+        p1StarterId: side === 'p1' ? owner.id : enemy.id, p2StarterId: side === 'p2' ? owner.id : enemy.id,
+        battleMode: 'PVP', preparedTeams: true, isFast: () => true });
+      try {
+        e.mount(); e.start(); await e.idle();
+        assert.ok(e.getState()[side].illusion, '實際登場取得魂印');
+        for (const pickSide of ['p1', 'p2'] as const) e.onSkillSelect(pickSide, e.getState()[pickSide].skills[pickSide === side ? 1 : 0]);
+        await e.idle();
+        const result = e.getState(), pp = result[side].skills;
+        const expected = outcome === 'disabled' ? 3 : 27;
+        assert.equal(pp[1].pp, expected, `${side}/${outcome} 正式結算原槽PP`);
+        if (outcome !== 'disabled') assert.equal(pp[1].currentPp, expected);
+        assert.equal(pp[0].pp, 8, `${side}/${outcome} 同名未選槽不受影響`);
+        const swaps = result.logs.filter((l: any) => String(l.text ?? l.message ?? '').includes('PP 互換'));
+        assert.equal(swaps.length, outcome === 'disabled' ? 0 : 1, '每次實際使用只互換一次，無法出手不互換');
+        assert.ok(result[other].currentHp > 0); checks++;
+      } finally { e.unmount(); delete souls[owner.name]; }
+    }
   }
   assert.equal(errors.length, 0, '正式註冊表錯誤不可被吞掉');
   console.log(`幻化還原／取得效果／真實無為PP／藥劑／視角：${checks}個雙側情境通過。`);

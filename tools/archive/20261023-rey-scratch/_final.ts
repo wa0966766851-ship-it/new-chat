@@ -1,0 +1,10 @@
+﻿import { DEFAULT_ELVES } from './src/data/defaultElves.ts';
+const jq:any = DEFAULT_ELVES.find(e=>e.name==='九青');
+const s = jq.skills.find((x:any)=>x.name==='蒼靈銜樂');
+console.log('=== 蒼靈銜樂 kit ===');
+for(const k of (s.kit||[])) console.log(' role=', k.role, '| node=', k.node, '|', (k.customText||'').slice(0,40));
+console.log('\n=== 第五技能 ===');
+const f = jq.skills[0];
+console.log('name:', f.name, '| isSureHit:', f.isSureHit, '| 首行:', JSON.stringify(f.description.split('\r\n')[0]));
+console.log('\n=== 主列/池 ===');
+console.log('skills:', jq.skills.length, '| pool:', jq.skillPool.length, '| rank:', jq.destinyRank);

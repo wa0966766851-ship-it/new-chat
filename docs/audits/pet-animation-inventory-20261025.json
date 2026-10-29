@@ -1,0 +1,2813 @@
+{
+  "checkedAt": "2026-10-25T01:07:10.688Z",
+  "indexUrl": "https://pet-anim-viewer.seerapi.com/pet-anim-index.json",
+  "indexVersion": "20261022142543",
+  "sourceRoot": "D:\\影片\\bilibili\\新建文件夹\\TWSeerLauncher\\Games\\NewSeer\\Seer_Data\\yoo\\PetAnimPackage\\CacheBundleFiles",
+  "totalIndexBytes": 12118619475,
+  "owners": 40,
+  "uniqueAssets": 38,
+  "subsetBytes": 119955663,
+  "items": [
+    {
+      "owner": "5001",
+      "name": "悲歌.索比拉特",
+      "animation": {
+        "id": 3435,
+        "name": "ppets_3435",
+        "hash": "4cf9bcf49075f71f2357aa24cf19326c",
+        "bytes": 877907,
+        "url": "https://newseer.61.com/Assets/StandaloneWindows64/PetAnimPackage/4cf9bcf49075f71f2357aa24cf19326c",
+        "local": true,
+        "localFile": "D:\\影片\\bilibili\\新建文件夹\\TWSeerLauncher\\Games\\NewSeer\\Seer_Data\\yoo\\PetAnimPackage\\CacheBundleFiles\\4c\\4cf9bcf49075f71f2357aa24cf19326c\\__data",
+        "sha256": "7c39a7dae1ae839bac603c6fcb024c3dda8dd5a1fc65f8907d0bd1f93d0ef335",
+        "native": {
+          "textures": [
+            {
+              "name": "3435._Atlas_",
+              "width": 2048,
+              "height": 2048,
+              "rgbaBytes": 16777216
+            }
+          ],
+          "clips": [
+            {
+              "name": "3435.pet",
+              "fps": 25.0,
+              "sequences": [
+                {
+                  "name": "standby",
+                  "frames": 27,
+                  "hits": []
+                },
+                {
+                  "name": "attack",
+                  "frames": 111,
+                  "hits": [
+                    82
+                  ]
+                },
+                {
+                  "name": "sa",
+                  "frames": 71,
+                  "hits": [
+                    31
+                  ]
+                },
+                {
+                  "name": "cp",
+                  "frames": 60,
+                  "hits": [
+                    25
+                  ]
+                },
+                {
+                  "name": "hited",
+                  "frames": 8,
+                  "hits": []
+                }
+              ]
+            }
+          ],
+          "usable": true
+        }
+      },
+      "small": null,
+      "binding": "待逐一視覺校準，未自動啟用"
+    },
+    {
+      "owner": "5002",
+      "name": "帝皇之盾",
+      "animation": {
+        "id": 3404,
+        "name": "ppets_3404",
+        "hash": "9a59b726f4b1106ae585e04dfa121895",
+        "bytes": 1809383,
+        "url": "https://newseer.61.com/Assets/StandaloneWindows64/PetAnimPackage/9a59b726f4b1106ae585e04dfa121895",
+        "local": true,
+        "localFile": "D:\\影片\\bilibili\\新建文件夹\\TWSeerLauncher\\Games\\NewSeer\\Seer_Data\\yoo\\PetAnimPackage\\CacheBundleFiles\\9a\\9a59b726f4b1106ae585e04dfa121895\\__data",
+        "sha256": "032b362f4f350092302dc5482a6c2846662c0d43e5a64d3cf06552707024da77",
+        "native": {
+          "textures": [
+            {
+              "name": "3404._Atlas_",
+              "width": 2048,
+              "height": 2048,
+              "rgbaBytes": 16777216
+            }
+          ],
+          "clips": [
+            {
+              "name": "3404.pet",
+              "fps": 25.0,
+              "sequences": [
+                {
+                  "name": "standby",
+                  "frames": 27,
+                  "hits": []
+                },
+                {
+                  "name": "attack",
+                  "frames": 148,
+                  "hits": [
+                    121
+                  ]
+                },
+                {
+                  "name": "sa",
+                  "frames": 78,
+                  "hits": [
+                    54
+                  ]
+                },
+                {
+                  "name": "cp",
+                  "frames": 67,
+                  "hits": [
+                    33
+                  ]
+                },
+                {
+                  "name": "hited",
+                  "frames": 8,
+                  "hits": []
+                }
+              ]
+            }
+          ],
+          "usable": true
+        }
+      },
+      "small": null,
+      "binding": "待逐一視覺校準，未自動啟用"
+    },
+    {
+      "owner": "5003",
+      "name": "天蓬元帥八戒",
+      "animation": {
+        "id": 1536,
+        "name": "ppets_1536",
+        "hash": "67fae7335cfc72db354e50c83df6b46b",
+        "bytes": 279138,
+        "url": "https://newseer.61.com/Assets/StandaloneWindows64/PetAnimPackage/67fae7335cfc72db354e50c83df6b46b",
+        "local": true,
+        "localFile": "D:\\影片\\bilibili\\新建文件夹\\TWSeerLauncher\\Games\\NewSeer\\Seer_Data\\yoo\\PetAnimPackage\\CacheBundleFiles\\67\\67fae7335cfc72db354e50c83df6b46b\\__data",
+        "sha256": "24f05cdf0824317e0f05bd1b32bfe986b9c8fb738db88dd035a35a5405968c42",
+        "native": {
+          "textures": [
+            {
+              "name": "1536._Atlas_",
+              "width": 1024,
+              "height": 1024,
+              "rgbaBytes": 4194304
+            }
+          ],
+          "clips": [
+            {
+              "name": "1536.pet",
+              "fps": 24.0,
+              "sequences": [
+                {
+                  "name": "standby",
+                  "frames": 24,
+                  "hits": []
+                },
+                {
+                  "name": "attack",
+                  "frames": 69,
+                  "hits": [
+                    24
+                  ]
+                },
+                {
+                  "name": "sa",
+                  "frames": 56,
+                  "hits": [
+                    30
+                  ]
+                },
+                {
+                  "name": "cp",
+                  "frames": 62,
+                  "hits": [
+                    19
+                  ]
+                },
+                {
+                  "name": "hited",
+                  "frames": 8,
+                  "hits": []
+                }
+              ]
+            }
+          ],
+          "usable": true
+        }
+      },
+      "small": null,
+      "binding": "待逐一視覺校準，未自動啟用"
+    },
+    {
+      "owner": "5004",
+      "name": "皮特薩拉羅",
+      "animation": {
+        "id": 3098,
+        "name": "ppets_3098",
+        "hash": "e9b97105798b7e297b54e3bd4ce7cc58",
+        "bytes": 733414,
+        "url": "https://newseer.61.com/Assets/StandaloneWindows64/PetAnimPackage/e9b97105798b7e297b54e3bd4ce7cc58",
+        "local": true,
+        "localFile": "D:\\影片\\bilibili\\新建文件夹\\TWSeerLauncher\\Games\\NewSeer\\Seer_Data\\yoo\\PetAnimPackage\\CacheBundleFiles\\e9\\e9b97105798b7e297b54e3bd4ce7cc58\\__data",
+        "sha256": "ef6dc64dfc068f291319d06a769483ccfd5d000692ec12a911f5aa4666926128",
+        "native": {
+          "textures": [
+            {
+              "name": "3098._Atlas_",
+              "width": 2048,
+              "height": 2048,
+              "rgbaBytes": 16777216
+            }
+          ],
+          "clips": [
+            {
+              "name": "3098.pet",
+              "fps": 25.0,
+              "sequences": [
+                {
+                  "name": "standby",
+                  "frames": 20,
+                  "hits": []
+                },
+                {
+                  "name": "attack",
+                  "frames": 96,
+                  "hits": [
+                    73
+                  ]
+                },
+                {
+                  "name": "sa",
+                  "frames": 63,
+                  "hits": [
+                    25
+                  ]
+                },
+                {
+                  "name": "cp",
+                  "frames": 64,
+                  "hits": [
+                    28
+                  ]
+                },
+                {
+                  "name": "hited",
+                  "frames": 8,
+                  "hits": []
+                }
+              ]
+            }
+          ],
+          "usable": true
+        }
+      },
+      "small": null,
+      "binding": "待逐一視覺校準，未自動啟用"
+    },
+    {
+      "owner": "5005",
+      "name": "布萊克",
+      "animation": {
+        "id": 875,
+        "name": "ppets_875",
+        "hash": "f377a186ef73cde02db8b8c60fe1d20b",
+        "bytes": 256157,
+        "url": "https://newseer.61.com/Assets/StandaloneWindows64/PetAnimPackage/f377a186ef73cde02db8b8c60fe1d20b",
+        "local": true,
+        "localFile": "D:\\影片\\bilibili\\新建文件夹\\TWSeerLauncher\\Games\\NewSeer\\Seer_Data\\yoo\\PetAnimPackage\\CacheBundleFiles\\f3\\f377a186ef73cde02db8b8c60fe1d20b\\__data",
+        "sha256": "7ed0b8db2c5e8945803e6af3768ae9ad5864b5504d34ae9258dc9ec4db1cb09c",
+        "native": {
+          "textures": [
+            {
+              "name": "875._Atlas_",
+              "width": 1024,
+              "height": 1024,
+              "rgbaBytes": 4194304
+            }
+          ],
+          "clips": [
+            {
+              "name": "875.pet",
+              "fps": 24.0,
+              "sequences": [
+                {
+                  "name": "standby",
+                  "frames": 16,
+                  "hits": []
+                },
+                {
+                  "name": "attack",
+                  "frames": 84,
+                  "hits": [
+                    50
+                  ]
+                },
+                {
+                  "name": "sa",
+                  "frames": 70,
+                  "hits": [
+                    29
+                  ]
+                },
+                {
+                  "name": "cp",
+                  "frames": 65,
+                  "hits": [
+                    20
+                  ]
+                },
+                {
+                  "name": "hited",
+                  "frames": 8,
+                  "hits": []
+                }
+              ]
+            }
+          ],
+          "usable": true
+        }
+      },
+      "small": null,
+      "binding": "待逐一視覺校準，未自動啟用"
+    },
+    {
+      "owner": "300",
+      "name": "譜尼",
+      "animation": {
+        "id": 300,
+        "name": "ppets_300",
+        "hash": "d9eee6b091c5b719c18f9016f8558488",
+        "bytes": 1243585,
+        "url": "https://newseer.61.com/Assets/StandaloneWindows64/PetAnimPackage/d9eee6b091c5b719c18f9016f8558488",
+        "local": true,
+        "localFile": "D:\\影片\\bilibili\\新建文件夹\\TWSeerLauncher\\Games\\NewSeer\\Seer_Data\\yoo\\PetAnimPackage\\CacheBundleFiles\\d9\\d9eee6b091c5b719c18f9016f8558488\\__data",
+        "sha256": "047aa269f2d5d5455447df9ec743f521a319606414e458ff7de46356029bfb49",
+        "native": {
+          "textures": [
+            {
+              "name": "300._Atlas_",
+              "width": 2048,
+              "height": 2048,
+              "rgbaBytes": 16777216
+            }
+          ],
+          "clips": [
+            {
+              "name": "300.pet",
+              "fps": 24.0,
+              "sequences": [
+                {
+                  "name": "standby",
+                  "frames": 140,
+                  "hits": []
+                },
+                {
+                  "name": "attack",
+                  "frames": 101,
+                  "hits": [
+                    39
+                  ]
+                },
+                {
+                  "name": "sa",
+                  "frames": 75,
+                  "hits": [
+                    11
+                  ]
+                },
+                {
+                  "name": "cp",
+                  "frames": 89,
+                  "hits": [
+                    12
+                  ]
+                },
+                {
+                  "name": "hited",
+                  "frames": 8,
+                  "hits": []
+                }
+              ]
+            }
+          ],
+          "usable": true
+        }
+      },
+      "small": null,
+      "binding": "待逐一視覺校準，未自動啟用"
+    },
+    {
+      "owner": "5006",
+      "name": "星光·魔焰猩猩",
+      "animation": {
+        "id": 4649,
+        "name": "ppets_4649",
+        "hash": "bd96d63de6f607a77e496dea55276df3",
+        "bytes": 3285852,
+        "url": "https://newseer.61.com/Assets/StandaloneWindows64/PetAnimPackage/bd96d63de6f607a77e496dea55276df3",
+        "local": true,
+        "localFile": "D:\\影片\\bilibili\\新建文件夹\\TWSeerLauncher\\Games\\NewSeer\\Seer_Data\\yoo\\PetAnimPackage\\CacheBundleFiles\\bd\\bd96d63de6f607a77e496dea55276df3\\__data",
+        "sha256": "05bbd5579e70e5c3d3d147fb02ad7b7dcf8c957a35abaa0d65eba5b83e7232fc",
+        "native": {
+          "textures": [
+            {
+              "name": "4649._Atlas_",
+              "width": 4096,
+              "height": 2048,
+              "rgbaBytes": 33554432
+            }
+          ],
+          "clips": [
+            {
+              "name": "4649.pet",
+              "fps": 24.0,
+              "sequences": [
+                {
+                  "name": "standby",
+                  "frames": 32,
+                  "hits": []
+                },
+                {
+                  "name": "attack",
+                  "frames": 100,
+                  "hits": [
+                    61
+                  ]
+                },
+                {
+                  "name": "sa",
+                  "frames": 94,
+                  "hits": [
+                    72
+                  ]
+                },
+                {
+                  "name": "cp",
+                  "frames": 74,
+                  "hits": [
+                    50
+                  ]
+                },
+                {
+                  "name": "hited",
+                  "frames": 8,
+                  "hits": []
+                }
+              ]
+            }
+          ],
+          "usable": true
+        }
+      },
+      "small": null,
+      "binding": "待逐一視覺校準，未自動啟用"
+    },
+    {
+      "owner": "5007",
+      "name": "混濁海妖.布林克克",
+      "animation": {
+        "id": 359,
+        "name": "ppets_359",
+        "hash": "5297931ba97202f5ec76e5727910824c",
+        "bytes": 243645,
+        "url": "https://newseer.61.com/Assets/StandaloneWindows64/PetAnimPackage/5297931ba97202f5ec76e5727910824c",
+        "local": true,
+        "localFile": "D:\\影片\\bilibili\\新建文件夹\\TWSeerLauncher\\Games\\NewSeer\\Seer_Data\\yoo\\PetAnimPackage\\CacheBundleFiles\\52\\5297931ba97202f5ec76e5727910824c\\__data",
+        "sha256": "df460d8a782e8dea6377e404bb50a100d941d90dc5436a14eca9803e0a4271ee",
+        "native": {
+          "textures": [
+            {
+              "name": "359._Atlas_",
+              "width": 1024,
+              "height": 1024,
+              "rgbaBytes": 4194304
+            }
+          ],
+          "clips": [
+            {
+              "name": "359.pet",
+              "fps": 25.0,
+              "sequences": [
+                {
+                  "name": "standby",
+                  "frames": 14,
+                  "hits": []
+                },
+                {
+                  "name": "attack",
+                  "frames": 98,
+                  "hits": [
+                    62
+                  ]
+                },
+                {
+                  "name": "sa",
+                  "frames": 75,
+                  "hits": [
+                    29
+                  ]
+                },
+                {
+                  "name": "cp",
+                  "frames": 89,
+                  "hits": [
+                    66
+                  ]
+                },
+                {
+                  "name": "hited",
+                  "frames": 8,
+                  "hits": []
+                }
+              ]
+            }
+          ],
+          "usable": true
+        }
+      },
+      "small": null,
+      "binding": "待逐一視覺校準，未自動啟用"
+    },
+    {
+      "owner": "5008",
+      "name": "鎮魂.巴弗洛",
+      "animation": {
+        "id": 177,
+        "name": "ppets_177",
+        "hash": "9c6ca9018f482c073a8a6385acc287a3",
+        "bytes": 956511,
+        "url": "https://newseer.61.com/Assets/StandaloneWindows64/PetAnimPackage/9c6ca9018f482c073a8a6385acc287a3",
+        "local": true,
+        "localFile": "D:\\影片\\bilibili\\新建文件夹\\TWSeerLauncher\\Games\\NewSeer\\Seer_Data\\yoo\\PetAnimPackage\\CacheBundleFiles\\9c\\9c6ca9018f482c073a8a6385acc287a3\\__data",
+        "sha256": "5ebb7cb6e90264ae17653732a330831da9a4036f471e173e4a9e776b78bd7979",
+        "native": {
+          "textures": [
+            {
+              "name": "177._Atlas_",
+              "width": 2048,
+              "height": 2048,
+              "rgbaBytes": 16777216
+            }
+          ],
+          "clips": [
+            {
+              "name": "177.pet",
+              "fps": 24.0,
+              "sequences": [
+                {
+                  "name": "standby",
+                  "frames": 10,
+                  "hits": []
+                },
+                {
+                  "name": "attack",
+                  "frames": 75,
+                  "hits": [
+                    45
+                  ]
+                },
+                {
+                  "name": "sa",
+                  "frames": 77,
+                  "hits": [
+                    49
+                  ]
+                },
+                {
+                  "name": "cp",
+                  "frames": 75,
+                  "hits": [
+                    44
+                  ]
+                },
+                {
+                  "name": "hited",
+                  "frames": 8,
+                  "hits": []
+                }
+              ]
+            }
+          ],
+          "usable": true
+        }
+      },
+      "small": null,
+      "binding": "待逐一視覺校準，未自動啟用"
+    },
+    {
+      "owner": "5009",
+      "name": "誑獅魔軀.魔獅迪露",
+      "animation": {
+        "id": 187,
+        "name": "ppets_187",
+        "hash": "f683ab88ad26e5803a6861a9d92f97f4",
+        "bytes": 181920,
+        "url": "https://newseer.61.com/Assets/StandaloneWindows64/PetAnimPackage/f683ab88ad26e5803a6861a9d92f97f4",
+        "local": true,
+        "localFile": "D:\\影片\\bilibili\\新建文件夹\\TWSeerLauncher\\Games\\NewSeer\\Seer_Data\\yoo\\PetAnimPackage\\CacheBundleFiles\\f6\\f683ab88ad26e5803a6861a9d92f97f4\\__data",
+        "sha256": "1e86eed49ee2b9c9172440f504f2ba3ed87d45a094f5c445ef2f87d9d31c1393",
+        "native": {
+          "textures": [
+            {
+              "name": "187._Atlas_",
+              "width": 512,
+              "height": 512,
+              "rgbaBytes": 1048576
+            }
+          ],
+          "clips": [
+            {
+              "name": "187.pet",
+              "fps": 25.0,
+              "sequences": [
+                {
+                  "name": "standby",
+                  "frames": 12,
+                  "hits": []
+                },
+                {
+                  "name": "attack",
+                  "frames": 75,
+                  "hits": [
+                    41
+                  ]
+                },
+                {
+                  "name": "sa",
+                  "frames": 75,
+                  "hits": [
+                    29
+                  ]
+                },
+                {
+                  "name": "cp",
+                  "frames": 75,
+                  "hits": [
+                    35
+                  ]
+                },
+                {
+                  "name": "hited",
+                  "frames": 8,
+                  "hits": []
+                }
+              ]
+            }
+          ],
+          "usable": true
+        }
+      },
+      "small": null,
+      "binding": "待逐一視覺校準，未自動啟用"
+    },
+    {
+      "owner": "5000",
+      "name": "聖靈譜尼",
+      "animation": {
+        "id": 5000,
+        "name": "ppets_5000",
+        "hash": "98757d6cc4fe3ff6dabcc027a86872ec",
+        "bytes": 12785509,
+        "url": "https://newseer.61.com/Assets/StandaloneWindows64/PetAnimPackage/98757d6cc4fe3ff6dabcc027a86872ec",
+        "local": true,
+        "localFile": "D:\\影片\\bilibili\\新建文件夹\\TWSeerLauncher\\Games\\NewSeer\\Seer_Data\\yoo\\PetAnimPackage\\CacheBundleFiles\\98\\98757d6cc4fe3ff6dabcc027a86872ec\\__data",
+        "sha256": "823c6e36380de7374e5fe255aba0ede37b6a091788a50a20d1f82a2782af2e5f",
+        "native": {
+          "textures": [
+            {
+              "name": "5000._Atlas_",
+              "width": 8192,
+              "height": 8192,
+              "rgbaBytes": 268435456
+            }
+          ],
+          "clips": [
+            {
+              "name": "5000.pet",
+              "fps": 24.0,
+              "sequences": [
+                {
+                  "name": "standby",
+                  "frames": 27,
+                  "hits": []
+                },
+                {
+                  "name": "attack",
+                  "frames": 173,
+                  "hits": [
+                    138
+                  ]
+                },
+                {
+                  "name": "sa",
+                  "frames": 70,
+                  "hits": [
+                    34
+                  ]
+                },
+                {
+                  "name": "cp",
+                  "frames": 50,
+                  "hits": [
+                    27
+                  ]
+                },
+                {
+                  "name": "hited",
+                  "frames": 8,
+                  "hits": []
+                }
+              ]
+            }
+          ],
+          "usable": true
+        }
+      },
+      "small": {
+        "id": 5000,
+        "name": "ppets_5000_small",
+        "hash": "7bfb595f79c9bf18e83442dcf035cd23",
+        "bytes": 4294165,
+        "url": "https://newseer.61.com/Assets/StandaloneWindows64/PetAnimPackage/7bfb595f79c9bf18e83442dcf035cd23",
+        "local": true,
+        "localFile": "D:\\影片\\bilibili\\新建文件夹\\TWSeerLauncher\\Games\\NewSeer\\Seer_Data\\yoo\\PetAnimPackage\\CacheBundleFiles\\7b\\7bfb595f79c9bf18e83442dcf035cd23\\__data",
+        "sha256": "14cfc6f3c243c3c6fb25d6f608d70ba4c2a678cbd4ecab29e364714e7b32dacf",
+        "native": {
+          "textures": [
+            {
+              "name": "5000._Atlas_",
+              "width": 4096,
+              "height": 4096,
+              "rgbaBytes": 67108864
+            }
+          ],
+          "clips": [
+            {
+              "name": "5000.pet",
+              "fps": 24.0,
+              "sequences": [
+                {
+                  "name": "standby",
+                  "frames": 27,
+                  "hits": []
+                },
+                {
+                  "name": "attack",
+                  "frames": 173,
+                  "hits": [
+                    138
+                  ]
+                },
+                {
+                  "name": "sa",
+                  "frames": 70,
+                  "hits": [
+                    34
+                  ]
+                },
+                {
+                  "name": "cp",
+                  "frames": 50,
+                  "hits": [
+                    27
+                  ]
+                },
+                {
+                  "name": "hited",
+                  "frames": 8,
+                  "hits": []
+                }
+              ]
+            }
+          ],
+          "usable": true
+        }
+      },
+      "binding": "待逐一視覺校準，未自動啟用"
+    },
+    {
+      "owner": "5010",
+      "name": "星光·魯斯王",
+      "animation": {
+        "id": 4648,
+        "name": "ppets_4648",
+        "hash": "f50b00d88203d0cfb912237af0bc5277",
+        "bytes": 4009084,
+        "url": "https://newseer.61.com/Assets/StandaloneWindows64/PetAnimPackage/f50b00d88203d0cfb912237af0bc5277",
+        "local": true,
+        "localFile": "D:\\影片\\bilibili\\新建文件夹\\TWSeerLauncher\\Games\\NewSeer\\Seer_Data\\yoo\\PetAnimPackage\\CacheBundleFiles\\f5\\f50b00d88203d0cfb912237af0bc5277\\__data",
+        "sha256": "2b5758b09900e7cdbf4020ab3fd1b759a2886a468cbef3b28215ad743a49ec0d",
+        "native": {
+          "textures": [
+            {
+              "name": "4648._Atlas_",
+              "width": 4096,
+              "height": 2048,
+              "rgbaBytes": 33554432
+            }
+          ],
+          "clips": [
+            {
+              "name": "4648.pet",
+              "fps": 24.0,
+              "sequences": [
+                {
+                  "name": "standby",
+                  "frames": 32,
+                  "hits": []
+                },
+                {
+                  "name": "attack",
+                  "frames": 82,
+                  "hits": [
+                    50
+                  ]
+                },
+                {
+                  "name": "sa",
+                  "frames": 90,
+                  "hits": [
+                    69
+                  ]
+                },
+                {
+                  "name": "cp",
+                  "frames": 71,
+                  "hits": [
+                    39
+                  ]
+                },
+                {
+                  "name": "hited",
+                  "frames": 8,
+                  "hits": []
+                }
+              ]
+            }
+          ],
+          "usable": true
+        }
+      },
+      "small": null,
+      "binding": "待逐一視覺校準，未自動啟用"
+    },
+    {
+      "owner": "5011",
+      "name": "星光·麗莎布布",
+      "animation": {
+        "id": 4647,
+        "name": "ppets_4647",
+        "hash": "7b65edd0b138ffa1871608fb3053a66b",
+        "bytes": 2851191,
+        "url": "https://newseer.61.com/Assets/StandaloneWindows64/PetAnimPackage/7b65edd0b138ffa1871608fb3053a66b",
+        "local": true,
+        "localFile": "D:\\影片\\bilibili\\新建文件夹\\TWSeerLauncher\\Games\\NewSeer\\Seer_Data\\yoo\\PetAnimPackage\\CacheBundleFiles\\7b\\7b65edd0b138ffa1871608fb3053a66b\\__data",
+        "sha256": "9ab0a466ea8af58cd32b18c91a76fa8b093e988ab712dc24ce1062f42968d4ee",
+        "native": {
+          "textures": [
+            {
+              "name": "4647._Atlas_",
+              "width": 4096,
+              "height": 2048,
+              "rgbaBytes": 33554432
+            }
+          ],
+          "clips": [
+            {
+              "name": "4647.pet",
+              "fps": 24.0,
+              "sequences": [
+                {
+                  "name": "standby",
+                  "frames": 64,
+                  "hits": []
+                },
+                {
+                  "name": "attack",
+                  "frames": 80,
+                  "hits": [
+                    51
+                  ]
+                },
+                {
+                  "name": "sa",
+                  "frames": 92,
+                  "hits": [
+                    69
+                  ]
+                },
+                {
+                  "name": "cp",
+                  "frames": 68,
+                  "hits": [
+                    31
+                  ]
+                },
+                {
+                  "name": "hited",
+                  "frames": 8,
+                  "hits": []
+                }
+              ]
+            }
+          ],
+          "usable": true
+        }
+      },
+      "small": null,
+      "binding": "待逐一視覺校準，未自動啟用"
+    },
+    {
+      "owner": "5012",
+      "name": "冰魄·柯爾德",
+      "animation": {
+        "id": 3886,
+        "name": "ppets_3886",
+        "hash": "d8f2b0c2c76fcff582eb197b011643b9",
+        "bytes": 5034023,
+        "url": "https://newseer.61.com/Assets/StandaloneWindows64/PetAnimPackage/d8f2b0c2c76fcff582eb197b011643b9",
+        "local": true,
+        "localFile": "D:\\影片\\bilibili\\新建文件夹\\TWSeerLauncher\\Games\\NewSeer\\Seer_Data\\yoo\\PetAnimPackage\\CacheBundleFiles\\d8\\d8f2b0c2c76fcff582eb197b011643b9\\__data",
+        "sha256": "93f07dbcb47a795ec24fe20fcffeb15bf50f4ad7b69f4f33edefd9754a9eb9cd",
+        "native": {
+          "textures": [
+            {
+              "name": "3886._Atlas_",
+              "width": 8192,
+              "height": 4096,
+              "rgbaBytes": 134217728
+            }
+          ],
+          "clips": [
+            {
+              "name": "3886.pet",
+              "fps": 25.0,
+              "sequences": [
+                {
+                  "name": "standby",
+                  "frames": 27,
+                  "hits": []
+                },
+                {
+                  "name": "attack",
+                  "frames": 166,
+                  "hits": [
+                    124
+                  ]
+                },
+                {
+                  "name": "sa",
+                  "frames": 90,
+                  "hits": [
+                    53
+                  ]
+                },
+                {
+                  "name": "cp",
+                  "frames": 85,
+                  "hits": [
+                    39
+                  ]
+                },
+                {
+                  "name": "hited",
+                  "frames": 8,
+                  "hits": []
+                }
+              ]
+            }
+          ],
+          "usable": true
+        }
+      },
+      "small": {
+        "id": 3886,
+        "name": "ppets_3886_small",
+        "hash": "d590718b7335d71f5ddf0d117de2c54b",
+        "bytes": 2205393,
+        "url": "https://newseer.61.com/Assets/StandaloneWindows64/PetAnimPackage/d590718b7335d71f5ddf0d117de2c54b",
+        "local": true,
+        "localFile": "D:\\影片\\bilibili\\新建文件夹\\TWSeerLauncher\\Games\\NewSeer\\Seer_Data\\yoo\\PetAnimPackage\\CacheBundleFiles\\d5\\d590718b7335d71f5ddf0d117de2c54b\\__data",
+        "sha256": "30b88d617131d539b4741018025252201f4425bdb2b7402cd3113938a16c8c7b",
+        "native": {
+          "textures": [
+            {
+              "name": "3886._Atlas_",
+              "width": 4096,
+              "height": 2048,
+              "rgbaBytes": 33554432
+            }
+          ],
+          "clips": [
+            {
+              "name": "3886.pet",
+              "fps": 25.0,
+              "sequences": [
+                {
+                  "name": "standby",
+                  "frames": 27,
+                  "hits": []
+                },
+                {
+                  "name": "attack",
+                  "frames": 166,
+                  "hits": [
+                    124
+                  ]
+                },
+                {
+                  "name": "sa",
+                  "frames": 90,
+                  "hits": [
+                    53
+                  ]
+                },
+                {
+                  "name": "cp",
+                  "frames": 85,
+                  "hits": [
+                    39
+                  ]
+                },
+                {
+                  "name": "hited",
+                  "frames": 8,
+                  "hits": []
+                }
+              ]
+            }
+          ],
+          "usable": true
+        }
+      },
+      "binding": "待逐一視覺校準，未自動啟用"
+    },
+    {
+      "owner": "5013",
+      "name": "柯爾霍德",
+      "animation": {
+        "id": 3432,
+        "name": "ppets_3432",
+        "hash": "a3c824d8e1a9305a30a2da33119b078f",
+        "bytes": 1960507,
+        "url": "https://newseer.61.com/Assets/StandaloneWindows64/PetAnimPackage/a3c824d8e1a9305a30a2da33119b078f",
+        "local": true,
+        "localFile": "D:\\影片\\bilibili\\新建文件夹\\TWSeerLauncher\\Games\\NewSeer\\Seer_Data\\yoo\\PetAnimPackage\\CacheBundleFiles\\a3\\a3c824d8e1a9305a30a2da33119b078f\\__data",
+        "sha256": "985727c226f178356e729cc19dd544a7ffd18e0b77b4428d45a48c3dc603318e",
+        "native": {
+          "textures": [
+            {
+              "name": "3432._Atlas_",
+              "width": 2048,
+              "height": 2048,
+              "rgbaBytes": 16777216
+            }
+          ],
+          "clips": [
+            {
+              "name": "3432.pet",
+              "fps": 25.0,
+              "sequences": [
+                {
+                  "name": "standby",
+                  "frames": 27,
+                  "hits": []
+                },
+                {
+                  "name": "attack",
+                  "frames": 153,
+                  "hits": [
+                    127
+                  ]
+                },
+                {
+                  "name": "sa",
+                  "frames": 98,
+                  "hits": [
+                    67
+                  ]
+                },
+                {
+                  "name": "cp",
+                  "frames": 64,
+                  "hits": [
+                    25
+                  ]
+                },
+                {
+                  "name": "hited",
+                  "frames": 8,
+                  "hits": []
+                }
+              ]
+            }
+          ],
+          "usable": true
+        }
+      },
+      "small": null,
+      "binding": "待逐一視覺校準，未自動啟用"
+    },
+    {
+      "owner": "5014",
+      "name": "聖光斯嘉麗",
+      "animation": {
+        "id": 3456,
+        "name": "ppets_3456",
+        "hash": "8575a78139e91f27a5dee314f76a034f",
+        "bytes": 2668459,
+        "url": "https://newseer.61.com/Assets/StandaloneWindows64/PetAnimPackage/8575a78139e91f27a5dee314f76a034f",
+        "local": true,
+        "localFile": "D:\\影片\\bilibili\\新建文件夹\\TWSeerLauncher\\Games\\NewSeer\\Seer_Data\\yoo\\PetAnimPackage\\CacheBundleFiles\\85\\8575a78139e91f27a5dee314f76a034f\\__data",
+        "sha256": "b0ad43968d87dbde22838791ddb665c6ea9715adbc72c09a7b55a1435efaa9fa",
+        "native": {
+          "textures": [
+            {
+              "name": "3456._Atlas_",
+              "width": 4096,
+              "height": 2048,
+              "rgbaBytes": 33554432
+            }
+          ],
+          "clips": [
+            {
+              "name": "3456.pet",
+              "fps": 25.0,
+              "sequences": [
+                {
+                  "name": "standby",
+                  "frames": 25,
+                  "hits": []
+                },
+                {
+                  "name": "attack",
+                  "frames": 136,
+                  "hits": [
+                    100
+                  ]
+                },
+                {
+                  "name": "sa",
+                  "frames": 144,
+                  "hits": [
+                    96
+                  ]
+                },
+                {
+                  "name": "cp",
+                  "frames": 70,
+                  "hits": [
+                    23
+                  ]
+                },
+                {
+                  "name": "hited",
+                  "frames": 8,
+                  "hits": []
+                }
+              ]
+            }
+          ],
+          "usable": true
+        }
+      },
+      "small": null,
+      "binding": "待逐一視覺校準，未自動啟用"
+    },
+    {
+      "owner": "5015",
+      "name": "混沌·布萊克",
+      "animation": {
+        "id": 3539,
+        "name": "ppets_3539",
+        "hash": "6b2b43ffe6e06679b630f85bd8115843",
+        "bytes": 1789946,
+        "url": "https://newseer.61.com/Assets/StandaloneWindows64/PetAnimPackage/6b2b43ffe6e06679b630f85bd8115843",
+        "local": true,
+        "localFile": "D:\\影片\\bilibili\\新建文件夹\\TWSeerLauncher\\Games\\NewSeer\\Seer_Data\\yoo\\PetAnimPackage\\CacheBundleFiles\\6b\\6b2b43ffe6e06679b630f85bd8115843\\__data",
+        "sha256": "ef622804ce33e21150c68704398284fb9573f6d00b946c73b48bd511701f7097",
+        "native": {
+          "textures": [
+            {
+              "name": "3539._Atlas_",
+              "width": 2048,
+              "height": 2048,
+              "rgbaBytes": 16777216
+            }
+          ],
+          "clips": [
+            {
+              "name": "3539.pet",
+              "fps": 24.0,
+              "sequences": [
+                {
+                  "name": "standby",
+                  "frames": 24,
+                  "hits": []
+                },
+                {
+                  "name": "attack",
+                  "frames": 129,
+                  "hits": [
+                    95
+                  ]
+                },
+                {
+                  "name": "sa",
+                  "frames": 71,
+                  "hits": [
+                    49
+                  ]
+                },
+                {
+                  "name": "cp",
+                  "frames": 59,
+                  "hits": [
+                    24
+                  ]
+                },
+                {
+                  "name": "hited",
+                  "frames": 8,
+                  "hits": []
+                }
+              ]
+            }
+          ],
+          "usable": true
+        }
+      },
+      "small": null,
+      "binding": "待逐一視覺校準，未自動啟用"
+    },
+    {
+      "owner": "5016",
+      "name": "變革·馬爾修斯",
+      "animation": {
+        "id": 3393,
+        "name": "ppets_3393",
+        "hash": "2e29aa5945ba01f21637cebd3c2e0d6d",
+        "bytes": 2606047,
+        "url": "https://newseer.61.com/Assets/StandaloneWindows64/PetAnimPackage/2e29aa5945ba01f21637cebd3c2e0d6d",
+        "local": true,
+        "localFile": "D:\\影片\\bilibili\\新建文件夹\\TWSeerLauncher\\Games\\NewSeer\\Seer_Data\\yoo\\PetAnimPackage\\CacheBundleFiles\\2e\\2e29aa5945ba01f21637cebd3c2e0d6d\\__data",
+        "sha256": "d2844702dbe99fc44c0b1a0e141945aec8bd619e689d292518959b05f525fd25",
+        "native": {
+          "textures": [
+            {
+              "name": "3393._Atlas_",
+              "width": 4096,
+              "height": 2048,
+              "rgbaBytes": 33554432
+            }
+          ],
+          "clips": [
+            {
+              "name": "3393.pet",
+              "fps": 24.0,
+              "sequences": [
+                {
+                  "name": "standby",
+                  "frames": 26,
+                  "hits": []
+                },
+                {
+                  "name": "attack",
+                  "frames": 173,
+                  "hits": [
+                    139
+                  ]
+                },
+                {
+                  "name": "sa",
+                  "frames": 111,
+                  "hits": [
+                    69
+                  ]
+                },
+                {
+                  "name": "cp",
+                  "frames": 62,
+                  "hits": [
+                    28
+                  ]
+                },
+                {
+                  "name": "hited",
+                  "frames": 8,
+                  "hits": []
+                },
+                {
+                  "name": "transform",
+                  "frames": 40,
+                  "hits": [
+                    2
+                  ]
+                }
+              ]
+            }
+          ],
+          "usable": true
+        }
+      },
+      "small": null,
+      "binding": "待逐一視覺校準，未自動啟用"
+    },
+    {
+      "owner": "5018",
+      "name": "蟲后·奧佩婭",
+      "animation": {
+        "id": 3626,
+        "name": "ppets_3626",
+        "hash": "be8ed67e5a71529180a619950899de04",
+        "bytes": 3013784,
+        "url": "https://newseer.61.com/Assets/StandaloneWindows64/PetAnimPackage/be8ed67e5a71529180a619950899de04",
+        "local": true,
+        "localFile": "D:\\影片\\bilibili\\新建文件夹\\TWSeerLauncher\\Games\\NewSeer\\Seer_Data\\yoo\\PetAnimPackage\\CacheBundleFiles\\be\\be8ed67e5a71529180a619950899de04\\__data",
+        "sha256": "8d8c1b03e2b71da7dc063be411fb39568c892ab8bf22f54bac3325eaa8272954",
+        "native": {
+          "textures": [
+            {
+              "name": "3626._Atlas_",
+              "width": 4096,
+              "height": 4096,
+              "rgbaBytes": 67108864
+            }
+          ],
+          "clips": [
+            {
+              "name": "3626.pet",
+              "fps": 24.0,
+              "sequences": [
+                {
+                  "name": "standby",
+                  "frames": 25,
+                  "hits": []
+                },
+                {
+                  "name": "attack",
+                  "frames": 124,
+                  "hits": [
+                    84
+                  ]
+                },
+                {
+                  "name": "sa",
+                  "frames": 116,
+                  "hits": [
+                    64
+                  ]
+                },
+                {
+                  "name": "cp",
+                  "frames": 69,
+                  "hits": [
+                    23
+                  ]
+                },
+                {
+                  "name": "hited",
+                  "frames": 8,
+                  "hits": []
+                }
+              ]
+            }
+          ],
+          "usable": true
+        }
+      },
+      "small": null,
+      "binding": "待逐一視覺校準，未自動啟用"
+    },
+    {
+      "owner": "5019",
+      "name": "眾神之父·奧丁",
+      "animation": {
+        "id": 2647,
+        "name": "ppets_2647",
+        "hash": "9ae7c5179224f1683f5c4bf91aca8504",
+        "bytes": 2123682,
+        "url": "https://newseer.61.com/Assets/StandaloneWindows64/PetAnimPackage/9ae7c5179224f1683f5c4bf91aca8504",
+        "local": true,
+        "localFile": "D:\\影片\\bilibili\\新建文件夹\\TWSeerLauncher\\Games\\NewSeer\\Seer_Data\\yoo\\PetAnimPackage\\CacheBundleFiles\\9a\\9ae7c5179224f1683f5c4bf91aca8504\\__data",
+        "sha256": "e8c7a849c0dea5995944ceca0f002522b17bb83084e613f3fde2550fe43569c0",
+        "native": {
+          "textures": [
+            {
+              "name": "2647._Atlas_",
+              "width": 4096,
+              "height": 2048,
+              "rgbaBytes": 33554432
+            }
+          ],
+          "clips": [
+            {
+              "name": "2647.pet",
+              "fps": 24.0,
+              "sequences": [
+                {
+                  "name": "standby",
+                  "frames": 22,
+                  "hits": []
+                },
+                {
+                  "name": "attack",
+                  "frames": 90,
+                  "hits": [
+                    62
+                  ]
+                },
+                {
+                  "name": "sa",
+                  "frames": 73,
+                  "hits": [
+                    44
+                  ]
+                },
+                {
+                  "name": "cp",
+                  "frames": 68,
+                  "hits": [
+                    34
+                  ]
+                },
+                {
+                  "name": "hited",
+                  "frames": 8,
+                  "hits": []
+                }
+              ]
+            }
+          ],
+          "usable": true
+        }
+      },
+      "small": null,
+      "binding": "待逐一視覺校準，未自動啟用"
+    },
+    {
+      "owner": "5020",
+      "name": "皮皮",
+      "animation": {
+        "id": 10,
+        "name": "ppets_10",
+        "hash": "9e3cdd04b926faa7e7590a3bdb33e3b6",
+        "bytes": 767772,
+        "url": "https://newseer.61.com/Assets/StandaloneWindows64/PetAnimPackage/9e3cdd04b926faa7e7590a3bdb33e3b6",
+        "local": true,
+        "localFile": "D:\\影片\\bilibili\\新建文件夹\\TWSeerLauncher\\Games\\NewSeer\\Seer_Data\\yoo\\PetAnimPackage\\CacheBundleFiles\\9e\\9e3cdd04b926faa7e7590a3bdb33e3b6\\__data",
+        "sha256": "fa9b5a5539783f93108f422e2f86fc973656d319f2c8a06f807f32ec5b0e47c2",
+        "native": {
+          "textures": [
+            {
+              "name": "10._Atlas_",
+              "width": 2048,
+              "height": 2048,
+              "rgbaBytes": 16777216
+            }
+          ],
+          "clips": [
+            {
+              "name": "10.pet",
+              "fps": 24.0,
+              "sequences": [
+                {
+                  "name": "standby",
+                  "frames": 11,
+                  "hits": []
+                },
+                {
+                  "name": "attack",
+                  "frames": 125,
+                  "hits": [
+                    51
+                  ]
+                },
+                {
+                  "name": "sa",
+                  "frames": 125,
+                  "hits": [
+                    29
+                  ]
+                },
+                {
+                  "name": "cp",
+                  "frames": 125,
+                  "hits": [
+                    33
+                  ]
+                },
+                {
+                  "name": "hited",
+                  "frames": 8,
+                  "hits": []
+                }
+              ]
+            }
+          ],
+          "usable": true
+        }
+      },
+      "small": null,
+      "binding": "待逐一視覺校準，未自動啟用"
+    },
+    {
+      "owner": "5021",
+      "name": "治癒.龍魂再臨 次元龍",
+      "animation": {
+        "id": 4586,
+        "name": "ppets_4586",
+        "hash": "3b5f6bd055dbd640d409b820fccc76ba",
+        "bytes": 3640558,
+        "url": "https://newseer.61.com/Assets/StandaloneWindows64/PetAnimPackage/3b5f6bd055dbd640d409b820fccc76ba",
+        "local": true,
+        "localFile": "D:\\影片\\bilibili\\新建文件夹\\TWSeerLauncher\\Games\\NewSeer\\Seer_Data\\yoo\\PetAnimPackage\\CacheBundleFiles\\3b\\3b5f6bd055dbd640d409b820fccc76ba\\__data",
+        "sha256": "be62179dab0570d0646858b8c726594f729f6ab18551b764332d2413f1920e51",
+        "native": {
+          "textures": [
+            {
+              "name": "4586._Atlas_",
+              "width": 2048,
+              "height": 2048,
+              "rgbaBytes": 16777216
+            }
+          ],
+          "clips": [
+            {
+              "name": "4586.pet",
+              "fps": 24.0,
+              "sequences": [
+                {
+                  "name": "standby",
+                  "frames": 256,
+                  "hits": []
+                },
+                {
+                  "name": "attack",
+                  "frames": 91,
+                  "hits": [
+                    55
+                  ]
+                },
+                {
+                  "name": "sa",
+                  "frames": 106,
+                  "hits": [
+                    70
+                  ]
+                },
+                {
+                  "name": "cp",
+                  "frames": 71,
+                  "hits": [
+                    27
+                  ]
+                },
+                {
+                  "name": "hited",
+                  "frames": 8,
+                  "hits": []
+                },
+                {
+                  "name": "add1",
+                  "frames": 60,
+                  "hits": []
+                },
+                {
+                  "name": "add2",
+                  "frames": 69,
+                  "hits": []
+                }
+              ]
+            }
+          ],
+          "usable": true
+        }
+      },
+      "small": null,
+      "binding": "待逐一視覺校準，未自動啟用"
+    },
+    {
+      "owner": "5024",
+      "name": "湮滅之主・咤克斯",
+      "animation": {
+        "id": 4762,
+        "name": "ppets_4762",
+        "hash": "93a2d4af0f44e974b0d5538b98caebe6",
+        "bytes": 10216534,
+        "url": "https://newseer.61.com/Assets/StandaloneWindows64/PetAnimPackage/93a2d4af0f44e974b0d5538b98caebe6",
+        "local": true,
+        "localFile": "D:\\影片\\bilibili\\新建文件夹\\TWSeerLauncher\\Games\\NewSeer\\Seer_Data\\yoo\\PetAnimPackage\\CacheBundleFiles\\93\\93a2d4af0f44e974b0d5538b98caebe6\\__data",
+        "sha256": "3ccf00762c570610d8cfb37a0ac27da7ea188d1f868f9aebbcfabdcb3b20f3d7",
+        "native": {
+          "textures": [
+            {
+              "name": "4762._Atlas_",
+              "width": 8192,
+              "height": 4096,
+              "rgbaBytes": 134217728
+            }
+          ],
+          "clips": [
+            {
+              "name": "4762.pet",
+              "fps": 24.0,
+              "sequences": [
+                {
+                  "name": "standby",
+                  "frames": 40,
+                  "hits": []
+                },
+                {
+                  "name": "attack",
+                  "frames": 117,
+                  "hits": [
+                    79
+                  ]
+                },
+                {
+                  "name": "sa",
+                  "frames": 121,
+                  "hits": [
+                    52
+                  ]
+                },
+                {
+                  "name": "cp",
+                  "frames": 106,
+                  "hits": [
+                    82
+                  ]
+                },
+                {
+                  "name": "hited",
+                  "frames": 25,
+                  "hits": []
+                }
+              ]
+            }
+          ],
+          "usable": true
+        }
+      },
+      "small": {
+        "id": 4762,
+        "name": "ppets_4762_small",
+        "hash": "3a25021cdf667f315686b0a65ccb5ed2",
+        "bytes": 4383478,
+        "url": "https://newseer.61.com/Assets/StandaloneWindows64/PetAnimPackage/3a25021cdf667f315686b0a65ccb5ed2",
+        "local": true,
+        "localFile": "D:\\影片\\bilibili\\新建文件夹\\TWSeerLauncher\\Games\\NewSeer\\Seer_Data\\yoo\\PetAnimPackage\\CacheBundleFiles\\3a\\3a25021cdf667f315686b0a65ccb5ed2\\__data",
+        "sha256": "f1d095112047cfe8aca1aeb2c0a3c3c73868e73cd5523ad8032c1f87ad439638",
+        "native": {
+          "textures": [
+            {
+              "name": "4762._Atlas_",
+              "width": 4096,
+              "height": 2048,
+              "rgbaBytes": 33554432
+            }
+          ],
+          "clips": [
+            {
+              "name": "4762.pet",
+              "fps": 24.0,
+              "sequences": [
+                {
+                  "name": "standby",
+                  "frames": 40,
+                  "hits": []
+                },
+                {
+                  "name": "attack",
+                  "frames": 117,
+                  "hits": [
+                    79
+                  ]
+                },
+                {
+                  "name": "sa",
+                  "frames": 121,
+                  "hits": [
+                    52
+                  ]
+                },
+                {
+                  "name": "cp",
+                  "frames": 106,
+                  "hits": [
+                    82
+                  ]
+                },
+                {
+                  "name": "hited",
+                  "frames": 25,
+                  "hits": []
+                }
+              ]
+            }
+          ],
+          "usable": true
+        }
+      },
+      "binding": "待逐一視覺校準，未自動啟用"
+    },
+    {
+      "owner": "5025",
+      "name": "恐懼的化身·咤克斯",
+      "animation": {
+        "id": 15010,
+        "name": "ppets_15010",
+        "hash": "f8c2dcf96daf378118789b78e3f7cb73",
+        "bytes": 3733359,
+        "url": "https://newseer.61.com/Assets/StandaloneWindows64/PetAnimPackage/f8c2dcf96daf378118789b78e3f7cb73",
+        "local": true,
+        "localFile": "D:\\影片\\bilibili\\新建文件夹\\TWSeerLauncher\\Games\\NewSeer\\Seer_Data\\yoo\\PetAnimPackage\\CacheBundleFiles\\f8\\f8c2dcf96daf378118789b78e3f7cb73\\__data",
+        "sha256": "1b0719b54a2c187c2b0c73ad54edad7e30243d03640c148091651dd6c848ff4e",
+        "native": {
+          "textures": [
+            {
+              "name": "15010._Atlas_",
+              "width": 8192,
+              "height": 8192,
+              "rgbaBytes": 268435456
+            }
+          ],
+          "clips": [
+            {
+              "name": "15010.pet",
+              "fps": 25.0,
+              "sequences": [
+                {
+                  "name": "standby",
+                  "frames": 26,
+                  "hits": []
+                },
+                {
+                  "name": "attack",
+                  "frames": 115,
+                  "hits": [
+                    74
+                  ]
+                },
+                {
+                  "name": "sa",
+                  "frames": 118,
+                  "hits": [
+                    54
+                  ]
+                },
+                {
+                  "name": "cp",
+                  "frames": 96,
+                  "hits": [
+                    30
+                  ]
+                },
+                {
+                  "name": "hited",
+                  "frames": 10,
+                  "hits": []
+                }
+              ]
+            }
+          ],
+          "usable": true
+        }
+      },
+      "small": null,
+      "binding": "已接入／留在原地物攻"
+    },
+    {
+      "owner": "5027",
+      "name": "蓓麗安特",
+      "animation": {
+        "id": 4643,
+        "name": "ppets_4643",
+        "hash": "3848669eeed329b5386eb2856a57e433",
+        "bytes": 11680820,
+        "url": "https://newseer.61.com/Assets/StandaloneWindows64/PetAnimPackage/3848669eeed329b5386eb2856a57e433",
+        "local": true,
+        "localFile": "D:\\影片\\bilibili\\新建文件夹\\TWSeerLauncher\\Games\\NewSeer\\Seer_Data\\yoo\\PetAnimPackage\\CacheBundleFiles\\38\\3848669eeed329b5386eb2856a57e433\\__data",
+        "sha256": "aea3d96433af1223a085c22b040cfb18b5bf449dfba8611ee01918ab6c11b9e3",
+        "native": {
+          "textures": [
+            {
+              "name": "4643._Atlas_",
+              "width": 8192,
+              "height": 4096,
+              "rgbaBytes": 134217728
+            }
+          ],
+          "clips": [
+            {
+              "name": "4643.pet",
+              "fps": 24.0,
+              "sequences": [
+                {
+                  "name": "standby",
+                  "frames": 229,
+                  "hits": []
+                },
+                {
+                  "name": "attack",
+                  "frames": 116,
+                  "hits": [
+                    84
+                  ]
+                },
+                {
+                  "name": "sa",
+                  "frames": 116,
+                  "hits": [
+                    88
+                  ]
+                },
+                {
+                  "name": "cp",
+                  "frames": 85,
+                  "hits": [
+                    45
+                  ]
+                },
+                {
+                  "name": "hited",
+                  "frames": 7,
+                  "hits": []
+                }
+              ]
+            }
+          ],
+          "usable": true
+        }
+      },
+      "small": {
+        "id": 4643,
+        "name": "ppets_4643_small",
+        "hash": "ff98979f1609dde22dce93e37ce48501",
+        "bytes": 5041704,
+        "url": "https://newseer.61.com/Assets/StandaloneWindows64/PetAnimPackage/ff98979f1609dde22dce93e37ce48501",
+        "local": true,
+        "localFile": "D:\\影片\\bilibili\\新建文件夹\\TWSeerLauncher\\Games\\NewSeer\\Seer_Data\\yoo\\PetAnimPackage\\CacheBundleFiles\\ff\\ff98979f1609dde22dce93e37ce48501\\__data",
+        "sha256": "8d554e1e0537e1816dbe46a9aa075e7b7a91424c2e87678bc2ea5ac00daf2e87",
+        "native": {
+          "textures": [
+            {
+              "name": "4643._Atlas_",
+              "width": 4096,
+              "height": 2048,
+              "rgbaBytes": 33554432
+            }
+          ],
+          "clips": [
+            {
+              "name": "4643.pet",
+              "fps": 24.0,
+              "sequences": [
+                {
+                  "name": "standby",
+                  "frames": 229,
+                  "hits": []
+                },
+                {
+                  "name": "attack",
+                  "frames": 116,
+                  "hits": [
+                    84
+                  ]
+                },
+                {
+                  "name": "sa",
+                  "frames": 116,
+                  "hits": [
+                    88
+                  ]
+                },
+                {
+                  "name": "cp",
+                  "frames": 85,
+                  "hits": [
+                    45
+                  ]
+                },
+                {
+                  "name": "hited",
+                  "frames": 7,
+                  "hits": []
+                }
+              ]
+            }
+          ],
+          "usable": true
+        }
+      },
+      "binding": "待逐一視覺校準，未自動啟用"
+    },
+    {
+      "owner": "5028",
+      "name": "怒濤·滄嵐",
+      "animation": {
+        "id": 3740,
+        "name": "ppets_3740",
+        "hash": "d50b7a5b419f5e7ab1500ba680de527a",
+        "bytes": 2334413,
+        "url": "https://newseer.61.com/Assets/StandaloneWindows64/PetAnimPackage/d50b7a5b419f5e7ab1500ba680de527a",
+        "local": true,
+        "localFile": "D:\\影片\\bilibili\\新建文件夹\\TWSeerLauncher\\Games\\NewSeer\\Seer_Data\\yoo\\PetAnimPackage\\CacheBundleFiles\\d5\\d50b7a5b419f5e7ab1500ba680de527a\\__data",
+        "sha256": "3017ffce761d3fd5d27621499387b2855b00267942d3b1520157885a87c2b8b2",
+        "native": {
+          "textures": [
+            {
+              "name": "3740._Atlas_",
+              "width": 2048,
+              "height": 2048,
+              "rgbaBytes": 16777216
+            }
+          ],
+          "clips": [
+            {
+              "name": "3740.pet",
+              "fps": 25.0,
+              "sequences": [
+                {
+                  "name": "standby",
+                  "frames": 27,
+                  "hits": []
+                },
+                {
+                  "name": "attack",
+                  "frames": 117,
+                  "hits": [
+                    79
+                  ]
+                },
+                {
+                  "name": "sa",
+                  "frames": 128,
+                  "hits": [
+                    89
+                  ]
+                },
+                {
+                  "name": "cp",
+                  "frames": 64,
+                  "hits": [
+                    26
+                  ]
+                },
+                {
+                  "name": "hited",
+                  "frames": 8,
+                  "hits": []
+                }
+              ]
+            }
+          ],
+          "usable": true
+        }
+      },
+      "small": null,
+      "binding": "待逐一視覺校準，未自動啟用"
+    },
+    {
+      "owner": "5029",
+      "name": "異境神霆·雷伊",
+      "animation": {
+        "id": 70,
+        "name": "ppets_70",
+        "hash": "455c66ff461d4188dd53cbd9fff4944e",
+        "bytes": 579315,
+        "url": "https://newseer.61.com/Assets/StandaloneWindows64/PetAnimPackage/455c66ff461d4188dd53cbd9fff4944e",
+        "local": true,
+        "localFile": "D:\\影片\\bilibili\\新建文件夹\\TWSeerLauncher\\Games\\NewSeer\\Seer_Data\\yoo\\PetAnimPackage\\CacheBundleFiles\\45\\455c66ff461d4188dd53cbd9fff4944e\\__data",
+        "sha256": "cddca15a2ce15026ed685d64796ad5585890c81b4046ad88bf7ce2ab08e77d40",
+        "native": {
+          "textures": [
+            {
+              "name": "70._Atlas_",
+              "width": 2048,
+              "height": 1024,
+              "rgbaBytes": 8388608
+            }
+          ],
+          "clips": [
+            {
+              "name": "70.pet",
+              "fps": 24.0,
+              "sequences": [
+                {
+                  "name": "standby",
+                  "frames": 29,
+                  "hits": []
+                },
+                {
+                  "name": "attack",
+                  "frames": 75,
+                  "hits": [
+                    22
+                  ]
+                },
+                {
+                  "name": "sa",
+                  "frames": 75,
+                  "hits": [
+                    24
+                  ]
+                },
+                {
+                  "name": "cp",
+                  "frames": 75,
+                  "hits": [
+                    18
+                  ]
+                },
+                {
+                  "name": "hited",
+                  "frames": 8,
+                  "hits": []
+                }
+              ]
+            }
+          ],
+          "usable": true
+        }
+      },
+      "small": null,
+      "binding": "指定普通雷伊皮膚"
+    },
+    {
+      "owner": "5030",
+      "name": "聖靈邁爾斯",
+      "animation": {
+        "id": 1204,
+        "name": "ppets_1204",
+        "hash": "3d57ddbf68feeb9b256f6be6048f0423",
+        "bytes": 325788,
+        "url": "https://newseer.61.com/Assets/StandaloneWindows64/PetAnimPackage/3d57ddbf68feeb9b256f6be6048f0423",
+        "local": true,
+        "localFile": "D:\\影片\\bilibili\\新建文件夹\\TWSeerLauncher\\Games\\NewSeer\\Seer_Data\\yoo\\PetAnimPackage\\CacheBundleFiles\\3d\\3d57ddbf68feeb9b256f6be6048f0423\\__data",
+        "sha256": "f8ec969a95c5029ce0bf425f0f32bfa363732bd7ff7435a1a70abad690f17d55",
+        "native": {
+          "textures": [
+            {
+              "name": "1204._Atlas_",
+              "width": 2048,
+              "height": 2048,
+              "rgbaBytes": 16777216
+            }
+          ],
+          "clips": [
+            {
+              "name": "1204.pet",
+              "fps": 25.0,
+              "sequences": [
+                {
+                  "name": "standby",
+                  "frames": 16,
+                  "hits": []
+                },
+                {
+                  "name": "attack",
+                  "frames": 81,
+                  "hits": [
+                    46
+                  ]
+                },
+                {
+                  "name": "sa",
+                  "frames": 62,
+                  "hits": [
+                    34
+                  ]
+                },
+                {
+                  "name": "cp",
+                  "frames": 56,
+                  "hits": [
+                    17
+                  ]
+                },
+                {
+                  "name": "hited",
+                  "frames": 8,
+                  "hits": []
+                }
+              ]
+            }
+          ],
+          "usable": true
+        }
+      },
+      "small": null,
+      "binding": "待逐一視覺校準，未自動啟用"
+    },
+    {
+      "owner": "5031",
+      "name": "六界神王",
+      "animation": {
+        "id": 3045,
+        "name": "ppets_3045",
+        "hash": "d9f17442408d8d976bbad61425caae15",
+        "bytes": 2142771,
+        "url": "https://newseer.61.com/Assets/StandaloneWindows64/PetAnimPackage/d9f17442408d8d976bbad61425caae15",
+        "local": true,
+        "localFile": "D:\\影片\\bilibili\\新建文件夹\\TWSeerLauncher\\Games\\NewSeer\\Seer_Data\\yoo\\PetAnimPackage\\CacheBundleFiles\\d9\\d9f17442408d8d976bbad61425caae15\\__data",
+        "sha256": "8606b5b3c5389bc201cf28b92935f1f1dc30f00f032261f7f2cbe20db8e36ac3",
+        "native": {
+          "textures": [
+            {
+              "name": "3045._Atlas_",
+              "width": 4096,
+              "height": 2048,
+              "rgbaBytes": 33554432
+            }
+          ],
+          "clips": [
+            {
+              "name": "3045.pet",
+              "fps": 25.0,
+              "sequences": [
+                {
+                  "name": "standby",
+                  "frames": 25,
+                  "hits": []
+                },
+                {
+                  "name": "attack",
+                  "frames": 105,
+                  "hits": [
+                    77
+                  ]
+                },
+                {
+                  "name": "sa",
+                  "frames": 95,
+                  "hits": [
+                    50
+                  ]
+                },
+                {
+                  "name": "cp",
+                  "frames": 69,
+                  "hits": [
+                    29
+                  ]
+                },
+                {
+                  "name": "hited",
+                  "frames": 8,
+                  "hits": []
+                }
+              ]
+            }
+          ],
+          "usable": true
+        }
+      },
+      "small": null,
+      "binding": "待逐一視覺校準，未自動啟用"
+    },
+    {
+      "owner": "5032",
+      "name": "星核寰宇·艾斯菲亞",
+      "animation": {
+        "id": 79,
+        "name": "ppets_79",
+        "hash": "13035beea3567ee33cbf6dfa22df37ae",
+        "bytes": 168426,
+        "url": "https://newseer.61.com/Assets/StandaloneWindows64/PetAnimPackage/13035beea3567ee33cbf6dfa22df37ae",
+        "local": true,
+        "localFile": "D:\\影片\\bilibili\\新建文件夹\\TWSeerLauncher\\Games\\NewSeer\\Seer_Data\\yoo\\PetAnimPackage\\CacheBundleFiles\\13\\13035beea3567ee33cbf6dfa22df37ae\\__data",
+        "sha256": "1cdaef6ecfe1bfcea4f37c754403d5533793e224bf18049ddc85588ccf73cca0",
+        "native": {
+          "textures": [
+            {
+              "name": "79._Atlas_",
+              "width": 1024,
+              "height": 1024,
+              "rgbaBytes": 4194304
+            }
+          ],
+          "clips": [
+            {
+              "name": "79.pet",
+              "fps": 24.0,
+              "sequences": [
+                {
+                  "name": "standby",
+                  "frames": 17,
+                  "hits": []
+                },
+                {
+                  "name": "attack",
+                  "frames": 75,
+                  "hits": [
+                    37
+                  ]
+                },
+                {
+                  "name": "sa",
+                  "frames": 75,
+                  "hits": [
+                    54
+                  ]
+                },
+                {
+                  "name": "cp",
+                  "frames": 75,
+                  "hits": [
+                    12
+                  ]
+                },
+                {
+                  "name": "hited",
+                  "frames": 8,
+                  "hits": []
+                }
+              ]
+            }
+          ],
+          "usable": true
+        }
+      },
+      "small": null,
+      "binding": "待逐一視覺校準，未自動啟用"
+    },
+    {
+      "owner": "5033",
+      "name": "星軌重構·艾斯菲格",
+      "animation": {
+        "id": 418,
+        "name": "ppets_418",
+        "hash": "f094376351955b028c14d03386d7ec28",
+        "bytes": 867560,
+        "url": "https://newseer.61.com/Assets/StandaloneWindows64/PetAnimPackage/f094376351955b028c14d03386d7ec28",
+        "local": true,
+        "localFile": "D:\\影片\\bilibili\\新建文件夹\\TWSeerLauncher\\Games\\NewSeer\\Seer_Data\\yoo\\PetAnimPackage\\CacheBundleFiles\\f0\\f094376351955b028c14d03386d7ec28\\__data",
+        "sha256": "d904df89f18f434c15550048f3188b9c26035caecef9ed9c7956ca2e5ddb1437",
+        "native": {
+          "textures": [
+            {
+              "name": "418._Atlas_",
+              "width": 2048,
+              "height": 2048,
+              "rgbaBytes": 16777216
+            }
+          ],
+          "clips": [
+            {
+              "name": "418.pet",
+              "fps": 25.0,
+              "sequences": [
+                {
+                  "name": "standby",
+                  "frames": 22,
+                  "hits": []
+                },
+                {
+                  "name": "attack",
+                  "frames": 144,
+                  "hits": [
+                    74
+                  ]
+                },
+                {
+                  "name": "sa",
+                  "frames": 145,
+                  "hits": [
+                    54
+                  ]
+                },
+                {
+                  "name": "cp",
+                  "frames": 142,
+                  "hits": [
+                    81
+                  ]
+                },
+                {
+                  "name": "hited",
+                  "frames": 8,
+                  "hits": []
+                }
+              ]
+            }
+          ],
+          "usable": true
+        }
+      },
+      "small": null,
+      "binding": "待逐一視覺校準，未自動啟用"
+    },
+    {
+      "owner": "5034",
+      "name": "邪靈主宰·摩哥斯",
+      "animation": {
+        "id": 3561,
+        "name": "ppets_3561",
+        "hash": "e2accf2e47f08e7199d3996772b172bd",
+        "bytes": 2213332,
+        "url": "https://newseer.61.com/Assets/StandaloneWindows64/PetAnimPackage/e2accf2e47f08e7199d3996772b172bd",
+        "local": true,
+        "localFile": "D:\\影片\\bilibili\\新建文件夹\\TWSeerLauncher\\Games\\NewSeer\\Seer_Data\\yoo\\PetAnimPackage\\CacheBundleFiles\\e2\\e2accf2e47f08e7199d3996772b172bd\\__data",
+        "sha256": "828034ff086427b917b1b0e29df488393f6522ccc8578ebe08e8895505bb15ed",
+        "native": {
+          "textures": [
+            {
+              "name": "3561._Atlas_",
+              "width": 4096,
+              "height": 2048,
+              "rgbaBytes": 33554432
+            }
+          ],
+          "clips": [
+            {
+              "name": "3561.pet",
+              "fps": 25.0,
+              "sequences": [
+                {
+                  "name": "standby",
+                  "frames": 31,
+                  "hits": []
+                },
+                {
+                  "name": "attack",
+                  "frames": 136,
+                  "hits": [
+                    113
+                  ]
+                },
+                {
+                  "name": "sa",
+                  "frames": 116,
+                  "hits": [
+                    93
+                  ]
+                },
+                {
+                  "name": "cp",
+                  "frames": 64,
+                  "hits": [
+                    29
+                  ]
+                },
+                {
+                  "name": "hited",
+                  "frames": 8,
+                  "hits": []
+                }
+              ]
+            }
+          ],
+          "usable": true
+        }
+      },
+      "small": null,
+      "binding": "待逐一視覺校準，未自動啟用"
+    },
+    {
+      "owner": "5035",
+      "name": "御天龍神·哈莫",
+      "animation": {
+        "id": 3809,
+        "name": "ppets_3809",
+        "hash": "60157b0b6919772b63d52a161bcf9fee",
+        "bytes": 1806218,
+        "url": "https://newseer.61.com/Assets/StandaloneWindows64/PetAnimPackage/60157b0b6919772b63d52a161bcf9fee",
+        "local": true,
+        "localFile": "D:\\影片\\bilibili\\新建文件夹\\TWSeerLauncher\\Games\\NewSeer\\Seer_Data\\yoo\\PetAnimPackage\\CacheBundleFiles\\60\\60157b0b6919772b63d52a161bcf9fee\\__data",
+        "sha256": "906547e31dab4a59690b72e2238fd9323a3dd5a4c1c735982445b424c4889cfd",
+        "native": {
+          "textures": [
+            {
+              "name": "3809._Atlas_",
+              "width": 2048,
+              "height": 2048,
+              "rgbaBytes": 16777216
+            }
+          ],
+          "clips": [
+            {
+              "name": "3809.pet",
+              "fps": 25.0,
+              "sequences": [
+                {
+                  "name": "standby",
+                  "frames": 29,
+                  "hits": []
+                },
+                {
+                  "name": "attack",
+                  "frames": 139,
+                  "hits": [
+                    115
+                  ]
+                },
+                {
+                  "name": "sa",
+                  "frames": 111,
+                  "hits": [
+                    81
+                  ]
+                },
+                {
+                  "name": "cp",
+                  "frames": 78,
+                  "hits": [
+                    33
+                  ]
+                },
+                {
+                  "name": "hited",
+                  "frames": 8,
+                  "hits": []
+                }
+              ]
+            }
+          ],
+          "usable": true
+        }
+      },
+      "small": null,
+      "binding": "待逐一視覺校準，未自動啟用"
+    },
+    {
+      "owner": "7070",
+      "name": "魔化.雷伊",
+      "animation": {
+        "id": 70,
+        "name": "ppets_70",
+        "hash": "455c66ff461d4188dd53cbd9fff4944e",
+        "bytes": 579315,
+        "url": "https://newseer.61.com/Assets/StandaloneWindows64/PetAnimPackage/455c66ff461d4188dd53cbd9fff4944e",
+        "local": true,
+        "localFile": "D:\\影片\\bilibili\\新建文件夹\\TWSeerLauncher\\Games\\NewSeer\\Seer_Data\\yoo\\PetAnimPackage\\CacheBundleFiles\\45\\455c66ff461d4188dd53cbd9fff4944e\\__data",
+        "sha256": "cddca15a2ce15026ed685d64796ad5585890c81b4046ad88bf7ce2ab08e77d40",
+        "native": {
+          "textures": [
+            {
+              "name": "70._Atlas_",
+              "width": 2048,
+              "height": 1024,
+              "rgbaBytes": 8388608
+            }
+          ],
+          "clips": [
+            {
+              "name": "70.pet",
+              "fps": 24.0,
+              "sequences": [
+                {
+                  "name": "standby",
+                  "frames": 29,
+                  "hits": []
+                },
+                {
+                  "name": "attack",
+                  "frames": 75,
+                  "hits": [
+                    22
+                  ]
+                },
+                {
+                  "name": "sa",
+                  "frames": 75,
+                  "hits": [
+                    24
+                  ]
+                },
+                {
+                  "name": "cp",
+                  "frames": 75,
+                  "hits": [
+                    18
+                  ]
+                },
+                {
+                  "name": "hited",
+                  "frames": 8,
+                  "hits": []
+                }
+              ]
+            }
+          ],
+          "usable": true
+        }
+      },
+      "small": null,
+      "binding": "指定普通雷伊皮膚"
+    },
+    {
+      "owner": "707070",
+      "name": "墜霆.雷伊",
+      "animation": {
+        "id": 70,
+        "name": "ppets_70",
+        "hash": "455c66ff461d4188dd53cbd9fff4944e",
+        "bytes": 579315,
+        "url": "https://newseer.61.com/Assets/StandaloneWindows64/PetAnimPackage/455c66ff461d4188dd53cbd9fff4944e",
+        "local": true,
+        "localFile": "D:\\影片\\bilibili\\新建文件夹\\TWSeerLauncher\\Games\\NewSeer\\Seer_Data\\yoo\\PetAnimPackage\\CacheBundleFiles\\45\\455c66ff461d4188dd53cbd9fff4944e\\__data",
+        "sha256": "cddca15a2ce15026ed685d64796ad5585890c81b4046ad88bf7ce2ab08e77d40",
+        "native": {
+          "textures": [
+            {
+              "name": "70._Atlas_",
+              "width": 2048,
+              "height": 1024,
+              "rgbaBytes": 8388608
+            }
+          ],
+          "clips": [
+            {
+              "name": "70.pet",
+              "fps": 24.0,
+              "sequences": [
+                {
+                  "name": "standby",
+                  "frames": 29,
+                  "hits": []
+                },
+                {
+                  "name": "attack",
+                  "frames": 75,
+                  "hits": [
+                    22
+                  ]
+                },
+                {
+                  "name": "sa",
+                  "frames": 75,
+                  "hits": [
+                    24
+                  ]
+                },
+                {
+                  "name": "cp",
+                  "frames": 75,
+                  "hits": [
+                    18
+                  ]
+                },
+                {
+                  "name": "hited",
+                  "frames": 8,
+                  "hits": []
+                }
+              ]
+            }
+          ],
+          "usable": true
+        }
+      },
+      "small": null,
+      "binding": "指定普通雷伊皮膚"
+    },
+    {
+      "owner": "arena12",
+      "name": "無為龍者",
+      "animation": {
+        "id": 4661,
+        "name": "ppets_4661",
+        "hash": "913273a90e36650b4caf9ed22d4a79a3",
+        "bytes": 6394969,
+        "url": "https://newseer.61.com/Assets/StandaloneWindows64/PetAnimPackage/913273a90e36650b4caf9ed22d4a79a3",
+        "local": true,
+        "localFile": "D:\\影片\\bilibili\\新建文件夹\\TWSeerLauncher\\Games\\NewSeer\\Seer_Data\\yoo\\PetAnimPackage\\CacheBundleFiles\\91\\913273a90e36650b4caf9ed22d4a79a3\\__data",
+        "sha256": "a9789d4d3df80b04ad06bca62e821c34f526124fee01b367e58fdeedb3741316",
+        "native": {
+          "textures": [
+            {
+              "name": "4661._Atlas_",
+              "width": 4096,
+              "height": 4096,
+              "rgbaBytes": 67108864
+            }
+          ],
+          "clips": [
+            {
+              "name": "4661.pet",
+              "fps": 24.0,
+              "sequences": [
+                {
+                  "name": "standby",
+                  "frames": 33,
+                  "hits": []
+                },
+                {
+                  "name": "attack",
+                  "frames": 120,
+                  "hits": [
+                    93
+                  ]
+                },
+                {
+                  "name": "sa",
+                  "frames": 100,
+                  "hits": [
+                    80
+                  ]
+                },
+                {
+                  "name": "cp",
+                  "frames": 92,
+                  "hits": [
+                    48
+                  ]
+                },
+                {
+                  "name": "hited",
+                  "frames": 7,
+                  "hits": []
+                }
+              ]
+            }
+          ],
+          "usable": true
+        }
+      },
+      "small": null,
+      "binding": "待逐一視覺校準，未自動啟用"
+    },
+    {
+      "owner": "arena13",
+      "name": "龍錄天鋒",
+      "animation": {
+        "id": 4903,
+        "name": "ppets_4903",
+        "hash": "5f31874f17fd5abfcd9cf2162eb8e963",
+        "bytes": 5742307,
+        "url": "https://newseer.61.com/Assets/StandaloneWindows64/PetAnimPackage/5f31874f17fd5abfcd9cf2162eb8e963",
+        "local": false,
+        "localFile": "D:\\影片\\bilibili\\新建文件夹\\TWSeerLauncher\\Games\\NewSeer\\Seer_Data\\yoo\\PetAnimPackage\\CacheBundleFiles\\5f\\5f31874f17fd5abfcd9cf2162eb8e963\\__data",
+        "sha256": null
+      },
+      "small": null,
+      "binding": "待逐一視覺校準，未自動啟用"
+    },
+    {
+      "owner": "arena14",
+      "name": "無極聖武",
+      "animation": {
+        "id": 4800,
+        "name": "ppets_4800",
+        "hash": "d6219bad7cb3d928c041eb57960d8b83",
+        "bytes": 10683382,
+        "url": "https://newseer.61.com/Assets/StandaloneWindows64/PetAnimPackage/d6219bad7cb3d928c041eb57960d8b83",
+        "local": true,
+        "localFile": "D:\\影片\\bilibili\\新建文件夹\\TWSeerLauncher\\Games\\NewSeer\\Seer_Data\\yoo\\PetAnimPackage\\CacheBundleFiles\\d6\\d6219bad7cb3d928c041eb57960d8b83\\__data",
+        "sha256": "a98a05d231b85632c37646eaf18b1f2eb45b527fd862af0cb17c724613627568",
+        "native": {
+          "textures": [
+            {
+              "name": "4800._Atlas_",
+              "width": 8192,
+              "height": 4096,
+              "rgbaBytes": 134217728
+            }
+          ],
+          "clips": [
+            {
+              "name": "4800.pet",
+              "fps": 24.0,
+              "sequences": [
+                {
+                  "name": "standby",
+                  "frames": 128,
+                  "hits": []
+                },
+                {
+                  "name": "attack",
+                  "frames": 127,
+                  "hits": [
+                    97
+                  ]
+                },
+                {
+                  "name": "sa",
+                  "frames": 110,
+                  "hits": [
+                    77
+                  ]
+                },
+                {
+                  "name": "cp",
+                  "frames": 78,
+                  "hits": [
+                    37
+                  ]
+                },
+                {
+                  "name": "hited",
+                  "frames": 8,
+                  "hits": []
+                }
+              ]
+            }
+          ],
+          "usable": true
+        }
+      },
+      "small": null,
+      "binding": "待逐一視覺校準，未自動啟用"
+    },
+    {
+      "owner": "arena15",
+      "name": "命運龍輪 莫伊萊",
+      "animation": {
+        "id": 4275,
+        "name": "ppets_4275",
+        "hash": "a93517fb9a9ad1ebfc58d09c265c802e",
+        "bytes": 1243453,
+        "url": "https://newseer.61.com/Assets/StandaloneWindows64/PetAnimPackage/a93517fb9a9ad1ebfc58d09c265c802e",
+        "local": true,
+        "localFile": "D:\\影片\\bilibili\\新建文件夹\\TWSeerLauncher\\Games\\NewSeer\\Seer_Data\\yoo\\PetAnimPackage\\CacheBundleFiles\\a9\\a93517fb9a9ad1ebfc58d09c265c802e\\__data",
+        "sha256": "7fb255e7174cbace7b7d54edf2eb782949eb82aab0bccd43549fdab94cb19a99",
+        "native": {
+          "textures": [
+            {
+              "name": "4275._Atlas_",
+              "width": 2048,
+              "height": 2048,
+              "rgbaBytes": 16777216
+            }
+          ],
+          "clips": [
+            {
+              "name": "4275.pet",
+              "fps": 24.0,
+              "sequences": [
+                {
+                  "name": "standby",
+                  "frames": 120,
+                  "hits": []
+                },
+                {
+                  "name": "attack",
+                  "frames": 135,
+                  "hits": [
+                    109
+                  ]
+                },
+                {
+                  "name": "sa",
+                  "frames": 91,
+                  "hits": [
+                    66
+                  ]
+                },
+                {
+                  "name": "cp",
+                  "frames": 82,
+                  "hits": [
+                    40
+                  ]
+                },
+                {
+                  "name": "hited",
+                  "frames": 8,
+                  "hits": []
+                }
+              ]
+            }
+          ],
+          "usable": true
+        }
+      },
+      "small": null,
+      "binding": "待逐一視覺校準，未自動啟用"
+    },
+    {
+      "owner": "wiki4937",
+      "name": "星光·雷納多",
+      "animation": {
+        "id": 4937,
+        "name": "ppets_4937",
+        "hash": "cbdd736271229e4fa51c79b51a5e8d97",
+        "bytes": 6704942,
+        "url": "https://newseer.61.com/Assets/StandaloneWindows64/PetAnimPackage/cbdd736271229e4fa51c79b51a5e8d97",
+        "local": false,
+        "localFile": "D:\\影片\\bilibili\\新建文件夹\\TWSeerLauncher\\Games\\NewSeer\\Seer_Data\\yoo\\PetAnimPackage\\CacheBundleFiles\\cb\\cbdd736271229e4fa51c79b51a5e8d97\\__data",
+        "sha256": null
+      },
+      "small": null,
+      "binding": "待逐一視覺校準，未自動啟用"
+    }
+  ],
+  "customUnbound": [
+    "5017 人皇·帝辛",
+    "5022 無序.六刃",
+    "5023 無序·蝕言",
+    "5026 無序.墜星",
+    "5036 九青（4543為原版候選，未驗證當前自製外觀）",
+    "arena16 鎮世龍魂・龍之治癒"
+  ]
+}

@@ -1,9 +1,30 @@
 # 專案開發規範：精靈實裝與重構指南
 
+## 戰鬥引擎位置（2026-10-10 起）
+- 回合結算已從 `src/components/BattleScreen.tsx` 抽到 `src/engine/battleEngine.ts`（`createBattleEngine`），不依賴 React；BattleScreen 只負責輸入、訂閱狀態與播放。
+- 官方節點順序定義在 `src/engine/nodes.ts`（1.1–6.6），引擎以 `onNode` 回報實際順序；`tests/battleEngine.headless.test.ts` 鎖定順序。改動流程必須同步更新該測試。
+- 下文所有「禁止寫在 BattleScreen.tsx」的規則同樣適用於 `src/engine/battleEngine.ts`。
+
 ## 核心原則：避免檔案臃腫 (Anti-Bloat)
 為了保持 `src/components/BattleScreen.tsx` 的可維護性，所有精靈的專屬邏輯（技能效果、魂印被動、特殊判定）**嚴格禁止**直接硬編碼在主檔案中。
 
+## 立繪朝向固定基準（2026-10-12）
+- 座標一律以玩家看到的畫面為準：左側P1朝右（→），右側P2朝左（←），面向中央對手，不是以角色自身左右判斷。
+- 先查看實際載入的原始全身素材，再依頭／眼／口／武器指向判斷；不依檔名、尾巴或「官方大多朝左」猜測。真正正面圖標front，不能為了左右不同硬翻。
+- 只在 `src/battle/seerAssets.ts` 登記原圖的left/right/front，實際素材URL優先於精靈名稱；多個備用圖須分別核對。同名換圖必須重驗，不繼承舊圖方向。
+- 翻轉只能由 `mirrorSourceFacing` → `shouldMirrorBattleSprite` → `ElfAvatar` 全身圖執行一次；禁止在父容器、動畫、P1/P2頁面疊加scaleX。頭像與文字不跟著翻。
+- 原圖left：P1翻、P2不翻；原圖right：P1不翻、P2翻；front／未核對：兩邊不猜。未知圖列待核，不能宣稱朝向驗收通過。
+- 每次新增／換圖必須加P1/P2、實際URL、備用／自訂路徑測試，執行 `tests/battleSpriteFacing.semantic.test.ts`；需要確認呈現時再測真實 `ElfAvatar` 的DOM樣式，不能只核對方向表就宣稱畫面正確。
+
+## 皮膚與備用立繪驗收補充
+- 原生動畫同樣在 `seerAssets.ts` 以素材 URL 分別登記朝向，不能繼承靜態圖方向。Canvas 播放器透過同一個 `shouldMirrorBattleSprite` 判斷，在自身根節點執行一次翻轉；外層容器、首頁、P1/P2 不得再反轉。靜態圖片仍只由 ElfAvatar 執行翻轉。
+- 皮膚只以 `skinId` 選擇外觀，不改精靈名稱、ID、能力值、技能、魂印或通用特性；原始外觀、自訂圖址與皮膚分開保存。
+- 每張新圖在 `src/battle/seerAssets.ts` 依實際 URL 登記方向。未知 URL 不得繼承同名精靈的舊方向，備用圖也須各自登記。
+- 新增皮膚須測舊版選單切換、回復原圖、保存重載、P1／P2實際 ElfAvatar DOM，以及幻化使用目標皮膚、頭像不鏡射。
+- 預覽保留原始長寬比並使用 object-contain；不得為修方向而翻轉整張卡片、文字、頭像或父動畫容器。
+
 ## 語義分詞與實裝協定 (Semantic Tokenization Protocol)
+
 為了確保「精靈描述」與「戰鬥邏輯」完美同步，所有新機制與精靈必須遵循以下實裝流程：
 1. **文本拆解**：將自然語言描述拆解為「觸發 (Trigger)」、「條件 (Condition)」、「目標 (Target)」、「行為 (Action)」等結構化 Tokens。
 2. **語義對齊**：由 AI 代理與使用者確認分詞結構，確保機制無歧義。

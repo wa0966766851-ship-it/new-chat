@@ -1,0 +1,14 @@
+import assert from 'node:assert/strict';
+import {beginPetFormTransition,waitPetFormTransition} from '../src/battle/petFormTransitions';
+const elf={id:'form-test',name:'form-test',battleId:'unit-1'};
+const release=beginPetFormTransition('p1',elf);let done=false;
+const wait=waitPetFormTransition('p1',elf).then(()=>done=true);
+await Promise.resolve();assert.equal(done,false);release();release();await wait;assert.equal(done,true);
+const old=beginPetFormTransition('p1',elf);const previous=waitPetFormTransition('p1',elf);
+const latest=beginPetFormTransition('p1',elf);await previous;
+let nextDone=false;const next=waitPetFormTransition('p1',elf).then(()=>nextDone=true);
+old();await Promise.resolve();assert.equal(nextDone,false,'舊播放器卸載不能解除新過場');
+const right=beginPetFormTransition('p2',elf);latest();await next;
+let rightDone=false;const rightWait=waitPetFormTransition('p2',elf).then(()=>rightDone=true);
+await Promise.resolve();assert.equal(rightDone,false,'P1 結束不能放行 P2');right();await rightWait;
+console.log('型態過場等待、重複解除、替換與雙方隔離通過');

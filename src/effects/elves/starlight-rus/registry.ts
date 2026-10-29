@@ -6,116 +6,8 @@ import { BattleEventContext, BattleSkillHandler, EffectTiming } from "../../type
  * 嚴格對齊文本描述機制
  */
 
-export const handleStarlightRusSoulMark = (context: BattleEventContext, event: EffectTiming, extraData?: any) => {
-  const { self, target, actor, setPlayerState, getPlayerState, setOpponentState, getOpponentState, addLog, applyStatusWithImmunityCheck, clearTurnEffectsOf, activeP1, activeP2, applyPinkDamage, applyTrueDamage } = context;
-  const oppSide = actor === "p1" ? "p2" : "p1";
-
-  if (event === EffectTiming.BEFORE_DAMAGE && !extraData?.isIncoming && extraData?.damageCategory === "skill_attack") {
-    extraData.multiplier *= getPlayerState("rusAttackMultiplier") || 1;
-  }
-
-  // 1. 登場與常駐標記
-  if (event === EffectTiming.ON_ENTRANCE || event === EffectTiming.BEFORE_ACTION || event === EffectTiming.BEFORE_SKILL) {
-    // 必定致命一擊
-    // alwaysCritical moved to BEFORE_SKILL
-    
-    if (event === EffectTiming.ON_ENTRANCE) {
-      addLog(`🌊 【海】：登場無條件令對手進入 3 回合【星海之浸】！`, "effect");
-      setOpponentState("starSeaSoakTurns", 3); setOpponentState("utilitySkillInvalidTurns", 3); setOpponentState("utilitySkillInvalidReason", "星海之浸：屬性技能失效");
-    }
-
-    // 自身所有技能必定打出致命一擊
-    if (event === EffectTiming.BEFORE_SKILL) {
-      setPlayerState("nextTurnCrit", true);
-    }
-  }
-
-  // 回合開始：清空「本回合所受技能傷害」紀錄（供【克制】反饋使用）
-  if (event === EffectTiming.ROUND_START) {
-    setPlayerState("rusSkillDmgTakenThisTurn", 0);
-  }
-
-  // 2. 攻擊後效果
-  // AFTER_ACTION 只派發給行動方本身（無 extraData），以 ctx.skill 判斷是否為攻擊
-  if (event === EffectTiming.AFTER_ACTION) {
-    setPlayerState("rusAttackMultiplier", 0);
-    const pending = getPlayerState("rusPendingPercentDamage") || 0;
-    if (pending > 0) {
-      setPlayerState("rusPendingPercentDamage", 0);
-      applyPinkDamage(oppSide, pending, "【星光·浪打千擊】百分比傷害", activeP1, activeP2, "percent");
-    }
-    const usedSkill = extraData?.skill || context.skill;
-    const isAttack = usedSkill?.category === "物理" || usedSkill?.category === "特殊";
-    if (isAttack) {
-      addLog(`🌊 【海】：攻擊觸發星海漫溢，對手【星海之浸】回合刷新為 3！`, "effect");
-      setOpponentState("starSeaSoakTurns", 3); setOpponentState("utilitySkillInvalidTurns", 3); setOpponentState("utilitySkillInvalidReason", "星海之浸：屬性技能失效");
-    }
-  }
-
-  // 3. 標記觸發效果 (ON_DAMAGED)
-  // 自身受到技能傷害：記錄本回合所受技能傷害（【克制】反饋用）
-  if (event === EffectTiming.ON_DAMAGED && extraData?.targetSide === actor) {
-    const dt = String(extraData?.damageType || "");
-    if ((dt === "skill_attack" || dt === "skill") && (extraData?.damage || 0) > 0) {
-      setPlayerState("rusSkillDmgTakenThisTurn", (getPlayerState("rusSkillDmgTakenThisTurn") || 0) + Math.floor(extraData.damage));
-    }
-  }
-  if (event === EffectTiming.ON_DAMAGED && extraData?.targetSide !== actor) {
-    const soakTurns = getOpponentState("starSeaSoakTurns");
-    if (soakTurns > 0) {
-      const dmgVal = Math.floor(extraData?.damage || 0);
-      // 持有者每次受到攻擊傷害後額外受到傷害值100%的百分比傷害，並恢復對方在場精靈等量體力與1點所有技能PP值
-      if (dmgVal > 0) {
-        addLog(`🌊 【星海之浸】：附加額外 ${dmgVal} 點百分比傷害！`, "damage");
-        applyPinkDamage(oppSide, dmgVal, "星海之浸", activeP1, activeP2, "百分比傷害");
-        context.applyHeal(actor, dmgVal);
-        self.skills.forEach(s => { if (s.pp !== undefined && s.maxPp !== undefined) s.pp = Math.min(s.maxPp, s.pp + 1); });
-        addLog(`🌊 【星海之浸】：為【${self.name}】恢復 ${dmgVal} 點體力與所有技能 1 點 PP！`, "heal");
-      }
-
-      // 若對手為草系則星海之浸消失並額外附加傷害值100%的真實傷害，並恢復對方在場精靈等量體力與所有技能全部PP值
-      if (target.type === "草") {
-        addLog(`🌊 【星海之浸】：對手為草系，星海之浸消失！`, "effect");
-        setOpponentState("starSeaSoakTurns", 0); setOpponentState("utilitySkillInvalidTurns", 0);
-        if (dmgVal > 0) {
-          applyTrueDamage(oppSide, dmgVal, "星海之浸", activeP1, activeP2);
-          context.applyHeal(actor, dmgVal);
-        }
-        self.skills.forEach(s => { if (s.pp !== undefined && s.maxPp !== undefined) s.pp = s.maxPp; });
-        addLog(`🌊 【星海之浸】：【${self.name}】恢復 ${dmgVal} 點體力與所有技能全部 PP！`, "heal");
-      }
-    }
-  }
-
-  // 4. 回合結束與標記遞減 (ROUND_END)
-  if (event === EffectTiming.ROUND_END) {
-    const soakTurns = getOpponentState("starSeaSoakTurns") || 0;
-    if (soakTurns > 0) {
-      setOpponentState("starSeaSoakTurns", soakTurns - 1); setOpponentState("utilitySkillInvalidTurns", soakTurns - 1);
-    }
-  }
-
-  // 5. 致命抗性
-  if (event === EffectTiming.FATAL_RESIST) {
-    const used = getPlayerState("rusFatalResistUsed");
-    if (!used && self.level === 100) {
-      setPlayerState("rusFatalResistUsed", true);
-      addLog(`🌊 【海】：觸發死地重生！消除對手強化與回合類效果，體力與 PP 全部恢復！`, "effect");
-      // 消除對手能力提升狀態（僅提升，下降保留）
-      const st = target.statStages as Record<string, number>;
-      Object.keys(st).forEach(k => { if ((st[k] || 0) > 0) st[k] = 0; });
-      clearTurnEffectsOf(oppSide, target);
-      self.currentHp = self.maxHp;
-      self.skills.forEach(s => {
-        if (s.pp !== undefined && s.maxPp !== undefined) s.pp = s.maxPp;
-      });
-      self.shield = self.maxHp;
-      self.barrier = self.maxHp;
-      addLog(`🌊 【海】：獲得等同於自身體力值的護盾與護罩 (${self.maxHp})！`, "effect");
-      return true;
-    }
-  }
-
+export const handleStarlightRusSoulMark = (_context: BattleEventContext, _event: EffectTiming, _extraData?: any) => {
+  // 5010 魂印「海」已遷真 Kit（migratedGroup5SeaSoulKit.ts；DSH 20261018 組 5）——規則3.3 空殼化。
   return false;
 };
 
@@ -143,9 +35,10 @@ export const STARLIGHT_RUS_SKILLS: Record<string, BattleSkillHandler> = {
     ["atk", "def", "spatk", "spdef", "speed", "accuracy"].forEach(k => {
       stages[k as keyof typeof stages] = Math.min(6, (stages[k as keyof typeof stages] || 0) + bonus);
     });
-    setPlayerState("dmgDoubleTurns", 2);
-    setPlayerState("ignoreDef25Turns", 2);
-    setPlayerState("ignoreOppBuffTurns", 2);
+    // 「下2回合」：本回合不生效，之後 2 個回合
+    ctx.setNextTurns?.("self", "dmgDoubleTurns", 2);
+    ctx.setNextTurns?.("self", "ignoreDef25Turns", 2);
+    ctx.setNextTurns?.("self", "ignoreOppBuffTurns", 2);
     addLog(`🌊 【星光·隨風逐浪】：全屬性+${bonus}，進入傷害翻倍、穿防與無視強化狀態！`, "effect");
   },
 

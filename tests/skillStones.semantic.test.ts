@@ -2,7 +2,8 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { SKILL_STONE_ATTRIBUTES as attrs, SKILL_STONE_GRADES as grades, PERFECT_SKILL_STONE_EFFECTS as effects,
   createSkillStone, toSSStone, stoneBasePp, distinctStoneCount, isStoneThrower, equipSkillStone, stoneIconUrl } from '../src/data/skillStones';
-import { getMaxPp, isPpCostFree, isZeroPpExempt } from '../src/utils/battleHelpers';
+import { getMaxPp } from '../src/utils/battleHelpers';
+import { isPpCostFree, isZeroPpExempt } from '../src/battle/ppExemptions';
 import { resetElfStateForBattle, getTypeMatchup } from '../src/utils/statCalculator';
 import { stoneAfterHit, stoneBeforeDamage, stonePriorityBonus } from '../src/effects/skillStoneEffects';
 import { handleStoneThrowerSoul } from '../src/effects/elves/wuxu/stoneThrowerSoul';
@@ -102,7 +103,8 @@ check('安全裝備、選效校驗、完整草稿 roundtrip', () => {
 });
 check('普通傷害翻倍不是威力翻倍；本系加成', () => {
   const sk = createSkillStone('普通','D','物理',true,'attr_normal_double'), c = context(sk);
-  const dmg = (elf: any, s: any) => calculateDamage(elf,c.target,s,'p1',undefined,undefined,1,false).damage;
+  // 寶石「傷害翻倍」屬獨立乘區，不在公式內（equipmentMultiplier 回報），2026-10-11
+  const dmg = (elf: any, s: any) => { const r = calculateDamage(elf,c.target,s,'p1',undefined,undefined,1,false); return Math.floor(r.damage * r.equipmentMultiplier); };
   assert.equal(dmg(c.self,stoneBeforeDamage(c,sk,()=>true)),dmg(c.self,sk)*2);
   const custom = {...sk,skillStoneRuleset:'project' as const}; assert.equal(stoneBeforeDamage(c,custom,()=>true).power,80);
   const fire = createSkillStone('火','S'); assert.equal(dmg(make('無序.墜星'),fire),Math.floor(((42*500*160/250)/50+2)*1.5*getTypeMatchup('火','普通')));

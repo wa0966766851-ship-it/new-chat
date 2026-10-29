@@ -7,8 +7,30 @@ import { matchCond } from "../blocks/parse";
 import { evalCond } from "../blocks/runtime";
 import { CUSTOM } from "../blocks/custom";
 import { SKILL_MODE } from "../blocks/specs";
+import { usesAuthoredSkill, hasConnectedSkillHandler } from '../effects/connectedEffects';
+import { compileEffectPlan, effectRoute } from '../effects/effectConnection';
+import { conditionalPriorityFromDescription, priorityFromDescription } from '../effects/genericSkillText';
+import { readBasePriority } from '../effects/skillProperty';
 
 type StatusGetter = (e: any) => Record<string, number>;
+
+/** 基礎先制與条件式先制共用來源合約；Kit 不借用舊描述，欄位先制不再被描述重複加算。 */
+export function skillBasePriority(skill: any, self: any, opp: any, getStatuses: StatusGetter, inherentRestricted = false, battleContext?:any): number {
+  if (!skill || inherentRestricted) return 0;
+  const hasHandler = hasConnectedSkillHandler(skill.name);
+  if (usesAuthoredSkill(skill, hasHandler, self)) {
+    if(effectRoute(skill,hasHandler)==='kit')return readBasePriority(skill,battleContext??{self,target:opp,getStatuses,getPlayerState:()=>undefined,getOpponentState:()=>undefined,getMarks:(side:string)=>side==='p1'?(self.marks||[]):(opp.marks||[]),actor:'p1',targetSide:'p2',skill}) ?? skill.priority ?? 0;
+    if (effectRoute(skill, hasHandler) !== 'description') return skill.priority || 0;
+    const plan = compileEffectPlan(skill, 'skill', hasHandler);
+    const unconditional = plan.program.clauses.filter(c => c.parsed && !c.cond?.length)
+      .flatMap(c => c.body.filter(b => !b.cond?.length).flatMap(b => b.acts))
+      .map(a => a.op === 'noop' ? String(a.p.tag || '').match(/^(?:額外)?先制\s*([+＋-])\s*(\d+)$/) : null).find(Boolean);
+    const base = skill.priority || (unconditional ? (unconditional[1] === '-' ? -1 : 1) * Number(unconditional[2]) : 0);
+    return base + blockCondPriority(skill, self, opp, getStatuses, true);
+  }
+  return (skill.priority || (!hasHandler ? priorityFromDescription(skill.description || '', skill.name) : 0))
+    + (!hasHandler ? conditionalPriorityFromDescription(skill, self, opp, getStatuses) : handlerSkillCondPriority(skill, self, opp, getStatuses));
+}
 
 /**
  * 條件式先制已由魂印 MODIFY_PRIORITY 以技能名稱自行加算的技能（避免重複計算）。

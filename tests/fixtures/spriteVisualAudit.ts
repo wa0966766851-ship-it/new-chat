@@ -1,0 +1,41 @@
+import {acquirePetClip} from '../../src/battle/petAnimationLoader';
+import {preparePetFx} from '../../src/battle/petFxPolicy';
+import {PET_ANIMATION_ASSETS} from '../../src/battle/petAnimationAssets';
+import {SwfPlayer} from '@seer-pet-anim/swf-renderer';
+import {unifyPetColors,petColorVariant} from '../../src/battle/petColorVariants';
+import {BODY_SOURCE_FACING,shouldMirrorBattleSprite} from '../../src/battle/seerAssets';
+let player:SwfPlayer|undefined,lease:ReturnType<typeof acquirePetClip>|undefined;
+const host=document.getElementById('host')!;
+(window as any).auditAssets=PET_ANIMATION_ASSETS;
+(window as any).auditSources=BODY_SOURCE_FACING;
+(window as any).auditFxOf=async(id:keyof typeof PET_ANIMATION_ASSETS)=>{const l=acquirePetClip(id);try{const c=await l.clip;const p=preparePetFx(c);return JSON.stringify({id,name:PET_ANIMATION_ASSETS[id].name,facing:PET_ANIMATION_ASSETS[id].facing,report:p.report});}finally{l.release();}};
+(window as any).auditLoad=async(id:keyof typeof PET_ANIMATION_ASSETS,side?:'p1'|'p2')=>{
+ player?.destroy();player=undefined;lease?.release();host.replaceChildren();
+ lease=acquirePetClip(id);const source=await lease.clip;
+ const prepared=preparePetFx(source),clip=new URLSearchParams(location.search).has('filtered')?prepared.clip:source;
+ (window as any).auditFxReport=prepared.report;
+ const colorReport=new URLSearchParams(location.search).has('original')?{}:unifyPetColors(clip.sequences,petColorVariant(PET_ANIMATION_ASSETS[id].name,id));
+ const frames=clip.sequences.find(s=>s.name==='standby')!.frames;
+ let lx=Infinity,rx=-Infinity,ly=Infinity,ry=-Infinity;
+ for(const f of frames)for(let i=0;i<f.mesh.positions.length;i+=2){lx=Math.min(lx,f.mesh.positions[i]);rx=Math.max(rx,f.mesh.positions[i]);ly=Math.min(ly,f.mesh.positions[i+1]);ry=Math.max(ry,f.mesh.positions[i+1]);}
+ player=new SwfPlayer();await player.mount(host,clip,{transparent:true,mode:'fixed',clock:'manual'});
+ const scale=Math.min(550/(rx-lx),550/(ry-ly));
+ const mirror=side?shouldMirrorBattleSprite(PET_ANIMATION_ASSETS[id].name,side,false,'/api/pet-animations/bundle/'+id):false;
+ const sx=mirror?-scale:scale;
+ player.setFixedTransform({x:300-(lx+rx)/2*sx,y:575+ly*scale},{x:sx,y:-scale});
+ player.playSequence('standby',{loop:true});player.seek(Math.floor(frames.length*.35)/clip.frameRate);player.pause();player.draw();
+ document.getElementById('title')!.textContent=id+' / '+PET_ANIMATION_ASSETS[id].name+' / '+(side||'RAW')+' '+PET_ANIMATION_ASSETS[id].facing;
+ const bounds=(mesh:any)=>{let x0=Infinity,x1=-Infinity,y0=Infinity,y1=-Infinity;for(let i=0;i<mesh.positions.length;i+=2){x0=Math.min(x0,mesh.positions[i]);x1=Math.max(x1,mesh.positions[i]);y0=Math.min(y0,mesh.positions[i+1]);y1=Math.max(y1,mesh.positions[i+1]);}return [x0,x1,y0,y1];};
+ (window as any).auditPose=(sequence:string,fraction:number,wide=false)=>{
+ const seq=clip.sequences.find(s=>s.name===sequence)!;const index=Math.min(seq.frames.length-1,Math.floor(seq.frames.length*fraction));
+ host.style.width=wide?'1599px':'600px';host.style.height=wide?'700px':'600px';
+ const k=wide?480/(ry-ly):scale;const signed=mirror?-k:k;
+ player!.setFixedTransform({x:(wide?350:300)-(lx+rx)/2*signed,y:(wide?650:575)+ly*k},{x:signed,y:-k});
+ player!.playSequence(sequence,{loop:false});player!.seek(index/clip.frameRate);player!.pause();player!.draw();
+ const bb=bounds(seq.frames[index].mesh);const screen=[(wide?350:300)-(lx+rx)/2*signed+bb[0]*signed,(wide?350:300)-(lx+rx)/2*signed+bb[1]*signed,(wide?650:575)+ly*k-bb[3]*k,(wide?650:575)+ly*k-bb[2]*k];
+ document.getElementById('title')!.textContent=id+' / '+sequence+' frame '+index+' / '+(wide?'FIELD 1599x700':'RAW')+' / official mesh';
+ return {sequence,index,frames:seq.frames.length,bounds:bb,screen,widthVsRest:(bb[1]-bb[0])/(rx-lx),heightVsRest:(bb[3]-bb[2])/(ry-ly),sourceGeometry:true};
+ };
+ return {id,name:PET_ANIMATION_ASSETS[id].name,facing:PET_ANIMATION_ASSETS[id].facing,mirror,bounds:[lx,rx,ly,ry],frame:Math.floor(frames.length*.35),colors:Object.fromEntries(Object.entries(colorReport).map(([key,t])=>[key,t?{mul:t.mul.slice(0,4),add:t.add.slice(0,4)}:null])),uniformTints:clip.sequences.map(s=>({name:s.name,variants:[...new Set(s.frames.flatMap(f=>{const out:string[]=[];for(let i=0;i<f.mesh.mulColors.length;i+=4)out.push(Array.from(f.mesh.mulColors.slice(i,i+4)).map(n=>n.toFixed(4)).join(',')+'/'+Array.from(f.mesh.addColors.slice(i,i+4)).map(n=>n.toFixed(4)).join(','));return out;}))].length})),sequences:clip.sequences.map(s=>({name:s.name,frames:s.frames.length,maxWidthVsRest:Math.max(...s.frames.map(f=>{const b=bounds(f.mesh);return (b[1]-b[0])/(rx-lx);})),maxHeightVsRest:Math.max(...s.frames.map(f=>{const b=bounds(f.mesh);return (b[3]-b[2])/(ry-ly);})),mid:bounds(s.frames[Math.floor(s.frames.length/2)].mesh)}))};
+};
+(window as any).auditReady=true;

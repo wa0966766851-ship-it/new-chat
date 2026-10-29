@@ -1,5 +1,4 @@
 import type { Elf, Skill } from "../types";
-import { reyGodDescentRule } from "../battle/survivalRules";
 import { OTHERWORLD_REY_TEXT } from "./otherworldReyDescriptions";
 
 export const OTHERWORLD_REY_ID = "5029";
@@ -113,17 +112,8 @@ export const OTHERWORLD_REY_SEED: ElfSeed = {
   gender: "雄性",
   path: "otherworld_thunder_rey",
   artPresentation: "scene",
-  suppressAbnormalSideEffectsWhenParalyzed: true,
-  ppLimitIgnoredWhenParalyzedTurns: 7,
-  useAtkSpAtkSumForAttacks: true,
-  treatOpponentBoostAsDoubleDrop: true,
-  ownTurnEffectsUnclearable: true,
-  collapseOpponentTurnEffectsToOne: true,
-  paralyzeBothOnOwnStatChangeTurns: 7,
   category: "異能精靈",
   isAlienElf: true,
-  // maxHp 會在進場重算；minHp 由戰鬥開始時依實際 maxHp 更新。
-  survivalRule: reyGodDescentRule(0),
   baseStats: { hp: 120, atk: 170, spatk: 170, def: 125, spdef: 125, speed: 140 },
   soulMark: {
     name: "異",

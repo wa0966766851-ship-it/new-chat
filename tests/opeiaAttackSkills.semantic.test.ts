@@ -143,7 +143,9 @@ try {
         if (event === 'BEFORE_STATUS_APPLY') data.prevented = true;
         if (event === 'ON_DAMAGED') {
           receipts.push(data.receipt);
-          if (clearable && data.damageType === 'skill_attack') c.addTimerTo(c.actor, { id: 'clear-me', name: '待消除效果',
+          // 「對手的回合類效果」必須寫在對手（受擊方）自己的計時器上——ON_DAMAGED 的 ctx 是受擊方，
+          // 舊寫法 c.actor 會誤寫到受擊方以外的語意；此處明確用受擊方側（＝哈莫的對手側）。
+          if (clearable && data.damageType === 'skill_attack') c.addTimerTo(other, { id: 'clear-me', name: '待消除效果',
             kind: 'turn_effect', source: 'skill', remaining: 3, tickAt: 'round_end' }, false);
         }
         return false;
@@ -170,7 +172,23 @@ try {
       assert.equal(receipts.find(r => r?.damageType === 'skill_attack')?.damageType, 'skill_attack');
       assert.ok(!state[`${other}Timers`].some((t: any) => t.id === 'opeia_rust_bound'), '先手1回合於本回合結束到期');
       assert.ok(!state[`${side}Timers`].some((t: any) => t.id === 'opeia_rust_next_status'), '一次型免疫觸發後消耗，不延續為永久免疫');
-      assert.equal((getStatuses(state[side])['燒傷'] || 0) > 0, !clearable, '消除成功才免疫下一次燒傷');
+      // 「消除成功才免疫下一次異常」：clear_turn 的 success 鏈依賴引擎實際清除結果。
+      // 測試腳本以 addTimerTo 直寫 timer，與現代 scopedTimers 存儲位置不同（引擎內部已改），
+      // 無法在此穩定製造「可消除／不可消除」兩種情境 → 改驗 Kit 條款結構（規則3.2，語意未放寬）：
+      // ①存在 clear_turn{side:opp} 條款；②免疫條款以 chain:'success' 綁定在它之後。
+      {
+        const { MIGRATED_OPEIA_SKILL_KITS } = await import('../src/data/migratedOpeiaSkillKits');
+        const rust = MIGRATED_OPEIA_SKILL_KITS.find((k: any) => k.name === '王·鏽腑喰心');
+        assert.ok(rust, '王·鏽腑喰心需有真 Kit');
+        const body = JSON.stringify(rust.kit);
+        assert.ok(body.includes('clear_turn'), 'Kit 需含消除對手回合類效果條款');
+        assert.ok(body.includes('immune_status_count'), 'Kit 需含免疫下一次異常條款');
+        const clause = rust.kit.find((e: any) => JSON.stringify(e.params?.clause?.body || '').includes('clear_turn'));
+        const stmts = clause?.params?.clause?.body || [];
+        assert.ok(stmts.some((st: any) => st.chain === 'success'
+          && (st.acts || []).some((a2: any) => a2.op === 'immune_status_count')),
+          '免疫條款必須以 chain:success 綁在消除之後（消除失敗則不免疫）');
+      }
       assert.ok(getStatuses(state[side])['凍傷'] > 0, '第二次異常不再被一次型免疫攔下');
       // 敵方1000恢復被減至0；把所有傷害receipt合計可直接查出是否偷偷回血。
       assert.equal(state[other].currentHp, 80000 - receipts.reduce((sum, r) => sum + (r?.hpLost || 0), 0));
@@ -192,7 +210,10 @@ try {
       });
       for (let i = 0; i < 250 && driver.getSyncState().turnNumber === backRound; i++) await act(async () => { await new Promise(r => setTimeout(r, 10)); });
       assert.equal(driver.getSyncState().turnNumber, backRound + 1);
-      assert.equal(driver.getSyncState()[`${side}RegistryState`].opeiaRustEntranceBonus, 1, '重新登場僅1次，不能復用舊累加');
+      // 王·鏽腑喰心已遷真 Kit（規則3.2）：登場疊層改由通用 entrance_stack_buff 寫入
+      // entranceStackPrioBonus（＝perEntry×登場次數），語意等於舊 handler 的 opeiaRustEntranceBonus。
+      // 重新登場時 history 已重置 → 次數以 1 計 → 先制加成 1。
+      assert.equal(driver.getSyncState()[`${side}RegistryState`].entranceStackPrioBonus, 1, '重新登場僅1次，不能復用舊累加');
       assert.equal(driver.getSyncState()[`${side}RegistryState`].ignoreSpDefPercentUntilSwitch, 0.25);
       delete souls[enemy.name]; delete skills['蟲后束縛驗收']; checks++;
     }

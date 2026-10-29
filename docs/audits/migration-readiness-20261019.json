@@ -1,0 +1,183 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-10-19T09:12:24.544Z",
+  "note": "nonWrappedKitRoutes只是路由分類，不是完整遷移或正確率；flags必須人工查證，不能當錯誤份數。semanticAccuracy=null代表尚無全來源代表性驗收數據。",
+  "summary": {
+    "definitions": 397,
+    "wiredIncludingWrappers": 397,
+    "legacyWrapped": 0,
+    "nonWrappedKitRoutes": 397,
+    "unconnected": 0,
+    "definitionsNeedingPlaceholderReview": 0,
+    "definitionsWithContractIssues": 0,
+    "semanticAccuracy": null
+  },
+  "remaining": [],
+  "reviewRequired": [
+    {
+      "elfId": "5002",
+      "elf": "帝皇之盾",
+      "name": "盾",
+      "route": "kit",
+      "legacyWrapped": false,
+      "flags": [
+        {
+          "category": "reader-review",
+          "reason": "持續狀態寫入須另查事件讀取端；本標記不是判定缺失",
+          "key": "attackPpMultiplierTurns",
+          "text": "自身被擊敗時將剩餘護盾值轉化為守護印記附加給下一隻登場的己方精靈，並消除對手能力提升狀態（消除成功則令對手2回合內攻擊技能PP消耗提升3倍）",
+          "path": "kit[3].clause.body[2].acts[0]"
+        },
+        {
+          "category": "reader-review",
+          "reason": "持續狀態寫入須另查事件讀取端；本標記不是判定缺失",
+          "key": "attackPpMultiplierValue",
+          "text": "自身被擊敗時將剩餘護盾值轉化為守護印記附加給下一隻登場的己方精靈，並消除對手能力提升狀態（消除成功則令對手2回合內攻擊技能PP消耗提升3倍）",
+          "path": "kit[3].clause.body[2].acts[1]"
+        }
+      ]
+    },
+    {
+      "elfId": "5010",
+      "elf": "星光·魯斯王",
+      "name": "星光·浪打千擊",
+      "route": "kit",
+      "legacyWrapped": false,
+      "flags": [
+        {
+          "category": "reader-review",
+          "reason": "持續狀態寫入須另查事件讀取端；本標記不是判定缺失",
+          "key": "attackMissTurns",
+          "text": "消除對手回合類效果，消除成功則對手2回合內攻擊技能MISS",
+          "path": "kit[3].clause.body[1].acts[0]"
+        }
+      ]
+    },
+    {
+      "elfId": "5021",
+      "elf": "治癒.龍魂再臨 次元龍",
+      "name": "遺典.妄世律裁",
+      "route": "kit",
+      "legacyWrapped": false,
+      "flags": [
+        {
+          "category": "reader-review",
+          "reason": "持續狀態寫入須另查事件讀取端；本標記不是判定缺失",
+          "key": "wangshiHealFactor",
+          "text": "■ 龍魂：自身體力大於對手時攻擊傷害的100%回復自身體力值，自身體力低於對手時附加雙方體力差值70%的真實傷害",
+          "path": "kit[5].clause.body[0].acts[0]"
+        }
+      ]
+    },
+    {
+      "elfId": "5031",
+      "elf": "六界神王",
+      "name": "界",
+      "route": "kit",
+      "legacyWrapped": false,
+      "flags": [
+        {
+          "category": "reader-review",
+          "reason": "持續狀態寫入須另查事件讀取端；本標記不是判定缺失",
+          "key": "priorityBoostTurns",
+          "text": "若自身不處於全屬性能力提升狀態，戰鬥階段結束時令自身全屬性+1且下回合所有技能先制+2",
+          "path": "kit[1].clause.body[0].acts[1]"
+        },
+        {
+          "category": "reader-review",
+          "reason": "持續狀態寫入須另查事件讀取端；本標記不是判定缺失",
+          "key": "priorityBoostValue",
+          "text": "若自身不處於全屬性能力提升狀態，戰鬥階段結束時令自身全屬性+1且下回合所有技能先制+2",
+          "path": "kit[1].clause.body[0].acts[2]"
+        }
+      ]
+    },
+    {
+      "elfId": "5032",
+      "elf": "星核寰宇·艾斯菲亞",
+      "name": "寰宇幻影閃",
+      "route": "kit",
+      "legacyWrapped": false,
+      "flags": [
+        {
+          "category": "reader-review",
+          "reason": "持續狀態寫入須另查事件讀取端；本標記不是判定缺失",
+          "key": "nextElfAstralPriority",
+          "text": "🎯 未擊敗對手則下2回合自身所有技能先制+2\r\n🎯 擊敗對手則對手下隻出戰精靈出戰前2回合內先制效果失效",
+          "path": "kit[4].clause.body[1].acts[0]"
+        }
+      ]
+    },
+    {
+      "elfId": "5033",
+      "elf": "星軌重構·艾斯菲格",
+      "name": "寰宇星軌陣",
+      "route": "kit",
+      "legacyWrapped": false,
+      "flags": [
+        {
+          "category": "reader-review",
+          "reason": "持續狀態寫入須另查事件讀取端；本標記不是判定缺失",
+          "key": "nextElfAstralPriority",
+          "text": "🎯 未擊敗對手則下2回合自身所有技能先制+2\r\n🎯 擊敗對手則對手下隻出戰精靈出戰前2回合內先制-2",
+          "path": "kit[4].clause.body[1].acts[0]"
+        }
+      ]
+    },
+    {
+      "elfId": "5035",
+      "elf": "御天龍神·哈莫",
+      "name": "龍神·御天陣",
+      "route": "kit",
+      "legacyWrapped": false,
+      "flags": [
+        {
+          "category": "reader-review",
+          "reason": "持續狀態寫入須另查事件讀取端；本標記不是判定缺失",
+          "key": "minimumTypeMultiplierThisAction",
+          "text": "■ 攻擊時造成的傷害不會出現微弱（克制關係為微弱時都變成普通）",
+          "path": "kit[5].clause.body[0].acts[0]"
+        }
+      ]
+    },
+    {
+      "elfId": "arena_13",
+      "elf": "龍錄天鋒",
+      "name": "專屬特性",
+      "route": "kit",
+      "legacyWrapped": false,
+      "flags": [
+        {
+          "category": "reader-review",
+          "reason": "持續狀態寫入須另查事件讀取端；本標記不是判定缺失",
+          "key": "tfHitOver300",
+          "text": "本回合未造成高於300的攻擊傷害：特攻、速度各提升1個等級",
+          "path": "kit[12].clause.body[1].acts[0]"
+        }
+      ]
+    },
+    {
+      "elfId": "arena_15",
+      "elf": "命運龍輪 莫伊萊",
+      "name": "命運龍輪",
+      "route": "kit",
+      "legacyWrapped": false,
+      "flags": [
+        {
+          "category": "reader-review",
+          "reason": "持續狀態寫入須另查事件讀取端；本標記不是判定缺失",
+          "key": "priorityPenaltyTurns",
+          "text": "回合結束時：對手該回合有使用技能則隨機觸發 2 項中的 1 項",
+          "path": "kit[1].clause.body[0].acts[0].p.branches[0].1.acts[2]"
+        },
+        {
+          "category": "reader-review",
+          "reason": "持續狀態寫入須另查事件讀取端；本標記不是判定缺失",
+          "key": "priorityPenaltyTurns",
+          "text": "若對手該回合沒有使用技能，回合結束時觸發上述全部效果",
+          "path": "kit[2].clause.body[5].acts[2]"
+        }
+      ]
+    }
+  ]
+}

@@ -2,8 +2,8 @@ import assert from 'node:assert/strict';
 import * as Blockly from '../src/vendor/blockly/index.js';
 import LegacyBlockly from 'blockly/core';
 import { defineCustomBlocks, buildEntryBlock, createKitBlockParser } from '../src/components/BlocklyBuilder';
-import { DEFAULT_ELVES } from '../src/data/defaultElves';
-import { parseElfBlueprint } from '../src/utils/elfBlueprint';
+import { DEFAULT_ELVES } from '../src/data/defaultElvesLoaded';
+import { parseElfBlueprint, MAX_BLUEPRINT_JSON_DEPTH } from '../src/utils/elfBlueprint';
 import { ATOM_PARAMETER_FIELDS, validateAtomParams, validateKit } from '../src/effects/kitValidation';
 import { ATOMS, runNode, runTimerPayload } from '../src/effects/effectRunner';
 import { normalizeBlockAtom } from '../src/effects/blockParams';
@@ -85,8 +85,8 @@ test('只剩 BOSS 狀態時解除失敗，不得假觸發解除成功回血', ()
   ATOMS.cure_status({},'self',{actor:'p1',activeP1:self,getStatuses,getPlayerState:()=>true,applyHeal:()=>healed++,updateElf:()=>updated++,addLog:()=>{},setPlayerState:()=>{}});
   assert.equal(healed,0); assert.equal(updated,0); assert.deepEqual(getStatuses(self),{'神話':1});
 });
-test('28 原子都有參數白名單；未知欄位、非法數值與未實裝舊積木不能偷渡', () => {
-  assert.equal(Object.keys(ATOM_PARAMETER_FIELDS).length, 28);
+test('執行原子與參數白名單逐項一致；未知欄位、非法數值與未實裝舊積木不能偷渡', () => {
+  assert.deepEqual(Object.keys(ATOM_PARAMETER_FIELDS).sort(),Object.keys(ATOMS).sort());
   for (const id of Object.keys(ATOM_PARAMETER_FIELDS)) assert.throws(() => validateAtomParams(id, { unknown: true }));
   for (const value of [-1, NaN, Infinity, '100']) assert.throws(() => validateAtomParams('extra_damage', { amount: value }));
   for (const id of ['mark_op','force_switch','bad']) assert.throws(() => validateAtomParams(id, {}));
@@ -106,7 +106,7 @@ test('巢狀容器／多分支逐層校驗；錯誤定位到子原子而非只�
   for (let i = 0; i < 14; i++) nested = { atom: 'condition_gate', params: { innerItems: [nested] } };
   assert.throws(() => validateKit([entry(nested.atom, nested.params)]), /12 層/);
 });
-test('32 隻完整圖紙可匯入，訓練／技能／專屬特質無格式回歸', () => {
+test('全部完整圖紙可匯入，訓練／技能／專屬特質無格式回歸，過深 JSON 仍拒絕', () => {
   for (const source of DEFAULT_ELVES) {
     const result = parseElfBlueprint(JSON.stringify({ schemaVersion: 2, manualElf: source }));
     assert.deepEqual(result.elf.baseStats, source.baseStats, source.name);
@@ -114,6 +114,9 @@ test('32 隻完整圖紙可匯入，訓練／技能／專屬特質無格式回�
     for (const extra of source.skills.slice(5)) assert.ok(result.elf.skillPool?.some(s => s.name === extra.name));
     assert.deepEqual(result.elf.alienTraits, source.alienTraits, source.name);
   }
+  let nested: any = 1;
+  for (let i = 0; i <= MAX_BLUEPRINT_JSON_DEPTH; i++) nested = { child: nested };
+  assert.throws(() => parseElfBlueprint(JSON.stringify({ schemaVersion: 2, manualElf: DEFAULT_ELVES[0], unknown: nested })), /資料過深或過多/);
 });
 test('Blockly 真正公開序列化重載保留巢狀順序／傷害範圍／反彈吸取類型', () => {
   defineCustomBlocks();

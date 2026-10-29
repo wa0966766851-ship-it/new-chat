@@ -18,7 +18,7 @@ export const NODE_META: Record<NodeKind, { name: string; glyph: string; hint: st
   elite: { name: "夢魘", glyph: "☠", hint: "精英戰：帶詞綴，必掉遺物" },
   boss: { name: "王座", glyph: "♛", hint: "章節首領" },
   event: { name: "異兆", glyph: "✶", hint: "未知的相遇" },
-  shop: { name: "瞳孔商會", glyph: "⚖", hint: "以賽爾豆、星晶交易" },
+  shop: { name: "瞳孔商會", glyph: "⚖", hint: "以賽爾豆交易遺物與招募令" },
   rest: { name: "星爐", glyph: "♨", hint: "修復、復甦或淬鍊" },
   treasure: { name: "寶匣", glyph: "✧", hint: "擇一遺物" },
   altar: { name: "蝕之祭壇", glyph: "☾", hint: "以代價換取力量" },
@@ -66,6 +66,7 @@ export interface EventOps {
   run: any;
   dice: { chance(p: number): boolean; int(a: number, b: number): number; next(): number };
   beans(n: number): void;
+  /** 星晶 ±n（不會低於 0） */
   shards(n: number): void;
   potions(n: number): void;
   eclipse(n: number): void;
@@ -77,14 +78,19 @@ export interface EventOps {
   curse(): string;
   removeCurse(): string | null;
   empowerRandom(pct: number): string | null;
-  recruitOffer(tier: "low" | "mid" | "high", count: number): void;
+  /** 獲得一張指定款式的招募令（單屬性／雙屬性／任一屬性／任意） */
+  recruitToken(want: "has" | "exact" | "either" | "any"): void;
   battle(kind: "combat" | "elite", reward?: "relic" | "legendary"): void;
+  /** 永久生命 +n */
+  lives(n: number): void;
+  /** 臨時生命 +n（只在當章有效） */
+  tempLives(n: number): void;
   reveal(): void;
   sacrifice(): string | null;
 }
 
 const needBeans = (n: number) => (run: any) => run.beans >= n ? null : `需要 ${n} 賽爾豆`;
-const needShards = (n: number) => (run: any) => run.shards >= n ? null : `需要 ${n} 星晶`;
+const needShards = (n: number) => (run: any) => (run.shards ?? 0) >= n ? null : `需要 ${n} 星晶`;
 const needPotion = (run: any) => run.potions > 0 ? null : "沒有藥劑";
 const needCurse = (run: any) => run.relics.some((id: string) => id.startsWith("curse_")) ? null : "沒有詛咒";
 
@@ -153,7 +159,7 @@ export const EVENTS: EventDef[] = [
     id: "lifepod", title: "漂流救生艙", npc: 4188,
     text: "一艘救生艙撞上你的船殼。艙門結霜，裡面有東西在敲。",
     choices: [
-      { label: "打開艙門", hint: "從 3 隻精靈中擇一加入", apply: o => { o.recruitOffer("mid", 3); return "冷氣散去，裡面不只一個生命。"; } },
+      { label: "打開艙門", hint: "獲得 1 張雙屬性招募令", apply: o => { o.recruitToken("exact"); return "冷氣散去，裡面不只一個生命。一枚刻著兩種印記的令牌落進你手裡。"; } },
       { label: "拆解零件", hint: "獲得 90 賽爾豆", apply: o => { o.beans(90); return "敲擊聲停了。你告訴自己那只是金屬冷縮。"; } },
     ],
   },
@@ -196,7 +202,7 @@ export const EVENTS: EventDef[] = [
     text: "白月與黑月在你頭頂重疊。逆世之瞳低聲說：「選一個，另一個會記住你。」",
     choices: [
       { label: "白月", hint: "全隊恢復 40% 體力，技能 PP 全滿", apply: o => { o.healTeam(.4); o.restorePp(); return "月光像水一樣洗過每一道傷。黑月在你背後慢慢轉過臉。"; } },
-      { label: "黑月", hint: "星晶 +2；蝕度 +12", apply: o => { o.shards(2); o.eclipse(12); return "黑月落下兩顆冰冷的結晶，落在你掌心，還在跳。"; } },
+      { label: "黑月", hint: "星晶 +3；蝕度 +12", apply: o => { o.shards(3); o.eclipse(12); return "黑月落下三枚冰冷的晶體，落在你掌心，還在跳。"; } },
     ],
   },
   {
@@ -226,6 +232,24 @@ export const EVENTS: EventDef[] = [
     ],
   },
   {
+    id: "night_watch", title: "守夜人的燭台", npc: 4620,
+    text: "石臺上排著幾十支燭，每一支代表一條還沒被吹熄的命。守夜人把火柴遞給你，沒有說話。",
+    choices: [
+      { label: "點一支燭", hint: "100 賽爾豆：臨時生命 +2（當章有效）", require: needBeans(100), apply: o => { o.beans(-100); o.tempLives(2); return "兩支燭同時亮起。它們只肯為這一章燒。"; } },
+      { label: "獻上星晶", hint: "2 星晶：永久生命 +1", require: needShards(2), apply: o => { o.shards(-2); o.lives(1); return "星晶化成燭芯。這一支，不會再熄了。"; } },
+      { label: "離開", apply: () => "守夜人把火柴收回去，像是早就知道。" },
+    ],
+  },
+  {
+    id: "stitch_crone", title: "縫命婆婆", npc: 3623,
+    text: "老婆婆坐在針線堆裡，膝上是一件看不出形狀的東西。「命這玩意兒，扯斷了可以再縫。就是疼。」",
+    choices: [
+      { label: "讓她縫", hint: "全隊失去 15% 體力；蝕度 +8：永久生命 +1", apply: o => { o.hurtTeam(.15); o.eclipse(8); o.lives(1); return "針尖穿過的地方不流血，只流出光。你感到身體裡多了一條線。"; } },
+      { label: "請她補一補", hint: "全隊恢復 25% 體力；臨時生命 +1", apply: o => { o.healTeam(.25); o.tempLives(1); return "她三兩下就縫好了傷口。「只補這一陣子，」她說。"; } },
+      { label: "走開", apply: () => "針線聲跟了你一段路，然後停了。" },
+    ],
+  },
+  {
     id: "star_fragment", title: "墜落的星圖", npc: 2656,
     text: "一顆燃燒的星墜在甲板上，燒穿的洞裡是一張地圖，標記著你還沒去過的地方。",
     choices: [
@@ -244,6 +268,6 @@ export const START_PACTS = [
   { id: "weak_body", name: "衰弱之契", desc: "我方體力 −20%" },
   { id: "strong_boss", name: "王權之契", desc: "首領多 1 個詞綴" },
   { id: "no_potions", name: "禁藥之契", desc: "初始藥劑 −2" },
-  { id: "cost_recruit", name: "匱乏之契", desc: "商會精靈契約 +1 星晶" },
+  { id: "cost_recruit", name: "匱乏之契", desc: "商會招募令與星晶價格 +25%" },
   { id: "high_gravity", name: "重力之契", desc: "我方速度 −15%" },
 ] as const;

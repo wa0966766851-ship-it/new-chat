@@ -1,4 +1,4 @@
-import { DEFAULT_ELVES } from "../src/data/defaultElves";
+import { DEFAULT_ELVES } from "../src/data/defaultElvesLoaded";
 
 type Finding = {
   id: number | string;

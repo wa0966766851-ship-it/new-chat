@@ -31,7 +31,11 @@ export function mergeSameStatus<T extends { id: string; duration?: number }>(eff
   for (const e of effects) {
     const i = at.get(e.id);
     if (i === undefined) { at.set(e.id, out.length); out.push(e); continue; }
-    out[i] = { ...out[i], duration: (Number(out[i].duration) || 0) + (Number(e.duration) || 0) };
+    const summed = (Number(out[i].duration) || 0) + (Number(e.duration) || 0);
+    // 2026-10-28：轉化帶明確回合數（durationFixed）時，相加後以該回合數為準，
+    // 不再讓兩筆相加（例：既有凍傷2 + 冰封轉化凍傷3 → 3，不是 5）。
+    const fixed = (e as any).durationFixed ? e.duration : (out[i] as any).durationFixed ? out[i].duration : undefined;
+    out[i] = { ...out[i], duration: fixed ?? summed, ...(fixed !== undefined ? { durationFixed: true } as any : {}) };
   }
   return out;
 }

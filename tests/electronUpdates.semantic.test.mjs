@@ -1,3 +1,4 @@
+import {rm} from 'node:fs/promises';
 import assert from 'node:assert/strict';
 import { createRequire } from 'node:module';
 import { mkdtemp, readFile, writeFile, mkdir, readdir } from 'node:fs/promises';
@@ -11,9 +12,11 @@ const name = '賽爾對戰模擬器-1.0.1-portable.exe';
 const url = `https://github.com/wa0966766851-ship-it/new-chat/releases/download/v1.0.1/${encodeURIComponent(name)}`;
 const release = { tag_name: 'v1.0.1', draft: false, prerelease: false, assets: [{ name, size: bytes.length, digest: `sha256:${sha256}`, browser_download_url: url }] };
 const asset = parseRelease(release, '1.0.0', 'portable');
+const { prepareUpdateManifest } = await import('../scripts/prepare_update_manifest.mjs');
 let passed = 0;
 const check = async (name, run) => { await run(); passed++; console.log(`✓ ${name}`); };
 await mkdir(resolve('build'), { recursive: true }); const temp = await mkdtemp(resolve('build/update-tests-'));
+try {
 await check('semver 數字比較、舊版與同版不下載', () => { assert.equal(compareVersion('1.10.0', '1.2.0'), 1); assert.equal(parseRelease(release, '1.0.1', 'portable').status, 'latest'); });
 for (const mutation of [{ prerelease: true }, { draft: true }, { tag_name: 'main' }, { assets: [] }, { assets: [{ ...release.assets[0], digest: '' }] }])
   await check('拒絕草稿／預覽／缺檔／缺校驗資訊', () => assert.throws(() => parseRelease({ ...release, ...mutation }, '1.0.0', 'portable')));
@@ -21,6 +24,34 @@ for (const bad of ['http://github.com/file', 'https://evil.test/file', 'https://
 await check('未發布 Release 明示，限流明示', async () => {
   assert.equal((await checkRelease('1.0.0', 'portable', async () => new Response('', { status: 404 }))).status, 'unpublished');
   await assert.rejects(checkRelease('1.0.0', 'portable', async () => new Response('', { status: 429 })), /限制/);
+});
+await check('API 限流改讀正式附件，沿用版本與 SHA-256 驗證', async () => {
+  for (const status of [403, 429]) {
+    const calls = [];
+    const fetcher = async (requested, options) => {
+      calls.push(requested);
+      if (requested.includes('api.github.com')) return new Response('', { status });
+      assert.equal(options.redirect, 'manual');
+      if (requested.endsWith('/latest/download/update-manifest.json')) return new Response(null, { status: 302, headers: { location: 'https://release-assets.githubusercontent.com/manifest' } });
+      return new Response(JSON.stringify({ schemaVersion: 1, ...release }));
+    };
+    assert.equal((await checkRelease('1.0.0', 'portable', fetcher)).sha256, sha256);
+    assert.equal(calls.length, 3);
+    assert.equal((await checkRelease('1.0.1', 'portable', fetcher)).status, 'latest');
+  }
+});
+await check('備援錯誤、缺 SHA、預覽版與惡意重新導向均不假裝更新成功', async () => {
+  for (const fallback of [new Response('', { status: 404 }), new Response('html'), new Response(JSON.stringify({ schemaVersion: 1, ...release, prerelease: true })), new Response(JSON.stringify({ schemaVersion: 1, ...release, assets: [{ ...release.assets[0], digest: '' }] })), new Response(null, { status: 302, headers: { location: 'https://evil.test/manifest' } })]) {
+    await assert.rejects(checkRelease('1.0.0', 'portable', async requested => requested.includes('api.github.com') ? new Response('', { status: 429 }) : fallback), /備援/);
+  }
+});
+await check('發布清單必須包含兩種正式 EXE 且保留官方 digest', () => {
+  const installer = { ...release.assets[0], name: name.replace('portable.exe', 'win-x64.exe'), browser_download_url: url.replace('portable.exe', 'win-x64.exe') };
+  const manifest = prepareUpdateManifest({ ...release, assets: [...release.assets, installer] });
+  assert.equal(manifest.schemaVersion, 1); assert.equal(manifest.assets.length, 2);
+  assert.equal(parseRelease(manifest, '1.0.0', 'installer').sha256, sha256);
+  assert.throws(() => prepareUpdateManifest(release), /Windows/);
+  assert.throws(() => prepareUpdateManifest({ ...release, draft: true }), /穩定/);
 });
 await check('允許可信 CDN 重新導向並核對大小和 hash', async () => {
   let calls = 0;
@@ -55,4 +86,6 @@ await check('真正另存新版、舊 EXE 核對備份、存檔備份、原檔�
   assert.equal(await readFile(join(result.folder, 'player-backup.json'), 'utf8'), snapshot); assert.equal(await readFile(originalExe, 'utf8'), 'OLD EXE');
   assert.equal(JSON.parse(await readFile(join(result.folder, 'receipt.json'), 'utf8')).release.sha256, sha256);
 });
-console.log(`桌面更新安全語意：${passed} 項通過；測試副本保留於 ${temp}`);
+console.log(`桌面更新安全語意：${passed} 項通過；測試暫存已排程清理`);
+
+} finally { await rm(temp,{recursive:true,force:true}); }

@@ -1,6 +1,6 @@
 import { addDamageReduction, multiplyDamageReduction } from '../battle/damageReduction';
 /**
- * 通用特性（generalTrait）與異能特質（alienTrait）的戰鬥效果
+ * 通用特性（generalTrait）與異能（alienTrait）的戰鬥效果
  *
  * 過去這兩類特性只能在編輯器裡選擇、在介面上顯示，戰鬥引擎完全沒有讀取（除了「亂舞」「瞬殺」少數被個別魂印引用）。
  * 這裡依 src/data/generalTraits.ts、src/data/alienTraits.ts 的描述逐條實作，資料驅動、不依精靈名稱判斷。
@@ -20,7 +20,7 @@ export function traitNames(elf: Elf | undefined | null): string[] {
   if (!elf) return [];
   return [...new Set(effectSourceViews(elf).flatMap(source => {
     const t = source.alienTraits || {};
-    return [t.generalTrait?.name, t.alienTrait?.name].filter((n): n is string => typeof n === 'string' && n.length > 0);
+    return [t.generalTrait, t.alienTrait].filter(trait => !['kit','description'].includes(trait?.effectMode || 'auto')).map(trait => trait?.name).filter((n): n is string => typeof n === 'string' && n.length > 0);
   }))];
 }
 const has = (elf: Elf | undefined | null, name: string) => traitNames(elf).includes(name);

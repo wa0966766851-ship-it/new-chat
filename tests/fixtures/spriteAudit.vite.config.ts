@@ -1,0 +1,1 @@
+import {defineConfig,mergeConfig} from 'vite';import base from './petAnimation.vite.config';export default mergeConfig(base,defineConfig({build:{rollupOptions:{input:['tests/fixtures/petBattlePreview.html','tests/fixtures/spriteVisualAudit.html']}}}));

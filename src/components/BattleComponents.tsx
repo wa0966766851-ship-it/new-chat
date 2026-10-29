@@ -4,6 +4,7 @@ import { Activity, Crown } from 'lucide-react';
 import { Elf, Skill, BattleLog, BattleMode, BattleItem } from '../types';
 import { getAttributeBadgeColor } from '../utils/statCalculator';
 import { BattleContextProps, BattleContext, useBattle } from './BattleScreen';
+import { formatCompactHud, formatFullNumber } from '../utils/formatBigNumber';
 
 // --- Helper Components ---
 
@@ -119,7 +120,7 @@ export const ExtraElfPanel = ({ side, elves, inline }: { side: "p1" | "p2", elve
             >
               <span>{elf.badge || '✨'}</span>
               <span className="font-bold text-slate-200">{elf.name}</span>
-              <span className={hpPercent > 50 ? 'text-cyan-400 font-bold' : 'text-amber-400 font-bold'}>{elf.currentHp}/{elf.maxHp}</span>
+              <span className={hpPercent > 50 ? 'text-cyan-400 font-bold' : 'text-amber-400 font-bold'} title={`${formatFullNumber(elf.currentHp)}/${formatFullNumber(elf.maxHp)}`}>{formatCompactHud(elf.currentHp)}/{formatCompactHud(elf.maxHp)}</span>
             </div>
           );
         })}
@@ -154,7 +155,7 @@ export const ExtraElfPanel = ({ side, elves, inline }: { side: "p1" | "p2", elve
               </div>
               <div className="flex justify-between items-center text-[9px] font-mono text-slate-400 mb-0.5">
                 <span>HP</span>
-                <span className="font-bold text-slate-200">{elf.currentHp}/{elf.maxHp} ({Math.round(hpPercent)}%)</span>
+                <span className="font-bold text-slate-200" title={`${formatFullNumber(elf.currentHp)}/${formatFullNumber(elf.maxHp)}`}>{formatCompactHud(elf.currentHp)}/{formatCompactHud(elf.maxHp)} ({Math.round(hpPercent)}%)</span>
               </div>
               <div className="relative h-1 bg-slate-900 rounded-full overflow-hidden border border-slate-800/80">
                 <div 

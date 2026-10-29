@@ -1,3 +1,5 @@
+import { combineSettlementCallbacks } from '../battle/settlementReceipt';
+import { addDamageIncrease } from '../battle/damagePipeline';
 import { addDamageReduction } from '../battle/damageReduction';
 import { prdChance } from "../utils/prd";
 import { BattleEventContext, EffectTiming } from "./types";
@@ -10,14 +12,13 @@ export const SuitEffectRegistry: Record<string, (ctx: BattleEventContext, event:
     if (event === EffectTiming.ROUND_START) {
       const self = ctx.self;
       const isAbnormal = self.effects && self.effects.length > 0;
-      const regKey = ctx.actor === "p1" ? "p1RegistryState" : "p2RegistryState";
+      // 通用鍵 opponentSpeedPenalty：先手判定時對手速度減少（戰鬥引擎讀取）。
+      // 過去寫成 setPlayerState(regKey, {...})，鍵落在 registry 的巢狀物件裡，引擎讀不到（2026-10-10 修正）。
       if (!isAbnormal) {
-        ctx.setPlayerState(regKey, { ...ctx.getPlayerState(regKey), morningStarIgnoreSpeed: true });
+        ctx.setPlayerState("opponentSpeedPenalty", 10);
         ctx.addLog(`✨ 【晨曦之星戰甲】：回合開始時不處於異常狀態，當回合忽略對手 10 點速度！`, "effect");
       } else {
-        const state = { ...ctx.getPlayerState(regKey) };
-        delete state.morningStarIgnoreSpeed;
-        ctx.setPlayerState(regKey, state);
+        ctx.setPlayerState("opponentSpeedPenalty", 0);
       }
     }
 
@@ -28,8 +29,8 @@ export const SuitEffectRegistry: Record<string, (ctx: BattleEventContext, event:
         let reduction = 0.1;
         if (self.currentHp < self.maxHp / 2) reduction *= 2;
         addDamageReduction(extraData!.damageComp, reduction);
-      } else {
-        // 造成的攻擊傷害提升10%
+      } else if (!extraData.damageComp.isIncoming && extraData.damageComp.damageCategory === "skill_attack") {
+        // 造成的攻擊傷害提升10%（過去 else 也套用到自己受到的非攻擊傷害，2026-10-11 修正）
         let boost = 0.1;
         if (self.currentHp > self.maxHp / 2) boost *= 2;
         extraData!.damageComp.increasePercent += boost;
@@ -59,7 +60,8 @@ export const SuitEffectRegistry: Record<string, (ctx: BattleEventContext, event:
     // 銀翼騎士套裝：先出手時傷害再額外提升30%
     if (event === EffectTiming.BEFORE_DAMAGE && extraData!.damageComp && !extraData!.damageComp.isIncoming) {
       if (ctx.goesFirst) {
-        extraData!.damageComp.increasePercent += 0.3;
+        // 描述：先出手的額外增傷與基礎增傷為加法結算 → 與套裝基礎 30% 同組加總（共 60%）
+        addDamageIncrease(extraData!.damageComp, 0.3, "suit:silver_knight");
       }
     }
   },
@@ -80,9 +82,14 @@ export const SuitEffectRegistry: Record<string, (ctx: BattleEventContext, event:
   nuclear_armor: (ctx, event, extraData) => {
     // 受到攻擊傷害時反彈對方在場精靈等同於傷害值15%百分比傷害
     if (event === EffectTiming.BEFORE_DAMAGE && extraData!.damageComp?.isIncoming && ctx.skill?.category !== "屬性" && extraData!.damageComp?.damageCategory === "skill_attack") {
-      ctx.applyPercentDamage(ctx.targetSide, 0.15);
-      const reflectDmg = Math.floor(ctx.target.maxHp * 0.15);
-      ctx.addLog(`☢️ 【核能機甲】：反彈對手等同於對方最大體力 15% 的百分比傷害 (${reflectDmg} 點)！`, "damage");
+      // 原文：反彈等同於「傷害值」15% 的百分比傷害 → 以實際結算傷害計算（過去誤用對手最大體力15%，且被抵擋也反彈）
+      const comp = extraData!.damageComp;
+      comp.afterDamage = combineSettlementCallbacks(comp.afterDamage, receipt => {
+        const reflectDmg = Math.floor((receipt.settledAmount || 0) * 0.15);
+        if (reflectDmg <= 0) return;
+        ctx.applyPinkDamage(ctx.targetSide, reflectDmg, "【核能機甲】", undefined, undefined, "percent");
+        ctx.addLog(`☢️ 【核能機甲】：反彈等同於傷害值 15% 的百分比傷害 (${reflectDmg} 點)！`, "damage");
+      });
     }
     // 自身體力低於最大體力1/3時，計算攻擊技能所造成的技能傷害時最終雙防值提升至基礎值的2倍
     if (event === EffectTiming.BEFORE_DAMAGE && extraData!.damageComp?.isIncoming && ctx.skill?.category !== "屬性" && extraData!.damageComp?.damageCategory === "skill_attack") {

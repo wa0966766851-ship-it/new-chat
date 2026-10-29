@@ -10,11 +10,13 @@ import { EFFECT_CATALOG } from '../data/effectCatalog';
 import { ElfAvatar, TypeIcon } from './SeerImages';
 import { statusVisual } from '../battle/effectIcons';
 import { ElfRosterCard } from './ElfRosterCard';
-import { ElfReadOnlyProfile } from './ElfReadOnlyProfile';
+import { ElfSpotlight } from './ElfSpotlight';
 import { readStoredRecord } from '../utils/safeStorage';
 import { getTemplateReviewReason, getTemplateTimingLabel } from '../utils/templateReview';
 import type { Elf } from '../types';
-import { matchesElfQuery } from '../utils/elfSearch';
+import { BossStatusSection } from './BossStatusSection';
+import { applyElfFilter } from '../utils/elfFilter';
+import { ElfFilterBar, useElfFilter } from './shared/ElfPicker';
 
 import { useGameData } from '../contexts/GameDataContext';
 
@@ -27,9 +29,10 @@ const Encyclopedia: React.FC<EncyclopediaProps> = ({ onClose, initialTab = 'elve
   const { allElves } = useGameData();
   const [activeTab, setActiveTab] = useState<'status' | 'types' | 'mechanics' | 'editor' | 'effectQuery' | 'elves'>(initialTab);
   const [searchQuery, setSearchQuery] = useState('');
-  const [elfTypes, setElfTypes] = useState<string[]>([]);
+  const elfFilter = useElfFilter();
   const [selectedElf, setSelectedElf] = useState<Elf | null>(null);
-  const deferredElfQuery = React.useDeferredValue(searchQuery);
+  const deferredElfSpec = React.useDeferredValue(elfFilter.spec);
+  const shownElves = React.useMemo(() => applyElfFilter(allElves, deferredElfSpec), [allElves, deferredElfSpec]);
   const [referenceLibrary, setReferenceLibrary] = useState<CardTemplateModule[]>([]);
   const [referenceError, setReferenceError] = useState(false);
   React.useEffect(() => {
@@ -299,7 +302,7 @@ const Encyclopedia: React.FC<EncyclopediaProps> = ({ onClose, initialTab = 'elve
     RESTRICTIVE: { label: '【限制類異常】', description: '限制切換、無法使用藥劑等戰鬥操作限制。', color: 'text-indigo-400' },
     EVOLUTIONARY: { label: '【衍化類異常】', description: '異常結束或觸發條件後轉化為另一種狀態。', color: 'text-emerald-400' },
     AUXILIARY: { label: '【附屬類異常】', description: '星附屬、詛咒附屬、特殊戰場狀態等。', color: 'text-cyan-400' },
-    BOSS_ONLY: { label: '【BOSS專用異常】', description: '神話、免疫等 BOSS 專屬附屬異常。', color: 'text-rose-400' },
+    BOSS_ONLY: { label: '【BOSS專用異常】', description: '免疫、神話與 36 條原廠 BOSS 特性，依性質分子類；BOSS 專用、無回合數。', color: 'text-rose-400' },
     NO_EFFECT: { label: '【無效果類異常】', description: '異常抵抗轉化等無效果類異常。', color: 'text-slate-400' },
   };
 
@@ -357,33 +360,11 @@ const Encyclopedia: React.FC<EncyclopediaProps> = ({ onClose, initialTab = 'elve
         <div className="flex-1 overflow-y-auto p-6 space-y-8">
           {activeTab === 'elves' && (
             <div className="space-y-6 animate-fade-in pb-8">
-              <div className="flex gap-4">
-                <div className="relative flex-1">
-                  <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
-                  <input
-                    type="text"
-                    placeholder="名稱、ID、屬性（可用空白組合）"
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="ios-search w-full pl-10 pr-4 py-2 text-[13px] text-slate-200 placeholder-slate-500 focus:outline-none"
-                  />
-                </div>
-              </div>
-              <details className="ios-card p-3">
-                <summary className="cursor-pointer text-sm text-slate-200">屬性篩選{elfTypes.length ? `（${elfTypes.join('＋')}）` : '（全部）'}</summary>
-                <div className="flex flex-wrap gap-2 pt-3">
-                  <button className="ios-button px-3 py-1.5 text-xs" onClick={() => setElfTypes([])}>全部</button>
-                  {SEER_TYPES.map(type => <button key={type} aria-pressed={elfTypes.includes(type)} className="elf-type-filter flex items-center gap-1.5 rounded-xl border border-white/10 px-2 py-1.5 text-xs" onClick={() => setElfTypes(prev => prev.includes(type) ? prev.filter(t => t !== type) : [...prev, type])}><TypeIcon type={type} size={18} showLabelWhenMissing={false} />{type}</button>)}
-                </div>
-              </details>
+              <ElfFilterBar state={elfFilter} count={`${shownElves.length} / ${allElves.length}`} />
               <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-                {allElves.filter(elf => matchesElfQuery(elf, deferredElfQuery, elfTypes)).map((elf, index) => <ElfRosterCard key={`${elf.id}-${index}`} elf={elf} onDetail={() => setSelectedElf(elf)} />)}
+                {shownElves.map((elf, index) => <ElfRosterCard key={`${elf.id}-${index}`} elf={elf} onDetail={() => setSelectedElf(elf)} />)}
               </div>
-              {selectedElf && <div role="dialog" aria-modal="true" aria-label="百科精靈介紹" className="fixed inset-0 z-[11000] bg-black/65 flex items-center justify-center p-3 sm:p-6" onClick={() => setSelectedElf(null)}>
-                <div className="ios-panel ios-dialog w-full max-w-3xl max-h-[88vh] overflow-y-auto p-4 sm:p-6" onClick={event => event.stopPropagation()}>
-                  <ElfReadOnlyProfile key={selectedElf.id} elf={selectedElf} onClose={() => setSelectedElf(null)} />
-                </div>
-              </div>}
+              {selectedElf && <ElfSpotlight elves={allElves} selectedElf={allElves.find(e=>e.id===selectedElf.id) ?? selectedElf} onClose={()=>setSelectedElf(null)}/>}
             </div>
           )}
 
@@ -463,7 +444,7 @@ const Encyclopedia: React.FC<EncyclopediaProps> = ({ onClose, initialTab = 'elve
                   });
 
                   // Apply text search query
-                  if (statusSearchQuery.trim()) {
+                  if (statusSearchQuery.trim() && catKey !== 'BOSS_ONLY') {
                     const q = statusSearchQuery.toLowerCase();
                     statusesInCategory = statusesInCategory.filter(([_, entry]) =>
                       entry.name.toLowerCase().includes(q) ||
@@ -481,7 +462,7 @@ const Encyclopedia: React.FC<EncyclopediaProps> = ({ onClose, initialTab = 'elve
                         <h3 className={`text-lg font-bold ${cat.color}`}>{cat.label} (共 {statusesInCategory.length} 個)</h3>
                         <span className="text-xs text-slate-500 ml-2">— {cat.description}</span>
                       </div>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {catKey === 'BOSS_ONLY' ? <BossStatusSection query={statusSearchQuery} entries={statusesInCategory.map(([, e]) => ({ name: e.name, description: e.description }))} /> : <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         {statusesInCategory.map(([statusName, status]) => (
                           <div key={statusName} className="ios-card p-4 flex gap-4">
                             <div className="flex-1">
@@ -504,7 +485,7 @@ const Encyclopedia: React.FC<EncyclopediaProps> = ({ onClose, initialTab = 'elve
                             </div>
                           </div>
                         ))}
-                      </div>
+                      </div>}
                     </section>
                   );
                 })}

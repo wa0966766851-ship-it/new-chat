@@ -1,0 +1,577 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-10-18T14:47:08.160Z",
+  "note": "nonWrappedKitRoutes只是路由分類，不是完整遷移或正確率；flags必須人工查證，不能當錯誤份數。semanticAccuracy=null代表尚無全來源代表性驗收數據。",
+  "summary": {
+    "definitions": 397,
+    "wiredIncludingWrappers": 397,
+    "legacyWrapped": 0,
+    "nonWrappedKitRoutes": 397,
+    "unconnected": 0,
+    "definitionsNeedingPlaceholderReview": 3,
+    "definitionsWithContractIssues": 5,
+    "semanticAccuracy": null
+  },
+  "remaining": [],
+  "reviewRequired": [
+    {
+      "elfId": "5002",
+      "elf": "帝皇之盾",
+      "name": "盾",
+      "route": "kit",
+      "legacyWrapped": false,
+      "flags": [
+        {
+          "category": "reader-review",
+          "reason": "持續狀態寫入須另查事件讀取端；本標記不是判定缺失",
+          "key": "attackPpMultiplierTurns",
+          "text": "自身被擊敗時將剩餘護盾值轉化為守護印記附加給下一隻登場的己方精靈，並消除對手能力提升狀態（消除成功則令對手2回合內攻擊技能PP消耗提升3倍）",
+          "path": "kit[3].clause.body[2].acts[0]"
+        },
+        {
+          "category": "reader-review",
+          "reason": "持續狀態寫入須另查事件讀取端；本標記不是判定缺失",
+          "key": "attackPpMultiplierValue",
+          "text": "自身被擊敗時將剩餘護盾值轉化為守護印記附加給下一隻登場的己方精靈，並消除對手能力提升狀態（消除成功則令對手2回合內攻擊技能PP消耗提升3倍）",
+          "path": "kit[3].clause.body[2].acts[1]"
+        }
+      ]
+    },
+    {
+      "elfId": "5010",
+      "elf": "星光·魯斯王",
+      "name": "星光·浪打千擊",
+      "route": "kit",
+      "legacyWrapped": false,
+      "flags": [
+        {
+          "category": "reader-review",
+          "reason": "持續狀態寫入須另查事件讀取端；本標記不是判定缺失",
+          "key": "attackMissTurns",
+          "text": "消除對手回合類效果，消除成功則對手2回合內攻擊技能MISS",
+          "path": "kit[3].clause.body[1].acts[0]"
+        }
+      ]
+    },
+    {
+      "elfId": "5014",
+      "elf": "聖光斯嘉麗",
+      "name": "燦",
+      "route": "kit",
+      "legacyWrapped": false,
+      "flags": [
+        {
+          "category": "contract",
+          "reason": "連鎖觸發尚無等價事件或與節點不符",
+          "text": "自身使用技能時：令自身特攻、速度+2、命中+1；附加對手特防、速度-2、命中-1",
+          "path": "kit[2]"
+        }
+      ]
+    },
+    {
+      "elfId": "5016",
+      "elf": "變革·馬爾修斯",
+      "name": "械",
+      "route": "kit",
+      "legacyWrapped": false,
+      "flags": [
+        {
+          "category": "contract",
+          "reason": "連鎖觸發尚無等價事件或與節點不符",
+          "text": "每次選擇使用第五技能時：吸取對手最大體力的⅓；若與極速機甲組合時則於使用技能後切換成與毀滅機甲進行組合；若與毀滅機甲組合時則於使用技能後切換成與極速機甲進行組合進行戰鬥",
+          "path": "kit[2]"
+        }
+      ]
+    },
+    {
+      "elfId": "5019",
+      "elf": "眾神之父·奧丁",
+      "name": "ᛏ",
+      "route": "kit",
+      "legacyWrapped": false,
+      "flags": [
+        {
+          "category": "contract",
+          "reason": "連鎖觸發尚無等價事件或與節點不符",
+          "text": "ᛈ：激活後直到下場前持有者每次選擇該技能轉化為使用自身技能中與對手所選擇使用技能相同位置技能",
+          "path": "kit[15]"
+        }
+      ]
+    },
+    {
+      "elfId": "5021",
+      "elf": "治癒.龍魂再臨 次元龍",
+      "name": "遺典.妄世律裁",
+      "route": "kit",
+      "legacyWrapped": false,
+      "flags": [
+        {
+          "category": "reader-review",
+          "reason": "持續狀態寫入須另查事件讀取端；本標記不是判定缺失",
+          "key": "wangshiHealFactor",
+          "text": "■ 龍魂：自身體力大於對手時攻擊傷害的100%回復自身體力值，自身體力低於對手時附加雙方體力差值70%的真實傷害",
+          "path": "kit[5].clause.body[0].acts[0]"
+        }
+      ]
+    },
+    {
+      "elfId": "5031",
+      "elf": "六界神王",
+      "name": "界",
+      "route": "kit",
+      "legacyWrapped": false,
+      "flags": [
+        {
+          "category": "reader-review",
+          "reason": "持續狀態寫入須另查事件讀取端；本標記不是判定缺失",
+          "key": "priorityBoostTurns",
+          "text": "若自身不處於全屬性能力提升狀態，戰鬥階段結束時令自身全屬性+1且下回合所有技能先制+2",
+          "path": "kit[1].clause.body[0].acts[1]"
+        },
+        {
+          "category": "reader-review",
+          "reason": "持續狀態寫入須另查事件讀取端；本標記不是判定缺失",
+          "key": "priorityBoostValue",
+          "text": "若自身不處於全屬性能力提升狀態，戰鬥階段結束時令自身全屬性+1且下回合所有技能先制+2",
+          "path": "kit[1].clause.body[0].acts[2]"
+        }
+      ]
+    },
+    {
+      "elfId": "5032",
+      "elf": "星核寰宇·艾斯菲亞",
+      "name": "寰宇幻影閃",
+      "route": "kit",
+      "legacyWrapped": false,
+      "flags": [
+        {
+          "category": "reader-review",
+          "reason": "持續狀態寫入須另查事件讀取端；本標記不是判定缺失",
+          "key": "nextElfAstralPriority",
+          "text": "🎯 未擊敗對手則下2回合自身所有技能先制+2\r\n🎯 擊敗對手則對手下隻出戰精靈出戰前2回合內先制效果失效",
+          "path": "kit[4].clause.body[1].acts[0]"
+        }
+      ]
+    },
+    {
+      "elfId": "5033",
+      "elf": "星軌重構·艾斯菲格",
+      "name": "寰宇星軌陣",
+      "route": "kit",
+      "legacyWrapped": false,
+      "flags": [
+        {
+          "category": "reader-review",
+          "reason": "持續狀態寫入須另查事件讀取端；本標記不是判定缺失",
+          "key": "nextElfAstralPriority",
+          "text": "🎯 未擊敗對手則下2回合自身所有技能先制+2\r\n🎯 擊敗對手則對手下隻出戰精靈出戰前2回合內先制-2",
+          "path": "kit[4].clause.body[1].acts[0]"
+        }
+      ]
+    },
+    {
+      "elfId": "5035",
+      "elf": "御天龍神·哈莫",
+      "name": "逐波",
+      "route": "kit",
+      "legacyWrapped": false,
+      "flags": [
+        {
+          "category": "reader-review",
+          "reason": "持續狀態寫入須另查事件讀取端；本標記不是判定缺失",
+          "key": "blkAtkSpatkSum",
+          "text": "■ 結算技能傷害時以自身攻擊、特攻值總和作為自身特攻值計算，若自身存在藍色龍鱗，則以水系、龍系中對對手的最優屬性計算傷害且當回合結束時重置自身被對手消除的強化、回合類效果，若自身不擁有藍色龍鱗則獲得水系技能本系加成",
+          "path": "kit[2].clause.body[0].acts[0]"
+        },
+        {
+          "category": "reader-review",
+          "reason": "持續狀態寫入須另查事件讀取端；本標記不是判定缺失",
+          "key": "grantStabThisAction",
+          "text": "■ 結算技能傷害時以自身攻擊、特攻值總和作為自身特攻值計算，若自身存在藍色龍鱗，則以水系、龍系中對對手的最優屬性計算傷害且當回合結束時重置自身被對手消除的強化、回合類效果，若自身不擁有藍色龍鱗則獲得水系技能本系加成",
+          "path": "kit[2].clause.body[1].elseActs[0]"
+        },
+        {
+          "category": "reader-review",
+          "reason": "持續狀態寫入須另查事件讀取端；本標記不是判定缺失",
+          "key": "hamoRestoreRound",
+          "text": "■ 結算技能傷害時以自身攻擊、特攻值總和作為自身特攻值計算，若自身存在藍色龍鱗，則以水系、龍系中對對手的最優屬性計算傷害且當回合結束時重置自身被對手消除的強化、回合類效果，若自身不擁有藍色龍鱗則獲得水系技能本系加成",
+          "path": "kit[2].clause.body[1].acts[0]"
+        }
+      ]
+    },
+    {
+      "elfId": "5035",
+      "elf": "御天龍神·哈莫",
+      "name": "燼世",
+      "route": "kit",
+      "legacyWrapped": false,
+      "flags": [
+        {
+          "category": "reader-review",
+          "reason": "持續狀態寫入須另查事件讀取端；本標記不是判定缺失",
+          "key": "blkAtkSpatkSum",
+          "text": "■ 結算技能傷害時以自身攻擊、特攻值總和作為自身特攻值計算，若自身存在紅色龍鱗，則以火系、龍系中對對手的最優屬性計算傷害且當回合結束時重置自身被對手消除的強化、回合類效果，若自身不擁有紅色龍鱗則獲得火系技能本系加成",
+          "path": "kit[2].clause.body[0].acts[0]"
+        },
+        {
+          "category": "reader-review",
+          "reason": "持續狀態寫入須另查事件讀取端；本標記不是判定缺失",
+          "key": "grantStabThisAction",
+          "text": "■ 結算技能傷害時以自身攻擊、特攻值總和作為自身特攻值計算，若自身存在紅色龍鱗，則以火系、龍系中對對手的最優屬性計算傷害且當回合結束時重置自身被對手消除的強化、回合類效果，若自身不擁有紅色龍鱗則獲得火系技能本系加成",
+          "path": "kit[2].clause.body[1].elseActs[0]"
+        },
+        {
+          "category": "reader-review",
+          "reason": "持續狀態寫入須另查事件讀取端；本標記不是判定缺失",
+          "key": "hamoRestoreRound",
+          "text": "■ 結算技能傷害時以自身攻擊、特攻值總和作為自身特攻值計算，若自身存在紅色龍鱗，則以火系、龍系中對對手的最優屬性計算傷害且當回合結束時重置自身被對手消除的強化、回合類效果，若自身不擁有紅色龍鱗則獲得火系技能本系加成",
+          "path": "kit[2].clause.body[1].acts[0]"
+        }
+      ]
+    },
+    {
+      "elfId": "5035",
+      "elf": "御天龍神·哈莫",
+      "name": "纏根",
+      "route": "kit",
+      "legacyWrapped": false,
+      "flags": [
+        {
+          "category": "reader-review",
+          "reason": "持續狀態寫入須另查事件讀取端；本標記不是判定缺失",
+          "key": "blkAtkSpatkSum",
+          "text": "■ 結算技能傷害時以自身攻擊、特攻值總和作為自身特攻值計算，若自身存在綠色龍鱗，則以草系、龍系中對對手的最優屬性計算傷害且當回合結束時重置自身被對手消除的強化、回合類效果，若自身不擁有綠色龍鱗則獲得草系技能本系加成",
+          "path": "kit[2].clause.body[0].acts[0]"
+        },
+        {
+          "category": "reader-review",
+          "reason": "持續狀態寫入須另查事件讀取端；本標記不是判定缺失",
+          "key": "grantStabThisAction",
+          "text": "■ 結算技能傷害時以自身攻擊、特攻值總和作為自身特攻值計算，若自身存在綠色龍鱗，則以草系、龍系中對對手的最優屬性計算傷害且當回合結束時重置自身被對手消除的強化、回合類效果，若自身不擁有綠色龍鱗則獲得草系技能本系加成",
+          "path": "kit[2].clause.body[1].elseActs[0]"
+        },
+        {
+          "category": "reader-review",
+          "reason": "持續狀態寫入須另查事件讀取端；本標記不是判定缺失",
+          "key": "hamoRestoreRound",
+          "text": "■ 結算技能傷害時以自身攻擊、特攻值總和作為自身特攻值計算，若自身存在綠色龍鱗，則以草系、龍系中對對手的最優屬性計算傷害且當回合結束時重置自身被對手消除的強化、回合類效果，若自身不擁有綠色龍鱗則獲得草系技能本系加成",
+          "path": "kit[2].clause.body[1].acts[0]"
+        }
+      ]
+    },
+    {
+      "elfId": "5035",
+      "elf": "御天龍神·哈莫",
+      "name": "龍神·御天陣",
+      "route": "kit",
+      "legacyWrapped": false,
+      "flags": [
+        {
+          "category": "reader-review",
+          "reason": "持續狀態寫入須另查事件讀取端；本標記不是判定缺失",
+          "key": "minimumTypeMultiplierThisAction",
+          "text": "■ 攻擊時造成的傷害不會出現微弱（克制關係為微弱時都變成普通）",
+          "path": "kit[5].clause.body[0].acts[0]"
+        },
+        {
+          "category": "reader-review",
+          "reason": "持續狀態寫入須另查事件讀取端；本標記不是判定缺失",
+          "key": "yutianPowerBoost",
+          "text": "🎯 技能威力提升150%，後出手效果翻倍",
+          "path": "kit[10].clause.body[0].acts[0]"
+        },
+        {
+          "category": "reader-review",
+          "reason": "持續狀態寫入須另查事件讀取端；本標記不是判定缺失",
+          "key": "yutianPowerBoost",
+          "text": "🎯 技能威力提升150%，後出手效果翻倍",
+          "path": "kit[10].clause.body[1].acts[0]"
+        }
+      ]
+    },
+    {
+      "elfId": "arena_12",
+      "elf": "無為龍者",
+      "name": "千秋虔",
+      "route": "kit",
+      "legacyWrapped": false,
+      "flags": [
+        {
+          "category": "placeholder",
+          "reason": "有具體效果文字但動作為noop，須核對是否缺實作",
+          "text": "🎯 若擊敗臣服的對手，下一隻出場的對手也進入臣服（於擊敗後節點結算）",
+          "path": "kit[4].clause.body[0].acts[0]"
+        }
+      ]
+    },
+    {
+      "elfId": "arena_12",
+      "elf": "無為龍者",
+      "name": "百法拜",
+      "route": "kit",
+      "legacyWrapped": false,
+      "flags": [
+        {
+          "category": "reader-review",
+          "reason": "持續狀態寫入須另查事件讀取端；本標記不是判定缺失",
+          "key": "baifaDrainTurns",
+          "text": "🎯 4 回合內，每次使用技能吸取對手最大體力的 1/3；自身低於一半體力時吸取翻倍",
+          "path": "kit[2].clause.body[0].acts[0]"
+        }
+      ]
+    },
+    {
+      "elfId": "arena_12",
+      "elf": "無為龍者",
+      "name": "十玄釋",
+      "route": "kit",
+      "legacyWrapped": false,
+      "flags": [
+        {
+          "category": "reader-review",
+          "reason": "持續狀態寫入須另查事件讀取端；本標記不是判定缺失",
+          "key": "shixuanTurns",
+          "text": "🎯 4 回合內，對手使用屬性技能後，自身恢復最大體力的 1/3 並造成等量百分比傷害；對手使用攻擊技能後，100% 使其【束縛】",
+          "path": "kit[2].clause.body[0].acts[0]"
+        }
+      ]
+    },
+    {
+      "elfId": "arena_12",
+      "elf": "無為龍者",
+      "name": "無相諦",
+      "route": "kit",
+      "legacyWrapped": false,
+      "flags": [
+        {
+          "category": "placeholder",
+          "reason": "零固定數值傷害，須核對是否為佔位",
+          "text": "> 萬相乖離使本技能威力 +50（每層），六項全部取消後不再增加威力",
+          "path": "kit[5].clause.body[0].acts[0]"
+        },
+        {
+          "category": "placeholder",
+          "reason": "有具體效果文字但動作為noop，須核對是否缺實作",
+          "text": "> 自身擊敗對手後，令對方全部陣亡精靈消逝（於擊敗後節點結算）",
+          "path": "kit[6].clause.body[0].acts[0]"
+        }
+      ]
+    },
+    {
+      "elfId": "arena_13",
+      "elf": "龍錄天鋒",
+      "name": "專屬特性",
+      "route": "kit",
+      "legacyWrapped": false,
+      "flags": [
+        {
+          "category": "reader-review",
+          "reason": "持續狀態寫入須另查事件讀取端；本標記不是判定缺失",
+          "key": "tfHitOver300",
+          "text": "本回合未造成高於300的攻擊傷害：特攻、速度各提升1個等級",
+          "path": "kit[12].clause.body[1].acts[0]"
+        }
+      ]
+    },
+    {
+      "elfId": "arena_13",
+      "elf": "龍錄天鋒",
+      "name": "鋒毫浸血雨",
+      "route": "kit",
+      "legacyWrapped": false,
+      "flags": [
+        {
+          "category": "reader-review",
+          "reason": "持續狀態寫入須另查事件讀取端；本標記不是判定缺失",
+          "key": "fenghaoBloodRainArmed",
+          "text": "🎯 下 1 回合攻擊命中時，消耗自身目前體力的 1/2，並對對手造成等量百分比傷害",
+          "path": "kit[1].clause.body[0].acts[0]"
+        },
+        {
+          "category": "reader-review",
+          "reason": "持續狀態寫入須另查事件讀取端；本標記不是判定缺失",
+          "key": "fenghaoPressureTurns",
+          "text": "🎯 2 回合內每回合使用技能時，令對手攻擊、特攻、速度各 −1",
+          "path": "kit[3].clause.body[0].acts[0]"
+        },
+        {
+          "category": "reader-review",
+          "reason": "持續狀態寫入須另查事件讀取端；本標記不是判定缺失",
+          "key": "fenghaoPressureFallback",
+          "text": "> 若該回合未觸發，則令對手下 2 回合攻擊技能無效",
+          "path": "kit[4].clause.body[0].acts[0]"
+        }
+      ]
+    },
+    {
+      "elfId": "arena_14",
+      "elf": "無極聖武",
+      "name": "無極聖武",
+      "route": "kit",
+      "legacyWrapped": false,
+      "flags": [
+        {
+          "category": "contract",
+          "reason": "連鎖觸發尚無等價事件或與節點不符",
+          "text": "自身攻擊無視對手的能力提升效果、護盾效果與攻擊技能免疫效果",
+          "path": "kit[2]"
+        }
+      ]
+    },
+    {
+      "elfId": "arena_15",
+      "elf": "命運龍輪 莫伊萊",
+      "name": "命運龍輪",
+      "route": "kit",
+      "legacyWrapped": false,
+      "flags": [
+        {
+          "category": "reader-review",
+          "reason": "持續狀態寫入須另查事件讀取端；本標記不是判定缺失",
+          "key": "priorityPenaltyTurns",
+          "text": "回合結束時：對手該回合有使用技能則隨機觸發 2 項中的 1 項",
+          "path": "kit[1].clause.body[0].acts[0].p.branches[0].1.acts[2]"
+        },
+        {
+          "category": "reader-review",
+          "reason": "持續狀態寫入須另查事件讀取端；本標記不是判定缺失",
+          "key": "priorityPenaltyTurns",
+          "text": "若對手該回合沒有使用技能，回合結束時觸發上述全部效果",
+          "path": "kit[2].clause.body[5].acts[2]"
+        }
+      ]
+    },
+    {
+      "elfId": "arena_16",
+      "elf": "鎮世龍魂・龍之治癒",
+      "name": "龍之治癒",
+      "route": "kit",
+      "legacyWrapped": false,
+      "flags": [
+        {
+          "category": "contract",
+          "reason": "連鎖觸發尚無等價事件或與節點不符",
+          "text": "首次使用技能欄第 1～4 個技能時，依序喚醒對應龍",
+          "path": "kit[1]"
+        },
+        {
+          "category": "contract",
+          "reason": "連鎖觸發尚無等價事件或與節點不符",
+          "text": "四龍全部喚醒後，使用第五技能喚醒【真龍・治癒】",
+          "path": "kit[4]"
+        },
+        {
+          "category": "contract",
+          "reason": "連鎖觸發尚無等價事件或與節點不符",
+          "text": "真龍・治癒令所有技能無視 PP 限制，使用技能時額外使用 4 次",
+          "path": "kit[5]"
+        }
+      ]
+    },
+    {
+      "elfId": "arena_16",
+      "elf": "鎮世龍魂・龍之治癒",
+      "name": "挨打要立正",
+      "route": "kit",
+      "legacyWrapped": false,
+      "flags": [
+        {
+          "category": "reader-review",
+          "reason": "持續狀態寫入須另查事件讀取端；本標記不是判定缺失",
+          "key": "dragonSoulSource",
+          "text": "🎯 自身獲得【龍魂之源】並全屬性 +1",
+          "path": "kit[1].clause.body[0].acts[0]"
+        },
+        {
+          "category": "reader-review",
+          "reason": "持續狀態寫入須另查事件讀取端；本標記不是判定缺失",
+          "key": "drain",
+          "text": "🎯 3 回合內，每回合吸取對手最大體力 1/3；對手未受到百分比傷害時，改為造成等量真實傷害並吸取",
+          "path": "kit[2].clause.body[0].acts[0]"
+        }
+      ]
+    },
+    {
+      "elfId": "arena_16",
+      "elf": "鎮世龍魂・龍之治癒",
+      "name": "幽魔相嘯",
+      "route": "kit",
+      "legacyWrapped": false,
+      "flags": [
+        {
+          "category": "reader-review",
+          "reason": "持續狀態寫入須另查事件讀取端；本標記不是判定缺失",
+          "key": "redTrue",
+          "text": "> 下次【赤龍】附加傷害改為真實傷害",
+          "path": "kit[3].clause.body[0].acts[0]"
+        },
+        {
+          "category": "placeholder",
+          "reason": "零固定數值傷害，須核對是否為佔位",
+          "text": "> 附加等同雙方被消除護盾與護罩總值的固定傷害",
+          "path": "kit[5].clause.body[0].acts[0]"
+        }
+      ]
+    },
+    {
+      "elfId": "arena_16",
+      "elf": "鎮世龍魂・龍之治癒",
+      "name": "雅髯獅嘯",
+      "route": "kit",
+      "legacyWrapped": false,
+      "flags": [
+        {
+          "category": "reader-review",
+          "reason": "持續狀態寫入須另查事件讀取端；本標記不是判定缺失",
+          "key": "yaranPowerBonus",
+          "text": "🎯 吸取對手的能力提升",
+          "path": "kit[0].clause.body[2].acts[0]"
+        },
+        {
+          "category": "reader-review",
+          "reason": "持續狀態寫入須另查事件讀取端；本標記不是判定缺失",
+          "key": "yaranPowerBoost",
+          "text": "■ 自身滿體力時技能威力提升 50%，先出手時提升效果改為 100%",
+          "path": "kit[1].clause.body[0].acts[0]"
+        },
+        {
+          "category": "reader-review",
+          "reason": "持續狀態寫入須另查事件讀取端；本標記不是判定缺失",
+          "key": "yaranPowerBoost",
+          "text": "■ 自身滿體力時技能威力提升 50%，先出手時提升效果改為 100%",
+          "path": "kit[1].clause.body[1].acts[0]"
+        },
+        {
+          "category": "reader-review",
+          "reason": "持續狀態寫入須另查事件讀取端；本標記不是判定缺失",
+          "key": "allHitEffectNullTurns",
+          "text": "🎯 解除自身所有異常狀態，成功時令對手下 2 回合所有技能的附加效果失效",
+          "path": "kit[2].clause.body[1].acts[0]"
+        },
+        {
+          "category": "reader-review",
+          "reason": "持續狀態寫入須另查事件讀取端；本標記不是判定缺失",
+          "key": "utilityHitEffectNullTurns",
+          "text": "■ 技能無效時，消除對手回合類效果，令對手【疲憊】3 回合並使其下 3 回合屬性技能命中效果失效，恢復自身全部體力",
+          "path": "kit[4].clause.body[0].acts[2]"
+        }
+      ]
+    },
+    {
+      "elfId": "arena_16",
+      "elf": "鎮世龍魂・龍之治癒",
+      "name": "但願不會是個怪物",
+      "route": "kit",
+      "legacyWrapped": false,
+      "flags": [
+        {
+          "category": "reader-review",
+          "reason": "持續狀態寫入須另查事件讀取端；本標記不是判定缺失",
+          "key": "capOpponentPriorityThisTurn",
+          "text": "■ 使用時自身獲得【龍魂之力】；若使用前已擁有，對手先制等級無法高於自身，且本技能固定按最高克制倍率計算",
+          "path": "kit[1].clause.body[0].acts[0]"
+        }
+      ]
+    }
+  ]
+}

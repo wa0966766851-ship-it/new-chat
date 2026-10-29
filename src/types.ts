@@ -1,5 +1,6 @@
 import { AbilityDefinition } from './effects/types';
 import { KitEntry } from './effects/effectSystem.schema';
+import type { EffectExecutionMode } from './effects/effectConnection';
 
 export interface BaseStats {
   hp: number;
@@ -11,6 +12,8 @@ export interface BaseStats {
 }
 
 export interface SoulMark {
+  effectMode?: EffectExecutionMode;
+  kit?: KitEntry[];
   name: string;
   description: string;
   effectType: 'paralyze_chance' | 'burn_chance' | 'heal_on_turn_end' | 'damage_boost' | 'shield' | 'status_immune' | 'speed_boost' | 'custom' | 'none';
@@ -33,11 +36,18 @@ export interface SkillBadge {
   bg?: string;    // e.g. "bg-cyan-950/80"
   border?: string;// e.g. "border-cyan-500/50"
   animate?: string; // e.g. "animate-pulse"
+  polarity?: 'positive' | 'negative'; // 效果面板色調（缺省：激活→正面、未激活→中性）
 }
 
 export interface Skill {
+  effectMode?: EffectExecutionMode;
   /** 僅本次選擇快照使用，不覆寫背包技能。 */
   battleSlot?: number;
+  /** 固有積木產生的本次公式視圖，不回寫背包能力或技能。 */
+  resolvedCombatStats?: {attack:number;defense:number};
+  resolvedTypeMultiplier?:number;
+  resolvedAttackStats?: ('atk'|'spatk')[];
+  resolvedForceStab?: boolean;
   name: string;
   type: string; // e.g. "電", "火", "草", "水", "無屬性"
   category: '物理' | '特殊' | '屬性';
@@ -45,6 +55,7 @@ export interface Skill {
   pp: number;
   currentPp?: number;
   maxPp?: number;
+  ppUnlimited?: boolean; // 原廠 PP 0/0：選招不受PP限制、使用不消耗PP
   charge?: number; // 充能 (馬爾修斯專屬機制)
   accuracy?: number; // 命中率 (0-100), default 100
   isSureHit?: boolean; // 是否必中
@@ -129,6 +140,8 @@ export interface BattleEffect {
   binding?: "SELF" | "OPPONENT" | string;
   statusCategory?: string;
   statChanges?: any[];
+  /** 轉化產生的異常帶明確回合數：同名合併時以此為準，不再相加（2026-10-28）。 */
+  durationFixed?: boolean;
 }
 
 export interface StatusEffect {
@@ -165,8 +178,15 @@ export interface StatChange {
 }
 
 export interface Elf {
+  /** 內建效果版本指紋；只供讀檔升級，戰鬥不依此執行。 */
+  builtinEffectBindings?: { schemaVersion: 1; elfId: string; definitions: Record<string, string> };
   /** 開局背包另一區相同位數的快照；不把待命精靈加入勝敗判定隊伍。 */
   initialCounterpart?: Elf;
+  /** 開局背包資料（出戰／待命兩區各自的原始位數）。待命快照在所有出戰精靈間共享同一份參考，
+   *  不受換人、召喚、死亡、消逝後的動態隊伍重排影響；詳見 battle/bagTargets.ts。 */
+  initialBagGroup?: 'active' | 'standby';
+  initialBagSlot?: number;
+  initialBench?: Elf[];
   /** 同一持有者重複取得效果時，隔離上一次幻化的私有計數。 */
   illusionGeneration?: number;
   /** 幻化保持戰鬥身分與自身技能欄位；外觀／同槽轉化與原始快照分開。 */
@@ -200,6 +220,7 @@ export interface Elf {
   openingSpDef?: number; // 戰鬥開始時的基礎面板特防值快照
   currentHp: number; // active HP during battle
   path?: string; // image path or name
+  skinId?: string; // 純外觀皮膚；與自訂圖片及戰鬥定義分開保存
   seerId?: number | string; // 賽爾號官方寵物ID（頭像/全身圖對應；未填則依名稱自動比對）
   description?: string; // text description that can be adjusted
   rawPrompt?: string; // 原始文本 (不經結構化拆解的真實用戶輸入文本)
@@ -249,12 +270,12 @@ export interface Elf {
   category?: string; // e.g. "異能精靈"
   isAlienElf?: boolean; // 類型：是否為異能精靈 (或由特質「戰士」賦予)
   alienTraits?: {
-    gen2Trait?: { name: string; description: string; mechanics?: Record<string, any> }; // 二代特質 (例如: 無我, 戰士)
-    exclusiveTrait?: { name: string; description: string; mechanics?: Record<string, any> }; // 專屬特質 (例如: 無序星魂使徒)
+    gen2Trait?: { name: string; description: string; mechanics?: Record<string, any>; kit?: KitEntry[]; effectMode?: EffectExecutionMode }; // 二代特質
+    exclusiveTrait?: { name: string; description: string; mechanics?: Record<string, any>; kit?: KitEntry[]; effectMode?: EffectExecutionMode }; // 專屬特質
     /** 同一精靈擁有複數專屬特質時使用；舊資料仍可沿用 exclusiveTrait。 */
-    exclusiveTraits?: Array<{ name: string; description: string; mechanics?: Record<string, any> }>;
-    alienTrait?: { name: string; description: string }; // 異能特質 (一代通用特質)
-    generalTrait?: { name: string; description: string }; // 通用特性
+    exclusiveTraits?: Array<{ name: string; description: string; mechanics?: Record<string, any>; kit?: KitEntry[]; effectMode?: EffectExecutionMode }>;
+    alienTrait?: { name: string; description: string; kit?: KitEntry[]; effectMode?: EffectExecutionMode }; // 異能
+    generalTrait?: { name: string; description: string; kit?: KitEntry[]; effectMode?: EffectExecutionMode }; // 通用特性
   };
   isConcealed?: boolean; // 隱匿：印記狀態 (立繪黑影，技能顯示為未知技能)
   trait_stone_thrower?: boolean; // 投石者特質
@@ -380,7 +401,13 @@ export interface BattleItem {
   type: 'hp' | 'pp' | 'hybrid' | 'special';
   value?: number;
   ppValue?: number;
-  effect?: 'clear_status' | 'clear_debuff';
+  effect?: 'clear_status' | 'clear_debuff' | 'set_illusion_target';
+  /** 不在預設藥劑庫存內，只能由效果（稱號、魂印…）放入；庫存為 0 時不顯示。 */
+  grantOnly?: boolean;
+  /** 使用前需先選一隻精靈：bag_elf＝雙方背包（出戰＋待命）內未消逝的任一隻。 */
+  pickTarget?: 'bag_elf';
+  /** 使用時由 UI 帶入的所選精靈（side + battleId）；不屬於目錄定義。 */
+  picked?: { side: 'p1' | 'p2'; battleId: string };
 }
 
 export interface BattleLog {

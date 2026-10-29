@@ -1,3 +1,4 @@
+import {portableSkillCapabilities} from '../battle/portableSkillMarks';
 import type { BattleEventContext } from './types';
 import { EffectTiming } from './types';
 import { active, alive, constraint, identity, timersFor, changePp, restorePp, drain, timed } from './newElfOperations';
@@ -5,18 +6,22 @@ import { activeConstraints } from '../battle/timedConstraints';
 import { getStatuses } from '../utils/battleHelpers';
 import { StatusRegistry } from './statusRegistry';
 import { isSkillDamageType } from '../battle/damageSemantics';
-import { addDamageReduction } from '../battle/damageReduction';
+import { addDamageReduction, multiplyDamageReduction } from '../battle/damageReduction';
 import { combineSettlementCallbacks } from '../battle/settlementReceipt';
 import { queueActionDamageModifier } from '../battle/actionDamageModifiers';
 import { endIllusion } from '../battle/illusion';
 import { skillSlot } from '../battle/skillSlot';
 import { bypassesAttackDefense } from '../battle/attackDefense';
 import { getMaxPp } from '../utils/battleHelpers';
+import { applyKitPpOperation } from './ppOperations';
+import {teamForcedHitLifecycle} from '../battle/forcedHitRules';
 
 /** 效果綁持有者：施加者下場後仍由受方執行，不依賴特定精靈 handler。 */
 export function runNewElfLifecycle(ctx: BattleEventContext, event: EffectTiming, data?: any): void {
+  teamForcedHitLifecycle(ctx,event,data);
   const onField = identity(ctx.self) === identity(active(ctx, ctx.actor));
   if (event === EffectTiming.ON_SWITCH_OUT) {
+    if((ctx.self as any).ppLimitIgnoredUntilSwitch)ctx.updateElf(ctx.actor,{ppLimitIgnoredUntilSwitch:false} as any);
     endIllusion(ctx); ctx.setPlayerState('fieldPpChanged', false);
     if (ctx.getPlayerState('timedInherentWasActive')) {
       ctx.updateElf(ctx.actor, { isInherentInvalid: ctx.getPlayerState('timedInherentOriginal') });
@@ -28,12 +33,29 @@ export function runNewElfLifecycle(ctx: BattleEventContext, event: EffectTiming,
     ctx.setPlayerState('fieldPpSnapshot', ctx.self.skills.map(s => s.pp));
     ctx.setPlayerState('fieldDamageCounts', {});
     ctx.setPlayerState('fieldStatusCount', 0);
+    const nextPp=ctx.getPlayerState('nextElfPpZero');
+    if(nextPp){
+      ctx.setPlayerState('nextElfPpZero',undefined);
+      const source=ctx.getFullTeam(nextPp.sourceSide).find(e=>identity(e)===nextPp.sourceBattleId)||active(ctx,nextPp.sourceSide);
+      const sourceCtx=ctx.contextForElf?.(nextPp.sourceSide,source);
+      applyKitPpOperation(sourceCtx || ctx,ctx.actor,'zero');
+    }
     const nextStatus = ctx.getPlayerState('nextElfStatus');
     if (nextStatus) {
       ctx.setPlayerState('nextElfStatus', undefined);
-      ctx.applyStatusWithImmunityCheck(ctx.actor, nextStatus.status, nextStatus.duration);
+      // 下一隻的異常仍由敵方來源附加；不能以受方「自己附加」繞過其免疫／反彈。
+      const sourceSide=nextStatus.sourceSide||ctx.targetSide;
+      const source=ctx.getFullTeam(sourceSide).find(e=>identity(e)===nextStatus.sourceBattleId)||active(ctx,sourceSide);
+      const sourceCtx=ctx.contextForElf?.(sourceSide,source);
+      if(sourceCtx)sourceCtx.applyStatusWithImmunityCheck(ctx.actor,nextStatus.status,nextStatus.duration);
+      else ctx.applyStatusWithImmunityCheck(ctx.actor, nextStatus.status, nextStatus.duration);
     }
     const priority = ctx.getPlayerState('nextElfAstralPriority');
+    const entryPriority=ctx.getPlayerState('nextElfPriorityConstraint');
+    if(entryPriority){
+      ctx.setPlayerState('nextElfPriorityConstraint',undefined);
+      timed(ctx,ctx.actor,'next_entry_priority',entryPriority.turns,{disablePriority:true},!!ctx.currentPhase?.startsWith('forced_switch')&&ctx.roundNumber===entryPriority.sourceRound,'skill',false);
+    }
     if (priority !== undefined) {
       timed(ctx, ctx.actor, 'astral_next_entry', 2, priority === 'disabled' ? { disablePriority: true } : { block: { prio: -2 } }, false, 'skill', false);
       ctx.setPlayerState('nextElfAstralPriority', undefined);
@@ -46,7 +68,11 @@ export function runNewElfLifecycle(ctx: BattleEventContext, event: EffectTiming,
     ctx.setPlayerState('fieldPpSnapshot', ctx.self.skills.map(s => s.pp));
   }
   const payloads = activeConstraints(timersFor(ctx, ctx.actor), ctx.self);
-  if (event === EffectTiming.OPPONENT_ACTION && onField) ctx.setPlayerState('blockedSkillDamageThisAction', false);
+  if (event === EffectTiming.OPPONENT_ACTION && onField) {
+    ctx.setPlayerState('blockedSkillDamageThisAction', false);
+    // 記錄正式使用事件；回合末的上下文不保證仍帶著對手所選技能。
+    if (data?.skill) ctx.setPlayerState('opponentSkillUsedRound', ctx.roundNumber ?? 0);
+  }
   if (event === EffectTiming.ON_KILL) {
     const next = ctx.getPlayerState('nextKillStatus');
     if (next) {
@@ -54,9 +80,18 @@ export function runNewElfLifecycle(ctx: BattleEventContext, event: EffectTiming,
       ctx.setOpponentState('nextElfStatus', next);
     }
   }
-  if (event === EffectTiming.SKILL_INVALID && !data?.isIncoming && data?.consumedInvalidation?.payload?.invalidFollowup) {
-    const followup = data.consumedInvalidation.payload.invalidFollowup;
-    timed(ctx, ctx.actor, 'invalid_same_category_followup', followup.rounds, { block: { addInvalid: followup.sameCategory ? data.skill.category : 'all' } }, true);
+  // invalidFollowup 由 addBlockTimer 寫入 payload.block（舊 uses() 寫 payload 頂層）——兩種都認。
+  // invalidFollowup：技能無效成功後追加「同類型附加效果失效」。
+  // 舊 uses() 寫在 payload 頂層；新 addBlockTimer 寫在 payload.block——兩種位置都認（DSH 20261019）。
+  if (event === EffectTiming.SKILL_INVALID && !data?.isIncoming) {
+    const followup = data?.consumedInvalidation?.payload?.block?.invalidFollowup
+      || data?.consumedInvalidation?.payload?.invalidFollowup;
+    if (followup) {
+      ((globalThis as any).__FC ||= []).push({ actor: ctx.actor, hasAdd: typeof ctx.addTimerTo, p2len: (ctx.p2Timers || []).length });
+      timed(ctx, ctx.actor, 'invalid_same_category_followup', followup.rounds,
+        { block: { addInvalid: followup.sameCategory ? data.skill.category : 'all' } }, true);
+      ((globalThis as any).__FC2 ||= []).push({ afterIds: ((ctx.actor === 'p1' ? ctx.p1Timers : ctx.p2Timers) || []).map((x: any) => x.id) });
+    }
   }
   if ([EffectTiming.ENFORCE, EffectTiming.ROUND_START, EffectTiming.BEFORE_SKILL].includes(event) && onField) {
     const disabled = payloads.some(p => p.inherentInvalid);
@@ -89,6 +124,11 @@ export function runNewElfLifecycle(ctx: BattleEventContext, event: EffectTiming,
       if (timer.payload?.nextAttackSkillBoost) {
         queueActionDamageModifier(ctx, timer.payload.nextAttackSkillBoost, '技能');
         ctx.consumeTimer(ctx.actor, timer.id);
+      }
+      const modifier=timer.payload?.nextAttackDamageModifier;
+      if(modifier){
+        queueActionDamageModifier(ctx,modifier.multiplier,modifier.kind);
+        ctx.consumeTimer(ctx.actor,timer.id);
       }
     }
   }
@@ -134,7 +174,8 @@ export function runNewElfLifecycle(ctx: BattleEventContext, event: EffectTiming,
       for (const timer of timersFor(ctx, ctx.actor)) {
         if (timer.remaining <= 0 || timer.pendingActivation || (timer.ownerBattleId && timer.ownerBattleId !== identity(ctx.self))) continue;
         if (timer.payload?.incomingPhysicalSkillMultiplier) {
-          comp.multiplier *= timer.payload.incomingPhysicalSkillMultiplier;
+          const factor=timer.payload.incomingPhysicalSkillMultiplier;
+          if(factor<1)multiplyDamageReduction(comp,factor);else comp.multiplier*=factor;
           if (timer.kind === 'use_counter') ctx.consumeTimer?.(ctx.actor, timer.id);
         }
       }
@@ -241,5 +282,5 @@ export function runNewElfLifecycle(ctx: BattleEventContext, event: EffectTiming,
 }
 
 export function innateDisabled(ctx: BattleEventContext): boolean {
-  return !!constraint(ctx, ctx.actor, 'inherentInvalid');
+  return portableSkillCapabilities(ctx.self,ctx.skill).innateDisabled===true||!!constraint(ctx, ctx.actor, 'inherentInvalid');
 }

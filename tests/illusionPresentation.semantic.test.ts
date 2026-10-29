@@ -36,6 +36,17 @@ const errors: unknown[][] = [], originalError = console.error;
 console.error = (...args) => { errors.push(args); originalError(...args); };
 let checks = 0;
 const settle = () => act(async () => { await new Promise(r => setTimeout(r, 5)); });
+const profileLoaded = async () => {
+  await settle();
+  assert.equal(document.querySelector('[aria-label="預設積木"]'), null, '精靈介紹預設顯示文字描述，不自動載入積木');
+  // 模擬使用者按下每張卡片的「積木／實裝核對」切換；原本的積木載入斷言維持不變。
+  const toggles = [...document.querySelectorAll<HTMLButtonElement>('nav[aria-label="效果呈現方式"] button')].filter(b => b.textContent?.trim() === '積木／實裝核對');
+  assert.ok(toggles.length > 0, '介紹頁提供積木檢視切換');
+  for (const b of toggles) await act(async () => b.click());
+  // 以時間（30秒）而非固定次數等待：vite首次轉譯積木解析器在高負載下可能超過1.5秒，但仍必須真的載入完成。
+  for(const t0=Date.now();Date.now()-t0<30000&&!document.querySelector('[aria-label="預設積木"]');) await settle();
+  assert.ok(document.querySelector('[aria-label="預設積木"]'),'預設積木必須完成實際非同步載入，不能忽略載入錯誤');
+};
 const image = (selector = 'img') => { const img = document.querySelector<HTMLImageElement>(selector); assert.ok(img, selector); return img; };
 const loaded = async (selector = 'img') => { await act(async () => image(selector).dispatchEvent(new dom.window.Event('load'))); await settle(); };
 try {
@@ -44,7 +55,7 @@ try {
   const { appearanceElf, startIllusion, endIllusion } = await server.ssrLoadModule('/src/battle/illusion.ts');
   const { ElfReadOnlyProfile } = await server.ssrLoadModule('/src/components/ElfReadOnlyProfile.tsx');
   const { loadSeerIndex } = await server.ssrLoadModule('/src/battle/seerAssets.ts');
-  const { spriteHeightRatio } = await server.ssrLoadModule('/src/battle/spriteMetrics.ts');
+  const { battleSpriteSizeRatio } = await server.ssrLoadModule('/src/battle/spriteMetrics.ts');
   await loadSeerIndex();
   const wait = { name: '幻化圖片驗收等待', category: '屬性', type: '普通', power: 0, pp: 30, maxPp: 30, isSureHit: true, description: '' };
   const make = (id: string): any => ({ id, battleId: id, name: id, type: '普通', level: 100,
@@ -69,13 +80,16 @@ try {
     profile.illusion.target.skills[0].name = `取得技能-${side}`;
     profile.illusion.target.type = '龍';
     await act(async () => root.render(React.createElement(ElfReadOnlyProfile, { key: `own-${side}`, elf: profile, battleSide: 'p1', onClose() {} })));
+    await profileLoaded();
     assert.ok(document.body.textContent!.includes('原特性'));
     assert.ok(document.body.textContent!.includes('目標特性'));
     assert.ok(document.body.textContent!.includes('幻化取得'));
     await act(async () => [...document.querySelectorAll('nav button')].find(b => b.textContent === '技能')!.dispatchEvent(new dom.window.MouseEvent('click', { bubbles: true })));
+    await settle(); // 技能分頁預設顯示描述（使用者決定 2026-10-10），不等待積木載入
     assert.ok(document.body.textContent!.includes(`原槽技能-${side}`));
     assert.ok(document.body.textContent!.includes(`轉化 → 取得技能-${side}`));
     await act(async () => root.render(React.createElement(ElfReadOnlyProfile, { key: `enemy-${side}`, elf: profile, battleSide: 'p2', onClose() {} })));
+    await profileLoaded();
     assert.ok(!document.body.textContent!.includes('原特性'), '敵方介紹不洩漏原特性');
     assert.ok(document.body.textContent!.includes('目標特性'));
     assert.ok(document.body.textContent!.includes('龍'), '敵方幻化介紹顯示複製對象屬性');
@@ -92,7 +106,7 @@ try {
     await act(async () => root.render(React.createElement(ProportionalSprite, spriteProps)));
     await loaded();
     const wrapper = document.querySelector<HTMLElement>('[data-sprite-side]')!;
-    assert.equal(wrapper.dataset.spriteRatio, spriteHeightRatio(500).toFixed(2));
+    assert.equal(wrapper.dataset.spriteRatio, '1.65');
     const targetWidth = image().parentElement!.style.width;
     // 同圖換陣營，非對稱透明邊界也需重新計算錨點。
     const leftBefore = image().parentElement!.style.left;
@@ -113,7 +127,7 @@ try {
     await loaded();
     assert.ok(image().src.endsWith(original.path), '同一戰鬥身分解除後還原原立繪');
     assert.equal(image().alt, original.name);
-    assert.equal(wrapper.dataset.spriteRatio, spriteHeightRatio(50).toFixed(2));
+    assert.equal(wrapper.dataset.spriteRatio, battleSpriteSizeRatio(50).toFixed(2));
     assert.notEqual(image().parentElement!.style.width, targetWidth, '解除重新計算原身高比例');
     assert.ok(image().style.maskImage.includes('radial-gradient'), '還原原場景遮罩（瀏覽器可正規化省略ellipse關鍵字）');
     await act(async () => root.render(React.createElement(ElfAvatar, { elf: owner, kind: 'head', battleSide: side })));
@@ -159,8 +173,9 @@ try {
     let state = driver.getSyncState(); assert.ok(state[side].illusion);
     const head = `[data-hud="${side}"] button img`, body = `[data-sprite-side="${side}"] img`;
     assert.ok(image(head).src.endsWith(target.path)); assert.ok(image(body).src.endsWith(target.path));
+    await loaded(body); // 素材載入後才套用 URL 專用的巨型取景，不能驗到載入前的身高備援值。
     assert.equal(image(body).style.transform, side === 'p2' ? 'scaleX(-1)' : '');
-    assert.equal(document.querySelector<HTMLElement>(`[data-sprite-side="${side}"]`)!.dataset.spriteRatio, spriteHeightRatio(500).toFixed(2));
+    assert.equal(document.querySelector<HTMLElement>(`[data-sprite-side="${side}"]`)!.dataset.spriteRatio, '1.65');
     if (id === '5033') {
       assert.equal(state[side].globalPpMaxOffset, 10);
       // 只設解除前置條件，正式ENFORCE派發及endIllusion仍由引擎處理。
@@ -188,7 +203,7 @@ try {
     assert.ok(image(head).src.endsWith(`/seer/head/${art}.png`), `${id}頭像還原原圖`);
     assert.ok(image(body).src.endsWith(`/seer/body/${art}.png`), `${id}立繪還原原圖`);
     assert.equal(image(body).style.transform, side === 'p1' ? 'scaleX(-1)' : '', '還原朝左原圖：P1朝右、P2朝左');
-    assert.equal(document.querySelector<HTMLElement>(`[data-sprite-side="${side}"]`)!.dataset.spriteRatio, spriteHeightRatio(50).toFixed(2));
+    assert.equal(document.querySelector<HTMLElement>(`[data-sprite-side="${side}"]`)!.dataset.spriteRatio, battleSpriteSizeRatio(50).toFixed(2));
     await act(async () => {
       // PVP依序選指令；P2換人須等P1已提交，不可從p1_select硬呼叫冒充實際UI。
       if (side === 'p2') driver.onSkillSelect(other, driver.getSyncState()[other].skills[0]);

@@ -1,7 +1,7 @@
 import React from "react";
 
 /** 局部頁面失敗不應令側欄／返回功能一起消失。 */
-type PageErrorProps = { children: React.ReactNode; onBack: () => void; onReload?: () => void };
+type PageErrorProps = { children: React.ReactNode; onBack: () => void; onReload?: () => void; backLabel?: string };
 
 export class PageErrorBoundary extends React.Component<PageErrorProps, { failed: boolean; resourceFailure: boolean }> {
   declare props: PageErrorProps;
@@ -19,7 +19,7 @@ export class PageErrorBoundary extends React.Component<PageErrorProps, { failed:
         : "沒有刪除你的存檔。可以返回首頁，並回報頁面名稱與剛才的操作。"}</p>
       <p className="text-sm text-amber-300">重新載入會失去未儲存的草稿及當前對戰進度，不會清除已儲存的資料。</p>
       <div className="flex flex-wrap gap-3">
-        <button type="button" onClick={this.props.onBack} className="rounded-xl bg-slate-700 px-4 py-2 text-sm">返回首頁</button>
+        <button type="button" onClick={this.props.onBack} className="rounded-xl bg-slate-700 px-4 py-2 text-sm">{this.props.backLabel ?? '返回首頁'}</button>
         <button type="button" onClick={() => {
           if (window.confirm("重新載入會失去未儲存的草稿及當前對戰進度。確定重新載入？")) {
             if (this.props.onReload) this.props.onReload();

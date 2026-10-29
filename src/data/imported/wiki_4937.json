@@ -1,0 +1,736 @@
+{
+  "id": "wiki_4937",
+  "seerId": 4937,
+  "name": "星光·雷納多",
+  "type": "機械",
+  "level": 100,
+  "height": 89,
+  "weight": 130,
+  "baseStats": {
+    "hp": 171,
+    "atk": 70,
+    "def": 114,
+    "spatk": 141,
+    "spdef": 114,
+    "speed": 130
+  },
+  "description": "自沉睡中甦醒的磁性晶體之軀，循著跨越星海的共鳴回到親人身邊。他是浴火重生、再度肩負守護之責的星光·雷納多。",
+  "soulMark": {
+    "name": "",
+    "badgeChar": "",
+    "description": "雙方使用技能時，令對手攻擊、特攻-1，未觸發則自身解除所處的異常狀態且本場戰鬥自身造成的攻擊傷害提升30%，最高150%\n戰鬥階段結束時，若對手處於能力下降狀態則令對手下回合屬性技能無效，若對手不處於能力下降狀態則恢復自身最大體力的1/3，每溢出10點自身下回合受到的攻擊傷害減少1%且獲得10點護盾，護盾存在期間自身每次受到攻擊後消除對手能力提升狀態",
+    "effectType": "none",
+    "effectValue": 0,
+    "source": {
+      "wiki": "魂印:2132",
+      "revid": 386042,
+      "timestamp": "2026-08-28T03:14:23Z",
+      "seerapi": "https://api.seerapi.com/v1/soulmark/2132",
+      "hash": "3ac2b9bc"
+    },
+    "bossInvalid": true
+  },
+  "skills": [
+    {
+      "name": "星光·極速射線",
+      "type": "機械",
+      "category": "特殊",
+      "power": 85,
+      "pp": 20,
+      "priority": 3,
+      "isSureHit": false,
+      "accuracy": 97,
+      "description": "■ 先制+3\n🎯 消除對手回合類效果，消除成功則下1回合令對手使用的攻擊技能無效\n🎯 雙方每有1方精靈先制為0，對手下1回合技能先制-1",
+      "effectType": "none",
+      "effectDetail": "",
+      "source": {
+        "wiki": "技能:38504",
+        "revid": 386008,
+        "timestamp": "2026-08-28T03:12:04Z",
+        "slot": "先手",
+        "seerapi": "https://api.seerapi.com/v1/skill/38504",
+        "hash": "c29a3555",
+        "effectIds": [
+          1032,
+          2540
+        ]
+      }
+    },
+    {
+      "name": "星光·合金壁壘",
+      "type": "無屬性",
+      "category": "屬性",
+      "power": 0,
+      "pp": 5,
+      "priority": 0,
+      "isSureHit": true,
+      "description": "■ 必中\n🎯 4回合內免疫並反彈所有受到的異常狀態\n🎯 獲得300點護盾，護盾消失時恢復自身最大體力的1/3\n🎯 3回合內自身的能力提升狀態無法被消除或吸取\n🎯 3回合內每回合攻擊+1，防禦+1，特攻+1，特防+1，速度+1，命中+1",
+      "effectType": "none",
+      "effectDetail": "",
+      "source": {
+        "wiki": "技能:29433",
+        "revid": 386001,
+        "timestamp": "2026-08-28T03:11:46Z",
+        "slot": "防御",
+        "seerapi": "https://api.seerapi.com/v1/skill/29433",
+        "hash": "32947289",
+        "effectIds": [
+          191,
+          1753,
+          1683,
+          433
+        ]
+      }
+    },
+    {
+      "name": "星光·渦輪增壓",
+      "type": "無屬性",
+      "category": "屬性",
+      "power": 0,
+      "pp": 5,
+      "priority": 0,
+      "isSureHit": true,
+      "description": "■ 必中\n🎯 全屬性+1，自身體力低於1/2時強化效果翻倍\n🎯 4回合內每回合使用技能恢復自身最大體力的1/2並造成等量百分比傷害，恢復體力時若自身體力低於最大體力的1/3則恢復效果和百分比傷害翻倍\n🎯 下1次攻擊技能無視攻擊免疫效果\n🎯 下2回合令自身所有技能先制+2",
+      "effectType": "none",
+      "effectDetail": "",
+      "source": {
+        "wiki": "技能:29434",
+        "revid": 386002,
+        "timestamp": "2026-08-28T03:11:49Z",
+        "slot": "强化",
+        "seerapi": "https://api.seerapi.com/v1/skill/29434",
+        "hash": "cb770d9",
+        "effectIds": [
+          1397,
+          1065,
+          1926,
+          843
+        ]
+      }
+    },
+    {
+      "name": "星光·能源吸收",
+      "type": "機械",
+      "category": "特殊",
+      "power": 150,
+      "pp": 5,
+      "priority": 0,
+      "isSureHit": false,
+      "accuracy": 97,
+      "description": "🎯 吸取對手能力提升狀態，吸取成功則對手癱瘓\n🎯 吸取對手250點體力，體力低於對手時吸取效果翻倍\n🎯 吸取對手所有技能2點PP值",
+      "effectType": "none",
+      "effectDetail": "",
+      "source": {
+        "wiki": "技能:38505",
+        "revid": 386009,
+        "timestamp": "2026-08-28T03:12:06Z",
+        "slot": "制敌",
+        "seerapi": "https://api.seerapi.com/v1/skill/38505",
+        "hash": "119c4ea2",
+        "effectIds": [
+          948,
+          894,
+          2564
+        ]
+      }
+    },
+    {
+      "name": "星光·魔動能量",
+      "type": "機械",
+      "category": "特殊",
+      "power": 160,
+      "pp": 5,
+      "priority": 0,
+      "isSureHit": true,
+      "isFifthSkill": true,
+      "description": "■ 必中\n🎯 消除對手能力提升狀態，若對手不處於能力提升狀態則消除對手回合類效果\n🎯 自身每處於一種能力提升狀態，此技能威力提升10\n🎯 對手不處於能力下降狀態則造成的傷害提高100%\n🎯 造成的攻擊傷害高於300時1回合內對手體力恢復效果減少100%",
+      "effectType": "none",
+      "effectDetail": "",
+      "source": {
+        "wiki": "技能:38506",
+        "revid": 386010,
+        "timestamp": "2026-08-28T03:12:09Z",
+        "slot": "第五",
+        "seerapi": "https://api.seerapi.com/v1/skill/38506",
+        "hash": "9e3eb73c",
+        "effectIds": [
+          2363,
+          882,
+          1198,
+          2366
+        ]
+      }
+    }
+  ],
+  "skillPool": [
+    {
+      "name": "叩擊",
+      "type": "普通",
+      "category": "物理",
+      "power": 40,
+      "pp": 40,
+      "priority": 0,
+      "isSureHit": false,
+      "accuracy": 100,
+      "description": "無特殊效果",
+      "effectType": "none",
+      "effectDetail": "",
+      "source": {
+        "wiki": "技能:10127",
+        "revid": 289222,
+        "timestamp": "2025-10-09T19:54:50Z",
+        "slot": null
+      }
+    },
+    {
+      "name": "堅硬",
+      "type": "普通",
+      "category": "屬性",
+      "power": 0,
+      "pp": 40,
+      "priority": 0,
+      "isSureHit": true,
+      "description": "■ 必中\n🎯 技能使用成功時，100%改變自身防禦等級+1",
+      "effectType": "none",
+      "effectDetail": "",
+      "source": {
+        "wiki": "技能:20045",
+        "revid": 298445,
+        "timestamp": "2025-10-10T01:44:47Z",
+        "slot": null
+      }
+    },
+    {
+      "name": "堅強",
+      "type": "普通",
+      "category": "屬性",
+      "power": 0,
+      "pp": 40,
+      "priority": 0,
+      "isSureHit": true,
+      "description": "■ 必中\n🎯 技能使用成功時，100%改變自身特防等級+1",
+      "effectType": "none",
+      "effectDetail": "",
+      "source": {
+        "wiki": "技能:20111",
+        "revid": 298511,
+        "timestamp": "2025-10-10T01:45:54Z",
+        "slot": null
+      }
+    },
+    {
+      "name": "電光波",
+      "type": "電",
+      "category": "特殊",
+      "power": 75,
+      "pp": 15,
+      "priority": 0,
+      "isSureHit": false,
+      "accuracy": 100,
+      "description": "🎯 命中後5%令對方麻痺",
+      "effectType": "none",
+      "effectDetail": "",
+      "source": {
+        "wiki": "技能:10051",
+        "revid": 289146,
+        "timestamp": "2025-10-09T19:53:31Z",
+        "slot": null
+      }
+    },
+    {
+      "name": "重力波",
+      "type": "機械",
+      "category": "特殊",
+      "power": 60,
+      "pp": 35,
+      "priority": 0,
+      "isSureHit": false,
+      "accuracy": 100,
+      "description": "🎯 技能使用成功時，15%改變對手速度等級-1",
+      "effectType": "none",
+      "effectDetail": "",
+      "source": {
+        "wiki": "技能:10328",
+        "revid": 289423,
+        "timestamp": "2025-10-09T19:58:15Z",
+        "slot": null
+      }
+    },
+    {
+      "name": "重擊",
+      "type": "普通",
+      "category": "物理",
+      "power": 50,
+      "pp": 35,
+      "priority": 0,
+      "isSureHit": false,
+      "accuracy": 100,
+      "description": "無特殊效果",
+      "effectType": "none",
+      "effectDetail": "",
+      "source": {
+        "wiki": "技能:10047",
+        "revid": 289143,
+        "timestamp": "2025-10-09T19:53:28Z",
+        "slot": null
+      }
+    },
+    {
+      "name": "虛弱光線",
+      "type": "普通",
+      "category": "屬性",
+      "power": 0,
+      "pp": 35,
+      "priority": 0,
+      "isSureHit": false,
+      "accuracy": 100,
+      "description": "🎯 技能使用成功時，100%改變對手攻擊等級-1\n🎯 技能使用成功時，100%改變對手特攻等級-1",
+      "effectType": "none",
+      "effectDetail": "",
+      "source": {
+        "wiki": "技能:20144",
+        "revid": 298544,
+        "timestamp": "2025-10-10T01:46:28Z",
+        "slot": null
+      }
+    },
+    {
+      "name": "激光掃射",
+      "type": "機械",
+      "category": "特殊",
+      "power": 70,
+      "pp": 30,
+      "priority": 0,
+      "isSureHit": false,
+      "accuracy": 100,
+      "description": "🎯 技能使用成功時，15%改變對手特防等級-1",
+      "effectType": "none",
+      "effectDetail": "",
+      "source": {
+        "wiki": "技能:10329",
+        "revid": 289424,
+        "timestamp": "2025-10-09T19:58:16Z",
+        "slot": null
+      }
+    },
+    {
+      "name": "鐵臂撞擊",
+      "type": "機械",
+      "category": "物理",
+      "power": 60,
+      "pp": 35,
+      "priority": 0,
+      "isSureHit": false,
+      "accuracy": 100,
+      "description": "無特殊效果",
+      "effectType": "none",
+      "effectDetail": "",
+      "source": {
+        "wiki": "技能:10330",
+        "revid": 289425,
+        "timestamp": "2025-10-09T19:58:17Z",
+        "slot": null
+      }
+    },
+    {
+      "name": "機械重組",
+      "type": "普通",
+      "category": "屬性",
+      "power": 0,
+      "pp": 5,
+      "priority": 0,
+      "isSureHit": true,
+      "description": "■ 必中\n🎯 恢復自身最大體力的1/2",
+      "effectType": "none",
+      "effectDetail": "",
+      "source": {
+        "wiki": "技能:21549",
+        "revid": 299947,
+        "timestamp": "2025-10-10T02:01:52Z",
+        "slot": null
+      }
+    },
+    {
+      "name": "穿透光束",
+      "type": "機械",
+      "category": "特殊",
+      "power": 70,
+      "pp": 30,
+      "priority": 0,
+      "isSureHit": true,
+      "description": "■ 必中",
+      "effectType": "none",
+      "effectDetail": "",
+      "source": {
+        "wiki": "技能:10333",
+        "revid": 289428,
+        "timestamp": "2025-10-09T19:58:20Z",
+        "slot": null
+      }
+    },
+    {
+      "name": "充能",
+      "type": "普通",
+      "category": "屬性",
+      "power": 0,
+      "pp": 20,
+      "priority": 0,
+      "isSureHit": true,
+      "description": "■ 必中\n🎯 技能使用成功時，100%改變自身特攻等級+2",
+      "effectType": "none",
+      "effectDetail": "",
+      "source": {
+        "wiki": "技能:20073",
+        "revid": 298473,
+        "timestamp": "2025-10-10T01:45:15Z",
+        "slot": null
+      }
+    },
+    {
+      "name": "極速射線",
+      "type": "機械",
+      "category": "特殊",
+      "power": 70,
+      "pp": 30,
+      "priority": 1,
+      "isSureHit": false,
+      "accuracy": 100,
+      "description": "■ 先制+1",
+      "effectType": "none",
+      "effectDetail": "",
+      "source": {
+        "wiki": "技能:10334",
+        "revid": 289429,
+        "timestamp": "2025-10-09T19:58:21Z",
+        "slot": null
+      }
+    },
+    {
+      "name": "金剛擊",
+      "type": "機械",
+      "category": "物理",
+      "power": 100,
+      "pp": 15,
+      "priority": 0,
+      "isSureHit": false,
+      "accuracy": 100,
+      "description": "🎯 技能使用成功時，15%改變對手防禦等級-1",
+      "effectType": "none",
+      "effectDetail": "",
+      "source": {
+        "wiki": "技能:10332",
+        "revid": 289427,
+        "timestamp": "2025-10-09T19:58:19Z",
+        "slot": null
+      }
+    },
+    {
+      "name": "液壓衝擊",
+      "type": "機械",
+      "category": "物理",
+      "power": 100,
+      "pp": 10,
+      "priority": 0,
+      "isSureHit": false,
+      "accuracy": 100,
+      "description": "🎯 技能使用成功時，15%改變自身速度等級+1",
+      "effectType": "none",
+      "effectDetail": "",
+      "source": {
+        "wiki": "技能:12979",
+        "revid": 292071,
+        "timestamp": "2025-10-09T20:43:19Z",
+        "slot": null
+      }
+    },
+    {
+      "name": "激光四射",
+      "type": "機械",
+      "category": "特殊",
+      "power": 90,
+      "pp": 20,
+      "priority": 0,
+      "isSureHit": false,
+      "accuracy": 100,
+      "description": "🎯 技能使用成功時，15%改變對手命中等級-1",
+      "effectType": "none",
+      "effectDetail": "",
+      "source": {
+        "wiki": "技能:10335",
+        "revid": 289430,
+        "timestamp": "2025-10-09T19:58:22Z",
+        "slot": null
+      }
+    },
+    {
+      "name": "野蠻橫掃",
+      "type": "普通",
+      "category": "物理",
+      "power": 80,
+      "pp": 25,
+      "priority": 0,
+      "isSureHit": false,
+      "accuracy": 100,
+      "description": "🎯 對方體力小於1/2時威力加倍",
+      "effectType": "none",
+      "effectDetail": "",
+      "source": {
+        "wiki": "技能:10331",
+        "revid": 289426,
+        "timestamp": "2025-10-09T19:58:18Z",
+        "slot": null
+      }
+    },
+    {
+      "name": "魔動能量",
+      "type": "機械",
+      "category": "特殊",
+      "power": 135,
+      "pp": 10,
+      "priority": 0,
+      "isSureHit": false,
+      "accuracy": 100,
+      "description": "無特殊效果",
+      "effectType": "none",
+      "effectDetail": "",
+      "source": {
+        "wiki": "技能:10336",
+        "revid": 289431,
+        "timestamp": "2025-10-09T19:58:23Z",
+        "slot": null
+      }
+    },
+    {
+      "name": "渦輪增壓",
+      "type": "普通",
+      "category": "屬性",
+      "power": 0,
+      "pp": 10,
+      "priority": 0,
+      "isSureHit": true,
+      "description": "■ 必中\n🎯 技能使用成功時，100%改變自身特攻等級+2\n🎯 技能使用成功時，100%改變自身命中等級+1",
+      "effectType": "none",
+      "effectDetail": "",
+      "source": {
+        "wiki": "技能:21550",
+        "revid": 299948,
+        "timestamp": "2025-10-10T02:01:53Z",
+        "slot": null
+      }
+    },
+    {
+      "name": "屬性複製",
+      "type": "普通",
+      "category": "屬性",
+      "power": 0,
+      "pp": 10,
+      "priority": 0,
+      "isSureHit": false,
+      "accuracy": 100,
+      "description": "🎯 5回合內使自身的屬性和對方的屬性相同",
+      "effectType": "none",
+      "effectDetail": "",
+      "source": {
+        "wiki": "技能:20145",
+        "revid": 298545,
+        "timestamp": "2025-10-10T01:46:29Z",
+        "slot": null
+      }
+    },
+    {
+      "name": "能源吸取",
+      "type": "機械",
+      "category": "特殊",
+      "power": 140,
+      "pp": 5,
+      "priority": 0,
+      "isSureHit": false,
+      "accuracy": 95,
+      "description": "🎯 造成傷害的1/4回覆自身體力，若屬性相同則造成傷害的1/2回覆自身體力",
+      "effectType": "none",
+      "effectDetail": "",
+      "source": {
+        "wiki": "技能:12980",
+        "revid": 292072,
+        "timestamp": "2025-10-09T20:43:20Z",
+        "slot": null
+      }
+    },
+    {
+      "name": "合金壁壘",
+      "type": "普通",
+      "category": "屬性",
+      "power": 0,
+      "pp": 10,
+      "priority": 0,
+      "isSureHit": true,
+      "description": "■ 必中\n🎯 技能使用成功時，100%改變自身防禦等級+2\n🎯 技能使用成功時，100%改變自身特防等級+2",
+      "effectType": "none",
+      "effectDetail": "",
+      "source": {
+        "wiki": "技能:21551",
+        "revid": 299949,
+        "timestamp": "2025-10-10T02:01:53Z",
+        "slot": null
+      }
+    },
+    {
+      "name": "機械能量炮",
+      "type": "機械",
+      "category": "特殊",
+      "power": 150,
+      "pp": 5,
+      "priority": 0,
+      "isSureHit": false,
+      "accuracy": 95,
+      "description": "🎯 若屬性相同則技能威力提升20",
+      "effectType": "none",
+      "effectDetail": "",
+      "source": {
+        "wiki": "技能:12981",
+        "revid": 292073,
+        "timestamp": "2025-10-09T20:43:21Z",
+        "slot": null
+      }
+    },
+    {
+      "name": "星光·極速射線",
+      "type": "機械",
+      "category": "特殊",
+      "power": 85,
+      "pp": 20,
+      "priority": 3,
+      "isSureHit": false,
+      "accuracy": 97,
+      "description": "■ 先制+3\n🎯 消除對手回合類效果，消除成功則下1回合令對手使用的攻擊技能無效\n🎯 雙方每有1方精靈先制為0，對手下1回合技能先制-1",
+      "effectType": "none",
+      "effectDetail": "",
+      "source": {
+        "wiki": "技能:38504",
+        "revid": 386008,
+        "timestamp": "2026-08-28T03:12:04Z",
+        "slot": "先手",
+        "seerapi": "https://api.seerapi.com/v1/skill/38504",
+        "hash": "c29a3555",
+        "effectIds": [
+          1032,
+          2540
+        ]
+      }
+    },
+    {
+      "name": "星光·合金壁壘",
+      "type": "無屬性",
+      "category": "屬性",
+      "power": 0,
+      "pp": 5,
+      "priority": 0,
+      "isSureHit": true,
+      "description": "■ 必中\n🎯 4回合內免疫並反彈所有受到的異常狀態\n🎯 獲得300點護盾，護盾消失時恢復自身最大體力的1/3\n🎯 3回合內自身的能力提升狀態無法被消除或吸取\n🎯 3回合內每回合攻擊+1，防禦+1，特攻+1，特防+1，速度+1，命中+1",
+      "effectType": "none",
+      "effectDetail": "",
+      "source": {
+        "wiki": "技能:29433",
+        "revid": 386001,
+        "timestamp": "2026-08-28T03:11:46Z",
+        "slot": "防御",
+        "seerapi": "https://api.seerapi.com/v1/skill/29433",
+        "hash": "32947289",
+        "effectIds": [
+          191,
+          1753,
+          1683,
+          433
+        ]
+      }
+    },
+    {
+      "name": "星光·渦輪增壓",
+      "type": "無屬性",
+      "category": "屬性",
+      "power": 0,
+      "pp": 5,
+      "priority": 0,
+      "isSureHit": true,
+      "description": "■ 必中\n🎯 全屬性+1，自身體力低於1/2時強化效果翻倍\n🎯 4回合內每回合使用技能恢復自身最大體力的1/2並造成等量百分比傷害，恢復體力時若自身體力低於最大體力的1/3則恢復效果和百分比傷害翻倍\n🎯 下1次攻擊技能無視攻擊免疫效果\n🎯 下2回合令自身所有技能先制+2",
+      "effectType": "none",
+      "effectDetail": "",
+      "source": {
+        "wiki": "技能:29434",
+        "revid": 386002,
+        "timestamp": "2026-08-28T03:11:49Z",
+        "slot": "强化",
+        "seerapi": "https://api.seerapi.com/v1/skill/29434",
+        "hash": "cb770d9",
+        "effectIds": [
+          1397,
+          1065,
+          1926,
+          843
+        ]
+      }
+    },
+    {
+      "name": "星光·能源吸收",
+      "type": "機械",
+      "category": "特殊",
+      "power": 150,
+      "pp": 5,
+      "priority": 0,
+      "isSureHit": false,
+      "accuracy": 97,
+      "description": "🎯 吸取對手能力提升狀態，吸取成功則對手癱瘓\n🎯 吸取對手250點體力，體力低於對手時吸取效果翻倍\n🎯 吸取對手所有技能2點PP值",
+      "effectType": "none",
+      "effectDetail": "",
+      "source": {
+        "wiki": "技能:38505",
+        "revid": 386009,
+        "timestamp": "2026-08-28T03:12:06Z",
+        "slot": "制敌",
+        "seerapi": "https://api.seerapi.com/v1/skill/38505",
+        "hash": "119c4ea2",
+        "effectIds": [
+          948,
+          894,
+          2564
+        ]
+      }
+    },
+    {
+      "name": "星光·魔動能量",
+      "type": "機械",
+      "category": "特殊",
+      "power": 160,
+      "pp": 5,
+      "priority": 0,
+      "isSureHit": true,
+      "isFifthSkill": true,
+      "description": "■ 必中\n🎯 消除對手能力提升狀態，若對手不處於能力提升狀態則消除對手回合類效果\n🎯 自身每處於一種能力提升狀態，此技能威力提升10\n🎯 對手不處於能力下降狀態則造成的傷害提高100%\n🎯 造成的攻擊傷害高於300時1回合內對手體力恢復效果減少100%",
+      "effectType": "none",
+      "effectDetail": "",
+      "source": {
+        "wiki": "技能:38506",
+        "revid": 386010,
+        "timestamp": "2026-08-28T03:12:09Z",
+        "slot": "第五",
+        "seerapi": "https://api.seerapi.com/v1/skill/38506",
+        "hash": "9e3eb73c",
+        "effectIds": [
+          2363,
+          882,
+          1198,
+          2366
+        ]
+      }
+    }
+  ],
+  "source": {
+    "api": "https://wiki.biligame.com/seer/api.php",
+    "fetchedAt": "2026-10-11T06:56:00.518Z",
+    "wiki": "精灵:4937",
+    "revid": 386350,
+    "timestamp": "2026-09-04T05:16:17Z",
+    "seerapi": "https://api.seerapi.com/v1/pet/4937",
+    "seerapiFetchedAt": "2026-10-11T09:27:20.261Z"
+  }
+}

@@ -1,11 +1,16 @@
 import React, { useState } from "react";
 import type { Elf, Skill } from "../types";
-import { ElfAvatar, TypeIcon } from "./SeerImages";
-import { hiddenFromViewer, elfForViewer, visibleSkills } from "../battle/viewerPerspective";
+import { ElfAvatar, TypeIcon, SkillTypeIcon } from "./SeerImages";
+import { skillDisplayType } from '../utils/skillPresentation';
+import { orderSkillsForDisplay } from '../battle/skillSlot';
+import { hiddenFromViewer, elfForViewer, visibleSkills, type BattleViewMode } from "../battle/viewerPerspective";
+import { useBattleViewMode, BattleViewModeContext } from "../battle/viewerMode";
 import { ElfTraitCards } from "./ElfTraitCards";
 import { InfoHint } from "./InfoHint";
-import { formatEffectText } from "../utils/descFormat";
+import { EffectDescription } from './EffectDescription';
 import { EffectBlockToggle } from './EffectBlockToggle';
+import { ElfSpotlight } from './ElfSpotlight';
+import { SkillResources } from './SkillResources';
 
 /** 百科與戰鬥共用唯讀介紹；此元件沒有保存、修改精靈或訓練設定的入口。 */
 export const ElfReadOnlyProfile: React.FC<{
@@ -14,13 +19,18 @@ export const ElfReadOnlyProfile: React.FC<{
   getSkillMaxPp?: (skill: Skill, elf: Elf) => number;
   /** 戰鬥中開啟時的陣營：己方隱匿精靈完整顯示，敵方才掩蓋。 */
   battleSide?: "p1" | "p2";
+  /** 對戰模式；未傳時取戰鬥容器提供的模式。PVP 全局隱藏。 */
+  battleMode?: BattleViewMode;
   /** 戰鬥中：在場精靈的即時狀態（能力等級、異常、印記、計時），作為第一個分頁。 */
   battlePanel?: React.ReactNode;
-}> = ({ elf: sourceElf, onClose, subtitle, effectiveBody, children, getSkillMaxPp, battleSide, battlePanel }) => {
+}> = ({ elf: sourceElf, onClose, subtitle, effectiveBody, children, getSkillMaxPp, battleSide, battleMode, battlePanel }) => {
+  const ctxMode = useBattleViewMode(); const mode = battleMode ?? ctxMode;
+  const [showFull, setShowFull] = useState(false);
   const elf = elfForViewer(sourceElf, battleSide);
   const [tab, setTab] = useState<"battle" | "traits" | "stats" | "skills">(battlePanel ? "battle" : "traits");
-  const concealed = hiddenFromViewer(elf, battleSide);
-  return <div className="space-y-5" data-testid="elf-readonly-profile">
+  const concealed = hiddenFromViewer(elf, battleSide, mode);
+  return <BattleViewModeContext.Provider value={mode}><div className="space-y-5" data-testid="elf-readonly-profile">
+    {showFull && !concealed && <ElfSpotlight elves={[elf]} selectedElf={elf} onClose={() => setShowFull(false)} />}
     <header className="flex items-start gap-4 border-b border-white/10 pb-4">
       <div className="w-16 h-16 sm:w-20 sm:h-20 shrink-0 rounded-full overflow-hidden bg-black/20 ring-1 ring-white/15">
         <ElfAvatar elf={elf} battleSide={battleSide} className="w-full h-full object-cover" />
@@ -33,11 +43,12 @@ export const ElfReadOnlyProfile: React.FC<{
           <span className="text-slate-500">{effectiveBody?.height ?? elf.height ?? "—"} cm · {effectiveBody?.weight ?? elf.weight ?? "—"} kg</span>
         </div>}
       </div>
+      {!concealed && <button type="button" onClick={() => setShowFull(true)} className="ios-button px-3 py-2 text-xs shrink-0">完整介紹 ↗</button>}
       <button type="button" aria-label="關閉精靈介紹" onClick={onClose} className="w-9 h-9 rounded-full bg-white/5 hover:bg-white/10 text-xl text-slate-300 shrink-0">×</button>
     </header>
     {concealed ? <p className="text-sm text-slate-400">此精靈正處於隱匿，真實資料暫不展示。</p> : <>
       <nav className="ios-segment w-full" aria-label="精靈介紹分類">
-        {([...(battlePanel ? [['battle', '戰鬥狀態']] : []), ['traits', '專屬特性'], ['stats', '能力資料'], ['skills', '技能']] as [typeof tab, string][]).map(([key, label]) =>
+        {([...(battlePanel ? [['battle', '戰鬥狀態']] : []), ['traits', '魂印'], ['stats', '能力資料'], ['skills', '技能']] as [typeof tab, string][]).map(([key, label]) =>
           <button key={key} type="button" className="flex-1" data-active={tab === key} onClick={() => setTab(key)}>{label}</button>)}
       </nav>
       {tab === "battle" && battlePanel}
@@ -57,17 +68,17 @@ export const ElfReadOnlyProfile: React.FC<{
         </div>
         {children}
       </>}
-      {tab === "skills" && <div className="space-y-3">{visibleSkills(elf).map((skill, i) =>
-        <details key={`${skill.name}-${i}`} className="ios-card p-4" open={i === 0}>
+      {tab === "skills" && <div className="space-y-3">{(() => { const vis = visibleSkills(elf); return orderSkillsForDisplay(elf.skills).map(({ slot: i }, order) => { const skill = vis[i]; return (
+        <details key={`${skill.name}-${i}`} className="ios-card p-4" open={order === 0}>
           <summary className="cursor-pointer text-sm font-semibold text-slate-100">
-            <span className="inline-flex items-center gap-2"><TypeIcon type={elf.skills[i].type} size={18} />{elf.skills[i].name}{elf.skills[i].isFifthSkill && <span className="text-xs text-amber-300">第五</span>}</span>
+            <span className="inline-flex items-center gap-2"><SkillTypeIcon skill={elf.skills[i]} size={18} />{elf.skills[i].name}{elf.skills[i].isFifthSkill && <span className="text-xs text-amber-300">第五</span>}</span>
             {elf.illusion && !elf.isInherentInvalid && <span className="block text-xs text-cyan-200 mt-1">轉化 → {skill.name}</span>}
           </summary>
           {elf.illusion && !elf.isInherentInvalid && <p className="mt-3 text-xs text-slate-400">轉化後資訊（原技能固有效果保留）</p>}
-          <p className="mt-3 text-xs text-slate-400 flex flex-wrap gap-3"><span>{skill.category} · {skill.type}</span><span>威力 {skill.power}</span><span>PP {skill.pp} / {getSkillMaxPp?.(skill, elf) ?? skill.maxPp ?? skill.pp}</span><span>先制 {skill.priority || 0}</span></p>
-          <EffectBlockToggle skill={skill}><p className="whitespace-pre-wrap text-sm leading-7 text-slate-200">{formatEffectText(skill.description)}</p></EffectBlockToggle>
-          {elf.illusion && !elf.isInherentInvalid && <div className="mt-3 border-t border-white/10 pt-3"><p className="text-xs text-slate-400">原技能（固有效果仍生效；原附加效果不重跑）</p><EffectBlockToggle skill={elf.skills[i]}><p className="whitespace-pre-wrap text-sm leading-7 text-slate-200">{formatEffectText(elf.skills[i].description)}</p></EffectBlockToggle></div>}
-        </details>)}</div>}
+          <p className="mt-3 text-xs text-slate-400 flex flex-wrap gap-3"><span>{skill.category} · {skillDisplayType(skill)}</span><span>威力 {skill.power}</span><SkillResources elf={elf} skill={skill} maxPp={getSkillMaxPp?.(skill, elf)} /><span>先制 {skill.priority || 0}</span></p>
+          <EffectBlockToggle elf={elf} skill={skill}><EffectDescription description={skill.description} className="text-sm leading-7 text-slate-200" /></EffectBlockToggle>
+          {elf.illusion && !elf.isInherentInvalid && <div className="mt-3 border-t border-white/10 pt-3"><p className="text-xs text-slate-400">原技能（固有效果仍生效；原附加效果不重跑）</p><EffectBlockToggle elf={elf} skill={elf.skills[i]}><EffectDescription description={elf.skills[i].description} className="text-sm leading-7 text-slate-200" /></EffectBlockToggle></div>}
+        </details>); }); })()}</div>}
     </>}
-  </div>;
+  </div></BattleViewModeContext.Provider>;
 };

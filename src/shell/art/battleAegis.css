@@ -1,0 +1,294 @@
+/*
+ * Aegis 戰鬥畫面覆寫（純 CSS）
+ *
+ * 為什麼用 CSS 而不是改 BattleScreen.ui.tsx：
+ *   那是 1474 行的元件，同時服務 Legacy 與 Aegis。
+ *   直接改 JSX 會影響舊介面，違反「Legacy 不動」的原則。
+ *   CSS 只在 #aegis-shell 內生效，兩邊互不干擾。
+ *
+ * 解決的問題（2026-10-21 實測）：
+ *   1. 技能卡的「次數／威力」在 390px 下斷行
+ *   2. 「屬性」兩個字被直向拆開
+ *   3. 技能名過長被截斷成 2 個字
+ *   4. 技能卡高度不一，5 個技能排成 3+2 很亂
+ */
+
+#aegis-shell {
+  /* ── 技能卡：改成緊湊的三段式 ── */
+  .bt-skill {
+    min-height: 68px;
+    padding: 9px 6px 6px;
+    border-radius: 10px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    gap: 2px;
+    /* 避免內容撐破格子 */
+    overflow: hidden;
+  }
+
+  /* 第一段：屬性圖示 + 技能名 */
+  .bt-skill > div:first-of-type {
+    gap: 4px;
+    min-width: 0;
+  }
+  .bt-skill > div:first-of-type > span {
+    font-size: 10.5px;
+    line-height: 1.1;
+    letter-spacing: 0;
+    /* 三行以內顯示完整名稱；390px 下 5 欄每格約 70px，中文 6 字需要 2 行 */
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    white-space: normal;
+    word-break: break-word;
+    overflow-wrap: anywhere;
+  }
+
+  /* 第二段：次數 / 威力
+     390px 下每格約 70px，兩個資訊硬塞會把威力擠出格子。
+     改成「次數在上、威力在下」的兩行堆疊，兩者都能完整顯示。 */
+  .bt-skill > div:last-of-type {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    justify-content: flex-end;
+    gap: 1px;
+    flex-wrap: nowrap;
+    font-size: 9px;
+    line-height: 1.1;
+    min-width: 0;
+    width: 100%;
+    overflow: hidden;
+  }
+  /* 威力那半邊靠右，但不超出格子 */
+  .bt-skill > div:last-of-type > span:last-child {
+    align-self: flex-end;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .bt-skill > div:last-of-type > * {
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+  /* SkillResources 是 inline-flex + flex-wrap，在 70px 寬的格子裡會把數字擠掉 */
+  .bt-skill [data-skill-resources] {
+    display: inline-flex;
+    flex-wrap: nowrap !important;
+    gap: 3px !important;
+    font-size: 9px;
+    line-height: 1.1;
+    min-width: 0;
+    overflow: hidden;
+  }
+  .bt-skill [data-skill-resources] > span {
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+  /* PP 數字是 <b>，不能讓它被截 */
+  .bt-skill [data-skill-resources] b {
+    font-weight: 800;
+    letter-spacing: -0.02em;
+  }
+  /* 「次數」「充能」這類標籤字可以縮，數值不行 */
+  .bt-skill [data-skill-resources] > span:first-child {
+    overflow: hidden;
+    text-overflow: clip;
+    min-width: 0;
+  }
+
+  /* 第五技能標籤：不要超出卡片 */
+  /* 第五徽章：縮到極小、貼右上角，並讓技能名避開它 */
+  .bt-skill > span.absolute.-top-2 {
+    top: 1px;
+    right: 2px;
+    left: auto;
+    font-size: 7px;
+    padding: 0 2px;
+    line-height: 10px;
+    border-radius: 2px;
+    opacity: 0.92;
+    z-index: 1;
+  }
+  /* 有徽章的那張：第一段（技能名）往右讓出徽章寬度 */
+  .bt-skill > span.absolute.-top-2 ~ div:first-of-type {
+    padding-right: 20px;
+  }
+
+  /* ── 技能列：手機也維持 5 欄（3 欄會變 3+2 很亂） ── */
+  @media (max-width: 639px) {
+    [data-act-side] {
+      grid-template-columns: repeat(5, minmax(0, 1fr)) !important;
+      gap: 4px !important;
+    }
+  }
+
+  /* ── 戰鬥面板：底部留出安全區 ── */
+  [data-battle-root] .bt-panel {
+    padding-bottom: max(6px, env(safe-area-inset-bottom, 0px));
+  }
+
+  /* ── 頂部 HUD：手機上壓縮，把空間讓給戰場 ── */
+  @media (max-width: 639px) {
+    [data-battle-root] .bt-hp {
+      height: 10px;
+    }
+  }
+
+  /* ══════════════════════════════════════════
+     頂部 HUD 重排（2026-10-21）
+     實測問題：頂部資訊區佔畫面 42%，中央戰場被壓縮。
+       1. 最上方有 63px 純黑留白
+       2. 回合框 + 屬性倍率框合計 115px，佔 14%
+       3. 雙方資料卡在中央幾乎貼合、框線交疊
+       4. 狀態標籤全部擠在左側，看不出屬於哪一方
+     修法：壓縮留白與框體、把狀態歸回各自那一側。
+     ══════════════════════════════════════════ */
+
+  /* 1. 頂部定位
+        實測：match-info y=54 h=86（結束 140），HUD 父層 top-[172px] → 中間 32px 空隙
+        用 :has() 命中「包著 data-hud 的那個 absolute 容器」，不改 BattleScreen。 */
+  @media (max-width: 639px) {
+    [data-battle-root] div:has(> [data-hud]) {
+      top: 140px !important;
+    }
+    /* 回合 / 倍率區上移並縮小 */
+    [data-battle-root] div:has(> [data-match-info]) {
+      top: 44px !important;
+      transform: translateX(-50%) scale(0.9);
+      transform-origin: top center;
+    }
+    /* 戰場起點跟著上移，避免角色被 HUD 蓋住 */
+    [data-battle-root] div:has(> canvas),
+    [data-battle-root] [data-field] {
+      top: 232px !important;
+    }
+  }
+
+  /* 2. 回合 + 倍率框：縮小內距，減少垂直佔用 */
+  [data-battle-root] [data-match-info] > .bt-panel {
+    padding-top: 1px;
+    padding-bottom: 1px;
+  }
+  [data-battle-root] [data-match-info] .bt-panel {
+    box-shadow: none;
+  }
+
+  /* 3. 雙方資料卡：只留邊距，不改寬度（壓窄會讓中文逐字直排） */
+  @media (max-width: 639px) {
+    [data-battle-root] [data-hud="p1"] { left: 4px !important; }
+    [data-battle-root] [data-hud="p2"] { right: 4px !important; }
+  }
+
+  /* 4. 資料卡內部：縮小頭像與內距，名稱可讀性優先 */
+  @media (max-width: 639px) {
+    [data-battle-root] [data-hud] .bt-panel > div {
+      padding: 6px 7px !important;
+      gap: 6px !important;
+    }
+    /* 頭像 56px → 44px */
+    [data-battle-root] [data-hud] button.rounded-full {
+      width: 44px !important;
+      height: 44px !important;
+    }
+    /* 血條矮一點 */
+    [data-battle-root] [data-hud] .bt-hp {
+      height: 12px;
+      margin-top: 4px;
+    }
+    /* 名稱：單行 + 省略號（逐字直排比截斷更難讀） */
+    [data-battle-root] [data-hud] button.font-black {
+      font-size: 12px;
+      line-height: 1.2;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      min-width: 0;
+    }
+  }
+
+  /* 5. 狀態標籤：歸到各自那一側（右方靠右、左方靠左） */
+  @media (max-width: 639px) {
+    /* p2 的狀態容器：讓內容靠右 */
+    [data-battle-root] [data-hud="p2"] + div,
+    [data-battle-root] [data-hud="p2"] ~ div {
+      display: flex;
+      justify-content: flex-end;
+    }
+  }
+
+
+  /* ══════════════════════════════════════════
+     狀態托盤壓縮（2026-10-21）
+     實測：p1 托盤 x=12 y=218 w=183 h=92 —— 縱向 3 列佔 92px。
+     左右歸屬其實已由 renderChips 處理（data-status-tray + items-end），
+     真正的問題是「縱向堆疊太佔高度」，改成橫向流動。
+     ══════════════════════════════════════════ */
+  @media (max-width: 639px) {
+    /* 托盤本身：改成橫向流動，最多兩行 */
+    [data-status-tray] {
+      flex-direction: row !important;
+      flex-wrap: wrap !important;
+      align-items: flex-start !important;
+      gap: 3px !important;
+      max-height: 60px;
+      overflow: visible;
+    }
+    /* 每一列（stages / statuses / effects）也橫向排，不再各佔一列 */
+    [data-status-tray] [data-tray-row] {
+      display: contents !important;
+    }
+    /* 籌碼縮小：能力等級方塊 44px → 30px */
+    [data-status-tray] button.inline-flex {
+      width: 30px !important;
+      height: 30px !important;
+    }
+    [data-status-tray] button.inline-flex > span:first-child {
+      font-size: 8px !important;
+      line-height: 1 !important;
+    }
+    [data-status-tray] button.inline-flex > span:last-child {
+      font-size: 11px !important;
+      margin-top: 0 !important;
+    }
+    /* 狀態膠囊：縮小內距與圖示 */
+    [data-status-tray] .bt-tile {
+      padding: 0 3px !important;
+      font-size: 8.5px !important;
+      line-height: 16px !important;
+      height: 18px !important;
+      max-width: 90px !important;
+      border-radius: 4px !important;
+    }
+    [data-status-tray] .bt-tile img,
+    [data-status-tray] .bt-tile span.rounded-sm {
+      width: 12px !important;
+      height: 12px !important;
+    }
+    /* p2 的托盤靠右（原本就有，這裡確保不會被上面的 flex 覆蓋） */
+    [data-status-tray="p2"] {
+      justify-content: flex-end !important;
+    }
+  }
+
+
+
+    /* 角色圖：放大 + 陰影
+       不要改「角色容器」的 position / display / top ——
+       角色位置由 placeSprite() 依戰場尺寸與身高比例算出（src/battle/spriteMetrics），
+       容器是 transform 驅動的，硬改會讓角色跳到錯誤位置（實測 y=478、top=-147px）。
+       只放大圖片本身，定位交給原本的演算法。 */
+    /*
+      只設 height，不設 max-width / width。
+      原因：placeSprite() 已經依「可見寬度 / 戰場寬度」算好縮放（maxWidthFrac），
+      再疊一層 max-width 會讓右側角色的水平偏移失準 → 超出畫面。
+    */
+    [data-battle-root] .absolute.inset-x-0 img {
+      height: 172px !important;
+      width: auto !important;
+      object-fit: contain;
+      filter: drop-shadow(0 14px 28px rgba(0, 0, 0, 0.7));
+    }
+  }

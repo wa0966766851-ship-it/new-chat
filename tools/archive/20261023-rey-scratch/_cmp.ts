@@ -1,0 +1,10 @@
+﻿import { DEFAULT_ELVES } from './src/data/defaultElves.ts';
+import { CORRUPTED_REY_SOUL_TEXT } from './src/data/corruptedReyDescriptions.ts';
+const e:any = DEFAULT_ELVES.find((x:any)=>x.name==='魔化.雷伊');
+console.log('=== 原文 (CORRUPTED_REY_SOUL_TEXT[7070]) ===');
+const src = CORRUPTED_REY_SOUL_TEXT['7070'];
+console.log(src);
+console.log('\n=== DEFAULT_ELVES 中的 soulMark.description ===');
+console.log(e.soulMark.description);
+console.log('\n=== 是否相同 ===');
+console.log('equal:', src === e.soulMark.description);

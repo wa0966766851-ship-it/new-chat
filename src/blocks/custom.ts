@@ -214,68 +214,6 @@ Object.assign(CUSTOM, {
   },
 });
 
-// ───────── 5007 混濁海妖·布林克克：深潛者盛宴 ─────────
-Object.assign(CUSTOM, {
-  "自身處於能力下降狀態時先制+3且使用技能不受PP值限制、將自身任意能力下降狀態視為至少2倍同等級的全屬性能力提升": {
-    label: "自身能力下降時：先制+3、不受PP限制、下降視為2倍同級全屬性提升",
-    prio: (self: any) => Object.values(self?.statStages || {}).some((v: any) => typeof v === "number" && v < 0) ? 3 : 0,
-    run: (ctx: BattleEventContext) => {
-      const downs = Object.values((ctx.self as any).statStages || {}).filter((v: any) => typeof v === "number" && v < 0) as number[];
-      if (!downs.length) return false;
-      const lvl = Math.min(6, 2 * Math.max(...downs.map(v => -v)));
-      // 傷害公式讀取 blkStageAsBoost（攻擊方能力等級視為至少 lvl）；行動結束由引擎重置為 0。
-      // 防禦／速度／命中的視同提升需引擎在對應讀取點支援（已列入報告）。
-      ctx.setPlayerState("blkStageAsBoost", lvl);
-      ctx.addLog(`🌊 能力下降視為全屬性 +${lvl}！`, "effect");
-      return true;
-    },
-  },
-  "自身下2次技能無效時令本次技能額外造成對手當前體力¼的水系技能傷害且令對手100%漸凍1回合": {
-    label: "下2次自身技能無效時：【水系技能傷害】對手當前體力¼、對手漸凍1回合",
-    run: (ctx: BattleEventContext) => {
-      ctx.addTimerTo(ctx.actor, { id: `blk_${ctx.actor}_brinkk_invalid`, name: "技能無效追擊", kind: "use_counter", source: "skill" as any, remaining: 2, tickAt: "never", payload: { block: { trig: "self_invalid", consumeOnFire: true, owner: ctx.actor, body: [{ acts: [{ op: "custom", p: { key: "__brinkk_invalid_hit" }, label: "" }] }] } } } as any, false);
-      return true;
-    },
-  },
-  "__brinkk_invalid_hit": {
-    label: "【水系技能傷害】對手當前體力¼＋漸凍1回合",
-    run: (ctx: BattleEventContext) => {
-      ctx.applySkillTypeDamage(ctx.targetSide, Math.floor((ctx.target as any).currentHp / 4), "深潛者盛宴", { elem: "水" });
-      ctx.applyStatusWithImmunityCheck(ctx.targetSide, "漸凍", 1);
-      return true;
-    },
-  },
-  "造成傷害時取水系、混沌系、水.混沌、普通系中克制倍數最高者，未擊敗對手則延續至自身下2次自身造成技能傷害": {
-    label: "克制倍數取 水／混沌／水.混沌／普通 最高者（未擊敗則延續2次）",
-    trig: "use",
-    run: (ctx: BattleEventContext) => { ctx.setPlayerState("blkTypeOverride", ["水", "混沌", "水.混沌", "普通"]); ctx.setPlayerState("blkTypeOverrideUses", 1); ctx.setPlayerState("blkTypeOverrideExtend", 2); return true; },
-  },
-  "吸取對手300點體力，雙方每處於1種能力等級提升/下降狀態則額外吸取前額外吸取對手40點，吸取後任意1次對手體力未因此減少則額外汲取對手當前體力¼": {
-    label: "吸取300；雙方每1種能力變化再吸取40（獨立）；任一次未減少則汲取對手當前體力¼",
-    run: (ctx: BattleEventContext) => {
-      const cnt = [ctx.self, ctx.target].reduce((a: number, e: any) => a + Object.values(e?.statStages || {}).filter((v: any) => typeof v === "number" && v !== 0).length, 0);
-      ctx.setPlayerState("brinkkFeastAbsorbFallbackPending", true);
-      // 技能結束時清除待決旗標（未觸發的補汲取不可延續到之後的吸取）
-      ctx.addTimerTo(ctx.actor, { id: `blk_${ctx.actor}_brinkk_feast_pending_clear`, name: "盛宴待決清除", kind: "use_counter", source: "skill" as any, remaining: 1, tickAt: "never", payload: { block: { trig: "self_after_skill", once: true, owner: ctx.actor, body: [{ acts: [{ op: "custom", p: { key: "__brinkk_feast_clear" }, label: "" }] }] } } } as any, false);
-      for (const amt of [...Array(cnt).fill(40), 300]) {
-        queueHpDrain(ctx, ctx.targetSide, amt, 'fixed', "深潛者盛宴·獨立吸取");
-      }
-      return true;
-    },
-  },
-  "__brinkk_feast_clear": {
-    label: "深潛者盛宴：技能結束清除補汲取待決",
-    run: (ctx: BattleEventContext) => { ctx.setPlayerState("brinkkFeastAbsorbFallbackPending", false); return true; },
-  },
-  "3回合內自身造成技能傷害提升50%，雙方任一方處於異常狀態則效果翻倍": {
-    label: "3回合技能傷害+50%；每次傷害時任一方異常則增傷變為100%",
-    run: (ctx: BattleEventContext) => {
-      ctx.addTimerTo(ctx.actor, { id: `blk_${ctx.actor}_brinkk_feast_damage`, name: "深潛者盛宴·技能增傷", kind: "turn_effect", source: "skill", remaining: 3, tickAt: "round_end", payload: { block: { dmgOut: 0.5, kind: "技能", doubleIfAnyStatus: true } } }, ctx.moveIndex === 1);
-      return true;
-    },
-  },
-} as Record<string, CustomDef>);
-
 // ───────── 5001 悲歌.索比拉特 / 5002 帝皇之盾（疑慮清單 A1/A2 對齊用） ─────────
 // 原則：只補積木解析，不刪除 SOBIRAT_SKILLS / IMPERIAL_SHIELD_SKILLS 舊 handler。
 Object.assign(CUSTOM, {

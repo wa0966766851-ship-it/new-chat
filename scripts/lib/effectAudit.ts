@@ -1,10 +1,20 @@
 import { createHash } from 'node:crypto';
 import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { resolve, relative, sep, isAbsolute } from 'node:path';
+import { unpackReviewedKits } from '../../src/data/packedReviewedKits';
 
 /** 文字證據統一 CRLF/LF；不忽略任何其他內容，且不供二進位發布校驗使用。 */
 export const digest = (text: string | Buffer) => createHash('sha256')
   .update(text.toString().replace(/\r\n/g, '\n')).digest('hex');
+/** 稽核JSON包含原文：巢狀字串也統一換行，不刪空白或更動任何數值。 */
+export const serializeAuditJson = (value: unknown): string => JSON.stringify(value,
+  (_key, item) => typeof item === 'string' ? item.replace(/\r\n/g, '\n') : item, 2) + '\n';
+/** 封裝的證據比較完整解碼資料；壓縮器版本／字典順序不應改變語意指紋。 */
+export function reviewedKitDigest(text: string | Buffer): string {
+  const canonical = (value: any): any => Array.isArray(value) ? value.map(canonical)
+    : value && typeof value === 'object' ? Object.fromEntries(Object.keys(value).sort().map(k => [k, canonical(value[k])])) : value;
+  return digest(serializeAuditJson(canonical(unpackReviewedKits(JSON.parse(text.toString())))));
+}
 /** 僅去展示標記和空白；不轉繁簡、不改數值、不把相似效果當相同。 */
 export const normalizeSourceText = (text: string) => text
   .replace(/^\s*>+\s*/gm, '').replace(/^\s*#{1,6}\s+/gm, '').replace(/\*\*/g, '')
@@ -16,6 +26,7 @@ export function clauseIdentity(elfId: string, kind: string, name: string, raw: s
 }
 
 export function clauseExecution(route: string, parsed: boolean, index: number, mode?: 'blocks' | number[]) {
+  if (route === 'kit' || route === 'description') return parsed ? 'authored-block-runtime' : 'blocked-unresolved';
   if (route === 'trait-review') return 'trait-review';
   if (route === 'handler' || (route === 'hybrid' && !Array.isArray(mode))) return 'handler-review';
   if (route === 'hybrid' && Array.isArray(mode) && !mode.includes(index)) return 'handler-review';
@@ -40,7 +51,7 @@ export function findTextSources(root: string, elves: Array<{ id: string; name: s
 
 export type AuditEvidence = {
   id: string; elfId: string; entry: string; fragment: string; testFile: string; anchor: string;
-  lastPassed: string; testSha256: string; inputs: Array<{ path: string; sha256: string }>;
+  lastPassed: string; testSha256: string; inputs: Array<{ path: string; sha256: string; format?: 'reviewed-kits' }>;
   scenario: string; expected: string; remaining: string;
 };
 
@@ -58,7 +69,12 @@ export function evidenceState(root: string, proof: AuditEvidence): 'partial-evid
   if (!proof.lastPassed || !proof.inputs.length || !proof.anchor || digest(test) !== proof.testSha256 || !test.includes(proof.anchor)) return 'stale-evidence';
   for (const input of proof.inputs) {
     const path = safePath(root, input.path);
-    if (!existsSync(path) || digest(readFileSync(path)) !== input.sha256) return 'stale-evidence';
+    if (!existsSync(path)) return 'stale-evidence';
+    try {
+      const bytes = readFileSync(path);
+      const actual = input.format === 'reviewed-kits' ? reviewedKitDigest(bytes) : digest(bytes);
+      if (actual !== input.sha256) return 'stale-evidence';
+    } catch { return 'stale-evidence'; }
   }
   return 'partial-evidence';
 }

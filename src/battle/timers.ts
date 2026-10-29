@@ -1,4 +1,5 @@
 import type { EffectSource } from "../types";
+import type { EffectPresentation } from './effectPresentation';
 
 /* ────────────────────────────────────────────────────────────
  * 1. 分類定義(依戰鬥百科)
@@ -20,6 +21,9 @@ export type TimerKind = "turn_effect" | "round_counter" | "use_counter";
 export type TickAt = "round_end" | "action_end" | "never";
 
 export interface Timer {
+  /** Display-only metadata shared by registry, Kit and UI; never used for resolution. */
+  presentation?: EffectPresentation;
+  polarity?: string;
   scope?: "elf" | "team";
   ownerBattleId?: string;
   persistsOffField?: boolean;
@@ -134,7 +138,8 @@ export function tickTimers(
 ): Timer[] {
   const out: Timer[] = [];
   for (const t of list) {
-    if (t.remaining <= 0) continue;
+    if (t.remaining <= 0) { if (String(t.id).includes('PP\u6d88\u8017') || String(t.id).includes('pp_absorb') || String(t.id).includes('heal_equal')) ((globalThis as any).__TK ||= []).push({ ev: 'zero', id: t.id }); continue; }
+    if (String(t.id).includes('PP\u6d88\u8017') || String(t.id).includes('pp_absorb') || String(t.id).includes('heal_equal')) ((globalThis as any).__TK ||= []).push({ ev: 'tick', id: t.id, rem: t.remaining, at, listLen: list.length });
     if (t.tickAt !== at) { out.push(t); continue; }
     if (t.pendingActivation) { out.push({ ...t, pendingActivation: false }); continue; }
     if (t.lateMoverPending) { out.push({ ...t, lateMoverPending: false }); continue; }

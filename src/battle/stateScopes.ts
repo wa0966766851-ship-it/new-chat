@@ -1,6 +1,8 @@
+import { StatusRegistry } from '../effects/statusRegistry';
+import { canonicalStatusName } from '../effects/statusIdentity';
 import type { Elf } from "../types";
 import type { BattleState } from "../components/BattleManager";
-import { addTimer, type Timer, type AddContext } from "./timers";
+import { addTimer, clearTurnEffects, type Timer, type AddContext } from "./timers";
 import { bindMarkToElf, markAppliesToElf, setMark, type Mark } from "./marks";
 
 type Side = "p1" | "p2";
@@ -12,6 +14,16 @@ export function setBattleSideMarks(state: BattleState, side: Side, marks: Mark[]
   const teamKey = `${side}Team` as const;
   const team = state[teamKey].map(elf => ({ ...elf, marks: marks.filter(mark => markAppliesToElf(mark, elf)) }));
   return { ...state, [teamKey]: team, [side]: team[state[`${side}ActiveIndex`]], [`${side}Marks`]: marks };
+}
+
+/** 精靈更新中的marks是持有者視圖，不能拿來覆蓋含場下持有者的完整側清單。 */
+export function replaceBattleElfMarks(state: BattleState, side: Side, holder: Elf, marks: Mark[]): BattleState {
+  const next=(state[`${side}Marks`]||[]).filter(mark=>!markAppliesToElf(mark,holder));
+  for(const mark of marks)if(markAppliesToElf(mark,holder)){
+    const bound=bindMarkToElf(mark,holder),index=next.findIndex(m=>m.id===bound.id&&m.ownerBattleId===bound.ownerBattleId);
+    if(index<0)next.push(bound);else next[index]=bound;
+  }
+  return setBattleSideMarks(state,side,next);
 }
 
 /** 明文的陣營、指定下一隻、及追蹤上場者資料；其他 RegistryState 預設個體。 */
@@ -58,7 +70,43 @@ export function addScopedTimer(state: BattleState, side: Side, elf: Elf, timer: 
   return { ...state, [`${side}ElfState`]: bank };
 }
 
+/** 指定持有者的次數型計時器消耗；不把同ID場下計時器留在銀行裡。 */
+export function consumeScopedTimer(state:BattleState,side:Side,elf:Elf,id:string):BattleState {
+  const owner=battleIdentity(elf);
+  const consume=(timers:Timer[])=>timers.flatMap(t=>t.id!==id||(t.scope!=='team'&&t.ownerBattleId&&t.ownerBattleId!==owner)?[t]:t.remaining>1?[{...t,remaining:t.remaining-1}]:[]);
+  const key=`${side}Timers` as const,bankKey=`${side}ElfState` as const;
+  const bank={...state[bankKey]},snapshot=bank[owner];
+  if(snapshot&&owner!==battleIdentity(state[side]))bank[owner]={...snapshot,timers:consume(snapshot.timers)};
+  return {...state,[key]:consume(state[key]),[bankKey]:bank};
+}
+
+/** 在場者只讀活動清單；其銀行是上次切換快照，不能重新啟用已到期效果。 */
+export function scopedTimers(state:BattleState,side:Side,elf:Elf):Timer[] {
+  const owner=battleIdentity(elf);
+  return [...state[`${side}Timers`].filter(t=>t.scope==='team'||!t.ownerBattleId||t.ownerBattleId===owner),
+    ...(owner===battleIdentity(state[side])?[]:state[`${side}ElfState`]?.[owner]?.timers||[])];
+}
+
+/** 同一持有者的可消除回合效果（含明確陣營級）才可清除。 */
+export function clearScopedTurnEffects(state:BattleState,side:Side,elf:Elf):{state:BattleState;removed:Timer[]} {
+  const owner=battleIdentity(elf),key=`${side}Timers` as const,bankKey=`${side}ElfState` as const;
+  const applicable=(t:Timer)=>t.scope==='team'||!t.ownerBattleId||t.ownerBattleId===owner;
+  const flat=state[key],bank={...state[bankKey]},snapshot=bank[owner];
+  const [kept]=clearTurnEffects(flat.filter(applicable));
+  const removed=flat.filter(t=>applicable(t)&&!kept.includes(t));
+  const nextFlat=flat.filter(t=>!removed.includes(t));
+  if(snapshot&&owner!==battleIdentity(state[side])){const [nextOwn]=clearTurnEffects(snapshot.timers);removed.push(...snapshot.timers.filter(t=>!nextOwn.includes(t)));bank[owner]={...snapshot,timers:nextOwn};}
+  const zeroKeys:Record<string,unknown>={};
+  for(const timer of removed)for(const key of timer.payload?.mirrorRegistryKeys||[])zeroKeys[key]=0;
+  return {state:writeScopedRegistry({...state,[key]:nextFlat,[bankKey]:bank},side,elf,zeroKeys),removed};
+}
+
 /** 所有切換路徑共用；不修改體力，不把下場保留誤當成傳給下一隻。 */
+/** effects 裡代表異常狀態的項目（與 battleStatuses 同步的舊結構）。 */
+function isStatusEffect(e: any): boolean {
+  return !!e && (!!StatusRegistry[canonicalStatusName(String(e.id ?? e.name ?? ''))] || !!StatusRegistry[canonicalStatusName(String(e.name ?? ''))]);
+}
+
 export function switchBattleSide(state: BattleState, side: Side, index: number): BattleState {
   const teamKey = `${side}Team` as const;
   const indexKey = `${side}ActiveIndex` as const;
@@ -107,7 +155,11 @@ export function switchBattleSide(state: BattleState, side: Side, index: number):
   const team = [...state[teamKey]];
   // 屬性剝離／暫時改變屬性只在場上有效：下場時恢復原屬性。
   const peelRestore = (outgoing.typePeeled || outgoing.typeChangedUntilSwitch) ? { type: outgoing.originalType || outgoing.type, typePeeled: false, typeChangedUntilSwitch: false } : {};
-  team[state[indexKey]] = { ...outgoing, ...peelRestore, marks: marks.filter(mark => markAppliesToElf(mark, outgoing)) };
+  // 原廠設定：下場時異常狀態與能力等級消失。直接清除，不經「異常結束／解除」流程，所以不會響應窒息等結束效果。
+  const offFieldReset = { battleStatus: 'normal', battleStatusDuration: 0, battleStatuses: {},
+    effects: (outgoing.effects || []).filter((e: any) => !isStatusEffect(e)),
+    statStages: { atk: 0, def: 0, spatk: 0, spdef: 0, speed: 0, accuracy: 0 } };
+  team[state[indexKey]] = { ...outgoing, ...peelRestore, ...offFieldReset, marks: marks.filter(mark => markAppliesToElf(mark, outgoing)) };
   team[index] = active;
   return {
     ...state, [teamKey]: team, [side]: active, [indexKey]: index,

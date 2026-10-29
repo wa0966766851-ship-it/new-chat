@@ -1,5 +1,6 @@
 import type { BattleEventContext } from '../../types';
 import { EffectTiming } from '../../types';
+import { readMarkStacks } from '../../markQueries';
 import { isNonTrueDamageType } from '../../../battle/damageSemantics';
 
 /** 天陣的期限與正常關閉代價，獨立於八荒倍率與伏魔計算。 */
@@ -8,7 +9,7 @@ export function runDixinFormation(c: BattleEventContext, event: EffectTiming | s
   if ((active.battleId || active.id) !== (c.self.battleId || c.self.id)) return;
   const round = c.roundNumber ?? 0;
   let left = Number(c.getPlayerState('dixinFormationRounds') || 0);
-  if (!left && (c.getPlayerState('dixinBahuangStacks') || 0) >= 9 && !c.getPlayerState('dixinFormationAtNine')) {
+  if (!left && readMarkStacks(c,{side:'self',id:'bahuang_mark'}) >= 9 && !c.getPlayerState('dixinFormationAtNine')) {
     left = 9;
     c.setPlayerState('dixinFormationRounds', left);
     c.setPlayerState('dixinFormationBornRound', round);
@@ -17,14 +18,15 @@ export function runDixinFormation(c: BattleEventContext, event: EffectTiming | s
       remaining: left, tickAt: 'never', scope: 'elf', payload: { opponentDamageHpCeiling: true } }, false);
     c.addLog('👑 誅魔天陣開啟，持續9回合。', 'effect');
   }
-  if ((c.getPlayerState('dixinBahuangStacks') || 0) < 9) c.setPlayerState('dixinFormationAtNine', false);
+  if (readMarkStacks(c,{side:'self',id:'bahuang_mark'}) < 9) c.setPlayerState('dixinFormationAtNine', false);
   if (!left) return;
   const comp = data?.damageComp || data;
   if (event === EffectTiming.BEFORE_DAMAGE && comp?.isIncoming && !comp.pure && isNonTrueDamageType(comp.damageCategory)) {
     // 固定點數減傷，不將「已損失體力」改成比例；可降至0。
     comp.flatReduction = (comp.flatReduction || 0) + Math.max(0, c.target.maxHp - c.target.currentHp) * (comp.reductionPolicy?.attenuation ?? 1);
   }
-  const nineLock = (c.actor === 'p1' ? c.p1Timers : c.p2Timers)?.some(t => t.id === 'dixin_nine_lock' && t.remaining > 0 && (!t.ownerBattleId || t.ownerBattleId === (c.self.battleId || c.self.id)));
+  // 九鼎「使用成功後存在」＝舊硬鍵或積木 markLock 二擇一（Kit 化後兩種都觸發 kill-close）。
+  const nineLock = ((c.actor === 'p1' ? c.p1Timers : c.p2Timers) || []).some(t => (t.id === 'dixin_nine_lock' || t.payload?.block?.markLock?.id === 'bahuang_mark') && t.remaining > 0 && !t.pendingActivation && (!t.ownerBattleId || t.ownerBattleId === (c.self.battleId || c.self.id)));
   const killClose = event === EffectTiming.BATTLE_PHASE_END && data?.killedOpponent && nineLock;
   if (killClose || (event === EffectTiming.ROUND_END && round !== c.getPlayerState('dixinFormationBornRound') && c.getPlayerState('dixinFormationTickRound') !== round)) {
     c.setPlayerState('dixinFormationTickRound', round);

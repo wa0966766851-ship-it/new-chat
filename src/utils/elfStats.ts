@@ -28,6 +28,11 @@ export function normalizeStoredElfStats<T extends Partial<Elf>>(elf: T): T {
   catch (error) { console.warn("精靈資料未能重算，保留原始紀錄供修復：", error); return elf; }
 }
 
+/** 隊伍預覽與開戰共用：從配置重算固定 +10，切換或重算不累加舊面板。 */
+export function withAnnualBonus<T extends Partial<Elf>>(elf: T, enabled: boolean) {
+  return normalizeElfStats({ ...elf, hasAnnualBonus: enabled });
+}
+
 export function getDefaultEvs(baseStats?: BaseStats): BaseStats {
   const isPhysical = (baseStats?.atk ?? 0) >= (baseStats?.spatk ?? 0);
   return isPhysical

@@ -1,0 +1,39 @@
+diff --git a/src/blocks/runtime.ts b/src/blocks/runtime.ts
+index c733bfaa..518ecc94 100644
+--- a/src/blocks/runtime.ts
++++ b/src/blocks/runtime.ts
+@@ -75,12 +75,13 @@ const hasStage = (elf: any, up: boolean) => Object.values(elf?.statStages || {})
+ 
+ function resetStages(ctx: BattleEventContext, side: S, pick: (v: number) => boolean): boolean {
+   const elf = liveElf(ctx, side);
+-  const stages: Record<string, number> = { ...(elf?.statStages || {}) };
++  const before: Record<string, number> = { ...(elf?.statStages || {}) };
++  const stages: Record<string, number> = { ...before };
+   let changed = false;
+   for (const k in stages) if (typeof stages[k] === "number" && pick(stages[k])) { stages[k] = 0; changed = true; }
+   if (changed) ctx.updateElf(side, { statStages: stages as any });
+-  // 寫入可能被「提升不可消除」攔截。成功分支必須看寫入後，不看原本想清掉幾項。
+-  return changed && (!ctx.getFullTeam || Object.keys(stages).some(k=>Number(liveElf(ctx,side)?.statStages?.[k] || 0)!==Number(elf?.statStages?.[k] || 0)));
++  // 寫入可能被「提升不可消除」攔截。成功分支必須看寫入後；比較對象是寫入前的複本（updateElf 可能原地修改）。
++  return changed && (!ctx.getFullTeam || Object.keys(stages).some(k=>Number(liveElf(ctx,side)?.statStages?.[k] || 0)!==Number(before[k] || 0)));
+ }
+ 
+ function cmp(a: number, op: string, b: number): boolean {
+diff --git a/src/effects/ppOperations.ts b/src/effects/ppOperations.ts
+index 26ade490..95a9a4b8 100644
+--- a/src/effects/ppOperations.ts
++++ b/src/effects/ppOperations.ts
+@@ -13,9 +13,10 @@ export function applyKitPpOperation(ctx:BattleEventContext,side:'p1'|'p2',mode:K
+     return ctx.getFullTeam?.(s)?.find(e=>identity(e)===identity(base)) || base;
+   };
+   // 老測試及非戰鬥預覽也可提供updateElf；正式戰鬥仍保留指定持有者的updateAnyElf。
+-  const adapter:BattleEventContext={...ctx,
+-    getFullTeam:ctx.getFullTeam || ((s)=>[current(s)]),
+-    updateAnyElf:ctx.updateAnyElf || ((s,_id,patch)=>ctx.updateElf(s,patch))};
++  // ctx 常是 Object.create(ctx) 的節點上下文；展開運算子會丟失原型上的計時器與事件，故以原型繼承覆寫。
++  const adapter:BattleEventContext=Object.assign(Object.create(ctx),{
++    getFullTeam:ctx.getFullTeam || ((s:'p1'|'p2')=>[current(s)]),
++    updateAnyElf:ctx.updateAnyElf || ((s:'p1'|'p2',_id:string,patch:any)=>ctx.updateElf(s,patch))});
+   const elf=current(side);if(!elf)return false;
+   const before=JSON.stringify(elf.skills);
+   const recovery=mode==='recover'||mode==='add';

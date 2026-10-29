@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useMemo } from "react";
-import { ElfAvatar, TypeIcon } from "./SeerImages";
+import { ElfAvatar, TypeIcon, SkillTypeIcon } from "./SeerImages";
+import { skillDisplayType } from '../utils/skillPresentation';
 import { Elf, BattleMode } from "../types";
+import { bindInitialCounterparts } from "../battle/illusionPresentation";
 import { DestinyElfInstance, buildDestinyPool, pullFromDestinyPool, simulateAiBan, simulateAiPick } from "../utils/destinyGacha";
 import { motion, AnimatePresence } from "motion/react";
 import DestinyIntroRuleTable from "./DestinyIntroRuleTable";
@@ -244,16 +246,24 @@ export default function DestinyWheelScreen({
       };
     });
 
+    // 初始背包：出戰＝所選 6 隻；待命＝池中未選且未被禁用者（依池內原順序壓緊），供「指定背包內精靈」類幻化使用。
+    const toBag = (picked: Elf[], pool: typeof p1Pool, pickedIds: string[]): Elf[] => {
+      const standby = pool.filter(e => !pickedIds.includes(e.instanceId) && !e.isBanned)
+        .map(found => ({ ...found, battleId: found.instanceId, currentHp: found.maxHp, statStages: { atk: 0, def: 0, spatk: 0, spdef: 0, speed: 0, accuracy: 0 } }) as Elf);
+      return bindInitialCounterparts([...picked, ...standby], picked.length).slice(0, picked.length);
+    };
+    const p1Bag = toBag(p1TeamFinal, p1Pool, p1PickedIds), p2Bag = toBag(p2TeamFinal, p2Pool, p2PickedIds);
+
     // 找出首發 ID 在 Team 中的實際精靈 ID
     const starter1Elf = p1Pool.find(e => e.instanceId === p1StarterId);
     const starter2Elf = p2Pool.find(e => e.instanceId === p2StarterId);
 
     onStartBattle(
       battleMode,
-      p1TeamFinal,
-      p2TeamFinal,
-      starter1Elf ? starter1Elf.instanceId : p1TeamFinal[0].battleId!,
-      starter2Elf ? starter2Elf.instanceId : p2TeamFinal[0].battleId!,
+      p1Bag,
+      p2Bag,
+      starter1Elf ? starter1Elf.instanceId : p1Bag[0].battleId!,
+      starter2Elf ? starter2Elf.instanceId : p2Bag[0].battleId!,
       p1Suit,
       p1Eyewear,
       p2Suit,
@@ -948,24 +958,24 @@ export default function DestinyWheelScreen({
                 {inspectElf.soulMark?.description || "（無記載）"}
               </div>
 
-              {/* 異能特質 */}
+              {/* 特質 */}
               {inspectElf.alienTraits && (
                 <div className="space-y-2 mb-4">
                   {inspectElf.alienTraits.gen2Trait && (
                     <div className="bg-amber-950/30 p-3 rounded-xl border border-amber-500/40 text-xs text-amber-100 leading-relaxed">
-                      <div className="font-bold text-amber-300 mb-1">🌟 二代異能特質：【{inspectElf.alienTraits.gen2Trait.name}】</div>
+                      <div className="font-bold text-amber-300 mb-1">🌟 二代特質：【{inspectElf.alienTraits.gen2Trait.name}】</div>
                       {inspectElf.alienTraits.gen2Trait.description}
                     </div>
                   )}
                   {inspectElf.alienTraits.exclusiveTrait && (
                     <div className="bg-red-950/30 p-3 rounded-xl border border-red-500/40 text-xs text-red-100 leading-relaxed">
-                      <div className="font-bold text-red-300 mb-1">🔥 專屬異能特質：【{inspectElf.alienTraits.exclusiveTrait.name}】</div>
+                      <div className="font-bold text-red-300 mb-1">🔥 專屬特質：【{inspectElf.alienTraits.exclusiveTrait.name}】</div>
                       {inspectElf.alienTraits.exclusiveTrait.description}
                     </div>
                   )}
                   {(inspectElf.alienTraits.exclusiveTraits || []).map((trait) => (
                     <div key={trait.name} className="text-red-200">
-                      <div className="font-bold text-red-300 mb-1">🔥 專屬異能特質：【{trait.name}】</div>
+                      <div className="font-bold text-red-300 mb-1">🔥 專屬特質：【{trait.name}】</div>
                       <div className="whitespace-pre-wrap">{trait.description}</div>
                     </div>
                   ))}
@@ -994,7 +1004,7 @@ export default function DestinyWheelScreen({
                   <div key={idx} className="bg-slate-950/60 border border-slate-800 p-2 rounded-lg text-xs flex justify-between items-center">
                     <div>
                       <span className="font-bold text-indigo-300 mr-2">{sk.name}</span>
-                      <span className="text-[10px] text-slate-500"><span className="inline-flex items-center gap-0.5 align-middle"><TypeIcon type={sk.type} size={11} showLabelWhenMissing={false} /></span>[{sk.type}/{sk.category}] 威力:{sk.power} PP:{sk.pp}</span>
+                      <span className="text-[10px] text-slate-500"><span className="inline-flex items-center gap-0.5 align-middle"><SkillTypeIcon skill={sk} size={11} showLabelWhenMissing={false} /></span>[{skillDisplayType(sk)}/{sk.category}] 威力:{sk.power} PP:{sk.pp}</span>
                     </div>
                     {sk.priority && sk.priority !== 0 ? (
                       <span className="text-[10px] bg-amber-500/20 text-amber-400 px-1.5 py-0.5 rounded">先制{sk.priority > 0 ? `+${sk.priority}` : sk.priority}</span>

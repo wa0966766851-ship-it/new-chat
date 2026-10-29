@@ -1,0 +1,60 @@
+{
+  "name": "賽爾號對戰模擬器",
+  "short_name": "賽爾模擬器",
+  "description": "6V6 精靈對戰模擬器：自訂陣容、AI 對戰、命運之輪與星際探索。",
+  "id": "/",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "display_override": [
+    "standalone",
+    "minimal-ui",
+    "browser"
+  ],
+  "orientation": "any",
+  "background_color": "#0A0C10",
+  "theme_color": "#0A0C10",
+  "lang": "zh-Hant",
+  "dir": "ltr",
+  "categories": [
+    "games",
+    "entertainment"
+  ],
+  "icons": [
+    {
+      "src": "/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "開始對戰",
+      "short_name": "對戰",
+      "url": "/?scene=battle"
+    },
+    {
+      "name": "編成",
+      "short_name": "編成",
+      "url": "/?scene=custom"
+    },
+    {
+      "name": "背包",
+      "short_name": "背包",
+      "url": "/?scene=bag"
+    }
+  ]
+}

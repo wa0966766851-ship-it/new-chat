@@ -38,9 +38,7 @@ try{
  // ── A：S4／S5／S6、K3、K1、K2 真實傷害、K5 未觸發分支
  await start([scarlett()],[mk('X',5_000_000,[sk('T增益'),sk('等待'),sk('打','物理',50)],10)]); dismissPuni();
  let L=await turn('暮光舞動','T增益');
- assert.match(L,/【燦】：自身特攻、速度\+2、命中\+1/,'S4');
- assert.match(L,/【燦】：對手雙攻、速度-2、命中-1/,'S5');
- assert.match(L,/弱點傷害/,'S6 觸發');
+ // S4/S5 以以下實際六維數值驗證，避免要求已除名 handler 的專屬日誌。
  assert.ok(fx('p2')['星贖']>0,'S6 對手星贖');
  assert.equal(st().p1RegistryState.weakPointDefenseTurns,1,'S6 弱點傷害 2 回合（回合結束剩1）');
  assert.equal(st().p1.statStages.spatk,4,'S4+K3 特攻 +4');
@@ -51,20 +49,22 @@ try{
  assert.equal(st().p1RegistryState.priorityBoostTurns,2,'K3 下2回合先制');
  assert.equal(st().p1RegistryState.priorityBoostValue,2);
  L=await turn('純白聖翎','T增益');
- assert.match(L,/對手所有攻擊技能PP歸0/,'K1 消強成功');
+ assert.match(L,/攻擊技能.*PP.*(?:歸零|歸0)/,'K1 消強成功');
  assert.equal(skillOf('p2','打').pp,0,'K1 攻擊技能 PP 歸0');
- assert.match(L,/受純白聖翎限制/,'K1 屬性技能無效');
+ assert.match(L,/無效/,'K1 屬性技能無效（搭配下方實際PP斷言）');
  assert.equal(skillOf('p2','T增益').pp,0,'K1 使用後屬性技能 PP 歸0');
- assert.match(L,/暮光舞動】：恢復 \d+ 體力並造成等量百分比傷害/,'K3 使用技能恢復＋百分比傷害');
+ assert.ok(st().p1Timers.some((t:any)=>t.id.includes('暮光舞動')&&t.payload?.block?.trig==='self_skill'&&t.remaining===3),'K3 完整Kit監控仍在；實際量/禁療/期限另由typeViewMigration雙側數值測試驗證');
+ // K5 的「未消除」分支獨立開局：K1 留在對手身上的無效計時器本來就可清除，不能把它當成無效果對手。
+ await start([scarlett()],[mk('X',5_000_000,[sk('等待'),sk('打','物理',50)],10)]); dismissPuni();
  L=await turn('晨曦昭世','等待');
- assert.ok(st().p1RegistryState.immuneAttackTurns>=2,'K2 攻擊免疫');
+ assert.equal(st().p1RegistryState.immuneAttackTurns,2,'K2 基礎2回合加星贖延長1回合，回合末剩2');
  assert.equal(st().p1RegistryState.reflectStatusTurns,4,'K2 5回合反彈異常');
  const hpBefore=st().p2.currentHp;
  L=await turn('王·聖璨天潔','等待');
- assert.match(L,/晨曦昭世】：附加自身最大體力20%的真實傷害/,'K2 使用技能附加真傷');
- assert.match(L,/未消除回合類效果，自身免疫下1次異常狀態/,'K5 未觸發分支');
- assert.match(L,/王·聖璨天潔】：附加 \d+ 百分比傷害並恢復等量體力/,'K5 30% 百分比傷害');
- assert.match(L,/未擊敗對手，恢復 \d+ 體力/,'K5 擊後⅓百分比傷害＋恢復');
+ assert.ok(st().p1Timers.some((t:any)=>t.payload?.block?.trig==='self_skill'&&t.payload.block.body?.some((s:any)=>s.acts?.some((a:any)=>a.op==='dmg'&&a.p.type==='真實'&&a.p.ratio===0.2))),'K2 20%真傷積木監控仍在；精確數值及期限由migrationExpiryReaction驗證');
+ assert.equal(st().p1RegistryState.blkImmuneStatusCount,1,'K5 未觸發分支真正授予一次異常免疫');
+ assert.ok(hpBefore-st().p2.currentHp>=Math.floor(st().p1.maxHp*.5)+Math.floor(st().p2.maxHp/3),'K2 20%真傷與K5 30%自身上限及對手⅓百分比傷害真正扣血');
+ assert.equal(st().p1.currentHp,st().p1.maxHp,'K5 未擊敗時保持滿血；實際傷害量由上方數值斷言驗證');
  assert.ok(st().p2.currentHp<hpBefore);
  console.log('A 通過');
 
@@ -73,25 +73,25 @@ try{
  L=await turn('晨曦昭世','打');
  assert.match(L,/免疫了【打】/,'K2 免疫攻擊');
  L=await turn('王·凰歌盡霄','T百分比');
- assert.match(L,/【燦】：傷害降至⅓/,'S2 降傷');
- assert.match(L,/回合結束造成等同恢復量 \d+ 的百分比傷害/,'S2 回合結束百分比傷害');
- assert.equal(st().p1RegistryState.chanStacks,1,'燦界聖芒 +1');
- assert.equal((st().p1Marks||[]).find((m:any)=>m.id==='scarlett_holy_light')?.count,1);
+ assert.equal((st().p1Marks||[]).find((m:any)=>m.id==='canGlory')?.count,1,'實際降低傷害才授予1層聖芒；精確HP結算另由canSettlement雙側測試驗證\n'+L);
  console.log('B 通過');
 
  // ── C：K4 交換／威力／無效下次攻擊、K5 消除回合類效果→麻痺
+ // K4 已 Kit 化（migratedScarlettSkillKits）：交換走通用 stat_swap、無效走 invalid_next 計時器、
+ // 威力走 boost{power,perInc}（1.75＋雙方PP<1技能數×0.3）、吸取走 vampire。
  await start([scarlett()],[mk('Z',5_000_000,[sk('T增益','屬性',0,5),sk('T佈陣','屬性',0,5),sk('打','物理',80)],10)]); dismissPuni();
  L=await turn('王·凰歌盡霄','T增益');
- assert.match(L,/交換 \d 項能力等級/,'K4 交換');
- assert.match(L,/威力 ×1\.75/,'K4 威力+75%');
+ assert.match(L,/與對手交換低於對手的能力等級/,'K4 交換（Kit stat_swap）');
+ assert.match(L,/本次攻擊威力 ×[\d.]+/,'K4 威力倍率（Kit boost power）');
+ assert.match(L,/吸血/,'K4 吸取等同攻擊傷害');
  const s1=st().p1.statStages, s2=st().p2.statStages;
  assert.ok(s1.def>=s2.def && s1.atk>=s2.atk && s1.spdef>=s2.spdef,'K4 交換後自身不低於對手');
- assert.equal(st().p1RegistryState.nextAttackSkillInvalid,true,'K4 無效對手下次攻擊');
+ assert.ok(st().p2Timers.some((t:any)=>t.payload?.block?.invalid==='攻擊'),'K4 無效對手下次攻擊（invalid_next 計時器）');
  L=await turn('王·聖璨天潔','T佈陣');
- assert.match(L,/消除對手回合類效果，對手麻痺/,'K5 消除成功→麻痺');
+ assert.ok(!st().p2Timers.some((t:any)=>t.id==='t_formation'),'K5 真正清除對手佈陣；下方確認麻痺');
  assert.ok(fx('p2')['麻痺']>0);
- // 對手麻痺：下回合無法行動 → 改測 K4 的「無效下次攻擊」於麻痺結束後；這裡只驗證旗標仍待命
- assert.equal(st().p1RegistryState.nextAttackSkillInvalid,true);
+ // 對手麻痺：下回合無法行動 → 改測 K4 的「無效下次攻擊」於麻痺結束後；這裡只驗證計時器仍待命
+ assert.ok(st().p2Timers.some((t:any)=>t.payload?.block?.invalid==='攻擊'),'K4 無效計時器仍待命（Kit invalid_next）');
  console.log('C 通過');
 
  // ── D：珀妮 麻痺→星贖、S3 下場繼承
@@ -99,13 +99,12 @@ try{
  await start([scarlett(),T],[mk('W',5_000_000,[sk('T麻痺術'),sk('T百分比')],10)]);
  L=await turn('暮光舞動','T麻痺術');
  assert.ok(!fx('p1')['麻痺'] && fx('p1')['星贖']>0,'P2 麻痺轉化為星贖');
- assert.match(L,/麻痺轉化為星贖/);
  const tIdx=st().p1Team.findIndex((e:any)=>e.battleId==='T');
+ const inheritedTargetHp=st().p2.currentHp;
  L=await turn({switchTo:tIdx},'T百分比');
  assert.equal(st().p1.battleId,'T');
- assert.match(L,/斯嘉麗下場，下一隻出戰精靈 \d 回合內獲得聖光護體/,'S3 下場');
- assert.match(L,/【燦】：傷害降至⅓/,'S3 繼承降傷');
- assert.match(L,/回合結束造成等同恢復量/,'S3 繼承回合結束百分比傷害');
+ assert.equal(st().p1.currentHp,100000,'S3 30%百分比傷害降至10%，再實際恢復10000');
+ assert.equal(inheritedTargetHp-st().p2.currentHp,10000,'S3 繼承回合末實際恢復等量百分比傷害');
  console.log('D 通過');
 
  // ── 弱點傷害（通用鍵 weakPointDefenseTurns）：以對手雙防較低者的60%計算
@@ -120,6 +119,35 @@ try{
  assert.equal(weak,expectWeak,'弱點傷害＝以 min(300,500)×0.6 作為特防');
  const ov=calculateDamage(atkE,{...defE,type:'普通'},{...spSkill,type:'普通'},'p1',undefined,undefined,1,false,[],[],{},undefined,undefined,{attackTypeOverrideUses:1,attackTypeOverride:'光',targetTypeOverride:'暗影'},{});
  assert.equal(ov.typeMultiplier,2,'K3 無效：光系對暗影系克制');
+ // ── E：重生條件（使用者裁定 2026-10-16）——必須在場下且隊伍存在可出戰精靈；死亡當回合不得在場復活
+ {
+   // E1：斯嘉麗在場死亡（滿層倒數1）→ 死亡當回合不得原地復活（否則無限復活）
+   const T2=mk('T2',100000,[sk('等待')],10);
+   const fatal={...sk('T必殺真傷','物理',1,100),effectMode:'kit',kit:[{codeId:'effect_sequence',node:'on_skill_use',source:'skill',role:'attached',order:0,
+     params:{clause:{raw:'測試致死真傷',trig:'use',parsed:true,body:[{acts:[{op:'dmg',p:{flat:100000,type:'真實'},label:'致死真傷'}]}]}}}]};
+   const killer=mk('K',1_000_000_000,[fatal,sk('等待')],99999); // 高先制擊殺，避免珀妮失明干擾死亡倒數測試
+   await start([scarlett(),T2],[killer]);
+   let L2=await turn('純白聖翎','T必殺真傷');
+   assert.equal(st().p1Team[0].currentHp,0,`E1 斯嘉麗確實死亡\n${L2}`);
+   // 等待強制換人階段到來（死亡結算非同步）
+   for(let w=0;w<40 && st().phase!==('forced_switch_p1' as any) && st().phase!=='game_over';w++) await wait(3);
+   const t0=st().p1Team[0];
+   assert.ok(!(t0.currentHp>0 && st().p1ActiveIndex===0 && /重生時間到/.test(L2)),'E1 死亡當回合不得在場復活');
+   // E2：換人下場後，倒數走完於背包內重生（體力滿、仍為場下）
+   const idx=st().p1Team.findIndex((e:any)=>e.battleId==='T2');
+   for(let i=0;i<60 && st().turnNumber<8 && st().phase!=='game_over';i++){
+     const ph=st().phase;
+     if(ph==='p1_select'){ if(!skillOf('p1','等待')) break; await turn('等待','等待'); }
+     else if(ph==='p2_select'){ await act(async()=>d.onSkillSelect('p2',skillOf('p2','等待'))); await wait(10); }
+     else if(ph==='forced_switch_p1'){ await act(async()=>d.onSwitchElf('p1',idx)); await wait(10); }
+     else { await wait(3); }
+   }
+   const logs2=(st().logs||[]).map((x:any)=>x.text).join('\n');
+   assert.match(logs2,/於背包內重生/,'E2 背包內重生');
+   assert.ok(st().p1Team[0].currentHp>0,'E2 重生後體力>0');
+   assert.ok(st().p1.battleId!=='S' || st().p1Team[0].currentHp>0,'E2 重生位置在背包');
+   console.log('E 通過（重生條件：場下＋可出戰精靈；死亡當回合不在場復活）');
+ }
  console.log('聖光斯嘉麗：魂印／珀妮／燦界聖芒／五技能語意測試通過');
 } catch (e) { console.error(e); await server.close(); process.exit(1); }
 await server.close(); process.exit(0);

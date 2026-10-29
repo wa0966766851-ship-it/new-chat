@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { DEFAULT_ELVES } from '../src/data/defaultElves';
+import { DEFAULT_ELVES } from '../src/data/defaultElvesLoaded';
 import { createDamageEntry, suggestDamageTypes } from '../src/effects/damageChoices';
 import { normalizeBlockAtom } from '../src/effects/blockParams';
 import { ATOMS, runNode } from '../src/effects/effectRunner';
@@ -69,13 +69,16 @@ check('未定傷害不偷用粉傷，非法數值／未指定技能屬性拒絕�
   assert.equal(createDamageEntry({ amount: 210, unit: 'percent' }).params.amount, 210);
   assert.throws(() => createDamageEntry({ amount: 10, unit: 'points', type: 'skill' }));
 });
-check('所有42隻精靈均能取得魂印／攜帶／預備技能積木與待確認清單', () => {
-  assert.equal(DEFAULT_ELVES.length, 42);
+check('所有預設精靈（含 API 匯入的 4937）均能取得魂印／攜帶／預備技能積木與待確認清單', () => {
+  // 精靈數不寫死：不得少於上次確認的 43 隻、id 不重複；逐隻檢查由下方迴圈涵蓋全部。
+  assert.ok(DEFAULT_ELVES.length >= 43);
+  assert.equal(new Set(DEFAULT_ELVES.map(e => String(e.id))).size, DEFAULT_ELVES.length, '精靈 id 不重複');
   for (const id of ['5031', '5032', '5033', '5034', '5035']) assert.ok(DEFAULT_ELVES.some(e => String(e.id) === id));
   const handlers = { skill: () => true, soul: () => true };
   for (const elf of DEFAULT_ELVES) {
     const soul = describeExecution({ elf }, handlers);
-    assert.equal(soul.route, SOUL_MODE[String(elf.id)] === 'blocks' ? 'blocks' : 'handler');
+    // API 匯入的精靈只有 Kit（沒有 handler），其餘依 SOUL_MODE
+    assert.equal(soul.route, soul.legacyWrapped || elf.soulMark?.effectMode === 'kit' ? 'kit' : SOUL_MODE[String(elf.id)] === 'blocks' ? 'blocks' : 'handler');
     for (const sk of [...elf.skills, ...(elf.skillPool || [])]) {
       const rows = auditProgram(describeExecution({ skill: sk }, handlers).program);
       assert.ok(rows.every(c => c.semanticVerification === 'pending'));

@@ -39,6 +39,7 @@ function setup(side: 'p1' | 'p2', id: string, skillName: string) {
 
 for(const side of ['p1','p2']as const){
   const d=setup(side,'5017','帝怒傾天');d.self.statStages={atk:-1,def:-2,spatk:-3,spdef:-4,speed:-5,accuracy:-6};d.target.statStages={atk:1,def:2,spatk:3,spdef:4,speed:5,accuracy:6};
+  d.ctx.skill={...d.ctx.skill,effectMode:'registry'};
   const prio={bonus:0};handleDixinSoulMark(d.ctx,E.MODIFY_PRIORITY,{priorityComp:prio});assert.equal(prio.bonus,6);
   for(const key of ['atk','def','spatk','spdef','speed','accuracy']as const){assert.equal(skillStageView(d.self,d.ctx.skill,key),-d.self.statStages[key]);assert.equal(skillStageView(d.target,d.ctx.skill,key,true),-d.target.statStages[key]);}
   const power=DIXIN_DAMAGE_TRANSFORMS['帝怒傾天'](d.ctx,d.ctx.skill);assert.equal(power.power,d.ctx.skill.power+21*30);
@@ -46,12 +47,12 @@ for(const side of ['p1','p2']as const){
   d.self.isInherentInvalid=true;prio.bonus=0;handleDixinSoulMark(d.ctx,E.MODIFY_PRIORITY,{priorityComp:prio});assert.equal(prio.bonus,0);assert.equal(DIXIN_DAMAGE_TRANSFORMS['帝怒傾天'](d.ctx,d.ctx.skill).power,d.ctx.skill.power);
   const layers=setup(side,'5017','鹿台悲歌');
   for(let n=0;n<=9;n++){
-    layers.state.dixinBahuangStacks=n;const comp={power:100};handleDixinSoulMark(layers.ctx,E.MODIFY_POWER,{skill:layers.ctx.skill,powerComp:comp});assert.equal(comp.power,100*(1+n*0.13));
+    layers.ctx.setMark({id:'bahuang_mark',count:n,scope:'elf',ownerBattleId:layers.self.battleId||layers.self.id},side);const comp={power:100};handleDixinSoulMark(layers.ctx,E.MODIFY_POWER,{skill:layers.ctx.skill,powerComp:comp});assert.equal(comp.power,100*(1+n*0.13));
     layers.damages.length=0;handleDixinSoulMark(layers.ctx,E.AFTER_ACTION);assert.deepEqual(layers.damages.map(x=>[x.kind,x.n]),n>=2?[['fixed',n*39]]:[]);
   }
-  layers.state.dixinBahuangStacks=4;layers.damages.length=0;DIXIN_SKILLS['鹿台悲歌'](layers.ctx);assert.equal(layers.damages[0].n,556);assert.equal(layers.state.dixinBahuangStacks,6);assert.equal(layers.self.statStages.accuracy,2);
+  layers.ctx.setMark({id:'bahuang_mark',count:4,scope:'elf',ownerBattleId:layers.self.battleId||layers.self.id},side);layers.damages.length=0;DIXIN_SKILLS['鹿台悲歌'](layers.ctx);assert.equal(layers.damages[0].n,556);assert.equal(layers.ctx.getMarks(side).find((m:any)=>m.id==='bahuang_mark').count,6);assert.equal(layers.self.statStages.accuracy,2);
   handleDixinSoulMark(layers.ctx,E.OPPONENT_DAMAGE,{label:'八荒吸取',hpReduced:0});assert.equal(layers.damages.at(-1).kind,'true');
-  layers.state.dixinBahuangStacks=3;handleDixinSoulMark(layers.ctx,E.OPPONENT_ACTION);handleDixinSoulMark(layers.ctx,E.ROUND_END);assert.equal(layers.state.dixinBahuangStacks,2);
+  layers.ctx.setMark({id:'bahuang_mark',count:3,scope:'elf',ownerBattleId:layers.self.battleId||layers.self.id},side);handleDixinSoulMark(layers.ctx,E.OPPONENT_ACTION);handleDixinSoulMark(layers.ctx,E.ROUND_END);assert.equal(layers.ctx.getMarks(side).find((m:any)=>m.id==='bahuang_mark').count,2);
   assert.equal(layers.damages.some(x=>x.label==='八荒固傷'&&x.kind==='true'),false,'回合末不再用真傷代替固傷');
 
   const o=setup(side,'5018','毒噬魂絲');o.target.statStages={atk:3,def:-2,accuracy:1};OPEIA_SKILLS['毒噬魂絲'](o.ctx);
@@ -59,7 +60,11 @@ for(const side of ['p1','p2']as const){
   const low=setup(side,'5018','毒噬魂絲');low.target.currentHp=600;OPEIA_SKILLS['毒噬魂絲'](low.ctx);assert.equal(low.target.statStages.accuracy,-1);assert.equal(low.damages[0].n,400);
   assert.equal(countOpeiaTeam([{currentHp:0,type:'蟲.混沌'},{currentHp:1,type:'普通'},{currentHp:0,type:'普通'},{currentHp:1,type:'蟲',isVanished:true}]),2);
   assert.equal(countOpeiaTeam([{currentHp:0,type:'蟲'},{currentHp:1,type:'普通'},{currentHp:0,type:'普通'}],true),2);
-  handleOpeiaSoulMark(o.ctx,E.SKILL_INVALID,{skill:o.ctx.skill,isIncoming:false});assert.equal(o.state.opeiaTreatInsectAttacks,2);assert.equal(o.heals.at(-1).n,600);
+  const beforeInvalidHeals=o.heals.length;
+  handleOpeiaSoulMark(o.ctx,E.SKILL_INVALID,{skill:{...o.ctx.skill,effectMode:'kit'},isIncoming:false});
+  assert.equal(o.state.opeiaTreatInsectAttacks,undefined);assert.equal(o.heals.length,beforeInvalidHeals,'Kit無效由圖紙執行，舊魂印不重播');
+  // 5018 后已遷真 Kit、舊魂印空殼：原「registry 模式失效→回復1/2最大體力＋2次視為蟲系攻擊」改於檔尾以真引擎驅動 Kit 毒噬魂絲驗證同一行為。
+  assert.equal(handleOpeiaSoulMark(o.ctx,E.SKILL_INVALID,{skill:{...o.ctx.skill,effectMode:'registry'},isIncoming:false}),false);assert.equal(o.state.opeiaTreatInsectAttacks,undefined,'空殼不再建立舊專屬次數');assert.equal(o.heals.length,beforeInvalidHeals);
 
   const c=setup(side,'5028','王·洛浦凌波');c.self.statStages={spatk:-2,accuracy:-1};c.self.shield=100;c.self.barrier=200;c.target.shield=300;c.target.barrier=400;
   CANGLAN_SKILLS['王·洛浦凌波'](c.ctx);assert.equal(c.self.statStages.spatk,2);assert.equal(c.target.statStages.spatk,-2);assert.equal(c.target.statStages.accuracy,-1);
@@ -105,3 +110,17 @@ extension=consumeSkillTypeOverride(extension,'percent',10);assert.equal(extensio
 extension=consumeSkillTypeOverride(extension,'skill_extra_action',0);assert.equal(extension.blkTypeOverrideUses,1);
 extension=consumeSkillTypeOverride(extension,'skill_extra_action',10);assert.equal(extension.blkTypeOverrideUses,0);
 assert.equal(skillTypeMultiplier(extension,'火','草'),getTypeMatchup('火','草'));
+// 毒噬魂絲失效（原 registry 模式分支）的真 Kit 行為：自身失效時回復1/2最大體力、接下來2次攻擊視為蟲系（attackTypeOverrideUses=2），雙側各一次，魂印不重播。
+{
+  const {createHarness}=await import('./helpers/migrationHarness');
+  const h=await createHarness();
+  try{
+    const trait={name:'起始無效一次',effectMode:'kit',kit:[{codeId:'effect_sequence',source:'mechanic',node:'on_entered',order:0,params:{clause:{raw:'測試用無效一次',trig:'entrance',parsed:true,body:[{acts:[{op:'invalid_next',p:{kind:'all',uses:1},label:'無效一次'}]}]}}}]};
+    for(const side of ['p1','p2'] as const){
+      const [r]=await h.play(side,{self:h.unit('S',100,[structuredClone(h.find('5018','毒噬魂絲')),h.wait()],{maxHp:1200}),opp:h.unit('E',1000000,[h.wait()],{extra:{trait}})});
+      assert.equal(r.self.currentHp,100+600,side+' 失效回復1/2最大體力(600)，只回復一次');
+      assert.equal(r.state[side+'RegistryState'].attackTypeOverrideUses,2,side+' 接下來2次攻擊視為蟲系');
+      assert.equal(r.state[side+'RegistryState'].opeiaTreatInsectAttacks||0,0,side+' 不建立舊專屬次數');
+    }
+  }finally{await h.close();}
+}

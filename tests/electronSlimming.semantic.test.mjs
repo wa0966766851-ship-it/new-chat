@@ -1,8 +1,10 @@
+import {rm} from 'node:fs/promises';
 import assert from 'node:assert/strict';
 import { mkdir, mkdtemp, writeFile, readFile, stat } from 'node:fs/promises';
 import { join, resolve } from 'node:path';
 import { planResourceSlimming, slimPackagedResources } from '../scripts/slim_electron_resources.mjs';
 await mkdir(resolve('build'), { recursive: true }); const job = await mkdtemp(resolve('build/slimming-test-'));
+try {
 const out = join(job, 'win-unpacked'), resources = join(out, 'resources');
 async function put(name, value) { const p = join(resources, name); await mkdir(join(p, '..'), { recursive: true }); await writeFile(p, value); }
 await put('dist/seer/body/123.png', 'same'); await put('public/seer/body/123.png', 'same');
@@ -18,3 +20,5 @@ assert.equal(await readFile(join(resources, 'dist/seer/index.json'), 'utf8'), 'i
 assert.equal(await readFile(join(resources, '系/test.png'), 'utf8'), 'different');
 await assert.rejects(slimPackagedResources(resolve('.'), resolve('.')), /只允許/);
 console.log('封裝瘦身：路由對應、同 bytes、不同內容保留、JSON 索引保留、越界拒絕通過。');
+
+} finally { await rm(job,{recursive:true,force:true}); }

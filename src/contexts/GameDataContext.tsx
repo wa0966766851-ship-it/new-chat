@@ -1,9 +1,12 @@
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { Elf, Skill } from "../types";
 import { GLOBAL_ELVES } from "../data/gameData";
+import { getDefaultElvesRevision, subscribeDefaultElves } from "../data/defaultElves";
 import { syncOtherworldReyDescriptions } from "../data/otherworldReyDescriptions";
+import { resolveElfCatalog } from "../utils/elfCatalog";
 import { ELF_ID_MAPPING } from "../data/elfRegistry";
 import { normalizeElfStats, normalizeStoredElfStats } from "../utils/elfStats";
+import {applySavedSkillCorrections} from '../data/savedSkillCorrections';
 
 interface GameDataContextProps {
   allElves: Elf[];
@@ -96,7 +99,19 @@ export const GameDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     }
   });
 
+  // 相容舊版的隱藏清單；所有目錄入口都套用，避免新版與舊版數量不同。
+  const [legacyDeletedIds] = useState<string[]>(() => {
+    try { const value = JSON.parse(localStorage.getItem('seer_deleted_elves') || '[]'); return Array.isArray(value) ? value.filter(v=>typeof v==='string') : []; } catch { return []; }
+  });
   const [deletedElves, setDeletedElves] = useState<Elf[]>([]);
+
+  // 預設清單在掛載後才補入匯入精靈時（正常流程由 main.tsx 在首次繪製前載入完成）重算 allElves。
+  const [defaultElvesRevision, setDefaultElvesRevision] = useState(getDefaultElvesRevision);
+  useEffect(() => {
+    const unsubscribe = subscribeDefaultElves(() => setDefaultElvesRevision(getDefaultElvesRevision()));
+    setDefaultElvesRevision(getDefaultElvesRevision());
+    return unsubscribe;
+  }, []);
 
   // One-time team and preset migrations
   useEffect(() => {
@@ -263,9 +278,9 @@ export const GameDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     // 優先使用自訂精靈數據 (customElves)，其後才是系統預設精靈 (GLOBAL_ELVES)，並且套用 override
     const overriddenGlobalElves = GLOBAL_ELVES.map(elf => {
       const override = defaultElvesOverrides[elf.id!];
-      return syncOtherworldReyDescriptions(override ? normalizeStoredElfStats({ ...elf, ...override }) : elf);
+      return syncOtherworldReyDescriptions(override ? normalizeStoredElfStats(applySavedSkillCorrections({ ...elf, ...override },GLOBAL_ELVES)) : elf);
     });
-    const combined = [...customElves.map(elf => syncOtherworldReyDescriptions(normalizeStoredElfStats(elf))), ...overriddenGlobalElves];
+    const combined = [...customElves.map(elf => syncOtherworldReyDescriptions(normalizeStoredElfStats(applySavedSkillCorrections(elf,GLOBAL_ELVES)))), ...overriddenGlobalElves];
     const uniqueMap = new Map();
     combined.forEach(elf => {
       const key = elf.id || elf.name; // id優先，只有真的沒有id時才退回用名字
@@ -273,8 +288,8 @@ export const GameDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         uniqueMap.set(key, elf);
       }
     });
-    return Array.from(uniqueMap.values());
-  }, [customElves, defaultElvesOverrides]);
+    return resolveElfCatalog(Array.from(uniqueMap.values()), GLOBAL_ELVES, legacyDeletedIds);
+  }, [customElves, defaultElvesOverrides, defaultElvesRevision, legacyDeletedIds]);
 
   const addCustomElf = (elf: Elf) => {
     setCustomElves(prev => [...prev, normalizeElfStats({ ...elf, id: `custom_${Date.now()}` })]);

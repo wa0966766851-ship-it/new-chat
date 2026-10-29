@@ -152,6 +152,38 @@ export const handleCanglanSoulMark = (ctx: BattleEventContext, event: EffectTimi
   return false;
 };
 
+/** 永恆誓約：獲得1道永恆之水，對手千秋一淚高於自身時額外獲得差值；道數滿則令對手束縛。技能無效時道數翻倍且束縛無條件。 */
+function canglanAddWater(ctx: BattleEventContext, invalid: boolean) {
+  const { self, actor } = ctx;
+  const owner = self.battleId || self.id;
+  const opponent = ctx.target;
+  const oppOwner = opponent.battleId || opponent.id;
+  const waterMark = ctx.getMarks(actor).find(mark => mark.id === "blk_永恆之水" && mark.ownerBattleId === owner);
+  const tearMark = ctx.getMarks(ctx.targetSide).find(mark => mark.id === "blk_千秋一淚" && mark.ownerBattleId === oppOwner);
+  const currentWater = waterMark?.count || 0;
+  let gain = 1 + Math.max(0, (tearMark?.count || 0) - currentWater);
+  if (invalid) gain *= 2;
+  const next = Math.min(8, currentWater + gain);
+  ctx.setMark({
+    id: "blk_永恆之水", displayChar: "水", count: next, name: "永恆之水",
+    ownerBattleId: owner, description: "最多8道；每道使攻擊傷害提升40%，並參與護盾保留與重生效果。",
+  }, actor);
+  if (invalid || next >= 8) ctx.applyStatusWithImmunityCheck(ctx.targetSide, "束縛", 3);
+}
+
+export const CANGLAN_ON_INVALID = {
+  // 技能無效時：改為免疫下2次異常、抵擋下次攻擊並附加500點護盾、永恆之水翻倍且束縛無條件
+  "永恆誓約": (ctx: BattleEventContext, info?: { kind?: string }) => {
+    if (info?.kind === "miss" || info?.kind === "evade") return;
+    const { self, actor } = ctx;
+    ctx.setPlayerState(`${actor}_immuneStatusCount`, Math.max(2, Number(ctx.getPlayerState(`${actor}_immuneStatusCount`)) || 0));
+    ctx.setPlayerState("blockAttackCount", Math.max(1, Number(ctx.getPlayerState("blockAttackCount")) || 0));
+    ctx.updateElf?.(actor, { id: self.id, shield: (self.shield || 0) + 500 });
+    ctx.addLog(`🛡️ 【永恆誓約】技能無效：抵擋下次攻擊並獲得 500 點護盾！`, "effect");
+    canglanAddWater(ctx, true);
+  },
+};
+
 export const CANGLAN_SKILLS: Record<string, BattleSkillHandler> = {
   "滄海永存": (ctx) => {
     const { addLog, applyHeal, setPlayerState, self, actor } = ctx;
@@ -168,22 +200,21 @@ export const CANGLAN_SKILLS: Record<string, BattleSkillHandler> = {
     clearTurnEffectsOf(ctx.targetSide);
   },
   "永恆誓約": (ctx) => {
-    const { addLog, self, actor, updateElf } = ctx;
+    const { addLog, self, actor } = ctx;
     addLog(`🌊 【永恆誓約】：永恆屏障，誓約守護！`, "effect");
-    self.shield = (self.shield || 0) + 500;
-    if (updateElf) updateElf(actor, { id: self.id, shield: self.shield });
-    addLog(`🛡️ 【永恆誓約】：獲得 500 點誓約護盾！`, "effect");
-    const owner = self.battleId || self.id;
-    const opponent = ctx.target;
-    const oppOwner = opponent.battleId || opponent.id;
-    const waterMark = ctx.getMarks(actor).find(mark => mark.id === "blk_永恆之水" && mark.ownerBattleId === owner);
-    const tearMark = ctx.getMarks(ctx.targetSide).find(mark => mark.id === "blk_千秋一淚" && mark.ownerBattleId === oppOwner);
-    const currentWater = waterMark?.count || 0;
-    const targetWater = Math.max(currentWater + 1, tearMark?.count || 0);
-    ctx.setMark({
-      id: "blk_永恆之水", displayChar: "水", count: Math.min(8, targetWater), name: "永恆之水",
-      ownerBattleId: owner, description: "最多8道；每道使攻擊傷害提升40%，並參與護盾保留與重生效果。",
-    }, actor);
+    // 特攻、防禦、特防、速度、命中+1，擁有護盾時翻倍
+    const n = (self.shield || 0) > 0 ? 2 : 1;
+    ctx.applyStatChange(actor, { spatk: n, def: n, spdef: n, speed: n, accuracy: n });
+    // 5回合內免疫並反彈所有異常狀態
+    ctx.setPlayerState(`${actor}_immuneAndReflectStatusTurns`, 5);
+    // 下2回合攻擊傷害提升150%（引擎讀取 attackDamageBoostTurns／Rate）
+    ctx.setPlayerState("attackDamageBoostRate", 1.5);
+    ctx.setNextTurns?.("self", "attackDamageBoostTurns", 2);
+    // 下2回合自身所有技能先制+3
+    ctx.setPlayerState("priorityBoostValue", 3);
+    ctx.setPlayerState("priorityBoostAttackOnly", false);
+    ctx.setNextTurns?.("self", "priorityBoostTurns", 2);
+    canglanAddWater(ctx, false);
   },
   "王·洛浦凌波": (ctx) => {
     const { self, target, actor, targetSide } = ctx;

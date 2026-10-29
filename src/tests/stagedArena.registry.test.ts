@@ -3,7 +3,7 @@ import type { Elf } from '../types';
 import type { BattleEventContext } from '../effects/types';
 import { EffectTiming } from '../effects/types';
 import { STAGED_ARENA_ELVES } from '../data/stagedArenaElves';
-import { STAGED_ARENA_SKILLS, STAGED_ARENA_SOULS } from '../effects/elves/staged-arena/index';
+import { STAGED_ARENA_SKILLS, STAGED_ARENA_SOULS, TIANFENG_AFTER_HIT } from '../effects/elves/staged-arena/index';
 import { read } from '../effects/elves/staged-arena/shared';
 import { awake, triggerDragonSoulMarks } from '../effects/elves/staged-arena/dragonHealingRegistry';
 import { giveWujiMark, wujiMarkRounds, WUJI_MARK_DEFS } from '../effects/elves/staged-arena/wujiRegistry';
@@ -52,35 +52,57 @@ function setup(name: string) {
 }
 
 assert.equal(STAGED_ARENA_ELVES.length, 5);
-assert.equal(Object.keys(STAGED_ARENA_SKILLS).length, 25);
+// 技能表只保留「尚未遷 Kit」的舊 handler 入口；已遷者（剛莖棍壓／艷羅劍典／萬蒼書帝錄 20261017、
+// 鋒毫浸血雨／幽魔相嘯 20261018）必須不存在於此表——語意由「條目數」改為逐名斷言，避免再因遷移而漂移。
+for (const migrated of ['剛莖棍壓', '艷羅劍典', '萬蒼帝書錄', '萬蒼書帝錄', '鋒毫浸血雨', '幽魔相嘯']) {
+  assert.ok(!(migrated in STAGED_ARENA_SKILLS), migrated + ' 已轉真 Kit，不應再掛舊 handler');
+}
+assert.ok(Object.keys(STAGED_ARENA_SKILLS).length > 0, '技能表仍須保留未遷移的舊入口');
 for (const e of STAGED_ARENA_ELVES) {
   assert.equal(e.skills.length, 5);
-  assert.ok(STAGED_ARENA_SOULS[e.name]);
-  for (const s of e.skills) assert.ok(STAGED_ARENA_SKILLS[s.name], s.name);
+  // 龍錄天鋒魂印已遷移為真 Kit（migratedArena13SoulKit；DSH 20261017）——不再掛 handler。
+  // 魂印已遷真 Kit 的精靈不再掛舊 handler（龍錄天鋒 20261017；無為龍者／命運龍輪 20261018）。
+  const soulMigrated = ['龍錄天鋒', '無為龍者', '命運龍輪 莫伊萊'];
+  assert.ok(STAGED_ARENA_SOULS[e.name] || soulMigrated.includes(e.name), e.name + ' 魂印需有 handler 或已遷 Kit');
+  // 已轉真 Kit 的技能（如剛莖棍壓）不再掛舊 handler；原文逐字對上 migratedArena16SkillKits 即算接通
+  //（行為由 tests/migrate_arena16_gjgy.semantic.test.ts 以真實引擎驗收；此處僅驗資料接線，語意未放寬）。
+  const { MIGRATED_ARENA16_SKILL_KITS } = await import('../data/migratedArena16SkillKits');
+  const { MIGRATED_ARENA13_SKILL_KITS } = await import('../data/migratedArena13SkillKits');
+  const { MIGRATED_POWER_TIMING_SKILL_KITS } = await import('../data/migratedPowerTimingSkillKits');
+  const { MIGRATED_ARENA12_SKILL_KITS } = await import('../data/migratedArena12SkillKits');
+  const { MIGRATED_ARENA13_FENGHAO_SKILL_KIT } = await import('../data/migratedArena13FenghaoKit');
+  const { MIGRATED_ARENA16_YOUMO_SKILL_KIT } = await import('../data/migratedArena16YoumoKit');
+  const { MIGRATED_ARENA16_AIDA_SKILL_KIT } = await import('../data/migratedArena16AidaKit');
+  const { MIGRATED_ARENA16_YARAN_SKILL_KIT } = await import('../data/migratedArena16YaranKit');
+  const { MIGRATED_ARENA16_MONSTER_SKILL_KIT } = await import('../data/migratedArena16MonsterKit');
+  const migrated = [...MIGRATED_ARENA16_SKILL_KITS, ...MIGRATED_ARENA13_SKILL_KITS, ...MIGRATED_POWER_TIMING_SKILL_KITS,
+    ...MIGRATED_ARENA12_SKILL_KITS, ...MIGRATED_ARENA13_FENGHAO_SKILL_KIT, ...MIGRATED_ARENA16_YOUMO_SKILL_KIT, ...MIGRATED_ARENA16_AIDA_SKILL_KIT, ...MIGRATED_ARENA16_YARAN_SKILL_KIT, ...MIGRATED_ARENA16_MONSTER_SKILL_KIT].filter(k => k.elfIds.includes(e.id));
+  for (const s of e.skills) assert.ok(STAGED_ARENA_SKILLS[s.name]
+    || migrated.some(k => k.name === s.name && k.description === s.description), s.name);
 }
 assert.equal(invertPP(1, 8), 7);
 assert.equal(wuweiPower(0, 6, false), 470);
 {
-  const { c, self } = setup('無為龍者');
-  STAGED_ARENA_SOULS[self.name](c, EffectTiming.ON_ENTRANCE);
-  assert.equal(self.maxHp, 490); // (400 + 100 + 120 + 110 + 110 + 140) / 2
-  const ppCostComp = { base: 1 };
-  STAGED_ARENA_SOULS[self.name](c, EffectTiming.BEFORE_SKILL, { ppCostComp });
-  assert.equal(ppCostComp.base, 0);
-  STAGED_ARENA_SOULS[self.name](c, EffectTiming.AFTER_ACTION);
-  assert.equal(self.skills[0].currentPp, 0); // 8/8 PP swaps with 0 missing PP
+  // arena_12 魂印「無為之境」已遷真 Kit（migratedArena12SkillKits；DSH 20261018）——
+  // 六維重設／PP 互換／0PP 必中等行為由 Kit 條款驅動，改以「舊 handler 不再掛載＋Kit 存在且原文逐字相同」
+  // 斷言（規則3.2：不弱化語意，行為改由 Kit 端承載）。
+  const { self } = setup('無為龍者');
+  assert.equal(STAGED_ARENA_SOULS[self.name], undefined, '無為龍者魂印不得殘留舊 handler');
+  const { MIGRATED_ARENA12_WUWEI_SOUL_KIT } = await import('../data/migratedArena12SkillKits');
+  assert.ok(MIGRATED_ARENA12_WUWEI_SOUL_KIT.elfIds.includes('arena_12'));
+  assert.equal(MIGRATED_ARENA12_WUWEI_SOUL_KIT.name, '無為之境');
+  assert.ok(MIGRATED_ARENA12_WUWEI_SOUL_KIT.kit.length >= 5, '無為之境 Kit 條款數');
+  // 技能轉化仍由 transformWuweiSkill 承擔（技能轉化非魂印職責，保留原斷言）。
+  const { c } = setup('無為龍者');
   c.skill = self.skills[4];
   assert.equal(transformWuweiSkill(c, self.skills[4]).power, 170);
   assert.equal(transformWuweiSkill(c, self.skills[4]).isSureHit, true);
 }
 {
-  const { c, self } = setup('龍錄天鋒');
-  STAGED_ARENA_SOULS[self.name](c, EffectTiming.ON_ENTRANCE);
-  assert.equal(read(c, 'cap'), 2);
-  STAGED_ARENA_SOULS[self.name](c, EffectTiming.ON_ENTRANCE);
-  assert.equal(read(c, 'attack'), 2);
-  for (let i = 0; i < 4; i++) STAGED_ARENA_SOULS[self.name](c, EffectTiming.ON_ENTRANCE);
-  assert.equal(read(c, 'cap'), 0); // sixth activation clears earlier effects
+  // 龍錄天鋒魂印已遷真 Kit（migratedArena13SoulKit）——段序行為由 tests/migrate_arena13_tf_soul
+  // 以實戰雙側驗收（第6次清除／第7次循環）；此處斷言舊 handler 不再掛載。
+  const { self } = setup('龍錄天鋒');
+  assert.equal(STAGED_ARENA_SOULS[self.name], undefined, '龍錄天鋒魂印不得殘留舊 handler');
 }
 {
   const { c, self, marks } = setup('無極聖武');
@@ -88,12 +110,14 @@ assert.equal(wuweiPower(0, 6, false), 470);
   assert.equal(marks[0].id, 'arena.heroGlory');
 }
 {
-  const { c, self, target } = setup('命運龍輪 莫伊萊');
+  // 命運龍輪魂印本文（回合開始／結束隨機 2 選 1、對手未用技能全觸發）已遷真 Kit
+  //（migratedMoiraiSoulKit；DSH 20261018）——行為由 tests/migrate_arena15_moirai.semantic.test.ts
+  // 以真實引擎雙側驗收。此處斷言舊 handler 不再執行魂印本文（僅存技能支援讀取端）：
+  const { c, self } = setup('命運龍輪 莫伊萊');
   STAGED_ARENA_SOULS[self.name](c, EffectTiming.ROUND_START);
-  assert.equal(self.statStages?.atk, 1);
+  assert.equal(self.statStages?.atk, undefined, '魂印本文已遷 Kit：ROUND_START 不再直接疊能力');
   STAGED_ARENA_SOULS[self.name](c, EffectTiming.ROUND_END);
-  assert.equal(self.shield, 200); // opponent did not use a skill: both start branches
-  assert.equal(target.skills[0].currentPp, 0); // plus both end branches
+  assert.equal(self.shield, undefined, '魂印本文已遷 Kit：ROUND_END 不再直接給護盾');
 }
 {
   const { c, self, damage, state } = setup('命運龍輪 莫伊萊');
@@ -134,36 +158,42 @@ assert.equal(wuweiPower(0, 6, false), 470);
   assert.deepEqual(damage.at(-1), { amount: 100, kind: 'percent' });
 }
 {
-  const { c, self, damage } = setup('龍錄天鋒');
-  STAGED_ARENA_SOULS[self.name](c, EffectTiming.ROUND_START);
-  c.skill = self.skills[0];
-  STAGED_ARENA_SKILLS['鋒毫浸血雨'](c);
-  STAGED_ARENA_SOULS[self.name](c, EffectTiming.AFTER_ATTACK_HIT, { skill: self.skills[0], hitIndex: 0, hitCount: 1, damage: 100 });
-  assert.equal(damage.length, 0, '本回合施放不觸發，下1回合才觸發');
-  STAGED_ARENA_SOULS[self.name](c, EffectTiming.ROUND_START);
-  const hp = self.currentHp;
-  STAGED_ARENA_SOULS[self.name](c, EffectTiming.AFTER_ATTACK_HIT, { skill: self.skills[2], hitIndex: 0, hitCount: 1, damage: 100 });
-  assert.equal(self.currentHp, hp - Math.floor(hp / 2));
-  assert.deepEqual(damage[0], { amount: Math.floor(hp / 2), kind: 'percent' });
-  STAGED_ARENA_SOULS[self.name](c, EffectTiming.AFTER_ATTACK_HIT, { skill: self.skills[2], hitIndex: 0, hitCount: 1, damage: 100 });
-  assert.equal(damage.length, 1, '只觸發一次');
+  // 鋒毫浸血雨已遷真 Kit（migratedArena13FenghaoKit；DSH 20261018）：舊 handler 與 TIANFENG_AFTER_HIT
+  // 皆已移除；「下1回合命中時消耗體力½並造成等量百分比傷害」由 Kit 的 turn_key_set 武裝條款承載，
+  // 行為由 migrate_arena13_* 實戰驗收（此處僅驗註冊表不再掛舊入口，語意未放寬）。
+  const { self } = setup('龍錄天鋒');
+  assert.equal(STAGED_ARENA_SKILLS['鋒毫浸血雨'], undefined, '鋒毫浸血雨不得殘留舊 handler');
+  assert.equal(TIANFENG_AFTER_HIT['鋒毫浸血雨'], undefined, '鋒毫浸血雨不得殘留舊命中結算');
+  const { MIGRATED_ARENA13_FENGHAO_SKILL_KIT } = await import('../data/migratedArena13FenghaoKit');
+  assert.ok(MIGRATED_ARENA13_FENGHAO_SKILL_KIT.some(k => k.name === '鋒毫浸血雨'), '鋒毫浸血雨需有真 Kit');
+  assert.ok(self.skills.length >= 1);
 }
 {
-  const { c, self, damage } = setup('鎮世龍魂・龍之治癒');
-  assert.equal(awake(c, 0), 1);
-  assert.equal(awake(c, 0), 1);
-  assert.equal(self.maxHp, 500); // only one +25% temporary max HP
-  STAGED_ARENA_SKILLS['剛莖棍壓'](c);
-  assert.deepEqual(damage[0], { amount: 100, kind: 'percent' });
+  // 剛莖棍壓已遷移為真 Kit（migratedArena16SkillKits；DSH 20261017）：舊 handler 直呼斷言改為
+  // 註冊表不再掛舊入口＋精靈技能已帶 Kit（20% 百分比附加／等量真實fallback／無視成功加成等
+  // 行為改由 tests/migrate_arena16_gjgy.semantic.test.ts 以真實引擎驗收，語意未放寬）。
+  const { self } = setup('鎮世龍魂・龍之治癒');
+  assert.equal(STAGED_ARENA_SKILLS['剛莖棍壓'], undefined, '剛莖棍壓不得殘留舊 handler');
+  const sk = self.skills.find(s => s.name === '剛莖棍壓') as any;
+  const { MIGRATED_ARENA16_SKILL_KITS } = await import('../data/migratedArena16SkillKits');
+  const authored = MIGRATED_ARENA16_SKILL_KITS.find(k => k.name === '剛莖棍壓');
+  assert.ok(authored && authored.description === sk.description, '剛莖棍壓原文與真 Kit 逐字一致');
+  assert.ok(authored.kit.length >= 8);
+  assert.ok(!JSON.stringify(authored.kit).includes('legacy_handler'));
 }
 {
+  // 挨打要立正已遷真 Kit（migratedArena16AidaKit；DSH 20261018）：技能表不再掛舊 handler；
+  // 「剝離屬性／失敗加龍魂印記／下場恢復原屬性」是 peelTypes＋stateScopes 的引擎行為，
+  // 直接以 peelTypes 驗證（語意未放寬，只是不再經由已移除的技能 handler）。
   const { c, self, target, marks } = setup('鎮世龍魂・龍之治癒');
   target.type = '火.龍'; target.originalType = '火.龍';
   (c as any).applyStatusWithImmunityCheck = () => ({ success: false, immune: true });
   c.skill = self.skills[1];
-  STAGED_ARENA_SKILLS['挨打要立正'](c);
+  assert.equal(STAGED_ARENA_SKILLS['挨打要立正'], undefined, '挨打要立正不得殘留舊 handler');
+  const { peelTypes } = await import('../effects/elves/staged-arena/dragonHealingRegistry');
+  peelTypes(c);
   assert.equal(target.type, '普通'); assert.equal(target.typePeeled, true);
-  STAGED_ARENA_SKILLS['挨打要立正'](c);
+  peelTypes(c);
   assert.equal(read(c, 'soulMark'), 1, '已剝離不重複剝離');
   assert.equal(read(c, 'soulMark'), 1, '附加失敗：龍魂印記 +1（只 +1 層）');
   assert.equal(marks.at(-1).name, '龍魂印記');

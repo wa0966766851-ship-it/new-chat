@@ -94,7 +94,7 @@ export const SUIT_CATALOG: Record<string, SuitDefinition> = {
     name: "腐蝕者套裝",
     badge: "腐蝕",
     description: "背包內精靈攻擊+10%、特攻+10%；所有攻擊技能忽略對手防禦值和特防值的15%；對方使用攻擊技能則使對手在場精靈下回合開始時麻痺1回合，未觸發則附加對方等同於對方最大體力1/6的百分比傷害",
-    percentBonus: { atk: 0.10, spatk: 0.10 },
+    percentBonus: { atk: 10, spatk: 10 },
     effects: {
       ignoreDefSpdefPercent: 0.15,
       hasCustomHandler: true

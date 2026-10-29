@@ -1,5 +1,25 @@
 # 專案檔案地圖
 
+`.local-archives/20261029/`為本機歷史封存區：`browser-profiles/`保存完整測試profile ZIP、`experiments/`保存舊實驗ZIP、`releases/<版本>/`保存歷史交付檔，`INDEX.json`記錄原位置與還原對照。排除Git與分享副本；`dist-electron/`目前只保留1.2.0與1.1.0的有版本成品，其他通用發佈資訊保留原處。
+
+後續存放與保留政策見[六個檔案分區](guides/storage-layout.md)：原始碼、正式素材、開發證據、單次工作、正式發佈、快取／測試資料。
+
+2026-10-29 補充：[完整紀錄索引](開發紀錄索引.md)、[截圖與空間整理](guides/project-housekeeping.md)。下列歷史模組數量保留原驗證日期，不代表本次重新驗收遊戲效果。
+
+## 目前補充路徑
+
+| 路徑 | 用途與維護方式 |
+|---|---|
+| `src/engine/`、`src/shell/` | 共用引擎與應用外殼；不是建置輸出 |
+| `server/` | 啟動識別、偏好與動畫資源服務 |
+| `.desktop-releases/active.json` | 桌面目前與上一版的指標；整理時同時保護兩版 |
+| `.desktop-releases/<版本>/` | 完整桌面建置副本；不要手改其中的遊戲資料 |
+| `.seer-cache/` | 真實遊戲素材與隔離測試快取混存，須按用途清理 |
+| `shots/`、`_shots/` | 本機開發截圖；正式報告只連結需要保留的證據 |
+| `.cleanup-audit/` | 本機空間盤點、壓縮與刪除回執，不加入 Git |
+
+本次採用入口與用途整理，保留程式及舊報告路徑，避免搬移破壞匯入、打包與交接連結。
+
 ## 核心與資料來源
 
 | 路徑 | 用途 | 整理邊界 |
@@ -14,6 +34,7 @@
 | `src/modes/` | 命運之輪、星際探索 | 模式專用結算與庫存，避免混入普通戰 |
 | `elf_source_files/elf_files/` | 使用者TXT原文 | 保留原位置；未命名檔案也須看首行，不只猜檔名 |
 | `docs/audits/` | 模式統計及人工對應的部分語意證據 | 報告可重建，證據不能自動冒充驗收 |
+| `docs/guides/`、`docs/archive/2026-10/` | 現行操作指南、歷史階段報告 | 開發日誌為單一入口；歸檔不刪待驗原文 |
 | `tests/`、`src/tests/` | 語意、正式戰鬥入口、UI、打包回歸 | 指令分類以package.json為準 |
 
 ## 程式與產物
@@ -28,6 +49,12 @@
 | `dist/`、`build/`、`dist-electron/`、`release/`、`node_modules/`、`.seer-cache/` | 生成或快取，不是需要手改的精靈實裝檔 |
 | `_修正前備份/`、`_備份_20250927_還債前/`、`_asset_backup/` | 原有備份，保留不動 |
 | `logs/legacy/20261008/` | 從根目錄歸檔的舊log及可逆搬移清單 |
+| `build/.work/exe-*/source/` | 一次打包專用的乾淨原始碼副本與node_modules；成功／失敗皆清理，`--keep-work`才保留 |
+| `build/electron-app/`、`dist-electron/win-unpacked/` | Electron中繼封裝；正常打包結束清理，檢查模式保留 |
+| `dist-electron/*.exe`、`dist-electron/nsis-web/` | 正式成品及網路安裝必要payload；不得當暫存刪除 |
+| `dist-electron/*-exe.zip` | 本版最後生成的EXE壓縮檔；不含來源或中繼副本 |
+| `dist_release/<版本>/`、`release/*.zip` | 版本工具或舊免安裝流程的正式成品，與中繼副本分開 |
+| `docs/開發日誌.md` | 最新開發紀錄與歷史索引的統一入口；舊原文證據不重複複製 |
 
 ## 已完成專屬註冊表收斂（2026-10-08）
 
