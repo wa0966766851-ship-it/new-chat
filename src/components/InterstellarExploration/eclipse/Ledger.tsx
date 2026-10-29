@@ -34,7 +34,7 @@ export default function Ledger({ run, pool, tab, onTab, onClose, dispatch }: { r
             <div className="ecl-roman text-[10px] ecl-muted">Ledger</div>
             <h2 className="ecl-title text-3xl ecl-gilt">帳冊</h2>
           </div>
-          <div className="flex items-center gap-1" role="tablist">
+          <div className="flex flex-wrap items-center gap-1 min-w-0 max-w-full" role="tablist">
             {tabs.map(t => (
               <button key={t.key} role="tab" aria-selected={tab === t.key} onClick={() => onTab(t.key)}
                 className={`px-2.5 ecl-sm:px-4 py-2 border-b-2 whitespace-nowrap font-black tracking-widest transition-colors ${tab === t.key ? "border-[var(--ecl-gold)] ecl-gilt" : "border-transparent ecl-muted hover:text-[var(--ecl-bone)]"}`}>
