@@ -86,10 +86,18 @@ try {
   const { buildDamageAPIs } = await vite.ssrLoadModule('/src/battle/contextBuilders.ts');
   for (const side of ['p1', 'p2'] as const) {
     const targetSide = side === 'p1' ? 'p2' : 'p1';
-    const elf = (id: string): any => ({ id, battleId: id, name: id, type: '普通', maxHp: 1000, currentHp: 10 });
+    const elf = (id: string): any => ({ id, battleId: id, name: id, type: '普通', maxHp: 1000, currentHp: 10, skills: [] });
     const state: any = { p1: elf('a'), p2: elf('b'), p1Marks: [], p2Marks: [], p1Timers: [], p2Timers: [], p1RegistryState: {}, p2RegistryState: {} };
     const events: any[] = [];
-    const api = buildDamageAPIs({ side, self: state[side], syncStateRef: { current: state }, pushEffect: (e: any) => events.push(e), getBattleEventContext: () => ({}) });
+    const api = buildDamageAPIs({ side, self: state[side], syncStateRef: { current: state }, pushEffect: (e: any) => events.push(e),
+      getBattleEventContext: (owner: string) => ({
+        actor: owner, targetSide: owner === 'p1' ? 'p2' : 'p1', self: state[owner], target: state[owner === 'p1' ? 'p2' : 'p1'],
+        activeP1: state.p1, activeP2: state.p2, p1Timers: [], p2Timers: [], roundNumber: 1,
+        getPlayerState: (key: string) => state[`${owner}RegistryState`][key],
+        setPlayerState: (key: string, value: any) => { state[`${owner}RegistryState`][key] = value; },
+        getOpponentState: (key: string) => state[`${owner === 'p1' ? 'p2' : 'p1'}RegistryState`][key],
+        getMarks: () => [], getOpponentMarks: () => [],
+      }) });
     check(`${side}真實傷害管線：吸取走護罩、汲取穿盾罩`, () => {
       for (const type of ['fixed', 'percent', 'true'] as const) {
         events.length = 0;

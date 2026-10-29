@@ -52,7 +52,7 @@ const count = (n: number) => c('mark_count', { side: 'self', id: 'poem_chapter',
 export const MIGRATED_FINAL_DRAGON_SOUL_KIT = {
   kind: 'soul' as const, elfIds: ['5021'], name: '龍', description: texts.dragon,
   kit: [
-    soulEntry('battle_start', 'battle_start', '出戰背包常駐：每回合開始所有存活精靈附加1篇獨立體力快照，死亡時轉交所有存活接收者', [{ acts: [a('snapshot_resource_rule', { id: 'poem_chapter', name: '詩章', displayChar: '詩', snapshotKey: 'poemHpSnapshots', perRound: 1, receiverKey: 'poem_chapter' })] }], 0),
+    soulEntry('battle_start', 'battle_start', '出戰背包常駐：每回合開始所有存活精靈附加1篇獨立體力快照，死亡時轉交所有存活接收者並令原持有精靈消逝', [{ acts: [a('snapshot_resource_rule', { id: 'poem_chapter', name: '詩章', displayChar: '詩', snapshotKey: 'poemHpSnapshots', perRound: 1, receiverKey: 'poem_chapter', vanishSourceOnTransfer: true })] }], 0),
     soulEntry('battle_start', 'battle_start', '1篇起將對手能力提升視為同級下降，自身能力下降視為同級提升', [{ acts: [a('resource_query_rule', { id: 'poem_chapter', min: 1, ignorePpLimit: false, selfDownAsUp: true, oppUpAsDown: true })] }], 1),
     soulEntry('battle_start', 'battle_start', '2篇起使用技能無視PP值限制', [{ acts: [a('resource_query_rule', { id: 'poem_chapter', min: 2, ignorePpLimit: true, selfDownAsUp: false, oppUpAsDown: false })] }], 2),
     soulEntry('modify_priority', 'modify_priority', '1：每有1篇詩章先制+1', [{ cond: [count(1)], acts: [a('resource_priority', { id: 'poem_chapter', perUnit: 1 })] }], 3),

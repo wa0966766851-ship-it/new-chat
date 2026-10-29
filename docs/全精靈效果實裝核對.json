@@ -3,12 +3,12 @@
   "note": "parsed ≠ executable route ≠ semantic acceptance",
   "summary": {
     "elves": 46,
-    "sourceRecords": 2182,
+    "sourceRecords": 2188,
     "presentationOnly": 0,
-    "clauses": 2182,
-    "parsed": 2182,
+    "clauses": 2188,
+    "parsed": 2188,
     "unparsed": 0,
-    "pending": 2115,
+    "pending": 2121,
     "partialEvidence": 0,
     "staleEvidence": 67,
     "fullyAccepted": 0
@@ -194,16 +194,6 @@
                           "reason": "【黯痕】",
                           "label": "黯痕",
                           "base": 3,
-                          "side": "opp"
-                        }
-                      },
-                      {
-                        "label": "status",
-                        "op": "status",
-                        "p": {
-                          "chance": 100,
-                          "status": "黯痕",
-                          "turns": 3,
                           "side": "opp"
                         }
                       }
@@ -392,16 +382,6 @@
                           "reason": "【黯痕】",
                           "label": "黯痕",
                           "base": 3,
-                          "side": "opp"
-                        }
-                      },
-                      {
-                        "label": "status",
-                        "op": "status",
-                        "p": {
-                          "chance": 100,
-                          "status": "黯痕",
-                          "turns": 3,
                           "side": "opp"
                         }
                       }
@@ -59261,14 +59241,14 @@
         {
           "kind": "魂印",
           "name": "龍",
-          "sourceText": "常駐效果：\n> 自身位於出戰背包內（無論是否為出戰/場下/額外精靈），敵我雙方所有精靈（無論是否為出戰/場下/額外精靈）所有回合開始效果時額外所有精靈附加1篇詩章\n> 自身根據持有詩章數量獲得以下效果：\n>> 1：每有1篇詩章先制+1；將對手能力提升視為同等級能力下降，自身能力下降視為同等級能力提升\n>> 2：使用技能無視PP值限制並吸取對手所有技能1點PP值\n>> 3：回合開始時解除自身所處的異常狀態，詩章大於3則自身免疫所有異常狀態\n>> 4：使用技能吸取對手最大體力的40%並減少下次受到的技能傷害40%；每持有2篇詩章效果吸取效果額外提升10%\n>> 5：每有1篇詩章，攻擊傷害提升20%，受到技能傷害減少10%\n>> 6：雙方每有50點精靈護盾、精靈護罩，自身攻擊技能威力額外提升50點\n>> 7：攻擊附加雙方體力差值的真實傷害\n>> 8：無視對手攻擊免疫效果，無視傷害限制效果，無視成功時攻擊技能所造成的技能傷害提升100%\n>> 9：為自身賦予等於自身攻擊傷害的護盾與護罩（可疊加無上限）\n>> 10以上：攻擊附加等同對方最大體力值的技能傷害\n自身每場戰鬥首次死亡時：\n> 解除自身所處異常狀態強制存活\n> 當回合保留1點體力並免疫異常狀態\n> 自身進入龍魂直到戰鬥結束\n龍魂：\n> 使用技能會額外執行龍魂效果\n詩章：\n> 紀錄持有者精靈的體力上限\n> 當持有精靈死亡時，詩章將轉移給存活狀態的治癒·龍魂再臨 次元龍以增加其等量體力上限\n> 治癒·龍魂再臨 次元龍若存在複數精靈則會同時轉移相同數量給予所有治癒·龍魂再臨 次元龍\n> 每篇詩章獨立計算且無上限，下場後保留",
+          "sourceText": "常駐效果：\n> 自身位於出戰背包內（無論是否為出戰/場下/額外精靈），敵我雙方所有精靈（無論是否為出戰/場下/額外精靈）所有回合開始效果時額外所有精靈附加1篇詩章\n> 自身根據持有詩章數量獲得以下效果：\n>> 1：每有1篇詩章先制+1；將對手能力提升視為同等級能力下降，自身能力下降視為同等級能力提升\n>> 2：使用技能無視PP值限制並吸取對手所有技能1點PP值\n>> 3：回合開始時解除自身所處的異常狀態，詩章大於3則自身免疫所有異常狀態\n>> 4：使用技能吸取對手最大體力的40%並減少下次受到的技能傷害40%；每持有2篇詩章效果吸取效果額外提升10%\n>> 5：每有1篇詩章，攻擊傷害提升20%，受到技能傷害減少10%\n>> 6：雙方每有50點精靈護盾、精靈護罩，自身攻擊技能威力額外提升50點\n>> 7：攻擊附加雙方體力差值的真實傷害\n>> 8：無視對手攻擊免疫效果，無視傷害限制效果，無視成功時攻擊技能所造成的技能傷害提升100%\n>> 9：為自身賦予等於自身攻擊傷害的護盾與護罩（可疊加無上限）\n>> 10以上：攻擊附加等同對方最大體力值的技能傷害\n自身每場戰鬥首次死亡時：\n> 解除自身所處異常狀態強制存活\n> 當回合保留1點體力並免疫異常狀態\n> 自身進入龍魂直到戰鬥結束\n龍魂：\n> 使用技能會額外執行龍魂效果\n詩章：\n> 紀錄持有者精靈的體力上限\n> 當持有精靈死亡時，詩章將轉移給存活狀態的治癒·龍魂再臨 次元龍以增加其等量體力上限，轉交後原持有精靈消逝\n> 治癒·龍魂再臨 次元龍若存在複數精靈則會同時轉移相同數量給予所有治癒·龍魂再臨 次元龍\n> 每篇詩章獨立計算且無上限，下場後保留",
           "route": "kit",
           "source": "統一魂印來源：kit；未接通 0 項",
-          "sourceSha256": "327d3d01f34a50ce22e8890a47c9e637485275feb34465303f8acd6356d23c82",
+          "sourceSha256": "b7d10cbfe1547880cad7e3472ba46266099d961add197bdee8972ca997967055",
           "clauses": [
             {
               "index": 0,
-              "raw": "出戰背包常駐：每回合開始所有存活精靈附加1篇獨立體力快照，死亡時轉交所有存活接收者",
+              "raw": "出戰背包常駐：每回合開始所有存活精靈附加1篇獨立體力快照，死亡時轉交所有存活接收者並令原持有精靈消逝",
               "trigger": "battle_start",
               "parsed": true,
               "explanation": false,
@@ -59284,6 +59264,7 @@
                         "label": "snapshot_resource_rule",
                         "op": "snapshot_resource_rule",
                         "p": {
+                          "vanishSourceOnTransfer": true,
                           "displayChar": "詩",
                           "receiverKey": "poem_chapter",
                           "snapshotKey": "poemHpSnapshots",
@@ -59296,7 +59277,7 @@
                   }
                 ]
               },
-              "id": "5021:魂印:龍:597bab8c0339:1",
+              "id": "5021:魂印:龍:499a10f08f4f:1",
               "presentationOnly": false,
               "execution": "authored-block-runtime",
               "textCorrespondence": {
@@ -60170,14 +60151,14 @@
         {
           "kind": "專屬特性",
           "name": "龍",
-          "sourceText": "常駐效果：\n> 自身位於出戰背包內（無論是否為出戰/場下/額外精靈），敵我雙方所有精靈（無論是否為出戰/場下/額外精靈）所有回合開始效果時額外所有精靈附加1篇詩章\n> 自身根據持有詩章數量獲得以下效果：\n>> 1：每有1篇詩章先制+1；將對手能力提升視為同等級能力下降，自身能力下降視為同等級能力提升\n>> 2：使用技能無視PP值限制並吸取對手所有技能1點PP值\n>> 3：回合開始時解除自身所處的異常狀態，詩章大於3則自身免疫所有異常狀態\n>> 4：使用技能吸取對手最大體力的40%並減少下次受到的技能傷害40%；每持有2篇詩章效果吸取效果額外提升10%\n>> 5：每有1篇詩章，攻擊傷害提升20%，受到技能傷害減少10%\n>> 6：雙方每有50點精靈護盾、精靈護罩，自身攻擊技能威力額外提升50點\n>> 7：攻擊附加雙方體力差值的真實傷害\n>> 8：無視對手攻擊免疫效果，無視傷害限制效果，無視成功時攻擊技能所造成的技能傷害提升100%\n>> 9：為自身賦予等於自身攻擊傷害的護盾與護罩（可疊加無上限）\n>> 10以上：攻擊附加等同對方最大體力值的技能傷害\n自身每場戰鬥首次死亡時：\n> 解除自身所處異常狀態強制存活\n> 當回合保留1點體力並免疫異常狀態\n> 自身進入龍魂直到戰鬥結束\n龍魂：\n> 使用技能會額外執行龍魂效果\n詩章：\n> 紀錄持有者精靈的體力上限\n> 當持有精靈死亡時，詩章將轉移給存活狀態的治癒·龍魂再臨 次元龍以增加其等量體力上限\n> 治癒·龍魂再臨 次元龍若存在複數精靈則會同時轉移相同數量給予所有治癒·龍魂再臨 次元龍\n> 每篇詩章獨立計算且無上限，下場後保留",
+          "sourceText": "常駐效果：\n> 自身位於出戰背包內（無論是否為出戰/場下/額外精靈），敵我雙方所有精靈（無論是否為出戰/場下/額外精靈）所有回合開始效果時額外所有精靈附加1篇詩章\n> 自身根據持有詩章數量獲得以下效果：\n>> 1：每有1篇詩章先制+1；將對手能力提升視為同等級能力下降，自身能力下降視為同等級能力提升\n>> 2：使用技能無視PP值限制並吸取對手所有技能1點PP值\n>> 3：回合開始時解除自身所處的異常狀態，詩章大於3則自身免疫所有異常狀態\n>> 4：使用技能吸取對手最大體力的40%並減少下次受到的技能傷害40%；每持有2篇詩章效果吸取效果額外提升10%\n>> 5：每有1篇詩章，攻擊傷害提升20%，受到技能傷害減少10%\n>> 6：雙方每有50點精靈護盾、精靈護罩，自身攻擊技能威力額外提升50點\n>> 7：攻擊附加雙方體力差值的真實傷害\n>> 8：無視對手攻擊免疫效果，無視傷害限制效果，無視成功時攻擊技能所造成的技能傷害提升100%\n>> 9：為自身賦予等於自身攻擊傷害的護盾與護罩（可疊加無上限）\n>> 10以上：攻擊附加等同對方最大體力值的技能傷害\n自身每場戰鬥首次死亡時：\n> 解除自身所處異常狀態強制存活\n> 當回合保留1點體力並免疫異常狀態\n> 自身進入龍魂直到戰鬥結束\n龍魂：\n> 使用技能會額外執行龍魂效果\n詩章：\n> 紀錄持有者精靈的體力上限\n> 當持有精靈死亡時，詩章將轉移給存活狀態的治癒·龍魂再臨 次元龍以增加其等量體力上限，轉交後原持有精靈消逝\n> 治癒·龍魂再臨 次元龍若存在複數精靈則會同時轉移相同數量給予所有治癒·龍魂再臨 次元龍\n> 每篇詩章獨立計算且無上限，下場後保留",
           "route": "kit",
           "source": "特質統一來源：kit；未接通 0 項",
-          "sourceSha256": "327d3d01f34a50ce22e8890a47c9e637485275feb34465303f8acd6356d23c82",
+          "sourceSha256": "b7d10cbfe1547880cad7e3472ba46266099d961add197bdee8972ca997967055",
           "clauses": [
             {
               "index": 0,
-              "raw": "出戰背包常駐：每回合開始所有存活精靈附加1篇獨立體力快照，死亡時轉交所有存活接收者",
+              "raw": "出戰背包常駐：每回合開始所有存活精靈附加1篇獨立體力快照，死亡時轉交所有存活接收者並令原持有精靈消逝",
               "trigger": "battle_start",
               "parsed": true,
               "explanation": false,
@@ -60193,6 +60174,7 @@
                         "label": "snapshot_resource_rule",
                         "op": "snapshot_resource_rule",
                         "p": {
+                          "vanishSourceOnTransfer": true,
                           "displayChar": "詩",
                           "receiverKey": "poem_chapter",
                           "snapshotKey": "poemHpSnapshots",
@@ -60205,7 +60187,7 @@
                   }
                 ]
               },
-              "id": "5021:專屬特性:龍:597bab8c0339:1",
+              "id": "5021:專屬特性:龍:499a10f08f4f:1",
               "presentationOnly": false,
               "execution": "authored-block-runtime",
               "textCorrespondence": {
@@ -61508,7 +61490,7 @@
                         "op": "resource_mark_add",
                         "p": {
                           "persistsOffField": true,
-                          "description": "紀錄持有者精靈的體力上限，當持有精靈死亡時轉移給存活的治癒.龍魂再臨次元龍。",
+                          "description": "紀錄持有者精靈的體力上限，當持有精靈死亡時轉移給存活的治癒.龍魂再臨次元龍，轉交後原持有精靈消逝。",
                           "displayChar": "詩",
                           "snapshotKey": "poemHpSnapshots",
                           "amount": 1,
@@ -61727,10 +61709,10 @@
         {
           "kind": "技能",
           "name": "告命詩途",
-          "sourceText": "■ 必中\n🎯 全屬性+1，自身持有詩章則效果翻倍，自身不存在詩章則為自身附加4篇詩章\n🎯 吸取對手最大體力的1/3，自身持有大於3篇詩章效果翻倍\n🎯 下2回合先制+2，自身先制等級大於0時提升為先制+3\n🎯 下2回合對手受到的攻擊傷害提升150%\n■ 龍魂：當自身處於龍魂時發動，對手每有1點PP值附加50點次元龍系技能傷害且下2回合對手無法主動切換精靈，雙方每存在1個PP值為滿的技能則翻倍1次",
+          "sourceText": "■ 必中\n🎯 全屬性+1，自身持有詩章則效果翻倍，自身不存在詩章則為自身附加4篇詩章\n🎯 5回合內每次使用技能時吸取對手最大體力的1/3，自身持有大於3篇詩章效果翻倍\n🎯 下2回合先制+2，自身先制等級大於0時提升為先制+3\n🎯 下2回合對手受到的攻擊傷害提升150%\n■ 龍魂：當自身處於龍魂時發動，對手每有1點PP值附加50點次元龍系技能傷害且下2回合對手無法主動切換精靈，雙方每存在1個PP值為滿的技能則翻倍1次",
           "route": "kit",
           "source": "統一效果來源：kit；未接通 0 項",
-          "sourceSha256": "8379190e565fedf495974fe0ca65969b9f0875980865a14126fe20cdff715a7e",
+          "sourceSha256": "d4593d53a9a623e19aadcd657322cb791397c76e67325f5bb595e6dbe103de09",
           "clauses": [
             {
               "index": 0,
@@ -61814,7 +61796,7 @@
                         "op": "resource_mark_add",
                         "p": {
                           "persistsOffField": true,
-                          "description": "紀錄持有者精靈的體力上限，當持有精靈死亡時轉移給存活的治癒.龍魂再臨次元龍。",
+                          "description": "紀錄持有者精靈的體力上限，當持有精靈死亡時轉移給存活的治癒.龍魂再臨次元龍，轉交後原持有精靈消逝。",
                           "displayChar": "詩",
                           "snapshotKey": "poemHpSnapshots",
                           "amount": 4,
@@ -61853,7 +61835,7 @@
             },
             {
               "index": 2,
-              "raw": "吸取對手最大體力的1/3，自身持有大於3篇詩章效果翻倍",
+              "raw": "5回合內每次使用技能時吸取對手最大體力的1/3，自身持有大於3篇詩章效果翻倍",
               "trigger": "use",
               "parsed": true,
               "explanation": false,
@@ -61864,49 +61846,63 @@
                 "conditions": [],
                 "statements": [
                   {
-                    "elseActs": [
-                      {
-                        "label": "drain",
-                        "op": "drain",
-                        "p": {
-                          "ratio": 0.3333333333333333,
-                          "true": false
-                        }
-                      }
-                    ],
                     "acts": [
                       {
-                        "label": "drain",
-                        "op": "drain",
+                        "label": "timed",
+                        "op": "timed",
                         "p": {
-                          "ratio": 0.6666666666666666,
-                          "true": false
-                        }
-                      }
-                    ],
-                    "cond": [
-                      {
-                        "label": "詩章大於3篇",
-                        "c": "mark_count",
-                        "p": {
-                          "amount": 3,
-                          "side": "self",
-                          "id": "poem_chapter",
-                          "op": "高於"
+                          "initial": true,
+                          "turns": 5,
+                          "body": [
+                            {
+                              "elseActs": [
+                                {
+                                  "label": "drain",
+                                  "op": "drain",
+                                  "p": {
+                                    "ratio": 0.3333333333333333,
+                                    "true": false
+                                  }
+                                }
+                              ],
+                              "acts": [
+                                {
+                                  "label": "drain",
+                                  "op": "drain",
+                                  "p": {
+                                    "ratio": 0.6666666666666666,
+                                    "true": false
+                                  }
+                                }
+                              ],
+                              "cond": [
+                                {
+                                  "label": "詩章大於3篇",
+                                  "c": "mark_count",
+                                  "p": {
+                                    "amount": 3,
+                                    "side": "self",
+                                    "id": "poem_chapter",
+                                    "op": "高於"
+                                  }
+                                }
+                              ]
+                            }
+                          ],
+                          "from": "now",
+                          "trig": "self_skill"
                         }
                       }
                     ]
                   }
                 ]
               },
-              "id": "5021:技能:告命詩途:815a749dc58f:1",
+              "id": "5021:技能:告命詩途:0cf9be73ccc0:1",
               "presentationOnly": false,
               "execution": "authored-block-runtime",
               "textCorrespondence": {
-                "state": "text-fragment-found",
-                "files": [
-                  "elf_source_files/elf_files/5021_治癒龍魂再臨次元龍.txt"
-                ]
+                "state": "needs-source-review",
+                "files": []
               },
               "evidence": []
             },
@@ -67420,7 +67416,7 @@
       "sourceFiles": [
         {
           "path": "elf_source_files/elf_files/5024_湮滅之主咤克斯.txt",
-          "sha256": "0f7b2d22177f37a99137be5e2ec97d4e72f6b3950e288de9e8faaa16a1d2cc0f"
+          "sha256": "3bd14e73acdbebe59d7e6412ecc6ac6979692ff9b3de6eed77024cddefbdb4c3"
         }
       ],
       "entries": [
@@ -122173,6 +122169,156 @@
                 "files": []
               },
               "evidence": []
+            },
+            {
+              "index": 15,
+              "raw": "【玄龍】成功免疫固定或百分比傷害後，下 3 回合自身造成的固定傷害與百分比傷害提升 50%",
+              "trigger": "damage_immune",
+              "parsed": true,
+              "explanation": false,
+              "unresolved": [],
+              "damage": {
+                "types": [
+                  "fixed",
+                  "percent"
+                ],
+                "inferred": false,
+                "reason": "文本指定；同句多段傷害仍須逐段核對。"
+              },
+              "semanticVerification": "pending",
+              "blocks": {
+                "conditions": [],
+                "statements": [
+                  {
+                    "acts": [
+                      {
+                        "label": "immune_success_bonus",
+                        "op": "immune_success_bonus",
+                        "p": {
+                          "kind": "mystic"
+                        }
+                      }
+                    ],
+                    "cond": [
+                      {
+                        "label": "已喚醒 1 條以上",
+                        "c": "mark_count",
+                        "p": {
+                          "amount": 1,
+                          "side": "self",
+                          "id": "dragonMystic",
+                          "op": "不小於"
+                        }
+                      }
+                    ]
+                  }
+                ]
+              },
+              "id": "arena_16:魂印:龍之治癒:ee36ed364f72:1",
+              "presentationOnly": false,
+              "execution": "authored-block-runtime",
+              "textCorrespondence": {
+                "state": "no-matching-txt",
+                "files": []
+              },
+              "evidence": []
+            },
+            {
+              "index": 16,
+              "raw": "【金龍】成功免疫異常狀態時，消除對手回合類效果",
+              "trigger": "status_immune",
+              "parsed": true,
+              "explanation": false,
+              "unresolved": [],
+              "damage": null,
+              "semanticVerification": "pending",
+              "blocks": {
+                "conditions": [],
+                "statements": [
+                  {
+                    "acts": [
+                      {
+                        "label": "immune_success_bonus",
+                        "op": "immune_success_bonus",
+                        "p": {
+                          "kind": "gold"
+                        }
+                      }
+                    ],
+                    "cond": [
+                      {
+                        "label": "已喚醒 1 條以上",
+                        "c": "mark_count",
+                        "p": {
+                          "amount": 1,
+                          "side": "self",
+                          "id": "dragonGold",
+                          "op": "不小於"
+                        }
+                      }
+                    ]
+                  }
+                ]
+              },
+              "id": "arena_16:魂印:龍之治癒:de2c487e3620:1",
+              "presentationOnly": false,
+              "execution": "authored-block-runtime",
+              "textCorrespondence": {
+                "state": "no-matching-txt",
+                "files": []
+              },
+              "evidence": []
+            },
+            {
+              "index": 17,
+              "raw": "【蒼龍】成功免疫能力下降時，吸取對手最大體力 1/2（同一技能多項下降只觸發一次）",
+              "trigger": "before_stat_change",
+              "parsed": true,
+              "explanation": false,
+              "unresolved": [],
+              "damage": null,
+              "semanticVerification": "pending",
+              "blocks": {
+                "conditions": [],
+                "statements": [
+                  {
+                    "acts": [
+                      {
+                        "label": "stat_drop_guard",
+                        "op": "stat_drop_guard",
+                        "p": {}
+                      },
+                      {
+                        "label": "immune_success_bonus",
+                        "op": "immune_success_bonus",
+                        "p": {
+                          "kind": "azure"
+                        }
+                      }
+                    ],
+                    "cond": [
+                      {
+                        "label": "已喚醒 1 條以上",
+                        "c": "mark_count",
+                        "p": {
+                          "amount": 1,
+                          "side": "self",
+                          "id": "dragonAzure",
+                          "op": "不小於"
+                        }
+                      }
+                    ]
+                  }
+                ]
+              },
+              "id": "arena_16:魂印:龍之治癒:70628486f293:1",
+              "presentationOnly": false,
+              "execution": "authored-block-runtime",
+              "textCorrespondence": {
+                "state": "no-matching-txt",
+                "files": []
+              },
+              "evidence": []
             }
           ]
         },
@@ -123281,6 +123427,156 @@
                 ]
               },
               "id": "arena_16:專屬特性:龍之治癒:aedb05d3ff7a:1",
+              "presentationOnly": false,
+              "execution": "authored-block-runtime",
+              "textCorrespondence": {
+                "state": "no-matching-txt",
+                "files": []
+              },
+              "evidence": []
+            },
+            {
+              "index": 15,
+              "raw": "【玄龍】成功免疫固定或百分比傷害後，下 3 回合自身造成的固定傷害與百分比傷害提升 50%",
+              "trigger": "damage_immune",
+              "parsed": true,
+              "explanation": false,
+              "unresolved": [],
+              "damage": {
+                "types": [
+                  "fixed",
+                  "percent"
+                ],
+                "inferred": false,
+                "reason": "文本指定；同句多段傷害仍須逐段核對。"
+              },
+              "semanticVerification": "pending",
+              "blocks": {
+                "conditions": [],
+                "statements": [
+                  {
+                    "acts": [
+                      {
+                        "label": "immune_success_bonus",
+                        "op": "immune_success_bonus",
+                        "p": {
+                          "kind": "mystic"
+                        }
+                      }
+                    ],
+                    "cond": [
+                      {
+                        "label": "已喚醒 1 條以上",
+                        "c": "mark_count",
+                        "p": {
+                          "amount": 1,
+                          "side": "self",
+                          "id": "dragonMystic",
+                          "op": "不小於"
+                        }
+                      }
+                    ]
+                  }
+                ]
+              },
+              "id": "arena_16:專屬特性:龍之治癒:ee36ed364f72:1",
+              "presentationOnly": false,
+              "execution": "authored-block-runtime",
+              "textCorrespondence": {
+                "state": "no-matching-txt",
+                "files": []
+              },
+              "evidence": []
+            },
+            {
+              "index": 16,
+              "raw": "【金龍】成功免疫異常狀態時，消除對手回合類效果",
+              "trigger": "status_immune",
+              "parsed": true,
+              "explanation": false,
+              "unresolved": [],
+              "damage": null,
+              "semanticVerification": "pending",
+              "blocks": {
+                "conditions": [],
+                "statements": [
+                  {
+                    "acts": [
+                      {
+                        "label": "immune_success_bonus",
+                        "op": "immune_success_bonus",
+                        "p": {
+                          "kind": "gold"
+                        }
+                      }
+                    ],
+                    "cond": [
+                      {
+                        "label": "已喚醒 1 條以上",
+                        "c": "mark_count",
+                        "p": {
+                          "amount": 1,
+                          "side": "self",
+                          "id": "dragonGold",
+                          "op": "不小於"
+                        }
+                      }
+                    ]
+                  }
+                ]
+              },
+              "id": "arena_16:專屬特性:龍之治癒:de2c487e3620:1",
+              "presentationOnly": false,
+              "execution": "authored-block-runtime",
+              "textCorrespondence": {
+                "state": "no-matching-txt",
+                "files": []
+              },
+              "evidence": []
+            },
+            {
+              "index": 17,
+              "raw": "【蒼龍】成功免疫能力下降時，吸取對手最大體力 1/2（同一技能多項下降只觸發一次）",
+              "trigger": "before_stat_change",
+              "parsed": true,
+              "explanation": false,
+              "unresolved": [],
+              "damage": null,
+              "semanticVerification": "pending",
+              "blocks": {
+                "conditions": [],
+                "statements": [
+                  {
+                    "acts": [
+                      {
+                        "label": "stat_drop_guard",
+                        "op": "stat_drop_guard",
+                        "p": {}
+                      },
+                      {
+                        "label": "immune_success_bonus",
+                        "op": "immune_success_bonus",
+                        "p": {
+                          "kind": "azure"
+                        }
+                      }
+                    ],
+                    "cond": [
+                      {
+                        "label": "已喚醒 1 條以上",
+                        "c": "mark_count",
+                        "p": {
+                          "amount": 1,
+                          "side": "self",
+                          "id": "dragonAzure",
+                          "op": "不小於"
+                        }
+                      }
+                    ]
+                  }
+                ]
+              },
+              "id": "arena_16:專屬特性:龍之治癒:70628486f293:1",
               "presentationOnly": false,
               "execution": "authored-block-runtime",
               "textCorrespondence": {

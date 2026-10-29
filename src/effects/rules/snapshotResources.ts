@@ -5,6 +5,7 @@ import { getMark, setMark, clearMark, markAppliesToElf } from '../../battle/mark
 export interface SnapshotResourceRule {
   id: string; name: string; displayChar: string; snapshotKey: string;
   perRound: number; receiverKey: string;
+  vanishSourceOnTransfer?: boolean;
 }
 const idOf = (e: any) => String(e?.battleId || e?.id || '');
 const owners = (state: any) => [...state.p1Team, ...state.p2Team].filter((e: any) => e && !checkElfDead(e) && e.snapshotResourceRules);
@@ -45,10 +46,10 @@ registerBattleRule({
     for (const source of sources) for (const cfg of Object.values(source.snapshotResourceRules) as SnapshotResourceRule[]) configs.set(cfg.id, cfg);
     for (const cfg of configs.values()) {
       const receivers = sources.filter((e: any) => e.snapshotResourceRules?.[cfg.id]?.receiverKey === cfg.receiverKey);
+      if (!receivers.length) continue;
       for (const side of ['p1', 'p2'] as const) for (const elf of state[side + 'Team']) {
-        // 2026-10-28 修正：死亡精靈必須能「轉出」詩章（原本被 checkElfDead 跳過，體力上限吸收永遠不生效）。
-        if (!elf) continue;
-        const dead = checkElfDead(elf);
+        // 死亡檢查也會在無人陣亡時執行；只轉出死亡者，存活者保留自己的快照。
+        if (!elf || !checkElfDead(elf)) continue;
         const mark = getMark(elf.marks || [], cfg.id);
         const snapshots = mark?.effects?.[cfg.snapshotKey];
         if (!Array.isArray(snapshots) || !snapshots.length || (mark.ownerBattleId && mark.ownerBattleId !== idOf(elf))) continue;
@@ -64,6 +65,7 @@ registerBattleRule({
           api.dispatch({type:'UPDATE_ELF',side:receiverSide,targetId:idOf(receiver),elf:{maxHp:receiver.maxHp,calculatedStats:receiver.calculatedStats}});
           sync(api, state, receiverSide, receiver);
         }
+        if (cfg.vanishSourceOnTransfer) api.ctx(side, true, undefined, elf).vanishElf(side, elf);
       }
     }
   },

@@ -58,7 +58,7 @@ MIGRATED_DIMENSIONAL_DRAGON_SKILL_KITS.push(
       { chain: 'fail', acts: [
         a('resource_mark_add', { id: 'poem_chapter', name: '詩章', displayChar: '詩', unit: '篇', side: 'self',
           scope: 'elf', persistsOffField: true, amount: 1, snapshotKey: 'poemHpSnapshots',
-          description: '紀錄持有者精靈的體力上限，當持有精靈死亡時轉移給存活的治癒.龍魂再臨次元龍。' }),
+          description: '紀錄持有者精靈的體力上限，當持有精靈死亡時轉移給存活的治癒.龍魂再臨次元龍，轉交後原持有精靈消逝。' }),
       ] },
     ], 2),
     // 3回合內對手使用攻擊技能 → 其後2回合屬性技能附加效果失效（掛對手）
@@ -85,7 +85,7 @@ MIGRATED_DIMENSIONAL_DRAGON_SKILL_KITS.push(
   ] },
 );
 
-const poemRaw = '■ 必中\n🎯 全屬性+1，自身持有詩章則效果翻倍，自身不存在詩章則為自身附加4篇詩章\n🎯 吸取對手最大體力的1/3，自身持有大於3篇詩章效果翻倍\n🎯 下2回合先制+2，自身先制等級大於0時提升為先制+3\n🎯 下2回合對手受到的攻擊傷害提升150%\n■ 龍魂：當自身處於龍魂時發動，對手每有1點PP值附加50點次元龍系技能傷害且下2回合對手無法主動切換精靈，雙方每存在1個PP值為滿的技能則翻倍1次';
+const poemRaw = '■ 必中\n🎯 全屬性+1，自身持有詩章則效果翻倍，自身不存在詩章則為自身附加4篇詩章\n🎯 5回合內每次使用技能時吸取對手最大體力的1/3，自身持有大於3篇詩章效果翻倍\n🎯 下2回合先制+2，自身先制等級大於0時提升為先制+3\n🎯 下2回合對手受到的攻擊傷害提升150%\n■ 龍魂：當自身處於龍魂時發動，對手每有1點PP值附加50點次元龍系技能傷害且下2回合對手無法主動切換精靈，雙方每存在1個PP值為滿的技能則翻倍1次';
 
 MIGRATED_DIMENSIONAL_DRAGON_SKILL_KITS.push(
   { elfIds: ['5021'], name: '告命詩途', description: poemRaw, kit: [
@@ -97,16 +97,19 @@ MIGRATED_DIMENSIONAL_DRAGON_SKILL_KITS.push(
       { cond: [c('has_mark', { side: 'self', name: 'poem_chapter', neg: true }, '不存在詩章')], acts: [
         a('resource_mark_add', { id: 'poem_chapter', name: '詩章', displayChar: '詩', unit: '篇', side: 'self',
           scope: 'elf', persistsOffField: true, amount: 4, snapshotKey: 'poemHpSnapshots',
-          description: '紀錄持有者精靈的體力上限，當持有精靈死亡時轉移給存活的治癒.龍魂再臨次元龍。' }),
+          description: '紀錄持有者精靈的體力上限，當持有精靈死亡時轉移給存活的治癒.龍魂再臨次元龍，轉交後原持有精靈消逝。' }),
       ] },
     ], 1),
-    // 吸取⅓；持有>3篇詩章翻倍（2/3）
-    sequence('吸取對手最大體力的1/3，自身持有大於3篇詩章效果翻倍', [
+    // 首次命中由附加效果入口建立五回合回合類效果；之後按使用技能觸發，無須再次命中。
+    // 每次重新讀取詩章；initial 補上成功施放當次，沿用既有去重與到期處理。
+    sequence('5回合內每次使用技能時吸取對手最大體力的1/3，自身持有大於3篇詩章效果翻倍', [
+      { acts: [a('timed', { turns: 5, from: 'now', trig: 'self_skill', initial: true, body: [
       { cond: [c('mark_count', { side: 'self', id: 'poem_chapter', op: '高於', amount: 3 }, '詩章大於3篇')], acts: [
         a('drain', { ratio: 2 / 3, true: false }),
       ], elseActs: [
         a('drain', { ratio: 1 / 3, true: false }),
       ] },
+      ] })] },
     ], 2),
     // 下2回合先制+2；持有詩章（先制等級>0）提升為+3
     sequence('下2回合先制+2，自身先制等級大於0時提升為先制+3', [

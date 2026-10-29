@@ -66,6 +66,9 @@ try {
     const dragonUnit = (id: string, hp: number, skill: any = h.wait()) => h.unit(id, hp, [skill], { speed: 300, extra: { soulMark: { name: '龍', effectMode: 'kit', description: dragon.description, kit: structuredClone(dragon.kit).filter((e: any) => e.order <= 2) } } });
     const both = await h.play(side, { self: dragonUnit('D', 10000), opp: h.unit('E', 12000, [h.wait()]), selfBench: [dragonUnit('D2', 15000)], turns: () => [0, 0] }, 1);
     const state = both[0].state;
+    assert.equal(both[0].self.maxHp, 10000, '無人死亡時不能轉交存活者詩章並增加在場接收者體力上限');
+    assert.equal(both[0].opp.maxHp, 12000, '對手存活時保留原有體力上限');
+    assert.equal(state[side + 'Team'][1].maxHp, 15000, '後備接收者也不能在無人死亡時增加體力上限');
     for (const team of [state.p1Team, state.p2Team]) for (const unit of team) {
       const mark = (unit.marks || []).find((m: any) => m.id === 'poem_chapter');
       assert.equal(mark?.count, 2, '兩個規則持有者各為所有存活精靈附加1篇');
@@ -86,6 +89,9 @@ try {
       assert.equal(receiver.calculatedStats.hp, receiver.maxHp, '當前能力面板與最大體力同步');
     }
     assert.ok(!death[0].opp.marks.some((m: any) => m.id === 'poem_chapter'), '轉移後消耗死亡原持有者快照');
+    assert.equal(death[0].opp.isVanished, true, '轉交後必須走正式消逝入口');
+    assert.equal(death[0].opp.maxHp, 0, '一般精靈消逝時體力上限歸零，非單純陣亡');
+    assert.ok(own.every((e: any) => !e.isVanished), '存活接收者不能跟著消逝');
     checks++;
   }
   console.log(`finalMarsLanDragon: ${checks} groups passed`);

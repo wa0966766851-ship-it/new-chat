@@ -21,6 +21,52 @@ try{
  const cond={c:'action_priority',p:{side:'self',op:'高於',amount:0}};
  for(const v of [-3,0,2])assert.equal(evalCond({self:{},target:{},getPlayerState:()=>v,getOpponentState:()=>0},cond,{}),v>0);checks++;
  for(const side of ['p1','p2'] as const){
+  const drainSkill=structuredClone(h.find('5021','告命詩途'));
+  drainSkill.kit=drainSkill.kit.filter((e:any)=>e.order===2);
+  const other=side==='p1'?'p2':'p1';
+  const drainRounds=await h.play(side,{
+   self:h.unit('S',1000,[drainSkill,h.wait()],{maxHp:100000,speed:200}),
+   opp:h.unit('E',30000,[h.wait()]),
+   turns:(engine:any,t:number)=>{
+    engine.dispatch({type:'UPDATE_ELF',side:other,elf:{currentHp:30000}});
+    engine.dispatch({type:'UPDATE_ELF',side,elf:{currentHp:1000}});
+    if(t===3){
+     const marks=[{id:'poem_chapter',name:'詩章',count:4,scope:'elf',ownerBattleId:'S',persistsOffField:true}];
+     engine.dispatch({type:'UPDATE_ELF',side,elf:{marks}});
+     engine.dispatch({type:'SET_MARKS',side,marks});
+    }
+    return [t===1?0:1,0];
+   },
+  },6);
+  assert.deepEqual(drainRounds.map((r:any)=>30000-r.opp.currentHp),[10000,10000,20000,20000,20000,0],
+   '告命詩途施放當次及後續使用技能持續五回合；每次依當下詩章判斷翻倍，第六回合停止');
+  assert.deepEqual(drainRounds.map((r:any)=>r.self.currentHp),[11000,11000,21000,21000,21000,1000],
+   '每次吸取仍走百分比傷害與等量恢復，不能只扣血或只恢復');
+  assert.ok(drainRounds[0].state[`${side}Timers`].some((timer:any)=>
+   timer.kind==='turn_effect'&&timer.clearable!==false&&timer.payload?.block?.trig==='self_skill'),
+   '五回合吸取登記為可消除的正式回合類效果');
+  checks++;
+  const missedSetup={...structuredClone(drainSkill),isSureHit:false,accuracy:0};
+  const noGrant=await h.play(side,{
+   self:h.unit('S',1000,[missedSetup,h.wait()],{maxHp:100000,speed:200}),
+   opp:h.unit('E',30000,[h.wait()]),turns:(_e:any,t:number)=>[t===1?0:1,0],
+  },2);
+  assert.deepEqual(noGrant.map((r:any)=>r.opp.currentHp),[30000,30000],
+   '首次未命中不取得五回合吸取效果，後續使用技能也不能憑空觸發');checks++;
+  const missedFollowup={...h.wait(),name:'未命中的後續攻擊',category:'物理',power:10,isSureHit:false,accuracy:0};
+  const useAfterGrant=await h.play(side,{
+   self:h.unit('S',1000,[structuredClone(drainSkill),missedFollowup],{maxHp:100000,speed:200}),
+   opp:h.unit('E',30000,[h.wait()]),turns:(_e:any,t:number)=>[t===1?0:1,0],
+  },2);
+  assert.deepEqual(useAfterGrant.map((r:any)=>r.opp.currentHp),[20000,10000],
+   '首次命中取得效果後，後續每次使用技能即吸取，不必再次命中');checks++;
+  const clear=h.kitSkill('清除回合類效果',[{op:'clear_turn',p:{side:'opp'}}],{priority:4});
+  const cleared=await h.play(side,{
+   self:h.unit('S',1000,[structuredClone(drainSkill),h.wait()],{maxHp:100000,speed:200}),
+   opp:h.unit('E',30000,[h.wait(),clear]),turns:(_e:any,t:number)=>[t===1?0:1,t===2?1:0],
+  },3);
+  assert.deepEqual(cleared.map((r:any)=>r.opp.currentHp),[20000,20000,20000],
+   '五回合吸取可以被既有消除回合類效果積木解除，解除後不再吸取');checks++;
   // 固定主公式10；追加100經2倍增傷、50%減傷仍100，應合計110且只一次落地。
   
   h.S.S=(_c:any,e:any,d:any)=>{if(e===T.BEFORE_DAMAGE&&!d.damageComp?.isIncoming&&d.damageComp?.damageCategory==='skill_attack'){d.damageComp.base=10;d.damageComp.increasePercent=0;d.damageComp.decreasePercent=0;d.damageComp.multiplier=1;}else if(e===T.BEFORE_DAMAGE&&!d.damageComp?.isIncoming&&d.damageComp?.damageCategory==='skill_attribute')d.damageComp.increasePercent+=1;};
