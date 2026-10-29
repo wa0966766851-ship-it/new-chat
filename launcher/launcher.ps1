@@ -17,6 +17,8 @@ $root   = Split-Path -Parent $PSScriptRoot
 $port   = Get-FreePort
 $url    = "http://localhost:$port"
 $probe  = "http://127.0.0.1:$port"
+$logDir = Join-Path $root 'launcher'
+$log    = Join-Path $logDir 'server.log'
 $appName = '賽爾對戰模擬器'
 $ownedProcesses = New-Object System.Collections.Generic.List[System.Diagnostics.Process]
 Set-Location $root
