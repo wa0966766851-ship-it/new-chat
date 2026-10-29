@@ -3,11 +3,20 @@ $ErrorActionPreference = 'Stop'
 Add-Type -AssemblyName System.Windows.Forms
 Add-Type -AssemblyName System.Drawing
 
+# ── 挑一個空閒的埠：先試 3000，被佔用就往後找，避免與 dev server／舊服務衝突
+function Get-FreePort {
+  foreach ($candidate in @(3000, 3011, 3012, 3014, 3016, 3017, 3018, 3019, 3020, 3021, 3022, 3023, 3024, 3025, 3026, 3027, 3028, 3029, 3030)) {
+    $busy = Get-NetTCPConnection -LocalPort $candidate -State Listen -ErrorAction SilentlyContinue
+    if (-not $busy) { return $candidate }
+  }
+  throw '找不到可用埠（3000 與 3011-3030 都被佔用）。請關閉部分服務後重試。'
+}
+
 $root   = Split-Path -Parent $PSScriptRoot
-$url    = 'http://localhost:3000'
-$probe  = 'http://127.0.0.1:3000'
-$logDir = Join-Path $root 'launcher'
-$log    = Join-Path $logDir 'server.log'
+# 2026-10-30：改為自動挑選空閒埠（原本固定 3000，被 dev server 佔用就整個開不起來）
+$port   = Get-FreePort
+$url    = "http://localhost:$port"
+$probe  = "http://127.0.0.1:$port"
 $appName = '賽爾對戰模擬器'
 $ownedProcesses = New-Object System.Collections.Generic.List[System.Diagnostics.Process]
 Set-Location $root
@@ -32,16 +41,23 @@ trap {
   exit 1
 }
 
-function Test-Server {
+function Test-ServerAt([int]$p) {
   try {
-    $r = Invoke-WebRequest -UseBasicParsing -Uri $probe -TimeoutSec 2
+    $r = Invoke-WebRequest -UseBasicParsing -Uri "http://127.0.0.1:$p" -TimeoutSec 2
     if ($r.StatusCode -ne 200) { return $false }
-    $identity = Invoke-RestMethod -Uri "$probe/api/launcher/identity" -TimeoutSec 2
+    $identity = Invoke-RestMethod -Uri "http://127.0.0.1:$p/api/launcher/identity" -TimeoutSec 2
     $mode = if ($useDev) { 'development' } else { 'production' }
     $expectedBuild = if ($useDev) { '' } else { $activeRelease.buildId }
-    if (-not (Test-LauncherServerIdentity $identity $root $mode $expectedBuild)) { throw '伺服器身分或版本不符' }
-    return $true
+    return Test-LauncherServerIdentity $identity $root $mode $expectedBuild
   } catch { return $false }
+}
+# 2026-10-30：改為掃描候選埠，不再只認 3000。
+# 原本固定探 3000，dev server 一佔用就判定「不是我們的伺服器」而拒絕啟動。
+function Test-Server {
+  foreach ($p in @(3000, 3011, 3012, 3014, 3016, 3017, 3018, 3019, 3020, 3021, 3022, 3023, 3024, 3025, 3026, 3027, 3028, 3029, 3030)) {
+    if (Test-ServerAt $p) { $script:foundPort = $p; return $true }
+  }
+  return $false
 }
 
 $icoPath = Join-Path $logDir 'app.ico'
@@ -117,11 +133,19 @@ if (-not $useDev) {
 $server = $null
 if (-not (Test-Server)) {
   # 不佔用其他服務的埠，也不把來源不明／舊模式的HTTP 200當成可用版本。
-  $busy = Get-NetTCPConnection -LocalPort 3000 -State Listen -ErrorAction SilentlyContinue
-  if ($busy) { throw '3000埠已有其他模式或舊版服務。請先關閉舊模擬器服務再開啟；啟動器未終止該服務。' }
+  # 2026-10-30：埠已在上面用 Get-FreePort 挑過；這裡只做最後確認，不再整個拒絕啟動。
+  $busy = Get-NetTCPConnection -LocalPort $port -State Listen -ErrorAction SilentlyContinue
+  if ($busy) {
+    # 極端情況（挑選後被搶走）：再挑一次
+    $port = Get-FreePort
+    $url  = "http://localhost:$port"
+    $probe = "http://127.0.0.1:$port"
+  }
   Set-Splash '啟動伺服器，等待實際連線成功…' 4
   $env:SEER_LAUNCHER = '1'
   $env:SEER_HOST = '127.0.0.1'
+  # 把挑好的埠傳給伺服器（server.ts 讀 process.env.PORT）
+  $env:PORT = "$port"
   $cmd = if ($useDev) { "npm run dev > `"$log`" 2>&1" } else { "set NODE_ENV=production&& node `"$releaseDir\server.cjs`" > `"$log`" 2>&1" }
   $server = Start-Process -FilePath 'cmd.exe' -ArgumentList '/c', $cmd -WorkingDirectory $root -WindowStyle Hidden -PassThru
   $ownedProcesses.Add($server)
