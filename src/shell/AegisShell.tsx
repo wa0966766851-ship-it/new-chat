@@ -5,7 +5,8 @@ import {
 } from "lucide-react";
 import type { ShellBridge } from "./bridge";
 import { LegacyScenes } from "./scenes/LegacyScenes";
-import { LobbyScene } from "./scenes/LobbyScene";
+// 舊版首頁不需要先下載新版大廳；切到新版首頁時才載入，維持首頁大小預算。
+const LobbyScene = lazy(() => import("./scenes/LobbyScene").then(m => ({ default: m.LobbyScene })));
 import { TeamScene } from "./scenes/TeamScene";
 import { BagScene } from "./scenes/BagScene";
 import { PALETTES, paletteToCssVars, type PaletteState } from "../design/palette";
@@ -189,7 +190,7 @@ export function AegisShell({ b, onSwitchShell }: { b: ShellBridge; onSwitchShell
             <PageErrorBoundary key={b.view === 'bag' || b.view === 'custom' ? 'shared-team-workspace' : b.view} onBack={() => b.setView("start")}>
               {/* live = 原生畫面；其餘一律委派 LegacyScenes，功能不會少 */}
               {b.view === "start"
-                ? <LobbyScene b={b} />
+                ? <Suspense fallback={<TechLoadingScreen />}><LobbyScene b={b} /></Suspense>
                 : b.view === "custom"
                   ? <LegacyScenes b={b} workspace />
                   : b.view === "bag"
