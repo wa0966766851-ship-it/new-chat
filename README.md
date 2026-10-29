@@ -119,7 +119,6 @@ public/ / images/ / pet/ / 系/  # 官方快照與自製立繪（elf-art 優先�
 launcher/ / packaging/     # 本地啟動與可攜包腳本
 ```
 
-別被根目錄的備份資料夾嚇到：`_修正前備份`、`_備份_20250927_還債前`、`_asset_backup`、`dist/`、`release/`、`node_modules/` 都不在版控重點內（見 `.gitignore`）。
 
 ## 後端速覽（server.ts）
 
@@ -151,14 +150,12 @@ launcher/ / packaging/     # 本地啟動與可攜包腳本
 
 - `electron-builder.yml`：`appId com.seer.battle.simulator`，`nsis + portable`，`extraResources` 帶 `dist / images / public / 系 / pet`。
 - `npm run package:electron` 前會先跑 `build:electron`；可攜包走 `scripts/package_portable.ps1`。
-- `dist/`、`dist-electron/`、`release/` 都不進版控；要驗收新成果請用本次的新 build，舊 exe 不會自己更新。
+- `dist/`、`dist-electron/`、`release/` 不進版控。
 
 ## 常見問題
 
 - `npm test` 失敗先看是哪一段：units / blocks / codex loading / profile loading / data / ui / scopes 是串起來的，分段重跑比較快。
 - `audit:bundle` 一定要在 `build` 之後跑，否則會拿到舊 `dist` 的數字。
-- 舊自訂精靈如果缺面板：列表照常顯示可進編輯器修；開戰 / 存檔時嚴格版會擋下並報錯，這是故意的，不要再加 `|| 100` 兜底。
-- 看到整排 `LF will be replaced by CRLF` 是換行符提示，無害。
 - `launcher/server.log` 出現 `API key should be set` 表示 `.env` 沒填 key，AI 功能停用是正常的。
 
 ## 文件索引
