@@ -53,6 +53,7 @@ import { consumeSkillTypeOverride } from '../battle/skillTypeOverride';
 import { executeGenericSkillTextAfterHit, rollSkillHit } from "../effects/genericSkillText";
 import { getAttackImmunity, ignoresAttackImmunity, grantsNextIgnoreOnSuccess } from "../battle/attackImmunity";
 import { runSkillBlocks, emitSkillUse, soulPassiveEvade, emitSelfInvalid, emitFailedSkillUse } from "../blocks/registry";
+import { runConnectedKit } from "../effects/connectedEffects";
 import {hasForcedHitEffects,runForcedHitEffects} from '../effects/forcedHitEffects';
 import { skillBasePriority } from "../battle/conditionalPriority";
 import { drainExtraActionQueue } from "../battle/extraActions";
@@ -3978,8 +3979,29 @@ syncStateRef.current = { ...syncStateRef.current, [actorRegKey]: { ...rg, attack
     if (!waiting && !skillSelectable(cur, side, cur[side], slot)) return;
 
     // 合法選招即生效；不延後到可能因受控而被跳過的出手流程。
-    SoulMarkRegistry[cur[side].name]?.(getBattleEventContext(side, true, 0), EffectTiming.SKILL_SELECTED, { skill: { ...skill, battleSlot: slot } });
-    statusSkillSelected(getBattleEventContext(side,true,0),skill,slot);
+    const selCtx = getBattleEventContext(side, true, 0);
+    SoulMarkRegistry[cur[side].name]?.(selCtx, EffectTiming.SKILL_SELECTED, { skill: { ...skill, battleSlot: slot } });
+    /**
+     * 2026-10-30：技能自己的 on_skill_selected 固有節點。
+     *
+     * 原本只派發魂印，技能 kit 裡的 `node: 'on_skill_selected'` 完全沒有執行端
+     * （runSkillBlocks 只跑 on_skill_use / on_hit / on_invalid），
+     * 所以「英雄之耀達到 3 層時，選擇使用時消除自身回合類效果」、
+     * 「解除自身所處的異常狀態」這些固有效果永遠不觸發。
+     *
+     * 這裡在合法選招後，直接執行該技能 kit 內 node 為 on_skill_selected 的段落。
+     */
+    try {
+      const selElf = cur[side];
+      const kitEntries = ((skill as any).kit || []).filter((e: any) => e && e.node === 'on_skill_selected');
+      if (selElf && kitEntries.length) {
+        const definition = { ...skill, kit: kitEntries } as any;
+        runConnectedKit('on_skill_selected', definition, selCtx);
+      }
+    } catch (err) {
+      console.error('[on_skill_selected] 執行失敗', err);
+    }
+    statusSkillSelected(selCtx,skill,slot);
 
     // 選擇技能時立即點亮與激活符文
     const actorElf = side === 'p1' ? cur.p1 : cur.p2;

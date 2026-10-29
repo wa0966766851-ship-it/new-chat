@@ -81,11 +81,19 @@ export function runConnectedLifecycle(ctx: BattleEventContext, event: EffectTimi
   let survived=false;
   for (const node of nodes) {
     if (soulKit) survived=runConnectedKit(node,teamRound?{...definition,kit:definition.kit?.filter(e=>e.codeId==='effect_sequence'&&e.params.clause.trig==='team_round_start')}:definition,nodeCtx)||survived;
+    /**
+     * 2026-10-30：去重必須按「持有者」區分。
+     *
+     * 原本只用 trait.name + trait.description 當鍵，
+     * 兩隻同序號精靈（例如雙方各一隻 5029 雷伊）的「神明」「雷神」名稱與描述完全一樣，
+     * 第二隻就會被當成重複而整段跳過，造成「一方效果莫名其妙丟失」。
+     */
     const seenTraits=new Set<string>();
+    const holderKey = String(elf.battleId || elf.id);
     for (const trait of [elf.trait, elf.alienTraits?.gen2Trait, elf.alienTraits?.exclusiveTrait,
       ...(elf.alienTraits?.exclusiveTraits || []), elf.alienTraits?.alienTrait, elf.alienTraits?.generalTrait]) {
       if(!trait)continue;
-      const identity=JSON.stringify([trait.name,trait.description]);
+      const identity=JSON.stringify([holderKey, trait.name, trait.description]);
       if(seenTraits.has(identity))continue;seenTraits.add(identity);
       if (trait?.effectMode === 'kit') survived=runConnectedKit(node,teamRound?{...trait,kit:trait.kit?.filter(e=>e.codeId==='effect_sequence'&&e.params.clause.trig==='team_round_start')}:trait,nodeCtx)||survived;
     }
