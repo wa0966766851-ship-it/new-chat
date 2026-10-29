@@ -12,6 +12,9 @@ export const STAGED_ARENA_SKILLS: Record<string, BattleSkillHandler> = {
 };
 export { TIANFENG_AFTER_HIT };
 export const STAGED_ARENA_SOULS: Record<string, SoulMarkHandler> = {
+  // 2026-10-30：龍錄天鋒（arena_13）魂印已遷真 Kit（migratedArena13SoulKit）；
+  // 這裡保留 handler 供技能支援讀取端派發（規則3.4），與命運龍輪同模式。
+  '龍錄天鋒': handleTianfengSoulMark,
   // 無為龍者魂印「無為之境」已遷真 Kit（migratedArena12SkillKits；DSH 20261018）——規則3.3 由魂印表移除。
   '無極聖武': handleWujiSoulMark,
   // 命運龍輪：魂印本文已遷 Kit（migratedMoiraiSoulKit）；此映射保留供技能支援讀取端派發（規則3.4）。

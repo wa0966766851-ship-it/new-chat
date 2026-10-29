@@ -20,10 +20,18 @@ export const POSITION_WEIGHTS = {
   hp: 100, shield: 45, barrier: 50, death: -200, stage: 4, pp: -30,
   control: -18, abnormal: -7, boss: 10, mark: 2, protection: 12, inventory: 3,
   charge:15, restriction:-8,
+  /**
+   * 2026-10-30：詩章（snapshot 型資源）。
+   *
+   * 價值不在層數本身，而在「每篇各記一份體力上限、死亡時全部轉交」。
+   * AI 原本完全看不到它（只讀 state[sideMarks]，沒讀精靈自己的 marks），
+   * 所以不會為了保詩章而換人，也評估不出對手次元龍累積了多少。
+   */
+  poem: 6,
 } as const;
 export const WEIGHT_LABELS: Record<keyof typeof POSITION_WEIGHTS, string> = {
   hp: '體力比例', shield: '護盾折算', barrier: '護罩折算', death: '主精靈陣亡', stage: '能力等級',
-  pp: 'PP缺額', control: '行動限制異常', abnormal: '其他異常', boss: 'BOSS狀態', mark: '印記', protection: '限時保護', inventory: '藥劑庫存', charge:'充能',restriction:'行動限制',
+  pp: 'PP缺額', control: '行動限制異常', abnormal: '其他異常', boss: 'BOSS狀態', mark: '印記', protection: '限時保護', inventory: '藥劑庫存', charge:'充能',restriction:'行動限制', poem:'詩章（快照資源）',
 };
 const clamp = (n: number, a: number, b: number) => Math.min(b, Math.max(a, Number.isFinite(n) ? n : a));
 // 滿體力等量的盾後邊際價值降低，不能無限堆盾灌分。
@@ -70,8 +78,25 @@ function sideScore(state: BattleState, side: AISide): PositionScore {
         : entry?.mechanics.some(m => m.type === 'CANT_ACT') ? POSITION_WEIGHTS.control : POSITION_WEIGHTS.abnormal;
       add('status', body * value * Math.min(2, remaining));
     }
-    const marks = state[`${side}Marks`].filter(m => markAppliesToElf(m, e));
-    for (const m of marks) if (m.polarity && m.polarity !== 'neutral') add('mark', body * Math.min(10, Math.max(0, m.count)) * POSITION_WEIGHTS.mark * (m.polarity === 'positive' ? 1 : -1));
+    /**
+     * 2026-10-30：印記來源補上「精靈自己的 marks」。
+     *
+     * 原本只讀 state[sideMarks]，那是「當前在場者」的鏡像；
+     * 場下精靈、以及像詩章這種由引擎規則直接寫進 elf.marks 的資源完全看不到。
+     */
+    const markById = new Map<string, any>();
+    for (const m of state[`${side}Marks`]) if (markAppliesToElf(m, e)) markById.set(String(m.id) + '|' + String(m.ownerBattleId || ''), m);
+    for (const m of ((e as any).marks || [])) if (markAppliesToElf(m, e)) markById.set(String(m.id) + '|' + String(m.ownerBattleId || ''), m);
+    for (const m of markById.values()) {
+      // snapshot 型資源（詩章等）：價值來自「每篇一份體力上限快照」
+      const snapshots = m?.effects?.poemHpSnapshots;
+      if (Array.isArray(snapshots) && snapshots.length) {
+        const totalHp = snapshots.reduce((n: number, v: any) => n + Math.max(0, Number(v) || 0), 0);
+        add('poem', body * clamp(totalHp / max, 0, 20) * POSITION_WEIGHTS.poem);
+        continue;
+      }
+      if (m.polarity && m.polarity !== 'neutral') add('mark', body * Math.min(10, Math.max(0, m.count)) * POSITION_WEIGHTS.mark * (m.polarity === 'positive' ? 1 : -1));
+    }
     for (const p of activeConstraints(state[`${side}Timers`], e)) {
       if (p.blockAttack || p.lockSwitch) add('restriction', POSITION_WEIGHTS.restriction * body);
       if (p.blockDamage || p.fatalResist || p.immuneStatus || p.immuneControl) add('protection', POSITION_WEIGHTS.protection * body);
