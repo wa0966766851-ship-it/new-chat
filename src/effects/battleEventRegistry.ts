@@ -189,10 +189,20 @@ export const SOUL_MARK_MAPPING: Record<string, string> = {
   "5020": "handlePipiSoulMark",
   "皮皮": "handlePipiSoulMark",
   
-  // 2026-10-30：5021 次元龍魂印「龍」已由 MIGRATED_FINAL_DRAGON_SOUL_KIT 真 Kit 完整實作
-  // （含 snapshot_resource_rule 安裝詩章規則）。原本這裡還留著 handleDimensionalSoulMark 對應，
-  // 導致 effectRoute(definition, hasHandler=true) 回傳 registry，Kit 永遠不會執行 ——
-  // 詩章完全消失就是這個原因。移除對應後改走 kit 通道。
+  /**
+   * 2026-10-30（回滾）：5021 的 handler 必須保留。
+   *
+   * 我先前誤以為「kit 已完整實作魂印」就把這個映射刪掉，結果：
+   * - 龍魂再臨的 FATAL_RESIST 免死判定不再被呼叫（handler 不跑）
+   * - 詩章連第 1 篇都建不出來（建立邏輯在 handler 的初始化段）
+   *
+   * handler 與 kit 並存是原本的設計：handler 負責免死、先制、PP 吸取等
+   * 「事件式」效果；kit 的部分由 runBlockEvent 獨立執行（兩者不衝突）。
+   */
+  "5021": "handleDimensionalSoulMark",
+  "治癒.龍魂再臨 次元龍": "handleDimensionalSoulMark",
+  "治癒·龍魂再臨 次元龍": "handleDimensionalSoulMark",
+  "次元龍": "handleDimensionalSoulMark",
   
   "5022": "handleWuxuSoulMark",
   "1017": "handleWuxuSoulMark",

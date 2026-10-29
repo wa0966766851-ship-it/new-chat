@@ -52,10 +52,10 @@ const step = async (e: any) => {
   }
 };
 
-await check('5021 不再有手寫魂印 handler（否則 effectRoute 會回傳 registry，kit 永不執行）', async () => {
+await check('5021 必須保留 handler（負責龍魂再臨免死與詩章初始化）', async () => {
   const S = getSoulMarkRegistry();
-  assert.equal(S['5021'], undefined, '5021 不可有 handler 對應');
-  assert.equal(S['治癒.龍魂再臨 次元龍'], undefined, '名稱對應也不可有');
+  assert.ok(S['5021'], '5021 必須有 handler：FATAL_RESIST 免死與詩章初始化都在其中');
+  assert.ok(S['治癒.龍魂再臨 次元龍'], '名稱對應也必須存在');
 });
 
 await check('真實 5021 的 soulMark 帶 17 條 kit 且 effectMode=kit', async () => {

@@ -65,19 +65,35 @@ export const handleDimensionalSoulMark = (ctx: BattleEventContext, event: Effect
 
     case EffectTiming.ROUND_START: {
       /**
-       * 2026-10-30：回合開始只做「依詩章篇數」的被動判定。
+       * 2026-10-30：每回合為「敵我雙方所有存活精靈」各附加 1 篇詩章（魂印原文）。
        *
-       * 詩章的「每回合疊加 1 篇」「每篇獨立快照」「死亡轉交」「原持有精靈消逝」
-       * 一律由積木 snapshot_resource_rule 安裝、引擎 rules/snapshotResources.ts 執行
-       * （MIGRATED_FINAL_DRAGON_SOUL_KIT 已為 5021 安裝）。
-       *
-       * 這裡原本手寫了一套 setMark + updateAnyElf 的疊加，
-       * 與引擎通道重複，且因為讀不到場下精靈的舊詩章、又把已改過的 maxHp 當快照相加，
-       * 造成「層數永遠 1」與「體力上限每回合暴漲」。已移除。
+       * 關鍵修正：
+       * - 用 getAllMarks 讀「未過濾」清單（getMarks 會按在場者過濾，場下精靈讀不到 → 層數永遠 1）
+       * - 每篇快照 = 該精靈「當下的體力上限」，純記錄，**不動 maxHp**
+       *   （先前用 e.maxHp 相加造成每回合翻倍暴漲）
        */
+      for (const sd of ["p1", "p2"] as const) {
+        for (const e of ctx.getFullTeam?.(sd) || []) {
+          if (e.isVanished || (e.currentHp || 0) <= 0) continue;
+          const bid = String(e.battleId || e.id);
+          const all = getAllMarks ? getAllMarks(sd) : (getMarks(sd) || []);
+          const exist = all.find(m => m.id === "poem_chapter" && m.ownerBattleId === bid);
+          const oldSnaps: number[] = exist?.effects?.poemHpSnapshots || [];
+          const nextSnaps = [...oldSnaps, Number(e.maxHp) || 1000];
+          ctx.setMark?.({
+            id: "poem_chapter", displayChar: "詩", name: "詩章",
+            count: nextSnaps.length,
+            description: POEM_DESCRIPTION, source: self.name,
+            scope: "elf", persistsOffField: true, clearable: false,
+            ownerBattleId: bid,
+            effects: { poemHpSnapshots: nextSnaps },
+          } as any, sd);
+        }
+      }
+      // 重算自身詩章數（剛加過）
       const liveMarks = getAllMarks ? getAllMarks(actor) : (getMarks(actor) || []);
       const livePoem = getMark(liveMarks, "poem_chapter", String(self.battleId || self.id));
-      const liveStacks = livePoem?.effects?.poemHpSnapshots?.length || Number(livePoem?.count) || 0;
+      const liveStacks = livePoem?.effects?.poemHpSnapshots?.length || 0;
 
       // 3:回合開始時解除自身所處的異常狀態，詩章大於3則自身免疫所有異常狀態
       if (liveStacks >= 3) {
