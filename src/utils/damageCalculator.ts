@@ -1,3 +1,4 @@
+import { applyStageViewAs } from './stageViewAs';
 import { traitNames } from '../effects/traitEffects';
 import { readStatPercent } from '../effects/soulProperty';
 import { specialDamageFormula } from '../effects/specialDamageFormulaRegistry';
@@ -113,12 +114,18 @@ export const calculateDamage = (
 
   // 無視對手能力提升（列星安辰、魯斯王、積木「無視能力提升」等）；視為下降優先。
   const stageReg = side === "p1" ? p1RegistryState : p2RegistryState;
-  if (stageReg?.oppBoostAsDropThisAction && defS > 0) defS = -defS;
+  // 2026-10-31：改用共用投影函式，與出手順序／其他屬性共用同一套「視為」規則。
+  // ② 將對手能力提升視為同級下降；③ 將自身能力下降視為對手同級下降。
+  {
+    const v = applyStageViewAs(atkS, defS, {
+      oppBoostAsDrop: !!stageReg?.oppBoostAsDropThisAction,
+      selfDropAsOppDrop: !!stageReg?.selfDropAsOppDropThisAction,
+    });
+    atkS = v.atkS; defS = v.defS;
+  }
   // 通用：「無視自身能力下降」（寂殺之魄1道等；行動鍵）——自身下降等級歸零。
   if (stageReg?.selfDropIgnoredThisAction && atkS < 0) atkS = 0;
   else if (options?.ignoreOppBuff && defS > 0) defS = 0;
-  // 將自身能力下降視為對手的能力下降
-  if (stageReg?.selfDropAsOppDropThisAction && atkS < 0) { defS = Math.max(-6, defS + atkS); atkS = 0; }
 
   if (atkPanelRatio) atkS = 0; // 「最終」攻擊／特攻＝面板原始值×比例，不再套能力等級
   const formula = specialDamageFormula(actor, target, skill, (oppSide === 'p1' ? p1Team : p2Team) || [], atkS, calculateEffectiveStat(atk, atkS));

@@ -800,7 +800,12 @@ export function computeHitChance(actor: any, target: any, skill: any, getStatuse
       }
     }
   }
-  const stage = Math.max(-6, Math.min(6, skillStageView(actor, skill, 'accuracy')));
+  // 2026-10-31：命中等級也要套用「能力等級視為」規則（無極聖武 ②③）。
+  // ② 對手的命中提升視為同級下降；③ 自身的命中下降視為對手的同級下降。
+  let accStage = skillStageView(actor, skill, 'accuracy');
+  if (actorReg?.selfDropAsOppDropThisAction && accStage < 0) accStage = 0;
+  if (targetReg?.oppBoostAsDropThisAction && accStage > 0) accStage = -accStage;
+  const stage = Math.max(-6, Math.min(6, accStage));
   const mult = getStatMultiplier(stage, true); // 命中等級（下降採使用者規則表）
   let chance = Math.max(0, base) * mult;
   if (ACC_TRAIT(actor, "精準")) chance *= 1.14;

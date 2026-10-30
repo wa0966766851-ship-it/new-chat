@@ -54,6 +54,7 @@ import { executeGenericSkillTextAfterHit, rollSkillHit } from "../effects/generi
 import { getAttackImmunity, ignoresAttackImmunity, grantsNextIgnoreOnSuccess } from "../battle/attackImmunity";
 import { runSkillBlocks, emitSkillUse, soulPassiveEvade, emitSelfInvalid, emitFailedSkillUse } from "../blocks/registry";
 import { stripRunesFrom } from "../blocks/ops/odinRune";
+import { applyStageViewAsSingle, applyStageViewAs } from "../utils/stageViewAs";
 import { runConnectedKit } from "../effects/connectedEffects";
 import {hasForcedHitEffects,runForcedHitEffects} from '../effects/forcedHitEffects';
 import { skillBasePriority } from "../battle/conditionalPriority";
@@ -2508,8 +2509,24 @@ case 'switch': {
       p2Priority = Math.max(p2Priority, p1Priority + 999);
     }
 
-    let p1Speed = calculateEffectiveStat(cur.p1.calculatedStats.speed, skillStageView(cur.p1, p1Skill, 'speed'));
-    let p2Speed = calculateEffectiveStat(cur.p2.calculatedStats.speed, skillStageView(cur.p2, p2Skill, 'speed'));
+    // 2026-10-31：出手順序也要套用「能力等級視為」規則（無極聖武 ②③）。
+    // 原本只算真實 statStages，所以速度完全不受 ②③ 影響 —— 這是不正確的。
+    // ② 對手速度提升視為同級下降；③ 自身速度下降視為對手的同級下降。
+    const p1AsView = {
+      oppBoostAsDrop: !!cur.p1RegistryState?.oppBoostAsDropThisAction,
+      selfDropAsOppDrop: !!cur.p1RegistryState?.selfDropAsOppDropThisAction,
+    };
+    const p2AsView = {
+      oppBoostAsDrop: !!cur.p2RegistryState?.oppBoostAsDropThisAction,
+      selfDropAsOppDrop: !!cur.p2RegistryState?.selfDropAsOppDropThisAction,
+    };
+    let p1SpeedStage = applyStageViewAsSingle(skillStageView(cur.p1, p1Skill, 'speed'), 'self', p1AsView);
+    let p2SpeedStage = applyStageViewAsSingle(skillStageView(cur.p2, p2Skill, 'speed'), 'self', p2AsView);
+    // ② 對手的速度提升視為下降：p1 行動時看 p2 的等級，反之亦然。
+    p2SpeedStage = applyStageViewAsSingle(p2SpeedStage, 'opp', p1AsView);
+    p1SpeedStage = applyStageViewAsSingle(p1SpeedStage, 'opp', p2AsView);
+    let p1Speed = calculateEffectiveStat(cur.p1.calculatedStats.speed, p1SpeedStage);
+    let p2Speed = calculateEffectiveStat(cur.p2.calculatedStats.speed, p2SpeedStage);
     // 通用：當回合忽略對手 N 點速度（由套裝／魂印設定 opponentSpeedPenalty）
     p2Speed = Math.max(0, p2Speed - (Number(cur.p1RegistryState?.opponentSpeedPenalty) || 0));
     p1Speed = Math.max(0, p1Speed - (Number(cur.p2RegistryState?.opponentSpeedPenalty) || 0));
