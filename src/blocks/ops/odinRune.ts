@@ -14,6 +14,7 @@ export const ODIN_ACTION_FIELDS: Record<string, readonly string[]> = {
   rune_attach: ['side','slot','rune','withinRounds'],
   duel_start: [],
   rune_activate: ['slot', 'rune'],
+  rune_strip: [],
   rune_strip_reward: ['hpRatio', 'ppMode'],
   next_skill_prio: ['side', 'v', 'dmgMod'],
   pp_max_zero_highest: [],
@@ -51,7 +52,13 @@ export function odinOperations(helpers: { liveElf: (ctx: BattleEventContext, sid
       const side:S=p.side==='opp'?ctx.targetSide:ctx.actor;
       const elf=helpers.liveElf(ctx,side);
       const holderCtx=side===ctx.actor?ctx:ctx.contextForElf?.(side,elf);
-      const rounds=Number(holderCtx?.getPlayerState(`${side}_turnsInBattle`)??1);
+        // 2026-10-30：改用「該精靈自己的在場回合數」，不是「該側的回合數」。
+        // 原本讀 `${side}_turnsInBattle`（整場累計、不隨換人重置），
+        // 導致第 3 回合以後換上來的精靈明明在場 1 回合，也被判定「超過 2 回合」而拿不到符文。
+        // 官方描述：「在場精靈在場回合數未超過2回合且技能沒有符文」。
+        const entryTurn=Number(holderCtx?.getPlayerState('fieldEntryTurn')??0);
+        const nowTurn=Number((ctx as any).roundNumber??0);
+        const rounds=entryTurn>0&&nowTurn>=entryTurn?(nowTurn-entryTurn+1):1;
       if(rounds>p.withinRounds||!elf?.skills?.[p.slot])return false;
       const sk=elf.skills[p.slot];
       if(sk.skillRune||sk.portableSkillMark||sk.specialBadge?.text?.includes('ᛏ'))return false;
@@ -75,20 +82,48 @@ export function odinOperations(helpers: { liveElf: (ctx: BattleEventContext, sid
       });
       return true;
     },
+    // 2026-10-30：剝離該精靈身上所有符文（官方：「直到該精靈下場後剝離」）。
+    // 記錄「剝離了幾道已激活」，供 rune_strip_reward 按道數結算。
+    // 原本 5019 kit 沒有 on_switch_out，符文換人後永久殘留 → 全程生效／類兩命。
+    rune_strip:(ctx:BattleEventContext):boolean=>{
+      const elf=helpers.liveElf(ctx,ctx.actor);
+      if(!elf||!Array.isArray(elf.skills))return false;
+      const stripped=elf.skills.filter((s:any)=>s.skillRune||s.specialBadge||s.portableSkillMark).length;
+      if(!stripped)return false;
+      const activeCount=elf.skills.filter((s:any)=>s.isRuneActive===true).length;
+      ctx.updateAnyElf(ctx.actor,idOf(elf),{
+        skills:elf.skills.map((s:any)=>{
+          const {skillRune,isRuneActive,specialBadge,...rest}=s;
+          return rest;
+        }),
+      });
+      (ctx as any).setPlayerState?.('runeStrippedActiveCount',activeCount);
+      (ctx as any).addLog?.('ᛏ 【奧丁】：下場剝離 '+stripped+' 道符文（其中 '+activeCount+' 道已激活）','effect');
+      return true;
+    },
+    // 2026-10-30：剝離獎勵改為「按已剝離的激活符文道數」結算（官方描述是「每剝離1道…」）。
+    // 原實作只結算一次，且沒有任何 kit 條目呼叫。
     rune_strip_reward: (ctx: BattleEventContext, p: any): boolean => {
-      const isSelf = p.ppMode === 'restore';
+      const isSelf = p.ppMode === "restore";
       const side: S = isSelf ? ctx.actor : ctx.targetSide;
       const elf = helpers.liveElf(ctx, side);
       if (!elf) return false;
+      const holderCtx = side === ctx.actor ? ctx : ctx.contextForElf?.(side, elf);
+      const count = Math.max(0, Number((holderCtx as any)?.getPlayerState?.("runeStrippedActiveCount") ?? 0));
+      if (!count) return false;
+      const per = Math.floor((Number(elf.maxHp) || 0) * p.hpRatio);
       if (isSelf) {
-        (ctx as any).runAct?.({ op: 'pp_op', p: { side: 'self', mode: 'recover', amount: 99 }, label: '符文剝離·PP恢復' });
-        const heal = Math.floor((Number(elf.maxHp) || 0) * p.hpRatio);
+        (ctx as any).runAct?.({ op: "pp_op", p: { side: "self", mode: "recover", amount: 99 }, label: "符文剝離·PP恢復" });
+        const heal = per * count;
         if (heal > 0) (ctx as any).applyHeal?.(side, heal);
+        (ctx as any).addLog?.("ᛏ 【奧丁】：剝離 " + count + " 道激活符文，恢復 " + heal + " 體力", "heal");
       } else {
-        (ctx as any).runAct?.({ op: 'pp_op', p: { side: 'opp', mode: 'zero', amount: 0 }, label: '符文剝離·PP失去' });
-        const dmg = Math.floor((Number(elf.maxHp) || 0) * p.hpRatio);
-        if (dmg > 0) (ctx as any).applyTrueDamage?.(side, dmg, '符文剝離·真實傷害');
+        (ctx as any).runAct?.({ op: "pp_op", p: { side: "opp", mode: "zero", amount: 0 }, label: "符文剝離·PP失去" });
+        const dmg = per * count;
+        if (dmg > 0) (ctx as any).applyTrueDamage?.(side, dmg, "符文剝離·真實傷害");
+        (ctx as any).addLog?.("ᛏ 【奧丁】：剝離 " + count + " 道激活符文，對手受到 " + dmg + " 真實傷害", "effect");
       }
+      (holderCtx as any)?.setPlayerState?.("runeStrippedActiveCount", 0);
       return true;
     },
     next_skill_prio: (ctx: BattleEventContext, p: any): boolean => {

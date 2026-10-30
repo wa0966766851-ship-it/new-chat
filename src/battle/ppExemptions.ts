@@ -43,7 +43,10 @@ const nativeZeroPpExempt = (elf: Elf, sk: Skill, opp?: Elf | null): boolean => {
   if (!elf || !sk || !elf.name) return false;
   if((elf as any).ppLimitIgnoredUntilSwitch===true)return true;
   if(authoredPpExemption(elf,sk,opp))return true;
-  if(portableSkillCapabilities(elf).ppUnrestricted||(sk as any).portableSkillMark?.capabilities?.ppUnrestricted)return true;
+  // 2026-10-30：可攜技能標記（符文）的能力必須「已激活」才生效。
+  // 原寫法不看 isRuneActive，導致 ᚱᚷ 未激活也讓所有技能豁免 PP。
+  if(portableSkillCapabilities(elf).ppUnrestricted)return true;
+  if((sk as any).portableSkillMark?.capabilities?.ppUnrestricted&&(sk as any).isRuneActive===true)return true;
   if(sk.ppUnlimited===true)return true; // 原廠 PP 0/0
 
   // 1. 專屬機制
@@ -68,7 +71,7 @@ const nativeZeroPpExempt = (elf: Elf, sk: Skill, opp?: Elf | null): boolean => {
   // 3. 奧丁 ᚱᚷ 符文：激活後所有技能選擇時不受PP值限制；附有 ᚱᚷ 的技能選擇時即激活
   const isRG = (s: Skill) => !(s as any).portableSkillMark&&(s.skillRune === 'ᚱᚷ' || s.specialBadge?.text === 'ᚱᚷ' || !!s.specialBadge?.id?.includes('ᚱᚷ'));
   if ((elf.skills || []).some(s => isRG(s) && s.isRuneActive === true)) return true;
-  if (isRG(sk)) return true;
+  if (isRG(sk) && (sk as any).isRuneActive === true) return true;
 
   // 4. 已激活標記中的「不受PP」
   const hasPpExemptBadge = (elf.skills || []).some(s => {
