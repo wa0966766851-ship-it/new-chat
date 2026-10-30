@@ -63,7 +63,7 @@ export function odinOperations(helpers: { liveElf: (ctx: BattleEventContext, sid
       const sk=elf.skills[p.slot];
       if(sk.skillRune||sk.portableSkillMark||sk.specialBadge?.text?.includes('ᛏ'))return false;
       // 附加不等於激活；保留既有符文，不覆蓋另一來源的槽位。
-      ctx.updateAnyElf(side,idOf(elf),{skills:elf.skills.map((s:any,i:number)=>i===p.slot?{...s,skillRune:p.rune,isRuneActive:false,specialBadge:{id:`slot_mark_${p.rune}`,text:p.rune,description:`【未激活】選擇該技能時激活 ${p.rune}`}}:s)});
+      ctx.updateAnyElf(side,idOf(elf),{skills:elf.skills.map((s:any,i:number)=>i===p.slot?{...s,skillRune:p.rune,isRuneActive:false,specialBadge:{id:`slot_mark_${p.rune}`,text:p.rune,description:'【未激活】'}}:s)});
       return true;
     },
     duel_start: (ctx: BattleEventContext): boolean => {

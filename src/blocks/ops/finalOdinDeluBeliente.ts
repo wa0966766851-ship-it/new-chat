@@ -168,7 +168,7 @@ export function runPortableSkillMarkPrograms(ctx: BattleEventContext, trigs: str
         for(const key of ['atk','def','spatk','spdef','speed']){const before=calculatedStats[key];calculatedStats[key]=Math.floor(before*ratio);skill.portableAppliedStatRatios[key]=before?calculatedStats[key]/before:1;}
         ctx.updateElf(ctx.actor,{id:ctx.self.id,calculatedStats});
       }
-      skill.specialBadge = { ...skill.specialBadge, text: def.symbol, description: `【已激活】${def.description}` };
+      skill.specialBadge = { ...skill.specialBadge, text: def.symbol, description: '【已激活】' };
       ctx.updateElf(ctx.actor, { id: ctx.self.id, skills: ctx.self.skills.map((s: any) => ({ ...s })) });
       if((ctx.self as any).portableInheritedActiveSlots?.includes(index))ctx.updateElf(ctx.actor,{id:ctx.self.id,portableInheritedActiveSlots:(ctx.self as any).portableInheritedActiveSlots.filter((i:number)=>i!==index)} as any);
     }
@@ -349,14 +349,20 @@ export function finalOdbOperations(addTimer: (ctx: BattleEventContext, side: Sid
     },
     skill_marks_assign(ctx: BattleEventContext, p: any) {
       const side = sideOf(ctx, p.side), elf: any = elfOf(ctx, side), get = side === ctx.actor ? ctx.getPlayerState : ctx.getOpponentState;
-      if ((Number(get(`${side}_turnsInBattle`)) || 1) > p.withinRounds) return false;
+      // 2026-10-30：改用「該精靈自己的在場回合數」，不是該側的整場回合數。
+      // 原本讀 ${side}_turnsInBattle（不隨換人重置），第 3 回合後換上的精靈明明在場 1 回合也被擋。
+      const entryTurn = Number(get('fieldEntryTurn')) || 0;
+      const nowTurn = Number(ctx.roundNumber) || 0;
+      const onFieldRounds = entryTurn > 0 && nowTurn >= entryTurn ? (nowTurn - entryTurn + 1) : 1;
+      if (onFieldRounds > p.withinRounds) return false;
       let changed = false;
       const skills = elf.skills.map((skill: any, index: number) => {
         if (!p.marks[index] || skill.skillRune || skill.portableSkillMark) return skill;
         changed = true; const def = structuredClone(p.marks[index]);
         const active = false;
         return { ...skill, skillRune: def.symbol, isRuneActive: active, portableSkillMark: def,
-          specialBadge: { id: `slot_mark_${def.symbol}`, text: def.symbol, description: `${active ? '【已激活】' : '【未激活】'}${def.description}` } };
+          specialBadge: { id: `slot_mark_${def.symbol}`, text: def.symbol, description: active ? "【已激活】" : "【未激活】" },
+        };
       });
       if (changed) ctx.updateElf(side, { id: elf.id, skills }); return changed;
     },
