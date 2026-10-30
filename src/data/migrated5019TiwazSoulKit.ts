@@ -47,5 +47,5 @@ export const MIGRATED_5019_TIWAZ_SOUL_KIT={kind:'soul' as const,elfIds:['5019'],
 
    // 2026-10-30：下場剝離（官方：「自身附加的符文於選擇技能階段時激活直到該精靈下場後剝離」）。
    // 原本完全沒有這個節點，符文換人後永久殘留，造成全程生效與類兩命效果。
-   e('on_switch_out','switch_out','下場時剝離自身符文：恢復該技能全部PP值；每剝離1道激活符文則增加等同最大體力20%的體力值',[{acts:[a('rune_strip',{}),a('rune_strip_reward',{hpRatio:.2,ppMode:'restore'})]}],90),
+   e('on_switch_out','switch_out','下場時剝離自身符文：恢復該技能全部PP值；每剝離1道激活符文則增加等同最大體力20%的體力值',[{acts:[a('skill_marks_strip',{side:'self'})]}],90),
   ]};
