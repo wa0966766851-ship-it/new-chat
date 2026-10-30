@@ -1012,7 +1012,15 @@ Object.assign(fCtx as any, { fatalDamage: effectiveAmount, fatalIsDamage: true }
         // 「體力無法恢復/增加超過原始體力上限」（六刃等）：增加體力同樣受恢復上限限制，但不會因此扣血
         const adjustCap = Number(readScopedRegistry(cur, targetSide, target, 'recoveryMaxHpCap')) || 0;
         if (adjustCap > 0 && adjustedHp > target.currentHp) adjustedHp = Math.max(target.currentHp, Math.min(adjustedHp, adjustCap));
-        const nextHp = capCurrentHp(cur, targetSide, target, adjustedHp);
+        let nextHp = capCurrentHp(cur, targetSide, target, adjustedHp);
+        // 2026-10-30：已消逝（maxHp 被歸零）的精靈不可「增加」體力。
+        // 注意：這裡是「調整體力」不是「恢復體力」，所以只擋增加、不擋減少 ——
+        // 扣血、清零等調整仍要正常生效，否則消逝／死亡流程會被卡住。
+        const hpZeroTarget = Number(target.currentHp) <= 0;
+        if (hpZeroTarget && nextHp > 0) {
+          adjustedHp = Number(target.currentHp);
+        nextHp = capCurrentHp(cur, targetSide, target, adjustedHp);
+        }
         const val = nextHp - target.currentHp;
         if (val < 0) delete damageOriginRef.current[target.battleId || target.id];
 
@@ -1078,7 +1086,9 @@ Object.assign(fCtx as any, { fatalDamage: effectiveAmount, fatalIsDamage: true }
         const target = data.targetId ? teamForHeal.find(e=>(e.battleId||e.id)===data.targetId) : cur[targetSide];
         // 2026-10-30：已消逝（maxHp 被歸零）或上限<=0 者不可恢復。
         // 否則治療會把 currentHp 補到 400 而上限仍是 0，出現 400/0 並污染消逝判定。
-        if (!target || checkElfDead(target) || (target as any).isVanished || !(Number(target.maxHp) > 0)) break;
+        // 2026-10-30：體力為 0 的目標不觸發恢復（消逝者的上限也會是 0，補血會變成 400/0）。
+        // 用 currentHp<=0 判斷，不動 maxHp 相關邏輯，避免影響調整體力的判定。
+        if (!target || checkElfDead(target) || Number(target.currentHp) <= 0) break;
         const recoveryTimers=scopedTimers(syncStateRef.current,targetSide,target);
         const recoveryRegistry = new Proxy({}, {get:(_,key)=>readScopedRegistry(syncStateRef.current,targetSide,target,String(key))}) as any;
         const playerStateKey = `${targetSide}RegistryState` as "p1RegistryState" | "p2RegistryState";
@@ -2268,6 +2278,9 @@ case 'switch': {
               const outCtx = getBattleEventContext(s, true, mIdx);
               SoulMarkRegistry[outgoingElf.name](outCtx, EffectTiming.BEFORE_SWITCH_OUT, { incomingElf: targetElf, forced: false });
               SoulMarkRegistry[outgoingElf.name](getBattleEventContext(s, true, mIdx), EffectTiming.ON_SWITCH_OUT, { incomingElf: targetElf, forced: false });
+        // 2026-10-30：任何帶符文的精靈下場都剝離（官方：「直到該精靈下場後剝離」）。
+        // 原本只有奧丁自己的 on_switch_out，隊友與對手換人時符文會永久殘留 → 全程生效。
+        stripRunesFrom(outgoingElf);
             }
 
             if (outgoingElf) {
@@ -4072,6 +4085,7 @@ syncStateRef.current = { ...syncStateRef.current, [actorRegKey]: { ...rg, attack
         const outCtx = getBattleEventContext(side, true, 0);
         SoulMarkRegistry[outgoingElf.name](outCtx, EffectTiming.BEFORE_SWITCH_OUT, { incomingElf: targetElf, forced: true });
         SoulMarkRegistry[outgoingElf.name](getBattleEventContext(side, true, 0), EffectTiming.ON_SWITCH_OUT, { incomingElf: targetElf, forced: true });
+        stripRunesFrom(outgoingElf);
       }
 
       if (outgoingElf) {
