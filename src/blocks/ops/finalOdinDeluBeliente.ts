@@ -349,6 +349,14 @@ export function finalOdbOperations(addTimer: (ctx: BattleEventContext, side: Sid
     },
     skill_marks_assign(ctx: BattleEventContext, p: any) {
       const side = sideOf(ctx, p.side), elf: any = elfOf(ctx, side), get = side === ctx.actor ? ctx.getPlayerState : ctx.getOpponentState;
+      // 2026-10-31：符文附加只在「魂印持有者本人在場」時進行。
+      // 官方描述是「若自身在場回合數未超過2回合」—— 持有者在後台時不該為任何人附加符文。
+      // 引擎會把 ROUND_START 廣播給全隊（battleEngine.ts:2370），所以後台持有者也會被呼叫到。
+      const holder: any = ctx.self;
+      const activeHolder: any = ctx.actor === 'p1' ? (ctx as any).activeP1 : (ctx as any).activeP2;
+      const holderId = String(holder?.battleId || holder?.id || '');
+      const activeId = String(activeHolder?.battleId || activeHolder?.id || '');
+      if (!holderId || holderId !== activeId) return false;
       // 2026-10-30：改用「該精靈自己的在場回合數」，不是該側的整場回合數。
       // 原本讀 ${side}_turnsInBattle（不隨換人重置），第 3 回合後換上的精靈明明在場 1 回合也被擋。
       const entryTurn = Number(get('fieldEntryTurn')) || 0;
