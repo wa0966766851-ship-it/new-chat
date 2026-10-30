@@ -980,7 +980,14 @@ export function buildStateAPIs(shared: SharedContextDeps): StateAPIs {
         const updatedElf = { 
           ...elfToVanish, 
           currentHp: 0, 
-          maxHp: isDeluImmune ? elfToVanish.maxHp : 0, 
+          maxHp: isDeluImmune ? elfToVanish.maxHp : 0,
+          // 2026-10-30：消逝等於下場，剝離該精靈身上的符文。
+          // 官方：「符文於選擇技能階段時激活直到該精靈下場後剝離」，
+          // 否則死後符文仍為「已激活」，效果持續生效（全程生效／類兩命）。
+          skills: (elfToVanish.skills || []).map((s: any) => {
+            const { skillRune, isRuneActive, specialBadge, ...rest } = s;
+            return rest;
+          }), 
           isVanished: true 
         };
         enforceMaximumHealthLock(updatedElf);

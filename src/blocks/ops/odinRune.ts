@@ -152,3 +152,20 @@ export function odinOperations(helpers: { liveElf: (ctx: BattleEventContext, sid
     },
   };
 }
+
+/**
+ * 2026-10-30：供死亡／消逝路徑呼叫的符文剝離。
+ * 官方：「自身附加的符文於選擇技能階段時激活直到該精靈下場後剝離」，
+ * 死亡等同下場，但 on_switch_out 只涵蓋主動切換，因此死亡需另外呼叫。
+ */
+export function stripRunesFrom(elf: any): { stripped: number; active: number } | null {
+  if (!elf || !Array.isArray(elf.skills)) return null;
+  const withRune = elf.skills.filter((s: any) => s.skillRune || s.specialBadge || s.portableSkillMark);
+  if (!withRune.length) return null;
+  const active = elf.skills.filter((s: any) => s.isRuneActive === true).length;
+  elf.skills = elf.skills.map((s: any) => {
+    const { skillRune, isRuneActive, specialBadge, ...rest } = s;
+    return rest;
+  });
+  return { stripped: withRune.length, active };
+}

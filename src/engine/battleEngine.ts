@@ -53,6 +53,7 @@ import { consumeSkillTypeOverride } from '../battle/skillTypeOverride';
 import { executeGenericSkillTextAfterHit, rollSkillHit } from "../effects/genericSkillText";
 import { getAttackImmunity, ignoresAttackImmunity, grantsNextIgnoreOnSuccess } from "../battle/attackImmunity";
 import { runSkillBlocks, emitSkillUse, soulPassiveEvade, emitSelfInvalid, emitFailedSkillUse } from "../blocks/registry";
+import { stripRunesFrom } from "../blocks/ops/odinRune";
 import { runConnectedKit } from "../effects/connectedEffects";
 import {hasForcedHitEffects,runForcedHitEffects} from '../effects/forcedHitEffects';
 import { skillBasePriority } from "../battle/conditionalPriority";
@@ -1075,7 +1076,9 @@ Object.assign(fCtx as any, { fatalDamage: effectiveAmount, fatalIsDamage: true }
         const targetSide = side;
         const teamForHeal = cur[`${side}Team`];
         const target = data.targetId ? teamForHeal.find(e=>(e.battleId||e.id)===data.targetId) : cur[targetSide];
-        if (!target || checkElfDead(target)) break; // 已陣亡者不受回復（重生另走專用流程）
+        // 2026-10-30：已消逝（maxHp 被歸零）或上限<=0 者不可恢復。
+        // 否則治療會把 currentHp 補到 400 而上限仍是 0，出現 400/0 並污染消逝判定。
+        if (!target || checkElfDead(target) || (target as any).isVanished || !(Number(target.maxHp) > 0)) break;
         const recoveryTimers=scopedTimers(syncStateRef.current,targetSide,target);
         const recoveryRegistry = new Proxy({}, {get:(_,key)=>readScopedRegistry(syncStateRef.current,targetSide,target,String(key))}) as any;
         const playerStateKey = `${targetSide}RegistryState` as "p1RegistryState" | "p2RegistryState";
@@ -1601,6 +1604,11 @@ case 'switch': {
       SoulMarkRegistry[mid.p2.name](dCtx, EffectTiming.DEATH_NODE_1, { defeatedSelf: true, node: deathNode });
     }
     if (n1 || n2) broadcastExtraElfNode(deathNode === 1 ? "死亡節點一" : deathNode === 2 ? "死亡節點二" : "死亡節點三");
+    // 2026-10-30：死亡等於下場，需剝離該精靈身上的符文。
+    // 官方：「符文於選擇技能階段時激活直到該精靈下場後剝離」；
+    // on_switch_out 只涵蓋主動切換，死亡不會觸發，導致符文死後永久殘留（全程生效／類兩命）。
+    if (n1) stripRunesFrom((mid as any).p1Team?.find((e: any) => (e.battleId || e.id) === ((mid as any).p1?.battleId || (mid as any).p1?.id)));
+    if (n2) stripRunesFrom((mid as any).p2Team?.find((e: any) => (e.battleId || e.id) === ((mid as any).p2?.battleId || (mid as any).p2?.id)));
 
     // Trigger ON_KILL if someone just died and we have a killer
     if (killerSide && (killerSide === "p1" ? n2 : n1)) {
