@@ -3261,13 +3261,15 @@ case 'switch': {
         // 在每次傷害計算前，把「本回合對手（= 被打的一方）是否選了特殊攻擊」寫進該側 registryState，
         // 由 damageCalculator 讀取。每次重算＝每次判定：沒選特殊攻擊就不生效。
         {
-          const oppSideForShiyan: "p1" | "p2" = s === "p1" ? "p2" : "p1";
-          const oppSelected: any = oppSideForShiyan === "p1" ? mid.p1SelectedSkill : mid.p2SelectedSkill;
-          const oppIsSpecial = String(oppSelected?.category || "") === "特殊";
-          const oppRegKey: "p1RegistryState" | "p2RegistryState" = oppSideForShiyan === "p1" ? "p1RegistryState" : "p2RegistryState";
-          syncStateRef.current = { ...syncStateRef.current, [oppRegKey]: {
-            ...(syncStateRef.current[oppRegKey] || {}),
-            shiyanOppSpecialThisAction: oppIsSpecial,
+          // 觸發者＝攻擊方（s）選擇了特殊攻擊；旗標寫進「被打方」的 registryState，
+          // 因為 damageCalculator 在計算時是以防守方視角讀 tReg。
+          const attackerSelected: any = s === "p1" ? mid.p1SelectedSkill : mid.p2SelectedSkill;
+          const attackerIsSpecial = String(attackerSelected?.category || "") === "特殊";
+          const defSideForShiyan: "p1" | "p2" = s === "p1" ? "p2" : "p1";
+          const defRegKey: "p1RegistryState" | "p2RegistryState" = defSideForShiyan === "p1" ? "p1RegistryState" : "p2RegistryState";
+          syncStateRef.current = { ...syncStateRef.current, [defRegKey]: {
+            ...(syncStateRef.current[defRegKey] || {}),
+            shiyanOppSpecialThisAction: attackerIsSpecial,
           } } as any;
         }
         const dmgRes = calculateDamage(

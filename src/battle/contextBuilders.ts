@@ -1,4 +1,4 @@
-import {retainShield} from './markCapabilities';
+﻿import {retainShield} from './markCapabilities';
 import { queueAttachedAttackDamage } from './attachedAttackDamage';
 import {portableSkillCapabilities,portableShieldPatch} from './portableSkillMarks';
 import { applyAlienDoubleDamage } from './advancedDamageModifiers';
@@ -273,6 +273,22 @@ export function buildDamageAPIs(shared: SharedContextDeps): DamageAPIs {
 
       runDamageHooks(shared, tSide, damageComp);
       applyStatusDamageModifiers(damageComp, syncStateRef.current[side], syncStateRef.current[tSide]);
+
+      // 2026-10-31：無序·蝕言「對手選擇特殊攻擊時…每次造成技能傷害減少1%」。
+      // 額外行動／附加技能傷害不走 calculateDamage，需在此套用同一條減傷。
+      if (!damageComp.pure && (String(damageCategory) === "skill_extra_action" || String(damageCategory) === "skill" || String(damageCategory) === "skill_attribute")) {
+        const defReg: any = tSide === "p1" ? c.p1RegistryState : c.p2RegistryState;
+
+        if (defReg?.shiyanOppSpecialThisAction) {
+          const tTeam3: any[] = ((tSide === "p1" ? c.p1Team : c.p2Team) || []) as any[];
+          const syElf2 = tTeam3.find((e: any) => String(e?.name || "").includes("蝕言") && Number(e?.currentHp) > 0 && !e?.isVanished);
+          if (syElf2) {
+            const finalSpdef2 = Number(syElf2?.calculatedStats?.spdef) || 0;
+            const reduce2 = Math.min(1, Math.max(0, finalSpdef2 / 100));
+            if (reduce2 > 0) multiplyDamageReduction(damageComp, 1 - reduce2, true);
+          }
+        }
+      }
 
       // Scan actor's marks for nonTrueDamageDealtMultiplier
       const actorSide = side;
