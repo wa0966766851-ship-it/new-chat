@@ -1,4 +1,4 @@
-import { applyStageViewAs } from './stageViewAs';
+﻿import { applyStageViewAs } from './stageViewAs';
 import { traitNames } from '../effects/traitEffects';
 import { readStatPercent } from '../effects/soulProperty';
 import { specialDamageFormula } from '../effects/specialDamageFormulaRegistry';
@@ -127,6 +127,25 @@ export const calculateDamage = (
   if (stageReg?.selfDropIgnoredThisAction && atkS < 0) atkS = 0;
   else if (options?.ignoreOppBuff && defS > 0) defS = 0;
 
+  // 2026-10-31：無序·蝕言「修正敵方特殊攻擊計算公式」。
+  // 官方：「自身最終特防值每有1點特防則對手選擇特殊攻擊時直到下回合結束時每次造成技能傷害時減少1%」
+  // registry 在對手「選擇特殊攻擊」時寫入觸發回合；這裡比對回合數判斷是否仍在有效期。
+  let shiyanOverride = 0;
+  if (!isPhys) {
+    // 從防守方隊伍找蝕言（存活且非消逝），讀它身上的觸發回合與最終特防。
+    // 防守方是否有存活的蝕言（在場或後台皆可，官方為常駐）
+    const tTeam2: any[] = ((side === "p1" ? p2Team : p1Team) || []) as any[];
+    const tReg: any = side === "p1" ? p2RegistryState : p1RegistryState;
+    const syElf = tTeam2.find((e: any) => String(e?.name || "").includes("蝕言") && Number(e?.currentHp) > 0 && !e?.isVanished);
+    // 只在「對手本回合選擇特殊攻擊」時生效（每次重算都重新判定）。
+    const oppChoseSpecial = !!(tReg?.shiyanOppSpecialThisAction);
+    if (syElf && oppChoseSpecial) {
+      const finalSpdef = Number(syElf?.calculatedStats?.spdef) || 0;
+      const flat = Math.max(1, Math.floor(Number(actor.calculatedStats?.spatk) || 0));
+      const reduce = Math.min(1, Math.max(0, finalSpdef / 100));
+      shiyanOverride = Math.max(0, Math.floor(flat * (1 - reduce)));
+    }
+  }
   if (atkPanelRatio) atkS = 0; // 「最終」攻擊／特攻＝面板原始值×比例，不再套能力等級
   const formula = specialDamageFormula(actor, target, skill, (oppSide === 'p1' ? p1Team : p2Team) || [], atkS, calculateEffectiveStat(atk, atkS));
   // 公式替換：結果即總傷，不吃暴擊、也不乘連擊（使用者確認 2026-10-11）
@@ -213,7 +232,7 @@ export const calculateDamage = (
   }
 
   return { 
-    damage: Math.max(0, final), 
+    damage: shiyanOverride > 0 ? shiyanOverride : Math.max(0, final), 
     isCrit, 
     typeMultiplier: typeMult,
     hitCount,

@@ -71,12 +71,57 @@ function runShiyanSoul(ctx: C, event: E, extraData?: any): any {
           if (e.calculatedStats.spdef !== value) ctx.updateAnyElf(actor, id, { calculatedStats: { ...e.calculatedStats, spdef: value } });
         }
         setPlayerState('shiyanOriginalSpdef', originals);
+
+        // 2026-10-31：實作「修正敵方特殊攻擊公式」與「每點最終特防減1%」。
+        // 原本這兩個 effects 只在 profile 宣告，全專案沒有任何讀取端（純聲明）。
+        // 這裡把「自身最終特防」與「是否生效」寫進狀態，由 damageCalculator 讀取。
+        // 官方：
+        //   修正敵方所有精靈特殊攻擊計算公式改為只能造成等同於特攻值的傷害
+        //   然後若自身最終特防值每有1點特防則對手造成上述傷害時減少1%
+        setPlayerState('shiyanFormulaActive', 1);
+        setPlayerState('shiyanFinalSpdef', adjusted);
+        // 同時寫進 elf 欄位：setPlayerState 受 contextForElf 作用域影響，
+        // 從其他精靈的 context 讀不到；elf 欄位跨 context 可見。
+        ctx.updateAnyElf(actor, self.battleId || self.id, {
+          shiyanFormulaActive: 1,
+          shiyanFinalSpdef: adjusted,
+        } as any);
+        addLog?.('🌑 【蝕言】：對手特殊攻擊公式已改寫（每點最終特防額外減少1%傷害）', 'effect');
       } else {
         for (const e of ctx.getFullTeam(actor)) {
           const original = originals[e.battleId || e.id];
           if (original !== undefined) ctx.updateAnyElf(actor, e.battleId || e.id, { calculatedStats: { ...e.calculatedStats, spdef: original } });
         }
         setPlayerState('shiyanOriginalSpdef', {});
+        // 自身死亡時還原對手特殊攻擊計算公式
+        setPlayerState('shiyanFormulaActive', 0);
+        setPlayerState('shiyanFinalSpdef', 0);
+        ctx.updateAnyElf(actor, self.battleId || self.id, {
+          shiyanFormulaActive: 0,
+          shiyanFinalSpdef: 0,
+        } as any);
+      }
+    }
+    // 2026-10-31：官方「自身最終特防值每有1點特防則對手選擇特殊攻擊時
+    //              直到下回合結束時每次造成技能傷害時減少1%」。
+    // SKILL_SELECTED 只派發給「選擇方自己」的魂印，蝕言收不到對手選招；
+    // 改在 ENFORCE（每回合全隊廣播）檢查「對手本回合選的是否特殊攻擊」。
+    if (event === E.ENFORCE && self.currentHp > 0 && !self.isVanished) {
+      const oppSide = ctx.targetSide;
+      const oppSkill: any = oppSide === "p1" ? (ctx as any).p1SelectedSkill : (ctx as any).p2SelectedSkill;
+      const isSpecial = String(oppSkill?.category || "") === "特殊";
+      if (isSpecial) {
+        const originals: Record<string, number> = getPlayerState("shiyanOriginalSpdef") || {};
+        const original = originals[self.battleId || self.id] ?? self.calculatedStats.spdef;
+        const finalSpdef = Math.ceil(original / 10);
+        // 寫進「己方」registryState（跨精靈可見），不是單一精靈的 playerState。
+        (ctx as any).setTeamState?.(actor, "shiyanSpatkFormulaRound", ctx.roundNumber ?? 0);
+        (ctx as any).setTeamState?.(actor, "shiyanSpatkFormulaSpdef", finalSpdef);
+        // 同時寫進自身 elf 欄位，讓同一側任何在場精靈都讀得到。
+        ctx.updateAnyElf(actor, self.battleId || self.id, {
+          shiyanSpatkFormulaRound: ctx.roundNumber ?? 0,
+          shiyanSpatkFormulaSpdef: finalSpdef,
+        } as any);
       }
     }
     const wraithElf = ctx.getFullTeam(actor).find(e => e.name.includes("賽博怨靈") && !e.isVanished

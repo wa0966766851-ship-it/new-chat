@@ -1018,7 +1018,9 @@ Object.assign(fCtx as any, { fatalDamage: effectiveAmount, fatalIsDamage: true }
         // 注意：這裡是「調整體力」不是「恢復體力」，所以只擋增加、不擋減少 ——
         // 扣血、清零等調整仍要正常生效，否則消逝／死亡流程會被卡住。
         const hpZeroTarget = Number(target.currentHp) <= 0;
-        if (hpZeroTarget && nextHp > 0) {
+        // 通用旗標 fromNonPositive：效果明確要求「從 ≤0 設定為正值」時放行；maxHp≤0 的消逝者仍不生效。
+        const allowFromNonPositive = !!data.fromNonPositive && Number(target.maxHp) > 0;
+        if (hpZeroTarget && nextHp > 0 && !allowFromNonPositive) {
           adjustedHp = Number(target.currentHp);
         nextHp = capCurrentHp(cur, targetSide, target, adjustedHp);
         }
@@ -3255,6 +3257,19 @@ case 'switch': {
           pushEffect({ type: 'log', side: s, data: { text: `${syncStateRef.current[actorRegKey]?.ignoreSpDefSource ? `【${syncStateRef.current[actorRegKey].ignoreSpDefSource}】：` : ""}特殊攻擊忽略對手特防 ${Math.round(ignoreSpDefPercent * 100)}%！（剩餘 ${ignoreSpDefCount - 1} 次）`, type: "effect" } });
         }
 
+        // 2026-10-31：無序·蝕言「對手選擇特殊攻擊時直到下回合結束每次造成技能傷害減少1%」。
+        // 在每次傷害計算前，把「本回合對手（= 被打的一方）是否選了特殊攻擊」寫進該側 registryState，
+        // 由 damageCalculator 讀取。每次重算＝每次判定：沒選特殊攻擊就不生效。
+        {
+          const oppSideForShiyan: "p1" | "p2" = s === "p1" ? "p2" : "p1";
+          const oppSelected: any = oppSideForShiyan === "p1" ? mid.p1SelectedSkill : mid.p2SelectedSkill;
+          const oppIsSpecial = String(oppSelected?.category || "") === "特殊";
+          const oppRegKey: "p1RegistryState" | "p2RegistryState" = oppSideForShiyan === "p1" ? "p1RegistryState" : "p2RegistryState";
+          syncStateRef.current = { ...syncStateRef.current, [oppRegKey]: {
+            ...(syncStateRef.current[oppRegKey] || {}),
+            shiyanOppSpecialThisAction: oppIsSpecial,
+          } } as any;
+        }
         const dmgRes = calculateDamage(
           currentActor,
           currentOpp,

@@ -378,7 +378,7 @@ export function buildDamageAPIs(shared: SharedContextDeps): DamageAPIs {
       getBattleEventContext(actorSide, true, moveIndex).applyHeal(actorSide, actualDmg,opts);
     },
     applyHeal: (tSide, amt, opts) => pushEffect({ type: 'heal', side: tSide, data: { amount: Math.floor(amt), ...opts } }),
-    adjustHp: (tSide, amt) => pushEffect({ type: 'adjust_hp', side: tSide, data: { amount: Math.floor(amt) } }),
+    adjustHp: (tSide, amt, opts) => pushEffect({ type: 'adjust_hp', side: tSide, data: { amount: Math.floor(amt), ...(opts?.fromNonPositive ? { fromNonPositive: true } : {}) } }),
     applyInstantKill:(targetSide,label,opts)=>queueInstantKill(shared.getBattleEventContext(side,true,shared.moveIndex,self),targetSide,label,opts,pushEffect),
     applyPercentDamage: (tSide, p) => {
       const c = syncStateRef.current;
@@ -910,7 +910,14 @@ export function buildStatusAPIs(shared: SharedContextDeps): StatusAPIs {
       };
 
       dispatch({ type: 'UPDATE_ELF', side: tSide,targetId:target.battleId||target.id, elf: { statStages: nextElf.statStages, skills: nextElf.skills } });
-      pushEffect({ type: 'log', side: tSide, data: { text: `【${target.name}】的能力發生了變化！`, type: "status" } });
+      // 2026-10-31：原本只寫「能力發生了變化」，玩家無法得知改了哪些屬性、加減多少。
+      // 改用 applied（已扣除 ±6 上下限與免疫過濾後的真實變化量）逐項列出。
+      {
+        const STAT_LABEL: Record<string, string> = { atk: "攻擊", def: "防禦", spatk: "特攻", spdef: "特防", speed: "速度", accuracy: "命中" };
+        const parts = Object.entries(applied).map(([k, v]) => `${STAT_LABEL[k] || k}${v > 0 ? "+" : ""}${v}`);
+        const text = parts.length ? `【${target.name}】${parts.join("、")}` : `【${target.name}】的能力發生了變化！`;
+        pushEffect({ type: "log", side: tSide, data: { text, type: "status" } });
+      }
       if (filteredChanges.length > 0 && target.paralyzeBothOnOwnStatChangeTurns) {
         const turns = target.paralyzeBothOnOwnStatChangeTurns;
         const otherSide = tSide === "p1" ? "p2" : "p1";
