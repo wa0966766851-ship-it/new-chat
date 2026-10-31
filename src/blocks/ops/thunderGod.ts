@@ -1,4 +1,4 @@
-// 異能雷霆系通用件（legacyWrapped 拆解組 4；5029 異境神霆·雷伊 魂印「異」／專屬特質「神明」「雷神」／技能「霆·禁雷敕令」）。
+﻿// 異能雷霆系通用件（legacyWrapped 拆解組 4；5029 異境神霆·雷伊 魂印「異」／專屬特質「神明」「雷神」／技能「霆·禁雷敕令」）。
 // 舊 handler（effects/elves/otherworld-rey/registry.ts handleOtherworldReySoulMark／OTHERWORLD_REY_SKILLS）整份空殼化，
 // 行為以本檔 op 在 Kit 內重現；引擎既有讀取端不動（survivalRules／damageCalculator／contextBuilders 的精靈旗標與 calcAtkDefMult 等）。
 //
@@ -44,6 +44,9 @@ export const ELF_TRAIT_FLAGS: Record<string, 'boolean' | 'turns'> = {
   ppLimitIgnoredRequiresNonFull: 'boolean',
   // 攻擊技能以雙攻值總和計算（engine 於行動前寫 blkAtkSpatkSum）。
   useAtkSpAtkSumForAttacks: 'boolean',
+  // 2026-10-31（5041 卡修斯）：處於【山神守護】時，控制類／弱化類異常的「原有效果」失效
+  // （異常本身仍存在、回合數照算）。
+  suppressControlWeakeningWhileMountainGuard: 'boolean',
 };
 
 /** 契約欄位（登記於 sequenceContract）。 */

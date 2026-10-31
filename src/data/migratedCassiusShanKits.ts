@@ -28,6 +28,34 @@ export const CASSIUS_SHAN_SOUL_KIT = {
   name: '山',
   description: texts.soul,
   kit: [
+    // ── 魂印核心（2026-10-31 補完）──────────────────────────────────────
+    // 1. 有護盾時，受到攻擊傷害的扣減量減半（己方全隊，自身在出戰背包內即生效）
+    e('before_damage', 'incoming_attack', '自身與己方其他精靈擁有護盾時若因受到攻擊傷害而扣減時減少量減半', [
+      { cond: [c('field_shield', {})], acts: [
+        a('dmg_mod', { dir: 'in', kind: '攻擊', reduce: 0.5 }),
+      ] },
+    ], 0),
+    // 2. 超額非真實傷害 > 當前護盾 → 本次免傷 + 階段結束消耗 50% 護盾回 25% 體力
+    e('before_damage', 'incoming_nontrue', '若在場精靈受到任一種超額非真實傷害大於該精靈當前護盾值：對手無法造成本次傷害，且戰鬥階段結束時消耗當前護盾值50%以恢復在場精靈等同於消耗量25%的體力', [
+      { cond: [c('field_shield', {})], acts: [
+        a('excess_non_true_intercept', {}),
+      ] },
+    ], 1),
+    // 3. 超額真實傷害 > 護盾且為致死 → 100% 重生 1 次
+    e('self_fatal', 'fatal', '若在場精靈受到超額真實傷害大於該精靈當前護盾值且為致死真實傷害：100%重生1次', [
+      { cond: [c('field_shield', {})], acts: [ a('rebirth_once', {}) ] },
+    ], 2),
+    // 4. 山神守護時：控制類／弱化類異常原有效果失效（異常本身仍在）
+    e('battle_start', 'battle_start', '自身處於山神守護狀態時：自身所處的所有異常狀態無法被轉化為控制類異常、弱化類異常；取消控制類異常與弱化類異常原有效果', [
+      { acts: [
+        a('elf_trait', { flag: 'suppressControlWeakeningWhileMountainGuard', value: true }),
+        a('status_conversion_ban', { statuses: ['麻痺','石化','害怕','睡眠','冰封','疲憊','癱瘓','沉默'] }),
+      ] },
+    ], 2),
+    // 5. 護盾消失時：炫彩山神死亡以清除在場累計回合數（以階段結束檢查護盾是否歸零實作）
+    e('battle_phase_end', 'phase_end', '自身護盾每次消失時：炫彩山神死亡以清除自身本次在場累計回合數', [
+      { cond: [c('field_shield', { absent: true })], acts: [ a('shield_break_mountain_god_death', {}) ] },
+    ], 10),
     // 回合開始：在場累計 ≤1 回合 → 召喚炫彩山神
     e('round_start', 'round_start', '回合開始時若自身本次在場累計回合數不高於1回合，召喚額外精靈炫彩山神加入己方', [
       { cond: [c('field_rounds', { op: '不高於', amount: 1 })], acts: [

@@ -1,4 +1,4 @@
-import {hasPortableDuel} from '../battle/portableSkillMarks';
+﻿import {hasPortableDuel} from '../battle/portableSkillMarks';
 // src/utils/battleHelpers.ts
 import { Elf, Skill, BattleItem } from "../types";
 import { isStoneThrower, isSkillStone, stoneBasePp } from "../data/skillStones";
@@ -301,6 +301,8 @@ export const isElfActionDisabled = (elf: any, opponent?: any) => {
   if (!elf) return false;
   const statuses = getStatuses(elf);
   if (elf.suppressAbnormalSideEffectsWhenParalyzed && Math.max(statuses["麻痺"] || 0, statuses["麻痹"] || 0, statuses.paralyzed || 0) > 0) return false;
+  // 2026-10-31（5041 卡修斯）：處於山神守護時，控制類異常的原有效果失效（異常仍存在）。
+  if (elf.suppressControlWeakeningWhileMountainGuard && (statuses["山神守護"] || 0) > 0) return false;
   for (const stId of Object.keys(statuses)) {
     if (statuses[stId] > 0) {
       const entry = StatusRegistry[canonicalStatusName(stId)];

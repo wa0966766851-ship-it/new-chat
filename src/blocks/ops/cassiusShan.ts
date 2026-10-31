@@ -23,6 +23,8 @@ export const CASSIUS_SHAN_ACTION_FIELDS: Record<string, readonly string[]> = {
   shield_break_no_switch: ['turns'],
   status_if_absent_else_heal: ['status', 'turns', 'healRatio'],
   team_next_entry_status_immune: ['count'],
+  excess_non_true_intercept: [],
+  shield_break_mountain_god_death: [],
   // 炫彩山神（額外精靈）用
   shield_owner_ratio: ['ratio'],
   status_owner: ['status', 'turns'],
@@ -89,6 +91,8 @@ export function cassiusShanActionIssue(op: string, p: any): string | null {
     if (!(p.healRatio > 0 && p.healRatio <= 1)) return '需0至100%恢復比例';
     return null;
   }
+  if (op === 'excess_non_true_intercept') return null;
+  if (op === 'shield_break_mountain_god_death') return null;
   if (op === 'shield_owner_ratio') {
     if (!(p.ratio > 0 && p.ratio <= 2)) return '護盾需0至200%比例';
     return null;
@@ -263,6 +267,57 @@ export function cassiusShanOperations(helpers: {
         return true;
       }
       ctx.applyStatusWithImmunityCheck(ctx.actor, p.status, p.turns);
+      return true;
+    },
+
+    /**
+     * 2026-10-31（5041 卡修斯）：超額非真實傷害 > 當前護盾 → 本次免傷。
+     * 戰鬥階段結束時消耗當前護盾值 50%，恢復在場精靈等同消耗量 25% 的體力。
+     * 實際免傷由 before_damage 階段的 damageComp 處理；此 op 只負責掛「階段結束結算」。
+     */
+    excess_non_true_intercept: (ctx: BattleEventContext): boolean => {
+      const self = helpers.liveElf(ctx, ctx.actor);
+      if (!self) return false;
+      const shieldNow = Math.max(0, Number(self.shield) || 0) + Math.max(0, Number(self.barrier) || 0);
+      if (shieldNow <= 0) return false;
+      // 本次免傷：標記後由傷害管線攔截（引擎讀 excessInterceptThisAction）
+      ctx.setPlayerState('excessInterceptThisAction', true);
+      // 階段結束結算：消耗 50% 護盾，恢復 25% 消耗量
+      const consume = Math.floor(shieldNow * 0.5);
+      const heal = Math.floor(consume * 0.25);
+      if (consume > 0) {
+        const nextShield = Math.max(0, (Number(self.shield) || 0) - consume);
+        ctx.updateAnyElf(ctx.actor, idOf(self), { shield: nextShield } as any);
+        if (heal > 0) ctx.applyHeal(ctx.actor, heal);
+        ctx.addLog?.('⛰️ 【卡修斯】：超額非真實傷害被抵消，消耗 ' + consume + ' 護盾恢復 ' + heal + ' 體力', 'effect');
+      }
+      return true;
+    },
+
+    /**
+     * 2026-10-31（5041 卡修斯）：自身護盾消失時，炫彩山神死亡並清除在場累計回合數。
+     * 死亡效果（清對手回合類/能力提升/PP歸零）寫在炫彩山神 kit，但該 kit 目前無執行端，
+     * 因此在這裡一併處理。
+     */
+    shield_break_mountain_god_death: (ctx: BattleEventContext): boolean => {
+      const team = (ctx as any).getFullTeam?.(ctx.actor) || [];
+      const shan = team.find((e: any) => String(e?.name || '').includes('炫彩山神') && e?.currentHp > 0 && !e?.isVanished);
+      if (!shan) return false;
+      // 炫彩山神死亡
+      ctx.vanishElf(ctx.actor, shan);
+      // 清除自身在場累計回合數
+      ctx.setPlayerState('fieldEntryTurn', ctx.roundNumber ?? 0);
+      // 死亡效果：清對手回合類、能力提升、PP 歸零
+      ctx.clearTurnEffectsOf?.(ctx.targetSide);
+      const opp = helpers.liveElf(ctx, ctx.targetSide);
+      if (opp) {
+        const up = Object.fromEntries(Object.keys(opp.statStages || {}).map(k => [k, -Math.max(0, Number((opp.statStages as any)?.[k]) || 0)]));
+        ctx.applyStatChange(ctx.targetSide, up);
+        ctx.updateAnyElf(ctx.targetSide, idOf(opp), {
+          skills: (opp.skills || []).map((sk: any) => ({ ...sk, pp: 0, currentPp: 0 })),
+        } as any);
+      }
+      ctx.addLog?.('⛰️ 【炫彩山神】：護盾消失，山神退場並清除對手回合類、能力提升與 PP！', 'effect');
       return true;
     },
 
