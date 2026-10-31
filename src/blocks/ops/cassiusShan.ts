@@ -23,6 +23,11 @@ export const CASSIUS_SHAN_ACTION_FIELDS: Record<string, readonly string[]> = {
   shield_break_no_switch: ['turns'],
   status_if_absent_else_heal: ['status', 'turns', 'healRatio'],
   team_next_entry_status_immune: ['count'],
+  // 炫彩山神（額外精靈）用
+  shield_owner_ratio: ['ratio'],
+  status_owner: ['status', 'turns'],
+  self_destroy: [],
+  clear_turn: ['side'],
 };
 
 export function cassiusShanActionIssue(op: string, p: any): string | null {
@@ -82,6 +87,19 @@ export function cassiusShanActionIssue(op: string, p: any): string | null {
     if (typeof p.status !== 'string' || !p.status) return '需狀態名稱';
     if (!Number.isInteger(p.turns) || p.turns < 1) return '需正整數回合';
     if (!(p.healRatio > 0 && p.healRatio <= 1)) return '需0至100%恢復比例';
+    return null;
+  }
+  if (op === 'shield_owner_ratio') {
+    if (!(p.ratio > 0 && p.ratio <= 2)) return '護盾需0至200%比例';
+    return null;
+  }
+  if (op === 'status_owner') {
+    if (typeof p.status !== 'string' || !p.status) return '需狀態名稱';
+    if (!Number.isInteger(p.turns) || p.turns < 1) return '需正整數回合';
+    return null;
+  }
+  if (op === 'clear_turn') {
+    if (p.side !== undefined && !['self','opp'].includes(p.side)) return '需指定對象';
     return null;
   }
   if (op === 'team_next_entry_status_immune') {
@@ -246,6 +264,45 @@ export function cassiusShanOperations(helpers: {
       }
       ctx.applyStatusWithImmunityCheck(ctx.actor, p.status, p.turns);
       return true;
+    },
+
+    /** 為召喚者附加最大體力 N% 的護盾。 */
+    shield_owner_ratio: (ctx: BattleEventContext, p: any): boolean => {
+      const self = helpers.liveElf(ctx, ctx.actor);
+      if (!self) return false;
+      // 額外精靈的召喚者：同側的卡修斯
+      const team = (ctx as any).getFullTeam?.(ctx.actor) || [];
+      const owner = team.find((e: any) => String(e?.name || '').includes('卡修斯') && e?.currentHp > 0);
+      if (!owner) return false;
+      const amount = Math.floor((Number(owner.maxHp) || 0) * p.ratio);
+      if (amount <= 0) return false;
+      const ownerCtx: any = (ctx as any).contextForElf?.(ctx.actor, owner) || ctx;
+      ownerCtx.applyShield?.(ctx.actor, amount);
+      return true;
+    },
+
+    /** 為召喚者附加狀態（必須用 contextForElf 指定持有者，否則會加到額外精靈自己）。 */
+    status_owner: (ctx: BattleEventContext, p: any): boolean => {
+      const team = (ctx as any).getFullTeam?.(ctx.actor) || [];
+      const owner = team.find((e: any) => String(e?.name || '').includes('卡修斯') && e?.currentHp > 0);
+      if (!owner) return false;
+      const ownerCtx: any = (ctx as any).contextForElf?.(ctx.actor, owner) || ctx;
+      ownerCtx.applyStatusWithImmunityCheck?.(ctx.actor, p.status, p.turns);
+      return true;
+    },
+
+    /** 自身消逝（額外精靈退場）。 */
+    self_destroy: (ctx: BattleEventContext): boolean => {
+      const self = helpers.liveElf(ctx, ctx.actor);
+      if (!self) return false;
+      ctx.vanishElf(ctx.actor, self);
+      return true;
+    },
+
+    /** 清除對手回合類效果。 */
+    clear_turn: (ctx: BattleEventContext, p: any): boolean => {
+      const side: S = p.side === 'self' ? ctx.actor : ctx.targetSide;
+      return !!ctx.clearTurnEffectsOf?.(side);
     },
 
     /** 己方其他精靈下次登場時免疫下次受到的異常狀態。 */

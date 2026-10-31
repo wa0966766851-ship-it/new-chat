@@ -32,6 +32,9 @@ export const CASSIUS_SHAN_SOUL_KIT = {
     e('round_start', 'round_start', '回合開始時若自身本次在場累計回合數不高於1回合，召喚額外精靈炫彩山神加入己方', [
       { cond: [c('field_rounds', { op: '不高於', amount: 1 })], acts: [
         a('summon_extra_elf', { id: 'shancaishen', name: '炫彩山神', type: '普通', side: 'self', statFromTeamRatio: 1, statSource: 'team' }),
+        // 2026-10-31：額外精靈的 kit 目前沒有執行端（EXTRA_ELF_KITS 只被掛上、不執行），
+        // 因此「炫彩山神被加入時」的效果直接寫在召喚節點上。
+        a('cure_status', { side: 'self' }),
         a('shield', { ratio: 0.5 }),
         a('status', { side: 'self', status: '山神守護', turns: 3, chance: 100 }),
       ] },

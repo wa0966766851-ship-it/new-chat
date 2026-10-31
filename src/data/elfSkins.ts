@@ -24,7 +24,17 @@ export const ZHAKESI_AVATAR_SKINS:readonly ElfSkin[]=[
  {id:'zhakesi-wrath',name:'憤怒的化身',elfId:'5024',elfName:'湮滅之主・咤克斯',body:ZHAKESI_BODY,head:ZHAKESI_HEAD,animationAssetId:'zhakesi15008'},
  {id:'zhakesi-greed',name:'貪婪的化身',elfId:'5024',elfName:'湮滅之主・咤克斯',body:ZHAKESI_BODY,head:ZHAKESI_HEAD,animationAssetId:'zhakesi15009'},
 ];
-export const ELF_SKINS:readonly ElfSkin[]=[...ZHAKESI_AVATAR_SKINS,ORIGINAL_PUNI_SKIN,{
+/**
+ * 岳峙淵渟.卡修斯 的兩套外觀（2026-10-31）。
+ *  - 聖地卡修斯（3568）：預設外觀，SEER_ID_OVERRIDES 已指向此 id
+ *  - 原版卡修斯（798）：最初型態，作為可切換皮膚
+ * 純外觀；不覆寫技能、魂印、種族或實戰數值。
+ */
+export const CASSIUS_SKINS:readonly ElfSkin[]=[
+  {id:'cassius-shandi',name:'聖地卡修斯',elfId:'5041',elfName:'岳峙淵渟.卡修斯',body:'/seer/body/3568.png',head:'/seer/head/3568.png'},
+  {id:'cassius-original',name:'原版卡修斯',elfId:'5041',elfName:'岳峙淵渟.卡修斯',body:'/seer/body/798.png',head:'/seer/head/798.png'},
+];
+export const ELF_SKINS:readonly ElfSkin[]=[...ZHAKESI_AVATAR_SKINS,ORIGINAL_PUNI_SKIN,...CASSIUS_SKINS,{
  id:'rey-thunder-dragon-v1',name:'雷龍之翼',elfId:'5029',elfName:'異境神霆·雷伊',body:'/elf-skins/rey-thunder-dragon-v1.png',portrait:{scale:3,origin:'50% 70%',position:'50% 60%'},
 }, ...[{elfId:'5029',elfName:'異境神霆·雷伊'},{elfId:'7070',elfName:'魔化.雷伊'},{elfId:'707070',elfName:'墜霆.雷伊'}].map(owner=>({
  ...owner,...ORIGINAL_REY_SKIN,

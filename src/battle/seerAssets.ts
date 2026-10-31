@@ -61,6 +61,9 @@ export const SEER_ID_OVERRIDES: Record<string, number> = {
   "無為龍者": 4661,                // 無為覺者
   "龍錄天鋒": 4903,                // 帝錄天鋒
   "無極聖武": 4800,                // 無極聖武
+  // 2026-10-31：岳峙淵渟.卡修斯 —— 靜態立繪沿用「聖地卡修斯」(3568)；
+  // 原版卡修斯 (798) 作為第二皮膚，由 elfSkins 切換。
+  "岳峙淵渟.卡修斯": 3568,
   "命運龍輪 莫伊萊": 4275,        // 命運之輪莫伊萊
 };
 
@@ -362,7 +365,7 @@ export function typeComboId(type: string): number | null {
 /** 無屬性（含屬性技能誤填「屬性」）→ 官方 pettype/prop.png */
 export const isNoneType = (type?: string) => !type || ["無屬性", "无属性", "屬性", "--", "無"].includes(type.replace(/系$/, ""));
 /** public/seer/xi 目前的檔案（新增圖檔時同步加入）。 */
-const XI_FILES = new Set(["機械.暗影", "機械.暗影系", "混沌.水系", "混沌.電系", "神秘.電系", "神秘.電系", "邪靈.戰鬥系", "邪靈.戰鬥"]);
+export const XI_FILES = new Set(["機械.暗影", "混沌.水系", "混沌.電系", "神秘.電系", "邪靈.戰鬥系"]);
 
 export function typeIconUrls(type: string): string[] {
   if (isNoneType(type)) return ["/seer/type/prop.png"];

@@ -2,6 +2,7 @@
 // 額外精靈生命週期與真實傷害疊層缺口，以通用 op 表達；引擎既有 createExtraElf／addExtraElf 承擔召喚。
 import type { BattleEventContext } from '../../effects/types';
 import { createExtraElf } from '../../utils/extraElf';
+import { SHANCAISHEN_SELF_KIT } from '../../data/migratedShancaishenKit';
 
 type S = 'p1' | 'p2';
 
@@ -37,6 +38,8 @@ export const CTHYAAT_SELF_KIT: any[] = [
 ];
 // 模組載入即註冊（同模組常數，無順序問題）。
 EXTRA_ELF_KITS.set('克塔亞特', CTHYAAT_SELF_KIT);
+// 2026-10-31：炫彩山神（5041 岳峙淵渟.卡修斯 召喚的額外精靈）。
+EXTRA_ELF_KITS.set('炫彩山神', SHANCAISHEN_SELF_KIT);
 const idOf = (e: any) => String(e?.battleId || e?.id || '');
 
 export const BRINKK_ACTION_FIELDS: Record<string, readonly string[]> = {
