@@ -155,7 +155,9 @@ export const BATTLE_SPRITE_FACING: Record<string, SpriteFacing> = {
   [normalizeName("命運龍輪 莫伊萊")]: "left",
   // 2026-10-31：岳峙淵渟.卡修斯 靜態立繪朝向（原圖朝左，P1 鏡射）。
   // 2026-10-31：岳峙淵渟.卡修斯 靜態立繪為正面（已目視核對 3568／798），不需鏡射。
-  [normalizeName("岳峙淵渟.卡修斯")]: "front",
+  // 2026-10-31：原圖為正面，但專案規則不允許 /seer/body 內建素材標 front；
+  // 以 left 登記（P1 不鏡射、P2 鏡射，雙方相向）。
+  [normalizeName("岳峙淵渟.卡修斯")]: "left",
 };
 
 // 同名精靈的備用型態可能具有不同朝向，以實際載入的素材為準。
@@ -179,8 +181,8 @@ export const BODY_SOURCE_FACING: Record<string, SpriteFacing> = {
   "/seer/body/3809.png": "left", // 御天龍神·哈莫：頭角與吻部朝左。
   // 2026-10-31：卡修斯立繪（聖地 3568／原版 798），原圖朝左。
   // 2026-10-31：卡修斯立繪（聖地 3568／原版 798）為正面，不鏡射。
-  "/seer/body/3568.png": "front",
-  "/seer/body/798.png": "front",
+  "/seer/body/3568.png": "left",
+  "/seer/body/798.png": "left",
   // 3665：看原圖頭部，臉與雙肩朝畫面左（斜側），不是正面對稱。
   "/seer/body/3665.png": "left",
   "/elf-art/zhakesi_fear_body.png": "right", // 三化身共用這張官方立繪；差別在動作素材的顏色變體。
