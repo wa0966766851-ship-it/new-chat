@@ -1,4 +1,4 @@
-import type {Elf} from '../types';
+﻿import type {Elf} from '../types';
 import type {PetAnimationAssetId} from '../battle/petAnimationAssets';
 
 export interface ElfSkin {
@@ -31,8 +31,8 @@ export const ZHAKESI_AVATAR_SKINS:readonly ElfSkin[]=[
  * 純外觀；不覆寫技能、魂印、種族或實戰數值。
  */
 export const CASSIUS_SKINS:readonly ElfSkin[]=[
-  {id:'cassius-shandi',name:'聖地卡修斯',elfId:'5041',elfName:'岳峙淵渟.卡修斯',body:'/seer/body/3568.png',head:'/seer/head/3568.png'},
-  {id:'cassius-original',name:'原版卡修斯',elfId:'5041',elfName:'岳峙淵渟.卡修斯',body:'/seer/body/798.png',head:'/seer/head/798.png'},
+ {id:'cassius-shandi',name:'聖地卡修斯',elfId:'5041',elfName:'岳峙淵渟.卡修斯',body:'/seer/body/3568.png',head:'/seer/head/3568.png',animationAssetId:'cassiusShandi'},
+ {id:'cassius-original',name:'原版卡修斯',elfId:'5041',elfName:'岳峙淵渟.卡修斯',body:'/seer/body/798.png',head:'/seer/head/798.png',animationAssetId:'cassiusOriginal'},
 ];
 export const ELF_SKINS:readonly ElfSkin[]=[...ZHAKESI_AVATAR_SKINS,ORIGINAL_PUNI_SKIN,...CASSIUS_SKINS,{
  id:'rey-thunder-dragon-v1',name:'雷龍之翼',elfId:'5029',elfName:'異境神霆·雷伊',body:'/elf-skins/rey-thunder-dragon-v1.png',portrait:{scale:3,origin:'50% 70%',position:'50% 60%'},

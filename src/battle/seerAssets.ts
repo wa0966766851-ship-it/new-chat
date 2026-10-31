@@ -1,4 +1,4 @@
-// 賽爾號資源對應：精靈頭像/全身圖、屬性圖標（資料來源：SeerAPI api-data / seer-unity-assets）
+﻿// 賽爾號資源對應：精靈頭像/全身圖、屬性圖標（資料來源：SeerAPI api-data / seer-unity-assets）
 // 圖片一律經由本機伺服器 /seer/* 取得：public/seer → 使用者 pet/、系/ 資料夾 → 快取 → 遠端（自動快取）
 import type { Elf } from "../types";
 import { appearanceElf } from './illusionPresentation';
@@ -153,6 +153,9 @@ export const BATTLE_SPRITE_FACING: Record<string, SpriteFacing> = {
   [normalizeName("龍錄天鋒")]: "left",
   [normalizeName("無極聖武")]: "left",
   [normalizeName("命運龍輪 莫伊萊")]: "left",
+  // 2026-10-31：岳峙淵渟.卡修斯 靜態立繪朝向（原圖朝左，P1 鏡射）。
+  // 2026-10-31：岳峙淵渟.卡修斯 靜態立繪為正面（已目視核對 3568／798），不需鏡射。
+  [normalizeName("岳峙淵渟.卡修斯")]: "front",
 };
 
 // 同名精靈的備用型態可能具有不同朝向，以實際載入的素材為準。
@@ -174,6 +177,10 @@ export const BODY_SOURCE_FACING: Record<string, SpriteFacing> = {
   // 已查看本機body快取：2648咤克斯頭／口朝左；備用圖也不能因直接path失去方向。
   "/seer/body/2648.png": "left",
   "/seer/body/3809.png": "left", // 御天龍神·哈莫：頭角與吻部朝左。
+  // 2026-10-31：卡修斯立繪（聖地 3568／原版 798），原圖朝左。
+  // 2026-10-31：卡修斯立繪（聖地 3568／原版 798）為正面，不鏡射。
+  "/seer/body/3568.png": "front",
+  "/seer/body/798.png": "front",
   // 3665：看原圖頭部，臉與雙肩朝畫面左（斜側），不是正面對稱。
   "/seer/body/3665.png": "left",
   "/elf-art/zhakesi_fear_body.png": "right", // 三化身共用這張官方立繪；差別在動作素材的顏色變體。
