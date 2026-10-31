@@ -40,7 +40,7 @@ EXTRA_ELF_KITS.set('克塔亞特', CTHYAAT_SELF_KIT);
 const idOf = (e: any) => String(e?.battleId || e?.id || '');
 
 export const BRINKK_ACTION_FIELDS: Record<string, readonly string[]> = {
-  summon_extra_elf: ['name', 'type', 'statFromTeamRatio', 'side', 'kit', 'statSource'],
+  summon_extra_elf: ['name', 'type', 'statFromTeamRatio', 'side', 'kit', 'statSource', 'id'],
   true_damage_stack: ['key', 'stackStep', 'maxStacks', 'dir', 'kind'],
   off_field_hp_drain: ['ratio', 'key', 'maxStacks'],
   extra_elf_heal_owner: ['ratio', 'side'],
@@ -54,6 +54,8 @@ export function brinkkActionIssue(op: string, p: any): string | null {
     if (typeof p.type !== 'string' || !p.type) return '召喚額外精靈需屬性';
     if (!(p.statFromTeamRatio > 0 && p.statFromTeamRatio <= 1)) return '召喚額外精靈能力來源需0至100%比例';
     if (!['self', 'opp'].includes(p.side)) return '召喚額外精靈需指定陣營';
+    // 2026-10-31：可選 id（額外精靈序號統一用英文字母開頭，避免占用數字 id 空間）。
+    if (p.id !== undefined && (typeof p.id !== 'string' || !/^[A-Za-z][A-Za-z0-9_]*$/.test(p.id))) return '額外精靈序號需英文字母開頭';
     return null;
   }
   if (op === 'true_damage_stack') {
@@ -100,7 +102,7 @@ export function brinkkOperations(helpers: { liveElf: (ctx: BattleEventContext, s
       for (const k of Object.keys(sum)) scaled[k] = Math.max(1, Math.floor(sum[k] * p.statFromTeamRatio));
       // DSH 20261020：額外精靈的專屬 Kit 由註冊表按名字取得（Kit 參數無法通過 params 序列化）。
       const extraKit = extraElfKitByName(p.name);
-      const extra = createExtraElf(base, { name: p.name, type: p.type, calculatedStats: scaled, maxHp: scaled.hp, currentHp: scaled.hp,
+      const extra = createExtraElf(base, { ...(p.id ? { id: p.id } : {}), name: p.name, type: p.type, calculatedStats: scaled, maxHp: scaled.hp, currentHp: scaled.hp,
         ...(p.statSource === 'holder' ? { baseStats: Object.fromEntries(Object.entries(base.baseStats || {}).map(([k, v]) => [k, Math.max(1, Math.floor(Number(v) * p.statFromTeamRatio))])) } : {}),
         ...(extraKit?.length ? { kit: extraKit } : {}) } as any);
       (ctx as any).addExtraElf(side, extra);

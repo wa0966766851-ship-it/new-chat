@@ -1,4 +1,4 @@
-// src/effects/statusRegistry.ts
+﻿// src/effects/statusRegistry.ts
 import { StatusCategory } from './statusTypes';
 import { BOSS_TRAIT_STATUSES } from './bossTraitStatuses';
 
@@ -8,7 +8,7 @@ export interface StatusRegistryEntry {
   description: string;
   // 綁定的核心機制處理器
   mechanics: {
-    type: 'CANT_ACT' | 'CANT_SWITCH' | 'EVOLUTION_TRANSFORM' | 'DAMAGE_TICK' | 'MODIFIER_LIMIT' | 'SPECIAL_BUFF' | 'TYPE_MATCHUP_OVERRIDE';
+    type: 'CANT_ACT' | 'CANT_SWITCH' | 'EVOLUTION_TRANSFORM' | 'DAMAGE_TICK' | 'MODIFIER_LIMIT' | 'SPECIAL_BUFF' | 'TYPE_MATCHUP_OVERRIDE' | 'STATUS_HIT_RELEASE';
     params?: Record<string, any>;
   }[];
 }
@@ -349,9 +349,16 @@ export const StatusRegistry: Record<string, StatusRegistryEntry> = {
   // ==========================================
   '山神守護': {
     name: '山神守護',
-    categories: ['AUXILIARY'],
-    description: '附屬類異常；處於該異常狀態則每回合受到對手的攻擊傷害減少 80%',
-    mechanics: [{ type: 'SPECIAL_BUFF', params: { damageTakenMultiplier: 0.2, damageTypes: ['attack'] } }]
+    // BOSS_ONLY = 不隨回合數遞減（沿用 statusLifecycle 既有機制）；解除改由「累計2次技能傷害」決定。
+    categories: ['AUXILIARY', 'BOSS_ONLY'],
+    description: '附屬類異常；處於該異常狀態則受到技能傷害降低至原始傷害1/10，累計受到2次技能傷害時解除該異常',
+    mechanics: [
+      { type: 'SPECIAL_BUFF', params: { damageTakenMultiplier: 0.1, damageTypes: ['attack', 'skill'] } },
+      // 2026-10-31：累計受到 2 次技能傷害時解除。計數由引擎在技能傷害結算時寫入
+      // statusHitCount（見 battleEngine），達到門檻後清除此異常。
+      { type: 'STATUS_HIT_RELEASE', params: { hits: 2, counterKey: 'statusHitCount' } },
+
+    ]
   },
   '狂暴': {
     name: '狂暴',

@@ -16,7 +16,7 @@ export const ATOM_PARAMETER_FIELDS: Record<AtomId, string[]> = {
   drain_hp: ['amount','ratio','damageType','dmgType','amountMode','elem','incremental'], hp_cost: ['amount','ratio'], maxhp_change: ['amount','mode'],
   apply_status: ['status','duration','turns','chance'], cure_status: [],
   stat_change: ['all','stat','value','stages','atk','def','spatk','spdef','speed','accuracy'], clear_stat: ['type','statType'],
-  shield: ['amount','shieldType'], pp_op: ['op','mode','amount'], priority: ['bonus','level'], accuracy: ['mode','alwaysHit','evade'],
+  shield: ['amount','shieldType'], pp_op: ['side','op','mode','amount','stopIfEmpty','kind','captureRestored'], priority: ['bonus','level'], accuracy: ['mode','alwaysHit','evade'],
   pierce: ['type'], crit: ['mode'], extra_action: [], summon_extra: ['elfName','extraElf'], vanish: [], rebirth: ['turns','fixedCap'],
   copy_transfer: ['mode'], immune: ['type'], turn_effect_apply: ['duration','timerId','id','timerName','name','displayChar','char','applyMode','tickAt','clearable','polarity','wraps','wrapParams','wrapItems'],
   turn_effect_clear: [], copy_stat_sum: [], condition_gate: ['hp_below','hp_above','has_shield','is_gender','enemy_type','layer_gte','timerId','has_status','is_first','is_second','inner','innerParams','innerTarget','innerItems','template'],

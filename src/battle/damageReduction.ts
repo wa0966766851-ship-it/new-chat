@@ -103,6 +103,11 @@ export function finalizeDamageReductions(comp: DamageComputation, state: Pick<Ba
 /** 異常增減傷在攻擊、X系、額外行動、固定／百分比API共用；每節點只跑一次。 */
 export function applyStatusDamageModifiers(comp: DamageComputation, actor: Elf, target: Elf): void {
   if (comp.pure) return;
+  // 2026-10-31：STATUS_HIT_RELEASE —— 累計受到 N 次技能傷害時解除該異常。
+  // 目前用於「山神守護：累計受到2次技能傷害時解除」。
+  // 以 comp.statusHitMarked 避免同一次傷害重複計數（多段傷害仍算一次技能）。
+  // 計數由引擎在「實際扣血後」統一累加（見 battleEngine STATUS_HIT_RELEASE 區塊），
+  // 這裡不再自行計數，避免同一回合多次呼叫造成重複。
   for (const [elf, incoming] of [[actor, false], [target, true]] as const) for (const status of Object.keys(getStatuses(elf))) {
     for (const m of StatusRegistry[status]?.mechanics || []) {
       if (m.type !== 'SPECIAL_BUFF') continue;

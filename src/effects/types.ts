@@ -1,4 +1,4 @@
-import { Elf, Skill, BattleLog, BattleItem, BattleEffect, EffectSubCategory } from "../types";
+﻿import { Elf, Skill, BattleLog, BattleItem, BattleEffect, EffectSubCategory } from "../types";
 import { Timer } from "../battle/timers";
 import { Mark } from "../battle/marks";
 import type { SettlementOptions } from '../battle/settlementReceipt';
@@ -193,6 +193,10 @@ export interface DamageComputation {
   afterDamage?: import('../battle/settlementReceipt').SettlementCallback;
   reductionPolicy?: import("../battle/damageReduction").ReductionPolicy;
   trackReduction?:boolean;
+  /** 2026-10-31：STATUS_HIT_RELEASE 用；避免同一次傷害重複計數。 */
+  statusHitMarked?: boolean;
+  /** 2026-10-31：累計受技能傷害次數（供「累計N次解除異常」）。 */
+  statusHitCount?: number;
   multiplierReductionProduct?:number;
   reductionSources?: Record<string, number>; // 明確同源可加算；不同來源合成剩餘傷害比例
   attackDefenseBypass?: import('../battle/attackDefense').AttackDefenseBypass;
@@ -291,7 +295,8 @@ export interface BattleEventContext {
   setOpponentState: (key: string, val: any) => void;
   
   applyHeal: (side: "p1" | "p2", amount: number, opts?: SettlementOptions) => void;
-  adjustHp: (side: "p1" | "p2", amount: number) => void;
+  /** opts.fromNonPositive：允許體力 ≤0 者被「設定」為正值（通用旗標；maxHp≤0 的消逝者仍不生效）。 */
+  adjustHp: (side: "p1" | "p2", amount: number, opts?: { fromNonPositive?: boolean }) => void;
   /** 回傳實際變化量（舊呼叫端可忽略回傳值） */
   applyStatChange: (side: "p1" | "p2", changes: Record<string, number>, ppChanges?: Record<string, number>) => StatChangeResult;
   applyShield: (side: "p1" | "p2", amount: number) => void;

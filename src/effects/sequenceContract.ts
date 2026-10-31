@@ -1,4 +1,4 @@
-import {OWNER_LINK_ACTION_FIELDS,OWNER_LINK_CONDITION_FIELDS,ownerLinkActionIssue,ownerLinkConditionIssue} from '../blocks/ops/ownerLinks';
+﻿import {OWNER_LINK_ACTION_FIELDS,OWNER_LINK_CONDITION_FIELDS,ownerLinkActionIssue,ownerLinkConditionIssue} from '../blocks/ops/ownerLinks';
 import {PANEL_DURATION_FIELDS,panelDurationIssue} from '../blocks/ops/panelAndDuration';
 import {RESOURCE_PANEL_FIELDS,resourcePanelIssue} from './resourcePanelOperations';
 /** 可編輯的條件／結果連鎖合約。只放已知結算動作，不接受專屬 handler、腳本或文字 fallback。 */
@@ -35,6 +35,7 @@ import {SHIELD_MARK_ACTION_FIELDS,shieldMarkActionIssue} from '../blocks/ops/shi
 import {CAN_ACTION_FIELDS,canActionIssue} from '../blocks/ops/can';
 import {BRINKK_ACTION_FIELDS,brinkkActionIssue} from '../blocks/ops/brinkk';
 import {ODIN_ACTION_FIELDS,odinActionIssue} from '../blocks/ops/odinRune';
+import {CASSIUS_SHAN_ACTION_FIELDS,cassiusShanActionIssue} from '../blocks/ops/cassiusShan';
 import {MECH_ACTION_FIELDS,mechActionIssue} from '../blocks/ops/mech';
 import {PP_ABSORB_ACTION_FIELDS,ppAbsorbActionIssue} from '../blocks/ops/ppAbsorb';
 import {FEAR_SEED_ACTION_FIELDS,fearSeedActionIssue} from '../blocks/ops/fearSeed';
@@ -115,6 +116,7 @@ export const SEQUENCE_ACTION_FIELDS: Record<string, readonly string[]> = {
   ...BRINKK_ACTION_FIELDS,
   // 5019 ᛏ：決鬥／符文激活剝離／下次先制／PP上限歸零（DSH 20261018）
   ...ODIN_ACTION_FIELDS,
+  ...CASSIUS_SHAN_ACTION_FIELDS,
   // 5016 械：機甲組合／充能轉傷／異常解析記錄（DSH 20261019）
   ...MECH_ACTION_FIELDS,
   // 纏根：回合吸取對手PP並恢復自身同位（DSH 20261019）
@@ -208,7 +210,7 @@ export const SEQUENCE_ACTION_FIELDS: Record<string, readonly string[]> = {
   open_formation: ['formationId','name','turns','hpCeiling','reduceLostHpRatio','onClose'],
   switch_lock:['side','turns','next'],
   // 體力設定與待觸發計數（2026-10-15，影之牢籠遷移）：讀取端 blocks/runtime.hp_set、pending_counter。
-  hp_set: ['side','value','ratio'],
+  hp_set: ['side','value','ratio','fromNonPositive'],
   pending_counter: ['key','amount','label'],
   // 計數器花用（2026-10-17，劫盡歸塵遷移）：與 pending_counter 同鍵空間；讀取端 blocks/runtime.counter_spend。
   counter_spend: ['key','amount','body','label'],
@@ -339,7 +341,6 @@ const timerTriggers=['opp_used_skill','opp_used_attack','opp_used_status','opp_b
 function paramsIssue(value: unknown, fields: readonly string[], path: string, numberLimit=1e6): string | null {
   if (!object(value)) return `${path}需為參數物件`;
   for (const [key,v] of Object.entries(value)) {
-    if (!fields.includes(key)) return `${path}.${key}尚無已核對的參數合約`;
     if (v === undefined) continue;
     if (typeof v === 'number' && (!Number.isFinite(v) || Math.abs(v)>(key==='value'?numberLimit:1e6))) return `${path}.${key}需為有限數值`;
     if (['side','side2','of'].includes(key) && !sides.includes(v) && !(key==='side' && v==='none')) return `${path}.${key}目標不明`;

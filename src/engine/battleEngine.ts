@@ -3373,6 +3373,36 @@ case 'switch': {
         
         applyStatusDamageModifiers(damageComp, currentActor, currentOpp);
 
+        // 2026-10-31：STATUS_HIT_RELEASE —— 累計受到 N 次技能傷害時解除該異常。
+        // 由引擎統一累加「受擊次數」，存在受擊精靈身上（跨回合累積）。
+        if (!damageComp.pure && ["skill_attack", "skill"].includes(String(damageComp.damageCategory))) {
+          // 從 team 陣列實時讀（syncStateRef.current[side] 可能是舊快照）。
+          const teamKeyLive = oppSide === "p1" ? "p1Team" : "p2Team";
+          const liveOpp: any = (syncStateRef.current as any)[teamKeyLive]?.find((e: any) => (e.battleId || e.id) === ((currentOpp as any).battleId || (currentOpp as any).id)) || syncStateRef.current[oppSide] || currentOpp;
+          const prevHits = Number(liveOpp.statusHitCount) || 0;
+          const hits = prevHits + 1;
+          let released = false;
+          const liveStatuses = Object.keys((liveOpp as any).battleStatuses || {});
+          liveStatuses.forEach(stId => {
+            const entry = StatusRegistry[stId];
+            const rel = entry?.mechanics?.find((m: any) => m.type === "STATUS_HIT_RELEASE");
+            if (!rel) return;
+            const need = Number(rel.params?.hits) || 2;
+            if (hits >= need) released = true;
+          });
+          const nextOpp: any = { ...liveOpp, statusHitCount: released ? 0 : hits };
+          if (released) {
+            liveStatuses.forEach(stId => {
+              const entry = StatusRegistry[stId];
+              const rel = entry?.mechanics?.find((m: any) => m.type === "STATUS_HIT_RELEASE");
+              if (!rel) return;
+              removeStatusEffect(nextOpp, stId);
+              pushEffect({ type: "log", side: oppSide, data: { text: `🛡️ 【${entry.name}】：累計受到 ${hits} 次技能傷害，狀態解除！`, type: "effect" } });
+            });
+          }
+          syncStateRef.current = { ...syncStateRef.current, [oppSide]: nextOpp,
+            [oppSide === "p1" ? "p1Team" : "p2Team"]: syncStateRef.current[oppSide === "p1" ? "p1Team" : "p2Team"].map((e: any) => (e.battleId || e.id) === (nextOpp.battleId || nextOpp.id) ? nextOpp : e) } as any;
+        }
         // Defender buffs（pure 獨立乘區時跳過通用增減傷；floor 保底類不受影響）
         if (!damageComp.pure) Object.keys(oppStatuses).forEach(stId => {
           const entry = StatusRegistry[stId];

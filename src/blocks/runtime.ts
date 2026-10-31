@@ -84,6 +84,7 @@ import {markCapability} from '../battle/markCapabilities';
 import { canOperations, canEvalCond } from './ops/can';
 import { brinkkOperations } from './ops/brinkk';
 import { odinOperations } from './ops/odinRune';
+import { cassiusShanOperations } from './ops/cassiusShan';
 import { mechOperations } from './ops/mech';
 import { ppAbsorbOperations } from './ops/ppAbsorb';
 import { fearSeedOperations } from './ops/fearSeed';
@@ -658,8 +659,7 @@ export const OPS: Record<string, OpFn> = {
       ? Math.max(0, Math.min(100, ((liveElf(ctx, ctx.actor)?.currentHp ?? 0) / (liveElf(ctx, ctx.actor)?.maxHp || 1)) * 100))
       : increasingStatusChance(ctx, p));
     if (statusChanceBlocked(ctx, pct) || !chance(ctx, `st:${p.status}`, pct)) return false;
-    for (const s of sides) ok = applyStatus(ctx, s, p.status, p.turns) || ok;
-    return ok;
+    for (const s of sides) ok = applyStatus(ctx, s, p.status, p.turns) || ok;    return ok;
   },
   status_collection:(ctx,p)=>applyStatusCollection(ctx,p),
   status_or_extend:(ctx,p)=>{
@@ -1446,7 +1446,7 @@ export const OPS: Record<string, OpFn> = {
     if (!elf || !(typeof p.value === 'number' && p.value >= 0)) return false;
     const delta = Math.trunc(p.value) - elf.currentHp;
     if (!delta) return true;
-    return ctx.adjustHp?.(side, delta) !== undefined ? true : true;
+    return ctx.adjustHp?.(side, delta, p.fromNonPositive === true ? { fromNonPositive: true } : undefined) !== undefined ? true : true;
   },
   stat_floor_opponent:ctx=>floorStagesAtOpponent(ctx),
   body_maxhp_resource_loss:(ctx,p,st)=>{st.lastAmount=loseBodyMaximumAndResource(ctx,p);return st.lastAmount>0;},
@@ -1655,6 +1655,7 @@ export const OPS: Record<string, OpFn> = {
   ...canOperations({ liveElf }),
   ...brinkkOperations({ liveElf }),
   ...odinOperations({ liveElf }),
+  ...cassiusShanOperations({ liveElf, addBlockTimer, runAct }),
   ...mechOperations({ liveElf,runAct }),
   ...ppAbsorbOperations(),
   ...fearSeedOperations(),
