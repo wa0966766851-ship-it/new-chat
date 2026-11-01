@@ -1,4 +1,4 @@
-import {AnimationSpeedControl,useAnimationSpeed} from './battle/AnimationSpeedControl';
+﻿import {AnimationSpeedControl,useAnimationSpeed} from './battle/AnimationSpeedControl';
 import {BattleFxLayer} from './battle/BattleFxLayer';
 import { SpecialBattleEndDialog } from "./BattleEndDialog";
 import { BattleResult } from "./battle/BattleResult";
@@ -45,7 +45,7 @@ import { computeHitChance } from "../effects/genericSkillText";
 import { ShieldBarrierPanel } from "./ShieldBarrierPanel";
 import { Elf, Skill, BattleLog, BattleItem } from "../types";
 import { BattleEffectViewModel, describeEffectMeta } from "../battle/effectViewModel";
-import { hudFieldReserve, hudTrayReserve, stageHeight } from '../battle/hudReserve';
+import { hudFieldReserve, hudTrayMaxHeight, stageHeight } from '../battle/hudReserve';
 import { activeEffectViews, stateSignSourceText } from '../battle/activeEffectViews';
 import {statusCountClasses} from '../battle/statusImmunityCount';
 import { getHpBarColor } from "./BattleComponents";
@@ -69,7 +69,7 @@ import { StatusRegistry } from "../effects/statusRegistry";
 import { EFFECT_CATALOG } from "../data/effectCatalog";
 import { SkillResources } from './SkillResources';
 import { formatCompactHud, formatFullNumber } from '../utils/formatBigNumber';
-import { BATTLE_ITEMS, ITEM_CATEGORIES, getItemCategory, ItemCategory, isElfSkillSelectionDisabled } from "../utils/battleHelpers";
+import { BATTLE_ITEMS, ITEM_CATEGORIES, getItemCategory, ItemCategory, isElfSkillSelectionDisabled, isElfSwitchDisabled, isElfItemDisabled, getNoSwitchTurns } from "../utils/battleHelpers";
 import { isZeroPpExempt } from '../battle/ppExemptions';
 import { classifyLog, filterByMode, mergeExtraActions, toTraditional, turnDigests, filterByElf, filterByQuery, damageTone, extractAmount, elfNamesIn, type LogMode, type BattleLogRow } from '../battle/logClassifier';
 
@@ -281,9 +281,9 @@ function BattleScreenBody(props: BattleScreenUIProps) {
     const update = () => {
       setFieldSize(prev => prev.w === el.clientWidth && prev.h === el.clientHeight ? prev : { w: el.clientWidth, h: el.clientHeight });
       const top = el.getBoundingClientRect().top;
-      // 只量頭像卡片底緣；狀態晶片區另有固定預留與最大高度，晶片數量不影響立繪大小（battle/hudReserve.ts）。
+      // 只量頭像卡片底緣；狀態晶片區是浮層（有最大高度、區內捲動），不佔立繪高度（battle/hudReserve.ts）。
       const bottoms = (["p1", "p2"] as const).map(k => hudRefs.current[k]?.querySelector('[data-hud]')?.getBoundingClientRect().bottom ?? 0);
-      const r = hudFieldReserve(Math.max(...bottoms) - top, el.clientHeight);
+      const r = hudFieldReserve(Math.max(...bottoms) - top);
       setFieldReserve(prev => Math.abs(prev - r) < 4 ? prev : r);
     };
     update();
@@ -714,7 +714,7 @@ function BattleScreenBody(props: BattleScreenUIProps) {
                               className={`group relative flex items-center gap-2 text-left bg-slate-900/60 border rounded-xl px-2 py-1.5 transition-all cursor-pointer
                                 ${idx === actActiveIndex ? 'border-cyan-500 bg-cyan-950/20 shadow-[0_0_15px_rgba(6,182,212,0.1)] opacity-100 grayscale-0' : isExtra ? 'border-amber-500/40 bg-amber-950/10 shadow-[0_0_10px_rgba(245,158,11,0.05)] hover:border-amber-400' : 'border-slate-800 hover:border-slate-600'} 
                                 ${isDead || elf.isVanished ? 'opacity-40 grayscale' : ''}`}
-                              disabled={!isExtra && (idx === actActiveIndex || isDead || (phase !== actPhaseSelect && !phase.includes("forced_switch")))}
+                              disabled={!isExtra && (idx === actActiveIndex || isDead || (phase !== actPhaseSelect && !phase.includes("forced_switch")) || (phase === actPhaseSelect && (actSide === 'p1' ? battle.p1RegistryState : battle.p2RegistryState)?.switchPickedRound === (battle.roundNumber ?? battle.turnNumber)))}
                             >
                                <div className="w-10 h-10 shrink-0 rounded-full overflow-hidden border border-cyan-500/40 bg-slate-900"><ElfAvatar elf={elf} battleSide={actSide} kind="head" className="w-full h-full object-cover" fallbackClassName="w-full h-full flex items-center justify-center text-xl font-black text-slate-300" /></div>
                                <div className="flex-1 min-w-0 flex flex-col gap-0.5">
@@ -754,6 +754,26 @@ function BattleScreenBody(props: BattleScreenUIProps) {
 
                   {tacticalTab === "ITEMS" && (
                     <>
+                      {/* 2026-11-02：禁止切換／禁止用藥／用藥反噬 的狀態提示區 */}
+                      {(() => {
+                        const selfElf = actSide === 'p1' ? p1 : p2;
+                        const oppElf = actSide === 'p1' ? p2 : p1;
+                        const switchLocked = isElfSwitchDisabled(selfElf, oppElf, false, getNoSwitchTurns(battle, actSide));
+                        const itemLocked = isElfItemDisabled(selfElf);
+                        const backlash = (selfElf as any)?.potionBacklashTurns > 0;
+                        const notes: { tone: string; text: string }[] = [];
+                        if (switchLocked) notes.push({ tone: 'text-rose-300 border-rose-500/40 bg-rose-500/10', text: '禁止切換精靈' });
+                        if (itemLocked) notes.push({ tone: 'text-amber-300 border-amber-500/40 bg-amber-500/10', text: '禁止使用藥劑' });
+                        if (backlash) notes.push({ tone: 'text-violet-300 border-violet-500/40 bg-violet-500/10', text: `用藥反噬（剩 ${(selfElf as any).potionBacklashTurns} 回合）` });
+                        if (!notes.length) return null;
+                        return (
+                          <div className="flex flex-wrap items-center gap-1.5" data-lock-hints>
+                            {notes.map((n, i) => (
+                              <span key={i} className={`px-2 py-0.5 rounded-full border text-[11px] font-black ${n.tone}`}>{n.text}</span>
+                            ))}
+                          </div>
+                        );
+                      })()}
                       {props.potionLimit && (
                         <div className={`flex items-center justify-between px-3 py-1.5 rounded-lg border text-xs font-black ${props.potionLimit.left > 0 ? "border-amber-500/40 bg-amber-500/10 text-amber-200" : "border-rose-500/50 bg-rose-950/40 text-rose-300"}`} data-potion-limit>
                           <span>藥劑次數</span>
@@ -786,7 +806,7 @@ function BattleScreenBody(props: BattleScreenUIProps) {
                               onClick={() => { if (item.pickTarget) { setPickingItem(item); return; } props.onUseItem(actSide, item as any); setTacticalTab("SKILLS"); }}
                               title={item.description}
                               className="group flex items-center gap-2.5 bg-slate-900/60 border border-slate-800 hover:border-amber-500/40 rounded-xl px-2.5 py-2 transition-all hover:bg-slate-800 disabled:opacity-40 text-left"
-                              disabled={phase !== actPhaseSelect || !hasBattleItem((actInventory ?? (battle as any).p1ItemInventory), item.id) || (!!props.potionLimit && props.potionLimit.left <= 0 && item.type !== "special")}
+                              disabled={phase !== actPhaseSelect || !hasBattleItem((actInventory ?? (battle as any).p1ItemInventory), item.id) || ((actSide === 'p1' ? battle.p1RegistryState : battle.p2RegistryState)?.itemPickedRound === (battle.roundNumber ?? battle.turnNumber)) || (!!props.potionLimit && props.potionLimit.left <= 0 && item.type !== "special")}
                             >
                               <div className={`w-8 h-8 shrink-0 rounded-lg flex items-center justify-center border ${tone}`}>
                                 <FlaskConical className="w-4 h-4" />
@@ -901,7 +921,7 @@ function BattleScreenBody(props: BattleScreenUIProps) {
     if (!rows.length) return null;
     // 頭像下方分層：能力等級（小長方形）→ 異常 → 印記與回合類；每層各占一列，不併排。
     return (
-      <div className={`flex flex-col gap-1 overflow-y-auto overscroll-contain custom-scrollbar ${side === "p2" ? "items-end" : "items-start"}`} data-status-tray={side} style={{ maxHeight: hudTrayReserve(fieldSize.h) }}>
+      <div className={`flex flex-col gap-1 overflow-y-auto overscroll-contain custom-scrollbar ${side === "p2" ? "items-end" : "items-start"}`} data-status-tray={side} style={{ maxHeight: hudTrayMaxHeight(fieldSize.h) }}>
         {[...rows].sort((a, b) => ["stages", "statuses", "effects"].indexOf(a.key) - ["stages", "statuses", "effects"].indexOf(b.key)).map(row => (
           <div key={row.key} data-tray-row={row.key} className={`flex flex-wrap gap-1 ${side === "p2" ? "justify-end" : ""}`}>
             {row.chips.map(chip => (
@@ -1116,7 +1136,14 @@ function BattleScreenBody(props: BattleScreenUIProps) {
           const isFifth = slot === fifthSlot;
           const uses = skill.charge !== undefined ? skill.charge : skill.pp;
           const oppForAct = actSide === 'p2' ? p1 : p2;
-          const disabled = phase !== actPhaseSelect || original.isAbolished || isElfSkillSelectionDisabled(actElf) || (uses <= 0 && !isZeroPpExempt(actElf, skill, oppForAct));
+          const zeroPpExempt = isZeroPpExempt(actElf, skill, oppForAct);
+          const disabled = phase !== actPhaseSelect || original.isAbolished || isElfSkillSelectionDisabled(actElf) || (uses <= 0 && !zeroPpExempt);
+          // 2026-11-02：禁用時仍可 hover 看說明；並在按鈕上標示原因（0PP 與不受PP限制的交互已在 disabled 判定處理）。
+          const disabledReason = !disabled ? '' :
+            original.isAbolished ? '技能已被廢除' :
+            isElfSkillSelectionDisabled(actElf) ? '目前無法選擇技能' :
+            (uses <= 0 && !zeroPpExempt) ? 'PP 已耗盡' :
+            phase !== actPhaseSelect ? '現在不是選擇階段' : '';
           const selected = skillSlot(actElf, actSelectedSkill) === slot;
           const hover = skillHidden ? { ...skill, name: UNKNOWN_SKILL, description: "", specialBadge: undefined, __concealed: true } as any : actElf.illusion && !actElf.isInherentInvalid ? { ...skill, name: `${original.name} → ${skill.name}`,
             description: `【原技能】${original.name}\n${original.description}\n\n【轉化後】${skill.name}\n${skill.description}` } : skill;
@@ -1124,6 +1151,16 @@ function BattleScreenBody(props: BattleScreenUIProps) {
             <button
               key={i}
               onClick={(e) => {
+                // 2026-11-02：aria-disabled 不會自動阻擋點擊，這裡手動擋；
+                // 但禁用時仍允許點擊顯示說明（手機端看描述）。
+                if (disabled) {
+                  try {
+                    const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+                    setHoveredSkillAnchor({ x: rect.left + rect.width / 2, y: rect.top, top: rect.top, bottom: rect.bottom });
+                    setHoveredSkill({ ...hover, __viewerContext: skillViewKey } as any);
+                  } catch { /* 略過 */ }
+                  return;
+                }
                 // 手機端：沒有 hover，點已選中的技能彈說明浮窗，再點收起；點未選中的照常選招。
                 if (phase === actPhaseSelect && selected && hoveredSkill?.battleSlot === slot) {
                   setHoveredSkill(null); setHoveredSkillAnchor(null); return;
@@ -1144,10 +1181,16 @@ function BattleScreenBody(props: BattleScreenUIProps) {
                 setHoveredSkill({ ...hover, __viewerContext: skillViewKey } as any);
               }}
               onMouseLeave={() => { setHoveredSkill(null); setHoveredSkillAnchor(null); }}
-              disabled={disabled}
-              className={`bt-skill group relative flex flex-col gap-1 short:gap-0 px-2.5 pt-2.5 pb-2 short:py-1 text-left transition-all disabled:opacity-45 disabled:cursor-not-allowed min-h-[52px] short:min-h-[38px] ${isFifth ? "!border-amber-400/80 shadow-[0_0_14px_rgba(245,158,11,0.25)]" : ""} ${selected ? "ring-2 ring-cyan-400" : ""}`}
+              aria-disabled={disabled}
+              data-skill-disabled={disabled ? "true" : "false"}
+              data-skill-disabled-reason={disabledReason || undefined}
+              className={`bt-skill group relative flex flex-col gap-1 short:gap-0 px-2.5 pt-2.5 pb-2 short:py-1 text-left transition-all ${disabled ? 'opacity-45 cursor-not-allowed' : ''} min-h-[52px] short:min-h-[38px] ${isFifth ? "!border-amber-400/80 shadow-[0_0_14px_rgba(245,158,11,0.25)]" : ""} ${selected ? "ring-2 ring-cyan-400" : ""}`}
             >
-              {isFifth && <span className="absolute -top-2 left-2 px-1.5 rounded bg-gradient-to-r from-amber-500 to-yellow-400 text-[10px] font-black text-slate-900 shadow">第五</span>}
+              {isFifth && <span className="absolute -top-2 left-2 bg-gradient-to-r from-amber-500 to-yellow-400 px-1.5 rounded text-[10px] font-black text-slate-900 shadow">第五</span>}
+              {/* 2026-11-02：禁用時顯示原因（對照背包陣亡的灰階＋標記） */}
+              {disabled && disabledReason && !skillHidden && (
+                <span className="absolute -top-2 right-2 px-1.5 rounded bg-rose-600/90 text-[10px] font-black text-white shadow" data-skill-disabled-badge>{disabledReason}</span>
+              )}
               {skill.specialBadge && !skillHidden && (
                 <span title={skill.specialBadge.description} data-skill-badge={skill.specialBadge.text} data-badge-active={skill.isRuneActive ? "true" : "false"} className={`absolute -top-2.5 right-1.5 px-1.5 rounded text-[12px] leading-4 font-black border ${skill.specialBadge.bg || "bg-purple-900/90"} ${skill.specialBadge.color || "text-purple-200"} ${skill.specialBadge.border || "border-purple-500/40"} ${skill.isRuneActive ? skill.specialBadge.animate || "" : ""}`}>{skill.specialBadge.text}{skill.isRuneActive ? <span className="ml-0.5 text-[8px] align-middle">●</span> : null}</span>
               )}
@@ -1184,7 +1227,7 @@ function BattleScreenBody(props: BattleScreenUIProps) {
       {(["p1", "p2"] as const).map(side => {
         const elf = side === "p1" ? p1 : p2;
         return (
-          <div key={side} ref={el => { hudRefs.current[side] = el; }} className={`absolute top-[172px] sm:top-[56px] short:top-[58px] ${side === "p1" ? "left-2 sm:left-3 items-start" : "right-2 sm:right-3 items-end"} w-[48%] sm:w-[min(440px,29%)] short:w-[min(300px,28%)] z-30 flex flex-col gap-1.5 short:gap-1`}>
+          <div key={side} ref={el => { hudRefs.current[side] = el; }} className={`absolute top-[172px] sm:top-[56px] short:top-[58px] ${side === "p1" ? "left-2 sm:left-3 items-start" : "right-2 sm:right-3 items-end"} w-[48%] sm:w-[min(480px,31%)] short:w-[min(300px,28%)] z-30 flex flex-col gap-1.5 short:gap-1`}>
             {renderCard(side)}
             <div className={`w-full ${side === "p1" ? "pl-1" : "pr-1"}`}>{elf && renderChips(side, elf)}</div>
           </div>
@@ -1231,9 +1274,13 @@ function BattleScreenBody(props: BattleScreenUIProps) {
     <div ref={battleRootRef} data-battle-root data-skin={props.specialMode === "interstellar" ? "eclipse" : "default"} className="h-full w-full bg-transparent overflow-clip relative font-sans text-slate-200">
       {winner && !props.specialMode && resultSummary && <BattleResult winner={winner as any} battleMode={props.battleMode || "PVE"} summary={resultSummary} p1Team={resultTeams.p1} p2Team={resultTeams.p2} format={props.formatLabel || "自由戰"} onRestart={props.onReset} onHome={props.onBackToMenu} />}
       {winner && props.specialMode && <SpecialBattleEndDialog winner={winner} mode={props.specialMode} onBack={props.onBackToMenu} />}
-      {/* Global Interaction Blocker while resolving or during transitions */}
+      {/* 2026-11-02：動畫／結算期間不再全螢幕攔截點擊。
+          改為只在戰場中央顯示半透明提示，玩家仍可 hover 技能、查看精靈、切換分頁。
+          指令列本身由 phase 判定禁用（送出指令的按鈕會變灰），不影響檢視。 */}
       {(phase === "resolving" || phase === "processing") && (
-        <div className="fixed inset-0 z-[100] cursor-wait" />
+        <div className="pointer-events-none fixed left-1/2 top-6 z-[95] -translate-x-1/2 rounded-full border border-cyan-500/30 bg-slate-950/70 px-4 py-1.5 text-[11px] font-black text-cyan-200 backdrop-blur-sm">
+          演出中…（可自由查看技能與精靈）
+        </div>
       )}
 
       {/* Background Blueprint Grid - Lower Opacity to show theme background */}
@@ -1247,11 +1294,12 @@ function BattleScreenBody(props: BattleScreenUIProps) {
       {/* Trait / Soul Mark Modal */}
       <AnimatePresence>
         {modalContent && (
-          <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+          <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4" onClick={() => setModalContent(null)}>
             <motion.div 
               initial={{ scale: 0.9, opacity: 0, y: 20 }}
               animate={{ scale: 1, opacity: 1, y: 0 }}
               exit={{ scale: 0.9, opacity: 0, y: 20 }}
+              onClick={(e) => e.stopPropagation()}
               className="bt-panel max-w-xl w-full p-6 relative max-h-[85vh] flex flex-col overflow-hidden"
             >
               <button 

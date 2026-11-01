@@ -33,8 +33,8 @@ const round=(n:number)=>Math.round(n*100)/100;
 const dedupe=(list:Quad[])=>{const seen=new Map<string,{sequence:string;count:number;maxWidth:number;maxHeight:number}>();
  for(const q of list){const key=q.sequence+'|'+q.width+'x'+q.height;const hit=seen.get(key);if(hit)hit.count++;else seen.set(key,{sequence:q.sequence,count:1,maxWidth:q.width,maxHeight:q.height});}
  return [...seen.values()];};
-function makeReport(restHeight:number,counts:{removedQuads:number;keptAddQuads:number;normalRemoved:number},removed:Quad[],pending:Quad[],fullscreen:{sequences:string[];mode:'auto'|'explicit'},backdropBounds:Record<string,NativeBounds>){
- return {restHeight,...counts,policy:LARGE_ADD_POLICY,removed:dedupe(removed),pending:dedupe(pending),fullscreen,backdropBounds};
+function makeReport(restHeight:number,counts:{removedQuads:number;keptAddQuads:number;normalRemoved:number},removed:Quad[],pending:Quad[],fullscreen:{sequences:string[];mode:'auto'|'explicit'},backdropBounds:Record<string,NativeBounds>,backdropFrames:Record<string,(NativeBounds|null)[]>){
+ return {restHeight,...counts,policy:LARGE_ADD_POLICY,removed:dedupe(removed),pending:dedupe(pending),fullscreen,backdropBounds,backdropFrames};
 }
 const range=(sm:SwfSubMesh,from:number,to:number):SwfSubMesh=>({...sm,startVertex:sm.startVertex+from*4,indexStart:sm.indexStart+from*6,indexCount:(to-from)*6});
 function prepare(source:SwfClipData,config?:PetFullscreenConfig):PreparedPetFx{
@@ -45,9 +45,10 @@ function prepare(source:SwfClipData,config?:PetFullscreenConfig):PreparedPetFx{
  const removed:Quad[]=[],pending:Quad[]=[];
  const removedBySequence=new Map<string,number>(),bounds:Record<string,NativeBounds>={};
  /** 每影格同時產出：小畫布用的 keep 與全屏層用的 fx（被判定為底片的圖塊）。 */
+ const frameBoxesBySequence=new Map<string,(NativeBounds|null)[]>();
  const fxFramesBySequence=new Map<string,ReturnType<typeof scanFrame>['fx'][]>();
  function scanFrame(seqName:string,frame:SwfClipData['sequences'][number]['frames'][number]){
-  let masked=false,changed=false;
+  let masked=false,changed=false,frameBox:NativeBounds|null=null;
   const keep:SwfSubMesh[]=[],fx:SwfSubMesh[]=[];
   for(const sm of frame.mesh.subMeshes){
    const kind=sm.material.shaderKind;
@@ -64,6 +65,7 @@ function prepare(source:SwfClipData,config?:PetFullscreenConfig):PreparedPetFx{
     if(isLargeAddQuad(box.width,box.height,restHeight)){
      // add：全屏底片；normal：橫跨整個戰場的大矩形只有背景片會這樣，本體與特效都遠小於門檻。
      flushKeep(q);if(fxRun<0)fxRun=q;removedQuads++;removed.push(asQuad(seqName));changed=true;normalRemoved+=blend==='normal'?1:0;
+     frameBox=frameBox?{left:Math.min(frameBox.left,box.left),right:Math.max(frameBox.right,box.right),top:Math.min(frameBox.top,box.bottom),bottom:Math.max(frameBox.bottom,box.top)}:{left:box.left,right:box.right,top:box.bottom,bottom:box.top};
      removedBySequence.set(seqName,(removedBySequence.get(seqName)||0)+1);
      const b=bounds[seqName];
      bounds[seqName]=b?{left:Math.min(b.left,box.left),right:Math.max(b.right,box.right),top:Math.min(b.top,box.bottom),bottom:Math.max(b.bottom,box.top)}:{left:box.left,right:box.right,top:box.bottom,bottom:box.top};}
@@ -73,12 +75,13 @@ function prepare(source:SwfClipData,config?:PetFullscreenConfig):PreparedPetFx{
    }
    flushKeep(count);flushFx(count);
   }
-  return {frame:changed?{...frame,mesh:{...frame.mesh,subMeshes:keep}}:frame,fx:{...frame,mesh:{...frame.mesh,subMeshes:fx}}};
+  return {frame:changed?{...frame,mesh:{...frame.mesh,subMeshes:keep}}:frame,fx:{...frame,mesh:{...frame.mesh,subMeshes:fx}},box:frameBox};
  }
  const sequences=source.sequences.map(seq=>{
   if(seq.name==='standby')return seq;
   const scanned=seq.frames.map(frame=>scanFrame(seq.name,frame));
   fxFramesBySequence.set(seq.name,scanned.map(s=>s.fx));
+  frameBoxesBySequence.set(seq.name,scanned.map(s=>s.box));
   return {...seq,frames:scanned.map(s=>s.frame)};
  });
  // 哪些序列走全屏層：明確登記優先；否則「有底片圖塊被判定」的序列自動納入。
@@ -90,8 +93,8 @@ function prepare(source:SwfClipData,config?:PetFullscreenConfig):PreparedPetFx{
   const frames=fxFramesBySequence.get(seq.name);
   return {...seq,frames:seq.frames.map((frame,i)=>flaggedSet.has(seq.name)&&frames?frames[i]:{...frame,mesh:{...frame.mesh,subMeshes:[]}})};
  })} as SwfClipData:null;
- const flaggedBounds:Record<string,NativeBounds>={};for(const name of flagged)if(bounds[name])flaggedBounds[name]=bounds[name];
- return {clip:{...source,sequences},fxClip,report:makeReport(restHeight,{removedQuads,keptAddQuads,normalRemoved},removed,pending,{sequences:hasBackdrop?flagged:[],mode:explicit?'explicit':'auto'},flaggedBounds)};
+ const flaggedBounds:Record<string,NativeBounds>={},flaggedFrames:Record<string,(NativeBounds|null)[]>={};for(const name of flagged){if(bounds[name])flaggedBounds[name]=bounds[name];const fb=frameBoxesBySequence.get(name);if(fb)flaggedFrames[name]=fb;}
+ return {clip:{...source,sequences},fxClip,report:makeReport(restHeight,{removedQuads,keptAddQuads,normalRemoved},removed,pending,{sequences:hasBackdrop?flagged:[],mode:explicit?'explicit':'auto'},flaggedBounds,flaggedFrames)};
 }
 /** CPU 圖集與頂點共用，只建立新的 draw ranges；不修改共享 clip，P1/P2 可各自使用。
  * fullscreen 為素材的逐隻覆寫（PET_ANIMATION_ASSETS[*].fullscreen）；同一 clip 不同設定各自快取。 */

@@ -326,7 +326,7 @@ export const SEQUENCE_TRIGGERS: Record<string,string> = {
   use:'on_skill_use', after_hit:'on_hit', on_invalid:'on_invalid', entrance:'on_entered', ally_entered:'ally_entered',
   before_action:'before_action', before_skill:'before_skill', modify_priority:'modify_priority',
   battle_start:'battle_start', round_start:'round_start', round_end:'round_end', phase_end:'battle_phase_end',
-  kill:'on_kill',not_killed:'on_not_killed', defeated:'cthyaat_death', switch_out:'on_switch_out', damaged:'on_damaged',
+  kill:'on_kill',not_killed:'on_not_killed', defeated:'cthyaat_death', switch_out:'on_switch_out', opponent_switch_out:'opponent_switch_out', damaged:'on_damaged',
   self_skill:'on_skill_use', opp_skill:'on_attacked', opp_after_skill:'opponent_after_action',
   opp_used_skill:'on_opponent_skill_use',opp_used_attack:'on_opponent_skill_use',opp_used_status:'on_opponent_skill_use',
   opp_before_skill:'on_attacked',opp_before_attack:'on_attacked',opp_before_status:'on_attacked',

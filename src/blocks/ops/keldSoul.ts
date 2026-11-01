@@ -1,4 +1,4 @@
-// 受擊減免分支／印記點數傷害上限 通用件（legacyWrapped 拆解；DSH 20261017）。
+﻿// 受擊減免分支／印記點數傷害上限 通用件（legacyWrapped 拆解；DSH 20261017）。
 // incoming_reduction_branch：受到非真實傷害減免 ratio；「以此法減少的量」與 threshold 比較——
 //   低於→結算後執行 bodyLow；不低於→bodyHigh（事後回調，減免量寫入 lastAmount 供 body 判讀）。
 //   與舊專屬程式同構（keld soul 的 beforeFinalDamage/afterDamage 鏈），全通用。
@@ -8,6 +8,7 @@
 import type { BattleEventContext } from '../../effects/types';
 import type { RunState } from '../runtime';
 import { multiplyDamageReduction } from '../../battle/damageReduction';
+import { getMaxPp } from '../../utils/battleHelpers';
 
 const idOf = (e: any) => String(e?.battleId || e?.id || '');
 
@@ -56,6 +57,16 @@ export const KELD_SOUL_ACTION_FIELDS: Record<string, readonly string[]> = {
   backlash_percent: ['key', 'ratio', 'type', 'consume'],
   // 無視對手不高於 N 的先制（引擎先制結算讀 oppPriorityCeiling；行動結束重置）。
   opp_priority_ceiling: ['value', 'perMark', 'mult'],
+  // 2026-11-02：霜寒幽光 ②「吸取己方隨機1個不在場精靈所有技能1點PP值」
+  bench_pp_drain_random: ['side', 'restoreToHolder'],
+  // 2026-11-02：霜寒幽光 ④「下場後將霜寒幽光減半附加給下隻出戰精靈」
+  resource_mark_transfer_next: ['id', 'ratio', 'side'],
+  // 2026-11-02：霜寒幽光 ⑤「前n回合無法主動切換精靈（n=霜寒幽光值/50）」
+  switch_lock_from_resource: ['id', 'divisor', 'side'],
+  // 2026-11-02：接棒者登場時套用暫存的減半霜寒幽光並鎖切換
+  apply_pending_entry_resource: ['id', 'divisor', 'side'],
+  // 2026-11-02：霜寒幽光 ④⑤ 合併版（下場傳遞＋接棒鎖切換，同一節點完成）
+  transfer_and_reapply_resource: ['id', 'ratio', 'divisor', 'side'],
 };
 
 /** 契約補充檢查；回傳 null 代表通過。nested 驗 body 遞迴。 */
@@ -200,6 +211,161 @@ export function keldSoulOperations(helpers: {
       }
       if (!(Number.isFinite(value) && value >= 0)) return false;
       (ctx as any).setPlayerState?.('oppPriorityCeiling', value);
+      return true;
+    },
+    /**
+     * 2026-11-02 補實作：霜寒幽光減半。
+     * 原文「持有者造成固定傷害、百分比傷害若超過霜寒幽光值10%時則減半 m 次
+     * (m = 本次造成固定傷害、百分比傷害 / 霜寒幽光值10%)」。
+     * 讀對手身上的霜寒幽光點數（side 由 Kit 以 side:'opp' 寫入），
+     * 本次固/百分比傷害超過 thresholdRatio 就按 multiplier 連續折減 m 次。
+     */
+    damage_reduce_by_resource: (ctx: BattleEventContext, p: any, st: RunState): boolean => {
+      const comp = (st.event?.data?.damageComp || st.event?.data) as any;
+      if (!comp || !comp.isIncoming) return false;
+      const cat = String(comp.damageCategory || '');
+      // 只對固定／百分比傷害生效（技能傷害與真實傷害不在此列）。
+      if (!['fixed', 'percent'].includes(cat)) return false;
+      if (comp.noReductionApplied) return false;
+      const attackerSide = ctx.targetSide; // 造成傷害的一方
+      const marks = ((ctx as any).getMarks?.(attackerSide) || []) as any[];
+      const mark = marks.find((m: any) => m.id === p.id);
+      const points = Math.max(0, Number(mark?.count) || 0);
+      if (points <= 0) return false;
+      const step = points * p.thresholdRatio;      // 霜寒幽光值 10%
+      if (!(step > 0)) return false;
+      comp.beforeFinalDamage ||= [];
+      (comp.beforeFinalDamage as Array<() => void>).push(() => {
+        const base = Math.max(0, comp.base * (1 + (comp.increasePercent || 0)) * Math.max(0, 1 - (comp.decreasePercent || 0)) * (comp.multiplier ?? 1) - (comp.flat || 0));
+        if (base <= step) return;                    // 未超過門檻不減半
+        const times = Math.max(1, Math.floor(base / step)); // m 次
+        comp.multiplier = (comp.multiplier ?? 1) * Math.pow(p.multiplier, times);
+      });
+      return true;
+    },
+    /**
+     * 2026-11-02（霜寒幽光 ②③）：
+     * 「持有者在場時吸取己方隨機1個不在場精靈所有技能1點PP值，
+     *   柯爾霍德在場時恢復至柯爾霍德相同位置」。
+     * side='opp' 指「霜寒幽光持有者那一方」的背包（持有者＝對手）。
+     */
+    bench_pp_drain_random: (ctx: BattleEventContext, p: any): boolean => {
+      const side: 'p1' | 'p2' = p.side === 'self' ? ctx.actor : ctx.targetSide;
+      const team = (ctx.getFullTeam?.(side) || []) as any[];
+      const active = side === 'p1' ? ctx.activeP1 : ctx.activeP2;
+      const activeId = idOf(active);
+      const bench = team.filter((e: any) =>
+        e && !e.isVanished && !e.isExtra && idOf(e) !== activeId &&
+        (e.skills || []).some((s: any) => Number(s.pp) > 0));
+      if (!bench.length) return false;
+      const rnd = (ctx as any).rng?.() ?? Math.random();
+      const picked = bench[Math.min(bench.length - 1, Math.floor(rnd * bench.length))];
+      const nextSkills = (picked.skills || []).map((s: any) => ({ ...s, pp: Math.max(0, Number(s.pp) - 1) }));
+      ctx.updateAnyElf?.(side, idOf(picked), { skills: nextSkills } as any);
+      if (p.restoreToHolder) {
+        const self = ctx.self;
+        if (self && !(self as any).isVanished) {
+          const restored = (self.skills || []).map((s: any) => ({ ...s, pp: Math.min(getMaxPp(s, self), Number(s.pp) + 1) }));
+          ctx.updateAnyElf?.(ctx.actor, idOf(self), { skills: restored } as any);
+        }
+      }
+      ctx.addLog?.(`❄️ 【霜寒幽光】：吸取【${picked.name}】所有技能 1 點 PP${p.restoreToHolder ? '，並恢復至柯爾霍德' : ''}！`, 'effect');
+      return true;
+    },
+
+    /**
+     * 2026-11-02（霜寒幽光 ④）：
+     * 「下場後將霜寒幽光減半附加給下隻出戰精靈」。
+     */
+    resource_mark_transfer_next: (ctx: BattleEventContext, p: any): boolean => {
+      const side: 'p1' | 'p2' = p.side === 'self' ? ctx.actor : ctx.targetSide;
+      const active = side === 'p1' ? ctx.activeP1 : ctx.activeP2;
+      const marks = ((ctx as any).getMarks?.(side) || []) as any[];
+      const mark = marks.find((m: any) => m.id === p.id);
+      const points = Math.max(0, Number(mark?.count) || 0);
+      if (points <= 0) return false;
+      const half = Math.max(0, Math.floor(points * p.ratio));
+      (ctx as any).setPlayerState?.('pendingEntryResource', { id: p.id, amount: half, side });
+      // persistsOffField 的印記會在換人時被保留機制還原；改成「把層數歸零」而不是刪除，
+      // 這樣換人後帶過去的是 0 點，等效於清空。
+      // 先清掉所有舊持有者的同 id 印記：clearMark 的 ownerBattleId 比對不穩，
+      // 直接用 getAllMarks 拿完整陣列、過濾後寫回（setMark 會補回新的那條）。
+      const allMarks = ((ctx as any).getAllMarks?.(side) || marks) as any[];
+      for (const prev of allMarks.filter((m: any) => m.id === p.id)) {
+        (ctx as any).clearMark?.(prev.id, side, prev.ownerBattleId ?? undefined);
+      }
+      (ctx as any).setMark?.({ id: p.id, name: mark.name || '霜寒幽光', displayChar: mark.displayChar || '霜', unit: mark.unit || '點',
+        count: 0, maxCount: mark.maxCount, persistsOffField: true, clearable: mark.clearable, scope: mark.scope, description: mark.description } as any, side);
+      ctx.addLog?.(`❄️ 【霜寒幽光】：下場，減半後 ${half} 點將附加給下隻出戰精靈！`, 'effect');
+      return true;
+    },
+
+    /**
+     * 2026-11-02（霜寒幽光 ④⑤ 合併）：
+     * OPPONENT_SWITCH 派發時，對手的新精靈已經登場（引擎在換人流程最後才通知己方）。
+     * 所以這裡一次做完：讀舊值 → 減半 → 寫回新持有者 → 依 divisor 鎖切換。
+     */
+    transfer_and_reapply_resource: (ctx: BattleEventContext, p: any): boolean => {
+      const side: 'p1' | 'p2' = p.side === 'self' ? ctx.actor : ctx.targetSide;
+      const marks = ((ctx as any).getMarks?.(side) || []) as any[];
+      const mark = marks.find((m: any) => m.id === p.id);
+      const points = Math.max(0, Number(mark?.count) || 0);
+      if (points <= 0) return false;
+      const half = Math.max(0, Math.floor(points * p.ratio));
+      // 寫回減半後的值（覆蓋原印記）
+      // 先清掉所有舊持有者的同 id 印記：clearMark 的 ownerBattleId 比對不穩，
+      // 直接用 getAllMarks 拿完整陣列、過濾後寫回（setMark 會補回新的那條）。
+      const allMarks = ((ctx as any).getAllMarks?.(side) || marks) as any[];
+      for (const prev of allMarks.filter((m: any) => m.id === p.id)) {
+        (ctx as any).clearMark?.(prev.id, side, prev.ownerBattleId ?? undefined);
+      }
+      (ctx as any).setMark?.({ id: p.id, name: mark.name || '霜寒幽光', displayChar: mark.displayChar || '霜',
+        unit: mark.unit || '點', count: half, maxCount: mark.maxCount ?? 200, persistsOffField: true,
+        clearable: mark.clearable ?? true, scope: mark.scope || 'elf', source: mark.source || '霜寒幽光',
+        description: mark.description || '霜寒幽光' } as any, side);
+      // 依 half / divisor 鎖切換（施加給對手新登場的精靈）
+      const turns = Math.max(0, Math.floor(half / (p.divisor || 50)));
+      if (turns > 0) {
+        (ctx as any).addTimerTo?.(side, { id: 'frost_glow_lock', label: '霜寒幽光鎖切換', remaining: turns, kind: 'turns', payload: { lockSwitch: true } }, false);
+      }
+      ctx.addLog?.(`❄️ 【霜寒幽光】：持有者下場，減半為 ${half} 點附加給新上場精靈${turns > 0 ? `，並鎖定切換 ${turns} 回合` : ''}！`, 'effect');
+      return true;
+    },
+    /**
+     * 2026-11-02（霜寒幽光 ④⑤ 接棒端）：
+     * 接棒者登場時，把 pendingEntryResource 的減半值寫成新的霜寒幽光，
+     * 並依 divisor（原文 50）換算鎖切換回合。
+     */
+    apply_pending_entry_resource: (ctx: BattleEventContext, p: any): boolean => {
+      const pending = (ctx as any).getPlayerState?.('pendingEntryResource');
+      if (!pending || pending.id !== p.id) return false;
+      const amount = Math.max(0, Number(pending.amount) || 0);
+      (ctx as any).setPlayerState?.('pendingEntryResource', undefined);
+      if (amount <= 0) return false;
+      const side: 'p1' | 'p2' = p.side === 'self' ? ctx.actor : ctx.targetSide;
+      // 寫回減半後的點數
+      (ctx as any).setMark?.({ id: p.id, name: '霜寒幽光', displayChar: '霜', unit: '點',
+        count: amount, maxCount: 200, persistsOffField: true, clearable: true, scope: 'elf',
+        source: '霜寒幽光', description: '受到固定／百分比傷害超過霜寒幽光點數10%時則減半m次(m=本次傷害/霜寒幽光值10%)；持有者在場時吸取己方隨機1個不在場精靈所有技能1點PP值，柯爾霍德在場時恢復至相同位置，下場後減半附加給下隻出戰精靈並鎖切換(n=值/50)；上限200點' } as any, side);
+      // 依 amount / divisor 鎖切換
+      const turns = Math.max(0, Math.floor(amount / (p.divisor || 50)));
+      if (turns > 0) {
+        (ctx as any).addTimerTo?.(ctx.actor, { id: 'frost_glow_lock', label: '霜寒幽光鎖切換', remaining: turns, kind: 'turns', payload: { lockSwitch: true } }, false);
+        ctx.addLog?.(`🔒 【霜寒幽光】：接棒者 ${turns} 回合內無法主動切換，霜寒幽光 ${amount} 點！`, 'effect');
+      }
+      return true;
+    },    /**
+     * 2026-11-02（霜寒幽光 ⑤）：
+     * 「同時令該精靈在場前 n 回合無法主動切換精靈（n = 霜寒幽光值 / 50）」。
+     */
+    switch_lock_from_resource: (ctx: BattleEventContext, p: any): boolean => {
+      const pending = (ctx as any).getPlayerState?.('pendingEntryResource');
+      const points = Math.max(0, Number(pending?.amount) || 0);
+      if (points <= 0) return false;
+      const turns = Math.max(0, Math.floor(points / (p.divisor || 50)));
+      if (turns <= 0) return false;
+      (ctx as any).addTimerTo?.(ctx.actor, { id: 'frost_glow_lock', label: '霜寒幽光鎖切換', remaining: turns, kind: 'turns', payload: { lockSwitch: true } }, false);
+      ctx.addLog?.(`🔒 【霜寒幽光】：該精靈 ${turns} 回合內無法主動切換！`, 'effect');
       return true;
     },
   };

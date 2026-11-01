@@ -1,4 +1,4 @@
-/** 編輯器、分詞檢視與正式事件派發共用的節點合約；衍生／直接節點不偽造枚舉事件。 */
+﻿/** 編輯器、分詞檢視與正式事件派發共用的節點合約；衍生／直接節點不偽造枚舉事件。 */
 import { EffectTiming } from './types';
 import type { Node } from './effectSystem.schema';
 import type { Trigger } from '../blocks/model';
@@ -50,6 +50,8 @@ export const EFFECT_NODES: Record<Node, NodeContract> = {
   cthyaat_death:{label:'被擊敗時',phase:'切換與陣亡',trigger:'defeated',event:EffectTiming.DEATH_NODE_1,help:'正式被擊敗事件涵蓋三個死亡節點，以data.node讀取1、2、3；同一次陣亡僅結算一次。'},
   before_switch_out:{label:'主動切換前',phase:'切換與陣亡',trigger:'custom',event:EffectTiming.BEFORE_SWITCH_OUT,help:'主動切換的前置通知，不當成所有死亡強制切換的通知。'},
   on_switch_out:{label:'下場',phase:'切換與陣亡',trigger:'switch_out',event:EffectTiming.ON_SWITCH_OUT,help:'操作下場持有者；下場保留不代表傳給下一隻。'},
+  // 2026-11-02：霜寒幽光 ④⑤ 需要「對手切換下場」的觸發點（持有者＝對手，不是自己）。
+  opponent_switch_out:{label:'對手切換下場',phase:'切換與陣亡',trigger:'opponent_switch_out',event:EffectTiming.OPPONENT_SWITCH,help:'對手主動或被動換人下場時派發給己方在場精靈；data.switchingSide 為對手方。'},
   pp_consumed:{label:'本技能槽PP被消耗',phase:'事件監控',trigger:'pp_consumed',event:EffectTiming.ON_PP_CONSUME,help:'出招及削PP皆按實際消耗槽通知；只執行攜帶效果，同一連鎖每槽一次，恢復PP不觸發。'},
   pp_cleared:{label:'自身PP被清除',phase:'事件監控',trigger:'pp_cleared',derived:'PP_CHANGED的clear原因與實際歸零槽',help:'只有清除令正PP歸零才觸發原持有者；普通消耗、削PP、恢復與原本0PP不觸發。'},
   battle_end:{label:'戰鬥結束',phase:'回合收尾',trigger:'custom',event:EffectTiming.BATTLE_END,help:'整場結束，不是每回合結束。'},

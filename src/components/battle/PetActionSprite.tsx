@@ -5,7 +5,7 @@ import {acquirePetClip} from '../../battle/petAnimationLoader';
 import {petAnimationBinding,petExtraSequence,registerPetPlayer,registerPetTimings,reportPetPlayback,degradePet,type PetAction,type PetSequenceTiming} from '../../battle/petAnimationRegistry';
 import {getRestVisibleBox,registerVisibleBox,notifyVisibleBoxChanged,boxCenterX,boxCenterY} from '../../battle/visibleBox';
 import type {VisibleBox} from '../../battle/spriteMetrics';
-import {actionApproach,retargetAttack,restBodyTiles,nativeBodyBounds,nativeRestBounds,petCanvasFrame} from '../../battle/petAnimationGeometry';
+import {actionApproach,retargetAttack,bodyTiles,nativeBodyBounds,nativeRestBounds,petCanvasFrame} from '../../battle/petAnimationGeometry';
 import {shouldMirrorBattleSprite} from '../../battle/seerAssets';
 import {PET_ANIMATION_ASSETS,type PetAnimationAsset,type PetAnimationAssetId} from '../../battle/petAnimationAssets';
 import {overrideTint,petColorVariant} from '../../battle/petColorVariants';
@@ -36,7 +36,7 @@ export function PetActionSprite({elf,side,action,actionToken,width,height,onRead
  const sizeRef=React.useRef(sizeRefHeight);sizeRef.current=sizeRefHeight;
  React.useEffect(()=>{refit.current?.();},[sizeRefHeight]);
  // 全屏底片專用的第二個播放器（掛在 BattleFxLayer 裡，與本播放器同序列、同 dt 同步推進；不是全屏序列時隱藏且不繪製）。
- const fxRuntime=React.useRef<{player:SwfPlayer;el:HTMLDivElement;sequences:Set<string>;bounds:Record<string,{left:number;right:number;top:number;bottom:number}>;on:boolean}|null>(null);
+ const fxRuntime=React.useRef<{player:SwfPlayer;el:HTMLDivElement;sequences:Set<string>;bounds:Record<string,{left:number;right:number;top:number;bottom:number}>;frames:Record<string,({left:number;right:number;top:number;bottom:number}|null)[]>;on:boolean}|null>(null);
  const currentSequence=React.useRef<PetAction|'transform'>('standby');
  const frameIndex=React.useRef(0);
  const sequenceTimings=React.useRef<Partial<Record<PetAction,PetSequenceTiming>>>({});
@@ -73,7 +73,7 @@ export function PetActionSprite({elf,side,action,actionToken,width,height,onRead
    const variant=petColorVariant(elf.name,assetId);
    if(variant.mul||variant.add)overrideTint(clip.sequences.flatMap(s=>s.frames),variant);
    const frames=clip.sequences.find(s=>s.name==='standby')?.frames||[];
-   const tiles=restBodyTiles(frames.map(f=>f.mesh));
+   const tiles=bodyTiles(frames.map(f=>f.mesh));
    const bounds=new Map(clip.sequences.map(s=>[s.name,s.frames.map(f=>nativeBodyBounds(f.mesh,tiles)??nativeBodyBounds(f.mesh))]));
    let minX=Infinity,maxX=-Infinity,minY=Infinity,maxY=-Infinity;
    for(const frame of frames)for(let i=0;i<frame.mesh.positions.length;i+=2){const p=frame.mesh.positions;minX=Math.min(minX,p[i]);maxX=Math.max(maxX,p[i]);minY=Math.min(minY,p[i+1]);maxY=Math.max(maxY,p[i+1]);}
@@ -132,7 +132,7 @@ export function PetActionSprite({elf,side,action,actionToken,width,height,onRead
     // 全屏層：同一個鏡射與本體比例；底片不跟著出招位移（origin 為準）。底片不足以鋪滿整層時改 cover 並置中（fullscreenFit）。
     const fx=fxRuntime.current;
     if(fx&&fx.on){const lr=fx.el.getBoundingClientRect();if(lr.width>0&&lr.height>0){
-     const b=fx.bounds[sequence],f=fullscreenFit(b,{width:lr.width,height:lr.height},scale),fsx=sx<0?-f.scale:f.scale;
+     const b=fx.frames[sequence]?.[frameIndex.current]??fx.bounds[sequence],f=fullscreenFit(b,{width:lr.width,height:lr.height},scale),fsx=sx<0?-f.scale:f.scale;
      const fxX=f.centered&&b?lr.width/2-(b.left+b.right)/2*fsx:(origin-(minX+maxX)/2*sx)+(rest.left-lr.left);
      const fxY=f.centered&&b?lr.height/2+(b.top+b.bottom)/2*f.scale:(h+minY*scale)+(rest.top-lr.top);
      fx.player.setFixedTransform({x:fxX,y:fxY},{x:fsx,y:-f.scale});}}
@@ -151,7 +151,7 @@ export function PetActionSprite({elf,side,action,actionToken,width,height,onRead
     const el=document.createElement('div');el.dataset.petFxLayer=side;el.style.cssText='position:absolute;inset:0;pointer-events:none;visibility:hidden';layerHost.appendChild(el);
     try{const fxPlayer=new SwfPlayer();await fxPlayer.mount(el,fxClip,{transparent:true,mode:'fixed',clock:'manual',signal:abort.signal});
      if(!alive){fxPlayer.destroy();el.remove();return;}
-     fxPlayer.playSequence('standby',{loop:true});fxRuntime.current={player:fxPlayer,el,sequences:new Set(fxReport.fullscreen.sequences),bounds:fxReport.backdropBounds,on:false};
+     fxPlayer.playSequence('standby',{loop:true});fxRuntime.current={player:fxPlayer,el,sequences:new Set(fxReport.fullscreen.sequences),bounds:fxReport.backdropBounds,frames:fxReport.backdropFrames,on:false};
     }catch(error){el.remove();if(!alive)return;console.warn('[pet-actions] 全屏底片層略過',error);}
    }
    player.current=instance;setReady(true);clearTimeout(deadline);

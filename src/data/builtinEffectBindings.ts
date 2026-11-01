@@ -1,5 +1,6 @@
 import type { Elf } from '../types';
 import {soulDefinition} from '../effects/soulDefinitionSource';
+import legacySignatures from './legacyBuiltinSignatures.json';
 
 type Definition = { name: string; kit?: unknown[]; [key: string]: any };
 // 只更新效果定義，不能把 PP、配裝、戰鬥狀態及實例身分當成資料庫欄位覆寫。
@@ -25,6 +26,15 @@ function signature(d: Definition): string {
   return `1:${text.length}:${(a >>> 0).toString(16)}:${(b >>> 0).toString(16)}`;
 }
 const savedSignature=(key:string,value:Definition,elf:Elf)=>signature(key==='soul'?{...value,kit:soulDefinition(elf).kit}:value);
+/** Git 歷史中逐版出現過的內建定義指紋（scripts/generate_legacy_builtin_signatures.ts 產生）；存檔從未記錄基準時，完全相同才視為「未改過的舊內建」。 */
+const knownLegacy=(elf:Elf,key:string,current:string):boolean=>
+  !!(legacySignatures.elves as Record<string,Record<string,string[]>>)[String(elf.id)]?.[key]?.includes(current);
+/** 以精靈自身為來源計算每個定義的指紋（產生歷史指紋表用）。 */
+export function definitionSignatures(elf:Elf):Record<string,string>{
+  const result:Record<string,string>={};
+  mapDefinitions(elf,elf,(key,value)=>{result[key]=savedSignature(key,value,elf);return value;});
+  return result;
+}
 function sourceFor(elf: Elf, defaults: Elf[]) {
   if (!elf || String(elf.id).startsWith('custom_')) return undefined;
   return defaults.find(d => String(d.id) === String(elf.id) && d.name === elf.name);
@@ -82,7 +92,7 @@ export function inspectBuiltinEffectBindings(elf: Elf, defaults: Elf[]): Binding
     if (!canonical?.kit?.length) { result.push({key, name:value.name, status:'source-missing'}); return value; }
     const current = savedSignature(key,value,elf), latest = signature(canonical), previous = baseline[key];
     const effective=key==='soul'?{...value,kit:soulDefinition(elf).kit}:value;
-    result.push({key, name:value.name, status: current === latest ? 'current' : previous === current ? 'upgradeable' : previous ? 'modified' : 'untracked',
+    result.push({key, name:value.name, status: current === latest ? 'current' : previous === current || !previous && knownLegacy(elf,key,current) ? 'upgradeable' : previous ? 'modified' : 'untracked',
       ...(current===latest?{}:{differences:fields.filter(field=>stable(effective[field]??null)!==stable(canonical[field]??null)),
         ...(stable(effective.kit??null)===stable(canonical.kit??null)?{}:{kitDifferences:changedPaths(effective.kit,canonical.kit)})})});
     return value;
@@ -100,7 +110,7 @@ export function synchronizeBuiltinEffectBindings(elf: Elf, defaults: Elf[]): Elf
     if (!canonical?.kit?.length) return value;
     const current = savedSignature(key,value,elf), latest = signature(canonical);
     if (current === latest) { next[key] = latest; return value; }
-    if (baseline[key] !== current) return value;
+    if (baseline[key] !== current && !(!baseline[key] && knownLegacy(elf,key,current))) return value;
     const replacement = {...value};
     for (const field of fields) delete replacement[field];
     Object.assign(replacement, structuredClone(projection(canonical)));

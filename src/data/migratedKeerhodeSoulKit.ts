@@ -1,7 +1,13 @@
-// 5013 柯爾霍德 魂印「凕」Kit（DSH 20261017 第八批 legacyWrapped 拆解）。
+﻿// 5013 柯爾霍德 魂印「凕」Kit（DSH 20261017 第八批 legacyWrapped 拆解）。
 // 舊 handler：keerhode/registry.ts handleKeerhodeSoulMark 整份移除（規則3.3）。
 // 重要修正：舊 handler 混入 5012「冰」段落（寂殺計層/肅霜/反噬——歷史複製遺留）；Kit 僅表達凕原文
 // 七子句，不帶 5012 行為（遷移＝行為對齊原文）。
+// ⚠️ 2026-11-02 待補（缺專用 op，暫不實作）：
+//   霜寒幽光 ②「持有者在場時吸取己方隨機1個不在場精靈所有技能1點PP值，柯爾霍德在場時恢復至柯爾霍德相同位置」
+//   霜寒幽光 ④「下場後將霜寒幽光減半附加給下隻出戰精靈」
+//   霜寒幽光 ⑤「同時令該精靈在場前n回合無法主動切換精靈（n=霜寒幽光值/50）」
+//   ⑥ 上限 200 已補（maxCount:200）。
+//   ① 減半 m 次已補（keldSoul.damage_reduce_by_resource）。
 // 通用件：incoming_reduction_branch{thresholdBase}（動態閾值：當前體力⅓）／
 //   damage_reduce_by_resource（霜寒幽光閾值減半）／resource_mark_add{ratio}／drain{event_damage}。
 import type { KitEntry } from '../effects/effectSystem.schema';
@@ -26,17 +32,23 @@ export const MIGRATED_KEERHODE_SOUL_KIT = {
       { acts: [a('incoming_reduction_branch', {
         ratio: 0.6, thresholdBase: 'currentHpThird', compareBase: 'raw_damage',
         bodyHigh: [
-          { acts: [a('resource_mark_add', { id: 'frost_glow', name: '霜寒幽光', displayChar: '霜', unit: '點', side: 'opp', scope: 'elf', persistsOffField: true, ratio: 1, description: '受到固定／百分比傷害超過霜寒幽光點數10%時減半' })] },
+          { acts: [a('resource_mark_add', { id: 'frost_glow', name: '霜寒幽光', displayChar: '霜', unit: '點', side: 'opp', scope: 'elf', persistsOffField: true, ratio: 1, maxCount: 200, description: '受到固定／百分比傷害超過霜寒幽光點數10%時則減半m次(m=本次造成固定傷害、百分比傷害/霜寒幽光值10%)；持有者在場時吸取己方隨機1個不在場精靈所有技能1點PP值，柯爾霍德在場時恢復至柯爾霍德相同位置，下場後將霜寒幽光減半附加給下隻出戰精靈，同時令該精靈在場前n回合無法主動切換精靈(n=霜寒幽光值/50)；霜寒幽光上限200點' })] },
         ],
         bodyLow: [
           { acts: [a('drain', { basis: 'event_damage', ratio: 0.6, true: false })] },
         ],
       })] },
     ], 0),
-    // B. 霜寒幽光讀取端：固/百分傷超過資源10%→減半
-    entry('before_damage', 'incoming', '霜寒幽光：受到固定／百分比傷害超過資源值10%時減半', [
+    // B. 霜寒幽光讀取端：固/百分傷超過資源10%→減半 m 次（m=本次傷害/資源10%，實作見 keldSoul.damage_reduce_by_resource）
+    entry('before_damage', 'incoming', '霜寒幽光：受到固定／百分比傷害超過資源值10%時則減半m次', [
       { acts: [a('damage_reduce_by_resource', { id: 'frost_glow', thresholdRatio: 0.1, multiplier: 0.5 })] },
     ], 1),
+    // B2. 霜寒幽光 ②③：持有者在場時吸取己方隨機1個不在場精靈所有技能1點PP值；柯爾霍德在場時恢復至相同位置
+    entry('round_start', 'round_start', '霜寒幽光：持有者在場時吸取己方隨機1個不在場精靈所有技能1點PP值，柯爾霍德在場時恢復至柯爾霍德相同位置', [
+      { cond: [c('mark_count', { side: 'opp', id: 'frost_glow', op: '不小於', amount: 1 }, '對手持有霜寒幽光')], acts: [
+        a('bench_pp_drain_random', { side: 'opp', restoreToHolder: true }),
+      ] },
+    ], 2),
     // C. 在場任一方受真傷→+1未暝之夜（資源印記；無上限）
     entry('on_damaged', 'damaged_true', '在場敵我雙方任一方受到真實傷害：為自身附加1道未暝之夜', [
       { acts: [a('resource_mark_add', { id: 'dark_night', name: '未暝之夜', displayChar: '夜', unit: '道', side: 'self', scope: 'elf', persistsOffField: false, amount: 1, description: '無視對手能力上升；技能先制+1；造成傷害提升150%；吸血100%；大於1道時每道將對手視為至少1級全屬性下降' })] },
@@ -72,6 +84,14 @@ export const MIGRATED_KEERHODE_SOUL_KIT = {
         a('dmg_mod', { dir: 'out', kind: '攻擊', boost: 1.5 }),
       ] },
     ], 6),
+    // H. 霜寒幽光 ④⑤：持有者下場時減半附加給下隻出戰精靈，並令該精靈前 n 回合無法主動切換（n=值/50）
+    // 註：OPPONENT_SWITCH 在換人流程最後派發，此時對手新精靈已登場，
+    //     所以「讀舊值 → 減半 → 寫回新持有者 → 鎖切換」可以在同一節點完成。
+    entry('opponent_switch_out', 'opponent_switch_out', '霜寒幽光：持有者下場後將霜寒幽光減半附加給下隻出戰精靈，同時令該精靈在場前n回合無法主動切換精靈(n=霜寒幽光值/50)', [
+      { cond: [c('mark_count', { side: 'opp', id: 'frost_glow', op: '不小於', amount: 1 }, '對手持有霜寒幽光')], acts: [
+        a('transfer_and_reapply_resource', { id: 'frost_glow', ratio: 0.5, divisor: 50, side: 'opp' }),
+      ] },
+    ], 7),
     // I. 回合結束血≥⅓：解除自身所有異常；成功→下2回合免疫反彈＋對手附加失效2回合
     entry('round_end', 'round_end', '回合結束體力不低於⅓：解除自身所有異常；成功→下2回合免疫並反彈＋對手附加效果失效2回合', [
       { cond: [c('hp_ratio', { side: 'self', op: '不低於', ratio: 1 / 3 }, '體力不低於⅓')], acts: [

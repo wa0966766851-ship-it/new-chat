@@ -1,4 +1,4 @@
-// 積木系統資料模型：精靈描述 → 積木（觸發 / 條件 / 動作），同一份結構同時用於「顯示」與「執行」。
+﻿// 積木系統資料模型：精靈描述 → 積木（觸發 / 條件 / 動作），同一份結構同時用於「顯示」與「執行」。
 
 export type Side = "self" | "opp" | "both";
 
@@ -50,6 +50,7 @@ export type Trigger =
   | "stat_boost_cleared" // 他方實際消除／吸取本持有者的能力提升
   | "status_end" | "status_immune" | "status_tick" // 持有者異常結束、免疫結果及扣減前
   | "switch_out"
+  | "opponent_switch_out" // 2026-11-02：對手切換下場（霜寒幽光 ④⑤ 需要）
   | "status_received" // 自身受到異常狀態時
   | "bench" // 自身位於背包時
   | "team_round_start" // 存活於背包或在場・回合開始

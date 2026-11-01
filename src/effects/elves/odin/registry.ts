@@ -172,6 +172,12 @@ export function handleOdinSoulMark(ctx: BattleEventContext, event: EffectTiming,
   const oppActor = isP1 ? 'p2' : 'p1';
   const selfTeam = isP1 ? p1Team : p2Team;
 
+  // 舊版 handler 的回合型事件會被廣播給全隊；持有者在場下時 selfElf 是「在場的另一隻精靈」，
+  // 不得替它（或對手）附加符文、回血或結算。官方語意：自身在場時才生效。
+  const holder: any = ctx.self;
+  const holderOffField = !!holder && String(holder.battleId || holder.id) !== String((selfElf as any)?.battleId || (selfElf as any)?.id);
+  if (holderOffField && (event === EffectTiming.ROUND_START || event === EffectTiming.BEFORE_ACTION)) return false;
+
   // 1. 登場時：為己方背包中末位精靈附加 ᛏ 符文 (順延機制) 與處理繼承激活狀態
   
   if (event === EffectTiming.MODIFY_PRIORITY) {
@@ -390,7 +396,7 @@ export function handleOdinSoulMark(ctx: BattleEventContext, event: EffectTiming,
   }
 
   // 4. 回合結束時：恢復最大體力 ⅓ 併附加對手等量百分比傷害，以及體力高低判定先制與增減傷
-  if (event === EffectTiming.ROUND_END && selfElf && selfElf.currentHp > 0) {
+  if (event === EffectTiming.ROUND_END && !holderOffField && selfElf && selfElf.currentHp > 0) {
     const maxHp = selfElf.maxHp || 1000;
     const healAmt = Math.floor(maxHp / 3);
     const selfCurHpBefore = selfElf.currentHp;

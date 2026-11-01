@@ -1,4 +1,4 @@
-// ============================================================================
+﻿// ============================================================================
 // effectSystem.schema.ts —— 模組化技能/魂印效果系統：正式型別合約
 // 這份是「AI 自訂精靈 + 任何新技能直接引用效果」的資料契約。
 // codex(2278 筆已分類) 依此結構被查詢/引用；runner 依此執行。
@@ -17,6 +17,7 @@ export type Node =
   | "on_kill" | "on_not_killed" | "self_fatal" | "cthyaat_death" | "battle_end"
   | "on_skill_use" | "on_opponent_skill_use" | "on_attacked" | "any_battle_node" | "passive_always" | "modify_priority"
   | "on_invalid" | "before_switch_out" | "on_switch_out" | "opponent_after_action" | "pp_consumed" | "pp_cleared"
+  | "opponent_switch_out"
   | "extra_action_start" | "extra_action_end" | "before_status_apply" | "opponent_entered"
   | "ally_entered" | "on_status_ended" | "on_status_received" | "on_status_immunized" | "on_damage_immunized" | "before_status_tick" | "on_turn_effects_cleared" | "on_stat_boost_cleared" | "before_stat_change";
 

@@ -103,6 +103,9 @@ export const ProportionalSprite: React.FC<ProportionalSpriteProps> = ({ elf, sid
   React.useEffect(() => {
     let alive = true;
     let retry: ReturnType<typeof setTimeout> | undefined; let tries = 0;
+    // 身分改變（幻化開始／解除、換精靈、換皮）時舊量測屬於另一張圖：必須丟棄，否則尺寸設定檔沿用舊圖。
+    // 同一身分內的短暫換圖（備援鏈、透明度）才沿用上一次有效量測。
+    setM(null);
     const root = wrap.current; if (!root) return;
     const pendingLoads = new Map<HTMLImageElement, EventListener>();
     const check = () => {

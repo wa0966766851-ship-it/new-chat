@@ -46,11 +46,18 @@ export interface BattleEffectViewModel {
   triggerText?: string;
 }
 
-/** 計數統一文字：待啟用優先；層數與回合同時存在時兩者都列。 */
+/** 「不限次數／不限回合」的哨兵：套件用 9999（每次類計時器）、999（常駐回合）表示沒有上限。
+ * 次數／回合計數 >= 此值一律視為不限，不顯示成數字（9999次 沒有意義）；只套用在次數與回合，不套用在層數或數值。 */
+export const UNLIMITED_COUNT_FLOOR = 999;
+export const isUnlimitedCount = (n: unknown): boolean => typeof n === 'number' && (n === Infinity || n >= UNLIMITED_COUNT_FLOOR);
+
+/** 計數統一文字：待啟用優先；層數與回合同時存在時兩者都列。不限次數／回合不顯示數字。 */
 export function effectCountText(v: Pick<BattleEffectViewModel, 'value' | 'maxValue' | 'unit' | 'layers' | 'maxLayers' | 'turns' | 'pending'>): string {
   const parts: string[] = [];
+  const countUnit = v.unit === '次' || v.unit === '回合';
   if (v.pending) parts.push('待啟用');
-  else if (v.turns !== undefined) parts.push(`${v.turns}回合`);
+  else if (v.turns !== undefined) { if (!isUnlimitedCount(v.turns)) parts.push(`${v.turns}回合`); }
+  else if (v.value !== undefined && countUnit && isUnlimitedCount(v.value)) { /* 不限：不顯示計數 */ }
   else if (v.value !== undefined) parts.push(`${v.value}${v.maxValue !== undefined && v.layers === undefined ? `/${v.maxValue}` : ''}${v.unit || ''}`);
   if (v.layers !== undefined) parts.push(`${v.layers}${v.maxLayers !== undefined ? `/${v.maxLayers}` : ''}層`);
   return parts.join(' ');
@@ -119,7 +126,7 @@ export function buildEffectViewModels(marks: Mark[] = [], timers: Timer[] = [], 
       ...(mark.origin ? { origin: mark.origin, sourceTag: foreignTag(mark.origin, activeBattleId) } : {}),
       ...(showLayers ? { layers: mark.count, maxLayers: mark.maxCount, layerUnit } : {}),
       ...(turns !== undefined ? { turns } : {}),
-      countText: [showLayers ? `${mark.count}${mark.maxCount !== undefined ? `/${mark.maxCount}` : ''}${layerUnit}` : '', turns !== undefined ? `${turns}回合` : ''].filter(Boolean).join(' '),
+      countText: [showLayers ? `${mark.count}${mark.maxCount !== undefined ? `/${mark.maxCount}` : ''}${layerUnit}` : '', turns !== undefined && !isUnlimitedCount(turns) ? `${turns}回合` : ''].filter(Boolean).join(' '),
       };
       return view;
     });
@@ -186,6 +193,7 @@ export function describeEffectMeta(effect: BattleEffectViewModel): string {
     `可被消除回合類效果清除：${effect.clearable ? "是" : "否"}`,
   ];
   if (effect.triggerText) lines.splice(3, 0, `觸發：${effect.triggerText}`);
+  if (effect.category !== 'mark' && isUnlimitedCount(effect.value)) lines.push('次數／回合：不限');
   if (effect.note) lines.push(effect.note);
   if (effect.persistsOffField !== undefined) lines.push(`下場後保留：${effect.persistsOffField ? "是" : "否"}`);
   if (effect.triggerNode) lines.push(`遞減／觸發節點：${effect.triggerNode}`);

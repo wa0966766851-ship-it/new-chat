@@ -1,21 +1,22 @@
 /**
  * 戰鬥 HUD 的立繪保留高度。
- * 狀態晶片再多也不得縮小立繪：保留高度只由「頭像卡片底緣＋固定的晶片區預留」決定，
- * 晶片區自身以同一個預留值為最大高度（超出者在區內捲動），因此舞台高度與晶片數量無關。
+ * 立繪舞台高度只取決於頭像卡片底緣：狀態晶片區是疊在場地上方的浮層（可蓋住場地頂端、區內遮罩並捲動），
+ * 不佔舞台高度。晶片數量、晶片區最大高度都不是 stageHeight 的輸入。
+ * （2026-11-01 前一版另外固定預留 48–104px 給晶片區，立繪因此整體縮小；已撤除。）
  */
-export const HUD_TRAY_MIN_PX = 48;
-export const HUD_TRAY_MAX_PX = 104;
+export const HUD_TRAY_MIN_PX = 96;
+export const HUD_TRAY_MAX_PX = 248;
 export const HUD_RESERVE_GAP_PX = 8;
 
-/** 晶片區預留（同時是晶片區的最大高度）：隨場地高度縮放，夾在上下限內。 */
-export function hudTrayReserve(fieldHeight: number): number {
+/** 晶片區浮層的最大高度（桌面約 4 列後捲動；手機場地矮則收斂到下限）。與立繪舞台高度無關。 */
+export function hudTrayMaxHeight(fieldHeight: number): number {
   const h = Number.isFinite(fieldHeight) ? fieldHeight : 0;
-  return Math.min(HUD_TRAY_MAX_PX, Math.max(HUD_TRAY_MIN_PX, Math.round(h * 0.18)));
+  return Math.min(HUD_TRAY_MAX_PX, Math.max(HUD_TRAY_MIN_PX, Math.round(h * 0.34)));
 }
 
-/** 場地頂端到卡片底緣的距離（已量測）→ 立繪需讓出的高度。chipCount 刻意不是參數。 */
-export function hudFieldReserve(cardBottomFromFieldTop: number, fieldHeight: number): number {
-  return Math.max(0, Math.ceil(cardBottomFromFieldTop + HUD_RESERVE_GAP_PX + hudTrayReserve(fieldHeight)));
+/** 場地頂端到卡片底緣的距離（已量測）→ 立繪需讓出的高度。 */
+export function hudFieldReserve(cardBottomFromFieldTop: number): number {
+  return Math.max(0, Math.ceil(cardBottomFromFieldTop + HUD_RESERVE_GAP_PX));
 }
 
 /** 立繪舞台高度（與 BattleScreen 的 fh 同式）。 */

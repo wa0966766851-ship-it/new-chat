@@ -426,7 +426,13 @@ export function finalOdbOperations(addTimer: (ctx: BattleEventContext, side: Sid
       const side = sideOf(ctx, p.side), elf: any = elfOf(ctx, side), updates: any = { id: elf.id };
       if (p.stages) updates.statStages = Object.fromEntries(Object.keys(elf.statStages || {}).map(key => [key, 0]));
       if (p.shields) { updates.shield = 0; updates.barrier = 0; }
-      if (p.fieldRounds) (side === ctx.actor ? ctx.setPlayerState : ctx.setOpponentState)(`${side}_turnsInBattle`, 0);
+      if (p.fieldRounds) {
+        // 「當前在場回合數紀錄」有兩個讀者：舊的 `${side}_turnsInBattle` 與符文附加讀的 fieldEntryTurn（在場起算回合）。
+        // 兩者一起歸零：重置發生在本回合，下一個回合開始時算「在場第1回合」，所以起算回合＝下回合。
+        const set = side === ctx.actor ? ctx.setPlayerState : ctx.setOpponentState;
+        set(`${side}_turnsInBattle`, 0);
+        set('fieldEntryTurn', (Number(ctx.roundNumber) || 0) + 1);
+      }
       if (p.clearUses) for (const t of (side === 'p1' ? ctx.p1Timers : ctx.p2Timers) || []) if (t.kind === 'use_counter' && (!t.ownerBattleId || t.ownerBattleId === idOf(elf))) {for(let i=0;i<t.remaining;i++)ctx.consumeTimer?.(side,t.id);}
       ctx.updateElf(side, updates); return true;
     },

@@ -53,6 +53,8 @@ export enum EffectTiming {
   /** 主動切換精靈時，在 ON_SWITCH_OUT 之前派發給下場精靈魂印。data: { incomingElf } */
   BEFORE_SWITCH_OUT = "BEFORE_SWITCH_OUT",
   ON_SWITCH_OUT = "ON_SWITCH_OUT",
+  /** 對手切換精靈下場時派發給己方在場精靈的魂印。data: { switchingSide } */
+  OPPONENT_SWITCH = "OPPONENT_SWITCH",
   /** 受到傷害後（同 AFTER_DAMAGE 的 payload；damageType 一律正規化）。另會通知部分「對手受擊」觀察者。 */
   ON_DAMAGED = "ON_DAMAGED",
   OPPONENT_DAMAGE = "OPPONENT_DAMAGE",

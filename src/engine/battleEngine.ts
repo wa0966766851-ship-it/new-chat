@@ -2102,8 +2102,8 @@ case 'switch': {
       p2Timers: mergeById(mid.p2Timers || [], nextP2Timers, live.p2Timers || []),
       p1: finalP1,
       p2: finalP2,
-      p1RegistryState: { ...tickGenericTurns(live.p1RegistryState, mid.p1RegistryState), switchedThisTurn: false },
-      p2RegistryState: { ...tickGenericTurns(live.p2RegistryState, mid.p2RegistryState), switchedThisTurn: false },
+      p1RegistryState: { ...tickGenericTurns(live.p1RegistryState, mid.p1RegistryState), switchedThisTurn: false, itemUsedThisTurn: false },
+      p2RegistryState: { ...tickGenericTurns(live.p2RegistryState, mid.p2RegistryState), switchedThisTurn: false, itemUsedThisTurn: false },
       turnNumber: mid.turnNumber + 1,
       p1SelectedSkill: null,
       p2SelectedSkill: null,
@@ -2368,7 +2368,7 @@ case 'switch': {
             const oppElf = syncStateRef.current[oppSideActual];
             if (oppElf && SoulMarkRegistry[oppElf.name]) {
               const oppCtx = getBattleEventContext(oppSideActual, false, mIdx);
-              SoulMarkRegistry[oppElf.name](oppCtx, "OPPONENT_SWITCH" as any, { switchingSide: s });
+              SoulMarkRegistry[oppElf.name](oppCtx, EffectTiming.OPPONENT_SWITCH, { switchingSide: s });
             }
           }
           continue;
@@ -4258,7 +4258,7 @@ syncStateRef.current = { ...syncStateRef.current, [actorRegKey]: { ...rg, attack
       const oppElf = syncStateRef.current[oppSide];
       if (oppElf && SoulMarkRegistry[oppElf.name]) {
         const oppCtx = getBattleEventContext(oppSide, false, 0);
-        SoulMarkRegistry[oppElf.name](oppCtx, "OPPONENT_SWITCH" as any, { switchingSide: side });
+        SoulMarkRegistry[oppElf.name](oppCtx, EffectTiming.OPPONENT_SWITCH, { switchingSide: side });
       }
       
       if (syncStateRef.current.phase === "forced_switch_both") {
@@ -4269,6 +4269,8 @@ syncStateRef.current = { ...syncStateRef.current, [actorRegKey]: { ...rg, attack
     } else {
       dispatch({ type: 'SET_SKILL', side, skill: { name: "切換精靈", type: "無", category: "屬性", power: 0, pp: 0, priority: 6 } });
       dispatch({ type: 'SET_SWITCH_INDEX', side, index });
+      // 2026-11-02：記錄「本回合已選切換」，供 UI 禁用其他精靈按鈕。
+      dispatch({ type: 'UPDATE_REGISTRY_STATE', side, state: { switchPickedRound: syncStateRef.current.roundNumber ?? syncStateRef.current.turnNumber } });
       if (side === 'p1') {
         if (battleMode === "PVE") {
           void chooseP2AndResolve();
@@ -4291,6 +4293,11 @@ syncStateRef.current = { ...syncStateRef.current, [actorRegKey]: { ...rg, attack
     if (catalogItem.pickTarget && !(item.picked && findBagElf({ p1: curForItems.p1Team, p2: curForItems.p2Team }, item.picked.side, item.picked.battleId))) {
       pushEffect({ type: 'log', side, data: { text: '請先選擇背包內未消逝的精靈。', type: 'effect' } }); return;
     }
+    // 2026-11-02：本回合已使用過道具 → 擋下（避免連續吃藥白吃）。
+    if (curForItems[`${side}RegistryState`]?.itemUsedThisTurn === true) {
+      pushEffect({ type: 'log', side, data: { text: '🚫 本回合已經使用過道具，無法再次使用！', type: "system" } });
+      return;
+    }
     if (!hasBattleItem(curForItems[`${side}ItemInventory`], item.id)) {
       pushEffect({ type: 'log', side, data: { text: '該藥劑已用盡。', type: 'effect' } }); return;
     }
@@ -4307,6 +4314,9 @@ syncStateRef.current = { ...syncStateRef.current, [actorRegKey]: { ...rg, attack
       props.onPotionUsed?.();
     }
     dispatch({ type: 'SET_ITEM', side, item: catalogItem.pickTarget ? { ...catalogItem, picked: item.picked } : item });
+    // 2026-11-02：記錄「本回合已選道具」，供 UI 禁用其他藥劑按鈕。
+    dispatch({ type: 'UPDATE_REGISTRY_STATE', side, state: { itemPickedRound: syncStateRef.current.roundNumber ?? syncStateRef.current.turnNumber } });
+    dispatch({ type: 'UPDATE_REGISTRY_STATE', side, state: { itemUsedThisTurn: true } });
     dispatch({ type: 'SET_SKILL', side, skill: { name: "使用道具", type: "無", category: "屬性", power: 0, pp: 0, priority: 6 } });
     
     if (side === 'p1') {

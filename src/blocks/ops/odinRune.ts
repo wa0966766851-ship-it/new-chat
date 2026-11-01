@@ -49,6 +49,9 @@ export function odinActionIssue(op: string, p: any): string | null {
 export function odinOperations(helpers: { liveElf: (ctx: BattleEventContext, side: S) => any }) {
   return {
     rune_attach:(ctx:BattleEventContext,p:any):boolean=>{
+      // 魂印持有者不在場（場下）時不得為任何人附加符文。
+      const holderActive=helpers.liveElf(ctx,ctx.actor);
+      if(!ctx.self||idOf(ctx.self)!==idOf(holderActive))return false;
       const side:S=p.side==='opp'?ctx.targetSide:ctx.actor;
       const elf=helpers.liveElf(ctx,side);
       const holderCtx=side===ctx.actor?ctx:ctx.contextForElf?.(side,elf);
