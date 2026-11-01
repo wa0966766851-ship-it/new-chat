@@ -18,6 +18,7 @@
 
 import React from "react";
 import { ring, rule, blade, sparkle, makeHalftone, rng, TAU, PAPER_PALETTE } from "../design/sketchStroke";
+import { isJsdom } from "./destiny/destinyViewPref";
 
 export interface PaperDestinyBackdropProps {
   /** 目前階段：intro / pulling / reveal / ban / pick / ready，用於改變圓環速度 */
@@ -38,7 +39,7 @@ export function PaperDestinyBackdrop({ phase = "intro", revealed = 0, total = 12
 
   React.useEffect(() => {
     const canvas = canvasRef.current;
-    if (!canvas) return;
+    if (!canvas || isJsdom()) return;
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
 

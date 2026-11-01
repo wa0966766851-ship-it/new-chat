@@ -65,8 +65,10 @@ try {
     assert.equal(document.querySelectorAll('[data-battle-popup]').length, 0, '收束後不殘留數字');
     if (!fast) {
       const numbers = [...seen.values()];
-      assert.equal(numbers.filter(n => n.type === 'skill').length, 1 + (group ? 1 : extraCount),
-        '一般額外行動按筆播放；單筆run內六段邏輯只播一次，不是六次連擊動畫');
+      // 2026-11 擁有者裁定：同一行動窗口內連續的額外行動合併為「一次」演出（一次動畫、一筆合併紅字）；
+      // 單筆 run 內多段邏輯當然也只播一次，不是六次連擊動畫。
+      assert.equal(numbers.filter(n => n.type === 'skill').length, 1 + ((group || extraCount > 0) ? 1 : 0),
+        '同一窗口的額外行動合併為一次演出；單筆run內六段邏輯也只播一次');
       assert.ok(numbers.filter(n => n.type === 'true').length === 1 && numbers.some(n => n.type === 'true' && n.text.includes('-12')), 'DSH 20261020 規格：出手期間兩筆真傷合併為一筆白字（即時通道但不逐筆串行），數字不遺漏');
       assert.ok(numbers.some(n => n.type === 'fixed' && n.text.includes('-10')), '明確類型優先，標籤不得把固定傷害變成真傷');
       assert.ok(!numbers.some(n => /吸取|汲取/.test(n.text)), '演出隱藏吸取／汲取用語，日誌仍可保留');

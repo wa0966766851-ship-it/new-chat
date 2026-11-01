@@ -33,7 +33,7 @@ export const BATTLE_ANIMATION_EVENT = 'battle-animation-update';
 export const BATTLE_ANIMATION_OPTIONS: { key: 'skill'|'damage'|'extra'|'potion'|'roundEnd'|'intro'; label: string; tip: string }[] = [
   { key: 'skill', label: '出招動畫', tip: '使用技能時的攻擊前移／屬性亮光' },
   { key: 'damage', label: '技能傷害', tip: '攻擊技能與X系技能傷害的紅字，出招當下顯示' },
-  { key: 'extra', label: '額外行動', tip: '紅字之後多播一次，不論額外行動幾次都合併為一次' },
+  { key: 'extra', label: '額外行動', tip: '同一行動窗口的額外行動合併為一次：先播主戰精靈的額外行動動畫，再一併跳紅字' },
   { key: 'potion', label: '吃藥回血', tip: '藥劑回血綠字黃邊，使用當下顯示' },
   { key: 'roundEnd', label: '回合末結算', tip: '固定／百分比傷害、回血、真實傷害統一在回合結束依序顯示' },
   { key: 'intro', label: '入戰動畫', tip: '進入戰鬥時的雙方登場過場，可點擊或按任意鍵跳過；重來時播放縮短版' },

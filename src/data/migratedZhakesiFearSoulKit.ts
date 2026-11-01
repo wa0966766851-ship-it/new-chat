@@ -26,12 +26,13 @@
 //      （原文無此條件；舊 handler 把整段包在 lostHp>0 內）。
 //   3. 「等同於自身恢復量」以實際恢復量結算（dmg_from_last 讀 heal 結算量）；舊 handler 以請求量結算，
 //      禁療時仍會造成百分比傷害——原文語意為恢復量，未恢復即無傷害。
-//   4. 「每次己方精靈登場…提高1層」沿用舊 handler 的回合級偵測（回合開始比對對手在場身分），但於
-//      battle_start 先記錄對手首發基準——首回合選擇階段的換人也能計數（舊 handler 首次檢查在
-//      回合一開始，首回合換人先於基準建立、永不計數）。主動換人於選擇階段完成，回合開始即比出差異；
-//      中途死亡換人於下次回合開始偵測（與舊 handler 相同）。
-//   另：原句「每次己方精靈登場或受到害怕狀態時提高1層」的「受到害怕」半句——恐懼之種持有方受害怕
-//   必被免疫（免疫即未附加成功），舊 handler 亦未實作該半句，維持不實作（已寫進時點規則待確認區）。
+//   4. 「每次己方精靈登場或受到害怕狀態時提高1層」（DSH 20261101 決議：事件當下立即疊層，不等回合開始）：
+//      · 登場：team_entrance（opponent_entered 節點）＋ event_on_opp 條件——對手方任何登場（主動換人、死亡換人）
+//        在登場事件當下立即 +1 層；舊 handler 的回合級輪詢（opp_active_swap）不再使用。
+//      · 受到害怕：team_before_status ＋ event_status 害怕 ＋ event_on_opp——對手方每次被附加害怕（持有方必免疫，
+//        故取「附加前」事件，含被免疫的那一次）立即 +1 層。
+//      · 開局首發登場（戰鬥開始序列內，登場事件帶 opening 旗標）不疊層：種下時的 1 層即代表它。
+//      · 恐懼之種於「戰鬥開始時」種下（battle_start，與無為龍者／無極聖武的戰鬥開始效果同節點）。
 import type { KitEntry } from '../effects/effectSystem.schema';
 import { action as a } from './reviewedSequenceSkillKits';
 
@@ -58,6 +59,31 @@ const seedProgram = (mode: 'set' | 'add') => act('mark_program', {
   guaranteedMaxHpDamageChance: 0.2, guaranteedMaxHpDamageChancePerStack: 0.02,
 }, '恐懼之種');
 
+/**
+ * 疊層／轉生共用本體（事件當下立即結算）。pre 快照杜絕「先疊層又轉生」的連鎖誤觸：
+ *   層數未達轉生門檻 → +1 層（每層保底機率 +2%，mark_program 寫入時按層數折算）；
+ *   達轉生門檻 → 移除恐懼之種、種下恐懼之花。
+ */
+const seedStackBody = (extraCond: any[] = []) => [
+  { pre: true, cond: [
+    c('event_on_opp', { afterOpening: true }, '事件主體為對手方（開局首發不計）'), ...extraCond,
+    c('has_mark', { side: 'opp', name: '恐懼之種' }, '對手持有恐懼之種'),
+    c('mark_count', { side: 'opp', id: 'fear_seed', op: '低於', amount: 4 }, '層數未達轉生門檻'),
+  ], acts: [seedProgram('add')] },
+  { pre: true, cond: [
+    c('event_on_opp', { afterOpening: true }, '事件主體為對手方（開局首發不計）'), ...extraCond,
+    c('has_mark', { side: 'opp', name: '恐懼之種' }, '對手持有恐懼之種'),
+    c('mark_count', { side: 'opp', id: 'fear_seed', op: '不低於', amount: 4 }, '層數達轉生門檻'),
+  ], acts: [
+    act('resource_mark_remove', { id: 'fear_seed', side: 'opp', scope: 'team' }, '移除恐懼之種'),
+    act('mark_program', {
+      id: 'fear_flower', name: '恐懼之花', displayChar: '花', unit: '株', description: FLOWER_MARK_DESC,
+      side: 'opp', scope: 'team', mode: 'set', count: 1, maxCount: 1, persistsOffField: true, rules: [],
+      nonTrueDamageDealtMultiplier: 0.5, nonTrueDamageTakenMultiplier: 2, guaranteedMaxHpDamageChance: 0.5,
+    }, '恐懼之花'),
+  ] },
+];
+
 export const MIGRATED_ZHAKESI_FEAR_SOUL_KIT = {
   kind: 'soul' as const,
   elfIds: ['5025'],
@@ -65,38 +91,28 @@ export const MIGRATED_ZHAKESI_FEAR_SOUL_KIT = {
   description: raw,
   kit: [
     // 0. 戰鬥開始：為對手種下恐懼之種（開局 1.1 對雙方所有存活背包持有者派發；在場或場下皆生效）
-    entry('battle_start', 'battle_start', '戰鬥開始時：為對手種下恐懼之種（並記錄對手在場精靈基準）', [
-      { acts: [seedProgram('set'), act('opp_active_swap', {}, '記錄對手在場精靈基準')] },
+    entry('battle_start', 'battle_start', '戰鬥開始時：為對手種下恐懼之種', [
+      { acts: [seedProgram('set')] },
     ], 0),
     // 1. 每回合（背包內存活或在場；team_round_start——在場與場下持有者唯一共同回合節點）：
     //    吸取敵我雙方所有精靈 20 點體力上限附加給自身（最多吸取至 1）；
-    //    恐懼之種：對手在場精靈更換（主動換人於選擇階段完成、回合開始即比出差異；死亡換人下次回合開始偵測）
-    //    → 未達轉生門檻 +1 層（每層保底機率 +2%，mark_program 寫入時按層數折算）；
-    //    達轉生門檻 → 移除恐懼之種、種下恐懼之花（pre 快照杜絕「先疊層又轉生」的連鎖誤觸）；
     //    恐懼之花：每回合開始令在場精靈進入害怕狀態（live 讀印記——轉生當回合即生效；
     //    恐懼之花本身擋附加異常，此附加由引擎讀取端如舊 handler 般被擋下，維持原行為）。
-    entry('round_start', 'team_round_start', '每回合吸取敵我雙方所有精靈20點體力上限附加給自身，最多吸取至該精靈體力上限為1；恐懼之種每次己方精靈登場時提高1層，每有1層則機率提高2%，最高5層達到時轉變為恐懼之花；恐懼之花每回合開始時令在場精靈進入害怕狀態', [
+    entry('round_start', 'team_round_start', '每回合吸取敵我雙方所有精靈20點體力上限附加給自身，最多吸取至該精靈體力上限為1；恐懼之花每回合開始時令在場精靈進入害怕狀態', [
       { acts: [a('maxhp_absorb_all', { amount: 20, floor: 1 })] },
-      { acts: [act('opp_active_swap', {}, '對手在場精靈更換檢查')] },
-      { pre: true, chain: 'success', cond: [
-        c('has_mark', { side: 'opp', name: '恐懼之種' }, '對手持有恐懼之種'),
-        c('mark_count', { side: 'opp', id: 'fear_seed', op: '低於', amount: 4 }, '層數未達轉生門檻'),
-      ], acts: [seedProgram('add')] },
-      { pre: true, chain: 'success', cond: [
-        c('has_mark', { side: 'opp', name: '恐懼之種' }, '對手持有恐懼之種'),
-        c('mark_count', { side: 'opp', id: 'fear_seed', op: '不低於', amount: 4 }, '層數達轉生門檻'),
-      ], acts: [
-        act('resource_mark_remove', { id: 'fear_seed', side: 'opp', scope: 'team' }, '移除恐懼之種'),
-        act('mark_program', {
-          id: 'fear_flower', name: '恐懼之花', displayChar: '花', unit: '株', description: FLOWER_MARK_DESC,
-          side: 'opp', scope: 'team', mode: 'set', count: 1, maxCount: 1, persistsOffField: true, rules: [],
-          nonTrueDamageDealtMultiplier: 0.5, nonTrueDamageTakenMultiplier: 2, guaranteedMaxHpDamageChance: 0.5,
-        }, '恐懼之花'),
-      ] },
       { cond: [c('has_mark', { side: 'opp', name: '恐懼之花' }, '對手持有恐懼之花')], live: true, acts: [
         act('status', { side: 'opp', status: '害怕', turns: 1, chance: 100 }, '恐懼之花·害怕'),
       ] },
     ], 1),
+    // 1a. 恐懼之種「每次己方精靈登場…提高1層」（己方＝持有種子的對手方）：登場事件當下立即疊層（出戰背包觀察者；
+    //     主動換人、死亡換人、戰鬥開始後的任何登場皆同）。層數達轉生門檻時轉為恐懼之花。
+    entry('opponent_entered', 'team_entrance', '恐懼之種每次己方精靈登場時提高1層，每有1層則機率提高2%，最高5層達到時轉變為恐懼之花', [
+      ...seedStackBody(),
+    ], 4),
+    // 1b. 恐懼之種「每次…受到害怕狀態時提高1層」：對手方（種子持有方）每次被附加害怕（含被免疫的那一次）當下立即疊層。
+    entry('before_status_apply', 'team_before_status', '恐懼之種每次受到害怕狀態時提高1層，每有1層則機率提高2%，最高5層達到時轉變為恐懼之花', [
+      ...seedStackBody([c('event_status', { statuses: ['害怕'] }, '本次為害怕')]),
+    ], 5),
 
     // 2. 回合開始，自身滿體力（在場；round_start 對場下持有者不派發＝舊 handler 的在場閘門）：
     //    令對手 100% 害怕；未觸發（被免疫／抵抗）→ 消除雙方能力上升、下降狀態與回合類效果。

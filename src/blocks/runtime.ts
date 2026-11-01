@@ -1,4 +1,5 @@
 import {ownerLinkOperations,ownerLinkCondition} from './ops/ownerLinks';
+import {extraElfLifecycleOperations,extraElfLifecycleCondition} from './ops/extraElfLifecycle';
 import {resourcePanelOperations} from '../effects/resourcePanelOperations';
 import {supportOperations,consumedHealthAmount} from '../effects/mechSupportLifecycle';
 import {portableSkillCapabilities} from '../battle/portableSkillMarks';
@@ -87,7 +88,7 @@ import { odinOperations } from './ops/odinRune';
 import { cassiusShanOperations } from './ops/cassiusShan';
 import { mechOperations } from './ops/mech';
 import { ppAbsorbOperations } from './ops/ppAbsorb';
-import { fearSeedOperations } from './ops/fearSeed';
+import { fearSeedOperations, fearSeedCondition } from './ops/fearSeed';
 import { rosterStatsOperations } from './ops/rosterStats';
 import { group1Operations } from './ops/group1';
 import { finalExtraTraitOperations } from './ops/finalExtraTraits';
@@ -183,6 +184,8 @@ function cmp(a: number, op: string, b: number): boolean {
 // ───────── 條件 ─────────
 export function evalCond(ctx: BattleEventContext, c: Cond, st: RunState): boolean | undefined {
   const linkCondition=ownerLinkCondition(ctx,c);if(linkCondition!==undefined)return linkCondition;
+  const extraCondition=extraElfLifecycleCondition(ctx,c);if(extraCondition!==undefined)return extraCondition;
+  const fearCondition=fearSeedCondition(ctx,c);if(fearCondition!==undefined)return fearCondition;
   const companionCondition = canEvalCond(ctx, c);
   if (companionCondition !== undefined) return companionCondition;
   const finalCondition = finalOdbEvalCond(ctx,c,st);
@@ -217,7 +220,7 @@ export function evalCond(ctx: BattleEventContext, c: Cond, st: RunState): boolea
     case 'hp_value':return cmp(pick(p.side).currentHp,p.op,p.amount);
     case 'alive':return !checkElfDead(pick(p.side));
     case "hp_cmp": { const a = pick(p.side), b = p.side === "self" ? opp : self; return cmp(a.currentHp, p.op, b.currentHp); }
-    case "field_shield": return [self,opp].some(e => p.absent ? !(Number(e?.shield)>0) : Number(e?.shield)>0);
+    case "field_shield": return p.absent ? [self,opp].every(e => !(Number(e?.shield)>0)) : [self,opp].some(e => Number(e?.shield)>0); // absent＝雙方都沒有護盾（原本「任一方沒有」會在對手沒盾時誤判）
     case "shield": { const e = pick(p.side); const r = ((e?.shield || 0) + (e?.barrier || 0)) > 0; return p.neg ? !r : r; }
     case "hp_full": { const e = pick(p.side); return !!e && e.currentHp >= e.maxHp; }
     case "no_skill_dmg": return ctx.getPlayerState(p.kind === "攻擊" ? "blkAttackDmgTakenRound" : "blkSkillDmgTakenRound") !== (ctx.roundNumber ?? 0);
@@ -1358,7 +1361,9 @@ export const OPS: Record<string, OpFn> = {
   stop_status_tick:(_ctx,_p,st)=>{const data=st.event?.data?.effectEventData||st.event?.data;if(!data?.status)return false;data.skipTick=true;return true;},
   stat_protect_turns: (ctx, p, st) => { setTurnKey(ctx, ctx.actor, st, "能力提升不可消除", { statBoostUnclearableTurns: Math.max(p.turns, Number(ctx.getPlayerState("statBoostUnclearableTurns")) || 0) }, "statBoostUnclearableTurns"); return true; },
   stage_guard_turns:(ctx,p,st)=>{addBlockTimer(ctx,ctx.actor,p.kind==='up'?'能力提升不可消除或吸取':'能力下降不可解除或反轉',p.turns,'turns',{stageGuard:p.kind},false,isSkillCtx(st)?'turn_effect':'round_counter',true);return true;},
-  ignore_next: (ctx, p) => { if (p.what !== "攻擊免疫") return false; ctx.setPlayerState("ignoreAttackImmunityNext", true); ctx.addLog("⚔️ 下次攻擊技能無視攻擊免疫！", "effect"); return true; },
+  ignore_next: (ctx, p) => {
+    if (p.what === "傷害限制") { ctx.setPlayerState("ignoreDamageLimitNext", true); ctx.addLog("⚔️ 下次攻擊技能無視傷害限制！", "effect"); return true; }
+    if (p.what !== "攻擊免疫") return false; ctx.setPlayerState("ignoreAttackImmunityNext", true); ctx.addLog("⚔️ 下次攻擊技能無視攻擊免疫！", "effect"); return true; },
   heal_reduce_turns: (ctx, p, st) => {
     ctx.addTimerTo(ctx.targetSide, { id: `heal_reduce_${ctx.skill?.name || ctx.self?.name}`, name: `恢復效果-${Math.round(p.ratio * 100)}%`, kind: isSkillCtx(st) ? "turn_effect" : "round_counter",
       source: "skill" as any, remaining: p.turns, tickAt: "round_end", stackRule: "refresh", payload: { recoveryReductionPercent: p.ratio } } as any, ctx.moveIndex === 1);
@@ -1526,7 +1531,8 @@ export const OPS: Record<string, OpFn> = {
       displayChar: p.name[0],
       description: def.map(c => c.raw.replace(/^>\s*/, "")).join("\n"),
       unit: "回合",
-      remainingRounds: p.turns,
+      // mark_duration 只寫了 blkTurns 時也要有 remainingRounds，否則回合數會被當成「層」顯示。
+      remainingRounds: p.turns ?? eff.blkTurns,
       clearable: false,
       triggerNode: "round_end",
       polarity: "negative",
@@ -1654,6 +1660,7 @@ export const OPS: Record<string, OpFn> = {
   ...shieldMarkOperations({ liveElf, addBlockTimer, runAct: (ctx,act,st)=>runAct(ctx,act,st) }),
   ...canOperations({ liveElf }),
   ...brinkkOperations({ liveElf }),
+  ...extraElfLifecycleOperations({ runAct: (ctx,act,st)=>runAct(ctx,act,st), killExtraElf: (ctx,side,extra,data)=>!!(ctx as any).killExtraElf?.(side,extra,data) }),
   ...odinOperations({ liveElf }),
   ...cassiusShanOperations({ liveElf, addBlockTimer, runAct }),
   ...mechOperations({ liveElf,runAct }),
@@ -1696,8 +1703,11 @@ export function surviveAt1(ctx: BattleEventContext) {
 
 // ───────── 持續效果（回合類，可被消除） ─────────
 export function addBlockTimer(ctx: BattleEventContext, side: S, name: string, n: number, mode: "turns" | "uses", payload: Record<string, any>, pendingActivation = false, kind?: "turn_effect" | "round_counter", benefitThisTurn = false, scope: 'elf' | 'team' = 'elf',timerId?:string) {
-  const sourceName = kind === 'round_counter' ? ctx.self?.soulMark?.name || ctx.self?.name : ctx.skill?.name;
-  const presentation = makeEffectPresentation({ block: payload }, sourceName, name === '持續效果' ? undefined : name);
+  // 來源名稱：技能容器取技能名；魂印／特質容器（recoveryOrigin 由 runAct 依 sourceKind 包入）與其他回合計數取魂印名；永不留空。
+  const container = (ctx as any).recoveryOrigin?.kind;
+  const passive = kind === 'round_counter' || container === 'soul' || container === 'trait';
+  const sourceName = passive ? ctx.self?.soulMark?.name || ctx.self?.name : ctx.skill?.name || ctx.self?.soulMark?.name || ctx.self?.name;
+  const presentation = makeEffectPresentation({ block: payload }, sourceName, name === '持續效果' ? undefined : name, { name });
   ctx.addTimerTo(side, {
     // 同來源同效果重複附加時刷新回合數（不疊加）
     id: timerId || `blk_${side}_${ctx.skill?.name || ctx.self?.name || "src"}_${name}_${payload.trig || ""}${timerProgramIdentity(payload)}`,

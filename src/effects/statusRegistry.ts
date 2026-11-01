@@ -350,6 +350,8 @@ export const StatusRegistry: Record<string, StatusRegistryEntry> = {
   '山神守護': {
     name: '山神守護',
     // 回合數正常遞減（依描述「3回合的山神守護」）；另有「累計2次技能傷害」的提前解除條件。
+    // 預留「關閉回合數遞減」開關（預設關閉＝照常遞減）：需要時在此 categories 加入 'BOSS_ONLY'，
+    // 沿用 battle/statusLifecycle.advanceStatusEffect 既有 boss 分支（不扣回合、不受延長），不另造機制。
     categories: ['AUXILIARY'],
     description: '附屬類異常；處於該異常狀態則受到技能傷害降低至原始傷害1/10，累計受到2次技能傷害時解除該異常',
     mechanics: [

@@ -154,22 +154,26 @@ try {
   saved[0].skills = saved[0].skills.slice().reverse();
   saved[0].evs = { hp: 17, atk: 19, def: 0, spatk: 0, spdef: 0, speed: 23 };
   localStorage.setItem('seer_last_used_p1_team', JSON.stringify({ team: saved, starterId: 'saved-1' }));
+  // 2026-10-30 起保存陣容只決定順序與實例身分，配置（努力值／刻印／技能順序）一律取目前倉庫（prepareSavedBattleRoster）；
+  // 因此「舊配置被帶回」不再成立，改為斷言：身分與順序保留、配置等於倉庫、且不再等於舊保存內容。
+  const warehouse0 = DEFAULT_ELVES[0];
+  assert.notDeepEqual(saved[0].evs, warehouse0.evs); assert.notDeepEqual(saved[0].skills.map((s: any) => s.name), warehouse0.skills.map((s: any) => s.name));
   const mountStart = () => React.createElement(GameDataProvider, null, React.createElement(Start, { onStartBattle: () => {}, onNavigateToCustom: () => {} }));
   await act(async () => root.render(mountStart()));
   const tool = (side: string) => document.querySelector(`[aria-label="${side} 陣容工具"]`)!;
   assert.equal(tool('P1').querySelectorAll('button').length, 5); assert.equal(tool('P2').querySelectorAll('button').length, 5);
   await click(tool('P1'), '保存當前');
   const p1 = JSON.parse(localStorage.getItem('seer_last_used_p1_team')!);
-  assert.equal(p1.starterId, p1.team[1].battleId); assert.deepEqual(p1.team[0].evs, saved[0].evs);
+  assert.equal(p1.starterId, p1.team[1].battleId); assert.deepEqual(p1.team[0].evs, warehouse0.evs, '配置取目前倉庫'); assert.notDeepEqual(p1.team[0].evs, saved[0].evs);
   await click(tool('P2'), '複製 P1'); await click(tool('P2'), '保存當前');
   const p2 = JSON.parse(localStorage.getItem('seer_last_used_p2_team')!);
-  assert.equal(p2.starterId, p2.team[1].battleId); assert.deepEqual(p2.team[0].evs, saved[0].evs);
+  assert.equal(p2.starterId, p2.team[1].battleId); assert.deepEqual(p2.team[0].evs, warehouse0.evs);
   assert.notEqual(p1.team[0].battleId, p2.team[0].battleId);
-  assert.deepEqual(p2.team[0].inscriptions, saved[0].inscriptions);
-  assert.deepEqual(p2.team[0].skills.map((s: any) => s.name), saved[0].skills.map((s: any) => s.name));
+  assert.deepEqual(p2.team[0].inscriptions, warehouse0.inscriptions);
+  assert.deepEqual(p2.team[0].skills.map((s: any) => s.name), warehouse0.skills.map((s: any) => s.name));
   await click(tool('P2'), '隨機部署'); await click(tool('P2'), '載入紀錄'); await click(tool('P2'), '保存當前');
   const restored = JSON.parse(localStorage.getItem('seer_last_used_p2_team')!);
-  assert.equal(restored.team.length, 2); assert.deepEqual(restored.team[0].evs, saved[0].evs);
+  assert.equal(restored.team.length, 2); assert.deepEqual(restored.team[0].evs, warehouse0.evs);
   assert.equal(restored.starterId, restored.team[1].battleId);
   await click(tool('P1'), '複製 P2'); await click(tool('P1'), '保存當前');
   assert.equal(JSON.parse(localStorage.getItem('seer_last_used_p1_team')!).starterId,
@@ -179,6 +183,6 @@ try {
   await click(tool('P2'), '保存當前');
   const remounted = JSON.parse(localStorage.getItem('seer_last_used_p2_team')!);
   assert.equal(remounted.team.length, 2); assert.equal(remounted.starterId, remounted.team[1].battleId);
-  assert.deepEqual(remounted.team[0].inscriptions, saved[0].inscriptions);
+  assert.deepEqual(remounted.team[0].inscriptions, warehouse0.inscriptions);
   console.log('普通對戰彈窗、重來清空結果、特殊模式隔離、立繪備用來源、雙向複製／獨立保存／首發與配裝還原通過');
 } finally { await act(async () => root.unmount()); await server.close(); dom.window.close(); }

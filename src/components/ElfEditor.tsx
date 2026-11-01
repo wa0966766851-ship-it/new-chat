@@ -3,6 +3,7 @@ import { useState, useEffect, useMemo, lazy, Suspense } from "react";
 import type { ComponentProps } from "react";
 import { plainDescription } from '../utils/descFormat';
 import { EffectDescription } from './EffectDescription';
+import { RichDescription } from './RichDescription';
 import { TypeIcon, SkillTypeIcon } from "./SeerImages";
 import { skillDisplayType, skillDisplayTypeLabel } from '../utils/skillPresentation';
 import { ElfEditorDraftSummary, ElfEditorSectionNav, type EditorSection } from "./ElfEditorSections";
@@ -291,7 +292,7 @@ const KEYWORD_DETAILS: Record<string, string> = {
   "神游": "控制與衍化異常：無法行動，異常結束後轉化為 2-3 回合失神狀態。",
   "空定": "控制與衍化異常：無法行動，異常結束後轉化為 2-3 回合沉默狀態。",
   "漸凍": "附屬與衍化異常：異常結束後轉化為 2 回合冰封。（具備衍化屬性）",
-  "山神守護": "附屬類異常：每回合受到對手的攻擊傷害減少 80%。",
+  "山神守護": "附屬類異常：受到技能傷害降低至原始傷害1/10，累計受到2次技能傷害時解除。",
   "狂暴": "附屬類異常：造成傷害翻倍（大幅提升進攻壓迫）。",
   "神話": "附屬類異常：BOSS專屬。免疫能力下降、免疫異常狀態、PP無限、技能必中（黃色圖標）。",
   "免疫": "附屬類異常：免疫異常狀態，PP 無限（藍色圖標）。",
@@ -2706,7 +2707,7 @@ export default function ElfEditor({ initialElf: suppliedElf, onSaveElf, onBack, 
                                             <Trash2 className="w-3.5 h-3.5" />
                                          </button>
                                       </div>
-                                      <p className="text-[10px] text-slate-400 whitespace-pre-wrap leading-relaxed mb-2">{eff.description}</p>
+                                      <RichDescription text={eff.description} compact className="text-[10px] text-slate-400 mb-2" />
                                       
                                       <div className="flex flex-col gap-1.5">
                                         {eff.notes && (

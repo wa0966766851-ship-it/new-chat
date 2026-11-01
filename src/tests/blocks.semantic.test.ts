@@ -667,6 +667,7 @@ t("星光·魔焰猩猩登場：為對手附加星火之灼", () => {
   const h = makeBlockContext({ id: elf.id, name: elf.name });
   runSoulProgram(h.ctx, getSoulProgram(elf), ["entrance"], {});
   assert.ok(h.marks.p2.some(mark => mark.name === "星火之灼" && mark.effects.blkTurns === 3));
+  assert.ok(h.marks.p2.some(mark => mark.name === "星火之灼" && mark.remainingRounds === 3), "mark_duration 的回合數同步寫入 remainingRounds（顯示為回合而非層）");
 });
 
 t("星光·魔焰猩猩物攻後：回血、等量百分比傷害與PP恢復皆生效", () => {
@@ -700,6 +701,7 @@ t("星光·麗莎布布登場：為對手附加星芳之纏", () => {
   const h = makeBlockContext({ id: elf.id, name: elf.name });
   runSoulProgram(h.ctx, getSoulProgram(elf), ["entrance"], {});
   assert.ok(h.marks.p2.some(mark => mark.name === "星芳之纏" && mark.effects.blkTurns === 3));
+  assert.ok(h.marks.p2.some(mark => mark.name === "星芳之纏" && mark.remainingRounds === 3), "mark_duration 的回合數同步寫入 remainingRounds（顯示為回合而非層）");
 });
 
 console.log(`\n${"=".repeat(40)}\n積木語意通過: ${pass}  失敗: ${fail}\n${"=".repeat(40)}`);

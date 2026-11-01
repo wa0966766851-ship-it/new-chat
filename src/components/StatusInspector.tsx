@@ -9,7 +9,7 @@ import { EffectDescription } from './EffectDescription';
 import { effectDefinitionEntries } from '../battle/effectSources';
 import { elfForViewer, hiddenFromViewer, UNKNOWN_ELF, maskViewerText, viewerMaskTermsForMode, type BattleViewMode } from '../battle/viewerPerspective';
 import { useBattleViewMode } from '../battle/viewerMode';
-import { activeEffectViews, visibleEffectSourceText } from '../battle/activeEffectViews';
+import { activeEffectViews, stateSignSourceText } from '../battle/activeEffectViews';
 import {statusCountClasses, type StatusCountTone} from '../battle/statusImmunityCount';
 import { getStatuses } from '../utils/battleHelpers';
 import { statusVisual, UNKNOWN_EFFECT_ICON } from '../battle/effectIcons';
@@ -81,11 +81,14 @@ export function getActiveEffects(side: "p1" | "p2", state: any, mode: BattleView
   const marks: Mark[] = side === "p1" ? (state.p1Marks || []) : (state.p2Marks || []);
   const timers: Timer[] = side === "p1" ? (state.p1Timers || []) : (state.p2Timers || []);
   const categories: Record<string, StateCategory> = { mark: '印記', turn: '回合類', round: '其他計時', count: '次數類', mechanism: '常駐', protection: '防護' };
-  for (const view of activeEffectViews(elf, marks, timers, (side === 'p1' ? state.p1RegistryState : state.p2RegistryState) || {}, visibleEffectSourceText(side === 'p1' ? state.p2 : state.p1, side === 'p1' ? 'p2' : 'p1', mode))) {
+  for (const view of activeEffectViews(elf, marks, timers, (side === 'p1' ? state.p1RegistryState : state.p2RegistryState) || {}, stateSignSourceText(side === 'p1' ? state.p1 : state.p2, side === 'p1' ? state.p2 : state.p1, side, mode))) {
     const metricIsStack = view.category === 'mark' || view.category === 'protection';
-    effects.push({ name: mask(view.label), desc: mask(view.description), category: categories[view.category], icon: view.icon, source: mask(view.source), tone: view.tone,
+    const both = view.category === 'mark' && view.layers !== undefined && view.turns !== undefined;
+    effects.push({ name: mask(view.sourceTag ? `${view.sourceTag}${view.label}` : view.label), desc: mask(view.note ? `${view.description}\n${view.note}` : view.description), category: categories[view.category], icon: view.icon, source: mask(view.source), tone: view.tone,
       polarity: view.polarity.toUpperCase() as ActiveEffect['polarity'],
-      ...(metricIsStack ? { stacks: view.value, stackUnit: view.unit } : { remaining: view.value, unit: view.unit as '回合' | '次' | undefined }) });
+      ...(both ? { stacks: view.layers, stackUnit: view.layerUnit, remaining: view.turns, unit: '回合' as const }
+        : view.pending ? { remaining: view.value, unit: view.unit as '回合' | '次' | undefined, ...(view.layers !== undefined ? { stacks: view.layers, stackUnit: '層' } : {}) }
+        : metricIsStack ? { stacks: view.value, stackUnit: view.unit } : { remaining: view.value, unit: view.unit as '回合' | '次' | undefined, ...(view.layers !== undefined ? { stacks: view.layers, stackUnit: '層' } : {}) }) });
   }
   return effects;
 }

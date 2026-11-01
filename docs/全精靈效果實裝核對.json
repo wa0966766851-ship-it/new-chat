@@ -2,13 +2,13 @@
   "schemaVersion": 2,
   "note": "parsed ≠ executable route ≠ semantic acceptance",
   "summary": {
-    "elves": 46,
-    "sourceRecords": 2188,
+    "elves": 47,
+    "sourceRecords": 2247,
     "presentationOnly": 0,
-    "clauses": 2188,
-    "parsed": 2188,
+    "clauses": 2247,
+    "parsed": 2247,
     "unparsed": 0,
-    "pending": 2121,
+    "pending": 2180,
     "partialEvidence": 0,
     "staleEvidence": 67,
     "fullyAccepted": 0
@@ -55759,6 +55759,45 @@
                 ]
               },
               "evidence": []
+            },
+            {
+              "index": 6,
+              "raw": "下場時剝離自身符文：恢復該技能全部PP值；每剝離1道激活符文則增加等同最大體力20%的體力值",
+              "trigger": "switch_out",
+              "parsed": true,
+              "explanation": false,
+              "unresolved": [],
+              "damage": null,
+              "semanticVerification": "pending",
+              "blocks": {
+                "conditions": [],
+                "statements": [
+                  {
+                    "acts": [
+                      {
+                        "label": "skill_marks_strip",
+                        "op": "skill_marks_strip",
+                        "p": {
+                          "zeroHighestMaxPp": false,
+                          "damageRatio": 0,
+                          "nonlethal": true,
+                          "restorePp": true,
+                          "hpRatio": 0.2,
+                          "side": "self"
+                        }
+                      }
+                    ]
+                  }
+                ]
+              },
+              "id": "5019:魂印:ᛏ:448ee67e6321:1",
+              "presentationOnly": false,
+              "execution": "authored-block-runtime",
+              "textCorrespondence": {
+                "state": "needs-source-review",
+                "files": []
+              },
+              "evidence": []
             }
           ]
         },
@@ -56281,6 +56320,45 @@
                 "files": [
                   "elf_source_files/elf_files/5019_眾神之父奧丁.txt"
                 ]
+              },
+              "evidence": []
+            },
+            {
+              "index": 6,
+              "raw": "下場時剝離自身符文：恢復該技能全部PP值；每剝離1道激活符文則增加等同最大體力20%的體力值",
+              "trigger": "switch_out",
+              "parsed": true,
+              "explanation": false,
+              "unresolved": [],
+              "damage": null,
+              "semanticVerification": "pending",
+              "blocks": {
+                "conditions": [],
+                "statements": [
+                  {
+                    "acts": [
+                      {
+                        "label": "skill_marks_strip",
+                        "op": "skill_marks_strip",
+                        "p": {
+                          "zeroHighestMaxPp": false,
+                          "damageRatio": 0,
+                          "nonlethal": true,
+                          "restorePp": true,
+                          "hpRatio": 0.2,
+                          "side": "self"
+                        }
+                      }
+                    ]
+                  }
+                ]
+              },
+              "id": "5019:專屬特性:ᛏ:448ee67e6321:1",
+              "presentationOnly": false,
+              "execution": "authored-block-runtime",
+              "textCorrespondence": {
+                "state": "needs-source-review",
+                "files": []
               },
               "evidence": []
             }
@@ -67416,7 +67494,7 @@
       "sourceFiles": [
         {
           "path": "elf_source_files/elf_files/5024_湮滅之主咤克斯.txt",
-          "sha256": "3bd14e73acdbebe59d7e6412ecc6ac6979692ff9b3de6eed77024cddefbdb4c3"
+          "sha256": "0f7b2d22177f37a99137be5e2ec97d4e72f6b3950e288de9e8faaa16a1d2cc0f"
         }
       ],
       "entries": [
@@ -70741,7 +70819,7 @@
           "clauses": [
             {
               "index": 0,
-              "raw": "戰鬥開始時：為對手種下恐懼之種（並記錄對手在場精靈基準）",
+              "raw": "戰鬥開始時：為對手種下恐懼之種",
               "trigger": "battle_start",
               "parsed": true,
               "explanation": false,
@@ -70774,28 +70852,25 @@
                           "unit": "層",
                           "id": "fear_seed"
                         }
-                      },
-                      {
-                        "label": "記錄對手在場精靈基準",
-                        "op": "opp_active_swap",
-                        "p": {}
                       }
                     ]
                   }
                 ]
               },
-              "id": "5025:魂印:懼:a956fe830da6:1",
+              "id": "5025:魂印:懼:6761d32cae26:1",
               "presentationOnly": false,
               "execution": "authored-block-runtime",
               "textCorrespondence": {
-                "state": "needs-source-review",
-                "files": []
+                "state": "text-fragment-found",
+                "files": [
+                  "elf_source_files/elf_files/5025_恐懼的化身咤克斯.txt"
+                ]
               },
               "evidence": []
             },
             {
               "index": 1,
-              "raw": "每回合吸取敵我雙方所有精靈20點體力上限附加給自身，最多吸取至該精靈體力上限為1；恐懼之種每次己方精靈登場時提高1層，每有1層則機率提高2%，最高5層達到時轉變為恐懼之花；恐懼之花每回合開始時令在場精靈進入害怕狀態",
+              "raw": "每回合吸取敵我雙方所有精靈20點體力上限附加給自身，最多吸取至該精靈體力上限為1；恐懼之花每回合開始時令在場精靈進入害怕狀態",
               "trigger": "team_round_start",
               "parsed": true,
               "explanation": false,
@@ -70820,14 +70895,52 @@
                   {
                     "acts": [
                       {
-                        "label": "對手在場精靈更換檢查",
-                        "op": "opp_active_swap",
-                        "p": {}
+                        "label": "恐懼之花·害怕",
+                        "op": "status",
+                        "p": {
+                          "chance": 100,
+                          "status": "害怕",
+                          "turns": 1,
+                          "side": "opp"
+                        }
                       }
-                    ]
-                  },
+                    ],
+                    "cond": [
+                      {
+                        "label": "對手持有恐懼之花",
+                        "c": "has_mark",
+                        "p": {
+                          "name": "恐懼之花",
+                          "side": "opp"
+                        }
+                      }
+                    ],
+                    "live": true
+                  }
+                ]
+              },
+              "id": "5025:魂印:懼:3229c1f81f0a:1",
+              "presentationOnly": false,
+              "execution": "authored-block-runtime",
+              "textCorrespondence": {
+                "state": "needs-source-review",
+                "files": []
+              },
+              "evidence": []
+            },
+            {
+              "index": 2,
+              "raw": "恐懼之種每次己方精靈登場時提高1層，每有1層則機率提高2%，最高5層達到時轉變為恐懼之花",
+              "trigger": "team_entrance",
+              "parsed": true,
+              "explanation": false,
+              "unresolved": [],
+              "damage": null,
+              "semanticVerification": "pending",
+              "blocks": {
+                "conditions": [],
+                "statements": [
                   {
-                    "chain": "success",
                     "acts": [
                       {
                         "label": "恐懼之種",
@@ -70854,6 +70967,13 @@
                     ],
                     "cond": [
                       {
+                        "label": "事件主體為對手方（開局首發不計）",
+                        "c": "event_on_opp",
+                        "p": {
+                          "afterOpening": true
+                        }
+                      },
+                      {
                         "label": "對手持有恐懼之種",
                         "c": "has_mark",
                         "p": {
@@ -70875,7 +70995,6 @@
                     "pre": true
                   },
                   {
-                    "chain": "success",
                     "acts": [
                       {
                         "label": "移除恐懼之種",
@@ -70910,6 +71029,13 @@
                     ],
                     "cond": [
                       {
+                        "label": "事件主體為對手方（開局首發不計）",
+                        "c": "event_on_opp",
+                        "p": {
+                          "afterOpening": true
+                        }
+                      },
+                      {
                         "label": "對手持有恐懼之種",
                         "c": "has_mark",
                         "p": {
@@ -70929,35 +71055,10 @@
                       }
                     ],
                     "pre": true
-                  },
-                  {
-                    "acts": [
-                      {
-                        "label": "恐懼之花·害怕",
-                        "op": "status",
-                        "p": {
-                          "chance": 100,
-                          "status": "害怕",
-                          "turns": 1,
-                          "side": "opp"
-                        }
-                      }
-                    ],
-                    "cond": [
-                      {
-                        "label": "對手持有恐懼之花",
-                        "c": "has_mark",
-                        "p": {
-                          "name": "恐懼之花",
-                          "side": "opp"
-                        }
-                      }
-                    ],
-                    "live": true
                   }
                 ]
               },
-              "id": "5025:魂印:懼:c38571ffa5c5:1",
+              "id": "5025:魂印:懼:a879615fcf36:1",
               "presentationOnly": false,
               "execution": "authored-block-runtime",
               "textCorrespondence": {
@@ -70967,7 +71068,164 @@
               "evidence": []
             },
             {
-              "index": 2,
+              "index": 3,
+              "raw": "恐懼之種每次受到害怕狀態時提高1層，每有1層則機率提高2%，最高5層達到時轉變為恐懼之花",
+              "trigger": "team_before_status",
+              "parsed": true,
+              "explanation": false,
+              "unresolved": [],
+              "damage": null,
+              "semanticVerification": "pending",
+              "blocks": {
+                "conditions": [],
+                "statements": [
+                  {
+                    "acts": [
+                      {
+                        "label": "恐懼之種",
+                        "op": "mark_program",
+                        "p": {
+                          "guaranteedMaxHpDamageChancePerStack": 0.02,
+                          "nonTrueDamageDealtMultiplier": 0.8,
+                          "nonTrueDamageTakenMultiplier": 1.4,
+                          "guaranteedMaxHpDamageChance": 0.2,
+                          "persistsOffField": true,
+                          "description": "恐懼之種:持有方所有精靈均無法附加害怕異常與觸發秒殺效果且每次受到害怕異常時當回合免疫害怕異常狀態但所選擇的技能PP值歸0且當回合若因此PP值為0時則無法行動，造成非真實傷害降低20%，受到非真實傷害提升40%，每次受到對手的攻擊時有20%機率受到攻擊傷害不低於自身當前體力上限，觸發成功則當回合無法恢復體力並受到等同於己方體力上限的真實傷害，每次己方精靈登場或受到害怕狀態時提高1層，每有1層則上述機率提高2%，最高5層，達到5層時轉變為恐懼之花",
+                          "displayChar": "種",
+                          "maxCount": 5,
+                          "count": 1,
+                          "rules": [],
+                          "scope": "team",
+                          "mode": "add",
+                          "name": "恐懼之種",
+                          "side": "opp",
+                          "unit": "層",
+                          "id": "fear_seed"
+                        }
+                      }
+                    ],
+                    "cond": [
+                      {
+                        "label": "事件主體為對手方（開局首發不計）",
+                        "c": "event_on_opp",
+                        "p": {
+                          "afterOpening": true
+                        }
+                      },
+                      {
+                        "label": "本次為害怕",
+                        "c": "event_status",
+                        "p": {
+                          "statuses": [
+                            "害怕"
+                          ]
+                        }
+                      },
+                      {
+                        "label": "對手持有恐懼之種",
+                        "c": "has_mark",
+                        "p": {
+                          "name": "恐懼之種",
+                          "side": "opp"
+                        }
+                      },
+                      {
+                        "label": "層數未達轉生門檻",
+                        "c": "mark_count",
+                        "p": {
+                          "amount": 4,
+                          "side": "opp",
+                          "id": "fear_seed",
+                          "op": "低於"
+                        }
+                      }
+                    ],
+                    "pre": true
+                  },
+                  {
+                    "acts": [
+                      {
+                        "label": "移除恐懼之種",
+                        "op": "resource_mark_remove",
+                        "p": {
+                          "scope": "team",
+                          "side": "opp",
+                          "id": "fear_seed"
+                        }
+                      },
+                      {
+                        "label": "恐懼之花",
+                        "op": "mark_program",
+                        "p": {
+                          "nonTrueDamageDealtMultiplier": 0.5,
+                          "nonTrueDamageTakenMultiplier": 2,
+                          "guaranteedMaxHpDamageChance": 0.5,
+                          "persistsOffField": true,
+                          "description": "恐懼之花:持有方所有精靈均無法附加給敵我雙方任一方異常異常狀態與觸發秒殺效果，每回合開始時恐懼之花會令在場精靈進入害怕狀態，造成非真實傷害降低50%，受到非真實傷害提升100%，每次受到對手的攻擊時有50%機率受到攻擊傷害不低於自身當前體力上限，觸發成功則當回合無法恢復體力並受到等同於己方體力上限的真實傷害",
+                          "displayChar": "花",
+                          "maxCount": 1,
+                          "count": 1,
+                          "rules": [],
+                          "scope": "team",
+                          "mode": "set",
+                          "name": "恐懼之花",
+                          "side": "opp",
+                          "unit": "株",
+                          "id": "fear_flower"
+                        }
+                      }
+                    ],
+                    "cond": [
+                      {
+                        "label": "事件主體為對手方（開局首發不計）",
+                        "c": "event_on_opp",
+                        "p": {
+                          "afterOpening": true
+                        }
+                      },
+                      {
+                        "label": "本次為害怕",
+                        "c": "event_status",
+                        "p": {
+                          "statuses": [
+                            "害怕"
+                          ]
+                        }
+                      },
+                      {
+                        "label": "對手持有恐懼之種",
+                        "c": "has_mark",
+                        "p": {
+                          "name": "恐懼之種",
+                          "side": "opp"
+                        }
+                      },
+                      {
+                        "label": "層數達轉生門檻",
+                        "c": "mark_count",
+                        "p": {
+                          "amount": 4,
+                          "side": "opp",
+                          "id": "fear_seed",
+                          "op": "不低於"
+                        }
+                      }
+                    ],
+                    "pre": true
+                  }
+                ]
+              },
+              "id": "5025:魂印:懼:c2fda5c77c01:1",
+              "presentationOnly": false,
+              "execution": "authored-block-runtime",
+              "textCorrespondence": {
+                "state": "needs-source-review",
+                "files": []
+              },
+              "evidence": []
+            },
+            {
+              "index": 4,
               "raw": "回合開始時，若自身滿體力：令對手100%害怕，未觸發則消除雙方能力上升、下降狀態與回合類效果",
               "trigger": "round_start",
               "parsed": true,
@@ -71046,7 +71304,7 @@
               "evidence": []
             },
             {
-              "index": 3,
+              "index": 5,
               "raw": "戰鬥階段結束時：恢復自身已損失體力50%的體力值與1點PP值，同時對手受到等同於自身恢復量百分比傷害；若對手體力未滿則額外令對手全屬性-1且至少減至1，未觸發則對手下2回合無法主動切換精靈",
               "trigger": "phase_end",
               "parsed": true,
@@ -71185,7 +71443,7 @@
           "clauses": [
             {
               "index": 0,
-              "raw": "戰鬥開始時：為對手種下恐懼之種（並記錄對手在場精靈基準）",
+              "raw": "戰鬥開始時：為對手種下恐懼之種",
               "trigger": "battle_start",
               "parsed": true,
               "explanation": false,
@@ -71218,28 +71476,25 @@
                           "unit": "層",
                           "id": "fear_seed"
                         }
-                      },
-                      {
-                        "label": "記錄對手在場精靈基準",
-                        "op": "opp_active_swap",
-                        "p": {}
                       }
                     ]
                   }
                 ]
               },
-              "id": "5025:專屬特性:懼:a956fe830da6:1",
+              "id": "5025:專屬特性:懼:6761d32cae26:1",
               "presentationOnly": false,
               "execution": "authored-block-runtime",
               "textCorrespondence": {
-                "state": "needs-source-review",
-                "files": []
+                "state": "text-fragment-found",
+                "files": [
+                  "elf_source_files/elf_files/5025_恐懼的化身咤克斯.txt"
+                ]
               },
               "evidence": []
             },
             {
               "index": 1,
-              "raw": "每回合吸取敵我雙方所有精靈20點體力上限附加給自身，最多吸取至該精靈體力上限為1；恐懼之種每次己方精靈登場時提高1層，每有1層則機率提高2%，最高5層達到時轉變為恐懼之花；恐懼之花每回合開始時令在場精靈進入害怕狀態",
+              "raw": "每回合吸取敵我雙方所有精靈20點體力上限附加給自身，最多吸取至該精靈體力上限為1；恐懼之花每回合開始時令在場精靈進入害怕狀態",
               "trigger": "team_round_start",
               "parsed": true,
               "explanation": false,
@@ -71264,14 +71519,52 @@
                   {
                     "acts": [
                       {
-                        "label": "對手在場精靈更換檢查",
-                        "op": "opp_active_swap",
-                        "p": {}
+                        "label": "恐懼之花·害怕",
+                        "op": "status",
+                        "p": {
+                          "chance": 100,
+                          "status": "害怕",
+                          "turns": 1,
+                          "side": "opp"
+                        }
                       }
-                    ]
-                  },
+                    ],
+                    "cond": [
+                      {
+                        "label": "對手持有恐懼之花",
+                        "c": "has_mark",
+                        "p": {
+                          "name": "恐懼之花",
+                          "side": "opp"
+                        }
+                      }
+                    ],
+                    "live": true
+                  }
+                ]
+              },
+              "id": "5025:專屬特性:懼:3229c1f81f0a:1",
+              "presentationOnly": false,
+              "execution": "authored-block-runtime",
+              "textCorrespondence": {
+                "state": "needs-source-review",
+                "files": []
+              },
+              "evidence": []
+            },
+            {
+              "index": 2,
+              "raw": "恐懼之種每次己方精靈登場時提高1層，每有1層則機率提高2%，最高5層達到時轉變為恐懼之花",
+              "trigger": "team_entrance",
+              "parsed": true,
+              "explanation": false,
+              "unresolved": [],
+              "damage": null,
+              "semanticVerification": "pending",
+              "blocks": {
+                "conditions": [],
+                "statements": [
                   {
-                    "chain": "success",
                     "acts": [
                       {
                         "label": "恐懼之種",
@@ -71298,6 +71591,13 @@
                     ],
                     "cond": [
                       {
+                        "label": "事件主體為對手方（開局首發不計）",
+                        "c": "event_on_opp",
+                        "p": {
+                          "afterOpening": true
+                        }
+                      },
+                      {
                         "label": "對手持有恐懼之種",
                         "c": "has_mark",
                         "p": {
@@ -71319,7 +71619,6 @@
                     "pre": true
                   },
                   {
-                    "chain": "success",
                     "acts": [
                       {
                         "label": "移除恐懼之種",
@@ -71354,6 +71653,13 @@
                     ],
                     "cond": [
                       {
+                        "label": "事件主體為對手方（開局首發不計）",
+                        "c": "event_on_opp",
+                        "p": {
+                          "afterOpening": true
+                        }
+                      },
+                      {
                         "label": "對手持有恐懼之種",
                         "c": "has_mark",
                         "p": {
@@ -71373,35 +71679,10 @@
                       }
                     ],
                     "pre": true
-                  },
-                  {
-                    "acts": [
-                      {
-                        "label": "恐懼之花·害怕",
-                        "op": "status",
-                        "p": {
-                          "chance": 100,
-                          "status": "害怕",
-                          "turns": 1,
-                          "side": "opp"
-                        }
-                      }
-                    ],
-                    "cond": [
-                      {
-                        "label": "對手持有恐懼之花",
-                        "c": "has_mark",
-                        "p": {
-                          "name": "恐懼之花",
-                          "side": "opp"
-                        }
-                      }
-                    ],
-                    "live": true
                   }
                 ]
               },
-              "id": "5025:專屬特性:懼:c38571ffa5c5:1",
+              "id": "5025:專屬特性:懼:a879615fcf36:1",
               "presentationOnly": false,
               "execution": "authored-block-runtime",
               "textCorrespondence": {
@@ -71411,7 +71692,164 @@
               "evidence": []
             },
             {
-              "index": 2,
+              "index": 3,
+              "raw": "恐懼之種每次受到害怕狀態時提高1層，每有1層則機率提高2%，最高5層達到時轉變為恐懼之花",
+              "trigger": "team_before_status",
+              "parsed": true,
+              "explanation": false,
+              "unresolved": [],
+              "damage": null,
+              "semanticVerification": "pending",
+              "blocks": {
+                "conditions": [],
+                "statements": [
+                  {
+                    "acts": [
+                      {
+                        "label": "恐懼之種",
+                        "op": "mark_program",
+                        "p": {
+                          "guaranteedMaxHpDamageChancePerStack": 0.02,
+                          "nonTrueDamageDealtMultiplier": 0.8,
+                          "nonTrueDamageTakenMultiplier": 1.4,
+                          "guaranteedMaxHpDamageChance": 0.2,
+                          "persistsOffField": true,
+                          "description": "恐懼之種:持有方所有精靈均無法附加害怕異常與觸發秒殺效果且每次受到害怕異常時當回合免疫害怕異常狀態但所選擇的技能PP值歸0且當回合若因此PP值為0時則無法行動，造成非真實傷害降低20%，受到非真實傷害提升40%，每次受到對手的攻擊時有20%機率受到攻擊傷害不低於自身當前體力上限，觸發成功則當回合無法恢復體力並受到等同於己方體力上限的真實傷害，每次己方精靈登場或受到害怕狀態時提高1層，每有1層則上述機率提高2%，最高5層，達到5層時轉變為恐懼之花",
+                          "displayChar": "種",
+                          "maxCount": 5,
+                          "count": 1,
+                          "rules": [],
+                          "scope": "team",
+                          "mode": "add",
+                          "name": "恐懼之種",
+                          "side": "opp",
+                          "unit": "層",
+                          "id": "fear_seed"
+                        }
+                      }
+                    ],
+                    "cond": [
+                      {
+                        "label": "事件主體為對手方（開局首發不計）",
+                        "c": "event_on_opp",
+                        "p": {
+                          "afterOpening": true
+                        }
+                      },
+                      {
+                        "label": "本次為害怕",
+                        "c": "event_status",
+                        "p": {
+                          "statuses": [
+                            "害怕"
+                          ]
+                        }
+                      },
+                      {
+                        "label": "對手持有恐懼之種",
+                        "c": "has_mark",
+                        "p": {
+                          "name": "恐懼之種",
+                          "side": "opp"
+                        }
+                      },
+                      {
+                        "label": "層數未達轉生門檻",
+                        "c": "mark_count",
+                        "p": {
+                          "amount": 4,
+                          "side": "opp",
+                          "id": "fear_seed",
+                          "op": "低於"
+                        }
+                      }
+                    ],
+                    "pre": true
+                  },
+                  {
+                    "acts": [
+                      {
+                        "label": "移除恐懼之種",
+                        "op": "resource_mark_remove",
+                        "p": {
+                          "scope": "team",
+                          "side": "opp",
+                          "id": "fear_seed"
+                        }
+                      },
+                      {
+                        "label": "恐懼之花",
+                        "op": "mark_program",
+                        "p": {
+                          "nonTrueDamageDealtMultiplier": 0.5,
+                          "nonTrueDamageTakenMultiplier": 2,
+                          "guaranteedMaxHpDamageChance": 0.5,
+                          "persistsOffField": true,
+                          "description": "恐懼之花:持有方所有精靈均無法附加給敵我雙方任一方異常異常狀態與觸發秒殺效果，每回合開始時恐懼之花會令在場精靈進入害怕狀態，造成非真實傷害降低50%，受到非真實傷害提升100%，每次受到對手的攻擊時有50%機率受到攻擊傷害不低於自身當前體力上限，觸發成功則當回合無法恢復體力並受到等同於己方體力上限的真實傷害",
+                          "displayChar": "花",
+                          "maxCount": 1,
+                          "count": 1,
+                          "rules": [],
+                          "scope": "team",
+                          "mode": "set",
+                          "name": "恐懼之花",
+                          "side": "opp",
+                          "unit": "株",
+                          "id": "fear_flower"
+                        }
+                      }
+                    ],
+                    "cond": [
+                      {
+                        "label": "事件主體為對手方（開局首發不計）",
+                        "c": "event_on_opp",
+                        "p": {
+                          "afterOpening": true
+                        }
+                      },
+                      {
+                        "label": "本次為害怕",
+                        "c": "event_status",
+                        "p": {
+                          "statuses": [
+                            "害怕"
+                          ]
+                        }
+                      },
+                      {
+                        "label": "對手持有恐懼之種",
+                        "c": "has_mark",
+                        "p": {
+                          "name": "恐懼之種",
+                          "side": "opp"
+                        }
+                      },
+                      {
+                        "label": "層數達轉生門檻",
+                        "c": "mark_count",
+                        "p": {
+                          "amount": 4,
+                          "side": "opp",
+                          "id": "fear_seed",
+                          "op": "不低於"
+                        }
+                      }
+                    ],
+                    "pre": true
+                  }
+                ]
+              },
+              "id": "5025:專屬特性:懼:c2fda5c77c01:1",
+              "presentationOnly": false,
+              "execution": "authored-block-runtime",
+              "textCorrespondence": {
+                "state": "needs-source-review",
+                "files": []
+              },
+              "evidence": []
+            },
+            {
+              "index": 4,
               "raw": "回合開始時，若自身滿體力：令對手100%害怕，未觸發則消除雙方能力上升、下降狀態與回合類效果",
               "trigger": "round_start",
               "parsed": true,
@@ -71490,7 +71928,7 @@
               "evidence": []
             },
             {
-              "index": 3,
+              "index": 5,
               "raw": "戰鬥階段結束時：恢復自身已損失體力50%的體力值與1點PP值，同時對手受到等同於自身恢復量百分比傷害；若對手體力未滿則額外令對手全屬性-1且至少減至1，未觸發則對手下2回合無法主動切換精靈",
               "trigger": "phase_end",
               "parsed": true,
@@ -84415,6 +84853,7 @@
                         "label": "hp_set",
                         "op": "hp_set",
                         "p": {
+                          "fromNonPositive": true,
                           "value": 1,
                           "side": "self"
                         }
@@ -105703,6 +106142,2542 @@
       ]
     },
     {
+      "id": "5041",
+      "name": "岳峙淵渟.卡修斯",
+      "sourceFiles": [],
+      "entries": [
+        {
+          "kind": "魂印",
+          "name": "山",
+          "sourceText": "自身位於出戰背包內時：\n>自身與己方其他精靈擁有護盾時若因受到攻擊傷害而扣減時減少量減半\n>>若在場精靈受到任一種超額非真實傷害大於該精靈當前護盾值\n>>>對手無法造成本次傷害且戰鬥階段結束時消耗當前護盾值50%以恢復在場精靈等同於消耗量25%的體力\n>>若在場精靈受到超額真實傷害大於該精靈當前護盾值且為致死真實傷害\n>>>100%重生1次\n\n自身處於山神守護狀態時：\n>自身所處的所有異常狀態無法被轉化為控制類異常、弱化類異常\n>取消控制類異常與弱化類異常原有效果\n>>改為自身1回合內選擇使用技能不受PP值限制且技能使用後令對手1回合內技能附加效果失效\n\n回合開始時：\n>若自身本次在場累計回合數不高於1回合\n>>召喚額外精靈炫彩山神加入己方\n\n額外精靈炫彩山神：\n>能力值等同於任一方岳峙淵渟.卡修斯中能力最高者\n>己方岳峙淵渟.卡修斯以外的其他精靈登場後死亡\n\n炫彩山神被加入時：\n>解除自身異常狀態\n>為岳峙淵渟.卡修斯附加最大體力½的護盾值\n>為岳峙淵渟.卡修斯附加3回合山神守護\n炫彩山神進入死亡時：\n>消除對手在場精靈回合類效果\n>消除對手在場精靈能力提升狀態\n>令對手在場精靈所有技能PP值歸0\n\n自身處於山神守護狀態時：\n>自身異常狀態無法被轉化為控制類異常、弱化類異常\n>取消控制類異常與弱化類異常附加效果\n>>改為自身1回合內選擇使用技能不受當前PP值限制\n自身護盾每次消失時：\n>炫彩山神死亡以清除自身本次在場累計回合數\n\n自身選擇使用攻擊技能時：\n>忽略對手防禦值40%\n>>雙方任一方存在護盾時額外令對手先制-2且100%石化\n自身選擇使用屬性技能時：\n>使用技能後無效對手下次攻擊技能\n>>雙方任一方存在護盾時則自身使用技能不消耗PP值且技能使用時額外吸取雙方護盾值70%的體力",
+          "route": "kit",
+          "source": "統一魂印來源：kit；未接通 0 項",
+          "sourceSha256": "93e2c3cde19d847c5eb55061483d19fd0bfa8f9804500a4864a409b9d7f61574",
+          "clauses": [
+            {
+              "index": 0,
+              "raw": "自身與己方其他精靈擁有護盾時若因受到攻擊傷害而扣減時減少量減半",
+              "trigger": "battle_start",
+              "parsed": true,
+              "explanation": false,
+              "unresolved": [],
+              "damage": {
+                "types": [
+                  "attack"
+                ],
+                "inferred": false,
+                "reason": "文本指定；同句多段傷害仍須逐段核對。"
+              },
+              "semanticVerification": "pending",
+              "blocks": {
+                "conditions": [],
+                "statements": [
+                  {
+                    "acts": [
+                      {
+                        "label": "team_rules",
+                        "op": "team_rules",
+                        "p": {
+                          "shieldDeductionRatio": 0.5
+                        }
+                      }
+                    ]
+                  }
+                ]
+              },
+              "id": "5041:魂印:山:4f8fa3b00439:1",
+              "presentationOnly": false,
+              "execution": "authored-block-runtime",
+              "textCorrespondence": {
+                "state": "no-matching-txt",
+                "files": []
+              },
+              "evidence": []
+            },
+            {
+              "index": 1,
+              "raw": "若在場精靈受到任一種超額非真實傷害大於該精靈當前護盾值：對手無法造成本次傷害",
+              "trigger": "battle_start",
+              "parsed": true,
+              "explanation": false,
+              "unresolved": [],
+              "damage": {
+                "types": [
+                  "non_true"
+                ],
+                "inferred": false,
+                "reason": "文本指定；同句多段傷害仍須逐段核對。"
+              },
+              "semanticVerification": "pending",
+              "blocks": {
+                "conditions": [],
+                "statements": [
+                  {
+                    "acts": [
+                      {
+                        "label": "team_rules",
+                        "op": "team_rules",
+                        "p": {
+                          "excessIntercept": true
+                        }
+                      }
+                    ]
+                  }
+                ]
+              },
+              "id": "5041:魂印:山:1c9828b8510d:1",
+              "presentationOnly": false,
+              "execution": "authored-block-runtime",
+              "textCorrespondence": {
+                "state": "no-matching-txt",
+                "files": []
+              },
+              "evidence": []
+            },
+            {
+              "index": 2,
+              "raw": "戰鬥階段結束時消耗當前護盾值50%以恢復在場精靈等同於消耗量25%的體力",
+              "trigger": "team_phase_end",
+              "parsed": true,
+              "explanation": false,
+              "unresolved": [],
+              "damage": null,
+              "semanticVerification": "pending",
+              "blocks": {
+                "conditions": [],
+                "statements": [
+                  {
+                    "acts": [
+                      {
+                        "label": "team_intercept_settle",
+                        "op": "team_intercept_settle",
+                        "p": {
+                          "shieldRatio": 0.5,
+                          "healRatio": 0.25
+                        }
+                      }
+                    ]
+                  }
+                ]
+              },
+              "id": "5041:魂印:山:e8fddf85ee20:1",
+              "presentationOnly": false,
+              "execution": "authored-block-runtime",
+              "textCorrespondence": {
+                "state": "no-matching-txt",
+                "files": []
+              },
+              "evidence": []
+            },
+            {
+              "index": 3,
+              "raw": "若在場精靈受到超額真實傷害大於該精靈當前護盾值且為致死真實傷害：100%重生1次",
+              "trigger": "battle_start",
+              "parsed": true,
+              "explanation": false,
+              "unresolved": [],
+              "damage": {
+                "types": [
+                  "true"
+                ],
+                "inferred": false,
+                "reason": "文本指定；同句多段傷害仍須逐段核對。"
+              },
+              "semanticVerification": "pending",
+              "blocks": {
+                "conditions": [],
+                "statements": [
+                  {
+                    "acts": [
+                      {
+                        "label": "team_rules",
+                        "op": "team_rules",
+                        "p": {
+                          "excessTrueRebirth": true
+                        }
+                      }
+                    ]
+                  }
+                ]
+              },
+              "id": "5041:魂印:山:baa500400b89:1",
+              "presentationOnly": false,
+              "execution": "authored-block-runtime",
+              "textCorrespondence": {
+                "state": "no-matching-txt",
+                "files": []
+              },
+              "evidence": []
+            },
+            {
+              "index": 4,
+              "raw": "自身所處的所有異常狀態無法被轉化為控制類異常、弱化類異常",
+              "trigger": "battle_start",
+              "parsed": true,
+              "explanation": false,
+              "unresolved": [],
+              "damage": null,
+              "semanticVerification": "pending",
+              "blocks": {
+                "conditions": [],
+                "statements": [
+                  {
+                    "acts": [
+                      {
+                        "label": "status_rules",
+                        "op": "status_rules",
+                        "p": {
+                          "conversionTargetBan": [
+                            "CONTROL",
+                            "WEAKENING"
+                          ],
+                          "whileStatus": "山神守護"
+                        }
+                      }
+                    ]
+                  }
+                ]
+              },
+              "id": "5041:魂印:山:58ab4f46ae96:1",
+              "presentationOnly": false,
+              "execution": "authored-block-runtime",
+              "textCorrespondence": {
+                "state": "no-matching-txt",
+                "files": []
+              },
+              "evidence": []
+            },
+            {
+              "index": 5,
+              "raw": "取消控制類異常與弱化類異常原有效果；改為自身1回合內選擇使用技能不受PP值限制",
+              "trigger": "battle_start",
+              "parsed": true,
+              "explanation": false,
+              "unresolved": [],
+              "damage": null,
+              "semanticVerification": "pending",
+              "blocks": {
+                "conditions": [],
+                "statements": [
+                  {
+                    "acts": [
+                      {
+                        "label": "status_rules",
+                        "op": "status_rules",
+                        "p": {
+                          "replaceInvalidateOppTurns": 1,
+                          "cancelEffects": [
+                            "CONTROL",
+                            "WEAKENING"
+                          ],
+                          "replacePpFree": true,
+                          "whileStatus": "山神守護"
+                        }
+                      }
+                    ]
+                  }
+                ]
+              },
+              "id": "5041:魂印:山:d6e6e5c7f33a:1",
+              "presentationOnly": false,
+              "execution": "authored-block-runtime",
+              "textCorrespondence": {
+                "state": "no-matching-txt",
+                "files": []
+              },
+              "evidence": []
+            },
+            {
+              "index": 6,
+              "raw": "技能使用後令對手1回合內技能附加效果失效",
+              "trigger": "self_after_skill",
+              "parsed": true,
+              "explanation": false,
+              "unresolved": [],
+              "damage": null,
+              "semanticVerification": "pending",
+              "blocks": {
+                "conditions": [],
+                "statements": [
+                  {
+                    "acts": [
+                      {
+                        "label": "replacement_invalidate_opp",
+                        "op": "replacement_invalidate_opp",
+                        "p": {}
+                      }
+                    ]
+                  }
+                ]
+              },
+              "id": "5041:魂印:山:fe709773a0f6:1",
+              "presentationOnly": false,
+              "execution": "authored-block-runtime",
+              "textCorrespondence": {
+                "state": "no-matching-txt",
+                "files": []
+              },
+              "evidence": []
+            },
+            {
+              "index": 7,
+              "raw": "回合開始時若自身本次在場累計回合數不高於1回合，召喚額外精靈炫彩山神加入己方",
+              "trigger": "round_start",
+              "parsed": true,
+              "explanation": false,
+              "unresolved": [],
+              "damage": null,
+              "semanticVerification": "pending",
+              "blocks": {
+                "conditions": [],
+                "statements": [
+                  {
+                    "acts": [
+                      {
+                        "label": "summon_extra_elf",
+                        "op": "summon_extra_elf",
+                        "p": {
+                          "statFromTeamRatio": 1,
+                          "statSource": "highest_of_name",
+                          "statMode": "each",
+                          "statName": "岳峙淵渟.卡修斯",
+                          "name": "炫彩山神",
+                          "side": "self",
+                          "type": "普通",
+                          "id": "x_shancaishen"
+                        }
+                      }
+                    ],
+                    "cond": [
+                      {
+                        "label": "field_rounds",
+                        "c": "field_rounds",
+                        "p": {
+                          "amount": 1,
+                          "op": "不高於"
+                        }
+                      }
+                    ]
+                  }
+                ]
+              },
+              "id": "5041:魂印:山:bd10b2b498fa:1",
+              "presentationOnly": false,
+              "execution": "authored-block-runtime",
+              "textCorrespondence": {
+                "state": "no-matching-txt",
+                "files": []
+              },
+              "evidence": []
+            },
+            {
+              "index": 8,
+              "raw": "自身護盾每次消失時：炫彩山神死亡以清除自身本次在場累計回合數",
+              "trigger": "entrance",
+              "parsed": true,
+              "explanation": false,
+              "unresolved": [],
+              "damage": null,
+              "semanticVerification": "pending",
+              "blocks": {
+                "conditions": [],
+                "statements": [
+                  {
+                    "acts": [
+                      {
+                        "label": "shield_lost_watch",
+                        "op": "shield_lost_watch",
+                        "p": {
+                          "scope": "self",
+                          "body": [
+                            {
+                              "acts": [
+                                {
+                                  "label": "kill_owned_extra",
+                                  "op": "kill_owned_extra",
+                                  "p": {
+                                    "resetOwnerRounds": true,
+                                    "ownerShield": "gone",
+                                    "id": "x_shancaishen"
+                                  }
+                                }
+                              ]
+                            }
+                          ],
+                          "once": false
+                        }
+                      }
+                    ]
+                  }
+                ]
+              },
+              "id": "5041:魂印:山:20b6c4a62af8:1",
+              "presentationOnly": false,
+              "execution": "authored-block-runtime",
+              "textCorrespondence": {
+                "state": "no-matching-txt",
+                "files": []
+              },
+              "evidence": []
+            },
+            {
+              "index": 9,
+              "raw": "自身選擇使用攻擊技能時忽略對手防禦值40%",
+              "trigger": "self_attack",
+              "parsed": true,
+              "explanation": false,
+              "unresolved": [],
+              "damage": null,
+              "semanticVerification": "pending",
+              "blocks": {
+                "conditions": [],
+                "statements": [
+                  {
+                    "acts": [
+                      {
+                        "label": "ignore_def_turns",
+                        "op": "ignore_def_turns",
+                        "p": {
+                          "ratio": 0.4,
+                          "turns": 1,
+                          "stat": "雙防"
+                        }
+                      }
+                    ]
+                  }
+                ]
+              },
+              "id": "5041:魂印:山:06a3dc6c5c75:1",
+              "presentationOnly": false,
+              "execution": "authored-block-runtime",
+              "textCorrespondence": {
+                "state": "no-matching-txt",
+                "files": []
+              },
+              "evidence": []
+            },
+            {
+              "index": 10,
+              "raw": "雙方任一方存在護盾時額外令對手先制-2且100%石化",
+              "trigger": "skill_selected",
+              "parsed": true,
+              "explanation": false,
+              "unresolved": [],
+              "damage": null,
+              "semanticVerification": "pending",
+              "blocks": {
+                "conditions": [],
+                "statements": [
+                  {
+                    "acts": [
+                      {
+                        "label": "prio_turns",
+                        "op": "prio_turns",
+                        "p": {
+                          "current": true,
+                          "turns": 1,
+                          "side": "opp",
+                          "v": -2
+                        }
+                      },
+                      {
+                        "label": "status",
+                        "op": "status",
+                        "p": {
+                          "chance": 100,
+                          "status": "石化",
+                          "turns": 3,
+                          "side": "opp"
+                        }
+                      }
+                    ],
+                    "cond": [
+                      {
+                        "label": "攻擊技能",
+                        "c": "skill_kind",
+                        "p": {
+                          "kind": "攻擊"
+                        }
+                      },
+                      {
+                        "label": "雙方任一方存在護盾",
+                        "c": "field_shield",
+                        "p": {}
+                      }
+                    ]
+                  }
+                ]
+              },
+              "id": "5041:魂印:山:f16ccd4595ba:1",
+              "presentationOnly": false,
+              "execution": "authored-block-runtime",
+              "textCorrespondence": {
+                "state": "no-matching-txt",
+                "files": []
+              },
+              "evidence": []
+            },
+            {
+              "index": 11,
+              "raw": "自身選擇使用屬性技能時使用技能後無效對手下次攻擊技能",
+              "trigger": "self_status",
+              "parsed": true,
+              "explanation": false,
+              "unresolved": [],
+              "damage": null,
+              "semanticVerification": "pending",
+              "blocks": {
+                "conditions": [],
+                "statements": [
+                  {
+                    "acts": [
+                      {
+                        "label": "invalid_next",
+                        "op": "invalid_next",
+                        "p": {
+                          "kind": "攻擊",
+                          "uses": 1
+                        }
+                      }
+                    ]
+                  }
+                ]
+              },
+              "id": "5041:魂印:山:d73f9602581b:1",
+              "presentationOnly": false,
+              "execution": "authored-block-runtime",
+              "textCorrespondence": {
+                "state": "no-matching-txt",
+                "files": []
+              },
+              "evidence": []
+            },
+            {
+              "index": 12,
+              "raw": "雙方任一方存在護盾時則自身使用技能不消耗PP值",
+              "trigger": "battle_start",
+              "parsed": true,
+              "explanation": false,
+              "unresolved": [],
+              "damage": null,
+              "semanticVerification": "pending",
+              "blocks": {
+                "conditions": [],
+                "statements": [
+                  {
+                    "acts": [
+                      {
+                        "label": "skill_rules",
+                        "op": "skill_rules",
+                        "p": {
+                          "ppFreeWhenFieldShield": true,
+                          "ppFreeKind": "屬性"
+                        }
+                      }
+                    ]
+                  }
+                ]
+              },
+              "id": "5041:魂印:山:79ba84f787ce:1",
+              "presentationOnly": false,
+              "execution": "authored-block-runtime",
+              "textCorrespondence": {
+                "state": "no-matching-txt",
+                "files": []
+              },
+              "evidence": []
+            },
+            {
+              "index": 13,
+              "raw": "雙方任一方存在護盾時技能使用時額外吸取雙方護盾值70%的體力",
+              "trigger": "self_status",
+              "parsed": true,
+              "explanation": false,
+              "unresolved": [],
+              "damage": null,
+              "semanticVerification": "pending",
+              "blocks": {
+                "conditions": [],
+                "statements": [
+                  {
+                    "acts": [
+                      {
+                        "label": "drain_shield_ratio",
+                        "op": "drain_shield_ratio",
+                        "p": {
+                          "ratio": 0.7
+                        }
+                      }
+                    ],
+                    "cond": [
+                      {
+                        "label": "雙方任一方存在護盾",
+                        "c": "field_shield",
+                        "p": {}
+                      }
+                    ]
+                  }
+                ]
+              },
+              "id": "5041:魂印:山:86af75c28d20:1",
+              "presentationOnly": false,
+              "execution": "authored-block-runtime",
+              "textCorrespondence": {
+                "state": "no-matching-txt",
+                "files": []
+              },
+              "evidence": []
+            }
+          ]
+        },
+        {
+          "kind": "專屬特性",
+          "name": "山",
+          "sourceText": "自身位於出戰背包內時：\n>自身與己方其他精靈擁有護盾時若因受到攻擊傷害而扣減時減少量減半\n>>若在場精靈受到任一種超額非真實傷害大於該精靈當前護盾值\n>>>對手無法造成本次傷害且戰鬥階段結束時消耗當前護盾值50%以恢復在場精靈等同於消耗量25%的體力\n>>若在場精靈受到超額真實傷害大於該精靈當前護盾值且為致死真實傷害\n>>>100%重生1次\n\n自身處於山神守護狀態時：\n>自身所處的所有異常狀態無法被轉化為控制類異常、弱化類異常\n>取消控制類異常與弱化類異常原有效果\n>>改為自身1回合內選擇使用技能不受PP值限制且技能使用後令對手1回合內技能附加效果失效\n\n回合開始時：\n>若自身本次在場累計回合數不高於1回合\n>>召喚額外精靈炫彩山神加入己方\n\n額外精靈炫彩山神：\n>能力值等同於任一方岳峙淵渟.卡修斯中能力最高者\n>己方岳峙淵渟.卡修斯以外的其他精靈登場後死亡\n\n炫彩山神被加入時：\n>解除自身異常狀態\n>為岳峙淵渟.卡修斯附加最大體力½的護盾值\n>為岳峙淵渟.卡修斯附加3回合山神守護\n炫彩山神進入死亡時：\n>消除對手在場精靈回合類效果\n>消除對手在場精靈能力提升狀態\n>令對手在場精靈所有技能PP值歸0\n\n自身處於山神守護狀態時：\n>自身異常狀態無法被轉化為控制類異常、弱化類異常\n>取消控制類異常與弱化類異常附加效果\n>>改為自身1回合內選擇使用技能不受當前PP值限制\n自身護盾每次消失時：\n>炫彩山神死亡以清除自身本次在場累計回合數\n\n自身選擇使用攻擊技能時：\n>忽略對手防禦值40%\n>>雙方任一方存在護盾時額外令對手先制-2且100%石化\n自身選擇使用屬性技能時：\n>使用技能後無效對手下次攻擊技能\n>>雙方任一方存在護盾時則自身使用技能不消耗PP值且技能使用時額外吸取雙方護盾值70%的體力",
+          "route": "kit",
+          "source": "特質統一來源：kit；未接通 0 項",
+          "sourceSha256": "93e2c3cde19d847c5eb55061483d19fd0bfa8f9804500a4864a409b9d7f61574",
+          "clauses": [
+            {
+              "index": 0,
+              "raw": "自身與己方其他精靈擁有護盾時若因受到攻擊傷害而扣減時減少量減半",
+              "trigger": "battle_start",
+              "parsed": true,
+              "explanation": false,
+              "unresolved": [],
+              "damage": {
+                "types": [
+                  "attack"
+                ],
+                "inferred": false,
+                "reason": "文本指定；同句多段傷害仍須逐段核對。"
+              },
+              "semanticVerification": "pending",
+              "blocks": {
+                "conditions": [],
+                "statements": [
+                  {
+                    "acts": [
+                      {
+                        "label": "team_rules",
+                        "op": "team_rules",
+                        "p": {
+                          "shieldDeductionRatio": 0.5
+                        }
+                      }
+                    ]
+                  }
+                ]
+              },
+              "id": "5041:專屬特性:山:4f8fa3b00439:1",
+              "presentationOnly": false,
+              "execution": "authored-block-runtime",
+              "textCorrespondence": {
+                "state": "no-matching-txt",
+                "files": []
+              },
+              "evidence": []
+            },
+            {
+              "index": 1,
+              "raw": "若在場精靈受到任一種超額非真實傷害大於該精靈當前護盾值：對手無法造成本次傷害",
+              "trigger": "battle_start",
+              "parsed": true,
+              "explanation": false,
+              "unresolved": [],
+              "damage": {
+                "types": [
+                  "non_true"
+                ],
+                "inferred": false,
+                "reason": "文本指定；同句多段傷害仍須逐段核對。"
+              },
+              "semanticVerification": "pending",
+              "blocks": {
+                "conditions": [],
+                "statements": [
+                  {
+                    "acts": [
+                      {
+                        "label": "team_rules",
+                        "op": "team_rules",
+                        "p": {
+                          "excessIntercept": true
+                        }
+                      }
+                    ]
+                  }
+                ]
+              },
+              "id": "5041:專屬特性:山:1c9828b8510d:1",
+              "presentationOnly": false,
+              "execution": "authored-block-runtime",
+              "textCorrespondence": {
+                "state": "no-matching-txt",
+                "files": []
+              },
+              "evidence": []
+            },
+            {
+              "index": 2,
+              "raw": "戰鬥階段結束時消耗當前護盾值50%以恢復在場精靈等同於消耗量25%的體力",
+              "trigger": "team_phase_end",
+              "parsed": true,
+              "explanation": false,
+              "unresolved": [],
+              "damage": null,
+              "semanticVerification": "pending",
+              "blocks": {
+                "conditions": [],
+                "statements": [
+                  {
+                    "acts": [
+                      {
+                        "label": "team_intercept_settle",
+                        "op": "team_intercept_settle",
+                        "p": {
+                          "shieldRatio": 0.5,
+                          "healRatio": 0.25
+                        }
+                      }
+                    ]
+                  }
+                ]
+              },
+              "id": "5041:專屬特性:山:e8fddf85ee20:1",
+              "presentationOnly": false,
+              "execution": "authored-block-runtime",
+              "textCorrespondence": {
+                "state": "no-matching-txt",
+                "files": []
+              },
+              "evidence": []
+            },
+            {
+              "index": 3,
+              "raw": "若在場精靈受到超額真實傷害大於該精靈當前護盾值且為致死真實傷害：100%重生1次",
+              "trigger": "battle_start",
+              "parsed": true,
+              "explanation": false,
+              "unresolved": [],
+              "damage": {
+                "types": [
+                  "true"
+                ],
+                "inferred": false,
+                "reason": "文本指定；同句多段傷害仍須逐段核對。"
+              },
+              "semanticVerification": "pending",
+              "blocks": {
+                "conditions": [],
+                "statements": [
+                  {
+                    "acts": [
+                      {
+                        "label": "team_rules",
+                        "op": "team_rules",
+                        "p": {
+                          "excessTrueRebirth": true
+                        }
+                      }
+                    ]
+                  }
+                ]
+              },
+              "id": "5041:專屬特性:山:baa500400b89:1",
+              "presentationOnly": false,
+              "execution": "authored-block-runtime",
+              "textCorrespondence": {
+                "state": "no-matching-txt",
+                "files": []
+              },
+              "evidence": []
+            },
+            {
+              "index": 4,
+              "raw": "自身所處的所有異常狀態無法被轉化為控制類異常、弱化類異常",
+              "trigger": "battle_start",
+              "parsed": true,
+              "explanation": false,
+              "unresolved": [],
+              "damage": null,
+              "semanticVerification": "pending",
+              "blocks": {
+                "conditions": [],
+                "statements": [
+                  {
+                    "acts": [
+                      {
+                        "label": "status_rules",
+                        "op": "status_rules",
+                        "p": {
+                          "conversionTargetBan": [
+                            "CONTROL",
+                            "WEAKENING"
+                          ],
+                          "whileStatus": "山神守護"
+                        }
+                      }
+                    ]
+                  }
+                ]
+              },
+              "id": "5041:專屬特性:山:58ab4f46ae96:1",
+              "presentationOnly": false,
+              "execution": "authored-block-runtime",
+              "textCorrespondence": {
+                "state": "no-matching-txt",
+                "files": []
+              },
+              "evidence": []
+            },
+            {
+              "index": 5,
+              "raw": "取消控制類異常與弱化類異常原有效果；改為自身1回合內選擇使用技能不受PP值限制",
+              "trigger": "battle_start",
+              "parsed": true,
+              "explanation": false,
+              "unresolved": [],
+              "damage": null,
+              "semanticVerification": "pending",
+              "blocks": {
+                "conditions": [],
+                "statements": [
+                  {
+                    "acts": [
+                      {
+                        "label": "status_rules",
+                        "op": "status_rules",
+                        "p": {
+                          "replaceInvalidateOppTurns": 1,
+                          "cancelEffects": [
+                            "CONTROL",
+                            "WEAKENING"
+                          ],
+                          "replacePpFree": true,
+                          "whileStatus": "山神守護"
+                        }
+                      }
+                    ]
+                  }
+                ]
+              },
+              "id": "5041:專屬特性:山:d6e6e5c7f33a:1",
+              "presentationOnly": false,
+              "execution": "authored-block-runtime",
+              "textCorrespondence": {
+                "state": "no-matching-txt",
+                "files": []
+              },
+              "evidence": []
+            },
+            {
+              "index": 6,
+              "raw": "技能使用後令對手1回合內技能附加效果失效",
+              "trigger": "self_after_skill",
+              "parsed": true,
+              "explanation": false,
+              "unresolved": [],
+              "damage": null,
+              "semanticVerification": "pending",
+              "blocks": {
+                "conditions": [],
+                "statements": [
+                  {
+                    "acts": [
+                      {
+                        "label": "replacement_invalidate_opp",
+                        "op": "replacement_invalidate_opp",
+                        "p": {}
+                      }
+                    ]
+                  }
+                ]
+              },
+              "id": "5041:專屬特性:山:fe709773a0f6:1",
+              "presentationOnly": false,
+              "execution": "authored-block-runtime",
+              "textCorrespondence": {
+                "state": "no-matching-txt",
+                "files": []
+              },
+              "evidence": []
+            },
+            {
+              "index": 7,
+              "raw": "回合開始時若自身本次在場累計回合數不高於1回合，召喚額外精靈炫彩山神加入己方",
+              "trigger": "round_start",
+              "parsed": true,
+              "explanation": false,
+              "unresolved": [],
+              "damage": null,
+              "semanticVerification": "pending",
+              "blocks": {
+                "conditions": [],
+                "statements": [
+                  {
+                    "acts": [
+                      {
+                        "label": "summon_extra_elf",
+                        "op": "summon_extra_elf",
+                        "p": {
+                          "statFromTeamRatio": 1,
+                          "statSource": "highest_of_name",
+                          "statMode": "each",
+                          "statName": "岳峙淵渟.卡修斯",
+                          "name": "炫彩山神",
+                          "side": "self",
+                          "type": "普通",
+                          "id": "x_shancaishen"
+                        }
+                      }
+                    ],
+                    "cond": [
+                      {
+                        "label": "field_rounds",
+                        "c": "field_rounds",
+                        "p": {
+                          "amount": 1,
+                          "op": "不高於"
+                        }
+                      }
+                    ]
+                  }
+                ]
+              },
+              "id": "5041:專屬特性:山:bd10b2b498fa:1",
+              "presentationOnly": false,
+              "execution": "authored-block-runtime",
+              "textCorrespondence": {
+                "state": "no-matching-txt",
+                "files": []
+              },
+              "evidence": []
+            },
+            {
+              "index": 8,
+              "raw": "自身護盾每次消失時：炫彩山神死亡以清除自身本次在場累計回合數",
+              "trigger": "entrance",
+              "parsed": true,
+              "explanation": false,
+              "unresolved": [],
+              "damage": null,
+              "semanticVerification": "pending",
+              "blocks": {
+                "conditions": [],
+                "statements": [
+                  {
+                    "acts": [
+                      {
+                        "label": "shield_lost_watch",
+                        "op": "shield_lost_watch",
+                        "p": {
+                          "scope": "self",
+                          "body": [
+                            {
+                              "acts": [
+                                {
+                                  "label": "kill_owned_extra",
+                                  "op": "kill_owned_extra",
+                                  "p": {
+                                    "resetOwnerRounds": true,
+                                    "ownerShield": "gone",
+                                    "id": "x_shancaishen"
+                                  }
+                                }
+                              ]
+                            }
+                          ],
+                          "once": false
+                        }
+                      }
+                    ]
+                  }
+                ]
+              },
+              "id": "5041:專屬特性:山:20b6c4a62af8:1",
+              "presentationOnly": false,
+              "execution": "authored-block-runtime",
+              "textCorrespondence": {
+                "state": "no-matching-txt",
+                "files": []
+              },
+              "evidence": []
+            },
+            {
+              "index": 9,
+              "raw": "自身選擇使用攻擊技能時忽略對手防禦值40%",
+              "trigger": "self_attack",
+              "parsed": true,
+              "explanation": false,
+              "unresolved": [],
+              "damage": null,
+              "semanticVerification": "pending",
+              "blocks": {
+                "conditions": [],
+                "statements": [
+                  {
+                    "acts": [
+                      {
+                        "label": "ignore_def_turns",
+                        "op": "ignore_def_turns",
+                        "p": {
+                          "ratio": 0.4,
+                          "turns": 1,
+                          "stat": "雙防"
+                        }
+                      }
+                    ]
+                  }
+                ]
+              },
+              "id": "5041:專屬特性:山:06a3dc6c5c75:1",
+              "presentationOnly": false,
+              "execution": "authored-block-runtime",
+              "textCorrespondence": {
+                "state": "no-matching-txt",
+                "files": []
+              },
+              "evidence": []
+            },
+            {
+              "index": 10,
+              "raw": "雙方任一方存在護盾時額外令對手先制-2且100%石化",
+              "trigger": "skill_selected",
+              "parsed": true,
+              "explanation": false,
+              "unresolved": [],
+              "damage": null,
+              "semanticVerification": "pending",
+              "blocks": {
+                "conditions": [],
+                "statements": [
+                  {
+                    "acts": [
+                      {
+                        "label": "prio_turns",
+                        "op": "prio_turns",
+                        "p": {
+                          "current": true,
+                          "turns": 1,
+                          "side": "opp",
+                          "v": -2
+                        }
+                      },
+                      {
+                        "label": "status",
+                        "op": "status",
+                        "p": {
+                          "chance": 100,
+                          "status": "石化",
+                          "turns": 3,
+                          "side": "opp"
+                        }
+                      }
+                    ],
+                    "cond": [
+                      {
+                        "label": "攻擊技能",
+                        "c": "skill_kind",
+                        "p": {
+                          "kind": "攻擊"
+                        }
+                      },
+                      {
+                        "label": "雙方任一方存在護盾",
+                        "c": "field_shield",
+                        "p": {}
+                      }
+                    ]
+                  }
+                ]
+              },
+              "id": "5041:專屬特性:山:f16ccd4595ba:1",
+              "presentationOnly": false,
+              "execution": "authored-block-runtime",
+              "textCorrespondence": {
+                "state": "no-matching-txt",
+                "files": []
+              },
+              "evidence": []
+            },
+            {
+              "index": 11,
+              "raw": "自身選擇使用屬性技能時使用技能後無效對手下次攻擊技能",
+              "trigger": "self_status",
+              "parsed": true,
+              "explanation": false,
+              "unresolved": [],
+              "damage": null,
+              "semanticVerification": "pending",
+              "blocks": {
+                "conditions": [],
+                "statements": [
+                  {
+                    "acts": [
+                      {
+                        "label": "invalid_next",
+                        "op": "invalid_next",
+                        "p": {
+                          "kind": "攻擊",
+                          "uses": 1
+                        }
+                      }
+                    ]
+                  }
+                ]
+              },
+              "id": "5041:專屬特性:山:d73f9602581b:1",
+              "presentationOnly": false,
+              "execution": "authored-block-runtime",
+              "textCorrespondence": {
+                "state": "no-matching-txt",
+                "files": []
+              },
+              "evidence": []
+            },
+            {
+              "index": 12,
+              "raw": "雙方任一方存在護盾時則自身使用技能不消耗PP值",
+              "trigger": "battle_start",
+              "parsed": true,
+              "explanation": false,
+              "unresolved": [],
+              "damage": null,
+              "semanticVerification": "pending",
+              "blocks": {
+                "conditions": [],
+                "statements": [
+                  {
+                    "acts": [
+                      {
+                        "label": "skill_rules",
+                        "op": "skill_rules",
+                        "p": {
+                          "ppFreeWhenFieldShield": true,
+                          "ppFreeKind": "屬性"
+                        }
+                      }
+                    ]
+                  }
+                ]
+              },
+              "id": "5041:專屬特性:山:79ba84f787ce:1",
+              "presentationOnly": false,
+              "execution": "authored-block-runtime",
+              "textCorrespondence": {
+                "state": "no-matching-txt",
+                "files": []
+              },
+              "evidence": []
+            },
+            {
+              "index": 13,
+              "raw": "雙方任一方存在護盾時技能使用時額外吸取雙方護盾值70%的體力",
+              "trigger": "self_status",
+              "parsed": true,
+              "explanation": false,
+              "unresolved": [],
+              "damage": null,
+              "semanticVerification": "pending",
+              "blocks": {
+                "conditions": [],
+                "statements": [
+                  {
+                    "acts": [
+                      {
+                        "label": "drain_shield_ratio",
+                        "op": "drain_shield_ratio",
+                        "p": {
+                          "ratio": 0.7
+                        }
+                      }
+                    ],
+                    "cond": [
+                      {
+                        "label": "雙方任一方存在護盾",
+                        "c": "field_shield",
+                        "p": {}
+                      }
+                    ]
+                  }
+                ]
+              },
+              "id": "5041:專屬特性:山:86af75c28d20:1",
+              "presentationOnly": false,
+              "execution": "authored-block-runtime",
+              "textCorrespondence": {
+                "state": "no-matching-txt",
+                "files": []
+              },
+              "evidence": []
+            }
+          ]
+        },
+        {
+          "kind": "技能",
+          "name": "萬壑崩摧",
+          "sourceText": "必中\n5回合內每回合結束時解除自身能力下降狀態並附加給對手\n消除雙方護盾、護罩並吸取對手消除量的等量體力，若消除量高於400則為自身本場戰鬥提升100點體力上限\n5回合內自身使用技能後吸取對手300點體力，自身體力低於最大體力½時吸取效果翻倍，吸取體力後體力未減少則附加對手300點真實傷害且下2回合對手無法恢復體力\n令對手所有技能PP值-1，執行後若對手當回合所選技能PP值為0則當回合無法行動",
+          "route": "kit",
+          "source": "統一效果來源：kit；未接通 0 項",
+          "sourceSha256": "5efbfce05fe8f34830fd656f95e2b4635fe325d3b71cc3a1b1d0c3ba1c2eeb34",
+          "clauses": [
+            {
+              "index": 0,
+              "raw": "5回合內每回合結束時解除自身能力下降並附加給對手",
+              "trigger": "self_skill",
+              "parsed": true,
+              "explanation": false,
+              "unresolved": [],
+              "damage": null,
+              "semanticVerification": "pending",
+              "blocks": {
+                "conditions": [],
+                "statements": [
+                  {
+                    "acts": [
+                      {
+                        "label": "timed",
+                        "op": "timed",
+                        "p": {
+                          "turns": 5,
+                          "body": [
+                            {
+                              "acts": [
+                                {
+                                  "label": "stat_transfer_down",
+                                  "op": "stat_transfer_down",
+                                  "p": {}
+                                }
+                              ]
+                            }
+                          ],
+                          "trig": "round_end"
+                        }
+                      }
+                    ]
+                  }
+                ]
+              },
+              "id": "5041:技能:萬壑崩摧:c7556a966728:1",
+              "presentationOnly": false,
+              "execution": "authored-block-runtime",
+              "textCorrespondence": {
+                "state": "no-matching-txt",
+                "files": []
+              },
+              "evidence": []
+            },
+            {
+              "index": 1,
+              "raw": "消除雙方護盾護罩並吸取對手消除量的等量體力，若高於400則提升100點體力上限",
+              "trigger": "self_skill",
+              "parsed": true,
+              "explanation": false,
+              "unresolved": [],
+              "damage": null,
+              "semanticVerification": "pending",
+              "blocks": {
+                "conditions": [],
+                "statements": [
+                  {
+                    "acts": [
+                      {
+                        "label": "clear_both_shields",
+                        "op": "clear_both_shields",
+                        "p": {
+                          "drainRatio": 1,
+                          "maxHpBonus": 100,
+                          "threshold": 400
+                        }
+                      }
+                    ]
+                  }
+                ]
+              },
+              "id": "5041:技能:萬壑崩摧:489a7226510b:1",
+              "presentationOnly": false,
+              "execution": "authored-block-runtime",
+              "textCorrespondence": {
+                "state": "no-matching-txt",
+                "files": []
+              },
+              "evidence": []
+            },
+            {
+              "index": 2,
+              "raw": "5回合內使用技能後吸取對手300點體力，低於½翻倍，未減少則附加300真傷且下2回合對手無法恢復體力",
+              "trigger": "self_skill",
+              "parsed": true,
+              "explanation": false,
+              "unresolved": [],
+              "damage": {
+                "types": [
+                  "true"
+                ],
+                "inferred": false,
+                "reason": "文本指定；同句多段傷害仍須逐段核對。"
+              },
+              "semanticVerification": "pending",
+              "blocks": {
+                "conditions": [],
+                "statements": [
+                  {
+                    "acts": [
+                      {
+                        "label": "timed",
+                        "op": "timed",
+                        "p": {
+                          "turns": 5,
+                          "body": [
+                            {
+                              "acts": [
+                                {
+                                  "label": "drain",
+                                  "op": "drain",
+                                  "p": {
+                                    "flat": 300,
+                                    "x2If": {
+                                      "label": "自身體力低於½",
+                                      "c": "hp_ratio",
+                                      "p": {
+                                        "ratio": 0.5,
+                                        "side": "self",
+                                        "op": "低於"
+                                      }
+                                    }
+                                  }
+                                }
+                              ]
+                            },
+                            {
+                              "acts": [
+                                {
+                                  "label": "dmg",
+                                  "op": "dmg",
+                                  "p": {
+                                    "flat": 300,
+                                    "type": "真實"
+                                  }
+                                },
+                                {
+                                  "label": "no_heal",
+                                  "op": "no_heal",
+                                  "p": {
+                                    "turns": 2,
+                                    "next": true
+                                  }
+                                }
+                              ],
+                              "cond": [
+                                {
+                                  "label": "吸取後對手體力未減少",
+                                  "c": "last_no_dmg",
+                                  "p": {}
+                                }
+                              ]
+                            }
+                          ],
+                          "trig": "self_after_skill"
+                        }
+                      }
+                    ]
+                  }
+                ]
+              },
+              "id": "5041:技能:萬壑崩摧:451292ccc562:1",
+              "presentationOnly": false,
+              "execution": "authored-block-runtime",
+              "textCorrespondence": {
+                "state": "no-matching-txt",
+                "files": []
+              },
+              "evidence": []
+            },
+            {
+              "index": 3,
+              "raw": "令對手所有技能PP值-1，若當回合所選技能PP為0則無法行動",
+              "trigger": "self_skill",
+              "parsed": true,
+              "explanation": false,
+              "unresolved": [],
+              "damage": null,
+              "semanticVerification": "pending",
+              "blocks": {
+                "conditions": [],
+                "statements": [
+                  {
+                    "acts": [
+                      {
+                        "label": "pp_op",
+                        "op": "pp_op",
+                        "p": {
+                          "amount": 1,
+                          "mode": "reduce",
+                          "side": "opp"
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "acts": [
+                      {
+                        "label": "action_prevent_on_empty",
+                        "op": "action_prevent_on_empty",
+                        "p": {
+                          "side": "opp"
+                        }
+                      }
+                    ],
+                    "cond": [
+                      {
+                        "label": "對手所選技能PP為0",
+                        "c": "selected_pp",
+                        "p": {
+                          "amount": 0,
+                          "side": "opp",
+                          "op": "不高於"
+                        }
+                      }
+                    ]
+                  }
+                ]
+              },
+              "id": "5041:技能:萬壑崩摧:131966e3b0d1:1",
+              "presentationOnly": false,
+              "execution": "authored-block-runtime",
+              "textCorrespondence": {
+                "state": "no-matching-txt",
+                "files": []
+              },
+              "evidence": []
+            }
+          ]
+        },
+        {
+          "kind": "技能",
+          "name": "群山許諾",
+          "sourceText": "必中\n使自身攻擊、防禦、特防、速度、命中+1\n為自身附加3回合的山神守護，自身擁有山神守護時改為山神守護異常回合結束時將其他異常狀態同時解除\n5回合內使用技能時吸取對手最大體力⅓，自身體力低於最大體力½時吸取效果翻倍，吸取體力後體力未減少則附加對手300點真實傷害並為對手附加300點護罩\n3回合內對手若使用攻擊技能，則下2回合屬性技能附加效果失效\n為自身附加400點護盾，護盾消失時附加400點真實傷害且100%令雙方依序進入束縛、星贖3回合",
+          "route": "kit",
+          "source": "統一效果來源：kit；未接通 0 項",
+          "sourceSha256": "f25e453deed97ea5747cd1419fc35825beff6021241f4de9596f97ec362a734e",
+          "clauses": [
+            {
+              "index": 0,
+              "raw": "自身攻擊、防禦、特防、速度、命中+1",
+              "trigger": "self_skill",
+              "parsed": true,
+              "explanation": false,
+              "unresolved": [],
+              "damage": null,
+              "semanticVerification": "pending",
+              "blocks": {
+                "conditions": [],
+                "statements": [
+                  {
+                    "acts": [
+                      {
+                        "label": "stat",
+                        "op": "stat",
+                        "p": {
+                          "stats": [
+                            "攻擊",
+                            "防禦",
+                            "特防",
+                            "速度",
+                            "命中"
+                          ],
+                          "side": "self",
+                          "v": 1
+                        }
+                      }
+                    ]
+                  }
+                ]
+              },
+              "id": "5041:技能:群山許諾:446067384f95:1",
+              "presentationOnly": false,
+              "execution": "authored-block-runtime",
+              "textCorrespondence": {
+                "state": "no-matching-txt",
+                "files": []
+              },
+              "evidence": []
+            },
+            {
+              "index": 1,
+              "raw": "為自身附加3回合山神守護，自身擁有山神守護時改為山神守護回合結束時將其他異常同時解除",
+              "trigger": "self_skill",
+              "parsed": true,
+              "explanation": false,
+              "unresolved": [],
+              "damage": null,
+              "semanticVerification": "pending",
+              "blocks": {
+                "conditions": [],
+                "statements": [
+                  {
+                    "acts": [
+                      {
+                        "label": "status",
+                        "op": "status",
+                        "p": {
+                          "chance": 100,
+                          "status": "山神守護",
+                          "turns": 3,
+                          "side": "self"
+                        }
+                      }
+                    ],
+                    "cond": [
+                      {
+                        "label": "has_status",
+                        "c": "has_status",
+                        "p": {
+                          "status": "山神守護",
+                          "side": "self",
+                          "neg": true
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "acts": [
+                      {
+                        "label": "status_end_cleanse",
+                        "op": "status_end_cleanse",
+                        "p": {
+                          "status": "山神守護",
+                          "turns": 3
+                        }
+                      }
+                    ],
+                    "cond": [
+                      {
+                        "label": "has_status",
+                        "c": "has_status",
+                        "p": {
+                          "status": "山神守護",
+                          "side": "self"
+                        }
+                      }
+                    ]
+                  }
+                ]
+              },
+              "id": "5041:技能:群山許諾:98725fb0a414:1",
+              "presentationOnly": false,
+              "execution": "authored-block-runtime",
+              "textCorrespondence": {
+                "state": "no-matching-txt",
+                "files": []
+              },
+              "evidence": []
+            },
+            {
+              "index": 2,
+              "raw": "5回合內使用技能吸取對手最大體力⅓，低於½翻倍，未減少則附加300真傷並為對手附加300護罩",
+              "trigger": "self_skill",
+              "parsed": true,
+              "explanation": false,
+              "unresolved": [],
+              "damage": {
+                "types": [
+                  "true"
+                ],
+                "inferred": false,
+                "reason": "文本指定；同句多段傷害仍須逐段核對。"
+              },
+              "semanticVerification": "pending",
+              "blocks": {
+                "conditions": [],
+                "statements": [
+                  {
+                    "acts": [
+                      {
+                        "label": "timed",
+                        "op": "timed",
+                        "p": {
+                          "turns": 5,
+                          "body": [
+                            {
+                              "acts": [
+                                {
+                                  "label": "drain",
+                                  "op": "drain",
+                                  "p": {
+                                    "ratio": 0.3333333333333333,
+                                    "x2If": {
+                                      "label": "自身體力低於½",
+                                      "c": "hp_ratio",
+                                      "p": {
+                                        "ratio": 0.5,
+                                        "side": "self",
+                                        "op": "低於"
+                                      }
+                                    }
+                                  }
+                                }
+                              ]
+                            },
+                            {
+                              "acts": [
+                                {
+                                  "label": "dmg",
+                                  "op": "dmg",
+                                  "p": {
+                                    "flat": 300,
+                                    "type": "真實"
+                                  }
+                                },
+                                {
+                                  "label": "barrier_add",
+                                  "op": "barrier_add",
+                                  "p": {
+                                    "flat": 300,
+                                    "side": "opp"
+                                  }
+                                }
+                              ],
+                              "cond": [
+                                {
+                                  "label": "吸取後對手體力未減少",
+                                  "c": "last_no_dmg",
+                                  "p": {}
+                                }
+                              ]
+                            }
+                          ],
+                          "trig": "self_after_skill"
+                        }
+                      }
+                    ]
+                  }
+                ]
+              },
+              "id": "5041:技能:群山許諾:3f1f7689c07c:1",
+              "presentationOnly": false,
+              "execution": "authored-block-runtime",
+              "textCorrespondence": {
+                "state": "no-matching-txt",
+                "files": []
+              },
+              "evidence": []
+            },
+            {
+              "index": 3,
+              "raw": "3回合內對手使用攻擊技能則下2回合屬性技能附加效果失效",
+              "trigger": "self_skill",
+              "parsed": true,
+              "explanation": false,
+              "unresolved": [],
+              "damage": null,
+              "semanticVerification": "pending",
+              "blocks": {
+                "conditions": [],
+                "statements": [
+                  {
+                    "acts": [
+                      {
+                        "label": "timed",
+                        "op": "timed",
+                        "p": {
+                          "skillKind": "攻擊",
+                          "turns": 3,
+                          "body": [
+                            {
+                              "acts": [
+                                {
+                                  "label": "add_invalid_turns",
+                                  "op": "add_invalid_turns",
+                                  "p": {
+                                    "turns": 2,
+                                    "kind": "屬性",
+                                    "next": true
+                                  }
+                                }
+                              ]
+                            }
+                          ],
+                          "from": "now",
+                          "trig": "opp_attack"
+                        }
+                      }
+                    ]
+                  }
+                ]
+              },
+              "id": "5041:技能:群山許諾:30aa89035dd9:1",
+              "presentationOnly": false,
+              "execution": "authored-block-runtime",
+              "textCorrespondence": {
+                "state": "no-matching-txt",
+                "files": []
+              },
+              "evidence": []
+            },
+            {
+              "index": 4,
+              "raw": "為自身附加400點護盾，護盾消失時附加400點真傷且100%令雙方依序進入束縛、星贖3回合",
+              "trigger": "self_skill",
+              "parsed": true,
+              "explanation": false,
+              "unresolved": [],
+              "damage": {
+                "types": [
+                  "true"
+                ],
+                "inferred": false,
+                "reason": "文本指定；同句多段傷害仍須逐段核對。"
+              },
+              "semanticVerification": "pending",
+              "blocks": {
+                "conditions": [],
+                "statements": [
+                  {
+                    "acts": [
+                      {
+                        "label": "shield",
+                        "op": "shield",
+                        "p": {
+                          "flat": 400
+                        }
+                      },
+                      {
+                        "label": "shield_lost_watch",
+                        "op": "shield_lost_watch",
+                        "p": {
+                          "scope": "self",
+                          "body": [
+                            {
+                              "acts": [
+                                {
+                                  "label": "dmg",
+                                  "op": "dmg",
+                                  "p": {
+                                    "flat": 400,
+                                    "type": "真實"
+                                  }
+                                }
+                              ]
+                            },
+                            {
+                              "acts": [
+                                {
+                                  "label": "status",
+                                  "op": "status",
+                                  "p": {
+                                    "chance": 100,
+                                    "status": "束縛",
+                                    "turns": 3,
+                                    "side": "both"
+                                  }
+                                }
+                              ]
+                            },
+                            {
+                              "acts": [
+                                {
+                                  "label": "status",
+                                  "op": "status",
+                                  "p": {
+                                    "chance": 100,
+                                    "status": "星贖",
+                                    "turns": 3,
+                                    "side": "both"
+                                  }
+                                }
+                              ]
+                            }
+                          ],
+                          "once": true
+                        }
+                      }
+                    ]
+                  }
+                ]
+              },
+              "id": "5041:技能:群山許諾:aebfcadc936e:1",
+              "presentationOnly": false,
+              "execution": "authored-block-runtime",
+              "textCorrespondence": {
+                "state": "no-matching-txt",
+                "files": []
+              },
+              "evidence": []
+            }
+          ]
+        },
+        {
+          "kind": "技能",
+          "name": "歸塵",
+          "sourceText": "必中\n無視對手免疫受到的攻擊效果，無視成功則自身下次攻擊無視對手免疫效果\n消除對手回合類效果，消除成功則100%令對手疲憊，未觸發則將自身下次受到攻擊傷害轉化為自身體力\n吸取對手最大體力40%，每次使用則提升5%，最高60%\n3回合內對手使用攻擊技能時100令對手進入石化",
+          "route": "kit",
+          "source": "統一效果來源：kit；未接通 0 項",
+          "sourceSha256": "c45a07b2886a5039753aaf8257a1b87f63dc1bcb7df85fc217eadd23abedda74",
+          "clauses": [
+            {
+              "index": 0,
+              "raw": "無視對手免疫受到的攻擊效果",
+              "trigger": "self_attack",
+              "parsed": true,
+              "explanation": false,
+              "unresolved": [],
+              "damage": null,
+              "semanticVerification": "pending",
+              "blocks": {
+                "conditions": [],
+                "statements": [
+                  {
+                    "acts": [
+                      {
+                        "label": "ignore",
+                        "op": "ignore",
+                        "p": {
+                          "what": "攻擊免疫"
+                        }
+                      }
+                    ]
+                  }
+                ]
+              },
+              "id": "5041:技能:歸塵:9502a489bcf0:1",
+              "presentationOnly": false,
+              "execution": "authored-block-runtime",
+              "textCorrespondence": {
+                "state": "no-matching-txt",
+                "files": []
+              },
+              "evidence": []
+            },
+            {
+              "index": 1,
+              "raw": "無視成功則自身下次攻擊無視對手免疫效果",
+              "trigger": "self_attack",
+              "parsed": true,
+              "explanation": false,
+              "unresolved": [],
+              "damage": null,
+              "semanticVerification": "pending",
+              "blocks": {
+                "conditions": [],
+                "statements": [
+                  {
+                    "acts": [
+                      {
+                        "label": "ignore_next",
+                        "op": "ignore_next",
+                        "p": {
+                          "what": "攻擊免疫"
+                        }
+                      }
+                    ],
+                    "cond": [
+                      {
+                        "label": "ignore_success",
+                        "c": "ignore_success",
+                        "p": {
+                          "what": "攻擊免疫"
+                        }
+                      }
+                    ]
+                  }
+                ]
+              },
+              "id": "5041:技能:歸塵:5f512854a057:1",
+              "presentationOnly": false,
+              "execution": "authored-block-runtime",
+              "textCorrespondence": {
+                "state": "no-matching-txt",
+                "files": []
+              },
+              "evidence": []
+            },
+            {
+              "index": 2,
+              "raw": "消除對手回合類效果，成功則100%令對手疲憊，未觸發則將自身下次受到攻擊傷害轉化為自身體力",
+              "trigger": "self_attack",
+              "parsed": true,
+              "explanation": false,
+              "unresolved": [],
+              "damage": {
+                "types": [
+                  "attack"
+                ],
+                "inferred": false,
+                "reason": "文本指定；同句多段傷害仍須逐段核對。"
+              },
+              "semanticVerification": "pending",
+              "blocks": {
+                "conditions": [],
+                "statements": [
+                  {
+                    "acts": [
+                      {
+                        "label": "clear_turn",
+                        "op": "clear_turn",
+                        "p": {
+                          "side": "opp"
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "chain": "success",
+                    "acts": [
+                      {
+                        "label": "status",
+                        "op": "status",
+                        "p": {
+                          "chance": 100,
+                          "status": "疲憊",
+                          "turns": 3,
+                          "side": "opp"
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "chain": "fail",
+                    "acts": [
+                      {
+                        "label": "convert_damage_to_heal_next",
+                        "op": "convert_damage_to_heal_next",
+                        "p": {
+                          "ratio": 1,
+                          "kind": "攻擊",
+                          "n": 1
+                        }
+                      }
+                    ]
+                  }
+                ]
+              },
+              "id": "5041:技能:歸塵:acac9e35b4f7:1",
+              "presentationOnly": false,
+              "execution": "authored-block-runtime",
+              "textCorrespondence": {
+                "state": "no-matching-txt",
+                "files": []
+              },
+              "evidence": []
+            },
+            {
+              "index": 3,
+              "raw": "吸取對手最大體力40%，每次使用提升5%，最高60%",
+              "trigger": "self_attack",
+              "parsed": true,
+              "explanation": false,
+              "unresolved": [],
+              "damage": null,
+              "semanticVerification": "pending",
+              "blocks": {
+                "conditions": [],
+                "statements": [
+                  {
+                    "acts": [
+                      {
+                        "label": "escalating_drain",
+                        "op": "escalating_drain",
+                        "p": {
+                          "base": 0.4,
+                          "step": 0.05,
+                          "max": 0.6
+                        }
+                      }
+                    ]
+                  }
+                ]
+              },
+              "id": "5041:技能:歸塵:928df3c45072:1",
+              "presentationOnly": false,
+              "execution": "authored-block-runtime",
+              "textCorrespondence": {
+                "state": "no-matching-txt",
+                "files": []
+              },
+              "evidence": []
+            },
+            {
+              "index": 4,
+              "raw": "3回合內對手使用攻擊技能時100%令對手進入石化",
+              "trigger": "self_attack",
+              "parsed": true,
+              "explanation": false,
+              "unresolved": [],
+              "damage": null,
+              "semanticVerification": "pending",
+              "blocks": {
+                "conditions": [],
+                "statements": [
+                  {
+                    "acts": [
+                      {
+                        "label": "timed",
+                        "op": "timed",
+                        "p": {
+                          "skillKind": "攻擊",
+                          "turns": 3,
+                          "body": [
+                            {
+                              "acts": [
+                                {
+                                  "label": "status",
+                                  "op": "status",
+                                  "p": {
+                                    "chance": 100,
+                                    "status": "石化",
+                                    "turns": 3,
+                                    "side": "opp"
+                                  }
+                                }
+                              ]
+                            }
+                          ],
+                          "from": "now",
+                          "trig": "opp_attack"
+                        }
+                      }
+                    ]
+                  }
+                ]
+              },
+              "id": "5041:技能:歸塵:eaea36a1e011:1",
+              "presentationOnly": false,
+              "execution": "authored-block-runtime",
+              "textCorrespondence": {
+                "state": "no-matching-txt",
+                "files": []
+              },
+              "evidence": []
+            }
+          ]
+        },
+        {
+          "kind": "技能",
+          "name": "破影",
+          "sourceText": "必中\n無視對手攻擊傷害限制效果，無視成功則自身下次攻擊無視對手攻擊傷害限制效果\n3回合內令對手防禦、特防-1，未觸發則下2回合內對手受到技能傷害提升150%\n先出手則對手當回合攻擊技能無效\n4回合內自身使用技能吸取對手最大體力¼",
+          "route": "kit",
+          "source": "統一效果來源：kit；未接通 0 項",
+          "sourceSha256": "569a826169a7fce35d8b7f825558ba05d5040533dd0990db8aae2f581f7aa528",
+          "clauses": [
+            {
+              "index": 0,
+              "raw": "無視對手攻擊傷害限制效果",
+              "trigger": "self_attack",
+              "parsed": true,
+              "explanation": false,
+              "unresolved": [],
+              "damage": {
+                "types": [
+                  "attack"
+                ],
+                "inferred": false,
+                "reason": "文本指定；同句多段傷害仍須逐段核對。"
+              },
+              "semanticVerification": "pending",
+              "blocks": {
+                "conditions": [],
+                "statements": [
+                  {
+                    "acts": [
+                      {
+                        "label": "ignore",
+                        "op": "ignore",
+                        "p": {
+                          "what": "傷害限制"
+                        }
+                      }
+                    ]
+                  }
+                ]
+              },
+              "id": "5041:技能:破影:3b638753fc86:1",
+              "presentationOnly": false,
+              "execution": "authored-block-runtime",
+              "textCorrespondence": {
+                "state": "no-matching-txt",
+                "files": []
+              },
+              "evidence": []
+            },
+            {
+              "index": 1,
+              "raw": "無視成功則自身下次攻擊無視對手攻擊傷害限制效果",
+              "trigger": "after_hit",
+              "parsed": true,
+              "explanation": false,
+              "unresolved": [],
+              "damage": {
+                "types": [
+                  "attack"
+                ],
+                "inferred": false,
+                "reason": "文本指定；同句多段傷害仍須逐段核對。"
+              },
+              "semanticVerification": "pending",
+              "blocks": {
+                "conditions": [],
+                "statements": [
+                  {
+                    "acts": [
+                      {
+                        "label": "ignore_next",
+                        "op": "ignore_next",
+                        "p": {
+                          "what": "傷害限制"
+                        }
+                      }
+                    ],
+                    "cond": [
+                      {
+                        "label": "ignore_success",
+                        "c": "ignore_success",
+                        "p": {
+                          "what": "傷害限制"
+                        }
+                      }
+                    ]
+                  }
+                ]
+              },
+              "id": "5041:技能:破影:60f892b9fcd3:1",
+              "presentationOnly": false,
+              "execution": "authored-block-runtime",
+              "textCorrespondence": {
+                "state": "no-matching-txt",
+                "files": []
+              },
+              "evidence": []
+            },
+            {
+              "index": 2,
+              "raw": "3回合內令對手防禦、特防-1，未觸發則下2回合內對手受到技能傷害提升150%",
+              "trigger": "self_attack",
+              "parsed": true,
+              "explanation": false,
+              "unresolved": [],
+              "damage": {
+                "types": [
+                  "skill"
+                ],
+                "inferred": false,
+                "reason": "文本指定；同句多段傷害仍須逐段核對。"
+              },
+              "semanticVerification": "pending",
+              "blocks": {
+                "conditions": [],
+                "statements": [
+                  {
+                    "acts": [
+                      {
+                        "label": "stat",
+                        "op": "stat",
+                        "p": {
+                          "stats": [
+                            "防禦",
+                            "特防"
+                          ],
+                          "side": "opp",
+                          "v": -1
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "chain": "fail",
+                    "acts": [
+                      {
+                        "label": "damage_multiplier_turns",
+                        "op": "damage_multiplier_turns",
+                        "p": {
+                          "turns": 2,
+                          "kind": "技能",
+                          "mult": 2.5,
+                          "next": true,
+                          "side": "opp",
+                          "dir": "in"
+                        }
+                      }
+                    ]
+                  }
+                ]
+              },
+              "id": "5041:技能:破影:6429ee877d88:1",
+              "presentationOnly": false,
+              "execution": "authored-block-runtime",
+              "textCorrespondence": {
+                "state": "no-matching-txt",
+                "files": []
+              },
+              "evidence": []
+            },
+            {
+              "index": 3,
+              "raw": "先出手則對手當回合攻擊技能無效",
+              "trigger": "self_attack",
+              "parsed": true,
+              "explanation": false,
+              "unresolved": [],
+              "damage": null,
+              "semanticVerification": "pending",
+              "blocks": {
+                "conditions": [],
+                "statements": [
+                  {
+                    "acts": [
+                      {
+                        "label": "invalid_turns",
+                        "op": "invalid_turns",
+                        "p": {
+                          "turns": 1,
+                          "kind": "攻擊"
+                        }
+                      }
+                    ],
+                    "cond": [
+                      {
+                        "label": "first",
+                        "c": "first",
+                        "p": {}
+                      }
+                    ]
+                  }
+                ]
+              },
+              "id": "5041:技能:破影:c78cc24e5a89:1",
+              "presentationOnly": false,
+              "execution": "authored-block-runtime",
+              "textCorrespondence": {
+                "state": "no-matching-txt",
+                "files": []
+              },
+              "evidence": []
+            },
+            {
+              "index": 4,
+              "raw": "4回合內自身使用技能吸取對手最大體力¼",
+              "trigger": "self_attack",
+              "parsed": true,
+              "explanation": false,
+              "unresolved": [],
+              "damage": null,
+              "semanticVerification": "pending",
+              "blocks": {
+                "conditions": [],
+                "statements": [
+                  {
+                    "acts": [
+                      {
+                        "label": "timed",
+                        "op": "timed",
+                        "p": {
+                          "turns": 4,
+                          "body": [
+                            {
+                              "acts": [
+                                {
+                                  "label": "drain",
+                                  "op": "drain",
+                                  "p": {
+                                    "ratio": 0.25
+                                  }
+                                }
+                              ]
+                            }
+                          ],
+                          "trig": "self_after_skill"
+                        }
+                      }
+                    ]
+                  }
+                ]
+              },
+              "id": "5041:技能:破影:956ce99dfbb5:1",
+              "presentationOnly": false,
+              "execution": "authored-block-runtime",
+              "textCorrespondence": {
+                "state": "no-matching-txt",
+                "files": []
+              },
+              "evidence": []
+            }
+          ]
+        },
+        {
+          "kind": "技能",
+          "name": "炫彩.山殞垣頹",
+          "sourceText": "必中；\n【精靈王特權】攻擊時造成的傷害不會出現微弱（克制關係為微弱時都變成普通）\n消除對手能力提升狀態，消除成功則自身進入山神守護，已處於則恢復自身最大體力⅓\n己方其他精靈下次登場時免疫下次受到的異常狀態\n吸取對手自身最大體力50%並為自身附加等量護盾，之後下次己方精靈護盾消失時令對手下回合無法主動切換精靈\n自身擁有護盾時技能威力翻倍",
+          "route": "kit",
+          "source": "統一效果來源：kit；未接通 0 項",
+          "sourceSha256": "e6dab1d80df8d8f9790f7376794f5bd9615b9072d6068ce995e6b5714e4221eb",
+          "clauses": [
+            {
+              "index": 0,
+              "raw": "【精靈王特權】攻擊時造成的傷害不會出現微弱（克制關係為微弱時都變成普通）",
+              "trigger": "self_attack",
+              "parsed": true,
+              "explanation": false,
+              "unresolved": [],
+              "damage": {
+                "types": [],
+                "inferred": true,
+                "reason": "請選固定／百分比／X 系技能／真實類別。"
+              },
+              "semanticVerification": "pending",
+              "blocks": {
+                "conditions": [],
+                "statements": [
+                  {
+                    "acts": [
+                      {
+                        "label": "no_resist",
+                        "op": "no_resist",
+                        "p": {}
+                      }
+                    ]
+                  }
+                ]
+              },
+              "id": "5041:技能:炫彩.山殞垣頹:a8e0f0bfee15:1",
+              "presentationOnly": false,
+              "execution": "authored-block-runtime",
+              "textCorrespondence": {
+                "state": "no-matching-txt",
+                "files": []
+              },
+              "evidence": []
+            },
+            {
+              "index": 1,
+              "raw": "消除對手能力提升狀態，成功則自身進入山神守護，已處於則恢復自身最大體力⅓",
+              "trigger": "self_attack",
+              "parsed": true,
+              "explanation": false,
+              "unresolved": [],
+              "damage": null,
+              "semanticVerification": "pending",
+              "blocks": {
+                "conditions": [],
+                "statements": [
+                  {
+                    "acts": [
+                      {
+                        "label": "stat_clear",
+                        "op": "stat_clear",
+                        "p": {
+                          "kind": "up",
+                          "side": "opp"
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "chain": "success",
+                    "acts": [
+                      {
+                        "label": "status_if_absent_else_heal",
+                        "op": "status_if_absent_else_heal",
+                        "p": {
+                          "healRatio": 0.3333333333333333,
+                          "status": "山神守護",
+                          "turns": 3
+                        }
+                      }
+                    ]
+                  }
+                ]
+              },
+              "id": "5041:技能:炫彩.山殞垣頹:7512a52b33a1:1",
+              "presentationOnly": false,
+              "execution": "authored-block-runtime",
+              "textCorrespondence": {
+                "state": "no-matching-txt",
+                "files": []
+              },
+              "evidence": []
+            },
+            {
+              "index": 2,
+              "raw": "己方其他精靈下次登場時免疫下次受到的異常狀態",
+              "trigger": "use",
+              "parsed": true,
+              "explanation": false,
+              "unresolved": [],
+              "damage": null,
+              "semanticVerification": "pending",
+              "blocks": {
+                "conditions": [],
+                "statements": [
+                  {
+                    "acts": [
+                      {
+                        "label": "next_ally_entry",
+                        "op": "next_ally_entry",
+                        "p": {
+                          "excludeSource": true,
+                          "resource": "none",
+                          "label": "免疫下次異常",
+                          "ratio": 1,
+                          "body": [
+                            {
+                              "acts": [
+                                {
+                                  "label": "immune_status_count",
+                                  "op": "immune_status_count",
+                                  "p": {
+                                    "count": 1
+                                  }
+                                }
+                              ]
+                            }
+                          ]
+                        }
+                      }
+                    ]
+                  }
+                ]
+              },
+              "id": "5041:技能:炫彩.山殞垣頹:c31b63297d62:1",
+              "presentationOnly": false,
+              "execution": "authored-block-runtime",
+              "textCorrespondence": {
+                "state": "no-matching-txt",
+                "files": []
+              },
+              "evidence": []
+            },
+            {
+              "index": 3,
+              "raw": "吸取對手自身最大體力50%並為自身附加等量護盾",
+              "trigger": "self_attack",
+              "parsed": true,
+              "explanation": false,
+              "unresolved": [],
+              "damage": null,
+              "semanticVerification": "pending",
+              "blocks": {
+                "conditions": [],
+                "statements": [
+                  {
+                    "acts": [
+                      {
+                        "label": "drain_then_shield",
+                        "op": "drain_then_shield",
+                        "p": {
+                          "ratio": 0.5
+                        }
+                      }
+                    ]
+                  }
+                ]
+              },
+              "id": "5041:技能:炫彩.山殞垣頹:1ad143898029:1",
+              "presentationOnly": false,
+              "execution": "authored-block-runtime",
+              "textCorrespondence": {
+                "state": "no-matching-txt",
+                "files": []
+              },
+              "evidence": []
+            },
+            {
+              "index": 4,
+              "raw": "之後下次己方精靈護盾消失時令對手下回合無法主動切換精靈",
+              "trigger": "self_attack",
+              "parsed": true,
+              "explanation": false,
+              "unresolved": [],
+              "damage": null,
+              "semanticVerification": "pending",
+              "blocks": {
+                "conditions": [],
+                "statements": [
+                  {
+                    "acts": [
+                      {
+                        "label": "shield_lost_watch",
+                        "op": "shield_lost_watch",
+                        "p": {
+                          "scope": "team",
+                          "body": [
+                            {
+                              "acts": [
+                                {
+                                  "label": "no_switch",
+                                  "op": "no_switch",
+                                  "p": {
+                                    "turns": 1,
+                                    "next": true
+                                  }
+                                }
+                              ]
+                            }
+                          ],
+                          "once": true
+                        }
+                      }
+                    ]
+                  }
+                ]
+              },
+              "id": "5041:技能:炫彩.山殞垣頹:510d1d2f1c51:1",
+              "presentationOnly": false,
+              "execution": "authored-block-runtime",
+              "textCorrespondence": {
+                "state": "no-matching-txt",
+                "files": []
+              },
+              "evidence": []
+            },
+            {
+              "index": 5,
+              "raw": "自身擁有護盾時技能威力翻倍",
+              "trigger": "outgoing_power",
+              "parsed": true,
+              "explanation": false,
+              "unresolved": [],
+              "damage": null,
+              "semanticVerification": "pending",
+              "blocks": {
+                "conditions": [],
+                "statements": [
+                  {
+                    "acts": [
+                      {
+                        "label": "power_multiplier",
+                        "op": "power_multiplier",
+                        "p": {
+                          "v": 2
+                        }
+                      }
+                    ],
+                    "cond": [
+                      {
+                        "label": "自身擁有護盾",
+                        "c": "shield",
+                        "p": {
+                          "side": "self"
+                        }
+                      }
+                    ]
+                  }
+                ]
+              },
+              "id": "5041:技能:炫彩.山殞垣頹:2bf6323bac73:1",
+              "presentationOnly": false,
+              "execution": "authored-block-runtime",
+              "textCorrespondence": {
+                "state": "no-matching-txt",
+                "files": []
+              },
+              "evidence": []
+            }
+          ]
+        }
+      ]
+    },
+    {
       "id": "5035",
       "name": "御天龍神·哈莫",
       "sourceFiles": [],
@@ -116645,19 +119620,21 @@
                         }
                       },
                       {
-                        "label": "stat_reverse",
-                        "op": "stat_reverse",
+                        "label": "flag_set",
+                        "op": "flag_set",
                         "p": {
-                          "kind": "up",
-                          "side": "opp"
+                          "thisRound": true,
+                          "value": true,
+                          "key": "oppBoostAsDropThisAction"
                         }
                       },
                       {
-                        "label": "stat_reverse",
-                        "op": "stat_reverse",
+                        "label": "flag_set",
+                        "op": "flag_set",
                         "p": {
-                          "kind": "down",
-                          "side": "self"
+                          "thisRound": true,
+                          "value": true,
+                          "key": "selfDropAsOppDropThisAction"
                         }
                       },
                       {
@@ -117212,19 +120189,21 @@
                         }
                       },
                       {
-                        "label": "stat_reverse",
-                        "op": "stat_reverse",
+                        "label": "flag_set",
+                        "op": "flag_set",
                         "p": {
-                          "kind": "up",
-                          "side": "opp"
+                          "thisRound": true,
+                          "value": true,
+                          "key": "oppBoostAsDropThisAction"
                         }
                       },
                       {
-                        "label": "stat_reverse",
-                        "op": "stat_reverse",
+                        "label": "flag_set",
+                        "op": "flag_set",
                         "p": {
-                          "kind": "down",
-                          "side": "self"
+                          "thisRound": true,
+                          "value": true,
+                          "key": "selfDropAsOppDropThisAction"
                         }
                       },
                       {

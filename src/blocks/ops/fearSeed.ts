@@ -15,6 +15,25 @@ export const FEAR_SEED_ACTION_FIELDS: Record<string, readonly string[]> = {
   opp_active_swap: [],
 };
 
+/** 條件欄位（登記於 sequenceContract）。 */
+export const FEAR_SEED_CONDITION_FIELDS: Record<string, readonly string[]> = {
+  event_on_opp: ['afterOpening'],
+};
+
+/**
+ * event_on_opp：本次事件的主體（登場者／被附加異常者）在持有者的對手方。
+ * 只能掛在 team_entrance／team_before_status／team_status_received（契約檢查）；
+ * 讓「對手精靈登場或受到害怕」這類即時事件不必靠回合級輪詢（opp_active_swap）。
+ */
+export function fearSeedCondition(ctx: BattleEventContext, c: any): boolean | undefined {
+  if (c.c !== 'event_on_opp') return undefined;
+  const d = (ctx as any).effectEventData || {};
+  // afterOpening：開局首發登場（與戰鬥開始同一開局序列，登場事件帶 opening 旗標）不算「事後登場」。
+  if (c.p?.afterOpening && d.opening) return false;
+  const subject = d.enteredSide ?? d.targetSide;
+  return !!subject && subject !== ctx.actor;
+}
+
 /** 契約補充檢查；回傳 null 代表通過。 */
 export function fearSeedActionIssue(op: string, p: any): string | null {
   if (op === 'maxhp_absorb_all') {

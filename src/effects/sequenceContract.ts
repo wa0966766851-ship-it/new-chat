@@ -34,11 +34,12 @@ import {DRAGON_HEALING_ACTION_FIELDS,dragonHealingActionIssue} from '../blocks/o
 import {SHIELD_MARK_ACTION_FIELDS,shieldMarkActionIssue} from '../blocks/ops/shieldMark';
 import {CAN_ACTION_FIELDS,canActionIssue} from '../blocks/ops/can';
 import {BRINKK_ACTION_FIELDS,brinkkActionIssue} from '../blocks/ops/brinkk';
+import {EXTRA_ELF_LIFECYCLE_ACTION_FIELDS,EXTRA_ELF_LIFECYCLE_CONDITION_FIELDS,extraElfLifecycleActionIssue} from '../blocks/ops/extraElfLifecycle';
 import {ODIN_ACTION_FIELDS,odinActionIssue} from '../blocks/ops/odinRune';
 import {CASSIUS_SHAN_ACTION_FIELDS,cassiusShanActionIssue} from '../blocks/ops/cassiusShan';
 import {MECH_ACTION_FIELDS,mechActionIssue} from '../blocks/ops/mech';
 import {PP_ABSORB_ACTION_FIELDS,ppAbsorbActionIssue} from '../blocks/ops/ppAbsorb';
-import {FEAR_SEED_ACTION_FIELDS,fearSeedActionIssue} from '../blocks/ops/fearSeed';
+import {FEAR_SEED_ACTION_FIELDS,FEAR_SEED_CONDITION_FIELDS,fearSeedActionIssue} from '../blocks/ops/fearSeed';
 import {ROSTER_STATS_ACTION_FIELDS,rosterStatsActionIssue} from '../blocks/ops/rosterStats';
 import {GROUP1_ACTION_FIELDS,group1ActionIssue} from '../blocks/ops/group1';
 import {FINAL_EXTRA_TRAIT_ACTION_FIELDS,finalExtraTraitActionIssue} from '../blocks/ops/finalExtraTraits';
@@ -114,6 +115,8 @@ export const SEQUENCE_ACTION_FIELDS: Record<string, readonly string[]> = {
   ...CAN_ACTION_FIELDS,
   // 5007 濁：額外精靈召喚／真實傷害疊層／場下消耗／死亡消逝（DSH 20261018）
   ...BRINKK_ACTION_FIELDS,
+  // 額外精靈生命週期（blocks/ops/extraElfLifecycle.ts；DSH 2026-10-31）
+  ...EXTRA_ELF_LIFECYCLE_ACTION_FIELDS,
   // 5019 ᛏ：決鬥／符文激活剝離／下次先制／PP上限歸零（DSH 20261018）
   ...ODIN_ACTION_FIELDS,
   ...CASSIUS_SHAN_ACTION_FIELDS,
@@ -229,6 +232,8 @@ export const SEQUENCE_ACTION_FIELDS: Record<string, readonly string[]> = {
 };
 export const SEQUENCE_CONDITION_FIELDS: Record<string, readonly string[]> = {
   ...OWNER_LINK_CONDITION_FIELDS,
+  ...EXTRA_ELF_LIFECYCLE_CONDITION_FIELDS,
+  ...FEAR_SEED_CONDITION_FIELDS,
   ...FINAL_ODB_CONDITION_FIELDS,
   first: [],
   // 無為龍者（arena_12）條件（blocks/ops/arenaShared.ts；DSH 20261018）
@@ -341,6 +346,7 @@ const timerTriggers=['opp_used_skill','opp_used_attack','opp_used_status','opp_b
 function paramsIssue(value: unknown, fields: readonly string[], path: string, numberLimit=1e6): string | null {
   if (!object(value)) return `${path}需為參數物件`;
   for (const [key,v] of Object.entries(value)) {
+    if (!fields.includes(key)) return `${path}.${key}尚無已核對的參數合約`;
     if (v === undefined) continue;
     if (typeof v === 'number' && (!Number.isFinite(v) || Math.abs(v)>(key==='value'?numberLimit:1e6))) return `${path}.${key}需為有限數值`;
     if (['side','side2','of'].includes(key) && !sides.includes(v) && !(key==='side' && v==='none')) return `${path}.${key}目標不明`;
@@ -354,7 +360,7 @@ function paramsIssue(value: unknown, fields: readonly string[], path: string, nu
     if (['ids','stats','stats2','list','statuses','exclude','fields','phase'].includes(key) && (!Array.isArray(v)||!v.length||v.length>30||v.some(x=>typeof x!=='string'||x.length>200))) return `${path}.${key}需為有限名稱陣列`;
     if (key==='cls' && (typeof v!=='string'||!['','控制類','弱化類','限制類','衍化類','附屬類','非附屬類'].includes(v))) return `${path}.cls異常分類不明`;
     if (['label','text'].includes(key) && (typeof v!=='string'||v.length>100000)) return `${path}.${key}需為有限文字`;
-    if (typeof v === 'object' && !['ids','terms','stats','stats2','list','statuses','exclude','fields','phase','effects','body','bodyLow','bodyHigh','onMatch','onMismatch','choices','onExpire','onRoundMiss','branches','perStageDown','from','onClose','onBlock','rules','marks','recoveryReduction','incomingDamageReduction','perMark','perMarkTurns','perStage','perStageKinds','perStageLevel','perMarkHits','scaleByMarks','perNonFullPp','keys','sides','types','resources','pool','repeat','fallback','traitSources','countFromMark'].includes(key)) return `${path}.${key}不接受程式或巢狀行為`;
+    if (typeof v === 'object' && !['ids','terms','stats','stats2','list','statuses','exclude','fields','phase','effects','body','bodyLow','bodyHigh','onMatch','onMismatch','choices','onExpire','onRoundMiss','branches','perStageDown','from','onClose','onBlock','rules','marks','recoveryReduction','incomingDamageReduction','perMark','perMarkTurns','perStage','perStageKinds','perStageLevel','perMarkHits','scaleByMarks','perNonFullPp','keys','sides','types','resources','pool','repeat','fallback','traitSources','countFromMark','conversionTargetBan','cancelEffects'].includes(key)) return `${path}.${key}不接受程式或巢狀行為`;
   }
   return null;
 }
@@ -376,6 +382,8 @@ export function sequenceIssue(value: unknown, node?: string, depth=0, inMark=fal
       if(c.neg !== undefined && c.neg !== false) return '頂層反向條件尚未接通';
       if(c.label !== undefined && typeof c.label !== 'string')return '條件名稱需為文字';
       const linkIssue=ownerLinkConditionIssue(c);if(linkIssue)return linkIssue;
+      if(c.c==='entered_not_owner'&&value.trig!=='ally_entered')return '登場者條件只能用在隊友登場事件';
+      if(c.c==='event_on_opp'&&!['team_entrance','team_before_status','team_status_received'].includes(value.trig))return '事件主體在對手方的條件只能用在出戰背包登場／異常事件';
       const finalIssue=finalOdbConditionIssue(c);if(finalIssue)return finalIssue;
       const issue=paramsIssue(c.p || {},SEQUENCE_CONDITION_FIELDS[c.c],'condition')||groupAConditionIssue(c)||powerStatConditionIssue(c)||stageDamageConditionIssue(c)||keldSoulConditionIssue(c)||entranceStackConditionIssue(c);if(issue)return issue;
       const conditionSides=c.c==='has_status'?['self','opp','both']:c.c==='abnormal'?['self','opp','any']:['stage_any','stage_total'].includes(c.c)?['self','opp','both']:['self','opp'];
@@ -556,6 +564,7 @@ export function sequenceIssue(value: unknown, node?: string, depth=0, inMark=fal
       if(STAGE_DAMAGE_ACTION_FIELDS[act.op]){const issue=stageDamageActionIssue(act.op,act.p);if(issue)return issue;}
       if(CAN_ACTION_FIELDS[act.op]){const issue=canActionIssue(act.op,act.p,value.trig);if(issue)return issue;}
       if(act.op==='summon_extra_elf'){const issue=brinkkActionIssue(act.op,act.p);if(issue)return issue;}
+      if(EXTRA_ELF_LIFECYCLE_ACTION_FIELDS[act.op]){const issue=extraElfLifecycleActionIssue(act.op,act.p);if(issue)return issue;}
       if(KELD_SOUL_ACTION_FIELDS[act.op]){const issue=keldSoulActionIssue(act.op,act.p,(body,trig)=>sequenceIssue({raw:'減免分支主體',trig,parsed:true,body},undefined,depth+1,inMark));if(issue)return issue;}
       const sovereigntyIssue=statusSovereigntyActionIssue(act.op,act.p);if(sovereigntyIssue)return sovereigntyIssue;
       const priorityBonusIssue=priorityBonusActionIssue(act.op,act.p,value.trig);if(priorityBonusIssue)return priorityBonusIssue;
@@ -590,6 +599,7 @@ export function sequenceIssue(value: unknown, node?: string, depth=0, inMark=fal
       if(EXTRA_ELF_ACTION_FIELDS[act.op]){const issue=extraElfActionIssue(act.op,act.p);if(issue)return issue;}
       if(SHIELD_MARK_ACTION_FIELDS[act.op]){const issue=shieldMarkActionIssue(act.op,act.p);if(issue)return issue;}
       if(THUNDER_GOD_ACTION_FIELDS[act.op]){const issue=thunderGodActionIssue(act.op,act.p,value.trig);if(issue)return issue;}
+      if(CASSIUS_SHAN_ACTION_FIELDS[act.op]){const issue=cassiusShanActionIssue(act.op,act.p,body=>sequenceIssue({raw:'護盾消失監看子流程',trig:'round_end',parsed:true,body},undefined,depth+1,inMark));if(issue)return issue;}
       if(GROUP5_ACTION_FIELDS[act.op]){const issue=group5ActionIssue(act.op,act.p,(body,trig)=>sequenceIssue({raw:'子流程主體',trig,parsed:true,body},undefined,depth+1,inMark),value.trig);if(issue)return issue;}
       if(act.op==='block_damage_uses') {
         if(!(act.p.uses>0)||!['攻擊','技能'].includes(act.p.kind)||typeof act.p.key!=='string'||!act.p.key||act.p.key.length>200||!['use','self_skill','self_attack','self_status','on_invalid','entrance','damaged_skill'].includes(value.trig))return '次數抵擋需正次數、攻擊／技能範圍、計數鍵及使用時入口';
@@ -797,7 +807,7 @@ export function sequenceIssue(value: unknown, node?: string, depth=0, inMark=fal
       if(act.op==='stage_guard_turns'&&(!['up','down'].includes(act.p.kind)||!Number.isInteger(act.p.turns)||act.p.turns<1||act.p.turns>10000))return '能力等級操作保護需明確提升／下降及正整數期限';
       if(act.op==='heal_overflow'&&(!(act.p.unit>0)||(act.p.reduce===undefined&&act.p.shield===undefined)||(act.p.reduce!==undefined&&!(act.p.reduce>0&&act.p.reduce<=1))||(act.p.kind!==undefined&&act.p.kind!=='攻擊')))return '溢出換算需單位、減傷比例或護盾';
       if(act.op==='battle_boost'&&(!(act.p.inc>0)||(act.p.cap!==undefined&&!(act.p.cap>=act.p.inc))||(act.p.kind??'攻擊')!=='攻擊'))return '本場累積增傷需每次增量與上限（目前只限攻擊傷害）';
-      if(act.op==='ignore_next'&&act.p.what!=='攻擊免疫')return '下次無視範圍不明';
+      if(act.op==='ignore_next'&&!['攻擊免疫','傷害限制'].includes(act.p.what))return '下次無視範圍不明';
       if(act.op==='heal_reduce_turns'&&(!(act.p.turns>0)||!(act.p.ratio>0&&act.p.ratio<=1)))return '恢復減少需期限與0至100%';
       if(act.op==='at_round_end') {
         const issue=sequenceIssue({raw:'回合結束時',trig:'round_end',parsed:true,body:act.p.body},undefined,depth+1);

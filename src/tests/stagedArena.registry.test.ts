@@ -100,9 +100,13 @@ assert.equal(wuweiPower(0, 6, false), 470);
 }
 {
   // 龍錄天鋒魂印已遷真 Kit（migratedArena13SoulKit）——段序行為由 tests/migrate_arena13_tf_soul
-  // 以實戰雙側驗收（第6次清除／第7次循環）；此處斷言舊 handler 不再掛載。
+  // 以實戰雙側驗收（第6次清除／第7次循環）。2026-10-30 起註冊表刻意保留一個「無作用」handler 供技能支援讀取端派發（規則3.4）；
+  // 此處斷言它真的什麼都不做：任何計時點呼叫，碰到 ctx 任一屬性即失敗，且回傳 undefined（魂印本文仍不得由舊 handler 執行）。
   const { self } = setup('龍錄天鋒');
-  assert.equal(STAGED_ARENA_SOULS[self.name], undefined, '龍錄天鋒魂印不得殘留舊 handler');
+  const h = STAGED_ARENA_SOULS[self.name];
+  assert.equal(typeof h, 'function', '龍錄天鋒保留無作用 handler');
+  const trap: any = new Proxy({}, { get() { throw new Error('龍錄天鋒魂印 handler 不得讀取 ctx（本文已遷 Kit）'); }, set() { throw new Error('龍錄天鋒魂印 handler 不得寫入 ctx'); } });
+  for (const ev of [EffectTiming.ROUND_START, EffectTiming.ROUND_END, EffectTiming.ON_ENTRANCE, EffectTiming.BATTLE_START]) assert.equal(h(trap, ev), undefined, '無作用 handler：' + String(ev));
 }
 {
   const { c, self, marks } = setup('無極聖武');

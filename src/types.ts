@@ -108,7 +108,21 @@ export type StatusCategory =
   | 'NONE' 
   | string;
 
-export type EffectSource = 'skill' | 'soulmark' | 'mechanic' | 'item';
+/** Timer.source：與效果顯示（EffectOrigin.kind）使用同一組種類；'mechanic' 為舊稱，顯示時視同系統機制。 */
+export type EffectSource = 'skill' | 'soulmark' | 'mechanic' | 'item' | 'trait' | 'extra' | 'system';
+
+/**
+ * 效果來源紀錄（顯示與稽核用，不參與結算）。由 contextBuilders 的 addTimerTo／setMark 集中填入；舊存檔沒有此欄位。
+ * sourceBattleId＝施加者（取得效果時為持有者本人）；defName＝效果定義所屬精靈（取得效果時為被複製者）。
+ */
+export interface EffectOrigin {
+  kind: 'skill' | 'soulmark' | 'trait' | 'item' | 'extra' | 'system';
+  sourceSide: 'p1' | 'p2';
+  sourceBattleId: string;
+  sourceName: string;
+  skillName?: string;
+  defName?: string;
+}
 
 export type TimerUnit = 'round' | 'use' | 'permanent';
 export type EffectCategory = 'turn_effect' | 'other';
@@ -251,7 +265,8 @@ export interface Elf {
     accuracy: number;
   };
   isVanished?: boolean; // Flag to identify if the elf has vanished
-  isExtra?: boolean; // 標示該精靈是否為額外/待命後備精靈 (Peak 模式 50 回合勝負判定時預設不計入)
+  isExtra?: boolean; // 效果額外加入的精靈；不是待命背包、BP 候選或正常隊友（不計入存活勝負判定）
+  extraKind?: string; // 額外精靈種類 id（字母開頭 x_*，見 docs/rules/額外精靈id標準.md）
   summonerId?: string; // 額外精靈的召喚者 battleId（陣亡召喚者的延後效果由存活的額外精靈代為執行）
   badge?: string; // 精靈徽章圖示或標籤 (例如: ✨, 🦑, 👻)
   hasDiedTriggered?: boolean; // Flag for Brinkk revival

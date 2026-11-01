@@ -1,3 +1,4 @@
+import { correctSavedDimensionalDragon } from './savedDimensionalDragonCorrection';
 import type {Elf,Skill} from '../types';
 import {correctSavedCorruptedRey} from './savedCorruptedReyCorrection';
 import {correctSavedOdinPp} from './savedOdinPpCorrection';
@@ -19,6 +20,7 @@ function knownLegacySoulKit(elf:Elf):boolean {
 
 /** 只修正已知舊版內建定義；圖紙或全文有其他改動時保留使用者版本。 */
 export function applySavedSkillCorrections(elf:Elf,defaults:Elf[]):Elf{
+  elf = correctSavedDimensionalDragon(elf, defaults, modifiedBuiltinDefinitions(elf, defaults));
   return synchronizeBuiltinEffectBindings(correctKnownSavedDefinitions(correctSavedJiuqing(correctSavedCorruptedRey(correctSavedFifthFlags(elf,defaults),defaults),defaults),defaults),defaults);
 }
 

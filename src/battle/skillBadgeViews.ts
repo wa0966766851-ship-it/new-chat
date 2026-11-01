@@ -19,7 +19,8 @@ export function skillBadgeViews(elf: Elf): BattleEffectViewModel[] {
       id: `skill-badge:${slot}:${badge.text}`,
       semanticId: `skill-badge:${badge.text}`,
       category: 'mark',
-      label: `${badge.text}${state ? ` ${state}` : ''}`,
+      // 標籤＝技能名＋狀態（不再只有符文字）；符文字留在 shortLabel。
+      label: `${skill.name}${state ? ` ${state}` : ''}`,
       shortLabel: badge.text,
       description: `技能${slot + 1}「${skill.name}」上的${badge.text}${state ? `（${state}）` : ''}：${detail || badge.text}`,
       source: '技能印記',

@@ -11,6 +11,7 @@ import { ElfAvatar, TypeIcon } from './SeerImages';
 import { statusVisual } from '../battle/effectIcons';
 import { ElfRosterCard } from './ElfRosterCard';
 import { ElfSpotlight } from './ElfSpotlight';
+import { RichDescription } from './RichDescription';
 import { readStoredRecord } from '../utils/safeStorage';
 import { getTemplateReviewReason, getTemplateTimingLabel } from '../utils/templateReview';
 import type { Elf } from '../types';
@@ -479,9 +480,7 @@ const Encyclopedia: React.FC<EncyclopediaProps> = ({ onClose, initialTab = 'elve
                                   ))}
                                 </div>
                               </div>
-                              <p className="text-xs text-slate-300 leading-relaxed whitespace-pre-wrap font-sans">
-                                {status.description}
-                              </p>
+                              <RichDescription text={status.description} className="text-xs text-slate-300 font-sans" />
                             </div>
                           </div>
                         ))}
@@ -1384,9 +1383,7 @@ const Encyclopedia: React.FC<EncyclopediaProps> = ({ onClose, initialTab = 'elve
                                   </span>
                                 </div>
 
-                                <p className="text-xs text-slate-300 leading-relaxed font-sans text-left">
-                                  {item.description}
-                                </p>
+                                <RichDescription text={item.description} className="text-xs text-slate-300 font-sans text-left" />
 
                                 {/* Tags */}
                                 {item.tags && item.tags.length > 0 && (

@@ -7,6 +7,8 @@ import {effectSourceViews} from './effectSources';
 import {skillSlot} from './skillSlot';
 import {hasStoneThrowerMythic} from '../data/skillStones';
 import {authoredPpExemption} from '../effects/skillPpProperty';
+import {statusReplacementActive} from './statusRules';
+import {ppCostFreeByRule} from './skillRules';
 
 // isZeroPpExempt：PP 為 0 時仍可選擇（「不受PP值限制」）
 // isPpCostFree：使用時不消耗 PP（「不消耗PP值」）
@@ -46,8 +48,11 @@ const nativeZeroPpExempt = (elf: Elf, sk: Skill, opp?: Elf | null): boolean => {
   // 2026-10-30：可攜技能標記（符文）的能力必須「已激活」才生效。
   // 原寫法不看 isRuneActive，導致 ᚱᚷ 未激活也讓所有技能豁免 PP。
   if(portableSkillCapabilities(elf).ppUnrestricted)return true;
-  if((sk as any).portableSkillMark?.capabilities?.ppUnrestricted&&(sk as any).isRuneActive===true)return true;
+  // 附有該標記的技能本身「選招不受PP限制」：選招即激活，所以未激活時也必須能選（否則 0PP 的標記槽永遠無法激活）；其他技能仍須等標記激活。
+  if((sk as any).portableSkillMark?.capabilities?.ppUnrestricted)return true;
   if(sk.ppUnlimited===true)return true; // 原廠 PP 0/0
+  // 異常規則：原有效果被取消期間改為選擇使用技能不受PP值限制（battle/statusRules.ts）。
+  if(statusReplacementActive(elf.statusRules,getStatuses(elf))?.replacePpFree)return true;
 
   // 1. 專屬機制
   if (elf.name === "變革·馬爾修斯") return true; // 充能系統
@@ -98,6 +103,7 @@ const nativeZeroPpExempt = (elf: Elf, sk: Skill, opp?: Elf | null): boolean => {
 const nativePpCostFree = (elf: Elf, sk: Skill, opp?: Elf | null): boolean => {
   if (!elf || !sk) return false;
   if (sk.ppUnlimited === true) return true; // 原廠 PP 0/0：使用不消耗PP
+  if (ppCostFreeByRule(elf, sk, opp)) return true; // 技能規則（battle/skillRules.ts）
   if (hasStoneThrowerMythic(elf)) return true;
   if (elf.name === "變革·馬爾修斯") return true;               // 充能系統另計
   if (elf.name?.includes("奧佩婭")) return true;               // 自身使用技能時：不消耗技能PP值

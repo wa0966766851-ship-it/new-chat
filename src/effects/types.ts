@@ -340,6 +340,8 @@ export interface BattleEventContext {
   getSeparatedElves: (side: "p1" | "p2", elf: Elf) => Elf[];
   vanishElf: (side: "p1" | "p2", elf: Elf) => void;
   addExtraElf: (side: "p1" | "p2", extraElf: Elf) => void;
+  /** 令額外精靈死亡（先派發其 self_fatal 再消逝）；已死亡／已消逝回傳 false。由 contextBuilders 注入，避免 blocks/runtime 靜態引入 extraElfKit 形成載入環。 */
+  killExtraElf?: (side: "p1" | "p2", extraElf: Elf, data?: Record<string, unknown>) => boolean;
 }
 
 export type BattleSkillHandler = (context: BattleEventContext) => void;

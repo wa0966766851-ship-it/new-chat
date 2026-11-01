@@ -2,6 +2,7 @@ import React from "react";
 import { statusVisual } from "../battle/effectIcons";
 import { BOSS_TRAIT_BY_STATUS, bossTraitText, type BossTraitDef } from "../data/bossTraits";
 import { BOSS_STATUS_GROUPS, bossGroupOf } from "../data/bossStatusGroups";
+import { RichDescription } from "./RichDescription";
 
 const TIER_LABEL: Record<number, string> = { 1: "溫和", 2: "中等", 3: "強", 4: "極端" };
 const TIER_TONE: Record<number, string> = { 1: "text-emerald-300", 2: "text-sky-300", 3: "text-amber-300", 4: "text-rose-300" };
@@ -56,7 +57,7 @@ export function BossStatusSection({ entries, query = "" }: { entries: readonly B
                       <h4 className="font-semibold text-slate-100 text-sm">{e.name}</h4>
                       {def && <span className={`text-[10px] px-2 py-0.5 rounded-full bg-white/[0.06] ${TIER_TONE[def.tier]}`} title="威脅層次（星蝕回廊依難度解鎖）">{TIER_LABEL[def.tier]}</span>}
                     </div>
-                    <p className="text-xs text-slate-300 leading-relaxed whitespace-pre-wrap font-sans">{def ? bossTraitText(def) : e.description}</p>
+                    <RichDescription as="p" text={def ? bossTraitText(def) : e.description} className="text-xs text-slate-300 font-sans" />
                     {(rows.length > 0 || def?.lv) && (
                       <div className="flex flex-wrap gap-1.5 text-[10px] text-slate-400">
                         {rows.map(r => <span key={r.label} className="px-1.5 py-0.5 rounded bg-white/[0.05]" title="參數預設值">{r.label} {r.value}</span>)}

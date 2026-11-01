@@ -25,7 +25,8 @@ export function petAnimationBinding(elf:Pick<Elf,'id'|'name'|'skinId'|'path'>):P
  if(String(elf.id)==='70' && elf.name==='雷伊') return 'rey70';
  return BY_NAME.get(elf.name)??null;
 }
-export type PetAction='standby'|'attack'|'sa'|'cp'|'hited'|'extra';
+/** ultimate＝第五技能的絕招序列（只有素材登記 fullscreen.ultimate 才會用到，序列名由素材決定）。 */
+export type PetAction='standby'|'attack'|'sa'|'cp'|'hited'|'extra'|'ultimate';
 /** 額外行動序列：優先使用登記的 extraSequence；否則依序找 add1/add2/extra；最後才退回 cp。
  *  2026-10-28：次元龍 4586.pet 實際帶 add1(60)/add2(69)，舊邏輯只找 extra 會誤退成 cp。 */
 export function petExtraSequence(available:readonly string[],preferred?:string):string {
@@ -34,7 +35,7 @@ export function petExtraSequence(available:readonly string[],preferred?:string):
  return 'cp';
 }
 /** 已核對 70.pet：24fps；只供播放時間軸，不參與結算。 */
-export const PET_SEQUENCE_MS:Record<PetAction,number>={extra:3125,standby:29/24*1000,attack:3125,sa:3125,cp:3125,hited:8/24*1000};
+export const PET_SEQUENCE_MS:Record<PetAction,number>={extra:3125,ultimate:3125,standby:29/24*1000,attack:3125,sa:3125,cp:3125,hited:8/24*1000};
 const ready=new Map<string,number>();
 export type PetSequenceTiming={duration:number;hit:number};
 const timings=new Map<string,Partial<Record<PetAction,PetSequenceTiming>>>();

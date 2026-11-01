@@ -58,9 +58,9 @@ try{
         await h.play(side,{self:h.unit('S',1000000,[skill()],{speed:50,statStages:selfStages}),opp:h.unit('E',1000000,[{...h.wait(),priority:4}],{speed:200,statStages:oppStages})});assert.equal(order[0],expected);
       }delete h.S.E;
     });
-    await check(`${side} 八荒2層減傷80%，3層起無視受方減傷，但附加固定不借攻擊繞過`,async()=>{
+    await check(`${side} 八荒2層山神守護降至1/10，3層起無視受方減傷，但附加固定不借攻擊繞過`,async()=>{
       for(const n of [2,3]){const bases:number[]=[];init(n,(_,e,d)=>{if(e===T.BEFORE_DAMAGE&&!d.isIncoming&&d.damageCategory==='skill_attack'){d.base=1000;bases.push(d.base);}});
-        const [r]=await h.play(side,{self:h.unit('S',1000000,[skill()],{statStages:{accuracy:-1}}),opp:h.unit('E',1000000,[h.wait()],{extra:{battleStatuses:{山神守護:3}}})});assert.equal(r.opp.currentHp,1000000-(n===3?1000:200)-60,r.logs.join('\n'));
+        const [r]=await h.play(side,{self:h.unit('S',1000000,[skill()],{statStages:{accuracy:-1}}),opp:h.unit('E',1000000,[h.wait()],{extra:{battleStatuses:{山神守護:3}}})});assert.equal(r.opp.currentHp,1000000-(n===3?1000:100)-60,r.logs.join('\n'));
       }
       init(3,(c,e,d)=>{if(e===T.BEFORE_DAMAGE&&!d.isIncoming&&d.damageCategory==='skill_attack')d.base=1000;});const reduction={name:'共用減傷',description:'共用減傷',effectMode:'kit',kit:[{codeId:'effect_sequence',node:'before_damage',source:'mechanic',order:0,params:{clause:{raw:'非真實減半',trig:'incoming_nontrue',parsed:true,body:[{acts:[a('dmg_mod',{dir:'in',kind:'非真實',reduce:.5})]}]}}}]};
       const [r]=await h.play(side,{self:h.unit('S',1000000,[skill()],{statStages:{accuracy:-1}}),opp:h.unit('E',1000000,[h.wait()],{extra:{trait:reduction}})});assert.equal(r.opp.currentHp,998970,r.logs.join('\n'));

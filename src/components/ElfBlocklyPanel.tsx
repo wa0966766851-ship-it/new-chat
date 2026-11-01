@@ -7,6 +7,7 @@ import { getSoulMarkRegistry, hasSkillHandler } from "../effects/battleEventRegi
 import { AlertTriangle } from "lucide-react";
 import { isSoulBlocksOnly } from '../blocks/registry';
 import { EffectBlockToggle } from './EffectBlockToggle';
+import { RichDescription } from './RichDescription';
 import { EffectConnectionInspector } from './EffectConnectionInspector';
 import type { EffectDefinition, EffectExecutionMode } from '../effects/effectConnection';
 import { describeExecution } from '../blocks/audit';
@@ -122,7 +123,7 @@ export function ElfBlocklyPanel({ elfName, elf, soulKit, onSoulKitChange, skills
         onKitChange={k => selectedTrait && traitKey ? onTraitChange(traitKey, { ...selectedTrait, kit: k, effectMode: 'kit' }) : idx < 0 ? onSoulKitChange(k) : onSkillKitChange(idx,k)}
         onModeChange={mode => selectedTrait && traitKey ? onTraitChange(traitKey, { ...selectedTrait, effectMode: mode }) : idx < 0 ? onSoulModeChange(mode) : onSkillModeChange(idx, mode)} />
       <details className="ios-card p-3"><summary className="cursor-pointer text-sm text-blue-200">原描述煉成／實裝核對（不覆寫編輯畫布）</summary>
-        <EffectBlockToggle {...(selectedTrait ? { trait: selectedTrait as any } : idx < 0 ? { elf } : { elf, skill: skills[idx] })}><p className="whitespace-pre-wrap text-sm leading-7">{definition.description}</p></EffectBlockToggle>
+        <EffectBlockToggle {...(selectedTrait ? { trait: selectedTrait as any } : idx < 0 ? { elf } : { elf, skill: skills[idx] })}><RichDescription text={definition.description} className="text-sm" /></EffectBlockToggle>
       </details></>}
       {workspace === 'verification' && <EffectVerificationWorkbench definition={definition} kind={idx < 0 ? 'soul' : 'skill'} hasHandler={selectedHasHandler} elfId={elf.id} execution={execution} />}
       {canvasVisited && <div className={`${workspace !== 'canvas' ? 'hidden' : ''} h-[72vh] min-h-[440px] rounded-2xl overflow-hidden border border-white/10`}>

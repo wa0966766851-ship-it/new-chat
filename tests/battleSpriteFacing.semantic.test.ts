@@ -264,3 +264,18 @@ test("每一筆靜態立繪都有方向，且 front 只留無法核對的自訂�
     }
   }
 });
+
+test("卡修斯兩款外觀：靜態原圖 left、原生動畫 right，P1 朝右、P2 朝左", () => {
+  const name = "岳峙淵渟.卡修斯";
+  for (const src of ["/seer/body/3568.png", "/seer/body/798.png"]) {
+    assert.equal(BODY_SOURCE_FACING[src], "left", src);
+    assert.equal(shouldMirrorBattleSprite(name, "p1", false, src), true, `${src} P1 翻→朝右`);
+    assert.equal(shouldMirrorBattleSprite(name, "p2", false, src), false, `${src} P2 原圖→朝左`);
+  }
+  for (const key of ["cassiusShandi", "cassiusOriginal"] as const) {
+    assert.equal(PET_ANIMATION_ASSETS[key].facing, "right", key);
+    const src = "/api/pet-animations/bundle/" + key;
+    assert.equal(shouldMirrorBattleSprite(name, "p1", false, src), false, `${key} P1 原姿→朝右`);
+    assert.equal(shouldMirrorBattleSprite(name, "p2", false, src), true, `${key} P2 鏡射→朝左`);
+  }
+});

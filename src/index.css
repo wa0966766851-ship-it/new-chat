@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;600;700&family=JetBrains+Mono:wght@400;700&family=Inter:wght@400;500;600;700&family=Noto+Sans+Runic&family=Noto+Sans+Symbols&family=Cinzel:wght@500;700;900&family=Noto+Serif+TC:wght@400;600;900&display=swap');
+/* D-13：Google Fonts 改由 index.html 以非阻塞方式載入（離線時直接用系統字型，不卡首屏）。 */
 @import "tailwindcss";
 @import "./components/InterstellarExploration/eclipse/eclipse.css";
 @import "./components/battle/battleSkin.css";

@@ -2,9 +2,9 @@
   "schemaVersion": 1,
   "summary": {
     "total": 342,
-    "needsDefinition": 209,
+    "needsDefinition": 208,
     "candidateUnverified": 80,
-    "sourceChanged": 2,
+    "sourceChanged": 3,
     "missingSource": 51,
     "semanticallyAccepted": 0
   },
@@ -5049,7 +5049,7 @@
       "category": "技能",
       "sourceSha256": "8379190e565fedf495974fe0ca65969b9f0875980865a14126fe20cdff715a7e",
       "index": 203,
-      "status": "needs-definition",
+      "status": "source-changed",
       "currentRoute": "kit",
       "convertedClauses": 2,
       "unresolved": [
@@ -5060,8 +5060,8 @@
         },
         {
           "index": 2,
-          "text": "🎯 吸取對手最大體力的1/3，自身持有大於3篇詩章效果翻倍",
-          "reason": "自身持有大於3篇詩章效果翻倍"
+          "text": "🎯 5回合內每次使用技能時吸取對手最大體力的1/3，自身持有大於3篇詩章效果翻倍",
+          "reason": "5回合內每次使用技能時吸取對手最大體力的1/3；自身持有大於3篇詩章效果翻倍"
         },
         {
           "index": 3,

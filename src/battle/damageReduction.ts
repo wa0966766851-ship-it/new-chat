@@ -4,7 +4,7 @@ import type { BattleState } from '../components/BattleManager';
 import type { DamageComputation } from '../effects/types';
 import { matchesDamageTypes } from '../effects/damageChoices';
 import { StatusRegistry } from '../effects/statusRegistry';
-import { getStatuses } from '../utils/battleHelpers';
+import { getStatuses, getEffectiveStatuses } from '../utils/battleHelpers';
 import { markAppliesToElf,MARK_DEFINITIONS } from './marks';
 import { activeConstraints } from './timedConstraints';
 import { isNonTrueDamageType, isSkillDamageType, normalizeDamageType } from './damageSemantics';
@@ -108,7 +108,7 @@ export function applyStatusDamageModifiers(comp: DamageComputation, actor: Elf, 
   // 以 comp.statusHitMarked 避免同一次傷害重複計數（多段傷害仍算一次技能）。
   // 計數由引擎在「實際扣血後」統一累加（見 battleEngine STATUS_HIT_RELEASE 區塊），
   // 這裡不再自行計數，避免同一回合多次呼叫造成重複。
-  for (const [elf, incoming] of [[actor, false], [target, true]] as const) for (const status of Object.keys(getStatuses(elf))) {
+  for (const [elf, incoming] of [[actor, false], [target, true]] as const) for (const status of Object.keys(getEffectiveStatuses(elf))) {
     for (const m of StatusRegistry[status]?.mechanics || []) {
       if (m.type !== 'SPECIAL_BUFF') continue;
       const p = m.params || {};

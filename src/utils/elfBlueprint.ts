@@ -74,7 +74,7 @@ export function parseElfBlueprint(json: string): { elf: Elf; warnings: string[];
   if (source.guildBonuses !== undefined) numericStats(source.guildBonuses, 'guildBonuses', 100000);
   if (source.natureModifiers !== undefined) { if (!object(source.natureModifiers)) fail('natureModifiers'); for (const key of stats) if (source.natureModifiers[key] !== undefined) number(source.natureModifiers[key], `natureModifiers.${key}`, 0.1, 2); }
   for (const key of ['height', 'weight']) if (source[key] !== undefined) number(source[key], key, 0, Number.MAX_SAFE_INTEGER);
-  for (const key of ['id', 'gender', 'path', 'specialModeRating', 'destinyRank', 'description', 'imageUrl', 'avatarUrl', 'badge', 'category', 'rawPrompt']) if (source[key] !== undefined) text(source[key], key);
+  for (const key of ['id', 'gender', 'path', 'skinId', 'specialModeRating', 'destinyRank', 'description', 'imageUrl', 'avatarUrl', 'badge', 'category', 'rawPrompt']) if (source[key] !== undefined) text(source[key], key);
   if (source.seerId !== undefined && typeof source.seerId !== 'string' && typeof source.seerId !== 'number') fail('seerId');
   if (source.critValue !== undefined) number(source.critValue, 'critValue', 0, 10000);
   for (const key of ['isAlienElf', 'hasAnnualBonus']) if (source[key] !== undefined && typeof source[key] !== 'boolean') fail(key);
@@ -159,7 +159,7 @@ export function parseElfBlueprint(json: string): { elf: Elf; warnings: string[];
       if(typeof value!=='string'||!/^1:\d+:[0-9a-f]{1,8}:[0-9a-f]{1,8}$/.test(value))fail('builtinEffectBindings signature');
     }
   }
-  const allowed = ['id','name','type','baseStats','evs','ivs','natureModifiers','guildBonuses','inscriptions','resistances','isAlienElf','hasAnnualBonus','height','weight','gender','path','specialModeRating','destinyRank','description','soulMark','trait','alienTraits','skills','skillPool','kit','imageUrl','avatarUrl','seerId','badge','critValue','category','rawPrompt','builtinEffectBindings'];
+  const allowed = ['id','name','type','baseStats','evs','ivs','natureModifiers','guildBonuses','inscriptions','resistances','isAlienElf','hasAnnualBonus','height','weight','gender','path','skinId','specialModeRating','destinyRank','description','soulMark','trait','alienTraits','skills','skillPool','kit','imageUrl','avatarUrl','seerId','badge','critValue','category','rawPrompt','builtinEffectBindings'];
   const skipped = Object.keys(source).filter(k => !allowed.includes(k) && !['level','isCustom','calculatedStats','currentHp','maxHp'].includes(k));
   if (skipped.length) warnings.push(`未匯入戰鬥狀態或尚不支援欄位：${skipped.join('、')}。請保留原始圖紙。`);
   const elf: any = Object.fromEntries(allowed.filter(k => source[k] !== undefined).map(k => [k, source[k]]));

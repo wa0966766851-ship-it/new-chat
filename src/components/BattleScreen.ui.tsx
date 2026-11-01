@@ -1,4 +1,5 @@
 import {AnimationSpeedControl,useAnimationSpeed} from './battle/AnimationSpeedControl';
+import {BattleFxLayer} from './battle/BattleFxLayer';
 import { SpecialBattleEndDialog } from "./BattleEndDialog";
 import { BattleResult } from "./battle/BattleResult";
 import { summarizeLedger, type DamageLedger } from "../battle/damageLedger";
@@ -44,7 +45,8 @@ import { computeHitChance } from "../effects/genericSkillText";
 import { ShieldBarrierPanel } from "./ShieldBarrierPanel";
 import { Elf, Skill, BattleLog, BattleItem } from "../types";
 import { BattleEffectViewModel, describeEffectMeta } from "../battle/effectViewModel";
-import { activeEffectViews, visibleEffectSourceText } from '../battle/activeEffectViews';
+import { hudFieldReserve, hudTrayReserve, stageHeight } from '../battle/hudReserve';
+import { activeEffectViews, stateSignSourceText } from '../battle/activeEffectViews';
 import {statusCountClasses} from '../battle/statusImmunityCount';
 import { getHpBarColor } from "./BattleComponents";
 import { StatusInspector } from "./StatusInspector";
@@ -61,8 +63,8 @@ import { isAliveBySurvivalRule } from "../battle/survivalRules";
 import { statusVisual, stageDesc, STAT_FULL, signIconFor, UNKNOWN_EFFECT_ICON } from "../battle/effectIcons";
 import { bossTraitInstanceText } from "../data/bossTraits";
 import { markAppliesToElf } from "../battle/marks";
-import { effectLines } from "../utils/descFormat";
 import { EffectDescription } from './EffectDescription';
+import { RichDescription } from './RichDescription';
 import { StatusRegistry } from "../effects/statusRegistry";
 import { EFFECT_CATALOG } from "../data/effectCatalog";
 import { SkillResources } from './SkillResources';
@@ -279,8 +281,9 @@ function BattleScreenBody(props: BattleScreenUIProps) {
     const update = () => {
       setFieldSize(prev => prev.w === el.clientWidth && prev.h === el.clientHeight ? prev : { w: el.clientWidth, h: el.clientHeight });
       const top = el.getBoundingClientRect().top;
-      const bottoms = (["p1", "p2"] as const).map(k => hudRefs.current[k]?.getBoundingClientRect().bottom ?? 0);
-      const r = Math.max(0, Math.ceil(Math.max(...bottoms) - top + 8));
+      // 只量頭像卡片底緣；狀態晶片區另有固定預留與最大高度，晶片數量不影響立繪大小（battle/hudReserve.ts）。
+      const bottoms = (["p1", "p2"] as const).map(k => hudRefs.current[k]?.querySelector('[data-hud]')?.getBoundingClientRect().bottom ?? 0);
+      const r = hudFieldReserve(Math.max(...bottoms) - top, el.clientHeight);
       setFieldReserve(prev => Math.abs(prev - r) < 4 ? prev : r);
     };
     update();
@@ -336,7 +339,7 @@ function BattleScreenBody(props: BattleScreenUIProps) {
       (isP1 ? p1Marks : p2Marks) || [],
       (isP1 ? p1Timers : p2Timers) || [],
       (isP1 ? battle.p1RegistryState : battle.p2RegistryState) || {},
-      visibleEffectSourceText(isP1 ? p2 : p1, isP1 ? 'p2' : 'p1', viewMode),
+      stateSignSourceText(isP1 ? p1 : p2, isP1 ? p2 : p1, side, viewMode),
     );
     const renderEffectGroup = (effects: BattleEffectViewModel[], emptyHint: string) => (
       effects.length ? (
@@ -355,7 +358,7 @@ function BattleScreenBody(props: BattleScreenUIProps) {
               }`}
             >
               <ChainImage urls={[effect.icon]} className="inline-block h-5 w-5 mr-1 object-contain" />
-              {fog(effect.label)} {effect.value}{effect.value !== undefined ? effect.unit : ''}
+              {fog(`${effect.sourceTag || ''}${effect.label}`)} {effect.countText ?? ''}
             </button>
           ))}
         </div>
@@ -688,7 +691,7 @@ function BattleScreenBody(props: BattleScreenUIProps) {
                       </div>
                       <div className="grid grid-cols-[repeat(auto-fill,minmax(130px,1fr))] gap-2.5" data-team-side={actSide}>
                         {actTeam.map((elf, idx) => {
-                          const isExtra = idx >= 6 || !!elf.isExtra;
+                          const isExtra = !!elf.isExtra;
                           const isDead = !elf || (!isAliveBySurvivalRule(elf.currentHp, elf.survivalRule) && !(elf.deathImmunity && elf.deathImmunity.deathImmuneTurns > 0));
                           const isDeathImmuneActive = !!(elf && elf.currentHp <= 0 && elf.deathImmunity && elf.deathImmunity.deathImmuneTurns > 0);
                           return (
@@ -806,7 +809,7 @@ function BattleScreenBody(props: BattleScreenUIProps) {
   );
 
 
-  const aliveCount = (team: Elf[]) => team.filter((e, i) => e && !e.isExtra && i < 6 && !e.isVanished && (isAliveBySurvivalRule(e.currentHp, e.survivalRule) || (e.deathImmunity && e.deathImmunity.deathImmuneTurns > 0))).length;
+  const aliveCount = (team: Elf[]) => team.filter((e, i) => e && !e.isExtra && !e.isVanished && (isAliveBySurvivalRule(e.currentHp, e.survivalRule) || (e.deathImmunity && e.deathImmunity.deathImmuneTurns > 0))).length;
 
   const catalogDesc = (c: any, inst: any) => {
     try { return typeof c?.describe === "function" ? c.describe(inst || {}) : (c?.description || ""); } catch { return c?.description || ""; }
@@ -816,7 +819,7 @@ function BattleScreenBody(props: BattleScreenUIProps) {
     if (hid(elf, side)) return (
       <div className="flex flex-wrap gap-1"><span className="px-1.5 py-0.5 rounded border border-slate-600 bg-slate-900/80 text-[10px] text-slate-300">隱匿</span></div>
     );
-    type Chip = { key: string; text: string; cls: string; name: string; desc?: string; icon?: string; stageLabel?: string; stageValue?: string };
+    type Chip = { key: string; text: string; cls: string; name: string; desc?: string; icon?: string; stageLabel?: string; stageValue?: string; count?: string };
     const rows: { key: string; label: string; chips: Chip[]; vertical?: boolean }[] = [];
     const addRow = (key: string, label: string, chips: Chip[], vertical = false) => {
       if (chips.length) rows.push({ key, label, chips, vertical });
@@ -875,11 +878,11 @@ function BattleScreenBody(props: BattleScreenUIProps) {
     const effectChips: Chip[] = [];
     const marks = (side === "p1" ? p1Marks : p2Marks) || [];
     const timers = (side === "p1" ? p1Timers : p2Timers) || [];
-    activeEffectViews(elf, marks, timers, (side === 'p1' ? battle.p1RegistryState : battle.p2RegistryState) || {}, visibleEffectSourceText(side === 'p1' ? p2 : p1, side === 'p1' ? 'p2' : 'p1', viewMode)).filter(effect => effect.category !== 'protection').forEach(effect => {
+    activeEffectViews(elf, marks, timers, (side === 'p1' ? battle.p1RegistryState : battle.p2RegistryState) || {}, stateSignSourceText(side === 'p1' ? p1 : p2, side === 'p1' ? p2 : p1, side, viewMode)).filter(effect => effect.category !== 'protection').forEach(effect => {
       if (effect.category === "mark") {
         effectChips.push({
           key: effect.id, name: effect.label,
-          text: `${effect.label}${effect.value !== undefined ? ` ${effect.value}${effect.unit || ""}` : ""}`,
+          text: `${effect.sourceTag || ''}${effect.label}`, count: effect.countText || undefined,
           cls: effect.polarity === 'negative' ? "bg-rose-950/70 text-rose-200 border-rose-500/40" : "bg-yellow-950/70 text-yellow-200 border-yellow-500/40", desc: describeEffectMeta(effect), icon: effect.icon,
         });
       } else {
@@ -889,7 +892,7 @@ function BattleScreenBody(props: BattleScreenUIProps) {
             : "bg-cyan-950/70 text-cyan-200 border-cyan-500/40";
         effectChips.push({
           key: effect.id, name: effect.label,
-          text: `${effect.label} ${effect.value ?? ""}${effect.unit || ""}`.trim(),
+          text: `${effect.sourceTag || ''}${effect.label}`, count: effect.countText || undefined,
           cls, desc: describeEffectMeta(effect), icon: effect.icon,
         });
       }
@@ -898,7 +901,7 @@ function BattleScreenBody(props: BattleScreenUIProps) {
     if (!rows.length) return null;
     // 頭像下方分層：能力等級（小長方形）→ 異常 → 印記與回合類；每層各占一列，不併排。
     return (
-      <div className={`flex flex-col gap-1 ${side === "p2" ? "items-end" : "items-start"}`} data-status-tray={side}>
+      <div className={`flex flex-col gap-1 overflow-y-auto overscroll-contain custom-scrollbar ${side === "p2" ? "items-end" : "items-start"}`} data-status-tray={side} style={{ maxHeight: hudTrayReserve(fieldSize.h) }}>
         {[...rows].sort((a, b) => ["stages", "statuses", "effects"].indexOf(a.key) - ["stages", "statuses", "effects"].indexOf(b.key)).map(row => (
           <div key={row.key} data-tray-row={row.key} className={`flex flex-wrap gap-1 ${side === "p2" ? "justify-end" : ""}`}>
             {row.chips.map(chip => (
@@ -909,7 +912,7 @@ function BattleScreenBody(props: BattleScreenUIProps) {
                   : `bt-tile max-w-full sm:max-w-[18rem] hover:brightness-125 shadow-[0_2px_6px_rgba(0,0,0,.5)] ${chip.cls}`}>
                 {row.key === "stages"
                   ? <><span className="text-[11px]">{chip.stageLabel}</span><span className="font-mono text-[15px] mt-0.5">{chip.stageValue}</span></>
-                  : <>{chip.icon && <ChainImage urls={[chip.icon]} className="h-5 w-5 shrink-0 rounded-sm object-contain" />}<span className="min-w-0 truncate">{fog(chip.text)}</span></>}
+                  : <>{chip.icon && <ChainImage urls={[chip.icon]} className="h-5 w-5 shrink-0 rounded-sm object-contain" />}<span className="min-w-0 truncate">{fog(chip.text)}</span>{chip.count && <span data-chip-count className="shrink-0 min-w-[2.25rem] text-right font-mono tabular-nums">{chip.count}</span>}</>}
               </button>
             ))}
           </div>
@@ -994,14 +997,14 @@ function BattleScreenBody(props: BattleScreenUIProps) {
       const team = side === "p1" ? p1Team : p2Team;
       const activeIdx = side === "p1" ? p1ActiveIndex : battle.p2ActiveIndex;
       const n = aliveCount(team);
-      const extras = team.filter((e, i) => e && (e.isExtra || i >= 6)).length;
+      const extras = team.filter((e, i) => e && e.isExtra).length;
       return (
         <span className={`flex items-center gap-1.5 ${side === "p2" ? "flex-row-reverse" : ""}`}
           title={`剩餘 ${n} 隻（計入勝負）${extras ? `\n額外精靈 ${extras} 隻：不計入勝負` : ""}`}>
           <span className={`flex flex-wrap gap-1 max-w-[110px] ${side === "p2" ? "justify-end" : ""}`}>
             {team.map((e, i) => {
               if (!e) return null;
-              const extra = !!e.isExtra || i >= 6;
+              const extra = !!e.isExtra;
               const dead = e.isVanished || (!isAliveBySurvivalRule(e.currentHp, e.survivalRule) && !(e.deathImmunity && e.deathImmunity.deathImmuneTurns > 0));
               const active = i === activeIdx;
               return (
@@ -1062,16 +1065,17 @@ function BattleScreenBody(props: BattleScreenUIProps) {
     const skillBanner: string | null = skillPopup?.skillName || (isActing ? props.activeSkillAnim?.skillName : null) || null;
     const isHit = (battle.floatingDamagePopups || props.floatingDamagePopups || []).some((p: any) => p.side === side && p.type === 'skill' && p.amount > 0);
     const lunge = simpleLunge(side);
-    const anim = isHit ? { x: [0, isP1 ? -10 : 10, isP1 ? 6 : -6, 0], filter: ['brightness(1)', 'brightness(2.2)', 'brightness(1)'] }
-      : isAttacking ? { x: [0, isP1 ? lunge : -lunge, 0], filter: 'brightness(1)' }
+    // 受擊不打斷進行中的出招／額外行動演出：同側同時有兩者時以出招為準，受擊排在其後（出招結束後若跳字仍在才播受擊）。
+    const anim = isAttacking ? { x: [0, isP1 ? lunge : -lunge, 0], filter: 'brightness(1)' }
       : isActing ? { x: 0, filter: ['brightness(1)', 'brightness(1.3)', 'brightness(1)'] }
+      : isHit ? { x: [0, isP1 ? -10 : 10, isP1 ? 6 : -6, 0], filter: ['brightness(1)', 'brightness(2.2)', 'brightness(1)'] }
       : { x: 0, filter: 'brightness(1)' };
     const dead = !isAliveBySurvivalRule(elf.currentHp, elf.survivalRule);
     const spriteProfile = hid(elf, side) ? undefined : battleSpriteProfile(elf.name);
 
     // 全部立繪共用可見區域與貼地座標；首領僅以資料配置尺寸上限。
     {
-      const fw = fieldSize.w, fh = Math.max(120, fieldSize.h - fieldReserve);
+      const fw = fieldSize.w, fh = stageHeight(fieldSize.h, fieldReserve);
       const stage = spriteStageLayout(fw);
       if (!fw || !fh) return (
         <div className={`absolute bottom-[30%] ${isP1 ? "left-[19%]" : "right-[19%]"} z-30 pointer-events-none flex flex-col items-center gap-1.5 w-max`}>{renderPopups(side)}</div>
@@ -1079,7 +1083,7 @@ function BattleScreenBody(props: BattleScreenUIProps) {
       return (
         <ProportionalSprite key={elf.battleId || elf.id} elf={isP1?p1:p2} appearanceState={isP1?battle.p1RegistryState:battle.p2RegistryState} side={side} anchorX={fw * (isP1 ? stage.anchorFrac : 1 - stage.anchorFrac)} stageW={fw * stage.widthFrac} stageH={fh} heightRatio={spriteProfile?.heightRatio}
           canvasW={fw} fieldH={fieldSize.h} targetX={fw * (isP1 ? 1 - stage.anchorFrac : stage.anchorFrac)}
-          action={isHit?'hited':isActing?(props.activeSkillAnim?.category==='extra'?'extra':props.activeSkillAnim?.category==='property'?'cp':props.activeSkillAnim?.category==='special'?'sa':'attack'):'standby'}
+          action={isActing?(props.activeSkillAnim?.category==='extra'?'extra':props.activeSkillAnim?.category==='property'?'cp':props.activeSkillAnim?.category==='special'?'sa':'attack'):isHit?'hited':'standby'}
           actionToken={isActing?props.activeSkillAnim:(battle.floatingDamagePopups || props.floatingDamagePopups || []).find((p:any)=>p.side===side&&p.type==='skill'&&p.amount>0)?.id||skillPopup?.id}
           anim={anim} dead={dead} opacity={spriteMode === "hide" ? 0 : spriteMode === "dim" ? 0.55 : 1}
           overlay={(visible) => <>
@@ -1236,6 +1240,8 @@ function BattleScreenBody(props: BattleScreenUIProps) {
       <div className="absolute inset-0 bg-[linear-gradient(rgba(6,182,212,0.02)_1px,transparent_1px),linear-gradient(90deg,rgba(6,182,212,0.02)_1px,transparent_1px)] bg-[size:40px_40px] [mask-image:radial-gradient(ellipse_at_center,black,transparent)] pointer-events-none" />
 
       {renderFixedLayout()}
+      {/* 全屏演出層：z 24，在場地／訊息欄之上、HUD 與指令列（z 30）之下 */}
+      <BattleFxLayer />
 
 
       {/* Trait / Soul Mark Modal */}
@@ -1320,11 +1326,7 @@ function BattleScreenBody(props: BattleScreenUIProps) {
                 
                 <div className="bg-slate-900/60 rounded-xl px-4 py-3 mb-4 border border-white/5 min-h-[60px] flex flex-col justify-center">
                   {hoveredSkill.description ? (
-                    <ul className="text-slate-200 text-[13px] leading-relaxed font-medium space-y-0.5">
-                      {effectLines(hoveredSkill.description).map((l, i) => (
-                        <li key={i} className="border-b border-white/5 last:border-0 pb-0.5">{l}</li>
-                      ))}
-                    </ul>
+                    <RichDescription text={hoveredSkill.description} className="text-slate-200 text-[13px] font-medium" />
                   ) : <p className="text-slate-400 text-sm">該技能尚未登載詳細描述文本。</p>}
                   {hoveredSkill.specialBadge && (
                     <div className={`mt-3 px-3 py-2 rounded-xl border text-xs font-bold flex flex-col gap-1 ${hoveredSkill.specialBadge.bg || 'bg-amber-950/80'} ${hoveredSkill.specialBadge.color || 'text-amber-200'} ${hoveredSkill.specialBadge.border || 'border-amber-500/40'}`}>
@@ -1475,7 +1477,7 @@ function BattleScreenBody(props: BattleScreenUIProps) {
                     <h3 className="text-sm font-semibold text-amber-300">目前印記</h3>
                     {marks.map((mark, i) => <details key={`${mark.id}-${i}`}>
                       <summary className="text-sm cursor-pointer">{mark.name} · {mark.count}</summary>
-                      <p className="text-sm text-slate-300 whitespace-pre-wrap leading-6 mt-2">{mark.description}</p>
+                      <RichDescription text={mark.description} className="text-sm text-slate-300 mt-2" />
                     </details>)}
                   </section>}
                 </ElfReadOnlyProfile>;

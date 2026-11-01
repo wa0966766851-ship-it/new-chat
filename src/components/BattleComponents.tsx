@@ -5,6 +5,7 @@ import { Elf, Skill, BattleLog, BattleMode, BattleItem } from '../types';
 import { getAttributeBadgeColor } from '../utils/statCalculator';
 import { BattleContextProps, BattleContext, useBattle } from './BattleScreen';
 import { formatCompactHud, formatFullNumber } from '../utils/formatBigNumber';
+import { RichDescription } from './RichDescription';
 
 // --- Helper Components ---
 
@@ -88,9 +89,9 @@ export const ExtraElfPanel = ({ side, elves, inline }: { side: "p1" | "p2", elve
             <div className="text-[11px] font-bold text-amber-400 mb-2 flex items-center gap-1.5">
               <span>⚡</span> 專屬伴生特性與效果說明
             </div>
-            <p className="text-slate-300 text-xs leading-[1.75] whitespace-pre-wrap antialiased font-sans">
-              {selectedElf.description?.replace(/([；;])\s*/g, '$1\n\n') || "協同作戰中的特殊單位，具有獨立的能力值與運算邏輯。"}
-            </p>
+            <RichDescription text={selectedElf.description?.replace(/([；;])\s*/g, '$1\n\n')}
+              fallback="協同作戰中的特殊單位，具有獨立的能力值與運算邏輯。"
+              className="text-slate-300 text-xs antialiased font-sans" />
           </div>
 
           <div className="mt-5 flex justify-end">
@@ -169,7 +170,7 @@ export const ExtraElfPanel = ({ side, elves, inline }: { side: "p1" | "p2", elve
               {/* Simplified Tooltip for preview */}
               <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-64 bg-[#0A0C10] border border-slate-800 p-2 rounded-lg shadow-2xl opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity z-50 text-[10px]">
                 <p className="font-bold text-cyan-400 mb-1">{elf.name}</p>
-                <p className="text-slate-400 line-clamp-3">{elf.description}</p>
+                <RichDescription text={elf.description} compact className="text-slate-400 line-clamp-3" />
               </div>
             </div>
           );

@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { DEFAULT_ELVES } from '../data/defaultElves';
 import { collectEffectPresetsAsync, type EffectKind, type EffectPreset } from '../effects/effectPresets';
+import { RichDescription } from './RichDescription';
 
 // 只在打開效果庫時建立索引；分頁不掛載數百個畫布／原文解析視圖。
 let catalog: Promise<EffectPreset[]> | undefined;
@@ -34,7 +35,7 @@ export function ReusableEffectLibrary({ kind, onSelect, onClose }: { kind: Effec
       {matches.slice(current*12,(current+1)*12).map(p=><article key={p.id} className="rounded-2xl border border-white/10 bg-white/[0.025] p-4 space-y-2">
         <div className="flex items-start justify-between gap-3"><div><h4 className="text-sm font-semibold">{p.definition.name}</h4><p className="text-[11px] text-slate-400">{p.elfName} · #{p.elfId} · {p.category}</p></div>
           <button type="button" disabled={!p.complete} onClick={()=>onSelect(p)} className="ios-button-primary shrink-0 p-2 text-xs disabled:opacity-40">{p.complete?'套用效果':'尚未接通'}</button></div>
-        <p className="whitespace-pre-wrap text-xs leading-6 max-h-28 overflow-y-auto">{p.definition.description || '無描述'}</p>
+        <RichDescription text={p.definition.description} fallback="無描述" className="text-xs max-h-28 overflow-y-auto" />
         {p.complete ? <p className="text-[11px] text-blue-300">{p.kit.length} 個可執行積木 · 使用獨立副本</p> : <details className="text-xs text-amber-200"><summary className="cursor-pointer">未接通原因（{p.issues.length}）</summary>{p.issues.map((i,n)=><p key={n} className="mt-2">{i.text}：{i.reason}</p>)}{!p.issues.length && <p>沒有可執行詞條。</p>}</details>}
       </article>)}
     </div>

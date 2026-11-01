@@ -28,10 +28,20 @@ export const POSITION_WEIGHTS = {
    * 所以不會為了保詩章而換人，也評估不出對手次元龍累積了多少。
    */
   poem: 6,
+  /**
+   * 2026-10-30：次數免疫（blkImmuneStatusCount / blkReflectStatusCount）。
+   *
+   * 這是「擋下 N 次異常」的資源，反彈型還能回敬對手。
+   * AI 原本完全不知道它的存在，所以：
+   *  - 不會為了保留免疫次數而避免無謂消耗
+   *  - 也不會趁對手免疫用完時才丟控制（等於白白浪費控制技能）
+   */
+  immunityCount: 9,
+  reflectCount: 12,
 } as const;
 export const WEIGHT_LABELS: Record<keyof typeof POSITION_WEIGHTS, string> = {
   hp: '體力比例', shield: '護盾折算', barrier: '護罩折算', death: '主精靈陣亡', stage: '能力等級',
-  pp: 'PP缺額', control: '行動限制異常', abnormal: '其他異常', boss: 'BOSS狀態', mark: '印記', protection: '限時保護', inventory: '藥劑庫存', charge:'充能',restriction:'行動限制', poem:'詩章（快照資源）',
+  pp: 'PP缺額', control: '行動限制異常', abnormal: '其他異常', boss: 'BOSS狀態', mark: '印記', protection: '限時保護', inventory: '藥劑庫存', charge:'充能',restriction:'行動限制', poem:'詩章（快照資源）', immunityCount:'次數免疫剩餘', reflectCount:'次數免疫反彈',
 };
 const clamp = (n: number, a: number, b: number) => Math.min(b, Math.max(a, Number.isFinite(n) ? n : a));
 // 滿體力等量的盾後邊際價值降低，不能無限堆盾灌分。
@@ -97,6 +107,16 @@ function sideScore(state: BattleState, side: AISide): PositionScore {
       }
       if (m.polarity && m.polarity !== 'neutral') add('mark', body * Math.min(10, Math.max(0, m.count)) * POSITION_WEIGHTS.mark * (m.polarity === 'positive' ? 1 : -1));
     }
+    /**
+     * 2026-10-30：次數免疫計分。
+     *
+     * 免疫次數是「還能擋幾次異常」，反彈型額外有壓制價值（對手丟控制會被回敬）。
+     * 讀精靈自身的 player-state（引擎按 battleId 存放），不是側級共用鍵。
+     */
+    const immuneLeft = Number((e as any).blkImmuneStatusCount || 0);
+    const reflectLeft = Number((e as any).blkReflectStatusCount || 0);
+    if (immuneLeft > 0) add('immunity', body * Math.min(5, immuneLeft) * POSITION_WEIGHTS.immunityCount);
+    if (reflectLeft > 0) add('reflect', body * Math.min(5, reflectLeft) * POSITION_WEIGHTS.reflectCount);
     for (const p of activeConstraints(state[`${side}Timers`], e)) {
       if (p.blockAttack || p.lockSwitch) add('restriction', POSITION_WEIGHTS.restriction * body);
       if (p.blockDamage || p.fatalResist || p.immuneStatus || p.immuneControl) add('protection', POSITION_WEIGHTS.protection * body);

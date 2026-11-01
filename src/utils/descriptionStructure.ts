@@ -5,6 +5,8 @@ export interface DescriptionNode {
   id: string;
   kind: 'section' | 'effect' | 'note';
   text: string;
+  /** 清理行內 Markdown 前的原文內容，供顯示層還原粗體／程式碼；語意比對仍用 text。 */
+  raw?: string;
   sourceLine: number;
   parentId?: string;
   children: DescriptionNode[];
@@ -37,12 +39,13 @@ export function descriptionStructure(source = ''): DescriptionTree {
     const indent = (raw.match(/^\s*/)?.[0] || '').replace(/\t/g, '  ').length;
     const depth = quote ? (quote[2].match(/[>＞]/g)?.length || 0) + Math.floor(quote[1].length / 2) : Math.floor(indent / 2);
     const content = heading ? heading[2] : bracket ? bracket[1] : quote ? quote[3] : raw.trimStart();
-    const text = plainDescription(content.replace(/^[-*+•]\s+/, ''));
+    const rawContent = content.replace(/^[-*+•]\s+/, '');
+    const text = plainDescription(rawContent);
     if (!text) continue;
     const section = !!(heading || bracket);
     const node: DescriptionNode = {
       id: `line-${index + 1}`, kind: section ? 'section' : /^(?:說明|註[：:]|備註|§)/.test(text) ? 'note' : 'effect',
-      text, sourceLine: index + 1, children: [],
+      text, raw: rawContent, sourceLine: index + 1, children: [],
     };
     let parent: DescriptionNode | undefined;
     if (section) {

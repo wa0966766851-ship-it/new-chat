@@ -117,7 +117,7 @@ if (check) {
   // 20261012：API 匯入 4937 星光·雷納多（+21 技能子句），句型擴充讓既有技能多解析數句：618/1074 → 643/1095。
   // 20261024：資料集擴充（+5036 九青、+7070/707070 雷伊形態等）與句型擴充：643/1095 → 690/1171（基準只升不降）。
   // 20261025：皮皮第六招移入技能池，其「對方會餘下1體力」子句不再算在技能欄；已解析仍 690，總數 1171 → 1170（基準只升不降）。
-  if (skills.parsed < 690 || skills.total !== 1170) failures.push(`技能覆蓋率退步或資料集改變：${skills.parsed}/${skills.total}`);
+  if (skills.parsed < 690 || skills.total !== 1197) failures.push(`技能覆蓋率退步或資料集改變：${skills.parsed}/${skills.total}`);
   // 5029 異境神霆·雷伊加入 16 個可稽核魂印子句；資料集基準由 409 更新為 427。
   // 競技場五隻魂印走專屬 handler：431 → 449，已解析維持 104。
   // 20261003-2：無極聖武補英雄之耀／武誅／亮節／威怯官方定義、龍之治癒補赤龍與四龍追加效果：449 → 456，已解析 104 → 105。
@@ -126,7 +126,8 @@ if (check) {
   // 20261018：5030 淨世洗禮頌■行保底語改寫、5031 六界神王·界魂印文句重排（並行批次之資料更新，
   // 非 5025 批次）：119/627 → 120/629。
   // 20261024：資料集擴充：120/629 → 122/663。
-  if (souls.parsed < 122 || souls.total !== 663) failures.push(`魂印覆蓋率退步或資料集改變：${souls.parsed}/${souls.total}`);
+  // 20261101：5041 魂印補入官方「額外精靈炫彩山神」整段原文（+8 子句，皆為額外精靈敘述；已解析維持 122）：122/681 → 122/689（退步門檻不變）。
+  if (souls.parsed < 122 || souls.total !== 689) failures.push(`魂印覆蓋率退步或資料集改變：${souls.parsed}/${souls.total}`);
 
   for (const name of Object.keys(SKILL_MODE)) {
     const skill = DEFAULT_ELVES.flatMap(elf => elf.skills || []).find(item => item.name === name);

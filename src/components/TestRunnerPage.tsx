@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
+import { RichDescription } from './RichDescription';
 import { DEFAULT_ELVES } from "../data/defaultElves";
 import { getAllTestableElves, generateSkillCyclingScript } from "../tests/allElvesRunner";
 import { Elf, Skill, BattleLog, BattleItem } from "../types";
@@ -961,9 +962,7 @@ export default function TestRunnerPage() {
                         <tr key={idx} className="hover:bg-slate-900/40 transition-colors">
                           <td className="py-3 px-3 font-medium text-white">{item.elfName}</td>
                           <td className="py-3 px-3 font-semibold text-indigo-400">{item.skillName}</td>
-                          <td className="py-3 px-3 text-slate-400 leading-relaxed whitespace-pre-wrap max-w-xs text-[11px]">
-                            {item.description}
-                          </td>
+                          <td className="py-3 px-3 text-slate-400 max-w-xs text-[11px]"><RichDescription text={item.description} /></td>
                           <td className="py-3 px-3 font-mono text-slate-300 text-[11px]">
                             {item.sourcePath}
                           </td>

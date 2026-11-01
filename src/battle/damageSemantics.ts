@@ -57,6 +57,8 @@ export function settleDamageAbsorption(
   shield: number,
   barrier: number,
   ignoreShield = false,
+  /** 隊伍被動規則：攻擊傷害使護盾扣減時的扣減比例（0.5＝減半＝護盾容量加倍）。僅攻擊傷害適用。 */
+  shieldDeductionRatio = 1,
 ): DamageAbsorptionResult {
   let remaining = Math.max(0, Math.floor(amount));
   let nextShield = Math.max(0, Math.floor(shield));
@@ -65,8 +67,11 @@ export function settleDamageAbsorption(
   let barrierAbsorbed = 0;
 
   if (isSkillDamageType(damageType) && !ignoreShield && nextShield > 0) {
-    shieldAbsorbed = Math.min(nextShield, remaining);
-    nextShield -= shieldAbsorbed;
+    const ratio = damageType === "skill_attack" && shieldDeductionRatio > 0 && shieldDeductionRatio < 1 ? shieldDeductionRatio : 1;
+    // 扣減減半＝等效容量加倍：吸收量最多為 護盾/比例，護盾實際扣減為 吸收量×比例（無條件進位，避免 1 點傷害不扣盾）。
+    shieldAbsorbed = Math.min(ratio < 1 ? Math.floor(nextShield / ratio) : nextShield, remaining);
+    const deduction = ratio < 1 ? Math.min(nextShield, Math.ceil(shieldAbsorbed * ratio)) : shieldAbsorbed;
+    nextShield -= deduction;
     remaining -= shieldAbsorbed;
   } else if (isFixedOrPercentDamageType(damageType) && nextBarrier > 0) {
     barrierAbsorbed = Math.min(nextBarrier, remaining);

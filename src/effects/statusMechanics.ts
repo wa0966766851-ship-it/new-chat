@@ -2,12 +2,12 @@
 import type { Elf, Skill } from '../types';
 import type { BattleEventContext } from './types';
 import { StatusRegistry } from './statusRegistry';
-import { getStatuses,addStatusEffect } from '../utils/battleHelpers';
+import { getStatuses,getEffectiveStatuses,addStatusEffect } from '../utils/battleHelpers';
 import { getTypeMatchup } from '../utils/statCalculator';
 import { skillSlot } from '../battle/skillSlot';
 import { applyKitPpOperation } from './ppOperations';
 
-const mechanics=(elf:Elf)=>Object.entries(getStatuses(elf)).filter(([,n])=>n>0).flatMap(([name])=>StatusRegistry[name]?.mechanics||[]);
+const mechanics=(elf:Elf)=>Object.entries(getEffectiveStatuses(elf)).filter(([,n])=>n>0).flatMap(([name])=>StatusRegistry[name]?.mechanics||[]);
 export function statusTypeMultiplier(elf:Elf,normal:number):number {
  let result=normal;
  for(const m of mechanics(elf))if(m.type==='TYPE_MATCHUP_OVERRIDE'){

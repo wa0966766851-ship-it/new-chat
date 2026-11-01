@@ -3,8 +3,12 @@ import type { EffectPresentation } from './effectPresentation';
 import type { MarkRecoveryReduction } from './markRecovery';
 import type { MarkDamageReduction } from './markDamageReduction';
 
+import type { EffectOrigin } from '../types';
+
 export interface Mark {
   presentation?: EffectPresentation;
+  /** 來源紀錄（顯示用）；舊存檔沒有。由 setMark 集中填入。 */
+  origin?: EffectOrigin;
   id: string;            // 唯一鍵，例如 "delu_shackles"
   displayChar: string;   // 徽章上顯示的字/短標籤，例如 "枷"
   count: number;         // 徽章旁的數字

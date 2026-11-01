@@ -23,7 +23,7 @@ for (const type of ['', '--', '無', '无属性']) {
 }
 assert.ok(existsSync(new URL('../public/seer/type/prop.png', import.meta.url)), '無屬性圖標必須實際存在');
 // 防止已修正的畫面日後繞過共用判定，再直接使用過期type。
-for (const name of ['BattleScreen.ui', 'StartScreen', 'ElfEditor', 'ElfReadOnlyProfile', 'DestinyIntroRuleTable', 'DestinyWheelScreen']) {
+for (const name of ['BattleScreen.ui', 'StartScreen', 'ElfEditor', 'ElfReadOnlyProfile', 'DestinyIntroRuleTable', 'destiny/DestinyWheelClassic', 'destiny/DestinyWheelB/DetailSheet']) {
   const source = readFileSync(new URL(`../src/components/${name}.tsx`, import.meta.url), 'utf8');
   assert.match(source, /SkillTypeIcon/);
   assert.doesNotMatch(source, /<TypeIcon\s+type=\{(?:skill|sk|s|original|hoveredSkill)\.type\}/, name);

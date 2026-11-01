@@ -4,12 +4,20 @@
  * 無方向／真正正面必須留視覺證據，不用 front 表示「未看過」。 */
 export const FRONT_EVIDENCE: Record<string, string> = {
 };
+export interface PetFullscreenConfig {
+ sequences?:readonly string[];
+ ultimate?:string;
+}
 export interface PetAnimationAsset {
  name:string; clip:string; physicalMotion:'approach'|'stationary'; facing:'left'|'right'|'front';
  /** 已逐圖核對的官方靜態來源；只允許此來源使用本動畫，不放寬自繪圖限制。 */
  body?:string;
  /** 經核對的額外行動片段；沒有登記或來源缺片段時使用 cp。 */
  extraSequence?:string;
+ /** 全屏演出（BattleFxLayer）：預設「自動偵測」——任何序列裡被 preparePetFx 判定為全屏底片的超大圖塊，
+  * 都不再刪除，改交給全屏層顯示。這裡只放逐素材覆寫：sequences＝明確指定哪些序列走全屏層（指定後不再自動偵測，[] 即關閉）；
+  * ultimate＝第五技能（絕招）要播的序列名，必須是 sequences 裡登記過的片段。 */
+ fullscreen?:PetFullscreenConfig;
  /** 實機靜動對照後的本體校準，只用於戰鬥，不影響首頁或其他來源。 */
  battleScale?:number;
  facingVerified:boolean; fps:number; atlas:readonly [number,number]; hash:string; size:number; sha256:string;
@@ -18,9 +26,12 @@ export interface PetAnimationAsset {
 export const PET_ANIMATION_ASSETS = {
  // 2026-10-27 IAB：P1 原姿朝右、P2 鏡射朝左，雙向六項出招完成；見 player-audit-20261027。
  // 2026-10-31：岳峙淵渟.卡修斯（聖地卡修斯 3568）—— 24fps、atlas 4096×2048。
- cassiusShandi: {name:'岳峙淵渟.卡修斯',body:'/seer/body/3568.png',clip:'3568.pet',physicalMotion:'stationary',facing:'left',facingVerified:true,fps:24,atlas:[4096,2048],hash:'c3f933d81f62103e65b33c92190a71c9',size:2890755,sha256:'a463aab69406c516cb37e7b12ff626ea52131ee8e4a56a6e79e35167575c9ff2',sequences:[{name:'standby',frames:25,hits:[]},{name:'attack',frames:164,hits:[141]},{name:'sa',frames:116,hits:[70]},{name:'cp',frames:67,hits:[27]},{name:'hited',frames:8,hits:[]}]},
+ // 2026-11-01 facingVerified：以正式 PetActionSprite 在 Chromium(WebGL) 播放 3568.pet／798.pet 待機並逐側截圖：
+ // 兩款原生動畫皆為「朝畫面右」的站姿（尾巴／火焰翼在左後、前腳與身體向右），與各自靜態圖互為鏡像 → facing:'right'；
+ // P1 不翻、P2 在播放器根節點鏡射一次。截圖見驗收紀錄 cassiusArt。
+ cassiusShandi: {name:'岳峙淵渟.卡修斯',body:'/seer/body/3568.png',clip:'3568.pet',physicalMotion:'stationary',facing:'right',facingVerified:true,fps:24,atlas:[4096,2048],hash:'c3f933d81f62103e65b33c92190a71c9',size:2890755,sha256:'a463aab69406c516cb37e7b12ff626ea52131ee8e4a56a6e79e35167575c9ff2',sequences:[{name:'standby',frames:25,hits:[]},{name:'attack',frames:164,hits:[141]},{name:'sa',frames:116,hits:[70]},{name:'cp',frames:67,hits:[27]},{name:'hited',frames:8,hits:[]}]},
  // 2026-10-31：原版卡修斯（798）—— 25fps、atlas 2048×2048。
- cassiusOriginal: {name:'原版卡修斯',body:'/seer/body/798.png',clip:'798.pet',physicalMotion:'stationary',facing:'left',facingVerified:true,fps:25,atlas:[2048,2048],hash:'32e340f77238916dcbd5039a3b2c652f',size:504034,sha256:'93d169d6b92224dd9bed34b149e2dccc79f09d5c478a827e2adc8077d1c29cc9',sequences:[{name:'standby',frames:16,hits:[]},{name:'attack',frames:105,hits:[53]},{name:'sa',frames:101,hits:[54]},{name:'cp',frames:70,hits:[24]},{name:'hited',frames:8,hits:[]}]},
+ cassiusOriginal: {name:'原版卡修斯',body:'/seer/body/798.png',clip:'798.pet',physicalMotion:'stationary',facing:'right',facingVerified:true,fps:25,atlas:[2048,2048],hash:'32e340f77238916dcbd5039a3b2c652f',size:504034,sha256:'93d169d6b92224dd9bed34b149e2dccc79f09d5c478a827e2adc8077d1c29cc9',sequences:[{name:'standby',frames:16,hits:[]},{name:'attack',frames:105,hits:[53]},{name:'sa',frames:101,hits:[54]},{name:'cp',frames:70,hits:[24]},{name:'hited',frames:8,hits:[]}]},
  renaduo4937: {name:'星光·雷納多',body:'/seer/body/4937.png',clip:'4937.pet',physicalMotion:'stationary',facing:'right',facingVerified:true,fps:24,atlas:[4096,4096],hash:'cbdd736271229e4fa51c79b51a5e8d97',size:6704942,sha256:'6c3f3e23c20e077130ddba72b43cf6470b605d9519340b3a86c1dfedac27bf95',sequences:[{name:'standby',frames:40,hits:[]},{name:'attack',frames:101,hits:[74]},{name:'sa',frames:97,hits:[75]},{name:'cp',frames:59,hits:[29]},{name:'hited',frames:7,hits:[]}]},
  // 3435 是伊麗莎白；343 才是索比拉特。名稱／靜態圖／實際動畫必須三方核對。
  sobira: {name:'悲歌.索比拉特',clip:'343.pet',physicalMotion:'stationary',facing:'right',facingVerified:true,fps:25,atlas:[2048,2048],hash:'a991759413dbffc9803226e8e646b70a',size:513549,sha256:'432ff3bbb7de9027a936ca4e039b5769eca28dce3f55e5a3da3a2146f09dfae3',sequences:[{name:'standby',frames:30,hits:[]},{name:'attack',frames:93,hits:[61]},{name:'sa',frames:96,hits:[50]},{name:'cp',frames:75,hits:[19]},{name:'hited',frames:8,hits:[]}]},

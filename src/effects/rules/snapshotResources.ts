@@ -17,9 +17,9 @@ const appendSnapshots = (elf: any, cfg: SnapshotResourceRule, incoming: number[]
     description: '每份獨立記錄取得時體力上限；死亡時轉交存活接收者。', effects: { ...old?.effects, [cfg.snapshotKey]: snapshots } });
 };
 const sync = (api: any, state: any, side: 'p1' | 'p2', elf: any) => {
+  // UPDATE_ELF 會以持有者身分合併進整側印記清單。
+  // 不可接著用這一隻的印記 SET_MARKS，否則會刪掉同側後備精靈的快照。
   api.dispatch({ type: 'UPDATE_ELF', side, targetId: idOf(elf), elf: { marks: elf.marks || [] } });
-  const active = state[side + 'Team'][state[side + 'ActiveIndex']];
-  if (idOf(active) === idOf(elf)) { state[side + 'Marks'] = elf.marks || []; api.dispatch({ type: 'SET_MARKS', side, marks: elf.marks || [] }); }
 };
 // 所有規則均由有效Kit安裝的參數驅動，未安裝者不因名稱或原文自動取得能力。
 registerBattleRule({

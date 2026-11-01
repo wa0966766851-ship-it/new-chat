@@ -1,4 +1,5 @@
 ﻿import {retainShield} from './markCapabilities';
+import { runExtraElfNode, killExtraElf } from './extraElfKit';
 import { queueAttachedAttackDamage } from './attachedAttackDamage';
 import {portableSkillCapabilities,portableShieldPatch} from './portableSkillMarks';
 import { applyAlienDoubleDamage } from './advancedDamageModifiers';
@@ -7,6 +8,7 @@ import { resolveDamageBlocking } from './damageBlocking';
 import { matchesDamageTypes } from '../effects/damageChoices';
 import { trackIllusionStatWrite } from './illusionStats';
 import { trackNativeRegistryWrite } from './acquiredEffectContext';
+import { buildEffectOrigin } from './effectOrigin';
 import { normalizePpPatch } from './ppTransitions';
 import { applyBattleItem, consumeBattleItem, grantBattleItem } from './itemInventory';
 import { findBagElf } from './bagTargets';
@@ -88,7 +90,7 @@ export interface SharedContextDeps {
 export type DamageAPIs = Pick<BattleEventContext, "applyInstantKill" | "applyPinkDamage" | "applyTrueDamage" | "applySkillTypeDamage" | "applyAbsorb" | "applyHeal" | "adjustHp" | "applyPercentDamage" | "applyFixedDamage">;
 export type StatusAPIs = Pick<BattleEventContext, "applyStatusWithImmunityCheck" | "getStatuses" | "clearTurnEffectsOf" | "hasTurnEffectOn" | "applyStatChange" | "applyShield">;
 export type StateAPIs = Pick<BattleEventContext, 
-  "useBattleItem" | "grantBattleItem" | "applyDeathImmunity" | "vanishElf" | "addExtraElf" | "setMark" | "clearMark" | "getMarks" | "getAllMarks" | "addTimerTo" | "consumeTimer" | "queueExtraAction" | "updateElf" | "updateAnyElf" | "emitElfEvent" | "contextForElf" |
+  "useBattleItem" | "grantBattleItem" | "applyDeathImmunity" | "vanishElf" | "addExtraElf" | "killExtraElf" | "setMark" | "clearMark" | "getMarks" | "getAllMarks" | "addTimerTo" | "consumeTimer" | "queueExtraAction" | "updateElf" | "updateAnyElf" | "emitElfEvent" | "contextForElf" |
   "getPlayerState" | "setPlayerState" | "getOpponentState" | "setOpponentState" |
   "shuffleArray" | "getEligibleTeam" | "getFullTeam" | "getFirstStarter" | "getNthElf" | "getAdjacentElves" | "getSeparatedElves" | "trackCodeExec" | "setNextTurns"
 >;
@@ -969,6 +971,9 @@ export function buildStatusAPIs(shared: SharedContextDeps): StatusAPIs {
 
 export function buildStateAPIs(shared: SharedContextDeps): StateAPIs {
   const { side, moveIndex, syncStateRef, dispatch, pushEffect, isP1, self, getBattleEventContext } = shared;
+  /** 來源精靈查找（來源紀錄用）：只讀即時狀態，找不到回傳 undefined。 */
+  const findTeamElf = (tSide: 'p1' | 'p2', id: string): Elf | undefined =>
+    (syncStateRef.current[`${tSide}Team` as 'p1Team' | 'p2Team'] || []).find(e => String(e?.battleId || e?.id) === id);
   
   return {
     applyDeathImmunity: (tSide, opts) => {
@@ -1061,13 +1066,15 @@ export function buildStateAPIs(shared: SharedContextDeps): StateAPIs {
       const mul = fixedValueMul(current[recipient === 'p1' ? 'p1Relics' : 'p2Relics']);
       return applyBattleItem(getBattleEventContext(recipient, true, moveIndex, holder), mul !== 1 && item.value ? { ...item, value: Math.round(item.value * mul) } : item, recipient);
     },
-    setMark: (m, targetSide) => {
+    setMark(this: any, m, targetSide) {
       const c = syncStateRef.current;
       const actorSide = targetSide || side; 
       const marksKey = `${actorSide}Marks` as "p1Marks" | "p2Marks";
       const curMarks = c[marksKey] || [];
       const holder = actorSide === side ? self : c[actorSide];
-      const nextMark = bindMarkToElf({ ...m, source: m.source || (self.name + " / " + (self.soulMark?.badgeChar || "")) } as Mark, holder);
+      // 來源紀錄由執行容器推導（this＝呼叫的 ctx，可能是幻化／延後交付的衍生容器）；已帶 origin 者不覆蓋。
+      const origin = (m as Mark).origin ?? buildEffectOrigin(this && typeof this === 'object' ? this : { self, actor: side, skill: undefined }, self, side, findTeamElf);
+      const nextMark = bindMarkToElf({ ...m, origin, source: m.source || (self.name + " / " + (self.soulMark?.badgeChar || "")) } as Mark, holder);
       const nextMarks = setMarkUtil(curMarks, nextMark as Mark);
       
       syncStateRef.current = setBattleSideMarks(c, actorSide, nextMarks);
@@ -1105,16 +1112,16 @@ export function buildStateAPIs(shared: SharedContextDeps): StateAPIs {
       const next=syncStateRef.current,ownerId=owner.battleId||owner.id;
       dispatch({type:'SET_SCOPED_TIMERS',side:s,ownerId,timers:next[`${s}Timers`],ownerTimers:next[`${s}ElfState`]?.[ownerId]?.timers});
     },
-    addTimerTo: (s, timer, isLateMover) => {
+    addTimerTo(this: any, s, timer, isLateMover) {
       const c = syncStateRef.current;
       const timersKey = `${s}Timers` as "p1Timers" | "p2Timers";
       const curTimers = c[timersKey];
       const controllerSide = s === "p1" ? "p2" : "p1";
       const controller = c[controllerSide];
-      let actualTimer = timer;
+      let actualTimer = timer.origin ? timer : { ...timer, origin: buildEffectOrigin(this && typeof this === 'object' ? this : { self, actor: side }, self, side, findTeamElf, timer.source) };
       if (timer.kind === "turn_effect" && controller?.collapseOpponentTurnEffectsToOne && timer.remaining > 1) {
         const reduced = timer.remaining - 1;
-        actualTimer = { ...timer, remaining: 1 };
+        actualTimer = { ...actualTimer, remaining: 1 };
         const controllerStatuses = getStatuses(controller);
         const existing = Math.max(controllerStatuses["麻痺"] || 0, controllerStatuses["麻痹"] || 0, controllerStatuses.paralyzed || 0);
         getBattleEventContext(controllerSide, true, 0).applyStatusWithImmunityCheck(controllerSide, "麻痺", existing + 1 + reduced);
@@ -1305,14 +1312,19 @@ export function buildStateAPIs(shared: SharedContextDeps): StateAPIs {
       const c = syncStateRef.current;
       const teamKey = `${tSide}Team` as "p1Team" | "p2Team";
       const currentTeam = c[teamKey] || [];
-      if (currentTeam.some(e => e.id === extraElf.id)) return;
-      const nextTeam = [...currentTeam, extraElf];
+      // 同 id（固定種類 id，如 x_shancaishen）：存活者不重複加入；已死亡／消逝者原位換成新實例，才能再次召喚。
+      const dupIndex = currentTeam.findIndex(e => e.id === extraElf.id);
+      if (dupIndex >= 0 && !(currentTeam[dupIndex].isExtra && (currentTeam[dupIndex].isVanished || currentTeam[dupIndex].currentHp <= 0))) return;
+      const nextTeam = dupIndex >= 0 ? currentTeam.map((e, i) => i === dupIndex ? extraElf : e) : [...currentTeam, extraElf];
       syncStateRef.current = {
         ...c,
         [teamKey]: nextTeam
       };
       dispatch({ type: 'UPDATE_TEAM', side: tSide, team: nextTeam });
+      // 通用「被加入時」入口：額外精靈自己的 Kit（on_entered）在加入後立刻執行一次。
+      runExtraElfNode(getBattleEventContext(tSide, true, moveIndex, extraElf), tSide, extraElf, 'on_entered');
     },
+    killExtraElf: (tSide, extraElf, data) => killExtraElf(getBattleEventContext(tSide, true, moveIndex), tSide, extraElf, data),
     trackCodeExec: () => {},
     setNextTurns: (who, key, n) => {
       const tSide = who === "self" ? side : who === "opp" ? (side === "p1" ? "p2" : "p1") : who;

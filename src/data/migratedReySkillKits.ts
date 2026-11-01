@@ -20,7 +20,7 @@ export const MIGRATED_REY_SKILL_KITS:ReviewedSequenceSkill[]=[{
 MIGRATED_REY_SKILL_KITS.push({elfIds:['5029'],name:'同塵祭',description:OTHERWORLD_REY_TEXT.skills['同塵祭'],kit:[
  property('■ 必中','sure_hit',true,0),
  sequence('調整自身能力等級，令自身能力等級不會小於對手',[{acts:[a('stat_floor_opponent',{})]}],1),
- sequence('令自身體力歸1',[{acts:[a('hp_set',{side:'self',value:1})]}],2),
+ sequence('令自身體力歸1',[{acts:[a('hp_set',{side:'self',value:1,fromNonPositive:true})]}],2),
  sequence('7回合內對手PP值消耗量為7倍',[{acts:[a('pp_cost_mult',{turns:7,mult:7,kind:''})]}],3),
  sequence('對手每有1點重量，則失去1點體力上限與1點相應異能值，最多70',[{acts:[a('body_maxhp_resource_loss',{side:'opp',unit:1,cap:70,resourceId:'rey_alien_energy'})]}],4),
 ]});

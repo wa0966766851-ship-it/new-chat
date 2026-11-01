@@ -35,7 +35,7 @@ assert.equal(judgeTurnLimit('peak_6v6', PEAK_TURN_LIMIT, a, b, dead), 'p1');
 assert.equal(judgeTurnLimit('peak_6v6', PEAK_TURN_LIMIT, [elf(1)], [elf(1), elf(1, true)], dead), 'draw');
 assert.equal(judgeTurnLimit('normal_6v6', 99, a, b, dead), null, '一般 6V6 不套用');
 const seven = [...Array(7)].map(() => elf(1));
-assert.equal(countedAlive(seven, dead), 6, '第 7 位以後視為額外精靈');
+assert.equal(countedAlive(seven, dead), 7, '不能按陣列位置把正常精靈當額外精靈');
 
 // 三主寵星光型態印記圖示（SeerAPI sign 96/97/98）
 assert.equal(signIconFor('星芳之纏'), '/seer/signbuff/96.png');

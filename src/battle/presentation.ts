@@ -7,6 +7,7 @@ import { DEFAULT_BATTLE_ANIMATION, effectiveAnimationSettings, animationSpeed, t
 import { damagePopupLabel } from './damagePopupStyle';
 import { formatCompactHud } from '../utils/formatBigNumber';
 import {readyPetTiming,observePetPlayback,petRecoveryTimeout,degradePet,type PetAction} from './petAnimationRegistry';
+import {routeUltimate} from './petActionRouting';
 export type PresentationKind = 'skill' | 'fixed' | 'percent' | 'heal' | 'true' | 'adjust_up' | 'adjust_down' | 'notice';
 export interface PresentationEvent {
   side: 'p1' | 'p2'; elfId: string; type: PresentationKind;
@@ -90,15 +91,19 @@ export class BattlePresentation {
       await this.recovery;
       if(!this.active)return;
       const owner=this.view?.[`${anim.side}Team`]?.[this.view?.[`${anim.side}ActiveIndex`]];
-      const sequence:PetAction=anim.category==='extra'?'extra':anim.category==='property'?'cp':anim.category==='special'?'sa':'attack';
-      const timing=owner?readyPetTiming(anim.side,owner,sequence):undefined;
+      const sequence:PetAction=routeUltimate(anim.category==='extra'?'extra':anim.category==='property'?'cp':anim.category==='special'?'sa':'attack',anim,!!owner&&!!readyPetTiming(anim.side,owner,'ultimate'));
+      // 額外行動演出者一律是在場的主戰精靈（額外精靈沿用主戰精靈的額外行動序列）；該精靈沒有額外序列時退回屬性技(cp)序列。
+      const timing=owner?readyPetTiming(anim.side,owner,sequence)??(sequence==='extra'?readyPetTiming(anim.side,owner,'cp'):undefined):undefined;
       if(timing&&!this.fast()) {
+        const isExtraAnim=anim.category==='extra';
         // 先訂閱再通知 React：命中放行紅字，收招則阻擋下一次出手。
         let hit!:()=>void,complete!:()=>void;
         const impact=new Promise<void>(r=>{hit=r;});
         this.recovery=new Promise<void>(r=>{complete=r;});
+        // 額外行動收招期間：下一個行動的跳字要等收招完成（額外行動自己的紅字仍在命中時播出）。
+        if(isExtraAnim)this.extraRecoveryActive=true;
         let settled=false;
-        const finish=()=>{if(settled)return;settled=true;clearTimeout(endTimer);off();this.animationCancels.delete(finish);hit();complete();if(this.active&&this.skillAnim===anim){this.skillAnim=null;this.notify();}};
+        const finish=()=>{if(settled)return;settled=true;clearTimeout(endTimer);off();this.animationCancels.delete(finish);if(isExtraAnim)this.extraRecoveryActive=false;hit();complete();if(this.active&&this.skillAnim===anim){this.skillAnim=null;this.notify();}};
         const off=observePetPlayback(anim.side,owner,event=>{if(event.sequence!==sequence)return;if(event.type==='marker'&&event.marker?.name==='action_hit')hit();if(event.type==='complete'||event.type==='cancel')finish();});
         // 收招等待上限＝片段長度＋寬限（petRecoveryTimeout）。逾時代表播放器停住：降級為靜態圖並記錄，戰鬥繼續，
         // 不再被動畫無限鎖住。背景分頁暫停播放屬正常，只放行不降級。標記只控制演出，不執行戰鬥積木。
@@ -113,6 +118,7 @@ export class BattlePresentation {
       this.skillAnim = null; this.notify();
   }
   private recovery:Promise<void>=Promise.resolve();
+  private extraRecoveryActive=false;
   private animationCancels=new Set<()=>void>();
   /** 回合數顯示：播到回合收尾才換。 */
   setTurn(n: number): Promise<void> { return this.schedule(() => { this.turnNumber = n; this.notify(); }); }
@@ -195,6 +201,8 @@ export class BattlePresentation {
     if (extra) {
       this.extraPending.push(e);
       // 額外行動中擊倒：立即播出合併的額外行動紅字
+      // 致死也不搶在動畫前：額外行動動畫已在第一筆額外行動結算前排入時間軸（engine 的 extraWindow），
+      // enqueue 依時間軸接在它後面，所以目標要等動畫命中點才倒下；這裡不另外插隊。
       return fatal ? this.enqueue(this.mergeExtra()) : Promise.resolve();
     }
     if (e.type === 'true' && this.inAction) {
@@ -272,7 +280,7 @@ export class BattlePresentation {
     }
     this.pending++;
     const play = async () => {
-      if(simultaneous)await this.recovery;
+      if(simultaneous||(this.extraRecoveryActive&&events.every(e=>e.channel!=='extra')))await this.recovery;
       const frames = simultaneous ? [events] : events.map(e => [e]);
       for (const frame of frames) {
         if (!this.active) return;

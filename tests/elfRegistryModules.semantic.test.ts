@@ -61,6 +61,18 @@ try {
     for(const key of keys){assert.ok(baseline.souls.includes(key),`魂印遷移必須對應原基準：${key}`);assert.ok(!actual.souls.includes(key),`${key} 魂印 handler 已遷 Kit，不應殘留入口`);}
   }
   const migratedSouls=new Set(Object.values(soulMigrations).flat());
+  // 無作用橋接（2026-10-30 電腦端刻意保留）：魂印本文已遷真 Kit，註冊表仍留一個「無作用」handler 供技能支援讀取端派發（規則3.4）。
+  // 只允許指定名單新增；要求原基準沒有該入口、精靈魂印已是真 Kit，且 handler 對任何計時點都不得碰 ctx（碰到即失敗）。
+  const soulBridges:Record<string,string>={'龍錄天鋒':'arena_13'};
+  for(const [name,id] of Object.entries(soulBridges)) {
+    const elf=DEFAULT_ELVES.find((e:any)=>String(e.id)===id);
+    assert.equal(elf?.name,name,`${id} 必須對應 ${name}`); assert.equal(elf.soulMark?.effectMode,'kit',`${id} 魂印必須已是真 Kit`); assert.ok((elf.soulMark.kit||[]).length);
+    for(const entry of elf.soulMark.kit)assert.equal(kitEntryIssue(entry),null);
+    assert.ok(!baseline.souls.includes(name),`魂印橋接不得覆蓋原基準入口：${name}`);
+    const handler=registry.getSoulMarkRegistry()[name]; assert.equal(typeof handler,'function',`${name} 應保留無作用 handler`);
+    const trap:any=new Proxy({},{get(){throw new Error(`${name} 魂印 handler 不得讀取 ctx`)},set(){throw new Error(`${name} 魂印 handler 不得寫入 ctx`)}});
+    for(const ev of ['ROUND_START','ROUND_END','ON_ENTRANCE','BATTLE_START'])assert.equal(handler(trap,ev),undefined,`${name} 無作用 handler：${ev}`);
+  }
   // 過渡橋接：legacy_handler 包裝需要可解析的原 handler；原本走通用文字路徑、沒有專屬程式的技能，以「行為相同的轉呼叫通用路徑」登記一個橋接 handler。
   // 只允許指定名單新增，且拆成通用積木後必須連同包裝一起移除；任何其他新增入口一律視為錯誤。
   const bridges:Record<string,string>={}; // 王·夜予寒吟已轉真 Kit（DSH 20261017），橋接清空。
@@ -73,7 +85,7 @@ try {
   // skills 段：遷移項若仍保留入口（以 kit 閘門收尾），需兩邊一致——expected 保留它。
   const dropMigratedSkills = (list: string[]) => list.filter((name: string) => !migrations[name] || actual.skills.includes(name));
   const dropMigrated = (list: string[]) => list.filter((name: string) => !migrations[name]);
-  assert.deepEqual(actual,{...baseline,skills:[...dropMigratedSkills(baseline.skills),...Object.keys(bridges)].sort(),afterHit:dropMigrated(baseline.afterHit),invalid:dropMigrated(baseline.invalid),souls:baseline.souls.filter((k:string)=>!migratedSouls.has(k))},'除指定Kit遷移與指定橋接外，原註冊表所有入口必須保持');
+  assert.deepEqual(actual,{...baseline,skills:[...dropMigratedSkills(baseline.skills),...Object.keys(bridges)].sort(),afterHit:dropMigrated(baseline.afterHit),invalid:dropMigrated(baseline.invalid),souls:[...baseline.souls.filter((k:string)=>!migratedSouls.has(k)),...Object.keys(soulBridges)].sort()},'除指定Kit遷移與指定橋接外，原註冊表所有入口必須保持');
   const expected: Record<string, any> = {};
   for (const [, mod] of Object.entries(ELF_REGISTRY_MODULES).sort(([a], [b]) => a < b ? -1 : a > b ? 1 : 0)) {
     for (const [name, value] of Object.entries(mod as object)) if (name.endsWith('_SKILLS')) Object.assign(expected, value);

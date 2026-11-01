@@ -12,7 +12,9 @@ export function mergeRoundEnd<T extends { id?: unknown }>(before: T[] = [], tick
     // 改成比對「回合數是否真的被改過」：只有實際改動 duration 才採用新值。
     const liveDuration = (e as any)?.duration;
     const beforeDuration = (original as any)?.duration;
-    const modified = liveDuration !== beforeDuration;
+    // 計時器（Timer）沒有 duration：同ID在回合結算期間被刷新／延長／疊層（touchSeq 變動）也視為已改動，
+    // 否則「本回合才刷新」的計時器會被同回合收尾的扣減快照蓋回，少活一回合。
+    const modified = liveDuration !== beforeDuration || (e as any)?.touchSeq !== (original as any)?.touchSeq;
     if (modified) return [e];
     const tick = ticks.get(e.id);
     return tick ? [tick] : [];

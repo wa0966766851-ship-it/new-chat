@@ -8,6 +8,9 @@ export interface EffectPresentation {
   polarity?: 'positive' | 'negative' | 'neutral';
 }
 
+import { DAMAGE_STAT_BASES } from '../effects/damageBases';
+import { opDisplayName } from './opDisplayNames';
+
 const numberText = (n: number) => Number(n.toFixed(2)).toString();
 const percent = (n: number) => `${numberText(n * 100)}%`;
 
@@ -104,26 +107,99 @@ function damageScope(types?: string[]): string {
   return (types || []).map(t => ({ attack: '攻擊', skill: '技能', non_true: '非真實', fixed: '固定', percent: '百分比', true: '真實' }[t] || t)).join('／');
 }
 
-function triggerCaption(trigger?: string): string {
-  return ({ self_after_use: '使用技能後（含未命中／無效）：', self_after_skill: '成功使用技能後：', round_start: '回合開始：', round_end: '回合結束：', damaged: '受傷後：' } as Record<string, string>)[trigger || ''] || '觸發時：';
+const STAT_NAME: Record<string, string> = { atk: '攻擊', def: '防禦', spatk: '特攻', spdef: '特防', speed: '速度' };
+/** 附加傷害的基數顯示：`stat:` 面板基數轉成「攻擊＋特攻」；其餘（當前體力等）原樣。 */
+export function baseText(base?: string): string {
+  if (!base) return '';
+  const keys = DAMAGE_STAT_BASES[base];
+  return keys ? keys.map(k => STAT_NAME[k] || k).join('＋') : String(base).replace(/^stat:/, '');
 }
 
-function actionCaption(a: { op: string; p: Record<string, any>; label?: string }): string {
+/** 觸發時點的顯示前綴；涵蓋 Trigger 全部值，未知者不加前綴（不輸出籠統的「觸發時」）。 */
+const TRIGGER_CAPTIONS: Record<string, string> = {
+  team_battle_start: '戰鬥開始時（全隊）', team_entrance: '精靈登場時（全隊）', team_after_action: '行動結束後（全隊）', team_round_end: '回合結束時（全隊）',
+  team_before_status: '受到異常前（全隊）', team_status_received: '受到異常時（全隊）', team_defeated: '精靈被擊敗時（全隊）', team_phase_end: '戰鬥階段結束時（全隊）',
+  team_opponent_skill: '對手使用技能時（全隊）', team_action_end: '行動結束時（全隊）', team_round_start: '回合開始時（全隊）',
+  opp_damaged_skill: '對手受到技能傷害後', opp_damage_settled: '對手傷害結算後', skill_selected: '選擇技能時', outgoing_power: '攻擊威力結算時', incoming_power: '受到攻擊威力結算時',
+  resource_changed: '資源變化後', use: '使用技能時', before_action: '行動前', before_skill: '技能使用前', before_stat_change: '能力等級改變前', modify_priority: '先制判定時',
+  before_instant_kill: '秒殺前', extra_action_start: '額外行動開始時', extra_action_end: '額外行動結束時', after_hit: '技能傷害結算後', attack_hit: '每次攻擊命中後',
+  on_invalid: '技能無效時', self_invalid: '自身技能無效時', battle_start: '戰鬥開始時', entrance: '登場時', round_start: '回合開始時', round_end: '回合結束時', phase_end: '戰鬥階段結束時',
+  self_skill: '使用技能時', self_attack: '使用攻擊技能時', self_status: '使用屬性技能時', self_after_skill: '成功使用技能後', self_after_attack: '成功使用攻擊技能後',
+  self_after_status: '成功使用屬性技能後', self_after_physical: '使用物理攻擊後', self_after_special: '使用特殊攻擊後', self_after_use: '使用技能後（含未命中／無效）',
+  opp_skill: '對手使用技能時', opp_attack: '對手使用攻擊技能時', opp_status: '對手使用屬性技能時', opp_used_skill: '對手使用技能後', opp_used_attack: '對手使用攻擊技能後',
+  opp_used_status: '對手使用屬性技能後', opp_before_skill: '對手出手前', opp_before_attack: '對手攻擊出手前', opp_before_status: '對手屬性技能出手前',
+  opp_after_skill: '對手使用技能結算後', opp_after_attack: '對手攻擊結算後', opp_after_status: '對手屬性技能結算後', damaged: '受傷後', damaged_skill: '受到技能傷害後',
+  damaged_attack: '受到攻擊傷害後', damaged_true: '受到真實傷害後', damaged_fixed: '受到固定傷害後', damaged_percent: '受到百分比傷害後', damaged_nontrue: '受到非真實傷害後',
+  incoming: '受到傷害時', incoming_skill: '受到技能傷害時', incoming_attack: '受到攻擊傷害時', incoming_nontrue: '受到非真實傷害時', outgoing: '造成傷害時',
+  outgoing_skill: '造成技能傷害時', outgoing_attack: '造成攻擊傷害時', defeated: '被擊敗時', kill: '擊敗對手時', not_killed: '行動結束仍未擊敗時', fatal: '受到致命傷害時',
+  before_status: '受到異常前', pp_consumed: 'PP被消耗時', pp_cleared: 'PP被清空時', turn_effects_cleared: '回合類效果被消除時', stat_boost_cleared: '能力提升被消除時',
+  status_end: '異常結束時', status_immune: '免疫異常時', status_tick: '異常回合遞減前', switch_out: '下場時', status_received: '受到異常時', bench: '位於背包時',
+  any_status: '任一方受到異常時', holder_damaged_attack: '持有者受到攻擊傷害後', holder_damaged: '持有者受傷後', holder_passive: '持有者期間', passive: '常駐',
+  held_resource_lost: '持有資源消失時', damage_immune: '免疫傷害時',
+};
+export function triggerCaption(trigger?: string): string {
+  const text = TRIGGER_CAPTIONS[trigger || ''];
+  return text ? `${text}：` : '';
+}
+
+export function actionCaption(a: { op: string; p: Record<string, any>; label?: string }): string {
   const p = a.p || {};
-  if (a.op === 'dmg') return `附加${p.flat !== undefined ? `${p.flat}點` : p.ratio !== undefined ? `${percent(p.ratio)}${p.base || ''}` : ''}${p.type || '指定類型'}傷害`;
+  if (a.op === 'dmg') return `附加${p.flat !== undefined ? `${p.flat}點` : p.ratio !== undefined ? `${p.of === 'opp' ? '對手' : p.of === 'self' ? '自身' : ''}${baseText(p.base)}${percent(p.ratio)}` : ''}${p.type || '指定類型'}傷害`;
   if (a.op === 'dmg_from_last') return `前一效果數值${percent(p.ratio ?? 1)}轉為${p.elem ? `${p.elem}系` : ''}${p.type || '指定類型'}傷害`;
   if (a.op === 'stat') return `${p.side === 'opp' ? '對手' : '自身'}${(p.stats || []).join('／')}等級${p.v >= 0 ? '+' : ''}${p.v}`;
   if (a.op === 'status') return `附加${p.status || '指定異常'}`;
   if (a.op === 'heal') return `恢復${p.flat !== undefined ? `${p.flat}點` : p.ratio !== undefined ? `${p.base || '最大體力'}${percent(p.ratio)}` : ''}體力`;
   if (a.op === 'pp') return '調整PP';
   if (a.op === 'boost') return `${p.kind || '指定類型'}${p.power ? '威力' : '傷害'}×${p.mult}`;
-  if (a.label && a.label !== a.op) return a.label;
-  return ({ clear_turn: '消除回合類效果', invalid_turns: '技能無效', immune_status_turns: '異常免疫', immune_attack_count: '免疫攻擊', vampire: '吸血', drain: '吸取體力', stat_clear: '消除能力等級', survive: '致死存活' } as Record<string, string>)[a.op] || '積木組合效果';
+  if (a.label && a.label !== a.op && !isBadLabel(a.label)) return a.label;
+  return opDisplayName(a.op) || '';
+}
+
+const BAD_LABELS = new Set(['持續效果', '積木組合效果', '計時效果', '待補說明的效果', '次數類效果', '未命名效果']);
+/** 不可當標籤的字串：籠統代稱、內部 `stat:` 記號、空白。 */
+export function isBadLabel(label?: string): boolean {
+  const t = String(label ?? '').trim();
+  return !t || BAD_LABELS.has(t) || t.includes('積木組合') || t.includes('stat:');
+}
+/** 舊存檔文字清理：去掉內部 `stat:` 記號與籠統代稱，不改其餘文字。 */
+export function scrubEffectText(text?: string): string {
+  return String(text ?? '').replace(/stat:/g, '').replace(/積木組合效果/g, '');
+}
+const warned = new Set<string>();
+function warnUnnamed(info: string): void {
+  // 專案沒有 import.meta.env 型別：Node／測試看 NODE_ENV，瀏覽器看是否為本機開發位址。
+  const dev = typeof process !== 'undefined' && process.env?.NODE_ENV ? process.env.NODE_ENV !== 'production'
+    : typeof location !== 'undefined' && /localhost|127\.0\.0\.1/.test(location.hostname);
+  if (!dev || warned.has(info) || typeof console === 'undefined') return;
+  warned.add(info);
+  console.warn(`[effect-label] 未命名效果（缺顯示名稱）：${info}`);
+}
+const firstOp = (payload?: Record<string, any>): string | undefined => {
+  const body = (payload?.block || payload)?.body;
+  const act = Array.isArray(body) ? body.flatMap((s: any) => [...(s.acts || []), ...(s.onSuccess || []), ...(s.onFail || [])])[0] : undefined;
+  return act?.op;
+};
+
+/**
+ * 效果標籤唯一入口。順序：Kit 標籤／名稱（非籠統代稱）→ 動作顯示名稱表 → 結構化參數句 → 描述首句 → 「未命名效果」。
+ * 絕不輸出「積木組合效果」或 `stat:` 記號；落到最後一層時於開發模式 console.warn 並指出 op。
+ */
+export function resolveEffectLabel(input: { label?: string; name?: string; op?: string; payload?: Record<string, any>; description?: string }): string {
+  for (const c of [input.label, input.name]) if (!isBadLabel(c)) return String(c).trim();
+  const byOp = opDisplayName(input.op);
+  if (byOp) return byOp;
+  const structured = payloadPresentation(input.payload)?.label;
+  if (!isBadLabel(structured)) return structured!;
+  const first = scrubEffectText(input.description).split(/[。；\n]/).map(t => t.trim()).find(t => !isBadLabel(t));
+  if (first) return first.length > 16 ? `${first.slice(0, 15)}…` : first;
+  warnUnnamed(`op=${input.op || firstOp(input.payload) || '(無)'}`);
+  return '未命名效果';
 }
 
 /** Unknown payloads remain explicitly unknown rather than being renamed after a skill. */
-export function makeEffectPresentation(payload: Record<string, any> | undefined, sourceName?: string, label?: string): EffectPresentation {
+export function makeEffectPresentation(payload: Record<string, any> | undefined, sourceName?: string, label?: string, extra?: { name?: string; op?: string; description?: string }): EffectPresentation {
   const inferred = payloadPresentation(payload);
-  return { ...(inferred || { semanticId: 'unclassified', label: '待補說明的效果', description: '此效果尚未提供結構化顯示說明；請查看來源定義。' }),
-    ...(label ? { label, description: inferred?.description || label } : {}), sourceName };
+  const resolved = resolveEffectLabel({ label, name: extra?.name, op: extra?.op, payload, description: extra?.description });
+  return { semanticId: inferred?.semanticId || 'unclassified', iconTag: inferred?.iconTag, polarity: inferred?.polarity,
+    label: resolved, description: inferred?.description || extra?.description || resolved, sourceName };
 }

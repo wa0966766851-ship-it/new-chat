@@ -1,6 +1,7 @@
 import React from "react";
 import { Zap, CheckCircle2, AlertTriangle, Clock, Blocks } from "lucide-react";
 import { analyzeClauseBreakdown, ClauseAnalysisResult } from "../utils/clauseBreakdown";
+import { RichDescription } from "./RichDescription";
 
 interface ClauseBreakdownCardProps {
   title: string;
@@ -87,9 +88,7 @@ export const ClauseBreakdownCard: React.FC<ClauseBreakdownCardProps> = ({
           const destiny = rest.length ? "【命運之輪" + rest.join("【命運之輪") : "";
           return (
             <>
-              <p className="text-[12.5px] text-slate-300 leading-relaxed whitespace-pre-line">
-                {mainText.trim() || "尚無描述文字"}
-              </p>
+              <RichDescription text={mainText} fallback="尚無描述文字" className="text-[12.5px] text-slate-300" />
               {destiny && (
                 <div className="rounded-xl bg-cyan-500/10 px-2.5 py-1.5 text-[11.5px] text-cyan-200 leading-relaxed">
                   <span className="font-semibold">命運之輪模式限定：</span>{destiny.replace(/^【命運之輪\s*[A-Z]?\s*級?專屬攔截[:：]\s*/, "【")}

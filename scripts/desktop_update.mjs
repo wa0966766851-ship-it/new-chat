@@ -48,6 +48,9 @@ try{
  run('node_modules/tsx/dist/cli.mjs',['scripts/pack_reviewed_kits.ts']);
  const source=fingerprint();
  run('node_modules/typescript/bin/tsc',['--noEmit']);
+ // 舊倉庫／背包入口與正式死亡結算必須一起驗收，不能只測新建的乾淨戰場。
+ for(const file of ['tests/rosterIdentity.ui.test.tsx','tests/savedDragonTransfer.integration.test.ts','tests/dimensionalDragonCorrections.semantic.test.ts'])
+   run('node_modules/tsx/dist/cli.mjs',[file]);
  run('node_modules/tsx/dist/cli.mjs',['tests/petAnimationImpact.semantic.test.ts']);
  run('node_modules/tsx/dist/cli.mjs',['tests/petAnimationRetarget.semantic.test.ts']);
  run('node_modules/tsx/dist/cli.mjs',['tests/petAnimationCache.semantic.test.ts']);
@@ -62,7 +65,10 @@ try{
  const launcherCheck=spawnSync('powershell.exe',['-NoProfile','-ExecutionPolicy','Bypass','-File','tests/launcherIdentity.semantic.test.ps1'],{cwd:root,stdio:'inherit',windowsHide:true});
  if(launcherCheck.status!==0)throw Error('Windows啟動器驗證失敗');
  const id=Date.now().toString(),dir=path.join(home,id);
- run('node_modules/vite/bin/vite.js',['build','--outDir',dir,'--sourcemap','false']);
+ // 桌面由目前 Chromium 執行，不需對整個大型區塊再次降級語法。
+ // 避開 Windows 下 esbuild >1 MiB 輸入的暫存檔刪除失敗；仍由 terser 壓縮。
+ // 僅限桌面 CLI，網站建置的瀏覽器相容性設定不變。
+ run('node_modules/vite/bin/vite.js',['build','--outDir',dir,'--sourcemap','false','--target','esnext']);
  buildSync({entryPoints:['server.ts'],bundle:true,platform:'node',format:'cjs',packages:'external',outfile:path.join(dir,'server.cjs')});
  if(fingerprint()!==source)throw Error('建置期間來源有變更，本次產物不切換；請完成編輯後重試。');
  for(const f of ['index.html','server.cjs','version.json'])if(!fs.statSync(path.join(dir,f)).size)throw Error(`產物不完整：${f}`);

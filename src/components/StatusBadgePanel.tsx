@@ -8,6 +8,7 @@ import { statusVisual, catalogEffectIcon } from '../battle/effectIcons';
 import { bossTraitInstanceText } from '../data/bossTraits';
 import { ChainImage } from './SeerImages';
 import {displayTurnValue} from '../battle/displayTurnValue';
+import { RichDescription } from './RichDescription';
 
 interface StatusBadgePanelProps {
   elf: Elf;
@@ -277,9 +278,7 @@ export const StatusBadgePanel: React.FC<StatusBadgePanelProps> = ({ elf, registr
                   {catLabels}
                 </span>
               </div>
-              <div className="text-slate-200 text-xs leading-relaxed bg-slate-900/80 p-3 rounded-xl border border-slate-800 whitespace-pre-wrap font-sans">
-                {description}
-              </div>
+              <RichDescription text={description} className="text-slate-200 text-xs bg-slate-900/80 p-3 rounded-xl border border-slate-800 font-sans" />
               <div className="mt-4 text-right">
                 <button
                   onClick={() => setSelectedEffect(null)}

@@ -44,6 +44,16 @@ try{
    try{const r=await h.play(side,{self:h.unit('S',1000,[part([0,4]),h.wait()],{speed:200}),opp:h.unit('E',1000,[h.wait()],{extra:{weight:70}}),oppBench:[h.unit('B',1000,[h.wait()])],turns:(_,t)=>[t===1?0:1,t===2?{switch:1}:t===3?{switch:0}:0]},3);const opp=side==='p1'?'p2':'p1';assert.equal(r[2].state[opp+'Marks'].find((m:any)=>m.id==='rey_alien_energy').count,0);}finally{delete h.S.E;}
   });
  }
+ // 引擎的「體力≤0 者不可被調整體力增加」守門（2026-10-30）：只有明確帶通用旗標 fromNonPositive 的設定才能從 ≤0 設為正值，消逝者（maxHp≤0）一律不行。
+ const withFlag=(flag:boolean)=>{const v=part([0,2]);for(const e of v.kit)for(const g of e.params?.clause?.body||[])for(const x of g.acts||[])if(x.op==='hp_set'){if(flag)x.p.fromNonPositive=true;else delete x.p.fromNonPositive;}return v;};
+ const hpAfter=async(sk:any,hp:number,maxHp:number)=>{const [r]=await h.play('p1',{self:h.unit('S',hp,[sk],{maxHp,speed:200,extra:{survivalRule:reyGodDescentRule(1000)}}),opp:h.unit('E',1000,[h.wait()])});return r.self.currentHp;};
+ await check('旗標守門：正式技能帶旗標→零血歸1；去掉旗標→零血者不可被加體力；消逝者（maxHp≤0）即使帶旗標也無效',async()=>{
+  assert.ok(JSON.stringify(skill.kit).includes('"fromNonPositive":true'),'正式 Kit 的 hp_set 帶通用旗標');
+  assert.equal(await hpAfter(withFlag(true),0,1000),1);
+  assert.equal(await hpAfter(withFlag(false),0,1000),0,'沒有旗標的一般調整對零血者仍無效');
+  assert.equal(await hpAfter(withFlag(false),-700,1000),-700,'沒有旗標的一般調整對負血者仍無效（維持原值）');
+  assert.equal(await hpAfter(withFlag(true),0,0),0,'maxHp≤0 的消逝者即使有旗標也無效');
+ });
  console.log(`同塵祭 ${checks}項正式測試通過`);
 }finally{await h.close();}
 process.exit(0);

@@ -1,4 +1,4 @@
-import type { EffectSource } from "../types";
+import type { EffectOrigin, EffectSource } from "../types";
 import type { EffectPresentation } from './effectPresentation';
 
 /* ────────────────────────────────────────────────────────────
@@ -23,6 +23,8 @@ export type TickAt = "round_end" | "action_end" | "never";
 export interface Timer {
   /** Display-only metadata shared by registry, Kit and UI; never used for resolution. */
   presentation?: EffectPresentation;
+  /** 來源紀錄（顯示用）；舊存檔沒有。由 addTimerTo 集中填入，呼叫端不必自填。 */
+  origin?: EffectOrigin;
   polarity?: string;
   scope?: "elf" | "team";
   ownerBattleId?: string;
@@ -46,6 +48,8 @@ export interface Timer {
   lateMoverPending?: boolean;
   /** 明寫「下N回合」：附加當回合不啟用，首次回合結束啟用且不扣期限。 */
   pendingActivation?: boolean;
+  /** 同ID重複附加（延長／疊層／刷新）的累計次數；回合結束收尾用來辨識本回合結算期間被刷新的計時器。 */
+  touchSeq?: number;
   /** 同 id 重複附加時的行為 */
   stackRule?: "refresh" | "extend" | "stack" | "ignore";
   layers?: number;
@@ -98,11 +102,14 @@ export function addTimer(list: Timer[], timer: Timer, ctx?: AddContext): Timer[]
 
   const old = list[idx];
   const next = [...list];
+  // 同ID重複附加（延長／疊層／刷新）一律記一次「被碰過」：回合結束收尾（mergeRoundEnd）以此判定
+  // 「本回合結算期間才建立／刷新」的計時器，不得被同回合的扣減快照覆蓋（否則第二次刷新會被同回合扣掉一回合）。
+  const touchSeq = (old.touchSeq ?? 0) + 1;
   switch (t.stackRule ?? old.stackRule ?? "refresh") {
     case "ignore":
       return list;
     case "extend":
-      next[idx] = { ...old, remaining: old.remaining + t.remaining, lateMoverPending: t.lateMoverPending };
+      next[idx] = { ...old, remaining: old.remaining + t.remaining, lateMoverPending: t.lateMoverPending, touchSeq };
       return next;
     case "stack": {
       const currentLayers = old.layers || 1;
@@ -112,13 +119,14 @@ export function addTimer(list: Timer[], timer: Timer, ctx?: AddContext): Timer[]
         ...t,
         layers: Math.min(maxLayers, currentLayers + 1),
         remaining: Math.max(old.remaining, t.remaining),
-        lateMoverPending: t.lateMoverPending
+        lateMoverPending: t.lateMoverPending,
+        touchSeq
       };
       return next;
     }
     case "refresh":
     default:
-      next[idx] = { ...old, ...t, remaining: Math.max(old.remaining, t.remaining) };
+      next[idx] = { ...old, ...t, remaining: Math.max(old.remaining, t.remaining), touchSeq };
       return next;
   }
 }

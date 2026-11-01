@@ -22,4 +22,31 @@ assert.equal(preparePetFx(source),result,'快取且不重複過濾');
 // 保守門檻：3 倍待機高才略過；一般大光效(2x1.5)、狹長落雷(12x300)一律保留。
 for(const scale of [.2,1,3]){assert.ok(isLargeAddQuad(400*scale,200*scale,100*scale));assert.ok(!isLargeAddQuad(200*scale,150*scale,100*scale));assert.ok(!isLargeAddQuad(12*scale,300*scale,100*scale));}
 assert.ok(!isLargeAddQuad(1000,1000,0));assert.ok(!isLargeAddQuad(Infinity,1000,100));
+// ---- 2026-11-01 全屏層：被判定為底片的圖塊不再丟掉，而是收進 fxClip；小畫布 clip 仍不畫（舊行為不變）----
+const big=frame([...quad(0,10,20),...quad(20,400,200)],[ranges('add','simple',2)]);
+const small=frame([...quad(0,10,20)],[ranges('add','simple',1)]);
+const source2={sequences:[{name:'standby',frames:[idle]},{name:'attack',frames:[big,big]},{name:'sa',frames:[big,small]},{name:'cp',frames:[small]}]} as SwfClipData;
+const auto=preparePetFx(source2);
+assert.deepEqual(auto.report.fullscreen,{sequences:['attack','sa'],mode:'auto'},'未登記時自動偵測：有底片被判定的序列都走全屏層（預設，現有素材免設定受益）');
+assert.ok(auto.fxClip,'有底片就產生 fxClip');
+assert.deepEqual(auto.fxClip!.sequences.map(s=>s.name),source2.sequences.map(s=>s.name),'序列一一對應');
+assert.deepEqual(auto.fxClip!.sequences.map(s=>s.frames.length),source2.sequences.map(s=>s.frames.length),'影格數一一對應，兩個播放器可同步');
+assert.deepEqual(auto.fxClip!.sequences[2].frames[0].mesh.subMeshes.map(s=>[s.startVertex,s.indexStart,s.indexCount]),[[4,6,6]],'fxClip 只含大底片那一塊（保留超大圖塊）');
+assert.equal(auto.fxClip!.sequences[2].frames[0].mesh.positions,big.mesh.positions,'fxClip 與原 clip 共用頂點，不複製');
+assert.equal(auto.fxClip!.sequences[2].frames[1].mesh.subMeshes.length,0,'同序列沒有底片的影格為空');
+assert.equal(auto.fxClip!.sequences[3].frames[0].mesh.subMeshes.length,0,'沒有底片的序列在全屏層為空');
+assert.equal(auto.fxClip!.sequences[0].frames[0].mesh.subMeshes.length,0,'待機在全屏層永遠為空');
+assert.deepEqual(auto.clip.sequences[2].frames[0].mesh.subMeshes.map(s=>[s.startVertex,s.indexCount]),[[0,6]],'小畫布仍濾掉底片（行為不變）');
+assert.deepEqual(auto.report.backdropBounds.sa,{left:20,right:420,top:0,bottom:200},'底片聯集框（原生座標）供全屏層鋪滿用');
+assert.equal(preparePetFx(source2),auto,'相同設定快取');
+// 逐素材覆寫：明確登記後只認登記的序列；未登記序列的大圖塊照舊過濾（不進全屏層）。
+const only=preparePetFx(source2,{sequences:['sa']});
+assert.notEqual(only,auto,'不同設定各自快取');
+assert.deepEqual(only.report.fullscreen,{sequences:['sa'],mode:'explicit'});
+assert.equal(only.fxClip!.sequences[2].frames[0].mesh.subMeshes.length,1,'登記的序列保留超大圖塊');
+assert.equal(only.fxClip!.sequences[1].frames[0].mesh.subMeshes.length,0,'未登記序列的超大圖塊仍被過濾');
+assert.deepEqual(only.clip.sequences[1].frames[0].mesh.subMeshes.map(s=>s.indexCount),[6],'未登記序列的小畫布也不畫底片');
+for(const none of [[],['nope']]){const off=preparePetFx(source2,{sequences:none});assert.equal(off.fxClip,null,'登記為空／不存在的序列＝關閉全屏層');assert.deepEqual(off.report.fullscreen.sequences,[]);assert.equal(off.report.removedQuads,auto.report.removedQuads,'過濾結果不變');}
+const plain=preparePetFx({sequences:[{name:'standby',frames:[idle]},{name:'attack',frames:[small]}]} as SwfClipData);
+assert.equal(plain.fxClip,null,'沒有任何底片＝不建立第二個播放器');assert.deepEqual(plain.report.fullscreen.sequences,[]);
 console.log('B策略：混合子網格分割、小光效/落雷、normal/遮罩/待機保留、共享素材不變、比例與快取通過');

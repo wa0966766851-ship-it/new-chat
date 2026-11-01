@@ -1,6 +1,25 @@
 import { Elf, SoulMark } from "../types";
 
 /**
+ * 額外精靈統一 id 標準（docs/rules/額外精靈id標準.md）：
+ *  - 一律英文字母開頭、`x_` 前綴 + 小寫英數底線，不佔用數字序號（5xxx）。
+ *  - 登錄表 EXTRA_ELF_KINDS 以名稱對應「種類 id」，createExtraElf 會寫入 `extraKind`。
+ *  - 同一時間每隊只會有一隻的額外精靈（如炫彩山神）直接以種類 id 作為實例 id；
+ *    可能多隻並存者用 `<種類id>_<時間>_<亂數>` 當實例 id（舊的 `extra_<中文名>_…` 已改成純字母），種類以 extraKind 辨識。
+ */
+export const EXTRA_ELF_KINDS: Record<string, string> = {
+  "克塔亞特": "x_cthyaat",
+  "珀妮": "x_puni",
+  "賽博怨靈": "x_cyber_wraith",
+  "炫彩山神": "x_shancaishen",
+  "旭": "x_xu",
+  "清": "x_qing",
+};
+export const EXTRA_ELF_ID_PATTERN = /^[A-Za-z][A-Za-z0-9_]*$/;
+export const extraKindOf = (elf: { name?: string; extraKind?: string } | null | undefined): string | undefined =>
+  elf?.extraKind ?? (elf?.name ? EXTRA_ELF_KINDS[elf.name] : undefined);
+
+/**
  * Create an extra/support elf (額外精靈) summoned by another elf.
  *
  * Descriptive/effect fields (soulMark / trait / alienTraits) are scoped to the
@@ -16,7 +35,9 @@ export function createExtraElf(baseElf: Elf, overrides: Partial<Elf> & { name: s
   const cloned = JSON.parse(JSON.stringify(Object.fromEntries(
     inheritedKeys.map(key => [key, baseElf[key]]),
   ))) as Elf;
-  const uniqueId = `extra_${overrides.name}_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
+  // overrides.id（字母開頭的種類 id，如 x_shancaishen）優先；否則沿用唯一實例 id。
+  const explicitId = typeof overrides.id === "string" && EXTRA_ELF_ID_PATTERN.test(overrides.id) ? overrides.id : undefined;
+  const uniqueId = explicitId ?? `${EXTRA_ELF_KINDS[overrides.name] ?? "x_extra"}_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
 
   const defaultExtraSoulMark: SoulMark = {
     name: "額外精靈",
@@ -31,6 +52,7 @@ export function createExtraElf(baseElf: Elf, overrides: Partial<Elf> & { name: s
     id: uniqueId,
     battleId: uniqueId,
     isExtra: true,
+    extraKind: overrides.extraKind ?? EXTRA_ELF_KINDS[overrides.name],
     // 召喚者（陣亡後的延後效果，例如斯嘉麗重生，由存活的額外精靈代為執行）
     summonerId: String(baseElf.battleId || baseElf.id),
     skills: overrides.skills ?? [],

@@ -6,13 +6,15 @@ import { ElfAvatar } from "../SeerImages";
 import { hiddenFromViewer } from "../../battle/viewerPerspective";
 import { useBattleViewMode } from "../../battle/viewerMode";
 import { placeSprite, spriteHeightRatio, battleSpriteSizeRatio, BATTLE_GROUND_LIFT, type OpaqueBox, type VisibleBox } from "../../battle/spriteMetrics";
-import { measureOpaqueBox as measure } from "../../battle/opaqueMeasure";
+import { measureOpaqueBoxResult as measure } from "../../battle/opaqueMeasure";
 import { registerVisibleBox, notifyVisibleBoxChanged, subscribeVisibleBox, getVisibleBox, popupAnchor } from "../../battle/visibleBox";
 import {animationModeFor,animationSpeed,readAnimationSettings,BATTLE_ANIMATION_EVENT} from '../../battle/animationSettings';
 import {petAnimationBinding,isPetDegraded,onPetDegraded,type PetAction} from '../../battle/petAnimationRegistry';
 import {battleSpriteProfile} from '../../battle/seerAssets';
 import {beginPetFormTransition} from '../../battle/petFormTransitions';
 import {battleFormAsset,battleFormAssets,settledFormAsset} from '../../battle/battleFormPresentation';
+import {useFullscreenFxActive} from '../../battle/fullscreenFx';
+import {isFifthSkillAnim,ultimateSequenceOf} from '../../battle/petActionRouting';
 const PetActionSprite=React.lazy(()=>import('./PetActionSprite').then(m=>({default:m.PetActionSprite})));
 
 /**
@@ -49,6 +51,8 @@ interface ProportionalSpriteProps {
   fieldH?:number;
   overlay: (visibleHeight: number) => React.ReactNode;
 }
+/** 第五技能且素材登記了絕招序列才改播 ultimate；否則維持既有對應。 */
+const routeFifth=(action:PetAction,token:unknown,asset:Parameters<typeof ultimateSequenceOf>[0]):PetAction=>(action==='attack'||action==='sa'||action==='cp')&&isFifthSkillAnim(token)&&ultimateSequenceOf(asset)?'ultimate':action;
 export const ProportionalSprite: React.FC<ProportionalSpriteProps> = ({ elf, side, anchorX, stageW, stageH, anim, dead, opacity, overlay,appearanceState,action='standby',actionToken,canvasW,targetX,heightRatio,fieldH }) => {
   const disguised=!!elf.illusion;
   elf = appearanceElf(elf);
@@ -57,7 +61,7 @@ export const ProportionalSprite: React.FC<ProportionalSpriteProps> = ({ elf, sid
   // 隱匿：不可見方只顯示共用鬼影，不載入真實動作模型，也不依真實身高決定大小。
   const concealed = hiddenFromViewer(elf, side, useBattleViewMode());
   const wrap = React.useRef<HTMLDivElement>(null);
-  const [m, setM] = React.useState<{ src: string; box: OpaqueBox; mirrored: boolean } | null>(null);
+  const [m, setM] = React.useState<{ src: string; box: OpaqueBox; mirrored: boolean; measured: boolean } | null>(null);
   const [fallback, setFallback] = React.useState(false);
   const [settings,setSettings]=React.useState(readAnimationSettings);
   const [actionReady,setActionReady]=React.useState(false);
@@ -65,6 +69,7 @@ export const ProportionalSprite: React.FC<ProportionalSpriteProps> = ({ elf, sid
   React.useEffect(()=>onPetDegraded(()=>setDegradedTick(n=>n+1)),[]);
   React.useEffect(()=>{const refresh=()=>setSettings(readAnimationSettings());window.addEventListener(BATTLE_ANIMATION_EVENT,refresh);window.addEventListener('storage',refresh);return()=>{window.removeEventListener(BATTLE_ANIMATION_EVENT,refresh);window.removeEventListener('storage',refresh);};},[]);
   const mode=animationModeFor(settings,elf);
+  const fxActive=useFullscreenFxActive();
   const useActions=!concealed&&mode==='actions'&&settings.skill&&!!form.asset&&!dead&&opacity>0&&!(degradedTick>=0&&isPetDegraded(side,elf));
   const showActions=useActions&&actionReady;
   const preloadIds=battleFormAssets(elf).join('|');
@@ -97,22 +102,27 @@ export const ProportionalSprite: React.FC<ProportionalSpriteProps> = ({ elf, sid
   // 量測：圖片載入後量一次；圖片來源改變（備援鏈切換）時才重量。不輪詢，避免戰鬥中持續耗用。
   React.useEffect(() => {
     let alive = true;
+    let retry: ReturnType<typeof setTimeout> | undefined; let tries = 0;
     const root = wrap.current; if (!root) return;
     const pendingLoads = new Map<HTMLImageElement, EventListener>();
     const check = () => {
       if (!alive) return;
       const img = root.querySelector("img");
-      if (!img) { setM(null); setFallback(true); return; }
+      // 換圖（幻化／皮膚／型態／透明度）期間沿用「上一次有效的量測」直到新圖量完，不可先設 null——
+      // m 一旦為 null，visible 會跳到備援尺寸、動畫畫布跟著重排再跳回，就是「精靈偶爾變很小」。
+      if (!img) { setFallback(true); return; }
       const source = img.src;
-      // 換圖尚未載入時，不得沿用上一張的可見區域、位置與大小。
-      setM(prev => prev && prev.src !== source ? null : prev);
       setFallback(false);
       const done = () => {
+        clearTimeout(retry);
         if (!alive || !root.contains(img) || img.src !== source || !img.naturalWidth) return;
         const src = img.currentSrc || img.src;
         const mirrored = /scaleX\(-1\)/.test(img.style.transform || "");
         setFallback(false);
-        setM(prev => prev && prev.src === src && prev.mirrored === mirrored ? prev : { src, box: measure(img), mirrored });
+        const result = measure(img);
+        setM(prev => prev && prev.src === src && prev.mirrored === mirrored && (prev.measured || !result.measured) ? prev : { src, box: result.box, mirrored, measured: result.measured });
+        // 量不到像素（結果未快取）：稍後重試一次，成功就換成真正的可見框。
+        if (!result.measured && tries++ < 2) retry = setTimeout(() => { if (alive && root.contains(img) && img.src === source) done(); }, 600);
       };
       const previous = pendingLoads.get(img);
       if (previous) img.removeEventListener("load", previous);
@@ -128,9 +138,10 @@ export const ProportionalSprite: React.FC<ProportionalSpriteProps> = ({ elf, sid
       if (records.some(r => r.type === "childList" || (r.target as Element).tagName === "IMG")) check();
     });
     mo.observe(root, { subtree: true, childList: true, attributes: true, attributeFilter: ["src", "style"] });
-    const t = setTimeout(() => { if (alive && !root.querySelector("img")) setFallback(true); }, 1200);
+    // 持續沒有圖片才放棄舊量測（真的缺圖）；短暫換圖不會走到這裡。
+    const t = setTimeout(() => { if (alive && !root.querySelector("img")) { setFallback(true); setM(null); } }, 1200);
     return () => {
-      alive = false; mo.disconnect(); clearTimeout(t);
+      alive = false; mo.disconnect(); clearTimeout(t); clearTimeout(retry);
       pendingLoads.forEach((handler, img) => img.removeEventListener("load", handler));
     };
   }, [elf.battleId, elf.id, elf.name, elf.path, elf.skinId, side]);
@@ -175,13 +186,13 @@ export const ProportionalSprite: React.FC<ProportionalSpriteProps> = ({ elf, sid
   React.useEffect(() => { notifyVisibleBoxChanged(); }, [action, showActions, dead]);
 
   return (
-    <div className="absolute bottom-0 pointer-events-none" style={{ left: displayAnchor, bottom:colossal?0:stageH*BATTLE_GROUND_LIFT, opacity, zIndex:showActions&&action!=='standby'?25:undefined, display: opacity === 0 ? "none" : undefined }} data-form-assets-ready={formsReady} data-sprite-side={side} data-sprite-ratio={ratio.toFixed(2)} data-sprite-visible={visible.toFixed(1)} data-sprite-opaque={opaque ? `${opaque.left.toFixed(1)},${opaque.right.toFixed(1)},${opaque.bottomY.toFixed(1)},${opaque.topY.toFixed(1)}` : undefined} data-sprite-sink={sink.toFixed(1)}>
+    <div className="absolute bottom-0 pointer-events-none" style={{ left: displayAnchor, bottom:colossal?0:stageH*BATTLE_GROUND_LIFT, opacity, zIndex:fxActive||(showActions&&action!=='standby')?25:undefined, display: opacity === 0 ? "none" : undefined }} data-form-assets-ready={formsReady} data-sprite-side={side} data-sprite-ratio={ratio.toFixed(2)} data-sprite-visible={visible.toFixed(1)} data-sprite-opaque={opaque ? `${opaque.left.toFixed(1)},${opaque.right.toFixed(1)},${opaque.bottomY.toFixed(1)},${opaque.topY.toFixed(1)}` : undefined} data-sprite-sink={sink.toFixed(1)}>
       <motion.div ref={wrap} animate={mode==='static'||showActions?{x:0,filter:'brightness(1)'}:anim} transition={{ duration: 0.35/animationSpeed(settings.speed) }} style={{...style,visibility:showActions?'hidden':undefined}}
         className={`${dead ? "opacity-30 grayscale" : ""} will-change-transform`}>
         <ElfAvatar elf={elf} kind="body" battleSide={side} className="w-full h-full object-fill"
           fallbackClassName="w-full h-full rounded-full overflow-hidden ring-2 ring-white/15 flex items-center justify-center text-5xl font-black text-slate-200 bg-black/20" />
       </motion.div>
-      {useActions&&<React.Suspense fallback={null}><PetActionSprite assetId={form.asset!} enterTransform={form.enter} onTransitionEnd={form.finish} key={`${form.asset}:${elf.battleId||elf.id}:${elf.skinId||''}:${form.enter?1:0}`} sizeRefHeight={sizeRef} elf={elf} side={side} action={action} actionToken={actionToken} width={stageW*(colossal?3:1)} height={Math.max(1,visible)} viewport={canvasW?{width:canvasW,height:colossal?Math.max(layoutH,visible):stageH,anchorX:displayAnchor,targetX}:undefined} onReady={setActionReady} sink={sink}/></React.Suspense>}
+      {useActions&&<React.Suspense fallback={null}><PetActionSprite assetId={form.asset!} enterTransform={form.enter} onTransitionEnd={form.finish} key={`${form.asset}:${elf.battleId||elf.id}:${elf.skinId||''}:${form.enter?1:0}`} sizeRefHeight={sizeRef} elf={elf} side={side} action={routeFifth(action as PetAction,actionToken,form.asset)} actionToken={actionToken} width={stageW*(colossal?3:1)} height={Math.max(1,visible)} viewport={canvasW?{width:canvasW,height:colossal?Math.max(layoutH,visible):stageH,anchorX:displayAnchor,targetX}:undefined} onReady={setActionReady} sink={sink}/></React.Suspense>}
       <div className="absolute left-1/2 -translate-x-1/2 w-40 h-4 rounded-[50%] bg-black/35 blur-md -z-10" style={{ bottom: -6 }} />
       {useActions&&!showActions&&<span role="status" className="absolute bottom-4 left-0 -translate-x-1/2 whitespace-nowrap rounded bg-slate-950/80 px-2 py-1 text-xs text-cyan-200">動作載入中，仍可選擇技能</span>}
       {useActions&&preloadIds&&!formsReady&&<span role="status" className="absolute bottom-10 left-0 -translate-x-1/2 whitespace-nowrap rounded bg-slate-950/80 px-2 py-1 text-xs text-cyan-200">型態素材準備中</span>}

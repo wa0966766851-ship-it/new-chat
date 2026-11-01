@@ -2,7 +2,7 @@
 // 額外精靈生命週期與真實傷害疊層缺口，以通用 op 表達；引擎既有 createExtraElf／addExtraElf 承擔召喚。
 import type { BattleEventContext } from '../../effects/types';
 import { createExtraElf } from '../../utils/extraElf';
-import { SHANCAISHEN_SELF_KIT } from '../../data/migratedShancaishenKit';
+import { SHANCAISHEN_SELF_KIT, SHANCAISHEN_SOULMARK } from '../../data/migratedShancaishenKit';
 
 type S = 'p1' | 'p2';
 
@@ -13,6 +13,9 @@ type S = 'p1' | 'p2';
 const EXTRA_ELF_KITS = new Map<string, any[]>();
 export function registerExtraElfKit(name: string, kit: any[]): void { EXTRA_ELF_KITS.set(name, kit); }
 export function extraElfKitByName(name: string): any[] | undefined { return EXTRA_ELF_KITS.get(name); }
+/** 額外精靈專屬魂印（顯示用描述）註冊表：未註冊者沿用 createExtraElf 的預設魂印。 */
+const EXTRA_ELF_SOULMARKS = new Map<string, any>();
+export function extraElfSoulMarkByName(name: string): any | undefined { return EXTRA_ELF_SOULMARKS.get(name); }
 
 /**
  * 克塔亞特（5007 濁的額外精靈）自身條款——定義在 op 同模組，避免模組載入順序問題（DSH 20261020）。
@@ -40,10 +43,11 @@ export const CTHYAAT_SELF_KIT: any[] = [
 EXTRA_ELF_KITS.set('克塔亞特', CTHYAAT_SELF_KIT);
 // 2026-10-31：炫彩山神（5041 岳峙淵渟.卡修斯 召喚的額外精靈）。
 EXTRA_ELF_KITS.set('炫彩山神', SHANCAISHEN_SELF_KIT);
+EXTRA_ELF_SOULMARKS.set('炫彩山神', SHANCAISHEN_SOULMARK);
 const idOf = (e: any) => String(e?.battleId || e?.id || '');
 
 export const BRINKK_ACTION_FIELDS: Record<string, readonly string[]> = {
-  summon_extra_elf: ['name', 'type', 'statFromTeamRatio', 'side', 'kit', 'statSource', 'id'],
+  summon_extra_elf: ['name', 'type', 'statFromTeamRatio', 'side', 'kit', 'statSource', 'id', 'statName', 'statMode'],
   true_damage_stack: ['key', 'stackStep', 'maxStacks', 'dir', 'kind'],
   off_field_hp_drain: ['ratio', 'key', 'maxStacks'],
   extra_elf_heal_owner: ['ratio', 'side'],
@@ -52,7 +56,11 @@ export const BRINKK_ACTION_FIELDS: Record<string, readonly string[]> = {
 
 export function brinkkActionIssue(op: string, p: any): string | null {
   if (op === 'summon_extra_elf') {
-    if (p.statSource !== undefined && !['team', 'holder'].includes(p.statSource)) return '召喚能力來源需全隊或持有者';
+    if (p.statSource !== undefined && !['team', 'holder', 'highest_of_name'].includes(p.statSource)) return '召喚能力來源需全隊、持有者或指定名稱最高者';
+    if (p.statSource === 'highest_of_name') {
+      if (typeof p.statName !== 'string' || !p.statName) return '指定名稱最高者需精靈名稱';
+      if (p.statMode !== undefined && !['total', 'each'].includes(p.statMode)) return '指定名稱最高者需以總和或逐項比較';
+    } else if (p.statName !== undefined || p.statMode !== undefined) return '精靈名稱與比較方式只用於指定名稱最高者';
     if (typeof p.name !== 'string' || !p.name) return '召喚額外精靈需名稱';
     if (typeof p.type !== 'string' || !p.type) return '召喚額外精靈需屬性';
     if (!(p.statFromTeamRatio > 0 && p.statFromTeamRatio <= 1)) return '召喚額外精靈能力來源需0至100%比例';
@@ -94,20 +102,45 @@ export function brinkkOperations(helpers: { liveElf: (ctx: BattleEventContext, s
       const team = ((ctx as any).getFullTeam?.(side) || []) as any[];
       const base = helpers.liveElf(ctx, side) || team[0];
       if (!base) return false;
-      const sources = p.statSource === 'holder' ? [base] : team.filter(e => e && !e.isVanished);
-      const sum = sources.reduce((acc: any, e: any) => {
-        const st = e.calculatedStats || {};
-        for (const k of ['atk', 'def', 'spatk', 'spdef', 'speed', 'hp']) acc[k] += st[k] || 0;
-        return acc;
-      }, { atk: 0, def: 0, spatk: 0, spdef: 0, speed: 0, hp: 0 });
-      if (p.statSource === 'holder') sum.hp = base.maxHp;
+      const allStatKeys = ['atk', 'def', 'spatk', 'spdef', 'speed', 'hp'];
+      const sum = { atk: 0, def: 0, spatk: 0, spdef: 0, speed: 0, hp: 0 } as Record<string, number>;
+      let baseStatsFrom: Record<string, number> | undefined;
+      if (p.statSource === 'highest_of_name') {
+        // 「能力值等同於任一方（敵我雙方）〈名稱〉中能力最高者」。
+        // 預設 each（DSH 決議）：雙方隊伍（出戰＋背包，不含額外精靈與已消逝者）中所有同名精靈，每一項能力各取最高值。
+        // statMode:'total'：改取六項能力總和最高的那一隻整隻照抄（僅作對照）。兩種都含敵我雙方。
+        const norm = (n: string) => String(n || '').replace(/[·・]/g, '.');
+        const candidates = (['p1', 'p2'] as S[]).flatMap(sd => (((ctx as any).getFullTeam?.(sd) || []) as any[])
+          .filter(e => e && !e.isExtra && !e.isVanished && norm(e.name) === norm(p.statName)));
+        if (!candidates.length) return false;
+        const statOf = (e: any, k: string) => Number(k === 'hp' ? (e.calculatedStats?.hp ?? e.maxHp) : e.calculatedStats?.[k]) || 0;
+        const totalOf = (e: any) => allStatKeys.reduce((n, k) => n + statOf(e, k), 0);
+        if (p.statMode !== 'total') {
+          for (const k of allStatKeys) sum[k] = Math.max(...candidates.map(e => statOf(e, k)));
+        } else {
+          const best = candidates.reduce((a, b) => totalOf(b) > totalOf(a) ? b : a);
+          for (const k of allStatKeys) sum[k] = statOf(best, k);
+          baseStatsFrom = best.baseStats;
+        }
+      } else {
+        const sources = p.statSource === 'holder' ? [base] : team.filter(e => e && !e.isVanished);
+        for (const e of sources) {
+          const st = e.calculatedStats || {};
+          for (const k of allStatKeys) sum[k] += st[k] || 0;
+        }
+        if (p.statSource === 'holder') sum.hp = base.maxHp;
+      }
       const scaled: any = {};
       for (const k of Object.keys(sum)) scaled[k] = Math.max(1, Math.floor(sum[k] * p.statFromTeamRatio));
+      // 同種類的額外精靈已存活在場（同 id）→ 不重複召喚；死亡後可再次召喚（addExtraElf 原位換成新實例）。
+      if (p.id && ((ctx as any).getFullTeam?.(side) || []).some((e: any) => e?.id === p.id && e.isExtra && !e.isVanished && Number(e.currentHp) > 0)) return false;
       // DSH 20261020：額外精靈的專屬 Kit 由註冊表按名字取得（Kit 參數無法通過 params 序列化）。
       const extraKit = extraElfKitByName(p.name);
       const extra = createExtraElf(base, { ...(p.id ? { id: p.id } : {}), name: p.name, type: p.type, calculatedStats: scaled, maxHp: scaled.hp, currentHp: scaled.hp,
+        ...(baseStatsFrom ? { baseStats: Object.fromEntries(Object.entries(baseStatsFrom).map(([k, v]) => [k, Math.max(1, Math.floor(Number(v) * p.statFromTeamRatio))])) } : {}),
         ...(p.statSource === 'holder' ? { baseStats: Object.fromEntries(Object.entries(base.baseStats || {}).map(([k, v]) => [k, Math.max(1, Math.floor(Number(v) * p.statFromTeamRatio))])) } : {}),
-        ...(extraKit?.length ? { kit: extraKit } : {}) } as any);
+        ...(extraKit?.length ? { kit: extraKit } : {}),
+        ...(extraElfSoulMarkByName(p.name) ? { soulMark: { ...extraElfSoulMarkByName(p.name) } } : {}) } as any);
       (ctx as any).addExtraElf(side, extra);
       (ctx as any).addLog?.('召喚額外精靈：' + p.name, 'effect');
       return true;

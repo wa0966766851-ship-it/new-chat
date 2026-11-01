@@ -5,6 +5,7 @@ import { TRIG_LABEL } from "../blocks/parse";
 import { suggestDamageTypes, damageChoiceLabel } from '../effects/damageChoices';
 import { sequenceActionLabel } from '../effects/sequencePresentation';
 import { LEGACY_TOOLTIP } from '../blocks/ops/legacyHandler';
+import { RichDescription } from './RichDescription';
 
 const OP_TONE: Record<string, string> = {
   status: "bg-fuchsia-600/80", status_seq: "bg-fuchsia-600/80", status_random: "bg-fuchsia-600/80", status_chance_turns: "bg-fuchsia-600/80", convert_status: "bg-fuchsia-600/80",
@@ -22,7 +23,7 @@ const OP_TONE: Record<string, string> = {
 
 const ActBlock: React.FC<{ a: Act }> = ({ a }) => {
   if(a.op==='legacy_handler')return <div title={LEGACY_TOOLTIP} className="rounded-md border border-purple-400/40 bg-purple-600/60 px-2 py-1 text-[12px] font-medium text-white shadow-sm">🔒 {a.label || `專屬機制：${a.p.key}`}</div>;
-  if(a.op==='mark_program')return <div className="rounded-lg border border-yellow-400/40 bg-yellow-500/10 p-2"><p className="text-xs font-semibold text-yellow-200">{sequenceActionLabel(a)}</p><p className="text-xs text-slate-300">{a.p.description}</p>{(a.p.rules||[]).map((c:Clause,i:number)=><div key={i} className="border-l-2 border-yellow-400/50 pl-2 mt-2"><p className="text-xs text-yellow-100">{TRIG_LABEL[c.trig]||c.trig}：{c.raw}</p>{(c.cond||[]).map((cond,j)=><CondChip key={j} c={cond}/>)}<StmtList body={c.body}/></div>)}</div>;
+  if(a.op==='mark_program')return <div className="rounded-lg border border-yellow-400/40 bg-yellow-500/10 p-2"><p className="text-xs font-semibold text-yellow-200">{sequenceActionLabel(a)}</p><RichDescription text={a.p.description} compact className="text-xs text-slate-300" />{(a.p.rules||[]).map((c:Clause,i:number)=><div key={i} className="border-l-2 border-yellow-400/50 pl-2 mt-2"><p className="text-xs text-yellow-100">{TRIG_LABEL[c.trig]||c.trig}：{c.raw}</p>{(c.cond||[]).map((cond,j)=><CondChip key={j} c={cond}/>)}<StmtList body={c.body}/></div>)}</div>;
   if (a.op === "timed" || a.op === "once") {
     const p = a.p;
     return (
@@ -66,7 +67,7 @@ const ClauseBlock: React.FC<{ c: Clause }> = ({ c }) => {
   return (
     <div className="rounded-xl border border-white/10 bg-black/25 p-2 space-y-1.5">
       <div className="flex items-start justify-between gap-2">
-        <div className="text-[11px] leading-snug text-slate-400 whitespace-pre-wrap">{c.raw.replace(/^\s*>+\s*/, "")}</div>
+        <RichDescription text={c.raw} compact className="text-[11px] leading-snug text-slate-400" />
         <span className={`shrink-0 rounded px-1.5 py-0.5 text-[10.5px] font-semibold ${c.parsed ? "bg-emerald-500/15 text-emerald-300" : c.marker === "§" ? "bg-slate-500/15 text-slate-400" : "bg-rose-500/15 text-rose-300"}`}
           title={c.parsed ? "已轉成積木" : c.marker === "§" ? "名詞說明" : `未轉成積木：${(c.rest || []).join("、")}`}>
           {c.parsed ? "積木" : c.marker === "§" ? "說明" : "未解析"}

@@ -44,9 +44,6 @@ export const ELF_TRAIT_FLAGS: Record<string, 'boolean' | 'turns'> = {
   ppLimitIgnoredRequiresNonFull: 'boolean',
   // 攻擊技能以雙攻值總和計算（engine 於行動前寫 blkAtkSpatkSum）。
   useAtkSpAtkSumForAttacks: 'boolean',
-  // 2026-10-31（5041 卡修斯）：處於【山神守護】時，控制類／弱化類異常的「原有效果」失效
-  // （異常本身仍存在、回合數照算）。
-  suppressControlWeakeningWhileMountainGuard: 'boolean',
 };
 
 /** 契約欄位（登記於 sequenceContract）。 */

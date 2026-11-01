@@ -17,14 +17,17 @@
 
 export const TAU = Math.PI * 2;
 
-/** 決定性亂數（同一 seed 永遠得到同一序列，保證每次重繪一致）。 */
+/**
+ * 決定性亂數：mulberry32，與拾光行記 index.html 的 rng 逐行一致（同 seed 同序列）。
+ * （2026-10-31 由 xorshift 改為 mulberry32，紙本背景圖形因此改變；測試以參考實作逐值比對。）
+ */
 export function rng(seed: number): () => number {
   let a = (seed >>> 0) || 1;
   return function () {
-    a ^= a << 13; a >>>= 0;
-    a ^= a >> 17;
-    a ^= a << 5; a >>>= 0;
-    return (a >>> 0) / 4294967296;
+    a |= 0; a = a + 0x6D2B79F5 | 0;
+    let t = Math.imul(a ^ a >>> 15, 1 | a);
+    t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+    return ((t ^ t >>> 14) >>> 0) / 4294967296;
   };
 }
 
@@ -156,3 +159,62 @@ export const PAPER_PALETTE = {
   pale: '#7C9BE8',
   warm: '#E8622B',
 } as const;
+
+
+/* ---------- 2026-10-31：與拾光行記 sk 模組對齊的補充 ---------- */
+
+/** 線寬跟景深走（d 小＝遠景髮絲，d 大＝近景馬克筆），與拾光行記 DW(d) 相同。 */
+export function DW(d: number): number { return d < 0.3 ? 0.6 : d < 0.6 ? 0.85 : d < 1.0 ? 1.15 : 1.55; }
+
+/** 套印錯位：第二遍偏移量與透明度倍率（拾光行記 ink()：偏移 1.15 / 0.95px，透明度 ×0.4）。 */
+export const INK_OFFSET = { x: 1.15, y: 0.95, alpha: 0.4 } as const;
+
+export interface InkOptions { color?: string; width?: number; alpha?: number; dash?: number[]; inked?: boolean; gx?: number; gy?: number }
+export interface InkLayer { d: string; color: string; width: number; alpha: number; dash?: string; dx: number; dy: number }
+
+/** 把一條線展開成要描的圖層（SVG／Canvas 共用）；inked 不為 false 時先描一遍偏移的淡影。 */
+export function inkLayers(d: string, o: InkOptions = {}): InkLayer[] {
+  const color = o.color ?? PAPER_PALETTE.ink, width = o.width ?? 1, alpha = o.alpha ?? 1;
+  const dash = o.dash ? o.dash.join(' ') : undefined;
+  const out: InkLayer[] = [];
+  if (o.inked !== false) out.push({ d, color, width, alpha: alpha * INK_OFFSET.alpha, dash, dx: o.gx ?? INK_OFFSET.x, dy: o.gy ?? INK_OFFSET.y });
+  out.push({ d, color, width, alpha, dash, dx: 0, dy: 0 });
+  return out;
+}
+
+/** 手繪方章：四條 rule 組成，角落衝出。回傳四段 path（以空白相接，可直接當 d）。 */
+export function stamp(x: number, y: number, w: number, h: number, seed: number, o: RuleOptions = {}): string {
+  const opt = { ext: 2, bow: 0.004, ...o };
+  return [
+    rule(x, y, x + w, y, seed, opt), rule(x + w, y, x + w, y + h, seed + 1, opt),
+    rule(x + w, y + h, x, y + h, seed + 2, opt), rule(x, y + h, x, y, seed + 3, opt),
+  ].join(' ');
+}
+
+/** 斜線底紋（C 級用）：在方框內以 45 度細線填滿。 */
+export function hatch(x: number, y: number, w: number, h: number, gap: number, seed: number): string {
+  const R = rng(seed);
+  let d = '';
+  for (let c = gap; c < w + h; c += gap) {
+    const x1 = Math.min(c, w), y1 = c - x1;
+    const x2 = Math.max(0, c - h), y2 = c - x2;
+    const j = (R() - 0.5) * 0.8;
+    d += `M${(x + x1).toFixed(2)} ${(y + y1 + j).toFixed(2)} L${(x + x2).toFixed(2)} ${(y + y2 + j).toFixed(2)} `;
+  }
+  return d.trim();
+}
+
+/** 封印叉：兩條 brush 交叉（Ban 用）。 */
+export function cross(cx: number, cy: number, r: number, seed: number): string {
+  const R = rng(seed);
+  const mk = (a: number): [number, number][] => {
+    const pts: [number, number][] = [];
+    for (let i = 0; i <= 10; i++) {
+      const t = i / 10 - 0.5;
+      pts.push([cx + Math.cos(a) * r * 2 * t + (R() - 0.5) * 0.8, cy + Math.sin(a) * r * 2 * t + (R() - 0.5) * 0.8]);
+    }
+    return pts;
+  };
+  const w = Math.max(3, r * 0.22);
+  return brush(mk(Math.PI / 4 + (R() - 0.5) * 0.12), w) + brush(mk(-Math.PI / 4 + (R() - 0.5) * 0.12), w);
+}

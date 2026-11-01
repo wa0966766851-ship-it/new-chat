@@ -1,10 +1,10 @@
 import type { Elf } from '../types';
 
-/** 巔峰 6V6：滿 50 回合仍未分出勝負時，依存活精靈數判定；額外精靈（isExtra 或第 7 位以後）一概不計入。 */
+/** 巔峰 6V6：滿 50 回合仍未分出勝負時，依存活精靈數判定；額外精靈（依 isExtra 身分，與陣列位置無關）一概不計入。 */
 export const PEAK_TURN_LIMIT = 50;
 
 export function countedAlive(team: Elf[], isDead: (e: Elf) => boolean): number {
-  return team.filter((e, i) => e && !e.isExtra && i < 6 && !isDead(e)).length;
+  return team.filter(e => e && !e.isExtra && !isDead(e)).length;
 }
 
 /** 回傳勝方；未達上限回傳 null。completedTurns＝已結束的回合數。 */

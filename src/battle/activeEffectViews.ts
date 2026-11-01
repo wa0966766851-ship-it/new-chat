@@ -1,7 +1,7 @@
 import type { Elf } from '../types';
 import type { Mark } from './marks';
 import type { Timer } from './timers';
-import { buildEffectViewModels, type BattleEffectViewModel } from './effectViewModel';
+import { buildEffectViewModels, effectCountText, type BattleEffectViewModel } from './effectViewModel';
 import { effectIcon, STATE_SIGNS } from './effectIcons';
 import { marsMechanismEffects, MARS_MECHA_CATALOG } from '../effects/elves/mars/presentation';
 import { elfForViewer, hiddenFromViewer, type BattleViewMode } from './viewerPerspective';
@@ -13,12 +13,22 @@ export function visibleEffectSourceText(source: Elf | undefined, side: 'p1' | 'p
   return !source || hiddenFromViewer(source, side, mode) ? '' : elfForViewer(source, side).soulMark?.description || '';
 }
 
+/**
+ * 專屬印記（星光型態等）的說明來源：印記多由對手魂印施加在持有者身上，故以對手魂印為主；
+ * 自身魂印也一併提供（自施加時才找得到）。兩者都經檢視者視角過濾，隱匿者不外洩。
+ */
+export function stateSignSourceText(own: Elf | undefined, opp: Elf | undefined, ownSide: 'p1' | 'p2', mode: BattleViewMode = 'PVE'): string {
+  return [visibleEffectSourceText(opp, ownSide === 'p1' ? 'p2' : 'p1', mode), visibleEffectSourceText(own, ownSide, mode)].filter(Boolean).join('\n');
+}
+
 /** One read-only projection for HUD, avatar details and inspector. No state is created here. */
 export function activeEffectViews(elf: Elf, marks: Mark[] = [], timers: Timer[] = [], registry: Record<string, any> = {}, sourceText = ''): BattleEffectViewModel[] {
   const views = buildEffectViewModels(marks, timers, elf.battleId || elf.id);
-  const append = (view: BattleEffectViewModel, shadowOf?: string) => {
-    // Only legacy-field mirrors are deduplicated. Two distinct timers must never be merged by label.
-    if (shadowOf && views.some(v => v.semanticId === shadowOf && v.value === view.value)) return;
+  const mirrored = new Set(views.flatMap(v => v.mirrorKeys || []));
+  const append = (view: BattleEffectViewModel, shadowOf?: string, clockKey?: string) => {
+    // 只有舊欄位鏡像會去重：該效果的計時器已宣告同步寫入此鍵（mirrorRegistryKeys）即以計時器為準，不再出現數字不同的第二顆。
+    // 沒有宣告時退回「語意與數值皆相同」才視為重複。兩個獨立計時器永遠不依標籤合併。
+    if (shadowOf && ((clockKey && mirrored.has(clockKey)) || views.some(v => v.semanticId === shadowOf && v.value === view.value))) return;
     views.push(view);
   };
   for (const key of ['blkImmuneStatusCount', 'blkReflectStatusCount']) {
@@ -30,15 +40,15 @@ export function activeEffectViews(elf: Elf, marks: Mark[] = [], timers: Timer[] 
       persistsOffField: true, triggerNode: '受到異常時消耗', polarity: 'positive',
       icon: appearance.icon, priority: 70});
   }
-  for (const [field, semanticId, label, iconTag, polarity] of [
-    ['statusImmuneTurns', 'status_guard', '異常免疫', '免疫異常', 'positive'],
-    ['cannotUseAttrSkillsTurns', 'invalid:屬性', '屬性技能封鎖', '技能無效', 'negative'],
-    ['cannotUseAttackSkillsTurns', 'invalid:攻擊', '攻擊技能失效', '技能無效', 'negative'],
+  for (const [field, semanticId, label, iconTag, polarity, clockKey] of [
+    ['statusImmuneTurns', 'status_guard', '異常免疫', '免疫異常', 'positive', 'immuneStatusTurns'],
+    ['cannotUseAttrSkillsTurns', 'invalid:屬性', '屬性技能封鎖', '技能無效', 'negative', 'utilitySkillInvalidTurns'],
+    ['cannotUseAttackSkillsTurns', 'invalid:攻擊', '攻擊技能失效', '技能無效', 'negative', 'attackSkillInvalidTurns'],
   ] as const) {
     const value = displayTurnValue(elf,registry,field);
     if (value > 0) append({ id: `field:${field}`, semanticId, category: 'turn', label, shortLabel: label[0],
       description: label, source: '戰鬥狀態欄位', value, unit: '回合', clearable: true,
-      polarity, icon: effectIcon(iconTag), priority: 80 }, semanticId);
+      polarity, icon: effectIcon(iconTag), priority: 80 }, semanticId, clockKey);
   }
   if (elf.isAttackImmune) append({ id: 'field:isAttackImmune', semanticId: 'attack_immunity', category: 'mechanism',
     label: '攻擊傷害免疫', shortLabel: '免', description: '當前攻擊傷害免疫狀態；不虛構剩餘次數。',
@@ -64,5 +74,6 @@ export function activeEffectViews(elf: Elf, marks: Mark[] = [], timers: Timer[] 
       shortLabel: sign.name, description: descriptionAt >= 0 ? sourceText.slice(descriptionAt) : `專屬印記：剩餘${value}回合。`, source: '專屬印記狀態',
       value, unit: '回合', clearable: false, polarity: 'neutral', icon: effectIcon(undefined, sign.name), priority: 60 });
   }
+  for (const v of views) if (v.countText === undefined) v.countText = effectCountText(v);
   return views.sort((a, b) => b.priority - a.priority || a.label.localeCompare(b.label, 'zh-Hant'));
 }

@@ -1,3 +1,5 @@
+import { prepareSavedBattleRoster } from '../data/prepareSavedBattleRoster';
+import { asRosterMember } from '../battle/rosterIdentity';
 import { fifthSkillSlot } from '../battle/skillSlot';
 import {ElfSkinPicker} from './ElfSkinPicker';
 import { TeamSetupTools } from "./TeamSetupTools";
@@ -16,6 +18,7 @@ import { skillDisplayType, skillDisplayTypeLabel } from '../utils/skillPresentat
 import { isStoneThrower, validateSkillStoneLoadout, skillConfigurationKey } from "../data/skillStones";
 import { plainDescription } from "../utils/descFormat";
 import { EffectDescription } from './EffectDescription';
+import { RichDescription } from './RichDescription';
 import { getElfDisplayRank as getElfDestinyRank } from "../utils/elfDisplayRank";
 import { InfoHint } from "./InfoHint";
 import { getNatureFromModifiers, getDefaultNatureModifiers } from "../utils/seerNatures";
@@ -419,52 +422,19 @@ export default function StartScreen({
       );
 
       let changed = validTeam.length !== team.length;
-      const synced = validTeam.map((inst) => {
-        const latest = allElves.find((e) => e && ((e.id && e.id === inst.id) || e.name === inst.name));
-        if (latest) {
-          const inscChanged = JSON.stringify(latest.inscriptions) !== JSON.stringify(inst.inscriptions);
-          const statsChanged = JSON.stringify(latest.calculatedStats) !== JSON.stringify(inst.calculatedStats);
-          const trainingChanged = JSON.stringify(latest.evs) !== JSON.stringify(inst.evs)
-            || JSON.stringify(latest.natureModifiers) !== JSON.stringify(inst.natureModifiers)
-            || JSON.stringify(latest.guildBonuses) !== JSON.stringify(inst.guildBonuses);
-          const poolChanged = JSON.stringify(latest.skillPool) !== JSON.stringify(inst.skillPool);
-          const soulMarkChanged = JSON.stringify(latest.soulMark) !== JSON.stringify(inst.soulMark);
-          const traitsChanged = JSON.stringify(latest.alienTraits) !== JSON.stringify(inst.alienTraits);
-          const descChanged = latest.description !== inst.description;
-          const nameChanged = latest.name !== inst.name;
-          const typeChanged = latest.type !== inst.type;
-          const equippedSkills = inst.skills?.map(skill => {
-            const { currentPp, ...saved } = skill as typeof skill & { currentPp?: number };
-            return saved;
-          });
-          const skillsChanged = JSON.stringify(latest.skills) !== JSON.stringify(equippedSkills);
-          const missingSkills = !inst.skills || inst.skills.length === 0;
-
-          if (inscChanged || statsChanged || trainingChanged || poolChanged || soulMarkChanged || traitsChanged || descChanged || nameChanged || typeChanged || skillsChanged || missingSkills) {
-            changed = true;
-            return {
-              ...inst,
-              name: latest.name,
-              type: latest.type,
-              description: latest.description,
-              soulMark: latest.soulMark,
-              alienTraits: latest.alienTraits,
-              inscriptions: latest.inscriptions,
-              evs: latest.evs,
-              natureModifiers: latest.natureModifiers,
-              guildBonuses: latest.guildBonuses,
-              skills: (latest.skills || inst.skills || []).map(skill => ({
-                ...skill,
-                currentPp: inst.skills?.find(old => old.name === skill.name)?.currentPp ?? skill.pp,
-              })),
-              skillPool: latest.skillPool,
-              calculatedStats: latest.calculatedStats,
-              maxHp: latest.maxHp,
-              currentHp: Math.min(inst.currentHp, latest.maxHp),
-            };
-          }
-        }
-        return inst;
+      const synced = prepareSavedBattleRoster(validTeam, allElves, teamKey === 'p1' ? p1AnnualBonus : p2AnnualBonus, teamKey).map((latest, i) => {
+        const inst = validTeam[i];
+        // 定義與配置取目前倉庫；只保留此隊伍實例的身分及準備畫面狀態。
+        const next = {
+          ...latest,
+          currentHp: Math.min(inst.currentHp, latest.maxHp),
+          skills: latest.skills.map(skill => ({ ...skill,
+            currentPp: inst.skills?.find(old => old.name === skill.name)?.currentPp ?? skill.pp,
+          })),
+        } as TeamInstance;
+        if (JSON.stringify(next) === JSON.stringify(inst)) return inst;
+        changed = true;
+        return next;
       });
 
       if (changed) {
@@ -477,11 +447,13 @@ export default function StartScreen({
 
     syncTeam(p1Team, setP1Team, "p1", p1StarterId, setP1StarterId);
     syncTeam(p2Team, setP2Team, "p2", p2StarterId, setP2StarterId);
-  }, [allElves]);
+  }, [allElves, p1Team, p2Team, p1AnnualBonus, p2AnnualBonus]);
 
   const createInstance = (elf: Elf, preserveConfiguration = false): TeamInstance => {
-    const source = preserveConfiguration ? elf : allElves.find((e) => e && ((e.id && e.id === elf.id) || e.name === elf.name)) || elf;
-    const latest = JSON.parse(JSON.stringify(source)) as Elf;
+    const source = preserveConfiguration
+      ? prepareSavedBattleRoster([elf], allElves, elf.hasAnnualBonus ?? true, "roster")[0]
+      : allElves.find((e) => e && ((e.id && e.id === elf.id) || e.name === elf.name)) || elf;
+    const latest = asRosterMember(JSON.parse(JSON.stringify(source)) as Elf);
     return {
       ...latest,
       battleId: `${elf.id}_inst_${Math.random().toString(36).substr(2, 9)}`,
@@ -1005,7 +977,7 @@ export default function StartScreen({
   };
 
   const ensureBattleTeam = (team: TeamInstance[], defaultStarterId: string, format: string, customPick?: number): { team: TeamInstance[]; starterId: string } => {
-    let result = [...team];
+    let result = team.map(asRosterMember);
     if (result.length === 0 && allElves.length > 0) {
       result.push(createInstance(allElves[0]));
     }
@@ -1017,10 +989,7 @@ export default function StartScreen({
       result.push(createInstance(source));
       i++;
     }
-    result = result.map((e, idx) => ({
-      ...e,
-      isExtra: idx >= activeLimit
-    }));
+    result = result.map(asRosterMember);
     const st = result.find(e => e.battleId === defaultStarterId)?.battleId || result[0]?.battleId || "";
     return { team: result, starterId: st };
   };
@@ -1030,31 +999,15 @@ export default function StartScreen({
     try { for (const elf of [...p1Team, ...p2Team]) validateSkillStoneLoadout(elf, elf.skills); }
     catch (error) { alert(`隊伍技能石配置不合法：${(error as Error).message}。請先更換多餘技能石；原背包不會被刪除。`); return; }
     if (battleFormat === "normal_6v6" || battleFormat === "solo_1v1") {
-      /**
-       * 2026-10-30：開戰時重置 isExtra。
-       *
-       * 「額外精靈」只由戰鬥中的被動效果召喚（blocks/ops/extraElf.ts 設 isExtra: true），
-       * 組隊階段上場的 6 隻一律不是額外精靈。
-       *
-       * 但隊列資料會被上一場「巔峰模式」汙染：
-       * ensureBattleTeam 在 peak_3v3 會補人到 8 隻並把 idx >= pickCount(3) 的全標 isExtra: true，
-       * 再 setP1Team 存回狀態。之後切回 normal_6v6 時，前 6 隻仍帶著那些 true，
-       * 於是怒濤滄嵐這類正常精靈被誤標成「額外精靈」。
-       *
-       * 這裡在送入戰鬥前統一把上場隊員的 isExtra 清為 false。
-       */
+      // 舊存檔與待命快照都先清理身分，再綁定背包。
       let p1Active = p1Team.map(e => {
-        return withAnnualBonus({ ...e }, p1AnnualBonus);
+        return withAnnualBonus(asRosterMember(e), p1AnnualBonus);
       });
       let p2Active = p2Team.map(e => {
-        return withAnnualBonus({ ...e }, p2AnnualBonus);
+        return withAnnualBonus(asRosterMember(e), p2AnnualBonus);
       });
-      // 2026-10-30：上場的 6 隻一律不是「額外精靈」。
-      // isExtra 只由戰鬥中的被動效果召喚時設 true（blocks/ops/extraElf.ts）。
-      // 但隊列資料會被上一場巔峰模式汙染（ensureBattleTeam 把 idx >= pickCount 標 true 後存回），
-      // 導致怒濤滄嵐這類正常精靈被誤標。這裡在送入戰鬥前清掉。
-      p1Active = bindInitialCounterparts(p1Active, 6).slice(0, 6).map(e => ({ ...e, isExtra: false }));
-      p2Active = bindInitialCounterparts(p2Active, 6).slice(0, 6).map(e => ({ ...e, isExtra: false }));
+      p1Active = bindInitialCounterparts(p1Active, 6).slice(0, 6);
+      p2Active = bindInitialCounterparts(p2Active, 6).slice(0, 6);
       const st1 = p1Active.find(e => e.battleId === p1StarterId)?.battleId || p1Active[0]?.battleId || p1StarterId;
       const st2 = p2Active.find(e => e.battleId === p2StarterId)?.battleId || p2Active[0]?.battleId || p2StarterId;
       if (battleFormat === "solo_1v1") {
@@ -1161,14 +1114,16 @@ export default function StartScreen({
       return withAnnualBonus({ ...e, isExtra: false }, p2AnnualBonus);
     });
 
+    // 未完成選出時不得把整個候選池送進戰場。
+    if (finalP1Active.length !== pickCount || finalP2Active.length !== pickCount) return;
     setBpPhase("closed");
     const starter1 = p1BpStarterId || finalP1Active[0]?.battleId || p1StarterId;
     const starter2 = p2BpStarterId || finalP2Active[0]?.battleId || p2StarterId;
     
     onStartBattle(
       battleMode,
-      finalP1Active.length > 0 ? bindInitialCounterparts([...finalP1Active, ...p1Team.filter(e => !p1PickedIds.includes(e.battleId) && !p2BannedIds.includes(e.battleId))], finalP1Active.length).slice(0, finalP1Active.length) : p1Team,
-      finalP2Active.length > 0 ? bindInitialCounterparts([...finalP2Active, ...p2Team.filter(e => !p2PickedIds.includes(e.battleId) && !p1BannedIds.includes(e.battleId))], finalP2Active.length).slice(0, finalP2Active.length) : p2Team,
+      finalP1Active.length > 0 ? bindInitialCounterparts([...finalP1Active, ...p1Team.filter(e => !p1PickedIds.includes(e.battleId) && !p2BannedIds.includes(e.battleId)).map(asRosterMember)], finalP1Active.length).slice(0, finalP1Active.length) : p1Team,
+      finalP2Active.length > 0 ? bindInitialCounterparts([...finalP2Active, ...p2Team.filter(e => !p2PickedIds.includes(e.battleId) && !p1BannedIds.includes(e.battleId)).map(asRosterMember)], finalP2Active.length).slice(0, finalP2Active.length) : p2Team,
       starter1,
       starter2,
       p1Suit,
@@ -1941,9 +1896,7 @@ export default function StartScreen({
                           <Edit3 className="w-2.5 h-2.5" /> 備註描述
                         </span>
                       </div>
-                      <p className="text-[9px] text-slate-600 leading-relaxed line-clamp-2">
-                        {elf.description}
-                      </p>
+                      <RichDescription text={elf.description} compact className="text-[9px] text-slate-600 line-clamp-2" />
                     </div>
                   )}
                 </div>
@@ -2767,9 +2720,7 @@ export default function StartScreen({
                       <MessageSquare className="w-3.5 h-3.5 text-slate-500" />
                       背景設定與備註
                     </h4>
-                    <p className="text-[11px] text-slate-500 leading-relaxed">
-                      {showDetailModal.description}
-                    </p>
+                    <RichDescription text={showDetailModal.description} className="text-[11px] text-slate-500" />
                   </div>
                 )}
                 {/* Decomposition & Effect Reference Report in Detail Modal */}

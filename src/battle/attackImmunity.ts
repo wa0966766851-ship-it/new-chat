@@ -16,7 +16,7 @@ export function getAttackImmunity(reg: Record<string, any> | undefined): AttackI
   return null;
 }
 
-const IGNORE_LINE = /^(?:■|🎯)?\s*(?:自身攻擊)?無視對手(?:的)?(?:攻擊免疫|免疫攻擊)效果/;
+const IGNORE_LINE = /^(?:■|🎯)?\s*(?:自身攻擊)?無視對手(?:的)?(?:攻擊免疫|免疫攻擊|免疫受到的攻擊)效果/;
 
 function clauses(desc?: string): string[] {
   return String(desc || "").split(/\n|；|;/).map(s => s.trim()).filter(Boolean);
@@ -56,5 +56,5 @@ export function ignoresAttackImmunity(
 
 /** 技能描述：「無視成功則自身下次攻擊無視對手免疫攻擊效果」 */
 export function grantsNextIgnoreOnSuccess(skill: any): boolean {
-  return /無視成功則自身下次攻擊無視對手(?:的)?(?:免疫攻擊|攻擊免疫)效果/.test(String(skill?.description || ""));
+  return /無視成功則自身下次攻擊無視對手(?:的)?(?:免疫攻擊|攻擊免疫|免疫受到的攻擊|免疫)效果/.test(String(skill?.description || ""));
 }

@@ -1,0 +1,53 @@
+/**
+ * 舊頁（A）每個按鈕／資訊 ↔ B 頁對應項。每列的 b 是 data-testid；
+ * tests/destinyWheelB.ui.test.tsx 逐列在對應狀態檢查 DOM 內存在，並與計畫文件附錄 C 對照表同步。
+ */
+export type ParityState = "any" | "intro" | "intro-bp" | "intro-error" | "pulling" | "reveal-back" | "reveal-front" | "ban-pve" | "ban-pvp" | "pick-pve" | "pick-pvp" | "detail" | "detail-bp";
+export interface ParityRow { no: number; old: string; b: string[]; where: string; state: ParityState }
+
+export const PARITY: ParityRow[] = [
+  { no: 1, old: "標頭：返回大廳", b: ["b-back"], where: "頂列工具「返回大廳」", state: "any" },
+  { no: 2, old: "標頭：PVE／PVP 切換（抽卡後鎖定）", b: ["b-mode"], where: "頂列工具「PVE／PVP」", state: "any" },
+  { no: 3, old: "標頭：風格切換（數理／標準／紙本）", b: ["b-switch-a"], where: "B 頁為單一主題；以「返回舊頁」回到三風格頁", state: "any" },
+  { no: 4, old: "標頭：階段指示器（01／02／03）", b: ["b-rail", "b-chap-0", "b-chap-2", "b-chap-3", "b-chap-4"], where: "左下章節列（桌機）／底部章節列（手機）", state: "any" },
+  { no: 5, old: "介紹：啟動命運輪盤（上）與 立即前往抽卡（下）", b: ["b-start"], where: "序章主視覺的「啟動命運輪盤」", state: "intro" },
+  { no: 6, old: "介紹：四張賽制規則卡", b: ["b-rules", "b-rule-1", "b-rule-2", "b-rule-3", "b-rule-4"], where: "序章下方賽制四格（說明在 tooltip）", state: "intro" },
+  { no: 7, old: "介紹：分級統計（S／A／B／C 張數與占比）", b: ["b-rank-tab-S", "b-rank-tab-A", "b-rank-tab-B", "b-rank-tab-C", "b-rank-count-S", "b-rank-count-B"], where: "序章分級四格（點格篩選卡池）", state: "intro" },
+  { no: 8, old: "介紹：全部精靈頁籤", b: ["b-tab-all"], where: "卡池檢索「全部」頁籤", state: "intro" },
+  { no: 9, old: "介紹：S／A／B／C 分級頁籤", b: ["b-tab-S", "b-tab-A", "b-tab-B", "b-tab-C"], where: "卡池檢索分級頁籤", state: "intro" },
+  { no: 10, old: "介紹：搜尋框", b: ["b-search"], where: "卡池檢索搜尋", state: "intro" },
+  { no: 11, old: "介紹：表格／網格切換", b: ["b-view-table", "b-view-grid"], where: "卡池檢索「表格／網格」", state: "intro" },
+  { no: 12, old: "介紹：分級判定準則資訊盒（由規則表產生）", b: ["b-rank-rules"], where: "圖紙模式（B）下顯示於卡池檢索上方", state: "intro-bp" },
+  { no: 13, old: "介紹：表格列／網格卡（點開詳情）", b: ["b-list-item"], where: "卡池檢索列表", state: "intro" },
+  { no: 14, old: "介紹：表格「詳情」鈕", b: ["b-list-detail"], where: "表格列尾「詳情」", state: "intro" },
+  { no: 15, old: "抽卡中動畫", b: ["b-pulling", "b-skip"], where: "01 輪盤（新增「跳過」）", state: "pulling" },
+  { no: 16, old: "揭曉：已翻 n / 24 計數", b: ["b-revealed-count"], where: "02 圖版標題列", state: "reveal-back" },
+  { no: 17, old: "揭曉：點一次全翻所有牌", b: ["b-reveal-all"], where: "02 圖版操作列", state: "reveal-back" },
+  { no: 18, old: "揭曉：下一步進入 Ban 3", b: ["b-next-ban"], where: "02 圖版操作列", state: "reveal-back" },
+  { no: 19, old: "揭曉：雙方卡池與 S／A／B／C 統計", b: ["b-pool-p1", "b-pool-p2", "b-pool-stats"], where: "02 圖版兩個面板標題", state: "reveal-back" },
+  { no: 20, old: "揭曉：卡背（點擊翻開單張）", b: ["b-card"], where: "卡背（含序號）", state: "reveal-back" },
+  { no: 21, old: "卡面：立繪、名稱、屬性、分級標", b: ["b-card-art", "b-card-name", "b-rank-S", "b-rank-A", "b-rank-B", "b-rank-C"], where: "圖版卡（立繪＋名稱＋屬性圖標＋分級章）", state: "reveal-front" },
+  { no: 22, old: "卡面：C 級攔截標籤", b: ["b-intercept-tag"], where: "圖版卡左上標籤", state: "reveal-front" },
+  { no: 23, old: "卡面：六界神王【界】魂印標籤", b: ["b-liujie-tag"], where: "圖版卡左上標籤", state: "reveal-front" },
+  { no: 24, old: "Ban：P1／P2 已選計數", b: ["b-ban-count"], where: "03 禁選標題列", state: "ban-pve" },
+  { no: 25, old: "Ban：確認禁用並進入 Pick 6", b: ["b-confirm-ban"], where: "03 禁選操作列", state: "ban-pve" },
+  { no: 26, old: "Ban：點選對手卡池禁用（可取消）", b: ["b-ban-opp", "b-ban-card"], where: "03 禁選左側對手圖版", state: "ban-pve" },
+  { no: 27, old: "Ban：已禁用蓋章", b: ["b-ban-mark"], where: "手繪封印叉＋「已禁用」", state: "ban-pve" },
+  { no: 28, old: "Ban：我方卡池（PVE 待揭曉／PVP 由 P2 點選禁用）", b: ["b-ban-own", "b-ban-own-card"], where: "03 禁選右側我方圖版", state: "ban-pvp" },
+  { no: 29, old: "Pick：P1／P2 已出戰計數", b: ["b-pick-count"], where: "04 編隊標題列", state: "pick-pve" },
+  { no: 30, old: "Pick：啟動巔峰對決", b: ["b-launch"], where: "04 編隊操作列", state: "pick-pve" },
+  { no: 31, old: "Pick：P1 可用卡池選取／取消", b: ["b-pick-p1", "b-pick-card"], where: "04 編隊左側圖版", state: "pick-pve" },
+  { no: 32, old: "Pick：首發皇冠鈕", b: ["b-starter-btn"], where: "圖版卡「首」鈕", state: "pick-pve" },
+  { no: 33, old: "Pick：狀態標（首發出戰／已入戰隊／未選用）", b: ["b-starter-mark", "b-pick-order"], where: "首發標記／出戰序號／未選用變淡", state: "pick-pve" },
+  { no: 34, old: "Pick：AI 最終陣容（PVE，可看詳情）", b: ["b-pick-p2", "b-pick2-card"], where: "04 編隊右側圖版", state: "pick-pve" },
+  { no: 35, old: "Pick：P2 可用卡池選取與首發（PVP）", b: ["b-pick2-card", "b-starter-btn"], where: "04 編隊右側圖版（可點選）", state: "pick-pvp" },
+  { no: 36, old: "詳情：關閉鈕", b: ["b-detail-close"], where: "詳情圖版頂列（固定，不隨內容捲動）", state: "detail" },
+  { no: 37, old: "詳情：頭像、名稱、分級、屬性、魂印名", b: ["b-detail", "b-detail-body"], where: "詳情圖版標頭", state: "detail" },
+  { no: 38, old: "詳情：魂印效果", b: ["b-detail-soul"], where: "詳情「魂印」區（層次描述元件）", state: "detail" },
+  { no: 39, old: "詳情：二代／專屬／通用特質", b: ["b-detail-traits"], where: "詳情「特質」區", state: "detail" },
+  { no: 40, old: "詳情：C 級命運攔截被動", b: ["b-detail-intercept"], where: "詳情 C 級攔截區", state: "detail" },
+  { no: 41, old: "詳情：技能名冊（屬性、類別、威力、PP、先制）", b: ["b-detail-skills"], where: "詳情「技能」區（資料順序）", state: "detail" },
+  { no: 42, old: "詳情：種族值六維（介紹頁詳情）", b: ["b-detail-stats"], where: "詳情「種族值」區", state: "detail" },
+  { no: 43, old: "詳情：第五技能標記（D-09 新增）", b: ["b-fifth"], where: "技能列「第五技能」標籤", state: "detail" },
+  { no: 44, old: "卡池不足錯誤提示", b: ["b-error"], where: "序章提示（role=alert）", state: "intro-error" },
+];

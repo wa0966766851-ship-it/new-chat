@@ -112,6 +112,6 @@ function buildSoul(s:Spec){
 }
 export const CORRUPTED_REY_SEEDS=specs.map(s=>{
  const skills=buildSkills(s),soulMark=buildSoul(s);
-  return {id:s.id,name:s.name,type:s.type,weight:s.weight,gender:'雄性',seerId:70,level:100,...(!s.upgraded?{destinyRank:'B' as const}:{}),baseStats:s.stats,skills,skillPool:skills.map(k=>({...k})),soulMark,description:'自訂精靈；立繪暫用普通雷伊。'} as Omit<Elf,'calculatedStats'|'currentHp'|'maxHp'>;
+  return {id:s.id,name:s.name,type:s.type,weight:s.weight,gender:'雄性',seerId:70,level:100,...(!s.upgraded?{destinyRank:'B' as const}:s.id==='707070'?{destinyRank:'A' as const}:{}),baseStats:s.stats,skills,skillPool:skills.map(k=>({...k})),soulMark,description:'自訂精靈；立繪暫用普通雷伊。'} as Omit<Elf,'calculatedStats'|'currentHp'|'maxHp'>;
 });
 export const CORRUPTED_REY_KITS=defs;

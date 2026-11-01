@@ -22,6 +22,19 @@ try {
   for (const e of MIGRATED_ZHAKESI_FEAR_SOUL_KIT.kit) assert.equal(kitEntryIssue(e), null, 'kitEntryIssue: ' + e.customText);
   for (const k of ['5025', '1019', '1037', '咤克斯', '恐懼的化身·咤克斯', '恐懼的化身.咤克斯'])
     assert.ok(!(k in h.S), 'SOUL_MARK_MAPPING 不得殘留 5025 鍵：' + k);
+  {
+    // 「戰鬥開始時」種下恐懼之種：與無極聖武（及無為龍者）的戰鬥開始效果使用同一節點／觸發。
+    const { MIGRATED_ARENA14_WUJI_SOUL_KIT } = await h.server.ssrLoadModule('/src/data/migratedArena14WujiSoulKit.ts');
+    const wujiStart = MIGRATED_ARENA14_WUJI_SOUL_KIT.kit.find((e: any) => /戰鬥開始時/.test(e.customText));
+    const seedPlant = MIGRATED_ZHAKESI_FEAR_SOUL_KIT.kit.find((e: any) => /種下恐懼之種/.test(e.customText));
+    assert.ok(wujiStart && seedPlant);
+    assert.equal(seedPlant.node, wujiStart.node); assert.equal(seedPlant.params.clause.trig, wujiStart.params.clause.trig);
+    assert.equal(seedPlant.node, 'battle_start');
+    // 疊層走登場／受到害怕即時事件節點，不再用回合級輪詢。
+    assert.ok(!JSON.stringify(MIGRATED_ZHAKESI_FEAR_SOUL_KIT.kit).includes('opp_active_swap'), '不得再用回合級輪詢 opp_active_swap');
+    const stackNodes = MIGRATED_ZHAKESI_FEAR_SOUL_KIT.kit.filter((e: any) => /提高1層/.test(e.customText)).map((e: any) => e.params.clause.trig).sort();
+    assert.deepEqual(stackNodes, ['team_before_status', 'team_entrance']);
+  }
   checks++; console.log('OK 5025 魂印「懼」已是真 Kit（無包裝、無舊映射、合約全過）');
 
   const fearUnit = (id: string, hp: number, skills: any[], o: any = {}) => {
@@ -141,6 +154,48 @@ try {
       assert.equal(flower.effects.instantKillDisabled, true, side + ' 恐懼之花禁秒殺');
       assert.ok(!h.statuses(r[3].opp).includes('害怕'), side + ' 恐懼之花擋附加異常（自身令害怕也被擋）');
       assert.ok(!h.statuses(r[4].opp).includes('害怕'), side + ' 轉生後續回合仍擋附加異常');
+      checks++;
+    }
+    // ⑤b 登場立即疊層（不等回合開始）：對手在場者陣亡後換上替補，換人完成的當下（下一回合尚未結算、尚未進回合開始）
+    //    種子已 +1 層；開局首發登場不另計（種下的 1 層即代表它）。舊的回合級輪詢要到下回合開始才會偵測到。
+    {
+      const killer = fearUnit('S', 40000, [fixedAtk(5000), h.wait()], { maxHp: 50000, speed: 300 });
+      const e = h.unit('E', 500, [h.wait()], { maxHp: 100000, speed: 10 });
+      const e2 = h.unit('E2', 90000, [h.wait()], { maxHp: 100000 });
+      const seedCount = (st: any) => st[other + 'Marks'].find((m: any) => m.id === 'fear_seed')?.count;
+      let atStart: any, beforeSwitch: any, afterSwitch: any, phaseAfter: any, activeAfter: any;
+      const picks = async (engine: any, t: number) => {
+        if (t === 1) { atStart = seedCount(engine.getState()); return [0, 0] as [any, any]; }
+        if (t === 2) {
+          beforeSwitch = seedCount(engine.getState());
+          engine.onSwitchElf(other, 1); await engine.idle();
+          const st = engine.getState(); afterSwitch = seedCount(st); phaseAfter = st.phase; activeAfter = st[other].id;
+        }
+        return [1, 0] as [any, any];
+      };
+      await h.play(side, { self: killer, opp: e, oppBench: [e2], turns: picks }, 2);
+      assert.equal(atStart, 1, side + ' 開局首發登場不另疊：戰鬥開始種下 1 層');
+      assert.equal(activeAfter, 'E2', side + ' 前置：替補已登場');
+      assert.equal(beforeSwitch, 1, side + ' 前置：替補登場前仍為 1 層');
+      assert.equal(afterSwitch, 2, side + ' 替補登場當下立即 +1 層（尚未進入下一回合開始；phase=' + phaseAfter + '）');
+      checks++;
+    }
+    // ⑤c 受到害怕立即疊層：對手方每次被附加害怕（持有方免疫，仍計一次）+1 層；己方（持有者）自己被害怕不計。
+    //    回合開始自身滿體力 100% 害怕對手 → 同一回合開始節點內即 +1。
+    {
+      const self = fearUnit('S', 50000, [h.wait()], { maxHp: 50000 });
+      const opp = h.unit('E', 100000, [h.wait()], { speed: 300, extra: { trait: structuredClone(percentImmuneTrait) } });
+      const [r] = await h.play(side, { self, opp, turns: () => [0, 0] }, 1);
+      const seed = r.state[other + 'Marks'].find((m: any) => m.id === 'fear_seed');
+      assert.equal(seed?.count, 2, side + ' 開局 1 層＋受到害怕 1 次（回合開始令對手害怕）＝2 層：' + seed?.count);
+      assert.ok(Math.abs(seed.effects.guaranteedMaxHpDamageChance - 0.22) < 1e-9, side + ' 每層機率 +2%');
+      assert.ok(!h.statuses(r.opp).includes('害怕'), side + ' 仍免疫害怕');
+      // 受方是己方（持有者陣營）：5025 持有者被對手附加害怕不使對手的種子疊層。
+      const fearCaster = h.kitSkill('嚇', [{ op: 'status', p: { side: 'opp', status: '害怕', turns: 1, chance: 100 } }]);
+      const selfHurt = fearUnit('S', 40000, [h.wait()], { maxHp: 50000 });
+      const foe = h.unit('E', 100000, [fearCaster, h.wait()], { speed: 300 });
+      const [r2] = await h.play(side, { self: selfHurt, opp: foe, turns: () => [0, 0] }, 1);
+      assert.equal(r2.state[other + 'Marks'].find((m: any) => m.id === 'fear_seed')?.count, 1, side + ' 持有者自己受害怕不疊層');
       checks++;
     }
     // ⑥ 自身位於背包（場下）：戰鬥開始照樣種下恐懼之種；每回合吸取照常運作、自身淨增體力上限

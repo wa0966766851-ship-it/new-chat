@@ -1,7 +1,5 @@
-import { Elf, BaseStats, Skill } from "../types";
+import { Elf } from "../types";
 import { getElfDisplayRank } from "./elfDisplayRank";
-import { calculateElfStats } from "./statCalculator";
-import { LIUJIE_SEED } from '../data/liujie';
 
 export type DestinyRank = 'S' | 'A' | 'B' | 'C';
 
@@ -64,11 +62,6 @@ export const INTERCEPTOR_EFFECTS: Record<string, DestinyInterceptorEffect> = {
 /** 六界神王：C 級但以【界】魂印取代攔截效果（介面也不顯示攔截標籤）。 */
 export const usesSoulMarkInsteadOfInterceptor = (name?: string) => !!name?.includes("六界神王");
 
-// 專門為命運之輪模式擴展的 C 級經典攔截卡（如果圖鑑中沒有，會作為抽卡補充包加入池中）
-export const CLASSIC_INTERCEPTORS: Partial<Elf>[] = [
-  LIUJIE_SEED
-];
-
 /**
  * 判定精靈在命運之輪模式中的稀有度等級 (S / A / B / C)
  */
@@ -81,7 +74,7 @@ export function getElfDestinyRank(elf: Elf): DestinyRank {
 }
 
 /**
- * 創建完整命運之輪卡池（包含所有傳入精靈 + 經典C級攔截卡）
+ * 創建完整命運之輪卡池（所有傳入精靈；不補入重複的經典卡）
  */
 export function buildDestinyPool(allElves: Elf[], rng: () => number = Math.random): DestinyElfInstance[] {
   const pool: DestinyElfInstance[] = [];
@@ -106,42 +99,10 @@ export function buildDestinyPool(allElves: Elf[], rng: () => number = Math.rando
     pool.push(instance);
   });
 
-  // 如果池子裡 C 級數量不足（例如不到 4 隻），自動補齊經典 C 級攔截卡
-  const cCount = pool.filter(e => e.destinyRank === 'C').length;
-  if (cCount < 6) {
-    CLASSIC_INTERCEPTORS.forEach((classic, idx) => {
-      const fullElf: Elf = {
-        id: `classic_c_${idx}`,
-        name: classic.name || "神秘攔截者",
-        type: classic.type || "普通",
-        level: 100,
-        baseStats: classic.baseStats || { hp: 130, atk: 80, def: 110, spatk: 80, spdef: 110, speed: 90 },
-        calculatedStats: classic.baseStats || { hp: 130, atk: 80, def: 110, spatk: 80, spdef: 110, speed: 90 },
-        currentHp: classic.baseStats?.hp || 130,
-        maxHp: classic.baseStats?.hp || 130,
-        soulMark: classic.soulMark || { name: "截", description: "C級攔截", effectType: "none", effectValue: 0, badgeChar: "截" },
-        skills: (classic.skills as Skill[]) || [],
-        path: classic.path
-      };
-      
-      const stats = calculateElfStats(fullElf.baseStats, 100);
-      fullElf.calculatedStats = stats;
-      fullElf.maxHp = stats.hp;
-      fullElf.currentHp = stats.hp;
+  // 2026-10-31：不再補入舊版 classic_c_0（六界神王）。圖鑑已有 5031 六界神王，補卡 id 不同、
+  // 去重（id||name）擋不住，12 連抽會出現兩張同名精靈。C 級不足時允許不足，由 pullFromDestinyPool 的
+  // 「至少 2 隻 C」檢查擋下並提示，不以重複精靈湊數。
 
-      const keys = Object.keys(INTERCEPTOR_EFFECTS);
-      const effectKey = keys[idx % keys.length];
-
-      pool.push({
-        ...fullElf,
-        destinyRank: 'C',
-        interceptorEffect: usesSoulMarkInsteadOfInterceptor(fullElf.name) ? undefined : INTERCEPTOR_EFFECTS[effectKey],
-        instanceId: `classic_${idx}_${rng().toString(36).substring(2, 7)}`
-      });
-    });
-  }
-
-  // 如果 B 級較少，將部分雷伊蓋亞卡修斯強制設為 B 或 C 級攔截
   return pool;
 }
 

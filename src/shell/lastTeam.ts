@@ -1,3 +1,4 @@
+import { asRosterMember } from '../battle/rosterIdentity';
 /**
  * 上次使用陣容 — 唯讀存取
  *
@@ -20,7 +21,7 @@ export interface LastUsedRecord {
 
 function sanitize(team: unknown): Elf[] {
   if (!Array.isArray(team)) return [];
-  return team.filter((e: any) => e && typeof e === "object" && e.name && e.calculatedStats) as Elf[];
+  return (team.filter((e: any) => e && typeof e === "object" && e.name && e.calculatedStats) as Elf[]).map(asRosterMember);
 }
 
 export function readLastUsedRecord(side: "p1" | "p2"): LastUsedRecord | null {

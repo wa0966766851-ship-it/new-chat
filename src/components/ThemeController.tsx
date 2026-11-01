@@ -169,6 +169,7 @@ export function ThemeBackground({ currentScene }: { currentScene: string }) {
           <div
             className="absolute inset-0 w-full h-full transition-all duration-700 ease-in-out scale-[1.01]"
             style={{
+              backgroundColor: "#0A0C10", // D-13：外部圖離線／被擋時的底色，不阻塞也不露白
               backgroundImage: `url('${activeBg}')`,
               backgroundSize: "cover",
               backgroundPosition: "center",

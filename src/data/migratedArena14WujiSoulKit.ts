@@ -71,10 +71,11 @@ export const MIGRATED_ARENA14_WUJI_SOUL_KIT = {
       { cond: [hasMark('wuZhu', 'opp')], acts: [
         // ① 每有1回合武誅，當回合造成攻擊傷害+20%
         a('dmg_mod_turns', { side: 'self', dir: 'out', kind: '攻擊', boost: 0.2, turns: 1 }),
-        // ② 將對手能力提升視為同級能力下降
-        a('stat_reverse', { side: 'opp', kind: 'up' }),
-        // ③ 將自身能力下降視為對手的同級能力下降
-        a('stat_reverse', { side: 'self', kind: 'down' }),
+        // ②③ 是「視為」不是「反轉」：只在讀取等級計算時套用，不修改真實 statStages。
+        // 原本用 stat_reverse（會真的把 -1 改成 +1，面板顯示反轉），與官方文字不符。
+        // 這裡改為設定旗標，由 damageCalculator／出手順序／命中判定統一投影。
+        a('flag_set', { key: 'oppBoostAsDropThisAction', value: true, thisRound: true }),
+        a('flag_set', { key: 'selfDropAsOppDropThisAction', value: true, thisRound: true }),
         // ④ 對手每有100點護盾護罩，本次攻擊傷害+10%（最高100%）
         a('dmg_mod_turns', { side: 'self', dir: 'out', kind: '攻擊', boost: 1, turns: 1 }),
         // ⑤ 無視攻擊技能免疫成功時為對手附加3回合威怯

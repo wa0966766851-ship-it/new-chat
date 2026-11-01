@@ -1,3 +1,4 @@
+import { asRosterMember } from '../battle/rosterIdentity';
 /**
  * 隊伍草稿 — Aegis 原生編成的資料層
  *
@@ -19,7 +20,7 @@ export const TEAM_CAPACITY = 12;
 
 /** 從精靈資料建立戰鬥實例（與 StartScreen 的 createInstance 行為一致） */
 export function createBattleInstance(elf: Elf): Elf {
-  const latest = JSON.parse(JSON.stringify(elf)) as Elf;
+  const latest = asRosterMember(JSON.parse(JSON.stringify(elf)) as Elf);
   return {
     ...latest,
     battleId: `${elf.id || elf.name}_inst_${Math.random().toString(36).slice(2, 11)}`,
@@ -81,7 +82,7 @@ export function moveMember(draft: TeamDraft, from: number, to: number): TeamDraf
 export function saveDraft(side: "p1" | "p2", draft: TeamDraft): boolean {
   if (typeof window === "undefined") return false;
   const record = {
-    team: draft.members,
+    team: draft.members.map(asRosterMember),
     starterId: draft.starterBattleId,
     timestamp: new Date().toLocaleTimeString(),
   };
@@ -96,5 +97,5 @@ export function saveDraft(side: "p1" | "p2", draft: TeamDraft): boolean {
 /** 把已存的紀錄載回草稿（編輯既有隊伍用） */
 export function draftFromRecord(record: { team: Elf[]; starterId: string } | null): TeamDraft {
   if (!record || !record.team?.length) return emptyDraft();
-  return { members: record.team, starterBattleId: record.starterId || record.team[0]?.battleId || "" };
+  return { members: record.team.map(asRosterMember), starterBattleId: record.starterId || record.team[0]?.battleId || "" };
 }

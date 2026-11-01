@@ -491,7 +491,9 @@ export const SoulMarkRegistry: Record<string, SoulMarkHandler> = new Proxy({}, {
         notifyTeamObservers(ctx, event, extraData, elf);
         res = copiedSoul(ctx, event, extraData) || res;
         // 已有手寫魂印 handler 的精靈（譜尼等），kit 只是描述用資料，不再重複執行
-        if (!authoredSoul && !originalHandler && elf && elf.kit && elf.kit.length > 0) {
+        // 額外精靈的 on_entered 只在「被加入時」由 addExtraElf 派發一次；隊友出戰（ELF_ENTERED／ON_ENTRANCE 廣播）改走 ally_entered，不重複觸發。
+        const extraEntryBroadcast = !!elf?.isExtra && (event === EffectTiming.ELF_ENTERED || event === EffectTiming.ON_ENTRANCE);
+        if (!authoredSoul && !originalHandler && elf && elf.kit && elf.kit.length > 0 && !extraEntryBroadcast) {
           const node = mapTimingToNode(event);
           if (node) {
             // extraData（damageComp / priorityComp 等）併入 ctx，傷害與先制修正原子才拿得到
@@ -564,7 +566,9 @@ export const SoulMarkRegistry: Record<string, SoulMarkHandler> = new Proxy({}, {
         notifyTeamObservers(ctx, event, extraData, elf);
         res = copiedSoul(ctx, event, extraData) || res;
         // 已有手寫魂印 handler 的精靈（譜尼等），kit 只是描述用資料，不再重複執行
-        if (!authoredSoul && !originalHandler && elf && elf.kit && elf.kit.length > 0) {
+        // 額外精靈的 on_entered 只在「被加入時」由 addExtraElf 派發一次；隊友出戰（ELF_ENTERED／ON_ENTRANCE 廣播）改走 ally_entered，不重複觸發。
+        const extraEntryBroadcast = !!elf?.isExtra && (event === EffectTiming.ELF_ENTERED || event === EffectTiming.ON_ENTRANCE);
+        if (!authoredSoul && !originalHandler && elf && elf.kit && elf.kit.length > 0 && !extraEntryBroadcast) {
           const node = mapTimingToNode(event);
           if (node) {
             // extraData（damageComp / priorityComp 等）併入 ctx，傷害與先制修正原子才拿得到

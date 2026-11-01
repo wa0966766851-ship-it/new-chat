@@ -44,14 +44,14 @@ export function constraint(ctx: BattleEventContext, side: Side, key: string): an
 
 export function timed(ctx: BattleEventContext, side: Side, id: string, rounds: number,
   payload: Timer['payload'], next = false, source: 'skill' | 'soulmark' = 'skill', missed = true): void {
-  const presentation = makeEffectPresentation(payload, source === 'skill' ? ctx.skill?.name : ctx.self.soulMark?.name || ctx.self.name);
+  const presentation = makeEffectPresentation(payload, source === 'skill' ? ctx.skill?.name || ctx.self.soulMark?.name || ctx.self.name : ctx.self.soulMark?.name || ctx.self.name);
   ctx.addTimerTo(side, { id, name: presentation.label, presentation, description: presentation.description, remaining: rounds, tickAt: 'round_end',
     kind: source === 'skill' ? 'turn_effect' : 'round_counter', source, scope: 'elf',
     persistsOffField: false, pendingActivation: next, payload }, ctx.goesFirst === false && missed);
 }
 export function uses(ctx: BattleEventContext, side: Side, id: string, count: number, payload: Timer['payload'],
   preserve = false): void {
-  const presentation = makeEffectPresentation(payload, ctx.skill?.name);
+  const presentation = makeEffectPresentation(payload, ctx.skill?.name || ctx.self.soulMark?.name || ctx.self.name);
   ctx.addTimerTo(side, { id, name: presentation.label, presentation, description: presentation.description, remaining: count, tickAt: 'never',
     kind: 'use_counter', source: 'skill', scope: 'elf', persistsOffField: preserve, payload }, false);
 }

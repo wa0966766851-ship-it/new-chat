@@ -37,8 +37,8 @@ check('雷伊明確補充歸屬與神降生命週期說明', () => {
   assert.equal(soul.nodes[0].children[0].children[0].text, '複製成功則令自身麻痺。');
   const attack = soul.nodes.find(n => n.text === '使用攻擊技能時')!;
   assert.ok(attack.children[0].children[0].text.includes('上述吸取'));
-  const thunder = descriptionStructure(OTHERWORLD_REY_TEXT.thunder);
-  const god = thunder.nodes.find(n => n.text === '神降效果')!;
+  const godTree = descriptionStructure(OTHERWORLD_REY_TEXT.god);
+  const god = godTree.nodes.find(n => n.text === '神降效果')!;
   assert.equal(god.children.at(-1)!.kind, 'note');
   assert.equal(god.children.at(-2)!.kind, 'note');
   assert.ok(!god.children.some(n => n.children.some(c => c.text === '神降狀態下場後保留。')));
@@ -53,7 +53,7 @@ check('使用者確認的雷伊回合縮減補充同屬一條，其他不明指�
   assert.equal(unknown.nodes.length, 2); assert.equal(unknown.unresolved.length, 1);
 });
 check('自訂原文變更時不套舊關聯、CRLF不造成失配', () => {
-  const modified = OTHERWORLD_REY_TEXT.thunder + '\n自訂效果';
+  const modified = OTHERWORLD_REY_TEXT.god + '\n自訂效果';
   const god = descriptionStructure(modified).nodes.find(n => n.text === '神降效果')!;
   assert.notEqual(god.children.at(-2)!.kind, 'note');
   assert.deepEqual(descriptionStructure(OTHERWORLD_REY_TEXT.soul.replace(/\n/g, '\r\n')), descriptionStructure(OTHERWORLD_REY_TEXT.soul));
@@ -68,12 +68,12 @@ check('完整原文不被改寫，複製純文字的既有契約不變', () => {
   assert.equal(descriptionStructure('').nodes.length, 0);
 });
 check('實際描述元件的章節、說明與子效果DOM', () => {
-  const markup = renderToStaticMarkup(<EffectDescription description={OTHERWORLD_REY_TEXT.thunder} />);
+  const markup = renderToStaticMarkup(<EffectDescription description={OTHERWORLD_REY_TEXT.god} />);
   const doc = new JSDOM(markup).window.document;
   const section = doc.querySelector('section[aria-label="神降效果"]')!;
   assert.equal(section.querySelectorAll('[data-description-kind="note"]').length, 2);
   assert.ok(section.textContent!.includes('神降狀態下場後保留。'));
-  assert.equal(doc.querySelectorAll('section').length, 3);
+  assert.equal(doc.querySelectorAll('section').length, 1);
   const childDoc = new JSDOM(renderToStaticMarkup(<EffectDescription description={source} renderText={text => <em>{text}</em>} />)).window.document;
   assert.ok(childDoc.querySelector('[data-source-line="3"] [data-source-line="4"] em'));
 });

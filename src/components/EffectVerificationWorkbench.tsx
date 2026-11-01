@@ -3,6 +3,7 @@ import { compileEffectPlan, EFFECT_NODE_LABELS, type EffectDefinition } from '..
 import { TRIG_LABEL } from '../blocks/parse';
 import type { Program } from '../blocks/model';
 import { EFFECT_NODES } from '../effects/effectNodes';
+import { RichDescription } from './RichDescription';
 
 const CASES = ['正常觸發及精確數值', '條件不成立／技能無效', 'P1／P2及持有者隔離', '下場／回場／期限／清除'];
 export function EffectVerificationWorkbench({ definition, kind, hasHandler, elfId, execution }: {
@@ -27,12 +28,12 @@ export function EffectVerificationWorkbench({ definition, kind, hasHandler, elfI
       <p className="text-xs text-amber-200">此頁不自動宣稱通過。正式證據需記錄測試檔、情境、預期值與未驗分支；改動後舊證據需重新核對。</p>
       <ul className="grid sm:grid-cols-2 gap-2 text-xs text-slate-400">{CASES.map(text => <li key={text}>□ {text}</li>)}</ul>
     </div>
-    <details className="ios-card p-4" open><summary className="cursor-pointer text-sm text-blue-200">保留的原始描述</summary><p className="mt-2 whitespace-pre-wrap text-sm leading-7">{definition.description || '尚無描述'}</p></details>
+    <details className="ios-card p-4" open><summary className="cursor-pointer text-sm text-blue-200">保留的原始描述</summary><RichDescription text={definition.description} fallback="尚無描述" className="mt-2 text-sm" /></details>
     {plan.issues.map((issue,i) => <p key={i} className="ios-card p-3 text-xs text-amber-200">待接通：{issue.text} · {issue.reason}</p>)}
     {program.clauses.map((clause,i) => <article key={i} className="ios-card p-4 space-y-3">
       <header className="flex justify-between gap-3 text-xs"><span className="text-blue-200">{plan.route === 'kit' && !legacy ? '積木詞條' : '原句'} {i + 1} · {clause.marker || '未標記'}</span>
         <span className={clause.parsed ? 'text-slate-300' : 'text-amber-200'}>{clause.parsed ? '已形成結構 · 未驗收' : '未完整解析 · 保留原文'}</span></header>
-      <p className="whitespace-pre-wrap text-sm leading-7">{clause.raw}</p>
+      <RichDescription text={clause.raw} className="text-sm" />
       <dl className="grid grid-cols-[64px_minmax(0,1fr)] gap-x-3 gap-y-2 text-xs">
         <dt className="text-slate-400">觸發</dt><dd>{clause.body[0]?.acts[0]?.p.node ? EFFECT_NODE_LABELS[clause.body[0].acts[0].p.node] : TRIG_LABEL[clause.trig] || clause.trig}
           {clause.body[0]?.acts[0]?.p.node && <p className="mt-1 text-slate-400">{EFFECT_NODES[clause.body[0].acts[0].p.node as keyof typeof EFFECT_NODES]?.help}</p>}</dd>

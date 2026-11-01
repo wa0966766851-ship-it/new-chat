@@ -1,4 +1,5 @@
-﻿import {hasPortableDuel} from '../battle/portableSkillMarks';
+﻿import { effectiveStatusTable } from '../battle/statusRules';
+import {hasPortableDuel} from '../battle/portableSkillMarks';
 // src/utils/battleHelpers.ts
 import { Elf, Skill, BattleItem } from "../types";
 import { isStoneThrower, isSkillStone, stoneBasePp } from "../data/skillStones";
@@ -291,6 +292,9 @@ export const isStatusActive = (elf: any, statusId: string) => {
   return Object.entries(statuses).some(([key, turns]) => turns > 0 && sameStatus(key, statusId));
 };
 
+/** 機制查詢用異常表：去掉被規則取消「原有效果」的異常（battle/statusRules.ts）；回合數與顯示仍用 getStatuses。 */
+export const getEffectiveStatuses = (elf: any): Record<string, number> => effectiveStatusTable(elf?.statusRules, getStatuses(elf));
+
 export const hasAnyAbnormalStatus = (elf: any) => {
   if (!elf) return false;
   const statuses = getStatuses(elf);
@@ -299,10 +303,8 @@ export const hasAnyAbnormalStatus = (elf: any) => {
 
 export const isElfActionDisabled = (elf: any, opponent?: any) => {
   if (!elf) return false;
-  const statuses = getStatuses(elf);
+  const statuses = getEffectiveStatuses(elf);
   if (elf.suppressAbnormalSideEffectsWhenParalyzed && Math.max(statuses["麻痺"] || 0, statuses["麻痹"] || 0, statuses.paralyzed || 0) > 0) return false;
-  // 2026-10-31（5041 卡修斯）：處於山神守護時，控制類異常的原有效果失效（異常仍存在）。
-  if (elf.suppressControlWeakeningWhileMountainGuard && (statuses["山神守護"] || 0) > 0) return false;
   for (const stId of Object.keys(statuses)) {
     if (statuses[stId] > 0) {
       const entry = StatusRegistry[canonicalStatusName(stId)];
@@ -322,7 +324,7 @@ export const isElfActionDisabled = (elf: any, opponent?: any) => {
 
 export const isElfSkillSelectionDisabled = (elf: any) => {
   if (!elf) return false;
-  const statuses = getStatuses(elf);
+  const statuses = getEffectiveStatuses(elf);
   for (const stId of Object.keys(statuses)) {
     if (statuses[stId] > 0) {
       if (stId === "眩暈") return true;
@@ -347,7 +349,7 @@ export const isElfSwitchDisabled = (elf: any, oppElf: any, isTyrDuelField: boole
   if (isTyrDuelField && elf.currentHp > 0 && oppElf && oppElf.currentHp > 0) return true;
   if (elf.battleStatus === "paralyzed_lock" || elf.battleStatus === "癱瘓") return true;
 
-  const statuses = getStatuses(elf);
+  const statuses = getEffectiveStatuses(elf);
   for (const stId of Object.keys(statuses)) {
     if (statuses[stId] > 0) {
       if (stId === "paralyzed_lock" || stId === "癱瘓") return true;
@@ -362,7 +364,7 @@ export const isElfItemDisabled = (elf: any) => {
   if (!elf) return false;
   if (elf.battleStatus === "繳械" || elf.battleStatus === "失溫") return true;
 
-  const statuses = getStatuses(elf);
+  const statuses = getEffectiveStatuses(elf);
   for (const stId of Object.keys(statuses)) {
     if (statuses[stId] > 0) {
       if (stId === "繳械" || stId === "失溫") return true;
