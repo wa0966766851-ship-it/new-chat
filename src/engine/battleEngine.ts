@@ -600,7 +600,8 @@ Object.assign(ctx as any, { fatalDamage: absorbed.amount, fatalIsDamage: true })
         // --- 護盾/護罩吸收邏輯 ---
         // 隊伍被動規則（出戰背包持有者；battle/teamPassiveRules.ts）：超額非真實傷害無法造成、攻擊傷害使護盾扣減減半。
         const teamRules = teamRulesOf(cur[`${targetSide}Team`]);
-        if (teamRules.excessIntercept && isNonTrueDamageType(normalizedDamageType) && !data.ignoreShield
+        // 2026-11-01：免傷判定只看「傷害 > 當前護盾值」，不受無視護盾影響（無視護盾只讓護盾不吸收）。
+        if (teamRules.excessIntercept && isNonTrueDamageType(normalizedDamageType)
           && isExcessNonTrue(effectiveAmount, normalizedDamageType, target.shield || 0, target.barrier || 0)) {
           dispatch({ type: 'ADD_LOG', log: { turn: cur.turnNumber, text: `🛡️ 【護盾守護】：超額非真實傷害 ${effectiveAmount} 大於護盾 ${target.shield}，本次傷害無法造成！`, type: "effect" } });
           getBattleEventContext(targetSide, true, 0).setPlayerState('teamInterceptPending', true);
