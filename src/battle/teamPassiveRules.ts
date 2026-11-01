@@ -1,4 +1,4 @@
-// 隊伍被動規則（通用讀取端；DSH 2026-10-31，5041 魂印「山」首段使用，名稱不綁特定精靈）。
+﻿// 隊伍被動規則（通用讀取端；DSH 2026-10-31，5041 魂印「山」首段使用，名稱不綁特定精靈）。
 // 持有者位於出戰背包（存活）時，對「己方在場精靈」生效的護盾類規則。
 // 規則由持有者的 Kit 寫入 elf.teamRules（blocks/ops/cassiusShan.ts team_rules），此處只負責讀取與結算。
 import type { Elf } from '../types';
@@ -15,13 +15,15 @@ export interface TeamPassiveRules {
 declare module '../types' { interface Elf { teamRules?: TeamPassiveRules } }
 
 const alive = (e: any) => !!e && !e.isVanished && !e.isExtra && Number(e.currentHp) > 0;
+/** 隊伍被動的持有者判定：不看體力（持有者死亡後仍對隊友生效），只看是否仍在隊伍中。 */
+const inTeam = (e: any) => !!e && !e.isVanished && !e.isExtra;
 const idOf = (e: any) => String(e?.battleId || e?.id || '');
 
 /** 隊伍內存活持有者的規則聯集（比例取最小者）。 */
 export function teamRulesOf(team: readonly Elf[] | undefined): TeamPassiveRules & { holders: string[] } {
   const out: TeamPassiveRules & { holders: string[] } = { holders: [] };
   for (const e of team || []) {
-    const r = alive(e) ? e.teamRules : undefined;
+    const r = inTeam(e) ? e.teamRules : undefined;
     if (!r) continue;
     out.holders.push(idOf(e));
     if (r.shieldDeductionRatio !== undefined && r.shieldDeductionRatio > 0 && r.shieldDeductionRatio < 1)
@@ -47,8 +49,3 @@ export function isLethalExcessTrue(amount: number, shield: number, hp: number): 
   return amount > Math.max(0, shield) && amount >= hp;
 }
 
-/** 重生後消耗持有者的 1 次機會；回傳要寫回的持有者 id。 */
-export function rebirthHolderOf(team: readonly Elf[] | undefined): string | undefined {
-  for (const e of team || []) if (alive(e) && e.teamRules?.excessTrueRebirth) return idOf(e);
-  return undefined;
-}

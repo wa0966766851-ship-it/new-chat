@@ -1,4 +1,4 @@
-import {dispatchShieldChange,retainShield} from '../battle/markCapabilities';
+﻿import {dispatchShieldChange,retainShield} from '../battle/markCapabilities';
 import { takeAttachedAttackDamage } from '../battle/attachedAttackDamage';
 import {statusSkillSelected,statusSelectionRoundEnd} from '../effects/statusMechanics';
 import {damageReductionReceipt} from '../battle/damageReductionReceipt';
@@ -83,7 +83,7 @@ import { switchBattleSide } from "../battle/stateScopes";
 import { TraitsEngine } from "../utils/traitsEngine";
 import { checkStatusDrivenFatalResist } from "../utils/statusFatalResist";
 import { statusConversionBlocked } from "../battle/statusRules";
-import { teamRulesOf, isExcessNonTrue, isLethalExcessTrue, rebirthHolderOf, rebirthPatch } from "../battle/teamPassiveRules";
+import { teamRulesOf, isExcessNonTrue, isLethalExcessTrue, rebirthPatch } from "../battle/teamPassiveRules";
 import {settleInstantKill} from '../battle/instantKill';
 
 import { pickAiAction, pickAiForcedSwitch, materializeAiAction } from "../utils/ai";
@@ -670,15 +670,11 @@ Object.assign(fCtx as any, { fatalDamage: effectiveAmount, fatalIsDamage: true }
           if (!resisted) resisted = TraitsEngine.triggerFatalResist(fCtx);
           if (!resisted) resisted = traitFatalResist(fCtx, targetSide, target, rng);
           if (!resisted) resisted = checkStatusDrivenFatalResist(fCtx);
-          // 隊伍被動規則：超額真實傷害大於護盾且致死 → 100% 重生（持有者僅 1 次）。
+          // 隊伍被動規則：超額真實傷害大於護盾且致死 → 100% 重生（每次滿足條件都觸發，無總次數限制）。
           if (!resisted && normalizedDamageType === 'true' && teamRules.excessTrueRebirth && isLethalExcessTrue(effectiveAmount, target.shield || 0, hpBefore)) {
-            const holder = rebirthHolderOf(cur[`${targetSide}Team`]);
-            if (holder) {
-              fCtx.updateElf(targetSide, rebirthPatch(target) as any);
-              fCtx.updateAnyElf(targetSide, holder, { teamRules: { ...(cur[`${targetSide}Team`].find((e: any) => (e.battleId || e.id) === holder)?.teamRules || {}), excessTrueRebirth: false } } as any);
-              fCtx.addLog(`✨ 【${target.name}】受到超額真實傷害 ${effectiveAmount}（大於護盾 ${target.shield || 0}）致死，100%重生！`, "effect");
-              resisted = true;
-            }
+            fCtx.updateElf(targetSide, rebirthPatch(target) as any);
+            fCtx.addLog(`✨ 【${target.name}】受到超額真實傷害 ${effectiveAmount}（大於護盾 ${target.shield || 0}）致死，100%重生！`, "effect");
+            resisted = true;
           }
         }
 
@@ -2260,7 +2256,7 @@ case 'switch': {
   }, [getBattleEventContext, processQueue, pushEffect]);
 
     // DSH 20261020：第 1 回合的「回合開始時」在開局（start）派發後，resolveTurn 首輪跳過，防止雙跑。
-  const openingRoundStartDoneRef = { done: false };
+  const openingRoundStartDoneRef: { done: boolean; active?: Record<'p1' | 'p2', string> } = { done: false };
   const resolveTurn = stable(async () => {
     if (!battleAliveRef.current) return;
     presentation.setInAction(false); // 回合開始等節點：技能傷害延後
@@ -2401,7 +2397,20 @@ case 'switch': {
     // §39-1: Trigger ROUND_START and ENFORCE for all team members
     // 全局規則：回合開始（例：次元龍在場時所有精靈累積詩章）
     // DSH 20261020：開局已派發首回合 ROUND_START（見 start），此處首輪跳過防雙跑。
-    if (openingRoundStartDoneRef.done) { openingRoundStartDoneRef.done = false; } else {
+    if (openingRoundStartDoneRef.done) {
+      // 開局的回合開始已在操作階段之前派發；第 1 回合操作階段才換上場的精靈沒有收到，在此只補給「新上場者」（其餘精靈不重跑）。
+      const opened = openingRoundStartDoneRef.active;
+      openingRoundStartDoneRef.done = false; openingRoundStartDoneRef.active = undefined;
+      for (const side of ["p1", "p2"] as const) {
+        const entered: any = syncStateRef.current[side];
+        if (!opened || !entered || String(entered.battleId || entered.id) === opened[side] || checkElfDead(entered)) continue;
+        if (SoulMarkRegistry[entered.name]) {
+          const ctx = getBattleEventContext(side, false, 0, entered);
+          SoulMarkRegistry[entered.name](ctx, EffectTiming.ROUND_START);
+          SoulMarkRegistry[entered.name](ctx, EffectTiming.ENFORCE);
+        }
+      }
+    } else {
     for (const rule of battleRules()) rule.roundStart?.(ruleApi, cur);
 
     // 先同時更新雙方的在場計數，再派發任何回合開始事件；避免P1讀到P2上一回合的值。
@@ -4097,6 +4106,8 @@ syncStateRef.current = { ...syncStateRef.current, [actorRegKey]: { ...rg, attack
         });
       }
       openingRoundStartDoneRef.done = true;
+      const idOfActive = (e: any) => String(e?.battleId || e?.id || '');
+      openingRoundStartDoneRef.active = { p1: idOfActive(syncStateRef.current.p1), p2: idOfActive(syncStateRef.current.p2) };
       await processQueue();
     })();
   };
