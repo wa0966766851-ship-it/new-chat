@@ -1,4 +1,4 @@
-// arena_12 無為龍者：魂印「無為之境」＋五技能 真 Kit
+﻿// arena_12 無為龍者：魂印「無為之境」＋五技能 真 Kit
 // （DSH 20261018 第十六批 legacyWrapped 拆解；同精靈整批轉換＝規則3.4）。
 // 核心機制：
 //   萬相乖離——以 0 PP 使用技能時必定命中、強制執行命中效果，並「依序永久取消下一條尚未取消的觸發條件」
@@ -15,7 +15,10 @@ const entry = (node: KitEntry['node'], trig: string, raw: string, body: any[], o
   codeId: 'effect_sequence', source: 'soulmark', role: 'innate', node, order, customText: raw,
   params: { clause: { raw, trig, parsed: true, body } } });
 // 「已取消數 < N」守衛（萬相乖離依序取消）
+// 「已取消數 < N」守衛（萬相乖離依序取消）
 const notCancelled = (n: number) => c('mark_count', { side: 'self', id: 'wuweiCancelled', op: '低於', amount: n }, '萬相乖離尚未取消此條（<' + n + '）');
+// 「已取消數 >= N」：該條件已被永久取消，改為無條件執行。
+const cancelled = (n: number) => c('mark_count', { side: 'self', id: 'wuweiCancelled', op: '不低於', amount: n }, '萬相乖離已取消此條（>=' + n + '）');
 
 const SOUL_RAW = '戰鬥開始時，自身所有能力值變為全部能力值之和的一半。使用技能不受 PP 限制；技能使用後，不扣除固定 PP，改為互換該技能的目前 PP 與已損失 PP。以非 0 PP 使用技能時，解除自身異常狀態並免疫下一次異常狀態；以 0 PP 使用時必定命中、強制執行命中效果並觸發【萬相乖離】。未使用技能的回合結束時，依技能條件觸發【無為】效果。';
 
@@ -172,21 +175,38 @@ const SKILLS: ReviewedSequenceSkill[] = [
     description: '■ 必中\n■ 威力 0、PP 0\n■ 自身與技能同屬性時威力 +170\n🎯 先出手時令對手所有技能 PP −1，後出手時消除對手回合類效果\n🎯 對手無異常時吸取其最大體力 1/3，有異常時令其【臣服】\n🎯 對手體力不足 300 時直接秒殺\n> 萬相乖離會依此順序永久取消下一條尚未取消的觸發條件，並使本技能威力 +50；六項條件全部取消後不再增加威力；自身擊敗對手後，令對方全部陣亡精靈消逝',
     kit: [
       prop('必中', 'sure_hit', true, 0),
-      prop('自身與技能同屬性時威力 +170', 'base_power', 170, 1),
-      // ① 先出手→對手PP-1；後出手→消除回合類（守衛：已取消數<1）
-      seq('🎯 先出手時令對手所有技能 PP −1，後出手時消除對手回合類效果', [
-        { cond: [notCancelled(1), c('first_move', {}, '先出手')], acts: [a('pp_op', { side: 'opp', mode: 'reduce', amount: 1 })] },
-        { cond: [notCancelled(1), c('first_move', { neg: true }, '後出手')], acts: [a('clear_turn', { side: 'opp' })] },
+      prop('必中', 'sure_hit', true, 0),
+      // ── 六項觸發條件，依序永久取消；取消後改為無條件執行 ──────────────
+      // 第 1 項：自身與技能同屬性 → 威力 +170（power_mod 只能掛 outgoing_power）
+      skillEntry('modify_power', 'outgoing_power', '■ 自身與技能同屬性時威力 +170', [
+        { cond: [cancelled(1)], acts: [a('power_mod', { flat: 170 })] },
+        { cond: [notCancelled(1), c('same_type', { side: 'self' }, '自身與技能同屬性')], acts: [a('power_mod', { flat: 170 })] },
+      ], 1),
+      // 第 2 項：先出手 → 對手 PP-1
+      seq('🎯 先出手時令對手所有技能 PP −1', [
+        { cond: [cancelled(2)], acts: [a('pp_op', { side: 'opp', mode: 'reduce', amount: 1 })] },
+        { cond: [notCancelled(2), c('first_move', {}, '先出手')], acts: [a('pp_op', { side: 'opp', mode: 'reduce', amount: 1 })] },
       ], 2),
-      // ② 對手無異常→吸取1/3；有異常→臣服（守衛：<2）
-      seq('🎯 對手無異常時吸取其最大體力 1/3，有異常時令其【臣服】', [
-        { cond: [notCancelled(2), c('abnormal', { side: 'opp', neg: true }, '對手無異常')], acts: [a('drain', { ratio: 1 / 3 })] },
-        { cond: [notCancelled(2), c('abnormal', { side: 'opp' }, '對手有異常')], acts: [a('status', { side: 'opp', status: '臣服', chance: 100 })] },
+      // 第 3 項：後出手 → 消除對手回合類效果
+      seq('🎯 後出手時消除對手回合類效果', [
+        { cond: [cancelled(3)], acts: [a('clear_turn', { side: 'opp' })] },
+        { cond: [notCancelled(3), c('first_move', { neg: true }, '後出手')], acts: [a('clear_turn', { side: 'opp' })] },
       ], 3),
-      // ③ 對手體力不足300→秒殺（守衛：<3）
-      seq('🎯 對手體力不足 300 時直接秒殺', [
-        { cond: [notCancelled(3), c('hp_value', { side: 'opp', op: '低於', amount: 300 }, '對手體力不足300點')], acts: [a('instant_kill', { chance: 100 })] },
+      // 第 4 項：對手無異常 → 吸取其最大體力 1/3
+      seq('🎯 對手無異常時吸取其最大體力 1/3', [
+        { cond: [cancelled(4)], acts: [a('drain', { ratio: 1 / 3 })] },
+        { cond: [notCancelled(4), c('abnormal', { side: 'opp', neg: true }, '對手無異常')], acts: [a('drain', { ratio: 1 / 3 })] },
       ], 4),
+      // 第 5 項：對手有異常 → 令其【臣服】
+      seq('🎯 對手有異常時令其【臣服】', [
+        { cond: [cancelled(5)], acts: [a('status', { side: 'opp', status: '臣服', chance: 100 })] },
+        { cond: [notCancelled(5), c('abnormal', { side: 'opp' }, '對手有異常')], acts: [a('status', { side: 'opp', status: '臣服', chance: 100 })] },
+      ], 5),
+      // 第 6 項：對手體力不足 300 → 直接秒殺
+      seq('🎯 對手體力不足 300 時直接秒殺', [
+        { cond: [cancelled(6)], acts: [a('instant_kill', { chance: 100 })] },
+        { cond: [notCancelled(6), c('hp_value', { side: 'opp', op: '低於', amount: 300 }, '對手體力不足300點')], acts: [a('instant_kill', { chance: 100 })] },
+      ], 6),
       // 萬相乖離：威力 +50×層數（六層後不再增）
       skillEntry('modify_power', 'outgoing_power', '> 萬相乖離使本技能威力 +50（每層，讀已取消層數），六項全部取消後不再增加威力', [
         { acts: [a('power_mod', { flat: 50, perMark: { side: 'self', id: 'wuweiCancelled' } })] },
