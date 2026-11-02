@@ -53,7 +53,10 @@ export const handleWuxuSoulMark = (ctx: BattleEventContext, event: EffectTiming 
 
     if (event === EffectTiming.ON_ENTRANCE) {
       addLog(`🌑 【無序】：六刃出陣，原始體力共鳴！`, "effect");
-      ctx.updateElf(actor, { ...(!hasAuthoredAdvancedMechanic(self,'enterGainConceal')?{isConcealed:true}:{}), survivalRule: liurenSurvivalRule() });
+      // 2026-11-02：不再於登場時永久掛上 survivalRule。
+      // 原文「直至上述效果結束的下回合結束時自身是否存活不受當前體力值限制」
+      // ——不死是有時限的（受真實傷害後 3 回合），不是開場即生效。
+      ctx.updateElf(actor, { ...(!hasAuthoredAdvancedMechanic(self,'enterGainConceal')?{isConcealed:true}:{}) });
       if (!getPlayerState("wuxuLiurenOriginalMaxHp")) {
         setPlayerState("wuxuLiurenOriginalMaxHp", self.maxHp);
       }
@@ -149,8 +152,14 @@ export const handleWuxuSoulMark = (ctx: BattleEventContext, event: EffectTiming 
     }
 
     if (event === EffectTiming.ON_DAMAGED && extraData?.damageType === "true") {
-      ctx.applyDeathImmunity(actor, { guardTurns: 2, deathImmuneTurns: 3, fixedPercentCap: 60, preserveOffField: true });
-      addLog(`🌑 【死亡條件不受體力限制】：無序·六刃觸發真實傷害庇護！(下場後保留效果且不因此降低效果回合數)`, "effect");
+      // 原文：「自身每次受到真實傷害時
+      //   > 2回合內抵擋受到的所有技能傷害且受到的固定傷害、百分比傷害不超過66
+      //   > 直至上述效果結束的下回合結束時自身是否存活不受當前體力值限制」
+      // 每次受到真實傷害都重新計算 → 3 回合（2 回合抵擋 + 下回合結束）。
+      ctx.applyDeathImmunity(actor, { guardTurns: 2, deathImmuneTurns: 3, fixedPercentCap: 66, preserveOffField: true });
+      // 不死期間才掛 survivalRule；由 deathImmunity 到期時一併移除（見 battleEngine 的同步）。
+      ctx.updateElf(actor, { survivalRule: liurenSurvivalRule() });
+      addLog(`🌑 【死亡條件不受體力限制】：無序·六刃觸發真實傷害庇護！(2回合抵擋＋3回合不死，下場後保留)`, "effect");
     }
 
     if (event === EffectTiming.ON_KILL && extraData?.defeatedElf && getElfAdvancedMechanics(self).killAlienElfVanish) {

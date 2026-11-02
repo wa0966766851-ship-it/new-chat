@@ -1,4 +1,4 @@
-import type { KitEntry } from '../effects/effectSystem.schema';
+﻿import type { KitEntry } from '../effects/effectSystem.schema';
 import extraSoulText from './finalExtraSoulText.json';
 const declaration=(raw:string,values:Record<string,number|boolean>,order:number):KitEntry=>({
   codeId:'effect_sequence',node:'passive_always',source:'mechanic',role:'innate',order,customText:raw,
@@ -94,7 +94,7 @@ export const MIGRATED_FINAL_EXTRA_SOUL_KITS=[{
       {acts:[{op:'missing_hp_damage_boost',p:{baseBoost:1.2,step:.001,stepBoost:1.2,doubleBelow:.5},label:'按本次體力計算增傷'}]}
     ],5),
     soulEntry('on_damaged','damaged_true','受到真傷後2回合抵擋技能、固傷與百分比上限60，直到下回合結束前不受體力限制',[
-      {acts:[{op:'damage_survival_guard',p:{guardTurns:2,deathImmuneTurns:3,fixedPercentCap:60,preserveOffField:true},label:'建立有限期非正體力存活'}]}
+      {acts:[{op:'damage_survival_guard',p:{guardTurns:2,deathImmuneTurns:3,fixedPercentCap:66,preserveOffField:true},label:'建立有限期非正體力存活'}]}
     ],6),
     soulEntry('on_skill_use','self_skill','使用技能恢復自身最大體力⅙並造成等量百分比傷害',[
       {acts:[{op:'heal_then',p:{side:'self',ratio:1/6,body:[{acts:[{op:'dmg_from_last',p:{ratio:1,type:'百分比'},label:'等同實際恢復量百分比傷害'}]}]},label:'恢復結算後造成等量傷害'}]}
