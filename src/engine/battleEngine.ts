@@ -3128,6 +3128,12 @@ case 'switch': {
         }
       }
 
+      // 2026-11-02：技能無效仍屬於「已使用技能」——先播使用提示與動畫，
+      // 再進入無效判定（未命中／技能無效／使用失敗是同一類結果）。
+      pushEffect({ type: 'log', side: s, data: { text: `【${displayName}】使用了【${displaySkill}】！`, type: s, sourceCode: `src/effects/${actor.name}Registry.ts:${activeSkill.name}` } });
+      const animCategoryPre = activeSkill.category === "屬性" ? "property" : activeSkill.category === "物理" ? "physical" : "special";
+      pushEffect({ type: 'animation', side: s, data: { anim: { side: s, category: animCategoryPre, skillName: activeSkill.name, targetSide: s === "p1" ? "p2" : "p1", isFifthSkill: !!activeSkill.isFifthSkill }, duration: 400 } });
+
       if (skillIsInvalidated) {
         // 技能無效視同未命中
         SoulMarkRegistry[syncStateRef.current[s].name]?.(getBattleEventContext(s, false, mIdx), EffectTiming.SKILL_INVALID, { skill: activeSkill, reason: invalidationReason, kind: "invalid", isIncoming: false, consumedInvalidation });
@@ -3141,13 +3147,10 @@ case 'switch': {
         activeSkill = recalculatedSkill(activeSkill, retry); retryFailureKind = 'invalid'; addEffectsInvalid = true;
       }
 
-      pushEffect({ type: 'log', side: s, data: { text: `【${displayName}】使用了【${displaySkill}】！`, type: s, sourceCode: `src/effects/${actor.name}Registry.ts:${activeSkill.name}` } });
       // 固有使用條款在公式快照之後、命中／攻擊免疫之前執行；附加條款仍待命中閘門。
       if (!retryFailureKind) runSkillBlocks(withRecoveryOrigin(getBattleEventContext(s, true, mIdx),'skill'), 'use', hasSkillHandler(activeSkill.name), false, 'innate');
       ctx.innateSkillUseHandled = !retryFailureKind;
       if (!retryFailureKind) try { emitSkillUse(getBattleEventContext(s, true, mIdx), getBattleEventContext(oppSide, true, mIdx), activeSkill, false); } catch (e) { console.error("[blocks]", e); }
-      const animCategory = activeSkill.category === "屬性" ? "property" : activeSkill.category === "物理" ? "physical" : "special";
-      pushEffect({ type: 'animation', side: s, data: { anim: { side: s, category: animCategory, skillName: activeSkill.name, targetSide: s === "p1" ? "p2" : "p1", isFifthSkill: !!activeSkill.isFifthSkill }, duration: 400 } });
 
       // ── 命中判定（過去 accuracy／必中／命中等級都只是資料，所有技能必定命中）
       if (!retryFailureKind) {

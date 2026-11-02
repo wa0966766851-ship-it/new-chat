@@ -1,4 +1,4 @@
-// 異常規則（通用讀取端；DSH 2026-10-31，5041 魂印「山神守護時」使用，名稱不綁特定精靈）。
+﻿// 異常規則（通用讀取端；DSH 2026-10-31，5041 魂印「山神守護時」使用，名稱不綁特定精靈）。
 // 持有者在「條件異常」（whileStatus）期間：
 //   conversionTargetBan：其所處的異常不可被轉化為這些分類的異常（衍化／轉化的目標分類）；
 //   cancelEffects：這些分類異常的「原有效果」取消（異常本身仍在、回合數照算）；
@@ -48,7 +48,16 @@ export function statusConversionBlocked(rules: ElfStatusRules | undefined, statu
   return !!active?.conversionTargetBan?.length && categoriesOf(targetId).some(c => active.conversionTargetBan!.includes(c));
 }
 
-/** 取代原有效果的替代規則是否正在生效（條件異常存在且至少一個異常被取消原效果）。 */
+/**
+ * 條件異常存在時的替代規則。
+ *
+ * 2026-11-02 修正：原本要求「至少一個異常被取消原效果」才生效，
+ * 這是錯的。原文「自身處於山神守護狀態時：
+ *   > 取消控制類異常與弱化類異常附加效果
+ *   > 改為自身1回合內選擇使用技能不受當前PP值限制」
+ * —— 「改為」是並列的替代規則，不是「取消效果」的附屬結果。
+ * 只要條件異常還在，替代規則就生效（即使身上沒有任何控制／弱化類異常）。
+ */
 export function statusReplacementActive(rules: ElfStatusRules | undefined, statuses: Record<string, number>): ElfStatusRules | undefined {
-  return cancelledStatusIds(rules, statuses).length ? rules : undefined;
+  return activeStatusRules(rules, statuses);
 }
