@@ -1761,6 +1761,12 @@ case 'switch': {
       const currentStatuses = getStatuses(elf);
       const statusTick = { status: e.id, skipTick: false };
       SoulMarkRegistry[elf.name]?.(getBattleEventContext(side, true, 0, elf), EffectTiming.BEFORE_STATUS_TICK, statusTick);
+      // 2026-11-02：回合數被關閉（skipTick）的異常標記為 turnsFrozen，
+      // 讓 convert_status 不會把它轉化成其他異常（避免「回合數已凍結」的異常被轉走）。
+      if (statusTick.skipTick && !e.metadata?.turnsFrozen) {
+        nextEffects.push({ ...e, metadata: { ...(e.metadata || {}), turnsFrozen: true } } as any);
+        continue;
+      }
       const transition = statusTick.skipTick ? { next: e, transformed: undefined } : advanceStatusEffect(e, currentStatuses, rng);
       if (transition.next) {
         nextEffects.push(transition.next);

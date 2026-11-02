@@ -1,4 +1,4 @@
-import {consumedHealthAmount} from '../../effects/mechSupportLifecycle';
+﻿import {consumedHealthAmount} from '../../effects/mechSupportLifecycle';
 /** 末批可攜印記、面板結算與體力鎖。參數決定行為，不按精靈或技能名稱分流。 */
 import type { BattleEventContext } from '../../effects/types';
 import type { RunState } from '../runtime';
@@ -251,6 +251,8 @@ export function finalOdbOperations(addTimer: (ctx: BattleEventContext, side: Sid
     },
     resistance_record(ctx: BattleEventContext, p: any) {
       const slots = (ctx.self.resistances?.statusResist?.slots || []).filter((s: any) => s.status && Number.isFinite(s.rate));
+      // 本專案強化版：記錄「所有」最高項（原廠為唯一最高項）。
+      // 並列最高時全部記錄，己方進入其中任一種都轉化為星賜。
       const maximum = Math.max(-1, ...slots.map((s: any) => s.rate));
       const values = [...new Set(slots.filter((s: any) => s.rate === maximum).map((s: any) => canonicalStatusName(s.status)))];
       ctx.setPlayerState(p.key, values);

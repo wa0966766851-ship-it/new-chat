@@ -29,7 +29,11 @@ export function startIllusion(ctx: BattleEventContext, defaultTarget: Elf | unde
       projectedStats: { ...stats }, projectedMaxHp: original.maxHp + targetCopy.calculatedStats.hp } }, calculatedStats: stats,
     maxHp: original.maxHp + targetCopy.calculatedStats.hp,
     globalPpMaxOffset: (self.globalPpMaxOffset || 0) + ppBonus,
-    isAlienElf: self.isAlienElf || targetCopy.isAlienElf, category: targetCopy.category || self.category });
+    isAlienElf: self.isAlienElf || targetCopy.isAlienElf, category: targetCopy.category || self.category,
+    // 2026-11-02：描述「獲得特性、專屬特性、特質、二代特質、專屬特質」。
+    // trait 與 alienTraits（內含 gen2Trait／exclusiveTrait(s)／alienTrait／generalTrait）原本只備份、
+    // 沒有實際換成目標的，導致幻化後這些來源的機制（含無視異常等）不生效。
+    trait: targetCopy.trait, alienTraits: targetCopy.alienTraits });
   ctx.addLog(`✨ 【${source}】：幻化為【${targetCopy.name}】，使用技能時依相同欄位轉化。`, 'effect');
   return true;
 }
@@ -93,4 +97,3 @@ function takeIllusionOverride(ctx: BattleEventContext): Elf | undefined {
   ctx.addLog(`【幻化指令】：幻化對象改為【${elf.name}】。`, 'effect');
   return elf;
 }
-

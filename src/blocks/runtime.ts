@@ -1,4 +1,4 @@
-import {ownerLinkOperations,ownerLinkCondition} from './ops/ownerLinks';
+﻿import {ownerLinkOperations,ownerLinkCondition} from './ops/ownerLinks';
 import {extraElfLifecycleOperations,extraElfLifecycleCondition} from './ops/extraElfLifecycle';
 import {resourcePanelOperations} from '../effects/resourcePanelOperations';
 import {supportOperations,consumedHealthAmount} from '../effects/mechSupportLifecycle';
@@ -742,16 +742,24 @@ export const OPS: Record<string, OpFn> = {
     // 常駐主權（status_conversion_ban）：持有者列入保護的異常不可被轉化為其他異常狀態（5015 夜）。
     const conversionBanned=((side===ctx.actor?ctx.getPlayerState:ctx.getOpponentState)('blkStatusConversionBan')||[]).map((n:string)=>canonicalStatusName(n));
     if(p.from!==undefined){
-      const matched=Object.keys(before).filter(id=>canonicalStatusName(id)===canonicalStatusName(p.from)&&!conversionBanned.includes(canonicalStatusName(id))&&!StatusRegistry[canonicalStatusName(id)]?.categories.includes('BOSS_ONLY'));
+      const matched=Object.keys(before).filter(id=>canonicalStatusName(id)===canonicalStatusName(p.from)&&!conversionBanned.includes(canonicalStatusName(id))&&!StatusRegistry[canonicalStatusName(id)]?.categories.includes('BOSS_ONLY')&&!StatusRegistry[canonicalStatusName(id)]?.categories.includes('NO_EFFECT'));
       if(!matched.length||!applyStatus(ctx,side,p.status,p.turns))return false;
       // 附加失敗時保留來源；成功後只移除指定異常，避免清掉無關異常與新附加的目標。
       const current=liveElf(ctx,side),updated={...current,effects:[...(current.effects||[])],battleStatuses:{...(ctx.getStatuses(current)||{})}};
       for(const id of matched)removeStatusEffect(updated,id);
       ctx.updateElf(side,{effects:updated.effects,battleStatuses:updated.battleStatuses,battleStatus:updated.battleStatus,battleStatusDuration:updated.battleStatusDuration} as any);return true;
     }
+    // 2026-11-02：回合數被關閉（turnsFrozen）的異常也不得被轉化——
+    // 它的回合數本來就不會遞減，轉化等於無視「回合數凍結」的原意。
+    const frozenIds = new Set((e.effects || [])
+      .filter((eff: any) => eff?.metadata?.turnsFrozen)
+      .map((eff: any) => canonicalStatusName(eff.id)));
     const convertible = Object.keys(before).filter(id => {
       const entry = StatusRegistry[canonicalStatusName(id)];
-      return entry && !entry.categories.includes('BOSS_ONLY') && !conversionBanned.includes(canonicalStatusName(id));
+      // 2026-11-02：NO_EFFECT（異常抵抗等無效果類）不得被再次轉化，避免抵抗結果又被改成其他異常。
+      return entry && !entry.categories.includes('BOSS_ONLY') && !entry.categories.includes('NO_EFFECT')
+        && !conversionBanned.includes(canonicalStatusName(id))
+        && !frozenIds.has(canonicalStatusName(id));
     });
     if (!convertible.length) return false;
     // 只移除真正被轉化的異常，不把計時效果／其他增益及BOSS特性一起清空。

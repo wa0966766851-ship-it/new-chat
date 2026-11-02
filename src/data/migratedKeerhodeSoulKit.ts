@@ -32,7 +32,7 @@ export const MIGRATED_KEERHODE_SOUL_KIT = {
       { acts: [a('incoming_reduction_branch', {
         ratio: 0.6, thresholdBase: 'currentHpThird', compareBase: 'raw_damage',
         bodyHigh: [
-          { acts: [a('resource_mark_add', { id: 'frost_glow', name: '霜寒幽光', displayChar: '霜', unit: '點', side: 'opp', scope: 'elf', persistsOffField: true, ratio: 1, maxCount: 200, description: '受到固定／百分比傷害超過霜寒幽光點數10%時則減半m次(m=本次造成固定傷害、百分比傷害/霜寒幽光值10%)；持有者在場時吸取己方隨機1個不在場精靈所有技能1點PP值，柯爾霍德在場時恢復至柯爾霍德相同位置，下場後將霜寒幽光減半附加給下隻出戰精靈，同時令該精靈在場前n回合無法主動切換精靈(n=霜寒幽光值/50)；霜寒幽光上限200點' })] },
+          { acts: [a('resource_mark_add', { id: 'frost_glow', name: '霜寒幽光', displayChar: '霜', unit: '點', side: 'opp', scope: 'elf', persistsOffField: true, ratio: 1, maxCount: 200, description: '霜寒幽光：\n>持有者造成對方固定／百分比傷害超過霜寒幽光點數10%時則減半m次(m=本次造成固定傷害、百分比傷害/霜寒幽光值10%)\n>持有者在場時吸取己方隨機1個不在場精靈所有技能1點PP值\n>>柯爾霍德在場時恢復至柯爾霍德相同位置\n>下場後將霜寒幽光減半附加給下隻出戰精靈\n>>同時令該精靈在場前n回合無法主動切換精靈(n=霜寒幽光值/50)\n>霜寒幽光上限200點' })] },
         ],
         bodyLow: [
           { acts: [a('drain', { basis: 'event_damage', ratio: 0.6, true: false })] },
