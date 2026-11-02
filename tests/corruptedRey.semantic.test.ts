@@ -1,4 +1,4 @@
-import assert from 'node:assert/strict';
+﻿import assert from 'node:assert/strict';
 import {createHarness} from './helpers/migrationHarness';
 import * as Blockly from '../src/vendor/blockly/index.js';
 import {defineCustomBlocks,buildEntryBlock,createKitBlockParser} from '../src/components/BlocklyBuilder';
@@ -42,7 +42,11 @@ try{
    const [r]=await h.play(side,{self:unit(e.id,passive(e,[0])),opp:unit('enemy'),oppBench:[unit('bench')]},1);
    const ratio=e.id==='7070'?.2:.07,unitSize=e.id==='7070'?70:7;
    const loss=2*(Math.floor(10000*ratio)+5*Math.floor(1000*ratio)),bonus=Math.floor(loss/unitSize)*70;
-   assert.equal(r.self.maxHp,10000+bonus);assert.equal(r.self.calculatedStats.atk,1000+bonus);
+   // 2026-11-02：墜霆.雷伊 order 0 同時施加「入魔」，回合結束時「失去體力上限20%」。
+   // 入魔只降上限（不扣當前體力），panel_pool_transfer 仍以 10000 為基數算出 bonus，
+   // 最終 maxHp 再被入魔削 20%。（舊版入魔誤扣當前體力、maxHp 不變，故曾為 10000+bonus。）
+   const rumoLoss=e.id==='707070'?Math.floor((10000+bonus)*0.2):0;
+   assert.equal(r.self.maxHp,10000+bonus-rumoLoss);assert.equal(r.self.calculatedStats.atk,1000+bonus);
    assert.equal(r.opp.maxHp,10000-Math.floor(10000*ratio));
    assert.equal(r.state[`${side==='p1'?'p2':'p1'}Team`][1].calculatedStats.atk,1000-Math.floor(1000*ratio));checks++;
   }
@@ -110,7 +114,9 @@ try{
   const hit=h.kitSkill('技能傷害',[{op:'dmg',p:{flat:1000,type:'技能',elem:'普通'}}]);
   const guarded=await h.play(side,{self:guardActor,opp:h.unit('target',100000,[hit],{speed:50}),turns:(_e,t)=>[t===1?0:1,0]},2);
   assert.equal(guarded[0].self.currentHp,80000); // 未選攻擊的20%體力流失仍生效，並非傷害免疫。
-  assert.ok(guarded[1].self.currentHp<60000);checks++;
+  // 2026-11-02：入魔改為「失去體力上限20%」（只降上限，不扣當前體力）。
+  // 兩回合各降 20%：100000 → 80000 → 64000，當前體力被夾到上限。
+  assert.ok(guarded[1].self.maxHp<70000);assert.ok(guarded[1].self.currentHp<70000);checks++;
   // 次數致死存活：第一次保留1HP，第二次致死不再觸發。
   const survivor=plain('actor',[only('707070','怨雷',[4]),h.wait()],1000);
   const fatal=h.kitSkill('致死',[{op:'dmg',p:{flat:2000,type:'真實'}}]);
