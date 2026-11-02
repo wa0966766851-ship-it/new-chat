@@ -78,10 +78,10 @@ export function godDescentFloor(rule: NonPositiveSurvivalRule | undefined, maxHp
 
 export function isAliveBySurvivalRule(currentHp: number, rule?: NonPositiveSurvivalRule, maxHp = 0): boolean {
   if (currentHp > 0) return true;
-  if (!rule?.active || rule.mode === "none") return false;
-  // god_descent 有明確下限；到達或低於下限即判死。
-  // god_descent：下限由公式即時算出；到達或低於下限即判死。
-  if (rule.mode === "god_descent") { const floor = godDescentFloor(rule, maxHp); if (Number.isFinite(floor) && floor < 0) return currentHp > floor; }
+  // 2026-11-02 修正：神降的語意是「體力下限往負方向移」，不是「到達下限就死亡」。
+  // 原本只看 rule.active 是對的——只要規則還在，非正體力就是存活。
+  // 真正的死亡由 resolveDamageTransition 依 floor 夾住後另行判定。
+  return !!rule?.active && rule.mode !== "none";
 }
 
 /**
@@ -116,7 +116,7 @@ export function resolveDamageTransition(
     return { hp, alive: true, enteredNonPositive: false, ignoredDamage: false, damageApplied: amount, hpAdjustment: -amount };
   }
 
-  const floor = Number.isFinite(rule.minHp) ? rule.minHp : -70 * Math.max(0, maxHp);
+  const floor = godDescentFloor(rule, maxHp);
   if (nature === "non_true" && !options.ignoreNonTrueImmunity && (currentHp <= 0 || crossingZero)) {
     // 原傷害不進入體力；從0（首次進入）或當前負體力另作-70%最大體力調整。
     const baseHp = crossingZero ? 0 : currentHp;
