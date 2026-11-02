@@ -125,6 +125,56 @@ const PHASE_LABEL_PVP: Record<string, string> = {
   ...PHASE_LABEL, p2_select: "P2 選擇指令", forced_switch_p2: "P2 請換人",
 };
 
+/**
+ * 2026-11-02：抗性顯示格式（傷害抗性在前，異常抗性在後）。
+ * 傷害抗性＝致命／固定／百分比三項（0–35%）；異常抗性＝6 槽位 + 5% 全免。
+ */
+function formatResistanceShort(r?: { damageResist?: any; statusResist?: any }): string {
+  const d = r?.damageResist;
+  if (!d) return "抗性";
+  const parts: string[] = [];
+  if (d.crit) parts.push(`致${d.crit}%`);
+  if (d.fixed) parts.push(`固${d.fixed}%`);
+  if (d.percent) parts.push(`百${d.percent}%`);
+  return parts.length ? parts.join(" ") : "抗性 0";
+}
+
+function formatResistanceSummary(r?: { damageResist?: any; statusResist?: any }): string {
+  const d = r?.damageResist, s = r?.statusResist;
+  const lines: string[] = [];
+  lines.push(`致命一擊 ${d?.crit ?? 0}%`);
+  lines.push(`固定傷害 ${d?.fixed ?? 0}%`);
+  lines.push(`百分比傷害 ${d?.percent ?? 0}%`);
+  const slots = (s?.slots || []).filter((x: any) => x?.status && Number(x.rate) > 0);
+  lines.push(`異常抗性 ${slots.length} 項${s?.allImmune ? "＋全免5%" : ""}`);
+  return lines.join("／");
+}
+
+function formatResistanceDetail(r?: { damageResist?: any; statusResist?: any }): string {
+  const d = r?.damageResist, s = r?.statusResist;
+  const out: string[] = [];
+  out.push("【傷害抗性】");
+  out.push(`> 致命一擊傷害 -${d?.crit ?? 0}%`);
+  out.push(`> 固定傷害 -${d?.fixed ?? 0}%`);
+  out.push(`> 百分比傷害 -${d?.percent ?? 0}%`);
+  out.push("");
+  out.push("【異常抗性】");
+  out.push(`> 全免抗性：${s?.allImmune ? "開啟（+5%）" : "關閉"}`);
+  const slots = (s?.slots || []).filter((x: any) => x?.status);
+  if (!slots.length) {
+    out.push("> （未配置異常抗性槽位）");
+  } else {
+    for (const slot of slots) {
+      const base = Number(slot.rate) || 0;
+      const total = base + (s?.allImmune ? 5 : 0);
+      out.push(`> ${slot.category === "control" ? "控制類" : "弱化類"}【${slot.status}】：${base}%${s?.allImmune ? `（含全免 ${total}%）` : ""}`);
+    }
+  }
+  out.push("");
+  out.push("抗性可減少受到的固定傷害、百分比傷害、致命傷害，並依機率免疫對應異常。");
+  return out.join("\n");
+}
+
 /** 戰鬥畫面：先固定隱匿可見性模式（PVE／PVP），子元件（頭像、詳情、選擇器）共用同一個判斷。 */
 export function BattleScreenUI(props: BattleScreenUIProps) {
   return <BattleViewModeContext.Provider value={toViewMode(props.battleMode)}><BattleScreenBody {...props} /></BattleViewModeContext.Provider>;
@@ -982,6 +1032,16 @@ function BattleScreenBody(props: BattleScreenUIProps) {
               {!hidden && elf.trait && (
                 <button type="button" onClick={() => setModalContent({ title: elf.trait!.name, content: elf.trait!.description })} title={`特性：${elf.trait.name}`}
                   className="hidden sm:inline shrink-0 px-1.5 rounded bg-indigo-900/60 border border-indigo-500/40 text-[11px] font-bold text-indigo-200">{elf.trait.name}</button>
+              )}
+              {/* 2026-11-02：抗性（放在專屬特性旁）。傷害抗性在前，異常抗性在後。 */}
+              {!hidden && elf.resistances && (
+                <button type="button" data-resistance-badge={side}
+                  onClick={() => setModalContent({ title: "抗性", content: formatResistanceDetail(elf.resistances) })}
+                  title={`抗性：${formatResistanceSummary(elf.resistances)}`}
+                  className="hidden sm:inline-flex shrink-0 items-center gap-1 px-1.5 rounded bg-teal-900/60 border border-teal-500/40 text-[11px] font-bold text-teal-200 hover:bg-teal-800/70">
+                  <ChainImage urls={[signIconFor("抗性")!]} className="h-4 w-4 object-contain" />
+                  {formatResistanceShort(elf.resistances)}
+                </button>
               )}
             </div>
             <div className="bt-hp mt-2">

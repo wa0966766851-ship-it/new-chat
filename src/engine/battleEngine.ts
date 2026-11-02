@@ -487,9 +487,17 @@ export function createBattleEngine(props: BattleEngineOptions): BattleEngine {
           if (category !== 'true') {
             const comp = { damageCategory: category as any, decreasePercent: 0, multiplier: 1,
               reductionPolicy: data.reductionPolicy ?? reductionPolicy(cur, side, target, category) };
+            // 2026-11-02：傷害抗性觸發時留下可見紀錄（原本只默默減傷）。
+            const resistRate = category === 'fixed' ? (resist?.fixed || 0) : category === 'percent' ? (resist?.percent || 0) : 0;
+            const beforeResist = amount;
             if (category === 'fixed' && resist?.fixed) multiplyDamageReduction(comp, 1 - resist.fixed / 100);
             if (category === 'percent' && resist?.percent) multiplyDamageReduction(comp, 1 - resist.percent / 100);
             amount = Math.floor(amount * comp.multiplier);
+            if (resistRate > 0 && beforeResist > amount) {
+              pushEffect({ type: 'log', side, data: {
+                text: `🛡️ 【抗性】${category === 'fixed' ? '固定' : '百分比'}傷害抗性 ${resistRate}%：${beforeResist} → ${amount}`,
+                type: 'effect' } });
+            }
           }
           const absorbed = settleDamageAbsorption(amount, category, target.shield || 0, target.barrier || 0, !!data.ignoreShield);
           const outcome = resolveDamageTransition(target.currentHp, target.maxHp, absorbed.amount, category === 'true' ? 'true' : 'non_true', target.survivalRule);

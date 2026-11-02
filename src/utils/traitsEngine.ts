@@ -1,4 +1,4 @@
-import { Elf } from '../types';
+﻿import { Elf } from '../types';
 import { BattleEventContext, EffectTiming } from '../effects/types';
 import { getElfAdvancedMechanics, hasAuthoredAdvancedMechanic, AdvancedTraitMechanics } from '../data/traitsRegistry';
 import { isStatusActive } from './statusManager';
@@ -197,7 +197,16 @@ export class TraitsEngine {
         if (slot) {
           const totalRate = slot.rate + (resistCfg.allImmune ? 5 : 0);
           const rngFunc = ctx.rng || Math.random;
-          if (rngFunc() * 100 < totalRate) {
+          // 2026-11-02：機率性判定一律用「偽保底」——連續失敗會累積補正，
+          // 避免同一隻精靈長期臉黑（純隨機在少量樣本下波動過大）。
+          // 第 n 次連續失敗後，本次實際機率 = 1 - (1 - p)^(n+1)，
+          // 期望失敗次數收斂，但單次仍保留隨機性。
+          const pityKey = `resistancePity_${canonicalStatusName(status)}`;
+          const fails = Math.max(0, Number(ctx.getPlayerState(pityKey)) || 0);
+          const p0 = Math.max(0, Math.min(1, totalRate / 100));
+          const effective = p0 <= 0 ? 0 : 1 - Math.pow(1 - p0, fails + 1);
+          if (rngFunc() < effective) {
+            ctx.setPlayerState(pityKey, 0);
             if (status === "窒息") {
               ctx.addLog(`💀 【抗性抵抗】：【${targetElf.name}】抵抗了窒息，但觸發了缺氧致死！`, "status");
               ctx.applyTrueDamage(side, targetElf.maxHp, "缺氧致死");
@@ -205,6 +214,8 @@ export class TraitsEngine {
             ctx.addLog(`🛡️ 【抗性抵抗】：【${targetElf.name}】抵抗了【${status}】，轉化為異常抵抗！`, "status");
             return { handled: true, overrideStatus: "異常抵抗", overrideDuration: 1 };
           }
+          // 未觸發 → 累積偽保底計數
+          ctx.setPlayerState(pityKey, fails + 1);
         }
       }
     }

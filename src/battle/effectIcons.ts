@@ -1,4 +1,4 @@
-// 異常狀態／效果圖標與說明（資料來源：SeerAPI battle_effect、buff；圖檔：seer-unity-assets battleeffect）
+﻿// 異常狀態／效果圖標與說明（資料來源：SeerAPI battle_effect、buff；圖檔：seer-unity-assets battleeffect）
 import data from "../data/seerEffects.json";
 import { getStatMultiplier } from "../utils/statCalculator";
 import { BOSS_TRAIT_BY_STATUS, bossTraitIcon, bossTraitText, BOSS_TRAIT_BADGE_DIR, BOSS_TRAIT_ICON_DIR } from "../data/bossTraits";
@@ -38,6 +38,7 @@ export interface EffectVisual { icon?: string; desc?: string; category?: string 
 export function statusVisual(name?: string): EffectVisual | null {
   if (!name) return null;
   const n = ALIAS[name] || name;
+
   if (CUSTOM_STATUS_ICONS[n]) {
     return { icon: CUSTOM_STATUS_ICONS[n], category: STATUS[n]?.[1] || "" };
   }
@@ -91,6 +92,10 @@ export function stageDesc(key: string, v: number): string {
 
 /** 官方印記（sign）圖示：battleeffect/signbuff/<id>.png，id 取自 SeerAPI api-data sign。 */
 const SIGN_ICON_IDS: Record<string, number> = {
+  // 2026-11-02：SeerAPI sign/1 = 「抗性」（減少固定／百分比／致命傷害，並機率免疫異常）。
+  抗性: 1,
+  // 2026-11-02：蓓麗安特星執系統（SeerAPI sign 94/95；95 的 num_des＝「剩餘能量」）。
+  星執: 94, 星执: 94, 星執者: 95, 星执者: 95,
   精靈護盾: 2, 護盾: 2, 精靈護罩: 3, 護罩: 3,
   星芳之纏: 96, 星芳之缠: 96, 星海之浸: 97, 星火之灼: 98,
   // 無極聖武專屬印記（SeerAPI sign 133–137，圖檔 battleeffect/signbuff/<id>.png）
