@@ -1,14 +1,28 @@
-import type {Elf} from '../types';
+﻿import type {Elf} from '../types';
 import {selectedElfSkin} from '../data/elfSkins';
 import {PET_ANIMATION_ASSETS,type PetAnimationAssetId} from './petAnimationAssets';
 /** 名稱→素材；只認 PET_ANIMATION_ASSETS 已逐檔登記的名稱，不以序號推算。 */
 const BY_NAME=new Map<string,PetAnimationAssetId>(
  Object.entries(PET_ANIMATION_ASSETS).map(([id,meta])=>[meta.name,id as PetAnimationAssetId]),
 );
+/** clip 名（如 '70.pet'）→ 素材；讓 seerId 能直接對到官方動作。 */
+const BY_SEER_ID=new Map<number,PetAnimationAssetId>(
+ Object.entries(PET_ANIMATION_ASSETS).flatMap(([id,meta])=>{
+  const m=/^(\d+)\.pet$/.exec(String((meta as any).clip||''));
+  return m?[[Number(m[1]),id as PetAnimationAssetId] as [number,PetAnimationAssetId]]:[];
+ }),
+);
 /** 外觀對應必須明確核對；自訂 ID 絕不直接推導官方 ppets 編號。 */
-export function petAnimationBinding(elf:Pick<Elf,'id'|'name'|'skinId'|'path'>):PetAnimationAssetId|null {
+export function petAnimationBinding(elf:Pick<Elf,'id'|'name'|'skinId'|'path'> & {seerId?:number|string}):PetAnimationAssetId|null {
  const skin=selectedElfSkin(elf);
  if(elf.skinId) return skin?.animationAssetId||null;
+ // 2026-11-02：以 seerId 對應官方動作素材。
+ // 魔化.雷伊(7070)／墜霆.雷伊(707070) 的 seerId 都是 70，外觀就是原始雷伊，
+ // 但 id／名稱都不是 '70'／'雷伊'，舊邏輯會落到 null 而沒有動態圖。
+ if(elf.seerId!=null && elf.seerId!==''){
+  const bySeerId=BY_SEER_ID.get(Number(elf.seerId));
+  if(bySeerId) return bySeerId;
+ }
  // 已核對的官方完整 URL 僅開放該素材本身，不讓自繪圖誤接同名動畫。
  const named=BY_NAME.get(elf.name);
  if(named){const meta=PET_ANIMATION_ASSETS[named];if('body' in meta&&elf.path===meta.body)return named;}
