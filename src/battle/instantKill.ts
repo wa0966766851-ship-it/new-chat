@@ -1,4 +1,4 @@
-import type {BattleEventContext} from '../effects/types';
+﻿import type {BattleEventContext} from '../effects/types';
 import {EffectTiming} from '../effects/types';
 import type {EffectItem} from '../components/BattleManager';
 import {checkElfDead} from './elfAlive';
@@ -45,9 +45,9 @@ export function settleInstantKill(ctx:BattleEventContext,data:any):Readonly<Inst
   let resistedFatal=false;
   const blocked=checkElfDead(ctx.self)||before<=0;
   if(!blocked){
-    const outcome=resolveHpAdjustment(before,-before,ctx.self.survivalRule);
+    const outcome=resolveHpAdjustment(ctx.self.maxHp,before,-before,ctx.self.survivalRule);
     const immortal=(ctx.self.deathImmunity?.deathImmuneTurns||0)>0;
-    if(!isAliveBySurvivalRule(outcome.hp,ctx.self.survivalRule)&&!immortal){
+    if(!isAliveBySurvivalRule(outcome.hp,ctx.self.survivalRule,ctx.self.maxHp)&&!immortal){
       resistedFatal=!!SoulMarkRegistry[ctx.self.name]?.(ctx,EffectTiming.FATAL_RESIST,{damageType:'instant_kill',sourceSide:data.sourceSide,sourceBattleId:data.sourceBattleId})
         ||TraitsEngine.triggerFatalResist(ctx)||traitFatalResist(ctx,ctx.actor,ctx.self,ctx.rng||Math.random)||checkStatusDrivenFatalResist(ctx);
     }

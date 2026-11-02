@@ -1,4 +1,4 @@
-export type DamageNature = "true" | "non_true";
+﻿export type DamageNature = "true" | "non_true";
 export type NonPositiveSurvivalMode = "none" | "freeze_at_zero" | "god_descent";
 
 export interface NonPositiveSurvivalRule {
@@ -6,7 +6,16 @@ export interface NonPositiveSurvivalRule {
   active: boolean;
   /** 換到場下後規則是否仍保留。永久規則不應使用一般回合倒數。 */
   preserveOffField: boolean;
-  /** 神降使用；六刃固定為0。 */
+  /**
+   * 2026-11-02：下限倍率（神降＝70，意即下限 = -70 × 當前最大體力）。
+   * 這是公式參數，不是算好的數字——體力上限會隨效果變動（臨時上限、異能、
+   * 幻化、技能加成），下限必須跟著重算，不能在設定當下就固定住。
+   */
+  floorMult?: number;
+  /**
+   * 舊欄位：設定當下算好的下限快照。
+   * 只在 floorMult 未提供時作為退路（相容既有存檔／測試）。
+   */
   minHp: number;
 }
 
@@ -43,9 +52,36 @@ export const reyGodDescentRule = (maxHp: number): NonPositiveSurvivalRule => ({
   minHp: -70 * Math.max(0, maxHp),
 });
 
-export function isAliveBySurvivalRule(currentHp: number, rule?: NonPositiveSurvivalRule): boolean {
+/**
+ * 2026-11-02：非正體力存活判定。
+ *
+ * 原本只看「規則是否啟用」，完全不看 currentHp 是否已到下限，
+ * 導致神降的雷伊停在 -70×最大體力 卻永遠不死（戰鬥卡在 p1_select）。
+ *
+ * 依使用者裁定（方案 A）：體力下限是「死亡線」——
+ *   hp > minHp → 存活；hp ≤ minHp → 死亡。
+ * 其他模式（六刃 freeze_at_zero 等）minHp 為 0，行為不變。
+ */
+/**
+ * 2026-11-02：神降下限一律由公式即時算出。
+ *   floorMult 有值 → 下限 = -floorMult × 當前最大體力
+ *   否則退回舊的 minHp 快照
+ * 這樣體力上限變動（臨時上限／異能／幻化／技能加成）時下限會自動跟上。
+ */
+export function godDescentFloor(rule: NonPositiveSurvivalRule | undefined, maxHp: number): number {
+  if (!rule?.active || rule.mode !== 'god_descent') return 0;
+  if (Number.isFinite(rule.floorMult) && (rule.floorMult as number) > 0) {
+    return -(rule.floorMult as number) * Math.max(0, maxHp);
+  }
+  return Number.isFinite(rule.minHp) ? rule.minHp : 0;
+}
+
+export function isAliveBySurvivalRule(currentHp: number, rule?: NonPositiveSurvivalRule, maxHp = 0): boolean {
   if (currentHp > 0) return true;
-  return !!rule?.active && rule.mode !== "none";
+  if (!rule?.active || rule.mode === "none") return false;
+  // god_descent 有明確下限；到達或低於下限即判死。
+  // god_descent：下限由公式即時算出；到達或低於下限即判死。
+  if (rule.mode === "god_descent") { const floor = godDescentFloor(rule, maxHp); if (Number.isFinite(floor) && floor < 0) return currentHp > floor; }
 }
 
 /**
@@ -109,12 +145,13 @@ export interface HpAdjustmentTransition {
  * 一般精靈最低為0；神降中的雷伊可調整至其負體力下限。
  */
 export function resolveHpAdjustment(
+  maxHp: number,
   currentHp: number,
   amount: number,
   rule: NonPositiveSurvivalRule = standardSurvivalRule(),
 ): HpAdjustmentTransition {
   const requested = Math.floor(amount);
-  const floor = rule.active && rule.mode === "god_descent" && Number.isFinite(rule.minHp) ? rule.minHp : 0;
+  const floor = godDescentFloor(rule, maxHp);
   const hp = Math.max(floor, currentHp + requested);
   return { hp, applied: hp - currentHp };
 }

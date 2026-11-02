@@ -1,4 +1,4 @@
-// src/tests/battle.units.test.ts
+﻿// src/tests/battle.units.test.ts
 // 執行期單元測試 —— 不依賴 React / 引擎,可 headless 直接跑。
 // 存在理由:tsc 通過 ≠ 正確(statuses.some 當初就是「編譯 100% 通過」然後執行時炸掉)。
 // 跑法: npx esbuild src/tests/battle.units.test.ts --bundle --platform=node --outfile=/tmp/t.cjs && node /tmp/t.cjs
@@ -191,9 +191,9 @@ t("魔王咒怨達到5層不是上限，技能可繼續累積到6層以上", () 
 });
 
 t("體力調整不受體力上限限制，神降時可調整至負體力下限", () => {
-  assert.deepStrictEqual(resolveHpAdjustment(900, 300), { hp: 1200, applied: 300 });
-  assert.deepStrictEqual(resolveHpAdjustment(100, -500), { hp: 0, applied: -100 });
-  assert.deepStrictEqual(resolveHpAdjustment(-100, -700, reyGodDescentRule(1000)), { hp: -800, applied: -700 });
+  assert.deepStrictEqual(resolveHpAdjustment(1000, 900, 300), { hp: 1200, applied: 300 });
+  assert.deepStrictEqual(resolveHpAdjustment(1000, 100, -500), { hp: 0, applied: -100 });
+  assert.deepStrictEqual(resolveHpAdjustment(1000, -100, -700, reyGodDescentRule(1000)), { hp: -800, applied: -700 });
 });
 
 console.log("\n=== AI 決策 ===");

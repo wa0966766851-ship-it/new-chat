@@ -192,7 +192,13 @@ export function thunderGodOperations(deps: { liveElf: (ctx: BattleEventContext, 
     },
     survival_rule: (ctx: BattleEventContext, p: any): boolean => {
       const self = ctx.self; if (!self) return false;
-      ctx.updateElf(ctx.actor, { survivalRule: { mode: p.mode, active: true, preserveOffField: true, minHp: -p.floorMult * Math.max(0, self.maxHp) } } as any);
+      // 2026-11-02：存公式參數 floorMult，不存算好的 minHp。
+      // 體力上限會隨效果變動（臨時上限／異能／幻化／技能加成），
+      // 下限必須由 godDescentFloor(rule, maxHp) 即時算出，否則會停留在設定當下的舊值。
+      ctx.updateElf(ctx.actor, { survivalRule: {
+        mode: p.mode, active: true, preserveOffField: true,
+        floorMult: p.floorMult, minHp: 0,
+      } } as any);
       return true;
     },
     elf_trait: (ctx: BattleEventContext, p: any): boolean => {
