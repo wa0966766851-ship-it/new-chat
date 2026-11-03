@@ -1,5 +1,24 @@
 # 專案開發規範：精靈實裝與重構指南
 
+## ⚠️ 精靈總數（AI 必讀，避免誤判）
+
+**目前專案共 47 隻精靈。**
+
+- **權威事實源**：`docs/精靈清單_權威事實源.md`（自動產生，含完整清單與統計）
+- **交叉驗證**：`docs/audits/block-migration.json` 的 `summary.elves`
+- **執行期來源**：`src/data/defaultElves.ts` 的 `DEFAULT_ELVES`
+
+**如果其他文件寫的數字不是 47（例如 31、32、46），那是歷史文件，反映當時的資料集，不代表現在。**
+
+已知過期文件（僅供歷史核對，**不得作為清單依據**）：
+- `docs/31隻總體檢.md`（2026-09-27，當時 31 隻）
+- `docs/技能文義與替代實裝盤點_20261002.md`（當時 32 隻）
+- `docs/implementation-audit.md`（2026-09-27 的覆蓋率數字）
+
+**新增／刪除精靈後**，執行 `npx tsx arena-test/gen_elf_manifest.mts` 重建權威清單。
+
+---
+
 ## 戰鬥引擎位置（2026-10-10 起）
 - 回合結算已從 `src/components/BattleScreen.tsx` 抽到 `src/engine/battleEngine.ts`（`createBattleEngine`），不依賴 React；BattleScreen 只負責輸入、訂閱狀態與播放。
 - 官方節點順序定義在 `src/engine/nodes.ts`（1.1–6.6），引擎以 `onNode` 回報實際順序；`tests/battleEngine.headless.test.ts` 鎖定順序。改動流程必須同步更新該測試。

@@ -143,7 +143,7 @@ launcher/ / packaging/     # 本地啟動與可攜包腳本
 
 - `codex.json`（全量）→ `codexRegistry.ts` + `codexEntry.ts`（`atoms` 延遲到第一次讀取才解析 + 快取，可被編輯器覆寫）。
 - `npm run data:pack` 產生 `codex.packed.json` / `blockLibrary.packed.json`；`npm run data:skills` 產生 `skillReferences.generated.json`。這些是衍生檔，改源頭後要重跑，`test:data` 會檢查是否過期。
-- 23 份精靈描述物已搬到 `src/data/elfProfiles/`，`src/effects/*Registry.ts` 只留 handler + `re-export`，行為不變。
+- 精靈描述物已搬到 `src/data/elfProfiles/`（目前 17 份），`src/effects/*Registry.ts` 只留 handler + `re-export`，行為不變。
 - `vite.config.ts` 用 `manualChunks` 拆 `vendor-lucide / vendor-charts / vendor-blockly / vendor-motion / vendor-core`，頁面靠 `React.lazy` 切分；`@` 指向 repo 根。
 
 ## 打包與發佈
@@ -161,6 +161,7 @@ launcher/ / packaging/     # 本地啟動與可攜包腳本
 ## 文件索引
 
 - `AGENTS.md`：開發規範全文
+- `docs/精靈清單_權威事實源.md`：**精靈總數與完整清單（權威來源，目前 47 隻）**
 - `docs/傷害定義正典.md`：傷害分區定義
 - `docs/體力與狀態作用域修正計畫_20260930.md`：體力與切換串位的修正邊界
 - `docs/建置與載入效能修正_20260930.md`：打包體積與延遲載入紀錄
