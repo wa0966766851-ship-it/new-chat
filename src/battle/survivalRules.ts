@@ -109,8 +109,17 @@ export function resolveDamageTransition(
   }
 
   if (rule.mode === "freeze_at_zero") {
-    if (currentHp <= 0 || crossingZero) {
-      return { hp: 0, alive: true, enteredNonPositive: crossingZero, ignoredDamage: currentHp <= 0, damageApplied: Math.max(0, currentHp), hpAdjustment: -Math.max(0, currentHp) };
+    // 2026-11-04 修正：首次跨過 0 時，體力要「顯示成實際的負值」，不是夾成 0。
+    // 原文「直至上述效果結束的下回合結束時自身是否存活不受當前體力值限制」
+    // 描述的是「存活不受體力限制」，體力本身照常被扣（可以為負）。
+    // 原本固定回傳 hp:0，導致玩家看不到負血、傷害統計也失真。
+    if (crossingZero) {
+      const hp = currentHp - amount;   // 保留實際負值
+      return { hp, alive: true, enteredNonPositive: true, ignoredDamage: false, damageApplied: Math.max(0, currentHp), hpAdjustment: hp - currentHp };
+    }
+    if (currentHp <= 0) {
+      // 已經在非正值：後續傷害不再改變體力（維持既有語意）
+      return { hp: currentHp, alive: true, enteredNonPositive: false, ignoredDamage: true, damageApplied: 0, hpAdjustment: 0 };
     }
     const hp = currentHp - amount;
     return { hp, alive: true, enteredNonPositive: false, ignoredDamage: false, damageApplied: amount, hpAdjustment: -amount };

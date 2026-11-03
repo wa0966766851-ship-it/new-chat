@@ -506,7 +506,7 @@ export function createBattleEngine(props: BattleEngineOptions): BattleEngine {
 Object.assign(ctx as any, { fatalDamage: absorbed.amount, fatalIsDamage: true });
           const immune = (guard?.deathImmuneTurns || 0) > 0;
           const resisted = !outcome.alive && !immune && (SoulMarkRegistry[target.name]?.(ctx, EffectTiming.FATAL_RESIST, {damageType:category}) || TraitsEngine.triggerFatalResist(ctx) || checkStatusDrivenFatalResist(ctx));
-          ctx.updateAnyElf(side, data.targetId, { ...(resisted ? {} : {currentHp:immune ? Math.max(0, outcome.hp) : outcome.hp}), shield:retainShield(target,absorbed.shield), barrier:absorbed.barrier });
+          ctx.updateAnyElf(side, data.targetId, { ...(resisted ? {} : {currentHp:outcome.hp}), shield:retainShield(target,absorbed.shield), barrier:absorbed.barrier });
           if (outcome.damageApplied > 0 && data.sourceSide && data.sourceBattleId) damageOriginRef.current[data.targetId] = {side:data.sourceSide,id:data.sourceBattleId};
           const receipt = settlementReceipt({ operation: 'damage', targetBattleId: data.targetId, damageType: category,
             requestedAmount: data.requestedAmount ?? data.amount, settledAmount: amount,

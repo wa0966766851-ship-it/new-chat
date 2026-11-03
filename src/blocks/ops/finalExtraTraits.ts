@@ -1,4 +1,4 @@
-/** 常駐進階機制宣告。實際讀取者是 traitsRegistry / TraitsEngine / 傷害與 PP 正式查詢。
+﻿/** 常駐進階機制宣告。實際讀取者是 traitsRegistry / TraitsEngine / 傷害與 PP 正式查詢。
  * 每個欄位獨立可編輯，不由精靈或特質名稱選擇封閉處理器。 */
 import type {BattleEventContext} from '../../effects/types';
 import {StatusRegistry} from '../../effects/statusRegistry';
@@ -70,10 +70,40 @@ export function finalExtraTraitOperations(){return {
     const selfId=String(ctx.self.battleId||ctx.self.id),active=ctx.actor==='p1'?ctx.activeP1:ctx.activeP2;
     if(String(active.battleId||active.id)!==selfId)return false;
     const record=ctx.getPlayerState(p.key)||{original:ctx.self.maxHp,temp:0};
+    // 2026-11-04 修正：只有「登場」與「真正的對手切換／自身進入異常」才觸發。
+    //
+    // 原本沒有排除 opening（開局首次登場），導致同一回合內
+    // on_entered／on_status_received／opponent_entered 三個節點全部命中，
+    // 每次 +1944 臨時上限，maxHp 從 968 疊到 6800。
+    //
+    // 另外 record.temp 每次非 entrance 都被清 0，但 prior.temp 又累加，
+    // 造成「顯示值」與「實際累計」不一致。
+    const evData=(ctx as any).effectEventData||{};
+    if(p.when!=='entrance'){
+      // 開局首次登場只算 entrance 一次
+      if(evData.opening===true||String(evData.opening)==='true')return false;
+      // 同一個 enteredId 只觸發一次（避免同回合多個節點重複）
+      const dedupKey='entryHpExchangeDone:'+p.when;
+      const lastId=String(ctx.getPlayerState(dedupKey)||'');
+      const thisId=String(evData.enteredId||ctx.roundNumber||'');
+      if(lastId&&lastId===thisId)return false;
+      ctx.setPlayerState(dedupKey,thisId);
+    }
     if(p.when==='opponent_entry'){
-      const data=(ctx as any).effectEventData||{};
-      if(data.enteredSide===ctx.actor||!data.enteredId||String(data.enteredId)===record.opponentId)return false;
-      record.opponentId=String(data.enteredId);
+      const enteredId=String(evData.enteredId||'');
+      if(!enteredId)return false;
+      if(evData.enteredSide===ctx.actor)return false;
+      const prev=String((record as any).lastOpponentId||'');
+      if(enteredId===prev)return false;
+      (record as any).lastOpponentId=enteredId;
+    }
+    if(p.when==='status'){
+      // 自身進入異常才觸發：確認身上真的有異常（排除輔助類）
+      const sts=ctx.getStatuses?.(ctx.self)||{};
+      const hasReal=Object.entries(sts).some(([k,v])=>Number(v)>0 && !String(k).includes('山神'));
+      if(!hasReal)return false;
+      // 開局第 1 回合不觸發（那時是首次登場，只算 entrance 一次）
+      if((ctx.roundNumber||0)<=1)return false;
     }
     // 再觸發時只把舊的臨時額度轉為永久；這次仍建立新的可在下場撤回額度。
     if(p.when!=='entrance')record.temp=0;
@@ -83,9 +113,14 @@ export function finalExtraTraitOperations(){return {
     const settle=(r:any)=>{
       total+=r.hpLost||0;if(--remaining||total<=0)return;
       const live=ctx.getFullTeam(ctx.actor).find(e=>String(e.battleId||e.id)===selfId);if(!live||live.isVanished)return;
+      // 2026-11-04 修正：maxHp 必須以「原始上限 + 累計臨時」重算。
+      // 原本寫 live.maxHp + boost，而 live.maxHp 已經含前一次 boost，
+      // 每觸發一次就疊一次（968 → 7766 → …），實測 maxHp 衝到 6800。
       const prior=ctx.getPlayerState(p.key)||record,boost=Math.floor(total*p.maxHpMultiple);
-      ctx.setPlayerState(p.key,{...prior,temp:(prior.temp||0)+boost});
-      ctx.updateAnyElf(ctx.actor,selfId,{maxHp:live.maxHp+boost,tempMaxHpBoost:(prior.temp||0)+boost});
+      const newTemp=(prior.temp||0)+boost;
+      const baseMaxHp=Number(prior.original)||live.maxHp;
+      ctx.setPlayerState(p.key,{...prior,temp:newTemp});
+      ctx.updateAnyElf(ctx.actor,selfId,{maxHp:baseMaxHp+newTemp,tempMaxHpBoost:newTemp});
       if(p.healPrevious){
         const previous=ctx.getPlayerState('previousActiveElfId');
         const mate=ctx.getFullTeam(ctx.actor).find(e=>(String(e.battleId||e.id)===String(previous)||e.id===previous)&&String(e.battleId||e.id)!==selfId);
@@ -103,5 +138,11 @@ export function finalExtraTraitOperations(){return {
     const increase=(p.baseBoost+count*p.stepBoost)*(ratio<p.doubleBelow?2:1);
     comp.increasePercent+=increase;return true;
   },
-  damage_survival_guard:(ctx:BattleEventContext,p:any)=>{ctx.applyDeathImmunity(ctx.actor,p);return true;},
+  // 2026-11-04 修正：免死窗口同時要掛「非正體力存活」規則，
+  // 否則 hp 歸 0 後 checkElfDead 仍以 currentHp 判死（六刃無法顯示負血／被多段打死）。
+  damage_survival_guard:(ctx:BattleEventContext,p:any)=>{
+    ctx.applyDeathImmunity(ctx.actor,p);
+    ctx.updateElf(ctx.actor,{survivalRule:{mode:'freeze_at_zero',active:true,preserveOffField:!!p?.preserveOffField,minHp:0}} as any);
+    return true;
+  },
 };}
