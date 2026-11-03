@@ -1,0 +1,46 @@
+﻿# AI 搜尋／讀取排除清單
+# 目的：防止 AI 讀到舊的建置產物、備份與歷史文件而誤判現況。
+# 注意：.gitignore 只影響 git，不影響 AI 的檔案搜尋；本檔補上這一層。
+
+# ── 建置產物 ──
+build/
+dist/
+dist-electron/
+release/
+.desktop-releases/
+.tmp-esbuild/
+.tmp-testlogs/
+
+# ── 備份與暫存 ──
+_修正前備份/
+_備份_20250927_還債前/
+_asset_backup/
+.local-archives/
+logs/
+shots/
+arena-test/out/
+
+# ── 依賴 ──
+node_modules/
+
+# ── 歷史文件（不代表現況）──
+docs/archive/
+docs/drafts-20261003-v1/
+docs/release-20261019/
+docs/audits/2026-09/
+docs/audits/2026-10/
+
+# ── 媒體資源（AI 通常不需要）──
+pet/
+public/
+images/
+系/
+印記圖標/
+異常圖標/
+docs/images/
+docs/abnormal-icons/
+docs/boss-effect-icons/
+docs/art-references/
+
+# ── 明確過期的文件（已加標註，但仍排除以免誤引）──
+docs/31隻總體檢.md

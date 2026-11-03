@@ -17,6 +17,24 @@
 
 **新增／刪除精靈後**，執行 `npx tsx arena-test/gen_elf_manifest.mts` 重建權威清單。
 
+## ⚠️ 檔案搜尋規則（避免讀到舊資料）
+
+1. **先看 `.aiignore`**：建置產物（`build/`、`dist/`、`.desktop-releases/`）、備份（`_修正前備份/`）、
+   歷史文件（`docs/archive/`）都在排除清單裡。用 `grep -r` 或檔案搜尋前先排除這些路徑，
+   否則會讀到舊程式碼（例如 `dist/assets/*.js` 裡還有已修正的舊字串）。
+
+2. **同名檔案要確認是不是「轉發殼」**：
+   - `src/data/wuxuRegistry.ts`（137 B）是殼 → 實際內容在 `src/data/elfProfiles/wuxuRegistry.ts`
+   - `src/data/defaultElvesLoaded.ts` 是殼 → 實際內容在 `src/data/defaultElves.ts`
+   - `registry.ts` 在專案裡有 35 份，改之前先確認路徑
+
+3. **文件開頭有 `> ⚠️ 歷史文件（日期）` 標記的，只作歷史參考**，不代表現況。
+   目前有效的是沒有此標記的文件，以及 `docs/精靈清單_權威事實源.md`。
+
+4. **描述資料有兩層**：改了 `elfSourceText.json` 等源檔不會立即生效，
+   執行期讀的是 `src/data/descriptions.compressed.json`（gzip）。
+   改完要跑 `npx tsx scripts/pack_effect_data.ts` 重新打包。
+
 ---
 
 ## 戰鬥引擎位置（2026-10-10 起）
