@@ -16,7 +16,7 @@ try{
  const click=async(text:string)=>{const b=[...document.querySelectorAll('button')].find(b=>b.textContent?.includes(text)||b.getAttribute('aria-label')===text);assert.ok(b,text);await act(async()=>b!.click());};
  localStorage.setItem('unrelated','preserve');await render();
  assert.equal(document.querySelectorAll('.spot-identity').length,1);
- assert.ok(document.querySelector('.spot-name h2')?.textContent?.includes('次元龍'));
+ assert.ok(document.querySelector('.spot-name h2')?.textContent?.includes('龍魂再臨'));
  for(const s of elves.find((e:any)=>e.id==='5021').skills)assert.ok(document.querySelector('.spot-skills')?.textContent?.includes(s.description));
  assert.equal(document.querySelector('.spot-text-controls'),null,'預設隱藏字級控制');
  await click('字級設定');
@@ -54,7 +54,7 @@ try{
  await act(async()=>root.render(<ElfReadOnlyProfile elf={elves.find((e:any)=>e.id==='5021')} onClose={()=>closed++}/>));
  await click('完整介紹');
  assert.equal(document.querySelector('.elf-spotlight')?.getAttribute('aria-label'),'精靈介紹');
- assert.ok(document.querySelector('.spot-name h2')?.textContent?.includes('次元龍'));
+ assert.ok(document.querySelector('.spot-name h2')?.textContent?.includes('龍魂再臨'));
  assert.ok(!document.querySelector('.elf-spotlight')?.textContent?.includes('替換展示精靈'));
  assert.ok(document.querySelector('.spot-skill-meta [aria-label^="PP "]'));
  assert.ok(document.querySelector('.spot-skill-meta svg'));
