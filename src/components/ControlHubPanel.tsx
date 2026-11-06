@@ -14,6 +14,7 @@ import { playAudioTestTone } from '../utils/audioTestTone';
 import { BattleAISettingsPanel } from './BattleAISettingsPanel';
 import { LauncherSettingsPanel } from './LauncherSettingsPanel';
 import {GlobalAnimationMode} from './AnimationModeSettings';
+import { BATTLE_GAME_SKINS, useBattleLayoutPrefs } from './battle/gameHud';
 
 const TAB_ICONS: Record<ControlSectionId, React.ComponentType<{ className?: string }>> = {
   background: ImageIcon, audio: Music, visual: Palette, battle: Swords, system: Sliders,
@@ -47,6 +48,9 @@ const inputCls = "flex-1 min-w-0 bg-slate-950 border border-slate-700 rounded-lg
 
 export default function ControlHubPanel(model: ControlHubPanelModel) {
   const { isMaximized, setIsMaximized, setIsOpen, activeTab, setActiveTab, state, updateUrlParam, currentAccent, setFeedback, backgrounds, isPlaying, musicInfo, togglePlay, setIsPlaying, playlist, animationSettings, setAnimationSettings, setLocalResources, localResources, currentScene, updateSceneBg, updateSceneBgm, isMuted, setIsMuted, toggleMute, setPlaylist, setBackgrounds, feedback } = model;
+
+  // 戰鬥外觀偏好（與戰鬥畫面共用同一組 localStorage 鍵）
+  const battleLayout = useBattleLayoutPrefs();
 
   const timer = useRef<number>();
   const flash = (msg: string) => { setFeedback(msg); window.clearTimeout(timer.current); timer.current = window.setTimeout(() => setFeedback(null), 1800); };
@@ -332,6 +336,34 @@ export default function ControlHubPanel(model: ControlHubPanelModel) {
 
         {activeTab === 'battle' && (<>
           <BattleAISettingsPanel />
+          <Section title="戰鬥介面" hint="介面風格與外觀；星蝕迴廊固定黑漆鎏金">
+            <div className="flex items-center justify-between gap-3 rounded-lg border border-slate-700 bg-slate-950 p-3 mb-3">
+              <span className="text-sm font-bold text-slate-200">介面風格</span>
+              <div className="ios-segment">
+                {([["game", "原廠風"], ["classic", "實用風"]] as const).map(([k, l]) => (
+                  <button key={k} type="button" data-active={battleLayout.style === k} onClick={() => battleLayout.setStyle(k)}>{l}</button>
+                ))}
+              </div>
+            </div>
+            <div className="flex items-center justify-between gap-3 rounded-lg border border-slate-700 bg-slate-950 p-3 mb-3">
+              <span className="text-sm font-bold text-slate-200">原廠風外觀</span>
+              <div className="ios-segment">
+                {BATTLE_GAME_SKINS.map(([k, l]) => (
+                  <button key={k} type="button" data-active={battleLayout.skin === k} onClick={() => battleLayout.setSkin(k)}>{l}</button>
+                ))}
+              </div>
+            </div>
+            <label className="flex items-center justify-between gap-3 rounded-lg border border-slate-700 bg-slate-950 p-3 mb-3">
+              <span><span className="block text-sm font-bold text-slate-200">效果列</span><span className="text-xs text-slate-400">原廠風頭像下方的能力／異常／常駐／印記／回合整排</span></span>
+              <div className="ios-segment">
+                {([[false, "顯示"], [true, "收起"]] as const).map(([k, l]) => (
+                  <button key={l} type="button" data-active={battleLayout.trayHidden === k} onClick={() => battleLayout.setTrayHidden(k)}>{l}</button>
+                ))}
+              </div>
+            </label>
+            <p className="text-xs text-slate-500 leading-relaxed">切換後直接套用到戰鬥畫面；手機直向固定使用實用風。</p>
+          </Section>
+
           <Section title="動畫播放" hint="關閉的項目直接略過動畫，不影響結算">
             <ImageRetrySetting/>
             <GlobalAnimationMode settings={animationSettings} onChange={next=>{setAnimationSettings(next);writeAnimationSettings(next);}}/>
