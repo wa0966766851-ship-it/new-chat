@@ -1,4 +1,4 @@
-node_modules/
+﻿node_modules/
 dist/
 dist-electron/
 build/
@@ -11,33 +11,38 @@ coverage/
 .env*
 !.env.example
 .seer-cache/
-_修正前備份/
-_備份_20250927_還債前/
+_淇鍓嶅倷浠?
+_鍌欎唤_20250927_閭勫偟鍓?
 _asset_backup/
-# 系/ 是屬性圖標（171張約6MB，多為幾KB小圖，僅神秘.電系.png 4MB 例外）
-# 全部跟倉庫走：Codex 與 clone 下來直接有圖，不用等遠端
-# public/seer/ 是官方圖快照，不進版控，靠 SeerAPI 遠端補
-# public/elf-art 跟著倉庫走；原有自繪圖與套裝素材並存，官方新素材附 source.json
+# 绯? 鏄爆鎬у湒妯欙紙171寮电磩6MB锛屽鐐哄咕KB灏忓湒锛屽儏绁炵.闆荤郴.png 4MB 渚嬪锛?# 鍏ㄩ儴璺熷€夊韩璧帮細Codex 鑸?clone 涓嬩締鐩存帴鏈夊湒锛屼笉鐢ㄧ瓑閬犵
+# public/seer/ 鏄畼鏂瑰湒蹇収锛屼笉閫茬増鎺э紝闈?SeerAPI 閬犵瑁?# public/elf-art 璺熻憲鍊夊韩璧帮紱鍘熸湁鑷躬鍦栬垏濂楄绱犳潗涓﹀瓨锛屽畼鏂规柊绱犳潗闄?source.json
 launcher/settings.json
 launcher/settings.json.tmp
 
-# 2026-10-23: 建置暫存與臨時截圖不入版控（避免 git add -A 帶進雜物）
+# 2026-10-23: 寤虹疆鏆瓨鑸囪嚚鏅傛埅鍦栦笉鍏ョ増鎺э紙閬垮厤 git add -A 甯堕€查洔鐗╋級
 .tmp-esbuild/
 _corner.png
 
-# 驗收截圖（不進 repo）
-_shots/
+# 椹楁敹鎴湒锛堜笉閫?repo锛?_shots/
 
-# 可回復的本機桌面完成版本
+# 鍙洖寰╃殑鏈妗岄潰瀹屾垚鐗堟湰
 .desktop-releases/
 launcher/animation-source.local.json
 launcher/animation-source.local.json.bak
 
-# 2026-10-29: 建置與測試暫存 log 不入版控
+# 2026-10-29: 寤虹疆鑸囨脯瑭︽毇瀛?log 涓嶅叆鐗堟帶
 .tmp-testlogs/
 
-# 本機截圖與空間盤點回執；正式稽核摘要仍放 docs/audits
+# 鏈鎴湒鑸囩┖闁撶洡榛炲洖鍩凤紱姝ｅ紡绋芥牳鎽樿浠嶆斁 docs/audits
 shots/
 .cleanup-audit/
 .local-archives/
 __pycache__/
+
+# UI 改版備份（本機參考用，不進倉庫）
+_backup_ui/
+_claude_archive_*.cmd
+# 本機備份目錄（不進倉庫）
+_修正前備份/
+_備份_*/
+_claude_archive_*.cmd

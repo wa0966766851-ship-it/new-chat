@@ -1,0 +1,356 @@
+/* 對戰畫面「原廠風」版面（2026-11-07）。實用風（舊版）不使用這些 class，切換回去不受影響。
+   預設：藍色遊戲風；[data-skin="eclipse"]：星蝕回廊黑漆鎏金（雙線框、菱形飾、尖角按鈕、襯線字）。 */
+[data-layout="game"] {
+  --g-panel: linear-gradient(180deg, rgba(20, 52, 108, .86), rgba(8, 22, 52, .88));
+  --g-line: rgba(130, 196, 255, .55);
+  --g-text: #eef5ff;
+  --g-muted: #b9cbe6;
+  --g-accent: #7cc4ff;
+  --g-card: linear-gradient(180deg, rgba(52, 110, 196, .94) 0%, rgba(22, 58, 122, .94) 44%, rgba(10, 30, 70, .95) 100%);
+  --g-card-line: rgba(150, 210, 255, .65);
+  --g-card-sel: linear-gradient(180deg, rgba(92, 160, 255, .98), rgba(30, 80, 170, .97));
+  --g-pill: rgba(4, 14, 36, .55);
+  --g-cmd: linear-gradient(180deg, #6fb6ff 0%, #2a6fd0 55%, #1a4c9e 100%);
+  --g-cmd-line: rgba(190, 228, 255, .85);
+  --g-cmd-off: linear-gradient(180deg, rgba(70, 96, 140, .9), rgba(36, 52, 86, .92));
+  --g-dock: linear-gradient(180deg, rgba(4, 12, 30, 0) 0%, rgba(4, 12, 30, .72) 38%, rgba(4, 12, 30, .86) 100%);
+  --g-fifth-ring: #ffd27a;
+  --g-fifth-hi: #ffe39a;
+  --g-fifth-lo: #e0921f;
+  --g-fifth-ink: #2a1300;
+  --g-font: inherit;
+  --g-radius: 14px;
+}
+[data-layout="game"][data-skin="eclipse"] {
+  --g-panel: linear-gradient(180deg, rgba(26, 18, 30, .94), rgba(9, 7, 14, .95));
+  --g-line: rgba(217, 180, 90, .55);
+  --g-text: #ece3cf;
+  --g-muted: #a99f8b;
+  --g-accent: #f6e2a0;
+  --g-card: linear-gradient(180deg, rgba(36, 26, 40, .95), rgba(12, 9, 16, .96));
+  --g-card-line: rgba(217, 180, 90, .5);
+  --g-card-sel: linear-gradient(180deg, rgba(74, 52, 24, .97), rgba(24, 16, 10, .97));
+  --g-pill: rgba(0, 0, 0, .45);
+  --g-cmd: linear-gradient(180deg, #1d1526, #0b0810);
+  --g-cmd-line: rgba(217, 180, 90, .75);
+  --g-cmd-off: linear-gradient(180deg, #120d18, #08060b);
+  --g-dock: linear-gradient(180deg, rgba(7, 6, 12, 0) 0%, rgba(7, 6, 12, .78) 38%, rgba(7, 6, 12, .92) 100%);
+  --g-fifth-ring: #d9b45a;
+  --g-fifth-hi: #3a2a3e;
+  --g-fifth-lo: #0c0910;
+  --g-fifth-ink: #f6e2a0;
+  --g-font: "Noto Serif TC", "Songti TC", "Source Han Serif TC", serif;
+  --g-radius: 2px;
+}
+[data-layout="game"] .btg { font-family: var(--g-font); color: var(--g-text); }
+
+/* ── HUD ── */
+.btg-hud {
+  position: relative; display: flex; align-items: center; gap: .75rem; padding: .6rem 2.2rem .6rem .6rem;
+  background: var(--g-panel); border: 1px solid var(--g-line);
+  clip-path: polygon(0 0, 100% 0, calc(100% - 22px) 100%, 0 100%);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .14);
+}
+.btg-hud[data-side="p2"] { flex-direction: row-reverse; padding: .6rem .6rem .6rem 2.2rem; clip-path: polygon(0 0, 100% 0, 100% 100%, 22px 100%); }
+[data-skin="eclipse"] .btg-hud, [data-skin="eclipse"] .btg-hud[data-side="p2"] {
+  clip-path: none; padding: .6rem .9rem;
+  box-shadow: inset 0 0 0 3px rgba(9, 7, 14, .95), inset 0 0 0 4px rgba(217, 180, 90, .22), 0 12px 36px rgba(0, 0, 0, .55);
+}
+[data-skin="eclipse"] .btg-hud::before, [data-skin="eclipse"] .btg-hud::after {
+  content: ""; position: absolute; width: 8px; height: 8px; background: #d9b45a; transform: rotate(45deg); box-shadow: 0 0 8px rgba(246, 226, 160, .6);
+}
+[data-skin="eclipse"] .btg-hud::before { top: -4px; left: calc(50% - 4px); }
+[data-skin="eclipse"] .btg-hud::after { bottom: -4px; left: calc(50% - 4px); }
+.btg-avatar {
+  position: relative; flex-shrink: 0; width: 5.25rem; height: 5.25rem; border-radius: 12px; overflow: hidden;
+  border: 3px solid var(--g-accent); background: #142a52; box-shadow: 0 0 12px rgba(124, 196, 255, .35);
+}
+[data-skin="eclipse"] .btg-avatar { border-radius: 0; border: 1px solid #d9b45a; box-shadow: inset 0 0 0 2px #0b0810, 0 0 0 1px rgba(217, 180, 90, .3); background: #120d18; }
+.btg-name { font-size: 1.3rem; font-weight: 900; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-shadow: 0 1px 3px rgba(0, 0, 0, .8); }
+[data-skin="eclipse"] .btg-name { letter-spacing: .08em; background: linear-gradient(180deg, #f6e2a0, #d9b45a 50%, #9a6d1f); -webkit-background-clip: text; background-clip: text; color: transparent; text-shadow: none; filter: drop-shadow(0 1px 0 rgba(0,0,0,.7)); }
+.btg-typeslot { display: inline-flex; align-items: center; justify-content: center; min-width: 1.75rem; height: 1.75rem; flex-shrink: 0; }
+.btg-typeslot[data-dual="true"] { min-width: 3.1rem; }
+
+.btg-hp { position: relative; height: 1.5rem; background: rgba(0, 0, 0, .55); clip-path: polygon(0 0, 100% 0, calc(100% - 12px) 100%, 0 100%); }
+.btg-hud[data-side="p2"] .btg-hp { clip-path: polygon(0 0, 100% 0, 100% 100%, 12px 100%); }
+.btg-hp > i { position: absolute; top: 0; bottom: 0; display: block; transition: width .3s; }
+.btg-hp > span { position: absolute; top: 50%; transform: translateY(-50%); font-size: .95rem; font-weight: 900; font-variant-numeric: tabular-nums; text-shadow: 0 1px 2px #000, 0 0 2px #000; white-space: nowrap; }
+[data-skin="eclipse"] .btg-hp, [data-skin="eclipse"] .btg-hud[data-side="p2"] .btg-hp { clip-path: none; height: 1.3rem; background: #120b10; border: 1px solid rgba(217, 180, 90, .5); }
+.btg-prot { display: inline-flex; align-items: center; gap: .15rem; font-size: .85rem; font-weight: 900; text-shadow: 0 1px 2px #000; }
+
+/* ── 分類效果列 ── */
+.btg-tray { display: flex; flex-direction: column; gap: .3rem; }
+.btg-row { display: flex; align-items: center; gap: .35rem; flex-wrap: wrap; }
+[data-side="p2"] > .btg-tray .btg-row, .btg-tray[data-side="p2"] .btg-row { flex-direction: row-reverse; }
+.btg-row-label {
+  writing-mode: vertical-rl; font-size: 10px; font-weight: 900; letter-spacing: 1px; line-height: 1; padding: 2px 1px;
+  border-inline-start: 2px solid currentColor; opacity: .85; text-shadow: 0 1px 2px #000; flex-shrink: 0;
+}
+.btg-fx { position: relative; display: inline-flex; align-items: center; gap: .25rem; padding: 0; background: none; border: 0; color: var(--g-text); cursor: pointer; }
+.btg-fx:hover { filter: brightness(1.25); }
+.btg-fx > .ico { width: 2.35rem; height: 2.35rem; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; overflow: hidden; box-sizing: border-box; }
+.btg-fx[data-kind="mark"] > .ico { border-radius: 50%; }
+.btg-fx[data-kind="turn"] > .ico { border-radius: 6px; }
+.btg-fx[data-kind="status"] > .ico { border-radius: 6px; box-shadow: 0 0 0 1px rgba(255, 120, 140, .55); }
+.btg-fx[data-kind="sig"] > .ico { width: 1.9rem; height: 1.9rem; clip-path: polygon(25% 3%, 75% 3%, 100% 50%, 75% 97%, 25% 97%, 0 50%); font-size: .8rem; font-weight: 900; color: #fff; }
+.btg-fx[data-kind="sig"][data-sig="特性"] > .ico { background: linear-gradient(180deg, #7c8bff, #2e3a9a); }
+.btg-fx[data-kind="sig"][data-sig="特質"] > .ico { background: linear-gradient(180deg, #f2c35a, #9a6a16); color: #2a1600; }
+.btg-fx[data-kind="sig"][data-sig="異能"] > .ico { background: linear-gradient(180deg, #5fe0c8, #146a5c); }
+.btg-fx[data-kind="sig"][data-sig="機制"] > .ico { background: linear-gradient(180deg, #8aa0bc, #34465e); }
+[data-skin="eclipse"] .btg-fx[data-kind="sig"] > .ico { box-shadow: inset 0 0 0 1px rgba(246, 226, 160, .6); }
+.btg-fx > .ico img { width: 100%; height: 100%; object-fit: contain; }
+.btg-fx > .nm { font-size: .8rem; font-weight: 800; max-width: 7.5em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-shadow: 0 1px 2px #000, 0 0 2px #000; }
+.btg-fx > .n { position: absolute; left: 0; width: 2.35rem; bottom: -5px; text-align: center; font-size: 11px; font-weight: 900; font-variant-numeric: tabular-nums; text-shadow: 0 0 3px #000, 0 0 2px #000, 0 0 1px #000; pointer-events: none; }
+.btg-stage { width: 2.6rem; height: 2.6rem; display: inline-flex; flex-direction: column; align-items: center; justify-content: center; border-radius: 5px; font-size: 11px; font-weight: 800; line-height: 1.1; border: 1px solid; cursor: pointer; }
+.btg-stage b { font-size: 15px; font-family: ui-monospace, monospace; }
+.btg-stage[data-up="true"] { background: linear-gradient(180deg, #8a6a1e, #4a3608); border-color: #e0b04a; color: #ffe7a8; }
+.btg-stage[data-up="false"] { background: linear-gradient(180deg, #5a3a8a, #2a1648); border-color: #a07ae0; color: #e6d6ff; }
+.btg-tray-toggle { display: inline-flex; align-items: center; gap: .25rem; height: 1.4rem; padding: 0 .55rem; font-size: 11px; font-weight: 900; border-radius: 999px; border: 1px solid var(--g-line); background: var(--g-pill); color: var(--g-muted); cursor: pointer; }
+.btg-tray-toggle:hover { color: var(--g-text); }
+
+/* ── 中上：克制＋回合＋陣容 ── */
+.btg-match { display: flex; align-items: center; gap: .8rem; padding: .25rem 1.8rem .35rem; background: var(--g-panel); border: 1px solid var(--g-line); clip-path: polygon(0 0, 100% 0, calc(100% - 18px) 100%, 18px 100%); }
+[data-skin="eclipse"] .btg-match { clip-path: polygon(14px 0, calc(100% - 14px) 0, 100% 50%, calc(100% - 14px) 100%, 14px 100%, 0 50%); }
+.btg-dot { width: 13px; height: 13px; padding: 0; border-radius: 50%; border: 1px solid rgba(255, 255, 255, .55); cursor: pointer; }
+.btg-dot[data-extra="true"] { border-radius: 2px; transform: rotate(45deg); width: 11px; height: 11px; }
+.btg-dot:hover { filter: brightness(1.4); }
+
+/* ── 指令區 ── */
+.btg-dock { background: var(--g-dock); }
+.btg-skill {
+  position: relative; display: flex; align-items: center; gap: .75rem; padding: 0 .9rem; min-height: 4.6rem; text-align: left;
+  background: var(--g-card); border: 2px solid var(--g-card-line); border-radius: var(--g-radius); color: var(--g-text);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .18), 0 4px 12px rgba(0, 0, 0, .35); transition: filter .15s, transform .1s;
+}
+.btg-skill:hover:not([data-disabled="true"]) { filter: brightness(1.15); }
+.btg-skill:active:not([data-disabled="true"]) { transform: translateY(1px); }
+.btg-skill[data-selected="true"] { background: var(--g-card-sel); border-color: #ffd27a; box-shadow: 0 0 16px rgba(255, 210, 122, .45); }
+.btg-skill[data-state="conv"] { border-color: #4fc3f7; }
+.btg-skill[data-state="invalid"] { border-color: #d89a3a; }
+.btg-skill[data-disabled="true"] { opacity: .6; cursor: not-allowed; }
+.btg-skill[data-abolished="true"] { filter: grayscale(.85); }
+[data-skin="eclipse"] .btg-skill { box-shadow: inset 0 0 0 2px #0b0810, inset 0 0 0 3px rgba(217, 180, 90, .18), 0 6px 18px rgba(0, 0, 0, .5); }
+.btg-skill .type { position: relative; width: 3.3rem; height: 3.3rem; border-radius: 50%; flex-shrink: 0; display: flex; align-items: center; justify-content: center; background: radial-gradient(circle at 40% 35%, rgba(255, 255, 255, .28), rgba(0, 0, 0, .35)); }
+[data-skin="eclipse"] .btg-skill .type { border-radius: 0; transform: rotate(45deg) scale(.82); border: 1px solid rgba(217, 180, 90, .55); background: #0b0810; }
+[data-skin="eclipse"] .btg-skill .type > * { transform: rotate(-45deg) scale(1.15); }
+.btg-skill .nm { font-size: 1.15rem; font-weight: 900; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-shadow: 0 1px 2px rgba(0, 0, 0, .6); }
+.btg-pill { display: inline-flex; align-items: center; gap: .25rem; padding: 1px .6rem; border-radius: 999px; background: var(--g-pill); font-size: .8rem; font-weight: 800; white-space: nowrap; }
+[data-skin="eclipse"] .btg-pill { border-radius: 0; border-top: 1px solid rgba(217, 180, 90, .3); border-bottom: 1px solid rgba(217, 180, 90, .3); }
+.btg-tag { position: absolute; top: -.7rem; padding: 0 .5rem; border-radius: 6px; font-size: 11px; font-weight: 900; line-height: 1.25rem; color: #fff; white-space: nowrap; z-index: 1; }
+.btg-stamp { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%) rotate(-8deg); border: 3px solid #e5484d; color: #ff8a8e; background: rgba(20, 4, 6, .82); padding: 0 1rem; font-size: 1.2rem; font-weight: 900; letter-spacing: .35em; white-space: nowrap; line-height: 2rem; pointer-events: none; z-index: 2; }
+.btg-lock { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; pointer-events: none; z-index: 3; }
+.btg-lock > span { display: inline-flex; align-items: center; gap: .5rem; padding: .35rem 1.3rem; border-radius: 999px; background: rgba(10, 4, 6, .88); border: 2px solid currentColor; font-size: 1.05rem; font-weight: 900; letter-spacing: .1em; }
+
+.btg-cmd {
+  position: relative; display: flex; align-items: center; justify-content: center; font-size: 1.45rem; font-weight: 900; letter-spacing: .25em; text-indent: .25em;
+  color: #fff; background: var(--g-cmd); border: 2px solid var(--g-cmd-line); text-shadow: 0 2px 3px rgba(0, 0, 0, .45);
+  clip-path: polygon(12px 0, 100% 0, 100% calc(100% - 12px), calc(100% - 12px) 100%, 0 100%, 0 12px); transition: filter .15s;
+}
+.btg-cmd:hover:not(:disabled) { filter: brightness(1.15); }
+.btg-cmd[data-active="true"] { background: var(--g-cmd-off); color: rgba(255, 255, 255, .55); }
+.btg-cmd[data-danger="true"] { background: linear-gradient(180deg, #d0525c, #8a2030); border-color: #ffb3ba; }
+[data-skin="eclipse"] .btg-cmd { color: #f6e2a0; clip-path: polygon(14px 0, calc(100% - 14px) 0, 100% 50%, calc(100% - 14px) 100%, 14px 100%, 0 50%); border: 1px solid rgba(217, 180, 90, .75); }
+[data-skin="eclipse"] .btg-cmd[data-active="true"] { color: #1a1206; background: linear-gradient(180deg, #f6e2a0, #c99a3f); }
+[data-skin="eclipse"] .btg-cmd[data-danger="true"] { color: #ffd7dd; border-color: rgba(224, 71, 95, .8); background: linear-gradient(180deg, #3a0d17, #160509); }
+.btg-badge { position: absolute; right: .4rem; top: .3rem; min-width: 1.35rem; height: 1.35rem; padding: 0 .3rem; border-radius: 999px; background: #c8962e; color: #2a1300; font-size: .8rem; line-height: 1.35rem; letter-spacing: 0; text-indent: 0; text-shadow: none; }
+
+.btg-round { width: 3.2rem; height: 3.2rem; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-direction: column; line-height: 1; font-weight: 900; color: #fff; background: var(--g-panel); border: 2px solid var(--g-line); box-shadow: 0 2px 8px rgba(0, 0, 0, .45); }
+.btg-round[data-on="true"] { background: radial-gradient(circle, #34d399, #047857); border-color: #6ee7b7; box-shadow: 0 0 12px rgba(52, 211, 153, .7); }
+[data-skin="eclipse"] .btg-round { color: #f6e2a0; border-radius: 0; transform: rotate(45deg) scale(.86); }
+[data-skin="eclipse"] .btg-round > * { transform: rotate(-45deg); }
+[data-skin="eclipse"] .btg-round[data-on="true"] { background: linear-gradient(180deg, #f6e2a0, #c99a3f); color: #1a1206; }
+.btg-menu { background: var(--g-panel); border: 1px solid var(--g-line); border-radius: 12px; padding: .5rem; display: flex; flex-direction: column; gap: .35rem; min-width: 10rem; box-shadow: 0 10px 30px rgba(0, 0, 0, .55); }
+[data-skin="eclipse"] .btg-menu { border-radius: 0; }
+.btg-menu button { text-align: left; padding: .45rem .8rem; border-radius: 8px; border: 1px solid var(--g-line); background: transparent; color: var(--g-text); font-size: .9rem; font-weight: 700; }
+.btg-menu button:hover { background: rgba(255, 255, 255, .08); }
+
+.btg-logtab { height: 2rem; padding: 0 2rem; border: 0; font-size: .95rem; font-weight: 900; letter-spacing: .2em; color: #fff; background: linear-gradient(180deg, #4f9be8, #1b4f9a); clip-path: polygon(12px 0, calc(100% - 12px) 0, 100% 100%, 0 100%); }
+[data-skin="eclipse"] .btg-logtab { color: #1a1206; background: linear-gradient(180deg, #f6e2a0, #c99a3f); }
+
+/* ── 第五技能圓章 ── */
+.btg-fifth { position: relative; width: 11.5rem; height: 11.5rem; border-radius: 50%; padding: 0; border: 0; background: none; color: var(--g-fifth-ink); flex-shrink: 0; }
+.btg-fifth > svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
+.btg-fifth .face { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; text-align: center; }
+.btg-fifth .nm { font-weight: 900; line-height: 1.15; white-space: pre-line; max-width: 8.2rem; }
+[data-skin="eclipse"] .btg-fifth .nm { background: linear-gradient(180deg, #f6e2a0, #d9b45a 55%, #9a6d1f); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.btg-fifth[data-disabled="true"] { cursor: not-allowed; }
+.btg-fifth[data-abolished="true"], .btg-fifth[data-empty="true"] { filter: grayscale(.9) brightness(.85); }
+.btg-fifth .tag5 { position: absolute; left: 50%; top: -.4rem; transform: translateX(-50%); padding: 1px .6rem; border-radius: 999px; background: #e0a33c; color: #2a1300; font-size: .8rem; font-weight: 900; }
+[data-skin="eclipse"] .btg-fifth .tag5 { border-radius: 0; background: linear-gradient(180deg, #f6e2a0, #c99a3f); color: #1a1206; }
+
+/* ── 精靈頁 ── */
+.btg-bench { position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; padding: .3rem; border-radius: 12px; border: 2px solid var(--g-card-line); background: var(--g-card); color: var(--g-text); min-width: 0; }
+.btg-bench[data-focus="true"] { border-color: #ffd27a; box-shadow: 0 0 12px rgba(255, 210, 122, .45); }
+.btg-bench[data-active="true"] { border-color: #4fc3f7; }
+.btg-bench[data-extra="true"] { border-color: #c8962e; }
+.btg-bench[data-dead="true"] { filter: grayscale(1) brightness(.7); }
+[data-skin="eclipse"] .btg-bench { border-radius: 0; border-width: 1px; }
+.btg-benchskill { flex: 1 1 0; min-width: 0; display: flex; align-items: center; gap: .4rem; padding: .25rem .5rem; border-radius: 10px; background: var(--g-pill); border: 1px solid rgba(255, 255, 255, .15); }
+.btg-benchskill[data-fifth="true"] { border-color: #c8962e; background: linear-gradient(180deg, rgba(150, 100, 20, .55), rgba(60, 40, 8, .6)); }
+[data-skin="eclipse"] .btg-benchskill { border-radius: 0; }
+
+/* ═════════ 戰術風（2026-11-07）═════════
+   參考方舟系平面戰術 UI 與幾何海報：墨黑平塗、髮絲線、缺角＋角標、單一強調色、窄體數字、英文微字、
+   固定位置的幾何飾（第五技能刻度環、指令區斜紋、回合數大字）。星蝕迴廊不套用。 */
+.btg-deco, .btg-dock-stripe, .btg-dock-ghost, .btg-ghost-turn { display: none; }
+[data-layout="game"][data-gskin^="tactical"]:not([data-skin="eclipse"]) {
+  --t-acc: #5ee7ff;
+  --t-acc-ink: #04141a;
+  --t-acc-dim: rgba(94, 231, 255, .28);
+  --t-ink: rgba(11, 14, 19, .84);
+  --t-ink-solid: #0b0e13;
+  --t-line: rgba(233, 238, 244, .16);
+  --t-line-strong: rgba(233, 238, 244, .42);
+  --t-num: "Bahnschrift", "DIN Alternate", "Barlow Condensed", "Roboto Condensed", "Arial Narrow", sans-serif;
+  --g-panel: var(--t-ink);
+  --g-line: var(--t-line);
+  --g-text: #eef1f4;
+  --g-muted: #8f99a5;
+  --g-accent: var(--t-acc);
+  --g-card: linear-gradient(90deg, rgba(24, 29, 37, .94), rgba(13, 16, 21, .92));
+  --g-card-line: var(--t-line);
+  --g-card-sel: linear-gradient(90deg, rgba(30, 38, 48, .97), rgba(16, 20, 26, .96));
+  --g-pill: rgba(255, 255, 255, .06);
+  --g-cmd: rgba(14, 18, 24, .9);
+  --g-cmd-line: var(--t-line-strong);
+  --g-cmd-off: var(--t-acc);
+  --g-dock: linear-gradient(180deg, rgba(8, 10, 14, 0) 0%, rgba(8, 10, 14, .78) 34%, rgba(8, 10, 14, .9) 100%);
+  --g-fifth-ring: var(--t-acc);
+  --g-fifth-hi: #273141;
+  --g-fifth-lo: #0b0e13;
+  --g-fifth-ink: #eef1f4;
+  --g-radius: 0px;
+}
+[data-layout="game"][data-gskin="tactical-lime"]:not([data-skin="eclipse"]) {
+  --t-acc: #d7ff3a;
+  --t-acc-ink: #141a00;
+  --t-acc-dim: rgba(215, 255, 58, .26);
+}
+/* 角標：四角 L 形，純背景、不增 DOM */
+[data-gskin^="tactical"]:not([data-skin="eclipse"]) :is(.btg-hud, .btg-match, .btg-skill, .btg-bench, .btg-menu) {
+  --tick: var(--t-line-strong);
+  background-image:
+    linear-gradient(var(--tick), var(--tick)), linear-gradient(var(--tick), var(--tick)),
+    linear-gradient(var(--tick), var(--tick)), linear-gradient(var(--tick), var(--tick)),
+    linear-gradient(var(--tick), var(--tick)), linear-gradient(var(--tick), var(--tick)),
+    linear-gradient(var(--tick), var(--tick)), linear-gradient(var(--tick), var(--tick)),
+    var(--g-panel);
+  background-size: 10px 1px, 1px 10px, 10px 1px, 1px 10px, 10px 1px, 1px 10px, 10px 1px, 1px 10px, 100% 100%;
+  background-position: 0 0, 0 0, 100% 0, 100% 0, 0 100%, 0 100%, 100% 100%, 100% 100%, 0 0;
+  background-repeat: no-repeat;
+}
+[data-gskin^="tactical"]:not([data-skin="eclipse"]) :is(.btg-skill, .btg-bench) { background-color: transparent; background-image:
+    linear-gradient(var(--tick), var(--tick)), linear-gradient(var(--tick), var(--tick)),
+    linear-gradient(var(--tick), var(--tick)), linear-gradient(var(--tick), var(--tick)),
+    linear-gradient(var(--tick), var(--tick)), linear-gradient(var(--tick), var(--tick)),
+    linear-gradient(var(--tick), var(--tick)), linear-gradient(var(--tick), var(--tick)),
+    var(--g-card); }
+
+/* HUD：右上缺角＋左側強調色條（P2 鏡像），去斜切、去高光 */
+[data-gskin^="tactical"]:not([data-skin="eclipse"]) .btg-hud {
+  clip-path: polygon(0 0, calc(100% - 18px) 0, 100% 18px, 100% 100%, 0 100%);
+  padding: .65rem 1.1rem .65rem .75rem; border: 1px solid var(--t-line);
+  box-shadow: inset 3px 0 0 var(--t-acc);
+}
+[data-gskin^="tactical"]:not([data-skin="eclipse"]) .btg-hud[data-side="p2"] {
+  clip-path: polygon(18px 0, 100% 0, 100% 100%, 0 100%, 0 18px);
+  padding: .65rem .75rem .65rem 1.1rem; box-shadow: inset -3px 0 0 #ff8a5c;
+}
+[data-gskin^="tactical"]:not([data-skin="eclipse"]) .btg-avatar { border-radius: 0; border: 1px solid var(--t-line-strong); box-shadow: 0 0 0 3px rgba(0,0,0,.35); background: #11161d; }
+[data-gskin^="tactical"]:not([data-skin="eclipse"]) .btg-name { letter-spacing: .03em; text-shadow: none; }
+[data-gskin^="tactical"]:not([data-skin="eclipse"]) .btg-hp { height: 1.15rem; clip-path: none; background: rgba(255,255,255,.07); }
+[data-gskin^="tactical"]:not([data-skin="eclipse"]) .btg-hp::after {
+  content: ""; position: absolute; inset: 0; pointer-events: none;
+  background: repeating-linear-gradient(90deg, transparent 0 calc(10% - 1px), rgba(0,0,0,.55) calc(10% - 1px) 10%);
+}
+[data-gskin^="tactical"]:not([data-skin="eclipse"]) .btg-hp > span { font-family: var(--t-num); font-size: .9rem; letter-spacing: .02em; z-index: 1; }
+[data-gskin^="tactical"]:not([data-skin="eclipse"]) .btg-prot { font-family: var(--t-num); }
+[data-gskin^="tactical"]:not([data-skin="eclipse"]) .btg-row-label { font-size: 9px; opacity: .75; }
+[data-gskin^="tactical"]:not([data-skin="eclipse"]) .btg-stage { border-radius: 0; background: rgba(11,14,19,.85); font-family: var(--t-num); }
+[data-gskin^="tactical"]:not([data-skin="eclipse"]) .btg-stage[data-up="true"] { border-color: var(--t-acc); color: var(--t-acc); }
+[data-gskin^="tactical"]:not([data-skin="eclipse"]) .btg-stage[data-up="false"] { border-color: #ff7a8a; color: #ffb3bd; }
+[data-gskin^="tactical"]:not([data-skin="eclipse"]) .btg-fx[data-kind="turn"] > .ico,
+[data-gskin^="tactical"]:not([data-skin="eclipse"]) .btg-fx[data-kind="status"] > .ico { border-radius: 0; outline: 1px solid var(--t-line); outline-offset: 1px; }
+[data-gskin^="tactical"]:not([data-skin="eclipse"]) .btg-fx > .n { font-family: var(--t-num); }
+
+/* 中上：倍率框缺角、回合數大字背景 */
+[data-gskin^="tactical"]:not([data-skin="eclipse"]) .btg-match { clip-path: polygon(12px 0, calc(100% - 12px) 0, 100% 12px, 100% 100%, 0 100%, 0 12px); border: 1px solid var(--t-line); }
+[data-gskin^="tactical"]:not([data-skin="eclipse"]) .btg-ghost-turn {
+  display: block; position: absolute; left: 50%; top: -.4rem; transform: translateX(-50%); z-index: 0; pointer-events: none;
+  font-family: var(--t-num); font-weight: 800; font-size: 7.5rem; line-height: 1; letter-spacing: -.02em;
+  color: transparent; -webkit-text-stroke: 1.5px rgba(233, 238, 244, .22);
+}
+[data-gskin^="tactical"]:not([data-skin="eclipse"]) [data-match-info] > :not(.btg-ghost-turn) { position: relative; z-index: 1; }
+[data-gskin^="tactical"]:not([data-skin="eclipse"]) [data-match-info] b { font-family: var(--t-num); font-weight: 700; letter-spacing: .04em; }
+
+/* 技能卡：平塗＋左側屬性色條＋右上編號；選中＝強調色外框＋錯位色塊陰影 */
+[data-gskin^="tactical"]:not([data-skin="eclipse"]) .btg-skill {
+  border: 1px solid var(--t-line); box-shadow: inset 4px 0 0 var(--type-c, var(--t-acc)); padding-left: 1.1rem;
+  clip-path: polygon(0 0, calc(100% - 14px) 0, 100% 14px, 100% 100%, 0 100%);
+  transition: transform .12s, box-shadow .12s, filter .15s;
+}
+[data-gskin^="tactical"]:not([data-skin="eclipse"]) .btg-skill::after {
+  content: attr(data-idx); position: absolute; right: 1.1rem; top: .35rem; font-family: var(--t-num); font-size: .7rem; font-weight: 700; letter-spacing: .12em; color: var(--g-muted); pointer-events: none;
+}
+[data-gskin^="tactical"]:not([data-skin="eclipse"]) .btg-skill:hover:not([data-disabled="true"]) { filter: none; transform: translate(-2px, -2px); box-shadow: inset 4px 0 0 var(--type-c, var(--t-acc)), 4px 4px 0 var(--t-acc-dim); }
+[data-gskin^="tactical"]:not([data-skin="eclipse"]) .btg-skill[data-selected="true"] { border-color: var(--t-acc); box-shadow: inset 4px 0 0 var(--t-acc), 6px 6px 0 var(--t-acc-dim); }
+[data-gskin^="tactical"]:not([data-skin="eclipse"]) .btg-skill .type { background: rgba(255,255,255,.05); border-radius: 0; width: 3rem; height: 3rem; outline: 1px solid var(--t-line); }
+[data-gskin^="tactical"]:not([data-skin="eclipse"]) .btg-skill .nm { text-shadow: none; letter-spacing: .02em; }
+[data-gskin^="tactical"]:not([data-skin="eclipse"]) .btg-pill { border-radius: 0; background: transparent; border-left: 2px solid var(--t-line-strong); padding: 0 .5rem; font-family: var(--t-num); letter-spacing: .03em; }
+[data-gskin^="tactical"]:not([data-skin="eclipse"]) .btg-stamp { border-radius: 0; }
+
+/* 指令 2×2：平塗、英文微字、選中反白、撤退紅斜紋 */
+[data-gskin^="tactical"]:not([data-skin="eclipse"]) .btg-cmd {
+  border: 1px solid var(--t-line-strong); text-shadow: none; font-size: 1.35rem; letter-spacing: .3em;
+  clip-path: polygon(0 0, calc(100% - 16px) 0, 100% 16px, 100% 100%, 16px 100%, 0 calc(100% - 16px));
+  transition: transform .1s, background .15s;
+}
+[data-gskin^="tactical"]:not([data-skin="eclipse"]) .btg-cmd::before {
+  content: attr(data-en); position: absolute; left: .7rem; top: .45rem; font-family: var(--t-num); font-size: .62rem; letter-spacing: .2em; text-indent: 0; color: var(--g-muted); font-weight: 700;
+}
+[data-gskin^="tactical"]:not([data-skin="eclipse"]) .btg-cmd:hover:not(:disabled) { filter: none; background: rgba(30, 37, 47, .95); }
+[data-gskin^="tactical"]:not([data-skin="eclipse"]) .btg-cmd:active { transform: translate(2px, 2px); }
+[data-gskin^="tactical"]:not([data-skin="eclipse"]) .btg-cmd[data-active="true"] { background: var(--t-acc); color: var(--t-acc-ink); border-color: var(--t-acc); }
+[data-gskin^="tactical"]:not([data-skin="eclipse"]) .btg-cmd[data-active="true"]::before { color: var(--t-acc-ink); opacity: .7; }
+[data-gskin^="tactical"]:not([data-skin="eclipse"]) .btg-cmd[data-danger="true"] {
+  border-color: rgba(255, 92, 102, .7); color: #ffd3d6;
+  background: repeating-linear-gradient(-45deg, rgba(255, 77, 87, .16) 0 8px, transparent 8px 16px), rgba(40, 10, 14, .9);
+}
+[data-gskin^="tactical"]:not([data-skin="eclipse"]) .btg-badge { border-radius: 0; background: var(--t-acc); color: var(--t-acc-ink); font-family: var(--t-num); }
+
+/* 右側圓鈕、選單、戰報頁籤 */
+[data-gskin^="tactical"]:not([data-skin="eclipse"]) .btg-round { background: rgba(11,14,19,.86); border: 1px solid var(--t-line-strong); box-shadow: 0 0 0 4px rgba(0,0,0,.25); font-family: var(--t-num); }
+[data-gskin^="tactical"]:not([data-skin="eclipse"]) .btg-round[data-on="true"] { background: var(--t-acc); color: var(--t-acc-ink); border-color: var(--t-acc); box-shadow: 0 0 0 4px var(--t-acc-dim); }
+[data-gskin^="tactical"]:not([data-skin="eclipse"]) .btg-menu { border-radius: 0; }
+[data-gskin^="tactical"]:not([data-skin="eclipse"]) .btg-menu button { border-radius: 0; }
+[data-gskin^="tactical"]:not([data-skin="eclipse"]) .btg-logtab { background: var(--t-acc); color: var(--t-acc-ink); clip-path: polygon(10px 0, calc(100% - 10px) 0, 100% 100%, 0 100%); }
+
+/* 指令區：上緣髮絲線、左端強調色斜紋、右側 BATTLE 大字 */
+[data-gskin^="tactical"]:not([data-skin="eclipse"]) .btg-dock { border-top: 1px solid var(--t-line); }
+[data-gskin^="tactical"]:not([data-skin="eclipse"]) .btg-dock > * { position: relative; z-index: 1; }
+[data-gskin^="tactical"]:not([data-skin="eclipse"]) .btg-dock > .btg-dock-stripe {
+  display: block; position: absolute; z-index: 0; left: 0; top: -7px; width: 15rem; height: 6px; pointer-events: none;
+  background: repeating-linear-gradient(-45deg, var(--t-acc) 0 6px, transparent 6px 12px);
+  clip-path: polygon(0 0, 100% 0, calc(100% - 6px) 100%, 0 100%);
+}
+[data-gskin^="tactical"]:not([data-skin="eclipse"]) .btg-dock > .btg-dock-ghost {
+  display: block; position: absolute; z-index: 0; left: 16rem; top: -.95rem; pointer-events: none; white-space: nowrap;
+  font-family: var(--t-num); font-weight: 700; font-size: .68rem; letter-spacing: .38em; color: var(--g-muted); opacity: .8;
+}
+
+/* 第五技能：深色盤＋強調色環＋刻度環／分段弧／三角／點陣 */
+[data-gskin^="tactical"]:not([data-skin="eclipse"]) .btg-fifth > .btg-deco-fifth {
+  display: block; position: absolute; inset: -16%; width: 132%; height: 132%; pointer-events: none; z-index: 0;
+}
+[data-gskin^="tactical"]:not([data-skin="eclipse"]) .btg-fifth .tag5 { border-radius: 0; background: var(--t-acc); color: var(--t-acc-ink); font-family: var(--t-num); letter-spacing: .15em; }
+[data-gskin^="tactical"]:not([data-skin="eclipse"]) .btg-fifth .face { z-index: 1; }
+[data-gskin^="tactical"]:not([data-skin="eclipse"]) .btg-fifth .tabular-nums { font-family: var(--t-num); }
+
+/* 精靈頁 */
+[data-gskin^="tactical"]:not([data-skin="eclipse"]) .btg-bench { border-radius: 0; border: 1px solid var(--t-line); }
+[data-gskin^="tactical"]:not([data-skin="eclipse"]) .btg-bench[data-focus="true"] { border-color: var(--t-acc); box-shadow: 4px 4px 0 var(--t-acc-dim); }
+[data-gskin^="tactical"]:not([data-skin="eclipse"]) .btg-benchskill { border-radius: 0; }
+
+@media (prefers-reduced-motion: reduce) {
+  [data-gskin^="tactical"] :is(.btg-skill, .btg-cmd) { transition: none; }
+}

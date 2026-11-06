@@ -61,7 +61,7 @@ import { getVisibleBox } from "../battle/visibleBox";
 import { hiddenFromViewer, viewerMaskTermsForMode, maskViewerText, maskViewerDeep, maskElfIdentity, UNKNOWN_EFFECT, UNKNOWN_ELF, UNKNOWN_SKILL, elfForViewer, visibleSkills } from "../battle/viewerPerspective";
 import { toViewMode, BattleViewModeContext } from "../battle/viewerMode";
 import { isAliveBySurvivalRule } from "../battle/survivalRules";
-import { statusVisual, stageDesc, STAT_FULL, signIconFor, UNKNOWN_EFFECT_ICON } from "../battle/effectIcons";
+import { statusVisual, stageDesc, STAT_FULL, signIconFor, effectIcon, UNKNOWN_EFFECT_ICON } from "../battle/effectIcons";
 import { bossTraitInstanceText } from "../data/bossTraits";
 import { markAppliesToElf } from "../battle/marks";
 import { EffectDescription } from './EffectDescription';
@@ -74,6 +74,8 @@ import { BATTLE_ITEMS, ITEM_CATEGORIES, getItemCategory, ItemCategory, isElfSkil
 import { isZeroPpExempt } from '../battle/ppExemptions';
 import { classifyLog, filterByMode, mergeExtraActions, toTraditional, turnDigests, filterByElf, filterByQuery, damageTone, extractAmount, elfNamesIn, type LogMode, type BattleLogRow } from '../battle/logClassifier';
 import { LOG_PAGE_SIZE, maskLogRows, buildLogPipeline } from '../battle/logView';
+import { useBattleLayoutPrefs, useWideEnoughForGameLayout, cycleAnimationSpeed, TypeSlot, FifthMedallion, typeAccent, BATTLE_GAME_SKINS } from './battle/gameHud';
+import { effectDefinitionEntries } from '../battle/effectSources';
 
 const BagElfPickerModal = lazy(() => import("./battle/BagElfPickerModal"));
 
@@ -253,6 +255,14 @@ function BattleScreenBody(props: BattleScreenUIProps) {
   const [showShields, setShowShields] = useState<Record<"p1" | "p2", boolean>>({ p1: true, p2: true });
 
   const [showDisplaySettings, setShowDisplaySettings] = useState(false);
+  // 原廠風版面（2026-11-07）：偏好、選單與確認框狀態；實用風不使用。
+  const layoutPrefs = useBattleLayoutPrefs();
+  const wideEnough = useWideEnoughForGameLayout();
+  const gameLayout = layoutPrefs.style === 'game' && wideEnough;
+  const [gMenuOpen, setGMenuOpen] = useState(false);
+  const [gBenchFocus, setGBenchFocus] = useState<number | null>(null);
+  const [gConfirmRetreat, setGConfirmRetreat] = useState(false);
+  const [gInspector, setGInspector] = useState(false);
   const [selectedElfDetail, setSelectedElfDetail] = useState<{ elf: Elf; side: "p1" | "p2"; idx: number } | null>(null);
 
   const DEFAULT_SECTION_VISIBILITY = {
@@ -1330,8 +1340,425 @@ function BattleScreenBody(props: BattleScreenUIProps) {
     </div>
   );
 
+  // ═══════════════ 原廠風版面（2026-11-07）═══════════════
+  // 實用風（renderFixedLayout）完整保留；顯示設定或右側齒輪可切回。資料、判定與實用風共用，這裡只換版面。
+  type GameFx = { key: string; kind: 'stage' | 'status' | 'sig' | 'mark' | 'turn'; name: string; desc?: string; icon?: string; glyph?: string; count?: string; sig?: string; stageLabel?: string; stageValue?: string; up?: boolean };
+  const gameTrayRows = (side: "p1" | "p2", elf: Elf): { key: string; label: string; color: string; items: GameFx[] }[] => {
+    if (hid(elf, side)) return [{ key: 'hidden', label: '隱匿', color: '#94a3b8', items: [{ key: 'concealed', kind: 'turn', name: '隱匿', desc: '隱匿中：效果不可見', glyph: '隱' }] }];
+    const stageLabels: Record<string, string> = { atk: "攻擊", def: "防禦", spatk: "特攻", spdef: "特防", speed: "速度", accuracy: "命中" };
+    const stages: GameFx[] = [];
+    const st = (elf.statStages || {}) as Record<string, number>;
+    if (disguiseBattleStates && Object.values(st).some(v => Number(v) > 0)) stages.push({ key: 'stage-nightmare', kind: 'status', name: '魘昧', desc: StatusRegistry["魘昧"].description, icon: statusVisual("魘昧")?.icon, count: '1' });
+    for (const k of ["atk", "def", "spatk", "spdef", "speed", "accuracy"]) {
+      const v = Number(st[k] || 0);
+      if (!v || (disguiseBattleStates && v > 0)) continue;
+      stages.push({ key: `stage-${k}`, kind: 'stage', name: `${stageLabels[k]}能力等級`, desc: stageDesc(k, v), stageLabel: stageLabels[k], stageValue: `${v > 0 ? '+' : ''}${v}`, up: v > 0 });
+    }
+    const statuses: GameFx[] = [];
+    const sts = getStatuses(elf) as Record<string, any>;
+    const active = Object.entries(sts || {}).filter(([, t]) => Number(t) > 0);
+    if (disguiseBattleStates && active.length) statuses.push({ key: 's-魘昧', kind: 'status', name: '魘昧', desc: StatusRegistry['魘昧'].description, icon: statusVisual('魘昧')?.icon, count: '1' });
+    else active.forEach(([id, turns]) => {
+      const reg = (StatusRegistry as any)[id]; const cat = (EFFECT_CATALOG as any)[id];
+      const name = reg?.name || cat?.label || id; const vis = statusVisual(name); const n = Number(turns);
+      statuses.push({ key: `s-${id}`, kind: 'status', name, icon: vis?.icon || UNKNOWN_EFFECT_ICON, count: reg?.categories?.includes('BOSS_ONLY') ? undefined : n > 0 && n < 99 ? String(n) : undefined,
+        desc: bossTraitInstanceText(elf, id) || vis?.desc || reg?.description || catalogDesc(cat, { remainingTurns: n }) || name });
+    });
+    // 常駐：抗性 → 特性／特質／異能（實際資料）→ 常駐機制。魂印在名字旁的「X」徽章。
+    const passive: GameFx[] = [];
+    if (elf.resistances) passive.push({ key: 'resist', kind: 'mark', name: '抗性', desc: formatResistanceDetail(elf.resistances), icon: signIconFor('抗性'), count: undefined, glyph: formatResistanceShort(elf.resistances) });
+    for (const entry of effectDefinitionEntries(elf)) {
+      if ((entry as any).soul) continue;
+      const kind = String(entry.kind || '');
+      const sig = kind.includes('特質') ? '特質' : kind.includes('異能') ? '異能' : '特性';
+      passive.push({ key: `def-${kind}-${entry.name}`, kind: 'sig', sig, name: entry.name, desc: `${kind}\n${entry.description || ''}`, glyph: (entry.name || '?').slice(0, 1) });
+    }
+    const marks: GameFx[] = [], turns: GameFx[] = [];
+    const views = activeEffectViews(elf, (side === "p1" ? p1Marks : p2Marks) || [], (side === "p1" ? p1Timers : p2Timers) || [],
+      (side === 'p1' ? battle.p1RegistryState : battle.p2RegistryState) || {}, stateSignSourceText(side === 'p1' ? p1 : p2, side === 'p1' ? p2 : p1, side, viewMode));
+    views.filter(v => v.category !== 'protection').forEach(v => {
+      const fx: GameFx = { key: v.id, kind: v.category === 'mark' ? 'mark' : v.category === 'mechanism' ? 'sig' : 'turn', sig: '機制', name: `${v.sourceTag || ''}${v.label}`,
+        desc: describeEffectMeta(v), icon: v.icon && v.icon !== UNKNOWN_EFFECT_ICON ? v.icon : undefined, glyph: v.shortLabel || (v.label || '?').slice(0, 1), count: v.countText || undefined };
+      (fx.kind === 'mark' ? marks : fx.kind === 'sig' ? passive : turns).push(fx);
+    });
+    return [
+      { key: 'stages', label: '能力', color: '#e0b04a', items: stages },
+      { key: 'statuses', label: '異常', color: '#ff8a9a', items: statuses },
+      { key: 'passive', label: '常駐', color: '#7fd8c8', items: passive },
+      { key: 'marks', label: '印記', color: '#e8b85a', items: marks },
+      { key: 'turns', label: '回合', color: '#7cc4ff', items: turns },
+    ].filter(r => r.items.length);
+  };
+
+  const renderGameTray = (side: "p1" | "p2", elf: Elf) => {
+    const rows = gameTrayRows(side, elf);
+    const total = rows.reduce((n, r) => n + r.items.length, 0);
+    const toggle = <button type="button" className="btg-tray-toggle" data-tray-toggle onClick={() => layoutPrefs.setTrayHidden(!layoutPrefs.trayHidden)}
+      title={layoutPrefs.trayHidden ? '展開效果列' : '收起效果列'}>{layoutPrefs.trayHidden ? `▸ 效果 ${total}` : '▾'}</button>;
+    if (layoutPrefs.trayHidden || !rows.length) return <div className={`flex ${side === 'p2' ? 'justify-end' : ''}`}>{layoutPrefs.trayHidden && total > 0 ? toggle : null}</div>;
+    return (
+      <div className="btg-tray overflow-y-auto overscroll-contain custom-scrollbar pb-1" data-side={side} data-status-tray={side} style={{ maxHeight: hudTrayMaxHeight(fieldSize.h) }}>
+        {rows.map(row => (
+          <div key={row.key} className="btg-row" data-tray-row={row.key}>
+            <span className="btg-row-label" style={{ color: row.color }}>{row.label}</span>
+            {row.items.map(fx => fx.kind === 'stage'
+              ? <button type="button" key={fx.key} className="btg-stage" data-up={fx.up} title={fog(`${fx.name}\n${fx.desc || ''}`)} onClick={() => setModalContent({ title: fog(fx.name), content: fog(fx.desc || fx.name) })}>{fx.stageLabel}<b>{fx.stageValue}</b></button>
+              : <button type="button" key={fx.key} className="btg-fx" data-kind={fx.kind} data-sig={fx.sig} title={fog(`${fx.name}\n${fx.desc || ''}`)}
+                  onClick={() => setModalContent({ title: fog(fx.name), content: fog(fx.desc || fx.name) })}>
+                  <span className="ico">{fx.icon ? <ChainImage urls={[fx.icon]} fallback={<span className="text-xs font-black">{fx.glyph}</span>} /> : <span className="text-xs font-black">{fx.kind === 'sig' ? fog(fx.glyph) : fog(fx.glyph)}</span>}</span>
+                  {(fx.kind === 'sig' || fx.key === 'resist') && <span className="nm">{fx.key === 'resist' ? fx.glyph : fog(fx.name)}</span>}
+                  {fx.count && fx.key !== 'resist' && <span className="n">{fx.count}</span>}
+                </button>)}
+          </div>
+        ))}
+        <div className={`flex ${side === 'p2' ? 'justify-end' : ''}`}>{toggle}</div>
+      </div>
+    );
+  };
+
+  const renderGameHud = (side: "p1" | "p2") => {
+    const isP1 = side === "p1";
+    const elf = appearanceElf(elfForViewer(isP1 ? p1 : p2, side));
+    if (!elf) return null;
+    const idx = isP1 ? p1ActiveIndex : battle.p2ActiveIndex;
+    const hidden = hid(elf, side);
+    const hpPct = elf.maxHp > 0 ? Math.max(0, Math.min(100, (elf.currentHp / elf.maxHp) * 100)) : 0;
+    const openDetail = () => !hidden && setSelectedElfDetail({ elf, side, idx });
+    return (
+      <div className={`flex flex-col gap-1.5 ${isP1 ? 'items-start' : 'items-end'}`}>
+        <div className={`btg-hud w-full pointer-events-auto ${props.consoleShake?.[side] ? 'outline outline-2 outline-rose-500/80' : ''}`} data-side={side} data-hud={side}>
+          <button type="button" className="btg-avatar" onClick={openDetail} title="精靈詳情">
+            <ElfAvatar elf={elf} battleSide={side} kind="head" className="w-full h-full object-cover" />
+          </button>
+          <div className={`flex-1 min-w-0 flex flex-col gap-1.5 ${isP1 ? '' : 'items-end'}`}>
+            <div className={`flex items-center gap-2 min-w-0 max-w-full ${isP1 ? '' : 'flex-row-reverse'}`}>
+              {hidden ? <span className="btg-typeslot text-base font-black text-slate-300">?</span> : <TypeSlot type={elf.type} size={26} title={`${elf.type}系`} />}
+              <button type="button" className="btg-name min-w-0" onClick={openDetail}>{hidden ? "未知精靈" : elf.name}</button>
+              {!hidden && elf.soulMark && (
+                <button type="button" onClick={() => setModalContent({ title: elf.soulMark?.name || "魂印", content: elf.soulMark?.description || "" })} title={`魂印：${elf.soulMark.name}`}
+                  className="shrink-0 px-1.5 rounded bg-purple-900/70 border border-purple-500/50 text-xs font-black text-purple-200 hover:bg-purple-800/70">
+                  「{elf.soulMark.badgeChar || (elf.soulMark.name || "").slice(0, 1)}」
+                </button>
+              )}
+            </div>
+            <div className="btg-hp bt-hp w-full">
+              <i className={`${isP1 ? 'left-0' : 'right-0'} ${getHpBarColor(elf.currentHp, elf.maxHp)}`} style={{ width: `${hpPct}%` }} />
+              <span className={isP1 ? 'left-2' : 'right-2'} title={hidden ? undefined : `${formatFullNumber(elf.currentHp)}/${formatFullNumber(elf.maxHp)}`}>{hidden ? '？/？' : `${formatCompactHud(elf.currentHp)}/${formatCompactHud(elf.maxHp)}`}</span>
+              {!hidden && <span className={isP1 ? 'right-4' : 'left-4'}>{hpPct >= 10 ? Math.round(hpPct) : hpPct.toFixed(1)}%</span>}
+            </div>
+            {!hidden && (elf.shield || 0) + (elf.barrier || 0) > 0 && (
+              <div className={`flex gap-3 ${isP1 ? '' : 'flex-row-reverse'}`} data-protection={side}>
+                {(elf.shield || 0) > 0 && <button type="button" className="btg-prot text-sky-200" title="護盾：優先吸收技能攻擊傷害" onClick={() => setModalContent({ title: "護盾", content: "優先吸收技能攻擊傷害。" })}>
+                  <ChainImage urls={[effectIcon('護盾'), signIconFor('護盾')!]} className="h-6 w-6 object-contain" />{formatCompactHud(elf.shield || 0)}</button>}
+                {(elf.barrier || 0) > 0 && <button type="button" className="btg-prot text-fuchsia-200" title="護罩：優先吸收固定與百分比傷害" onClick={() => setModalContent({ title: "護罩", content: "優先吸收固定與百分比傷害。" })}>
+                  <ChainImage urls={[effectIcon('護罩'), signIconFor('護罩')!]} className="h-6 w-6 object-contain" />{formatCompactHud(elf.barrier || 0)}</button>}
+              </div>
+            )}
+          </div>
+        </div>
+        <div className="w-full pointer-events-auto">{renderGameTray(side, elf)}</div>
+      </div>
+    );
+  };
+
+  const renderGameMatch = () => {
+    const fogged = hid(p1, "p1") || hid(p2, "p2");
+    const shownP1 = elfForViewer(p1, 'p1'), shownP2 = elfForViewer(p2, 'p2');
+    const m1 = p1 && p2 ? getTypeMatchup(shownP1.type, shownP2.type) : 1;
+    const m2 = p1 && p2 ? getTypeMatchup(shownP2.type, shownP1.type) : 1;
+    const word = (m: number) => fogged ? '？' : m === 0 ? '無效' : m > 1 ? '克制' : m < 1 ? '微弱' : '普通';
+    const tone = (m: number) => fogged ? '#9aa6b8' : m > 1 ? '#ff9a6a' : m === 0 ? '#7c8596' : m < 1 ? '#9fc4ef' : '#e6edf7';
+    const fmt = (m: number) => fogged ? '×?' : `×${Number(m.toFixed(3))}`;
+    const dots = (side: "p1" | "p2", extra: boolean) => {
+      const team = side === "p1" ? p1Team : p2Team;
+      const activeIdx = side === "p1" ? p1ActiveIndex : battle.p2ActiveIndex;
+      return team.map((e, i) => {
+        if (!e || !!e.isExtra !== extra) return null;
+        const dead = e.isVanished || (!isAliveBySurvivalRule(e.currentHp, e.survivalRule) && !(e.deathImmunity && e.deathImmunity.deathImmuneTurns > 0));
+        const sheltered = !e.isVanished && e.currentHp <= 0 && e.deathImmunity && e.deathImmunity.deathImmuneTurns > 0;
+        const activeNow = i === activeIdx;
+        const bg = extra ? (dead ? '#5a4410' : '#f2c14e') : dead ? '#3a4252' : activeNow ? '#7de3ff' : sheltered ? '#b57cff' : '#3dd68c';
+        return <button key={i} type="button" className="btg-dot" data-extra={extra} style={{ background: bg, boxShadow: activeNow ? '0 0 6px #7de3ff' : undefined }}
+          onClick={() => !hid(e, side) && setSelectedElfDetail({ elf: e, side, idx: i })}
+          title={`${hid(e, side) ? "未知精靈" : elfForViewer(e, side).name}${extra ? "（額外精靈・不計勝負）" : ""}${e.isVanished ? "（消逝）" : dead ? "（陣亡）" : sheltered ? "（庇護中）" : activeNow ? "（出戰中）" : ""}`} />;
+      });
+    };
+    const extrasP1 = p1Team.some(e => e?.isExtra), extrasP2 = p2Team.some(e => e?.isExtra);
+    const limit = battle.battleFormat === "peak_6v6" ? 50 : 0;
+    return (
+      <div className="relative flex flex-col items-center gap-1 pointer-events-auto" data-match-info>
+        <span className="btg-ghost-turn" aria-hidden="true">{String(turnNumber).padStart(2, '0')}</span>
+        <div className="btg-match">
+          <div className="text-center leading-tight" title="我方屬性對對方的克制倍率"><div className="text-xl font-black" style={{ color: tone(m1) }}>{word(m1)}</div><div className="text-xs" style={{ color: 'var(--g-muted)' }}>{fmt(m1)}</div></div>
+          <svg width="86" height="26" aria-hidden="true"><path d="M6 4l10 9-10 9M20 4l10 9-10 9" fill="none" stroke="var(--g-accent)" strokeWidth="3.5" strokeLinejoin="round" /><path d="M80 4l-10 9 10 9M66 4l-10 9 10 9" fill="none" stroke="#e9905c" strokeWidth="3.5" strokeLinejoin="round" /></svg>
+          <div className="text-center leading-tight" title="對方屬性對我方的克制倍率"><div className="text-xl font-black" style={{ color: tone(m2) }}>{word(m2)}</div><div className="text-xs" style={{ color: 'var(--g-muted)' }}>{fmt(m2)}</div></div>
+        </div>
+        <div className="flex items-center gap-2.5" style={{ textShadow: '0 1px 3px #000' }}>
+          <span className="flex gap-1" title={`剩餘 ${aliveCount(p1Team)} 隻（計入勝負）`}>{dots('p1', false)}</span>
+          <b className="text-lg">第 {turnNumber} 回合</b>
+          {limit > 0 && <span className="text-sm" style={{ color: 'var(--g-muted)' }} title="巔峰 6V6：滿 50 回合依存活精靈數判勝負（額外精靈不計）">/ {limit}</span>}
+          <span className="flex gap-1 flex-row-reverse" title={`剩餘 ${aliveCount(p2Team)} 隻（計入勝負）`}>{dots('p2', false)}</span>
+        </div>
+        {(extrasP1 || extrasP2) && (
+          <div className="flex items-center gap-6" title="額外精靈不計入勝負">
+            <span className="flex gap-1.5 min-w-[2rem]">{extrasP1 && dots('p1', true)}</span>
+            <span className="text-[10px] font-black tracking-widest text-amber-300/90">額外</span>
+            <span className="flex gap-1.5 flex-row-reverse min-w-[2rem]">{extrasP2 && dots('p2', true)}</span>
+          </div>
+        )}
+        <span className="text-xs font-bold" style={{ color: 'var(--g-muted)', textShadow: '0 1px 2px #000' }}>
+          {phase === actPhaseSelect ? (isLocalPvp && actSide === "p2" ? "P2 請選擇指令" : "請選擇指令") : phase.includes("forced_switch") ? (isLocalPvp && (phase === "forced_switch_p2" || phase === "forced_switch_both") ? "P2 請選擇出戰精靈" : "請選擇出戰精靈") : (isLocalPvp ? PHASE_LABEL_PVP[phase] : PHASE_LABEL[phase]) || ""}
+        </span>
+      </div>
+    );
+  };
+
+  /** 技能卡共用判定（與實用風相同規則；轉化以操作側精靈判斷）。 */
+  const gameSkillModel = (skill: Skill) => {
+    const slot = skill.battleSlot!;
+    const original = { ...actElf.skills[slot], battleSlot: slot };
+    const uses = skill.charge !== undefined ? skill.charge : skill.pp;
+    const oppForAct = actSide === 'p2' ? p1 : p2;
+    const zeroPpExempt = isZeroPpExempt(actElf, skill, oppForAct);
+    const disabled = phase !== actPhaseSelect || !!original.isAbolished || isElfSkillSelectionDisabled(actElf) || (uses <= 0 && !zeroPpExempt);
+    const reason = !disabled ? '' : original.isAbolished ? '技能已被廢除' : isElfSkillSelectionDisabled(actElf) ? '目前無法選擇技能' : (uses <= 0 && !zeroPpExempt) ? 'PP 已耗盡' : '';
+    const selected = skillSlot(actElf, actSelectedSkill) === slot;
+    const converted = !!actElf.illusion && skill.name !== original.name;
+    const skillHidden = hid(actElf, actSide) && (phase !== actPhaseSelect || !!winner);
+    const hover = skillHidden ? { ...skill, name: UNKNOWN_SKILL, description: "", specialBadge: undefined, __concealed: true } as any
+      : actElf.illusion && !actElf.isInherentInvalid ? { ...skill, name: `${original.name} → ${skill.name}`, description: `【原技能】${original.name}\n${original.description}\n\n【轉化後】${skill.name}\n${skill.description}` } : skill;
+    const showTip = (e: React.MouseEvent<HTMLElement>) => {
+      try {
+        const rect = e.currentTarget.getBoundingClientRect();
+        setHoveredSkillAnchor({ x: rect.left + rect.width / 2, y: rect.top, top: rect.top, bottom: rect.bottom });
+        setHoveredSkill({ ...hover, __viewerContext: skillViewKey } as any);
+      } catch { /* 略過 */ }
+    };
+    const onClick = (e: React.MouseEvent<HTMLElement>) => {
+      if (disabled) { showTip(e); return; }
+      if (phase === actPhaseSelect && selected && hoveredSkill?.battleSlot === slot) { setHoveredSkill(null); setHoveredSkillAnchor(null); return; }
+      if (phase === actPhaseSelect) { props.onSkillSelect(actSide, original); showTip(e); }
+    };
+    return { slot, original, disabled, reason, selected, converted, skillHidden, showTip, onClick,
+      abolished: !!original.isAbolished, invalid: !!actElf.isInherentInvalid,
+      hide: () => { setHoveredSkill(null); setHoveredSkillAnchor(null); } };
+  };
+
+  const renderGameSkills = () => {
+    const baseSkills = visibleSkills(actElf).slice(0, 5);
+    const fifthSlot = fifthSkillSlot(actElf.skills);
+    const ordered = orderBattleSkillsForDisplay(actElf.skills, baseSkills).filter(s => s.battleSlot !== fifthSlot);
+    const all = visibleSkills(actElf).slice(0, 5).map(s => actElf.skills[s.battleSlot!]).filter(Boolean);
+    const allAbolished = all.length > 0 && all.every(s => s.isAbolished);
+    const lockReason = allAbolished ? '所有技能已廢除' : isElfSkillSelectionDisabled(actElf) && phase === actPhaseSelect ? '目前無法選擇技能' : '';
+    return (
+      <div className="relative h-full grid grid-cols-[11.5rem_minmax(0,1fr)_minmax(0,1fr)] auto-rows-[minmax(4.6rem,1fr)] gap-x-4 gap-y-3 pt-2.5 overflow-y-auto custom-scrollbar" data-act-side={actSide}>
+        {renderGameFifth()}
+        {ordered.map((skill, i) => {
+          const m = gameSkillModel(skill);
+          const tag = m.abolished ? null : m.converted ? { text: '轉化', color: '#1c7fb8' } : m.invalid ? { text: '固有效果失效', color: '#b8761c' } : null;
+          return (
+            <button key={i} type="button" className="btg-skill" data-idx={String(i + 1).padStart(2, '0')} style={{ ['--type-c' as any]: typeAccent(m.skillHidden ? '' : skillDisplayType(skill)) }} onClick={m.onClick} onMouseEnter={m.showTip} onMouseLeave={m.hide}
+              data-selected={m.selected} data-disabled={m.disabled} data-abolished={m.abolished} data-state={m.converted ? 'conv' : m.invalid ? 'invalid' : undefined}
+              aria-disabled={m.disabled} data-skill-disabled={m.disabled ? "true" : "false"} data-skill-disabled-reason={m.reason || undefined}>
+              {tag && !m.skillHidden && <span className="btg-tag" style={{ left: '.75rem', background: tag.color }}>{tag.text}</span>}
+              {skill.specialBadge && !m.skillHidden && !m.abolished && (
+                <span title={skill.specialBadge.description} data-skill-badge={skill.specialBadge.text} data-badge-active={skill.isRuneActive ? "true" : "false"} className={`absolute -top-2.5 right-2 px-1.5 rounded text-[12px] leading-4 font-black border z-[1] ${skill.specialBadge.bg || "bg-purple-900/90"} ${skill.specialBadge.color || "text-purple-200"} ${skill.specialBadge.border || "border-purple-500/40"} ${skill.isRuneActive ? skill.specialBadge.animate || "" : ""}`}>{skill.specialBadge.text}{skill.isRuneActive ? <span className="ml-0.5 text-[8px] align-middle">●</span> : null}</span>
+              )}
+              <span className="type">
+                {!m.skillHidden && <SkillTypeIcon skill={skill} size={34} />}
+                {m.converted && !m.skillHidden && <span className="absolute -right-1.5 -bottom-1 rounded-full bg-black/70 p-px" title="原技能屬性"><SkillTypeIcon skill={m.original} size={18} /></span>}
+              </span>
+              <span className="flex-1 min-w-0 flex flex-col gap-1.5">
+                <span className="flex items-baseline gap-2 min-w-0">
+                  <span className="nm">{m.skillHidden ? `${UNKNOWN_SKILL} ${m.slot + 1}` : skill.name}</span>
+                  {m.converted && !m.skillHidden && <span className="text-xs truncate" style={{ color: '#9fdcff' }}>← 原 {m.original.name}</span>}
+                </span>
+                <span className="flex items-center gap-1.5 flex-nowrap min-w-0 overflow-hidden">
+                  <span className="btg-pill"><SkillResources elf={actElf} skill={skill} normalLabel="PP" anonymous={m.skillHidden} /></span>
+                  <span className="btg-pill">{skill.category === "屬性" ? <b className="text-emerald-300">屬性</b> : <>威力 <b>{skill.power || 0}</b></>}</span>
+                </span>
+              </span>
+              {m.disabled && m.reason && !m.abolished && !lockReason && !m.skillHidden && <span className="shrink-0 text-[11px] font-black text-rose-300">{m.reason}</span>}
+              {m.abolished && <span className="btg-stamp">已廢除</span>}
+            </button>
+          );
+        })}
+        {lockReason && <div className="btg-lock" style={{ left: '12.5rem', color: allAbolished ? '#ff8a8e' : '#ffd27a' }}><span>{lockReason}</span></div>}
+      </div>
+    );
+  };
+
+  const renderGameFifth = () => {
+    const fifthSlot = fifthSkillSlot(actElf.skills);
+    const skill = fifthSlot >= 0 ? visibleSkills(actElf).find(s => s.battleSlot === fifthSlot) : undefined;
+    if (!skill) return <div className="btg-fifth row-span-2 self-center opacity-40" aria-hidden="true"><svg viewBox="0 0 190 190"><circle cx="95" cy="95" r="88" fill="rgba(6,10,20,.6)" stroke="var(--g-line)" strokeWidth="2" strokeDasharray="6 8" /></svg></div>;
+    const m = gameSkillModel(skill);
+    const maxPp = getMaxPp(skill, actElf) || 1;
+    const uses = skill.charge !== undefined ? skill.charge : skill.pp;
+    return <FifthMedallion className="row-span-2 self-center" name={m.skillHidden ? UNKNOWN_SKILL : skill.name} type={m.skillHidden ? '' : skillDisplayType(skill)}
+      ppText={<SkillResources elf={actElf} skill={skill} normalLabel="PP" anonymous={m.skillHidden} />} powerText={skill.category === '屬性' ? '屬性' : `威力 ${skill.power || 0}`}
+      ppFrac={Math.max(0, Number(skill.pp) || 0) / maxPp} selected={m.selected} disabled={m.disabled} abolished={m.abolished} empty={uses <= 0}
+      originalName={m.converted && !m.skillHidden ? m.original.name : undefined}
+      tag={m.abolished ? null : m.converted ? { text: '轉化', color: '#1c7fb8' } : m.invalid ? { text: '固有效果失效', color: '#b8761c' } : null}
+      runeBadge={skill.specialBadge && !m.skillHidden && !m.abolished ? <span title={skill.specialBadge.description} data-skill-badge={skill.specialBadge.text} className={`absolute top-3 right-2 px-1.5 rounded text-[12px] leading-4 font-black border ${skill.specialBadge.bg || "bg-purple-900/90"} ${skill.specialBadge.color || "text-purple-200"} ${skill.specialBadge.border || "border-purple-500/40"}`}>{skill.specialBadge.text}{skill.isRuneActive ? '●' : ''}</span> : undefined}
+      onClick={m.onClick} onMouseEnter={m.showTip} onMouseLeave={m.hide} />;
+  };
+
+  const renderGameTeam = () => {
+    const focusIdx = gBenchFocus ?? actActiveIndex;
+    const focusElf = actTeam[focusIdx];
+    const canSwitchPhase = phase === actPhaseSelect || phase.includes("forced_switch");
+    const switchPicked = phase === actPhaseSelect && (actSide === 'p1' ? battle.p1RegistryState : battle.p2RegistryState)?.switchPickedRound === (battle.roundNumber ?? battle.turnNumber);
+    const focusSkills = focusElf && !hid(focusElf, actSide) ? (() => {
+      const f = fifthSkillSlot(focusElf.skills);
+      const list = visibleSkills(focusElf).slice(0, 5);
+      return [...list.filter(s => s.battleSlot === f), ...list.filter(s => s.battleSlot !== f)].map(s => ({ s, fifth: s.battleSlot === f }));
+    })() : [];
+    return (
+      <div className="h-full flex flex-col gap-2 pt-2" data-team-side={actSide}>
+        <div className="grid gap-2 h-[5.9rem]" style={{ gridTemplateColumns: `repeat(${Math.max(6, actTeam.length)}, minmax(0, 1fr))` }}>
+          {actTeam.map((elf, idx) => {
+            if (!elf) return <span key={idx} />;
+            const isExtra = !!elf.isExtra;
+            const isDead = !isAliveBySurvivalRule(elf.currentHp, elf.survivalRule) && !(elf.deathImmunity && elf.deathImmunity.deathImmuneTurns > 0);
+            const sheltered = !!(elf.currentHp <= 0 && elf.deathImmunity && elf.deathImmunity.deathImmuneTurns > 0);
+            const isActive = idx === actActiveIndex;
+            const focused = idx === focusIdx;
+            const canSwitch = !isExtra && !isActive && !isDead && !elf.isVanished && canSwitchPhase && !switchPicked;
+            const tag = elf.isVanished ? ['消逝', '#6b21a8'] : isDead ? ['陣亡', '#8a2a33'] : sheltered ? ['庇護中', '#7a3ab8'] : isActive ? ['出場中', '#1c8fb8'] : isExtra ? ['額外', '#b8761c'] : null;
+            const pct = elf.maxHp > 0 ? (elf.currentHp / elf.maxHp) * 100 : 0;
+            return (
+              <div key={`${actSide}-g-${idx}`} className="btg-bench" data-focus={focused} data-active={isActive} data-extra={isExtra} data-dead={isDead || !!elf.isVanished}>
+                <button type="button" className="w-full h-full flex flex-col items-center justify-center gap-1"
+                  title={`${hid(elf, actSide) ? UNKNOWN_ELF : elf.name}${canSwitch ? (focused ? '\n再點一下出戰（消耗一回合）' : '\n點一下看技能，再點一下出戰') : ''}`}
+                  onClick={() => {
+                    if (!focused) { setGBenchFocus(idx); return; }
+                    if (canSwitch) { props.onSwitchElf(actSide, idx); setGBenchFocus(null); setTacticalTab("SKILLS"); }
+                    else if (isExtra && !hid(elf, actSide)) setSelectedElfDetail({ elf, side: actSide, idx });
+                  }}>
+                  <span className="relative">
+                    <span className="block w-11 h-11 rounded-full overflow-hidden bg-slate-900"><ElfAvatar elf={elf} battleSide={actSide} kind="head" className="w-full h-full object-cover" /></span>
+                    {!hid(elf, actSide) && <span className="absolute -right-2 -bottom-1"><TypeIcon type={elf.type} size={16} /></span>}
+                  </span>
+                  <span className="text-[11px] font-black max-w-full truncate">{hid(elf, actSide) ? UNKNOWN_ELF : elf.name}</span>
+                  <span className="w-4/5 h-1 rounded bg-black/50 overflow-hidden"><span className={`block h-full ${getHpBarColor(elf.currentHp, elf.maxHp)}`} style={{ width: `${pct}%` }} /></span>
+                </button>
+                {!hid(elf, actSide) && <button type="button" aria-label="精靈詳情" title="精靈詳情" onClick={() => setSelectedElfDetail({ elf, side: actSide, idx })}
+                  className="absolute right-1 top-1 w-5 h-5 rounded-full border border-white/40 bg-black/55 text-[11px] font-black leading-none">i</button>}
+                {tag && <span className="absolute left-1 -top-2 px-1 rounded text-[10px] font-black text-white leading-4" style={{ background: tag[1] }}>{tag[0]}</span>}
+                {focused && canSwitch && <span className="absolute left-1/2 -bottom-2 -translate-x-1/2 px-2 rounded text-[10px] font-black leading-4 bg-amber-400 text-slate-900 whitespace-nowrap">再點出戰</span>}
+              </div>
+            );
+          })}
+        </div>
+        <div className="flex-1 min-h-0 flex items-center gap-2 px-2 rounded-xl border" style={{ borderColor: 'var(--g-line)', background: 'var(--g-pill)' }} data-bench-skills>
+          <span className="text-xs font-black shrink-0 max-w-[7rem] truncate" style={{ color: 'var(--g-accent)' }}>{focusElf ? (hid(focusElf, actSide) ? UNKNOWN_ELF : focusElf.name) : ''}</span>
+          {focusSkills.map(({ s, fifth }) => (
+            <span key={s.battleSlot} className="btg-benchskill" data-fifth={fifth} title={`${s.name}${fifth ? '（第五技能）' : ''}\n${s.description || ''}`}>
+              <SkillTypeIcon skill={s} size={22} />
+              <span className="min-w-0 flex flex-col leading-tight">
+                <b className="text-xs truncate">{s.name}</b>
+                <span className="text-[10px] whitespace-nowrap" style={{ color: 'var(--g-muted)' }}>PP {s.pp}/{getMaxPp(s, focusElf)}・{s.category === '屬性' ? '屬性' : `威力 ${s.power || 0}`}</span>
+              </span>
+            </span>
+          ))}
+          {focusElf && hid(focusElf, actSide) && <span className="text-xs bt-muted">{UNKNOWN_SKILL}</span>}
+        </div>
+      </div>
+    );
+  };
+
+  const renderGameLayout = () => {
+    const cmds: { key: "SKILLS" | "TEAM" | "ITEMS" | "RETREAT"; label: string; en: string }[] = [
+      { key: "SKILLS", label: "戰鬥", en: "FIGHT" }, { key: "ITEMS", label: "道具", en: "ITEM" }, { key: "TEAM", label: "精靈", en: "TEAM" }, { key: "RETREAT", label: "撤退", en: "ESCAPE" },
+    ];
+    return (
+      <div className="absolute inset-0 btg">
+        <div ref={fieldRef} className="absolute inset-x-0 top-[120px] bottom-[214px] pointer-events-none">
+          {renderSprite("p1")}
+          {renderSprite("p2")}
+        </div>
+
+        {(["p1", "p2"] as const).map(side => (
+          <div key={side} ref={el => { hudRefs.current[side] = el; }} style={{ zIndex: Z.HUD }}
+            className={`absolute top-[54px] ${side === "p1" ? "left-3" : "right-3"} w-[min(520px,32%)] pointer-events-none`}>
+            {renderGameHud(side)}
+          </div>
+        ))}
+        <div style={{ zIndex: Z.HUD }} className="absolute top-2 left-1/2 -translate-x-1/2">{renderGameMatch()}</div>
+
+        {/* 右側圓鈕：托管／速度／設定 */}
+        <div style={{ zIndex: Z.CONTROLS }} className="absolute right-4 top-[46%] flex flex-col gap-3 pointer-events-auto">
+          <button type="button" className="btg-round text-lg" data-on={isAutoBattle} onClick={props.onAutoBattleToggle} title="托管（自動戰鬥）"><span>A</span></button>
+          <button type="button" className="btg-round text-sm" onClick={() => cycleAnimationSpeed(animationRate)} title="動畫速度（點擊切換 ×1／×2／×5／×10）"><span>×{Number(animationRate.toFixed(1))}<br /><small className="text-[9px]">▶▶</small></span></button>
+          <div className="relative">
+            <button type="button" className="btg-round" onClick={() => setGMenuOpen(v => !v)} title="設定" aria-label="設定"><span><Settings className="w-5 h-5" /></span></button>
+            {gMenuOpen && (
+              <div className="btg-menu absolute right-[3.8rem] top-0" onMouseLeave={() => setGMenuOpen(false)}>
+                <button type="button" onClick={() => { setGMenuOpen(false); setShowDisplaySettings(true); }}>顯示設定</button>
+                <button type="button" onClick={() => { setGMenuOpen(false); window.dispatchEvent(new CustomEvent('open-settings', { detail: { tab: 'battle' } })); }}>戰鬥設定</button>
+                <button type="button" onClick={() => { setGMenuOpen(false); setGInspector(true); }}>效果總覽</button>
+                <button type="button" onClick={() => { setGMenuOpen(false); layoutPrefs.setStyle('classic'); }}>切換為實用風</button>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* 戰報 */}
+        <div style={{ zIndex: Z.LOG }} className="absolute left-1/2 -translate-x-1/2 bottom-[214px] w-[min(620px,40%)] flex flex-col items-center pointer-events-auto">
+          {logOpen && <div className="w-full h-[min(46vh,420px)] min-h-0 flex">{<div className="flex-1 min-w-0">{renderBattleLog()}</div>}</div>}
+          <button type="button" className="btg-logtab" data-log-toggle data-active={logOpen} onClick={() => setLogOpen(v => !v)}>{logOpen ? '戰報 ▾' : '戰報'}</button>
+        </div>
+
+        {/* 指令區 */}
+        <div style={{ zIndex: Z.CONTROLS }} className="btg-dock absolute inset-x-0 bottom-0 h-[214px] pointer-events-auto flex items-end gap-4 px-4 pb-3">
+          <span className="btg-dock-stripe" aria-hidden="true" />
+          <span className="btg-dock-ghost" aria-hidden="true">BATTLE // ROUND {String(turnNumber).padStart(2, '0')}</span>
+          <div className="flex-1 min-w-0 h-[196px]">
+            {tacticalTab === "TEAM" || tacticalTab === "ITEMS" ? (
+              <div className="h-full flex gap-4 items-center">
+                {renderGameFifth()}
+                <div className="flex-1 min-w-0 h-full">{tacticalTab === "TEAM" ? renderGameTeam() : <div className="h-full overflow-y-auto custom-scrollbar space-y-2 bt-panel p-2">{renderTacticalOther()}</div>}</div>
+              </div>
+            ) : renderGameSkills()}
+          </div>
+          <div className="grid grid-cols-2 gap-2.5 w-[17rem] h-[150px] mb-[42px] shrink-0" title="">
+            {cmds.map(c => (
+              <button key={c.key} type="button" className="btg-cmd" data-en={c.en} data-active={c.key !== 'RETREAT' && tacticalTab === c.key} data-danger={c.key === 'RETREAT'}
+                onClick={() => c.key === 'RETREAT' ? setGConfirmRetreat(true) : (setTacticalTab(c.key), setGBenchFocus(null))}>
+                {c.label}
+                {c.key === 'ITEMS' && props.potionLimit && <span className="btg-badge" style={props.potionLimit.left > 0 ? undefined : { background: '#e5484d', color: '#fff' }}>{props.potionLimit.left}</span>}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {gConfirmRetreat && (
+          <div className="fixed inset-0 z-[10000] flex items-center justify-center bg-black/60 pointer-events-auto" onClick={() => setGConfirmRetreat(false)}>
+            <div className="bt-panel p-6 flex flex-col items-center gap-4 w-[22rem]" onClick={e => e.stopPropagation()}>
+              <span className="text-lg font-black">確定撤退？</span>
+              <div className="flex gap-3">
+                <button type="button" className="bt-btn px-6 py-2 text-sm" onClick={() => setGConfirmRetreat(false)}>取消</button>
+                <button type="button" className="bt-btn px-6 py-2 text-sm !text-rose-200 !border-rose-700" onClick={() => { setGConfirmRetreat(false); props.onBackToMenu(); }}>撤退</button>
+              </div>
+            </div>
+          </div>
+        )}
+        {gInspector && (
+          <div className="fixed inset-0 z-[10000] flex items-center justify-center bg-black/60 p-4 pointer-events-auto" onClick={() => setGInspector(false)}>
+            <div className="bt-panel w-full max-w-3xl max-h-[85vh] overflow-y-auto custom-scrollbar p-4" onClick={e => e.stopPropagation()}>
+              <div className="flex justify-between items-center mb-3"><span className="bt-title">效果總覽</span><button type="button" className="bt-btn" onClick={() => setGInspector(false)}>✕</button></div>
+              <StatusInspector state={battle} />
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  };
+
   return (
-    <div ref={battleRootRef} data-battle-root data-skin={props.specialMode === "interstellar" ? "eclipse" : "default"} className="h-full w-full bg-transparent overflow-clip relative font-sans text-slate-200">
+    <div ref={battleRootRef} data-battle-root data-layout={gameLayout ? "game" : "classic"} data-gskin={layoutPrefs.skin} data-skin={props.specialMode === "interstellar" ? "eclipse" : "default"} className="h-full w-full bg-transparent overflow-clip relative font-sans text-slate-200">
       {winner && !props.specialMode && resultSummary && <BattleResult winner={winner as any} battleMode={props.battleMode || "PVE"} summary={resultSummary} p1Team={resultTeams.p1} p2Team={resultTeams.p2} format={props.formatLabel || "自由戰"} onRestart={props.onReset} onHome={props.onBackToMenu} />}
       {winner && props.specialMode && <SpecialBattleEndDialog winner={winner} mode={props.specialMode} onBack={props.onBackToMenu} />}
       {/* 2026-11-02：動畫／結算期間不再全螢幕攔截點擊。
@@ -1346,7 +1773,7 @@ function BattleScreenBody(props: BattleScreenUIProps) {
       {/* Background Blueprint Grid - Lower Opacity to show theme background */}
       <div className="absolute inset-0 bg-[linear-gradient(rgba(6,182,212,0.02)_1px,transparent_1px),linear-gradient(90deg,rgba(6,182,212,0.02)_1px,transparent_1px)] bg-[size:40px_40px] [mask-image:radial-gradient(ellipse_at_center,black,transparent)] pointer-events-none" />
 
-      {renderFixedLayout()}
+      {gameLayout ? renderGameLayout() : renderFixedLayout()}
       {/* 全屏演出層：FX_BACKDROP，鋪滿整個戰鬥畫面；在場地／訊息欄之上，HUD、指令列、飄字（battleLayers.ts）一律在它之上 */}
       <BattleFxLayer />
 
@@ -1500,6 +1927,30 @@ function BattleScreenBody(props: BattleScreenUIProps) {
                 <div className="ios-segment">
                   {([["show", "顯示"], ["dim", "半透明"], ["hide", "隱藏"]] as const).map(([k, l]) => (
                     <button key={k} data-active={spriteMode === k} onClick={() => setSpriteMode(k)}>{l}</button>
+                  ))}
+                </div>
+              </div>
+              <div className="flex items-center justify-between mb-4 p-2.5 rounded-xl bg-slate-900/60 border border-slate-800" data-layout-style-setting>
+                <span className="text-xs font-bold text-slate-300" title="原廠風：參照原廠排版的新介面；實用風：舊版資訊密集介面（手機直向固定使用實用風）">介面風格</span>
+                <div className="ios-segment">
+                  {([["game", "原廠風"], ["classic", "實用風"]] as const).map(([k, l]) => (
+                    <button key={k} data-active={layoutPrefs.style === k} onClick={() => layoutPrefs.setStyle(k)}>{l}</button>
+                  ))}
+                </div>
+              </div>
+              <div className="flex items-center justify-between mb-4 p-2.5 rounded-xl bg-slate-900/60 border border-slate-800">
+                <span className="text-xs font-bold text-slate-300" title="原廠風的外觀；星蝕迴廊固定黑漆鎏金">原廠風外觀</span>
+                <div className="ios-segment">
+                  {BATTLE_GAME_SKINS.map(([k, l]) => (
+                    <button key={k} data-active={layoutPrefs.skin === k} onClick={() => layoutPrefs.setSkin(k)}>{l}</button>
+                  ))}
+                </div>
+              </div>
+              <div className="flex items-center justify-between mb-4 p-2.5 rounded-xl bg-slate-900/60 border border-slate-800">
+                <span className="text-xs font-bold text-slate-300" title="原廠風頭像下方的能力／異常／常駐／印記／回合整排">效果列</span>
+                <div className="ios-segment">
+                  {([[false, "顯示"], [true, "收起"]] as const).map(([k, l]) => (
+                    <button key={l} data-active={layoutPrefs.trayHidden === k} onClick={() => layoutPrefs.setTrayHidden(k)}>{l}</button>
                   ))}
                 </div>
               </div>
