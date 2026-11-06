@@ -93,7 +93,7 @@ export const MIGRATED_FINAL_EXTRA_SOUL_KITS=[{
     soulEntry('before_damage','outgoing','非真傷提升120%；每降低0.1%體力另提升120%，低於½翻倍',[
       {acts:[{op:'missing_hp_damage_boost',p:{baseBoost:1.2,step:.001,stepBoost:1.2,doubleBelow:.5},label:'按本次體力計算增傷'}]}
     ],5),
-    soulEntry('on_damaged','damaged_true','受到真傷後2回合抵擋技能、固傷與百分比上限60，直到下回合結束前不受體力限制',[
+    soulEntry('on_damaged','damaged_true','受到真傷後2回合抵擋技能、固傷與百分比上限66，直到下回合結束前不受體力限制',[
       {acts:[{op:'damage_survival_guard',p:{guardTurns:2,deathImmuneTurns:3,fixedPercentCap:66,preserveOffField:true},label:'建立有限期非正體力存活'}]}
     ],6),
     soulEntry('on_skill_use','self_skill','使用技能恢復自身最大體力⅙並造成等量百分比傷害',[

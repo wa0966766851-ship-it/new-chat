@@ -85,7 +85,15 @@ try {
   // skills 段：遷移項若仍保留入口（以 kit 閘門收尾），需兩邊一致——expected 保留它。
   const dropMigratedSkills = (list: string[]) => list.filter((name: string) => !migrations[name] || actual.skills.includes(name));
   const dropMigrated = (list: string[]) => list.filter((name: string) => !migrations[name]);
-  assert.deepEqual(actual,{...baseline,skills:[...dropMigratedSkills(baseline.skills),...Object.keys(bridges)].sort(),afterHit:dropMigrated(baseline.afterHit),invalid:dropMigrated(baseline.invalid),souls:[...baseline.souls.filter((k:string)=>!migratedSouls.has(k)),...Object.keys(soulBridges)].sort()},'除指定Kit遷移與指定橋接外，原註冊表所有入口必須保持');
+  // 改名別名（2026-11-06）：5021 正式名稱改為「治癒·龍魂再臨」（不再含屬性系「次元龍」）；舊名稱鍵保留為別名，
+  // 新名稱鍵必須對應原基準的舊鍵且掛到同一個 handler。
+  const soulRenames:Record<string,string>={'治癒·龍魂再臨':'治癒.龍魂再臨 次元龍'};
+  for(const [name,legacy] of Object.entries(soulRenames)){
+    assert.ok(baseline.souls.includes(legacy),`改名必須對應原基準舊鍵：${legacy}`);assert.ok(!baseline.souls.includes(name));
+    assert.equal(registry.getSoulMarkRegistry()[name],registry.getSoulMarkRegistry()[legacy],`${name} 必須與舊名稱別名掛同一handler`);
+    assert.equal(DEFAULT_ELVES.find((e:any)=>String(e.id)==='5021').name,name);
+  }
+  assert.deepEqual(actual,{...baseline,skills:[...dropMigratedSkills(baseline.skills),...Object.keys(bridges)].sort(),afterHit:dropMigrated(baseline.afterHit),invalid:dropMigrated(baseline.invalid),souls:[...baseline.souls.filter((k:string)=>!migratedSouls.has(k)),...Object.keys(soulBridges),...Object.keys(soulRenames)].sort()},'除指定Kit遷移與指定橋接外，原註冊表所有入口必須保持');
   const expected: Record<string, any> = {};
   for (const [, mod] of Object.entries(ELF_REGISTRY_MODULES).sort(([a], [b]) => a < b ? -1 : a > b ? 1 : 0)) {
     for (const [name, value] of Object.entries(mod as object)) if (name.endsWith('_SKILLS')) Object.assign(expected, value);

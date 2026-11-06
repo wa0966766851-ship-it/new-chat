@@ -60,6 +60,9 @@ const freeze = resolveDamageTransition(40, 500, 127, 'true', liurenSurvivalRule(
 const atZero = resolveDamageTransition(0, 500, 53, 'true', liurenSurvivalRule());
 assert.equal(freeze.hp, 0); assert.equal(atZero.hp, 0);
 assert.equal(freeze.alive, true); assert.equal(atZero.alive, true);
+assert.equal(atZero.ignoredDamage, false, '零血只禁止繼續扣體力，不是免疫傷害');
+assert.equal(atZero.damageApplied, 0, '零血傷害與實際體力損失分開記錄');
+assert.equal(resolveDamageTransition(-408, 8200, 53, 'true', liurenSurvivalRule()).hp, 0, '舊錯誤負體力在下次傷害結算回到0');
 assert.equal(damagePresentationAmount('true', 127, freeze.damageApplied), 127);
 assert.equal(damagePresentationAmount('true', 53, atZero.damageApplied), 53);
 assert.equal(damagePresentationAmount('skill', 127, 40), 127, '技能傷害顯示實際傷害，不是體力變化');

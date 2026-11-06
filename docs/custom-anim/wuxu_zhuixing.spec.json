@@ -1,0 +1,491 @@
+{
+  "id": "wuxu_zhuixing",
+  "elfId": "5026",
+  "elfName": "無序.墜星",
+  "fps": 24,
+  "facing": "left",
+  "source": "public/elf-art/wuxu_zhuixing_body.png",
+  "_note": "座標以畫布中心為原點，x 向右為正，y 向下為正。全部數值都可調；調完重跑 build_custom_animation.mjs 即可。",
+  "sequences": {
+    "standby": {
+      "frames": 40,
+      "loop": true,
+      "layers": [
+        {
+          "kind": "sprite",
+          "track": [
+            {
+              "t": 0,
+              "x": 0,
+              "y": 0,
+              "scale": 1
+            },
+            {
+              "t": 12,
+              "x": 0,
+              "y": -3,
+              "scale": 1.008,
+              "ease": "inOut"
+            },
+            {
+              "t": 26,
+              "x": 0,
+              "y": 1,
+              "scale": 0.996,
+              "ease": "inOut"
+            },
+            {
+              "t": 39,
+              "x": 0,
+              "y": 0,
+              "scale": 1,
+              "ease": "inOut"
+            }
+          ]
+        },
+        {
+          "kind": "glow",
+          "color": "#4aa8ff",
+          "radius": 70,
+          "power": 2.6,
+          "track": [
+            {
+              "t": 0,
+              "x": 250,
+              "y": -30,
+              "alpha": 0.28,
+              "scale": 0.9
+            },
+            {
+              "t": 12,
+              "x": 250,
+              "y": -30,
+              "alpha": 0.5,
+              "scale": 1.05,
+              "ease": "inOut"
+            },
+            {
+              "t": 26,
+              "x": 250,
+              "y": -30,
+              "alpha": 0.32,
+              "scale": 0.94,
+              "ease": "inOut"
+            },
+            {
+              "t": 39,
+              "x": 250,
+              "y": -30,
+              "alpha": 0.28,
+              "scale": 0.9,
+              "ease": "inOut"
+            }
+          ]
+        },
+        {
+          "kind": "glow",
+          "color": "#7a5cff",
+          "radius": 46,
+          "power": 2.4,
+          "track": [
+            {
+              "t": 0,
+              "x": -210,
+              "y": 90,
+              "alpha": 0.2,
+              "scale": 1
+            },
+            {
+              "t": 20,
+              "x": -210,
+              "y": 90,
+              "alpha": 0.42,
+              "scale": 1.12,
+              "ease": "inOut"
+            },
+            {
+              "t": 39,
+              "x": -210,
+              "y": 90,
+              "alpha": 0.2,
+              "scale": 1,
+              "ease": "inOut"
+            }
+          ]
+        }
+      ]
+    },
+    "sa": {
+      "frames": 46,
+      "hits": [
+        26
+      ],
+      "layers": [
+        {
+          "kind": "sprite",
+          "track": [
+            {
+              "t": 0,
+              "x": 0,
+              "y": 0,
+              "scale": 1
+            },
+            {
+              "t": 16,
+              "x": -26,
+              "y": 10.4,
+              "scale": 0.961,
+              "ease": "charge"
+            },
+            {
+              "t": 22,
+              "x": -36.4,
+              "y": 15.600000000000001,
+              "scale": 0.9428,
+              "ease": "inOut"
+            },
+            {
+              "t": 26,
+              "x": 36.4,
+              "y": -10.4,
+              "scale": 1.052,
+              "ease": "snap"
+            },
+            {
+              "t": 30,
+              "x": -46.800000000000004,
+              "y": 5.2,
+              "scale": 0.974,
+              "ease": "out"
+            },
+            {
+              "t": 38,
+              "x": -15.600000000000001,
+              "y": 0,
+              "scale": 1,
+              "ease": "inOut"
+            },
+            {
+              "t": 45,
+              "x": 0,
+              "y": 0,
+              "scale": 1,
+              "ease": "inOut"
+            }
+          ]
+        },
+        {
+          "kind": "ring",
+          "color": "#66d4ff",
+          "radius": 120,
+          "width": 5,
+          "track": [
+            {
+              "t": 0,
+              "x": 250,
+              "y": -30,
+              "alpha": 0,
+              "scale": 0.2
+            },
+            {
+              "t": 10,
+              "x": 250,
+              "y": -30,
+              "alpha": 0.85,
+              "scale": 0.7,
+              "ease": "charge"
+            },
+            {
+              "t": 20,
+              "x": 250,
+              "y": -30,
+              "alpha": 0.95,
+              "scale": 1,
+              "ease": "inOut"
+            },
+            {
+              "t": 26,
+              "x": 250,
+              "y": -30,
+              "alpha": 1,
+              "scale": 0.35,
+              "ease": "snap"
+            },
+            {
+              "t": 30,
+              "x": 250,
+              "y": -30,
+              "alpha": 0,
+              "scale": 0.1,
+              "ease": "out"
+            }
+          ]
+        },
+        {
+          "kind": "glow",
+          "color": "#4aa8ff",
+          "radius": 90,
+          "power": 2,
+          "track": [
+            {
+              "t": 0,
+              "x": 250,
+              "y": -30,
+              "alpha": 0.15,
+              "scale": 0.6
+            },
+            {
+              "t": 18,
+              "x": 250,
+              "y": -30,
+              "alpha": 1,
+              "scale": 1.3,
+              "ease": "charge"
+            },
+            {
+              "t": 26,
+              "x": 250,
+              "y": -30,
+              "alpha": 1,
+              "scale": 1.55,
+              "ease": "snap"
+            },
+            {
+              "t": 32,
+              "x": 250,
+              "y": -30,
+              "alpha": 0.5,
+              "scale": 1.1,
+              "ease": "out"
+            },
+            {
+              "t": 45,
+              "x": 250,
+              "y": -30,
+              "alpha": 0.2,
+              "scale": 0.8,
+              "ease": "inOut"
+            }
+          ]
+        },
+        {
+          "kind": "beam",
+          "color": "#8fe6ff",
+          "length": 620,
+          "width": 96,
+          "dir": "right",
+          "track": [
+            {
+              "t": 0,
+              "x": 250,
+              "y": -30,
+              "alpha": 0
+            },
+            {
+              "t": 25,
+              "x": 250,
+              "y": -30,
+              "alpha": 0
+            },
+            {
+              "t": 26,
+              "x": 250,
+              "y": -30,
+              "alpha": 1,
+              "scale": 1,
+              "ease": "snap"
+            },
+            {
+              "t": 30,
+              "x": 250,
+              "y": -30,
+              "alpha": 0.75,
+              "scale": 1.05,
+              "ease": "out"
+            },
+            {
+              "t": 35,
+              "x": 250,
+              "y": -30,
+              "alpha": 0,
+              "scale": 1.1,
+              "ease": "out"
+            }
+          ]
+        },
+        {
+          "kind": "spark",
+          "color": "#a8e8ff",
+          "count": 34,
+          "spread": 240,
+          "speed": 1.5,
+          "seed": 20261103,
+          "track": [
+            {
+              "t": 0,
+              "x": 250,
+              "y": -30,
+              "alpha": 0
+            },
+            {
+              "t": 26,
+              "x": 250,
+              "y": -30,
+              "alpha": 0.95,
+              "scale": 1,
+              "ease": "snap"
+            },
+            {
+              "t": 36,
+              "x": 250,
+              "y": -30,
+              "alpha": 0.3,
+              "scale": 1.2,
+              "ease": "out"
+            },
+            {
+              "t": 45,
+              "x": 250,
+              "y": -30,
+              "alpha": 0,
+              "scale": 1.3
+            }
+          ]
+        },
+        {
+          "kind": "glow",
+          "color": "#7a5cff",
+          "radius": 60,
+          "power": 2.2,
+          "track": [
+            {
+              "t": 0,
+              "x": -210,
+              "y": 90,
+              "alpha": 0.2,
+              "scale": 1
+            },
+            {
+              "t": 20,
+              "x": -210,
+              "y": 90,
+              "alpha": 0.75,
+              "scale": 1.35,
+              "ease": "charge"
+            },
+            {
+              "t": 26,
+              "x": -210,
+              "y": 90,
+              "alpha": 0.35,
+              "scale": 0.9,
+              "ease": "snap"
+            },
+            {
+              "t": 45,
+              "x": -210,
+              "y": 90,
+              "alpha": 0.2,
+              "scale": 1,
+              "ease": "inOut"
+            }
+          ]
+        }
+      ]
+    },
+    "hited": {
+      "frames": 8,
+      "layers": [
+        {
+          "kind": "sprite",
+          "track": [
+            {
+              "t": 0,
+              "x": 0,
+              "y": 0,
+              "scale": 1,
+              "alpha": 1
+            },
+            {
+              "t": 1,
+              "x": -24,
+              "y": -6,
+              "scale": 0.985,
+              "alpha": 0.82,
+              "ease": "out"
+            },
+            {
+              "t": 3,
+              "x": 15,
+              "y": 3,
+              "scale": 1.0150000000000001,
+              "alpha": 0.94,
+              "ease": "inOut"
+            },
+            {
+              "t": 5,
+              "x": -7.5,
+              "y": 0,
+              "scale": 1,
+              "alpha": 1,
+              "ease": "inOut"
+            },
+            {
+              "t": 7,
+              "x": 0,
+              "y": 0,
+              "scale": 1,
+              "alpha": 1,
+              "ease": "out"
+            }
+          ]
+        },
+        {
+          "kind": "glow",
+          "color": "#ff5a5a",
+          "radius": 110,
+          "power": 2.8,
+          "track": [
+            {
+              "t": 0,
+              "x": 0,
+              "y": -40,
+              "alpha": 0
+            },
+            {
+              "t": 1,
+              "x": 0,
+              "y": -40,
+              "alpha": 0.6,
+              "scale": 1,
+              "ease": "out"
+            },
+            {
+              "t": 4,
+              "x": 0,
+              "y": -40,
+              "alpha": 0.2,
+              "scale": 1.2,
+              "ease": "out"
+            },
+            {
+              "t": 7,
+              "x": 0,
+              "y": -40,
+              "alpha": 0,
+              "scale": 1.3
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "scale": 0.5,
+  "pad": {
+    "left": 120,
+    "right": 420,
+    "top": 90,
+    "bottom": 60
+  },
+  "_coordNote": "座標以立繪中心為原點、x 向右為正；spec 一律以「角色朝畫面右」撰寫，立繪實際朝左時由 facing 把動作鏡射到左側（立繪本身不動）。"
+}

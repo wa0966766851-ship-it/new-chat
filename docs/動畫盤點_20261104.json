@@ -1,0 +1,284 @@
+[
+  {
+    "id": "5001",
+    "name": "悲歌.索比拉特",
+    "path": null,
+    "kind": "OFFICIAL"
+  },
+  {
+    "id": "5002",
+    "name": "帝皇之盾",
+    "path": null,
+    "kind": "OFFICIAL"
+  },
+  {
+    "id": "5003",
+    "name": "天蓬元帥八戒",
+    "path": null,
+    "kind": "OFFICIAL"
+  },
+  {
+    "id": "5004",
+    "name": "皮特薩拉羅",
+    "path": null,
+    "kind": "OFFICIAL"
+  },
+  {
+    "id": "5005",
+    "name": "布萊克",
+    "path": null,
+    "kind": "OFFICIAL"
+  },
+  {
+    "id": "300",
+    "name": "譜尼",
+    "path": null,
+    "kind": "OFFICIAL"
+  },
+  {
+    "id": "5006",
+    "name": "星光·魔焰猩猩",
+    "path": null,
+    "kind": "OFFICIAL"
+  },
+  {
+    "id": "5007",
+    "name": "混濁海妖.布林克克",
+    "path": null,
+    "kind": "OFFICIAL"
+  },
+  {
+    "id": "5008",
+    "name": "鎮魂.巴弗洛",
+    "path": null,
+    "kind": "OFFICIAL"
+  },
+  {
+    "id": "5009",
+    "name": "誑獅魔軀.魔獅迪露",
+    "path": null,
+    "kind": "OFFICIAL"
+  },
+  {
+    "id": "5000",
+    "name": "聖靈譜尼",
+    "path": null,
+    "kind": "OFFICIAL"
+  },
+  {
+    "id": "5010",
+    "name": "星光·魯斯王",
+    "path": null,
+    "kind": "OFFICIAL"
+  },
+  {
+    "id": "5011",
+    "name": "星光·麗莎布布",
+    "path": null,
+    "kind": "OFFICIAL"
+  },
+  {
+    "id": "5012",
+    "name": "冰魄·柯爾德",
+    "path": null,
+    "kind": "OFFICIAL"
+  },
+  {
+    "id": "5013",
+    "name": "柯爾霍德",
+    "path": null,
+    "kind": "OFFICIAL"
+  },
+  {
+    "id": "5014",
+    "name": "聖光斯嘉麗",
+    "path": null,
+    "kind": "OFFICIAL"
+  },
+  {
+    "id": "5015",
+    "name": "混沌·布萊克",
+    "path": null,
+    "kind": "OFFICIAL"
+  },
+  {
+    "id": "5016",
+    "name": "變革·馬爾修斯",
+    "path": null,
+    "kind": "OFFICIAL"
+  },
+  {
+    "id": "5017",
+    "name": "人皇·帝辛",
+    "path": null,
+    "kind": "CUSTOM"
+  },
+  {
+    "id": "5018",
+    "name": "蟲后·奧佩婭",
+    "path": null,
+    "kind": "OFFICIAL"
+  },
+  {
+    "id": "5019",
+    "name": "眾神之父·奧丁",
+    "path": null,
+    "kind": "OFFICIAL"
+  },
+  {
+    "id": "5020",
+    "name": "皮皮",
+    "path": null,
+    "kind": "OFFICIAL"
+  },
+  {
+    "id": "5021",
+    "name": "治癒.龍魂再臨 次元龍",
+    "path": null,
+    "kind": "OFFICIAL"
+  },
+  {
+    "id": "5022",
+    "name": "無序.六刃",
+    "path": null,
+    "kind": "CUSTOM"
+  },
+  {
+    "id": "5023",
+    "name": "無序·蝕言",
+    "path": null,
+    "kind": "CUSTOM"
+  },
+  {
+    "id": "5024",
+    "name": "湮滅之主・咤克斯",
+    "path": null,
+    "kind": "OFFICIAL"
+  },
+  {
+    "id": "5025",
+    "name": "恐懼的化身·咤克斯",
+    "path": null,
+    "kind": "OFFICIAL"
+  },
+  {
+    "id": "5026",
+    "name": "無序.墜星",
+    "path": null,
+    "kind": "CUSTOM"
+  },
+  {
+    "id": "5027",
+    "name": "蓓麗安特",
+    "path": null,
+    "kind": "OFFICIAL"
+  },
+  {
+    "id": "5028",
+    "name": "怒濤·滄嵐",
+    "path": null,
+    "kind": "OFFICIAL"
+  },
+  {
+    "id": "5029",
+    "name": "異境神霆·雷伊",
+    "path": "otherworld_thunder_rey",
+    "kind": "NONE"
+  },
+  {
+    "id": "5030",
+    "name": "聖靈邁爾斯",
+    "path": null,
+    "kind": "OFFICIAL"
+  },
+  {
+    "id": "5031",
+    "name": "六界神王",
+    "path": null,
+    "kind": "OFFICIAL"
+  },
+  {
+    "id": "5032",
+    "name": "星核寰宇·艾斯菲亞",
+    "path": "astral_aesfia",
+    "kind": "OFFICIAL"
+  },
+  {
+    "id": "5033",
+    "name": "星軌重構·艾斯菲格",
+    "path": "astral_aesfig",
+    "kind": "OFFICIAL"
+  },
+  {
+    "id": "5034",
+    "name": "邪靈主宰·摩哥斯",
+    "path": "mogos_overlord",
+    "kind": "OFFICIAL"
+  },
+  {
+    "id": "5036",
+    "name": "九青",
+    "path": "jiuqing",
+    "kind": "OFFICIAL"
+  },
+  {
+    "id": "7070",
+    "name": "魔化.雷伊",
+    "path": null,
+    "kind": "NONE"
+  },
+  {
+    "id": "707070",
+    "name": "墜霆.雷伊",
+    "path": null,
+    "kind": "NONE"
+  },
+  {
+    "id": "5041",
+    "name": "岳峙淵渟.卡修斯",
+    "path": null,
+    "kind": "OFFICIAL"
+  },
+  {
+    "id": "5035",
+    "name": "御天龍神·哈莫",
+    "path": "imperial_dragon_hamo",
+    "kind": "OFFICIAL"
+  },
+  {
+    "id": "arena_12",
+    "name": "無為龍者",
+    "path": null,
+    "kind": "OFFICIAL"
+  },
+  {
+    "id": "arena_13",
+    "name": "龍錄天鋒",
+    "path": null,
+    "kind": "OFFICIAL"
+  },
+  {
+    "id": "arena_14",
+    "name": "無極聖武",
+    "path": null,
+    "kind": "OFFICIAL"
+  },
+  {
+    "id": "arena_15",
+    "name": "命運龍輪 莫伊萊",
+    "path": null,
+    "kind": "OFFICIAL"
+  },
+  {
+    "id": "arena_16",
+    "name": "鎮世龍魂・龍之治癒",
+    "path": null,
+    "kind": "NONE"
+  },
+  {
+    "id": "wiki_4937",
+    "name": "星光·雷納多",
+    "path": null,
+    "kind": "OFFICIAL"
+  }
+]

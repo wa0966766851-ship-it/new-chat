@@ -86,7 +86,7 @@ import { MIGRATED_BRINKK_SKILL_KITS } from './migratedBrinkkSkillKits';
 import { MIGRATED_FINAL_C_SKILL_KITS } from './migratedFinalCKits';
 // 5012 冰魄·柯爾德 凝寒止喧（DSH 20261016 接線；multi_hit perMarkHits 新機制）
 import { MIGRATED_KELD_SKILL_KITS } from './migratedKeldSkillKits';
-// 5021 治癒.龍魂再臨 次元龍 閱世（DSH 20261016 接線；dragon_soul 新條件）
+// 5021 治癒·龍魂再臨 閱世（DSH 20261016 接線；dragon_soul 新條件）
 import { MIGRATED_DIMENSIONAL_DRAGON_SKILL_KITS } from './migratedDimensionalDragonSkillKits';
 // 5019 奧丁符文系 ᛟᛞᛁᚾᛋ ᚨᚾᛋᚢᛉ（DSH 20261016 接線）
 import { MIGRATED_ODIN_RUNE_SKILL_KITS } from './migratedOdinRuneSkillKits';
@@ -231,10 +231,10 @@ export const MIGRATED_SEQUENCE_SKILL_KITS: ReviewedSequenceSkill[] = [
     sequence("🎯 消除對手能力提升狀態，消除成功則對手全屬性-1",[{"acts":[{"op":"stat_clear","p":{"side":"opp","kind":"up"},"label":"消除對手能力提升"}]},{"chain":"success","acts":[{"op":"stat","p":{"chance":100,"side":"opp","stats":["全屬性"],"v":-1},"label":"對手 全屬性 -1"}]}],2),
     sequence("🎯 消除對手回合類效果，消除成功則對手2回合內無法恢復體力",[{"acts":[{"op":"clear_turn","p":{"side":"opp"},"label":"消除對手回合類效果"}]},{"chain":"success","acts":[{"op":"no_heal","p":{"turns":2},"label":"2回合 對手無法恢復體力"}]}],3),
   ]},
-  {elfIds:["5003"],name:"萬鈞鎮魂",description:"■ 必中\n🎯 造成傷害的40%恢復自身體力\n🎯 對手體力高於自身時附加對手最大體力1/4固定傷害\n🎯 未擊敗對手則對手全屬性-1",kit:[
+  {elfIds:["5003"],name:"萬鈞鎮魂",description:"■ 必中\n🎯 造成傷害的40%恢復自身體力\n🎯 對手體力高於自身時附加對手最大體力1/4百分比傷害\n🎯 未擊敗對手則對手全屬性-1",kit:[
     property("■ 必中","sure_hit",true,0),
     sequence("🎯 造成傷害的40%恢復自身體力",[{"acts":[{"op":"vampire","p":{"ratio":0.4,"kind":"攻擊"},"label":"吸血 40%"}]}],1),
-    sequence("🎯 對手體力高於自身時附加對手最大體力1/4固定傷害",[{"cond":[{"c":"hp_cmp","p":{"side":"opp","op":"高於"},"label":"對手體力高於自身"}],"acts":[{"op":"dmg","p":{"base":"最大體力","of":"opp","ratio":0.25,"type":"固定"},"label":"【固定傷害】對手最大體力 25%"}]}],2),
+    sequence("🎯 對手體力高於自身時附加對手最大體力1/4百分比傷害",[{"cond":[{"c":"hp_cmp","p":{"side":"opp","op":"高於"},"label":"對手體力高於自身"}],"acts":[{"op":"dmg","p":{"base":"最大體力","of":"opp","ratio":0.25,"type":"百分比"},"label":"【百分比傷害】對手最大體力 25%"}]}],2),
     afterHit("🎯 未擊敗對手則對手全屬性-1",[{"cond":[{"c":"nokill","p":{},"label":"未擊敗對手"}],"acts":[{"op":"stat","p":{"chance":100,"side":"opp","stats":["全屬性"],"v":-1},"label":"對手 全屬性 -1"}]}],3),
   ]},
   {elfIds:["5003"],name:"混元護體",description:"■ 必中\n🎯 4回合內免疫並反彈所有非附屬類異常狀態\n🎯 命中後100%令對手害怕\n🎯 3回合內自身受到的單次攻擊傷害不超過280點\n🎯 下2回合自身所有攻擊技能先制+2",kit:[
@@ -250,13 +250,13 @@ export const MIGRATED_SEQUENCE_SKILL_KITS: ReviewedSequenceSkill[] = [
     sequence("🎯 消除對手回合類效果，消除成功則對手3回合內無法恢復體力且屬性技能無效",[{"acts":[{"op":"clear_turn","p":{"side":"opp"},"label":"消除對手回合類效果"}]},{"chain":"success","acts":[{"op":"no_heal","p":{"turns":3},"label":"3回合 對手無法恢復體力"},{"op":"invalid_turns","p":{"turns":3,"kind":"屬性"},"label":"3回合 對手屬性技能無效"}]}],2),
     sequence("🎯 自身體力低於對手時造成傷害提升100%並恢復等量體力",[{"cond":[{"c":"hp_cmp","p":{"side":"self","op":"低於"},"label":"自身體力低於對手"}],"acts":[{"op":"boost","p":{"mult":2,"kind":"攻擊","power":false},"label":"本次【攻擊傷害】×2"},{"op":"heal_equal","p":{},"label":"恢復等量體力"}]}],3),
   ]},
-  // 5003 殘軀鎖命（使用者決定 2026-10-12）：「恢復量的50%轉化為附加對手等量戰鬥系傷害」＝戰鬥系技能傷害（applySkillTypeDamage）；
+  // 5003 殘軀鎖命（使用者決定 2026-10-12）：「恢復量的50%轉化為附加對手等量戰鬥系技能傷害」＝戰鬥系技能傷害（applySkillTypeDamage）；
   // 恢復量＝實際結算恢復量（禁療／體力已滿＝0 → 不附加傷害）。「4回合內每回合」含使用當回合結束（與舊文字路徑一致）。
-  {elfIds:['5003'],name:'殘軀鎖命',description:'■ 必中\n■ 先制+2\n🎯 全屬性+1，自身處於能力提升狀態時強化效果翻倍\n🎯 4回合內自身體力受到攻擊傷害不超過200點\n🎯 4回合內每回合恢復自身最大體力1/3，恢復量的50%轉化為附加對手等量戰鬥系傷害\n🎯 下2回合對手受到攻擊傷害提升100%',kit:[
+  {elfIds:['5003'],name:'殘軀鎖命',description:'■ 必中\n■ 先制+2\n🎯 全屬性+1，自身處於能力提升狀態時強化效果翻倍\n🎯 4回合內自身體力受到攻擊傷害不超過200點\n🎯 4回合內每回合恢復自身最大體力1/3，恢復量的50%轉化為附加對手等量戰鬥系技能傷害\n🎯 下2回合對手受到攻擊傷害提升100%',kit:[
     property('■ 必中','sure_hit',true,0),property('■ 先制+2','base_priority',2,1),
     sequence('🎯 全屬性+1，自身處於能力提升狀態時強化效果翻倍',[{acts:[action('stat',{chance:100,side:'auto',stats:['全屬性'],v:1,x2If:{c:'stage',p:{side:'self',kind:'up',neg:false},label:'自身處於能力提升'}})]}],2),
     sequence('🎯 4回合內自身體力受到攻擊傷害不超過200點',[{acts:[action('dmg_cap_turns',{turns:4,cap:200})]}],3),
-    sequence('🎯 4回合內每回合恢復自身最大體力1/3，恢復量的50%轉化為附加對手等量戰鬥系傷害',[{acts:[action('timed',{turns:4,from:'now',trig:'self_skill',initial:true,body:[{acts:[action('heal',{side:'self',ratio:1/3}),action('dmg_from_last',{ratio:0.5,type:'技能',elem:'戰鬥'})]}]})]}],4),
+    sequence('🎯 4回合內每回合恢復自身最大體力1/3，恢復量的50%轉化為附加對手等量戰鬥系技能傷害',[{acts:[action('timed',{turns:4,from:'now',trig:'self_skill',initial:true,body:[{acts:[action('heal',{side:'self',ratio:1/3}),action('dmg_from_last',{ratio:0.5,type:'技能',elem:'戰鬥'})]}]})]}],4),
     sequence('🎯 下2回合對手受到攻擊傷害提升100%',[{acts:[action('dmg_mod_turns',{side:'opp',dir:'taken',kind:'攻擊',boost:1,turns:2,next:true})]}],5),
   ]},
   // 5002 帝皇之盾（帝永壁令／盾碎同歸：custom 動作 B；魂印 B）

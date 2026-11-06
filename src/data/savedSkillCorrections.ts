@@ -8,6 +8,7 @@ import legacySoulKits from './legacySoulKitFingerprints.json';
 import { correctSavedJiuqing } from './savedJiuqingCorrection';
 import { restoreBuiltinFifthFlags } from '../battle/skillSlot';
 import {synchronizeBuiltinEffectBindings,modifiedBuiltinDefinitions} from './builtinEffectBindings';
+import {upgradeLegacyElfName} from './legacyElfNames';
 
 // 早期 Elf.kit 是描述詞條；只認領 Git 歷史逐項完全相同的資料，不能把使用者的頂層積木當成舊版。
 function knownLegacySoulKit(elf:Elf):boolean {
@@ -20,8 +21,23 @@ function knownLegacySoulKit(elf:Elf):boolean {
 
 /** 只修正已知舊版內建定義；圖紙或全文有其他改動時保留使用者版本。 */
 export function applySavedSkillCorrections(elf:Elf,defaults:Elf[]):Elf{
+  // 內建精靈改名（5021「治癒.龍魂再臨 次元龍」→「治癒·龍魂再臨」）：其餘修正都以 id＋名稱對照內建來源，必須先改名。
+  elf = upgradeLegacyElfName(elf);
+  // 通用：內建精靈存檔缺少 seerId（舊版沒寫）時，依預設資料補回。
+  // seerId 是「外觀→官方動作素材」的唯一依據，缺了不會報錯、只會安靜地退回簡易演出。
+  // 只補不覆寫，使用者存檔有值時尊重原值；custom_ 精靈不套用。
+  elf = restoreBuiltinSeerId(elf, defaults);
   elf = correctSavedDimensionalDragon(elf, defaults, modifiedBuiltinDefinitions(elf, defaults));
   return synchronizeBuiltinEffectBindings(correctKnownSavedDefinitions(correctSavedJiuqing(correctSavedCorruptedRey(correctSavedFifthFlags(elf,defaults),defaults),defaults),defaults),defaults);
+}
+
+/** seerId 補回：只處理內建精靈，且預設資料確實有值時才補。 */
+function restoreBuiltinSeerId(elf:Elf,defaults:Elf[]):Elf{
+  if(!elf||String(elf.id).startsWith('custom_')||elf.isCustom)return elf;
+  const canonical=defaults.find(e=>String(e.id)===String(elf.id)&&e.name===elf.name);
+  if(!canonical||canonical.seerId===undefined||canonical.seerId==='')return elf;
+  if(elf.seerId===canonical.seerId)return elf;
+  return {...elf,seerId:canonical.seerId};
 }
 
 /** 第五技能旗標：內建精靈存檔缺旗標（例如 10/23 前未標記的魔獅迪露）時，依預設資料補回；規則見 docs/rules/技能欄與第五技能規則.md。 */

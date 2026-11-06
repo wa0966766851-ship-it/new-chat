@@ -1,4 +1,4 @@
-﻿/** 原生動畫的原始朝向以正立 SwfPlayer 畫面逐筆登記；不得從靜態 PNG 繼承。
+/** 原生動畫的原始朝向以正立 SwfPlayer 畫面逐筆登記；不得從靜態 PNG 繼承。
  * 核對：2026-10-26 正式播放器固定 transform={x:+scale,y:-scale}，未水平鏡射。
  * 舊 CPU 取樣漏掉 Y 軸反轉，該批朝向判讀作廢。mirrored 索引旗標不直接代替視覺判讀。
  * 無方向／真正正面必須留視覺證據，不用 front 表示「未看過」。 */
@@ -12,6 +12,10 @@ export interface PetAnimationAsset {
  name:string; clip:string; physicalMotion:'approach'|'stationary'; facing:'left'|'right'|'front';
  /** 已逐圖核對的官方靜態來源；只允許此來源使用本動畫，不放寬自繪圖限制。 */
  body?:string;
+ /** 自製素材的目錄（public 下的路徑）；有值時不讀官方 .pet bundle，改讀 manifest + 圖集。 */
+ custom?:string;
+ /** 自製出招的場地特效；與角色網格分開，以對手實際位置對位。 */
+ presentation?:import('./customBattleFx').CustomFxConfig;
  /** 經核對的額外行動片段；沒有登記或來源缺片段時使用 cp。 */
  extraSequence?:string;
  /** 全屏演出（BattleFxLayer）：預設「自動偵測」——任何序列裡被 preparePetFx 判定為全屏底片的超大圖塊，
@@ -59,7 +63,7 @@ export const PET_ANIMATION_ASSETS = {
  opeia: {name:'蟲后·奧佩婭',clip:'3626.pet',physicalMotion:'stationary',facing:'right',facingVerified:true,fps:24,atlas:[4096,4096],hash:'be8ed67e5a71529180a619950899de04',size:3013784,sha256:'8d8c1b03e2b71da7dc063be411fb39568c892ab8bf22f54bac3325eaa8272954',sequences:[{name:'standby',frames:25,hits:[]},{name:'attack',frames:124,hits:[84]},{name:'sa',frames:116,hits:[64]},{name:'cp',frames:69,hits:[23]},{name:'hited',frames:8,hits:[]}]},
  odin: {name:'眾神之父·奧丁',clip:'2647.pet',physicalMotion:'stationary',facing:'right',facingVerified:true,fps:24,atlas:[4096,2048],hash:'9ae7c5179224f1683f5c4bf91aca8504',size:2123682,sha256:'e8c7a849c0dea5995944ceca0f002522b17bb83084e613f3fde2550fe43569c0',sequences:[{name:'standby',frames:22,hits:[]},{name:'attack',frames:90,hits:[62]},{name:'sa',frames:73,hits:[44]},{name:'cp',frames:68,hits:[34]},{name:'hited',frames:8,hits:[]}]},
  pipi: {name:'皮皮',clip:'10.pet',physicalMotion:'stationary',facing:'right',facingVerified:true,fps:24,atlas:[2048,2048],hash:'9e3cdd04b926faa7e7590a3bdb33e3b6',size:767772,sha256:'fa9b5a5539783f93108f422e2f86fc973656d319f2c8a06f807f32ec5b0e47c2',sequences:[{name:'standby',frames:11,hits:[]},{name:'attack',frames:125,hits:[51]},{name:'sa',frames:125,hits:[29]},{name:'cp',frames:125,hits:[33]},{name:'hited',frames:8,hits:[]}]},
- dimensionDragon: {name:'治癒.龍魂再臨 次元龍',battleScale:1,extraSequence:'add1',clip:'4586.pet',physicalMotion:'stationary',facing:'right',facingVerified:true,fps:24,atlas:[2048,2048],hash:'3b5f6bd055dbd640d409b820fccc76ba',size:3640558,sha256:'be62179dab0570d0646858b8c726594f729f6ab18551b764332d2413f1920e51',sequences:[{name:'standby',frames:256,hits:[]},{name:'attack',frames:91,hits:[55]},{name:'sa',frames:106,hits:[70]},{name:'cp',frames:71,hits:[27]},{name:'hited',frames:8,hits:[]},{name:'add1',frames:60,hits:[]},{name:'add2',frames:69,hits:[]}]},
+ dimensionDragon: {name:'治癒·龍魂再臨',battleScale:1,extraSequence:'add1',clip:'4586.pet',physicalMotion:'stationary',facing:'right',facingVerified:true,fps:24,atlas:[2048,2048],hash:'3b5f6bd055dbd640d409b820fccc76ba',size:3640558,sha256:'be62179dab0570d0646858b8c726594f729f6ab18551b764332d2413f1920e51',sequences:[{name:'standby',frames:256,hits:[]},{name:'attack',frames:91,hits:[55]},{name:'sa',frames:106,hits:[70]},{name:'cp',frames:71,hits:[27]},{name:'hited',frames:8,hits:[]},{name:'add1',frames:60,hits:[]},{name:'add2',frames:69,hits:[]}]},
  zhakesi4762: {name:'湮滅之主・咤克斯',clip:'4762.pet',physicalMotion:'stationary',facing:'right',facingVerified:true,fps:24,atlas:[8192,4096],hash:'93a2d4af0f44e974b0d5538b98caebe6',size:10216534,sha256:'3ccf00762c570610d8cfb37a0ac27da7ea188d1f868f9aebbcfabdcb3b20f3d7',sequences:[{name:'standby',frames:40,hits:[]},{name:'attack',frames:117,hits:[79]},{name:'sa',frames:121,hits:[52]},{name:'cp',frames:106,hits:[82]},{name:'hited',frames:25,hits:[]}]},
  // 三個化身共用同一個模型與幾乎相同的圖集，差別只在影格 addColor（紅／紫／青）。
  // 由原廠動畫編號相鄰性與 addColor 對照確認：15008＝憤怒、15009＝貪婪、15010＝恐懼。
@@ -86,6 +90,16 @@ export const PET_ANIMATION_ASSETS = {
  // 2026-10-26 補：幻域競技場 13「龍錄天鋒」的官方素材（SeerAPI 正式名「帝录天锋」，pet id 4903）。
  // 本機 U 端快取沒有這個 hash，改由 PET_BUNDLES 白名單走同源後端按需取得並驗 sha256。
  diluTianfeng: {name:'龍錄天鋒',battleScale:1.15,clip:'4903.pet',physicalMotion:'stationary',facing:'right',facingVerified:true,fps:24,atlas:[4096,4096],hash:'5f31874f17fd5abfcd9cf2162eb8e963',size:5742307,sha256:'54492728e56927aa0d4f990e0bcbd8a03c2a9ea1a9cbb75da742a0c43ee222b2',sequences:[{name:'standby',frames:40,hits:[]},{name:'attack',frames:112,hits:[86]},{name:'sa',frames:119,hits:[89]},{name:'cp',frames:64,hits:[26]},{name:'hited',frames:7,hits:[]}]},
+ // ── 自製動作素材（2026-11-03）──────────────────────────────────────
+ // 現行 2026-11-05 v2：完整替換姿勢 + 少量局部待機變形 + 獨立場地特效。
+ // 準備／發布走 prepare_custom_combat_v2、build_pose_animation、publish_custom_animation。
+ // 四隻動作原稿統一朝左；六刃原始抱胸靜態圖朝右，製作時另行正規化待機。
+ // 靜態與動作各自登記來源方向，遊戲只由共用規則鏡射一次，不能沿用對方登記。
+ // 待機仍未通過玩家品質要求；96 格播放不代表有 96 張不同畫稿。
+ wuxu_zhuixing: {name:'無序.墜星',body:'/elf-art/wuxu_zhuixing_body_new.png',custom:'/elf-anim/wuxu_zhuixing',presentation:{"style":"railgun","trajectory":"orbital","color":"#38bdf8","secondary":"#d9f7ff","muzzle":[0.22,0.2],"impactSheet":"/elf-fx/custom-v2/orbital-explosion.png","ambient":true},clip:'custom-wuxu_zhuixing',physicalMotion:'stationary',facing:'left',facingVerified:true,fps:24,atlas:[4088,1356] as const,hash:'custom-wuxu_zhuixing',size:6790192,sha256:'49391139a4c3a45104984e33e5a3fcba18e329294b1835527d619190d763271d',fullscreen:{ultimate:'ultimate'},sequences:[{"name":"standby","frames":96,"hits":[]},{"name":"attack","frames":36,"hits":[23]},{"name":"sa","frames":52,"hits":[34]},{"name":"ultimate","frames":68,"hits":[47]},{"name":"cp","frames":36,"hits":[]},{"name":"extra","frames":32,"hits":[]},{"name":"hited","frames":8,"hits":[]}]},
+ wuxu_shiyan: {name:'無序·蝕言',body:'/elf-art/wuxu_shiyan_body.png',custom:'/elf-anim/wuxu_shiyan',presentation:{"style":"sigil","color":"#a855f7","secondary":"#f0d9ff","focusExtra":true,"ambient":true},clip:'custom-wuxu_shiyan',physicalMotion:'stationary',facing:'left',facingVerified:true,fps:24,atlas:[4065,1144] as const,hash:'custom-wuxu_shiyan',size:5946975,sha256:'ca3ec02cfd130110fd5048763004c36f7e2e7e903be3bdad32b116ef41f7dd6c',fullscreen:{ultimate:'ultimate'},sequences:[{"name":"standby","frames":96,"hits":[]},{"name":"attack","frames":28,"hits":[10]},{"name":"sa","frames":34,"hits":[12]},{"name":"ultimate","frames":42,"hits":[14]},{"name":"cp","frames":30,"hits":[]},{"name":"extra","frames":53,"hits":[]},{"name":"hited","frames":8,"hits":[]}]},
+ emperor_dixin: {name:'人皇·帝辛',body:'/elf-art/emperor_dixin_body.png',custom:'/elf-anim/emperor_dixin',presentation:{"style":"slash","color":"#f59e0b","secondary":"#fff1bd","melee":true,"contactDepth":0.4,"ambient":true},clip:'custom-emperor_dixin',physicalMotion:'approach',facing:'left',facingVerified:true,fps:24,atlas:[4031,1471] as const,hash:'custom-emperor_dixin',size:10040475,sha256:'0be73316b97aebc858c8f4bf3eb6e0f520d3d4d6519fd54344083db2bb0ee520',fullscreen:{ultimate:'ultimate'},sequences:[{"name":"standby","frames":96,"hits":[]},{"name":"attack","frames":32,"hits":[13]},{"name":"sa","frames":34,"hits":[12]},{"name":"ultimate","frames":42,"hits":[14]},{"name":"cp","frames":30,"hits":[]},{"name":"extra","frames":33,"hits":[]},{"name":"hited","frames":8,"hits":[]}]},
+ wuxu_liuren: {name:'無序.六刃',body:'/elf-art/wuxu_liuren_body.png',custom:'/elf-anim/wuxu_liuren',presentation:{"style":"vortex","color":"#22c55e","secondary":"#b9ffc9","melee":true,"contactDepth":0.4,"ambient":true},clip:'custom-wuxu_liuren',physicalMotion:'approach',facing:'left',facingVerified:true,fps:24,atlas:[3988,1641] as const,hash:'custom-wuxu_liuren',size:7854144,sha256:'a4665102678664ee77e45c9d014a03a667d5e18461dbd105889b6ef1a1af3ce9',fullscreen:{ultimate:'ultimate'},sequences:[{"name":"standby","frames":96,"hits":[]},{"name":"attack","frames":32,"hits":[13]},{"name":"sa","frames":34,"hits":[12]},{"name":"ultimate","frames":42,"hits":[14]},{"name":"cp","frames":30,"hits":[]},{"name":"extra","frames":33,"hits":[]},{"name":"hited","frames":8,"hits":[]}]},
 } as const satisfies Record<string, PetAnimationAsset>;
 export type PetAnimationAssetId=keyof typeof PET_ANIMATION_ASSETS;
 export const PET_MATERIAL_BUNDLE={hash:'b9a969aa82208674095ee2bad6e7bd0f',size:3627,sha256:'1df8c3bba2fdecf9da717143c4507faa206c23c641df4d9ce7eaa28bb79fcd74'} as const;

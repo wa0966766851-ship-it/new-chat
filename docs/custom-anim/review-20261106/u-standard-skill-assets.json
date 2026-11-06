@@ -1,0 +1,2432 @@
+{
+  "source": "D:\\影片\\bilibili\\新建文件夹\\TWSeerLauncher\\Games\\NewSeer\\Seer_Data\\yoo\\DefaultPackage\\ManifestFiles\\PackageManifest_DefaultPackage_20261104142820.bytes",
+  "build": "20261104142820",
+  "assetCount": 66708,
+  "bundleTableOffset": 3876275,
+  "assets": [
+    {
+      "asset": "Assets/Game/Prefabs/Swf/skill/1/1.skill.prefab",
+      "bundle": 1,
+      "deps": [
+        7797,
+        3120
+      ]
+    },
+    {
+      "asset": "Assets/Game/Prefabs/Swf/skill/2/2.skill.prefab",
+      "bundle": 1,
+      "deps": [
+        7797,
+        3120
+      ]
+    },
+    {
+      "asset": "Assets/Game/Prefabs/Swf/skill/3/3.skill.prefab",
+      "bundle": 1,
+      "deps": [
+        7797,
+        3120
+      ]
+    },
+    {
+      "asset": "Assets/Game/Prefabs/Swf/skill/4/4.skill.prefab",
+      "bundle": 1,
+      "deps": [
+        7797,
+        3120
+      ]
+    },
+    {
+      "asset": "Assets/Game/Prefabs/Swf/skill/5/5.skill.prefab",
+      "bundle": 1,
+      "deps": [
+        7797,
+        3120
+      ]
+    },
+    {
+      "asset": "Assets/Game/Prefabs/Swf/skill/6/6.skill.prefab",
+      "bundle": 1,
+      "deps": [
+        7797,
+        3120
+      ]
+    },
+    {
+      "asset": "Assets/Game/Prefabs/Swf/skill/7/7.skill.prefab",
+      "bundle": 1,
+      "deps": [
+        7797,
+        3120
+      ]
+    },
+    {
+      "asset": "Assets/Game/Prefabs/Swf/skill/8/8.skill.prefab",
+      "bundle": 1,
+      "deps": [
+        7797,
+        3120
+      ]
+    },
+    {
+      "asset": "Assets/Game/Prefabs/Swf/skill/9/9.skill.prefab",
+      "bundle": 1,
+      "deps": [
+        7797,
+        3120
+      ]
+    },
+    {
+      "asset": "Assets/Game/Prefabs/Swf/skill/10/10.skill.prefab",
+      "bundle": 1,
+      "deps": [
+        7797,
+        3120
+      ]
+    },
+    {
+      "asset": "Assets/Game/Prefabs/Swf/skill/11/11.skill.prefab",
+      "bundle": 1,
+      "deps": [
+        7797,
+        3120
+      ]
+    },
+    {
+      "asset": "Assets/Game/Prefabs/Swf/skill/12/12.skill.prefab",
+      "bundle": 1,
+      "deps": [
+        7797,
+        3120
+      ]
+    },
+    {
+      "asset": "Assets/Game/Prefabs/Swf/skill/13/13.skill.prefab",
+      "bundle": 1,
+      "deps": [
+        7797,
+        3120
+      ]
+    },
+    {
+      "asset": "Assets/Game/Prefabs/Swf/skill/14/14.skill.prefab",
+      "bundle": 1,
+      "deps": [
+        7797,
+        3120
+      ]
+    },
+    {
+      "asset": "Assets/Game/Prefabs/Swf/skill/15/15.skill.prefab",
+      "bundle": 1,
+      "deps": [
+        7797,
+        3120
+      ]
+    },
+    {
+      "asset": "Assets/Game/Prefabs/Swf/skill/16/16.skill.prefab",
+      "bundle": 1,
+      "deps": [
+        7797,
+        3120
+      ]
+    },
+    {
+      "asset": "Assets/Game/Prefabs/Swf/skill/17/17.skill.prefab",
+      "bundle": 1,
+      "deps": [
+        7797,
+        3120
+      ]
+    },
+    {
+      "asset": "Assets/Game/Prefabs/Swf/skill/18/18.skill.prefab",
+      "bundle": 1,
+      "deps": [
+        7797,
+        3120
+      ]
+    },
+    {
+      "asset": "Assets/Game/Prefabs/Swf/skill/19/19.skill.prefab",
+      "bundle": 1,
+      "deps": [
+        7797,
+        3120
+      ]
+    },
+    {
+      "asset": "Assets/Game/Prefabs/Swf/skill/20/20.skill.prefab",
+      "bundle": 1,
+      "deps": [
+        7797,
+        3120
+      ]
+    },
+    {
+      "asset": "Assets/Game/Prefabs/Swf/skill/21/21.skill.prefab",
+      "bundle": 1,
+      "deps": [
+        7797,
+        3120
+      ]
+    },
+    {
+      "asset": "Assets/Game/Prefabs/Swf/skill/22/22.skill.prefab",
+      "bundle": 1,
+      "deps": [
+        7797,
+        3120
+      ]
+    },
+    {
+      "asset": "Assets/Game/Prefabs/Swf/skill/23/23.skill.prefab",
+      "bundle": 1,
+      "deps": [
+        7797,
+        3120
+      ]
+    },
+    {
+      "asset": "Assets/Game/Prefabs/Swf/skill/24/24.skill.prefab",
+      "bundle": 1,
+      "deps": [
+        7797,
+        3120
+      ]
+    },
+    {
+      "asset": "Assets/Game/Prefabs/Swf/skill/25/25.skill.prefab",
+      "bundle": 1,
+      "deps": [
+        7797,
+        3120
+      ]
+    },
+    {
+      "asset": "Assets/Game/Prefabs/Swf/skill/26/26.skill.prefab",
+      "bundle": 1,
+      "deps": [
+        7797,
+        3120
+      ]
+    },
+    {
+      "asset": "Assets/Game/Prefabs/Swf/skill/27/27.skill.prefab",
+      "bundle": 1,
+      "deps": [
+        7797,
+        3120
+      ]
+    },
+    {
+      "asset": "Assets/Game/Prefabs/Swf/skill/28/28.skill.prefab",
+      "bundle": 1,
+      "deps": [
+        7797,
+        3120
+      ]
+    },
+    {
+      "asset": "Assets/Game/Prefabs/Swf/skill/29/29.skill.prefab",
+      "bundle": 1,
+      "deps": [
+        7797,
+        3120
+      ]
+    },
+    {
+      "asset": "Assets/Game/Prefabs/Swf/skill/30/30.skill.prefab",
+      "bundle": 1,
+      "deps": [
+        7797,
+        3120
+      ]
+    },
+    {
+      "asset": "Assets/Game/Prefabs/Swf/skill/31/31.skill.prefab",
+      "bundle": 1,
+      "deps": [
+        7797,
+        3120
+      ]
+    },
+    {
+      "asset": "Assets/Game/Prefabs/Swf/skill/32/32.skill.prefab",
+      "bundle": 1,
+      "deps": [
+        7797,
+        3120
+      ]
+    },
+    {
+      "asset": "Assets/Game/Prefabs/Swf/skill/33/33.skill.prefab",
+      "bundle": 1,
+      "deps": [
+        7797,
+        3120
+      ]
+    },
+    {
+      "asset": "Assets/Game/Prefabs/Swf/skill/34/34.skill.prefab",
+      "bundle": 1,
+      "deps": [
+        7797,
+        3120
+      ]
+    },
+    {
+      "asset": "Assets/Game/Prefabs/Swf/skill/35/35.skill.prefab",
+      "bundle": 1,
+      "deps": [
+        7797,
+        3120
+      ]
+    },
+    {
+      "asset": "Assets/Game/Prefabs/Swf/skill/36/36.skill.prefab",
+      "bundle": 1,
+      "deps": [
+        7797,
+        3120
+      ]
+    },
+    {
+      "asset": "Assets/Game/Prefabs/Swf/skill/37/37.skill.prefab",
+      "bundle": 1,
+      "deps": [
+        7797,
+        3120
+      ]
+    },
+    {
+      "asset": "Assets/Game/Prefabs/Swf/skill/38/38.skill.prefab",
+      "bundle": 1,
+      "deps": [
+        7797,
+        3120
+      ]
+    },
+    {
+      "asset": "Assets/Game/Prefabs/Swf/skill/39/39.skill.prefab",
+      "bundle": 1,
+      "deps": [
+        7797,
+        3120
+      ]
+    },
+    {
+      "asset": "Assets/Game/Prefabs/Swf/skill/40/40.skill.prefab",
+      "bundle": 1,
+      "deps": [
+        7797,
+        3120
+      ]
+    },
+    {
+      "asset": "Assets/Game/Prefabs/Swf/skill/41/41.skill.prefab",
+      "bundle": 1,
+      "deps": [
+        7797,
+        3120
+      ]
+    },
+    {
+      "asset": "Assets/Game/Prefabs/Swf/skill/42/42.skill.prefab",
+      "bundle": 1,
+      "deps": [
+        7797,
+        3120
+      ]
+    },
+    {
+      "asset": "Assets/Game/Prefabs/Swf/skill/43/43.skill.prefab",
+      "bundle": 1,
+      "deps": [
+        7797,
+        3120
+      ]
+    },
+    {
+      "asset": "Assets/Game/Prefabs/Swf/skill/44/44.skill.prefab",
+      "bundle": 1,
+      "deps": [
+        7797,
+        3120
+      ]
+    },
+    {
+      "asset": "Assets/Game/Prefabs/Swf/skill/45/45.skill.prefab",
+      "bundle": 1,
+      "deps": [
+        7797,
+        3120
+      ]
+    },
+    {
+      "asset": "Assets/Game/Prefabs/Swf/skill/46/46.skill.prefab",
+      "bundle": 1,
+      "deps": [
+        7797,
+        3120
+      ]
+    },
+    {
+      "asset": "Assets/Game/Prefabs/Swf/skill/47/47.skill.prefab",
+      "bundle": 1,
+      "deps": [
+        7797,
+        3120
+      ]
+    },
+    {
+      "asset": "Assets/Game/Prefabs/Swf/skill/48/48.skill.prefab",
+      "bundle": 1,
+      "deps": [
+        7797,
+        3120
+      ]
+    },
+    {
+      "asset": "Assets/Game/Prefabs/Swf/skill/49/49.skill.prefab",
+      "bundle": 1,
+      "deps": [
+        7797,
+        3120
+      ]
+    },
+    {
+      "asset": "Assets/Game/Prefabs/Swf/skill/50/50.skill.prefab",
+      "bundle": 1,
+      "deps": [
+        7797,
+        3120
+      ]
+    },
+    {
+      "asset": "Assets/Game/Prefabs/Swf/skill/51/51.skill.prefab",
+      "bundle": 1,
+      "deps": [
+        7797,
+        3120
+      ]
+    },
+    {
+      "asset": "Assets/Game/Prefabs/Swf/skill/52/52.skill.prefab",
+      "bundle": 1,
+      "deps": [
+        7797,
+        3120
+      ]
+    },
+    {
+      "asset": "Assets/Game/Prefabs/Swf/skill/53/53.skill.prefab",
+      "bundle": 1,
+      "deps": [
+        7797,
+        3120
+      ]
+    },
+    {
+      "asset": "Assets/Game/Prefabs/Swf/skill/54/54.skill.prefab",
+      "bundle": 1,
+      "deps": [
+        7797,
+        3120
+      ]
+    },
+    {
+      "asset": "Assets/Game/Prefabs/Swf/skill/55/55.skill.prefab",
+      "bundle": 1,
+      "deps": [
+        7797,
+        3120
+      ]
+    },
+    {
+      "asset": "Assets/Game/Prefabs/Swf/skill/56/56.skill.prefab",
+      "bundle": 1,
+      "deps": [
+        7797,
+        3120
+      ]
+    },
+    {
+      "asset": "Assets/Game/Prefabs/Swf/skill/57/57.skill.prefab",
+      "bundle": 1,
+      "deps": [
+        7797,
+        3120
+      ]
+    },
+    {
+      "asset": "Assets/Game/Prefabs/Swf/skill/58/58.skill.prefab",
+      "bundle": 1,
+      "deps": [
+        7797,
+        3120
+      ]
+    },
+    {
+      "asset": "Assets/Game/Prefabs/Swf/skill/59/59.skill.prefab",
+      "bundle": 1,
+      "deps": [
+        7797,
+        3120
+      ]
+    },
+    {
+      "asset": "Assets/Game/Prefabs/Swf/skill/60/60.skill.prefab",
+      "bundle": 1,
+      "deps": [
+        7797,
+        3120
+      ]
+    },
+    {
+      "asset": "Assets/Game/Prefabs/Swf/skill/61/61.skill.prefab",
+      "bundle": 1,
+      "deps": [
+        7797,
+        3120
+      ]
+    },
+    {
+      "asset": "Assets/Game/Prefabs/Swf/skill/62/62.skill.prefab",
+      "bundle": 1,
+      "deps": [
+        7797,
+        3120
+      ]
+    },
+    {
+      "asset": "Assets/Game/Prefabs/Swf/skill/63/63.skill.prefab",
+      "bundle": 1,
+      "deps": [
+        7797,
+        3120
+      ]
+    },
+    {
+      "asset": "Assets/Game/Prefabs/Swf/skill/64/64.skill.prefab",
+      "bundle": 1,
+      "deps": [
+        7797,
+        3120
+      ]
+    },
+    {
+      "asset": "Assets/Game/Prefabs/Swf/skill/65/65.skill.prefab",
+      "bundle": 1,
+      "deps": [
+        7797,
+        3120
+      ]
+    },
+    {
+      "asset": "Assets/Game/Prefabs/Swf/skill/66/66.skill.prefab",
+      "bundle": 1,
+      "deps": [
+        7797,
+        3120
+      ]
+    },
+    {
+      "asset": "Assets/Game/Prefabs/Swf/skill/67/67.skill.prefab",
+      "bundle": 1,
+      "deps": [
+        7797,
+        3120
+      ]
+    },
+    {
+      "asset": "Assets/Game/Prefabs/Swf/skill/68/68.skill.prefab",
+      "bundle": 1,
+      "deps": [
+        7797,
+        3120
+      ]
+    },
+    {
+      "asset": "Assets/Game/Prefabs/Swf/skill/69/69.skill.prefab",
+      "bundle": 1,
+      "deps": [
+        7797,
+        3120
+      ]
+    },
+    {
+      "asset": "Assets/Game/Prefabs/Swf/skill/70/70.skill.prefab",
+      "bundle": 1,
+      "deps": [
+        7797,
+        3120
+      ]
+    },
+    {
+      "asset": "Assets/Game/Prefabs/Swf/skill/71/71.skill.prefab",
+      "bundle": 1,
+      "deps": [
+        7797,
+        3120
+      ]
+    },
+    {
+      "asset": "Assets/Game/Prefabs/Swf/skill/72/72.skill.prefab",
+      "bundle": 1,
+      "deps": [
+        7797,
+        3120
+      ]
+    },
+    {
+      "asset": "Assets/Game/Prefabs/Swf/skill/73/73.skill.prefab",
+      "bundle": 1,
+      "deps": [
+        7797,
+        3120
+      ]
+    },
+    {
+      "asset": "Assets/Game/Prefabs/Swf/skill/74/74.skill.prefab",
+      "bundle": 1,
+      "deps": [
+        7797,
+        3120
+      ]
+    },
+    {
+      "asset": "Assets/Game/Prefabs/Swf/skill/75/75.skill.prefab",
+      "bundle": 1,
+      "deps": [
+        7797,
+        3120
+      ]
+    },
+    {
+      "asset": "Assets/Game/Prefabs/Swf/skill/76/76.skill.prefab",
+      "bundle": 1,
+      "deps": [
+        7797,
+        3120
+      ]
+    },
+    {
+      "asset": "Assets/Game/Prefabs/Swf/skill/77/77.skill.prefab",
+      "bundle": 1,
+      "deps": [
+        7797,
+        3120
+      ]
+    },
+    {
+      "asset": "Assets/Game/Prefabs/Swf/skill/78/78.skill.prefab",
+      "bundle": 1,
+      "deps": [
+        7797,
+        3120
+      ]
+    },
+    {
+      "asset": "Assets/Game/Prefabs/Swf/skill/79/79.skill.prefab",
+      "bundle": 1,
+      "deps": [
+        7797,
+        3120
+      ]
+    },
+    {
+      "asset": "Assets/Game/Prefabs/Swf/skill/80/80.skill.prefab",
+      "bundle": 1,
+      "deps": [
+        7797,
+        3120
+      ]
+    },
+    {
+      "asset": "Assets/Game/Prefabs/Swf/skill/81/81.skill.prefab",
+      "bundle": 1,
+      "deps": [
+        7797,
+        3120
+      ]
+    },
+    {
+      "asset": "Assets/Game/Prefabs/Swf/skill/82/82.skill.prefab",
+      "bundle": 1,
+      "deps": [
+        7797,
+        3120
+      ]
+    },
+    {
+      "asset": "Assets/Game/Prefabs/Swf/skill/83/83.skill.prefab",
+      "bundle": 1,
+      "deps": [
+        7797,
+        3120
+      ]
+    },
+    {
+      "asset": "Assets/Game/Prefabs/Swf/skill/84/84.skill.prefab",
+      "bundle": 1,
+      "deps": [
+        7797,
+        3120
+      ]
+    },
+    {
+      "asset": "Assets/Game/Prefabs/Swf/skill/85/85.skill.prefab",
+      "bundle": 1,
+      "deps": [
+        7797,
+        3120
+      ]
+    },
+    {
+      "asset": "Assets/Game/Prefabs/Swf/skill/86/86.skill.prefab",
+      "bundle": 1,
+      "deps": [
+        7797,
+        3120
+      ]
+    },
+    {
+      "asset": "Assets/Game/Prefabs/Swf/skill/87/87.skill.prefab",
+      "bundle": 1,
+      "deps": [
+        7797,
+        3120
+      ]
+    },
+    {
+      "asset": "Assets/Game/Prefabs/Swf/skill/88/88.skill.prefab",
+      "bundle": 1,
+      "deps": [
+        7797,
+        3120
+      ]
+    },
+    {
+      "asset": "Assets/Game/Prefabs/Swf/skill/89/89.skill.prefab",
+      "bundle": 1,
+      "deps": [
+        7797,
+        3120
+      ]
+    },
+    {
+      "asset": "Assets/Game/Prefabs/Swf/skill/90/90.skill.prefab",
+      "bundle": 1,
+      "deps": [
+        7797,
+        3120
+      ]
+    },
+    {
+      "asset": "Assets/Game/Prefabs/Swf/skill/91/91.skill.prefab",
+      "bundle": 1,
+      "deps": [
+        7797,
+        3120
+      ]
+    },
+    {
+      "asset": "Assets/Game/Prefabs/Swf/skill/92/92.skill.prefab",
+      "bundle": 1,
+      "deps": [
+        7797,
+        3120
+      ]
+    },
+    {
+      "asset": "Assets/Game/Prefabs/Swf/skill/93/93.skill.prefab",
+      "bundle": 1,
+      "deps": [
+        7797,
+        3120
+      ]
+    },
+    {
+      "asset": "Assets/Game/Prefabs/Swf/skill/94/94.skill.prefab",
+      "bundle": 1,
+      "deps": [
+        7797,
+        3120
+      ]
+    },
+    {
+      "asset": "Assets/Game/Prefabs/Swf/skill/95/95.skill.prefab",
+      "bundle": 1,
+      "deps": [
+        7797,
+        3120
+      ]
+    },
+    {
+      "asset": "Assets/Game/Prefabs/Swf/skill/96/96.skill.prefab",
+      "bundle": 1,
+      "deps": [
+        7797,
+        3120
+      ]
+    },
+    {
+      "asset": "Assets/Game/Prefabs/Swf/skill/97/97.skill.prefab",
+      "bundle": 1,
+      "deps": [
+        7797,
+        3120
+      ]
+    },
+    {
+      "asset": "Assets/Game/Prefabs/Swf/skill/98/98.skill.prefab",
+      "bundle": 1,
+      "deps": [
+        7797,
+        3120
+      ]
+    },
+    {
+      "asset": "Assets/Game/Prefabs/Swf/skill/99/99.skill.prefab",
+      "bundle": 1,
+      "deps": [
+        7797,
+        3120
+      ]
+    },
+    {
+      "asset": "Assets/Game/Prefabs/Swf/skill/100/100.skill.prefab",
+      "bundle": 1,
+      "deps": [
+        7797,
+        3120
+      ]
+    },
+    {
+      "asset": "Assets/Game/Prefabs/Swf/skill/101/101.skill.prefab",
+      "bundle": 1,
+      "deps": [
+        7797,
+        3120
+      ]
+    },
+    {
+      "asset": "Assets/Game/Prefabs/Swf/skill/102/102.skill.prefab",
+      "bundle": 1,
+      "deps": [
+        7797,
+        3120
+      ]
+    },
+    {
+      "asset": "Assets/Game/Prefabs/Swf/skill/103/103.skill.prefab",
+      "bundle": 1,
+      "deps": [
+        7797,
+        3120
+      ]
+    },
+    {
+      "asset": "Assets/Game/Prefabs/Swf/skill/104/104.skill.prefab",
+      "bundle": 1,
+      "deps": [
+        7797,
+        3120
+      ]
+    },
+    {
+      "asset": "Assets/Game/Prefabs/Swf/skill/105/105.skill.prefab",
+      "bundle": 1,
+      "deps": [
+        7797,
+        3120
+      ]
+    },
+    {
+      "asset": "Assets/Game/Prefabs/Swf/skill/106/106.skill.prefab",
+      "bundle": 1,
+      "deps": [
+        7797,
+        3120
+      ]
+    },
+    {
+      "asset": "Assets/Game/Prefabs/Swf/skill/107/107.skill.prefab",
+      "bundle": 1,
+      "deps": [
+        7797,
+        3120
+      ]
+    },
+    {
+      "asset": "Assets/Game/Prefabs/Swf/skill/108/108.skill.prefab",
+      "bundle": 1,
+      "deps": [
+        7797,
+        3120
+      ]
+    },
+    {
+      "asset": "Assets/Game/Prefabs/Swf/skill/109/109.skill.prefab",
+      "bundle": 1,
+      "deps": [
+        7797,
+        3120
+      ]
+    },
+    {
+      "asset": "Assets/Game/Prefabs/Swf/skill/110/110.skill.prefab",
+      "bundle": 1,
+      "deps": [
+        7797,
+        3120
+      ]
+    },
+    {
+      "asset": "Assets/Game/Prefabs/Swf/skill/111/111.skill.prefab",
+      "bundle": 1,
+      "deps": [
+        7797,
+        3120
+      ]
+    },
+    {
+      "asset": "Assets/Game/Prefabs/Swf/skill/112/112.skill.prefab",
+      "bundle": 1,
+      "deps": [
+        7797,
+        3120
+      ]
+    },
+    {
+      "asset": "Assets/Game/Prefabs/Swf/skill/113/113.skill.prefab",
+      "bundle": 1,
+      "deps": [
+        7797,
+        3120
+      ]
+    },
+    {
+      "asset": "Assets/Game/Prefabs/Swf/skill/114/114.skill.prefab",
+      "bundle": 1,
+      "deps": [
+        7797,
+        3120
+      ]
+    },
+    {
+      "asset": "Assets/Game/Prefabs/Swf/skill/115/115.skill.prefab",
+      "bundle": 1,
+      "deps": [
+        7797,
+        3120
+      ]
+    },
+    {
+      "asset": "Assets/Game/Prefabs/Swf/skill/116/116.skill.prefab",
+      "bundle": 1,
+      "deps": [
+        7797,
+        3120
+      ]
+    },
+    {
+      "asset": "Assets/Game/Prefabs/Swf/skill/117/117.skill.prefab",
+      "bundle": 1,
+      "deps": [
+        7797,
+        3120
+      ]
+    },
+    {
+      "asset": "Assets/Game/Prefabs/Swf/skill/118/118.skill.prefab",
+      "bundle": 1,
+      "deps": [
+        7797,
+        3120
+      ]
+    },
+    {
+      "asset": "Assets/Game/Prefabs/Swf/skill/119/119.skill.prefab",
+      "bundle": 1,
+      "deps": [
+        7797,
+        3120
+      ]
+    },
+    {
+      "asset": "Assets/Game/Prefabs/Swf/skill/120/120.skill.prefab",
+      "bundle": 1,
+      "deps": [
+        7797,
+        3120
+      ]
+    },
+    {
+      "asset": "Assets/Game/Prefabs/Swf/skill/121/121.skill.prefab",
+      "bundle": 1,
+      "deps": [
+        7797,
+        3120
+      ]
+    },
+    {
+      "asset": "Assets/Game/Prefabs/Swf/skill/122/122.skill.prefab",
+      "bundle": 1,
+      "deps": [
+        7797,
+        3120
+      ]
+    },
+    {
+      "asset": "Assets/Game/Prefabs/Swf/skill/123/123.skill.prefab",
+      "bundle": 1,
+      "deps": [
+        7797,
+        3120
+      ]
+    },
+    {
+      "asset": "Assets/Game/Prefabs/Swf/skill/124/124.skill.prefab",
+      "bundle": 1,
+      "deps": [
+        7797,
+        3120
+      ]
+    },
+    {
+      "asset": "Assets/Game/Prefabs/Swf/skill/125/125.skill.prefab",
+      "bundle": 1,
+      "deps": [
+        7797,
+        3120
+      ]
+    },
+    {
+      "asset": "Assets/Game/Prefabs/Swf/skill/126/126.skill.prefab",
+      "bundle": 1,
+      "deps": [
+        7797,
+        3120
+      ]
+    },
+    {
+      "asset": "Assets/Game/Prefabs/Swf/skill/127/127.skill.prefab",
+      "bundle": 1,
+      "deps": [
+        7797,
+        3120
+      ]
+    },
+    {
+      "asset": "Assets/Game/Prefabs/Swf/skill/128/128.skill.prefab",
+      "bundle": 1,
+      "deps": [
+        7797,
+        3120
+      ]
+    },
+    {
+      "asset": "Assets/Game/Prefabs/Swf/skill/129/129.skill.prefab",
+      "bundle": 1,
+      "deps": [
+        7797,
+        3120
+      ]
+    },
+    {
+      "asset": "Assets/Game/Prefabs/Swf/skill/130/130.skill.prefab",
+      "bundle": 1,
+      "deps": [
+        7797,
+        3120
+      ]
+    },
+    {
+      "asset": "Assets/Game/Prefabs/Swf/skill/131/131.skill.prefab",
+      "bundle": 1,
+      "deps": [
+        7797,
+        3120
+      ]
+    },
+    {
+      "asset": "Assets/Game/Prefabs/Swf/skill/132/132.skill.prefab",
+      "bundle": 1,
+      "deps": [
+        7797,
+        3120
+      ]
+    },
+    {
+      "asset": "Assets/Game/Prefabs/Swf/skill/221/221.skill.prefab",
+      "bundle": 1,
+      "deps": [
+        7797,
+        3120
+      ]
+    },
+    {
+      "asset": "Assets/Game/Prefabs/Swf/skill/222/222.skill.prefab",
+      "bundle": 1,
+      "deps": [
+        7797,
+        3120
+      ]
+    },
+    {
+      "asset": "Assets/Game/Prefabs/Swf/skill/223/223.skill.prefab",
+      "bundle": 1,
+      "deps": [
+        7797,
+        3120
+      ]
+    },
+    {
+      "asset": "Assets/Game/Prefabs/Swf/skill/224/224.skill.prefab",
+      "bundle": 1,
+      "deps": [
+        7797,
+        3120
+      ]
+    },
+    {
+      "asset": "Assets/Game/Prefabs/Swf/skill/225/225.skill.prefab",
+      "bundle": 1,
+      "deps": [
+        7797,
+        3120
+      ]
+    },
+    {
+      "asset": "Assets/Game/Prefabs/Swf/skill/226/226.skill.prefab",
+      "bundle": 1,
+      "deps": [
+        7797,
+        3120
+      ]
+    },
+    {
+      "asset": "Assets/Game/Prefabs/Swf/skill/999/999.skill.prefab",
+      "bundle": 1,
+      "deps": [
+        7797,
+        3120
+      ]
+    },
+    {
+      "asset": "Assets/Game/Prefabs/Swf/skill/10400/10400.skill.prefab",
+      "bundle": 1,
+      "deps": [
+        7797,
+        3120
+      ]
+    },
+    {
+      "asset": "Assets/Game/Prefabs/Swf/skill/10618/10618.skill.prefab",
+      "bundle": 1,
+      "deps": [
+        7797,
+        3120
+      ]
+    },
+    {
+      "asset": "Assets/Game/Prefabs/Swf/skill/10825/10825.skill.prefab",
+      "bundle": 1,
+      "deps": [
+        7797,
+        3120
+      ]
+    },
+    {
+      "asset": "Assets/Game/Prefabs/Swf/skill/10995/10995.skill.prefab",
+      "bundle": 1,
+      "deps": [
+        7797,
+        3120
+      ]
+    },
+    {
+      "asset": "Assets/Game/Prefabs/Swf/skill/10998/10998.skill.prefab",
+      "bundle": 1,
+      "deps": [
+        7797,
+        3120
+      ]
+    },
+    {
+      "asset": "Assets/Game/Prefabs/Swf/skill/10999/10999.skill.prefab",
+      "bundle": 1,
+      "deps": [
+        7797,
+        3120
+      ]
+    },
+    {
+      "asset": "Assets/Game/Prefabs/Swf/skill/11000/11000.skill.prefab",
+      "bundle": 1,
+      "deps": [
+        7797,
+        3120
+      ]
+    },
+    {
+      "asset": "Assets/Game/Prefabs/Swf/skill/11261/11261.skill.prefab",
+      "bundle": 1,
+      "deps": [
+        7797,
+        3120
+      ]
+    },
+    {
+      "asset": "Assets/Game/Prefabs/Swf/skill/11274/11274.skill.prefab",
+      "bundle": 1,
+      "deps": [
+        7797,
+        3120
+      ]
+    },
+    {
+      "asset": "Assets/Game/Prefabs/Swf/skill/12551/12551.skill.prefab",
+      "bundle": 1,
+      "deps": [
+        7797,
+        3120
+      ]
+    },
+    {
+      "asset": "Assets/Game/Prefabs/Swf/skill/13582/13582.skill.prefab",
+      "bundle": 1,
+      "deps": [
+        7797,
+        3120
+      ]
+    },
+    {
+      "asset": "Assets/Game/Prefabs/Swf/skill/13583/13583.skill.prefab",
+      "bundle": 1,
+      "deps": [
+        7797,
+        3120
+      ]
+    },
+    {
+      "asset": "Assets/Game/Prefabs/Swf/skill/13584/13584.skill.prefab",
+      "bundle": 1,
+      "deps": [
+        7797,
+        3120
+      ]
+    },
+    {
+      "asset": "Assets/Game/Prefabs/Swf/skill/13585/13585.skill.prefab",
+      "bundle": 1,
+      "deps": [
+        7797,
+        3120
+      ]
+    },
+    {
+      "asset": "Assets/Game/Prefabs/Swf/skill/17912/17912.skill.prefab",
+      "bundle": 1,
+      "deps": [
+        7797,
+        3120
+      ]
+    },
+    {
+      "asset": "Assets/Game/Prefabs/Swf/skill/18006/18006.skill.prefab",
+      "bundle": 1,
+      "deps": [
+        7797,
+        3120
+      ]
+    },
+    {
+      "asset": "Assets/Game/Prefabs/Swf/skill/18099/18099.skill.prefab",
+      "bundle": 1,
+      "deps": [
+        7797,
+        3120
+      ]
+    },
+    {
+      "asset": "Assets/Game/Prefabs/Swf/skill/20364/20364.skill.prefab",
+      "bundle": 1,
+      "deps": [
+        7797,
+        3120
+      ]
+    },
+    {
+      "asset": "Assets/Game/Prefabs/Swf/skill/20498/20498.skill.prefab",
+      "bundle": 1,
+      "deps": [
+        7797,
+        3120
+      ]
+    },
+    {
+      "asset": "Assets/Game/Prefabs/Swf/skill/20499/20499.skill.prefab",
+      "bundle": 1,
+      "deps": [
+        7797,
+        3120
+      ]
+    },
+    {
+      "asset": "Assets/Game/Prefabs/Swf/skill/20500/20500.skill.prefab",
+      "bundle": 1,
+      "deps": [
+        7797,
+        3120
+      ]
+    },
+    {
+      "asset": "Assets/Game/Prefabs/Swf/skill/20605/20605.skill.prefab",
+      "bundle": 1,
+      "deps": [
+        7797,
+        3120
+      ]
+    },
+    {
+      "asset": "Assets/Game/Prefabs/Swf/skill/20606/20606.skill.prefab",
+      "bundle": 1,
+      "deps": [
+        7797,
+        3120
+      ]
+    },
+    {
+      "asset": "Assets/Game/Prefabs/Swf/skill/20607/20607.skill.prefab",
+      "bundle": 1,
+      "deps": [
+        7797,
+        3120
+      ]
+    },
+    {
+      "asset": "Assets/Game/Prefabs/Swf/skill/20608/20608.skill.prefab",
+      "bundle": 1,
+      "deps": [
+        7797,
+        3120
+      ]
+    },
+    {
+      "asset": "Assets/Game/Prefabs/Swf/skill/24319/24319.skill.prefab",
+      "bundle": 1,
+      "deps": [
+        7797,
+        3120
+      ]
+    },
+    {
+      "asset": "Assets/Game/Prefabs/Swf/skill/25294/25294.skill.prefab",
+      "bundle": 1,
+      "deps": [
+        7797,
+        3120
+      ]
+    },
+    {
+      "asset": "Assets/Game/Prefabs/Swf/skill/25295/25295.skill.prefab",
+      "bundle": 1,
+      "deps": [
+        7797,
+        3120
+      ]
+    },
+    {
+      "asset": "Assets/Game/Prefabs/Swf/skill/30376/30376.skill.prefab",
+      "bundle": 1,
+      "deps": [
+        7797,
+        3120
+      ]
+    },
+    {
+      "asset": "Assets/Game/Prefabs/Swf/skill/30380/30380.skill.prefab",
+      "bundle": 1,
+      "deps": [
+        7797,
+        3120
+      ]
+    },
+    {
+      "asset": "Assets/Game/Prefabs/Swf/skill/30381/30381.skill.prefab",
+      "bundle": 1,
+      "deps": [
+        7797,
+        3120
+      ]
+    },
+    {
+      "asset": "Assets/Game/Prefabs/Swf/skill/34454/34454.skill.prefab",
+      "bundle": 1,
+      "deps": [
+        7797,
+        3120
+      ]
+    },
+    {
+      "asset": "Assets/Game/Prefabs/Swf/skill/34457/34457.skill.prefab",
+      "bundle": 1,
+      "deps": [
+        7797,
+        3120
+      ]
+    },
+    {
+      "asset": "Assets/Game/Prefabs/Swf/skill/34460/34460.skill.prefab",
+      "bundle": 1,
+      "deps": [
+        7797,
+        3120
+      ]
+    },
+    {
+      "asset": "Assets/Game/Prefabs/Swf/skill/34812/34812.skill.prefab",
+      "bundle": 1,
+      "deps": [
+        7797,
+        3120
+      ]
+    },
+    {
+      "asset": "Assets/Game/Prefabs/Swf/skill/35620/35620.skill.prefab",
+      "bundle": 1,
+      "deps": [
+        7797,
+        3120
+      ]
+    },
+    {
+      "asset": "Assets/Game/Prefabs/Swf/skill/100001/100001.skill.prefab",
+      "bundle": 1,
+      "deps": [
+        7797,
+        3120
+      ]
+    },
+    {
+      "asset": "Assets/Game/Prefabs/Swf/skill/100002/100002.skill.prefab",
+      "bundle": 1,
+      "deps": [
+        7797,
+        3120
+      ]
+    },
+    {
+      "asset": "Assets/Game/Prefabs/Swf/skill/100003/100003.skill.prefab",
+      "bundle": 1,
+      "deps": [
+        7797,
+        3120
+      ]
+    },
+    {
+      "asset": "Assets/Game/Prefabs/Swf/skill/100004/100004.skill.prefab",
+      "bundle": 1,
+      "deps": [
+        7797,
+        3120
+      ]
+    },
+    {
+      "asset": "Assets/Game/Prefabs/Swf/skill/100005/100005.skill.prefab",
+      "bundle": 1,
+      "deps": [
+        7797,
+        3120
+      ]
+    },
+    {
+      "asset": "Assets/Game/Prefabs/Swf/skill/100006/100006.skill.prefab",
+      "bundle": 1,
+      "deps": [
+        7797,
+        3120
+      ]
+    },
+    {
+      "asset": "Assets/Game/Prefabs/Swf/skill/100007/100007.skill.prefab",
+      "bundle": 1,
+      "deps": [
+        7797,
+        3120
+      ]
+    },
+    {
+      "asset": "Assets/Game/Prefabs/Swf/skill/100008/100008.skill.prefab",
+      "bundle": 1,
+      "deps": [
+        7797,
+        3120
+      ]
+    },
+    {
+      "asset": "Assets/Game/Prefabs/Swf/skill/100009/100009.skill.prefab",
+      "bundle": 1,
+      "deps": [
+        7797,
+        3120
+      ]
+    },
+    {
+      "asset": "Assets/Game/Prefabs/Swf/skill/100010/100010.skill.prefab",
+      "bundle": 1,
+      "deps": [
+        7797,
+        3120
+      ]
+    },
+    {
+      "asset": "Assets/Game/Prefabs/Swf/skill/100011/100011.skill.prefab",
+      "bundle": 1,
+      "deps": [
+        7797,
+        3120
+      ]
+    },
+    {
+      "asset": "Assets/Game/Prefabs/Swf/skill/100012/100012.skill.prefab",
+      "bundle": 1,
+      "deps": [
+        7797,
+        3120
+      ]
+    },
+    {
+      "asset": "Assets/Game/Prefabs/Swf/skill/100013/100013.skill.prefab",
+      "bundle": 1,
+      "deps": [
+        7797,
+        3120
+      ]
+    },
+    {
+      "asset": "Assets/Game/Prefabs/Swf/skill/100014/100014.skill.prefab",
+      "bundle": 1,
+      "deps": [
+        7797,
+        3120
+      ]
+    },
+    {
+      "asset": "Assets/Game/Prefabs/Swf/skill/100015/100015.skill.prefab",
+      "bundle": 1,
+      "deps": [
+        7797,
+        3120
+      ]
+    },
+    {
+      "asset": "Assets/Game/Prefabs/Swf/skill/100016/100016.skill.prefab",
+      "bundle": 1,
+      "deps": [
+        7797,
+        3120
+      ]
+    },
+    {
+      "asset": "Assets/Game/Prefabs/Swf/skill/100017/100017.skill.prefab",
+      "bundle": 1,
+      "deps": [
+        7797,
+        3120
+      ]
+    },
+    {
+      "asset": "Assets/Game/Prefabs/Swf/skill/100018/100018.skill.prefab",
+      "bundle": 1,
+      "deps": [
+        7797,
+        3120
+      ]
+    },
+    {
+      "asset": "Assets/Game/Prefabs/Swf/skill/100019/100019.skill.prefab",
+      "bundle": 1,
+      "deps": [
+        7797,
+        3120
+      ]
+    },
+    {
+      "asset": "Assets/Game/Prefabs/Swf/skill/100020/100020.skill.prefab",
+      "bundle": 1,
+      "deps": [
+        7797,
+        3120
+      ]
+    },
+    {
+      "asset": "Assets/Game/Prefabs/Swf/skill/100021/100021.skill.prefab",
+      "bundle": 1,
+      "deps": [
+        7797,
+        3120
+      ]
+    },
+    {
+      "asset": "Assets/Game/Prefabs/Swf/skill/100022/100022.skill.prefab",
+      "bundle": 1,
+      "deps": [
+        7797,
+        3120
+      ]
+    },
+    {
+      "asset": "Assets/Game/Prefabs/Swf/skill/100023/100023.skill.prefab",
+      "bundle": 1,
+      "deps": [
+        7797,
+        3120
+      ]
+    },
+    {
+      "asset": "Assets/Game/Prefabs/Swf/skill/100024/100024.skill.prefab",
+      "bundle": 1,
+      "deps": [
+        7797,
+        3120
+      ]
+    },
+    {
+      "asset": "Assets/Game/Prefabs/Swf/skill/100025/100025.skill.prefab",
+      "bundle": 1,
+      "deps": [
+        7797,
+        3120
+      ]
+    },
+    {
+      "asset": "Assets/Game/Prefabs/Swf/skill/100026/100026.skill.prefab",
+      "bundle": 1,
+      "deps": [
+        7797,
+        3120
+      ]
+    },
+    {
+      "asset": "Assets/Game/Prefabs/Swf/skill/100027/100027.skill.prefab",
+      "bundle": 1,
+      "deps": [
+        7797,
+        3120
+      ]
+    },
+    {
+      "asset": "Assets/Game/Prefabs/Swf/skill/100028/100028.skill.prefab",
+      "bundle": 1,
+      "deps": [
+        7797,
+        3120
+      ]
+    },
+    {
+      "asset": "Assets/Game/Prefabs/Swf/skill/100029/100029.skill.prefab",
+      "bundle": 1,
+      "deps": [
+        7797,
+        3120
+      ]
+    },
+    {
+      "asset": "Assets/Game/Prefabs/Swf/skill/100030/100030.skill.prefab",
+      "bundle": 1,
+      "deps": [
+        7797,
+        3120
+      ]
+    },
+    {
+      "asset": "Assets/Game/Prefabs/Swf/skill/100031/100031.skill.prefab",
+      "bundle": 1,
+      "deps": [
+        7797,
+        3120
+      ]
+    },
+    {
+      "asset": "Assets/Game/Prefabs/Swf/skill/100032/100032.skill.prefab",
+      "bundle": 1,
+      "deps": [
+        7797,
+        3120
+      ]
+    },
+    {
+      "asset": "Assets/Game/Prefabs/Swf/skill/100033/100033.skill.prefab",
+      "bundle": 1,
+      "deps": [
+        7797,
+        3120
+      ]
+    },
+    {
+      "asset": "Assets/Game/Prefabs/Swf/skill/100034/100034.skill.prefab",
+      "bundle": 1,
+      "deps": [
+        7797,
+        3120
+      ]
+    },
+    {
+      "asset": "Assets/Game/Prefabs/Swf/skill/100035/100035.skill.prefab",
+      "bundle": 1,
+      "deps": [
+        7797,
+        3120
+      ]
+    },
+    {
+      "asset": "Assets/Game/Prefabs/Swf/skill/100036/100036.skill.prefab",
+      "bundle": 1,
+      "deps": [
+        7797,
+        3120
+      ]
+    },
+    {
+      "asset": "Assets/Game/Prefabs/Swf/skill/100037/100037.skill.prefab",
+      "bundle": 1,
+      "deps": [
+        7797,
+        3120
+      ]
+    },
+    {
+      "asset": "Assets/Game/Prefabs/Swf/skill/100038/100038.skill.prefab",
+      "bundle": 1,
+      "deps": [
+        7797,
+        3120
+      ]
+    },
+    {
+      "asset": "Assets/Game/Prefabs/Swf/skill/100039/100039.skill.prefab",
+      "bundle": 1,
+      "deps": [
+        7797,
+        3120
+      ]
+    },
+    {
+      "asset": "Assets/Game/Prefabs/Swf/skill/100040/100040.skill.prefab",
+      "bundle": 1,
+      "deps": [
+        7797,
+        3120
+      ]
+    },
+    {
+      "asset": "Assets/Game/Prefabs/Swf/skill/100041/100041.skill.prefab",
+      "bundle": 1,
+      "deps": [
+        7797,
+        3120
+      ]
+    },
+    {
+      "asset": "Assets/Game/Prefabs/Swf/skill/100042/100042.skill.prefab",
+      "bundle": 1,
+      "deps": [
+        7797,
+        3120
+      ]
+    },
+    {
+      "asset": "Assets/Game/Prefabs/Swf/skill/100043/100043.skill.prefab",
+      "bundle": 1,
+      "deps": [
+        7797,
+        3120
+      ]
+    },
+    {
+      "asset": "Assets/Game/Prefabs/Swf/skill/100044/100044.skill.prefab",
+      "bundle": 1,
+      "deps": [
+        7797,
+        3120
+      ]
+    },
+    {
+      "asset": "Assets/Game/Prefabs/Swf/skill/100045/100045.skill.prefab",
+      "bundle": 1,
+      "deps": [
+        7797,
+        3120
+      ]
+    },
+    {
+      "asset": "Assets/Game/Prefabs/Swf/skill/100046/100046.skill.prefab",
+      "bundle": 1,
+      "deps": [
+        7797,
+        3120
+      ]
+    },
+    {
+      "asset": "Assets/Game/Prefabs/Swf/skill/100047/100047.skill.prefab",
+      "bundle": 1,
+      "deps": [
+        7797,
+        3120
+      ]
+    },
+    {
+      "asset": "Assets/Game/Prefabs/Swf/skill/100048/100048.skill.prefab",
+      "bundle": 1,
+      "deps": [
+        7797,
+        3120
+      ]
+    },
+    {
+      "asset": "Assets/Game/Prefabs/Swf/skill/100049/100049.skill.prefab",
+      "bundle": 1,
+      "deps": [
+        7797,
+        3120
+      ]
+    },
+    {
+      "asset": "Assets/Game/Prefabs/Swf/skill/100050/100050.skill.prefab",
+      "bundle": 1,
+      "deps": [
+        7797,
+        3120
+      ]
+    },
+    {
+      "asset": "Assets/Game/Prefabs/Swf/skill/100051/100051.skill.prefab",
+      "bundle": 1,
+      "deps": [
+        7797,
+        3120
+      ]
+    },
+    {
+      "asset": "Assets/Game/Prefabs/Swf/skill/100052/100052.skill.prefab",
+      "bundle": 1,
+      "deps": [
+        7797,
+        3120
+      ]
+    },
+    {
+      "asset": "Assets/Game/Prefabs/Swf/skill/100053/100053.skill.prefab",
+      "bundle": 1,
+      "deps": [
+        7797,
+        3120
+      ]
+    },
+    {
+      "asset": "Assets/Game/Prefabs/Swf/skill/100054/100054.skill.prefab",
+      "bundle": 1,
+      "deps": [
+        7797,
+        3120
+      ]
+    },
+    {
+      "asset": "Assets/Game/Prefabs/Swf/skill/100055/100055.skill.prefab",
+      "bundle": 1,
+      "deps": [
+        7797,
+        3120
+      ]
+    },
+    {
+      "asset": "Assets/Game/Prefabs/Swf/skill/100056/100056.skill.prefab",
+      "bundle": 1,
+      "deps": [
+        7797,
+        3120
+      ]
+    },
+    {
+      "asset": "Assets/Game/Prefabs/Swf/skill/100057/100057.skill.prefab",
+      "bundle": 1,
+      "deps": [
+        7797,
+        3120
+      ]
+    },
+    {
+      "asset": "Assets/Game/Prefabs/Swf/skill/100058/100058.skill.prefab",
+      "bundle": 1,
+      "deps": [
+        7797,
+        3120
+      ]
+    },
+    {
+      "asset": "Assets/Game/Prefabs/Swf/skill/100059/100059.skill.prefab",
+      "bundle": 1,
+      "deps": [
+        7797,
+        3120
+      ]
+    },
+    {
+      "asset": "Assets/Game/Prefabs/Swf/skill/100060/100060.skill.prefab",
+      "bundle": 1,
+      "deps": [
+        7797,
+        3120
+      ]
+    },
+    {
+      "asset": "Assets/Game/Prefabs/Swf/skill/100061/100061.skill.prefab",
+      "bundle": 1,
+      "deps": [
+        7797,
+        3120
+      ]
+    },
+    {
+      "asset": "Assets/Game/Prefabs/Swf/skill/100062/100062.skill.prefab",
+      "bundle": 1,
+      "deps": [
+        7797,
+        3120
+      ]
+    },
+    {
+      "asset": "Assets/Game/Prefabs/Swf/skill/100063/100063.skill.prefab",
+      "bundle": 1,
+      "deps": [
+        7797,
+        3120
+      ]
+    },
+    {
+      "asset": "Assets/Game/Prefabs/Swf/skill/100064/100064.skill.prefab",
+      "bundle": 1,
+      "deps": [
+        7797,
+        3120
+      ]
+    },
+    {
+      "asset": "Assets/Game/Prefabs/Swf/skill/100065/100065.skill.prefab",
+      "bundle": 1,
+      "deps": [
+        7797,
+        3120
+      ]
+    },
+    {
+      "asset": "Assets/Game/Prefabs/Swf/skill/100066/100066.skill.prefab",
+      "bundle": 1,
+      "deps": [
+        7797,
+        3120
+      ]
+    },
+    {
+      "asset": "Assets/Game/Prefabs/Swf/skill/100067/100067.skill.prefab",
+      "bundle": 1,
+      "deps": [
+        7797,
+        3120
+      ]
+    },
+    {
+      "asset": "Assets/Game/Prefabs/Swf/skill/100068/100068.skill.prefab",
+      "bundle": 1,
+      "deps": [
+        7797,
+        3120
+      ]
+    },
+    {
+      "asset": "Assets/Game/Prefabs/Swf/skill/100069/100069.skill.prefab",
+      "bundle": 1,
+      "deps": [
+        7797,
+        3120
+      ]
+    },
+    {
+      "asset": "Assets/Game/Prefabs/Swf/skill/100070/100070.skill.prefab",
+      "bundle": 1,
+      "deps": [
+        7797,
+        3120
+      ]
+    },
+    {
+      "asset": "Assets/Game/Prefabs/Swf/skill/100071/100071.skill.prefab",
+      "bundle": 1,
+      "deps": [
+        7797,
+        3120
+      ]
+    },
+    {
+      "asset": "Assets/Game/Prefabs/Swf/skill/100072/100072.skill.prefab",
+      "bundle": 1,
+      "deps": [
+        7797,
+        3120
+      ]
+    },
+    {
+      "asset": "Assets/Game/Prefabs/Swf/skill/100073/100073.skill.prefab",
+      "bundle": 1,
+      "deps": [
+        7797,
+        3120
+      ]
+    },
+    {
+      "asset": "Assets/Game/Prefabs/Swf/skill/100074/100074.skill.prefab",
+      "bundle": 1,
+      "deps": [
+        7797,
+        3120
+      ]
+    },
+    {
+      "asset": "Assets/Game/Prefabs/Swf/skill/100075/100075.skill.prefab",
+      "bundle": 1,
+      "deps": [
+        7797,
+        3120
+      ]
+    },
+    {
+      "asset": "Assets/Game/Prefabs/Swf/skill/100076/100076.skill.prefab",
+      "bundle": 1,
+      "deps": [
+        7797,
+        3120
+      ]
+    },
+    {
+      "asset": "Assets/Game/Prefabs/Swf/skill/100077/100077.skill.prefab",
+      "bundle": 1,
+      "deps": [
+        7797,
+        3120
+      ]
+    },
+    {
+      "asset": "Assets/Game/Prefabs/Swf/skill/100078/100078.skill.prefab",
+      "bundle": 1,
+      "deps": [
+        7797,
+        3120
+      ]
+    },
+    {
+      "asset": "Assets/Game/Prefabs/Swf/skill/100079/100079.skill.prefab",
+      "bundle": 1,
+      "deps": [
+        7797,
+        3120
+      ]
+    },
+    {
+      "asset": "Assets/Game/Prefabs/Swf/skill/100080/100080.skill.prefab",
+      "bundle": 1,
+      "deps": [
+        7797,
+        3120
+      ]
+    },
+    {
+      "asset": "Assets/Game/Prefabs/Swf/skill/100081/100081.skill.prefab",
+      "bundle": 1,
+      "deps": [
+        7797,
+        3120
+      ]
+    },
+    {
+      "asset": "Assets/Game/Prefabs/Swf/skill/100082/100082.skill.prefab",
+      "bundle": 1,
+      "deps": [
+        7797,
+        3120
+      ]
+    },
+    {
+      "asset": "Assets/Game/Prefabs/Swf/skill/100083/100083.skill.prefab",
+      "bundle": 1,
+      "deps": [
+        7797,
+        3120
+      ]
+    },
+    {
+      "asset": "Assets/Game/Prefabs/Swf/skill/100084/100084.skill.prefab",
+      "bundle": 1,
+      "deps": [
+        7797,
+        3120
+      ]
+    },
+    {
+      "asset": "Assets/Game/Prefabs/Swf/skill/100085/100085.skill.prefab",
+      "bundle": 1,
+      "deps": [
+        7797,
+        3120
+      ]
+    },
+    {
+      "asset": "Assets/Game/Prefabs/Swf/skill/100086/100086.skill.prefab",
+      "bundle": 1,
+      "deps": [
+        7797,
+        3120
+      ]
+    },
+    {
+      "asset": "Assets/Game/Prefabs/Swf/skill/100087/100087.skill.prefab",
+      "bundle": 1,
+      "deps": [
+        7797,
+        3120
+      ]
+    },
+    {
+      "asset": "Assets/Game/Prefabs/Swf/skill/100088/100088.skill.prefab",
+      "bundle": 1,
+      "deps": [
+        7797,
+        3120
+      ]
+    },
+    {
+      "asset": "Assets/Game/Prefabs/Swf/skill/100089/100089.skill.prefab",
+      "bundle": 1,
+      "deps": [
+        7797,
+        3120
+      ]
+    },
+    {
+      "asset": "Assets/Game/Prefabs/Swf/skill/100090/100090.skill.prefab",
+      "bundle": 1,
+      "deps": [
+        7797,
+        3120
+      ]
+    },
+    {
+      "asset": "Assets/Game/Prefabs/Swf/skill/100091/100091.skill.prefab",
+      "bundle": 1,
+      "deps": [
+        7797,
+        3120
+      ]
+    },
+    {
+      "asset": "Assets/Game/Prefabs/Swf/skill/100092/100092.skill.prefab",
+      "bundle": 1,
+      "deps": [
+        7797,
+        3120
+      ]
+    },
+    {
+      "asset": "Assets/Game/Prefabs/Swf/skill/100093/100093.skill.prefab",
+      "bundle": 1,
+      "deps": [
+        7797,
+        3120
+      ]
+    },
+    {
+      "asset": "Assets/Game/Prefabs/Swf/skill/100094/100094.skill.prefab",
+      "bundle": 1,
+      "deps": [
+        7797,
+        3120
+      ]
+    },
+    {
+      "asset": "Assets/Game/Prefabs/Swf/skill/100095/100095.skill.prefab",
+      "bundle": 1,
+      "deps": [
+        7797,
+        3120
+      ]
+    },
+    {
+      "asset": "Assets/Game/Prefabs/Swf/skill/100096/100096.skill.prefab",
+      "bundle": 1,
+      "deps": [
+        7797,
+        3120
+      ]
+    },
+    {
+      "asset": "Assets/Game/Prefabs/Swf/skill/100097/100097.skill.prefab",
+      "bundle": 1,
+      "deps": [
+        7797,
+        3120
+      ]
+    },
+    {
+      "asset": "Assets/Game/Prefabs/Swf/skill/100098/100098.skill.prefab",
+      "bundle": 1,
+      "deps": [
+        7797,
+        3120
+      ]
+    },
+    {
+      "asset": "Assets/Game/Prefabs/Swf/skill/100099/100099.skill.prefab",
+      "bundle": 1,
+      "deps": [
+        7797,
+        3120
+      ]
+    },
+    {
+      "asset": "Assets/Game/Prefabs/Swf/skill/100100/100100.skill.prefab",
+      "bundle": 1,
+      "deps": [
+        7797,
+        3120
+      ]
+    },
+    {
+      "asset": "Assets/Game/Prefabs/Swf/skill/100101/100101.skill.prefab",
+      "bundle": 1,
+      "deps": [
+        7797,
+        3120
+      ]
+    },
+    {
+      "asset": "Assets/Game/Prefabs/Swf/skill/100102/100102.skill.prefab",
+      "bundle": 1,
+      "deps": [
+        7797,
+        3120
+      ]
+    },
+    {
+      "asset": "Assets/Game/Prefabs/Swf/skill/100103/100103.skill.prefab",
+      "bundle": 1,
+      "deps": [
+        7797,
+        3120
+      ]
+    },
+    {
+      "asset": "Assets/Game/Prefabs/Swf/skill/100104/100104.skill.prefab",
+      "bundle": 1,
+      "deps": [
+        7797,
+        3120
+      ]
+    },
+    {
+      "asset": "Assets/Game/Prefabs/Swf/skill/100105/100105.skill.prefab",
+      "bundle": 1,
+      "deps": [
+        7797,
+        3120
+      ]
+    },
+    {
+      "asset": "Assets/Game/Prefabs/Swf/skill/102001/102001.skill.prefab",
+      "bundle": 1,
+      "deps": [
+        7797,
+        3120
+      ]
+    },
+    {
+      "asset": "Assets/Game/Prefabs/Swf/skill/102002/102002.skill.prefab",
+      "bundle": 1,
+      "deps": [
+        7797,
+        3120
+      ]
+    },
+    {
+      "asset": "Assets/Game/Prefabs/Swf/skill/102003/102003.skill.prefab",
+      "bundle": 1,
+      "deps": [
+        7797,
+        3120
+      ]
+    },
+    {
+      "asset": "Assets/Game/Prefabs/Swf/skill/102004/102004.skill.prefab",
+      "bundle": 1,
+      "deps": [
+        7797,
+        3120
+      ]
+    },
+    {
+      "asset": "Assets/Game/Prefabs/Swf/skill/102005/102005.skill.prefab",
+      "bundle": 1,
+      "deps": [
+        7797,
+        3120
+      ]
+    },
+    {
+      "asset": "Assets/Game/Prefabs/Swf/skill/200001/200001.skill.prefab",
+      "bundle": 1,
+      "deps": [
+        7797,
+        3120
+      ]
+    },
+    {
+      "asset": "Assets/Game/Prefabs/Swf/skill/200002/200002.skill.prefab",
+      "bundle": 1,
+      "deps": [
+        7797,
+        3120
+      ]
+    },
+    {
+      "asset": "Assets/Game/Prefabs/Swf/skill/200003/200003.skill.prefab",
+      "bundle": 1,
+      "deps": [
+        7797,
+        3120
+      ]
+    },
+    {
+      "asset": "Assets/Game/Prefabs/Swf/skill/200004/200004.skill.prefab",
+      "bundle": 1,
+      "deps": [
+        7797,
+        3120
+      ]
+    },
+    {
+      "asset": "Assets/Game/Prefabs/Swf/skill/200005/200005.skill.prefab",
+      "bundle": 1,
+      "deps": [
+        7797,
+        3120
+      ]
+    },
+    {
+      "asset": "Assets/Game/Prefabs/Swf/skill/19001841/19001841.skill.prefab",
+      "bundle": 1,
+      "deps": [
+        7797,
+        3120
+      ]
+    },
+    {
+      "asset": "Assets/Game/Prefabs/Swf/skill/19001842/19001842.skill.prefab",
+      "bundle": 1,
+      "deps": [
+        7797,
+        3120
+      ]
+    },
+    {
+      "asset": "Assets/Game/Prefabs/Swf/skill/19002221/19002221.skill.prefab",
+      "bundle": 1,
+      "deps": [
+        7797,
+        3120
+      ]
+    },
+    {
+      "asset": "Assets/Game/Prefabs/Swf/skill/19002222/19002222.skill.prefab",
+      "bundle": 1,
+      "deps": [
+        7797,
+        3120
+      ]
+    },
+    {
+      "asset": "Assets/Game/Prefabs/Swf/skill/19005101/19005101.skill.prefab",
+      "bundle": 1,
+      "deps": [
+        7797,
+        3120
+      ]
+    },
+    {
+      "asset": "Assets/Game/Prefabs/Swf/skill/19005102/19005102.skill.prefab",
+      "bundle": 1,
+      "deps": [
+        7797,
+        3120
+      ]
+    },
+    {
+      "asset": "Assets/Game/Prefabs/Swf/skill/36705525/36705525.skill.prefab",
+      "bundle": 1,
+      "deps": [
+        7797,
+        3120
+      ]
+    },
+    {
+      "asset": "Assets/Game/Prefabs/Swf/skill/47935620/47935620.skill.prefab",
+      "bundle": 1,
+      "deps": [
+        7797,
+        3120
+      ]
+    },
+    {
+      "asset": "Assets/Game/Prefabs/Swf/skill/54234812/54234812.skill.prefab",
+      "bundle": 1,
+      "deps": [
+        7797,
+        3120
+      ]
+    },
+    {
+      "asset": "Assets/Game/Prefabs/Swf/skill/64434812/64434812.skill.prefab",
+      "bundle": 1,
+      "deps": [
+        7797,
+        3120
+      ]
+    },
+    {
+      "asset": "Assets/Game/Prefabs/Swf/skill/64535620/64535620.skill.prefab",
+      "bundle": 1,
+      "deps": [
+        7797,
+        3120
+      ]
+    },
+    {
+      "asset": "Assets/Game/Prefabs/Swf/skill/1900032911/1900032911.skill.prefab",
+      "bundle": 1,
+      "deps": [
+        7797,
+        3120
+      ]
+    },
+    {
+      "asset": "Assets/Game/Prefabs/Swf/skill/1900032912/1900032912.skill.prefab",
+      "bundle": 1,
+      "deps": [
+        7797,
+        3120
+      ]
+    }
+  ]
+}

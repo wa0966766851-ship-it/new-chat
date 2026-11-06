@@ -69,10 +69,13 @@ const {isZeroPpExempt}=await server.ssrLoadModule('/src/battle/ppExemptions.ts')
     assert.equal(projected.priority, (target.skills[0].priority || 0) + 3);
     assert.equal(projected.isSureHit, true);
     assert.ok(!projected.description.includes('原技能附加不得重跑'), '固有保留不等於複製原技能附加'); checks++;
-    assert.equal(ctx.self.trait.name, '自身特性', '原特性不被取得特性覆蓋');
+    // 現行契約（339e482，11/02）：幻化期間 trait／alienTraits 換成目標的（獲得特性，供特性機制生效）；原特性備份在 illusion.original，解除時還原，定義展示仍分開列出。
+    assert.equal(ctx.self.trait, target.trait, '幻化期間特性＝目標特性（獲得特性）');
+    assert.equal(ctx.self.illusion.original.trait.name, '自身特性', '原特性備份在 illusion.original，不遺失');
     assert.equal(isZeroPpExempt(ctx.self, { ...ctx.self.skills[0], pp: 0 }), true);
     const entries = effectDefinitionEntries(ctx.self);
     assert.ok(entries.some((e: any) => !e.acquired && e.name === '自身魂印'));
+    assert.ok(entries.some((e: any) => !e.acquired && e.name === '自身特性'), '自身來源仍列出原特性，不被取得特性蓋掉');
     assert.ok(entries.some((e: any) => e.acquired && e.soul)); checks++;
     for (const finish of ['AFTER_ACTION', 'ACTION_FAILED']) {
       apis.updateElf(side, { skills: ctx.self.skills.map((s: any, i: number) => ({ ...s, pp: i === 0 ? 3 : 8 })) });

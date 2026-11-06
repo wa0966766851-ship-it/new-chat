@@ -11,6 +11,9 @@ const logs = (hist: any[]) => last(hist).logs.join('\n');
 const idx = (elf: any, name: string) => elf.skills.findIndex((s: any) => s.name === name);
 const wait = () => h.wait();
 const BIG = 2_000_000;
+// 山神守護的「替代規則」（5e756e6，11/02）：只要持有山神守護就生效——自身選擇使用技能不受PP限制，且每次使用技能後令對手1回合內技能附加效果失效。
+// 本檔以下與「護盾／回合類效果」有關的情境，需要對手的技能附加效果能正常生效；以此隔離替代規則（其本身由「山神守護：…」各項測試鎖定）。
+const noGuardReplacement = (c: any) => { c.soulMark.kit = c.soulMark.kit.filter((x: any) => !/改為自身1回合內選擇使用技能不受PP值限制|技能使用後令對手1回合內技能附加效果失效/.test(x.customText)); };
 
 try {
   for (const side of SIDES) {
@@ -97,12 +100,13 @@ try {
       assert.equal(last(r).self.currentHp, 90000 - 300);
       assert.equal(last(r).self.shield, 400);
     });
-    await check(`${side} 魂印：超額真實傷害 > 護盾且致死 → 100%重生，僅 1 次`, async () => {
+    await check(`${side} 魂印（使用者 11/01 裁定解讀A）：超額真實傷害 > 護盾且致死 → 100%重生；每次滿足條件都觸發，無總次數限制`, async () => {
       const kill = h.dmgSkill('致死真傷', '真實', 5000);
-      const r = await benchBattle(side, [kill], [0, 0], { withCassius: true, shield: 400, frontHp: 3000, turns: 2 });
+      const r = await benchBattle(side, [kill], [0, 0, 0], { withCassius: true, shield: 400, frontHp: 3000, turns: 3 });
       assert.equal(r[0].self.currentHp, 3000, '第1次致死真傷：重生回滿');
       assert.ok(r[0].logs.join('').includes('重生'), '重生日誌');
-      assert.ok(r[1].self.currentHp <= 0, `第2次不再重生：${r[1].self.currentHp}`);
+      assert.equal(r[1].self.currentHp, 3000, `第2次致死真傷仍重生：${r[1].self.currentHp}`);
+      assert.equal(r[2].self.currentHp, 3000, `第3次致死真傷仍重生：${r[2].self.currentHp}`);
     });
     await check(`${side} 魂印（使用者 11/01）：攻擊傷害高於當前護盾（未達兩倍）即無法造成`, async () => {
       const big = h.dmgSkill('固傷600', '固定', 600);
@@ -519,7 +523,7 @@ try {
   const deathLogs = (r: any) => r.logs.filter((x: string) => x.includes('炫彩山神】死亡')).length;
   for (const side of SIDES) {
     await check(`${side} 護盾消失→山神死亡：護盾仍在（僅被扣減）不誤殺；每次護盾消失各死亡一次；死亡後清除回合數並於下回合再召喚`, async () => {
-      const cas = h.cassius(); cas.skills = [wait()];
+      const cas = h.cassius(); cas.skills = [wait()]; noGuardReplacement(cas);
       // 隔離：移除屬性技能的「無效對手下次攻擊」，讓輕擊能實際扣減護盾
       cas.soulMark.kit = cas.soulMark.kit.filter((x: any) => !/使用技能後無效對手下次攻擊技能/.test(x.customText));
       const clear = h.kitSkill('清盾', [{ op: 'clear_shield', p: { side: 'opp', kind: 'both' } }]);
@@ -557,7 +561,7 @@ try {
     });
 
     await check(`${side} 山神死亡「消除對手回合類效果」：回合類（轉由回合計數）被清除；魂印「下次攻擊無效」為次數類效果，依規則不屬回合類而保留`, async () => {
-      const cas = h.cassius(); cas.skills = [h.sk('穩', { name: '定場' }), wait()];
+      const cas = h.cassius(); cas.skills = [h.sk('穩', { name: '定場' }), wait()]; noGuardReplacement(cas);
       const clear = h.kitSkill('清盾', [{ op: 'clear_shield', p: { side: 'opp', kind: 'both' } }]);
       const foe = h.foe('E', 900000, [h.turnEffectSkill(), clear, h.wait()], { speed: 10 });
       const hist = await h.play(side, { self: cas, opp: foe, turns: (_e: any, t: number) => [[0, 1][t - 1], [0, 1][t - 1]] as any }, 2);
@@ -576,14 +580,16 @@ try {
     const zeroPp = h.sk('零PP技能', { pp: 0, maxPp: 5, category: '屬性' });
     const guardMod = (c: any) => { c.skills.push(h.wait(), zeroPp); };
     const used = (hist: any[], name: string) => last(hist).logs.some((x: string) => x.includes('卡修斯】使用了【' + name + '】'));
-    await check(`${side} 山神守護：控制類異常原效果取消（照常行動）；改為選擇使用技能不受PP限制（對照：無控制異常時PP0技能不可用）`, async () => {
-      const foeSk = [h.wait(), petrify(3)];
-      const withC = await cast(side, { picks: [[5, 0], [5, 1], [6, 0]], soul: true, foeSkills: foeSk, foeSpeed: 5000, selfMod: guardMod });
+    await check(`${side} 山神守護：控制類異常原效果取消（照常行動）；改為選擇使用技能不受PP限制（11/02：只要持有山神守護即生效，不需要有被取消的異常）`, async () => {
+      // 石化在第 1 回合（對手先手，此時替代規則尚未令其附加效果失效）上身，之後 3 回合期間照常行動
+      const petrify4 = h.kitSkill('石化咒', [{ op: 'status', p: { side: 'opp', status: '石化', turns: 4, chance: 100 } }]);
+      const foeSk = [h.wait(), petrify4];
+      const withC = await cast(side, { picks: [[5, 1], [5, 0], [6, 0]], soul: true, foeSkills: foeSk, foeSpeed: 5000, selfMod: guardMod });
       assert.ok(h.statuses(last(withC.hist).self).includes('石化'), '石化仍在（僅取消效果）');
       assert.ok(used(withC.hist, '零PP技能'), '石化期間照常行動，且 PP0 技能不受 PP 限制');
       const noC = await cast(side, { picks: [[5, 0], [5, 0], [6, 0]], soul: true, foeSkills: foeSk, foeSpeed: 5000, selfMod: guardMod });
-      assert.ok(!used(noC.hist, '零PP技能'), '對照：沒有被取消的異常 → PP0 技能仍受限');
-      const bare = await cast(side, { picks: [[5, 0], [5, 1], [6, 0]], soul: false, foeSkills: foeSk, foeSpeed: 5000, selfMod: c => { guardMod(c); c.effects = []; } });
+      assert.ok(used(noC.hist, '零PP技能'), '沒有被取消的異常，只要持有山神守護 → PP0 技能照樣不受 PP 限制');
+      const bare = await cast(side, { picks: [[5, 1], [5, 0], [6, 0]], soul: false, foeSkills: foeSk, foeSpeed: 5000, selfMod: c => { guardMod(c); c.effects = []; } });
       assert.ok(!used(bare.hist, '零PP技能'), '對照：無山神守護（無魂印）→ 石化阻止行動');
     });
     await check(`${side} 山神守護：所處異常不可轉化為控制類／弱化類（石化到期不轉凍傷）；對照無守護則轉化`, async () => {
@@ -593,12 +599,13 @@ try {
       const bare = await cast(side, { picks: [[5, 0], [5, 1], [5, 0]], soul: false, foeSkills: foeSk, foeSpeed: 5000, selfMod: c => { guardMod(c); } });
       assert.ok(h.statuses(last(bare.hist).self).includes('凍傷'), '對照：無守護則轉化為凍傷：' + h.statuses(last(bare.hist).self));
     });
-    await check(`${side} 山神守護：原效果被取消時，技能使用後令對手1回合內技能附加效果失效（對照：無被取消異常則不失效）`, async () => {
+    await check(`${side} 山神守護：技能使用後令對手1回合內技能附加效果失效（11/02：只要持有山神守護即生效；對照無魂印則不失效）`, async () => {
       const foeSk = [h.wait(), petrify(3), buff];
       const r = await cast(side, { picks: [[5, 0], [5, 1], [5, 2]], soul: true, foeSkills: foeSk, foeSpeed: 5000, selfMod: guardMod });
       assert.equal(stage(last(r.hist).opp, '攻擊'), 0, '對手附加效果失效，+1 未生效');
-      const ctrl = await cast(side, { picks: [[5, 0], [5, 0], [5, 2]], soul: true, foeSkills: foeSk, foeSpeed: 5000, selfMod: guardMod });
-      assert.equal(stage(last(ctrl.hist).opp, '攻擊'), 1, '對照：無取代條件時對手附加效果正常');
+      assert.ok(!h.statuses(last(r.hist).self).includes('石化'), '對手石化咒的附加效果同樣失效（身上無被取消的異常，替代規則仍生效）');
+      const ctrl = await cast(side, { picks: [[5, 0], [5, 0], [5, 2]], soul: false, foeSkills: foeSk, foeSpeed: 5000, selfMod: guardMod });
+      assert.equal(stage(last(ctrl.hist).opp, '攻擊'), 1, '對照：無魂印（無山神守護替代規則）時對手附加效果正常');
     });
   }
 

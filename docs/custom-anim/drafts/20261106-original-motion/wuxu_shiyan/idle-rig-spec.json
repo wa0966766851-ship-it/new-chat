@@ -1,0 +1,335 @@
+{
+  "id": "wuxu_shiyan",
+  "elfId": "5023",
+  "elfName": "無序·蝕言",
+  "fps": 24,
+  "facing": "left",
+  "canvas": [
+    1200,
+    1500
+  ],
+  "anchor": [
+    600,
+    1420
+  ],
+  "margin": 8,
+  "pixelsPerUnit": 132.15384615384616,
+  "poses": {
+    "ready": {
+      "file": "docs/custom-anim/drafts/20261106-original-motion/wuxu_shiyan/ready.png",
+      "sha256": "ee7a82a8e18fdeb6683968c145bd919cfd1b1d0352092c37f76fc8056723874f",
+      "facing": "left",
+      "anchors": {
+        "muzzle": [
+          600,
+          627.0769230769231
+        ]
+      },
+      "review": {
+        "accepted": true,
+        "note": "允許試播匯入；保留原始來源獨立高解析姿勢，不代表待機／銜接／美術已通過。"
+      }
+    },
+    "cast": {
+      "file": "docs/custom-anim/drafts/20261106-original-motion/wuxu_shiyan/cast.png",
+      "sha256": "163210dc4692d81ad205ec3bca60d29ead8064ea15baf4c68f51e47200e38be5",
+      "facing": "left",
+      "anchors": {
+        "muzzle": [
+          600,
+          627.0769230769231
+        ]
+      },
+      "review": {
+        "accepted": true,
+        "note": "允許試播匯入；保留原始來源獨立高解析姿勢，不代表待機／銜接／美術已通過。"
+      }
+    },
+    "anticipation": {
+      "file": "docs/custom-anim/drafts/20261106-original-motion/wuxu_shiyan/anticipation.png",
+      "sha256": "fa96aa8f6a22d55a8172bc8b8ee780fda0cb4a3c735fb2420c42532eced37f6f",
+      "facing": "left",
+      "anchors": {
+        "muzzle": [
+          600,
+          627.0769230769231
+        ]
+      },
+      "review": {
+        "accepted": true,
+        "note": "允許試播匯入；保留原始來源獨立高解析姿勢，不代表待機／銜接／美術已通過。"
+      }
+    },
+    "idleLower": {
+      "file": "docs/custom-anim/drafts/20261106-original-motion/wuxu_shiyan/idleLower.png",
+      "sha256": "d24c25ee7271d14f9c02b32bbb35b5a67a45b65df0716814525c6f82213524dd",
+      "facing": "left",
+      "review": {
+        "accepted": true,
+        "note": "僅允許獨立接縫研究；原人物像素保留，幽魂遮擋補底為生成素材。尚未通過美術驗收。"
+      }
+    },
+    "idleUpper": {
+      "file": "docs/custom-anim/drafts/20261106-original-motion/wuxu_shiyan/idleUpper.png",
+      "sha256": "2a699cc152927820d7355caa520bcbad87c9376324bde6ee4188abfa4b0ce3be",
+      "facing": "left",
+      "review": {
+        "accepted": true,
+        "note": "僅允許獨立接縫研究；原人物像素保留，幽魂遮擋補底為生成素材。尚未通過美術驗收。"
+      }
+    },
+    "idleGhost": {
+      "file": "docs/custom-anim/drafts/20261106-original-motion/wuxu_shiyan/idleGhost.png",
+      "sha256": "f33d304da45ea62c123b5e655c876e7c9e5ce2674189c2ef8f0709f11d58b95f",
+      "facing": "left",
+      "review": {
+        "accepted": true,
+        "note": "僅允許獨立接縫研究；原人物像素保留，幽魂遮擋補底為生成素材。尚未通過美術驗收。"
+      }
+    }
+  },
+  "sequences": {
+    "standby": {
+      "loop": true,
+      "drawings": [
+        {
+          "pose": "idleLower",
+          "hold": 120
+        }
+      ],
+      "hits": []
+    },
+    "attack": {
+      "drawings": [
+        {
+          "pose": "ready",
+          "hold": 3
+        },
+        {
+          "pose": "anticipation",
+          "hold": 3
+        },
+        {
+          "pose": "cast",
+          "hold": 12
+        },
+        {
+          "pose": "anticipation",
+          "hold": 4
+        },
+        {
+          "pose": "ready",
+          "hold": 6
+        }
+      ],
+      "hits": [
+        10
+      ],
+      "events": {
+        "launch": 6,
+        "recover": 18
+      }
+    },
+    "sa": {
+      "drawings": [
+        {
+          "pose": "ready",
+          "hold": 3
+        },
+        {
+          "pose": "anticipation",
+          "hold": 5
+        },
+        {
+          "pose": "cast",
+          "hold": 15
+        },
+        {
+          "pose": "anticipation",
+          "hold": 4
+        },
+        {
+          "pose": "ready",
+          "hold": 7
+        }
+      ],
+      "hits": [
+        12
+      ],
+      "events": {
+        "launch": 8,
+        "recover": 23
+      }
+    },
+    "ultimate": {
+      "drawings": [
+        {
+          "pose": "ready",
+          "hold": 3
+        },
+        {
+          "pose": "anticipation",
+          "hold": 7
+        },
+        {
+          "pose": "cast",
+          "hold": 20
+        },
+        {
+          "pose": "anticipation",
+          "hold": 4
+        },
+        {
+          "pose": "ready",
+          "hold": 8
+        }
+      ],
+      "hits": [
+        14
+      ],
+      "events": {
+        "launch": 10,
+        "recover": 30
+      }
+    },
+    "cp": {
+      "drawings": [
+        {
+          "pose": "ready",
+          "hold": 3
+        },
+        {
+          "pose": "anticipation",
+          "hold": 5
+        },
+        {
+          "pose": "cast",
+          "hold": 12
+        },
+        {
+          "pose": "anticipation",
+          "hold": 4
+        },
+        {
+          "pose": "ready",
+          "hold": 6
+        }
+      ],
+      "hits": [],
+      "events": {}
+    },
+    "extra": {
+      "drawings": [
+        {
+          "pose": "ready",
+          "hold": 6
+        },
+        {
+          "pose": "anticipation",
+          "hold": 12
+        },
+        {
+          "pose": "cast",
+          "hold": 40
+        },
+        {
+          "pose": "anticipation",
+          "hold": 6
+        },
+        {
+          "pose": "ready",
+          "hold": 8
+        }
+      ],
+      "hits": [],
+      "events": {}
+    },
+    "hited": {
+      "drawings": [
+        {
+          "pose": "ready",
+          "hold": 8
+        }
+      ]
+    }
+  },
+  "presentation": {
+    "style": "sigil",
+    "color": "#a855f7",
+    "secondary": "#f0d9ff",
+    "focusExtra": true,
+    "ambient": true,
+    "extraSeal": true,
+    "extraSealArt": {
+      "page": "/__animation-drafts/wuxu_shiyan/curse-page.png",
+      "claw": {
+        "open": "/__animation-drafts/wuxu_shiyan/claw-open.png",
+        "closed": "/__animation-drafts/wuxu_shiyan/claw-closed.png"
+      }
+    }
+  },
+  "physicalMotion": "stationary",
+  "idleZones": [],
+  "idleGrid": [
+    28,
+    40
+  ],
+  "idlePins": [
+    {
+      "x": 0.4875,
+      "y": 0.42,
+      "rx": 0.055,
+      "ry": 0.06
+    },
+    {
+      "x": 0.37916666666666665,
+      "y": 0.5366666666666666,
+      "rx": 0.12083333333333333,
+      "ry": 0.058666666666666666
+    },
+    {
+      "x": 0.5166666666666667,
+      "y": 0.5513333333333333,
+      "rx": 0.10833333333333334,
+      "ry": 0.04133333333333333
+    },
+    {
+      "x": 0.4083333333333333,
+      "y": 0.916,
+      "rx": 0.06666666666666667,
+      "ry": 0.04
+    },
+    {
+      "x": 0.5608333333333333,
+      "y": 0.916,
+      "rx": 0.058333333333333334,
+      "ry": 0.04
+    }
+  ],
+  "rigidAttachments": [
+    {
+      "basePose": "idleLower",
+      "pose": "idleGhost",
+      "pivot": [
+        590,
+        800
+      ],
+      "degrees": 2.4,
+      "dx": 5,
+      "dy": -5,
+      "delay": 0.5,
+      "behind": true
+    },
+    {
+      "basePose": "idleLower",
+      "pose": "idleUpper",
+      "pivot": [
+        590,
+        905
+      ],
+      "degrees": 1.15,
+      "dy": -2,
+      "behind": false
+    }
+  ]
+}

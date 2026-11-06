@@ -139,7 +139,7 @@ export function finalExtraTraitOperations(){return {
     comp.increasePercent+=increase;return true;
   },
   // 2026-11-04 修正：免死窗口同時要掛「非正體力存活」規則，
-  // 否則 hp 歸 0 後 checkElfDead 仍以 currentHp 判死（六刃無法顯示負血／被多段打死）。
+  // 否則 hp 歸 0 後 checkElfDead 仍以 currentHp 判死；保留0體力，不允許負血。
   damage_survival_guard:(ctx:BattleEventContext,p:any)=>{
     ctx.applyDeathImmunity(ctx.actor,p);
     ctx.updateElf(ctx.actor,{survivalRule:{mode:'freeze_at_zero',active:true,preserveOffField:!!p?.preserveOffField,minHp:0}} as any);

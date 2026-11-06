@@ -15,7 +15,7 @@ export const GOLDEN_SCENARIOS: GoldenScenario[] = [
   {
     id: "dimensional_dragon",
     name: "次元龍 vs 人皇·帝辛 (詩章/龍魂/死亡吸取)",
-    p1ElfName: "治癒.龍魂再臨 次元龍",
+    p1ElfName: "治癒·龍魂再臨",
     p2ElfName: "人皇·帝辛",
     seed: 10001,
     maxTurns: 10,

@@ -111,6 +111,9 @@ export const OTHERWORLD_REY_SEED: ElfSeed = {
   weight: 70,
   gender: "雄性",
   path: "otherworld_thunder_rey",
+  // 2026-11-03：官方動作素材以 seerId 對應；異境神霆是雷伊的異境形態，本體就是 70 號雷伊，
+  // 故綁 70 讓它能直接播 rey70（70.pet）。不影響頭像／立繪（path 已指定自繪外觀）。
+  seerId: 70,
   artPresentation: "scene",
   category: "異能精靈",
   isAlienElf: true,

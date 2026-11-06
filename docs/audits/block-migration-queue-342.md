@@ -1,7 +1,7 @@
 # 本批342份效果定義追蹤
 
 固定任務開始時的342份來源；新增可轉換候選不移出本表，不將解析率當成實裝率。正常／失敗／P1P2／場下／期限及傷害分類均須有情境證據才可驗收。
-待補定義208，候選待驗80，原文已變3，來源缺失51；本表未授予整份語意通過。
+待補定義205，候選待驗77，原文已變9，來源缺失51；本表未授予整份語意通過。
 
 | # | ID | 精靈 | 效果 | 狀態 | 未解分支數 |
 |---:|---|---|---|---|---:|
@@ -19,13 +19,13 @@
 | 12 | 5002 | 帝皇之盾 | 帝·永恆守護 | candidate-unverified | 0 |
 | 13 | 5003 | 天蓬元帥八戒 | 淨 | missing-source | 0 |
 | 14 | 5003 | 天蓬元帥八戒 | 天河衝擊 | candidate-unverified | 0 |
-| 15 | 5003 | 天蓬元帥八戒 | 殘軀鎖命 | candidate-unverified | 0 |
-| 16 | 5003 | 天蓬元帥八戒 | 萬鈞鎮魂 | candidate-unverified | 0 |
+| 15 | 5003 | 天蓬元帥八戒 | 殘軀鎖命 | source-changed | 0 |
+| 16 | 5003 | 天蓬元帥八戒 | 萬鈞鎮魂 | source-changed | 0 |
 | 17 | 5003 | 天蓬元帥八戒 | 混元護體 | candidate-unverified | 0 |
 | 18 | 5003 | 天蓬元帥八戒 | 淨·天河倒懸 | candidate-unverified | 0 |
 | 19 | 5004 | 皮特薩拉羅 | 翎 | missing-source | 0 |
 | 20 | 5004 | 皮特薩拉羅 | 翎封禁之羽 | candidate-unverified | 0 |
-| 21 | 5004 | 皮特薩拉羅 | 千鳥俱寂 | candidate-unverified | 0 |
+| 21 | 5004 | 皮特薩拉羅 | 千鳥俱寂 | source-changed | 0 |
 | 22 | 5004 | 皮特薩拉羅 | 翎羽風暴 | candidate-unverified | 0 |
 | 23 | 5004 | 皮特薩拉羅 | 千翎破陣 | candidate-unverified | 0 |
 | 24 | 5004 | 皮特薩拉羅 | 翎萬羽歸宗 | candidate-unverified | 0 |
@@ -119,7 +119,7 @@
 | 112 | 5010 | 星光·魯斯王 | 龍之牙 | candidate-unverified | 0 |
 | 113 | 5010 | 星光·魯斯王 | 星光·劍舞 | candidate-unverified | 0 |
 | 114 | 5010 | 星光·魯斯王 | 星光·克制 | needs-definition | 1 |
-| 115 | 5010 | 星光·魯斯王 | 星光·水天一色 | needs-definition | 1 |
+| 115 | 5010 | 星光·魯斯王 | 星光·水天一色 | source-changed | 1 |
 | 116 | 5010 | 星光·魯斯王 | 星光·驚濤駭浪 | candidate-unverified | 0 |
 | 117 | 5010 | 星光·魯斯王 | 星光·怒濤狂湧 | needs-definition | 1 |
 | 118 | 5011 | 星光·麗莎布布 | 芳 | missing-source | 0 |
@@ -289,7 +289,7 @@
 | 282 | 5030 | 聖靈邁爾斯 | 聖靈乾坤斷 | needs-definition | 1 |
 | 283 | 5031 | 六界神王 | 界 | missing-source | 0 |
 | 284 | 5031 | 六界神王 | 界・裁決之劍 | needs-definition | 1 |
-| 285 | 5031 | 六界神王 | 禁靈領域 | needs-definition | 1 |
+| 285 | 5031 | 六界神王 | 禁靈領域 | source-changed | 1 |
 | 286 | 5031 | 六界神王 | 升臨恩澤 | needs-definition | 1 |
 | 287 | 5031 | 六界神王 | 超界審判 | needs-definition | 2 |
 | 288 | 5031 | 六界神王 | 界·六神歸一 | needs-definition | 3 |
@@ -343,7 +343,7 @@
 | 336 | arena_15 | 命運龍輪 莫伊萊 | 恆·蒼穹斗轉 | needs-definition | 3 |
 | 337 | arena_16 | 鎮世龍魂・龍之治癒 | 龍之治癒 | missing-source | 0 |
 | 338 | arena_16 | 鎮世龍魂・龍之治癒 | 剛莖棍壓 | needs-definition | 3 |
-| 339 | arena_16 | 鎮世龍魂・龍之治癒 | 挨打要立正 | needs-definition | 6 |
+| 339 | arena_16 | 鎮世龍魂・龍之治癒 | 挨打要立正 | source-changed | 6 |
 | 340 | arena_16 | 鎮世龍魂・龍之治癒 | 幽魔相嘯 | needs-definition | 6 |
 | 341 | arena_16 | 鎮世龍魂・龍之治癒 | 雅髯獅嘯 | needs-definition | 5 |
 | 342 | arena_16 | 鎮世龍魂・龍之治癒 | 但願不會是個怪物 | needs-definition | 8 |

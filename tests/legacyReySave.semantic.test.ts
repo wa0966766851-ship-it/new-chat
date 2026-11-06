@@ -21,7 +21,7 @@ try{
   const repaired=correct(old,DEFAULT_ELVES);
   assert.deepEqual(old,original);assert.equal(repaired.skills[0].pp,3);
   assert.equal(repaired.soulMark.kit.length,10);
-  assert.deepEqual(repaired.alienTraits.exclusiveTraits.map((t:any)=>t.kit.length),[9,11]);
+  assert.deepEqual(repaired.alienTraits.exclusiveTraits.map((t:any)=>t.kit.length),[9,12]);// 雷神 12 條：1389b2c 新增「before_skill 出手前自身不為滿體力」旗標條款（aba3ed2 後的 11 條 → 12 條）
   assert.ok(repaired.skills.every((s:any)=>s.kit?.length));
   assert.equal(correct(repaired,DEFAULT_ELVES),repaired,'修復冪等');
   const crlf=structuredClone(old);crlf.soulMark.description=crlf.soulMark.description.replace(/\n/g,'\r\n');

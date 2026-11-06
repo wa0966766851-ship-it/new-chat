@@ -44,7 +44,7 @@ check('任何印記缺 displayChar/name 都不會崩潰（含 8 個已知靠 mar
 check('詩章印記能產出正確的 view model', () => {
   const mark: any = { id: 'poem_chapter', displayChar: '詩', name: '詩章', count: 1, unit: '篇',
     ownerBattleId: 'D1', scope: 'elf', clearable: false, persistsOffField: true, polarity: 'positive',
-    source: '治癒.龍魂再臨 次元龍', effects: { poemHpSnapshots: [8000] } };
+    source: '治癒·龍魂再臨', effects: { poemHpSnapshots: [8000] } };
   const views = buildEffectViewModels([mark], [], 'D1');
   assert.equal(views.length, 1, '必須產生 1 個 view');
   assert.equal(views[0].label, '詩章');

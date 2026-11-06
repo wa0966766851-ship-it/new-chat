@@ -25,6 +25,11 @@ for (const file of files) {
 for (const file of await listFiles(resolve('images'))) {
   if (!/\.(png|jpe?g|webp|gif|svg|ico)$/i.test(file)) continue;
   const bytes = await readFile(join('images', file)), destination = join(output, 'images', file);
+  const existing = entries.find(entry => entry.path === `images/${file}`);
+  if (existing) {
+    if (existing.size !== bytes.length || existing.sha256 !== createHash('sha256').update(bytes).digest('hex')) throw new Error(`圖片來源衝突：images/${file}`);
+    continue;
+  }
   await mkdir(join(destination, '..'), { recursive: true });
   await cp(join('images', file), destination, { force: false, errorOnExist: true });
   entries.push({ path: `images/${file}`, size: bytes.length, sha256: createHash('sha256').update(bytes).digest('hex') });

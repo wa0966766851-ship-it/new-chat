@@ -99,6 +99,7 @@ export const OP_DISPLAY_NAMES: Record<string, string> = {
   pp_add_random: '隨機PP增加', once: '僅一次', once_per_round: '每回合一次',
   // 只在序列契約登記（由傷害管線或其他節點讀取，不經 OPS 執行）的 op
   damage_reduce_by_resource: '資源減傷', death_source_reflect: '死亡來源反彈',
+  bench_pp_drain_random: '吸取後備PP', resource_mark_transfer_next: '資源印記傳給下隻', switch_lock_from_resource: '資源值鎖切換', apply_pending_entry_resource: '套用接棒資源', transfer_and_reapply_resource: '傳遞並重附資源',
 };
 
 /** 取得動作顯示名稱；表內沒有時回傳 undefined（呼叫端決定後備，不輸出內部 op 代號）。 */

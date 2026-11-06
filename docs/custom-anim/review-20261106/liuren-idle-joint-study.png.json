@@ -1,0 +1,14 @@
+{
+  "source": "build/liuren-idle-study/wuxu_liuren/manifest.json",
+  "frames": [
+    0,
+    23,
+    71
+  ],
+  "rows": [
+    "dark",
+    "light"
+  ],
+  "scale": 0.35,
+  "note": "Offline geometry/edge inspection only; not browser playback evidence"
+}

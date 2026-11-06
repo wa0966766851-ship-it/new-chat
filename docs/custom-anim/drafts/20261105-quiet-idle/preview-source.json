@@ -1,0 +1,21 @@
+{
+  "status": "draft-not-approved",
+  "generatedAt": "2026-11-04T20:43:03.604Z",
+  "source": "public/elf-art/wuxu_zhuixing_body_new.png",
+  "sourceSha256": "d015d727ae8ad0e47e8ceeff9bbe515b28edab3971bae1e1f18b336a4b268018",
+  "motionSha256": "18a581e36fcd2d13bea1fc31e0b53ece80ee7cc8c2ea909bfb5ad57cf311dcb1",
+  "scale": 0.26,
+  "fps": 24,
+  "noFx": true,
+  "canvas": [
+    573,
+    529
+  ],
+  "sequences": [
+    {
+      "name": "standby",
+      "frames": 72,
+      "hits": []
+    }
+  ]
+}

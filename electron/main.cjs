@@ -27,7 +27,8 @@ async function startServer() {
     cwd,
     silent: true,
     env: { ...process.env, NODE_ENV: "production", PORT: String(PORT), ELECTRON_RUN_AS_NODE: "1",
-      SEER_HOST: "127.0.0.1", SEER_CACHE_DIR: path.join(app.getPath("userData"), "seer-cache") },
+      SEER_HOST: "127.0.0.1", SEER_CACHE_DIR: path.join(app.getPath("userData"), "seer-cache"),
+      SEER_PLAYER_DATA_DIR: path.join(app.getPath("userData"), "player-saves") },
     execPath: process.execPath,
   });
   serverProcess.stderr?.on("data", (data) => console.error(`[server] ${data}`));

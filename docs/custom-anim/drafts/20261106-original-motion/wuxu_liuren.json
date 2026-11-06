@@ -1,0 +1,284 @@
+{
+  "id": "wuxu_liuren",
+  "elfId": "5022",
+  "elfName": "無序.六刃",
+  "fps": 24,
+  "facing": "left",
+  "canvas": [
+    1100,
+    1400
+  ],
+  "anchor": [
+    550,
+    1320
+  ],
+  "margin": 8,
+  "pixelsPerUnit": 121.53846153846153,
+  "poses": {
+    "ready": {
+      "file": "docs/custom-anim/drafts/20261106-original-motion/wuxu_liuren/ready.png",
+      "sha256": "5edccf4c959abd4d389609c103e3917f453b0d4af9ba5a7e9e1494c8384a745e",
+      "facing": "left",
+      "anchors": {
+        "muzzle": [
+          550,
+          590.7692307692308
+        ]
+      },
+      "review": {
+        "accepted": true,
+        "note": "允許試播匯入；保留原始來源獨立高解析姿勢，不代表待機／銜接／美術已通過。"
+      }
+    },
+    "cast": {
+      "file": "docs/custom-anim/drafts/20261106-original-motion/wuxu_liuren/cast.png",
+      "sha256": "2ab755a09c9f6c91b9b2f9a1eb9d36b1a7c5639e74c50a83b1478c30d1d903cd",
+      "facing": "left",
+      "anchors": {
+        "muzzle": [
+          550,
+          590.7692307692308
+        ]
+      },
+      "review": {
+        "accepted": true,
+        "note": "允許試播匯入；保留原始來源獨立高解析姿勢，不代表待機／銜接／美術已通過。"
+      }
+    },
+    "anticipation": {
+      "file": "docs/custom-anim/drafts/20261106-original-motion/wuxu_liuren/anticipation.png",
+      "sha256": "80552eee8e50be329d366bf83afbce77027d1a37173fa06896a36d9d52e78950",
+      "facing": "left",
+      "anchors": {
+        "muzzle": [
+          550,
+          590.7692307692308
+        ]
+      },
+      "review": {
+        "accepted": true,
+        "note": "允許試播匯入；保留原始來源獨立高解析姿勢，不代表待機／銜接／美術已通過。"
+      }
+    },
+    "melee": {
+      "file": "docs/custom-anim/drafts/20261106-original-motion/wuxu_liuren/melee.png",
+      "sha256": "7456a003b55a6e5974fc78f956a3f7b5140e5700bec70a58624f6c889261dd75",
+      "facing": "left",
+      "anchors": {
+        "muzzle": [
+          550,
+          590.7692307692308
+        ]
+      },
+      "review": {
+        "accepted": true,
+        "note": "允許試播匯入；保留原始來源獨立高解析姿勢，不代表待機／銜接／美術已通過。"
+      }
+    }
+  },
+  "sequences": {
+    "standby": {
+      "loop": true,
+      "drawings": [
+        {
+          "pose": "ready",
+          "hold": 96
+        }
+      ],
+      "hits": []
+    },
+    "attack": {
+      "drawings": [
+        {
+          "pose": "ready",
+          "hold": 3
+        },
+        {
+          "pose": "anticipation",
+          "hold": 7
+        },
+        {
+          "pose": "melee",
+          "hold": 10
+        },
+        {
+          "pose": "anticipation",
+          "hold": 4
+        },
+        {
+          "pose": "ready",
+          "hold": 8
+        }
+      ],
+      "hits": [
+        13
+      ],
+      "events": {
+        "launch": 10,
+        "recover": 20
+      }
+    },
+    "sa": {
+      "drawings": [
+        {
+          "pose": "ready",
+          "hold": 3
+        },
+        {
+          "pose": "anticipation",
+          "hold": 5
+        },
+        {
+          "pose": "cast",
+          "hold": 15
+        },
+        {
+          "pose": "anticipation",
+          "hold": 4
+        },
+        {
+          "pose": "ready",
+          "hold": 7
+        }
+      ],
+      "hits": [
+        12
+      ],
+      "events": {
+        "launch": 8,
+        "recover": 23
+      }
+    },
+    "ultimate": {
+      "drawings": [
+        {
+          "pose": "ready",
+          "hold": 3
+        },
+        {
+          "pose": "anticipation",
+          "hold": 7
+        },
+        {
+          "pose": "cast",
+          "hold": 20
+        },
+        {
+          "pose": "anticipation",
+          "hold": 4
+        },
+        {
+          "pose": "ready",
+          "hold": 8
+        }
+      ],
+      "hits": [
+        14
+      ],
+      "events": {
+        "launch": 10,
+        "recover": 30
+      }
+    },
+    "cp": {
+      "drawings": [
+        {
+          "pose": "ready",
+          "hold": 3
+        },
+        {
+          "pose": "anticipation",
+          "hold": 5
+        },
+        {
+          "pose": "cast",
+          "hold": 12
+        },
+        {
+          "pose": "anticipation",
+          "hold": 4
+        },
+        {
+          "pose": "ready",
+          "hold": 6
+        }
+      ],
+      "hits": [],
+      "events": {}
+    },
+    "extra": {
+      "drawings": [
+        {
+          "pose": "ready",
+          "hold": 3
+        },
+        {
+          "pose": "anticipation",
+          "hold": 6
+        },
+        {
+          "pose": "cast",
+          "hold": 12
+        },
+        {
+          "pose": "anticipation",
+          "hold": 4
+        },
+        {
+          "pose": "ready",
+          "hold": 8
+        }
+      ],
+      "hits": [],
+      "events": {}
+    },
+    "hited": {
+      "drawings": [
+        {
+          "pose": "ready",
+          "hold": 8
+        }
+      ]
+    }
+  },
+  "presentation": {
+    "style": "vortex",
+    "color": "#22c55e",
+    "secondary": "#b9ffc9",
+    "melee": true,
+    "contactDepth": 0.4,
+    "ambient": true
+  },
+  "physicalMotion": "approach",
+  "idleZones": [],
+  "idleGrid": [
+    28,
+    40
+  ],
+  "idlePins": [
+    {
+      "x": 0.5018181818181818,
+      "y": 0.4107142857142857,
+      "rx": 0.06,
+      "ry": 0.05142857142857143
+    },
+    {
+      "x": 0.48363636363636364,
+      "y": 0.5,
+      "rx": 0.14545454545454545,
+      "ry": 0.06
+    },
+    {
+      "x": 0.5836363636363636,
+      "y": 0.9035714285714286,
+      "rx": 0.06363636363636363,
+      "ry": 0.04642857142857143
+    },
+    {
+      "x": 0.44727272727272727,
+      "y": 0.8678571428571429,
+      "rx": 0.06363636363636363,
+      "ry": 0.05357142857142857
+    }
+  ]
+}

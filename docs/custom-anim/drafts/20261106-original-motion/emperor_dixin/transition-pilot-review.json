@@ -1,0 +1,43 @@
+{
+  "status": "unaccepted-transition-study",
+  "source": "step-source-v1.png",
+  "scale": 1.13,
+  "offset": [
+    125,
+    1163
+  ],
+  "atlasLayout": {
+    "area": 12157047,
+    "width": 3063,
+    "height": 3969,
+    "ids": [
+      "idleSashBase",
+      "cast",
+      "hurt",
+      "anticipation",
+      "step",
+      "melee",
+      "idleSash"
+    ]
+  },
+  "preserved": {
+    "attack": {
+      "frames": 32,
+      "launch": 10,
+      "hit": 13,
+      "recover": 20
+    },
+    "ultimate": {
+      "frames": 42,
+      "launch": 10,
+      "hit": 14,
+      "recover": 30
+    }
+  },
+  "pending": [
+    "standing to half-crouch and thrust continuity",
+    "orb/orbit disappearance at physical action",
+    "sword-tip path and torso alignment",
+    "both sides and frame budget"
+  ]
+}

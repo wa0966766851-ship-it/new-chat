@@ -4,7 +4,7 @@ import { BattleEventContext, BattleSkillHandler, EffectTiming } from "../../type
 import { isAbnormal } from "../../../utils/battleHelpers";
 import { getMark } from "../../../battle/marks";
 
-const POEM_DESCRIPTION = "紀錄持有者精靈的體力上限，當持有精靈死亡時，詩章將轉移給存活狀態的治癒.龍魂再臨 次元龍以增加其等量體力上限，治癒.龍魂再臨 次元龍若存在複數精靈則會同時轉移相同數量給予所有治癒.龍魂再臨 次元龍(每篇詩章獨立計算且無上限，下場後保留)";
+const POEM_DESCRIPTION = "紀錄持有者精靈的體力上限，當持有精靈死亡時，詩章將轉移給存活狀態的治癒·龍魂再臨以增加其等量體力上限，治癒·龍魂再臨若存在複數精靈則會同時轉移相同數量給予所有治癒·龍魂再臨(每篇詩章獨立計算且無上限，下場後保留)";
 
 export const handleDimensionalSoulMark = (ctx: BattleEventContext, event: EffectTiming | string, extraData?: any) => {
   const { self, target, actor, setPlayerState, getPlayerState, addLog, applyTrueDamage, applyPinkDamage, applySkillTypeDamage, applyHeal, setMark, getMarks, getAllMarks } = ctx;
@@ -214,8 +214,8 @@ export const handleDimensionalSoulMark = (ctx: BattleEventContext, event: Effect
     /**
      * 2026-10-30：詩章的死亡轉交與消逝。
      *
-     * 描述：「當持有精靈死亡時，詩章將轉移給存活狀態的治癒.龍魂再臨 次元龍以增加其等量體力上限，
-     * 若存在複數精靈則會同時轉移相同數量給予所有治癒.龍魂再臨 次元龍（每篇詩章獨立計算且無上限，下場後保留）」
+     * 描述：「當持有精靈死亡時，詩章將轉移給存活狀態的治癒·龍魂再臨以增加其等量體力上限，
+     * 若存在複數精靈則會同時轉移相同數量給予所有治癒·龍魂再臨（每篇詩章獨立計算且無上限，下場後保留）」
      *
      * 原本完全沒有這段實作，所以死亡時詩章不會轉交、原持有精靈也不會消逝。
      */

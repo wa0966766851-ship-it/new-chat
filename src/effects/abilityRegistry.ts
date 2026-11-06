@@ -471,8 +471,8 @@ export const DeconstructedElfRegistry: Record<string, ElfDeconstructedProfile> =
         {
           id: 'rus.star_shuitian.innate',
           effectClass: 'INNATE',
-          flavor: { name: '必中與回血', description: '必中；恢復自身最大體力的 1/1，自身體力低於 1/2 時造成等量固定傷害。' },
-          mechanics: { alwaysHit: true, healPercent: 1.0, lowHpFixedDamageRatio: 1.0 }
+          flavor: { name: '必中與回血', description: '必中；恢復自身最大體力的 1/1，自身體力低於 1/2 時造成等量百分比傷害。' },
+          mechanics: { alwaysHit: true, healPercent: 1.0, lowHpPercentDamageRatio: 1.0 }
         },
         {
           id: 'rus.star_shuitian.turn',

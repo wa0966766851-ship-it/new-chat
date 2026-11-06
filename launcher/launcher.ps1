@@ -146,6 +146,7 @@ if (-not (Test-Server)) {
   Set-Splash '啟動伺服器，等待實際連線成功…' 4
   $env:SEER_LAUNCHER = '1'
   $env:SEER_HOST = '127.0.0.1'
+  $env:SEER_PLAYER_DATA_DIR = Join-Path $env:LOCALAPPDATA 'SeerBattleSim\player-saves\browser'
   # 把挑好的埠傳給伺服器（server.ts 讀 process.env.PORT）
   $env:PORT = "$port"
   $cmd = if ($useDev) { "npm run dev > `"$log`" 2>&1" } else { "set NODE_ENV=production&& node `"$releaseDir\server.cjs`" > `"$log`" 2>&1" }
@@ -192,6 +193,7 @@ $profileDir = Join-Path $env:LOCALAPPDATA 'SeerBattleSim\browser'
 New-Item -ItemType Directory -Force -Path $profileDir | Out-Null
 Set-Splash '伺服器已就緒，正在開啟遊戲視窗。' 5
 
+if ($foundPort) { $url = "http://localhost:$foundPort" }
 if ($browser) {
   $bargs = @(
     "--app=$url",

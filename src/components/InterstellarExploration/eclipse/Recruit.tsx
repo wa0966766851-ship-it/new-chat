@@ -6,6 +6,7 @@ import { DUP_STAT_PER_LAYER, TIER_TEXT, dupOf, tokenBrief, tokenGroupKey, tokenH
 import { ElfAvatar, TypeIcon } from "../../SeerImages";
 import { ElfPicker } from "../../shared/ElfPicker";
 import { alive, hpRatio } from "./parts";
+import { backdropClose, useEscDismiss } from "./dismiss";
 
 type Dispatch = (f: (r: E.RunV2) => E.RunV2) => void;
 const line = "border-[rgba(217,180,90,.2)]";
@@ -60,8 +61,9 @@ export function AdvanceChoice({ run, target, dispatch, onDone }: { run: E.RunV2;
 
 /** 背包卡的進階視窗 */
 export function AdvanceDialog({ run, target, dispatch, onClose }: { run: E.RunV2; target: Elf; dispatch: Dispatch; onClose: () => void }) {
+  useEscDismiss(onClose);
   return portalToRoot(
-    <div className="fixed inset-0 z-[70] bg-black/80 backdrop-blur-[2px] p-4 pt-16 ecl-md:p-10 overflow-y-auto" role="dialog" aria-label="進階" data-testid="advance-dialog" onClick={onClose}>
+    <div className="fixed inset-0 z-[70] bg-black/80 backdrop-blur-[2px] p-4 pt-16 ecl-md:p-10 overflow-y-auto" role="dialog" aria-label="進階" data-testid="advance-dialog" {...backdropClose(onClose)}>
       <div className="mx-auto max-w-2xl ecl-frame p-5 ecl-md:p-7 bg-[var(--ecl-ink-2)]" onClick={ev => ev.stopPropagation()}>
         <div className="flex items-center justify-between mb-3 gap-3">
           <h3 className="ecl-title text-xl ecl-gilt" title="對已持有的同一隻精靈消耗星晶；持有重複招募令可免費進階一次">進階</h3>
@@ -91,8 +93,9 @@ export function RecruitPicker({ run, pool, token, advance, dispatch, onClose }: 
   const title = adv ? "進階" : token ? tokenLabel(token) : "星晶招募";
   const tip = adv ? "對已持有的同一隻精靈消耗星晶；重複招募令可免費進階一次" : token ? tokenHint(token) : "任選一隻精靈。基價 2，每次星晶招募 +1，每兩章 +1，Ⅲ +1、Ⅳ +2；持令招募免費且不推高價格";
   const live = target ? run.team.find(e => E.bagIdOf(e) === E.bagIdOf(target)) ?? target : null;
+  useEscDismiss(onClose);
   return portalToRoot(
-    <div className="fixed inset-0 z-[70] bg-black/80 backdrop-blur-[2px] p-4 pt-16 ecl-md:p-10 overflow-y-auto" role="dialog" aria-label="招募" data-testid="recruit-picker" onClick={onClose}>
+    <div className="fixed inset-0 z-[70] bg-black/80 backdrop-blur-[2px] p-4 pt-16 ecl-md:p-10 overflow-y-auto" role="dialog" aria-label="招募" data-testid="recruit-picker" {...backdropClose(onClose)}>
       <div className="mx-auto max-w-5xl ecl-frame p-5 ecl-md:p-7 bg-[var(--ecl-ink-2)]" onClick={ev => ev.stopPropagation()}>
         <div className="flex items-center justify-between mb-3 gap-3">
           <h3 className="ecl-title text-xl ecl-gilt" title={tip}>{title}<span className="ml-3 text-sm ecl-muted tabular-nums">{elves.length} 隻可選</span>{!token && <span className="ml-3 text-sm ecl-muted tabular-nums" data-testid="picker-shards">星晶 <b className="ecl-gilt">{run.shards}</b></span>}</h3>

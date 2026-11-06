@@ -218,14 +218,15 @@ t("殘軀鎖命：強化翻倍、傷害上限、回復計時與易傷均寫入�
   assert.ok(h.timers.p1.some(timer => timer.payload.block.trig === "self_skill" && timer.remaining === 4));
 });
 
-t("萬鈞鎮魂：高體力目標受到1/4固定傷害，未擊敗時全屬性-1", () => {
+t("萬鈞鎮魂：高體力目標受到最大體力1/4百分比傷害，未擊敗時全屬性-1", () => {
   const h = makeBlockContext({ currentHp: 500 }, { currentHp: 800, maxHp: 1000 });
   h.ctx.skill = skillByName("萬鈞鎮魂");
   const program = getSkillProgram(h.ctx.skill);
   runSkillProgram(h.ctx, program, "use");
   runSkillProgram(h.ctx, program, "after_hit");
   assert.strictEqual(h.playerState.vampireRatio, 0.4);
-  assert.strictEqual(h.damage.fixed, 250);
+  assert.strictEqual(h.damage.pink, 250); // 百分比傷害（pink）；不再是固定傷害
+  assert.strictEqual(h.damage.fixed, 0);
   assert.deepStrictEqual(h.target.statStages, { atk: -1, def: -1, spatk: -1, spdef: -1, speed: -1, accuracy: -1 });
 });
 

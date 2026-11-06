@@ -1,0 +1,283 @@
+{
+  "id": "wuxu_liuren",
+  "elfId": "5022",
+  "elfName": "無序.六刃",
+  "fps": 24,
+  "facing": "left",
+  "canvas": [
+    900,
+    1100
+  ],
+  "anchor": [
+    450,
+    1040
+  ],
+  "margin": 8,
+  "pixelsPerUnit": 100,
+  "poses": {
+    "ready": {
+      "file": "docs/custom-anim/drafts/20261105-combat-v2/wuxu_liuren-ready-left.png",
+      "sha256": "a4d1e89edb4090f9483899876f3deee7d8be0c54348a112ee62ab59d60a9e88b",
+      "anchors": {
+        "muzzle": [
+          449,
+          440
+        ]
+      },
+      "review": {
+        "accepted": true,
+        "note": "使用者指出原抱胸待機朝右；匯入時整張鏡射為朝左，統一新出招方向，靜態原圖不改檔。"
+      },
+      "facing": "left"
+    },
+    "cast": {
+      "file": "docs/custom-anim/drafts/20261105-liuren/aligned/cast.png",
+      "sha256": "901e9faf40dd05da2bd63f5f021ac9b1d96e82616ac080f33144fd417295f278",
+      "anchors": {
+        "muzzle": [
+          450,
+          440
+        ]
+      },
+      "review": {
+        "accepted": true,
+        "note": "目視核對完整姿勢，頭腳不裁切；需實播驗收銜接與方向。"
+      },
+      "facing": "left"
+    },
+    "anticipation": {
+      "file": "docs/custom-anim/drafts/20261105-liuren/aligned/anticipation.png",
+      "sha256": "8ab1512ef88a45d401f4289bf58b2251bedbb9ebd3ab1c46509132eb5eb87668",
+      "anchors": {
+        "muzzle": [
+          450,
+          440
+        ]
+      },
+      "review": {
+        "accepted": true,
+        "note": "目視核對完整姿勢，頭腳不裁切；需實播驗收銜接與方向。"
+      },
+      "facing": "left"
+    },
+    "melee": {
+      "file": "docs/custom-anim/drafts/20261105-combat-v2/wuxu_liuren-melee-aligned.png",
+      "sha256": "1a25e74eba4bbc9f106eab911eb353d2e08acca2d14279c44d490eebd3ea08f7",
+      "anchors": {
+        "muzzle": [
+          129,
+          516
+        ]
+      },
+      "review": {
+        "accepted": true,
+        "note": "完整近戰姿勢；持劍手、頭冠／面具、雙腳與武器完整，來源朝左；待對戰實播檢查接觸點。"
+      },
+      "facing": "left"
+    }
+  },
+  "sequences": {
+    "standby": {
+      "loop": true,
+      "drawings": [
+        {
+          "pose": "ready",
+          "hold": 96
+        }
+      ],
+      "hits": []
+    },
+    "attack": {
+      "drawings": [
+        {
+          "pose": "ready",
+          "hold": 3
+        },
+        {
+          "pose": "anticipation",
+          "hold": 7
+        },
+        {
+          "pose": "melee",
+          "hold": 10
+        },
+        {
+          "pose": "anticipation",
+          "hold": 4
+        },
+        {
+          "pose": "ready",
+          "hold": 8
+        }
+      ],
+      "hits": [
+        13
+      ],
+      "events": {
+        "launch": 10,
+        "recover": 20
+      }
+    },
+    "sa": {
+      "drawings": [
+        {
+          "pose": "ready",
+          "hold": 3
+        },
+        {
+          "pose": "anticipation",
+          "hold": 5
+        },
+        {
+          "pose": "cast",
+          "hold": 15
+        },
+        {
+          "pose": "anticipation",
+          "hold": 4
+        },
+        {
+          "pose": "ready",
+          "hold": 7
+        }
+      ],
+      "hits": [
+        12
+      ],
+      "events": {
+        "launch": 8,
+        "recover": 23
+      }
+    },
+    "ultimate": {
+      "drawings": [
+        {
+          "pose": "ready",
+          "hold": 3
+        },
+        {
+          "pose": "anticipation",
+          "hold": 7
+        },
+        {
+          "pose": "cast",
+          "hold": 20
+        },
+        {
+          "pose": "anticipation",
+          "hold": 4
+        },
+        {
+          "pose": "ready",
+          "hold": 8
+        }
+      ],
+      "hits": [
+        14
+      ],
+      "events": {
+        "launch": 10,
+        "recover": 30
+      }
+    },
+    "cp": {
+      "drawings": [
+        {
+          "pose": "ready",
+          "hold": 3
+        },
+        {
+          "pose": "anticipation",
+          "hold": 5
+        },
+        {
+          "pose": "cast",
+          "hold": 12
+        },
+        {
+          "pose": "anticipation",
+          "hold": 4
+        },
+        {
+          "pose": "ready",
+          "hold": 6
+        }
+      ],
+      "hits": [],
+      "events": {}
+    },
+    "extra": {
+      "drawings": [
+        {
+          "pose": "ready",
+          "hold": 3
+        },
+        {
+          "pose": "anticipation",
+          "hold": 6
+        },
+        {
+          "pose": "cast",
+          "hold": 12
+        },
+        {
+          "pose": "anticipation",
+          "hold": 4
+        },
+        {
+          "pose": "ready",
+          "hold": 8
+        }
+      ],
+      "hits": [],
+      "events": {}
+    },
+    "hited": {
+      "drawings": [
+        {
+          "pose": "ready",
+          "hold": 8
+        }
+      ]
+    }
+  },
+  "presentation": {
+    "style": "vortex",
+    "color": "#22c55e",
+    "secondary": "#b9ffc9",
+    "melee": true,
+    "contactDepth": 0.4,
+    "ambient": true
+  },
+  "physicalMotion": "approach",
+  "idleZones": [
+    {
+      "kind": "breath",
+      "x": 0.5,
+      "y": 0.5,
+      "rx": 0.12,
+      "ry": 0.11,
+      "dy": -1.8
+    },
+    {
+      "kind": "cloth",
+      "x": 0.3,
+      "y": 0.75,
+      "rx": 0.13,
+      "ry": 0.14,
+      "dx": 3.2,
+      "dy": 0.6,
+      "delay": 0.5
+    },
+    {
+      "kind": "cloth",
+      "x": 0.71,
+      "y": 0.77,
+      "rx": 0.13,
+      "ry": 0.14,
+      "dx": -2.8,
+      "dy": 0.5,
+      "delay": 1
+    }
+  ]
+}

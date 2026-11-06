@@ -104,7 +104,7 @@ export const ELF_ID_MAPPING: Record<string, string> = {
   "default_24": "5020",
   "1029": "5020",
 
-  // 21. 治癒.龍魂再臨 次元龍
+  // 21. 治癒·龍魂再臨
   "default_22": "5021",
   "default_25": "5021",
 

@@ -3,12 +3,12 @@
   "note": "parsed ≠ executable route ≠ semantic acceptance",
   "summary": {
     "elves": 47,
-    "sourceRecords": 2247,
+    "sourceRecords": 2254,
     "presentationOnly": 0,
-    "clauses": 2247,
-    "parsed": 2247,
+    "clauses": 2254,
+    "parsed": 2254,
     "unparsed": 0,
-    "pending": 2180,
+    "pending": 2187,
     "partialEvidence": 0,
     "staleEvidence": 67,
     "fullyAccepted": 0
@@ -3033,7 +3033,7 @@
       "sourceFiles": [
         {
           "path": "elf_source_files/elf_files/5003_天蓬元帥八戒.txt",
-          "sha256": "f8d5ce99d26358dca5c7e8c8a66526a86fea9e74d76f879fa349c724f4c61e72"
+          "sha256": "51ea91d7d6d023825a364e5b5d05404e1b42cb0ae33c9cfe9d141f4593f3a91f"
         }
       ],
       "entries": [
@@ -3770,10 +3770,10 @@
         {
           "kind": "技能",
           "name": "殘軀鎖命",
-          "sourceText": "■ 必中\n■ 先制+2\n🎯 全屬性+1，自身處於能力提升狀態時強化效果翻倍\n🎯 4回合內自身體力受到攻擊傷害不超過200點\n🎯 4回合內每回合恢復自身最大體力1/3，恢復量的50%轉化為附加對手等量戰鬥系傷害\n🎯 下2回合對手受到攻擊傷害提升100%",
+          "sourceText": "■ 必中\n■ 先制+2\n🎯 全屬性+1，自身處於能力提升狀態時強化效果翻倍\n🎯 4回合內自身體力受到攻擊傷害不超過200點\n🎯 4回合內每回合恢復自身最大體力1/3，恢復量的50%轉化為附加對手等量戰鬥系技能傷害\n🎯 下2回合對手受到攻擊傷害提升100%",
           "route": "kit",
           "source": "統一效果來源：kit；未接通 0 項",
-          "sourceSha256": "ff26a21e380825731dd7fa43fcad058380b40561ff579fecee60195a2fa4ee59",
+          "sourceSha256": "71644f54794969eea39bdb379994aaf709be2c8f53d0186f178b720ed2d9f3b1",
           "clauses": [
             {
               "index": 0,
@@ -3948,7 +3948,7 @@
             },
             {
               "index": 4,
-              "raw": "🎯 4回合內每回合恢復自身最大體力1/3，恢復量的50%轉化為附加對手等量戰鬥系傷害",
+              "raw": "🎯 4回合內每回合恢復自身最大體力1/3，恢復量的50%轉化為附加對手等量戰鬥系技能傷害",
               "trigger": "use",
               "parsed": true,
               "explanation": false,
@@ -4003,7 +4003,7 @@
                   }
                 ]
               },
-              "id": "5003:技能:殘軀鎖命:adcf56e0c7f1:1",
+              "id": "5003:技能:殘軀鎖命:09d4374afd3d:1",
               "presentationOnly": false,
               "execution": "authored-block-runtime",
               "textCorrespondence": {
@@ -4066,10 +4066,10 @@
         {
           "kind": "技能",
           "name": "萬鈞鎮魂",
-          "sourceText": "■ 必中\n🎯 造成傷害的40%恢復自身體力\n🎯 對手體力高於自身時附加對手最大體力1/4固定傷害\n🎯 未擊敗對手則對手全屬性-1",
+          "sourceText": "■ 必中\n🎯 造成傷害的40%恢復自身體力\n🎯 對手體力高於自身時附加對手最大體力1/4百分比傷害\n🎯 未擊敗對手則對手全屬性-1",
           "route": "kit",
           "source": "統一效果來源：kit；未接通 0 項",
-          "sourceSha256": "f26cc33fc621f790a5c7bd6829c993a92647e48fee88060cc1e41d9a20cd0e10",
+          "sourceSha256": "bd34be72ee48d0b44309e61fe81ef073952e3e50ed1f0e46af861fabafac61b2",
           "clauses": [
             {
               "index": 0,
@@ -4153,14 +4153,14 @@
             },
             {
               "index": 2,
-              "raw": "🎯 對手體力高於自身時附加對手最大體力1/4固定傷害",
+              "raw": "🎯 對手體力高於自身時附加對手最大體力1/4百分比傷害",
               "trigger": "use",
               "parsed": true,
               "explanation": false,
               "unresolved": [],
               "damage": {
                 "types": [
-                  "fixed"
+                  "percent"
                 ],
                 "inferred": false,
                 "reason": "文本指定；同句多段傷害仍須逐段核對。"
@@ -4172,12 +4172,12 @@
                   {
                     "acts": [
                       {
-                        "label": "【固定傷害】對手最大體力 25%",
+                        "label": "【百分比傷害】對手最大體力 25%",
                         "op": "dmg",
                         "p": {
                           "ratio": 0.25,
                           "base": "最大體力",
-                          "type": "固定",
+                          "type": "百分比",
                           "of": "opp"
                         }
                       }
@@ -4195,7 +4195,7 @@
                   }
                 ]
               },
-              "id": "5003:技能:萬鈞鎮魂:19cdfc035fdd:1",
+              "id": "5003:技能:萬鈞鎮魂:addb5a20f8ab:1",
               "presentationOnly": false,
               "execution": "authored-block-runtime",
               "textCorrespondence": {
@@ -4671,7 +4671,7 @@
       "sourceFiles": [
         {
           "path": "elf_source_files/elf_files/5004_皮特薩拉羅.txt",
-          "sha256": "540b0c33c02ddd31daf1b74e7b62d17e7d5da8bd62b50a684fda60428500efbc"
+          "sha256": "6d28b3041a62c8a634440207221e9847e59fb065f0f182e0eee644cd76f1eea8"
         }
       ],
       "entries": [
@@ -5468,10 +5468,10 @@
         {
           "kind": "技能",
           "name": "千鳥俱寂",
-          "sourceText": "■ 必中\n🎯 全屬性+1，自身處於能力提升狀態時強化效果翻倍\n🎯 消除對手回合類效果\n🎯 4回合內每回合恢復自身最大體力1/3並附加等量固定傷害\n🎯 下2回合自身攻擊技能必定令對手麻痺\n🎯 下2回合所有技能先制+2",
+          "sourceText": "■ 必中\n🎯 全屬性+1，自身處於能力提升狀態時強化效果翻倍\n🎯 消除對手回合類效果\n🎯 4回合內每回合恢復自身最大體力1/3並附加等量百分比傷害\n🎯 下2回合自身攻擊技能必定令對手麻痺\n🎯 下2回合所有技能先制+2",
           "route": "kit",
           "source": "統一效果來源：kit；未接通 0 項",
-          "sourceSha256": "6752759d0275d25612c7cda4b16c2c1385158554a66b7f47d9b1acbc7373d79d",
+          "sourceSha256": "b805417601f880ae5e8892ffdf47f5f099ea799f575026e2108ba848eb2cbc4c",
           "clauses": [
             {
               "index": 0,
@@ -5598,14 +5598,14 @@
             },
             {
               "index": 3,
-              "raw": "🎯 4回合內每回合恢復自身最大體力1/3並附加等量固定傷害",
+              "raw": "🎯 4回合內每回合恢復自身最大體力1/3並附加等量百分比傷害",
               "trigger": "after_hit",
               "parsed": true,
               "explanation": false,
               "unresolved": [],
               "damage": {
                 "types": [
-                  "fixed"
+                  "percent"
                 ],
                 "inferred": false,
                 "reason": "文本指定；同句多段傷害仍須逐段核對。"
@@ -5637,7 +5637,7 @@
                                   "label": "dmg_equal",
                                   "op": "dmg_equal",
                                   "p": {
-                                    "type": "固定"
+                                    "type": "百分比"
                                   }
                                 }
                               ]
@@ -5651,7 +5651,7 @@
                   }
                 ]
               },
-              "id": "5004:技能:千鳥俱寂:db438c1034ff:1",
+              "id": "5004:技能:千鳥俱寂:290f6310e00d:1",
               "presentationOnly": false,
               "execution": "authored-block-runtime",
               "textCorrespondence": {
@@ -29478,10 +29478,10 @@
         {
           "kind": "技能",
           "name": "星光·水天一色",
-          "sourceText": "必中；4 回合內免疫並反彈所有受到的異常狀態；解除自身能力下降效果，解除成功則下 2 回合先制+2；恢復自身最大體力的 1/1，自身體力低於 1/2 時造成等量固定傷害；3 回合內受到攻擊則對手下回合受到的傷害翻倍",
+          "sourceText": "必中；4 回合內免疫並反彈所有受到的異常狀態；解除自身能力下降效果，解除成功則下 2 回合先制+2；恢復自身最大體力的 1/1，自身體力低於 1/2 時造成等量百分比傷害；3 回合內受到攻擊則對手下回合受到的傷害翻倍",
           "route": "kit",
           "source": "統一效果來源：kit；未接通 0 項",
-          "sourceSha256": "748b817a1306a98ddb4228fbab14dd6c015d2c1b8b4f993ac4ec59c5fec572e9",
+          "sourceSha256": "731de0c014181515382be732506d21286c579c76f5cbda2267e161284e8794c8",
           "clauses": [
             {
               "index": 0,
@@ -29608,14 +29608,14 @@
             },
             {
               "index": 3,
-              "raw": "恢復自身最大體力的 1/1，自身體力低於 1/2 時造成等量固定傷害",
+              "raw": "恢復自身最大體力的 1/1，自身體力低於 1/2 時造成等量百分比傷害",
               "trigger": "use",
               "parsed": true,
               "explanation": false,
               "unresolved": [],
               "damage": {
                 "types": [
-                  "fixed"
+                  "percent"
                 ],
                 "inferred": false,
                 "reason": "文本指定；同句多段傷害仍須逐段核對。"
@@ -29642,7 +29642,7 @@
                         "label": "dmg_equal",
                         "op": "dmg_equal",
                         "p": {
-                          "type": "固定"
+                          "type": "百分比"
                         }
                       }
                     ],
@@ -29660,7 +29660,7 @@
                   }
                 ]
               },
-              "id": "5010:技能:星光·水天一色:c7786cbaa0b1:1",
+              "id": "5010:技能:星光·水天一色:84d5e99e6b57:1",
               "presentationOnly": false,
               "execution": "authored-block-runtime",
               "textCorrespondence": {
@@ -32701,7 +32701,7 @@
             },
             {
               "index": 1,
-              "raw": "命中後中毒，未觸發附加200固定傷害",
+              "raw": "命中後中毒，未觸發附加200點固定傷害",
               "trigger": "after_hit",
               "parsed": true,
               "explanation": false,
@@ -32746,7 +32746,7 @@
                   }
                 ]
               },
-              "id": "5011:技能:星光·粉末擊打:9e407fccb2f9:1",
+              "id": "5011:技能:星光·粉末擊打:516ec5d698a4:1",
               "presentationOnly": false,
               "execution": "authored-block-runtime",
               "textCorrespondence": {
@@ -36250,8 +36250,9 @@
                                   "op": "resource_mark_add",
                                   "p": {
                                     "persistsOffField": true,
-                                    "description": "受到固定／百分比傷害超過霜寒幽光點數10%時減半",
+                                    "description": "霜寒幽光：\n>持有者造成對方固定／百分比傷害超過霜寒幽光點數10%時則減半m次(m=本次造成固定傷害、百分比傷害/霜寒幽光值10%)\n>持有者在場時吸取己方隨機1個不在場精靈所有技能1點PP值\n>>柯爾霍德在場時恢復至柯爾霍德相同位置\n>下場後將霜寒幽光減半附加給下隻出戰精靈\n>>同時令該精靈在場前n回合無法主動切換精靈(n=霜寒幽光值/50)\n>霜寒幽光上限200點",
                                     "displayChar": "霜",
+                                    "maxCount": 200,
                                     "ratio": 1,
                                     "scope": "elf",
                                     "name": "霜寒幽光",
@@ -36296,7 +36297,7 @@
             },
             {
               "index": 1,
-              "raw": "霜寒幽光：受到固定／百分比傷害超過資源值10%時減半",
+              "raw": "霜寒幽光：受到固定／百分比傷害超過資源值10%時則減半m次",
               "trigger": "incoming",
               "parsed": true,
               "explanation": false,
@@ -36327,7 +36328,7 @@
                   }
                 ]
               },
-              "id": "5013:魂印:凕:464589efba6d:1",
+              "id": "5013:魂印:凕:0b8fae4c24db:1",
               "presentationOnly": false,
               "execution": "authored-block-runtime",
               "textCorrespondence": {
@@ -36338,6 +36339,53 @@
             },
             {
               "index": 2,
+              "raw": "霜寒幽光：持有者在場時吸取己方隨機1個不在場精靈所有技能1點PP值，柯爾霍德在場時恢復至柯爾霍德相同位置",
+              "trigger": "round_start",
+              "parsed": true,
+              "explanation": false,
+              "unresolved": [],
+              "damage": null,
+              "semanticVerification": "pending",
+              "blocks": {
+                "conditions": [],
+                "statements": [
+                  {
+                    "acts": [
+                      {
+                        "label": "bench_pp_drain_random",
+                        "op": "bench_pp_drain_random",
+                        "p": {
+                          "restoreToHolder": true,
+                          "side": "opp"
+                        }
+                      }
+                    ],
+                    "cond": [
+                      {
+                        "label": "對手持有霜寒幽光",
+                        "c": "mark_count",
+                        "p": {
+                          "amount": 1,
+                          "side": "opp",
+                          "id": "frost_glow",
+                          "op": "不小於"
+                        }
+                      }
+                    ]
+                  }
+                ]
+              },
+              "id": "5013:魂印:凕:c178d11c77ed:1",
+              "presentationOnly": false,
+              "execution": "authored-block-runtime",
+              "textCorrespondence": {
+                "state": "needs-source-review",
+                "files": []
+              },
+              "evidence": []
+            },
+            {
+              "index": 3,
               "raw": "在場敵我雙方任一方受到真實傷害：為自身附加1道未暝之夜",
               "trigger": "damaged_true",
               "parsed": true,
@@ -36385,7 +36433,7 @@
               "evidence": []
             },
             {
-              "index": 3,
+              "index": 4,
               "raw": "未暝之夜：當回合首次死亡時強制存活並保留1點體力",
               "trigger": "fatal",
               "parsed": true,
@@ -36442,7 +36490,7 @@
               "evidence": []
             },
             {
-              "index": 4,
+              "index": 5,
               "raw": "回合開始時體力不高於½：附加1道未暝之夜（取消需受真傷限制）",
               "trigger": "round_start",
               "parsed": true,
@@ -36501,7 +36549,7 @@
               "evidence": []
             },
             {
-              "index": 5,
+              "index": 6,
               "raw": "未暝之夜：無視對手能力上升；吸血100%",
               "trigger": "use",
               "parsed": true,
@@ -36555,7 +36603,7 @@
               "evidence": []
             },
             {
-              "index": 6,
+              "index": 7,
               "raw": "未暝之夜：技能先制+1",
               "trigger": "modify_priority",
               "parsed": true,
@@ -36601,7 +36649,7 @@
               "evidence": []
             },
             {
-              "index": 7,
+              "index": 8,
               "raw": "未暝之夜：造成傷害提升150%",
               "trigger": "outgoing_power",
               "parsed": true,
@@ -36653,7 +36701,56 @@
               "evidence": []
             },
             {
-              "index": 8,
+              "index": 9,
+              "raw": "霜寒幽光：持有者下場後將霜寒幽光減半附加給下隻出戰精靈，同時令該精靈在場前n回合無法主動切換精靈(n=霜寒幽光值/50)",
+              "trigger": "opponent_switch_out",
+              "parsed": true,
+              "explanation": false,
+              "unresolved": [],
+              "damage": null,
+              "semanticVerification": "pending",
+              "blocks": {
+                "conditions": [],
+                "statements": [
+                  {
+                    "acts": [
+                      {
+                        "label": "transfer_and_reapply_resource",
+                        "op": "transfer_and_reapply_resource",
+                        "p": {
+                          "divisor": 50,
+                          "ratio": 0.5,
+                          "side": "opp",
+                          "id": "frost_glow"
+                        }
+                      }
+                    ],
+                    "cond": [
+                      {
+                        "label": "對手持有霜寒幽光",
+                        "c": "mark_count",
+                        "p": {
+                          "amount": 1,
+                          "side": "opp",
+                          "id": "frost_glow",
+                          "op": "不小於"
+                        }
+                      }
+                    ]
+                  }
+                ]
+              },
+              "id": "5013:魂印:凕:e893c636b8e8:1",
+              "presentationOnly": false,
+              "execution": "authored-block-runtime",
+              "textCorrespondence": {
+                "state": "needs-source-review",
+                "files": []
+              },
+              "evidence": []
+            },
+            {
+              "index": 10,
               "raw": "回合結束體力不低於⅓：解除自身所有異常；成功→下2回合免疫並反彈＋對手附加效果失效2回合",
               "trigger": "round_end",
               "parsed": true,
@@ -36765,8 +36862,9 @@
                                   "op": "resource_mark_add",
                                   "p": {
                                     "persistsOffField": true,
-                                    "description": "受到固定／百分比傷害超過霜寒幽光點數10%時減半",
+                                    "description": "霜寒幽光：\n>持有者造成對方固定／百分比傷害超過霜寒幽光點數10%時則減半m次(m=本次造成固定傷害、百分比傷害/霜寒幽光值10%)\n>持有者在場時吸取己方隨機1個不在場精靈所有技能1點PP值\n>>柯爾霍德在場時恢復至柯爾霍德相同位置\n>下場後將霜寒幽光減半附加給下隻出戰精靈\n>>同時令該精靈在場前n回合無法主動切換精靈(n=霜寒幽光值/50)\n>霜寒幽光上限200點",
                                     "displayChar": "霜",
+                                    "maxCount": 200,
                                     "ratio": 1,
                                     "scope": "elf",
                                     "name": "霜寒幽光",
@@ -36811,7 +36909,7 @@
             },
             {
               "index": 1,
-              "raw": "霜寒幽光：受到固定／百分比傷害超過資源值10%時減半",
+              "raw": "霜寒幽光：受到固定／百分比傷害超過資源值10%時則減半m次",
               "trigger": "incoming",
               "parsed": true,
               "explanation": false,
@@ -36842,7 +36940,7 @@
                   }
                 ]
               },
-              "id": "5013:專屬特性:凕:464589efba6d:1",
+              "id": "5013:專屬特性:凕:0b8fae4c24db:1",
               "presentationOnly": false,
               "execution": "authored-block-runtime",
               "textCorrespondence": {
@@ -36853,6 +36951,53 @@
             },
             {
               "index": 2,
+              "raw": "霜寒幽光：持有者在場時吸取己方隨機1個不在場精靈所有技能1點PP值，柯爾霍德在場時恢復至柯爾霍德相同位置",
+              "trigger": "round_start",
+              "parsed": true,
+              "explanation": false,
+              "unresolved": [],
+              "damage": null,
+              "semanticVerification": "pending",
+              "blocks": {
+                "conditions": [],
+                "statements": [
+                  {
+                    "acts": [
+                      {
+                        "label": "bench_pp_drain_random",
+                        "op": "bench_pp_drain_random",
+                        "p": {
+                          "restoreToHolder": true,
+                          "side": "opp"
+                        }
+                      }
+                    ],
+                    "cond": [
+                      {
+                        "label": "對手持有霜寒幽光",
+                        "c": "mark_count",
+                        "p": {
+                          "amount": 1,
+                          "side": "opp",
+                          "id": "frost_glow",
+                          "op": "不小於"
+                        }
+                      }
+                    ]
+                  }
+                ]
+              },
+              "id": "5013:專屬特性:凕:c178d11c77ed:1",
+              "presentationOnly": false,
+              "execution": "authored-block-runtime",
+              "textCorrespondence": {
+                "state": "needs-source-review",
+                "files": []
+              },
+              "evidence": []
+            },
+            {
+              "index": 3,
               "raw": "在場敵我雙方任一方受到真實傷害：為自身附加1道未暝之夜",
               "trigger": "damaged_true",
               "parsed": true,
@@ -36900,7 +37045,7 @@
               "evidence": []
             },
             {
-              "index": 3,
+              "index": 4,
               "raw": "未暝之夜：當回合首次死亡時強制存活並保留1點體力",
               "trigger": "fatal",
               "parsed": true,
@@ -36957,7 +37102,7 @@
               "evidence": []
             },
             {
-              "index": 4,
+              "index": 5,
               "raw": "回合開始時體力不高於½：附加1道未暝之夜（取消需受真傷限制）",
               "trigger": "round_start",
               "parsed": true,
@@ -37016,7 +37161,7 @@
               "evidence": []
             },
             {
-              "index": 5,
+              "index": 6,
               "raw": "未暝之夜：無視對手能力上升；吸血100%",
               "trigger": "use",
               "parsed": true,
@@ -37070,7 +37215,7 @@
               "evidence": []
             },
             {
-              "index": 6,
+              "index": 7,
               "raw": "未暝之夜：技能先制+1",
               "trigger": "modify_priority",
               "parsed": true,
@@ -37116,7 +37261,7 @@
               "evidence": []
             },
             {
-              "index": 7,
+              "index": 8,
               "raw": "未暝之夜：造成傷害提升150%",
               "trigger": "outgoing_power",
               "parsed": true,
@@ -37168,7 +37313,56 @@
               "evidence": []
             },
             {
-              "index": 8,
+              "index": 9,
+              "raw": "霜寒幽光：持有者下場後將霜寒幽光減半附加給下隻出戰精靈，同時令該精靈在場前n回合無法主動切換精靈(n=霜寒幽光值/50)",
+              "trigger": "opponent_switch_out",
+              "parsed": true,
+              "explanation": false,
+              "unresolved": [],
+              "damage": null,
+              "semanticVerification": "pending",
+              "blocks": {
+                "conditions": [],
+                "statements": [
+                  {
+                    "acts": [
+                      {
+                        "label": "transfer_and_reapply_resource",
+                        "op": "transfer_and_reapply_resource",
+                        "p": {
+                          "divisor": 50,
+                          "ratio": 0.5,
+                          "side": "opp",
+                          "id": "frost_glow"
+                        }
+                      }
+                    ],
+                    "cond": [
+                      {
+                        "label": "對手持有霜寒幽光",
+                        "c": "mark_count",
+                        "p": {
+                          "amount": 1,
+                          "side": "opp",
+                          "id": "frost_glow",
+                          "op": "不小於"
+                        }
+                      }
+                    ]
+                  }
+                ]
+              },
+              "id": "5013:專屬特性:凕:e893c636b8e8:1",
+              "presentationOnly": false,
+              "execution": "authored-block-runtime",
+              "textCorrespondence": {
+                "state": "needs-source-review",
+                "files": []
+              },
+              "evidence": []
+            },
+            {
+              "index": 10,
               "raw": "回合結束體力不低於⅓：解除自身所有異常；成功→下2回合免疫並反彈＋對手附加效果失效2回合",
               "trigger": "round_end",
               "parsed": true,
@@ -38751,17 +38945,17 @@
       "sourceFiles": [
         {
           "path": "elf_source_files/elf_files/5014_聖光斯嘉麗.txt",
-          "sha256": "7b5782670b94f6a3a30aa2040f1c9422291487559938ae824705ee27dfce08bd"
+          "sha256": "df4ef1ee64fd937cb8b87664635488f562c6b5bbf7857a275b1bafcd00c2a659"
         }
       ],
       "entries": [
         {
           "kind": "魂印",
           "name": "燦",
-          "sourceText": "戰鬥開始時：\n> 珀妮作為額外精靈加入己方與斯嘉麗共同作戰\n自身每次受到非真實傷害時：\n> 降低至原始傷害的⅓\n> 每次降低成功則令己方附加1層燦界聖芒\n> 同時恢復最大體力1/3於當回合結束時造成對手等同於恢復量的百分比傷害\n> 自身下場後，1回合內令己方下隻出戰精靈登場前1回合獲得上述降低傷害效果與回合結束時恢復效果，每有1層燦界聖芒則延長1回合\n自身使用技能時：\n> 令自身特攻、速度+2、命中+1\n> 附加對手特防、速度-2、命中-1\n對手使用技能時：\n> 令對手雙攻、速度-2、命中-1\n> 附加自身雙防、速度、命中+1\n前述效果執行時若雙方能力等級變化不高於10：\n> 2回合內自身攻擊技能計算傷害時以弱點傷害計算\n> 附加對手星贖1回合，已存在星贖則改為回合數+1\n珀妮：\n> 光系額外精靈，所有能力值均為斯嘉麗⅓\n> 己方在場精靈每次受到麻痺時後將當前所處異常狀態轉化為星贖且當回合直到戰鬥階段結束前回合類效果無法被消除\n> 斯嘉麗在場期間每次出手流程結束後（含斯嘉麗選擇技能因故未能出手）進行一次額外行動造成對方等同於最大體力⅓的光系傷害\n> 100%令對手失明，未觸發失明或對手已處於失明則消除對手回合類效果\n> 令斯嘉麗下2次造成的攻擊傷害提升150%\n> 己方斯嘉麗死亡4回合後在背包內重生\n> 己方每有1層燦界聖芒則重生所需回合降低1回合\n燦界聖芒：\n> 己方在場精靈每次受到失明後將當前所處異常狀態轉化為星贖\n> 直到戰鬥階段結束前能力上升狀態無法被消除\n> 己方戰鬥階段結束時敵我雙方每有1回合星贖則己方在場精靈控制類異常狀態的回合數降低燦界聖芒層數2倍，異常回合數最高降至1回合\n> 對方技能戰鬥階段結束時敵我雙方每有1回合星贖降低對手等同於燦界聖芒層數所有技能等量技能PP值，最多降低至1點PP值\n> 若對手被降低後PP值不大於1時額外令對手PP值該技能PP值上限歸1\n> 上限3層，下場後保留\n弱點傷害：\n> 計算傷害以對手當前雙防值中較低者的60%作為對手的防禦值或特防值計算",
+          "sourceText": "戰鬥開始時：\n> 珀妮作為額外精靈加入己方與斯嘉麗共同作戰\n自身每次受到非真實傷害時：\n> 降低至原始傷害的⅓\n> 每次降低成功則令己方附加1層燦界聖芒\n> 同時恢復最大體力1/3於當回合結束時造成對手等同於恢復量的百分比傷害\n> 自身下場後，1回合內令己方下隻出戰精靈登場前1回合獲得上述降低傷害效果與回合結束時恢復效果，每有1層燦界聖芒則延長1回合\n自身使用技能時：\n> 令自身特攻、速度+2、命中+1\n> 附加對手特防、速度-2、命中-1\n對手使用技能時：\n> 令對手雙攻、速度-2、命中-1\n> 附加自身雙防、速度、命中+1\n前述效果執行時若雙方能力等級變化不高於10：\n> 2回合內自身攻擊技能計算傷害時以弱點傷害計算\n> 附加對手星贖1回合，已存在星贖則改為回合數+1\n珀妮：\n> 光系額外精靈，所有能力值均為斯嘉麗⅓\n> 己方在場精靈每次受到麻痺時後將當前所處異常狀態轉化為星贖且當回合直到戰鬥階段結束前回合類效果無法被消除\n> 斯嘉麗在場期間每次出手流程結束後（含斯嘉麗選擇技能因故未能出手）進行一次額外行動造成對方等同於最大體力⅓的光系技能傷害\n> 100%令對手失明，未觸發失明或對手已處於失明則消除對手回合類效果\n> 令斯嘉麗下2次造成的攻擊傷害提升150%\n> 己方斯嘉麗死亡4回合後在背包內重生\n> 己方每有1層燦界聖芒則重生所需回合降低1回合\n燦界聖芒：\n> 己方在場精靈每次受到失明後將當前所處異常狀態轉化為星贖\n> 直到戰鬥階段結束前能力上升狀態無法被消除\n> 己方戰鬥階段結束時敵我雙方每有1回合星贖則己方在場精靈控制類異常狀態的回合數降低燦界聖芒層數2倍，異常回合數最高降至1回合\n> 對方技能戰鬥階段結束時敵我雙方每有1回合星贖降低對手等同於燦界聖芒層數所有技能等量技能PP值，最多降低至1點PP值\n> 若對手被降低後PP值不大於1時額外令對手PP值該技能PP值上限歸1\n> 上限3層，下場後保留\n弱點傷害：\n> 計算傷害以對手當前雙防值中較低者的60%作為對手的防禦值或特防值計算",
           "route": "kit",
           "source": "統一魂印來源：kit；未接通 0 項",
-          "sourceSha256": "e60dc886204af654f48b76a1a1b61a62b4d07d5012af73abc10b1b93363f2b2b",
+          "sourceSha256": "3311a729a1d9a4f6408d0e589083b7c6d0a57cb674a4603957fc709fe1c0ce00",
           "clauses": [
             {
               "index": 0,
@@ -38979,7 +39173,7 @@
             },
             {
               "index": 2,
-              "raw": "斯嘉麗在場且珀妮存活，每次出手流程結束（含未出手）額外造成對手最大體力⅓光系傷害，失明或未觸發時清除回合效果，自身下2次攻擊增傷150%",
+              "raw": "斯嘉麗在場且珀妮存活，每次出手流程結束（含未出手）額外造成對手最大體力⅓光系技能傷害，失明或未觸發時清除回合效果，自身下2次攻擊增傷150%",
               "trigger": "team_action_end",
               "parsed": true,
               "explanation": false,
@@ -39002,7 +39196,7 @@
                         "op": "queue_extra_action",
                         "p": {
                           "damageRatio": 0.3333333333333333,
-                          "label": "珀妮：光系傷害",
+                          "label": "珀妮：光系技能傷害",
                           "body": [
                             {
                               "acts": [
@@ -39104,7 +39298,7 @@
                   }
                 ]
               },
-              "id": "5014:魂印:燦:13a8bf1123a8:1",
+              "id": "5014:魂印:燦:8844ff21a565:1",
               "presentationOnly": false,
               "execution": "authored-block-runtime",
               "textCorrespondence": {
@@ -39951,10 +40145,10 @@
         {
           "kind": "專屬特性",
           "name": "燦",
-          "sourceText": "戰鬥開始時：\n> 珀妮作為額外精靈加入己方與斯嘉麗共同作戰\n自身每次受到非真實傷害時：\n> 降低至原始傷害的⅓\n> 每次降低成功則令己方附加1層燦界聖芒\n> 同時恢復最大體力1/3於當回合結束時造成對手等同於恢復量的百分比傷害\n> 自身下場後，1回合內令己方下隻出戰精靈登場前1回合獲得上述降低傷害效果與回合結束時恢復效果，每有1層燦界聖芒則延長1回合\n自身使用技能時：\n> 令自身特攻、速度+2、命中+1\n> 附加對手特防、速度-2、命中-1\n對手使用技能時：\n> 令對手雙攻、速度-2、命中-1\n> 附加自身雙防、速度、命中+1\n前述效果執行時若雙方能力等級變化不高於10：\n> 2回合內自身攻擊技能計算傷害時以弱點傷害計算\n> 附加對手星贖1回合，已存在星贖則改為回合數+1\n珀妮：\n> 光系額外精靈，所有能力值均為斯嘉麗⅓\n> 己方在場精靈每次受到麻痺時後將當前所處異常狀態轉化為星贖且當回合直到戰鬥階段結束前回合類效果無法被消除\n> 斯嘉麗在場期間每次出手流程結束後（含斯嘉麗選擇技能因故未能出手）進行一次額外行動造成對方等同於最大體力⅓的光系傷害\n> 100%令對手失明，未觸發失明或對手已處於失明則消除對手回合類效果\n> 令斯嘉麗下2次造成的攻擊傷害提升150%\n> 己方斯嘉麗死亡4回合後在背包內重生\n> 己方每有1層燦界聖芒則重生所需回合降低1回合\n燦界聖芒：\n> 己方在場精靈每次受到失明後將當前所處異常狀態轉化為星贖\n> 直到戰鬥階段結束前能力上升狀態無法被消除\n> 己方戰鬥階段結束時敵我雙方每有1回合星贖則己方在場精靈控制類異常狀態的回合數降低燦界聖芒層數2倍，異常回合數最高降至1回合\n> 對方技能戰鬥階段結束時敵我雙方每有1回合星贖降低對手等同於燦界聖芒層數所有技能等量技能PP值，最多降低至1點PP值\n> 若對手被降低後PP值不大於1時額外令對手PP值該技能PP值上限歸1\n> 上限3層，下場後保留\n弱點傷害：\n> 計算傷害以對手當前雙防值中較低者的60%作為對手的防禦值或特防值計算",
+          "sourceText": "戰鬥開始時：\n> 珀妮作為額外精靈加入己方與斯嘉麗共同作戰\n自身每次受到非真實傷害時：\n> 降低至原始傷害的⅓\n> 每次降低成功則令己方附加1層燦界聖芒\n> 同時恢復最大體力1/3於當回合結束時造成對手等同於恢復量的百分比傷害\n> 自身下場後，1回合內令己方下隻出戰精靈登場前1回合獲得上述降低傷害效果與回合結束時恢復效果，每有1層燦界聖芒則延長1回合\n自身使用技能時：\n> 令自身特攻、速度+2、命中+1\n> 附加對手特防、速度-2、命中-1\n對手使用技能時：\n> 令對手雙攻、速度-2、命中-1\n> 附加自身雙防、速度、命中+1\n前述效果執行時若雙方能力等級變化不高於10：\n> 2回合內自身攻擊技能計算傷害時以弱點傷害計算\n> 附加對手星贖1回合，已存在星贖則改為回合數+1\n珀妮：\n> 光系額外精靈，所有能力值均為斯嘉麗⅓\n> 己方在場精靈每次受到麻痺時後將當前所處異常狀態轉化為星贖且當回合直到戰鬥階段結束前回合類效果無法被消除\n> 斯嘉麗在場期間每次出手流程結束後（含斯嘉麗選擇技能因故未能出手）進行一次額外行動造成對方等同於最大體力⅓的光系技能傷害\n> 100%令對手失明，未觸發失明或對手已處於失明則消除對手回合類效果\n> 令斯嘉麗下2次造成的攻擊傷害提升150%\n> 己方斯嘉麗死亡4回合後在背包內重生\n> 己方每有1層燦界聖芒則重生所需回合降低1回合\n燦界聖芒：\n> 己方在場精靈每次受到失明後將當前所處異常狀態轉化為星贖\n> 直到戰鬥階段結束前能力上升狀態無法被消除\n> 己方戰鬥階段結束時敵我雙方每有1回合星贖則己方在場精靈控制類異常狀態的回合數降低燦界聖芒層數2倍，異常回合數最高降至1回合\n> 對方技能戰鬥階段結束時敵我雙方每有1回合星贖降低對手等同於燦界聖芒層數所有技能等量技能PP值，最多降低至1點PP值\n> 若對手被降低後PP值不大於1時額外令對手PP值該技能PP值上限歸1\n> 上限3層，下場後保留\n弱點傷害：\n> 計算傷害以對手當前雙防值中較低者的60%作為對手的防禦值或特防值計算",
           "route": "kit",
           "source": "特質統一來源：kit；未接通 0 項",
-          "sourceSha256": "e60dc886204af654f48b76a1a1b61a62b4d07d5012af73abc10b1b93363f2b2b",
+          "sourceSha256": "3311a729a1d9a4f6408d0e589083b7c6d0a57cb674a4603957fc709fe1c0ce00",
           "clauses": [
             {
               "index": 0,
@@ -40172,7 +40366,7 @@
             },
             {
               "index": 2,
-              "raw": "斯嘉麗在場且珀妮存活，每次出手流程結束（含未出手）額外造成對手最大體力⅓光系傷害，失明或未觸發時清除回合效果，自身下2次攻擊增傷150%",
+              "raw": "斯嘉麗在場且珀妮存活，每次出手流程結束（含未出手）額外造成對手最大體力⅓光系技能傷害，失明或未觸發時清除回合效果，自身下2次攻擊增傷150%",
               "trigger": "team_action_end",
               "parsed": true,
               "explanation": false,
@@ -40195,7 +40389,7 @@
                         "op": "queue_extra_action",
                         "p": {
                           "damageRatio": 0.3333333333333333,
-                          "label": "珀妮：光系傷害",
+                          "label": "珀妮：光系技能傷害",
                           "body": [
                             {
                               "acts": [
@@ -40297,7 +40491,7 @@
                   }
                 ]
               },
-              "id": "5014:專屬特性:燦:13a8bf1123a8:1",
+              "id": "5014:專屬特性:燦:8844ff21a565:1",
               "presentationOnly": false,
               "execution": "authored-block-runtime",
               "textCorrespondence": {
@@ -59308,21 +59502,21 @@
     },
     {
       "id": "5021",
-      "name": "治癒.龍魂再臨 次元龍",
+      "name": "治癒·龍魂再臨",
       "sourceFiles": [
         {
-          "path": "elf_source_files/elf_files/5021_治癒龍魂再臨次元龍.txt",
-          "sha256": "e30d88c5786e9fe142719ac5f6fef22e630dc8baeeda980d680ac0563da72373"
+          "path": "elf_source_files/elf_files/5021_治癒龍魂再臨.txt",
+          "sha256": "d83026812574beec32b79e5c5be87cd41cf3a57469f7b0ee361d1df1be46557f"
         }
       ],
       "entries": [
         {
           "kind": "魂印",
           "name": "龍",
-          "sourceText": "常駐效果：\n> 自身位於出戰背包內（無論是否為出戰/場下/額外精靈），敵我雙方所有精靈（無論是否為出戰/場下/額外精靈）所有回合開始效果時額外所有精靈附加1篇詩章\n> 自身根據持有詩章數量獲得以下效果：\n>> 1：每有1篇詩章先制+1；將對手能力提升視為同等級能力下降，自身能力下降視為同等級能力提升\n>> 2：使用技能無視PP值限制並吸取對手所有技能1點PP值\n>> 3：回合開始時解除自身所處的異常狀態，詩章大於3則自身免疫所有異常狀態\n>> 4：使用技能吸取對手最大體力的40%並減少下次受到的技能傷害40%；每持有2篇詩章效果吸取效果額外提升10%\n>> 5：每有1篇詩章，攻擊傷害提升20%，受到技能傷害減少10%\n>> 6：雙方每有50點精靈護盾、精靈護罩，自身攻擊技能威力額外提升50點\n>> 7：攻擊附加雙方體力差值的真實傷害\n>> 8：無視對手攻擊免疫效果，無視傷害限制效果，無視成功時攻擊技能所造成的技能傷害提升100%\n>> 9：為自身賦予等於自身攻擊傷害的護盾與護罩（可疊加無上限）\n>> 10以上：攻擊附加等同對方最大體力值的技能傷害\n自身每場戰鬥首次死亡時：\n> 解除自身所處異常狀態強制存活\n> 當回合保留1點體力並免疫異常狀態\n> 自身進入龍魂直到戰鬥結束\n龍魂：\n> 使用技能會額外執行龍魂效果\n詩章：\n> 紀錄持有者精靈的體力上限\n> 當持有精靈死亡時，詩章將轉移給存活狀態的治癒·龍魂再臨 次元龍以增加其等量體力上限，轉交後原持有精靈消逝\n> 治癒·龍魂再臨 次元龍若存在複數精靈則會同時轉移相同數量給予所有治癒·龍魂再臨 次元龍\n> 每篇詩章獨立計算且無上限，下場後保留",
+          "sourceText": "常駐效果：\n> 自身位於出戰背包內（無論是否為出戰/場下/額外精靈），敵我雙方所有精靈（無論是否為出戰/場下/額外精靈）所有回合開始效果時額外所有精靈附加1篇詩章\n> 自身根據持有詩章數量獲得以下效果：\n>> 1：每有1篇詩章先制+1；將對手能力提升視為同等級能力下降，自身能力下降視為同等級能力提升\n>> 2：使用技能無視PP值限制並吸取對手所有技能1點PP值\n>> 3：回合開始時解除自身所處的異常狀態，詩章大於3則自身免疫所有異常狀態\n>> 4：使用技能吸取對手最大體力的40%並減少下次受到的技能傷害40%；每持有2篇詩章效果吸取效果額外提升10%\n>> 5：每有1篇詩章，攻擊傷害提升20%，受到技能傷害減少10%\n>> 6：雙方每有50點精靈護盾、精靈護罩，自身攻擊技能威力額外提升50點\n>> 7：攻擊附加雙方體力差值的真實傷害\n>> 8：無視對手攻擊免疫效果，無視傷害限制效果，無視成功時攻擊技能所造成的技能傷害提升100%\n>> 9：為自身賦予等於自身攻擊傷害的護盾與護罩（可疊加無上限）\n>> 10以上：攻擊附加等同對方最大體力值的技能傷害\n自身每場戰鬥首次死亡時：\n> 解除自身所處異常狀態強制存活\n> 當回合保留1點體力並免疫異常狀態\n> 自身進入龍魂直到戰鬥結束\n龍魂：\n> 使用技能會額外執行龍魂效果\n詩章：\n> 紀錄持有者精靈的體力上限\n> 當持有精靈死亡時，詩章將轉移給存活狀態的治癒·龍魂再臨以增加其等量體力上限，轉交後原持有精靈消逝\n> 治癒·龍魂再臨若存在複數精靈則會同時轉移相同數量給予所有治癒·龍魂再臨\n> 每篇詩章獨立計算且無上限，下場後保留",
           "route": "kit",
           "source": "統一魂印來源：kit；未接通 0 項",
-          "sourceSha256": "b7d10cbfe1547880cad7e3472ba46266099d961add197bdee8972ca997967055",
+          "sourceSha256": "7c9050dd3d9f88416f5d4d1e3c039a8a6f0d4119decba77b09c651186b87042b",
           "clauses": [
             {
               "index": 0,
@@ -59484,7 +59678,7 @@
               "textCorrespondence": {
                 "state": "text-fragment-found",
                 "files": [
-                  "elf_source_files/elf_files/5021_治癒龍魂再臨次元龍.txt"
+                  "elf_source_files/elf_files/5021_治癒龍魂再臨.txt"
                 ]
               },
               "evidence": []
@@ -60229,10 +60423,10 @@
         {
           "kind": "專屬特性",
           "name": "龍",
-          "sourceText": "常駐效果：\n> 自身位於出戰背包內（無論是否為出戰/場下/額外精靈），敵我雙方所有精靈（無論是否為出戰/場下/額外精靈）所有回合開始效果時額外所有精靈附加1篇詩章\n> 自身根據持有詩章數量獲得以下效果：\n>> 1：每有1篇詩章先制+1；將對手能力提升視為同等級能力下降，自身能力下降視為同等級能力提升\n>> 2：使用技能無視PP值限制並吸取對手所有技能1點PP值\n>> 3：回合開始時解除自身所處的異常狀態，詩章大於3則自身免疫所有異常狀態\n>> 4：使用技能吸取對手最大體力的40%並減少下次受到的技能傷害40%；每持有2篇詩章效果吸取效果額外提升10%\n>> 5：每有1篇詩章，攻擊傷害提升20%，受到技能傷害減少10%\n>> 6：雙方每有50點精靈護盾、精靈護罩，自身攻擊技能威力額外提升50點\n>> 7：攻擊附加雙方體力差值的真實傷害\n>> 8：無視對手攻擊免疫效果，無視傷害限制效果，無視成功時攻擊技能所造成的技能傷害提升100%\n>> 9：為自身賦予等於自身攻擊傷害的護盾與護罩（可疊加無上限）\n>> 10以上：攻擊附加等同對方最大體力值的技能傷害\n自身每場戰鬥首次死亡時：\n> 解除自身所處異常狀態強制存活\n> 當回合保留1點體力並免疫異常狀態\n> 自身進入龍魂直到戰鬥結束\n龍魂：\n> 使用技能會額外執行龍魂效果\n詩章：\n> 紀錄持有者精靈的體力上限\n> 當持有精靈死亡時，詩章將轉移給存活狀態的治癒·龍魂再臨 次元龍以增加其等量體力上限，轉交後原持有精靈消逝\n> 治癒·龍魂再臨 次元龍若存在複數精靈則會同時轉移相同數量給予所有治癒·龍魂再臨 次元龍\n> 每篇詩章獨立計算且無上限，下場後保留",
+          "sourceText": "常駐效果：\n> 自身位於出戰背包內（無論是否為出戰/場下/額外精靈），敵我雙方所有精靈（無論是否為出戰/場下/額外精靈）所有回合開始效果時額外所有精靈附加1篇詩章\n> 自身根據持有詩章數量獲得以下效果：\n>> 1：每有1篇詩章先制+1；將對手能力提升視為同等級能力下降，自身能力下降視為同等級能力提升\n>> 2：使用技能無視PP值限制並吸取對手所有技能1點PP值\n>> 3：回合開始時解除自身所處的異常狀態，詩章大於3則自身免疫所有異常狀態\n>> 4：使用技能吸取對手最大體力的40%並減少下次受到的技能傷害40%；每持有2篇詩章效果吸取效果額外提升10%\n>> 5：每有1篇詩章，攻擊傷害提升20%，受到技能傷害減少10%\n>> 6：雙方每有50點精靈護盾、精靈護罩，自身攻擊技能威力額外提升50點\n>> 7：攻擊附加雙方體力差值的真實傷害\n>> 8：無視對手攻擊免疫效果，無視傷害限制效果，無視成功時攻擊技能所造成的技能傷害提升100%\n>> 9：為自身賦予等於自身攻擊傷害的護盾與護罩（可疊加無上限）\n>> 10以上：攻擊附加等同對方最大體力值的技能傷害\n自身每場戰鬥首次死亡時：\n> 解除自身所處異常狀態強制存活\n> 當回合保留1點體力並免疫異常狀態\n> 自身進入龍魂直到戰鬥結束\n龍魂：\n> 使用技能會額外執行龍魂效果\n詩章：\n> 紀錄持有者精靈的體力上限\n> 當持有精靈死亡時，詩章將轉移給存活狀態的治癒·龍魂再臨以增加其等量體力上限，轉交後原持有精靈消逝\n> 治癒·龍魂再臨若存在複數精靈則會同時轉移相同數量給予所有治癒·龍魂再臨\n> 每篇詩章獨立計算且無上限，下場後保留",
           "route": "kit",
           "source": "特質統一來源：kit；未接通 0 項",
-          "sourceSha256": "b7d10cbfe1547880cad7e3472ba46266099d961add197bdee8972ca997967055",
+          "sourceSha256": "7c9050dd3d9f88416f5d4d1e3c039a8a6f0d4119decba77b09c651186b87042b",
           "clauses": [
             {
               "index": 0,
@@ -60394,7 +60588,7 @@
               "textCorrespondence": {
                 "state": "text-fragment-found",
                 "files": [
-                  "elf_source_files/elf_files/5021_治癒龍魂再臨次元龍.txt"
+                  "elf_source_files/elf_files/5021_治癒龍魂再臨.txt"
                 ]
               },
               "evidence": []
@@ -61178,7 +61372,7 @@
               "textCorrespondence": {
                 "state": "text-fragment-found",
                 "files": [
-                  "elf_source_files/elf_files/5021_治癒龍魂再臨次元龍.txt"
+                  "elf_source_files/elf_files/5021_治癒龍魂再臨.txt"
                 ]
               },
               "evidence": []
@@ -61235,7 +61429,7 @@
               "textCorrespondence": {
                 "state": "text-fragment-found",
                 "files": [
-                  "elf_source_files/elf_files/5021_治癒龍魂再臨次元龍.txt"
+                  "elf_source_files/elf_files/5021_治癒龍魂再臨.txt"
                 ]
               },
               "evidence": []
@@ -61300,7 +61494,7 @@
               "textCorrespondence": {
                 "state": "text-fragment-found",
                 "files": [
-                  "elf_source_files/elf_files/5021_治癒龍魂再臨次元龍.txt"
+                  "elf_source_files/elf_files/5021_治癒龍魂再臨.txt"
                 ]
               },
               "evidence": []
@@ -61345,7 +61539,7 @@
               "textCorrespondence": {
                 "state": "text-fragment-found",
                 "files": [
-                  "elf_source_files/elf_files/5021_治癒龍魂再臨次元龍.txt"
+                  "elf_source_files/elf_files/5021_治癒龍魂再臨.txt"
                 ]
               },
               "evidence": []
@@ -61491,7 +61685,7 @@
               "textCorrespondence": {
                 "state": "text-fragment-found",
                 "files": [
-                  "elf_source_files/elf_files/5021_治癒龍魂再臨次元龍.txt"
+                  "elf_source_files/elf_files/5021_治癒龍魂再臨.txt"
                 ]
               },
               "evidence": []
@@ -61529,7 +61723,7 @@
               "textCorrespondence": {
                 "state": "text-fragment-found",
                 "files": [
-                  "elf_source_files/elf_files/5021_治癒龍魂再臨次元龍.txt"
+                  "elf_source_files/elf_files/5021_治癒龍魂再臨.txt"
                 ]
               },
               "evidence": []
@@ -61568,7 +61762,7 @@
                         "op": "resource_mark_add",
                         "p": {
                           "persistsOffField": true,
-                          "description": "紀錄持有者精靈的體力上限，當持有精靈死亡時轉移給存活的治癒.龍魂再臨次元龍，轉交後原持有精靈消逝。",
+                          "description": "紀錄持有者精靈的體力上限，當持有精靈死亡時轉移給存活的治癒·龍魂再臨，轉交後原持有精靈消逝。",
                           "displayChar": "詩",
                           "snapshotKey": "poemHpSnapshots",
                           "amount": 1,
@@ -61589,7 +61783,7 @@
               "textCorrespondence": {
                 "state": "text-fragment-found",
                 "files": [
-                  "elf_source_files/elf_files/5021_治癒龍魂再臨次元龍.txt"
+                  "elf_source_files/elf_files/5021_治癒龍魂再臨.txt"
                 ]
               },
               "evidence": []
@@ -61643,7 +61837,7 @@
               "textCorrespondence": {
                 "state": "text-fragment-found",
                 "files": [
-                  "elf_source_files/elf_files/5021_治癒龍魂再臨次元龍.txt"
+                  "elf_source_files/elf_files/5021_治癒龍魂再臨.txt"
                 ]
               },
               "evidence": []
@@ -61696,7 +61890,7 @@
               "textCorrespondence": {
                 "state": "text-fragment-found",
                 "files": [
-                  "elf_source_files/elf_files/5021_治癒龍魂再臨次元龍.txt"
+                  "elf_source_files/elf_files/5021_治癒龍魂再臨.txt"
                 ]
               },
               "evidence": []
@@ -61777,7 +61971,7 @@
               "textCorrespondence": {
                 "state": "text-fragment-found",
                 "files": [
-                  "elf_source_files/elf_files/5021_治癒龍魂再臨次元龍.txt"
+                  "elf_source_files/elf_files/5021_治癒龍魂再臨.txt"
                 ]
               },
               "evidence": []
@@ -61826,7 +62020,7 @@
               "textCorrespondence": {
                 "state": "text-fragment-found",
                 "files": [
-                  "elf_source_files/elf_files/5021_治癒龍魂再臨次元龍.txt"
+                  "elf_source_files/elf_files/5021_治癒龍魂再臨.txt"
                 ]
               },
               "evidence": []
@@ -61874,7 +62068,7 @@
                         "op": "resource_mark_add",
                         "p": {
                           "persistsOffField": true,
-                          "description": "紀錄持有者精靈的體力上限，當持有精靈死亡時轉移給存活的治癒.龍魂再臨次元龍，轉交後原持有精靈消逝。",
+                          "description": "紀錄持有者精靈的體力上限，當持有精靈死亡時轉移給存活的治癒·龍魂再臨，轉交後原持有精靈消逝。",
                           "displayChar": "詩",
                           "snapshotKey": "poemHpSnapshots",
                           "amount": 4,
@@ -61906,7 +62100,7 @@
               "textCorrespondence": {
                 "state": "text-fragment-found",
                 "files": [
-                  "elf_source_files/elf_files/5021_治癒龍魂再臨次元龍.txt"
+                  "elf_source_files/elf_files/5021_治癒龍魂再臨.txt"
                 ]
               },
               "evidence": []
@@ -62037,7 +62231,7 @@
               "textCorrespondence": {
                 "state": "text-fragment-found",
                 "files": [
-                  "elf_source_files/elf_files/5021_治癒龍魂再臨次元龍.txt"
+                  "elf_source_files/elf_files/5021_治癒龍魂再臨.txt"
                 ]
               },
               "evidence": []
@@ -62084,7 +62278,7 @@
               "textCorrespondence": {
                 "state": "text-fragment-found",
                 "files": [
-                  "elf_source_files/elf_files/5021_治癒龍魂再臨次元龍.txt"
+                  "elf_source_files/elf_files/5021_治癒龍魂再臨.txt"
                 ]
               },
               "evidence": []
@@ -62146,7 +62340,7 @@
               "textCorrespondence": {
                 "state": "text-fragment-found",
                 "files": [
-                  "elf_source_files/elf_files/5021_治癒龍魂再臨次元龍.txt"
+                  "elf_source_files/elf_files/5021_治癒龍魂再臨.txt"
                 ]
               },
               "evidence": []
@@ -62195,7 +62389,7 @@
               "textCorrespondence": {
                 "state": "text-fragment-found",
                 "files": [
-                  "elf_source_files/elf_files/5021_治癒龍魂再臨次元龍.txt"
+                  "elf_source_files/elf_files/5021_治癒龍魂再臨.txt"
                 ]
               },
               "evidence": []
@@ -62243,7 +62437,7 @@
               "textCorrespondence": {
                 "state": "text-fragment-found",
                 "files": [
-                  "elf_source_files/elf_files/5021_治癒龍魂再臨次元龍.txt"
+                  "elf_source_files/elf_files/5021_治癒龍魂再臨.txt"
                 ]
               },
               "evidence": []
@@ -62338,7 +62532,7 @@
               "textCorrespondence": {
                 "state": "text-fragment-found",
                 "files": [
-                  "elf_source_files/elf_files/5021_治癒龍魂再臨次元龍.txt"
+                  "elf_source_files/elf_files/5021_治癒龍魂再臨.txt"
                 ]
               },
               "evidence": []
@@ -62367,6 +62561,7 @@
                         "label": "dmg",
                         "op": "dmg",
                         "p": {
+                          "appendToAttack": true,
                           "elem": "次元龍",
                           "flat": 50,
                           "type": "技能",
@@ -62397,7 +62592,7 @@
               "textCorrespondence": {
                 "state": "text-fragment-found",
                 "files": [
-                  "elf_source_files/elf_files/5021_治癒龍魂再臨次元龍.txt"
+                  "elf_source_files/elf_files/5021_治癒龍魂再臨.txt"
                 ]
               },
               "evidence": []
@@ -62509,7 +62704,7 @@
               "textCorrespondence": {
                 "state": "text-fragment-found",
                 "files": [
-                  "elf_source_files/elf_files/5021_治癒龍魂再臨次元龍.txt"
+                  "elf_source_files/elf_files/5021_治癒龍魂再臨.txt"
                 ]
               },
               "evidence": []
@@ -62568,7 +62763,7 @@
               "textCorrespondence": {
                 "state": "text-fragment-found",
                 "files": [
-                  "elf_source_files/elf_files/5021_治癒龍魂再臨次元龍.txt"
+                  "elf_source_files/elf_files/5021_治癒龍魂再臨.txt"
                 ]
               },
               "evidence": []
@@ -62614,7 +62809,7 @@
               "textCorrespondence": {
                 "state": "text-fragment-found",
                 "files": [
-                  "elf_source_files/elf_files/5021_治癒龍魂再臨次元龍.txt"
+                  "elf_source_files/elf_files/5021_治癒龍魂再臨.txt"
                 ]
               },
               "evidence": []
@@ -62673,7 +62868,7 @@
               "textCorrespondence": {
                 "state": "text-fragment-found",
                 "files": [
-                  "elf_source_files/elf_files/5021_治癒龍魂再臨次元龍.txt"
+                  "elf_source_files/elf_files/5021_治癒龍魂再臨.txt"
                 ]
               },
               "evidence": []
@@ -62735,7 +62930,7 @@
               "textCorrespondence": {
                 "state": "text-fragment-found",
                 "files": [
-                  "elf_source_files/elf_files/5021_治癒龍魂再臨次元龍.txt"
+                  "elf_source_files/elf_files/5021_治癒龍魂再臨.txt"
                 ]
               },
               "evidence": []
@@ -62822,7 +63017,7 @@
               "textCorrespondence": {
                 "state": "text-fragment-found",
                 "files": [
-                  "elf_source_files/elf_files/5021_治癒龍魂再臨次元龍.txt"
+                  "elf_source_files/elf_files/5021_治癒龍魂再臨.txt"
                 ]
               },
               "evidence": []
@@ -62837,17 +63032,17 @@
       "sourceFiles": [
         {
           "path": "elf_source_files/elf_files/5022_無序六刃.txt",
-          "sha256": "d9a75e0ac0a57af6bbc0722224d057fa59665324e7baa84618aea765a964bcb2"
+          "sha256": "ab17258719576e9e63977bd5f77f6f32aa70425c0a627ea389bdb39707562443"
         }
       ],
       "entries": [
         {
           "kind": "魂印",
           "name": "專屬特性",
-          "sourceText": "自身每次出戰時：\n> 紀錄自身原始體力上限\n> 令自身受到自身最大體力⅙的真實傷害\n> 令對手受到對手最大體力⅙的真實傷害\n>> 觸發成功則己方上隻出戰精靈恢復上述受到真實傷害總和，同時自身獲得上述受到真實傷害量6倍的臨時體力上限（下場後消失）\n> 之後若對手主動/死亡切換精靈，或自身進入異常狀態則再次觸發出戰效果並將原臨時體力上限變為永久體力上限\n常駐效果：\n> 自身恢復體力無法恢復/增加超過至自身原始體力上限\n> 自身造成非真實傷害提升120%\n>> 自身體力每降低0.1%，上述效果提升120%，體力低於最大體力½時效果翻倍\n> 自身每次受到真實傷害時\n>> 2回合內抵擋受到的所有技能傷害且受到的固定傷害、百分比傷害不超過60\n>> 直至上述效果結束的下回合結束時自身是否存活不受當前體力值限制\n> 自身每次使用技能時，恢復自身最大體力⅙並造成等量百分比傷害",
+          "sourceText": "自身每次出戰時：\n> 紀錄自身原始體力上限\n> 令自身受到自身最大體力⅙的真實傷害\n> 令對手受到對手最大體力⅙的真實傷害\n>> 觸發成功則己方上隻出戰精靈恢復上述受到真實傷害總和，同時自身獲得上述受到真實傷害量6倍的臨時體力上限（下場後消失）\n> 之後若對手主動/死亡切換精靈，或自身進入異常狀態則再次觸發出戰效果並將原臨時體力上限變為永久體力上限\n常駐效果：\n> 自身恢復體力無法恢復/增加超過至自身原始體力上限\n> 自身造成非真實傷害提升120%\n>> 自身體力每降低0.1%，上述效果提升120%，體力低於最大體力½時效果翻倍\n> 自身每次受到真實傷害時\n>> 2回合內抵擋受到的所有技能傷害且受到的固定傷害、百分比傷害不超過66\n>> 直至上述效果結束的下回合結束時自身是否存活不受當前體力值限制\n> 自身每次使用技能時，恢復自身最大體力⅙並造成等量百分比傷害",
           "route": "kit",
           "source": "統一魂印來源：kit；未接通 0 項",
-          "sourceSha256": "1f771546444b18145950450683da27d4a9881528b0216354d71648681ed80c88",
+          "sourceSha256": "8c8d067f87dd636ea0bb850a25d0b68c5b15126f6481ee17b809b52f85c7fec5",
           "clauses": [
             {
               "index": 0,
@@ -63085,7 +63280,7 @@
             },
             {
               "index": 6,
-              "raw": "受到真傷後2回合抵擋技能、固傷與百分比上限60，直到下回合結束前不受體力限制",
+              "raw": "受到真傷後2回合抵擋技能、固傷與百分比上限66，直到下回合結束前不受體力限制",
               "trigger": "damaged_true",
               "parsed": true,
               "explanation": false,
@@ -63110,7 +63305,7 @@
                         "p": {
                           "deathImmuneTurns": 3,
                           "preserveOffField": true,
-                          "fixedPercentCap": 60,
+                          "fixedPercentCap": 66,
                           "guardTurns": 2
                         }
                       }
@@ -63118,7 +63313,7 @@
                   }
                 ]
               },
-              "id": "5022:魂印:專屬特性:9222d873c8e2:1",
+              "id": "5022:魂印:專屬特性:f1ec06fb7f70:1",
               "presentationOnly": false,
               "execution": "authored-block-runtime",
               "textCorrespondence": {
@@ -63187,10 +63382,10 @@
         {
           "kind": "專屬特性",
           "name": "專屬特性",
-          "sourceText": "自身每次出戰時：\n> 紀錄自身原始體力上限\n> 令自身受到自身最大體力⅙的真實傷害\n> 令對手受到對手最大體力⅙的真實傷害\n>> 觸發成功則己方上隻出戰精靈恢復上述受到真實傷害總和，同時自身獲得上述受到真實傷害量6倍的臨時體力上限（下場後消失）\n> 之後若對手主動/死亡切換精靈，或自身進入異常狀態則再次觸發出戰效果並將原臨時體力上限變為永久體力上限\n常駐效果：\n> 自身恢復體力無法恢復/增加超過至自身原始體力上限\n> 自身造成非真實傷害提升120%\n>> 自身體力每降低0.1%，上述效果提升120%，體力低於最大體力½時效果翻倍\n> 自身每次受到真實傷害時\n>> 2回合內抵擋受到的所有技能傷害且受到的固定傷害、百分比傷害不超過60\n>> 直至上述效果結束的下回合結束時自身是否存活不受當前體力值限制\n> 自身每次使用技能時，恢復自身最大體力⅙並造成等量百分比傷害",
+          "sourceText": "自身每次出戰時：\n> 紀錄自身原始體力上限\n> 令自身受到自身最大體力⅙的真實傷害\n> 令對手受到對手最大體力⅙的真實傷害\n>> 觸發成功則己方上隻出戰精靈恢復上述受到真實傷害總和，同時自身獲得上述受到真實傷害量6倍的臨時體力上限（下場後消失）\n> 之後若對手主動/死亡切換精靈，或自身進入異常狀態則再次觸發出戰效果並將原臨時體力上限變為永久體力上限\n常駐效果：\n> 自身恢復體力無法恢復/增加超過至自身原始體力上限\n> 自身造成非真實傷害提升120%\n>> 自身體力每降低0.1%，上述效果提升120%，體力低於最大體力½時效果翻倍\n> 自身每次受到真實傷害時\n>> 2回合內抵擋受到的所有技能傷害且受到的固定傷害、百分比傷害不超過66\n>> 直至上述效果結束的下回合結束時自身是否存活不受當前體力值限制\n> 自身每次使用技能時，恢復自身最大體力⅙並造成等量百分比傷害",
           "route": "kit",
           "source": "特質統一來源：kit；未接通 0 項",
-          "sourceSha256": "1f771546444b18145950450683da27d4a9881528b0216354d71648681ed80c88",
+          "sourceSha256": "8c8d067f87dd636ea0bb850a25d0b68c5b15126f6481ee17b809b52f85c7fec5",
           "clauses": [
             {
               "index": 0,
@@ -63428,7 +63623,7 @@
             },
             {
               "index": 6,
-              "raw": "受到真傷後2回合抵擋技能、固傷與百分比上限60，直到下回合結束前不受體力限制",
+              "raw": "受到真傷後2回合抵擋技能、固傷與百分比上限66，直到下回合結束前不受體力限制",
               "trigger": "damaged_true",
               "parsed": true,
               "explanation": false,
@@ -63453,7 +63648,7 @@
                         "p": {
                           "deathImmuneTurns": 3,
                           "preserveOffField": true,
-                          "fixedPercentCap": 60,
+                          "fixedPercentCap": 66,
                           "guardTurns": 2
                         }
                       }
@@ -63461,7 +63656,7 @@
                   }
                 ]
               },
-              "id": "5022:專屬特性:專屬特性:9222d873c8e2:1",
+              "id": "5022:專屬特性:專屬特性:f1ec06fb7f70:1",
               "presentationOnly": false,
               "execution": "authored-block-runtime",
               "textCorrespondence": {
@@ -67494,7 +67689,7 @@
       "sourceFiles": [
         {
           "path": "elf_source_files/elf_files/5024_湮滅之主咤克斯.txt",
-          "sha256": "0f7b2d22177f37a99137be5e2ec97d4e72f6b3950e288de9e8faaa16a1d2cc0f"
+          "sha256": "3bd14e73acdbebe59d7e6412ecc6ac6979692ff9b3de6eed77024cddefbdb4c3"
         }
       ],
       "entries": [
@@ -88375,7 +88570,7 @@
       "sourceFiles": [
         {
           "path": "elf_source_files/elf_files/六界神王.txt",
-          "sha256": "d449840cd09f8db1b6bb6f63d21666a1b70db0cb6fef4370862dadf45af22685"
+          "sha256": "cfeac159c67672f711c8a8c9cde8f98bec245eaac5b476c4a693ad0ad1344c89"
         }
       ],
       "entries": [
@@ -90139,10 +90334,10 @@
         {
           "kind": "技能",
           "name": "禁靈領域",
-          "sourceText": "■ 必中\n🎯 全屬性+1，自身處於能力提升狀態時強化效果翻倍\n🎯 4回合內每回合恢復自身最大體力的1/3並造成等量固定傷害\n  > 自身體力低於1/2時恢復效果和固定傷害翻倍\n🎯 3回合內自身能力強化狀態被消除、吸取時則對手2回合使用屬性技能附加效果失效",
+          "sourceText": "■ 必中\n🎯 全屬性+1，自身處於能力提升狀態時強化效果翻倍\n🎯 4回合內每回合恢復自身最大體力的1/3並造成等量百分比傷害\n  > 自身體力低於1/2時恢復效果和百分比傷害翻倍\n🎯 3回合內自身能力強化狀態被消除、吸取時則對手2回合使用屬性技能附加效果失效",
           "route": "kit",
           "source": "統一效果來源：kit；未接通 0 項",
-          "sourceSha256": "0ea944dd7d88fd675a123d148c4c730195ac15d103777ecc015c47ccc14545de",
+          "sourceSha256": "c24b4ec4f2b7bb3e0ca210f9bc658d9b5a46fc072900487cd87b56794831b339",
           "clauses": [
             {
               "index": 0,
@@ -90233,14 +90428,14 @@
             },
             {
               "index": 2,
-              "raw": "🎯 4回合內每回合恢復自身最大體力的1/3並造成等量固定傷害\n  > 自身體力低於1/2時恢復效果和固定傷害翻倍",
+              "raw": "🎯 4回合內每回合恢復自身最大體力的1/3並造成等量百分比傷害\n  > 自身體力低於1/2時恢復效果和百分比傷害翻倍",
               "trigger": "use",
               "parsed": true,
               "explanation": false,
               "unresolved": [],
               "damage": {
                 "types": [
-                  "fixed"
+                  "percent"
                 ],
                 "inferred": false,
                 "reason": "文本指定；同句多段傷害仍須逐段核對。"
@@ -90281,7 +90476,7 @@
                                   "label": "dmg_equal",
                                   "op": "dmg_equal",
                                   "p": {
-                                    "type": "固定"
+                                    "type": "百分比"
                                   }
                                 }
                               ]
@@ -90295,7 +90490,7 @@
                   }
                 ]
               },
-              "id": "5031:技能:禁靈領域:a003f9ddd508:1",
+              "id": "5031:技能:禁靈領域:b55fd02faaae:1",
               "presentationOnly": false,
               "execution": "authored-block-runtime",
               "textCorrespondence": {
@@ -103212,10 +103407,10 @@
         {
           "kind": "技能",
           "name": "暗蝕雷驅",
-          "sourceText": "■ 必中\n■ 自身處於能力下降狀態時先制+3\n🎯 2回合內自身免疫並反彈所有異常狀態\n🎯 解除自身所有異常狀態，解除成功則2回合內對手技能附加效果失效\n🎯 消除雙方能力上升、下降狀態與護盾、護罩效果並附加自身最大體力50%的電.暗影系傷害\n🎯 抵擋下次受到的攻擊，抵擋成功則附加對手自身受到傷害100%的真實傷害",
+          "sourceText": "■ 必中\n■ 自身處於能力下降狀態時先制+3\n🎯 2回合內自身免疫並反彈所有異常狀態\n🎯 解除自身所有異常狀態，解除成功則2回合內對手技能附加效果失效\n🎯 消除雙方能力上升、下降狀態與護盾、護罩效果並附加自身最大體力50%的電.暗影系技能傷害\n🎯 抵擋下次受到的攻擊，抵擋成功則附加對手自身受到傷害100%的真實傷害",
           "route": "kit",
           "source": "統一效果來源：kit；未接通 0 項",
-          "sourceSha256": "3d1489c3a4257cf1d7528f186727a8f61a7bbe3368f647d6ed4ecf0f5b260aaa",
+          "sourceSha256": "2e64f9ebfa09ca5e4e17964d40b65edd3b27b9394697bd325b32c5e30c41d70e",
           "clauses": [
             {
               "index": 0,
@@ -103382,7 +103577,7 @@
             },
             {
               "index": 4,
-              "raw": "🎯 消除雙方能力上升、下降狀態與護盾、護罩效果，並附加自身最大體力50%的電·暗影系傷害",
+              "raw": "🎯 消除雙方能力上升、下降狀態與護盾、護罩效果，並附加自身最大體力50%的電·暗影系技能傷害",
               "trigger": "use",
               "parsed": true,
               "explanation": false,
@@ -103431,7 +103626,7 @@
                   }
                 ]
               },
-              "id": "7070:技能:暗蝕雷驅:bb9d7758ea94:1",
+              "id": "7070:技能:暗蝕雷驅:9c0f35527ec7:1",
               "presentationOnly": false,
               "execution": "authored-block-runtime",
               "textCorrespondence": {
@@ -105193,10 +105388,10 @@
         {
           "kind": "技能",
           "name": "魔化雷驅",
-          "sourceText": "■ 必中\n■ 自身處於異常狀態時先制+3\n🎯 解除自身所有異常狀態，解除成功則7回合內對手技能附加效果失效\n🎯 直接造成對手自身最大體力50%的混沌.電系傷害，技能無效時效果提升150%\n🎯 7回合內，對手若使用屬性技能則下7回合造成非真實傷害不超過70\n🎯 下7回合對手受到非真實傷害提升170%",
+          "sourceText": "■ 必中\n■ 自身處於異常狀態時先制+3\n🎯 解除自身所有異常狀態，解除成功則7回合內對手技能附加效果失效\n🎯 直接造成對手自身最大體力50%的混沌.電系技能傷害，技能無效時效果提升150%\n🎯 7回合內，對手若使用屬性技能則下7回合造成非真實傷害不超過70\n🎯 下7回合對手受到非真實傷害提升170%",
           "route": "kit",
           "source": "統一效果來源：kit；未接通 0 項",
-          "sourceSha256": "4d7547e4342edf9266b81aa7471fb12589ca7cd6b53f6345317f9eeb37ca451b",
+          "sourceSha256": "1f30156af395b61080c8b17abbd2e853cadbfdf5c0395792288fbcd76b197caa",
           "clauses": [
             {
               "index": 0,
@@ -105327,7 +105522,7 @@
             },
             {
               "index": 3,
-              "raw": "🎯 直接造成對手自身最大體力50%的混沌·電系傷害",
+              "raw": "🎯 直接造成對手自身最大體力50%的混沌·電系技能傷害",
               "trigger": "use",
               "parsed": true,
               "explanation": false,
@@ -105360,7 +105555,7 @@
                   }
                 ]
               },
-              "id": "707070:技能:魔化雷驅:ec1c51f83fd1:1",
+              "id": "707070:技能:魔化雷驅:683ad8b2c5d1:1",
               "presentationOnly": false,
               "execution": "authored-block-runtime",
               "textCorrespondence": {
@@ -116905,7 +117100,7 @@
             },
             {
               "index": 1,
-              "raw": "自身與技能同屬性時威力 +170",
+              "raw": "必中",
               "trigger": "before_skill",
               "parsed": true,
               "explanation": false,
@@ -116922,10 +117117,86 @@
                         "p": {
                           "node": "before_skill",
                           "conditions": [],
-                          "property": "base_power",
-                          "value": 170
+                          "property": "sure_hit",
+                          "value": true
                         },
-                        "label": "使用技能前 · 自身與技能同屬性時威力 +170"
+                        "label": "使用技能前 · 必中"
+                      }
+                    ]
+                  }
+                ]
+              },
+              "id": "arena_12:技能:無相諦:3e76e6d438f9:2",
+              "presentationOnly": false,
+              "execution": "authored-block-runtime",
+              "textCorrespondence": {
+                "state": "no-matching-txt",
+                "files": []
+              },
+              "evidence": []
+            },
+            {
+              "index": 2,
+              "raw": "■ 自身與技能同屬性時威力 +170",
+              "trigger": "outgoing_power",
+              "parsed": true,
+              "explanation": false,
+              "unresolved": [],
+              "damage": null,
+              "semanticVerification": "pending",
+              "blocks": {
+                "conditions": [],
+                "statements": [
+                  {
+                    "acts": [
+                      {
+                        "label": "power_mod",
+                        "op": "power_mod",
+                        "p": {
+                          "flat": 170
+                        }
+                      }
+                    ],
+                    "cond": [
+                      {
+                        "label": "萬相乖離已取消此條（>=1）",
+                        "c": "mark_count",
+                        "p": {
+                          "amount": 1,
+                          "side": "self",
+                          "id": "wuweiCancelled",
+                          "op": "不低於"
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "acts": [
+                      {
+                        "label": "power_mod",
+                        "op": "power_mod",
+                        "p": {
+                          "flat": 170
+                        }
+                      }
+                    ],
+                    "cond": [
+                      {
+                        "label": "萬相乖離尚未取消此條（<1）",
+                        "c": "mark_count",
+                        "p": {
+                          "amount": 1,
+                          "side": "self",
+                          "id": "wuweiCancelled",
+                          "op": "低於"
+                        }
+                      },
+                      {
+                        "label": "自身與技能同屬性",
+                        "c": "same_type",
+                        "p": {
+                          "side": "self"
+                        }
                       }
                     ]
                   }
@@ -116941,8 +117212,8 @@
               "evidence": []
             },
             {
-              "index": 2,
-              "raw": "🎯 先出手時令對手所有技能 PP −1，後出手時消除對手回合類效果",
+              "index": 3,
+              "raw": "🎯 先出手時令對手所有技能 PP −1",
               "trigger": "use",
               "parsed": true,
               "explanation": false,
@@ -116966,10 +117237,35 @@
                     ],
                     "cond": [
                       {
-                        "label": "萬相乖離尚未取消此條（<1）",
+                        "label": "萬相乖離已取消此條（>=2）",
                         "c": "mark_count",
                         "p": {
+                          "amount": 2,
+                          "side": "self",
+                          "id": "wuweiCancelled",
+                          "op": "不低於"
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "acts": [
+                      {
+                        "label": "pp_op",
+                        "op": "pp_op",
+                        "p": {
                           "amount": 1,
+                          "mode": "reduce",
+                          "side": "opp"
+                        }
+                      }
+                    ],
+                    "cond": [
+                      {
+                        "label": "萬相乖離尚未取消此條（<2）",
+                        "c": "mark_count",
+                        "p": {
+                          "amount": 2,
                           "side": "self",
                           "id": "wuweiCancelled",
                           "op": "低於"
@@ -116979,6 +117275,52 @@
                         "label": "先出手",
                         "c": "first_move",
                         "p": {}
+                      }
+                    ]
+                  }
+                ]
+              },
+              "id": "arena_12:技能:無相諦:02b950cfe210:1",
+              "presentationOnly": false,
+              "execution": "authored-block-runtime",
+              "textCorrespondence": {
+                "state": "no-matching-txt",
+                "files": []
+              },
+              "evidence": []
+            },
+            {
+              "index": 4,
+              "raw": "🎯 後出手時消除對手回合類效果",
+              "trigger": "use",
+              "parsed": true,
+              "explanation": false,
+              "unresolved": [],
+              "damage": null,
+              "semanticVerification": "pending",
+              "blocks": {
+                "conditions": [],
+                "statements": [
+                  {
+                    "acts": [
+                      {
+                        "label": "clear_turn",
+                        "op": "clear_turn",
+                        "p": {
+                          "side": "opp"
+                        }
+                      }
+                    ],
+                    "cond": [
+                      {
+                        "label": "萬相乖離已取消此條（>=3）",
+                        "c": "mark_count",
+                        "p": {
+                          "amount": 3,
+                          "side": "self",
+                          "id": "wuweiCancelled",
+                          "op": "不低於"
+                        }
                       }
                     ]
                   },
@@ -116994,10 +117336,10 @@
                     ],
                     "cond": [
                       {
-                        "label": "萬相乖離尚未取消此條（<1）",
+                        "label": "萬相乖離尚未取消此條（<3）",
                         "c": "mark_count",
                         "p": {
-                          "amount": 1,
+                          "amount": 3,
                           "side": "self",
                           "id": "wuweiCancelled",
                           "op": "低於"
@@ -117014,7 +117356,7 @@
                   }
                 ]
               },
-              "id": "arena_12:技能:無相諦:8f77dab30048:1",
+              "id": "arena_12:技能:無相諦:56ace48d4ce3:1",
               "presentationOnly": false,
               "execution": "authored-block-runtime",
               "textCorrespondence": {
@@ -117024,8 +117366,8 @@
               "evidence": []
             },
             {
-              "index": 3,
-              "raw": "🎯 對手無異常時吸取其最大體力 1/3，有異常時令其【臣服】",
+              "index": 5,
+              "raw": "🎯 對手無異常時吸取其最大體力 1/3",
               "trigger": "use",
               "parsed": true,
               "explanation": false,
@@ -117047,10 +117389,33 @@
                     ],
                     "cond": [
                       {
-                        "label": "萬相乖離尚未取消此條（<2）",
+                        "label": "萬相乖離已取消此條（>=4）",
                         "c": "mark_count",
                         "p": {
-                          "amount": 2,
+                          "amount": 4,
+                          "side": "self",
+                          "id": "wuweiCancelled",
+                          "op": "不低於"
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "acts": [
+                      {
+                        "label": "drain",
+                        "op": "drain",
+                        "p": {
+                          "ratio": 0.3333333333333333
+                        }
+                      }
+                    ],
+                    "cond": [
+                      {
+                        "label": "萬相乖離尚未取消此條（<4）",
+                        "c": "mark_count",
+                        "p": {
+                          "amount": 4,
                           "side": "self",
                           "id": "wuweiCancelled",
                           "op": "低於"
@@ -117062,6 +117427,54 @@
                         "p": {
                           "side": "opp",
                           "neg": true
+                        }
+                      }
+                    ]
+                  }
+                ]
+              },
+              "id": "arena_12:技能:無相諦:4c4ba137616d:1",
+              "presentationOnly": false,
+              "execution": "authored-block-runtime",
+              "textCorrespondence": {
+                "state": "no-matching-txt",
+                "files": []
+              },
+              "evidence": []
+            },
+            {
+              "index": 6,
+              "raw": "🎯 對手有異常時令其【臣服】",
+              "trigger": "use",
+              "parsed": true,
+              "explanation": false,
+              "unresolved": [],
+              "damage": null,
+              "semanticVerification": "pending",
+              "blocks": {
+                "conditions": [],
+                "statements": [
+                  {
+                    "acts": [
+                      {
+                        "label": "status",
+                        "op": "status",
+                        "p": {
+                          "chance": 100,
+                          "status": "臣服",
+                          "side": "opp"
+                        }
+                      }
+                    ],
+                    "cond": [
+                      {
+                        "label": "萬相乖離已取消此條（>=5）",
+                        "c": "mark_count",
+                        "p": {
+                          "amount": 5,
+                          "side": "self",
+                          "id": "wuweiCancelled",
+                          "op": "不低於"
                         }
                       }
                     ]
@@ -117080,10 +117493,10 @@
                     ],
                     "cond": [
                       {
-                        "label": "萬相乖離尚未取消此條（<2）",
+                        "label": "萬相乖離尚未取消此條（<5）",
                         "c": "mark_count",
                         "p": {
-                          "amount": 2,
+                          "amount": 5,
                           "side": "self",
                           "id": "wuweiCancelled",
                           "op": "低於"
@@ -117100,7 +117513,7 @@
                   }
                 ]
               },
-              "id": "arena_12:技能:無相諦:cac11145a93a:1",
+              "id": "arena_12:技能:無相諦:d0253ba99827:1",
               "presentationOnly": false,
               "execution": "authored-block-runtime",
               "textCorrespondence": {
@@ -117110,7 +117523,7 @@
               "evidence": []
             },
             {
-              "index": 4,
+              "index": 7,
               "raw": "🎯 對手體力不足 300 時直接秒殺",
               "trigger": "use",
               "parsed": true,
@@ -117133,10 +117546,33 @@
                     ],
                     "cond": [
                       {
-                        "label": "萬相乖離尚未取消此條（<3）",
+                        "label": "萬相乖離已取消此條（>=6）",
                         "c": "mark_count",
                         "p": {
-                          "amount": 3,
+                          "amount": 6,
+                          "side": "self",
+                          "id": "wuweiCancelled",
+                          "op": "不低於"
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "acts": [
+                      {
+                        "label": "instant_kill",
+                        "op": "instant_kill",
+                        "p": {
+                          "chance": 100
+                        }
+                      }
+                    ],
+                    "cond": [
+                      {
+                        "label": "萬相乖離尚未取消此條（<6）",
+                        "c": "mark_count",
+                        "p": {
+                          "amount": 6,
                           "side": "self",
                           "id": "wuweiCancelled",
                           "op": "低於"
@@ -117165,7 +117601,7 @@
               "evidence": []
             },
             {
-              "index": 5,
+              "index": 8,
               "raw": "> 萬相乖離使本技能威力 +50（每層，讀已取消層數），六項全部取消後不再增加威力",
               "trigger": "outgoing_power",
               "parsed": true,
@@ -117203,7 +117639,7 @@
               "evidence": []
             },
             {
-              "index": 6,
+              "index": 9,
               "raw": "> 自身擊敗對手後，令對方全部陣亡精靈消逝",
               "trigger": "kill",
               "parsed": true,
@@ -124039,10 +124475,10 @@
         {
           "kind": "魂印",
           "name": "龍之治癒",
-          "sourceText": "登場時，【金龍】、【玄龍】、【赤龍】與【蒼龍】均為沉睡狀態。首次使用技能欄第 1～4 個技能時，依序喚醒對應龍。以下效果均按喚醒數量疊加：每喚醒 1 條龍，自身攻擊、特攻、防禦、特防、速度提升 25%，並獲得基礎最大體力 25% 的臨時體力上限；攻擊傷害提升 50%，受到的非真實傷害減少 15%；回合結束時恢復最大體力 10%，並吸取對手 1 點 PP。\n\n四龍全部喚醒後，使用第五技能喚醒【真龍・治癒】。真龍・治癒令所有技能無視 PP 限制，使用技能時額外使用 4 次，並取消四龍追加效果的觸發條件；使用屬性技能時，每條龍額外造成 150 點龍系直接傷害。\n\n【赤龍】：喚醒後抵擋受到的攻擊傷害並累計（上限為自身最大體力），自身使用攻擊技能時以累計值附加固定傷害。\n四龍追加效果（真龍・治癒喚醒後每次使用技能無條件觸發）：【金龍】消除對手回合類效果；【玄龍】下3回合造成的固定傷害與百分比傷害提升50%；【蒼龍】吸取對手最大體力50%；使用屬性技能時【赤龍】以累計值附加傷害。",
+          "sourceText": "登場時，【金龍】、【玄龍】、【赤龍】與【蒼龍】均為沉睡狀態。首次使用技能欄第 1～4 個技能時，依序喚醒對應龍。以下效果均按喚醒數量疊加：每喚醒 1 條龍，自身攻擊、特攻、防禦、特防、速度提升 25%，並獲得基礎最大體力 25% 的臨時體力上限；攻擊傷害提升 50%，受到的非真實傷害減少 15%；回合結束時恢復最大體力 10%，並吸取對手 1 點 PP。\n\n四龍全部喚醒後，使用第五技能喚醒【真龍・治癒】。真龍・治癒令所有技能無視 PP 限制，使用技能時額外使用 4 次，並取消四龍追加效果的觸發條件；使用屬性技能時，每條龍額外造成 150 點龍系技能傷害。\n\n【赤龍】：喚醒後抵擋受到的攻擊傷害並累計（上限為自身最大體力），自身使用攻擊技能時以累計值附加固定傷害。\n四龍追加效果（真龍・治癒喚醒後每次使用技能無條件觸發）：【金龍】消除對手回合類效果；【玄龍】下3回合造成的固定傷害與百分比傷害提升50%；【蒼龍】吸取對手最大體力50%；使用屬性技能時【赤龍】以累計值附加傷害。",
           "route": "kit",
           "source": "統一魂印來源：kit；未接通 0 項",
-          "sourceSha256": "89d58d775135bdca87bd71064fc519ae34fe2e1df018b62a2ae4d56b7b0f9558",
+          "sourceSha256": "1be3a071ba64ecc62f9c64ff85f91df9e2f20e92321229361db96022891f2450",
           "clauses": [
             {
               "index": 0,
@@ -124934,15 +125370,17 @@
             },
             {
               "index": 13,
-              "raw": "真龍喚醒後使用屬性技能，每條甦醒之龍各造成150點龍系直接傷害",
+              "raw": "真龍喚醒後使用屬性技能，每條甦醒之龍各造成150點龍系技能傷害",
               "trigger": "self_after_status",
               "parsed": true,
               "explanation": false,
               "unresolved": [],
               "damage": {
-                "types": [],
-                "inferred": true,
-                "reason": "請選固定／百分比／X 系技能／真實類別。"
+                "types": [
+                  "skill"
+                ],
+                "inferred": false,
+                "reason": "文本指定；同句多段傷害仍須逐段核對。"
               },
               "semanticVerification": "pending",
               "blocks": {
@@ -125090,7 +125528,7 @@
                   }
                 ]
               },
-              "id": "arena_16:魂印:龍之治癒:1bbf0708f544:1",
+              "id": "arena_16:魂印:龍之治癒:c608356c990d:1",
               "presentationOnly": false,
               "execution": "authored-block-runtime",
               "textCorrespondence": {
@@ -125101,15 +125539,17 @@
             },
             {
               "index": 14,
-              "raw": "龍魂印記：每層令每條甦醒之龍各造成150點龍系直接傷害；龍魂之源每龍增加50點，真龍改用最高克制倍率",
+              "raw": "龍魂印記：每層令每條甦醒之龍各造成150點龍系技能傷害；龍魂之源每龍增加50點，真龍改用最高克制倍率",
               "trigger": "self_after_skill",
               "parsed": true,
               "explanation": false,
               "unresolved": [],
               "damage": {
-                "types": [],
-                "inferred": true,
-                "reason": "請選固定／百分比／X 系技能／真實類別。"
+                "types": [
+                  "skill"
+                ],
+                "inferred": false,
+                "reason": "文本指定；同句多段傷害仍須逐段核對。"
               },
               "semanticVerification": "pending",
               "blocks": {
@@ -125140,7 +125580,7 @@
                   }
                 ]
               },
-              "id": "arena_16:魂印:龍之治癒:aedb05d3ff7a:1",
+              "id": "arena_16:魂印:龍之治癒:8ab719319de7:1",
               "presentationOnly": false,
               "execution": "authored-block-runtime",
               "textCorrespondence": {
@@ -125304,10 +125744,10 @@
         {
           "kind": "專屬特性",
           "name": "龍之治癒",
-          "sourceText": "登場時，【金龍】、【玄龍】、【赤龍】與【蒼龍】均為沉睡狀態。首次使用技能欄第 1～4 個技能時，依序喚醒對應龍。以下效果均按喚醒數量疊加：每喚醒 1 條龍，自身攻擊、特攻、防禦、特防、速度提升 25%，並獲得基礎最大體力 25% 的臨時體力上限；攻擊傷害提升 50%，受到的非真實傷害減少 15%；回合結束時恢復最大體力 10%，並吸取對手 1 點 PP。\n\n四龍全部喚醒後，使用第五技能喚醒【真龍・治癒】。真龍・治癒令所有技能無視 PP 限制，使用技能時額外使用 4 次，並取消四龍追加效果的觸發條件；使用屬性技能時，每條龍額外造成 150 點龍系直接傷害。\n\n【赤龍】：喚醒後抵擋受到的攻擊傷害並累計（上限為自身最大體力），自身使用攻擊技能時以累計值附加固定傷害。\n四龍追加效果（真龍・治癒喚醒後每次使用技能無條件觸發）：【金龍】消除對手回合類效果；【玄龍】下3回合造成的固定傷害與百分比傷害提升50%；【蒼龍】吸取對手最大體力50%；使用屬性技能時【赤龍】以累計值附加傷害。",
+          "sourceText": "登場時，【金龍】、【玄龍】、【赤龍】與【蒼龍】均為沉睡狀態。首次使用技能欄第 1～4 個技能時，依序喚醒對應龍。以下效果均按喚醒數量疊加：每喚醒 1 條龍，自身攻擊、特攻、防禦、特防、速度提升 25%，並獲得基礎最大體力 25% 的臨時體力上限；攻擊傷害提升 50%，受到的非真實傷害減少 15%；回合結束時恢復最大體力 10%，並吸取對手 1 點 PP。\n\n四龍全部喚醒後，使用第五技能喚醒【真龍・治癒】。真龍・治癒令所有技能無視 PP 限制，使用技能時額外使用 4 次，並取消四龍追加效果的觸發條件；使用屬性技能時，每條龍額外造成 150 點龍系技能傷害。\n\n【赤龍】：喚醒後抵擋受到的攻擊傷害並累計（上限為自身最大體力），自身使用攻擊技能時以累計值附加固定傷害。\n四龍追加效果（真龍・治癒喚醒後每次使用技能無條件觸發）：【金龍】消除對手回合類效果；【玄龍】下3回合造成的固定傷害與百分比傷害提升50%；【蒼龍】吸取對手最大體力50%；使用屬性技能時【赤龍】以累計值附加傷害。",
           "route": "kit",
           "source": "特質統一來源：kit；未接通 0 項",
-          "sourceSha256": "89d58d775135bdca87bd71064fc519ae34fe2e1df018b62a2ae4d56b7b0f9558",
+          "sourceSha256": "1be3a071ba64ecc62f9c64ff85f91df9e2f20e92321229361db96022891f2450",
           "clauses": [
             {
               "index": 0,
@@ -126199,15 +126639,17 @@
             },
             {
               "index": 13,
-              "raw": "真龍喚醒後使用屬性技能，每條甦醒之龍各造成150點龍系直接傷害",
+              "raw": "真龍喚醒後使用屬性技能，每條甦醒之龍各造成150點龍系技能傷害",
               "trigger": "self_after_status",
               "parsed": true,
               "explanation": false,
               "unresolved": [],
               "damage": {
-                "types": [],
-                "inferred": true,
-                "reason": "請選固定／百分比／X 系技能／真實類別。"
+                "types": [
+                  "skill"
+                ],
+                "inferred": false,
+                "reason": "文本指定；同句多段傷害仍須逐段核對。"
               },
               "semanticVerification": "pending",
               "blocks": {
@@ -126355,7 +126797,7 @@
                   }
                 ]
               },
-              "id": "arena_16:專屬特性:龍之治癒:1bbf0708f544:1",
+              "id": "arena_16:專屬特性:龍之治癒:c608356c990d:1",
               "presentationOnly": false,
               "execution": "authored-block-runtime",
               "textCorrespondence": {
@@ -126366,15 +126808,17 @@
             },
             {
               "index": 14,
-              "raw": "龍魂印記：每層令每條甦醒之龍各造成150點龍系直接傷害；龍魂之源每龍增加50點，真龍改用最高克制倍率",
+              "raw": "龍魂印記：每層令每條甦醒之龍各造成150點龍系技能傷害；龍魂之源每龍增加50點，真龍改用最高克制倍率",
               "trigger": "self_after_skill",
               "parsed": true,
               "explanation": false,
               "unresolved": [],
               "damage": {
-                "types": [],
-                "inferred": true,
-                "reason": "請選固定／百分比／X 系技能／真實類別。"
+                "types": [
+                  "skill"
+                ],
+                "inferred": false,
+                "reason": "文本指定；同句多段傷害仍須逐段核對。"
               },
               "semanticVerification": "pending",
               "blocks": {
@@ -126405,7 +126849,7 @@
                   }
                 ]
               },
-              "id": "arena_16:專屬特性:龍之治癒:aedb05d3ff7a:1",
+              "id": "arena_16:專屬特性:龍之治癒:8ab719319de7:1",
               "presentationOnly": false,
               "execution": "authored-block-runtime",
               "textCorrespondence": {
@@ -126981,10 +127425,10 @@
         {
           "kind": "技能",
           "name": "挨打要立正",
-          "sourceText": "■ 必中\n🎯 自身獲得【龍魂之源】並全屬性 +1\n🎯 3 回合內，每回合吸取對手最大體力 1/3；對手未受到百分比傷害時，改為造成等量真實傷害並吸取\n🎯 下 2 回合自身所有技能先制 +2\n🎯 剝離對手的屬性，每剝離一種屬性便隨機附加 1 種異常狀態\n> 只要其中任意一次異常狀態附加失敗，便為自身附加 1 層【龍魂印記】\n> 【龍魂之源】：龍魂印記每次攻擊的基礎傷害額外提升（已喚醒龍數×50）點\n> 【龍魂印記】：自身每次使用技能後，每層令每條已喚醒的龍各造成 1 次 150 點龍系直接傷害；真龍・治癒喚醒後改按最高克制倍率計算",
+          "sourceText": "■ 必中\n🎯 自身獲得【龍魂之源】並全屬性 +1\n🎯 3 回合內，每回合吸取對手最大體力 1/3；對手未受到百分比傷害時，改為造成等量真實傷害並吸取\n🎯 下 2 回合自身所有技能先制 +2\n🎯 剝離對手的屬性，每剝離一種屬性便隨機附加 1 種異常狀態\n> 只要其中任意一次異常狀態附加失敗，便為自身附加 1 層【龍魂印記】\n> 【龍魂之源】：龍魂印記每次攻擊的基礎傷害額外提升（已喚醒龍數×50）點\n> 【龍魂印記】：自身每次使用技能後，每層令每條已喚醒的龍各造成 1 次 150 點龍系技能傷害；真龍・治癒喚醒後改按最高克制倍率計算",
           "route": "kit",
           "source": "統一效果來源：kit；未接通 0 項",
-          "sourceSha256": "6f6408d92dbcc8bd5b53c336ec38be20e67ada309e40356d3262b751c51847b0",
+          "sourceSha256": "0723a8947023c92402e6f716da0ba65b614a17fe2f43c1767ae6c2faa49ad0af",
           "clauses": [
             {
               "index": 0,
@@ -127221,7 +127665,7 @@
                         "op": "resource_mark_add",
                         "p": {
                           "persistsOffField": true,
-                          "description": "每次使用技能後：層數×已喚醒龍數次，每次150點龍系直接傷害",
+                          "description": "每次使用技能後：層數×已喚醒龍數次，每次150點龍系技能傷害",
                           "displayChar": "魂",
                           "maxCount": 99,
                           "amount": 1,
@@ -127515,7 +127959,7 @@
                         "op": "resource_mark_add",
                         "p": {
                           "persistsOffField": true,
-                          "description": "每次使用技能後：層數×已喚醒龍數次，每次150點龍系直接傷害",
+                          "description": "每次使用技能後：層數×已喚醒龍數次，每次150點龍系技能傷害",
                           "displayChar": "魂",
                           "maxCount": 99,
                           "amount": 1,
@@ -128228,7 +128672,7 @@
                         "op": "resource_mark_add",
                         "p": {
                           "persistsOffField": true,
-                          "description": "每次使用後，層數×已喚醒龍數段龍系傷害",
+                          "description": "每次使用後，層數×已喚醒龍數段龍系技能傷害",
                           "displayChar": "魂",
                           "maxCount": 1000000,
                           "ratio": 1,

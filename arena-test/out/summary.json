@@ -1,0 +1,296 @@
+{
+ "total": 100,
+ "played": 100,
+ "p1Wins": 40,
+ "p2Wins": 54,
+ "draws": 6,
+ "p1Rate": 40,
+ "p2Rate": 54,
+ "drawRate": 6,
+ "avgTurns": 23.9,
+ "turnLimitRate": 27,
+ "elfStats": [
+  {
+   "name": "鎮世龍魂・龍之治癒",
+   "games": 35,
+   "wins": 19,
+   "winRate": 54.29
+  },
+  {
+   "name": "悲歌.索比拉特",
+   "games": 34,
+   "wins": 19,
+   "winRate": 55.88
+  },
+  {
+   "name": "冰魄·柯爾德",
+   "games": 33,
+   "wins": 15,
+   "winRate": 45.45
+  },
+  {
+   "name": "墜霆.雷伊",
+   "games": 33,
+   "wins": 16,
+   "winRate": 48.48
+  },
+  {
+   "name": "星光·魯斯王",
+   "games": 33,
+   "wins": 8,
+   "winRate": 24.24
+  },
+  {
+   "name": "混沌·布萊克",
+   "games": 32,
+   "wins": 14,
+   "winRate": 43.75
+  },
+  {
+   "name": "星光·雷納多",
+   "games": 32,
+   "wins": 12,
+   "winRate": 37.5
+  },
+  {
+   "name": "六界神王",
+   "games": 31,
+   "wins": 18,
+   "winRate": 58.06
+  },
+  {
+   "name": "星光·麗莎布布",
+   "games": 30,
+   "wins": 17,
+   "winRate": 56.67
+  },
+  {
+   "name": "命運龍輪 莫伊萊",
+   "games": 29,
+   "wins": 14,
+   "winRate": 48.28
+  },
+  {
+   "name": "無序·蝕言",
+   "games": 29,
+   "wins": 15,
+   "winRate": 51.72
+  },
+  {
+   "name": "蟲后·奧佩婭",
+   "games": 28,
+   "wins": 13,
+   "winRate": 46.43
+  },
+  {
+   "name": "異境神霆·雷伊",
+   "games": 28,
+   "wins": 18,
+   "winRate": 64.29
+  },
+  {
+   "name": "魔化.雷伊",
+   "games": 28,
+   "wins": 11,
+   "winRate": 39.29
+  },
+  {
+   "name": "混濁海妖.布林克克",
+   "games": 27,
+   "wins": 18,
+   "winRate": 66.67
+  },
+  {
+   "name": "布萊克",
+   "games": 27,
+   "wins": 7,
+   "winRate": 25.93
+  },
+  {
+   "name": "星核寰宇·艾斯菲亞",
+   "games": 27,
+   "wins": 15,
+   "winRate": 55.56
+  },
+  {
+   "name": "蓓麗安特",
+   "games": 26,
+   "wins": 10,
+   "winRate": 38.46
+  },
+  {
+   "name": "帝皇之盾",
+   "games": 26,
+   "wins": 10,
+   "winRate": 38.46
+  },
+  {
+   "name": "岳峙淵渟.卡修斯",
+   "games": 26,
+   "wins": 13,
+   "winRate": 50
+  },
+  {
+   "name": "御天龍神·哈莫",
+   "games": 26,
+   "wins": 9,
+   "winRate": 34.62
+  },
+  {
+   "name": "誑獅魔軀.魔獅迪露",
+   "games": 26,
+   "wins": 15,
+   "winRate": 57.69
+  },
+  {
+   "name": "怒濤·滄嵐",
+   "games": 26,
+   "wins": 12,
+   "winRate": 46.15
+  },
+  {
+   "name": "皮特薩拉羅",
+   "games": 26,
+   "wins": 11,
+   "winRate": 42.31
+  },
+  {
+   "name": "眾神之父·奧丁",
+   "games": 26,
+   "wins": 14,
+   "winRate": 53.85
+  },
+  {
+   "name": "聖靈邁爾斯",
+   "games": 25,
+   "wins": 12,
+   "winRate": 48
+  },
+  {
+   "name": "柯爾霍德",
+   "games": 25,
+   "wins": 8,
+   "winRate": 32
+  },
+  {
+   "name": "變革·馬爾修斯",
+   "games": 24,
+   "wins": 11,
+   "winRate": 45.83
+  },
+  {
+   "name": "星光·魔焰猩猩",
+   "games": 24,
+   "wins": 10,
+   "winRate": 41.67
+  },
+  {
+   "name": "皮皮",
+   "games": 23,
+   "wins": 10,
+   "winRate": 43.48
+  },
+  {
+   "name": "人皇·帝辛",
+   "games": 23,
+   "wins": 10,
+   "winRate": 43.48
+  },
+  {
+   "name": "聖靈譜尼",
+   "games": 23,
+   "wins": 6,
+   "winRate": 26.09
+  },
+  {
+   "name": "無序.六刃",
+   "games": 23,
+   "wins": 15,
+   "winRate": 65.22
+  },
+  {
+   "name": "星軌重構·艾斯菲格",
+   "games": 23,
+   "wins": 14,
+   "winRate": 60.87
+  },
+  {
+   "name": "龍錄天鋒",
+   "games": 22,
+   "wins": 8,
+   "winRate": 36.36
+  },
+  {
+   "name": "無為龍者",
+   "games": 22,
+   "wins": 11,
+   "winRate": 50
+  },
+  {
+   "name": "無極聖武",
+   "games": 22,
+   "wins": 5,
+   "winRate": 22.73
+  },
+  {
+   "name": "九青",
+   "games": 22,
+   "wins": 8,
+   "winRate": 36.36
+  },
+  {
+   "name": "天蓬元帥八戒",
+   "games": 21,
+   "wins": 9,
+   "winRate": 42.86
+  },
+  {
+   "name": "譜尼",
+   "games": 21,
+   "wins": 9,
+   "winRate": 42.86
+  },
+  {
+   "name": "聖光斯嘉麗",
+   "games": 20,
+   "wins": 13,
+   "winRate": 65
+  },
+  {
+   "name": "湮滅之主・咤克斯",
+   "games": 20,
+   "wins": 8,
+   "winRate": 40
+  },
+  {
+   "name": "鎮魂.巴弗洛",
+   "games": 20,
+   "wins": 15,
+   "winRate": 75
+  },
+  {
+   "name": "治癒.龍魂再臨 次元龍",
+   "games": 19,
+   "wins": 12,
+   "winRate": 63.16
+  },
+  {
+   "name": "邪靈主宰·摩哥斯",
+   "games": 18,
+   "wins": 5,
+   "winRate": 27.78
+  },
+  {
+   "name": "無序.墜星",
+   "games": 18,
+   "wins": 12,
+   "winRate": 66.67
+  },
+  {
+   "name": "恐懼的化身·咤克斯",
+   "games": 18,
+   "wins": 10,
+   "winRate": 55.56
+  }
+ ]
+}

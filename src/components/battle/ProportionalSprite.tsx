@@ -6,6 +6,7 @@ import { ElfAvatar } from "../SeerImages";
 import { hiddenFromViewer } from "../../battle/viewerPerspective";
 import { useBattleViewMode } from "../../battle/viewerMode";
 import { placeSprite, spriteHeightRatio, battleSpriteSizeRatio, BATTLE_GROUND_LIFT, type OpaqueBox, type VisibleBox } from "../../battle/spriteMetrics";
+import { BATTLE_LAYERS } from "../../battle/battleLayers";
 import { measureOpaqueBoxResult as measure } from "../../battle/opaqueMeasure";
 import { registerVisibleBox, notifyVisibleBoxChanged, subscribeVisibleBox, getVisibleBox, popupAnchor } from "../../battle/visibleBox";
 import {animationModeFor,animationSpeed,readAnimationSettings,BATTLE_ANIMATION_EVENT} from '../../battle/animationSettings';
@@ -15,13 +16,14 @@ import {beginPetFormTransition} from '../../battle/petFormTransitions';
 import {battleFormAsset,battleFormAssets,settledFormAsset} from '../../battle/battleFormPresentation';
 import {useFullscreenFxActive} from '../../battle/fullscreenFx';
 import {isFifthSkillAnim,ultimateSequenceOf} from '../../battle/petActionRouting';
+import {UnknownElfAction} from './UnknownElfAction';
 const PetActionSprite=React.lazy(()=>import('./PetActionSprite').then(m=>({default:m.PetActionSprite})));
 
 /**
  * 把子層（飄字、技能名）放在該側立繪「實際可見框」上：水平置中於可見框、垂直取可見框高度的 fraction 處（自上緣往下）。
  * 位置讀 getVisibleBox（有動畫時為動畫當前包圍框）；resize、換人、載圖、動畫切換時重算；讀不到時沿用 fallbackBottom。
  */
-export const AnchoredToVisible: React.FC<{ side: "p1" | "p2"; fraction: number; fallbackBottom: number; className?: string; children?: React.ReactNode; deps?: unknown }> = ({ side, fraction, fallbackBottom, className, children, deps }) => {
+export const AnchoredToVisible: React.FC<{ side: "p1" | "p2"; fraction: number; fallbackBottom: number; className?: string; z?: number; children?: React.ReactNode; deps?: unknown }> = ({ side, fraction, fallbackBottom, className, z, children, deps }) => {
   const ref = React.useRef<HTMLDivElement>(null);
   const place = React.useCallback(() => {
     const el = ref.current, parent = el?.parentElement; if (!el || !parent) return;
@@ -34,7 +36,7 @@ export const AnchoredToVisible: React.FC<{ side: "p1" | "p2"; fraction: number; 
   }, [side, fraction, fallbackBottom]);
   React.useLayoutEffect(() => { place(); }, [place, deps, children]);
   React.useEffect(() => subscribeVisibleBox(place), [place]);
-  return <div ref={ref} className={className} style={{ bottom: fallbackBottom }}>{children}</div>;
+  return <div ref={ref} className={className} style={{ bottom: fallbackBottom, zIndex: z }}>{children}</div>;
 };
 
 /**
@@ -149,11 +151,12 @@ export const ProportionalSprite: React.FC<ProportionalSpriteProps> = ({ elf, sid
     };
   }, [elf.battleId, elf.id, elf.name, elf.path, elf.skinId, side]);
 
-  const profile=concealed?null:battleSpriteProfile(elf.name,m?.src),colossal=profile?.framing==='colossal';
+  const placeholder=concealed||(!useActions&&!!m?.src.includes('/unknown_myth_ghost_'));
+  const profile=placeholder?null:battleSpriteProfile(elf.name,m?.src),colossal=profile?.framing==='colossal';
   // 所有立繪（含首領）一律以同一塊場地高度為基準；首領只透過 heightRatio 略高，
   // 不再另外換用更大的場地高度，否則實際高度會變成一般精靈的兩倍、頂端直接穿出畫面。
   const layoutH=stageH;
-  const ratio = concealed ? battleSpriteSizeRatio(NaN) : heightRatio??profile?.heightRatio??battleSpriteSizeRatio(Number(elf.height));
+  const ratio = placeholder ? battleSpriteSizeRatio(NaN) : heightRatio??profile?.heightRatio??battleSpriteSizeRatio(Number(elf.height));
   const place = m && layoutH > 0 ? placeSprite(m.box, stageW, layoutH, ratio, 1, m.mirrored, colossal?'colossal':'area') : null;
   // 首領（咤克斯）比場地高：多出來的高度往下沉，頭頂留在場地上緣、腳底被下緣裁掉，
   // 與原廠實戰畫面一致；往上長就會變成「太上去了」。
@@ -189,12 +192,13 @@ export const ProportionalSprite: React.FC<ProportionalSpriteProps> = ({ elf, sid
   React.useEffect(() => { notifyVisibleBoxChanged(); }, [action, showActions, dead]);
 
   return (
-    <div className="absolute bottom-0 pointer-events-none" style={{ left: displayAnchor, bottom:colossal?0:stageH*BATTLE_GROUND_LIFT, opacity, zIndex:fxActive||(showActions&&action!=='standby')?25:undefined, display: opacity === 0 ? "none" : undefined }} data-form-assets-ready={formsReady} data-sprite-side={side} data-sprite-ratio={ratio.toFixed(2)} data-sprite-visible={visible.toFixed(1)} data-sprite-opaque={opaque ? `${opaque.left.toFixed(1)},${opaque.right.toFixed(1)},${opaque.bottomY.toFixed(1)},${opaque.topY.toFixed(1)}` : undefined} data-sprite-sink={sink.toFixed(1)}>
-      <motion.div ref={wrap} animate={mode==='static'||showActions?{x:0,filter:'brightness(1)'}:anim} transition={{ duration: 0.35/animationSpeed(settings.speed) }} style={{...style,visibility:showActions?'hidden':undefined}}
+    <div className="absolute bottom-0 pointer-events-none" style={{ left: displayAnchor, bottom:colossal?0:stageH*BATTLE_GROUND_LIFT, opacity, zIndex:fxActive||(showActions&&action!=='standby')?BATTLE_LAYERS.SPRITES:undefined, display: opacity === 0 ? "none" : undefined }} data-form-assets-ready={formsReady} data-sprite-side={side} data-sprite-ratio={ratio.toFixed(2)} data-sprite-visible={visible.toFixed(1)} data-sprite-opaque={opaque ? `${opaque.left.toFixed(1)},${opaque.right.toFixed(1)},${opaque.bottomY.toFixed(1)},${opaque.topY.toFixed(1)}` : undefined} data-sprite-sink={sink.toFixed(1)}>
+      <motion.div ref={wrap} animate={mode==='static'||showActions||concealed||m?.src.includes('/unknown_myth_ghost_')?{x:0,filter:'brightness(1)'}:anim} transition={{ duration: 0.35/animationSpeed(settings.speed) }} style={{...style,visibility:showActions?'hidden':undefined}}
         className={`${dead ? "opacity-30 grayscale" : ""} will-change-transform`}>
         <ElfAvatar elf={elf} kind="body" battleSide={side} className="w-full h-full object-fill"
           fallbackClassName="w-full h-full rounded-full overflow-hidden ring-2 ring-white/15 flex items-center justify-center text-5xl font-black text-slate-200 bg-black/20" />
       </motion.div>
+      {!dead&&opacity>0&&mode!=='static'&&settings.skill&&!useActions&&(concealed||m?.src.includes('/unknown_myth_ghost_'))&&<UnknownElfAction elf={elf} side={side} action={action as PetAction} actionToken={actionToken}/>}
       {useActions&&<React.Suspense fallback={null}><PetActionSprite assetId={form.asset!} enterTransform={form.enter} onTransitionEnd={form.finish} key={`${form.asset}:${elf.battleId||elf.id}:${elf.skinId||''}:${form.enter?1:0}`} sizeRefHeight={sizeRef} elf={elf} side={side} action={routeFifth(action as PetAction,actionToken,form.asset)} actionToken={actionToken} width={stageW*(colossal?3:1)} height={Math.max(1,visible)} viewport={canvasW?{width:canvasW,height:colossal?Math.max(layoutH,visible):stageH,anchorX:displayAnchor,targetX}:undefined} onReady={setActionReady} sink={sink}/></React.Suspense>}
       <div className="absolute left-1/2 -translate-x-1/2 w-40 h-4 rounded-[50%] bg-black/35 blur-md -z-10" style={{ bottom: -6 }} />
       {useActions&&!showActions&&<span role="status" className="absolute bottom-4 left-0 -translate-x-1/2 whitespace-nowrap rounded bg-slate-950/80 px-2 py-1 text-xs text-cyan-200">動作載入中，仍可選擇技能</span>}

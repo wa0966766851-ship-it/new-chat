@@ -1,0 +1,82 @@
+[
+  {
+    "id": "puni",
+    "sequence": "standby",
+    "clip": "300.pet",
+    "fps": 24,
+    "frames": 140,
+    "seconds": 5.833333333333333,
+    "atlas": [
+      2048,
+      2048
+    ],
+    "uniqueRenderedMeshStates": 140,
+    "uniqueNormalGeometry": 140,
+    "uniqueNormalUvLayout": 89,
+    "normalDrawCallsRange": [
+      1,
+      1
+    ],
+    "note": "UV layout count is not the number of hand-drawn full-body images; transforms, reuse and part replacement can all change layout."
+  },
+  {
+    "id": "puni",
+    "sequence": "hited",
+    "clip": "300.pet",
+    "fps": 24,
+    "frames": 8,
+    "seconds": 0.3333333333333333,
+    "atlas": [
+      2048,
+      2048
+    ],
+    "uniqueRenderedMeshStates": 8,
+    "uniqueNormalGeometry": 8,
+    "uniqueNormalUvLayout": 5,
+    "normalDrawCallsRange": [
+      1,
+      1
+    ],
+    "note": "UV layout count is not the number of hand-drawn full-body images; transforms, reuse and part replacement can all change layout."
+  },
+  {
+    "id": "rey70",
+    "sequence": "standby",
+    "clip": "70.pet",
+    "fps": 24,
+    "frames": 29,
+    "seconds": 1.2083333333333333,
+    "atlas": [
+      2048,
+      1024
+    ],
+    "uniqueRenderedMeshStates": 18,
+    "uniqueNormalGeometry": 14,
+    "uniqueNormalUvLayout": 3,
+    "normalDrawCallsRange": [
+      1,
+      1
+    ],
+    "note": "UV layout count is not the number of hand-drawn full-body images; transforms, reuse and part replacement can all change layout."
+  },
+  {
+    "id": "rey70",
+    "sequence": "hited",
+    "clip": "70.pet",
+    "fps": 24,
+    "frames": 8,
+    "seconds": 0.3333333333333333,
+    "atlas": [
+      2048,
+      1024
+    ],
+    "uniqueRenderedMeshStates": 4,
+    "uniqueNormalGeometry": 4,
+    "uniqueNormalUvLayout": 4,
+    "normalDrawCallsRange": [
+      1,
+      1
+    ],
+    "note": "UV layout count is not the number of hand-drawn full-body images; transforms, reuse and part replacement can all change layout."
+  }
+]

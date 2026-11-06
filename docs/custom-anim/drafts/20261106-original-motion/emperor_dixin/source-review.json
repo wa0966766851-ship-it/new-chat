@@ -1,0 +1,62 @@
+{
+  "status": "pilot-not-accepted",
+  "id": "emperor_dixin",
+  "sourceSize": [
+    1024,
+    1536
+  ],
+  "sourceRecords": [
+    {
+      "pose": "ready",
+      "file": "docs/custom-anim/drafts/20261105-dixin/ready-clean.png",
+      "sha256": "5bc71859337c87192182438924b7ba54dc515843ed3cc8dd234e61dad685e3e9",
+      "scale": 1,
+      "offset": [
+        520,
+        765
+      ],
+      "flip": false
+    },
+    {
+      "pose": "cast",
+      "file": "docs/custom-anim/drafts/20261105-dixin/action-reviewed.png",
+      "sha256": "92517b8588997106ee83ffc0af5afecae09e05d48912463075f3355bcb154c75",
+      "scale": 1.0124087591240876,
+      "offset": [
+        499.8700729927007,
+        746.2007299270074
+      ],
+      "flip": false
+    },
+    {
+      "pose": "anticipation",
+      "file": "docs/custom-anim/drafts/20261105-dixin/anticipation.png",
+      "sha256": "7494b17686a5e5c2f34299be022e07292571cf123bd0de088e17516be2cd8b86",
+      "scale": 1.0381736526946108,
+      "offset": [
+        496.48577844311376,
+        707.1669161676646
+      ],
+      "flip": false
+    },
+    {
+      "pose": "melee",
+      "file": "docs/custom-anim/drafts/20261105-combat-v2/emperor_dixin-melee-clean.png",
+      "sha256": "5ebe29ef3118d08519db936caa8a4c29358dec327a57c5ce39e75ceb98fefaa9",
+      "scale": 1.1522769230769232,
+      "offset": [
+        125.12307692307698,
+        1191.7384615384617
+      ],
+      "flip": false
+    }
+  ],
+  "original": "public/elf-art/emperor_dixin_body.png",
+  "pending": [
+    "局部待機待改為材質對應的關節／分層，橢圓拉伸已撤除",
+    "兩側與三圈待機實播",
+    "原圖去背能量邊緣",
+    "待機到出招姿勢銜接",
+    "受擊仍是舊版佔位，未完成"
+  ]
+}

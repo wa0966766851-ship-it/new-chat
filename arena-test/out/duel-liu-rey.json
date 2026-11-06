@@ -1,0 +1,18 @@
+{
+ "r1": {
+  "winner": null,
+  "turns": 31,
+  "liuHp": 0,
+  "liuMax": 15704,
+  "reyHp": -62580,
+  "reyMax": 894
+ },
+ "r2": {
+  "winner": null,
+  "turns": 2,
+  "liuHp": 0,
+  "liuMax": 13916,
+  "reyHp": -62580,
+  "reyMax": 894
+ }
+}

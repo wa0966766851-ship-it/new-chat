@@ -47,17 +47,17 @@ try {
       assert.equal(sealed.opp.statStages.atk, 2); assert.ok(hasTimer(sealed.state, opp, '免疫'));
       assert.ok(sealed.opp.currentHp < 20000);
     });
-    await check(`${side} 萬鈞鎮魂：吸血只算技能傷害的40%；對手體力高於自身才附加最大體力1/4固定傷害；未擊敗全屬性-1`, async () => {
+    await check(`${side} 萬鈞鎮魂：吸血只算技能傷害的40%；對手體力高於自身才附加最大體力1/4百分比傷害；未擊敗全屬性-1`, async () => {
       const mk = (selfHp: number, oppHp: number, sealed = false) => duel(side, soul, { selfHp, oppHp, sealed, pick: t => [0, 2], n: 1 });
       const ctl = (await mk(8000, 8000))[0], hi = (await mk(8000, 20000))[0], sealed = (await mk(8000, 20000, true))[0];
       const d = 8000 - ctl.opp.currentHp;
       assert.ok(d > 0 && d < 8000, '技能傷害 ' + d);
-      assert.equal(ctl.self.currentHp - 8000, Math.floor(d * 0.4), '等體力：不附加固定傷害；吸血40%');
+      assert.equal(ctl.self.currentHp - 8000, Math.floor(d * 0.4), '等體力：不附加百分比傷害；吸血40%');
       stagesAll(ctl.opp, -1, '未擊敗 → 全屬性-1');
-      assert.equal(20000 - hi.opp.currentHp, d + 5000, '對手較高 → 追加最大體力1/4=5000固定傷害');
-      assert.equal(hi.self.currentHp - 8000, Math.floor(d * 0.4), '吸血不含固定傷害');
+      assert.equal(20000 - hi.opp.currentHp, d + 5000, '對手較高 → 追加最大體力1/4=5000百分比傷害');
+      assert.equal(hi.self.currentHp - 8000, Math.floor(d * 0.4), '吸血不含百分比傷害');
       const low = (await mk(8000, 5000))[0];
-      assert.equal(5000 - low.opp.currentHp >= 0 && 5000 - low.opp.currentHp <= d, true, '對手較低 → 無固定傷害');
+      assert.equal(5000 - low.opp.currentHp >= 0 && 5000 - low.opp.currentHp <= d, true, '對手較低 → 無百分比傷害');
       assert.equal(sealed.opp.currentHp, 20000 - d, '封印附加：只有技能傷害'); assert.equal(sealed.self.currentHp, 8000); stagesAll(sealed.opp, 0, '封印');
     });
     await check(`${side} 萬鈞鎮魂：擊敗對手時不降屬性（未擊敗才降）`, async () => {

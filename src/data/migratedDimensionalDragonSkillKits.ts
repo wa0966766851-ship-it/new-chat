@@ -1,4 +1,4 @@
-// 5021 治癒.龍魂再臨 次元龍 閱世 Kit：先制+3／對手回合類→增傷100%+消回合／
+// 5021 治癒·龍魂再臨 閱世 Kit：先制+3／對手回合類→增傷100%+消回合／
 // 吸取提升→下2次屬性無效(未觸發→全屬性+1)／龍魂分支（覺醒時：無視對手正先制+增傷100%+無效分支）。
 // 新 cond：dragon_soul（dimensionalDragonSoul 覺醒鍵）——龍魂此前僅在舊 handler 讀取。
 import type { ReviewedSequenceSkill } from './reviewedSequenceSkillKits';
@@ -58,7 +58,7 @@ MIGRATED_DIMENSIONAL_DRAGON_SKILL_KITS.push(
       { chain: 'fail', acts: [
         a('resource_mark_add', { id: 'poem_chapter', name: '詩章', displayChar: '詩', unit: '篇', side: 'self',
           scope: 'elf', persistsOffField: true, amount: 1, snapshotKey: 'poemHpSnapshots',
-          description: '紀錄持有者精靈的體力上限，當持有精靈死亡時轉移給存活的治癒.龍魂再臨次元龍，轉交後原持有精靈消逝。' }),
+          description: '紀錄持有者精靈的體力上限，當持有精靈死亡時轉移給存活的治癒·龍魂再臨，轉交後原持有精靈消逝。' }),
       ] },
     ], 2),
     // 3回合內對手使用攻擊技能 → 其後2回合屬性技能附加效果失效（掛對手）
@@ -97,7 +97,7 @@ MIGRATED_DIMENSIONAL_DRAGON_SKILL_KITS.push(
       { cond: [c('has_mark', { side: 'self', name: 'poem_chapter', neg: true }, '不存在詩章')], acts: [
         a('resource_mark_add', { id: 'poem_chapter', name: '詩章', displayChar: '詩', unit: '篇', side: 'self',
           scope: 'elf', persistsOffField: true, amount: 4, snapshotKey: 'poemHpSnapshots',
-          description: '紀錄持有者精靈的體力上限，當持有精靈死亡時轉移給存活的治癒.龍魂再臨次元龍，轉交後原持有精靈消逝。' }),
+          description: '紀錄持有者精靈的體力上限，當持有精靈死亡時轉移給存活的治癒·龍魂再臨，轉交後原持有精靈消逝。' }),
       ] },
     ], 1),
     // 首次命中由附加效果入口建立五回合回合類效果；之後按使用技能觸發，無須再次命中。
@@ -154,9 +154,10 @@ MIGRATED_DIMENSIONAL_DRAGON_SKILL_KITS.push(
       ] })] },
     ], 3),
     // 龍魂：雙方每1點PP附加50點次元龍技能傷害；對方PP均滿時×2；下次擊敗→恢復全部體力與PP
+    // 本技能是攻擊技能：次元龍系技能傷害與攻擊傷害各自獨立結算（各自吃屬性相剋），再合併為同一擊（appendToAttack）。
     sequence('龍魂：當自身處於龍魂時發動，雙方技能每有1點PP值附加50點次元龍系技能傷害，對方PP值均為滿時效果翻倍', [
       { cond: [c('dragon_soul', {}, '龍魂')], acts: [
-        a('dmg', { flat: 50, type: '技能', elem: '次元龍', per: 'sides_pp_sum',
+        a('dmg', { flat: 50, type: '技能', elem: '次元龍', appendToAttack: true, per: 'sides_pp_sum',
           x2If: { c: 'skill_pp_all', p: { side: 'opp' }, label: '對方PP均為滿' } }),
       ] },
     ], 4),

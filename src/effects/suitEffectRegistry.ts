@@ -254,8 +254,15 @@ export const SuitEffectRegistry: Record<string, (ctx: BattleEventContext, event:
     const regKey = side === "p1" ? "p1RegistryState" : "p2RegistryState";
     const isBerserk = ctx.getPlayerState(regKey)?.isBerserk;
 
-    if (event === EffectTiming.BEFORE_DAMAGE && !extraData!.damageComp?.isIncoming) {
-      if (isBerserk) extraData!.damageComp.increasePercent += 1.0;
+    // 2026-11-04 修正：原文「每次攻擊造成傷害前有15%機率…」——整段效果建立在「使用攻擊技能」上。
+    // 舊寫法掛在 BEFORE_DAMAGE（只有真的造成傷害才會派發），屬性技能不會進入；
+    // 但 AFTER_ACTION 卻無條件派發，導致屬性技能也附加 115 真傷／秒殺。
+    // 改為統一在 BEFORE_SKILL（使用技能時）判定一次，並排除屬性技能。
+    const isAttackSkill = !!ctx.skill && ctx.skill.category !== "屬性";
+    // 只在【技能攻擊本體】的傷害前判定；附加真實傷害（applyTrueDamage）也會走 BEFORE_DAMAGE，
+    // 若不加 damageCategory 條件，狂暴者自己的 115 真傷會再觸發一次判定（實測重複）。
+    const isMainSkillDamage = extraData?.damageComp?.damageCategory === "skill_attack";
+    if (event === EffectTiming.BEFORE_DAMAGE && isAttackSkill && isMainSkillDamage) {
       if (prdChance("suitEffectRegistry:L249", 0.15)) {
         ctx.setPlayerState(regKey, { ...ctx.getPlayerState(regKey), berserkExecute: true });
       } else {
@@ -264,7 +271,19 @@ export const SuitEffectRegistry: Record<string, (ctx: BattleEventContext, event:
       }
     }
 
-    if (event === EffectTiming.AFTER_ACTION && !extraData!.damageComp?.isIncoming) {
+    // 狂暴狀態的攻擊傷害提升 100%。
+    // 2026-11-04 修正（兩個獨立問題）：
+    // 1. `increasePercent += x` 在 createDamageComp 裡是「新增獨立乘區」，多次呼叫會相乘而非相加；
+    //    改用 addDamageIncrease(..., 'total') 走標準加算管線。
+    // 2. 只對【技能攻擊本體】套用：applyTrueDamage 也會經過 runDamageHooks → BEFORE_DAMAGE，
+    //    若不加 damageCategory 條件，狂暴者自己附加的 115 真實傷害會再次被 +100%（實測 5 倍）。
+    if (event === EffectTiming.BEFORE_DAMAGE
+        && !extraData!.damageComp?.isIncoming
+        && extraData!.damageComp?.damageCategory === "skill_attack") {
+      if (isBerserk) addDamageIncrease(extraData!.damageComp, 1.0, "total");
+    }
+
+    if (event === EffectTiming.AFTER_ACTION && isAttackSkill) {
       if (ctx.getPlayerState(regKey)?.berserkExecute) {
         ctx.addLog(`💀 【狂暴者】：觸發秒殺判定！`, "effect");
         ctx.adjustHp(ctx.targetSide, -ctx.target.maxHp);

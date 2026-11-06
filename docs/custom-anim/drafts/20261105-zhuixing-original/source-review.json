@@ -1,0 +1,18 @@
+{
+  "original": [
+    1086,
+    1448
+  ],
+  "candidate": [
+    1086,
+    1448
+  ],
+  "testedOpaquePixels": 615,
+  "meanAbsoluteRGBError": 45.60271002710027,
+  "exactOpaquePixels": 1,
+  "sourceSha256": "85357aebca6789e563221d632da988bf8e4cacef1028497637dfd195945bfb86",
+  "candidateSha256": "350ba0445985e4067fb20c8e4d53eed121a84260034a8b16d8ed7a59daab40c4",
+  "status": "candidate-not-published",
+  "generation": "exec-52d96024-f904-4197-b888-b1c0815e7ed7",
+  "note": "Opaque RGB equality does not validate all alpha edges or faint effects."
+}

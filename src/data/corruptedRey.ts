@@ -60,12 +60,12 @@ function buildSkills(s:Spec):Skill[]{
   ...(!u?[{raw:'🎯 2回合內自身免疫並反彈所有異常狀態',body:[act(a('immune_status_turns',{turns:2,reflect:true}))]}]:[]),
   {raw:`🎯 解除自身所有異常狀態，解除成功則${t}回合內對手技能附加效果失效`,body:[act(a('cure_status',{side:'self'})),{chain:'success',acts:[a('add_invalid_turns',{turns:t,kind:'all'})]}]},
   ...(u?[
-   {raw:'🎯 直接造成對手自身最大體力50%的混沌·電系傷害',body:[act(a('dmg',{base:'最大體力',of:'opp',ratio:.5,type:'技能',elem:s.type}))]},
+   {raw:'🎯 直接造成對手自身最大體力50%的混沌·電系技能傷害',body:[act(a('dmg',{base:'最大體力',of:'opp',ratio:.5,type:'技能',elem:s.type}))]},
    {raw:'🎯 技能無效時，上述傷害提升150%',trig:'on_invalid',body:[act(a('dmg',{base:'最大體力',of:'opp',ratio:1.25,type:'技能',elem:s.type}))]},
    {raw:'🎯 7回合內，對手若使用屬性技能則下7回合造成非真實傷害不超過70',body:[act(timed(7,'opp_used_status',[act(a('damage_cap_turns',{side:'opp',dir:'out',kind:'非真實',cap:70,turns:7,next:true}))]))]},
    {raw:'🎯 下7回合對手受到的非真實傷害提升170%',body:[act(a('damage_multiplier_turns',{side:'opp',dir:'in',kind:'非真實',mult:2.7,turns:7,next:true}))]},
   ]:[
-   {raw:'🎯 消除雙方能力上升、下降狀態與護盾、護罩效果，並附加自身最大體力50%的電·暗影系傷害',body:[act(a('stat_clear',{side:'both',kind:'all'}),a('clear_shield',{side:'both',kind:'both'}),a('dmg',{base:'最大體力',of:'self',ratio:.5,type:'技能',elem:s.type}))]},
+   {raw:'🎯 消除雙方能力上升、下降狀態與護盾、護罩效果，並附加自身最大體力50%的電·暗影系技能傷害',body:[act(a('stat_clear',{side:'both',kind:'all'}),a('clear_shield',{side:'both',kind:'both'}),a('dmg',{base:'最大體力',of:'self',ratio:.5,type:'技能',elem:s.type}))]},
    {raw:'🎯 抵擋下次受到的攻擊，抵擋成功則附加對手等同抵擋傷害100%的真實傷害',body:[act(block('counterAttack'))]},
   ]),
  ];

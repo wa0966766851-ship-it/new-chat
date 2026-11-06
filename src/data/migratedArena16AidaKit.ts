@@ -10,7 +10,7 @@ const c = (id: string, p: any, label?: string) => ({ c: id, p, label: label || i
 export const MIGRATED_ARENA16_AIDA_SKILL_KIT: ReviewedSequenceSkill[] = [{
   elfIds: ['arena_16'],
   name: '挨打要立正',
-  description: '■ 必中\n🎯 自身獲得【龍魂之源】並全屬性 +1\n🎯 3 回合內，每回合吸取對手最大體力 1/3；對手未受到百分比傷害時，改為造成等量真實傷害並吸取\n🎯 下 2 回合自身所有技能先制 +2\n🎯 剝離對手的屬性，每剝離一種屬性便隨機附加 1 種異常狀態\n> 只要其中任意一次異常狀態附加失敗，便為自身附加 1 層【龍魂印記】\n> 【龍魂之源】：龍魂印記每次攻擊的基礎傷害額外提升（已喚醒龍數×50）點\n> 【龍魂印記】：自身每次使用技能後，每層令每條已喚醒的龍各造成 1 次 150 點龍系直接傷害；真龍・治癒喚醒後改按最高克制倍率計算',
+  description: '■ 必中\n🎯 自身獲得【龍魂之源】並全屬性 +1\n🎯 3 回合內，每回合吸取對手最大體力 1/3；對手未受到百分比傷害時，改為造成等量真實傷害並吸取\n🎯 下 2 回合自身所有技能先制 +2\n🎯 剝離對手的屬性，每剝離一種屬性便隨機附加 1 種異常狀態\n> 只要其中任意一次異常狀態附加失敗，便為自身附加 1 層【龍魂印記】\n> 【龍魂之源】：龍魂印記每次攻擊的基礎傷害額外提升（已喚醒龍數×50）點\n> 【龍魂印記】：自身每次使用技能後，每層令每條已喚醒的龍各造成 1 次 150 點龍系技能傷害；真龍・治癒喚醒後改按最高克制倍率計算',
   kit: [
     prop('必中', 'sure_hit', true, 0),
     // 自身獲得【龍魂之源】並全屬性+1
@@ -35,7 +35,7 @@ export const MIGRATED_ARENA16_AIDA_SKILL_KIT: ReviewedSequenceSkill[] = [{
         a('status_seq', { side: 'opp', list: ['燒傷', '凍傷', '中毒', '麻痺', '害怕', '睡眠'], chance: 100, turns: 3, countFrom: 'peeledTypes' }),
       ] },
       { cond: [c('last_amount', {op:'高於',amount:0}, '本次剝離附加有失敗')], acts: [
-        a('resource_mark_add', { id: 'arena.dragonSoulMark', name: '龍魂印記', displayChar: '魂', unit: '層', side: 'self', scope: 'elf', persistsOffField: true, amount: 1, maxCount: 99, description: '每次使用技能後：層數×已喚醒龍數次，每次150點龍系直接傷害' }),
+        a('resource_mark_add', { id: 'arena.dragonSoulMark', name: '龍魂印記', displayChar: '魂', unit: '層', side: 'self', scope: 'elf', persistsOffField: true, amount: 1, maxCount: 99, description: '每次使用技能後：層數×已喚醒龍數次，每次150點龍系技能傷害' }),
       ] },
     ], 4),
   ],

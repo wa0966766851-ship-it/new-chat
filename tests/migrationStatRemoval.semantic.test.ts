@@ -28,7 +28,7 @@ try{
         assert.equal(r.self.statStages.atk,up?3:1);assert.equal(r.self.statStages.def,up?2:1);
       }
     });
-    await check(`${side} 低半血嚴格翻倍；滿血、封頂及禁療按實際恢復量造成固定傷害`,async()=>{
+    await check(`${side} 低半血嚴格翻倍；滿血、封頂及禁療按實際恢復量造成百分比傷害`,async()=>{
       for(const [hp,loss] of [[1000,6000],[4500,3000],[7000,2000],[9000,0]]){
         const [r]=await h.play(side,{self:h.unit('S',hp,[skill()],{maxHp:9000}),opp:h.unit('E',100000,[h.wait()])});
         assert.equal(r.self.currentHp,hp+loss,r.logs.join('\n'));assert.equal(r.opp.currentHp,100000-loss);
@@ -36,7 +36,7 @@ try{
       const sealed=h.kitSkill('禁療',[{op:'no_heal',p:{turns:2,next:false}}],{priority:2});
       const [r]=await h.play(side,{self:h.unit('S',1000,[skill()],{maxHp:9000}),opp:h.unit('E',100000,[sealed])});assert.equal(r.self.currentHp,1000);assert.equal(r.opp.currentHp,100000);
     });
-    await check(`${side} 四回合使用時先恢復、之後才受敵方3000；第五回合停止，固定傷害依實際恢復`,async()=>{
+    await check(`${side} 四回合使用時先恢復、之後才受敵方3000；第五回合停止，百分比傷害依實際恢復`,async()=>{
       const hit=h.kitSkill('固定3000',[{op:'dmg',p:{flat:3000,type:'固定'}}]);
       const history=await h.play(side,{self:h.unit('S',7000,[skill(),h.wait()],{maxHp:9000,speed:200}),opp:h.unit('E',100000,[h.wait(),hit]),turns:(_,t)=>[t===1?0:1,t===1?0:1]},5);
       assert.deepEqual(history.map(r=>r.self.currentHp),[9000,6000,6000,6000,3000]);assert.deepEqual(history.map(r=>r.opp.currentHp),[98000,98000,95000,92000,92000]);

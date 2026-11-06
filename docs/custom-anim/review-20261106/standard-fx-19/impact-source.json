@@ -1,0 +1,19 @@
+{
+  "source": "U DefaultPackage / skill/19/19.skill.prefab",
+  "role": "visual candidate, numeric type mapping not independently confirmed",
+  "sourceAtlasSha256": "b5396d5efcfba6319bedef8574d845026ba90dea26aa8583276343c80c342295",
+  "fps": 25,
+  "cols": 5,
+  "rows": 6,
+  "frames": 26,
+  "cell": 256,
+  "sourceBounds": [
+    4.8242950439453125,
+    -2.5578160285949707,
+    7.623660087585449,
+    2.7715702056884766
+  ],
+  "downloadBytes": 157417,
+  "decodedBytes": 7864320,
+  "palette": "original source colors"
+}

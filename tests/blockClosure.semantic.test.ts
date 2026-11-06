@@ -125,7 +125,7 @@ try {
       assert.ok(!h.statuses(g.state[`${side}Team`].find((e:any)=>e.id==='B')).includes('凍傷'));assert.equal(g.state[`${side}RegistryState`].blkImmuneStatusCount||0,0);
       assert.equal(g.state[`${side}ElfState`].B.registry.blkImmuneStatusCount,0);
     });
-    await check(`${side} 千鳥俱寂回合末恢復／等量固定共4回合，麻痺只下2回合攻擊`,async()=>{
+    await check(`${side} 千鳥俱寂回合末恢復／等量百分比共4回合，麻痺只下2回合攻擊`,async()=>{
       const bird=h.find('5004','千鳥俱寂'),zero={...attack,power:0,isSureHit:true};
       const hist=await h.play(side,{self:h.unit('S',3000,[bird,zero],{maxHp:12000}),opp:h.unit('E',50000,[h.wait()]),turns:(_e,t)=>[t===1?0:1,0]},5);
       assert.deepEqual(hist.map(r=>r.self.currentHp),[7000,11000,12000,12000,12000]);

@@ -1,0 +1,22 @@
+{
+  "status": "unaccepted-take-transition-pilot",
+  "source": "docs/custom-anim/drafts/20261106-original-motion/liuren-weapon-pilot/take-source.png",
+  "scale": 1.2,
+  "offset": [
+    12,
+    -11
+  ],
+  "floor": 1520,
+  "frames": 64,
+  "unchangedEvents": {
+    "launch": 18,
+    "hit": 32,
+    "recover": 48
+  },
+  "pending": [
+    "hand-to-prop handoff still needs a reach drawing",
+    "head size and cloak contour across drawings",
+    "P1/P2 actual playback",
+    "ordinary idle and skill speed/resolution coverage"
+  ]
+}

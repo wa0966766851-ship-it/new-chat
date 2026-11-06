@@ -1,0 +1,18 @@
+import fs from 'node:fs';
+import assert from 'node:assert/strict';
+import {compilePoseAnimation} from '../scripts/lib/poseAnimation.mjs';
+const dir='docs/custom-anim/drafts/20261106-original-motion/emperor_dixin';
+const idle=JSON.parse(fs.readFileSync(dir+'/idle-sash-spec.json','utf8'));
+const hurt=JSON.parse(fs.readFileSync(dir+'/hurt-pilot-spec.json','utf8'));
+for(const [name,seq] of Object.entries(idle.sequences))if(name!=='hited')assert.deepEqual(hurt.sequences[name],seq);
+for(const [id,pose] of Object.entries(idle.poses))assert.deepEqual(hurt.poses[id],pose,'keep approved source pixels and independent sash unchanged');
+assert.deepEqual(hurt.presentation,idle.presentation);
+assert.deepEqual(hurt.rigidAttachments,idle.rigidAttachments);
+assert.deepEqual(hurt.sequences.hited.drawings,[{pose:'hurt',hold:6},{pose:'idleSashBase',hold:6}]);
+const {manifest:m,atlasBytes}=compilePoseAnimation(hurt,p=>fs.readFileSync(p));
+assert.equal(m.sequences.hited.frames,12);
+assert.notDeepEqual(m.sequences.hited.quads[0].buv,m.sequences.standby.quads[0].buv,'reaction must use a distinct drawing');
+assert.deepEqual(m.sequences.hited.quads.at(-1).g,m.sequences.standby.quads[0].g,'reaction must return to assembled rest layers');
+assert.ok(m.production.rgbaBytes<48*1024*1024,'decoded atlas budget');
+assert.ok(atlasBytes.length<14*1024*1024,'download budget');
+console.log('Dixin distinct reaction, shared rest assembly, unchanged actions/palette and resource budgets passed; visual transition still needs refinement.');

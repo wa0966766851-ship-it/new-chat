@@ -2,9 +2,9 @@
   "schemaVersion": 1,
   "summary": {
     "total": 342,
-    "needsDefinition": 208,
-    "candidateUnverified": 80,
-    "sourceChanged": 3,
+    "needsDefinition": 205,
+    "candidateUnverified": 77,
+    "sourceChanged": 9,
     "missingSource": 51,
     "semanticallyAccepted": 0
   },
@@ -309,7 +309,7 @@
       "category": "技能",
       "sourceSha256": "ff26a21e380825731dd7fa43fcad058380b40561ff579fecee60195a2fa4ee59",
       "index": 15,
-      "status": "candidate-unverified",
+      "status": "source-changed",
       "currentRoute": "kit",
       "convertedClauses": 6,
       "unresolved": [],
@@ -329,7 +329,7 @@
       "category": "技能",
       "sourceSha256": "f26cc33fc621f790a5c7bd6829c993a92647e48fee88060cc1e41d9a20cd0e10",
       "index": 16,
-      "status": "candidate-unverified",
+      "status": "source-changed",
       "currentRoute": "kit",
       "convertedClauses": 4,
       "unresolved": [],
@@ -422,7 +422,7 @@
       "category": "技能",
       "sourceSha256": "6752759d0275d25612c7cda4b16c2c1385158554a66b7f47d9b1acbc7373d79d",
       "index": 21,
-      "status": "candidate-unverified",
+      "status": "source-changed",
       "currentRoute": "kit",
       "convertedClauses": 6,
       "unresolved": [],
@@ -2652,14 +2652,14 @@
       "category": "技能",
       "sourceSha256": "748b817a1306a98ddb4228fbab14dd6c015d2c1b8b4f993ac4ec59c5fec572e9",
       "index": 115,
-      "status": "needs-definition",
+      "status": "source-changed",
       "currentRoute": "kit",
       "convertedClauses": 0,
       "unresolved": [
         {
           "index": 0,
-          "text": "必中；4 回合內免疫並反彈所有受到的異常狀態；解除自身能力下降效果，解除成功則下 2 回合先制+2；恢復自身最大體力的 1/1，自身體力低於 1/2 時造成等量固定傷害；3 回合內受到攻擊則對手下回合受到的傷害翻倍",
-          "reason": "解除自身能力下降效果；自身體力低於 1/2 時造成等量固定傷害；3 回合內受到攻擊則對手下回合受到的傷害翻倍"
+          "text": "必中；4 回合內免疫並反彈所有受到的異常狀態；解除自身能力下降效果，解除成功則下 2 回合先制+2；恢復自身最大體力的 1/1，自身體力低於 1/2 時造成等量百分比傷害；3 回合內受到攻擊則對手下回合受到的傷害翻倍",
+          "reason": "解除自身能力下降效果；自身體力低於 1/2 時造成等量百分比傷害；3 回合內受到攻擊則對手下回合受到的傷害翻倍"
         }
       ],
       "requiredCases": [
@@ -7313,14 +7313,14 @@
       "category": "技能",
       "sourceSha256": "0ea944dd7d88fd675a123d148c4c730195ac15d103777ecc015c47ccc14545de",
       "index": 285,
-      "status": "needs-definition",
+      "status": "source-changed",
       "currentRoute": "kit",
       "convertedClauses": 4,
       "unresolved": [
         {
           "index": 3,
-          "text": "  > 自身體力低於1/2時恢復效果和固定傷害翻倍",
-          "reason": "自身體力低於1/2時恢復效果和固定傷害翻倍"
+          "text": "  > 自身體力低於1/2時恢復效果和百分比傷害翻倍",
+          "reason": "自身體力低於1/2時恢復效果和百分比傷害翻倍"
         }
       ],
       "requiredCases": [
@@ -9160,7 +9160,7 @@
       "category": "技能",
       "sourceSha256": "6f6408d92dbcc8bd5b53c336ec38be20e67ada309e40356d3262b751c51847b0",
       "index": 339,
-      "status": "needs-definition",
+      "status": "source-changed",
       "currentRoute": "kit",
       "convertedClauses": 2,
       "unresolved": [
@@ -9191,8 +9191,8 @@
         },
         {
           "index": 7,
-          "text": "> 【龍魂印記】：自身每次使用技能後，每層令每條已喚醒的龍各造成 1 次 150 點龍系直接傷害；真龍・治癒喚醒後改按最高克制倍率計算",
-          "reason": "【龍魂印記】：自身每次使用技能後；每層令每條已喚醒的龍各造成 1 次 150 點龍系直接傷害；真龍・治癒喚醒後改按最高克制倍率計算"
+          "text": "> 【龍魂印記】：自身每次使用技能後，每層令每條已喚醒的龍各造成 1 次 150 點龍系技能傷害；真龍・治癒喚醒後改按最高克制倍率計算",
+          "reason": "【龍魂印記】：自身每次使用技能後；每層令每條已喚醒的龍各造成 1 次 150 點龍系技能傷害；真龍・治癒喚醒後改按最高克制倍率計算"
         }
       ],
       "requiredCases": [

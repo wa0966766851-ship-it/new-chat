@@ -1,0 +1,20 @@
+{
+  "A_部件骨骼": {
+    "quadsPerFrame": 46,
+    "totalFrames": 272,
+    "manifestMB": 1.15,
+    "gifMB": 1.64
+  },
+  "B_全圖網格": {
+    "quadsPerFrame": 80,
+    "totalFrames": 272,
+    "manifestMB": 1.99,
+    "gifMB": 1.65
+  },
+  "C_部件剛體": {
+    "quadsPerFrame": 9,
+    "totalFrames": 272,
+    "manifestMB": 0.22,
+    "gifMB": 1.65
+  }
+}

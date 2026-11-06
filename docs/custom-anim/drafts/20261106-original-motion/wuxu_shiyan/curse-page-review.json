@@ -1,0 +1,38 @@
+{
+  "source": "built-in imagegen exec-a62e1fd7-3d9b-4bee-8d82-07629ee0342a",
+  "sourceSha256": "155a5f9322892a0a479c9618064370db0e47513523ccf407369605e4da2fc644",
+  "palette": "charcoal black vellum / muted silver / lavender; original character untouched",
+  "downloadBytes": 98050,
+  "decodedBytes": 248832,
+  "claws": [
+    {
+      "pose": "open",
+      "sourceSize": [
+        1774,
+        887
+      ],
+      "canvas": [
+        512,
+        256
+      ],
+      "downloadBytes": 172719,
+      "decodedBytes": 524288,
+      "sourceSha256": "83532f957cb76ac80d93f93d1e709ca555a394402b49303bcdcb9ff36ec260ac"
+    },
+    {
+      "pose": "closed",
+      "sourceSize": [
+        1774,
+        887
+      ],
+      "canvas": [
+        512,
+        256
+      ],
+      "downloadBytes": 155115,
+      "decodedBytes": 524288,
+      "sourceSha256": "b0a6d8af317ae3975cddc2baf75004d7d217a599b9c975a6250a463ad1ecc305"
+    }
+  ],
+  "review": "P1/P2 live staging required; not a completed character animation"
+}

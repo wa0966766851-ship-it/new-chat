@@ -1,5 +1,6 @@
 ﻿import {AnimationSpeedControl,useAnimationSpeed} from './battle/AnimationSpeedControl';
 import {BattleFxLayer} from './battle/BattleFxLayer';
+import {BATTLE_LAYERS as Z} from '../battle/battleLayers';
 import { SpecialBattleEndDialog } from "./BattleEndDialog";
 import { BattleResult } from "./battle/BattleResult";
 import { summarizeLedger, type DamageLedger } from "../battle/damageLedger";
@@ -72,6 +73,7 @@ import { formatCompactHud, formatFullNumber } from '../utils/formatBigNumber';
 import { BATTLE_ITEMS, ITEM_CATEGORIES, getItemCategory, ItemCategory, isElfSkillSelectionDisabled, isElfSwitchDisabled, isElfItemDisabled, getNoSwitchTurns } from "../utils/battleHelpers";
 import { isZeroPpExempt } from '../battle/ppExemptions';
 import { classifyLog, filterByMode, mergeExtraActions, toTraditional, turnDigests, filterByElf, filterByQuery, damageTone, extractAmount, elfNamesIn, type LogMode, type BattleLogRow } from '../battle/logClassifier';
+import { LOG_PAGE_SIZE, maskLogRows, buildLogPipeline } from '../battle/logView';
 
 const BagElfPickerModal = lazy(() => import("./battle/BagElfPickerModal"));
 
@@ -646,9 +648,11 @@ function BattleScreenBody(props: BattleScreenUIProps) {
   };
 
   // 所有訊息文字（含精靈篩選選單、查詢、摘要、複製）先經隱匿遮蔽，DOM 與複製內容都不含隱藏名稱。
-  const maskedLogs = logs.map(l => ({ ...l, text: fog(l.text) }));
-  const LOG_PAGE_SIZE = 40;
-  const logPages = Math.max(1, Math.ceil(Math.max(1, filterByMode(maskedLogs, logMode).length) / LOG_PAGE_SIZE));
+  // 效能：日誌最多 400 筆，遮蔽與分類管線只在日誌／遮蔽規則／篩選條件改變時重算（重繪每回合 10 次以上）。
+  const maskedLogs = useMemo(() => maskLogRows(logs, fog), [logs, fogTerms, disguiseBattleStates, nightmareStatusPattern]);
+  const modeLogs = useMemo(() => filterByMode(maskedLogs, logMode), [maskedLogs, logMode]);
+  const logPipeline = useMemo(() => logOpen ? buildLogPipeline(maskedLogs, modeLogs, logElfFilter, logQuery) : null, [logOpen, maskedLogs, modeLogs, logElfFilter, logQuery]);
+  const logPages = Math.max(1, Math.ceil(Math.max(1, modeLogs.length) / LOG_PAGE_SIZE));
   const shownPage = logFollow ? logPages : Math.min(logPage, logPages);
   const copyLogs = async () => {
     // 複製當前檢視（DSH 20261019）：簡潔模式＝只複製主行動；查詢/精靈過濾同樣生效。
@@ -675,11 +679,7 @@ function BattleScreenBody(props: BattleScreenUIProps) {
   /** 對戰訊息公告欄：分頁、至頂／至底、複製成文字。 */
   const renderBattleLog = () => {
     // 詳略管線（DSH 20261019）：模式 → 精靈 → 查詢 → 合併額外行動 → 分頁；回合摘要另算。
-    let pipeline: BattleLogRow[] = filterByMode(maskedLogs, logMode);
-    pipeline = filterByElf(pipeline, logElfFilter);
-    pipeline = filterByQuery(pipeline, logQuery);
-    const digests = turnDigests(pipeline);
-    const elfChoices = [...new Set(([] as string[]).concat(...maskedLogs.slice(-LOG_PAGE_SIZE * 6).map(l => elfNamesIn(l.text))))].slice(0, 12);
+    const { pipeline, digests, elfChoices } = logPipeline!;
     const start = (shownPage - 1) * LOG_PAGE_SIZE;
     let pageLogs: { text: string; type?: string; turn: number }[] = pipeline.slice(start, start + LOG_PAGE_SIZE);
     if (logMode === 'brief') pageLogs = mergeExtraActions(pageLogs, fog(actElf?.name || ''));
@@ -1158,7 +1158,7 @@ function BattleScreenBody(props: BattleScreenUIProps) {
       const fw = fieldSize.w, fh = stageHeight(fieldSize.h, fieldReserve);
       const stage = spriteStageLayout(fw);
       if (!fw || !fh) return (
-        <div className={`absolute bottom-[30%] ${isP1 ? "left-[19%]" : "right-[19%]"} z-30 pointer-events-none flex flex-col items-center gap-1.5 w-max`}>{renderPopups(side)}</div>
+        <div style={{ zIndex: Z.POPUPS }} className={`absolute bottom-[30%] ${isP1 ? "left-[19%]" : "right-[19%]"} pointer-events-none flex flex-col items-center gap-1.5 w-max`}>{renderPopups(side)}</div>
       );
       return (
         <ProportionalSprite key={elf.battleId || elf.id} elf={isP1?p1:p2} appearanceState={isP1?battle.p1RegistryState:battle.p2RegistryState} side={side} anchorX={fw * (isP1 ? stage.anchorFrac : 1 - stage.anchorFrac)} stageW={fw * stage.widthFrac} stageH={fh} heightRatio={spriteProfile?.heightRatio}
@@ -1167,15 +1167,15 @@ function BattleScreenBody(props: BattleScreenUIProps) {
           actionToken={isActing?props.activeSkillAnim:(battle.floatingDamagePopups || props.floatingDamagePopups || []).find((p:any)=>p.side===side&&p.type==='skill'&&p.amount>0)?.id||skillPopup?.id}
           anim={anim} dead={dead} opacity={spriteMode === "hide" ? 0 : spriteMode === "dim" ? 0.55 : 1}
           overlay={(visible) => <>
-            <AnchoredToVisible side={side} fraction={0.28} fallbackBottom={Math.min(visible * 0.78, fh - 120)} deps={visible} className="absolute left-1/2 -translate-x-1/2 z-30 pointer-events-none flex flex-col items-center gap-1.5 w-max">
+            <AnchoredToVisible side={side} fraction={0.28} fallbackBottom={Math.min(visible * 0.78, fh - 120)} deps={visible} z={Z.POPUPS} className="absolute left-1/2 -translate-x-1/2 pointer-events-none flex flex-col items-center gap-1.5 w-max">
               {renderPopups(side)}
             </AnchoredToVisible>
             {skillBanner && (
-              <AnchoredToVisible side={side} fraction={0.58} fallbackBottom={Math.max(40, visible * 0.42)} deps={visible} className="absolute left-1/2 -translate-x-1/2 z-30 pointer-events-none w-max max-w-[80vw]">
+              <div data-battle-skill-banner={side} style={{zIndex:Z.POPUPS}} className="absolute left-0 top-3 -translate-x-1/2 pointer-events-none w-max max-w-[32vw] sm:max-w-[280px]">
                 <motion.div key={skillBanner} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.18/animationRate }}>
-                  <span className="block px-4 py-1.5 bt-panel text-xl font-black tracking-wider bt-accent truncate">{fog(skillBanner)}</span>
+                  <span className="block px-3 py-1 bt-panel text-sm font-black tracking-wide bt-accent truncate">{fog(skillBanner)}</span>
                 </motion.div>
-              </AnchoredToVisible>
+              </div>
             )}
           </>} />
       );
@@ -1287,23 +1287,23 @@ function BattleScreenBody(props: BattleScreenUIProps) {
       {(["p1", "p2"] as const).map(side => {
         const elf = side === "p1" ? p1 : p2;
         return (
-          <div key={side} ref={el => { hudRefs.current[side] = el; }} className={`absolute top-[172px] sm:top-[56px] short:top-[58px] ${side === "p1" ? "left-2 sm:left-3 items-start" : "right-2 sm:right-3 items-end"} w-[48%] sm:w-[min(480px,31%)] short:w-[min(300px,28%)] z-30 flex flex-col gap-1.5 short:gap-1`}>
+          <div key={side} ref={el => { hudRefs.current[side] = el; }} className={`absolute top-[172px] sm:top-[56px] short:top-[58px] ${side === "p1" ? "left-2 sm:left-3 items-start" : "right-2 sm:right-3 items-end"} w-[48%] sm:w-[min(480px,31%)] short:w-[min(300px,28%)] flex flex-col gap-1.5 short:gap-1`} style={{ zIndex: Z.HUD }}>
             {renderCard(side)}
             <div className={`w-full ${side === "p1" ? "pl-1" : "pr-1"}`}>{elf && renderChips(side, elf)}</div>
           </div>
         );
       })}
-      <div className="absolute top-[56px] sm:top-2 left-1/2 -translate-x-1/2 z-20 max-sm:scale-90 short:scale-75 short:origin-top short:top-0">{renderMatchInfo()}</div>
+      <div style={{ zIndex: Z.HUD }} className="absolute top-[56px] sm:top-2 left-1/2 -translate-x-1/2 max-sm:scale-90 short:scale-75 short:origin-top short:top-0">{renderMatchInfo()}</div>
 
       {/* 中間：對戰訊息公告欄（開關在指令列中間） */}
       {logOpen && (
-        <div className="absolute z-20 left-1/2 -translate-x-1/2 w-[94%] sm:w-[min(500px,34%)] top-[250px] sm:top-[178px] bottom-[300px] sm:bottom-[214px] short:top-[44px] short:bottom-[112px] short:w-[min(560px,46%)] pointer-events-auto flex flex-col">
+        <div style={{ zIndex: Z.LOG }} className="absolute left-1/2 -translate-x-1/2 w-[94%] sm:w-[min(500px,34%)] top-[250px] sm:top-[178px] bottom-[300px] sm:bottom-[214px] short:top-[44px] short:bottom-[112px] short:w-[min(560px,46%)] pointer-events-auto flex flex-col">
           <div className="flex-1 min-h-0">{renderBattleLog()}</div>
         </div>
       )}
 
       {/* 下方：指令 */}
-      <div className="absolute inset-x-2 sm:inset-x-3 bottom-2 z-30 pointer-events-auto">
+      <div style={{ zIndex: Z.CONTROLS }} className="absolute inset-x-2 sm:inset-x-3 bottom-2 pointer-events-auto">
         <div className="bt-panel">
           <div className="flex items-center gap-1.5 px-3 pt-2 short:pt-1 flex-wrap">
             {TABS.map(t => (
@@ -1347,7 +1347,7 @@ function BattleScreenBody(props: BattleScreenUIProps) {
       <div className="absolute inset-0 bg-[linear-gradient(rgba(6,182,212,0.02)_1px,transparent_1px),linear-gradient(90deg,rgba(6,182,212,0.02)_1px,transparent_1px)] bg-[size:40px_40px] [mask-image:radial-gradient(ellipse_at_center,black,transparent)] pointer-events-none" />
 
       {renderFixedLayout()}
-      {/* 全屏演出層：z 24，在場地／訊息欄之上、HUD 與指令列（z 30）之下 */}
+      {/* 全屏演出層：FX_BACKDROP，鋪滿整個戰鬥畫面；在場地／訊息欄之上，HUD、指令列、飄字（battleLayers.ts）一律在它之上 */}
       <BattleFxLayer />
 
 

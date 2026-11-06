@@ -88,10 +88,10 @@ export function hpRatio(e: Elf) { return e.maxHp > 0 ? Math.max(0, Math.min(1, e
 export const alive = (e: Elf) => isAliveBySurvivalRule(e.currentHp, e.survivalRule);
 
 /** 精靈塔羅卡 */
-export const ElfTarot: React.FC<{ elf: Elf; picked?: boolean; onClick?: () => void; footer?: React.ReactNode; badge?: React.ReactNode; disabled?: boolean }> = ({ elf, picked, onClick, footer, badge, disabled }) => {
+export const ElfTarot: React.FC<{ elf: Elf; picked?: boolean; onClick?: () => void; onDoubleClick?: () => void; footer?: React.ReactNode; badge?: React.ReactNode; disabled?: boolean }> = ({ elf, picked, onClick, onDoubleClick, footer, badge, disabled }) => {
   const cardId = React.useMemo(() => { try { return resolvePetIds(elf as any, "body").find(id => CARD_ART_IDS.has(id)); } catch { return undefined; } }, [elf]);
   return (
-    <button type="button" onClick={onClick} disabled={disabled} className="ecl-card w-full text-left disabled:opacity-40" data-picked={picked ? "true" : "false"}>
+    <button type="button" onClick={onClick} onDoubleClick={onDoubleClick} data-pick={onDoubleClick ? "elf" : undefined} aria-pressed={onDoubleClick ? !!picked : undefined} disabled={disabled} className="ecl-card w-full text-left disabled:opacity-40" data-picked={picked ? "true" : "false"}>
       {cardId ? (
         <img src={`/seer/card/${cardId}.png`} alt="" draggable={false} className="absolute inset-0 w-full h-full object-cover opacity-90" style={{ filter: "saturate(.75) contrast(1.08) brightness(.82)" }} />
       ) : (

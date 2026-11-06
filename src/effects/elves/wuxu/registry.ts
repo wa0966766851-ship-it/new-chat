@@ -140,15 +140,9 @@ export const handleWuxuSoulMark = (ctx: BattleEventContext, event: EffectTiming 
         ctx.applyPinkDamage(oppSide, healAmt, "無序追擊", ctx.activeP1, ctx.activeP2, "percent");
       }
       
-      if (self.trait?.name === "亂舞" && self.trait.effectMode !== 'kit' && ctx.skill && ctx.skill.category !== "屬性") {
-        const eligibleOppTeam = ctx.getEligibleTeam(oppSide).filter((e: any) => e.currentHp > 0 && e !== (oppSide === "p1" ? ctx.activeP1 : ctx.activeP2)); // 已陣亡者不會被波及（不會被拉回 1 血）
-        if (eligibleOppTeam.length > 0) {
-          const randomTarget = eligibleOppTeam[Math.floor(Math.random() * eligibleOppTeam.length)];
-          const offFieldDmg = Math.floor(ctx.skill.power || 0); // Estimate
-          randomTarget.currentHp = Math.max(1, randomTarget.currentHp - offFieldDmg);
-          addLog(`💥 【亂舞】特質發動！無序六刃的狂舞波及敵方備戰精靈 【${randomTarget.name}】，造成真實傷害！`, "effect");
-        }
-      }
+      // 2026-11-04：亂舞的「多目標」已統一由積木 extra_random_target 實作（migratedFinalCKits.ts → groupC.ts:17），
+      // 走完整傷害公式並以自身名字記錄。此處原有的硬編碼版本（威力當傷害、寫死「無序六刃」、1 血保護）
+      // 因三隻無序精靈的 effectMode 皆為 kit 而永不執行，屬死碼，已移除。
     }
 
     if (event === EffectTiming.ON_DAMAGED && extraData?.damageType === "true") {

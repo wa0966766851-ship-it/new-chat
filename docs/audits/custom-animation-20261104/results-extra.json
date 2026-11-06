@@ -1,0 +1,31 @@
+{
+  "origin": "http://127.0.0.1:3015",
+  "viewport": [
+    1366,
+    768
+  ],
+  "results": [
+    {
+      "asset": "wuxu_shiyan",
+      "side": "p1",
+      "action": "extra",
+      "unknown": false,
+      "from": "294.4,336.7",
+      "to": "1065.5,331.1",
+      "phase": "buff",
+      "width": 1366,
+      "height": 768
+    },
+    {
+      "asset": "wuxu_shiyan",
+      "side": "p2",
+      "action": "extra",
+      "unknown": false,
+      "from": "1069.7,336.0",
+      "to": "300.5,331.1",
+      "phase": "buff",
+      "width": 1366,
+      "height": 768
+    }
+  ]
+}

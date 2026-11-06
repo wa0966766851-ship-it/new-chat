@@ -36,15 +36,15 @@ export const MIGRATED_DURATION_SKILL_KITS:ReviewedSequenceSkill[]=[{
   ],
 },{
   elfIds:['5010'],name:'星光·水天一色',
-  description:'必中；4 回合內免疫並反彈所有受到的異常狀態；解除自身能力下降效果，解除成功則下 2 回合先制+2；恢復自身最大體力的 1/1，自身體力低於 1/2 時造成等量固定傷害；3 回合內受到攻擊則對手下回合受到的傷害翻倍',kit:[
+  description:'必中；4 回合內免疫並反彈所有受到的異常狀態；解除自身能力下降效果，解除成功則下 2 回合先制+2；恢復自身最大體力的 1/1，自身體力低於 1/2 時造成等量百分比傷害；3 回合內受到攻擊則對手下回合受到的傷害翻倍',kit:[
     property('必中','sure_hit',true,0),
     sequence('4 回合內免疫並反彈所有受到的異常狀態',[{acts:[a('immune_status_turns',{turns:4,reflect:true,cls:''})]}],1),
     sequence('解除自身能力下降效果，解除成功則下 2 回合先制+2',[
       {acts:[a('stat_clear',{side:'self',kind:'down'})]},{chain:'success',acts:[a('prio_turns',{turns:2,v:2})]},
     ],2),
-    sequence('恢復自身最大體力的 1/1，自身體力低於 1/2 時造成等量固定傷害',[
+    sequence('恢復自身最大體力的 1/1，自身體力低於 1/2 時造成等量百分比傷害',[
       {acts:[a('heal',{side:'self',ratio:1})]},
-      {cond:[c('hp_ratio',{side:'self',op:'低於',ratio:.5})],acts:[a('dmg_equal',{type:'固定'})]},
+      {cond:[c('hp_ratio',{side:'self',op:'低於',ratio:.5})],acts:[a('dmg_equal',{type:'百分比'})]},
     ],3),
     sequence('3 回合內受到攻擊則對手下回合受到的傷害翻倍',[{acts:[a('timed',{turns:3,from:'now',trig:'damaged_attack',body:[
       {acts:[a('dmg_mod_turns',{side:'opp',turns:1,next:true,dir:'taken',kind:'',boost:1})]},

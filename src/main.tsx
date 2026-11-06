@@ -6,10 +6,11 @@ import {repairSavedBuiltinStorage} from './data/savedBuiltinStorage';
 import './index.css';
 import './components/ElfSpotlight.css';
 import { registerServiceWorker } from './pwa/registerServiceWorker';
+import {initializePlayerSave} from './utils/playerSaveBridge';
 
 // 匯入精靈（延後載入的資料區塊）在第一次繪製前取得：精靈清單從第一幀就完整，
 // 不會在使用者保存的隊伍還原之後才改變清單（StartScreen 會依清單同步隊伍）。載入失敗時以不含匯入精靈的清單繼續。
-loadImportedElves()
+initializePlayerSave().then(()=>loadImportedElves())
   .catch(error => console.warn('[匯入精靈] 載入失敗，以不含匯入精靈的清單繼續', error))
   .finally(() => {
     const repaired=repairSavedBuiltinStorage(localStorage,DEFAULT_ELVES);

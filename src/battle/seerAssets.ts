@@ -26,7 +26,7 @@ export function loadSeerIndex(): Promise<SeerIndex> {
       indexCache = (m.default || m) as SeerIndex;
       listeners.forEach(fn => fn());
       return indexCache!;
-    });
+    }).catch(error => { indexPromise = null; throw error; });
   }
   return indexPromise;
 }
@@ -48,7 +48,7 @@ export const SEER_ID_OVERRIDES: Record<string, number> = {
   '御天龍神·哈莫': 3809, // 本機 SeerAPI 索引：龍神哈莫，不冒用其他型態。
   "天蓬元帥八戒": 1536,            // 使用者指定：菲爾蓬格
   "混濁海妖.布林克克": 359,        // 布林克克（原版）
-  "治癒.龍魂再臨 次元龍": 4586,    // 空元行者
+  "治癒·龍魂再臨": 4586,    // 空元行者
   "恐懼的化身·咤克斯": 5010,       // 舊版吒克斯「恐懼的化身」外觀（Seer 靜態圖資）
   "湮滅之主・咤克斯": 4762,        // 湮滅之主吒克斯（官方）
   "變革·馬爾修斯": 3393,           // 馬爾修斯（最新型態）
@@ -133,7 +133,7 @@ export const BATTLE_SPRITE_FACING: Record<string, SpriteFacing> = {
   [normalizeName("蟲后·奧佩婭")]: "left",
   [normalizeName("眾神之父·奧丁")]: "left",
   [normalizeName("皮皮")]: "left",
-  [normalizeName("治癒.龍魂再臨 次元龍")]: "left",
+  [normalizeName("治癒·龍魂再臨")]: "left",
   [normalizeName("無序.六刃")]: "right",
   [normalizeName("無序·蝕言")]: "left",
   [normalizeName("湮滅之主・咤克斯")]: "left",
@@ -171,7 +171,7 @@ export const BODY_SOURCE_FACING: Record<string, SpriteFacing> = {
   "/seer/body/4937.png": "left",
   "/elf-art/unknown_myth_ghost_body.png": "front",
   "/elf-art/emperor_dixin_body.png": "left",
-  "/elf-art/wuxu_liuren_body.png": "right",
+  "/elf-art/wuxu_liuren_body.png": "right", // 2026-11-05 使用者核對：原抱胸圖朝右；動作待機已另行正規化為朝左。
   "/elf-art/wuxu_shiyan_body.png": "left",
   // 已查看原始全身圖：墜星頭／槍口朝左，雷伊頭部斜朝左；直接path與幻化也共用此方向。
   "/elf-art/wuxu_zhuixing_body.png": "left",
@@ -305,7 +305,7 @@ export function resolvePetIds(elf: Pick<Elf, "name" | "id"> & { seerId?: number 
   // 名稱候選：全名 → 以分隔符切開後的各段（後段優先，例：悲歌.索比拉特 → 索比拉特）
   const parts = (elf.name || "").split(/[.·・•‧]/).map(s => normalizeName(s)).filter(Boolean);
   const candidates = [full, ...parts.slice().reverse()];
-  // 名稱含空白時（例：治癒.龍魂再臨 次元龍）也試最後一個詞
+  // 名稱含空白時（例：命運龍輪 莫伊萊）也試最後一個詞
   const lastWord = (elf.name || "").trim().split(/\s+/).pop();
   if (lastWord && lastWord !== elf.name) candidates.push(normalizeName(lastWord));
   for (const key of candidates) {

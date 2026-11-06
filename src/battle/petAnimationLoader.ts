@@ -6,8 +6,15 @@ import {createPetClipPool} from './petClipPool';
 let parsing:Promise<unknown>=Promise.resolve();
 const pool=createPetClipPool<PetAnimationAssetId,SwfClipData>({
  limitBytes:512*1024*1024,idleBytes:32*1024*1024,idleMs:15000,handoffMs:250,
- bytes:id=>{const [w,h]=PET_ANIMATION_ASSETS[id].atlas;return w*h*4;},
+ bytes:id=>{const meta=PET_ANIMATION_ASSETS[id];const [w,h]=meta.atlas;return w*h*4;},
  load:async(id,signal,stage)=>{
+  // 自製素材：manifest + 單張圖集，不走官方 bundle 解析。
+  const custom=(PET_ANIMATION_ASSETS[id] as {custom?:string}).custom;
+  if(custom){
+   stage('載入自製動作素材');
+   const {loadCustomClip}=await import('./customPetClip');
+   return loadCustomClip(custom,signal,PET_ANIMATION_ASSETS[id].sha256);
+  }
   stage('載入模組與素材');
   const [{parseBundleInWorker,MaterialResolver},{loadMaterialBundle}]=await Promise.all([import('@seer-pet-anim/swf-bundle'),import('@seer-pet-anim/swf-bundle/parse')]);
   const get=async(key:string)=>{const r=await fetch('/api/pet-animations/bundle/'+key,{signal});if(!r.ok)throw Error('動作素材未就緒');return r.arrayBuffer();};

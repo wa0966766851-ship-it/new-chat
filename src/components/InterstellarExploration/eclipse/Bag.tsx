@@ -1,3 +1,4 @@
+import { backdropClose, useEscDismiss } from "./dismiss";
 import React from "react";
 import type { Elf } from "../../../types";
 import * as E from "../../../modes/interstellar/v2/engine";
@@ -26,6 +27,7 @@ export default function BagPage({ run, dispatch }: { run: E.RunV2; dispatch: Dis
   const starterId = lists.lineup.find(id => alive(byId.get(id)!));
   const [picker, setPicker] = React.useState<{ zone: E.BagZone; index: number; occupant?: string } | null>(null);
   const [advancing, setAdvancing] = React.useState<string | null>(null);
+  useEscDismiss(() => setPicker(null), !!picker);
   const filter = useElfFilter();
   const mover = useSlotMover<Target>((id, t) => dispatch(r => t.kind === "member" ? E.swapBagMembers(r, id, t.id) : E.moveBagMember(r, id, t.zone, t.index)));
   const lock = editable ? undefined : "戰鬥結算中，暫時不能整理背包";
@@ -168,7 +170,7 @@ export default function BagPage({ run, dispatch }: { run: E.RunV2; dispatch: Dis
 
       {advancing && byId.get(advancing) && <AdvanceDialog run={run} target={byId.get(advancing)!} dispatch={dispatch} onClose={() => setAdvancing(null)} />}
       {picker && portalToRoot(
-        <div className="fixed inset-0 z-[60] bg-black/80 backdrop-blur-[2px] p-4 pt-16 ecl-md:p-10 overflow-y-auto" role="dialog" aria-label="更換精靈" onClick={() => setPicker(null)}>
+        <div className="fixed inset-0 z-[60] bg-black/80 backdrop-blur-[2px] p-4 pt-16 ecl-md:p-10 overflow-y-auto" role="dialog" aria-label="更換精靈" {...backdropClose(() => setPicker(null))}>
           <div className="mx-auto max-w-4xl ecl-frame p-5 ecl-md:p-7 bg-[var(--ecl-ink-2)]" onClick={ev => ev.stopPropagation()}>
             <div className="flex items-center justify-between mb-3">
               <h3 className="ecl-title text-xl ecl-gilt">{ZONE_LABEL[picker.zone]} 第 {picker.index + 1} 格・{picker.occupant ? "更換" : "放入"}</h3>

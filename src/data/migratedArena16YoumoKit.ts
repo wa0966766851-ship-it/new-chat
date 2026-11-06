@@ -37,7 +37,7 @@ export const MIGRATED_ARENA16_YOUMO_SKILL_KIT: ReviewedSequenceSkill[] = [{
 
     // 技能無效時：自身獲得 1 層【龍魂印記】
     {...entry('on_invalid', 'self_invalid', '■ 技能無效時，自身獲得 1 層【龍魂印記】', [
-      { cond: [c('skill_invalid', {})], acts: [a('resource_mark_add', { id: 'arena.dragonSoulMark', name: '龍魂印記', displayChar: '魂', unit: '層', side: 'self', scope: 'elf', persistsOffField: true, amount: 1, maxCount: 99, description: '每次使用技能後：層數×已喚醒龍數次，每次150點龍系直接傷害' })] },
+      { cond: [c('skill_invalid', {})], acts: [a('resource_mark_add', { id: 'arena.dragonSoulMark', name: '龍魂印記', displayChar: '魂', unit: '層', side: 'self', scope: 'elf', persistsOffField: true, amount: 1, maxCount: 99, description: '每次使用技能後：層數×已喚醒龍數次，每次150點龍系技能傷害' })] },
     ], 2), role: 'innate'},
   ],
 }];

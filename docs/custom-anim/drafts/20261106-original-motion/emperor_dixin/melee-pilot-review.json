@@ -1,0 +1,36 @@
+{
+  "status": "unaccepted-physical-fifth-pilot",
+  "skill": "九鼎震八荒",
+  "type": "物理",
+  "palette": "Original black/gold/purple and white hair; no recolor or borrowed character art.",
+  "preserved": {
+    "frames": 42,
+    "launch": 10,
+    "hit": 14,
+    "recover": 30
+  },
+  "anchors": {
+    "ready": [
+      528,
+      2070
+    ],
+    "anticipation": [
+      507,
+      1087
+    ],
+    "melee": [
+      148,
+      1872
+    ],
+    "cast": [
+      1225,
+      1160
+    ]
+  },
+  "pending": [
+    "P1/P2 approach/contact/return",
+    "standing-to-crouch transition needs more drawings",
+    "idle remains static",
+    "hit reaction remains placeholder"
+  ]
+}

@@ -8,6 +8,8 @@ React + Vite + Express + Electron 製作的對戰模擬器：組隊、戰鬥結�
 
 現況／稽核／檔案分類從 [文件入口](docs/README.md) 開始；[檔案地圖](docs/PROJECT_STRUCTURE.md) 區分原文、執行程式、生成產物與備份。
 
+2026-11-04：[空間清理、檔案分工與桌面存檔保護](docs/audits/2026-11-04_專案結構清理與存檔保護.md)、[自製精靈動畫製作與驗收](docs/guides/自製精靈動畫製作與驗收.md)。
+
 - 開發與工具：[維護腳本分類](scripts/README.md)、[測試入口](tests/README.md)
 - 桌面版：[EXE建置與驗收](docs/guides/desktop-packaging.md)
 - 接續工作：[整合開發日誌](docs/開發日誌.md)、[完整紀錄索引](docs/開發紀錄索引.md)、[截圖與空間整理](docs/guides/project-housekeeping.md)；[2026-10-19交接](docs/coordination/本輪收尾交接_20261019.md)保留供歷史核對。

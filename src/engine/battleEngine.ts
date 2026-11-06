@@ -1,4 +1,4 @@
-﻿import {dispatchShieldChange,retainShield} from '../battle/markCapabilities';
+import {dispatchShieldChange,retainShield} from '../battle/markCapabilities';
 import { takeAttachedAttackDamage } from '../battle/attachedAttackDamage';
 import {statusSkillSelected,statusSelectionRoundEnd} from '../effects/statusMechanics';
 import {damageReductionReceipt} from '../battle/damageReductionReceipt';
@@ -1049,7 +1049,7 @@ Object.assign(fCtx as any, { fatalDamage: effectiveAmount, fatalIsDamage: true }
         const targetIdx=data.targetId?cur[teamKey].findIndex(e=>(e.battleId||e.id)===data.targetId):activeIdx;
         if(targetIdx<0)break;
         const target = cur[teamKey][targetIdx],isActiveAdjustment=targetIdx===activeIdx;
-        const adjustment = resolveHpAdjustment(target.currentHp, data.amount, target.survivalRule);
+        const adjustment = resolveHpAdjustment(target.maxHp, target.currentHp, data.amount, target.survivalRule);
         let adjustedHp = adjustment.hp;
         // 「體力無法恢復/增加超過原始體力上限」（六刃等）：增加體力同樣受恢復上限限制，但不會因此扣血
         const adjustCap = Number(readScopedRegistry(cur, targetSide, target, 'recoveryMaxHpCap')) || 0;

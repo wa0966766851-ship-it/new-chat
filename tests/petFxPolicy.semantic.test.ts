@@ -39,6 +39,14 @@ assert.equal(auto.fxClip!.sequences[0].frames[0].mesh.subMeshes.length,0,'待機
 assert.deepEqual(auto.clip.sequences[2].frames[0].mesh.subMeshes.map(s=>[s.startVertex,s.indexCount]),[[0,6]],'小畫布仍濾掉底片（行為不變）');
 assert.deepEqual(auto.report.backdropBounds.sa,{left:20,right:420,top:0,bottom:200},'底片聯集框（原生座標）供全屏層鋪滿用');
 assert.equal(preparePetFx(source2),auto,'相同設定快取');
+// 2026-11-01：逐影格底片框（全屏層逐格 cover 用）；聯集框會讓較小的影格鋪不滿，所以每格自己的框要保留。
+assert.deepEqual(auto.report.backdropFrames.sa,[{left:20,right:420,top:0,bottom:200},null],'sa：第 0 格有底片、第 1 格沒有（null）');
+assert.deepEqual(auto.report.backdropFrames.attack.length,2);
+const grow=frame([...quad(0,10,20),...quad(20,400,200)],[ranges('add','simple',2)]),grown=frame([...quad(0,10,20),...quad(-300,1000,500)],[ranges('add','simple',2)]);
+const growing=preparePetFx({sequences:[{name:'standby',frames:[idle]},{name:'sa',frames:[grow,grown]}]} as SwfClipData);
+const [f0,f1]=growing.report.backdropFrames.sa as any[];
+assert.ok(f1.right-f1.left>f0.right-f0.left,'底片逐格放大時每格框各自保留');
+assert.deepEqual(growing.report.backdropBounds.sa,{left:-300,right:700,top:0,bottom:500},'聯集框仍在（相容）');
 // 逐素材覆寫：明確登記後只認登記的序列；未登記序列的大圖塊照舊過濾（不進全屏層）。
 const only=preparePetFx(source2,{sequences:['sa']});
 assert.notEqual(only,auto,'不同設定各自快取');

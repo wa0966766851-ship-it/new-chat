@@ -69,13 +69,22 @@ function fingerprint(v: any) {
 for (const f of fixtures) {
   const actual = MIGRATED_SEQUENCE_SKILL_KITS.find(d => d.name === f.name && JSON.stringify(d.elfIds) === JSON.stringify(f.ids));
   assert.ok(actual, f.name);
-  const refactorBaseline=structuredClone(actual);
+  let refactorBaseline=structuredClone(actual);
   // 使用者已確認未指明類型的傷害只指攻擊傷害；只有這兩個範圍修正是機械重構後的允許差異。
   // 舊指紋不重產：把此唯一已驗證差異還原後，其餘全部仍須符合原始基準。
   if(['萬鈞鎮魂','聖盾裁決'].includes(f.name)) {
     const action=refactorBaseline.kit[1].params.clause.body[0].acts[0];
     assert.equal(action.op,'vampire');assert.equal(action.p.kind,'攻擊');action.p.kind='技能';
   }
+  // 2026-11-06 擁有者確認：「最大體力1/4」是比例，傷害種類應為百分比傷害（原為固定傷害）。
+  // 先斷言新的正確行為（type 百分比、文字「百分比傷害」），再還原成原始基準以核對其餘參數不變。
+  if(f.name==='萬鈞鎮魂') {
+    const dmg=refactorBaseline.kit[2].params.clause.body[0].acts[0];
+    assert.equal(dmg.op,'dmg');assert.equal(dmg.p.type,'百分比');assert.equal(dmg.p.ratio,0.25);assert.equal(dmg.label,'【百分比傷害】對手最大體力 25%');
+    assert.match(refactorBaseline.description,/對手最大體力1\/4百分比傷害/);
+    dmg.p.type='固定';
+    refactorBaseline=JSON.parse(JSON.stringify(refactorBaseline).replaceAll('最大體力1/4百分比傷害','最大體力1/4固定傷害').replaceAll('【百分比傷害】對手最大體力 25%','【固定傷害】對手最大體力 25%'));
+  }
   assert.equal(fingerprint(refactorBaseline), f.fingerprint, f.name + ': 除已確認吸血範圍外，原文與所有參數不得變更');
 }
-console.log('8份／34條積木重構：除已確認兩處吸血範圍修正，其餘原物件指紋保持一致');
+console.log('8份／34條積木重構：除已確認兩處吸血範圍修正與萬鈞鎮魂傷害種類（固定→百分比，2026-11-06），其餘原物件指紋保持一致');

@@ -1,0 +1,15 @@
+{
+  "source": "build/original-motion-v4/wuxu_liuren/manifest.json",
+  "sequence": "attack",
+  "frames": [
+    0,
+    6,
+    12
+  ],
+  "rows": [
+    "dark",
+    "light"
+  ],
+  "scale": 0.35,
+  "note": "Offline geometry/edge inspection only; not browser playback evidence"
+}

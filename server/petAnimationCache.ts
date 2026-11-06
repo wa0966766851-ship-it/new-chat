@@ -4,7 +4,9 @@ import os from 'node:os';
 import crypto from 'node:crypto';
 import {PET_ANIMATION_ASSETS,PET_MATERIAL_BUNDLE} from '../src/battle/petAnimationAssets';
 
-export const PET_BUNDLES={...PET_ANIMATION_ASSETS,materials:PET_MATERIAL_BUNDLE} as const;
+/** 只收官方 bundle：自製素材（有 custom 目錄）沒有 Unity 包，也不該走下載白名單。 */
+const OFFICIAL_ASSETS=Object.fromEntries(Object.entries(PET_ANIMATION_ASSETS).filter(([,meta])=>!(meta as {custom?:string}).custom));
+export const PET_BUNDLES={...OFFICIAL_ASSETS,materials:PET_MATERIAL_BUNDLE} as const;
 export type PetBundleKey=keyof typeof PET_BUNDLES;
 export const PET_REMOTE_BASE='https://newseer.61.com/Assets/StandaloneWindows64/PetAnimPackage/';
 export const PET_CACHE_LIMIT=512*1024*1024;

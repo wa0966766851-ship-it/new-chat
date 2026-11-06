@@ -6,6 +6,7 @@ import * as E from "../../modes/interstellar/v2/engine";
 import MapView from "./eclipse/MapView";
 import { SCENES } from "./eclipse/Scenes";
 import { EclipseMoon, NpcArt, alive, useEclRootRef } from "./eclipse/parts";
+import FloorCover, { floorCoverable, floorKeyOf } from "./eclipse/FloorCover";
 import Ledger, { type LedgerTab } from "./eclipse/Ledger";
 import { RELIC_BY_ID } from "../../modes/interstellar/v2/relics";
 
@@ -83,6 +84,9 @@ export default function InterstellarRun({ allElves, startingDiamonds, initialEqu
   const runRef = React.useRef(run); runRef.current = run;
   const [ledger, setLedger] = React.useState<LedgerTab | null>(null);
   const busy = React.useRef(false);
+  const floorKey = floorKeyOf(run);
+  const [seenFloor, setSeenFloor] = React.useState<string | null>(() => { try { return sessionStorage.getItem("ECL_COVER_SEEN"); } catch { return null; } });
+  const showCover = floorCoverable(run) && seenFloor !== floorKey;
   React.useEffect(()=>{
     if(busy.current)return;
     const updated=E.resumeRunV2(localStorage,pool);
@@ -103,6 +107,7 @@ export default function InterstellarRun({ allElves, startingDiamonds, initialEqu
     const b = E.startBattle(cur, pool, battleId);
     if (!b) return;
     busy.current = true;
+    try { sessionStorage.setItem("ECL_COVER_SEEN", floorKeyOf(cur)); } catch { /* 無 sessionStorage */ }
     try { sessionStorage.setItem("ECLIPSE_RETURN", "1"); } catch { /* 無 sessionStorage */ }
     const saved = E.saveRunV2(localStorage, b.run);
     runRef.current = saved; setRun(saved);
@@ -181,6 +186,10 @@ export default function InterstellarRun({ allElves, startingDiamonds, initialEqu
 
       <AnimatePresence>
         {ledger && run.scene.kind !== "draft" && <Ledger run={run} pool={pool} tab={ledger} onTab={setLedger} onClose={() => setLedger(null)} dispatch={dispatch} />}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {showCover && <FloorCover key={floorKey} run={run} backdrop={backdrop} onDone={() => setSeenFloor(floorKey)} />}
       </AnimatePresence>
 
       {/* 場景覆蓋層 */}

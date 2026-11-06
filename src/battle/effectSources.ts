@@ -4,7 +4,9 @@ import { soulDefinition } from '../effects/soulDefinitionSource';
 
 /** 取得效果只借用定義，不能借用目標戰鬥身分、體力、印記或存活規則。 */
 export function effectSourceViews(elf: Elf): Elf[] {
-  const own = { ...elf, illusion: undefined };
+  // 幻化期間 elf.trait／alienTraits 已換成目標的（339e482，供特性機制生效）；自身來源的定義須回到 illusion.original 備份。
+  const orig = elf.illusion?.original;
+  const own = { ...elf, illusion: undefined, ...(orig ? { trait: orig.trait, alienTraits: orig.alienTraits } : {}) };
   const source = elf.illusion?.target;
   return source ? [own, { ...own, name: source.name, soulMark: source.soulMark, kit: source.kit,
     trait: source.trait, alienTraits: source.alienTraits }] : [own];

@@ -6,6 +6,7 @@ import { skillDisplayType } from '../utils/skillPresentation';
 import { appearanceElf } from "../battle/illusionPresentation";
 import {selectedElfSkin} from '../data/elfSkins';
 import { IMAGE_COPY_EVENT } from "./ImageCopyMenu";
+import {readImageRetryMode,IMAGE_RETRY_EVENT,IMAGE_RETRY_SETTINGS_EVENT} from '../utils/imageRetrySettings';
 import { shouldMirrorBattleSprite, hasRenderableElfImagePath, getSeerIndex, loadSeerIndex, onSeerIndexLoaded, petImageUrls, splitTypes, typeIconUrls, isNoneType } from "../battle/seerAssets";
 
 /**
@@ -16,21 +17,22 @@ import { shouldMirrorBattleSprite, hasRenderableElfImagePath, getSeerIndex, load
  * 不再重試，造成「精靈圖片經常無法顯示」，即使檔案其實存在。
  *
  * 改成「有時效的失敗紀錄」：同一網址失敗後 8 秒內不再重試，之後自動放行。
- * 另外在視窗重新聚焦（visibilitychange / focus）時整批清空，讓切回頁面時重試。
+ * 自動模式在視窗重新聚焦或網路恢復時也可重試；手動與停用模式不自動清空。
  */
 const failed = new Map<string, number>();
 const FAIL_RETRY_MS = 8000;
 function hasFailed(url: string): boolean {
   const at = failed.get(url);
   if (at === undefined) return false;
-  if (Date.now() - at < FAIL_RETRY_MS) return true;
+  if (readImageRetryMode() !== 'auto' || Date.now() - at < FAIL_RETRY_MS) return true;
   failed.delete(url);
   return false;
 }
 function markFailed(url: string): void { failed.set(url, Date.now()); }
 if (typeof window !== "undefined") {
-  const clear = () => failed.clear();
+  const clear = () => { if(readImageRetryMode() !== 'auto') return; failed.clear(); window.dispatchEvent(new Event(IMAGE_RETRY_EVENT)); };
   window.addEventListener("focus", clear);
+  window.addEventListener("online", clear);
   document.addEventListener("visibilitychange", () => { if (!document.hidden) clear(); });
 }
 
@@ -38,9 +40,12 @@ function useSeerIndexReady() {
   const [ready, setReady] = useState(!!getSeerIndex());
   useEffect(() => {
     if (ready) return;
+    let alive=true,timer:ReturnType<typeof setTimeout>|undefined;
     const off = onSeerIndexLoaded(() => setReady(true));
-    loadSeerIndex().then(() => setReady(true)).catch(() => {});
-    return off;
+    const attempt=()=>{clearTimeout(timer);loadSeerIndex().then(()=>{if(alive)setReady(true);}).catch(()=>{if(alive&&readImageRetryMode()==='auto')timer=setTimeout(attempt,FAIL_RETRY_MS);});};
+    const retry=()=>{if(readImageRetryMode()==='auto')attempt();};
+    attempt();window.addEventListener(IMAGE_RETRY_SETTINGS_EVENT,retry);window.addEventListener(IMAGE_RETRY_EVENT,retry);
+    return ()=>{alive=false;clearTimeout(timer);off();window.removeEventListener(IMAGE_RETRY_SETTINGS_EVENT,retry);window.removeEventListener(IMAGE_RETRY_EVENT,retry);};
   }, [ready]);
   return ready;
 }
@@ -51,10 +56,28 @@ export function ChainImage({ urls, fallback, className, style, alt, sourceStyle 
 }) {
   const [, refresh] = useState(0);
   const src = urls.find(u => !hasFailed(u));
-  if (!src) return <>{fallback ?? null}</>;
+  const identity = urls.join('\n');
+  const mode = readImageRetryMode();
+  const retryOwn = (event: React.MouseEvent) => {
+    if(mode === 'off' || !urls.some(u => failed.has(u))) return;
+    event.preventDefault(); event.stopPropagation(); urls.forEach(u => failed.delete(u)); refresh(n => n + 1);
+  };
+  useEffect(() => {
+    // 即使目前已落到備用圖，也要主動喚醒；只讓 Map 過期不會讓 React 重畫。
+    const retry = () => refresh(n => n + 1);
+    window.addEventListener(IMAGE_RETRY_EVENT, retry);
+    window.addEventListener(IMAGE_RETRY_SETTINGS_EVENT, retry);
+    window.addEventListener('storage', retry);
+    const blocked = urls.map(u => failed.get(u)).filter((n): n is number => n !== undefined);
+    const timer = mode === 'auto' && blocked.length ? setTimeout(retry, Math.max(250, Math.min(...blocked) + FAIL_RETRY_MS - Date.now() + 50)) : undefined;
+    return () => { window.removeEventListener(IMAGE_RETRY_EVENT, retry); window.removeEventListener(IMAGE_RETRY_SETTINGS_EVENT,retry);window.removeEventListener('storage',retry);clearTimeout(timer); };
+  });
+  if (!src) return <span style={{display:'contents',pointerEvents:mode !== 'off' && urls.length ? 'auto' : undefined,cursor:mode !== 'off' && urls.length ? 'pointer' : undefined}} onClickCapture={retryOwn} title={mode !== 'off' && urls.length ? '點圖片重試載入' : undefined}>{fallback ?? null}</span>;
   return (
     <img
+      key={identity + src}
       src={src}
+      data-elf-placeholder={src.includes('/unknown_myth_ghost_') ? 'true' : undefined}
       alt={alt || ""}
       draggable={false}
       className={className}
@@ -66,6 +89,8 @@ export function ChainImage({ urls, fallback, className, style, alt, sourceStyle 
         } }));
       }}
       onError={() => { markFailed(src); refresh(n => n + 1); }}
+      onLoad={() => { failed.delete(src); }}
+      onClickCapture={retryOwn}
     />
   );
 }
@@ -144,15 +169,11 @@ export function ElfAvatar({ elf, battleSide, kind = "head", className, fallbackC
       <ChainImage urls={["/elf-art/unknown_myth_ghost_body.png"]} fallback={fb} alt="未知精靈"
         className={className || "w-full h-full object-contain"} style={style} />
     );
-    return fb;
+    return ghostHead;
   }
   if (kind === "body") {
-    // 沒有全身圖：顯示圓形裁切的頭像（透明外框，不遮背景）
-    const headFb = (
-      <div className={fallbackClassName || "w-40 h-40 rounded-full overflow-hidden"}>
-        <ChainImage urls={ready ? petImageUrls(elf as any, "head") : []} fallback={fb} className="w-full h-full object-cover rounded-full" alt={elf.name} />
-      </div>
-    );
+    // 沒有全身圖：使用共用未知精靈的完整立繪。
+    const headFb = <ChainImage urls={["/elf-art/unknown_myth_ghost_body.png"]} fallback={fb} className={className || "w-full h-full object-contain"} style={style} alt={elf.name || "未知精靈"} />;
     const sceneMask = elf.artPresentation === "scene" ? {
       WebkitMaskImage: "radial-gradient(ellipse 88% 92% at 50% 50%, #000 62%, rgba(0,0,0,.92) 76%, transparent 100%)",
       maskImage: "radial-gradient(ellipse 88% 92% at 50% 50%, #000 62%, rgba(0,0,0,.92) 76%, transparent 100%)",
@@ -167,7 +188,7 @@ export function ElfAvatar({ elf, battleSide, kind = "head", className, fallbackC
   } as React.CSSProperties : undefined;
   if (!urls.length && !ready) return ghostHead;
   if (!urls.length) return ghostHead;
-  return <ChainImage urls={urls} fallback={fb} className={`${className || ""} ${isOtherworldRey ? "rounded-full" : ""}`} style={{ ...portraitMask, ...style }}
+  return <ChainImage urls={urls} fallback={ghostHead} className={`${className || ""} ${isOtherworldRey ? "rounded-full" : ""}`} style={{ ...portraitMask, ...style }}
     sourceStyle={src => skinUrl&&src===skinUrl ? {objectFit:'cover',objectPosition:skin?.portrait?.position||'50% 50%',...(skin?.portrait?.scale?{transform:`scale(${skin.portrait.scale})`,transformOrigin:skin.portrait.origin||'50% 50%'}:{})} : src === "/elf-art/emperor_dixin_body.png" ? { objectPosition: "50% 4%", transform: "scale(2.5)", transformOrigin: "50% 8%" } : {}}
     alt={elf.name} />;
 }

@@ -1,3 +1,4 @@
+import { backdropClose, useEscDismiss } from "./dismiss";
 import React from "react";
 import type { Elf } from "../../../types";
 import { MAX_N, N_LEVELS, clampN, nLabel } from "../../../modes/interstellar/v2/levels";
@@ -39,6 +40,7 @@ export function LevelPicker({ value, onChange }: { value: number; onChange: (n: 
 /** 禁用名單：被禁用的精靈本局不會出現在招募、敵方、商店與獎勵。 */
 export function BanPicker({ bans, pool, cap, onChange }: { bans: string[]; pool: Elf[]; cap: number; onChange: (ids: string[]) => void }) {
   const [open, setOpen] = React.useState(false);
+  useEscDismiss(() => setOpen(false), open);
   const byId = React.useMemo(() => new Map(pool.map(e => [String(e.id), e])), [pool]);
   return (
     <div>
@@ -59,7 +61,7 @@ export function BanPicker({ bans, pool, cap, onChange }: { bans: string[]; pool:
         {!bans.length && <span className="text-xs ecl-muted self-center">未禁用</span>}
       </div>
       {open && (
-        <div className="fixed inset-0 z-[60] bg-black/80 backdrop-blur-[2px] p-4 pt-16 ecl-md:p-10 overflow-y-auto" role="dialog" aria-label="選擇禁用精靈" onClick={() => setOpen(false)}>
+        <div className="fixed inset-0 z-[60] bg-black/80 backdrop-blur-[2px] p-4 pt-16 ecl-md:p-10 overflow-y-auto" role="dialog" aria-label="選擇禁用精靈" {...backdropClose(() => setOpen(false))}>
           <div className="mx-auto max-w-5xl ecl-frame p-5 ecl-md:p-7 bg-[var(--ecl-ink-2)]" onClick={ev => ev.stopPropagation()}>
             <div className="flex items-center justify-between mb-3">
               <h3 className="ecl-title text-xl ecl-gilt">禁用精靈<span className="ml-3 text-sm ecl-muted tabular-nums">{bans.length} / {cap}</span></h3>

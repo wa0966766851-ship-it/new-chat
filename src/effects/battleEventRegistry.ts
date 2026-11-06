@@ -200,6 +200,8 @@ export const SOUL_MARK_MAPPING: Record<string, string> = {
    * 「事件式」效果；kit 的部分由 runBlockEvent 獨立執行（兩者不衝突）。
    */
   "5021": "handleDimensionalSoulMark",
+  "治癒·龍魂再臨": "handleDimensionalSoulMark",
+  // 舊名稱別名（2026-11-06 改名前的存檔／戰鬥狀態仍可能帶舊名）
   "治癒.龍魂再臨 次元龍": "handleDimensionalSoulMark",
   "治癒·龍魂再臨 次元龍": "handleDimensionalSoulMark",
   "次元龍": "handleDimensionalSoulMark",

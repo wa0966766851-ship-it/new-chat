@@ -3,6 +3,13 @@ import path from 'node:path';
 import {registerPetAnimations} from '../server/petAnimations';
 async function main(){
  const app=express();registerPetAnimations(app,process.cwd());
+ // Explicit authoring opt-in. Drafts are never copied into public or releases.
+ const draftArg=process.argv.indexOf('--draft-root');
+ if(draftArg>=0){
+  const base=path.resolve('build'),draft=path.resolve(process.argv[draftArg+1]??'');
+  if(!draft.startsWith(base+path.sep))throw Error('Animation drafts must stay inside build');
+  app.use('/__animation-drafts',express.static(draft,{index:false,setHeaders:res=>res.setHeader('Cache-Control','no-store')}));
+ }
  // 驗收不依賴另外啟動的正式網站，先供應相同的本機圖片。
  app.use(express.static(path.resolve('public'),{index:false}));
  const dev=process.argv.includes('--dev'),port=Number(process.env.PET_PREVIEW_PORT||(dev?3015:3013));

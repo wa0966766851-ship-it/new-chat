@@ -4,6 +4,7 @@ import { Maximize2, Minimize2, Image as ImageIcon, RotateCcw, Copy, Music, X, Sl
 import { CONTROL_SECTIONS, backgroundThumb, type ControlSectionId } from "../utils/controlSettings";
 import { DEFAULT_SCENE_RESOURCES, saveSceneResources } from "../utils/resourceManager";
 import { BATTLE_ANIMATION_OPTIONS, writeAnimationSettings } from "../battle/animationSettings";
+import {ImageRetrySetting} from './ImageRetrySetting';
 import { ACCENT_CONFIGS, OPACITY_CONFIGS, RECOMMENDED_BACKGROUNDS, RECOMMENDED_BGMS, DEFAULT_PLAYLIST, DEFAULT_BACKGROUNDS } from "./ControlHubPresets";
 import type { AccentColor, CardOpacity } from "./ControlHubPresets";
 import type { ControlHubPanelModel } from "./ControlHub";
@@ -332,6 +333,7 @@ export default function ControlHubPanel(model: ControlHubPanelModel) {
         {activeTab === 'battle' && (<>
           <BattleAISettingsPanel />
           <Section title="動畫播放" hint="關閉的項目直接略過動畫，不影響結算">
+            <ImageRetrySetting/>
             <GlobalAnimationMode settings={animationSettings} onChange={next=>{setAnimationSettings(next);writeAnimationSettings(next);}}/>
             <label className="flex items-center justify-between gap-3 rounded-lg border border-cyan-900 bg-slate-950 p-3 mb-3">
               <span><span className="block text-sm font-bold text-cyan-200">靜態模式</span><span className="text-xs text-slate-400">略過出招與登場動畫，飄字保留。</span></span>

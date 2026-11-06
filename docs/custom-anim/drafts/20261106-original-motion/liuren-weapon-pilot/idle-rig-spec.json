@@ -1,0 +1,347 @@
+{
+  "id": "wuxu_liuren",
+  "elfId": "5022",
+  "elfName": "無序.六刃",
+  "fps": 24,
+  "facing": "left",
+  "canvas": [
+    1400,
+    1600
+  ],
+  "anchor": [
+    700,
+    1520
+  ],
+  "margin": 8,
+  "pixelsPerUnit": 121.53846153846153,
+  "poses": {
+    "ready": {
+      "file": "docs/custom-anim/drafts/20261106-original-motion/liuren-weapon-pilot/ready.png",
+      "sha256": "1804c3d03307f11e55e6319756817888777529c268448f32c604c407bf7fc8fd",
+      "facing": "left",
+      "review": {
+        "accepted": true,
+        "note": "僅允許六劍分層試播；人物原像素保護，背劍底圖仍待美術驗收。"
+      }
+    },
+    "command": {
+      "file": "docs/custom-anim/drafts/20261106-original-motion/liuren-weapon-pilot/command.png",
+      "sha256": "b20db46b4a38bcc04e287998b160084e106be5fb0cf25cc6a6d8941f855a1421",
+      "facing": "left",
+      "review": {
+        "accepted": true,
+        "note": "雙手不同發令關鍵姿勢；不是完整中間幀，肘肩與換姿銜接仍待實播。"
+      }
+    },
+    "gather": {
+      "file": "docs/custom-anim/drafts/20261106-original-motion/liuren-weapon-pilot/gather.png",
+      "sha256": "ff6ea2cab5c735d3f673c55624109c4ca0b0c55a07568fd78ba42d57f07d48e3",
+      "facing": "left",
+      "review": {
+        "accepted": true,
+        "note": "雙手不同發令關鍵姿勢；不是完整中間幀，肘肩與換姿銜接仍待實播。"
+      }
+    },
+    "windup": {
+      "file": "docs/custom-anim/drafts/20261106-original-motion/liuren-weapon-pilot/windup.png",
+      "sha256": "aff60f66c6bf5af8d9a5d55997c547861742257083571bb5f63451bcffbcb374",
+      "facing": "left",
+      "anchors": {
+        "muzzle": [
+          1116,
+          892.8000000000001
+        ]
+      },
+      "review": {
+        "accepted": true,
+        "note": "僅近身物攻試播：人物雙手握一劍，無背劍；頭甲大小與跨姿勢銜接仍待對戰驗收。"
+      }
+    },
+    "cut": {
+      "file": "docs/custom-anim/drafts/20261106-original-motion/liuren-weapon-pilot/cut.png",
+      "sha256": "68a21595719116c50a4d6ef224317ff11bc466a59c2e7f0e9ed3bc0e401d049d",
+      "facing": "left",
+      "anchors": {
+        "muzzle": [
+          218.07999999999998,
+          878.0799999999999
+        ]
+      },
+      "review": {
+        "accepted": true,
+        "note": "僅近身物攻試播：人物雙手握一劍，無背劍；頭甲大小與跨姿勢銜接仍待對戰驗收。"
+      }
+    },
+    "melee": {
+      "file": "docs/custom-anim/drafts/20261106-original-motion/liuren-weapon-pilot/melee.png",
+      "sha256": "5917a27d99fb83af28adffdd33b8dbb2e01418b3f9d7fd0791b263731d2216ac",
+      "facing": "left",
+      "anchors": {
+        "muzzle": [
+          85.59999999999997,
+          1104
+        ]
+      },
+      "review": {
+        "accepted": true,
+        "note": "僅近身物攻試播：人物雙手握一劍，無背劍；頭甲大小與跨姿勢銜接仍待對戰驗收。"
+      }
+    },
+    "hurt": {
+      "file": "docs/custom-anim/drafts/20261106-original-motion/liuren-weapon-pilot/hurt.png",
+      "sha256": "8b0205fd846817ea502bd3db0d462e4c4cd82eb659d9a357bd66362513ef560b",
+      "facing": "left",
+      "review": {
+        "accepted": true,
+        "note": "僅受擊試播：交叉前臂抬起護面、膝部屈曲；腳位與恢復銜接待兩側驗收。"
+      }
+    },
+    "idleBase": {
+      "file": "docs/custom-anim/drafts/20261106-original-motion/liuren-weapon-pilot/idleBase.png",
+      "sha256": "29496b8bcd17a44de8c31bced61186ea6d653e692683967bb67533528dc9d7ca",
+      "facing": "left",
+      "review": {
+        "accepted": true,
+        "note": "僅原像素腰部鉸接試播，腰帶覆蓋接縫；須檢查肩側與腰部有無露洞，尚未通過美術驗收。"
+      }
+    },
+    "idleTorso": {
+      "file": "docs/custom-anim/drafts/20261106-original-motion/liuren-weapon-pilot/idleTorso.png",
+      "sha256": "fbe4bd6bf45852b53bd17f913fe0ddee04318f689027f134392c6c011fb5bf6d",
+      "facing": "left",
+      "review": {
+        "accepted": true,
+        "note": "僅原像素腰部鉸接試播，腰帶覆蓋接縫；須檢查肩側與腰部有無露洞，尚未通過美術驗收。"
+      }
+    }
+  },
+  "sequences": {
+    "standby": {
+      "loop": true,
+      "drawings": [
+        {
+          "pose": "idleBase",
+          "hold": 96
+        }
+      ],
+      "hits": [],
+      "events": {}
+    },
+    "attack": {
+      "drawings": [
+        {
+          "pose": "ready",
+          "hold": 8
+        },
+        {
+          "pose": "windup",
+          "hold": 12
+        },
+        {
+          "pose": "cut",
+          "hold": 6
+        },
+        {
+          "pose": "melee",
+          "hold": 10
+        },
+        {
+          "pose": "cut",
+          "hold": 4
+        },
+        {
+          "pose": "windup",
+          "hold": 14
+        },
+        {
+          "pose": "ready",
+          "hold": 10
+        }
+      ],
+      "hits": [
+        32
+      ],
+      "events": {
+        "launch": 18,
+        "recover": 48
+      }
+    },
+    "sa": {
+      "drawings": [
+        {
+          "pose": "ready",
+          "hold": 12
+        },
+        {
+          "pose": "gather",
+          "hold": 8
+        },
+        {
+          "pose": "command",
+          "hold": 24
+        },
+        {
+          "pose": "gather",
+          "hold": 8
+        },
+        {
+          "pose": "ready",
+          "hold": 12
+        }
+      ],
+      "hits": [
+        32
+      ],
+      "events": {
+        "launch": 18,
+        "recover": 48
+      }
+    },
+    "ultimate": {
+      "drawings": [
+        {
+          "pose": "ready",
+          "hold": 8
+        },
+        {
+          "pose": "windup",
+          "hold": 12
+        },
+        {
+          "pose": "cut",
+          "hold": 6
+        },
+        {
+          "pose": "melee",
+          "hold": 10
+        },
+        {
+          "pose": "cut",
+          "hold": 4
+        },
+        {
+          "pose": "windup",
+          "hold": 14
+        },
+        {
+          "pose": "ready",
+          "hold": 10
+        }
+      ],
+      "hits": [
+        32
+      ],
+      "events": {
+        "launch": 18,
+        "recover": 48
+      }
+    },
+    "cp": {
+      "drawings": [
+        {
+          "pose": "ready",
+          "hold": 48
+        }
+      ],
+      "hits": [],
+      "events": {}
+    },
+    "extra": {
+      "drawings": [
+        {
+          "pose": "ready",
+          "hold": 48
+        }
+      ],
+      "hits": [],
+      "events": {}
+    },
+    "hited": {
+      "drawings": [
+        {
+          "pose": "hurt",
+          "hold": 7
+        },
+        {
+          "pose": "ready",
+          "hold": 5
+        }
+      ],
+      "hits": [],
+      "events": {}
+    }
+  },
+  "presentation": {
+    "style": "vortex",
+    "color": "#22c55e",
+    "secondary": "#b9ffc9",
+    "melee": true,
+    "contactDepth": 0.4,
+    "ambient": false,
+    "meleeSequences": [
+      "attack",
+      "ultimate"
+    ],
+    "weaponVolley": {
+      "sprite": "/__animation-drafts/wuxu_liuren/sword.png",
+      "impact": {
+        "sprite": "/__animation-drafts/wuxu_liuren/standard-impact-green.png",
+        "cols": 5,
+        "rows": 4,
+        "frames": 17
+      },
+      "held": {
+        "sequences": [
+          "attack",
+          "ultimate"
+        ],
+        "from": 8,
+        "until": 54
+      }
+    }
+  },
+  "physicalMotion": "approach",
+  "idleZones": [],
+  "idleGrid": [
+    28,
+    40
+  ],
+  "idlePins": [
+    {
+      "x": 0.5018181818181818,
+      "y": 0.4107142857142857,
+      "rx": 0.06,
+      "ry": 0.05142857142857143
+    },
+    {
+      "x": 0.48363636363636364,
+      "y": 0.5,
+      "rx": 0.14545454545454545,
+      "ry": 0.06
+    },
+    {
+      "x": 0.5836363636363636,
+      "y": 0.9035714285714286,
+      "rx": 0.06363636363636363,
+      "ry": 0.04642857142857143
+    },
+    {
+      "x": 0.44727272727272727,
+      "y": 0.8678571428571429,
+      "rx": 0.06363636363636363,
+      "ry": 0.05357142857142857
+    }
+  ],
+  "rigidAttachments": [
+    {
+      "basePose": "idleBase",
+      "pose": "idleTorso",
+      "pivot": [
+        712,
+        1005
+      ],
+      "degrees": 1.8,
+      "behind": true
+    }
+  ]
+}

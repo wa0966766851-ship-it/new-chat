@@ -1,4 +1,5 @@
 .pet-workbench{position:fixed;z-index:1000;right:12px;top:190px;width:min(410px,calc(100vw - 24px));color:#d7e6f7;font:13px/1.5 system-ui,sans-serif;pointer-events:none}
+.pet-workbench:not(.is-open){left:50%;right:auto;top:130px;transform:translateX(-50%);width:max-content;max-width:calc(100vw - 24px)}
 .pet-workbench button,.pet-workbench select,.pet-workbench input,.pet-workbench section{pointer-events:auto}
 .pet-workbench button{padding:7px 10px;border:1px solid #236579;border-radius:8px;background:#0b2332;color:#dcf7ff;cursor:pointer}
 .pet-workbench button:disabled{opacity:.45;cursor:wait}.pet-workbench-toggle{float:right;font-size:12px}

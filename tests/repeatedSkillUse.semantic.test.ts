@@ -14,7 +14,7 @@ const h=await createHarness();try{
  for(const side of ['p1','p2'] as const){
   const use=Array.from({length:5},(_,i)=>h.kitSkill('正式槽'+i,[{op:'dmg',p:{flat:i===4?11:1,type:'固定'}}],{pp:10,maxPp:10}));
   const hist=await h.play(side,{self:h.unit('真龍首次喚醒持有者',5000,use,{speed:300,extra:{soulMark:{...source,effectMode:'kit',kit:structuredClone(source.kit.filter((e:any)=>[0,1,4,5,13].includes(e.order)))}}}),opp:h.unit('真龍首次喚醒受方',20000,[h.wait()]),turns:(_e:any,t:number)=>[t-1,0]},5);
-  assert.equal(hist[4].opp.currentHp,16941,'首次第五技能當次重播，每次屬性使用皆以四條龍各追加150點龍系傷害');
+  assert.equal(hist[4].opp.currentHp,16941,'首次第五技能當次重播，每次屬性使用皆以四條龍各追加150點龍系技能傷害');
   assert.equal(hist[4].self.skills[4].pp,9);
  }
  for(const side of ['p1','p2'] as const){

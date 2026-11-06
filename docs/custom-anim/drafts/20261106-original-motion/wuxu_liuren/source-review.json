@@ -1,0 +1,62 @@
+{
+  "status": "pilot-not-accepted",
+  "id": "wuxu_liuren",
+  "sourceSize": [
+    682,
+    1000
+  ],
+  "sourceRecords": [
+    {
+      "pose": "ready",
+      "file": "public/elf-art/wuxu_liuren_body.png",
+      "sha256": "332ce8e0c167273a04f19ab2e17b567cfcd8e266b5ee802f28be3d3ae58f7ee8",
+      "scale": 1,
+      "offset": [
+        231,
+        325
+      ],
+      "flip": true
+    },
+    {
+      "pose": "cast",
+      "file": "docs/custom-anim/drafts/20261105-liuren/action-reviewed.png",
+      "sha256": "6a295bdcc9a584508fad81e5c27da5843a9038b8a906142cdc78d6596b5af864",
+      "scale": 0.6954225352112676,
+      "offset": [
+        160.56338028169012,
+        283.82042253521126
+      ],
+      "flip": false
+    },
+    {
+      "pose": "anticipation",
+      "file": "docs/custom-anim/drafts/20261105-liuren/anticipation.png",
+      "sha256": "f44b19612aaf20a7bf3ce997711413f7915e5df48e3b29082d1562202d5bec7e",
+      "scale": 0.6666666666666666,
+      "offset": [
+        203.33333333333337,
+        323.33333333333337
+      ],
+      "flip": false
+    },
+    {
+      "pose": "melee",
+      "file": "docs/custom-anim/drafts/20261105-combat-v2/wuxu_liuren-melee-clean.png",
+      "sha256": "0b81b3d51bdb92a7f40ac102edc268e196b2c6ff67511f4c81fb55367c57f978",
+      "scale": 0.8977272727272727,
+      "offset": [
+        146.02272727272728,
+        161.93181818181813
+      ],
+      "flip": false
+    }
+  ],
+  "original": "public/elf-art/wuxu_liuren_body.png",
+  "pending": [
+    "局部待機待改為材質對應的關節／分層，橢圓拉伸已撤除",
+    "兩側與三圈待機實播",
+    "原圖去背能量邊緣",
+    "待機到出招姿勢銜接",
+    "受擊仍是舊版佔位，未完成"
+  ]
+}

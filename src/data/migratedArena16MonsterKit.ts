@@ -37,7 +37,7 @@ export const MIGRATED_ARENA16_MONSTER_SKILL_KIT: ReviewedSequenceSkill[] = [{
     entry('on_hit','after_hit','本技能攻擊傷害每實際減少10點，取得一層印記及五維點數10%',[
       {acts:[a('damage_reduction_steps',{unit:10})]},
       {chain:'success',acts:[
-        a('resource_mark_add',{id:'arena.dragonSoulMark',name:'龍魂印記',displayChar:'魂',unit:'層',side:'self',scope:'elf',persistsOffField:true,ratio:1,maxCount:1000000,description:'每次使用後，層數×已喚醒龍數段龍系傷害'}),
+        a('resource_mark_add',{id:'arena.dragonSoulMark',name:'龍魂印記',displayChar:'魂',unit:'層',side:'self',scope:'elf',persistsOffField:true,ratio:1,maxCount:1000000,description:'每次使用後，層數×已喚醒龍數段龍系技能傷害'}),
         a('stat_points_scale',{side:'self',ratio:1,perLastAmount:0.1,stats:['atk','def','spatk','spdef','speed']}),
       ]},
     ],5),

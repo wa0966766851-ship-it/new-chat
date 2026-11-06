@@ -12,8 +12,12 @@ import {overrideTint,petColorVariant} from '../../battle/petColorVariants';
 import {animationSpeed,readAnimationSettings,BATTLE_ANIMATION_EVENT} from '../../battle/animationSettings';
 import {startPetRenderLoop} from '../../battle/petRenderLoop';
 import {preparePetFx} from '../../battle/petFxPolicy';
-import {getFxHost,setFullscreenFxActive,fullscreenFit} from '../../battle/fullscreenFx';
-import {ultimateSequenceOf} from '../../battle/petActionRouting';
+import {getFxHost,setFullscreenFxActive,fullscreenPlacement} from '../../battle/fullscreenFx';
+import {ultimateSequenceOf,playbackEventForAction} from '../../battle/petActionRouting';
+import {createCustomBattleFx,isMeleePresentationSequence} from '../../battle/customBattleFx';
+import {customFramePresentation} from '../../battle/customPetClip';
+import {capPlayerResolution} from '../../battle/petPlayerPerf';
+import {createLazyFxRuntime} from '../../battle/petFxLayerRuntime';
 /** 純播放元件；所有動作由既有播放時間軸驅動，動畫標記不觸發傷害或魂印。 */
 export function PetActionSprite({elf,side,action,actionToken,width,height,onReady,context='battle',viewport,sink=0,assetId:overrideAsset,enterTransform=false,onTransitionEnd,sizeRefHeight}:{elf:Elf;side:'p1'|'p2';action:PetAction;actionToken?:unknown;width:number;height:number;onReady:(ready:boolean)=>void;context?:'battle'|'home';viewport?:{width:number;height:number;anchorX:number;targetX?:number};sink?:number;assetId?:PetAnimationAssetId;enterTransform?:boolean;onTransitionEnd?:()=>void;sizeRefHeight?:number}){
  const speed=React.useRef(animationSpeed(readAnimationSettings().speed));
@@ -47,7 +51,7 @@ export function PetActionSprite({elf,side,action,actionToken,width,height,onRead
  React.useEffect(()=>{refit.current?.();},[width,height,viewport?.width,viewport?.height,viewport?.anchorX]);
  React.useEffect(()=>{
   setReady(false);setActivated(false);const loadStarted=performance.now();
-  let alive=true;let instance:SwfPlayer|undefined;let stopListen:(()=>void)|undefined;
+  let alive=true;let instance:SwfPlayer|undefined;let stopListen:(()=>void)|undefined;let customFx:ReturnType<typeof createCustomBattleFx>|undefined;
   let renderLoop:ReturnType<typeof startPetRenderLoop>|undefined;
   const assetId=resolvedAsset;if(!assetId){readyCallback.current(false);return;}
   const lease=acquirePetClip(assetId);const abort=new AbortController();
@@ -60,10 +64,11 @@ export function PetActionSprite({elf,side,action,actionToken,width,height,onRead
    host.current.dataset.petFxRemoved=String(fxReport?.removedQuads??0);
    host.current.dataset.petFxFullscreen=(fxReport?.fullscreen.sequences??[]).join(',');
    const mountStarted=performance.now();
-   instance=new SwfPlayer();await instance.mount(host.current,clip,{transparent:true,mode:'fixed',clock:'manual',signal:abort.signal});
+    instance=new SwfPlayer();await instance.mount(host.current,clip,{transparent:true,mode:'fixed',clock:'manual',signal:abort.signal});
+   capPlayerResolution(instance,clip);
    host.current?.setAttribute('data-pet-mount-ms',(performance.now()-mountStarted).toFixed(0));
    host.current?.setAttribute('data-pet-load-ms',(performance.now()-loadStarted).toFixed(0));
-   instance.setOnFrameChange(frame=>{frameIndex.current=frame;host.current?.setAttribute('data-pet-frame',String(frame));refit.current?.();});
+    instance.setOnFrameChange(frame=>{frameIndex.current=frame;host.current?.setAttribute('data-pet-frame',String(frame));refit.current?.();});
    if(!alive){instance.destroy();return;}
    // 原廠影格自帶 mulColor／addColor（逐幀調色）。同一段出招裡亮度會在多組數值間跳動
    // （咤克斯 attack 有 0.80 / 0.76 / 0.52 三種），整隻播出來就像三種顏色的分身疊在一起。
@@ -88,6 +93,8 @@ export function PetActionSprite({elf,side,action,actionToken,width,height,onRead
    sequenceTimings.current.extra=sequenceTimings.current[extraName as PetAction];
    const ultimateName=ultimateSequenceOf(assetId);
    if(ultimateName&&sequenceTimings.current[ultimateName as PetAction])sequenceTimings.current.ultimate=sequenceTimings.current[ultimateName as PetAction];
+   const presentation=(PET_ANIMATION_ASSETS[assetId] as PetAnimationAsset).presentation,stage=getFxHost();
+   if(context==='battle'&&presentation&&stage)customFx=createCustomBattleFx(stage,presentation,side);
    const fit=()=>{if(!instance||!host.current)return;const config=dimensions.current,w=host.current.clientWidth,h=host.current.clientHeight-config.footroom;// 地平線不隨畫布底部留白移動；角色大小仍由原場地決定。
     // 尺寸只由「高度」決定：靜態立繪與原生動畫必須同高，否則切換演出模式就會跳大小。
     // 待機影格的 mesh 比靜態不透明框寬（含武器、披風擺動），若讓寬度也參與 min()，
@@ -105,13 +112,15 @@ export function PetActionSprite({elf,side,action,actionToken,width,height,onRead
     // 對位：讀對手「實際可見框」的近側邊緣；讀不到才退回舊的場域中心。
     const dir=side==='p1'?1:-1,bodyW=(maxX-minX)*scale,rest=host.current.getBoundingClientRect();
     const opponent=context==='battle'?getRestVisibleBox(side==='p1'?'p2':'p1'):null;
-    const near=opponent?(dir>0?opponent.left:opponent.right)-rest.left:fallbackTarget;
+    const physical=isMeleePresentationSequence(meta.presentation,sequence)||sequence==='attack';
+    const depth=physical?Math.max(0,Math.min(.6,meta.presentation?.contactDepth??0)):0;
+    const near=opponent?(dir>0?opponent.left+(opponent.right-opponent.left)*depth:opponent.right-(opponent.right-opponent.left)*depth)-rest.left:fallbackTarget;
     const front=origin+dir*bodyW/2,overlap=Math.min(14,bodyW*.05);
     const body=bounds.get(sequence)?.[frameIndex.current]??{left:minX,right:maxX,top:minY,bottom:maxY};
     const rootOffset=((body.left+body.right-minX-maxX)/2)*sx;
     const poseHalfWidth=(body.right-body.left)*scale/2;
     const attack=retargetAttack(origin,near,dir,bodyW/2,rootOffset,poseHalfWidth,approach,overlap);
-    const advances=sequence==='attack'&&context==='battle'&&PET_ANIMATION_ASSETS[assetId].physicalMotion==='approach';
+    const advances=physical&&context==='battle'&&PET_ANIMATION_ASSETS[assetId].physicalMotion==='approach';
     const contact=attack.contact,x=advances?attack.translation:origin;
     const tx=x-(minX+maxX)/2*sx,ty=h+minY*scale;
     // 當前影格包圍框（client px），供對手對位、飄字與特效讀取。
@@ -124,18 +133,21 @@ export function PetActionSprite({elf,side,action,actionToken,width,height,onRead
      // 驗收用：待機框相對外層 div 的幾何，必須與靜態立繪的不透明區域重合。
      const sinkPx=sink||0,restHalf=bodyW/2;
      host.current.setAttribute('data-pet-rest',`${(-restHalf).toFixed(1)},${restHalf.toFixed(1)},${(-sinkPx).toFixed(1)},${(-sinkPx+refH*scale).toFixed(1)}`);
-    if(flight.current){const travelling=sequence==='sa'&&frameIndex.current<=hitFrame&&context==='battle'&&near!==origin;
+    const ownBox=frameBox.current?.();
+    if(customFx&&ownBox){const seq=clip.sequences.find(s=>s.name===sequence);const declared=PET_ANIMATION_ASSETS[assetId].sequences.find(s=>s.name===sequence);
+     const authored=customFramePresentation(clip,sequence,frameIndex.current),r=host.current.getBoundingClientRect();
+     const muzzlePoint=authored?.muzzle?{x:r.left+tx+authored.muzzle[0]/clip.pixelsPerUnit*sx,y:r.top+ty-authored.muzzle[1]/clip.pixelsPerUnit*scale}:undefined;
+     customFx.draw({sequence,frame:frameIndex.current,frames:seq?.frames.length??1,hits:declared?.hits??[],caster:ownBox,target:opponent,mirrored:sx<0,launch:authored?.launch,muzzlePoint});}
+    if(flight.current){const travelling=!customFx&&sequence==='sa'&&frameIndex.current<=hitFrame&&context==='battle'&&near!==origin;
      const aim=opponent?{x:boxCenterX(opponent)-rest.left,y:boxCenterY(opponent)-rest.top}:{x:near,y:h-config.height*.5};
      const t=Math.min(1,frameIndex.current/Math.max(1,hitFrame)),startX=front,startY=h-refH*scale*.5;
      flight.current.style.opacity=travelling?'1':'0';flight.current.style.left=`${startX+(aim.x-startX)*t}px`;flight.current.style.bottom=`${h-(startY+(aim.y-startY)*t)}px`;}
     instance.setFixedTransform({x:tx,y:ty},{x:sx,y:-scale});
-    // 全屏層：同一個鏡射與本體比例；底片不跟著出招位移（origin 為準）。底片不足以鋪滿整層時改 cover 並置中（fullscreenFit）。
+    // 全屏層：同一個鏡射與本體比例；底片不跟著出招位移（origin 為準）。底片沒蓋滿整層（BattleFxLayer 全矩形）時改 cover 並置中（fullscreenPlacement）。
     const fx=fxRuntime.current;
     if(fx&&fx.on){const lr=fx.el.getBoundingClientRect();if(lr.width>0&&lr.height>0){
-     const b=fx.frames[sequence]?.[frameIndex.current]??fx.bounds[sequence],f=fullscreenFit(b,{width:lr.width,height:lr.height},scale),fsx=sx<0?-f.scale:f.scale;
-     const fxX=f.centered&&b?lr.width/2-(b.left+b.right)/2*fsx:(origin-(minX+maxX)/2*sx)+(rest.left-lr.left);
-     const fxY=f.centered&&b?lr.height/2+(b.top+b.bottom)/2*f.scale:(h+minY*scale)+(rest.top-lr.top);
-     fx.player.setFixedTransform({x:fxX,y:fxY},{x:fsx,y:-f.scale});}}
+     const b=fx.frames[sequence]?.[frameIndex.current]??fx.bounds[sequence],f=fullscreenPlacement(b,{width:lr.width,height:lr.height},{scale,mirrored:sx<0,x:(origin-(minX+maxX)/2*sx)+(rest.left-lr.left),y:(h+minY*scale)+(rest.top-lr.top)});
+     fx.player.setFixedTransform({x:f.x,y:f.y},{x:f.sx,y:-f.scale});}}
     renderLoop?.invalidate();notifyVisibleBoxChanged();};
    refit.current=fit;
    const resize=new ResizeObserver(fit);resize.observe(host.current);fit();
@@ -147,16 +159,10 @@ export function PetActionSprite({elf,side,action,actionToken,width,height,onRead
    stopListen=()=>{renderLoop?.stop();clearInterval(metrics);resize.disconnect();document.removeEventListener('visibilitychange',visibility);};
    // 全屏層第二播放器：只有素材有底片序列、且戰鬥畫面掛了 BattleFxLayer 才建立；失敗只失去全屏底片，不影響本體。
    const layerHost=context==='battle'&&fxClip&&fxReport?getFxHost():null;
-   if(layerHost&&fxClip&&fxReport){
-    const el=document.createElement('div');el.dataset.petFxLayer=side;el.style.cssText='position:absolute;inset:0;pointer-events:none;visibility:hidden';layerHost.appendChild(el);
-    try{const fxPlayer=new SwfPlayer();await fxPlayer.mount(el,fxClip,{transparent:true,mode:'fixed',clock:'manual',signal:abort.signal});
-     if(!alive){fxPlayer.destroy();el.remove();return;}
-     fxPlayer.playSequence('standby',{loop:true});fxRuntime.current={player:fxPlayer,el,sequences:new Set(fxReport.fullscreen.sequences),bounds:fxReport.backdropBounds,frames:fxReport.backdropFrames,on:false};
-    }catch(error){el.remove();if(!alive)return;console.warn('[pet-actions] 全屏底片層略過',error);}
-   }
+   if(layerHost&&fxClip&&fxReport)fxRuntime.current=createLazyFxRuntime({layerHost,side,fxClip,sequences:fxReport.fullscreen.sequences,bounds:fxReport.backdropBounds,frames:fxReport.backdropFrames,createPlayer:()=>new SwfPlayer(),signal:abort.signal,mainTime:()=>(instance as SwfPlayer&{getTime?:()=>number})?.getTime?.()});// 底片播放器在本體就緒後的瀏覽器閒置時預載、整場保留（petFxLayerRuntime）
    player.current=instance;setReady(true);clearTimeout(deadline);
-  })().catch(error=>{clearTimeout(deadline);stopListen?.();renderLoop?.stop();instance?.destroy();lease.release();if(alive){console.warn('[pet-actions] 沿用簡易演出',error);degradePet(side,elf,'load-failed');onTransitionEnd?.();setReady(false);readyCallback.current(false);}});
-  return()=>{alive=false;onTransitionEnd?.();clearTimeout(deadline);if(context==='battle')reportPetPlayback(side,elf,{sequence:playbackAction.current,type:'cancel'});abort.abort();stopListen?.();refit.current=null;frameBox.current=null;restBox.current=null;player.current=null;const fx=fxRuntime.current;fxRuntime.current=null;setFullscreenFxActive(side,false);fx?.player.destroy();fx?.el.remove();instance?.destroy();lease.release();readyCallback.current(false);};
+  })().catch(error=>{clearTimeout(deadline);stopListen?.();renderLoop?.stop();instance?.destroy();customFx?.destroy();lease.release();if(alive){console.warn('[pet-actions] 沿用簡易演出',error);degradePet(side,elf,'load-failed');onTransitionEnd?.();setReady(false);readyCallback.current(false);}});
+  return()=>{alive=false;onTransitionEnd?.();clearTimeout(deadline);if(context==='battle')reportPetPlayback(side,elf,{sequence:playbackAction.current,type:'cancel'});abort.abort();stopListen?.();refit.current=null;frameBox.current=null;restBox.current=null;player.current=null;const fx=fxRuntime.current;fxRuntime.current=null;setFullscreenFxActive(side,false);fx?.player.destroy();fx?.el.remove();customFx?.destroy();instance?.destroy();lease.release();readyCallback.current(false);};
  },[side,context,elf.id,elf.battleId,elf.name,elf.skinId,resolvedAsset]);
  // 載入完成時若正在出招，等下一個待機邊界才切入，避免半招突然換播放器。
  React.useEffect(()=>{if(ready&&action==='standby')setActivated(true);},[ready,action]);
@@ -165,7 +171,7 @@ export function PetActionSprite({elf,side,action,actionToken,width,height,onRead
  React.useEffect(()=>{const p=player.current;if(!p||!activated)return;
   const play=(sequence:PetAction|'transform')=>{playbackAction.current=sequence;const names=p.getSequences().map(s=>s.name);const declared=sequence==='ultimate'?ultimateSequenceOf(resolvedAsset):null;const actual=sequence==='extra'?petExtraSequence(names,resolvedAsset?(PET_ANIMATION_ASSETS[resolvedAsset] as PetAnimationAsset).extraSequence:undefined):sequence==='ultimate'?(declared&&names.includes(declared)?declared:'sa'):sequence;currentSequence.current=actual;frameIndex.current=0;p.playSequence(actual,{loop:sequence==='standby'});
    const fx=fxRuntime.current;if(fx){const wanted=fx.sequences.has(actual);fx.on=wanted;fx.el.style.visibility=wanted?'visible':'hidden';if(wanted)fx.player.playSequence(actual,{loop:false});setFullscreenFxActive(side,wanted);}host.current?.setAttribute('data-pet-sequence',actual);if(sequence==='extra')host.current?.setAttribute('data-pet-extra-sequence',actual);if(sequence==='transform')host.current?.setAttribute('data-pet-transform-source',resolvedAsset??'');refit.current?.();notifyVisibleBoxChanged();};
-  const unsub=p.subscribe(event=>{if(context==='battle')reportPetPlayback(side,elf,playbackAction.current==='extra'||playbackAction.current==='ultimate'?{...event,sequence:playbackAction.current}:event);if(event.type==='marker')host.current?.setAttribute('data-pet-marker',`${event.sequence}:${event.marker?.name}:${event.playbackId}`);if(event.type==='complete'&&event.sequence!=='standby'){if(event.sequence==='transform')onTransitionEnd?.();play('standby');}});
+  const unsub=p.subscribe(event=>{if(context==='battle')reportPetPlayback(side,elf,playbackEventForAction(event,playbackAction.current,currentSequence.current));if(event.type==='marker')host.current?.setAttribute('data-pet-marker',`${event.sequence}:${event.marker?.name}:${event.playbackId}`);if(event.type==='complete'&&event.sequence!=='standby'){if(event.sequence==='transform')onTransitionEnd?.();play('standby');}});
   if(action==='standby'&&currentSequence.current==='transform')return unsub;
   if(action==='standby'&&transformPending.current&&p.getSequences().some(s=>s.name==='transform')){transformPending.current=false;play('transform');}
   else {transformPending.current=false;onTransitionEnd?.();play(action);}return unsub;

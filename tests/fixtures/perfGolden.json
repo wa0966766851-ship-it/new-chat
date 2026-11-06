@@ -1,0 +1,32 @@
+[
+  {
+    "name": "heavy-A",
+    "turnsPlayed": 30,
+    "winner": null,
+    "turnNumber": 31,
+    "logCount": 400,
+    "logsHash": "868231423f626bc8",
+    "finalHash": "90fb6a062f37d6db",
+    "chainHash": "fb02e05686962cd4"
+  },
+  {
+    "name": "heavy-B",
+    "turnsPlayed": 11,
+    "winner": null,
+    "turnNumber": 11,
+    "logCount": 138,
+    "logsHash": "87b4abaa569e1318",
+    "finalHash": "679afe42a33c215d",
+    "chainHash": "cbcc2b09eed770f9"
+  },
+  {
+    "name": "heavy-C",
+    "turnsPlayed": 30,
+    "winner": null,
+    "turnNumber": 31,
+    "logCount": 400,
+    "logsHash": "5aab9f14e0d1da06",
+    "finalHash": "2b8aef04ecb904cf",
+    "chainHash": "0e455f45341bf966"
+  }
+]

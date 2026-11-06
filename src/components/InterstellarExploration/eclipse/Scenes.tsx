@@ -10,6 +10,7 @@ import { formatBigNumber, formatFullNumber } from "../../../utils/formatBigNumbe
 import { fixedMulAt, tokenBrief, tokenHint, tokenLabel } from "../../../modes/interstellar/v2/recruit";
 import { TokenChip } from "./Recruit";
 import Barter from "./Barter";
+import { useConfirmPick } from "./dismiss";
 import { BOSS_TRAIT_BY_ID, bossTraitIcon, bossTraitText } from "../../../data/bossTraits";
 
 type Dispatch = (f: (r: E.RunV2) => E.RunV2) => void;
@@ -170,12 +171,25 @@ export function RestScene({ run, dispatch }: SceneProps) {
   );
 }
 
-function RelicChoice({ ids, taken, onTake }: { ids: string[]; taken?: string; onTake: (id: string) => void }) {
+/** 兩段式確認列：點選只標記，按「確認」（或雙擊／Enter）才送出。 */
+function ConfirmBar({ show, enabled, onConfirm, label }: { show: boolean; enabled: boolean; onConfirm: () => void; label?: string }) {
+  if (!show) return null;
   return (
+    <div className="mt-4 flex items-center gap-3">
+      <button type="button" className="ecl-btn" data-testid="pick-confirm" disabled={!enabled} onClick={onConfirm} title="確認選擇（雙擊卡片或 Enter 亦可）">確認</button>
+      {label && <span className="text-sm ecl-muted" data-testid="pick-selected">{label}</span>}
+    </div>
+  );
+}
+
+function RelicChoice({ ids, taken, onTake }: { ids: string[]; taken?: string; onTake: (id: string) => void }) {
+  const pick = useConfirmPick(ids, !!taken, onTake);
+  return (<>
     <div className="grid grid-cols-2 ecl-md:grid-cols-3 gap-4">
-      {ids.map(id => { const r = RELIC_BY_ID[id]; if (!r) return null; const picked = taken === id;
+      {ids.map(id => { const r = RELIC_BY_ID[id]; if (!r) return null; const picked = taken === id || pick.sel === id;
         return (
-          <button key={id} type="button" className="ecl-card !aspect-auto min-h-60 text-center p-5 flex flex-col items-center justify-center gap-3 disabled:opacity-30" data-rarity={r.rarity} data-picked={picked ? "true" : "false"} disabled={!!taken && !picked} onClick={() => onTake(id)}>
+          <button key={id} type="button" data-pick="relic" data-relic={id} aria-pressed={picked} className="ecl-card !aspect-auto min-h-60 text-center p-5 flex flex-col items-center justify-center gap-3 disabled:opacity-30" data-rarity={r.rarity} data-picked={picked ? "true" : "false"} disabled={!!taken && taken !== id}
+            onClick={() => { if (!taken) pick.select(id); }} onDoubleClick={() => { if (!taken) pick.confirm(id); }}>
             <RelicIcon id={id} rarity={r.rarity} glyph={r.glyph} dim="5rem" fontSize="2rem" />
             <span className="font-black ecl-gilt text-lg">{r.name}</span>
             <span className="ecl-roman text-[10px] ecl-muted">{RARITY_LABEL[r.rarity]}</span>
@@ -184,7 +198,8 @@ function RelicChoice({ ids, taken, onTake }: { ids: string[]; taken?: string; on
           </button>
         ); })}
     </div>
-  );
+    <ConfirmBar show={!taken} enabled={!!pick.sel} onConfirm={() => pick.confirm()} label={pick.sel ? RELIC_BY_ID[pick.sel]?.name : undefined} />
+  </>);
 }
 
 export function TreasureScene({ run, dispatch }: SceneProps) {
@@ -252,6 +267,19 @@ export function PreludeScene({ run, pool, dispatch, onFight, onOpenTeam }: Scene
   );
 }
 
+/** 精靈三選一：點選標記、「確認」才收下（taken 已有時鎖定）。 */
+function ElfOffer({ ids, pool, taken, className, onTake }: { ids: string[]; pool: Elf[]; taken?: string; className: string; onTake: (id: string) => void }) {
+  const pick = useConfirmPick(ids, !!taken, onTake);
+  return (<>
+    <div className={className}>
+      {ids.map(id => { const e = E.findElf(pool, id); if (!e) return null;
+        return <ElfTarot key={id} elf={e} picked={taken === id || pick.sel === id} disabled={!!taken && taken !== id}
+          onClick={() => { if (!taken) pick.select(id); }} onDoubleClick={() => { if (!taken) pick.confirm(id); }} />; })}
+    </div>
+    <ConfirmBar show={!taken} enabled={!!pick.sel} onConfirm={() => pick.confirm()} label={pick.sel ? E.findElf(pool, pick.sel)?.name : undefined} />
+  </>);
+}
+
 export function RewardScene({ run, pool, dispatch, onOpenRecruit }: SceneProps) {
   const [replace, setReplace] = React.useState<string | null>(null);
   if (run.scene.kind !== "reward") return null;
@@ -280,11 +308,8 @@ export function RewardScene({ run, pool, dispatch, onOpenRecruit }: SceneProps) 
       </>)}
       {reward.recruitChoices.length > 0 && (<>
         <div className="ecl-roman text-xs ecl-muted mt-6 mb-2">A soul wishes to follow</div>
-        <div className="grid grid-cols-3 gap-3 max-w-2xl">
-          {reward.recruitChoices.map(id => { const e = E.findElf(pool, id); if (!e) return null;
-            return <ElfTarot key={id} elf={e} picked={reward.recruitTaken === id} disabled={!!reward.recruitTaken && reward.recruitTaken !== id}
-              onClick={() => full ? setReplace(id) : dispatch(r => E.takeRewardRecruit(r, id, pool))} />; })}
-        </div>
+        <ElfOffer ids={reward.recruitChoices} pool={pool} taken={reward.recruitTaken} className="grid grid-cols-3 gap-3 max-w-2xl"
+          onTake={id => full ? setReplace(id) : dispatch(r => E.takeRewardRecruit(r, id, pool))} />
         {replace && <ReplacePicker run={run} incoming={E.findElf(pool, replace)?.name ?? ""} onPick={i => { dispatch(r => E.takeRewardRecruit(r, replace, pool, i)); setReplace(null); }} onCancel={() => setReplace(null)} />}
       </>)}
       <div className="pt-8"><button className="ecl-btn" onClick={() => dispatch(r => E.leaveReward(r, pool))}>{reward.isFinal ? "迎接黎明" : reward.isBoss ? "踏入下一章" : "繼續前行"}</button></div>
@@ -299,10 +324,8 @@ export function RecruitScene({ run, pool, dispatch }: SceneProps) {
   return (
     <Stage kicker="Covenant" title={run.scene.note} wide>
       <p className="ecl-muted mb-4">選一個，帶它走。其餘的會留在這裡，等下一個人。</p>
-      <div className="grid grid-cols-3 gap-3 max-w-3xl">
-        {run.scene.offer.map(id => { const e = E.findElf(pool, id); if (!e) return null;
-          return <ElfTarot key={id} elf={e} onClick={() => full ? setReplace(id) : dispatch(r => E.recruitFromOffer(r, id, pool))} />; })}
-      </div>
+      <ElfOffer ids={run.scene.offer} pool={pool} className="grid grid-cols-3 gap-3 max-w-3xl"
+        onTake={id => full ? setReplace(id) : dispatch(r => E.recruitFromOffer(r, id, pool))} />
       {replace && <ReplacePicker run={run} incoming={E.findElf(pool, replace)?.name ?? ""} onPick={i => { dispatch(r => E.recruitFromOffer(r, replace, pool, i)); setReplace(null); }} onCancel={() => setReplace(null)} />}
       <div className="pt-6"><button className="ecl-btn ecl-btn-ghost" onClick={() => dispatch(r => E.recruitFromOffer(r, null, pool))}>誰也不帶</button></div>
     </Stage>

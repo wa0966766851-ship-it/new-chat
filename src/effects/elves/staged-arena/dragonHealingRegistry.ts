@@ -100,12 +100,12 @@ export function peelTypes(c: ArenaContext): number {
   return types.length;
 }
 
-/** 龍魂印記：層數；效果（每次使用技能後 150 點龍系直接傷害 × 層數 × 已喚醒龍數）由技能後結算處理。 */
+/** 龍魂印記：層數；效果（每次使用技能後 150 點龍系技能傷害 × 層數 × 已喚醒龍數）由技能後結算處理。 */
 export function addSoulMark(c: ArenaContext): number {
   const n = bump(c, 'soulMark');
   c.setMark?.({ id: 'arena.dragonSoulMark', name: '龍魂印記', displayChar: '魂', source: '鎮世龍魂・龍之治癒',
     ownerBattleId: c.self.battleId, count: n, persistsOffField: true, clearable: false, polarity: 'positive',
-    description: '每次使用技能後：層數 × 已喚醒龍數 次，每次 150 點龍系直接傷害（龍魂之源每龍 +50）；真龍喚醒後按最高克制' } as any);
+    description: '每次使用技能後：層數 × 已喚醒龍數 次，每次 150 點龍系技能傷害（龍魂之源每龍 +50）；真龍喚醒後按最高克制' } as any);
   return n;
 }
 
@@ -131,7 +131,7 @@ export function applySoulPower(c: ArenaContext): void {
   c.setPlayerState('blkIgnoreBlock', true);
 }
 
-/** 龍魂印記（來源站程式）：每次使用技能後，層數 × 已喚醒龍數次，每次 150 點龍系直接傷害；
+/** 龍魂印記（來源站程式）：每次使用技能後，層數 × 已喚醒龍數次，每次 150 點龍系技能傷害；
  *  擁有龍魂之源時每次額外 + 本場已喚醒過的龍數 × 50；真龍・治癒喚醒後按最高克制（4 倍）計算。 */
 export function triggerDragonSoulMarks(c: ArenaContext): number {
   const marks = read(c, 'soulMark');
@@ -152,7 +152,7 @@ export function triggerDragonSoulMarks(c: ArenaContext): number {
 }
 
 /** 真龍・治癒取消四龍追加效果的觸發條件（來源站程式）：使用技能後無條件觸發
- *  赤龍（屬性技能時結算累計值）→ 金龍消除對手回合類效果 → 玄龍下 3 回合固定／百分比傷害提升 50% → 蒼龍吸取對手最大體力 50% → 屬性技能每條龍 150 龍系傷害。 */
+ *  赤龍（屬性技能時結算累計值）→ 金龍消除對手回合類效果 → 玄龍下 3 回合固定／百分比傷害提升 50% → 蒼龍吸取對手最大體力 50% → 屬性技能每條龍 150 龍系技能傷害。 */
 export function triggerTrueDragonEffects(c: ArenaContext): void {
   if (c.skill?.category === '屬性') settleRedDragon(c);
   c.clearTurnEffectsOf(c.targetSide);
@@ -192,7 +192,7 @@ export function queueTrueDragonEcho(c: ArenaContext): void {
   });
 }
 
-/** 真龍喚醒後使用屬性技能：每條龍額外造成 150 點龍系直接傷害。 */
+/** 真龍喚醒後使用屬性技能：每條龍額外造成 150 點龍系技能傷害。 */
 export function dragonTypeDamage(c: ArenaContext): number {
   const n = awakeCount(read(c, 'dragons'));
   let dealt = 0;

@@ -1,0 +1,112 @@
+{
+  "status": "unaccepted-joint-study",
+  "source": "body-protected-original.png",
+  "torso": [
+    [
+      281,
+      197
+    ],
+    [
+      394,
+      193
+    ],
+    [
+      415,
+      270
+    ],
+    [
+      454,
+      299
+    ],
+    [
+      480,
+      342
+    ],
+    [
+      489,
+      405
+    ],
+    [
+      472,
+      453
+    ],
+    [
+      467,
+      496
+    ],
+    [
+      405,
+      512
+    ],
+    [
+      280,
+      500
+    ],
+    [
+      235,
+      453
+    ],
+    [
+      217,
+      415
+    ],
+    [
+      210,
+      381
+    ],
+    [
+      235,
+      310
+    ],
+    [
+      275,
+      278
+    ]
+  ],
+  "cover": [
+    [
+      254,
+      475
+    ],
+    [
+      343,
+      463
+    ],
+    [
+      429,
+      470
+    ],
+    [
+      477,
+      483
+    ],
+    [
+      476,
+      529
+    ],
+    [
+      391,
+      538
+    ],
+    [
+      273,
+      525
+    ],
+    [
+      247,
+      507
+    ]
+  ],
+  "pivotNative": [
+    350,
+    480
+  ],
+  "degrees": 1.8,
+  "notes": [
+    "Original pixels copied without resampling before alignment",
+    "No per-pixel warping or body-wide translation",
+    "Belt stays in front of torso",
+    "Shoulder edge and waist gap require close-up dark/light inspection",
+    "Action drawings unchanged"
+  ]
+}

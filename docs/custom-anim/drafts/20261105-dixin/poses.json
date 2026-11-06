@@ -1,0 +1,225 @@
+{
+  "id": "emperor_dixin",
+  "elfId": "5017",
+  "elfName": "人皇·帝辛",
+  "fps": 24,
+  "facing": "left",
+  "canvas": [
+    900,
+    1100
+  ],
+  "anchor": [
+    450,
+    1040
+  ],
+  "margin": 8,
+  "pixelsPerUnit": 100,
+  "poses": {
+    "ready": {
+      "file": "docs/custom-anim/drafts/20261105-dixin/aligned/ready.png",
+      "sha256": "fda312c8c4577494515c5ad63372c4654e7f6e9770109ccab4878c6e8d2ae718",
+      "anchors": {
+        "muzzle": [
+          450,
+          440
+        ]
+      },
+      "review": {
+        "accepted": true,
+        "note": "目視核對完整姿勢，頭腳不裁切；需實播驗收銜接與方向。"
+      }
+    },
+    "cast": {
+      "file": "docs/custom-anim/drafts/20261105-dixin/aligned/cast.png",
+      "sha256": "851c8b3ef7cc265b0e305eaad9cdaedacc9626ed9feccb1f9a50fb5538707592",
+      "anchors": {
+        "muzzle": [
+          450,
+          440
+        ]
+      },
+      "review": {
+        "accepted": true,
+        "note": "目視核對完整姿勢，頭腳不裁切；需實播驗收銜接與方向。"
+      }
+    },
+    "anticipation": {
+      "file": "docs/custom-anim/drafts/20261105-dixin/aligned/anticipation.png",
+      "sha256": "920679652f4b3bf2413dc07481c6c9b35be411752214e840e6b5d1f3715f8a19",
+      "anchors": {
+        "muzzle": [
+          450,
+          440
+        ]
+      },
+      "review": {
+        "accepted": true,
+        "note": "目視核對完整姿勢，頭腳不裁切；需實播驗收銜接與方向。"
+      }
+    }
+  },
+  "sequences": {
+    "standby": {
+      "loop": true,
+      "drawings": [
+        {
+          "pose": "ready",
+          "hold": 24
+        }
+      ]
+    },
+    "attack": {
+      "drawings": [
+        {
+          "pose": "ready",
+          "hold": 3
+        },
+        {
+          "pose": "anticipation",
+          "hold": 3
+        },
+        {
+          "pose": "cast",
+          "hold": 12
+        },
+        {
+          "pose": "anticipation",
+          "hold": 4
+        },
+        {
+          "pose": "ready",
+          "hold": 6
+        }
+      ],
+      "hits": [
+        10
+      ],
+      "events": {
+        "launch": 6,
+        "recover": 18
+      }
+    },
+    "sa": {
+      "drawings": [
+        {
+          "pose": "ready",
+          "hold": 3
+        },
+        {
+          "pose": "anticipation",
+          "hold": 5
+        },
+        {
+          "pose": "cast",
+          "hold": 15
+        },
+        {
+          "pose": "anticipation",
+          "hold": 4
+        },
+        {
+          "pose": "ready",
+          "hold": 7
+        }
+      ],
+      "hits": [
+        12
+      ],
+      "events": {
+        "launch": 8,
+        "recover": 23
+      }
+    },
+    "ultimate": {
+      "drawings": [
+        {
+          "pose": "ready",
+          "hold": 3
+        },
+        {
+          "pose": "anticipation",
+          "hold": 7
+        },
+        {
+          "pose": "cast",
+          "hold": 20
+        },
+        {
+          "pose": "anticipation",
+          "hold": 4
+        },
+        {
+          "pose": "ready",
+          "hold": 8
+        }
+      ],
+      "hits": [
+        14
+      ],
+      "events": {
+        "launch": 10,
+        "recover": 30
+      }
+    },
+    "cp": {
+      "drawings": [
+        {
+          "pose": "ready",
+          "hold": 3
+        },
+        {
+          "pose": "anticipation",
+          "hold": 5
+        },
+        {
+          "pose": "cast",
+          "hold": 12
+        },
+        {
+          "pose": "anticipation",
+          "hold": 4
+        },
+        {
+          "pose": "ready",
+          "hold": 6
+        }
+      ],
+      "hits": [],
+      "events": {}
+    },
+    "extra": {
+      "drawings": [
+        {
+          "pose": "ready",
+          "hold": 3
+        },
+        {
+          "pose": "anticipation",
+          "hold": 6
+        },
+        {
+          "pose": "cast",
+          "hold": 12
+        },
+        {
+          "pose": "anticipation",
+          "hold": 4
+        },
+        {
+          "pose": "ready",
+          "hold": 8
+        }
+      ],
+      "hits": [],
+      "events": {}
+    },
+    "hited": {
+      "drawings": [
+        {
+          "pose": "ready",
+          "hold": 8
+        }
+      ]
+    }
+  }
+}

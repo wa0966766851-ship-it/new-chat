@@ -1,0 +1,58 @@
+{
+  "status": "experimental-not-published",
+  "method": "Farneback bidirectional inverse warp with premultiplied alpha interpolation",
+  "frames": 48,
+  "fps": 24,
+  "bytes": 9055936,
+  "diagnostics": [
+    {
+      "pair": [
+        0,
+        1
+      ],
+      "meanOpaqueDisplacement": 3.9072490700323548,
+      "maxOpaqueDisplacement": 42.37293081256427
+    },
+    {
+      "pair": [
+        1,
+        2
+      ],
+      "meanOpaqueDisplacement": 4.9766397553378345,
+      "maxOpaqueDisplacement": 35.08557580537268
+    },
+    {
+      "pair": [
+        2,
+        3
+      ],
+      "meanOpaqueDisplacement": 2.3687656517485554,
+      "maxOpaqueDisplacement": 21.372043598613182
+    },
+    {
+      "pair": [
+        3,
+        4
+      ],
+      "meanOpaqueDisplacement": 7.328358523722659,
+      "maxOpaqueDisplacement": 52.22651287383204
+    },
+    {
+      "pair": [
+        4,
+        5
+      ],
+      "meanOpaqueDisplacement": 2.1152072016229133,
+      "maxOpaqueDisplacement": 18.962876855139342
+    },
+    {
+      "pair": [
+        5,
+        0
+      ],
+      "meanOpaqueDisplacement": 0.9708290757989496,
+      "maxOpaqueDisplacement": 7.322697693370197
+    }
+  ],
+  "reference": "https://docs.opencv.org/4.12.0/db/d7f/tutorial_js_lucas_kanade.html"
+}

@@ -242,7 +242,8 @@ try {
       {
         const r = (await run(holder('5013', { extraSoulKit: [boostEntry(1)] }), attacker([fixedHit(200)])))[0];
         assert.equal(r.self.currentHp, 900 - 160, side + ' 增傷後高傷：400×0.4'); assert.equal(r.opp.currentHp, 100000, '後續增傷超過門檻選高傷分支（不汲取）');
-        assert.equal(marks(r.state, other).frost_glow, 240);
+        // 減少量 400-160=240，但原文「霜寒幽光上限200點」（d98b311）→ 封頂 200
+        assert.equal(marks(r.state, other).frost_glow, 200, side + ' 霜寒幽光上限200點：減少量240封頂為200');
       }
       // 低傷分支：<⅓ → 不減傷、汲取傷害值60%（原：299→乘數1、對手真傷179、自身回復179）
       {

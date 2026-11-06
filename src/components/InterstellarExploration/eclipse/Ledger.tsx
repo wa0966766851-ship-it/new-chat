@@ -5,6 +5,7 @@ import { RELIC_BY_ID, RARITY_LABEL, relicMulTotals, type RelicRarity } from "../
 import { Ornament, RelicIcon } from "./parts";
 import BagPage from "./Bag";
 import RecruitPage from "./Recruit";
+import { backdropClose, useEscDismiss } from "./dismiss";
 import type { Elf } from "../../../types";
 
 export type LedgerTab = "team" | "recruit" | "relics" | "chronicle";
@@ -20,14 +21,11 @@ export default function Ledger({ run, pool, tab, onTab, onClose, dispatch }: { r
     { key: "relics", label: "遺物", count: String(run.relics.length) },
     { key: "chronicle", label: "紀事", count: String(run.chronicle.length) },
   ];
-  React.useEffect(() => {
-    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
-    window.addEventListener("keydown", onKey); return () => window.removeEventListener("keydown", onKey);
-  }, [onClose]);
+  useEscDismiss(onClose);
 
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-      className="absolute inset-0 z-[45] overflow-y-auto bg-[rgba(4,3,8,.9)] backdrop-blur-[3px] p-4 ecl-md:p-8" role="dialog" aria-label="帳冊">
+      className="absolute inset-0 z-[45] overflow-y-auto bg-[rgba(4,3,8,.9)] backdrop-blur-[3px] p-4 ecl-md:p-8" role="dialog" aria-label="帳冊" {...backdropClose(onClose)}>
       <div className="mx-auto max-w-6xl ecl-xl:max-w-[88rem] ecl-frame p-5 ecl-md:p-8">
         <div className="flex flex-wrap items-end justify-between gap-4">
           <div>

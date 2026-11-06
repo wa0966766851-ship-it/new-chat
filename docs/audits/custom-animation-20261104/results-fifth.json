@@ -1,0 +1,31 @@
+{
+  "origin": "http://127.0.0.1:3015",
+  "viewport": [
+    1366,
+    768
+  ],
+  "results": [
+    {
+      "asset": "wuxu_zhuixing",
+      "side": "p1",
+      "action": "fifth",
+      "unknown": false,
+      "from": "371.4,206.1",
+      "to": "1065.5,330.8",
+      "phase": "impact",
+      "width": 1366,
+      "height": 768
+    },
+    {
+      "asset": "wuxu_zhuixing",
+      "side": "p2",
+      "action": "fifth",
+      "unknown": false,
+      "from": "994.6,206.1",
+      "to": "300.5,330.8",
+      "phase": "impact",
+      "width": 1366,
+      "height": 768
+    }
+  ]
+}

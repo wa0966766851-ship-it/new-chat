@@ -80,6 +80,23 @@ try{
   h.S.S=(c:any,e:any)=>{if(e===T.ON_ENTRANCE)c.setPlayerState('dimensionalDragonSoul',true);};
   const [poem]=await h.play(side,{self:h.unit('S',100000,[s],{speed:200}),opp:h.unit('E',100000,[{...h.wait(),pp:2,maxPp:2}])});
   assert.equal(100000-poem.opp.currentHp,200);checks++;
+  // 神懺福音之章是攻擊技能（特殊 威力150）：龍魂的次元龍系技能傷害（雙方PP總和×50，對方PP均滿×2＝600）與攻擊傷害各自獨立結算，
+  // 再合併為同一擊（appendToAttack）——技能傷害不受攻擊技能自身屬性相剋影響，攻擊傷害照常吃相剋。
+  {const gospel=structuredClone(h.find('5021','神懺福音之章'));
+   assert.equal(gospel.category,'特殊');
+   const dragonOp=gospel.kit.find((e:any)=>e.order===4).params.clause.body[0].acts[0];
+   assert.equal(dragonOp.p.appendToAttack,true,'攻擊技能的龍魂技能傷害必須合併攻擊');assert.equal(dragonOp.p.type,'技能');assert.equal(dragonOp.p.elem,'次元龍');
+   const run=async(orders:number[],type:string,oppType:string)=>{
+    h.S.S=(c:any,e:any)=>{if(e===T.ON_ENTRANCE)c.setPlayerState('dimensionalDragonSoul',true);};
+    const kit=gospel.kit.filter((e:any)=>orders.includes(e.order));
+    const [r]=await h.play(side,{self:h.unit('S',100000,[{...gospel,kit,type,power:10,pp:5,maxPp:5}],{speed:200}),opp:h.unit('E',100000,[{...h.wait(),pp:2,maxPp:2}],{type:oppType})});
+    return 100000-r.opp.currentHp;};
+   const results:number[]=[];
+   for(const [atkType,oppType] of [['普通','普通'],['火','水'],['水','火']]){
+    const total=await run([0,4],atkType,oppType),attackOnly=await run([0],atkType,oppType);
+    assert.equal(total-attackOnly,600,`${atkType}→${oppType}：次元龍系技能傷害固定 600，不吃攻擊技能的屬性相剋`);results.push(attackOnly);}
+   assert.ok(new Set(results).size===3,'攻擊傷害部分各自吃屬性相剋（普通／被抵抗／被剋制三種不同）');
+   delete h.S.S;checks+=5;}
   // 技能直接增加詩章也保存取得時的獨立體力快照。
   const add=h.kitSkill('快照',[{op:'resource_mark_add',p:{id:'poem_chapter',name:'詩章',displayChar:'詩',unit:'篇',side:'self',scope:'elf',persistsOffField:true,amount:4,snapshotKey:'poemHpSnapshots',description:'快照'}}]);
   const [snap]=await h.play(side,{self:h.unit('S',12345,[add]),opp:h.unit('E',100000,[h.wait()])});

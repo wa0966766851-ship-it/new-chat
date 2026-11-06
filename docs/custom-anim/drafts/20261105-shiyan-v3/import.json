@@ -1,0 +1,31 @@
+{
+  "baseSpec": "docs/custom-anim/drafts/20261105-combat-v2/wuxu_shiyan.json",
+  "draft": "docs/custom-anim/drafts/20261105-shiyan-v3",
+  "hitSheet": "docs/custom-anim/drafts/20261105-shiyan-v3/hit-source.png",
+  "idleAlignment": {
+    "scale": 0.8,
+    "offset": [
+      29.8,
+      132.8
+    ]
+  },
+  "hitAlignment": {
+    "scale": 0.604,
+    "offset": [
+      65.5,
+      133.4
+    ]
+  },
+  "idleMuzzle": [
+    190,
+    280
+  ],
+  "review": {
+    "accepted": true,
+    "note": "已檢視完整六格待機與四格受擊：朝左、書本雙手持有、幽影保留、頭腳完整；僅採關鍵畫面，整段仍需對戰驗收。"
+  },
+  "matte": {
+    "minGreenRegion": 1,
+    "despill": true
+  }
+}

@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import {JSDOM} from 'jsdom';
-import {fullscreenFit,registerFxHost,getFxHost,setFullscreenFxActive,isFullscreenFxActive,subscribeFullscreenFx,resetFullscreenFx} from '../src/battle/fullscreenFx';
+import {fullscreenFit,fullscreenPlacement,registerFxHost,getFxHost,setFullscreenFxActive,isFullscreenFxActive,subscribeFullscreenFx,resetFullscreenFx} from '../src/battle/fullscreenFx';
 import {routeUltimate,isFifthSkillAnim,ultimateSequenceOf} from '../src/battle/petActionRouting';
 import {PET_ANIMATION_ASSETS} from '../src/battle/petAnimationAssets';
 import {registerPetPlayer,registerPetTimings,reportPetPlayback,readyPetTiming,clearPetDegrade} from '../src/battle/petAnimationRegistry';
@@ -13,6 +13,31 @@ assert.deepEqual(fullscreenFit({left:0,right:400,top:0,bottom:300},{width:800,he
 assert.deepEqual(fullscreenFit({left:0,right:900,top:0,bottom:700},{width:800,height:600},1),{scale:1,centered:false},'已覆蓋整層 → 沿用角色比例與本體對位');
 for(const bad of [undefined,null,{left:0,right:0,top:0,bottom:0}])assert.deepEqual(fullscreenFit(bad as any,{width:800,height:600},1.5),{scale:1.5,centered:false},'無底片資料不改比例');
 assert.deepEqual(fullscreenFit({left:0,right:10,top:0,bottom:10},{width:0,height:0},1),{scale:1,centered:false});
+// 2026-11-01：逐影格 cover——底片從小長到大時，每一格（而不是聯集）都必須鋪滿整層。
+for(const frameBox of [{left:0,right:100,top:0,bottom:60},{left:0,right:400,top:0,bottom:200},{left:0,right:2000,top:0,bottom:1500}]){
+ const fit=fullscreenFit(frameBox,{width:1200,height:700},.8);
+ assert.ok((frameBox.right-frameBox.left)*fit.scale>=1200-1e-9&&(frameBox.bottom-frameBox.top)*fit.scale>=700-1e-9,`底片 ${frameBox.right}×${frameBox.bottom} 鋪滿 1200×700`);
+ assert.ok(fit.scale>=.8,'永不小於角色比例');
+}
+
+// ---- 全屏底片擺位：一律以 BattleFxLayer 整層矩形為準，蓋不滿就 cover＋置中（P2 鏡射只翻 x 縮放）----
+{const L={width:800,height:600};
+ // 底片太小 → cover 放大並置中；四邊都蓋滿。
+ for(const mirrored of [false,true]){const b={left:-200,right:200,top:0,bottom:200};const r=fullscreenPlacement(b,L,{scale:1,mirrored,x:123,y:456});
+  assert.equal(r.centered,true);assert.equal(r.scale,Math.max(800/400,600/200));assert.equal(Math.sign(r.sx),mirrored?-1:1,'鏡射只影響 x 縮放');assert.equal(Math.abs(r.sx),r.scale);
+  const xs=[r.x+b.left*r.sx,r.x+b.right*r.sx],ys=[r.y-b.bottom*r.scale,r.y-b.top*r.scale];
+  assert.ok(Math.min(...xs)<=1e-9&&Math.max(...xs)>=800-1e-9&&Math.min(...ys)<=1e-9&&Math.max(...ys)>=600-1e-9,'整層矩形四邊都被蓋住');
+  assert.ok(Math.abs((xs[0]+xs[1])/2-400)<1e-9&&Math.abs((ys[0]+ys[1])/2-300)<1e-9,'底片框置中於整層');}
+ // 尺寸夠且位置也蓋住 → 沿用與本體對位的擺法。
+ {const b={left:-500,right:500,top:-100,bottom:900};const r=fullscreenPlacement(b,L,{scale:1,mirrored:false,x:400,y:500});assert.deepEqual(r,{scale:1,sx:1,x:400,y:500,centered:false});
+  const m=fullscreenPlacement(b,L,{scale:1,mirrored:true,x:400,y:500});assert.deepEqual(m,{scale:1,sx:-1,x:400,y:500,centered:false},'鏡射保留 sx 負號');}
+ // 尺寸夠但位置沒蓋住（偏到一邊）→ 不能留空邊，改 cover。
+ {const b={left:0,right:1000,top:-100,bottom:900};const r=fullscreenPlacement(b,L,{scale:1,mirrored:false,x:400,y:500});assert.equal(r.centered,true,'尺寸夠但左緣在畫面內 → cover');assert.ok(r.x+b.left*r.sx<=1e-9&&r.x+b.right*r.sx>=800-1e-9);}
+ // 無底片資料／無效尺寸 → 原樣。
+ for(const bad of [undefined,null,{left:0,right:0,top:0,bottom:0}])assert.deepEqual(fullscreenPlacement(bad as any,L,{scale:1.5,mirrored:true,x:7,y:9}),{scale:1.5,sx:-1.5,x:7,y:9,centered:false});
+ assert.equal(fullscreenPlacement({left:0,right:10,top:0,bottom:10},{width:0,height:0},{scale:1,mirrored:false,x:1,y:2}).centered,false);
+ // 與 fullscreenFit 一致：不足以鋪滿的縮放倍率相同。
+ assert.equal(fullscreenPlacement({left:0,right:400,top:0,bottom:300},L,{scale:1,mirrored:false,x:0,y:0}).scale,fullscreenFit({left:0,right:400,top:0,bottom:300},L,1).scale);}
 
 // ---- 登記表（host／active）----
 const dom=new JSDOM('<div id="a"></div>');

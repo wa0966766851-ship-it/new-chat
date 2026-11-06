@@ -42,9 +42,13 @@ export function readScopedRegistry(state: BattleState, side: Side, elf: Elf, key
 }
 
 export function writeScopedRegistry(state: BattleState, side: Side, elf: Elf, patch: Record<string, unknown>): BattleState {
+  const id = battleIdentity(elf);
+  // 效能：引擎每回合有上百次登錄表寫入，其中多數是寫入相同值（旗標重設、回合戳記）。
+  // 寫入前後內容完全相同、且個體快照已存在時，直接沿用原狀態，不複製整張登錄表與銀行。
+  const flatNow = state[`${side}RegistryState`], snapNow = state[`${side}ElfState`]?.[id];
+  if (snapNow && registryPatchIsNoop(flatNow, snapNow.registry, patch, id === battleIdentity(state[side]))) return state;
   const flat = { ...state[`${side}RegistryState`] };
   const bank = { ...state[`${side}ElfState`] };
-  const id = battleIdentity(elf);
   const snapshot = bank[id] || { registry: {}, timers: [] };
   const registry = { ...snapshot.registry };
   for (const [key, value] of Object.entries(patch)) {
@@ -53,6 +57,15 @@ export function writeScopedRegistry(state: BattleState, side: Side, elf: Elf, pa
   }
   bank[id] = { ...snapshot, registry };
   return { ...state, [`${side}RegistryState`]: flat, [`${side}ElfState`]: bank };
+}
+
+const has = (o: object | undefined, k: string) => !!o && Object.prototype.hasOwnProperty.call(o, k);
+function registryPatchIsNoop(flat: Record<string, unknown> | undefined, registry: Record<string, unknown> | undefined, patch: Record<string, unknown>, isActive: boolean): boolean {
+  for (const [key, value] of Object.entries(patch)) {
+    const target = isTeamRegistryKey(key) || isActive ? flat : registry;
+    if (!has(target, key) || !Object.is(target![key], value)) return false;
+  }
+  return true;
 }
 
 export function addScopedTimer(state: BattleState, side: Side, elf: Elf, timer: Timer, context?: AddContext): BattleState {

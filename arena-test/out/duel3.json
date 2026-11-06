@@ -1,0 +1,14 @@
+{
+ "r1": {
+  "winner": "draw",
+  "turns": 51,
+  "liuDead": false,
+  "reyDead": false
+ },
+ "r2": {
+  "winner": "未分",
+  "turns": 2,
+  "liuDead": false,
+  "reyDead": false
+ }
+}

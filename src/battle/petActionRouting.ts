@@ -16,3 +16,7 @@ export function isFifthSkillAnim(anim:unknown):boolean{
 export function routeUltimate(base:PetAction,anim:unknown,hasUltimate:boolean):PetAction{
  return hasUltimate&&isFifthSkillAnim(anim)&&(base==='attack'||base==='sa'||base==='cp')?'ultimate':base;
 }
+/** 切換片段會先送出舊片段 cancel；只有新片段本身的事件才能改名為額外行動／第五技。 */
+export function playbackEventForAction<T extends {sequence:string}>(event:T,action:string,actualSequence:string):T{
+ return (action==='extra'||action==='ultimate')&&event.sequence===actualSequence?{...event,sequence:action}:event;
+}

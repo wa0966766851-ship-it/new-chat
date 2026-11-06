@@ -11,10 +11,10 @@ export const MIGRATED_SHARED_SKILL_KITS:ReviewedSequenceSkill[]=[
     seq('🎯 3回合內每回合使用技能則造成傷害前隨機吸取對手3項能力值-1',[{acts:[timed(3,'self_skill',[{acts:[a('stat_steal_random',{count:3,v:1})]}],'now',true)]}],3),
     seq('🎯 3回合內對手使用技能消耗的PP值變為3倍',[{acts:[a('pp_cost_mult',{turns:3,mult:3,kind:''})]}],4),
   ]},
-  {elfIds:['5004'],name:'千鳥俱寂',description:'■ 必中\n🎯 全屬性+1，自身處於能力提升狀態時強化效果翻倍\n🎯 消除對手回合類效果\n🎯 4回合內每回合恢復自身最大體力1/3並附加等量固定傷害\n🎯 下2回合自身攻擊技能必定令對手麻痺\n🎯 下2回合所有技能先制+2',kit:[
+  {elfIds:['5004'],name:'千鳥俱寂',description:'■ 必中\n🎯 全屬性+1，自身處於能力提升狀態時強化效果翻倍\n🎯 消除對手回合類效果\n🎯 4回合內每回合恢復自身最大體力1/3並附加等量百分比傷害\n🎯 下2回合自身攻擊技能必定令對手麻痺\n🎯 下2回合所有技能先制+2',kit:[
     prop('■ 必中','sure_hit',true,0),seq('🎯 全屬性+1，自身處於能力提升狀態時強化效果翻倍',[{acts:[a('stat',{side:'self',stats:['全屬性'],v:1,x2If:c('stage',{side:'self',kind:'up'})})]}],1),
     seq('🎯 消除對手回合類效果',[{acts:[a('clear_turn',{side:'opp'})]}],2),
-    hit('🎯 4回合內每回合恢復自身最大體力1/3並附加等量固定傷害',[{acts:[timed(4,'self_skill',[{acts:[a('heal',{side:'self',ratio:1/3}),a('dmg_equal',{type:'固定'})]}])]}],3),
+    hit('🎯 4回合內每回合恢復自身最大體力1/3並附加等量百分比傷害',[{acts:[timed(4,'self_skill',[{acts:[a('heal',{side:'self',ratio:1/3}),a('dmg_equal',{type:'百分比'})]}])]}],3),
     hit('🎯 下2回合自身攻擊技能必定令對手麻痺',[{acts:[timed(2,'self_attack',[{acts:[a('status',{side:'opp',status:'麻痺',turns:3,chance:100})]}],'next')]}],4),
     seq('🎯 下2回合所有技能先制+2',[{acts:[a('prio_turns',{turns:2,v:2})]}],5),
   ]},

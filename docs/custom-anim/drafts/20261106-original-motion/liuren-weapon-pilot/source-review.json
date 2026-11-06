@@ -1,0 +1,123 @@
+{
+  "status": "weapon-choreography-pilot-not-accepted",
+  "source": "public/elf-art/wuxu_liuren_body.png",
+  "sha256": "332ce8e0c167273a04f19ab2e17b567cfcd8e266b5ee802f28be3d3ae58f7ee8",
+  "underpainting": "docs/custom-anim/drafts/20261106-original-motion/liuren-weapon-pilot/body-underpainting-source.png",
+  "underpaintingSha256": "30e99af096fb902ffdeb9b063c7a53fac3493eeaf686aceb2134855301f0d009",
+  "protectedCore": [
+    [
+      294,
+      196
+    ],
+    [
+      390,
+      192
+    ],
+    [
+      413,
+      264
+    ],
+    [
+      450,
+      300
+    ],
+    [
+      476,
+      347
+    ],
+    [
+      488,
+      400
+    ],
+    [
+      470,
+      440
+    ],
+    [
+      476,
+      535
+    ],
+    [
+      498,
+      660
+    ],
+    [
+      480,
+      835
+    ],
+    [
+      464,
+      960
+    ],
+    [
+      405,
+      984
+    ],
+    [
+      352,
+      880
+    ],
+    [
+      322,
+      988
+    ],
+    [
+      251,
+      1000
+    ],
+    [
+      219,
+      966
+    ],
+    [
+      242,
+      823
+    ],
+    [
+      224,
+      664
+    ],
+    [
+      239,
+      524
+    ],
+    [
+      223,
+      426
+    ],
+    [
+      208,
+      389
+    ],
+    [
+      234,
+      307
+    ],
+    [
+      276,
+      276
+    ]
+  ],
+  "originalPixels": 146188,
+  "reconstructedPixels": 123816,
+  "sword": {
+    "file": "docs/custom-anim/drafts/20261106-original-motion/liuren-sword-source.png",
+    "sha256": "427dce028d7f498f54d4719f3d210527bc82d360cc8e31b93926d79f8b1abe03",
+    "crop": [
+      419,
+      16,
+      187,
+      1505
+    ],
+    "output": "docs/custom-anim/drafts/20261106-original-motion/liuren-weapon-pilot/sword.png",
+    "downloadBytes": 337030,
+    "decodedBytes": 1125740
+  },
+  "pending": [
+    "原背劍與鏈條殘留、披風補圖邊緣需放大檢查",
+    "六劍取還劍銜接仍需補圖",
+    "新增揮砍中間姿勢與受擊待兩側實播",
+    "自然局部待機仍未完成",
+    "這不是四隻動畫完成版"
+  ]
+}

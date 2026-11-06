@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import {readFileSync} from 'node:fs';
 import * as Blockly from '../src/vendor/blockly/index.js';
 import {buildEntryBlock,createKitBlockParser,defineCustomBlocks} from '../src/components/BlocklyBuilder';
 import {createHarness} from './helpers/migrationHarness';
@@ -11,6 +12,15 @@ const trait=(id:string)=>({...structuredClone(defs.find((x:any)=>x.elfIds.includ
 const equip=(id:string)=>({alienTraits:{gen2Trait:trait(id)}});
 const test=async(label:string,f:()=>any)=>{await f();checks++;console.log('✓ '+label);};
 try{
+  await test('六刃「專屬特性」固／百傷上限統一為 66（d1f4359；原文、來源 TXT、Kit 條款與參數一致，無殘留 60）',()=>{
+    const soul=souls.find((x:any)=>x.elfIds.includes('5022'));assert.ok(soul);
+    const txt=readFileSync('elf_source_files/elf_files/5022_無序六刃.txt','utf8');
+    assert.match(txt,/百分比傷害不超過66\s*$/m);assert.ok(!/百分比傷害不超過60/.test(txt));
+    assert.ok(soul.description.includes('百分比傷害不超過66')&&!soul.description.includes('不超過60'),'Kit description＝原文');
+    const guard=soul.kit.flatMap((e:any)=>e.params.clause.body.flatMap((b:any)=>b.acts||[])).find((a:any)=>a.op==='damage_survival_guard');
+    assert.equal(guard?.p.fixedPercentCap,66);
+    const clauses=soul.kit.map((e:any)=>e.customText).join('\n');assert.ok(!/上限60/.test(clauses)&&/上限66/.test(clauses),'條款摘要同為 66');
+  });
   await test('三特質資料逐項可編輯、Blockly保存重載、無名稱回退',()=>{
     defineCustomBlocks();
     for(const d of defs){

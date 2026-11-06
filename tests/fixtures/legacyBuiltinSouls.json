@@ -1,0 +1,1472 @@
+{
+ "odinKitless": {
+  "commit": "719513a2",
+  "soulMark": {
+   "name": "ᛏ",
+   "badgeChar": "ᛏ",
+   "description": "登場時：\n> 為己方背包中末位精靈附加ᛏ符文\n> 末位精靈已擁有ᛏ符文時順延附加至前一順位\n回合開始時：\n> 若對方在場精靈在場回合數未超過2回合且技能沒有符文則按照技能1到5位分別附加ᛈ、ᛁ、ᚦᚺ、ᚾ、ᛃ符文\n> 若自身在場回合數未超過2回合且技能沒有符文則按照技能1到5位分別附加ᚨ、ᛉ、ᚱᚷ、ᛇ、ᛖ\n自身附加的符文於選擇技能階段時激活直到該精靈下場後剝離：\n> 自身剝離時恢復該技能全部PP值\n> 每剝離1道激活狀態的符文則直接增加等同於自身最大體力20%的體力值\n> 對手剝離時失去該技能全部PP值\n> 每剝離1道激活狀態的符文則對手受到對手最大體力20%的真實傷害\n> 造成致死傷害時保留1點體力但PP值上限最高的技能PP值上限歸0\n回合結束時：\n> 恢復自身最大體力⅓並附加對手等量百分比傷害\n> 恢復前自身體力低於對手則下次對手所有技能先制-2且造成技能傷害降低50%\n> 恢復後自身體力高於對手則下次所有技能先制+2且造成技能傷害提升50%\n決鬥：\n> 在場精靈直到任一方被擊敗前雙方無法附加控制類異常狀態與主動切換下場\nᛏ：\n> 持有該符文者提升所有能力值20%\n> 但每次出戰時與對手當前在場精靈發起決鬥\n> 下場後保留，上限1道\nᚨ：\n> 激活後直到下場前持有者免疫所有異常狀態\n> 每回合開始時將對手所處的弱化類異常延長至3回合\nᛉ：\n> 激活後直到下場前對手能力提升效果失效\n> 無法觸發場下精靈對場上精靈的效果\nᚱᚷ：\n> 激活後直到下場前持有者所有技能必定命中、強制執行命中效果\n> 選擇技能時不受PP值限制\nᛇ：\n> 激活後令持有者的對手相同位置技能PP值上限與該技能相同\n> 超出部分的PP值每有1點轉化為附加對手100點真實傷害\nᛖ：\n> 激活後直到下場前持有者的對手正先制效果無法高於先制+1\n> 擊敗效果失效\nᛈ：\n> 激活後直到下場前持有者每次選擇該技能轉化為使用自身技能中與對手所選擇使用技能相同位置技能\nᛁ：\n> 激活後則直到下場前持有者此技能固有效果失效\n> 造成非真實傷害減半\nᚦᚺ：\n> 激活後則直到下場前持有者護盾與護罩附加效果失效\n> 回合結束時受到等同於護盾與護罩總和20%的真實傷害\nᚾ：\n> 激活後則直到下場前持有者失去能力值20%\nᛃ：\n> 持有者無法觸發未擊敗對手時效果\n> 對手每次使用技能時被對手吸取最大體力40%",
+   "effectType": "custom",
+   "effectValue": 0
+  },
+  "kit": null
+ },
+ "odinKit1023": {
+  "commit": "5af874d2",
+  "soulMark": {
+   "name": "ᛏ",
+   "badgeChar": "ᛏ",
+   "description": "登場時：\n> 為己方背包中末位精靈附加ᛏ符文\n> 末位精靈已擁有ᛏ符文時順延附加至前一順位\n回合開始時：\n> 若對方在場精靈在場回合數未超過2回合且技能沒有符文則按照技能1到5位分別附加ᛈ、ᛁ、ᚦᚺ、ᚾ、ᛃ符文\n> 若自身在場回合數未超過2回合且技能沒有符文則按照技能1到5位分別附加ᚨ、ᛉ、ᚱᚷ、ᛇ、ᛖ\n自身附加的符文於選擇技能階段時激活直到該精靈下場後剝離：\n> 自身剝離時恢復該技能全部PP值\n> 每剝離1道激活狀態的符文則直接增加等同於自身最大體力20%的體力值\n> 對手剝離時失去該技能全部PP值\n> 每剝離1道激活狀態的符文則對手受到對手最大體力20%的真實傷害\n> 造成致死傷害時保留1點體力但PP值上限最高的技能PP值上限歸0\n回合結束時：\n> 恢復自身最大體力⅓並附加對手等量百分比傷害\n> 恢復前自身體力低於對手則下次對手所有技能先制-2且造成技能傷害降低50%\n> 恢復後自身體力高於對手則下次所有技能先制+2且造成技能傷害提升50%\n決鬥：\n> 在場精靈直到任一方被擊敗前雙方無法附加控制類異常狀態與主動切換下場\nᛏ：\n> 持有該符文者提升所有能力值20%\n> 但每次出戰時與對手當前在場精靈發起決鬥\n> 下場後保留，上限1道\nᚨ：\n> 激活後直到下場前持有者免疫所有異常狀態\n> 每回合開始時將對手所處的弱化類異常延長至3回合\nᛉ：\n> 激活後直到下場前對手能力提升效果失效\n> 無法觸發場下精靈對場上精靈的效果\nᚱᚷ：\n> 激活後直到下場前持有者所有技能必定命中、強制執行命中效果\n> 選擇技能時不受PP值限制\nᛇ：\n> 激活後令持有者的對手相同位置技能PP值上限與該技能相同\n> 超出部分的PP值每有1點轉化為附加對手100點真實傷害\nᛖ：\n> 激活後直到下場前持有者的對手正先制效果無法高於先制+1\n> 擊敗效果失效\nᛈ：\n> 激活後直到下場前持有者每次選擇該技能轉化為使用自身技能中與對手所選擇使用技能相同位置技能\nᛁ：\n> 激活後則直到下場前持有者此技能固有效果失效\n> 造成非真實傷害減半\nᚦᚺ：\n> 激活後則直到下場前持有者護盾與護罩附加效果失效\n> 回合結束時受到等同於護盾與護罩總和20%的真實傷害\nᚾ：\n> 激活後則直到下場前持有者失去能力值20%\nᛃ：\n> 持有者無法觸發未擊敗對手時效果\n> 對手每次使用技能時被對手吸取最大體力40%",
+   "effectType": "custom",
+   "effectValue": 0,
+   "effectMode": "kit",
+   "kit": [
+    {
+     "customText": "登場時為己方末位尚無ᛏ的精靈附加永久戰神符文",
+     "codeId": "effect_sequence",
+     "params": {
+      "clause": {
+       "parsed": true,
+       "body": [
+        {
+         "acts": [
+          {
+           "label": "battle_mark_to_last_ally",
+           "op": "battle_mark_to_last_ally",
+           "p": {
+            "displayChar": "ᛏ",
+            "statRatio": 1.2,
+            "duel": true,
+            "name": "ᛏ 戰神符文",
+            "id": "tiwaz_rune"
+           }
+          }
+         ]
+        }
+       ],
+       "trig": "entrance",
+       "raw": "登場時為己方末位尚無ᛏ的精靈附加永久戰神符文"
+      }
+     },
+     "source": "soulmark",
+     "order": 0,
+     "node": "on_entered",
+     "role": "innate"
+    },
+    {
+     "customText": "對手在場前2回合為無符文技能按槽附加符文",
+     "codeId": "effect_sequence",
+     "params": {
+      "clause": {
+       "parsed": true,
+       "body": [
+        {
+         "acts": [
+          {
+           "label": "skill_marks_assign",
+           "op": "skill_marks_assign",
+           "p": {
+            "withinRounds": 2,
+            "marks": [
+             {
+              "capabilities": {
+               "mirrorOpponentSlot": true
+              },
+              "description": "選擇該槽時改用自身與對手原所選技能同位序的技能",
+              "symbol": "ᛈ",
+              "rules": [],
+              "strip": {
+               "zeroHighestMaxPp": true,
+               "damageRatio": 0.2,
+               "nonlethal": true,
+               "restorePp": false,
+               "hpRatio": 0
+              }
+             },
+             {
+              "capabilities": {
+               "nonTrueOutputMultiplier": 0.5,
+               "innateDisabled": true
+              },
+              "description": "本槽固有效果失效；持有者非真實傷害減半",
+              "symbol": "ᛁ",
+              "rules": [],
+              "strip": {
+               "zeroHighestMaxPp": true,
+               "damageRatio": 0.2,
+               "nonlethal": true,
+               "restorePp": false,
+               "hpRatio": 0
+              }
+             },
+             {
+              "capabilities": {
+               "shieldsBlocked": true
+              },
+              "description": "無法附加護盾護罩；回合末受到兩者總和20%真傷",
+              "symbol": "ᚦᚺ",
+              "rules": [
+               {
+                "parsed": true,
+                "body": [
+                 {
+                  "acts": [
+                   {
+                    "label": "held_resources_damage",
+                    "op": "held_resources_damage",
+                    "p": {
+                     "resources": [
+                      "shield",
+                      "barrier"
+                     ],
+                     "ratio": 0.2
+                    }
+                   }
+                  ]
+                 }
+                ],
+                "trig": "round_end",
+                "raw": "槽印記持有者規則"
+               }
+              ],
+              "strip": {
+               "zeroHighestMaxPp": true,
+               "damageRatio": 0.2,
+               "nonlethal": true,
+               "restorePp": false,
+               "hpRatio": 0
+              }
+             },
+             {
+              "capabilities": {
+               "statMultiplier": 0.8
+              },
+              "description": "直到下場前五項能力點數降低20%",
+              "symbol": "ᚾ",
+              "rules": [],
+              "strip": {
+               "zeroHighestMaxPp": true,
+               "damageRatio": 0.2,
+               "nonlethal": true,
+               "restorePp": false,
+               "hpRatio": 0
+              }
+             },
+             {
+              "capabilities": {
+               "notKilledDisabled": true
+              },
+              "description": "未擊敗效果失效；對手使用技能時被對手吸取最大體力40%",
+              "symbol": "ᛃ",
+              "rules": [
+               {
+                "parsed": true,
+                "body": [
+                 {
+                  "acts": [
+                   {
+                    "label": "drain_to_opponent",
+                    "op": "drain_to_opponent",
+                    "p": {
+                     "ratio": 0.4
+                    }
+                   }
+                  ]
+                 }
+                ],
+                "trig": "opp_skill",
+                "raw": "槽印記持有者規則"
+               }
+              ],
+              "strip": {
+               "zeroHighestMaxPp": true,
+               "damageRatio": 0.2,
+               "nonlethal": true,
+               "restorePp": false,
+               "hpRatio": 0
+              }
+             }
+            ],
+            "side": "opp"
+           }
+          }
+         ]
+        }
+       ],
+       "trig": "round_start",
+       "raw": "對手在場前2回合為無符文技能按槽附加符文"
+      }
+     },
+     "source": "soulmark",
+     "order": 1,
+     "node": "round_start",
+     "role": "innate"
+    },
+    {
+     "customText": "自身在場前2回合為無符文技能按槽附加符文",
+     "codeId": "effect_sequence",
+     "params": {
+      "clause": {
+       "parsed": true,
+       "body": [
+        {
+         "acts": [
+          {
+           "label": "skill_marks_assign",
+           "op": "skill_marks_assign",
+           "p": {
+            "withinRounds": 2,
+            "marks": [
+             {
+              "capabilities": {
+               "statusImmune": true
+              },
+              "description": "激活後免疫異常；回合開始將對手弱化類異常延長至至少3回合",
+              "symbol": "ᚨ",
+              "rules": [
+               {
+                "parsed": true,
+                "body": [
+                 {
+                  "acts": [
+                   {
+                    "label": "status_duration_floor",
+                    "op": "status_duration_floor",
+                    "p": {
+                     "turns": 3,
+                     "side": "opp",
+                     "cls": "弱化類"
+                    }
+                   }
+                  ]
+                 }
+                ],
+                "trig": "round_start",
+                "raw": "槽印記持有者規則"
+               }
+              ],
+              "strip": {
+               "zeroHighestMaxPp": false,
+               "damageRatio": 0,
+               "nonlethal": true,
+               "restorePp": true,
+               "hpRatio": 0.2
+              }
+             },
+             {
+              "capabilities": {
+               "opponentBoostDisabled": true,
+               "suppressBenchEffects": true
+              },
+              "description": "對手能力提升效果失效；阻止己方場下精靈支援場上",
+              "symbol": "ᛉ",
+              "rules": [],
+              "strip": {
+               "zeroHighestMaxPp": false,
+               "damageRatio": 0,
+               "nonlethal": true,
+               "restorePp": true,
+               "hpRatio": 0.2
+              }
+             },
+             {
+              "capabilities": {
+               "forceHitEffects": true,
+               "ppUnrestricted": true,
+               "sureHit": true
+              },
+              "description": "所有技能必中、強制執行命中效果；選招不受PP限制",
+              "symbol": "ᚱᚷ",
+              "rules": [],
+              "strip": {
+               "zeroHighestMaxPp": false,
+               "damageRatio": 0,
+               "nonlethal": true,
+               "restorePp": true,
+               "hpRatio": 0.2
+              }
+             },
+             {
+              "capabilities": {},
+              "description": "激活時同槽PP上限同步，超出部分每點附加100真傷",
+              "symbol": "ᛇ",
+              "rules": [
+               {
+                "activationOnly": true,
+                "parsed": true,
+                "body": [
+                 {
+                  "acts": [
+                   {
+                    "label": "skill_mark_pp_match",
+                    "op": "skill_mark_pp_match",
+                    "p": {
+                     "perPp": 100
+                    }
+                   }
+                  ]
+                 }
+                ],
+                "trig": "skill_selected",
+                "raw": "槽印記持有者規則"
+               }
+              ],
+              "strip": {
+               "zeroHighestMaxPp": false,
+               "damageRatio": 0,
+               "nonlethal": true,
+               "restorePp": true,
+               "hpRatio": 0.2
+              }
+             },
+             {
+              "capabilities": {
+               "opponentKillDisabled": true,
+               "priorityCeiling": 1
+              },
+              "description": "對手正先制至多+1；對手擊敗效果失效",
+              "symbol": "ᛖ",
+              "rules": [],
+              "strip": {
+               "zeroHighestMaxPp": false,
+               "damageRatio": 0,
+               "nonlethal": true,
+               "restorePp": true,
+               "hpRatio": 0.2
+              }
+             }
+            ],
+            "side": "self"
+           }
+          }
+         ]
+        }
+       ],
+       "trig": "round_start",
+       "raw": "自身在場前2回合為無符文技能按槽附加符文"
+      }
+     },
+     "source": "soulmark",
+     "order": 2,
+     "node": "round_start",
+     "role": "innate"
+    },
+    {
+     "customText": "回合結束時：恢復自身最大體力⅓並附加對手等量百分比傷害",
+     "codeId": "effect_sequence",
+     "params": {
+      "clause": {
+       "parsed": true,
+       "body": [
+        {
+         "acts": [
+          {
+           "label": "heal_then",
+           "op": "heal_then",
+           "p": {
+            "ratio": 0.3333333333333333,
+            "body": [
+             {
+              "acts": [
+               {
+                "label": "dmg_from_last",
+                "op": "dmg_from_last",
+                "p": {
+                 "ratio": 1,
+                 "type": "百分比"
+                }
+               }
+              ]
+             }
+            ],
+            "side": "self"
+           }
+          }
+         ]
+        }
+       ],
+       "trig": "round_end",
+       "raw": "回合結束時：恢復自身最大體力⅓並附加對手等量百分比傷害"
+      }
+     },
+     "source": "soulmark",
+     "order": 5,
+     "node": "round_end",
+     "role": "innate"
+    },
+    {
+     "customText": "恢復前自身體力低於對手則下次對手所有技能先制-2且造成技能傷害降低50%",
+     "codeId": "effect_sequence",
+     "params": {
+      "clause": {
+       "parsed": true,
+       "body": [
+        {
+         "acts": [
+          {
+           "label": "next_skill_prio",
+           "op": "next_skill_prio",
+           "p": {
+            "dmgMod": -0.5,
+            "side": "opp",
+            "v": -2
+           }
+          }
+         ],
+         "cond": [
+          {
+           "label": "恢復前體力低於對手",
+           "c": "hp_cmp",
+           "p": {
+            "side": "self",
+            "op": "低於"
+           }
+          }
+         ]
+        }
+       ],
+       "trig": "round_end",
+       "raw": "恢復前自身體力低於對手則下次對手所有技能先制-2且造成技能傷害降低50%"
+      }
+     },
+     "source": "soulmark",
+     "order": 6,
+     "node": "round_end",
+     "role": "innate"
+    },
+    {
+     "customText": "恢復後自身體力高於對手則下次所有技能先制+2且造成技能傷害提升50%",
+     "codeId": "effect_sequence",
+     "params": {
+      "clause": {
+       "parsed": true,
+       "body": [
+        {
+         "acts": [
+          {
+           "label": "next_skill_prio",
+           "op": "next_skill_prio",
+           "p": {
+            "dmgMod": 0.5,
+            "side": "self",
+            "v": 2
+           }
+          }
+         ],
+         "cond": [
+          {
+           "label": "恢復後體力高於對手",
+           "c": "hp_cmp",
+           "p": {
+            "side": "self",
+            "op": "高於"
+           }
+          }
+         ],
+         "live": true
+        }
+       ],
+       "trig": "round_end",
+       "raw": "恢復後自身體力高於對手則下次所有技能先制+2且造成技能傷害提升50%"
+      }
+     },
+     "source": "soulmark",
+     "order": 7,
+     "node": "round_end",
+     "role": "innate"
+    }
+   ]
+  },
+  "kit": null
+ },
+ "odinKit1030": {
+  "commit": "20891ebd",
+  "soulMark": {
+   "name": "ᛏ",
+   "badgeChar": "ᛏ",
+   "description": "登場時：\n> 為己方背包中末位精靈附加ᛏ符文\n> 末位精靈已擁有ᛏ符文時順延附加至前一順位\n回合開始時：\n> 若對方在場精靈在場回合數未超過2回合且技能沒有符文則按照技能1到5位分別附加ᛈ、ᛁ、ᚦᚺ、ᚾ、ᛃ符文\n> 若自身在場回合數未超過2回合且技能沒有符文則按照技能1到5位分別附加ᚨ、ᛉ、ᚱᚷ、ᛇ、ᛖ\n自身附加的符文於選擇技能階段時激活直到該精靈下場後剝離：\n> 自身剝離時恢復該技能全部PP值\n> 每剝離1道激活狀態的符文則直接增加等同於自身最大體力20%的體力值\n> 對手剝離時失去該技能全部PP值\n> 每剝離1道激活狀態的符文則對手受到對手最大體力20%的真實傷害\n> 造成致死傷害時保留1點體力但PP值上限最高的技能PP值上限歸0\n回合結束時：\n> 恢復自身最大體力⅓並附加對手等量百分比傷害\n> 恢復前自身體力低於對手則下次對手所有技能先制-2且造成技能傷害降低50%\n> 恢復後自身體力高於對手則下次所有技能先制+2且造成技能傷害提升50%\n決鬥：\n> 在場精靈直到任一方被擊敗前雙方無法附加控制類異常狀態與主動切換下場\nᛏ：\n> 持有該符文者提升所有能力值20%\n> 但每次出戰時與對手當前在場精靈發起決鬥\n> 下場後保留，上限1道\nᚨ：\n> 激活後直到下場前持有者免疫所有異常狀態\n> 每回合開始時將對手所處的弱化類異常延長至3回合\nᛉ：\n> 激活後直到下場前對手能力提升效果失效\n> 無法觸發場下精靈對場上精靈的效果\nᚱᚷ：\n> 激活後直到下場前持有者所有技能必定命中、強制執行命中效果\n> 選擇技能時不受PP值限制\nᛇ：\n> 激活後令持有者的對手相同位置技能PP值上限與該技能相同\n> 超出部分的PP值每有1點轉化為附加對手100點真實傷害\nᛖ：\n> 激活後直到下場前持有者的對手正先制效果無法高於先制+1\n> 擊敗效果失效\nᛈ：\n> 激活後直到下場前持有者每次選擇該技能轉化為使用自身技能中與對手所選擇使用技能相同位置技能\nᛁ：\n> 激活後則直到下場前持有者此技能固有效果失效\n> 造成非真實傷害減半\nᚦᚺ：\n> 激活後則直到下場前持有者護盾與護罩附加效果失效\n> 回合結束時受到等同於護盾與護罩總和20%的真實傷害\nᚾ：\n> 激活後則直到下場前持有者失去能力值20%\nᛃ：\n> 持有者無法觸發未擊敗對手時效果\n> 對手每次使用技能時被對手吸取最大體力40%",
+   "effectType": "custom",
+   "effectValue": 0,
+   "effectMode": "kit",
+   "kit": [
+    {
+     "customText": "登場時為己方末位尚無ᛏ的精靈附加永久戰神符文",
+     "codeId": "effect_sequence",
+     "params": {
+      "clause": {
+       "parsed": true,
+       "body": [
+        {
+         "acts": [
+          {
+           "label": "battle_mark_to_last_ally",
+           "op": "battle_mark_to_last_ally",
+           "p": {
+            "displayChar": "ᛏ",
+            "statRatio": 1.2,
+            "duel": true,
+            "name": "ᛏ 戰神符文",
+            "id": "tiwaz_rune"
+           }
+          }
+         ]
+        }
+       ],
+       "trig": "entrance",
+       "raw": "登場時為己方末位尚無ᛏ的精靈附加永久戰神符文"
+      }
+     },
+     "source": "soulmark",
+     "order": 0,
+     "node": "on_entered",
+     "role": "innate"
+    },
+    {
+     "customText": "對手在場前2回合為無符文技能按槽附加符文",
+     "codeId": "effect_sequence",
+     "params": {
+      "clause": {
+       "parsed": true,
+       "body": [
+        {
+         "acts": [
+          {
+           "label": "skill_marks_assign",
+           "op": "skill_marks_assign",
+           "p": {
+            "withinRounds": 2,
+            "marks": [
+             {
+              "capabilities": {
+               "mirrorOpponentSlot": true
+              },
+              "description": "選擇該槽時改用自身與對手原所選技能同位序的技能",
+              "symbol": "ᛈ",
+              "rules": [],
+              "strip": {
+               "zeroHighestMaxPp": true,
+               "damageRatio": 0.2,
+               "nonlethal": true,
+               "restorePp": false,
+               "hpRatio": 0
+              }
+             },
+             {
+              "capabilities": {
+               "nonTrueOutputMultiplier": 0.5,
+               "innateDisabled": true
+              },
+              "description": "本槽固有效果失效；持有者非真實傷害減半",
+              "symbol": "ᛁ",
+              "rules": [],
+              "strip": {
+               "zeroHighestMaxPp": true,
+               "damageRatio": 0.2,
+               "nonlethal": true,
+               "restorePp": false,
+               "hpRatio": 0
+              }
+             },
+             {
+              "capabilities": {
+               "shieldsBlocked": true
+              },
+              "description": "無法附加護盾護罩；回合末受到兩者總和20%真傷",
+              "symbol": "ᚦᚺ",
+              "rules": [
+               {
+                "parsed": true,
+                "body": [
+                 {
+                  "acts": [
+                   {
+                    "label": "held_resources_damage",
+                    "op": "held_resources_damage",
+                    "p": {
+                     "resources": [
+                      "shield",
+                      "barrier"
+                     ],
+                     "ratio": 0.2
+                    }
+                   }
+                  ]
+                 }
+                ],
+                "trig": "round_end",
+                "raw": "槽印記持有者規則"
+               }
+              ],
+              "strip": {
+               "zeroHighestMaxPp": true,
+               "damageRatio": 0.2,
+               "nonlethal": true,
+               "restorePp": false,
+               "hpRatio": 0
+              }
+             },
+             {
+              "capabilities": {
+               "statMultiplier": 0.8
+              },
+              "description": "直到下場前五項能力點數降低20%",
+              "symbol": "ᚾ",
+              "rules": [],
+              "strip": {
+               "zeroHighestMaxPp": true,
+               "damageRatio": 0.2,
+               "nonlethal": true,
+               "restorePp": false,
+               "hpRatio": 0
+              }
+             },
+             {
+              "capabilities": {
+               "notKilledDisabled": true
+              },
+              "description": "未擊敗效果失效；對手使用技能時被對手吸取最大體力40%",
+              "symbol": "ᛃ",
+              "rules": [
+               {
+                "parsed": true,
+                "body": [
+                 {
+                  "acts": [
+                   {
+                    "label": "drain_to_opponent",
+                    "op": "drain_to_opponent",
+                    "p": {
+                     "ratio": 0.4
+                    }
+                   }
+                  ]
+                 }
+                ],
+                "trig": "opp_skill",
+                "raw": "槽印記持有者規則"
+               }
+              ],
+              "strip": {
+               "zeroHighestMaxPp": true,
+               "damageRatio": 0.2,
+               "nonlethal": true,
+               "restorePp": false,
+               "hpRatio": 0
+              }
+             }
+            ],
+            "side": "opp"
+           }
+          }
+         ]
+        }
+       ],
+       "trig": "round_start",
+       "raw": "對手在場前2回合為無符文技能按槽附加符文"
+      }
+     },
+     "source": "soulmark",
+     "order": 1,
+     "node": "round_start",
+     "role": "innate"
+    },
+    {
+     "customText": "自身在場前2回合為無符文技能按槽附加符文",
+     "codeId": "effect_sequence",
+     "params": {
+      "clause": {
+       "parsed": true,
+       "body": [
+        {
+         "acts": [
+          {
+           "label": "skill_marks_assign",
+           "op": "skill_marks_assign",
+           "p": {
+            "withinRounds": 2,
+            "marks": [
+             {
+              "capabilities": {
+               "statusImmune": true
+              },
+              "description": "激活後免疫異常；回合開始將對手弱化類異常延長至至少3回合",
+              "symbol": "ᚨ",
+              "rules": [
+               {
+                "parsed": true,
+                "body": [
+                 {
+                  "acts": [
+                   {
+                    "label": "status_duration_floor",
+                    "op": "status_duration_floor",
+                    "p": {
+                     "turns": 3,
+                     "side": "opp",
+                     "cls": "弱化類"
+                    }
+                   }
+                  ]
+                 }
+                ],
+                "trig": "round_start",
+                "raw": "槽印記持有者規則"
+               }
+              ],
+              "strip": {
+               "zeroHighestMaxPp": false,
+               "damageRatio": 0,
+               "nonlethal": true,
+               "restorePp": true,
+               "hpRatio": 0.2
+              }
+             },
+             {
+              "capabilities": {
+               "opponentBoostDisabled": true,
+               "suppressBenchEffects": true
+              },
+              "description": "對手能力提升效果失效；阻止己方場下精靈支援場上",
+              "symbol": "ᛉ",
+              "rules": [],
+              "strip": {
+               "zeroHighestMaxPp": false,
+               "damageRatio": 0,
+               "nonlethal": true,
+               "restorePp": true,
+               "hpRatio": 0.2
+              }
+             },
+             {
+              "capabilities": {
+               "forceHitEffects": true,
+               "ppUnrestricted": true,
+               "sureHit": true
+              },
+              "description": "所有技能必中、強制執行命中效果；選招不受PP限制",
+              "symbol": "ᚱᚷ",
+              "rules": [],
+              "strip": {
+               "zeroHighestMaxPp": false,
+               "damageRatio": 0,
+               "nonlethal": true,
+               "restorePp": true,
+               "hpRatio": 0.2
+              }
+             },
+             {
+              "capabilities": {},
+              "description": "激活時同槽PP上限同步，超出部分每點附加100真傷",
+              "symbol": "ᛇ",
+              "rules": [
+               {
+                "activationOnly": true,
+                "parsed": true,
+                "body": [
+                 {
+                  "acts": [
+                   {
+                    "label": "skill_mark_pp_match",
+                    "op": "skill_mark_pp_match",
+                    "p": {
+                     "perPp": 100
+                    }
+                   }
+                  ]
+                 }
+                ],
+                "trig": "skill_selected",
+                "raw": "槽印記持有者規則"
+               }
+              ],
+              "strip": {
+               "zeroHighestMaxPp": false,
+               "damageRatio": 0,
+               "nonlethal": true,
+               "restorePp": true,
+               "hpRatio": 0.2
+              }
+             },
+             {
+              "capabilities": {
+               "opponentKillDisabled": true,
+               "priorityCeiling": 1
+              },
+              "description": "對手正先制至多+1；對手擊敗效果失效",
+              "symbol": "ᛖ",
+              "rules": [],
+              "strip": {
+               "zeroHighestMaxPp": false,
+               "damageRatio": 0,
+               "nonlethal": true,
+               "restorePp": true,
+               "hpRatio": 0.2
+              }
+             }
+            ],
+            "side": "self"
+           }
+          }
+         ]
+        }
+       ],
+       "trig": "round_start",
+       "raw": "自身在場前2回合為無符文技能按槽附加符文"
+      }
+     },
+     "source": "soulmark",
+     "order": 2,
+     "node": "round_start",
+     "role": "innate"
+    },
+    {
+     "customText": "回合結束時：恢復自身最大體力⅓並附加對手等量百分比傷害",
+     "codeId": "effect_sequence",
+     "params": {
+      "clause": {
+       "parsed": true,
+       "body": [
+        {
+         "acts": [
+          {
+           "label": "heal_then",
+           "op": "heal_then",
+           "p": {
+            "ratio": 0.3333333333333333,
+            "body": [
+             {
+              "acts": [
+               {
+                "label": "dmg_from_last",
+                "op": "dmg_from_last",
+                "p": {
+                 "ratio": 1,
+                 "type": "百分比"
+                }
+               }
+              ]
+             }
+            ],
+            "side": "self"
+           }
+          }
+         ]
+        }
+       ],
+       "trig": "round_end",
+       "raw": "回合結束時：恢復自身最大體力⅓並附加對手等量百分比傷害"
+      }
+     },
+     "source": "soulmark",
+     "order": 5,
+     "node": "round_end",
+     "role": "innate"
+    },
+    {
+     "customText": "恢復前自身體力低於對手則下次對手所有技能先制-2且造成技能傷害降低50%",
+     "codeId": "effect_sequence",
+     "params": {
+      "clause": {
+       "parsed": true,
+       "body": [
+        {
+         "acts": [
+          {
+           "label": "next_skill_prio",
+           "op": "next_skill_prio",
+           "p": {
+            "dmgMod": -0.5,
+            "side": "opp",
+            "v": -2
+           }
+          }
+         ],
+         "cond": [
+          {
+           "label": "恢復前體力低於對手",
+           "c": "hp_cmp",
+           "p": {
+            "side": "self",
+            "op": "低於"
+           }
+          }
+         ]
+        }
+       ],
+       "trig": "round_end",
+       "raw": "恢復前自身體力低於對手則下次對手所有技能先制-2且造成技能傷害降低50%"
+      }
+     },
+     "source": "soulmark",
+     "order": 6,
+     "node": "round_end",
+     "role": "innate"
+    },
+    {
+     "customText": "恢復後自身體力高於對手則下次所有技能先制+2且造成技能傷害提升50%",
+     "codeId": "effect_sequence",
+     "params": {
+      "clause": {
+       "parsed": true,
+       "body": [
+        {
+         "acts": [
+          {
+           "label": "next_skill_prio",
+           "op": "next_skill_prio",
+           "p": {
+            "dmgMod": 0.5,
+            "side": "self",
+            "v": 2
+           }
+          }
+         ],
+         "cond": [
+          {
+           "label": "恢復後體力高於對手",
+           "c": "hp_cmp",
+           "p": {
+            "side": "self",
+            "op": "高於"
+           }
+          }
+         ],
+         "live": true
+        }
+       ],
+       "trig": "round_end",
+       "raw": "恢復後自身體力高於對手則下次所有技能先制+2且造成技能傷害提升50%"
+      }
+     },
+     "source": "soulmark",
+     "order": 7,
+     "node": "round_end",
+     "role": "innate"
+    },
+    {
+     "customText": "下場時剝離自身符文：恢復該技能全部PP值；每剝離1道激活符文則增加等同最大體力20%的體力值",
+     "codeId": "effect_sequence",
+     "params": {
+      "clause": {
+       "parsed": true,
+       "body": [
+        {
+         "acts": [
+          {
+           "label": "rune_strip",
+           "op": "rune_strip",
+           "p": {}
+          },
+          {
+           "label": "rune_strip_reward",
+           "op": "rune_strip_reward",
+           "p": {
+            "hpRatio": 0.2,
+            "ppMode": "restore"
+           }
+          }
+         ]
+        }
+       ],
+       "trig": "switch_out",
+       "raw": "下場時剝離自身符文：恢復該技能全部PP值；每剝離1道激活符文則增加等同最大體力20%的體力值"
+      }
+     },
+     "source": "soulmark",
+     "order": 90,
+     "node": "on_switch_out",
+     "role": "innate"
+    }
+   ]
+  },
+  "kit": null
+ },
+ "cassiusPre": {
+  "commit": "a2a6e704^",
+  "soulMark": {
+   "name": "山",
+   "badgeChar": "山",
+   "description": "自身位於出戰背包內時：\n>自身與己方其他精靈擁有護盾時若因受到攻擊傷害而扣減時減少量減半\n>>若在場精靈受到任一種超額非真實傷害大於該精靈當前護盾值\n>>>對手無法造成本次傷害且戰鬥階段結束時消耗當前護盾值50%以恢復在場精靈等同於消耗量25%的體力\n>>若在場精靈受到超額真實傷害大於該精靈當前護盾值且為致死真實傷害\n>>>100%重生1次\n\n自身處於山神守護狀態時：\n>自身所處的所有異常狀態無法被轉化為控制類異常、弱化類異常\n>取消控制類異常與弱化類異常原有效果\n>>改為自身1回合內選擇使用技能不受PP值限制且技能使用後令對手1回合內技能附加效果失效\n\n回合開始時：\n>若自身本次在場累計回合數不高於1回合\n>>召喚額外精靈炫彩山神加入己方\n自身處於山神守護狀態時：\n>自身異常狀態無法被轉化為控制類異常、弱化類異常\n>取消控制類異常與弱化類異常附加效果\n>>改為自身1回合內選擇使用技能不受當前PP值限制\n自身護盾每次消失時：\n>炫彩山神死亡以清除自身本次在場累計回合數\n\n自身選擇使用攻擊技能時：\n>忽略對手防禦值40%\n>>雙方任一方存在護盾時額外令對手先制-2且100%石化\n自身選擇使用屬性技能時：\n>使用技能後無效對手下次攻擊技能\n>>雙方任一方存在護盾時則自身使用技能不消耗PP值且技能使用時額外吸取雙方護盾值70%的體力",
+   "effectType": "none",
+   "effectValue": 0,
+   "effectMode": "kit",
+   "kit": [
+    {
+     "customText": "自身與己方其他精靈擁有護盾時若因受到攻擊傷害而扣減時減少量減半",
+     "codeId": "effect_sequence",
+     "params": {
+      "clause": {
+       "parsed": true,
+       "body": [
+        {
+         "acts": [
+          {
+           "label": "team_rules",
+           "op": "team_rules",
+           "p": {
+            "shieldDeductionRatio": 0.5
+           }
+          }
+         ]
+        }
+       ],
+       "trig": "battle_start",
+       "raw": "自身與己方其他精靈擁有護盾時若因受到攻擊傷害而扣減時減少量減半"
+      }
+     },
+     "source": "soulmark",
+     "order": 0,
+     "node": "battle_start",
+     "role": "innate"
+    },
+    {
+     "customText": "若在場精靈受到任一種超額非真實傷害大於該精靈當前護盾值：對手無法造成本次傷害",
+     "codeId": "effect_sequence",
+     "params": {
+      "clause": {
+       "parsed": true,
+       "body": [
+        {
+         "acts": [
+          {
+           "label": "team_rules",
+           "op": "team_rules",
+           "p": {
+            "excessIntercept": true
+           }
+          }
+         ]
+        }
+       ],
+       "trig": "battle_start",
+       "raw": "若在場精靈受到任一種超額非真實傷害大於該精靈當前護盾值：對手無法造成本次傷害"
+      }
+     },
+     "source": "soulmark",
+     "order": 1,
+     "node": "battle_start",
+     "role": "innate"
+    },
+    {
+     "customText": "戰鬥階段結束時消耗當前護盾值50%以恢復在場精靈等同於消耗量25%的體力",
+     "codeId": "effect_sequence",
+     "params": {
+      "clause": {
+       "observer": {
+        "includeDead": false
+       },
+       "parsed": true,
+       "body": [
+        {
+         "acts": [
+          {
+           "label": "team_intercept_settle",
+           "op": "team_intercept_settle",
+           "p": {
+            "shieldRatio": 0.5,
+            "healRatio": 0.25
+           }
+          }
+         ]
+        }
+       ],
+       "trig": "team_phase_end",
+       "raw": "戰鬥階段結束時消耗當前護盾值50%以恢復在場精靈等同於消耗量25%的體力"
+      }
+     },
+     "source": "soulmark",
+     "order": 2,
+     "node": "battle_phase_end",
+     "role": "innate"
+    },
+    {
+     "customText": "若在場精靈受到超額真實傷害大於該精靈當前護盾值且為致死真實傷害：100%重生1次",
+     "codeId": "effect_sequence",
+     "params": {
+      "clause": {
+       "parsed": true,
+       "body": [
+        {
+         "acts": [
+          {
+           "label": "team_rules",
+           "op": "team_rules",
+           "p": {
+            "excessTrueRebirth": true
+           }
+          }
+         ]
+        }
+       ],
+       "trig": "battle_start",
+       "raw": "若在場精靈受到超額真實傷害大於該精靈當前護盾值且為致死真實傷害：100%重生1次"
+      }
+     },
+     "source": "soulmark",
+     "order": 3,
+     "node": "battle_start",
+     "role": "innate"
+    },
+    {
+     "customText": "自身所處的所有異常狀態無法被轉化為控制類異常、弱化類異常",
+     "codeId": "effect_sequence",
+     "params": {
+      "clause": {
+       "parsed": true,
+       "body": [
+        {
+         "acts": [
+          {
+           "label": "status_rules",
+           "op": "status_rules",
+           "p": {
+            "conversionTargetBan": [
+             "CONTROL",
+             "WEAKENING"
+            ],
+            "whileStatus": "山神守護"
+           }
+          }
+         ]
+        }
+       ],
+       "trig": "battle_start",
+       "raw": "自身所處的所有異常狀態無法被轉化為控制類異常、弱化類異常"
+      }
+     },
+     "source": "soulmark",
+     "order": 4,
+     "node": "battle_start",
+     "role": "innate"
+    },
+    {
+     "customText": "取消控制類異常與弱化類異常原有效果；改為自身1回合內選擇使用技能不受PP值限制",
+     "codeId": "effect_sequence",
+     "params": {
+      "clause": {
+       "parsed": true,
+       "body": [
+        {
+         "acts": [
+          {
+           "label": "status_rules",
+           "op": "status_rules",
+           "p": {
+            "replaceInvalidateOppTurns": 1,
+            "cancelEffects": [
+             "CONTROL",
+             "WEAKENING"
+            ],
+            "replacePpFree": true,
+            "whileStatus": "山神守護"
+           }
+          }
+         ]
+        }
+       ],
+       "trig": "battle_start",
+       "raw": "取消控制類異常與弱化類異常原有效果；改為自身1回合內選擇使用技能不受PP值限制"
+      }
+     },
+     "source": "soulmark",
+     "order": 5,
+     "node": "battle_start",
+     "role": "innate"
+    },
+    {
+     "customText": "技能使用後令對手1回合內技能附加效果失效",
+     "codeId": "effect_sequence",
+     "params": {
+      "clause": {
+       "parsed": true,
+       "body": [
+        {
+         "acts": [
+          {
+           "label": "replacement_invalidate_opp",
+           "op": "replacement_invalidate_opp",
+           "p": {}
+          }
+         ]
+        }
+       ],
+       "trig": "self_after_skill",
+       "raw": "技能使用後令對手1回合內技能附加效果失效"
+      }
+     },
+     "source": "soulmark",
+     "order": 6,
+     "node": "after_action",
+     "role": "innate"
+    },
+    {
+     "customText": "回合開始時若自身本次在場累計回合數不高於1回合，召喚額外精靈炫彩山神加入己方",
+     "codeId": "effect_sequence",
+     "params": {
+      "clause": {
+       "parsed": true,
+       "body": [
+        {
+         "acts": [
+          {
+           "label": "summon_extra_elf",
+           "op": "summon_extra_elf",
+           "p": {
+            "statFromTeamRatio": 1,
+            "statSource": "highest_of_name",
+            "statMode": "each",
+            "statName": "岳峙淵渟.卡修斯",
+            "name": "炫彩山神",
+            "side": "self",
+            "type": "普通",
+            "id": "x_shancaishen"
+           }
+          }
+         ],
+         "cond": [
+          {
+           "label": "field_rounds",
+           "c": "field_rounds",
+           "p": {
+            "amount": 1,
+            "op": "不高於"
+           }
+          }
+         ]
+        }
+       ],
+       "trig": "round_start",
+       "raw": "回合開始時若自身本次在場累計回合數不高於1回合，召喚額外精靈炫彩山神加入己方"
+      }
+     },
+     "source": "soulmark",
+     "order": 0,
+     "node": "round_start",
+     "role": "innate"
+    },
+    {
+     "customText": "自身護盾每次消失時：炫彩山神死亡以清除自身本次在場累計回合數",
+     "codeId": "effect_sequence",
+     "params": {
+      "clause": {
+       "parsed": true,
+       "body": [
+        {
+         "acts": [
+          {
+           "label": "shield_lost_watch",
+           "op": "shield_lost_watch",
+           "p": {
+            "scope": "self",
+            "body": [
+             {
+              "acts": [
+               {
+                "label": "kill_owned_extra",
+                "op": "kill_owned_extra",
+                "p": {
+                 "resetOwnerRounds": true,
+                 "ownerShield": "gone",
+                 "id": "x_shancaishen"
+                }
+               }
+              ]
+             }
+            ],
+            "once": false
+           }
+          }
+         ]
+        }
+       ],
+       "trig": "entrance",
+       "raw": "自身護盾每次消失時：炫彩山神死亡以清除自身本次在場累計回合數"
+      }
+     },
+     "source": "soulmark",
+     "order": 7,
+     "node": "on_entered",
+     "role": "innate"
+    },
+    {
+     "customText": "自身選擇使用攻擊技能時忽略對手防禦值40%",
+     "codeId": "effect_sequence",
+     "params": {
+      "clause": {
+       "parsed": true,
+       "body": [
+        {
+         "acts": [
+          {
+           "label": "ignore_def_turns",
+           "op": "ignore_def_turns",
+           "p": {
+            "ratio": 0.4,
+            "turns": 1,
+            "stat": "雙防"
+           }
+          }
+         ]
+        }
+       ],
+       "trig": "self_attack",
+       "raw": "自身選擇使用攻擊技能時忽略對手防禦值40%"
+      }
+     },
+     "source": "soulmark",
+     "order": 8,
+     "node": "on_skill_use",
+     "role": "innate"
+    },
+    {
+     "customText": "雙方任一方存在護盾時額外令對手先制-2且100%石化",
+     "codeId": "effect_sequence",
+     "params": {
+      "clause": {
+       "parsed": true,
+       "body": [
+        {
+         "acts": [
+          {
+           "label": "prio_turns",
+           "op": "prio_turns",
+           "p": {
+            "current": true,
+            "turns": 1,
+            "side": "opp",
+            "v": -2
+           }
+          },
+          {
+           "label": "status",
+           "op": "status",
+           "p": {
+            "chance": 100,
+            "status": "石化",
+            "turns": 3,
+            "side": "opp"
+           }
+          }
+         ],
+         "cond": [
+          {
+           "label": "攻擊技能",
+           "c": "skill_kind",
+           "p": {
+            "kind": "攻擊"
+           }
+          },
+          {
+           "label": "雙方任一方存在護盾",
+           "c": "field_shield",
+           "p": {}
+          }
+         ]
+        }
+       ],
+       "trig": "skill_selected",
+       "raw": "雙方任一方存在護盾時額外令對手先制-2且100%石化"
+      }
+     },
+     "source": "soulmark",
+     "order": 9,
+     "node": "on_skill_selected",
+     "role": "innate"
+    },
+    {
+     "customText": "自身選擇使用屬性技能時使用技能後無效對手下次攻擊技能",
+     "codeId": "effect_sequence",
+     "params": {
+      "clause": {
+       "parsed": true,
+       "body": [
+        {
+         "acts": [
+          {
+           "label": "invalid_next",
+           "op": "invalid_next",
+           "p": {
+            "kind": "攻擊",
+            "uses": 1
+           }
+          }
+         ]
+        }
+       ],
+       "trig": "self_status",
+       "raw": "自身選擇使用屬性技能時使用技能後無效對手下次攻擊技能"
+      }
+     },
+     "source": "soulmark",
+     "order": 10,
+     "node": "on_skill_use",
+     "role": "innate"
+    },
+    {
+     "customText": "雙方任一方存在護盾時則自身使用技能不消耗PP值",
+     "codeId": "effect_sequence",
+     "params": {
+      "clause": {
+       "parsed": true,
+       "body": [
+        {
+         "acts": [
+          {
+           "label": "skill_rules",
+           "op": "skill_rules",
+           "p": {
+            "ppFreeWhenFieldShield": true,
+            "ppFreeKind": "屬性"
+           }
+          }
+         ]
+        }
+       ],
+       "trig": "battle_start",
+       "raw": "雙方任一方存在護盾時則自身使用技能不消耗PP值"
+      }
+     },
+     "source": "soulmark",
+     "order": 11,
+     "node": "battle_start",
+     "role": "innate"
+    },
+    {
+     "customText": "雙方任一方存在護盾時技能使用時額外吸取雙方護盾值70%的體力",
+     "codeId": "effect_sequence",
+     "params": {
+      "clause": {
+       "parsed": true,
+       "body": [
+        {
+         "acts": [
+          {
+           "label": "drain_shield_ratio",
+           "op": "drain_shield_ratio",
+           "p": {
+            "ratio": 0.7
+           }
+          }
+         ],
+         "cond": [
+          {
+           "label": "雙方任一方存在護盾",
+           "c": "field_shield",
+           "p": {}
+          }
+         ]
+        }
+       ],
+       "trig": "self_status",
+       "raw": "雙方任一方存在護盾時技能使用時額外吸取雙方護盾值70%的體力"
+      }
+     },
+     "source": "soulmark",
+     "order": 12,
+     "node": "on_skill_use",
+     "role": "innate"
+    }
+   ]
+  },
+  "kit": null
+ }
+}

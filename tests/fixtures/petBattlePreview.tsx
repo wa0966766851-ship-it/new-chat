@@ -32,12 +32,12 @@ function Workbench(){
  const [p1,setP1]=React.useState(()=>initialSelection('p1')),[p2,setP2]=React.useState(()=>initialSelection('p2'));
  const [open,setOpen]=React.useState(new URLSearchParams(location.search).get('tools')!=='0');
  const [attacker,setAttacker]=React.useState<'p1'|'p2'>('p1'),[mode,setMode]=React.useState<AnimationMode>('actions');
- const [scene,setScene]=React.useState('visual');const visual=scene!=='real';const [revision,setRevision]=React.useState(0),[search,setSearch]=React.useState('');
+ const [scene,setScene]=React.useState(new URLSearchParams(location.search).has('unknown')?'hidden':'visual');const visual=scene!=='real';const [revision,setRevision]=React.useState(0),[search,setSearch]=React.useState('');
  const [rosterRev,setRosterRev]=React.useState(0);
  const [auditSource,setAuditSource]=React.useState('');
  const [status,setStatus]=React.useState({size:'',busy:false,phase:'',players:0,leases:'',degraded:''});
  const driver=React.useRef<Driver|null>(null);
- const teams=React.useMemo(()=>{const out={p1:workbenchElf(roster,p1,'p1',attacker,visual||p1.id==='70',scene==='mechanism'),p2:workbenchElf(roster,p2,'p2',attacker,visual||p2.id==='70',scene==='mechanism')};if(auditSource)for(const e of [out.p1,out.p2])Object.assign(e,{name:'素材 '+auditSource.split('/').pop(),path:auditSource,skinId:undefined,height:185});return out;},[p1,p2,attacker,visual,scene,revision,rosterRev,auditSource]);
+ const teams=React.useMemo(()=>{const out={p1:workbenchElf(roster,p1,'p1',attacker,visual||p1.id==='70',scene==='mechanism'),p2:workbenchElf(roster,p2,'p2',attacker,visual||p2.id==='70',scene==='mechanism')};if(scene==='hidden')for(const e of [out.p1,out.p2])e.isConcealed=true;if(auditSource)for(const e of [out.p1,out.p2])Object.assign(e,{name:'素材 '+auditSource.split('/').pop(),path:auditSource,skinId:undefined,height:185});return out;},[p1,p2,attacker,visual,scene,revision,rosterRev,auditSource]);
  React.useEffect(()=>{writeAnimationSettings({...DEFAULT_BATTLE_ANIMATION,mode,elfModes:{},staticMode:mode==='static',intro:false});},[mode]);
  React.useEffect(()=>{
   const poll=()=>setStatus({size:innerWidth+' × '+innerHeight+' · DPR '+devicePixelRatio,busy:driver.current?.isPresenting?.()??false,phase:driver.current?.getState().phase||'準備中',players:document.querySelectorAll('[data-pet-ready="true"]').length,leases:petClipLeaseSnapshot().map(a=>a.id+' ×'+a.users+'：CPU 圖集 '+Math.round(a.rgbaBytes/1048576)+' MiB').join('；'),degraded:getPetDegradeLog().slice(-1).map(a=>a.side+' '+a.reason).join('')});
@@ -69,7 +69,7 @@ function Workbench(){
  <aside className={'pet-workbench '+(open?'is-open':'')} aria-label="動畫驗收工具"><button className="pet-workbench-toggle" onClick={()=>setOpen(!open)}>{open?'收起驗收工具':'動畫驗收工具'} · {status.size}</button><section hidden={!open}><h1>正式對戰畫面・動畫驗收</h1><p>沿用正式 HUD、技能列、站位、縮放與出傷時間軸。工具是浮層，收起後不改變場地尺寸。</p>
  {picker('p1',p1,setP1)}{picker('p2',p2,setP2)}
  <div className="pet-workbench-row"><label>出招方<select aria-label="出招方" value={attacker} onChange={e=>setAttacker(e.target.value as 'p1'|'p2')}><option value="p1">P1 → P2</option><option value="p2">P2 → P1</option></select></label><label>演出模式<select aria-label="演出模式" value={mode} onChange={e=>setMode(e.target.value as AnimationMode)}>{ANIMATION_MODES.map(m=><option key={m.value} value={m.value}>{m.label}</option>)}</select></label></div>
- <label>驗收場景<select aria-label="驗收場景" value={scene} onChange={e=>setScene(e.target.value)}><option value="visual">外觀與出傷驗收（固定數值、停用魂印）</option><option value="mechanism">魂印機制＋測試技能（含第五切換）</option><option value="real">原始隊伍實戰（正式技能與魂印）</option></select></label>
+ <label>驗收場景<select aria-label="驗收場景" value={scene} onChange={e=>setScene(e.target.value)}><option value="visual">外觀與出傷驗收（固定數值、停用魂印）</option><option value="mechanism">魂印機制＋測試技能（含第五切換）</option><option value="hidden">未知精靈共用演出</option><option value="real">原始隊伍實戰（正式技能與魂印）</option></select></label>
  {visual?<><p>五格為測試技能；{scene==='mechanism'?'保留正式魂印以驗證第五變身。':'停用魂印。'}原始資料與玩家存檔不修改。由正式引擎安排一回合，對方使用屬性技。</p><div className="pet-workbench-actions">{(['物理攻擊','特殊攻擊','屬性技能','額外行動','第五技能'] as const).map((name,i)=><button key={name} data-preview-action={['attack','sa','cp','extra','fifth'][i]} disabled={status.busy||status.phase!=='p1_select'} onClick={()=>run(i)}>{name}</button>)}</div></>:<div><p>原始技能與魂印；對手選擇第三格技能。仍可能結束戰鬥。</p><div className="pet-workbench-actions">{(attacker==='p1'?teams.p1:teams.p2).skills.slice(0,5).map((skill,i)=><button key={i} disabled={status.busy||status.phase!=='p1_select'} onClick={()=>run(i)}>{skill.isFifthSkill?'第五：':''}{skill.name}</button>)}</div></div>}
  <div className="pet-workbench-actions"><button onClick={reset}>重置／重試載入</button><button onClick={()=>{const first=p1;setP1(p2);setP2(first);}}>交換雙方</button><button onClick={()=>{void document.documentElement.requestFullscreen?.();}}>全螢幕驗收</button></div>
  <output aria-live="polite">{status.busy?'演出中':status.phase} · 原生播放器 {status.players}/2<br/>{status.leases||'無原生圖集使用中'}{status.degraded&&<><br/>已回退：{status.degraded}；可重試載入</>}</output>
@@ -83,7 +83,23 @@ writeAnimationSettings({...DEFAULT_BATTLE_ANIMATION,mode:'actions',elfModes:{},i
 // 閘門放在最外層，Workbench 內的 hook 數量才不會隨載入狀態改變。
 function App(){
  const [loaded,setLoaded]=React.useState(false);
- React.useEffect(()=>{let alive=true;loadImportedElves().then(()=>{if(alive){syncRoster();setLoaded(true);}}).catch(()=>{if(alive)setLoaded(true);});return()=>{alive=false};},[]);
+ const [error,setError]=React.useState('');
+ React.useEffect(()=>{let alive=true;void(async()=>{
+  await loadImportedElves();
+  const draft=new URLSearchParams(location.search).get('draft');
+  if(draft){
+   if(!['wuxu_zhuixing','wuxu_shiyan','wuxu_liuren','emperor_dixin'].includes(draft))throw Error('未登記的試作素材');
+   const response=await fetch('/__animation-drafts/'+draft+'/manifest.json',{cache:'no-store'});
+   if(!response.ok)throw Error('試作素材未啟用，保留正式素材；請用 --draft-root 啟動驗收服務');
+   const m=await response.json();
+   if(m.id!==draft)throw Error('試作來源不一致');
+   Object.assign(PET_ANIMATION_ASSETS[draft],{custom:'/__animation-drafts/'+draft,atlas:[m.atlas.width,m.atlas.height],
+    sha256:m.sha256,size:m.size,facing:m.facing,presentation:m.presentation,physicalMotion:m.physicalMotion,
+    sequences:Object.entries(m.sequences).map(([name,v])=>({name,frames:(v as {frames:number}).frames,hits:(v as {hits:number[]}).hits}))});
+  }
+  if(alive){syncRoster();setLoaded(true);}
+ })().catch(e=>{if(alive)setError(String(e));});return()=>{alive=false};},[]);
+ if(error)return <p role="alert" style={{color:'#fda4af',padding:24}}>驗收入口載入失敗：{error}</p>;
  return loaded?<Workbench/>:<p style={{color:'#cbd5e1',padding:24}}>載入精靈名冊…</p>;
 }
 const root=createRoot(document.getElementById('root')!);

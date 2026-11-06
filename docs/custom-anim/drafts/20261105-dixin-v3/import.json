@@ -1,0 +1,31 @@
+{
+  "baseSpec": "docs/custom-anim/drafts/20261105-combat-v2/emperor_dixin.json",
+  "draft": "docs/custom-anim/drafts/20261105-dixin-v3",
+  "combinedSheet": "docs/custom-anim/drafts/20261105-dixin-v3/motion-source.png",
+  "idleAlignment": {
+    "scale": 0.96,
+    "offset": [
+      13.8,
+      145.6
+    ]
+  },
+  "hitAlignment": {
+    "scale": 0.96,
+    "offset": [
+      13.8,
+      145.6
+    ]
+  },
+  "idleMuzzle": [
+    295,
+    240
+  ],
+  "review": {
+    "accepted": true,
+    "note": "已檢視九格原圖：前六格衣髮待機、後三格中招後仰回復，頭冠劍尖與衣襬完整，朝左且金環不整圈旋轉；整段仍須對戰驗收。"
+  },
+  "matte": {
+    "minGreenRegion": 1,
+    "despill": true
+  }
+}

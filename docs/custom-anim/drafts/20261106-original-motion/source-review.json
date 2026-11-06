@@ -1,0 +1,264 @@
+{
+  "status": "pilot-not-accepted",
+  "canvas": [
+    1200,
+    1600
+  ],
+  "scale": 1,
+  "offset": [
+    57,
+    76
+  ],
+  "sourceFiles": {
+    "ready": {
+      "file": "docs/custom-anim/drafts/20261105-zhuixing-original/original-color-matte-v3.png",
+      "sha256": "c84a1afd217206ee61f2baeee4167e74ec9861052374e7b737f0dfc111e9def3"
+    },
+    "raise": {
+      "file": "docs/custom-anim/drafts/20261106-original-motion/zhuixing-raise-source.png",
+      "sha256": "567b259bab2f2b75074b4bc7a58480ab5a4c2ea573d6a603672c231efdd3c9ba"
+    },
+    "aim": {
+      "file": "docs/custom-anim/drafts/20261106-original-motion/zhuixing-aim-source.png",
+      "sha256": "0868bece3f032e2bda30b5bee2e3fff48df798473202fa05730d08ed033ee795"
+    },
+    "hit": {
+      "file": "docs/custom-anim/drafts/20261106-original-motion/zhuixing-hit-source.png",
+      "sha256": "a46677b99c48729ea465031a7fdbff206de0eec21f9800edebdbafec6fc405e2"
+    }
+  },
+  "underpainting": {
+    "file": "docs/custom-anim/drafts/20261106-original-motion/zhuixing-coat-underpainting-source.png",
+    "sha256": "04f2423d6fbeea5f7347f5cf10b1efcbe9667d1dfb2c30b0a1c1fd7993e0909b",
+    "usage": "Only hidden pixels within authored coatTail polygon; not a replacement body",
+    "generator": "builtin imagegen",
+    "source": "exec-5ec84537-be5e-4fe3-a5fd-6b8dd0130287"
+  },
+  "partition": [
+    {
+      "id": "coatTail",
+      "polygon": [
+        [
+          751,
+          716
+        ],
+        [
+          828,
+          726
+        ],
+        [
+          985,
+          772
+        ],
+        [
+          1085,
+          794
+        ],
+        [
+          1085,
+          1154
+        ],
+        [
+          988,
+          1134
+        ],
+        [
+          950,
+          1052
+        ],
+        [
+          879,
+          997
+        ],
+        [
+          826,
+          943
+        ],
+        [
+          803,
+          885
+        ],
+        [
+          773,
+          842
+        ],
+        [
+          752,
+          786
+        ]
+      ],
+      "pivot": [
+        761,
+        748
+      ],
+      "dx": 0,
+      "dy": 0,
+      "degrees": 3.5,
+      "delay": 0
+    },
+    {
+      "id": "droneLeft",
+      "polygon": [
+        [
+          0,
+          910
+        ],
+        [
+          0,
+          690
+        ],
+        [
+          120,
+          670
+        ],
+        [
+          280,
+          610
+        ],
+        [
+          390,
+          625
+        ],
+        [
+          390,
+          690
+        ],
+        [
+          300,
+          770
+        ],
+        [
+          210,
+          860
+        ],
+        [
+          80,
+          910
+        ]
+      ],
+      "pivot": [
+        210,
+        735
+      ],
+      "dx": 8,
+      "dy": -27,
+      "degrees": 1.4,
+      "delay": 0.8
+    },
+    {
+      "id": "droneRight",
+      "polygon": [
+        [
+          823,
+          572
+        ],
+        [
+          928,
+          535
+        ],
+        [
+          1042,
+          550
+        ],
+        [
+          1085,
+          590
+        ],
+        [
+          1085,
+          688
+        ],
+        [
+          1003,
+          684
+        ],
+        [
+          891,
+          644
+        ]
+      ],
+      "pivot": [
+        970,
+        609
+      ],
+      "dx": -7,
+      "dy": 23,
+      "degrees": -1.2,
+      "delay": 2.2
+    },
+    {
+      "id": "upperBody",
+      "polygon": [
+        [
+          0,
+          0
+        ],
+        [
+          1086,
+          0
+        ],
+        [
+          1086,
+          710
+        ],
+        [
+          0,
+          710
+        ]
+      ],
+      "pivot": [
+        577,
+        690
+      ],
+      "dx": 0,
+      "dy": 0,
+      "degrees": 1.25,
+      "delay": 0,
+      "behind": true,
+      "anchors": [
+        "muzzle"
+      ]
+    }
+  ],
+  "beltCover": [
+    [
+      425,
+      660
+    ],
+    [
+      510,
+      640
+    ],
+    [
+      630,
+      660
+    ],
+    [
+      714,
+      700
+    ],
+    [
+      690,
+      743
+    ],
+    [
+      578,
+      708
+    ],
+    [
+      505,
+      702
+    ],
+    [
+      455,
+      732
+    ]
+  ],
+  "pending": [
+    "能量邊緣雜點",
+    "抬砲中間張不足",
+    "待機與受擊腳位一致性",
+    "對戰畫面三圈待機與兩側技能實播",
+    "其他三隻未完成"
+  ]
+}

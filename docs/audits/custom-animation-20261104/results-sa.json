@@ -1,0 +1,97 @@
+{
+  "origin": "http://127.0.0.1:3015",
+  "viewport": [
+    1366,
+    768
+  ],
+  "results": [
+    {
+      "asset": "wuxu_zhuixing",
+      "side": "p1",
+      "action": "sa",
+      "unknown": false,
+      "from": "369.6,235.3",
+      "to": "1065.5,330.8",
+      "phase": "impact",
+      "width": 1366,
+      "height": 768
+    },
+    {
+      "asset": "wuxu_zhuixing",
+      "side": "p2",
+      "action": "sa",
+      "unknown": false,
+      "from": "996.4,235.3",
+      "to": "300.5,330.8",
+      "phase": "impact",
+      "width": 1366,
+      "height": 768
+    },
+    {
+      "asset": "wuxu_shiyan",
+      "side": "p1",
+      "action": "sa",
+      "unknown": false,
+      "from": "297.0,333.7",
+      "to": "1065.5,331.1",
+      "phase": "impact",
+      "width": 1366,
+      "height": 768
+    },
+    {
+      "asset": "wuxu_shiyan",
+      "side": "p2",
+      "action": "sa",
+      "unknown": false,
+      "from": "1068.5,334.5",
+      "to": "300.5,331.1",
+      "phase": "impact",
+      "width": 1366,
+      "height": 768
+    },
+    {
+      "asset": "emperor_dixin",
+      "side": "p1",
+      "action": "sa",
+      "unknown": false,
+      "from": "303.0,335.0",
+      "to": "1065.5,331.3",
+      "phase": "impact",
+      "width": 1366,
+      "height": 768
+    },
+    {
+      "asset": "emperor_dixin",
+      "side": "p2",
+      "action": "sa",
+      "unknown": false,
+      "from": "1062.2,336.2",
+      "to": "300.5,331.3",
+      "phase": "impact",
+      "width": 1366,
+      "height": 768
+    },
+    {
+      "asset": "wuxu_liuren",
+      "side": "p1",
+      "action": "sa",
+      "unknown": false,
+      "from": "308.4,332.1",
+      "to": "1065.5,328.4",
+      "phase": "impact",
+      "width": 1366,
+      "height": 768
+    },
+    {
+      "asset": "wuxu_liuren",
+      "side": "p2",
+      "action": "sa",
+      "unknown": false,
+      "from": "1053.7,333.3",
+      "to": "300.5,328.4",
+      "phase": "impact",
+      "width": 1366,
+      "height": 768
+    }
+  ]
+}

@@ -1,0 +1,19 @@
+{
+  "source": "U DefaultPackage / skill/11/11.skill.prefab",
+  "role": "visual candidate, numeric type mapping not independently confirmed",
+  "sourceAtlasSha256": "836afae690643b24e8343a31870c461db31511f937282f62d0b39b2877c7b1d9",
+  "fps": 25,
+  "cols": 5,
+  "rows": 4,
+  "frames": 17,
+  "cell": 256,
+  "sourceBounds": [
+    4.476374626159668,
+    -2.101868152618408,
+    8.693875312805176,
+    2.03079891204834
+  ],
+  "downloadBytes": 208098,
+  "decodedBytes": 5242880,
+  "palette": "black steel body; emerald midtones; pale white core; no original amber"
+}

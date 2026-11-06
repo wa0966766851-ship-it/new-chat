@@ -1,0 +1,487 @@
+[
+  {
+    "id": "5001",
+    "name": "悲歌.索比拉特",
+    "art": "官方",
+    "first": "/seer/body/343.png",
+    "skinAnim": [],
+    "baseAnim": true,
+    "verdict": "排除",
+    "reason": "官方立繪＋已有官方動畫"
+  },
+  {
+    "id": "5002",
+    "name": "帝皇之盾",
+    "art": "官方",
+    "first": "/seer/body/3404.png",
+    "skinAnim": [],
+    "baseAnim": true,
+    "verdict": "排除",
+    "reason": "官方立繪＋已有官方動畫"
+  },
+  {
+    "id": "5003",
+    "name": "天蓬元帥八戒",
+    "art": "官方",
+    "first": "/seer/body/1536.png",
+    "skinAnim": [],
+    "baseAnim": true,
+    "verdict": "排除",
+    "reason": "官方立繪＋已有官方動畫"
+  },
+  {
+    "id": "5004",
+    "name": "皮特薩拉羅",
+    "art": "官方",
+    "first": "/seer/body/3098.png",
+    "skinAnim": [],
+    "baseAnim": true,
+    "verdict": "排除",
+    "reason": "官方立繪＋已有官方動畫"
+  },
+  {
+    "id": "5005",
+    "name": "布萊克",
+    "art": "官方",
+    "first": "/seer/body/875.png",
+    "skinAnim": [],
+    "baseAnim": true,
+    "verdict": "排除",
+    "reason": "官方立繪＋已有官方動畫"
+  },
+  {
+    "id": "300",
+    "name": "譜尼",
+    "art": "官方",
+    "first": "/seer/body/300.png",
+    "skinAnim": [],
+    "baseAnim": true,
+    "verdict": "排除",
+    "reason": "官方立繪＋已有官方動畫"
+  },
+  {
+    "id": "5006",
+    "name": "星光·魔焰猩猩",
+    "art": "官方",
+    "first": "/seer/body/4649.png",
+    "skinAnim": [],
+    "baseAnim": true,
+    "verdict": "排除",
+    "reason": "官方立繪＋已有官方動畫"
+  },
+  {
+    "id": "5007",
+    "name": "混濁海妖.布林克克",
+    "art": "官方",
+    "first": "/seer/body/359.png",
+    "skinAnim": [],
+    "baseAnim": true,
+    "verdict": "排除",
+    "reason": "官方立繪＋已有官方動畫"
+  },
+  {
+    "id": "5008",
+    "name": "鎮魂.巴弗洛",
+    "art": "官方",
+    "first": "/seer/body/177.png",
+    "skinAnim": [],
+    "baseAnim": true,
+    "verdict": "排除",
+    "reason": "官方立繪＋已有官方動畫"
+  },
+  {
+    "id": "5009",
+    "name": "誑獅魔軀.魔獅迪露",
+    "art": "官方",
+    "first": "/seer/body/187.png",
+    "skinAnim": [],
+    "baseAnim": true,
+    "verdict": "排除",
+    "reason": "官方立繪＋已有官方動畫"
+  },
+  {
+    "id": "5000",
+    "name": "聖靈譜尼",
+    "art": "官方",
+    "first": "/seer/body/5000.png",
+    "skinAnim": [
+      "puni"
+    ],
+    "baseAnim": true,
+    "verdict": "排除",
+    "reason": "已有皮膚動畫（puni）"
+  },
+  {
+    "id": "5010",
+    "name": "星光·魯斯王",
+    "art": "官方",
+    "first": "/seer/body/4648.png",
+    "skinAnim": [],
+    "baseAnim": true,
+    "verdict": "排除",
+    "reason": "官方立繪＋已有官方動畫"
+  },
+  {
+    "id": "5011",
+    "name": "星光·麗莎布布",
+    "art": "官方",
+    "first": "/seer/body/4647.png",
+    "skinAnim": [],
+    "baseAnim": true,
+    "verdict": "排除",
+    "reason": "官方立繪＋已有官方動畫"
+  },
+  {
+    "id": "5012",
+    "name": "冰魄·柯爾德",
+    "art": "官方",
+    "first": "/seer/body/3886.png",
+    "skinAnim": [],
+    "baseAnim": true,
+    "verdict": "排除",
+    "reason": "官方立繪＋已有官方動畫"
+  },
+  {
+    "id": "5013",
+    "name": "柯爾霍德",
+    "art": "官方",
+    "first": "/seer/body/3432.png",
+    "skinAnim": [],
+    "baseAnim": true,
+    "verdict": "排除",
+    "reason": "官方立繪＋已有官方動畫"
+  },
+  {
+    "id": "5014",
+    "name": "聖光斯嘉麗",
+    "art": "官方",
+    "first": "/seer/body/3456.png",
+    "skinAnim": [],
+    "baseAnim": true,
+    "verdict": "排除",
+    "reason": "官方立繪＋已有官方動畫"
+  },
+  {
+    "id": "5015",
+    "name": "混沌·布萊克",
+    "art": "官方",
+    "first": "/seer/body/3539.png",
+    "skinAnim": [],
+    "baseAnim": true,
+    "verdict": "排除",
+    "reason": "官方立繪＋已有官方動畫"
+  },
+  {
+    "id": "5016",
+    "name": "變革·馬爾修斯",
+    "art": "官方",
+    "first": "/seer/body/3393.png",
+    "skinAnim": [],
+    "baseAnim": true,
+    "verdict": "排除",
+    "reason": "官方立繪＋已有官方動畫"
+  },
+  {
+    "id": "5017",
+    "name": "人皇·帝辛",
+    "art": "自製",
+    "first": "/elf-art/emperor_dixin_body.png",
+    "skinAnim": [],
+    "baseAnim": false,
+    "verdict": "納入",
+    "reason": "自製立繪且無任何動畫"
+  },
+  {
+    "id": "5018",
+    "name": "蟲后·奧佩婭",
+    "art": "官方",
+    "first": "/seer/body/3626.png",
+    "skinAnim": [],
+    "baseAnim": true,
+    "verdict": "排除",
+    "reason": "官方立繪＋已有官方動畫"
+  },
+  {
+    "id": "5019",
+    "name": "眾神之父·奧丁",
+    "art": "官方",
+    "first": "/seer/body/2647.png",
+    "skinAnim": [],
+    "baseAnim": true,
+    "verdict": "排除",
+    "reason": "官方立繪＋已有官方動畫"
+  },
+  {
+    "id": "5020",
+    "name": "皮皮",
+    "art": "官方",
+    "first": "/seer/body/10.png",
+    "skinAnim": [],
+    "baseAnim": true,
+    "verdict": "排除",
+    "reason": "官方立繪＋已有官方動畫"
+  },
+  {
+    "id": "5021",
+    "name": "治癒.龍魂再臨 次元龍",
+    "art": "官方",
+    "first": "/seer/body/4586.png",
+    "skinAnim": [],
+    "baseAnim": true,
+    "verdict": "排除",
+    "reason": "官方立繪＋已有官方動畫"
+  },
+  {
+    "id": "5022",
+    "name": "無序.六刃",
+    "art": "自製",
+    "first": "/elf-art/wuxu_liuren_body.png",
+    "skinAnim": [],
+    "baseAnim": false,
+    "verdict": "納入",
+    "reason": "無序系列（全部納入）"
+  },
+  {
+    "id": "5023",
+    "name": "無序·蝕言",
+    "art": "自製",
+    "first": "/elf-art/wuxu_shiyan_body.png",
+    "skinAnim": [],
+    "baseAnim": false,
+    "verdict": "納入",
+    "reason": "無序系列（全部納入）"
+  },
+  {
+    "id": "5024",
+    "name": "湮滅之主・咤克斯",
+    "art": "官方",
+    "first": "/seer/body/4762.png",
+    "skinAnim": [
+      "zhakesi15010",
+      "zhakesi15008",
+      "zhakesi15009"
+    ],
+    "baseAnim": true,
+    "verdict": "排除",
+    "reason": "已有皮膚動畫（zhakesi15010/zhakesi15008/zhakesi15009）"
+  },
+  {
+    "id": "5025",
+    "name": "恐懼的化身·咤克斯",
+    "art": "自製",
+    "first": "/elf-art/zhakesi_fear_body.png",
+    "skinAnim": [],
+    "baseAnim": true,
+    "verdict": "納入",
+    "reason": "自製立繪且無任何動畫"
+  },
+  {
+    "id": "5026",
+    "name": "無序.墜星",
+    "art": "自製",
+    "first": "/elf-art/wuxu_zhuixing_body.png",
+    "skinAnim": [],
+    "baseAnim": false,
+    "verdict": "納入",
+    "reason": "無序系列（全部納入）"
+  },
+  {
+    "id": "5027",
+    "name": "蓓麗安特",
+    "art": "官方",
+    "first": "/seer/body/4643.png",
+    "skinAnim": [],
+    "baseAnim": true,
+    "verdict": "排除",
+    "reason": "官方立繪＋已有官方動畫"
+  },
+  {
+    "id": "5028",
+    "name": "怒濤·滄嵐",
+    "art": "官方",
+    "first": "/seer/body/3740.png",
+    "skinAnim": [],
+    "baseAnim": true,
+    "verdict": "排除",
+    "reason": "官方立繪＋已有官方動畫"
+  },
+  {
+    "id": "5029",
+    "name": "異境神霆·雷伊",
+    "art": "自製",
+    "first": "/elf-art/otherworld_thunder_rey_body.png",
+    "skinAnim": [
+      "rey70"
+    ],
+    "baseAnim": false,
+    "verdict": "排除",
+    "reason": "已有皮膚動畫（rey70）"
+  },
+  {
+    "id": "5030",
+    "name": "聖靈邁爾斯",
+    "art": "官方",
+    "first": "/seer/body/1204.png",
+    "skinAnim": [],
+    "baseAnim": true,
+    "verdict": "排除",
+    "reason": "官方立繪＋已有官方動畫"
+  },
+  {
+    "id": "5031",
+    "name": "六界神王",
+    "art": "官方",
+    "first": "/seer/body/3045.png",
+    "skinAnim": [],
+    "baseAnim": true,
+    "verdict": "排除",
+    "reason": "官方立繪＋已有官方動畫"
+  },
+  {
+    "id": "5032",
+    "name": "星核寰宇·艾斯菲亞",
+    "art": "官方",
+    "first": "/seer/body/79.png",
+    "skinAnim": [],
+    "baseAnim": true,
+    "verdict": "排除",
+    "reason": "官方立繪＋已有官方動畫"
+  },
+  {
+    "id": "5033",
+    "name": "星軌重構·艾斯菲格",
+    "art": "官方",
+    "first": "/seer/body/418.png",
+    "skinAnim": [],
+    "baseAnim": true,
+    "verdict": "排除",
+    "reason": "官方立繪＋已有官方動畫"
+  },
+  {
+    "id": "5034",
+    "name": "邪靈主宰·摩哥斯",
+    "art": "官方",
+    "first": "/seer/body/3561.png",
+    "skinAnim": [],
+    "baseAnim": true,
+    "verdict": "排除",
+    "reason": "官方立繪＋已有官方動畫"
+  },
+  {
+    "id": "5036",
+    "name": "九青",
+    "art": "自製",
+    "first": "/elf-art/jiuqing_body.png",
+    "skinAnim": [],
+    "baseAnim": true,
+    "verdict": "納入",
+    "reason": "自製立繪且無任何動畫"
+  },
+  {
+    "id": "7070",
+    "name": "魔化.雷伊",
+    "art": "官方",
+    "first": "/seer/body/70.png",
+    "skinAnim": [
+      "rey70"
+    ],
+    "baseAnim": false,
+    "verdict": "排除",
+    "reason": "已有皮膚動畫（rey70）"
+  },
+  {
+    "id": "707070",
+    "name": "墜霆.雷伊",
+    "art": "官方",
+    "first": "/seer/body/70.png",
+    "skinAnim": [
+      "rey70"
+    ],
+    "baseAnim": false,
+    "verdict": "排除",
+    "reason": "已有皮膚動畫（rey70）"
+  },
+  {
+    "id": "5041",
+    "name": "岳峙淵渟.卡修斯",
+    "art": "官方",
+    "first": "/seer/body/3568.png",
+    "skinAnim": [
+      "cassiusShandi",
+      "cassiusOriginal"
+    ],
+    "baseAnim": true,
+    "verdict": "排除",
+    "reason": "已有皮膚動畫（cassiusShandi/cassiusOriginal）"
+  },
+  {
+    "id": "5035",
+    "name": "御天龍神·哈莫",
+    "art": "官方",
+    "first": "/seer/body/3809.png",
+    "skinAnim": [],
+    "baseAnim": true,
+    "verdict": "排除",
+    "reason": "官方立繪＋已有官方動畫"
+  },
+  {
+    "id": "arena_12",
+    "name": "無為龍者",
+    "art": "官方",
+    "first": "/seer/body/4661.png",
+    "skinAnim": [],
+    "baseAnim": true,
+    "verdict": "排除",
+    "reason": "官方立繪＋已有官方動畫"
+  },
+  {
+    "id": "arena_13",
+    "name": "龍錄天鋒",
+    "art": "官方",
+    "first": "/seer/body/4903.png",
+    "skinAnim": [],
+    "baseAnim": true,
+    "verdict": "排除",
+    "reason": "官方立繪＋已有官方動畫"
+  },
+  {
+    "id": "arena_14",
+    "name": "無極聖武",
+    "art": "官方",
+    "first": "/seer/body/4800.png",
+    "skinAnim": [],
+    "baseAnim": true,
+    "verdict": "排除",
+    "reason": "官方立繪＋已有官方動畫"
+  },
+  {
+    "id": "arena_15",
+    "name": "命運龍輪 莫伊萊",
+    "art": "官方",
+    "first": "/seer/body/4275.png",
+    "skinAnim": [],
+    "baseAnim": true,
+    "verdict": "排除",
+    "reason": "官方立繪＋已有官方動畫"
+  },
+  {
+    "id": "arena_16",
+    "name": "鎮世龍魂・龍之治癒",
+    "art": "無立繪",
+    "first": null,
+    "skinAnim": [],
+    "baseAnim": false,
+    "verdict": "排除",
+    "reason": "完全沒立繪"
+  },
+  {
+    "id": "wiki_4937",
+    "name": "星光·雷納多",
+    "art": "官方",
+    "first": "/seer/body/4937.png",
+    "skinAnim": [],
+    "baseAnim": true,
+    "verdict": "排除",
+    "reason": "官方立繪＋已有官方動畫"
+  }
+]

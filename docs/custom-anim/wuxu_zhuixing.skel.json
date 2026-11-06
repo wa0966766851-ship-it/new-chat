@@ -1,0 +1,11 @@
+{
+  "id": "wuxu_zhuixing",
+  "elfId": "5026",
+  "elfName": "無序.墜星",
+  "fps": 24,
+  "facing": "left",
+  "source": "public/elf-art/wuxu_zhuixing_body_new.png",
+  "_note": "座標以立繪像素為單位。管線在 scripts/lib/skeletalRig/，動作在 motion.mjs，部件切分在 parts.mjs。改完重跑 node scripts/build_zhuixing_skeletal.mjs。",
+  "scale": 0.42,
+  "pad": { "left": 240, "right": 380, "top": 120, "bottom": 90 }
+}

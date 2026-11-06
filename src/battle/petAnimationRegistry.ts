@@ -1,4 +1,4 @@
-﻿import type {Elf} from '../types';
+import type {Elf} from '../types';
 import {selectedElfSkin} from '../data/elfSkins';
 import {PET_ANIMATION_ASSETS,type PetAnimationAssetId} from './petAnimationAssets';
 /** 名稱→素材；只認 PET_ANIMATION_ASSETS 已逐檔登記的名稱，不以序號推算。 */
@@ -34,6 +34,12 @@ export function petAnimationBinding(elf:Pick<Elf,'id'|'name'|'skinId'|'path'> & 
   const allowed=!elf.path||elf.path===`zhakesi_${key}`||elf.path===`/elf-art/zhakesi_${key}_body.png`;
   if(allowed)return ({wrath:'zhakesi15008',greed:'zhakesi15009',fear:'zhakesi15010'} as const)[key];
  }
+ // 自製動作素材：只認「這張立繪就是該素材的來源圖」，避免自訂外觀誤接別人的動作。
+ const byBody=Object.entries(PET_ANIMATION_ASSETS).find(([,meta])=>{
+  const custom=(meta as {custom?:string}).custom;
+  return custom && 'body' in meta && elf.path===meta.body;
+ });
+ if(byBody) return byBody[0] as PetAnimationAssetId;
  // 自訂圖址（含自繪立繪）一律不套用官方動作，避免外觀與動作不同來源。
  if(elf.path && /^(\/|https?:|data:)/.test(elf.path) && elf.path!=='/seer/body/70.png') return null;
  if(String(elf.id)==='70' && elf.name==='雷伊') return 'rey70';

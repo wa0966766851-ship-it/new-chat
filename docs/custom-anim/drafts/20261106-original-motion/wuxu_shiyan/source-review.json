@@ -1,0 +1,51 @@
+{
+  "status": "pilot-not-accepted",
+  "id": "wuxu_shiyan",
+  "sourceSize": [
+    633,
+    1000
+  ],
+  "sourceRecords": [
+    {
+      "pose": "ready",
+      "file": "public/elf-art/wuxu_shiyan_body.png",
+      "sha256": "917c488234fd5534b42edd93eb6b727bb9d652eec083019dbf7eff25e75ace15",
+      "scale": 1,
+      "offset": [
+        280,
+        425
+      ],
+      "flip": false
+    },
+    {
+      "pose": "cast",
+      "file": "docs/custom-anim/drafts/20261105-shiyan/action-reviewed.png",
+      "sha256": "3c7ce62542b2033d8ecf32680a6bcede2492f0ad87894f8ebc5a4bbd3fa26863",
+      "scale": 0.633480825958702,
+      "offset": [
+        289.59439528023603,
+        424.1681415929204
+      ],
+      "flip": false
+    },
+    {
+      "pose": "anticipation",
+      "file": "docs/custom-anim/drafts/20261105-shiyan/anticipation.png",
+      "sha256": "3ad96e8d75dd5f2a77fe4f68c11bb6b27abaeeeaeb408b417347b399b97df20a",
+      "scale": 0.6348854397634885,
+      "offset": [
+        288.9061345158906,
+        426.4042867701404
+      ],
+      "flip": false
+    }
+  ],
+  "original": "public/elf-art/wuxu_shiyan_body.png",
+  "pending": [
+    "局部待機待改為材質對應的關節／分層，橢圓拉伸已撤除",
+    "兩側與三圈待機實播",
+    "原圖去背能量邊緣",
+    "待機到出招姿勢銜接",
+    "受擊仍是舊版佔位，未完成"
+  ]
+}

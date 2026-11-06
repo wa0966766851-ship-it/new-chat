@@ -88,7 +88,7 @@ export function isAliveBySurvivalRule(currentHp: number, rule?: NonPositiveSurvi
  * 統一傷害後體力判定。
  *
  * - 一般精靈：最低0，抵達0即死亡。
- * - 六刃：首次被打至非正值時固定為0；其後傷害全部忽略，仍然存活。
+ * - 六刃：體力最低0；其後仍受到傷害，但傷害不再改變體力，仍然存活。
  * - 雷伊：首次跨過0即進入神降。非真傷本身免疫，改作-70%最大體力調整；
  *   真傷正常扣除。之後持續使用相同規則，最低為-70倍最大體力。
  */
@@ -109,20 +109,12 @@ export function resolveDamageTransition(
   }
 
   if (rule.mode === "freeze_at_zero") {
-    // 2026-11-04 修正：首次跨過 0 時，體力要「顯示成實際的負值」，不是夾成 0。
-    // 原文「直至上述效果結束的下回合結束時自身是否存活不受當前體力值限制」
-    // 描述的是「存活不受體力限制」，體力本身照常被扣（可以為負）。
-    // 原本固定回傳 hp:0，導致玩家看不到負血、傷害統計也失真。
-    if (crossingZero) {
-      const hp = currentHp - amount;   // 保留實際負值
-      return { hp, alive: true, enteredNonPositive: true, ignoredDamage: false, damageApplied: Math.max(0, currentHp), hpAdjustment: hp - currentHp };
-    }
-    if (currentHp <= 0) {
-      // 已經在非正值：後續傷害不再改變體力（維持既有語意）
-      return { hp: currentHp, alive: true, enteredNonPositive: false, ignoredDamage: true, damageApplied: 0, hpAdjustment: 0 };
-    }
-    const hp = currentHp - amount;
-    return { hp, alive: true, enteredNonPositive: false, ignoredDamage: false, damageApplied: amount, hpAdjustment: -amount };
+    // 2026-11-05 使用者確認：不免疫傷害，只凍結體力下限為0。
+    // damageApplied 沿用「實際體力扣除量」；原傷害由既有 receipt／跳字流程保存。
+    // 亦修復舊錯誤版本已留下的負體力，不讓後續傷害繼續保持負數。
+    const hp = Math.max(0, currentHp - amount);
+    return { hp, alive: true, enteredNonPositive: crossingZero, ignoredDamage: false,
+      damageApplied: Math.max(0, currentHp - hp), hpAdjustment: hp - currentHp };
   }
 
   const floor = godDescentFloor(rule, maxHp);

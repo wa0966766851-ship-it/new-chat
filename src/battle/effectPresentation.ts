@@ -133,7 +133,7 @@ const TRIGGER_CAPTIONS: Record<string, string> = {
   incoming: '受到傷害時', incoming_skill: '受到技能傷害時', incoming_attack: '受到攻擊傷害時', incoming_nontrue: '受到非真實傷害時', outgoing: '造成傷害時',
   outgoing_skill: '造成技能傷害時', outgoing_attack: '造成攻擊傷害時', defeated: '被擊敗時', kill: '擊敗對手時', not_killed: '行動結束仍未擊敗時', fatal: '受到致命傷害時',
   before_status: '受到異常前', pp_consumed: 'PP被消耗時', pp_cleared: 'PP被清空時', turn_effects_cleared: '回合類效果被消除時', stat_boost_cleared: '能力提升被消除時',
-  status_end: '異常結束時', status_immune: '免疫異常時', status_tick: '異常回合遞減前', switch_out: '下場時', status_received: '受到異常時', bench: '位於背包時',
+  status_end: '異常結束時', status_immune: '免疫異常時', status_tick: '異常回合遞減前', switch_out: '下場時', opponent_switch_out: '對手下場時', status_received: '受到異常時', bench: '位於背包時',
   any_status: '任一方受到異常時', holder_damaged_attack: '持有者受到攻擊傷害後', holder_damaged: '持有者受傷後', holder_passive: '持有者期間', passive: '常駐',
   held_resource_lost: '持有資源消失時', damage_immune: '免疫傷害時',
 };

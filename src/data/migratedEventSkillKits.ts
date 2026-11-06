@@ -59,7 +59,7 @@ export const MIGRATED_EVENT_SKILL_KITS:ReviewedSequenceSkill[]=[
   ]},
   {elfIds:['5011'],name:'星光·粉末擊打',description:'命中後100%使對手寄生，未觸發則附加自身最大體力值1/4的百分比傷害；命中則100%使對手中毒，未觸發則附加200點固定傷害。',kit:[
     hit('命中後寄生，未觸發附加自身1/4百分比傷害',[{acts:[a('status',{side:'opp',status:'寄生',turns:3,chance:100})]},{chain:'fail',acts:[a('dmg',{base:'最大體力',of:'self',ratio:.25,type:'百分比'})]}],0),
-    hit('命中後中毒，未觸發附加200固定傷害',[{acts:[a('status',{side:'opp',status:'中毒',turns:3,chance:100})]},{chain:'fail',acts:[a('dmg',{flat:200,type:'固定'})]}],1),
+    hit('命中後中毒，未觸發附加200點固定傷害',[{acts:[a('status',{side:'opp',status:'中毒',turns:3,chance:100})]},{chain:'fail',acts:[a('dmg',{flat:200,type:'固定'})]}],1),
   ]},
   {elfIds:['5011'],name:'寄生種子',description:'5回合吸取對方最大體力的1/8（對草系無效）。',kit:[
     hit('非草系對手5回合每回合吸取1/8',[{cond:[c('type_is',{side:'opp',type:'草',neg:true})],acts:[timed(5,'self_skill',[{acts:[a('drain',{ratio:1/8,true:false})]}])]}],0),

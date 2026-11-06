@@ -33,9 +33,9 @@ export const MIGRATED_5014_CAN_SOUL_KIT = {
     e('round_end', 'team_round_end', '斯嘉麗死亡後在背包內倒數，珀妮存活且有可出戰隊友時重生，死亡當回合不在場復活', [
       { acts: [a('delayed_rebirth_tick', {})] },
     ], 11),
-    e('after_action', 'team_action_end', '斯嘉麗在場且珀妮存活，每次出手流程結束（含未出手）額外造成對手最大體力⅓光系傷害，失明或未觸發時清除回合效果，自身下2次攻擊增傷150%', [
+    e('after_action', 'team_action_end', '斯嘉麗在場且珀妮存活，每次出手流程結束（含未出手）額外造成對手最大體力⅓光系技能傷害，失明或未觸發時清除回合效果，自身下2次攻擊增傷150%', [
       { cond: [c('holder_active', {}), c('summoned_extra_alive', { name: '珀妮' })], acts: [a('queue_extra_action', {
-        label: '珀妮：光系傷害', damageRatio: 1 / 3, elem: '光', body: [
+        label: '珀妮：光系技能傷害', damageRatio: 1 / 3, elem: '光', body: [
           { cond: [c('has_status', { side: 'opp', status: '失明', neg: true })], acts: [a('status', { side: 'opp', status: '失明', turns: 2, chance: 100 })] },
           { cond: [c('fail', {})], acts: [a('clear_turn', { side: 'opp' })] },
           { cond: [c('has_status', { side: 'opp', status: '失明' })], acts: [a('clear_turn', { side: 'opp' })] },

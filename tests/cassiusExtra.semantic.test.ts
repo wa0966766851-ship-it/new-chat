@@ -16,7 +16,7 @@ try {
   const R = getBattleSkillRegistry();
   const cas = DEFAULT_ELVES.find((e: any) => String(e.id) === '5041');
 
-  type Opt = { stats?: Partial<Record<'atk' | 'def' | 'spatk' | 'spdef' | 'speed', number>>; noSummon?: boolean; noInvalid?: boolean; summon?: any; phaseEnd?: any };
+  type Opt = { stats?: Partial<Record<'atk' | 'def' | 'spatk' | 'spdef' | 'speed', number>>; noSummon?: boolean; noInvalid?: boolean; noReplace?: boolean; summon?: any; phaseEnd?: any };
   /** 真實 5041；o.phaseEnd 取代「護盾消失」子句（A 組合約版），o.summon 改寫召喚參數。 */
   const mkCas = (id: string, hp: number, o: Opt = {}) => {
     const b = structuredClone(cas); b.id = id; b.battleId = id; b.maxHp = hp; b.currentHp = hp;
@@ -25,6 +25,8 @@ try {
     b.skills.forEach((s: any) => { s.pp = s.maxPp = 99; }); b.skills.push(h.wait());
     // 屬性技能的「使用後無效對手下次攻擊技能」會在對手身上留下計時；需要乾淨的對手計時時移除（只在隔離死亡效果的測試使用）。
     if (o.noInvalid) b.soulMark.kit = b.soulMark.kit.filter((e: any) => !/使用技能後無效對手下次攻擊技能/.test(e.customText));
+    // 山神守護的替代規則（5e756e6）：持有山神守護即令「每次使用技能後對手1回合內技能附加效果失效」。需要對手的附加效果（回合類效果、能力提升、清盾）正常生效時移除，該規則本身另由 cassiusShan.semantic 鎖定。
+    if (o.noReplace) b.soulMark.kit = b.soulMark.kit.filter((e: any) => !/改為自身1回合內選擇使用技能不受PP值限制|技能使用後令對手1回合內技能附加效果失效/.test(e.customText));
     if (o.noSummon) b.soulMark.kit = b.soulMark.kit.filter((e: any) => !/召喚額外精靈/.test(e.customText));
     for (const entry of b.soulMark.kit) {
       if (o.summon && /召喚額外精靈/.test(entry.customText)) for (const act of entry.params.clause.body[0].acts) if (act.op === 'summon_extra_elf') Object.assign(act.p, o.summon);
@@ -177,7 +179,7 @@ try {
     const boost = h.kitSkill('強化', [{ op: 'stat', p: { side: 'self', stats: ['攻擊'], v: 2, chance: 100 } }]);
     const idle = h.wait();
     const enemy = h.unit('敵', 900000, [turnFx, boost, idle], { speed: 10 });
-    const p1 = [mkCas('5041', 4000, { noInvalid: true }), h.unit('友', 3000, [h.wait()])];
+    const p1 = [mkCas('5041', 4000, { noInvalid: true, noReplace: true }), h.unit('友', 3000, [h.wait()])];
     const out = await run(p1, [enemy], [() => [WAIT, 0], () => [WAIT, 1], () => [{ switch: 1 }, 2]]);
     assert.ok(h.timers(out[1].state, 'p2').length > 0, '前置：對手有回合類效果');
     assert.equal(out[1].p2.statStages.atk, 2, '前置：對手有能力提升');
@@ -204,7 +206,7 @@ try {
 
   await check('卡修斯護盾消失→山神死亡（觸發死亡效果）＋清除在場累計回合數→下一回合開始可再次召喚；護盾仍在不動作', async () => {
     const clearShield = h.kitSkill('清盾', [{ op: 'clear_shield', p: { side: 'opp', kind: 'both' } }]);
-    const mk = (reset: boolean) => [mkCas('5041', 4000, reset ? {} : { phaseEnd: killClause(false) })]; // reset=true 用真實 Kit 子句
+    const mk = (reset: boolean) => [mkCas('5041', 4000, reset ? { noReplace: true } : { noReplace: true, phaseEnd: killClause(false) })]; // reset=true 用真實 Kit 子句
     const enemyOf = () => h.unit('敵', 900000, [{ ...h.wait(), name: '閒置' }, clearShield, h.kitSkill('強化', [{ op: 'stat', p: { side: 'self', stats: ['攻擊'], v: 2, chance: 100 } }])], { speed: 10 });
     // T2 清盾→山神死亡→對手PP歸0；之後對手沒有可選技能（交給引擎自動處理），對手換上後備（全技能PP為0時不能再出招）。
     const picks: ((e: any, t: number) => [any, any])[] = [() => [WAIT, 2], () => [WAIT, 1], () => [WAIT, { switch: 1 }], () => [WAIT, 0]];

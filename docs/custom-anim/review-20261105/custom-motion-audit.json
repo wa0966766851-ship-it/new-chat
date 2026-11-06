@@ -1,0 +1,81 @@
+{
+  "note": "Counts describe body data only. Repeated frames, alpha flicker and external FX do not prove character animation quality. Local mesh deformation can animate a single drawing; its visual quality requires playback.",
+  "rows": [
+    {
+      "id": "wuxu_liuren",
+      "downloadBytes": 7854144,
+      "decodedBytes": 26177232,
+      "sequences": {
+        "standby": {
+          "frames": 96,
+          "distinctAuthoredBodyStates": 47,
+          "runtimeLocalDeformation": false,
+          "assessment": "different-body-drawings-or-geometry-not-yet-a-quality-verdict"
+        },
+        "hited": {
+          "frames": 8,
+          "distinctAuthoredBodyStates": 4,
+          "runtimeLocalDeformation": false,
+          "assessment": "different-body-drawings-or-geometry-not-yet-a-quality-verdict"
+        }
+      }
+    },
+    {
+      "id": "wuxu_zhuixing",
+      "downloadBytes": 6790192,
+      "decodedBytes": 22173312,
+      "sequences": {
+        "standby": {
+          "frames": 96,
+          "distinctAuthoredBodyStates": 47,
+          "runtimeLocalDeformation": false,
+          "assessment": "different-body-drawings-or-geometry-not-yet-a-quality-verdict"
+        },
+        "hited": {
+          "frames": 8,
+          "distinctAuthoredBodyStates": 4,
+          "runtimeLocalDeformation": false,
+          "assessment": "different-body-drawings-or-geometry-not-yet-a-quality-verdict"
+        }
+      }
+    },
+    {
+      "id": "wuxu_shiyan",
+      "downloadBytes": 5946975,
+      "decodedBytes": 18601440,
+      "sequences": {
+        "standby": {
+          "frames": 96,
+          "distinctAuthoredBodyStates": 47,
+          "runtimeLocalDeformation": false,
+          "assessment": "different-body-drawings-or-geometry-not-yet-a-quality-verdict"
+        },
+        "hited": {
+          "frames": 8,
+          "distinctAuthoredBodyStates": 4,
+          "runtimeLocalDeformation": false,
+          "assessment": "different-body-drawings-or-geometry-not-yet-a-quality-verdict"
+        }
+      }
+    },
+    {
+      "id": "emperor_dixin",
+      "downloadBytes": 10040475,
+      "decodedBytes": 23718404,
+      "sequences": {
+        "standby": {
+          "frames": 96,
+          "distinctAuthoredBodyStates": 47,
+          "runtimeLocalDeformation": false,
+          "assessment": "different-body-drawings-or-geometry-not-yet-a-quality-verdict"
+        },
+        "hited": {
+          "frames": 8,
+          "distinctAuthoredBodyStates": 4,
+          "runtimeLocalDeformation": false,
+          "assessment": "different-body-drawings-or-geometry-not-yet-a-quality-verdict"
+        }
+      }
+    }
+  ]
+}

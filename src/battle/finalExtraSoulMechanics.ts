@@ -3,8 +3,25 @@ import type { BattleEventContext } from '../effects/types';
 import { effectDefinitionEntries } from './effectSources';
 import { finalExtraTraitActionIssue } from '../blocks/ops/finalExtraTraits';
 const id=(e:any)=>String(e?.battleId||e?.id||'');
+const isPassiveSequence=(e:any)=>e?.node==='passive_always'&&e.codeId==='effect_sequence'&&!e.disabled;
+const hasPassiveSequence=(kit:any)=>Array.isArray(kit)&&kit.some(isPassiveSequence);
+const traitHasPassive=(t:any)=>!!t&&hasPassiveSequence(t.kit);
+/** 必要條件（超集合）：effectDefinitionEntries 會讀到的所有 kit 中，是否存在可被讀取的被動連鎖條目。沒有就一定讀不到。 */
+function mayHavePassiveSequence(elf:any):boolean {
+  const views=elf?.illusion?.target?[elf,elf.illusion.target,elf.illusion.original]:[elf];
+  for(const v of views){
+    if(!v)continue;
+    if(hasPassiveSequence(v.soulMark?.kit)||hasPassiveSequence(v.kit))return true;
+    const a=v.alienTraits;
+    if(traitHasPassive(v.trait)||traitHasPassive(a?.gen2Trait)||traitHasPassive(a?.exclusiveTrait)||traitHasPassive(a?.alienTrait)||traitHasPassive(a?.generalTrait))return true;
+    for(const t of a?.exclusiveTraits||[])if(traitHasPassive(t))return true;
+  }
+  return false;
+}
 /** 公式層直接查目前積木，移除條目或編輯值即失效；不依精靈名稱或原文猜測。 */
 export function readPassiveSoulMechanic(elf:Elf,op:string):any|undefined {
+  // 效能：每個戰鬥事件都會對全隊掃描；絕大多數精靈沒有任何被動連鎖，先用不配置物件的必要條件擋掉（結果與完整掃描相同）。
+  if(!mayHavePassiveSequence(elf))return undefined;
   for(const def of effectDefinitionEntries(elf)){
     if(def.effectMode!=='kit')continue;
     for(const e of def.kit||[]){

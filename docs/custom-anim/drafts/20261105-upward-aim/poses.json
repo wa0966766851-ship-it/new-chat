@@ -1,0 +1,227 @@
+{
+  "id": "wuxu_zhuixing",
+  "elfId": "5026",
+  "elfName": "無序.墜星",
+  "facing": "left",
+  "fps": 24,
+  "canvas": [
+    736,
+    864
+  ],
+  "anchor": [
+    550,
+    816
+  ],
+  "margin": 8,
+  "pixelsPerUnit": 100,
+  "poses": {
+    "ready": {
+      "file": "docs/custom-anim/drafts/20261105-upward-aim/aligned/ready.png",
+      "sha256": "c38bff4f0561675134d8e63998bd2e4abe6e99fa7caa7b20624371d1f243cb47",
+      "anchors": {
+        "muzzle": [
+          127.2,
+          236.4
+        ]
+      },
+      "review": {
+        "accepted": true,
+        "note": "完整備戰姿勢，兩手持砲；足部未裁切。"
+      }
+    },
+    "raise": {
+      "file": "docs/custom-anim/drafts/20261105-upward-aim/aligned/raise.png",
+      "sha256": "7793f942a4fd2e45e3dd71515ebc600ab9946fe57a47ec917a07796a91476e24",
+      "anchors": {
+        "muzzle": [
+          164.4,
+          154.79999999999998
+        ]
+      },
+      "review": {
+        "accepted": true,
+        "note": "中途抬砲，手臂與武器一體重繪；無拆件。"
+      }
+    },
+    "aim": {
+      "file": "docs/custom-anim/drafts/20261105-upward-aim/aligned/aim.png",
+      "sha256": "1168c7e4c3490af635370d5f99fe07dc28988f767967497f550470923a60a2bb",
+      "anchors": {
+        "muzzle": [
+          182.4,
+          126.6
+        ]
+      },
+      "review": {
+        "accepted": true,
+        "note": "向上瞄準，砲身未穿過面部，完整頭部與雙足。"
+      }
+    },
+    "recoil": {
+      "file": "docs/custom-anim/drafts/20261105-upward-aim/aligned/recoil.png",
+      "sha256": "b96078641a714528b6075fe3fe4cfbc120a710a99ea57466f8fb68c8c8a0d3a5",
+      "anchors": {
+        "muzzle": [
+          201.6,
+          148.2
+        ]
+      },
+      "review": {
+        "accepted": true,
+        "note": "彎肘承受後座力；雙腳位置與備戰大致一致，須以實播再驗收。"
+      }
+    }
+  },
+  "sequences": {
+    "standby": {
+      "loop": true,
+      "drawings": [
+        {
+          "pose": "ready",
+          "hold": 24
+        }
+      ]
+    },
+    "attack": {
+      "drawings": [
+        {
+          "pose": "ready",
+          "hold": 3
+        },
+        {
+          "pose": "raise",
+          "hold": 3
+        },
+        {
+          "pose": "aim",
+          "hold": 7
+        },
+        {
+          "pose": "recoil",
+          "hold": 3
+        },
+        {
+          "pose": "aim",
+          "hold": 12
+        },
+        {
+          "pose": "raise",
+          "hold": 3
+        },
+        {
+          "pose": "ready",
+          "hold": 5
+        }
+      ],
+      "hits": [
+        23
+      ],
+      "events": {
+        "launch": 13,
+        "recover": 28
+      }
+    },
+    "sa": {
+      "drawings": [
+        {
+          "pose": "ready",
+          "hold": 4
+        },
+        {
+          "pose": "raise",
+          "hold": 4
+        },
+        {
+          "pose": "aim",
+          "hold": 15
+        },
+        {
+          "pose": "recoil",
+          "hold": 4
+        },
+        {
+          "pose": "aim",
+          "hold": 14
+        },
+        {
+          "pose": "raise",
+          "hold": 4
+        },
+        {
+          "pose": "ready",
+          "hold": 7
+        }
+      ],
+      "hits": [
+        34
+      ],
+      "events": {
+        "launch": 23,
+        "recover": 41
+      }
+    },
+    "ultimate": {
+      "drawings": [
+        {
+          "pose": "ready",
+          "hold": 4
+        },
+        {
+          "pose": "raise",
+          "hold": 5
+        },
+        {
+          "pose": "aim",
+          "hold": 23
+        },
+        {
+          "pose": "recoil",
+          "hold": 5
+        },
+        {
+          "pose": "aim",
+          "hold": 19
+        },
+        {
+          "pose": "raise",
+          "hold": 5
+        },
+        {
+          "pose": "ready",
+          "hold": 7
+        }
+      ],
+      "hits": [
+        47
+      ],
+      "events": {
+        "launch": 32,
+        "recover": 56
+      }
+    },
+    "cp": {
+      "drawings": [
+        {
+          "pose": "ready",
+          "hold": 36
+        }
+      ]
+    },
+    "extra": {
+      "drawings": [
+        {
+          "pose": "ready",
+          "hold": 32
+        }
+      ]
+    },
+    "hited": {
+      "drawings": [
+        {
+          "pose": "ready",
+          "hold": 8
+        }
+      ]
+    }
+  }
+}

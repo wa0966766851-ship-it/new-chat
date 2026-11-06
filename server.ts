@@ -7,6 +7,7 @@ import dotenv from "dotenv";
 import { registerLauncherPreferences } from './server/launcherPreferences';
 import { registerLauncherIdentity } from './server/launcherIdentity';
 import { registerPetAnimations } from './server/petAnimations';
+import { registerPlayerSaves } from './server/playerSaves';
 import { AssetCache } from './electron/update/assetCache.cjs';
 import { REAL_CARD_EFFECT_MODULES as AI_EFFECT_REFERENCE_LIBRARY, TEMPLATE_GRAMMAR_GUIDELINES } from "./src/data/cardTemplates";
 
@@ -16,6 +17,7 @@ const distRoot=path.resolve(process.env.SEER_DIST_DIR || path.join(process.cwd()
 const app = express();
 const PORT = Number(process.env.PORT || 3000);
 
+registerPlayerSaves(app);
 app.use(express.json());
 registerLauncherPreferences(app, process.cwd());
 registerPetAnimations(app, process.cwd());
@@ -412,7 +414,7 @@ app.post("/api/dissect-tokens", async (req, res) => {
          - "modifier" (動態縮減/Modifier，可選)
          
       【經典範例對齊標準】：
-      若輸入為："所有能力值/己方/在場精靈/每次/受到/麻痺/時/將/當前/所處/異常狀態/轉化/為/星贖/且/當回合/直到/戰鬥階段/結束前/回合類效果/無法/被/消除/在場期間/每次/出手流程/結束/後(含/選擇/技能/因故/未能/出手/)進行/一/次/額外行動/造成/對方/等同於/最大體力/⅓/的/光系傷害/且/100%/令/對手/失明//未觸發/失明/或/對手/已處於/失明/則/消除/對手/回合類效果/且/令//下/2次/造成/的/攻擊傷害/提升/150%/；己方/死亡/4/回合/後/在/背包/內/重生/，己方/每/有/1層/燦界/聖芒/則/重生/所需/回合/降低/1回合/"
+      若輸入為："所有能力值/己方/在場精靈/每次/受到/麻痺/時/將/當前/所處/異常狀態/轉化/為/星贖/且/當回合/直到/戰鬥階段/結束前/回合類效果/無法/被/消除/在場期間/每次/出手流程/結束/後(含/選擇/技能/因故/未能/出手/)進行/一/次/額外行動/造成/對方/等同於/最大體力/⅓/的/光系技能傷害/且/100%/令/對手/失明//未觸發/失明/或/對手/已處於/失明/則/消除/對手/回合類效果/且/令//下/2次/造成/的/攻擊傷害/提升/150%/；己方/死亡/4/回合/後/在/背包/內/重生/，己方/每/有/1層/燦界/聖芒/則/重生/所需/回合/降低/1回合/"
       你應當精準將其所有字詞切割，不漏掉任何一個字，並精確分類，且生成 4 個子句對齊。
       
       請確保對任何新輸入的文字都能做到同樣高水準的 100% 覆蓋拆解。輸出必須為繁體中文，且回傳格式必須嚴格符合指定的 JSON Schema。

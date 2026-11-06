@@ -2,7 +2,7 @@ import type { Clause } from '../blocks/model';
 import { eventTriggers, recordSkillUse, runClause, snapshotConditions, type RunState } from '../blocks/runtime';
 import type { BattleEventContext, DamageComputation } from './types';
 import { EffectTiming } from './types';
-import { sequenceIssue } from './sequenceContract';
+import { cachedSequenceIssue as sequenceIssue } from './sequenceIssueCache';
 import type { KitEntry, Node } from './effectSystem.schema';
 
 /** 狀態只存在於一次definition／node執行中；不寫入隊伍，不能串給下一隻。 */

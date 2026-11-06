@@ -121,7 +121,7 @@ test("known left-facing battle art faces the opponent on both sides", () => {
     "聖靈邁爾斯",
     "譜尼",
     "混沌·布萊克",
-    "治癒.龍魂再臨 次元龍",
+    "治癒·龍魂再臨",
     "無序·蝕言",
     "蓓麗安特",
     "天蓬元帥八戒",
@@ -183,7 +183,7 @@ test("source facing matches the user-confirmed P1 corrections", () => {
     }
   }
   for (const [name, source] of [["譜尼", "/seer/body/300.png"], ["混沌·布萊克", "/seer/body/3539.png"],
-    ["治癒.龍魂再臨 次元龍", "/seer/body/4586.png"], ["無序·蝕言", "/elf-art/wuxu_shiyan_body.png"], ["蓓麗安特", "/seer/body/4643.png"]]) {
+    ["治癒·龍魂再臨", "/seer/body/4586.png"], ["無序·蝕言", "/elf-art/wuxu_shiyan_body.png"], ["蓓麗安特", "/seer/body/4643.png"]]) {
     assert.equal(shouldMirrorBattleSprite(name, "p1", false, source), true);
     assert.equal(shouldMirrorBattleSprite(name, "p2", false, source), false);
   }
@@ -278,4 +278,14 @@ test("卡修斯兩款外觀：靜態原圖 left、原生動畫 right，P1 朝右
     assert.equal(shouldMirrorBattleSprite(name, "p1", false, src), false, `${key} P1 原姿→朝右`);
     assert.equal(shouldMirrorBattleSprite(name, "p2", false, src), true, `${key} P2 鏡射→朝左`);
   }
+});
+
+test("六刃：原始抱胸靜態朝右，正規化動作朝左，兩側各只鏡射一次", () => {
+  const name="無序.六刃",body="/elf-art/wuxu_liuren_body.png",anim="/api/pet-animations/bundle/wuxu_liuren";
+  assert.equal(BODY_SOURCE_FACING[body],"right");
+  assert.equal(PET_ANIMATION_ASSETS.wuxu_liuren.facing,"left");
+  assert.equal(shouldMirrorBattleSprite(name,"p1",false,body),false);
+  assert.equal(shouldMirrorBattleSprite(name,"p2",false,body),true);
+  assert.equal(shouldMirrorBattleSprite(name,"p1",false,anim),true);
+  assert.equal(shouldMirrorBattleSprite(name,"p2",false,anim),false);
 });

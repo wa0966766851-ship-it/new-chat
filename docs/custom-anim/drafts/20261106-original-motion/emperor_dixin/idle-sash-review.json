@@ -1,0 +1,94 @@
+{
+  "status": "unaccepted-sash-study",
+  "sash": [
+    [
+      595,
+      560
+    ],
+    [
+      645,
+      615
+    ],
+    [
+      677,
+      713
+    ],
+    [
+      731,
+      806
+    ],
+    [
+      798,
+      889
+    ],
+    [
+      895,
+      968
+    ],
+    [
+      1009,
+      1080
+    ],
+    [
+      1024,
+      1174
+    ],
+    [
+      1024,
+      1295
+    ],
+    [
+      960,
+      1220
+    ],
+    [
+      933,
+      1165
+    ],
+    [
+      870,
+      1100
+    ],
+    [
+      800,
+      1045
+    ],
+    [
+      749,
+      981
+    ],
+    [
+      711,
+      920
+    ],
+    [
+      674,
+      848
+    ],
+    [
+      647,
+      772
+    ],
+    [
+      611,
+      696
+    ],
+    [
+      590,
+      633
+    ]
+  ],
+  "original": "docs/custom-anim/drafts/20261105-dixin/ready-clean.png",
+  "underpaint": "sash-underpaint-source.png",
+  "offset": [
+    520,
+    765
+  ],
+  "underpaintScope": "inside sash mask, y>=620, x<850, y<1050 and original alpha===255 only",
+  "pending": [
+    "root seam and overlap",
+    "underpaint color visible at maximum rotation",
+    "source sash includes neighboring embroidery",
+    "hair/torso and hit action still incomplete"
+  ]
+}

@@ -280,7 +280,7 @@ export const handleScarlettSoulMark = (ctx: BattleEventContext, event: EffectTim
       skills: [],
       soulMark: {
         name: "珀妮（光系額外精靈）",
-        description: "珀妮:光系額外精靈，所有能力值均為斯嘉麗⅓，己方在場精靈每次受到麻痺時後將當前所處異常狀態轉化為星贖且當回合直到戰鬥階段結束前回合類效果無法被消除；斯嘉麗在場期間每次出手流程結束後(含斯嘉麗選擇技能因故未能出手)進行一次額外行動造成對方等同於最大體力⅓的光系傷害且100%令對手失明，未觸發失明或對手已處於失明則消除對手回合類效果且令斯嘉麗下2次造成的攻擊傷害提升150%；己方斯嘉麗死亡4回合後在背包內重生，己方每有1層燦界聖芒則重生所需回合降低1回合。",
+        description: "珀妮:光系額外精靈，所有能力值均為斯嘉麗⅓，己方在場精靈每次受到麻痺時後將當前所處異常狀態轉化為星贖且當回合直到戰鬥階段結束前回合類效果無法被消除；斯嘉麗在場期間每次出手流程結束後(含斯嘉麗選擇技能因故未能出手)進行一次額外行動造成對方等同於最大體力⅓的光系技能傷害且100%令對手失明，未觸發失明或對手已處於失明則消除對手回合類效果且令斯嘉麗下2次造成的攻擊傷害提升150%；己方斯嘉麗死亡4回合後在背包內重生，己方每有1層燦界聖芒則重生所需回合降低1回合。",
         effectType: "none",
         effectValue: 0
       }
@@ -447,7 +447,7 @@ export const handleScarlettSoulMark = (ctx: BattleEventContext, event: EffectTim
       // 珀妮：斯嘉麗在場期間每次出手流程結束後（含未能出手）進行一次額外行動
       if (isPuniAlive(ctx, actor) && extraData?.actor === actor && ctx.queueExtraAction) {
         ctx.queueExtraAction(actor, {
-          label: "珀妮：光系傷害",
+          label: "珀妮：光系技能傷害",
           amount: Math.floor(ctx.target.maxHp / 3),
           elem: "光",
           after: (c) => {

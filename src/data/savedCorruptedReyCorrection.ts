@@ -10,6 +10,9 @@ export function correctSavedCorruptedRey(elf:Elf,defaults:Elf[]):Elf{
  if(!old||!source||elf.isCustom)return elf;
  // 分級是本次明確調整的內建資料；既有配裝覆寫也必須接收。
  if(String(elf.id)==='7070'&&source.destinyRank==='B'&&elf.destinyRank!=='B')elf={...elf,destinyRank:'B'};
+ // seerId 是「外觀→官方動作」的唯一依據（7070／707070 都是 70 → rey70）。舊存檔沒有這個欄位，
+ // 一旦被重建就會默默失去動作而不報錯，所以照預設資料補回。只補不覆寫。
+ if(source.seerId!==undefined&&elf.seerId!==source.seerId)elf={...elf,seerId:source.seerId};
  const protectedDefinitions=modifiedBuiltinDefinitions(elf,defaults);
  const desktop=desktopLegacy.find(e=>e.id===String(elf.id)&&e.name===elf.name);
  const definition=(v:any)=>({description:v.description,effectMode:v.effectMode,kit:v.kit});

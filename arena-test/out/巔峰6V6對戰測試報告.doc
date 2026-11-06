@@ -1,0 +1,164 @@
+﻿<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word" xmlns="http://www.w3.org/TR/REC-html40">
+<head><meta charset="utf-8"><title>巔峰 6V6 對戰測試報告</title>
+<style>
+ @page { size: A4; margin: 2cm; }
+ body { font-family:"Microsoft JhengHei","PingFang TC",sans-serif; font-size:11pt; line-height:1.6; color:#1e293b; }
+ h1 { font-size:20pt; color:#1e3a8a; border-bottom:2px solid #2563eb; padding-bottom:6px; }
+ h2 { font-size:14pt; color:#1e40af; margin-top:22px; border-left:4px solid #2563eb; padding-left:8px; }
+ h3 { font-size:12pt; color:#334155; }
+ table { border-collapse:collapse; width:100%; margin:10px 0; font-size:10.5pt; }
+ th { background:#e0e7ff; border:1px solid #94a3b8; padding:5px 7px; text-align:left; }
+ td { border:1px solid #cbd5e1; padding:4px 7px; }
+ .kpi td { text-align:center; font-size:16pt; font-weight:bold; color:#1d4ed8; }
+ .note { background:#fef3c7; border-left:4px solid #f59e0b; padding:8px 12px; margin:12px 0; font-size:10pt; }
+</style></head><body>
+
+<h1>巔峰 6V6 大規模對戰測試報告</h1>
+<p><b>測試時間</b>：2026/11/2 下午4:26:29<br>
+<b>規則</b>：47 隻精靈池 → 雙方各抽 12 隻 → 各 ban 3 → 9 挑 6 → 50 回合上限（存活數判定）<br>
+<b>對戰雙方</b>：P1＝自寫規則式策略　│　P2＝專案內建 AI（planner，預算 300ms）</p>
+
+<h2>一、總體結果</h2>
+<table border="1" cellspacing="0" cellpadding="5" style="border-collapse:collapse;width:100%;font-size:11pt;font-family:'Microsoft JhengHei'"><tr><th style="width:40%">指標</th><th>數值</th></tr>
+<tr><td>有效場次</td><td style="text-align:right;font-weight:bold">100 場</td></tr>
+<tr><td>P1 自寫策略勝率</td><td style="text-align:right;font-weight:bold;color:#2563eb">40%（40 勝）</td></tr>
+<tr><td>P2 內建 AI 勝率</td><td style="text-align:right;font-weight:bold;color:#dc2626">54%（54 勝）</td></tr>
+<tr><td>平局</td><td style="text-align:right">6 場（6%）</td></tr>
+<tr><td>平均回合數</td><td style="text-align:right">23.9 回合</td></tr>
+<tr><td>50 回合判定率</td><td style="text-align:right">27%</td></tr>
+</table>
+
+<h3>判定原因</h3>
+<table border="1" cellspacing="0" cellpadding="5" style="border-collapse:collapse;width:100%;font-size:11pt;font-family:'Microsoft JhengHei'"><tr><th>原因</th><th>場次</th><th>占比</th></tr><tr><td>擊殺分出勝負</td><td style="text-align:right">93 場</td><td style="text-align:right">93%</td></tr><tr><td>unknown</td><td style="text-align:right">7 場</td><td style="text-align:right">7%</td></tr></table>
+
+<h2>二、回合數分布</h2>
+<table border="1" cellspacing="0" cellpadding="5" style="border-collapse:collapse;width:100%;font-size:11pt;font-family:'Microsoft JhengHei'"><tr><th>區間</th><th>場次</th><th>占比</th></tr><tr><td>1-10 回合</td><td style="text-align:right">34 場</td><td style="text-align:right">34%</td></tr><tr><td>11-20 回合</td><td style="text-align:right">28 場</td><td style="text-align:right">28%</td></tr><tr><td>21-30 回合</td><td style="text-align:right">5 場</td><td style="text-align:right">5%</td></tr><tr><td>31-40 回合</td><td style="text-align:right">2 場</td><td style="text-align:right">2%</td></tr><tr><td>41-50 回合</td><td style="text-align:right">31 場</td><td style="text-align:right">31%</td></tr></table>
+<p style="font-size:10pt;color:#64748b">多數戰鬥在 11–30 回合結束，代表雙方都能形成有效對抗，而非速崩或純拖時間。</p>
+
+<h2>三、各精靈勝率（全部 47 隻）</h2>
+<table border="1" cellspacing="0" cellpadding="5" style="border-collapse:collapse;width:100%;font-size:11pt;font-family:'Microsoft JhengHei'"><tr><th>精靈</th><th style="width:80px">出場</th><th style="width:80px">勝場</th><th style="width:90px">勝率</th></tr><tr><td>鎮魂.巴弗洛</td><td style="text-align:right">20</td><td style="text-align:right">15</td><td style="text-align:right;font-weight:bold;color:#16a34a">75%</td></tr><tr><td>混濁海妖.布林克克</td><td style="text-align:right">27</td><td style="text-align:right">18</td><td style="text-align:right;font-weight:bold;color:#16a34a">66.7%</td></tr><tr><td>無序.墜星</td><td style="text-align:right">18</td><td style="text-align:right">12</td><td style="text-align:right;font-weight:bold;color:#16a34a">66.7%</td></tr><tr><td>無序.六刃</td><td style="text-align:right">23</td><td style="text-align:right">15</td><td style="text-align:right;font-weight:bold;color:#16a34a">65.2%</td></tr><tr><td>聖光斯嘉麗</td><td style="text-align:right">20</td><td style="text-align:right">13</td><td style="text-align:right;font-weight:bold;color:#16a34a">65%</td></tr><tr><td>異境神霆·雷伊</td><td style="text-align:right">28</td><td style="text-align:right">18</td><td style="text-align:right;font-weight:bold;color:#16a34a">64.3%</td></tr><tr><td>治癒.龍魂再臨 次元龍</td><td style="text-align:right">19</td><td style="text-align:right">12</td><td style="text-align:right;font-weight:bold;color:#16a34a">63.2%</td></tr><tr><td>星軌重構·艾斯菲格</td><td style="text-align:right">23</td><td style="text-align:right">14</td><td style="text-align:right;font-weight:bold;color:#16a34a">60.9%</td></tr><tr><td>六界神王</td><td style="text-align:right">31</td><td style="text-align:right">18</td><td style="text-align:right;font-weight:bold;color:#65a30d">58.1%</td></tr><tr><td>誑獅魔軀.魔獅迪露</td><td style="text-align:right">26</td><td style="text-align:right">15</td><td style="text-align:right;font-weight:bold;color:#65a30d">57.7%</td></tr><tr><td>星光·麗莎布布</td><td style="text-align:right">30</td><td style="text-align:right">17</td><td style="text-align:right;font-weight:bold;color:#65a30d">56.7%</td></tr><tr><td>悲歌.索比拉特</td><td style="text-align:right">34</td><td style="text-align:right">19</td><td style="text-align:right;font-weight:bold;color:#65a30d">55.9%</td></tr><tr><td>星核寰宇·艾斯菲亞</td><td style="text-align:right">27</td><td style="text-align:right">15</td><td style="text-align:right;font-weight:bold;color:#65a30d">55.6%</td></tr><tr><td>恐懼的化身·咤克斯</td><td style="text-align:right">18</td><td style="text-align:right">10</td><td style="text-align:right;font-weight:bold;color:#65a30d">55.6%</td></tr><tr><td>鎮世龍魂・龍之治癒</td><td style="text-align:right">35</td><td style="text-align:right">19</td><td style="text-align:right;font-weight:bold;color:#65a30d">54.3%</td></tr><tr><td>眾神之父·奧丁</td><td style="text-align:right">26</td><td style="text-align:right">14</td><td style="text-align:right;font-weight:bold;color:#65a30d">53.8%</td></tr><tr><td>無序·蝕言</td><td style="text-align:right">29</td><td style="text-align:right">15</td><td style="text-align:right;font-weight:bold;color:#65a30d">51.7%</td></tr><tr><td>岳峙淵渟.卡修斯</td><td style="text-align:right">26</td><td style="text-align:right">13</td><td style="text-align:right;font-weight:bold;color:#65a30d">50%</td></tr><tr><td>無為龍者</td><td style="text-align:right">22</td><td style="text-align:right">11</td><td style="text-align:right;font-weight:bold;color:#65a30d">50%</td></tr><tr><td>墜霆.雷伊</td><td style="text-align:right">33</td><td style="text-align:right">16</td><td style="text-align:right;font-weight:bold;color:#ca8a04">48.5%</td></tr><tr><td>命運龍輪 莫伊萊</td><td style="text-align:right">29</td><td style="text-align:right">14</td><td style="text-align:right;font-weight:bold;color:#ca8a04">48.3%</td></tr><tr><td>聖靈邁爾斯</td><td style="text-align:right">25</td><td style="text-align:right">12</td><td style="text-align:right;font-weight:bold;color:#ca8a04">48%</td></tr><tr><td>蟲后·奧佩婭</td><td style="text-align:right">28</td><td style="text-align:right">13</td><td style="text-align:right;font-weight:bold;color:#ca8a04">46.4%</td></tr><tr><td>怒濤·滄嵐</td><td style="text-align:right">26</td><td style="text-align:right">12</td><td style="text-align:right;font-weight:bold;color:#ca8a04">46.2%</td></tr><tr><td>變革·馬爾修斯</td><td style="text-align:right">24</td><td style="text-align:right">11</td><td style="text-align:right;font-weight:bold;color:#ca8a04">45.8%</td></tr><tr><td>冰魄·柯爾德</td><td style="text-align:right">33</td><td style="text-align:right">15</td><td style="text-align:right;font-weight:bold;color:#ca8a04">45.5%</td></tr><tr><td>混沌·布萊克</td><td style="text-align:right">32</td><td style="text-align:right">14</td><td style="text-align:right;font-weight:bold;color:#ca8a04">43.8%</td></tr><tr><td>皮皮</td><td style="text-align:right">23</td><td style="text-align:right">10</td><td style="text-align:right;font-weight:bold;color:#ca8a04">43.5%</td></tr><tr><td>人皇·帝辛</td><td style="text-align:right">23</td><td style="text-align:right">10</td><td style="text-align:right;font-weight:bold;color:#ca8a04">43.5%</td></tr><tr><td>天蓬元帥八戒</td><td style="text-align:right">21</td><td style="text-align:right">9</td><td style="text-align:right;font-weight:bold;color:#ca8a04">42.9%</td></tr><tr><td>譜尼</td><td style="text-align:right">21</td><td style="text-align:right">9</td><td style="text-align:right;font-weight:bold;color:#ca8a04">42.9%</td></tr><tr><td>皮特薩拉羅</td><td style="text-align:right">26</td><td style="text-align:right">11</td><td style="text-align:right;font-weight:bold;color:#ca8a04">42.3%</td></tr><tr><td>星光·魔焰猩猩</td><td style="text-align:right">24</td><td style="text-align:right">10</td><td style="text-align:right;font-weight:bold;color:#ca8a04">41.7%</td></tr><tr><td>湮滅之主・咤克斯</td><td style="text-align:right">20</td><td style="text-align:right">8</td><td style="text-align:right;font-weight:bold;color:#ca8a04">40%</td></tr><tr><td>魔化.雷伊</td><td style="text-align:right">28</td><td style="text-align:right">11</td><td style="text-align:right;font-weight:bold;color:#dc2626">39.3%</td></tr><tr><td>蓓麗安特</td><td style="text-align:right">26</td><td style="text-align:right">10</td><td style="text-align:right;font-weight:bold;color:#dc2626">38.5%</td></tr><tr><td>帝皇之盾</td><td style="text-align:right">26</td><td style="text-align:right">10</td><td style="text-align:right;font-weight:bold;color:#dc2626">38.5%</td></tr><tr><td>星光·雷納多</td><td style="text-align:right">32</td><td style="text-align:right">12</td><td style="text-align:right;font-weight:bold;color:#dc2626">37.5%</td></tr><tr><td>龍錄天鋒</td><td style="text-align:right">22</td><td style="text-align:right">8</td><td style="text-align:right;font-weight:bold;color:#dc2626">36.4%</td></tr><tr><td>九青</td><td style="text-align:right">22</td><td style="text-align:right">8</td><td style="text-align:right;font-weight:bold;color:#dc2626">36.4%</td></tr><tr><td>御天龍神·哈莫</td><td style="text-align:right">26</td><td style="text-align:right">9</td><td style="text-align:right;font-weight:bold;color:#dc2626">34.6%</td></tr><tr><td>柯爾霍德</td><td style="text-align:right">25</td><td style="text-align:right">8</td><td style="text-align:right;font-weight:bold;color:#dc2626">32%</td></tr><tr><td>邪靈主宰·摩哥斯</td><td style="text-align:right">18</td><td style="text-align:right">5</td><td style="text-align:right;font-weight:bold;color:#dc2626">27.8%</td></tr><tr><td>聖靈譜尼</td><td style="text-align:right">23</td><td style="text-align:right">6</td><td style="text-align:right;font-weight:bold;color:#dc2626">26.1%</td></tr><tr><td>布萊克</td><td style="text-align:right">27</td><td style="text-align:right">7</td><td style="text-align:right;font-weight:bold;color:#dc2626">25.9%</td></tr><tr><td>星光·魯斯王</td><td style="text-align:right">33</td><td style="text-align:right">8</td><td style="text-align:right;font-weight:bold;color:#dc2626">24.2%</td></tr><tr><td>無極聖武</td><td style="text-align:right">22</td><td style="text-align:right">5</td><td style="text-align:right;font-weight:bold;color:#dc2626">22.7%</td></tr></table>
+<div class="note">勝率＝「該精靈所屬隊伍獲勝」的比例，非精靈個人擊殺數。出場 &lt; 15 場者波動較大，僅供參考。</div>
+
+<h2>四、勝率視覺化</h2>
+<h3>勝率前 20 名</h3>
+<svg viewBox="0 0 780 460" style="width:100%;max-width:780px"><rect x="180" y="10" width="390" height="16" fill="#16a34a" rx="2"/>
+      <text x="174" y="22" font-size="11" text-anchor="end" fill="#334155">鎮魂.巴弗洛</text>
+      <text x="574" y="22" font-size="10" fill="#0f172a">75% (20)</text><rect x="180" y="32" width="347" height="16" fill="#16a34a" rx="2"/>
+      <text x="174" y="44" font-size="11" text-anchor="end" fill="#334155">混濁海妖.布林克克</text>
+      <text x="531" y="44" font-size="10" fill="#0f172a">66.7% (27)</text><rect x="180" y="54" width="347" height="16" fill="#16a34a" rx="2"/>
+      <text x="174" y="66" font-size="11" text-anchor="end" fill="#334155">無序.墜星</text>
+      <text x="531" y="66" font-size="10" fill="#0f172a">66.7% (18)</text><rect x="180" y="76" width="339" height="16" fill="#16a34a" rx="2"/>
+      <text x="174" y="88" font-size="11" text-anchor="end" fill="#334155">無序.六刃</text>
+      <text x="523" y="88" font-size="10" fill="#0f172a">65.2% (23)</text><rect x="180" y="98" width="338" height="16" fill="#16a34a" rx="2"/>
+      <text x="174" y="110" font-size="11" text-anchor="end" fill="#334155">聖光斯嘉麗</text>
+      <text x="522" y="110" font-size="10" fill="#0f172a">65% (20)</text><rect x="180" y="120" width="334" height="16" fill="#16a34a" rx="2"/>
+      <text x="174" y="132" font-size="11" text-anchor="end" fill="#334155">異境神霆·雷伊</text>
+      <text x="518" y="132" font-size="10" fill="#0f172a">64.3% (28)</text><rect x="180" y="142" width="329" height="16" fill="#16a34a" rx="2"/>
+      <text x="174" y="154" font-size="11" text-anchor="end" fill="#334155">治癒.龍魂再臨 次元龍</text>
+      <text x="513" y="154" font-size="10" fill="#0f172a">63.2% (19)</text><rect x="180" y="164" width="317" height="16" fill="#16a34a" rx="2"/>
+      <text x="174" y="176" font-size="11" text-anchor="end" fill="#334155">星軌重構·艾斯菲格</text>
+      <text x="501" y="176" font-size="10" fill="#0f172a">60.9% (23)</text><rect x="180" y="186" width="302" height="16" fill="#65a30d" rx="2"/>
+      <text x="174" y="198" font-size="11" text-anchor="end" fill="#334155">六界神王</text>
+      <text x="486" y="198" font-size="10" fill="#0f172a">58.1% (31)</text><rect x="180" y="208" width="300" height="16" fill="#65a30d" rx="2"/>
+      <text x="174" y="220" font-size="11" text-anchor="end" fill="#334155">誑獅魔軀.魔獅迪露</text>
+      <text x="484" y="220" font-size="10" fill="#0f172a">57.7% (26)</text><rect x="180" y="230" width="295" height="16" fill="#65a30d" rx="2"/>
+      <text x="174" y="242" font-size="11" text-anchor="end" fill="#334155">星光·麗莎布布</text>
+      <text x="479" y="242" font-size="10" fill="#0f172a">56.7% (30)</text><rect x="180" y="252" width="291" height="16" fill="#65a30d" rx="2"/>
+      <text x="174" y="264" font-size="11" text-anchor="end" fill="#334155">悲歌.索比拉特</text>
+      <text x="475" y="264" font-size="10" fill="#0f172a">55.9% (34)</text><rect x="180" y="274" width="289" height="16" fill="#65a30d" rx="2"/>
+      <text x="174" y="286" font-size="11" text-anchor="end" fill="#334155">星核寰宇·艾斯菲亞</text>
+      <text x="473" y="286" font-size="10" fill="#0f172a">55.6% (27)</text><rect x="180" y="296" width="289" height="16" fill="#65a30d" rx="2"/>
+      <text x="174" y="308" font-size="11" text-anchor="end" fill="#334155">恐懼的化身·咤克斯</text>
+      <text x="473" y="308" font-size="10" fill="#0f172a">55.6% (18)</text><rect x="180" y="318" width="282" height="16" fill="#65a30d" rx="2"/>
+      <text x="174" y="330" font-size="11" text-anchor="end" fill="#334155">鎮世龍魂・龍之治癒</text>
+      <text x="466" y="330" font-size="10" fill="#0f172a">54.3% (35)</text><rect x="180" y="340" width="280" height="16" fill="#65a30d" rx="2"/>
+      <text x="174" y="352" font-size="11" text-anchor="end" fill="#334155">眾神之父·奧丁</text>
+      <text x="464" y="352" font-size="10" fill="#0f172a">53.8% (26)</text><rect x="180" y="362" width="269" height="16" fill="#65a30d" rx="2"/>
+      <text x="174" y="374" font-size="11" text-anchor="end" fill="#334155">無序·蝕言</text>
+      <text x="453" y="374" font-size="10" fill="#0f172a">51.7% (29)</text><rect x="180" y="384" width="260" height="16" fill="#65a30d" rx="2"/>
+      <text x="174" y="396" font-size="11" text-anchor="end" fill="#334155">岳峙淵渟.卡修斯</text>
+      <text x="444" y="396" font-size="10" fill="#0f172a">50% (26)</text><rect x="180" y="406" width="260" height="16" fill="#65a30d" rx="2"/>
+      <text x="174" y="418" font-size="11" text-anchor="end" fill="#334155">無為龍者</text>
+      <text x="444" y="418" font-size="10" fill="#0f172a">50% (22)</text><rect x="180" y="428" width="252" height="16" fill="#ca8a04" rx="2"/>
+      <text x="174" y="440" font-size="11" text-anchor="end" fill="#334155">墜霆.雷伊</text>
+      <text x="436" y="440" font-size="10" fill="#0f172a">48.5% (33)</text>
+    <line x1="440" y1="0" x2="440" y2="450" stroke="#cbd5e1" stroke-dasharray="3,3"/></svg>
+<h3>勝率後 10 名</h3>
+<svg viewBox="0 0 780 240" style="width:100%;max-width:780px"><rect x="180" y="10" width="118" height="16" fill="#dc2626" rx="2"/>
+      <text x="174" y="22" font-size="11" text-anchor="end" fill="#334155">無極聖武</text>
+      <text x="302" y="22" font-size="10" fill="#0f172a">22.7% (22)</text><rect x="180" y="32" width="126" height="16" fill="#dc2626" rx="2"/>
+      <text x="174" y="44" font-size="11" text-anchor="end" fill="#334155">星光·魯斯王</text>
+      <text x="310" y="44" font-size="10" fill="#0f172a">24.2% (33)</text><rect x="180" y="54" width="135" height="16" fill="#dc2626" rx="2"/>
+      <text x="174" y="66" font-size="11" text-anchor="end" fill="#334155">布萊克</text>
+      <text x="319" y="66" font-size="10" fill="#0f172a">25.9% (27)</text><rect x="180" y="76" width="136" height="16" fill="#dc2626" rx="2"/>
+      <text x="174" y="88" font-size="11" text-anchor="end" fill="#334155">聖靈譜尼</text>
+      <text x="320" y="88" font-size="10" fill="#0f172a">26.1% (23)</text><rect x="180" y="98" width="145" height="16" fill="#dc2626" rx="2"/>
+      <text x="174" y="110" font-size="11" text-anchor="end" fill="#334155">邪靈主宰·摩哥斯</text>
+      <text x="329" y="110" font-size="10" fill="#0f172a">27.8% (18)</text><rect x="180" y="120" width="166" height="16" fill="#dc2626" rx="2"/>
+      <text x="174" y="132" font-size="11" text-anchor="end" fill="#334155">柯爾霍德</text>
+      <text x="350" y="132" font-size="10" fill="#0f172a">32% (25)</text><rect x="180" y="142" width="180" height="16" fill="#dc2626" rx="2"/>
+      <text x="174" y="154" font-size="11" text-anchor="end" fill="#334155">御天龍神·哈莫</text>
+      <text x="364" y="154" font-size="10" fill="#0f172a">34.6% (26)</text><rect x="180" y="164" width="189" height="16" fill="#dc2626" rx="2"/>
+      <text x="174" y="176" font-size="11" text-anchor="end" fill="#334155">九青</text>
+      <text x="373" y="176" font-size="10" fill="#0f172a">36.4% (22)</text><rect x="180" y="186" width="189" height="16" fill="#dc2626" rx="2"/>
+      <text x="174" y="198" font-size="11" text-anchor="end" fill="#334155">龍錄天鋒</text>
+      <text x="373" y="198" font-size="10" fill="#0f172a">36.4% (22)</text><rect x="180" y="208" width="195" height="16" fill="#dc2626" rx="2"/>
+      <text x="174" y="220" font-size="11" text-anchor="end" fill="#334155">星光·雷納多</text>
+      <text x="379" y="220" font-size="10" fill="#0f172a">37.5% (32)</text>
+    <line x1="440" y1="0" x2="440" y2="230" stroke="#cbd5e1" stroke-dasharray="3,3"/></svg>
+
+<h2>五、出招策略說明</h2>
+<h3>決策優先級</h3>
+<table border="1" cellspacing="0" cellpadding="5" style="border-collapse:collapse;width:100%;font-size:11pt;font-family:'Microsoft JhengHei'"><tr><th style="width:60px">順位</th><th style="width:35%">條件</th><th>動作</th></tr>
+<tr><td style="text-align:center">①</td><td>PP 全空</td><td>吃活力藥劑（pp_35→pp_5）；無藥則換人</td></tr>
+<tr><td style="text-align:center">②</td><td>血量 &lt; 35%</td><td>吃體力藥劑（hp_330→hp_20）；無藥用恢復技能；再無則換人</td></tr>
+<tr><td style="text-align:center">③</td><td>能一擊擊殺</td><td>選威力最高的攻擊技能</td></tr>
+<tr><td style="text-align:center">④</td><td>對手血量 &lt; 25%</td><td>全力輸出（最高期望傷害）</td></tr>
+<tr><td style="text-align:center">⑤</td><td>對手血量 &gt; 60% 且有強化技能</td><td>30% 機率強化</td></tr>
+<tr><td style="text-align:center">⑥</td><td>預設</td><td>期望傷害最高者（同分比 PP）</td></tr>
+</table>
+
+<h3>傷害估算公式</h3>
+<p style="font-family:Consolas,monospace;background:#f1f5f9;padding:8px">期望傷害 = 威力 × 攻方能力值 ÷ 守方能力值 × 0.45 × 屬性倍率</p>
+<p style="font-size:10pt;color:#64748b">物理技能用 atk / def，特殊技能用 spatk / spdef。</p>
+
+<h3>局面評分權重（沿用專案 POSITION_WEIGHTS）</h3>
+<p style="font-family:Consolas,monospace;background:#f1f5f9;padding:8px;font-size:9.5pt">
+hp:100　shield:45　barrier:50　death:-200　stage:4　pp:-30<br>
+control:-18　abnormal:-7　boss:10　mark:2　protection:12<br>
+inventory:3　charge:15　restriction:-8　poem:6
+</p>
+
+<h2>六、如何分析每場判定細節</h2>
+<p>每場結果已記錄於 <code>results.json</code>，欄位如下：</p>
+<table border="1" cellspacing="0" cellpadding="5" style="border-collapse:collapse;width:100%;font-size:11pt;font-family:'Microsoft JhengHei'"><tr><th style="width:30%">欄位</th><th>說明</th></tr>
+<tr><td><code>winner</code></td><td>p1 / p2 / draw / error</td></tr>
+<tr><td><code>turns</code></td><td>該場總回合數</td></tr>
+<tr><td><code>reason</code></td><td>ko（擊殺）／turn_limit（50 回合判定）</td></tr>
+<tr><td><code>p1Team / p2Team</code></td><td>雙方 6 隻精靈名稱</td></tr>
+<tr><td><code>p1Pick / p2Pick</code></td><td>選出的精靈 ID</td></tr>
+<tr><td><code>p1Ban / p2Ban</code></td><td>被 ban 的 3 隻 ID</td></tr>
+<tr><td><code>p1Survivors / p2Survivors</code></td><td>終局存活數</td></tr>
+<tr><td><code>turnLog[]</code></td><td>逐回合：回合數、在場精靈、動作、血量、雙方存活數</td></tr>
+</table>
+
+<h3>可回答的問題</h3>
+<ul>
+<li><b>哪一回合崩盤？</b>看 <code>turnLog</code> 中存活數突然下降的回合。</li>
+<li><b>某隻精靈真的強嗎？</b>對照「出場數」與「勝率」，樣本 &lt; 15 場的不可信。</li>
+<li><b>50 回合判定公平嗎？</b>看 <code>reason=turn_limit</code> 的場次，對照 <code>p1Survivors</code> vs <code>p2Survivors</code>。</li>
+<li><b>ban 有沒有影響？</b>比對 <code>p1Ban</code> 與該場勝負的關聯。</li>
+</ul>
+
+<h2>七、結論</h2>
+<ul>
+<li><b>勝率</b>：P1 自寫策略 <b>40%</b>，P2 內建 AI <b>54%</b>。內建 AI 領先 14.0 個百分點。</li>
+<li><b>對抗品質</b>：平均 23.9 回合，50 回合判定僅佔 27%，代表多數場次能自然分出勝負，不是靠拖時間。</li>
+<li><b>精靈平衡</b>：勝率最高 <b>鎮魂.巴弗洛（75%）</b>，最低 <b>無極聖武（22.7%）</b>，差距 52.3 個百分點。</li>
+<li><b>策略差異</b>：自寫策略是「規則式 + 道具優先 + 淺層傷害估算」，內建 AI 是「多步搜尋 + 局面評估」。前者決策快、可解釋性高；後者計算深但每回合耗時 300ms。</li>
+<li><b>可改進點</b>：自寫策略沒有考慮屬性克制表的完整倍率、也沒有推演對手回應，這兩點是與內建 AI 的主要差距來源。</li>
+</ul>
+
+<p style="margin-top:30px;font-size:9pt;color:#94a3b8;border-top:1px solid #e2e8f0;padding-top:8px">
+資料來源：arena-test/out/results.json　│　共 100 場有效對戰</p>
+</body></html>

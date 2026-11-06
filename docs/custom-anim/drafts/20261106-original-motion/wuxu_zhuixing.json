@@ -1,0 +1,327 @@
+{
+  "id": "wuxu_zhuixing",
+  "elfId": "5026",
+  "elfName": "無序.墜星",
+  "facing": "left",
+  "fps": 24,
+  "canvas": [
+    1200,
+    1600
+  ],
+  "anchor": [
+    870,
+    1507
+  ],
+  "margin": 8,
+  "pixelsPerUnit": 167,
+  "poses": {
+    "ready": {
+      "file": "docs/custom-anim/drafts/20261106-original-motion/aligned/ready.png",
+      "sha256": "54e1ffa7b6ba9e5ec93ec9eab24b1354ac7f27cb6ffedd8c9bd1e38fd31b70c1",
+      "facing": "left",
+      "anchors": {
+        "muzzle": [
+          229,
+          286
+        ]
+      },
+      "review": {
+        "accepted": true,
+        "note": "原圖分層試播。衣襬繞根部轉動，遮擋區限域補底；身體與金屬不拉伸。分層邊界仍需深淺底目視驗收。"
+      }
+    },
+    "raise": {
+      "file": "docs/custom-anim/drafts/20261106-original-motion/aligned/raise.png",
+      "sha256": "438138204f1b17f2db2eda26d9c719e1e1df5e925e6699949f090f67e311ad53",
+      "facing": "left",
+      "anchors": {
+        "muzzle": [
+          206,
+          300
+        ]
+      },
+      "review": {
+        "accepted": true,
+        "note": "僅允許匯入試播，不代表動畫美術通過。單張高解析中途抬砲；完整頭腳與持砲手。能量邊緣雜點與姿勢接續尚未驗收。"
+      }
+    },
+    "aim": {
+      "file": "docs/custom-anim/drafts/20261106-original-motion/aligned/aim.png",
+      "sha256": "21192e38698a50bf0863d5140ae373d78fb10be71c8ecc1deb332a1019c0185b",
+      "facing": "left",
+      "anchors": {
+        "muzzle": [
+          313,
+          223
+        ]
+      },
+      "review": {
+        "accepted": true,
+        "note": "僅允許匯入試播，不代表動畫美術通過。單張高解析朝上瞄準；完整頭腳與砲身。能量邊緣雜點尚未驗收。"
+      }
+    },
+    "hit": {
+      "file": "docs/custom-anim/drafts/20261106-original-motion/aligned/hit.png",
+      "sha256": "a79f2d4e1634cc65bcbe9ec427c1151f7719a0c55177c7c3cb269b7e8a501fde",
+      "facing": "left",
+      "anchors": {
+        "muzzle": [
+          328,
+          261
+        ]
+      },
+      "review": {
+        "accepted": true,
+        "note": "僅允許匯入試播，不代表動畫美術通過。單張高解析受擊後仰；雙手持砲。與待機的腳位、頭部風格接續尚未驗收。"
+      }
+    },
+    "coatTail": {
+      "file": "docs/custom-anim/drafts/20261106-original-motion/aligned/coatTail.png",
+      "sha256": "731004b609b5e9fa2af55a5cc82dbe21b1d783217087a179ab1a6068fb85b167",
+      "facing": "left",
+      "anchors": {},
+      "review": {
+        "accepted": true,
+        "note": "原圖分層試播。衣襬繞根部轉動，遮擋區限域補底；身體與金屬不拉伸。分層邊界仍需深淺底目視驗收。"
+      }
+    },
+    "droneLeft": {
+      "file": "docs/custom-anim/drafts/20261106-original-motion/aligned/droneLeft.png",
+      "sha256": "4dc5d8300c36badb97177e0b0e7a5db00322a01a2817984d72bd71be4e034025",
+      "facing": "left",
+      "anchors": {},
+      "review": {
+        "accepted": true,
+        "note": "原圖分層試播。衣襬繞根部轉動，遮擋區限域補底；身體與金屬不拉伸。分層邊界仍需深淺底目視驗收。"
+      }
+    },
+    "droneRight": {
+      "file": "docs/custom-anim/drafts/20261106-original-motion/aligned/droneRight.png",
+      "sha256": "da960945575e621a7adfdfaf3e840fe76d620434b7d585942fefa8807c54f2d6",
+      "facing": "left",
+      "anchors": {},
+      "review": {
+        "accepted": true,
+        "note": "原圖分層試播。衣襬繞根部轉動，遮擋區限域補底；身體與金屬不拉伸。分層邊界仍需深淺底目視驗收。"
+      }
+    },
+    "upperBody": {
+      "file": "docs/custom-anim/drafts/20261106-original-motion/aligned/upperBody.png",
+      "sha256": "db46e6dcd52268c18b775ea680fafc4e5c8fdc9cf491678323b4a85a59347536",
+      "facing": "left",
+      "anchors": {},
+      "review": {
+        "accepted": true,
+        "note": "原圖分層試播。衣襬繞根部轉動，遮擋區限域補底；身體與金屬不拉伸。分層邊界仍需深淺底目視驗收。"
+      }
+    }
+  },
+  "sequences": {
+    "standby": {
+      "loop": true,
+      "drawings": [
+        {
+          "pose": "ready",
+          "hold": 96
+        }
+      ],
+      "hits": []
+    },
+    "attack": {
+      "drawings": [
+        {
+          "pose": "ready",
+          "hold": 3
+        },
+        {
+          "pose": "raise",
+          "hold": 4
+        },
+        {
+          "pose": "aim",
+          "hold": 19
+        },
+        {
+          "pose": "raise",
+          "hold": 5
+        },
+        {
+          "pose": "ready",
+          "hold": 9
+        }
+      ],
+      "hits": [
+        23
+      ],
+      "events": {
+        "launch": 12,
+        "recover": 26
+      }
+    },
+    "sa": {
+      "drawings": [
+        {
+          "pose": "ready",
+          "hold": 4
+        },
+        {
+          "pose": "raise",
+          "hold": 5
+        },
+        {
+          "pose": "aim",
+          "hold": 28
+        },
+        {
+          "pose": "raise",
+          "hold": 5
+        },
+        {
+          "pose": "ready",
+          "hold": 10
+        }
+      ],
+      "hits": [
+        34
+      ],
+      "events": {
+        "launch": 23,
+        "recover": 37
+      }
+    },
+    "ultimate": {
+      "drawings": [
+        {
+          "pose": "ready",
+          "hold": 4
+        },
+        {
+          "pose": "raise",
+          "hold": 6
+        },
+        {
+          "pose": "aim",
+          "hold": 44
+        },
+        {
+          "pose": "raise",
+          "hold": 6
+        },
+        {
+          "pose": "ready",
+          "hold": 8
+        }
+      ],
+      "hits": [
+        47
+      ],
+      "events": {
+        "launch": 32,
+        "recover": 54
+      }
+    },
+    "cp": {
+      "drawings": [
+        {
+          "pose": "ready",
+          "hold": 36
+        }
+      ],
+      "hits": []
+    },
+    "extra": {
+      "drawings": [
+        {
+          "pose": "ready",
+          "hold": 32
+        }
+      ],
+      "hits": []
+    },
+    "hited": {
+      "drawings": [
+        {
+          "pose": "hit",
+          "hold": 3
+        },
+        {
+          "pose": "raise",
+          "hold": 2
+        },
+        {
+          "pose": "ready",
+          "hold": 5
+        }
+      ],
+      "hits": []
+    }
+  },
+  "presentation": {
+    "style": "railgun",
+    "trajectory": "orbital",
+    "color": "#38bdf8",
+    "secondary": "#d9f7ff",
+    "muzzle": [
+      0.22,
+      0.2
+    ],
+    "impactSheet": "/elf-fx/custom-v2/orbital-explosion.png",
+    "ambient": true
+  },
+  "physicalMotion": "stationary",
+  "idleZones": [],
+  "rigidAttachments": [
+    {
+      "basePose": "ready",
+      "pose": "coatTail",
+      "pivot": [
+        818,
+        824
+      ],
+      "dx": 0,
+      "dy": 0,
+      "degrees": 3.5,
+      "delay": 0
+    },
+    {
+      "basePose": "ready",
+      "pose": "droneLeft",
+      "pivot": [
+        267,
+        811
+      ],
+      "dx": 8,
+      "dy": -27,
+      "degrees": 1.4,
+      "delay": 0.8
+    },
+    {
+      "basePose": "ready",
+      "pose": "droneRight",
+      "pivot": [
+        1027,
+        685
+      ],
+      "dx": -7,
+      "dy": 23,
+      "degrees": -1.2,
+      "delay": 2.2
+    },
+    {
+      "basePose": "ready",
+      "pose": "upperBody",
+      "pivot": [
+        634,
+        766
+      ],
+      "dx": 0,
+      "dy": 0,
+      "degrees": 1.25,
+      "delay": 0,
+      "behind": true,
+      "anchors": [
+        "muzzle"
+      ]
+    }
+  ]
+}

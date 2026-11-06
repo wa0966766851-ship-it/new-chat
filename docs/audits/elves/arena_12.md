@@ -93,9 +93,12 @@ TXT來源：未找到ID／名稱精確匹配的TXT，須核對嵌入資料或另
 | 原文 | 解析／執行候選 | 語意登記 | TXT片段 |
 |---|---|---|---|
 | 必中 | 已解析／authored-block-runtime | 待核對 | 缺精確TXT來源 |
-| 自身與技能同屬性時威力 +170 | 已解析／authored-block-runtime | 待核對 | 缺精確TXT來源 |
-| 🎯 先出手時令對手所有技能 PP −1，後出手時消除對手回合類效果 | 已解析／authored-block-runtime | 待核對 | 缺精確TXT來源 |
-| 🎯 對手無異常時吸取其最大體力 1/3，有異常時令其【臣服】 | 已解析／authored-block-runtime | 待核對 | 缺精確TXT來源 |
+| 必中 | 已解析／authored-block-runtime | 待核對 | 缺精確TXT來源 |
+| ■ 自身與技能同屬性時威力 +170 | 已解析／authored-block-runtime | 待核對 | 缺精確TXT來源 |
+| 🎯 先出手時令對手所有技能 PP −1 | 已解析／authored-block-runtime | 待核對 | 缺精確TXT來源 |
+| 🎯 後出手時消除對手回合類效果 | 已解析／authored-block-runtime | 待核對 | 缺精確TXT來源 |
+| 🎯 對手無異常時吸取其最大體力 1/3 | 已解析／authored-block-runtime | 待核對 | 缺精確TXT來源 |
+| 🎯 對手有異常時令其【臣服】 | 已解析／authored-block-runtime | 待核對 | 缺精確TXT來源 |
 | 🎯 對手體力不足 300 時直接秒殺 | 已解析／authored-block-runtime | 待核對 | 缺精確TXT來源 |
 | > 萬相乖離使本技能威力 +50（每層，讀已取消層數），六項全部取消後不再增加威力 | 已解析／authored-block-runtime | 待核對 | 缺精確TXT來源 |
 | > 自身擊敗對手後，令對方全部陣亡精靈消逝 | 已解析／authored-block-runtime | 待核對 | 缺精確TXT來源 |

@@ -88,9 +88,9 @@ export const MIGRATED_ARENA16_DRAGON_HEALING_SOUL_KIT = {
       {cond:[hasDragon('dragonRed'),c('skill_kind',{kind:'攻擊'})],acts:[a('stored_damage_release',{key:'arena.red',type:'固定'})]},
       {cond:[hasDragon('dragonRed'),hasDragon('trueDragon'),c('skill_kind',{kind:'屬性'})],acts:[a('stored_damage_release',{key:'arena.red',type:'固定'})]},
     ],8),
-    e('after_action','self_after_status','真龍喚醒後使用屬性技能，每條甦醒之龍各造成150點龍系直接傷害',
+    e('after_action','self_after_status','真龍喚醒後使用屬性技能，每條甦醒之龍各造成150點龍系技能傷害',
       DRAGONS.map(id=>({cond:[hasDragon('trueDragon'),hasDragon(id)],acts:[a('dmg',{flat:150,type:'技能',elem:'龍'})]})),13),
-    e('after_action','self_after_skill','龍魂印記：每層令每條甦醒之龍各造成150點龍系直接傷害；龍魂之源每龍增加50點，真龍改用最高克制倍率',[
+    e('after_action','self_after_skill','龍魂印記：每層令每條甦醒之龍各造成150點龍系技能傷害；龍魂之源每龍增加50點，真龍改用最高克制倍率',[
       {acts:[a('resource_scaled_hits',{ids:DRAGONS,mark:'arena.dragonSoulMark',base:150,bonusMark:'dragonSoulSource',bonusPerResource:50,multiplierMark:'trueDragon',maxMultiplier:4,elem:'龍'})]},
     ],14),
     // 2026-10-28 三龍追加效果：由 DAMAGE_IMMUNIZED（真正 100% 免傷）事件觸發。

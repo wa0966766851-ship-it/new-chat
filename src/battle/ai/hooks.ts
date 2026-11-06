@@ -58,12 +58,12 @@ export const AI_ELF_HINTS: Record<string, ElfHint> = {
   },
   "誑獅魔軀.魔獅迪露": { entranceValue: 25 },
   "聖靈譜尼": { entranceValue: 40, bulkModifier: 1.2 },
-  "治癒.龍魂再臨 次元龍": { entranceValue: 35, bulkModifier: 1.15 },
+  "治癒·龍魂再臨": { entranceValue: 35, bulkModifier: 1.15 },
   "人皇·帝辛": { entranceValue: 40 },
   "聖光斯嘉麗": { entranceValue: 50, entranceNote: "登場召喚珀妮協同作戰" },
   "蓓麗安特": { entranceValue: 45, entranceNote: "戰鬥開始建立星執記錄" },
 };
-const HINT_IDS: Record<string, string> = { '5008': '鎮魂.巴弗洛', '5007': '混濁海妖.布林克克', '5016': '變革·馬爾修斯', '5009': '誑獅魔軀.魔獅迪露', '5000': '聖靈譜尼', '5021': '治癒.龍魂再臨 次元龍', '5017': '人皇·帝辛', '5014': '聖光斯嘉麗', '5027': '蓓麗安特' };
+const HINT_IDS: Record<string, string> = { '5008': '鎮魂.巴弗洛', '5007': '混濁海妖.布林克克', '5016': '變革·馬爾修斯', '5009': '誑獅魔軀.魔獅迪露', '5000': '聖靈譜尼', '5021': '治癒·龍魂再臨', '5017': '人皇·帝辛', '5014': '聖光斯嘉麗', '5027': '蓓麗安特' };
 /** 舊提示只用於回退／候選排序；推演已結算的登場、復活不得再補同一份分。 */
 export function elfHint(elf: Elf): ElfHint | undefined {
   if (elf.name === '未知精靈') return undefined;
