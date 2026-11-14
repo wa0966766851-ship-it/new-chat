@@ -2,7 +2,7 @@
 // 舊 handler：staged-arena/dragonHealingRegistry.ts DRAGON_HEALING_SKILLS['幽魔相嘯'] 已空殼化。
 // 時點：■ 自身處於能力下降時先制+3＝modify_priority 條件先制（prio_bonus）；
 //       🎯＝使用時（on_skill_use）依序消除四類並分別觸發；> 為各自觸發條件；
-//       ■ 技能無效時＝正式 on_invalid/self_invalid，僅 actual invalid，不含 Miss／閃避。
+//       🎯 技能無效時＝正式 on_invalid/self_invalid，僅 actual invalid，不含 Miss／閃避。
 // 「赤龍下次附加傷害改為真實傷害」由可編輯儲存傷害動作於釋放時消耗。
 import type { KitEntry } from '../effects/effectSystem.schema';
 import { action as a, property as prop, sequence as seq } from './reviewedSequenceSkillKits';
@@ -16,7 +16,7 @@ const entry = (node: KitEntry['node'], trig: string, raw: string, body: any[], o
 export const MIGRATED_ARENA16_YOUMO_SKILL_KIT: ReviewedSequenceSkill[] = [{
   elfIds: ['arena_16'],
   name: '幽魔相嘯',
-  description: '■ 自身處於能力下降時先制 +3\n🎯 依序消除雙方的能力提升、能力下降、回合類效果及所有護盾效果；每一類只要任意一方成功被消除，便分別觸發：\n> 為雙方附加 3 回合附屬類異常【狂暴】\n> 下次【赤龍】附加傷害改為真實傷害\n> 恢復自身全部體力並對對手附加等同實際恢復量的百分比傷害（出手時自身體力低於一半則傷害翻倍）\n> 附加等同雙方被消除護盾與護罩總值的固定傷害\n■ 技能無效時，自身獲得 1 層【龍魂印記】',
+  description: '■ 自身處於能力下降時先制 +3\n🎯 依序消除雙方的能力提升、能力下降、回合類效果及所有護盾效果；每一類只要任意一方成功被消除，便分別觸發：\n> 為雙方附加 3 回合附屬類異常【狂暴】\n> 下次【赤龍】附加傷害改為真實傷害\n> 恢復自身全部體力並對對手附加等同實際恢復量的百分比傷害（出手時自身體力低於一半則傷害翻倍）\n> 附加等同雙方被消除護盾與護罩總值的固定傷害\n🎯 技能無效時，自身獲得 1 層【龍魂印記】',
   kit: [
     // 自身處於能力下降時先制+3（事中查詢）
     entry('modify_priority', 'modify_priority', '自身處於能力下降時先制 +3', [
@@ -36,8 +36,8 @@ export const MIGRATED_ARENA16_YOUMO_SKILL_KIT: ReviewedSequenceSkill[] = [{
     ], 1),
 
     // 技能無效時：自身獲得 1 層【龍魂印記】
-    {...entry('on_invalid', 'self_invalid', '■ 技能無效時，自身獲得 1 層【龍魂印記】', [
+    {...entry('on_invalid', 'self_invalid', '🎯 技能無效時，自身獲得 1 層【龍魂印記】', [
       { cond: [c('skill_invalid', {})], acts: [a('resource_mark_add', { id: 'arena.dragonSoulMark', name: '龍魂印記', displayChar: '魂', unit: '層', side: 'self', scope: 'elf', persistsOffField: true, amount: 1, maxCount: 99, description: '每次使用技能後：層數×已喚醒龍數次，每次150點龍系技能傷害' })] },
-    ], 2), role: 'innate'},
+    ], 2), role: 'attached'},
   ],
 }];

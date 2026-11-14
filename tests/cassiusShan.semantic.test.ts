@@ -119,13 +119,16 @@ try {
     });
     await check(`${side} 魂印（使用者 11/01）：重生時體力與 PP 皆重置 100%；卡修斯自身在場也適用`, async () => {
       const kill = h.dmgSkill('致死真傷', '真實', 5000);
-      const front = h.foe('F', 3000, [h.sk('等', { pp: 3, maxPp: 10 })], { speed: 50 });
+      // 2026-11-13 使用者裁定：超額真實傷害重生的前提是「存在護盾」。
+      const bare = await h.play(side, { self: h.foe('F', 3000, [h.sk('等', { pp: 3, maxPp: 10 })], { speed: 50 }), selfBench: [h.cassius()], opp: h.foe('E', BIG, [kill], { speed: 200 }), turns: () => [0, 0] }, 1);
+      assert.ok(!last(bare).logs.join('').includes('重生'), '沒有護盾：不算超額，不重生');
+      const front = h.foe('F', 3000, [h.sk('等', { pp: 3, maxPp: 10 })], { speed: 50, extra: { shield: 100 } });
       const foe = h.foe('E', BIG, [kill], { speed: 200 });
       const hist = await h.play(side, { self: front, selfBench: [h.cassius()], opp: foe, turns: () => [0, 0] }, 1);
       assert.equal(last(hist).self.currentHp, 3000, '重生回滿體力');
       assert.equal(last(hist).self.skills[0].pp, 9, `重生 PP 由 3 回滿 10，之後同回合出手 -1：${last(hist).self.skills[0].pp}`);
       // 卡修斯自身在場且處於山神守護：守護只減技能傷害，5000 真傷照常致死 → 重生。技能換成等待以免控住對手。
-      const c = h.cassius({ hp: 3000, speed: 10 }); c.skills = [h.sk('等', { pp: 1, maxPp: 10 }), h.sk('候', { pp: 2, maxPp: 8 })];
+      const c = h.cassius({ hp: 3000, speed: 10 }); c.shield = 100; c.skills = [h.sk('等', { pp: 1, maxPp: 10 }), h.sk('候', { pp: 2, maxPp: 8 })];
       const hist2 = await h.play(side, { self: c, opp: h.foe('E', BIG, [h.dmgSkill('致死真傷', '真實', 5000)], { speed: 200 }), turns: () => [1, 0] }, 1);
       assert.ok(last(hist2).logs.join('').includes('山神守護'), '前提：卡修斯處於山神守護');
       assert.ok(last(hist2).logs.join('').includes('重生'), '山神守護不減真實傷害：致死 → 重生');

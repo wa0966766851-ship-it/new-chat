@@ -1,0 +1,14 @@
+import assert from 'node:assert/strict';
+import {createFxSheetCache} from '../src/battle/fxSheetCache';
+let loads=0;
+const cache=createFxSheetCache(async url=>({url,generation:++loads}));
+const a=cache.acquire('same'),b=cache.acquire('same');
+assert.equal(await a.ready,await b.ready,'P1/P2 must share the exact decoded image');
+a.release();a.release();
+const c=cache.acquire('same');assert.equal(await c.ready,await b.ready,'one actor leaving must not discard the other image');
+b.release();c.release();
+const d=cache.acquire('same');assert.equal((await d.ready).generation,2,'last actor releases the cached image');d.release();
+let tries=0;const retry=createFxSheetCache(async()=>{if(++tries===1)throw Error('offline');return 'ok';});
+const failed=retry.acquire('broken');await assert.rejects(failed.ready);failed.release();
+const recovered=retry.acquire('broken');assert.equal(await recovered.ready,'ok');recovered.release();
+console.log('Shared decode, independent releases and remount recovery passed.');

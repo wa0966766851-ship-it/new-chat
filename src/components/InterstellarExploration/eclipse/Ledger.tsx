@@ -25,7 +25,7 @@ export default function Ledger({ run, pool, tab, onTab, onClose, dispatch }: { r
 
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-      className="absolute inset-0 z-[45] overflow-y-auto bg-[rgba(4,3,8,.9)] backdrop-blur-[3px] p-4 ecl-md:p-8" role="dialog" aria-label="帳冊" {...backdropClose(onClose)}>
+      className="absolute inset-0 z-[45] overflow-y-auto bg-[rgba(4,3,8,.9)] backdrop-blur-[3px] p-4 pb-28 ecl-md:p-8" role="dialog" aria-label="帳冊" {...backdropClose(onClose)}>
       <div className="mx-auto max-w-6xl ecl-xl:max-w-[88rem] ecl-frame p-5 ecl-md:p-8">
         <div className="flex flex-wrap items-end justify-between gap-4">
           <div>

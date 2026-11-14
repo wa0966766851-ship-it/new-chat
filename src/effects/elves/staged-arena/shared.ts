@@ -1,3 +1,4 @@
+import {recipientEffectChance} from '../../../battle/recipientEffectChance';
 import type { Elf, Skill } from '../../../types';
 import type { BattleEventContext } from '../../types';
 import { changePp } from '../../newElfOperations';
@@ -28,7 +29,7 @@ export const stages = (e: Elf) => e.statStages || { atk: 0, spatk: 0, def: 0, sp
 export const hasBoost = (e: Elf) => STATS.some(s => stages(e)[s] > 0);
 export const hasDrop = (e: Elf) => STATS.some(s => stages(e)[s] < 0);
 export const abnormal = (c: ArenaContext, e: Elf) => Object.values(c.getStatuses(e)).some(n => n > 0);
-export const chance = (c: ArenaContext, p: number) => (c.rng?.() ?? Math.random()) < p;
+export const chance = (c: ArenaContext, p: number) => (c.rng?.() ?? Math.random()) < recipientEffectChance(c,c.targetSide,p*100)/100;
 export const until = (c: ArenaContext, name: string, rounds: number) => write(c, name, read(c, 'round') + rounds);
 export const activeUntil = (c: ArenaContext, name: string) => read(c, name) > 0 && read(c, name) >= read(c, 'round');
 

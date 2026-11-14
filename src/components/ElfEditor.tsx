@@ -1,5 +1,8 @@
 import { fifthSkillSlot } from '../battle/skillSlot';
 import { useState, useEffect, useMemo, lazy, Suspense } from "react";
+import { useShellBack } from "../shell/shellBack";
+import tacticalPageCss from "../design/tacticalPageCss";
+import { useScopedStyle } from "./destiny/injectStyle";
 import type { ComponentProps } from "react";
 import { plainDescription } from '../utils/descFormat';
 import { EffectDescription } from './EffectDescription';
@@ -451,7 +454,7 @@ const getKeywordStyle = (part: string) => {
   return "text-slate-300 bg-slate-500/10 border-slate-500/20";
 };
 
-const SmartDescription = ({ text, className = "" }: { text?: string, className?: string }) => {
+const SmartDescription = ({ text, skill, className = "" }: { text?: string, skill?: Skill, className?: string }) => {
   if (!text) return <span className="text-slate-500 italic">（無描述內容）</span>;
 
   const CATEGORIES = {
@@ -505,7 +508,7 @@ const SmartDescription = ({ text, className = "" }: { text?: string, className?:
   const regexStr = `(${allWords.join('|')}|[0-9]+%|[0-9]+點|1/[0-9]+|LV[0-9]+)`;
   const regex = new RegExp(regexStr, 'g');
 
-  return <EffectDescription description={text} className={`leading-relaxed font-sans ${className}`}
+  return <EffectDescription skill={skill} description={text} className={`leading-relaxed font-sans ${className}`}
     renderText={line => line.split(regex).map((part, i) => {
         let catKey: keyof typeof CATEGORIES | null = null;
         if (STATUS_KEYWORDS.includes(part) || part.includes("異常") || part.includes("狀態")) catKey = 'status';
@@ -889,6 +892,8 @@ interface ElfEditorProps {
 
 export default function ElfEditor({ initialElf: suppliedElf, onSaveElf, onBack, initialTab }: ElfEditorProps) {
   const [initialElf, setInitialElf] = useState(suppliedElf);
+  const shellBack = useShellBack();
+  useScopedStyle("tactical-page-css", tacticalPageCss);
   useEffect(() => setInitialElf(suppliedElf), [suppliedElf?.id, suppliedElf?.name]);
   const [manualDraftId] = useState(() => `custom_${Date.now()}`);
   const [activeTab, setActiveTab] = useState<"ai" | "manual" | "blockly">(initialTab || (initialElf ? "manual" : "ai"));
@@ -2055,7 +2060,7 @@ export default function ElfEditor({ initialElf: suppliedElf, onSaveElf, onBack, 
                 <Eye className="w-3 h-3" />
                 語法即時解析預覽
               </div>
-              <SmartDescription text={skill.description} className="text-xs text-slate-300" />
+              <SmartDescription skill={skill} text={skill.description} className="text-xs text-slate-300" />
             </div>
           )}
           {isExpanded && <LiveDeconstructPreview text={skill.description} title="技能觸發條件解析" />}
@@ -2267,22 +2272,20 @@ export default function ElfEditor({ initialElf: suppliedElf, onSaveElf, onBack, 
   } as Elf;
 
   return (
-    <div className="elf-editor-page w-full max-w-6xl mx-auto px-4 sm:px-6 pt-16 sm:pt-20 pb-8" id="elf-editor-container">
+    <div data-skin="tactical" className="tac-page elf-editor-page w-full max-w-6xl mx-auto px-4 sm:px-6 pt-16 sm:pt-20 pb-8" id="elf-editor-container">
       {/* Back Header */}
       <div className="ios-panel p-5 flex flex-wrap items-center justify-between gap-4 mb-6">
         <div className="flex items-center gap-4">
-          <button
+          {!shellBack && <button
             id="btn-editor-back"
             onClick={onBack}
             className="p-2.5 bg-[#0F1117] border border-slate-800 hover:border-slate-700 text-slate-300 rounded-xl transition-all cursor-pointer flex items-center justify-center group"
           >
             <ArrowLeft className="w-4 h-4 group-hover:-translate-x-0.5 transition-transform" />
-          </button>
+          </button>}
           <div>
-            <h1 className="text-xl font-bold text-slate-100 flex items-center gap-2">
-              <span className="w-2 h-4 bg-blue-500 rounded-sm"></span>
-              精靈自定
-            </h1>
+            <span className="tac-kicker">ELF // WORKSHOP</span>
+            <h1 className="tac-title text-xl font-bold text-slate-100">精靈自定</h1>
             <p className="text-xs text-slate-500 mt-0.5">AI 解析／手動表單／積木 三種方式編輯同一隻精靈</p>
           </div>
         </div>
@@ -2438,11 +2441,11 @@ export default function ElfEditor({ initialElf: suppliedElf, onSaveElf, onBack, 
                 </div>
                 {aiEnabled === false && (
                   <div className="mb-3 rounded-xl bg-amber-500/10 px-3 py-2 text-[13px] text-amber-200" title="在專案根目錄建立 .env，寫入 GEMINI_API_KEY=你的金鑰 後重新啟動">
-                    AI 未啟用（未設定 GEMINI_API_KEY）。請用「全文本一鍵導入」本地解析。
+                    AI 未啟用：貼上文字後按「本地解析」即可（不需金鑰）。
                   </div>
                 )}
-                <p className="text-xs text-slate-500 mb-4 leading-relaxed">
-                  貼上精靈設定文字（名稱、屬性、魂印、技能）。
+                <p className="text-xs text-slate-500 mb-4 leading-relaxed" title={'格式範例：\n名稱：星光·雷納多\n屬性：機械\n種族值：體力 100 攻擊 120 …\n魂印：…\n技能1：技能名｜物理｜威力150｜PP5\n■ 必中\n🎯 …'}>
+                  ① 貼上精靈設定文字（名稱、屬性、魂印、技能）② 解析 ③ 在「預覽」確認後儲存。也可從下方載入既有精靈當範本。
                 </p>
 
                 <AnimatePresence>
@@ -2494,7 +2497,7 @@ export default function ElfEditor({ initialElf: suppliedElf, onSaveElf, onBack, 
                   id="ai-prompt-input"
                   rows={9}
                   className="w-full bg-[#050608] border border-slate-800 focus:border-blue-500 rounded-xl p-4 text-xs text-slate-200 focus:outline-none focus:ring-1 focus:ring-blue-500 leading-relaxed custom-scrollbar font-sans"
-                  placeholder="請在此輸入精靈的故事描述..."
+                  placeholder={'貼上精靈設定，例如：\n名稱：…\n屬性：…\n魂印：…\n技能1：技能名｜物理｜威力150｜PP5\n■ 必中\n🎯 …'}
                   value={prompt}
                   onChange={(e) => setPrompt(e.target.value)}
                 />
@@ -2502,7 +2505,7 @@ export default function ElfEditor({ initialElf: suppliedElf, onSaveElf, onBack, 
                 {/* Preloader section */}
                 <details className="mt-3 border-t border-slate-800/60 pt-3 space-y-2">
                     <summary className="text-xs font-bold text-slate-400 cursor-pointer">
-                      📁 載入既有精靈進行字段解構與分析
+                      📁 以既有精靈當範本（載入後可直接修改）
                     </summary>
                   <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2">
                     {DEFAULT_ELVES.map((elf, index) => (
@@ -2531,8 +2534,10 @@ export default function ElfEditor({ initialElf: suppliedElf, onSaveElf, onBack, 
                 )}
 
                 <div className="flex flex-col sm:flex-row gap-3 mt-5">
+                  {/* AI 未啟用時，本地解析排第一個、作為主要按鈕。 */}
                   <button
                     id="btn-ai-generate-submit"
+                    style={aiEnabled === false ? { order: 2 } : undefined}
                     disabled={isLoading || aiEnabled === false}
                     title={aiEnabled === false ? "未設定 GEMINI_API_KEY" : undefined}
                     onClick={handleAIGenerate}
@@ -2554,11 +2559,11 @@ export default function ElfEditor({ initialElf: suppliedElf, onSaveElf, onBack, 
                   <button
                     onClick={handleLocalParse}
                     disabled={isLoading}
-                    className="flex-1 py-3.5 px-6 bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold text-xs rounded-xl border border-slate-700 transition-all transform hover:-translate-y-0.5 disabled:transform-none disabled:opacity-50 cursor-pointer flex items-center justify-center gap-2"
-                    title="從文字區域直接擷取屬性與技能資料，不經過 AI 簡化處理"
+                    className={`flex-1 py-3.5 px-6 font-bold text-xs rounded-xl border transition-all transform hover:-translate-y-0.5 disabled:transform-none disabled:opacity-50 cursor-pointer flex items-center justify-center gap-2 ${aiEnabled === false ? 'bg-blue-600 hover:bg-blue-500 text-white border-blue-500' : 'bg-slate-800 hover:bg-slate-700 text-slate-200 border-slate-700'}`}
+                    title="從文字直接擷取屬性與技能資料並保留原文，不經過 AI；不需金鑰"
                   >
                     <Copy className="w-4 h-4" />
-                    <span>全文本一鍵導入 (保留原始文本)</span>
+                    <span>本地解析（保留原文）</span>
                   </button>
                 </div>
               </div>
@@ -3194,7 +3199,7 @@ export default function ElfEditor({ initialElf: suppliedElf, onSaveElf, onBack, 
                                 <span>威力: <strong className="text-slate-300">{skill.power}</strong></span>
                                 <span>PP: <strong className="text-slate-300">{skill.pp}</strong></span>
                               </div>
-                              <SmartDescription text={skill.description} className="text-[10px] text-slate-300" />
+                              <SmartDescription skill={skill} text={skill.description} className="text-[10px] text-slate-300" />
                             </div>
                           ))}
                         </div>
@@ -4108,7 +4113,7 @@ export default function ElfEditor({ initialElf: suppliedElf, onSaveElf, onBack, 
                                   </div>
                                 </div>
                                 <div className="mt-1">
-                                  <SmartDescription text={sk.description} className="text-[11px] text-slate-300" />
+                                  <SmartDescription skill={sk} text={sk.description} className="text-[11px] text-slate-300" />
                                 </div>
                               </div>
                             );
@@ -4219,7 +4224,7 @@ export default function ElfEditor({ initialElf: suppliedElf, onSaveElf, onBack, 
                     <Eye className="w-3.5 h-3.5 text-blue-400" />
                     語法即時解析預覽
                   </div>
-                  <SmartDescription text={targetSkill.description} className="text-sm text-slate-300" />
+                  <SmartDescription skill={targetSkill} text={targetSkill.description} className="text-sm text-slate-300" />
                 </div>
                 <GrammarLegend currentText={targetSkill.description || ""} />
               </div>

@@ -307,9 +307,7 @@ export const ZHAKESI_ANNIHILATION_SKILLS: Record<string, BattleSkillHandler> = {
     // 3. 若魔王咒怨層數高於 5 則秒殺對手且本次造成的攻擊傷害不低於對方所有精靈體力上限之和
     if (nextCount > 5) {
       addLog(`👿 【絕滅・萬物哀鳴】：咒怨層數 > 5！觸發絕滅秒殺！`, "effect");
-      const oppTeam = ctx.getFullTeam(oppSide) || [];
-      const sumOppHp = oppTeam.reduce((acc, curr) => acc + curr.maxHp, 0);
-      applyTrueDamage(oppSide, sumOppHp, "絕滅之哀");
+      ctx.applyInstantKill?.(oppSide, "絕滅之哀");
       ctx.setOpponentState("nextElfCurse", true);
     }
   }

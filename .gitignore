@@ -46,3 +46,6 @@ _claude_archive_*.cmd
 _修正前備份/
 _備份_*/
 _claude_archive_*.cmd
+
+# 官方特效萃取暫存（tools/fx-extract；bundle 與逐格輸出只留本機）
+public/fxlab-data/

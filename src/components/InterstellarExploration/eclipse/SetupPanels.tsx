@@ -61,7 +61,7 @@ export function BanPicker({ bans, pool, cap, onChange }: { bans: string[]; pool:
         {!bans.length && <span className="text-xs ecl-muted self-center">未禁用</span>}
       </div>
       {open && (
-        <div className="fixed inset-0 z-[60] bg-black/80 backdrop-blur-[2px] p-4 pt-16 ecl-md:p-10 overflow-y-auto" role="dialog" aria-label="選擇禁用精靈" {...backdropClose(() => setOpen(false))}>
+        <div className="fixed inset-0 z-[60] bg-black/80 backdrop-blur-[2px] p-4 pt-16 pb-28 ecl-md:p-10 overflow-y-auto" role="dialog" aria-label="選擇禁用精靈" {...backdropClose(() => setOpen(false))}>
           <div className="mx-auto max-w-5xl ecl-frame p-5 ecl-md:p-7 bg-[var(--ecl-ink-2)]" onClick={ev => ev.stopPropagation()}>
             <div className="flex items-center justify-between mb-3">
               <h3 className="ecl-title text-xl ecl-gilt">禁用精靈<span className="ml-3 text-sm ecl-muted tabular-nums">{bans.length} / {cap}</span></h3>

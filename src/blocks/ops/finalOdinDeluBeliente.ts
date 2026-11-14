@@ -44,7 +44,7 @@ export const FINAL_ODB_ACTION_FIELDS: Record<string, readonly string[]> = {
   skill_marks_assign: ['side', 'withinRounds', 'marks'],
   status_duration_floor: ['side','cls','turns'],
   held_resources_damage: ['resources','ratio'],
-  drain_to_opponent: ['ratio'],
+  drain_to_opponent: ['ratio','flat','perLayer'],
   skill_marks_strip: ['side', 'restorePp', 'hpRatio', 'damageRatio', 'nonlethal', 'zeroHighestMaxPp'],
   skill_marks_priority: ['perKinds', 'bonus'],
   skill_mark_pp_match: ['perPp'],
@@ -75,7 +75,7 @@ export function finalOdbActionIssue(op: string, p: any): string | null {
   if (!(op in FINAL_ODB_ACTION_FIELDS)) return null;
   if(op==='status_duration_floor'&&(!['self','opp'].includes(p.side)||!['弱化類'].includes(p.cls)||!Number.isInteger(p.turns)||p.turns<1||p.turns>10000))return '期限保底需明確分類、持有者與回合';
   if(op==='held_resources_damage'&&(!Array.isArray(p.resources)||!p.resources.length||p.resources.some((v:any)=>!['shield','barrier'].includes(v))||!Number.isFinite(p.ratio)||p.ratio<=0))return '持有資源傷害需明確資源與正比例';
-  if(op==='drain_to_opponent'&&(!Number.isFinite(p.ratio)||p.ratio<=0||p.ratio>1))return '吸取需正體力比例';
+  if(op==='drain_to_opponent'&&((p.ratio===undefined)===(p.flat===undefined)||p.ratio!==undefined&&(!Number.isFinite(p.ratio)||p.ratio<=0||p.ratio>1)||p.flat!==undefined&&(!Number.isSafeInteger(p.flat)||p.flat<1||p.flat>1000000)||p.perLayer!==undefined&&typeof p.perLayer!=='boolean'))return '持有者被吸取需體力比例或固定點數擇一及明確逐層規則';
   if (op === 'maximum_health_lock' && (!Number.isInteger(p.value) || p.value < 1 || p.value > 1e9 || typeof p.resetCurrent !== 'boolean')) return '體力上限鎖需正整數與明確是否重設當前體力';
   if (op === 'portable_mark' && (!['self', 'opp'].includes(p.side) || !p.id || !p.name || !p.displayChar || !p.description || !Number.isInteger(p.count) || p.count < 1 || !Number.isInteger(p.maxCount) || p.maxCount < p.count || typeof p.persistsOffField !== 'boolean' || !Array.isArray(p.rules))) return '可攜印記需明確目標、識別、文字、層數、上限、保留與規則';
   if (op === 'portable_mark_transfer' && (!p.id || !Number.isInteger(p.count) || p.count < 1 || !Number.isInteger(p.maxCount) || p.maxCount < p.count)) return '印記轉移需識別碼、正層數與上限';
@@ -378,7 +378,7 @@ export function finalOdbOperations(addTimer: (ctx: BattleEventContext, side: Sid
     },
     status_duration_floor(ctx:BattleEventContext,p:any){const side=sideOf(ctx,p.side),elf=elfOf(ctx,side);let changed=false;for(const [status,duration]of Object.entries(getStatuses(elf)))if(StatusRegistry[canonicalStatusName(status)]?.categories?.includes('WEAKENING')&&Number(duration)<p.turns){changed=applyOrExtendStatus(ctx,side,elf,status,p.turns,p.turns-Number(duration))||changed;}return changed;},
     held_resources_damage(ctx:BattleEventContext,p:any){const amount=Math.floor(p.resources.reduce((n:number,k:string)=>n+Math.max(0,Number((ctx.self as any)[k])||0),0)*p.ratio);if(amount>0)ctx.applyTrueDamage(ctx.actor,amount,'持有資源結算');return amount>0;},
-    drain_to_opponent(ctx:BattleEventContext,p:any){const enemy=ctx.contextForElf?.(ctx.targetSide,ctx.target);if(!enemy)return false;queueHpDrain(enemy,ctx.actor,Math.floor(ctx.self.maxHp*p.ratio),'percent','吸取持有者體力');return true;},
+    drain_to_opponent(ctx:BattleEventContext,p:any,st:RunState){const enemy=ctx.contextForElf?.(ctx.targetSide,ctx.target);if(!enemy)return false;const amount=Math.floor(p.flat??ctx.self.maxHp*p.ratio),count=p.perLayer?Math.max(0,st.markStacks||0):1;for(let i=0;i<count;i++)queueHpDrain(enemy,ctx.actor,amount,p.flat===undefined?'percent':'fixed','吸取持有者體力');return count>0;},
     skill_marks_strip(ctx: BattleEventContext, p: any) {
       const side=sideOf(ctx,p.side),elf:any=elfOf(ctx,side);
       let changed=false,statRatio=1,healRatio=0;

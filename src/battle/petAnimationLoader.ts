@@ -2,6 +2,16 @@ import type {SwfClipData} from '@seer-pet-anim/swf-bundle';
 import {PET_ANIMATION_ASSETS,type PetAnimationAssetId} from './petAnimationAssets';
 import {createPetClipPool} from './petClipPool';
 
+
+async function prepareClipForPlayback(clip:SwfClipData,id:PetAnimationAssetId,signal:AbortSignal,stage:(name:string)=>void){
+   try{
+    stage('分批準備演出');
+    const [{preparePetFxAsync},{preparePetGeometry,sharePetGeometry}]=await Promise.all([import('./petFxPolicy'),import('./petAnimation/preparedGeometry')]);
+    const fx=await preparePetFxAsync(clip,(PET_ANIMATION_ASSETS[id] as import('./petAnimationAssets').PetAnimationAsset).fullscreen,signal);
+    await preparePetGeometry(clip,signal);sharePetGeometry(clip,fx.clip);return clip;
+   }catch(error){const {disposeSwfClipData}=await import('@seer-pet-anim/swf-bundle');disposeSwfClipData(clip);throw error;}
+}
+
 // 原始畫質；共用的是 CPU 圖集，不能當成各 WebGL 畫布的總顯示記憶體。
 let parsing:Promise<unknown>=Promise.resolve();
 const pool=createPetClipPool<PetAnimationAssetId,SwfClipData>({
@@ -13,7 +23,7 @@ const pool=createPetClipPool<PetAnimationAssetId,SwfClipData>({
   if(custom){
    stage('載入自製動作素材');
    const {loadCustomClip}=await import('./customPetClip');
-   return loadCustomClip(custom,signal,PET_ANIMATION_ASSETS[id].sha256);
+   return prepareClipForPlayback(await loadCustomClip(custom,signal,PET_ANIMATION_ASSETS[id].sha256),id,signal,stage);
   }
   stage('載入模組與素材');
   const [{parseBundleInWorker,MaterialResolver},{loadMaterialBundle}]=await Promise.all([import('@seer-pet-anim/swf-bundle'),import('@seer-pet-anim/swf-bundle/parse')]);
@@ -23,7 +33,8 @@ const pool=createPetClipPool<PetAnimationAssetId,SwfClipData>({
   const parse=parsing.then(async()=>{
    signal.throwIfAborted();stage('解析原生動作與圖集');
    // 0.3.2 自行在閒置時回收 Worker；不可終止別的元件正在使用的 Worker。
-   return parseBundleInWorker(bundle,PET_ANIMATION_ASSETS[id].clip,resolver.snapshot(),{signal});
+   const clip=await parseBundleInWorker(bundle,PET_ANIMATION_ASSETS[id].clip,resolver.snapshot(),{signal});
+   return prepareClipForPlayback(clip,id,signal,stage);
   });
   parsing=parse.catch(()=>{});return parse;
  },

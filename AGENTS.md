@@ -2,13 +2,13 @@
 
 ## ⚠️ 精靈總數（AI 必讀，避免誤判）
 
-**目前專案共 47 隻精靈。**
+**目前專案共 57 隻精靈。**
 
 - **權威事實源**：`docs/精靈清單_權威事實源.md`（自動產生，含完整清單與統計）
 - **交叉驗證**：`docs/audits/block-migration.json` 的 `summary.elves`
 - **執行期來源**：`src/data/defaultElves.ts` 的 `DEFAULT_ELVES`
 
-**如果其他文件寫的數字不是 47（例如 31、32、46），那是歷史文件，反映當時的資料集，不代表現在。**
+**如果其他文件寫的數字不是 57（例如 31、32、46、47、48、49、50、54、55、56），那是歷史文件，反映當時的資料集，不代表現在。**
 
 已知過期文件（僅供歷史核對，**不得作為清單依據**）：
 - `docs/31隻總體檢.md`（2026-09-27，當時 31 隻）
@@ -109,6 +109,16 @@
   };
   ```
 - **動態狀態管理**：使用 `setPlayerState("opeiaComboBonus", n)` 來管理跨回合的計數器，避免在 `BattleScreen.tsx` 中定義過多單一用途的 `useState`。
+
+## 行動限制（切換／藥劑）注意事項（2026-11-07）
+- **一律讀 `src/battle/actionRestrictions.ts`**：`switchRestrictions`／`itemRestrictions`／`potionBacklash`。引擎、AI、畫面共用同一份判斷，不要各自重寫。
+- **作用域要分清楚**：
+  - `scope: 'elf'`＝只鎖目前在場那一隻（癱瘓、決鬥、個體計時器）；換人規則仍以「在場者能否離場」判定。
+  - `scope: 'team'`＝整個陣營（「對手無法主動切換精靈 N 回合」、全隊計時器、`noItemTurns`）；換誰上場都一樣。
+  - 新增「無法切換／無法用藥」效果時，計時器要帶正確的 `scope`（積木 `switch_lock_scoped`／`item_lock` 的 `scope` 欄位），畫面才會顯示「個體」或「全隊」。
+- **陣亡後強制換人不受任何切換限制**（`forcedReplace`）。
+- **畫面不鎖按鈕**：不能用的技能、藥劑、精靈照樣可點開看資訊，只擋下動作並顯示原因（`aria-disabled`＋原因文字），不要改回 `disabled`。
+- **打包／交接**：改動上述判斷後，跑 `npm run test:potion-backlash`、`npm run test:game-layout`，再雙擊 `_claude_desktop_update.cmd` 重新打包。
 
 ## 注意事項
 - **機制優先**：實裝邏輯必須嚴格對齊精靈技能/魂印的文本描述。

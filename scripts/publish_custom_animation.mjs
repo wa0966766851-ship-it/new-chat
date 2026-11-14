@@ -4,11 +4,13 @@ import path from 'node:path';
 import crypto from 'node:crypto';
 import {fileURLToPath} from 'node:url';
 import {PNG} from 'pngjs';
+import {animationResources} from './lib/animationResources.mjs';
 const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'..');
 const args=process.argv.slice(2),get=(k)=>args[args.indexOf(k)+1];
 const id=get('--id');if(!args.includes('--id')||!/^\w+$/.test(id))throw Error('請指定 --id <素材ID>');
 const base=args.includes('--source')?path.resolve(root,get('--source')):path.join(root,'build/custom-animation');
 const source=path.join(base,id),m=JSON.parse(fs.readFileSync(path.join(source,'manifest.json'),'utf8'));
+const resources=animationResources(m.presentation,id,source);m.presentation=resources.value;
 if(!['left','right','front'].includes(m.facing))throw Error('缺少已核對的素材方向');
 const image=fs.readFileSync(path.join(source,'atlas.png')),png=PNG.sync.read(image),hash=crypto.createHash('sha256').update(image).digest('hex');
 if(m.id!==id||m.sha256!==hash||m.size!==image.length||png.width!==m.atlas.width||png.height!==m.atlas.height)throw Error('草稿圖集與登記不符');
@@ -34,7 +36,8 @@ let updated=line.replace(/atlas:\[[^\]]+\](?: as const)?/,'atlas:'+JSON.stringif
  .replace(/size:\d+/,'size:'+image.length).replace(/sha256:'[^']*'/,"sha256:'"+hash+"'")
  .replace(/sequences:\[.*\](?=\},?\s*$)/,'sequences:'+JSON.stringify(sequences));
 if(m.sequences.ultimate&&!updated.includes('fullscreen:'))updated=updated.replace('sequences:',"fullscreen:{ultimate:'ultimate'},sequences:");
-if(m.presentation)updated=updated.replace(/presentation:\{[^}]+\}/,'presentation:'+JSON.stringify(m.presentation));
+// presentation 可含巢狀物件（fxSheets），以括號配對取代整段，不能用 [^}]+。
+if(m.presentation){const at=updated.indexOf('presentation:{');if(at>=0){let d=0,end=at+13;for(;end<updated.length;end++){if(updated[end]==='{')d++;else if(updated[end]==='}'&&--d===0){end++;break;}}updated=updated.slice(0,at)+'presentation:'+JSON.stringify(m.presentation)+updated.slice(end);}}
 if(m.physicalMotion){if(!['stationary','approach'].includes(m.physicalMotion))throw Error('無效物攻移動方式');updated=updated.replace(/physicalMotion:'(?:approach|stationary)'/,"physicalMotion:'"+m.physicalMotion+"'");}
 if(updated===line&&args.includes('--publish'))console.log('登記值不變');
 console.log(JSON.stringify({id,atlas:[png.width,png.height],downloadBytes:image.length,rgbaBytes:png.width*png.height*4,sequences,willPublish:args.includes('--publish')},null,2));
@@ -42,6 +45,7 @@ if(args.includes('--publish')){
  const stamp=Date.now()+'-'+id,stage=path.join(root,'build/custom-animation-staging',stamp),dest=path.join(root,'public/elf-anim',id),backup=path.join(root,'build/custom-animation-backups',stamp);
  for(const p of [stage,dest,backup])if(!p.startsWith(root+path.sep))throw Error('路徑越界');
  fs.mkdirSync(stage,{recursive:true});fs.writeFileSync(path.join(stage,'atlas.png'),image);fs.writeFileSync(path.join(stage,'manifest.json'),JSON.stringify(m));
+ for(const [relative,file] of resources.files){const target=path.join(stage,relative);fs.mkdirSync(path.dirname(target),{recursive:true});fs.copyFileSync(file,target);}
  fs.mkdirSync(path.dirname(backup),{recursive:true});const exists=fs.existsSync(dest);if(exists)fs.renameSync(dest,backup);
  try{fs.renameSync(stage,dest);}catch(e){if(exists)fs.renameSync(backup,dest);throw e;}
  try{fs.writeFileSync(registry,original.replace(line,updated));}catch(e){

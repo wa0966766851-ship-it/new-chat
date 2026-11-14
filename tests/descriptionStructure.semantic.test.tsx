@@ -72,7 +72,7 @@ check('實際描述元件的章節、說明與子效果DOM', () => {
   const doc = new JSDOM(markup).window.document;
   const section = doc.querySelector('section[aria-label="神降效果"]')!;
   assert.equal(section.querySelectorAll('[data-description-kind="note"]').length, 2);
-  assert.ok(section.textContent!.includes('神降狀態下場後保留。'));
+  assert.ok(section.textContent!.includes('神降狀態下場後保留'));
   assert.equal(doc.querySelectorAll('section').length, 1);
   const childDoc = new JSDOM(renderToStaticMarkup(<EffectDescription description={source} renderText={text => <em>{text}</em>} />)).window.document;
   assert.ok(childDoc.querySelector('[data-source-line="3"] [data-source-line="4"] em'));

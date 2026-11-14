@@ -112,7 +112,7 @@ test("真實傷害閘門忽略其他持有者，即使側清單殘留亦不吃�
 });
 // 真實傷害 API 會讀取 Vite 的 import.meta.glob 註冊表，需由 Vite 載入而非偽造註冊表。
 const { createServer } = await import("vite");
-const vite = await createServer({ server: { middlewareMode: true }, appType: "custom" });
+const vite = await createServer({ server: { middlewareMode: true, hmr:false, watch:null }, appType: "custom" });
 try {
   const { buildDamageAPIs } = await vite.ssrLoadModule("/src/battle/contextBuilders.ts");
   test("實際附加傷害不套用板凳增傷／易傷，原持有者上場才生效", () => {
@@ -120,7 +120,9 @@ try {
   ref.current.p1Marks = [bindMarkToElf(mark("boost", { effects: { nonTrueDamageDealtMultiplier: 2 } }), ref.current.p1Team[1])];
   ref.current.p2Marks = [bindMarkToElf(mark("vulnerable", { effects: { nonTrueDamageTakenMultiplier: 3 } }), ref.current.p2Team[1])];
   const api = buildDamageAPIs({ side: "p1", self: ref.current.p1, syncStateRef: ref, pushEffect: () => {},
-    getBattleEventContext: () => ({ self: ref.current.p2, target: ref.current.p1, getPlayerState: () => undefined, getMarks: () => [] }) } as any);
+    getBattleEventContext: (side:'p1'|'p2') => ({ actor:side,targetSide:side==='p1'?'p2':'p1',
+      self:ref.current[side],target:ref.current[side==='p1'?'p2':'p1'],activeP1:ref.current.p1,activeP2:ref.current.p2,
+      getPlayerState: () => undefined, getMarks: () => [] }) } as any);
   assert.equal(api.applyPinkDamage("p2", 100, "test"), 100);
   ref.current = switchBattleSide(ref.current, "p1", 1);
   ref.current = switchBattleSide(ref.current, "p2", 1);

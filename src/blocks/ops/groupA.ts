@@ -10,10 +10,9 @@ export const GROUP_A_CONDITION_FIELDS: Record<string, readonly string[]> = {
 export function groupAEvalCond(ctx: BattleEventContext, c: { c: string; p?: any }): boolean | undefined {
   const p = c.p || {};
   if (c.c === 'player_state') {
-    if(p.thisRound&&ctx.getPlayerState(p.key+':round')!==ctx.roundNumber)return false;
     const raw = (ctx as any).getPlayerState?.(p.key);
     const value = raw === undefined || raw === null ? p.fallback : raw;
-    const result = value === p.equals;
+    const result = (!p.thisRound||ctx.getPlayerState(p.key+':round')===ctx.roundNumber)&&value === p.equals;
     return p.neg ? !result : result;
   }
   return undefined;

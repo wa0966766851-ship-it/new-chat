@@ -1,4 +1,5 @@
 import { prepareSavedBattleRoster } from '../data/prepareSavedBattleRoster';
+import { slimTeamRecord, slimTeamPresets } from '../data/savedTeamCompact';
 import { asRosterMember } from '../battle/rosterIdentity';
 import { fifthSkillSlot } from '../battle/skillSlot';
 import {ElfSkinPicker} from './ElfSkinPicker';
@@ -38,6 +39,7 @@ const InscriptionModal = lazy(() => import("./InscriptionModal").then(m => ({ de
 const LazyBlockProgramView = lazy(() => import("./LazyBlockProgramView"));
 const BattleAIQuickSettings = lazy(() => import('./BattleAIQuickSettings').then(m=>({default:m.BattleAIQuickSettings})));
 const EffectLibraryModal = lazy(() => import("./EffectLibraryModal").then(m => ({ default: m.EffectLibraryModal })));
+const AegisTraining = lazy(() => import('../shell/scenes/AegisTraining').then(m => ({ default: m.AegisTraining })));
 const SkillStonePicker = lazy(() => import('./SkillStonePicker'));
 // 與星蝕回廊共用的搜尋＋屬性篩選挑選器；只在開啟「選擇精靈」視窗時才載入（首頁初始 JS 預算 950 kB）。
 const ElfPicker = lazy(() => import("./shared/ElfPicker").then(m => ({ default: m.ElfPicker as React.ComponentType<any> })));
@@ -255,7 +257,8 @@ export default function StartScreen({
 
   // Peak Arena BP & Format States
   const [battleFormat, setBattleFormat] = useState<"normal_6v6" | "solo_1v1" | "peak_6v6" | "peak_3v3">(initialBattleFormat ?? "normal_6v6");
-  const [banCount, setBanCount] = useState<number>(1);
+  // 2026-11-14：預設改為原廠傳統 ban 3（巔峰 3V3 為 2）。
+  const [banCount, setBanCount] = useState<number>(() => initialBattleFormat === "peak_3v3" ? 2 : 3);
   const [pickCount, setPickCount] = useState<number>(6);
   const [bpPhase, setBpPhase] = useState<"closed" | "ban_p1" | "ban_p2" | "pick_p1" | "pick_p2" | "pick_standby_p1" | "pick_standby_p2">("closed");
   const [p1BannedIds, setP1BannedIds] = useState<string[]>([]);
@@ -306,7 +309,7 @@ export default function StartScreen({
   const handleSaveLastUsedP2 = () => {
     if (!p2Team.length) { alert("請先在 P2 加入至少 1 隻精靈才能保存紀錄！"); return; }
     const record = structuredClone({ team: p2Team, starterId: p2StarterId });
-    localStorage.setItem("seer_last_used_p2_team", JSON.stringify(record));
+    localStorage.setItem("seer_last_used_p2_team", JSON.stringify(slimTeamRecord(record)));
     setLastUsedRecordP2(record);
     setSaveSuccessMsg("已保存 P2 陣容紀錄");
     setTimeout(() => setSaveSuccessMsg(""), 3500);
@@ -664,7 +667,7 @@ export default function StartScreen({
       starterId: p1StarterId,
       timestamp: new Date().toLocaleTimeString()
     };
-    localStorage.setItem("seer_last_used_p1_team", JSON.stringify(record));
+    localStorage.setItem("seer_last_used_p1_team", JSON.stringify(slimTeamRecord(record)));
     setLastUsedRecord(record);
     setSaveSuccessMsg("✅ 已成功保存當前陣容至「上次使用紀錄」！(需點保存成功)");
     setTimeout(() => setSaveSuccessMsg(""), 3500);
@@ -699,7 +702,7 @@ export default function StartScreen({
       }
     };
     setBackpackPresets(updated);
-    localStorage.setItem("seer_p1_backpack_presets", JSON.stringify(updated));
+    localStorage.setItem("seer_p1_backpack_presets", JSON.stringify(slimTeamPresets(updated)));
     setSaveSuccessMsg(`💾 已成功保存隊伍至【背包插槽 #${slot}】！`);
     setTimeout(() => setSaveSuccessMsg(""), 3500);
   };
@@ -734,7 +737,7 @@ export default function StartScreen({
       }
     };
     setBackpackPresetsP2(updated);
-    localStorage.setItem("seer_p2_backpack_presets", JSON.stringify(updated));
+    localStorage.setItem("seer_p2_backpack_presets", JSON.stringify(slimTeamPresets(updated)));
     setSaveSuccessMsg(`💾 已成功保存隊伍至【P2 背包插槽 #${slot}】！`);
     setTimeout(() => setSaveSuccessMsg(""), 3500);
   };
@@ -2012,8 +2015,29 @@ export default function StartScreen({
       {/* 兩種版面共用所有操作視窗，避免新版提早 return 後只更新狀態卻無視窗。 */}
       {showIntroduction && showDetailModal && <Suspense fallback={detailPanelLoading}><ElfSpotlight elves={[showDetailModal]} selectedElf={showDetailModal} onClose={()=>setShowIntroduction(false)}/></Suspense>}
       {/* Elf Detail Modal */}
+      {presentation === "aegis" && showDetailModal && createPortal(
+        <Suspense fallback={detailPanelLoading}>
+          <AegisTraining
+            elf={showDetailModal}
+            skillSources={[
+              allElves.find(e => e && ((e.id && e.id === showDetailModal.id) || e.name === showDetailModal.name)),
+              DEFAULT_ELVES.find(e => e && ((e.id && e.id === showDetailModal.id) || e.name === showDetailModal.name)),
+            ].filter(Boolean) as Elf[]}
+            readonly={!onUpdateElf}
+            onChange={next => {
+              setShowDetailModal(next);
+              onUpdateElf?.(next);
+              const sync = (team: TeamInstance[]) => team.map(inst => inst && (inst.id === next.id || inst.name === next.name) ? { ...inst, skills: next.skills, skillPool: next.skillPool } : inst);
+              setP1Team(sync); setP2Team(sync);
+            }}
+            onClose={() => { setShowDetailModal(null); setReplacingSlotIndex(null); }}
+            onEdit={onEditElf ? () => { onEditElf(showDetailModal); setShowDetailModal(null); } : undefined}
+            onIntro={() => setShowIntroduction(true)}
+            onEditInscription={index => setEditingModalInscIndex(index)}
+          />
+        </Suspense>, document.body)}
       {createPortal(<AnimatePresence>
-        {showDetailModal && (
+        {showDetailModal && presentation !== "aegis" && (
           <div
             className="fixed inset-0 z-[220] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm"
             onClick={() => {
@@ -2521,12 +2545,12 @@ export default function StartScreen({
                             </div>
                           </div>
                           
-                          {blockView ? <Suspense fallback={detailLoading}><LazyBlockProgramView elf={showDetailModal} skill={s} /></Suspense> : <EffectDescription description={s.description} className="text-slate-200 text-[13px] leading-[1.7] font-sans antialiased  tracking-wide" />}
+                          {blockView ? <Suspense fallback={detailLoading}><LazyBlockProgramView elf={showDetailModal} skill={s} /></Suspense> : <EffectDescription skill={s} description={s.description} className="text-slate-200 text-[13px] leading-[1.7] font-sans antialiased  tracking-wide" />}
                           
                           <div className="flex justify-between items-center text-xs text-slate-500 font-mono w-full border-t border-slate-900 pt-2 mt-auto">
                             <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5">
                               <span>類型: <strong className="text-slate-300">{s.category === '物理' ? '物理攻擊' : s.category === '特殊' ? '特殊攻擊' : s.category === '屬性' ? '屬性技能' : s.category}</strong></span>
-                              <span title={s.isSureHit ? "必中；固有效果失效時改用此命中率" : undefined}>命中: <strong className="text-slate-300">{s.isSureHit ? "必中・" : ""}{s.accuracy !== undefined ? `${s.accuracy}%` : '100%'}</strong></span>
+                              <span>基礎命中率: <strong className="text-slate-300">{s.accuracy !== undefined ? `${s.accuracy}%` : '100%'}</strong></span>
                               <span>威力: <strong className="text-slate-300">{s.power}</strong></span>
                               <span>PP: <strong className="text-slate-300">{s.pp}/{s.maxPp !== undefined ? s.maxPp : s.pp}</strong>{s.isSkillStone && isStoneThrower(showDetailModal) && <strong className="text-amber-300" title="投石者：裝備的技能石 PP 上限 +10（墜星特有）"> +10</strong>}</span>
                             </div>
@@ -2698,7 +2722,7 @@ export default function StartScreen({
                                               <span>PP: <strong className="text-slate-300">{sk.pp}/{sk.maxPp !== undefined ? sk.maxPp : sk.pp}</strong></span>
                                             </div>
                                           </div>
-                                          <EffectDescription description={sk.description} className="text-[13px] text-slate-200 leading-[1.7]" />
+                                          <EffectDescription skill={sk} description={sk.description} className="text-[13px] text-slate-200 leading-[1.7]" />
                                         </div>
                                       );
                                     })
@@ -3279,6 +3303,8 @@ export default function StartScreen({
                           "border-slate-800 opacity-70 hover:opacity-100 hover:border-slate-600"
                         }`}
                       >
+                        {/* 巔峰禁選：保留卡池原編號（被禁精靈原位顯示，不往前遞補） */}
+                        <span data-bp-slot={index + 1} title={`卡池第 ${index + 1} 位`} className="absolute top-1.5 left-1.5 z-30 min-w-[1.4rem] h-5 px-1 rounded-md bg-slate-900/90 border border-slate-600 text-[11px] font-black text-slate-200 flex items-center justify-center tabular-nums">{index + 1}</span>
                         {/* Starter Crown Button */}
                         {!isBanPhase && !isBanned && isPicked && (
                           <button
@@ -3382,6 +3408,7 @@ export default function StartScreen({
                           "border-slate-800 opacity-70 hover:opacity-100 hover:border-slate-600"
                         }`}
                       >
+                        <span data-bp-slot={index + 1} title={`卡池第 ${index + 1} 位`} className="absolute top-1.5 left-1.5 z-30 min-w-[1.4rem] h-5 px-1 rounded-md bg-slate-900/90 border border-slate-600 text-[11px] font-black text-slate-200 flex items-center justify-center tabular-nums">{index + 1}</span>
                         {/* PVP Starter Crown Button */}
                         {!isBanPhase && !isBanned && battleMode === "PVP" && isPicked && (
                           <button

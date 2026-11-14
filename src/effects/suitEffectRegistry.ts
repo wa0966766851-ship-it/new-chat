@@ -1,3 +1,5 @@
+import {instantKillChance} from '../battle/instantKillChance';
+import {recipientPrdChance} from '../battle/recipientEffectChance';
 import { combineSettlementCallbacks } from '../battle/settlementReceipt';
 import { addDamageIncrease } from '../battle/damagePipeline';
 import { addDamageReduction } from '../battle/damageReduction';
@@ -67,14 +69,14 @@ export const SuitEffectRegistry: Record<string, (ctx: BattleEventContext, event:
   },
   future_armor: (ctx, event, extraData) => {
     // 未來戰甲：背包內每死亡1隻精靈則自身攻擊命中後有1%的機率瞬殺對手。
-    if (event === EffectTiming.AFTER_ACTION && !extraData!.damageComp?.isIncoming && ctx.skill?.category !== "屬性") {
+    if (event === EffectTiming.AFTER_ACTION && !extraData?.isIncoming && !extraData?.damageComp?.isIncoming && ctx.skill?.category !== "屬性" && extraData?.hit === true) {
       const team = ctx.actor === "p1" ? ctx.p1FullTeam : ctx.p2FullTeam;
       const deadCount = team.filter(e => e.currentHp <= 0).length;
       if (deadCount > 0) {
         const chance = deadCount * 0.01;
-        if (prdChance("suitEffectRegistry:L70", chance)) {
+        if (instantKillChance(ctx,"suit:future_armor", chance*100)) {
           ctx.addLog(`⚡ 【未來戰甲】：觸發瞬殺效果！`, "effect");
-          ctx.adjustHp(ctx.targetSide, -ctx.target.maxHp);
+          ctx.applyInstantKill?.(ctx.targetSide, "套裝秒殺");
         }
       }
     }
@@ -101,7 +103,7 @@ export const SuitEffectRegistry: Record<string, (ctx: BattleEventContext, event:
   void_traveler: (ctx, event, extraData) => {
     // 使用屬性技能後有20%機率令對手隨機進入一種異常狀態3回合
     if (event === EffectTiming.AFTER_ACTION && !extraData!.damageComp?.isIncoming && ctx.skill?.category === "屬性") {
-      if (prdChance("suitEffectRegistry:L94", 0.2)) {
+      if (recipientPrdChance(ctx,ctx.targetSide,"suitEffectRegistry:L94", 0.2)) {
         const statuses = ["燒傷", "冰封", "麻痺", "中毒", "害怕", "疲憊"];
         const status = statuses[Math.floor(ctx.rng() * statuses.length)];
         ctx.applyStatusWithImmunityCheck(ctx.targetSide, status, 3);
@@ -262,8 +264,8 @@ export const SuitEffectRegistry: Record<string, (ctx: BattleEventContext, event:
     // 只在【技能攻擊本體】的傷害前判定；附加真實傷害（applyTrueDamage）也會走 BEFORE_DAMAGE，
     // 若不加 damageCategory 條件，狂暴者自己的 115 真傷會再觸發一次判定（實測重複）。
     const isMainSkillDamage = extraData?.damageComp?.damageCategory === "skill_attack";
-    if (event === EffectTiming.BEFORE_DAMAGE && isAttackSkill && isMainSkillDamage) {
-      if (prdChance("suitEffectRegistry:L249", 0.15)) {
+    if (event === EffectTiming.BEFORE_DAMAGE && isAttackSkill && isMainSkillDamage && !extraData?.damageComp?.isIncoming) {
+      if (instantKillChance(ctx,"suit:berserker", 15)) {
         ctx.setPlayerState(regKey, { ...ctx.getPlayerState(regKey), berserkExecute: true });
       } else {
         ctx.setPlayerState(regKey, { ...ctx.getPlayerState(regKey), isBerserk: true });
@@ -283,10 +285,10 @@ export const SuitEffectRegistry: Record<string, (ctx: BattleEventContext, event:
       if (isBerserk) addDamageIncrease(extraData!.damageComp, 1.0, "total");
     }
 
-    if (event === EffectTiming.AFTER_ACTION && isAttackSkill) {
+    if (event === EffectTiming.AFTER_ACTION && !extraData?.isIncoming && isAttackSkill) {
       if (ctx.getPlayerState(regKey)?.berserkExecute) {
         ctx.addLog(`💀 【狂暴者】：觸發秒殺判定！`, "effect");
-        ctx.adjustHp(ctx.targetSide, -ctx.target.maxHp);
+        ctx.applyInstantKill?.(ctx.targetSide, "套裝秒殺");
         ctx.setPlayerState(regKey, { ...ctx.getPlayerState(regKey), berserkExecute: false });
       } else {
         ctx.applyTrueDamage(ctx.targetSide, 115, "【狂暴者】");
@@ -473,42 +475,8 @@ export const SuitEffectRegistry: Record<string, (ctx: BattleEventContext, event:
     const regKey = side === "p1" ? "p1RegistryState" : "p2RegistryState";
 
     if (event === EffectTiming.ON_ENTRANCE) {
-      const res = ctx.self.resistances;
-      if (res) {
-        const crit = res.damageResist?.crit || 0;
-        const fixed = res.damageResist?.fixed || 0;
-        const percent = res.damageResist?.percent || 0;
-        const statusMax = Math.max(0, ...(res.statusResist?.slots || []).map(s => s.rate || 0)) + (res.statusResist?.allImmune ? 5 : 0);
-
-        const items = [
-          { key: "crit", name: "致命一擊抗性", val: crit },
-          { key: "fixed", name: "固定傷害抗性", val: fixed },
-          { key: "percent", name: "百分比傷害抗性", val: percent },
-          { key: "status", name: "異常狀態抗性", val: statusMax },
-        ];
-        items.sort((a, b) => b.val - a.val);
-
-        if (items[0].val > items[1].val) {
-          const highestKey = items[0].key;
-          const nextRes = {
-            damageResist: {
-              crit: highestKey === "crit" ? 100 : 0,
-              fixed: highestKey === "fixed" ? 100 : 0,
-              percent: highestKey === "percent" ? 100 : 0,
-            },
-            statusResist: {
-              allImmune: highestKey === "status",
-              selectedStatuses: res.statusResist?.selectedStatuses || [],
-              slots: (res.statusResist?.slots || []).map(s => ({
-                ...s,
-                rate: highestKey === "status" ? 100 : 0,
-              })),
-            },
-          };
-          ctx.updateElf(side, { resistances: nextRes });
-          ctx.addLog(`✨ 【聖芒佑界】：抗性重分配！最高項【${items[0].name}】提升至 100%，其餘項減少至 0%！`, "effect");
-        }
-      }
+      ctx.updateElf(side,{resistanceHighestOnly:true});
+      ctx.setPlayerState(regKey,{...ctx.getPlayerState(regKey),holySanctuaryHealRatio:0.3});
     }
 
     if (event === EffectTiming.BEFORE_STATUS_APPLY) {
@@ -516,7 +484,7 @@ export const SuitEffectRegistry: Record<string, (ctx: BattleEventContext, event:
       if (extraData?.duration > 2) extraData.duration = 2;
     }
 
-    if (event === EffectTiming.ON_STATUS_IMMUNIZED) {
+    if (event === EffectTiming.ON_STATUS_IMMUNIZED && extraData?.reason === "resistance") {
       const ratio = ctx.getPlayerState(regKey)?.holySanctuaryHealRatio ?? 0.3;
       if (ratio > 0) {
         ctx.applyHeal(side, Math.floor(ctx.self.maxHp * ratio));
@@ -592,7 +560,7 @@ export const SuitEffectRegistry: Record<string, (ctx: BattleEventContext, event:
     }
 
     if (event === EffectTiming.AFTER_ACTION && !extraData!.damageComp?.isIncoming && ctx.skill?.category !== "屬性") {
-      if (prdChance("suitEffectRegistry:L565", 0.3)) {
+      if (recipientPrdChance(ctx,ctx.targetSide,"suitEffectRegistry:L565", 0.3)) {
         const bonus = Math.floor(ctx.target.maxHp * 0.15);
         ctx.applyPinkDamage(ctx.targetSide, bonus, "【毒液戰甲】百分比");
         ctx.setPlayerState(regKey, { 

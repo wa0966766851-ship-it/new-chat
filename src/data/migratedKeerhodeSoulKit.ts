@@ -50,19 +50,28 @@ export const MIGRATED_KEERHODE_SOUL_KIT = {
       ] },
     ], 2),
     // C. 在場任一方受真傷→+1未暝之夜（資源印記；無上限）
-    entry('on_damaged', 'damaged_true', '在場敵我雙方任一方受到真實傷害：為自身附加1道未暝之夜', [
-      { acts: [a('resource_mark_add', { id: 'dark_night', name: '未暝之夜', displayChar: '夜', unit: '道', side: 'self', scope: 'elf', persistsOffField: false, amount: 1, description: '無視對手能力上升；技能先制+1；造成傷害提升150%；吸血100%；大於1道時每道將對手視為至少1級全屬性下降' })] },
+    // 2026-11-13：原本只聽自身受真傷，對手受真傷不會觸發；且「當回合首次死亡存活」被誤做成只要持有未暝之夜就每回合有效。
+    entry('on_damaged', 'damaged_true', '在場敵我雙方任一方受到真實傷害：為自身附加1道未暝之夜，令自身當回合若首次死亡時強制存活並保留1點體力', [
+      { acts: [a('resource_mark_add', { id: 'dark_night', name: '未暝之夜', displayChar: '夜', unit: '道', side: 'self', scope: 'elf', persistsOffField: false, amount: 1, description: '無視對手能力上升；技能先制+1；造成傷害提升150%；吸血100%；大於1道時每道將對手視為至少1級全屬性下降' }), a('flag_set', { key: 'keerhodeNightGuard', value: true, thisRound: true })] },
+    ], 2),
+    entry('on_opponent_damaged', 'opp_damaged_true', '在場敵我雙方任一方受到真實傷害：為自身附加1道未暝之夜，令自身當回合若首次死亡時強制存活並保留1點體力', [
+      { acts: [a('resource_mark_add', { id: 'dark_night', name: '未暝之夜', displayChar: '夜', unit: '道', side: 'self', scope: 'elf', persistsOffField: false, amount: 1, description: '無視對手能力上升；技能先制+1；造成傷害提升150%；吸血100%；大於1道時每道將對手視為至少1級全屬性下降' }), a('flag_set', { key: 'keerhodeNightGuard', value: true, thisRound: true })] },
     ], 2),
     // D. 當回合首次死亡→強制存活1點（未暝之夜賦予；once_per_round）
     entry('self_fatal', 'fatal', '未暝之夜：當回合首次死亡時強制存活並保留1點體力', [
-      { cond: [c('mark_count', { side: 'self', id: 'dark_night', op: '不小於', amount: 1 }, '擁有未暝之夜')], acts: [
+      { cond: [c('player_state', { key: 'keerhodeNightGuard', equals: true, thisRound: true }, '本回合已觸發真實傷害條件')], acts: [
         a('once_per_round', { key: 'keerhode_ming_first_death', body: [{ acts: [a('survive', {})] }] }),
       ] },
     ], 3),
     // E. 回合開始：血≤½→直接+1未暝之夜（取消「需受真傷」限制；對手鎖切換分支由 cond 組合表達）
-    entry('round_start', 'round_start', '回合開始時體力不高於½：附加1道未暝之夜（取消需受真傷限制）', [
+    entry('round_start', 'round_start', '回合開始時體力不高於½或對手無法主動切換精靈：取消需受真實傷害的觸發條件', [
       { cond: [c('hp_ratio', { side: 'self', op: '不高於', ratio: 0.5 }, '體力不高於½')], acts: [
         a('resource_mark_add', { id: 'dark_night', name: '未暝之夜', displayChar: '夜', unit: '道', side: 'self', scope: 'elf', persistsOffField: false, amount: 1, description: '無視對手能力上升；技能先制+1；造成傷害提升150%；吸血100%；大於1道時每道將對手視為至少1級全屬性下降' }),
+        a('flag_set', { key: 'keerhodeNightGuard', value: true, thisRound: true }),
+      ] },
+      { cond: [c('hp_ratio', { side: 'self', op: '高於', ratio: 0.5 }, '體力高於½'), c('switch_blocked', { side: 'opp' }, '對手無法主動切換精靈')], acts: [
+        a('resource_mark_add', { id: 'dark_night', name: '未暝之夜', displayChar: '夜', unit: '道', side: 'self', scope: 'elf', persistsOffField: false, amount: 1, description: '無視對手能力上升；技能先制+1；造成傷害提升150%；吸血100%；大於1道時每道將對手視為至少1級全屬性下降' }),
+        a('flag_set', { key: 'keerhodeNightGuard', value: true, thisRound: true }),
       ] },
     ], 4),
     // F. 未暝之夜屬性：無視提升＋吸血100%（使用時寫行動鍵＝常駐等效）

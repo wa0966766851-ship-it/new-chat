@@ -4,11 +4,18 @@ export type Side = "self" | "opp" | "both";
 
 /** 觸發時點（魂印標頭、N回合內的持續效果） */
 export type Trigger =
+  | "stat_changed" | "team_stat_changed"
+  | "battle_node"
+  | "before_round_start"
+  | "action_phase_enter" | "team_action_phase_enter"
+  | "status_mechanic" | "team_status_mechanic"
   | "team_battle_start" | "team_entrance" | "team_after_action" | "team_round_end"
-  | "team_before_status" | "team_status_received" | "team_defeated"
+  | "team_before_status" | "team_status_received" | "team_opponent_status_received" | "team_defeated"
   | "team_phase_end" | "team_opponent_skill"
   | "team_action_end"
+  | "team_before_damage" | "team_action_failed"
   | "opp_damaged_skill"
+  | "opp_damaged_true" // 對手受到真實傷害後（在場觀察者）
   | "opp_damage_settled"
   | "skill_selected"
   | "outgoing_power" | "incoming_power" // 正式公式前的攻方／受方威力修正
@@ -48,7 +55,7 @@ export type Trigger =
   | "pp_cleared" // 原持有者至少一槽正PP被清除為0；不包含普通出招或削PP
   | "turn_effects_cleared" // 本持有者的回合效果實際被消除
   | "stat_boost_cleared" // 他方實際消除／吸取本持有者的能力提升
-  | "status_end" | "status_immune" | "status_tick" // 持有者異常結束、免疫結果及扣減前
+  | "status_reflected" | "status_end" | "status_immune" | "status_tick" // 持有者異常結束、免疫結果及扣減前
   | "switch_out"
   | "opponent_switch_out" // 2026-11-02：對手切換下場（霜寒幽光 ④⑤ 需要）
   | "status_received" // 自身受到異常狀態時

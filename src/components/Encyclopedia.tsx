@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { Book, Shield, Zap, Info, ChevronRight, X, Swords, Target, Flame, Layers, Search, Sparkles, HelpCircle, BookOpen, Check, Edit, Copy, Trash2, RefreshCw, Send, Maximize2, Minimize2 } from 'lucide-react';
 import { motion } from 'motion/react';
+import tacticalPageCss from '../design/tacticalPageCss';
+import { useScopedStyle } from './destiny/injectStyle';
 import { StatusRegistry } from '../effects/statusRegistry';
 import { StatusCategory } from '../effects/statusTypes';
 import { TYPE_MATCHUPS, SEER_TYPES, setDynamicMatchups, getAttributeBadgeColor, getTypeMatchup } from '../utils/statCalculator';
@@ -16,19 +18,46 @@ import { readStoredRecord } from '../utils/safeStorage';
 import { getTemplateReviewReason, getTemplateTimingLabel } from '../utils/templateReview';
 import type { Elf } from '../types';
 import { BossStatusSection } from './BossStatusSection';
+import { OpCodePanel } from './OpCodePanel';
+import { IndexSearchPanel, NodeAtlasPanel, MechanicsPanel, ModeGuidePanel } from './encyclopedia/EncyclopediaPanels';
+import encyclopediaCss from './encyclopedia/encyclopediaCss';
+import type { IndexEntry, IndexTab } from '../data/encyclopediaIndex';
+import type { EncyclopediaTab } from '../shell/features';
 import { applyElfFilter } from '../utils/elfFilter';
 import { ElfFilterBar, useElfFilter } from './shared/ElfPicker';
 
 import { useGameData } from '../contexts/GameDataContext';
+import { searchList } from '../utils/textSearch';
 
 interface EncyclopediaProps {
   onClose: () => void;
-  initialTab?: 'status' | 'types' | 'mechanics' | 'editor' | 'effectQuery' | 'elves';
+  initialTab?: EncyclopediaTab;
 }
 
-const Encyclopedia: React.FC<EncyclopediaProps> = ({ onClose, initialTab = 'elves' }) => {
+/** 百科分頁導航（目錄測試逐項讀取分頁鍵與名稱）。 */
+const ENCYCLOPEDIA_NAV: { title: string; tabs: (readonly [EncyclopediaTab, string])[] }[] = [
+  { title: '檢索', tabs: [['search', '總索引']] },
+  { title: '資料', tabs: [['elves', '精靈圖鑑'], ['status', '異常狀態'], ['types', '屬性克制']] },
+  { title: '規則', tabs: [['mechanics', '戰鬥機制'], ['nodes', '戰鬥節點'], ['effectQuery', '效果查詢'], ['opCodes', '積木代號']] },
+  { title: '玩法', tabs: [['modes', '玩法說明']] },
+  { title: '工具', tabs: [['editor', '自訂克制']] },
+];
+
+const Encyclopedia: React.FC<EncyclopediaProps> = ({ onClose, initialTab = 'search' }) => {
+  useScopedStyle('tactical-page-css', tacticalPageCss);
+  useScopedStyle('encyclopedia-shell-css', encyclopediaCss);
   const { allElves } = useGameData();
-  const [activeTab, setActiveTab] = useState<'status' | 'types' | 'mechanics' | 'editor' | 'effectQuery' | 'elves'>(initialTab);
+  const [activeTab, setActiveTab] = useState<EncyclopediaTab>(initialTab);
+  const [opFocus, setOpFocus] = useState<string | undefined>(undefined);
+  const [nodeFocus, setNodeFocus] = useState<string | undefined>(undefined);
+  // 總索引 → 原分頁：積木帶代號、節點帶 key、異常與效果帶名稱，直接落在搜尋結果上。
+  const jumpFromIndex = (tab: IndexTab, entry: IndexEntry) => {
+    if (tab === 'opCodes') setOpFocus(entry.id.replace(/^op:/, ''));
+    if (tab === 'nodes') setNodeFocus(entry.code ?? entry.title);
+    if (tab === 'status') setStatusSearchQuery(entry.title);
+    if (tab === 'effectQuery') setSearchQueryEffects(entry.title);
+    setActiveTab(tab);
+  };
   const [searchQuery, setSearchQuery] = useState('');
   const elfFilter = useElfFilter();
   const [selectedElf, setSelectedElf] = useState<Elf | null>(null);
@@ -284,15 +313,8 @@ const Encyclopedia: React.FC<EncyclopediaProps> = ({ onClose, initialTab = 'elve
       result = result.filter(item => item.type === 'status_effect');
     }
 
-    if (deferredEffectQuery.trim()) {
-      const q = deferredEffectQuery.toLowerCase();
-      result = result.filter(item => 
-        item.title.toLowerCase().includes(q) ||
-        item.description.toLowerCase().includes(q) ||
-        item.sourceName.toLowerCase().includes(q) ||
-        item.tags.some(t => t.toLowerCase().includes(q))
-      );
-    }
+    // 2026-11-07：多關鍵字（空白＝全部符合、-詞＝排除）、同義詞、簡繁、依相關度排序。
+    if (deferredEffectQuery.trim()) result = searchList(result, deferredEffectQuery, (item: any) => ({ title: item.title, tags: item.tags, body: [item.description, item.sourceName] }));
 
     return result;
   }, [unifiedItems, deferredEffectQuery, selectedEffectCategory]);
@@ -314,51 +336,39 @@ const Encyclopedia: React.FC<EncyclopediaProps> = ({ onClose, initialTab = 'elve
       exit={{ opacity: 0, scale: 0.95 }}
       className={`fixed inset-0 z-[100] flex items-center justify-center bg-black/75 backdrop-blur-sm transition-all duration-300 ${isMaximized ? 'p-0' : 'p-4'}`}
     >
-      <div className={`ios-panel flex flex-col overflow-hidden transition-all duration-300 ${isMaximized ? 'w-full h-full !rounded-none' : 'w-[94vw] max-w-[1400px] h-[88vh]'}`}>
-        {/* Header */}
-        <div className="px-5 py-3.5 border-b border-white/[0.06] flex items-center justify-between shrink-0">
-          <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-[10px] bg-blue-500/15 flex items-center justify-center">
-              <Book className="w-5 h-5 text-blue-400" />
+      <div data-skin="tactical" data-enc-shell className={`enc-shell transition-all duration-300 ${isMaximized ? 'w-full h-full !rounded-none' : 'w-[94vw] max-w-[1400px] h-[88vh]'}`}>
+        <i className="enc-orbit" aria-hidden="true" />
+        <div className="enc-head">
+          <div className="flex items-center gap-3 min-w-0">
+            <span className="enc-icon" aria-hidden="true"><Book className="w-4 h-4" /></span>
+            <div className="min-w-0">
+              <div className="enc-kicker">SEER // BATTLE ARCHIVE</div>
+              <h2 className="enc-title">圖鑑與戰鬥百科</h2>
             </div>
-            <h2 className="text-[19px] font-semibold text-slate-100 tracking-tight">圖鑑與戰鬥百科</h2>
           </div>
           <div className="flex items-center gap-1.5">
-            <button
-              onClick={() => setIsMaximized(!isMaximized)}
-              title={isMaximized ? "還原視窗" : "全螢幕"}
-              className="w-8 h-8 flex items-center justify-center rounded-full bg-white/[0.06] hover:bg-white/[0.12] transition-colors text-slate-300"
-            >
+            <button className="enc-icon" onClick={() => setIsMaximized(!isMaximized)} title={isMaximized ? "還原視窗" : "全螢幕"}>
               {isMaximized ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
             </button>
-            <button
-              onClick={onClose}
-              title="關閉"
-              className="w-8 h-8 flex items-center justify-center rounded-full bg-white/[0.06] hover:bg-white/[0.12] transition-colors text-slate-300"
-            >
-              <X className="w-4 h-4" />
-            </button>
+            <button className="enc-icon" onClick={onClose} title="關閉"><X className="w-4 h-4" /></button>
           </div>
         </div>
 
-        {/* Tabs：iOS 分段控制 */}
-        <div className="px-5 py-2.5 border-b border-white/[0.06] shrink-0 overflow-x-auto scrollbar-none">
-          <div className="ios-segment">
-            {([
-              ['elves', '精靈圖鑑'],
-              ['status', '異常狀態'],
-              ['types', '屬性克制'],
-              ['mechanics', '戰鬥機制'],
-              ['editor', '自訂克制'],
-              ['effectQuery', '效果查詢'],
-            ] as const).map(([key, label]) => (
-              <button key={key} data-active={activeTab === key} onClick={() => setActiveTab(key as any)}>{label}</button>
-            ))}
-          </div>
-        </div>
+        <div className="enc-body">
+        {/* 分頁：依用途分組（檢索／資料／規則／玩法／工具） */}
+        <nav className="enc-rail" aria-label="百科分頁">
+          {ENCYCLOPEDIA_NAV.map(group => (
+            <React.Fragment key={group.title}>
+              <h4>{group.title}</h4>
+              {group.tabs.map(([key, label]) => (
+                <button key={key} data-active={activeTab === key} data-tab={key} onClick={() => setActiveTab(key)}>{label}</button>
+              ))}
+            </React.Fragment>
+          ))}
+        </nav>
 
         {/* Content */}
-        <div className="flex-1 overflow-y-auto p-6 space-y-8">
+        <div className="enc-content tac-page space-y-8">
           {activeTab === 'elves' && (
             <div className="space-y-6 animate-fade-in pb-8">
               <ElfFilterBar state={elfFilter} count={`${shownElves.length} / ${allElves.length}`} />
@@ -1043,175 +1053,12 @@ const Encyclopedia: React.FC<EncyclopediaProps> = ({ onClose, initialTab = 'elve
             </div>
           )}
 
-          {activeTab === 'mechanics' && (
-            <div className="space-y-6 animate-fade-in">
-              <div className="bg-blue-500/10 border border-blue-500/30 p-4 rounded-xl flex items-center gap-3 text-blue-300 text-xs">
-                <Info className="w-5 h-5 text-blue-400 shrink-0" />
-                <span>以下為賽爾號核心對戰術語與底層機制定義，嚴格規範了技能結算次序、後手補償、傷害分流與防無限反彈循環法則。</span>
-              </div>
+          {activeTab === 'mechanics' && (<MechanicsPanel />)}
+          {activeTab === 'search' && (<IndexSearchPanel onJump={jumpFromIndex} />)}
+          {activeTab === 'nodes' && (<NodeAtlasPanel key={nodeFocus} focus={nodeFocus} />)}
+          {activeTab === 'modes' && (<ModeGuidePanel />)}
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {/* 1. 回合與時序機制 */}
-                <div className="bg-slate-900/50 border border-slate-800 p-6 rounded-2xl space-y-4 flex flex-col">
-                  <div className="flex items-center gap-3 border-b border-slate-800/80 pb-3">
-                    <div className="p-2 bg-amber-500/10 rounded-lg">
-                      <Zap className="w-5 h-5 text-amber-400" />
-                    </div>
-                    <div>
-                      <h3 className="text-base font-bold text-slate-200">回合與時序判定</h3>
-                      <p className="text-[11px] text-slate-500">規範回合計數與判定條件</p>
-                    </div>
-                  </div>
-                  <div className="space-y-3 flex-1">
-                    <div className="p-3.5 bg-slate-800/40 rounded-xl border border-slate-700/50 hover:border-amber-500/30 transition-colors">
-                      <h4 className="text-xs font-bold text-amber-400 mb-1 flex items-center justify-between">
-                        <span>回合類效果</span>
-                        <span className="text-[9px] bg-amber-500/20 text-amber-300 px-1.5 py-0.5 rounded">核心時序</span>
-                      </h4>
-                      <p className="text-xs text-slate-300 leading-relaxed">
-                        由技能效果附加的、以回合為計數的未命名效果；此類效果在後出手附加時，若當回合因此無法直接觸發收益，則回合數+1。
-                      </p>
-                    </div>
-                    <div className="p-3.5 bg-slate-800/40 rounded-xl border border-slate-700/50">
-                      <h4 className="text-xs font-bold text-slate-200 mb-1">未觸發</h4>
-                      <p className="text-xs text-slate-400 leading-relaxed">
-                        前置行為的結果未能正確發生，包括不限於未通過機率判定、被免疫、被修改等。
-                      </p>
-                    </div>
-                    <div className="p-3.5 bg-slate-800/40 rounded-xl border border-slate-700/50">
-                      <h4 className="text-xs font-bold text-slate-200 mb-1">改變</h4>
-                      <p className="text-xs text-slate-400 leading-relaxed">
-                        當一項屬性變化為與變化前不同的狀態時，此屬性被判定為改變；若變化前後狀態一致（例如能力已達上限或下限），則本次變化不判定為改變。
-                      </p>
-                    </div>
-                  </div>
-                </div>
-
-                {/* 2. 傷害與吸取法則 */}
-                <div className="bg-slate-900/50 border border-slate-800 p-6 rounded-2xl space-y-4 flex flex-col">
-                  <div className="flex items-center gap-3 border-b border-slate-800/80 pb-3">
-                    <div className="p-2 bg-rose-500/10 rounded-lg">
-                      <Swords className="w-5 h-5 text-rose-400" />
-                    </div>
-                    <div>
-                      <h3 className="text-base font-bold text-slate-200">傷害與吸取類型</h3>
-                      <p className="text-[11px] text-slate-500">明確特殊傷害與粉字結算</p>
-                    </div>
-                  </div>
-                  <div className="space-y-3 flex-1">
-                    <div className="p-3.5 bg-slate-800/40 rounded-xl border border-slate-700/50">
-                      <h4 className="text-xs font-bold text-rose-400 mb-1 flex items-center justify-between">
-                        <span>固定傷害</span>
-                        <span className="text-[9px] bg-rose-500/20 text-rose-300 px-1.5 py-0.5 rounded">粉字傷害</span>
-                      </h4>
-                      <p className="text-xs text-slate-300 leading-relaxed">
-                        以固定的點數表示的一種傷害的類型（不受防禦與克制影響）。
-                      </p>
-                    </div>
-                    <div className="p-3.5 bg-slate-800/40 rounded-xl border border-slate-700/50">
-                      <h4 className="text-xs font-bold text-purple-400 mb-1 flex items-center justify-between">
-                        <span>百分比傷害</span>
-                        <span className="text-[9px] bg-purple-500/20 text-purple-300 px-1.5 py-0.5 rounded">比例扣血</span>
-                      </h4>
-                      <p className="text-xs text-slate-300 leading-relaxed">
-                        以分數、百分數表示的一種傷害的類型（如最大體力的 1/3、20% 等）。
-                      </p>
-                    </div>
-                    <div className="p-3.5 bg-slate-800/40 rounded-xl border border-slate-700/50 hover:border-rose-500/30 transition-colors">
-                      <h4 className="text-xs font-bold text-emerald-400 mb-1">吸取 (Drain)</h4>
-                      <p className="text-xs text-slate-300 leading-relaxed">
-                        附加對手一定的傷害，然後恢復一定的體力，數值由後續搭配的數值決定；當搭配的數值為固定點數時傷害類型為固定傷害，當搭配的數值為比例時傷害類型為百分比傷害。
-                      </p>
-                    </div>
-                  </div>
-                </div>
-
-                {/* 3. 防禦與反彈循環 */}
-                <div className="bg-slate-900/50 border border-slate-800 p-6 rounded-2xl space-y-4 flex flex-col">
-                  <div className="flex items-center gap-3 border-b border-slate-800/80 pb-3">
-                    <div className="p-2 bg-blue-500/10 rounded-lg">
-                      <Shield className="w-5 h-5 text-blue-400" />
-                    </div>
-                    <div>
-                      <h3 className="text-base font-bold text-slate-200">防禦屏障與反彈機制</h3>
-                      <p className="text-[11px] text-slate-500">防禦傷害分類與防無限循環防禦</p>
-                    </div>
-                  </div>
-                  <div className="space-y-3 flex-1">
-                    <div className="p-3.5 bg-slate-800/40 rounded-xl border border-slate-700/50">
-                      <h4 className="text-xs font-bold text-blue-400 mb-1 flex items-center justify-between">
-                        <span>護盾 (Shield)</span>
-                        <span className="text-[9px] bg-blue-500/20 text-blue-300 px-1.5 py-0.5 rounded">抵擋威力</span>
-                      </h4>
-                      <p className="text-xs text-slate-300 leading-relaxed">
-                        可以抵消對手攻擊技能造成的攻擊傷害（無法抵擋固定傷害、百分比傷害或真實傷害）。
-                      </p>
-                    </div>
-                    <div className="p-3.5 bg-slate-800/40 rounded-xl border border-slate-700/50">
-                      <h4 className="text-xs font-bold text-cyan-400 mb-1 flex items-center justify-between">
-                        <span>護罩 (Barrier)</span>
-                        <span className="text-[9px] bg-cyan-500/20 text-cyan-300 px-1.5 py-0.5 rounded">抵擋粉傷</span>
-                      </h4>
-                      <p className="text-xs text-slate-300 leading-relaxed">
-                        專門抵擋固定傷害與百分比傷害等特殊傷害（在護罩破裂前，保護本體血量安全）。<strong className="text-amber-300">注意：真實傷害與招式直接造成的攻擊傷害無法被護罩抵擋或吸收。</strong>
-                      </p>
-                    </div>
-                    <div className="p-3.5 bg-slate-800/40 rounded-xl border border-slate-700/50 hover:border-blue-500/30 transition-colors">
-                      <h4 className="text-xs font-bold text-indigo-400 mb-1 flex items-center justify-between">
-                        <span>反彈 (Reflect) & 反彈攻擊傷害</span>
-                        <span className="text-[9px] bg-indigo-500/20 text-indigo-300 px-1.5 py-0.5 rounded">防死循環</span>
-                      </h4>
-                      <p className="text-xs text-slate-300 leading-relaxed mb-1.5">
-                        <strong className="text-slate-200">反彈：</strong>一種特殊的附加，被反彈的效果不會被再次反彈。
-                      </p>
-                      <p className="text-xs text-slate-300 leading-relaxed">
-                        <strong className="text-slate-200">反彈(攻擊)傷害：</strong>一種特殊的附加，被反彈的效果不會被再次反彈給自己，真實傷害不受此限但是不會多附加 1 次。
-                      </p>
-                    </div>
-                  </div>
-                </div>
-
-                {/* 4. 對象與能力範圍 */}
-                <div className="bg-slate-900/50 border border-slate-800 p-6 rounded-2xl space-y-4 flex flex-col">
-                  <div className="flex items-center gap-3 border-b border-slate-800/80 pb-3">
-                    <div className="p-2 bg-emerald-500/10 rounded-lg">
-                      <Target className="w-5 h-5 text-emerald-400" />
-                    </div>
-                    <div>
-                      <h3 className="text-base font-bold text-slate-200">作用對象與能力範圍</h3>
-                      <p className="text-[11px] text-slate-500">界定團隊標記與屬性範圍</p>
-                    </div>
-                  </div>
-                  <div className="space-y-3 flex-1">
-                    <div className="p-3.5 bg-slate-800/40 rounded-xl border border-slate-700/50 hover:border-emerald-500/30 transition-colors">
-                      <h4 className="text-xs font-bold text-emerald-400 mb-1 flex items-center justify-between">
-                        <span>全屬性 (All Stat Stages)</span>
-                        <span className="text-[9px] bg-emerald-500/20 text-emerald-300 px-1.5 py-0.5 rounded">六大能力</span>
-                      </h4>
-                      <p className="text-xs text-slate-300 leading-relaxed">
-                        即攻擊、防禦、特攻、特防、速度、命中共 6 種能力的等級（不包含閃避與體力上限）。
-                      </p>
-                    </div>
-                    <div className="p-3.5 bg-slate-800/40 rounded-xl border border-slate-700/50 hover:border-emerald-500/30 transition-colors">
-                      <h4 className="text-xs font-bold text-teal-400 mb-1 flex items-center justify-between">
-                        <span>對方 / 己方 (Team & Player Scope)</span>
-                        <span className="text-[9px] bg-teal-500/20 text-teal-300 px-1.5 py-0.5 rounded">團隊/場地範圍</span>
-                      </h4>
-                      <p className="text-xs text-slate-300 leading-relaxed">
-                        與己方對應的一種特殊對象，包含玩家本身與從屬於玩家的所有精靈；綁定己方/對方的效果（如陣營護盾、團隊特效）不會作為綁定在任意單體精靈的效果進行結算。
-                      </p>
-                    </div>
-                    <div className="p-3.5 bg-slate-800/40 rounded-xl border border-slate-700/50">
-                      <h4 className="text-xs font-bold text-amber-400 mb-1">真實回合持續法則</h4>
-                      <p className="text-xs text-slate-400 leading-relaxed">
-                        當前標記為「n 回合」的異常在經過 n 個完整回合結算後消退；控制類計時器在回合結束時遞減；轉化效果在消退瞬間觸發。
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
+          {activeTab === 'opCodes' && (<OpCodePanel key={opFocus} initialQuery={opFocus} />)}
 
           {activeTab === 'effectQuery' && (
             <div className="space-y-6 animate-fade-in pb-8">
@@ -1585,7 +1432,7 @@ const Encyclopedia: React.FC<EncyclopediaProps> = ({ onClose, initialTab = 'elve
           )}
 
         </div>
-
+        </div>
       </div>
     </motion.div>
   );

@@ -13,6 +13,8 @@ import {getTypeMatchup} from '../utils/statCalculator';
 export { skillPropertyIssue } from './sequenceContract';
 
 export function readAttachedSureHit(skill:any,ctx:any):boolean {
+  const timers=ctx.actor==='p1'?ctx.p1Timers:ctx.p2Timers;
+  if(skill?.category!=='屬性'&&(timers||[]).some((t:any)=>t.remaining>0&&!t.pendingActivation&&(!t.ownerBattleId||t.ownerBattleId===(ctx.self.battleId||ctx.self.id))&&t.payload?.block?.sureHit))return true;
   // 純命中預覽的pseudoCtx沒有狀態API；正式引擎已在前置轉換讀過完整上下文。
   // 缺少API時不能擅自假定附加封印為0，也不能為不含此屬性的普通Kit拋錯。
   if(skill?.effectMode!=='kit'||typeof ctx.getPlayerState!=='function')return false;
@@ -29,14 +31,18 @@ export function applyFormulaProperties(skill:any,ctx:any) {
   const resolvedTypeMultiplier=readSkillProperty(skill,'fixed_type_multiplier',ctx);
   const accuracy=readSkillProperty(skill,'base_accuracy',ctx);
   const power=readSkillProperty(skill,'base_power',ctx);
+  const resolvedBaseCritChance=readSkillProperty(skill,'base_crit_chance',ctx);
   const resolvedAttackStats=readSkillProperty(skill,'attack_stat_sum',ctx);
-  const resolvedForceStab=readSkillProperty(skill,'force_stab',ctx)===true;
-  const preferred=readSkillProperty(skill,'preferred_types',ctx) as string[]|undefined;
+  const timers=ctx.actor==='p1'?ctx.p1Timers:ctx.p2Timers;
+  const forceStab=(timers||[]).some((t:any)=>t.remaining>0&&!t.pendingActivation&&(!t.ownerBattleId||t.ownerBattleId===(ctx.self.battleId||ctx.self.id))&&t.payload?.block?.forceStab);
+  const resolvedForceStab=forceStab||readSkillProperty(skill,'force_stab',ctx)===true;
+  const resolvedNeutralStab=readSkillProperty(skill,'force_stab',ctx)==='neutral';
+  const preferred=(readSkillProperty(skill,'preferred_type_history',ctx)?ctx.self.typeHistory:readSkillProperty(skill,'preferred_types',ctx)) as string[]|undefined;
   const type=preferred?.reduce((best,next)=>getTypeMatchup(next,ctx.target.type)>getTypeMatchup(best,ctx.target.type)?next:best);
   const resolvedStageViews=!innateAllowed(ctx)?[]:(skill.kit||[]).filter((e:KitEntry)=>e.codeId==='skill_property'&&e.params.property==='stage_view'&&!skillPropertyIssue(e)&&e.params.conditions.every((c:any)=>evalCond(ctx,c,{last:null,lastAmount:0})===true)).map((e:KitEntry)=>e.params.value);
   if(resolvedStageViews.includes('opp_up_as_down'))ctx.setPlayerState('oppBoostAsDropThisAction',true);
   if(resolvedStageViews.includes('self_down_as_opp_down'))ctx.setPlayerState('selfDropAsOppDropThisAction',true);
-  return {...skill,resolvedCombatStats,resolvedTypeMultiplier,resolvedStageViews,resolvedAttackStats,resolvedForceStab,...(type?{type}:{}),...(accuracy===undefined?{}:{accuracy}),...(power===undefined?{}:{power}),...(skillTransformPatch(skill,ctx,evalCond)||{})};
+  return {...skill,resolvedBaseCritChance,resolvedCombatStats,resolvedTypeMultiplier,resolvedStageViews,resolvedAttackStats,resolvedForceStab,resolvedNeutralStab,...(type?{type}:{}),...(accuracy===undefined?{}:{accuracy}),...(power===undefined?{}:{power}),...(skillTransformPatch(skill,ctx,evalCond)||{})};
 }
 
 /** 「只有…才能命中」先於必中判定；條件不符時不能被必中繞過。 */
@@ -88,7 +94,7 @@ export function applyPowerProperties(skill:any,ctx:any){
 
 /** 先於裝備／魂印／狀態減傷，僅攻擊傷害，不等於繞過傷害上限、抵擋或護盾。 */
 export function skillReductionPolicy(ctx:any,skill:any,policy:ReductionPolicy):ReductionPolicy{
-  return readSkillProperty(skill,'ignore_damage_reduction',ctx)===true?{...policy,attenuation:0}:policy;
+  return (ctx.getPlayerState?.('ignoreDamageReductionThisAction')===true||readSkillProperty(skill,'ignore_damage_reduction',ctx)===true)?{...policy,attenuation:0}:policy;
 }
 
 /**

@@ -1,3 +1,4 @@
+import { aiBan, aiPick } from './destinyDraftAi';
 import { Elf } from "../types";
 import { getElfDisplayRank } from "./elfDisplayRank";
 
@@ -133,56 +134,17 @@ export function pullFromDestinyPool(candidates: DestinyElfInstance[], rng:()=>nu
 }
 
 /**
- * 模擬 AI Ban 掉對手的 3 隻精靈
- * AI 策略：優先 Ban 掉對手的 S 級，其次 Ban 掉極度噁心的 C 級攔截（例如封技或索魂），再來是 A 級
+ * 模擬 AI Ban 掉對手的 3 隻精靈：威脅＝實戰價值（勝率資料＋等級先驗＋攔截）＋對 AI 池子的屬性剋制。
  */
-export function simulateAiBan(playerPool: DestinyElfInstance[], count: number = 3): string[] {
-  const sortedForBan = [...playerPool].sort((a, b) => {
-    // 權重估算
-    const getBanWeight = (e: DestinyElfInstance) => {
-      if (e.destinyRank === 'S') return 100 + (e.calculatedStats.hp || 0) * 0.1;
-      // C 級封技與悲歌護盾在巔峰戰術威脅極大
-      if (e.destinyRank === 'C' && e.interceptorEffect) {
-        if (e.interceptorEffect.id === 'block_attack' || e.interceptorEffect.id === 'dirge_shield') return 85;
-        return 65;
-      }
-      if (e.destinyRank === 'A') return 70;
-      return 50;
-    };
-    return getBanWeight(b) - getBanWeight(a);
-  });
-
-  return sortedForBan.slice(0, count).map(e => e.instanceId);
+export function simulateAiBan(playerPool: DestinyElfInstance[], count: number = 3, aiPool: DestinyElfInstance[] = []): string[] {
+  // 2026-11-07：改為依實戰分數＋屬性對位（見 destinyDraftAi.ts）；傳入 AI 自己的池子時會禁掉最剋我方的精靈。
+  return aiBan(playerPool, aiPool, count);
 }
 
 /**
  * 模擬 AI 從剩下的 9 隻中，挑選 6 隻出戰陣容並決定首發
  */
-export function simulateAiPick(aiPool: DestinyElfInstance[]): { pickedIds: string[]; starterId: string } {
-  const available = aiPool.filter(e => !e.isBanned);
-  
-  // 優先挑選 S 級、強力 A 級與戰術 C 級
-  const sortedForPick = [...available].sort((a, b) => {
-    const getPickWeight = (e: DestinyElfInstance) => {
-      if (e.destinyRank === 'S') return 100;
-      if (e.destinyRank === 'C' && e.interceptorEffect) return 80; // AI 也愛用攔截卡！
-      if (e.destinyRank === 'A') return 75;
-      return 50;
-    };
-    return getPickWeight(b) - getPickWeight(a);
-  });
-
-  const picked = sortedForPick.slice(0, 6);
-  const pickedIds = picked.map(e => e.instanceId);
-  
-  // AI 首發邏輯：喜歡把帶有【時空枷鎖】或【封技攔截】的 C 級攔截卡設為首發，或是直接出 S 級主神壓場！
-  let starter = picked.find(e => e.destinyRank === 'C' && (e.interceptorEffect?.id === 'pp_chain' || e.interceptorEffect?.id === 'block_attack'));
-  if (!starter) {
-    starter = picked.find(e => e.destinyRank === 'S') || picked[0];
-  }
-
-  return {
-    pickedIds,
-    starterId: starter ? starter.instanceId : (pickedIds[0] || "")
-  };
+export function simulateAiPick(aiPool: DestinyElfInstance[], opponentPool: DestinyElfInstance[] = []): { pickedIds: string[]; starterId: string } {
+  // 2026-11-07：改為依實戰分數、對對方剩餘精靈的剋制面、屬性多樣性挑選（見 destinyDraftAi.ts）。
+  return aiPick(aiPool, opponentPool, 6);
 }

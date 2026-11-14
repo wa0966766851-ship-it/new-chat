@@ -6,7 +6,7 @@ const dom=new JSDOM('<div id="root"></div>',{url:'http://localhost'});
 Object.assign(globalThis,{window:dom.window,document:dom.window.document,localStorage:dom.window.localStorage,HTMLElement:dom.window.HTMLElement,Element:dom.window.Element,IS_REACT_ACT_ENVIRONMENT:true});
 Object.defineProperty(globalThis,'navigator',{value:dom.window.navigator,configurable:true});
 const {createRoot}=await import('react-dom/client');
-const server=await createServer({server:{middlewareMode:true,hmr:false,watch:null},appType:'custom',logLevel:'silent'});
+const server=await createServer({configFile:false,optimizeDeps:{noDiscovery:true,include:[]},resolve:{preserveSymlinks:true},server:{middlewareMode:true,hmr:false,watch:null},appType:'custom',logLevel:'silent'});
 let root=createRoot(document.getElementById('root')!);let closed=0;
 try{
  const {DEFAULT_ELVES}=await server.ssrLoadModule('/src/data/defaultElvesLoaded.ts');

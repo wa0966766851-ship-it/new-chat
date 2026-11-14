@@ -45,7 +45,10 @@ try {
   const self2 = h.unit('S', 3000, [sk, h.wait()], { maxHp: 3000 });
   // 回合1：自身先制+2 出劫盡歸塵（免疫2次建檔、對手隨機3技能PP歸0）；回合2-4：對手連發詛咒、自身等待
   // 對手帶 6 技（詛咒＋普攻＋4填充）：隨機3個歸0後仍有可選技能，不會卡在選招。
-  const r2 = await h.play('p1', { self: self2, opp: h.unit('E', 100000, [curse, attack, filler('技B'), filler('技C'), filler('技D'), filler('技E')]),
+  // 2026-11-14：雙方三異常改為預設 3 回合後，對手約第 3 回合被異常耗盡；對手加回合末恢復 20000，讓三次詛咒都能發生。
+  const sustain = { name: '續航', effectMode: 'kit', kit: [{ codeId: 'effect_sequence', node: 'round_end', source: 'mechanic', role: 'innate', order: 0, customText: '回合末恢復',
+    params: { clause: { raw: '回合末恢復', trig: 'round_end', parsed: true, body: [{ acts: [{ op: 'heal_flat', p: { amount: 20000 }, label: '恢復' }] }] } } }] };
+  const r2 = await h.play('p1', { self: self2, opp: h.unit('E', 100000, [curse, attack, filler('技B'), filler('技C'), filler('技D'), filler('技E')], { extra: { trait: sustain } }),
     turns: (_e, t) => [t === 1 ? 0 : 1, t === 1 ? 1 : 0] }, 5);
   // 日誌為全程累積快照：以最終回合快照斷言全程事實。
   const final = r2[4], allLogs: string[] = final.logs;
@@ -54,8 +57,8 @@ try {
   assert.equal(count('劫盡歸塵·免疫回饋】剩餘 1 次'), 1, '第一次免疫回饋花用');
   assert.equal(count('劫盡歸塵·免疫回饋】剩餘 0 次'), 1, '第二次免疫回饋花用');
   checks++;
-  // 第一次回饋：恢復⅓（1000點）；第二次回饋時已滿血（0點，受已損失上限約束）
-  assert.equal(count('恢復了 1000 點體力'), 1, '免疫回饋恢復⅓（1000點）一次');
+  // 2026-11-14：三異常改預設 3 回合，第二次回饋時自身仍在異常扣血中（未因異常結束而痊癒），兩次都恢復⅓（1000點）。
+  assert.equal(count('恢復了 1000 點體力'), 2, '免疫回饋各恢復⅓（1000點）');
   checks++;
   // 免疫回饋造成對手等量百分比傷害
   assert.ok(final.opp.currentHp < 100000, '免疫回饋造成對手百分比傷害');

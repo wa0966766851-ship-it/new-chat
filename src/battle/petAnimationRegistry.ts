@@ -21,7 +21,10 @@ export function petAnimationBinding(elf:Pick<Elf,'id'|'name'|'skinId'|'path'> & 
  // 但 id／名稱都不是 '70'／'雷伊'，舊邏輯會落到 null 而沒有動態圖。
  if(elf.seerId!=null && elf.seerId!==''){
   const bySeerId=BY_SEER_ID.get(Number(elf.seerId));
-  if(bySeerId) return bySeerId;
+  if(bySeerId){
+   const meta=PET_ANIMATION_ASSETS[bySeerId];
+   if(!elf.path||!/^(\/|https?:|data:)/.test(elf.path)||("body" in meta&&elf.path===meta.body)||elf.path===`/seer/body/${Number(elf.seerId)}.png`)return bySeerId;
+  }
  }
  // 已核對的官方完整 URL 僅開放該素材本身，不讓自繪圖誤接同名動畫。
  const named=BY_NAME.get(elf.name);

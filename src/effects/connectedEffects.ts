@@ -29,16 +29,20 @@ export function runConnectedKit(node: Node, definition: EffectDefinition, ctx: B
   const runnable: KitEntry[] = [];
   for (const entry of definition.kit || []) {
     if (entry.node !== node) continue;
+    // 失敗出招只補「已使用後」條款；成功級收尾及其他原子不得跟著重播。
+    if((ctx as any).failedUseOnly&&(entry.codeId!=='effect_sequence'||entry.params?.clause?.trig!=='self_after_use'))continue;
     if (!!TEAM_KIT_TRIGGERS[entry.params?.clause?.trig] !== !!(ctx as any).teamKitObserver) continue;
     if (entry.source === 'skill') {
       if (entry.role === 'innate' && ctx.self.isInherentInvalid) continue;
-      if ((entry.role || 'attached') === 'attached' && !(ctx as any).forcedHitEffects && ((ctx as any).additionalEffectsEnabled === false || ctx.self.isAdditionalInvalid || ctx.getPlayerState?.('additionalEffectsSealed') || ctx.getPlayerState?.(`${ctx.actor}_sealSkillAdditionalEffects`))) continue;
+      // 技能無效時的附加效果：技能本身無效不等於附加效果失效（仍受附加效果失效／封印限制）。
+      if ((entry.role || 'attached') === 'attached' && !(ctx as any).forcedHitEffects && (((ctx as any).additionalEffectsEnabled === false && entry.node !== 'on_invalid') || ctx.self.isAdditionalInvalid || ctx.getPlayerState?.('additionalEffectsSealed') || ctx.getPlayerState?.(`${ctx.actor}_sealSkillAdditionalEffects`))) continue;
     }
     const issue = kitEntryIssue(entry);
     if (issue) ctx.addLog(`【效果待接通】${definition.name}：${entry.customText || entry.codeId}；${issue}`, 'effect');
     else runnable.push(entry);
   }
-  return runNode(node, runnable, {}, ctx) === true;
+  const namedContext=Object.create(ctx);namedContext.effectDefinitionName=definition.name;
+  return runNode(node, runnable, {}, namedContext) === true;
 }
 
 /** 同義事件只採一個正式時點，避免入場／致死／行動結束各觸發多次。 */
@@ -46,6 +50,7 @@ export function connectedEventNodes(event: EffectTiming, data: any, battleStart 
   if (event === EffectTiming.ON_DAMAGED && data?.targetSide && data.targetSide !== data.holderSide) return /^skill_/.test(data.damageType||'')?['on_opponent_damaged']:[];
   const node = eventEffectNode(event);
   const nodes: Node[] = node ? [node, 'any_battle_node'] : [];
+  if(event===EffectTiming.ACTION_FAILED)nodes.push('after_action');
   if (event === EffectTiming.PP_CHANGED && isPpConsumption(event,data)) nodes.push('pp_consumed');
   if(event===EffectTiming.PP_CHANGED&&data?.reason==='clear'&&data.emptied?.length)nodes.push('pp_cleared');
   if (event === EffectTiming.ON_PP_CONSUME && !isPpConsumption(event,data)) return [];
@@ -80,6 +85,7 @@ export function runConnectedLifecycle(ctx: BattleEventContext, event: EffectTimi
   const soulKit = usesAuthoredSoul(elf, hasSoulHandler) && effectRoute(definition, hasSoulHandler) === 'kit';
   let survived=false;
   for (const node of nodes) {
+    nodeCtx.failedUseOnly=event===EffectTiming.ACTION_FAILED&&node==='after_action';
     if (soulKit) survived=runConnectedKit(node,teamRound?{...definition,kit:definition.kit?.filter(e=>e.codeId==='effect_sequence'&&e.params.clause.trig==='team_round_start')}:definition,nodeCtx)||survived;
     /**
      * 2026-10-30：去重必須按「持有者」區分。
@@ -117,8 +123,10 @@ export function runConnectedLifecycle(ctx: BattleEventContext, event: EffectTimi
       // 本次使用槽命中由 runSkillBlocks(after_hit) 執行，這裡只補其他槽的攜帶監控。
       if ((node === 'on_hit' || node === 'on_invalid') && selectedSlot) continue;
       // 攜帶效果可監控裝備中的技能；固有／附加只屬於本次使用槽，不能因裝備就每回合觸發。
+      // 本次出手失敗（技能無效／未命中等）時，本次使用槽的附加效果不在「未擊敗對手」節點補觸發。
+      const failedAttached = (e: any) => node === 'on_not_killed' && data?.actionFailed === true && (e.role || 'attached') === 'attached';
       const kit = skill.kit?.filter(e => e.role === 'carried' || (node !== 'on_hit' && !data?.damageComp?.isIncoming && !data?.isIncoming &&
-        (selectedSlot || transformedInnateSlot && e.role === 'innate')));
+        (selectedSlot || transformedInnateSlot && e.role === 'innate') && !failedAttached(e)));
       survived=runConnectedKit(node, { ...skill, kit }, nodeCtx)||survived;
     }
   }

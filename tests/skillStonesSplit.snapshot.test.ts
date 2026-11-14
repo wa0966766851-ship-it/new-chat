@@ -4,6 +4,7 @@
 // 2026-10-12 情境修正：引擎依原廠規則拒絕選 PP 為 0 的技能（skillSelectable）。「自然石之力-S（attr_nature_pp）」的一般持有者
 // 會在第 14 回合把自身技能石 PP 降到 2、第 16 回合歸 0，舊情境仍每回合選它（非法行動）。現在石頭 PP 為 0 時改選第 2 招「等待」。
 // 只重產受影響的 4 份情境（自然石之力-S｜normal-slow／normal-fast × p1／p2，PP 歸 0 之後的回合）；其餘 206 份一字未動。
+// 2026-11-14 使用者裁定：描述未寫回合數的異常一律預設 3 回合（技能石 -S 原為 2）。重產附加異常的 10 種石頭共 44 份情境（異常多持續 1 回合），其餘 166 份不變。
 import assert from 'node:assert/strict';
 import { readFileSync, writeFileSync, existsSync } from 'node:fs';
 import { createHarness } from './helpers/migrationHarness';

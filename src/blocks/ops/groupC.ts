@@ -69,7 +69,9 @@ export function groupCOperations(h: { liveElf: (ctx: BattleEventContext, side: S
       return true;
     },
     type_best_of: (ctx, p) => {
-      ctx.setPlayerState('blkTypeOverride', [...p.types]);
+      const types=p.fromCarried?[...new Set(ctx.self.skills.flatMap((s:any)=>s.type.split(/[.·・]/)).filter((t:string)=>!['無','無屬性'].includes(t)))]:p.types;
+      if(!types.length)return false;
+      ctx.setPlayerState('blkTypeOverride', [...types]);
       ctx.setPlayerState('blkTypeOverrideUses', 1);
       ctx.setPlayerState('blkTypeOverrideCurrentAction', true);
       ctx.setPlayerState('blkTypeOverrideExtend', p.extend);

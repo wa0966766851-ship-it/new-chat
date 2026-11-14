@@ -3,8 +3,8 @@ import assert from "node:assert/strict";
 import ts from "typescript";
 import { getDeconstructedProfile } from "../src/effects/abilityRegistry";
 
-/** 首頁只需要技能描述與類型等欄位，不必讀入完整魂印／戰鬥解構資料。 */
-const source = ts.createSourceFile("defaultElves.ts", readFileSync("src/data/defaultElves.ts", "utf8"), ts.ScriptTarget.Latest, true);
+/** 2026-11-14：createRefSkill 呼叫已搬到 defaultElfSeedsSource.ts。首頁只需要技能描述與類型等欄位，不必讀入完整魂印／戰鬥解構資料。 */
+const source = ts.createSourceFile("defaultElfSeedsSource.ts", readFileSync("src/data/defaultElfSeedsSource.ts", "utf8"), ts.ScriptTarget.Latest, true);
 const fields = ["category", "type", "accuracy", "alwaysHit", "isSureHit", "isFifthSkill"];
 const references: Record<string, Record<string, unknown>> = {};
 let count = 0;

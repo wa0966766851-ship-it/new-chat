@@ -291,7 +291,7 @@ export const SUIT_CATALOG: Record<string, SuitDefinition> = {
     id: "holy_sanctuary",
     name: "聖芒佑界套裝",
     badge: "聖芒",
-    description: "己方精靈體力+100點，其他能力+80點；己方在場精靈抗性中的唯一最高項觸發機率提升至100%，其餘項機率減少至0%；自身進入的異常狀態最高為2回合；自身異常抗性觸發時，恢復自身最大體力的30%，每生效1次比例減少5%，下場時重置。（因異常抗性沒有實裝，現僅作為佔位符號，受到異常觸發並降低比例直到歸0）。",
+    description: "己方精靈體力+100點，其他能力+80點；己方在場精靈抗性中的唯一最高項觸發機率提升至100%，其餘項機率減少至0%；自身進入的異常狀態最高為2回合；自身異常抗性觸發時，恢復自身最大體力的30%，每生效1次比例減少5%，下場時重置。",
     statBonus: { hp: 100, atk: 80, def: 80, spatk: 80, spdef: 80, speed: 80 },
     effects: {
       hasCustomHandler: true

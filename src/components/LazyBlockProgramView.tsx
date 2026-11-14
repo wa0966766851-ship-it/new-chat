@@ -23,7 +23,7 @@ export default function LazyBlockProgramView(props: { elf?: Elf; skill?: Skill; 
   const definition = props.skill || props.trait || (props.elf && soulDefinition(props.elf));
   return <div className="space-y-3">{definition && <>
     <details className="rounded-xl border border-white/10 p-3"><summary className="cursor-pointer text-sm text-slate-300">原文階層與補充說明</summary>
-      <EffectDescription description={definition.description} className="mt-3 text-slate-200" />
+      <EffectDescription skill={props.skill} description={definition.description} className="mt-3 text-slate-200" />
     </details>
     <DefaultEffectBlocks draft={defaultEffectKit(definition,props.skill?'skill':'soul')} />
   </>}

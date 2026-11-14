@@ -1,5 +1,7 @@
 ﻿import { effectiveStatusTable } from '../battle/statusRules';
 import {hasPortableDuel} from '../battle/portableSkillMarks';
+import {DIFU_AMULET} from '../data/difuItem';
+import {NAIFEN_GRASS,NAIFEN_FORMS} from '../data/naifenItems';
 // src/utils/battleHelpers.ts
 import { Elf, Skill, BattleItem } from "../types";
 import { isStoneThrower, isSkillStone, stoneBasePp } from "../data/skillStones";
@@ -126,7 +128,76 @@ export const isCthyaat = (elf: Elf | undefined | null): boolean => {
 };
 
 // ── PP 值限制
+/**
+ * 2026-11-07 擴充藥劑（使用者規格：窮舉藥劑反噬傷害、干擾、持續恢復、附加異常、附屬強化）。
+ * 全部走 applyBattleItem 同一結算；藥劑反噬中依規則反轉（見 battle/itemInventory.ts）。
+ * 函式宣告（會提升）：讓上方 BATTLE_ITEMS 可直接展開。
+ */
+function EXTENDED_POTIONS(): BattleItem[] {
+  const out: BattleItem[] = [];
+  const push = (item: Omit<BattleItem, 'type'> & { type?: BattleItem['type'] }) => out.push({ type: 'hybrid', ...item } as BattleItem);
+  // ── 攻擊・干擾：藥劑反噬傷害（無視傷害減免與傷害限制；綠字黃框負數）
+  for (const [n, name] of [[100, '微光反噬藥劑'], [200, '灼光反噬藥劑'], [300, '烈光反噬藥劑'], [500, '極光反噬藥劑']] as const)
+    push({ id: `atk_dmg_${n}`, name, description: `對對手在場精靈造成 ${n} 點藥劑反噬傷害（無視傷害減免與傷害限制）。`, oppDamage: n, stock: 10 });
+  for (const [n, name] of [[10, '一成反噬藥劑'], [20, '二成反噬藥劑'], [30, '三成反噬藥劑']] as const)
+    push({ id: `atk_pct_${n}`, name, description: `對對手在場精靈造成其最大體力 ${n}% 的藥劑反噬傷害（無視傷害減免與傷害限制）。`, oppDamagePercent: n, stock: 10 });
+  for (const [n, name] of [[1, '微量抽能藥劑'], [2, '抽能藥劑'], [3, '強效抽能藥劑']] as const)
+    push({ id: `atk_pp_${n}`, name, description: `扣除對手在場精靈每個技能 ${n} 點 PP 值。`, oppPpDrain: n, stock: 10 });
+  push({ id: 'atk_dmg_pp', name: '蝕能反噬藥劑', description: '對對手在場精靈造成 150 點藥劑反噬傷害，並扣除每個技能 1 點 PP 值。', oppDamage: 150, oppPpDrain: 1, stock: 10 });
+  push({ id: 'atk_pct_pp', name: '潰能反噬藥劑', description: '對對手在場精靈造成其最大體力 15% 的藥劑反噬傷害，並扣除每個技能 2 點 PP 值。', oppDamagePercent: 15, oppPpDrain: 2, stock: 5 });
+  // 干擾：藥劑反噬／禁止藥劑／禁止切換（對手；反噬中改為自己）
+  for (const n of [1, 2, 3]) push({ id: `atk_backlash_${n}`, name: `反轉藥劑・${n}`, description: `令對手全隊 ${n} 回合進入藥劑反噬（期間藥劑效果反轉）。`, oppPotionBacklash: n, stock: 5 });
+  for (const n of [1, 2, 3]) push({ id: `atk_itemlock_${n}`, name: `封藥藥劑・${n}`, description: `令對手全隊 ${n} 回合無法使用藥劑。`, oppItemLock: n, stock: 5 });
+  for (const n of [1, 2]) push({ id: `atk_switchlock_${n}`, name: `縛足藥劑・${n}`, description: `令對手在場精靈 ${n} 回合無法主動切換。`, oppSwitchLock: n, stock: 5 });
+  push({ id: 'atk_backlash_dmg', name: '反噬引爆藥劑', description: '對對手在場精靈造成 200 點藥劑反噬傷害，並令對手全隊 2 回合進入藥劑反噬。', oppDamage: 200, oppPotionBacklash: 2, stock: 3 });
+  push({ id: 'atk_seal_all', name: '全封藥劑', description: '令對手全隊 2 回合無法使用藥劑，並令對手在場精靈 2 回合無法主動切換。', oppItemLock: 2, oppSwitchLock: 2, stock: 3 });
+  // ── 附加異常（對手在場精靈；已處於則重置回合；反噬中改為自身進入）
+  const inflict: [string, string, string, number][] = [
+    ['麻痺', 'paralysis', '麻痺藥劑', 2], ['害怕', 'fear', '驚懼藥劑', 2], ['睡眠', 'sleep', '催眠藥劑', 2], ['疲憊', 'fatigue', '倦怠藥劑', 2], ['石化', 'petrify', '石化藥劑', 2],
+    ['冰封', 'icebound', '冰封藥劑', 2], ['焚燼', 'cinder', '焚燼藥劑', 2], ['感染', 'infect', '感染藥劑', 2],
+    ['中毒', 'poison', '毒素藥劑', 3], ['燒傷', 'burn', '灼燒藥劑', 3], ['凍傷', 'frostbite', '凍傷藥劑', 3], ['寄生', 'parasite', '寄生藥劑', 3], ['混亂', 'confuse', '混亂藥劑', 3],
+    ['衰弱', 'weaken', '衰弱藥劑', 3], ['流血', 'bleed', '裂傷藥劑', 3], ['失明', 'blind', '致盲藥劑', 3], ['束縛', 'bind', '束縛藥劑', 3], ['沉默', 'silence', '沉默藥劑', 3], ['繳械', 'disarm', '繳械藥劑', 3],
+    // 2026-11-14：補齊其餘異常（每種異常至少一款單一藥劑）。控制類 2 回合、其餘 3 回合。
+    ['狂信', 'zealot', '狂信藥劑', 2], ['癱瘓', 'cripple', '癱瘓藥劑', 2], ['詛咒', 'curse', '詛咒藥劑', 2], ['神游', 'trance', '神游藥劑', 2], ['空定', 'stasis', '空定藥劑', 2],
+    ['沉睡', 'slumber', '沉睡藥劑', 2], ['神悔', 'repent', '神悔藥劑', 2], ['眩暈', 'dizzy', '眩暈藥劑', 2],
+    ['魘昧', 'nightmare', '魘昧藥劑', 3], ['失溫', 'hypothermia', '失溫藥劑', 3], ['凝滯', 'stagnate', '凝滯藥劑', 3],
+    ['易燃', 'flammable', '易燃藥劑', 3], ['失神', 'daze', '失神藥劑', 3], ['臣服', 'submit', '臣服藥劑', 3], ['沸湧', 'boil', '沸湧藥劑', 3],
+    ['腐朽', 'decay', '腐朽藥劑', 3], ['遲鈍', 'sluggish', '遲鈍藥劑', 3], ['窒息', 'suffocate', '窒息藥劑', 3],
+  ];
+  for (const [status, key, name, turns] of inflict)
+    push({ id: `inflict_${key}`, name, description: `令對手在場精靈進入 ${turns} 回合【${status}】（已處於則重置為 ${turns} 回合）。`, inflictStatuses: [{ name: status, turns }], stock: 5 });
+  // 複合藥劑規則：最多 2 種異常、同類型（控制／弱化）最多 1 種。原「中毒＋燒傷」同屬弱化，改為中毒＋焚燼。
+  push({ id: 'inflict_poison_burn', name: '劇毒烈焰藥劑', description: '令對手在場精靈進入 3 回合【中毒】與 2 回合【焚燼】。', inflictStatuses: [{ name: '中毒', turns: 3 }, { name: '焚燼', turns: 2 }], stock: 3 });
+  push({ id: 'inflict_paralysis_poison', name: '麻毒雙生藥劑', description: '令對手在場精靈進入 2 回合【麻痺】與 3 回合【中毒】。', inflictStatuses: [{ name: '麻痺', turns: 2 }, { name: '中毒', turns: 3 }], stock: 3 });
+  push({ id: 'inflict_dmg', name: '腐蝕反噬藥劑', description: '對對手在場精靈造成 100 點藥劑反噬傷害並令其進入 3 回合【中毒】。', oppDamage: 100, inflictStatuses: [{ name: '中毒', turns: 3 }], stock: 3, category: 'inflict' });
+  // ── 強化狀態（自身在場精靈的附屬狀態；反噬中改為解除這些狀態）
+  const buffs: [string, string, string][] = [['狂暴', 'rage', '狂暴藥劑'], ['平靜', 'calm', '平靜藥劑'], ['砥礪', 'hone', '砥礪藥劑'], ['超頻', 'overclock', '超頻藥劑'],
+    ['星賜', 'stargift', '星賜藥劑'], ['星佑', 'starbless', '星佑藥劑'], ['星護', 'starguard', '星護藥劑'], ['星哲', 'starsage', '星哲藥劑'], ['山神守護', 'mountain', '山神守護藥劑']];
+  for (const [status, key, name] of buffs)
+    push({ id: `buff_${key}`, name, description: `自身在場精靈進入 3 回合【${status}】（已處於則重置為 3 回合）。`, selfStatuses: [{ name: status, turns: 3 }], stock: 5 });
+  push({ id: 'buff_heal_rage', name: '狂暴復甦藥劑', description: '回復 150 點體力並進入 3 回合【狂暴】。', value: 150, selfStatuses: [{ name: '狂暴', turns: 3 }], stock: 3, category: 'buff' });
+  // ── 持續恢復（之後數回合每回合結束；在場／不在場／額外，或其中兩種）
+  const sets: [('active' | 'bench' | 'extra')[], string, string][] = [
+    [['active'], 'a', '在場'], [['bench'], 'b', '後援'], [['extra'], 'x', '額外'],
+    [['active', 'bench'], 'ab', '在場與後援'], [['active', 'extra'], 'ax', '在場與額外'], [['bench', 'extra'], 'bx', '後援與額外'],
+  ];
+  const who = (t: string[]) => t.map(x => ({ active: '在場', bench: '不在場', extra: '額外' } as any)[x]).join('與');
+  for (const [targets, key, short] of sets) {
+    push({ id: `regen_hp_${key}`, name: `${short}・持續體力藥劑`, description: `之後 3 回合每回合結束，${who(targets)}精靈恢復最大體力 10% 的體力。`, regen: { turns: 3, hpPercent: 10, targets }, stock: 10 });
+    push({ id: `regen_pp_${key}`, name: `${short}・持續活力藥劑`, description: `之後 3 回合每回合結束，${who(targets)}精靈每個技能恢復 1 點 PP 值。`, regen: { turns: 3, pp: 1, targets }, stock: 10 });
+  }
+  push({ id: 'regen_hp_flat_a', name: '在場・定量持續藥劑', description: '之後 4 回合每回合結束，在場精靈恢復 80 點體力。', regen: { turns: 4, hp: 80, targets: ['active'] }, stock: 10 });
+  push({ id: 'regen_both_a', name: '在場・生機持續藥劑', description: '之後 3 回合每回合結束，在場精靈恢復最大體力 8% 的體力與每個技能 1 點 PP 值。', regen: { turns: 3, hpPercent: 8, pp: 1, targets: ['active'] }, stock: 5 });
+  push({ id: 'regen_both_ab', name: '全軍・生機持續藥劑', description: '之後 3 回合每回合結束，在場與不在場精靈恢復最大體力 5% 的體力與每個技能 1 點 PP 值。', regen: { turns: 3, hpPercent: 5, pp: 1, targets: ['active', 'bench'] }, stock: 5 });
+  push({ id: 'regen_pp_pct_a', name: '在場・比例活力持續藥劑', description: '之後 3 回合每回合結束，在場精靈每個技能恢復該技能 PP 上限 10% 的 PP 值（至少 1 點）。', regen: { turns: 3, ppPercent: 10, targets: ['active'] }, stock: 5 });
+  push({ id: 'regen_heal_now', name: '即效持續體力藥劑', description: '立即回復 100 點體力，之後 2 回合每回合結束在場精靈再恢復 100 點體力。', value: 100, regen: { turns: 2, hp: 100, targets: ['active'] }, stock: 5, category: 'regen' });
+  return out;
+}
+
 export const BATTLE_ITEMS: BattleItem[] = [
+  DIFU_AMULET,
+  NAIFEN_GRASS,
+  ...NAIFEN_FORMS,
   { id: 'hp_330', name: '全滿體力藥劑', description: '回復 330 點體力。不受減療影響。', type: 'hp', value: 330 },
   { id: 'hp_300', name: '超級體力藥劑', description: '回復 300 點體力。不受減療影響。', type: 'hp', value: 300 },
   { id: 'hp_250', name: '高級體力藥劑', description: '回復 250 點體力。不受減療影響。', type: 'hp', value: 250 },
@@ -139,26 +210,42 @@ export const BATTLE_ITEMS: BattleItem[] = [
   { id: 'pp_15', name: '中級活力藥劑', description: '回復 15 點 PP 值。', type: 'pp', ppValue: 15 },
   { id: 'pp_10', name: '初級活力藥劑', description: '回復 10 點 PP 值。', type: 'pp', ppValue: 10 },
   { id: 'pp_5', name: '微量活力藥劑', description: '回復 5 點 PP 值。', type: 'pp', ppValue: 5 },
+  // 2026-11-07：百分比藥劑（上限 30%）。體力以最大體力計；PP 以各技能自己的 PP 上限計，至少 1 點。
+  { id: 'hp_pct_30', name: '三成體力藥劑', description: '回復最大體力 30% 的體力。不受減療影響。', type: 'hp', hpPercent: 30 },
+  { id: 'hp_pct_20', name: '二成體力藥劑', description: '回復最大體力 20% 的體力。不受減療影響。', type: 'hp', hpPercent: 20 },
+  { id: 'hp_pct_10', name: '一成體力藥劑', description: '回復最大體力 10% 的體力。不受減療影響。', type: 'hp', hpPercent: 10 },
+  { id: 'pp_pct_30', name: '三成活力藥劑', description: '每個技能回復該技能 PP 上限 30% 的 PP 值（至少 1 點）。', type: 'pp', ppPercent: 30 },
+  { id: 'pp_pct_20', name: '二成活力藥劑', description: '每個技能回復該技能 PP 上限 20% 的 PP 值（至少 1 點）。', type: 'pp', ppPercent: 20 },
+  { id: 'pp_pct_10', name: '一成活力藥劑', description: '每個技能回復該技能 PP 上限 10% 的 PP 值（至少 1 點）。', type: 'pp', ppPercent: 10 },
   { id: 'hybrid_150_2', name: '復甦藥劑', description: '回復 150 點體力與 2 點 PP 值。', type: 'hybrid', value: 150, ppValue: 2 },
   { id: 'special_170_clear', name: '淨化藥劑', description: '回復 170 點體力並解除異常狀態。', type: 'special', value: 170, effect: 'clear_status' },
   { id: 'special_5_debuff', name: '解弱化藥劑', description: '回復 5 點 PP 值並解除能力下降。', type: 'special', ppValue: 5, effect: 'clear_debuff' },
   // 只能由稱號等效果放入道具欄位（grantOnly）；使用前先選擇雙方背包內一隻精靈。
   { id: 'illusion_command', name: '幻化指令', description: '使用成功則恢復在場精靈 200 點體力與所有技能 1 點 PP 值；選擇雙方背包內任一隻精靈，己方下次執行幻化效果時取消原有指定對象改為指定該精靈，無法對消逝的對象執行。',
     type: 'special', value: 200, ppValue: 1, effect: 'set_illusion_target', pickTarget: 'bag_elf', grantOnly: true },
+  ...EXTENDED_POTIONS(),
 ];
 
-// 藥劑分類：恢復體力 / PP值 / 解除異常與弱化 / 複合型 / 特殊
-export type ItemCategory = "hp" | "pp" | "cleanse" | "hybrid" | "special";
+// 藥劑分類：恢復體力 / PP值 / 持續恢復 / 解除異常與弱化 / 複合型 / 攻擊干擾 / 附加異常 / 強化狀態 / 特殊
+export type ItemCategory = "hp" | "pp" | "regen" | "cleanse" | "hybrid" | "offense" | "inflict" | "buff" | "special";
 export const ITEM_CATEGORIES: { key: ItemCategory; label: string }[] = [
   { key: "hp", label: "恢復體力" },
   { key: "pp", label: "PP值" },
+  { key: "regen", label: "持續恢復" },
   { key: "cleanse", label: "解除異常與弱化" },
   { key: "hybrid", label: "複合型" },
+  { key: "offense", label: "攻擊・干擾" },
+  { key: "inflict", label: "附加異常" },
+  { key: "buff", label: "強化狀態" },
   { key: "special", label: "特殊" },
 ];
 export const getItemCategory = (item: BattleItem): ItemCategory => {
-  const c = (item as any).category as ItemCategory | undefined;
+  const c = item.category as ItemCategory | undefined;
   if (c) return c;
+  if (item.regen) return "regen";
+  if (item.selfStatuses?.length) return "buff";
+  if (item.inflictStatuses?.length) return "inflict";
+  if (item.oppDamage || item.oppDamagePercent || item.oppPpDrain || item.oppPotionBacklash || item.oppItemLock || item.oppSwitchLock) return "offense";
   if (item.effect === "clear_status" || item.effect === "clear_debuff") return "cleanse";
   if (item.type === "hp") return "hp";
   if (item.type === "pp") return "pp";

@@ -17,7 +17,7 @@ const STAT_ROWS: [keyof NonNullable<DestinyElfInstance["baseStats"]>, string][] 
 ];
 
 /**
- * 精靈詳情圖版：桌機為右側抽屜，手機為全頁；內容區 overflow-y-auto 並限制 max-h（修 D-05），
+ * 精靈詳情圖版：桌機為置中寬版，手機為全頁；內容區 overflow-y-auto 並限制 max-h（修 D-05），
  * 關閉鈕固定在頂列。魂印／特質走 EffectDescription 層次元件（修 D-06），技能依資料順序並標第五技能（D-09）。
  */
 export function DetailSheet({ elf, owner, mode, blueprint, onClose }: { elf: DestinyElfInstance; owner: Side; mode: BattleViewMode; blueprint: boolean; onClose: () => void }) {
@@ -39,6 +39,7 @@ export function DetailSheet({ elf, owner, mode, blueprint, onClose }: { elf: Des
           <span className="dwb-sheet-kicker">FIG. {String(seed % 100).padStart(2, "0")}</span>
         </div>
         <div className="dwb-sheet-body" data-testid="b-detail-body">
+          <div className="dwb-sheet-profile">
           <header className="dwb-sheet-head">
             <div className="dwb-sheet-art"><ElfAvatar elf={view} battleSide={view.isConcealed ? owner : undefined} kind="body" className="dwb-portrait-img" /></div>
             <div className="dwb-sheet-id">
@@ -65,7 +66,8 @@ export function DetailSheet({ elf, owner, mode, blueprint, onClose }: { elf: Des
               })}
             </ul>
           </section>
-
+          </div>
+          <div className="dwb-sheet-effects">
           <section className="dwb-sec dwb-desc" data-testid="b-detail-soul">
             <h3>魂印 <small>【{view.soulMark?.name || "無"}】</small></h3>
             <EffectDescription description={view.soulMark?.description || "（無記載）"} className="dwb-desc-body" />
@@ -87,8 +89,8 @@ export function DetailSheet({ elf, owner, mode, blueprint, onClose }: { elf: Des
               <RichDescription text={elf.interceptorEffect!.description} className="dwb-desc-body" />
             </section>
           )}
-
-          <section className="dwb-sec" data-testid="b-detail-skills">
+          </div>
+          <section className="dwb-sec dwb-sheet-skills" data-testid="b-detail-skills">
             <h3>技能 <small>{view.skills?.length || 0} 招</small></h3>
             <ol className="dwb-skills">
               {(view.skills || []).map((sk, i) => (
@@ -103,7 +105,7 @@ export function DetailSheet({ elf, owner, mode, blueprint, onClose }: { elf: Des
                       {sk.priority ? `　先制${sk.priority > 0 ? "+" : ""}${sk.priority}` : ""}
                     </span>
                   </div>
-                  <RichDescription text={sk.description} className="dwb-desc-body" />
+                  <EffectDescription skill={sk} description={sk.description} className="dwb-desc-body" />
                 </li>
               ))}
               {!(view.skills || []).length && <li className="dwb-muted">尚無已登記的技能。</li>}

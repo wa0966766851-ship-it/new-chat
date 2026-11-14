@@ -21,3 +21,7 @@
 | 原始資料匯入 | `import_*`、`generate_*`、`build_*codex*`等 | 核對資料來源後使用，不屬於日常打包 |
 
 臨時診斷資料放`build/diagnostics/`，避免新增根目錄散檔。詳見[結構](../docs/PROJECT_STRUCTURE.md)與[桌面指南](../docs/guides/desktop-packaging.md)。
+
+## 散落截圖封存
+
+`npm run housekeeping:screenshots` 預覽工作區父目錄的散落 `_*.png/jpg/webp`；`npm run housekeeping:screenshots -- --apply` 才搬移。搜尋到引用的圖片保留，目的地已有回執時拒絕覆寫；每張圖片的原位置與 SHA256 存在 shots/archive 的 manifest.json。來源、正式圖像與舊專案副本不在此工具的搬移範圍。

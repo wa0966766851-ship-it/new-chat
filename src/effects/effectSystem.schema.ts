@@ -6,10 +6,15 @@
 
 // ── 引擎既有節點(對齊 EffectTiming)。技能=隱含節點；魂印=顯式節點 ──────────
 export type Node =
+  | "battle_node"
+  | "stat_changed"
   | "on_opponent_damaged"
   | "on_opponent_settlement"
   | "on_skill_selected"
   | "modify_power"
+  | "modify_status_mechanic"
+  | "action_phase_enter"
+  | "before_round_start"
   | "on_resource_changed"
   | "battle_start" | "on_entered" | "before_action" | "before_skill" | "before_instant_kill"
   | "before_damage" | "on_hit" | "after_attack_hit" | "on_damaged" | "after_action"
@@ -19,7 +24,7 @@ export type Node =
   | "on_invalid" | "before_switch_out" | "on_switch_out" | "opponent_after_action" | "pp_consumed" | "pp_cleared"
   | "opponent_switch_out"
   | "extra_action_start" | "extra_action_end" | "before_status_apply" | "opponent_entered"
-  | "ally_entered" | "on_status_ended" | "on_status_received" | "on_status_immunized" | "on_damage_immunized" | "before_status_tick" | "on_turn_effects_cleared" | "on_stat_boost_cleared" | "before_stat_change";
+  | "ally_entered" | "on_status_reflected" | "on_status_ended" | "on_status_received" | "on_status_immunized" | "on_damage_immunized" | "before_status_tick" | "on_turn_effects_cleared" | "on_stat_boost_cleared" | "before_stat_change";
 
 // ── 三分類軸(前面談定的)──────────────────────────────────────────────
 export type Role = "innate" | "attached" | "carried";          // ■ 🎯 ◇

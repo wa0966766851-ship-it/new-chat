@@ -1,0 +1,91 @@
+/* 戰鬥跳字與技能名橫幅（2026-11-07）。
+   跳字：沿用原本的出現軌跡，只換字體與配色（參照原廠：粗黑斜體、漸層字、深色描邊）。
+   - 紅：技能傷害；粉：固定／百分比／體力淨減少；綠黃框：回復／體力淨增加；白：真實傷害。
+   - Miss 與技能無效同一種外觀（evade）；附加效果失效改為附屬標籤，跟著同一筆傷害顯示。
+   - 致命一擊：官方「致命一擊」圖示（SeerAPI buff 36）＋金色字＋星芒。 */
+.bpop {
+  --pop-fill: linear-gradient(180deg, #fffbe0 0%, #ffe066 28%, #ff7a1a 60%, #e0140f 100%);
+  --pop-stroke: #3d0404;
+  --pop-glow: rgba(255, 90, 30, .5);
+  font-family: Impact, "Arial Black", Bahnschrift, "Noto Sans TC", sans-serif;
+  font-style: italic;
+  letter-spacing: -.01em;
+  line-height: 1.05;
+  padding: 0 .12em .06em;
+  background: var(--pop-fill);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent !important;
+  -webkit-text-stroke: 3px var(--pop-stroke);
+  paint-order: stroke fill;
+  filter: drop-shadow(0 2px 0 rgba(0, 0, 0, .65)) drop-shadow(0 0 10px var(--pop-glow));
+  white-space: nowrap;
+}
+.bpop.text-3xl { -webkit-text-stroke-width: 2px; }
+.bpop-crit {
+  --pop-fill: linear-gradient(180deg, #ffffff 0%, #fff27a 30%, #ffb000 62%, #ff3d00 100%);
+  --pop-stroke: #4a1300;
+  --pop-glow: rgba(255, 200, 40, .75);
+  font-size: 3.6rem !important;
+}
+.bpop-pink { --pop-fill: linear-gradient(180deg, #ffffff 0%, #ffc6e4 34%, #ff62b4 100%); --pop-stroke: #6a0a3a; --pop-glow: rgba(255, 80, 160, .45); }
+.bpop-heal { --pop-fill: linear-gradient(180deg, #ffffff 0%, #c4ffa8 32%, #2ccf5a 100%); --pop-stroke: #d9a800; --pop-glow: rgba(250, 210, 40, .45); }
+.bpop-potion { --pop-fill: linear-gradient(180deg, #ffffff 0%, #c4ffa8 32%, #2ccf5a 100%); --pop-stroke: #d9a800; --pop-glow: rgba(250, 210, 40, .45); }
+.bpop-true { --pop-fill: linear-gradient(180deg, #ffffff 0%, #e8ecf2 55%, #a9b3c1 100%); --pop-stroke: #14171d; --pop-glow: rgba(255, 255, 255, .35); }
+.bpop-evade, .bpop-notice { --pop-fill: linear-gradient(180deg, #f2f8ff 0%, #bdd0e8 55%, #7f97b8 100%); --pop-stroke: #0f1a2a; --pop-glow: rgba(140, 180, 230, .4); letter-spacing: .02em; }
+
+.bpop-eff {
+  display: inline-block; padding: 1px .55rem; transform: skewX(-10deg);
+  font-family: Impact, "Arial Black", "Noto Sans TC", sans-serif; font-weight: 900; font-size: .85rem; letter-spacing: .12em; color: #fff;
+  background: linear-gradient(180deg, #6b7a90, #3a4658); box-shadow: 0 2px 0 rgba(0, 0, 0, .55);
+}
+.bpop-eff[data-effectiveness="克制"] { background: linear-gradient(180deg, #ff9a3c, #d43a10); }
+.bpop-eff[data-effectiveness="微弱"] { background: linear-gradient(180deg, #7fa6d6, #33547f); }
+.bpop-eff[data-effectiveness="無效"] { background: linear-gradient(180deg, #555c66, #2a2f36); color: #c9ced6; }
+.bpop-eff[data-effectiveness="普通"] { display: none; }
+.bpop-crit-label {
+  display: inline-flex; align-items: center; gap: .2rem; padding: 0 .5rem 0 .25rem; transform: skewX(-10deg);
+  font-weight: 900; font-size: .9rem; letter-spacing: .12em; color: #2a1300;
+  background: linear-gradient(180deg, #fff3a0, #ffb000); box-shadow: 0 2px 0 rgba(0, 0, 0, .55), 0 0 12px rgba(255, 200, 40, .6);
+}
+.bpop-label { font-size: .75rem; font-weight: 800; color: #eef2f7; text-shadow: 0 1px 2px #000, 0 0 2px #000; }
+.bpop-tag {
+  display: inline-block; margin-top: .1rem; padding: 0 .5rem; transform: skewX(-10deg);
+  font-size: .75rem; font-weight: 900; letter-spacing: .08em; color: #ffe1a0;
+  background: rgba(58, 36, 4, .88); border: 1px solid #e0a33c; box-shadow: 0 2px 0 rgba(0, 0, 0, .5);
+}
+.bpop-tag-lg { font-size: 1rem; padding: .1rem .8rem; }
+.bpop-burst {
+  position: absolute; left: 50%; top: 58%; width: 11rem; height: 11rem; transform: translate(-50%, -50%); z-index: -1; pointer-events: none;
+  background:
+    radial-gradient(circle, rgba(255, 240, 160, .85) 0 18%, rgba(255, 170, 30, .45) 34%, transparent 62%),
+    repeating-conic-gradient(from 0deg, rgba(255, 220, 90, .55) 0 6deg, transparent 6deg 22deg);
+  -webkit-mask: radial-gradient(circle, #000 0 40%, transparent 70%);
+  mask: radial-gradient(circle, #000 0 40%, transparent 70%);
+  animation: bpop-burst .45s ease-out both;
+}
+[data-popup-kind="crit"] { isolation: isolate; }
+@keyframes bpop-burst { from { transform: translate(-50%, -50%) scale(.3) rotate(-20deg); opacity: 0; } 60% { opacity: 1; } to { transform: translate(-50%, -50%) scale(1) rotate(0); opacity: .9; } }
+@media (prefers-reduced-motion: reduce) { .bpop-burst { animation: none; } }
+
+/* ── 出招技能名橫幅：屬性圖示＋技能名，外觀跟著目前的介面／外觀 ── */
+.bt-skill-banner {
+  display: inline-flex; align-items: center; gap: .4rem; max-width: 100%; padding: .25rem .8rem .25rem .45rem;
+  font-weight: 900; font-size: .9rem; letter-spacing: .06em; color: var(--bt-accent, #67e8f9);
+  background: var(--bt-bg, rgba(2, 6, 23, .86)); border: 1px solid var(--bt-line, rgba(34, 211, 238, .28));
+  border-radius: var(--bt-radius, 14px); box-shadow: var(--bt-shadow, 0 8px 30px rgba(0, 0, 0, .5));
+}
+.bt-skill-banner-text { min-width: 0; }
+[data-layout="game"] .bt-skill-banner {
+  color: #fff; border-radius: 0; background: var(--g-panel); border-color: var(--g-line);
+  clip-path: polygon(0 0, calc(100% - 10px) 0, 100% 10px, 100% 100%, 0 100%);
+  box-shadow: inset 3px 0 0 var(--g-accent), 0 6px 18px rgba(0, 0, 0, .45);
+}
+[data-layout="game"][data-gskin="blue"] .bt-skill-banner { background: linear-gradient(180deg, rgba(52, 110, 196, .95), rgba(14, 40, 92, .95)); border-color: rgba(150, 210, 255, .65); }
+[data-skin="eclipse"] .bt-skill-banner, [data-layout="game"][data-skin="eclipse"] .bt-skill-banner {
+  color: #f6e2a0; font-family: "Noto Serif TC", "Songti TC", serif; letter-spacing: .14em;
+  background: linear-gradient(180deg, rgba(26, 18, 30, .96), rgba(9, 7, 14, .96)); border: 1px solid rgba(217, 180, 90, .6);
+  clip-path: polygon(10px 0, calc(100% - 10px) 0, 100% 50%, calc(100% - 10px) 100%, 10px 100%, 0 50%);
+  box-shadow: inset 0 0 0 2px rgba(9, 7, 14, .95), inset 0 0 0 3px rgba(217, 180, 90, .22);
+  padding-left: .8rem;
+}

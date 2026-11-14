@@ -1,6 +1,6 @@
+import {recipientPrdChance} from '../battle/recipientEffectChance';
 import { addDamageReduction } from '../battle/damageReduction';
 import { BattleEventContext, EffectTiming } from "./types";
-import { prdChance } from "../utils/prd";
 import { isStatusActive } from "../utils/statusManager";
 
 /**
@@ -29,7 +29,7 @@ const onKillHeal = (p: number, label: string): RelicHandler => (ctx, event, extr
   if (event === EffectTiming.BATTLE_PHASE_END && extra?.killedOpponent && alive(ctx)) { ctx.applyHeal(ctx.actor, pctHp(ctx, p)); ctx.addLog(`🪽 【${label}】：擊敗對手，恢復 ${Math.round(p * 100)}% 最大體力！`, "heal"); }
 };
 const roundStartStatus = (chance: number, status: string, label: string, turns = 1): RelicHandler => (ctx, event) => {
-  if (event === EffectTiming.ROUND_START && alive(ctx) && prdChance(`${ctx.actor}:relic:${label}`, chance)) {
+  if (event === EffectTiming.ROUND_START && alive(ctx) && recipientPrdChance(ctx,ctx.targetSide,`${ctx.actor}:relic:${label}`, chance)) {
     if (ctx.applyStatusWithImmunityCheck(ctx.targetSide, status, turns)?.success) ctx.addLog(`🕸️ 【${label}】：令對手${status} ${turns} 回合！`, "status");
   }
 };
@@ -82,6 +82,14 @@ export const RelicEffectRegistry: Record<string, RelicHandler> = {
     if ((event !== EffectTiming.BEFORE_ACTION && event !== EffectTiming.OPPONENT_ACTION) || !alive(ctx) || isStatusActive(ctx.self, "神話")) return;
     if (ctx.applyStatusWithImmunityCheck(ctx.actor, "神話", 999)?.success) ctx.addLog(`🌟 【${ctx.self?.name ?? "首領"}】的神話被喚醒：免疫能力下降與異常狀態、PP 無限、所有技能必中！`, "effect");
   },
+
+  // ── 戰鬥火焰（data/battleFlames.ts；每方一種，強化版原廠火焰） ──
+  flame_green: (ctx, event) => {
+    if (event === EffectTiming.ON_ENTRANCE && alive(ctx)) { ctx.applyStatChange(ctx.actor, { atk: 1, def: 1, spatk: 1, spdef: 1, speed: 1 }); ctx.addLog("🟢 【綠火・生機之焰】：攻擊、防禦、特攻、特防、速度 +1。", "effect"); }
+  },
+  flame_blue: healEnd(0.08, "藍火・回流之焰"),
+  flame_gold: dmgIn(0.25),
+  flame_purple: dmgOut(0.25),
 
   // ── 敵方詞綴 ──
   affix_frenzy: dmgOut(0.25),

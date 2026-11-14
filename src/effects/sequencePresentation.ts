@@ -17,12 +17,43 @@ export function sequenceActionLabel(a: Act, triggerLabels: Record<string, string
   }
   if (a.label && a.label !== a.op) return a.label;
   const p = a.p || {}, side = p.side === 'opp' ? '對手' : p.side === 'both' ? '雙方' : '自身';
+  if(a.op==='status_mechanic_override')return `「${p.statuses?.join('、')}」效果替換${p.skipDamage!==undefined?`；${p.skipDamage?'停止':'保留'}原扣血`:''}${p.powerMultiplier!==undefined?`；攻擊威力×${p.powerMultiplier}`:''}`;
+  if(a.op==='drain'&&p.base)return `${p.true?'汲取':'吸取'}對手${p.of==='self'?'自身':'對手'}${p.base}的${Math.round(p.ratio*10000)/100}%（${p.true?'真實':'百分比'}傷害）`;
   const pct = (n: number) => `${Math.round(n * 10000) / 100}%`;
   const amount = p.flat ?? p.amount;
   const base = String(p.base || '最大體力').replace(/^stat:/, '');
   const groupB = groupBPresentation(a.op, p, side);
   if (groupB) return groupB;
   switch (a.op) {
+    case 'priority_exponential_damage':return `技能傷害×（1＋${pct(p.boost)}×2的雙方先制絕對值總和次方）`;
+    case 'status_duration_damage':return `非真實傷害×${p.remaining}^(1＋雙方異常回合合計)${p.increase?`，另受傷增傷${pct(p.increase)}×2^(雙方異常回合合計)`:''}`;
+    case 'status_duration_damage_boost':return `造成非真實傷害提升${pct(p.increase)}×2^(雙方異常回合合計)`;
+    case 'prevented_damage_drain':return `汲取實際減免傷害${pct(p.ratio)}的體力（真實傷害）`;
+    case 'damage_values_record':return '逐筆紀錄本次行動造成的非真實傷害';
+    case 'damage_values_drain':return `逐筆汲取記錄傷害；任一筆低於${p.threshold}或對手體力上限${pct(p.maxHpThreshold)}，下次攻擊威力×${p.nextPower}`;
+    case 'pp_attack_absorb_to':return `吸取對手攻擊技能PP至${p.remaining}，按對應槽恢復自身`;
+    case 'zero_pp_max_zero':return '對手目前PP為0的技能，PP上限歸0';
+    case 'pp_reduce_stop':return `對手所有技能PP-${p.amount}，因此耗盡則當回合無法行動`;
+    case 'minimum_matchup':return `本次攻擊克制倍數最低${p.value}`;
+    case 'self_down_as_up':return '計算本次攻擊時，自身能力下降視為等級相同的提升';
+    case 'next_selection_no_attack':return '對手下次選擇技能時禁止選攻擊技能';
+    case 'transfer_next_departure':return '對手下次主動或死亡離場時，轉交能力等級及異常給下一隻';
+    case 'next_enemy_entry':return `敵方下一隻登場時附加${p.statuses.join('／')}${p.duration}回合，並吸取其體力上限${pct(p.drainRatio)}`;
+    case 'seal_by_status_turns':return `雙方「${p.status}」合計每1回合，對手所有附加效果失效1回合`;
+    case 'maxhp_flat_reduce':return `扣除對手體力上限${p.amount}`;
+    case 'status_duration_link':return `持續將後續異常期限對齊自身「${p.status}」`;
+    case 'priority_disabled_turns':return `${p.next?'下':''}${p.turns}回合${side}先制效果失效`;
+    case 'sure_hit_turns':return `${p.next?'下':''}${p.turns}回合自身攻擊必定命中`;
+    case 'percent_survivor_heal':return `附加對手最大體力${pct(p.ratio)}百分比傷害，未擊敗後恢復等量體力`;
+    case 'settlement_flow':return '依子流程最後一個動作判斷成功／失敗';
+    case 'pp_restore_slots':return `恢復${p.side==='both'?'雙方':side}全部PP，記錄實際有恢復的技能數`;
+    case 'status_from_amount':return `為${side}附加${p.status}，回合數取前一步實際數值`;
+    case 'pp_deficit_repeat':return `按${p.side==='both'?'雙方':side}各槽欠缺的PP總點數逐次執行子流程`;
+    case 'pp_sum_cap':return `受到固定／百分比傷害不超過自身目前PP總和×${p.factor}`;
+    case 'copy_status_durations':return `將自身異常與剩餘回合數附加給${side}`;
+    case 'power_by_iv':return `按${p.iv}天賦增加威力（31時${p.maximum}）`;
+    case 'pp_zero':return `對手${p.highestOnly?'目前PP最高（並列皆選取）的':p.kind||'所有'}技能PP歸零`;
+    case 'stage_guard_turns':return `${p.turns}回合內${side}能力${p.kind==='up'?'提升不能被消除或吸取':'下降不能被解除或反轉'}`;
     case 'panel_pool_transfer':return `敵方背包六項面板降低${pct(p.ratio)}，實際降低合計每${p.unit}點，自身六項各增加${p.gain}點`;
     case 'compress_turn_effects':return `${side}回合類效果縮短至${p.remaining}回合，記錄合計縮短量`;
     case 'pending_damage_write':return `覆寫待用追加傷害：縮短回合數×最大體力${pct(p.ratio)}`;
@@ -37,7 +68,7 @@ export function sequenceActionLabel(a: Act, triggerLabels: Record<string, string
     case 'stop_action':return `${side}當回合無法行動`;
     case 'status_guard_instance':return `本次「${p.status}」結束前抵擋${p.kind}傷害`;
     case 'query_number':return `查詢${side}${p.kind==='full_pp'?'滿PP技能數':`${p.status||'全部異常'}剩餘回合總和`}`;
-    case 'survive_uses':return `下${p.uses}次受到致死傷害時強制存活，保留1點體力`;
+    case 'survive_uses':return p.thenRound?`下${p.uses}次死亡時強制存活，直到當回合結束每次受到致死傷害保留1點體力`:`下${p.uses}次受到致死傷害時強制存活，保留1點體力`;
     case 'summon_fixed_extra':return `召喚${p.gender}、${p.type}系額外精靈「${p.name}」，六項面板各${p.value}`;
     case 'retire_summoned_extra':return `確認召喚者陣亡後令「${p.name}」${p.trueDamage?`受到${p.trueDamage}真實傷害並`:''}${p.gender?`轉為${p.gender}並`:''}陣亡`;
     case 'combine_panel_stats':return `${p.stats.join('／')}面板${p.mode==='restore'?'還原原值':`各設為原值${p.mode==='sum'?'總和':'最大值'}`}（快照：${p.key}）`;
@@ -45,6 +76,9 @@ export function sequenceActionLabel(a: Act, triggerLabels: Record<string, string
     case 'stat_points_add_gap':return `${p.stats.join('／')}各增加｜${p.stats2.join('－')}｜×${pct(p.ratio)}×「${p.markId}」層數（向下取整）`;
     case 'prio_turns':if(p.current)return `${p.turns}回合內${side}先制${p.v>0?'+':''}${p.v}`;return `${p.next===false?'當回合起':'下'}${p.turns}回合${side}${p.attackOnly?'攻擊':'所有'}技能先制${p.v>0?'+':''}${p.v}`;
     case 'heal_main_settled':return `成功行動後恢復本次主技能結算量${pct(p.ratio)}（含護盾吸收，不含附加傷害）`;
+    case 'status_turn_drains':return `獨立吸取對手最大體力${pct(p.ratio)}，次數＝1＋雙方異常剩餘回合合計×${p.perTurn}`;
+    case 'self_stat_recoil':return `自身受到${p.stat}面板${pct(p.ratio)}的${p.type}傷害，此筆傷害最低保留${p.floor}體力`;
+    case 'random_streak_power':return `威力${p.min}～${p.max}，連續使用下限＋${p.step}至${p.cap}，強化時上下限×${p.stageMultiplier}`;
     case 'next_power_nonfull':return `記錄己方${p.scope==='bench'?'場下':'背包全隊'}${p.aliveOnly?'存活':''}非滿體力精靈數，每隻令下次攻擊威力+${pct(p.perElf)}（只用一次，下場清除）`;
     case 'checked_percent_drain':return `吸取對手最大體力${pct(p.ratio)}；結算後對手未扣血或自身體力未增加則追加${p.failTrue}真實傷害（一次）`;
     case 'type_damage_floor_turns':return `${side}${p.turns}回合內受到技能傷害至少${p.base}×${p.list.join('／')}中最高克制倍率（依受方當前屬性）`;
@@ -64,7 +98,7 @@ export function sequenceActionLabel(a: Act, triggerLabels: Record<string, string
     case 'select_elf':return `選取${side}${p.scope==='bench'?'場下':'背包'}${p.state==='dead'?'陣亡':p.state==='alive'?'存活':'所有'}隊員，依${p.orderBy==='max_hp'?'體力上限':'隊伍順序'}${p.direction==='asc'?'由小到大':'由大到小'}${p.all?'全選':'取首位'}`;
     case 'shield':return `自身獲得${p.flat??`${p.base||'最大體力'}×${pct(p.ratio)}`}${p.kind==='barrier'?'護罩':'護盾'}`;
     case 'stat_value':return `${side}${p.stats.join('／')}能力值${p.direction==='decrease'?'減少':'增加'}${p.amount}點，最低${p.floor}（體力值修改上限）`;
-    case 'maxhp':return `${side}體力上限${p.direction==='decrease'?'減少':'增加'}${Math.round(p.ratio*100)}%`;
+    case 'maxhp':return `${side}體力上限${p.direction==='decrease'?'減少':'增加'}${Math.round(p.ratio*100)}%${p.temporary?'，下場後消失':''}`;
     case 'snapshot_value':return `回合開始記錄${side}${p.fields.join('＋')}至${p.key}`;
     case 'heal_snapshot':return `恢復本回合${p.key}快照量×${p.ratio}${p.consume?'並消耗快照':''}`;
     case 'count_team_trait':return p.traitText ? `統計${side}背包低機率異常特性${p.excludeSelf?'（排除自身）':''}：符合${p.matchedWeight??1}、不符合${p.unmatchedWeight??0}` : `計算${p.side==='both'?'雙方':side}背包${p.state==='alive'?'存活':p.state==='dead'?'陣亡':'所有'}精靈擁有「${p.name}」的人數`;
@@ -74,13 +108,14 @@ export function sequenceActionLabel(a: Act, triggerLabels: Record<string, string
     case 'vanish_selected':return '令選定隊員消逝';
     case 'stat_apply_last':return `向${side}附加本次反轉的${p.direction==='opposite'?'相反':'相同'}等級`;
     case 'next_entry_priority':return `對手下隻出戰精靈前${p.turns}回合先制效果失效`;
+    case 'drain_checked_then':return `吸取對手${p.flat??`最大體力×${pct(p.ratio)}`}（${p.type}傷害）；實際${p.measure==='either'?'扣血或恢復':'扣血'}低於${p.threshold}時執行後續`;
     case 'heal_then':return `${side}恢復最大體力×${pct(p.ratio)}，正式恢復結算後執行子流程（恢復失敗仍繼續）`;
     case 'abolish_selected':return `廢除${side}本次所選技能槽（恢復PP也不能再選）`;
     case 'consume_selected_pp':return `消耗${side}所選技能槽全部剩餘PP，記錄實際消耗量`;
     case 'resource_mark_add':return `${side}獲得「${p.name}」${p.amount===undefined?`上一結算量×${p.ratio}`:p.amount}${p.unit}（${p.scope==='team'?'陣營':'個體'}資源）${p.incomingDamageReduction?`；${markDamageReductionText(p.incomingDamageReduction)}`:''}`;
     case 'dmg_mod':return `${p.dir.startsWith('in')?'受到':'造成'}的${p.kind||'全部'}傷害${['in','out_reduce'].includes(p.dir)?'減少':'提升'}${pct(p.reduce??p.boost)}${p.perMark?`×${p.perMark.side==='self'?'自身':'對手'}「${p.perMark.id}」當下層數`:''}`;
     case 'damage_floor':return `本次攻擊傷害不低於${side}${p.base}×${pct(p.ratio)}`;
-    case 'damage_to_heal_turns':return `${p.next?'下':'當回合起'}${p.turns}回合受到的${p.kind}傷害轉化為自身體力（正式最終量）`;
+    case 'damage_to_heal_turns':return p.instant?`本次受到的${p.kind}傷害轉化為自身體力，實際轉化後執行後續效果`:`${p.next?'下':'當回合起'}${p.turns}回合受到的${p.kind}傷害轉化為自身體力（正式最終量）`;
     case 'block_damage_uses':return `抵擋下${p.uses}次${p.kind}傷害，記錄正式抵擋量${p.onBlock?'並執行成功反應':''}${p.sealOpponentAdded?'；抵擋觸發前或下場前對手附加效果失效':''}`;
     case 'instant_kill':return `${p.chance}%機率秒殺對手（獨立體力修正及免死攔截）`;
     case 'prevent_instant_kill':return `使${p.scope==='team'?'本方所有精靈':'本持有者'}${p.dir==='in'?'受到':'觸發'}的秒殺失效`;
@@ -120,6 +155,8 @@ export function sequenceActionLabel(a: Act, triggerLabels: Record<string, string
     case 'shield_from_last': return `上一結算量的${pct(p.ratio)}轉化為自身護盾`;
     case 'mark_program': return `${side}${p.mode==='add'?'增加':'設定'}${p.count}${p.countFromMark?`×印記${p.countFromMark.id}數量`:''}${p.unit}「${p.name}」（上限${p.maxCount}；${p.scope==='team'?'陣營':'持有者'}；${p.persistsOffField?'下場保留':'下場消失'}${p.recoveryReduction?`；${p.recoveryReduction.perStack?'每層':''}恢復減少${pct(p.recoveryReduction.ratio)}，${p.recoveryReduction.includePotions?'包含':'不含'}藥劑`:''}${p.incomingDamageReduction?`；${markDamageReductionText(p.incomingDamageReduction)}`:''}）`;
     case 'mark_remove_current': return '移除此持有者目前執行的印記';
+    case 'heal_mark_source': return `將本次實際受到傷害的${pct(p.ratio)}恢復給附加印記的精靈（${p.activeOnly?'來源須在場且存活':'來源須存活'}）`;
+    case 'random_damage': return `${p.source==='opp'?'對手':'自身'}向${side}${p.perStack?'逐層獨立':''}附加隨機${p.min}～${p.max}點${p.type}傷害`;
     case 'recoil': return `本次造成的實際體力傷害×${pct(p.ratio)}反作用扣減自身體力`;
     case 'incoming_utility_invalid_turns': return `${p.turns}回合內對自身使用的屬性技能無效`;
     case 'first_turns': return `${p.next?'下':'當回合起'}${p.turns}回合${p.attackOnly?'攻擊技能':'技能'}必定先出手`;
@@ -127,6 +164,17 @@ export function sequenceActionLabel(a: Act, triggerLabels: Record<string, string
     case 'once': return `本場戰鬥僅限一次（${p.key}）`;
     case 'counter_spend': return `花用「${p.label || p.key}」計數${p.amount}點執行（剩餘不足則不執行）`;
     case 'use_stolen_item': return `偷取對手藥劑（${p.itemId}）並立即使用`;
+    case 'grant_item': return `${side}道具欄加入${p.count}個道具（${p.itemId}）${p.snapshotStats ? '，紀錄來源當前六項能力' : ''}`;
+    case 'convert_item': return `${side}道具欄將一個${p.fromId}依序轉化為可加入的形態（${p.ids.join('→')}），無可用形態則不消耗`;
+    case 'item_source_panel_scale': return `${side}道具（${p.itemId}）紀錄來源的同種精靈：${p.stats?.join('、')}面板×${p.ratio}`;
+    case 'item_snapshot_drains': return `在場隊友依道具（${p.itemId}）紀錄${p.stat}的${p.ratio*100}%逐次汲取（${p.type}），受擊者每回合${p.status}增加${p.perTurn}次`;
+    case 'potion_backlash': return `${side}${p.scope==='team'?'全隊':''}${p.next?'下':''}${p.turns}回合進入藥劑反噬（藥劑效果反轉）`;
+    case 'potion_regen': { const who=(p.targets||[]).map((t:string)=>({active:'在場',bench:'不在場',extra:'額外'} as any)[t]||t).join('＋')+'精靈';
+      const parts=[p.hp?`${p.hp}點體力`:'',p.hpPercent?`最大體力${p.hpPercent}%`:'',p.pp?`${p.pp}點PP值`:'',p.ppPercent?`PP上限${p.ppPercent}%`:''].filter(Boolean).join('、');
+      return p.inverted?`${who}受到${parts}的藥劑反噬（扣除）`:`${who}恢復${parts}`; }
+    case 'potion_backlash_damage': return `${side}受到${p.amount?`${p.amount}點`:''}${p.amount&&p.maxHpRatio?'＋':''}${p.maxHpRatio?`最大體力${pct(p.maxHpRatio)}`:''}藥劑反噬傷害（無視減免與限制）`;
+    case 'item_lock': return `${side}${p.scope==='team'?'全隊':''}${p.next?'下':''}${p.turns}回合無法使用藥劑`;
+    case 'switch_lock_scoped': return `${side}${p.scope==='team'?'全隊':''}${p.next?'下':''}${p.turns}回合無法主動切換精靈`;
     case 'power_add_stat': return `技能威力提升${p.stats.join('＋')}總和的${pct(p.ratio)}`;
     case 'entrance_stack_buff': return `本次戰鬥每登場一次：先制+${p.per}${p.ignoreSpDef ? `且忽略對手特防${pct(p.ignoreSpDef)}` : ''}（直到下場）`;
     case 'entrance_reset': return `重置登場紀錄${p.bothSides ? '（雙方）' : ''}`;
@@ -146,7 +194,7 @@ export function sequenceActionLabel(a: Act, triggerLabels: Record<string, string
     case 'no_pos_prio_turns': return `${p.next?'下':'當回合起'}${p.turns}回合對手正先制失效`;
     case 'power_streak': return `連續使用每次威力+${p.step}（最高${p.cap}）`;
     case 'hp_adjust': return `${side}體力調整${p.delta!==undefined?`${p.delta>=0?'+':''}${p.delta}`:`${p.direction==='subtract'?'-':'+'}${p.base}×${pct(p.ratio)}`}${p.perStack?'×印記層數':''}`;
-    case 'rebirth_once': return '自身下次死亡時重生（僅1次）';
+    case 'rebirth_once': return `自身下次死亡時重生（僅1次）${p.restorePp?'，體力與全部技能PP重置為100%':''}`;
     case 'stat_mirror': return `將${p.side==='opp'?'自身':'對手'}能力提升附加為${side}等量${p.kind==='down'?'下降':'提升'}`;
     case 'pp_lost_damage': return `對手受到已損失PP总量×${p.mult}點${p.type}傷害`;
     case 'clear_shield': return `消除${side}${p.kind==='both'?'護盾與護罩':p.kind==='barrier'?'護罩':'護盾'}`;
@@ -157,8 +205,8 @@ export function sequenceActionLabel(a: Act, triggerLabels: Record<string, string
     case 'convert_status': return `${side}${p.from||'現有異常'}轉化為${p.status}（${p.turns}回合）`;
     case 'immune_status_turns': return `${p.turns}回合內免疫${p.reflect ? '並反彈' : ''}${p.exclude?.length?`除${p.exclude.join('、')}外`:''}${p.cls || '所有'}異常`;
     case 'immune_statdown_turns': return `${p.turns}回合內免疫能力下降`;
-    case 'clear_turn': return `消除${side}回合類效果`;
-    case 'cure_status':return `解除${side}${p.cls||'所有'}異常狀態（保留BOSS特性）`;
+    case 'clear_turn': return `消除${side}${p.polarity==='positive'?'正面':''}回合類效果`;
+    case 'cure_status':return `解除${side}${p.statuses?.join('、')||p.cls||'所有'}異常狀態（保留BOSS特性）`;
     case 'at_round_end':return `當回合結束時執行${p.originalTarget?'（僅限原目標）':''}`;
     case 'stat_clear': return `消除${side}能力${p.kind === 'up' ? '提升' : p.kind === 'down' ? '下降' : '變化'}狀態${p.captureLevels?'，記錄實際消除級數':''}`;
     case 'stat': return `${side}${(p.stats || []).join('／')}${p.v >= 0 ? '+' : ''}${p.v}${p.hpGapUnit?`，體力每高於另一方${p.hpGapUnit}點額外+1（最高+6）`:''}`;
@@ -172,6 +220,9 @@ export function sequenceActionLabel(a: Act, triggerLabels: Record<string, string
     case 'boost': return p.power && p.add !== undefined ? `技能威力+${p.add}${p.per === 'self_up_kinds' ? '（每項自身能力提升）' : ''}`
       : `${p.power ? '技能威力' : `${p.kind || '攻擊'}傷害`}提升${pct(p.mult - 1)}`;
     case 'timed': return `${p.from === 'next' ? '下' : '當回合起'}${p.turns}回合：${triggerLabels[p.trig] || p.trig}${p.once?'，僅觸發一次':''}${p.onExpire?'，未觸發自然到期另執行分支':''}`;
+    case 'recovery_scale_turns':return `${p.turns}回合內恢復效果×${p.multiplier}`;
+    case 'damage_boost_current_or_next_attack':return `對手當回合及下次受到攻擊傷害增加${pct(p.boost)}（重疊只算一次）`;
+    case 'recovery_backlash_turns':return `${p.turns}回合內每次執行恢復受到${p.amount}點真實傷害`;
     case 'noop': return '無特殊效果';
     default: return a.label || a.op;
   }

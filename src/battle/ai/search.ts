@@ -63,8 +63,14 @@ export async function planDecision(request: DecisionRequest, simulate: Simulator
   if (sweeps && limits.randomness > 0 && request.settings.risk !== 'conservative') {
     const rng = makeRng(request.seed ^ 0xa11ce);
     if (rng() < limits.randomness) {
-      const near = result.candidates.filter(c => result.candidates[0].score - c.score <= 15);
-      result.action = near[Math.min(near.length - 1, Math.floor(rng() * near.length))].action;
+      // 混合策略（2026-11-08）：只在分數相近（差 ≤15）的候選間抽，且依分數加權（softmax，T=5）——
+      // 越接近最佳越常被選；比均勻亂抽更不吃虧，又讓對手讀不出固定套路。
+      const top = result.candidates[0].score;
+      const near = result.candidates.filter(c => top - c.score <= 15);
+      const w = near.map(c => Math.exp((c.score - top) / 5)), total = w.reduce((a, b) => a + b, 0);
+      let r = rng() * total, pick = near[0];
+      for (let i = 0; i < near.length; i++) { r -= w[i]; if (r <= 0) { pick = near[i]; break; } }
+      result.action = pick.action;
     }
   }
   const sampleNote = sweeps === 1 ? ['只完成一組回應／機率樣本，不能區分結果波動。'] : [];

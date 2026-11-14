@@ -9,7 +9,7 @@ Object.assign(globalThis,{window:dom.window,document:dom.window.document,localSt
 Object.defineProperty(globalThis,'navigator',{value:dom.window.navigator,configurable:true});
 const {createRoot}=await import('react-dom/client');
 const root=createRoot(document.getElementById('root')!);
-const server=await createServer({server:{middlewareMode:true,hmr:false,watch:null},appType:'custom',logLevel:'silent'});
+const server=await createServer({configFile:false,optimizeDeps:{noDiscovery:true,include:[]},resolve:{preserveSymlinks:true},server:{middlewareMode:true,hmr:false,watch:null},appType:'custom',logLevel:'silent'});
 try{
  const {DEFAULT_ELVES:defaults}=await server.ssrLoadModule('/src/data/defaultElvesLoaded.ts');
  const {GameDataProvider,useGameData}=await server.ssrLoadModule('/src/contexts/GameDataContext.tsx');
@@ -44,7 +44,9 @@ try{
   await act(async()=>root.render(null));
   repairSavedBuiltinStorage(localStorage,defaults);
   await act(async()=>root.render(<GameDataProvider><Probe/></GameDataProvider>));check();
-  assert.equal(JSON.parse(localStorage.getItem('seer_default_elves_overrides')!)[saved.id].soulMark.description,source.soulMark.description);
+  // 2026-11-14：覆寫只存與內建不同的欄位；與內建相同的魂印不再寫入，合併後仍是正式魂印。
+  const storedOverride=JSON.parse(localStorage.getItem('seer_default_elves_overrides')!)[saved.id];
+  assert.equal({...source,...storedOverride}.soulMark.description,source.soulMark.description);
   await act(async()=>root.render(null));
  }
  console.log('真實舊版覆寫 → 圖鑑資料 → 戰鬥詳情 → 完整介紹 → 存檔重載：兩隻雷伊正式魂印與積木一致');

@@ -38,7 +38,7 @@ export type BattlePhase =
   | "game_over";
 
 export interface EffectItem {
-  type: 'damage' | 'heal' | 'adjust_hp' | 'instant_kill' | 'status' | 'stat_change' | 'log' | 'animation' | 'switch' | 'death';
+  type: 'damage' | 'heal' | 'adjust_hp' | 'potion_damage' | 'instant_kill' | 'status' | 'stat_change' | 'log' | 'notice' | 'animation' | 'switch' | 'death';
   side: 'p1' | 'p2';
   data: any;
   delay?: number;

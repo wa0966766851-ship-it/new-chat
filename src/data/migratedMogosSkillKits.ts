@@ -6,8 +6,8 @@ import type { KitEntry } from '../effects/effectSystem.schema';
 
 const c3 = (name: string, p: any, label: string) => ({ c: name, p, label });
 const inv34 = (raw: string, acts: any[], order: number): KitEntry => ({
-  codeId: 'effect_sequence', node: 'on_invalid', source: 'skill', role: 'innate', order, customText: raw,
-  params: { clause: { raw, marker: '■', trig: 'self_invalid', parsed: true, body: [{ cond:[{c:'skill_invalid',p:{},label:'技能實際無效'}],acts }] } },
+  codeId: 'effect_sequence', node: 'on_invalid', source: 'skill', role: 'attached', order, customText: raw,
+  params: { clause: { raw, marker: '🎯', trig: 'self_invalid', parsed: true, body: [{ cond:[{c:'skill_invalid',p:{},label:'技能實際無效'}],acts }] } },
 });
 
 const cuiyao = ['■ 先制+3','🎯 與對手交換自身低於對手的能力等級，交換成功則100%令對手害怕','> 觸發後對手處於能力下降則自身無效下次對手的攻擊技能','> 觸發後自身處於能力提升狀態則當回合攻擊連擊次數+2','🎯 3回合內，對手屬性技能附加效果失效且造成非真實傷害無法超過280','🎯 附加對手已損失體力50%的百分比傷害，對手受到此傷害後體力未減少則轉為附加對手已損失體力50%的真實傷害','🎯 恢復自身所有技能5點PP值'];

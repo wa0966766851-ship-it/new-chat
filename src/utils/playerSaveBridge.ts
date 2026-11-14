@@ -1,5 +1,6 @@
 // 瀏覽器仍使用原有 localStorage；桌面另保存不依賴網址埠號的副本。
 const META='seer_desktop_save_revision';
+const LEGACY_BACKUP_PREFIXES=['seer_before_builtin_kit_repair_'];
 export function readPlayerEntries(storage:Storage):Record<string,string> {
   const entries:Record<string,string>={};
   for(let i=0;i<storage.length;i++){
@@ -31,14 +32,21 @@ export async function initializePlayerSave(storage:Storage=localStorage,request:
   const hasSaved=Object.keys(saved.entries).length>0;
   // 新埠沒有資料，或是已知舊副本：在 React 與資料遷移之前還原。
   if(hasSaved && (!Object.keys(local).length || previousRevision && previousRevision!==saved.revision)){
-    // 先檢查新副本能否寫入；失敗時保留現有資料，不啟動同步。
-    try{
-      const old=JSON.stringify(local);
-      if(Object.keys(local).length)storage.setItem('seer_before_desktop_restore_'+Date.now(),old);
-      for(const [key,value] of Object.entries(saved.entries))storage.setItem(key,value);
-      for(const key of Object.keys(local))if(!(key in saved.entries))storage.removeItem(key);
-      local=readPlayerEntries(storage);
-    }catch{warn('瀏覽器儲存空間不足，還原未完成；磁碟原存檔保留，暫停同步。');return;}
+    // 磁碟端已有 history/ 完整備份，瀏覽器端不再另外寫入一份整包
+    // seer_before_desktop_restore_*（那會額外吃掉一份 local 的量，是配額爆掉的主因）。
+    // 逐 key 寫入：單一 key 失敗時保留已成功的部分，不整包回滾成「未完成」。
+    const failed:string[]=[];
+    for(const [key,value] of Object.entries(saved.entries)){
+      try{storage.setItem(key,value);}catch{failed.push(key);}
+    }
+    for(const key of Object.keys(local))if(!(key in saved.entries)){
+      try{storage.removeItem(key);}catch{/* 刪除失敗不影響已還原的資料 */}
+    }
+    local=readPlayerEntries(storage);
+    if(failed.length){
+      warn(`瀏覽器儲存空間不足，${failed.length} 個存檔項目未還原（${failed.slice(0,3).join('、')}${failed.length>3?'…':''}）；磁碟原存檔保留，其餘資料已還原，暫停同步。`);
+      return;
+    }
   }else if(hasSaved && !previousRevision && (Object.keys(local).length!==Object.keys(saved.entries).length ||
     Object.entries(local).some(([key,value])=>saved.entries[key]!==value))){
     warn('發現兩份不同的舊存檔，已保留雙方並暫停同步；請先匯出目前資料，避免覆蓋。');return;
@@ -57,6 +65,9 @@ export async function initializePlayerSave(storage:Storage=localStorage,request:
     }catch(error){stopped=true;warn(String(error));}finally{busy=false;}
   };
   // 先保存舊資料，再讓既有來源升級與畫面初始化寫入。
+  await flush();if(stopped)return;
+  // 2026-11-14：已同步到磁碟（history/ 保有完整備份）後，清掉瀏覽器內的舊一次性備份鍵，釋放配額。
+  for(const key of Object.keys(readPlayerEntries(storage)))if(LEGACY_BACKUP_PREFIXES.some(p=>key.startsWith(p))){try{storage.removeItem(key);}catch{/* 略過 */}}
   await flush();if(stopped)return;
   try{storage.setItem(META,revision);}catch{
     warn('瀏覽器儲存空間不足，無法記錄同步版本；磁碟存檔保留，暫停同步。');return;

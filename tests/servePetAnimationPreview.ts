@@ -3,6 +3,8 @@ import path from 'node:path';
 import {registerPetAnimations} from '../server/petAnimations';
 async function main(){
  const app=express();registerPetAnimations(app,process.cwd());
+ // Read-only authoring assets; outside public so builds never ship raw bundles.
+ app.use('/fxlab-data',express.static(path.resolve('.seer-cache/fxlab-data'),{index:false}));
  // Explicit authoring opt-in. Drafts are never copied into public or releases.
  const draftArg=process.argv.indexOf('--draft-root');
  if(draftArg>=0){

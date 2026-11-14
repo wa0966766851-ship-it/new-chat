@@ -18,7 +18,8 @@ import { opposite, type AISettings, type AISide, type DecisionRequest, type Posi
 /** 僅決策評價，不參與傷害、恢復、機率或真實體力結算。 */
 export const POSITION_WEIGHTS = {
   hp: 100, shield: 45, barrier: 50, death: -200, stage: 4, pp: -30,
-  control: -18, abnormal: -7, boss: 10, mark: 2, protection: 12, inventory: 3,
+  // 2026-11-07 使用者要求：AI 控場慾望較大——行動限制異常（每回合，最多計 2 回合）權重 -18 → -24（再高會讓「穩守／均衡」風格也放棄正常輸出，見 localBattleAI.calibration）。
+  control: -24, abnormal: -7, boss: 10, mark: 2, protection: 12, inventory: 3,
   charge:15, restriction:-8,
   /**
    * 2026-10-30：詩章（snapshot 型資源）。

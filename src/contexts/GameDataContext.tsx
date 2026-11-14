@@ -1,4 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from "react";
+import { slimTeamRecord, slimTeamPresets, compactBuiltinOverrides } from '../data/savedTeamCompact';
+import {withDefaultResistances} from '../battle/resistances';
 import { Elf, Skill } from "../types";
 import { GLOBAL_ELVES } from "../data/gameData";
 import { getDefaultElvesRevision, subscribeDefaultElves } from "../data/defaultElves";
@@ -134,7 +136,7 @@ export const GameDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
             changed = true;
           }
           if (changed) {
-            localStorage.setItem("seer_last_used_p1_team", JSON.stringify(parsed));
+            localStorage.setItem("seer_last_used_p1_team", JSON.stringify(slimTeamRecord(parsed)));
           }
         }
       }
@@ -161,7 +163,7 @@ export const GameDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
             }
           }
           if (changed) {
-            localStorage.setItem("seer_p1_backpack_presets", JSON.stringify(parsed));
+            localStorage.setItem("seer_p1_backpack_presets", JSON.stringify(slimTeamPresets(parsed)));
           }
         }
       }
@@ -188,12 +190,20 @@ export const GameDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
             }
           }
           if (changed) {
-            localStorage.setItem("seer_p2_backpack_presets", JSON.stringify(parsed));
+            localStorage.setItem("seer_p2_backpack_presets", JSON.stringify(slimTeamPresets(parsed)));
           }
         }
       }
     } catch (e) {
       console.error("ID migration failed:", e);
+    }
+    // 2026-11-14 存檔瘦身：既有陣容紀錄一次性去除可重建的重資料（逐 key，失敗不影響其他）。
+    for (const [key, slim] of [["seer_last_used_p1_team", slimTeamRecord], ["seer_last_used_p2_team", slimTeamRecord], ["seer_p1_backpack_presets", slimTeamPresets], ["seer_p2_backpack_presets", slimTeamPresets]] as const) {
+      try {
+        const raw = localStorage.getItem(key); if (!raw) continue;
+        const next = JSON.stringify((slim as (v: any) => any)(JSON.parse(raw)));
+        if (next.length < raw.length) localStorage.setItem(key, next);
+      } catch { /* 單一 key 失敗略過 */ }
     }
   }, []);
 
@@ -271,7 +281,7 @@ export const GameDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   }, [customElves]);
 
   useEffect(() => {
-    localStorage.setItem("seer_default_elves_overrides", JSON.stringify(defaultElvesOverrides));
+    localStorage.setItem("seer_default_elves_overrides", JSON.stringify(compactBuiltinOverrides(defaultElvesOverrides, GLOBAL_ELVES)));
   }, [defaultElvesOverrides]);
 
   const allElves = React.useMemo(() => {
@@ -280,7 +290,7 @@ export const GameDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       const override = defaultElvesOverrides[elf.id!];
       return syncOtherworldReyDescriptions(override ? normalizeStoredElfStats(applySavedSkillCorrections({ ...elf, ...override },GLOBAL_ELVES)) : elf);
     });
-    const combined = [...customElves.map(elf => syncOtherworldReyDescriptions(normalizeStoredElfStats(applySavedSkillCorrections(elf,GLOBAL_ELVES)))), ...overriddenGlobalElves];
+    const combined = [...customElves.map(elf => withDefaultResistances(syncOtherworldReyDescriptions(normalizeStoredElfStats(applySavedSkillCorrections(elf,GLOBAL_ELVES))))), ...overriddenGlobalElves];
     const uniqueMap = new Map();
     combined.forEach(elf => {
       const key = elf.id || elf.name; // id優先，只有真的沒有id時才退回用名字

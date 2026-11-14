@@ -4,6 +4,7 @@ import { checkElfDead } from '../elfAlive';
 import { listBagElves } from '../bagTargets';
 import { activeConstraints } from '../timedConstraints';
 import { hasBattleItem } from '../itemInventory';
+import { itemRestrictions, switchRestrictions } from '../actionRestrictions';
 import { BATTLE_ITEMS, getMaxPp, getNoSwitchTurns, isElfItemDisabled, isElfSkillSelectionDisabled, isElfSwitchDisabled } from '../../utils/battleHelpers';
 import { isZeroPpExempt } from '../ppExemptions';
 import { visibleSkills } from '../viewerPerspective';
@@ -26,12 +27,15 @@ export function legalActions(state: BattleState, side: AISide, forced = false, p
   const self = state[side], opponent = state[opposite(side)];
   const actions: PlannedAction[] = [];
   const constraints = activeConstraints(state[`${side}Timers`], self);
-  const canSwitch = forced || (!checkElfDead(self) && !constraints.some(p => p.lockSwitch) && !isElfSwitchDisabled(self, opponent, state.isTyrDuelField, getNoSwitchTurns(state, side)));
+  const canSwitch = forced || (!checkElfDead(self) && !constraints.some(p => p.lockSwitch) && !isElfSwitchDisabled(self, opponent, state.isTyrDuelField, getNoSwitchTurns(state, side)) && !switchRestrictions(state, side).blocked);
+  const items = itemRestrictions(state, side);
   if (!forced && !checkElfDead(self)) {
     self.skills.forEach((_, slot) => { if (skillSelectable(state, side, self, slot)) actions.push({ kind: 'skill', slot }); });
-    if (!isElfItemDisabled(self)) {
+    if (!isElfItemDisabled(self) && !items.blocked) {
       for (const item of BATTLE_ITEMS) {
         if (!hasBattleItem(state[`${side}ItemInventory`], item.id)) continue;
+        // 藥劑反噬中：回復／解除類藥劑會反轉成自傷，不列為合法選項（攻擊型藥劑也會打到自己）。
+        if (items.backlash && !item.pickTarget) continue;
         if (side === 'p1' && potionRemaining !== undefined && potionRemaining <= 0 && item.type !== 'special') continue;
         if (item.pickTarget === 'bag_elf') {
           const teams = {p1: state.p1Team.map((e,i) => i === state.p1ActiveIndex ? state.p1 : e),

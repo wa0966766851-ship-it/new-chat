@@ -46,6 +46,7 @@ export function rebirthPatch(elf: Elf): Partial<Elf> {
 
 /** 超額真實傷害且致死：真實傷害不被護盾吸收，穿透量即全額；需大於當前護盾。 */
 export function isLethalExcessTrue(amount: number, shield: number, hp: number): boolean {
-  return amount > Math.max(0, shield) && amount >= hp;
+  // 2026-11-13：需「存在護盾」才算超額（無護盾時不觸發重生）。
+  return shield > 0 && amount > shield && amount >= hp;
 }
 

@@ -1,3 +1,4 @@
+import { searchList } from '../utils/textSearch';
 import blockTemplatesData from "./block_templates_from_cards.json";
 
 export interface CardTemplateItem {
@@ -79,15 +80,10 @@ export const REAL_CARD_EFFECT_MODULES: CardTemplateModule[] = CARD_TEMPLATE_ITEM
 /**
  * 依關鍵字搜尋真實卡牌描述模組
  */
+/** 2026-11-07：改用通用搜尋（多關鍵字、排除、同義詞、簡繁、相關度排序）。 */
 export function searchCardTemplates(query: string): CardTemplateModule[] {
   if (!query || query.trim() === "") return REAL_CARD_EFFECT_MODULES;
-  const q = query.toLowerCase().trim();
-  return REAL_CARD_EFFECT_MODULES.filter(m => 
-    m.name.toLowerCase().includes(q) ||
-    m.standardSyntax.toLowerCase().includes(q) ||
-    m.rawText.toLowerCase().includes(q) ||
-    m.tags.some(t => t.toLowerCase().includes(q))
-  );
+  return searchList(REAL_CARD_EFFECT_MODULES, query, m => ({ title: m.name, tags: m.tags, body: [m.standardSyntax, m.rawText] }));
 }
 
 export const TEMPLATE_GRAMMAR_GUIDELINES = [

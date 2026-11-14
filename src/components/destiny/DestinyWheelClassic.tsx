@@ -1,4 +1,6 @@
 import React, { useState } from "react";
+import { useShellBack } from "../../shell/shellBack";
+import { loadoutLabel, type Loadout, type LoadoutOptions } from "../../utils/destinyLoadout";
 import { ElfAvatar, TypeIcon, SkillTypeIcon } from "../SeerImages";
 import { skillDisplayType } from "../../utils/skillPresentation";
 import { motion, AnimatePresence } from "motion/react";
@@ -22,11 +24,12 @@ interface ClassicProps {
 }
 
 export default function DestinyWheelClassic({ draft, allElves, onBack, onSwitchToB }: ClassicProps) {
+  const shellBack = useShellBack();
   const {
     sessionPool, pullError, phase, battleMode, setBattleMode, modeLocked, p1Title, p2Title, p1Pool, p2Pool, revealedIds, isRevealingAll,
     isCardRevealed, handleStartPull, handleNextReveal, handleRevealAll, handleProceedToBan, p1BannedIds, p2BannedIds, toggleBan, toggleP2Ban,
     canConfirmBan, handleConfirmBan, p1PickedIds, p2PickedIds, p1StarterId, p2StarterId, setP1StarterId, setP2StarterId, togglePick, toggleP2Pick,
-    canLaunch, handleLaunchBattle, inspectElf, setInspectElf,
+    canLaunch, handleLaunchBattle, inspectElf, setInspectElf, loadoutOptions, p1Loadout, p2Loadout, chooseLoadout,
   } = draft;
   useScopedStyle("destiny-legacy-paper-css", legacyPaperCss);
   const [isMathStyle, setIsMathStyle] = useState<boolean>(true);
@@ -138,12 +141,12 @@ export default function DestinyWheelClassic({ draft, allElves, onBack, onSwitchT
       {/* 頂部導航列 */}
       <header className="flex flex-col md:flex-row md:items-center justify-between mb-6 py-3 px-3 rounded-xl bg-slate-950/75 backdrop-blur-md border border-[#36B2BC]/30 relative z-10 gap-3 pt-12 md:pt-3 md:mr-[var(--control-hub-safe,13rem)]">
         <div className="flex items-center gap-3">
-          <button 
+          {!shellBack && <button 
             onClick={onBack}
             className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-slate-900/80 hover:bg-slate-800 text-slate-300 border border-slate-700 transition whitespace-nowrap shrink-0"
           >
             <ArrowLeft className="w-4 h-4" /> 返回大廳
-          </button>
+          </button>}
           <div className="flex items-center gap-2">
             <div>
               <h1 className="text-xl md:text-2xl font-black bg-gradient-to-r from-[#36B2BC] via-purple-300 to-indigo-300 bg-clip-text text-transparent flex items-center gap-2 whitespace-nowrap" title="Wheel of Destiny">
@@ -600,6 +603,29 @@ export default function DestinyWheelClassic({ draft, allElves, onBack, onSwitchT
               <Swords className="w-5 h-5" /> 啟動巔峰對決 <ChevronRight className="w-5 h-5" />
             </button>
           </div>
+
+          {loadoutOptions && (
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 mb-4" data-testid="a-loadout">
+              {([['p1', `P1 配裝`, loadoutOptions.p1, p1Loadout, false], ['p2', battleMode === 'PVE' ? 'AI 配裝' : 'P2 配裝', loadoutOptions.p2, p2Loadout, battleMode === 'PVE']] as const).map(([side, label, opts, val, locked]) => (
+                <div key={side} className="bg-slate-900/70 border border-slate-700 rounded-xl p-3 space-y-1.5">
+                  <div className="text-xs font-bold text-slate-300" title="套裝／目鏡／稱號雙方不重複；火焰 2 選 1">{label}</div>
+                  {(['suit', 'eyewear', 'title', 'flame'] as (keyof Loadout)[]).map(k => {
+                    const list: string[] = k === 'suit' ? (opts as LoadoutOptions).suits : k === 'eyewear' ? (opts as LoadoutOptions).eyewears : k === 'title' ? (opts as LoadoutOptions).titles : (opts as LoadoutOptions).flames;
+                    return (
+                      <div key={k} className="flex flex-wrap items-center gap-1.5">
+                        <span className="w-10 text-[11px] text-slate-500">{{ suit: '套裝', eyewear: '目鏡', title: '稱號', flame: '火焰' }[k]}</span>
+                        {list.map(id => { const l = loadoutLabel(k, id); const on = (val as Loadout | null)?.[k] === id; return (
+                          <button key={id} type="button" title={l.desc} disabled={locked && !on} onClick={() => chooseLoadout(side, k, id)}
+                            className={`px-2 py-1 rounded-md text-xs border ${on ? 'bg-emerald-600/30 border-emerald-400 text-emerald-200' : 'border-slate-700 text-slate-300 hover:border-slate-500'} disabled:opacity-40`}>
+                            {l.color && <span className="inline-block w-2 h-2 mr-1 rotate-45" style={{ background: l.color }} />}{l.name}
+                          </button>); })}
+                      </div>
+                    );
+                  })}
+                </div>
+              ))}
+            </div>
+          )}
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 flex-1 overflow-y-auto pb-6">
             {/* 玩家剩餘 9 隻中選 6 隻 */}

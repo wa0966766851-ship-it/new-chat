@@ -8,7 +8,7 @@ export const GROUP_C_ACTION_FIELDS: Record<string, readonly string[]> = {
   // 以上一數值為等級，改變能力（全屬性／指定項）。
   stat_by_last: ['side', 'stats'],
   // 屬性取最優克制：本次造成技能傷害時，克制倍數取清單中最高者；未擊敗對手則延續到之後 N 次造成技能傷害。
-  type_best_of: ['types', 'extend'],
+  type_best_of: ['types', 'extend','fromCarried'],
   // 多次各自獨立的固定吸取；吸取後該次對手體力未減少則改為汲取（真實傷害＋等量恢復）。
   drain_repeat_independent: ['flat', 'repeat', 'fallback'],
   // 消耗對方指定名稱額外精靈的最大體力比例（不足則令其體力歸零）；找不到存活的該額外精靈則失敗。
@@ -43,6 +43,8 @@ export function groupCActionIssue(op: string, p: any, trig: string, inMark: bool
     if (!['self', 'opp'].includes(p.side) || !Array.isArray(p.stats) || !p.stats.length || p.stats.some((s: any) => !STAT_NAMES.includes(s))) return '依上一數值改能力需明確目標與能力名稱';
   }
   if (op === 'type_best_of') {
+    if(p.fromCarried!==undefined&&p.fromCarried!==true)return '攜帶技能屬性查詢需為true';
+    if(p.fromCarried===true)return p.types!==undefined||!['use','self_skill','self_attack','before_skill'].includes(trig)||!Number.isInteger(p.extend)||p.extend<0||p.extend>100?'攜帶技能最優克制需使用前與有限延續次數，不可混入固定屬性':null;
     if (!Array.isArray(p.types) || p.types.length < 2 || p.types.length > 8 || p.types.some((t: any) => typeof t !== 'string' || !t || t.length > 20)) return '最優克制需2至8個屬性';
     if (!Number.isInteger(p.extend) || p.extend < 0 || p.extend > 100) return '最優克制延續次數需0至100整數';
     if (!['use', 'self_skill', 'self_attack'].includes(trig)) return '最優克制需在自身技能使用時設定';

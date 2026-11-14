@@ -22,7 +22,8 @@ export const MIGRATED_HAMO_YUTIANZHEN_SKILL_KIT: ReviewedSequenceSkill[] = [{
     // 無視傷害限制／攻擊免疫／百分比減傷
     seq('■ 無視傷害限制效果', [{ acts: [a('ignore', { what: '傷害限制' })] }], 2),
     seq('■ 無視免疫受到的攻擊效果', [{ acts: [a('ignore', { what: '攻擊免疫' })] }], 3),
-    seq('■ 無視對手百分比技能傷害減少效果', [{ acts: [a('ignore', { what: '抵擋傷害' })] }], 4),
+    // 2026-11-13：「百分比技能傷害減少」＝百分比減傷（只作用於技能傷害），不是抵擋。
+    seq('■ 無視對手百分比技能傷害減少效果', [{ acts: [a('ignore', { what: '百分比減傷' })] }], 4),
     // 攻擊時不會出現微弱（克制關係微弱時變普通）——引擎既有 minimumTypeMultiplierThisAction
     seq('■ 攻擊時造成的傷害不會出現微弱（克制關係為微弱時都變成普通）', [
       { acts: [a('turn_key_set', { key: 'minimumTypeMultiplierThisAction', turns: 1, side: 'self', reason: '龍神·御天陣', label: '微弱變普通' })] },

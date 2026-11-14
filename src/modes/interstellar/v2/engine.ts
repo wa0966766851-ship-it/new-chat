@@ -154,8 +154,36 @@ export const runPerk = (run: Pick<RunV2, "equipType" | "equipId" | "nLevel">): P
 export const banCapFor = (nLevel: number, perk?: Perk | null): number => banCap(nLevel) + (perk?.banBonus ?? 0);
 export const levelOf = (run: Pick<RunV2, "nLevel">): NEffects => nEffects(clampN(run.nLevel));
 export function loadRunV2(storage: Pick<Storage, "getItem">): RunV2 | null {
-  const raw = storage.getItem(RUN_KEY_V2); if (!raw) return null;
-  try { const r = JSON.parse(raw); return r?.schemaVersion === 2 && r.map && Array.isArray(r.team) ? migrateRun({ ...r, nLevel: clampN(r.nLevel), bans: Array.isArray(r.bans) ? r.bans.map(String) : [] }) : null; } catch { return null; }
+  let raw: string | null = null;
+  try { raw = storage.getItem(RUN_KEY_V2); } catch { return null; }
+  if (!raw) return null;
+  try { const r = JSON.parse(raw); return r?.schemaVersion === 2 && r.map && Array.isArray(r.team) ? repairRun(migrateRun({ ...r, nLevel: clampN(r.nLevel), bans: Array.isArray(r.bans) ? r.bans.map(String) : [] })) : null; } catch { return null; }
+}
+const SCENE_KINDS = new Set(["draft", "map", "event", "shop", "rest", "treasure", "altar", "prelude", "reward", "recruit", "end"]);
+/**
+ * 2026-11-14 改版容錯：精靈／內容更新後，舊存檔可能引用已移除或改名的事件、遺物、隊員，
+ * 讀檔時就地修正成合法局面（不重置進度），避免畫面一開就崩潰而讓整個存檔卡死。
+ */
+export function repairRun(run: RunV2): RunV2 {
+  let r: any = run, changed = false;
+  const set = (patch: any) => { r = { ...r, ...patch }; changed = true; };
+  const team = (Array.isArray(r.team) ? r.team : []).filter((e: any) => e && typeof e === "object" && e.id != null && Array.isArray(e.skills));
+  if (team.length !== r.team.length) set({ team });
+  const relics = (Array.isArray(r.relics) ? r.relics : []).filter((id: any) => typeof id === "string" && RELIC_BY_ID[id]);
+  if (!Array.isArray(r.relics) || relics.length !== r.relics.length) set({ relics });
+  if (!Array.isArray(r.chronicle)) set({ chronicle: [] });
+  const sc = r.scene;
+  if (!sc || !SCENE_KINDS.has(sc.kind) || (sc.kind === "event" && !EVENT_BY_ID[sc.eventId])) {
+    set({ scene: { kind: "map", note: "版本更新後原場景已不存在，已返回地圖。" } });
+  } else if (sc.kind === "shop" && Array.isArray(sc.stock)) {
+    const stock = sc.stock.filter((x: ShopItem) => x && (x.kind !== "relic" || (x.ref && RELIC_BY_ID[x.ref])));
+    if (stock.length !== sc.stock.length) set({ scene: { ...sc, stock } });
+  } else if (sc.kind === "treasure" && Array.isArray(sc.offer)) {
+    const offer = sc.offer.filter((id: string) => RELIC_BY_ID[id]);
+    if (offer.length !== sc.offer.length) set({ scene: { ...sc, offer } });
+  }
+  if (r.at && r.map?.nodes && !r.map.nodes.some((n: any) => n.id === r.at)) set({ at: r.map.nodes.find((n: any) => n.col === 0)?.id ?? null });
+  return changed ? r as RunV2 : run;
 }
 /**
  * 舊存檔相容：星晶保留為貨幣，原數量不變，不轉成任意令。
@@ -195,17 +223,37 @@ export function syncRunDefinitions(run:RunV2,pool:readonly Elf[]):RunV2 {
 /** 每局首次覆寫前留下完整存檔；相同定義不加revision、不重複備份。 */
 export function resumeRunV2(storage:Storage,pool:readonly Elf[]):RunV2|null {
   const run=loadRunV2(storage);if(!run)return null;
-  const next=syncRunDefinitions(run,pool);if(next===run)return run;
+  // 2026-11-14：定義同步失敗（新版資料與舊存檔不相容）時沿用原存檔，不讓整局卡死。
+  let next:RunV2;
+  try{next=syncRunDefinitions(run,pool);}catch(error){console.warn('[星蝕迴廊] 定義同步失敗，沿用原存檔',error);return run;}
+  if(next===run)return run;
   const backupKey=definitionSyncBackupKey(run.runId);
-  if(!storage.getItem(backupKey))storage.setItem(backupKey,JSON.stringify(run));
+  const backup=():boolean=>{try{if(!storage.getItem(backupKey))storage.setItem(backupKey,JSON.stringify(run));return true;}catch{return false;}};
+  // 備份失敗不得覆寫原檔；空間不足時先清掉其他局的舊備份再試，仍失敗就沿用原存檔（不同步、不拋錯，避免開啟即卡死）。
+  if(!backup()){pruneRunBackups(storage,run.runId);if(!backup()){console.warn('[星蝕迴廊] 同步前備份失敗，本次不套用新版定義');return run;}}
   return saveRunV2(storage,next);
+}
+/** 只保留目前這一局的同步前備份；舊局（含已結束或被覆蓋的局）的備份一律移除，避免累積吃滿儲存空間。 */
+export function pruneRunBackups(storage:Storage,keepRunId?:string):void {
+  try{
+    const s=storage as any;if(typeof s.length!=='number'||typeof s.key!=='function')return;
+    const keep=keepRunId?definitionSyncBackupKey(keepRunId):null,drop:string[]=[];
+    for(let i=0;i<s.length;i++){const k=s.key(i);if(k&&k.startsWith(DEFINITION_SYNC_BACKUP_KEY)&&k!==keep)drop.push(k);}
+    for(const k of drop)storage.removeItem(k);
+  }catch{/* 略過 */}
 }
 /** 寫入：不覆蓋較新的修訂（例如戰鬥結算已寫入的局面）。 */
 export function saveRunV2(storage: Storage, run: RunV2): RunV2 {
   const cur = loadRunV2(storage);
   if (cur && cur.runId === run.runId && cur.revision > run.revision) return cur;
   const next = { ...run, revision: (cur?.runId === run.runId ? cur.revision : run.revision) + 1 };
-  storage.setItem(RUN_KEY_V2, JSON.stringify(next));
+  const raw = JSON.stringify(next);
+  try { storage.setItem(RUN_KEY_V2, raw); }
+  catch {
+    // 空間不足：先清掉舊局備份再試一次；仍失敗就保留記憶體中的局面，不讓畫面崩潰。
+    pruneRunBackups(storage, run.runId);
+    try { storage.setItem(RUN_KEY_V2, raw); } catch (error) { console.warn('[星蝕迴廊] 存檔寫入失敗（儲存空間不足）', error); }
+  }
   return next;
 }
 

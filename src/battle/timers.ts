@@ -151,6 +151,11 @@ export function tickTimers(
     if (t.tickAt !== at) { out.push(t); continue; }
     if (t.pendingActivation) { out.push({ ...t, pendingActivation: false }); continue; }
     if (t.lateMoverPending) { out.push({ ...t, lateMoverPending: false }); continue; }
+    if(t.kind==='turn_effect'&&turnEffectCountdownFrozen(list,t)){
+      // 凍結期限不延後下回合啟用，也不取消每回合的效果；到期動作仍不得提前執行。
+      if(t.payload?.applyMode==='per_tick'&&onTickEffect)onTickEffect(t);
+      out.push(t);continue;
+    }
     
     if (onTickEffect) {
       onTickEffect(t);
@@ -160,6 +165,15 @@ export function tickTimers(
     if (remaining > 0) out.push({ ...t, remaining });
   }
   return out;
+}
+
+/** 凍結器也屬回合類效果，因此包含自己；依持有者隔離，不凍結隊友。 */
+export function turnEffectCountdownFrozen(list:Timer[],timer:Timer):boolean {
+ return list.some(t=>t.remaining>0&&!t.pendingActivation&&(t.payload?.freezeTurnEffects===true||t.payload?.block?.freezeTurnEffects===true)&&
+  (t.scope==='team'||t.ownerBattleId===timer.ownerBattleId));
+}
+export function frozenTurnRegistryKeys(list:Timer[]):Set<string>{
+ return new Set(list.filter(t=>t.kind==='turn_effect'&&turnEffectCountdownFrozen(list,t)).flatMap(t=>t.payload?.mirrorRegistryKeys||[]));
 }
 
 /** 消耗一次「次數類效果」。回傳 [新陣列, 是否成功消耗]。 */

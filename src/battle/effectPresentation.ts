@@ -45,6 +45,8 @@ export function payloadPresentation(payload: Record<string, any> = {}): EffectPr
   if (payload.immuneStatus) add(payload.reflectStatus ? 'status_guard_reflect' : 'status_guard', payload.reflectStatus ? '異常免疫與反彈' : '異常免疫', '免疫異常',
     `免疫${payload.excludeStatusCategory === 'AUXILIARY' ? '非附屬類' : '指定'}異常${payload.reflectStatus ? '並反彈' : ''}。`);
   if (payload.recoveryReductionPercent !== undefined) add('recovery_reduction', payload.recoveryReductionPercent >= 1 ? '禁止恢復體力' : `恢復量降低${percent(payload.recoveryReductionPercent)}`, '降療');
+  if (payload.recoveryMultiplier !== undefined) add('recovery_multiplier', `恢復效果×${payload.recoveryMultiplier}`, '恢復倍率');
+  if (payload.recoveryBacklash !== undefined) { add('recovery_backlash', `執行恢復時受到${payload.recoveryBacklash}點真實傷害`, '恢復反噬'); parts[parts.length-1].polarity='negative'; }
   if (payload.ppRecoveryReductionPercent !== undefined) add('pp_recovery_reduction', `PP恢復量降低${percent(payload.ppRecoveryReductionPercent)}`, '減PP');
   if (payload.afterUseDrainRatio) add('after_use_drain', '使用技能後吸取體力', '吸血',
     `使用技能後吸取對手最大體力的${percent(payload.afterUseDrainRatio.ratio)}${payload.afterUseDrainRatio.doubleBelowHalf ? '，自身低於半血時翻倍' : ''}。`);
@@ -58,6 +60,8 @@ export function payloadPresentation(payload: Record<string, any> = {}): EffectPr
   if (payload.inherentInvalid) add('inherent_invalid', '固有效果無效', '技能無效');
   if (payload.preventAction) add('prevent_action', '禁止行動');
   if (payload.lockSwitch) add('switch_lock', '禁止主動切換', '切換限制');
+  if (payload.noItem) add('item_lock', '禁止使用藥劑', '藥劑限制');
+  if (payload.potionBacklash) add('potion_backlash', '藥劑反噬', '藥劑反噬', '藥劑效果反轉：回復變為藥劑反噬傷害、回復PP變為扣除、解除異常變為進入異常；對對手的藥劑效果改由自身承受。');
   if (payload.roundHealEqualPercent) add('round_heal_damage', '回合開始恢復與附傷', '恢復');
   if (payload.blockSkillDamage) add('block_skill_damage', '免疫技能傷害', '免傷');
   if (payload.spaceShift) add('space_shift', '空間轉移');
@@ -116,11 +120,13 @@ export function baseText(base?: string): string {
 }
 
 /** 觸發時點的顯示前綴；涵蓋 Trigger 全部值，未知者不加前綴（不輸出籠統的「觸發時」）。 */
-const TRIGGER_CAPTIONS: Record<string, string> = {
+export const TRIGGER_CAPTIONS: Record<string, string> = {
+  team_before_damage:'受到傷害前（全隊）',team_action_failed:'技能使用失敗時（全隊）',
   team_battle_start: '戰鬥開始時（全隊）', team_entrance: '精靈登場時（全隊）', team_after_action: '行動結束後（全隊）', team_round_end: '回合結束時（全隊）',
   team_before_status: '受到異常前（全隊）', team_status_received: '受到異常時（全隊）', team_defeated: '精靈被擊敗時（全隊）', team_phase_end: '戰鬥階段結束時（全隊）',
   team_opponent_skill: '對手使用技能時（全隊）', team_action_end: '行動結束時（全隊）', team_round_start: '回合開始時（全隊）',
-  opp_damaged_skill: '對手受到技能傷害後', opp_damage_settled: '對手傷害結算後', skill_selected: '選擇技能時', outgoing_power: '攻擊威力結算時', incoming_power: '受到攻擊威力結算時',
+  stat_changed: '自身能力等級變化時', team_stat_changed: '己方能力等級變化時', battle_node: '戰鬥節點觸發時', before_round_start: '回合開始前',
+  opp_damaged_skill: '對手受到技能傷害後', opp_damaged_true: '對手受到真實傷害後', opp_damage_settled: '對手傷害結算後', skill_selected: '選擇技能時', outgoing_power: '攻擊威力結算時', incoming_power: '受到攻擊威力結算時',
   resource_changed: '資源變化後', use: '使用技能時', before_action: '行動前', before_skill: '技能使用前', before_stat_change: '能力等級改變前', modify_priority: '先制判定時',
   before_instant_kill: '秒殺前', extra_action_start: '額外行動開始時', extra_action_end: '額外行動結束時', after_hit: '技能傷害結算後', attack_hit: '每次攻擊命中後',
   on_invalid: '技能無效時', self_invalid: '自身技能無效時', battle_start: '戰鬥開始時', entrance: '登場時', round_start: '回合開始時', round_end: '回合結束時', phase_end: '戰鬥階段結束時',
@@ -134,6 +140,9 @@ const TRIGGER_CAPTIONS: Record<string, string> = {
   outgoing_skill: '造成技能傷害時', outgoing_attack: '造成攻擊傷害時', defeated: '被擊敗時', kill: '擊敗對手時', not_killed: '行動結束仍未擊敗時', fatal: '受到致命傷害時',
   before_status: '受到異常前', pp_consumed: 'PP被消耗時', pp_cleared: 'PP被清空時', turn_effects_cleared: '回合類效果被消除時', stat_boost_cleared: '能力提升被消除時',
   status_end: '異常結束時', status_immune: '免疫異常時', status_tick: '異常回合遞減前', switch_out: '下場時', opponent_switch_out: '對手下場時', status_received: '受到異常時', bench: '位於背包時',
+  action_phase_enter:'進入出手階段（含受控）',team_action_phase_enter:'雙方進入出手階段（全隊觀察，含受控）',
+  team_opponent_status_received:'敵方受到異常後（全隊觀察）',
+  status_reflected:'反彈異常成功時', status_mechanic:'異常效果計算前', team_status_mechanic:'異常效果計算前（全隊）',
   any_status: '任一方受到異常時', holder_damaged_attack: '持有者受到攻擊傷害後', holder_damaged: '持有者受傷後', holder_passive: '持有者期間', passive: '常駐',
   held_resource_lost: '持有資源消失時', damage_immune: '免疫傷害時',
 };

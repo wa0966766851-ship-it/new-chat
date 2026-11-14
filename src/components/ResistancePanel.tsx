@@ -1,3 +1,4 @@
+import { defaultResistances } from '../battle/resistances';
 import React, { useState } from "react";
 import { ElfResistances, ResistanceSlot } from "../types";
 import { Shield, RotateCcw, Sliders, Info, Zap, Flame, Snowflake } from "lucide-react";
@@ -9,25 +10,7 @@ const CONTROL_STATUS_OPTIONS = statusOptionsFor('CONTROL');
 const WEAKENING_STATUS_OPTIONS = statusOptionsFor('WEAKENING');
 
 export function getDefaultResistances(): ElfResistances {
-  return {
-    damageResist: {
-      crit: 35,
-      fixed: 35,
-      percent: 35,
-    },
-    statusResist: {
-      allImmune: true,
-      selectedStatuses: ["麻痹", "害怕", "疲憊", "中毒", "燒傷", "凍傷"],
-      slots: [
-        { id: "c1", category: "control", status: "麻痹", rate: 10 },
-        { id: "c2", category: "control", status: "害怕", rate: 10 },
-        { id: "c3", category: "control", status: "疲憊", rate: 10 },
-        { id: "w1", category: "weakening", status: "中毒", rate: 10 },
-        { id: "w2", category: "weakening", status: "燒傷", rate: 10 },
-        { id: "w3", category: "weakening", status: "凍傷", rate: 10 },
-      ],
-    },
-  };
+  return defaultResistances();
 }
 
 interface ResistancePanelProps {
@@ -146,7 +129,7 @@ export default function ResistancePanel({ resistances, onChange, readonly = fals
           <div className="flex items-center gap-2">
             <button type="button" onClick={handleResetToDefault}
               className="px-3 py-1.5 rounded-full bg-white/[0.06] hover:bg-white/[0.12] text-[12px] font-medium text-slate-200 flex items-center gap-1"
-              title="傷害抗性 35%；控制 麻痺/害怕/疲憊、弱化 中毒/燒傷/凍傷 各 10%">
+              title="傷害抗性 35%；控制 麻痺/害怕/疲憊、弱化 中毒/燒傷/凍傷 各 55%（50%＋全免5%）">
               <RotateCcw className="w-3.5 h-3.5" /> 預設
             </button>
             <button type="button" onClick={handleResetDamageToZero}

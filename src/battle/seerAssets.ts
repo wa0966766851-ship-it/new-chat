@@ -45,6 +45,16 @@ function normalizeKeyed(idx: SeerIndex, key: string) {
 /** 依名稱找出可用的寵物ID（含同名前置型態），依優先序排列 */
 /** 指定圖像（名稱 → 官方寵物 ID）：沒有官方圖或名稱對不上時使用 */
 export const SEER_ID_OVERRIDES: Record<string, number> = {
+ [normalizeName("魔化.瑞爾斯")]: 3094,
+ [normalizeName("不滅.艾恩斯")]: 3467,
+ [normalizeName("毀滅之神.莫迪西斯")]: 2205,
+ [normalizeName("赫爾卡星魂")]: 2824,
+ [normalizeName("滄桑移壤·納多雷")]: 88,
+ [normalizeName("終焉戰神.蓋亞")]: 261,
+ [normalizeName("炫彩山之神.迪符特")]: 3590,
+ [normalizeName("月鈴極樂·奈尼芬多")]: 264,
+ [normalizeName("聖光天馬.珀伽索斯")]: 999,
+ [normalizeName("難違天律.天邪龍王")]: 2652,
   '御天龍神·哈莫': 3809, // 本機 SeerAPI 索引：龍神哈莫，不冒用其他型態。
   "天蓬元帥八戒": 1536,            // 使用者指定：菲爾蓬格
   "混濁海妖.布林克克": 359,        // 布林克克（原版）
@@ -88,6 +98,8 @@ export const BATTLE_SPRITE_PROFILES: Record<string, BattleSpriteProfile> = {
 };
 
 export function battleSpriteProfile(name: string, bodySrc?:string): BattleSpriteProfile | null {
+  // 滅戰神決：以本體體量構圖，允許外圍星環裁切；不套用咤克斯的沉降與外移數值。
+  if(bodySrc?.endsWith('/seer/body/4766.png'))return {framing:'colossal',heightRatio:1.65,sink:.35,outward:.04};
   if(bodySrc?.endsWith('/elf-art/zhakesi_fear_body.png'))return BATTLE_SPRITE_PROFILES[normalizeName('恐懼的化身·咤克斯')];
   return BATTLE_SPRITE_PROFILES[normalizeName(name || "")] || null;
 }
@@ -105,6 +117,7 @@ export type SpriteFacing = "left" | "right" | "front";
  * - 沒有視覺證據時不得記 front，也不得直接上場；補核對前先以 left 暫存並在 FRONT_EVIDENCE 留紀錄。
  */
 export const STATIC_FRONT_EVIDENCE: Record<string, string> = {
+  '/seer/body/88.png': '已查看 public/seer/body/88.png 與 .seer-cache/new-ten-animation-shots/static-contact.png：納多雷靜態為正面對稱造型，原生動作另以朝右核對。',
   '/elf-art/unknown_myth_ghost_body.png': '已查看 public/elf-art/unknown_myth_ghost_body.png：正面鬼影，無左右側向；原圖與雙方截圖見 review-20261026/static-custom.txt。',
 };
 export const BATTLE_SPRITE_FACING: Record<string, SpriteFacing> = {
@@ -162,6 +175,18 @@ export const BATTLE_SPRITE_FACING: Record<string, SpriteFacing> = {
 
 // 同名精靈的備用型態可能具有不同朝向，以實際載入的素材為準。
 export const BODY_SOURCE_FACING: Record<string, SpriteFacing> = {
+ // 2026-11-10 官方原始PNG逐圖核對；原生動畫另依播放器方向表。
+ "/seer/body/88.png": "front",
+ "/seer/body/261.png": "left",
+ "/seer/body/264.png": "left",
+ "/seer/body/999.png": "left",
+ "/seer/body/2205.png": "left",
+ "/seer/body/2652.png": "left",
+ "/seer/body/2824.png": "left",
+ "/seer/body/3094.png": "left",
+ "/seer/body/3467.png": "left",
+ "/seer/body/3590.png": "left",
+ "/seer/body/4766.png": "left",
   // 已核對 70.pet 待機／頭部：原生動畫朝右，與普通雷伊靜態圖分別登記。
   ...Object.fromEntries(Object.entries(PET_ANIMATION_ASSETS).map(([id,meta])=>[`/api/pet-animations/bundle/${id}`,meta.facing])),
   "/elf-skins/rey-thunder-dragon-v1.png": "right", // 已查看原圖：金色本體頭部朝右。
@@ -297,7 +322,7 @@ export function resolvePetIds(elf: Pick<Elf, "name" | "id"> & { seerId?: number 
   const out: number[] = [];
   const push = (n: number) => { if (Number.isFinite(n) && n > 0 && !out.includes(n)) out.push(n); };
   if (elf.seerId != null && elf.seerId !== "") push(Number(elf.seerId));
-  const ov = SEER_ID_OVERRIDES[elf.name || ""];
+  const ov = SEER_ID_OVERRIDES[elf.name || ""] || SEER_ID_OVERRIDES[normalizeName(elf.name || "")];
   if (ov) push(ov);
   if (!idx) return out;
   const flag = kind === "head" ? 1 : 2;

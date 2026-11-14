@@ -21,6 +21,7 @@ import {
   ArrowRight
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
+import { searchList } from '../utils/textSearch';
 
 // Types for Test Runner State
 interface ElfTestResult {
@@ -491,15 +492,7 @@ export default function TestRunnerPage() {
     });
   });
 
-  const filteredSourceLogs = aggregatedSourceLogs.filter(item => {
-    const s = searchTerm.toLowerCase();
-    return (
-      item.elfName.toLowerCase().includes(s) ||
-      item.skillName.toLowerCase().includes(s) ||
-      item.logText.toLowerCase().includes(s) ||
-      item.sourcePath.toLowerCase().includes(s)
-    );
-  });
+  const filteredSourceLogs = searchList(aggregatedSourceLogs, searchTerm, item => ({ title: item.skillName, tags: [item.elfName], body: [item.logText, item.sourcePath] }));
 
   // Compile coverage rows for view
   const aggregatedCoverage: { elfName: string; skillName: string; category: string; skillDmg: boolean; fixedDmg: boolean; percentDmg: boolean; trueDmg: boolean; heal: boolean }[] = [];
@@ -513,17 +506,11 @@ export default function TestRunnerPage() {
     });
   });
 
-  const filteredCoverage = aggregatedCoverage.filter(item => {
-    const s = searchTerm.toLowerCase();
-    return (
-      item.elfName.toLowerCase().includes(s) ||
-      item.skillName.toLowerCase().includes(s) ||
-      item.category.toLowerCase().includes(s)
-    );
-  });
+  // 2026-11-07：與效果庫同一套搜尋（多關鍵字、排除、同義詞、簡繁）。
+  const filteredCoverage = searchList(aggregatedCoverage, searchTerm, item => ({ title: item.skillName, tags: [item.elfName], body: [item.category] }));
 
   return (
-    <div id="test-runner-container" className="absolute inset-0 flex flex-col overflow-y-auto bg-slate-950/90 backdrop-blur-md text-slate-100 font-sans p-4 md:p-6 pb-20 z-10">
+    <div id="test-runner-container" className="absolute inset-0 flex flex-col overflow-y-auto bg-slate-950/90 backdrop-blur-md text-slate-100 font-sans px-4 md:px-6 pt-16 pb-20 z-10">
       
       {/* Hidden Battle Engine Frame */}
       {activeTest && (
@@ -552,15 +539,13 @@ export default function TestRunnerPage() {
         <div>
           <div className="flex items-center gap-2">
             <Cpu className="w-6 h-6 text-indigo-400 animate-pulse" />
-            <h1 className="text-xl md:text-2xl font-bold tracking-tight text-white font-mono">
-              全精靈自動化測試引擎
+            <h1 className="text-xl md:text-2xl font-bold tracking-tight text-white">
+              精靈自動測試
             </h1>
-            <span className="bg-indigo-950/80 border border-indigo-800 text-indigo-300 text-[10px] px-2 py-0.5 rounded-full font-mono uppercase">
-              V2 Real-Drive
-            </span>
+            <span className="bg-indigo-950/80 border border-indigo-800 text-indigo-300 text-[10px] px-2 py-0.5 rounded-full" title="實際開戰鬥執行，不是模擬">實戰驅動</span>
           </div>
-          <p className="text-xs text-slate-400 mt-1 max-w-2xl">
-            透過實際掛載 <span className="text-slate-200 underline">BattleScreen</span> 核心引擎，逐一驅動精靈執行完整技能循環。檢測程式碼路徑、記錄魂印/技能對應日誌，並即時產出傷害類型與回復效果覆蓋報告。
+          <p className="text-xs text-slate-400 mt-1 max-w-2xl" title="每隻精靈實際開一場對戰，輪流使用全部技能；記錄魂印／技能日誌、傷害類型與回復是否觸發，執行出錯會標示為「異常阻斷」。">
+            勾選精靈 → 開始測試：每隻實際對戰並輪流使用全部技能，檢查報錯、傷害類型與回復。
           </p>
         </div>
         

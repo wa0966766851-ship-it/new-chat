@@ -83,6 +83,8 @@ async function createWindow() {
       contextIsolation: true,
       nodeIntegration: false,
       sandbox: true,
+      // 背景音樂（星蝕回廊等）進入頁面即可自動播放；是否自動播放由控制中心設定決定。
+      autoplayPolicy: "no-user-gesture-required",
     },
   });
   await mainWindow.loadURL(url);

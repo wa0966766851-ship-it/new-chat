@@ -4,7 +4,7 @@ const description='■ 先制-6\n■ 無視對手抵擋傷害效果\n■ 無視�
 export const MIGRATED_REFLECTION_SKILL_KITS:ReviewedSequenceSkill[]=[
   {elfIds:['300','5000'],name:'能量',description,kit:makeKit()},
   {elfIds:['5010'],name:'克制',description,kit:makeKit()},
-  {elfIds:['5024'],name:'無盡入侵',description:'下2回合對手受到的傷害提高150%；5回合內免疫並反彈異常狀態；2回合內反彈對手致命一擊的傷害；2回合內受到的傷害不超過260',kit:[
+  {elfIds:['5024','5025'],name:'無盡入侵',description:'下2回合對手受到的傷害提高150%；5回合內免疫並反彈異常狀態；2回合內反彈對手致命一擊的傷害；2回合內受到的傷害不超過260',kit:[
     sequence('下2回合對手受到的傷害提高150%',[{acts:[a('dmg_mod_turns',{side:'opp',turns:2,next:true,dir:'taken',kind:'攻擊',boost:1.5})]}],0),
     sequence('5回合內免疫並反彈異常狀態',[{acts:[a('immune_status_turns',{turns:5,reflect:true,cls:''})]}],1),
     sequence('2回合內反彈對手致命一擊的傷害',[{acts:[a('timed',{turns:2,from:'now',trig:'damaged_attack',body:[{cond:[{c:'event_crit',p:{},label:'本次受傷為致命一擊'}],acts:[a('reflect_event_damage',{ratio:1})]}]})]}],2),

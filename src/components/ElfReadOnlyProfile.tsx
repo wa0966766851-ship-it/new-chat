@@ -75,9 +75,9 @@ export const ElfReadOnlyProfile: React.FC<{
             {elf.illusion && !elf.isInherentInvalid && <span className="block text-xs text-cyan-200 mt-1">轉化 → {skill.name}</span>}
           </summary>
           {elf.illusion && !elf.isInherentInvalid && <p className="mt-3 text-xs text-slate-400">轉化後資訊（原技能固有效果保留）</p>}
-          <p className="mt-3 text-xs text-slate-400 flex flex-wrap gap-3"><span>{skill.category} · {skillDisplayType(skill)}</span><span>威力 {skill.power}</span><SkillResources elf={elf} skill={skill} maxPp={getSkillMaxPp?.(skill, elf)} /><span>先制 {skill.priority || 0}</span></p>
-          <EffectBlockToggle elf={elf} skill={skill}><EffectDescription description={skill.description} className="text-sm leading-7 text-slate-200" /></EffectBlockToggle>
-          {elf.illusion && !elf.isInherentInvalid && <div className="mt-3 border-t border-white/10 pt-3"><p className="text-xs text-slate-400">原技能（固有效果仍生效；原附加效果不重跑）</p><EffectBlockToggle elf={elf} skill={elf.skills[i]}><EffectDescription description={elf.skills[i].description} className="text-sm leading-7 text-slate-200" /></EffectBlockToggle></div>}
+          <p className="mt-3 text-xs text-slate-400 flex flex-wrap gap-3"><span>{skill.category} · {skillDisplayType(skill)}</span><span>威力 {skill.power}</span><SkillResources elf={elf} skill={skill} maxPp={getSkillMaxPp?.(skill, elf)} /><span>先制 {skill.priority || 0}</span><span>基礎命中率 {skill.accuracy ?? 100}%</span></p>
+          <EffectBlockToggle elf={elf} skill={skill}><EffectDescription skill={skill} description={skill.description} className="text-sm leading-7 text-slate-200" /></EffectBlockToggle>
+          {elf.illusion && !elf.isInherentInvalid && <div className="mt-3 border-t border-white/10 pt-3"><p className="text-xs text-slate-400">原技能（固有效果仍生效；原附加效果不重跑）</p><EffectBlockToggle elf={elf} skill={elf.skills[i]}><EffectDescription skill={elf.skills[i]} description={elf.skills[i].description} className="text-sm leading-7 text-slate-200" /></EffectBlockToggle></div>}
         </details>); }); })()}</div>}
     </>}
   </div></BattleViewModeContext.Provider>;

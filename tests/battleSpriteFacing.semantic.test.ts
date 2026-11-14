@@ -257,10 +257,10 @@ test("每一筆靜態立繪都有方向，且 front 只留無法核對的自訂�
       assert.ok(STATIC_FRONT_EVIDENCE[key], `靜態圖 ${key} 標成 front 卻沒有視覺證據`);
     }
   }
-  // 內建 /seer/body/*.png 是原廠素材，一律有明確方向，不得用 front 交差。
+  // 原廠也有正面對稱素材（已逐圖核對的納多雷）；front 必須附實際視覺證據。
   for (const table of tables) {
     for (const [key, facing] of Object.entries(table)) {
-      if (/^\/seer\/body\//.test(key)) assert.notEqual(facing, 'front', `${key} 是原廠立繪，不得標成 front`);
+      if (/^\/seer\/body\//.test(key) && facing==='front') assert.ok(STATIC_FRONT_EVIDENCE[key], `${key} 必須具備原圖正面證據`);
     }
   }
 });

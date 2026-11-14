@@ -53,7 +53,8 @@ try {
     })));
     await act(async () => { driver.onSkillSelect('p1', driver.getSyncState().p1.skills[0]); driver.onSkillSelect('p2', driver.getSyncState().p2.skills[0]); });
     // 引擎先算完整回合，畫面再依時間軸播放：要等播放也結束。
-    for (let i = 0; i < 250 && !(driver.getSyncState().turnNumber === 2 && driver.getSyncState().phase === 'p1_select' && !driver.isPresenting()); i++) {
+    // 數字淡出計時略晚於播放佇列結束；在上限內等到數字收完再驗（負載高時不再誤判）。
+    for (let i = 0; i < 250 && !(driver.getSyncState().turnNumber === 2 && driver.getSyncState().phase === 'p1_select' && !driver.isPresenting() && !document.querySelector('[data-battle-popup]')); i++) {
       await act(async () => { await new Promise(r => setTimeout(r, 40)); });
     }
     observer.disconnect();
@@ -107,6 +108,8 @@ try {
     (window as any).__BATTLE_FAST__ = fast;
     const defender = make(`bound-${targetSide}`, initialHp, '等待', 100);
     defender.survivalRule = { mode: 'freeze_at_zero', active: true, preserveOffField: true, minHp: 0 };
+    // 0 體力存活只在免死窗口內有效（實戰的六刃／damage_survival_guard 都同時給免死回合）。
+    defender.deathImmunity = { guardTurns: 2, deathImmuneTurns: 3, preserveOffField: true };
     defender.shield = 999; defender.barrier = 999;
     const attacker = make('source', 500, '真傷上限驗收', 200);
     const seen = new Map<string, { text: string; hp: number }>();

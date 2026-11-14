@@ -351,6 +351,8 @@ try {
 
   // 星光·冥想寫入的免疫能力下降／反彈異常可被對手消除（算消除成功），之後麻痺命中
   const mk6 = real('5006', 'MK'); mk6.skills = [...mk6.skills, sk('T等待')];
+  // 2026-11-14：內建預設抗性 55%；此案驗證反彈被消除，抗性不屬本案範圍，設為無抗性以免抗性骰干擾。
+  mk6.resistances = { damageResist: { crit: 0, fixed: 0, percent: 0 }, statusResist: { allImmune: false, selectedStatuses: [], slots: [] } };
   R['T等待'] = () => {};
   await start([mk6], [mkE('Z', 5_000_000, [sk('T消回合')])]);
   let L3 = await turn('星光·冥想', 'T消回合');

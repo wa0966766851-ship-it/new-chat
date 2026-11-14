@@ -1,6 +1,7 @@
 import type {Elf} from '../types';
 type Owner=Pick<Elf,'id'|'battleId'|'name'|'skinId'>;
-const key=(side:string,elf:Owner)=>`${side}:${elf.battleId||elf.id}:${elf.name}:${elf.skinId||''}`;
+// 以戰鬥實例識別（2026-11-08）：幻化會改變外觀名稱／皮膚，舊鍵含名稱會讓播放層等錯鍵、變身沒有預留時間。
+const key=(side:string,elf:Owner)=>`${side}:${elf.battleId||elf.id}`;
 const transitions=new Map<string,{pending:Promise<void>;release:()=>void}>();
 /** 僅播放器真的切換外觀時登記；靜態模式與隱匿不會建立等待。 */
 export function beginPetFormTransition(side:string,elf:Owner){

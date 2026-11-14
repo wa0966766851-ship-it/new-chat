@@ -91,6 +91,47 @@ try {
  await act(async()=>{window.dispatchEvent(new window.Event('battle-layout-pref'));});
  assert.equal(document.querySelector('[data-battle-root]')!.getAttribute('data-layout'),'game');
  ok('原廠風／實用風切換');
+ // 六、道具：新分類與搜尋（名稱／效果／異常名，空白分隔全部符合）。
+ await render(value);
+ await act(async()=>{([...document.querySelectorAll('.btg-cmd')].find(b=>b.getAttribute('data-en')==='ITEM') as HTMLButtonElement).click();});
+ const search=document.querySelector('[data-item-search] input') as HTMLInputElement;
+ assert.ok(search,'道具頁有搜尋框');
+ for(const label of ['持續恢復','攻擊・干擾','附加異常','強化狀態'])assert.ok(document.body.textContent!.includes(label),`分類 ${label}`);
+ const typeQuery=async(q:string)=>{await act(async()=>{const setter=Object.getOwnPropertyDescriptor(dom.window.HTMLInputElement.prototype,'value')!.set!;setter.call(search,q);search.dispatchEvent(new dom.window.Event('input',{bubbles:true}));});};
+ // 原廠風卡片只留名稱與數量；說明在上方資訊列，比對時以道具目錄的名稱＋說明為準。
+ const {BATTLE_ITEMS}=await server.ssrLoadModule('/src/utils/battleHelpers.ts');
+ const names=()=>[...document.querySelectorAll('[data-item-stock]')].map(e=>{const it=BATTLE_ITEMS.find((x:any)=>x.id===e.getAttribute('data-item-stock'));return `${it?.name} ${it?.description}`;});
+ await typeQuery('麻痺');
+ assert.ok(names().some(t=>t.includes('麻痺藥劑'))&&!names().some(t=>t.includes('全滿體力藥劑')),'依異常名搜尋');
+ await typeQuery('不在場 體力');
+ assert.ok(names().length>0&&names().every(t=>t.includes('體力')),'多關鍵字同時符合');
+ await typeQuery('不存在的道具');
+ assert.ok(document.querySelector('[data-item-empty]'),'無結果提示');
+ await typeQuery('');
+ const tile=document.querySelector('.btg-item') as HTMLButtonElement;
+ assert.ok(tile&&!tile.textContent!.includes('回復'),'卡片不放說明');
+ await act(async()=>{tile.dispatchEvent(new dom.window.MouseEvent('mouseover',{bubbles:true}));});
+ assert.ok(document.querySelector('[data-item-desc]')?.getAttribute('data-item-desc'),'移上時說明出現在上方資訊列');
+ ok('道具新分類與搜尋');
+ // 七、藥劑不鎖按鈕：不能用時仍可點、顯示原因（不改用 disabled）。
+ await typeQuery('');
+ await render({...value,phase:'resolving'});
+ await act(async()=>{([...document.querySelectorAll('.btg-cmd')].find(b=>b.getAttribute('data-en')==='ITEM') as HTMLButtonElement).click();});
+ const potionBtn=document.querySelector('[data-item-unusable]') as HTMLButtonElement;
+ assert.ok(potionBtn&&!potionBtn.disabled&&potionBtn.getAttribute('aria-disabled')==='true','不能用的藥劑仍可點開查看');
+ await act(async()=>{potionBtn.click();});
+ assert.ok(document.querySelector('[data-item-notice]')?.textContent?.includes('目前不是選擇階段'),'點下顯示原因');
+ ok('藥劑：可看不可用＋原因');
+
+ // 八、背包：技能一覽（PP／可否使用），廢除照樣顯示資訊。
+ await render(withP1(e=>{e.skills[other].isAbolished=true;}));
+ await act(async()=>{([...document.querySelectorAll('.btg-cmd')].find(b=>b.getAttribute('data-en')==='TEAM') as HTMLButtonElement).click();});
+ await act(async()=>{(document.querySelector('[data-team-view-skills]') as HTMLButtonElement).click();});
+ const table=document.querySelector('[data-team-skill-table]')!;
+ assert.ok(table,'切換為技能一覽');
+ assert.ok(table.textContent!.includes('已廢除'),'廢除技能仍列出並標示');
+ assert.ok(/PP \d+\/\d+/.test(table.textContent!),'列出 PP');
+ ok('背包技能一覽');
  console.log(`原廠風對戰版面 ${checks} 項通過`);
 }finally{await act(async()=>root.unmount());await server.close();dom.window.close();}
 process.exit(0);

@@ -12,6 +12,7 @@ export const EXTRA_ELF_KINDS: Record<string, string> = {
   "珀妮": "x_puni",
   "賽博怨靈": "x_cyber_wraith",
   "炫彩山神": "x_shancaishen",
+  "不滅神焰": "x_immortal_flame",
   "旭": "x_xu",
   "清": "x_qing",
 };

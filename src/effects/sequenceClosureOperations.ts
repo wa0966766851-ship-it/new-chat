@@ -64,8 +64,8 @@ export function closureOperations(helpers: { liveElf: (ctx: BattleEventContext, 
       if(p.perStack && !Number.isInteger(st.markStacks))return false;
       return adjust(ctx,side,Math.trunc(amount*(p.perStack?st.markStacks!:1)));
     },
-    rebirth_once: (ctx: BattleEventContext) => {
-      helpers.addTimer(ctx, ctx.actor, '下次死亡重生', 1, 'uses', { rebirth: true }); return true;
+    rebirth_once: (ctx: BattleEventContext, p: any) => {
+      helpers.addTimer(ctx, ctx.actor, '下次死亡重生', 1, 'uses', { rebirth: true, rebirthRestorePp: p.restorePp===true }); return true;
     },
     stat_mirror: (ctx: BattleEventContext, p: any) => {
       const other = p.side === 'self' ? ctx.targetSide : ctx.actor, side = p.side === 'self' ? ctx.actor : ctx.targetSide;

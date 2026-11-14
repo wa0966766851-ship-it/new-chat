@@ -8,6 +8,7 @@ import { registerLauncherPreferences } from './server/launcherPreferences';
 import { registerLauncherIdentity } from './server/launcherIdentity';
 import { registerPetAnimations } from './server/petAnimations';
 import { registerPlayerSaves } from './server/playerSaves';
+import { registerMusicMeta } from './server/musicMeta';
 import { AssetCache } from './electron/update/assetCache.cjs';
 import { REAL_CARD_EFFECT_MODULES as AI_EFFECT_REFERENCE_LIBRARY, TEMPLATE_GRAMMAR_GUIDELINES } from "./src/data/cardTemplates";
 
@@ -21,6 +22,7 @@ registerPlayerSaves(app);
 app.use(express.json());
 registerLauncherPreferences(app, process.cwd());
 registerPetAnimations(app, process.cwd());
+registerMusicMeta(app);
 registerLauncherIdentity(app, process.cwd(), process.env.NODE_ENV === 'production' ? 'production' : 'development');
 // Lite builds carry a local, version-pinned manifest from the verified application package.
 // Full builds have no manifest and retain their original offline routes.

@@ -10,6 +10,8 @@ export interface CustomAnimManifest {
   character:{uv:[number,number,number,number];size:[number,number]};
   sha256:string; size:number;
   idleMotion?:CustomIdleOptions&{zones:CustomIdleZone[]};
+  /** 換姿勢殘影（預設開）：false 關閉。 */
+  poseBlend?:boolean;
   sequences:Record<string,{
     frames:number; hits:number[]; loop?:boolean;
     events?:{launch?:number;recover?:number};
@@ -43,6 +45,32 @@ const FX_MATERIAL:SwfMaterialState={
 };
 
 const UV=[0,0,1,0,1,1,0,1];
+
+/**
+ * 換姿勢殘影（2026-11-08）：自製動作在兩張關鍵姿勢之間是硬切，看起來「一下就跳過去」。
+ * 在切換後的前兩格，把前一張姿勢以淡出殘影畫在新姿勢後方（0.45 → 0.2），
+ * 等同動畫常用的拖影／過渡格；不新增圖集內容、不改影格數與命中時點。待機循環不套用。
+ */
+export const POSE_BLEND_ALPHA=[0.45,0.2] as const;
+type CustomQuad=CustomAnimManifest['sequences'][string]['quads'][number];
+const sameRect=(a?:number[],b?:number[])=>!!a&&!!b&&a.length===b.length&&a.every((v,i)=>Math.abs(v-b[i])<1e-6);
+/** 回傳每一格需要疊在後方的殘影（前一張姿勢的本體四邊形與透明度）。 */
+export function poseBlendGhosts(name:string,quads:readonly CustomQuad[],fallbackUv:readonly number[],enabled=true):({c:number[];buv:number[];a:number}|null)[]{
+  const out:({c:number[];buv:number[];a:number}|null)[]=quads.map(()=>null);
+  if(!enabled||name==='standby')return out;
+  for(let i=1;i<quads.length;i++){
+    const prev=quads[i-1],cur=quads[i];
+    if(!prev?.c||!cur?.c||prev.g?.length||cur.g?.length)continue;
+    const pu=prev.buv??fallbackUv as number[],cu=cur.buv??fallbackUv as number[];
+    if(sameRect(pu,cu))continue; // 同一張姿勢的移動不需要殘影
+    for(let k=0;k<POSE_BLEND_ALPHA.length&&i+k<quads.length;k++){
+      const at=quads[i+k];
+      if(!at?.c||at.g?.length||!sameRect(at.buv??fallbackUv as number[],cu))break;
+      out[i+k]={c:prev.c,buv:pu,a:POSE_BLEND_ALPHA[k]*(prev.a??1)};
+    }
+  }
+  return out;
+}
 const INDEX=[2,1,0,0,3,2];
 
 /** 一個四邊形 → 4 個頂點。positions 是「世界座標」，播放器不再額外縮放。 */
@@ -66,6 +94,7 @@ function quad(
  */
 export function customClipFromManifest(manifest:CustomAnimManifest,atlas:ImageBitmap):SwfClipData{
   const sequences=Object.entries(manifest.sequences).map(([name,seq])=>{
+    const ghosts=poseBlendGhosts(name,seq.quads,manifest.character.uv,manifest.poseBlend!==false);
     const frames=seq.quads.map((original,index)=>{
       // Store a few authored zones, not ~9 MB of repeated idle vertices per elf.
       const uv=original.buv??manifest.character.uv,c=original.c,ppu=manifest.pixelsPerUnit;
@@ -73,6 +102,10 @@ export function customClipFromManifest(manifest:CustomAnimManifest,atlas:ImageBi
         [c[0]*ppu,manifest.canvas[1]-c[1]*ppu,(c[2]-c[0])*ppu,(c[1]-c[5])*ppu],uv,manifest.canvas,ppu,
         index/Math.max(1,seq.frames-1),manifest.idleMotion.zones,manifest.idleMotion)}:original;
       const positions:number[]=[],uvs:number[]=[];
+      // 殘影：先畫（在後方），新姿勢蓋在上面；只露出輪廓外的拖影。
+      const ghost=ghosts[index];
+      if(ghost)quad(positions,uvs,ghost.c[0],ghost.c[1],ghost.c[2],ghost.c[5],...ghost.buv as [number,number,number,number]);
+      const ghostVerts=ghost?4:0;
       // 本體：共用圖集裡的同一個角色格
       // 本體 UV：逐幀自己的圖集格。舊版一律用 manifest.character.uv，
       // 等於整段動畫貼同一張靜止圖，本體自然一動也不動。
@@ -92,14 +125,14 @@ export function customClipFromManifest(manifest:CustomAnimManifest,atlas:ImageBi
         quad(positions,uvs,q.f[0],q.f[1],q.f[2],q.f[5],...q.fuv as [number,number,number,number]);
       }
       const vertCount=positions.length/2;
-      const bodyVertCount=q.g&&q.g.length?q.g.length*4:4;
+      const bodyVertCount=ghostVerts+(q.g&&q.g.length?q.g.length*4:4);
       const fxVertCount=q.f?4:0;
       const addColors=new Float32Array(vertCount*4);
       const mulColors=new Float32Array(vertCount*4);
       for(let v=0;v<vertCount;v++){
         // 前 4 個頂點是本體：用逐幀 alpha；後 4 個是光效：全不透明（亮度已烘進圖集）
-        const bodyVerts=q.g&&q.g.length?q.g.length*4:4;
-        const alpha=v<bodyVerts?q.a:1;
+        const bodyVerts=bodyVertCount;
+        const alpha=v<ghostVerts?ghost!.a:v<bodyVerts?q.a:1;
         mulColors[v*4]=1;mulColors[v*4+1]=1;mulColors[v*4+2]=1;mulColors[v*4+3]=alpha;
       }
       // 索引型別由 SwfFrameMesh 固定為 Uint16（上限 65535 頂點）。

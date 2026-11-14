@@ -1,3 +1,5 @@
+import { getItemCategory } from '../../utils/battleHelpers';
+import { skillControl, controlTurnsLeft, immuneToStatus, controlValue, turnLimitState } from './controlPlanning';
 // src/battle/ai.ts
 // 戰術 AI 決策引擎 —— 取代 v3 的「只選技能 + 每隻硬寫 if」與 v4 的「克制→威力排序」。
 //
@@ -64,6 +66,10 @@ export interface AIContext {
   canSwitch: boolean;
   canUseItem: boolean;
   turnNumber: number;
+  /** 回合上限（巔峰 6V6＝50；滿回合依存活精靈數判勝負）。 */
+  turnLimit?: number;
+  /** 對方全隊（存活數為公開資訊），回合上限時估算領先／落後。 */
+  opponentTeam?: Elf[];
 }
 
 /* ────────────────────────────────────────────────────────────
@@ -159,12 +165,18 @@ function assess(c: AIContext, d: AIDeps): Threat {
 function scoreSkills(c: AIContext, d: AIDeps, cfg: AIConfig, th: Threat): ScoredAction[] {
   const out: ScoredAction[] = [];
   const hints = elfHint(c.self)?.skillHints;
+  // 控場（2026-11-07）：對手受控剩餘回合、是否免疫異常；回合上限局勢。
+  const foeCtl = controlTurnsLeft(c.opponent, d.getStatuses, d.isControlStatus);
+  const foeImmune = immuneToStatus(c.opponent, d.getStatuses);
+  const limit = turnLimitState(c.turnNumber, c.turnLimit, c.team, c.opponentTeam);
 
   (c.self.skills || []).forEach((skill, moveIndex) => {
     if (!d.isSkillUsable(c.self, skill)) return;
 
     let score = 50;
     let reason = "基礎出招";
+    const ctl = foeImmune ? null : skillControl(skill, d.isControlStatus);
+    let killing = false;
 
     if (skill.category !== "屬性") {
       const dmg = (() => { try { return d.estimateDamage(c.self, c.opponent, skill); } catch { return 0; } })();
@@ -172,7 +184,8 @@ function scoreSkills(c: AIContext, d: AIDeps, cfg: AIConfig, th: Threat): Scored
 
       // ★ 斬殺判定:v3 完全沒有。這是「更敏銳」最關鍵的一項。
       if (estimatedKO(c.opponent, dmg)) {
-        score += 140;
+        killing = true;
+        score += 140 + (limit ? Math.round(60 * limit.urgency) : 0);
         reason = `可直接擊敗【${c.opponent.name}】(預估 ${Math.round(dmg)} 傷害)`;
         if ((skill.priority || 0) > 0) { score += 25; reason += ",且先制搶殺"; }
       } else {
@@ -191,14 +204,27 @@ function scoreSkills(c: AIContext, d: AIDeps, cfg: AIConfig, th: Threat): Scored
       }
       // 對手已有護盾 → 純輸出略降
       if ((c.opponent.shield ?? 0) > 0) score -= 8;
+      // 趁控輸出：對手仍受控 ≥2 回合時，把回合用在傷害上（控場與輸出的平衡）。
+      if (foeCtl >= 2 && !killing && !ctl) { score += 18; reason += "；對手受控中，趁機輸出"; }
+      // 回合上限：落後或平手時越接近上限越要輸出搶擊倒。
+      if (limit && limit.lead <= 0 && !killing) score += Math.round(20 * limit.urgency);
     } else {
       // 屬性技:局勢好時鋪場,危急時別浪費回合(v3 對屬性技幾乎沒有判斷)
       score += 10;
       reason = "屬性技鋪場";
-      if (th.opponentCanKO) { score -= 55; reason = "危急,不宜鋪場"; }
+      // 控制類屬性技能本身就是保命手段：危急時不扣分（交給下方控場評分）。
+      if (th.opponentCanKO && !(ctl && foeCtl <= 1)) { score -= 55; reason = "危急,不宜鋪場"; }
       if (th.selfCanKO) { score -= 70; reason = "可直接收人頭,不鋪場"; }
       if (anyBuff(c.self) && buffCount(c.self) >= 6) { score -= 20; reason = "自身增益已飽和"; }
       if (c.turnNumber <= 2) { score += 18; reason = "開局鋪場收益高"; }
+      if (limit && !ctl) score -= Math.round(25 * limit.urgency); // 回合所剩不多，不再慢慢鋪場
+    }
+
+    // ★ 控場慾望：開控／續控權重大；已在控則不浪費（見 controlPlanning）。擊殺優先於控制。
+    if (ctl && !killing) {
+      const cv = controlValue(ctl, foeCtl, th.opponentCanKO);
+      const lead = limit && limit.lead > 0 ? 1 + 0.4 * limit.urgency : 1; // 回合上限且領先：更重控制保住優勢
+      if (cv.value > 0) { score += Math.round(cv.value * lead); if (cv.reason) reason = cv.reason; }
     }
 
     // 專屬提示表(取代 v3 的 if 鏈)
@@ -276,6 +302,9 @@ function scoreSwitches(c: AIContext, d: AIDeps, cfg: AIConfig, th: Threat): Scor
 
     // 反向抑制:自己狀態很好時不要亂換
     if (th.selfCanKO) score -= 80;
+    // 回合上限且領先：在場精靈可能被擊倒時換下保住存活數（滿回合依存活數判勝負）。
+    const lim = turnLimitState(c.turnNumber, c.turnLimit, c.team, c.opponentTeam);
+    if (lim && lim.lead > 0 && th.opponentCanKO && !estimatedKO(cand, selfWorstIncoming)) { score += Math.round(35 * lim.urgency); reasons.push("回合將盡且領先，換下保住存活數"); }
     if (anyBuff(c.self) && buffCount(c.self) >= 4) { score -= 45; reasons.push("(自身增益豐厚,換人會浪費)"); }
     if (selfWorstIncoming < c.self.currentHp * 0.2) score -= 25;
 
@@ -289,6 +318,76 @@ function scoreSwitches(c: AIContext, d: AIDeps, cfg: AIConfig, th: Threat): Scor
   return out;
 }
 
+/**
+ * 擴充藥劑評分（2026-11-07）。規則：
+ * - 我能直接擊倒對手時一律不用（出招收頭）；藥劑反噬傷害足以擊倒對手則最高優先（無視減免與限制）。
+ * - 對手可能擊倒我時，只考慮能阻止對手行動的控制類異常。
+ * - 附加異常：對手已處於同一異常、或對手免疫異常時不用；控制類優先於弱化類。
+ * - 干擾：對手體力偏低（可能補血／換人）時封藥、反轉、縛足才有價值。
+ * - 強化：自身體力充足且尚未持有。持續恢復：依缺血比例（在場／後援／額外分開算）或缺 PP。
+ */
+function scoreExtendedItem(item: NonNullable<AIContext['items']>[number], c: AIContext, d: AIDeps, th: Threat): { score: number; reason: string } | null {
+  const foe = c.opponent;
+  if (!foe || foe.currentHp <= 0) return null;
+  const burst = (item.oppDamage || 0) + (item.oppDamagePercent ? Math.floor(foe.maxHp * Math.min(30, item.oppDamagePercent) / 100) : 0);
+  if (burst > 0 && burst >= foe.currentHp && !th.selfCanKO) return { score: 120, reason: `【${item.name}】的藥劑反噬傷害可擊敗對手` };
+  if (th.selfCanKO) return null;
+  const foeSt = d.getStatuses(foe) || {};
+  const selfSt = d.getStatuses(c.self) || {};
+  const foeHp = hpRatio(foe), selfHp = hpRatio(c.self);
+  const foeImmune = Number((foe as any).immuneStatusTurns || 0) > 0;
+  let score = 0; const reasons: string[] = [];
+  if (item.inflictStatuses?.length && !foeImmune) {
+    // 多種異常不線性相加：取最有價值的一種，其餘各 +4（避免組合藥劑壓過正常出招）。
+    const values: number[] = [];
+    for (const st of item.inflictStatuses) {
+      if ((foeSt[st.name] || 0) > 0) continue;
+      if (d.isControlStatus(st.name)) {
+        // 控場慾望：未受控＝開控、剩 1 回合＝續控；仍受控 ≥2 回合不浪費藥劑。藥劑不造成傷害，分數略低於同等控制技能。
+        const left = controlTurnsLeft(foe, d.getStatuses, d.isControlStatus);
+        const v = th.opponentCanKO && left <= 1 ? 62 : left <= 0 ? 44 : left <= 1 ? 34 : 0;
+        if (v) { values.push(v); reasons.push(`令對手【${st.name}】無法行動`); }
+      }
+      else if (!th.opponentCanKO) { values.push(14); reasons.push(`附加【${st.name}】`); }
+    }
+    if (values.length) score += Math.max(...values) + (values.length - 1) * 4;
+  }
+  if (th.opponentCanKO) return score > 0 ? { score, reason: reasons.join('，') } : null;
+  if (burst > 0) { const r = burst / foe.maxHp; if (r >= 0.15) { score += Math.min(30, r * 90); reasons.push('藥劑反噬傷害無視減免'); } }
+  if (item.oppPpDrain) {
+    const empties = (foe.skills || []).filter(s => s.charge === undefined && (s.pp ?? 0) > 0 && (s.pp ?? 0) <= item.oppPpDrain!).length;
+    if (empties) { score += 18 + empties * 8; reasons.push(`可耗盡對手 ${empties} 個技能的 PP`); }
+  }
+  if (item.oppPotionBacklash && foeHp < 0.6) { score += 26; reasons.push('對手體力偏低，令其藥劑反噬'); }
+  if (item.oppItemLock && foeHp < 0.6) { score += 22; reasons.push('對手體力偏低，封鎖藥劑'); }
+  if (item.oppSwitchLock && foeHp < 0.45) { score += 20; reasons.push('對手難以換人逃脫'); }
+  if (item.selfStatuses?.length && selfHp > 0.5) {
+    const fresh = item.selfStatuses.filter(st => !((selfSt[st.name] || 0) > 0));
+    if (fresh.length) { score += 12 + fresh.length * 4 + (c.turnNumber <= 2 ? 8 : 0); reasons.push(`強化：${fresh.map(s => s.name).join('、')}`); }
+  }
+  if (item.value && c.self.currentHp < c.self.maxHp) score += Math.min(20, (item.value / c.self.maxHp) * 60);
+  if (item.regen) {
+    const r = item.regen, turns = Math.max(1, r.turns);
+    const missingOf = (e: any) => e && e.maxHp > 0 && e.currentHp > 0 && !e.isVanished ? 1 - e.currentHp / e.maxHp : 0;
+    const bench = (c.team || []).filter((e, i) => i !== c.activeIndex && !e.isExtra);
+    const extra = (c.team || []).filter((e, i) => i !== c.activeIndex && e.isExtra);
+    const want = (list: any[]) => list.reduce((n, e) => n + missingOf(e), 0);
+    let need = 0;
+    if (r.hp || r.hpPercent) {
+      if (r.targets.includes('active')) need += missingOf(c.self) * (selfHp < 0.7 ? 1 : 0.3);
+      if (r.targets.includes('bench')) need += want(bench) * 0.6;
+      if (r.targets.includes('extra')) need += want(extra) * 0.4;
+    }
+    if (r.pp || r.ppPercent) {
+      const dryRatio = (e: any) => { const sk = (e?.skills || []).filter((s: any) => s.charge === undefined); return sk.length ? sk.filter((s: any) => (s.pp ?? 0) <= 1).length / sk.length : 0; };
+      if (r.targets.includes('active')) need += dryRatio(c.self) * 0.8;
+      if (r.targets.includes('bench')) need += bench.reduce((n, e) => n + dryRatio(e), 0) * 0.3;
+    }
+    if (need > 0.2) { score += Math.min(40, need * 35) * Math.min(1.5, turns / 3); reasons.push('持續恢復'); }
+  }
+  return score > 0 ? { score: Math.round(score), reason: reasons.join('，') || `使用【${item.name}】` } : null;
+}
+
 function scoreItems(c: AIContext, d: AIDeps, cfg: AIConfig, th: Threat): ScoredAction[] {
   if (!c.canUseItem || !c.items?.length) return [];
   const out: ScoredAction[] = [];
@@ -300,6 +399,13 @@ function scoreItems(c: AIContext, d: AIDeps, cfg: AIConfig, th: Threat): ScoredA
   for (const item of c.items) {
     let score = 0;
     let reason = "";
+    // 2026-11-07 擴充藥劑（攻擊干擾／附加異常／強化／持續恢復）：獨立評分，分數刻意低於一般出招，只在局面明確有利時勝出。
+    const extCat = getItemCategory(item);
+    if (extCat === "offense" || extCat === "inflict" || extCat === "regen" || extCat === "buff") {
+      const ext = scoreExtendedItem(item, c, d, th);
+      if (ext && ext.score > 0) out.push({ action: { kind: "item", item }, score: ext.score, reason: ext.reason });
+      continue;
+    }
 
     if (item.type === "hp" || item.type === "hybrid" || (item.type === "special" && item.value)) {
       const heal = item.value ?? 0;

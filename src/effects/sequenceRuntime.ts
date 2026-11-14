@@ -24,7 +24,7 @@ export function runEffectSequence(clause: Clause, ctx: BattleEventContext & {eff
   if(ctx.effectNode==='on_opponent_damaged'&&!eventTriggers(ctx,EffectTiming.ON_DAMAGED,(ctx as any).effectEventData).includes(clause.trig))return;
   const issue=sequenceIssue(clause,ctx.effectNode);if(issue)throw new Error(issue);
   if(ctx.effectNode==='modify_power'&&!eventTriggers(ctx,EffectTiming.MODIFY_POWER,(ctx as any).effectEventData).includes(clause.trig))return;
-  if(ctx.effectNode==='before_damage'&&!eventTriggers(ctx,EffectTiming.BEFORE_DAMAGE,{damageComp:ctx.damageComp}).includes(clause.trig))return;
+  if(ctx.effectNode==='before_damage'&&!(ctx as any).teamKitObserver&&!eventTriggers(ctx,EffectTiming.BEFORE_DAMAGE,{damageComp:ctx.damageComp}).includes(clause.trig))return;
   if(ctx.effectNode==='on_damaged'&&!eventTriggers(ctx,EffectTiming.ON_DAMAGED,{targetSide:ctx.actor,damageType:ctx.damageType,typedSkill:ctx.typedSkill}).includes(clause.trig))return;
   const category=ctx.skill?.category;
   if(/(?:self|opp)(?:_after|_used|_before)?_attack$/.test(clause.trig)&&(!category||category==='屬性'))return;

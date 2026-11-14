@@ -26,3 +26,9 @@
 新工作先寫日期明確的報告，再補進 `docs/開發日誌.md`；執行 `node scripts/index_development_records.mjs` 更新完整索引。索引不是驗收完成清單。
 
 改遊戲程式後仍須依[桌面封裝指南](desktop-packaging.md)建置與啟用；不要手改 `dist/` 或歷史桌面副本。只整理文件、截圖和快取時，不必重建 EXE，避免再次生成大量產物。
+
+## 2026-11-10：外層散落截圖
+
+已將工作區父目錄的 29 張 `_*.png` 測試截圖移到 `shots/archive/2026-11-10/from-workspace-root/`，約 5.78 MiB。搬移前搜尋程式與文件引用，沒有找到引用；搬移後逐張 SHA256 核對。該資料夾的 `manifest.json` 保存原位置、目的地、大小與雜湊，可逆向還原，沒有刪除圖片。正式素材、既有報告圖片與其他專案副本未混入此封存。
+
+後續執行 `npm run housekeeping:screenshots` 只預覽父目錄散落截圖；加 `-- --apply` 才封存，已有引用的圖片保留並列出，不覆寫既有回執。新的測試截圖一律以用途建資料夾，例如 `shots/skin-switch/`；正式報告才保留到 `docs/images/` 或 `docs/audits/screenshots/`。

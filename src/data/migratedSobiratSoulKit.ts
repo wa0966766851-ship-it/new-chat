@@ -26,7 +26,7 @@ export const MIGRATED_SOBIRAT_SOUL_KIT = {
   kit: [
     // 受擊 → 100% 害怕；未觸發（附加失敗）→ 本回合結束吸取對手 1 PP
     entry('on_damaged', 'damaged_skill', '自身每次受到技能傷害時令對手進入害怕狀態，未觸發則當回合結束時吸取對手所有技能1點PP值', [
-      { acts: [a('status', { side: 'opp', status: '害怕', chance: 100, turns: 1 })] },
+      { acts: [a('status', { side: 'opp', status: '害怕', chance: 100, turns: 3 })] },
       { chain: 'fail', acts: [a('timed', { turns: 1, from: 'now', trig: 'round_end', once: true, label: '幽冥迴響',
         body: [{ acts: [a('pp_drain', { v: 1, steal: false })] }] })] },
     ], 0),

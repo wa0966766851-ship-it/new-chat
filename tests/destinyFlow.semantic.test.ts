@@ -13,7 +13,7 @@ const elves=Array.from({length:20},(_,i):any=>({id:String(i),name:`卡${i}`,type
 const root=createRoot(document.getElementById('root')!);let launched:any;
 const click=async(label:string)=>{const b=[...document.querySelectorAll('button')].find(e=>e.textContent?.includes(label));assert.ok(b,label);assert.equal(b.disabled,false);await act(async()=>b.click())};
 try {
-  await act(async()=>root.render(React.createElement(Wheel,{allElves:elves,onBack:()=>{},onStartBattle:(...args:any[])=>launched=args})));
+  localStorage.setItem('destinyWheelView','A');await act(async()=>root.render(React.createElement(Wheel,{allElves:elves,onBack:()=>{},onStartBattle:(...args:any[])=>launched=args})));
   await click('立即前往抽卡');await act(async()=>{await new Promise(r=>setTimeout(r,1550))});
   const hidden=[...document.querySelectorAll('span')].filter(e=>e.textContent==='點擊翻開此牌');assert.equal(hidden.length,24);
   await act(async()=>hidden[0].click());assert.ok(document.body.textContent?.includes('1 / 24'));

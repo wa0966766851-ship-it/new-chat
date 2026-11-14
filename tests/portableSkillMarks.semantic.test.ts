@@ -54,9 +54,13 @@ try{
     const boost=h.kitSkill('能力提升',[{op:'stat',p:{side:'self',stats:['攻擊'],v:2}}]);
     const [up]=await h.play(side,{self:h.unit('封鎖持有者',5000,[marked(h.wait(),source.TIWAZ_ALLY_MARKS[1])]),opp:h.unit('提升對手',5000,[boost])});
     assert.equal(up.opp.statStages.atk||0,0,'封鎖新能力提升，不能反轉現有等級');
-    const rg=marked({...h.kitSkill('零PP命中',[{op:'dmg',p:{flat:37,type:'真實'}}]),pp:0,currentPp:0,maxPp:0,accuracy:0,isSureHit:false},source.TIWAZ_ALLY_MARKS[2]);
-    const [zeroPp]=await h.play(side,{self:h.unit('零PP持有者',5000,[rg]),opp:h.unit('零PP對手',5000,[h.wait()])});
-    assert.equal(zeroPp.opp.currentHp,4963,'激活槽0PP仍能選招且必中');
+    const rg=marked({...h.kitSkill('零PP命中',[{op:'dmg',p:{flat:37,type:'真實'}}]),pp:1,currentPp:1,maxPp:1,accuracy:0,isSureHit:false},source.TIWAZ_ALLY_MARKS[2]);
+    const {isZeroPpExempt}=await h.server.ssrLoadModule('/src/battle/ppExemptions.ts');
+    const rg0={...rg,pp:0,currentPp:0};
+    assert.equal(isZeroPpExempt(h.unit('未激活持有者',5000,[rg0]),rg0),false,'未激活符文槽0PP不可選，不能靠選招激活');
+    const zeroRounds=await h.play(side,{self:h.unit('零PP持有者',5000,[rg]),opp:h.unit('零PP對手',5000,[h.wait()]),turns:()=>[0,0]},2);
+    const zeroPp=zeroRounds[1];
+    assert.equal(zeroPp.opp.currentHp,4926,'選招激活後，下回合0PP仍能選招且必中');
     assert.equal(zeroPp.self.skills[0].pp,0,'不受PP限制並不把PP補回');
     const [priority]=await h.play(side,{self:h.unit('上限持有者',5000,[marked({...h.wait(),priority:2},source.TIWAZ_ALLY_MARKS[4])],{speed:50}),opp:h.unit('高先制對手',5000,[{...h.wait(),priority:4}],{speed:300})});
     assert.ok(priority.logs.filter((l:string)=>l.includes('使用了'))[0].includes('上限持有者'),'對手+4限制為+1，自身+2先行');

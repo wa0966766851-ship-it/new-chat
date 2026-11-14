@@ -6,6 +6,7 @@ import { skillSlot } from '../battle/skillSlot';
 import { changePp, restorePp } from './newElfOperations';
 import { additionalAllowed } from './additionalGate';
 import { readChancePriority } from './skillProperty';
+import {recipientEffectChance} from '../battle/recipientEffectChance';
 
 type Roll = (key: string, percent: number) => boolean;
 /** 5026 等定義已把技能石效果寫成技能自帶的連鎖 Kit：由 Kit 執行，這裡的資料表路徑不得再重複結算。 */
@@ -13,7 +14,9 @@ export const kitDrivenStone = (skill?: Skill): boolean => skill?.effectMode === 
 const key = (ctx: BattleEventContext, skill: Skill) => `${ctx.actor}:${ctx.self.battleId || ctx.self.id}:${skill.name}:stone`;
 const proc = (ctx: BattleEventContext, skill: Skill, roll: Roll) => {
   const effect = stoneEffect(skill);
-  return !!effect && roll(key(ctx, skill), isStoneThrower(ctx.self) ? 100 : effect.chance);
+  const affectsOpponent=effect && (['status','stat_down'].includes(effect.type)||['add_damage_200','reduce_opp_pp_1'].includes(effect.detail));
+  const pct=isStoneThrower(ctx.self)?100:effect?.chance;
+  return !!effect && roll(key(ctx, skill), affectsOpponent?recipientEffectChance(ctx,ctx.targetSide,pct!):pct!);
 };
 
 /** 附加效果統一走 metadata，不再讓文字解析猜測或重複執行。 */

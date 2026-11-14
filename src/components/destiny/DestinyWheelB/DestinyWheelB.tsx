@@ -8,6 +8,9 @@ import { Backdrop } from "./Backdrop";
 import { PlateCard } from "./PlateCard";
 import { DetailSheet } from "./DetailSheet";
 import { IntroChapter } from "./IntroChapter";
+import { Plate, ChapterHead, TicketButton } from "./Plate";
+import { LoadoutPlate } from "./LoadoutPlate";
+import { useShellBack } from "../../../shell/shellBack";
 import { RankSeal } from "./Ink";
 import { CHAPTERS, C, ring, blade, prefersReducedMotion, rng, TAU } from "./bModel";
 import { DW, inkLayers } from "../../../design/sketchStroke";
@@ -20,7 +23,7 @@ const CHAPTER_NOTE: Record<string, string[]> = {
   pulling: ["自全圖鑑為雙方各抽 12 隻；非六界神王的 C 級已在建池時綁定一種命運攔截。"],
   reveal: ["點未翻開的卡只翻開那一張；全翻可跳過。", "點已翻開的卡檢視詳情。"],
   ban: ["從對手卡池點選 3 隻禁用，再點一次取消。", "PVE：AI 對你的禁用在確認後揭曉。PVP：P2 從你的卡池禁用。"],
-  pick: ["自未被禁用的 9 隻挑 6 隻，點「首」鈕設首發。", "PVE：對手陣容已由 AI 選定並公開。"],
+  pick: ["自未被禁用的 9 隻挑 6 隻，點「首」鈕設首發。", "PVE：對手陣容已由 AI 選定並公開。", "命運配裝：套裝／目鏡／稱號雙方不重複，火焰 2 選 1。"],
 };
 
 function useReducedMotion() {
@@ -57,6 +60,7 @@ function WheelRitual({ animated }: { animated: boolean }) {
 export default function DestinyWheelB({ draft, onBack, onSwitchToA }: { draft: DestinyDraft; onBack: () => void; onSwitchToA: () => void }) {
   useScopedStyle("destiny-wheel-b-css", dwbCss);
   const d = draft;
+  const shellBack = useShellBack();
   const { phase, battleMode } = d;
   const rootRef = useRef<HTMLDivElement>(null);
   const reduced = useReducedMotion();
@@ -113,6 +117,7 @@ export default function DestinyWheelB({ draft, onBack, onSwitchToA }: { draft: D
       if (ev.key === "ArrowRight" && i >= 0 && reach[i + 1]) d.goPhase(reach[i + 1].key);
       else if (ev.key === "ArrowLeft" && i > 0) d.goPhase(reach[i - 1].key);
       else if (ev.key === "b" || ev.key === "B") setBlueprint(v => !v);
+      else if (ev.key === "m" || ev.key === "M") d.setBattleMode(m => (m === "PVE" ? "PVP" : "PVE"));
       else if (ev.key === "Escape") {
         if (d.inspectElf) d.setInspectElf(null);
         else if (blueprint) setBlueprint(false);
@@ -133,11 +138,10 @@ export default function DestinyWheelB({ draft, onBack, onSwitchToA }: { draft: D
     const st = rankStats(pool);
     return <span className="dwb-counts" data-testid="b-pool-stats" title="S／A／B／C 張數">S {st.counts.S} · A {st.counts.A} · B {st.counts.B} · C {st.counts.C}</span>;
   };
-  const panel = (title: string, id: string, pool: DestinyElfInstance[], right: React.ReactNode, cards: React.ReactNode, cols = 4) => (
-    <section className="dwb-panel" data-testid={id} aria-label={title}>
-      <header className="dwb-panel-head"><h3>{title}</h3>{right}</header>
+  const panel = (title: string, id: string, pool: DestinyElfInstance[], right: React.ReactNode, cards: React.ReactNode, cols = 4, fig = "FIG.01", en = "POOL", tone: "a" | "b" = "a") => (
+    <Plate fig={fig} en={en} title={title} testid={id} right={right} tone={tone}>
       <div className="dwb-grid" style={{ ["--cols" as string]: cols }}>{cards}</div>
-    </section>
+    </Plate>
   );
 
   return (
@@ -146,15 +150,15 @@ export default function DestinyWheelB({ draft, onBack, onSwitchToA }: { draft: D
       <Backdrop chapter={phase} lit={lit} blueprint={blueprint} animated={animated} />
 
       <header className="dwb-bar">
-        <div className="dwb-brand"><b>命運之輪</b><i>WHEEL OF DESTINY</i></div>
+        <div className="dwb-brand" title="← → 切換章節 · B 圖紙 · M 模式 · Esc 返回"><b>命運之輪</b><i>WHEEL OF DESTINY</i></div>
         <div className="dwb-tools" role="toolbar" aria-label="工具">
-          <button type="button" className="dwb-tbtn" data-testid="b-back" onClick={onBack}><ArrowLeft size={13} aria-hidden="true" /> 返回大廳</button>
-          <button type="button" className="dwb-tbtn" data-testid="b-mode" aria-label={`對戰模式 ${battleMode}`} disabled={d.modeLocked}
-            title={d.modeLocked ? "抽卡開始後不能切換模式" : battleMode === "PVE" ? "對戰智能 AI（點擊切換 PVP）" : "輪流操作模式（點擊切換 PVE）"}
+          {!shellBack && <button type="button" className="dwb-tbtn" data-testid="b-back" onClick={onBack}><ArrowLeft size={13} aria-hidden="true" /> 返回大廳</button>}
+          <button type="button" className="dwb-tbtn" data-testid="b-mode" data-key="M" aria-label={`對戰模式 ${battleMode}`} disabled={d.modeLocked}
+            title={d.modeLocked ? "抽卡開始後不能切換模式" : battleMode === "PVE" ? "對戰智能 AI（M 切換 PVP）" : "輪流操作（M 切換 PVE）"}
             onClick={() => d.setBattleMode(m => (m === "PVE" ? "PVP" : "PVE"))}>{battleMode}</button>
-          <button type="button" className={`dwb-tbtn${blueprint ? " on" : ""}`} data-testid="b-blueprint" aria-pressed={blueprint} title="圖紙模式：顯示說明層與判定來源（B）" onClick={() => setBlueprint(v => !v)}>圖紙 B</button>
+          <button type="button" className={`dwb-tbtn${blueprint ? " on" : ""}`} data-testid="b-blueprint" data-key="B" aria-pressed={blueprint} title="圖紙：說明層與判定來源" onClick={() => setBlueprint(v => !v)}>圖紙</button>
           <button type="button" className={`dwb-tbtn${staticMode ? " on" : ""}`} data-testid="b-static" aria-pressed={staticMode} title="靜態：關閉視差與動畫" onClick={() => setStaticMode(v => !v)}>靜態</button>
-          <button type="button" className="dwb-tbtn" data-testid="b-switch-a" title="返回舊頁，抽卡進度保留" onClick={onSwitchToA}>返回舊頁</button>
+          <button type="button" className="dwb-tbtn" data-testid="b-switch-a" title="切到經典版面（進度保留）" onClick={onSwitchToA}>經典版</button>
         </div>
       </header>
 
@@ -163,6 +167,7 @@ export default function DestinyWheelB({ draft, onBack, onSwitchToA }: { draft: D
 
         {phase === "pulling" && (
           <section className="dwb-pull" data-testid="b-pulling">
+            <span className="dwb-watermark" aria-hidden="true">FORTUNA</span>
             <WheelRitual animated={animated} />
             <h2>輪盤轉動中</h2>
             <button type="button" className="dwb-tbtn" data-testid="b-skip" onClick={d.skipPull}>跳過</button>
@@ -171,78 +176,70 @@ export default function DestinyWheelB({ draft, onBack, onSwitchToA }: { draft: D
 
         {phase === "reveal" && (
           <>
-            <div className="dwb-head">
-              <h2><em>02</em>圖版 <small data-testid="b-revealed-count">已翻 {d.revealedIds.length} / 24</small></h2>
-              <div className="dwb-actions">
-                {!d.isRevealingAll && <button type="button" className="dwb-btn" data-testid="b-reveal-all" onClick={d.handleRevealAll}>點一次全翻所有牌</button>}
-                <button type="button" className="dwb-btn dwb-btn--go" data-testid="b-next-ban" onClick={d.handleProceedToBan}>下一步：進入 Ban 3</button>
-              </div>
-            </div>
+            <ChapterHead no="02" name="圖版" en="REVEAL" hint="點卡背翻開單張；翻開後點卡看詳情"
+              count={<span data-testid="b-revealed-count">已翻 {d.revealedIds.length} / 24</span>}
+              actions={<>
+                {!d.isRevealingAll && <button type="button" className="dwb-btn" data-testid="b-reveal-all" onClick={d.handleRevealAll}>全部翻開</button>}
+                <TicketButton go testid="b-next-ban" sub="NEXT · 03" label="進入禁選" onClick={d.handleProceedToBan} />
+              </>} />
             <div className="dwb-pools">
-              {panel(`我方 12 抽卡池（${d.p1Title}）`, "b-pool-p1", d.p1Pool, counts(d.p1Pool), d.p1Pool.map((e, i) => (
+              {panel(`我方卡池 · ${d.p1Title}`, "b-pool-p1", d.p1Pool, counts(d.p1Pool), d.p1Pool.map((e, i) => (
                 <PlateCard key={e.instanceId} elf={e} owner="p1" mode={mode} index={i + 1} face={d.isCardRevealed(e.instanceId) ? "front" : "back"} testid="b-card"
                   blueprint={blueprint} animated={animated}
                   onActivate={() => (d.isCardRevealed(e.instanceId) ? openDetail(e, "p1") : d.handleNextReveal(e.instanceId))} />
-              )))}
-              {panel(`${battleMode === "PVE" ? "對手 AI" : "挑戰者 P2"} 的 12 抽卡池（${d.p2Title}）`, "b-pool-p2", d.p2Pool, counts(d.p2Pool), d.p2Pool.map((e, i) => (
+              )), 4, "FIG.01", "OURS")}
+              {panel(`${battleMode === "PVE" ? "對手 AI" : "挑戰者 P2"} · ${d.p2Title}`, "b-pool-p2", d.p2Pool, counts(d.p2Pool), d.p2Pool.map((e, i) => (
                 <PlateCard key={e.instanceId} elf={e} owner="p2" mode={mode} index={i + 1} face={d.isCardRevealed(e.instanceId) ? "front" : "back"} testid="b-card"
                   blueprint={blueprint} animated={animated}
                   onActivate={() => (d.isCardRevealed(e.instanceId) ? openDetail(e, "p2") : d.handleNextReveal(e.instanceId))} />
-              )))}
+              )), 4, "FIG.02", "RIVAL")}
             </div>
           </>
         )}
 
         {phase === "ban" && (
           <>
-            <div className="dwb-head">
-              <h2 title={battleMode === "PVE" ? "從對手 AI 的卡池點選 3 隻禁用；AI 也同步禁用你的 3 隻。" : "雙方真人各從對手卡池點選 3 隻禁用。"}><em>03</em>禁選 Ban 3
-                <small data-testid="b-ban-count">P1 已選 {d.p1BannedIds.length} / 3{battleMode === "PVP" ? `　P2 已選 ${d.p2BannedIds.length} / 3` : ""}</small></h2>
-              <div className="dwb-actions">
-                <button type="button" className="dwb-btn dwb-btn--go" data-testid="b-confirm-ban" disabled={!d.canConfirmBan} onClick={d.handleConfirmBan}>確認禁用並進入 Pick 6</button>
-              </div>
-            </div>
+            <ChapterHead no="03" name="禁選" en="EXILE" hint={battleMode === "PVE" ? "從對手卡池點 3 隻禁用；AI 同步禁用你的 3 隻" : "雙方各從對手卡池點 3 隻禁用"}
+              count={<span data-testid="b-ban-count">P1 {d.p1BannedIds.length} / 3{battleMode === "PVP" ? `　P2 ${d.p2BannedIds.length} / 3` : ""}</span>}
+              actions={<TicketButton go testid="b-confirm-ban" sub="NEXT · 04" label="確認禁用" disabled={!d.canConfirmBan} onClick={d.handleConfirmBan} />} />
             <div className="dwb-pools">
-              {panel(`點擊敵方（${d.p2Title}）精靈禁用　P1 剩餘 ${3 - d.p1BannedIds.length}`, "b-ban-opp", d.p2Pool, counts(d.p2Pool), d.p2Pool.map((e, i) => (
+              {panel(`禁用對手 · 剩 ${3 - d.p1BannedIds.length}`, "b-ban-opp", d.p2Pool, counts(d.p2Pool), d.p2Pool.map((e, i) => (
                 <PlateCard key={e.instanceId} elf={e} owner="p2" mode={mode} index={i + 1} face="front" testid="b-ban-card" blueprint={blueprint} animated={animated}
                   banned={d.p1BannedIds.includes(e.instanceId)} bannedText="已禁用" onActivate={() => d.toggleBan(e.instanceId)} onDetail={() => openDetail(e, "p2")} />
-              )))}
-              {panel(battleMode === "PVE" ? "我方卡池（AI 禁用確認後揭曉）" : `點擊敵方（${d.p1Title}）精靈禁用　P2 剩餘 ${3 - d.p2BannedIds.length}`, "b-ban-own", d.p1Pool, counts(d.p1Pool), d.p1Pool.map((e, i) => (
+              )), 4, "FIG.03", "TARGET")}
+              {panel(battleMode === "PVE" ? "我方卡池 · 確認後揭曉" : `P2 禁用 · 剩 ${3 - d.p2BannedIds.length}`, "b-ban-own", d.p1Pool, counts(d.p1Pool), d.p1Pool.map((e, i) => (
                 <PlateCard key={e.instanceId} elf={e} owner="p1" mode={mode} index={i + 1} face="front" testid="b-ban-own-card" blueprint={blueprint} animated={animated}
                   dim={battleMode === "PVE"} banned={battleMode === "PVP" && d.p2BannedIds.includes(e.instanceId)} bannedText="P2 禁用"
                   onActivate={battleMode === "PVP" ? () => d.toggleP2Ban(e.instanceId) : undefined} onDetail={() => openDetail(e, "p1")} />
-              )))}
+              )), 4, "FIG.04", "OURS")}
             </div>
           </>
         )}
 
         {phase === "pick" && (
           <>
-            <div className="dwb-head">
-              <h2 title="自未被禁用的 9 隻中挑選 6 隻；點卡片上的「首」鈕設為首發精靈。"><em>04</em>編隊 Pick 6
-                <small data-testid="b-pick-count">P1 已出戰 {d.p1PickedIds.length} / 6{battleMode === "PVP" ? `　P2 已出戰 ${d.p2PickedIds.length} / 6` : ""}</small></h2>
-              <div className="dwb-actions">
-                <button type="button" className="dwb-btn dwb-btn--go" data-testid="b-launch" disabled={!d.canLaunch} onClick={d.handleLaunchBattle}>啟動巔峰對決</button>
-              </div>
-            </div>
+            <ChapterHead no="04" name="編隊" en="ROSTER" hint="挑 6 隻、點「首」設首發；下方選命運配裝"
+              count={<span data-testid="b-pick-count">P1 {d.p1PickedIds.length} / 6{battleMode === "PVP" ? `　P2 ${d.p2PickedIds.length} / 6` : ""}</span>}
+              actions={<TicketButton go testid="b-launch" sub="PEAK · 6V6" label="啟動巔峰對決" disabled={!d.canLaunch} onClick={d.handleLaunchBattle} />} />
             <div className="dwb-pools">
-              {panel(`P1（${d.p1Title}）可用卡池`, "b-pick-p1", p1Avail, <span className="dwb-counts">{p1Avail.length} 隻</span>, p1Avail.map((e, i) => (
-                <PlateCard key={e.instanceId} elf={e} owner="p1" mode={mode} index={i + 1} face="front" testid="b-pick-card" blueprint={blueprint} animated={animated}
+              {panel(`P1 出戰 · ${d.p1Title}`, "b-pick-p1", p1Avail, <span className="dwb-counts">可用 {p1Avail.length}</span>, p1Avail.map(e => (
+                <PlateCard key={e.instanceId} elf={e} owner="p1" mode={mode} index={d.p1Pool.indexOf(e) + 1} face="front" testid="b-pick-card" blueprint={blueprint} animated={animated}
                   picked={d.p1PickedIds.includes(e.instanceId)} pickOrder={d.p1PickedIds.indexOf(e.instanceId) + 1} starter={d.p1StarterId === e.instanceId}
                   dim={!d.p1PickedIds.includes(e.instanceId)} onActivate={() => d.togglePick(e.instanceId)} onDetail={() => openDetail(e, "p1")}
                   onStarter={() => d.setP1StarterId(e.instanceId)} />
-              )), 3)}
-              {panel(battleMode === "PVE" ? "AI 最終出戰陣容" : `P2（${d.p2Title}）可用卡池`, "b-pick-p2", p2Avail,
-                <span className="dwb-counts">{battleMode === "PVE" ? "AI 首發已就緒" : `已選 ${d.p2PickedIds.length}/6 隻`}</span>,
-                p2Avail.filter(e => battleMode === "PVP" || d.p2PickedIds.includes(e.instanceId)).map((e, i) => (
-                  <PlateCard key={e.instanceId} elf={e} owner="p2" mode={mode} index={i + 1} face="front" testid="b-pick2-card" blueprint={blueprint} animated={animated}
+              )), 3, "FIG.05", "SQUAD")}
+              {panel(battleMode === "PVE" ? "AI 出戰陣容" : `P2 出戰 · ${d.p2Title}`, "b-pick-p2", p2Avail,
+                <span className="dwb-counts">{battleMode === "PVE" ? "首發已定" : `${d.p2PickedIds.length} / 6`}</span>,
+                p2Avail.filter(e => battleMode === "PVP" || d.p2PickedIds.includes(e.instanceId)).map(e => (
+                  <PlateCard key={e.instanceId} elf={e} owner="p2" mode={mode} index={d.p2Pool.indexOf(e) + 1} face="front" testid="b-pick2-card" blueprint={blueprint} animated={animated}
                     picked={d.p2PickedIds.includes(e.instanceId)} pickOrder={d.p2PickedIds.indexOf(e.instanceId) + 1} starter={d.p2StarterId === e.instanceId}
                     starterText={battleMode === "PVE" ? "AI首發" : "P2首發"} dim={!d.p2PickedIds.includes(e.instanceId)}
                     onActivate={battleMode === "PVE" ? () => openDetail(e, "p2") : () => d.toggleP2Pick(e.instanceId)}
                     onDetail={battleMode === "PVP" ? () => openDetail(e, "p2") : undefined}
                     onStarter={battleMode === "PVP" ? () => d.setP2StarterId(e.instanceId) : undefined} />
-                )), 3)}
+                )), 3, "FIG.06", "RIVAL", "b")}
             </div>
+            <LoadoutPlate d={d} />
           </>
         )}
       </main>

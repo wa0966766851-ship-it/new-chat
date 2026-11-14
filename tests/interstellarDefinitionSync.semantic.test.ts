@@ -74,7 +74,11 @@ E.resumeRunV2(storage, [source]);
 assert.deepEqual(JSON.parse(storage.getItem(E.definitionSyncBackupKey(anotherRun.runId))!), anotherRun, '不同局各自備份');
 assert.deepEqual(JSON.parse(storage.getItem(E.definitionSyncBackupKey(run.runId))!), run, '不覆蓋上一局備份');
 const broken = { ...storage, setItem: () => { throw new Error('quota'); }, getItem: (key: string) => key === E.RUN_KEY_V2 ? JSON.stringify(run) : null };
-assert.throws(() => E.resumeRunV2(broken, [source]), /quota/, '備份失敗不得繼續覆寫原檔');
+// 2026-11-14：備份失敗仍不得覆寫原檔，但改為沿用原存檔回傳（不拋錯），避免空間不足時回廊一開就卡死。
+let overwritten = false;
+const broken2 = { ...broken, setItem: (key: string) => { if (key === E.RUN_KEY_V2) overwritten = true; throw new Error('quota'); }, removeItem: () => {}, length: 0, key: () => null };
+assert.deepEqual(E.resumeRunV2(broken2 as any, [source]), E.loadRunV2(broken2 as any), '備份失敗時沿用原存檔');
+assert.equal(overwritten, false, '備份失敗不得繼續覆寫原檔');
 
 const changedSource = { ...source, baseStats: { ...stats, hp: 150 } };
 const oldPanel = E.snapshotElf(run, source);

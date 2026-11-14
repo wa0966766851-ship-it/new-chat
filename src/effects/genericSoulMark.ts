@@ -1,3 +1,4 @@
+import {recipientEffectChance} from '../battle/recipientEffectChance';
 /**
  * 自訂／AI 生成精靈的魂印（soulMark.effectType + effectValue）
  * 這些精靈沒有手寫的魂印 handler，過去魂印只是顯示文字、戰鬥中完全沒有作用。
@@ -20,7 +21,7 @@ export function runGenericSoulMark(ctx: BattleEventContext, event: EffectTiming,
     case "burn_chance": {
       if (event !== EffectTiming.AFTER_ACTION || !isActive) return;
       if (!ctx.skill || ctx.skill.category === "屬性") return;
-      if (!prdPercent(`${side}:${elf.id}:soulmark:${type}`, value)) return;
+      if (!prdPercent(`${side}:${elf.id}:soulmark:${type}`, recipientEffectChance(ctx,ctx.targetSide,value))) return;
       const status = type === "paralyze_chance" ? "麻痺" : "燒傷";
       if (ctx.applyStatusWithImmunityCheck(ctx.targetSide, status, 2).success) ctx.addLog(`✨ ${label}：令對手陷入【${status}】！`, "status");
       return;

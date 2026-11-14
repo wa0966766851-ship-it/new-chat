@@ -220,6 +220,8 @@ try {
       Object.assign(u, { id: 'S', battleId: 'S', name: '減傷驗收持有者', maxHp: 1000, currentHp: o.cur ?? 900, shield: 0, statStages: {}, battleStatuses: o.statuses || {},
         baseStats: { hp: 100, atk: 100, def: 100, spatk: 100, spdef: 100, speed: 100 }, calculatedStats: { hp: 1000, atk: 300, def: 300, spatk: 300, spdef: 300, speed: 100 }, skills: o.skills || [h.wait(), h.wait()] });
       u.soulMark = structuredClone(real(id).soulMark);
+      // 2026-11-14：內建精靈預設帶滿抗性；本測驗證其他機制，抗性設為 0 以免抗性骰與傷害抗性干擾。
+      u.resistances = { damageResist: { crit: 0, fixed: 0, percent: 0 }, statusResist: { allImmune: false, selectedStatuses: [], slots: [] } };
       if (o.extraSoulKit) u.soulMark.kit = [...u.soulMark.kit, ...o.extraSoulKit];
       return u;
     };

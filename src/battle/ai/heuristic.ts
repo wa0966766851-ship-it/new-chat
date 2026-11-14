@@ -26,7 +26,10 @@ export function heuristicRanking(request: DecisionRequest): CandidateReport[] {
   const ctx: AIContext = { self: ownTeam[state[`${side}ActiveIndex`]], opponent: enemy,
     team: ownTeam, activeIndex: state[`${side}ActiveIndex`],
     items: BATTLE_ITEMS.filter(i => legal.some(a => a.kind === 'item' && a.id === i.id)),
-    canSwitch: legal.some(a => a.kind === 'switch'), canUseItem: legal.some(a => a.kind === 'item'), turnNumber: state.turnNumber };
+    canSwitch: legal.some(a => a.kind === 'switch'), canUseItem: legal.some(a => a.kind === 'item'), turnNumber: state.turnNumber,
+    // 巔峰 6V6：滿 50 回合依存活精靈數判勝負（AI 依剩餘回合與存活差調整控場／輸出）。
+    turnLimit: (request.battleFormat ?? (state as any).battleFormat) === 'peak_6v6' ? 50 : undefined,
+    opponentTeam: state[`${foe}Team`].map((e, i) => i === state[`${foe}ActiveIndex`] ? state[foe] : e) };
   const deps: AIDeps = {
     estimateDamage: (attacker, defender, skill) => {
       const actingSide = attacker === enemy ? foe : side;

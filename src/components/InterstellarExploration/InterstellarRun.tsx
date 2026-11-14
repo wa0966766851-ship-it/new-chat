@@ -107,6 +107,8 @@ export default function InterstellarRun({ allElves, startingDiamonds, initialEqu
     const b = E.startBattle(cur, pool, battleId);
     if (!b) return;
     busy.current = true;
+    // 保險：開戰後本畫面理應卸載；若因故沒切到戰鬥（仍掛著），4 秒後解鎖，避免整頁按鈕全部失效。
+    setTimeout(() => { busy.current = false; }, 4000);
     try { sessionStorage.setItem("ECL_COVER_SEEN", floorKeyOf(cur)); } catch { /* 無 sessionStorage */ }
     try { sessionStorage.setItem("ECLIPSE_RETURN", "1"); } catch { /* 無 sessionStorage */ }
     const saved = E.saveRunV2(localStorage, b.run);
@@ -119,7 +121,8 @@ export default function InterstellarRun({ allElves, startingDiamonds, initialEqu
       interstellarOptions: {
         runId, battleId, battleSeed: b.battleSeed, potionUsage: 0, maxPotionUsage: saved.potions, relics: b.relics, enemyRelics: b.enemyRelics,
         onPotionUse: () => E.consumePotionV2(localStorage, runId, battleId),
-        onBattleEnd: (winner: string, team?: Elf[]) => E.settleStoredBattleV2(localStorage, runId, battleId, winner, team, pool),
+        // 結算失敗（舊快照與新版不相容）不得讓戰鬥結束流程卡住；局面留在戰前，可回地圖重打。
+        onBattleEnd: (winner: string, team?: Elf[]) => { try { return E.settleStoredBattleV2(localStorage, runId, battleId, winner, team, pool); } catch (error) { console.error('[星蝕迴廊] 戰鬥結算失敗', error); return null; } },
       },
     });
   };
@@ -169,7 +172,7 @@ export default function InterstellarRun({ allElves, startingDiamonds, initialEqu
       <div className="ecl-rule mx-6" />
 
       {/* 地圖 */}
-      <main className="relative z-10 flex-1 px-4 ecl-md:px-10 flex items-center">
+      <main className="relative z-10 flex-1 px-4 pb-24 ecl-md:pb-0 ecl-md:px-10 flex items-center">
         <div className="w-full max-w-[1400px] mx-auto">
           <MapView run={run} onMove={id => dispatch(r => E.moveTo(r, id, pool))} />
         </div>
@@ -196,10 +199,16 @@ export default function InterstellarRun({ allElves, startingDiamonds, initialEqu
       <AnimatePresence>
         {Scene && (
           <motion.div key={run.scene.kind} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-            className="absolute inset-0 z-40 overflow-y-auto bg-[rgba(4,3,8,.82)] backdrop-blur-[3px] p-4 ecl-md:p-10 flex items-start ecl-md:items-center">
-            <div className="fixed right-[4.5rem] top-4 z-[44]"><LifeResource run={run} compact /></div>
-            <button className="fixed right-4 top-4 z-[44] px-3 py-1.5 border border-[rgba(217,180,90,.45)] bg-black/60 hover:bg-[rgba(217,180,90,.12)] font-black tracking-widest text-xs" onClick={() => setLedger("team")} title="整理背包與倉庫">背包</button>
-            <Scene run={run} pool={pool} dispatch={dispatch} onFight={fight} onExit={() => onEndRun(run.act, run.exp)} onOpenTeam={() => setLedger("team")} onOpenRecruit={() => setLedger("recruit")} />
+            className="absolute inset-0 z-40 overflow-y-auto bg-[rgba(4,3,8,.82)] backdrop-blur-[3px] p-4 pb-28 ecl-md:p-10 flex flex-col">
+            {/* 生命與背包：放在覆蓋層自己的頂列（右側讓出控制中心／殼層工具列），不再用 fixed——
+                覆蓋層有 backdrop-filter，fixed 會相對它定位，落到殼層右上角工具鈕底下而按不到（2026-11-08 修正）。 */}
+            <div className="sticky top-0 z-[44] shrink-0 flex items-center justify-end gap-2 pl-14 ecl-md:pr-[var(--control-hub-safe,13rem)]" data-testid="scene-topbar">
+              <LifeResource run={run} compact />
+              <button className="px-3 py-1.5 border border-[rgba(217,180,90,.45)] bg-black/60 hover:bg-[rgba(217,180,90,.12)] font-black tracking-widest text-xs" onClick={() => setLedger("team")} title="整理背包與倉庫">背包</button>
+            </div>
+            <div className="my-auto w-full pt-2">
+              <Scene run={run} pool={pool} dispatch={dispatch} onFight={fight} onExit={() => onEndRun(run.act, run.exp)} onOpenTeam={() => setLedger("team")} onOpenRecruit={() => setLedger("recruit")} />
+            </div>
           </motion.div>
         )}
       </AnimatePresence>

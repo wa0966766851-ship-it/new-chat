@@ -16,11 +16,11 @@ export const PANEL_DURATION_FIELDS:Record<string,readonly string[]> = {
   damage_scale_by_status:['side','base','perTurn','kind'],
   power_per_full_pp:['amount'],
   effect_end_watch:['turns','mode','count','status'],
-  status_convert_uses:['count','status'],
+  status_convert_uses:['count','status','side','fromStatus'],
   bound_penalty:['turns','ppMultiplier','ppKind','sealKind'],
   stop_action:['side'],
   status_guard_instance:['status','kind'],
-  survive_uses:['uses'],
+  survive_uses:['uses','thenRound'],
 };
 export function panelDurationIssue(op:string,p:any,trig?:string):string|null {
   if(op==='power_per_full_pp'&&trig!==undefined&&trig!=='outgoing_power')return '滿PP威力必須接至公式前的輸出威力事件';
@@ -36,10 +36,12 @@ export function panelDurationIssue(op:string,p:any,trig?:string):string|null {
   if(op==='power_per_full_pp'&&!(p.amount>0))return '滿PP威力需正增量';
   if(op==='effect_end_watch'&&(!(p.turns>0)||!(p.count>0)||!['immune','convert'].includes(p.mode)||(p.mode==='convert'&&!StatusRegistry[p.status])))return '效果結束監控需期限、次數與免疫／轉化模式';
   if(op==='status_convert_uses'&&!(p.count>0))return '異常轉化需正次數';
+  if(op==='status_convert_uses'&&(p.side!==undefined&&!['self','opp'].includes(p.side)||p.fromStatus!==undefined&&!StatusRegistry[p.fromStatus]||!StatusRegistry[p.status]))return '異常轉化需已知狀態與明確目標';
   if(op==='bound_penalty'&&(!(p.turns>0)||!(p.ppMultiplier>=1)||!['攻擊','屬性','all'].includes(p.ppKind)||!['攻擊','屬性','all'].includes(p.sealKind)))return '綁定懲罰需期限、PP倍率及各自技能範圍';
   if(op==='stop_action'&&!['self','opp'].includes(p.side))return '行動阻止需明確目標';
   if(op==='status_guard_instance'&&(!StatusRegistry[p.status]||p.kind!=='技能'))return '異常期間抵擋需已知異常與技能傷害範圍';
   if(op==='survive_uses'&&(!Number.isInteger(p.uses)||p.uses<1))return '致死存活需正整數次數';
+  if(op==='survive_uses'&&p.thenRound!==undefined&&p.thenRound!==true)return '致死存活延續當回合只接受true';
   return null;
 }
 
@@ -111,7 +113,7 @@ export function panelDurationOperations(h:{liveElf:Function;dealDamage:Function;
       h.addBlockTimer(ctx,ctx.actor,'回合效果結束監控',p.turns,'turns',{effectEndWatch:{mode:p.mode,count:p.count,status:p.status},sourceKind:st.sourceKind},false,undefined,true);return true;
     },
     status_convert_uses:(ctx:BattleEventContext,p:any)=>{
-      h.addBlockTimer(ctx,ctx.actor,'異常轉化',p.count,'uses',{statusConversion:{status:p.status}},false);return true;
+      h.addBlockTimer(ctx,p.side==='opp'?ctx.targetSide:ctx.actor,'異常轉化',p.count,'uses',{statusConversion:{status:p.status,...(p.fromStatus?{fromStatus:p.fromStatus}:{})}},false);return true;
     },
     bound_penalty:(ctx:BattleEventContext,p:any)=>{
       const e=h.liveElf(ctx,ctx.targetSide);
@@ -125,6 +127,6 @@ export function panelDurationOperations(h:{liveElf:Function;dealDamage:Function;
       if(!(ctx.getStatuses(h.liveElf(ctx,ctx.actor))?.[p.status]>0))return false;
       h.addBlockTimer(ctx,ctx.actor,'本次異常期間抵擋',1,'uses',{statusInstanceGuard:p.status,kind:p.kind},false);return true;
     },
-    survive_uses:(ctx:BattleEventContext,p:any)=>{h.addBlockTimer(ctx,ctx.actor,'下次致死存活',p.uses,'uses',{survive:true},false);return true;},
+    survive_uses:(ctx:BattleEventContext,p:any)=>{h.addBlockTimer(ctx,ctx.actor,'下次致死存活',p.uses,'uses',{survive:true,...(p.thenRound?{thenRound:true}:{})},false);return true;},
   };
 }

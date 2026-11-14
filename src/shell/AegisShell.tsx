@@ -4,13 +4,15 @@ import {
   Home, Swords, Settings, Book, TestTubes, Sparkles, Disc, Package, Layers,
 } from "lucide-react";
 import type { ShellBridge } from "./bridge";
+import { controlScene } from "./bridge";
 import { LegacyScenes } from "./scenes/LegacyScenes";
 // 舊版首頁不需要先下載新版大廳；切到新版首頁時才載入，維持首頁大小預算。
 const LobbyScene = lazy(() => import("./scenes/LobbyScene").then(m => ({ default: m.LobbyScene })));
 import { TeamScene } from "./scenes/TeamScene";
 import { BagScene } from "./scenes/BagScene";
 import { PALETTES, paletteToCssVars, type PaletteState } from "../design/palette";
-import { getFeature, aegisNavFeatures } from "./features";
+import { getFeature, aegisNavFeatures, type DirectoryEntry, type EncyclopediaTab } from "./features";
+import { DirectoryRail, DirectoryList } from "./art/DirectoryPanel";
 import { ElfAvatar } from "../components/SeerImages";
 import { DEFAULT_ELVES } from "../data/defaultElves";
 import { ThemeBackground } from "../components/ThemeController";
@@ -18,7 +20,7 @@ import { ImageCopyMenu } from "../components/ImageCopyMenu";
 import { PageErrorBoundary } from "../components/PageErrorBoundary";
 import { SiteUpdateNotice } from "../components/SiteUpdateNotice";
 import TechLoadingScreen from "../components/TechLoadingScreen";
-import { TopUtilityBar, SideRail, BottomBar, type RailItem } from "./art/chrome";
+import { TopUtilityBar, BottomBar, type RailItem } from "./art/chrome";
 import "./art/battleAegis.css";
 import "./art/motion.css";
 import "./art/shellLayout.css";
@@ -26,6 +28,7 @@ import "./art/teamWorkspace.css";
 import { haptic } from "./haptics";
 import { SceneTransition } from "./art/SceneTransition";
 import { AegisBackButton, useEdgeSwipeBack } from "./art/BackButton";
+import { ShellBackContext } from "./shellBack";
 const ControlHub = lazy(() => import("../components/ControlHub"));
 import { ResourcePill, PlayerBadge } from "./art/gameUi";
 import { ProfileAvatar } from "./art/ProfileAvatar";
@@ -105,6 +108,23 @@ export function AegisShell({ b, onSwitchShell }: { b: ShellBridge; onSwitchShell
   };
 
   const activeId = b.showEncyclopedia ? "encyclopedia" : b.view;
+  /** 目錄項目：頁面、對戰模式、新增精靈分頁、百科分頁、控制中心分區、效能探針、切換介面。 */
+  const [encyclopediaTab, setEncyclopediaTab] = React.useState<EncyclopediaTab>('search');
+  const openEntry = (entry: DirectoryEntry) => {
+    const a = entry.action;
+    if (!a) return;
+    haptic("light");
+    if (a.kind !== 'encyclopedia' && b.showEncyclopedia) b.setShowEncyclopedia(false);
+    switch (a.kind) {
+      case 'view': b.setView(a.view); return;
+      case 'battle': if (a.format) b.setBattleFormat(a.format); b.setEditingElf(null); b.setEditorTab(undefined); b.setView('bag'); return;
+      case 'editor': b.setEditingElf(null); b.setEditorTab(a.tab); b.setView('custom'); return;
+      case 'encyclopedia': setEncyclopediaTab(a.tab); b.setShowEncyclopedia(true); return;
+      case 'settings': window.dispatchEvent(new CustomEvent("open-settings", { detail: { tab: a.section } })); return;
+      case 'event': window.dispatchEvent(new Event(a.name)); return;
+      case 'switch_shell': onSwitchShell(); return;
+    }
+  };
   const current = getFeature(activeId);
 
   const railItems: RailItem[] = nav.map(f => ({
@@ -120,7 +140,13 @@ export function AegisShell({ b, onSwitchShell }: { b: ShellBridge; onSwitchShell
 
   // iOS 邊緣滑動返回：只在非首頁、非戰鬥時生效
   const canGoBack = b.view !== "start" && b.view !== "battle";
-  useEdgeSwipeBack(() => b.setView("start"), canGoBack);
+  // 殼層返回＝頁面原本的返回語意：編輯器（編成內）回背包並清掉編輯狀態，背包走自己的返回，其餘回首頁。
+  const shellBack = () => {
+    if (b.view === "bag" && b.goBackFromBag) return b.goBackFromBag();
+    if (b.view === "custom" && (b.editingElf || b.editorTab)) { b.setEditingElf(null); b.setEditorTab(undefined); return b.setView("bag"); }
+    b.setView("start");
+  };
+  useEdgeSwipeBack(shellBack, canGoBack);
   return (
     <div
       id="aegis-shell"
@@ -138,7 +164,7 @@ export function AegisShell({ b, onSwitchShell }: { b: ShellBridge; onSwitchShell
     >
       <ThemeBackground currentScene={b.showEncyclopedia ? "encyclopedia" : b.view} />
       <Suspense fallback={null}>
-        <ControlHub currentScene={b.showEncyclopedia ? "encyclopedia" : b.view} canApplyUpdates={b.view === "start" && !b.editingElf && !b.showEncyclopedia} />
+        <ControlHub currentScene={controlScene(b)} canApplyUpdates={b.view === "start" && !b.editingElf && !b.showEncyclopedia} />
       </Suspense>
 
       {/* 頂部：工具列 + 玩家 + 資源（戰鬥中隱藏，手遊慣例是全螢幕戰場） */}
@@ -147,7 +173,7 @@ export function AegisShell({ b, onSwitchShell }: { b: ShellBridge; onSwitchShell
           返回鈕改由該頁面內部渲染，避免和標題擠在一起。 */}
       {canGoBack && (
         <div className="shell-back-slot absolute left-2 z-40" style={{ top: "max(8px, env(safe-area-inset-top))" }}>
-          <AegisBackButton onBack={() => (b.view === "bag" && b.goBackFromBag ? b.goBackFromBag() : b.setView("start"))} />
+          <AegisBackButton onBack={shellBack} />
         </div>
       )}
 
@@ -166,11 +192,7 @@ export function AegisShell({ b, onSwitchShell }: { b: ShellBridge; onSwitchShell
       {/* 頂欄浮起來後，內容要補上它的高度（否則會被蓋住） */}
       <div className="flex-1 min-h-0 flex relative z-10">
         {!isVertical && (
-          <SideRail
-            items={railItems}
-            activeId={activeId}
-            onSelect={go}
-          />
+          <DirectoryRail activeKey={activeId} onOpen={openEntry} />
         )}
 
         <main
@@ -186,6 +208,7 @@ export function AegisShell({ b, onSwitchShell }: { b: ShellBridge; onSwitchShell
         >
           <SiteUpdateNotice active={b.view === "start" && !b.editingElf} />
           {/* 場景轉場：戰鬥中不播（避免動畫疊加），reduced-motion 由 motion.css 統一關閉 */}
+          <ShellBackContext.Provider value={canGoBack}>
           <SceneTransition viewKey={b.view} disabled={b.view === "battle"}>
             <PageErrorBoundary key={b.view === 'bag' || b.view === 'custom' ? 'shared-team-workspace' : b.view} onBack={() => b.setView("start")}>
               {/* live = 原生畫面；其餘一律委派 LegacyScenes，功能不會少 */}
@@ -198,11 +221,12 @@ export function AegisShell({ b, onSwitchShell }: { b: ShellBridge; onSwitchShell
                     : <LegacyScenes b={b} />}
             </PageErrorBoundary>
           </SceneTransition>
+          </ShellBackContext.Provider>
 
           {b.showEncyclopedia && createPortal(
             <PageErrorBoundary onBack={() => b.setShowEncyclopedia(false)}>
               <Suspense fallback={<TechLoadingScreen />}>
-                <Encyclopedia onClose={() => b.setShowEncyclopedia(false)} />
+                <Encyclopedia key={encyclopediaTab} initialTab={encyclopediaTab} onClose={() => { b.setShowEncyclopedia(false); setEncyclopediaTab('search'); }} />
               </Suspense>
             </PageErrorBoundary>,
             document.body
@@ -217,6 +241,7 @@ export function AegisShell({ b, onSwitchShell }: { b: ShellBridge; onSwitchShell
           items={railItems}
           activeId={activeId}
           onSelect={go}
+          directory={close => <DirectoryList activeKey={activeId} onOpen={entry => { close(); openEntry(entry); }} />}
         />
       )}
     </div>

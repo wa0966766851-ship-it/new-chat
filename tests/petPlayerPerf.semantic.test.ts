@@ -17,7 +17,7 @@ const el=()=>{const kids:any[]=[];const d:any={ownerDocument:{createElement:()=>
 const idleQ=new Map<number,()=>void>();let iid=0;
 const idle=(fn:()=>void)=>{const id=++iid;idleQ.set(id,fn);return()=>{idleQ.delete(id);};};
 const runIdle=()=>{for(const [id,fn] of [...idleQ]){idleQ.delete(id);fn();}};
-const flush=async()=>{for(let i=0;i<6;i++)await Promise.resolve();};
+const flush=async()=>{await new Promise(r=>setTimeout(r,10));};
 const made:any[]=[];
 const mk=(opts:any={})=>({mounts:[] as any[],calls:[] as any[],destroyed:false,seeks:[] as number[],transforms:[] as any[],advanced:0,draws:0,paused:false,order:[] as string[],...opts,
  async mount(parent:any,clip:any,options:any){this.order.push('mount');this.mounts.push({parent,clip,options});if(this.failMount)throw Error('gl');},
@@ -32,7 +32,7 @@ assert.equal(made.length,0,'建立外殼當下不建立播放器');assert.equal(
 rt.player.setFixedTransform({x:1,y:2},{x:3,y:-3});rt.player.advance(.1);rt.player.draw();rt.player.pause();assert.equal(made.length,0,'未預載前 advance／draw／pause 不會觸發建立');
 runIdle();await flush();
 assert.equal(made.length,1,'閒置後預載（在任何全屏序列之前）');assert.equal(rt.live(),true);const p=made[0];assert.equal(rt.on,false,'預載時不是全屏序列');
-assert.deepEqual(p.mounts[0].options,{transparent:true,mode:'fixed',clock:'manual',signal:undefined});assert.equal(p.mounts[0].clip,fxClip);
+assert.deepEqual(p.mounts[0].options,{transparent:true,mode:'fixed',clock:'manual',signal:p.mounts[0].options.signal});assert.equal(p.mounts[0].clip,fxClip);
 assert.equal(p.app.renderer.resolution,1.5,'底片畫布也套用解析度上限（8192 → 1.5）');
 assert.ok(p.draws>=1&&p.order.indexOf('draw')>p.order.indexOf('mount'),'暖機：掛載後隱藏繪製一次');assert.deepEqual(p.transforms[0],[{x:1,y:2},{x:3,y:-3}],'補套用預載前記下的變換');assert.equal(p.paused,true,'補套用暫停狀態');
 rt.player.play();

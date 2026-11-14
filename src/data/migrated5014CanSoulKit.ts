@@ -36,7 +36,7 @@ export const MIGRATED_5014_CAN_SOUL_KIT = {
     e('after_action', 'team_action_end', '斯嘉麗在場且珀妮存活，每次出手流程結束（含未出手）額外造成對手最大體力⅓光系技能傷害，失明或未觸發時清除回合效果，自身下2次攻擊增傷150%', [
       { cond: [c('holder_active', {}), c('summoned_extra_alive', { name: '珀妮' })], acts: [a('queue_extra_action', {
         label: '珀妮：光系技能傷害', damageRatio: 1 / 3, elem: '光', body: [
-          { cond: [c('has_status', { side: 'opp', status: '失明', neg: true })], acts: [a('status', { side: 'opp', status: '失明', turns: 2, chance: 100 })] },
+          { cond: [c('has_status', { side: 'opp', status: '失明', neg: true })], acts: [a('status', { side: 'opp', status: '失明', chance: 100 })] },
           { cond: [c('fail', {})], acts: [a('clear_turn', { side: 'opp' })] },
           { cond: [c('has_status', { side: 'opp', status: '失明' })], acts: [a('clear_turn', { side: 'opp' })] },
           { acts: [a('dmg_mod_uses', { uses: 2, boost: 1.5, kind: '攻擊', attackOnly: true })] },

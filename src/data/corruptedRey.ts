@@ -42,7 +42,7 @@ function buildSkills(s:Spec):Skill[]{
  const first=u?[
   {raw:'🎯 消除雙方能力上升、下降狀態並附加等同於消除前雙方能力等級總和×70點真實傷害',body:[act(a('stat_clear',{side:'both',kind:'all',captureLevels:true}),a('dmg_from_last',{ratio:70,type:'真實'}))]},
   {raw:'🎯 抵擋下次受到的攻擊傷害，抵擋成功則附加對手等量真實傷害；直到抵擋觸發前或自身下場，對手所有技能附加效果失效',body:[act(block('counterAttack',true))]},
-  {raw:'🎯 下次死亡時令自身強制存活並保留1點體力',body:[act(a('survive_uses',{uses:1}))]},
+  {raw:'🎯 下次死亡時令自身強制存活，直到當回合結束後每次受到致死傷害時保留1點體力',body:[act(a('survive_uses',{uses:1,thenRound:true}))]},
  ]:[
   {raw:'🎯 吸取對手能力提升狀態，吸取成功則對手下次屬性技能無效',body:[act(a('stat_steal',{mode:'吸取'})),{chain:'success',acts:[a('invalid_next',{kind:'屬性',uses:1})]}]},
   {raw:'🎯 吸取對手270點固定體力',body:[act(a('drain',{flat:270}))]},

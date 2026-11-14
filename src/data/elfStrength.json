@@ -1,0 +1,386 @@
+{
+ "generatedAt": "2026-11-07T15:17:11.686Z",
+ "format": "peak_6v6",
+ "teamSize": 6,
+ "totalGames": 120,
+ "priorK": 6,
+ "note": "隊伍勝率（出場隊伍贏則記勝）＋貝氏平滑；由 scripts/selfplay.ts 產生",
+ "elves": [
+  {
+   "id": "5022",
+   "name": "無序.六刃",
+   "games": 26,
+   "wins": 25,
+   "draws": 6,
+   "score": 0.875
+  },
+  {
+   "id": "5029",
+   "name": "異境神霆·雷伊",
+   "games": 36,
+   "wins": 31,
+   "draws": 4,
+   "score": 0.8095
+  },
+  {
+   "id": "5033",
+   "name": "星軌重構·艾斯菲格",
+   "games": 32,
+   "wins": 22,
+   "draws": 1,
+   "score": 0.6579
+  },
+  {
+   "id": "5008",
+   "name": "鎮魂.巴弗洛",
+   "games": 29,
+   "wins": 20,
+   "draws": 0,
+   "score": 0.6571
+  },
+  {
+   "id": "5034",
+   "name": "邪靈主宰·摩哥斯",
+   "games": 30,
+   "wins": 19,
+   "draws": 2,
+   "score": 0.6111
+  },
+  {
+   "id": "5032",
+   "name": "星核寰宇·艾斯菲亞",
+   "games": 22,
+   "wins": 14,
+   "draws": 1,
+   "score": 0.6071
+  },
+  {
+   "id": "5005",
+   "name": "布萊克",
+   "games": 30,
+   "wins": 18,
+   "draws": 2,
+   "score": 0.5833
+  },
+  {
+   "id": "5001",
+   "name": "悲歌.索比拉特",
+   "games": 29,
+   "wins": 17,
+   "draws": 3,
+   "score": 0.5714
+  },
+  {
+   "id": "5009",
+   "name": "誑獅魔軀.魔獅迪露",
+   "games": 36,
+   "wins": 21,
+   "draws": 0,
+   "score": 0.5714
+  },
+  {
+   "id": "5041",
+   "name": "岳峙淵渟.卡修斯",
+   "games": 26,
+   "wins": 15,
+   "draws": 1,
+   "score": 0.5625
+  },
+  {
+   "id": "5007",
+   "name": "混濁海妖.布林克克",
+   "games": 39,
+   "wins": 22,
+   "draws": 1,
+   "score": 0.5556
+  },
+  {
+   "id": "5028",
+   "name": "怒濤·滄嵐",
+   "games": 30,
+   "wins": 17,
+   "draws": 2,
+   "score": 0.5556
+  },
+  {
+   "id": "5026",
+   "name": "無序.墜星",
+   "games": 25,
+   "wins": 14,
+   "draws": 5,
+   "score": 0.5484
+  },
+  {
+   "id": "5011",
+   "name": "星光·麗莎布布",
+   "games": 27,
+   "wins": 15,
+   "draws": 2,
+   "score": 0.5455
+  },
+  {
+   "id": "5019",
+   "name": "眾神之父·奧丁",
+   "games": 29,
+   "wins": 16,
+   "draws": 0,
+   "score": 0.5429
+  },
+  {
+   "id": "707070",
+   "name": "墜霆.雷伊",
+   "games": 20,
+   "wins": 11,
+   "draws": 2,
+   "score": 0.5385
+  },
+  {
+   "id": "5000",
+   "name": "聖靈譜尼",
+   "games": 28,
+   "wins": 15,
+   "draws": 3,
+   "score": 0.5294
+  },
+  {
+   "id": "5020",
+   "name": "皮皮",
+   "games": 30,
+   "wins": 16,
+   "draws": 2,
+   "score": 0.5278
+  },
+  {
+   "id": "5023",
+   "name": "無序·蝕言",
+   "games": 23,
+   "wins": 12,
+   "draws": 3,
+   "score": 0.5172
+  },
+  {
+   "id": "arena_13",
+   "name": "龍錄天鋒",
+   "games": 29,
+   "wins": 15,
+   "draws": 1,
+   "score": 0.5143
+  },
+  {
+   "id": "5006",
+   "name": "星光·魔焰猩猩",
+   "games": 35,
+   "wins": 18,
+   "draws": 1,
+   "score": 0.5122
+  },
+  {
+   "id": "5014",
+   "name": "聖光斯嘉麗",
+   "games": 26,
+   "wins": 13,
+   "draws": 0,
+   "score": 0.5
+  },
+  {
+   "id": "5016",
+   "name": "變革·馬爾修斯",
+   "games": 33,
+   "wins": 16,
+   "draws": 1,
+   "score": 0.4872
+  },
+  {
+   "id": "arena_14",
+   "name": "無極聖武",
+   "games": 32,
+   "wins": 15,
+   "draws": 3,
+   "score": 0.4737
+  },
+  {
+   "id": "5017",
+   "name": "人皇·帝辛",
+   "games": 26,
+   "wins": 12,
+   "draws": 1,
+   "score": 0.4688
+  },
+  {
+   "id": "5024",
+   "name": "湮滅之主・咤克斯",
+   "games": 22,
+   "wins": 10,
+   "draws": 1,
+   "score": 0.4643
+  },
+  {
+   "id": "5013",
+   "name": "柯爾霍德",
+   "games": 22,
+   "wins": 10,
+   "draws": 5,
+   "score": 0.4643
+  },
+  {
+   "id": "5002",
+   "name": "帝皇之盾",
+   "games": 35,
+   "wins": 16,
+   "draws": 2,
+   "score": 0.4634
+  },
+  {
+   "id": "arena_15",
+   "name": "命運龍輪 莫伊萊",
+   "games": 29,
+   "wins": 13,
+   "draws": 2,
+   "score": 0.4571
+  },
+  {
+   "id": "5021",
+   "name": "治癒·龍魂再臨",
+   "games": 27,
+   "wins": 12,
+   "draws": 0,
+   "score": 0.4545
+  },
+  {
+   "id": "5025",
+   "name": "恐懼的化身·咤克斯",
+   "games": 23,
+   "wins": 10,
+   "draws": 1,
+   "score": 0.4483
+  },
+  {
+   "id": "5030",
+   "name": "聖靈邁爾斯",
+   "games": 28,
+   "wins": 12,
+   "draws": 1,
+   "score": 0.4412
+  },
+  {
+   "id": "arena_12",
+   "name": "無為龍者",
+   "games": 24,
+   "wins": 10,
+   "draws": 1,
+   "score": 0.4333
+  },
+  {
+   "id": "5031",
+   "name": "六界神王",
+   "games": 31,
+   "wins": 13,
+   "draws": 1,
+   "score": 0.4324
+  },
+  {
+   "id": "5036",
+   "name": "九青",
+   "games": 38,
+   "wins": 16,
+   "draws": 3,
+   "score": 0.4318
+  },
+  {
+   "id": "5003",
+   "name": "天蓬元帥八戒",
+   "games": 32,
+   "wins": 13,
+   "draws": 2,
+   "score": 0.4211
+  },
+  {
+   "id": "300",
+   "name": "譜尼",
+   "games": 32,
+   "wins": 13,
+   "draws": 1,
+   "score": 0.4211
+  },
+  {
+   "id": "wiki_4937",
+   "name": "星光·雷納多",
+   "games": 23,
+   "wins": 9,
+   "draws": 1,
+   "score": 0.4138
+  },
+  {
+   "id": "5004",
+   "name": "皮特薩拉羅",
+   "games": 26,
+   "wins": 10,
+   "draws": 0,
+   "score": 0.4063
+  },
+  {
+   "id": "5027",
+   "name": "蓓麗安特",
+   "games": 31,
+   "wins": 12,
+   "draws": 2,
+   "score": 0.4054
+  },
+  {
+   "id": "arena_16",
+   "name": "鎮世龍魂・龍之治癒",
+   "games": 25,
+   "wins": 9,
+   "draws": 2,
+   "score": 0.3871
+  },
+  {
+   "id": "5018",
+   "name": "蟲后·奧佩婭",
+   "games": 25,
+   "wins": 9,
+   "draws": 1,
+   "score": 0.3871
+  },
+  {
+   "id": "5010",
+   "name": "星光·魯斯王",
+   "games": 25,
+   "wins": 9,
+   "draws": 2,
+   "score": 0.3871
+  },
+  {
+   "id": "7070",
+   "name": "魔化.雷伊",
+   "games": 28,
+   "wins": 10,
+   "draws": 2,
+   "score": 0.3824
+  },
+  {
+   "id": "5012",
+   "name": "冰魄·柯爾德",
+   "games": 24,
+   "wins": 8,
+   "draws": 3,
+   "score": 0.3667
+  },
+  {
+   "id": "5035",
+   "name": "御天龍神·哈莫",
+   "games": 40,
+   "wins": 13,
+   "draws": 1,
+   "score": 0.3478
+  },
+  {
+   "id": "5015",
+   "name": "混沌·布萊克",
+   "games": 38,
+   "wins": 12,
+   "draws": 3,
+   "score": 0.3409
+  }
+ ]
+}

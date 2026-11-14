@@ -58,9 +58,10 @@ export function ChainImage({ urls, fallback, className, style, alt, sourceStyle 
   const src = urls.find(u => !hasFailed(u));
   const identity = urls.join('\n');
   const mode = readImageRetryMode();
-  const retryOwn = (event: React.MouseEvent) => {
+  const retryOwn = () => {
     if(mode === 'off' || !urls.some(u => failed.has(u))) return;
-    event.preventDefault(); event.stopPropagation(); urls.forEach(u => failed.delete(u)); refresh(n => n + 1);
+    // 重試是圖片的附帶行為，不能吞掉外層招募、選隊或開啟詳情的點擊。
+    urls.forEach(u => failed.delete(u)); refresh(n => n + 1);
   };
   useEffect(() => {
     // 即使目前已落到備用圖，也要主動喚醒；只讓 Map 過期不會讓 React 重畫。

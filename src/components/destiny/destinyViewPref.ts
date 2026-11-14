@@ -1,9 +1,9 @@
 export type DestinyView = "A" | "B";
 export const DESTINY_VIEW_KEY = "destinyWheelView";
 
-/** 讀取介面偏好（A 舊頁／B 新頁）；localStorage 不可用時退回 A。 */
+/** 讀取介面偏好（A 經典版／B 拾光行記版，2026-11-07 起預設 B）；localStorage 不可用時用 B。 */
 export function readDestinyView(): DestinyView {
-  try { return localStorage.getItem(DESTINY_VIEW_KEY) === "B" ? "B" : "A"; } catch { return "A"; }
+  try { return localStorage.getItem(DESTINY_VIEW_KEY) === "A" ? "A" : "B"; } catch { return "B"; }
 }
 export function writeDestinyView(v: DestinyView) {
   try { localStorage.setItem(DESTINY_VIEW_KEY, v); } catch { /* 隱私模式等：只是不記住 */ }

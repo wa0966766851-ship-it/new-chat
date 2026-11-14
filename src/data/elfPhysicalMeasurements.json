@@ -1,0 +1,121 @@
+[
+  {
+    "id": "5031",
+    "name": "六界神王",
+    "seerId": 3045,
+    "height": 184,
+    "weight": 70
+  },
+  {
+    "id": "5034",
+    "name": "邪靈主宰·摩哥斯",
+    "seerId": 3561,
+    "height": 190,
+    "weight": 80
+  },
+  {
+    "id": "7070",
+    "name": "魔化.雷伊",
+    "seerId": 70,
+    "height": 129,
+    "weight": 35.8
+  },
+  {
+    "id": "707070",
+    "name": "墜霆.雷伊",
+    "seerId": 70,
+    "height": 129,
+    "weight": 35.8
+  },
+  {
+    "id": "5037",
+    "name": "魔化.瑞爾斯",
+    "seerId": 3094,
+    "height": 180,
+    "weight": 100
+  },
+  {
+    "id": "5040",
+    "name": "赫爾卡星魂",
+    "seerId": 2824,
+    "height": 176,
+    "weight": 96
+  },
+  {
+    "id": "5042",
+    "name": "滄桑移壤·納多雷",
+    "seerId": 88,
+    "height": 145,
+    "weight": 600
+  },
+  {
+    "id": "5043",
+    "name": "終焉戰神.蓋亞",
+    "seerId": 261,
+    "height": 131,
+    "weight": 51
+  },
+  {
+    "id": "5044",
+    "name": "炫彩山之神.迪符特",
+    "seerId": 3590,
+    "height": 260,
+    "weight": 150
+  },
+  {
+    "id": "5045",
+    "name": "月鈴極樂·奈尼芬多",
+    "seerId": 264,
+    "height": 98,
+    "weight": 45
+  },
+  {
+    "id": "5046",
+    "name": "聖光天馬.珀伽索斯",
+    "seerId": 999,
+    "height": 198,
+    "weight": 102
+  },
+  {
+    "id": "5047",
+    "name": "難違天律.天邪龍王",
+    "seerId": 2652,
+    "height": 178,
+    "weight": 98
+  },
+  {
+    "id": "5035",
+    "name": "御天龍神·哈莫",
+    "seerId": 3809,
+    "height": 900,
+    "weight": 1200
+  },
+  {
+    "id": "arena_12",
+    "name": "無為龍者",
+    "seerId": 4661,
+    "height": 188,
+    "weight": 90
+  },
+  {
+    "id": "arena_13",
+    "name": "龍錄天鋒",
+    "seerId": 4903,
+    "height": 176,
+    "weight": 62
+  },
+  {
+    "id": "arena_14",
+    "name": "無極聖武",
+    "seerId": 4800,
+    "height": 200,
+    "weight": 90
+  },
+  {
+    "id": "arena_15",
+    "name": "命運龍輪 莫伊萊",
+    "seerId": 4275,
+    "height": 178,
+    "weight": 58
+  }
+]

@@ -23,19 +23,20 @@ export const CASSIUS_SHAN_ACTION_FIELDS: Record<string, readonly string[]> = {
   drain_then_shield: ['ratio'],
   escalating_drain: ['base', 'step', 'max'],
   power_multiplier: ['v'],
-  stat_transfer_down: [],
+  stat_transfer_down: ['requireOpponentApplied'],
   barrier_add: ['side', 'flat'],
   status_if_absent_else_heal: ['status', 'turns', 'healRatio'],
   status_end_cleanse: ['status', 'turns'],
   team_rules: ['shieldDeductionRatio', 'excessIntercept', 'excessTrueRebirth'],
   team_intercept_settle: ['shieldRatio', 'healRatio'],
-  status_rules: ['whileStatus', 'conversionTargetBan', 'cancelEffects', 'replacePpFree', 'replaceInvalidateOppTurns'],
+  status_rules: ['whileStatus', 'cancelExceptCategory', 'conversionTargetBan', 'cancelEffects', 'replacePpFree', 'replaceInvalidateOppTurns'],
   replacement_invalidate_opp: [],
   skill_rules: ['ppFreeKind', 'ppFreeWhenFieldShield'],
   shield_lost_watch: ['scope', 'once', 'body'],
 };
 
 export function cassiusShanActionIssue(op: string, p: any, bodyIssue?: (body: any[]) => string | null): string | null {
+  if(op==='stat_transfer_down'&&p.requireOpponentApplied!==undefined&&typeof p.requireOpponentApplied!=='boolean')return '反饋成功判定需布林值';
   if (op === 'clear_both_shields') {
     if (!(p.drainRatio >= 0 && p.drainRatio <= 2)) return '清除護盾需0至200%吸取比例';
     if (!Number.isFinite(p.threshold) || p.threshold < 0) return '清除護盾需非負門檻';
@@ -85,6 +86,7 @@ export function cassiusShanActionIssue(op: string, p: any, bodyIssue?: (body: an
     return null;
   }
   if (op === 'status_rules') {
+    if(p.cancelExceptCategory!==undefined&&!CATEGORIES.includes(p.cancelExceptCategory))return '保留分類需已登記的異常分類';
     if (typeof p.whileStatus !== 'string' || !StatusRegistry[canonicalStatusName(p.whileStatus)]) return '異常規則需已登記的條件異常';
     for (const k of ['conversionTargetBan', 'cancelEffects']) {
       if (p[k] !== undefined && (!Array.isArray(p[k]) || !p[k].length || p[k].some((c: any) => !CATEGORIES.includes(c)))) return '異常規則分類需為已登記的異常分類';
@@ -180,13 +182,15 @@ export function cassiusShanOperations(helpers: {
     },
 
     /** 解除自身能力下降並等量附加給對手（每項能力：自身歸回下降前、對手同等級下降）。 */
-    stat_transfer_down: (ctx: BattleEventContext): boolean => {
+    stat_transfer_down: (ctx: BattleEventContext,p:any): boolean => {
       const self = helpers.liveElf(ctx, ctx.actor);
       if (!self) return false;
       const downs = Object.entries(self.statStages || {}).filter(([, v]) => typeof v === 'number' && (v as number) < 0) as [string, number][];
       if (!downs.length) return false;
-      ctx.applyStatChange(ctx.actor, Object.fromEntries(downs.map(([k, v]) => [k, -v])));
-      ctx.applyStatChange(ctx.targetSide, Object.fromEntries(downs));
+      if(p.requireOpponentApplied)ctx.updateElf(ctx.actor,{statStages:{...self.statStages,...Object.fromEntries(downs.map(([k])=>[k,0]))}});
+      else ctx.applyStatChange(ctx.actor, Object.fromEntries(downs.map(([k, v]) => [k, -v])));
+      const applied=ctx.applyStatChange(ctx.targetSide, Object.fromEntries(downs));
+      if(p.requireOpponentApplied)return Object.values(applied?.applied||{}).some(v=>Number(v)<0);
       ctx.addLog?.(`⛰️ 【萬壑崩摧】：自身能力下降已解除並附加給對手！`, 'effect');
       return true;
     },
@@ -263,6 +267,7 @@ export function cassiusShanOperations(helpers: {
       const merge = (a?: string[], b?: string[]) => [...new Set([...(a || []), ...(b || [])])];
       const next: any = { ...prev, whileStatus: p.whileStatus };
       if (p.conversionTargetBan) next.conversionTargetBan = merge(prev.conversionTargetBan, p.conversionTargetBan);
+      if (p.cancelExceptCategory) next.cancelExceptCategory = p.cancelExceptCategory;
       if (p.cancelEffects) next.cancelEffects = merge(prev.cancelEffects, p.cancelEffects);
       if (p.replacePpFree) next.replacePpFree = true;
       if (p.replaceInvalidateOppTurns) next.replaceInvalidateOppTurns = p.replaceInvalidateOppTurns;

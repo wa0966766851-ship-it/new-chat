@@ -1,0 +1,201 @@
+{
+ "note": "由官方精靈動畫的特效層萃取（去除本體部位），經改色、混合、重新取樣而成；僅作自製精靈的出招特效。",
+ "tool": "tools/fx-extract",
+ "sources": {
+  "emperor_dixin": "4930 帝皇鎧甲 sa／4468 始皇帝嬴政 sa、cp",
+  "wuxu_liuren": "3876 伽瑪悍刀 attack、sa／4758 神決蓋亞 sa",
+  "wuxu_zhuixing": "4834 重裝派魯基達 attack、sa、cp",
+  "wuxu_shiyan": "4676 神覺米斯蒂克 attack、cp／4643 蓓麗安特 sa"
+ },
+ "index": "https://raw.githubusercontent.com/Nattsu39/seer-pet-viewer/main/apps/viewer/public/pet-anim-index.json",
+ "indexVersion": "20261105205854",
+ "specs": {
+  "emperor_dixin/attack": [
+   {
+    "src": 4930,
+    "seq": "sa",
+    "from": 36,
+    "to": 60,
+    "hue": 12,
+    "sat": 1.1
+   }
+  ],
+  "emperor_dixin/sa": [
+   {
+    "src": 4930,
+    "seq": "sa",
+    "from": 61,
+    "to": 100,
+    "hue": 15
+   },
+   {
+    "src": 4468,
+    "seq": "sa",
+    "from": 81,
+    "to": 99,
+    "hue": -8,
+    "offset": 4,
+    "alpha": 0.7,
+    "scale": 0.8
+   }
+  ],
+  "emperor_dixin/ultimate": [
+   {
+    "src": 4468,
+    "seq": "sa",
+    "from": 100,
+    "to": 146,
+    "hue": -10
+   },
+   {
+    "src": 4930,
+    "seq": "sa",
+    "from": 80,
+    "to": 100,
+    "hue": 15,
+    "offset": 4,
+    "alpha": 0.8
+   }
+  ],
+  "emperor_dixin/cp": [
+   {
+    "src": 4468,
+    "seq": "cp",
+    "from": 28,
+    "to": 118,
+    "step": 3,
+    "hue": -10
+   }
+  ],
+  "wuxu_liuren/attack": [
+   {
+    "src": 3876,
+    "seq": "attack",
+    "from": 40,
+    "to": 62,
+    "hue": 70
+   }
+  ],
+  "wuxu_liuren/sa": [
+   {
+    "src": 3876,
+    "seq": "sa",
+    "from": 40,
+    "to": 80,
+    "hue": 240,
+    "sat": 0.85,
+    "gain": 0.85
+   }
+  ],
+  "wuxu_liuren/ultimate": [
+   {
+    "src": 4758,
+    "seq": "sa",
+    "from": 72,
+    "to": 118,
+    "hue": 150
+   },
+   {
+    "src": 3876,
+    "seq": "sa",
+    "from": 55,
+    "to": 75,
+    "hue": 240,
+    "offset": 6,
+    "alpha": 0.8
+   }
+  ],
+  "wuxu_zhuixing/attack": [
+   {
+    "src": 4834,
+    "seq": "attack",
+    "from": 68,
+    "to": 96,
+    "hue": 170
+   }
+  ],
+  "wuxu_zhuixing/sa": [
+   {
+    "src": 4834,
+    "seq": "sa",
+    "from": 78,
+    "to": 112,
+    "hue": 170,
+    "gain": 0.85
+   }
+  ],
+  "wuxu_zhuixing/ultimate": [
+   {
+    "src": 4834,
+    "seq": "sa",
+    "from": 60,
+    "to": 112,
+    "hue": 165
+   },
+   {
+    "src": 4834,
+    "seq": "attack",
+    "from": 70,
+    "to": 96,
+    "hue": 185,
+    "offset": 8,
+    "alpha": 0.7
+   }
+  ],
+  "wuxu_zhuixing/cp": [
+   {
+    "src": 4834,
+    "seq": "cp",
+    "from": 17,
+    "to": 66,
+    "hue": 170
+   }
+  ],
+  "wuxu_shiyan/attack": [
+   {
+    "src": 4676,
+    "seq": "attack",
+    "from": 30,
+    "to": 72,
+    "hue": 22
+   }
+  ],
+  "wuxu_shiyan/sa": [
+   {
+    "src": 4676,
+    "seq": "attack",
+    "from": 76,
+    "to": 112,
+    "hue": 30
+   },
+   {
+    "src": 4643,
+    "seq": "sa",
+    "from": 80,
+    "to": 115,
+    "hue": 28,
+    "offset": 2,
+    "alpha": 0.8
+   }
+  ],
+  "wuxu_shiyan/ultimate": [
+   {
+    "src": 4643,
+    "seq": "sa",
+    "from": 10,
+    "to": 115,
+    "step": 3,
+    "hue": 28
+   }
+  ],
+  "wuxu_shiyan/cp": [
+   {
+    "src": 4676,
+    "seq": "cp",
+    "from": 17,
+    "to": 52,
+    "hue": 22
+   }
+  ]
+ }
+}

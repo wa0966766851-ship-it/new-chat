@@ -33,7 +33,7 @@ export const MIGRATED_SHARED_SKILL_KITS:ReviewedSequenceSkill[]=[
     seq('🎯 造成傷害100%恢復自身體力',[{acts:[a('vampire',{ratio:1,kind:'攻擊'})]}],3),seq('🎯 2回合內100%閃避對手攻擊技能',[{acts:[a('evade_turns',{turns:2,chance:100,kind:'攻擊'})]}],4),
     seq('🎯 3回合內自身死亡時強制存活並保留1點體力',[{acts:[a('survive_turns',{turns:3})]}],5),
   ]},
-  {elfIds:['5024'],name:'魔王天權震',description:'必中；將自身能力下降狀態雙倍回饋給對手；未擊敗對手則己方下2次攻擊必定致命一擊（己方代表會繼承給場下所有精靈，同類效果觸發時會重置次數至最高值後再消耗次數）',kit:[
+  {elfIds:['5024','5025'],name:'魔王天權震',description:'必中；將自身能力下降狀態雙倍回饋給對手；未擊敗對手則己方下2次攻擊必定致命一擊（己方代表會繼承給場下所有精靈，同類效果觸發時會重置次數至最高值後再消耗次數）',kit:[
     prop('必中','sure_hit',true,0),seq('將自身能力下降狀態雙倍回饋給對手',[{acts:[a('stat_mirror',{side:'opp',fromKind:'down',kind:'down',mult:2})]}],1),
     hit('未擊敗對手則己方下2次攻擊必定致命一擊（同類效果刷新到最高次數，不相加）',[{cond:[c('nokill',{})],acts:[a('crit_uses',{uses:2,scope:'team'})]}],2),
   ]},
@@ -64,7 +64,7 @@ export const MIGRATED_SHARED_SKILL_KITS:ReviewedSequenceSkill[]=[
     seq('🎯 反轉自身能力下降狀態',[{acts:[a('stat_reverse',{side:'self',kind:'down'})]}],2),seq('🎯 使對手隨機2個技能PP歸零',[{acts:[a('pp_zero_random',{count:2})]}],3),
     seq('🎯 造成攻擊傷害提升50%，自身處於能力提升狀態時效果翻倍',[{live:true,acts:[a('boost',{mult:1.5,kind:'攻擊',x2If:c('stage',{side:'self',kind:'up'})})]}],4),
   ]},
-  {elfIds:['5024'],name:'絕滅死亡',description:'全屬性+1，對手處於異常狀態時強化效果翻倍；4回合內，每回合吸取對手最大體力的1/3，自身體力低於1/2時吸取效果翻倍；4回合內免疫並反彈異常狀態',kit:[
+  {elfIds:['5024','5025'],name:'絕滅死亡',description:'全屬性+1，對手處於異常狀態時強化效果翻倍；4回合內，每回合吸取對手最大體力的1/3，自身體力低於1/2時吸取效果翻倍；4回合內免疫並反彈異常狀態',kit:[
     seq('全屬性+1，對手處於異常狀態時強化效果翻倍',[{acts:[a('stat',{side:'self',stats:['全屬性'],v:1,x2If:c('abnormal',{side:'opp'})})]}],0),
     hit('4回合內，每回合吸取對手最大體力的1/3，自身體力低於1/2時吸取效果翻倍',[{acts:[timed(4,'self_skill',[{acts:[a('drain',{ratio:1/3,true:false,x2If:c('hp_ratio',{side:'self',op:'低於',ratio:.5})})]}])]}],1),
     seq('4回合內免疫並反彈異常狀態',[{acts:[a('immune_status_turns',{turns:4,cls:'',reflect:true})]}],2),

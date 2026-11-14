@@ -28,6 +28,8 @@ try {
     const old=structuredClone(DEFAULT_ELVES.find((e:any)=>e.id==='5029'));
     for(const d of [old.soulMark,old.alienTraits.gen2Trait,...old.alienTraits.exclusiveTraits]){delete d.kit;delete d.effectMode;}
     const rey=syncOtherworldReyDescriptions(applySavedSkillCorrections(old,DEFAULT_ELVES));rey.battleId='rey';
+    // 2026-11-14：內建精靈預設帶滿抗性；本測驗證其他機制，抗性設為 0 以免抗性骰與傷害抗性干擾。
+    rey.resistances={ damageResist: { crit: 0, fixed: 0, percent: 0 }, statusResist: { allImmune: false, selectedStatuses: [], slots: [] } };
     const other=guard('enemy');
     // 對照靶也要能在雷伊施加的麻痺下行動，否則測不到真正的反覆強控。
     other.suppressAbnormalSideEffectsWhenParalyzed=true;
@@ -86,7 +88,7 @@ try {
       console.log(`✓ ${side} 初始場下旗標、換上後回合初複製及強控下實際出招`);
     }finally{switched.unmount();}
 
-    const caster=structuredClone(DEFAULT_ELVES.find((e:any)=>e.id==='5033'));caster.battleId='caster';
+    const caster=structuredClone(DEFAULT_ELVES.find((e:any)=>e.id==='5033'));caster.battleId='caster';caster.resistances={ damageResist: { crit: 0, fixed: 0, percent: 0 }, statusResist: { allImmune: false, selectedStatuses: [], slots: [] } };
     const low=guard('low',1000),high=guard('high',1000);high.calculatedStats={hp:1000,atk:2000,def:2000,spatk:2000,spdef:2000,speed:2000};
     const own=bindBag([caster,low],1),enemy=bindBag([guard('enemy-active',1000),high],1);
     const e=createBattleEngine({initialP1Team:side==='p1'?[own[0]]:[enemy[0]],initialP2Team:side==='p2'?[own[0]]:[enemy[0]],

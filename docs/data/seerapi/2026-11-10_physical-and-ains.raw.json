@@ -1,0 +1,358 @@
+{
+  "fetchedAt": "2026-11-10T11:24:50.248Z",
+  "encyclopedia": [
+    {
+      "url": "https://api.seerapi.com/v1/pet_encyclopedia_entry/3045",
+      "status": 200,
+      "data": {
+        "id": 3045,
+        "name": "六界神王",
+        "has_sound": false,
+        "height": 184,
+        "weight": 70,
+        "foundin": null,
+        "food": null,
+        "introduction": "六界之主，维护着六界中的正常秩序，是正义的化身！",
+        "pet": {
+          "id": 3045,
+          "url": "https://api.seerapi.com/v1/pet/3045"
+        },
+        "hash": "50967059"
+      }
+    },
+    {
+      "url": "https://api.seerapi.com/v1/pet_encyclopedia_entry/3561",
+      "status": 200,
+      "data": {
+        "id": 3561,
+        "name": "邪灵主宰·摩哥斯",
+        "has_sound": false,
+        "height": 190,
+        "weight": 80,
+        "foundin": null,
+        "food": null,
+        "introduction": "此身为王，尚未满足！摩哥斯的出现，再次告诉了我们逆袭的力量！",
+        "pet": {
+          "id": 3561,
+          "url": "https://api.seerapi.com/v1/pet/3561"
+        },
+        "hash": "6993c794"
+      }
+    },
+    {
+      "url": "https://api.seerapi.com/v1/pet_encyclopedia_entry/4543",
+      "status": 404,
+      "data": {
+        "error": "Not Found"
+      }
+    },
+    {
+      "url": "https://api.seerapi.com/v1/pet_encyclopedia_entry/70",
+      "status": 200,
+      "data": {
+        "id": 70,
+        "name": "雷伊",
+        "has_sound": true,
+        "height": 129,
+        "weight": 35.8,
+        "foundin": "赫尔卡星荒地",
+        "food": "闪电能量",
+        "introduction": "雷伊是赫尔卡星的神秘精灵，只有当雷雨天才会出现，全身被电流所包围，尽显王者风范。",
+        "pet": {
+          "id": 70,
+          "url": "https://api.seerapi.com/v1/pet/70"
+        },
+        "hash": "6b2af886"
+      }
+    },
+    {
+      "url": "https://api.seerapi.com/v1/pet_encyclopedia_entry/3094",
+      "status": 200,
+      "data": {
+        "id": 3094,
+        "name": "魔化瑞尔斯",
+        "has_sound": false,
+        "height": 180,
+        "weight": 100,
+        "foundin": null,
+        "food": null,
+        "introduction": "是斗神瑞尔斯心中对于邪恶的极端憎恶！充满了黑暗的暴力！向往着无尽的屠戮和虐杀！",
+        "pet": {
+          "id": 3094,
+          "url": "https://api.seerapi.com/v1/pet/3094"
+        },
+        "hash": "f1b3135c"
+      }
+    },
+    {
+      "url": "https://api.seerapi.com/v1/pet_encyclopedia_entry/2824",
+      "status": 200,
+      "data": {
+        "id": 2824,
+        "name": "赫尔卡",
+        "has_sound": false,
+        "height": 176,
+        "weight": 96,
+        "foundin": null,
+        "food": null,
+        "introduction": "赫尔卡星的缔造者，创世之神。能够肆意掌控雷电和空间的力量!",
+        "pet": {
+          "id": 2824,
+          "url": "https://api.seerapi.com/v1/pet/2824"
+        },
+        "hash": "3c0a5be8"
+      }
+    },
+    {
+      "url": "https://api.seerapi.com/v1/pet_encyclopedia_entry/88",
+      "status": 200,
+      "data": {
+        "id": 88,
+        "name": "纳多雷",
+        "has_sound": true,
+        "height": 145,
+        "weight": 600,
+        "foundin": "阿尔法星岩地",
+        "food": "理石拼盘",
+        "introduction": "纳奇鲁的进化形态，长期吸收着大地的精华的它防御能力无可匹敌。纳多雷最自豪的就是可以随心所欲的和对手交换属性，让对手防不胜防。",
+        "pet": {
+          "id": 88,
+          "url": "https://api.seerapi.com/v1/pet/88"
+        },
+        "hash": "8e45dd33"
+      }
+    },
+    {
+      "url": "https://api.seerapi.com/v1/pet_encyclopedia_entry/261",
+      "status": 200,
+      "data": {
+        "id": 261,
+        "name": "盖亚",
+        "has_sound": true,
+        "height": 131,
+        "weight": 51,
+        "foundin": "暗影峭壁",
+        "food": null,
+        "introduction": "提坦的进化形态，盖亚是精灵世界的战斗大师，它掌握着许许多多原创的战斗技巧，颇具霸者风范。",
+        "pet": {
+          "id": 261,
+          "url": "https://api.seerapi.com/v1/pet/261"
+        },
+        "hash": "711e7dab"
+      }
+    },
+    {
+      "url": "https://api.seerapi.com/v1/pet_encyclopedia_entry/3590",
+      "status": 200,
+      "data": {
+        "id": 3590,
+        "name": "炫彩山神·迪符特",
+        "has_sound": false,
+        "height": 260,
+        "weight": 150,
+        "foundin": null,
+        "food": null,
+        "introduction": "怀特星的古老守护者！圣神禁地的忠诚护卫！如今炫彩山遭逢危机，迪符特再度挺身而出！",
+        "pet": {
+          "id": 3590,
+          "url": "https://api.seerapi.com/v1/pet/3590"
+        },
+        "hash": "e0e4d666"
+      }
+    },
+    {
+      "url": "https://api.seerapi.com/v1/pet_encyclopedia_entry/264",
+      "status": 200,
+      "data": {
+        "id": 264,
+        "name": "奈尼芬多",
+        "has_sound": true,
+        "height": 98,
+        "weight": 45,
+        "foundin": null,
+        "food": null,
+        "introduction": "奈诺伊的进化形态，传说奈尼芬多是爱迪星的守护者，天籁般的歌声连月亮都为之倾倒。",
+        "pet": {
+          "id": 264,
+          "url": "https://api.seerapi.com/v1/pet/264"
+        },
+        "hash": "f43877be"
+      }
+    },
+    {
+      "url": "https://api.seerapi.com/v1/pet_encyclopedia_entry/999",
+      "status": 200,
+      "data": {
+        "id": 999,
+        "name": "珀伽索斯",
+        "has_sound": true,
+        "height": 198,
+        "weight": 102,
+        "foundin": null,
+        "food": null,
+        "introduction": "乔伊的进化形态，有着美丽的双翼，被誉为天马，曾经上古圣战之中神兽位置的有力竞争者，身上各色的羽毛是它能量的来源。",
+        "pet": {
+          "id": 999,
+          "url": "https://api.seerapi.com/v1/pet/999"
+        },
+        "hash": "17739fff"
+      }
+    },
+    {
+      "url": "https://api.seerapi.com/v1/pet_encyclopedia_entry/2652",
+      "status": 200,
+      "data": {
+        "id": 2652,
+        "name": "天邪龙王",
+        "has_sound": false,
+        "height": 178,
+        "weight": 98,
+        "foundin": null,
+        "food": null,
+        "introduction": "暗夜邪龙的大形态，全身散发着令人胆战心惊的邪恶气息，是新的暗夜王者！",
+        "pet": {
+          "id": 2652,
+          "url": "https://api.seerapi.com/v1/pet/2652"
+        },
+        "hash": "6fc3aee0"
+      }
+    },
+    {
+      "url": "https://api.seerapi.com/v1/pet_encyclopedia_entry/3809",
+      "status": 200,
+      "data": {
+        "id": 3809,
+        "name": "龙神哈莫",
+        "has_sound": false,
+        "height": 900,
+        "weight": 1200,
+        "foundin": null,
+        "food": null,
+        "introduction": "龙行踏绛气，天半语相闻。混沌疑初判，洪荒若始分。临危不惧，奋勇直前，龙神哈莫震撼降临！",
+        "pet": {
+          "id": 3809,
+          "url": "https://api.seerapi.com/v1/pet/3809"
+        },
+        "hash": "37144758"
+      }
+    },
+    {
+      "url": "https://api.seerapi.com/v1/pet_encyclopedia_entry/4661",
+      "status": 200,
+      "data": {
+        "id": 4661,
+        "name": "无为觉者",
+        "has_sound": false,
+        "height": 188,
+        "weight": 90,
+        "foundin": null,
+        "food": null,
+        "introduction": "虚实交错的力量将包括无为觉者本人在内的一切笼罩在了阴影之下。生命的意义总在被追寻与赋予，而在他的周遭仅有永恒的消解。",
+        "pet": {
+          "id": 4661,
+          "url": "https://api.seerapi.com/v1/pet/4661"
+        },
+        "hash": "5a1a6bf8"
+      }
+    },
+    {
+      "url": "https://api.seerapi.com/v1/pet_encyclopedia_entry/4903",
+      "status": 200,
+      "data": {
+        "id": 4903,
+        "name": "帝录天锋",
+        "has_sound": false,
+        "height": 176,
+        "weight": 62,
+        "foundin": null,
+        "food": null,
+        "introduction": "帝王之刃的完全体形态，上古的封印终于破除，魔剑原本的样貌终于重见天日！",
+        "pet": {
+          "id": 4903,
+          "url": "https://api.seerapi.com/v1/pet/4903"
+        },
+        "hash": "6f1d9b56"
+      }
+    },
+    {
+      "url": "https://api.seerapi.com/v1/pet_encyclopedia_entry/4800",
+      "status": 200,
+      "data": {
+        "id": 4800,
+        "name": "无极圣武",
+        "has_sound": false,
+        "height": 200,
+        "weight": 90,
+        "foundin": null,
+        "food": null,
+        "introduction": "星宇朽坏的存在之边陲，拳圣再度紧握长锋，义无反顾。",
+        "pet": {
+          "id": 4800,
+          "url": "https://api.seerapi.com/v1/pet/4800"
+        },
+        "hash": "fc282a36"
+      }
+    },
+    {
+      "url": "https://api.seerapi.com/v1/pet_encyclopedia_entry/4275",
+      "status": 200,
+      "data": {
+        "id": 4275,
+        "name": "命运之轮·莫伊莱",
+        "has_sound": false,
+        "height": 178,
+        "weight": 58,
+        "foundin": null,
+        "food": null,
+        "introduction": "莫伊莱的超进化形态，从来没有那么一人，有种前世今生的感觉，似星辰开启记忆，如命运做出选择，兜兜转转，难分难舍，日月安属，列星安陈，初心不变，轮回永恒！",
+        "pet": {
+          "id": 4275,
+          "url": "https://api.seerapi.com/v1/pet/4275"
+        },
+        "hash": "1fac8fe4"
+      }
+    }
+  ],
+  "skill": {
+    "url": "https://api.seerapi.com/v1/skill/31271",
+    "data": {
+      "id": 31271,
+      "name": "诸邪皆伏",
+      "power": 140,
+      "max_pp": 5,
+      "accuracy": 95,
+      "crit_rate": 6.25,
+      "priority": 0,
+      "must_hit": false,
+      "atk_num": 1,
+      "info": null,
+      "category": {
+        "id": 2,
+        "url": "https://api.seerapi.com/v1/skill_category/2"
+      },
+      "type": {
+        "id": 3,
+        "url": "https://api.seerapi.com/v1/element_type_combination/3"
+      },
+      "learned_by_pet": [],
+      "skill_effect": [
+        {
+          "info": "随机附加200~400点固定伤害",
+          "analyze_info": "[sprite name=iconHit]随机附加200~400点[color=#52a5f2]固定伤害[/color]（boss有效）",
+          "args": [
+            200,
+            400
+          ],
+          "effect": {
+            "id": 683,
+            "url": "https://api.seerapi.com/v1/skill_effect_type/683"
+          }
+        }
+      ],
+      "friend_skill_effect": [],
+      "hide_effect": null,
+      "advance": null,
+      "hash": "be954e41"
+    }
+  }
+}

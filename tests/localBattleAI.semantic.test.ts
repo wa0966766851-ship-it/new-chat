@@ -53,6 +53,8 @@ try {
   await check('正常禁切與死亡強制切換分流；0血免死替補合法', () => {
     const st=state([elf('A'),elf('L',0)]);
     st.p1Team[1].survivalRule={mode:'freeze_at_zero',active:true,preserveOffField:true,minHp:0};
+    // 2026-11-13 起 0 體力存活只在免死窗口內有效（六刃／damage_survival_guard 皆同時給免死回合）。
+    st.p1Team[1].deathImmunity={guardTurns:2,deathImmuneTurns:3,preserveOffField:true};
     st.p1Timers=[{remaining:2,payload:{lockSwitch:true}}];
     assert.ok(!legalActions(st,'p1').some((a:any)=>a.kind==='switch'));
     assert.deepEqual(legalActions(st,'p1',true),[{kind:'switch',index:1}]);
@@ -75,6 +77,7 @@ try {
   await check('負血／六刃不算死亡，評分有限且沒有0傷擊殺獎勵', () => {
     const st=state([elf('A',800,[skill('等')])],[elf('L',0,[skill('等')])]);
     st.p2.maxHp=800;st.p2.survivalRule={mode:'freeze_at_zero',active:true,preserveOffField:true,minHp:0};
+    st.p2.deathImmunity={guardTurns:2,deathImmuneTurns:3,preserveOffField:true}; // 0 體力存活只在免死窗口內有效
     st.p2Team[0]=st.p2;
     const value=evaluatePosition(st,'p1',DEFAULT_AI_SETTINGS);
     assert.ok(Number.isFinite(value.total));

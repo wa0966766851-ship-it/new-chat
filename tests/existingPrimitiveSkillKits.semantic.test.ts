@@ -30,7 +30,8 @@ try {
       } finally { ws.dispose(); reload.dispose(); }
       matched++;
     }
-    assert.equal(matched, 2);
+    // 毀傷湧進同時配給 5024 與 5025：逐隻精靈都要精確匹配。
+    assert.equal(matched, definitions.reduce((n, d) => n + d.elfIds.length, 0));
   });
   for (const side of ['p1', 'p2'] as const) {
     await check(`${side} 毀傷湧進：兩種非附屬類必為不同異常且排除附屬／BOSS 類`, async () => {

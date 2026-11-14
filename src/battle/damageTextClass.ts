@@ -33,7 +33,8 @@ export interface DamagePhrase {
 }
 
 const RATIO = String.raw`(?:\d+\s*\/\s*\d+|[⅓¼½⅔¾⅕⅙⅛⅐⅑⅒]|\d+(?:\.\d+)?\s*%)`;
-const NUMBER_POINTS = /(?:\d+(?:\.\d+)?\s*點|[*×]\s*\d+(?:\.\d+)?\s*點?)\s*(?:的|之)?$/;
+// 2026-11-14：「隨機附加200~400固定傷害」這類範圍也是固定數值。
+const NUMBER_POINTS = /(?:\d+(?:\.\d+)?\s*點|[*×]\s*\d+(?:\.\d+)?\s*點?|\d+\s*[~～－-]\s*\d+\s*點?)\s*(?:的|之)?$/;
 const RATIO_TAIL = new RegExp(String.raw`${RATIO}[^點，；。]{0,10}$`);
 const DERIVED_TAIL = /(?:等量|等同於?|等同)[^，；。]{0,14}$/;
 const TOKEN = new RegExp(String.raw`(\d+(?:\.\d+)?\s*點)|(${RATIO})`, 'g');
@@ -72,7 +73,13 @@ export function classifyDamagePhrase(text: string): DamageTextClass | null {
 /** 「等量」「等同」的數量是否來自比例：同一句內最後一個數量記號是比例（不是 N 點）。 */
 export function derivedFromRatio(phrase: Pick<DamagePhrase, 'sentenceBefore'>, previousText = ''): boolean {
   const last = (s: string) => [...s.matchAll(TOKEN)].pop();
-  const token = last(phrase.sentenceBefore) ?? last(previousText);
+  const own = last(phrase.sentenceBefore);
+  if (own) return own[2] !== undefined;
+  // 2026-11-14：句內沒有數量時才回看前文，且前文最後一句必須是恢復／吸取（「等量」才是承接該恢復量）；
+  // 例：「無視對手護盾…附加雙方等量固定傷害」的等量指護盾量，不是前面某行的比例。
+  const lastSentence = previousText.split(/[；。\n]/).filter(s => s.trim()).pop() ?? '';
+  if (!/恢復|回復|吸取/.test(lastSentence)) return false;
+  const token = last(lastSentence);
   return !!token && token[2] !== undefined;
 }
 

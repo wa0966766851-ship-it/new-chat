@@ -1,3 +1,4 @@
+import {finishPetPreparation} from './petAnimation/preparationScheduler';
 import type {SwfClipData,SwfFrameMesh,SwfSubMesh} from '@seer-pet-anim/swf-bundle';
 import type {PetFullscreenConfig} from './petAnimationAssets';
 import type {NativeBounds} from './petAnimationGeometry';
@@ -37,9 +38,9 @@ function makeReport(restHeight:number,counts:{removedQuads:number;keptAddQuads:n
  return {restHeight,...counts,policy:LARGE_ADD_POLICY,removed:dedupe(removed),pending:dedupe(pending),fullscreen,backdropBounds,backdropFrames};
 }
 const range=(sm:SwfSubMesh,from:number,to:number):SwfSubMesh=>({...sm,startVertex:sm.startVertex+from*4,indexStart:sm.indexStart+from*6,indexCount:(to-from)*6});
-function prepare(source:SwfClipData,config?:PetFullscreenConfig):PreparedPetFx{
+function* prepare(source:SwfClipData,config?:PetFullscreenConfig):Generator<void,PreparedPetFx>{
  let low=Infinity,high=-Infinity;
- for(const f of source.sequences.find(s=>s.name==='standby')?.frames??[])for(let i=1;i<f.mesh.positions.length;i+=2){low=Math.min(low,f.mesh.positions[i]);high=Math.max(high,f.mesh.positions[i]);}
+ for(const f of source.sequences.find(s=>s.name==='standby')?.frames??[]){for(let i=1;i<f.mesh.positions.length;i+=2){low=Math.min(low,f.mesh.positions[i]);high=Math.max(high,f.mesh.positions[i]);}yield;}
  const restHeight=high-low;
  let removedQuads=0,keptAddQuads=0,normalRemoved=0;
  const removed:Quad[]=[],pending:Quad[]=[];
@@ -77,13 +78,15 @@ function prepare(source:SwfClipData,config?:PetFullscreenConfig):PreparedPetFx{
   }
   return {frame:changed?{...frame,mesh:{...frame.mesh,subMeshes:keep}}:frame,fx:{...frame,mesh:{...frame.mesh,subMeshes:fx}},box:frameBox};
  }
- const sequences=source.sequences.map(seq=>{
-  if(seq.name==='standby')return seq;
-  const scanned=seq.frames.map(frame=>scanFrame(seq.name,frame));
+ const sequences:SwfClipData['sequences']=[];
+ for(const seq of source.sequences){
+  if(seq.name==='standby'){sequences.push(seq);continue;}
+  const scanned:ReturnType<typeof scanFrame>[]=[];
+  for(const frame of seq.frames){scanned.push(scanFrame(seq.name,frame));yield;}
   fxFramesBySequence.set(seq.name,scanned.map(s=>s.fx));
   frameBoxesBySequence.set(seq.name,scanned.map(s=>s.box));
-  return {...seq,frames:scanned.map(s=>s.frame)};
- });
+  sequences.push({...seq,frames:scanned.map(s=>s.frame)});
+ }
  // 哪些序列走全屏層：明確登記優先；否則「有底片圖塊被判定」的序列自動納入。
  const explicit=config?.sequences;
  const flagged=(explicit?explicit.filter(name=>fxFramesBySequence.has(name)):[...removedBySequence.keys()]);
@@ -101,6 +104,13 @@ function prepare(source:SwfClipData,config?:PetFullscreenConfig):PreparedPetFx{
 export function preparePetFx(source:SwfClipData,fullscreen?:PetFullscreenConfig):PreparedPetFx{
  let byConfig=cache.get(source);if(!byConfig){byConfig=new Map();cache.set(source,byConfig);}
  const key=fullscreen?.sequences?fullscreen.sequences.join('|')+'#':'auto';
- let result=byConfig.get(key);if(!result){result=prepare(source,fullscreen);byConfig.set(key,result);}
+ let result=byConfig.get(key);if(!result){const steps=prepare(source,fullscreen);let step=steps.next();while(!step.done)step=steps.next();result=step.value;byConfig.set(key,result);}
  return result;
+}
+
+/** 載入時分批預處理；既有同步 API 留給已快取讀取與離線測試。 */
+export async function preparePetFxAsync(source:SwfClipData,fullscreen?:PetFullscreenConfig,signal?:AbortSignal){
+ signal?.throwIfAborted();let byConfig=cache.get(source);if(!byConfig){byConfig=new Map();cache.set(source,byConfig);}
+ const key=fullscreen?.sequences?fullscreen.sequences.join('|')+'#':'auto';const hit=byConfig.get(key);if(hit)return hit;
+ const result=await finishPetPreparation(prepare(source,fullscreen),signal);byConfig.set(key,result);return result;
 }

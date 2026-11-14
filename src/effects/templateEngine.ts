@@ -1,3 +1,4 @@
+import {recipientEffectChance} from '../battle/recipientEffectChance';
 import { queueActionPowerMultiplier } from '../battle/actionDamageModifiers';
 import { BattleEventContext, EffectTiming } from './types';
 import { prdPercent } from '../utils/prd';
@@ -69,7 +70,7 @@ export const TEMPLATE_EFFECTS: Record<string, TemplateEffectExecutor> = {
   // args 格式: [屬性名, 機率, 變化等級] 例如 ["def", 100, -1]
   "0005": (args, ctx) => {
     const statName = args[0] || "def";
-    const chance = args[1] !== undefined ? Number(args[1]) : 100;
+    const chance = recipientEffectChance(ctx,ctx.targetSide,args[1] !== undefined ? Number(args[1]) : 100);
     const level = args[2] !== undefined ? Number(args[2]) : -1;
 
     if (chanceOf(ctx, "L67", chance)) {
@@ -80,7 +81,7 @@ export const TEMPLATE_EFFECTS: Record<string, TemplateEffectExecutor> = {
 
   // 0010: 命中後{0}%令對方麻痺
   "0010": (args, ctx) => {
-    const chance = args[0] !== undefined ? Number(args[0]) : 100;
+    const chance = recipientEffectChance(ctx,ctx.targetSide,args[0] !== undefined ? Number(args[0]) : 100);
     if (!statusChanceBlocked(ctx, chance) && chanceOf(ctx, "L76", chance)) {
       const res = ctx.applyStatusWithImmunityCheck(ctx.targetSide, "麻痺", 2);
       if (res.success) {
@@ -91,7 +92,7 @@ export const TEMPLATE_EFFECTS: Record<string, TemplateEffectExecutor> = {
 
   // 0011: 命中後{0}%令對方中毒（BOSS有效）
   "0011": (args, ctx) => {
-    const chance = args[0] !== undefined ? Number(args[0]) : 100;
+    const chance = recipientEffectChance(ctx,ctx.targetSide,args[0] !== undefined ? Number(args[0]) : 100);
     if (!statusChanceBlocked(ctx, chance) && chanceOf(ctx, "L87", chance)) {
       const res = ctx.applyStatusWithImmunityCheck(ctx.targetSide, "中毒", 3);
       if (res.success) {
@@ -102,7 +103,7 @@ export const TEMPLATE_EFFECTS: Record<string, TemplateEffectExecutor> = {
 
   // 0012: 命中後{0}%令對方燒傷（BOSS有效）
   "0012": (args, ctx) => {
-    const chance = args[0] !== undefined ? Number(args[0]) : 100;
+    const chance = recipientEffectChance(ctx,ctx.targetSide,args[0] !== undefined ? Number(args[0]) : 100);
     if (!statusChanceBlocked(ctx, chance) && chanceOf(ctx, "L98", chance)) {
       const res = ctx.applyStatusWithImmunityCheck(ctx.targetSide, "燒傷", 3);
       if (res.success) {
@@ -167,7 +168,7 @@ export const TEMPLATE_EFFECTS: Record<string, TemplateEffectExecutor> = {
 
   // 0015: 命中後{0}%令對方害怕
   "0015": (args, ctx) => {
-    const chance = args[0] !== undefined ? Number(args[0]) : 100;
+    const chance = recipientEffectChance(ctx,ctx.targetSide,args[0] !== undefined ? Number(args[0]) : 100);
     if (!statusChanceBlocked(ctx, chance) && chanceOf(ctx, "L163", chance)) {
       const res = ctx.applyStatusWithImmunityCheck(ctx.targetSide, "害怕", 2);
       if (res.success) {
@@ -178,7 +179,7 @@ export const TEMPLATE_EFFECTS: Record<string, TemplateEffectExecutor> = {
 
   // 0016: 命中後{0}%令對方冰封
   "0016": (args, ctx) => {
-    const chance = args[0] !== undefined ? Number(args[0]) : 100;
+    const chance = recipientEffectChance(ctx,ctx.targetSide,args[0] !== undefined ? Number(args[0]) : 100);
     if (!statusChanceBlocked(ctx, chance) && chanceOf(ctx, "L174", chance)) {
       const res = ctx.applyStatusWithImmunityCheck(ctx.targetSide, "冰封", 2);
       if (res.success) {

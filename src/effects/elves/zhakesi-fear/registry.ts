@@ -1,3 +1,5 @@
+import {instantKillChance} from '../../../battle/instantKillChance';
+import {recipientEffectChance} from '../../../battle/recipientEffectChance';
 import { BattleEventContext, BattleSkillHandler, EffectTiming, ElfDeconstructedProfile } from '../../types';
 
 // 5025 魂印「懼」已遷移為真 Kit（src/data/migratedZhakesiFearSoulKit.ts；DSH 20261018 第十三批·第一波）——
@@ -89,42 +91,8 @@ export const ZHAKESI_FEAR_SKILLS: Record<string, BattleSkillHandler> = {
     addLog(`🦇 【劫數.萬念歸墟】：大劫降臨，萬物皆歸於虛無！`, "effect");
 
     const tryInstantKill = (chance: number, reason: string): boolean => {
-      const actorMarks = ctx.getMarks(actor) || [];
-      const hasSeed = actorMarks.some(m => m.id === "fear_seed");
-      const hasFlower = actorMarks.some(m => m.id === "fear_flower");
-      if (hasSeed || hasFlower) {
-        addLog(`🦇 【恐懼限制】：處於恐懼狀態，無法觸發秒殺效果！`, "effect");
-        return false;
-      }
-      const oppTeam = ctx.getFullTeam(oppSide) || [];
-      const activeOpp = oppSide === "p1" ? ctx.activeP1 : ctx.activeP2;
-      const isLordInBackpack = oppTeam.some(e => e.name.includes("湮滅之主") && e.id !== activeOpp?.id && e.currentHp > 0 && !e.isVanished);
-      if (isLordInBackpack) {
-        addLog(`🛡️ 【湮滅之主】：對手背包內的湮滅之主令秒殺效果失效！並為其凝聚魔王咒怨！`, "effect");
-        const oppMarks = ctx.getMarks(oppSide) || [];
-        const grudge = oppMarks.find(m => m.id === "demon_grudge");
-        const count = grudge ? (grudge.count || 1) : 0;
-        ctx.setMark({ id: "demon_grudge", name: "魔王咒怨", count: count + 1, displayChar: "咒", description: "湮滅之主令秒殺效果失效時所凝聚的咒怨層數，持有方下次秒殺觸發成功時會引發連鎖反應，令對方所有體力與秒殺目標相同的精靈一同秒殺" }, oppSide);
-        return false;
-      }
-      const roll = ctx.rng ? ctx.rng() : Math.random();
-      if (roll < chance) {
-        addLog(`💀 【秒殺觸發】：${reason}觸發成功！秒殺對手！`, "effect");
-        const grudgeMark = actorMarks.find(m => m.id === "demon_grudge");
-        if (grudgeMark && (grudgeMark.count || 0) >= 1) {
-          addLog(`👿 【魔王咒怨】：連鎖反應！選擇對方所有體力與秒殺目標相同的精靈一同秒殺！`, "effect");
-          const targetHp = ctx.target.currentHp;
-          oppTeam.forEach(elf => {
-            if (elf && elf.currentHp === targetHp && !elf.isVanished) {
-              ctx.applyTrueDamage(oppSide, elf.currentHp, "咒怨連鎖秒殺");
-            }
-          });
-        } else {
-          ctx.applyTrueDamage(oppSide, ctx.target.currentHp, "秒殺");
-        }
-        return true;
-      }
-      return false;
+      if(!instantKillChance(ctx,'skill:萬念歸墟',chance*100))return false;
+      return ctx.applyInstantKill?.(oppSide,reason)===true;
     };
 
     const cleared = ctx.clearTurnEffectsOf(oppSide);

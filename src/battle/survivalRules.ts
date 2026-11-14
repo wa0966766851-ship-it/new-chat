@@ -1,4 +1,4 @@
-﻿export type DamageNature = "true" | "non_true";
+export type DamageNature = "true" | "non_true";
 export type NonPositiveSurvivalMode = "none" | "freeze_at_zero" | "god_descent";
 
 export interface NonPositiveSurvivalRule {
@@ -44,12 +44,16 @@ export const liurenSurvivalRule = (): NonPositiveSurvivalRule => ({
   minHp: 0,
 });
 
-/** 異境神霆·雷伊：非正體力仍存活，最低可到最大體力的-70倍。 */
-export const reyGodDescentRule = (maxHp: number): NonPositiveSurvivalRule => ({
+/** 神降下限倍率（「70乘以-自身當前體力上限」）。規則只存公式參數，判定時即時乘上當前 maxHp。 */
+export const GOD_DESCENT_FLOOR_MULT = 70;
+
+/** 異境神霆·雷伊：非正體力仍存活，下限 = -floorMult × 當前最大體力（死亡線）。 */
+export const reyGodDescentRule = (maxHp: number, floorMult = GOD_DESCENT_FLOOR_MULT): NonPositiveSurvivalRule => ({
   mode: "god_descent",
   active: true,
   preserveOffField: true,
-  minHp: -70 * Math.max(0, maxHp),
+  floorMult,
+  minHp: -floorMult * Math.max(0, maxHp),
 });
 
 /**
@@ -98,14 +102,14 @@ export function resolveDamageTransition(
   incomingDamage: number,
   nature: DamageNature,
   rule: NonPositiveSurvivalRule = standardSurvivalRule(),
-  options: { ignoreNonTrueImmunity?: boolean } = {},
+  options: { ignoreNonTrueImmunity?: boolean; deathFloorRatio?:number } = {},
 ): DamageTransition {
   const amount = Math.max(0, Math.floor(incomingDamage));
   const crossingZero = currentHp > 0 && currentHp - amount <= 0;
 
-  if (!rule.active || rule.mode === "none") {
+  if (!rule.active || rule.mode === "none" || ((options.deathFloorRatio||0)>0 && godDescentFloor(rule,maxHp)>=0)) {
     const hp = Math.max(0, currentHp - amount);
-    return { hp, alive: hp > 0, enteredNonPositive: crossingZero, ignoredDamage: false, damageApplied: Math.max(0, currentHp - hp), hpAdjustment: hp - currentHp };
+    return { hp, alive: hp > maxHp*(options.deathFloorRatio||0), enteredNonPositive: crossingZero, ignoredDamage: false, damageApplied: Math.max(0, currentHp - hp), hpAdjustment: hp - currentHp };
   }
 
   if (rule.mode === "freeze_at_zero") {
@@ -121,12 +125,24 @@ export function resolveDamageTransition(
   if (nature === "non_true" && !options.ignoreNonTrueImmunity && (currentHp <= 0 || crossingZero)) {
     // 原傷害不進入體力；從0（首次進入）或當前負體力另作-70%最大體力調整。
     const baseHp = crossingZero ? 0 : currentHp;
-    const hp = Math.max(floor, baseHp - Math.floor(maxHp * 0.7));
-    return { hp, alive: true, enteredNonPositive: crossingZero, ignoredDamage: true, damageApplied: crossingZero ? Math.max(0, currentHp) : 0, hpAdjustment: hp - currentHp };
+    // 體力上限極小（如被壓到 1）時 floor(0.7×上限)=0，非真傷會變成完全無效；至少扣 1。
+    const hp = Math.max(floor, baseHp - Math.max(maxHp > 0 ? 1 : 0, Math.floor(maxHp * 0.7)));
+    // Reaching the floor is death; let the normal fatal-resist / immunity pipeline run.
+    return { hp, alive: hp > floor, enteredNonPositive: crossingZero, ignoredDamage: true, damageApplied: crossingZero ? Math.max(0, currentHp) : 0, hpAdjustment: hp - currentHp };
   }
 
   const hp = Math.max(floor, currentHp - amount);
-  return { hp, alive: true, enteredNonPositive: crossingZero, ignoredDamage: false, damageApplied: amount, hpAdjustment: hp - currentHp };
+  // Reaching the floor is death; let the normal fatal-resist / immunity pipeline run.
+  return { hp, alive: hp > floor, enteredNonPositive: crossingZero, ignoredDamage: false, damageApplied: amount, hpAdjustment: hp - currentHp };
+}
+
+/**
+ * 2026-11-13：「0體力仍存活」（freeze_at_zero：六刃真傷庇護、damage_survival_guard）只在免死窗口內有效。
+ * 免死回合到期時規則必須一併移除，否則體力 0 的精靈之後永遠不會陣亡。
+ */
+export function releaseExpiredSurvivalRule(rule: NonPositiveSurvivalRule | undefined, immunity?: { deathImmuneTurns?: number } | null): NonPositiveSurvivalRule | undefined {
+  if (rule?.mode === "freeze_at_zero" && !((immunity?.deathImmuneTurns || 0) > 0)) return undefined;
+  return rule;
 }
 
 export interface RecoveryTransition {

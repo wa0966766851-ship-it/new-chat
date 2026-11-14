@@ -13,6 +13,7 @@ export const MARK_PROGRAM_TRIGGERS = new Set([
   'outgoing','outgoing_skill','outgoing_attack',
 ]);
 export const MARK_PROGRAM_FIELDS = [
+  'stabDisabled','typeAdvantageDisabled',
   'id','name','side','mode','count','maxCount','scope','persistsOffField','turns',
   'displayChar','unit','description','rules','recoveryReduction','incomingDamageReduction',
   // 引擎既有印記效果讀取端（marks.effects；battle/contextBuilders 倍率、battleEngine 保底機率）：
@@ -22,13 +23,17 @@ export const MARK_PROGRAM_FIELDS = [
   'guaranteedMaxHpDamageChance','guaranteedMaxHpDamageChancePerStack',
   // 持有者（屬性／攻擊／全部）技能無效：寫入 marks.effects.blkInvalid（battleEngine 技能無效讀取端既有）。5010 星海之浸。
   'holderInvalid',
-  'countFromMark','turnsFromCount','priorityBonus','vsOpponentName',
+  'countFromMark','turnsFromCount','priorityBonus','priorityPerStack','vsOpponentName','bindSource','incomingDamageLimitDisabled','incomingEffectChanceGuaranteed',
 ] as const;
 export function markProgramIssue(p:any):string|null {
+  for(const key of ['stabDisabled','typeAdvantageDisabled'])if(p[key]!==undefined&&typeof p[key]!=='boolean')return '屬性加成限制需明確布林值';
   if(!['self','opp'].includes(p.side)||!['elf','team'].includes(p.scope))return '印記需明確目標與精靈／陣營作用域';
   if(!['add','set'].includes(p.mode)||!Number.isInteger(p.count)||p.count<1||p.count>10000)return '印記需明確累加／設定方式及正整數層數';
   if(!Number.isInteger(p.maxCount)||p.maxCount<1||p.maxCount>10000||p.count>p.maxCount)return '印記需有效層數上限';
   if(typeof p.persistsOffField!=='boolean')return '印記需明確下場保留規則';
+  if(p.bindSource!==undefined&&typeof p.bindSource!=='boolean')return '印記來源綁定需明確布林值';
+  if(p.incomingDamageLimitDisabled!==undefined&&typeof p.incomingDamageLimitDisabled!=='boolean')return '持有者受傷上限失效需明確布林值';
+  if(p.incomingEffectChanceGuaranteed!==undefined&&typeof p.incomingEffectChanceGuaranteed!=='boolean')return '持有者受到敵方機率效果保證需明確布林值';
   for(const key of ['id','name','displayChar','description'])if(typeof p[key]!=='string'||!p[key]||p[key].length>(key==='description'?100000:200))return `印記${key}需有限非空文字`;
   if(!['層','道','點','篇','枚','株','回合'].includes(p.unit))return '印記單位不明';
   if(p.turns!==undefined&&(!Number.isInteger(p.turns)||p.turns<1||p.turns>10000))return '印記期限需正整數；未填才代表不按回合到期';
@@ -43,8 +48,9 @@ export function markProgramIssue(p:any):string|null {
   if(p.countFromMark!==undefined&&(!p.countFromMark||Object.keys(p.countFromMark).some(k=>!['side','id'].includes(k))||!['self','opp'].includes(p.countFromMark.side)||typeof p.countFromMark.id!=='string'||!p.countFromMark.id||p.countFromMark.id.length>200))return '印記數量來源需明確持有者與資源識別碼';
   if(p.turnsFromCount!==undefined&&(typeof p.turnsFromCount!=='boolean'||!p.countFromMark||p.turns!==undefined))return '依數量定期限需資源來源且不能重複指定期限';
   if(p.priorityBonus!==undefined&&(!Number.isInteger(p.priorityBonus)||!p.priorityBonus||Math.abs(p.priorityBonus)>6))return '印記先制需非零-6至6整數';
+  if(p.priorityPerStack!==undefined&&(typeof p.priorityPerStack!=='boolean'||p.priorityBonus===undefined))return '逐層先制需布林值及先制數值';
   if(p.vsOpponentName!==undefined&&(typeof p.vsOpponentName!=='string'||!p.vsOpponentName||p.vsOpponentName.length>200||p.priorityBonus===undefined))return '對手名稱條件需有限文字及先制讀取效果';
-  const hasEngineEffect=p.priorityBonus!==undefined||p.holderInvalid!==undefined||p.nonTrueDamageDealtMultiplier!==undefined||p.nonTrueDamageTakenMultiplier!==undefined||p.guaranteedMaxHpDamageChance!==undefined;
+  const hasEngineEffect=p.stabDisabled===true||p.typeAdvantageDisabled===true||p.incomingEffectChanceGuaranteed===true||p.incomingDamageLimitDisabled===true||p.priorityBonus!==undefined||p.holderInvalid!==undefined||p.nonTrueDamageDealtMultiplier!==undefined||p.nonTrueDamageTakenMultiplier!==undefined||p.guaranteedMaxHpDamageChance!==undefined;
   if(!Array.isArray(p.rules)||p.rules.length>30||(!p.rules.length&&p.recoveryReduction===undefined&&p.incomingDamageReduction===undefined&&!hasEngineEffect))return '印記需明確規則陣列；空陣列時需已接通的持有者限制';
   for(const rule of p.rules)if(!MARK_PROGRAM_TRIGGERS.has(rule?.trig))return '印記規則缺少已接通的持有者節點';
   return null;
@@ -66,8 +72,12 @@ export function applyMarkProgram(ctx:BattleEventContext,p:any,holder:any):boolea
     id:p.id,name:p.name,displayChar:p.displayChar,description:p.description,
     count,maxCount:p.maxCount,unit:p.unit,scope:p.scope,ownerBattleId,
     persistsOffField:p.persistsOffField,clearable:false,remainingRounds:turns,
-    effects:{blockProgram:structuredClone(p.rules) as Clause[],...(p.holderInvalid!==undefined?{blkInvalid:p.holderInvalid}:{}),...(turns!==undefined?{blkTurns:turns}:{}),
-      ...(p.priorityBonus!==undefined?{priorityBonus:p.priorityBonus,...(p.vsOpponentName?{vsOpponentName:p.vsOpponentName}:{})}:{}),
+    effects:{blockProgram:structuredClone(p.rules) as Clause[],...(p.bindSource?{blockSource:{side:ctx.actor,battleId:String(ctx.self.battleId||ctx.self.id)}}:{}),...(p.holderInvalid!==undefined?{blkInvalid:p.holderInvalid}:{}),...(turns!==undefined?{blkTurns:turns}:{}),
+      ...(p.incomingDamageLimitDisabled?{incomingDamageLimitDisabled:1}:{}),
+      ...(p.stabDisabled?{stabDisabled:1}:{}),
+      ...(p.typeAdvantageDisabled?{typeAdvantageDisabled:1}:{}),
+      ...(p.incomingEffectChanceGuaranteed?{incomingEffectChanceGuaranteed:1}:{}),
+      ...(p.priorityBonus!==undefined?{priorityBonus:p.priorityBonus,...(p.priorityPerStack?{priorityPerStack:true}:{}),...(p.vsOpponentName?{vsOpponentName:p.vsOpponentName}:{})}:{}),
       ...(p.recoveryReduction!==undefined?{recoveryReduction:structuredClone(p.recoveryReduction)}:{}),
       ...(p.incomingDamageReduction!==undefined?{incomingDamageReduction:structuredClone(p.incomingDamageReduction)}:{}),
       ...(p.nonTrueDamageDealtMultiplier!==undefined?{nonTrueDamageDealtMultiplier:p.nonTrueDamageDealtMultiplier}:{}),

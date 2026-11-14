@@ -79,8 +79,11 @@ export function extraElfLifecycleOperations(helpers: {
   runAct: (ctx: BattleEventContext, act: any, st: any) => any;
   killExtraElf: (ctx: any, side: S, extra: any, data?: Record<string, unknown>) => boolean;
 }) {
-  const resetRounds = (ctx: BattleEventContext, side: S) =>
-    (side === ctx.actor ? ctx.setPlayerState : (ctx as any).setOpponentState)(`${side}_turnsInBattle`, 0);
+  const resetRounds = (ctx: BattleEventContext, side: S) => {
+    const set = side === ctx.actor ? ctx.setPlayerState : ctx.setOpponentState;
+    set(`${side}_turnsInBattle`, 0);
+    set('fieldEntryTurn', (Number(ctx.roundNumber) || 0) + 1);
+  };
   return {
     kill_owned_extra: (ctx: BattleEventContext, p: any): boolean => {
       const owner = liveOf(ctx, ctx.actor, ctx.self);
@@ -91,7 +94,7 @@ export function extraElfLifecycleOperations(helpers: {
       if (!extra) return false;
       const killed = helpers.killExtraElf(ctx, ctx.actor, extra, { reason: 'owned_extra_kill', ownerId: idOf(owner) });
       if (killed && p.resetOwnerRounds) resetRounds(ctx, ctx.actor);
-      if (killed) (ctx as any).addLog?.(`【${extra.name}】死亡，清除${owner.name}本次在場累計回合數。`, 'effect');
+      if (killed) (ctx as any).addLog?.(`【${extra.name}】死亡${p.resetOwnerRounds?`，清除${owner.name}本次在場累計回合數`:''}。`, 'effect');
       return killed;
     },
     reset_field_rounds: (ctx: BattleEventContext, p: any): boolean => {

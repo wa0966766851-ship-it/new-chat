@@ -43,7 +43,7 @@ export const MIGRATED_REY_SOUL_KIT = {
       { acts: [a('flag_set',{key:'roundPriorityBranch',value:false,thisRound:true})] },
       { cond:[c('stage',{side:'opp',kind:'up',neg:true})],acts:[a('flag_set',{key:'roundPriorityBranch',value:true,thisRound:true})] },
       { acts: [a('stage_copy_up', {})] },
-      { chain: 'success', acts: [a('status_or_extend', { side: 'self', status: '麻痺', turns: 1, extend: 1 })] },
+      { chain: 'success', acts: [a('status_or_extend', { side: 'self', status: '麻痺', turns: 3, extend: 1 })] },
       { cond: [c('stage', { side: 'opp', kind: 'up', neg: true }, '對手不處於能力提升')], acts: [
         a('stat', { side: 'self', stats: ['攻擊', '速度', '命中'], v: 2 }),
       ] },
@@ -75,10 +75,10 @@ export const MIGRATED_REY_SOUL_KIT = {
 
 // ───────── 專屬特質「神明」「雷神」 ─────────
 const T = 'mechanic' as const;
-const GOD_ENTITY_RAW = '自身存活條件不受當前體力限制。\n自身當前體力歸0時進入「神降」。';
+const GOD_ENTITY_RAW = '自身體力為正數或0時存活條件不受當前體力限制。\n自身當前體力小於等於0時進入「神降」。';
 const alien = a('alien_category', { id: 'rey_alien_energy', name: '異能值', displayChar: '異', description: '個體異能值資源；可顯示及依技能扣除，特殊模式的登場消耗規則尚未接通。' });
 const survival = a('survival_rule', { mode: 'god_descent', floorMult: 70 });
-const thunderGodRaw = '令自身死亡時的體力下限不再為0，改為70乘以（-自身體力上限）為體力下限。\n自身恢復體力量降低100%，改為每次執行恢復體力效果時令自身增加等同於自身最大體力的70%。\n自身每次受到非真實傷害時免疫此傷害，並令扣除自身體力上限70%的體力值。\n自身每次受到真實傷害時，正常結算傷害。';
+const thunderGodRaw = '令自身獲得死亡條件，死亡體力改為70乘以（-自身當前體力上限），體力小於等於該值即死亡。\n自身恢復體力量降低100%，但每次執行恢復體力效果時改為令自身直接增加等同於自身體力上限70%的當前體力。\n自身每次受到非真實傷害時免疫此傷害，改為扣除自身等同於自身體力上限70%的當前體力（跨越至非正體力之該次傷害亦依神降結算；傷害仍照原公式計算與記錄，僅不以此改變體力，且不受傷害抵擋效果影響）。\n自身每次受到真實傷害時正常結算傷害，不適用前述免疫與調整。';
 
 export const MIGRATED_REY_GOD_KIT = {
   kind: 'trait' as const,
@@ -94,7 +94,7 @@ export const MIGRATED_REY_GOD_KIT = {
     // 【神降效果】（規則表由引擎 survivalRules 承載；每次戰鬥開始／登場以當時體力上限重算下限）
     entry(T, 'battle_start', 'battle_start', thunderGodRaw, [{ acts: [survival] }], 4),
     entry(T, 'on_entered', 'entrance', thunderGodRaw, [{ acts: [survival] }], 5),
-    entry(T, 'before_damage', 'incoming_nontrue', '自身每次受到非真實傷害時免疫此傷害，並令扣除自身體力上限70%的體力值。', [
+    entry(T, 'before_damage', 'incoming_nontrue', '自身每次受到非真實傷害時免疫此傷害，改為扣除自身等同於自身體力上限70%的當前體力（跨越至非正體力之該次傷害亦依神降結算；傷害仍照原公式計算與記錄，僅不以此改變體力，且不受傷害抵擋效果影響）。', [
       { cond: [c('god_descent', { side: 'self' }, '自身處於神降')], acts: [a('nullify_incoming', { kind: '非真實' })] },
     ], 6),
     entry(T, 'on_damaged', 'damaged_nontrue', '回合結束時若當回合未受到非真實傷害，則增加自身最大體力7%的體力值。', [{ acts: [a('round_fact', { key: 'nonTrueDamaged' })] }], 7),

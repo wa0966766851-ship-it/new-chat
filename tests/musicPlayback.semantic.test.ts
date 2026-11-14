@@ -95,7 +95,12 @@ await check('點播放只顯示載入，尚未ready不發指令、不謊報播�
   await act(async () => model.setIsPlaying(true));
   assert.equal(instances.length, 1); assert.equal(instances[0].calls.length, 0); assert.equal(model.isPlaying, false);
   assert.equal(instances[0].frame.referrerPolicy, 'strict-origin-when-cross-origin');
-  assert.equal(instances[0].frame.height, '200'); assert.match(instances[0].frame.allow, /autoplay/);
+  // 播放器預設隱藏：用最小尺寸（YouTube 依尺寸挑最低畫質）；顯示時放大，不重建播放器。
+  assert.equal(instances[0].frame.height, '113'); assert.match(instances[0].frame.allow, /autoplay/);
+  await act(async () => model.setShowPlayer(true));
+  assert.equal(instances[0].frame.height, '200'); assert.equal(instances.length, 1, '顯示播放器不重建');
+  await act(async () => model.setShowPlayer(false));
+  assert.equal(instances[0].frame.height, '113');
 });
 const first = instances[0];
 await check('ready後送有聲播放和60音量', async () => {

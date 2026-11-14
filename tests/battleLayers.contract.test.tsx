@@ -24,7 +24,7 @@ const rootTag=/<div ref=\{battleRootRef\} data-battle-root[^\n]*?className="([^"
 assert.match(rootTag![1],/\bh-full\b/);assert.match(rootTag![1],/\bw-full\b/);assert.match(rootTag![1],/\brelative\b/,'battle root 是底片的定位基準');
 assert.doesNotMatch(rootTag![1],/\bz-|isolate|\btransform\b|\bscale-/,'battle root 不自成 stacking context／縮放，底片與 HUD 在同一層級空間比較');
 const indentOf=(needle:string)=>{const i=ui.indexOf(needle);assert.ok(i>0,needle);return /(^|\n)( *)[^\n]*$/.exec(ui.slice(0,i))![2].length;};
-assert.equal(indentOf('<BattleFxLayer />'),indentOf('{renderFixedLayout()}'),'底片層與場地／HUD 圖層同為 battle root 的直屬子層（不在場地容器內）');
+assert.equal(indentOf('<BattleFxLayer />'),indentOf('{gameLayout ? renderGameLayout() : renderFixedLayout()}'),'底片層與場地／HUD 圖層同為 battle root 的直屬子層（不在場地容器內）');
 const field=/ref=\{fieldRef\} className="([^"]*)"/.exec(ui);assert.ok(field);assert.doesNotMatch(field![1],/\bz-|isolate/,'場地容器不設 z-index（否則精靈被關在底片之下）');
 assert.doesNotMatch(/ref=\{fieldRef\}[^\n]*/.exec(ui)![0],/zIndex/,'場地容器沒有內聯 z-index');
 
@@ -36,8 +36,11 @@ const inside=[
  inlineZ(/style=\{\{ zIndex: (Z\.\w+) \}\} className="absolute inset-x-2 sm:inset-x-3 bottom-2 pointer-events-auto"/,'下方指令列（技能／分頁／速度／托管／撤退）'),
  inlineZ(/style=\{\{ zIndex: (Z\.\w+) \}\}\s*className=\{`absolute bottom-\[30%\]/,'飄字（場地尚未量測的退路）'),
 ];
-const popups=[...ui.matchAll(/<AnchoredToVisible[^>]*? z=\{(Z\.\w+)\}/g)];assert.equal(popups.length,2,'飄字與技能名橫幅都帶 z');
-for(const m of popups)inside.push({label:'飄字／技能名橫幅',z:valueOf(m[1])});
+// 技能名橫幅改為固定在立繪疊層左上（不再錨定可見框，68b041b 其他 AI 調整）：飄字仍錨定，橫幅以內聯 z 驗收。
+const popups=[...ui.matchAll(/<AnchoredToVisible[^>]*? z=\{(Z\.\w+)\}/g)];assert.equal(popups.length,1,'飄字錨定層帶 z');
+for(const m of popups)inside.push({label:'飄字',z:valueOf(m[1])});
+// 2026-11-14：橫幅 style 另帶 bottom（不落進技能面板），只驗 zIndex。
+inside.push(inlineZ(/data-battle-skill-banner=\{side\} style=\{\{zIndex:(Z\.\w+)[,}]/,'技能名橫幅'));
 for(const e of inside)assert.ok(e.z>Z.FX_BACKDROP,`${e.label} 的 z(${e.z}) 必須高於 FX_BACKDROP(${Z.FX_BACKDROP})`);
 assert.ok(sprite.includes('z?: number')&&/style=\{\{ bottom: fallbackBottom, zIndex: z \}\}/.test(sprite),'AnchoredToVisible 把 z 套到元素上');
 // 戰鬥內所有 fixed 彈窗／阻擋層：z 不低於 MODAL_MIN，一定在底片之上

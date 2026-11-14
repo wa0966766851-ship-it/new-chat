@@ -8,6 +8,10 @@ import {buildSync} from 'esbuild';
 const root=process.cwd(),home=path.join(root,'.desktop-releases');
 fs.mkdirSync(home,{recursive:true});
 const lock=path.join(home,'update.lock');let fd;
+// 2026-11-14：--quick＝啟動器自動更新用（型別檢查＋建置＋前後端實測，略過回歸測試組）；完整驗收仍用不帶參數的 desktop:update。
+const quick=process.argv.includes('--quick');
+// 中斷留下的舊鎖（超過 45 分鐘）視為失效，否則之後每次更新都會被擋、桌面永遠停在舊版。
+try{const st=fs.statSync(lock);if(Date.now()-st.mtimeMs>45*60*1000){fs.unlinkSync(lock);console.warn('已移除逾時的更新鎖');}}catch{/* 沒有鎖 */}
 try{fd=fs.openSync(lock,'wx');}catch{throw Error('已有桌面更新進行中；確認該流程結束後再處理更新鎖。');}
 function run(cmd,args){const r=spawnSync(process.execPath,[cmd,...args],{cwd:root,stdio:'inherit',windowsHide:true});if(r.status!==0)throw Error(`更新停止：${cmd}`);}
 async function smoke(dir,buildId){
@@ -46,12 +50,17 @@ function fingerprint(){
 }
 try{
  run('node_modules/tsx/dist/cli.mjs',['scripts/pack_reviewed_kits.ts']);
- const source=fingerprint();
+ let source=fingerprint();
  run('node_modules/typescript/bin/tsc',['--noEmit']);
+ if(!quick){
  // 舊倉庫／背包入口與正式死亡結算必須一起驗收，不能只測新建的乾淨戰場。
  for(const file of ['tests/rosterIdentity.ui.test.tsx','tests/savedDragonTransfer.integration.test.ts','tests/dimensionalDragonCorrections.semantic.test.ts'])
    run('node_modules/tsx/dist/cli.mjs',[file]);
  run('node_modules/tsx/dist/cli.mjs',['tests/petAnimationImpact.semantic.test.ts']);
+ run('node_modules/tsx/dist/cli.mjs',['tests/illusionPlaybackWait.semantic.test.ts']);
+  run('node_modules/tsx/dist/cli.mjs',['tests/eclipseRecruitCandidates.ui.test.tsx']);
+  run('node_modules/tsx/dist/cli.mjs',['tests/imageRetry.ui.test.tsx']);
+  run('node_modules/tsx/dist/cli.mjs',['tests/destinyIllusionLaunch.integration.test.tsx']);
  run('node_modules/tsx/dist/cli.mjs',['tests/petAnimationRetarget.semantic.test.ts']);
  run('node_modules/tsx/dist/cli.mjs',['tests/petAnimationCache.semantic.test.ts']);
  run('node_modules/tsx/dist/cli.mjs',['tests/petLoadingFlow.semantic.test.ts']);
@@ -64,18 +73,26 @@ try{
  run('tests/desktopRelease.semantic.test.mjs',[]);
  const launcherCheck=spawnSync('powershell.exe',['-NoProfile','-ExecutionPolicy','Bypass','-File','tests/launcherIdentity.semantic.test.ps1'],{cwd:root,stdio:'inherit',windowsHide:true});
  if(launcherCheck.status!==0)throw Error('Windows啟動器驗證失敗');
+ }
  const id=Date.now().toString(),dir=path.join(home,id);
  // 桌面由目前 Chromium 執行，不需對整個大型區塊再次降級語法。
  // 避開 Windows 下 esbuild >1 MiB 輸入的暫存檔刪除失敗；仍由 terser 壓縮。
  // 僅限桌面 CLI，網站建置的瀏覽器相容性設定不變。
  run('node_modules/vite/bin/vite.js',['build','--outDir',dir,'--sourcemap','false','--target','esnext']);
  buildSync({entryPoints:['server.ts'],bundle:true,platform:'node',format:'cjs',packages:'external',outfile:path.join(dir,'server.cjs')});
- if(fingerprint()!==source)throw Error('建置期間來源有變更，本次產物不切換；請完成編輯後重試。');
+ if(fingerprint()!==source){
+  // 其他工作同時改了來源：重建一次（以重建後的來源為準），避免因並行編輯永遠無法更新。
+  console.warn('建置期間來源有變更，重新建置一次。');
+  source=fingerprint();
+  run('node_modules/vite/bin/vite.js',['build','--outDir',dir,'--emptyOutDir','--sourcemap','false','--target','esnext']);
+  buildSync({entryPoints:['server.ts'],bundle:true,platform:'node',format:'cjs',packages:'external',outfile:path.join(dir,'server.cjs')});
+  if(fingerprint()!==source)throw Error('建置期間來源持續變更，本次產物不切換；請完成編輯後重試。');
+ }
  for(const f of ['index.html','server.cjs','version.json'])if(!fs.statSync(path.join(dir,f)).size)throw Error(`產物不完整：${f}`);
  const version=JSON.parse(fs.readFileSync(path.join(dir,'version.json'),'utf8'));
  await smoke(dir,version.buildId);
  if(fingerprint()!==source)throw Error('服務驗證期間來源有變更，本次產物不切換。');
- fs.writeFileSync(path.join(dir,'completion.json'),JSON.stringify({source,version,checks:'types, rey, facing, saved definitions, skins, HTTP frontend/backend identity',completedAt:new Date().toISOString()}));
+ fs.writeFileSync(path.join(dir,'completion.json'),JSON.stringify({source,version,checks:quick?'types, HTTP frontend/backend identity (quick)':'types, rey, facing, saved definitions, skins, HTTP frontend/backend identity',completedAt:new Date().toISOString()}));
  activateRelease(home,id);
  console.log('桌面完成版本已就緒。結束目前戰鬥並關閉舊視窗後，使用原桌面捷徑開啟。');
 }finally{fs.closeSync(fd);fs.unlinkSync(lock);}

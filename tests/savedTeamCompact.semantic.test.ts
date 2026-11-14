@@ -1,0 +1,21 @@
+import assert from 'node:assert/strict';
+import {slimTeamMember,slimTeamRecord,slimTeamPresets,compactBuiltinOverrides} from '../src/data/savedTeamCompact';
+import {prepareSavedBattleRoster} from '../src/data/prepareSavedBattleRoster';
+import {DEFAULT_ELVES} from '../src/data/defaultElves';
+// 2026-11-14 存檔瘦身：去掉可重建的重資料後，開戰仍取倉庫定義；覆寫只存差異且合併結果不變。
+const base=DEFAULT_ELVES.find(e=>e.skills?.some(s=>(s as any).kit?.length))!;
+const inst={...structuredClone(base),battleId:'b1',currentHp:base.maxHp,imageUrl:'data:image/png;base64,AAAA'} as any;
+const slim=slimTeamMember(inst);
+assert.ok(JSON.stringify(slim).length<JSON.stringify(inst).length/2,'陣容成員至少縮小一半');
+assert.equal(slim.id,inst.id);assert.equal(slim.battleId,'b1');assert.ok(slim.calculatedStats);assert.equal(slim.skills.length,inst.skills.length);
+assert.ok(slim.skills.every((s:any)=>!s.kit&&s.name),'技能保留名稱、去掉積木');assert.equal(slim.imageUrl,undefined,'內嵌圖去除');
+const [battle]=prepareSavedBattleRoster([slim],DEFAULT_ELVES,false,'p1');
+assert.deepEqual(battle.skills.map(s=>(s as any).kit),base.skills.map(s=>(s as any).kit),'開戰時積木取自倉庫');
+assert.deepEqual(slimTeamRecord({team:[inst],starterId:'b1'}),{team:[slim],starterId:'b1'});
+assert.deepEqual(slimTeamPresets({1:{team:[inst],starterId:'b1'}}),{1:{team:[slim],starterId:'b1'}});
+const override={...structuredClone(base),destinyRank:'S',evs:{...(base as any).evs,hp:252}} as any;
+const compact=compactBuiltinOverrides({[String(base.id)]:override},DEFAULT_ELVES)[String(base.id)] as any;
+assert.ok(!('skills' in compact),'與內建相同的技能不寫入（內建修正可直接生效）');
+assert.equal(compact.destinyRank,'S');
+assert.deepEqual(JSON.parse(JSON.stringify({...base,...compact})),JSON.parse(JSON.stringify(override)),'合併結果與完整覆寫相同');
+console.log('存檔瘦身：陣容去重資料、覆寫只存差異 通過');

@@ -1,5 +1,6 @@
 import { ElfSpotlight } from './ElfSpotlight';
 import { useMemo, useState } from 'react';
+import { useShellBack } from '../shell/shellBack';
 import type { Elf } from '../types';
 import { RELEASE_NOTES } from '../data/releaseNotes';
 import { createElfUpdateBlueprint, createElfUpdateHandoff } from '../utils/elfUpdateWorkflow';
@@ -17,6 +18,7 @@ function downloadText(text: string, name: string, type: string) {
 
 export default function UpdatesPage({ elves, onBack, onEditElf }: Props) {
   const [tab, setTab] = useState<Tab>('news');
+  const shellBack = useShellBack();
   const [selectedId, setSelectedId] = useState('wiki_4937');
   const [request, setRequest] = useState('');
   const [feedback, setFeedback] = useState('');
@@ -37,7 +39,7 @@ export default function UpdatesPage({ elves, onBack, onEditElf }: Props) {
   return <section className="w-full max-w-5xl mx-auto p-4 sm:p-8 space-y-6 text-slate-200" aria-label="更新與精靈">
     <header className="flex flex-wrap items-center justify-between gap-3">
       <div><h1 className="text-2xl font-bold">更新與精靈</h1><p className="text-sm text-slate-400 mt-2">查看本版本內容、認識新精靈，或開始修改你的精靈。</p></div>
-      <button type="button" className="ios-button" onClick={onBack}>返回首頁</button>
+      {!shellBack && <button type="button" className="ios-button" onClick={onBack}>返回首頁</button>}
     </header>
     <nav className="ios-segment flex flex-wrap" aria-label="更新頁分類">
       {([['news', '更新公告'], ['elves', '新精靈介紹'], ['workflow', '精靈更新指南']] as const).map(([key, label]) => <button key={key} type="button" aria-current={tab === key ? 'page' : undefined} data-active={tab === key} onClick={() => { setTab(key); setFeedback(''); }}>{label}</button>)}

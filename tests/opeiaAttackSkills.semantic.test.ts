@@ -65,7 +65,8 @@ try {
     const template = structuredClone(DEFAULT_ELVES.find((e: any) => e.id === '5018'));
     const skill = template.skills.find((s: any) => s.name === name);
     assert.ok(skill, name);
-    return { ...template, ...make('5018'), name: template.name, type: '蟲', skills: [skill, { ...wait }] };
+    // 2026-11-14：內建精靈預設帶滿抗性；本測驗證其他機制，抗性設為 0 以免抗性骰與傷害抗性干擾。
+    return { ...template, ...make('5018'), name: template.name, type: '蟲', skills: [skill, { ...wait }], resistances: { damageResist: { crit: 0, fixed: 0, percent: 0 }, statusResist: { allImmune: false, selectedStatuses: [], slots: [] } } };
   };
   async function mount(key: string, side: string, self: any, enemy: any, bench: any[] = []) {
     await act(async () => root.render(React.createElement(Battle, { key,

@@ -1,16 +1,21 @@
 import { useMemo, type ReactNode } from 'react';
 import { descriptionStructure, type DescriptionNode } from '../utils/descriptionStructure';
 import { RichInline } from './RichDescription';
+import type {Skill} from '../types';
+import {skillDescriptionText} from '../utils/skillDescription';
 
 /** 各詳情共用的純呈現元件；不載入戰鬥登記表、不修改描述或執行模式。 */
-export function EffectDescription({ description, className = '', renderText }: {
-  description?: string; className?: string; renderText?: (text: string) => ReactNode;
+export function EffectDescription({ description, skill, className = '', renderText }: {
+  description?: string; skill?:Skill; className?: string; renderText?: (text: string) => ReactNode;
 }) {
-  const tree = useMemo(() => descriptionStructure(description), [description]);
+  const tree = useMemo(() => descriptionStructure(skill?skillDescriptionText({...skill,description:description??skill.description}):description), [description,skill]);
   // 標題與正文都走同一套行內解析：`**粗體**` 真的加粗、殘留符號不外露。
-  const inline = (node: DescriptionNode) => renderText
-    ? renderText(node.text)
-    : <RichInline text={node.raw ?? node.text} />;
+  const inline = (node: DescriptionNode) => {
+    const marker=skill&&(node.raw??node.text).match(/^([■◇🎯])\s*/u);
+    const text=marker?(node.raw??node.text).slice(marker[0].length):(node.raw??node.text);
+    const role=marker&&({'■':'固有','◇':'攜帶','🎯':'附加'} as Record<string,string>)[marker[1]];
+    return <>{role&&<span data-effect-role={role} title={`${role}效果`} aria-label={`${role}效果`} className="mr-2 rounded border border-white/15 bg-white/5 px-1.5 py-0.5 text-[0.85em] text-slate-300">{marker![1]}</span>}{renderText?renderText(marker?node.text.slice(marker[0].length):node.text):<RichInline text={text}/>}</>;
+  };
   const render = (node: DescriptionNode): ReactNode => <div key={node.id} data-description-kind={node.kind}
     data-source-line={node.sourceLine} data-parent-id={node.parentId}>
     {node.kind === 'section' ? <section className="rounded-xl border border-white/10 bg-white/[0.025] p-3 space-y-2" aria-label={node.text}>

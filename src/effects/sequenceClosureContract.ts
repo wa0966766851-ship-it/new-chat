@@ -4,11 +4,11 @@ export const CLOSURE_ACTION_FIELDS: Record<string, readonly string[]> = {
   evade_turns: ['turns', 'chance', 'kind', 'onExpire'], survive_turns: ['turns'],
   pp_zero_random: ['count'], pp_cost_mult: ['turns', 'mult', 'kind'],
   no_pos_prio_turns: ['turns', 'next'], power_streak: ['step', 'cap'],
-  hp_adjust: ['side', 'delta', 'ratio', 'base', 'direction','perStack'], rebirth_once: [],
+  hp_adjust: ['side', 'delta', 'ratio', 'base', 'direction','perStack'], rebirth_once: ['restorePp'],
   stat_mirror: ['side', 'kind','fromKind','mult'], pp_lost_damage: ['mult', 'type'],
   status_guard:['cls'], survive:[], once:['key','body'],once_per_round:['key','body'],
   crit_turns:['turns','next','now'],mercy:[],hp_match:['side'],
-  stat_steal_random:['count','v'],shield_from_last:['ratio'],
+  stat_steal_random:['count','v','stats'],shield_from_last:['ratio'],
   block_damage:['kind','key'],damage_from_counter:['key','ratio','type','consume'],heal_from_counter:['key','ratio','consume'],
   status_replace:['status','durationMode'],
   // 既有執行器的欄位清單；有函數仍不等於語意接通。
@@ -27,6 +27,7 @@ export const CLOSURE_ACTION_FIELDS: Record<string, readonly string[]> = {
   attack_extra_turns:['turns','flat','type'], stat_transfer:[],
 };
 export function closureActionIssue(op: string, p: any): string | null {
+  if(op==='rebirth_once'&&p.restorePp!==undefined&&typeof p.restorePp!=='boolean')return '重生重置PP需明確開關';
   if(op==='immune_attack_turns'&&p.extendByStatusTurns!==undefined&&!['self','opp','both'].includes(p.extendByStatusTurns))return '異常期限加總需明確持有者';
   if(op==='status_replace'&&(typeof p.status!=='string'||!p.status||p.durationMode!=='keep'))return '本次異常替換需名稱並明確保留本次附加期限';
   if(['block_damage','damage_from_counter','heal_from_counter'].includes(op)&&(typeof p.key!=='string'||!p.key||p.key.length>200))return '傷害計數需穩定有限識別碼';
@@ -34,6 +35,7 @@ export function closureActionIssue(op: string, p: any): string | null {
   if(op==='block_damage'&&!['攻擊','技能'].includes(p.kind))return '抵擋需明確攻擊／技能傷害範圍';
   if(op==='damage_from_counter'&&(!(p.ratio>0)||!['固定','百分比','真實'].includes(p.type)||typeof p.consume!=='boolean'))return '抵擋量轉化需比例、傷害類型與是否消耗計數';
   if(op==='stat_steal_random'&&(!Number.isInteger(p.count)||p.count<1||p.count>6||!Number.isInteger(p.v)||p.v<1||p.v>6))return '隨機吸取需1至6個不同能力及1至6級';
+  if(op==='stat_steal_random'&&p.stats!==undefined&&(!Array.isArray(p.stats)||p.stats.length<p.count||p.stats.length>6||new Set(p.stats).size!==p.stats.length||p.stats.some((s:any)=>!['atk','def','spatk','spdef','speed','accuracy'].includes(s))))return '指定吸取能力池需足夠且不重複的有效能力';
   if(op==='shield_from_last'&&!(p.ratio>0))return '恢復／傷害轉護盾需明確比例';
   if(op==='crit_turns' && !(Number.isInteger(p.turns)&&p.turns>0))return '致命一擊需正整數期限';
   if(op==='hp_match'&&!['self','opp'].includes(p.side))return '體力匹配需單一目標';

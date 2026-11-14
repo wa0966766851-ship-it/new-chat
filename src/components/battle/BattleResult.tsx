@@ -258,12 +258,14 @@ export interface BattleResultProps {
   summary: LedgerSummary;
   p1Team: Elf[]; p2Team: Elf[];
   format: string;
-  onRestart: () => void;
+  /** 省略時不顯示「重來」（命運之輪等特殊模式）。 */
+  onRestart?: () => void;
   onHome: () => void;
+  homeLabel?: string;
 }
 
 /** 普通對戰結算：全螢幕可捲動面板。數字全部來自傷害帳本彙總。 */
-export function BattleResult({ winner, battleMode, summary, p1Team, p2Team, format, onRestart, onHome }: BattleResultProps) {
+export function BattleResult({ winner, battleMode, summary, p1Team, p2Team, format, onRestart, onHome, homeLabel = "回到首頁" }: BattleResultProps) {
   const view = useMemo(() => outcomeView(winner, battleMode), [winner, battleMode]);
   const reduced = useReduced();
   const animate = !reduced;
@@ -301,8 +303,8 @@ export function BattleResult({ winner, battleMode, summary, p1Team, p2Team, form
     <div className="br-mini" data-testid="battle-result-mini" data-tone={view.tone}>
       <b>{view.zh}</b>
       <button type="button" onClick={() => setCollapsed(false)} autoFocus>返回結算</button>
-      <button type="button" onClick={onRestart}>重來</button>
-      <button type="button" onClick={onHome}>回到首頁</button>
+      {onRestart && <button type="button" onClick={onRestart}>重來</button>}
+      <button type="button" onClick={onHome}>{homeLabel}</button>
     </div>
   );
 
@@ -355,8 +357,8 @@ export function BattleResult({ winner, battleMode, summary, p1Team, p2Team, form
         </div>
       </div>
       <footer className="br-actions">
-        <button type="button" className="primary" autoFocus onClick={onRestart} title="以原本的陣容與首發開始新的一局">重來</button>
-        <button type="button" onClick={onHome}>回到首頁</button>
+        {onRestart && <button type="button" className="primary" autoFocus onClick={onRestart} title="以原本的陣容與首發開始新的一局">重來</button>}
+        <button type="button" className={onRestart ? undefined : "primary"} autoFocus={!onRestart} onClick={onHome}>{homeLabel}</button>
         <button type="button" className="ghost" onClick={() => setCollapsed(true)} title="收起面板，查看最後的戰場">查看戰場</button>
       </footer>
     </dialog>

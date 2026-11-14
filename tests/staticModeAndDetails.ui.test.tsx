@@ -10,7 +10,7 @@ Object.defineProperty(globalThis,'navigator',{value:dom.window.navigator,configu
 globalThis.fetch=(async()=>{throw Error('offline UI fixture');}) as any;
 const {createRoot}=await import('react-dom/client');
 const root=createRoot(document.getElementById('root')!);
-const server=await createServer({server:{middlewareMode:true,hmr:false,watch:null},appType:'custom',logLevel:'silent'});
+const server=await createServer({configFile:false,optimizeDeps:{noDiscovery:true,include:[]},server:{middlewareMode:true,hmr:false,watch:null},appType:'custom',logLevel:'silent'});
 try{
  const {loadSeerIndex}=await server.ssrLoadModule('/src/battle/seerAssets.ts');await loadSeerIndex();
  const {default:ControlHubPanel}=await server.ssrLoadModule('/src/components/ControlHubPanel.tsx');

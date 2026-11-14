@@ -12,6 +12,7 @@ export const EFFECT_FIELD_LABELS: Record<string, string> = {
   chance:'機率（%）', cap:'上限', min:'下限', max:'上限', count:'次數', unit:'單位',
   v:'等級變化', stats:'能力項目', stat:'能力', boost:'增幅（1＝100%）', reduce:'減幅', mult:'倍率',
   threshold:'門檻', perMark:'逐層資源', perMarkTurns:'逐層回合', perStage:'逐能力等級',
+  step:'每份門檻比例',thresholdSide:'門檻持有者',belowRatio:'結算合計低於最大體力比例',belowBody:'吸取結算不足時',smallBody:'技能傷害不足一份時',
   id:'識別碼', key:'狀態鍵', name:'名稱', status:'異常', statuses:'異常清單',
   source:'來源', role:'效果類別', node:'戰鬥節點', order:'順序', codeId:'積木種類', customText:'原文', params:'積木參數',
   chain:'前項結果條件', live:'即時條件', pre:'句首快照', afterHit:'傷害結算後', neg:'條件反轉',
@@ -20,6 +21,9 @@ export const EFFECT_FIELD_LABELS: Record<string, string> = {
   damageRatio:'傷害比例', elem:'屬性', damageTypes:'傷害範圍', types:'類型清單',
   countFromMark:'數量來源印記',turnsFromCount:'以數量決定期限',priorityBonus:'先制修正',vsOpponentName:'對手名稱條件',
   excludeSelf:'排除自身',matchedWeight:'符合時計數',unmatchedWeight:'不符合時計數',traitSources:'特性來源範圍',
+  bindSource:'綁定附加印記的精靈',activeOnly:'來源須在場',
+  incomingDamageLimitDisabled:'持有者受到技能／固定／百分比傷害的上限失效',
+  incomingEffectChanceGuaranteed:'敵方施加給持有者的機率效果必定通過機率判定',
 };
 export function effectFieldLabel(key: string | number): string {
   return typeof key === 'number' ? `第 ${key + 1} 項` : (Object.hasOwn(EFFECT_FIELD_LABELS, key) ? EFFECT_FIELD_LABELS[key] : key);

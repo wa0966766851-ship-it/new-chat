@@ -48,8 +48,7 @@ const nativeZeroPpExempt = (elf: Elf, sk: Skill, opp?: Elf | null): boolean => {
   // 2026-10-30：可攜技能標記（符文）的能力必須「已激活」才生效。
   // 原寫法不看 isRuneActive，導致 ᚱᚷ 未激活也讓所有技能豁免 PP。
   if(portableSkillCapabilities(elf).ppUnrestricted)return true;
-  // 附有該標記的技能本身「選招不受PP限制」：選招即激活，所以未激活時也必須能選（否則 0PP 的標記槽永遠無法激活）；其他技能仍須等標記激活。
-  if((sk as any).portableSkillMark?.capabilities?.ppUnrestricted)return true;
+  // 2026-11-14：符文只能經「選擇技能」激活；未激活時依一般PP規則（0PP 不可選，也就無法激活）。
   if(sk.ppUnlimited===true)return true; // 原廠 PP 0/0
   // 異常規則：原有效果被取消期間改為選擇使用技能不受PP值限制（battle/statusRules.ts）。
   if(statusReplacementActive(elf.statusRules,getStatuses(elf))?.replacePpFree)return true;

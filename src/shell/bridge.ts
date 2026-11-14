@@ -19,6 +19,13 @@ export type AppView =
   | "updates"
   | "bag";
 
+/** 控制中心用的頁面鍵（背景／音樂）：星蝕回廊的戰鬥另有專屬音樂。 */
+export function controlScene(b: Pick<ShellBridge, 'showEncyclopedia' | 'view' | 'specialMode'>): string {
+  if (b.showEncyclopedia) return 'encyclopedia';
+  if (b.view === 'battle' && b.specialMode === 'interstellar') return 'eclipse_battle';
+  return b.view;
+}
+
 export type BattleFormat = "normal_6v6" | "solo_1v1" | "peak_6v6" | "peak_3v3";
 
 export type StartBattleFn = (
@@ -73,6 +80,8 @@ export interface ShellBridge {
   setHostPlayer: (h: "p1" | "p2") => void;
   specialMode: "destiny" | "interstellar" | undefined;
   interstellarOptions: any;
+  /** 戰鬥火焰（命運之輪等模式抽選；data/battleFlames.ts）。 */
+  battleFlames?: { p1?: string; p2?: string } | null;
   setInterstellarOptions: (o: any) => void;
 
   // ── 編輯器 ──

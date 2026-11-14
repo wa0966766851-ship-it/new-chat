@@ -6,18 +6,20 @@ import { BOSS_TRAIT_BY_ID, bossTraitIcon } from "../../../data/bossTraits";
 import { animationSpeed, readAnimationSettings } from "../../../battle/animationSettings";
 import { NpcArt, Ornament } from "./parts";
 
-/** 樓層識別：章＋欄＋保命次數（逆時沙漏等倒轉會讓同一層重新進入）。 */
-export const floorKeyOf = (run: E.RunV2) => `${run.runId}|${run.act}|${E.currentNode(run).col}|${run.rescues?.length ?? 0}`;
-/** 起點（第 0 欄）還不算進入樓層；踏上第 1 欄起才有封面。選燈與結算畫面不顯示。 */
-export const floorCoverable = (run: E.RunV2) => run.scene.kind !== "draft" && run.scene.kind !== "end" && E.currentNode(run).col >= 1;
+/**
+ * 2026-11-07 使用者規格：跳轉介面與封面改為「每一層」（每一章＝一層），不再每個節點都跳。
+ * 層識別：局＋層＋保命次數（逆時沙漏等倒轉會讓同一層重新進入）。
+ */
+export const floorKeyOf = (run: E.RunV2) => `${run.runId}|${run.act}|${run.rescues?.length ?? 0}`;
+/** 進入新一層（含起點）即顯示；選燈與結算畫面不顯示。 */
+export const floorCoverable = (run: E.RunV2) => run.scene.kind !== "draft" && run.scene.kind !== "end";
 export const FLOOR_COVER_AUTO_MS = 2500;
 
 /** 進入樓層封面：點擊／Enter／Space／Esc 關閉，約 2.5 秒自動關閉；只是覆蓋層，不改動遊戲狀態。 */
 const FloorCover: React.FC<{ run: E.RunV2; backdrop?: { src: string; className: string }; onDone: () => void }> = ({ run, backdrop, onDone }) => {
   const act = E.actDef(run);
-  const node = E.currentNode(run);
-  const floor = depthOf(run.act, node.col);
-  const label = E.nodeLabel(run, node);
+  const floor = run.act;
+  const depthFrom = depthOf(run.act, 1), depthTo = depthOf(run.act, 12);
   const enc = run.scene.kind === "prelude" ? run.scene.encounter : null;
   const traits = (enc?.enemies ?? []).flatMap(e => e.traits ?? []).map(t => BOSS_TRAIT_BY_ID[t.id]).filter(Boolean);
   const reduce = useReducedMotion();
@@ -43,12 +45,12 @@ const FloorCover: React.FC<{ run: E.RunV2; backdrop?: { src: string; className: 
       <div className="absolute right-[-4%] top-[6%] h-[84%] w-[44%] pointer-events-none opacity-[.16] mix-blend-screen"><NpcArt id={act.npc} className="w-full h-full" /></div>
       <div className="absolute inset-0 pointer-events-none" style={{ background: "radial-gradient(ellipse at center, rgba(7,6,12,.2), rgba(7,6,12,.9))" }} />
       <motion.div initial={{ y: 14, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: reduce ? 0 : .1, duration: reduce ? 0 : .4 }} className="relative text-center px-6">
-        <div className="ecl-roman text-xs ecl-muted">Floor {floor}</div>
+        <div className="ecl-roman text-xs ecl-muted">Layer {floor}</div>
         <h2 className="ecl-title text-6xl ecl-md:text-8xl ecl-gilt mt-2" data-testid="floor-cover-title">第 {floor} 層</h2>
         <Ornament className="my-5 mx-auto" />
         <div className="ecl-title text-2xl ecl-md:text-3xl" title={act.epithet} style={{ color: act.hue }}>{act.name}</div>
         <div className="mt-5 flex flex-wrap items-center justify-center gap-3 text-sm" data-testid="floor-cover-info">
-          <span className="px-3 py-1 border border-[rgba(217,180,90,.45)]" title={label.hint}>{label.glyph} {label.name}</span>
+          <span className="px-3 py-1 border border-[rgba(217,180,90,.45)] tabular-nums" title="本層節點的敵方深度（影響強度倍率）">深度 {depthFrom}–{depthTo}</span>
           {enc && <span className="px-3 py-1 border border-[rgba(217,180,90,.45)] font-black" title={`${enc.title}`}>{enc.title}</span>}
           <span className="px-3 py-1 border border-[rgba(224,71,95,.45)] ecl-blood tabular-nums" title={E.LIFE_RULE}>♥ {run.lives}{(run.tempLives ?? 0) > 0 ? `(+${run.tempLives})` : ""}</span>
         </div>

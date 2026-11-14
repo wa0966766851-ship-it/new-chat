@@ -245,11 +245,13 @@ export function SideRail({
 /* ────────────── 底部導航（直向） ────────────── */
 
 export function BottomBar({
-  items, activeId, onSelect,
+  items, activeId, onSelect, directory,
 }: {
   items: RailItem[];
   activeId: string;
   onSelect: (id: string) => void;
+  /** 2026-11-07：提供時，最後一格改為「目錄」，點開列出完整目錄（取代「更多」的剩餘項目清單）。 */
+  directory?: (close: () => void) => React.ReactNode;
 }) {
   /**
    * 2026-10-29：手機底部欄原本硬砍 slice(0, 5)，導覽 7 項時「測試」「更新」完全到不了。
@@ -257,7 +259,7 @@ export function BottomBar({
    */
   const [moreOpen, setMoreOpen] = React.useState(false);
   const MAX_VISIBLE = 4;
-  const overflow = items.length > MAX_VISIBLE + 1 ? items.slice(MAX_VISIBLE) : [];
+  const overflow = directory ? items.slice(MAX_VISIBLE) : items.length > MAX_VISIBLE + 1 ? items.slice(MAX_VISIBLE) : [];
   const visible = overflow.length ? items.slice(0, MAX_VISIBLE) : items;
   const overflowActive = overflow.some(f => f.id === activeId);
   React.useEffect(() => { if (!moreOpen) return; const on = () => setMoreOpen(false);
@@ -310,13 +312,13 @@ export function BottomBar({
           </button>
         );
       })}
-      {overflow.length > 0 && (
+      {(overflow.length > 0 || directory) && (
         <button
           type="button"
           onClick={(e) => { e.stopPropagation(); setMoreOpen(v => !v); }}
           className="flex-1 flex flex-col items-center justify-center gap-0.5 py-1 min-h-[50px] active:scale-95 transition-transform"
           style={{ color: moreOpen || overflowActive ? "var(--p-accent-hot)" : "rgba(148,163,184,0.66)" }}
-          aria-label="更多功能"
+          aria-label={directory ? "目錄" : "更多功能"}
           aria-expanded={moreOpen}
         >
           <span className="flex items-center justify-center transition-all relative" style={{ width: 34, height: 24 }}>
@@ -327,14 +329,22 @@ export function BottomBar({
             )}
             <span className="relative"><MoreHorizontal className="w-[17px] h-[17px]" /></span>
           </span>
-          <span className="text-[9.5px] leading-none font-bold">更多</span>
+          <span className="text-[9.5px] leading-none font-bold">{directory ? "目錄" : "更多"}</span>
           {(moreOpen || overflowActive) && (
             <span style={{ width: 14, height: 2, borderRadius: 999,
               background: "var(--p-accent)", boxShadow: "0 0 6px var(--p-accent)" }} />
           )}
         </button>
       )}
-      {moreOpen && overflow.length > 0 && (
+      {moreOpen && directory && (
+        <div className="absolute left-2 right-2 z-30 p-2 overflow-y-auto shell-dir-sheet" data-directory-sheet
+          style={{ bottom: "calc(100% + 8px)", maxHeight: "70dvh", borderRadius: 14,
+            background: "rgba(6,14,24,0.97)", border: "1px solid rgba(148,163,184,0.22)", boxShadow: "0 8px 28px rgba(0,0,0,0.55)" }}
+          onPointerDown={(e) => e.stopPropagation()}>
+          {directory(() => setMoreOpen(false))}
+        </div>
+      )}
+      {moreOpen && !directory && overflow.length > 0 && (
         <div
           className="absolute right-2 z-30 flex flex-col gap-1 p-1.5"
           style={{ bottom: "calc(100% + 8px)", borderRadius: 12,

@@ -303,14 +303,18 @@ export default function DestinyIntroRuleTable({
         </div>
 
         {/* 階級判定準則：由 elfDisplayRank 的規則表即時產生（D-03），不寫死 */}
-        <div data-testid="rank-rules" title="命運模式評級與一般圖鑑評級同源（getElfDisplayRank）；資料已預設等級者優先。"
-          className="bg-slate-950/90 border border-slate-800 rounded-xl p-4 mb-6 text-xs text-slate-300 leading-relaxed">
-          <div className="flex items-center gap-2 font-bold text-amber-300 mb-1.5">
+        {/* 2026-11-07：準則預設收起（點開看全文），選定等級時自動展開該級說明。 */}
+        <details data-testid="rank-rules" open={selectedRankTab !== 'all'} title="命運模式評級與一般圖鑑評級同源（getElfDisplayRank）；資料已預設等級者優先。"
+          className="bg-slate-950/90 border border-slate-800 rounded-xl px-4 py-3 mb-6 text-xs text-slate-300 leading-relaxed">
+          <summary className="flex items-center gap-2 font-bold text-amber-300 cursor-pointer select-none">
             <Info className="w-4 h-4 shrink-0 text-amber-400" />
             <span>{selectedRankTab === 'all' ? '分級判定準則' : `${selectedRankTab} 級判定準則`}</span>
+            <span className="ml-auto text-[11px] font-normal text-slate-500">點開查看</span>
+          </summary>
+          <div className="mt-2 space-y-1">
+            {(selectedRankTab === 'all' ? describeAllRankRules().split('\n') : [describeRankRule(selectedRankTab)]).map(line => <p key={line} className="whitespace-pre-wrap">{line}</p>)}
           </div>
-          {(selectedRankTab === 'all' ? describeAllRankRules().split('\n') : [describeRankRule(selectedRankTab)]).map(line => <p key={line} className="whitespace-pre-wrap">{line}</p>)}
-        </div>
+        </details>
 
         {/* 精靈列表展示區 (表格 vs 網格) */}
         {filteredElves.length === 0 ? (
@@ -576,7 +580,7 @@ export default function DestinyIntroRuleTable({
                             威力: <span className="text-white font-bold">{skill.power}</span> | PP: {skill.pp} {skill.priority ? <span className="text-amber-400 font-bold ml-1">(先制{skill.priority > 0 ? `+${skill.priority}` : skill.priority})</span> : null}
                           </div>
                         </div>
-                        <RichDescription text={skill.description} fallback="造成一般傷害。" className="text-slate-400 text-[11px]" />
+                        <EffectDescription skill={skill} description={skill.description} className="text-slate-400 text-[11px]" />
                       </div>
                     ))
                   ) : (

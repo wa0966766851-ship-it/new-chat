@@ -1,4 +1,5 @@
 import { StatusRegistry } from '../effects/statusRegistry';
+import {turnEffectPolarity} from './turnEffectPolarity';
 import { canonicalStatusName } from '../effects/statusIdentity';
 import type { Elf } from "../types";
 import type { BattleState } from "../components/BattleManager";
@@ -101,14 +102,15 @@ export function scopedTimers(state:BattleState,side:Side,elf:Elf):Timer[] {
 }
 
 /** 同一持有者的可消除回合效果（含明確陣營級）才可清除。 */
-export function clearScopedTurnEffects(state:BattleState,side:Side,elf:Elf):{state:BattleState;removed:Timer[]} {
+export function clearScopedTurnEffects(state:BattleState,side:Side,elf:Elf,polarity?:'positive'):{state:BattleState;removed:Timer[]} {
   const owner=battleIdentity(elf),key=`${side}Timers` as const,bankKey=`${side}ElfState` as const;
   const applicable=(t:Timer)=>t.scope==='team'||!t.ownerBattleId||t.ownerBattleId===owner;
   const flat=state[key],bank={...state[bankKey]},snapshot=bank[owner];
-  const [kept]=clearTurnEffects(flat.filter(applicable));
+  const clear=(list:Timer[])=>{const selected=list.filter(t=>!polarity||turnEffectPolarity(t)===polarity);const [kept]=clearTurnEffects(selected);return list.filter(t=>!selected.includes(t)||kept.includes(t));};
+  const kept=clear(flat.filter(applicable));
   const removed=flat.filter(t=>applicable(t)&&!kept.includes(t));
   const nextFlat=flat.filter(t=>!removed.includes(t));
-  if(snapshot&&owner!==battleIdentity(state[side])){const [nextOwn]=clearTurnEffects(snapshot.timers);removed.push(...snapshot.timers.filter(t=>!nextOwn.includes(t)));bank[owner]={...snapshot,timers:nextOwn};}
+  if(snapshot&&owner!==battleIdentity(state[side])){const nextOwn=clear(snapshot.timers);removed.push(...snapshot.timers.filter(t=>!nextOwn.includes(t)));bank[owner]={...snapshot,timers:nextOwn};}
   const zeroKeys:Record<string,unknown>={};
   for(const timer of removed)for(const key of timer.payload?.mirrorRegistryKeys||[])zeroKeys[key]=0;
   return {state:writeScopedRegistry({...state,[key]:nextFlat,[bankKey]:bank},side,elf,zeroKeys),removed};
@@ -172,7 +174,10 @@ export function switchBattleSide(state: BattleState, side: Side, index: number):
   const offFieldReset = { battleStatus: 'normal', battleStatusDuration: 0, battleStatuses: {},
     effects: (outgoing.effects || []).filter((e: any) => !isStatusEffect(e)),
     statStages: { atk: 0, def: 0, spatk: 0, spdef: 0, speed: 0, accuracy: 0 } };
-  team[state[indexKey]] = { ...outgoing, ...peelRestore, ...offFieldReset, marks: marks.filter(mark => markAppliesToElf(mark, outgoing)) };
+  const tempHp=outgoing.tempMaxHpBoost||0;
+  const maxHp=Math.max(1,outgoing.maxHp-tempHp);
+  const temporaryHpReset=tempHp?{maxHp,currentHp:Math.min(outgoing.currentHp,maxHp),tempMaxHpBoost:0,calculatedStats:{...outgoing.calculatedStats,hp:maxHp}}:{};
+  team[state[indexKey]] = { ...outgoing,...temporaryHpReset, ...peelRestore, ...offFieldReset, marks: marks.filter(mark => markAppliesToElf(mark, outgoing)) };
   team[index] = active;
   return {
     ...state, [teamKey]: team, [side]: active, [indexKey]: index,

@@ -43,7 +43,7 @@ export function queueInstantKill(ctx:BattleEventContext,targetSide:Side,label:st
 export function settleInstantKill(ctx:BattleEventContext,data:any):Readonly<InstantKillReceipt> {
   const before=ctx.self.currentHp,id=ctx.self.battleId||ctx.self.id;
   let resistedFatal=false;
-  const blocked=checkElfDead(ctx.self)||before<=0;
+  const blocked=checkElfDead(ctx.self)||before<=0||bossTraitBlocksInstantKill(ctx.self);
   if(!blocked){
     const outcome=resolveHpAdjustment(ctx.self.maxHp,before,-before,ctx.self.survivalRule);
     const immortal=(ctx.self.deathImmunity?.deathImmuneTurns||0)>0;

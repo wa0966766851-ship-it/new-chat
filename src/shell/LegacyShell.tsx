@@ -2,6 +2,7 @@ import React, { Suspense, lazy } from "react";
 import { createPortal } from "react-dom";
 import { ChevronLeft, Menu, Home, Settings, Book, Swords, TestTubes } from "lucide-react";
 import type { ShellBridge } from "./bridge";
+import { controlScene } from "./bridge";
 import { LegacyScenes } from "./scenes/LegacyScenes";
 import { ElfAvatar } from "../components/SeerImages";
 import { DEFAULT_ELVES } from "../data/defaultElves";
@@ -57,7 +58,7 @@ export function LegacyShell({ b, showHeader, setShowHeader, isCompactLayout }: L
     <div className="h-screen w-full flex relative bg-transparent text-slate-100 overflow-hidden" id="app-wrapper">
       <Suspense fallback={null}>
         <ControlHub
-          currentScene={b.showEncyclopedia ? "encyclopedia" : b.view}
+          currentScene={controlScene(b)}
           canApplyUpdates={b.view === "start" && !b.editingElf && !b.showEncyclopedia}
         />
       </Suspense>

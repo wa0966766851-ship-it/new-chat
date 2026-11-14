@@ -1,3 +1,4 @@
+import {recipientEffectChance} from '../battle/recipientEffectChance';
 import { queueActionDamageModifier, queueActionPowerMultiplier } from '../battle/actionDamageModifiers';
 import { queueHpDrain } from '../battle/hpDrain';
 import { traitNames } from './traitEffects';
@@ -338,7 +339,7 @@ const RULES: Rule[] = [
   {
     re: /(?:(\d+)%\s*(?:機率)?\s*)?(?:令|使)(?:對[手方])(?:陷入)?(麻痺|麻痹|中毒|燒傷|害怕|睡眠|冰封|石化|寄生|凍傷|混亂|衰弱|失明|疲憊|焚燼|詛咒|感染|束縛|流血)/,
     apply: (m, ctx, st) => {
-      const chance = m[1] !== undefined ? Number(m[1]) : 100;
+      const chance = recipientEffectChance(ctx,ctx.targetSide,m[1] !== undefined ? Number(m[1]) : 100);
       const status = STATUS_ALIAS[m[2]] || m[2];
       if (!isStatusStatus(status)) return false;
       st.lastTriggered = false;
@@ -356,12 +357,13 @@ const RULES: Rule[] = [
     ),
     apply: (m, ctx, st, clause) => {
       const chance = m[1] !== undefined ? Number(m[1]) : 100;
-      if (!chanceOf(ctx, "L322", chance)) return;
       const who = m[2] || (/(對手|對方)/.test(clause.slice(0, clause.indexOf(m[3]))) ? "對手" : "自身");
       const stats = m[3].split(/\s*[、與和及]\s*/).map(s => STAT_KEY[s]).filter(Boolean);
       let val = Number(m[4]);
       const sides: Side[] = who === "雙方" ? [ctx.actor, ctx.targetSide] : who === "自身" ? [ctx.actor] : [ctx.targetSide];
+      const baseRoll=chanceOf(ctx,"L322",chance);
       for (const side of sides) {
+        if (!baseRoll && recipientEffectChance(ctx,side,chance)!==100) continue;
         let v = val;
         if (side === ctx.actor && v > 0 && st.doubleSelfBuff) v *= 2;
         const changes: Record<string, number> = {};
@@ -382,10 +384,13 @@ const RULES: Rule[] = [
     re: /(?:(\d+)%\s*)?(?:令|使)?(?:敵我)?雙方(?:同時)?(?:進入)?((?:麻痺|中毒|燒傷|害怕|睡眠|冰封|石化|寄生|凍傷|混亂|衰弱|失明|疲憊|流血|詛咒|凝滯)(?:、(?:麻痺|中毒|燒傷|害怕|睡眠|冰封|石化|寄生|凍傷|混亂|衰弱|失明|疲憊|流血|詛咒|凝滯))*)(?:異常)?(?:狀態)?$/,
     apply: (m, ctx) => {
       const chance = m[1] !== undefined ? Number(m[1]) : 100;
-      if (statusChanceBlocked(ctx, chance) || !chanceOf(ctx, "L348", chance)) return;
+      const baseRoll=chanceOf(ctx,"L348",chance);
       for (const status of m[2].split("、")) {
         if (!isStatusStatus(status)) continue;
-        for (const side of [ctx.targetSide, ctx.actor] as Side[]) ctx.applyStatusWithImmunityCheck(side, status, STATUS_DURATION[status] ?? DEFAULT_STATUS_TURNS);
+        for (const side of [ctx.targetSide, ctx.actor] as Side[]) {
+          const pct=recipientEffectChance(ctx,side,chance);
+          if (!statusChanceBlocked(ctx,pct) && (baseRoll || pct===100)) ctx.applyStatusWithImmunityCheck(side,status,STATUS_DURATION[status] ?? DEFAULT_STATUS_TURNS);
+        }
       }
       ctx.addLog(`💫 雙方陷入【${m[2]}】！`, "status");
     },
@@ -712,7 +717,8 @@ export function applyEffectDetail(ctx: BattleEventContext): boolean {
     m = part.match(/^([a-z_]+):(\d+)%?$/i);
     if (m && DETAIL_STATUS[m[1].toLowerCase()]) {
       const status = DETAIL_STATUS[m[1].toLowerCase()];
-      if (isStatusStatus(status) && !statusChanceBlocked(ctx, Number(m[2])) && chanceOf(ctx, "L633", Number(m[2]))) {
+      const pct=recipientEffectChance(ctx,ctx.targetSide,Number(m[2]));
+      if (isStatusStatus(status) && !statusChanceBlocked(ctx,pct) && chanceOf(ctx, "L633",pct)) {
         if (ctx.applyStatusWithImmunityCheck(ctx.targetSide, status, STATUS_DURATION[status] ?? DEFAULT_STATUS_TURNS).success) ctx.addLog(`💫 使對手陷入了【${status}】！`, "status");
       }
       done = true; continue;

@@ -13,7 +13,9 @@
  * 版本升級：改 CACHE_VERSION 就會清掉舊快取。
  */
 
-const CACHE_VERSION = "aegis-v1";
+// 2026-11-14 v2：只有 /assets/ 下帶雜湊的建置產物用快取優先；其餘（資料 JSON、立繪、動畫）改網路優先，
+// 否則更新後仍讀到舊資料／舊圖。換版號會清掉 v1 留下的舊快取。
+const CACHE_VERSION = "aegis-v2";
 const STATIC_CACHE = `static-${CACHE_VERSION}`;
 
 /** 只快取這些（避免把 API 回應也存起來） */
@@ -59,7 +61,20 @@ self.addEventListener("fetch", event => {
     (async () => {
       const cache = await caches.open(STATIC_CACHE);
 
-      // cache-first：有就用（這些檔案帶 hash 或很少變）
+      // 非雜湊檔：網路優先，離線時才用快取
+      if (!url.pathname.startsWith("/assets/")) {
+        try {
+          const res = await fetch(req);
+          if (res.ok && res.type === "basic") cache.put(req, res.clone()).catch(() => {});
+          return res;
+        } catch (err) {
+          const old = await cache.match(req);
+          if (old) return old;
+          throw err;
+        }
+      }
+
+      // cache-first：/assets/ 檔名帶雜湊，內容變了檔名就會變
       const hit = await cache.match(req);
       if (hit) return hit;
 

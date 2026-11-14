@@ -42,24 +42,23 @@ try {
   const b1 = E.moveTo(b, E.movesFrom(b)[0].id, pool); // 踏上第 1 層
   const cover = () => q('[data-testid=floor-cover]');
   const fresh1 = () => ({ ...b1 });
-  assert.ok(!floorCoverable(b), '起點尚未進入樓層，不顯示封面');
-  assert.ok(floorCoverable(b1), '進入第 1 層顯示封面');
+  // 2026-11-07 使用者規格：封面「每一層」（每一章）一次，不再每個節點都跳。
+  assert.ok(floorCoverable(b), '進入新一層（起點）即顯示封面');
+  assert.ok(floorCoverable(b1));
+  assert.equal(floorKeyOf(b), floorKeyOf(b1), '同一層內移動節點：封面識別不變');
+  assert.notEqual(floorKeyOf(b1), floorKeyOf({ ...b1, act: 2 }), '換層：識別改變');
   assert.ok(!floorCoverable({ ...b1, scene: { kind: 'draft', offer: [], picks: [] } }), '選燈階段不顯示封面');
   assert.notEqual(floorKeyOf(b1), floorKeyOf({ ...b1, rescues: ['reverse_hourglass'] }), '逆時沙漏倒轉後同一層視為重新進入');
-  await mount(b, { keepCover: true }); assert.equal(cover(), null, '起點沒有封面');
-  const startCol = E.currentNode(stored()).col;
-  await click(q('.ecl-node-reachable'), '前往第一個節點'); await sleep(80);
-  assert.ok(E.currentNode(stored()).col > startCol, '已移動'); assert.ok(cover(), '進入第 1 層：顯示封面');
+  await mount(b, { keepCover: true }); assert.ok(cover(), '進入第 1 層：顯示封面');
   assert.equal(cover()!.getAttribute('data-floor'), '1');
   assert.match(cover()!.textContent || '', /第 1 層/);
   assert.ok(qa('[data-testid=life-resource]').length >= 1, '封面不阻擋底下畫面（狀態照常載入）');
   await click(cover(), '封面'); await sleep(700);
-  assert.equal(cover(), null, '點擊關閉封面');// 再往前一層：換層再顯示，樓層編號遞增
-  await mount({ ...b1, scene: { kind: 'map' } });const col1 = E.currentNode(stored()).col;
-  await click(q('.ecl-node-reachable'), '前往下一層'); await sleep(80);
-  assert.ok(E.currentNode(stored()).col > col1);
-  assert.ok(cover(), '換層後再顯示封面');
-  assert.ok(Number(cover()!.getAttribute('data-floor')) > 1, '樓層編號遞增');
+  assert.equal(cover(), null, '點擊關閉封面');
+  const startCol = E.currentNode(stored()).col;
+  await click(q('.ecl-node-reachable'), '前往第一個節點'); await sleep(80);
+  assert.ok(E.currentNode(stored()).col > startCol, '已移動');
+  assert.equal(cover(), null, '同一層內前往下一個節點：不再跳封面');
   // Enter / Space / Esc 關閉
   for (const k of ['Enter', ' ', 'Escape']) {
     await mount(fresh1(), { keepCover: true });assert.ok(cover(), `${JSON.stringify(k)}：封面存在`);

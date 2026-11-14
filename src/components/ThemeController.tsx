@@ -6,6 +6,7 @@
 import React, { useState, useEffect } from "react";
 import { useSceneResources, DEFAULT_SCENE_RESOURCES } from "../utils/resourceManager";
 import { Palette, Sun, Moon, Image as ImageIcon, Check, RotateCcw, Sparkles, Eye } from "lucide-react";
+import { themeParams, saveThemeParams } from '../utils/themePrefs';
 
 export interface ThemeControllerProps {
   currentScene: string;
@@ -81,7 +82,7 @@ function getThemeState() {
   let accent: AccentColor = "emerald";
   let cardOpacity: CardOpacity = "medium";
   try {
-    const params = new URLSearchParams(window.location.search);
+    const params = themeParams(); // 已保存的外觀偏好＋網址參數（網址優先）
     const bgParam = params.get("bg");
     if (bgParam) bg = bgParam.trim();
 

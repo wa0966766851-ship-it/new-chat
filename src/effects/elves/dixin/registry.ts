@@ -1,8 +1,8 @@
+import {recipientPrdChance} from '../../../battle/recipientEffectChance';
 import type { Skill } from '../../../types';
 import { runDixinFormation } from './formation';
 import { readMarkStacks } from '../../markQueries';
 import { abilityKeys, abilityLevels, absorbBoosts, currentElf } from '../../semanticOperations';
-import { prdChance } from "../../../utils/prd";
 import { BattleEventContext, BattleSkillHandler, EffectTiming, ElfDeconstructedProfile } from '../../types';
 
 export const handleDixinSoulMark = (ctx: BattleEventContext, event: EffectTiming | string, extraData?: any) => {
@@ -102,7 +102,7 @@ export const handleDixinSoulMark = (ctx: BattleEventContext, event: EffectTiming
     if (stacks >= 5) {
       const healAmt = (Math.floor(self.maxHp / 3) + Math.floor(Math.max(0, self.maxHp - self.currentHp) / 3)) * dixinEffectFactor(ctx);
       applyHeal(actor, healAmt);
-      if (prdChance("dixinRegistry:L44", 0.5)) {
+      if (recipientPrdChance(ctx,ctx.targetSide,"dixinRegistry:L44", 0.5)) {
         setOpponentState("nextSkillInvalid", true);
         addLog(`👑 【荒】：天威壓制，對手下回合技能可能失效！`, "status");
       }

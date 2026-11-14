@@ -1,0 +1,77 @@
+/* Aegis 精靈培養頁（2026-11-14）：與編成工作區／戰鬥 HUD 同一套視覺語言（斜切角面板、青色描邊、軌道線）。 */
+.atr-root { position: fixed; inset: 0; z-index: 220; display: flex; align-items: center; justify-content: center; padding: 12px; background: #020a12cc; backdrop-filter: blur(6px); }
+.atr-sheet { position: relative; isolation: isolate; overflow: hidden; width: min(1080px, 98vw); height: min(92vh, 900px); display: flex; flex-direction: column;
+  border: 1px solid #6f9aae80; border-top: 2px solid #84e1f5; border-radius: 2px 22px 2px 2px; background: linear-gradient(155deg, #0f2c40f2, #050f19f5 60%); box-shadow: 0 24px 60px #000a; color: #d7edf6; }
+.atr-orbit { position: absolute; width: 640px; height: 640px; right: -260px; top: -300px; border: 1px solid #94c8de24; border-radius: 50%; pointer-events: none; z-index: -1;
+  background: repeating-conic-gradient(from 20deg, transparent 0 29.7deg, #b1def52a 29.7deg 30deg); opacity: .5; }
+.atr-head { display: flex; align-items: center; gap: 14px; padding: 14px 18px; border-bottom: 1px solid #b4ddec36; }
+.atr-avatar { width: 64px; height: 64px; flex: none; overflow: hidden; border: 1px solid #c0e9ff66; border-radius: 4px 16px 4px 4px; background: #0b1724; }
+.atr-kicker { font-size: 9px; letter-spacing: .24em; color: #8fc3d6; }
+.atr-name { display: flex; align-items: center; gap: 8px; font-size: 22px; font-weight: 800; letter-spacing: .04em; color: #f1fbff; min-width: 0; }
+.atr-rank { font-size: 11px; padding: 1px 7px; border: 1px solid #84e1f5aa; color: #9beef7; border-radius: 2px 8px 2px 2px; }
+.atr-hp { margin-top: 6px; display: flex; align-items: center; gap: 8px; max-width: 340px; font-size: 11px; color: #9fc6d6; }
+.atr-hp i { flex: 1; height: 6px; border-radius: 3px; background: linear-gradient(90deg, #4ade80, #22c55e); box-shadow: 0 0 8px #4ade8066; }
+.atr-hp b { color: #e9fff2; font-variant-numeric: tabular-nums; }
+.atr-actions { display: flex; gap: 6px; }
+.atr-icon { width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center; color: #cee8f4; border: 1px solid #6f9aae65;
+  border-radius: 2px 9px 2px 2px; background: linear-gradient(120deg, #1b3d50ed, #0a1a28ed); transition: border-color .15s, background .15s; flex: none; }
+.atr-icon:hover { border-color: #8de8ff; background: #28536b; }
+.atr-body { flex: 1; min-height: 0; display: flex; }
+.atr-rail { display: flex; flex-direction: column; gap: 6px; padding: 12px 8px; border-right: 1px solid #b4ddec26; background: #04101acc; }
+.atr-rail button { width: 58px; padding: 9px 0 7px; display: flex; flex-direction: column; align-items: center; gap: 3px; color: #8fb3c4; border: 1px solid transparent; border-radius: 2px 12px 2px 2px; }
+.atr-rail button span { font-size: 19px; line-height: 1; }
+.atr-rail button small { font-size: 10px; letter-spacing: .12em; }
+.atr-rail button:hover { color: #e2f6ff; background: #123044; }
+.atr-rail button[data-active="true"] { color: #082330; background: linear-gradient(105deg, #9beef7, #5dbbd8); border-color: #b8f4ff; font-weight: 700; }
+.atr-content { flex: 1; min-width: 0; overflow-y: auto; padding: 14px 16px 20px; display: flex; flex-direction: column; gap: 12px; scrollbar-color: #6299af66 #08172555; scrollbar-width: thin; }
+.atr-panel { border: 1px solid #639ab669; border-left: 2px solid #84e1f5; border-radius: 2px 14px 2px 2px; background: linear-gradient(150deg, #102b3fd9, #06121dd9); padding: 12px 14px; }
+.atr-panel-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding-bottom: 8px; margin-bottom: 10px; border-bottom: 1px solid #9bc8d62b; }
+.atr-panel-head h3 { display: flex; align-items: center; gap: 8px; font-size: 14px; letter-spacing: .06em; color: #d1e9f3; font-weight: 700; }
+.atr-panel-head h3::before { content: ''; width: 6px; height: 6px; background: #84e1f5; transform: rotate(45deg); }
+.atr-chip { font-size: 11px; padding: 2px 8px; color: #bfeefa; border: 1px solid #84e1f566; border-radius: 2px 8px 2px 2px; background: #0b2433; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.atr-chip[data-warn="true"] { color: #fecaca; border-color: #f87171; background: #3b0d12; }
+.atr-stats { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 8px; }
+.atr-stat { position: relative; padding: 10px 6px 8px; text-align: center; border: 1px solid #709db146; border-radius: 2px 12px 2px 2px; background: linear-gradient(120deg, #173b50e8, #0b1b2bea); }
+.atr-stat small { display: block; font-size: 11px; color: #a3cada; letter-spacing: .1em; }
+.atr-stat b { display: block; margin: 2px 0; font-size: 22px; font-weight: 800; color: #eafcff; font-variant-numeric: tabular-nums; }
+.atr-stat i { font-style: normal; font-size: 10px; color: #6f95a6; }
+.atr-stat[data-up="true"] { border-color: #fb923c99; } .atr-stat[data-up="true"] small { color: #fdba74; }
+.atr-stat[data-down="true"] { border-color: #60a5fa88; } .atr-stat[data-down="true"] small { color: #93c5fd; }
+.atr-select { width: 100%; padding: 7px 9px; font-size: 13px; color: #effaff; border: 1px solid #6a9ab966; border-radius: 3px; background: #112d40; }
+.atr-presets { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px; }
+.atr-pill { padding: 4px 10px; font-size: 11px; color: #cee8f4; border: 1px solid #6f9aae65; border-radius: 2px 9px 2px 2px; background: linear-gradient(120deg, #1b3d50ed, #0a1a28ed); }
+.atr-pill:hover:not(:disabled) { border-color: #8de8ff; }
+.atr-pill[data-on="true"] { color: #082330; background: linear-gradient(105deg, #9beef7, #5dbbd8); border-color: #b8f4ff; }
+.atr-pill:disabled, .atr-select:disabled { opacity: .5; }
+.atr-evs { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 8px 16px; }
+.atr-ev { display: grid; grid-template-columns: 3.2rem 1fr 4.2rem; align-items: center; gap: 8px; font-size: 12px; color: #b5d5e4; }
+.atr-ev input[type=range] { accent-color: #7fdef4; width: 100%; }
+.atr-ev input[type=number] { width: 100%; padding: 3px 6px; text-align: right; color: #effaff; border: 1px solid #6a9ab966; border-radius: 3px; background: #0b2433; font-variant-numeric: tabular-nums; }
+.atr-val { text-align: right; color: #eafcff; font-variant-numeric: tabular-nums; }
+.atr-slots { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 8px; }
+.atr-slot { display: grid; grid-template-columns: 2.4rem 7rem 1fr 3rem; align-items: center; gap: 8px; padding: 6px 8px; border: 1px solid #709db146; border-radius: 2px 10px 2px 2px; background: #0c2232; font-size: 12px; }
+.atr-slot small { color: #fda4af; letter-spacing: .1em; } .atr-slot[data-cat="weakening"] small { color: #a7f3d0; }
+.atr-slot input[type=range] { accent-color: #7fdef4; width: 100%; }
+.atr-slot .atr-select { padding: 4px 6px; font-size: 12px; }
+.atr-text { font-size: 13px; line-height: 1.75; color: #d4ebf4; }
+.atr-insc { display: flex; justify-content: space-around; flex-wrap: wrap; gap: 12px; padding: 6px 0; }
+.atr-skills { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 10px; }
+.atr-skill { padding: 10px 12px; border: 1px solid #709db146; border-radius: 2px 12px 2px 2px; background: linear-gradient(120deg, #173b50e8, #0b1b2bea); }
+.atr-skill[role=button] { cursor: pointer; } .atr-skill[role=button]:hover { border-color: #8de8ff; }
+.atr-skill[data-fifth] { border-color: #f5c35a88; box-shadow: inset 3px 0 #f5c35a; }
+.atr-skill[data-state="current"] { border-color: #84e1f5; box-shadow: inset 3px 0 #84e1f5; }
+.atr-skill-head { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; min-width: 0; }
+.atr-skill-head b { flex: 1; min-width: 0; font-size: 14px; color: #f1fbff; }
+.atr-skill-meta { font-size: 11px; color: #9fc6d6; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.atr-skill-desc { font-size: 12px; line-height: 1.65; }
+.atr-info { display: grid; grid-template-columns: 4rem 1fr; gap: 6px 12px; font-size: 13px; }
+.atr-info dt { color: #8fb3c4; } .atr-info dd { color: #eafcff; display: flex; align-items: center; gap: 4px; }
+.atr-empty { text-align: center; color: #6f95a6; padding: 24px 0; }
+@media (max-width: 720px) {
+  .atr-root { padding: 0; } .atr-sheet { width: 100vw; height: 100dvh; border-radius: 0; }
+  .atr-body { flex-direction: column; }
+  .atr-rail { flex-direction: row; overflow-x: auto; border-right: 0; border-bottom: 1px solid #b4ddec26; padding: 6px; }
+  .atr-rail button { width: 54px; flex: none; }
+  .atr-stats { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .atr-slot { grid-template-columns: 2.4rem 6rem 1fr 2.8rem; }
+}

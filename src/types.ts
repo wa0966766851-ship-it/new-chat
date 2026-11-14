@@ -48,6 +48,9 @@ export interface Skill {
   resolvedTypeMultiplier?:number;
   resolvedAttackStats?: ('atk'|'spatk')[];
   resolvedForceStab?: boolean;
+  resolvedNeutralStab?: boolean;
+  /** 固有積木解析的基礎致命率；不覆蓋必定致命或額外加成。 */
+  resolvedBaseCritChance?: number;
   name: string;
   type: string; // e.g. "電", "火", "草", "水", "無屬性"
   category: '物理' | '特殊' | '屬性';
@@ -192,6 +195,7 @@ export interface StatChange {
 }
 
 export interface Elf {
+  combatPhases?:Record<string,{phase:string;until?:number;statsMultiplier:number}|undefined>;
   /** 內建效果版本指紋；只供讀檔升級，戰鬥不依此執行。 */
   builtinEffectBindings?: { schemaVersion: 1; elfId: string; definitions: Record<string, string> };
   /** 開局背包另一區相同位數的快照；不把待命精靈加入勝敗判定隊伍。 */
@@ -223,6 +227,8 @@ export interface Elf {
   typePeeled?: boolean;
   /** 屬性被效果暫時改變（例如變為暗影系），直到下場；下場時恢復 originalType。 */
   typeChangedUntilSwitch?: boolean;
+  /** 戰鬥中記錄的歷史屬性，下場保留；每場由新戰鬥個體重建。 */
+  typeHistory?: string[];
   level: number;
   baseStats: BaseStats;
   ivs?: BaseStats; // individual values (0-31), if undefined we assume 31
@@ -251,6 +257,7 @@ export interface Elf {
   isCustom?: boolean; // flag to identify if created by user
   battleId?: string; // 戰鬥唯一識別碼
   battleRating?: number; // 戰鬥評分
+  resistanceHighestOnly?: boolean; // 戰鬥抗性規則：唯一最高項100%，其餘0%；不覆寫配置
   resistances?: ElfResistances; // 傷害抗性與異常抗性配置
   critValue?: number; // 每 1 點代表 1/16 的暴擊率，預設為 1 (6.25%)
   decompositionReport?: DecompositionReport; // AI效果解構與庫存引用分析報告
@@ -302,8 +309,11 @@ export interface Elf {
   isSkillInvalid?: boolean; // 技能無效 (Attack skills negated)
   isAttackImmune?: boolean; // 攻擊免疫 (Immune to attack effects, bypassable by "Ignore Immunity")
   statusImmuneTurns?: number; // 異常抵抗回合數 (Immunity to status abnormalities)
+  heldDeathFloorRatio?:number; // 即時道具持有規則；離場或用完由共用生命週期解除
   cannotUseAttrSkillsTurns?: number; // 屬性技能無效回合數
   cannotUseAttackSkillsTurns?: number; // 攻擊技能無效回合數
+  /** 舊欄位：藥劑反噬回合（新施加一律用計時器 payload.potionBacklash，見 battle/actionRestrictions.ts）。 */
+  potionBacklashTurns?: number;
   cannotActThisTurn?: boolean; // 當回合無法行動
   
   // Opeia (蟲后·奧佩婭) & Custom Tracking Properties
@@ -417,8 +427,62 @@ export interface BattleItem {
   value?: number;
   ppValue?: number;
   effect?: 'clear_status' | 'clear_debuff' | 'set_illusion_target';
+  /** 恢復最大體力的百分比（例：10＝10%）；與 value 可並存。 */
+  hpPercent?: number;
+  /** 每個技能恢復「該技能 PP 上限」的百分比（例：20＝20%，至少 1 點）。 */
+  ppPercent?: number;
+  /** 解除指定異常（只解除這些）；未填且 effect='clear_status' 時為解除全部異常。 */
+  cureStatuses?: string[];
+  /** 攻擊型藥劑：對對手在場精靈造成藥劑反噬傷害（固定值）。 */
+  oppDamage?: number;
+  /** 攻擊型藥劑：對對手在場精靈造成其最大體力百分比的藥劑反噬傷害。 */
+  oppDamagePercent?: number;
+  /** 攻擊型藥劑：扣除對手在場精靈每個技能的 PP 值。 */
+  oppPpDrain?: number;
+  /** 攻擊型藥劑：令對手在場精靈進入異常（turns 預設 3）。 */
+  inflictStatuses?: { name: string; turns?: number }[];
+  /** 攻擊型藥劑：令對手（全隊）進入藥劑反噬 N 回合。 */
+  oppPotionBacklash?: number;
+  /** 攻擊型藥劑：令對手（全隊）無法使用藥劑 N 回合。 */
+  oppItemLock?: number;
+  /** 攻擊型藥劑：令對手在場精靈無法主動切換 N 回合。 */
+  oppSwitchLock?: number;
+  /** 強化型藥劑：為自身在場精靈附加附屬狀態（turns 預設 3）。藥劑反噬時改為解除自身這些狀態。 */
+  selfStatuses?: { name: string; turns?: number }[];
+  /**
+   * 持續恢復藥劑：之後 N 回合每回合結束時恢復。targets：active＝在場、bench＝不在場（背包待命）、extra＝額外精靈。
+   * 使用當下處於藥劑反噬則整段反轉（每回合改為藥劑反噬傷害／扣除 PP）。
+   */
+  regen?: { turns: number; hp?: number; hpPercent?: number; pp?: number; ppPercent?: number; targets: ('active' | 'bench' | 'extra')[] };
+  /** 道具分類（未填依效果推斷）。 */
+  category?: 'hp' | 'pp' | 'cleanse' | 'hybrid' | 'regen' | 'offense' | 'inflict' | 'buff' | 'special';
+  /** 每場戰鬥預設攜帶量（未填依 type）。 */
+  stock?: number;
   /** 不在預設藥劑庫存內，只能由效果（稱號、魂印…）放入；庫存為 0 時不顯示。 */
   grantOnly?: boolean;
+  /** 效果放入時的持有上限；不改變普通藥劑的預設攜帶量。 */
+  holdLimit?: number;
+  /** 同組不同形態共用的總持有上限；不以各形態上限相加。 */
+  inventoryGroup?: { id: string; limit: number };
+  /** 真正持有期間，每次使用藥劑都套用既有藥劑反噬規則。 */
+  potionBacklashWhileHeld?: boolean;
+  /** 持有期間即時查詢的通用規則；不複製成永久魂印或依來源名稱判斷。 */
+  heldModifiers?: {
+    maxHpIncreaseDisabled?:boolean;
+    deathFloorRatio?:number;
+    incomingIncrease?:number;
+    incomingSpecialSkillIncrease?:number;
+    reductionDisabled?:boolean;
+    incomingLimitDisabled?:boolean;
+    selectedSpecialSkillMultiplier?:number;
+    recovery?:{reduction:number;abnormalMultiplier:number;opponentTrueRatio:number};
+  };
+  /** 特殊道具使用效果仍由同一套可編輯積木執行；反噬分支需明確定義。 */
+  useKit?: { normal: KitEntry[]; backlash: KitEntry[] };
+  /** 道具仍在正式庫存時執行的生命週期積木，不依賴召喚者存活或在場。 */
+  heldKit?: KitEntry[];
+  /** 實際持有期間，指定異常在回合末不扣期限；不阻止受擊解除等其他規則。 */
+  retainStatusDuration?: string[];
   /** 使用前需先選一隻精靈：bag_elf＝雙方背包（出戰＋待命）內未消逝的任一隻。 */
   pickTarget?: 'bag_elf';
   /** 使用時由 UI 帶入的所選精靈（side + battleId）；不屬於目錄定義。 */

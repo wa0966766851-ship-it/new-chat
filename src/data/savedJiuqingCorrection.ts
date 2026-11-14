@@ -28,7 +28,11 @@ export function correctSavedJiuqing(elf:Elf,defaults:Elf[]):Elf {
     // 第五身分與效果版本無關；自訂文案／積木也必須沿用這五招的身分。
     const fifth=s.name==='清璨星辰落';
     const flagChanged=main.includes(s.name)&&!!fixed.isFifthSkill!==fifth;
-    return flagChanged||description!==fixed.description?{...fixed,description,...(main.includes(s.name)?{isFifthSkill:fifth}:{})}:fixed;
+    // 2026-11-13：舊存檔把雙屬性技能存成單屬性（例：生塵眷盼「聖靈」）；存檔蓋過內建，原始碼怎麼改都會被還原。
+    // 只認領「存檔屬性是正確雙屬性的其中一段」這種截斷，其他自訂屬性保留。
+    const parts=(t?:string)=>String(t||'').split(/[.·・]/).filter(Boolean);
+    const type=main.includes(s.name)&&canonical&&fixed.type!==canonical.type&&parts(canonical.type).length>1&&parts(fixed.type).length===1&&parts(canonical.type).includes(String(fixed.type))?canonical.type:fixed.type;
+    return flagChanged||description!==fixed.description||type!==fixed.type?{...fixed,description,type,...(main.includes(s.name)?{isFifthSkill:fifth}:{})}:fixed;
   };
   let skills=elf.skills.map(fixSkill);
   let pool=elf.skillPool?.map(fixSkill);

@@ -1,6 +1,21 @@
 import { useEffect, useRef, useState } from 'react';
 import { youtubeEmbedUrl, youtubeErrorMessage, type MusicSource } from '../utils/musicSource';
 import { loadYoutubePlayerApi, type YoutubePlayer } from '../utils/youtubePlayerApi';
+import { readMusicReplay, writeMusicReplay, bilibiliReplayDelayMs } from '../utils/musicReplay';
+
+/** 隱藏時最小可播放尺寸（YouTube 依播放器尺寸挑最低解析度）；顯示時正常大小。 */
+export const MUSIC_FRAME_HIDDEN = { width: 200, height: 113 };
+function sizeFrame(frame: HTMLIFrameElement, shown: boolean) {
+  const w = shown ? 320 : MUSIC_FRAME_HIDDEN.width, h = shown ? 200 : MUSIC_FRAME_HIDDEN.height;
+  frame.width = String(w); frame.height = String(h);
+  frame.style.width = shown ? '100%' : `${w}px`; frame.style.height = `${h}px`;
+}
+/** YouTube：要求最低畫質（官方 API 已不保證生效，但不影響播放；實際由小尺寸決定）。 */
+function lowestQuality(p: any) { try { p?.setPlaybackQuality?.('tiny'); } catch { /* 不支援時略過 */ } }
+/** B站嵌入：關彈幕、低畫質（high_quality=0），只為聽音樂。 */
+export function bilibiliEmbedUrl(id: string, page: number, muted: boolean) {
+  return `https://player.bilibili.com/player.html?bvid=${id}&page=${page}&autoplay=1&muted=${muted ? 1 : 0}&high_quality=0&danmaku=0`;
+}
 
 type Playback = { phase: 'idle' | 'loading' | 'ready' | 'playing' | 'paused' | 'buffering' | 'blocked' | 'error' | 'external'; message: string };
 export function useMusicPlayer(source: MusicSource) {
@@ -20,12 +35,22 @@ export function useMusicPlayer(source: MusicSource) {
   const [showPlayer, updateShowPlayer] = useState(() => {
     try { return window.localStorage.getItem('seer_music_show_player') === '1'; } catch { return false; }
   });
+  const showPlayerRef = useRef(showPlayer); showPlayerRef.current = showPlayer;
+  // 顯示／隱藏只改 iframe 尺寸，不重建播放器（不中斷播放）。
+  useEffect(() => { const frame = containerRef.current?.querySelector('iframe'); if (frame) sizeFrame(frame, showPlayer); }, [showPlayer]);
   const watchdog = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const [requestedPlaying, setRequestedPlaying] = useState(false);
   const [isMuted, updateMuted] = useState(true);
   const [mounted, setMounted] = useState(false);
   const [attempt, setAttempt] = useState(0);
   const [playback, setPlayback] = useState<Playback>({ phase: 'idle', message: '尚未播放' });
+  // 播完停幾秒再重播（預設開、5 秒）
+  const [replay, updateReplay] = useState(readMusicReplay);
+  const replayRef = useRef(replay); replayRef.current = replay;
+  const replayTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  const clearReplay = () => { window.clearTimeout(replayTimer.current); replayTimer.current = undefined; };
+  const setReplay = (v: { enabled: boolean; gap: number }) => { writeMusicReplay(v); updateReplay(readMusicReplay()); };
+  const [biliCycle, setBiliCycle] = useState(0);
   const sourceKey = JSON.stringify(source);
   const clearWatchdog = () => window.clearTimeout(watchdog.current);
   const armWatchdog = () => {
@@ -46,6 +71,7 @@ export function useMusicPlayer(source: MusicSource) {
     else { clearWatchdog(); player.current.pauseVideo(); setPlayback({ phase: 'paused', message: '已暫停' }); }
   };
   const setIsPlaying = (playing: boolean) => {
+    if (!playing) clearReplay();
     desired.current.playing = playing; setRequestedPlaying(playing);
     if (playing) {
       desired.current.muted = volumeRef.current === 0; updateMuted(volumeRef.current === 0); setMounted(true);
@@ -117,7 +143,8 @@ export function useMusicPlayer(source: MusicSource) {
     frame.title = `${source.type === 'youtube' ? 'YouTube' : 'B站'} 音樂播放器`;
     frame.allow = 'autoplay; encrypted-media; fullscreen; picture-in-picture';
     frame.referrerPolicy = 'strict-origin-when-cross-origin';
-    frame.width = '320'; frame.height = '200'; frame.style.width = '100%'; frame.style.height = '200px'; frame.style.border = '0';
+    // 純音樂（2026-11-07）：播放器隱藏時用最小尺寸，YouTube 依尺寸自動降到最低畫質；顯示時才放大。
+    sizeFrame(frame, showPlayerRef.current); frame.style.border = '0';
     const attachFrame = () => { container.replaceChildren(frame); };
     const fail = (message: string, phase: 'blocked' | 'error' = 'error') => {
       if (disposed) return;
@@ -125,7 +152,7 @@ export function useMusicPlayer(source: MusicSource) {
     };
     const loadTimer = window.setTimeout(() => fail('播放器載入逾時；請檢查連線、瀏覽器限制或按「重新載入」。'), 20000);
     if (source.type === 'bilibili') {
-      frame.src = `https://player.bilibili.com/player.html?bvid=${source.id}&page=${source.page}&autoplay=1&muted=${desired.current.muted ? 1 : 0}`;
+      frame.src = bilibiliEmbedUrl(source.id, source.page, desired.current.muted);
       frame.onload = () => {
         window.clearTimeout(loadTimer);
         if (!disposed) setPlayback(desired.current.playing
@@ -136,20 +163,28 @@ export function useMusicPlayer(source: MusicSource) {
     } else {
       void loadYoutubePlayerApi().then(api => {
         if (disposed) return;
-        frame.src = youtubeEmbedUrl(source, window.location.origin); attachFrame();
+        frame.src = youtubeEmbedUrl(source, window.location.origin, !replayRef.current.enabled); attachFrame();
         instance = new api.Player(frame, { events: {
           onReady: event => {
             if (disposed) return;
             window.clearTimeout(loadTimer); player.current = event.target; ready.current = true;
+            lowestQuality(event.target);
             setPlayback({ phase: 'ready', message: '播放器已就緒' }); apply();
           },
           onStateChange: event => {
             if (disposed) return;
             const state = event.data;
             if (state === 1) {
+              lowestQuality(event.target);
               clearWatchdog(); desired.current.playing = true; setRequestedPlaying(true);
               updateMuted(event.target.isMuted() || event.target.getVolume() === 0);
               setPlayback({ phase: 'playing', message: '播放中' });
+            } else if (state === 0 && replayRef.current.enabled && desired.current.playing && !source.playlist) {
+              // 播完：停 gap 秒再從頭播（仍視為播放中，使用者按停止才會取消）。
+              clearWatchdog(); clearReplay();
+              const gap = replayRef.current.gap;
+              setPlayback({ phase: 'paused', message: gap ? `播放結束，${gap} 秒後重播` : '重新播放' });
+              replayTimer.current = setTimeout(() => { if (disposed || !desired.current.playing) return; try { event.target.seekTo(0, true); event.target.playVideo(); } catch { /* 播放器已釋放 */ } }, gap * 1000);
             } else if (state === 2 || state === 0) {
               clearWatchdog(); desired.current.playing = false; setRequestedPlaying(false);
               setPlayback({ phase: 'paused', message: state === 0 ? '播放結束' : '已暫停' });
@@ -162,7 +197,7 @@ export function useMusicPlayer(source: MusicSource) {
       }).catch(error => { window.clearTimeout(loadTimer); fail(error instanceof Error ? error.message : '播放器載入失敗'); });
     }
     return () => {
-      disposed = true; ready.current = false; player.current = null;
+      disposed = true; ready.current = false; player.current = null; clearReplay();
       window.clearTimeout(loadTimer); clearWatchdog(); frame.onload = null;
       instance?.destroy(); container.replaceChildren();
     };
@@ -173,9 +208,21 @@ export function useMusicPlayer(source: MusicSource) {
     if (!mounted || source.type !== 'bilibili' || !containerRef.current) return;
     const frame = containerRef.current.querySelector('iframe');
     if (frame) frame.src = requestedPlaying
-      ? `https://player.bilibili.com/player.html?bvid=${source.id}&page=${source.page}&autoplay=1&muted=${isMuted ? 1 : 0}` : 'about:blank';
-  }, [mounted, sourceKey, requestedPlaying, isMuted]);
+      ? bilibiliEmbedUrl(source.id, source.page, isMuted) : 'about:blank';
+  }, [mounted, sourceKey, requestedPlaying, isMuted, biliCycle]);
+
+  // B站沒有「播放結束」事件：向本機後端查影片長度，播到長度＋間隔時重新載入（重頭播放）。
+  useEffect(() => {
+    if (!mounted || source.type !== 'bilibili' || !requestedPlaying || !replay.enabled) return;
+    let cancelled = false; let timer: ReturnType<typeof setTimeout> | undefined;
+    void fetch(`/api/music/bilibili-duration/${source.id}?p=${source.page}`).then(r => r.ok ? r.json() : null).then(j => {
+      const ms = bilibiliReplayDelayMs(j?.duration, replay.gap);
+      if (cancelled || ms === null) return;
+      timer = setTimeout(() => { if (!cancelled) setBiliCycle(n => n + 1); }, ms);
+    }).catch(() => { /* 查不到長度：維持原狀 */ });
+    return () => { cancelled = true; if (timer) clearTimeout(timer); };
+  }, [mounted, sourceKey, requestedPlaying, replay.enabled, replay.gap, biliCycle]);
   return { containerRef, playback, isPlaying: playback.phase === 'playing', requestedPlaying, isMuted, mounted,
     setIsPlaying, setIsMuted, togglePlay, toggleMute, retryMusic, closeMusic,
-    volume, setVolume, audioInfo, showPlayer, setShowPlayer };
+    volume, setVolume, audioInfo, showPlayer, setShowPlayer, replay, setReplay };
 }

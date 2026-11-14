@@ -10,7 +10,7 @@ const hitFear='🎯 命中後100%令對手害怕，未觸發或對手已處於�
 const blockFear='🎯 令自身抵擋下次受到攻擊傷害，觸發成功則下次攻擊自身附加等同於抵擋攻擊傷害量真實傷害';
 
 export const MIGRATED_INSTANT_KILL_SKILL_KITS:ReviewedSequenceSkill[]=[{
-  elfIds:['5024'],name:'超重力壓迫',description:'先制+3；命中後15%秒殺對手；2回合內對手屬性技能無效',
+  elfIds:['5024','5025'],name:'超重力壓迫',description:'先制+3；命中後15%秒殺對手；2回合內對手屬性技能無效',
   kit:[
     property('先制+3','base_priority',3,0),
     {codeId:'effect_sequence',node:'on_hit',source:'skill',role:'attached',order:1,customText:'命中後15%秒殺對手',

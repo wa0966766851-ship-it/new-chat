@@ -114,6 +114,20 @@ if (-not (Test-Path (Join-Path $root 'node_modules\tsx'))) {
 $useDev = $env:SEER_DEV -eq '1'
 $releaseRoot = Join-Path $root '.desktop-releases'
 $activeFile = Join-Path $releaseRoot 'active.json'
+# 2026-11-14：開啟時自動跟上來源。來源比目前啟用的完成版本新（或還沒有完成版本）就先快速更新
+# （型別檢查＋建置＋前後端實測）；失敗則沿用上一個完成版本並告知，不再默默停在舊版。
+# 設定環境變數 SEER_SKIP_AUTO_UPDATE=1 可略過。
+$updateWarning = $null
+if (-not $useDev -and $env:SEER_SKIP_AUTO_UPDATE -ne '1') {
+  $staleCheck = Start-Process -FilePath $node.Source -ArgumentList 'scripts/desktop_stale.mjs' -WorkingDirectory $root -WindowStyle Hidden -PassThru -Wait
+  if ($staleCheck.ExitCode -eq 3 -or $staleCheck.ExitCode -eq 4) {
+    $updateLog = Join-Path $releaseRoot 'auto-update.log'
+    $updater = Start-Process -FilePath 'cmd.exe' -ArgumentList '/c', "node scripts/desktop_update.mjs --quick > `"$updateLog`" 2>&1" -WorkingDirectory $root -WindowStyle Hidden -PassThru
+    if ((Wait-StartupProcess $updater '偵測到新版本，正在更新桌面版（約 2–4 分鐘）…' 3) -ne 0) {
+      $updateWarning = "自動更新未完成，這次先開啟上一個版本。`n紀錄：$updateLog"
+    }
+  }
+}
 if (-not $useDev) {
   if (-not (Test-Path -LiteralPath $activeFile)) { throw '尚無桌面完成版本。請在專案執行 npm run desktop:update。' }
   $activeRelease = Get-Content -LiteralPath $activeFile -Raw | ConvertFrom-Json
@@ -188,6 +202,10 @@ function Find-Browser {
   return $null
 }
 
+if ($updateWarning -and (Test-Path -LiteralPath $activeFile)) {
+  Complete-StartupWindow $startup
+  [System.Windows.Forms.MessageBox]::Show($updateWarning, $appName, 'OK', 'Warning') | Out-Null
+}
 $browser = Find-Browser
 $profileDir = Join-Path $env:LOCALAPPDATA 'SeerBattleSim\browser'
 New-Item -ItemType Directory -Force -Path $profileDir | Out-Null

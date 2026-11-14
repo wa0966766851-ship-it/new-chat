@@ -1,6 +1,7 @@
 export interface YoutubePlayer {
   playVideo(): void; pauseVideo(): void; mute(): void; unMute(): void;
   setVolume(volume: number): void; isMuted(): boolean; getVolume(): number; getPlayerState(): number; destroy(): void;
+  seekTo(seconds: number, allowSeekAhead: boolean): void;
 }
 export interface YoutubeEvents {
   onReady(event: { target: YoutubePlayer }): void;

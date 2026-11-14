@@ -28,9 +28,9 @@ export const MIGRATED_DELU_SKILL_KITS: ReviewedSequenceSkill[] = [
       sequence('消除雙方回合類效果並為雙方附加中毒、凍傷、燒傷', [
         { acts: [
           a('clear_turn', { side: 'both' }),
-          a('status', { side: 'both', status: '中毒', turns: 2, chance: 100 }),
-          a('status', { side: 'both', status: '凍傷', turns: 2, chance: 100 }),
-          a('status', { side: 'both', status: '燒傷', turns: 2, chance: 100 }),
+          a('status', { side: 'both', status: '中毒', chance: 100 }),
+          a('status', { side: 'both', status: '凍傷', chance: 100 }),
+          a('status', { side: 'both', status: '燒傷', chance: 100 }),
         ] },
       ], 2),
       // 🎯 上述任意異常結束或解除時自身恢復全部體力（持有者視角同舊 handler；本場一次）
@@ -65,7 +65,7 @@ export const MIGRATED_DELU_SKILL_KITS: ReviewedSequenceSkill[] = [
       at('on_invalid', 'on_invalid', '技能無效時，消除對手回合類效果，100%令對手感染', [
         { acts: [
           a('clear_turn', { side: 'opp' }),
-          a('status', { side: 'opp', status: '感染', turns: 2, chance: 100 }),
+          a('status', { side: 'opp', status: '感染', chance: 100 }),
         ] },
       ], 7),
     ],
@@ -126,9 +126,9 @@ MIGRATED_DELU_SKILL_KITS.push({
     sequence('🎯 消除對手能力提升狀態，消除成功則對手100%感染、冰封、焚燼', [
       { acts: [a('stat_clear', { side: 'opp', kind: 'up' })] },
       { chain: 'success', acts: [
-        a('status', { side: 'opp', status: '感染', turns: 2, chance: 100 }),
-        a('status', { side: 'opp', status: '冰封', turns: 2, chance: 100 }),
-        a('status', { side: 'opp', status: '焚燼', turns: 2, chance: 100 }),
+        a('status', { side: 'opp', status: '感染', chance: 100 }),
+        a('status', { side: 'opp', status: '冰封', chance: 100 }),
+        a('status', { side: 'opp', status: '焚燼', chance: 100 }),
       ] },
     ], 8),
     // 🎯 未擊敗對手則自身下次使用技能額外先制+2（prio_next 次數型先制）

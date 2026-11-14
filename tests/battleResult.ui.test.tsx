@@ -242,6 +242,13 @@ try {
   assert.deepEqual(labelDisplay({ kind: 'soulmark', label: '百分比傷害' }, { soulMark: { name: '無' } }), { text: '百分比傷害', tip: '百分比傷害' });
   assert.deepEqual(labelDisplay({ kind: 'skill', label: '烈焰斬' }, { soulMark: { name: '烈焰印記' } }), { text: '烈焰斬', tip: '烈焰斬' }, '技能不套用魂印名');
   console.log('✓ tiles P1/P2 標示、魂印名顯示、色盤');
+  // 9) 命運之輪結算：沒有「重來」，唯一出口回命運之輪
+  await act(async () => root.render(<BattleResult winner="p1" battleMode="PVE" summary={summary} p1Team={p1Team} p2Team={p2Team} format="命運之輪" onHome={() => calls.push('wheel')} homeLabel="返回命運之輪" />));
+  const btns = gAll('[data-testid="battle-result"] .br-actions button').map(b => b.textContent);
+  assert.ok(!btns.includes('重來') && btns.includes('返回命運之輪'), btns.join('/'));
+  await act(async () => (gAll('[data-testid="battle-result"] .br-actions button').find(b => b.textContent === '返回命運之輪') as HTMLElement).click());
+  assert.equal(calls.at(-1), 'wheel');
+  console.log('✓ 命運之輪結算：返回命運之輪');
 } finally {
   await act(async () => root.unmount());
   dom.window.close();

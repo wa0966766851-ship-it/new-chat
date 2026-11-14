@@ -9,6 +9,7 @@ import { maskForViewer } from "../maskForViewer";
 import { RankSeal } from "./Ink";
 import { RANK_VIS, hashSeed } from "./bModel";
 import { totalOf } from "./PlateCard";
+import { strengthOf } from "../../../utils/destinyDraftAi";
 
 type Tab = "all" | DestinyRank;
 const RANK_ORDER: Record<DestinyRank, number> = { S: 4, A: 3, B: 2, C: 1 };
@@ -95,7 +96,7 @@ export function IntroChapter(props: {
         {list.length === 0 ? <p className="dwb-empty">沒有符合條件的精靈。</p> : view === "table" ? (
           <div className="dwb-tablewrap" data-testid="b-list-table">
             <table>
-              <thead><tr><th>階級</th><th>精靈</th><th>屬性</th><th>總和</th><th>體</th><th>攻</th><th>防</th><th>特攻</th><th>特防</th><th>速</th><th>魂印／攔截</th><th /></tr></thead>
+              <thead><tr><th>階級</th><th>精靈</th><th>屬性</th><th>總和</th><th>體</th><th>攻</th><th>防</th><th>特攻</th><th>特防</th><th>速</th><th title="AI 自我對戰的隊伍勝率（貝氏平滑）；場數在滑鼠提示">實戰</th><th>魂印／攔截</th><th /></tr></thead>
               <tbody>
                 {list.map(e0 => { const e = maskForViewer(e0, "p1", mode); const b = e.baseStats; return (
                   <tr key={e0.instanceId} data-testid="b-list-item" data-rank={e0.destinyRank} onClick={() => props.onDetail(e0)}>
@@ -104,6 +105,7 @@ export function IntroChapter(props: {
                     <td><span className="ty"><TypeIcon type={e.type} size={13} showLabelWhenMissing={false} />{e.type}</span></td>
                     <td><b>{totalOf(e)}</b></td>
                     <td>{b?.hp || "-"}</td><td>{b?.atk || "-"}</td><td>{b?.def || "-"}</td><td>{b?.spatk || "-"}</td><td>{b?.spdef || "-"}</td><td>{b?.speed || "-"}</td>
+                    <td title={strengthOf(e.id) ? `${strengthOf(e.id)!.wins} 勝 / ${strengthOf(e.id)!.games} 場` : "尚無實戰紀錄"}>{strengthOf(e.id) ? `${Math.round(strengthOf(e.id)!.score * 100)}%` : "—"}</td>
                     <td className="soul" title={soulLine(e0)}>{soulLine(e0)}</td>
                     <td><button type="button" className="dwb-mini" data-testid="b-list-detail" aria-label={`${e.name} 詳情`} onClick={ev => { ev.stopPropagation(); props.onDetail(e0); }}>詳情</button></td>
                   </tr>); })}

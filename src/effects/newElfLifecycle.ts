@@ -14,13 +14,20 @@ import { skillSlot } from '../battle/skillSlot';
 import { bypassesAttackDefense } from '../battle/attackDefense';
 import { getMaxPp } from '../utils/battleHelpers';
 import { applyKitPpOperation } from './ppOperations';
+import {queueHpDrain} from '../battle/hpDrain';
 import {teamForcedHitLifecycle} from '../battle/forcedHitRules';
 
 /** 效果綁持有者：施加者下場後仍由受方執行，不依賴特定精靈 handler。 */
 export function runNewElfLifecycle(ctx: BattleEventContext, event: EffectTiming, data?: any): void {
   teamForcedHitLifecycle(ctx,event,data);
   const onField = identity(ctx.self) === identity(active(ctx, ctx.actor));
+  if(onField&&[EffectTiming.ON_SWITCH_OUT,EffectTiming.AFTER_DEFEATED].includes(event)&&(ctx.self as any).transferOnDeparture){
+    ctx.setPlayerState('nextElfTransferredStates',{stages:{...ctx.self.statStages},statuses:{...getStatuses(ctx.self)},...(ctx.self as any).transferOnDeparture});
+    ctx.updateElf(ctx.actor,{transferOnDeparture:undefined} as any);
+  }
+  if(onField&&event===EffectTiming.SKILL_SELECTED)for(const t of timersFor(ctx,ctx.actor))if(t.remaining>0&&t.payload?.consumeOnSelection&&(!t.ownerBattleId||t.ownerBattleId===identity(ctx.self)))ctx.consumeTimer(ctx.actor,t.id);
   if (event === EffectTiming.ON_SWITCH_OUT) {
+    if((ctx.self as any).statusDurationLink)ctx.updateElf(ctx.actor,{statusDurationLink:undefined} as any);
     if((ctx.self as any).ppLimitIgnoredUntilSwitch)ctx.updateElf(ctx.actor,{ppLimitIgnoredUntilSwitch:false} as any);
     endIllusion(ctx); ctx.setPlayerState('fieldPpChanged', false);
     if (ctx.getPlayerState('timedInherentWasActive')) {
@@ -29,6 +36,30 @@ export function runNewElfLifecycle(ctx: BattleEventContext, event: EffectTiming,
     }
   }
   if (event === EffectTiming.ON_ENTRANCE) {
+    const transfer=ctx.getPlayerState('nextElfTransferredStates');
+    if(transfer){
+      ctx.setPlayerState('nextElfTransferredStates',undefined);
+      ctx.applyStatChange(ctx.actor,transfer.stages);
+      const source=ctx.getFullTeam(transfer.sourceSide).find(e=>identity(e)===transfer.sourceBattleId);
+      const frame=source&&ctx.contextForElf?.(transfer.sourceSide,source);
+      for(const [name,n] of Object.entries(transfer.statuses))if((n as number)>0)(frame||ctx).applyStatusWithImmunityCheck(ctx.actor,name,n as number);
+    }
+    const program=ctx.getPlayerState('nextElfEntryProgram');
+    if(program){
+      ctx.setPlayerState('nextElfEntryProgram',undefined);
+      const source=ctx.getFullTeam(program.sourceSide).find(e=>identity(e)===program.sourceBattleId);
+      const frame=source&&ctx.contextForElf?.(program.sourceSide,source);
+      if(frame){for(const name of program.statuses)frame.applyStatusWithImmunityCheck(ctx.actor,name,program.duration);queueHpDrain(frame,ctx.actor,Math.floor(ctx.self.maxHp*program.drainRatio),'percent');}
+    }
+    const trap=ctx.getPlayerState('nextElfBothFixed');
+    if(trap){
+      ctx.setPlayerState('nextElfBothFixed',undefined);
+      const source=ctx.getFullTeam(trap.sourceSide).find(e=>identity(e)===trap.sourceBattleId);
+      const sourceCtx=source&&ctx.contextForElf?.(trap.sourceSide,source);
+      const damageCtx=sourceCtx||ctx;
+      damageCtx.applyPinkDamage(ctx.actor,trap.amount,undefined,undefined,undefined,'fixed');
+      damageCtx.applyPinkDamage(ctx.targetSide,trap.amount,undefined,undefined,undefined,'fixed');
+    }
     ctx.setPlayerState('fieldPpChanged', false);
     ctx.setPlayerState('fieldPpSnapshot', ctx.self.skills.map(s => s.pp));
     ctx.setPlayerState('fieldDamageCounts', {});
@@ -67,7 +98,12 @@ export function runNewElfLifecycle(ctx: BattleEventContext, event: EffectTiming,
     if (before && before.some((n, i) => n !== ctx.self.skills[i]?.pp)) ctx.setPlayerState('fieldPpChanged', true);
     ctx.setPlayerState('fieldPpSnapshot', ctx.self.skills.map(s => s.pp));
   }
+  const ownBlockTimers=timersFor(ctx,ctx.actor).filter(t=>t.remaining>0&&!t.pendingActivation&&(!t.ownerBattleId||t.ownerBattleId===identity(ctx.self)));
   const payloads = activeConstraints(timersFor(ctx, ctx.actor), ctx.self);
+  if(onField&&event===EffectTiming.BEFORE_STATUS_APPLY&&data?.status){
+    const anchor=(ctx.self as any).statusDurationLink,turns=anchor&&getStatuses(ctx.self)[anchor];
+    if(turns>0&&data.status!==anchor)data.duration=turns;
+  }
   if (event === EffectTiming.OPPONENT_ACTION && onField) {
     ctx.setPlayerState('blockedSkillDamageThisAction', false);
     // 記錄正式使用事件；回合末的上下文不保證仍帶著對手所選技能。
@@ -119,6 +155,15 @@ export function runNewElfLifecycle(ctx: BattleEventContext, event: EffectTiming,
     }
     ctx.setPlayerState('soulSureHitThisAction', false);
     ctx.setPlayerState('sourceSkillThisAction', ctx.skill);
+    ctx.setPlayerState('zeroSelectedPpAfterUse',ctx.skill&&ownBlockTimers.some(t=>{const p=t.payload?.block;return p?.ppZeroAfterUse&&(!p.notMatchingType||!String(ctx.self.type).split(/[.·・]/).some(x=>String(ctx.skill?.type).split(/[.·・]/).includes(x)));}));
+    if(ctx.skill?.category!=='屬性')for(const timer of ownBlockTimers){
+      const prop=timer.payload?.block?.attackProperty;
+      if(!prop||timer.payload.block.startAfterActionId===ctx.actionId)continue;
+      if(prop.sureHit)ctx.setPlayerState('soulSureHitThisAction',true);
+      if(prop.ignoreBlocking){ctx.setPlayerState('blkIgnoreBlock',true);ctx.setPlayerState('ignoreAttackImmunityThisAction',true);}
+      if(prop.type)ctx.setPlayerState('attackTypeOverride',prop.type);
+      if(prop.type)ctx.setPlayerState('attackTypeOverrideUses',1);
+    }
     if (ctx.skill?.category !== '屬性') for (const timer of timersFor(ctx, ctx.actor)) {
       if (timer.ownerBattleId && timer.ownerBattleId !== identity(ctx.self) || timer.pendingActivation || timer.remaining <= 0) continue;
       if (timer.payload?.nextAttackSkillBoost) {
@@ -210,6 +255,8 @@ export function runNewElfLifecycle(ctx: BattleEventContext, event: EffectTiming,
   }
   if (event === EffectTiming.ON_SKILL_HIT && ctx.skill?.category !== '屬性') for (const p of payloads) if (p.attackAdditionalTruePercent) ctx.applyTrueDamage(ctx.targetSide, Math.floor(ctx.target.maxHp * p.attackAdditionalTruePercent));
   if ([EffectTiming.AFTER_ACTION, EffectTiming.ACTION_FAILED].includes(event) && onField) {
+    if(ctx.skill?.category!=='屬性')for(const timer of ownBlockTimers)if(timer.payload?.block?.attackProperty&&timer.payload.block.startAfterActionId!==ctx.actionId)ctx.consumeTimer(ctx.actor,timer.id);
+    if(ctx.getPlayerState('zeroSelectedPpAfterUse')){const e=active(ctx,ctx.actor),slot=skillSlot(e,ctx.getPlayerState('sourceSkillThisAction')||ctx.skill);changePp(ctx,ctx.actor,e,(s,i)=>i===slot?0:s.pp);ctx.setPlayerState('zeroSelectedPpAfterUse',false);}
     for (const p of payloads) {
       if (p.afterUseDrainRatio) {
         const spec = p.afterUseDrainRatio;

@@ -256,6 +256,14 @@ export default function ControlHubPanel(model: ControlHubPanelModel) {
             <label className="flex items-center gap-2 text-xs text-slate-200">
               <input type="checkbox" checked={model.showPlayer} onChange={e => model.setShowPlayer(e.target.checked)} />顯示影片播放器
             </label>
+            <label className="flex items-center gap-2 text-xs text-slate-200" title="進入星蝕回廊大廳或回廊戰鬥時自動開始播放該頁音樂">
+              <input type="checkbox" data-testid="music-autoplay" checked={model.autoplay} onChange={e => model.setAutoplay(e.target.checked)} />進入星蝕回廊自動播放
+            </label>
+            <label className="flex items-center gap-2 text-xs text-slate-200" title="曲子播完後停一下再從頭播（像遊戲背景音樂）。B站依影片長度計時">
+              <input type="checkbox" data-testid="music-replay" checked={model.replay.enabled} onChange={e => model.setReplay({ ...model.replay, enabled: e.target.checked })} />播完自動重播，間隔
+              <input type="number" data-testid="music-replay-gap" min={0} max={60} value={model.replay.gap} disabled={!model.replay.enabled}
+                onChange={e => model.setReplay({ ...model.replay, gap: Number(e.target.value) })} className="w-14 bg-slate-950 border border-slate-700 rounded px-1 py-0.5" />秒
+            </label>
             <p className="text-xs text-slate-400 leading-relaxed">預設收起到畫面外，不縮成 0。切換顯示不會重載影片。但 YouTube 不支援隱藏式背景播放，可能暫停或阻擋聲音；無聲時請先勾選顯示，再點影片內播放鍵。B站以影片內控制為準。</p>
             <label className="flex items-center gap-2 text-xs text-slate-200">影片音量 {model.volume}%
               <input aria-label="影片音量" type="range" min="0" max="100" value={model.volume} disabled={musicInfo.type !== 'youtube'} onChange={e => model.setVolume(Number(e.target.value))} className="flex-1 min-w-0" />

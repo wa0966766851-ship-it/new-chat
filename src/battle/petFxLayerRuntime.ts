@@ -1,5 +1,6 @@
 import type {SwfPlayer} from '@seer-pet-anim/swf-renderer';
 import type {SwfClipData} from '@seer-pet-anim/swf-bundle';
+import {mountPetPlayer} from './petAnimation/playerMount';
 import {capPlayerResolution} from './petPlayerPerf';
 /** 全屏底片播放器的「閒置預載」外殼。
  * 2026-11-06 決策：底片必須在第一個全屏招式之前就緒（不能晚出現），所以不再延遲到第一個全屏序列、也不再閒置銷毀。
@@ -19,6 +20,8 @@ export function whenIdle(fn:()=>void):()=>void{
  const id=setTimeout(fn,FX_PRELOAD_FALLBACK_MS);return()=>clearTimeout(id);
 }
 export function createLazyFxRuntime(o:{layerHost:HTMLElement;side:string;fxClip:SwfClipData;sequences:Iterable<string>;bounds:LazyFxRuntime['bounds'];frames:LazyFxRuntime['frames'];createPlayer:()=>SwfPlayer;signal?:AbortSignal;/** 本體目前的序列時間（秒），提前開始的全屏序列對齊用 */mainTime?:()=>number|undefined;/** false = 不自動預載（只在全屏序列開始時才建立）；預設 true */preload?:boolean;/** 注入閒置排程（測試用）；回傳取消函式 */idle?:(fn:()=>void)=>()=>void}):LazyFxRuntime{
+ const cancellation=new AbortController();const abort=()=>cancellation.abort();
+ if(o.signal?.aborted)abort();else o.signal?.addEventListener('abort',abort,{once:true});
  const el=o.layerHost.ownerDocument.createElement('div');el.dataset.petFxLayer=o.side;el.style.cssText='position:absolute;inset:0;pointer-events:none;visibility:hidden';o.layerHost.appendChild(el);
  const sequences=new Set(o.sequences);
  let real:SwfPlayer|null=null,creating=false,destroyed=false,failed=false,paused=false,want:{name:string;loop:boolean}|null=null,transform:[{x:number;y:number},{x:number;y:number}]|null=null,on=false,cancelIdle:(()=>void)|null=null;
@@ -31,7 +34,7 @@ export function createLazyFxRuntime(o:{layerHost:HTMLElement;side:string;fxClip:
   if(real||creating||destroyed||failed)return;creating=true;
   void (async()=>{
    const p=o.createPlayer();
-   try{await p.mount(el,o.fxClip,{transparent:true,mode:'fixed',clock:'manual',signal:o.signal});}
+   try{await mountPetPlayer(p,el,o.fxClip,cancellation.signal);}
    catch(error){creating=false;p.destroy();if(destroyed||o.signal?.aborted)return;failed=true;console.warn('[pet-actions] 全屏底片層略過',error);return;}
    creating=false;if(destroyed||o.signal?.aborted){p.destroy();return;}
    capPlayerResolution(p,o.fxClip);real=p;apply(p);
@@ -46,7 +49,7 @@ export function createLazyFxRuntime(o:{layerHost:HTMLElement;side:string;fxClip:
   advance(dt:number){real?.advance(dt);},draw(){real?.draw();},
   pause(){paused=true;real?.pause();},play(){paused=false;real?.play();},
   setFixedTransform(position:{x:number;y:number},scale:{x:number;y:number}){transform=[position,scale];real?.setFixedTransform(position,scale);},
-  destroy(){destroyed=true;cancelIdle?.();cancelIdle=null;creating=false;const p=real;real=null;p?.destroy();},
+  destroy(){destroyed=true;cancellation.abort();o.signal?.removeEventListener('abort',abort);cancelIdle?.();cancelIdle=null;creating=false;const p=real;real=null;p?.destroy();},
  } as unknown as SwfPlayer;
  return {player:facade,el,sequences,bounds:o.bounds,frames:o.frames,
   get on(){return on;},set on(v:boolean){on=v;},

@@ -58,6 +58,8 @@ interface BattleScreenProps {
   /** 重來（非首次進入）：入戰動畫播縮短版 */
   introReplay?: boolean;
   interstellarOptions?: {onPotionUse?:()=>boolean;onBattleEnd?:Function;relics?:string[];enemyRelics?:string[];battleSeed?:number};
+  /** 戰鬥火焰（data/battleFlames.ts）。 */
+  battleFlames?: { p1?: string; p2?: string };
   /** 固定戰鬥亂數種子（可重現的對局；缺省為隨機） */
   randomSeed?: number;
   onDriverInit?: (driver: {
@@ -203,6 +205,7 @@ export default function BattleScreen(props: BattleScreenProps) {
         onSkillSelect={onSkillSelect}
         onSwitchElf={onSwitchElf}
         onUseItem={onUseItem}
+        onPass={engine.onPass}
         potionLimit={potionLimit}
         specialMode={props.specialMode}
         onReset={props.onRestartBattle}
@@ -211,6 +214,7 @@ export default function BattleScreen(props: BattleScreenProps) {
         activeSkillAnim={presentation.skillAnim}
         floatingDamagePopups={presentation.popups}
         consoleShake={{ p1: false, p2: false }}
+        illusionMorph={presentation.morphSide}
         damageDealt={state.damageDealt}
         ledger={engine.ledger}
         battleMode={props.battleMode}

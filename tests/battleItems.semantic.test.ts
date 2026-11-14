@@ -6,12 +6,14 @@ import { battleReducer } from '../src/components/BattleManager';
 const original = createBattleItemInventory();
 // 只能被放入的道具（grantOnly，如幻化指令）開場為 0，不在預設庫存內。
 for (const item of BATTLE_ITEMS.filter(i => i.grantOnly)) {
-  assert.deepEqual(original[item.id], { left: 0, max: 99 });
+  // 有持有上限（holdLimit，例：山神護符 1、鈴鐺草 7）者以上限為準，其餘 99。
+  assert.deepEqual(original[item.id], { left: 0, max: item.holdLimit ?? 99 });
   assert.equal(hasBattleItem(original, item.id), false);
   assert.equal(consumeBattleItem(original, item.id), undefined);
 }
 for (const item of BATTLE_ITEMS.filter(i => !i.grantOnly)) {
-  const max = item.type === 'special' ? 5 : item.type === 'hybrid' ? 50 : 100;
+  // 道具可指定每場攜帶量（stock，2026-11-07 擴充藥劑）；未指定依類型。
+  const max = item.stock ?? (item.type === 'special' ? 5 : item.type === 'hybrid' ? 50 : 100);
   assert.deepEqual(original[item.id], { left: max, max });
   let inventory = original;
   for (let n = 0; n < max; n++) inventory = consumeBattleItem(inventory, item.id)!;

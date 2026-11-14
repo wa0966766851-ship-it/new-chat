@@ -10,6 +10,7 @@ import { RELICS } from "../../modes/interstellar/v2/relics";
 import { EVENTS } from "../../modes/interstellar/v2/content";
 import { Ornament, NpcArt, RelicIcon, useEclRootRef } from "./eclipse/parts";
 import SuitSelect from "./eclipse/SuitSelect";
+import { useShellBack } from "../../shell/shellBack";
 import { SeedField, LevelPicker, BanPicker } from "./eclipse/SetupPanels";
 import { newSeed } from "../../modes/interstellar/v2/rng";
 import { encodeRunCode, parseSeedInput } from "../../modes/interstellar/v2/seed";
@@ -33,7 +34,33 @@ function readMeta(): Meta {
 }
 const LEVEL_EXP = 1000;
 
+/** 2026-11-14：局內畫面崩潰時不讓整個回廊卡死；提供返回地圖（保留進度）或放棄本局。 */
+type RecoveryProps = { onToMap: () => void; onAbandon: () => void; children: React.ReactNode };
+class RunRecoveryBoundary extends React.Component<RecoveryProps, { error: Error | null }> {
+  declare props: RecoveryProps;
+  declare setState: React.Component<RecoveryProps, { error: Error | null }>['setState'];
+  state = { error: null as Error | null };
+  static getDerivedStateFromError(error: Error) { return { error }; }
+  componentDidCatch(error: Error) { console.error("[星蝕迴廊] 局內畫面錯誤", error); }
+  render() {
+    if (!this.state.error) return this.props.children;
+    return (
+      <div className="ecl-root w-full min-h-[100vh] flex items-center justify-center p-6" role="alert" data-eclipse-recovery>
+        <div className="max-w-md w-full border border-[rgba(217,180,90,.45)] bg-black/60 p-6 space-y-4 text-center">
+          <h2 className="ecl-title text-2xl ecl-gilt">回廊存檔需要修復</h2>
+          <p className="text-sm ecl-muted" title={String(this.state.error?.message || "")}>這一局的畫面讀取失敗（通常是版本更新後的舊資料）。</p>
+          <div className="flex gap-3 justify-center">
+            <button className="ecl-btn px-5 py-2" onClick={() => { this.setState({ error: null }); this.props.onToMap(); }}>返回地圖</button>
+            <button className="ecl-btn ecl-btn-blood px-5 py-2" onClick={() => { this.setState({ error: null }); this.props.onAbandon(); }}>放棄本局</button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+}
+
 export default function InterstellarHub({ allElves, onBack, onStartBattle }: InterstellarHubProps) {
+  const shellBack = useShellBack();
   const rootRef = useEclRootRef();
   const [active, setActive] = React.useState(() => E.loadRunV2(localStorage));
   // 從戰鬥返回（有待結算或剛結算）直接進入回廊
@@ -81,7 +108,7 @@ export default function InterstellarHub({ allElves, onBack, onStartBattle }: Int
     const run = E.loadRunV2(localStorage);
     if (!run) { setMenu("title"); return; }
     const won = run.scene.kind === "end" && run.scene.result === "victory";
-    localStorage.removeItem(E.RUN_KEY_V2);
+    localStorage.removeItem(E.RUN_KEY_V2); E.pruneRunBackups(localStorage);
     setActive(null);
     setMeta(m => { const total = m.exp + exp; return { exp: total, level: Math.floor(total / LEVEL_EXP) + 1, bestAct: Math.max(m.bestAct, act), wins: m.wins + (won ? 1 : 0), runs: m.runs + 1 }; });
     setMenu("title");
@@ -89,9 +116,13 @@ export default function InterstellarHub({ allElves, onBack, onStartBattle }: Int
 
   if (menu === "in_run") {
     return (
+      <RunRecoveryBoundary
+        onToMap={() => { const run = E.loadRunV2(localStorage); if (run) E.saveRunV2(localStorage, { ...run, pendingBattle: undefined, scene: { kind: "map", note: "畫面發生錯誤，已返回地圖。" } } as any); setActive(E.loadRunV2(localStorage)); setMenu("title"); }}
+        onAbandon={() => { localStorage.removeItem(E.RUN_KEY_V2); E.pruneRunBackups(localStorage); setActive(null); setMenu("title"); }}>
       <InterstellarRun allElves={allElves} startingDiamonds={startingShards} initialEquipType={equipType} initialEquipId={equipId}
         selectedModifiers={pacts} seed={seed} nLevel={nLevel} bans={bans} onEndRun={endRun} onStartBattle={onStartBattle}
         onLeave={() => { setActive(E.loadRunV2(localStorage)); setMenu("title"); }} />
+      </RunRecoveryBoundary>
     );
   }
 
@@ -103,7 +134,7 @@ export default function InterstellarHub({ allElves, onBack, onStartBattle }: Int
       <img src="/eclipse/bg_throne.webp" alt="" aria-hidden className="absolute inset-0 w-full h-full object-cover opacity-40 -z-[1] pointer-events-none" />
 
       <div className="relative z-10 mx-auto px-6 pt-16 ecl-md:pt-8 pb-24 ecl-md:pb-10 max-w-[1680px] ecl-md:pr-24">
-        <button className="ecl-btn ecl-btn-ghost text-xs px-4 py-2" onClick={() => menu === "title" ? onBack() : menu === "setup" ? setMenu("gear") : setMenu("title")}>{menu === "title" ? "返回首頁" : "返回"}</button>
+        {!(shellBack && menu === "title") && <button className="ecl-btn ecl-btn-ghost text-xs px-4 py-2" onClick={() => menu === "title" ? onBack() : menu === "setup" ? setMenu("gear") : setMenu("title")}>{menu === "title" ? "返回首頁" : "返回"}</button>}
 
         <AnimatePresence mode="wait">
           {menu === "title" && (
@@ -130,7 +161,7 @@ export default function InterstellarHub({ allElves, onBack, onStartBattle }: Int
                     <div className="font-black mb-1">放棄這段旅程？</div>
                     <div className="text-sm ecl-muted mb-3">隊伍、遺物與進度都會消失，不會獲得經驗。</div>
                     <div className="flex gap-3">
-                      <button className="ecl-btn ecl-btn-blood text-sm" onClick={() => { localStorage.removeItem(E.RUN_KEY_V2); setActive(null); setConfirmAbandon(false); }}>熄滅</button>
+                      <button className="ecl-btn ecl-btn-blood text-sm" onClick={() => { localStorage.removeItem(E.RUN_KEY_V2); E.pruneRunBackups(localStorage); setActive(null); setConfirmAbandon(false); }}>熄滅</button>
                       <button className="ecl-btn ecl-btn-ghost text-sm" onClick={() => setConfirmAbandon(false)}>再想想</button>
                     </div>
                   </div>
@@ -194,7 +225,7 @@ export default function InterstellarHub({ allElves, onBack, onStartBattle }: Int
                 </div>
                 <div className="flex justify-between items-center ecl-lg:col-span-2">
                   <button className="ecl-btn ecl-btn-ghost" onClick={() => setMenu("gear")}>上一步</button>
-                  <button className="ecl-btn text-lg px-10" disabled={!parsed} title={E.FAIL_RULE} onClick={() => { localStorage.removeItem(E.RUN_KEY_V2); setMenu("in_run"); }}>點燃第一盞燈</button>
+                  <button className="ecl-btn text-lg px-10" disabled={!parsed} title={E.FAIL_RULE} onClick={() => { localStorage.removeItem(E.RUN_KEY_V2); E.pruneRunBackups(localStorage); setMenu("in_run"); }}>點燃第一盞燈</button>
                 </div>
               </div>
             </motion.section>

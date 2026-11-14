@@ -1,3 +1,4 @@
+import {instantKillChance} from '../../battle/instantKillChance';
 // 原廠 BOSS 特性（BWIKI「赛尔号PVE概论」==BOSS特性==）的通用效果實作。
 // 特性＝異常資料庫的 BOSS_ONLY 狀態（src/effects/bossTraitStatuses.ts，資料 src/data/bossTraits.ts）；
 // 這裡只讀「持有者身上有哪些特性狀態」與參數（狀態實例 metadata.params，缺值用預設），不認精靈、不分 P1／P2。
@@ -179,9 +180,9 @@ const H: Record<string, Handler> = {
   instakill: (c, ev, d, p, def) => {
     if (ev !== EffectTiming.AFTER_DAMAGE || !d?.isIncoming || !d.isCrit || !isSkillDamageType(String(d.damageType)) || !d.attackerSide) return;
     const foe: any = c.target;
-    if (!alive(foe) || !chance(c, "instakill", p.x)) return;
+    if (!alive(foe) || !instantKillChance(c, "boss:instakill", num(p.x,100), d.attackerSide)) return;
     note(c, def, `受到致命一擊，對手體力歸 0！`);
-    c.applyTrueDamage(d.attackerSide, (foe.currentHp || 0) + (foe.shield || 0) + (foe.barrier || 0), "秒殺");
+    c.applyInstantKill?.(d.attackerSide, "秒殺");
   },
   awaken: (c, ev, _d, p, def) => {
     if (ev !== EffectTiming.ROUND_END || !alive(c.self) || c.self.currentHp >= c.self.maxHp * num(p.x, 30) / 100 || bossTraitsOf(c.self).some(t => t.key === "power")) return;

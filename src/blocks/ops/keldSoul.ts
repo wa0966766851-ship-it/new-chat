@@ -32,7 +32,7 @@ export function keldSoulConditionIssue(c: Record<string, any>): string | undefin
 export function keldSoulEvalCond(ctx: BattleEventContext, c: Record<string, any>): boolean | undefined {
   const data = (ctx as any).effectEventData || (c as any).st?.event?.data || {};
   if (c?.c === 'event_damage_type') {
-    const raw = String(data.damageType || data.rawDamageType || '');
+    const raw = String(data.damageType || data.rawDamageType || data.damageComp?.damageCategory || data.damageCategory || '');
     const t = c.p.type;
     if (t === '真實') return /true/.test(raw);
     if (t === '非真實') return raw && !/true/.test(raw);

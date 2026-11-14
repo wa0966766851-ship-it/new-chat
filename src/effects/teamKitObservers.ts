@@ -8,6 +8,12 @@ import { checkElfDead } from '../battle/elfAlive';
 
 /** 正式事件的出戰背包觀察者。源持有者、事件主體與真正active分開。 */
 const events: Record<string, string> = {
+  [EffectTiming.BEFORE_DAMAGE]:'team_before_damage',[EffectTiming.ACTION_FAILED]:'team_action_failed',
+  [EffectTiming.STAT_CHANGED]:'team_stat_changed',
+  [EffectTiming.OPPONENT_DAMAGE]:'team_damage_settled',
+  [EffectTiming.MODIFY_PRIORITY]:'team_modify_priority',[EffectTiming.SKILL_SELECTED]:'team_skill_selected',
+  [EffectTiming.ACTION_PHASE_ENTER]: 'team_action_phase_enter',
+  [EffectTiming.MODIFY_STATUS_MECHANIC]: 'team_status_mechanic',
   [EffectTiming.BATTLE_START]: 'team_battle_start', [EffectTiming.ELF_ENTERED]: 'team_entrance',
   [EffectTiming.AFTER_ACTION]: 'team_after_action', [EffectTiming.ROUND_END]: 'team_round_end',
   [EffectTiming.BEFORE_STATUS_APPLY]: 'team_before_status', [EffectTiming.SELF_STATUS_APPLIED]: 'team_status_received',
@@ -20,6 +26,7 @@ const executing = new Set<string>();
 export function notifyTeamKitObservers(ctx: BattleEventContext, event: string, data: any = {}) {
   const trig = events[event], node = TEAM_KIT_TRIGGERS[trig];
   if (!node || !ctx.contextForElf || !ctx.getFullTeam) return;
+  if(event===EffectTiming.BEFORE_DAMAGE && !(data.damageComp||data).isIncoming)return;
   if(event===EffectTiming.DEATH_NODE_1&&data.node!==undefined&&data.node!==1)return;
   // 替換異常須早於各種免疫；既有受方魂印晚期通知不能再觸發一次。
   if (event === EffectTiming.BEFORE_STATUS_APPLY && data?.teamObserverPhase !== 'beforeImmunity') return;
@@ -29,8 +36,10 @@ export function notifyTeamKitObservers(ctx: BattleEventContext, event: string, d
     if (ctx.actor !== data.enteredSide || idOf(ctx.self) !== idOf(active)) return;
   } else if (![EffectTiming.BEFORE_STATUS_APPLY, EffectTiming.SELF_STATUS_APPLIED, EffectTiming.DEATH_NODE_1].includes(event as EffectTiming)
     && idOf(ctx.self) !== idOf(active)) return;
-  const sides: ('p1'|'p2')[] = event === EffectTiming.ELF_ENTERED ? ['p1','p2'] : [ctx.actor];
+  const sides: ('p1'|'p2')[] = [EffectTiming.STAT_CHANGED,EffectTiming.OPPONENT_DAMAGE,EffectTiming.ELF_ENTERED,EffectTiming.SELF_STATUS_APPLIED,EffectTiming.SKILL_SELECTED,EffectTiming.MODIFY_PRIORITY].includes(event as EffectTiming) ? ['p1','p2'] : [ctx.actor];
   for (const side of sides) for (const owner of ctx.getFullTeam(side) || []) {
+    // 敵方收到異常使用獨立觸發，不能重播原本只觀察己方的條款。
+    const ownerTrig=side!==ctx.actor ? ({[EffectTiming.OPPONENT_DAMAGE]:'team_opponent_damage_settled',[EffectTiming.SELF_STATUS_APPLIED]:'team_opponent_status_received',[EffectTiming.MODIFY_PRIORITY]:'team_opponent_modify_priority',[EffectTiming.SKILL_SELECTED]:'team_opponent_skill_selected'} as Record<string,string>)[event]||trig : trig;
     if (owner.isExtra) continue;
     const field=side==='p1'?ctx.activeP1:ctx.activeP2;
     if(idOf(owner)!==idOf(field)&&portableSkillCapabilities(field).suppressBenchEffects)continue;
@@ -41,7 +50,7 @@ export function notifyTeamKitObservers(ctx: BattleEventContext, event: string, d
       if (!def || def.effectMode !== 'kit') continue;
       const identity = JSON.stringify([def.name, def.description]);
       if (seen.has(identity)) continue; seen.add(identity);
-      const kit = def.kit?.filter(e => e.codeId === 'effect_sequence' && e.params.clause?.trig === trig
+      const kit = def.kit?.filter(e => e.codeId === 'effect_sequence' && e.params.clause?.trig === ownerTrig
         && ((!checkElfDead(owner) && !owner.isVanished) || e.params.clause?.observer?.includeDead === true));
       if (!kit?.length) continue;
       const key = JSON.stringify([side,idOf(owner),identity,event]);

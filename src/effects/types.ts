@@ -5,6 +5,10 @@ import type { SettlementOptions } from '../battle/settlementReceipt';
 import type {StatusOrigin} from '../battle/statusOrigin';
 
 export enum EffectTiming {
+  STAT_CHANGED = "STAT_CHANGED",
+  BATTLE_NODE = "BATTLE_NODE",
+  /** 每次合法技能行動進入出手階段；先於控制判定，不代表成功使用技能。 */
+  ACTION_PHASE_ENTER = "ACTION_PHASE_ENTER",
   SKILL_SELECTED = "SKILL_SELECTED",
   /** 開局1.1：通知雙方存活的完整出戰背包持有者，先於首發登場；每場一次。 */
   BATTLE_START = "BATTLE_START",
@@ -17,8 +21,11 @@ export enum EffectTiming {
   AFTER_DAMAGE = "AFTER_DAMAGE",
   AFTER_ATTACK_HIT = "AFTER_ATTACK_HIT",
   MODIFY_POWER = "MODIFY_POWER",
+  MODIFY_STATUS_MECHANIC = "MODIFY_STATUS_MECHANIC",
   BEFORE_STATUS_TICK = "BEFORE_STATUS_TICK",
   ON_STATUS_ENDED = "ON_STATUS_ENDED",
+  /** 反彈的異常已實際附加成功；免疫或附加失敗不派送。 */
+  STATUS_REFLECTED = "STATUS_REFLECTED",
   SELF_STATUS_APPLIED = "SELF_STATUS_APPLIED",
   ON_ENTRANCE = "ON_ENTRANCE",
   BEFORE_ACTION = "BEFORE_ACTION",
@@ -233,7 +240,11 @@ export interface BattleEventContext {
   /** 從指定陣營背包扣一瓶並立即使用；recipient預設自己，空庫存不偽造回復。 */
   useBattleItem?: (inventorySide: 'p1' | 'p2', itemId: string, recipient?: 'p1' | 'p2', picked?: { side: 'p1' | 'p2'; battleId: string }) => boolean;
   /** 通用：把道具放入指定陣營的道具欄位（不超過持有上限）。 */
-  grantBattleItem?: (inventorySide: 'p1' | 'p2', itemId: string, count?: number) => boolean;
+  grantBattleItem?: (inventorySide: 'p1' | 'p2', itemId: string, count?: number, snapshot?: import('../battle/itemInventory').BattleItemSnapshot) => boolean;
+  /** 實際陣營道具欄的即時副本，包含持有量與加入時紀錄。 */
+  getBattleItem?: (inventorySide: 'p1' | 'p2', itemId: string) => import('../battle/itemInventory').BattleItemEntry | undefined;
+  /** 原子轉化：從實際庫存扣一個原形態並依序加入一個可用形態；失敗不扣除。 */
+  convertBattleItem?: (inventorySide: 'p1' | 'p2', fromId: string, intoIds: string[]) => boolean;
   /** 指定持有者的通用事件，不偷換成當前操作方。 */
   emitElfEvent?: (side: 'p1' | 'p2', owner: Elf, event: EffectTiming, data: Record<string, unknown>) => void;
   /** 指定持有者的正式上下文，保留個體狀態銀行；不能用場上精靈上下文冒充場下持有者。 */
@@ -260,6 +271,8 @@ export interface BattleEventContext {
   goesFirst?: boolean;
   /** 僅本次命中後入口提供：主技能傷害實際扣除的HP，不含附加傷害。 */
   mainSkillHpReduced?: number;
+  /** 主技能正式結算值，含盾罩吸收；不含附加傷害。 */
+  mainSkillSettledAmount?: number;
   /** 本次固有使用條款已在命中閘門前執行，技能runner不得重播。 */
   innateSkillUseHandled?: boolean;
   mainSkillReduction?: import("../battle/damageReductionReceipt").DamageReductionReceipt;
@@ -267,6 +280,7 @@ export interface BattleEventContext {
   currentPhase?: string;
   skill: any;
   opponentSkill?: Skill | null;
+  effectDefinitionName?: string; // 當前技能／魂印／特質容器，供來源隔離與延後效果使用
   isHit?: boolean;
   moveIndex?: number;
   activeP1: Elf;
@@ -297,6 +311,8 @@ export interface BattleEventContext {
   setOpponentState: (key: string, val: any) => void;
   
   applyHeal: (side: "p1" | "p2", amount: number, opts?: SettlementOptions) => void;
+  /** 藥劑反噬傷害（只能由藥劑附加）：無視傷害減免／限制，綠字黃框負數。targetId 省略＝在場精靈。 */
+  applyPotionBacklashDamage?: (side: "p1" | "p2", amount: number, label?: string, targetId?: string) => void;
   /** opts.fromNonPositive：允許體力 ≤0 者被「設定」為正值（通用旗標；maxHp≤0 的消逝者仍不生效）。 */
   adjustHp: (side: "p1" | "p2", amount: number, opts?: { fromNonPositive?: boolean }) => void;
   /** 回傳實際變化量（舊呼叫端可忽略回傳值） */
@@ -319,7 +335,7 @@ export interface BattleEventContext {
   trackCodeExec: (blockName: string, description: string, codeSnippet: string) => void;
   
   // Utilities
-  clearTurnEffectsOf: (side: "p1" | "p2", elf?: Elf) => boolean;
+  clearTurnEffectsOf: (side: "p1" | "p2", elf?: Elf, polarity?:'positive') => boolean;
   hasTurnEffectOn: (side: "p1" | "p2") => boolean;
   addTimerTo: (side: "p1" | "p2", timer: Timer, isLateMover: boolean) => void;
   consumeTimer?: (side: "p1" | "p2", id: string) => void;

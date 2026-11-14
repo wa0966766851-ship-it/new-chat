@@ -1,4 +1,5 @@
-﻿import {retainShield} from './markCapabilities';
+import { itemRestrictions } from './actionRestrictions';
+import {retainShield} from './markCapabilities';
 import { runExtraElfNode, killExtraElf } from './extraElfKit';
 import { queueAttachedAttackDamage } from './attachedAttackDamage';
 import {portableSkillCapabilities,portableShieldPatch} from './portableSkillMarks';
@@ -10,12 +11,14 @@ import { trackIllusionStatWrite } from './illusionStats';
 import { trackNativeRegistryWrite } from './acquiredEffectContext';
 import { buildEffectOrigin } from './effectOrigin';
 import { normalizePpPatch } from './ppTransitions';
-import { applyBattleItem, consumeBattleItem, grantBattleItem } from './itemInventory';
+import { applyBattleItem, consumeBattleItem, grantBattleItem, readBattleItem, convertBattleItem } from './itemInventory';
+import {battleItemProgramIssue,runBattleItemProgram} from '../effects/battleItemProgram';
+import {applyHeldDamageModifiers,guardHeldMaximumHp,syncHeldDeathFloor} from './heldItemModifiers';
 import { findBagElf } from './bagTargets';
 import { BATTLE_ITEMS, isElfItemDisabled } from '../utils/battleHelpers';
 import { capCurrentHp } from './hpCeiling';
 import { applyAdvancedDamageModifiers, applyOutgoingSkillRestriction } from './advancedDamageModifiers';
-import { reductionPolicy, multiplyDamageReduction, applyStatusDamageModifiers, applyMarkDamageReductions, finalizeDamageReductions } from './damageReduction';
+import { reductionPolicy, multiplyDamageReduction, applyStatusDamageModifiers, applyMarkDamageReductions, finalizeDamageReductions, limitIncomingDamage } from './damageReduction';
 import { activeConstraints } from './timedConstraints';
 import { blocksStatusInfliction } from './statusOrigin';
 import { attackDefenseBypass, applyAttackDefenseLimit } from './attackDefense';
@@ -30,6 +33,7 @@ import { isNonTrueDamageType, normalizeDamageType } from './damageSemantics';
 import React, { MutableRefObject, Dispatch } from "react";
 import { Elf, Skill } from "../types";
 import { Mark, bindMarkToElf, markAppliesToElf } from "./marks";
+import {markCapability} from './markCapabilities';
 import { BattleState, BattleAction, EffectItem } from "../components/BattleManager";
 import { BattleEventContext, EffectTiming, DamageComputation, PriorityComputation } from "../effects/types";
 import { Timer } from "./timers";
@@ -87,10 +91,10 @@ export interface SharedContextDeps {
   skill: Skill | null;
 }
 
-export type DamageAPIs = Pick<BattleEventContext, "applyInstantKill" | "applyPinkDamage" | "applyTrueDamage" | "applySkillTypeDamage" | "applyAbsorb" | "applyHeal" | "adjustHp" | "applyPercentDamage" | "applyFixedDamage">;
+export type DamageAPIs = Pick<BattleEventContext, "applyInstantKill" | "applyPinkDamage" | "applyTrueDamage" | "applySkillTypeDamage" | "applyAbsorb" | "applyHeal" | "applyPotionBacklashDamage" | "adjustHp" | "applyPercentDamage" | "applyFixedDamage">;
 export type StatusAPIs = Pick<BattleEventContext, "applyStatusWithImmunityCheck" | "getStatuses" | "clearTurnEffectsOf" | "hasTurnEffectOn" | "applyStatChange" | "applyShield">;
 export type StateAPIs = Pick<BattleEventContext, 
-  "useBattleItem" | "grantBattleItem" | "applyDeathImmunity" | "vanishElf" | "addExtraElf" | "killExtraElf" | "setMark" | "clearMark" | "getMarks" | "getAllMarks" | "addTimerTo" | "consumeTimer" | "queueExtraAction" | "updateElf" | "updateAnyElf" | "emitElfEvent" | "contextForElf" |
+  "useBattleItem" | "grantBattleItem" | "getBattleItem" | "convertBattleItem" | "applyDeathImmunity" | "vanishElf" | "addExtraElf" | "killExtraElf" | "setMark" | "clearMark" | "getMarks" | "getAllMarks" | "addTimerTo" | "consumeTimer" | "queueExtraAction" | "updateElf" | "updateAnyElf" | "emitElfEvent" | "contextForElf" |
   "getPlayerState" | "setPlayerState" | "getOpponentState" | "setOpponentState" |
   "shuffleArray" | "getEligibleTeam" | "getFullTeam" | "getFirstStarter" | "getNthElf" | "getAdjacentElves" | "getSeparatedElves" | "trackCodeExec" | "setNextTurns"
 >;
@@ -100,9 +104,11 @@ function runDamageHooks(shared: SharedContextDeps, targetSide: 'p1' | 'p2', comp
   comp.sourceSide = shared.side;
   if(targetSide!==shared.side && readScopedRegistry(shared.syncStateRef.current,shared.side,shared.self,'blkIgnoreBlock'))comp.ignoreDamageBlocking=true;
   if (targetSide !== shared.side) comp.attackDefenseBypass = attackDefenseBypass(shared.self, {
+    ignoreDamageConversionThisAction: readScopedRegistry(shared.syncStateRef.current,shared.side,shared.self,'ignoreDamageConversionThisAction'),
     attackDefenseBypassUntilSwitch: readScopedRegistry(shared.syncStateRef.current, shared.side, shared.self, 'attackDefenseBypassUntilSwitch'),
   }, comp.damageCategory);
   comp.reductionPolicy = reductionPolicy(shared.syncStateRef.current, targetSide, shared.syncStateRef.current[targetSide], comp.damageCategory);
+  if(targetSide!==shared.side && /^skill_/.test(comp.damageCategory) && readScopedRegistry(shared.syncStateRef.current,shared.side,shared.self,'ignoreDamageReductionThisAction')===true)comp.reductionPolicy={...comp.reductionPolicy,attenuation:0};
   if (targetSide !== shared.side) applyAlienDoubleDamage(comp, shared.self, shared.syncStateRef.current[targetSide]);
   // 獨立乘區與巢狀傷害可略過一般增減傷，仍須遵守造成者自己的輸出上限。
   for(const {block:b} of activeConstraints(scopedTimers(shared.syncStateRef.current,shared.side,shared.self),shared.self)){
@@ -171,6 +177,7 @@ export function buildDamageAPIs(shared: SharedContextDeps): DamageAPIs {
 
       runDamageHooks(shared, tSide, damageComp);
       applyStatusDamageModifiers(damageComp, syncStateRef.current[side], syncStateRef.current[tSide]);
+      applyHeldDamageModifiers(damageComp,syncStateRef.current,side,tSide,syncStateRef.current[side],syncStateRef.current[tSide]);
 
       // Scan actor's marks for nonTrueDamageDealtMultiplier
       const actorSide = side;
@@ -228,7 +235,7 @@ export function buildDamageAPIs(shared: SharedContextDeps): DamageAPIs {
       finalizeDamageReductions(damageComp, syncStateRef.current, tSide, syncStateRef.current[tSide]);
       const stage1 = damageComp.base * (1 + damageComp.increasePercent) * Math.max(0, 1 - damageComp.decreasePercent);
       const stage2 = Math.max(0, stage1 * damageComp.multiplier - (damageComp.flatReduction || 0));
-      const stage3 = damageComp.limit !== undefined ? Math.min(stage2, damageComp.limit) : stage2;
+      const stage3 = limitIncomingDamage(damageComp,stage2);
       const finalDamage = resolveDamageBlocking(damageComp,Math.min(damageComp.outgoingLimit ?? Infinity, floorDamage(damageComp.floor !== undefined ? Math.max(stage3, damageComp.floor) : Math.max(0, stage3))));
 
       notifyDamageCalculation(opts,damageComp,amt,finalDamage);
@@ -240,7 +247,7 @@ export function buildDamageAPIs(shared: SharedContextDeps): DamageAPIs {
           SoulMarkRegistry[immTarget?.name]?.(immCtx, EffectTiming.DAMAGE_IMMUNIZED, { damageType: damageComp.damageCategory, blockedAmount: amt, targetSide: tSide, holderSide: tSide });
         } catch (e) { console.error('[DAMAGE_IMMUNIZED]', e); }
       }
-      pushEffect({ type: 'damage', side: tSide, data: { marksApplied: true, amount: finalDamage, requestedAmount: amt, onSettled: combineSettlementCallbacks(opts?.onSettled, damageComp.afterDamage), label: label || "附加傷害", popup: true, sourceElfName: self.name, sourceSide:side, sourceBattleId:self.battleId||self.id, damageType: damageComp.damageCategory, attackDefenseBypass: damageComp.attackDefenseBypass, reductionPolicy: damageComp.reductionPolicy, ignoreShield: !!damageComp.attackDefenseBypass?.shield } });
+      pushEffect({ type: 'damage', side: tSide, data: { marksApplied: true, amount: finalDamage, requestedAmount: amt, minimumRemainingHp:opts?.minimumRemainingHp, onSettled: combineSettlementCallbacks(opts?.onSettled, damageComp.afterDamage), label: label || "附加傷害", popup: true, sourceElfName: self.name, sourceSide:side, sourceBattleId:self.battleId||self.id, damageType: damageComp.damageCategory, attackDefenseBypass: damageComp.attackDefenseBypass, reductionPolicy: damageComp.reductionPolicy, ignoreShield: !!damageComp.attackDefenseBypass?.shield } });
       return finalDamage;
     },
     applySkillTypeDamage: (tSide, amt, label, opts) => {
@@ -252,7 +259,8 @@ export function buildDamageAPIs(shared: SharedContextDeps): DamageAPIs {
       const elemType = opts?.elem || self.type;
       let typeMultiplier: number | undefined;
       if (opts?.applyTypeMatchup !== false && elemType && tOpp.type) {
-        const typeMult = statusTypeMultiplier(self,skillTypeMultiplier(c[`${side}RegistryState`], elemType, tOpp.type));
+        let typeMult = statusTypeMultiplier(self,skillTypeMultiplier(c[`${side}RegistryState`], elemType, tOpp.type));
+        if(markCapability(self,'typeAdvantageDisabled',syncStateRef.current[`${side}Marks`])>0)typeMult=Math.min(1,typeMult);
         typeMultiplier = typeMult;
         baseVal = Math.floor(baseVal * typeMult);
       }
@@ -275,6 +283,7 @@ export function buildDamageAPIs(shared: SharedContextDeps): DamageAPIs {
 
       runDamageHooks(shared, tSide, damageComp);
       applyStatusDamageModifiers(damageComp, syncStateRef.current[side], syncStateRef.current[tSide]);
+      applyHeldDamageModifiers(damageComp,syncStateRef.current,side,tSide,syncStateRef.current[side],syncStateRef.current[tSide]);
 
       // 2026-10-31：無序·蝕言「對手選擇特殊攻擊時…每次造成技能傷害減少1%」。
       // 額外行動／附加技能傷害不走 calculateDamage，需在此套用同一條減傷。
@@ -345,7 +354,7 @@ export function buildDamageAPIs(shared: SharedContextDeps): DamageAPIs {
       finalizeDamageReductions(damageComp, syncStateRef.current, tSide, syncStateRef.current[tSide]);
       const stage1 = damageComp.base * (1 + damageComp.increasePercent) * Math.max(0, 1 - damageComp.decreasePercent);
       const stage2 = Math.max(0, stage1 * damageComp.multiplier - (damageComp.flatReduction || 0));
-      const stage3 = damageComp.limit !== undefined ? Math.min(stage2, damageComp.limit) : stage2;
+      const stage3 = limitIncomingDamage(damageComp,stage2);
       const finalDamage = resolveDamageBlocking(damageComp,Math.min(damageComp.outgoingLimit ?? Infinity, floorDamage(damageComp.floor !== undefined ? Math.max(stage3, damageComp.floor) : Math.max(0, stage3))));
 
       if (opts?.appendToAttack && shared.skill && shared.skill.category !== '屬性' && tSide !== side) {
@@ -373,6 +382,7 @@ export function buildDamageAPIs(shared: SharedContextDeps): DamageAPIs {
 
       runDamageHooks(shared, tSide, damageComp);
       applyStatusDamageModifiers(damageComp, syncStateRef.current[side], syncStateRef.current[tSide]);
+      applyHeldDamageModifiers(damageComp,syncStateRef.current,side,tSide,syncStateRef.current[side],syncStateRef.current[tSide]);
 
       const actorSide = side;
       applyActiveGateTimersToDamage(actorSide, tSide, damageComp, pushEffect, syncStateRef, { side, moveIndex });
@@ -386,7 +396,7 @@ export function buildDamageAPIs(shared: SharedContextDeps): DamageAPIs {
       // 真實傷害不受傷害上限與保底影響（使用者確認 2026-10-11）；自身輸出上限（黯痕等）仍適用
       const finalDamage = resolveDamageBlocking(damageComp,Math.min(damageComp.outgoingLimit ?? Infinity, floorDamage(Math.max(0, stage2))));
 
-      pushEffect({ type: 'damage', side: tSide, data: { marksApplied: true, amount: finalDamage, reductionPolicy: damageComp.reductionPolicy, requestedAmount: amt, onSettled: combineSettlementCallbacks(opts?.onSettled, damageComp.afterDamage), label, popup: true, sourceElfName: self.name, sourceSide:side, sourceBattleId:self.battleId||self.id, damageType: "true" } });
+      pushEffect({ type: 'damage', side: tSide, data: { marksApplied: true, amount: finalDamage, reductionPolicy: damageComp.reductionPolicy, requestedAmount: amt, minimumRemainingHp:opts?.minimumRemainingHp, onSettled: combineSettlementCallbacks(opts?.onSettled, damageComp.afterDamage), label, popup: true, sourceElfName: self.name, sourceSide:side, sourceBattleId:self.battleId||self.id, damageType: "true" } });
       return finalDamage;
     },
     applyAbsorb: (tSide, amt, label = "汲取",opts) => {
@@ -396,6 +406,8 @@ export function buildDamageAPIs(shared: SharedContextDeps): DamageAPIs {
       getBattleEventContext(actorSide, true, moveIndex).applyHeal(actorSide, actualDmg,opts);
     },
     applyHeal: (tSide, amt, opts) => pushEffect({ type: 'heal', side: tSide, data: { amount: Math.floor(amt), ...opts } }),
+    // 藥劑反噬傷害：只供藥劑結算（battle/itemInventory.ts）使用；無視減免與限制，獨立傷害類型。
+    applyPotionBacklashDamage: (tSide, amt, label, targetId) => pushEffect({ type: 'potion_damage', side: tSide, data: { amount: Math.max(0, Math.floor(amt)), label: label || '藥劑反噬傷害', targetId, damageType: 'potion_backlash', sourceSide: side, sourceBattleId: self.battleId || self.id } }),
     adjustHp: (tSide, amt, opts) => pushEffect({ type: 'adjust_hp', side: tSide, data: { amount: Math.floor(amt), ...(opts?.fromNonPositive ? { fromNonPositive: true } : {}) } }),
     applyInstantKill:(targetSide,label,opts)=>queueInstantKill(shared.getBattleEventContext(side,true,shared.moveIndex,self),targetSide,label,opts,pushEffect),
     applyPercentDamage: (tSide, p) => {
@@ -415,6 +427,7 @@ export function buildDamageAPIs(shared: SharedContextDeps): DamageAPIs {
 
       runDamageHooks(shared, tSide, damageComp);
       applyStatusDamageModifiers(damageComp, syncStateRef.current[side], syncStateRef.current[tSide]);
+      applyHeldDamageModifiers(damageComp,syncStateRef.current,side,tSide,syncStateRef.current[side],syncStateRef.current[tSide]);
 
       // Scan actor's marks for nonTrueDamageDealtMultiplier
       const actorSide = side;
@@ -478,7 +491,7 @@ export function buildDamageAPIs(shared: SharedContextDeps): DamageAPIs {
       finalizeDamageReductions(damageComp, syncStateRef.current, tSide, syncStateRef.current[tSide]);
       const stage1 = damageComp.base * (1 + damageComp.increasePercent) * Math.max(0, 1 - damageComp.decreasePercent);
       const stage2 = Math.max(0, stage1 * damageComp.multiplier - (damageComp.flatReduction || 0));
-      const stage3 = damageComp.limit !== undefined ? Math.min(stage2, damageComp.limit) : stage2;
+      const stage3 = limitIncomingDamage(damageComp,stage2);
       const finalDamage = resolveDamageBlocking(damageComp,Math.min(damageComp.outgoingLimit ?? Infinity, floorDamage(damageComp.floor !== undefined ? Math.max(stage3, damageComp.floor) : Math.max(0, stage3))));
 
       pushEffect({ type: 'damage', side: tSide, data: { marksApplied: true, amount: finalDamage, reductionPolicy: damageComp.reductionPolicy, onSettled: damageComp.afterDamage, label: "百分比傷害", popup: true, sourceElfName: self.name, sourceSide:side, sourceBattleId:self.battleId||self.id, damageType: "percent" } });
@@ -502,6 +515,7 @@ export function buildDamageAPIs(shared: SharedContextDeps): DamageAPIs {
 
       runDamageHooks(shared, tSide, damageComp);
       applyStatusDamageModifiers(damageComp, syncStateRef.current[side], syncStateRef.current[tSide]);
+      applyHeldDamageModifiers(damageComp,syncStateRef.current,side,tSide,syncStateRef.current[side],syncStateRef.current[tSide]);
 
       // Scan actor's marks for nonTrueDamageDealtMultiplier
       const actorSide = side;
@@ -565,7 +579,7 @@ export function buildDamageAPIs(shared: SharedContextDeps): DamageAPIs {
       finalizeDamageReductions(damageComp, syncStateRef.current, tSide, syncStateRef.current[tSide]);
       const stage1 = damageComp.base * (1 + damageComp.increasePercent) * Math.max(0, 1 - damageComp.decreasePercent);
       const stage2 = Math.max(0, stage1 * damageComp.multiplier - (damageComp.flatReduction || 0));
-      const stage3 = damageComp.limit !== undefined ? Math.min(stage2, damageComp.limit) : stage2;
+      const stage3 = limitIncomingDamage(damageComp,stage2);
       const finalDamage = resolveDamageBlocking(damageComp,Math.min(damageComp.outgoingLimit ?? Infinity, floorDamage(damageComp.floor !== undefined ? Math.max(stage3, damageComp.floor) : Math.max(0, stage3))));
 
       pushEffect({ type: 'damage', side: tSide, data: { marksApplied: true, amount: finalDamage, reductionPolicy: damageComp.reductionPolicy, onSettled: damageComp.afterDamage, label: label || "固定傷害", popup: true, sourceElfName: self.name, sourceSide:side, sourceBattleId:self.battleId||self.id, damageType: "fixed" } });
@@ -638,7 +652,10 @@ export function buildStatusAPIs(shared: SharedContextDeps): StatusAPIs {
       // Check active gate timers on target side for wraps === "immune"
       const targetTimers = scopedTimers(c,tSide,target);
       // 次數型異常轉化先於免疫／反彈；轉化後以自身來源附加，避免再次攔截同一個事件。
-      const conversion=tSide!==side?targetTimers.find(t=>t.remaining>0&&!t.pendingActivation&&t.payload?.block?.statusConversion):undefined;
+      const conversion=targetTimers.find(t=>{
+        const rule=t.payload?.block?.statusConversion;
+        return t.remaining>0&&!t.pendingActivation&&rule&&(rule.fromStatus?canonicalStatusName(rule.fromStatus)===s:tSide!==side);
+      });
       if(conversion){
         const receiver=targetContext();receiver.consumeTimer?.(tSide,conversion.id);
         return receiver.applyStatusWithImmunityCheck(tSide,conversion.payload!.block.statusConversion.status,d);
@@ -671,12 +688,14 @@ export function buildStatusAPIs(shared: SharedContextDeps): StatusAPIs {
           pushEffect({ type: 'log', side: tSide, data: { text: `🔁 【反彈異常】：【${target.name}】將【${s}】反彈給對手！`, type: "effect" } });
           _reflectingStatus = true;
           _reflectHookDepth++;
+          let reflectedSuccess = false;
           try {
-            targetContext().applyStatusWithImmunityCheck(side, s, d,undefined,self.battleId||self.id);
+            reflectedSuccess = targetContext().applyStatusWithImmunityCheck(side, s, d,undefined,self.battleId||self.id)?.success === true;
           } finally {
             _reflectingStatus = false;
             _reflectHookDepth--;
           }
+          if(reflectedSuccess)targetContext().emitElfEvent?.(tSide,target,EffectTiming.STATUS_REFLECTED,{status:s,sourceSide:tSide,targetSide:side,targetBattleId:self.battleId||self.id});
           return { success: false, immune: true };
         }
         const immunityTimer = protectionTimers.find(t => (t.payload?.immuneStatus || t.payload?.reflectStatus) && acceptsStatus(t));
@@ -706,8 +725,10 @@ export function buildStatusAPIs(shared: SharedContextDeps): StatusAPIs {
         filterCtx.consumeTimer?.(tSide, countTimer.id);
         if (countTimer.payload!.statusImmunityCount.reflect && tSide !== side && !_reflectingStatus && _reflectHookDepth === 0) {
           _reflectingStatus = true; _reflectHookDepth++;
-          try { filterCtx.applyStatusWithImmunityCheck(side, s, d, undefined, self.battleId || self.id); }
+          let reflectedSuccess=false;
+          try { reflectedSuccess=filterCtx.applyStatusWithImmunityCheck(side, s, d, undefined, self.battleId || self.id)?.success===true; }
           finally { _reflectingStatus = false; _reflectHookDepth--; }
+          if(reflectedSuccess)filterCtx.emitElfEvent?.(tSide,target,EffectTiming.STATUS_REFLECTED,{status:s,sourceSide:tSide,targetSide:side,targetBattleId:self.battleId||self.id});
         } else notifyImmunized('immuneCount');
         return { success: false, immune: true };
       }
@@ -717,8 +738,10 @@ export function buildStatusAPIs(shared: SharedContextDeps): StatusAPIs {
         filterCtx.setPlayerState(key, (reflectCount > 0 ? reflectCount : immuneCount) - 1);
         if (reflectCount > 0 && tSide !== side && !_reflectingStatus && _reflectHookDepth === 0) {
           _reflectingStatus = true; _reflectHookDepth++;
-          try { filterCtx.applyStatusWithImmunityCheck(side, s, d,undefined,self.battleId||self.id); }
+          let reflectedSuccess=false;
+          try { reflectedSuccess=filterCtx.applyStatusWithImmunityCheck(side, s, d,undefined,self.battleId||self.id)?.success===true; }
           finally { _reflectingStatus = false; _reflectHookDepth--; }
+          if(reflectedSuccess)filterCtx.emitElfEvent?.(tSide,target,EffectTiming.STATUS_REFLECTED,{status:s,sourceSide:tSide,targetSide:side,targetBattleId:self.battleId||self.id});
         }
         if (reflectCount <= 0) notifyImmunized("immuneCount");
         return { success: false, immune: true };
@@ -762,6 +785,7 @@ export function buildStatusAPIs(shared: SharedContextDeps): StatusAPIs {
 
       const filtered = sovereignStatus ? { handled: false } : TraitsEngine.filterStatusInflict(filterCtx, tSide, s, d);
       if (filtered.handled) {
+        if ("resistanceTriggered" in filtered && filtered.resistanceTriggered) notifyImmunized("resistance");
         if (!filtered.overrideStatus) {
            // §47: Suit／魂印 ON_STATUS_IMMUNIZED（特性免疫）
            notifyImmunized("trait");
@@ -771,7 +795,9 @@ export function buildStatusAPIs(shared: SharedContextDeps): StatusAPIs {
         d = filtered.overrideDuration ?? d;
       }
 
-      const isLate = (moveIndex === 1 && tSide === side);
+      // 後手對自身附加：當回合收益已錯過，延後一回合扣減（共用補償，例：狂暴）。
+      // 2026-11-14：控制類例外——自身控制從附加當回合起算、回合結束照常扣減（例：石契自身石化1回合）。
+      const isLate = moveIndex === 1 && tSide === side && !StatusRegistry[s]?.categories?.includes('CONTROL');
       const latestTarget = syncStateRef.current[`${tSide}Team`].find(e=>(e.battleId||e.id)===targetId);
       if(!latestTarget)return {success:false,immune:false};
       const existingEffects = latestTarget.effects || [];
@@ -831,9 +857,9 @@ export function buildStatusAPIs(shared: SharedContextDeps): StatusAPIs {
       })(); } finally { _statusApplyDepth--; }
     },
     getStatuses: (e) => getStatuses(e),
-    clearTurnEffectsOf: (s) => {
+    clearTurnEffectsOf: (s,elf,polarity) => {
       const c = syncStateRef.current;
-      const protectedElf = recipient(c,s);
+      const protectedElf = elf || recipient(c,s);
       if (protectedElf?.ownTurnEffectsUnclearable) {
         pushEffect({ type: 'log', side: s, data: { text: `⚡ 【專屬特質】：【${protectedElf.name}】的回合類效果無法被消除！`, type: "effect" } });
         return false;
@@ -845,7 +871,7 @@ export function buildStatusAPIs(shared: SharedContextDeps): StatusAPIs {
         pushEffect({ type: 'log', side: s, data: { text: `🛡️ 【${protectedElf?.name}】的回合類效果無法被消除！`, type: 'effect' } });
         return false;
       }
-      const result=clearScopedTurnEffects(c,s,protectedElf),removed=result.removed,cleared=removed.length;
+      const result=clearScopedTurnEffects(c,s,protectedElf,polarity),removed=result.removed,cleared=removed.length;
       const zeroKeys: Record<string, any> = {};
       const removedRegistry:Record<string,any>={};
       for (const t of removed) for (const k of (t.payload?.mirrorRegistryKeys || [])) zeroKeys[k] = 0;
@@ -943,6 +969,7 @@ export function buildStatusAPIs(shared: SharedContextDeps): StatusAPIs {
         getBattleEventContext(tSide, true, 0,target).applyStatusWithImmunityCheck(otherSide, "麻痺", turns);
         pushEffect({ type: 'log', side: tSide, data: { text: `⚡ 【異】：自身能力等級被改變，雙方麻痺${turns}回合！`, type: "effect" } });
       }
+      if(Object.keys(applied).length)SoulMarkRegistry[nextElf.name]?.(getBattleEventContext(tSide,true,0,recipient(syncStateRef.current,tSide)),EffectTiming.STAT_CHANGED,{side:tSide,targetBattleId:nextElf.battleId||nextElf.id,sourceSide:side,applied});
       return { success: Object.keys(applied).length > 0, applied };
     },
     applyShield: (tSide, amount) => {
@@ -1037,22 +1064,34 @@ export function buildStateAPIs(shared: SharedContextDeps): StateAPIs {
         pushEffect({ type: 'log', side: tSide, data: { text: `🌌 【${updatedElf.name}】化為虛無，徹底消逝在戰場中！`, type: "defeat" } });
       }
     },
-    grantBattleItem: (inventorySide, itemId, count = 1) => {
+    getBattleItem: (inventorySide, itemId) => readBattleItem(syncStateRef.current[`${inventorySide}ItemInventory`], itemId),
+    convertBattleItem: (inventorySide, fromId, intoIds) => {
       const current = syncStateRef.current;
-      const next = grantBattleItem(current[`${inventorySide}ItemInventory`], itemId, count);
+      const next = convertBattleItem(current[`${inventorySide}ItemInventory`], fromId, intoIds);
       if (!next) return false;
       syncStateRef.current = { ...current, [`${inventorySide}ItemInventory`]: next };
       dispatch({ type: 'SET_ITEM_INVENTORY', side: inventorySide, inventory: next });
+      syncHeldDeathFloor(getBattleEventContext(inventorySide,true,moveIndex));
+      return true;
+    },
+    grantBattleItem: (inventorySide, itemId, count = 1, snapshot) => {
+      const current = syncStateRef.current;
+      const next = grantBattleItem(current[`${inventorySide}ItemInventory`], itemId, count, snapshot);
+      if (!next) return false;
+      syncStateRef.current = { ...current, [`${inventorySide}ItemInventory`]: next };
+      dispatch({ type: 'SET_ITEM_INVENTORY', side: inventorySide, inventory: next });
+      syncHeldDeathFloor(getBattleEventContext(inventorySide,true,moveIndex));
       return true;
     },
     useBattleItem: (inventorySide, itemId, recipient = side, picked) => {
       const catalogItem = BATTLE_ITEMS.find(item => item.id === itemId);
       const item = catalogItem && picked ? { ...catalogItem, picked } : catalogItem;
+      if(item&&battleItemProgramIssue(item))return false;
       const current = syncStateRef.current;
       // 需選擇對象的道具：對象不合法時不扣庫存、不產生任何效果。
       if (item?.pickTarget && !(picked && findBagElf({ p1: current.p1Team, p2: current.p2Team }, picked.side, picked.battleId))) return false;
       const holder = recipient === side ? current[`${side}Team`].find(elf => (elf.battleId || elf.id) === (self.battleId || self.id)) || current[side] : current[recipient];
-      if (!item || isElfItemDisabled(holder)) return false;
+      if (!item || isElfItemDisabled(holder) || itemRestrictions(current, recipient, holder).blocked) return false;
       const inventory = current[`${inventorySide}ItemInventory`];
       // 未配置正式庫存時只允許原模式正常使用；不能憑空偷取。
       if (!inventory && inventorySide !== recipient) return false;
@@ -1061,10 +1100,11 @@ export function buildStateAPIs(shared: SharedContextDeps): StateAPIs {
         if (!next) return false;
         syncStateRef.current = { ...current, [`${inventorySide}ItemInventory`]: next };
         dispatch({ type: 'SET_ITEM_INVENTORY', side: inventorySide, inventory: next });
+        syncHeldDeathFloor(getBattleEventContext(inventorySide,true,moveIndex));
       }
       // 星蝕回廊：藥劑的固定回復量隨層數乘 √depthMul（一般對戰＝1）；PP 回復與狀態清除不縮放
       const mul = fixedValueMul(current[recipient === 'p1' ? 'p1Relics' : 'p2Relics']);
-      return applyBattleItem(getBattleEventContext(recipient, true, moveIndex, holder), mul !== 1 && item.value ? { ...item, value: Math.round(item.value * mul) } : item, recipient);
+      return applyBattleItem(getBattleEventContext(recipient, true, moveIndex, holder), mul !== 1 && item.value ? { ...item, value: Math.round(item.value * mul) } : item, recipient,runBattleItemProgram);
     },
     setMark(this: any, m, targetSide) {
       const c = syncStateRef.current;
@@ -1147,6 +1187,7 @@ export function buildStateAPIs(shared: SharedContextDeps): StateAPIs {
       if (foundIndex < 0) return;
       const targetIndex = foundIndex;
       const target = team[targetIndex] || c[tSide];
+      elfUpdates=guardHeldMaximumHp(c,tSide,target,elfUpdates);
       elfUpdates = normalizePpPatch(trackIllusionStatWrite(target, portableShieldPatch(target,elfUpdates)));
       if(elfUpdates.shield!==undefined)elfUpdates={...elfUpdates,shield:retainShield(target,elfUpdates.shield)};
       if((target as any).maximumHealthLock){
@@ -1181,6 +1222,10 @@ export function buildStateAPIs(shared: SharedContextDeps): StateAPIs {
       };
       dispatch({ type: 'UPDATE_ELF', side: tSide, elf: elfUpdates, targetId: target.battleId || target.id });
       shared.checkResourceTransitions?.();
+      if(elfUpdates.statStages){
+        const applied=Object.fromEntries(Object.keys({...target.statStages,...nextElf.statStages}).map(k=>[k,Number(nextElf.statStages?.[k]||0)-Number(target.statStages?.[k]||0)]).filter(([,v])=>v!==0));
+        if(Object.keys(applied).length)SoulMarkRegistry[nextElf.name]?.(getBattleEventContext(tSide,true,0,nextElf),EffectTiming.STAT_CHANGED,{side:tSide,targetBattleId:nextElf.battleId||nextElf.id,sourceSide:side,applied});
+      }
       if(patchesStatuses(elfUpdates))for(const ended of removedStatusEvents(target,nextElf))
         SoulMarkRegistry[nextElf.name]?.(getBattleEventContext(tSide,true,0,nextElf),EffectTiming.ON_STATUS_ENDED,{...ended,targetSide:tSide,sourceSide:side});
       if (elfUpdates.statStages && tSide !== side) {
@@ -1202,6 +1247,7 @@ export function buildStateAPIs(shared: SharedContextDeps): StateAPIs {
       shared.checkResourceTransitions?.();
       const c = syncStateRef.current;
       const patchTarget = c[`${tSide}Team`].find(e => (e.battleId || e.id) === battleId || e.id === battleId);
+      if(patchTarget)patch=guardHeldMaximumHp(c,tSide,patchTarget,patch);
       if (patchTarget) patch = normalizePpPatch(trackIllusionStatWrite(patchTarget, portableShieldPatch(patchTarget,patch)));
       if(patchTarget&&patch.shield!==undefined)patch={...patch,shield:retainShield(patchTarget,patch.shield)};
       if((patchTarget as any)?.maximumHealthLock){

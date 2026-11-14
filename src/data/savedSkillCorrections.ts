@@ -9,6 +9,9 @@ import { correctSavedJiuqing } from './savedJiuqingCorrection';
 import { restoreBuiltinFifthFlags } from '../battle/skillSlot';
 import {synchronizeBuiltinEffectBindings,modifiedBuiltinDefinitions} from './builtinEffectBindings';
 import {upgradeLegacyElfName} from './legacyElfNames';
+import {fillElfPhysicalMeasurements} from './elfPhysicalMeasurements';
+import {correctSavedAinsAndReserve} from './savedAinsAndReserveCorrection';
+import {correctSavedFinalGaia} from './savedFinalGaiaCorrection';
 
 // 早期 Elf.kit 是描述詞條；只認領 Git 歷史逐項完全相同的資料，不能把使用者的頂層積木當成舊版。
 function knownLegacySoulKit(elf:Elf):boolean {
@@ -27,6 +30,7 @@ export function applySavedSkillCorrections(elf:Elf,defaults:Elf[]):Elf{
   // seerId 是「外觀→官方動作素材」的唯一依據，缺了不會報錯、只會安靜地退回簡易演出。
   // 只補不覆寫，使用者存檔有值時尊重原值；custom_ 精靈不套用。
   elf = restoreBuiltinSeerId(elf, defaults);
+  elf = fillElfPhysicalMeasurements(correctSavedFinalGaia(correctSavedAinsAndReserve(elf,defaults),defaults));
   elf = correctSavedDimensionalDragon(elf, defaults, modifiedBuiltinDefinitions(elf, defaults));
   return synchronizeBuiltinEffectBindings(correctKnownSavedDefinitions(correctSavedJiuqing(correctSavedCorruptedRey(correctSavedFifthFlags(elf,defaults),defaults),defaults),defaults),defaults);
 }

@@ -1,3 +1,5 @@
+import {instantKillChance} from '../battle/instantKillChance';
+import {recipientPrdChance} from '../battle/recipientEffectChance';
 import { addDamageReduction, multiplyDamageReduction } from '../battle/damageReduction';
 /**
  * 通用特性（generalTrait）與異能（alienTrait）的戰鬥效果
@@ -114,19 +116,19 @@ export function afterSkillHit(
   // ── 攻方
   for (const n of traitNames(actor)) {
     const oa = ON_ATTACK_STATUS[n];
-    if (oa && skill.category === oa.cat && prdChance(`${actor?.id}>${target?.id}:trait:L111`, 0.08)) {
+    if (oa && skill.category === oa.cat && recipientPrdChance(actorCtx,tSide,`${actor?.id}>${target?.id}:trait:L111`, 0.08)) {
       if (actorCtx.applyStatusWithImmunityCheck(tSide, oa.status, 2).success) actorCtx.addLog(`✨ 【${n}】：令對手陷入【${oa.status}】！`, "status");
     }
     const cs = CRIT_STATUS[n];
-    if (cs && isCrit && prdChance(`${actor?.id}>${target?.id}:trait:L115`, 0.05)) {
+    if (cs && isCrit && recipientPrdChance(actorCtx,tSide,`${actor?.id}>${target?.id}:trait:L115`, 0.05)) {
       if (actorCtx.applyStatusWithImmunityCheck(tSide, cs, 2).success) actorCtx.addLog(`✨ 【${n}】：致命一擊令對手陷入【${cs}】！`, "status");
     }
     if (n === "吸血") {
       const heal = Math.floor(damage * 0.11);
       if (heal > 0) { actorCtx.applyHeal(aSide, heal); actorCtx.addLog(`🩸 【吸血】：恢復了 ${heal} 點體力！`, "heal"); }
     }
-    if (n === "絕命" && prdChance(`${actor?.id}>${target?.id}:trait:L122`, 0.01)) { actorCtx.applyFixedDamage(tSide, 500, "絕命"); actorCtx.addLog(`☠️ 【絕命】：附加 500 點固定傷害！`, "effect"); }
-    if (n === "切割" && prdChance(`${actor?.id}>${target?.id}:trait:L123`, 0.03)) {
+    if (n === "絕命" && recipientPrdChance(actorCtx,tSide,`${actor?.id}>${target?.id}:trait:L122`, 0.01)) { actorCtx.applyFixedDamage(tSide, 500, "絕命"); actorCtx.addLog(`☠️ 【絕命】：附加 500 點固定傷害！`, "effect"); }
+    if (n === "切割" && recipientPrdChance(actorCtx,tSide,`${actor?.id}>${target?.id}:trait:L123`, 0.03)) {
       actorCtx.setOpponentState("hpLossPerTurnTurns", 3);
       actorCtx.setOpponentState("hpLossPerTurnAmount", 50);
       actorCtx.addLog(`🔪 【切割】：3 回合內對手每回合受到 50 點傷害！`, "effect");
@@ -137,32 +139,21 @@ export function afterSkillHit(
       for (const k in stages) if (typeof stages[k] === "number" && stages[k] > 0) { stages[k] = 0; changed = true; }
       if (changed) { actorCtx.updateElf(tSide, { statStages: stages as any }); actorCtx.addLog(`✨ 【淨化】：消除了對手的能力提升狀態！`, "status"); }
     }
-    if (n === "瞬殺" && skill.category !== "屬性" && prdChance(`${actor?.id}>${target?.id}:trait:L134`, 0.07)) {
-      const guardTeam = actorCtx.getFullTeam(tSide) || [];
-      const blocker = guardTeam.find(e => e && e.name.includes("湮滅之主") && e.currentHp > 0);
-      if (blocker) {
-        actorCtx.addLog(`👿 【魔王咒怨】：【${blocker.name}】令秒殺效果失效！`, "effect");
-        const marks = actorCtx.getMarks(tSide) || [];
-        const g = marks.find((m: any) => m.id === "demon_grudge");
-        if (g) actorCtx.setMark({ ...g, count: (g.count || 0) + 1 }, tSide);
-      } else {
-        const hp = (actorCtx.target && actorCtx.target.currentHp) || target.currentHp;
-        actorCtx.applyTrueDamage(tSide, hp, "瞬殺");
-        actorCtx.addLog(`⚡ 【瞬殺】：一擊秒殺！`, "effect");
-      }
+    if (n === "瞬殺" && skill.category !== "屬性" && instantKillChance(actorCtx,'trait:instant_kill',7)) {
+      actorCtx.applyInstantKill?.(tSide,'瞬殺');
     }
   }
   // ── 守方
   for (const n of traitNames(target)) {
     const ps = ON_PHYS_HIT_STATUS[n];
-    if (ps && isPhys && prdChance(`${actor?.id}>${target?.id}:trait:L152`, 0.08)) {
+    if (ps && isPhys && recipientPrdChance(targetCtx,aSide,`${actor?.id}>${target?.id}:trait:L152`, 0.08)) {
       if (targetCtx.applyStatusWithImmunityCheck(aSide, ps, 2).success) targetCtx.addLog(`✨ 【${n}】：受擊令對手陷入【${ps}】！`, "status");
     }
     const deb = ON_SPEC_HIT_DEBUFF[n];
-    if (deb && isSpec && prdChance(`${actor?.id}>${target?.id}:trait:L156`, 0.14)) targetCtx.applyStatChange(aSide, { [deb]: -1 });
+    if (deb && isSpec && recipientPrdChance(targetCtx,aSide,`${actor?.id}>${target?.id}:trait:L156`, 0.14)) targetCtx.applyStatChange(aSide, { [deb]: -1 });
     const buf = ON_ANY_HIT_BUFF[n];
     if (buf && prdChance(`${actor?.id}>${target?.id}:trait:L158`, 0.14)) targetCtx.applyStatChange(tSide, { [buf]: 1 });
-    if (n === "反彈" && prdChance(`${actor?.id}>${target?.id}:trait:L159`, 0.45)) { targetCtx.applyFixedDamage(aSide, 110, "反彈"); targetCtx.addLog(`🔁 【反彈】：反彈 110 點固定傷害！`, "effect"); }
+    if (n === "反彈" && recipientPrdChance(targetCtx,aSide,`${actor?.id}>${target?.id}:trait:L159`, 0.45)) { targetCtx.applyFixedDamage(aSide, 110, "反彈"); targetCtx.addLog(`🔁 【反彈】：反彈 110 點固定傷害！`, "effect"); }
   }
 }
 

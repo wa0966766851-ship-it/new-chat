@@ -3,12 +3,12 @@ import { StatusRegistry } from '../effects/statusRegistry';
 import { canonicalStatusName } from '../effects/statusIdentity';
 
 /** 純期限轉移：場下不扣；BOSS 不扣且不受星贖延長；新衍化當回合不再扣。 */
-export function advanceStatusEffect(effect: BattleEffect, statuses: Record<string, number>, rng: () => number, offField = false) {
+export function advanceStatusEffect(effect: BattleEffect, statuses: Record<string, number>, rng: () => number, offField = false, retainDuration = false) {
   const entry = StatusRegistry[canonicalStatusName(effect.id)];
   const boss = entry?.categories.includes('BOSS_ONLY');
   let duration = effect.duration;
   if (!offField && !boss) {
-    if (!effect.isLateMover) duration -= 1;
+    if (!effect.isLateMover && !retainDuration) duration -= 1;
     for (const [id, turns] of Object.entries(statuses)) {
       if (turns <= 0) continue;
       const params = StatusRegistry[canonicalStatusName(id)]?.mechanics.find(m => m.type === 'SPECIAL_BUFF')?.params;

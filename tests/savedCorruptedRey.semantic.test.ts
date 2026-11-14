@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import {createServer} from 'vite';
 import legacy from '../src/data/legacyCorruptedReyDefinitions.json';
 import desktopLegacy from '../src/data/legacyCorruptedReyDesktop.json';
-const server=await createServer({server:{middlewareMode:true,hmr:false,watch:null},appType:'custom',logLevel:'silent'});
+const server=await createServer({configFile:false,optimizeDeps:{noDiscovery:true,include:[]},resolve:{preserveSymlinks:true},server:{middlewareMode:true,hmr:false,watch:null},appType:'custom',logLevel:'silent'});
 try{
  const {DEFAULT_ELVES:defaults}=await server.ssrLoadModule('/src/data/defaultElvesLoaded.ts');
  const {applySavedSkillCorrections:fix}=await server.ssrLoadModule('/src/data/savedSkillCorrections.ts');

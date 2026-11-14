@@ -129,7 +129,7 @@ export function thunderGodActionIssue(op: string, p: any, trig: string): string 
  * 雙攻（含能力等級）相同則不轉化。名稱取 names（物理／特殊各一個同效果隱藏技能），其餘欄位（Kit、技能槽）沿用原技能，
  * 因此原技能的附加效果仍由同一份 Kit 執行，不重複結算。
  */
-export const SKILL_TRANSFORM_VALUE_KEYS = ['power', 'perWeight', 'perPower', 'types', 'names', 'ignoreAttackImmunity'];
+export const SKILL_TRANSFORM_VALUE_KEYS = ['power', 'perWeight', 'perPower', 'types', 'names', 'ignoreAttackImmunity','category'];
 export function skillTransformIssue(entry: any): string | null {
   const { value, conditions = [] } = entry.params || {};
   if (entry.source !== 'skill' || entry.role !== 'innate' || entry.node !== 'before_skill') return '技能轉化需技能固有、使用前查詢';
@@ -141,6 +141,7 @@ export function skillTransformIssue(entry: any): string | null {
   if (!Array.isArray(value.types) || value.types.length < 1 || value.types.length > 8 || value.types.some((t: any) => typeof t !== 'string' || !t || t.length > 20)) return '轉化屬性需1至8個屬性';
   if (!value.names || typeof value.names.物理 !== 'string' || typeof value.names.特殊 !== 'string' || !value.names.物理 || !value.names.特殊) return '轉化技能需物理與特殊隱藏技能名稱';
   if (typeof value.ignoreAttackImmunity !== 'boolean') return '轉化技能需明確是否無視攻擊免疫';
+  if(value.category!==undefined&&!['物理','特殊'].includes(value.category))return '指定轉化類型需物理或特殊';
   return null;
 }
 /** 回傳套用於本次技能的欄位；條件不符、雙攻相同或固有效果失效回傳 undefined。 */
@@ -152,8 +153,8 @@ export function skillTransformPatch(skill: any, ctx: any, evalCond: (ctx: any, c
   const v = entry.params.value, self = ctx.self, target = ctx.target;
   const atkBase = self.calculatedStats?.atk || self.baseStats?.atk || 0, spBase = self.calculatedStats?.spatk || self.baseStats?.spatk || 0;
   const atk = calculateEffectiveStat(atkBase, self.statStages?.atk || 0), spatk = calculateEffectiveStat(spBase, self.statStages?.spatk || 0);
-  if (atk === spatk) return undefined;
-  const category = atk > spatk ? '物理' : '特殊';
+  if (!v.category&&atk === spatk) return undefined;
+  const category = v.category||(atk > spatk ? '物理' : '特殊');
   const weight = Math.floor(ctx.getBody?.(ctx.targetSide).weight ?? target?.weight ?? 0);
   const defenderType = target?.type || '普通';
   const type = (v.types as string[]).reduce((best, next) => getTypeMatchup(next, defenderType) > getTypeMatchup(best, defenderType) ? next : best, v.types[0]);

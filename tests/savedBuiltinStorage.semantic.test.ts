@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import {createServer} from 'vite';
 import historical from '../src/data/legacyReyDescriptions.json';
 import legacySoulKits from '../src/data/legacySoulKitFingerprints.json';
-const server=await createServer({server:{middlewareMode:true,hmr:false,watch:null},appType:'custom',logLevel:'silent'});
+const server=await createServer({configFile:false,optimizeDeps:{noDiscovery:true,include:[]},resolve:{preserveSymlinks:true},server:{middlewareMode:true,hmr:false,watch:null},appType:'custom',logLevel:'silent'});
 try{
   const {DEFAULT_ELVES:defs}=await server.ssrLoadModule('/src/data/defaultElvesLoaded.ts');
   const {repairSavedBuiltinStorage:repair,BUILTIN_SAVE_KEYS:keys}=await server.ssrLoadModule('/src/data/savedBuiltinStorage.ts');

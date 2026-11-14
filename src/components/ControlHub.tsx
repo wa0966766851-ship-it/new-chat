@@ -6,6 +6,7 @@ import { useSceneResources, saveSceneResources, DEFAULT_SCENE_RESOURCES, SceneRe
 import { readAnimationSettings,BATTLE_ANIMATION_EVENT } from "../battle/animationSettings";
 import { parseMusicSource, musicWatchUrl } from "../utils/musicSource";
 import { useMusicPlayer } from "./useMusicPlayer";
+import { readMusicAutoplay, writeMusicAutoplay, shouldAutoplayOnEnter } from "../utils/musicAutoplay";
 import { PageErrorBoundary } from "./PageErrorBoundary";
 
 // --- Theme Types & Config ---
@@ -44,7 +45,7 @@ function getThemeState() {
   let bgmUrl: string | null = null;
   
   try {
-    const params = new URLSearchParams(window.location.search);
+    const params = themeParams(); // 已保存的外觀偏好＋網址參數（網址優先）
     bg = params.get("bg");
     const t = params.get("theme") as ThemeMode;
     if (t && ["day", "night", "dark"].includes(t)) theme = t;
@@ -72,6 +73,7 @@ function notifyThemeUpdate() {
 
 import { DEFAULT_P1_LAYOUT, DEFAULT_P2_LAYOUT, DEFAULT_TACTICAL_LAYOUT, ACCENT_CONFIGS, OPACITY_CONFIGS, DEFAULT_BACKGROUNDS, DEFAULT_PLAYLIST } from "./ControlHubPresets";
 import type { ThemeMode, AccentColor, CardOpacity } from "./ControlHubPresets";
+import { themeParams, saveThemeParams } from '../utils/themePrefs';
 export type { ThemeMode, AccentColor, CardOpacity } from "./ControlHubPresets";
 const ControlHubPanel = lazy(() => import("./ControlHubPanel"));
 
@@ -184,6 +186,7 @@ function useControlHubModel(currentScene: string, canApplyUpdates: boolean) {
         else url.searchParams.delete(key);
       });
       window.history.replaceState(null, "", url.toString());
+      saveThemeParams(params); // 重開後仍保留（過去只存在網址，重開即消失）
       notifyThemeUpdate();
     } catch {}
   };
@@ -199,8 +202,16 @@ function useControlHubModel(currentScene: string, canApplyUpdates: boolean) {
     (currentScene === 'destiny_wheel' ? 'BV1uh411Y73e' : 'wJ8onQryXRY'), destinyPage),
     [state.bgmUrl, currentScene, sceneResources[currentScene]?.bgm, destinyPage]);
   const music = useMusicPlayer(musicInfo);
+  // 進入星蝕回廊（大廳／回廊戰鬥）自動播放；可在「音樂」關閉。
+  const [autoplay, setAutoplayState] = useState(readMusicAutoplay);
+  const setAutoplay = (on: boolean) => { setAutoplayState(on); writeMusicAutoplay(on); };
+  const prevScene = useRef<string | null>(null);
+  useEffect(() => {
+    const prev = prevScene.current; prevScene.current = currentScene;
+    if (shouldAutoplayOnEnter(prev, currentScene, autoplay) && !music.requestedPlaying) music.setIsPlaying(true);
+  }, [currentScene]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  return { isMaximized, setIsMaximized, setIsOpen, activeTab, searchTerm, setSearchTerm, setActiveTab, state, updateUrlParam, currentAccent, setFeedback, backgrounds, inputBgUrl, setInputBgUrl, musicInfo, playlist, inputBgmUrl, setInputBgmUrl, animationSettings, setAnimationSettings, customLayout, setCustomLayout, p1Panel, setP1Panel, p2Panel, setP2Panel, tacticalPanel, setTacticalPanel, hudOpacity, setHudOpacity, setLocalResources, localResources, selectedScene, sceneResources, currentScene, setSelectedScene, updateSceneBg, updateSceneBgm, setPlaylist, setBackgrounds, feedback, isOpen, canApplyUpdates, ...music };
+  return { isMaximized, setIsMaximized, setIsOpen, activeTab, searchTerm, setSearchTerm, setActiveTab, state, updateUrlParam, currentAccent, setFeedback, backgrounds, inputBgUrl, setInputBgUrl, musicInfo, playlist, inputBgmUrl, setInputBgmUrl, animationSettings, setAnimationSettings, customLayout, setCustomLayout, p1Panel, setP1Panel, p2Panel, setP2Panel, tacticalPanel, setTacticalPanel, hudOpacity, setHudOpacity, setLocalResources, localResources, selectedScene, sceneResources, currentScene, setSelectedScene, updateSceneBg, updateSceneBgm, setPlaylist, setBackgrounds, feedback, isOpen, canApplyUpdates, autoplay, setAutoplay, ...music };
 }
 
 export type ControlHubPanelModel = ReturnType<typeof useControlHubModel>;
@@ -220,7 +231,7 @@ export default function ControlHub({ currentScene, canApplyUpdates = false }: { 
           <button type="button" onClick={() => setShowPlayer(false)} aria-label="隱藏播放器" className="text-xs text-slate-400 hover:text-white">隱藏</button>
           <button type="button" onClick={closeMusic} aria-label="停止並關閉播放器" className="text-xs text-slate-400 hover:text-white">停止</button>
         </div>
-        <div ref={containerRef} className="h-[200px]" />
+        <div ref={containerRef} className={showPlayer ? "h-[200px]" : undefined} />
         <div className="px-3 py-2 space-y-2 text-xs">
           <p role="status" data-testid="music-playback-status">{playback.message}{isPlaying && isMuted ? '（靜音）' : ''}</p>
           {['blocked', 'error'].includes(playback.phase) && <button type="button" onClick={retryMusic} className="rounded bg-blue-600 px-2 py-1">重新載入播放器</button>}

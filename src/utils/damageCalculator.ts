@@ -1,3 +1,4 @@
+import {battleResistances} from '../battle/resistances';
 ﻿import { applyStageViewAs } from './stageViewAs';
 import { traitNames } from '../effects/traitEffects';
 import { readStatPercent } from '../effects/soulProperty';
@@ -18,6 +19,7 @@ import { hpPowerScale } from '../battle/actionDamageModifiers';
 import {readIncomingPanelAttack} from '../battle/panelAttack';
 import {activeResourceQueryRules} from '../battle/resourceQueryRules';
 import {statusTypeMultiplier} from '../effects/statusMechanics';
+import {markCapability} from '../battle/markCapabilities';
 
 export const calculateDamage = (
   actor: Elf,
@@ -57,6 +59,9 @@ export const calculateDamage = (
   // opponentAtkPanelRatio＝對手攻擊時其最終攻擊／特攻變為面板原始值的比例（忽略能力等級）。
   const statRegA = side === "p1" ? p1RegistryState : p2RegistryState;
   const statRegT = side === "p1" ? p2RegistryState : p1RegistryState;
+  const viewA=statRegA?.formulaStatView,viewT=statRegT?.formulaStatView;
+  if(viewA?.attackStats?.length)atk=viewA.attackStats.reduce((sum:number,key:keyof typeof actor.calculatedStats)=>sum+(actor.calculatedStats[key]||0),0);
+  if(viewT?.defenseAddStats?.length)def+=viewT.defenseAddStats.reduce((sum:number,key:keyof typeof target.calculatedStats)=>sum+(target.calculatedStats[key]||0),0);
   const atkPanelRatio = readIncomingPanelAttack(statRegT,actor,options?.actionId) || (Number(statRegT?.opponentAtkPanelRatio) > 0 ? Number(statRegT.opponentAtkPanelRatio) : 0);
   if (Number(statRegA?.calcAtkDefMult) > 0) atk = atk * Number(statRegA.calcAtkDefMult);
   if (Number(statRegT?.calcAtkDefMult) > 0) def = def * Number(statRegT.calcAtkDefMult);
@@ -124,6 +129,7 @@ export const calculateDamage = (
     atkS = v.atkS; defS = v.defS;
   }
   // 通用：「無視自身能力下降」（寂殺之魄1道等；行動鍵）——自身下降等級歸零。
+  if (stageReg?.selfDownAsUpThisAction && atkS < 0) atkS = -atkS;
   if (stageReg?.selfDropIgnoredThisAction && atkS < 0) atkS = 0;
   else if (options?.ignoreOppBuff && defS > 0) defS = 0;
 
@@ -170,11 +176,12 @@ export const calculateDamage = (
   }
   if (actorReg?.minimumTypeMultiplierThisAction !== undefined) typeMult = Math.max(typeMult, actorReg.minimumTypeMultiplierThisAction);
   typeMult=statusTypeMultiplier(actor,typeMult);
+  if(markCapability(actor,'typeAdvantageDisabled',actorMarks)>0)typeMult=Math.min(1,typeMult);
   // 積木：克制倍數取指定屬性中最高者
   // 本系加成 1.5 倍：技能屬性（含雙屬性技能的任一屬性）為自身系別中含有的屬性
   const splitT = (t?: string) => (t || "").replace(/系$/, "").split(/[.·・]/).filter(Boolean);
   const actorTypes = splitT(actor.type);
-  const stab = skill.resolvedForceStab || actorReg?.grantStabThisAction || (isStoneThrower(actor) && isSkillStone(skill)) || (skill.type && skill.type !== "無屬性" && splitT(skill.type).some(t => actorTypes.includes(t))) ? 1.5 : 1.0;
+  const stab = markCapability(actor,'stabDisabled',actorMarks)>0?1:(skill.resolvedForceStab || skill.resolvedNeutralStab&&typeMult===1 || actorReg?.grantStabThisAction || (isStoneThrower(actor) && isSkillStone(skill)) || (skill.type && skill.type !== "無屬性" && splitT(skill.type).some(t => actorTypes.includes(t))) ? 1.5 : 1.0);
   // 浮動取整數 217~255
   const roll = Math.max(217, Math.min(255, Math.round(randomValue * 255)));
 
@@ -191,13 +198,13 @@ export const calculateDamage = (
     suitCritBonus += stacks * suit.effects.critRateBonusPerStack;
   }
 
-  const critChance = Math.max(0, Math.min(1, ((actor.critValue ?? 1) / 16) + suitCritBonus + ((title?.critBonus || 0) / 100) + critChanceBonus(actor, target) + Number(options?.critChanceBonus || 0)));
+  const critChance = Math.max(0, Math.min(1, (skill.resolvedBaseCritChance ?? ((actor.critValue ?? 1) / 16)) + suitCritBonus + ((title?.critBonus || 0) / 100) + critChanceBonus(actor, target) + Number(options?.critChanceBonus || 0)));
   const isCrit = isCritOverride !== undefined ? isCritOverride : prdChance(`crit:${side}:${actor.id}`, critChance);
   
   // 套裝／稱號／刻印「傷害提升／減少X%」、寶石「傷害翻倍」不在公式內：由引擎在增傷／減傷層加入（battle/damagePipeline.ts）。
   const equipment = equipmentDamageFactors({ actor, target, skill, side, isCrit, p1Suit, p2Suit, p1Title, p2Title });
 
-  const critResistPercent = target.resistances?.damageResist?.crit || 0;
+  const critResistPercent = battleResistances(target)?.damageResist?.crit || 0;
   // 致命一擊倍率 = 2 ×（1 − 致命抗性）：無抗 2 倍、5% 1.9 倍、滿抗 35% 1.3 倍（只在這裡套用一次）
   const critBonusMultiplier = 2 * (1 - critResistPercent / 100);
   const hitCount = Math.max(1, Math.floor(options?.hitCount || 1));

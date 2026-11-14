@@ -5,13 +5,15 @@ import {acquirePetClip} from '../../battle/petAnimationLoader';
 import {petAnimationBinding,petExtraSequence,registerPetPlayer,registerPetTimings,reportPetPlayback,degradePet,type PetAction,type PetSequenceTiming} from '../../battle/petAnimationRegistry';
 import {getRestVisibleBox,registerVisibleBox,notifyVisibleBoxChanged,boxCenterX,boxCenterY} from '../../battle/visibleBox';
 import type {VisibleBox} from '../../battle/spriteMetrics';
-import {actionApproach,retargetAttack,bodyTiles,nativeBodyBounds,nativeRestBounds,petCanvasFrame} from '../../battle/petAnimationGeometry';
+import {actionApproach,retargetAttack,petCanvasFrame} from '../../battle/petAnimationGeometry';
 import {shouldMirrorBattleSprite} from '../../battle/seerAssets';
 import {PET_ANIMATION_ASSETS,type PetAnimationAsset,type PetAnimationAssetId} from '../../battle/petAnimationAssets';
 import {overrideTint,petColorVariant} from '../../battle/petColorVariants';
 import {animationSpeed,readAnimationSettings,BATTLE_ANIMATION_EVENT} from '../../battle/animationSettings';
 import {startPetRenderLoop} from '../../battle/petRenderLoop';
-import {preparePetFx} from '../../battle/petFxPolicy';
+import {preparePetFxAsync} from '../../battle/petFxPolicy';
+import {preparePetGeometry} from '../../battle/petAnimation/preparedGeometry';
+import {mountPetPlayer} from '../../battle/petAnimation/playerMount';
 import {getFxHost,setFullscreenFxActive,fullscreenPlacement} from '../../battle/fullscreenFx';
 import {ultimateSequenceOf,playbackEventForAction} from '../../battle/petActionRouting';
 import {createCustomBattleFx,isMeleePresentationSequence} from '../../battle/customBattleFx';
@@ -58,13 +60,14 @@ export function PetActionSprite({elf,side,action,actionToken,width,height,onRead
   const deadline=setTimeout(()=>{if(!player.current){alive=false;abort.abort();lease.release();degradePet(side,elf,'load-timeout');onTransitionEnd?.();readyCallback.current(false);}},(import.meta as ImportMeta & {env?:{DEV?:boolean}}).env?.DEV?90000:45000);
   void (async()=>{
    const [source,{SwfPlayer}]=await Promise.all([lease.clip,import('@seer-pet-anim/swf-renderer')]);
-   const {clip,fxClip,report:fxReport}=context==='battle'?preparePetFx(source,(PET_ANIMATION_ASSETS[assetId] as PetAnimationAsset).fullscreen):{clip:source,fxClip:null,report:null};
+   if(!alive||abort.signal.aborted)return;
+   const {clip,fxClip,report:fxReport}=context==='battle'?await preparePetFxAsync(source,(PET_ANIMATION_ASSETS[assetId] as PetAnimationAsset).fullscreen,abort.signal):{clip:source,fxClip:null,report:null};
    if(!alive||!host.current)return;
    host.current.dataset.petFxPolicy=fxReport?'large-add-only':'original';
    host.current.dataset.petFxRemoved=String(fxReport?.removedQuads??0);
    host.current.dataset.petFxFullscreen=(fxReport?.fullscreen.sequences??[]).join(',');
    const mountStarted=performance.now();
-    instance=new SwfPlayer();await instance.mount(host.current,clip,{transparent:true,mode:'fixed',clock:'manual',signal:abort.signal});
+    instance=new SwfPlayer();await mountPetPlayer(instance,host.current,clip,abort.signal);
    capPlayerResolution(instance,clip);
    host.current?.setAttribute('data-pet-mount-ms',(performance.now()-mountStarted).toFixed(0));
    host.current?.setAttribute('data-pet-load-ms',(performance.now()-loadStarted).toFixed(0));
@@ -77,15 +80,9 @@ export function PetActionSprite({elf,side,action,actionToken,width,height,onRead
    // 只有具名形態（例如咤克斯三化身）才整隻覆寫成指定的形態色。
    const variant=petColorVariant(elf.name,assetId);
    if(variant.mul||variant.add)overrideTint(clip.sequences.flatMap(s=>s.frames),variant);
-   const frames=clip.sequences.find(s=>s.name==='standby')?.frames||[];
-   const tiles=bodyTiles(frames.map(f=>f.mesh));
-   const bounds=new Map(clip.sequences.map(s=>[s.name,s.frames.map(f=>nativeBodyBounds(f.mesh,tiles)??nativeBodyBounds(f.mesh))]));
-   let minX=Infinity,maxX=-Infinity,minY=Infinity,maxY=-Infinity;
-   for(const frame of frames)for(let i=0;i<frame.mesh.positions.length;i+=2){const p=frame.mesh.positions;minX=Math.min(minX,p[i]);maxX=Math.max(maxX,p[i]);minY=Math.min(minY,p[i+1]);maxY=Math.max(maxY,p[i+1]);}
-   // 尺寸基準必須是「待機的身體框」，不能是整段待機的原始網格邊界：原始邊界含光暈／翅膀／背景片等大圖塊，
-   // 拿它當分母會把整隻精靈縮小好幾倍，連帶讓招式特效永遠構不到對手、背景替換只剩一點點（使用者回報的「動態比靜態小很多」）。
-   const reference=nativeRestBounds(frames.map(f=>f.mesh));
-   if(reference){minX=reference.left;maxX=reference.right;minY=reference.top;maxY=reference.bottom;}
+   const {bounds,rest:reference}=await preparePetGeometry(clip,abort.signal);
+   if(!alive||abort.signal.aborted)return;
+   const {left:minX,right:maxX,top:minY,bottom:maxY}=reference??{left:Infinity,right:-Infinity,top:Infinity,bottom:-Infinity};
    if(!Number.isFinite(minX)||maxY<=minY)throw Error('動作邊界無效');
    const sequences=instance.getSequences();
    sequenceTimings.current=Object.fromEntries(sequences.map(s=>[s.name,{duration:s.duration*1000,hit:(s.markers.find(m=>m.name==='action_hit')?.time??s.duration)*1000}]));

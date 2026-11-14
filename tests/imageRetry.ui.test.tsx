@@ -6,7 +6,7 @@ const dom=new JSDOM('<div id="root"></div>',{url:'http://localhost/'});
 Object.assign(globalThis,{Event:dom.window.Event,window:dom.window,document:dom.window.document,localStorage:dom.window.localStorage,HTMLElement:dom.window.HTMLElement,IS_REACT_ACT_ENVIRONMENT:true});
 Object.defineProperty(globalThis,'navigator',{configurable:true,value:dom.window.navigator});
 const {createRoot}=await import('react-dom/client'),root=createRoot(document.getElementById('root')!);
-const server=await createServer({server:{middlewareMode:true,hmr:false,watch:null},appType:'custom',logLevel:'silent'});
+const server=await createServer({configFile:false,optimizeDeps:{noDiscovery:true,include:[]},server:{middlewareMode:true,hmr:false,watch:null},appType:'custom',logLevel:'silent'});
 const settle=(ms:number)=>act(async()=>{await new Promise(r=>setTimeout(r,ms));});
 try{
  const {ChainImage,ElfAvatar}=await server.ssrLoadModule('/src/components/SeerImages.tsx');
@@ -20,6 +20,11 @@ try{
  assert.equal(document.querySelector('#picture img')!.getAttribute('alt'),'備用圖','手動模式不因切回視窗重試');
  await act(async()=>document.querySelector('#picture img')!.dispatchEvent(new dom.window.MouseEvent('click',{bubbles:true})));
  assert.equal(document.querySelector('#picture img')!.getAttribute('src'),'/manual.png','點擊備用圖重試原圖');
+ let selected=0;
+ await act(async()=>root.render(<button onClick={()=>selected++}><div id="picture"><ChainImage urls={['/card.png']} fallback={<img src="/fallback.png"/>}/></div></button>));
+ await fail();await act(async()=>document.querySelector('#picture img')!.dispatchEvent(new dom.window.MouseEvent('click',{bubbles:true})));
+ assert.equal(selected,1,'圖片重試不能吞掉招募或選隊卡片的點擊');
+ assert.equal(document.querySelector('#picture img')!.getAttribute('src'),'/card.png','卡片點擊仍同時重試圖片');
  await act(async()=>settings.writeImageRetryMode('off'));await render('/off.png');await fail();
  await act(async()=>{document.querySelector('#picture img')!.dispatchEvent(new dom.window.MouseEvent('click',{bubbles:true}));window.dispatchEvent(new dom.window.Event('online'));});
  assert.equal(document.querySelector('#picture img')!.getAttribute('alt'),'備用圖','不重試模式忽略點擊與網路恢復');

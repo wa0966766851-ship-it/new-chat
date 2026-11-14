@@ -34,7 +34,11 @@ export const CASSIUS_SKINS:readonly ElfSkin[]=[
  {id:'cassius-shandi',name:'聖地卡修斯',elfId:'5041',elfName:'岳峙淵渟.卡修斯',body:'/seer/body/3568.png',head:'/seer/head/3568.png',animationAssetId:'cassiusShandi'},
  {id:'cassius-original',name:'原版卡修斯',elfId:'5041',elfName:'岳峙淵渟.卡修斯',body:'/seer/body/798.png',head:'/seer/head/798.png',animationAssetId:'cassiusOriginal'},
 ];
-export const ELF_SKINS:readonly ElfSkin[]=[...ZHAKESI_AVATAR_SKINS,ORIGINAL_PUNI_SKIN,...CASSIUS_SKINS,{
+export const GAIA_SKINS:readonly ElfSkin[]=[
+ {id:"gaia-original",name:"原版蓋亞",elfId:"5043",elfName:"終焉戰神.蓋亞",body:"/seer/body/261.png",head:"/seer/head/261.png",animationAssetId:"finalGaia"},
+ {id:"gaia-godslayer",name:"滅戰神決蓋亞",elfId:"5043",elfName:"終焉戰神.蓋亞",body:"/seer/body/4766.png",head:"/seer/head/4766.png",animationAssetId:"gaiaGodslayer"},
+];
+export const ELF_SKINS:readonly ElfSkin[]=[...GAIA_SKINS,...ZHAKESI_AVATAR_SKINS,ORIGINAL_PUNI_SKIN,...CASSIUS_SKINS,{
  id:'rey-thunder-dragon-v1',name:'雷龍之翼',elfId:'5029',elfName:'異境神霆·雷伊',body:'/elf-skins/rey-thunder-dragon-v1.png',portrait:{scale:3,origin:'50% 70%',position:'50% 60%'},
 }, ...[{elfId:'5029',elfName:'異境神霆·雷伊'},{elfId:'7070',elfName:'魔化.雷伊'},{elfId:'707070',elfName:'墜霆.雷伊'}].map(owner=>({
  ...owner,...ORIGINAL_REY_SKIN,

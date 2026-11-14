@@ -1,6 +1,7 @@
 ﻿/** 狀態登記表的共用執行端；只讀機制參數，不依狀態或精靈名稱分支。 */
 import type { Elf, Skill } from '../types';
 import type { BattleEventContext } from './types';
+import { EffectTiming } from './types';
 import { StatusRegistry } from './statusRegistry';
 import { getStatuses,getEffectiveStatuses,addStatusEffect } from '../utils/battleHelpers';
 import { getTypeMatchup } from '../utils/statCalculator';
@@ -8,6 +9,24 @@ import { skillSlot } from '../battle/skillSlot';
 import { applyKitPpOperation } from './ppOperations';
 
 const mechanics=(elf:Elf)=>Object.entries(getEffectiveStatuses(elf)).filter(([,n])=>n>0).flatMap(([name])=>StatusRegistry[name]?.mechanics||[]);
+/** 每次即時查詢，保留原請求物件；不把光環結果快取到受方或延長異常期限。 */
+export function queryStatusMechanic(ctx:BattleEventContext,status:string,kind:'damage'|'power',powerMultiplier=1){
+ const request={status,kind,skipDamage:false,powerMultiplier};
+ ctx.emitElfEvent?.(ctx.actor,ctx.self,EffectTiming.MODIFY_STATUS_MECHANIC,request);
+ return request;
+}
+export function statusAttackPowerMultiplier(ctx:BattleEventContext):number{
+ let result=1;
+ for(const [status,turns] of Object.entries(getEffectiveStatuses(ctx.self))){
+  if(!(turns>0))continue;
+  const factors=(StatusRegistry[status]?.mechanics||[]).filter(m=>m.type==='SPECIAL_BUFF'&&typeof m.params?.attackPowerMultiplier==='number');
+  if(!factors.length)continue;
+  const normal=factors.reduce((n,m)=>n*m.params.attackPowerMultiplier,1);
+  const request=queryStatusMechanic(ctx,status,'power',normal);
+  result*=Number.isFinite(request.powerMultiplier)&&request.powerMultiplier>=0?request.powerMultiplier:normal;
+ }
+ return result;
+}
 export function statusTypeMultiplier(elf:Elf,normal:number):number {
  let result=normal;
  for(const m of mechanics(elf))if(m.type==='TYPE_MATCHUP_OVERRIDE'){
@@ -17,7 +36,7 @@ export function statusTypeMultiplier(elf:Elf,normal:number):number {
  return result;
 }
 export function statusSkillSelected(ctx:BattleEventContext,skill:Skill,slot:number){
- ctx.setPlayerState('selectedActionSnapshot',{round:ctx.roundNumber,battleId:ctx.self.battleId||ctx.self.id,slot,attack:skill.category!=='屬性'});
+ ctx.setPlayerState('selectedActionSnapshot',{round:ctx.roundNumber,battleId:ctx.self.battleId||ctx.self.id,slot,attack:skill.category!=='屬性',category:skill.category});
  if(slot<0)return;
  if(mechanics(ctx.self).some(m=>m.type==='MODIFIER_LIMIT'&&m.params?.drainSelectedPP)){
   applyKitPpOperation(ctx,ctx.actor,'zero',0,s=>s===ctx.self.skills[slot]);

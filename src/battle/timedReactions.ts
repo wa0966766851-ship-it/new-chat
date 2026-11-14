@@ -26,7 +26,13 @@ export function timedRecoveryMultiplier(timers: BattleEventContext['p1Timers'], 
   const reductions = activeConstraints(timers, elf)
     .filter(p => !isPotion || p.recoveryReductionIncludesPotions === true)
     .map(p => p.recoveryReductionPercent).filter((n): n is number => typeof n === 'number');
-  return Math.max(0, 1 - reductions.reduce((sum, n) => sum + Math.max(0, n), 0));
+  const boost=activeConstraints(timers,elf).reduce((m,p)=>m*(Number.isFinite(p.recoveryMultiplier)&&p.recoveryMultiplier>0?p.recoveryMultiplier:1),1);
+  return boost*Math.max(0, 1 - reductions.reduce((sum, n) => sum + Math.max(0, n), 0));
+}
+
+/** 執行恢復即觸發，包含滿血及禁療；不依實際回血量判斷。 */
+export function timedRecoveryBacklash(timers:BattleEventContext['p1Timers'],elf:BattleEventContext['self']):number{
+  return activeConstraints(timers,elf).reduce((n,p)=>n+Math.max(0,Number(p.recoveryBacklash)||0),0);
 }
 
 /** 全隊持有登場紀錄，但計數按battleId分開，同名精靈不共用。 */

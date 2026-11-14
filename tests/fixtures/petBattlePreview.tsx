@@ -54,6 +54,9 @@ function Workbench(){
  const reset=()=>{clearPetDegrade();driver.current=null;setRevision(n=>n+1);};
  const run=async(index:number)=>{
   const d=driver.current,s=d?.getState();if(!d||d.isPresenting?.()||s.phase!=='p1_select')return;
+  // Hide the test controls before playback so P2 and short extra actions are
+  // visible from their first frame, without a second UI click eating the clip.
+  setOpen(false);
   const chosen=(attacker==='p1'?s.p1:s.p2).skills[index],idle=(attacker==='p1'?s.p2:s.p1).skills[2];
   d.onSkillSelect('p1',attacker==='p1'?chosen:idle);
   const deadline=performance.now()+30000;

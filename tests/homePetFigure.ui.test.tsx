@@ -64,6 +64,13 @@ try{
  await act(async()=>{for(const img of document.querySelectorAll('img'))img.dispatchEvent(new dom.window.Event('error'));});await settle();
  const fallback=sprite();assert.ok(fallback,'缺靜態圖時仍可播放動態立繪');
  assert.equal(Number(fallback!.getAttribute('data-w')),BOX_W);assert.equal(Number(fallback!.getAttribute('data-h')),BOX_H);
+ imageAvailable=true;(globalThis as any).__petTestHoldReady=true;
+ const gaia={...rey,id:'5043',name:'終焉戰神.蓋亞',seerId:261,skinId:'gaia-original'};
+ await render(gaia);await loaded();assert.equal(staticHidden(),false,'新皮膚未就緒前保留靜態圖');assert.ok(document.querySelector('[role="status"]')?.textContent?.includes('動作載入中'));
+ const oldReady=(globalThis as any).__petTestResolveReady;
+ await render({...gaia,skinId:'gaia-godslayer'});await loaded();await act(async()=>oldReady());assert.equal(staticHidden(),false,'舊皮膚遲到的 ready 不隱藏新皮膚靜態圖');
+ await act(async()=>(globalThis as any).__petTestResolveReady());await settle();assert.equal(staticHidden(),true,'目前皮膚就緒後才切入');
+ delete (globalThis as any).__petTestHoldReady;delete (globalThis as any).__petTestResolveReady;
  console.log('新版首頁動態立繪：掛載條件、不透明區域對位、cover、降級、缺圖退回通過');
 }finally{await act(async()=>root.unmount());await server.close();dom.window.close();}
 process.exit(0);

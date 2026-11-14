@@ -13,6 +13,7 @@ export interface ElfStatusRules {
   whileStatus: string;
   conversionTargetBan?: StatusCategory[];
   cancelEffects?: StatusCategory[];
+  cancelExceptCategory?: StatusCategory;
   replacePpFree?: boolean;
   replaceInvalidateOppTurns?: number;
 }
@@ -30,9 +31,9 @@ export function activeStatusRules(rules: ElfStatusRules | undefined, statuses: R
 /** 目前被取消原有效果的異常 id（不含條件異常自身）。 */
 export function cancelledStatusIds(rules: ElfStatusRules | undefined, statuses: Record<string, number>): string[] {
   const active = activeStatusRules(rules, statuses);
-  if (!active?.cancelEffects?.length) return [];
+  if (!active?.cancelEffects?.length && !active?.cancelExceptCategory) return [];
   return Object.keys(statuses).filter(id => statuses[id] > 0 && canonicalStatusName(id) !== canonicalStatusName(active.whileStatus)
-    && categoriesOf(id).some(c => active.cancelEffects!.includes(c)));
+    && (active.cancelExceptCategory ? !categoriesOf(id).includes(active.cancelExceptCategory) : categoriesOf(id).some(c => active.cancelEffects!.includes(c))));
 }
 
 /** 去掉被取消原有效果的異常後的異常表（供機制查詢；顯示與回合數照舊使用原表）。 */

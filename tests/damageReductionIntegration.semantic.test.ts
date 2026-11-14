@@ -88,7 +88,7 @@ try {
     for (let i = 0; i < 300 && driver.getSyncState().turnNumber === before; i++) await act(async () => { await new Promise(r => setTimeout(r, 10)); });
     assert.equal(driver.getSyncState().turnNumber, before + 1, `${side}/${mode}確實結算完`);
     const r = receipts.find(r => r?.damageType === (mode === 'resistance' ? 'fixed' : mode === 'hp_ceiling' ? 'true' : 'skill_attack'));
-    assert.ok(r, `${side}/${mode}有傷害回饋`);
+    assert.ok(r, `${side}/${mode}有傷害回饋 ${JSON.stringify(driver.getSyncState().logs)}`);
     if (mode === 'resistance') assert.equal(r.settledAmount, 10, '99%讀取到抗性舊入口');
     else if (mode === 'hp_ceiling') assert.equal(driver.getSyncState()[other].currentHp, 80000, '真傷快照同時限制回血及體力調整，不改maxHp');
     else assert.equal(r.settledAmount, Math.floor(base * (mode === 'dixin_ignore' ? 1 : 1 - .99)), `${side}/${mode}主傷害管線讀取減傷政策`);

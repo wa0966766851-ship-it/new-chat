@@ -110,11 +110,12 @@ try {
     let h = attachBossTraits(hs, o.traits ?? []), f = attachBossTraits(fs, o.foeTraits ?? []);
     if (o.myth) { f = { ...f, effects: [...(f.effects || []), { id: '神話', name: '神話', duration: 999, stacks: 1 }], battleStatuses: { ...(f.battleStatuses || {}), 神話: 999 } }; }
     const p1 = side === 'p1' ? h : f, p2 = side === 'p1' ? f : h;
-    const engine = createBattleEngine({ initialP1Team: [p1], initialP2Team: [p2], p1StarterId: p1.id, p2StarterId: p2.id, battleMode: 'PVE', preparedTeams: true, isFast: () => true, randomSeed: o.seed ?? 7,
+    // round() 明確指定雙方技能；用 PVP 讓兩側都照指定出手（PVE 時對手 AI 會自行決策，可能改用藥劑，與驗收意圖不符）。
+    const engine = createBattleEngine({ initialP1Team: [p1], initialP2Team: [p2], p1StarterId: p1.id, p2StarterId: p2.id, battleMode: 'PVP', preparedTeams: true, isFast: () => true, randomSeed: o.seed ?? 7,
       interstellarOptions: { relics: [], enemyRelics: [], onPotionUse: () => true, maxPotionUsage: 3 } });
     engine.mount(); engine.start(); await engine.idle();
     const H = () => engine.getState()[side], F = () => engine.getState()[other(side)];
-    const round = async (hi = 0, fi = 0) => { const st = engine.getState(); engine.onSkillSelect(side, st[side].skills[hi]); engine.onSkillSelect(other(side), st[other(side)].skills[fi]); await engine.idle(); };
+    const round = async (hi = 0, fi = 0) => { const st = engine.getState(); const pick = { [side]: st[side].skills[hi], [other(side)]: st[other(side)].skills[fi] } as any; engine.onSkillSelect('p1', pick.p1); engine.onSkillSelect('p2', pick.p2); await engine.idle(); };
     const logs = () => engine.getState().logs.map((l: any) => String(l.text));
     return { engine, H, F, round, logs, close: () => engine.unmount(), hMax: hs.maxHp, fMax: fs.maxHp };
   }

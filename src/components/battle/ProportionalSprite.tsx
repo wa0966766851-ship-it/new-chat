@@ -46,6 +46,8 @@ export const AnchoredToVisible: React.FC<{ side: "p1" | "p2"; fraction: number; 
 interface ProportionalSpriteProps {
   elf: Elf; side: "p1" | "p2"; anchorX: number; stageW: number; stageH: number;
   anim: any; dead: boolean; opacity: number;
+  /** 簡易演出動畫長度（秒）；未給為 0.35。幻化／額外行動需要較長的時間才看得清楚。 */
+  animDuration?: number;
   appearanceState?:Record<string,unknown>;
   action?:PetAction;actionToken?:unknown;
   canvasW?:number;
@@ -55,7 +57,7 @@ interface ProportionalSpriteProps {
 }
 /** 第五技能且素材登記了絕招序列才改播 ultimate；否則維持既有對應。 */
 const routeFifth=(action:PetAction,token:unknown,asset:Parameters<typeof ultimateSequenceOf>[0]):PetAction=>(action==='attack'||action==='sa'||action==='cp')&&isFifthSkillAnim(token)&&ultimateSequenceOf(asset)?'ultimate':action;
-export const ProportionalSprite: React.FC<ProportionalSpriteProps> = ({ elf, side, anchorX, stageW, stageH, anim, dead, opacity, overlay,appearanceState,action='standby',actionToken,canvasW,targetX,heightRatio,fieldH }) => {
+export const ProportionalSprite: React.FC<ProportionalSpriteProps> = ({ elf, side, anchorX, stageW, stageH, anim, animDuration, dead, opacity, overlay,appearanceState,action='standby',actionToken,canvasW,targetX,heightRatio,fieldH }) => {
   const disguised=!!elf.illusion;
   elf = appearanceElf(elf);
   const requestedAsset=battleFormAsset(elf,disguised?undefined:appearanceState);
@@ -193,7 +195,7 @@ export const ProportionalSprite: React.FC<ProportionalSpriteProps> = ({ elf, sid
 
   return (
     <div className="absolute bottom-0 pointer-events-none" style={{ left: displayAnchor, bottom:colossal?0:stageH*BATTLE_GROUND_LIFT, opacity, zIndex:fxActive||(showActions&&action!=='standby')?BATTLE_LAYERS.SPRITES:undefined, display: opacity === 0 ? "none" : undefined }} data-form-assets-ready={formsReady} data-sprite-side={side} data-sprite-ratio={ratio.toFixed(2)} data-sprite-visible={visible.toFixed(1)} data-sprite-opaque={opaque ? `${opaque.left.toFixed(1)},${opaque.right.toFixed(1)},${opaque.bottomY.toFixed(1)},${opaque.topY.toFixed(1)}` : undefined} data-sprite-sink={sink.toFixed(1)}>
-      <motion.div ref={wrap} animate={mode==='static'||showActions||concealed||m?.src.includes('/unknown_myth_ghost_')?{x:0,filter:'brightness(1)'}:anim} transition={{ duration: 0.35/animationSpeed(settings.speed) }} style={{...style,visibility:showActions?'hidden':undefined}}
+      <motion.div ref={wrap} animate={mode==='static'||showActions||concealed||m?.src.includes('/unknown_myth_ghost_')?{x:0,filter:'brightness(1)'}:anim} transition={{ duration: (animDuration ?? 0.35)/animationSpeed(settings.speed) }} style={{...style,visibility:showActions?'hidden':undefined}}
         className={`${dead ? "opacity-30 grayscale" : ""} will-change-transform`}>
         <ElfAvatar elf={elf} kind="body" battleSide={side} className="w-full h-full object-fill"
           fallbackClassName="w-full h-full rounded-full overflow-hidden ring-2 ring-white/15 flex items-center justify-center text-5xl font-black text-slate-200 bg-black/20" />

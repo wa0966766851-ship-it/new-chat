@@ -45,6 +45,8 @@ try {
     base.calculatedStats = { hp: base.maxHp, atk: 300, def: 300, spatk: 300, spdef: 300, speed: o.speed ?? 100 };
     base.skills = skills; base.statStages = o.statStages || {}; base.shield = 0; base.barrier = 0;
     base.soulMark = zf.soulMark; // 真 soulMark（已套用真 Kit）
+    // 2026-11-14：內建預設滿抗性；本測驗證魂印，抗性設為 0 以免固定傷害抗性與抗性骰干擾。
+    base.resistances = { damageResist: { crit: 0, fixed: 0, percent: 0 }, statusResist: { allImmune: false, selectedStatuses: [], slots: [] } };
     return base;
   };
   const ppSkill = { ...h.wait(), name: '蓄能', pp: 3, maxPp: 5 };

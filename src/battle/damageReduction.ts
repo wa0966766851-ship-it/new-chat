@@ -1,4 +1,5 @@
 import {markCapability} from './markCapabilities';
+import {heldModifiers} from './heldItemModifiers';
 import type { Elf } from '../types';
 import type { BattleState } from '../components/BattleManager';
 import type { DamageComputation } from '../effects/types';
@@ -10,20 +11,27 @@ import { activeConstraints } from './timedConstraints';
 import { isNonTrueDamageType, isSkillDamageType, normalizeDamageType } from './damageSemantics';
 import {markDamageReductionRate} from './markDamageReduction';
 
-export interface ReductionPolicy { override?: number; attenuation: number; skillDefenseDisabled?:boolean }
+export interface ReductionPolicy { override?: number; attenuation: number; skillDefenseDisabled?:boolean; incomingDamageLimitDisabled?:boolean }
 type ReductionComp = Pick<DamageComputation, 'damageCategory' | 'multiplier' | 'decreasePercent' | 'pure'> & { trackReduction?:boolean; multiplierReductionProduct?:number; incomingDamageImmunity?:boolean; reductionPolicy?: ReductionPolicy; reductionSources?: Record<string, number> };
 
-/** 僅改寫「持有者受到傷害降低」；不改造成傷害降低、抵擋、攻擊值、上限或護盾。 */
+/** 受方減傷與上限失效分開查詢；不改造成傷害降低、輸出上限、抵擋、攻擊值或護盾。 */
 export function reductionPolicy(state: Pick<BattleState, 'p1Timers' | 'p2Timers' | 'p1Marks' | 'p2Marks'>, side: 'p1' | 'p2', elf: Elf, category: string): ReductionPolicy {
   const type = normalizeDamageType({ damageType: category });
   const overrides = isNonTrueDamageType(type) ? activeConstraints(state[`${side}Timers`], elf)
     .map(p => p.damageReductionOverridePercent).filter((n): n is number => Number.isFinite(n)) : [];
   let attenuation = 1;
+  const held=heldModifiers(state,side,elf);
+  if(isNonTrueDamageType(type)&&held.some(m=>m.reductionDisabled))attenuation=0;
   if (type === 'skill_attack' && Object.keys(getStatuses(elf)).some(s => StatusRegistry[s]?.mechanics?.some(m => m.params?.reduceDmgEffectToZero))) attenuation = 0;
   if (isSkillDamageType(type)) for (const mark of state[`${side}Marks`] || []) {
     if (mark.id === 'blk_千秋一淚' && markAppliesToElf(mark, elf)) attenuation *= 0.5 ** Math.floor(Math.max(0, mark.count) / 2);
   }
-  return { skillDefenseDisabled:isSkillDamageType(type)&&!!markCapability(elf,"skillDefenseDisabled",state[`${side}Marks`]), override: overrides.length ? Math.max(...overrides) / 100 : undefined, attenuation };
+  return { incomingDamageLimitDisabled:isNonTrueDamageType(type)&&(held.some(m=>m.incomingLimitDisabled)||!!markCapability(elf,'incomingDamageLimitDisabled',state[`${side}Marks`])), skillDefenseDisabled:isSkillDamageType(type)&&!!markCapability(elf,"skillDefenseDisabled",state[`${side}Marks`]), override: overrides.length ? Math.max(...overrides) / 100 : undefined, attenuation };
+}
+
+/** 只取消持有者的受傷上限；輸出上限、抵擋、減傷、護盾及真實傷害規則不變。 */
+export function limitIncomingDamage(comp:Pick<DamageComputation,'limit'|'reductionPolicy'>,amount:number):number {
+  return comp.limit!==undefined&&!comp.reductionPolicy?.incomingDamageLimitDisabled?Math.min(amount,comp.limit):amount;
 }
 
 export function effectiveReduction(comp: ReductionComp, rate: number, incoming = true): number {

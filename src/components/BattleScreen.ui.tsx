@@ -1,10 +1,13 @@
+import {skillDescriptionText} from '../utils/skillDescription';
 ﻿import {AnimationSpeedControl,useAnimationSpeed} from './battle/AnimationSpeedControl';
+import { readPassMode, writePassMode, type PassMode } from '../battle/passAction';
 import {BattleFxLayer} from './battle/BattleFxLayer';
 import {BATTLE_LAYERS as Z} from '../battle/battleLayers';
 import { SpecialBattleEndDialog } from "./BattleEndDialog";
 import { BattleResult } from "./battle/BattleResult";
 import { summarizeLedger, type DamageLedger } from "../battle/damageLedger";
 import { damagePopupStyle, damagePopupLabel } from '../battle/damagePopupStyle';
+import './battle/battlePopups.css';
 import { appearanceElf } from '../battle/illusionPresentation';
 import { skillSlot, fifthSkillSlot, orderBattleSkillsForDisplay } from '../battle/skillSlot';
 import { hasBattleItem } from '../battle/itemInventory';
@@ -31,7 +34,8 @@ import {
   Monitor,
   FlaskConical,
   Star,
-  BarChart2
+  BarChart2,
+  RefreshCw
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from 'recharts';
@@ -51,7 +55,7 @@ import { activeEffectViews, stateSignSourceText } from '../battle/activeEffectVi
 import {statusCountClasses} from '../battle/statusImmunityCount';
 import { getHpBarColor } from "./BattleComponents";
 import { StatusInspector } from "./StatusInspector";
-import { getTypeMatchup, getAttributeBadgeColor, getEffectiveBody } from "../utils/statCalculator";
+import { getTypeMatchup, getAttributeBadgeColor, getEffectiveBody, calculateEffectiveStat } from "../utils/statCalculator";
 import { battleSpriteProfile } from "../battle/seerAssets";
 import { ElfAvatar, TypeIcon, ChainImage, SkillTypeIcon } from "./SeerImages";
 import { skillDisplayType, skillDisplayTypeLabel } from '../utils/skillPresentation';
@@ -65,6 +69,7 @@ import { statusVisual, stageDesc, STAT_FULL, signIconFor, effectIcon, UNKNOWN_EF
 import { bossTraitInstanceText } from "../data/bossTraits";
 import { markAppliesToElf } from "../battle/marks";
 import { EffectDescription } from './EffectDescription';
+import {skillBannerBottom,skillBannerType as resolveSkillBannerType} from '../battle/skillBanner';
 import { RichDescription } from './RichDescription';
 import { StatusRegistry } from "../effects/statusRegistry";
 import { EFFECT_CATALOG } from "../data/effectCatalog";
@@ -72,10 +77,12 @@ import { SkillResources } from './SkillResources';
 import { formatCompactHud, formatFullNumber } from '../utils/formatBigNumber';
 import { BATTLE_ITEMS, ITEM_CATEGORIES, getItemCategory, ItemCategory, isElfSkillSelectionDisabled, isElfSwitchDisabled, isElfItemDisabled, getNoSwitchTurns } from "../utils/battleHelpers";
 import { isZeroPpExempt } from '../battle/ppExemptions';
+import { searchList } from '../utils/textSearch';
 import { classifyLog, filterByMode, mergeExtraActions, toTraditional, turnDigests, filterByElf, filterByQuery, damageTone, extractAmount, elfNamesIn, type LogMode, type BattleLogRow } from '../battle/logClassifier';
 import { LOG_PAGE_SIZE, maskLogRows, buildLogPipeline } from '../battle/logView';
 import { useBattleLayoutPrefs, useWideEnoughForGameLayout, cycleAnimationSpeed, TypeSlot, FifthMedallion, typeAccent, BATTLE_GAME_SKINS } from './battle/gameHud';
 import { effectDefinitionEntries } from '../battle/effectSources';
+import { switchRestrictions, itemRestrictions, restrictionText, type ActionRestriction } from '../battle/actionRestrictions';
 
 const BagElfPickerModal = lazy(() => import("./battle/BagElfPickerModal"));
 
@@ -84,6 +91,8 @@ interface BattleScreenUIProps {
   onSkillSelect: (side: "p1" | "p2", skill: Skill) => void;
   onSwitchElf: (side: "p1" | "p2", index: number) => void;
   onUseItem: (side: "p1" | "p2", item: BattleItem) => void;
+  /** 空過：放棄本回合行動（全部封鎖時避免卡死）。 */
+  onPass?: (side: "p1" | "p2") => void;
   /** 特殊模式的藥劑次數（星際探索）；未提供＝不限 */
   potionLimit?: { left: number; max: number };
   onReset: () => void;
@@ -92,6 +101,8 @@ interface BattleScreenUIProps {
   activeSkillAnim: any;
   floatingDamagePopups: any[];
   consoleShake: any;
+  /** 幻化變身中的一側（播放層 morphSide） */
+  illusionMorph?: { p1: boolean; p2: boolean };
   damageDealt: Record<string, number>;
   /** 傷害帳本（結算畫面用） */
   ledger?: DamageLedger;
@@ -260,7 +271,41 @@ function BattleScreenBody(props: BattleScreenUIProps) {
   const wideEnough = useWideEnoughForGameLayout();
   const gameLayout = layoutPrefs.style === 'game' && wideEnough;
   const [gMenuOpen, setGMenuOpen] = useState(false);
+  const [passMode, setPassModeState] = useState<PassMode>(() => readPassMode());
+  useEffect(() => { const on = (e: Event) => setPassModeState((e as CustomEvent).detail === 'manual' ? 'manual' : 'auto'); window.addEventListener('seer-pass-mode', on); return () => window.removeEventListener('seer-pass-mode', on); }, []);
+  const canPass = !!props.onPass && phase === actPhaseSelect && !winner;
+  const doPass = () => { if (canPass) props.onPass!(actSide); };
+  const togglePassMode = () => writePassMode(passMode === 'auto' ? 'manual' : 'auto');
   const [gBenchFocus, setGBenchFocus] = useState<number | null>(null);
+  const [gTeamView, setGTeamView] = useState<'elves' | 'skills'>('elves');
+  // 拖曳換人：ref 保存起點與移動狀態，state 只負責畫面（拖影與放置提示）。
+  const gDragRef = useRef<{ idx: number; x: number; y: number; moved: boolean; pointerId: number; suppressClick?: boolean } | null>(null);
+  const [gDrag, setGDrag] = useState<{ idx: number; x: number; y: number; moved: boolean; over: boolean } | null>(null);
+  const gDropRef = useRef<((idx: number) => void) | null>(null);
+  useEffect(() => {
+    const overDrop = (x: number, y: number) => !!document.elementFromPoint?.(x, y)?.closest('[data-drop-switch="true"]');
+    const move = (e: PointerEvent) => {
+      const d = gDragRef.current;
+      if (!d || e.pointerId !== d.pointerId) return;
+      if (!d.moved && Math.hypot(e.clientX - d.x, e.clientY - d.y) < 8) return;
+      d.moved = true;
+      setGDrag({ idx: d.idx, x: e.clientX, y: e.clientY, moved: true, over: overDrop(e.clientX, e.clientY) });
+    };
+    const up = (e: PointerEvent) => {
+      const d = gDragRef.current;
+      if (!d || e.pointerId !== d.pointerId) return;
+      if (d.moved) {
+        d.suppressClick = true;
+        if (overDrop(e.clientX, e.clientY)) gDropRef.current?.(d.idx);
+        setTimeout(() => { if (gDragRef.current === d) gDragRef.current = null; }, 0);
+      } else gDragRef.current = null;
+      setGDrag(null);
+    };
+    window.addEventListener('pointermove', move);
+    window.addEventListener('pointerup', up);
+    window.addEventListener('pointercancel', up);
+    return () => { window.removeEventListener('pointermove', move); window.removeEventListener('pointerup', up); window.removeEventListener('pointercancel', up); };
+  }, []);
   const [gConfirmRetreat, setGConfirmRetreat] = useState(false);
   const [gInspector, setGInspector] = useState(false);
   const [selectedElfDetail, setSelectedElfDetail] = useState<{ elf: Elf; side: "p1" | "p2"; idx: number } | null>(null);
@@ -320,6 +365,18 @@ function BattleScreenBody(props: BattleScreenUIProps) {
   const [logMode, setLogMode] = useState<LogMode>(() => { try { return (localStorage.getItem("battleLogMode") as LogMode) || "full"; } catch { return "full"; } });
   const applyLogMode = (m: LogMode) => { setLogMode(m); try { localStorage.setItem("battleLogMode", m); } catch {} setLogPage(1); setLogFollow(true); };
   const [itemCat, setItemCat] = useState<ItemCategory | "all">("all");
+  const [itemQuery, setItemQuery] = useState("");
+  const [itemNotice, setItemNotice] = useState("");
+  const [itemPeek, setItemPeek] = useState<string | null>(null);
+  const itemPointerRef = useRef<string>('mouse');
+  useEffect(() => { if (!itemNotice) return; const t = setTimeout(() => setItemNotice(""), 2600); return () => clearTimeout(t); }, [itemNotice]);
+  // 轉化技能：預設顯示原技能；循環圖示移上（或觸控點一下釘住）時顯示轉化後技能。
+  const [convHover, setConvHover] = useState<number | null>(null);
+  const [convPinned, setConvPinned] = useState<Record<number, boolean>>({});
+  // 道具搜尋：名稱、說明、附加／解除的異常名；空白分隔＝全部符合。
+  const queriedItems = useMemo(() => searchList(shownItems, itemQuery, (it: typeof shownItems[number]) => ({ title: it.name,
+    tags: [...(it.inflictStatuses || []).map(x => x.name), ...(it.selfStatuses || []).map(x => x.name), ...(it.cureStatuses || [])], body: [it.description] })),
+  [shownItems, itemQuery]);
   const [spriteMode, setSpriteMode] = useState<"show" | "dim" | "hide">(() => { try { return (localStorage.getItem("battleSpriteMode") as any) || "show"; } catch { return "show"; } });
   useEffect(() => { try { localStorage.setItem("battleSpriteMode", spriteMode); } catch {} }, [spriteMode]);
   const [hudOpacity, setHudOpacity] = useState(() => parseFloat(localStorage.getItem('hudOpacity') || "0.95"));
@@ -362,31 +419,41 @@ function BattleScreenBody(props: BattleScreenUIProps) {
                     .map((pop: any) => {
                       const visual = damagePopupStyle(pop.type);
                       const label = damagePopupLabel(pop.label);
-                      const isHeal = visual.heal;
                       const isSkillHit = visual.skill;
                       const eff = pop.effectiveness as string | undefined;
-                      const effClass = eff === '克制' ? 'text-amber-300 border-amber-400/70 bg-amber-950/70' : eff === '微弱' ? 'text-sky-300 border-sky-400/60 bg-sky-950/70' : eff === '無效' ? 'text-slate-300 border-slate-500/60 bg-slate-900/80' : 'text-slate-200 border-slate-500/40 bg-slate-950/60';
-                      const numClass = visual.colorClass;
+                      // 跳字外觀（原廠風字體與配色；動畫軌跡不變）：Miss／技能無效同一種、附加效果失效為標籤、致命一擊另加官方圖示與星芒。
+                      const kind = pop.type === 'notice' ? (pop.noticeKind || 'notice') : pop.isCrit && isSkillHit ? 'crit' : visual.variant;
+                      const tags: string[] = Array.isArray(pop.tags) ? pop.tags : [];
+                      if (kind === 'addInvalid') return (
+                        <motion.div key={pop.id} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
+                          transition={{ duration: 0.2/animationRate }} className="flex flex-col items-center" data-battle-popup={pop.type} data-popup-kind={kind} data-presentation-id={pop.id} data-elf-id={pop.elfId}>
+                          <span className="bpop-tag bpop-tag-lg">{fog(pop.text)}</span>
+                        </motion.div>
+                      );
                       return (
                         <motion.div
                           key={pop.id}
                           initial={{ opacity: 0, y: 14, scale: 0.6 }}
-                          animate={{ opacity: 1, y: 0, scale: [0.6, 1.18, 1] }}
+                          animate={{ opacity: 1, y: 0, scale: [0.6, kind === 'crit' ? 1.3 : 1.18, 1] }}
                           exit={{ opacity: 0, y: -18, scale: 0.95 }}
                           transition={{ duration: 0.28/animationRate, ease: "easeOut" }}
-                          className="flex flex-col items-center gap-0.5"
+                          className="relative flex flex-col items-center gap-0.5"
                           data-battle-popup={pop.type}
+                          data-popup-kind={kind}
                           data-presentation-id={pop.id}
                           data-elf-id={pop.elfId}
                         >
+                          {kind === 'crit' && <span className="bpop-burst" aria-hidden="true" />}
                           {(eff && isSkillHit) || label || pop.isCrit ? (
-                            <div className="flex items-center gap-1">
-                              {eff && isSkillHit && <span className={`px-1.5 py-px rounded border text-xs font-black tracking-widest ${effClass}`} data-effectiveness={eff}>{eff}</span>}
-                              {(label || pop.isCrit) && <span className="text-xs font-bold text-slate-200 drop-shadow-[0_1px_2px_rgba(0,0,0,0.9)]">{fog(label || '暴擊')}</span>}
+                            <div className="relative flex items-center gap-1">
+                              {eff && isSkillHit && <span className="bpop-eff" data-effectiveness={eff}>{eff}</span>}
+                              {pop.isCrit && isSkillHit && <span className="bpop-crit-label"><ChainImage urls={['/seer/buff/36.png']} className="h-5 w-5 object-contain" />致命一擊</span>}
+                              {label && <span className="bpop-label">{fog(label)}</span>}
+                              {pop.isCrit && !isSkillHit && !label && <span className="bpop-label">暴擊</span>}
                             </div>
                           ) : null}
-                          <span className={`${isSkillHit ? 'text-5xl' : 'text-3xl'} font-black tabular-nums max-w-[11ch] truncate ${numClass}`}
-                            style={{ textShadow: visual.textShadow }}>{fog(pop.text)}</span>
+                          <span className={`bpop bpop-${kind} ${isSkillHit ? 'text-5xl' : 'text-3xl'} font-black tabular-nums max-w-[11ch] truncate ${visual.colorClass}`}>{fog(pop.text)}</span>
+                          {tags.map((t, i) => <span key={i} className="bpop-tag">{fog(t)}</span>)}
                         </motion.div>
                       );
                     })}
@@ -754,11 +821,15 @@ function BattleScreenBody(props: BattleScreenUIProps) {
                           const isExtra = !!elf.isExtra;
                           const isDead = !elf || (!isAliveBySurvivalRule(elf.currentHp, elf.survivalRule) && !(elf.deathImmunity && elf.deathImmunity.deathImmuneTurns > 0));
                           const isDeathImmuneActive = !!(elf && elf.currentHp <= 0 && elf.deathImmunity && elf.deathImmunity.deathImmuneTurns > 0);
+                          // 不鎖按鈕：不能出戰時點下改看精靈詳情（資訊照樣可看）。
+                          const switchBlocked = !isExtra && (idx === actActiveIndex || isDead || (phase === actPhaseSelect && switchRestrictions(battle, actSide).blocked) || (phase !== actPhaseSelect && !phase.includes("forced_switch")) || (phase === actPhaseSelect && (actSide === 'p1' ? battle.p1RegistryState : battle.p2RegistryState)?.switchPickedRound === (battle.roundNumber ?? battle.turnNumber)));
                           return (
                             <button
                               key={`${actSide}-team-${idx}-${elf.name}`}
+                              type="button"
+                              aria-disabled={switchBlocked} data-switch-blocked={switchBlocked ? 'true' : undefined}
                               onClick={() => {
-                                if (isExtra) {
+                                if (isExtra || switchBlocked) {
                                   if (!hid(elf, actSide)) setSelectedElfDetail({ elf, side: actSide, idx });
                                 } else if (phase === actPhaseSelect || phase.includes("forced_switch")) {
                                   props.onSwitchElf(actSide, idx);
@@ -774,7 +845,6 @@ function BattleScreenBody(props: BattleScreenUIProps) {
                               className={`group relative flex items-center gap-2 text-left bg-slate-900/60 border rounded-xl px-2 py-1.5 transition-all cursor-pointer
                                 ${idx === actActiveIndex ? 'border-cyan-500 bg-cyan-950/20 shadow-[0_0_15px_rgba(6,182,212,0.1)] opacity-100 grayscale-0' : isExtra ? 'border-amber-500/40 bg-amber-950/10 shadow-[0_0_10px_rgba(245,158,11,0.05)] hover:border-amber-400' : 'border-slate-800 hover:border-slate-600'} 
                                 ${isDead || elf.isVanished ? 'opacity-40 grayscale' : ''}`}
-                              disabled={!isExtra && (idx === actActiveIndex || isDead || (phase !== actPhaseSelect && !phase.includes("forced_switch")) || (phase === actPhaseSelect && (actSide === 'p1' ? battle.p1RegistryState : battle.p2RegistryState)?.switchPickedRound === (battle.roundNumber ?? battle.turnNumber)))}
                             >
                                <div className="w-10 h-10 shrink-0 rounded-full overflow-hidden border border-cyan-500/40 bg-slate-900"><ElfAvatar elf={elf} battleSide={actSide} kind="head" className="w-full h-full object-cover" fallbackClassName="w-full h-full flex items-center justify-center text-xl font-black text-slate-300" /></div>
                                <div className="flex-1 min-w-0 flex flex-col gap-0.5">
@@ -818,13 +888,13 @@ function BattleScreenBody(props: BattleScreenUIProps) {
                       {(() => {
                         const selfElf = actSide === 'p1' ? p1 : p2;
                         const oppElf = actSide === 'p1' ? p2 : p1;
-                        const switchLocked = isElfSwitchDisabled(selfElf, oppElf, false, getNoSwitchTurns(battle, actSide));
-                        const itemLocked = isElfItemDisabled(selfElf);
-                        const backlash = (selfElf as any)?.potionBacklashTurns > 0;
+                        // 2026-11-07：與引擎同一份判斷（狀態＋陣營／個體計時器），列出原因與剩餘回合。
+                        void selfElf; void oppElf;
+                        const sw = switchRestrictions(battle, actSide), it = itemRestrictions(battle, actSide);
                         const notes: { tone: string; text: string }[] = [];
-                        if (switchLocked) notes.push({ tone: 'text-rose-300 border-rose-500/40 bg-rose-500/10', text: '禁止切換精靈' });
-                        if (itemLocked) notes.push({ tone: 'text-amber-300 border-amber-500/40 bg-amber-500/10', text: '禁止使用藥劑' });
-                        if (backlash) notes.push({ tone: 'text-violet-300 border-violet-500/40 bg-violet-500/10', text: `用藥反噬（剩 ${(selfElf as any).potionBacklashTurns} 回合）` });
+                        for (const r of it.list) notes.push({ tone: 'text-amber-300 border-amber-500/40 bg-amber-500/10', text: restrictionText(r) });
+                        if (it.backlash) notes.push({ tone: 'text-lime-200 border-yellow-500/60 bg-lime-500/10', text: `${restrictionText(it.backlash)}：藥劑效果反轉` });
+                        for (const r of sw.list) notes.push({ tone: 'text-rose-300 border-rose-500/40 bg-rose-500/10', text: restrictionText(r) });
                         if (!notes.length) return null;
                         return (
                           <div className="flex flex-wrap items-center gap-1.5" data-lock-hints>
@@ -840,9 +910,16 @@ function BattleScreenBody(props: BattleScreenUIProps) {
                           <span className="tabular-nums" title="「特殊」類道具不計次">{props.potionLimit.left} / {props.potionLimit.max}{props.potionLimit.left <= 0 ? "　已用盡（特殊類仍可用）" : ""}</span>
                         </div>
                       )}
+                      {itemNotice && <div className="px-3 py-1 rounded-lg border border-rose-500/50 bg-rose-950/60 text-[11px] font-black text-rose-200" role="status" data-item-notice>{itemNotice}</div>}
+                      <div className="flex items-center gap-2" data-item-search>
+                        <input type="search" value={itemQuery} onChange={e => setItemQuery(e.target.value)} placeholder="搜尋道具（名稱、效果、異常名）"
+                          aria-label="搜尋道具"
+                          className="flex-1 min-w-0 px-3 py-1.5 rounded-lg bg-slate-950/70 border border-slate-700 text-xs text-slate-100 placeholder:text-slate-500 focus:outline-none focus:border-amber-500/60" />
+                        {itemQuery && <button type="button" onClick={() => setItemQuery("")} className="px-2 py-1 rounded-md text-[11px] font-bold text-slate-300 border border-slate-700 hover:text-white">清除</button>}
+                      </div>
                       <div className="flex items-center gap-1.5 flex-wrap" title="使用道具消耗一回合">
                         {[{ key: "all", label: "全部" }, ...ITEM_CATEGORIES].map(c => {
-                          const n = c.key === "all" ? shownItems.length : shownItems.filter(it => getItemCategory(it) === c.key).length;
+                          const n = c.key === "all" ? queriedItems.length : queriedItems.filter(it => getItemCategory(it) === c.key).length;
                           return (
                             <button key={c.key} onClick={() => setItemCat(c.key as any)} disabled={n === 0}
                               className={`px-2.5 py-0.5 rounded-full text-[11px] font-bold border transition-colors disabled:opacity-30 ${itemCat === c.key ? "bg-amber-500/20 text-amber-200 border-amber-500/60" : "bg-slate-900/60 text-slate-400 border-slate-700 hover:text-slate-200"}`}>
@@ -851,30 +928,77 @@ function BattleScreenBody(props: BattleScreenUIProps) {
                           );
                         })}
                       </div>
-                      <div className="grid grid-cols-[repeat(auto-fill,minmax(190px,1fr))] gap-2">
-                        {shownItems.filter(it => itemCat === "all" || getItemCategory(it) === itemCat).map((item, idx) => {
+                      {gameLayout && (() => {
+                        // 原廠風：說明收進上方資訊列（移上／觸控點一下顯示），卡片只留名稱與數量／上限。
+                        const it = itemPeek ? BATTLE_ITEMS.find(x => x.id === itemPeek) : undefined;
+                        return (
+                          <div className="btg-itemdesc" data-item-desc={it?.id || undefined} aria-live="polite">
+                            {it ? <>
+                              <b className="shrink-0">{it.name}</b>
+                              <span className="btg-itemdesc-cat">{ITEM_CATEGORIES.find(c => c.key === getItemCategory(it))?.label}</span>
+                              <span className="min-w-0 flex-1">{it.description}</span>
+                            </> : <span className="opacity-60">移到道具上查看說明（觸控：點一下看說明，再點一下使用）</span>}
+                          </div>
+                        );
+                      })()}
+                      <div className={gameLayout ? "grid grid-cols-[repeat(auto-fill,minmax(150px,1fr))] gap-1.5" : "grid grid-cols-[repeat(auto-fill,minmax(190px,1fr))] gap-2"} data-item-grid>
+                        {!queriedItems.some(it => itemCat === "all" || getItemCategory(it) === itemCat) && <div className="col-span-full text-center text-xs text-slate-500 py-4" data-item-empty>找不到符合的道具</div>}
+                        {queriedItems.filter(it => itemCat === "all" || getItemCategory(it) === itemCat).map((item, idx) => {
+                          const itemLock = itemRestrictions(battle, actSide);
                           const stock = (actInventory ?? (battle as any).p1ItemInventory)?.[item.id];
                           const cat = getItemCategory(item);
                           const tone = cat === "hp" ? "text-emerald-400 border-emerald-500/30 bg-emerald-500/10"
                             : cat === "pp" ? "text-sky-400 border-sky-500/30 bg-sky-500/10"
                             : cat === "cleanse" ? "text-violet-300 border-violet-500/30 bg-violet-500/10"
                             : cat === "hybrid" ? "text-amber-300 border-amber-500/30 bg-amber-500/10"
+                            : cat === "regen" ? "text-teal-300 border-teal-500/30 bg-teal-500/10"
+                            : cat === "offense" ? "text-lime-300 border-yellow-500/40 bg-lime-500/10"
+                            : cat === "inflict" ? "text-fuchsia-300 border-fuchsia-500/30 bg-fuchsia-500/10"
+                            : cat === "buff" ? "text-orange-300 border-orange-500/30 bg-orange-500/10"
                             : "text-rose-300 border-rose-500/30 bg-rose-500/10";
+                          // 不鎖按鈕：不能用時照樣可看（說明、庫存），點下只顯示原因。
+                          const unusable = phase !== actPhaseSelect ? '目前不是選擇階段'
+                            : itemLock.blocked ? itemLock.list.map(restrictionText).join('、')
+                            : !hasBattleItem((actInventory ?? (battle as any).p1ItemInventory), item.id) ? '已用完'
+                            : ((actSide === 'p1' ? battle.p1RegistryState : battle.p2RegistryState)?.itemPickedRound === (battle.roundNumber ?? battle.turnNumber)) ? '本回合已使用道具'
+                            : (!!props.potionLimit && props.potionLimit.left <= 0 && item.type !== "special") ? '藥劑次數已用盡' : '';
+                          const useItem = () => { if (unusable) { setItemNotice(`${item.name}：${unusable}`); return; } if (item.pickTarget) { setPickingItem(item); return; } props.onUseItem(actSide, item as any); setTacticalTab("SKILLS"); };
+                          if (gameLayout) return (
+                            <button key={item.id || idx} type="button" className="btg-item" data-cat={cat} data-peek={itemPeek === item.id ? 'true' : undefined}
+                              aria-disabled={!!unusable} data-item-unusable={unusable || undefined} aria-label={`${item.name}${unusable ? `（無法使用：${unusable}）` : ''}`}
+                              title={unusable ? `無法使用：${unusable}` : undefined}
+                              onMouseEnter={() => setItemPeek(item.id)} onFocus={() => setItemPeek(item.id)}
+                              onPointerDown={e => { itemPointerRef.current = e.pointerType; }}
+                              onClick={() => {
+                                // 觸控：第一下只看說明，第二下才使用；滑鼠直接使用。
+                                if (itemPointerRef.current === 'touch' && itemPeek !== item.id) { setItemPeek(item.id); return; }
+                                useItem();
+                              }}>
+                              <span className="btg-item-ico"><FlaskConical className="w-4 h-4" /></span>
+                              <span className="min-w-0 flex-1 text-left">
+                                <span className="block text-xs font-black truncate">{item.name}{itemLock.backlash && <span className="ml-1 text-[10px] text-lime-200" title="藥劑反噬：效果反轉">反噬</span>}</span>
+                                <span className="block text-[11px] font-bold tabular-nums" data-item-stock={item.id}>{stock && Number.isFinite(stock.max) ? (item.grantOnly ? `×${stock.left}` : `${stock.left}/${stock.max}`) : '∞'}</span>
+                              </span>
+                              {unusable && <span className="btg-item-lock" aria-hidden>🚫</span>}
+                            </button>
+                          );
                           return (
                             <button
                               key={item.id || idx}
-                              onClick={() => { if (item.pickTarget) { setPickingItem(item); return; } props.onUseItem(actSide, item as any); setTacticalTab("SKILLS"); }}
-                              title={item.description}
-                              className="group flex items-center gap-2.5 bg-slate-900/60 border border-slate-800 hover:border-amber-500/40 rounded-xl px-2.5 py-2 transition-all hover:bg-slate-800 disabled:opacity-40 text-left"
-                              disabled={phase !== actPhaseSelect || !hasBattleItem((actInventory ?? (battle as any).p1ItemInventory), item.id) || ((actSide === 'p1' ? battle.p1RegistryState : battle.p2RegistryState)?.itemPickedRound === (battle.roundNumber ?? battle.turnNumber)) || (!!props.potionLimit && props.potionLimit.left <= 0 && item.type !== "special")}
+                              type="button"
+                              onClick={useItem}
+                              title={unusable ? `${item.description}\n無法使用：${unusable}` : item.description}
+                              aria-disabled={!!unusable} data-item-unusable={unusable || undefined}
+                              className={`group flex items-center gap-2.5 bg-slate-900/60 border border-slate-800 hover:border-amber-500/40 rounded-xl px-2.5 py-2 transition-all hover:bg-slate-800 text-left ${unusable ? 'opacity-55 saturate-50 cursor-help' : ''}`}
                             >
                               <div className={`w-8 h-8 shrink-0 rounded-lg flex items-center justify-center border ${tone}`}>
                                 <FlaskConical className="w-4 h-4" />
                               </div>
                               <div className="flex-1 min-w-0">
-                                <div className="text-xs font-black text-white truncate">{item.name}</div>
+                                <div className="text-xs font-black text-white truncate">{item.name}{itemLock.backlash && <span className="ml-1 px-1 rounded text-[10px] text-lime-200 border border-yellow-500/60" title="藥劑反噬：效果反轉">反噬</span>}</div>
                                 {stock && Number.isFinite(stock.max) && <div className="text-[11px] font-bold text-amber-200 tabular-nums" data-item-stock={item.id}>{item.grantOnly ? `持有 ×${stock.left}` : `${stock.left}/${stock.max}`}</div>}
                                 <div className="text-[10px] text-slate-400 leading-tight truncate">{item.description}</div>
+                                {unusable && <div className="text-[10px] font-black text-rose-300 truncate">🚫 {unusable}</div>}
                               </div>
                             </button>
                           );
@@ -1153,10 +1277,20 @@ function BattleScreenBody(props: BattleScreenUIProps) {
     const isShaking = props.consoleShake?.[side];
     const skillPopup = (battle.floatingDamagePopups || props.floatingDamagePopups || []).find((p: any) => p.sourceSide === side && p.skillName);
     const skillBanner: string | null = skillPopup?.skillName || (isActing ? props.activeSkillAnim?.skillName : null) || null;
+    const skillBannerType: string | undefined = (() => {
+      // 只放屬性圖標：依出招方技能資料（含幻化轉化後技能）判斷；隱匿時不顯示，避免洩漏。
+      if (!skillBanner || hid(isP1 ? p1 : p2, side)) return undefined;
+      return resolveSkillBannerType(skillBanner,isActing?props.activeSkillAnim:undefined,skillPopup,[...visibleSkills(isP1?p1:p2),...(elf.skills||[]),...(elf.skillPool||[])],false);
+    })();
     const isHit = (battle.floatingDamagePopups || props.floatingDamagePopups || []).some((p: any) => p.side === side && p.type === 'skill' && p.amount > 0);
     const lunge = simpleLunge(side);
     // 受擊不打斷進行中的出招／額外行動演出：同側同時有兩者時以出招為準，受擊排在其後（出招結束後若跳字仍在才播受擊）。
-    const anim = isAttacking ? { x: [0, isP1 ? lunge : -lunge, 0], filter: 'brightness(1)' }
+    const isMorphing = !!props.illusionMorph?.[side];
+    const isExtra = isActing && props.activeSkillAnim?.category === 'extra';
+    // 幻化：白光收縮→展開（0.7 秒）；額外行動：短衝刺＋金色光暈（0.65 秒），與一般出招／屬性技能區分。
+    const anim = isMorphing ? { x: 0, scale: [1, 0.86, 1.06, 1], filter: ['brightness(1) blur(0px)', 'brightness(2.6) blur(3px)', 'brightness(1.4) blur(0px)', 'brightness(1) blur(0px)'] }
+      : isExtra ? { x: [0, isP1 ? lunge * 0.55 : -lunge * 0.55, 0], scale: [1, 1.05, 1], filter: ['brightness(1) drop-shadow(0 0 0 rgba(255,200,80,0))', 'brightness(1.35) drop-shadow(0 0 14px rgba(255,200,80,.85))', 'brightness(1) drop-shadow(0 0 0 rgba(255,200,80,0))'] }
+      : isAttacking ? { x: [0, isP1 ? lunge : -lunge, 0], filter: 'brightness(1)' }
       : isActing ? { x: 0, filter: ['brightness(1)', 'brightness(1.3)', 'brightness(1)'] }
       : isHit ? { x: [0, isP1 ? -10 : 10, isP1 ? 6 : -6, 0], filter: ['brightness(1)', 'brightness(2.2)', 'brightness(1)'] }
       : { x: 0, filter: 'brightness(1)' };
@@ -1175,15 +1309,18 @@ function BattleScreenBody(props: BattleScreenUIProps) {
           canvasW={fw} fieldH={fieldSize.h} targetX={fw * (isP1 ? 1 - stage.anchorFrac : stage.anchorFrac)}
           action={isActing?(props.activeSkillAnim?.category==='extra'?'extra':props.activeSkillAnim?.category==='property'?'cp':props.activeSkillAnim?.category==='special'?'sa':'attack'):isHit?'hited':'standby'}
           actionToken={isActing?props.activeSkillAnim:(battle.floatingDamagePopups || props.floatingDamagePopups || []).find((p:any)=>p.side===side&&p.type==='skill'&&p.amount>0)?.id||skillPopup?.id}
-          anim={anim} dead={dead} opacity={spriteMode === "hide" ? 0 : spriteMode === "dim" ? 0.55 : 1}
+          anim={anim} animDuration={isMorphing ? 0.7 : isExtra ? 0.65 : undefined} dead={dead} opacity={spriteMode === "hide" ? 0 : spriteMode === "dim" ? 0.55 : 1}
           overlay={(visible) => <>
             <AnchoredToVisible side={side} fraction={0.28} fallbackBottom={Math.min(visible * 0.78, fh - 120)} deps={visible} z={Z.POPUPS} className="absolute left-1/2 -translate-x-1/2 pointer-events-none flex flex-col items-center gap-1.5 w-max">
               {renderPopups(side)}
             </AnchoredToVisible>
             {skillBanner && (
-              <div data-battle-skill-banner={side} style={{zIndex:Z.POPUPS}} className="absolute left-0 top-3 -translate-x-1/2 pointer-events-none w-max max-w-[32vw] sm:max-w-[280px]">
+              <div data-battle-skill-banner={side} style={{zIndex:Z.POPUPS,bottom:skillBannerBottom(visible,fh)}} className="absolute left-0 -translate-x-1/2 pointer-events-none w-max max-w-[32vw] sm:max-w-[280px]">
                 <motion.div key={skillBanner} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.18/animationRate }}>
-                  <span className="block px-3 py-1 bt-panel text-sm font-black tracking-wide bt-accent truncate">{fog(skillBanner)}</span>
+                  <span className="bt-skill-banner">
+                    {skillBannerType && <TypeSlot type={skillBannerType} size={18} title={skillBannerType === "無屬性" ? "屬性技能" : `${skillBannerType}系`} />}
+                    <span className="bt-skill-banner-text truncate">{fog(skillBanner)}</span>
+                  </span>
                 </motion.div>
               </div>
             )}
@@ -1216,7 +1353,7 @@ function BattleScreenBody(props: BattleScreenUIProps) {
             phase !== actPhaseSelect ? '現在不是選擇階段' : '';
           const selected = skillSlot(actElf, actSelectedSkill) === slot;
           const hover = skillHidden ? { ...skill, name: UNKNOWN_SKILL, description: "", specialBadge: undefined, __concealed: true } as any : actElf.illusion && !actElf.isInherentInvalid ? { ...skill, name: `${original.name} → ${skill.name}`,
-            description: `【原技能】${original.name}\n${original.description}\n\n【轉化後】${skill.name}\n${skill.description}` } : skill;
+            description: `【原技能】${original.name}\n${skillDescriptionText(original)}\n\n【轉化後】${skill.name}\n${skillDescriptionText(skill)}` } : skill;
           return (
             <button
               key={i}
@@ -1327,6 +1464,8 @@ function BattleScreenBody(props: BattleScreenUIProps) {
             <button onClick={() => setLogOpen(v => !v)} className="bt-btn shrink-0" data-active={logOpen} data-log-toggle>{logOpen ? "收起對戰訊息" : "打開對戰訊息"}</button>
             <AnimationSpeedControl/>
             <span className="flex-1 max-sm:hidden" />
+            <button onClick={doPass} disabled={!canPass} data-pass-button title="空過：放棄本回合行動" className="bt-btn disabled:opacity-40">空過</button>
+            <button onClick={togglePassMode} data-pass-mode={passMode} title={passMode === 'auto' ? '無可用行動時自動空過（點擊改為手動）' : '手動空過（點擊改為無可用行動時自動空過）'} className="bt-btn" style={passMode === 'auto' ? { color: "#7dd3fc", borderColor: "#38bdf8" } : undefined}>{passMode === 'auto' ? '自動空過' : '手動空過'}</button>
             <button onClick={props.onAutoBattleToggle} title="自動戰鬥" className="bt-btn" style={isAutoBattle ? { background: "#059669", color: "#fff", borderColor: "#34d399" } : undefined}>托管</button>
             <button onClick={() => setShowDisplaySettings(true)} title="顯示設定" className="bt-btn"><Layout className="w-4 h-4" /></button>
             <button onClick={() => window.dispatchEvent(new CustomEvent('open-settings', { detail: { tab: 'battle' } }))} title="戰鬥設定" className="bt-btn"><Settings className="w-4 h-4" /></button>
@@ -1399,7 +1538,7 @@ function BattleScreenBody(props: BattleScreenUIProps) {
     return (
       <div className="btg-tray overflow-y-auto overscroll-contain custom-scrollbar pb-1" data-side={side} data-status-tray={side} style={{ maxHeight: hudTrayMaxHeight(fieldSize.h) }}>
         {rows.map(row => (
-          <div key={row.key} className="btg-row" data-tray-row={row.key}>
+          <div key={row.key} className="btg-row" data-tray-row={row.key} data-dense={row.items.length > 4 || undefined}>
             <span className="btg-row-label" style={{ color: row.color }}>{row.label}</span>
             {row.items.map(fx => fx.kind === 'stage'
               ? <button type="button" key={fx.key} className="btg-stage" data-up={fx.up} title={fog(`${fx.name}\n${fx.desc || ''}`)} onClick={() => setModalContent({ title: fog(fx.name), content: fog(fx.desc || fx.name) })}>{fx.stageLabel}<b>{fx.stageValue}</b></button>
@@ -1442,10 +1581,30 @@ function BattleScreenBody(props: BattleScreenUIProps) {
               )}
             </div>
             <div className="btg-hp bt-hp w-full">
-              <i className={`${isP1 ? 'left-0' : 'right-0'} ${getHpBarColor(elf.currentHp, elf.maxHp)}`} style={{ width: `${hpPct}%` }} />
+              {/* 掉血殘影：主條與跳字同一幀變化，殘影延遲收縮（原廠式），回復時殘影藏在主條後面 */}
+              <i className={`btg-hp-trail ${isP1 ? 'left-0' : 'right-0'}`} style={{ width: `${hpPct}%` }} />
+              <i className={`btg-hp-fill ${isP1 ? 'left-0' : 'right-0'} ${getHpBarColor(elf.currentHp, elf.maxHp)}`} style={{ width: `${hpPct}%` }} />
               <span className={isP1 ? 'left-2' : 'right-2'} title={hidden ? undefined : `${formatFullNumber(elf.currentHp)}/${formatFullNumber(elf.maxHp)}`}>{hidden ? '？/？' : `${formatCompactHud(elf.currentHp)}/${formatCompactHud(elf.maxHp)}`}</span>
               {!hidden && <span className={isP1 ? 'right-4' : 'left-4'}>{hpPct >= 10 ? Math.round(hpPct) : hpPct.toFixed(1)}%</span>}
             </div>
+            {!hidden && (() => {
+              // 2026-11-14：頂部顯示雙方當前能力值（含能力等級）與本回合體力淨變化；細項在 tooltip。
+              const cs = (elf.calculatedStats || {}) as Record<string, number>, stg = (elf.statStages || {}) as Record<string, number>;
+              const masked = disguiseBattleStates;
+              const rows = ([['atk', '攻'], ['def', '防'], ['spatk', '特攻'], ['spdef', '特防'], ['speed', '速']] as const).map(([k, l]) => {
+                const base = Number(cs[k]) || 0, lv = masked ? 0 : Number(stg[k]) || 0;
+                return { k, l, v: calculateEffectiveStat(base, lv), lv, base };
+              });
+              const ts = isP1 ? p1TurnStats : p2TurnStats, net = Number(ts?.hpChange) || 0;
+              const tip = ts ? `本回合體力淨變化 ${net > 0 ? '+' : ''}${net}\n技能 ${ts.skillDmg || 0}・固定 ${ts.fixedDmg || 0}・百分比 ${ts.percentDmg || 0}・真實 ${ts.trueDmg || 0}・回復 ${ts.heal || 0}` : '';
+              return (
+                <div className={`flex items-center gap-x-2 gap-y-0.5 flex-wrap text-[11px] leading-none tabular-nums ${isP1 ? '' : 'flex-row-reverse'}`} data-hud-stats={side}>
+                  {rows.map(r => <span key={r.k} title={`${r.l}：面板 ${r.base}${r.lv ? `，等級 ${r.lv > 0 ? '+' : ''}${r.lv}` : ''}`}
+                    style={{ color: r.lv > 0 ? '#ffb86b' : r.lv < 0 ? '#8ab4ff' : 'var(--g-muted, #9aa6b8)' }}>{r.l}<b className="ml-0.5 text-slate-100">{formatCompactHud(r.v)}</b></span>)}
+                  {net !== 0 && <span data-hud-hp-delta={side} title={tip} className={`px-1 rounded font-black ${net > 0 ? 'text-emerald-300 bg-emerald-950/70' : 'text-rose-300 bg-rose-950/70'}`}>{net > 0 ? '+' : ''}{formatCompactHud(net)}</span>}
+                </div>
+              );
+            })()}
             {!hidden && (elf.shield || 0) + (elf.barrier || 0) > 0 && (
               <div className={`flex gap-3 ${isP1 ? '' : 'flex-row-reverse'}`} data-protection={side}>
                 {(elf.shield || 0) > 0 && <button type="button" className="btg-prot text-sky-200" title="護盾：優先吸收技能攻擊傷害" onClick={() => setModalContent({ title: "護盾", content: "優先吸收技能攻擊傷害。" })}>
@@ -1478,9 +1637,13 @@ function BattleScreenBody(props: BattleScreenUIProps) {
         const sheltered = !e.isVanished && e.currentHp <= 0 && e.deathImmunity && e.deathImmunity.deathImmuneTurns > 0;
         const activeNow = i === activeIdx;
         const bg = extra ? (dead ? '#5a4410' : '#f2c14e') : dead ? '#3a4252' : activeNow ? '#7de3ff' : sheltered ? '#b57cff' : '#3dd68c';
-        return <button key={i} type="button" className="btg-dot" data-extra={extra} style={{ background: bg, boxShadow: activeNow ? '0 0 6px #7de3ff' : undefined }}
-          onClick={() => !hid(e, side) && setSelectedElfDetail({ elf: e, side, idx: i })}
-          title={`${hid(e, side) ? "未知精靈" : elfForViewer(e, side).name}${extra ? "（額外精靈・不計勝負）" : ""}${e.isVanished ? "（消逝）" : dead ? "（陣亡）" : sheltered ? "（庇護中）" : activeNow ? "（出戰中）" : ""}`} />;
+        // 場下精靈體力（2026-11-07）：點的填色＝剩餘體力比例；tooltip 寫出數值（隱匿者不顯示）。
+        const hidden = hid(e, side);
+        const ratio = dead || hidden ? (dead ? 0 : 1) : Math.max(0, Math.min(1, e.maxHp > 0 ? e.currentHp / e.maxHp : 0));
+        const fill = `conic-gradient(${bg} ${ratio * 360}deg, rgba(10,14,22,.85) 0)`;
+        return <button key={i} type="button" className="btg-dot" data-extra={extra} data-hp-ratio={hidden ? undefined : ratio.toFixed(3)} style={{ background: extra ? bg : fill, boxShadow: activeNow ? '0 0 6px #7de3ff' : undefined }}
+          onClick={() => !hidden && setSelectedElfDetail({ elf: e, side, idx: i })}
+          title={`${hidden ? "未知精靈" : elfForViewer(e, side).name}${extra ? "（額外精靈・不計勝負）" : ""}${e.isVanished ? "（消逝）" : dead ? "（陣亡）" : sheltered ? "（庇護中）" : activeNow ? "（出戰中）" : ""}${hidden || e.isVanished ? "" : `\n體力 ${formatFullNumber(Math.max(0, e.currentHp))} / ${formatFullNumber(e.maxHp)}（${Math.round(ratio * 100)}%）`}`} />;
       });
     };
     const extrasP1 = p1Team.some(e => e?.isExtra), extrasP2 = p2Team.some(e => e?.isExtra);
@@ -1506,7 +1669,7 @@ function BattleScreenBody(props: BattleScreenUIProps) {
             <span className="flex gap-1.5 flex-row-reverse min-w-[2rem]">{extrasP2 && dots('p2', true)}</span>
           </div>
         )}
-        <span className="text-xs font-bold" style={{ color: 'var(--g-muted)', textShadow: '0 1px 2px #000' }}>
+        <span className="text-xs font-bold max-w-[18rem] truncate" style={{ color: 'var(--g-muted)', textShadow: '0 1px 2px #000' }}>
           {phase === actPhaseSelect ? (isLocalPvp && actSide === "p2" ? "P2 請選擇指令" : "請選擇指令") : phase.includes("forced_switch") ? (isLocalPvp && (phase === "forced_switch_p2" || phase === "forced_switch_both") ? "P2 請選擇出戰精靈" : "請選擇出戰精靈") : (isLocalPvp ? PHASE_LABEL_PVP[phase] : PHASE_LABEL[phase]) || ""}
         </span>
       </div>
@@ -1526,7 +1689,7 @@ function BattleScreenBody(props: BattleScreenUIProps) {
     const converted = !!actElf.illusion && skill.name !== original.name;
     const skillHidden = hid(actElf, actSide) && (phase !== actPhaseSelect || !!winner);
     const hover = skillHidden ? { ...skill, name: UNKNOWN_SKILL, description: "", specialBadge: undefined, __concealed: true } as any
-      : actElf.illusion && !actElf.isInherentInvalid ? { ...skill, name: `${original.name} → ${skill.name}`, description: `【原技能】${original.name}\n${original.description}\n\n【轉化後】${skill.name}\n${skill.description}` } : skill;
+      : actElf.illusion && !actElf.isInherentInvalid ? { ...skill, name: `${original.name} → ${skill.name}`, description: `【原技能】${original.name}\n${skillDescriptionText(original)}\n\n【轉化後】${skill.name}\n${skillDescriptionText(skill)}` } : skill;
     const showTip = (e: React.MouseEvent<HTMLElement>) => {
       try {
         const rect = e.currentTarget.getBoundingClientRect();
@@ -1557,8 +1720,10 @@ function BattleScreenBody(props: BattleScreenUIProps) {
         {ordered.map((skill, i) => {
           const m = gameSkillModel(skill);
           const tag = m.abolished ? null : m.converted ? { text: '轉化', color: '#1c7fb8' } : m.invalid ? { text: '固有效果失效', color: '#b8761c' } : null;
+          const peek = m.converted && (convHover === m.slot || !!convPinned[m.slot]);
+          const shown: Skill = m.converted && !peek ? m.original : skill;
           return (
-            <button key={i} type="button" className="btg-skill" data-idx={String(i + 1).padStart(2, '0')} style={{ ['--type-c' as any]: typeAccent(m.skillHidden ? '' : skillDisplayType(skill)) }} onClick={m.onClick} onMouseEnter={m.showTip} onMouseLeave={m.hide}
+            <button key={i} type="button" className="btg-skill" data-idx={String(i + 1).padStart(2, '0')} style={{ ['--type-c' as any]: typeAccent(m.skillHidden ? '' : skillDisplayType(shown)) }} onClick={m.onClick} onMouseEnter={m.showTip} onMouseLeave={m.hide}
               data-selected={m.selected} data-disabled={m.disabled} data-abolished={m.abolished} data-state={m.converted ? 'conv' : m.invalid ? 'invalid' : undefined}
               aria-disabled={m.disabled} data-skill-disabled={m.disabled ? "true" : "false"} data-skill-disabled-reason={m.reason || undefined}>
               {tag && !m.skillHidden && <span className="btg-tag" style={{ left: '.75rem', background: tag.color }}>{tag.text}</span>}
@@ -1566,17 +1731,26 @@ function BattleScreenBody(props: BattleScreenUIProps) {
                 <span title={skill.specialBadge.description} data-skill-badge={skill.specialBadge.text} data-badge-active={skill.isRuneActive ? "true" : "false"} className={`absolute -top-2.5 right-2 px-1.5 rounded text-[12px] leading-4 font-black border z-[1] ${skill.specialBadge.bg || "bg-purple-900/90"} ${skill.specialBadge.color || "text-purple-200"} ${skill.specialBadge.border || "border-purple-500/40"} ${skill.isRuneActive ? skill.specialBadge.animate || "" : ""}`}>{skill.specialBadge.text}{skill.isRuneActive ? <span className="ml-0.5 text-[8px] align-middle">●</span> : null}</span>
               )}
               <span className="type">
-                {!m.skillHidden && <SkillTypeIcon skill={skill} size={34} />}
-                {m.converted && !m.skillHidden && <span className="absolute -right-1.5 -bottom-1 rounded-full bg-black/70 p-px" title="原技能屬性"><SkillTypeIcon skill={m.original} size={18} /></span>}
+                {!m.skillHidden && <SkillTypeIcon skill={shown} size={34} />}
               </span>
               <span className="flex-1 min-w-0 flex flex-col gap-1.5">
                 <span className="flex items-baseline gap-2 min-w-0">
-                  <span className="nm">{m.skillHidden ? `${UNKNOWN_SKILL} ${m.slot + 1}` : skill.name}</span>
-                  {m.converted && !m.skillHidden && <span className="text-xs truncate" style={{ color: '#9fdcff' }}>← 原 {m.original.name}</span>}
+                  <span className="nm" data-conv-view={m.converted ? (peek ? 'after' : 'before') : undefined} style={peek ? { color: '#9fdcff' } : undefined}>{m.skillHidden ? `${UNKNOWN_SKILL} ${m.slot + 1}` : shown.name}</span>
+                  {/* 轉化：循環圖示切換轉化前後（移上＝暫看，點一下＝釘住；觸控同樣點一下）。點卡片仍選原槽。 */}
+                  {m.converted && !m.skillHidden && (
+                    <span role="button" tabIndex={0} className="btg-conv" data-peek={peek ? 'true' : 'false'} data-conv-toggle={m.slot}
+                      title={peek ? `原技能：${m.original.name}` : `轉化後：${skill.name}（${skillDisplayType(skill)}／${skill.category}${skill.category === '屬性' ? '' : `／威力${skill.power || 0}`}）`}
+                      onMouseEnter={() => setConvHover(m.slot)} onMouseLeave={() => setConvHover(h => (h === m.slot ? null : h))}
+                      onClick={e => { e.stopPropagation(); setConvPinned(v => ({ ...v, [m.slot]: !v[m.slot] })); }}
+                      onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); e.stopPropagation(); setConvPinned(v => ({ ...v, [m.slot]: !v[m.slot] })); } }}>
+                      <RefreshCw className="w-3.5 h-3.5" aria-hidden />
+                      <span className="sr-only">轉化 → {skill.name}</span>
+                    </span>
+                  )}
                 </span>
                 <span className="flex items-center gap-1.5 flex-nowrap min-w-0 overflow-hidden">
                   <span className="btg-pill"><SkillResources elf={actElf} skill={skill} normalLabel="PP" anonymous={m.skillHidden} /></span>
-                  <span className="btg-pill">{skill.category === "屬性" ? <b className="text-emerald-300">屬性</b> : <>威力 <b>{skill.power || 0}</b></>}</span>
+                  <span className="btg-pill">{shown.category === "屬性" ? <b className="text-emerald-300">屬性</b> : <>威力 <b>{shown.power || 0}</b></>}</span>
                 </span>
               </span>
               {m.disabled && m.reason && !m.abolished && !lockReason && !m.skillHidden && <span className="shrink-0 text-[11px] font-black text-rose-300">{m.reason}</span>}
@@ -1608,34 +1782,124 @@ function BattleScreenBody(props: BattleScreenUIProps) {
   const renderGameTeam = () => {
     const focusIdx = gBenchFocus ?? actActiveIndex;
     const focusElf = actTeam[focusIdx];
+    const oppForAct = actSide === 'p2' ? p1 : p2;
     const canSwitchPhase = phase === actPhaseSelect || phase.includes("forced_switch");
     const switchPicked = phase === actPhaseSelect && (actSide === 'p1' ? battle.p1RegistryState : battle.p2RegistryState)?.switchPickedRound === (battle.roundNumber ?? battle.turnNumber);
-    const focusSkills = focusElf && !hid(focusElf, actSide) ? (() => {
-      const f = fifthSkillSlot(focusElf.skills);
-      const list = visibleSkills(focusElf).slice(0, 5);
+    // 陣亡後強制換人不受切換限制；一般選擇階段依統一判斷（個體／全隊）。
+    const swLock = phase === actPhaseSelect ? switchRestrictions(battle, actSide) : { blocked: false, list: [] as ActionRestriction[] };
+    const teamLock = swLock.list.some(r => r.scope === 'team'), elfLock = swLock.list.some(r => r.scope === 'elf');
+    const deadOf = (elf: Elf) => !isAliveBySurvivalRule(elf.currentHp, elf.survivalRule) && !(elf.deathImmunity && elf.deathImmunity.deathImmuneTurns > 0);
+    /** 不能出戰的原因（空字串＝可以）；按鈕不鎖，只用來顯示與擋下動作。 */
+    const switchBlock = (idx: number): string => {
+      const elf = actTeam[idx];
+      if (!elf) return '—';
+      if (elf.isExtra) return '額外精靈不可出戰';
+      if (idx === actActiveIndex) return '出場中';
+      if (elf.isVanished) return '已消逝';
+      if (deadOf(elf)) return '已陣亡';
+      if (!canSwitchPhase) return '目前不是選擇階段';
+      if (switchPicked) return '本回合已選擇切換';
+      if (swLock.blocked) return swLock.list.map(restrictionText).join('、');
+      return '';
+    };
+    const doSwitch = (idx: number) => { props.onSwitchElf(actSide, idx); setGBenchFocus(null); setTacticalTab("SKILLS"); };
+    gDropRef.current = idx => { if (!switchBlock(idx)) doSwitch(idx); };
+    /** 技能能否使用（背包檢視用）：空字串＝可用。 */
+    const skillBlock = (elf: Elf, s: Skill, isActive: boolean): string => {
+      const orig = elf.skills[s.battleSlot ?? 0] || s;
+      if (orig.isAbolished) return '已廢除';
+      const uses = s.charge !== undefined ? s.charge : s.pp;
+      if (uses <= 0 && !isZeroPpExempt(elf, s, oppForAct)) return s.charge !== undefined ? '充能不足' : 'PP 耗盡';
+      if (isActive && isElfSkillSelectionDisabled(elf)) return '無法選擇技能';
+      return '';
+    };
+    const skillsOf = (elf: Elf) => {
+      const f = fifthSkillSlot(elf.skills);
+      const list = visibleSkills(elf).slice(0, 5);
       return [...list.filter(s => s.battleSlot === f), ...list.filter(s => s.battleSlot !== f)].map(s => ({ s, fifth: s.battleSlot === f }));
-    })() : [];
+    };
+    const focusLive = focusIdx === actActiveIndex ? actElf : focusElf;
+    const focusSkills = focusLive && !hid(focusLive, actSide) ? skillsOf(focusLive) : [];
+    // 拖曳換人：按住精靈拖到「出場中」上放開（觸控同樣適用）；點兩下出戰保留。
+    const startDrag = (e: React.PointerEvent, idx: number) => {
+      if (e.button !== 0 || switchBlock(idx)) return;
+      gDragRef.current = { idx, x: e.clientX, y: e.clientY, moved: false, pointerId: e.pointerId };
+    };
+    const skillChip = (elf: Elf, s: Skill, fifth: boolean, isActive: boolean, key: React.Key) => {
+      const block = skillBlock(elf, s, isActive);
+      const maxPp = getMaxPp(s, elf) || 1;
+      const uses = s.charge !== undefined ? s.charge : s.pp;
+      return (
+        <span key={key} className="btg-benchskill" data-fifth={fifth} data-unusable={block ? 'true' : undefined}
+          title={`${s.name}${fifth ? '（第五技能）' : ''}${block ? `\n不可使用：${block}` : ''}\n${s.description || ''}`}>
+          <SkillTypeIcon skill={s} size={22} />
+          <span className="min-w-0 flex-1 flex flex-col leading-tight">
+            <b className="text-xs truncate">{s.name}</b>
+            <span className="text-[10px] whitespace-nowrap" style={{ color: block ? '#ff9aa0' : 'var(--g-muted)' }}>
+              {block || `${s.charge !== undefined ? `充能 ${uses}` : `PP ${uses}/${maxPp}`}・${s.category === '屬性' ? '屬性' : `威力 ${s.power || 0}`}`}
+            </span>
+            {s.charge === undefined && <span className="btg-ppbar" aria-hidden><span style={{ width: `${Math.max(0, Math.min(1, (Number(s.pp) || 0) / maxPp)) * 100}%` }} /></span>}
+          </span>
+        </span>
+      );
+    };
     return (
-      <div className="h-full flex flex-col gap-2 pt-2" data-team-side={actSide}>
-        <div className="grid gap-2 h-[5.9rem]" style={{ gridTemplateColumns: `repeat(${Math.max(6, actTeam.length)}, minmax(0, 1fr))` }}>
+      <div className="h-full flex flex-col gap-2 pt-2 relative" data-team-side={actSide} data-team-lock={teamLock ? 'team' : elfLock ? 'elf' : undefined}>
+        <div className="absolute right-0 -top-1 z-[2] btg-seg" role="tablist" aria-label="背包檢視">
+          <button type="button" role="tab" aria-selected={gTeamView === 'elves'} data-active={gTeamView === 'elves'} onClick={() => setGTeamView('elves')}>精靈</button>
+          <button type="button" role="tab" aria-selected={gTeamView === 'skills'} data-active={gTeamView === 'skills'} onClick={() => setGTeamView('skills')} data-team-view-skills>技能一覽</button>
+        </div>
+        {gTeamView === 'skills' ? (
+          <div className="flex-1 min-h-0 overflow-y-auto custom-scrollbar flex flex-col gap-1.5 pr-1 pt-5" data-team-skill-table>
+            {actTeam.map((teamElf, idx) => {
+              if (!teamElf) return null;
+              const isActive = idx === actActiveIndex;
+              // 在場者讀即時狀態（隊伍陣列可能尚未同步廢除、PP 等變化）。
+              const elf = isActive ? actElf : teamElf;
+              const hidden = hid(elf, actSide);
+              return (
+                <div key={`${actSide}-st-${idx}`} className="flex items-center gap-2" data-dead={deadOf(elf) || !!elf.isVanished}>
+                  <span className="w-[6.5rem] shrink-0 flex items-center gap-1.5 min-w-0">
+                    <span className="block w-7 h-7 shrink-0 rounded-full overflow-hidden bg-slate-900"><ElfAvatar elf={elf} battleSide={actSide} kind="head" className="w-full h-full object-cover" /></span>
+                    <span className="text-[11px] font-black truncate" style={{ color: isActive ? '#4fc3f7' : elf.isExtra ? '#e0b45a' : undefined }}>{hidden ? UNKNOWN_ELF : elf.name}</span>
+                  </span>
+                  {hidden ? <span className="text-xs bt-muted">{UNKNOWN_SKILL}</span>
+                    : <span className="flex-1 min-w-0 grid grid-cols-5 gap-1.5">{skillsOf(elf).map(({ s, fifth }) => skillChip(elf, s, fifth, isActive, s.battleSlot ?? s.name))}</span>}
+                </div>
+              );
+            })}
+          </div>
+        ) : (<>
+        {/* 2026-11-14：背包可左右滑動（觸控滑、滑鼠滾輪橫移），超過 6 隻不再擠壓。 */}
+        <div className="grid gap-2 h-[5.9rem] overflow-x-auto overflow-y-hidden custom-scrollbar snap-x" data-bench-scroll
+          style={{ gridAutoFlow: 'column', gridAutoColumns: `max(5.5rem, calc((100% - ${5 * 0.5}rem) / 6))`, overscrollBehaviorX: 'contain' }}
+          onWheel={e => { const el = e.currentTarget; if (el.scrollWidth > el.clientWidth && Math.abs(e.deltaY) > Math.abs(e.deltaX)) el.scrollLeft += e.deltaY; }}>
           {actTeam.map((elf, idx) => {
             if (!elf) return <span key={idx} />;
             const isExtra = !!elf.isExtra;
-            const isDead = !isAliveBySurvivalRule(elf.currentHp, elf.survivalRule) && !(elf.deathImmunity && elf.deathImmunity.deathImmuneTurns > 0);
+            const isDead = deadOf(elf);
             const sheltered = !!(elf.currentHp <= 0 && elf.deathImmunity && elf.deathImmunity.deathImmuneTurns > 0);
             const isActive = idx === actActiveIndex;
             const focused = idx === focusIdx;
-            const canSwitch = !isExtra && !isActive && !isDead && !elf.isVanished && canSwitchPhase && !switchPicked;
+            const block = switchBlock(idx);
+            const canSwitch = !block;
+            const lockedCandidate = swLock.blocked && !isExtra && !isActive && !isDead && !elf.isVanished;
             const tag = elf.isVanished ? ['消逝', '#6b21a8'] : isDead ? ['陣亡', '#8a2a33'] : sheltered ? ['庇護中', '#7a3ab8'] : isActive ? ['出場中', '#1c8fb8'] : isExtra ? ['額外', '#b8761c'] : null;
             const pct = elf.maxHp > 0 ? (elf.currentHp / elf.maxHp) * 100 : 0;
+            const dragOver = !!gDrag && isActive && gDrag.over;
             return (
-              <div key={`${actSide}-g-${idx}`} className="btg-bench" data-focus={focused} data-active={isActive} data-extra={isExtra} data-dead={isDead || !!elf.isVanished}>
-                <button type="button" className="w-full h-full flex flex-col items-center justify-center gap-1"
-                  title={`${hid(elf, actSide) ? UNKNOWN_ELF : elf.name}${canSwitch ? (focused ? '\n再點一下出戰（消耗一回合）' : '\n點一下看技能，再點一下出戰') : ''}`}
+              <div key={`${actSide}-g-${idx}`} className="btg-bench" data-focus={focused} data-active={isActive} data-extra={isExtra} data-dead={isDead || !!elf.isVanished}
+                data-switch-lock={lockedCandidate ? (teamLock ? 'team' : 'elf') : isActive && elfLock ? 'self' : undefined}
+                data-drop-switch={isActive ? 'true' : undefined} data-drop-over={dragOver ? 'true' : undefined} data-dragging={gDrag?.idx === idx ? 'true' : undefined}>
+                <button type="button" className="w-full h-full flex flex-col items-center justify-center gap-1 touch-none" aria-disabled={!canSwitch && !isExtra}
+                  data-bench-idx={idx}
+                  title={`${hid(elf, actSide) ? UNKNOWN_ELF : elf.name}${canSwitch ? (focused ? '\n再點一下出戰，或拖到「出場中」（消耗一回合）' : '\n點一下看技能，再點一下出戰；也可拖到「出場中」') : !isActive && !isExtra ? `\n無法出戰：${block}` : ''}`}
+                  onPointerDown={e => startDrag(e, idx)}
                   onClick={() => {
+                    if (gDragRef.current?.suppressClick) { gDragRef.current = null; return; }
                     if (!focused) { setGBenchFocus(idx); return; }
-                    if (canSwitch) { props.onSwitchElf(actSide, idx); setGBenchFocus(null); setTacticalTab("SKILLS"); }
-                    else if (isExtra && !hid(elf, actSide)) setSelectedElfDetail({ elf, side: actSide, idx });
+                    if (canSwitch) doSwitch(idx);
+                    else if (!hid(elf, actSide)) setSelectedElfDetail({ elf, side: actSide, idx });
                   }}>
                   <span className="relative">
                     <span className="block w-11 h-11 rounded-full overflow-hidden bg-slate-900"><ElfAvatar elf={elf} battleSide={actSide} kind="head" className="w-full h-full object-cover" /></span>
@@ -1643,28 +1907,36 @@ function BattleScreenBody(props: BattleScreenUIProps) {
                   </span>
                   <span className="text-[11px] font-black max-w-full truncate">{hid(elf, actSide) ? UNKNOWN_ELF : elf.name}</span>
                   <span className="w-4/5 h-1 rounded bg-black/50 overflow-hidden"><span className={`block h-full ${getHpBarColor(elf.currentHp, elf.maxHp)}`} style={{ width: `${pct}%` }} /></span>
+                  {!hid(elf, actSide) && !elf.isVanished && <span className="text-[10px] font-bold tabular-nums leading-none" style={{ color: 'var(--g-muted)' }} data-bench-hp={idx}
+                    title={`${formatFullNumber(Math.max(0, elf.currentHp))} / ${formatFullNumber(elf.maxHp)}`}>{formatCompactHud(Math.max(0, elf.currentHp))}/{formatCompactHud(elf.maxHp)}</span>}
                 </button>
                 {!hid(elf, actSide) && <button type="button" aria-label="精靈詳情" title="精靈詳情" onClick={() => setSelectedElfDetail({ elf, side: actSide, idx })}
                   className="absolute right-1 top-1 w-5 h-5 rounded-full border border-white/40 bg-black/55 text-[11px] font-black leading-none">i</button>}
                 {tag && <span className="absolute left-1 -top-2 px-1 rounded text-[10px] font-black text-white leading-4" style={{ background: tag[1] }}>{tag[0]}</span>}
+                {isActive && elfLock && <span className="btg-lockchip" data-scope="elf" title={swLock.list.filter(r => r.scope === 'elf').map(restrictionText).join('\n')}>⛓ 個體</span>}
+                {lockedCandidate && <span className="btg-lockcover" aria-hidden>⛓</span>}
                 {focused && canSwitch && <span className="absolute left-1/2 -bottom-2 -translate-x-1/2 px-2 rounded text-[10px] font-black leading-4 bg-amber-400 text-slate-900 whitespace-nowrap">再點出戰</span>}
+                {dragOver && <span className="absolute inset-0 flex items-center justify-center text-[11px] font-black text-slate-900 bg-amber-300/85 rounded-[inherit] pointer-events-none">放開換人</span>}
               </div>
             );
           })}
         </div>
+        {swLock.blocked && (
+          <div className="flex items-center gap-2 flex-wrap text-[11px] font-black" data-switch-lock>
+            {swLock.list.map((r, i) => <span key={i} className="btg-lockline" data-scope={r.scope} title={r.source ? `來源：${r.source}` : undefined}>⛓ {r.scope === 'team' ? '全隊' : '在場精靈'}｜{restrictionText(r)}</span>)}
+          </div>
+        )}
         <div className="flex-1 min-h-0 flex items-center gap-2 px-2 rounded-xl border" style={{ borderColor: 'var(--g-line)', background: 'var(--g-pill)' }} data-bench-skills>
           <span className="text-xs font-black shrink-0 max-w-[7rem] truncate" style={{ color: 'var(--g-accent)' }}>{focusElf ? (hid(focusElf, actSide) ? UNKNOWN_ELF : focusElf.name) : ''}</span>
-          {focusSkills.map(({ s, fifth }) => (
-            <span key={s.battleSlot} className="btg-benchskill" data-fifth={fifth} title={`${s.name}${fifth ? '（第五技能）' : ''}\n${s.description || ''}`}>
-              <SkillTypeIcon skill={s} size={22} />
-              <span className="min-w-0 flex flex-col leading-tight">
-                <b className="text-xs truncate">{s.name}</b>
-                <span className="text-[10px] whitespace-nowrap" style={{ color: 'var(--g-muted)' }}>PP {s.pp}/{getMaxPp(s, focusElf)}・{s.category === '屬性' ? '屬性' : `威力 ${s.power || 0}`}</span>
-              </span>
-            </span>
-          ))}
+          {focusLive && focusSkills.map(({ s, fifth }) => skillChip(focusLive, s, fifth, focusIdx === actActiveIndex, s.battleSlot ?? s.name))}
           {focusElf && hid(focusElf, actSide) && <span className="text-xs bt-muted">{UNKNOWN_SKILL}</span>}
         </div>
+        </>)}
+        {gDrag?.moved && actTeam[gDrag.idx] && (
+          <div className="fixed pointer-events-none z-[120] w-12 h-12 rounded-full overflow-hidden border-2 border-amber-300 shadow-[0_0_14px_rgba(255,210,122,.7)]" style={{ left: gDrag.x - 24, top: gDrag.y - 24 }} data-drag-ghost>
+            <ElfAvatar elf={actTeam[gDrag.idx]} battleSide={actSide} kind="head" className="w-full h-full object-cover" />
+          </div>
+        )}
       </div>
     );
   };
@@ -1691,6 +1963,7 @@ function BattleScreenBody(props: BattleScreenUIProps) {
         {/* 右側圓鈕：托管／速度／設定 */}
         <div style={{ zIndex: Z.CONTROLS }} className="absolute right-4 top-[46%] flex flex-col gap-3 pointer-events-auto">
           <button type="button" className="btg-round text-lg" data-on={isAutoBattle} onClick={props.onAutoBattleToggle} title="托管（自動戰鬥）"><span>A</span></button>
+          <button type="button" className="btg-round text-sm disabled:opacity-40" data-pass-button disabled={!canPass} onClick={doPass} title="空過：放棄本回合行動"><span>⏭<br /><small className="text-[9px]">空過</small></span></button>
           <button type="button" className="btg-round text-sm" onClick={() => cycleAnimationSpeed(animationRate)} title="動畫速度（點擊切換 ×1／×2／×5／×10）"><span>×{Number(animationRate.toFixed(1))}<br /><small className="text-[9px]">▶▶</small></span></button>
           <div className="relative">
             <button type="button" className="btg-round" onClick={() => setGMenuOpen(v => !v)} title="設定" aria-label="設定"><span><Settings className="w-5 h-5" /></span></button>
@@ -1699,6 +1972,7 @@ function BattleScreenBody(props: BattleScreenUIProps) {
                 <button type="button" onClick={() => { setGMenuOpen(false); setShowDisplaySettings(true); }}>顯示設定</button>
                 <button type="button" onClick={() => { setGMenuOpen(false); window.dispatchEvent(new CustomEvent('open-settings', { detail: { tab: 'battle' } })); }}>戰鬥設定</button>
                 <button type="button" onClick={() => { setGMenuOpen(false); setGInspector(true); }}>效果總覽</button>
+                <button type="button" data-pass-mode={passMode} onClick={togglePassMode} title="無可用行動時是否自動空過">{passMode === 'auto' ? '自動空過 ✓' : '自動空過 ✗'}</button>
                 <button type="button" onClick={() => { setGMenuOpen(false); layoutPrefs.setStyle('classic'); }}>切換為實用風</button>
               </div>
             )}
@@ -1729,6 +2003,8 @@ function BattleScreenBody(props: BattleScreenUIProps) {
                 onClick={() => c.key === 'RETREAT' ? setGConfirmRetreat(true) : (setTacticalTab(c.key), setGBenchFocus(null))}>
                 {c.label}
                 {c.key === 'ITEMS' && props.potionLimit && <span className="btg-badge" style={props.potionLimit.left > 0 ? undefined : { background: '#e5484d', color: '#fff' }}>{props.potionLimit.left}</span>}
+                {c.key === 'TEAM' && phase === actPhaseSelect && switchRestrictions(battle, actSide).blocked && <span className="btg-lockmark" title={switchRestrictions(battle, actSide).list.map(restrictionText).join('\n')}>⛓</span>}
+                {c.key === 'ITEMS' && (() => { const it = itemRestrictions(battle, actSide); return it.blocked ? <span className="btg-lockmark" title={it.list.map(restrictionText).join('\n')}>🚫</span> : it.backlash ? <span className="btg-lockmark btg-lockmark-backlash" title={`${restrictionText(it.backlash)}：藥劑效果反轉`}>反噬</span> : null; })()}
               </button>
             ))}
           </div>
@@ -1760,11 +2036,13 @@ function BattleScreenBody(props: BattleScreenUIProps) {
   return (
     <div ref={battleRootRef} data-battle-root data-layout={gameLayout ? "game" : "classic"} data-gskin={layoutPrefs.skin} data-skin={props.specialMode === "interstellar" ? "eclipse" : "default"} className="h-full w-full bg-transparent overflow-clip relative font-sans text-slate-200">
       {winner && !props.specialMode && resultSummary && <BattleResult winner={winner as any} battleMode={props.battleMode || "PVE"} summary={resultSummary} p1Team={resultTeams.p1} p2Team={resultTeams.p2} format={props.formatLabel || "自由戰"} onRestart={props.onReset} onHome={props.onBackToMenu} />}
-      {winner && props.specialMode && <SpecialBattleEndDialog winner={winner} mode={props.specialMode} onBack={props.onBackToMenu} />}
+      {winner && props.specialMode === "destiny" && resultSummary && <BattleResult winner={winner as any} battleMode={props.battleMode || "PVE"} summary={resultSummary} p1Team={resultTeams.p1} p2Team={resultTeams.p2} format="命運之輪" onHome={props.onBackToMenu} homeLabel="返回命運之輪" />}
+      {winner && props.specialMode && (props.specialMode !== "destiny" || !resultSummary) && <SpecialBattleEndDialog winner={winner} mode={props.specialMode} onBack={props.onBackToMenu} />}
       {/* 2026-11-02：動畫／結算期間不再全螢幕攔截點擊。
           改為只在戰場中央顯示半透明提示，玩家仍可 hover 技能、查看精靈、切換分頁。
           指令列本身由 phase 判定禁用（送出指令的按鈕會變灰），不影響檢視。 */}
-      {(phase === "resolving" || phase === "processing") && (
+      {/* 原廠風：階段文字已在回合欄下方，不再疊一顆浮動提示蓋住克制倍率 */}
+      {!gameLayout && (phase === "resolving" || phase === "processing") && (
         <div className="pointer-events-none fixed left-1/2 top-6 z-[95] -translate-x-1/2 rounded-full border border-cyan-500/30 bg-slate-950/70 px-4 py-1.5 text-[11px] font-black text-cyan-200 backdrop-blur-sm">
           演出中…（可自由查看技能與精靈）
         </div>
@@ -1861,7 +2139,7 @@ function BattleScreenBody(props: BattleScreenUIProps) {
                 
                 <div className="bg-slate-900/60 rounded-xl px-4 py-3 mb-4 border border-white/5 min-h-[60px] flex flex-col justify-center">
                   {hoveredSkill.description ? (
-                    <RichDescription text={hoveredSkill.description} className="text-slate-200 text-[13px] font-medium" />
+                    <EffectDescription skill={hoveredSkill} description={hoveredSkill.description} className="text-slate-200 text-[13px] font-medium" />
                   ) : <p className="text-slate-400 text-sm">該技能尚未登載詳細描述文本。</p>}
                   {hoveredSkill.specialBadge && (
                     <div className={`mt-3 px-3 py-2 rounded-xl border text-xs font-bold flex flex-col gap-1 ${hoveredSkill.specialBadge.bg || 'bg-amber-950/80'} ${hoveredSkill.specialBadge.color || 'text-amber-200'} ${hoveredSkill.specialBadge.border || 'border-amber-500/40'}`}>
@@ -1884,7 +2162,7 @@ function BattleScreenBody(props: BattleScreenUIProps) {
 
                 <div className="flex justify-between items-center text-[11px] font-black uppercase tracking-widest">
                   <div className="flex gap-5">
-                    <span className="flex items-center gap-2 text-emerald-400"><div className="w-2 h-2 bg-emerald-500 rounded-full shadow-[0_0_8px_rgba(16,185,129,0.5)]" /> 命中率: {(() => { const c = computeHitChance(p1, p2, hoveredSkill, (e) => getStatuses(e), battle.p2RegistryState, battle.p1RegistryState); return c >= 1 && (hoveredSkill.isSureHit || /必中/.test(hoveredSkill.description || "")) ? "必中" : `${Math.round(c * 100)}%`; })()}</span>
+                    <span className="flex items-center gap-2 text-emerald-400"><div className="w-2 h-2 bg-emerald-500 rounded-full shadow-[0_0_8px_rgba(16,185,129,0.5)]" /> 基礎命中率: {hoveredSkill.accuracy ?? 100}% · 本次命中率: {Math.round(computeHitChance(actElf, actSide === "p1" ? p2 : p1, hoveredSkill, (e) => getStatuses(e), actSide === "p1" ? battle.p2RegistryState : battle.p1RegistryState, actSide === "p1" ? battle.p1RegistryState : battle.p2RegistryState) * 100)}%</span>
                     <span className="flex items-center gap-2 text-cyan-400"><div className="w-2 h-2 bg-cyan-500 rounded-full shadow-[0_0_8px_rgba(6,182,212,0.5)]" /> 先制級: {hoveredSkill.priority || 0}</span>
                   </div>
                   {hoveredSkill.category !== "屬性" && (

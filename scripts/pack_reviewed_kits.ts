@@ -1,3 +1,5 @@
+import {SEED_ELVES} from '../src/data/defaultElfSeedsSource';
+import {NEW_ELF_SEEDS} from '../src/data/newElfDefinitions';
 import assert from 'node:assert/strict';
 import { readFileSync, writeFileSync } from 'node:fs';
 import { gzipSync } from 'node:zlib';
@@ -64,3 +66,12 @@ for(const [name,definitions] of groups){
   }else writeFileSync(file,output);
   console.log(`${name}：${definitions.length}份，${Buffer.byteLength(raw)} → ${Buffer.byteLength(output)} bytes；完整原文／參數深比較通過`);
 }
+
+// 新精靈包含完整技能／魂印原文與 Kit，沿用無損封裝並逐欄核對。
+{const raw=JSON.stringify(NEW_ELF_SEEDS),gzip=gzipSync(raw,{level:9}).toString('base64');
+const restored=JSON.parse(strFromU8(gunzipSync(Uint8Array.from(Buffer.from(gzip,'base64')))));
+assert.deepEqual(restored,NEW_ELF_SEEDS);
+if(process.argv.includes('--check'))assert.deepEqual(unpackReviewedKits(JSON.parse(readFileSync('src/data/newElves.packed.json','utf8'))),NEW_ELF_SEEDS,'新精靈封裝需更新');else writeFileSync('src/data/newElves.packed.json',JSON.stringify({schemaVersion:1,gzip})+'\n');
+console.log('newElves.packed.json：完整資料深比較通過，'+Buffer.byteLength(raw)+' → '+gzip.length+' bytes');}
+
+{const raw=JSON.stringify(SEED_ELVES),gzip=gzipSync(raw,{level:9}).toString('base64');const restored=JSON.parse(strFromU8(gunzipSync(Uint8Array.from(Buffer.from(gzip,'base64')))));assert.deepEqual(restored,SEED_ELVES);if(process.argv.includes('--check'))assert.deepEqual(unpackReviewedKits(JSON.parse(readFileSync('src/data/defaultElfSeeds.packed.json','utf8'))),SEED_ELVES,'預設精靈封裝需更新');else writeFileSync('src/data/defaultElfSeeds.packed.json',JSON.stringify({schemaVersion:1,gzip})+'\n');console.log('defaultElfSeeds.packed.json：完整資料深比較通過，'+Buffer.byteLength(raw)+' → '+gzip.length+' bytes');}

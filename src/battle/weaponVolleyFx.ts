@@ -17,8 +17,18 @@ export function createWeaponVolleyFx(config:WeaponVolleyConfig){
    if(state.sequence==='standby')rest={...state.caster};
    // A lunging drawing is wider and lower. Its five support swords must not
    // abruptly shrink or spread to the width of the extended hand-held blade.
-   const box=rest?{left:(state.caster.left+state.caster.right)/2-(rest.right-rest.left)/2,right:(state.caster.left+state.caster.right)/2+(rest.right-rest.left)/2,top:state.caster.bottom-(rest.bottom-rest.top),bottom:state.caster.bottom}:state.caster;
-   const input={...state,caster:box,side,hit,launch},poses=weaponVolleyPoses(input),held=weaponIsHeld(config,state.sequence,state.frame);
+   const travelling=state.target&&['attack','ultimate','sa'].includes(state.sequence);
+   // Independent props launch from their idle station while the actor lunges.
+   // Following the lunging silhouette would drag both ends of every route.
+   const box=rest&&travelling&&config.travelOrigin==='standby'?rest:rest?{left:(state.caster.left+state.caster.right)/2-(rest.right-rest.left)/2,right:(state.caster.left+state.caster.right)/2+(rest.right-rest.left)/2,top:state.caster.bottom-(rest.bottom-rest.top),bottom:state.caster.bottom}:state.caster;
+   const input={...state,caster:box,side,hit,launch,pattern:config.patterns?.[state.sequence],formation:config.formations?.[state.sequence]},poses=weaponVolleyPoses(input),held=weaponIsHeld(config,state.sequence,state.frame);
+   // Inspect the actual visible prop layer alongside the sword baked into the
+   // actor pose. Six computed routes alone do not prove six visible weapons.
+   ctx.canvas.dataset.weaponHeld=held?'0':'';
+   ctx.canvas.dataset.weaponSide=side;
+   ctx.canvas.dataset.weaponSequence=state.sequence;
+   ctx.canvas.dataset.weaponFrame=String(state.frame);
+   const drawn:number[]=[];
    ctx.save();ctx.globalCompositeOperation='source-over';
    // A short swept ribbon follows the actual sword geometry, rather than
    // translating a slash icon across the stage. No stored/independent clock.
@@ -39,6 +49,7 @@ export function createWeaponVolleyFx(config:WeaponVolleyConfig){
    }
    for(const [i,p] of poses.entries()){
     if(held&&i===0)continue; // This sword is in the actor drawing, not a seventh prop.
+    drawn.push(i);
     const x=p.x-rect.left,y=p.y-rect.top,width=p.length*image.naturalWidth/image.naturalHeight;
     // A dark steel core stays opaque. Only the thin afterimage uses additive
     // mixing, so the weapons cannot turn into six luminous green triangles.
@@ -47,7 +58,11 @@ export function createWeaponVolleyFx(config:WeaponVolleyConfig){
      ctx.strokeStyle='#62d77d';ctx.lineWidth=Math.max(1,width*.05);
      ctx.beginPath();ctx.moveTo(0,-p.length*.7);ctx.lineTo(0,p.length*.42);ctx.stroke();ctx.restore();
     }
-    ctx.save();ctx.translate(x,y);ctx.rotate(p.angle);ctx.drawImage(image,-width/2,-p.length/2,width,p.length);ctx.restore();
+    ctx.save();ctx.translate(x,y);ctx.rotate(p.angle);
+    // Optional silhouette light follows the sprite alpha; the opaque steel
+    // remains unchanged. Keep it narrow enough to distinguish adjacent blades.
+    if(config.edgeLight){ctx.shadowColor=config.edgeLight.color;ctx.shadowBlur=Math.min(4,Math.max(0,config.edgeLight.radius));}
+    ctx.drawImage(image,-width/2,-p.length/2,width,p.length);ctx.restore();
     if(p.strike>0){
      ctx.save();ctx.globalCompositeOperation='lighter';ctx.globalAlpha=p.strike;
      ctx.strokeStyle='#b5ffd0';ctx.lineWidth=1.8;ctx.translate(x,y);ctx.rotate(p.angle);
@@ -72,6 +87,8 @@ export function createWeaponVolleyFx(config:WeaponVolleyConfig){
      ctx.drawImage(impact,f%sheet.cols*cw,Math.floor(f/sheet.cols)*ch,cw,ch,-size/2,-size/2,size,size);ctx.restore();
     }else delete ctx.canvas.dataset.weaponImpactFrame;
    }
+   ctx.canvas.dataset.weaponProps=drawn.join(',');
+   ctx.canvas.dataset.weaponPhases=poses.map((p,i)=>`${i}:${held&&i===0?'held':p.phase}`).join(',');
    ctx.restore();return true;
   },
   destroy(){image.onerror=null;image.onload=null;image.removeAttribute('src');impact?.removeAttribute('src');},

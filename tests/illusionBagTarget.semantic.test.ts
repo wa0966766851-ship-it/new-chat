@@ -2,7 +2,7 @@
 // 涵蓋 6V6、1V1、3V3、換人後、星蝕回廊背包、目標消逝／被禁用、P1/P2 兩側。
 import assert from 'node:assert/strict';
 import { createServer } from 'vite';
-const server = await createServer({ server: { middlewareMode: true, hmr: false, watch: null }, appType: 'custom', logLevel: 'silent', cacheDir: 'node_modules/.vite-illusion-bag' });
+const server = await createServer({ configFile: false, optimizeDeps: { noDiscovery: true, include: [] }, server: { middlewareMode: true, hmr: false, watch: null }, appType: 'custom', logLevel: 'silent', cacheDir: 'node_modules/.vite-illusion-bag' });
 const { createBattleEngine } = await server.ssrLoadModule('/src/engine/battleEngine.ts');
 const { DEFAULT_ELVES } = await server.ssrLoadModule('/src/data/defaultElves.ts');
 const kit: any = await server.ssrLoadModule('/src/data/migratedAstralAesfigSoulKit.ts');

@@ -15,6 +15,7 @@ import { matchesEffectConditions } from './effectConditions';
 import { matchesDamageTypes } from './damageChoices';
 import { clearAllStatuses } from '../utils/battleHelpers';
 import { statusChanceBlocked } from '../battle/statusChanceRules';
+import {recipientEffectChance} from '../battle/recipientEffectChance';
 import { prepareSequenceFrame, runEffectSequence } from './sequenceRuntime';
 import { kitToSequences } from './atomToSequence';
 
@@ -156,7 +157,7 @@ export const ATOMS: AtomTable = {
     const status = p.status || "麻痺";
     const duration = p.duration ?? p.turns ?? 3; // 未定義回合數：預設 3
     if (duration <= 0) return;
-    const chance = Number(p.chance ?? 100);
+    const chance = recipientEffectChance(ctx,side,Number(p.chance ?? 100));
     if (chance < 100 && (statusChanceBlocked(ctx, chance) || !prdPercent(`kit_status_${ctx.actor || "p1"}_${status}`, chance))) return;
     ctx.applyStatusWithImmunityCheck(side, status, duration);
   },

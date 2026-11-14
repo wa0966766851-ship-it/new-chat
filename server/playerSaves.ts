@@ -36,11 +36,19 @@ export class PlayerSaveStore {
     if(previous.revision!==revision)return null;
     if(JSON.stringify(previous.entries)===JSON.stringify(entries))return previous;
     fs.mkdirSync(this.directory,{recursive:true});
-    // 寫新檔以前先保存原始內容；不循環刪除歷史，不回寫安裝包。
+    // 寫新檔以前先保存原始內容；不回寫安裝包。
+    // 歷史備份設上限：每次寫入都會留一份完整 current.json（約 5MB），
+    // 無上限時幾天就能累積到數百 MB。只保留最近 HISTORY_LIMIT 份。
+    const HISTORY_LIMIT=20;
     const file=path.join(this.directory,'current.json');
     if(fs.existsSync(file)){
       const backup=path.join(this.directory,'history');fs.mkdirSync(backup,{recursive:true});
       fs.copyFileSync(file,path.join(backup,`${Date.now()}-${randomUUID()}.json`),fs.constants.COPYFILE_EXCL);
+      try{
+        const older=fs.readdirSync(backup).filter(n=>n.endsWith('.json')).map(n=>({n,t:fs.statSync(path.join(backup,n)).mtimeMs}))
+          .sort((a,b)=>b.t-a.t).slice(HISTORY_LIMIT);
+        for(const {n} of older)fs.unlinkSync(path.join(backup,n));
+      }catch{/* 清理失敗不阻擋本次寫入；下次寫入會再試 */}
     }
     const next:PlayerSave={schema:1,revision:randomUUID(),entries};
     const temporary=path.join(this.directory,`${next.revision}.tmp`);

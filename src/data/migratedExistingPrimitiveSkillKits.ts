@@ -26,7 +26,7 @@ export const MIGRATED_EXISTING_PRIMITIVE_SKILL_KITS: ReviewedSequenceSkill[] = [
       ], 5),
     ] },
   // 5024 湮滅之主・咤克斯：候選池取自正式 StatusRegistry；「非附屬類」＝排除附屬類與 BOSS 專用／無效果類。
-  { elfIds: ['5024'], name: '毀傷湧進',
+  { elfIds:['5024','5025'], name: '毀傷湧進',
     description: '必中；使對手隨機進入兩種非附屬類異常狀態',
     kit: [
       property('■ 必中', 'sure_hit', true, 0),

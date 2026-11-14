@@ -2,11 +2,15 @@ import type {VisibleBox} from './spriteMetrics';
 import {setFullscreenFxActive} from './fullscreenFx';
 import {drawCustomAmbient} from './customAmbientFx';
 import {createWeaponVolleyFx} from './weaponVolleyFx';
+import type {WeaponStrikeCue,WeaponFormationCue} from './weaponVolleyMotion';
 import {drawExtraSeal} from './extraSealFx';
+import {createFxSheetCache} from './fxSheetCache';
 
 export type CustomFxStyle='railgun'|'sigil'|'slash'|'vortex';
-export interface WeaponVolleyConfig {sprite:string;held?:{sequences:readonly string[];from:number;until:number};impact?:{sprite:string;cols:number;rows:number;frames:number}}
-export interface CustomFxConfig {style:CustomFxStyle;color:string;secondary:string;muzzle?:readonly [number,number];trajectory?:'orbital';focusExtra?:boolean;extraSeal?:boolean;extraSealArt?:{page:string;claw?:{open:string;closed?:string};impact?:{sprite:string;cols:number;rows:number;frames:number}};melee?:boolean;meleeSequences?:readonly string[];contactDepth?:number;ambient?:boolean;impactSheet?:string;weaponVolley?:WeaponVolleyConfig}
+export interface WeaponVolleyConfig {sprite:string;travelOrigin?:'standby';edgeLight?:{color:string;radius:number};held?:{sequences:readonly string[];from:number;until:number};patterns?:Readonly<Record<string,readonly WeaponStrikeCue[]>>;formations?:Readonly<Record<string,readonly WeaponFormationCue[]>>;impact?:{sprite:string;cols:number;rows:number;frames:number}}
+/** 序列特效圖表（由官方特效層萃取、改色混合後的加法發光圖）。cols×rows 格，依出招影格逐格播放。 */
+export interface FxSheet {src:string;cols:number;rows:number;frames:number;anchor?:'target'|'caster';at?:'start'|'launch'|'hit';lead?:number;peak?:number;pivot?:readonly [number,number];size?:number;y?:number;dx?:number;rate?:number;alpha?:number}
+export interface CustomFxConfig {fxSheets?:Partial<Record<string,FxSheet|readonly FxSheet[]>>;fxSheetsOnly?:boolean;style:CustomFxStyle;color:string;secondary:string;muzzle?:readonly [number,number];trajectory?:'orbital';focusExtra?:boolean;extraSeal?:boolean;extraSealArt?:{page:string;claw?:{open:string;closed?:string};impact?:{sprite:string;cols:number;rows:number;frames:number}};melee?:boolean;meleeSequences?:readonly string[];contactDepth?:number;ambient?:boolean;impactSheet?:string;weaponVolley?:WeaponVolleyConfig}
 export const isMeleePresentationSequence=(config:CustomFxConfig|undefined,sequence:string)=>!!config?.melee&&(config.meleeSequences??['attack']).includes(sequence);
 export interface CustomFxFrame {
  sequence:string;frame:number;frames:number;hits:readonly number[];
@@ -14,6 +18,47 @@ export interface CustomFxFrame {
  launch?:number;muzzlePoint?:{x:number;y:number};
 }
 const clamp=(v:number)=>Math.max(0,Math.min(1,v));
+const sheetList=(config:CustomFxConfig|undefined,sequence:string):readonly FxSheet[]=>{const v=config?.fxSheets?.[sequence];return !v?[]:Array.isArray(v)?v:[v as FxSheet];};
+/** 圖表第幾格（未開始或已結束回傳 -1）。at＝對齊點，lead＝圖表在對齊點前已播放的格數。 */
+export function fxSheetCell(sheet:FxSheet,frame:number,phase:{hit:number;launch:number}){
+ const origin=sheet.at==='hit'?phase.hit:sheet.at==='launch'?phase.launch:0;
+ // An explicit peak avoids rounded lead/rate values showing the wrong cell on impact.
+ const offset=sheet.at==='hit'&&sheet.peak!==undefined?sheet.peak:(sheet.lead??0)*(sheet.rate??1);
+ const cell=Math.floor((frame-origin)*(sheet.rate??1)+offset+1e-9);
+ return cell>=0&&cell<sheet.frames?cell:-1;
+}
+/** 黑底發光圖 → 帶透明度圖層。普通透明疊圖只是發光近似，不等同原廠加法混合。 */
+export function glowPixels(px:Uint8ClampedArray){
+ for(let i=0;i<px.length;i+=4){const a=Math.max(px[i],px[i+1],px[i+2]);
+  if(a<6){px[i+3]=0;continue;}const k=255/a;px[i]=Math.min(255,px[i]*k);px[i+1]=Math.min(255,px[i+1]*k);px[i+2]=Math.min(255,px[i+2]*k);px[i+3]=a;}
+ return px;
+}
+async function glowLayer(img:HTMLImageElement){
+ if(typeof document==='undefined'||!img.naturalWidth)return null;
+ const c=document.createElement('canvas');c.width=img.naturalWidth;c.height=img.naturalHeight;const g=c.getContext('2d',{willReadFrequently:true});if(!g)return null;
+ g.drawImage(img,0,0);const data=g.getImageData(0,0,c.width,c.height);
+ // Large sheets must yield while preparing, instead of blocking an entire battle frame.
+ const step=c.width*64*4;
+ for(let offset=0;offset<data.data.length;offset+=step){
+  glowPixels(data.data.subarray(offset,Math.min(data.data.length,offset+step)));
+  if(offset+step<data.data.length)await new Promise<void>(resolve=>setTimeout(resolve,0));
+ }
+ g.putImageData(data,0,0);return c;
+}
+const sharedSheets=createFxSheetCache<HTMLCanvasElement>(url=>new Promise((resolve,reject)=>{
+ const img=new Image();img.decoding='async';
+ img.onerror=()=>reject(Error('Effect sheet failed: '+url));
+ img.onload=()=>{void glowLayer(img).then(layer=>layer?resolve(layer):reject(Error('Effect canvas unavailable'))).catch(reject);};
+ img.src=url;
+}));
+/** 圖表放置框：以對手（或自身）可見框為準，p2 鏡像。 */
+export function fxSheetBox(sheet:FxSheet,cellAspect:number,state:Pick<CustomFxFrame,'caster'|'target'>,rect:{left:number;top:number},side:'p1'|'p2'){
+ const box=sheet.anchor==='caster'||!state.target?state.caster:state.target,bh=Math.max(1,box.bottom-box.top);
+ const h=bh*(sheet.size??1.6),w=h*cellAspect,dir=side==='p1'?1:-1;
+ const cx=(box.left+box.right)/2-rect.left+dir*(sheet.dx??0)*bh,cy=box.top-rect.top+bh*(sheet.y??.55);
+ const pivot=sheet.pivot??[.5,.5],px=side==='p2'?1-pivot[0]:pivot[0];
+ return {x:cx-w*px,y:cy-h*pivot[1],w,h,mirror:side==='p2'};
+}
 /** 與播放器共用影格時鐘；僅繪圖，不觸發任何戰鬥規則。 */
 export function customFxPhase(sequence:string,frame:number,frames:number,hits:readonly number[],launchFrame?:number){
  const active=!['standby','hited','transform'].includes(sequence)&&frames>1;
@@ -46,6 +91,14 @@ export function createCustomBattleFx(host:HTMLElement,config:CustomFxConfig,side
  if(clawOpen)clawOpen.src=config.extraSealArt!.claw!.open;
  if(clawClosed)clawClosed.src=config.extraSealArt!.claw!.closed!;
  const weaponVolley=config.weaponVolley?createWeaponVolleyFx(config.weaponVolley):null;
+ // 只預載本精靈登記的圖表；同一張圖可被多個序列共用。
+ // 圖表為黑底發光圖（JPEG 較小）；載入後轉成「亮度＝透明度」的圖層，疊在場景上不會出現黑框。
+ const sheetArt=new Map<string,CanvasImageSource&{width:number;height:number}>();
+ const sheetLeases=new Map<string,ReturnType<typeof sharedSheets.acquire>>();let destroyed=false;
+ for(const v of Object.values(config.fxSheets??{}))for(const sheet of (Array.isArray(v)?v:[v]) as FxSheet[])if(!sheetLeases.has(sheet.src)){
+  const lease=sharedSheets.acquire(sheet.src);sheetLeases.set(sheet.src,lease);
+  void lease.ready.then(glow=>{if(!destroyed)sheetArt.set(sheet.src,glow);}).catch(()=>{/* Missing effects never block the turn. */});
+ }
  const line=(x1:number,y1:number,x2:number,y2:number,width:number,color:string)=>{
   if(!ctx)return;ctx.strokeStyle=color;ctx.lineWidth=width;ctx.beginPath();ctx.moveTo(x1,y1);ctx.lineTo(x2,y2);ctx.stroke();
  };
@@ -96,7 +149,7 @@ export function createCustomBattleFx(host:HTMLElement,config:CustomFxConfig,side
    // No overlay of six new swords over a drawing that still contains six.
    if(weaponVolley){
     canvas.dataset.weaponVolley=weaponVolley.draw(ctx,state,rect,side,p.hit,p.launch)?'ready':'pending';
-    return;
+    if(!p.active)return;
    }
    if(ambient){drawCustomAmbient(ctx,state,rect,config);return;}
    if(!p.active)return;
@@ -107,6 +160,21 @@ export function createCustomBattleFx(host:HTMLElement,config:CustomFxConfig,side
     canvas.dataset.phase=seal.t<.4?'inscribe':seal.t<.67?'bind':seal.t<.87?'seal':'recover';
     return;
    }
+   const sheets=sheetList(config,state.sequence);
+   if(sheets.length){
+    let drawn=0;ctx.save();
+    sheets.forEach((sheet,i)=>{
+     const img=sheetArt.get(sheet.src),cell=fxSheetCell(sheet,state.frame,p);
+     if(cell<0||!img||img instanceof HTMLImageElement)return;
+     const cw=img.width/sheet.cols,ch=img.height/sheet.rows,b=fxSheetBox(sheet,cw/ch,state,rect,side);
+     ctx.globalAlpha=sheet.alpha??1;ctx.save();
+     if(b.mirror){ctx.translate(b.x+b.w,b.y);ctx.scale(-1,1);}else ctx.translate(b.x,b.y);
+     ctx.drawImage(img,cell%sheet.cols*cw,Math.floor(cell/sheet.cols)*ch,cw,ch,0,0,b.w,b.h);ctx.restore();drawn|=1<<i;
+    });
+    ctx.restore();canvas.dataset.fxSheet=String(drawn);
+    if(config.fxSheetsOnly)return;
+   }
+   if(weaponVolley)return;
    const own=state.caster,other=state.target,m=config.muzzle??[.5,.45],u=state.mirrored?1-m[0]:m[0];
    const sx=(state.muzzlePoint?.x??(own.left+(own.right-own.left)*u))-rect.left,sy=(state.muzzlePoint?.y??(own.top+(own.bottom-own.top)*m[1]))-rect.top;
    const physical=isMeleePresentationSequence(config,state.sequence);
@@ -261,6 +329,6 @@ export function createCustomBattleFx(host:HTMLElement,config:CustomFxConfig,side
    }
    ctx.restore();
   },
-  destroy(){weaponVolley?.destroy();setFullscreenFxActive(key,false);canvas.remove();},
+  destroy(){destroyed=true;for(const lease of sheetLeases.values())lease.release();sheetArt.clear();weaponVolley?.destroy();setFullscreenFxActive(key,false);canvas.remove();},
  };
 }

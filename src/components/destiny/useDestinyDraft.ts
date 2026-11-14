@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState, type Dispatch, type 
 import type { Elf, BattleMode } from "../../types";
 import { bindInitialCounterparts } from "../../battle/illusionPresentation";
 import { DestinyElfInstance, buildDestinyPool, pullFromDestinyPool, simulateAiBan, simulateAiPick } from "../../utils/destinyGacha";
+import { drawLoadoutOptions, defaultLoadout, aiChooseLoadout, type Loadout, type LoadoutOptions } from "../../utils/destinyLoadout";
 
 export type DraftPhase = "intro" | "pulling" | "reveal" | "ban" | "pick";
 export const DRAFT_PHASES: readonly DraftPhase[] = ["intro", "pulling", "reveal", "ban", "pick"];
@@ -10,6 +11,7 @@ export type StartBattleFn = (
   mode: BattleMode, team1: Elf[], team2: Elf[], starter1Id: string, starter2Id: string,
   p1Suit?: string, p1Eyewear?: string, p2Suit?: string, p2Eyewear?: string,
   p1Title?: string, p2Title?: string, format?: "normal_6v6" | "solo_1v1" | "peak_6v6" | "peak_3v3",
+  options?: { flames?: { p1?: string; p2?: string } },
 ) => void;
 
 export interface DestinyScreenProps {
@@ -49,6 +51,10 @@ export function useDestinyDraft(props: DestinyScreenProps, opts: { pullMs?: numb
   const [p2PickedIds, setP2PickedIds] = useState<string[]>([]);
   const [p2StarterId, setP2StarterId] = useState("");
   const [inspectElf, setInspectElf] = useState<DestinyElfInstance | null>(null);
+  // 命運配裝：抽卡時一併抽出雙方候選（套裝／目鏡／稱號不重複，火焰各抽 2 選 1）
+  const [loadoutOptions, setLoadoutOptions] = useState<{ p1: LoadoutOptions; p2: LoadoutOptions } | null>(null);
+  const [p1Loadout, setP1Loadout] = useState<Loadout | null>(null);
+  const [p2Loadout, setP2Loadout] = useState<Loadout | null>(null);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const clearTimer = () => { if (timer.current) { clearTimeout(timer.current); timer.current = null; } };
   useEffect(() => clearTimer, []);
@@ -70,6 +76,9 @@ export function useDestinyDraft(props: DestinyScreenProps, opts: { pullMs?: numb
     setPullError(""); clearTimer();
     setP1Pool(r1); setP2Pool(r2); setRevealedIds([]); setIsRevealingAll(false);
     setP1BannedIds([]); setP2BannedIds([]); setP1PickedIds([]); setP2PickedIds([]); setP1StarterId(""); setP2StarterId("");
+    const lo = drawLoadoutOptions(Math.random);
+    setLoadoutOptions(lo); setP1Loadout(defaultLoadout(lo.p1));
+    setP2Loadout(battleMode === "PVE" ? aiChooseLoadout(lo.p2) : defaultLoadout(lo.p2));
     setMaxPhaseIdx(DRAFT_PHASES.indexOf("pulling")); setPhase("pulling");
     timer.current = setTimeout(() => { timer.current = null; enter("reveal"); }, pullMs);
   };
@@ -87,7 +96,7 @@ export function useDestinyDraft(props: DestinyScreenProps, opts: { pullMs?: numb
 
   const handleProceedToBan = () => {
     enter("ban"); setP1BannedIds([]);
-    setP2BannedIds(battleMode === "PVE" ? simulateAiBan(p1Pool, 3) : []);
+    setP2BannedIds(battleMode === "PVE" ? simulateAiBan(p1Pool, 3, p2Pool) : []);
   };
   const toggleIn = (setter: Dispatch<SetStateAction<string[]>>, ids: string[], id: string, max: number) => {
     if (ids.includes(id)) setter(ids.filter(x => x !== id)); else if (ids.length < max) setter([...ids, id]);
@@ -102,7 +111,7 @@ export function useDestinyDraft(props: DestinyScreenProps, opts: { pullMs?: numb
     const updatedP2 = p2Pool.map(e => ({ ...e, isBanned: p1BannedIds.includes(e.instanceId) }));
     setP1Pool(updatedP1); setP2Pool(updatedP2);
     if (battleMode === "PVE") {
-      const ai = simulateAiPick(updatedP2);
+      const ai = simulateAiPick(updatedP2, updatedP1);
       setP2PickedIds(ai.pickedIds); setP2StarterId(ai.starterId);
     } else {
       const ids = updatedP2.filter(e => !e.isBanned).slice(0, 6).map(e => e.instanceId);
@@ -128,6 +137,15 @@ export function useDestinyDraft(props: DestinyScreenProps, opts: { pullMs?: numb
   const togglePick = (id: string) => togglePickFor(p1PickedIds, p1StarterId, setP1PickedIds, setP1StarterId, id);
   const toggleP2Pick = (id: string) => togglePickFor(p2PickedIds, p2StarterId, setP2PickedIds, setP2StarterId, id);
 
+  /** 改選配裝（只接受該方候選內的值；PVE 的 AI 方不可改）。 */
+  const chooseLoadout = (side: "p1" | "p2", key: keyof Loadout, value: string) => {
+    if (!loadoutOptions || (side === "p2" && battleMode === "PVE")) return;
+    const opts = loadoutOptions[side];
+    const allowed = key === "suit" ? opts.suits : key === "eyewear" ? opts.eyewears : key === "title" ? opts.titles : opts.flames;
+    if (!(allowed as string[]).includes(value)) return;
+    (side === "p1" ? setP1Loadout : setP2Loadout)(prev => (prev ? { ...prev, [key]: value } : prev));
+  };
+
   const canLaunch = p1PickedIds.length === 6 && !!p1StarterId && p2PickedIds.length === 6 && !!p2StarterId;
 
   const handleLaunchBattle = () => {
@@ -146,7 +164,9 @@ export function useDestinyDraft(props: DestinyScreenProps, opts: { pullMs?: numb
     const p1Bag = toBag(p1TeamFinal, p1Pool, p1PickedIds), p2Bag = toBag(p2TeamFinal, p2Pool, p2PickedIds);
     const s1 = p1Pool.find(e => e.instanceId === p1StarterId), s2 = p2Pool.find(e => e.instanceId === p2StarterId);
     onStartBattle(battleMode, p1Bag, p2Bag, s1 ? s1.instanceId : p1Bag[0].battleId!, s2 ? s2.instanceId : p2Bag[0].battleId!,
-      p1Suit, p1Eyewear, p2Suit, p2Eyewear, p1Title, p2Title, "peak_6v6");
+      p1Loadout?.suit || p1Suit, p1Loadout?.eyewear || p1Eyewear, p2Loadout?.suit || p2Suit, p2Loadout?.eyewear || p2Eyewear,
+      p1Loadout?.title || p1Title, p2Loadout?.title || p2Title, "peak_6v6",
+      { flames: { p1: p1Loadout?.flame, p2: p2Loadout?.flame } });
   };
 
   /** 章節導覽：只能回到已到過的章節（輪盤為過場，不可點）；回序章不清資料，重按開始才重抽。 */
@@ -159,6 +179,7 @@ export function useDestinyDraft(props: DestinyScreenProps, opts: { pullMs?: numb
     handleStartPull, skipPull, handleNextReveal, handleRevealAll, handleProceedToBan,
     p1BannedIds, p2BannedIds, toggleBan, toggleP2Ban, canConfirmBan, handleConfirmBan,
     p1PickedIds, p2PickedIds, p1StarterId, p2StarterId, setP1StarterId, setP2StarterId, togglePick, toggleP2Pick,
+    loadoutOptions, p1Loadout, p2Loadout, chooseLoadout,
     canLaunch, handleLaunchBattle, inspectElf, setInspectElf, canGoPhase, goPhase, maxPhaseIdx,
   };
 }

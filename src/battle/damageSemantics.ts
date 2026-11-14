@@ -14,6 +14,7 @@ const DAMAGE_TYPE_ALIASES: Record<string, RuntimeDamageType> = {
   "固定傷害": "fixed", "固定": "fixed",
   "真實傷害": "true", "真實": "true", "true_dmg": "true",
   "攻擊傷害": "skill_attack", "技能傷害": "skill", "額外行動傷害": "skill_extra_action",
+  "藥劑反噬傷害": "potion_backlash", "藥劑反噬": "potion_backlash", "potion": "potion_backlash",
 };
 
 /** 將歷史事件名稱正規化成戰鬥引擎使用的傷害分類（'skill_attack'|'skill_attribute'|'skill_extra_action'|'skill'(泛技能)|'fixed'|'percent'|'true'）。 */
@@ -29,6 +30,15 @@ export function normalizeDamageType(data: any): RuntimeDamageType {
 
 export const isSkillDamageType = (damageType: RuntimeDamageType): boolean =>
   damageType === "skill" || damageType === "skill_attack" || damageType === "skill_attribute" || damageType === "skill_extra_action";
+
+/**
+ * 藥劑反噬傷害（2026-11-07）：只能由道具中的藥劑附加的特殊傷害。
+ * - 無視目標的傷害減免、傷害限制（也不被護盾／護罩吸收、不吃抗性與克制）。
+ * - 不屬於技能傷害、固定、百分比或真實傷害；任何「受到真實傷害時／受到非真實傷害時」效果都不響應。
+ * - 顯示：與回復同色（綠字黃框），以負號表示扣除。
+ */
+export const POTION_BACKLASH_DAMAGE = 'potion_backlash' as const;
+export const isPotionBacklashDamageType = (damageType: RuntimeDamageType): boolean => damageType === POTION_BACKLASH_DAMAGE;
 
 export const isFixedOrPercentDamageType = (damageType: RuntimeDamageType): boolean =>
   damageType === "fixed" || damageType === "percent";

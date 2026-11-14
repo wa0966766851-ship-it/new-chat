@@ -49,7 +49,7 @@ export const MIGRATED_JIUQING_KITS: ReviewedSequenceSkill[] = [
       // 攻擊傷害高於 300 → 石化
       // 結果類條件（dmg_cmp／nokill／kill）必須在傷害結算後判斷，用 after_hit 節點。
       afterHit('🎯 造成的攻擊傷害高於300則100%令對手石化', [
-        { cond: [c('dmg_cmp', { op: '高於', v: 300 })], acts: [a('status', { side: 'opp', status: '石化', turns: 2 })] },
+        { cond: [c('dmg_cmp', { op: '高於', v: 300 })], acts: [a('status', { side: 'opp', status: '石化' })] },
       ], 1),
       // 未擊敗 → 己方下 1 次攻擊必定致命一擊
       {codeId:'effect_sequence',node:'on_not_killed',source:'skill',role:'attached',order:2,customText:'🎯 未擊敗對手，則己方下1次攻擊技能必定致命一擊',params:{clause:{raw:'未擊敗對手，則己方下1次攻擊技能必定致命一擊',marker:'🎯',trig:'not_killed',parsed:true,body:[{acts:[a('crit_uses',{uses:1,scope:'team'})]}]}}},

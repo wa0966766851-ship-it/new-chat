@@ -1,3 +1,4 @@
+import {battleResistances} from '../battle/resistances';
 ﻿import { Elf } from '../types';
 import { BattleEventContext, EffectTiming } from '../effects/types';
 import { getElfAdvancedMechanics, hasAuthoredAdvancedMechanic, AdvancedTraitMechanics } from '../data/traitsRegistry';
@@ -155,7 +156,7 @@ export class TraitsEngine {
    * 判定並套用：當精靈受到異常狀態時的特質干預 (無我、投石者、戰士等免疫判定)
    * 返回 true 表示異常被成功免疫或轉化，阻止原本的狀態附加
    */
-  static filterStatusInflict(ctx: BattleEventContext, side: "p1" | "p2", status: string, duration: number): { handled: boolean, overrideStatus?: string, overrideDuration?: number } {
+  static filterStatusInflict(ctx: BattleEventContext, side: "p1" | "p2", status: string, duration: number): { handled: boolean, overrideStatus?: string, overrideDuration?: number, resistanceTriggered?: boolean } {
     const targetElf = side===ctx.actor?ctx.self:side===ctx.targetSide?ctx.target:side==='p1'?ctx.activeP1:ctx.activeP2;
     const mechanics = getElfAdvancedMechanics(targetElf);
     const stateSide = side;
@@ -191,11 +192,11 @@ export class TraitsEngine {
 
     // 抗性骰判定 (附屬類、BOSS專用、無效果類不進行抗性骰判定)
     if (!isAuxiliaryOrBoss) {
-      const resistCfg = targetElf.resistances?.statusResist;
-      if (resistCfg?.slots) {
-        const slot = resistCfg.slots.find(s => sameStatus(s.status, status));
-        if (slot) {
-          const totalRate = slot.rate + (resistCfg.allImmune ? 5 : 0);
+      const resistCfg = battleResistances(targetElf)?.statusResist;
+      if (resistCfg) {
+        const slot = resistCfg.slots?.find(s => sameStatus(s.status, status));
+        if (slot || resistCfg.allImmune) {
+          const totalRate = Math.min(100,(slot?.rate||0)+(resistCfg.allImmune?5:0));
           const rngFunc = ctx.rng || Math.random;
           // 2026-11-02：機率性判定一律用「偽保底」——連續失敗會累積補正，
           // 避免同一隻精靈長期臉黑（純隨機在少量樣本下波動過大）。
@@ -212,7 +213,7 @@ export class TraitsEngine {
               ctx.applyTrueDamage(side, targetElf.maxHp, "缺氧致死");
             }
             ctx.addLog(`🛡️ 【抗性抵抗】：【${targetElf.name}】抵抗了【${status}】，轉化為異常抵抗！`, "status");
-            return { handled: true, overrideStatus: "異常抵抗", overrideDuration: 1 };
+            return { handled: true, overrideStatus: "異常抵抗", overrideDuration: 1, resistanceTriggered:true };
           }
           // 未觸發 → 累積偽保底計數
           ctx.setPlayerState(pityKey, fails + 1);

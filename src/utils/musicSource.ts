@@ -41,8 +41,9 @@ export function musicWatchUrl(source: MusicSource): string | undefined {
   return `https://www.youtube.com/watch?${params}`;
 }
 
-export function youtubeEmbedUrl(source: Extract<MusicSource, { type: 'youtube' }>, origin: string) {
-  const params = new URLSearchParams({ enablejsapi: '1', autoplay: '0', playsinline: '1', origin, loop: '1' });
+export function youtubeEmbedUrl(source: Extract<MusicSource, { type: 'youtube' }>, origin: string, loop = true) {
+  // loop=false：由播放器自行在播完後間隔幾秒重播（musicReplay），不用 YouTube 的立即循環。
+  const params = new URLSearchParams({ enablejsapi: '1', autoplay: '0', playsinline: '1', origin, loop: loop ? '1' : '0' });
   // 單曲循環只帶該影片；只有使用者真的提供歌單時才加入 list。
   if (source.playlist) { params.set('list', source.playlist); params.set('index', String(source.index || 1)); }
   else params.set('playlist', source.id);

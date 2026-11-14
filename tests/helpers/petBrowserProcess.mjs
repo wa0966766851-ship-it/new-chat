@@ -32,7 +32,7 @@ export function launchPetTestBrowser(browser,port,profile) {
  const sandbox=process.platform!=='win32'&&typeof process.getuid==='function'&&process.getuid()===0?['--no-sandbox']:[];
  // 軟體繪圖只供無 GPU 的 CI；不能拿它的逾時／速度推論使用者顯卡表現。
  const softwareGpu=process.env.PET_TEST_SOFTWARE_GPU==='1'?['--use-gl=angle','--use-angle=swiftshader','--enable-unsafe-swiftshader']:[];
- return spawn(browser,['--edge-skip-compat-layer-relaunch','--headless=new','--no-first-run','--no-default-browser-check',...softwareGpu,...sandbox,`--remote-debugging-port=${port}`,`--user-data-dir=${profile}`,'about:blank'],{stdio:'ignore',windowsHide:true});
+ return spawn(browser,['--edge-skip-compat-layer-relaunch','--headless=new','--no-first-run','--no-default-browser-check','--disable-extensions','--disable-sync',...softwareGpu,...sandbox,`--remote-debugging-port=${port}`,`--user-data-dir=${profile}`,'about:blank'],{stdio:'ignore',windowsHide:true});
 }
 /** Edge 可重新啟動為另一 PID；只終止本次唯一測試 profile，不碰一般瀏覽器。 */
 export function closePetTestBrowser(proc,profile) {

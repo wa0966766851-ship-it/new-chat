@@ -48,13 +48,13 @@ export const CASSIUS_SHAN_SOUL_KIT = {
     e('battle_start', 'battle_start', '自身與己方其他精靈擁有護盾時若因受到攻擊傷害而扣減時減少量減半', [
       { acts: [a('team_rules', { shieldDeductionRatio: 0.5 })] },
     ], 0),
-    e('battle_start', 'battle_start', '若在場精靈受到任一種超額非真實傷害大於該精靈當前護盾值：對手無法造成本次傷害', [
+    e('battle_start', 'battle_start', '若在場精靈受到任一種非真實傷害大於該精靈當前護盾值點數：對手無法造成本次傷害', [
       { acts: [a('team_rules', { excessIntercept: true })] },
     ], 1),
     e('battle_phase_end', 'team_phase_end', '戰鬥階段結束時消耗當前護盾值50%以恢復在場精靈等同於消耗量25%的體力', [
       { acts: [a('team_intercept_settle', { shieldRatio: 0.5, healRatio: 0.25 })] },
     ], 2, { observer: { includeDead: false } }),
-    e('battle_start', 'battle_start', '若在場精靈受到超額真實傷害大於該精靈當前護盾值且為致死真實傷害：100%重生1次', [
+    e('battle_start', 'battle_start', '若在場精靈受到真實傷害大於該精靈當前護盾值點數且為致死真實傷害：該在場精靈100%重生1次', [
       { acts: [a('team_rules', { excessTrueRebirth: true })] },
     ], 3),
     // ── 自身處於山神守護狀態時 ──

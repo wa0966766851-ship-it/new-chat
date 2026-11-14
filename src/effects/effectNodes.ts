@@ -6,6 +6,11 @@ import type { Trigger } from '../blocks/model';
 type Phase = '開局' | '選擇與出手' | '傷害結算' | '行動收尾' | '回合收尾' | '切換與陣亡' | '事件監控';
 interface NodeContract { label: string; phase: Phase; trigger: Trigger; event?: EffectTiming; derived?: string; help: string }
 export const EFFECT_NODES: Record<Node, NodeContract> = {
+  stat_changed:{label:'能力等級實際變化後',phase:'事件監控',trigger:'stat_changed',event:EffectTiming.STAT_CHANGED,help:'僅實際能力等級改變才派發，包含雙方在場持有者的全隊觀察，不把被免疫或封頂當成成功。'},
+  battle_node:{label:'正式戰鬥節點結算時',phase:'事件監控',trigger:'battle_node',event:EffectTiming.BATTLE_NODE,help:'由正式BattleNodeId逐節點通知雙方在場持有者，包含操作、傷害與陣亡節點；不增添或重播節點。'},
+  before_round_start:{label:'雙方選擇完成後、回合開始前',phase:'選擇與出手',trigger:'before_round_start',event:EffectTiming.BEFORE_TURN_RESOLVE,help:'沿用既有回合解析前事件，雙方已選定行動，包含首回合；先於排序與出手，不重播開局回合開始。'},
+  action_phase_enter:{label:'進入出手階段',phase:'選擇與出手',trigger:'action_phase_enter',event:EffectTiming.ACTION_PHASE_ENTER,help:'雙方每次進入技能出手階段均通知；先於控制與行動阻止，不要求成功出手。事件資料actingSide指出本次行動方。'},
+  modify_status_mechanic:{label:'異常效果計算前',phase:'事件監控',trigger:'status_mechanic',event:EffectTiming.MODIFY_STATUS_MECHANIC,help:'修改本次異常扣血或攻擊威力效果；不改異常名稱、期限或免疫。'},
   on_opponent_settlement:{label:'對手傷害扣血結算後',phase:'傷害結算',trigger:'opp_damage_settled',event:EffectTiming.OPPONENT_DAMAGE,help:'所有傷害扣血結算後通知來源側在場持有者，包含被免疫而未扣血的請求；讀取實際hpReduced，不重播技能受傷事件。'},
   on_opponent_damaged:{label:'對手受到技能傷害後',phase:'傷害結算',trigger:'opp_damaged_skill',derived:'ON_DAMAGED通知對手側在場觀察者',help:'正式技能傷害結算後通知另一側在場的積木持有者；不重播自身受傷節點，不包含固定／百分比／真傷。'},
   on_skill_selected:{label:'合法選擇技能後',phase:'選擇與出手',trigger:'skill_selected',event:EffectTiming.SKILL_SELECTED,help:'通過選招合法性後立即通知一次，先於另一方選招、排序與行動受控；重複提交不重播。'},
@@ -14,6 +19,7 @@ export const EFFECT_NODES: Record<Node, NodeContract> = {
   before_stat_change:{label:'能力等級變更前',phase:'事件監控',trigger:'before_stat_change',event:EffectTiming.BEFORE_STAT_CHANGE,help:'他方即將改變自身能力等級前通知原持有者；可移除本次變更（回寫 data.changes）或阻止（data.prevented）。'},
   on_stat_boost_cleared:{label:'自身能力提升被消除／吸取',phase:'事件監控',trigger:'stat_boost_cleared',event:EffectTiming.STAT_BOOST_CLEARED,help:'他方真正移除自身正能力等級後通知原持有者；免疫阻止、普通弱化、自身清除與換人不算。'},
   on_turn_effects_cleared:{label:'自身回合效果被消除',phase:'事件監控',trigger:'turn_effects_cleared',event:EffectTiming.TURN_EFFECTS_CLEARED,help:'實際消除後通知原持有者；含監控本身被清除，使用消除前快照，不含到期或換人。'},
+  on_status_reflected:{label:'反彈異常成功',phase:'事件監控',trigger:'status_reflected',event:EffectTiming.STATUS_REFLECTED,help:'反彈已實際附加成功後通知反彈方；免疫及失敗不觸發。'},
   on_status_ended:{label:'自身異常結束／解除',phase:'事件監控',trigger:'status_end',event:EffectTiming.ON_STATUS_ENDED,help:'期限結束、解除或轉化移除的實際異常名稱；下場清除不觸發。'},
   on_status_received:{label:'自身異常附加成功',phase:'事件監控',trigger:'status_received',event:EffectTiming.SELF_STATUS_APPLIED,help:'真正附加成功後，免疫失敗不會收到。'},
   on_damage_immunized:{label:'自身免疫傷害成功',phase:'事件監控',trigger:'damage_immune',event:EffectTiming.DAMAGE_IMMUNIZED,help:'真正 100% 免傷（incomingDamageImmunity）後通知受方；抵擋、上限、取整與護罩吸收不算免疫。'},

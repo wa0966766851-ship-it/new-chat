@@ -90,10 +90,10 @@ export function LegacyScenes({ b, workspace = false }: { b: ShellBridge; workspa
           <DestinyWheelScreen
             initialBattleMode={b.battleMode}
             allElves={b.allElvesCombined}
-            onStartBattle={(mode, team1, team2, starter1Id, starter2Id, s1, e1, s2, e2, t1, t2, fmt) => {
+            onStartBattle={(mode, team1, team2, starter1Id, starter2Id, s1, e1, s2, e2, t1, t2, fmt, opts) => {
               b.handleStartBattle(mode || "PVE", team1, team2, starter1Id, starter2Id,
                 s1 || "destiny_armor", e1 || "", s2 || "destiny_armor", e2 || "",
-                t1 || "命運之神", t2 || "宿命之敵", fmt || "normal_6v6", { specialMode: "destiny" });
+                t1 || "命運之神", t2 || "宿命之敵", fmt || "normal_6v6", { specialMode: "destiny", flames: opts?.flames });
             }}
             onBack={() => b.setView("start")}
           />
@@ -130,12 +130,13 @@ export function LegacyScenes({ b, workspace = false }: { b: ShellBridge; workspa
             hostPlayer={b.hostPlayer}
             onHostPlayerChange={b.setHostPlayer}
             interstellarOptions={b.interstellarOptions}
+            battleFlames={b.battleFlames || undefined}
             randomSeed={b.interstellarOptions?.battleSeed}
             preparedTeams={!!b.interstellarOptions}
             specialMode={b.specialMode}
             onBattleEnd={(winner: any, team: any) => b.interstellarOptions?.onBattleEnd?.(winner, team)}
             onBackToMenu={() => {
-              b.setView(b.interstellarOptions ? "interstellar_exploration" : "start");
+              b.setView(b.interstellarOptions ? "interstellar_exploration" : b.specialMode === "destiny" ? "destiny_wheel" : "start");
               b.setInterstellarOptions(null);
             }}
             introReplay={b.battleKey > 0 && !!b.restartedRef.current}

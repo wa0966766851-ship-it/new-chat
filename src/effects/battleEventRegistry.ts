@@ -1,4 +1,5 @@
 import {portableEventAllowed} from './portableSkillMarkLifecycle';
+import {statusAttackPowerMultiplier} from './statusMechanics';
 import { Elf, Skill } from '../types';
 import {withRecoveryOrigin} from '../battle/recoveryOrigin';
 import {applyTeamForcedHitPower} from '../battle/forcedHitRules';
@@ -26,6 +27,7 @@ import { setLegacyHandlerResolver } from '../blocks/ops/legacyHandler';
 import { effectRoute } from './effectConnection';
 import { withPpConsumptionChain } from './ppConsumptionChain';
 import { notifyTeamKitObservers } from './teamKitObservers';
+import { runHeldBattleItemPrograms } from './battleItemProgram';
 import { TraitsEngine } from '../utils/traitsEngine';
 import { applyFormulaProperties,applyPowerProperties, readOnceDegraded } from './skillProperty';
 setSoulHandlerProvider(elf => !!getSoulMarkRegistry()[elf?.name]);
@@ -382,13 +384,13 @@ export function transformSkillBeforeDamage(context: BattleEventContext, skill: S
   applyTeamForcedHitPower(context);
   const authored = usesAuthoredSkill(skill, hasSkillHandler(skill.name), context.self) && effectRoute(skill, hasSkillHandler(skill.name)) !== 'registry';
   const transformed = isSkillStone(skill) ? stoneBeforeDamage(context, skill) : authored ? applyPowerProperties(skill,context) : cachedDamageTransforms?.[skill.name]?.(context, skill) || skill;
-  const powerComp = { power: transformed.power || 0 };
+  const powerComp = { power: (transformed.power || 0)*(transformed.category==='屬性'?1:statusAttackPowerMultiplier(context)),finalMultiplier:1 };
   SoulMarkRegistry[context.self.name]?.(context, EffectTiming.MODIFY_POWER, { skill: transformed, powerComp });
   const opposingContext = deriveContext(context, { self: context.target, target: context.self, actor: context.targetSide, targetSide: context.actor,
     getPlayerState: context.getOpponentState, setPlayerState: context.setOpponentState,
     getOpponentState: context.getPlayerState, setOpponentState: context.setPlayerState });
   SoulMarkRegistry[context.target.name]?.(opposingContext, EffectTiming.MODIFY_POWER, { skill: transformed, powerComp, isIncoming: true });
-  return { ...transformed, power: powerComp.power };
+  return { ...transformed, power: powerComp.power*powerComp.finalMultiplier };
 }
 
 /** 技能命中結算後處理（`*_AFTER_HIT` 匯出合併；測試可直接寫入此物件） */
@@ -425,6 +427,7 @@ function sharedSoulLifecycle(ctx: BattleEventContext, event: EffectTiming, extra
   if (!ctx.self?.skills || !ctx.activeP1 || !ctx.activeP2 || !ctx.setPlayerState || !ctx.getPlayerState) return;
   TraitsEngine.triggerAuthoredLifecycle(ctx,event,extraData);
   runNewElfLifecycle(ctx, event, extraData);
+  runHeldBattleItemPrograms(ctx,event,extraData);
   runMogosTeamEffects(ctx, event, extraData);
   if (event === EffectTiming.ACTION_END) executeAstralMemory(ctx);
   if (event === EffectTiming.BEFORE_DAMAGE && extraData?.damageComp && !extraData.damageComp.isIncoming && extraData.damageComp.damageCategory === 'skill_attack') ctx.setPlayerState('actualCritThisAction', !!extraData.damageComp.isCrit);

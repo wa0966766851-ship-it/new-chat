@@ -70,11 +70,17 @@ export const ARENA12_CONDITION_FIELDS: Record<string, readonly string[]> = {
   opp_switched: ['neg'],
   // 自身屬性與所用技能屬性相同
   same_type: ['side','neg'],
+  // 指定方無法主動切換精靈（switchRestrictions）
+  switch_blocked: ['side','neg'],
+  // 致死傷害量 ≥（或 >）自身體力上限／當前體力×ratio
+  fatal_damage: ['basis','op','ratio'],
 };
 
 export function arena12ConditionIssue(op: string, p: any): string | null {
   if (!(op in ARENA12_CONDITION_FIELDS)) return null;
   if (op === 'same_type' && p?.side !== undefined && !['self', 'opp'].includes(p.side)) return '同屬性判定需明確持有者';
+  if (op === 'switch_blocked' && !['self', 'opp'].includes(p?.side)) return '切換限制判定需明確持有者';
+  if (op === 'fatal_damage' && (!['max_hp', 'current_hp'].includes(p?.basis) || !['不小於', '大於'].includes(p?.op) || !(p?.ratio > 0 && p.ratio <= 10))) return '致死傷害比較需基準、比較方式與正倍率';
   return null;
 }
 

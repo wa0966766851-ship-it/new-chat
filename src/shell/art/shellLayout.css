@@ -236,3 +236,23 @@
 /* Aegis 殼：隱藏 ControlHub 右上浮動入口鈕（2026-10-22）
    入口改由頂欄設定齒輪負責。只在 Aegis 殼生效。 */
 body:has(#aegis-shell) .fixed.top-2\.5[class*="z-[100]"] > .flex.items-center.gap-2 { display: none !important; }
+
+/* ══════════════════════════════════════════
+   目錄（2026-11-07）：側欄抽屜改為完整目錄；手機「目錄」底部面板共用樣式。
+   ══════════════════════════════════════════ */
+#aegis-shell .shell-rail.shell-dir { width: 232px !important; padding: 10px 8px 16px; display: block; }
+#aegis-shell .shell-dir button { min-height: 0; }
+#aegis-shell .shell-dir button span:last-child, #aegis-shell .shell-dir-sheet button span:last-child { font-size: inherit; }
+.shell-dir-list { display: flex; flex-direction: column; gap: 10px; }
+.shell-dir-group { display: flex; flex-direction: column; gap: 2px; }
+.shell-dir-head { margin: 0 0 2px; padding: 0 8px; font-size: 10px; font-weight: 900; letter-spacing: .18em; color: rgba(148,163,184,.6); }
+.shell-dir-row { display: flex; align-items: stretch; border-radius: 10px; }
+.shell-dir-row[data-active="true"] { background: color-mix(in srgb, var(--p-accent, #38bdf8) 20%, transparent); box-shadow: inset 2px 0 0 var(--p-accent, #38bdf8); }
+.shell-dir-item { flex: 1; min-width: 0; display: flex; align-items: center; gap: 10px; padding: 8px 10px; min-height: 38px; border-radius: 10px;
+  font-size: 13px; font-weight: 800; color: rgba(226,232,240,.9); text-align: left; }
+.shell-dir-row[data-active="true"] .shell-dir-item { color: var(--p-accent-hot, #7dd3fc); }
+.shell-dir-item:hover, .shell-dir-sub:hover, .shell-dir-toggle:hover { background: rgba(148,163,184,.12); }
+.shell-dir-toggle { width: 34px; display: flex; align-items: center; justify-content: center; border-radius: 10px; color: rgba(148,163,184,.8); }
+.shell-dir-toggle svg { transition: transform .18s; }
+.shell-dir-sub { display: block; width: 100%; text-align: left; padding: 6px 10px 6px 36px; min-height: 32px; border-radius: 8px; font-size: 12px; font-weight: 700; color: rgba(203,213,225,.82); }
+@media (prefers-reduced-motion: reduce) { .shell-dir-toggle svg { transition: none; } }

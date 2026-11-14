@@ -101,7 +101,7 @@ export const MIGRATED_ZHAKESI_FEAR_SOUL_KIT = {
     entry('round_start', 'team_round_start', '每回合吸取敵我雙方所有精靈20點體力上限附加給自身，最多吸取至該精靈體力上限為1；恐懼之花每回合開始時令在場精靈進入害怕狀態', [
       { acts: [a('maxhp_absorb_all', { amount: 20, floor: 1 })] },
       { cond: [c('has_mark', { side: 'opp', name: '恐懼之花' }, '對手持有恐懼之花')], live: true, acts: [
-        act('status', { side: 'opp', status: '害怕', turns: 1, chance: 100 }, '恐懼之花·害怕'),
+        act('status', { side: 'opp', status: '害怕', turns: 3, chance: 100 }, '恐懼之花·害怕'),
       ] },
     ], 1),
     // 1a. 恐懼之種「每次己方精靈登場…提高1層」（己方＝持有種子的對手方）：登場事件當下立即疊層（出戰背包觀察者；
@@ -118,7 +118,7 @@ export const MIGRATED_ZHAKESI_FEAR_SOUL_KIT = {
     //    令對手 100% 害怕；未觸發（被免疫／抵抗）→ 消除雙方能力上升、下降狀態與回合類效果。
     entry('round_start', 'round_start', '回合開始時，若自身滿體力：令對手100%害怕，未觸發則消除雙方能力上升、下降狀態與回合類效果', [
       { cond: [c('hp_full', { side: 'self' }, '自身滿體力')], acts: [
-        a('status', { side: 'opp', status: '害怕', turns: 1, chance: 100 }),
+        a('status', { side: 'opp', status: '害怕', turns: 3, chance: 100 }),
       ] },
       { cond: [c('hp_full', { side: 'self' }, '自身滿體力'), c('fail', {}, '害怕未觸發')], acts: [
         a('stat_clear', { side: 'both', kind: 'all' }),

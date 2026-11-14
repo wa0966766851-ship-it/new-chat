@@ -15,6 +15,7 @@ import { asRosterMember } from '../battle/rosterIdentity';
  */
 import type { Elf } from "../types";
 import { LAST_USED_P1_KEY, LAST_USED_P2_KEY } from "./lastTeam";
+import { slimTeamRecord } from "../data/savedTeamCompact";
 
 export const TEAM_CAPACITY = 12;
 
@@ -87,7 +88,7 @@ export function saveDraft(side: "p1" | "p2", draft: TeamDraft): boolean {
     timestamp: new Date().toLocaleTimeString(),
   };
   try {
-    window.localStorage.setItem(side === "p1" ? LAST_USED_P1_KEY : LAST_USED_P2_KEY, JSON.stringify(record));
+    window.localStorage.setItem(side === "p1" ? LAST_USED_P1_KEY : LAST_USED_P2_KEY, JSON.stringify(slimTeamRecord(record)));
     return true;
   } catch {
     return false;

@@ -17,9 +17,12 @@ export function attackDefenseBypass(elf: Pick<Elf, 'id' | 'battleId'>, registry:
   // 特質「戰士」：自身攻擊無視對手傷害限制、抵擋、轉化傷害與護盾承傷（攻擊免疫另於命中判定處理）
   if (getElfAdvancedMechanics(elf as Elf).ignoreImmuneShieldEffects) return { block: true, conversion: true, limit: true, shield: true };
   const rule = registry.attackDefenseBypassUntilSwitch;
-  if ((!rule || rule.ownerBattleId !== (elf.battleId || elf.id)) && !resourceQueryActive(elf as Elf,'ignoreDamageBlock') && !resourceQueryActive(elf as Elf,'ignoreDamageLimit')) return registry.blkIgnoreBlock?{block:true}:{};
+  if ((!rule || rule.ownerBattleId !== (elf.battleId || elf.id)) && !resourceQueryActive(elf as Elf,'ignoreDamageBlock') && !resourceQueryActive(elf as Elf,'ignoreDamageLimit')) {
+    const block = registry.blkIgnoreBlock === true, conversion = registry.ignoreDamageConversionThisAction === true;
+    return block || conversion ? { ...(block ? { block: true } : {}), ...(conversion ? { conversion: true } : {}) } : {};
+  }
   const owned = rule?.ownerBattleId === (elf.battleId || elf.id) ? rule : {};
-  return { block: owned.block === true || registry.blkIgnoreBlock === true || resourceQueryActive(elf as Elf,'ignoreDamageBlock'), conversion: owned.conversion === true,
+  return { block: owned.block === true || registry.blkIgnoreBlock === true || resourceQueryActive(elf as Elf,'ignoreDamageBlock'), conversion: owned.conversion === true || registry.ignoreDamageConversionThisAction===true,
     limit: owned.limit === true || resourceQueryActive(elf as Elf,'ignoreDamageLimit'), shield: owned.shield === true };
 }
 export function bypassesAttackDefense(comp: Pick<DamageComputation, 'damageCategory' | 'attackDefenseBypass'> | undefined, kind: keyof AttackDefenseBypass): boolean {

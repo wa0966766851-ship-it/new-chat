@@ -33,6 +33,8 @@ try {
     b.baseStats = { hp: 100, atk: 100, def: 100, spatk: 100, spdef: 100, speed: o.speed ?? 100 };
     b.calculatedStats = { hp: b.maxHp, atk: 300, def: 300, spatk: 300, spdef: 300, speed: o.speed ?? 100 };
     b.skills = skills; b.statStages = o.statStages || {}; b.shield = 0; b.barrier = 0;
+    // 2026-11-14：內建預設滿抗性；本測驗證魂印與特質，抗性設為 0 以免抗性骰干擾。
+    b.resistances = { damageResist: { crit: 0, fixed: 0, percent: 0 }, statusResist: { allImmune: false, selectedStatuses: [], slots: [] } };
     return b;
   };
   const thunderSkill = () => { const s = structuredClone(rey.skills.find((x: any) => x.name === '霆·禁雷敕令')); s.effectMode = 'kit'; s.kit = structuredClone(thunder.kit); s.pp = s.maxPp = 99; return s; };

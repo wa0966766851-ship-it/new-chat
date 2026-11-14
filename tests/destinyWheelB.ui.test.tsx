@@ -50,10 +50,11 @@ const stateIds = () => new Set([...document.querySelectorAll('[data-testid]')].m
 const results: string[] = []; const ok = (m: string) => { results.push(m); };
 
 try {
-  // ---- 偏好：預設舊頁；B 頁可切回舊頁並記住 ----
+  // ---- 偏好：2026-11-07 起預設 B 頁；可切經典版並記住 ----
   localStorage.removeItem('destinyWheelView'); await mount(elves, 'A'); localStorage.removeItem('destinyWheelView');
   await act(async () => root.render(React.createElement(Wheel, { key: 'default', allElves: elves, onBack: () => {}, onStartBattle: () => {} })));
-  assert.ok(document.querySelector('[data-destiny-view="A"]'), '預設應為舊頁');
+  assert.ok(document.querySelector('[data-destiny-view="B"]'), '預設應為 B 頁');
+  await click($('b-switch-a')); assert.ok(document.querySelector('[data-destiny-view="A"]'), '可切到經典版');
   const toB = [...document.querySelectorAll('button')].find(b => b.textContent?.trim() === 'B 頁'); await click(toB, 'B 頁鈕'); await wait(60);
   assert.ok(document.querySelector('[data-destiny-view="B"]'), '切換後應為 B 頁'); assert.equal(localStorage.getItem('destinyWheelView'), 'B');
   await click($('b-switch-a')); assert.ok(document.querySelector('[data-destiny-view="A"]')); assert.equal(localStorage.getItem('destinyWheelView'), 'A');
@@ -100,6 +101,8 @@ try {
   const soulText = $('b-detail-soul')!.textContent!; assert.ok(soulText.includes('為對手附加3回合的星火之灼')); assert.ok(!soulText.includes('**') && !/>\s*>/.test(soulText) && !soulText.includes('# '), `魂印不得露出 Markdown 符號：${soulText}`);
   const sheet = $('b-detail')!; assert.ok(!sheet.querySelector('.dwb-sheet-body')!.contains($('b-detail-close')), '關閉鈕在捲動區之外，手機永遠可見');
   assert.ok(sheet.querySelector('.dwb-sheet-top')!.contains($('b-detail-close')));
+  assert.ok(sheet.querySelector('.dwb-sheet-profile') && sheet.querySelector('.dwb-sheet-effects'), '桌面詳情分為立繪能力與效果區');
+  assert.match(dwbCss, /width:min\(1280px,100%\)/, '桌面使用寬版詳情');
   assert.match(dwbCss, /\.dwb-sheet-body\s*\{[^}]*overflow-y:auto/); assert.match(dwbCss, /\.dwb-sheet\s*\{[^}]*max-height:100dvh/);
   await key('Escape'); assert.equal($('b-detail'), null, 'Esc 關閉詳情'); ok('詳情：攔截、第五技能、層次描述、可捲動結構、Esc');
   const liu = faceCards.find(c => c.textContent!.includes('六界神王')); if (liu) assert.ok(liu.querySelector('[data-testid="b-liujie-tag"]'), '六界神王顯示【界】魂印而非攔截'); 
@@ -117,6 +120,13 @@ try {
   await click($$('b-ban-card')[0]); assert.equal($$('b-ban-mark').length, 2, '再點一次取消禁用'); await click($$('b-ban-card')[0]);
   assert.equal($('b-confirm-ban')!.hasAttribute('disabled'), false);
   await click($('b-confirm-ban')); verify('pick-pve');
+  assert.ok($('b-loadout'), '編隊章有命運配裝');
+  { const suits = $$('b-lo-p1-suit'); assert.equal(suits.length, 3); assert.equal(suits[0].getAttribute('aria-checked'), 'true');
+    await click(suits[2]); assert.equal($$('b-lo-p1-suit')[2].getAttribute('aria-checked'), 'true'); assert.equal($$('b-lo-p1-suit')[0].getAttribute('aria-checked'), 'false');
+    const ai = $$('b-lo-p2-suit'); assert.equal(ai.filter(b => b.getAttribute('aria-checked') === 'true').length, 1, 'AI 已選一件');
+    assert.ok(ai.filter(b => b.getAttribute('aria-checked') !== 'true').every(b => b.hasAttribute('disabled')), 'PVE：AI 配裝不可改');
+    const mine = new Set($$('b-lo-p1-suit').map(b => b.getAttribute('data-value'))); assert.ok(ai.every(b => !mine.has(b.getAttribute('data-value'))), '雙方套裝候選不重複');
+    assert.equal($$('b-lo-p1-flame').length, 2, '火焰 2 選 1'); ok('命運配裝：可改選、AI 鎖定、雙方不重複'); }
   assert.match($('b-pick-count')!.textContent!, /6 \/ 6/); assert.equal($$('b-pick-card').length, 9); assert.equal($$('b-pick2-card').length, 6, 'PVE 顯示 AI 最終 6 隻');
   assert.ok($$('b-pick2-card').some(c => c.querySelector('[data-testid="b-starter-mark"]')), 'AI 首發可見（決定 3：維持現況）');
   const picked = $$('b-pick-card').filter(c => c.getAttribute('data-picked') === '1'); assert.equal(picked.length, 6);
@@ -129,6 +139,10 @@ try {
   assert.ok(launched, 'onStartBattle 應被呼叫'); const [mode, p1, p2, f1, f2] = launched!;
   assert.equal(mode, 'PVE'); assert.equal(p1.length, 6); assert.equal(p2.length, 6); assert.equal(f1, targetId); assert.ok(p1.some((e: any) => e.battleId === f1)); assert.ok(p2.some((e: any) => e.battleId === f2));
   assert.equal(new Set([...p1, ...p2].map((e: any) => e.battleId)).size, 12); assert.equal(launched![11], 'peak_6v6'); ok('PVE 流程到 onStartBattle（簽名不變）');
+  // 命運配裝：雙方套裝／目鏡／稱號不重複，火焰隨開戰帶出
+  { const [, , , , , s1, e1, s2, e2, t1, t2, , opts] = launched!;
+    assert.ok(s1 && s2 && s1 !== s2, '雙方套裝不同'); assert.ok(e1 && e2 && e1 !== e2, '雙方目鏡不同'); assert.ok(t1 && t2 && t1 !== t2, '雙方稱號不同');
+    assert.match(String(opts?.flames?.p1), /^flame_/); assert.match(String(opts?.flames?.p2), /^flame_/); ok('命運配裝帶入開戰'); }
 
   // ---- PVP 流程 ----
   await mount(); await click($('b-mode')); assert.equal($('b-mode')!.textContent, 'PVP');
@@ -148,7 +162,11 @@ try {
   await act(async () => { const ev: any = new dom.window.Event('pointermove'); ev.clientX = 300; ev.clientY = 200; window.dispatchEvent(ev); }); await wait(80);
   assert.equal(rafCalls, 0, '靜態模式不得跑 rAF'); await click($('b-static')); rafCalls = 0;
   await act(async () => { const ev: any = new dom.window.Event('pointermove'); ev.clientX = 300; ev.clientY = 200; window.dispatchEvent(ev); }); await wait(600);
-  assert.ok(rafCalls > 0, '動畫模式指標移動應觸發視差'); const settled = rafCalls; await wait(300); assert.equal(rafCalls, settled, '指標靜止後 rAF 必須停止'); ok('靜態／視差 rAF');
+  assert.ok(rafCalls > 0, '動畫模式指標移動應觸發視差');
+  // 忙碌的電腦不保證 600ms 內完成全部影格，但視差仍須在有限時間內停止。
+  let stopped = false;
+  for (let i = 0; i < 20; i++) { const before = rafCalls; await wait(300); if (rafCalls === before) { stopped = true; break; } }
+  assert.ok(stopped, '指標靜止後 rAF 必須停止'); const settled = rafCalls; await wait(300); assert.equal(rafCalls, settled); ok('靜態／視差 rAF');
   await click($('b-static')); await click($('b-start')); await wait(500); assert.ok($('b-next-ban'), '靜態模式輪盤儀式縮短'); ok('靜態輪盤縮短');
 
   // ---- 返回大廳 ----

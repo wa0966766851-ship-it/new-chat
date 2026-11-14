@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import {customFxPhase,isMeleePresentationSequence} from '../src/battle/customBattleFx';
+import {customFxPhase,isMeleePresentationSequence,fxSheetCell,fxSheetBox,glowPixels} from '../src/battle/customBattleFx';
 import {weaponIsHeld} from '../src/battle/weaponVolleyFx';
 import {playbackEventForAction} from '../src/battle/petActionRouting';
 assert.equal(playbackEventForAction({sequence:'standby',type:'cancel'},'extra','extra').sequence,'standby','取消上一段待機不能取消剛開始的額外行動');
@@ -29,4 +29,27 @@ assert.equal(weaponIsHeld(weapons,'attack',53),true);
 assert.equal(weaponIsHeld(weapons,'attack',54),false,'還劍後恢復六把浮劍');
 assert.equal(weaponIsHeld(weapons,'sa',32),false,'只有物攻持劍時省略一把浮劍');
 assert.equal(customFxPhase('sa',46,96,[58],NaN).launch,48,'舊素材仍保留原本備援');
+// 圖表特效：對齊命中、提前量、播放倍率、結束後不再畫
+const sheet={src:'x.png',cols:4,rows:3,frames:12,at:'hit' as const,lead:5};
+assert.equal(fxSheetCell(sheet,20,{hit:20,launch:10}),5,'命中當格＝提前量');
+assert.equal(fxSheetCell(sheet,14,{hit:20,launch:10}),-1,'提前量之前不畫');
+assert.equal(fxSheetCell(sheet,15,{hit:20,launch:10}),0);
+assert.equal(fxSheetCell(sheet,27,{hit:20,launch:10}),-1,'播完不殘留');
+assert.equal(fxSheetCell({...sheet,at:'start',lead:0,rate:.5},7,{hit:20,launch:10}),3);
+assert.equal(fxSheetCell({...sheet,at:'launch',lead:0},10,{hit:20,launch:10}),0);
+assert.equal(fxSheetCell({...sheet,frames:24,peak:6,lead:9.33,rate:.643},20,{hit:20,launch:10}),6,'explicit peak stays exact despite rounded rate/lead');
+assert.equal(fxSheetCell({...sheet,frames:24,peak:6,lead:9.33,rate:.643},19,{hit:20,launch:10}),5);
+const caster={left:100,right:200,top:100,bottom:300},target={left:600,right:700,top:120,bottom:320};
+const b1=fxSheetBox({...sheet,size:1.5,y:.5},1,{caster,target},{left:0,top:0},'p1');
+assert.deepEqual([b1.x+b1.w/2,b1.y+b1.h/2,b1.h,b1.mirror],[650,220,300,false],'置中在對手框');
+const b2=fxSheetBox({...sheet,anchor:'caster',dx:.25},2,{caster,target},{left:0,top:0},'p2');
+assert.equal(b2.x+b2.w/2,150-50,'p2 往左偏移');assert.equal(b2.mirror,true);assert.equal(b2.w,b2.h*2);
+for(const side of ['p1','p2'] as const){
+ const b=fxSheetBox({...sheet,pivot:[.8,.3],size:1.5,y:.5},1,{caster,target},{left:0,top:0},side);
+ assert.ok(Math.abs(b.x+b.w*(side==='p2'?.2:.8)-650)<1e-9,'impact drawing pivot must hit the opponent after mirroring');
+ assert.equal(b.y+b.h*.3,220);
+}
+assert.equal(fxSheetBox(sheet,1,{caster,target:null},{left:0,top:0},'p1').x+fxSheetBox(sheet,1,{caster,target:null},{left:0,top:0},'p1').w/2,150,'沒有對手時退回自身');
+const px=glowPixels(new Uint8ClampedArray([0,0,0,255, 128,64,0,255, 255,255,255,255, 3,2,1,255]));
+assert.deepEqual([...px],[0,0,0,0, 255,128,0,128, 255,255,255,255, 3,2,1,0],'黑底轉透明、亮度轉不透明度');
 console.log('出招分段、精確命中標記、屬性與額外行動、自動收尾時鐘通過');

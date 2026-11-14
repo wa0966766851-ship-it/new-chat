@@ -86,6 +86,7 @@ function AppContent() {
   const [editingElf, setEditingElf] = useState<Elf | null>(null);
   const [specialMode, setSpecialMode] = useState<"destiny" | "interstellar" | undefined>();
   const [interstellarOptions, setInterstellarOptions] = useState<any>(null);
+  const [battleFlames, setBattleFlames] = useState<{ p1?: string; p2?: string } | null>(null);
   const elvesRef = React.useRef<Elf[]>([]);
   const [editorTab, setEditorTab] = useState<"ai" | "manual" | "blockly" | undefined>(undefined);
 
@@ -156,6 +157,7 @@ function AppContent() {
       setBattleMode(mode);
       setSpecialMode(options?.specialMode);
       setInterstellarOptions(options?.interstellarOptions || null);
+      setBattleFlames(options?.flames || null);
 
       restartedRef.current = false;
       setIsTransitioning(true);
@@ -177,7 +179,7 @@ function AppContent() {
     p1Team, p2Team, p1StarterId, p2StarterId,
     p1Suit, p1Eyewear, p2Suit, p2Eyewear, p1Title, p2Title,
     hostPlayer, setHostPlayer,
-    specialMode, interstellarOptions, setInterstellarOptions,
+    specialMode, interstellarOptions, setInterstellarOptions, battleFlames,
     editingElf, setEditingElf, editorTab, setEditorTab,
     showEncyclopedia, setShowEncyclopedia,
     showPerformanceProbe, setShowPerformanceProbe,
@@ -186,7 +188,7 @@ function AppContent() {
   return (
     <>
       {shellMode === "aegis" && view !== "battle"
-        ? <AegisShell b={bridge} onSwitchShell={toggleShell} />
+        ? <AegisShell b={bridge} onSwitchShell={() => { if (view === "bag") setView("start"); toggleShell(); }} />
         : <LegacyShell
             b={bridge}
             showHeader={showHeader}

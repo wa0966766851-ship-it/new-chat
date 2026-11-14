@@ -65,3 +65,15 @@
 `tests/elfRegistryModules.semantic.test.ts`用搬移前正式Vite入口的318個技能鍵、155個魂印別名、命中後及無效分支快照驗證新入口；同時核對handler函式身分。這是路徑／註冊相容契約，不是逐句效果驗收。Node描述解耦、去重清單生成器及各SSR測試引用一起更新。
 
 資料、美術、既有備份、打包／更新檔案不搬動。這輪一般建置與測試不能冒稱重新產出Electron安裝包。
+
+## 2026-11-10：動畫效能與證據分工
+
+| 路徑 | 用途 |
+|---|---|
+| `src/battle/petAnimation/` | 分批準備、共用幾何與 GPU 掛載，不參與戰鬥結算 |
+| `src/battle/petAnimationLoader.ts` | 既有載入入口，下載、解碼與準備共用同一份租約 |
+| `shots/skin-switch/` | 換皮實測數據與截圖，不混入原始碼 |
+| `shots/archive/2026-11-10/from-workspace-root/` | 29 張外層散落截圖與可還原 manifest |
+| `scripts/archive_workspace_screenshots.mjs` | 散落截圖唯讀盤點／明確 apply 封存 |
+
+父目錄有舊版本與其他工作副本；本輪建立入口說明，不以檔名相同直接合併或搬移原始碼。

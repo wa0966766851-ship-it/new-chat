@@ -10,7 +10,7 @@ export const PRIORITY_BONUS_ACTION_FIELDS = { prio_bonus: ['v'] } as const;
 
 export function priorityBonusActionIssue(op: string, p: any, trig?: string): string | null {
   if (!(op in PRIORITY_BONUS_ACTION_FIELDS)) return null;
-  if (trig !== 'modify_priority') return '先制即時修正需在先制判定節點執行';
+  if (!['modify_priority','team_opponent_modify_priority','team_modify_priority'].includes(trig||'')) return '先制即時修正需在先制判定節點執行';
   if (!Number.isInteger(p?.v) || p.v === 0 || Math.abs(p.v) > 6) return '先制即時修正需為非零-6至6整數';
   return null;
 }
