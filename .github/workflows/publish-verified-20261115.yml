@@ -1,0 +1,82 @@
+# One-time release runner on a dedicated branch. Never runs from main or on ordinary commits.
+# Reuses the exact package that passed the independent web-package build workflow.
+name: Publish verified Seer site package (one-time)
+on:
+  push:
+    branches:
+      - publish/site-20261115-c08cdbd
+    paths:
+      - .github/workflows/publish-verified-20261115.yml
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: seer-original-site-release
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    if: ${{ github.repository == 'wa0966766851-ship-it/new-chat' && github.ref == 'refs/heads/publish/site-20261115-c08cdbd' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - name: Checkout exactly the already validated source
+        uses: actions/checkout@v6
+        with:
+          ref: c08cdbd1f13a2021a432d5ee09801a7394021ef0
+          persist-credentials: false
+      - name: Setup Node 24
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Verify credentials exist without displaying them
+        env:
+          SEER_SITE_SERVICE_TOKEN: ${{ secrets.SEER_SITE_SERVICE_TOKEN }}
+          SEER_SITE_PUBLISH_KEY: ${{ secrets.SEER_SITE_PUBLISH_KEY }}
+        run: |
+          if [ -z "$SEER_SITE_SERVICE_TOKEN" ] || [ -z "$SEER_SITE_PUBLISH_KEY" ]; then
+            echo "::error::Original site's two publish credentials are not configured; old website is untouched."
+            exit 1
+          fi
+      - name: Verify original successful build and exact commit
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+        run: |
+          node --input-type=module <<'NODE'
+          const response = await fetch(`https://api.github.com/repos/${process.env.REPO}/actions/runs/43610370094`, {
+            headers: { Authorization: `Bearer ${process.env.GH_TOKEN}`, Accept: 'application/vnd.github+json' }
+          });
+          if (!response.ok) throw Error(`Cannot read original verification run: ${response.status}`);
+          const run = await response.json();
+          if (run.status !== 'completed' || run.conclusion !== 'success' ||
+              run.event !== 'workflow_dispatch' ||
+              run.head_sha !== 'c08cdbd1f13a2021a432d5ee09801a7394021ef0' ||
+              run.path !== '.github/workflows/build-web-package.yml') {
+            throw Error('The requested artifact was not produced by the approved successful source run');
+          }
+          NODE
+      - name: Download only the previously verified website artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: seer-web-c08cdbd1f13a2021a432d5ee09801a7394021ef0
+          run-id: 43610370094
+          github-token: ${{ github.token }}
+          path: build/web-package
+      - name: Verify package SHA-256 and source identity
+        run: |
+          node tests/webPackage.semantic.test.mjs
+          node --input-type=module <<'NODE'
+          import { readFileSync } from 'node:fs';
+          const m = JSON.parse(readFileSync('build/web-package/web-package-manifest.json', 'utf8'));
+          if (m.commit !== 'c08cdbd1f13a2021a432d5ee09801a7394021ef0' || m.version !== '1.3.1') {
+            throw Error('Website artifact version or commit mismatch; aborting deployment');
+          }
+          NODE
+      - name: Publish validated package to original protected website
+        env:
+          SEER_SITE_SERVICE_TOKEN: ${{ secrets.SEER_SITE_SERVICE_TOKEN }}
+          SEER_SITE_PUBLISH_KEY: ${{ secrets.SEER_SITE_PUBLISH_KEY }}
+        run: node scripts/publish_site_package.mjs
