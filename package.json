@@ -277,7 +277,15 @@
     "test:pet-skin-switch": "node tests/petSkinSwitch.browser.test.mjs",
     "test:ains-corrections": "node --import tsx tests/ainsReserveAndMeasurements.semantic.test.ts && node --import tsx tests/immortalAinsComplete.semantic.test.ts && node --import tsx tests/ainsRoyalFlame.semantic.test.ts",
     "test:skill-description": "node --import tsx tests/skillDescriptionPresentation.semantic.test.tsx && npm run test:description && node --import tsx tests/illusionFixes.semantic.test.ts",
-    "test:skill-banner": "node tests/skillBanner.browser.test.mjs"
+    "test:skill-banner": "node tests/skillBanner.browser.test.mjs",
+    "atlas:build": "node encyclopedia/build.mjs",
+    "atlas:dev": "node --import tsx encyclopedia/dev.mjs",
+    "test:atlas": "node --import tsx tests/atlasStorage.semantic.test.ts && node --import tsx tests/atlasContent.semantic.test.ts",
+    "atlas:sync": "node --import tsx encyclopedia/sync-catalog.ts",
+    "atlas:content": "node --import tsx encyclopedia/import-content.ts",
+    "atlas:start": "powershell -NoProfile -ExecutionPolicy Bypass -File encyclopedia/launcher.ps1",
+    "atlas:blank": "powershell -NoProfile -ExecutionPolicy Bypass -File encyclopedia/launcher.ps1 -Blank",
+    "atlas:shortcuts": "powershell -NoProfile -ExecutionPolicy Bypass -File encyclopedia/create-shortcuts.ps1"
   },
   "dependencies": {
     "@google/genai": "^2.4.0",
@@ -316,4 +324,3 @@
     "vite": "^6.2.3"
   }
 }
-

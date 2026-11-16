@@ -15,7 +15,28 @@ React + Vite + Express + Electron 製作的對戰模擬器：組隊、戰鬥結�
 - 接續工作：[整合開發日誌](docs/開發日誌.md)、[完整紀錄索引](docs/開發紀錄索引.md)、[截圖與空間整理](docs/guides/project-housekeeping.md)；[2026-10-19交接](docs/coordination/本輪收尾交接_20261019.md)保留供歷史核對。
 - 歷史規劃：[歸檔索引](docs/archive/README.md)
 
-## 系統需求
+## 獨立精靈圖鑑（含空白自製版）
+
+圖鑑與模擬器放在同一倉庫，使用獨立視窗與存檔。支援多本圖鑑、自訂精靈／圖片／屬性、PNG與PDF匯出及含圖片備份。一般版只先載入精簡名單，點選精靈才讀取介紹和圖片；空白版初始零收錄，不載入內建名單。
+
+```powershell
+npm install
+npm run atlas:build       # 檢查並建置圖鑑，完成後才切換版本
+npm run atlas:start       # 一般圖鑑
+npm run atlas:blank       # 空白自製圖鑑，獨立資料與視窗
+npm run atlas:shortcuts   # 建立桌面捷徑（保留已有捷徑）
+npm run atlas:sync        # 內建精靈更動後，更新輕量展示快照
+npm run atlas:build       # 同步後再建置；桌面「更新精靈圖鑑」會一併同步
+npm run atlas:dev         # 圖鑑開發服務，預設 http://127.0.0.1:3177
+npm run test:atlas        # 存檔、匯入與空白版驗證
+node tests/atlasLoading.browser.test.mjs  # 兩版載入、匯入、PNG/PDF實測，需先建置及安裝Edge/Chrome
+```
+
+AI新增內容：依 [通用工作流](encyclopedia/CONTENT_WORKFLOW.md) 與 [內容範本](encyclopedia/templates/content.example.json) 整理資料，執行 `npm run atlas:content -- input.json --out validated.json` 驗證；再從「匯入內容／備份」預覽並加入新圖鑑。缺失數值須先確認，匯入不覆蓋原有內容。
+
+一般版存檔位於 `%LOCALAPPDATA%\SeerEncyclopedia`；空白版位於 `%LOCALAPPDATA%\SeerEncyclopediaBlank`。私人存檔、上傳圖片、建置檔與驗收截圖不提交Git。詳見 [圖鑑說明與檔案結構](encyclopedia/README.md)。
+
+## 模擬器系統需求
 
 - Node.js 24、npm（與網站建置及CI一致）
 - Windows PowerShell（另有 `.bat` 一鍵腳本）
