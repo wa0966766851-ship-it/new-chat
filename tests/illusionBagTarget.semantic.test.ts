@@ -6,7 +6,7 @@ const server = await createServer({ configFile: false, optimizeDeps: { noDiscove
 const { createBattleEngine } = await server.ssrLoadModule('/src/engine/battleEngine.ts');
 const { DEFAULT_ELVES } = await server.ssrLoadModule('/src/data/defaultElves.ts');
 const kit: any = await server.ssrLoadModule('/src/data/migratedAstralAesfigSoulKit.ts');
-const { bindBag, correspondingBagElf, pickByBagSlot, benchOfTeam } = await server.ssrLoadModule('/src/battle/bagTargets.ts');
+const { bindBag, correspondingBagElf, pickByBagSlot, benchOfTeam, listBagElves, findBagElf } = await server.ssrLoadModule('/src/battle/bagTargets.ts');
 const E = await server.ssrLoadModule('/src/modes/interstellar/v2/engine.ts');
 const { DEFAULT_ELVES: POOL } = await server.ssrLoadModule('/src/data/defaultElvesLoaded.ts');
 
@@ -75,6 +75,10 @@ await check('召喚物與額外精靈不算背包位數', () => {
   const r = bag(0, 2, ['S0', 'S1']); const extra = { ...guard('EXTRA'), isExtra: true, summonerId: 'x' };
   const roster = bindBag([guard('F0'), guard('F1'), guard('B0')], 2);
   const standbyElf = { ...roster[2] };
+  const teams = { p1: [...roster, extra, { ...guard('DEAD_EXTRA'), isExtra:true, currentHp:0 }], p2: [] };
+  assert.equal(listBagElves(teams).find((entry: any) => entry.elf === extra)?.zone,'extra');
+  assert.equal(findBagElf(teams,'p1',extra.battleId),extra);
+  assert.equal(findBagElf(teams,'p1','DEAD_EXTRA'),undefined);
   assert.equal(correspondingBagElf([extra, ...roster.slice(0, 2), standbyElf], standbyElf)?.name, 'F0');
   assert.equal(correspondingBagElf(r, r[0])?.name, 'S0');
 });

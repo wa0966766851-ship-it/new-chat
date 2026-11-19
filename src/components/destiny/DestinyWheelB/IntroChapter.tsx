@@ -1,7 +1,7 @@
 import React, { useMemo, useRef, useState } from "react";
 import { ElfAvatar, TypeIcon } from "../../SeerImages";
 import { matchesElfQuery } from "../../../utils/elfSearch";
-import { usesSoulMarkInsteadOfInterceptor, type DestinyElfInstance, type DestinyRank } from "../../../utils/destinyGacha";
+import { type DestinyElfInstance, type DestinyRank } from "../../../utils/destinyGacha";
 import { DESTINY_RANKS, DESTINY_RANK_LABEL, RANK_SOURCE_LABEL, describeRankRule, rankStats } from "../../../utils/destinyRankMeta";
 import { explainElfDisplayRank } from "../../../utils/elfDisplayRank";
 import type { BattleViewMode } from "../../../battle/viewerPerspective";
@@ -19,7 +19,7 @@ export const RULE_ITEMS = [
   { no: "1", label: "12 連抽", line: "保底 1S＋3A＋2C", tip: "雙方各自從圖鑑隨機抽取 12 隻不同精靈。保底至少 1 隻 S、3 隻 A、2 隻 C，其餘 6 隻混合抽取；卡池不足時提示原因，不開始抽卡。" },
   { no: "2", label: "Ban 3", line: "禁用對手 3 隻", tip: "抽卡揭曉後，雙方檢視彼此卡池，各禁用對手 3 隻精靈。" },
   { no: "3", label: "Pick 6", line: "剩 9 選 6，指定首發", tip: "從扣除禁用的 9 隻精靈中挑選 6 隻出戰，並指定首發。PVE 為 AI 對手，PVP 為雙人輪流。" },
-  { no: "4", label: "C 級攔截", line: "出場或陣亡時觸發", tip: "非六界神王的 C 級卡綁定封技攔截、時空枷鎖、悲歌護盾、索魂同歸、英靈祝福之一，於登場或陣亡時觸發；六界神王改以【界】魂印取代。" },
+  { no: "4", label: "C 級攔截", line: "出場或陣亡時觸發", tip: "C 級卡綁定封技攔截、時空枷鎖、悲歌護盾、索魂同歸、英靈祝福之一，於登場或陣亡時觸發。" },
 ] as const;
 
 export function IntroChapter(props: {
@@ -34,7 +34,7 @@ export function IntroChapter(props: {
   const list = useMemo(() => pool.filter(e => (tab === "all" || e.destinyRank === tab) && matchesElfQuery(e, query)).sort((a, b) =>
     RANK_ORDER[b.destinyRank] - RANK_ORDER[a.destinyRank] || totalOf(b) - totalOf(a)), [pool, tab, query]);
   const pickTab = (t: Tab) => { setTab(t); browserRef.current?.scrollIntoView?.({ behavior: "smooth", block: "start" }); };
-  const soulLine = (e: DestinyElfInstance) => e.destinyRank === "C" && e.interceptorEffect && !usesSoulMarkInsteadOfInterceptor(e.name)
+  const soulLine = (e: DestinyElfInstance) => e.destinyRank === "C" && e.interceptorEffect
     ? `【${e.interceptorEffect.name}】${e.interceptorEffect.description}` : e.soulMark?.name ? `【${e.soulMark.name}】${e.soulMark.description || ""}` : "一般精靈特性";
   return (
     <div className="dwb-intro">

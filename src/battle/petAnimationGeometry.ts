@@ -1,8 +1,9 @@
 /** 純演出座標；不參與命中判定、傷害或效果結算。 */
-export function actionApproach(frame:number, hitFrame:number, endFrame:number) {
+export function actionApproach(frame:number, hitFrame:number, endFrame:number, returnFrame=hitFrame) {
   if (frame <= 0 || frame >= endFrame) return 0;
   // 命中前靠近、短暫停留後收招。尺寸與鏡射均保持不變。
-  const t=frame<=hitFrame?frame/Math.max(1,hitFrame):Math.max(0,1-(frame-hitFrame)/Math.max(1,endFrame-hitFrame));
+  const retreat=Math.max(hitFrame,Math.min(endFrame,returnFrame));
+  const t=frame<=hitFrame?frame/Math.max(1,hitFrame):frame<=retreat?1:Math.max(0,1-(frame-retreat)/Math.max(1,endFrame-retreat));
   return t*t*(3-2*t);
 }
 /**
@@ -18,9 +19,25 @@ export function attackContact(sourceFront:number,targetNear:number,direction:num
 }
 
 export type NativeBounds={left:number;right:number;top:number;bottom:number};
+/** 從原生本體的前進段找接觸區間；action_hit 是結算標記，不代表動畫已開始收招。
+ * 只接受待機圖塊辨認出的本體框，不能讓攻擊光束／殘影的聯集延長接觸。
+ * 沒有可靠位移（原地攻擊、換姿圖塊）時維持命中標記作為退路。 */
+export function nativeContactWindow(frames:(NativeBounds|null)[],rest:NativeBounds|null,hitFrame:number,direction=1){
+ const fallback={arrival:hitFrame,departure:hitFrame};if(!rest)return fallback;
+ const center=(rest.left+rest.right)/2,dir=direction<0?-1:1;
+ const travel=frames.map(b=>b?((b.left+b.right)/2-center)*dir:0),peak=Math.max(0,...travel);
+ if(peak<(rest.right-rest.left)*.2)return fallback;
+ const threshold=peak*.65,first=travel.findIndex(x=>x>=threshold);
+ let last=travel.length-1;while(last>=0&&travel[last]<threshold)last--;
+ return {arrival:Math.min(hitFrame,first),departure:Math.max(hitFrame,last)};
+}
 type NativeMesh={positions:ArrayLike<number>;uvs:ArrayLike<number>};
 /** 以待機出現過的圖塊辨認本體，排除攻擊才出現的大型光束／爆炸。 */
-const tileKey=(uv:ArrayLike<number>,offset:number)=>Array.from({length:8},(_,i)=>Math.round(uv[offset+i]*65536)).join(',');
+function tileKey(uv:ArrayLike<number>,offset:number){
+ let key=String(Math.round(uv[offset]*65536));
+ for(let i=offset+1;i<offset+8;i++)key+=','+Math.round(uv[i]*65536);
+ return key;
+}
 export function bodyTiles(meshes:NativeMesh[]){const keys=new Set<string>();for(const m of meshes)for(let i=0;i+7<m.uvs.length;i+=8)keys.add(tileKey(m.uvs,i));return keys;}
 export function nativeBodyBounds(mesh:NativeMesh,tiles?:Set<string>):NativeBounds|null{
  let left=Infinity,right=-Infinity,top=Infinity,bottom=-Infinity;
@@ -41,14 +58,23 @@ export function petCanvasFrame(stageHeight:number,bodyHeight:number,battle=true)
  const footroom=battle?Math.max(32,Math.min(160,bodyHeight*.4)):0;
  return {height:stageHeight+footroom,footroom,baseline:stageHeight};
 }
-/** 將原廠自帶的本體平移先扣除，再沿站位路徑接近。每一影格本體前緣均不可越過接觸點。
- * rootOffset 是當前本體中心相對待機中心的原生位移，poseHalfWidth 是當前姿勢半寬（均為螢幕 px）。 */
-export function retargetAttack(origin:number,targetNear:number,direction:number,restHalfWidth:number,rootOffset:number,poseHalfWidth:number,approach:number,overlap=0){
+/** 以命中影格定錨，讓武器或特效邊界抖動時不拖動整個畫面。 */
+export function anchorPhysicalImpact(origin:number, target:number, impactPoint:number, impactVelocity:number, frameFromImpact:number, approach:number) {
+ // 命中附近保留連續的前進慣性修正，離開命中區段後平滑交回原生動作。
+ const blend = Math.max(0, 1 - Math.abs(frameFromImpact) / 8);
+ return origin + (target - origin - impactPoint - impactVelocity * frameFromImpact * blend ** 2) * approach;
+}
+/** 從素材本體框取得經視覺校準的打擊點相對中心距離（螢幕 px）。 */
+export function physicalContactOffset(poseHalfWidth:number,fraction=1){return poseHalfWidth*(2*Math.max(0,Math.min(1,fraction))-1);}
+/** 將原廠自帶的本體平移先扣除，再沿站位路徑接近；接觸點不越過目標（含 overlap）。
+ * rootOffset 是當前本體中心相對待機中心的原生位移；poseContactOffset 預設使用姿勢半寬，
+ * 若武器／殘影的前緣不是真正落點，則傳入 physicalContactOffset 的校準值。均為螢幕 px。 */
+export function retargetAttack(origin:number,targetNear:number,direction:number,restHalfWidth:number,rootOffset:number,poseContactOffset:number,approach:number,overlap=0){
  const dir=direction<0?-1:1;
  const shift=attackContact(origin+dir*restHalfWidth,targetNear,dir,overlap);
  const progress=Math.max(0,Math.min(1,approach));
- const desiredCenter=origin+(shift+dir*(restHalfWidth-poseHalfWidth))*progress;
- const cap=targetNear+dir*overlap-dir*poseHalfWidth;
+ const desiredCenter=origin+(shift+dir*(restHalfWidth-poseContactOffset))*progress;
+ const cap=targetNear+dir*overlap-dir*poseContactOffset;
  const bodyCenter=dir>0?Math.min(desiredCenter,cap):Math.max(desiredCenter,cap);
- return {translation:bodyCenter-rootOffset,bodyCenter,front:bodyCenter+dir*poseHalfWidth,contact:origin+shift};
+ return {translation:bodyCenter-rootOffset,bodyCenter,front:bodyCenter+dir*poseContactOffset,contact:origin+shift};
 }

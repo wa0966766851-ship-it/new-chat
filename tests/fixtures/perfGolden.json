@@ -6,27 +6,27 @@
     "turnNumber": 31,
     "logCount": 400,
     "logsHash": "9a0311a74a1ccb6c",
-    "finalHash": "6ddf3cbf884799e1",
-    "chainHash": "94ccfffc67c488d3"
+    "finalHash": "f5eb79a8f0c1e91d",
+    "chainHash": "bd3882ac5e6a4c48"
   },
   {
     "name": "heavy-B",
     "turnsPlayed": 11,
     "winner": null,
     "turnNumber": 11,
-    "logCount": 158,
-    "logsHash": "daafdaea927c1142",
-    "finalHash": "8013310ee74af1a9",
-    "chainHash": "44b0d7300607ab89"
+    "logCount": 159,
+    "logsHash": "bf5114806e792e4b",
+    "finalHash": "22226277d9c457c6",
+    "chainHash": "ea7fbecd3d2e9090"
   },
   {
     "name": "heavy-C",
-    "turnsPlayed": 14,
+    "turnsPlayed": 16,
     "winner": "p2",
-    "turnNumber": 14,
-    "logCount": 233,
-    "logsHash": "f90911dc78447a92",
-    "finalHash": "320b426847c99175",
-    "chainHash": "66ddc573786209f5"
+    "turnNumber": 16,
+    "logCount": 229,
+    "logsHash": "46d4eefcd71cc3a9",
+    "finalHash": "ab8a9e464cc448c6",
+    "chainHash": "3f9f49cfa0229f20"
   }
 ]

@@ -4,6 +4,7 @@ import type {RunState} from '../runtime';
 import {isSkillDamageType} from '../../battle/damageSemantics';
 import {addDamageReduction} from '../../battle/damageReduction';
 import {readMarkStacks} from '../../effects/markQueries';
+import { battleTypeParts, sameBattleType } from '../../utils/typeQuery';
 import {markAppliesToElf} from '../../battle/marks';
 
 export const TYPED_CYCLE_ACTION_FIELDS:Record<string,readonly string[]>={
@@ -37,7 +38,7 @@ export function typedCycleOperations(runStmts:(ctx:BattleEventContext,body:any[]
       if(!comp?.isIncoming||comp.sourceSide===ctx.actor||!isSkillDamageType(comp.damageCategory))return false;
       const all=ctx.getPlayerState('typedDamageCycles')||{},key=cycleKey(ctx,p.id);
       const previous=all[key]||{index:0,reductions:p.initialReductions};
-      const matches=comp.skillType===p.types[previous.index%p.types.length];
+      const matches=sameBattleType(comp.skillType, p.types[previous.index % p.types.length]);
       const next=matches?{...previous,index:previous.index+1}:{...previous,reductions:previous.reductions+1};
       ctx.setPlayerState('typedDamageCycles',{...all,[key]:next});
       if(matches)addDamageReduction(comp,1-p.ratio**previous.reductions);
@@ -60,7 +61,7 @@ export function typedCycleOperations(runStmts:(ctx:BattleEventContext,body:any[]
     team_type_stats_mult:(ctx:BattleEventContext,p:any)=>{
       let changed=false;
       for(const elf of ctx.getFullTeam(ctx.actor)){
-        if(elf.isVanished||(p.aliveOnly&&elf.currentHp<=0)||!String(elf.type).replace(/系/g,'').split(/[·・./]/).includes(p.type))continue;
+        if(elf.isVanished||(p.aliveOnly&&elf.currentHp<=0)||!battleTypeParts(elf.type).includes(p.type))continue;
         const calculatedStats={...elf.calculatedStats};
         for(const k of ['hp','atk','def','spatk','spdef','speed'] as const)calculatedStats[k]=Math.floor(calculatedStats[k]*(1+p.ratio));
         const maxHp=Math.floor(elf.maxHp*(1+p.ratio));

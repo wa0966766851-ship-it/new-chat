@@ -51,17 +51,17 @@ export async function initializePlayerSave(storage:Storage=localStorage,request:
     Object.entries(local).some(([key,value])=>saved.entries[key]!==value))){
     warn('發現兩份不同的舊存檔，已保留雙方並暫停同步；請先匯出目前資料，避免覆蓋。');return;
   }
-  let revision=saved.revision, last=JSON.stringify(saved.entries), stopped=false, busy=false;
+  let revision=saved.revision, last=saved.entries, stopped=false, busy=false;
   const flush=async()=>{
     if(stopped || busy)return;
-    const entries=readPlayerEntries(storage), raw=JSON.stringify(entries);
-    if(raw===last)return;
+    const entries=readPlayerEntries(storage);
+    if(Object.keys(entries).length===Object.keys(last).length && Object.entries(entries).every(([key,value])=>last[key]===value))return;
     busy=true;
     try{
       const response=await request('/api/player-save',{method:'POST',headers:{'Content-Type':'application/json'},
         body:JSON.stringify({revision,entries}),signal:AbortSignal.timeout(5000)});
       if(!response.ok)throw Error(response.status===409?'另一視窗已有新存檔，未覆蓋；請先匯出目前資料再重開。':'桌面存檔寫入失敗，請先匯出目前資料；瀏覽器資料仍保留。');
-      revision=(await response.json()).revision;last=raw;storage.setItem(META,revision);
+      revision=(await response.json()).revision;last=entries;storage.setItem(META,revision);
     }catch(error){stopped=true;warn(String(error));}finally{busy=false;}
   };
   // 先保存舊資料，再讓既有來源升級與畫面初始化寫入。

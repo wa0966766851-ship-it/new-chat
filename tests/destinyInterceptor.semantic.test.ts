@@ -19,7 +19,7 @@ function fixture(id:string,actor:'p1'|'p2'='p1') {
   return {ctx,self,target,reg,timers,team,heals,damages};
 }
 for(const side of ['p1','p2'] as const) {
-  let f=fixture('block_attack',side);run(f.ctx,E.ON_ENTRANCE);run(f.ctx,E.ON_ENTRANCE);assert.equal(f.timers.length,1);
+  let f=fixture('block_attack',side);f.self.name='六界神王';run(f.ctx,E.ON_ENTRANCE);run(f.ctx,E.ON_ENTRANCE);assert.equal(f.timers.length,1);
   assert.equal(activeConstraints(f.timers,f.target).length,0);const enabled=tickTimers(f.timers,'round_end');assert.equal(activeConstraints(enabled,f.target)[0].blockAttack,true);assert.equal(tickTimers(enabled,'round_end').length,0);
   f=fixture('pp_chain',side);run(f.ctx,E.ON_ENTRANCE);assert.equal(f.target.skills[0].pp,0);assert.equal(getMaxPp(f.target.skills[0]),3);assert.equal(restoreSkillPp(f.target.skills[0],100).pp,3);f.reg.modeInterceptorEntranceActive=false;run(f.ctx,E.ON_ENTRANCE);assert.equal(f.target.skills[0].ppMaxOffset,-2);
   f=fixture('dirge_shield',side);run(f.ctx,E.DEATH_NODE_1);run(f.ctx,E.DEATH_NODE_1);assert.equal(f.reg.nextElfModeBarrier,800);f.self.currentHp=100;run(f.ctx,E.ON_ENTRANCE);assert.equal(f.self.barrier,800);assert.equal(f.reg.nextElfModeBarrier,0);assert.equal(f.timers[0].payload.immuneStatus,true);

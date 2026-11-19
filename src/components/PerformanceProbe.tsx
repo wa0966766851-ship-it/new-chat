@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 
-type Result = { seconds: number; frames: number; slowFrames: number; longestFrameMs: number; longTasks: number; longestTaskMs: number; heapMB: number | null; hidden: boolean; longTaskSupported: boolean };
-const empty = (): Result => ({ seconds: 0, frames: 0, slowFrames: 0, longestFrameMs: 0, longTasks: 0, longestTaskMs: 0, heapMB: null, hidden: false, longTaskSupported: false });
+type Result = { seconds: number; frames: number; slowFrames: number; longestFrameMs: number; frameP95Ms: number; longTasks: number; longestTaskMs: number; heapMB: number | null; hidden: boolean; longTaskSupported: boolean };
+const empty = (): Result => ({ seconds: 0, frames: 0, slowFrames: 0, longestFrameMs: 0, frameP95Ms: 0, longTasks: 0, longestTaskMs: 0, heapMB: null, hidden: false, longTaskSupported: false });
 /** 僅按下開始時採樣；關閉／到期／卸載即停止，不上傳任何資料。 */
 export default function PerformanceProbe({ onClose }: { onClose: () => void }) {
   const [running, setRunning] = useState(false), [result, setResult] = useState<Result>(empty);
@@ -13,8 +13,15 @@ export default function PerformanceProbe({ onClose }: { onClose: () => void }) {
   function start() {
     stop.current(); const sample = empty(), begin = performance.now(); let last: number | undefined, raf = 0, timer: ReturnType<typeof setInterval>;
     let observer: PerformanceObserver | undefined, finished = false;
+    const frameHistogram = new Uint32Array(501);
     const publish = () => {
       sample.seconds = (performance.now() - begin) / 1000;
+      const rank = Math.ceil(sample.frames * .95);
+      let runningCount = 0;
+      for (let gap = 0; gap < frameHistogram.length; gap++) {
+        runningCount += frameHistogram[gap];
+        if (runningCount >= rank) { sample.frameP95Ms = gap; break; }
+      }
       const memory = (performance as Performance & { memory?: { usedJSHeapSize: number } }).memory;
       sample.heapMB = memory ? memory.usedJSHeapSize / 1024 / 1024 : null;
       if (mounted.current) setResult({ ...sample });
@@ -30,7 +37,7 @@ export default function PerformanceProbe({ onClose }: { onClose: () => void }) {
     } catch { sample.longTaskSupported = false; }
     const frame = (now: number) => {
       if (finished) return;
-      if (last !== undefined) { const delta = now - last; sample.frames++; sample.longestFrameMs = Math.max(sample.longestFrameMs, delta); if (delta > 50) sample.slowFrames++; }
+      if (last !== undefined) { const delta = now - last; sample.frames++; frameHistogram[Math.min(500, Math.ceil(delta))]++; sample.longestFrameMs = Math.max(sample.longestFrameMs, delta); if (delta > 50) sample.slowFrames++; }
       last = now; raf = requestAnimationFrame(frame);
     };
     document.addEventListener('visibilitychange', hidden);
@@ -44,6 +51,7 @@ export default function PerformanceProbe({ onClose }: { onClose: () => void }) {
     <div className="flex gap-3"><button type="button" disabled={running} onClick={start}>開始量測</button><button type="button" disabled={!running} onClick={() => stop.current()}>停止量測</button></div>
     <output className="block space-y-1 text-slate-200" aria-label="效能量測結果">
       <p>{running ? '採樣中' : '已停止'} · {result.seconds.toFixed(1)} 秒 · 平均畫面回呼 {result.seconds > 0 ? (result.frames / result.seconds).toFixed(1) : '—'}/秒</p>
+      <p>畫面間隔 P95：{result.frames ? `${result.frameP95Ms===500?'≥':''}${result.frameP95Ms} ms` : '—'}</p>
       <p>超過 50 ms 的畫面間隔：{result.slowFrames}；最大 {result.longestFrameMs.toFixed(1)} ms</p>
       <p>長任務：{result.longTaskSupported ? `${result.longTasks}；最大 ${result.longestTaskMs.toFixed(1)} ms` : '瀏覽器未提供／尚未開始'}</p>
       <p>JS 堆積：{result.heapMB !== null ? `${result.heapMB.toFixed(1)} MB` : '瀏覽器未提供'}</p>

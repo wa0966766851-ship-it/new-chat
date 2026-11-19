@@ -7,19 +7,32 @@ import './index.css';
 import './components/ElfSpotlight.css';
 import { registerServiceWorker } from './pwa/registerServiceWorker';
 import {initializePlayerSave} from './utils/playerSaveBridge';
+import {startPerfAutoDetect} from './shell/perfMode';
 
-// 匯入精靈（延後載入的資料區塊）在第一次繪製前取得：精靈清單從第一幀就完整，
-// 不會在使用者保存的隊伍還原之後才改變清單（StartScreen 會依清單同步隊伍）。載入失敗時以不含匯入精靈的清單繼續。
-initializePlayerSave().then(()=>loadImportedElves())
-  .catch(error => console.warn('[匯入精靈] 載入失敗，以不含匯入精靈的清單繼續', error))
-  .finally(() => {
-    const repaired=repairSavedBuiltinStorage(localStorage,DEFAULT_ELVES);
-    if(repaired.length)console.info('[舊背包積木修復]',repaired);
-    createRoot(document.getElementById('root')!).render(
-      <StrictMode>
-        <App />
-      </StrictMode>,
-    );
-    // PWA：production 才註冊（dev 會干擾 HMR）
-    void registerServiceWorker();
-  });
+const spotlightExportId = new URLSearchParams(window.location.search).get('spotlightExport');
+if (spotlightExportId) {
+  void import('./components/SpotlightExportPage').then(({showSpotlightExport}) => showSpotlightExport(spotlightExportId));
+} else {
+  startSimulator();
+}
+
+function startSimulator() {
+  startPerfAutoDetect();
+
+  // 匯入精靈（延後載入的資料區塊）在第一次繪製前取得：精靈清單從第一幀就完整，
+  // 不會在使用者保存的隊伍還原之後才改變清單（StartScreen 會依清單同步隊伍）。載入失敗時以不含匯入精靈的清單繼續。
+  // 兩者獨立讀取。仍等存檔與完整目錄到位後，才修補舊資料並掛載操作介面。
+  Promise.allSettled([initializePlayerSave(), loadImportedElves()
+    .catch(error => console.warn('[匯入精靈] 載入失敗，以不含匯入精靈的清單繼續', error))])
+    .finally(() => {
+      const repaired=repairSavedBuiltinStorage(localStorage,DEFAULT_ELVES);
+      if(repaired.length)console.info('[舊背包積木修復]',repaired);
+      createRoot(document.getElementById('root')!).render(
+        <StrictMode>
+          <App />
+        </StrictMode>,
+      );
+      // PWA：production 才註冊（dev 會干擾 HMR）
+      void registerServiceWorker();
+    });
+}

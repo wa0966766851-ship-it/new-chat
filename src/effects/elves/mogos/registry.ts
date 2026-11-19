@@ -142,14 +142,22 @@ export function runMogosTeamEffects(c: C, event: E, data?: any): void {
   }
   if (event === E.ROUND_START && orb(c)?.phase === '混沌期') {
     const types = components(c.target.type);
-    if (!types.includes('神靈') && !types.includes('混沌')) {
-      if (types.includes('聖靈')) {
-        c.setOpponentState('actionPreventedRound', c.roundNumber);
-        timed(c, c.targetSide, 'orb_annihilation', 1, { recoveryReductionPercent: 1 }, false, 'soulmark', false);
-        c.applyTrueDamage(c.targetSide, 238);
-        c.updateElf(c.targetSide, { type: (c.rng?.() ?? Math.random()) < .5 ? '虛空' : '輪迴' });
+    const locked = (c.target as any).orbTypeLocked === true; // 經魂珠轉為虛空／輪迴：不可再被魂珠剝離
+    if (!types.includes('神靈') && !types.includes('混沌') && !types.includes('輪迴')) {
+      if (locked && types.includes('虛空')) {
+        c.updateElf(c.targetSide, { type: '混沌·虛空' } as any); // 魂珠虛空與混沌結合
       } else {
-        types[Math.floor((c.rng?.() ?? Math.random()) * types.length)] = '混沌'; c.updateElf(c.targetSide, { type: types.join('·') });
+        // 雙屬性帶聖靈系：優先取代非聖靈系的屬性，再執行屬性轉變
+        const holy = types.includes('聖靈');
+        const slots = types.map((t, i) => i).filter(i => types.length < 2 || types[i] !== '聖靈');
+        types[slots[Math.floor((c.rng?.() ?? Math.random()) * slots.length)]] = '混沌';
+        c.updateElf(c.targetSide, { type: types.join('·') });
+        if (holy) {
+          c.setOpponentState('actionPreventedRound', c.roundNumber);
+          timed(c, c.targetSide, 'orb_annihilation', 1, { recoveryReductionPercent: 1 }, false, 'soulmark', false);
+          c.applyTrueDamage(c.targetSide, 238);
+          c.updateElf(c.targetSide, { type: (c.rng?.() ?? Math.random()) < .5 ? '虛空' : '輪迴', orbTypeLocked: true } as any);
+        }
       }
     }
     if (!getStatuses(c.self)['平靜']) {

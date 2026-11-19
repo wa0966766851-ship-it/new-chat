@@ -1,4 +1,4 @@
-﻿// 異常規則（通用讀取端；DSH 2026-10-31，5041 魂印「山神守護時」使用，名稱不綁特定精靈）。
+// 異常規則（通用讀取端；DSH 2026-10-31，5041 魂印「山神守護時」使用，名稱不綁特定精靈）。
 // 持有者在「條件異常」（whileStatus）期間：
 //   conversionTargetBan：其所處的異常不可被轉化為這些分類的異常（衍化／轉化的目標分類）；
 //   cancelEffects：這些分類異常的「原有效果」取消（異常本身仍在、回合數照算）；
@@ -17,7 +17,27 @@ export interface ElfStatusRules {
   replacePpFree?: boolean;
   replaceInvalidateOppTurns?: number;
 }
-declare module '../types' { interface Elf { statusRules?: ElfStatusRules } }
+export interface StatusProjection {
+  target: 'holder' | 'opponent';
+  category: StatusCategory;
+  status: string;
+}
+declare module '../types' { interface Elf { statusRules?: ElfStatusRules; markStatusProjections?: readonly StatusProjection[] } }
+
+export function statusMatchesProjection(name: string, category: StatusCategory): boolean {
+  const categories = categoriesOf(name);
+  return !categories.includes('BOSS_ONLY') && !categories.includes('NO_EFFECT') && categories.includes(category);
+}
+
+export function applyStatusProjections(statuses: Record<string, number>, rules?: readonly StatusProjection[]): Record<string, number> {
+  if (!rules?.length) return statuses;
+  const next: Record<string, number> = {};
+  for (const [name, turns] of Object.entries(statuses)) {
+    const key = rules.find(rule => statusMatchesProjection(name, rule.category))?.status ?? name;
+    next[key] = Math.max(next[key] ?? 0, turns);
+  }
+  return next;
+}
 
 const present = (statuses: Record<string, number>, name: string) =>
   Object.entries(statuses).some(([id, turns]) => turns > 0 && canonicalStatusName(id) === canonicalStatusName(name));

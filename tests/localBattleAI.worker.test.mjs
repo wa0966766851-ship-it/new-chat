@@ -1,12 +1,13 @@
 // 正式建置的Worker跨執行緒測試，不依賴DOM、不修改實戰狀態。
 import assert from 'node:assert/strict';
-import { readdirSync } from 'node:fs';
+import { readFileSync, readdirSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { Worker } from 'node:worker_threads';
 import { createServer } from 'vite';
-const assets = resolve('dist/assets');
-const entries = readdirSync(assets).filter(f => /^worker-.*\.js$/.test(f));
+const assets = resolve(process.env.SEER_AI_WORKER_DIST || 'dist','assets');
+const entries = readdirSync(assets).filter(f => /^worker-.*\.js$/.test(f) &&
+  readFileSync(resolve(assets,f),'utf8').includes('boot-error'));
 assert.equal(entries.length, 1, '請先建置以取得唯一正式Worker入口');
 const workerUrl = pathToFileURL(resolve(assets, entries[0])).href;
 const server = await createServer({ server: { middlewareMode: true, hmr: false, watch: null }, appType: 'custom', logLevel: 'silent' });
@@ -33,7 +34,7 @@ try {
     timer=setTimeout(()=>no(new Error('建置Worker載入或推演逾時')),15000);
     worker.on('error',no);
     worker.on('message',m=>{
-      if(m.type==='ready')worker.postMessage({id:1,assumptions:[],request:{state,side:'p1',seed:7,settings:{...DEFAULT_AI_SETTINGS,difficulty:'hard',budgetMs:2000}}});
+      if(m.type==='ready')worker.postMessage({id:1,assumptions:[],request:{state,side:'p1',seed:7,settings:{...DEFAULT_AI_SETTINGS,difficulty:'hard',budgetMs:600}}});
       if(m.type==='error'||m.type==='boot-error')no(new Error(m.error));
       if(m.type==='done')ok(m.report);
     });

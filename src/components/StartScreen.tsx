@@ -1,3 +1,4 @@
+import { hasAlienGroup } from '../data/elfGroups';
 import { prepareSavedBattleRoster } from '../data/prepareSavedBattleRoster';
 import { slimTeamRecord, slimTeamPresets } from '../data/savedTeamCompact';
 import { asRosterMember } from '../battle/rosterIdentity';
@@ -6,6 +7,7 @@ import {ElfSkinPicker} from './ElfSkinPicker';
 import { TeamSetupTools } from "./TeamSetupTools";
 import { bindInitialCounterparts } from '../battle/illusionPresentation';
 import React, { useState, useEffect, useMemo, lazy, Suspense } from "react";
+import { ElfGroupEditor } from "./ElfGroupEditor";
 import { ElfFilterBar, useElfFilter } from './shared/ElfPicker';
 const ElfSpotlight = lazy(() => import('./ElfSpotlight').then(m=>({default:m.ElfSpotlight})));
 import { withAnnualBonus } from '../utils/elfStats';
@@ -2019,6 +2021,7 @@ export default function StartScreen({
         <Suspense fallback={detailPanelLoading}>
           <AegisTraining
             elf={showDetailModal}
+            groupSources={allElves}
             skillSources={[
               allElves.find(e => e && ((e.id && e.id === showDetailModal.id) || e.name === showDetailModal.name)),
               DEFAULT_ELVES.find(e => e && ((e.id && e.id === showDetailModal.id) || e.name === showDetailModal.name)),
@@ -2289,6 +2292,7 @@ export default function StartScreen({
                 </div>
 
                 <Suspense fallback={detailPanelLoading}>
+                <ElfGroupEditor key={showDetailModal.id} elf={showDetailModal} sources={allElves} onChange={next => { setShowDetailModal(next); onUpdateElf(next); }} />
                 <EvNaturePanel
                   baseStats={showDetailModal.baseStats}
                   ivs={showDetailModal.ivs}
@@ -2388,7 +2392,7 @@ export default function StartScreen({
                       <EffectBlockToggle trait={trait}><EffectDescription description={trait.description} className="text-red-100/90 text-[14px] leading-[1.75] font-sans" /></EffectBlockToggle>
                     </div>
                   ))}
-                  {showDetailModal.isAlienElf && (
+                  {hasAlienGroup(showDetailModal) && (
                     <div className="bg-blue-600/5 border border-blue-500/20 rounded-2xl p-4 relative overflow-hidden">
                       <div className="flex flex-col gap-2 mb-2">
                         <div className="flex items-center gap-2">
@@ -3275,6 +3279,7 @@ export default function StartScreen({
                     return (
                       <div
                         key={`${elf.battleId}-${index}`}
+                        data-bp-card="p1" data-instance={elf.battleId} data-banned={isBanned ? "1" : undefined}
                         onClick={() => {
                           if (isBanPhase) {
                             if (battleMode === "PVP") {
@@ -3376,11 +3381,11 @@ export default function StartScreen({
                     const isPicked = p2PickedIds.includes(elf.battleId);
                     const isStarter = p2BpStarterId === elf.battleId;
                     
-                    if (!isBanPhase && battleMode === "PVE" && !isPicked) return null;
 
                     return (
                       <div
                         key={`${elf.battleId}-${index}`}
+                        data-bp-card="p2" data-instance={elf.battleId} data-banned={isBanned ? "1" : undefined}
                         onClick={() => {
                           if (isBanPhase) {
                             if (isBanned) setP1BannedIds(prev => prev.filter(id => id !== elf.battleId));

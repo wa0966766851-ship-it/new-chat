@@ -1,10 +1,11 @@
 // P4: Op-code lookup panel. Read-only UI over the L3 catalog + L4 usage index.
 // No battle logic. See docs/op-code-system.md.
 import React, { useMemo, useState } from 'react';
-import { OP_CATALOG, OP_CODES, OP_FAMILY_LABEL, opsByFamily, type OpFamily } from '../data/opCatalog';
+import { CONDITION_CATALOG, OP_CATALOG, OP_CODES, OP_FAMILY_LABEL, opCode, opsByFamily, type OpFamily } from '../data/opCatalog';
 import { OP_ALIAS_FAMILIES, ALIAS_BY_CODE, aliasFamiliesOf } from '../data/opAliases';
 import usage from '../../docs/audits/op-usage.json';
 import { opTitle } from '../data/encyclopediaIndex';
+import { ELF_GROUPS, ELF_GROUP_CODES, ELF_GROUP_EFFECTS, elfGroupDefinition } from '../data/elfGroups';
 
 type Mode = 'byCode' | 'byElf' | 'families';
 
@@ -19,21 +20,26 @@ const aliasFamilies = usage.aliasFamilies as Array<{
   memberCount: number; usedMembers: string[]; unusedMembers: string[]; elves: string[]; referenceCount: number;
 }>;
 
-const FAMILIES: OpFamily[] = ['A', 'C', 'D', 'G', 'H', 'M', 'P', 'S', 'T', 'X'];
-const ENTRY_BY_CODE = Object.fromEntries(Object.values(OP_CATALOG).map(e => [e.code, e]));
+const FAMILIES: OpFamily[] = ['A', 'C', 'D', 'G', 'H', 'M', 'P', 'S', 'T', 'X', 'Q'];
+const ENTRY_BY_CODE: Record<string,{op:string;conditionCode?:string}> = {
+  ...Object.fromEntries(Object.values(CONDITION_CATALOG).map(e=>[e.code,e])),
+  ...Object.fromEntries(Object.values(OP_CATALOG).map(e => [e.code, e])),
+};
+const lookupCodes = [...new Set([...OP_CODES,...Object.keys(ENTRY_BY_CODE).filter(code=>code.startsWith('Q-'))])];
 
 /** initialQuery：從百科總索引跳來時帶入的積木名稱，直接搜尋並選取其代號。 */
 export const OpCodePanel: React.FC<{ initialQuery?: string }> = ({ initialQuery }) => {
   const [mode, setMode] = useState<Mode>('byCode');
   const [query, setQuery] = useState(initialQuery ?? '');
   const [family, setFamily] = useState<OpFamily | 'all'>('all');
-  const [selectedCode, setSelectedCode] = useState<string | null>(initialQuery ? OP_CATALOG[initialQuery]?.code ?? null : null);
+  const [selectedCode, setSelectedCode] = useState<string | null>(initialQuery ? OP_CATALOG[initialQuery]?.code ?? (lookupCodes.includes(initialQuery)?initialQuery:elfGroupDefinition(initialQuery)?'Q-106':null) : null);
 
   const codes = useMemo(() => {
     const q = query.trim().toLowerCase();
-    return OP_CODES.filter(c => {
+    const groupMatches = ELF_GROUPS.some(group=>[group.name,group.id,ELF_GROUP_CODES[group.id]].some(v=>v?.toLowerCase().includes(q)));
+    return lookupCodes.filter(c => {
       if (family !== 'all' && !c.startsWith(family + '-')) return false;
-      if (!q) return true;
+      if (!q || (c==='Q-106' && groupMatches)) return true;
       const entry = ENTRY_BY_CODE[c];
       const op = entry?.op || '';
       return c.toLowerCase().includes(q) || op.toLowerCase().includes(q) || (entry?.conditionCode ?? '').toLowerCase().includes(q) || (opTitle(op) ?? '').toLowerCase().includes(q);
@@ -55,6 +61,8 @@ export const OpCodePanel: React.FC<{ initialQuery?: string }> = ({ initialQuery 
 
   const detail = selectedCode ? byCode[selectedCode] : null;
   const alias = selectedCode ? ALIAS_BY_CODE[selectedCode] : undefined;
+  const groupQuery = query.trim().toLowerCase();
+  const listedGroups = ELF_GROUPS.filter(group=>[group.name,group.id,ELF_GROUP_CODES[group.id]].some(v=>v?.toLowerCase().includes(groupQuery)));
 
   return (
     <div className="space-y-5 animate-fade-in pb-8" data-testid="op-code-panel">
@@ -62,7 +70,7 @@ export const OpCodePanel: React.FC<{ initialQuery?: string }> = ({ initialQuery 
         <h3 className="text-base font-bold text-slate-100">積木代號查詢（L3 / L4）</h3>
         <p className="text-xs text-slate-400 mt-1">
           依代號查執行動作、依精靈反查用了哪些代號、或瀏覽同語意家族。
-          代號只做對照，不改寫戰鬥邏輯。共 {OP_CODES.length} 個代號、{usage.totals.opReferences} 筆引用、{aliasFamilies.length} 個家族。
+          代號只做對照，不改寫戰鬥邏輯。共 {lookupCodes.length} 個代號、{usage.totals.opReferences} 筆引用、{aliasFamilies.length} 個家族。
         </p>
       </div>
 
@@ -93,7 +101,7 @@ export const OpCodePanel: React.FC<{ initialQuery?: string }> = ({ initialQuery 
             <div className="text-[11px] text-slate-400 mb-2">{codes.length} 個代號</div>
             <div className="space-y-1">
               {codes.map(c => {
-                const op = Object.values(OP_CATALOG).find(e => e.code === c)!.op;
+                const op = ENTRY_BY_CODE[c].op;
                 const u = byCode[c];
                 return (
                   <button key={c} onClick={() => setSelectedCode(c)}
@@ -117,6 +125,24 @@ export const OpCodePanel: React.FC<{ initialQuery?: string }> = ({ initialQuery 
                 {opTitle(ENTRY_BY_CODE[selectedCode]?.op ?? '') && <div className="text-sm text-cyan-100">{opTitle(ENTRY_BY_CODE[selectedCode]?.op ?? '')}</div>}
                 {ENTRY_BY_CODE[selectedCode]?.conditionCode && <div className="text-xs text-amber-300/80">條件代號：<span className="font-mono">{ENTRY_BY_CODE[selectedCode].conditionCode}</span></div>}
                 <div className="text-xs text-slate-400">族：{selectedCode[0]} {OP_FAMILY_LABEL[selectedCode[0] as OpFamily]}</div>
+                {selectedCode==='Q-106' && <div className="space-y-2 text-xs text-slate-300">
+                  <p>依編號查詢自身、對手或被擊敗精靈的團體歸屬。可在樹狀積木編輯加入條件。</p>
+                  <ul className="max-h-60 space-y-1 overflow-y-auto">
+                    {(listedGroups.length?listedGroups:ELF_GROUPS).map(group=>{
+                      const effect=ELF_GROUP_EFFECTS[group.id];
+                      return <li key={group.id}><span className="font-mono text-cyan-300">{ELF_GROUP_CODES[group.id]}</span> {group.name}
+                        {effect && <div className="my-1 flex flex-wrap items-center gap-1">
+                          {effect.ops.map(op=>{
+                            const code=opCode(op,'condition')??opCode(op);
+                            return <button type="button" key={op} className="rounded border border-white/15 px-1 font-mono text-cyan-300"
+                              title={opTitle(op)??op} onClick={()=>{setFamily('all');setQuery(code??op);setSelectedCode(code??null);}}>{code??op}</button>;
+                          })}
+                          <span>{effect.description}</span>
+                        </div>}
+                      </li>;
+                    })}
+                  </ul>
+                </div>}
                 {detail ? (
                   <>
                     <div className="text-xs text-slate-300">引用 {detail.count} 次，精靈：{detail.elves.join('、') || '（無）'}</div>

@@ -106,8 +106,9 @@ try {
     assert.equal(driver.getSyncState()[side].illusion.target.name, enemy.name); assert.equal(driver.getSyncState()[side].maxHp, 200000);
     assert.ok(getStatuses(driver.getSyncState()[side])['星護']);
     if (side === 'p1') {
-      const button = [...document.querySelectorAll('button')].find(b => b.textContent?.includes('星核脈衝') && b.textContent?.includes('轉化 → 幻化目標等待'));
-      assert.ok(button, '己方技能欄同時顯示原名與转化後名稱');
+      // 2026-11-16 使用者規則：預設顯示轉化後技能，原技能名由循環鈕提供（與第五技能一致）。
+      const button = [...document.querySelectorAll('button')].find(b => b.textContent?.includes('幻化目標等待') && b.textContent?.includes('原技能 星核脈衝'));
+      assert.ok(button, '己方技能欄預設顯示轉化後名稱並附註原名');
       await act(async () => button.dispatchEvent(new dom.window.MouseEvent('click', { bubbles: true })));
       assert.equal(driver.getSyncState().p1SelectedSkill.name, '星核脈衝', '點轉化卡仍選原槽，保留變思遷憶');
       checks++;

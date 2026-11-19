@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
-import { MAX_BLUEPRINT_BYTES, parseElfBlueprint } from '../utils/elfBlueprint';
+import { MAX_BLUEPRINT_BYTES } from '../utils/blueprintLimits';
+import type { parseElfBlueprint } from '../utils/elfBlueprint';
 import type { Elf } from '../types';
 export function BlueprintImportButton({ onImport }: { onImport: (elf: Elf) => void }) {
   const input = useRef<HTMLInputElement>(null), request = useRef(0);
@@ -9,7 +10,13 @@ export function BlueprintImportButton({ onImport }: { onImport: (elf: Elf) => vo
     <input ref={input} aria-label="選擇精靈圖紙" type="file" accept=".json,application/json" className="hidden" onChange={async e => {
       const file = e.currentTarget.files?.[0], ticket = ++request.current; e.currentTarget.value = '';
       setError(''); setPending(null); if (!file) return;
-      try { if (file.size > MAX_BLUEPRINT_BYTES) throw new Error('圖紙超過 2 MB'); const parsed = parseElfBlueprint(await file.text()); if (ticket === request.current) setPending(parsed); }
+      try {
+        if (file.size > MAX_BLUEPRINT_BYTES) throw new Error('圖紙超過 2 MB');
+        const [parser, text] = await Promise.all([import('../utils/elfBlueprint'), file.text()]);
+        if (ticket !== request.current) return;
+        const parsed = parser.parseElfBlueprint(text);
+        setPending(parsed);
+      }
       catch (e) { if (ticket === request.current) setError((e as Error).message); }
     }} />
     {error && <p role="alert" className="text-rose-300 mt-2">{error}</p>}

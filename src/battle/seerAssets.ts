@@ -1,6 +1,7 @@
-﻿// 賽爾號資源對應：精靈頭像/全身圖、屬性圖標（資料來源：SeerAPI api-data / seer-unity-assets）
+// 賽爾號資源對應：精靈頭像/全身圖、屬性圖標（資料來源：SeerAPI api-data / seer-unity-assets）
 // 圖片一律經由本機伺服器 /seer/* 取得：public/seer → 使用者 pet/、系/ 資料夾 → 快取 → 遠端（自動快取）
 import type { Elf } from "../types";
+import { battleTypeParts } from '../utils/typeQuery';
 import { appearanceElf } from './illusionPresentation';
 import {selectedElfSkin} from '../data/elfSkins';
 import {PET_ANIMATION_ASSETS} from './petAnimationAssets';
@@ -55,6 +56,7 @@ export const SEER_ID_OVERRIDES: Record<string, number> = {
  [normalizeName("月鈴極樂·奈尼芬多")]: 264,
  [normalizeName("聖光天馬.珀伽索斯")]: 999,
  [normalizeName("難違天律.天邪龍王")]: 2652,
+ [normalizeName("聖靈奧斯卡")]: 1400599, // 皮膚599 創界衣缽·奧斯卡（使用者指定預設外觀；本體 3425）
   '御天龍神·哈莫': 3809, // 本機 SeerAPI 索引：龍神哈莫，不冒用其他型態。
   "天蓬元帥八戒": 1536,            // 使用者指定：菲爾蓬格
   "混濁海妖.布林克克": 359,        // 布林克克（原版）
@@ -118,6 +120,7 @@ export type SpriteFacing = "left" | "right" | "front";
  */
 export const STATIC_FRONT_EVIDENCE: Record<string, string> = {
   '/seer/body/88.png': '已查看 public/seer/body/88.png 與 .seer-cache/new-ten-animation-shots/static-contact.png：納多雷靜態為正面對稱造型，原生動作另以朝右核對。',
+  '/seer/body/3425.png': '2026-11-16 已查看 SeerAPI 原圖 pet/body/3425.png：聖靈守護奧斯卡正面站姿，左右三色光球對稱，無側向。',
   '/elf-art/unknown_myth_ghost_body.png': '已查看 public/elf-art/unknown_myth_ghost_body.png：正面鬼影，無左右側向；原圖與雙方截圖見 review-20261026/static-custom.txt。',
 };
 export const BATTLE_SPRITE_FACING: Record<string, SpriteFacing> = {
@@ -182,6 +185,10 @@ export const BODY_SOURCE_FACING: Record<string, SpriteFacing> = {
  "/seer/body/999.png": "left",
  "/seer/body/2205.png": "left",
  "/seer/body/2652.png": "left",
+ "/seer/body/1400599.png": "left", // 2026-11-16 逐圖核對：頭部朝畫面左
+ "/seer/body/3407.png": "left",
+ "/seer/body/4125.png": "left",
+ "/seer/body/3425.png": "front", // 2026-11-16 逐圖核對：正面站姿（原版聖靈守護奧斯卡）
  "/seer/body/2824.png": "left",
  "/seer/body/3094.png": "left",
  "/seer/body/3467.png": "left",
@@ -360,27 +367,11 @@ export function petImageUrls(elf: Pick<Elf, "name" | "id"> & { seerId?: number |
 }
 
 // ── 屬性
-const ALIAS: Record<string, string> = { 地: "地面", 神祕: "神秘" };
 export function splitTypes(type: string): string[] {
-  if (!type || type === "--" || type === "無屬性" || type === "未知") return [];
-  const t = type.replace(/系$/, "");
-  let parts = t.split(/[.·・/／\s]+/).filter(Boolean);
-  if (parts.length === 1 && indexCache && !indexCache.types[toIndexType(parts[0])]) {
-    // 無分隔的雙屬性（例：混沌暗影）→ 依屬性名拆分
-    const names = Object.keys(indexCache.types).map(fromIndexType).sort((a, b) => b.length - a.length);
-    const found: string[] = [];
-    let rest = parts[0];
-    while (rest) {
-      const hit = names.find(n => rest.startsWith(n));
-      if (!hit) break;
-      found.push(hit); rest = rest.slice(hit.length);
-    }
-    if (!rest && found.length) parts = found;
-  }
-  return parts.map(p => ALIAS[p] || p);
+  if (isNoneType(type) || type === '未知') return [];
+  return battleTypeParts(type);
 }
-const toIndexType = (t: string) => (t === "神秘" ? "神祕" : t);
-const fromIndexType = (t: string) => (t === "神祕" ? "神秘" : t);
+const toIndexType = (t: string) => t === '神秘' ? '神祕' : t;
 
 /** 回傳官方屬性組合圖標 ID（找不到回傳 null） */
 export function typeComboId(type: string): number | null {

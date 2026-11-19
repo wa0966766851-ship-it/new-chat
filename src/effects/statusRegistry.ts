@@ -1,4 +1,4 @@
-﻿// src/effects/statusRegistry.ts
+// src/effects/statusRegistry.ts
 import { StatusCategory } from './statusTypes';
 import { BOSS_TRAIT_STATUSES } from './bossTraitStatuses';
 
@@ -6,6 +6,8 @@ export interface StatusRegistryEntry {
   name: string;
   categories: StatusCategory[];
   description: string;
+  /** 關閉回合數系統：無回合數、不隨回合遞減、下場後保留（BOSS 類異常＝附屬類異常＋本旗標）。統一由 isDurationlessStatus 讀取。 */
+  noDuration?: true;
   // 綁定的核心機制處理器
   mechanics: {
     type: 'CANT_ACT' | 'CANT_SWITCH' | 'EVOLUTION_TRANSFORM' | 'DAMAGE_TICK' | 'MODIFIER_LIMIT' | 'SPECIAL_BUFF' | 'TYPE_MATCHUP_OVERRIDE' | 'STATUS_HIT_RELEASE';
@@ -90,10 +92,10 @@ export const StatusRegistry: Record<string, StatusRegistryEntry> = {
   '焚燼': {
     name: '焚燼',
     categories: ['CONTROL', 'EVOLUTIONARY'],
-    description: '控制類異常狀態；衍化類異常；處於該異常狀態則每回合無法行動；異常結束後轉化為命中 -1 與燒傷狀態3 回合',
+    description: '控制類、衍化類異常。無法行動。異常到期時轉化為燒傷2至3回合，並使命中等級-1。',
     mechanics: [
       { type: 'CANT_ACT' },
-      { type: 'EVOLUTION_TRANSFORM', params: { nextStatus: '燒傷', statDebuff: { accuracy: -1 }, nextDuration: 3 } }
+      { type: 'EVOLUTION_TRANSFORM', params: { nextStatus: '燒傷', statDebuff: { accuracy: -1 }, nextDurationMin: 2, nextDuration: 3 } }
     ]
   },
   '詛咒': {
@@ -222,10 +224,9 @@ export const StatusRegistry: Record<string, StatusRegistryEntry> = {
   '束縛': {
     name: '束縛',
     categories: ['WEAKENING'],
-    description: '弱化類異常；處於該異常狀態則所有先制效果失效，每回合對手出手時受到等同於自身最大體力 1/8 的百分比傷害',
+    description: '弱化類異常。處於束縛時，所有先制效果失效。異常到期時，受到自身最大體力1/8的百分比傷害。',
     mechanics: [
-      { type: 'SPECIAL_BUFF', params: { disablePriority: true } },
-      { type: 'DAMAGE_TICK', params: { dmgType: 'PERCENT', valueType: 'PERCENT', value: 0.125 } }
+      { type: 'SPECIAL_BUFF', params: { disablePriority: true, percentDamageOnEnd: .125 } }
     ]
   },
   '失神': {
@@ -294,7 +295,7 @@ export const StatusRegistry: Record<string, StatusRegistryEntry> = {
     description: '弱化類異常，處於該異常狀態減少、降低攻擊傷害效果衰減至0%且受到物理攻擊、特殊攻擊技能傷害提升30%且受到前述傷害時額外提高150點傷害；直至本回合戰鬥階段結束時未受到上述傷害則受到300點真實傷害且此異常回合數+2',
     mechanics: [
       { type: 'SPECIAL_BUFF', params: { reduceDmgEffectToZero: true, takePhysSpecDmgBonusPercent: 0.3, takePhysSpecDmgBonusFixed: 150 } },
-      { type: 'DAMAGE_TICK', params: { dmgType: 'REAL', valueType: 'FIXED', value: 300, condition: 'NO_HIT', extendOnTrigger: 2 } }
+      { type: 'DAMAGE_TICK', params: { dmgType: 'REAL', valueType: 'FIXED', value: 300, timing: 'PHASE_END', condition: 'NO_ATTACK_HIT', extendOnTrigger: 2 } }
     ]
   },
   '失溫': {
@@ -460,12 +461,14 @@ export const StatusRegistry: Record<string, StatusRegistryEntry> = {
   '神話': {
     name: '神話',
     categories: ['AUXILIARY', 'BOSS_ONLY'],
+    noDuration: true,
     description: '附屬類異常；BOSS 類異常；處於該異常狀態則免疫能力下降與異常狀態、PP 無限、所有技能必中（命中率強制 100%）。免弱免控在我方當回合出手後才啟用。無回合數且不會隨回合遞減，下場後保留。',
     mechanics: [{ type: 'SPECIAL_BUFF', params: { immuneStatDebuff: true, immuneStatus: true, infinitePP: true, sureHit: true } }]
   },
   '免疫': {
     name: '免疫',
     categories: ['AUXILIARY', 'BOSS_ONLY'],
+    noDuration: true,
     description: '附屬類異常；BOSS 類異常；處於該異常狀態則免疫異常狀態、PP 無限。無回合數且不會隨回合遞減，下場後保留。',
     mechanics: [{ type: 'SPECIAL_BUFF', params: { immuneStatus: true, infinitePP: true } }]
   },

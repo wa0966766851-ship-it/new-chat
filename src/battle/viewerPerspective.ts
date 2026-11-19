@@ -58,7 +58,7 @@ export function maskViewerDeep<T>(value: T, terms: [string, string][]): T {
 /** 結算畫面用：不可見的隱匿精靈換成不含任何識別資訊的替身（保留 id/battleId 以便對應）。 */
 export function maskElfIdentity(elf: Elf, owner: Side, mode: BattleViewMode): Elf {
   if (!hiddenFromViewer(elf, owner, mode)) return elf;
-  return { ...elf, name: UNKNOWN_ELF, type: '', soulMark: undefined as any, trait: undefined as any, alienTraits: undefined as any,
+  return { ...elf, name: UNKNOWN_ELF, type: '', interceptorEffect: undefined, groupIds: [], groupTags: [], isAlienElf: undefined, category: undefined, soulMark: undefined as any, trait: undefined as any, alienTraits: undefined as any,
     skills: (elf.skills || []).map(s => ({ ...s, name: UNKNOWN_SKILL, description: '' })), path: '', seerId: undefined as any, illusion: undefined } as Elf;
 }
 

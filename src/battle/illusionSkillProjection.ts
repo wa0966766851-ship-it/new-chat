@@ -20,5 +20,11 @@ export function projectIllusionSkill(original: Skill, target: Skill, slot: numbe
   for (const key of ['alwaysHit', 'ignoreImmunity', 'ignoreShield', 'ignoreAttackImmunity']) {
     if ((original as any)[key]) (result as any)[key] = true;
   }
+  // 2026-11-16 規則：轉化技能＝轉化前技能固有效果＋轉化後技能固有效果＋轉化後附加效果。
+  // 原槽的固有序列（非屬性欄位、非行動後節點——行動後由原槽接點執行）併入轉化後 Kit。
+  const carried = (original.kit || []).filter(e => e.role === 'innate' && e.codeId !== 'skill_property' && e.node !== 'after_action'
+    && !(target.kit || []).some(t => t.customText === e.customText));
+  if (carried.length && target.effectMode === 'kit') (result as any).kit = [...carried, ...(target.kit || [])];
+  (result as any).convertedFrom = { name: original.name, description: original.description || '' };
   return result;
 }

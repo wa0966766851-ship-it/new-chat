@@ -42,8 +42,12 @@ export const handleSobiratSoulMark = (ctx: BattleEventContext, event: EffectTimi
     case EffectTiming.BEFORE_STATUS_APPLY: {
       // 幽冥噬魂: 5 回合免疫並反彈所有異常
       if (getPlayerState("sobiratStatusReflectTurns") > 0 && extraData) {
-        addLog("✨【幽冥噬魂】：幽影彈控，反彈異常狀態！", "effect");
-        applyStatusWithImmunityCheck(ctx.targetSide, extraData.status, extraData.duration);
+        // 被反彈過來的異常不可再反彈，只免疫。
+        if (extraData.reflected) addLog(`✨【幽冥噬魂】：免疫了被反彈的【${extraData.status}】！`, "effect");
+        else {
+          addLog("✨【幽冥噬魂】：幽影彈控，反彈異常狀態！", "effect");
+          applyStatusWithImmunityCheck(ctx.targetSide, extraData.status, extraData.duration);
+        }
         extraData.prevented = true;
         extraData.prevent = true;
       }

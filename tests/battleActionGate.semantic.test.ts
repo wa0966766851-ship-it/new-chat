@@ -2,7 +2,7 @@
 import assert from 'node:assert/strict';
 import { createServer } from 'vite';
 import { createActionGate } from '../src/battle/introPlan';
-const server = await createServer({ server: { middlewareMode: true, hmr: false, watch: null }, appType: 'custom', logLevel: 'silent' });
+const server = await createServer({ configFile: false, optimizeDeps: { noDiscovery: true, include: [] }, resolve: { preserveSymlinks: true }, server: { middlewareMode: true, hmr: false, watch: null }, appType: 'custom', logLevel: 'silent' });
 const { createBattleEngine } = await server.ssrLoadModule('/src/engine/battleEngine.ts');
 const quiet = console.error; console.error = () => {};
 const skill = (name: string, power = 60) => ({ name, category: '物理', type: '普通', power, pp: 99, maxPp: 99, isSureHit: true, description: '' });
@@ -26,6 +26,7 @@ await check('閘門關閉時，托管（P1 AI）不出手；放開後才出手',
   gate.open();
   for (let i = 0; i < 40 && e.getState().turnNumber === 1; i++) await sleep(100);
   assert.ok(e.getState().turnNumber >= 2, '放開後托管出手');
+  e.unmount();
 });
 
 await check('閘門關閉時，P1 出手後對手 AI 也要等閘門；放開後才結算', async () => {
@@ -38,6 +39,7 @@ await check('閘門關閉時，P1 出手後對手 AI 也要等閘門；放開後
   gate.open();
   for (let i = 0; i < 40 && e.getState().turnNumber === 1; i++) await sleep(100);
   assert.ok(e.getState().turnNumber >= 2 && e.getState().p2.currentHp < 5000, '放開後對手 AI 出手並結算');
+  e.unmount();
 });
 
 await check('沒有閘門（動畫關閉）時照常，不延遲', async () => {
@@ -46,7 +48,45 @@ await check('沒有閘門（動畫關閉）時照常，不延遲', async () => {
   e.onSkillSelect('p1', e.getState().p1.skills[0]);
   for (let i = 0; i < 20 && e.getState().turnNumber === 1; i++) await sleep(50);
   assert.ok(e.getState().turnNumber >= 2);
+  e.unmount();
 });
+await check('手動暫停時不接受新指令，等待中的 AI 在繼續後只提交一次', async () => {
+  const gate = createActionGate();
+  let requested = 0, submitted = 0;
+  let result!: (report: any) => void;
+  const decision = new Promise<any>(resolve => { result = resolve; });
+  const e = createBattleEngine({
+    initialP1Team: [elf('A', 200),elf('B',150)], initialP2Team: [elf('X', 100)],
+    p1StarterId:'A', p2StarterId:'X', battleMode:'PVE', preparedTeams:true, isFast:()=>true,
+    actionGate:()=>gate.wait(), isInputPaused:()=>gate.held,
+    selectAi:()=>{requested++;return decision;}, onAIDecision:()=>submitted++,
+  });
+  try {
+    e.mount(); e.start(); await e.idle();
+    gate.hold();
+    e.onSkillSelect('p1',e.getState().p1.skills[0]);
+    e.onSwitchElf('p1',1);
+    e.onPass('p1');
+    assert.equal(e.getState().phase,'p1_select');
+    assert.equal(e.getState().p1.battleId,'A');
+    assert.equal(requested,0);
+    gate.open();
+    e.onSkillSelect('p1',e.getState().p1.skills[0]);
+    assert.equal(requested,1);
+    gate.hold();
+    result({action:{kind:'skill',slot:0}});
+    await sleep(20);
+    assert.equal(e.getState().phase,'p2_select');
+    assert.equal(submitted,0);
+    assert.equal(e.getState().p1.skills[0].pp,99);
+    gate.open();
+    await e.idle();
+    assert.equal(e.getState().turnNumber,2);
+    assert.equal(e.getState().p1.skills[0].pp,98);
+    assert.equal(submitted,1);
+  } finally { gate.open(); e.unmount(); }
+});
+
 console.error = quiet;
 console.log(`battleActionGate: ${n} checks passed`);
 await server.close();

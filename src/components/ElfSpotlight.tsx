@@ -12,6 +12,7 @@ import { RichDescription } from './RichDescription';
 import { typeColor } from '../shell/art/figure';
 import { ElfFilterBar, useElfFilter } from './shared/ElfPicker';
 import { readSpotlightTextSize, saveSpotlightTextSize, readSpotlightFieldSizes, saveSpotlightFieldSizes } from '../utils/spotlightPreferences';
+import { downloadSpotlight, type SpotlightExportFormat, type SpotlightExportSnapshot } from '../utils/spotlightExport';
 const STORAGE = 'seer_featured_elf';
 function SkillFacts({elf,skill,renderType}:{elf:Elf;skill:Skill;renderType?:(type:string,size:number)=>ReactNode}) {
  const resource=skillResourceView(elf,skill);
@@ -33,16 +34,19 @@ export interface ElfSpotlightProps {
  onEdit?: (elf: Elf) => void;
  /** 獨立圖鑑共用展示；預設仍維持原全螢幕對話框。 */
  embedded?: boolean;
+ exportSettings?: Pick<SpotlightExportSnapshot, 'textSize' | 'fieldSizes'>;
  renderType?: (type:string,size:number)=>ReactNode;
 }
-export function ElfSpotlight({elves,selectedElf,onClose,onBack,onEdit,embedded=false,renderType}:ElfSpotlightProps) {
+export function ElfSpotlight({elves,selectedElf,onClose,onBack,onEdit,embedded=false,renderType,exportSettings}:ElfSpotlightProps) {
  const [id,setId]=useState(()=>{try{return localStorage.getItem(STORAGE)||'5021';}catch{return '5021';}});
  const [choosing,setChoosing]=useState(false);
  const filter=useElfFilter();
  const choices=useMemo(()=>filter.filter(elves),[filter.filter,elves]);
- const [textSize,setTextSize]=useState(readSpotlightTextSize);
+ const [textSize,setTextSize]=useState(()=>exportSettings?.textSize??readSpotlightTextSize());
  const [fontSettings,setFontSettings]=useState(false);
- const [fieldSizes,setFieldSizes]=useState(readSpotlightFieldSizes);
+ const [fieldSizes,setFieldSizes]=useState(()=>exportSettings?.fieldSizes??readSpotlightFieldSizes());
+ const [exporting,setExporting]=useState<SpotlightExportFormat|null>(null);
+ const [exportError,setExportError]=useState('');
  const resize=(value:number)=>setTextSize(saveSpotlightTextSize(value));
  const close=useRef<HTMLButtonElement>(null),picker=useRef<HTMLDivElement>(null);
  const elf=selectedElf||elves.find(e=>e.id===id)||elves.find(e=>e.id==='5021')||elves.at(-1);
@@ -56,15 +60,33 @@ export function ElfSpotlight({elves,selectedElf,onClose,onBack,onEdit,embedded=f
  });
  useEffect(()=>{if(embedded)return;const previous=document.activeElement as HTMLElement|null;close.current?.focus();return()=>previous?.isConnected&&previous.focus();},[]);
  useEffect(()=>{if(choosing)picker.current?.querySelector('input')?.focus();},[choosing]);
+ const exportProfile=async (format:SpotlightExportFormat)=>{
+  if(!elf||exporting)return;
+  setExporting(format);
+  setExportError('');
+  try {
+   await downloadSpotlight({elf,textSize,fieldSizes},format);
+  } catch(error) {
+   setExportError(error instanceof Error ? error.message : '匯出失敗，請稍後再試。');
+  } finally {
+   setExporting(null);
+  }
+ };
  const traits=elf?getElfTraitEntries(elf,{includeConfigurable:false}):[];
  // 主列只收五格；技能池不參與介紹頁。沿用戰鬥介面的第五格優先順序。
  const skills=orderSkillsForDisplay(elf?.skills).map(row=>row.skill);
  const select=(next:string)=>{setId(next);try{localStorage.setItem(STORAGE,next);}catch{}setChoosing(false);filter.setQuery('');};
  const keydown=(e:KeyboardEvent)=>{if(e.key==='Escape'){e.preventDefault();e.stopPropagation();if(choosing){setChoosing(false);close.current?.focus();}else onClose();}if(e.key==='Tab'){const scope=choosing?picker.current:e.currentTarget;const items:HTMLElement[]=scope?Array.from((scope as HTMLElement).querySelectorAll<HTMLElement>('button:not(:disabled),input,select,[tabindex="0"]')):[];const first=items[0],last=items.at(-1);if(e.shiftKey&&document.activeElement===first){e.preventDefault();last?.focus();}else if(!e.shiftKey&&document.activeElement===last){e.preventDefault();first?.focus();}}};
  const view=<section className="elf-spotlight" role={embedded?"region":"dialog"} aria-modal={embedded?undefined:true} aria-label={title} onKeyDown={embedded?undefined:keydown} style={{'--spot-text-scale':textSize/100,'--spot-tone':typeColor(elf?.type||'普通','#83a9c4')} as CSSProperties}>
-  <header className="spot-top"><div><span className="spot-eyebrow">SEER / FIELD ARCHIVE</span><h1>{title} <span>{selectedElf?elf?.name:'每次，認識一位新夥伴。'}</span></h1></div><div className="spot-actions"><button aria-expanded={fontSettings} onClick={()=>setFontSettings(v=>!v)}>字級設定</button>{fontSettings&&<div className="spot-text-controls" role="group" aria-label="介紹文字大小"><button aria-label="縮小介紹文字" disabled={textSize<=80} onClick={()=>resize(textSize-10)}>A−</button><label>文字 <input aria-label="介紹文字大小" type="range" min="80" max="160" step="10" value={textSize} onChange={e=>resize(Number(e.target.value))}/><output>{textSize}%</output></label><button aria-label="放大介紹文字" disabled={textSize>=160} onClick={()=>resize(textSize+10)}>A＋</button><button onClick={()=>resize(100)}>重設字級</button></div>}{onBack&&<button onClick={onBack}>更新公告</button>}{onEdit&&elf&&<button onClick={()=>onEdit(elf)}>修改這隻精靈</button>}{!selectedElf&&<button onClick={()=>setChoosing(true)} disabled={!elves.length}>替換展示精靈 ↗</button>}<button ref={close} onClick={onClose} aria-label="關閉精靈介紹">關閉 ×</button></div></header>
+  <header className="spot-top"><div><span className="spot-eyebrow">SEER / FIELD ARCHIVE</span><h1>{title} <span>{selectedElf?elf?.name:'每次，認識一位新夥伴。'}</span></h1></div>{!exportSettings&&<div className="spot-actions"><button aria-expanded={fontSettings} onClick={()=>setFontSettings(v=>!v)}>{embedded?'字級設定':'字級設定與匯出'}</button>{fontSettings&&<div className="spot-text-controls" role="group" aria-label="介紹文字大小"><button aria-label="縮小介紹文字" disabled={textSize<=80} onClick={()=>resize(textSize-10)}>A−</button><label>文字 <input aria-label="介紹文字大小" type="range" min="80" max="160" step="10" value={textSize} onChange={e=>resize(Number(e.target.value))}/><output>{textSize}%</output></label><button aria-label="放大介紹文字" disabled={textSize>=160} onClick={()=>resize(textSize+10)}>A＋</button><button onClick={()=>resize(100)}>重設字級</button></div>}
+   {fontSettings&&!embedded&&elf&&<div className="spot-export-controls" role="group" aria-label="匯出精靈介紹">
+    <button type="button" disabled={!!exporting} onClick={()=>void exportProfile('png')}>截圖 PNG</button>
+    <button type="button" disabled={!!exporting} onClick={()=>void exportProfile('pdf')}>下載 PDF</button>
+    {exporting&&<span role="status">正在產生 {exporting.toUpperCase()}…</span>}
+    {exportError&&<span role="alert">{exportError}</span>}
+   </div>}{onBack&&<button onClick={onBack}>更新公告</button>}{onEdit&&elf&&<button onClick={()=>onEdit(elf)}>修改這隻精靈</button>}{!selectedElf&&<button onClick={()=>setChoosing(true)} disabled={!elves.length}>替換展示精靈 ↗</button>}<button ref={close} onClick={onClose} aria-label="關閉精靈介紹">關閉 ×</button></div>}</header>
   {elf?<main className="spot-grid" key={elf.id}>
-   <aside className="spot-identity" style={fieldStyle('identity')}>{fieldControls('identity','基本資料')}<span className="spot-index">精靈檔案 / {elf.id}</span><div className="spot-art"><div className="spot-orbit"/><ElfAvatar elf={elf} kind="body" className="spot-body"/></div><div className="spot-name">{renderType?renderType(elf.type,26):<TypeIcon type={elf.type} size={26}/>}<span>{elf.type}</span>{(elf.isAlienElf||elf.category==='異能精靈')&&<span className="spot-elf-kind">異能精靈</span>}<h2>{elf.name}</h2></div><div className="spot-stats"><h3>種族能力 <b>{Object.values(elf.baseStats||{}).reduce((a,b)=>a+b,0)}</b></h3><div>{([['hp','體力'],['atk','攻擊'],['def','防禦'],['spatk','特攻'],['spdef','特防'],['speed','速度']] as const).map(([key,label])=><div key={key}><span>{label}</span><strong>{elf.baseStats?.[key]??'—'}</strong><i style={{width:Math.min(100,(elf.baseStats?.[key]||0)/2)+'%'}}/></div>)}</div></div><p className="spot-source">目前資料同步呈現 · 可隨版本更新<br/>{selectedElf?'目前選取的精靈檔案':'展示選擇儲存在此裝置'}</p></aside>
+   <aside className="spot-identity" style={fieldStyle('identity')}>{fieldControls('identity','基本資料')}<span className="spot-index">精靈檔案 / {elf.id}</span><div className="spot-art"><div className="spot-orbit"/><ElfAvatar elf={elf} kind="body" className="spot-body"/></div><div className="spot-name">{renderType?renderType(elf.type,26):<TypeIcon type={elf.type} size={26}/>}<span>{elf.type}</span>{(elf.isAlienElf||elf.category==='異能精靈')&&<span className="spot-elf-kind">異能精靈</span>}<h2>{elf.name}</h2></div><div className="spot-stats"><h3>種族能力 <b>{Object.values(elf.baseStats||{}).reduce((a,b)=>a+b,0)}</b></h3><div>{([['hp','體力'],['atk','攻擊'],['def','防禦'],['spatk','特攻'],['spdef','特防'],['speed','速度']] as const).map(([key,label])=><div key={key}><span>{label}</span><strong>{elf.baseStats?.[key]??'—'}</strong><i style={{width:Math.min(100,(elf.baseStats?.[key]||0)/2)+'%'}}/></div>)}</div></div>{!exportSettings&&<p className="spot-source">目前資料同步呈現 · 可隨版本更新<br/>{selectedElf?'目前選取的精靈檔案':'展示選擇儲存在此裝置'}</p>}</aside>
    <section className="spot-panel spot-traits" style={fieldStyle('traits')}>{fieldControls('traits','魂印區')}<header><span>01 / ORIGIN</span><h2>魂印</h2></header><div className="spot-prose">{traits.length?traits.map((t,i)=><article key={i} style={fieldStyle(`trait:${elf.id}:${t.kind}:${t.name}`,'traits')}>{fieldControls(`trait:${elf.id}:${t.kind}:${t.name}`,t.name||t.kind,'traits')}<h3><small>{t.kind}</small>{t.name}</h3><RichDescription text={t.description} fallback='尚無描述' className='spot-desc' /></article>):<p>尚無已登記的魂印效果。</p>}</div></section>
    <section className="spot-panel spot-skills" style={fieldStyle('skills')}>{fieldControls('skills','技能區')}<header><span>02 / ARSENAL</span><h2>技能全覽 <small>{skills.length} 招</small></h2></header><div className="spot-skill-list">{skills.map((s,i)=><article key={i} className="spot-skill" style={fieldStyle(`skill:${elf.id}:${s.name}`,'skills')}>{fieldControls(`skill:${elf.id}:${s.name}`,s.name,'skills')}<header><span className="spot-skill-index">{String(i+1).padStart(2,'0')}</span><h3>{s.name}</h3><SkillFacts elf={elf} skill={s} renderType={renderType}/></header><RichDescription text={s.description} fallback='無特殊效果' className='spot-desc' /></article>)}{!skills.length&&<p>尚無已登記的技能。</p>}</div></section>
   </main>:<p role="status">目前沒有精靈資料。</p>}

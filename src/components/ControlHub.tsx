@@ -198,20 +198,28 @@ function useControlHubModel(currentScene: string, canApplyUpdates: boolean) {
   // --- Audio Logic ---
   // B站分P沿用既有輪替；YouTube 單曲不再擅自加入其他歌單。
   const destinyPage = useMemo(() => currentScene === 'destiny_wheel' && !state.bgmUrl ? getDestinyWheelPage() : 1, [currentScene, state.bgmUrl]);
-  const musicInfo = useMemo(() => parseMusicSource(state.bgmUrl || sceneResources[currentScene]?.bgm ||
+  const sceneSource = useMemo(() => parseMusicSource(state.bgmUrl || sceneResources[currentScene]?.bgm ||
     (currentScene === 'destiny_wheel' ? 'BV1uh411Y73e' : 'wJ8onQryXRY'), destinyPage),
     [state.bgmUrl, currentScene, sceneResources[currentScene]?.bgm, destinyPage]);
-  const music = useMusicPlayer(musicInfo);
+  const [continuousMusic, setContinuousMusicState] = useState(() => {
+    try { return localStorage.getItem('seer_music_continue_across_scenes') === '1'; } catch { return false; }
+  });
+  const setContinuousMusic = (enabled: boolean) => {
+    setContinuousMusicState(enabled);
+    try { localStorage.setItem('seer_music_continue_across_scenes', enabled ? '1' : '0'); } catch { /* 本次仍生效 */ }
+  };
+  const music = useMusicPlayer(sceneSource, { scene: currentScene, override: state.bgmUrl, continuous: continuousMusic });
+  const musicInfo = music.source;
   // 進入星蝕回廊（大廳／回廊戰鬥）自動播放；可在「音樂」關閉。
   const [autoplay, setAutoplayState] = useState(readMusicAutoplay);
   const setAutoplay = (on: boolean) => { setAutoplayState(on); writeMusicAutoplay(on); };
   const prevScene = useRef<string | null>(null);
   useEffect(() => {
     const prev = prevScene.current; prevScene.current = currentScene;
-    if (shouldAutoplayOnEnter(prev, currentScene, autoplay) && !music.requestedPlaying) music.setIsPlaying(true);
+    if (shouldAutoplayOnEnter(prev, currentScene, autoplay) && !music.requestedPlaying && (!continuousMusic || !music.mounted)) music.setIsPlaying(true);
   }, [currentScene]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  return { isMaximized, setIsMaximized, setIsOpen, activeTab, searchTerm, setSearchTerm, setActiveTab, state, updateUrlParam, currentAccent, setFeedback, backgrounds, inputBgUrl, setInputBgUrl, musicInfo, playlist, inputBgmUrl, setInputBgmUrl, animationSettings, setAnimationSettings, customLayout, setCustomLayout, p1Panel, setP1Panel, p2Panel, setP2Panel, tacticalPanel, setTacticalPanel, hudOpacity, setHudOpacity, setLocalResources, localResources, selectedScene, sceneResources, currentScene, setSelectedScene, updateSceneBg, updateSceneBgm, setPlaylist, setBackgrounds, feedback, isOpen, canApplyUpdates, autoplay, setAutoplay, ...music };
+  return { isMaximized, setIsMaximized, setIsOpen, activeTab, searchTerm, setSearchTerm, setActiveTab, state, updateUrlParam, currentAccent, setFeedback, backgrounds, inputBgUrl, setInputBgUrl, musicInfo, playlist, inputBgmUrl, setInputBgmUrl, animationSettings, setAnimationSettings, customLayout, setCustomLayout, p1Panel, setP1Panel, p2Panel, setP2Panel, tacticalPanel, setTacticalPanel, hudOpacity, setHudOpacity, setLocalResources, localResources, selectedScene, sceneResources, currentScene, setSelectedScene, updateSceneBg, updateSceneBgm, setPlaylist, setBackgrounds, feedback, isOpen, canApplyUpdates, autoplay, setAutoplay, continuousMusic, setContinuousMusic, ...music };
 }
 
 export type ControlHubPanelModel = ReturnType<typeof useControlHubModel>;

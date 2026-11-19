@@ -8,6 +8,7 @@ import { elfForViewer, hiddenFromViewer, type BattleViewMode } from './viewerPer
 import {statusCountAppearance} from './statusImmunityCount';
 import {displayTurnValue} from './displayTurnValue';
 import {skillBadgeViews} from './skillBadgeViews';
+import {getStatuses} from '../utils/battleHelpers';
 
 export function visibleEffectSourceText(source: Elf | undefined, side: 'p1' | 'p2', mode: BattleViewMode = 'PVE'): string {
   return !source || hiddenFromViewer(source, side, mode) ? '' : elfForViewer(source, side).soulMark?.description || '';
@@ -65,6 +66,10 @@ export function activeEffectViews(elf: Elf, marks: Mark[] = [], timers: Timer[] 
       shortLabel: '機', description: catalog.describe(), source: '魂印機制', clearable: false,
       polarity: 'positive', icon: effectIcon(), priority: 45 });
   }
+  const faith = (elf as any).faithTarget;
+  if (faith && Number(getStatuses(elf)['狂信']) > 0) append({ id: 'field:faithTarget', semanticId: 'faith_target',
+    category: 'mechanism', label: `信仰：${faith}`, shortLabel: '信', description: `信仰對象：${faith}；對方在場精靈為信仰對象時無法行動。`,
+    source: '狂信', clearable: false, polarity: 'negative', icon: effectIcon(undefined, '狂信'), priority: 85 });
   views.push(...skillBadgeViews(elf)); // 技能欄位上的標記（符文等）
   for (const sign of STATE_SIGNS) {
     const value = Number(registry[sign.key] || 0);

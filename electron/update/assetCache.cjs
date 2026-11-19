@@ -14,11 +14,12 @@ function validateAssetManifest(manifest) {
   return manifest;
 }
 class AssetCache {
-  constructor(manifest, directory, fetcher = fetch) { this.manifest = validateAssetManifest(manifest); this.directory = directory; this.fetcher = fetcher; this.pending = new Map(); this.running = 0; this.waiters = []; }
+  constructor(manifest, directory, fetcher = fetch) { this.manifest = validateAssetManifest(manifest); this.byUrl = new Map(this.manifest.entries.map(item => [item.url, item])); this.directory = directory; this.fetcher = fetcher; this.pending = new Map(); this.running = 0; this.waiters = []; }
   async slot() { if (this.running < 3) { this.running++; return; } if (this.waiters.length >= 64) throw new Error('素材下載忙碌，請稍後重試'); await new Promise(resolve => this.waiters.push(resolve)); }
   release() { const next = this.waiters.shift(); if (next) next(); else this.running--; }
+  has(url) { return this.byUrl.has(url); }
   async get(url) {
-    const item = this.manifest.entries.find(item => item.url === url); if (!item) return null;
+    const item = this.byUrl.get(url); if (!item) return null;
     if (this.pending.has(item.sha256)) return this.pending.get(item.sha256);
     const job = (async () => {
       await this.slot();

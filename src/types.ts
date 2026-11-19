@@ -67,6 +67,7 @@ export interface Skill {
   effectType: 'none' | 'stat_up' | 'stat_down' | 'heal' | 'status_inflict' | 'damage_multiplier' | 'absorb' | 'mercy' | 'special' | 'dispel' | 'buff' | string;
   effectDetail: string; // e.g. "atk+1", "def-1", "heal:30%", "paralyze:30", "double_damage:10"
   isFifthSkill?: boolean; // 是否為第五技能（專屬替換池）
+  sealedUntilUnseal?: boolean; // 解封：初始不可選，需 unseal_skill 解除（本場有效）
   isAbolished?: boolean; // 是否已廢除（直到戰鬥結束時無法再次選擇使用，視為失去該技能）
   
   // Dynamic Special Marks & Badges Display Slot (印記/特殊標記動態顯示區，無標記時不顯示)
@@ -195,6 +196,8 @@ export interface StatChange {
 }
 
 export interface Elf {
+    /** 預選的額外技能傷害目標；離場清除，傷害結算時再讀取目標當前狀態。 */
+    preparedExtraAttack?: { side: 'p1' | 'p2'; ids: string[] };
   combatPhases?:Record<string,{phase:string;until?:number;statsMultiplier:number}|undefined>;
   /** 內建效果版本指紋；只供讀檔升級，戰鬥不依此執行。 */
   builtinEffectBindings?: { schemaVersion: 1; elfId: string; definitions: Record<string, string> };
@@ -240,6 +243,8 @@ export interface Elf {
   openingSpDef?: number; // 戰鬥開始時的基礎面板特防值快照
   currentHp: number; // active HP during battle
   path?: string; // image path or name
+  groupIds?: string[]; // 未設定時讀取有來源的預設歸屬；空陣列可覆寫預設。
+  groupTags?: import('./data/elfGroups').ElfGroupDefinition[];
   skinId?: string; // 純外觀皮膚；與自訂圖片及戰鬥定義分開保存
   seerId?: number | string; // 賽爾號官方寵物ID（頭像/全身圖對應；未填則依名稱自動比對）
   description?: string; // text description that can be adjusted
@@ -249,6 +254,7 @@ export interface Elf {
   trait?: SoulMark;
   abilities?: AbilityDefinition[]; // New abilities system
   skills: Skill[];
+  unsealedSkills?: string[]; // 本場已解封的技能名稱（unseal_skill）
   skillPool?: Skill[]; // 該精靈所擁有的完整技能庫/技能池（包含所有可替換技能）
   height?: number; // 精靈身高
   weight?: number; // 精靈體重
@@ -466,6 +472,8 @@ export interface BattleItem {
   inventoryGroup?: { id: string; limit: number };
   /** 真正持有期間，每次使用藥劑都套用既有藥劑反噬規則。 */
   potionBacklashWhileHeld?: boolean;
+  /** 持有期間每次藥劑反噬：對方指定精靈（存活，場上場下皆可）恢復反噬體力／PP 的倍率。 */
+  backlashRestore?: { elfId: string; ratio: number };
   /** 持有期間即時查詢的通用規則；不複製成永久魂印或依來源名稱判斷。 */
   heldModifiers?: {
     maxHpIncreaseDisabled?:boolean;

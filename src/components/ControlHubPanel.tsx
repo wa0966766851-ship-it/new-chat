@@ -14,6 +14,7 @@ import { playAudioTestTone } from '../utils/audioTestTone';
 import { BattleAISettingsPanel } from './BattleAISettingsPanel';
 import { LauncherSettingsPanel } from './LauncherSettingsPanel';
 import {GlobalAnimationMode} from './AnimationModeSettings';
+import { readPerfPreference, writePerfPreference, perfLiteActive, type PerfPreference } from '../shell/perfMode';
 import { BATTLE_GAME_SKINS, useBattleLayoutPrefs } from './battle/gameHud';
 
 const TAB_ICONS: Record<ControlSectionId, React.ComponentType<{ className?: string }>> = {
@@ -245,7 +246,7 @@ export default function ControlHubPanel(model: ControlHubPanelModel) {
               {model.requestedPlaying && !['blocked', 'error'].includes(model.playback.phase) ? <Pause className="w-5 h-5" /> : <Play className="w-5 h-5" />}
             </button>
             <div className="min-w-0 flex-1">
-              <p className="text-sm font-bold text-slate-100 truncate">{playlist.find(p => p.url === state.bgmUrl)?.title || (state.bgmUrl ? '自訂連結' : `${sceneName(currentScene)} BGM`)}</p>
+              <p className="text-sm font-bold text-slate-100 truncate">{playlist.find(p => p.url === state.bgmUrl)?.title || (state.bgmUrl ? '自訂連結' : `${sceneName(model.musicScene ?? currentScene)} BGM`)}</p>
               <p role="status" className="text-xs text-slate-400">{musicInfo.type} · {model.playback.message}{isPlaying && isMuted ? '（靜音）' : ''}</p>
             </div>
             <button type="button" onClick={toggleMute} aria-label={isMuted ? '取消靜音' : '靜音'} title={isMuted ? '取消靜音' : '靜音'} className="p-2 text-slate-300 hover:text-white">
@@ -255,6 +256,9 @@ export default function ControlHubPanel(model: ControlHubPanelModel) {
           <Section title="播放器與音量">
             <label className="flex items-center gap-2 text-xs text-slate-200">
               <input type="checkbox" checked={model.showPlayer} onChange={e => model.setShowPlayer(e.target.checked)} />顯示影片播放器
+            </label>
+            <label className="flex items-center gap-2 text-xs text-slate-200" title="切換頁面時繼續播放同一首，關閉後跟隨各頁 BGM">
+              <input type="checkbox" data-testid="music-continue-across-scenes" checked={model.continuousMusic} onChange={e => model.setContinuousMusic(e.target.checked)} />切頁時持續播放
             </label>
             <label className="flex items-center gap-2 text-xs text-slate-200" title="進入星蝕回廊大廳或回廊戰鬥時自動開始播放該頁音樂">
               <input type="checkbox" data-testid="music-autoplay" checked={model.autoplay} onChange={e => model.setAutoplay(e.target.checked)} />進入星蝕回廊自動播放
@@ -374,6 +378,7 @@ export default function ControlHubPanel(model: ControlHubPanelModel) {
 
           <Section title="動畫播放" hint="關閉的項目直接略過動畫，不影響結算">
             <ImageRetrySetting/>
+            <PerfModeSetting/>
             <GlobalAnimationMode settings={animationSettings} onChange={next=>{setAnimationSettings(next);writeAnimationSettings(next);}}/>
             <label className="flex items-center justify-between gap-3 rounded-lg border border-cyan-900 bg-slate-950 p-3 mb-3">
               <span><span className="block text-sm font-bold text-cyan-200">靜態模式</span><span className="text-xs text-slate-400">略過出招與登場動畫，飄字保留。</span></span>
@@ -419,4 +424,17 @@ export default function ControlHubPanel(model: ControlHubPanelModel) {
       </AnimatePresence>
     </motion.div>
   );
+}
+
+/** 效能模式：自動依硬體與幀時間切換；精簡時移除背景模糊與循環裝飾動畫。 */
+function PerfModeSetting() {
+  const [pref, setPref] = React.useState<PerfPreference>(readPerfPreference);
+  const lite = perfLiteActive(pref);
+  return <label className="flex items-center justify-between gap-3 rounded-lg border border-cyan-900 bg-slate-950 p-3 mb-3" title="精簡會減少背景特效，並在下次載入時縮小大型動作圖集。完整保留原圖集，自動依硬體和幀時間選擇。">
+    <span className="text-sm font-bold text-cyan-200">效能模式 <span className="text-xs font-normal text-slate-400">（目前{lite ? '精簡' : '完整'}）</span></span>
+    <select aria-label="效能模式" className="rounded-lg bg-slate-950 border border-slate-700 p-2 text-sm" value={pref}
+      onChange={e => { const v = e.target.value as PerfPreference; setPref(v); writePerfPreference(v); }}>
+      <option value="auto">自動</option><option value="on">精簡</option><option value="off">完整</option>
+    </select>
+  </label>;
 }

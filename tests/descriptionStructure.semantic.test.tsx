@@ -6,6 +6,7 @@ import { descriptionStructure, descriptionFingerprint, type DescriptionNode } fr
 import { EffectDescription } from '../src/components/EffectDescription';
 import { EffectBlockToggle } from '../src/components/EffectBlockToggle';
 import { OTHERWORLD_REY_TEXT } from '../src/data/otherworldReyDescriptions';
+import { LEONIDAS_TEXT, GRAUEN_TEXT } from '../src/data/strengthenedElfDescriptions';
 import { plainDescription } from '../src/utils/descFormat';
 import { readFileSync } from 'node:fs';
 
@@ -66,6 +67,16 @@ check('完整原文不被改寫，複製純文字的既有契約不變', () => {
   assert.equal(OTHERWORLD_REY_TEXT.thunder, before);
   assert.equal(plainDescription('> **總和*70，1/3；-1。**'), '總和*70，1/3；-1。');
   assert.equal(descriptionStructure('').nodes.length, 0);
+});
+check('古王與火電王使用同一描述元件，保留三層條件分支', () => {
+  const markup = renderToStaticMarkup(<><EffectDescription description={LEONIDAS_TEXT.soul}/><EffectDescription description={GRAUEN_TEXT.soul}/></>);
+  const doc = new JSDOM(markup).window.document;
+  const hasNestedBranch = (section: string, text: RegExp) => {
+    const groups = doc.querySelectorAll(`section[aria-label="${section}"] [data-parent-id] [data-parent-id] [data-parent-id]`);
+    return [...groups].some(group => text.test(group.textContent || ''));
+  };
+  assert.ok(hasNestedBranch('常駐效果', /自身存活且亙古遺獸死亡/));
+  assert.ok(hasNestedBranch('登場與任一方體力變動時', /雷解未觸發/));
 });
 check('實際描述元件的章節、說明與子效果DOM', () => {
   const markup = renderToStaticMarkup(<EffectDescription description={OTHERWORLD_REY_TEXT.god} />);

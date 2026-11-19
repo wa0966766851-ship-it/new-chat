@@ -5,6 +5,7 @@ import { heuristicRanking } from '../battle/ai/heuristic';
 import { decisionKnowledge } from '../battle/ai/knowledge';
 import { readAISettings, settingsForSide } from '../battle/ai/settings';
 import { legalActions } from '../battle/ai/legalActions';
+import { aiLegalActions } from '../battle/ai/actionPolicy';
 import { type PlannedAction, type DecisionRequest, type AISettings } from '../battle/ai/types';
 
 export interface AIAction { type: 'skill' | 'switch' | 'item'; skill?: Skill; switchIndex?: number; item?: BattleItem }
@@ -30,7 +31,7 @@ export const pickAiAction = (state: BattleState, side: 'p1' | 'p2', p1Suit?: str
   try {
     const ranked = heuristicRanking(fallbackRequest(state, side, p1Suit, p2Suit, rng, false, opts));
     return materializeAiAction(state, side, ranked[0]?.action || { kind: 'wait' });
-  } catch { return materializeAiAction(state, side, legalActions(state, side)[0] || { kind: 'wait' }); }
+  } catch { return materializeAiAction(state, side, aiLegalActions({state,side,settings:opts.settings ?? readAISettings()})[0] || { kind: 'wait' }); }
 };
 export const pickAiForcedSwitch = (state: BattleState, side: 'p1' | 'p2', p1Suit?: string, p2Suit?: string, rng: () => number = Math.random, opts: FallbackOptions = {}): number => {
   let best: PlannedAction | undefined;

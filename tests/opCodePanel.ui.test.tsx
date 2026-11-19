@@ -23,5 +23,7 @@ assert.ok(html.includes('S-016'), 'S-016 listed in byCode mode');
 assert.ok(html.includes('246') || html.includes('代號'), 'catalog count visible');
 console.log('OpCodePanel UI smoke: render OK, S-016 visible');
 
-root.unmount();
+const group=renderToStaticMarkup(React.createElement(OpCodePanel,{initialQuery:'EG-005'}));
+assert.ok(group.includes('精靈王')&&group.includes('Q-106')&&group.includes('D-049'));
+await act(async()=>root.unmount());
 dom.window.close();

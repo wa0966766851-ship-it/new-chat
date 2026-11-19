@@ -3,7 +3,7 @@ import {createHarness} from './helpers/migrationHarness';
 import {kitEntryIssue} from '../src/effects/effectConnection';
 import {activeEffectViews} from '../src/battle/activeEffectViews';
 import {describeEffectMeta} from '../src/battle/effectViewModel';
-import {statusCountClasses} from '../src/battle/statusImmunityCount';
+import {statusCountClasses,statusCountAppearance} from '../src/battle/statusImmunityCount';
 import React, {act} from 'react';
 import {JSDOM} from 'jsdom';
 import * as Blockly from '../src/vendor/blockly/index.js';
@@ -109,6 +109,35 @@ try{
       }
       return [t===1?0:1,0];
     }},2);checks++;
+    // 消耗順序（2026-10-28 規格，2026-11-15 補測）：反彈 → 單人 → 己方全隊最後；反彈型內也是單人先於全隊。
+    const ordered=h.kitSkill('四種次數免疫',[
+      {op:'immune_status_count',p:{count:1,scope:'team'}},
+      {op:'immune_status_count',p:{count:1,scope:'team',reflect:true}},
+      {op:'immune_status_count',p:{count:1,scope:'self',persistsOffField:false}},
+      {op:'immune_status_count',p:{count:1,scope:'self',persistsOffField:true,reflect:true}},
+    ]);
+    await h.play(side,{self:h.unit('holder',100000,[ordered,h.wait()]),opp:h.unit('foe',100000,[h.wait()]),turns:(e:any,t:number)=>{
+      if(t===2){
+        const tones=()=>views(e.getState(),side).map(v=>v.tone).sort();
+        assert.deepEqual(tones(),['cyan','orange','purple','yellow']);
+        const spent:string[]=[];
+        for(let i=0;i<4;i++){const before=tones();assert.equal(foeCtx.applyStatusWithImmunityCheck(side,'中毒',3).immune,true);const after=tones();spent.push(before.find(x=>!after.includes(x))!);}
+        assert.deepEqual(spent,['purple','orange','yellow','cyan'],'反彈（單人→全隊）→ 純免疫（單人→全隊）');
+        assert.ok(!h.statuses(e.getState()[side]).includes('中毒'),'四次都沒中');
+        assert.equal(foeCtx.applyStatusWithImmunityCheck(side,'中毒',3).success,true,'次數用完後照常附加');
+      }
+      return [t===1?0:1,0];
+    }},2);checks++;
+  }
+  // 六種呈現（2026-11-16 最終更正）：純免疫三色＝原廠印記圖（60／100／179）；反彈三色＝自製換色盾牌（橘／紅／紫）。
+  {
+    const A=(team:boolean,retained:boolean,reflect:boolean)=>statusCountAppearance(team,retained,reflect);
+    assert.deepEqual([A(true,true,false),A(false,false,false),A(false,true,false)].map(a=>[a.tone,a.icon]),[['cyan','/seer/signbuff/60.png'],['yellow','/seer/signbuff/100.png'],['blue','/seer/signbuff/179.png']]);
+    const custom=[A(true,true,true),A(false,true,true),A(false,false,true)];
+    assert.deepEqual(custom.map(a=>[a.tone,a.icon]),[['orange','/seer/signbuff/custom/次數免疫_盾_橘.png'],['purple','/seer/signbuff/custom/次數免疫_盾_紫.png'],['red','/seer/signbuff/custom/次數免疫_盾_紅.png']]);
+    assert.ok(custom.every(a=>a.icon.startsWith('/seer/signbuff/custom/'))&&new Set(custom.map(a=>a.icon)).size===3,'反彈三型各有自製圖');
+    assert.equal(new Set([true,false].flatMap(r=>[A(true,true,r),A(false,true,r),A(false,false,r)]).map(a=>a.icon)).size,6,'六張圖都不同');
+    checks++;
   }
   const dom=new JSDOM('<div id="root"></div>',{url:'http://localhost/'});
   Object.assign(globalThis,{window:dom.window,document:dom.window.document,IS_REACT_ACT_ENVIRONMENT:true});

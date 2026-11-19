@@ -1,6 +1,7 @@
 // 純時點對照；資料建構不需載入完整合約與戰鬥動作。
 import {TEAM_KIT_TRIGGERS} from './teamKitContract';
 export const SEQUENCE_TRIGGERS: Record<string,string> = {
+  active_hp_changed:'active_hp_changed',
   stat_changed:'stat_changed',
   battle_node:'battle_node',
   any_node:'any_battle_node',

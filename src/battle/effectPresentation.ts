@@ -13,6 +13,13 @@ import { opDisplayName } from './opDisplayNames';
 
 const numberText = (n: number) => Number(n.toFixed(2)).toString();
 const percent = (n: number) => `${numberText(n * 100)}%`;
+/** 技能無效依技能類型分述（2026-11-16 BOSS 特性最終更正）。 */
+const ATTACK_INVALID = '無法造成技能傷害且技能附加效果失效';
+const UTILITY_INVALID = '屬性技能附加效果失效。';
+const skillInvalidText = (kind: string): string => kind === '攻擊' ? `攻擊技能：${ATTACK_INVALID}。`
+  : kind === '屬性' ? UTILITY_INVALID
+  : kind === 'all' ? `攻擊技能：${ATTACK_INVALID}；屬性技能：${UTILITY_INVALID}`
+  : `${kind}技能無效。`;
 
 /** Captions are derived from structured parameters, not from the originating skill's name. */
 export function payloadPresentation(payload: Record<string, any> = {}): EffectPresentation | undefined {
@@ -29,8 +36,9 @@ export function payloadPresentation(payload: Record<string, any> = {}): EffectPr
   }
   if (block.prio !== undefined) add('priority', `先制${block.prio >= 0 ? '+' : ''}${block.prio}`, block.prio < 0 ? '先制降低' : '先制');
   if (payload.disablePriority) add('priority_disabled', '先制效果失效', '先制效果失效');
-  if (block.invalid) add(`invalid:${block.invalid}`, `${block.invalid === 'all' ? '所有' : block.invalid}技能無效`, '技能無效');
-  if (block.addInvalid) add(`attached_invalid:${block.addInvalid}`, `${block.addInvalid}技能附加效果無效`, '技能無效');
+  if (block.invalid) add(`invalid:${block.invalid}`, `${block.invalid === 'all' ? '所有' : block.invalid}技能無效`, '技能無效', skillInvalidText(block.invalid));
+  if (payload.preventAttackDamage && block.addInvalid === '攻擊') add('attack_damage_and_attached_lock', '無法造成攻擊傷害且附加效果失效', '技能無效');
+  else if (block.addInvalid) add(`attached_invalid:${block.addInvalid}`, `${block.addInvalid}技能附加效果無效`, '技能無效', block.addInvalid === '屬性' ? UTILITY_INVALID : block.addInvalid === '攻擊' ? '攻擊技能附加效果失效（仍造成技能傷害）。' : '技能附加效果失效（仍造成技能傷害）。');
   if (block.ppMult !== undefined) add('pp_cost', `PP消耗×${block.ppMult}`, '減PP');
   if (block.dmgIn !== undefined) add('received_damage', `受到${block.kind || '指定類型'}傷害${block.dmgIn >= 0 ? '提升' : '降低'}${percent(Math.abs(block.dmgIn))}`, block.dmgIn < 0 ? '減傷' : '增傷');
   if (block.dmgOut !== undefined) add('outgoing_damage', `造成${block.kind || '指定類型'}傷害${block.dmgOut >= 0 ? '提升' : '降低'}${percent(Math.abs(block.dmgOut))}`, block.dmgOut < 0 ? '減傷' : '增傷');
@@ -40,7 +48,7 @@ export function payloadPresentation(payload: Record<string, any> = {}): EffectPr
   for (const rawKey of payload.mirrorRegistryKeys || []) {
     const key = rawKey.replace(/^p[12]_/, '');
     const known = MIRROR_PRESENTATIONS[key];
-    if (known) parts.push({ ...known, description: known.label });
+    if (known) parts.push({ ...known, description: known.description || known.label });
   }
   if (payload.immuneStatus) add(payload.reflectStatus ? 'status_guard_reflect' : 'status_guard', payload.reflectStatus ? '異常免疫與反彈' : '異常免疫', '免疫異常',
     `免疫${payload.excludeStatusCategory === 'AUXILIARY' ? '非附屬類' : '指定'}異常${payload.reflectStatus ? '並反彈' : ''}。`);
@@ -59,7 +67,9 @@ export function payloadPresentation(payload: Record<string, any> = {}): EffectPr
   if (payload.nonTrueOutputLimit !== undefined) add('non_true_output_cap', `非真實傷害上限${payload.nonTrueOutputLimit}`, '傷害限制');
   if (payload.inherentInvalid) add('inherent_invalid', '固有效果無效', '技能無效');
   if (payload.preventAction) add('prevent_action', '禁止行動');
-  if (payload.lockSwitch) add('switch_lock', '禁止主動切換', '切換限制');
+  if (payload.banish) add('banish', '放逐', '切換限制', '對手背包中的精靈無法主動切換上場。');
+  else if (payload.lockSwitch) add('switch_lock', '禁止主動切換', '切換限制');
+  if (block.boostInvalid) add('boost_invalid', '能力提升效果失效', '弱化', '能力提升不參與能力值計算，但仍算處於能力提升、仍計入等級計數。');
   if (payload.noItem) add('item_lock', '禁止使用藥劑', '藥劑限制');
   if (payload.potionBacklash) add('potion_backlash', '藥劑反噬', '藥劑反噬', '藥劑效果反轉：回復變為藥劑反噬傷害、回復PP變為扣除、解除異常變為進入異常；對對手的藥劑效果改由自身承受。');
   if (payload.roundHealEqualPercent) add('round_heal_damage', '回合開始恢復與附傷', '恢復');
@@ -93,12 +103,12 @@ export function payloadPresentation(payload: Record<string, any> = {}): EffectPr
   return { semanticId: parts.map(p => p.semanticId).join('+'), label: parts.map(p => p.label).join('／'),
     description: parts.map(p => p.description).join('\n'), iconTag: parts.length === 1 ? parts[0].iconTag : undefined,
     polarity: payload.polarity ? String(payload.polarity).toLowerCase() as EffectPresentation['polarity']
-      : parts.some(p => p.polarity === 'negative') || block.invalid || block.addInvalid || block.prio < 0 || block.ppMult > 1 || block.dmgIn > 0 || block.dmgOut < 0 || block.dmgOutMult < 1 || payload.recoveryReductionPercent || payload.ppRecoveryReductionPercent || payload.lockSwitch || payload.preventAction || payload.inherentInvalid || payload.disablePriority || payload.incomingAttackCritical || payload.incomingPhysicalSkillMultiplier > 1 || payload.priorityDelta < 0 ? 'negative' : 'positive' };
+      : parts.some(p => p.polarity === 'negative') || block.invalid || block.addInvalid || block.boostInvalid || block.prio < 0 || block.ppMult > 1 || block.dmgIn > 0 || block.dmgOut < 0 || block.dmgOutMult < 1 || payload.recoveryReductionPercent || payload.ppRecoveryReductionPercent || payload.lockSwitch || payload.preventAction || payload.inherentInvalid || payload.disablePriority || payload.incomingAttackCritical || payload.incomingPhysicalSkillMultiplier > 1 || payload.priorityDelta < 0 ? 'negative' : 'positive' };
 }
 
 const MIRROR_PRESENTATIONS: Record<string, EffectPresentation> = {
-  attackSkillInvalidTurns: { semanticId: 'invalid:攻擊', label: '攻擊技能無效', iconTag: '技能無效', polarity: 'negative' },
-  utilitySkillInvalidTurns: { semanticId: 'invalid:屬性', label: '屬性技能無效', iconTag: '技能無效', polarity: 'negative' },
+  attackSkillInvalidTurns: { semanticId: 'invalid:攻擊', label: '攻擊技能無效', iconTag: '技能無效', polarity: 'negative', description: `攻擊技能：${ATTACK_INVALID}。` },
+  utilitySkillInvalidTurns: { semanticId: 'invalid:屬性', label: '屬性技能無效', iconTag: '技能無效', polarity: 'negative', description: UTILITY_INVALID },
   noHealTurns: { semanticId: 'recovery_reduction', label: '禁止恢復體力', iconTag: '降療', polarity: 'negative' },
   noSwitchTurns: { semanticId: 'switch_lock', label: '禁止主動切換', iconTag: '切換限制', polarity: 'negative' },
   immuneAttackTurns: { semanticId: 'attack_immunity', label: '免疫攻擊', iconTag: '免傷', polarity: 'positive' },

@@ -171,8 +171,9 @@ export function astralOperations(helpers: {
       }
       const ownerId = identity(ctx.self);
       const label = p.label || '額外行動';
+      const skillId = typeof p.skillId === 'string' ? p.skillId : undefined;
       if (p.damageRatio !== undefined) {
-        ctx.queueExtraAction(ctx.actor, { label, amount: Math.floor(ctx.target.maxHp * p.damageRatio), elem: p.elem,
+        ctx.queueExtraAction(ctx.actor, { label, skillId, amount: Math.floor(ctx.target.maxHp * p.damageRatio), elem: p.elem,
           after: (c, dealt) => {
             if (identity(c.self) !== ownerId || !alive(c.self)) return;
             helpers.run(c, p.body, { last: null, lastAmount: dealt, sourceKind: st.sourceKind,
@@ -180,7 +181,7 @@ export function astralOperations(helpers: {
           } });
         return true;
       }
-      ctx.queueExtraAction(ctx.actor, { label, run: (c: BattleEventContext) => {
+      ctx.queueExtraAction(ctx.actor, { label, skillId, run: (c: BattleEventContext) => {
         if (identity(c.self) !== ownerId || !alive(c.self)) return 0;
         helpers.run(c, p.body, { last: null, lastAmount: 0, sourceKind: st.sourceKind, event: { trig: 'extra_action_start', data: c } } as RunState);
         return 0;

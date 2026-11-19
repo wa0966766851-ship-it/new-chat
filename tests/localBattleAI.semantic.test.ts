@@ -168,6 +168,66 @@ try {
     engine.onSkillSelect('p1',engine.getState().p1.skills[0]);engine.unmount();const before=structuredClone(engine.getState());resolve();
     await new Promise(r=>setTimeout(r,5));assert.deepEqual(engine.getState(),before);
   });
+  await check('戰報回合13：三成反噬確實擊敗低血目標，依目標上限算傷害',async()=>{
+    const ai=elf('邁爾斯',1000,[skill('常規攻擊',20)],200);
+    const target=elf('恐懼化身',4313,[skill('攻擊',20)],100);
+    target.currentHp=1173;
+    const st=state([ai],[target]);
+    st.p1ItemInventory={atk_pct_30:{left:1,max:1}};
+    const req=request(st,{shortlistSearch:true});
+    const chosen=heuristicRanking(req)[0].action;
+    assert.deepEqual(chosen,{kind:'item',id:'atk_pct_30'});
+    const after=await simulateAction(req,chosen,{kind:'skill',slot:0},7,performance.now()+1500);
+    assert.equal(after.p2.currentHp,0);
+  });
+  await check('戰報回合29–31：投石者不被標成技能斬殺，瀕死優先推演致命藥劑',async()=>{
+    const {DEFAULT_ELVES}=await load('data/defaultElvesLoaded');
+    const stone=structuredClone(DEFAULT_ELVES.find(e=>String(e.id)==='5026'));
+    for (const side of ['p1','p2'] as const) {
+      const enemy=side==='p1'?'p2':'p1';
+      const self=elf('雷伊測試',55324,[skill('怨雷',130),skill('備用攻擊',150),skill('預備')],500);
+      self.calculatedStats.atk=50000;
+      self.currentHp=1;
+      const target={...stone,battleId:'stone',currentHp:250,maxHp:1000,calculatedStats:{...stone.calculatedStats,speed:200}};
+      const filler=Array.from({length:5},(_,i)=>elf('替補'+i,700));
+      const st=side==='p1'?state([self],[target,...filler]):state([target,...filler],[self]);
+      st.turnNumber=31;
+      st[`${side}ItemInventory`]={hp_330:{left:1,max:1}};
+      st[`${enemy}ItemInventory`]={atk_backlash_dmg:{left:1,max:1}};
+      const req=request(st,{side,battleFormat:'peak_6v6',specialMode:'destiny',shortlistSearch:true,repeatedAttack:'怨雷',
+        settings:{...DEFAULT_AI_SETTINGS,budgetMs:1200}});
+      const ranked=heuristicRanking(req);
+      assert.ok(ranked.filter(c=>c.action.kind==='skill'&&c.action.slot<2).every(c=>c.reason.includes('保留1體力')&&c.reason.includes('藥劑')));
+      assert.deepEqual(ranked[0].action,{kind:'item',id:'hp_330'});
+      const chosen=await planDecision(req,simulateAction);
+      assert.ok(chosen.completedSweeps>0,chosen.fallbackReason);
+      assert.ok(chosen.candidates.length<=4);
+      assert.ok(chosen.firstSweepMs>0);
+      console.log(`  ${side} 四候選首組 ${Math.round(chosen.firstSweepMs)}ms，完成 ${chosen.completedSweeps} 組`);
+      const after=await simulateAction(req,{kind:'skill',slot:0},{kind:'item',id:'atk_backlash_dmg'},7,performance.now()+1500);
+      assert.equal(after[side].currentHp,0);
+      st[`${side}RegistryState`]={noHealTurns:1};
+      assert.ok(heuristicRanking(req).find(c=>c.action.kind==='item'&&c.action.id==='hp_330').score<0);
+    }
+  });
+  await check('陷入反覆攻擊時，預算內為兩個接近候選各比較下一回合',async()=>{
+    const st=state([elf('A',800,[skill('重複攻擊',40),skill('換節奏',45)])]);
+    const req=request(st,{repeatedAttack:'重複攻擊',shortlistSearch:true});
+    let deeper=0;
+    const report=await planDecision(req,async (branch,action)=>{
+      const after=structuredClone(branch.state);
+      after.turnNumber++;
+      if(branch.state.turnNumber>st.turnNumber) {
+        deeper++;
+        after.p2.currentHp-=branch.state.p1.statStages.atk * 50;
+      } else after.p1.statStages.atk=action.slot;
+      return after;
+    });
+    assert.equal(deeper,2);
+    assert.equal(report.lookahead,true);
+    assert.equal(report.candidates.filter(c=>c.reason.includes('已比較下一回合')).length,2);
+    assert.deepEqual(report.action,{kind:'skill',slot:1});
+  });
   await check('Worker不可用與不可序列化戰局均合法回退，不在主執行緒推演', async () => {
     const client=createLocalAIClient();const req=request(state());
     const report=await client.decide(req);assert.equal(report.mode,'heuristic');assert.equal(report.simulations,0);

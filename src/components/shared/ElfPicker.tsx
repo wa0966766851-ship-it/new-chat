@@ -61,11 +61,12 @@ export function useElfFilter(initial: Partial<typeof DEFAULT_ELF_FILTER> = {}) {
 }
 export type ElfFilterState = ReturnType<typeof useElfFilter>;
 
-export function ElfFilterBar({ state, variant = "slate", placeholder = ELF_SEARCH_PLACEHOLDER, count, showInTeam = false }: { state: ElfFilterState; variant?: PickerVariant; placeholder?: string; count?: React.ReactNode; showInTeam?: boolean }) {
+export function ElfFilterBar({ state, variant = "slate", placeholder = ELF_SEARCH_PLACEHOLDER, count, showInTeam = false, showExtra = false }: { state: ElfFilterState; variant?: PickerVariant; placeholder?: string; count?: React.ReactNode; showInTeam?: boolean; showExtra?: boolean }) {
   const [open, setOpen] = React.useState(false);
   const t = T[variant];
   const shell = variant === "shell";
   const flags: ElfFlag[] = showInTeam ? ["new", "fifth", "custom", "inTeam"] : ["new", "fifth", "custom"];
+  if (showExtra) flags.push("extra");
   const group = (label: string, hint: string | undefined, body: React.ReactNode) => (
     <div className="flex flex-wrap items-center gap-1.5" title={hint}>
       <span className={`text-[10px] font-bold shrink-0 ${t.icon}`}>{label}</span>{body}
@@ -130,7 +131,7 @@ export function ElfPicker<E extends Elf>({ elves, onPick, renderItem, variant = 
   const shown = f.filter(elves);
   return (
     <div className="space-y-4">
-      <ElfFilterBar state={f} variant={variant} placeholder={placeholder} count={`${shown.length} / ${elves.length}`} />
+      <ElfFilterBar state={f} showExtra={elves.some(elf => elf.isExtra)} variant={variant} placeholder={placeholder} count={`${shown.length} / ${elves.length}`} />
       <div className={gridClassName ?? "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"}>
         {shown.map((elf, index) => {
           const reason = isDisabled?.(elf);

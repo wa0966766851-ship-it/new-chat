@@ -44,7 +44,7 @@ await check("存檔無讀取權限時回預設值", () => assert.deepEqual(readS
 await check("有效存檔保留內容", () => assert.deepEqual(readStoredRecord("fixture", { getItem: () => '{"a":{"title":"原內容"}}' }), { a: { title: "原內容" } }));
 await check("所有特質來源保留；僅相同名稱且描述相同才去重", () => {
   const item = { name: "神明", description: "原描述" };
-  const entries = getElfTraitEntries({ ...elf, trait: { ...elf.soulMark, name: "通用" }, alienTraits: {
+  const entries = getElfTraitEntries({ ...elf, groupIds: ['alien'], trait: { ...elf.soulMark, name: "通用" }, alienTraits: {
     gen2Trait: { name: "電氣纏繞", description: "二代描述" }, exclusiveTrait: item,
     exclusiveTraits: [item, { name: "神明", description: "不同描述" }],
     alienTrait: { name: "異能", description: "異能描述" }, generalTrait: { name: "其他", description: "其他描述" },

@@ -60,8 +60,6 @@ export const INTERCEPTOR_EFFECTS: Record<string, DestinyInterceptorEffect> = {
   }
 };
 
-/** 六界神王：C 級但以【界】魂印取代攔截效果（介面也不顯示攔截標籤）。 */
-export const usesSoulMarkInsteadOfInterceptor = (name?: string) => !!name?.includes("六界神王");
 
 /**
  * 判定精靈在命運之輪模式中的稀有度等級 (S / A / B / C)
@@ -91,7 +89,7 @@ export function buildDestinyPool(allElves: Elf[], rng: () => number = Math.rando
     };
 
     // 如果是 C 級，為其綁定專屬命運攔截特效
-    if (rank === 'C' && !instance.interceptorEffect && !usesSoulMarkInsteadOfInterceptor(instance.name)) {
+    if (rank === 'C' && !instance.interceptorEffect) {
       const keys = Object.keys(INTERCEPTOR_EFFECTS);
       const randomKey = keys[Math.floor(rng() * keys.length)];
       instance.interceptorEffect = INTERCEPTOR_EFFECTS[randomKey];

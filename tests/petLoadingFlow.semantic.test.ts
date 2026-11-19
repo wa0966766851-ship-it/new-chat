@@ -12,6 +12,11 @@ await advance(100);const third=pool.acquire('rey');await third.clip;assert.equal
 const large=pool.acquire('large');await large.clip;large.release();await advance(100);const remount=pool.acquire('large');await remount.clip;assert.equal(loads,2,'整場重掛在緩衝期內重用大圖');
 remount.release();await advance(251);assert.ok(disposed.includes('large'),'大圖閒置迅速釋放');assert.ok(!disposed.includes('rey'));
 await advance(15000);assert.ok(disposed.includes('rey'),'小圖也有保留期限，不常駐整庫');
+const compactPool=createPetClipPool<string,string>({bytes:id=>id==='full'?128:64,limitBytes:256,idleBytes:128,maxIdleEntryBytes:64,idleMs:15000,handoffMs:250,load:async id=>id,dispose:()=>{},now:()=>time,schedule:(fn,ms)=>{const id=++nextId;timers.set(id,{at:time+ms,fn});return id;},cancel:id=>{timers.delete(id as number);}});
+for(const id of ['compact','other','full']){const lease=compactPool.acquire(id);await lease.clip;lease.release();}
+await advance(1500);
+assert.deepEqual(compactPool.snapshot().map(entry=>entry.id),['compact','other'],'只保溫符合單份上限的圖集');
+const reused=compactPool.acquire('compact');await reused.clip;assert.equal(compactPool.diagnostics().hits,1,'來回換皮重用精簡圖集');reused.release();
 let attempts=0;const retry=createPetClipPool<string,string>({bytes:()=>1,limitBytes:2,idleBytes:1,load:async()=>{if(!attempts++)throw Error('網路失敗');return 'ok';},dispose:()=>{}});
 const failed=retry.acquire('asset');await assert.rejects(failed.clip);failed.release();const recovered=retry.acquire('asset');assert.equal(await recovered.clip,'ok','失敗不污染快取');recovered.release();
 // 取消後即使解碼器忽略 signal、稍後才完成，也必須釋放結果。
@@ -23,4 +28,22 @@ const loop=startPetRenderLoop({now:()=>now,visible:()=>visible,request:fn=>{raf=
 for(let i=1;i<=60;i++){now=i*1000/60;raf!(now);}assert.ok(draws>=24&&draws<=25,'60 次螢幕刷新只繪製約 24 張原生影格');
 const before=draws;visible=false;for(let i=61;i<=120;i++){now=i*1000/60;raf!(now);}assert.equal(draws,before,'背景不繪製');
 visible=true;loop.resetTime();loop.invalidate();now+=16.7;raf!(now);assert.equal(draws,before+1);loop.stop();assert.equal(raf,undefined);
+let actionTime=0,standbyTime=0,actionFrames=0,standbyFrames=0;
+const pendingFrames=new Map<number,FrameRequestCallback>();
+let requestId=0;now=0;
+const common={now:()=>now,visible:()=>true,request:(fn:FrameRequestCallback)=>{pendingFrames.set(++requestId,fn);return requestId;},cancel:(id:number)=>{pendingFrames.delete(id);},draw:()=>{}};
+const actionLoop=startPetRenderLoop({...common,advance:seconds=>{actionTime+=seconds;actionFrames++;}});
+let busy=true;
+const standbyLoop=startPetRenderLoop({...common,minimumFrameIntervalMs:()=>busy?50:0,advance:seconds=>{standbyTime+=seconds;standbyFrames++;}});
+for(let i=1;i<=60;i++){
+ now=i*1000/60;
+ const callbacks=[...pendingFrames.values()];pendingFrames.clear();
+ for(const callback of callbacks)callback(now);
+}
+assert.equal(actionFrames,60);assert.equal(standbyFrames,20);
+assert.ok(Math.abs(actionTime-1)<1e-9&&Math.abs(standbyTime-1)<1e-9,'讓出待機繪製時間而不改變兩側播放速度');
+busy=false;now+=1000/60;
+const callbacks=[...pendingFrames.values()];pendingFrames.clear();for(const callback of callbacks)callback(now);
+assert.equal(standbyFrames,21,'前景動作結束後立即恢復待機更新');
+actionLoop.stop();standbyLoop.stop();
 console.log('原生解碼共用、有限保溫、錯誤重試、取消回收、24fps 單次繪製及背景暫停通過');

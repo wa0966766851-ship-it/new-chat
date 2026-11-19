@@ -3,11 +3,12 @@ import type { Mark } from '../battle/marks';
 import type { BattleEventContext } from './types';
 import { markRecoveryReductionIssue } from '../battle/markRecovery';
 import {markDamageReductionIssue} from '../battle/markDamageReduction';
+import { StatusRegistry } from './statusRegistry';
 import {readMarkStacks} from './markQueries';
 
 /** 印記內的程式以持有者為self。只開放已由持有者事件實際派發的節點。 */
 export const MARK_PROGRAM_TRIGGERS = new Set([
-  'round_start','round_end','phase_end','damaged','damaged_skill','damaged_attack',
+  'before_status','not_killed','fatal','round_start','round_end','phase_end','damaged','damaged_skill','damaged_attack',
   'damaged_true','damaged_fixed','damaged_percent','damaged_nontrue',
   'incoming','incoming_skill','incoming_attack','incoming_nontrue',
   'outgoing','outgoing_skill','outgoing_attack',
@@ -15,7 +16,7 @@ export const MARK_PROGRAM_TRIGGERS = new Set([
 export const MARK_PROGRAM_FIELDS = [
   'stabDisabled','typeAdvantageDisabled',
   'id','name','side','mode','count','maxCount','scope','persistsOffField','turns',
-  'displayChar','unit','description','rules','recoveryReduction','incomingDamageReduction',
+  'displayChar','unit','description','rules','recoveryReduction','incomingDamageReduction','statusProjection',
   // 引擎既有印記效果讀取端（marks.effects；battle/contextBuilders 倍率、battleEngine 保底機率）：
   // 5025 恐懼之種/花寫入用（DSH 20261018）。guaranteedMaxHpDamageChancePerStack：每層提高量，
   // 寫入時依最終層數折算成 guaranteedMaxHpDamageChance 存入（引擎讀值不讀層數）。
@@ -37,6 +38,11 @@ export function markProgramIssue(p:any):string|null {
   for(const key of ['id','name','displayChar','description'])if(typeof p[key]!=='string'||!p[key]||p[key].length>(key==='description'?100000:200))return `印記${key}需有限非空文字`;
   if(!['層','道','點','篇','枚','株','回合'].includes(p.unit))return '印記單位不明';
   if(p.turns!==undefined&&(!Number.isInteger(p.turns)||p.turns<1||p.turns>10000))return '印記期限需正整數；未填才代表不按回合到期';
+  if (p.statusProjection !== undefined) {
+    const rule = p.statusProjection;
+    if (!rule || !['holder', 'opponent'].includes(rule.target) || !['WEAKENING', 'AUXILIARY'].includes(rule.category)
+      || !StatusRegistry[rule.status] || Object.keys(rule).some(key => !['target', 'category', 'status'].includes(key))) return '印記異常替代需要明確的對象、分類與替代異常';
+  }
   if(p.recoveryReduction!==undefined){const issue=markRecoveryReductionIssue(p.recoveryReduction);if(issue)return issue;}
   if(p.incomingDamageReduction!==undefined){const issue=markDamageReductionIssue(p.incomingDamageReduction);if(issue)return issue;}
   // 引擎讀取端效果欄位：空規則陣列亦可（效果本身即持有者限制），數值需有限。
@@ -72,7 +78,7 @@ export function applyMarkProgram(ctx:BattleEventContext,p:any,holder:any):boolea
     id:p.id,name:p.name,displayChar:p.displayChar,description:p.description,
     count,maxCount:p.maxCount,unit:p.unit,scope:p.scope,ownerBattleId,
     persistsOffField:p.persistsOffField,clearable:false,remainingRounds:turns,
-    effects:{blockProgram:structuredClone(p.rules) as Clause[],...(p.bindSource?{blockSource:{side:ctx.actor,battleId:String(ctx.self.battleId||ctx.self.id)}}:{}),...(p.holderInvalid!==undefined?{blkInvalid:p.holderInvalid}:{}),...(turns!==undefined?{blkTurns:turns}:{}),
+    effects:{blockProgram:structuredClone(p.rules) as Clause[],...(p.statusProjection?{statusProjection:structuredClone(p.statusProjection)}:{}),...(p.bindSource?{blockSource:{side:ctx.actor,battleId:String(ctx.self.battleId||ctx.self.id)}}:{}),...(p.holderInvalid!==undefined?{blkInvalid:p.holderInvalid}:{}),...(turns!==undefined?{blkTurns:turns}:{}),
       ...(p.incomingDamageLimitDisabled?{incomingDamageLimitDisabled:1}:{}),
       ...(p.stabDisabled?{stabDisabled:1}:{}),
       ...(p.typeAdvantageDisabled?{typeAdvantageDisabled:1}:{}),

@@ -5,7 +5,8 @@
 //   屬死碼，不隨本魂印保留；300 譜尼（handlePuniBaseSoulMark）另有自己的支援碼，不動。
 //   SOUL_MARK_MAPPING 5000／聖靈譜尼 與 tests/fixtures/elfRegistryBeforeMove.json souls 同步移除。
 // 七個子效果（皆既有通用件＋組 5 新件）：
-//   虛無＝damaged_attack→immune_attack_count（引擎 blockAttackCount 讀取端；與 bypassesAttackDefense 同鍵）。
+//   虛無＝damaged_attack→invalid_next{1,攻擊}（技能無效積木）＋block_attack{1}（抵擋攻擊傷害積木）。
+//     2026-11-16 使用者規範：原本用攻擊免疫（immune_attack_count）會讓對手攻擊頻繁「無效」，與原文「免疫攻擊傷害」不符；改為兩者並存並同步描述。
 //   元素＝entrance→clear_turn，chain success→invalid_next{1}。
 //   能量＝phase_end→dmg{已損失體力×50%,百分比}。
 //   生命＝phase_end→heal 1/4＋pp_add_random{2,1}（新）。
@@ -23,7 +24,7 @@ const entry = (node: KitEntry['node'], trig: string, raw: string, body: any[], o
   params: { clause: { raw, trig, parsed: true, body } },
 });
 
-const raw = "> 虛無： 受到攻擊傷害時，免疫下1次受到的攻擊傷害\n> 元素： 登場時消除對手回合類效果，消除成功則對手下次技能無效\n> 能量： 戰鬥階段結束時附加自身已損失體力50%的百分比傷害\n> 生命： 戰鬥階段結束時恢復自身最大體力的1/4和隨機2個PP值未滿的技能1點PP值\n> 輪迴： 對手出手回合若自身受到致命傷害則殘留1點體力，同時回合結束後自身體力、PP值、能力等級返回當回合選擇操作之後的狀態（每場戰鬥僅觸發1次）\n> 永恆： 回合開始時若自身體力高於對手則當回合自身必定先手\n> 聖潔： 天生免疫所有異常狀態和能力下降狀態";
+const raw = "> 虛無： 受到攻擊傷害時，令對手下1次攻擊技能無效並抵擋下1次受到的攻擊傷害\n> 元素： 登場時消除對手回合類效果，消除成功則對手下次技能無效\n> 能量： 戰鬥階段結束時附加自身已損失體力50%的百分比傷害\n> 生命： 戰鬥階段結束時恢復自身最大體力的1/4和隨機2個PP值未滿的技能1點PP值\n> 輪迴： 對手出手回合若自身受到致命傷害則殘留1點體力，同時回合結束後自身體力、PP值、能力等級返回當回合選擇操作之後的狀態（每場戰鬥僅觸發1次）\n> 永恆： 回合開始時若自身體力高於對手則當回合自身必定先手\n> 聖潔： 天生免疫所有異常狀態和能力下降狀態";
 
 export const MIGRATED_GROUP5_HOLY_PUNI_SOUL_KIT = {
   kind: 'soul' as const,
@@ -31,8 +32,8 @@ export const MIGRATED_GROUP5_HOLY_PUNI_SOUL_KIT = {
   name: '神',
   description: raw,
   kit: [
-    entry('on_damaged', 'damaged_attack', '虛無： 受到攻擊傷害時，免疫下1次受到的攻擊傷害', [
-      { acts: [a('immune_attack_count', { count: 1 })] },
+    entry('on_damaged', 'damaged_attack', '虛無： 受到攻擊傷害時，令對手下1次攻擊技能無效並抵擋下1次受到的攻擊傷害', [
+      { acts: [a('invalid_next', { uses: 1, kind: '攻擊', timerId: 'puni_void_invalid', pairTimerId: 'puni_void_block' }), a('block_attack', { count: 1, timerId: 'puni_void_block', pairTimerId: 'puni_void_invalid' })] },
     ], 0),
     entry('on_entered', 'entrance', '元素： 登場時消除對手回合類效果，消除成功則對手下次技能無效', [
       { acts: [a('clear_turn', { side: 'opp' })] },

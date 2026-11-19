@@ -102,11 +102,11 @@ export function scopedTimers(state:BattleState,side:Side,elf:Elf):Timer[] {
 }
 
 /** 同一持有者的可消除回合效果（含明確陣營級）才可清除。 */
-export function clearScopedTurnEffects(state:BattleState,side:Side,elf:Elf,polarity?:'positive'):{state:BattleState;removed:Timer[]} {
+export function clearScopedTurnEffects(state:BattleState,side:Side,elf:Elf,polarity?:'positive',exclude?:ReadonlySet<string>):{state:BattleState;removed:Timer[]} {
   const owner=battleIdentity(elf),key=`${side}Timers` as const,bankKey=`${side}ElfState` as const;
   const applicable=(t:Timer)=>t.scope==='team'||!t.ownerBattleId||t.ownerBattleId===owner;
   const flat=state[key],bank={...state[bankKey]},snapshot=bank[owner];
-  const clear=(list:Timer[])=>{const selected=list.filter(t=>!polarity||turnEffectPolarity(t)===polarity);const [kept]=clearTurnEffects(selected);return list.filter(t=>!selected.includes(t)||kept.includes(t));};
+  const clear=(list:Timer[])=>{const selected=list.filter(t=>!exclude?.has(t.id)&&(!polarity||turnEffectPolarity(t)===polarity));const [kept]=clearTurnEffects(selected);return list.filter(t=>!selected.includes(t)||kept.includes(t));};
   const kept=clear(flat.filter(applicable));
   const removed=flat.filter(t=>applicable(t)&&!kept.includes(t));
   const nextFlat=flat.filter(t=>!removed.includes(t));

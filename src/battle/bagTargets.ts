@@ -1,4 +1,5 @@
 import type { Elf } from '../types';
+import { checkElfDead } from './elfAlive';
 // 不引入 stateScopes（會連帶拉進狀態／印記／計時器）：首頁的背包綁定只需要這個純函式模組。
 const identity = (elf: Pick<Elf, 'id' | 'battleId'>) => elf.battleId || elf.id;
 
@@ -66,13 +67,14 @@ export function correspondingBagElf(team: readonly Elf[], self: Elf): Elf | unde
   return pickByBagSlot(others, self.initialBagSlot, legal);
 }
 
-export interface BagEntry { side: 'p1' | 'p2'; elf: Elf; zone: 'active' | 'standby' }
-/** 雙方當前背包（出戰＋待命）：已消逝者不列入；用於幻化指令的挑選與驗證。 */
+export interface BagEntry { side: 'p1' | 'p2'; elf: Elf; zone: 'active' | 'standby' | 'extra' }
+/** 主動指定目標可選活著的額外精靈；它們不加入出戰／待命的位數配對。 */
 export function listBagElves(teams: Record<'p1' | 'p2', readonly Elf[]>): BagEntry[] {
   const out: BagEntry[] = [];
   for (const side of ['p1', 'p2'] as const) {
     for (const elf of activeBagOf(teams[side])) if (!elf.isVanished) out.push({ side, elf, zone: 'active' });
-    for (const elf of benchOfTeam(teams[side])) out.push({ side, elf, zone: 'standby' });
+    for (const elf of benchOfTeam(teams[side])) if (!elf.isVanished) out.push({ side, elf, zone: 'standby' });
+    for (const elf of teams[side]) if (elf.isExtra && !elf.isVanished && !checkElfDead(elf)) out.push({ side, elf, zone: 'extra' });
   }
   return out;
 }

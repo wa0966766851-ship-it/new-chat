@@ -9,7 +9,7 @@ import {TraitsEngine} from '../utils/traitsEngine';
 import {traitFatalResist} from '../effects/traitEffects';
 import {checkStatusDrivenFatalResist} from '../utils/statusFatalResist';
 import type {InstantKillRequest} from './instantKillRequest';
-import {bossTraitBlocksInstantKill} from '../blocks/ops/bossTraits';
+import {instantKillImmune} from './instantKillImmunity';
 export type {InstantKillRequest,InstantKillTarget} from './instantKillRequest';
 
 type Side='p1'|'p2';
@@ -21,7 +21,7 @@ export type InstantKillOptions={onSettled?:(result:Readonly<InstantKillReceipt>)
 export function queueInstantKill(ctx:BattleEventContext,targetSide:Side,label:string|undefined,opts:InstantKillOptions|undefined,push:(e:EffectItem)=>void):boolean {
   const target=targetSide==='p1'?ctx.activeP1:ctx.activeP2;
   if(!target||checkElfDead(target)||checkElfDead(ctx.self))return false;
-  if(bossTraitBlocksInstantKill(target))return false; // BOSS 特性「疾行」：免疫瞬殺
+  if(instantKillImmune(target))return false; // 瞬殺免疫統一入口（BOSS 特性「疾行」）
   if(ctx.getMarks(ctx.actor).some(m=>markAppliesToElf(m,ctx.self)&&m.effects?.instantKillDisabled))return false;
   const request:InstantKillRequest={sourceSide:ctx.actor,sourceBattleId:ctx.self.battleId||ctx.self.id,
     targetSide,targetBattleId:target.battleId||target.id,
@@ -43,7 +43,7 @@ export function queueInstantKill(ctx:BattleEventContext,targetSide:Side,label:st
 export function settleInstantKill(ctx:BattleEventContext,data:any):Readonly<InstantKillReceipt> {
   const before=ctx.self.currentHp,id=ctx.self.battleId||ctx.self.id;
   let resistedFatal=false;
-  const blocked=checkElfDead(ctx.self)||before<=0||bossTraitBlocksInstantKill(ctx.self);
+  const blocked=checkElfDead(ctx.self)||before<=0||instantKillImmune(ctx.self);
   if(!blocked){
     const outcome=resolveHpAdjustment(ctx.self.maxHp,before,-before,ctx.self.survivalRule);
     const immortal=(ctx.self.deathImmunity?.deathImmuneTurns||0)>0;

@@ -4,7 +4,6 @@ import {
   Home, Swords, Settings, Book, TestTubes, Sparkles, Disc, Package, Layers,
 } from "lucide-react";
 import type { ShellBridge } from "./bridge";
-import { controlScene } from "./bridge";
 import { LegacyScenes } from "./scenes/LegacyScenes";
 // 舊版首頁不需要先下載新版大廳；切到新版首頁時才載入，維持首頁大小預算。
 const LobbyScene = lazy(() => import("./scenes/LobbyScene").then(m => ({ default: m.LobbyScene })));
@@ -29,7 +28,6 @@ import { haptic } from "./haptics";
 import { SceneTransition } from "./art/SceneTransition";
 import { AegisBackButton, useEdgeSwipeBack } from "./art/BackButton";
 import { ShellBackContext } from "./shellBack";
-const ControlHub = lazy(() => import("../components/ControlHub"));
 import { ResourcePill, PlayerBadge } from "./art/gameUi";
 import { ProfileAvatar } from "./art/ProfileAvatar";
 
@@ -163,9 +161,6 @@ export function AegisShell({ b, onSwitchShell }: { b: ShellBridge; onSwitchShell
       }}
     >
       <ThemeBackground currentScene={b.showEncyclopedia ? "encyclopedia" : b.view} />
-      <Suspense fallback={null}>
-        <ControlHub currentScene={controlScene(b)} canApplyUpdates={b.view === "start" && !b.editingElf && !b.showEncyclopedia} />
-      </Suspense>
 
       {/* 頂部：工具列 + 玩家 + 資源（戰鬥中隱藏，手遊慣例是全螢幕戰場） */}
       {/* iOS 風格返回：非首頁時出現在左上角。

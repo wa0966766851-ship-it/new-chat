@@ -81,14 +81,16 @@ const fireTimer = async (delay: number) => {
   assert.ok(item, `missing ${delay} timer`); scheduled.delete(item[0]); await act(async () => item[1].run());
 };
 let model: ReturnType<typeof useMusicPlayer>;
-function Harness({ source }: { source: MusicSource }) {
-  model = useMusicPlayer(source);
+type SceneOptions = Parameters<typeof useMusicPlayer>[1];
+function Harness({ source, sceneOptions }: { source: MusicSource; sceneOptions?: SceneOptions }) {
+  model = useMusicPlayer(source, sceneOptions);
   return model.mounted ? React.createElement('div', { ref: model.containerRef }) : null;
 }
 const { createRoot } = await import('react-dom/client');
 const root = createRoot(document.getElementById('root')!);
 let source: MusicSource = { type: 'youtube', id: 'RjYnSIzR9Bo' };
-const render = async () => { await act(async () => root.render(React.createElement(Harness, { source }))); };
+let sceneOptions: SceneOptions;
+const render = async () => { await act(async () => root.render(React.createElement(Harness, { source, sceneOptions }))); };
 await render();
 await check('未點播放不建立iframe／播放器', () => { assert.equal(instances.length, 0); assert.equal(model.isPlaying, false); });
 await check('點播放只顯示載入，尚未ready不發指令、不謊報播放中', async () => {
@@ -187,6 +189,60 @@ await check('B站只回報外部載入，不假稱已播；暫停不被onload改
   await act(async () => frame.dispatchEvent(new dom.window.Event('load')));
   assert.equal(model.playback.phase, 'paused'); assert.equal(frame.src, 'about:blank');
   await act(async () => model.closeMusic()); assert.equal(scheduled.size, 0);
+});
+await check('跨頁播放沿用 YouTube 播放器，暫停與手動選歌仍生效', async () => {
+  const start: MusicSource = { type: 'youtube', id: 'RjYnSIzR9Bo' };
+  const battle: MusicSource = { type: 'bilibili', id: 'BV1uh411Y73e', page: 7 };
+  source = start;
+  sceneOptions = { scene: 'start', override: null, continuous: true };
+  await render();
+  await act(async () => model.setIsPlaying(true));
+  const current = instances.at(-1)!;
+  await act(async () => { current.ready(); current.state(1); });
+  const apiCalls = [...current.calls];
+
+  source = battle;
+  sceneOptions = { ...sceneOptions, scene: 'battle' };
+  await render();
+  assert.equal(document.querySelector('iframe'), current.frame);
+  assert.equal(model.musicScene, 'start');
+  assert.equal(model.isPlaying, true);
+  assert.deepEqual(current.calls, apiCalls);
+
+  await act(async () => { model.setIsPlaying(false); current.state(2); });
+  sceneOptions = { ...sceneOptions, scene: 'encyclopedia' };
+  await render();
+  assert.equal(document.querySelector('iframe'), current.frame);
+  assert.equal(model.requestedPlaying, false);
+  await act(async () => model.setIsPlaying(true));
+  assert.equal(current.calls.at(-1), 'play');
+
+  sceneOptions = { ...sceneOptions, override: 'BV1uh411Y73e' };
+  await render();
+  assert.equal(current.destroyed, true);
+  assert.match(document.querySelector('iframe')!.src, /page=7/);
+  await act(async () => model.closeMusic());
+});
+
+await check('跨頁播放沿用 B站 iframe；關閉模式後改播當前頁 BGM', async () => {
+  source = { type: 'bilibili', id: 'BV1uh411Y73e', page: 3 };
+  sceneOptions = { scene: 'destiny_wheel', override: null, continuous: true };
+  await render();
+  await act(async () => model.setIsPlaying(true));
+  const frame = document.querySelector('iframe')!;
+  const url = frame.src;
+  source = { type: 'youtube', id: 'wJ8onQryXRY' };
+  sceneOptions = { ...sceneOptions, scene: 'battle' };
+  await render();
+  assert.equal(document.querySelector('iframe'), frame);
+  assert.equal(frame.src, url);
+  assert.equal(model.musicScene, 'destiny_wheel');
+  sceneOptions = { ...sceneOptions, continuous: false };
+  await render();
+  assert.notEqual(document.querySelector('iframe'), frame);
+  assert.match(document.querySelector('iframe')!.src, /embed\/wJ8onQryXRY/);
+  assert.equal(model.musicScene, 'battle');
+  await act(async () => model.closeMusic());
 });
 await act(async () => root.unmount()); dom.window.close();
 

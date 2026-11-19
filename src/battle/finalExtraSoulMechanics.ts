@@ -1,3 +1,4 @@
+import { activeAlienTrait } from '../data/elfGroups';
 import type { Elf } from '../types';
 import type { BattleEventContext } from '../effects/types';
 import { effectDefinitionEntries } from './effectSources';
@@ -13,7 +14,7 @@ function mayHavePassiveSequence(elf:any):boolean {
     if(!v)continue;
     if(hasPassiveSequence(v.soulMark?.kit)||hasPassiveSequence(v.kit))return true;
     const a=v.alienTraits;
-    if(traitHasPassive(v.trait)||traitHasPassive(a?.gen2Trait)||traitHasPassive(a?.exclusiveTrait)||traitHasPassive(a?.alienTrait)||traitHasPassive(a?.generalTrait))return true;
+    if(traitHasPassive(v.trait)||traitHasPassive(a?.gen2Trait)||traitHasPassive(a?.exclusiveTrait)||traitHasPassive(activeAlienTrait(v))||traitHasPassive(a?.generalTrait))return true;
     for(const t of a?.exclusiveTraits||[])if(traitHasPassive(t))return true;
   }
   return false;

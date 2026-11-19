@@ -8,7 +8,7 @@ const c3 = (name: string, p: any, label: string) => ({ c: name, p, label });
 const mem33 = (raw: string, cond: any[], body: any[], order: number): KitEntry => ({
   codeId: 'effect_sequence', node: 'after_action', source: 'skill', role: 'innate', order, customText: raw,
   params: { clause: { raw, marker: '🎯', trig: 'self_after_skill', parsed: true, body: [
-    { cond, acts: [a('queue_extra_action', { label: '變思遷憶', body })] },
+    { cond, acts: [a('queue_extra_action', { label: '變思遷憶', skillId: 'astral_memory', body })] },
   ] } },
 });
 

@@ -19,6 +19,7 @@ try {
     base.calculatedStats = { hp, atk: 300, def: 300, spatk: 300, spdef: 300, speed: o.speed ?? 100 };
     base.skills = skills; base.statStages = {};
     base.soulMark = keerhode.soulMark;
+    base.resistances = { damageResist: { crit: 0, fixed: 0, percent: 0 }, statusResist: { allImmune: false, selectedStatuses: [], slots: [] } }; // 驗魂印機制，不受預設抗性影響
     return base;
   };
   const attack = { ...h.wait(), name: '普通攻擊', category: '物理', power: 100, pp: 10, maxPp: 10, isSureHit: true, description: '' };
@@ -37,7 +38,8 @@ try {
     assert.ok(selfLoss <= 1400 && selfLoss >= 1000, side + ' 大傷減60%（實損 ' + selfLoss + '）');
     checks++;
     const glow = (t1.state[(side === 'p1' ? 'p2' : 'p1') + 'Marks'] || []).find((m: any) => m.id === 'frost_glow');
-    assert.ok(glow && glow.count >= 1500, side + ' 對手獲得霜寒幽光（' + (glow?.count ?? 0) + '）');
+    // 原文：霜寒幽光上限200點（減少量1800 → 封頂200）
+    assert.equal(glow?.count, 200, side + ' 對手獲得霜寒幽光並封頂200（' + (glow?.count ?? 0) + '）');
     checks++;
   }
   console.log('OK 大傷減免＋霜寒幽光 雙側通過');

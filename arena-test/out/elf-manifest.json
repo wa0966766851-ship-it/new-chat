@@ -1,6 +1,6 @@
 {
- "generatedAt": "2026-11-10 06:02:01",
- "total": 57,
+ "generatedAt": "2026-11-18 13:29:27",
+ "total": 60,
  "elves": [
   {
    "i": 1,
@@ -161,7 +161,7 @@
    "id": "5013",
    "name": "柯爾霍德",
    "soul": "凕",
-   "soulKit": 11,
+   "soulKit": 13,
    "skillKit": 29,
    "hp": 1016,
    "speed": 451,
@@ -448,7 +448,7 @@
    "name": "不滅.艾恩斯",
    "soul": "專屬特性",
    "soulKit": 15,
-   "skillKit": 21,
+   "skillKit": 22,
    "hp": 1018,
    "speed": 441,
    "skills": 5
@@ -470,7 +470,7 @@
    "name": "赫爾卡星魂",
    "soul": "專屬特性",
    "soulKit": 6,
-   "skillKit": 35,
+   "skillKit": 34,
    "hp": 998,
    "speed": 451,
    "skills": 5
@@ -491,7 +491,7 @@
    "id": "5043",
    "name": "終焉戰神.蓋亞",
    "soul": "",
-   "soulKit": 22,
+   "soulKit": 23,
    "skillKit": 26,
    "hp": 1034,
    "speed": 471,
@@ -543,6 +543,39 @@
   },
   {
    "i": 50,
+   "id": "5048",
+   "name": "聖靈奧斯卡",
+   "soul": "聖",
+   "soulKit": 8,
+   "skillKit": 27,
+   "hp": 1018,
+   "speed": 487,
+   "skills": 5
+  },
+  {
+   "i": 51,
+   "id": "5049",
+   "name": "格勞恩斯",
+   "soul": "格勞恩斯魂印",
+   "soulKit": 8,
+   "skillKit": 33,
+   "hp": 980,
+   "speed": 447,
+   "skills": 5
+  },
+  {
+   "i": 52,
+   "id": "5050",
+   "name": "洪荒·列奧尼達",
+   "soul": "洪荒·列奧尼達魂印",
+   "soulKit": 14,
+   "skillKit": 34,
+   "hp": 1008,
+   "speed": 447,
+   "skills": 5
+  },
+  {
+   "i": 53,
    "id": "5041",
    "name": "岳峙淵渟.卡修斯",
    "soul": "山",
@@ -553,7 +586,7 @@
    "skills": 5
   },
   {
-   "i": 51,
+   "i": 54,
    "id": "5035",
    "name": "御天龍神·哈莫",
    "soul": "鱗",
@@ -564,7 +597,7 @@
    "skills": 5
   },
   {
-   "i": 52,
+   "i": 55,
    "id": "arena_12",
    "name": "無為龍者",
    "soul": "無為之境",
@@ -575,7 +608,7 @@
    "skills": 5
   },
   {
-   "i": 53,
+   "i": 56,
    "id": "arena_13",
    "name": "龍錄天鋒",
    "soul": "專屬特性",
@@ -586,7 +619,7 @@
    "skills": 5
   },
   {
-   "i": 54,
+   "i": 57,
    "id": "arena_14",
    "name": "無極聖武",
    "soul": "無極聖武",
@@ -597,7 +630,7 @@
    "skills": 5
   },
   {
-   "i": 55,
+   "i": 58,
    "id": "arena_15",
    "name": "命運龍輪 莫伊萊",
    "soul": "命運龍輪",
@@ -608,18 +641,18 @@
    "skills": 5
   },
   {
-   "i": 56,
+   "i": 59,
    "id": "arena_16",
    "name": "鎮世龍魂・龍之治癒",
    "soul": "龍之治癒",
-   "soulKit": 18,
+   "soulKit": 20,
    "skillKit": 31,
    "hp": 1052,
    "speed": 443,
    "skills": 5
   },
   {
-   "i": 57,
+   "i": 60,
    "id": "wiki_4937",
    "name": "星光·雷納多",
    "soul": "魂印",

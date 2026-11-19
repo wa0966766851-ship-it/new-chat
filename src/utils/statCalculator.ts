@@ -1,3 +1,5 @@
+import { battleTypeKey } from './typeQuery';
+export { SEER_TYPES } from './typeQuery';
 import { BaseStats, Inscription, Elf } from "../types";
 import { getEffectiveInscriptions } from "../data/inscriptionsCatalog";
 import { SUIT_CATALOG } from "../data/suitsAndEyewears";
@@ -47,12 +49,11 @@ export function calculateEffectiveStat(baseValue: number, stage: number, isAccur
  * Seer Type Matchup Matrix (克制係數)
  * Standard Matchups between common Seer attributes.
  */
-export const SEER_TYPES = [
-  "草", "水", "火", "飛行", "電", "機械", "地面", "普通", "冰", "超能", "戰鬥", "光", "暗影", "神秘", "龍", "聖靈", "次元", "遠古", "邪靈", "自然", "王", "混沌", "神靈", "輪迴", "蟲", "虛空", "無屬性"
-];
+
 
 // Simple matchup chart multiplier lookup: attackerType -> defenderType -> multiplier
 // By default, if not specified, it's 1.0.
+// 輪迴攻防列與 SeerAPI config-sources 的 Unity typesRelation 及 Flash TypeXMLInfo 一致。
 export const TYPE_MATCHUPS: { [attacker: string]: { [defender: string]: number } } = {
   "草": { "水": 2.0, "地面": 2.0, "光": 2.0, "草": 0.5, "火": 0.5, "飛行": 0.5, "機械": 0.5, "聖靈": 0.5, "遠古": 0.5, "混沌": 0.5, "神靈": 0.5 },
   "水": { "火": 2.0, "地面": 2.0, "草": 0.5, "水": 0.5, "聖靈": 0.5, "自然": 0.5, "混沌": 0.5, "神靈": 0.5 },
@@ -90,13 +91,7 @@ export function setDynamicMatchups(overrides: any) {
 }
 
 export function normalizeDualType(t: string): string {
-  if (!t) return "普通";
-  if (t === "混沌暗影" || t === "混沌/暗影" || t === "混沌·暗影") return "混沌.暗影";
-  if (t === "冰暗影" || t === "冰/暗影" || t === "冰·暗影") return "冰.暗影";
-  if (t === "聖靈光" || t === "光聖靈" || t === "聖靈/光" || t === "聖靈·光") return "聖靈.光";
-  if (t === "混沌水" || t === "水混沌" || t === "混沌/水" || t === "混沌·水") return "混沌.水";
-  if (t === "飛行超能" || t === "飛行/超能" || t === "飛行·超能") return "飛行.超能";
-  return t;
+  return battleTypeKey(t) || "普通";
 }
 
 export function getAttributeBadgeColor(type: string): string {

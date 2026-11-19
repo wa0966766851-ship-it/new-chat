@@ -155,6 +155,12 @@
 .btg-badge { position: absolute; right: .4rem; top: .3rem; min-width: 1.35rem; height: 1.35rem; padding: 0 .3rem; border-radius: 999px; background: #c8962e; color: #2a1300; font-size: .8rem; line-height: 1.35rem; letter-spacing: 0; text-indent: 0; text-shadow: none; }
 
 .btg-round { width: 3.2rem; height: 3.2rem; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-direction: column; line-height: 1; font-weight: 900; color: #fff; background: var(--g-panel); border: 2px solid var(--g-line); box-shadow: 0 2px 8px rgba(0, 0, 0, .45); }
+.btg-quick-actions { top: clamp(54px, 34%, calc(100% - 530px)); gap: .625rem; }
+@media (max-height: 680px) {
+  .btg-quick-actions { gap: .375rem; }
+  .btg-quick-actions .btg-round { width: 2.6rem; height: 2.6rem; }
+}
+
 .btg-round[data-on="true"] { background: radial-gradient(circle, #34d399, #047857); border-color: #6ee7b7; box-shadow: 0 0 12px rgba(52, 211, 153, .7); }
 [data-skin="eclipse"] .btg-round { color: #f6e2a0; border-radius: 0; transform: rotate(45deg) scale(.86); }
 [data-skin="eclipse"] .btg-round > * { transform: rotate(-45deg); }
@@ -174,7 +180,9 @@
 .btg-fifth .nm { font-weight: 900; line-height: 1.15; white-space: pre-line; max-width: 8.2rem; }
 [data-skin="eclipse"] .btg-fifth .nm { background: linear-gradient(180deg, #f6e2a0, #d9b45a 55%, #9a6d1f); -webkit-background-clip: text; background-clip: text; color: transparent; }
 .btg-fifth[data-disabled="true"] { cursor: not-allowed; }
-.btg-fifth[data-abolished="true"], .btg-fifth[data-empty="true"] { filter: grayscale(.9) brightness(.85); }
+.btg-fifth[data-abolished="true"], .btg-fifth[data-disabled="true"] { filter: grayscale(1) brightness(.65); }
+.btg-skill[data-disabled="true"] { filter: grayscale(1) brightness(.65); }
+.extra-attack-target { outline: 2px solid #fb7185; outline-offset: 2px; box-shadow: 0 0 7px #fb7185; }
 .btg-fifth .tag5 { position: absolute; left: 50%; top: -.4rem; transform: translateX(-50%); padding: 1px .6rem; border-radius: 999px; background: #e0a33c; color: #2a1300; font-size: .8rem; font-weight: 900; }
 [data-skin="eclipse"] .btg-fifth .tag5 { border-radius: 0; background: linear-gradient(180deg, #f6e2a0, #c99a3f); color: #1a1206; }
 

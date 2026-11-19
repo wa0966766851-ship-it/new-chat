@@ -30,7 +30,11 @@ import { ALIEN_TRAITS } from "../data/alienTraits";
 import { motion, AnimatePresence } from "motion/react";
 import { Puzzle, ArrowLeft, Sparkles, Save, ListPlus, Edit, Eye, ShieldAlert, Check, Shuffle, Crown, AlertCircle, X, BookOpen, Plus, Maximize2, Minimize2, ZoomIn, Search, Copy, Trash2, RefreshCw, Send, Share2 } from "lucide-react";
 const EffectLibraryModal = lazy(() => import("./EffectLibraryModal").then(module => ({ default: module.EffectLibraryModal })));
-import { parseEffectDescriptionWithAI } from "../utils/aiTextParser";
+// 效果範本及 AI 文字解析只在要求解析時載入。
+const parseEffectDescriptionWithAI: typeof import('../utils/aiTextParser').parseEffectDescriptionWithAI = async (...args) => {
+  const parser = await import('../utils/aiTextParser');
+  return parser.parseEffectDescriptionWithAI(...args);
+};
 import { parseFullElfData } from "../utils/fullElfParser";
 import { parseRawAbilityEffect } from "../utils/effectParser";
 import { SKILL_STONE_ATTRIBUTES, SKILL_STONE_GRADES, SkillStoneGrade, PERFECT_SKILL_STONE_EFFECTS, getPerfectEffectsForAttribute, createSkillStone, isStoneThrower, isSkillStone, equipSkillStone, stoneIconUrl, validateSkillStoneLoadout, skillConfigurationKey } from "../data/skillStones";
@@ -1097,6 +1101,10 @@ export default function ElfEditor({ initialElf: suppliedElf, onSaveElf, onBack, 
 
   const [soulMarkName, setSoulMarkName] = useState<string>("諸神之怒");
   const [soulMarkDesc, setSoulMarkDesc] = useState<string>("每回合結束時有30%機率使對手麻痺；若自身體力低於50%則每回合結束回復15%最大體力");
+  const displayedTokenAnalysis = useMemo(() => {
+    if (activeTab !== 'ai' || activeAnalysisTab !== 'token_dissect') return { tokens: [], clauses: [] };
+    return aiDissectedResult || parseRawAbilityEffect(tokenDissectText || soulMarkDesc || '');
+  }, [activeTab, activeAnalysisTab, aiDissectedResult, tokenDissectText, soulMarkDesc]);
   const [soulMarkBadgeChar, setSoulMarkBadgeChar] = useState<string>("");
   const [soulMarkEffectType, setSoulMarkEffectType] = useState<any>("paralyze_chance");
   const [soulMarkValue, setSoulMarkValue] = useState<number>(30);
@@ -1476,8 +1484,8 @@ export default function ElfEditor({ initialElf: suppliedElf, onSaveElf, onBack, 
         gen2Trait: gen2TraitName ? { ...initialElf?.alienTraits?.gen2Trait, ...traitEffectConfigs.gen2Trait, name: gen2TraitName, description: gen2TraitDesc } : undefined,
         exclusiveTrait: exTraitName ? { ...initialElf?.alienTraits?.exclusiveTrait, ...traitEffectConfigs.exclusiveTrait, name: exTraitName, description: exTraitDesc } : undefined,
         exclusiveTraits: exclusiveTraits.length ? exclusiveTraits : undefined,
-        alienTrait: alienTraitName ? { ...initialElf?.alienTraits?.alienTrait, ...traitEffectConfigs.alienTrait, name: alienTraitName, description: traitEffectConfigs.alienTrait?.description ?? ALIEN_TRAITS[alienTraitName]?.description ?? "" } : undefined,
-        generalTrait: generalTraitName ? { ...initialElf?.alienTraits?.generalTrait, ...traitEffectConfigs.generalTrait, name: generalTraitName, description: traitEffectConfigs.generalTrait?.description ?? GENERAL_TRAITS[generalTraitName]?.description ?? "" } : undefined,
+        alienTrait: alienTraitName ? { ...(initialElf?.alienTraits?.alienTrait?.name === alienTraitName ? initialElf.alienTraits.alienTrait : undefined), ...traitEffectConfigs.alienTrait, name: alienTraitName, description: traitEffectConfigs.alienTrait?.description ?? ALIEN_TRAITS[alienTraitName]?.description ?? "" } : undefined,
+        generalTrait: generalTraitName ? { ...(initialElf?.alienTraits?.generalTrait?.name === generalTraitName ? initialElf.alienTraits.generalTrait : undefined), ...traitEffectConfigs.generalTrait, name: generalTraitName, description: traitEffectConfigs.generalTrait?.description ?? GENERAL_TRAITS[generalTraitName]?.description ?? "" } : undefined,
       } : undefined,
       trait: initialElf?.trait ? { ...initialElf.trait, ...traitEffectConfigs.trait } : undefined,
       skills: skills.slice(0, 5),
@@ -2266,8 +2274,8 @@ export default function ElfEditor({ initialElf: suppliedElf, onSaveElf, onBack, 
       gen2Trait: gen2TraitName ? { ...initialElf?.alienTraits?.gen2Trait, ...traitEffectConfigs.gen2Trait, name: gen2TraitName, description: gen2TraitDesc } : undefined,
       exclusiveTrait: exTraitName ? { ...initialElf?.alienTraits?.exclusiveTrait, ...traitEffectConfigs.exclusiveTrait, name: exTraitName, description: exTraitDesc } : undefined,
       exclusiveTraits,
-      alienTrait: alienTraitName ? { ...initialElf?.alienTraits?.alienTrait, ...traitEffectConfigs.alienTrait, name: alienTraitName, description: traitEffectConfigs.alienTrait?.description ?? ALIEN_TRAITS[alienTraitName]?.description ?? '' } : undefined,
-      generalTrait: generalTraitName ? { ...initialElf?.alienTraits?.generalTrait, ...traitEffectConfigs.generalTrait, name: generalTraitName, description: traitEffectConfigs.generalTrait?.description ?? GENERAL_TRAITS[generalTraitName]?.description ?? '' } : undefined,
+      alienTrait: alienTraitName ? { ...(initialElf?.alienTraits?.alienTrait?.name === alienTraitName ? initialElf.alienTraits.alienTrait : undefined), ...traitEffectConfigs.alienTrait, name: alienTraitName, description: traitEffectConfigs.alienTrait?.description ?? ALIEN_TRAITS[alienTraitName]?.description ?? '' } : undefined,
+      generalTrait: generalTraitName ? { ...(initialElf?.alienTraits?.generalTrait?.name === generalTraitName ? initialElf.alienTraits.generalTrait : undefined), ...traitEffectConfigs.generalTrait, name: generalTraitName, description: traitEffectConfigs.generalTrait?.description ?? GENERAL_TRAITS[generalTraitName]?.description ?? '' } : undefined,
     },
   } as Elf;
 
@@ -2879,7 +2887,7 @@ export default function ElfEditor({ initialElf: suppliedElf, onSaveElf, onBack, 
                             🔮 螢光筆分詞即時重點標示 (Interactive Token Highlighter View)：
                           </span>
                           <div className="flex flex-wrap gap-1 leading-relaxed break-all select-text whitespace-pre-wrap max-h-[120px] overflow-y-auto p-1 text-slate-300">
-                            {(aiDissectedResult ? aiDissectedResult.tokens : parseRawAbilityEffect(tokenDissectText || soulMarkDesc || "").tokens).map((token: any, idx: number, arr: any[]) => {
+                            {displayedTokenAnalysis.tokens.map((token: any, idx: number, arr: any[]) => {
                               let badgeStyle = "text-slate-400 bg-slate-900 border-slate-800";
                               if (token.type === "status") badgeStyle = "text-pink-300 bg-pink-500/15 border-pink-500/30 shadow-[0_0_8px_rgba(236,72,153,0.15)]";
                               if (token.type === "timing") badgeStyle = "text-amber-300 bg-amber-500/15 border-amber-500/30";
@@ -2938,11 +2946,11 @@ export default function ElfEditor({ initialElf: suppliedElf, onSaveElf, onBack, 
                         <div className="flex items-center justify-between">
                           <span className="text-[10px] font-bold text-slate-400">🔍 語法分詞偵測流 (Token Lexical Flow)：</span>
                           <span className="text-[9px] text-slate-500 font-mono">
-                            共 {aiDissectedResult ? aiDissectedResult.tokens.length : parseRawAbilityEffect(tokenDissectText || soulMarkDesc || "").tokens.length} 個 Tokens
+                            共 {displayedTokenAnalysis.tokens.length} 個 Tokens
                           </span>
                         </div>
                         <div className="bg-[#050608]/60 border border-slate-800 rounded-xl p-3 flex flex-wrap gap-1.5 max-h-[140px] overflow-y-auto">
-                          {(aiDissectedResult ? aiDissectedResult.tokens : parseRawAbilityEffect(tokenDissectText || soulMarkDesc || "").tokens).map((token: any, idx: number) => {
+                          {displayedTokenAnalysis.tokens.map((token: any, idx: number) => {
                             let badgeStyle = "text-slate-400 bg-slate-900 border-slate-800";
                             if (token.type === "status") badgeStyle = "text-pink-300 bg-pink-500/10 border-pink-500/20 shadow-[0_0_8px_rgba(236,72,153,0.1)]";
                             if (token.type === "timing") badgeStyle = "text-amber-300 bg-amber-500/10 border-amber-500/20";
@@ -2967,7 +2975,7 @@ export default function ElfEditor({ initialElf: suppliedElf, onSaveElf, onBack, 
                       {/* 語義協定對齊 - 被動特性 */}
                       <div className="space-y-2.5">
                         <span className="text-[10px] font-bold text-slate-400 block">📋 語義對齊註冊表結果 (Semantic Clauses Matching)：</span>
-                        {(aiDissectedResult ? aiDissectedResult.clauses : parseRawAbilityEffect(tokenDissectText || soulMarkDesc || "").clauses).map((clause: any, idx: number) => (
+                        {displayedTokenAnalysis.clauses.map((clause: any, idx: number) => (
                           <div
                             key={idx}
                             className="bg-gradient-to-br from-slate-900/90 to-slate-950/90 border border-slate-800 rounded-xl p-3.5 space-y-2 shadow-sm relative overflow-hidden group hover:border-emerald-500/30 transition-all duration-300"
@@ -3831,7 +3839,10 @@ export default function ElfEditor({ initialElf: suppliedElf, onSaveElf, onBack, 
                       <label className="block text-[11px] font-bold text-slate-500 mb-1.5 ml-1">異能選擇</label>
                       <select
                         value={alienTraitName}
-                        onChange={(e) => setAlienTraitName(e.target.value)}
+                        onChange={(e) => {
+                          setAlienTraitName(e.target.value);
+                          setTraitEffectConfigs(({ alienTrait: _previous, ...rest }) => rest);
+                        }}
                         className="w-full bg-[#050608] border border-slate-800 rounded-xl p-3 text-xs text-slate-200 focus:outline-none focus:border-blue-500"
                       >
                         <option value="">無 (None)</option>
@@ -3865,7 +3876,10 @@ export default function ElfEditor({ initialElf: suppliedElf, onSaveElf, onBack, 
                     <label className="block text-[11px] font-bold text-slate-500 mb-1.5 ml-1">特性選擇</label>
                     <select
                       value={generalTraitName}
-                      onChange={(e) => setGeneralTraitName(e.target.value)}
+                      onChange={(e) => {
+                        setGeneralTraitName(e.target.value);
+                        setTraitEffectConfigs(({generalTrait: _previous, ...rest}) => rest);
+                      }}
                       className="w-full bg-[#050608] border border-slate-800 rounded-xl p-3 text-xs text-slate-200 focus:outline-none focus:border-blue-500"
                     >
                       <option value="">無 (None)</option>

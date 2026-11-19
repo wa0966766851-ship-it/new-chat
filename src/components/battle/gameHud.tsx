@@ -146,6 +146,8 @@ export interface FifthMedallionProps {
   onMouseLeave?: () => void;
   title?: string;
   className?: string;
+  /** 不可選原因（與引擎同源）；顯示在圓章上 */
+  reason?: string;
 }
 
 /** 第五技能圓章：外圈弧＝剩餘 PP；轉化時改冷色，廢除蓋章。 */
@@ -155,7 +157,7 @@ export function FifthMedallion(p: FifthMedallionProps) {
   const conv = !!p.originalName;
   const gid = React.useId().replace(/:/g, '');
   return <button type="button" className={`btg-fifth ${p.className || ''}`} data-fifth-skill data-disabled={p.disabled} data-abolished={p.abolished} data-empty={p.empty}
-    aria-disabled={p.disabled} title={p.title} onClick={p.onClick} onMouseEnter={p.onMouseEnter} onMouseLeave={p.onMouseLeave}>
+    aria-disabled={p.disabled} data-skill-disabled={p.disabled ? 'true' : 'false'} data-skill-disabled-reason={p.reason || undefined} title={p.title || p.reason} onClick={p.onClick} onMouseEnter={p.onMouseEnter} onMouseLeave={p.onMouseLeave}>
     <FifthDeco />
     <svg viewBox="0 0 190 190" aria-hidden="true">
       <defs>
@@ -181,5 +183,6 @@ export function FifthMedallion(p: FifthMedallionProps) {
     {p.runeBadge}
     {p.tag && <span className="btg-tag" style={{ left: '50%', top: 'auto', bottom: '-.3rem', transform: 'translateX(-50%)', background: p.tag.color }}>{p.tag.text}</span>}
     {p.abolished && <span className="btg-stamp">已廢除</span>}
+    {p.disabled && p.reason && !p.abolished && <span className="absolute left-1/2 -translate-x-1/2 top-[38%] px-1.5 rounded bg-rose-600/90 text-[10px] font-black text-white shadow whitespace-nowrap pointer-events-none" data-skill-disabled-badge>{p.reason}</span>}
   </button>;
 }
