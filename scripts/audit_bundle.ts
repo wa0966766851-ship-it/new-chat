@@ -97,3 +97,83 @@ for (const key of initial) {
 // 預算由 950 kB 調升為 970 kB（餘裕約 9.5 kB），待後續新一輪延後載入再降回。
 assert.ok(initialBytes < 970_000, `首頁初始 JS 超過970 kB回歸預算：${initialBytes}`);
 console.log(`首頁靜態 JS 總量 ${(initialBytes / 1000).toFixed(2)} kB；延後載入與主區塊大小回歸檢查通過。`);
+
+/** 首頁已下載的共用模組只算一次；頁面各自檢查新增的靜態依賴。 */
+function staticDependencies(keys: readonly string[]) {
+  const found = new Set<string>();
+  function add(key: string) {
+    if (found.has(key)) return;
+    const chunk = manifest[key];
+    assert.ok(chunk, `缺少建置區塊：${key}`);
+    found.add(key);
+    for (const dependency of chunk.imports || []) add(dependency);
+  }
+  for (const key of keys) add(key);
+  return found;
+}
+
+const routeLimits: Record<string, number> = {
+  'src/components/BattleScreen.tsx': 2_700_000,
+  'src/components/BlocklyBuilder.tsx': 2_300_000,
+  'src/components/EffectConnectionControls.tsx': 2_100_000,
+  'src/components/ElfBlocklyPanel.tsx': 2_100_000,
+  // 編輯器本頁有 30+ 個必要的靜態 import（面板／驗證／描述／計算），是已知重量頁；
+  // 給略高於實測的額度，仍能在未來膨脹時攔下。
+  'src/components/ElfEditor.tsx': 1_350_000,
+  'src/components/KitEffectBuilder.tsx': 1_550_000,
+  'src/components/LazyBlockProgramView.tsx': 2_100_000,
+  'src/components/ReusableEffectLibrary.tsx': 2_100_000,
+  'src/components/TestRunnerPage.tsx': 350_000,
+};
+const ROUTE_LIMIT = 800_000;
+const assetSizes = new Map<string, {raw: number; gzip: number}>();
+function measure(keys: Iterable<string>, alreadyLoaded?: ReadonlySet<string>) {
+  let raw = 0, gzip = 0;
+  const unique = new Set<string>();
+  for (const key of keys) {
+    if (alreadyLoaded?.has(key)) continue;
+    const file = manifest[key].file;
+    if (unique.has(file) || !file.endsWith('.js')) continue;
+    unique.add(file);
+    let size = assetSizes.get(file);
+    if (!size) {
+      const data = readFileSync(resolve(dist, file));
+      size = {raw: data.length, gzip: gzipSync(data).length};
+      assetSizes.set(file, size);
+    }
+    raw += size.raw;
+    gzip += size.gzip;
+  }
+  return {raw, gzip};
+}
+
+function routeChunk(source: string) {
+  if (manifest[source]) return source;
+  const name = source.split('/').at(-1)?.replace(/\.[^.]+$/, '');
+  const match = Object.keys(manifest).find(key => manifest[key].isDynamicEntry && manifest[key].file.startsWith(`assets/${name}-`));
+  assert.ok(match, `缺少頁面入口：${source}`);
+  return match;
+}
+const routes = new Map(Object.keys(manifest).filter(key => /^src\//.test(key) && manifest[key].isDynamicEntry).map(key => [key,key]));
+for (const source of Object.keys(routeLimits)) routes.set(source,routeChunk(source));
+const battleChunk = routeChunk('src/components/BattleScreen.tsx');
+const pageRows = [...routes].map(([key,chunk]) => {
+  const deps = staticDependencies([chunk]);
+  const limit = routeLimits[key] ?? ROUTE_LIMIT;
+  const size = measure(deps, initial);
+  assert.ok(size.raw < limit, `${key} 初次開啟的依賴超過預算：${size.raw} / ${limit} bytes`);
+  if (key === 'src/components/TestRunnerPage.tsx') {
+    assert.ok(!deps.has(battleChunk), '自動測試應在按下開始後才載入戰鬥');
+  }
+  return {key, ...size, limit};
+});
+
+const firstScreen = measure(staticDependencies([
+  entry[0], routeChunk('src/shell/AegisShell.tsx'), 'src/shell/scenes/LobbyScene.tsx', 'src/data/importedElves.ts',
+  'src/data/stagedArenaElves.ts', 'src/data/reviewedKits.deferred.json',
+]));
+assert.ok(firstScreen.raw < 1_240_000, `首次首頁與名冊依賴超過預算：${firstScreen.raw} / 1240000 bytes`);
+console.log(`首次首頁與名冊：${(firstScreen.raw/1000).toFixed(1)} kB / gzip ${(firstScreen.gzip/1000).toFixed(1)} kB。`);
+for (const {key,raw,gzip,limit} of pageRows.sort((a,b)=>b.raw-a.raw)) {
+  console.log(`${key}: ${(raw/1000).toFixed(1)} / ${limit/1000} kB，餘裕 ${((limit-raw)/1000).toFixed(1)} kB，gzip ${(gzip/1000).toFixed(1)} kB`);
+}

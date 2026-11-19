@@ -45,6 +45,7 @@ export default defineConfig(() => {
           const file = id.replace(/\\/g, '/');
           // 資料／精靈註冊模組／通用引擎依既有模組邊界分塊。
           // 初始化順序與跨塊相容性由正式Worker測試鎖定，不改寫任何handler。
+          if (/\/src\/engine\/battleEngine\.ts$/.test(file)) return 'ai-battle-engine';
           if (file.includes('/src/effects/elves/')) return 'ai-elf-effects';
           if (/\/src\/effects\/(sequenceContract|sequenceClosureContract|astralContract)\.ts$/.test(file)) return 'ai-kit-contracts';
           if (/\/src\/blocks\/runtime\.ts$/.test(file)) return 'ai-block-runtime';
@@ -55,6 +56,7 @@ export default defineConfig(() => {
           if (/\/src\/data\/defaultElves\.ts$/.test(file)) return 'ai-data-elves';
           if (/\/src\/data\/codex\.packed\.json$/.test(file)) return 'ai-data-codex';
           if (/\/src\/blocks\/parse\.ts$/.test(file)) return 'ai-description-parser';
+          if (/\/src\/battle\/petAnimationAssets\.ts$/.test(file)) return 'ai-animation-metadata';
           // Worker 的第三方依賴原本全併進入口區塊（617 kB）。依套件邊界拆成獨立區塊，
           // 入口只留協調程式；ES worker 支援動態模組分塊，載入順序不變。
           if (file.includes('node_modules')) {
@@ -115,6 +117,8 @@ export default defineConfig(() => {
               if (id.includes('blockly')) {
                 return 'vendor-blockly';
               }
+              // Public React context used at startup. The animation renderer stays with lazy pages.
+              if (normalized.endsWith('/framer-motion/dist/es/context/MotionConfigContext.mjs')) return 'vendor-core';
               if (id.includes('motion') || id.includes('framer-motion')) {
                 return 'vendor-motion';
               }

@@ -1,3 +1,4 @@
+import { readPerfPreference, writePerfPreference, perfLiteActive, type PerfPreference } from '../shell/perfMode';
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { Maximize2, Minimize2, Image as ImageIcon, RotateCcw, Copy, Music, X, Sliders, Sun, Moon, Eye, Check, Play, Pause, Plus, Volume2, VolumeX, Palette, Swords, Upload, Gauge } from "lucide-react";
@@ -374,7 +375,7 @@ export default function ControlHubPanel(model: ControlHubPanelModel) {
 
           <Section title="動畫播放" hint="關閉的項目直接略過動畫，不影響結算">
             <ImageRetrySetting/>
-            <GlobalAnimationMode settings={animationSettings} onChange={next=>{setAnimationSettings(next);writeAnimationSettings(next);}}/>
+            <PerfModeSetting/><GlobalAnimationMode settings={animationSettings} onChange={next=>{setAnimationSettings(next);writeAnimationSettings(next);}}/>
             <label className="flex items-center justify-between gap-3 rounded-lg border border-cyan-900 bg-slate-950 p-3 mb-3">
               <span><span className="block text-sm font-bold text-cyan-200">靜態模式</span><span className="text-xs text-slate-400">略過出招與登場動畫，飄字保留。</span></span>
               <input aria-label="靜態模式" type="checkbox" checked={!!animationSettings.staticMode} onChange={e=>{const next={...animationSettings,mode:e.target.checked?'static' as const:'simple' as const,staticMode:e.target.checked};setAnimationSettings(next);writeAnimationSettings(next);}}/>
@@ -419,4 +420,17 @@ export default function ControlHubPanel(model: ControlHubPanelModel) {
       </AnimatePresence>
     </motion.div>
   );
+}
+
+/** 效能模式：自動依硬體與幀時間切換；精簡時移除背景模糊與循環裝飾動畫。 */
+function PerfModeSetting() {
+  const [pref, setPref] = React.useState<PerfPreference>(readPerfPreference);
+  const lite = perfLiteActive(pref);
+  return <label className="flex items-center justify-between gap-3 rounded-lg border border-cyan-900 bg-slate-950 p-3 mb-3" title="精簡會減少背景特效，並在下次載入時縮小大型動作圖集。完整保留原圖集，自動依硬體和幀時間選擇。">
+    <span className="text-sm font-bold text-cyan-200">效能模式 <span className="text-xs font-normal text-slate-400">（目前{lite ? '精簡' : '完整'}）</span></span>
+    <select aria-label="效能模式" className="rounded-lg bg-slate-950 border border-slate-700 p-2 text-sm" value={pref}
+      onChange={e => { const v = e.target.value as PerfPreference; setPref(v); writePerfPreference(v); }}>
+      <option value="auto">自動</option><option value="on">精簡</option><option value="off">完整</option>
+    </select>
+  </label>;
 }

@@ -3,7 +3,8 @@ import { RichDescription } from './RichDescription';
 import { DEFAULT_ELVES } from "../data/defaultElves";
 import { getAllTestableElves, generateSkillCyclingScript } from "../tests/allElvesRunner";
 import { Elf, Skill, BattleLog, BattleItem } from "../types";
-import BattleScreen from "./BattleScreen";
+// 批次測試引擎只在按下開始後才掛載；避免自動測試頁一進入就拉進整包戰鬥模組。
+const BattleScreen = React.lazy(() => import("./BattleScreen"));
 import { 
   Play, 
   Pause, 
@@ -515,6 +516,7 @@ export default function TestRunnerPage() {
       {/* Hidden Battle Engine Frame */}
       {activeTest && (
         <div className="opacity-0 pointer-events-none fixed -top-[9999px] -left-[9999px] w-1 h-1 overflow-hidden z-0">
+          <React.Suspense fallback={null}>
           <BattleScreen
             key={activeTest.key}
             initialP1Team={[activeTest.p1Elf]}
@@ -531,6 +533,7 @@ export default function TestRunnerPage() {
               handleStateChange(s);
             }}
           />
+          </React.Suspense>
         </div>
       )}
 
