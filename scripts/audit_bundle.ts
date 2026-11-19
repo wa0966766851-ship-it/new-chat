@@ -157,10 +157,13 @@ function routeChunk(source: string) {
 const routes = new Map(Object.keys(manifest).filter(key => /^src\//.test(key) && manifest[key].isDynamicEntry).map(key => [key,key]));
 for (const source of Object.keys(routeLimits)) routes.set(source,routeChunk(source));
 const battleChunk = routeChunk('src/components/BattleScreen.tsx');
+const battlePanels = new Set(['src/components/ElfReadOnlyProfile.tsx', 'src/components/StatusInspector.tsx']);
+// These two dialogs only open inside a mounted battle. Charge their added dependencies to the dialog and the shared engine to BattleScreen.
+const battleLoaded = new Set([...initial, ...staticDependencies([battleChunk])]);
 const pageRows = [...routes].map(([key,chunk]) => {
   const deps = staticDependencies([chunk]);
   const limit = routeLimits[key] ?? ROUTE_LIMIT;
-  const size = measure(deps, initial);
+  const size = measure(deps, battlePanels.has(key) ? battleLoaded : initial);
   assert.ok(size.raw < limit, `${key} 初次開啟的依賴超過預算：${size.raw} / ${limit} bytes`);
   if (key === 'src/components/TestRunnerPage.tsx') {
     assert.ok(!deps.has(battleChunk), '自動測試應在按下開始後才載入戰鬥');
