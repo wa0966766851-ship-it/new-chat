@@ -11,6 +11,7 @@ import { EffectDescription } from './EffectDescription';
 import { EffectBlockToggle } from './EffectBlockToggle';
 import { ElfSpotlight } from './ElfSpotlight';
 import { SkillResources } from './SkillResources';
+import { extraActionSkillsOf } from '../data/extraActionSkills';
 
 /** 百科與戰鬥共用唯讀介紹；此元件沒有保存、修改精靈或訓練設定的入口。 */
 export const ElfReadOnlyProfile: React.FC<{
@@ -78,7 +79,12 @@ export const ElfReadOnlyProfile: React.FC<{
           <p className="mt-3 text-xs text-slate-400 flex flex-wrap gap-3"><span>{skill.category} · {skillDisplayType(skill)}</span><span>威力 {skill.power}</span><SkillResources elf={elf} skill={skill} maxPp={getSkillMaxPp?.(skill, elf)} /><span>先制 {skill.priority || 0}</span><span>基礎命中率 {skill.accuracy ?? 100}%</span></p>
           <EffectBlockToggle elf={elf} skill={skill}><EffectDescription skill={skill} description={skill.description} className="text-sm leading-7 text-slate-200" /></EffectBlockToggle>
           {elf.illusion && !elf.isInherentInvalid && <div className="mt-3 border-t border-white/10 pt-3"><p className="text-xs text-slate-400">原技能（固有效果仍生效；原附加效果不重跑）</p><EffectBlockToggle elf={elf} skill={elf.skills[i]}><EffectDescription skill={elf.skills[i]} description={elf.skills[i].description} className="text-sm leading-7 text-slate-200" /></EffectBlockToggle></div>}
-        </details>); }); })()}</div>}
+        </details>); }); })()}
+        {extraActionSkillsOf(elf.id).map(x => <details key={`extra-${x.id}`} className="ios-card p-4 border border-violet-400/30" data-extra-action={x.id}>
+          <summary className="cursor-pointer text-sm font-semibold text-violet-100"><span className="inline-flex items-center gap-2"><TypeIcon type={x.type} size={18} />{x.name}<span className="text-xs text-violet-300">額外行動</span></span></summary>
+          <p className="mt-3 text-xs text-slate-400 flex flex-wrap gap-3"><span title={x.typeNote}>{x.type}系{x.typeNote ? '＊' : ''}</span><span>{x.damage}</span><span>來源：{x.source}</span><span title="額外行動不占技能欄、不扣 PP、沒有先制">不占欄位</span></p>
+          <p className="mt-2 text-sm leading-7 text-slate-200">{x.summary}</p>
+        </details>)}</div>}
     </>}
   </div></BattleViewModeContext.Provider>;
 };

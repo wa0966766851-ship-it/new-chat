@@ -63,6 +63,10 @@ export function readSkillProperty(skill:any,property:string,ctx:any) {
 
 /** 兩側先制均結算後，套用所選技能的固有排序規則；不寫入跨回合旗標。 */
 export function resolveSelectedPriorityPolicies(p1:number,p2:number,s1:any,s2:any,c1:any,c2:any):[number,number]{
+  const offset1=s1&&s1.category!=='屬性'?(Number(c1.getPlayerState?.('nextWeightedAttackPriority')?.amount)||0):0;
+  const offset2=s2&&s2.category!=='屬性'?(Number(c2.getPlayerState?.('nextWeightedAttackPriority')?.amount)||0):0;
+  p1-=Math.min(offset2,Math.max(0,p1));
+  p2-=Math.min(offset1,Math.max(0,p2));
   const ignore1=readSkillProperty(s1,'ignore_positive_priority',c1)===true;
   const ignore2=readSkillProperty(s2,'ignore_positive_priority',c2)===true;
   if(readSkillProperty(s1,'cap_opponent_priority',c1)===true)p2=Math.min(p2,p1);

@@ -36,7 +36,7 @@ export function ownerLinkOperations() {
       if (ctx.getFullTeam(ctx.actor).some(e => e.isExtra && e.name === p.name && e.summonerId === idOf(ctx.self))) return false;
       const fixed = Object.fromEntries(stats.map(k => [k, p.value])) as any;
       const extra = createExtraElf(ctx.self, { name: p.name, type: p.type, gender: p.gender, baseStats: { ...fixed }, calculatedStats: fixed, currentHp: p.value, maxHp: p.value,
-        soulMark: { name: '額外精靈', description: p.description, effectType: 'none', effectValue: 0 } });
+        ...(p.description ? { soulMark: { name: '額外精靈', description: p.description, effectType: 'none', effectValue: 0 } } : {}) });
       ctx.addExtraElf(ctx.actor, extra);
       ctx.addLog(`【${ctx.self.name}】召喚額外精靈【${p.name}】。`, 'effect');
       return true;

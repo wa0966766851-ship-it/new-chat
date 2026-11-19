@@ -11,7 +11,7 @@ import { newestElfKeys, newestFirst } from "../shell/elfPool";
  */
 export type ElfTypeMode = "all" | "any";
 export type ElfTypeKind = "any" | "single" | "dual";
-export type ElfFlag = "new" | "fifth" | "custom" | "inTeam";
+export type ElfFlag = "new" | "fifth" | "custom" | "extra" | "inTeam";
 export type ElfSortKey = "default" | "id" | "name" | "total" | "newest";
 
 export interface ElfFilterSpec {
@@ -30,9 +30,9 @@ export interface ElfFilterSpec {
 export const DEFAULT_ELF_FILTER: ElfFilterSpec = { query: "", types: [], typeMode: "all", kind: "any", ranks: [], flags: [], sort: "default", desc: false };
 
 export const ELF_RANKS: readonly ElfDisplayRank[] = ["S", "A", "B", "C"];
-export const ELF_FLAG_LABEL: Record<ElfFlag, string> = { new: "新精靈", fifth: "有第五技能", custom: "自訂精靈", inTeam: "已編入" };
+export const ELF_FLAG_LABEL: Record<ElfFlag, string> = { new: "新精靈", fifth: "有第五技能", custom: "自訂精靈", extra: "額外精靈", inTeam: "已編入" };
 export const ELF_FLAG_HINT: Record<ElfFlag, string> = {
-  new: "清單尾端最新加入的內建精靈", fifth: "技能列含第五技能標記", custom: "自訂（custom_）或標記為自訂的精靈", inTeam: "已在目前隊伍中",
+  new: "清單尾端最新加入的內建精靈", fifth: "技能列含第五技能標記", custom: "自訂（custom_）或標記為自訂的精靈", extra: "效果召喚或額外加入的精靈", inTeam: "已在目前隊伍中",
 };
 export const ELF_SORT_LABEL: Record<ElfSortKey, string> = { default: "預設", id: "編號", name: "名稱", total: "種族值總和", newest: "新增順序" };
 
@@ -79,6 +79,7 @@ export function matchesElfSpec(e: Elf, s: ElfFilterSpec, ctx: ElfFilterContext &
     f === "new" ? ctx.fresh.has(keyOf(e)) :
     f === "fifth" ? fifthSkillSlot(e.skills || []) >= 0 :
     f === "custom" ? isCustom(e) :
+    f === "extra" ? !!e.isExtra :
     !!ctx.inTeam?.has(keyOf(e)) || !!ctx.inTeam?.has(String(e.name)));
 }
 

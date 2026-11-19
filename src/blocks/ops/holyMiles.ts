@@ -6,6 +6,7 @@
 //   天佑「已損失體力每有最大體力10%則額外執行1次」的迴圈端（每輪結算：heal 10%＋等量百分比傷害）。
 import type { BattleEventContext } from '../../effects/types';
 import type { RunState } from '../runtime';
+import { checkElfDead } from '../../battle/elfAlive';
 import { multiplyDamageReduction } from '../../battle/damageReduction';
 
 type S = 'p1' | 'p2';
@@ -86,10 +87,10 @@ export function holyMilesOperations(helpers: { runStmts: (ctx: BattleEventContex
       });
       return true;
     },
-    // 下場時還原：體力（夾回目前上限）與各技能 PP 重置為登場時快照。無快照＝不動。
+    // 存活下場時還原；陣亡或消失不能藉快照復活。負體力存活依共用規則判斷。
     entry_state_restore: (ctx: BattleEventContext): boolean => {
       const self = resolveSelf(ctx);
-      if (!self) return false;
+      if (!self || self.isVanished || checkElfDead(self)) return false;
       const snap = ctx.getPlayerState(entryKey(idOf(self)));
       if (!snap) return false;
       const byName = new Map<string, number>((snap.pp || []).map((x: any) => [x.name, x.pp] as [string, number]));

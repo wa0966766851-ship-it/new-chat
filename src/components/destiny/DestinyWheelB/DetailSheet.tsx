@@ -5,7 +5,7 @@ import { RichDescription } from "../../RichDescription";
 import { skillDisplayType } from "../../../utils/skillPresentation";
 import { explainElfDisplayRank } from "../../../utils/elfDisplayRank";
 import { RANK_SOURCE_LABEL, DESTINY_RANK_LABEL } from "../../../utils/destinyRankMeta";
-import { usesSoulMarkInsteadOfInterceptor, type DestinyElfInstance } from "../../../utils/destinyGacha";
+import { type DestinyElfInstance } from "../../../utils/destinyGacha";
 import type { BattleViewMode, Side } from "../../../battle/viewerPerspective";
 import { maskForViewer } from "../maskForViewer";
 import { C, hashSeed, rule } from "./bModel";
@@ -27,8 +27,7 @@ export function DetailSheet({ elf, owner, mode, blueprint, onClose }: { elf: Des
   const seed = hashSeed(elf.instanceId);
   const info = explainElfDisplayRank(view);
   const total = Object.values(view.baseStats || {}).reduce<number>((s, v) => s + (Number(v) || 0), 0);
-  const isLiujie = usesSoulMarkInsteadOfInterceptor(view.name);
-  const showIntercept = elf.destinyRank === "C" && elf.interceptorEffect && !isLiujie;
+  const showIntercept = elf.destinyRank === "C" && view.interceptorEffect;
   const traits = view.alienTraits;
   const rankLabel = DESTINY_RANK_LABEL[elf.destinyRank];
   return (

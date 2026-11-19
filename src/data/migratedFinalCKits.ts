@@ -1,6 +1,7 @@
 import type { KitEntry } from '../effects/effectSystem.schema';
 import type { ReviewedSequenceSkill } from './reviewedSequenceSkillKits';
 import { action as a, property } from './reviewedSequenceSkillKits';
+import { DANCE_DESCRIPTION, DANCE_TRAIT_KIT } from './generalTraitKits';
 
 // C 組（未接通 73 項）：5007 不淨者之約／深潛者盛宴、5018 蟲后之冠、5022/5023/5026 通用特性亂舞。
 const c = (name: string, p: any, label?: string) => ({ c: name, p, label: label || name });
@@ -38,7 +39,7 @@ const PACT = [
   '🎯 令自身100%狂暴',
   '🎯 下2回合對手所有技能先制-2，若對手當前速度高於自身則改為先制-3',
 ];
-const DANCE = '攻擊/特攻提升 12% 且造成技能傷害時隨機選擇對方任意場下精靈/額外精靈作為增加一個攻擊目標';
+export { DANCE_DESCRIPTION } from './generalTraitKits';
 
 export const MIGRATED_FINAL_C_SKILL_KITS: ReviewedSequenceSkill[] = [
   { elfIds: ['5018'], name: '蟲后之冠', description: CROWN.join('\n'), kit: [
@@ -118,13 +119,6 @@ export const MIGRATED_FINAL_C_SKILL_KITS: ReviewedSequenceSkill[] = [
 ];
 
 export const MIGRATED_FINAL_C_TRAIT_KITS = [{
-  kind: 'trait' as const, elfIds: ['5022', '5023', '5026'], name: '亂舞', description: DANCE, kit: [
-    { codeId: 'soul_property', source: 'mechanic', role: 'innate', node: 'passive_always', order: 0, customText: '攻擊/特攻提升 12%',
-      params: { property: 'stat_percent', stats: ['atk', 'spatk'], percent: 12 } } as KitEntry,
-    { codeId: 'effect_sequence', source: 'mechanic', role: 'innate', node: 'after_action', order: 1, customText: '造成技能傷害時隨機選擇對方任意場下精靈/額外精靈作為增加一個攻擊目標',
-      params: { clause: { raw: '造成技能傷害時隨機選擇對方任意場下精靈/額外精靈作為增加一個攻擊目標', trig: 'self_after_attack', parsed: true, body: [
-        { cond: [c('event_hit', {}, '本次攻擊命中')], acts: [a('extra_random_target', { pool: ['foe_bench', 'foe_extra'], count: 1 })] },
-      ] } } } as KitEntry,
-  ],
+  kind: 'trait' as const, elfIds: ['5022', '5023', '5026'], name: '亂舞', description: DANCE_DESCRIPTION, kit: DANCE_TRAIT_KIT,
 }];
 

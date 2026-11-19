@@ -8,9 +8,9 @@ import { getAttributeBadgeColor } from "../../utils/statCalculator";
 import { hiddenFromViewer, maskElfIdentity, UNKNOWN_ELF } from "../../battle/viewerPerspective";
 import { useBattleViewMode } from "../../battle/viewerMode";
 
-const ZONE_LABEL: Record<BagEntry["zone"], string> = { active: "出戰", standby: "待命" };
+const ZONE_LABEL: Record<BagEntry["zone"], string> = { active: "出戰", standby: "待命", extra: "額外精靈" };
 
-/** 選擇雙方背包（出戰＋待命）內任一隻未消逝的精靈；幻化指令等「需選對象」的道具共用。 */
+/** 幻化指令等手動目標道具的共用清單，依出戰、待命與額外身分標示。 */
 export default function BagElfPickerModal({ teams, viewerSide = "p1", title, onPick, onClose }: {
   teams: Record<"p1" | "p2", readonly Elf[]>; viewerSide?: "p1" | "p2"; title: string;
   onPick: (side: "p1" | "p2", battleId: string) => void; onClose: () => void;

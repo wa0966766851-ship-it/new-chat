@@ -121,7 +121,8 @@ export const StatusBadgePanel: React.FC<StatusBadgePanelProps> = ({ elf, registr
     if (e.isStandardStatus) {
       const reg = e.data;
       let catKey = 'NONE';
-      if (reg.categories.includes('BOSS_ONLY')) catKey = 'BOSS_ONLY';
+      // 實例開啟了回合數（剩餘 1–98）就不再算 BOSS 類，歸回附屬類。
+      if (reg.categories.includes('BOSS_ONLY') && !(e.remainingTurns > 0 && e.remainingTurns < 99)) catKey = 'BOSS_ONLY';
       else if (reg.categories.includes('CONTROL')) catKey = 'CONTROL';
       else if (reg.categories.includes('WEAKENING')) catKey = 'WEAKENING';
       else if (reg.categories.includes('RESTRICTIVE')) catKey = 'RESTRICTIVE';
@@ -187,7 +188,7 @@ export const StatusBadgePanel: React.FC<StatusBadgePanelProps> = ({ elf, registr
                     badge = style.badge;
                     label = inst.data.name;
                     color = style.color;
-                    displayValue = !inst.data.categories.includes('BOSS_ONLY') && inst.remainingTurns > 0 ? `${inst.remainingTurns}回合` : '';
+                    displayValue = (!inst.data.noDuration || inst.remainingTurns < 99) && inst.remainingTurns > 0 ? `${inst.remainingTurns}回合` : '';
                   } else {
                     const template = EFFECT_CATALOG[inst.catalogId];
                     if (!template) return null;
@@ -241,7 +242,7 @@ export const StatusBadgePanel: React.FC<StatusBadgePanelProps> = ({ elf, registr
           badge = style.badge;
           label = selectedEffect.data.name;
           color = style.color;
-          displayValue = !selectedEffect.data.categories.includes('BOSS_ONLY') && selectedEffect.remainingTurns > 0 ? `${selectedEffect.remainingTurns}回合` : '';
+          displayValue = (!selectedEffect.data.noDuration || selectedEffect.remainingTurns < 99) && selectedEffect.remainingTurns > 0 ? `${selectedEffect.remainingTurns}回合` : '';
           description = bossTraitInstanceText(elf, selectedEffect.catalogId) || selectedEffect.data.description || statusVisual(label)?.desc || '';
           catLabels = selectedEffect.data.categories.join(' / ');
         } else {

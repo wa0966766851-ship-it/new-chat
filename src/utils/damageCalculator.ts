@@ -1,6 +1,6 @@
+import { battleTypeParts } from './typeQuery';
 import {battleResistances} from '../battle/resistances';
 ﻿import { applyStageViewAs } from './stageViewAs';
-import { traitNames } from '../effects/traitEffects';
 import { readStatPercent } from '../effects/soulProperty';
 import { specialDamageFormula } from '../effects/specialDamageFormulaRegistry';
 import { skillTypeMultiplier } from '../battle/skillTypeOverride';
@@ -9,7 +9,7 @@ import { calculateEffectiveStat, getTypeMatchup } from "./statCalculator";
 import { SUIT_CATALOG } from "../data/suitsAndEyewears";
 import { TITLE_CATALOG } from "../data/titles";
 import { Mark, getMark } from "../battle/marks";
-import { critChanceBonus } from "../effects/traitEffects";
+import { critChanceBonus, traitPowerMultiplier } from "../effects/traitEffects";
 import { prdChance } from "./prd";
 import { skillStageView } from '../battle/skillStageView';
 import { isStoneThrower, isSkillStone } from '../data/skillStones';
@@ -17,7 +17,7 @@ import { getElfAdvancedMechanics } from '../data/traitsRegistry';
 import { equipmentDamageFactors } from '../battle/damagePipeline';
 import { hpPowerScale } from '../battle/actionDamageModifiers';
 import {readIncomingPanelAttack} from '../battle/panelAttack';
-import {activeResourceQueryRules} from '../battle/resourceQueryRules';
+import {activeResourceQueryRules,resourceOppStageFloor} from '../battle/resourceQueryRules';
 import {statusTypeMultiplier} from '../effects/statusMechanics';
 import {markCapability} from '../battle/markCapabilities';
 
@@ -32,7 +32,7 @@ export const calculateDamage = (
   isCritOverride?: boolean,
   p1Team?: Elf[],
   p2Team?: Elf[],
-  options?: { ignoreSpDefPercent?: number, ignoreDefPercent?: number, ignoreOppBuff?: boolean, hitCount?: number, critChanceBonus?: number, actionId?: number, inherentInvalid?: boolean },
+  options?: { traitPowerMultiplier?: number; ignoreSpDefPercent?: number, ignoreDefPercent?: number, ignoreOppBuff?: boolean, hitCount?: number, critChanceBonus?: number, actionId?: number, inherentInvalid?: boolean, actorBoostInvalid?: boolean, targetBoostInvalid?: boolean, stabDisabled?: boolean, typeAdvantageDisabled?: boolean },
   p1Title?: string,
   p2Title?: string,
   p1RegistryState?: any,
@@ -116,6 +116,9 @@ export const calculateDamage = (
   if(actorResourceRules.some(r=>r.oppUpAsDown)&&defS>0)defS=-defS;
   if(targetResourceRules.some(r=>r.selfDownAsUp)&&defS<0)defS=Math.abs(defS);
   if(targetResourceRules.some(r=>r.oppUpAsDown)&&atkS>0)atkS=-atkS;
+  // 持有者把對手視為至少處於N級全屬性能力下降（例：未暝之夜大於1道）
+  const oppFloor=resourceOppStageFloor(actor,actorMarks||[]);
+  if(oppFloor>0)defS=Math.min(defS,-oppFloor);
 
   // 無視對手能力提升（列星安辰、魯斯王、積木「無視能力提升」等）；視為下降優先。
   const stageReg = side === "p1" ? p1RegistryState : p2RegistryState;
@@ -132,6 +135,9 @@ export const calculateDamage = (
   if (stageReg?.selfDownAsUpThisAction && atkS < 0) atkS = -atkS;
   if (stageReg?.selfDropIgnoredThisAction && atkS < 0) atkS = 0;
   else if (options?.ignoreOppBuff && defS > 0) defS = 0;
+  // 能力提升效果失效（百科名詞積木 boost_invalid_turns）：提升等級不參與能力值計算，下降照常。
+  if (options?.actorBoostInvalid && atkS > 0) atkS = 0;
+  if (options?.targetBoostInvalid && defS > 0) defS = 0;
 
   if (atkPanelRatio) atkS = 0; // 「最終」攻擊／特攻＝面板原始值×比例，不再套能力等級
   const formula = specialDamageFormula(actor, target, skill, (oppSide === 'p1' ? p1Team : p2Team) || [], atkS, calculateEffectiveStat(atk, atkS));
@@ -141,7 +147,7 @@ export const calculateDamage = (
   // 積木：能力下降視為同級全屬性提升
   if (!atkPanelRatio && (side === "p1" ? p1RegistryState : p2RegistryState)?.blkStageAsBoost) atkS = Math.max(atkS, (side === "p1" ? p1RegistryState : p2RegistryState).blkStageAsBoost);
   const powerRegistry = side === 'p1' ? p1RegistryState : p2RegistryState;
-  const powerMultiplier = (powerRegistry?.powerMultiplierThisAction ?? 1) * hpPowerScale(powerRegistry, actor, target, options?.actionId);
+  const powerMultiplier = (powerRegistry?.powerMultiplierThisAction ?? 1) * hpPowerScale(powerRegistry, actor, target, options?.actionId) * traitPowerMultiplier(actor, skill) * (options?.traitPowerMultiplier ?? 1);
   const powerAdd = fixedPowerAdd;
   // 官方公式：[(等級×0.4+2)×威力×攻÷防÷50+2]×本系×克制 → 取整 → ×浮動(217~255)/255 → 取整 → ×暴擊 → 取整 → ×連擊次數。
   // 方括號內為整體不拆分（不先取整）；能力等級換算後的面板值已於 calculateEffectiveStat 取整。
@@ -159,9 +165,7 @@ export const calculateDamage = (
     if (atkMech.alwaysWeaknessDamage && atkMech.weaknessShieldReductionPercent) ratio = Math.max(0, ratio - (Number(target.shield) || 0) * atkMech.weaknessShieldReductionPercent / 100);
     effDef = Math.max(1, Math.floor(Math.min(effDef, otherEff) * ratio));
   }
-  // 通用特性「亂舞」：攻擊／特攻提升12%（能力值，屬公式輸入）
-  // 通用特性「亂舞」：kit 模式改讀 soul_property.stat_percent；其餘舊路徑保留名字判定。
-  const atkTraitMult = ((actor.trait?.name === "亂舞" && actor.trait?.effectMode !== 'kit') || traitNames(actor).includes("亂舞") ? 1.12 : 1) + readStatPercent(actor, isPhys ? 'atk' : 'spatk') / 100;
+  const atkTraitMult = 1 + readStatPercent(actor, isPhys ? 'atk' : 'spatk') / 100;
   const base = ((levelFactor * Math.floor(calculateEffectiveStat(atk, atkS) * atkTraitMult) * (skill.power + powerAdd) * powerMultiplier / Math.max(1, effDef)) / 50 + 2);
   
   const actorReg = side === "p1" ? p1RegistryState : p2RegistryState;
@@ -171,17 +175,17 @@ export const calculateDamage = (
   let typeMult = skill.resolvedTypeMultiplier ?? skillTypeMultiplier(actorReg, (typeOverrideActive && actorReg?.attackTypeOverride) || skill.type, targetType);
   // 特質「戰士」：克制倍數取技能擁有的屬性中對對手最優的系別
   if (atkMech.bestElementAdvantage && !(typeOverrideActive && actorReg?.attackTypeOverride)) {
-    const parts = String(skill.type || '').replace(/系$/, '').split(/[.·・]/).filter(Boolean);
+    const parts = battleTypeParts(skill.type);
     for (const part of parts) typeMult = Math.max(typeMult, skillTypeMultiplier(actorReg, part, targetType));
   }
   if (actorReg?.minimumTypeMultiplierThisAction !== undefined) typeMult = Math.max(typeMult, actorReg.minimumTypeMultiplierThisAction);
   typeMult=statusTypeMultiplier(actor,typeMult);
-  if(markCapability(actor,'typeAdvantageDisabled',actorMarks)>0)typeMult=Math.min(1,typeMult);
+  if(markCapability(actor,'typeAdvantageDisabled',actorMarks)>0||options?.typeAdvantageDisabled)typeMult=Math.min(1,typeMult);
   // 積木：克制倍數取指定屬性中最高者
   // 本系加成 1.5 倍：技能屬性（含雙屬性技能的任一屬性）為自身系別中含有的屬性
-  const splitT = (t?: string) => (t || "").replace(/系$/, "").split(/[.·・]/).filter(Boolean);
+  const splitT = battleTypeParts;
   const actorTypes = splitT(actor.type);
-  const stab = markCapability(actor,'stabDisabled',actorMarks)>0?1:(skill.resolvedForceStab || skill.resolvedNeutralStab&&typeMult===1 || actorReg?.grantStabThisAction || (isStoneThrower(actor) && isSkillStone(skill)) || (skill.type && skill.type !== "無屬性" && splitT(skill.type).some(t => actorTypes.includes(t))) ? 1.5 : 1.0);
+  const stab = (markCapability(actor,'stabDisabled',actorMarks)>0||options?.stabDisabled)?1:(skill.resolvedForceStab || skill.resolvedNeutralStab&&typeMult===1 || actorReg?.grantStabThisAction || (isStoneThrower(actor) && isSkillStone(skill)) || (skill.type && skill.type !== "無屬性" && splitT(skill.type).some(t => actorTypes.includes(t))) ? 1.5 : 1.0);
   // 浮動取整數 217~255
   const roll = Math.max(217, Math.min(255, Math.round(randomValue * 255)));
 

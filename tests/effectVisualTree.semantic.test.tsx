@@ -73,5 +73,20 @@ try {
   assert.deepEqual(imported.soulMark!.kit,draft,'完整圖紙重載保留深層修改');
   const invalid=replaceEffectValue(draft,path,-1);
   assert.throws(()=>validateKit(invalid),'可視化不放寬正式執行合約');
+  // 從沒有既有條件的動作分支開始，實際用選單加入團體，避免只測 JSON 手填。
+  let groupDraft={trig:'use',body:[{acts:[{op:'heal_flat',p:{amount:20},label:'治療'}]}]};
+  await act(async()=>root.render(<EffectParameterTree value={groupDraft}
+    onChange={(key,v)=>{groupDraft=replaceEffectValue(groupDraft,key,v);}}/>));
+  const preset=[...document.querySelectorAll('button')].find(b=>b.textContent==='＋團體條件')!;
+  assert.ok(preset);
+  await act(async()=>preset.click());
+  const target=document.querySelector<HTMLSelectElement>('[aria-label="團體查詢對象"]')!;
+  const group=document.querySelector<HTMLSelectElement>('[aria-label="加入精靈團體條件"]')!;
+  assert.ok(![...target.options].some(option=>option.value==='defeated'));
+  await act(async()=>{target.value='opp';target.dispatchEvent(new dom.window.Event('change',{bubbles:true}));});
+  await act(async()=>{group.value='elf-king';group.dispatchEvent(new dom.window.Event('change',{bubbles:true}));});
+  assert.deepEqual((groupDraft.body[0] as any).cond,
+    [{c:'elf_group',p:{id:'elf-king',target:'opp'},label:'對手屬於精靈王'}]);
+
 } finally {await act(async()=>root.unmount());dom.window.close();}
 console.log(`可視化掃描：${report.summary.definitions}份定義／${report.summary.parameterFields}欄位完整呈現；深層DOM改值、0、停用、Blockly與圖紙重載、非法參數拒絕通過。不是戰鬥正確率。`);

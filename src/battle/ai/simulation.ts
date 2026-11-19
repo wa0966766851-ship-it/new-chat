@@ -5,6 +5,10 @@ import { makeRng, restorePRNG, snapshotPRNG } from '../../utils/rng';
 import { type DecisionRequest, type PlannedAction, type AISide, opposite } from './types';
 
 function submit(engine: BattleEngine, side: AISide, choice: PlannedAction) {
+  if (choice.kind === 'wait') {
+    engine.onPass(side);
+    return;
+  }
   const action = materializeAiAction(engine.getState(), side, choice);
   if (action.type === 'skill') engine.onSkillSelect(side, action.skill!);
   else if (action.type === 'switch') engine.onSwitchElf(side, action.switchIndex!);

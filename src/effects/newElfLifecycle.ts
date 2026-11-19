@@ -1,3 +1,5 @@
+import { runWeightEffectLifecycle } from './weightEffectLifecycle';
+import { recordStatusApplication, runPairedSkillFollowup } from '../blocks/ops/statusAndPairedMarks';
 import {portableSkillCapabilities} from '../battle/portableSkillMarks';
 import type { BattleEventContext } from './types';
 import { EffectTiming } from './types';
@@ -25,6 +27,10 @@ export function runNewElfLifecycle(ctx: BattleEventContext, event: EffectTiming,
     ctx.setPlayerState('nextElfTransferredStates',{stages:{...ctx.self.statStages},statuses:{...getStatuses(ctx.self)},...(ctx.self as any).transferOnDeparture});
     ctx.updateElf(ctx.actor,{transferOnDeparture:undefined} as any);
   }
+  if (onField) {
+    runPairedSkillFollowup(ctx, event, data);
+    runWeightEffectLifecycle(ctx, event, data);
+  }
   if(onField&&event===EffectTiming.SKILL_SELECTED)for(const t of timersFor(ctx,ctx.actor))if(t.remaining>0&&t.payload?.consumeOnSelection&&(!t.ownerBattleId||t.ownerBattleId===identity(ctx.self)))ctx.consumeTimer(ctx.actor,t.id);
   if (event === EffectTiming.ON_SWITCH_OUT) {
     if((ctx.self as any).statusDurationLink)ctx.updateElf(ctx.actor,{statusDurationLink:undefined} as any);
@@ -49,7 +55,10 @@ export function runNewElfLifecycle(ctx: BattleEventContext, event: EffectTiming,
       ctx.setPlayerState('nextElfEntryProgram',undefined);
       const source=ctx.getFullTeam(program.sourceSide).find(e=>identity(e)===program.sourceBattleId);
       const frame=source&&ctx.contextForElf?.(program.sourceSide,source);
-      if(frame){for(const name of program.statuses)frame.applyStatusWithImmunityCheck(ctx.actor,name,program.duration);queueHpDrain(frame,ctx.actor,Math.floor(ctx.self.maxHp*program.drainRatio),'percent');}
+      if (frame) {
+        for (const name of program.statuses) frame.applyStatusWithImmunityCheck(ctx.actor, name, program.duration);
+        for (let i = 0; i < (program.drainCount ?? 1); i++) queueHpDrain(frame, ctx.actor, Math.floor(ctx.self.maxHp * program.drainRatio), 'percent');
+      }
     }
     const trap=ctx.getPlayerState('nextElfBothFixed');
     if(trap){
@@ -178,7 +187,10 @@ export function runNewElfLifecycle(ctx: BattleEventContext, event: EffectTiming,
     }
   }
   if (event === ('SELF_STATUS_APPLIED' as EffectTiming)) {
-    if (onField) ctx.setPlayerState('fieldStatusCount', (ctx.getPlayerState('fieldStatusCount') || 0) + 1);
+    if (onField) {
+      recordStatusApplication(ctx);
+      ctx.setPlayerState('fieldStatusCount', (ctx.getPlayerState('fieldStatusCount') || 0) + 1);
+    }
     if (getStatuses(ctx.self)['平靜']) {
       const clone = { ...ctx.self, effects: (ctx.self.effects || []).filter(e => e.name !== '狂暴'),
         battleStatuses: { ...getStatuses(ctx.self) } };

@@ -134,8 +134,8 @@ export function useDestinyDraft(props: DestinyScreenProps, opts: { pullMs?: numb
       if (!starter) setStarter(id);
     }
   };
-  const togglePick = (id: string) => togglePickFor(p1PickedIds, p1StarterId, setP1PickedIds, setP1StarterId, id);
-  const toggleP2Pick = (id: string) => togglePickFor(p2PickedIds, p2StarterId, setP2PickedIds, setP2StarterId, id);
+  const togglePick = (id: string) => p1Pool.some(e => e.instanceId === id && !e.isBanned) && togglePickFor(p1PickedIds, p1StarterId, setP1PickedIds, setP1StarterId, id);
+  const toggleP2Pick = (id: string) => p2Pool.some(e => e.instanceId === id && !e.isBanned) && togglePickFor(p2PickedIds, p2StarterId, setP2PickedIds, setP2StarterId, id);
 
   /** 改選配裝（只接受該方候選內的值；PVE 的 AI 方不可改）。 */
   const chooseLoadout = (side: "p1" | "p2", key: keyof Loadout, value: string) => {

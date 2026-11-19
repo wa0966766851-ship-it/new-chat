@@ -1,10 +1,12 @@
-﻿import { Elf, Skill, BattleLog, BattleItem, BattleEffect, EffectSubCategory } from "../types";
+import { Elf, Skill, BattleLog, BattleItem, BattleEffect, EffectSubCategory } from "../types";
 import { Timer } from "../battle/timers";
 import { Mark } from "../battle/marks";
 import type { SettlementOptions } from '../battle/settlementReceipt';
 import type {StatusOrigin} from '../battle/statusOrigin';
 
 export enum EffectTiming {
+  ACTUAL_SKILL_USE = 'ACTUAL_SKILL_USE',
+  ACTIVE_HP_CHANGED = 'ACTIVE_HP_CHANGED',
   STAT_CHANGED = "STAT_CHANGED",
   BATTLE_NODE = "BATTLE_NODE",
   /** 每次合法技能行動進入出手階段；先於控制判定，不代表成功使用技能。 */
@@ -88,8 +90,9 @@ export enum EffectTiming {
    */
   ON_SKILL_HIT = "ON_SKILL_HIT",
   /**
-   * 技能被「技能無效」類效果擋下：雙方魂印各一次（未命中／閃避／攻擊免疫不派發，請用 ACTION_FAILED 或 *_ON_INVALID）。
-   * data: { skill, reason, kind: 'invalid', isIncoming }（isIncoming=true 為被使用方）
+   * 「技能無效時」場景：雙方魂印各一次。2026-11-16 起未命中／閃避／失明／攻擊免疫與 BOSS 技能無效也派發，
+   * data.kind 區分：'invalid'（技能無效）／'miss'／'evade'／'blind'／'immune'；只認技能無效效果本身的處理器以 kind==='invalid' 過濾。
+   * data: { skill, reason, kind, isIncoming }（isIncoming=true 為被使用方）
    */
   SKILL_INVALID = "SKILL_INVALID",
   ENFORCE = "ENFORCE",
@@ -195,6 +198,8 @@ export interface DamageComputation {
   incomingDamageImmunity?:boolean; // 正式受方100%免傷；不同於抵擋、上限、取整或造成者傷害歸零。
   incomingDamageCancellation?:'block'|'conversion'; // 明確抵擋／轉化不以倍率0冒充免疫。
   damageBlocks?:Map<string,(amount:number)=>void>;
+  /** 依「最終傷害量」決定是否免疫（例：免疫低於／大於 X 點、免疫並反彈致命一擊）；回傳 true＝本次傷害歸 0。在抵擋之後、護盾之前判定。 */
+  conditionalImmunities?:Array<(amount:number)=>boolean>;
   damageConversions?:Map<string,(amount:number)=>void>;
   /** 明文無視傷害抵擋，與一般減傷、轉化及技能無效分開。 */
   ignoreDamageBlocking?:boolean;
@@ -216,7 +221,8 @@ export interface DamageComputation {
   limit?: number;            // Stage 3 傷害上限，多來源時取 Math.min
   outgoingLimit?: number;    // 造成者自己的輸出限制，不隨無視對手防護移除
   flatReduction?: number;    // 固定點數減傷，於倍率之後、傷害上限之前扣除，最低0
-  bonusFixed?: number;       // Stage 3.5 固定加法值
+  bonusFixed?: number;       // 隨主傷害套用增減傷的固定加法值
+  bonusAfterReduction?: number; // 跳過一般減傷，仍受技能免疫、傷害上限及盾罩約束
   floor?: number;            // Stage 4 保底傷害，多來源時取 Math.max
   pure?: boolean;            // 保底類獨立乘區：後續所有通用增減傷段跳過，自帶鏈與 floor／limit 不受影響
   damageCategory: DamageCategory;
@@ -378,11 +384,15 @@ export type BattleSkillAfterHitHandler = (context: BattleEventContext, info: { d
 export type BattleSkillOnInvalidHandler = (context: BattleEventContext, info: { reason: string; kind: "invalid" | "miss" | "evade" | "immune" }) => void;
 
 /**
- * 額外行動是出手流程結束後的獨立行動節點，不等同再次使用技能，亦不觸發一般 ACTION_END。
+ * 額外行動獨立結算，無須再次使用一般技能，也不會派發一般 ACTION_END。
  * amount＋elem＝以該屬性（吃克制）造成額外行動傷害；run＝在擁有者 ctx 執行自訂結算。
  */
 export interface ExtraAction {
   label: string;
+  /** 已明列在戰鬥階段結束時發動的額外行動。 */
+  phase?: 'battle_phase_end';
+  /** 額外行動技能表 id（src/data/extraActionSkills.ts）；登記後紀錄與演出顯示技能名稱與系別 */
+  skillId?: string;
   amount?: number;
   elem?: string;
   after?: (ctx: BattleEventContext, dealt: number) => void;

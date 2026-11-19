@@ -62,6 +62,7 @@ try{
   run('node_modules/tsx/dist/cli.mjs',['tests/imageRetry.ui.test.tsx']);
   run('node_modules/tsx/dist/cli.mjs',['tests/destinyIllusionLaunch.integration.test.tsx']);
  run('node_modules/tsx/dist/cli.mjs',['tests/petAnimationRetarget.semantic.test.ts']);
+ run('node_modules/tsx/dist/cli.mjs',['tests/petNativeContact.semantic.test.ts']);
  run('node_modules/tsx/dist/cli.mjs',['tests/petAnimationCache.semantic.test.ts']);
  run('node_modules/tsx/dist/cli.mjs',['tests/petLoadingFlow.semantic.test.ts']);
  for(const file of ['tests/corruptedRey.semantic.test.ts','tests/battleSpriteFacing.semantic.test.ts','tests/petAnimationModes.semantic.test.ts','tests/petAnimationModes.ui.test.tsx','tests/builtinEffectBindings.semantic.test.ts','tests/savedCorruptedRey.semantic.test.ts','tests/reySavedPresentation.integration.test.tsx','tests/elfSkins.ui.test.tsx','tests/staticModeAndDetails.ui.test.tsx','tests/elfSpotlight.ui.test.tsx','tests/launcherIdentity.semantic.test.ts']){ // vite 轉譯快取偶發 60 秒傳輸逾時（與程式碼無關）；同一支測試重跑一次即可通過，故允許一次重試。

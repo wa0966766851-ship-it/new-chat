@@ -16,7 +16,9 @@ import { isAbnormal } from "../../utils/battleHelpers";
 import { checkElfDead } from '../elfAlive';
 import { resolveDamageTransition } from '../survivalRules';
 import { elfHint } from './hooks';
-import { abnormalSideEffectsSuppressed, itemRecoveryGain, survivalMargin } from './mechanicAwareness';
+import { instantKillImmune, mentionsInstantKill } from '../instantKillImmunity';
+import { abnormalSideEffectsSuppressed, itemRecoveryGain, potionCanDefeat, repeatableFatalSurvival, survivalMargin } from './mechanicAwareness';
+import { itemDamageAmount, itemHpAmount } from '../itemInventory';
 
 /* ────────────────────────────────────────────────────────────
  * 1. 行動空間
@@ -70,6 +72,11 @@ export interface AIContext {
   turnLimit?: number;
   /** 對方全隊（存活數為公開資訊），回合上限時估算領先／落後。 */
   opponentTeam?: Elf[];
+  potionThreat?: number;
+  recoveryBlocked?: boolean;
+  movesBeforePotion?: boolean;
+  hasFatalGuard?: (elf: Elf) => boolean;
+  repeatedAttack?: string;
 }
 
 /* ────────────────────────────────────────────────────────────
@@ -112,7 +119,8 @@ const buffCount = (e: Elf) =>
 const anyDebuff = (e: Elf) => Object.values(e.statStages || {}).some(v => (v as number) < 0);
 const hpRatio = survivalMargin;
 // 估傷不足以穿透護盾／復活；回退只做保守斬殺判定，完整結果由推演確認。
-const estimatedKO = (e: Elf, amount: number) => amount > 0 && e.currentHp > 0
+const estimatedKO = (c: AIContext, e: Elf, amount: number) => amount > 0 && e.currentHp > 0
+  && !repeatableFatalSurvival(e) && !c.hasFatalGuard?.(e)
   && !((e.deathImmunity?.deathImmuneTurns || 0) > 0)
   && !resolveDamageTransition(e.currentHp, e.maxHp, Math.max(0, amount - (e.shield || 0) - (e.barrier || 0)), 'non_true', e.survivalRule).alive;
 
@@ -152,9 +160,9 @@ function assess(c: AIContext, d: AIDeps): Threat {
   }
   return {
     incomingMax,
-    opponentCanKO: estimatedKO(c.self, incomingMax),
+    opponentCanKO: estimatedKO(c, c.self, incomingMax),
     bestOutgoing,
-    selfCanKO: estimatedKO(c.opponent, bestOutgoing),
+    selfCanKO: estimatedKO(c, c.opponent, bestOutgoing),
   };
 }
 
@@ -183,7 +191,7 @@ function scoreSkills(c: AIContext, d: AIDeps, cfg: AIConfig, th: Threat): Scored
       const mult = d.getTypeMatchup(skill.type, c.opponent.type);
 
       // ★ 斬殺判定:v3 完全沒有。這是「更敏銳」最關鍵的一項。
-      if (estimatedKO(c.opponent, dmg)) {
+      if (estimatedKO(c, c.opponent, dmg)) {
         killing = true;
         score += 140 + (limit ? Math.round(60 * limit.urgency) : 0);
         reason = `可直接擊敗【${c.opponent.name}】(預估 ${Math.round(dmg)} 傷害)`;
@@ -195,6 +203,12 @@ function scoreSkills(c: AIContext, d: AIDeps, cfg: AIConfig, th: Threat): Scored
         if (mult > 1.5) { score += 45; reason = `屬性克制 ${mult}x,重擊【${c.opponent.name}】`; }
         else if (mult < 1.0) { score -= 30; reason = `屬性被抵抗(${mult}x),輸出偏低`; }
         else if (skill.power > 120) { score += 20; reason = "高威力核心大招"; }
+        if (repeatableFatalSurvival(c.opponent) && dmg >= c.opponent.currentHp) {
+          score -= c.repeatedAttack === skill.name ? 48 : 24;
+          reason = '對手受到致死傷害時會保留1體力';
+        } else if (c.hasFatalGuard?.(c.opponent) && dmg >= c.opponent.currentHp) {
+          reason = '可消耗對手的致死存活效果';
+        }
       }
 
       // 對手可能先 KO 我 → 先制技加值
@@ -230,7 +244,13 @@ function scoreSkills(c: AIContext, d: AIDeps, cfg: AIConfig, th: Threat): Scored
     // 專屬提示表(取代 v3 的 if 鏈)
     const h = hints?.[skill.name]?.(c, d);
     if (h) { score += h.bonus; reason = h.reason; }
+    // 瞬殺技能對免疫瞬殺的目標沒有收益（與結算共用同一判定：instantKillImmune）。
+    if (mentionsInstantKill(skill.description) && instantKillImmune(c.opponent)) { score -= skill.category === "屬性" ? 60 : 15; reason += "；對手免疫瞬殺"; }
 
+    if (potionCanDefeat(c.self, c.potionThreat || 0)) {
+      score -= 100;
+      reason += '；對手可在出招前用藥劑擊敗我方';
+    }
     out.push({ action: { kind: "skill", skill, moveIndex }, score, reason });
   });
 
@@ -261,7 +281,7 @@ function scoreSwitches(c: AIContext, d: AIDeps, cfg: AIConfig, th: Threat): Scor
       if (!d.isSkillUsable(cand, sk)) continue;
       try { candBest = Math.max(candBest, d.estimateDamage(cand, c.opponent, sk)); } catch { /* ignore */ }
     }
-    if (estimatedKO(c.opponent, candBest)) { score += 55; reasons.push("上場有斬殺機會"); }
+    if (estimatedKO(c, c.opponent, candBest)) { score += 55; reasons.push("上場有斬殺機會"); }
 
     // 我快死 且 候選人能扛 → 換
     // ★ 必須用「對手打候選人」的傷害來算,不能沿用對當前精靈的 incomingMax ——
@@ -304,7 +324,7 @@ function scoreSwitches(c: AIContext, d: AIDeps, cfg: AIConfig, th: Threat): Scor
     if (th.selfCanKO) score -= 80;
     // 回合上限且領先：在場精靈可能被擊倒時換下保住存活數（滿回合依存活數判勝負）。
     const lim = turnLimitState(c.turnNumber, c.turnLimit, c.team, c.opponentTeam);
-    if (lim && lim.lead > 0 && th.opponentCanKO && !estimatedKO(cand, selfWorstIncoming)) { score += Math.round(35 * lim.urgency); reasons.push("回合將盡且領先，換下保住存活數"); }
+    if (lim && lim.lead > 0 && th.opponentCanKO && !estimatedKO(c, cand, selfWorstIncoming)) { score += Math.round(35 * lim.urgency); reasons.push("回合將盡且領先，換下保住存活數"); }
     if (anyBuff(c.self) && buffCount(c.self) >= 4) { score -= 45; reasons.push("(自身增益豐厚,換人會浪費)"); }
     if (selfWorstIncoming < c.self.currentHp * 0.2) score -= 25;
 
@@ -329,8 +349,8 @@ function scoreSwitches(c: AIContext, d: AIDeps, cfg: AIConfig, th: Threat): Scor
 function scoreExtendedItem(item: NonNullable<AIContext['items']>[number], c: AIContext, d: AIDeps, th: Threat): { score: number; reason: string } | null {
   const foe = c.opponent;
   if (!foe || foe.currentHp <= 0) return null;
-  const burst = (item.oppDamage || 0) + (item.oppDamagePercent ? Math.floor(foe.maxHp * Math.min(30, item.oppDamagePercent) / 100) : 0);
-  if (burst > 0 && burst >= foe.currentHp && !th.selfCanKO) return { score: 120, reason: `【${item.name}】的藥劑反噬傷害可擊敗對手` };
+  const burst = itemDamageAmount(item, foe.maxHp);
+  if (potionCanDefeat(foe, burst) && (!th.selfCanKO || potionCanDefeat(c.self, c.potionThreat || 0))) return { score: 120, reason: `【${item.name}】的藥劑反噬傷害可擊敗對手` };
   if (th.selfCanKO) return null;
   const foeSt = d.getStatuses(foe) || {};
   const selfSt = d.getStatuses(c.self) || {};
@@ -408,12 +428,12 @@ function scoreItems(c: AIContext, d: AIDeps, cfg: AIConfig, th: Threat): ScoredA
     }
 
     if (item.type === "hp" || item.type === "hybrid" || (item.type === "special" && item.value)) {
-      const heal = item.value ?? 0;
+      const heal = itemHpAmount(item, c.self.maxHp);
       const missing = c.self.maxHp - c.self.currentHp;
       if (missing <= 0) continue;
 
       // 只在真的需要時吃,且不浪費大藥(溢療懲罰)
-      const effective = itemRecoveryGain(c.self, heal);
+      const effective = c.recoveryBlocked ? 0 : itemRecoveryGain(c.self, heal);
       const marginGain = survivalMargin({...c.self, currentHp: c.self.currentHp + effective}) - hp;
       const waste = Math.max(0, heal - effective);
       score = effective > 0 ? 10 + marginGain * 90 - (waste / c.self.maxHp) * 45 : -100;
@@ -433,6 +453,11 @@ function scoreItems(c: AIContext, d: AIDeps, cfg: AIConfig, th: Threat): ScoredA
       }
       // 我能一擊 KO 對手時別浪費回合吃藥
       if (th.selfCanKO) score -= 90;
+      if (effective > 0 && c.movesBeforePotion && potionCanDefeat(c.self, c.potionThreat || 0) &&
+        !potionCanDefeat({...c.self, currentHp:c.self.currentHp + effective}, c.potionThreat || 0)) {
+        score += 125;
+        reason = '可先補血，撐過對手的斬殺藥劑';
+      }
     }
 
     if (item.effect === "clear_status" && statusKeys.length) {
@@ -505,7 +530,7 @@ export function decideForcedSwitch(c: AIContext, d: AIDeps): number {
       if (!d.isSkillUsable(cand, sk)) continue;
       try { best2 = Math.max(best2, d.estimateDamage(cand, c.opponent, sk)); } catch { /* ignore */ }
     }
-    if (estimatedKO(c.opponent, best2)) score += 50;
+    if (estimatedKO(c, c.opponent, best2)) score += 50;
     score += (elfHint(cand)?.entranceValue ?? 0) * 0.4;
     if (score > bestScore) { bestScore = score; best = index; }
   });

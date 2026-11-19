@@ -11,7 +11,7 @@ export const ASTRAL_ACTION_FIELDS: Record<string, readonly string[]> = {
   illusion_start: ['source', 'ppBonus', 'pick'],
   illusion_end: [],
   // 通用條件性額外行動容器（變思遷憶等）：body 由 sequenceIssue 遞迴驗證。
-  queue_extra_action: ['label', 'body', 'onceKey', 'damageRatio', 'elem'],
+  queue_extra_action: ['label', 'body', 'onceKey', 'damageRatio', 'elem', 'skillId'],
   // 回合類效果攜帶引擎 payload 鍵（白名單）；期限由通用掃描遞減。
   effect_turns: ['keys', 'turns', 'side', 'label'],
   // 能力值拉平（差值總和寫 lastAmount）與技能傷害¼反彈（殞星衝擊；引擎 reflectSkillQuarter 讀取端）。

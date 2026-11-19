@@ -1,19 +1,22 @@
 import type { BattleEventContext } from '../effects/types';
 
 /**
- * 次數免疫的呈現（2026-10-28 使用者規格）：
+ * 次數免疫的呈現（2026-10-28 使用者規格；2026-11-16 最終更正）：
  *
- * 一、純免疫（不反彈）→ 用官方原色圖：
- *   1. 次數免疫（可傳承、切換保留、全隊）→ 青（87.png）
- *   2. 單人次數免疫（切換消失）        → 黃（100.png）
- *   3. 單人次數免疫（切換保留）        → 藍（183.png）
+ * 一、純免疫（不反彈）→ 原廠印記圖：
+ *   1. 己方全隊次數免疫（可傳承、切換保留）→ 青（signbuff/60.png）
+ *   2. 自身次數免疫（切換消失）            → 黃（signbuff/100.png）
+ *   3. 自身次數免疫（切換保留）            → 藍（signbuff/179.png）
  *
- * 二、免疫「並反彈」→ 用自製發光改色圖（同款底圖，僅換色相）：
- *   反彈・全隊可保留 → 亮橘
- *   反彈・自身可保留 → 亮紅
- *   反彈・切換消失   → 亮粉紅
+ * 二、免疫並反彈 → 自製換色盾牌（custom/次數免疫_盾_*.png）：
+ *   4. 己方全隊反彈             → 橘
+ *   5. 自身反彈（切換消失）     → 紅
+ *   6. 自身反彈（切換保留）     → 紫
+ *
+ * 舊圖 87／183 與 custom/次數免疫_{己方保留,自身保留,反彈,切換消失}.png 保留不刪，已不再引用。
+ * 消耗順序（contextBuilders）：反彈 → 單人 → 己方全隊最後。
  */
-export type StatusCountTone = 'cyan' | 'yellow' | 'blue' | 'pink' | 'orange' | 'red';
+export type StatusCountTone = 'cyan' | 'yellow' | 'blue' | 'orange' | 'red' | 'purple';
 
 export interface StatusCountAppearance {
   label: string;
@@ -24,12 +27,12 @@ export interface StatusCountAppearance {
 
 const CUSTOM = '/seer/signbuff/custom';
 const COUNT_ICONS: Record<StatusCountTone, string> = {
-  cyan: '/seer/signbuff/87.png',                       // 純免疫・全隊
-  yellow: '/seer/signbuff/100.png',                    // 純免疫・自身切換消失
-  blue: '/seer/signbuff/183.png',                      // 純免疫・自身切換保留
-  orange: `${CUSTOM}/次數免疫_己方保留.png`,           // 反彈・全隊可保留
-  red: `${CUSTOM}/次數免疫_自身保留.png`,              // 反彈・自身可保留
-  pink: `${CUSTOM}/次數免疫_反彈.png`,                // 反彈・切換消失
+  cyan: '/seer/signbuff/60.png',                // 1 純免疫・己方全隊
+  yellow: '/seer/signbuff/100.png',             // 2 純免疫・自身切換消失
+  blue: '/seer/signbuff/179.png',               // 3 純免疫・自身切換保留
+  orange: `${CUSTOM}/次數免疫_盾_橘.png`,       // 4 反彈・己方全隊
+  red: `${CUSTOM}/次數免疫_盾_紅.png`,          // 5 反彈・自身切換消失
+  purple: `${CUSTOM}/次數免疫_盾_紫.png`,       // 6 反彈・自身切換保留
 };
 
 export function statusCountAppearance(team: boolean, retained: boolean, reflect = false): StatusCountAppearance {
@@ -39,9 +42,9 @@ export function statusCountAppearance(team: boolean, retained: boolean, reflect 
     : retained
       ? '下場保留，僅原持有者再上場時生效，不轉交隊友。'
       : '僅目前持有者生效，下場即清除。';
-  // 反彈型才用自製亮色；純免疫沿用官方原色。
+  // 反彈型用自製換色盾牌；純免疫用原廠圖。
   const tone: StatusCountTone = reflect
-    ? (team ? 'orange' : retained ? 'red' : 'pink')
+    ? (team ? 'orange' : retained ? 'purple' : 'red')
     : (team ? 'cyan' : retained ? 'blue' : 'yellow');
   return {
     label,
@@ -75,7 +78,7 @@ export function grantCountedStatusImmunity(ctx: BattleEventContext, p: any): boo
 
 /** Tailwind 色票：與圖示色系一致。 */
 export function statusCountClasses(tone?: StatusCountTone): string {
-  return tone === 'pink' ? 'bg-pink-950/70 text-pink-200 border-pink-400/70'
+  return tone === 'purple' ? 'bg-purple-950/70 text-purple-200 border-purple-400/70'
     : tone === 'orange' ? 'bg-orange-950/70 text-orange-200 border-orange-400/70'
     : tone === 'red' ? 'bg-red-950/70 text-red-200 border-red-400/70'
     : tone === 'cyan' ? 'bg-cyan-950/70 text-cyan-200 border-cyan-400/60'

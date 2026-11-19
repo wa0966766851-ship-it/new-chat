@@ -63,7 +63,8 @@ try {
     });
   }
   // ───────── ᛉᛖᛚᛃᚨ ᛟᚾ ᛁᚷᚷᛞᚱᚨᛋᛁᛚ（世界樹）─────────
-  const ygg = h.find('5019', 'ᛉᛖᛚᛃᚨ ᛟᚾ ᛁᚷᚷᛞᚱᚨᛋᛁᛚ');
+  // 世界樹原廠 0/0 須 ᚱᚷ 激活才可選；此處只驗技能效果，給合成單位可用 PP。
+  const ygg = { ...h.find('5019', 'ᛉᛖᛚᛃᚨ ᛟᚾ ᛁᚷᚷᛞᚱᚨᛋᛁᛚ'), pp: 99, maxPp: 99 };
   h.assertKitOnly(ygg);
   await check('世界樹 固有屬性與原文逐句對應（必中＋4 連鎖）', async () => {
     assert.deepEqual(prop(ygg), ['sure_hit=true']);

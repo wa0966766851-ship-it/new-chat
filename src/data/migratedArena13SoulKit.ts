@@ -47,7 +47,8 @@ export const MIGRATED_ARENA13_SOUL_KIT = {
       ] },
     ], 9),
     // 攻傷為 0 →吸取對手 100% 最大體力（百分比吸取；行動後判讀本次結算量）
-    entry('after_action', 'self_after_skill', '造成的攻擊傷害為0時吸取對手100%最大體力', [
+    // 2026-11-16 使用者規範：這是魂印效果，不需命中；技能無效／未命中／被免疫（攻傷 0）同樣觸發 → 用「使用技能後」（成功與失敗都收尾）。
+    entry('after_action', 'self_after_use', '造成的攻擊傷害為0時吸取對手100%最大體力', [
       { cond: [c('skill_kind', { kind: '攻擊' }, '攻擊技能'), c('dmg_cmp', { op: '不高於', v: 0 }, '攻擊傷害為0')], acts: [
         a('drain', { ratio: 1, true: false }),
       ] },

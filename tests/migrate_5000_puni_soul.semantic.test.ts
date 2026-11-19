@@ -86,7 +86,7 @@ try {
       assert.equal(after.self.statStages.atk||0,0,side+' 來源版本升級後免弱化');
       checks++;
     }
-    // ① 虛無：受到攻擊傷害後，免疫下 1 次受到的攻擊傷害（受傷→免疫→受傷→免疫 交替）
+    // ① 虛無（2026-11-16 規範化）：受到攻擊傷害後，令對手下1次攻擊技能無效並抵擋下1次攻擊傷害（兩者成對，同一次攻擊一併消耗；受傷→無效→受傷→無效 交替）
     {
       // 自身最大體力 1e8、體力 20000：每回合「生命」固定回復 25000000，受傷量＝25000000 −（本回合體力淨變化）。
       const self = puniUnit('S', 20000, [wait()], { maxHp: 100000000 });
@@ -97,7 +97,8 @@ try {
       assert.equal(lost[1], 0, side + ' 第2次被免疫');
       assert.ok(lost[2] > 0, side + ' 第3次再受傷');
       // 第4回合生命回復已封頂在最大體力（20000+3×25000000+25000000>1e8），改以免疫日誌斷言。
-      assert.equal(r[3].logs.filter(l => l.includes('免疫了【打】')).length, 2, side + ' 第2、4次皆被免疫：' + JSON.stringify(lost));
+      assert.equal(r[3].logs.filter(l => l.includes('【技能無效】') && l.includes('【打】')).length, 2, side + ' 第2、4次皆技能無效：' + JSON.stringify(lost));
+      assert.equal(r[3].logs.filter(l => l.includes('【抵擋】')).length, 0, side + ' 無效已擋下，不另行抵擋');
       checks++;
     }
     // ② 元素：登場時消除對手回合類效果，成功則對手下次技能無效；對手沒有回合類效果則不無效
@@ -151,7 +152,7 @@ try {
       const self = puniUnit('S', 500, [raise], { maxHp: 100000, speed: 100 });
       const lethal = hit('絕殺', 50000, { pp: 99 });
       const opp = h.unit('E', 1e9, [lethal], { maxHp: 1e9, speed: 300 }); // 體力夠大，避免被「能量」百分比傷害打死而提前結束
-      // 第2回合受「虛無」免疫（第1次受傷後免疫下1次攻擊），第3回合再次致命傷害才驗證每場僅1次。
+      // 第2回合受「虛無」（第1次受傷後對手下1次攻擊技能無效），第3回合再次致命傷害才驗證每場僅1次。
       const r = await h.play(side, { self, opp, turns: () => [0, 0] }, 3);
       assert.ok(r[0].logs.some(l => l.includes('時空倒流')), side + ' 輪迴日誌：' + r[0].logs.join('｜'));
       assert.equal(r[0].self.currentHp, 500, side + ' 回合結束體力返回快照（500）');

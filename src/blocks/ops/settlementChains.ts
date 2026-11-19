@@ -1,3 +1,4 @@
+import { drainMultiplierOf } from '../../battle/hpDrain';
 import type {BattleEventContext} from '../../effects/types';
 import type {RunState} from '../runtime';
 import {changePp} from '../../effects/newElfOperations';
@@ -8,7 +9,7 @@ import {isSkillDamageType} from '../../battle/damageSemantics';
 /** 通用結算鏈：逐份吸取、實際回血延後傷害、按實際損失逐槽轉移PP。 */
 export const SETTLEMENT_CHAIN_FIELDS:Record<string,readonly string[]>={
   priority_exponential_damage:['boost'],
-  drain_checked_then:['type','flat','ratio','extraRatio','extraBelowHpRatio','threshold','measure','belowBody','afterBody'],
+  drain_checked_then:['type','flat','ratio','extraRatio','extraBelowHpRatio','threshold','measure','belowBody','afterBody','basis','floor','belowOnFloor'],
   damage_steps_drain:['step','ratio','thresholdSide','belowRatio','belowBody','smallBody'],
   heal_defer_damage:['ratio'],
   pp_drain_slots:['amount'],
@@ -19,6 +20,9 @@ export function settlementChainIssue(op:string,p:any,trig:string,nested:(body:an
   if(op==='drain_checked_then'){
     if(!['固定','百分比','真實'].includes(p.type)||!['lost','healed','either'].includes(p.measure)||!Number.isFinite(p.threshold)||p.threshold<0)return '吸取結算需明確傷害類型、檢查項目及非負門檻';
     if((p.extraRatio!==undefined||p.extraBelowHpRatio!==undefined)&&(!(p.extraRatio>0&&p.extraRatio<=1)||!(p.extraBelowHpRatio>0&&p.extraBelowHpRatio<=1)||p.ratio===undefined))return '額外吸取需最大體力比例與吸取前體力門檻';
+    if(p.basis!==undefined&&(p.basis!=='skill_damage'||!(p.ratio>0&&p.ratio<=10)||p.flat!==undefined))return '技能傷害比例吸取需正比例且不與點數併用';
+    if(p.floor!==undefined&&(!Number.isFinite(p.floor)||p.floor<0))return '最低吸取需非負點數';
+    if(p.belowOnFloor!==undefined&&typeof p.belowOnFloor!=='boolean')return '觸發最低吸取的後續需布林值';
     if((p.flat!==undefined)===(p.ratio!==undefined)||p.flat!==undefined&&(!Number.isFinite(p.flat)||p.flat<=0)||p.ratio!==undefined&&(!Number.isFinite(p.ratio)||p.ratio<=0))return '吸取量需點數或最大體力比例擇一';
     if(!Array.isArray(p.belowBody)||!p.belowBody.length&&!p.afterBody?.length)return '吸取需結果後續流程';
     for(const body of [p.belowBody,p.afterBody])if(body!==undefined){if(!Array.isArray(body))return '吸取後續需動作列表';if(body.length){const issue=nested(body,trig);if(issue)return issue;}}
@@ -53,7 +57,11 @@ export function settlementChainOperations(deps:Dependencies){return {
   },
   drain_checked_then:(ctx:BattleEventContext,p:any,st:RunState)=>{
     const self=live(ctx,ctx.actor,ctx.self),opp=live(ctx,ctx.targetSide,ctx.target);
-    const amount=Math.floor(p.flat??opp.maxHp*p.ratio),selfId=identity(self),targetId=identity(opp);
+    // basis skill_damage：本次行動造成的技能傷害×ratio（「吸取對手受到技能傷害值N%」）；floor＝最低吸取量。
+    const record=ctx.getPlayerState('skillDamageDealtThisAction');
+    const rawAmount=p.basis==='skill_damage'?Math.floor((record?.actionId===ctx.actionId?Number(record.amount)||0:0)*p.ratio):Math.floor(p.flat??opp.maxHp*p.ratio);
+    const floorUsed=Number.isFinite(p.floor)&&rawAmount<p.floor;
+    const amount=Math.floor(Math.max(rawAmount,p.floor||0)*drainMultiplierOf(ctx)),selfId=identity(self),targetId=identity(opp);
     const amounts=[amount];
     if(p.extraRatio&&self.currentHp<self.maxHp*p.extraBelowHpRatio)amounts.push(Math.floor(opp.maxHp*p.extraRatio));
     let finished=false,remaining=amounts.length,totalLost=0,totalHealed=0;
@@ -63,7 +71,7 @@ export function settlementChainOperations(deps:Dependencies){return {
       if(--remaining>0)return;
       finished=true;lost=totalLost;healed=totalHealed;
       if(p.afterBody?.length)deps.runStmts(ctx,p.afterBody,{sourceKind:st.sourceKind,event:st.event,last:lost>0,lastAmount:lost,lastDealt:lost});
-      if(p.belowBody?.length&&((p.measure!=='healed'&&lost<p.threshold)||(p.measure!=='lost'&&healed<p.threshold)))
+      if(p.belowBody?.length&&((p.belowOnFloor&&floorUsed)||(p.measure!=='healed'&&lost<p.threshold)||(p.measure!=='lost'&&healed<p.threshold)))
         deps.runStmts(ctx,p.belowBody,{sourceKind:st.sourceKind,event:st.event,last:lost>0,lastAmount:lost,lastDealt:lost});
     };
     const onSettled=(damage:any)=>{

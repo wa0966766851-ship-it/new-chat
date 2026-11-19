@@ -35,6 +35,14 @@ const navTabs = [...enc.matchAll(/\['(\w+)', '[^']+'\]/g)].map(m => m[1]);
 assert.deepEqual([...navTabs].sort(), [...tabUnion].sort(), '分組導航涵蓋全部分頁');
 assert.ok(!enc.includes('ios-segment'), '舊分段控制已移除');
 assert.ok(enc.includes("<MechanicsPanel />"), '戰鬥機制改用資料驅動');
+// 2026-11-16：舊「效果查詢」分頁（含錯誤的衝突沙盒）併入總索引並移除。
+assert.ok(!navTabs.includes('effectQuery') && !enc.includes('SANDBOX_SCENARIOS') && !features.includes("'effectQuery'"), '效果查詢分頁已移除');
+for (const e of ix.filter(e => e.kind === 'effect' || e.kind === 'rule')) assert.equal(e.tab, 'search', `${e.id} 留在總索引`);
+assert.ok(MECHANIC_TOPICS.some(t => t.group === 'conflict'), '判定交鋒條目移到戰鬥機制');
+const killRule = ix.find(e => e.id === 'ru:INSTA_KILL')!;
+assert.ok(killRule && /體力歸 0/.test(killRule.body) && !/補償粉傷/.test(killRule.body), '秒殺定義依原廠更正');
+const skillDmg = ix.find(e => e.id === 'ru:SKILL_DAMAGE')!;
+assert.ok(skillDmg && /不算技能傷害/.test(skillDmg.body), '技能傷害不含固定／百分比／真實');
 
 const dom = new JSDOM('<div id="root"></div>', { url: 'http://localhost/' });
 Object.assign(globalThis, { window: dom.window, document: dom.window.document, HTMLElement: dom.window.HTMLElement, Element: dom.window.Element, IS_REACT_ACT_ENVIRONMENT: true });
@@ -62,6 +70,17 @@ await type('3.10');
 assert.ok(host.textContent!.includes('死亡節點一'), '依節點編號找到官方節點');
 await type('巔峰');
 assert.ok([...host.querySelectorAll('.enc-row small')].some(s => s.textContent === '玩法'), '找到玩法說明');
+// 參考詞庫延後載入，送到精靈編輯器
+await act(async () => { await new Promise(r => setTimeout(r, 1500)); });
+await type('先制');
+await act(async () => { (host.querySelector('button[data-kind="template"]') as HTMLElement)?.click(); });
+const tpl = [...host.querySelectorAll('.enc-row')].find(r => r.querySelector('small')?.textContent === '參考詞庫') as HTMLElement | undefined;
+assert.ok(tpl, '總索引含參考詞庫');
+{
+  await act(async () => { tpl!.click(); });
+  await act(async () => { (host.querySelector('.enc-go') as HTMLElement).click(); });
+  assert.ok(dom.window.localStorage.getItem('seer_selected_effect_for_ai'), '參考詞庫可送到精靈編輯器');
+}
 await type('zzzz不存在');
 assert.match(host.textContent!, /沒有符合/);
 

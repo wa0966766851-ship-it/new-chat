@@ -256,6 +256,14 @@ for (const side of ['p1', 'p2'] as const) {
     assert.equal(f.registries[side].teamMogosOrb.phase, '竭擇期'); assert.equal(handleMogosSoulMark(f.c, E.FATAL_RESIST), false);
     f.c.target.type = '混沌'; drawMogosOrb(f.c); assert.equal(f.registries[side].teamMogosOrb.phase, '混沌期'); assert.equal(handleMogosSoulMark(f.c, E.FATAL_RESIST), false);
   });
+  check(`${side} 混沌期賦予混沌：聖靈雙屬性先取代非聖靈→湮滅轉虛空鎖定；虛空結合混沌.虛空；輪迴不變`, () => {
+    const f = fixture(M, side); f.registries[side].teamMogosOrb = { phase: '混沌期', fatalUsed: false, remaining: 2 };
+    f.c.target.type = '聖靈·火'; runMogosTeamEffects(f.c, E.ROUND_START);
+    assert.equal(f.c.target.type, '虛空'); assert.equal(f.c.target.orbTypeLocked, true); assert.equal(f.damage.at(-1).amount, 238);
+    runMogosTeamEffects(f.c, E.ROUND_START); assert.equal(f.c.target.type, '混沌·虛空', '魂珠虛空不可剝離，與混沌結合');
+    f.c.target.type = '輪迴'; f.c.target.orbTypeLocked = false; runMogosTeamEffects(f.c, E.ROUND_START); assert.equal(f.c.target.type, '輪迴', '輪迴不可改變');
+    f.c.target.type = '火·水'; runMogosTeamEffects(f.c, E.ROUND_START); assert.equal(f.c.target.type, '混沌·水');
+  });
   check(`${side} 魂珠雙方使用技能／同隻印記／PP回復場下者`, () => {
     const f = fixture(M, side), bench = make(F, 'bench'); bench.currentHp = 1; f.teams[side].push(bench);
     handleMogosSoulMark(f.c, E.ON_ENTRANCE); const pp = f.c.self.skills[0].pp;

@@ -12,8 +12,8 @@ import { registerVisibleBox, notifyVisibleBoxChanged, subscribeVisibleBox, getVi
 import {animationModeFor,animationSpeed,readAnimationSettings,BATTLE_ANIMATION_EVENT} from '../../battle/animationSettings';
 import {petAnimationBinding,isPetDegraded,onPetDegraded,type PetAction} from '../../battle/petAnimationRegistry';
 import {battleSpriteProfile} from '../../battle/seerAssets';
-import {beginPetFormTransition} from '../../battle/petFormTransitions';
-import {battleFormAsset,battleFormAssets,settledFormAsset} from '../../battle/battleFormPresentation';
+import {battleFormAsset} from '../../battle/battleFormPresentation';
+import {usePetFormPlayback} from './usePetFormPlayback';
 import {useFullscreenFxActive} from '../../battle/fullscreenFx';
 import {isFifthSkillAnim,ultimateSequenceOf} from '../../battle/petActionRouting';
 import {UnknownElfAction} from './UnknownElfAction';
@@ -35,7 +35,9 @@ export const AnchoredToVisible: React.FC<{ side: "p1" | "p2"; fraction: number; 
     el.style.bottom = `${Math.max(0, pr.bottom - y)}px`;
   }, [side, fraction, fallbackBottom]);
   React.useLayoutEffect(() => { place(); }, [place, deps, children]);
-  React.useEffect(() => subscribeVisibleBox(place), [place]);
+  React.useEffect(() => subscribeVisibleBox(() => {
+    if (ref.current?.firstChild) place();
+  }), [place]);
   return <div ref={ref} className={className} style={{ bottom: fallbackBottom, zIndex: z }}>{children}</div>;
 };
 
@@ -61,47 +63,20 @@ export const ProportionalSprite: React.FC<ProportionalSpriteProps> = ({ elf, sid
   const disguised=!!elf.illusion;
   elf = appearanceElf(elf);
   const requestedAsset=battleFormAsset(elf,disguised?undefined:appearanceState);
-  const [form,setForm]=React.useState<{asset:typeof requestedAsset;enter:boolean;finish?:()=>void}>({asset:requestedAsset,enter:false});
   // 隱匿：不可見方只顯示共用鬼影，不載入真實動作模型，也不依真實身高決定大小。
   const concealed = hiddenFromViewer(elf, side, useBattleViewMode());
   const wrap = React.useRef<HTMLDivElement>(null);
   const [m, setM] = React.useState<{ src: string; box: OpaqueBox; mirrored: boolean; measured: boolean } | null>(null);
   const [fallback, setFallback] = React.useState(false);
   const [settings,setSettings]=React.useState(readAnimationSettings);
-  const [actionReady,setActionReady]=React.useState(false);
   const [degradedTick,setDegradedTick]=React.useState(0);
   React.useEffect(()=>onPetDegraded(()=>setDegradedTick(n=>n+1)),[]);
   React.useEffect(()=>{const refresh=()=>setSettings(readAnimationSettings());window.addEventListener(BATTLE_ANIMATION_EVENT,refresh);window.addEventListener('storage',refresh);return()=>{window.removeEventListener(BATTLE_ANIMATION_EVENT,refresh);window.removeEventListener('storage',refresh);};},[]);
   const mode=animationModeFor(settings,elf);
   const fxActive=useFullscreenFxActive();
-  const useActions=!concealed&&mode==='actions'&&settings.skill&&!!form.asset&&!dead&&opacity>0&&!(degradedTick>=0&&isPetDegraded(side,elf));
-  const showActions=useActions&&actionReady;
-  const preloadIds=battleFormAssets(elf).join('|');
-  const [formsReady,setFormsReady]=React.useState(!preloadIds);
-  // 同一精靈的型態共用同一個尺寸基準（以基礎型態的待機本體高為分母），避免變身後縮小。
-  const [sizeRef,setSizeRef]=React.useState<number|undefined>(undefined);
-  React.useEffect(()=>{
-    if(!useActions||!preloadIds)return;
-    let alive=true;const leases:{release:()=>void}[]=[];setFormsReady(false);
-    void import('../../battle/petAnimationLoader').then(async({acquirePetClip})=>{
-      if(!alive)return;
-      const clips=battleFormAssets(elf).map(id=>{const lease=acquirePetClip(id);leases.push(lease);return lease.clip;});
-      const [baseClip]=await Promise.all(clips);if(!alive)return;
-      const {nativeRestBounds}=await import('../../battle/petAnimationGeometry');
-      const frames=(baseClip as any)?.sequences?.find((s:any)=>s.name==='standby')?.frames||[];
-      const box=nativeRestBounds(frames.map((fr:any)=>fr.mesh));
-      if(alive&&box&&box.bottom>box.top)setSizeRef(box.bottom-box.top);
-      if(alive)setFormsReady(true);
-    }).catch(error=>{if(alive)console.warn('[pet-forms] 型態預載未完成，切換時重試',error);});
-    return()=>{alive=false;leases.forEach(lease=>lease.release());};
-  },[useActions,preloadIds,elf.battleId]);
-  // 兩段式切換：先在「目前素材」播它自己的 transform，播完才換外觀 → 極速↔毀滅 雙向都有變身演出。
-  React.useEffect(()=>{
-    if(settledFormAsset(form.asset,requestedAsset,action)===form.asset)return;
-    if(!useActions||!form.asset){setForm({asset:requestedAsset,enter:false});return;}
-    const release=beginPetFormTransition(side,elf);
-    setForm(prev=>({asset:prev.asset,enter:true,finish:()=>{setForm({asset:requestedAsset,enter:false});release();}}));
-  },[requestedAsset,action,form.asset,useActions,side,elf.battleId]);
+  const useActions=!concealed&&mode==='actions'&&settings.skill&&!!requestedAsset&&!dead&&opacity>0&&!(degradedTick>=0&&isPetDegraded(side,elf));
+  const form=usePetFormPlayback(elf,side,requestedAsset,action as PetAction,useActions);
+  const showActions=useActions&&form.currentReady;
 
   // 量測：圖片載入後量一次；圖片來源改變（備援鏈切換）時才重量。不輪詢，避免戰鬥中持續耗用。
   React.useEffect(() => {
@@ -194,17 +169,25 @@ export const ProportionalSprite: React.FC<ProportionalSpriteProps> = ({ elf, sid
   React.useEffect(() => { notifyVisibleBoxChanged(); }, [action, showActions, dead]);
 
   return (
-    <div className="absolute bottom-0 pointer-events-none" style={{ left: displayAnchor, bottom:colossal?0:stageH*BATTLE_GROUND_LIFT, opacity, zIndex:fxActive||(showActions&&action!=='standby')?BATTLE_LAYERS.SPRITES:undefined, display: opacity === 0 ? "none" : undefined }} data-form-assets-ready={formsReady} data-sprite-side={side} data-sprite-ratio={ratio.toFixed(2)} data-sprite-visible={visible.toFixed(1)} data-sprite-opaque={opaque ? `${opaque.left.toFixed(1)},${opaque.right.toFixed(1)},${opaque.bottomY.toFixed(1)},${opaque.topY.toFixed(1)}` : undefined} data-sprite-sink={sink.toFixed(1)}>
+    <div className="absolute bottom-0 pointer-events-none" style={{ left: displayAnchor, bottom:colossal?0:stageH*BATTLE_GROUND_LIFT, opacity, zIndex:fxActive||(showActions&&action!=='standby')?BATTLE_LAYERS.SPRITES:undefined, display: opacity === 0 ? "none" : undefined }} data-form-assets-ready={form.formsReady} data-sprite-side={side} data-sprite-ratio={ratio.toFixed(2)} data-sprite-visible={visible.toFixed(1)} data-sprite-opaque={opaque ? `${opaque.left.toFixed(1)},${opaque.right.toFixed(1)},${opaque.bottomY.toFixed(1)},${opaque.topY.toFixed(1)}` : undefined} data-sprite-sink={sink.toFixed(1)}>
       <motion.div ref={wrap} animate={mode==='static'||showActions||concealed||m?.src.includes('/unknown_myth_ghost_')?{x:0,filter:'brightness(1)'}:anim} transition={{ duration: (animDuration ?? 0.35)/animationSpeed(settings.speed) }} style={{...style,visibility:showActions?'hidden':undefined}}
         className={`${dead ? "opacity-30 grayscale" : ""} will-change-transform`}>
         <ElfAvatar elf={elf} kind="body" battleSide={side} className="w-full h-full object-fill"
           fallbackClassName="w-full h-full rounded-full overflow-hidden ring-2 ring-white/15 flex items-center justify-center text-5xl font-black text-slate-200 bg-black/20" />
       </motion.div>
       {!dead&&opacity>0&&mode!=='static'&&settings.skill&&!useActions&&(concealed||m?.src.includes('/unknown_myth_ghost_'))&&<UnknownElfAction elf={elf} side={side} action={action as PetAction} actionToken={actionToken}/>}
-      {useActions&&<React.Suspense fallback={null}><PetActionSprite assetId={form.asset!} enterTransform={form.enter} onTransitionEnd={form.finish} key={`${form.asset}:${elf.battleId||elf.id}:${elf.skinId||''}:${form.enter?1:0}`} sizeRefHeight={sizeRef} elf={elf} side={side} action={routeFifth(action as PetAction,actionToken,form.asset)} actionToken={actionToken} width={stageW*(colossal?3:1)} height={Math.max(1,visible)} viewport={canvasW?{width:canvasW,height:colossal?Math.max(layoutH,visible):stageH,anchorX:displayAnchor,targetX}:undefined} onReady={setActionReady} sink={sink}/></React.Suspense>}
+      {useActions&&<React.Suspense fallback={null}>{form.assets.map(asset=><PetActionSprite
+        key={form.slotKey(asset)} assetId={asset} active={asset===form.active}
+        enterTransform={asset===form.transition?.from} onTransitionEnd={asset===form.transition?.from?form.transition.finish:undefined}
+        elf={elf} side={side} action={asset===form.active?routeFifth(action as PetAction,actionToken,asset):'standby'}
+        actionToken={asset===form.active?actionToken:undefined}
+        width={stageW*(colossal?3:1)} height={Math.max(1,visible)}
+        viewport={canvasW?{width:canvasW,height:colossal?Math.max(layoutH,visible):stageH,anchorX:displayAnchor,targetX}:undefined}
+        onReady={ready=>form.report(asset,ready?'ready':undefined)}
+        onLoadError={()=>form.report(asset,'failed')} sink={sink}/>)}</React.Suspense>}
       <div className="absolute left-1/2 -translate-x-1/2 w-40 h-4 rounded-[50%] bg-black/35 blur-md -z-10" style={{ bottom: -6 }} />
       {useActions&&!showActions&&<span role="status" className="absolute bottom-4 left-0 -translate-x-1/2 whitespace-nowrap rounded bg-slate-950/80 px-2 py-1 text-xs text-cyan-200">動作載入中，仍可選擇技能</span>}
-      {useActions&&preloadIds&&!formsReady&&<span role="status" className="absolute bottom-10 left-0 -translate-x-1/2 whitespace-nowrap rounded bg-slate-950/80 px-2 py-1 text-xs text-cyan-200">型態素材準備中</span>}
+      {useActions&&showActions&&form.preparing&&<span role="status" className="absolute bottom-10 left-0 -translate-x-1/2 whitespace-nowrap rounded bg-slate-950/80 px-2 py-1 text-xs text-cyan-200">型態素材準備中</span>}
       {overlay(visible)}
     </div>
   );

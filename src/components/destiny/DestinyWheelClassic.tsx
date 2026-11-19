@@ -373,14 +373,9 @@ export default function DestinyWheelClassic({ draft, allElves, onBack, onSwitchT
                         <div className={`text-[10px] inline-flex items-center gap-0.5 ${isPaperStyle ? "" : "text-slate-400"}`} style={isPaperStyle ? { color: "#16307A", opacity: 0.75 } : undefined}><TypeIcon type={elf.type} size={12} showLabelWhenMissing={false} />{elf.type}</div>
                       </div>
 
-                      {elf.destinyRank === 'C' && elf.interceptorEffect && !elf.name.includes("六界神王") && (
+                      {elf.destinyRank === 'C' && elf.interceptorEffect && (
                         <div className="absolute top-6 right-1 z-10 bg-emerald-900/90 text-emerald-300 text-[9px] px-1.5 py-0.5 rounded border border-emerald-500 font-bold">
                           {elf.interceptorEffect.name}
-                        </div>
-                      )}
-                      {elf.name.includes("六界神王") && (
-                        <div className="absolute top-6 right-1 z-10 bg-amber-950/90 text-amber-300 text-[9px] px-1.5 py-0.5 rounded border border-amber-500 font-bold">
-                          【界】魂印
                         </div>
                       )}
                     </motion.div>
@@ -434,14 +429,9 @@ export default function DestinyWheelClassic({ draft, allElves, onBack, onSwitchT
                         <div className="text-[10px] text-slate-400 inline-flex items-center gap-0.5"><TypeIcon type={elf.type} size={12} showLabelWhenMissing={false} />{elf.type}</div>
                       </div>
 
-                      {elf.destinyRank === 'C' && elf.interceptorEffect && !elf.name.includes("六界神王") && (
+                      {elf.destinyRank === 'C' && elf.interceptorEffect && (
                         <div className="absolute top-6 right-1 z-10 bg-emerald-900/90 text-emerald-300 text-[9px] px-1.5 py-0.5 rounded border border-emerald-500 font-bold">
                           {elf.interceptorEffect.name}
-                        </div>
-                      )}
-                      {elf.name.includes("六界神王") && (
-                        <div className="absolute top-6 right-1 z-10 bg-amber-950/90 text-amber-300 text-[9px] px-1.5 py-0.5 rounded border border-amber-500 font-bold">
-                          【界】魂印
                         </div>
                       )}
                     </motion.div>
@@ -486,13 +476,14 @@ export default function DestinyWheelClassic({ draft, allElves, onBack, onSwitchT
                 <span>點擊敵方 ({p2Title}) 精靈進行禁用 - P1 剩餘可 Ban: {3 - p1BannedIds.length}</span>
               </h4>
               <div className="grid grid-cols-3 sm:grid-cols-4 gap-3">
-                {p2Pool.map(elf => {
+                {p2Pool.map((elf, index) => {
                   const isBannedByP1 = p1BannedIds.includes(elf.instanceId);
                   const style = getRankStyle(elf.destinyRank);
 
                   return (
                     <div
                       key={elf.instanceId}
+                      data-instance={elf.instanceId} data-pool-slot={index + 1} data-banned={isBannedByP1 ? "1" : undefined}
                       onClick={() => toggleBan(elf.instanceId)}
                       className={`aspect-[3/4] rounded-xl bg-slate-950 border-2 ${
                         isBannedByP1 ? "border-red-500 shadow-[0_0_15px_rgba(239,68,68,0.7)] scale-95 opacity-70" : style.border
@@ -501,6 +492,7 @@ export default function DestinyWheelClassic({ draft, allElves, onBack, onSwitchT
                       <div className={`absolute top-0 left-0 right-0 text-[10px] text-center py-0.5 ${style.badgeBg}`}>
                         {style.title}
                       </div>
+                      <span title={`原卡池第 ${index + 1} 位`} className="absolute bottom-10 left-1 z-30 rounded bg-slate-950/90 px-1.5 text-xs text-white">{index + 1}</span>
 
                       <div className="flex-1 flex items-center justify-center my-4 overflow-hidden">
                         <ElfAvatar elf={elf} kind="body" className="max-w-full max-h-full object-contain" />
@@ -517,14 +509,9 @@ export default function DestinyWheelClassic({ draft, allElves, onBack, onSwitchT
                         </div>
                       )}
 
-                      {elf.destinyRank === 'C' && elf.interceptorEffect && !isBannedByP1 && !elf.name.includes("六界神王") && (
+                      {elf.destinyRank === 'C' && elf.interceptorEffect && !isBannedByP1 && (
                         <div className="absolute top-6 right-1 z-10 bg-emerald-900/90 text-emerald-300 text-[9px] px-1.5 py-0.5 rounded border border-emerald-500 font-bold">
                           {elf.interceptorEffect.name}
-                        </div>
-                      )}
-                      {elf.name.includes("六界神王") && !isBannedByP1 && (
-                        <div className="absolute top-6 right-1 z-10 bg-amber-950/90 text-amber-300 text-[9px] px-1.5 py-0.5 rounded border border-amber-500 font-bold">
-                          【界】魂印
                         </div>
                       )}
                     </div>
@@ -539,13 +526,14 @@ export default function DestinyWheelClassic({ draft, allElves, onBack, onSwitchT
                 <span>{battleMode === 'PVE' ? '我方卡池（AI 禁用確認後揭曉）' : `點擊敵方 (${p1Title}) 精靈進行禁用 - P2 剩餘可 Ban: ${3 - p2BannedIds.length}`}</span>
               </h4>
               <div className="grid grid-cols-3 sm:grid-cols-4 gap-3">
-                {p1Pool.map(elf => {
+                {p1Pool.map((elf, index) => {
                   const isBannedByAI = battleMode === 'PVP' && p2BannedIds.includes(elf.instanceId); // PVE：AI 禁用於確認後揭曉
                   const style = getRankStyle(elf.destinyRank);
 
                   return (
                     <div
                       key={elf.instanceId}
+                      data-instance={elf.instanceId} data-pool-slot={index + 1} data-banned={isBannedByAI ? "1" : undefined}
                       onClick={() => battleMode === 'PVP' ? toggleP2Ban(elf.instanceId) : undefined}
                       className={`aspect-[3/4] rounded-xl bg-slate-950 border-2 ${
                         isBannedByAI ? "border-red-500/80 opacity-60 grayscale" : style.border
@@ -554,6 +542,7 @@ export default function DestinyWheelClassic({ draft, allElves, onBack, onSwitchT
                       <div className={`absolute top-0 left-0 right-0 text-[10px] text-center py-0.5 ${style.badgeBg}`}>
                         {style.title}
                       </div>
+                      <span title={`原卡池第 ${index + 1} 位`} className="absolute bottom-10 left-1 z-30 rounded bg-slate-950/90 px-1.5 text-xs text-white">{index + 1}</span>
 
                       <div className="flex-1 flex items-center justify-center my-4 overflow-hidden">
                         <ElfAvatar elf={elf} kind="body" className="max-w-full max-h-full object-contain" />
@@ -634,7 +623,7 @@ export default function DestinyWheelClassic({ draft, allElves, onBack, onSwitchT
                 <span title="點擊選擇出戰，點皇冠鈕設為首發">P1 ({p1Title}) 可用卡池</span>
               </h4>
               <div className="grid grid-cols-3 sm:grid-cols-3 gap-3">
-                {p1Pool.filter(e => !e.isBanned).map(elf => {
+                {p1Pool.map((elf, index) => {
                   const isPicked = p1PickedIds.includes(elf.instanceId);
                   const isStarter = p1StarterId === elf.instanceId;
                   const style = getRankStyle(elf.destinyRank);
@@ -642,9 +631,10 @@ export default function DestinyWheelClassic({ draft, allElves, onBack, onSwitchT
                   return (
                     <div
                       key={elf.instanceId}
-                      onClick={() => togglePick(elf.instanceId)}
+                      data-instance={elf.instanceId} data-pool-slot={index + 1} data-banned={elf.isBanned ? "1" : undefined}
+                      onClick={() => !elf.isBanned && togglePick(elf.instanceId)}
                       className={`aspect-[3/4] rounded-xl bg-slate-950 border-2 ${
-                        isPicked 
+                        elf.isBanned ? "border-red-700 grayscale opacity-50" : isPicked
                           ? isStarter ? "border-amber-400 shadow-[0_0_15px_rgba(251,191,36,0.8)] scale-102" : "border-emerald-400 shadow-[0_0_10px_rgba(52,211,153,0.5)]"
                           : "border-slate-800 opacity-60 hover:opacity-90"
                       } p-2 flex flex-col justify-between relative overflow-hidden cursor-pointer transition`}
@@ -652,9 +642,10 @@ export default function DestinyWheelClassic({ draft, allElves, onBack, onSwitchT
                       <div className={`absolute top-0 left-0 right-0 text-[10px] text-center py-0.5 ${style.badgeBg}`}>
                         {style.title}
                       </div>
+                      <span title={`原卡池第 ${index + 1} 位`} className="absolute bottom-10 left-1 z-30 rounded bg-slate-950/90 px-1.5 text-xs text-white">{index + 1}</span>
 
                       {/* 首發設定按鈕 */}
-                      {isPicked && (
+                      {!elf.isBanned && isPicked && (
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
@@ -677,7 +668,7 @@ export default function DestinyWheelClassic({ draft, allElves, onBack, onSwitchT
 
                       <div className="text-center z-10">
                         <div className="text-xs font-bold text-white truncate">{elf.name}</div>
-                        {isStarter ? (
+                        {elf.isBanned ? <span className="inline-block bg-red-900 text-red-100 text-[10px] px-2 py-0.5 rounded-full mt-1">已禁用</span> : isStarter ? (
                           <span className="inline-block bg-amber-500 text-slate-950 text-[10px] font-black px-2 py-0.5 rounded-full mt-1 animate-pulse">
                             首發出戰
                           </span>
@@ -692,14 +683,9 @@ export default function DestinyWheelClassic({ draft, allElves, onBack, onSwitchT
                         )}
                       </div>
 
-                      {elf.destinyRank === 'C' && elf.interceptorEffect && !elf.name.includes("六界神王") && (
+                      {elf.destinyRank === 'C' && elf.interceptorEffect && (
                         <div className="absolute top-6 left-1 z-10 bg-emerald-900/90 text-emerald-300 text-[8px] px-1 py-0.5 rounded border border-emerald-500 font-bold">
                           {elf.interceptorEffect.name}
-                        </div>
-                      )}
-                      {elf.name.includes("六界神王") && (
-                        <div className="absolute top-6 left-1 z-10 bg-amber-950/90 text-amber-300 text-[8px] px-1 py-0.5 rounded border border-amber-500 font-bold">
-                          【界】魂印
                         </div>
                       )}
                     </div>
@@ -711,12 +697,11 @@ export default function DestinyWheelClassic({ draft, allElves, onBack, onSwitchT
             {/* AI 或 P2 的 Pick 陣容/卡池 */}
             <div className="bg-slate-900/60 border border-slate-700 rounded-xl p-4">
               <h4 className="text-sm font-bold text-slate-300 mb-3 flex items-center justify-between">
-                <span>{battleMode === 'PVE' ? 'AI 最終出戰陣容' : `P2 (${p2Title}) 可用卡池`}</span>
+                <span>{battleMode === 'PVE' ? 'AI 卡池（已選 6 隻出戰）' : `P2 (${p2Title}) 可用卡池`}</span>
                 <span className="text-xs text-amber-400">{battleMode === 'PVE' ? 'AI 首發已就緒' : `已選 ${p2PickedIds.length}/6 隻`}</span>
               </h4>
               <div className="grid grid-cols-3 sm:grid-cols-3 gap-3">
-                {p2Pool.filter(e => !e.isBanned).map(elf => {
-                  if (battleMode === 'PVE' && !p2PickedIds.includes(elf.instanceId)) return null;
+                {p2Pool.map((elf, index) => {
 
                   const isPicked = p2PickedIds.includes(elf.instanceId);
                   const isStarter = p2StarterId === elf.instanceId;
@@ -725,9 +710,10 @@ export default function DestinyWheelClassic({ draft, allElves, onBack, onSwitchT
                   return (
                     <div
                       key={elf.instanceId}
-                      onClick={() => battleMode === 'PVE' ? setInspectElf(elf) : toggleP2Pick(elf.instanceId)}
+                      data-instance={elf.instanceId} data-pool-slot={index + 1} data-banned={elf.isBanned ? "1" : undefined}
+                      onClick={() => battleMode === 'PVE' ? setInspectElf(elf) : !elf.isBanned && toggleP2Pick(elf.instanceId)}
                       className={`aspect-[3/4] rounded-xl bg-slate-950 border-2 ${
-                        isPicked 
+                        elf.isBanned ? "border-red-700 grayscale opacity-50" : isPicked
                           ? isStarter ? "border-amber-400 shadow-[0_0_15px_rgba(251,191,36,0.8)] scale-102" : "border-purple-400 shadow-[0_0_10px_rgba(168,85,247,0.5)]"
                           : "border-slate-800 opacity-60 hover:opacity-90"
                       } p-2 flex flex-col justify-between relative overflow-hidden cursor-pointer hover:scale-105 transition`}
@@ -735,9 +721,10 @@ export default function DestinyWheelClassic({ draft, allElves, onBack, onSwitchT
                       <div className={`absolute top-0 left-0 right-0 text-[10px] text-center py-0.5 ${style.badgeBg}`}>
                         {style.title}
                       </div>
+                      <span title={`原卡池第 ${index + 1} 位`} className="absolute bottom-10 left-1 z-30 rounded bg-slate-950/90 px-1.5 text-xs text-white">{index + 1}</span>
 
                       {/* PVP 下的首發設定按鈕 */}
-                      {battleMode === 'PVP' && isPicked && (
+                      {battleMode === 'PVP' && !elf.isBanned && isPicked && (
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
@@ -760,7 +747,7 @@ export default function DestinyWheelClassic({ draft, allElves, onBack, onSwitchT
 
                       <div className="text-center z-10">
                         <div className="text-xs font-bold text-white truncate">{elf.name}</div>
-                        {isStarter ? (
+                        {elf.isBanned ? <span className="inline-block bg-red-900 text-red-100 text-[10px] px-2 py-0.5 rounded-full mt-1">已禁用</span> : isStarter ? (
                           <span className="inline-block bg-amber-500 text-slate-950 text-[10px] font-black px-2 py-0.5 rounded-full mt-1 animate-pulse">
                             {battleMode === 'PVE' ? 'AI首發' : 'P2首發'}
                           </span>
@@ -775,14 +762,9 @@ export default function DestinyWheelClassic({ draft, allElves, onBack, onSwitchT
                         )}
                       </div>
 
-                      {elf.destinyRank === 'C' && elf.interceptorEffect && !elf.name.includes("六界神王") && (
+                      {elf.destinyRank === 'C' && elf.interceptorEffect && (
                         <div className="absolute top-6 right-1 z-10 bg-emerald-900/90 text-emerald-300 text-[8px] px-1 py-0.5 rounded border border-emerald-500 font-bold">
                           {elf.interceptorEffect.name}
-                        </div>
-                      )}
-                      {elf.name.includes("六界神王") && (
-                        <div className="absolute top-6 right-1 z-10 bg-amber-950/90 text-amber-300 text-[8px] px-1 py-0.5 rounded border border-amber-500 font-bold">
-                          【界】魂印
                         </div>
                       )}
                     </div>
@@ -875,7 +857,7 @@ export default function DestinyWheelClassic({ draft, allElves, onBack, onSwitchT
               )}
 
               {/* 如果是 C 級，展示專屬命運攔截 */}
-              {inspectElf.destinyRank === 'C' && inspectElf.interceptorEffect && !inspectElf.name.includes("六界神王") && (
+              {inspectElf.destinyRank === 'C' && inspectElf.interceptorEffect && (
                 <div className="bg-emerald-950/40 p-3 rounded-xl border border-emerald-500/60 mb-4 text-xs leading-relaxed">
                   <div className="font-black text-emerald-400 mb-1 flex items-center gap-1">
                     <Shield className="w-4 h-4" /> C級·命運攔截被動：【{inspectElf.interceptorEffect.name}】

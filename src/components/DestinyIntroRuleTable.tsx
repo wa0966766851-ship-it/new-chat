@@ -170,7 +170,7 @@ export default function DestinyIntroRuleTable({
             </div>
             <p className="text-xs text-slate-300 leading-relaxed">剩 9 選 6 並指定首發</p>
           </div>
-          <div title="非六界神王的 C 級卡綁定封技攔截、時空枷鎖、悲歌護盾、索魂同歸、英靈祝福之一，於登場或陣亡時觸發；六界神王改以【界】魂印取代。" className="border rounded-xl p-5 transition relative overflow-hidden bg-slate-950/80 border-emerald-500/50">
+          <div title="C 級卡綁定封技攔截、時空枷鎖、悲歌護盾、索魂同歸、英靈祝福之一，於登場或陣亡時觸發。" className="border rounded-xl p-5 transition relative overflow-hidden bg-slate-950/80 border-emerald-500/50">
             <div className="flex items-center gap-2 text-emerald-400 font-bold text-sm mb-2">
               <Zap className="w-4 h-4 shrink-0" />
               <span>4. C 級攔截</span>
@@ -381,7 +381,7 @@ export default function DestinyIntroRuleTable({
                       <td className="py-2.5 px-2 text-center text-teal-300">{elf.baseStats?.spdef || '-'}</td>
                       <td className="py-2.5 px-2 text-center text-emerald-300">{elf.baseStats?.speed || '-'}</td>
                       <td className="py-2.5 px-3.5 font-sans max-w-xs truncate text-slate-300">
-                        {elf.destinyRank === 'C' && elf.interceptorEffect && !elf.name.includes("六界神王") ? (
+                        {elf.destinyRank === 'C' && elf.interceptorEffect ? (
                           <span className="text-emerald-400 font-bold">
                             【{elf.interceptorEffect.name}】：<RichInline text={elf.interceptorEffect.description} />
                           </span>
@@ -439,7 +439,7 @@ export default function DestinyIntroRuleTable({
                   </div>
 
                   <div className="bg-slate-900/90 rounded p-1.5 text-[9px] text-slate-300 border border-slate-800/80 truncate text-center">
-                    {elf.destinyRank === 'C' && elf.interceptorEffect && !elf.name.includes("六界神王") ? (
+                    {elf.destinyRank === 'C' && elf.interceptorEffect ? (
                       <span className="text-emerald-400 font-bold">{elf.interceptorEffect.name}</span>
                     ) : elf.soulMark?.name ? (
                       <span className="text-amber-300 font-bold">【{elf.soulMark.name}】魂印</span>
@@ -545,7 +545,7 @@ export default function DestinyIntroRuleTable({
                   <Sparkles className="w-3.5 h-3.5" />
                   <span>核心特性 / 魂印機制解析</span>
                 </h3>
-                {inspectingElf.destinyRank === 'C' && inspectingElf.interceptorEffect && !inspectingElf.name.includes("六界神王") ? (
+                {inspectingElf.destinyRank === 'C' && inspectingElf.interceptorEffect ? (
                   <div className="text-xs text-emerald-300 leading-relaxed">
                     <div className="font-bold text-emerald-400 mb-0.5" title="此特效為命運之輪模式專門賦予，於精靈登場或陣亡時自動觸發。">C 級專屬攔截：【{inspectingElf.interceptorEffect.name}】</div>
                     <RichDescription text={inspectingElf.interceptorEffect.description} className="text-xs" />

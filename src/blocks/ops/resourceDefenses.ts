@@ -10,7 +10,7 @@ import {getMaxPp} from '../../utils/battleHelpers';
 import {withPp} from '../../battle/ppTransitions';
 
 export const RESOURCE_DEFENSE_FIELDS:Record<string,readonly string[]>={
-  stat_drop_guard:[], damage_immunity_now:['types'],
+  stat_drop_guard:[], damage_immunity_now:['types'], status_immunity_now:[],
   damage_reduce_first:['id','ratio','types','resources'],
   resource_consume_pending:['id'],resource_resolve_pending:['id','body'],
   resource_pending_reset:['keys'],
@@ -19,6 +19,7 @@ export const RESOURCE_DEFENSE_FIELDS:Record<string,readonly string[]>={
 export function resourceDefenseIssue(op:string,p:any,trig:string,nested:(body:any[])=>string|null):string|null{
   if(op==='damage_reduce_first'&&(!trig.startsWith('incoming')||typeof p.id!=='string'||!p.id||p.id.length>100||!(p.ratio>0&&p.ratio<=1)||!Array.isArray(p.types)||!p.types.length||!p.types.every((v:any)=>['attack','fixed','percent','skill','non_true'].includes(v))||!Array.isArray(p.resources)||!p.resources.length||!p.resources.every((v:any)=>['shield','barrier'].includes(v))))return '首次減傷需受傷前入口、識別碼、比例、傷害分類及必要資源';
   if(op==='stat_drop_guard'&&trig!=='before_stat_change')return '能力下降攔截需能力變化前入口';
+  if(op==='status_immunity_now'&&trig!=='before_status')return '即時異常免疫需異常附加前入口';
   if(op==='reset_hp_pp_on_clear'&&trig!=='pp_cleared')return 'PP被清除重置需真實清除事件';
   if(op==='damage_immunity_now'&&(!trig.startsWith('incoming')||!Array.isArray(p.types)||!p.types.length||!p.types.every((v:any)=>['attack','fixed','percent','skill','non_true'].includes(v))))return '即時傷害免疫需受傷前入口及明確傷害分類';
   if(['resource_consume_pending','resource_resolve_pending'].includes(op)&&(typeof p.id!=='string'||!p.id||p.id.length>100))return '待消耗資源需有限識別碼';
@@ -58,6 +59,14 @@ export function resourceDefenseOperations(runStmts:(ctx:BattleEventContext,body:
     const data=(ctx as any).effectEventData||st.event?.data;
     if(!data?.changes||data.prevented||!Object.values(data.changes).some(v=>typeof v==='number'&&v<0))return false;
     data.changes=Object.fromEntries(Object.entries(data.changes).filter(([,v])=>typeof v!=='number'||v>=0));
+    return true;
+  },
+  // 即時異常免疫：免疫這次附加到自身的異常（條件由條款決定，例：龍之治癒【金龍】喚醒後）。成功會派發「免疫異常成功」。
+  status_immunity_now:(ctx:BattleEventContext,_p:any,st:RunState)=>{
+    const data=(ctx as any).effectEventData||st.event?.data;
+    if(!data?.status||data.targetSide!==ctx.actor||data.prevented||data.prevent)return false;
+    data.prevented=true;data.prevent=true;data.immunized=true;
+    ctx.addLog?.(`🛡️ 免疫了【${data.status}】！`,'status');
     return true;
   },
   damage_immunity_now:(_ctx:BattleEventContext,p:any,st:RunState)=>{

@@ -25,7 +25,7 @@ export const ITEM_USE_ACTION_FIELDS: Record<string, readonly string[]> = {
   grant_item: ['side', 'itemId', 'count', 'snapshotStats'],
   convert_item: ['side', 'fromId', 'ids'],
   use_items_in_order:['side','ids'],
-  potion_penalty:['amount','pp','opponentId','mult'],
+  potion_penalty:['amount','pp','opponentId','mult','restoreRatio'],
   damage_parity_next:['evenBoost','oddMultiplier'],
   opponent_drain:['ratio'],
   item_source_panel_scale: ['side','itemId','stats','ratio'],
@@ -57,7 +57,7 @@ const turnsOk = (n: unknown) => Number.isSafeInteger(n) && (n as number) >= 1 &&
 export function itemUseActionIssue(op: string, p: any, trig?:string): string | null {
   if(op==='opponent_drain')return trig==='opp_after_skill'&&Number.isFinite(p.ratio)&&p.ratio>0&&p.ratio<=1?null:'對手吸取需對手使用後及正最大體力比例';
   if(op==='use_items_in_order')return sideOk(p.side)&&Array.isArray(p.ids)&&p.ids.length>0&&p.ids.length<=30&&new Set(p.ids).size===p.ids.length&&p.ids.every((id:unknown)=>typeof id==='string'&&id.length>0&&id.length<=100)?null:'依序使用需明確陣營及有限不重複道具';
-  if(op==='potion_penalty')return Number.isFinite(p.amount)&&p.amount>0&&Number.isFinite(p.pp)&&p.pp>0&&typeof p.opponentId==='string'&&p.opponentId.length>0&&p.opponentId.length<=100&&Number.isFinite(p.mult)&&p.mult>=1&&p.mult<=10?null:'藥劑代價需體力、PP、對手物種與倍率';
+  if(op==='potion_penalty')return Number.isFinite(p.amount)&&p.amount>0&&Number.isFinite(p.pp)&&p.pp>0&&typeof p.opponentId==='string'&&p.opponentId.length>0&&p.opponentId.length<=100&&Number.isFinite(p.mult)&&p.mult>=1&&p.mult<=10&&(p.restoreRatio===undefined||Number.isFinite(p.restoreRatio)&&p.restoreRatio>0&&p.restoreRatio<=10)?null:'藥劑代價需體力、PP、對手物種與倍率';
   if(op==='damage_parity_next')return trig==='opp_damage_settled'&&Number.isFinite(p.evenBoost)&&p.evenBoost>=0&&p.evenBoost<=100&&Number.isFinite(p.oddMultiplier)&&p.oddMultiplier>0&&p.oddMultiplier<=1?null:'傷害奇偶監控需正式傷害結算及有限倍率';
   if (op === 'convert_item') return sideOk(p.side) && typeof p.fromId === 'string' && p.fromId.length > 0 && p.fromId.length <= 100 &&
     Array.isArray(p.ids) && p.ids.length > 0 && p.ids.length <= 30 && new Set(p.ids).size === p.ids.length &&
@@ -123,8 +123,14 @@ export function itemUseOperations(deps: { addBlockTimer?: AddBlockTimer } = {}) 
     potion_penalty:(ctx:BattleEventContext,p:any):boolean=>{
       const active=ctx.actor==='p1'?ctx.activeP1:ctx.activeP2;
       const opponent=ctx.targetSide==='p1'?ctx.activeP1:ctx.activeP2;
-      const mult=opponent.id===p.opponentId?p.mult:1,pp=p.pp*mult;
-      ctx.applyPotionBacklashDamage?.(ctx.actor,Math.floor(p.amount*mult),'特殊藥劑代價');
+      const isTarget=opponent.id===p.opponentId,mult=isTarget?p.mult:1,pp=p.pp*mult,amount=Math.floor(p.amount*mult);
+      ctx.applyPotionBacklashDamage?.(ctx.actor,amount,'特殊藥劑代價');
+      // 對方在場為指定精靈：其恢復代價體力／PP 的 restoreRatio 倍（存活即可）
+      if(isTarget&&p.restoreRatio>0){
+        const heal=Math.floor(amount*p.restoreRatio);
+        if(heal>0)ctx.applyHealToElf?ctx.applyHealToElf(ctx.targetSide,identity(opponent),heal,{}):ctx.applyHeal(ctx.targetSide,heal);
+        changePp(ctx,ctx.targetSide,opponent,s=>Math.min(getMaxPp(s,opponent),s.pp+Math.floor(pp*p.restoreRatio)),true);
+      }
       const elf=ctx.getFullTeam(ctx.actor).find(e=>identity(e)===identity(active))||active;
       changePp(ctx,ctx.actor,elf,s=>Math.max(0,s.pp-pp));
       const now=ctx.getFullTeam(ctx.actor).find(e=>identity(e)===identity(elf))||elf;

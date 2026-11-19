@@ -1,3 +1,4 @@
+import { borrowedAlienTraits } from '../data/elfGroups';
 import type { Elf, Skill, BaseStats } from '../types';
 import type { BattleEventContext } from '../effects/types';
 import { battleIdentity as identity } from './stateScopes';
@@ -33,7 +34,7 @@ export function startIllusion(ctx: BattleEventContext, defaultTarget: Elf | unde
     // 2026-11-02：描述「獲得特性、專屬特性、特質、二代特質、專屬特質」。
     // trait 與 alienTraits（內含 gen2Trait／exclusiveTrait(s)／alienTrait／generalTrait）原本只備份、
     // 沒有實際換成目標的，導致幻化後這些來源的機制（含無視異常等）不生效。
-    trait: targetCopy.trait, alienTraits: targetCopy.alienTraits });
+    trait: targetCopy.trait, alienTraits: borrowedAlienTraits(self, targetCopy) });
   ctx.addLog(`✨ 【${source}】：幻化為【${targetCopy.name}】，使用技能時依相同欄位轉化。`, 'effect');
   return true;
 }
@@ -75,7 +76,7 @@ export const ILLUSION_OVERRIDE_KEY = 'teamIllusionTargetOverride';
 export interface IllusionOverride { side: 'p1' | 'p2'; battleId: string }
 const bagTeams = (ctx: BattleEventContext) => ({ p1: ctx.getFullTeam('p1'), p2: ctx.getFullTeam('p2') });
 
-/** 所選精靈是否仍在當前雙方背包內且未消逝。 */
+/** 所選精靈是否仍是當前雙方可手動指定的目標。 */
 export function resolveIllusionPick(ctx: BattleEventContext, pick: IllusionOverride | undefined): Elf | undefined {
   return pick ? findBagElf(bagTeams(ctx), pick.side, pick.battleId) : undefined;
 }

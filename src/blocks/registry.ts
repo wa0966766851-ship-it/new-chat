@@ -1,3 +1,4 @@
+import { activeAlienTrait } from '../data/elfGroups';
 // 積木程式快取與戰鬥接點
 import type { Program, Trigger } from "./model";
 import type { BattleEventContext, ActionResultInfo } from "../effects/types";
@@ -59,8 +60,9 @@ export function skillMode(name: string, hasHandler: boolean): "handler" | "block
 
 /** 技能效果（使用時／傷害結算後） */
 export function runSkillBlocks(ctx: BattleEventContext, phase: "use" | "after_hit" | "on_invalid", hasHandler: boolean, invalid = false, role?: "innate" | "attached"): { unparsedLines: string[] } {
-  // 失敗入口也涵蓋未命中、閃避、免疫；只有真正技能無效可要求公式重算。
-  if (phase === 'on_invalid') ctx = Object.assign(Object.create(ctx), { invalid });
+  // 失敗入口也涵蓋未命中、閃避、免疫；invalid＝真正技能無效。
+  // failed：本次出手屬於「技能無效時」場景（技能無效／未命中／閃避／攻擊免疫／BOSS 技能無效），供「技能無效」條件統一判定。
+  if (phase === 'on_invalid') ctx = Object.assign(Object.create(ctx), { invalid, failed: true });
   else if (hasForcedHitEffects(ctx)) ctx = Object.assign(Object.create(ctx), { forcedHitEffects: true });
   const sk = ctx.skill;
   const useRole = role ?? (ctx.innateSkillUseHandled ? 'attached' : undefined);
@@ -114,7 +116,10 @@ export function runBlockEvent(ctx: BattleEventContext, event: string, data: any,
     return false;
   }
   if (ACTIVE_ONLY.has(event) && !isActive) return false;
-  if (isActive) { runSideTimers(ctx, trigs, data); runHolderMarks(ctx, trigs, data, event === EffectTiming.ROUND_END); }
+  if (isActive) {
+    runSideTimers(ctx, trigs, data);
+    if (runHolderMarks(ctx, trigs, data, event === EffectTiming.ROUND_END) && event === EffectTiming.FATAL_RESIST) return true;
+  }
   if (event === EffectTiming.FATAL_RESIST) {
     if(resistFatalFromWindow(ctx))return true;
     const timers = ctx.actor === "p1" ? ctx.p1Timers : ctx.p2Timers;
@@ -150,6 +155,7 @@ function recordBattleFacts(ctx: BattleEventContext, event: string, data: any) {
   if (event === EffectTiming.OPPONENT_DAMAGE) settleNoDmgFollowUps(ctx, data);
   if(event===EffectTiming.ON_DAMAGED&&data&&(!data.targetSide||data.targetSide===ctx.actor)&&Number(data.amount)>0){
     const previous=ctx.getPlayerState('receivedDamageThisRound'),round=ctx.roundNumber??0,ownerBattleId=ctx.self.battleId||ctx.self.id;
+    if (data.damageType === 'skill_attack') ctx.setPlayerState('receivedAttackDamageRound', round);
     ctx.setPlayerState('receivedDamageThisRound',{round,ownerBattleId,amount:(previous?.round===round&&previous.ownerBattleId===ownerBattleId?Number(previous.amount)||0:0)+Number(data.amount)});
   }
   if (event === EffectTiming.ON_DAMAGED && data && (!data.targetSide || data.targetSide === ctx.actor) && (data.amount ?? 0) > 0 && isSkillDamageType(String(data.damageType || ""))) {
@@ -170,7 +176,7 @@ function recordBattleFacts(ctx: BattleEventContext, event: string, data: any) {
 function emitSoul(ctx: BattleEventContext, trigs: Trigger[], data: any, elf: any, isActive: boolean): boolean {
   if (!elf || !isActive) return false;
   let result = false;
-  for (const trait of [elf.trait, elf.alienTraits?.gen2Trait, elf.alienTraits?.exclusiveTrait, ...(elf.alienTraits?.exclusiveTraits || []), elf.alienTraits?.alienTrait, elf.alienTraits?.generalTrait]) {
+  for (const trait of [elf.trait, elf.alienTraits?.gen2Trait, elf.alienTraits?.exclusiveTrait, ...(elf.alienTraits?.exclusiveTraits || []), activeAlienTrait(elf), elf.alienTraits?.generalTrait]) {
     if (trait?.effectMode === 'description') result = runSoulProgram(ctx, compileEffectPlan(trait, 'soul').program, trigs, data) || result;
   }
   if (usesAuthoredSoul(elf, soulHandlerProvider(elf)) && elf.soulMark?.effectMode !== 'registry') {
@@ -231,6 +237,7 @@ export function emitSkillUse(actorCtx: BattleEventContext, oppCtx: BattleEventCo
   const oppT = (after ? [`opp_after_skill`, `opp_after_${kind}`] : [`opp_skill`, `opp_${kind}`]) as Trigger[];
   const data = { ...result, skill };
   if (!after) {
+    actorCtx.emitElfEvent?.(actorCtx.actor, actorCtx.self, EffectTiming.ACTUAL_SKILL_USE, data);
     // 共用戰鬥事實：只在真正出招時記錄；選招順序、排序或受控都不算。
     for(const ctx of [actorCtx,oppCtx]) {
       const saved=ctx.getPlayerState('roundSkillUseOrder');
@@ -240,7 +247,7 @@ export function emitSkillUse(actorCtx: BattleEventContext, oppCtx: BattleEventCo
     Object.defineProperty(opponentUseCtx,'skill',{value:skill,configurable:true});
     const opponentDefinition=soulDefinition(oppCtx.self);
     if(usesAuthoredSoul(oppCtx.self,soulHandlerProvider(oppCtx.self))&&effectRoute(opponentDefinition)==='kit')runConnectedKit('on_opponent_skill_use',opponentDefinition,opponentUseCtx);
-    for(const trait of [oppCtx.self.trait,oppCtx.self.alienTraits?.gen2Trait,oppCtx.self.alienTraits?.exclusiveTrait,...(oppCtx.self.alienTraits?.exclusiveTraits||[]),oppCtx.self.alienTraits?.alienTrait,oppCtx.self.alienTraits?.generalTrait])
+    for(const trait of [oppCtx.self.trait,oppCtx.self.alienTraits?.gen2Trait,oppCtx.self.alienTraits?.exclusiveTrait,...(oppCtx.self.alienTraits?.exclusiveTraits||[]),activeAlienTrait(oppCtx.self),oppCtx.self.alienTraits?.generalTrait])
       if(trait?.effectMode==='kit')runConnectedKit('on_opponent_skill_use',trait,opponentUseCtx);
     for(const equipped of oppCtx.self.skills){
       const handler=hasConnectedSkillHandler(equipped.name);
@@ -249,7 +256,7 @@ export function emitSkillUse(actorCtx: BattleEventContext, oppCtx: BattleEventCo
     }
     const definition = soulDefinition(actorCtx.self);
     if (usesAuthoredSoul(actorCtx.self, soulHandlerProvider(actorCtx.self)) && effectRoute(definition) === 'kit') runConnectedKit('on_skill_use', definition, actorCtx);
-    for (const trait of [actorCtx.self.trait, actorCtx.self.alienTraits?.gen2Trait, actorCtx.self.alienTraits?.exclusiveTrait, ...(actorCtx.self.alienTraits?.exclusiveTraits || []), actorCtx.self.alienTraits?.alienTrait, actorCtx.self.alienTraits?.generalTrait])
+    for (const trait of [actorCtx.self.trait, actorCtx.self.alienTraits?.gen2Trait, actorCtx.self.alienTraits?.exclusiveTrait, ...(actorCtx.self.alienTraits?.exclusiveTraits || []), activeAlienTrait(actorCtx.self), actorCtx.self.alienTraits?.generalTrait])
       if (trait?.effectMode === 'kit') runConnectedKit('on_skill_use', trait, actorCtx);
     for (const [slot, equipped] of actorCtx.self.skills.entries()) {
       const selected = equipped === skill || equipped.name === skill?.name && (skill.battleSlot == null || slot === skill.battleSlot);
@@ -279,7 +286,7 @@ export function soulPassiveEvade(elf: any, skill: any): number {
     const prog = authored ? effectRoute(definition, soulHandlerProvider(source)) === 'description' ? compileEffectPlan(definition, 'soul').program : null
       : (SOUL_MODE[String(source.id)] ?? SOUL_MODE[source.name]) ? getSoulProgram(source) : null;
     return [passiveEvade(prog, skill), ...(authored && effectRoute(definition,soulHandlerProvider(source))==='kit'?[readSoulEvade(definition.kit,skill)]:[]), ...[source.trait, source.alienTraits?.gen2Trait, source.alienTraits?.exclusiveTrait,
-      ...(source.alienTraits?.exclusiveTraits || []), source.alienTraits?.alienTrait, source.alienTraits?.generalTrait]
+      ...(source.alienTraits?.exclusiveTraits || []), activeAlienTrait(source), source.alienTraits?.generalTrait]
       .filter(Boolean).map(t => t.effectMode==='kit'?readSoulEvade(t.kit,skill):t.effectMode==='description'?passiveEvade(compileEffectPlan(t, 'soul').program, skill):0)];
   }));
 }
@@ -351,7 +358,7 @@ export function emitStatusApplied(ctxs: [BattleEventContext, BattleEventContext]
 }
 
 /** 自身技能無效（含未命中）時：側邊持續效果 */
-export function emitSelfInvalid(ctx: BattleEventContext, invalid = false) { runSideTimers(ctx, ["self_invalid" as Trigger], { skill: ctx.skill, invalid }); }
+export function emitSelfInvalid(ctx: BattleEventContext, invalid = false) { runSideTimers(ctx, ["self_invalid" as Trigger], { skill: ctx.skill, invalid, failed: true }); }
 
 /** 已使用技能但無效／未命中的收尾；未出手不呼叫，重算只在最終結果呼叫一次。 */
 export function emitFailedSkillUse(ctx: BattleEventContext, oppCtx: BattleEventContext, result: ActionResultInfo) {

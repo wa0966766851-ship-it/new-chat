@@ -35,3 +35,43 @@
 @media(min-width:1001px){.spot-prose article,.spot-skill{font-size:calc(clamp(10.5px,1.24vh,12px) * var(--spot-text-scale,1))}}
 @media(max-width:1000px){.spot-identity>.spot-field-controls{grid-column:1/-1}.spot-identity:has(>.spot-field-controls) .spot-art{grid-row:2/4}.spot-identity:has(>.spot-field-controls) .spot-stats{grid-row:2/4}}
 @media(max-width:600px){.spot-prose article,.spot-skill{font-size:calc(13px * var(--spot-text-scale,1))}.spot-identity:has(>.spot-field-controls) .spot-stats{grid-row:3}}
+
+.spot-export-controls{display:flex;align-items:center;flex-wrap:wrap;gap:6px}
+.spot-export-controls [role="status"],.spot-export-controls [role="alert"]{font-size:12px}
+.spot-export-controls [role="alert"]{color:#ffb0a9}
+.spot-export-controls button:disabled{opacity:.5;cursor:wait}
+
+html:has(.spotlight-export),body:has(.spotlight-export){margin:0;overflow:visible}
+.spotlight-export,.spotlight-export-page{width:1440px}
+.spotlight-export .elf-spotlight{
+  position:relative;
+  inset:auto;
+  box-sizing:border-box;
+  overflow:visible;
+  padding:28px;
+  background-color:#070d15;
+  print-color-adjust:exact;
+  -webkit-print-color-adjust:exact;
+}
+.spotlight-export .spot-grid{
+  display:grid;
+  flex:none;
+  grid-template-columns:260px minmax(0,1.02fr) minmax(0,1.42fr);
+  gap:24px;
+}
+.spotlight-export .spot-identity{display:flex;grid-column:auto;gap:0}
+.spotlight-export .spot-index,.spotlight-export .spot-top h1 span{display:inline}
+.spotlight-export .spot-art{flex:none;height:350px}
+.spotlight-export .spot-name h2{font-size:calc(22px * var(--spot-text-scale,1));overflow-wrap:anywhere}
+.spotlight-export .spot-panel{min-width:0;min-height:0}
+.spotlight-export .spot-prose,.spotlight-export .spot-skill-list{overflow:visible}
+.spotlight-export .spot-desc{overflow-wrap:anywhere}
+.spotlight-export .spot-desc [data-rich-kind="code"]{white-space:pre-wrap;overflow:visible}
+.spotlight-export .spot-skill-meta{flex-wrap:wrap}
+.spotlight-export .spot-prose article,.spotlight-export .spot-skill{
+  font-size:calc(13px * var(--spot-text-scale,1));
+  line-height:1.6;
+}
+.spotlight-export .spot-skill h3{font-size:calc(13px * var(--spot-text-scale,1))}
+.spotlight-export .spot-prose h3{font-size:calc(14px * var(--spot-text-scale,1))}
+.spotlight-export *{animation:none!important;transition:none!important}

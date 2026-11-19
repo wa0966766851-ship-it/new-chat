@@ -18,6 +18,11 @@ export interface AISettings {
   ownRisk?: AIRisk | 'follow';
   budgetMs: number;
   explain: boolean;
+  modelEnabled?: boolean;
+  modelTimeoutMs?: number;
+  allowOffensivePotions?: boolean;
+  allowStatusPotions?: boolean;
+  allowDamagePotions?: boolean;
 }
 export interface ScorePart { key: string; label: string; value: number }
 export interface PositionScore { total: number; parts: ScorePart[] }
@@ -29,11 +34,19 @@ export interface CandidateReport {
   strategyBonus: number;
   reason: string;
   samples: number;
+  losesToLethalPotion?: boolean;
   worst: number;
   best?: number;
   parts: ScorePart[];
 }
 export interface DecisionReport {
+  model?: {status:'used'|'agreed'|'local'|'low-confidence'|'unavailable'|'stale'|'limit';confidence?:number;inputTokens?:number;choice?:string;localAction?:PlannedAction;suggestedAction?:PlannedAction;suggestedLabel?:string;scoreGap?:number;threshold?:number;providerMs?:number;prepared?:boolean};
+  selectionWaitMs?: number;
+  timing?: {preparation:'hit'|'miss'|'none'; preparationMismatch?:string; localMs: number; waitBudgetMs: number;
+    workerStartupMs?:number; firstSweepMs?:number; modelMs?:number; modelWaitExpired?:boolean};
+  firstSweepMs?: number;
+  workerStartupMs?: number;
+  lookahead?: boolean;
   style?: AIStyle;
   risk?: AIRisk;
   side: AISide;
@@ -64,6 +77,8 @@ export interface DecisionRequest {
   battleFormat?: 'normal_6v6' | 'solo_1v1' | 'peak_6v6' | 'peak_3v3';
   specialMode?: 'destiny' | 'interstellar';
   potionRemaining?: number;
+  shortlistSearch?: boolean;
+  repeatedAttack?: string;
   prdCounters?: [string, number][];
   prngCounters?: Record<string, number>;
   runtime?: { deathHandled: string[]; pendingFinalize: boolean };

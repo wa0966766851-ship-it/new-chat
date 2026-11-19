@@ -39,7 +39,7 @@ export const FINAL_ODB_ACTION_FIELDS: Record<string, readonly string[]> = {
   battle_mark_grant: ['side', 'id', 'name', 'displayChar', 'statRatio', 'duel'],
   battle_mark_to_last_ally: ['id', 'name', 'displayChar', 'statRatio', 'duel'],
   battle_mark_entrance: [],
-  status_bound_round_end: ['side', 'body'], status_bound_resolve: ['targetId', 'key', 'body'],
+  status_bound_round_end: ['side', 'body', 'status'], status_bound_resolve: ['targetId', 'key', 'body', 'status'],
   typed_damage_checked: ['amount', 'elem'],
   skill_marks_assign: ['side', 'withinRounds', 'marks'],
   status_duration_floor: ['side','cls','turns'],
@@ -97,7 +97,7 @@ export function finalOdbActionIssue(op: string, p: any): string | null {
   if(op==='stat_points_scale'&&p.perLastAmount!==undefined&&(!Number.isFinite(p.perLastAmount)||p.perLastAmount<0||p.perLastAmount>10))return '逐回執能力點數增幅需0至1000%有限比例';
   if (op === 'stat_points_scale' && (!['self', 'opp'].includes(p.side) || !(p.ratio > 0) || !Array.isArray(p.stats) || !p.stats.length || p.stats.some((k: string) => !['atk', 'def', 'spatk', 'spdef', 'speed'].includes(k)))) return '能力點數倍率需單一目標、正倍率與明確能力清單';
   if (['battle_mark_grant', 'battle_mark_to_last_ally'].includes(op) && (!p.id || !p.name || !p.displayChar || !(p.statRatio > 0) || typeof p.duel !== 'boolean' || op === 'battle_mark_grant' && !['self', 'opp'].includes(p.side))) return '常駐戰鬥印記需識別、文字、正能力倍率及決鬥宣告';
-  if (op === 'status_bound_round_end' && (p.side !== 'opp' || !Array.isArray(p.body) || !p.body.length)) return '異常結束監控需明確對手與非空子流程';
+  if (op === 'status_bound_round_end' && (p.side !== 'opp' || !Array.isArray(p.body) || !p.body.length || (p.status !== undefined && (typeof p.status !== 'string' || !p.status)))) return '異常結束監控需明確對手與非空子流程';
   if (op === 'status_bound_resolve' && (!p.targetId || !p.key || !Array.isArray(p.body) || !p.body.length)) return '異常綁定結算需目標身分與監控鍵';
   if (op === 'typed_damage_checked' && (!Number.isFinite(p.amount) || p.amount <= 0 || !p.elem)) return '屬性技能傷害需確切正點數與元素';
   if (op === 'skill_marks_assign' && (!['self', 'opp'].includes(p.side) || !Number.isInteger(p.withinRounds) || p.withinRounds < 1 || !Array.isArray(p.marks) || p.marks.length < 1 || p.marks.length > 5 || p.marks.some((m: any) => !m.symbol || !m.description || !Array.isArray(m.rules) || typeof m.capabilities !== 'object'))) return '技能槽印記需目標、登場回合限制、1至5個完整印記';
@@ -151,6 +151,9 @@ function grantBattleMark(ctx: BattleEventContext, p: any, side: Side, elf: any):
   return true;
 }
 export {hasPortableDuel,portableSkillCapabilities} from '../../battle/portableSkillMarks';
+/** 槽印記徽章：未激活灰階、激活後亮色（與印記種類無關）。 */
+const SLOT_MARK_IDLE = { color: 'text-slate-400', bg: 'bg-slate-900/90', border: 'border-slate-600/60', animate: '' };
+const SLOT_MARK_ACTIVE = { color: 'text-amber-200', bg: 'bg-amber-950/90', border: 'border-amber-400/70', animate: 'animate-pulse ring-1 ring-amber-400/60' };
 /** 由共用事件入口調用；執行持有者自帶規則，不回頭查奧丁或呼叫其handler。 */
 export function runPortableSkillMarkPrograms(ctx: BattleEventContext, trigs: string[], data: any,
   run: (ctx: BattleEventContext, rule: any, state: RunState) => boolean): void {
@@ -168,8 +171,9 @@ export function runPortableSkillMarkPrograms(ctx: BattleEventContext, trigs: str
         for(const key of ['atk','def','spatk','spdef','speed']){const before=calculatedStats[key];calculatedStats[key]=Math.floor(before*ratio);skill.portableAppliedStatRatios[key]=before?calculatedStats[key]/before:1;}
         ctx.updateElf(ctx.actor,{id:ctx.self.id,calculatedStats});
       }
-      skill.specialBadge = { ...skill.specialBadge, text: def.symbol, description: def.description };
+      skill.specialBadge = { ...skill.specialBadge, text: def.symbol, description: def.description, ...SLOT_MARK_ACTIVE };
       ctx.updateElf(ctx.actor, { id: ctx.self.id, skills: ctx.self.skills.map((s: any) => ({ ...s })) });
+      ctx.addLog(`${ctx.self.name}【${skill.name}】激活 ${def.symbol}`, 'effect');
       if((ctx.self as any).portableInheritedActiveSlots?.includes(index))ctx.updateElf(ctx.actor,{id:ctx.self.id,portableInheritedActiveSlots:(ctx.self as any).portableInheritedActiveSlots.filter((i:number)=>i!==index)} as any);
     }
     if (!skill.isRuneActive) continue;
@@ -335,11 +339,14 @@ export function finalOdbOperations(addTimer: (ctx: BattleEventContext, side: Sid
     status_bound_round_end(ctx: BattleEventContext, p: any) {
       const key = `${idOf(ctx.self)}:${idOf(ctx.target)}:${ctx.actionId ?? ctx.roundNumber}:${ctx.skill?.name}`;
       addTimer(ctx, ctx.actor, '下次異常回合結束', 1, 'uses', { trig: 'round_end', sourceKind: 'skill', boundStatusKey: key,
-        body: [{ acts: [{ op: 'status_bound_resolve', p: { targetId: idOf(ctx.target), key, body: structuredClone(p.body) }, label: '異常綁定結算' }] }] });
+        body: [{ acts: [{ op: 'status_bound_resolve', p: { targetId: idOf(ctx.target), key, ...(p.status ? { status: p.status } : {}), body: structuredClone(p.body) }, label: '異常綁定結算' }] }] });
       return true;
     },
     status_bound_resolve(ctx: BattleEventContext, p: any, st: RunState) {
-      if (idOf(ctx.target) !== p.targetId || !Object.keys(getStatuses(ctx.target)).length || !runStatements) return false;
+      if (idOf(ctx.target) !== p.targetId || !runStatements) return false;
+      // 指定異常：等到該異常回合結束（本回合結束時到期或已不存在）才結算；未指定：任一異常存在的回合結束。
+      const statuses = getStatuses(ctx.target);
+      if (p.status ? Number(statuses[p.status] || 0) > 1 : !Object.keys(statuses).length) return false;
       const timers = ctx.actor === 'p1' ? ctx.p1Timers : ctx.p2Timers;
       for (const timer of timers || []) if (timer.payload?.block?.boundStatusKey === p.key) ctx.consumeTimer?.(ctx.actor, timer.id);
       runStatements(ctx, p.body, st); return true;
@@ -371,7 +378,7 @@ export function finalOdbOperations(addTimer: (ctx: BattleEventContext, side: Sid
         changed = true; const def = structuredClone(p.marks[index]);
         const active = false;
         return { ...skill, skillRune: def.symbol, isRuneActive: active, portableSkillMark: def,
-          specialBadge: { id: `slot_mark_${def.symbol}`, text: def.symbol, description: def.description },
+          specialBadge: { id: `slot_mark_${def.symbol}`, text: def.symbol, description: def.description, ...SLOT_MARK_IDLE },
         };
       });
       if (changed) ctx.updateElf(side, { id: elf.id, skills }); return changed;

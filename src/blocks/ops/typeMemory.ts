@@ -2,6 +2,7 @@ import type {BattleEventContext} from '../../effects/types';
 import type {RunState} from '../runtime';
 import {combineSettlementCallbacks} from '../../battle/settlementReceipt';
 import {identity} from '../../effects/newElfOperations';
+import { battleTypeKey, sameBattleType } from '../../utils/typeQuery';
 import {isKnownBattleType} from '../../effects/attackTypeView';
 
 /** 屬性交換的紀錄屬於戰鬥個體，不改物種定義、皮膚或存檔。 */
@@ -57,8 +58,8 @@ export function typeMemoryOperations(h:{liveElf:Function;ops:()=>any;runStmts:Fu
   attack_damage_percent:(ctx:BattleEventContext,p:any)=>{const n=Math.floor(Math.max(0,ctx.mainSkillSettledAmount??ctx.mainSkillHpReduced??0)*p.ratio);if(!n)return false;ctx.applyPinkDamage(ctx.targetSide,n,undefined,undefined,undefined,'percent');return true;},
   exchange_types:(ctx:BattleEventContext,p:any)=>{
    const self=h.liveElf(ctx,ctx.actor),opp=h.liveElf(ctx,ctx.targetSide);
-   if(p.record)ctx.updateElf(ctx.actor,{typeHistory:[...new Set([...history(ctx),self.type])]} as any);
-   if(self.type===opp.type)return false;
+   if(p.record)ctx.updateElf(ctx.actor,{typeHistory:[...new Set([...history(ctx),self.type].map(battleTypeKey))]} as any);
+   if(sameBattleType(self.type, opp.type))return false;
    for(const [side,elf,type] of [[ctx.actor,self,opp.type],[ctx.targetSide,opp,self.type]] as const)
     ctx.updateElf(side,{type,originalType:elf.originalType||elf.type,typeChangedUntilSwitch:true});
    return true;
@@ -107,7 +108,7 @@ export function typeMemoryOperations(h:{liveElf:Function;ops:()=>any;runStmts:Fu
    h.addTimer(ctx,ctx.targetSide,'屬性轉換至攻擊無效',1,'uses',{invalid:'攻擊',statusSkillReplacement:p.name});return true;
   },
   history_entry_damage_if_recorded:(ctx:BattleEventContext,p:any)=>{
-   if(!history(ctx).includes(h.liveElf(ctx,ctx.targetSide).type))return false;
+   if(!history(ctx).some(type => sameBattleType(type, h.liveElf(ctx,ctx.targetSide).type)))return false;
    ctx.setOpponentState('nextElfBothFixed',{amount:p.amount,sourceSide:ctx.actor,sourceBattleId:identity(ctx.self)});return true;
   },
   history_kill_entry_damage:(ctx:BattleEventContext,p:any,st:RunState)=>{

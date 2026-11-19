@@ -105,8 +105,9 @@ try {
   assert.match(dwbCss, /width:min\(1280px,100%\)/, '桌面使用寬版詳情');
   assert.match(dwbCss, /\.dwb-sheet-body\s*\{[^}]*overflow-y:auto/); assert.match(dwbCss, /\.dwb-sheet\s*\{[^}]*max-height:100dvh/);
   await key('Escape'); assert.equal($('b-detail'), null, 'Esc 關閉詳情'); ok('詳情：攔截、第五技能、層次描述、可捲動結構、Esc');
-  const liu = faceCards.find(c => c.textContent!.includes('六界神王')); if (liu) assert.ok(liu.querySelector('[data-testid="b-liujie-tag"]'), '六界神王顯示【界】魂印而非攔截'); 
-  assert.ok(document.querySelector('[data-testid="b-liujie-tag"]'), '至少一側抽到六界神王（C 級池僅 2 隻）'); verify('reveal-front');
+  const liu = faceCards.find(c => c.textContent!.includes('六界神王'));
+  assert.ok(liu?.querySelector('[data-testid="b-intercept-tag"]'), '六界神王顯示其命運攔截');
+  verify('reveal-front');
 
   // ---- 鍵盤切章 ----
   await key('ArrowLeft'); assert.ok($('b-start'), '←：回序章'); await key('ArrowRight'); assert.ok($('b-next-ban'), '→：回到圖版'); ok('←→ 切章');
@@ -127,11 +128,19 @@ try {
     assert.ok(ai.filter(b => b.getAttribute('aria-checked') !== 'true').every(b => b.hasAttribute('disabled')), 'PVE：AI 配裝不可改');
     const mine = new Set($$('b-lo-p1-suit').map(b => b.getAttribute('data-value'))); assert.ok(ai.every(b => !mine.has(b.getAttribute('data-value'))), '雙方套裝候選不重複');
     assert.equal($$('b-lo-p1-flame').length, 2, '火焰 2 選 1'); ok('命運配裝：可改選、AI 鎖定、雙方不重複'); }
-  assert.match($('b-pick-count')!.textContent!, /6 \/ 6/); assert.equal($$('b-pick-card').length, 9); assert.equal($$('b-pick2-card').length, 6, 'PVE 顯示 AI 最終 6 隻');
+  assert.match($('b-pick-count')!.textContent!, /6 \/ 6/); assert.equal($$('b-pick-card').length, 12); assert.equal($$('b-pick2-card').length, 12, 'PVE 保留 AI 原卡池 12 位');
+  for (const testid of ['b-pick-card', 'b-pick2-card']) {
+    const cards = $$(testid);
+    assert.deepEqual(cards.map(c => Number(c.dataset.poolSlot)), Array.from({length:12},(_,i)=>i+1));
+    assert.equal(cards.filter(c => c.dataset.banned === '1').length, 3);
+    const before = $('b-pick-count')!.textContent;
+    await click(cards.find(c => c.dataset.banned === '1')!);
+    assert.equal($('b-pick-count')!.textContent, before, '已禁用卡不能加入戰隊');
+  }
   assert.ok($$('b-pick2-card').some(c => c.querySelector('[data-testid="b-starter-mark"]')), 'AI 首發可見（決定 3：維持現況）');
   const picked = $$('b-pick-card').filter(c => c.getAttribute('data-picked') === '1'); assert.equal(picked.length, 6);
-  await click($$('b-pick-card')[0]); assert.match($('b-pick-count')!.textContent!, /5 \/ 6/); assert.equal($('b-launch')!.hasAttribute('disabled'), true);
-  await click($$('b-pick-card')[0]); assert.match($('b-pick-count')!.textContent!, /6 \/ 6/);
+  await click($$('b-pick-card').find(c => c.dataset.picked === '1')!); assert.match($('b-pick-count')!.textContent!, /5 \/ 6/); assert.equal($('b-launch')!.hasAttribute('disabled'), true);
+  await click($$('b-pick-card').find(c => !c.dataset.picked && !c.dataset.banned)!); assert.match($('b-pick-count')!.textContent!, /6 \/ 6/);
   const target = $$('b-pick-card').filter(c => c.getAttribute('data-picked') === '1')[3]; const targetId = target.getAttribute('data-instance')!;
   await click(target.querySelector('[data-testid="b-starter-btn"]'), '首發鈕');
   assert.ok($$('b-pick-card').find(c => c.getAttribute('data-instance') === targetId)!.querySelector('[data-testid="b-starter-mark"]'));
@@ -151,7 +160,11 @@ try {
   assert.equal($('b-confirm-ban')!.hasAttribute('disabled'), true, 'PVP 需雙方都選滿 3');
   for (const c of $$('b-ban-own-card').slice(0, 3)) await click(c);
   verify('ban-pvp'); await click($('b-confirm-ban')); verify('pick-pvp');
-  assert.equal($$('b-pick2-card').length, 9, 'PVP 顯示 P2 可用 9 隻');
+  assert.equal($$('b-pick2-card').length, 12, 'PVP 保留 P2 原卡池 12 位');
+  for (const id of ['b-pick-card', 'b-pick2-card']) {
+    assert.deepEqual($$(id).map(c => Number(c.dataset.poolSlot)), Array.from({length:12},(_,i)=>i+1));
+    assert.equal($$(id).filter(c=>c.dataset.banned==='1').length,3);
+  }
   const p2Card = $$('b-pick2-card').filter(c => c.getAttribute('data-picked') === '1')[2]; const p2Id = p2Card.getAttribute('data-instance')!;
   await click(p2Card.querySelector('[data-testid="b-starter-btn"]'));
   await click($('b-launch')); const [m2, q1, q2, , g2] = launched!;

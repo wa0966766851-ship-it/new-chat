@@ -10,6 +10,9 @@ const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'..');
 const home=path.join(root,'.desktop-releases'),archive=path.join(root,'.local-archives','desktop-content');
 const digest=b=>crypto.createHash('sha256').update(b).digest('hex');
 const apply=process.argv.includes('--apply'),restore=process.argv.includes('--restore')?process.argv[process.argv.indexOf('--restore')+1]:null;
+// 手動維護可縮短冷卻期；仍保留啟用／回退、最新三版及執行中版本。
+const ageIndex=process.argv.indexOf('--min-age-hours'),minAgeHours=ageIndex<0?48:Number(process.argv[ageIndex+1]);
+if(!Number.isFinite(minAgeHours)||minAgeHours<12)throw Error('封存冷卻期不得低於12小時');
 const checked=new Set();
 function objectFile(hash){if(!/^[a-f0-9]{64}$/.test(hash))throw Error('無效備份雜湊');return path.join(archive,'objects',hash+'.gz');}
 function readObject(hash){const data=zlib.gunzipSync(fs.readFileSync(objectFile(hash)));if(digest(data)!==hash)throw Error('備份校驗失敗 '+hash);return data;}
@@ -36,9 +39,9 @@ if(restore){
   const tracked=execFileSync('git',['ls-files','-z','--','.desktop-releases'],{cwd:root,encoding:'utf8'});if(tracked)throw Error('桌面版本含版控檔案，停止');
   const candidates=ids.filter(id=>!keep.has(id)).map(id=>({id,dir:assertBuildChild(root,path.join(home,id),'.desktop-releases')}))
     .filter(e=>!commands.includes(e.dir.toLowerCase())).map(e=>({...e,files:walk(e.dir)}))
-    .filter(e=>e.files.every(f=>Date.now()-f.mtime>48*3600e3));
+    .filter(e=>e.files.every(f=>Date.now()-f.mtime>minAgeHours*3600e3));
   const report={createdAt:new Date().toISOString(),apply,keep:[...keep],beforeBytes:candidates.reduce((n,e)=>n+e.files.reduce((b,f)=>b+f.size,0),0),addedBackupBytes:0,removedBytes:0,completed:[]};
-  console.log(JSON.stringify({candidates:candidates.length,bytes:report.beforeBytes,keep:report.keep}));
+  console.log(JSON.stringify({candidates:candidates.length,bytes:report.beforeBytes,minAgeHours,keep:report.keep}));
   if(apply){
     fs.mkdirSync(path.join(archive,'objects'),{recursive:true});fs.mkdirSync(path.join(archive,'manifests'),{recursive:true});
     for(const e of candidates){
