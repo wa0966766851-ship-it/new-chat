@@ -117,6 +117,9 @@ const routeLimits: Record<string, number> = {
   'src/components/BlocklyBuilder.tsx': 2_300_000,
   'src/components/EffectConnectionControls.tsx': 2_100_000,
   'src/components/ElfBlocklyPanel.tsx': 2_100_000,
+  // 編輯器本頁有 30+ 個必要的靜態 import（面板／驗證／描述／計算），是已知重量頁；
+  // 給略高於實測的額度，仍能在未來膨脹時攔下。
+  'src/components/ElfEditor.tsx': 1_350_000,
   'src/components/KitEffectBuilder.tsx': 1_550_000,
   'src/components/LazyBlockProgramView.tsx': 2_100_000,
   'src/components/ReusableEffectLibrary.tsx': 2_100_000,
@@ -166,7 +169,7 @@ const pageRows = [...routes].map(([key,chunk]) => {
 });
 
 const firstScreen = measure(staticDependencies([
-  entry[0], 'src/shell/scenes/LobbyScene.tsx', 'src/data/importedElves.ts',
+  entry[0], routeChunk('src/shell/AegisShell.tsx'), 'src/shell/scenes/LobbyScene.tsx', 'src/data/importedElves.ts',
   'src/data/stagedArenaElves.ts', 'src/data/reviewedKits.deferred.json',
 ]));
 assert.ok(firstScreen.raw < 1_240_000, `首次首頁與名冊依賴超過預算：${firstScreen.raw} / 1240000 bytes`);

@@ -1,3 +1,4 @@
+import { readPerfPreference, writePerfPreference, perfLiteActive, type PerfPreference } from '../shell/perfMode';
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { Maximize2, Minimize2, Image as ImageIcon, RotateCcw, Copy, Music, X, Sliders, Sun, Moon, Eye, Check, Play, Pause, Plus, Volume2, VolumeX, Palette, Swords, Upload, Gauge } from "lucide-react";

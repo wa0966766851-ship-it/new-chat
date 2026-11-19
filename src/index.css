@@ -303,7 +303,6 @@ body {
 @media (prefers-reduced-motion: reduce) {
   .ios-panel, .ios-card { transition: none; }
 }
-
 /* 2026-11-16 效能模式（data-perf="lite"）：低階電腦防卡頓。只減少繪製成本，不改版面與結算。 */
 [data-perf="lite"] *, [data-perf="lite"] *::before, [data-perf="lite"] *::after {
   backdrop-filter: none !important;

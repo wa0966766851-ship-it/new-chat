@@ -277,6 +277,11 @@
     "housekeeping:screenshots": "node scripts/archive_workspace_screenshots.mjs",
     "test:pet-preparation": "node --import tsx tests/petPreparation.semantic.test.ts",
     "test:pet-skin-switch": "node tests/petSkinSwitch.browser.test.mjs",
+    "test:perf-mode": "node --import tsx tests/perfMode.semantic.test.ts",
+    "test:pet-loading-flow": "node --import tsx tests/petLoadingFlow.semantic.test.ts",
+    "test:pet-native-contact": "node --import tsx tests/petNativeContact.semantic.test.ts",
+    "test:pet-native-contact:browser": "node tests/petNativeContact.browser.test.mjs",
+    "test:perf": "npm run test:perf-mode && npm run test:pet-loading-flow && npm run test:pet-native-contact",
     "test:ains-corrections": "node --import tsx tests/ainsReserveAndMeasurements.semantic.test.ts && node --import tsx tests/immortalAinsComplete.semantic.test.ts && node --import tsx tests/ainsRoyalFlame.semantic.test.ts",
     "test:skill-description": "node --import tsx tests/skillDescriptionPresentation.semantic.test.tsx && npm run test:description && node --import tsx tests/illusionFixes.semantic.test.ts",
     "test:skill-banner": "node tests/skillBanner.browser.test.mjs",
@@ -287,7 +292,8 @@
     "atlas:content": "node --import tsx encyclopedia/import-content.ts",
     "atlas:start": "powershell -NoProfile -ExecutionPolicy Bypass -File encyclopedia/launcher.ps1",
     "atlas:blank": "powershell -NoProfile -ExecutionPolicy Bypass -File encyclopedia/launcher.ps1 -Blank",
-    "atlas:shortcuts": "powershell -NoProfile -ExecutionPolicy Bypass -File encyclopedia/create-shortcuts.ps1"
+    "atlas:shortcuts": "powershell -NoProfile -ExecutionPolicy Bypass -File encyclopedia/create-shortcuts.ps1",
+    "backup:snapshot": "node scripts/backup_snapshot.mjs"
   },
   "dependencies": {
     "@google/genai": "^2.4.0",

@@ -8,6 +8,7 @@ import './components/ElfSpotlight.css';
 import { registerServiceWorker } from './pwa/registerServiceWorker';
 import {initializePlayerSave} from './utils/playerSaveBridge';
 import {startPerfAutoDetect} from './shell/perfMode';
+import {startPerfAutoDetect} from './shell/perfMode';
 
 const spotlightExportId = new URLSearchParams(window.location.search).get('spotlightExport');
 if (spotlightExportId) {
