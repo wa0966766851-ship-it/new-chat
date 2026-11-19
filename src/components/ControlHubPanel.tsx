@@ -15,7 +15,6 @@ import { playAudioTestTone } from '../utils/audioTestTone';
 import { BattleAISettingsPanel } from './BattleAISettingsPanel';
 import { LauncherSettingsPanel } from './LauncherSettingsPanel';
 import {GlobalAnimationMode} from './AnimationModeSettings';
-import { readPerfPreference, writePerfPreference, perfLiteActive, type PerfPreference } from '../shell/perfMode';
 import { BATTLE_GAME_SKINS, useBattleLayoutPrefs } from './battle/gameHud';
 
 const TAB_ICONS: Record<ControlSectionId, React.ComponentType<{ className?: string }>> = {

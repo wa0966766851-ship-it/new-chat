@@ -2,18 +2,18 @@
   "schemaVersion": 3,
   "note": "L4 usage index, ACTION/CONDITION split + P3 alias families. Actions resolve to FAMILY-###, conditions to Q-###. unindexedRefs are references whose context had no code (not an error).",
   "totals": {
-    "dataFiles": 151,
-    "opReferences": 2790,
-    "actionRefs": 2252,
+    "dataFiles": 152,
+    "opReferences": 2785,
+    "actionRefs": 2247,
     "conditionRefs": 538,
-    "indexedRefs": 2790,
-    "distinctOpsReferenced": 541,
+    "indexedRefs": 2785,
+    "distinctOpsReferenced": 540,
     "unindexedRefs": 0,
     "contextWarnings": 0,
     "catalogCodes": 701,
     "conditionCatalogCodes": 107,
-    "usedCodes": 543,
-    "unusedCodes": 246,
+    "usedCodes": 542,
+    "unusedCodes": 247,
     "aliasFamilies": 6,
     "aliasErrors": 0
   },
@@ -3530,16 +3530,6 @@
       "count": 1,
       "elves": [
         "5007"
-      ],
-      "context": "action"
-    },
-    "X-054": {
-      "op": "extra_random_target",
-      "count": 5,
-      "elves": [
-        "5022",
-        "5023",
-        "5026"
       ],
       "context": "action"
     },
@@ -8127,21 +8117,6 @@
       "conditionCount": 0,
       "elves": [],
       "definitions": []
-    },
-    "extra_random_target": {
-      "actionCode": "X-054",
-      "conditionCode": null,
-      "count": 5,
-      "actionCount": 5,
-      "conditionCount": 0,
-      "elves": [
-        "5022",
-        "5023",
-        "5026"
-      ],
-      "definitions": [
-        "亂舞"
-      ]
     },
     "extra_use_times": {
       "actionCode": "T-024",
@@ -15195,6 +15170,7 @@
     "X-034",
     "X-041",
     "X-047",
+    "X-054",
     "X-058",
     "X-061",
     "X-062",

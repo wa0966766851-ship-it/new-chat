@@ -4,15 +4,13 @@ import crypto from 'node:crypto';
 import {spawnSync,spawn} from 'node:child_process';
 import net from 'node:net';
 import {activateRelease} from './desktop_release.mjs';
+import {acquireDesktopUpdateLock} from './desktop_update_lock.mjs';
 import {buildSync} from 'esbuild';
 const root=process.cwd(),home=path.join(root,'.desktop-releases');
 fs.mkdirSync(home,{recursive:true});
-const lock=path.join(home,'update.lock');let fd;
 // 2026-11-14：--quick＝啟動器自動更新用（型別檢查＋建置＋前後端實測，略過回歸測試組）；完整驗收仍用不帶參數的 desktop:update。
 const quick=process.argv.includes('--quick');
-// 中斷留下的舊鎖（超過 45 分鐘）視為失效，否則之後每次更新都會被擋、桌面永遠停在舊版。
-try{const st=fs.statSync(lock);if(Date.now()-st.mtimeMs>45*60*1000){fs.unlinkSync(lock);console.warn('已移除逾時的更新鎖');}}catch{/* 沒有鎖 */}
-try{fd=fs.openSync(lock,'wx');}catch{throw Error('已有桌面更新進行中；確認該流程結束後再處理更新鎖。');}
+const releaseUpdateLock = await acquireDesktopUpdateLock(home);
 function run(cmd,args){const r=spawnSync(process.execPath,[cmd,...args],{cwd:root,stdio:'inherit',windowsHide:true});if(r.status!==0)throw Error(`更新停止：${cmd}`);}
 async function smoke(dir,buildId){
  const probe=net.createServer();await new Promise((ok,no)=>{probe.once('error',no);probe.listen(0,'127.0.0.1',ok);});
@@ -96,4 +94,4 @@ try{
  fs.writeFileSync(path.join(dir,'completion.json'),JSON.stringify({source,version,checks:quick?'types, HTTP frontend/backend identity (quick)':'types, rey, facing, saved definitions, skins, HTTP frontend/backend identity',completedAt:new Date().toISOString()}));
  activateRelease(home,id);
  console.log('桌面完成版本已就緒。結束目前戰鬥並關閉舊視窗後，使用原桌面捷徑開啟。');
-}finally{fs.closeSync(fd);fs.unlinkSync(lock);}
+}finally{await releaseUpdateLock();}

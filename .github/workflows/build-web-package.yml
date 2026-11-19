@@ -82,6 +82,14 @@ jobs:
             docs/全精靈效果實裝核對.json
           retention-days: 3
       - run: node --import tsx tests/updates.semantic.test.ts
+      - name: Verify the production roster
+        if: ${{ inputs.publish }}
+        run: >-
+          node --import tsx --input-type=module -e
+          "import { DEFAULT_ELVES } from './src/data/defaultElvesLoaded.ts';
+          const ids = new Set(DEFAULT_ELVES.map(elf => String(elf.id)));
+          for (const id of ['5048','5049','5050','5051']) if (!ids.has(id)) throw Error('正式名單缺少 ' + id);
+          console.log('正式名單 ' + ids.size + ' 隻')"
       - run: npm run build
       - run: npm run audit:bundle
       - run: node scripts/prepare_web_package.mjs
@@ -93,13 +101,13 @@ jobs:
           if-no-files-found: error
           retention-days: 30
       - name: Publish verified package to original protected site
-        if: ${{ inputs.publish }}
+        if: ${{ inputs.publish && github.ref == 'refs/heads/main' }}
         env:
           SEER_SITE_SERVICE_TOKEN: ${{ secrets.SEER_SITE_SERVICE_TOKEN }}
           SEER_SITE_PUBLISH_KEY: ${{ secrets.SEER_SITE_PUBLISH_KEY }}
         run: node scripts/publish_site_package.mjs
   resume-publication:
-    if: ${{ !inputs.diagnose_audit && inputs.publish && inputs.resume_publish_run != '' }}
+    if: ${{ !inputs.diagnose_audit && inputs.publish && inputs.resume_publish_run != '' && github.ref == 'refs/heads/main' }}
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
