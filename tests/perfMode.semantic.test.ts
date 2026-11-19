@@ -1,0 +1,21 @@
+// 2026-11-16 效能模式：自動判斷（硬體／幀時間）、手動開關、<html data-perf> 套用與 CSS 規則存在。
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import { JSDOM } from 'jsdom';
+const dom = new JSDOM('<html><body></body></html>', { url: 'http://localhost/' });
+Object.assign(globalThis, { window: dom.window, document: dom.window.document, localStorage: dom.window.localStorage });
+const m = await import('../src/shell/perfMode');
+assert.equal(m.weakHardwareHint({ hardwareConcurrency: 4 }), true);
+assert.equal(m.weakHardwareHint({ hardwareConcurrency: 8, deviceMemory: 8 }), false);
+assert.equal(m.weakHardwareHint({ hardwareConcurrency: 8, deviceMemory: 2 }), true);
+assert.equal(m.framesLookSlow(Array(60).fill(16.7)), false, '60fps 不精簡');
+assert.equal(m.framesLookSlow(Array(60).fill(30)), true, '33fps 精簡');
+assert.equal(m.framesLookSlow([...Array(40).fill(16), ...Array(20).fill(80)]), true, '大量長幀精簡');
+assert.equal(m.framesLookSlow(Array(10).fill(80)), false, '樣本不足不判斷');
+m.writePerfPreference('on'); assert.equal(document.documentElement.dataset.perf, 'lite'); assert.equal(m.readPerfPreference(), 'on');
+m.writePerfPreference('off'); assert.equal(document.documentElement.dataset.perf, undefined);
+m.writePerfPreference('auto'); assert.equal(m.readPerfPreference(), 'auto');
+const css = fs.readFileSync('src/index.css', 'utf8');
+assert.ok(/\[data-perf="lite"\][^{]*\{[^}]*backdrop-filter:\s*none/.test(css), '精簡模式移除背景模糊');
+assert.ok(fs.readFileSync('src/App.tsx', 'utf8').includes("reducedMotion: lite ? 'always' as const : 'user' as const"), 'motion 減少動態');
+console.log('效能模式：自動判斷、手動開關與樣式規則通過');

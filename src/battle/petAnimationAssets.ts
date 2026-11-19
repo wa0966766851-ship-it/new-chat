@@ -9,6 +9,8 @@ export interface PetFullscreenConfig {
  ultimate?:string;
 }
 export interface PetAnimationAsset {
+ /** Seer API 索引與官方原始路徑；本機副本不取代來源登記。 */
+ source?:{indexUrl:string;indexVersion:string;entry:string;url:string};
  name:string; clip:string; physicalMotion:'approach'|'stationary'; facing:'left'|'right'|'front';
  /** 已逐圖核對的官方靜態來源；只允許此來源使用本動畫，不放寬自繪圖限制。 */
  body?:string;
@@ -24,10 +26,22 @@ export interface PetAnimationAsset {
  fullscreen?:PetFullscreenConfig;
  /** 實機靜動對照後的本體校準，只用於戰鬥，不影響首頁或其他來源。 */
  battleScale?:number;
+ /** 原生物攻的實際打擊點，沿本體框由背側(0)到前側(1)；未登記沿用前緣。
+  * 巨型武器／殘影跨過打擊點的素材須以實際出招影格校準，不改圖集或傷害時點。 */
+ physicalContact?:Readonly<Record<string,number>>;
+ /** 以命中影格校準物攻位移，避免整段跟隨武器／特效外框變動。 */
+ stablePhysicalImpact?:boolean;
  facingVerified:boolean; fps:number; atlas:readonly [number,number]; hash:string; size:number; sha256:string;
  sequences:readonly {name:string;frames:number;hits:readonly number[]}[];
 }
 export const PET_ANIMATION_ASSETS = {
+  grauen: {stablePhysicalImpact:true,"name":"格勞恩斯","body":"/seer/body/3407.png","clip":"3407.pet","physicalMotion":"approach","facing":"right","facingVerified":true,"fps":25,"atlas":[2048,2048],"hash":"42ec4c42d7e58c129b1dc577a7728503","size":1448604,"sha256":"f8c3df73bb5b2b9d453f882e88f17803e031d885f0b8ba7c040b4922eecf04dd","sequences":[{"name":"standby","frames":25,"hits":[]},{"name":"attack","frames":144,"hits":[119]},{"name":"sa","frames":85,"hits":[42]},{"name":"cp","frames":78,"hits":[38]},{"name":"hited","frames":8,"hits":[]}],"source":{"indexUrl":"https://pet-anim-viewer.seerapi.com/pet-anim-index.json","indexVersion":"20261113164751","entry":"ppets_3407","url":"https://newseer.61.com/Assets/StandaloneWindows64/PetAnimPackage/42ec4c42d7e58c129b1dc577a7728503"}},
+  leonidas: {stablePhysicalImpact:true,"name":"洪荒·列奧尼達","body":"/seer/body/4125.png","clip":"4125.pet","physicalMotion":"approach","facing":"right","facingVerified":true,"fps":26,"atlas":[8192,4096],"hash":"338ba8561f105a57b9cd5b0913707943","size":6154244,"sha256":"3e067f285fac65802c8095085048a9d9f7c67ee5259a37f0a73cfcb1efd7168b","sequences":[{"name":"standby","frames":28,"hits":[]},{"name":"attack","frames":134,"hits":[109]},{"name":"sa","frames":126,"hits":[100]},{"name":"cp","frames":105,"hits":[59]},{"name":"hited","frames":8,"hits":[]}],"source":{"indexUrl":"https://pet-anim-viewer.seerapi.com/pet-anim-index.json","indexVersion":"20261113164751","entry":"ppets_4125","url":"https://newseer.61.com/Assets/StandaloneWindows64/PetAnimPackage/338ba8561f105a57b9cd5b0913707943"}},
+ // 奧斯卡原生雙外觀：2026-11-16 逐檔解析並以正式播放器核對原姿朝右，P1朝右／P2單次鏡射朝左。
+ // 原版動畫為右向三分之四站姿；不能繼承其正面靜態PNG朝向。見 .seer-cache/oscar-animation/*-standby.png。
+ oscarGenesis: {physicalContact:{attack:.7},"name":"聖靈奧斯卡","body":"/seer/body/1400599.png","clip":"1400599.pet","physicalMotion":"approach","facing":"right","facingVerified":true,"fps":24,"atlas":[4096,2048],"hash":"19720112218cbcfb6ef7207b60af54f2","size":2553973,"sha256":"93224b6a48c831c66c204189aac1cf04372cdc48b9db1b207cdc8e081f15de77","sequences":[{"name":"standby","frames":35,"hits":[]},{"name":"attack","frames":122,"hits":[100]},{"name":"sa","frames":101,"hits":[77]},{"name":"cp","frames":98,"hits":[49]},{"name":"hited","frames":8,"hits":[]},{"name":"appear","frames":32,"hits":[2]}],"source":{"indexUrl":"https://pet-anim-viewer.seerapi.com/pet-anim-index.json","indexVersion":"20261113164751","entry":"ppets_1400599","url":"https://newseer.61.com/Assets/StandaloneWindows64/PetAnimPackage/19720112218cbcfb6ef7207b60af54f2"}},
+ oscarOriginal: {physicalContact:{attack:.4},"name":"聖靈守護奧斯卡","body":"/seer/body/3425.png","clip":"3425.pet","physicalMotion":"approach","facing":"right","facingVerified":true,"fps":25,"atlas":[4096,4096],"hash":"ececf5c3a12ab1818a67393f1525ec43","size":3661744,"sha256":"a43d4af6bc52515ec407c27510eb226835892920727644a4111d9226ce32c727","sequences":[{"name":"standby","frames":27,"hits":[]},{"name":"attack","frames":160,"hits":[114]},{"name":"sa","frames":126,"hits":[99]},{"name":"cp","frames":73,"hits":[31]},{"name":"hited","frames":8,"hits":[]}],"source":{"indexUrl":"https://pet-anim-viewer.seerapi.com/pet-anim-index.json","indexVersion":"20261113164751","entry":"ppets_3425","url":"https://newseer.61.com/Assets/StandaloneWindows64/PetAnimPackage/ececf5c3a12ab1818a67393f1525ec43"}},
+
  gaiaGodslayer: {"name":"滅戰神決蓋亞","body":"/seer/body/4766.png","clip":"4766.pet","physicalMotion":"approach","facing":"right","facingVerified":true,"fps":30,"atlas":[8192,8192],"hash":"e8debdcf8d2478a8c5459b4ad9372d37","size":19477154,"sha256":"c5db76d72acdae9798dd588fdbed6cd2ff9a969e3d3e23477f3000025dd7be10","sequences":[{"name":"standby","frames":60,"hits":[]},{"name":"attack","frames":213,"hits":[122]},{"name":"sa","frames":128,"hits":[83]},{"name":"cp","frames":127,"hits":[92]},{"name":"hited","frames":8,"hits":[]},{"name":"appear","frames":84,"hits":[2]},{"name":"moves_37911","frames":187,"hits":[149]}]},
  // 2026-11-10：新十隻逐檔解析；朝向由正式播放器截圖另行核對。
  corruptedRiels: {"name":"魔化.瑞爾斯","body":"/seer/body/3094.png","clip":"3094.pet","physicalMotion":"approach","facing":"right","facingVerified":true,"fps":25,"atlas":[2048,2048],"hash":"6bc7f814daf6d8e13b31bcd7b0fb343b","size":779123,"sha256":"46e5d1e2f9f0367579cab63ac51d7d1cc4acef7b3aa1d8b188aff8491f13e435","sequences":[{"name":"standby","frames":25,"hits":[]},{"name":"attack","frames":121,"hits":[100]},{"name":"sa","frames":71,"hits":[28]},{"name":"cp","frames":67,"hits":[34]},{"name":"hited","frames":8,"hits":[]}]},

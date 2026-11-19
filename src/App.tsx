@@ -1,4 +1,6 @@
 import React, { useState, useEffect, lazy, Suspense } from "react";
+import { MotionConfigContext } from 'motion/react';
+import {perfLiteActive,PERF_EVENT} from './shell/perfMode';
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -10,9 +12,10 @@ import { applySavedSkillCorrections } from './data/savedSkillCorrections';
 import { resetElfStateForBattle, setDynamicMatchups } from "./utils/statCalculator";
 import { useShellMode } from "./shell/shellMode";
 import { LegacyShell, ShellSwitchButton } from "./shell/LegacyShell";
-import { AegisShell } from "./shell/AegisShell";
+import TechLoadingScreen from './components/TechLoadingScreen';
 import type { ShellBridge, AppView, BattleFormat } from "./shell/bridge";
 import { GameDataProvider, useGameData } from "./contexts/GameDataContext";
+const AegisShell = lazy(() => import('./shell/AegisShell').then(m => ({ default: m.AegisShell })));
 const PerformanceProbe = lazy(() => import('./components/PerformanceProbe'));
 
 /**
@@ -23,11 +26,21 @@ const PerformanceProbe = lazy(() => import('./components/PerformanceProbe'));
  */
 
 export default function App() {
+  const [lite, setLite] = useState(() => perfLiteActive());
+  useEffect(() => {
+    const sync = () => setLite(perfLiteActive());
+    window.addEventListener(PERF_EVENT, sync);
+    return () => window.removeEventListener(PERF_EVENT, sync);
+  }, []);
+  const parentMotion = React.useContext(MotionConfigContext);
+  const motionConfig = React.useMemo(() => ({ ...parentMotion, reducedMotion: lite ? 'always' as const : 'user' as const }), [parentMotion, lite]);
   return (
+    <MotionConfigContext.Provider value={motionConfig}>
     <GameDataProvider>
       <style>{`@keyframes appHeaderBtnIn{from{opacity:0;transform:translateX(-20px)}to{opacity:1;transform:translateX(0)}}`}</style>
       <AppContent />
     </GameDataProvider>
+    </MotionConfigContext.Provider>
   );
 }
 
@@ -188,7 +201,7 @@ function AppContent() {
   return (
     <>
       {shellMode === "aegis" && view !== "battle"
-        ? <AegisShell b={bridge} onSwitchShell={() => { if (view === "bag") setView("start"); toggleShell(); }} />
+        ? <Suspense fallback={<TechLoadingScreen />}><AegisShell b={bridge} onSwitchShell={() => { if (view === "bag") setView("start"); toggleShell(); }} /></Suspense>
         : <LegacyShell
             b={bridge}
             showHeader={showHeader}
