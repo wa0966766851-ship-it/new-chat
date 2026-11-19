@@ -282,7 +282,8 @@
     "test:perf": "npm run test:perf-mode && npm run test:pet-loading-flow && npm run test:pet-native-contact",
     "test:ains-corrections": "node --import tsx tests/ainsReserveAndMeasurements.semantic.test.ts && node --import tsx tests/immortalAinsComplete.semantic.test.ts && node --import tsx tests/ainsRoyalFlame.semantic.test.ts",
     "test:skill-description": "node --import tsx tests/skillDescriptionPresentation.semantic.test.tsx && npm run test:description && node --import tsx tests/illusionFixes.semantic.test.ts",
-    "test:skill-banner": "node tests/skillBanner.browser.test.mjs"
+    "test:skill-banner": "node tests/skillBanner.browser.test.mjs",
+    "backup:snapshot": "node scripts/backup_snapshot.mjs"
   },
   "dependencies": {
     "@google/genai": "^2.4.0",
