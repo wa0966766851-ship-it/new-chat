@@ -29,6 +29,27 @@ export const extraKindOf = (elf: { name?: string; extraKind?: string } | null | 
  * Callers SHOULD pass an extra-specific `soulMark` whose description is the verbatim
  * sub-clause (unaltered) that describes THIS extra elf inside the summoner's text.
  */
+/**
+ * 從召喚者原文擷取提及此額外精靈的段落（逐字，不改寫）：
+ * 含名稱的頂層行連同其後的「>」子行；找不到才回到預設說明。
+ */
+export function extraElfClauses(text: string | undefined, name: string): string {
+  if (!text || !name) return '';
+  const lines = text.split('\n'), out: string[] = [];
+  // 單字名（旭、清）只認獨立出現，避免「清除」之類誤配。
+  const esc = name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const hit = name.length > 1 ? (l: string) => l.includes(name)
+    : (l: string) => new RegExp(`(?:^|[「『【、與和令])${esc}(?=[」』】：:、與和作為]|$)`).test(l.trim());
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+    if (line.trimStart().startsWith('>') || !hit(line)) continue;
+    out.push(line);
+    while (i + 1 < lines.length && lines[i + 1].trimStart().startsWith('>')) out.push(lines[++i]);
+  }
+  if (!out.length) for (const line of lines) if (hit(line)) out.push(line);
+  return out.join('\n').trim();
+}
+
 export function createExtraElf(baseElf: Elf, overrides: Partial<Elf> & { name: string }): Elf {
   // 只繼承基礎配置；戰鬥印記、存活規則、PP特權等不能從召喚者複製。
   const inheritedKeys = ["type", "level", "baseStats", "ivs", "evs", "natureModifiers",
@@ -40,9 +61,11 @@ export function createExtraElf(baseElf: Elf, overrides: Partial<Elf> & { name: s
   const explicitId = typeof overrides.id === "string" && EXTRA_ELF_ID_PATTERN.test(overrides.id) ? overrides.id : undefined;
   const uniqueId = explicitId ?? `${EXTRA_ELF_KINDS[overrides.name] ?? "x_extra"}_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
 
+  const sourceClauses = extraElfClauses(baseElf.soulMark?.description, overrides.name)
+    || (baseElf.skills || []).map(s => extraElfClauses(s.description, overrides.name)).filter(Boolean).join('\n');
   const defaultExtraSoulMark: SoulMark = {
     name: "額外精靈",
-    description: `由【${baseElf.name}】召喚的額外精靈。其效果請見召喚者專屬魂印中與本精靈相關的敘述。`,
+    description: sourceClauses || `由【${baseElf.name}】召喚的額外精靈。其效果請見召喚者專屬魂印中與本精靈相關的敘述。`,
     effectType: "none",
     effectValue: 0,
   };

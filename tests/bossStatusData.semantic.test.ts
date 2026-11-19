@@ -43,6 +43,7 @@ test('所有 BOSS 特性描述符合規範格式', () => {
     assert.ok(d.startsWith('附屬類異常；BOSS 類異常；處於該異常狀態則'), `${t.name} 前綴不符：${d.slice(0, 40)}`);
     assert.ok(d.includes('無回合數且不會隨回合遞減，下場後保留'), `${t.name} 缺結尾說明`);
     assert.ok(!d.includes('。。'), `${t.name} 有重複句號`);
+    assert.ok(t.extension ? d.includes('【擴展】百科未收錄') : /#\d+「/.test(d), `${t.name} 結尾標明百科對應或擴展`);
   }
 });
 

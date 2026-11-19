@@ -2,7 +2,7 @@ import type { Elf, Skill } from '../../../types';
 import { clampSkillPp } from '../../../utils/battleHelpers';
 
 const PROFILE_KEYS=['name','type','baseStats','soulMark','trait','alienTraits','abilities','kit','path','seerId',
-  'artPresentation','spriteFacing','height','weight','gender','description','isAlienElf','category','trait_stone_thrower'] as const;
+  'artPresentation','spriteFacing','height','weight','gender','description','isAlienElf','category','groupIds','groupTags','trait_stone_thrower'] as const;
 const SKILL_STATE_KEYS=['pp','currentPp','charge','battleSlot','skillRune','isRuneActive','specialBadge','specialMarks',
   'isAbolished','isPpPenalized','ppMaxOffset','ppMinOffset'] as const;
 

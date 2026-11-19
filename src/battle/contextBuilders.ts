@@ -4,6 +4,7 @@ import { runExtraElfNode, killExtraElf } from './extraElfKit';
 import { queueAttachedAttackDamage } from './attachedAttackDamage';
 import {portableSkillCapabilities,portableShieldPatch} from './portableSkillMarks';
 import { applyAlienDoubleDamage } from './advancedDamageModifiers';
+import { modifySkillDamage } from '../effects/traitEffects';
 import { createDamageComp, floorDamage } from './damagePipeline';
 import { resolveDamageBlocking } from './damageBlocking';
 import { matchesDamageTypes } from '../effects/damageChoices';
@@ -20,6 +21,7 @@ import { capCurrentHp } from './hpCeiling';
 import { applyAdvancedDamageModifiers, applyOutgoingSkillRestriction } from './advancedDamageModifiers';
 import { reductionPolicy, multiplyDamageReduction, applyStatusDamageModifiers, applyMarkDamageReductions, finalizeDamageReductions, limitIncomingDamage } from './damageReduction';
 import { activeConstraints } from './timedConstraints';
+import { observeWeightEffect } from '../effects/weightEffectLifecycle';
 import { blocksStatusInfliction } from './statusOrigin';
 import { attackDefenseBypass, applyAttackDefenseLimit } from './attackDefense';
 import { skillTypeMultiplier } from './skillTypeOverride';
@@ -69,11 +71,15 @@ function withSelfRef<T extends object>(comp: T): T & { damageComp: T } {
 
 let _reflectingStatus = false;
 let _reflectHookDepth = 0; // >0 代表目前正在「反彈／攔截」流程中，此時套用的異常即為被反彈過來的
+// >0 代表正在對「被反彈過來的異常」執行附加前防護（魂印／套裝／遺物／BOSS 特性）：只能免疫，不能再反彈。
+// 2026-11-15：過去被反彈的異常整段跳過這些防護，導致魂印型免疫（例：譜尼【聖】）對反彈來的異常失效。
+let _reflectedGuardDepth = 0;
 let _statusApplyDepth = 0;
 let _secondaryDamageDepth = 0;
 let _immunizedNotifyDepth = 0;
 
 export interface SharedContextDeps {
+  actionId?: number;
   checkResourceTransitions?:()=>void;
   side: "p1" | "p2";
   isHit: boolean;
@@ -149,6 +155,16 @@ function runDamageHooks(shared: SharedContextDeps, targetSide: 'p1' | 'p2', comp
 
 export function buildDamageAPIs(shared: SharedContextDeps): DamageAPIs {
   const { side, moveIndex, syncStateRef, pushEffect, getBattleEventContext, self } = shared;
+  // 2026-10-28：真正 100% 免傷時派發通用事件，供四龍（金／玄／蒼）等「免疫成功後追加效果」使用。
+  // 2026-11-15：固定傷害與百分比傷害過去不派發，導致「免疫固定／百分比傷害成功時」條款永遠不觸發（例：龍之治癒【玄龍】）。
+  const notifyDamageImmunized = (tSide: 'p1' | 'p2', damageComp: any, amt: number, finalDamage: number) => {
+    if (!(amt > 0 && finalDamage === 0 && damageComp.incomingDamageImmunity && !damageComp.incomingDamageCancellation)) return;
+    try {
+      const immTarget = syncStateRef.current[tSide];
+      const immCtx = getBattleEventContext(tSide, true, moveIndex, immTarget);
+      SoulMarkRegistry[immTarget?.name]?.(immCtx, EffectTiming.DAMAGE_IMMUNIZED, { damageType: damageComp.damageCategory, blockedAmount: amt, targetSide: tSide, holderSide: tSide });
+    } catch (e) { console.error('[DAMAGE_IMMUNIZED]', e); }
+  };
   
   return {
     applyPinkDamage: (tSide, amt, label, aP1, aP2, dmgType, opts?: { pure?: boolean } & DamageCalculationOptions) => {
@@ -239,14 +255,7 @@ export function buildDamageAPIs(shared: SharedContextDeps): DamageAPIs {
       const finalDamage = resolveDamageBlocking(damageComp,Math.min(damageComp.outgoingLimit ?? Infinity, floorDamage(damageComp.floor !== undefined ? Math.max(stage3, damageComp.floor) : Math.max(0, stage3))));
 
       notifyDamageCalculation(opts,damageComp,amt,finalDamage);
-      // 2026-10-28：真正 100% 免傷時派發通用事件，供四龍（金／玄／蒼）等「免疫成功後追加效果」使用。
-      if (amt > 0 && finalDamage === 0 && damageComp.incomingDamageImmunity && !damageComp.incomingDamageCancellation) {
-        try {
-          const immTarget = syncStateRef.current[tSide];
-          const immCtx = getBattleEventContext(tSide, true, moveIndex, immTarget);
-          SoulMarkRegistry[immTarget?.name]?.(immCtx, EffectTiming.DAMAGE_IMMUNIZED, { damageType: damageComp.damageCategory, blockedAmount: amt, targetSide: tSide, holderSide: tSide });
-        } catch (e) { console.error('[DAMAGE_IMMUNIZED]', e); }
-      }
+      notifyDamageImmunized(tSide, damageComp, amt, finalDamage);
       pushEffect({ type: 'damage', side: tSide, data: { marksApplied: true, amount: finalDamage, requestedAmount: amt, minimumRemainingHp:opts?.minimumRemainingHp, onSettled: combineSettlementCallbacks(opts?.onSettled, damageComp.afterDamage), label: label || "附加傷害", popup: true, sourceElfName: self.name, sourceSide:side, sourceBattleId:self.battleId||self.id, damageType: damageComp.damageCategory, attackDefenseBypass: damageComp.attackDefenseBypass, reductionPolicy: damageComp.reductionPolicy, ignoreShield: !!damageComp.attackDefenseBypass?.shield } });
       return finalDamage;
     },
@@ -345,6 +354,9 @@ export function buildDamageAPIs(shared: SharedContextDeps): DamageAPIs {
       }
 
       if (!damageComp.pure) applyActiveGateTimersToDamage(actorSide, tSide, damageComp, pushEffect, syncStateRef, { side, moveIndex });
+
+      if (tSide !== side) modifySkillDamage(self, tOpp, undefined, damageComp,
+        text => pushEffect({ type: 'log', side, data: { text, type: 'effect' } }));
 
       // 無視對手抵擋傷害（乘區被歸零）／無視傷害限制／保底傷害
       if (opts?.ignoreBlock) damageComp.ignoreDamageBlocking = true;
@@ -494,6 +506,7 @@ export function buildDamageAPIs(shared: SharedContextDeps): DamageAPIs {
       const stage3 = limitIncomingDamage(damageComp,stage2);
       const finalDamage = resolveDamageBlocking(damageComp,Math.min(damageComp.outgoingLimit ?? Infinity, floorDamage(damageComp.floor !== undefined ? Math.max(stage3, damageComp.floor) : Math.max(0, stage3))));
 
+      notifyDamageImmunized(tSide, damageComp, damageComp.base, finalDamage);
       pushEffect({ type: 'damage', side: tSide, data: { marksApplied: true, amount: finalDamage, reductionPolicy: damageComp.reductionPolicy, onSettled: damageComp.afterDamage, label: "百分比傷害", popup: true, sourceElfName: self.name, sourceSide:side, sourceBattleId:self.battleId||self.id, damageType: "percent" } });
       return finalDamage;
     },
@@ -582,6 +595,7 @@ export function buildDamageAPIs(shared: SharedContextDeps): DamageAPIs {
       const stage3 = limitIncomingDamage(damageComp,stage2);
       const finalDamage = resolveDamageBlocking(damageComp,Math.min(damageComp.outgoingLimit ?? Infinity, floorDamage(damageComp.floor !== undefined ? Math.max(stage3, damageComp.floor) : Math.max(0, stage3))));
 
+      notifyDamageImmunized(tSide, damageComp, damageComp.base, finalDamage);
       pushEffect({ type: 'damage', side: tSide, data: { marksApplied: true, amount: finalDamage, reductionPolicy: damageComp.reductionPolicy, onSettled: damageComp.afterDamage, label: label || "固定傷害", popup: true, sourceElfName: self.name, sourceSide:side, sourceBattleId:self.battleId||self.id, damageType: "fixed" } });
       return finalDamage;
     },
@@ -601,6 +615,11 @@ export function buildStatusAPIs(shared: SharedContextDeps): StatusAPIs {
       s = canonicalStatusName(s);
       // 反彈／轉嫁類效果互相觸發時的遞迴保護（雙方都有「反彈異常」會無限互彈直到堆疊溢位）
       if (_statusApplyDepth >= 3) return { success: false, immune: true };
+      // 被反彈過來的異常在附加前防護中又試圖附加給他方＝再次反彈：依反彈原則不成立（防護本身的免疫照常生效）。
+      if (_reflectedGuardDepth > 0 && tSide !== side) {
+        pushEffect({ type: 'log', side, data: { text: `🔁 被反彈的【${s}】不可再次反彈。`, type: "info" } });
+        return { success: false, immune: false };
+      }
       // 「本回合執行過附加異常狀態的效果」：對自身或他方的附加均記錄，不論成敗。
       {
         const c0 = syncStateRef.current;
@@ -617,20 +636,22 @@ export function buildStatusAPIs(shared: SharedContextDeps): StatusAPIs {
       // 「無法附加」型禁令（黯痕）與反彈遞迴保護不是免疫類，照舊生效。
       const sovereignStatus = (readScopedRegistry(c, tSide, target, 'blkStatusImmunityBypass') || []).some((name: string) => canonicalStatusName(name) === s);
       const source=recipient(c,side);
-      if(blocksStatusInfliction(scopedTimers(c,side,source),source,side,statusOrigin)){
-        pushEffect({type:'log',side,data:{text:`🚫 【異常附加受限】：【${source.name}】本次無法附加【${s}】！`,type:'info'}});
-        return {success:false,immune:false};
-      }
+      const blockedThisAction = statusOrigin?.kind === 'skill' && statusOrigin.skillCategory === '屬性' &&
+        shared.actionId !== undefined && c.phase === 'resolving' && readScopedRegistry(c, side, source, 'utilityStatusBlockedAction') === shared.actionId;
+      const applicationBlocked = blockedThisAction || blocksStatusInfliction(scopedTimers(c,side,source),source,side,statusOrigin);
       const targetId=target.battleId||target.id;
       const targetContext=()=>getBattleEventContext(tSide,true,0,target);
       // 2026-10-28：異常未指定回合數時預設 3 回合。
       // 原本只有 runtime.status 等入口補預設，直接呼叫本函式（至少 15 處）會傳 undefined，
       // 而 advanceStatusEffect 的 duration-1 對 undefined 得 NaN，導致「附加後立刻結束」。
       if (d === undefined || d === null || !Number.isFinite(Number(d)) || Number(d) <= 0) d = 3;
-      const statusData: { [key:string]:any; status:string; duration:number; prevented:boolean; prevent?:boolean; immunized?:boolean; targetSide:'p1'|'p2'; sourceSide:'p1'|'p2' } = {status:s,duration:d,prevented:false,targetSide:tSide,sourceSide:side,sourceMoveIndex:shared.moveIndex,teamObserverPhase:'beforeImmunity'};
+      const statusData: { [key:string]:any; status:string; duration:number; prevented:boolean; prevent?:boolean; immunized?:boolean; targetSide:'p1'|'p2'; sourceSide:'p1'|'p2' } = {status:s,duration:d,prevented:false,targetSide:tSide,sourceSide:side,targetBattleId:targetId,sourceMoveIndex:shared.moveIndex,teamObserverPhase:'beforeImmunity',applicationBlocked};
       notifyTeamKitObservers(targetContext(),EffectTiming.BEFORE_STATUS_APPLY,statusData);
-      if(side!==tSide)notifyTeamKitObservers(getBattleEventContext(side,true,shared.moveIndex,self),EffectTiming.BEFORE_STATUS_APPLY,statusData);
       delete statusData.teamObserverPhase;
+      if (applicationBlocked) {
+        pushEffect({type:'log',side,data:{text:`🚫 【異常附加受限】：【${source.name}】本次無法附加【${s}】！`,type:'info'}});
+        return {success:false,immune:false};
+      }
       s=canonicalStatusName(statusData.status);d=statusData.duration;
       if(statusData.prevented||statusData.prevent)return {success:false,immune:!!statusData.immunized};
       // 通用：異常被免疫時通知受方魂印／套裝（ON_STATUS_IMMUNIZED；反彈不算免疫）
@@ -750,10 +771,16 @@ export function buildStatusAPIs(shared: SharedContextDeps): StatusAPIs {
       // §47: Suit BEFORE_STATUS_APPLY
       const suitId = tSide === 'p1' ? c.p1Suit : c.p2Suit;
       // targetSide＝受到異常的一方、sourceSide＝施加方（handler 以 targetSide === ctx.actor 判斷自身受到）
-      const isReflectedIn = _reflectHookDepth > 0; // 被反彈過來的異常：不再響應攔截／反彈
-      if (!isReflectedIn && !sovereignStatus && suitId && SuitEffectRegistry[suitId]) {
+      // 被反彈過來的異常：不再反彈，但免疫類防護照常判定（以 _reflectedGuardDepth 擋下防護內的再次反彈）。
+      const isReflectedIn = _reflectHookDepth > 0;
+      if (isReflectedIn) statusData.reflected = true;
+      const guarded = (fn: () => void) => {
+        if (isReflectedIn) _reflectedGuardDepth++;
+        try { fn(); } finally { if (isReflectedIn) _reflectedGuardDepth--; }
+      };
+      if (!sovereignStatus && suitId && SuitEffectRegistry[suitId]) {
         _reflectHookDepth++;
-        try { SuitEffectRegistry[suitId](filterCtx, EffectTiming.BEFORE_STATUS_APPLY, statusData); } finally { _reflectHookDepth--; }
+        try { guarded(() => SuitEffectRegistry[suitId](filterCtx, EffectTiming.BEFORE_STATUS_APPLY, statusData)); } finally { _reflectHookDepth--; }
         s = canonicalStatusName(statusData.status);
         d = statusData.duration;
         if (statusData.prevented || statusData.prevent) {
@@ -762,19 +789,19 @@ export function buildStatusAPIs(shared: SharedContextDeps): StatusAPIs {
         }
       }
       const tRelics = tSide === 'p1' ? c.p1Relics : c.p2Relics;
-      if (!isReflectedIn && !sovereignStatus && tRelics?.length) {
-        runRelicEffects(tRelics, filterCtx, EffectTiming.BEFORE_STATUS_APPLY, statusData);
+      if (!sovereignStatus && tRelics?.length) {
+        guarded(() => runRelicEffects(tRelics, filterCtx, EffectTiming.BEFORE_STATUS_APPLY, statusData));
         if (statusData.prevented || statusData.prevent) {if(statusData.immunized)notifyImmunized('statusGuard');return { success: false, immune: true };}
       }
-      if (!isReflectedIn && !sovereignStatus) {
-        runBossTraitEffects(target, filterCtx, EffectTiming.BEFORE_STATUS_APPLY, statusData);
+      if (!sovereignStatus) {
+        guarded(() => runBossTraitEffects(target, filterCtx, EffectTiming.BEFORE_STATUS_APPLY, statusData));
         if (statusData.prevented || statusData.prevent) {if(statusData.immunized)notifyImmunized('statusGuard');return { success: false, immune: true };}
       }
 
       // Also call SoulMarkRegistry for BEFORE_STATUS_APPLY to allow soul mark immunities/replacements (M1)
-      if (!isReflectedIn && !sovereignStatus && SoulMarkRegistry[target.name]) {
+      if (!sovereignStatus && SoulMarkRegistry[target.name]) {
         _reflectHookDepth++;
-        try { SoulMarkRegistry[target.name](filterCtx, EffectTiming.BEFORE_STATUS_APPLY, statusData); } finally { _reflectHookDepth--; }
+        try { guarded(() => SoulMarkRegistry[target.name](filterCtx, EffectTiming.BEFORE_STATUS_APPLY, statusData)); } finally { _reflectHookDepth--; }
         s = canonicalStatusName(statusData.status);
         d = statusData.duration;
         if (statusData.prevented || statusData.prevent) {
@@ -822,8 +849,8 @@ export function buildStatusAPIs(shared: SharedContextDeps): StatusAPIs {
       const nextEffects = [...existingEffects.filter(e => e.id !== s), newEffect];
       
       const nextElf: any = { ...latestTarget, effects: nextEffects };
-      // 狂信：進入狀態時若自身沒有信仰對象，則本次狂信來源成為信仰對象
-      if (s === '狂信' && !nextElf.faithTarget) {
+      // 狂信：進入狀態時將對方當前在場精靈（本次來源）設為信仰對象；已處於狂信時維持原對象。
+      if (s === '狂信' && (!nextElf.faithTarget || !(Number(getStatuses(latestTarget)['狂信']) > 0))) {
         const src = self;
         if (src && tSide !== side) {
           nextElf.faithTarget = src.name;
@@ -871,7 +898,8 @@ export function buildStatusAPIs(shared: SharedContextDeps): StatusAPIs {
         pushEffect({ type: 'log', side: s, data: { text: `🛡️ 【${protectedElf?.name}】的回合類效果無法被消除！`, type: 'effect' } });
         return false;
       }
-      const result=clearScopedTurnEffects(c,s,protectedElf,polarity),removed=result.removed,cleared=removed.length;
+      const concealed = s !== side ? new Set<string>(readScopedRegistry(c,s,protectedElf,'concealedTurnEffectIds') || []) : undefined;
+      const result=clearScopedTurnEffects(c,s,protectedElf,polarity,concealed),removed=result.removed,cleared=removed.length;
       const zeroKeys: Record<string, any> = {};
       const removedRegistry:Record<string,any>={};
       for (const t of removed) for (const k of (t.payload?.mirrorRegistryKeys || [])) zeroKeys[k] = 0;
@@ -886,11 +914,14 @@ export function buildStatusAPIs(shared: SharedContextDeps): StatusAPIs {
     },
     hasTurnEffectOn: (s) => {
       const c = syncStateRef.current;
-      return hasTurnEffect(scopedTimers(c,s,recipient(c,s)));
+      const owner = recipient(c,s);
+      const hidden = s !== side ? readScopedRegistry(c,s,owner,'concealedTurnEffectIds') || [] : [];
+      return hasTurnEffect(scopedTimers(c,s,owner).filter(timer => !hidden.includes(timer.id)));
     },
     applyStatChange: (tSide, changes, ppChanges) => {
       const interception = { changes: { ...changes }, prevented: false, sourceSide: side };
       const originalTarget = recipient(syncStateRef.current,tSide);
+      if (Object.values(changes || {}).some(value => value > 0)) observeWeightEffect(getBattleEventContext(tSide, true, 0, originalTarget), 'stage');
       SoulMarkRegistry[originalTarget.name]?.(getBattleEventContext(tSide, true, 0,originalTarget), EffectTiming.BEFORE_STAT_CHANGE, interception);
       changes = interception.prevented ? {} : interception.changes;
       // 攔截鉤子可以更新狀態；不能用鉤子執行前的快照覆寫其結果。
@@ -902,6 +933,7 @@ export function buildStatusAPIs(shared: SharedContextDeps): StatusAPIs {
         (!t.ownerBattleId || t.ownerBattleId === (target.battleId || target.id)) && t.payload?.immuneStatDown);
       
       const filteredChanges = Object.entries(changes || {}).filter(([stat, value]) => {
+         if (value > 0 && timers.some(timer => timer.remaining > 0 && !timer.pendingActivation && timer.payload?.preventPositiveStages)) return false;
          if(value>0&&portableSkillCapabilities(c[tSide==='p1'?'p2':'p1']).opponentBoostDisabled)return false;
          if (value < 0 && (immuneStatDownTurns > 0 || immuneStatDownTimer || hasStoneThrowerMythic(target) || Object.keys(getStatuses(target)).some(name => StatusRegistry[name]?.mechanics?.some(m => m.params?.immuneStatDebuff)))) {
             pushEffect({ type: 'log', side: tSide, data: { text: `🛡️ 【能力下降免疫】：【${target.name}】免疫了能力下降！`, type: "effect" } });

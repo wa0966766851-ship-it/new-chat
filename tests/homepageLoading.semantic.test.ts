@@ -57,12 +57,20 @@ try {
   assert.ok(loaded('ControlHubPanel'));
   const playlistIndex = localStorage.getItem('seer_yt_index_start');
   await click([...document.querySelectorAll('[data-control-hub] button')].find(b => b.textContent?.includes('音樂'))!, '切音樂分類');
+  const continueSelector = '[data-testid="music-continue-across-scenes"]';
+  const continuous = document.querySelector<HTMLInputElement>(continueSelector)!;
+  assert.equal(continuous.checked, false, '預設跟隨各頁 BGM');
+  await click(continuous, '開啟切頁時持續播放');
+  assert.equal(localStorage.getItem('seer_music_continue_across_scenes'), '1');
   await click(document.querySelector('[aria-label="關閉控制中心"]'), '關閉設定');
   await waitFor(() => !document.querySelector('[data-control-hub]'), '關閉後視窗移除');
   await click(openHub(), '重新開啟設定');
   await waitFor(() => !!document.querySelector('[data-control-hub]'), '重新開啟設定成功');
   assert.ok(document.querySelector('[data-control-hub]')!.textContent?.includes('播放'), '分類狀態保留');
+  assert.equal(document.querySelector<HTMLInputElement>(continueSelector)!.checked, true, '設定面板重開後偏好保留');
   assert.equal(localStorage.getItem('seer_yt_index_start'), playlistIndex, '開關視窗不觸發音樂輪替');
+  await click(document.querySelector(continueSelector), '關閉切頁時持續播放');
+  assert.equal(localStorage.getItem('seer_music_continue_across_scenes'), '0');
   await click(document.querySelector('[aria-label="關閉控制中心"]'), '關閉設定');
 
   await click(document.querySelector('button[aria-label^="查看 "][aria-label$=" 的詳情"]'), '開啟精靈詳情');

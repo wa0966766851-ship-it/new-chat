@@ -12,7 +12,7 @@ globalThis.fetch = (async () => { throw new Error('offline'); }) as any;
 (globalThis as any).ResizeObserver ??= class { observe() {} unobserve() {} disconnect() {} };
 Object.assign(globalThis, { requestAnimationFrame: dom.window.requestAnimationFrame.bind(dom.window), cancelAnimationFrame: dom.window.cancelAnimationFrame.bind(dom.window) });
 const { createRoot } = await import('react-dom/client');
-const server = await createServer({ server: { middlewareMode: true, hmr: false, watch: null }, appType: 'custom', logLevel: 'silent' });
+const server = await createServer({ configFile: false, optimizeDeps: { noDiscovery: true, include: [] }, resolve: { preserveSymlinks: true }, server: { middlewareMode: true, hmr: false, watch: null }, appType: 'custom', logLevel: 'silent' });
 const root = createRoot(document.getElementById('root')!);
 let passed = 0;
 const check = async (name: string, run: () => void | Promise<void>) => { await run(); passed++; console.log(`✓ ${name}`); };
@@ -68,9 +68,13 @@ try {
     const toggle = document.querySelector('[data-log-toggle]') as HTMLButtonElement;
     await act(async () => { toggle.click(); });
     assert.equal(document.querySelector('[data-battle-log]'), null, '已收起');
-    const before = logViewStats.pipelineBuilds;
+    const before = logViewStats.pipelineBuilds, masks = logViewStats.maskRuns;
     for (let i = 0; i < 4; i++) await render({ ...base, logs: [...logs, { turn: 9, type: 'info', text: `x${i}` }], turnNumber: 3 + i });
     assert.equal(logViewStats.pipelineBuilds, before, '收起期間不做分類管線');
+    assert.equal(logViewStats.maskRuns, masks, '收起期間也不掃描隱匿遮蔽');
+    await act(async () => { toggle.click(); });
+    assert.equal(logViewStats.maskRuns, masks + 1);
+    assert.ok(document.querySelector('[data-battle-log]')?.textContent?.includes('x3'), '開啟時讀到最新日誌');
   });
   engine.unmount();
 } finally {

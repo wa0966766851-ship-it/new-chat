@@ -13,7 +13,7 @@
 | `src/engine/`、`src/shell/` | 共用引擎與應用外殼；不是建置輸出 |
 | `server/` | 啟動識別、偏好與動畫資源服務 |
 | `.desktop-releases/active.json` | 桌面目前與上一版的指標；整理時同時保護兩版 |
-| `.desktop-releases/<版本>/` | 完整桌面建置副本；不要手改其中的遊戲資料 |
+| `.desktop-releases/<版本>/` | 完整桌面建置副本；不要手改其中的遊戲資料。2026-11-16 起每次自動更新後只保留目前、上一版與最新3份（scripts/desktop_release.mjs pruneReleases）；玩家存檔在 %LOCALAPPDATA%\SeerBattleSim，不受影響 |
 | `.seer-cache/` | 真實遊戲素材與隔離測試快取混存，須按用途清理 |
 | `shots/`、`_shots/` | 本機開發截圖；正式報告只連結需要保留的證據 |
 | `.cleanup-audit/` | 本機空間盤點、壓縮與刪除回執，不加入 Git |
@@ -32,7 +32,7 @@
 | `src/data/` | 遊戲卡片、描述、分類、技能石等資料 | `defaultElves.ts`為目錄入口，不代表已逐句驗收 |
 | `src/blocks/` | 積木模型、解析、執行、模式登記、編輯器 | 已解析不等於已實裝正確 |
 | `src/modes/` | 命運之輪、星際探索 | 模式專用結算與庫存，避免混入普通戰 |
-| `elf_source_files/elf_files/` | 使用者TXT原文 | 保留原位置；未命名檔案也須看首行，不只猜檔名 |
+| `elf_source_files/elf_files/` | 使用者TXT原文（唯一來源；測試不再讀外層 `../elf_source_files`） | 保留原位置；未命名檔案也須看首行，不只猜檔名 |
 | `docs/audits/` | 模式統計及人工對應的部分語意證據 | 報告可重建，證據不能自動冒充驗收 |
 | `docs/guides/`、`docs/archive/2026-10/` | 現行操作指南、歷史階段報告 | 開發日誌為單一入口；歸檔不刪待驗原文 |
 | `tests/`、`src/tests/` | 語意、正式戰鬥入口、UI、打包回歸 | 指令分類以package.json為準 |
@@ -77,3 +77,10 @@
 | `scripts/archive_workspace_screenshots.mjs` | 散落截圖唯讀盤點／明確 apply 封存 |
 
 父目錄有舊版本與其他工作副本；本輪建立入口說明，不以檔名相同直接合併或搬移原始碼。
+
+## 2026-11-17：本機備份與研究分工
+
+- `docs/audits/2026-11-17_decision-classification-and-performance.md`：決策模型分類的可行性、邊界及效能／大小量測。
+- `.local-archives/maintenance-20261117/`：本輪壓縮的 `_backup*`、舊修正備份、動畫備份與舊建置輸出。原本的鬆散目錄已封存時，從 ZIP 內清單核對舊相對路徑。
+- `.cleanup-audit/maintenance-20261117-result.json`：逐批壓縮大小、逐檔驗證與移除回執；此目錄不進 Git。
+- `scripts/maintain_local_workspace.py`：固定範圍的預覽、壓縮及還原入口。保留現行程式碼、正在執行的版本、玩家資料及動畫來源，不依「沒有 import」就刪除資源。

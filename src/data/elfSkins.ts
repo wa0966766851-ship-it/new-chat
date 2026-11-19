@@ -38,7 +38,12 @@ export const GAIA_SKINS:readonly ElfSkin[]=[
  {id:"gaia-original",name:"原版蓋亞",elfId:"5043",elfName:"終焉戰神.蓋亞",body:"/seer/body/261.png",head:"/seer/head/261.png",animationAssetId:"finalGaia"},
  {id:"gaia-godslayer",name:"滅戰神決蓋亞",elfId:"5043",elfName:"終焉戰神.蓋亞",body:"/seer/body/4766.png",head:"/seer/head/4766.png",animationAssetId:"gaiaGodslayer"},
 ];
-export const ELF_SKINS:readonly ElfSkin[]=[...GAIA_SKINS,...ZHAKESI_AVATAR_SKINS,ORIGINAL_PUNI_SKIN,...CASSIUS_SKINS,{
+/** 聖靈奧斯卡（5048）：預設外觀為皮膚599 創界衣缽（素材 1400599，由 SEER_ID_OVERRIDES 指定）；原版 3425 可切換。純外觀。 */
+export const OSCAR_SKINS:readonly ElfSkin[]=[
+ {id:'oscar-genesis',name:'創界衣缽·奧斯卡',elfId:'5048',elfName:'聖靈奧斯卡',body:'/seer/body/1400599.png',head:'/seer/head/1400599.png',animationAssetId:'oscarGenesis'},
+ {id:'oscar-original',name:'聖靈守護奧斯卡',elfId:'5048',elfName:'聖靈奧斯卡',body:'/seer/body/3425.png',head:'/seer/head/3425.png',animationAssetId:'oscarOriginal'},
+];
+export const ELF_SKINS:readonly ElfSkin[]=[...GAIA_SKINS,...OSCAR_SKINS,...ZHAKESI_AVATAR_SKINS,ORIGINAL_PUNI_SKIN,...CASSIUS_SKINS,{
  id:'rey-thunder-dragon-v1',name:'雷龍之翼',elfId:'5029',elfName:'異境神霆·雷伊',body:'/elf-skins/rey-thunder-dragon-v1.png',portrait:{scale:3,origin:'50% 70%',position:'50% 60%'},
 }, ...[{elfId:'5029',elfName:'異境神霆·雷伊'},{elfId:'7070',elfName:'魔化.雷伊'},{elfId:'707070',elfName:'墜霆.雷伊'}].map(owner=>({
  ...owner,...ORIGINAL_REY_SKIN,

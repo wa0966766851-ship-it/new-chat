@@ -18,6 +18,11 @@ export function normalizeAISettings(input: Partial<AISettings> | null | undefine
     ownRisk: Object.hasOwn(AI_RISKS,input?.ownRisk || '') ? input.ownRisk : 'follow',
     budgetMs: number(input?.budgetMs, 100, 2000, DEFAULT_AI_SETTINGS.budgetMs),
     explain: typeof input?.explain === 'boolean' ? input.explain : true,
+    modelEnabled: input?.modelEnabled === true,
+    modelTimeoutMs: number(input?.modelTimeoutMs, 1000, 120000, 15000),
+    allowOffensivePotions: input?.allowOffensivePotions !== false,
+    allowStatusPotions: input?.allowStatusPotions !== false,
+    allowDamagePotions: input?.allowDamagePotions !== false,
   };
 }
 export function settingsForSide(settings:AISettings,side:'p1'|'p2'):AISettings {

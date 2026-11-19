@@ -1,7 +1,7 @@
 /** C 組專屬動作／條件的純資料合約（不載入執行器，供 sequenceContract 使用）。 */
 export const GROUP_C_ACTION_FIELDS: Record<string, readonly string[]> = {
   // 造成技能傷害後，額外隨機選擇對方場下／額外精靈作為攻擊目標（同一技能以該目標的屬性與雙防另算一次傷害）。
-  extra_random_target: ['pool', 'count'],
+  extra_random_target: ['pool', 'count', 'mode', 'prepared'],
   // 背包／全隊名單查詢：符合條件的精靈數寫入「上一數值」，供其後動作使用。
   // filter: any／alive／dead／alive_or_type（存活或識別帶 types 之一）／dead_or_type（陣亡或識別帶 types 之一）。
   roster_query: ['sides', 'types', 'filter', 'scope'],
@@ -30,7 +30,10 @@ export function groupCActionIssue(op: string, p: any, trig: string, inMark: bool
   if (!GROUP_C_ACTION_FIELDS[op]) return null;
   if (inMark) return 'C組動作不能放在印記規則內';
   if (op === 'extra_random_target') {
-    if (!['self_after_attack', 'self_after_physical', 'self_after_special', 'self_after_skill'].includes(trig)) return '額外攻擊目標需在自身技能傷害結算後';
+    if (p.mode !== undefined && !['prepare', 'clear'].includes(p.mode)) return '額外目標模式需為預選或清除';
+    if (p.prepared !== undefined && typeof p.prepared !== 'boolean') return '預選目標開關需為布林值';
+    if (p.mode === 'clear') return ['switch_out', 'defeated'].includes(trig) && p.pool === undefined && p.count === undefined && p.prepared === undefined ? null : '清除預選目標需離場或被擊敗節點，不混用攻擊參數';
+    if (p.mode === 'prepare' ? !['entrance', 'round_end'].includes(trig) || p.prepared !== undefined : !['self_after_attack', 'self_after_physical', 'self_after_special', 'self_after_skill'].includes(trig)) return '預選需登場／回合結束，攻擊需自身技能傷害結算後';
     if (!Array.isArray(p.pool) || !p.pool.length || p.pool.some((x: any) => !POOLS.includes(x)) || new Set(p.pool).size !== p.pool.length) return '額外攻擊目標需明確場下／額外精靈範圍';
     if (!Number.isInteger(p.count) || p.count < 1 || p.count > 6) return '額外攻擊目標數量需1至6整數';
   }

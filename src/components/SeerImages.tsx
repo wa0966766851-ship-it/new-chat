@@ -212,7 +212,7 @@ export function TypeIcon({ type, size = 22, className, showLabelWhenMissing = tr
   if (!ready || !parts.length) return <span className={className} title={label}>{textFb}</span>;
   const imgStyle = { height: size, width: "auto" } as React.CSSProperties;
   const sideBySide = parts.length > 1 ? (
-    <span className="inline-flex items-center gap-0.5">
+    <span className="inline-flex items-center gap-px overflow-hidden rounded-sm" role="img" aria-label={label}>
       {parts.map(p => (
         <React.Fragment key={p}><ChainImage urls={typeIconUrls(p)} style={{ height: Math.round(size * 0.85), width: "auto" }} fallback={<span className="text-[10px] font-bold text-slate-300">{p}</span>} /></React.Fragment>
       ))}

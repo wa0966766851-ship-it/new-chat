@@ -1,3 +1,5 @@
+import { activeAlienTrait } from '../data/elfGroups';
+import { resolveGeneralTrait } from '../data/generalTraitKits';
 import type { Elf, Skill } from '../types';
 import type { BattleEventContext } from './types';
 import { EffectTiming } from './types';
@@ -15,7 +17,7 @@ export function setConnectedSkillHandlerProvider(provider: (name: string) => boo
 export function hasConnectedSkillHandler(name: string) { return skillHandlerProvider(name); }
 
 export function hasOpponentDamageObserver(elf:Elf):boolean{
-  const definitions=[soulDefinition(elf),elf.trait,elf.alienTraits?.gen2Trait,elf.alienTraits?.exclusiveTrait,...(elf.alienTraits?.exclusiveTraits||[]),elf.alienTraits?.alienTrait,elf.alienTraits?.generalTrait];
+  const definitions=[soulDefinition(elf),elf.trait,elf.alienTraits?.gen2Trait,elf.alienTraits?.exclusiveTrait,...(elf.alienTraits?.exclusiveTraits||[]),activeAlienTrait(elf),elf.alienTraits?.generalTrait];
   return definitions.some(d=>d?.effectMode==='kit'&&d.kit?.some(e=>e.node==='on_opponent_damaged'&&!kitEntryIssue(e)))||elf.skills.some(s=>s.effectMode==='kit'&&s.kit?.some(e=>e.node==='on_opponent_damaged'&&e.role==='carried'&&!kitEntryIssue(e)));
 }
 export function usesAuthoredSoul(elf: Elf, hasHandler: boolean): boolean {
@@ -41,6 +43,7 @@ export function runConnectedKit(node: Node, definition: EffectDefinition, ctx: B
     if (issue) ctx.addLog(`【效果待接通】${definition.name}：${entry.customText || entry.codeId}；${issue}`, 'effect');
     else runnable.push(entry);
   }
+  if (!runnable.length) return false;
   const namedContext=Object.create(ctx);namedContext.effectDefinitionName=definition.name;
   return runNode(node, runnable, {}, namedContext) === true;
 }
@@ -74,40 +77,43 @@ export function runConnectedLifecycle(ctx: BattleEventContext, event: EffectTimi
   const incomingToOwner=event===EffectTiming.BEFORE_DAMAGE && (data?.damageComp?.isIncoming || data?.isIncoming);
   if(event===EffectTiming.RESOURCE_CHANGED&&!resourceChanged)return;
   if(bench && !teamRound && !teamStart && !recipientEvent && !incomingToOwner && !instantGuard && !resourceChanged)return;
+  const nodes = connectedEventNodes(event, { ...data, holderSide: ctx.actor }, battleStart);
+  if (!nodes.length) return false;
   // ActionResultInfo.actor 是原行動方，不是事件持有方；不可蓋掉 ctx.actor／即時 self getter。
   const nodeCtx = Object.create(ctx);
   nodeCtx.effectEventData = data;
   for (const key of ['skill','damageComp','priorityComp','powerComp','amount','damage','hpReduced','settledDamage','damageDealt','damageType','typedSkill','hit','invalid','killed']) {
     if (data?.[key] !== undefined) Object.defineProperty(nodeCtx, key, { value: data[key], writable: true, configurable: true });
   }
-  const nodes = connectedEventNodes(event, { ...data, holderSide: ctx.actor }, battleStart);
   const definition = soulDefinition(elf);
   const soulKit = usesAuthoredSoul(elf, hasSoulHandler) && effectRoute(definition, hasSoulHandler) === 'kit';
-  let survived=false;
+  const teamDefinition = (entry: EffectDefinition) => teamRound
+    ? { ...entry, kit: entry.kit?.filter(e => e.codeId === 'effect_sequence' && e.params.clause.trig === 'team_round_start') }
+    : entry;
+  const soul = soulKit ? teamDefinition(definition) : undefined;
+  const traitKits: EffectDefinition[] = [];
+  // 同一持有者在同一事件內只納入一次相同定義，雙方同序號各自執行。
+  const seenTraits = new Set<string>();
+  const holderKey = String(elf.battleId || elf.id);
+  for (const trait of [resolveGeneralTrait(elf.trait), elf.alienTraits?.gen2Trait, elf.alienTraits?.exclusiveTrait,
+    ...(elf.alienTraits?.exclusiveTraits || []), activeAlienTrait(elf), resolveGeneralTrait(elf.alienTraits?.generalTrait)]) {
+    if (!trait) continue;
+    const identity = JSON.stringify([holderKey, trait.name, trait.description]);
+    if (seenTraits.has(identity)) continue;
+    seenTraits.add(identity);
+    if (trait.effectMode === 'kit' && trait.kit?.length) traitKits.push(teamDefinition(trait));
+  }
+  let survived = false;
   for (const node of nodes) {
-    nodeCtx.failedUseOnly=event===EffectTiming.ACTION_FAILED&&node==='after_action';
-    if (soulKit) survived=runConnectedKit(node,teamRound?{...definition,kit:definition.kit?.filter(e=>e.codeId==='effect_sequence'&&e.params.clause.trig==='team_round_start')}:definition,nodeCtx)||survived;
-    /**
-     * 2026-10-30：去重必須按「持有者」區分。
-     *
-     * 原本只用 trait.name + trait.description 當鍵，
-     * 兩隻同序號精靈（例如雙方各一隻 5029 雷伊）的「神明」「雷神」名稱與描述完全一樣，
-     * 第二隻就會被當成重複而整段跳過，造成「一方效果莫名其妙丟失」。
-     */
-    const seenTraits=new Set<string>();
-    const holderKey = String(elf.battleId || elf.id);
-    for (const trait of [elf.trait, elf.alienTraits?.gen2Trait, elf.alienTraits?.exclusiveTrait,
-      ...(elf.alienTraits?.exclusiveTraits || []), elf.alienTraits?.alienTrait, elf.alienTraits?.generalTrait]) {
-      if(!trait)continue;
-      const identity=JSON.stringify([holderKey, trait.name, trait.description]);
-      if(seenTraits.has(identity))continue;seenTraits.add(identity);
-      if (trait?.effectMode === 'kit') survived=runConnectedKit(node,teamRound?{...trait,kit:trait.kit?.filter(e=>e.codeId==='effect_sequence'&&e.params.clause.trig==='team_round_start')}:trait,nodeCtx)||survived;
-    }
+    nodeCtx.failedUseOnly = event === EffectTiming.ACTION_FAILED && node === 'after_action';
+    if (soul) survived = runConnectedKit(node, soul, nodeCtx) || survived;
+    for (const trait of traitKits) survived = runConnectedKit(node, trait, nodeCtx) || survived;
     // 取得魂印／特質不等於取得目標的整套技能（技能由幻化槽另行轉化）。
     if (acquired || bench && !ppConsumed && !teamStart && !resourceChanged) continue;
     const selected = data?.skill || ctx.skill;
     for (const [slot, skill] of elf.skills.entries()) {
-      if (!usesAuthoredSkill(skill, skillHandlerProvider(skill.name), elf) || effectRoute(skill, skillHandlerProvider(skill.name)) !== 'kit') continue;
+      const hasSkillHandler = skillHandlerProvider(skill.name);
+      if (!usesAuthoredSkill(skill, hasSkillHandler, elf) || effectRoute(skill, hasSkillHandler) !== 'kit') continue;
       if(node==='pp_consumed') {
         const kit=skill.kit?.filter(e=>e.node===node&&e.role==='carried');
         if(!ppConsumed||!data.consumedSlots.includes(slot)||!kit?.length||!claimPpCarriedSlot(ctx,slot))continue;

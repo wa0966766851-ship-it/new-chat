@@ -84,7 +84,7 @@ export default String.raw`/*
 .dwb-card { position:relative; aspect-ratio:3/4; container-type:inline-size; min-width:0; cursor:pointer; background:var(--paper); user-select:none; }
 .dwb-card-art, .dwb-starter-ring { position:absolute; inset:0; width:100%; height:100%; pointer-events:none; overflow:visible; }
 .dwb-seal { position:absolute; left:5px; top:5px; width:max(24px,21cqw); height:max(24px,21cqw); }
-.dwb-card-no { position:absolute; right:7px; top:5px; font-size:11px; letter-spacing:.1em; color:var(--pale); font-family:ui-monospace,Menlo,Consolas,monospace; }
+.dwb-card-no { position:absolute; z-index:3; right:7px; top:5px; background:var(--paper); padding:0 3px; pointer-events:none; font-size:11px; letter-spacing:.1em; color:var(--ink); font-family:ui-monospace,Menlo,Consolas,monospace; }
 .dwb-portrait { position:absolute; left:8%; right:8%; top:19%; bottom:30%; display:flex; align-items:center; justify-content:center; overflow:hidden; pointer-events:none; }
 .dwb-portrait-img { max-width:100%; max-height:100%; object-fit:contain; }
 .dwb-card-meta { position:absolute; left:5%; right:5%; bottom:4%; text-align:center; pointer-events:none; }

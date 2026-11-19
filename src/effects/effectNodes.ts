@@ -1,4 +1,4 @@
-﻿/** 編輯器、分詞檢視與正式事件派發共用的節點合約；衍生／直接節點不偽造枚舉事件。 */
+/** 編輯器、分詞檢視與正式事件派發共用的節點合約；衍生／直接節點不偽造枚舉事件。 */
 import { EffectTiming } from './types';
 import type { Node } from './effectSystem.schema';
 import type { Trigger } from '../blocks/model';
@@ -6,6 +6,7 @@ import type { Trigger } from '../blocks/model';
 type Phase = '開局' | '選擇與出手' | '傷害結算' | '行動收尾' | '回合收尾' | '切換與陣亡' | '事件監控';
 interface NodeContract { label: string; phase: Phase; trigger: Trigger; event?: EffectTiming; derived?: string; help: string }
 export const EFFECT_NODES: Record<Node, NodeContract> = {
+  active_hp_changed:{ label:'任一在場精靈體力實際變動後', phase:'事件監控', trigger:'active_hp_changed', event:EffectTiming.ACTIVE_HP_CHANGED, help:'體力結算後通知雙方在場持有者。未扣血或未回血不通知，登場另由登場事件處理。' },
   stat_changed:{label:'能力等級實際變化後',phase:'事件監控',trigger:'stat_changed',event:EffectTiming.STAT_CHANGED,help:'僅實際能力等級改變才派發，包含雙方在場持有者的全隊觀察，不把被免疫或封頂當成成功。'},
   battle_node:{label:'正式戰鬥節點結算時',phase:'事件監控',trigger:'battle_node',event:EffectTiming.BATTLE_NODE,help:'由正式BattleNodeId逐節點通知雙方在場持有者，包含操作、傷害與陣亡節點；不增添或重播節點。'},
   before_round_start:{label:'雙方選擇完成後、回合開始前',phase:'選擇與出手',trigger:'before_round_start',event:EffectTiming.BEFORE_TURN_RESOLVE,help:'沿用既有回合解析前事件，雙方已選定行動，包含首回合；先於排序與出手，不重播開局回合開始。'},

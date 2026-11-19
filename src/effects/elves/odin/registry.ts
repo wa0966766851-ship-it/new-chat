@@ -11,7 +11,7 @@ export { OdinDeconstructedProfile } from "../../../data/elfProfiles/odinRegistry
 export const ODIN_RUNES = {
   TIWAZ: { symbol: 'ᛏ', name: 'ᛏ', desc: '持有該符文者提升所有能力值20%但每次出戰時與對手當前在場精靈發起決鬥(下場後保留，上限1道)', color: 'text-amber-300', bg: 'bg-amber-950/90', border: 'border-amber-500/50' },
   ANSUZ: { symbol: 'ᚨ', name: 'ᚨ', desc: '激活後直到下場前持有者免疫所有異常狀態且每回合開始時將對手所處的弱化類異常延長至3回合', color: 'text-cyan-300', bg: 'bg-cyan-950/90', border: 'border-cyan-500/50' },
-  ALGIZ: { symbol: 'ᛉ', name: 'ᛉ', desc: '激活後直到下場前對手能力提升效果失效且無法觸發場下精靈對場上精靈的效果', color: 'text-emerald-300', bg: 'bg-emerald-950/90', border: 'border-emerald-500/50' },
+  ALGIZ: { symbol: 'ᛉ', name: 'ᛉ', desc: '激活後直到下場前對手能力提升效果失效且無法觸發場下精靈對場上精靈的支援效果(只針對精靈對精靈效果)', color: 'text-emerald-300', bg: 'bg-emerald-950/90', border: 'border-emerald-500/50' },
   RAIDO_GEBO: { symbol: 'ᚱᚷ', name: 'ᚱᚷ', desc: '激活後直到下場前持有者所有技能必定命中、強制執行命中效果且選擇技能時不受PP值限制', color: 'text-yellow-300', bg: 'bg-yellow-950/90', border: 'border-yellow-500/50' },
   EIHWAZ: { symbol: 'ᛇ', name: 'ᛇ', desc: '激活後令持有者的對手相同位置技能PP值上限與該技能相同，超出部分的PP值每有1點轉化為附加對手100點真實傷害', color: 'text-purple-300', bg: 'bg-purple-950/90', border: 'border-purple-500/50' },
   EHWAZ: { symbol: 'ᛖ', name: 'ᛖ', desc: '激活後直到下場前持有者的對手正先制效果無法高於先制+1且擊敗效果失效', color: 'text-indigo-300', bg: 'bg-indigo-950/90', border: 'border-indigo-500/50' },
@@ -33,6 +33,7 @@ export function activateRuneOnSkillSelect(elf: Elf, skillIndex: number, addLog?:
   const runeSymbol = sk.skillRune || sk.specialBadge?.text;
   if (!runeSymbol) return;
 
+  if ((sk as any).portableSkillMark) return; // 積木印記由共用印記程式激活
   if (!sk.isRuneActive) {
     sk.isRuneActive = true;
     const runeObj = Object.values(ODIN_RUNES).find(r => r.symbol === runeSymbol);
@@ -177,6 +178,15 @@ export function handleOdinSoulMark(ctx: BattleEventContext, event: EffectTiming,
   const holder: any = ctx.self;
   const holderOffField = !!holder && String(holder.battleId || holder.id) !== String((selfElf as any)?.battleId || (selfElf as any)?.id);
   if (holderOffField && (event === EffectTiming.ROUND_START || event === EffectTiming.BEFORE_ACTION)) return false;
+
+  // 0. 選擇技能：舊版符文（無積木印記）於選招時激活
+  if (event === EffectTiming.SKILL_SELECTED && selfElf?.skills) {
+    const slot = Number(extraData?.skill?.battleSlot);
+    if (Number.isInteger(slot) && slot >= 0) {
+      activateRuneOnSkillSelect(selfElf, slot, (msg, type) => addLog(msg, type as any));
+      ctx.updateElf(actor, { id: selfElf.id, skills: selfElf.skills.map(s => ({ ...s, specialBadge: s.specialBadge ? { ...s.specialBadge } : undefined })) });
+    }
+  }
 
   // 1. 登場時：為己方背包中末位精靈附加 ᛏ 符文 (順延機制) 與處理繼承激活狀態
   

@@ -3,11 +3,12 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { createServer } from 'vite';
-import { BOSS_TRAITS, BOSS_TRAIT_BY_ID, BOSS_TRAIT_BY_STATUS, bossTraitIcon, bossTraitText, bossTraitInstanceText } from '../src/data/bossTraits';
+import { BOSS_TRAITS, BOSS_TRAIT_BY_ID, BOSS_TRAIT_BY_STATUS, bossTraitIcon, bossTraitText, bossTraitInstanceText, bossTraitLayer, bossTraitTitle, bossTraitBaike } from '../src/data/bossTraits';
 import { StatusRegistry } from '../src/effects/statusRegistry';
 import { statusVisual } from '../src/battle/effectIcons';
 import { EffectTiming } from '../src/effects/types';
 import { advanceStatusEffect } from '../src/battle/statusLifecycle';
+import { resolveDamageBlocking } from '../src/battle/damageBlocking';
 import { attachBossTraits, runBossTraitEffects, bossTraitsOf, bossTraitEvade, bossTraitInvalidates, bossTraitBlocksInstantKill, checkBossTraitFatalResist, bossTraitActionIssue, bossTraitOperations } from '../src/blocks/ops/bossTraits';
 import { clearAllStatuses, getStatuses } from '../src/utils/battleHelpers';
 
@@ -20,16 +21,41 @@ const SIDES = ['p1', 'p2'] as const;
 type Side = (typeof SIDES)[number];
 const other = (s: Side): Side => (s === 'p1' ? 'p2' : 'p1');
 const approx = (a: number, b: number, tol: number, msg: string) => assert.ok(Math.abs(a - b) <= tol, `${msg}：${a} ≉ ${b}`);
+const ids0 = (list: any[]) => list.map(t => t.icon as number).sort((a, b) => a - b);
 let checks = 0;
 const check = async (name: string, fn: () => void | Promise<void>) => { try { await fn(); checks++; } catch (e) { console.error(`✗ ${name}`); throw e; } };
 
 // ───────── 一、資料與異常資料庫
-await check('37 條特性：id／狀態／名稱不重複，BWIKI 名稱逐一對上', () => {
+await check('41 條特性：id／狀態／名稱不重複；BWIKI 37 條全部保留（系別變化改回原廠名「屬性反轉」）', () => {
   const wiki = JSON.parse(fs.readFileSync(path.join(root, 'docs/data/seerapi/boss_traits.json'), 'utf8')).items as any[];
-  assert.equal(wiki.length, 37); assert.equal(BOSS_TRAITS.length, 37);
-  assert.equal(new Set(BOSS_TRAITS.map(t => t.id)).size, 37); assert.equal(new Set(BOSS_TRAITS.map(t => t.status)).size, 37);
-  assert.deepEqual(BOSS_TRAITS.map(t => t.name), wiki.map(w => w.name_tw), '順序與名稱同 BWIKI 整理檔');
-  assert.deepEqual(BOSS_TRAITS.map(t => t.cat), wiki.map(w => w.category_tw), '分類同 BWIKI 整理檔');
+  assert.equal(wiki.length, 37); assert.equal(BOSS_TRAITS.length, 41);
+  assert.equal(new Set(BOSS_TRAITS.map(t => t.id)).size, 41); assert.equal(new Set(BOSS_TRAITS.map(t => t.status)).size, 41);
+  const names = new Set(BOSS_TRAITS.map(t => t.name));
+  for (const w of wiki) assert.ok(names.has(w.name_tw === '系別變化' ? '屬性反轉' : w.name_tw), `BWIKI「${w.name_tw}」仍在資料表`);
+  assert.equal(BOSS_TRAIT_BY_STATUS['特性·系別變化'], BOSS_TRAIT_BY_ID.typeswap, '舊狀態名仍可讀（舊存檔）');
+});
+await check('原廠 29 條（百度百科 iconId 0–28）逐條對上；其餘標為擴展；層數與類型規則', () => {
+  const rows = fs.readFileSync(path.join(root, 'docs/data/seerapi/boss_traits_baike.csv'), 'utf8').replace(/^\uFEFF/, '').trim().split(/\r?\n/).slice(1)
+    .map(l => l.split('","').map(c => c.replace(/^"|"$/g, '')));
+  assert.equal(rows.length, 29);
+  const official = new Map<number, string>();
+  for (const t of BOSS_TRAITS) {
+    if (t.baike) official.set(t.baike.id, t.baike.name);
+    for (const v of t.variants ?? []) if (v.baike) official.set(v.baike.id, v.baike.name);
+    assert.equal(t.extension, !t.baike && !(t.variants ?? []).some(v => v.baike), `${t.name}：擴展旗標＝沒有原廠條目`);
+    if (t.layers) {
+      assert.ok(t.layers.includes(t.def.x!), `${t.name}：預設值取自原廠層數表`);
+      for (const n of t.lv ?? []) assert.ok(t.layers.includes(n), `${t.name}：星蝕回廊數值 ${n} 取自原廠層數表`);
+      assert.equal(bossTraitLayer(t, t.layers[1]), 2);
+    }
+    if (t.variants) { assert.ok(t.defaultVariant && t.variants.some(v => v.key === t.defaultVariant), `${t.name}：有預設類型`); for (const v of t.variants) assert.ok(!/\{[xys]\}/.test(bossTraitText(t, { v: v.key }))); }
+  }
+  for (const [id, name] of rows) assert.equal(official.get(Number(id)), name, `原廠 #${id}「${name}」`);
+  assert.equal(official.size, 29);
+  assert.deepEqual(BOSS_TRAITS.filter(t => t.extension).map(t => t.id).sort(), ['amp', 'clearturn', 'devour', 'empower', 'guard', 'inflict', 'instakill', 'powerguard', 'recover', 'reducepp', 'thorns', 'vampire', 'weaken']);
+  assert.equal(bossTraitTitle(BOSS_TRAIT_BY_ID.swift, { x: 2 }), '迅捷・2 層'); assert.equal(bossTraitTitle(BOSS_TRAIT_BY_ID.block, { v: 'B' }), '格擋・特攻格擋');
+  assert.equal(bossTraitIcon(BOSS_TRAIT_BY_ID.block, 'B'), '/seerapi/bosseffect-color/6.png', '同家族不同類型可有專用圖（原廠彩色）');
+  assert.ok(!bossTraitBaike(BOSS_TRAIT_BY_ID.nullify, 'A') && bossTraitBaike(BOSS_TRAIT_BY_ID.nullify, 'C')?.id === 27, '技能無效：A／B 為擴展，C＝原廠後手無效');
 });
 await check('每條特性都是 BOSS_ONLY 狀態（神話沿用既有），含說明、參數預設與圖示', () => {
   for (const t of BOSS_TRAITS) {
@@ -52,9 +78,10 @@ await check('每條特性都是 BOSS_ONLY 狀態（神話沿用既有），含�
   const withIcon = BOSS_TRAITS.filter(t => t.conf === 'sure' || t.conf === 'guess');
     // 2026-10-29：依官方 F 端 bossEffectIcon config 修正後，每個 iconId 只用一次（不再有 4/10/17/23 衝突）。
     assert.equal(withIcon.length, 27, '有圖特性數');
+    assert.deepEqual([...ids0(withIcon)], [...Array(29).keys()].filter(i => i !== 0 && i !== 6), '圖示編號＝百度 iconId（0 神話沿用既有圖、6 為格擋 B 型）');
     const ids = withIcon.map(t => t.icon!).sort((a, b) => a - b);
     assert.equal(new Set(ids).size, ids.length, '每個 iconId 只能用一次');
-    assert.deepEqual(['sure', 'guess', 'none', 'existing'].map(c => BOSS_TRAITS.filter(t => t.conf === c).length), [15, 12, 9, 1]);
+    assert.deepEqual(['sure', 'guess', 'none', 'existing'].map(c => BOSS_TRAITS.filter(t => t.conf === c).length), [27, 0, 13, 1]);
   const doc = fs.readFileSync(path.join(root, 'docs/data/seerapi/boss_trait_icons.md'), 'utf8');
   for (const t of BOSS_TRAITS) assert.ok(doc.includes(`| ${t.name} |`), `${t.name} 在對應表`);
   for (const t of BOSS_TRAITS) {
@@ -140,13 +167,13 @@ try {
       d = await duel(side, { ...prio, traits: [{ id: 'swift', x: 2 }] }); await d.round(); assert.ok(lost(d.H()) > 0, '先制同為 2：比速度，對手快'); d.close();
       d = await duel(side, { ...prio, traits: [{ id: 'swift', x: 3 }] }); await d.round(); assert.equal(lost(d.H()), 0, '先制 +3 高於對手 +2'); d.close();
     });
-    await check(tag('疾行：先制 +6（壓過對手 +5）；免疫束縛與瞬殺（不影響其他異常）'), async () => {
+    await check(tag('疾行：必定先手（無視對手先制效果）；免疫瞬殺；不免疫任何異常（含束縛）'), async () => {
+      { const e = await duel(side, { speed: [50, 100], fs: { hp: 1, skills: [skill('極快', { priority: 9 })] }, traits: [{ id: 'rush' }] }); await e.round(); assert.equal(lost(e.H()), 0, '對手先制 +9 仍由疾行先手'); e.close(); }
       const d = await duel(side, { speed: [50, 100], fs: { hp: 1, skills: [skill('快', { priority: 5 })] }, traits: [{ id: 'rush' }] }); await d.round(); assert.equal(lost(d.H()), 0); d.close();
       const held: any = attachBossTraits({ effects: [], battleStatuses: {}, currentHp: 10 } as any, [{ id: 'rush' }]);
       const mk = (status: string) => { const data: any = { status, duration: 2, prevented: false, targetSide: side, sourceSide: other(side) }; runBossTraitEffects(held, { actor: side, self: held, addLog() {} } as any, EffectTiming.BEFORE_STATUS_APPLY, data); return data; };
-      assert.ok(mk('束縛').prevented && mk('束縛').immunized, '免疫束縛'); assert.ok(!mk('麻痺').prevented, '其他異常照常');
-      const foeSide: any = { actor: other(side), self: held, addLog() {} }; const intoFoe: any = { status: '束縛', targetSide: side, prevented: false };
-      runBossTraitEffects(held, foeSide, EffectTiming.BEFORE_STATUS_APPLY, intoFoe); assert.ok(!intoFoe.prevented, '只擋自己受到的束縛');
+      assert.ok(!mk('束縛').prevented && !mk('麻痺').prevented, '疾行不免疫異常（2026-11-15：原「免疫束縛」移除）');
+      assert.ok(!/束縛|異常/.test(bossTraitText(BOSS_TRAIT_BY_ID.rush)) && bossTraitText(BOSS_TRAIT_BY_ID.rush).includes('無視對手的先制效果'), '文字：無視先制效果、無束縛');
       assert.ok(bossTraitBlocksInstantKill(held) && !bossTraitBlocksInstantKill({ effects: [] }), '免疫瞬殺');
     });
     await check(tag('增傷：攻擊傷害 +X%（只加攻擊技能傷害，固傷／真實不加）'), async () => {
@@ -162,7 +189,7 @@ try {
       for (const [cat, expect] of [['skill_attack', 0.4], ['fixed', 0.4], ['percent', 0.4], ['true', 0]] as const) { const comp: any = { isIncoming: true, damageCategory: cat, decreasePercent: 0, multiplier: 1 }; runBossTraitEffects(held, { actor: side } as any, EffectTiming.BEFORE_DAMAGE, { damageComp: comp }); approx(comp.decreasePercent, expect, 1e-9, cat); }
     });
     await check(tag('要害探尋：X% 機率傷害 ×Y（0% 不觸發、100% 必觸發、只算輸出）'), async () => {
-      approx(await holderDamage(side, { traits: [{ id: 'weakpoint', x: 100, y: 3 }] }) / baseOut, 3, 0.03, '100% ×3'); approx(await holderDamage(side, { traits: [{ id: 'weakpoint', x: 100 }] }) / baseOut, 2, 0.03, '預設 ×2');
+      approx(await holderDamage(side, { traits: [{ id: 'weakpoint', x: 100, y: 3 }] }) / baseOut, 3, 0.03, '100% ×3'); approx(await holderDamage(side, { traits: [{ id: 'weakpoint', x: 100 }] }) / baseOut, 5, 0.05, '預設 ×5（原廠）');
       approx(await holderDamage(side, { traits: [{ id: 'weakpoint', x: 0, y: 3 }] }) / baseOut, 1, 0.01, '0% 不觸發'); approx(await foeDamage(side, { traits: [{ id: 'weakpoint', x: 100, y: 3 }] }) / base, 1, 0.01, '受擊不放大');
     });
     await check(tag('致盲：對手技能 X% 未命中；必中技能不受影響；X=0 無效'), async () => {
@@ -171,22 +198,43 @@ try {
       assert.equal(await foeDamage(side, { traits: [{ id: 'blind', x: 0 }] }), base, 'X=0 不閃');
       assert.equal(bossTraitEvade(attachBossTraits({} as any, [{ id: 'blind', x: 40 }])), 40); assert.equal(bossTraitEvade({}), 0);
     });
-    await check(tag('封魔：對手屬性技能 X% 無效；攻擊技能不受影響'), async () => {
-      let d = await duel(side, { traits: [{ id: 'sealmagic', x: 100 }], fs: { skills: [attr('屬性技')] } }); await d.round(); assert.ok(d.logs().some(t => t.includes('技能無效') && t.includes('封魔')), '屬性技能被封'); d.close();
+    await check(tag('封魔：對手屬性技能 X% 附加效果失效（不是整招無效）；攻擊技能不受影響'), async () => {
+      let d = await duel(side, { traits: [{ id: 'sealmagic', x: 100 }], fs: { skills: [attr('屬性技')] } }); await d.round();
+      assert.ok(d.logs().some(t => t.includes('附加效果失效') && t.includes('封魔') && t.includes('屬性技能附加效果失效')), '屬性技能附加效果失效');
+      assert.ok(!d.logs().some(t => /^.*技能無效】：/.test(t) && t.includes('封魔')), '不再判為整招無效'); assert.equal(d.F().skills[0].pp, 29, '技能照常使用並扣 PP'); d.close();
       d = await duel(side, { traits: [{ id: 'sealmagic', x: 100 }] }); await d.round(); assert.ok(lost(d.H()) > 0 && !d.logs().some(t => t.includes('封魔')), '攻擊技能照常'); d.close();
       d = await duel(side, { traits: [{ id: 'sealmagic', x: 0 }], fs: { skills: [attr('屬性技')] } }); await d.round(); assert.ok(!d.logs().some(t => t.includes('封魔')), 'X=0 不封'); d.close();
+      d = await duel(side, { traits: [{ id: 'sealmagic', x: 100, v: 'B' }], fs: { skills: [attr('屬性技')] } }); await d.round();
+      assert.ok(d.logs().some(t => t.includes('技能無效') && t.includes('封魔')) && !d.logs().some(t => t.includes('附加效果失效') && t.includes('封魔')), 'B 型：整招無效（擴展，舊行為）'); d.close();
+      assert.deepEqual(bossTraitInvalidates(attachBossTraits({ currentHp: 5 } as any, [{ id: 'sealmagic', x: 100 }]), side, { category: '屬性' }), { noSkillDamage: false, addEffectsInvalid: true, reason: '【特性·封魔】屬性技能附加效果失效' });
     });
-    await check(tag('格擋：X% 擋下物理／特殊攻擊傷害；屬性技能與己方輸出不受影響'), async () => {
-      assert.equal(await foeDamage(side, { traits: [{ id: 'block', x: 100 }] }), 0, '傷害被擋'); assert.equal(await foeDamage(side, { traits: [{ id: 'block', x: 100 }], fs: { skills: [skill('特', { category: '特殊' })] } }), 0, '特殊也擋');
+    await check(tag('格擋：A＝物攻、B＝特攻、未指定＝兩者（擴展）；屬性技能與己方輸出不受影響'), async () => {
+      const special = { skills: [skill('特', { category: '特殊' })] };
+      assert.equal(await foeDamage(side, { traits: [{ id: 'block', x: 100 }] }), 0, '傷害被擋'); assert.equal(await foeDamage(side, { traits: [{ id: 'block', x: 100 }], fs: special }), 0, '特殊也擋');
+      assert.equal(await foeDamage(side, { traits: [{ id: 'block', x: 100, v: 'A' }] }), 0, 'A 型擋物理'); assert.ok(await foeDamage(side, { traits: [{ id: 'block', x: 100, v: 'A' }], fs: special }) > 0, 'A 型不擋特殊');
+      assert.equal(await foeDamage(side, { traits: [{ id: 'block', x: 100, v: 'B' }], fs: special }), 0, 'B 型擋特殊'); assert.ok(await foeDamage(side, { traits: [{ id: 'block', x: 100, v: 'B' }] }) > 0, 'B 型不擋物理');
       assert.equal(await foeDamage(side, { traits: [{ id: 'block', x: 0 }] }), base, 'X=0 不擋'); approx(await holderDamage(side, { traits: [{ id: 'block', x: 100 }] }) / baseOut, 1, 0.01, '自己的輸出不受影響');
       const held: any = attachBossTraits({ currentHp: 10 } as any, [{ id: 'block', x: 100 }]); const comp: any = { isIncoming: true, damageCategory: 'skill_attack', skillCategory: '物理', multiplier: 1 };
       runBossTraitEffects(held, { actor: side, addLog() {} } as any, EffectTiming.BEFORE_DAMAGE, { damageComp: comp }); assert.equal(comp.incomingDamageCancellation, 'block', '判定為擋傷（不是免疫），技能附加效果仍生效');
     });
-    await check(tag('技能無效：對手攻擊技能 X% 無效（傷害與附加效果皆無）；屬性技能不受影響'), async () => {
-      const d = await duel(side, { traits: [{ id: 'nullify', x: 100 }] }); await d.round(); assert.equal(lost(d.H()), 0); assert.ok(d.logs().some(t => t.includes('技能無效') && t.includes('技能無效】')), '技能無效'); d.close();
-      const e = await duel(side, { traits: [{ id: 'nullify', x: 100 }], fs: { skills: [attr('屬性技')] } }); await e.round(); assert.ok(!e.logs().some(t => t.includes('【特性·技能無效】')), '屬性技能不受影響'); e.close();
-      assert.equal(bossTraitInvalidates(attachBossTraits({ currentHp: 5 } as any, [{ id: 'nullify', x: 100 }]), side, { category: '物理' }), '【特性·技能無效】');
-      assert.equal(bossTraitInvalidates(attachBossTraits({ currentHp: 5 } as any, [{ id: 'nullify', x: 100 }]), side, { category: '屬性' }), null);
+    await check(tag('技能無效：對手攻擊技能無法造成技能傷害且附加效果失效（不是整招無效）；A 一般／B 先制／C 後手'), async () => {
+      const d = await duel(side, { traits: [{ id: 'nullify', x: 100 }] }); await d.round(); assert.equal(lost(d.H()), 0);
+      assert.ok(d.logs().some(t => t.includes('無法造成技能傷害且技能附加效果失效') && t.includes('特性·技能無效')), '用語'); assert.equal(d.F().skills[0].pp, 29, '技能照常使用並扣 PP'); d.close();
+      const e = await duel(side, { traits: [{ id: 'nullify', x: 100 }], fs: { skills: [attr('屬性技')] } }); await e.round(); assert.ok(!e.logs().some(t => t.includes('特性·技能無效')), '屬性技能不受影響'); e.close();
+      const held = (v?: string) => attachBossTraits({ currentHp: 5 } as any, [{ id: 'nullify', x: 100, v }]);
+      assert.deepEqual(bossTraitInvalidates(held(), side, { category: '物理' }), { noSkillDamage: true, addEffectsInvalid: true, reason: '【特性·技能無效】無法造成技能傷害且技能附加效果失效' });
+      assert.equal(bossTraitInvalidates(held(), side, { category: '屬性' }), null);
+      // B＝龍威型：只針對先制技能（屬性先制技能僅附加效果失效）
+      assert.equal(bossTraitInvalidates(held('B'), side, { category: '物理' }, { attackerPriority: 0 }), null);
+      assert.equal(bossTraitInvalidates(held('B'), side, { category: '物理' }, { attackerPriority: 2 })?.noSkillDamage, true);
+      assert.deepEqual(bossTraitInvalidates(held('B'), side, { category: '屬性' }, { attackerPriority: 1 }), { noSkillDamage: false, addEffectsInvalid: true, reason: '【特性·先制無效】屬性技能附加效果失效' });
+      assert.equal(await foeDamage(side, { traits: [{ id: 'nullify', x: 100, v: 'B' }], fs: { skills: [skill('快', { priority: 1 })] } }), 0, 'B：先制技能無傷害');
+      assert.equal(await foeDamage(side, { traits: [{ id: 'nullify', x: 100, v: 'B' }] }), base, 'B：一般技能照常');
+      // C＝後手無效（原廠 #27）：對手後出手才觸發
+      assert.equal(bossTraitInvalidates(held('C'), side, { category: '物理' }, { attackerSecond: false }), null);
+      assert.equal(bossTraitInvalidates(held('C'), side, { category: '物理' }, { attackerSecond: true })?.reason, '【特性·後手無效】無法造成技能傷害且技能附加效果失效');
+      assert.equal(await foeDamage(side, { traits: [{ id: 'nullify', x: 100, v: 'C' }], speed: [200, 100] }), 0, 'C：對手後出手，無傷害');
+      { const v = await foeDamage(side, { traits: [{ id: 'nullify', x: 100, v: 'C' }], speed: [50, 100] }); const b2 = await foeDamage(side, { speed: [50, 100] }); assert.equal(v, b2, `C：對手先出手，照常（${v} vs ${b2} base ${base}）`); }
     });
     await check(tag('戒備：對手不是先制技能就不受傷害；先制技能照吃；X=0 無效'), async () => {
       assert.equal(await foeDamage(side, { traits: [{ id: 'vigilance', x: 100 }] }), 0, '一般技能被擋');
@@ -205,10 +253,40 @@ try {
       for (const [cat, mult] of [['fixed', 0], ['percent', 0], ['skill_attack', 1], ['true', 1]] as const) { const comp: any = { isIncoming: true, damageCategory: cat, multiplier: 1 }; runBossTraitEffects(held, { actor: side, addLog() {} } as any, EffectTiming.BEFORE_DAMAGE, { damageComp: comp }); assert.equal(comp.multiplier, mult, cat); }
       const out: any = { isIncoming: false, damageCategory: 'fixed', multiplier: 1 }; runBossTraitEffects(held, { actor: side, addLog() {} } as any, EffectTiming.BEFORE_DAMAGE, { damageComp: out }); assert.equal(out.multiplier, 1, '自己造成的不免疫');
     });
-    await check(tag('免傷：對手攻擊技能威力低於門檻免疫；等於或高於照吃'), async () => {
-      assert.equal(await foeDamage(side, { traits: [{ id: 'immune', x: 60 }], fs: { skills: [skill('弱', { power: 50 })] } }), 0);
-      assert.ok(await foeDamage(side, { traits: [{ id: 'immune', x: 60 }], fs: { skills: [skill('強', { power: 60 })] } }) > 0, '威力 60 不低於門檻');
-      assert.ok(await foeDamage(side, { traits: [{ id: 'immune', x: 60 }] }) > 0, '威力 100');
+    await check(tag('威力免傷（擴展）：對手攻擊技能威力低於門檻免疫；等於或高於照吃'), async () => {
+      assert.equal(await foeDamage(side, { traits: [{ id: 'powerguard', x: 60 }], fs: { skills: [skill('弱', { power: 50 })] } }), 0);
+      assert.ok(await foeDamage(side, { traits: [{ id: 'powerguard', x: 60 }], fs: { skills: [skill('強', { power: 60 })] } }) > 0, '威力 60 不低於門檻');
+      assert.ok(await foeDamage(side, { traits: [{ id: 'powerguard', x: 60 }] }) > 0, '威力 100');
+    });
+    await check(tag('免傷：依傷害點數——A 免疫低於 X 點、B 免疫大於 X 點；門檻值本身照吃；真實傷害除外'), async () => {
+      assert.equal(await foeDamage(side, { traits: [{ id: 'immune', x: base + 1 }] }), 0, 'A：傷害低於門檻，免疫');
+      assert.equal(await foeDamage(side, { traits: [{ id: 'immune', x: base }] }), base, 'A：等於門檻照吃');
+      assert.equal(await foeDamage(side, { traits: [{ id: 'immune', x: base - 1, v: 'B' }] }), 0, 'B：傷害大於門檻，免疫');
+      assert.equal(await foeDamage(side, { traits: [{ id: 'immune', x: base, v: 'B' }] }), base, 'B：等於門檻照吃');
+      const held: any = attachBossTraits({ currentHp: 10 } as any, [{ id: 'immune', x: 500 }]);
+      const fixed: any = { isIncoming: true, damageCategory: 'fixed', multiplier: 1 }; runBossTraitEffects(held, { actor: side, addLog() {} } as any, EffectTiming.BEFORE_DAMAGE, { damageComp: fixed });
+      assert.equal(resolveDamageBlocking(fixed, 300), 0, '固定傷害 300 低於 500：免疫'); assert.ok(fixed.incomingDamageImmunity, '記為免疫（不是抵擋）');
+      const tr: any = { isIncoming: true, damageCategory: 'true', multiplier: 1 }; runBossTraitEffects(held, { actor: side, addLog() {} } as any, EffectTiming.BEFORE_DAMAGE, { damageComp: tr }); assert.equal(resolveDamageBlocking(tr, 300), 300, '真實傷害不免疫');
+    });
+    await check(tag('免疫反彈致命：致命一擊的攻擊傷害被免疫並原數反彈；非致命照吃'), async () => {
+      const d = await duel(side, { traits: [{ id: 'critreflect' }], hs: { skills: [attr('等')] }, fs: { critValue: 16 } }); await d.round();
+      assert.equal(lost(d.H()), 0, '致命一擊被免疫'); assert.ok(lost(d.F()) > base, '原數反彈給攻擊者（含致命倍率）'); assert.ok(d.logs().some(t => t.includes('免疫並反彈致命一擊'))); d.close();
+      const e = await duel(side, { traits: [{ id: 'critreflect' }], hs: { skills: [attr('等')] } }); await e.round(); assert.ok(lost(e.H()) > 0 && lost(e.F()) === 0, '非致命一擊照常受傷、不反彈'); e.close();
+    });
+    await check(tag('先手免傷：自身先出手則當回合免疫攻擊傷害；後出手照吃；與戒備互不覆蓋'), async () => {
+      assert.equal(await foeDamage(side, { traits: [{ id: 'firstguard' }], speed: [200, 100] }), 0, '先出手：免疫');
+      assert.ok(await foeDamage(side, { traits: [{ id: 'firstguard' }], speed: [50, 100] }) > 0, '後出手：照吃');
+      assert.ok(await foeDamage(side, { traits: [{ id: 'firstguard' }, { id: 'vigilance', x: 100 }], speed: [50, 100], fs: { skills: [skill('快', { priority: 1 })] } }) > 0, '兩者都不成立才受傷');
+      assert.equal(await foeDamage(side, { traits: [{ id: 'firstguard' }, { id: 'vigilance', x: 100 }], speed: [50, 100] }), 0, '後出手時戒備仍照常');
+    });
+    await check(tag('侵染：回合開始雙方恢復效果累計 −X%；歸 0 前自身攻擊 +100% 並附加 Y 固定傷害'), async () => {
+      const d = await duel(side, { traits: [{ id: 'infect', x: 50, y: 300 }] }); await d.round();
+      approx((lost(d.F()) - 300) / baseOut, 2, 0.03, '第 1 回合：攻擊 +100% 再加 300 固定傷害');
+      for (const s of SIDES) assert.ok((d.engine.getState()[`${s}Timers`] || []).some((t: any) => t.id?.startsWith('boss-infect') && t.payload?.recoveryReductionPercent === 0.5), `${s} 恢復效果 −50%`);
+      const before = lost(d.F()); await d.round();
+      const plain = await duel(side, {}); await plain.round(); const p1 = lost(plain.F()); await plain.round(); const second = lost(plain.F()) - p1; plain.close(); // 同種子、無特性的第 2 回合傷害
+      approx(lost(d.F()) - before, second, Math.max(2, second * 0.03), '第 2 回合：恢復效果已歸 0，增傷與固傷結束');
+      assert.ok((d.engine.getState()[`${side}Timers`] || []).some((t: any) => t.payload?.recoveryReductionPercent === 1), '恢復效果歸 0'); d.close();
     });
     await check(tag('反傷：反彈所受傷害的 X% 為真實傷害；不反彈自己造成的'), async () => {
       const d = await duel(side, { traits: [{ id: 'thorns', x: 50 }], hs: { skills: [attr('等')] } }); await d.round();
@@ -247,9 +325,10 @@ try {
       const held: any = attachBossTraits({ currentHp: 10 } as any, [{ id: 'envy' }]);
       for (const [hasTurn, expect] of [[true, 1], [false, 0]] as const) { const comp: any = { isIncoming: false, damageCategory: 'skill_attack', increasePercent: 0 }; runBossTraitEffects(held, { actor: side, targetSide: other(side), hasTurnEffectOn: () => hasTurn, addLog() {} } as any, EffectTiming.BEFORE_DAMAGE, { damageComp: comp }); assert.equal(comp.increasePercent, expect, `回合類效果=${hasTurn}`); }
     });
-    await check(tag('貪婪：偷對手提升；沒有提升則 3 項 −2 加給自己；每回合回復 X、對手受 X 固定傷害'), async () => {
-      let d = await duel(side, { traits: [{ id: 'greed', x: 500 }], hs: { hp: 500_000, maxHp: 1_000_000 } });
-      assert.equal(d.H().currentHp, 500_500, '回復 500'); assert.equal(lost(d.F()), 500, '對手受 500 固定傷害'); assert.equal(Object.values(d.F().statStages).filter(v => v === -2).length, 3, '3 項 −2'); assert.equal(Object.values(d.H().statStages).filter(v => v === 2).length, 3, '加給自己'); d.close();
+    await check(tag('貪婪：回合開始偷對手提升（沒有則 3 項 −2 加給自己）；回合結束吸取對手 X 點體力'), async () => {
+      let d = await duel(side, { traits: [{ id: 'greed', x: 500 }], hs: { hp: 500_000, maxHp: 1_000_000, skills: [attr('等')] }, fs: { skills: [attr('等')] } });
+      assert.equal(d.H().currentHp, 500_000, '回合開始不吸體力'); assert.equal(lost(d.F()), 0); assert.equal(Object.values(d.F().statStages).filter(v => v === -2).length, 3, '3 項 −2'); assert.equal(Object.values(d.H().statStages).filter(v => v === 2).length, 3, '加給自己');
+      await d.round(); assert.equal(d.H().currentHp, 500_500, '回合結束回復 500'); assert.equal(lost(d.F()), 500, '對手失去 500'); d.close();
       d = await duel(side, { traits: [{ id: 'greed', x: 500 }], fs: { stages: { atk: 3 } } }); assert.equal(d.H().statStages.atk, 3, '偷走提升'); assert.ok(!(d.F().statStages.atk > 0)); assert.equal(Object.values(d.F().statStages).filter(v => v === -2).length, 0, '有提升時不扣 3 項'); d.close();
     });
     await check(tag('硬化：X% 抵擋未打出致命一擊的攻擊；致命一擊照吃'), async () => {
@@ -296,11 +375,13 @@ try {
     await check(tag('癒合：每回合結束恢復 1/X 最大體力（滿血不回）'), async () => {
       let d = await duel(side, { traits: [{ id: 'mend', x: 10 }], hs: { hp: 500_000, maxHp: 1_000_000, skills: [attr('等')] }, fs: { skills: [attr('等')] } }); await d.round(); assert.equal(d.H().currentHp, 600_000); d.close();
       d = await duel(side, { traits: [{ id: 'mend', x: 5 }], hs: { skills: [attr('等')] }, fs: { skills: [attr('等')] } }); await d.round(); assert.equal(d.H().currentHp, 1_000_000); d.close();
+      d = await duel(side, { traits: [{ id: 'mend', x: 2000, v: 'B' }], hs: { hp: 500_000, maxHp: 1_000_000, skills: [attr('等')] }, fs: { skills: [attr('等')] } }); await d.round(); assert.equal(d.H().currentHp, 502_000, 'B 型：定點恢復'); d.close();
     });
-    await check(tag('暴食：每回合體力上限 +X%（上限 99999999），恢復已損失體力的 Y%'), async () => {
-      const d = await duel(side, { traits: [{ id: 'gluttony', x: 10, y: 30 }], hs: { hp: 500_000, maxHp: 1_000_000, skills: [attr('等')] }, fs: { skills: [attr('等')] } }); await d.round();
-      assert.equal(d.H().maxHp, 1_100_000); assert.equal(d.H().currentHp, 650_000, '回復損失 500k 的 30%'); d.close();
-      const e = await duel(side, { traits: [{ id: 'gluttony', x: 50, y: 0 }], hs: { hp: 90_000_000, maxHp: 90_000_000, skills: [attr('等')] }, fs: { skills: [attr('等')] } }); await e.round(); assert.equal(e.H().maxHp, 99_999_999, '上限封頂'); e.close();
+    await check(tag('暴食：回合開始體力上限 +X%（上限 99999999）；回合結束恢復已損失體力的 Y%'), async () => {
+      const d = await duel(side, { traits: [{ id: 'gluttony', x: 10, y: 30 }], hs: { hp: 500_000, maxHp: 1_000_000, skills: [attr('等')] }, fs: { skills: [attr('等')] } });
+      assert.equal(d.H().maxHp, 1_100_000, '回合開始就加上限'); assert.equal(d.H().currentHp, 500_000, '回合開始不回血'); await d.round();
+      assert.equal(d.H().currentHp, 680_000, '回合結束回復損失 600k 的 30%'); d.close();
+      const e = await duel(side, { traits: [{ id: 'gluttony', x: 50, y: 0 }], hs: { hp: 90_000_000, maxHp: 90_000_000, skills: [attr('等')] }, fs: { skills: [attr('等')] } }); assert.equal(e.H().maxHp, 99_999_999, '上限封頂'); e.close();
     });
     await check(tag('減PP：攻擊命中後 X% 令對手 Y 個技能 PP 歸零'), async () => {
       const fs = { skills: [skill('一'), skill('二'), skill('三')] };
@@ -313,7 +394,7 @@ try {
       d = await duel(side, { traits: [{ id: 'inflict', x: 100, s: '中毒' }] }); await d.round(); assert.ok(getStatuses(d.F())['中毒'] > 0 && !getStatuses(d.F())['麻痺'], '可指定異常'); d.close();
       d = await duel(side, { traits: [{ id: 'inflict', x: 0 }] }); await d.round(); assert.ok(!getStatuses(d.F())['麻痺']); d.close();
     });
-    await check(tag('系別變化：與對手互換屬性，在場期間生效'), async () => {
+    await check(tag('屬性反轉（原名系別變化）：與對手互換屬性，在場期間生效'), async () => {
       const d = await duel(side, { traits: [{ id: 'typeswap' }], hs: { type: '火' }, fs: { type: '水' } });
       assert.equal(d.H().type, '水'); assert.equal(d.F().type, '火'); assert.equal(d.H().originalType, '火'); assert.equal(d.F().originalType, '水'); await d.round(); assert.equal(d.H().type, '水', '不重複交換'); d.close();
     });
@@ -354,4 +435,4 @@ try {
   });
 } finally { console.error = quiet; await server.close(); }
 
-console.log(`BOSS 特性：${checks} 組檢查通過（37 條特性 × P1／P2、異常資料庫、圖示、op、致命抵抗、神話並存）`);
+console.log(`BOSS 特性：${checks} 組檢查通過（41 條特性 × P1／P2、異常資料庫、圖示、op、致命抵抗、神話並存）`);

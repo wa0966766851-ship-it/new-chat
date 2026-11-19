@@ -1,0 +1,6 @@
+import type {AtlasLibrary} from './model';
+export async function readLibrary():Promise<AtlasLibrary>{const r=await fetch('/api/atlas/library');if(!r.ok)throw Error('無法讀取圖鑑，請確認圖鑑程式已啟動');return r.json();}
+export async function writeLibrary(value:AtlasLibrary):Promise<AtlasLibrary>{const r=await fetch('/api/atlas/library',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(value)});if(!r.ok)throw Error((await r.json()).error||'圖鑑保存失敗');return r.json();}
+export async function uploadImage(file:File):Promise<string>{const r=await fetch('/api/atlas/images',{method:'POST',headers:{'Content-Type':file.type},body:file});const data=await r.json();if(!r.ok)throw Error(data.error||'圖片上傳失敗');return data.url;}
+export function download(blob:Blob,name:string){const url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(url),30000);}
+export async function exportDocument(bookId:string,elfId:string,format:'png'|'pdf',name:string){const r=await fetch('/api/atlas/export',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({bookId,elfId,format})});if(!r.ok)throw Error((await r.json()).error||'匯出失敗');download(await r.blob(),name.replace(/[<>:"/\\|?*]/g,'_')+'.'+format);}

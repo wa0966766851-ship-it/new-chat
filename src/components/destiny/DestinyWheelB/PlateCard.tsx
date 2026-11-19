@@ -2,7 +2,7 @@ import React, { useMemo } from "react";
 import { ElfAvatar, TypeIcon } from "../../SeerImages";
 import { explainElfDisplayRank } from "../../../utils/elfDisplayRank";
 import { RANK_SOURCE_LABEL, DESTINY_RANK_LABEL } from "../../../utils/destinyRankMeta";
-import { usesSoulMarkInsteadOfInterceptor, type DestinyElfInstance } from "../../../utils/destinyGacha";
+import { type DestinyElfInstance } from "../../../utils/destinyGacha";
 import type { BattleViewMode, Side } from "../../../battle/viewerPerspective";
 import { maskForViewer } from "../maskForViewer";
 import { C, RANK_VIS, cardArt, hashSeed, sealCross, ring, rule } from "./bModel";
@@ -86,14 +86,12 @@ export function PlateCard(p: PlateCardProps) {
     );
   }
 
-  const concealedHere = view.name !== elf.name;
-  const isLiujie = usesSoulMarkInsteadOfInterceptor(view.name);
-  const intercept = rank === "C" && elf.interceptorEffect && !isLiujie ? elf.interceptorEffect.name : "";
+  const intercept = rank === "C" && view.interceptorEffect ? view.interceptorEffect.name : "";
   const info = explainElfDisplayRank(view);
-  const label = `${view.name}，${rank} 級${banned ? "，已封" : ""}${picked ? "，已入戰隊" : ""}${starter ? "，首發" : ""}`;
+  const label = `${view.name}，原卡池第 ${index} 位，${rank} 級${banned ? "，已封" : ""}${picked ? "，已入戰隊" : ""}${starter ? "，首發" : ""}`;
   return (
     <div role="button" tabIndex={0} aria-label={label} aria-pressed={p.picked !== undefined || p.banned !== undefined ? !!(picked || banned) : undefined}
-      data-testid={p.testid} data-face="front" data-rank={rank} data-instance={elf.instanceId} data-picked={picked ? "1" : undefined} data-banned={banned ? "1" : undefined}
+      data-testid={p.testid} data-face="front" data-rank={rank} data-instance={elf.instanceId} data-pool-slot={index} data-picked={picked ? "1" : undefined} data-banned={banned ? "1" : undefined}
       className={`dwb-card dwb-card--${rank}${picked ? " is-picked" : ""}${starter ? " is-starter" : ""}${banned ? " is-banned" : ""}${p.dim ? " is-dim" : ""}${p.animated === false ? "" : " is-anim"}`}
       onClick={p.onActivate} onKeyDown={onKey} title={p.activateLabel}>
       <Frame seed={seed} rank={rank} selected={picked || starter} />
@@ -110,7 +108,6 @@ export function PlateCard(p: PlateCardProps) {
         )}
       </div>
       {intercept && <span className="dwb-tag dwb-tag--c" data-testid="b-intercept-tag" title={elf.interceptorEffect?.description}>{intercept}</span>}
-      {isLiujie && !concealedHere && <span className="dwb-tag dwb-tag--c" data-testid="b-liujie-tag" title="六界神王以【界】魂印取代攔截效果">【界】魂印</span>}
       {p.onDetail && (
         <button type="button" className="dwb-card-detail" aria-label={`${view.name} 詳情`} title="詳情" data-testid="b-detail-btn"
           onClick={e => { e.stopPropagation(); p.onDetail?.(); }}>詳</button>

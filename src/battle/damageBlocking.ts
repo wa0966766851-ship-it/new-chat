@@ -16,5 +16,10 @@ export function resolveDamageBlocking(comp:DamageComputation,amount:number):numb
     // 一份傷害只能轉化一次；不存在的受傷量不產生額外恢復。
     comp.incomingDamageCancellation='conversion';conversions[0](amount);return 0;
   }
+  // 依最終傷害量的免疫（BOSS 特性「免傷」「免疫反彈致命」）：真實傷害不適用。
+  if(comp.conditionalImmunities?.length&&!comp.pure&&comp.damageCategory!=='true') {
+    const rules=comp.conditionalImmunities;comp.conditionalImmunities=[];
+    for(const immune of rules)if(immune(amount)){comp.incomingDamageImmunity=true;return 0;}
+  }
   return amount;
 }

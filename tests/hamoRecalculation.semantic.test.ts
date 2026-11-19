@@ -38,7 +38,8 @@ try {
     assert.equal(retry.outcomes.filter(e=>e==='ON_SKILL_HIT').length,0,'不假裝原招命中');
     assert.equal(retry.outcomes.filter(e=>e==='ACTION_FAILED').length,1);
     const miss=await run(100,false,true);
-    assert.deepEqual(miss.receipts,[],'未命中不能觸發技能無效的傷害重算');
+    // 2026-11-16 使用者規範：「技能無效時」含未命中／免疫受到的攻擊，未命中同樣重算（等於雙倍威力的正式公式）。
+    assert.deepEqual(miss.receipts,doubled.receipts,'未命中也觸發技能無效時的傷害重算');
     assert.equal(miss.outcomes.filter(e=>e==='ACTION_FAILED').length,1);
     const statusAttempts:string[]=[];
     h.S['完整招式受方']=(c:any,event:string,data:any)=>{if(event==='BEFORE_STATUS_APPLY'&&data?.targetSide===c.actor)statusAttempts.push(data.status);};
@@ -47,5 +48,5 @@ try {
     const expected={逐波:'凍傷',燼世:'燒傷',纏根:'中毒'}[name];
     assert.equal(statusAttempts.filter(s=>s===expected).length,1,'完整技能的命中異常只能施加一次');
   }
-  console.log('三招無效重算：P1/P2正式公式、單次扣PP、無舊處理器、未命中隔離通過');
+  console.log('三招無效重算：P1/P2正式公式、單次扣PP、無舊處理器、未命中同樣重算通過');
 }finally{await h.close();}

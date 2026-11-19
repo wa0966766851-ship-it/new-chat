@@ -5,7 +5,7 @@ import { canonicalStatusName } from '../effects/statusIdentity';
 /** 純期限轉移：場下不扣；BOSS 不扣且不受星贖延長；新衍化當回合不再扣。 */
 export function advanceStatusEffect(effect: BattleEffect, statuses: Record<string, number>, rng: () => number, offField = false, retainDuration = false) {
   const entry = StatusRegistry[canonicalStatusName(effect.id)];
-  const boss = entry?.categories.includes('BOSS_ONLY');
+  const boss = entry?.noDuration === true && !(effect as any).timed; // 關閉回合數；實例開啟回合數（timed）時照常倒數
   let duration = effect.duration;
   if (!offField && !boss) {
     if (!effect.isLateMover && !retainDuration) duration -= 1;
@@ -19,7 +19,12 @@ export function advanceStatusEffect(effect: BattleEffect, statuses: Record<strin
   const params = entry?.mechanics.find(m => m.type === 'EVOLUTION_TRANSFORM')?.params;
   const pool = params?.randomPool;
   const id = Array.isArray(pool) && pool.length ? pool[Math.min(pool.length - 1, Math.max(0, Math.floor(rng() * pool.length)))] : params?.nextStatus;
-  const transformed: BattleEffect | undefined = id ? { id, name: StatusRegistry[id]?.name || id, duration: params?.nextDuration ?? 3, isLateMover: false, stacks: 1 } : undefined;
+  const maxDuration = params?.nextDuration ?? 3;
+  const minDuration = params?.nextDurationMin ?? maxDuration;
+  const durationRoll = id && minDuration < maxDuration
+    ? minDuration + Math.min(maxDuration - minDuration, Math.floor(rng() * (maxDuration - minDuration + 1)))
+    : maxDuration;
+  const transformed: BattleEffect | undefined = id ? { id, name: StatusRegistry[id]?.name || id, duration: durationRoll, isLateMover: false, stacks: 1 } : undefined;
   return { next: undefined, ended: true, transformed, statDebuff: params?.statDebuff as Record<string, number> | undefined,
     dieOnEnd: !!entry?.mechanics.find(m => m.type === 'SPECIAL_BUFF')?.params?.dieOnEnd };
 }

@@ -26,7 +26,8 @@ import type { RunState } from '../runtime';
 type S = 'p1' | 'p2';
 const TEMP_KEYS = ['hp', 'atk', 'def', 'spatk', 'spdef', 'speed'] as const;
 const idOf = (e: any) => String(e?.battleId || e?.id || '');
-const hasType = (e: any, type: string) => String(e?.type || '').replace(/系/g, '').split(/[.·・]/).includes(type);
+import { battleTypeParts } from '../../utils/typeQuery';
+const hasType = (e: any, type: string) => battleTypeParts(e?.type).includes(type);
 /** ON_ENTRANCE／ON_SWITCH_OUT 的 ctx 可能尚未繫結新精靈——沿用 entranceStack 的 fallback 鏈。 */
 const resolveSelf = (ctx: BattleEventContext): any =>
   (ctx as any).self ?? (ctx as any).effectEventData?.elf ?? (ctx as any).effectEventData?.incomingElf
@@ -42,7 +43,7 @@ export const ROSTER_STATS_ACTION_FIELDS: Record<string, readonly string[]> = {
   counter_from_last: ['key', 'label'],
   counter_power_ratio: ['key', 'perUnit'],
   attack_combo_uses_by_last: ['id'],
-  pp_no_cost: [],
+  pp_no_cost: ['thisRound'],
   reduction_override_turns: ['turns', 'percent'],
   seal_used_skill_pp_phase_end: ['sameCategory'],
   pp_zero_seal: ['targetId', 'name', 'category'],
@@ -90,6 +91,7 @@ export function rosterStatsActionIssue(op: string, p: any, trig: string): string
   }
   if (op === 'pp_no_cost') {
     if (trig !== 'before_skill') return 'PP免耗只能在本次技能消耗結算前執行';
+    if (p.thisRound !== undefined && typeof p.thisRound !== 'boolean') return '當回合免耗PP需為布林值';
     return null;
   }
   if (op === 'reduction_override_turns') {
@@ -215,10 +217,11 @@ export function rosterStatsOperations() {
       ctx.addLog(`👑 【${self.name}】：接下來 ${n} 次攻擊技能連擊次數+1。`, 'effect');
       return true;
     },
-    pp_no_cost: (ctx: BattleEventContext): boolean => {
+    pp_no_cost: (ctx: BattleEventContext, p: {thisRound?: boolean}): boolean => {
       const comp = (ctx as any).effectEventData?.ppCostComp;
       if (!comp) return false;
       comp.multiplier = 0;
+      if (p.thisRound) ctx.setPlayerState('ppNoCostRound', ctx.roundNumber);
       return true;
     },
     reduction_override_turns: (ctx: BattleEventContext, p: any): boolean => {

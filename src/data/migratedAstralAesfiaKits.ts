@@ -22,7 +22,7 @@ const memory2: KitEntry = {
   codeId: 'effect_sequence', node: 'after_action', source: 'skill', role: 'innate', order: 5, customText: raw[5],
   params: { clause: { raw: raw[5], marker: '■', trig: 'self_after_skill', parsed: true, body: [
     { cond: [c('has_turn_effect', { side: 'opp', neg: false })], acts: [
-      a('queue_extra_action', { label: '變思遷憶', body: [
+      a('queue_extra_action', { label: '變思遷憶', skillId: 'astral_memory', body: [
         { acts: [
           a('astral_select', { side: 'opp', scope: 'team', state: 'any', relation: 'adjacent', anchor: 'active', body: [
             { acts: [a('damage_selected', { type: 'skill_extra_action', elem: '超能', flat: 50, perNonFullPp: { side: 'self', flat: 50 } })] },
@@ -65,7 +65,7 @@ export const MIGRATED_ASTRAL_AESFIA_KITS: ReviewedSequenceSkill[] = [{
 const memoryEntry = (raw: string, cond: any[], body: any[], order: number): KitEntry => ({
   codeId: 'effect_sequence', node: 'after_action', source: 'skill', role: 'innate', order, customText: raw,
   params: { clause: { raw, marker: '■', trig: 'self_after_skill', parsed: true, body: [
-    { cond, acts: [a('queue_extra_action', { label: '變思遷憶', body })] },
+    { cond, acts: [a('queue_extra_action', { label: '變思遷憶', skillId: 'astral_memory', body })] },
   ] } },
 });
 const pulseRaw = ['■ 先制+3','🎯 消除對手回合類效果，消除成功則使對方屬性技能PP值歸零','🎯 若對手不處於回合類效果則吸取對手最大體力⅓','🎯 2回合內對手體力與PP值恢復量降低100%','🎯 命中後100%降低對方2點PP值，降低後若對手PP為0則當回合無法行動','■  變思遷憶：若對方不處於能力提升狀態，則行動階段結束時進行一次額外行動附加對方在場精靈50點超能系技能傷害，對手每有1個技能PP值不為滿則額外提升50點'];
@@ -185,7 +185,7 @@ export const MIGRATED_ASTRAL_AESFIA_FLASH: ReviewedSequenceSkill[] = [{
     },
     { codeId: 'effect_sequence', node: 'after_action', source: 'skill', role: 'innate', order: 5, customText: flashRaw[6],
       params: { clause: { raw: flashRaw[6], marker: '■', trig: 'self_after_skill', parsed: true, body: [
-        { acts: [a('queue_extra_action', { label: '變思遷憶', body: [
+        { acts: [a('queue_extra_action', { label: '變思遷憶', skillId: 'astral_memory', body: [
           { acts: [
             a('astral_select', { side: 'opp', scope: 'team', state: 'any', relation: 'last', anchor: 'active', body: [
               { acts: [a('damage_selected', { type: 'skill_extra_action', elem: '超能', flat: 50 })] },

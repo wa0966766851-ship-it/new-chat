@@ -28,7 +28,6 @@ export const PARITY: ParityRow[] = [
   { no: 20, old: "揭曉：卡背（點擊翻開單張）", b: ["b-card"], where: "卡背（含序號）", state: "reveal-back" },
   { no: 21, old: "卡面：立繪、名稱、屬性、分級標", b: ["b-card-art", "b-card-name", "b-rank-S", "b-rank-A", "b-rank-B", "b-rank-C"], where: "圖版卡（立繪＋名稱＋屬性圖標＋分級章）", state: "reveal-front" },
   { no: 22, old: "卡面：C 級攔截標籤", b: ["b-intercept-tag"], where: "圖版卡左上標籤", state: "reveal-front" },
-  { no: 23, old: "卡面：六界神王【界】魂印標籤", b: ["b-liujie-tag"], where: "圖版卡左上標籤", state: "reveal-front" },
   { no: 24, old: "Ban：P1／P2 已選計數", b: ["b-ban-count"], where: "03 禁選標題列", state: "ban-pve" },
   { no: 25, old: "Ban：確認禁用並進入 Pick 6", b: ["b-confirm-ban"], where: "03 禁選操作列", state: "ban-pve" },
   { no: 26, old: "Ban：點選對手卡池禁用（可取消）", b: ["b-ban-opp", "b-ban-card"], where: "03 禁選左側對手圖版", state: "ban-pve" },

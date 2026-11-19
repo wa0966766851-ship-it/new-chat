@@ -5,7 +5,11 @@ import { BATTLE_ANIMATION_EVENT, readAnimationSettings, effectiveAnimationSettin
 import { BattleScreenUI } from "./BattleScreen.ui.tsx";
 import { createBattleEngine, type BattleEngine } from "../engine/battleEngine";
 import { Elf, BattleMode } from "../types";
-import { createLocalAIClient } from '../battle/ai/client';
+import { createAssistedAIClient } from '../battle/ai/assistedClient';
+import { useTurnTimer } from './battle/useTurnTimer';
+import { useBattlePause } from './battle/useBattlePause';
+import { decisionStillCurrent } from '../battle/ai/decisionContext';
+import {createBattleRecorder} from '../battle/records/recorder';
 import { readAISettings, publishDecision, clearDecisions } from '../battle/ai/settings';
 import './battle/battleFx.css';
 import { BattleIntro } from './battle/BattleIntro';
@@ -109,19 +113,27 @@ export default function BattleScreen(props: BattleScreenProps) {
   if (!gateRef.current) { gateRef.current = createActionGate(); if (intro.play) gateRef.current.hold(); }
   useEffect(() => () => gateRef.current.open(), []);
 
+  const battlePause = useBattlePause();
   const engineRef = useRef<BattleEngine | null>(null);
-  const aiRef = useRef<ReturnType<typeof createLocalAIClient> | null>(null);
-  if (!aiRef.current) aiRef.current = createLocalAIClient();
+  const recorderRef=useRef<ReturnType<typeof createBattleRecorder>|null>(null);
+  if(!recorderRef.current)recorderRef.current=createBattleRecorder({battleMode:props.battleMode,battleFormat:props.battleFormat,specialMode:props.specialMode,loadouts:{
+      p1:{suit:props.p1Suit,eyewear:props.p1Eyewear,title:props.p1Title,flame:props.battleFlames?.p1},
+      p2:{suit:props.p2Suit,eyewear:props.p2Eyewear,title:props.p2Title,flame:props.battleFlames?.p2}},aiSettings:readAISettings()});
+  const aiRef = useRef<ReturnType<typeof createAssistedAIClient> | null>(null);
+  if (!aiRef.current) aiRef.current = createAssistedAIClient(undefined,undefined,request => decisionStillCurrent(request,engineRef.current?.getState()));
   if (!engineRef.current) {
     engineRef.current = createBattleEngine({
       ...props,
       // 結算已完成，等畫面播完最後的演出再通知外層
       onBattleEnd: (w, team) => { void engineRef.current?.presentation.wait().then(() => { if (engineRef.current?.isAlive()) propsRef.current.onBattleEnd?.(w, team); }); },
-      onStateCommit: s => commitRef.current(s),
+      onBattleAction: action => recorderRef.current?.action(action),
+      onStateCommit: s => {recorderRef.current?.observe(s,engineRef.current?.ledger);commitRef.current(s);},
       onPresentationChange: () => presentRef.current(),
       animationSettings: () => animationSettingsRef.current,
-      actionGate: () => gateRef.current.wait(),
-      selectAi: request => aiRef.current!.decide(request),
+      actionGate: () => gateRef.current.wait() ?? battlePause.wait(),
+      isInputPaused: battlePause.isPaused,
+      prepareAi: request => aiRef.current?.prepare(request),
+      selectAi: request => aiRef.current!.decide(request).then(report=>{recorderRef.current?.decision(report);return report;}),
       aiSettings: readAISettings,
       onAIDecision: report => { if (readAISettings().explain) publishDecision(report); },
       potionRemaining: () => propsRef.current.interstellarOptions?.onPotionUse
@@ -139,14 +151,17 @@ export default function BattleScreen(props: BattleScreenProps) {
   presentRef.current = () => updatePresentation();
   if (!presentation.view) void presentation.stage(engine.getState());
   const state: BattleState = presentation.view ?? engineState;
+  const turnTimer = useTurnTimer(engine,engineState,props.battleMode,introOn,battlePause.isPaused);
+  useEffect(() => { aiRef.current?.sync(); }, [engineState]);
 
   useEffect(() => {
     engine.mount();
+    recorderRef.current?.observe(engine.getState(),engine.ledger);
     if (propsRef.current.battleMode === 'PVE') aiRef.current?.start();
     engine.start();
     return () => {
       engine.unmount();
-      queueMicrotask(() => { if (!engine.isAlive()) { aiRef.current?.dispose(); clearDecisions(); } });
+      queueMicrotask(() => { if (!engine.isAlive()) {recorderRef.current?.finish(engine.getState(),engine.ledger); aiRef.current?.dispose(); clearDecisions(); } });
     };
   }, []);
 
@@ -208,9 +223,15 @@ export default function BattleScreen(props: BattleScreenProps) {
         onPass={engine.onPass}
         potionLimit={potionLimit}
         specialMode={props.specialMode}
+        loadouts={{
+          p1: { suit: props.p1Suit, eyewear: props.p1Eyewear, title: props.p1Title, flame: props.battleFlames?.p1 },
+          p2: { suit: props.p2Suit, eyewear: props.p2Eyewear, title: props.p2Title, flame: props.battleFlames?.p2 },
+        }}
         onReset={props.onRestartBattle}
         onBackToMenu={() => { const st = engine.getState(); if (!st.winner) props.onBattleEnd?.("exit", structuredClone(st.p1Team)); props.onBackToMenu(); }}
-        onAutoBattleToggle={() => dispatch({ type: 'SET_AUTO_BATTLE', isAuto: !engine.getState().isAutoBattle })}
+        paused={battlePause.paused}
+        onPauseToggle={engineState.winner || introOn ? undefined : battlePause.toggle}
+        onAutoBattleToggle={() => { if(battlePause.isPaused())return; if(engine.getState().isAutoBattle)aiRef.current?.cancel();dispatch({ type: 'SET_AUTO_BATTLE', isAuto: !engine.getState().isAutoBattle }); }}
         activeSkillAnim={presentation.skillAnim}
         floatingDamagePopups={presentation.popups}
         consoleShake={{ p1: false, p2: false }}
@@ -219,6 +240,16 @@ export default function BattleScreen(props: BattleScreenProps) {
         ledger={engine.ledger}
         battleMode={props.battleMode}
         formatLabel={formatLabel(props.battleFormat)}
+        turnClock={(turnTimer.enabled || turnTimer.autoP2 || (battlePause.paused && !engineState.winner)) && (
+          <div className="flex items-center gap-2 whitespace-nowrap rounded-full border border-cyan-400/25 bg-slate-950/90 px-2 py-0.5 text-xs font-semibold tabular-nums text-cyan-200" data-testid="turn-timer">
+            {(turnTimer.enabled || battlePause.paused) && <span role={battlePause.paused ? 'status' : 'timer'}>
+              {battlePause.paused
+                ? (turnTimer.remaining !== null ? `已暫停 · 剩餘 ${turnTimer.remaining} 秒` : engineState.phase === 'resolving' ? '本回合結算後暫停' : '對戰已暫停')
+                : (turnTimer.remaining === null ? '計時暫停' : `${turnTimer.side?.toUpperCase()} 剩餘 ${turnTimer.remaining} 秒`)}
+            </span>}
+            {turnTimer.autoP2 && <button type="button" onClick={() => {aiRef.current?.cancel();turnTimer.stopP2();}}>P2 託管中 · 點此關閉</button>}
+          </div>
+        )}
       />
       {introOn && <BattleIntro p1={state.p1} p2={state.p2} format={formatLabel(props.battleFormat)} plan={intro}
         onDone={() => { gateRef.current.open(); setIntroOn(false); }} />}

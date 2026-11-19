@@ -29,18 +29,20 @@ export function preservePrd(): () => void {
 }
 
 function pFromC(c: number): number {
-  let procByN = 0, sumNP = 0;
-  const maxN = Math.ceil(1 / c);
-  for (let n = 1; n <= maxN; n++) {
-    const procOnN = Math.min(1, n * c) * (1 - procByN);
-    procByN += procOnN;
-    sumNP += n * procOnN;
+  let survival = 1, expectedAttempts = 1;
+  for (let n = 1; ; n++) {
+    const chance = Math.min(1, n * c);
+    survival *= 1 - chance;
+    // 後續每次的觸發率只會上升。用等比級數上界，略過已小於浮點精度的尾端。
+    if (survival <= Number.EPSILON * expectedAttempts * chance) return 1 / expectedAttempts;
+    expectedAttempts += survival;
   }
-  return 1 / sumNP;
 }
 
 export function prdConstant(p: number): number {
   const k = Math.round(p * 10000) / 10000;
+  if (!(k > 0)) return 0;
+  if (k >= 1) return 1;
   const hit = cCache.get(k);
   if (hit !== undefined) return hit;
   let lo = 0, hi = k, c = k;
@@ -57,6 +59,7 @@ export function prdChance(key: string, p: number): boolean {
   if (!(p > 0)) return false;
   if (p >= 1) return true;
   const c = prdConstant(p);
+  if (c <= 0) return false;
   const n = (counters.get(key) || 0) + 1;
   if (rngFn() < Math.min(1, c * n)) {
     counters.set(key, 0);

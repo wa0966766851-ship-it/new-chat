@@ -9,6 +9,8 @@ import { registerLauncherIdentity } from './server/launcherIdentity';
 import { registerPetAnimations } from './server/petAnimations';
 import { registerPlayerSaves } from './server/playerSaves';
 import { registerMusicMeta } from './server/musicMeta';
+import { registerBattleAI } from './server/battleAI/routes';
+import { registerSpotlightExport } from './server/spotlightExport';
 import { AssetCache } from './electron/update/assetCache.cjs';
 import { REAL_CARD_EFFECT_MODULES as AI_EFFECT_REFERENCE_LIBRARY, TEMPLATE_GRAMMAR_GUIDELINES } from "./src/data/cardTemplates";
 
@@ -19,7 +21,10 @@ const app = express();
 const PORT = Number(process.env.PORT || 3000);
 
 registerPlayerSaves(app);
+app.use('/api/battle-ai/records',express.json({limit:'256kb'}));
+registerSpotlightExport(app);
 app.use(express.json());
+registerBattleAI(app, process.cwd());
 registerLauncherPreferences(app, process.cwd());
 registerPetAnimations(app, process.cwd());
 registerMusicMeta(app);
@@ -35,7 +40,7 @@ if (process.env.NODE_ENV === 'production' && fs.existsSync(assetManifestFile)) {
   app.use(async (req, res, next) => {
     if (!['GET', 'HEAD'].includes(req.method)) return next();
     let url: string; try { url = decodeURIComponent(req.path); } catch { return res.status(400).end(); }
-    if (!manifest.entries.some((entry: { url: string }) => entry.url === url)) return next();
+    if (!assets.has(url)) return next();
     try {
       const file = await assets.get(url); res.setHeader('Content-Type', 'image/png');
       res.setHeader('Cache-Control', 'private, max-age=0, must-revalidate'); return res.sendFile(file);

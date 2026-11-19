@@ -4,7 +4,8 @@ import { validateKit } from '../effects/kitValidation';
 import { StatusRegistry } from '../effects/statusRegistry';
 import { canonicalStatusName } from '../effects/statusIdentity';
 import { SKILL_STONE_GRADES, SKILL_STONE_ATTRIBUTES, getPerfectEffectsForAttribute, validateSkillStoneLoadout, isSkillStone } from '../data/skillStones';
-export const MAX_BLUEPRINT_BYTES = 2_000_000;
+import { MAX_BLUEPRINT_BYTES } from './blueprintLimits';
+export { MAX_BLUEPRINT_BYTES } from './blueprintLimits';
 // 序列每層包含 body/acts/params 等 JSON 容器；語意巢狀限制仍由 validateKit 檢查。
 export const MAX_BLUEPRINT_JSON_DEPTH = 64;
 const stats = ['hp', 'atk', 'def', 'spatk', 'spdef', 'speed'] as const;

@@ -4,8 +4,12 @@ import React, { Suspense, lazy, useMemo, useState } from "react";
 import { X, Pencil, Info, Crown, ArrowLeftRight } from "lucide-react";
 import type { BaseStats, Elf, ElfResistances, Inscription, ResistanceSlot, Skill } from "../../types";
 import { ElfAvatar, TypeIcon, SkillTypeIcon } from "../../components/SeerImages";
+import { GENERAL_TRAITS } from "../../data/generalTraits";
+import { ALIEN_TRAITS } from "../../data/alienTraits";
+import { hasAlienGroup } from "../../data/elfGroups";
 import { EffectDescription } from "../../components/EffectDescription";
 import { InscriptionSlot } from "../../components/InscriptionSlot";
+import { ElfGroupEditor } from "../../components/ElfGroupEditor";
 import { ElfSkinPicker } from "../../components/ElfSkinPicker";
 import { SEER_NATURES, getNatureFromModifiers, getModifiersFromNature, getDefaultNatureModifiers, EV_PRESETS } from "../../utils/seerNatures";
 import { calculateElfStats, getDefaultEvs } from "../../utils/statCalculator";
@@ -18,10 +22,10 @@ import "../art/aegisTraining.css";
 
 const SkillStonePicker = lazy(() => import("../../components/SkillStonePicker"));
 
-type Tab = "stats" | "resist" | "soul" | "insc" | "skill" | "info";
+type Tab = "stats" | "resist" | "soul" | "insc" | "skill" | "info" | "groups";
 const TABS: { key: Tab; icon: string; label: string }[] = [
   { key: "stats", icon: "⚔", label: "能力" }, { key: "resist", icon: "🛡", label: "抗性" }, { key: "soul", icon: "✦", label: "魂印" },
-  { key: "insc", icon: "◈", label: "刻印" }, { key: "skill", icon: "☰", label: "技能" }, { key: "info", icon: "ⓘ", label: "資料" },
+  { key: "insc", icon: "◈", label: "刻印" }, { key: "skill", icon: "☰", label: "技能" }, { key: "info", icon: "ⓘ", label: "資料" }, { key: "groups", icon: "◇", label: "團體" },
 ];
 const STAT_KEYS = ["hp", "atk", "def", "spatk", "spdef", "speed"] as const;
 const STAT_LABEL: Record<string, string> = { hp: "體力", atk: "攻擊", def: "防禦", spatk: "特攻", spdef: "特防", speed: "速度" };
@@ -32,6 +36,7 @@ export interface AegisTrainingProps {
   elf: Elf;
   /** 技能池來源（倉庫最新版＋內建定義）；由呼叫端提供。 */
   skillSources: Elf[];
+  groupSources?: readonly Elf[];
   readonly?: boolean;
   onChange: (next: Elf) => void;
   onClose: () => void;
@@ -46,7 +51,7 @@ const withStats = (elf: Elf): Elf => {
   return { ...elf, calculatedStats: stats, maxHp: stats.hp, currentHp: stats.hp };
 };
 
-export function AegisTraining({ elf, skillSources, readonly, onChange, onClose, onEdit, onIntro, onEditInscription }: AegisTrainingProps) {
+export function AegisTraining({ elf, skillSources, groupSources, readonly, onChange, onClose, onEdit, onIntro, onEditInscription }: AegisTrainingProps) {
   const [tab, setTab] = useState<Tab>("stats");
   const stats = useMemo(() => withStats(elf).calculatedStats, [elf]);
   const rank = getElfDisplayRank(elf);
@@ -78,9 +83,10 @@ export function AegisTraining({ elf, skillSources, readonly, onChange, onClose, 
           <section className="atr-content" data-tab={tab}>
             {tab === "stats" && <StatsTab elf={elf} stats={stats} readonly={readonly} onChange={next => onChange(withStats(next))} />}
             {tab === "resist" && <ResistTab elf={elf} readonly={readonly} onChange={onChange} />}
-            {tab === "soul" && <SoulTab elf={elf} />}
+            {tab === "soul" && <SoulTab elf={elf} readonly={readonly} onChange={onChange} />}
             {tab === "insc" && <InscTab elf={elf} readonly={readonly} onEdit={onEditInscription} />}
             {tab === "skill" && <SkillTab elf={elf} sources={skillSources} readonly={readonly} onChange={onChange} />}
+            {tab === "groups" && <Panel title="歸屬"><ElfGroupEditor key={elf.id} elf={elf} sources={groupSources} readonly={readonly} onChange={onChange} /></Panel>}
             {tab === "info" && <InfoTab elf={elf} readonly={readonly} onChange={onChange} />}
           </section>
         </div>
@@ -182,7 +188,30 @@ function ResistTab({ elf, readonly, onChange }: { elf: Elf; readonly?: boolean; 
   </>);
 }
 
-function SoulTab({ elf }: { elf: Elf }) {
+function SoulTab({ elf, readonly, onChange }: Pick<AegisTrainingProps, 'elf' | 'readonly' | 'onChange'>) {
+  const editableTrait = (
+    key: 'generalTrait' | 'alienTrait',
+    label: string,
+    presets: Record<string, { name: string; description: string }>,
+  ) => {
+    const current = elf.alienTraits?.[key];
+    const value = current?.name ?? '';
+    const locked = key === 'alienTrait' && !hasAlienGroup(elf);
+    return <Panel title={label}>
+      {locked && <p className="atr-text">在「團體」加入異能精靈標籤後才會啟用。</p>}
+      {!readonly && !locked && <select className="atr-select" value={value} aria-label={label} onChange={e => {
+        const name = e.target.value;
+        if (name === value || (name && !Object.hasOwn(presets, name))) return;
+        onChange({ ...elf, alienTraits: { ...elf.alienTraits, [key]: name ? { ...presets[name] } : undefined } });
+      }}>
+        <option value="">無</option>
+        {value && !Object.hasOwn(presets, value) && <option value={value}>{value}（目前配置）</option>}
+        {Object.values(presets).map(trait => <option key={trait.name} value={trait.name}>{trait.name}</option>)}
+      </select>}
+      {current ? <EffectDescription description={current.description} className="atr-text" />
+        : readonly && <p className="atr-empty">無</p>}
+    </Panel>;
+  };
   const traits = [elf.alienTraits?.gen2Trait, (elf.alienTraits as any)?.exclusiveTrait, ...(((elf.alienTraits as any)?.exclusiveTraits) || [])].filter(Boolean) as any[];
   const seen = new Set<string>();
   return (<>
@@ -192,7 +221,10 @@ function SoulTab({ elf }: { elf: Elf }) {
     {traits.filter(t => { const k = t.name || t.description; if (seen.has(k)) return false; seen.add(k); return true; }).map((t, i) => (
       <Panel key={i} title={t.name || "特質"}><EffectDescription description={t.description} className="atr-text" /></Panel>
     ))}
-    {!elf.soulMark && !traits.length && <p className="atr-empty">—</p>}
+    {elf.trait && elf.trait.name !== elf.alienTraits?.generalTrait?.name &&
+      <Panel title={elf.trait.name}><EffectDescription description={elf.trait.description} className="atr-text" /></Panel>}
+    {editableTrait('generalTrait', '通用特性', GENERAL_TRAITS)}
+    {editableTrait('alienTrait', '異能精靈通用特質', ALIEN_TRAITS)}
   </>);
 }
 

@@ -8,11 +8,30 @@ import { TRIGGER_CAPTIONS } from '../../battle/effectPresentation';
 import { MECHANIC_GROUPS, MECHANIC_TOPICS, MODE_GUIDES } from '../../data/encyclopediaGuide';
 import { searchList } from '../../utils/textSearch';
 
-const KINDS: IndexKind[] = ['mechanic', 'mode', 'battleNode', 'effectNode', 'trigger', 'op', 'status', 'effect', 'rule'];
+const KINDS: IndexKind[] = ['mechanic', 'mode', 'battleNode', 'effectNode', 'trigger', 'op', 'status', 'effect', 'rule', 'template'];
+const EDITOR_BRIDGE_KEY = 'seer_selected_effect_for_ai';
+
+/** 參考詞庫（原「效果查詢」的標準語法模板）：體積大，進入總索引後才載入。 */
+function useTemplateEntries(): IndexEntry[] {
+  const [entries, setEntries] = useState<IndexEntry[]>([]);
+  React.useEffect(() => {
+    let alive = true;
+    Promise.all([import('../../data/cardTemplates'), import('../../utils/templateReview')]).then(([cards, review]) => {
+      if (!alive) return;
+      setEntries(cards.REAL_CARD_EFFECT_MODULES.filter(m => !review.getTemplateReviewReason(m.standardSyntax)).map(m => ({
+        id: `tp:${m.id}`, kind: 'template' as const, title: m.name, code: review.getTemplateTimingLabel(m.standardSyntax),
+        tags: [m.source, m.effectType, ...m.tags], body: m.standardSyntax, tab: 'search' as const })));
+    }).catch(() => { /* 參考詞庫載入失敗時只顯示其他條目 */ });
+    return () => { alive = false; };
+  }, []);
+  return entries;
+}
 const PAGE = 80;
 
 export const IndexSearchPanel: React.FC<{ onJump: (tab: IndexTab, entry: IndexEntry) => void }> = ({ onJump }) => {
-  const all = useMemo(() => encyclopediaIndex(), []);
+  const templates = useTemplateEntries();
+  const all = useMemo(() => [...encyclopediaIndex(), ...templates], [templates]);
+  const [sent, setSent] = useState<string | null>(null);
   const [query, setQuery] = useState('');
   const deferred = React.useDeferredValue(query);
   const [kind, setKind] = useState<IndexKind | 'all'>('all');
@@ -71,7 +90,12 @@ export const IndexSearchPanel: React.FC<{ onJump: (tab: IndexTab, entry: IndexEn
               {current.tags.length > 0 && (<><dt>標籤</dt><dd>{current.tags.filter(Boolean).join('・')}</dd></>)}
             </dl>
             {current.body && <p className="enc-text" style={{ marginTop: 10 }}>{current.body}</p>}
-            <button className="enc-go" onClick={() => onJump(current.tab, current)}>前往分頁</button>
+            {current.kind === 'template' ? (
+              <button className="enc-go" title="複製語法並送到精靈編輯器的 AI 提示詞" onClick={() => {
+                try { window.localStorage.setItem(EDITOR_BRIDGE_KEY, JSON.stringify({ name: current.title, syntax: current.body })); setSent(current.id); } catch { /* 無法保存時略過 */ }
+                try { void navigator.clipboard?.writeText(current.body)?.catch(() => {}); } catch { /* 無剪貼簿權限 */ }
+              }}>{sent === current.id ? '已送到編輯器' : '送到精靈編輯器'}</button>
+            ) : current.tab !== 'search' && <button className="enc-go" onClick={() => onJump(current.tab, current)}>前往分頁</button>}
           </aside>
         )}
       </div>

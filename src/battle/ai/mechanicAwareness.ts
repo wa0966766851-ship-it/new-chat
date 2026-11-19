@@ -1,4 +1,29 @@
 import type { Elf } from '../../types';
+import type { BattleState } from '../../components/BattleManager';
+import { getElfAdvancedMechanics } from '../../data/traitsRegistry';
+import { resolveDamageTransition } from '../survivalRules';
+import { blocksTimedRecovery } from '../recoveryOrigin';
+import { isRecoveryBlocked } from '../recovery';
+import { checkElfDead } from '../elfAlive';
+import { scopedTimers } from '../stateScopes';
+import { opposite, type AISide } from './types';
+
+export const repeatableFatalSurvival = (elf: Elf) =>
+  !!getElfAdvancedMechanics(elf).firstFatalSurviveAt1Hp;
+
+export function potionCanDefeat(elf: Elf, amount: number): boolean {
+  if (!(amount > 0) || checkElfDead(elf)) return false;
+  const transition = resolveDamageTransition(elf.currentHp, elf.maxHp, amount, 'true', elf.survivalRule,
+    {deathFloorRatio:elf.heldDeathFloorRatio});
+  return checkElfDead({...elf,currentHp:transition.hp});
+}
+
+export function potionRecoveryBlocked(state: BattleState, side: AISide, elf = state[side]): boolean {
+  const own = state[`${side}RegistryState`], enemy = state[`${opposite(side)}RegistryState`];
+  return isRecoveryBlocked(elf.currentHp, elf.survivalRule, [
+    own?.noHealTurns, own?.[`${side}_noHealTurns`], enemy?.[`${side}_noHealTurns`], enemy?.oppSealHealTurns,
+  ].some(turns => Number(turns) > 0) || blocksTimedRecovery(scopedTimers(state, side, elf), side, elf.battleId || elf.id, undefined, true));
+}
 import { getStatuses } from '../../utils/battleHelpers';
 import { resolveRecoveryTransition } from '../survivalRules';
 

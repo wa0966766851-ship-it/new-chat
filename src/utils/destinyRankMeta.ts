@@ -26,7 +26,7 @@ export function describeRankRule(rank: DestinyRank): string {
   const R = DISPLAY_RANK_RULES;
   const join = (xs: readonly string[]) => xs.join("、");
   switch (rank) {
-    case "C": return `C：文本含「${R.cTextLabel}」，或名稱屬 ${join(R.cNames)}；優先於其他規則。非六界神王的 C 級綁定一種命運攔截。`;
+    case "C": return `C：文本含「${R.cTextLabel}」，或名稱屬 ${join(R.cNames)}；優先於其他規則。C 級綁定一種命運攔截。`;
     case "S": return `S：資料已預設 S，或名稱屬 ${join(R.sNames)}。`;
     case "A": return `A：資料已預設 A，或名稱屬 ${join(R.aNames)}；其餘未列名者種族值總和 ≥ ${R.aTotalThreshold}。`;
     case "B": return `B：資料已預設 B，或名稱屬 ${join(R.bNames)}；其餘未列名者種族值總和 < ${R.aTotalThreshold}。`;

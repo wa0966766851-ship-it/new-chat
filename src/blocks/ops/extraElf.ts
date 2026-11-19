@@ -67,7 +67,7 @@ export function extraElfOperations(): Record<string, OpFn> {
       const ownerId = idOf(ctx.self);
       if (typeof ctx.queueExtraAction !== 'function') return false;
       const label = `終焉·六花斬 ×${p.types.length}`;
-      ctx.queueExtraAction(ctx.actor, { label, run: (c: BattleEventContext) => {
+      ctx.queueExtraAction(ctx.actor, { label, skillId: 'six_petal', run: (c: BattleEventContext) => {
         if (idOf(c.self) !== ownerId || dead(c.self)) return 0;
         const opp = c.actor === 'p1' ? 'p2' : 'p1';
         const sumFor = (elf: any) => (p.types as string[]).reduce((a, t) => a + Math.floor(p.flat * getTypeMatchup(t, elf.type)), 0);

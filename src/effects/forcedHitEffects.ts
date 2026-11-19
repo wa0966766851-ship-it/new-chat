@@ -1,3 +1,4 @@
+import { activeAlienTrait } from '../data/elfGroups';
 import type {BattleEventContext} from './types';
 import type {Skill} from '../types';
 import {runConnectedKit} from './connectedEffects';
@@ -19,7 +20,7 @@ function hasActiveKitDamageBlock(ctx:BattleEventContext):boolean{
     const chosen=stmt.cond&&!matches(stmt.cond,st)?stmt.elseActs:stmt.acts;
     return (chosen||[]).some((action:any)=>action.op==='block_damage'&&['攻擊','技能'].includes(action.p.kind));
   });
-  const elf=ctx.target,definitions=[soulDefinition(elf),elf.trait,elf.alienTraits?.gen2Trait,elf.alienTraits?.exclusiveTrait,...(elf.alienTraits?.exclusiveTraits||[]),elf.alienTraits?.alienTrait,elf.alienTraits?.generalTrait];
+  const elf=ctx.target,definitions=[soulDefinition(elf),elf.trait,elf.alienTraits?.gen2Trait,elf.alienTraits?.exclusiveTrait,...(elf.alienTraits?.exclusiveTraits||[]),activeAlienTrait(elf),elf.alienTraits?.generalTrait];
   return definitions.some(def=>def?.effectMode==='kit'&&def.kit?.some(entry=>{
     if(entry.codeId!=='effect_sequence'||kitEntryIssue(entry))return false;
     const clause=entry.params.clause;
@@ -27,6 +28,25 @@ function hasActiveKitDamageBlock(ctx:BattleEventContext):boolean{
     const st={last:null,lastAmount:0,event:{trig:clause.trig,data}};
     return matches(clause.cond||[],st)&&contains(clause.body,st);
   }));
+}
+
+/** 攻擊方魂印／特性的威力條款（outgoing_power）目前條件成立：強制執行時同屬「變威力」，需進入重算（例：天馬金色羽毛）。 */
+function hasActiveKitPowerChange(ctx:BattleEventContext):boolean{
+  const data={powerComp:{power:Number(ctx.skill?.power)||0,finalMultiplier:1},skill:ctx.skill};
+  const self=Object.assign(Object.create(ctx),{effectEventData:data});
+  const elf=ctx.self,definitions=[soulDefinition(elf),elf.trait,elf.alienTraits?.gen2Trait,elf.alienTraits?.exclusiveTrait,...(elf.alienTraits?.exclusiveTraits||[]),activeAlienTrait(elf),elf.alienTraits?.generalTrait];
+  const matches=(conds:any[]|undefined,st:any)=>(conds||[]).every(c=>!['chance','mark_chance'].includes(c.c)&&evalCond(self,c,st)===true);
+  return definitions.some(def=>def?.effectMode==='kit'&&def.kit?.some((entry:any)=>{
+    if(entry.codeId!=='effect_sequence'||kitEntryIssue(entry))return false;
+    const clause=entry.params.clause;
+    if(clause.trig!=='outgoing_power')return false;
+    const st={last:null,lastAmount:0,event:{trig:clause.trig,data}};
+    return matches(clause.cond,st)&&clause.body.some((stmt:any)=>!stmt.chain&&(stmt.cond&&!matches(stmt.cond,st)?stmt.elseActs:stmt.acts)?.length>0);
+  }));
+}
+/** 連擊次數＝變威力（單次計算×次數）：強制執行時有連擊或追加連擊也要重算。 */
+function hasHitCountChange(ctx:BattleEventContext):boolean{
+  return (Number(ctx.getPlayerState('attackHitCountThisAction'))||0)>1||(Number(ctx.getPlayerState('attackBonusHitCountThisAction'))||0)>0;
 }
 
 export {hasForcedHitEffects} from '../battle/forcedHitRules';
@@ -41,5 +61,5 @@ export function runForcedHitEffects(ctx:BattleEventContext,skill:Skill):void {
   runConnectedKit('on_skill_use',definition,forcedCtx);
   runConnectedKit('on_hit',definition,forcedCtx);
   // 包含其他來源早已附加的固定威力，不只比較本段執行前後的差值。
-  if(Number(ctx.getPlayerState('powerAddThisAction'))>0||(Number(ctx.getPlayerState('powerMultiplierThisAction'))||1)!==1||skillHasPowerChange(skill)||teamForcedHitPower(forcedCtx)>0||hasPendingSkillDamageSuppression(ctx)||hasActiveKitDamageBlock(ctx))requestSkillRecalculation(ctx,{powerMultiplier:1,forced:true});
+  if(Number(ctx.getPlayerState('powerAddThisAction'))>0||(Number(ctx.getPlayerState('powerMultiplierThisAction'))||1)!==1||skillHasPowerChange(skill)||teamForcedHitPower(forcedCtx)>0||hasHitCountChange(ctx)||hasActiveKitPowerChange(ctx)||hasPendingSkillDamageSuppression(ctx)||hasActiveKitDamageBlock(ctx))requestSkillRecalculation(ctx,{powerMultiplier:1,forced:true});
 }

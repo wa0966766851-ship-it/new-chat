@@ -2,6 +2,7 @@ import type { BattleEventContext } from '../../effects/types';
 import type { RunState } from '../runtime';
 import { calculateDamage } from '../../utils/damageCalculator';
 import { queueHpDrain } from '../../battle/hpDrain';
+import { extraTargetPool, isPreparedExtraTarget } from '../../battle/extraAttackTargets';
 
 /**
  * C 組（未接通 73 項）專屬通用動作。
@@ -11,27 +12,41 @@ type S = 'p1' | 'p2';
 type OpFn = (ctx: BattleEventContext, p: any, st: RunState) => boolean | void;
 
 const idOf = (e: any) => String(e?.battleId || e?.id || '');
-const hasType = (e: any, type: string) => String(e?.type || '').replace(/系/g, '').split(/[.·・]/).includes(type);
+import { battleTypeParts } from '../../utils/typeQuery';
+const hasType = (e: any, type: string) => battleTypeParts(e?.type).includes(type);
 const dead = (e: any) => !!e?.isVanished || (e?.currentHp ?? 0) <= 0;
 
 export function groupCOperations(h: { liveElf: (ctx: BattleEventContext, side: S) => any; ops: () => Record<string, OpFn> }): Record<string, OpFn> {
   return {
-    extra_random_target: (ctx, p) => {
+    extra_random_target: (ctx, p, st) => {
       const oppSide = ctx.targetSide, actor = ctx.actor;
+      const active = h.liveElf(ctx, oppSide), self = h.liveElf(ctx, actor);
+      const write = (value: any) => ctx.updateAnyElf(actor, idOf(self), { preparedExtraAttack: value });
+      if (p.mode === 'clear') { write(undefined); return true; }
+      const pool = extraTargetPool(ctx.getFullTeam(oppSide) || [], active, p.pool);
+      const rng = ctx.rng ?? Math.random;
+      if (p.mode === 'prepare') {
+        const ids: string[] = [];
+        for (let n = 0; n < p.count && pool.length; n++) ids.push(idOf(pool.splice(Math.floor(rng() * pool.length), 1)[0]));
+        write({ side: oppSide, ids });
+        return true;
+      }
       const skill: any = ctx.skill;
       if (!skill || skill.category === '屬性' || !skill.power || !ctx.applyDamageToElf) return false;
-      const active = h.liveElf(ctx, oppSide), self = h.liveElf(ctx, actor);
-      const pool = (ctx.getFullTeam(oppSide) || []).filter((e: any) => idOf(e) !== idOf(active) && !dead(e) &&
-        (e.isExtra ? p.pool.includes('foe_extra') : p.pool.includes('foe_bench')));
-      const rng = ctx.rng ?? Math.random;
+      if (p.prepared) {
+        const dealt = ctx.mainSkillSettledAmount ?? st.event?.data?.settledDamage ?? st.event?.data?.damageDealt ?? 0;
+        if (!(dealt > 0) || ctx.isHit === false || st.event?.data?.hit === false) return false;
+      }
+      const victims = p.prepared ? pool.filter(victim => isPreparedExtraTarget(self, oppSide, victim, active)) : [];
       let hit = false;
-      for (let n = 0; n < p.count && pool.length; n++) {
-        const victim = pool.splice(Math.floor(rng() * pool.length), 1)[0];
+      for (let n = 0; n < p.count && (p.prepared ? victims.length : pool.length); n++) {
+        const victim = p.prepared ? victims.shift()! : pool.splice(Math.floor(rng() * pool.length), 1)[0];
         const res = calculateDamage(self, victim, skill, actor, undefined, undefined, (217 + rng() * 38) / 255);
         const amount = Math.floor(res.damage);
         if (amount <= 0) continue;
         ctx.addLog(`💥 【${self.name}】的攻擊波及敵方【${victim.name}】！`, 'effect');
-        ctx.applyDamageToElf(oppSide, idOf(victim), amount, 'skill_attack', { label: skill.name });
+        // 攻擊公式已套用技能克制；結算端只處理防護／傷害鉤子，不再乘持有者屬性的克制。
+        ctx.applyDamageToElf(oppSide, idOf(victim), amount, 'skill_attack', { label: skill.name, elem: skill.type, applyTypeMatchup: false });
         hit = true;
       }
       return hit;

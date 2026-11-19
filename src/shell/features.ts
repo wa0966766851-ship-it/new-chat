@@ -169,7 +169,7 @@ export function featuresByGroup(group: FeatureGroup): ShellFeature[] {
  * 主導航（aegisNavFeatures）維持精簡給底部欄；側欄改列完整目錄：頁面＋覆蓋層＋子分頁。
  * 每一項都必須能實際到達（tests/shellDirectory.semantic.test.ts 驗收）。
  * ──────────────────────────────────────────────────────────── */
-export type EncyclopediaTab = 'search' | 'elves' | 'status' | 'types' | 'mechanics' | 'nodes' | 'editor' | 'effectQuery' | 'opCodes' | 'modes';
+export type EncyclopediaTab = 'search' | 'elves' | 'status' | 'types' | 'mechanics' | 'nodes' | 'editor' | 'opCodes' | 'modes';
 export type DirectoryAction =
   | { kind: 'view'; view: 'start' | 'custom' | 'bag' | 'destiny_wheel' | 'interstellar_exploration' | 'test_runner' | 'updates' }
   | { kind: 'battle'; format?: 'normal_6v6' | 'solo_1v1' | 'peak_6v6' | 'peak_3v3' }
@@ -218,7 +218,6 @@ export const AEGIS_DIRECTORY: readonly DirectoryGroup[] = [
       { key: 'enc:mechanics', label: '戰鬥機制', action: { kind: 'encyclopedia', tab: 'mechanics' } },
       { key: 'enc:nodes', label: '戰鬥節點', action: { kind: 'encyclopedia', tab: 'nodes' } },
       { key: 'enc:editor', label: '自訂克制', action: { kind: 'encyclopedia', tab: 'editor' } },
-      { key: 'enc:effectQuery', label: '效果查詢', action: { kind: 'encyclopedia', tab: 'effectQuery' } },
       { key: 'enc:modes', label: '玩法說明', action: { kind: 'encyclopedia', tab: 'modes' } },
       { key: 'enc:opCodes', label: '積木代號', action: { kind: 'encyclopedia', tab: 'opCodes' } },
     ] },

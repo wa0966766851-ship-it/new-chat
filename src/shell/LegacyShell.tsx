@@ -2,7 +2,6 @@ import React, { Suspense, lazy } from "react";
 import { createPortal } from "react-dom";
 import { ChevronLeft, Menu, Home, Settings, Book, Swords, TestTubes } from "lucide-react";
 import type { ShellBridge } from "./bridge";
-import { controlScene } from "./bridge";
 import { LegacyScenes } from "./scenes/LegacyScenes";
 import { ElfAvatar } from "../components/SeerImages";
 import { DEFAULT_ELVES } from "../data/defaultElves";
@@ -13,7 +12,6 @@ import { PageErrorBoundary } from "../components/PageErrorBoundary";
 import TechLoadingScreen from "../components/TechLoadingScreen";
 import { BattleLoadingScreen } from "../components/battle/BattleLoadingScreen";
 
-const ControlHub = lazy(() => import("../components/ControlHub"));
 const Encyclopedia = lazy(() => import("../components/Encyclopedia"));
 const PerformanceProbe = lazy(() => import("../components/PerformanceProbe"));
 
@@ -56,12 +54,6 @@ export function LegacyShell({ b, showHeader, setShowHeader, isCompactLayout }: L
 
   return (
     <div className="h-screen w-full flex relative bg-transparent text-slate-100 overflow-hidden" id="app-wrapper">
-      <Suspense fallback={null}>
-        <ControlHub
-          currentScene={controlScene(b)}
-          canApplyUpdates={b.view === "start" && !b.editingElf && !b.showEncyclopedia}
-        />
-      </Suspense>
 
       <aside
         style={{ width: showHeader ? 256 : 0, transition: "width 220ms ease-out" }}

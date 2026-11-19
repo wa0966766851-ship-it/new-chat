@@ -160,13 +160,12 @@ export const DAMAGE_CATEGORIES: Record<DamageCategory, DamageCategoryDefinition>
     category: 'SKILL_DAMAGE',
     name: '技能傷害 (Skill Damage - Universal)',
     isSubsetOfSkillDamage: false,
-    definition: '最大的傷害分類大類。除了攻擊傷害屬於技能傷害之外，其他由技能機制直接引發、不受常規攻防減免制約的傷害皆屬於此類。',
+    // 2026-11-16 依原廠定義更正：固定／百分比／真實傷害是各自獨立的傷害類型，不屬於技能傷害。
+    definition: '紅字傷害。分為攻擊傷害（攻擊技能，受雙方攻防與克制影響）與屬性傷害（系別傷害，例如「附加 n 點 X 系技能傷害」，不涉攻防但受克制影響）；受技能傷害的提升、減少、免疫影響。固定傷害、百分比傷害、真實傷害是另外的傷害類型，不算技能傷害。',
     includedSources: [
-      '攻擊傷害（攻擊技能造成的傷害）',
-      '屬性技能直接造成的固定或百分比傷害',
-      '保底傷害（Guaranteed Minimum Damage）',
-      '技能附加的追加真實傷害（True Damage）',
-      '即使攻擊技能未命中 / 或是使用屬性技能，依條件觸發的追傷與扣血判定'
+      '攻擊傷害（物理／特殊攻擊技能）',
+      '屬性傷害（系別傷害、直傷）',
+      '保底傷害（以攻擊傷害結算）'
     ]
   }
 };
@@ -198,8 +197,9 @@ export const EXECUTION_MECHANICS: Record<ExecutionMechanicType, ExecutionMechani
   INSTA_KILL: {
     type: 'INSTA_KILL',
     name: '秒殺 / 瞬殺 (Insta-kill / Execute)',
-    definition: '真正意義上的秒殺機制，必須包含「體力修正（補償粉傷）」成分。',
-    coreMechanism: '結算常規傷害後若不足以擊殺，系統發動粉傷形式的「體力修正」補償剩餘血量。無視傷害限制、免疫、抗性及部分免死。',
+    // 2026-11-16 依原廠定義更正：秒殺是令體力歸 0 的效果，不是追加傷害。
+    definition: '使目標精靈的體力歸 0 的效果（秒殺與瞬殺同義）。',
+    coreMechanism: '直接把體力調整為 0，不經傷害結算，因此不受增減傷、抗性、護盾護罩影響；擁有「受到致死時保留體力」類魂印者可依其條件保留體力；BOSS 特性「疾行」免疫秒殺。',
     isTrueKill: true,
     bypassesDefenses: true
   },

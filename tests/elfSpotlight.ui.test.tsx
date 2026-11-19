@@ -19,8 +19,10 @@ try{
  assert.ok(document.querySelector('.spot-name h2')?.textContent?.includes('龍魂再臨'));
  for(const s of elves.find((e:any)=>e.id==='5021').skills)assert.ok(document.querySelector('.spot-skills')?.textContent?.includes(s.description));
  assert.equal(document.querySelector('.spot-text-controls'),null,'預設隱藏字級控制');
+ assert.equal(document.querySelector('.spot-export-controls'),null,'預設隱藏匯出操作');
  await click('字級設定');
  assert.equal(document.querySelector('.spot-text-controls output')?.textContent,'100%');
+ assert.deepEqual([...document.querySelectorAll('.spot-export-controls button')].map(b=>b.textContent),['截圖 PNG','下載 PDF']);
  await click('放大介紹文字');assert.equal(document.querySelector('.spot-text-controls output')?.textContent,'110%');
  assert.equal((document.querySelector('.elf-spotlight') as HTMLElement).style.getPropertyValue('--spot-text-scale'),'1.1');
  for(let n=0;n<8;n++)await click('放大介紹文字');assert.equal(document.querySelector('.spot-text-controls output')?.textContent,'160%');
@@ -92,6 +94,12 @@ try{
  assert.ok(document.querySelector('.spot-identity')?.textContent?.includes('異能精靈'),'異能精靈是身分標記');
  for(const text of ['可調配置甲','可調配置乙','通用特性','異能特質','異能特性'])assert.ok(!document.querySelector('.spot-traits')?.textContent?.includes(text),text);
  assert.deepEqual(classified.alienTraits.generalTrait,{name:'可調配置乙',description:'乙的配置效果'},'僅篩選展示，不改動配置');
+ await act(async()=>root.render(<ElfSpotlight key="export" elves={[]} selectedElf={classified} embedded
+  exportSettings={{textSize:130,fieldSizes:{['skill:'+classified.id+':'+classified.skills[0].name]:150}}} onClose={()=>{}}/>));
+ assert.equal(document.querySelector('.spot-actions'),null,'匯出時沒有操作工具列');
+ assert.equal(document.querySelector('.spot-field-controls'),null);
+ assert.equal((document.querySelector('.elf-spotlight') as HTMLElement).style.getPropertyValue('--spot-text-scale'),'1.3');
+ assert.ok([...document.querySelectorAll<HTMLElement>('.spot-skill')].some(skill=>skill.style.getPropertyValue('--spot-text-scale')==='1.5'));
  console.log('單隻完整展示、替換持久化、資料更新、重開、空清單、焦點與Escape通過');
 }finally{await act(async()=>root.unmount());await server.close();dom.window.close();}
 process.exit(0);

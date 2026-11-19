@@ -8,8 +8,8 @@ const operation=(op:string,p:any)=>({op,p,label:op});
 const text=NAIFEN_SOURCE.slice(NAIFEN_SOURCE.indexOf('搖晃的鈴鐺草:\r\n'),NAIFEN_SOURCE.indexOf('【七種形狀'));
 const useText=text.slice(text.indexOf('>使用時')).trim();
 const entry=(raw:string,trig:string,node:KitEntry['node'],body:any[],source:KitEntry['source']='soulmark'):KitEntry=>({codeId:'effect_sequence',node,source,role:'innate',order:0,customText:raw,params:{clause:{raw,trig,parsed:true,body}}});
-const use=()=>[entry(useText,'use','on_skill_use',[{acts:[operation('potion_penalty',{amount:500,pp:2,opponentId:NAIFEN_ELF_ID,mult:1.15})]}],'skill')];
-export const NAIFEN_GRASS:BattleItem={id:NAIFEN_GRASS_ID,name:'搖晃的鈴鐺草',description:text.trim(),type:'special',grantOnly:true,holdLimit:7,potionBacklashWhileHeld:true,
+const use=()=>[entry(useText,'use','on_skill_use',[{acts:[operation('potion_penalty',{amount:500,pp:2,opponentId:NAIFEN_ELF_ID,mult:1.15,restoreRatio:2})]}],'skill')];
+export const NAIFEN_GRASS:BattleItem={id:NAIFEN_GRASS_ID,name:'搖晃的鈴鐺草',description:text.trim(),type:'special',grantOnly:true,holdLimit:7,potionBacklashWhileHeld:true,backlashRestore:{elfId:NAIFEN_ELF_ID,ratio:2},
  heldKit:[entry(text.slice(text.indexOf('>>持有方造成偶數'),text.indexOf('>每次使用藥劑')).trim(),'opp_damage_settled','on_opponent_settlement',[{acts:[operation('damage_parity_next',{evenBoost:2,oddMultiplier:1/3})]}])],
  useKit:{normal:use(),backlash:use()},
 };

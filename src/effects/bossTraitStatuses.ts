@@ -23,7 +23,12 @@ function bossStatusDescription(t: BossTraitDef): string {
   }
   // 原 desc 結尾常有句號，先清掉再拼接，避免「。。」
   const cleanEffect = effect.replace(/[。.]\s*$/, '');
-  return `附屬類異常；BOSS 類異常；處於該異常狀態則${cleanEffect}${levelText}。無回合數且不會隨回合遞減，下場後保留`;
+  // 2026-11-15：結尾補上原廠（百度百科）對應；沒有原廠條目的標為擴展。既有格式（前綴、等級、結尾）不變。
+  const official = [t.baike, ...(t.variants ?? []).map(v => v.baike)].filter(Boolean).map(b => `#${b!.id}「${b!.name}」：${b!.text.replace(/[。.]\s*$/, '')}`);
+  const origin = official.length ? official.join('；') : '【擴展】百科未收錄';
+  const layers = t.layers ? `；層數 ${t.layers.join('／')}` : '';
+  const variants = t.variants ? `；類型 ${t.variants.map(v => `${v.key}＝${v.label}${v.extension ? '（擴展）' : ''}`).join('、')}` : '';
+  return `附屬類異常；BOSS 類異常；處於該異常狀態則${cleanEffect}${levelText}。無回合數且不會隨回合遞減，下場後保留。${origin}${layers}${variants}`;
 }
 
 export const BOSS_TRAIT_STATUSES: Record<string, StatusRegistryEntry> = {
@@ -31,6 +36,7 @@ export const BOSS_TRAIT_STATUSES: Record<string, StatusRegistryEntry> = {
     name: t.status,
     // 2026-10-29 修正：BOSS 特性在 PVP 被施加時屬「附屬類異常」，原本只有 BOSS_ONLY 導致被剝離。
     categories: ["AUXILIARY", "BOSS_ONLY"],
+    noDuration: true,
     description: bossStatusDescription(t),
     mechanics: [{ type: "SPECIAL_BUFF", params: { bossTrait: t.id, ...t.def } }],
   } as StatusRegistryEntry])),

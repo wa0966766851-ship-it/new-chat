@@ -1,6 +1,8 @@
 import React from "react";
 import { statusVisual } from "../battle/effectIcons";
 import { BOSS_TRAIT_BY_STATUS, bossTraitText, type BossTraitDef } from "../data/bossTraits";
+
+const tag = "text-[10px] px-1.5 py-0.5 rounded border";
 import { BOSS_STATUS_GROUPS, bossGroupOf } from "../data/bossStatusGroups";
 import { RichDescription } from "./RichDescription";
 
@@ -16,12 +18,31 @@ function paramRows(def?: BossTraitDef): { label: string; value: string }[] {
 }
 function searchText(e: BossStatusEntry): string {
   const def = BOSS_TRAIT_BY_STATUS[e.name];
-  return [e.name, e.description, def ? bossTraitText(def) : "", def?.cat ?? "", ...paramRows(def).map(r => r.label)].join("\n").toLowerCase();
+  return [e.name, e.description, def ? bossTraitText(def) : "", def?.cat ?? "", def?.baike?.name ?? "", def?.extension ? "擴展" : "百科",
+    ...(def?.variants ?? []).flatMap(v => [v.label, v.baike?.name ?? ""]), ...paramRows(def).map(r => r.label)].join("\n").toLowerCase();
+}
+
+/** 同名異常的「附屬類（開啟回合數）」說明：BOSS 類異常一旦開啟回合數就照一般附屬類倒數，不再算 BOSS 類。 */
+export function timedAuxDescription(description: string): string {
+  // 只留效果本體；結尾的百科／擴展來源說明在 BOSS 類說明裡看。
+  return description.replace(/BOSS 類異常；/, '').replace(/無回合數且不會隨回合遞減，下場後保留。?[\s\S]*$/, '開啟回合數：依回合數倒數，不再算 BOSS 類。');
+}
+
+/** BOSS 類與附屬類（開啟回合數）是同名的同一個異常：一張卡、一個按鈕切換說明。 */
+function ModeToggle({ mode, onChange }: { mode: 'boss' | 'aux'; onChange: (m: 'boss' | 'aux') => void }) {
+  return (
+    <button type="button" data-boss-mode={mode} onClick={() => onChange(mode === 'boss' ? 'aux' : 'boss')}
+      title="同名異常：BOSS 類（無回合數）／附屬類（開啟回合數）"
+      className="text-[10px] px-1.5 py-0.5 rounded border border-white/15 text-slate-300 hover:border-sky-300/60 shrink-0">
+      {mode === 'boss' ? 'BOSS 類' : '附屬類・有回合'} ⇄
+    </button>
+  );
 }
 
 /** 戰鬥百科「BOSS 類」異常：依性質細分子分類，可搜尋、可篩選；每條顯示圖示、名稱、威脅層次、說明與參數。 */
 export function BossStatusSection({ entries, query = "" }: { entries: readonly BossStatusEntry[]; query?: string }) {
   const [group, setGroup] = React.useState<string>("");
+  const [modes, setModes] = React.useState<Record<string, 'boss' | 'aux'>>({});
   const q = query.trim().toLowerCase();
   const matched = React.useMemo(() => entries.filter(e => !q || searchText(e).includes(q)), [entries, q]);
   const counts = React.useMemo(() => {
@@ -49,15 +70,32 @@ export function BossStatusSection({ entries, query = "" }: { entries: readonly B
               const def = BOSS_TRAIT_BY_STATUS[e.name];
               const icon = statusVisual(e.name)?.icon;
               const rows = paramRows(def);
+              const mode = modes[e.name] ?? 'boss';
               return (
                 <div key={e.name} data-boss-status={e.name} className="ios-card p-4 flex gap-3">
                   <img src={icon} alt="" data-boss-icon className="w-9 h-9 rounded shrink-0 object-contain" onError={ev => ((ev.currentTarget as HTMLImageElement).style.visibility = "hidden")} />
                   <div className="flex-1 min-w-0 space-y-1.5">
                     <div className="flex items-center justify-between gap-2">
-                      <h4 className="font-semibold text-slate-100 text-sm">{e.name}</h4>
-                      {def && <span className={`text-[10px] px-2 py-0.5 rounded-full bg-white/[0.06] ${TIER_TONE[def.tier]}`} title="威脅層次（星蝕回廊依難度解鎖）">{TIER_LABEL[def.tier]}</span>}
+                      <h4 className="font-semibold text-slate-100 text-sm flex items-center gap-1.5 min-w-0">
+                        <span className="truncate">{e.name}</span>
+                        {def && (def.extension
+                          ? <span data-boss-origin="extension" className={`${tag} text-violet-300 border-violet-400/40`} title="百科未收錄的擴展特性">擴展</span>
+                          : <span data-boss-origin="official" className={`${tag} text-amber-200 border-amber-300/40`} title={def.baike ? `#${def.baike.id}「${def.baike.name}」：${def.baike.text}` : "百科特性"}>{def.baike ? `#${def.baike.id}` : "百科"}</span>)}
+                      </h4>
+                      <span className="flex items-center gap-1.5">
+                        <ModeToggle mode={mode} onChange={m => setModes(s => ({ ...s, [e.name]: m }))} />
+                        {def && <span className={`text-[10px] px-2 py-0.5 rounded-full bg-white/[0.06] ${TIER_TONE[def.tier]}`} title="威脅層次（星蝕回廊依難度解鎖）">{TIER_LABEL[def.tier]}</span>}
+                      </span>
                     </div>
-                    <RichDescription as="p" text={def ? bossTraitText(def) : e.description} className="text-xs text-slate-300 font-sans" />
+                    <RichDescription as="p" text={mode === 'aux' ? timedAuxDescription(e.description) : def ? bossTraitText(def) : e.description} className="text-xs text-slate-300 font-sans" />
+                    {def?.extNote && <p className="text-[11px] text-violet-300/80" title="專案補充，百科沒有">擴展：{def.extNote}</p>}
+                    {def?.variants && (
+                      <div className="flex flex-wrap gap-1.5 text-[10px]" data-boss-variants>
+                        {def.variants.map(v => <span key={v.key} className={`${tag} ${v.extension ? "text-violet-300 border-violet-400/40" : "text-slate-200 border-white/15"}`}
+                          title={(v.desc ? bossTraitText(def, { v: v.key }) : bossTraitText(def)) + (v.extension ? "（擴展）" : v.baike ? `（#${v.baike.id}）` : "")}>{v.key} 型・{v.label}</span>)}
+                      </div>
+                    )}
+                    {def?.layers && <div className="text-[10px] text-slate-400" data-boss-layers title="數值表；層數＝第幾個值">層數 {def.layers.map((n, i) => `${i + 1}:${n}`).join("　")}{def.layersY ? `　｜　${def.lab.y ?? "第二參數"} ${def.layersY.join("／")}` : ""}</div>}
                     {(rows.length > 0 || def?.lv) && (
                       <div className="flex flex-wrap gap-1.5 text-[10px] text-slate-400">
                         {rows.map(r => <span key={r.label} className="px-1.5 py-0.5 rounded bg-white/[0.05]" title="參數預設值">{r.label} {r.value}</span>)}

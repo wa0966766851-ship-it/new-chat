@@ -1,5 +1,7 @@
 /** 從既有 battleHelpers 原表搬出，不猜測新增別名；可獨立供引擎與 UI 使用。 */
 export const STATUS_NAMES_MAP: Record<string, string> = {
+  // 2026-11-15 改回原廠名稱；舊存檔與進行中的對局仍可能帶舊名
+  "特性·系別變化": "特性·屬性反轉",
   poisoned: "中毒", burned: "燒傷", frostbite: "凍傷", paralyzed: "麻痺",
   paralyzed_lock: "癱瘓", ice_sealed: "冰封", infected: "感染", feared: "害怕",
   fatigued: "疲憊", incinerated: "焚燼", confused: "混亂", suffocated: "窒息",

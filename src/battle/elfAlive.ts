@@ -19,3 +19,8 @@ export const checkElfDead = (elf: Elf | undefined | null) => {
   if (elf.deathImmunity && elf.deathImmunity.deathImmuneTurns > 0) return false;
   return true;
 };
+
+/** 正死亡線（如星形鈴鐺草）判死且體力仍為正：死亡定案為 0 體力。
+ *  否則換下場或道具用完時死亡線解除，精靈會帶著正體力「復活」，與各處 currentHp>0 判定不一致而卡在換人。 */
+export const positiveDeathLineSettled = (elf: Elf | undefined | null) =>
+  !!elf && (elf.heldDeathFloorRatio||0) > 0 && elf.currentHp > 0 && checkElfDead(elf);

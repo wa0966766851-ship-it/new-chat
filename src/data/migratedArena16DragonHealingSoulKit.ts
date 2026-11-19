@@ -93,12 +93,22 @@ export const MIGRATED_ARENA16_DRAGON_HEALING_SOUL_KIT = {
     e('after_action','self_after_skill','龍魂印記：每層令每條甦醒之龍各造成150點龍系技能傷害；龍魂之源每龍增加50點，真龍改用最高克制倍率',[
       {acts:[a('resource_scaled_hits',{ids:DRAGONS,mark:'arena.dragonSoulMark',base:150,bonusMark:'dragonSoulSource',bonusPerResource:50,multiplierMark:'trueDragon',maxMultiplier:4,elem:'龍'})]},
     ],14),
+    // 2026-11-15 依作者規格補上四龍本體免疫（原本只有成功後的追加效果，免疫本身未接）：
+    // 金龍免疫異常狀態、玄龍免疫固定及百分比傷害；赤龍（攻擊）與蒼龍（能力下降）已由上方條款處理。
+    e('before_status_apply','before_status','【金龍】喚醒後自身免疫異常狀態',[
+      {cond:[hasDragon('dragonGold')],acts:[a('status_immunity_now',{})]},
+    ],18),
+    e('before_damage','incoming','【玄龍】喚醒後自身免疫固定傷害及百分比傷害',[
+      {cond:[hasDragon('dragonMystic')],acts:[a('damage_immunity_now',{types:['fixed','percent']})]},
+    ],19),
     // 2026-10-28 三龍追加效果：由 DAMAGE_IMMUNIZED（真正 100% 免傷）事件觸發。
     // 金龍：成功免疫異常時消除對手回合類效果（掛在異常免疫事件，見下）。
     // 玄龍：成功免疫固定／百分比傷害後，下 3 回合自身造成的固定與百分比傷害 +50%。
     // 蒼龍：成功免疫能力下降時吸取對手最大體力 1/2（同技能多項下降只觸發一次，op 內去重）。
     e('on_damage_immunized','damage_immune','【玄龍】成功免疫固定或百分比傷害後，下 3 回合自身造成的固定傷害與百分比傷害提升 50%',[
-      {cond:[hasDragon('dragonMystic')],acts:[a('immune_success_bonus',{kind:'mystic'})]},
+      // 2026-11-15：原本只寫入從未被讀取的 mysticDmgBoostTurns，增傷實際不生效；改用正式的回合增傷。
+      {cond:[hasDragon('dragonMystic')],acts:[a('immune_success_bonus',{kind:'mystic'}),
+        a('dmg_mod_turns',{side:'self',dir:'out',kind:'固定',boost:0.5,turns:3}),a('dmg_mod_turns',{side:'self',dir:'out',kind:'百分比',boost:0.5,turns:3})]},
     ],15),
     e('on_status_immunized','status_immune','【金龍】成功免疫異常狀態時，消除對手回合類效果',[
       {cond:[hasDragon('dragonGold')],acts:[a('immune_success_bonus',{kind:'gold'})]},

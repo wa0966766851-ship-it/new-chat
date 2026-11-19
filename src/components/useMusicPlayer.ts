@@ -18,7 +18,11 @@ export function bilibiliEmbedUrl(id: string, page: number, muted: boolean) {
 }
 
 type Playback = { phase: 'idle' | 'loading' | 'ready' | 'playing' | 'paused' | 'buffering' | 'blocked' | 'error' | 'external'; message: string };
-export function useMusicPlayer(source: MusicSource) {
+export function useMusicPlayer(sceneSource: MusicSource, sceneOptions?: {
+  scene: string;
+  override: string | null;
+  continuous: boolean;
+}) {
   const containerRef = useRef<HTMLDivElement>(null);
   const player = useRef<YoutubePlayer | null>(null);
   const ready = useRef(false);
@@ -51,7 +55,16 @@ export function useMusicPlayer(source: MusicSource) {
   const clearReplay = () => { window.clearTimeout(replayTimer.current); replayTimer.current = undefined; };
   const setReplay = (v: { enabled: boolean; gap: number }) => { writeMusicReplay(v); updateReplay(readMusicReplay()); };
   const [biliCycle, setBiliCycle] = useState(0);
-  const sourceKey = JSON.stringify(source);
+  // 跨頁模式保留已掛載的同一個 iframe（含暫停、緩衝與重播間隔）。
+  // 手動選歌／清除全域曲目仍更新來源，停止並關閉後重新採用當前頁的 BGM。
+  const candidate = { source: sceneSource, key: JSON.stringify(sceneSource), scene: sceneOptions?.scene, override: sceneOptions?.override };
+  const [selection, setSelection] = useState(candidate);
+  const followScene = !sceneOptions?.continuous || !mounted || candidate.override !== selection.override;
+  const track = followScene ? candidate : selection;
+  if (followScene && (candidate.key !== selection.key || candidate.scene !== selection.scene || candidate.override !== selection.override)) {
+    setSelection(candidate);
+  }
+  const { source, key: sourceKey } = track;
   const clearWatchdog = () => window.clearTimeout(watchdog.current);
   const armWatchdog = () => {
     clearWatchdog();
@@ -222,7 +235,7 @@ export function useMusicPlayer(source: MusicSource) {
     }).catch(() => { /* 查不到長度：維持原狀 */ });
     return () => { cancelled = true; if (timer) clearTimeout(timer); };
   }, [mounted, sourceKey, requestedPlaying, replay.enabled, replay.gap, biliCycle]);
-  return { containerRef, playback, isPlaying: playback.phase === 'playing', requestedPlaying, isMuted, mounted,
+  return { containerRef, playback, source, musicScene: track.scene, isPlaying: playback.phase === 'playing', requestedPlaying, isMuted, mounted,
     setIsPlaying, setIsMuted, togglePlay, toggleMute, retryMusic, closeMusic,
     volume, setVolume, audioInfo, showPlayer, setShowPlayer, replay, setReplay };
 }
