@@ -3,7 +3,7 @@ import { recordStatusApplication, runPairedSkillFollowup } from '../blocks/ops/s
 import {portableSkillCapabilities} from '../battle/portableSkillMarks';
 import type { BattleEventContext } from './types';
 import { EffectTiming } from './types';
-import { active, alive, constraint, identity, timersFor, changePp, restorePp, drain, timed } from './newElfOperations';
+import { active, alive, constraint, identity, timersFor, uses, changePp, restorePp, drain, timed } from './newElfOperations';
 import { activeConstraints } from '../battle/timedConstraints';
 import { getStatuses } from '../utils/battleHelpers';
 import { StatusRegistry } from './statusRegistry';
@@ -73,6 +73,11 @@ export function runNewElfLifecycle(ctx: BattleEventContext, event: EffectTiming,
     ctx.setPlayerState('fieldPpSnapshot', ctx.self.skills.map(s => s.pp));
     ctx.setPlayerState('fieldDamageCounts', {});
     ctx.setPlayerState('fieldStatusCount', 0);
+    const nextInvalid = ctx.getPlayerState('nextElfInvalidCategory');
+    if (nextInvalid) {
+      ctx.setPlayerState('nextElfInvalidCategory', undefined);
+      uses(ctx, ctx.actor, 'next_entry_invalid_category:' + identity(ctx.self), 1, { block: { invalid: nextInvalid } }, true, '首次使用' + nextInvalid + '技能無效');
+    }
     const nextPp=ctx.getPlayerState('nextElfPpZero');
     if(nextPp){
       ctx.setPlayerState('nextElfPpZero',undefined);

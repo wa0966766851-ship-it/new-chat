@@ -2588,7 +2588,7 @@ case 'switch': {
             const oppElf = syncStateRef.current[oppSideActual];
             if (oppElf && SoulMarkRegistry[oppElf.name]) {
               const oppCtx = getBattleEventContext(oppSideActual, false, mIdx);
-              SoulMarkRegistry[oppElf.name](oppCtx, EffectTiming.OPPONENT_SWITCH, { switchingSide: s });
+              SoulMarkRegistry[oppElf.name](oppCtx, EffectTiming.OPPONENT_SWITCH, { switchingSide: s, forced: false });
             }
           }
           continue;
@@ -4528,7 +4528,7 @@ syncStateRef.current = { ...syncStateRef.current, [actorRegKey]: { ...rg, attack
       const oppElf = syncStateRef.current[oppSide];
       if (oppElf && SoulMarkRegistry[oppElf.name]) {
         const oppCtx = getBattleEventContext(oppSide, false, 0);
-        SoulMarkRegistry[oppElf.name](oppCtx, EffectTiming.OPPONENT_SWITCH, { switchingSide: side });
+        SoulMarkRegistry[oppElf.name](oppCtx, EffectTiming.OPPONENT_SWITCH, { switchingSide: side, forced: true });
       }
       
       if (syncStateRef.current.phase === "forced_switch_both") {

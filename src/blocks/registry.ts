@@ -25,6 +25,7 @@ import {runPortableSkillMarkPrograms,resistFatalFromWindow} from './ops/finalOdi
 import {runDeferredAllyEntry} from '../effects/deferredEntryEffects';
 import {runConditionalRebirth} from '../effects/conditionalRebirth';
 import {getMaxPp} from '../utils/battleHelpers';
+import {skillSlot} from '../battle/skillSlot';
 
 const skillCache = new BoundedCache<string, Program>(1024);
 setSoulProgramProvider((elf) => getSoulProgram(elf));
@@ -238,6 +239,10 @@ export function emitSkillUse(actorCtx: BattleEventContext, oppCtx: BattleEventCo
   const data = { ...result, skill };
   if (!after) {
     actorCtx.emitElfEvent?.(actorCtx.actor, actorCtx.self, EffectTiming.ACTUAL_SKILL_USE, data);
+    const slot = skillSlot(actorCtx.self, skill);
+    if (slot >= 0) actorCtx.setPlayerState('lastUsedSkillSlotThisRound', {
+      round: actorCtx.roundNumber, battleId: actorCtx.self.battleId || actorCtx.self.id, slot,
+    });
     // 共用戰鬥事實：只在真正出招時記錄；選招順序、排序或受控都不算。
     for(const ctx of [actorCtx,oppCtx]) {
       const saved=ctx.getPlayerState('roundSkillUseOrder');

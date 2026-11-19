@@ -54,6 +54,7 @@ import {MISSING_HP_SCALING_FIELDS,missingHpScalingIssue} from '../blocks/ops/mis
 import {SETTLEMENT_CHAIN_FIELDS,settlementChainIssue} from '../blocks/ops/settlementChains';
 import {TYPE_MEMORY_FIELDS,typeMemoryIssue} from '../blocks/ops/typeMemory';
 import {PP_SETTLEMENT_FIELDS,ppSettlementIssue} from '../blocks/ops/ppSettlement';
+import { FORM_CYCLE_FIELDS, formCycleIssue } from '../blocks/ops/formCycle';
 import {COMBAT_RECEIPT_FIELDS,combatReceiptIssue} from '../blocks/ops/combatReceipts';
 import {STATUS_REPEAT_COMBAT_FIELDS,statusRepeatCombatIssue} from '../blocks/ops/statusRepeatCombat';
 import {formulaViewIssue,FORMULA_VIEW_FIELDS} from '../blocks/ops/formulaViews';
@@ -154,6 +155,7 @@ export const SEQUENCE_ACTION_FIELDS: Record<string, readonly string[]> = {
   ...MISSING_HP_SCALING_FIELDS,
   ...SETTLEMENT_CHAIN_FIELDS,
   ...COMBAT_RECEIPT_FIELDS,
+  ...FORM_CYCLE_FIELDS,
   ...STATUS_REPEAT_COMBAT_FIELDS,...FORMULA_VIEW_FIELDS,...COMBAT_WINDOW_FIELDS,...PHASE_CYCLE_FIELDS,
   ...PP_SETTLEMENT_FIELDS,
   ...TYPE_MEMORY_FIELDS,
@@ -369,7 +371,7 @@ function paramsIssue(value: unknown, fields: readonly string[], path: string, nu
     if (['ids','stats','stats2','list','statuses','exclude','fields','phase'].includes(key) && (!Array.isArray(v)||!v.length||v.length>30||v.some(x=>typeof x!=='string'||x.length>200))) return `${path}.${key}需為有限名稱陣列`;
     if (key==='cls' && (typeof v!=='string'||!['','控制類','弱化類','限制類','衍化類','附屬類','非附屬類'].includes(v))) return `${path}.cls異常分類不明`;
     if (['label','text'].includes(key) && (typeof v!=='string'||v.length>100000)) return `${path}.${key}需為有限文字`;
-    if (typeof v === 'object' && !['ids','terms','stats','stats2','list','statuses','exclude','fields','phase','effects','body','bodyLow','bodyHigh','belowBody','afterBody','smallBody','noHealBody','programs','statusProjection','families','onMatch','onMismatch','choices','onExpire','onRoundMiss','branches','perStageDown','from','onClose','onBlock','rules','marks','recoveryReduction','incomingDamageReduction','perMark','perMarkTurns','perStage','perStageKinds','perStageLevel','perMarkHits','scaleByMarks','perNonFullPp','keys','sides','types','resources','pool','repeat','fallback','traitSources','countFromMark','conversionTargetBan','cancelEffects'].includes(key)) return `${path}.${key}不接受程式或巢狀行為`;
+    if (typeof v === 'object' && !['ids','terms','stats','stats2','list','statuses','exclude','fields','phase','effects','body','bodyLow','bodyHigh','belowBody','afterBody','smallBody','noHealBody','programs','statusProjection','families','onMatch','onMismatch','choices','onExpire','onRoundMiss','branches','perStageDown','from','onClose','onBlock','rules','marks','recoveryReduction','incomingDamageReduction','perMark','perMarkTurns','perStage','perStageKinds','perStageLevel','perMarkHits','scaleByMarks','perNonFullPp','keys','sides','types','resources','pool','repeat','fallback','traitSources','countFromMark','conversionTargetBan','cancelEffects','cycle'].includes(key)) return `${path}.${key}不接受程式或巢狀行為`;
   }
   return null;
 }
@@ -620,6 +622,7 @@ export function sequenceIssue(value: unknown, node?: string, depth=0, inMark=fal
       if(MISSING_HP_SCALING_FIELDS[act.op]){const issue=missingHpScalingIssue(act.op,act.p,value.trig);if(issue)return issue;}
       if(SETTLEMENT_CHAIN_FIELDS[act.op]){const issue=settlementChainIssue(act.op,act.p,value.trig,(body,trig)=>sequenceIssue({raw:'結算鏈分支',trig,parsed:true,body},undefined,depth+1,inMark));if(issue)return issue;}
       if(TYPE_MEMORY_FIELDS[act.op]){const issue=typeMemoryIssue(act.op,act.p,value.trig,(body,trig)=>sequenceIssue({raw:'屬性紀錄子流程',trig,parsed:true,body},undefined,depth+1,inMark));if(issue)return issue;}
+      if (Object.hasOwn(FORM_CYCLE_FIELDS, act.op)) { const issue = formCycleIssue(act.op, act.p, value.trig); if (issue) return issue; }
       if(COMBAT_RECEIPT_FIELDS[act.op]){const issue=combatReceiptIssue(act.op,act.p,value.trig);if(issue)return issue;}
       if(STATUS_REPEAT_COMBAT_FIELDS[act.op]){const issue=statusRepeatCombatIssue(act.op,act.p,value.trig);if(issue)return issue;}
       if(FORMULA_VIEW_FIELDS[act.op]){const issue=formulaViewIssue(act.op,act.p,value.trig,(body,trig)=>sequenceIssue({raw:'公式後續',trig,parsed:true,body},undefined,depth+1,inMark));if(issue)return issue;}

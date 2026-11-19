@@ -94,6 +94,7 @@ export function stageDesc(key: string, v: number): string {
 
 /** 官方印記（sign）圖示：battleeffect/signbuff/<id>.png，id 取自 SeerAPI api-data sign。 */
 const SIGN_ICON_IDS: Record<string, number> = {
+  北冥之刃: 52, 北冥狂刃: 53, 強擊形態: 54, 無罔形態: 55, 威破形態: 56,
   // 2026-11-02：SeerAPI sign/1 = 「抗性」（減少固定／百分比／致命傷害，並機率免疫異常）。
   抗性: 1,
   // 2026-11-02：蓓麗安特星執系統（SeerAPI sign 94/95；95 的 num_des＝「剩餘能量」）。

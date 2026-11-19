@@ -559,8 +559,7 @@ export default function TestRunnerPage() {
         <div className="flex flex-wrap items-center gap-2">
           {!isRunning ? (
             <button
-              onClick={startTesting} disabled={starting}
-              disabled={totalSelected === 0}
+              onClick={startTesting} disabled={starting || totalSelected === 0}
               className="flex items-center gap-1.5 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 disabled:hover:bg-indigo-600 text-white font-medium text-xs px-4 py-2 rounded-lg shadow-lg hover:shadow-indigo-500/20 cursor-pointer transition-all"
             >
               <Play className="w-3.5 h-3.5 fill-current" />

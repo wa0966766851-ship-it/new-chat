@@ -188,6 +188,8 @@ export const BODY_SOURCE_FACING: Record<string, SpriteFacing> = {
  "/seer/body/1400599.png": "left", // 2026-11-16 逐圖核對：頭部朝畫面左
  "/seer/body/3407.png": "left",
  "/seer/body/4125.png": "left",
+ "/seer/body/4515.png": "left",
+ "/seer/body/1400551.png": "left",
  "/seer/body/3425.png": "front", // 2026-11-16 逐圖核對：正面站姿（原版聖靈守護奧斯卡）
  "/seer/body/2824.png": "left",
  "/seer/body/3094.png": "left",

@@ -19,6 +19,13 @@ export const ELF_GROUPS: readonly ElfGroupDefinition[] = [
   { id: 'elf-king', name: '精靈王', kind: 'group', source: '專案精靈王分類' },
   { id: 'dragon-soul', name: '龍魂精靈', kind: 'group', source: '專案龍魂系列' },
   ...SEER_GROUPS,
+  { id: 'huoguang-huojin', name: '霍金', kind: 'special', source: '使用者提供' },
+  { id: 'huoguang-chair', name: '輪椅霍大將軍', kind: 'special', source: '使用者提供' },
+  { id: 'qiongming-ship', name: '穹明號', kind: 'group', source: '使用者提供' },
+  { id: 'qiongming-trio', name: '穹明三杰', kind: 'group', source: '使用者提供' },
+  { id: 'huoguang-tao', name: '千里擊濤濤濤濤濤濤濤!!!!!', kind: 'special', source: '使用者提供' },
+  { id: 'artisan-elf', name: '匠心精靈', kind: 'group', source: '使用者提供' },
+  { id: 'beiming-huo', name: '北冥霍氏', kind: 'group', source: 'Seer API 精靈圖鑑' },
   { id: 'extra', name: '額外精靈', kind: 'special', source: '本場戰鬥的召喚身分' },
 ];
 
@@ -55,6 +62,13 @@ export const ELF_GROUP_CODES: Readonly<Record<string,string>> = {
   'six-realms': 'EG-029',
   'zone-twin': 'EG-030',
   'extra': 'EG-031',
+  'huoguang-huojin': 'EG-032',
+  'huoguang-chair': 'EG-033',
+  'qiongming-ship': 'EG-034',
+  'qiongming-trio': 'EG-035',
+  'huoguang-tao': 'EG-036',
+  'artisan-elf': 'EG-037',
+  'beiming-huo': 'EG-038',
 };
 
 export const ELF_GROUP_EFFECTS: Readonly<Record<string,{description:string; ops:readonly string[]}>> = {

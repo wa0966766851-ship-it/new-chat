@@ -4,6 +4,9 @@
  * 稽核：tests/effectLabels.semantic.test.ts 以 OPS 全部 key 檢查本表無缺漏。
  */
 export const OP_DISPLAY_NAMES: Record<string, string> = {
+  form_cycle: '武器與戰鬥形態循環',
+  selected_opponent_pp_reduce: '扣除對手已用技能的PP',
+  next_entry_invalid: '下隻登場對手首次指定類型技能無效',
   average_current_health: '平均雙方目前體力',
   recovery_checked_then: '按正式回執判斷無法恢復體力',
   attached_effect_lock: '指定方下數回合附加效果失效',

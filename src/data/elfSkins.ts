@@ -43,7 +43,7 @@ export const OSCAR_SKINS:readonly ElfSkin[]=[
  {id:'oscar-genesis',name:'創界衣缽·奧斯卡',elfId:'5048',elfName:'聖靈奧斯卡',body:'/seer/body/1400599.png',head:'/seer/head/1400599.png',animationAssetId:'oscarGenesis'},
  {id:'oscar-original',name:'聖靈守護奧斯卡',elfId:'5048',elfName:'聖靈奧斯卡',body:'/seer/body/3425.png',head:'/seer/head/3425.png',animationAssetId:'oscarOriginal'},
 ];
-export const ELF_SKINS:readonly ElfSkin[]=[...GAIA_SKINS,...OSCAR_SKINS,...ZHAKESI_AVATAR_SKINS,ORIGINAL_PUNI_SKIN,...CASSIUS_SKINS,{
+export const ELF_SKINS:readonly ElfSkin[]=[{ id: 'huoguang-beiming', name: '北冥之怒·霍光', elfId: '5051', elfName: '霍光', body: '/seer/body/1400551.png', head: '/seer/head/1400551.png', animationAssetId: 'huoguangBeiming' }, ...GAIA_SKINS,...OSCAR_SKINS,...ZHAKESI_AVATAR_SKINS,ORIGINAL_PUNI_SKIN,...CASSIUS_SKINS,{
  id:'rey-thunder-dragon-v1',name:'雷龍之翼',elfId:'5029',elfName:'異境神霆·雷伊',body:'/elf-skins/rey-thunder-dragon-v1.png',portrait:{scale:3,origin:'50% 70%',position:'50% 60%'},
 }, ...[{elfId:'5029',elfName:'異境神霆·雷伊'},{elfId:'7070',elfName:'魔化.雷伊'},{elfId:'707070',elfName:'墜霆.雷伊'}].map(owner=>({
  ...owner,...ORIGINAL_REY_SKIN,

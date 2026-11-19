@@ -107,6 +107,7 @@ import {missingHpScalingOperations} from './ops/missingHpScaling';
 import {settlementChainOperations,hasSkillInvalidEffect} from './ops/settlementChains';
 import {typeMemoryOperations} from './ops/typeMemory';
 import {ppSettlementOperations} from './ops/ppSettlement';
+import { formCycleOperations } from './ops/formCycle';
 import {combatReceiptOperations} from './ops/combatReceipts';
 import {statusRepeatCombatOperations} from './ops/statusRepeatCombat';
 import {formulaViewOperations} from './ops/formulaViews';
@@ -1840,6 +1841,7 @@ export const OPS: Record<string, OpFn> = {
   ...typedCycleOperations(runStmts),
   ...resourceDefenseOperations(runStmts),
   ...missingHpScalingOperations,
+  ...formCycleOperations({ survive: surviveAt1, ops: () => OPS }),
   ...combatReceiptOperations({liveElf,ops:()=>OPS,addTimer:addBlockTimer}),
   ...statusRepeatCombatOperations({liveElf}),
   ...formulaViewOperations({liveElf,runStmts}),
