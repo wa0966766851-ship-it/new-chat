@@ -1,0 +1,36 @@
+name: Preflight last seven 61-elf regression tests
+on:
+  push:
+    branches: [ci/61-final-seven-smoke-20261120]
+    paths: [.github/workflows/61-final-seven-smoke-20261120.yml]
+permissions:
+  contents: read
+jobs:
+  tail-tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: 24de731311bf53b2871360b8622a47a631ee3083
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+      - run: npm ci --no-audit --no-fund
+      - name: Recreate data and audit snapshots
+        run: |
+          npm run data:kit-pack
+          npm run audit:blocks
+          npm run audit:implementation
+      - name: Validate tests after extraActionSkills in original full CI order
+        run: |
+          node --import tsx tests/extraActionSkills.semantic.test.ts
+          node --import tsx tests/holyOscar.semantic.test.ts
+          node --import tsx tests/naifenStarDeath.semantic.test.ts
+          node --import tsx tests/roundEndNextAndForcedPower.semantic.test.ts
+          node --import tsx tests/keerhodeDarkNight.semantic.test.ts
+          node --import tsx tests/grauenAndTypeMatchup.semantic.test.ts
+          node --import tsx tests/leonidas.semantic.test.ts
+          node --import tsx tests/huoguang.semantic.test.ts
