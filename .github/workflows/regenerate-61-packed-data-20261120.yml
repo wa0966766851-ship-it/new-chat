@@ -31,9 +31,9 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          test "$(git rev-parse HEAD)" = dac6d3a85de4446a1f4719fa84dd535c86aa8a40
+          test "$(git rev-parse HEAD)" = 24de731311bf53b2871360b8622a47a631ee3083
           pr="$(gh api "repos/$REPO/pulls/7")"
-          test "$(jq -r .head.sha <<<"$pr")" = dac6d3a85de4446a1f4719fa84dd535c86aa8a40
+          test "$(jq -r .head.sha <<<"$pr")" = 24de731311bf53b2871360b8622a47a631ee3083
           test "$(jq -r .state <<<"$pr")" = open
           test "$(jq -r .base.sha <<<"$pr")" = dd4b0ad0273df70855191ed8cedd7f99978da127
           test "$(gh api "repos/$REPO/branches/main" --jq .commit.sha)" = dd4b0ad0273df70855191ed8cedd7f99978da127
@@ -56,6 +56,8 @@ jobs:
         run: node --import tsx tests/leonidas.semantic.test.ts
       - name: Fast gate - drag scroll
         run: node --import tsx tests/eclipseDragScroll.ui.test.tsx
+      - name: Fast gate - extra action registry and hyphenated skill IDs
+        run: node --import tsx tests/extraActionSkills.semantic.test.ts
       - name: Fast gate - packed data consistency
         run: npm run test:data
       - name: Full static checks
@@ -95,7 +97,7 @@ jobs:
             git config user.name "github-actions[bot]"
             git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
             git commit -m "build(data): refresh reproducible 61-elf packed resources after 5050 text fixes"
-            test "$(git ls-remote origin refs/heads/codex/main-integration-20261120 | cut -f1)" = dac6d3a85de4446a1f4719fa84dd535c86aa8a40
+            test "$(git ls-remote origin refs/heads/codex/main-integration-20261120 | cut -f1)" = 24de731311bf53b2871360b8622a47a631ee3083
             git push origin HEAD:refs/heads/codex/main-integration-20261120
           fi
           current="$(git rev-parse HEAD)"
