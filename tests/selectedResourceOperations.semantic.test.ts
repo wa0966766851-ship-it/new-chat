@@ -10,7 +10,8 @@ try{
   await check('所選槽、資源、動態層數、保底及本次擊敗監控都有嚴格合約',async()=>{
     const {sequenceIssue}=await h.server.ssrLoadModule('/src/effects/sequenceContract.ts');assert.equal(sequenceIssue(setup().kit[0].params.clause),null);
     for(const [op,p] of [['abolish_selected',{}],['consume_selected_pp',{side:'both'}],['resource_mark_add',{...resource,ratio:0}],['resource_mark_add',{...resource,scope:'不明'}]])assert.ok(sequenceIssue(h.kitSkill('壞', [{op,p}]).kit[0].params.clause));
-    assert.ok(sequenceIssue(entry('use','on_skill_use',[{op:'damage_floor',p:{side:'opp',base:'全隊體力上限',ratio:1}}]).params.clause));
+    // 全隊體力上限已成為 damage_floor 的合法基礎值（整合後新增），不再是非法案例。
+    assert.equal(sequenceIssue(entry('use','on_skill_use',[{op:'damage_floor',p:{side:'opp',base:'全隊體力上限',ratio:1}}]).params.clause), null);
     assert.ok(sequenceIssue(entry('use','on_skill_use',[],[{c:'death_node',p:{node:1},label:'死亡'}]).params.clause));
     assert.ok(sequenceIssue(entry('use','on_skill_use',[{op:'watch',p:{trig:'kill',actionOnly:'yes',body:[{acts:[{op:'next_entry_status',p:{status:'詛咒',turns:1},label:'詛咒'}]}]}}]).params.clause));
   });
