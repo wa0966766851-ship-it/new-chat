@@ -1,0 +1,151 @@
+name: Regenerate and release validated 61 elves
+on:
+  push:
+    branches:
+      - ci/regenerate-61-packed-data-20261120
+    paths:
+      - .github/workflows/regenerate-61-packed-data-20261120.yml
+permissions:
+  contents: write
+  pull-requests: write
+  actions: write
+concurrency:
+  group: safe-61-elves-publish-v3
+  cancel-in-progress: false
+jobs:
+  complete:
+    if: ${{ github.repository == 'wa0966766851-ship-it/new-chat' && github.ref == 'refs/heads/ci/regenerate-61-packed-data-20261120' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 175
+    steps:
+      - name: Checkout 61-elf PR source with permission to commit generated assets
+        uses: actions/checkout@v6
+        with:
+          ref: codex/main-integration-20261120
+          fetch-depth: 0
+          persist-credentials: true
+      - name: Check exact reviewed PR revision and unchanged main
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = dac6d3a85de4446a1f4719fa84dd535c86aa8a40
+          pr="$(gh api "repos/$REPO/pulls/7")"
+          test "$(jq -r .head.sha <<<"$pr")" = dac6d3a85de4446a1f4719fa84dd535c86aa8a40
+          test "$(jq -r .state <<<"$pr")" = open
+          test "$(jq -r .base.sha <<<"$pr")" = dd4b0ad0273df70855191ed8cedd7f99978da127
+          test "$(gh api "repos/$REPO/branches/main" --jq .commit.sha)" = dd4b0ad0273df70855191ed8cedd7f99978da127
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+      - run: npm ci --no-audit --no-fund
+      - name: Rebuild deterministic packed data from updated Leonidas sources
+        run: npm run data:kit-pack
+      - name: Fast gate - runtime damage descriptions
+        run: node --import tsx tests/damageTextClassification.semantic.test.ts
+      - name: Fast gate - Leonidas 5050 mechanics
+        run: node --import tsx tests/leonidas.semantic.test.ts
+      - name: Fast gate - drag scroll
+        run: node --import tsx tests/eclipseDragScroll.ui.test.tsx
+      - name: Fast gate - packed data consistency
+        run: npm run test:data
+      - name: Full static checks
+        run: npm run lint
+      - name: Complete CI test suite with repacked data
+        run: npm test
+      - name: Production build and bundle audit
+        run: |
+          npm run build
+          npm run audit:bundle
+      - name: Check no unintended changes and commit repacked files
+        id: source
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          git status --short
+          changed="$(git diff --name-only)"
+          while IFS= read -r file; do
+            [[ -z "$file" ]] && continue
+            case "$file" in
+              src/data/defaultElfSeeds.packed.json|src/data/newElves.packed.json|src/data/reviewedKits.compressed.json|src/data/reviewedKits.homepage.json|src/data/reviewedKits.deferred.json) ;;
+              *) echo "::error::Unexpected generated or modified file: $file"; exit 1 ;;
+            esac
+          done <<< "$changed"
+          git add src/data/defaultElfSeeds.packed.json src/data/newElves.packed.json \
+            src/data/reviewedKits.compressed.json src/data/reviewedKits.homepage.json \
+            src/data/reviewedKits.deferred.json
+          if git diff --cached --quiet; then
+            echo "Repacked files are already current"
+          else
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git commit -m "build(data): refresh reproducible 61-elf packed resources after 5050 text fixes"
+            test "$(git ls-remote origin refs/heads/codex/main-integration-20261120 | cut -f1)" = dac6d3a85de4446a1f4719fa84dd535c86aa8a40
+            git push origin HEAD:refs/heads/codex/main-integration-20261120
+          fi
+          current="$(git rev-parse HEAD)"
+          test "$(gh api "repos/$REPO/pulls/7" --jq .head.sha)" = "$current"
+          echo "sha=$current" >> "$GITHUB_OUTPUT"
+          echo "Full checks passed and source committed: $current"
+      - name: Merge validated PR 7 and dispatch existing protected-site publishing workflow
+        id: dispatch
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          SOURCE: ${{ steps.source.outputs.sha }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(gh api "repos/$REPO/branches/main" --jq .commit.sha)" = dd4b0ad0273df70855191ed8cedd7f99978da127
+          merged="$(gh api -X PUT "repos/$REPO/pulls/7/merge" -f sha="$SOURCE" -f merge_method=merge)"
+          test "$(jq -r .merged <<< "$merged")" = true
+          commit="$(jq -r .sha <<< "$merged")"
+          test "$(gh api "repos/$REPO/branches/main" --jq .commit.sha)" = "$commit"
+          echo "sha=$commit" >> "$GITHUB_OUTPUT"
+          previous="$(gh api "repos/$REPO/actions/workflows/build-web-package.yml/runs?event=workflow_dispatch&per_page=1" --jq '.workflow_runs[0].id // 0')"
+          echo "previous=$previous" >> "$GITHUB_OUTPUT"
+          gh api -X POST "repos/$REPO/actions/workflows/build-web-package.yml/dispatches" \
+            -f ref=main -f 'inputs[publish]=true' \
+            -f 'inputs[diagnose_audit]=false' -f 'inputs[resume_publish_run]='
+          echo "Merged and requested exact-main protected-site publishing: $commit"
+      - name: Wait for final website publish and live version validation
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          SOURCE: ${{ steps.dispatch.outputs.sha }}
+          PREVIOUS: ${{ steps.dispatch.outputs.previous }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          run=""
+          for i in $(seq 1 60); do
+            payload="$(gh api "repos/$REPO/actions/workflows/build-web-package.yml/runs?event=workflow_dispatch&per_page=40")"
+            run="$(jq -r --arg sha "$SOURCE" --argjson prev "$PREVIOUS" '[.workflow_runs[] | select(.id > $prev and .head_branch == "main" and .head_sha == $sha)] | first | .id // empty' <<<"$payload")"
+            [[ -n "$run" ]] && break
+            sleep 10
+          done
+          [[ -n "$run" ]] || { echo "::error::No matching new website deployment run"; exit 1; }
+          echo "Website deployment run: https://github.com/$REPO/actions/runs/$run"
+          for i in $(seq 1 100); do
+            payload="$(gh api "repos/$REPO/actions/runs/$run")"
+            test "$(jq -r .head_sha <<<"$payload")" = "$SOURCE"
+            if [[ "$(jq -r .status <<<"$payload")" == completed ]]; then
+              conclusion="$(jq -r .conclusion <<<"$payload")"
+              [[ "$conclusion" == success ]] || { echo "::error::Website pipeline failed ($conclusion)"; exit 1; }
+              jobs="$(gh api "repos/$REPO/actions/runs/$run/jobs?per_page=100")"
+              result="$(jq -r '[.jobs[].steps[]? | select(.name == "Publish verified package to original protected site")][0].conclusion // empty' <<<"$jobs")"
+              [[ "$result" == success ]] || { echo "::error::Protected site publish step not successful ($result)"; exit 1; }
+              echo "Publishing script checks authenticated live /version.json buildId, commit and version after activation."
+              echo "PASS: complete main build, uploaded package, original site activation and live verification"
+              exit 0
+            fi
+            echo "Website run $run still executing; check $i"
+            sleep 60
+          done
+          echo "::error::Website run exceeded polling limit; check linked run"; exit 1
