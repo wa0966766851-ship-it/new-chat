@@ -1,0 +1,27 @@
+name: Quick validate 61 elf damage text
+on:
+  push:
+    branches: [ci/quick-61-fix-20261120]
+    paths: [.github/workflows/quick-61-fix-20261120.yml]
+permissions:
+  contents: read
+jobs:
+  quick:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: dac6d3a85de4446a1f4719fa84dd535c86aa8a40
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+      - run: npm ci --no-audit --no-fund
+      - name: Targeted damage description classification
+        run: node --import tsx tests/damageTextClassification.semantic.test.ts
+      - name: Leonidas mechanics
+        run: node --import tsx tests/leonidas.semantic.test.ts
+      - name: Drag scrolling interaction
+        run: node --import tsx tests/eclipseDragScroll.ui.test.tsx
