@@ -1,0 +1,125 @@
+# One-shot release of an immutable 61-elf PR, with complete CI and live publishing verification.
+# Aborts if CI fails or another developer changes PR 7 or main.
+name: Verified 61-elves rollout v2
+on:
+  push:
+    branches: [release/verified-61-elves-20261120-v2]
+    paths: [.github/workflows/verified-61-rollout-v2.yml]
+permissions:
+  contents: write
+  pull-requests: write
+  actions: write
+concurrency:
+  group: verified-61-elves-rollout-v2
+  cancel-in-progress: false
+jobs:
+  rollout:
+    if: ${{ github.repository == 'wa0966766851-ship-it/new-chat' && github.ref == 'refs/heads/release/verified-61-elves-20261120-v2' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 175
+    steps:
+      - name: Await exact-source full CI
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          for i in $(seq 1 90); do
+            response="$(gh api "repos/$REPO/actions/runs/44707737821")"
+            test "$(jq -r '.head_sha' <<< "$response")" = 9a20a213c93f0d084fdead6598cf4ad9fd19daf1
+            test "$(jq -r '.event' <<< "$response")" = pull_request
+            state="$(jq -r '.status' <<< "$response")"
+            if [[ "$state" == completed ]]; then
+              result="$(jq -r '.conclusion' <<< "$response")"
+              if [[ "$result" != success ]]; then
+                echo "::error::61-elf CI failed ($result). No merge and no publishing."
+                exit 1
+              fi
+              echo "Exact-source CI successful: 9a20a213c93f0d084fdead6598cf4ad9fd19daf1"
+              exit 0
+            fi
+            echo "CI not yet finished ($state); check $i"
+            sleep 60
+          done
+          echo "::error::Source CI did not finish in 90 minutes; no changes."
+          exit 1
+      - name: Verify PR head, unchanged main, and exactly 61 elves
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          pr="$(gh api "repos/$REPO/pulls/7")"
+          [[ "$(jq -r '.state' <<< "$pr")" == open ]]
+          [[ "$(jq -r '.head.sha' <<< "$pr")" == 9a20a213c93f0d084fdead6598cf4ad9fd19daf1 ]]
+          [[ "$(jq -r '.base.ref' <<< "$pr")" == main ]]
+          [[ "$(jq -r '.base.sha' <<< "$pr")" == dd4b0ad0273df70855191ed8cedd7f99978da127 ]]
+          [[ "$(gh api "repos/$REPO/branches/main" --jq '.commit.sha')" == dd4b0ad0273df70855191ed8cedd7f99978da127 ]]
+          manifest="$(gh api "repos/$REPO/contents/docs/精靈清單_權威事實源.md?ref=9a20a213c93f0d084fdead6598cf4ad9fd19daf1" --jq .content | base64 -d)"
+          grep -qE '精靈總數.*61' <<<"$manifest"
+          grep -qE '有魂印 kit.*61' <<<"$manifest"
+          grep -qE '有技能 kit.*61' <<<"$manifest"
+          echo "PR and authoritative roster validated; main has not moved."
+      - name: Merge PR 7 and start standard verified site deployment
+        id: deploy
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          [[ "$(gh api "repos/$REPO/branches/main" --jq '.commit.sha')" == dd4b0ad0273df70855191ed8cedd7f99978da127 ]]
+          merged="$(gh api -X PUT "repos/$REPO/pulls/7/merge" \
+            -f sha=9a20a213c93f0d084fdead6598cf4ad9fd19daf1 -f merge_method=merge)"
+          [[ "$(jq -r '.merged' <<< "$merged")" == true ]]
+          commit="$(jq -r '.sha' <<< "$merged")"
+          [[ "$(gh api "repos/$REPO/branches/main" --jq '.commit.sha')" == "$commit" ]]
+          echo "merged_sha=$commit" >> "$GITHUB_OUTPUT"
+          echo "61-elf PR merged into main at $commit"
+          last="$(gh api "repos/$REPO/actions/workflows/build-web-package.yml/runs?event=workflow_dispatch&per_page=1" --jq '.workflow_runs[0].id // 0')"
+          echo "last_run=$last" >> "$GITHUB_OUTPUT"
+          gh api -X POST "repos/$REPO/actions/workflows/build-web-package.yml/dispatches" \
+            -f ref=main -f 'inputs[publish]=true' \
+            -f 'inputs[diagnose_audit]=false' -f 'inputs[resume_publish_run]='
+          echo "Standard publish workflow dispatched"
+      - name: Await original-site deployment and confirm publish step
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          MERGED_SHA: ${{ steps.deploy.outputs.merged_sha }}
+          LAST_RUN: ${{ steps.deploy.outputs.last_run }}
+        run: |
+          set -euo pipefail
+          published_run=""
+          for i in $(seq 1 40); do
+            runs="$(gh api "repos/$REPO/actions/workflows/build-web-package.yml/runs?event=workflow_dispatch&per_page=30")"
+            published_run="$(jq -r --arg sha "$MERGED_SHA" --argjson prev "$LAST_RUN" '[.workflow_runs[] | select(.id > $prev and .head_sha == $sha and .head_branch == "main")][0].id // empty' <<<"$runs")"
+            [[ -n "$published_run" ]] && break
+            sleep 15
+          done
+          if [[ -z "$published_run" ]]; then echo "::error::Could not find the dispatched website workflow"; exit 1; fi
+          echo "Website publication: https://github.com/$REPO/actions/runs/$published_run"
+          for i in $(seq 1 100); do
+            response="$(gh api "repos/$REPO/actions/runs/$published_run")"
+            [[ "$(jq -r '.head_sha' <<<"$response")" == "$MERGED_SHA" ]]
+            status="$(jq -r '.status' <<<"$response")"
+            if [[ "$status" == completed ]]; then
+              conclusion="$(jq -r '.conclusion' <<<"$response")"
+              if [[ "$conclusion" != success ]]; then echo "::error::Site build or publish failed ($conclusion)"; exit 1; fi
+              jobs="$(gh api "repos/$REPO/actions/runs/$published_run/jobs?per_page=100")"
+              publish_step="$(jq -r '[.jobs[].steps[]? | select(.name == "Publish verified package to original protected site")][0].conclusion // ""' <<< "$jobs")"
+              if [[ "$publish_step" != success ]]; then
+                echo "::error::Original protected site publish did not succeed ($publish_step)"; exit 1
+              fi
+              echo "Source commit $MERGED_SHA built, package verified, publish succeeded."
+              echo "scripts/publish_site_package.mjs also verifies authenticated live version.json identity and buildId."
+              exit 0
+            fi
+            echo "Publishing workflow status $status; check $i"
+            sleep 60
+          done
+          echo "::error::Site publication still running after 100 minutes; verify manually"
+          exit 1
