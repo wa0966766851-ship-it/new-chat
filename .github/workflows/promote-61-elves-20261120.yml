@@ -1,0 +1,98 @@
+# A single-use, exact-SHA guarded rollout. No game code is changed here.
+name: Promote validated 61-elves release
+on:
+  push:
+    branches:
+      - release/verified-61-elves-20261120
+    paths:
+      - .github/workflows/promote-61-elves-20261120.yml
+
+permissions:
+  contents: write
+  pull-requests: write
+  actions: write
+
+concurrency:
+  group: single-61-elves-release-20261120
+  cancel-in-progress: false
+
+jobs:
+  promote:
+    if: ${{ github.repository == 'wa0966766851-ship-it/new-chat' && github.ref == 'refs/heads/release/verified-61-elves-20261120' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 105
+    steps:
+      - name: Wait for complete CI on exact 61-elf PR source
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          run_id=44702953673
+          source_sha=faf51754a5cfa0110adeab2d1b85a616de35a542
+          for attempt in $(seq 1 90); do
+            run="$(gh api "repos/$REPO/actions/runs/$run_id")"
+            status="$(jq -r '.status' <<< "$run")"
+            conclusion="$(jq -r '.conclusion // ""' <<< "$run")"
+            current_sha="$(jq -r '.head_sha' <<< "$run")"
+            event="$(jq -r '.event' <<< "$run")"
+            if [[ "$current_sha" != "$source_sha" || "$event" != "pull_request" ]]; then
+              echo "::error::CI source no longer matches the reviewed PR"; exit 1
+            fi
+            if [[ "$status" == "completed" ]]; then
+              if [[ "$conclusion" == "success" ]]; then
+                echo "CI passed for the exact 61-elves source $source_sha"
+                exit 0
+              fi
+              echo "::error::CI did not pass ($conclusion); no merge or deployment performed"
+              exit 1
+            fi
+            echo "Waiting for source CI ($status), check $attempt"
+            sleep 60
+          done
+          echo "::error::CI did not finish within the verification window; no changes made"
+          exit 1
+
+      - name: Check immutable PR head, expected main, and 61-elf authoritative manifest
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          pr="$(gh api "repos/$REPO/pulls/7")"
+          test "$(jq -r '.state' <<<"$pr")" = open
+          test "$(jq -r '.head.sha' <<<"$pr")" = faf51754a5cfa0110adeab2d1b85a616de35a542
+          test "$(jq -r '.base.ref' <<<"$pr")" = main
+          test "$(jq -r '.base.sha' <<<"$pr")" = dd4b0ad0273df70855191ed8cedd7f99978da127
+          main_sha="$(gh api "repos/$REPO/branches/main" --jq '.commit.sha')"
+          test "$main_sha" = dd4b0ad0273df70855191ed8cedd7f99978da127
+          manifest="$(gh api "repos/$REPO/contents/docs/精靈清單_權威事實源.md?ref=faf51754a5cfa0110adeab2d1b85a616de35a542" --jq '.content' | base64 -d)"
+          grep -qE '精靈總數.*61' <<<"$manifest"
+          grep -qE '有魂印 kit.*61' <<<"$manifest"
+          grep -qE '有技能 kit.*61' <<<"$manifest"
+          echo "Validated PR head and 61-roster declaration; main unchanged"
+
+      - name: Merge validated PR 7 and dispatch original safe website publication
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo "Merging PR 7 only after source CI and main SHA match"
+          merged="$(gh api -X PUT "repos/$REPO/pulls/7/merge" \
+            -f sha=faf51754a5cfa0110adeab2d1b85a616de35a542 \
+            -f merge_method=merge)"
+          test "$(jq -r '.merged' <<<"$merged")" = true
+          commit="$(jq -r '.sha' <<<"$merged")"
+          test "$(gh api "repos/$REPO/branches/main" --jq '.commit.sha')" = "$commit"
+          echo "Merged verified 61-elves PR into main: $commit"
+          echo "Requesting standard workflow: npm ci, lint, full tests, build, package validation, and site publication"
+          gh api -X POST "repos/$REPO/actions/workflows/build-web-package.yml/dispatches" \
+            -f ref=main \
+            -f 'inputs[publish]=true' \
+            -f 'inputs[diagnose_audit]=false' \
+            -f 'inputs[resume_publish_run]='
+          echo "Website release requested; review the Build website package without AI run for definitive upload and live version.json verification."
