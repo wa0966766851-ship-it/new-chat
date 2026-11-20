@@ -44,6 +44,12 @@ jobs:
       - run: npm ci --no-audit --no-fund
       - name: Rebuild deterministic packed data from updated Leonidas sources
         run: npm run data:kit-pack
+      - name: Refresh parser coverage and implementation audit snapshots
+        run: |
+          npm run audit:blocks
+          npm run audit:implementation
+      - name: Fast gate - audited snapshot parity
+        run: npm run test:audit
       - name: Fast gate - runtime damage descriptions
         run: node --import tsx tests/damageTextClassification.semantic.test.ts
       - name: Fast gate - Leonidas 5050 mechanics
@@ -73,13 +79,16 @@ jobs:
           while IFS= read -r file; do
             [[ -z "$file" ]] && continue
             case "$file" in
-              src/data/defaultElfSeeds.packed.json|src/data/newElves.packed.json|src/data/reviewedKits.compressed.json|src/data/reviewedKits.homepage.json|src/data/reviewedKits.deferred.json) ;;
+              src/data/defaultElfSeeds.packed.json|src/data/newElves.packed.json|src/data/reviewedKits.compressed.json|src/data/reviewedKits.homepage.json|src/data/reviewedKits.deferred.json|docs/audits/積木解析與執行統計.json|docs/audits/積木解析與執行統計.md|docs/全精靈效果實裝核對.json|docs/全精靈效果實裝核對.md|docs/audits/elves/*) ;;
               *) echo "::error::Unexpected generated or modified file: $file"; exit 1 ;;
             esac
           done <<< "$changed"
           git add src/data/defaultElfSeeds.packed.json src/data/newElves.packed.json \
             src/data/reviewedKits.compressed.json src/data/reviewedKits.homepage.json \
-            src/data/reviewedKits.deferred.json
+            src/data/reviewedKits.deferred.json \
+            docs/audits/積木解析與執行統計.json docs/audits/積木解析與執行統計.md \
+            docs/全精靈效果實裝核對.json docs/全精靈效果實裝核對.md \
+            docs/audits/elves
           if git diff --cached --quiet; then
             echo "Repacked files are already current"
           else
