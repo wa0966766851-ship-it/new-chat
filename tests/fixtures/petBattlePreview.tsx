@@ -37,7 +37,14 @@ function Workbench(){
  const [auditSource,setAuditSource]=React.useState('');
  const [status,setStatus]=React.useState({size:'',busy:false,phase:'',players:0,leases:'',degraded:''});
  const driver=React.useRef<Driver|null>(null);
- const teams=React.useMemo(()=>{const out={p1:workbenchElf(roster,p1,'p1',attacker,visual||p1.id==='70',scene==='mechanism'),p2:workbenchElf(roster,p2,'p2',attacker,visual||p2.id==='70',scene==='mechanism')};if(scene==='hidden')for(const e of [out.p1,out.p2])e.isConcealed=true;if(auditSource)for(const e of [out.p1,out.p2])Object.assign(e,{name:'素材 '+auditSource.split('/').pop(),path:auditSource,skinId:undefined,height:185});return out;},[p1,p2,attacker,visual,scene,revision,rosterRev,auditSource]);
+ const teams=React.useMemo(()=>{const out={p1:workbenchElf(roster,p1,'p1',attacker,visual||p1.id==='70',scene==='mechanism'),p2:workbenchElf(roster,p2,'p2',attacker,visual||p2.id==='70',scene==='mechanism')};if(scene==='mechanism'&&new URLSearchParams(location.search).has('formCheck')){
+   for(const e of [out.p1,out.p2])if(e.id!=='5016'){
+    const raw='測試對手每回合恢復體力';
+    e.skills[2].kit=[{codeId:'effect_sequence',source:'skill',role:'attached',node:'on_skill_use',order:0,customText:raw,
+      params:{clause:{raw,trig:'use',parsed:true,body:[{acts:[{op:'heal',p:{side:'self',ratio:1},label:raw}]}]}}}];
+   }
+  }
+  if(scene==='hidden')for(const e of [out.p1,out.p2])e.isConcealed=true;if(auditSource)for(const e of [out.p1,out.p2])Object.assign(e,{name:'素材 '+auditSource.split('/').pop(),path:auditSource,skinId:undefined,height:185});return out;},[p1,p2,attacker,visual,scene,revision,rosterRev,auditSource]);
  React.useEffect(()=>{writeAnimationSettings({...DEFAULT_BATTLE_ANIMATION,mode,elfModes:{},staticMode:mode==='static',intro:false});},[mode]);
  React.useEffect(()=>{
   const poll=()=>setStatus({size:innerWidth+' × '+innerHeight+' · DPR '+devicePixelRatio,busy:driver.current?.isPresenting?.()??false,phase:driver.current?.getState().phase||'準備中',players:document.querySelectorAll('[data-pet-ready="true"]').length,leases:petClipLeaseSnapshot().map(a=>a.id+' ×'+a.users+'：CPU 圖集 '+Math.round(a.rgbaBytes/1048576)+' MiB').join('；'),degraded:getPetDegradeLog().slice(-1).map(a=>a.side+' '+a.reason).join('')});

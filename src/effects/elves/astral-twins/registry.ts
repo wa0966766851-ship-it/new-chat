@@ -59,7 +59,7 @@ export function executeAstralMemory(c: C): void {
   if (!forced && !condition) return;
   if ((c.getPlayerState('astralMemoryUses') || 0) > 0) c.setPlayerState('astralMemoryUses', c.getPlayerState('astralMemoryUses') - 1);
   const ownerId = identity(c.self);
-  c.queueExtraAction(c.actor, { label: '變思遷憶', run: ctx => {
+  c.queueExtraAction(c.actor, { label: '變思遷憶', skillId: 'astral_memory', run: ctx => {
     if (identity(ctx.self) !== ownerId || !alive(ctx.self) || identity(active(ctx, ctx.actor)) !== ownerId) return;
     const damage = (e: Elf, n: number) => ctx.applyDamageToElf?.(ctx.targetSide, identity(e), n, 'skill_extra_action', { elem: '超能' });
     if (kind === 0) damage(ctx.target, 50 + 50 * nonFullPp(ctx.target));

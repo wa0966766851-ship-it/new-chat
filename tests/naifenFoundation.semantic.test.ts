@@ -7,7 +7,7 @@ import {buildEntryBlock,createKitBlockParser,defineCustomBlocks} from '../src/co
 const h=await createHarness();
 try{
  const {NAIFEN_SOURCE}=await h.server.ssrLoadModule('/src/data/naifenSource.ts');
- assert.equal(NAIFEN_SOURCE,readFileSync('../elf_source_files/elf_files/月鈴極樂·奈尼芬多.txt','utf8'));
+ assert.equal(NAIFEN_SOURCE,readFileSync(new URL('../elf_source_files/elf_files/月鈴極樂·奈尼芬多.txt',import.meta.url),'utf8'));
  const {NAIFEN_READY_SKILLS:skills}=await h.server.ssrLoadModule('/src/data/naifenSkills.ts');
  const {sequenceIssue,skillPropertyIssue}=await h.server.ssrLoadModule('/src/effects/sequenceContract.ts');
  defineCustomBlocks();

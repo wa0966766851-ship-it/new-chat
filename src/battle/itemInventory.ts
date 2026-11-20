@@ -158,6 +158,24 @@ function potionDamage(ctx: BattleEventContext, side: 'p1' | 'p2', elf: Elf, amou
  * - 解除能力下降 → 消除自身能力提升（對稱補完）；
  * - 對對手的藥劑反噬傷害／扣 PP／附加異常 → 生效目標改為使用方在場精靈。
  */
+/** 持有物指定的對方精靈（存活即可，不論在場）依反噬量恢復體力與PP。 */
+export function restoreBacklashGrantor(ctx: BattleEventContext, holderSide: 'p1' | 'p2', hp: number, ppFor?: (skill: any, elf: any) => number): void {
+  const rule = BATTLE_ITEMS.find(held => held.backlashRestore && (ctx.getBattleItem?.(holderSide, held.id)?.left || 0) > 0)?.backlashRestore;
+  if (!rule) return;
+  const side: 'p1' | 'p2' = holderSide === 'p1' ? 'p2' : 'p1';
+  const grantor = ctx.getFullTeam(side).find(e => String(e.id) === rule.elfId && e.currentHp > 0 && !(e as any).isVanished);
+  if (!grantor) return;
+  const heal = Math.floor(hp * rule.ratio);
+  if (heal > 0) ctx.applyHealToElf ? ctx.applyHealToElf(side, identity(grantor), heal, {}) : ctx.applyHeal(side, heal);
+  if (ppFor) changePp(ctx, side, grantor, s => Math.min(getMaxPp(s, grantor), s.pp + Math.floor(ppFor(s, grantor) * rule.ratio)), true);
+}
+
+export const itemHpAmount = (item: BattleItem, maxHp: number) =>
+  (item.value || 0) + Math.floor(maxHp * pct(item.hpPercent) / 100);
+
+export const itemDamageAmount = (item: BattleItem, maxHp: number) =>
+  (item.oppDamage || 0) + Math.floor(maxHp * pct(item.oppDamagePercent) / 100);
+
 export function applyBattleItem(ctx: BattleEventContext, item: BattleItem, recipient: 'p1' | 'p2', runProgram?: (ctx:BattleEventContext,item:BattleItem,backlash:boolean)=>void): boolean {
   if(item.useKit&&!runProgram)return false;
   // 需要選擇對象的道具：對象在使用當下必須仍在雙方背包內且未消逝，否則整個道具不生效。
@@ -173,9 +191,9 @@ export function applyBattleItem(ctx: BattleEventContext, item: BattleItem, recip
   const state = { [`${recipient}Timers`]: recipient === 'p1' ? ctx.p1Timers : ctx.p2Timers, [recipient]: elf } as any;
   const backlash = !!potionBacklash(state, recipient, elf)||BATTLE_ITEMS.some(held=>held.potionBacklashWhileHeld&&(ctx.getBattleItem?.(recipient,held.id)?.left||0)>0);
   ctx.addLog(`【${elf.name}】使用了【${item.name}】！${backlash ? '（藥劑反噬：效果反轉）' : ''}`, 'info');
-  const hpGain = (item.value || 0) + (item.hpPercent ? Math.floor(elf.maxHp * pct(item.hpPercent) / 100) : 0);
+  const hpGain = itemHpAmount(item, elf.maxHp);
   if (hpGain > 0) {
-    if (backlash) potionDamage(ctx, recipient, elf, hpGain, `${item.name}・藥劑反噬`);
+    if (backlash) { potionDamage(ctx, recipient, elf, hpGain, `${item.name}・藥劑反噬`); restoreBacklashGrantor(ctx, recipient, hpGain); }
     else {
       const opts = { isPotion: true, presentationPotion: true };
       if (identity(elf) !== identity(active) && ctx.applyHealToElf) ctx.applyHealToElf(recipient, identity(elf), hpGain, opts);
@@ -185,7 +203,7 @@ export function applyBattleItem(ctx: BattleEventContext, item: BattleItem, recip
   const ppPct = pct(item.ppPercent);
   if (item.ppValue || ppPct) {
     const amountFor = (s: any) => (item.ppValue || 0) + (ppPct ? percentPp(s, elf, ppPct) : 0);
-    if (backlash) changePp(ctx, recipient, elf, s => Math.max(0, s.pp - amountFor(s)));
+    if (backlash) { changePp(ctx, recipient, elf, s => Math.max(0, s.pp - amountFor(s))); restoreBacklashGrantor(ctx, recipient, 0, (s, g) => (item.ppValue || 0) + (ppPct ? percentPp(s, g, ppPct) : 0)); }
     else changePp(ctx, recipient, elf, s => Math.min(getMaxPp(s, elf), s.pp + amountFor(s)), true);
   }
   if (item.effect === 'clear_status' || item.cureStatuses?.length) {
@@ -204,7 +222,7 @@ export function applyBattleItem(ctx: BattleEventContext, item: BattleItem, recip
   const hitSide = backlash ? recipient : oppSide;
   const hitElf = backlash ? elf : opp;
   if (hitElf && (item.oppDamage || item.oppDamagePercent)) {
-    const amount = (item.oppDamage || 0) + (item.oppDamagePercent ? Math.floor(hitElf.maxHp * pct(item.oppDamagePercent) / 100) : 0);
+    const amount = itemDamageAmount(item, hitElf.maxHp);
     potionDamage(ctx, hitSide, hitElf, amount, item.name);
   }
   if (hitElf && item.oppPpDrain) changePp(ctx, hitSide, hitElf, s => Math.max(0, s.pp - item.oppPpDrain!));

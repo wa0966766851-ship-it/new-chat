@@ -1,3 +1,4 @@
+import { borrowedAlienTraits } from '../data/elfGroups';
 import type { Elf } from '../types';
 import type { BattleEventContext } from '../effects/types';
 import { battleIdentity, isTeamRegistryKey } from './stateScopes';
@@ -17,7 +18,7 @@ export function acquiredEffectContext(ctx: BattleEventContext): BattleEventConte
   const source = ctx.self.illusion!.target;
   const key = ctx.self.illusion!.effectKey || source.name;
   const definition: Partial<Elf> = { name: source.name, soulMark: source.soulMark,
-    trait: source.trait, alienTraits: source.alienTraits, kit: source.kit, illusion: undefined };
+    trait: source.trait, alienTraits: borrowedAlienTraits(ctx.self, source), kit: source.kit, illusion: undefined };
   const view = new Proxy({} as Elf, {
     get: (_t, prop) => Object.prototype.hasOwnProperty.call(definition, prop)
       ? definition[prop as keyof Elf] : ctx.self[prop as keyof Elf],

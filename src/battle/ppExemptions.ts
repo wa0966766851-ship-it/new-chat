@@ -57,7 +57,7 @@ const nativeZeroPpExempt = (elf: Elf, sk: Skill, opp?: Elf | null): boolean => {
   if (elf.name === "變革·馬爾修斯") return true; // 充能系統
   if (isCanglan(elf) && canglanActive(elf, opp)) return true;
   if (hasStoneThrowerMythic(elf)) return true;
-  if (resourceQueryActive(elf,'ignorePpLimit')) return true;
+  if (resourceQueryActive(elf,'ignorePpLimit') || (sk.category !== '屬性' && resourceQueryActive(elf,'ignoreAttackPpLimit'))) return true;
   if (sk.name === "星光·光合作用" || sk.name === "星光·花草能量") return true;
   if ((elf.ppLimitIgnoredWhenParalyzedTurns || 0) > 0) {
     const st = getStatuses(elf);

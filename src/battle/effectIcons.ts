@@ -1,7 +1,7 @@
-﻿// 異常狀態／效果圖標與說明（資料來源：SeerAPI battle_effect、buff；圖檔：seer-unity-assets battleeffect）
+// 異常狀態／效果圖標與說明（資料來源：SeerAPI battle_effect、buff；圖檔：seer-unity-assets battleeffect）
 import data from "../data/seerEffects.json";
 import { getStatMultiplier } from "../utils/statCalculator";
-import { BOSS_TRAIT_BY_STATUS, bossTraitIcon, bossTraitText, BOSS_TRAIT_BADGE_DIR, BOSS_TRAIT_ICON_DIR } from "../data/bossTraits";
+import { BOSS_TRAIT_BY_STATUS, bossTraitIcon, bossTraitText, BOSS_TRAIT_BADGE_DIR, bossEffectIconPath } from "../data/bossTraits";
 
 type StatusRow = [number, string, string]; // [圖標ID, 類別, 官方說明]
 const STATUS = (data as any).status as Record<string, StatusRow>;
@@ -63,7 +63,7 @@ const KEYWORDS: [RegExp, string][] = [
   [/技能無效|失效|封印|封鎖|無法使用/, "技能無效"], [/閃避/, "閃避"],
   [/傷害限制|不超過/, "傷害限制"], [/減傷|傷害降低|傷害減少|減半/, "減傷"], [/免傷|抵擋|攻擊免疫/, "免傷"],
   [/先制-|先制降低/, "先制降低"], [/先制|先手/, "先制"],
-  [/致命一擊|暴擊/, "致命一擊"], [/秒殺|瞬殺/, "秒殺"],
+  [/致命一擊|暴擊/, "致命一擊"], [/秒殺|瞬殺/, "秒殺"], // 秒殺＝瞬殺（同義）：體力歸0、不經傷害結算；BOSS「疾行」經 instantKillImmune 免疫
   [/切換/, "切換限制"],
   [/^強化$/, "強化"], [/^弱化$/, "弱化"],
 ];
@@ -73,7 +73,9 @@ export function buffIconFor(text?: string): string | undefined {
   if (!text) return undefined;
   // 2026-10-28：嫉妒是 BOSS 特性（官方 bossEffectIcon iconId 19），
   // 原本 seerEffects.json 的 buffTags.嫉妒→19 會指到 seer/buff/19.png（那是「恢復」圖）。
-  if (/嫉妒/.test(text)) return `${BOSS_TRAIT_ICON_DIR}19.png`;
+  if (/嫉妒/.test(text)) return bossEffectIconPath(19);
+  // 2026-11-15：BOSS 特性衍生的計時效果（例：侵染令雙方恢復效果下降）沿用該特性圖示。
+  if (/侵染/.test(text)) return bossEffectIconPath(24);
   if (/護盾/.test(text)) return CUSTOM_BUFF_ICONS.護盾;
   if (/護罩/.test(text)) return CUSTOM_BUFF_ICONS.護罩;
   for (const [re, tag] of KEYWORDS) {
@@ -92,6 +94,7 @@ export function stageDesc(key: string, v: number): string {
 
 /** 官方印記（sign）圖示：battleeffect/signbuff/<id>.png，id 取自 SeerAPI api-data sign。 */
 const SIGN_ICON_IDS: Record<string, number> = {
+  北冥之刃: 52, 北冥狂刃: 53, 強擊形態: 54, 無罔形態: 55, 威破形態: 56,
   // 2026-11-02：SeerAPI sign/1 = 「抗性」（減少固定／百分比／致命傷害，並機率免疫異常）。
   抗性: 1,
   // 2026-11-02：蓓麗安特星執系統（SeerAPI sign 94/95；95 的 num_des＝「剩餘能量」）。
@@ -105,6 +108,8 @@ const SIGN_ICON_IDS: Record<string, number> = {
   寂殺之魄: 110, 寂杀之魄: 110,
   肅霜之禁: 111, 肃霜之禁: 111,
   魔王咒怨: 121,
+  歲月之痕: 148,
+  九劫之痕: 174, 百煉之炎: 175, 百炼之炎: 175,
   嫉妒: 225,
   // 哈莫林 龍鱗（官方 sign 48–51）
   紅色龍鱗: 48, 红色龙鳞: 48, 黃色龍鱗: 49, 黄色龙鳞: 49,
@@ -151,6 +156,13 @@ export function signIconFor(name?: string): string | undefined {
 }
 
 export const UNKNOWN_EFFECT_ICON = '/status-icons/effect-placeholder.svg';
+/**
+ * 臨時圖示（2026-11-15）：效果沒有明確圖示時，實戰介面改用「效果相近」的原廠 buff 圖暫代，不再顯示空白或文字。
+ * 依序：名稱關鍵字 → 說明關鍵字 → 依正負面給通用的強化／弱化圖。只用於顯示，不影響判定；有正式圖示時不會走到這裡。
+ */
+export function placeholderEffectIcon(label?: string, description?: string, polarity?: string): string {
+  return buffIconFor(label) || buffIconFor(description) || buffIconFor(polarity === 'negative' ? '弱化' : '強化') || UNKNOWN_EFFECT_ICON;
+}
 /** Exact, explicitly selected tag only. A composite description must never pick its first keyword. */
 export function effectIcon(iconTag?: string, markName?: string): string {
   if (iconTag && CUSTOM_BUFF_ICONS[iconTag]) return CUSTOM_BUFF_ICONS[iconTag];

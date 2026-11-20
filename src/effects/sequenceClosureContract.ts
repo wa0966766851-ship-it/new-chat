@@ -1,6 +1,6 @@
 /** 已核對讀取端的閉合原子；未知鍵仍不可執行。 */
 export const CLOSURE_ACTION_FIELDS: Record<string, readonly string[]> = {
-  crit_uses: ['uses', 'scope'], immune_attack_turns: ['turns','extendByStatusTurns'], block_attack: ['count'],
+  crit_uses: ['uses', 'scope'], immune_attack_turns: ['turns','extendByStatusTurns'], block_attack: ['count','timerId','pairTimerId'],
   evade_turns: ['turns', 'chance', 'kind', 'onExpire'], survive_turns: ['turns'],
   pp_zero_random: ['count'], pp_cost_mult: ['turns', 'mult', 'kind'],
   no_pos_prio_turns: ['turns', 'next'], power_streak: ['step', 'cap'],

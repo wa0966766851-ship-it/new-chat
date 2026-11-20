@@ -4,29 +4,29 @@
     "turnsPlayed": 30,
     "winner": null,
     "turnNumber": 31,
-    "logCount": 400,
-    "logsHash": "9a0311a74a1ccb6c",
-    "finalHash": "6ddf3cbf884799e1",
-    "chainHash": "94ccfffc67c488d3"
+    "logCount": 397,
+    "logsHash": "558c79e0e42ccb56",
+    "finalHash": "433563c895615482",
+    "chainHash": "db2f58edaf011a54"
   },
   {
     "name": "heavy-B",
     "turnsPlayed": 11,
     "winner": null,
     "turnNumber": 11,
-    "logCount": 158,
-    "logsHash": "daafdaea927c1142",
-    "finalHash": "8013310ee74af1a9",
-    "chainHash": "44b0d7300607ab89"
+    "logCount": 159,
+    "logsHash": "bf5114806e792e4b",
+    "finalHash": "4d890795128c34df",
+    "chainHash": "763cdd5412e5ba7d"
   },
   {
     "name": "heavy-C",
-    "turnsPlayed": 14,
-    "winner": "p2",
-    "turnNumber": 14,
-    "logCount": 233,
-    "logsHash": "f90911dc78447a92",
-    "finalHash": "320b426847c99175",
-    "chainHash": "66ddc573786209f5"
+    "turnsPlayed": 30,
+    "winner": null,
+    "turnNumber": 31,
+    "logCount": 387,
+    "logsHash": "8682b4bea8da5082",
+    "finalHash": "297d93bf411a08b4",
+    "chainHash": "36da58bf3f0a482e"
   }
 ]

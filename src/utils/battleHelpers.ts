@@ -1,4 +1,4 @@
-﻿import { effectiveStatusTable } from '../battle/statusRules';
+import { applyStatusProjections, effectiveStatusTable } from '../battle/statusRules';
 import {hasPortableDuel} from '../battle/portableSkillMarks';
 import {DIFU_AMULET} from '../data/difuItem';
 import {NAIFEN_GRASS,NAIFEN_FORMS} from '../data/naifenItems';
@@ -380,7 +380,7 @@ export const isStatusActive = (elf: any, statusId: string) => {
 };
 
 /** 機制查詢用異常表：去掉被規則取消「原有效果」的異常（battle/statusRules.ts）；回合數與顯示仍用 getStatuses。 */
-export const getEffectiveStatuses = (elf: any): Record<string, number> => effectiveStatusTable(elf?.statusRules, getStatuses(elf));
+export const getEffectiveStatuses = (elf: any): Record<string, number> => applyStatusProjections(effectiveStatusTable(elf?.statusRules, getStatuses(elf)), elf?.markStatusProjections);
 
 export const hasAnyAbnormalStatus = (elf: any) => {
   if (!elf) return false;

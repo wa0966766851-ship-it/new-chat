@@ -81,7 +81,7 @@ try {
     assert.equal(b.opp.currentHp - a.opp.currentHp, 300, `${side}: 靈絕击為300固定傷害`);
     checks++;
     const ygg = h.find('5019', 'ᛉᛖᛚᛃᚨ ᛟᚾ ᛁᚷᚷᛞᚱᚨᛋᛁᛚ');
-    const yggTimer = { ...ygg, kit: [ygg.kit[0], ygg.kit[2]] };
+    const yggTimer = { ...ygg, pp: 99, maxPp: 99, kit: [ygg.kit[0], ygg.kit[2]] }; // 0/0 原廠須 ᚱᚷ；此處只驗計時效果
     const reduce = { ...h.kitSkill('體力降低', [{ op: 'dmg', p: { flat: 20000, type: '真實' } }]), priority: 6 };
     const [live] = await h.play(side, {
       self: h.unit('S', 60000, [yggTimer], { maxHp: 100000, speed: 200 }),

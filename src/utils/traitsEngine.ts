@@ -561,10 +561,12 @@ export class TraitsEngine {
 
   private static queueWraithExtraAction(ctx: BattleEventContext, label: string, skillDamage: number, curseTurns: number) {
     const owner = ctx.actor;
+    const skillId = label.includes('滅靈') ? 'wraith_doom' : 'wraith_curse';
     const ownerId = identity(ctx.self);
     const targetSide = owner === 'p1' ? 'p2' : 'p1';
     ctx.queueExtraAction?.(owner, {
       label,
+      skillId,
       run: (c) => {
         // 排隊後仍須確認原持有者存活且仍在場；不能換人後由下一隻代放。
         if (!wraithOwnerOnField(c) || identity(c.self) !== ownerId) return 0;

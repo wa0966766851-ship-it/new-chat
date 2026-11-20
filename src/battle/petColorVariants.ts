@@ -25,7 +25,7 @@ export interface PetColorVariant {
 }
 
 /** 預設：每段序列取原廠最常見的那組顏色（保留原廠色調，但整段只有一種）。 */
-export const DEFAULT_VARIANT: PetColorVariant = { id: 'official', label: '原廠代表色', mul: null, add: null };
+export const DEFAULT_VARIANT: PetColorVariant = { id: 'official', label: '代表色', mul: null, add: null };
 
 /**
  * 具名變體表。目前只有原廠代表色與純材質色；
@@ -132,4 +132,4 @@ export function unifyPetColors(
  * 具名變體：原廠出招的逐段調色（每段序列各自一個代表色）。
  * 目前沒有形態使用；保留給「憤怒的化身」這類同模型、靠出招配色區分的形態。
  */
-export const COMBAT_TINT_VARIANT: PetColorVariant = { id: 'combat', label: '原廠出招配色', mul: null, add: null };
+export const COMBAT_TINT_VARIANT: PetColorVariant = { id: 'combat', label: '出招配色', mul: null, add: null };

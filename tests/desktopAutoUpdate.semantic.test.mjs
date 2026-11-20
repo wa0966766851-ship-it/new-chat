@@ -4,6 +4,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { releaseState } from '../scripts/desktop_stale.mjs';
+import { acquireDesktopUpdateLock } from '../scripts/desktop_update_lock.mjs';
 const root = fs.mkdtempSync(path.join(os.tmpdir(), 'seer-stale-'));
 try {
   fs.mkdirSync(path.join(root, 'src')); fs.writeFileSync(path.join(root, 'src', 'a.ts'), 'x');
@@ -17,6 +18,14 @@ try {
   const stale = releaseState(root);
   assert.equal(stale.code, 3, '來源較新需更新'); assert.match(stale.reason, /a\.ts/);
   const upd = fs.readFileSync('scripts/desktop_update.mjs', 'utf8');
-  assert.ok(upd.includes("--quick") && upd.includes('45*60*1000'), '快速更新與逾時鎖清除');
+  assert.ok(upd.includes('--quick'), '保留快速更新入口');
+  const marker = path.join(home, 'update.lock');
+  fs.writeFileSync(marker, '');
+  const unlock = await acquireDesktopUpdateLock(home);
+  try {
+    assert.equal(JSON.parse(fs.readFileSync(marker, 'utf8')).pid, process.pid);
+    await assert.rejects(acquireDesktopUpdateLock(home), /已有桌面更新/);
+  } finally { await unlock(); }
+  assert.equal(fs.existsSync(marker), false);
   console.log('桌面自動更新判定：無版本／最新／來源較新 通過');
 } finally { fs.rmSync(root, { recursive: true, force: true }); }

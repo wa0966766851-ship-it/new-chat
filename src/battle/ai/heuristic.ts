@@ -13,11 +13,15 @@ import { actionKey, opposite, type CandidateReport, type DecisionRequest, type P
 import { makeRng } from '../../utils/rng';
 import { AI_STYLES } from './styles';
 import { illusionItemAdjustment } from './illusionPlanning';
+import { aiLegalActions } from './actionPolicy';
+import { lethalPotion, winsPotionOrder } from './tactics';
+import { potionRecoveryBlocked } from './mechanicAwareness';
+import { scopedTimers } from '../stateScopes';
 
 export function heuristicRanking(request: DecisionRequest): CandidateReport[] {
   const { state, side } = request;
   const foe = opposite(side);
-  const legal = legalActions(state, side, request.forced, request.potionRemaining);
+  const legal = aiLegalActions(request);
   const ownTeam = state[`${side}Team`].map((e, i) => {
     const elf = i === state[`${side}ActiveIndex`] ? state[side] : e;
     return { ...elf, skills: visibleSkills(elf) };
@@ -26,6 +30,12 @@ export function heuristicRanking(request: DecisionRequest): CandidateReport[] {
   const ctx: AIContext = { self: ownTeam[state[`${side}ActiveIndex`]], opponent: enemy,
     team: ownTeam, activeIndex: state[`${side}ActiveIndex`],
     items: BATTLE_ITEMS.filter(i => legal.some(a => a.kind === 'item' && a.id === i.id)),
+    potionThreat: request.forced ? undefined : lethalPotion(state, side, request.potionRemaining)?.amount,
+    recoveryBlocked: potionRecoveryBlocked(state, side),
+    movesBeforePotion: winsPotionOrder(state, side),
+    hasFatalGuard: elf => scopedTimers(state, elf === enemy ? foe : side, elf).some(timer =>
+      timer.remaining > 0 && !timer.pendingActivation && timer.payload?.block?.survive),
+    repeatedAttack: request.repeatedAttack,
     canSwitch: legal.some(a => a.kind === 'switch'), canUseItem: legal.some(a => a.kind === 'item'), turnNumber: state.turnNumber,
     // 巔峰 6V6：滿 50 回合依存活精靈數判勝負（AI 依剩餘回合與存活差調整控場／輸出）。
     turnLimit: (request.battleFormat ?? (state as any).battleFormat) === 'peak_6v6' ? 50 : undefined,

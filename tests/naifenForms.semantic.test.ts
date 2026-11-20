@@ -47,7 +47,9 @@ try{
   for(const negative of [false,true]){
    const hit=h.kitSkill('降至正死亡線',[a('dmg',{type:'真實',flat:7000})]);
    const [star]=await h.play(side,{self:h.unit('S',10000,[h.wait()],{extra:{soulMark:soul(6),...(negative?{survivalRule:{mode:'god_descent',active:true,preserveOffField:true,minHp:-700000,floorMult:70}}:{})}}),opp:h.unit('E',10000,[hit])});
-   assert.equal(star.self.currentHp,3000);assert.equal(checkElfDead(star.self),!negative,'星形正死亡線不覆蓋負體力規則');
+   assert.equal(checkElfDead(star.self),!negative,'星形正死亡線不覆蓋負體力規則');
+   // 2026-11-17 使用者要求正確判定死亡：正死亡線判死後體力定案為0（否則離場解除死亡線會帶正體力復活、換人卡死）。
+   assert.equal(star.self.currentHp,negative?3000:0,'正死亡線判死體力定案為0；負體力規則下仍存活');
   }
   const consume=h.kitSkill('用完星形',[a('use_items_in_order',{side:'self',ids:[ids[6]]})]);
   const [zeroFloor]=await h.play(side,{self:h.unit('S',10000,[h.wait()],{extra:{soulMark:soul(6),survivalRule:{mode:'freeze_at_zero',active:true,preserveOffField:true,minHp:0}}}),opp:h.unit('E',10000,[h.kitSkill('降到死亡線',[a('dmg',{type:'真實',flat:7000})])])});

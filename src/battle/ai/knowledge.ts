@@ -1,11 +1,31 @@
 import type { BattleState } from '../../components/BattleManager';
 import type { Elf } from '../../types';
-import { elfForViewer } from '../viewerPerspective';
+import { elfForViewer, maskViewerText, viewerMaskTerms } from '../viewerPerspective';
 import { opposite, type AISide } from './types';
+
+/** 只取已結算回合，保留少量事實以辨識重複出招及保命。 */
+export function recentBattleEvents(state: BattleState, side: AISide) {
+  const masks = viewerMaskTerms(state[`${opposite(side)}Team`]);
+  return (state.logs ?? []).slice(-180).filter(l => l.turn < state.turnNumber &&
+    /使用了|空過|派出|陣亡|切換|保留.{0,3}1.{0,3}體力|強制存活|恢復失效|藥劑/.test(l.text))
+    .slice(-18).map(l => ({turn:l.turn,text:maskViewerText(l.text,masks).slice(0,150)}));
+}
+export function repeatedAttack(state: BattleState, side: AISide): string | undefined {
+  const last = recentBattleEvents(state, side);
+  const self = state[side];
+  for (const skill of self.skills) {
+    if (skill.category === '屬性') continue;
+    const turns = new Set(last.filter(e => e.turn >= state.turnNumber - 3 &&
+      e.text.includes(`【${self.name}】使用了【${skill.name}】`)).map(e => e.turn));
+    if (turns.size >= 2) return skill.name;
+  }
+}
 
 /** 清除未公開選招；隱匿／幻化敵人只按可見形態推演。不是全知模式。 */
 export function decisionKnowledge(source: BattleState, side: AISide): { state: BattleState; assumptions: string[] } {
-  const state = structuredClone(source), enemy = opposite(side);
+  const state = structuredClone({...source, logs:[], floatingDamagePopups:[], activeSkillAnim:null,
+    p1SelectedSkill:null,p2SelectedSkill:null,p1SelectedItem:null,p2SelectedItem:null,p1SwitchIndex:null,p2SwitchIndex:null,
+    isAutoBattle:false}), enemy = opposite(side);
   const assumptions = new Set<string>(), masked = new Set<string>();
   state[`${enemy}Team`][state[`${enemy}ActiveIndex`]] = state[enemy];
   const activeIdentity = state[enemy].battleId || state[enemy].id;
@@ -42,9 +62,5 @@ export function decisionKnowledge(source: BattleState, side: AISide): { state: B
   }
   if (state[`${enemy}ElfState`]) for (const id of masked) delete state[`${enemy}ElfState`][id];
   state[`${enemy}Marks`] = state[`${enemy}Marks`].filter(m => !m.ownerBattleId || !masked.has(m.ownerBattleId));
-  for (const s of ['p1', 'p2'] as const) {
-    state[`${s}SelectedSkill`] = null; state[`${s}SelectedItem`] = null; state[`${s}SwitchIndex`] = null;
-  }
-  state.isAutoBattle = false; state.logs = []; state.floatingDamagePopups = []; state.activeSkillAnim = null;
   return { state, assumptions: [...assumptions] };
 }

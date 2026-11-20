@@ -86,7 +86,7 @@ export const MIGRATED_FINAL_ODIN_RAVEN_KIT = {
     ], 1),
     sequence('100%令對手狂信，觸發成功則下次異常回合結束時消除對手信仰對象並附加ᛏ符文再降低能力值30%', [
       { acts: [a('status', { side: 'opp', status: '狂信', turns: 3, chance: 100 })] },
-      { chain: 'success', acts: [a('status_bound_round_end', { side: 'opp', body: [{ acts: [a('clear_faith_target', { side: 'opp' }), tiwaz('opp'), a('stat_points_scale', { side: 'opp', ratio: 0.7, stats: allStats })] }] })] },
+      { chain: 'success', acts: [a('status_bound_round_end', { side: 'opp', status: '狂信', body: [{ acts: [a('clear_faith_target', { side: 'opp' }), tiwaz('opp'), a('stat_points_scale', { side: 'opp', ratio: 0.7, stats: allStats })] }] })] },
     ], 2),
     sequence('3回合內自身技能傷害提升100%，在場雙方每有一個鎖切換效果再提升50%', [{ acts: [a('timed', { turns: 3, from: 'now', trig: 'outgoing_skill', label: '技能傷害增幅', body: [{ acts: [a('boost', { mult: 2, kind: '技能', per: 'sides_lock_switch_effects', perInc: 0.5 })] }] })] }], 3),
     sequence('直接附加300點遠古系技能傷害，若造成技能傷害為微弱則下2回合對手無法主動切換', [

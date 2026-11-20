@@ -1,10 +1,10 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { lazy, Suspense, useState, useEffect, useRef } from "react";
 import { RichDescription } from './RichDescription';
 import { DEFAULT_ELVES } from "../data/defaultElves";
-import { getAllTestableElves, generateSkillCyclingScript } from "../tests/allElvesRunner";
+import { generateSkillCyclingScript } from "../tests/allElvesRunner";
 import { Elf, Skill, BattleLog, BattleItem } from "../types";
-// 批次測試引擎只在按下開始後才掛載；避免自動測試頁一進入就拉進整包戰鬥模組。
-const BattleScreen = React.lazy(() => import("./BattleScreen"));
+const loadBattleScreen = () => import('./BattleScreen');
+const BattleScreen = lazy(loadBattleScreen);
 import { 
   Play, 
   Pause, 
@@ -68,6 +68,7 @@ export default function TestRunnerPage() {
   
   // Running state
   const [isRunning, setIsRunning] = useState<boolean>(false);
+  const [starting, setStarting] = useState(false);
   const [queue, setQueue] = useState<string[]>([]);
   const [currentQueueIdx, setCurrentQueueIdx] = useState<number>(-1);
   const [activeTest, setActiveTest] = useState<{
@@ -179,8 +180,8 @@ export default function TestRunnerPage() {
   };
 
   // Start the automated test series
-  const startTesting = () => {
-    if (isRunning) return;
+  const startTesting = async () => {
+    if (isRunning || starting) return;
     
     // Build queue of elf IDs that are selected
     const selectedIds = allElves.filter(e => selectedElfIds[e.id]).map(e => e.id);
@@ -189,6 +190,10 @@ export default function TestRunnerPage() {
       return;
     }
 
+    setStarting(true);
+    try { await loadBattleScreen(); }
+    catch { alert('戰鬥引擎載入失敗，請重試。'); return; }
+    finally { setStarting(false); }
     setQueue(selectedIds);
     setIsRunning(true);
     setCurrentQueueIdx(0);
@@ -516,8 +521,7 @@ export default function TestRunnerPage() {
       {/* Hidden Battle Engine Frame */}
       {activeTest && (
         <div className="opacity-0 pointer-events-none fixed -top-[9999px] -left-[9999px] w-1 h-1 overflow-hidden z-0">
-          <React.Suspense fallback={null}>
-          <BattleScreen
+          <Suspense fallback={null}><BattleScreen
             key={activeTest.key}
             initialP1Team={[activeTest.p1Elf]}
             initialP2Team={[activeTest.p2Elf]}
@@ -532,8 +536,7 @@ export default function TestRunnerPage() {
             onStateChange={(s) => {
               handleStateChange(s);
             }}
-          />
-          </React.Suspense>
+          /></Suspense>
         </div>
       )}
 
@@ -556,8 +559,7 @@ export default function TestRunnerPage() {
         <div className="flex flex-wrap items-center gap-2">
           {!isRunning ? (
             <button
-              onClick={startTesting}
-              disabled={totalSelected === 0}
+              onClick={startTesting} disabled={starting || totalSelected === 0}
               className="flex items-center gap-1.5 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 disabled:hover:bg-indigo-600 text-white font-medium text-xs px-4 py-2 rounded-lg shadow-lg hover:shadow-indigo-500/20 cursor-pointer transition-all"
             >
               <Play className="w-3.5 h-3.5 fill-current" />

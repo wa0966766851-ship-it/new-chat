@@ -9,10 +9,11 @@ import {petAnimationBinding} from './petAnimationRegistry';
  *  - 極速（speed）＝目前沒有獨立素材，沿用原形（不推算編號、不用猜的素材）
  */
 const FORM_PRESENTATIONS: Partial<Record<PetAnimationAssetId, {
-  stateKey:string; variants:Record<string,PetAnimationAssetId>;
+  stateKey:string; variants:Record<string,PetAnimationAssetId>; transformInto?:PetAnimationAssetId;
 }>> = {
   marthus: {
     stateKey:'mechCombo',
+    transformInto:'marthusDestroy',
     variants:{
       堅壁:'marthus',
       極速:'marthus',
@@ -24,6 +25,10 @@ export function battleFormAsset(elf:Elf,state?:Record<string,unknown>):PetAnimat
   const base=petAnimationBinding(elf);
   const rule=base&&FORM_PRESENTATIONS[base];
   return rule?.variants[String(state?.[rule.stateKey])]??base;
+}
+/** 只有原形片段有展開動作；重型素材的 transform 首尾都是重型姿態。 */
+export function playsFormTransform(from:PetAnimationAssetId,to:PetAnimationAssetId):boolean {
+  return FORM_PRESENTATIONS[from]?.transformInto===to;
 }
 /** 同一機制可能切換的來源一次預備；只限明確登記的型態，不能推算編號。
  *  回傳值一律包含 base 本身，確保原形與變身素材「兩種一起載入」，切換時不重新抓檔。 */

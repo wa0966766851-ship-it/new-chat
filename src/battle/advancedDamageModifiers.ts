@@ -4,6 +4,7 @@ import { getElfAdvancedMechanics } from '../data/traitsRegistry';
 import { multiplyDamageReduction } from './damageReduction';
 import { isSkillDamageType } from './damageSemantics';
 import { distinctStoneCount } from '../data/skillStones';
+import { hasAlienGroup } from '../data/elfGroups';
 
 const fourStones = (elf: Elf) => distinctStoneCount(elf) >= 4;
 
@@ -18,7 +19,7 @@ export function applyAdvancedDamageModifiers(comp: DamageComputation, actor: Elf
 /** 戰鬥中是否視為異能精靈（資料標記、類別，或特質「戰士」等 alwaysAlienElf）。 */
 export function isAlienElf(elf: Elf | undefined | null): boolean {
   if (!elf) return false;
-  return !!elf.isAlienElf || (elf as any).category === '異能精靈' || !!getElfAdvancedMechanics(elf).alwaysAlienElf;
+  return hasAlienGroup(elf) || !!elf.isAlienElf || elf.category === '異能精靈' || !!getElfAdvancedMechanics(elf).alwaysAlienElf;
 }
 
 /** 特質「無序星魂使徒」：對異能精靈造成傷害翻倍（所有傷害類別；屬「翻倍」獨立乘區）。 */

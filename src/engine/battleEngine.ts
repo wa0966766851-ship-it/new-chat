@@ -57,15 +57,20 @@ import { skillStageView } from '../battle/skillStageView';
 import { consumeSkillTypeOverride } from '../battle/skillTypeOverride';
 import { executeGenericSkillTextAfterHit, rollSkillHit } from "../effects/genericSkillText";
 import { getAttackImmunity, ignoresAttackImmunity, grantsNextIgnoreOnSuccess } from "../battle/attackImmunity";
+import { boostInvalidActive, resolveSkillReplacement } from "../blocks/ops/encyclopediaTerms";
+import { roundRestrictionOf } from "../blocks/ops/selectionRules";
 import { runSkillBlocks, emitSkillUse, soulPassiveEvade, emitSelfInvalid, emitFailedSkillUse } from "../blocks/registry";
 import { stripRunesFrom } from "../blocks/ops/odinRune";
 import { applyStageViewAsSingle, applyStageViewAs } from "../utils/stageViewAs";
+import { resourceOppStageFloor } from "../battle/resourceQueryRules";
 import { runConnectedKit } from "../effects/connectedEffects";
 import {hasForcedHitEffects,runForcedHitEffects} from '../effects/forcedHitEffects';
 import { skillBasePriority } from "../battle/conditionalPriority";
 import { drainExtraActionQueue } from "../battle/extraActions";
+import { extraActionSkill, extraActionTitle } from "../data/extraActionSkills";
 import { findBlockTimer } from "../blocks/runtime";
-import { modifySkillDamage, afterSkillHit, traitFatalResist, priorityBonus } from "../effects/traitEffects";
+import { modifySkillDamage, afterSkillHit, traitFatalResist, recoverAtCriticalHp, priorityBonus, rollStatusTraitPower } from "../effects/traitEffects";
+import { settleOutgoingTraitDamage } from '../effects/alienTraitSettlement';
 import { SuitEffectRegistry } from "../effects/suitEffectRegistry";
 import { runRelicEffects } from "../effects/relicEffectRegistry";
 import { runBossTraitEffects, bossTraitEvade, bossTraitInvalidates } from "../blocks/ops/bossTraits";
@@ -87,14 +92,20 @@ import { markRecoveryReduction } from '../battle/markRecovery';
 import { switchBattleSide } from "../battle/stateScopes";
 import { TraitsEngine } from "../utils/traitsEngine";
 import { checkStatusDrivenFatalResist } from "../utils/statusFatalResist";
+import { sharesBattleType } from '../utils/typeQuery';
+import { syncAgeMarks } from '../battle/ageMarks';
+import { observeWeightChange } from '../blocks/ops/weightCompanion';
+import { observeWeightEffect } from '../effects/weightEffectLifecycle';
+import { syncMarkStatusProjections } from '../battle/markStatusProjection';
 import { statusConversionBlocked } from "../battle/statusRules";
 import { teamRulesOf, isExcessNonTrue, isLethalExcessTrue, rebirthPatch } from "../battle/teamPassiveRules";
 import {settleInstantKill} from '../battle/instantKill';
 
 import { pickAiAction, pickAiForcedSwitch, materializeAiAction } from "../utils/ai";
 import { actionKey, type AISettings, type DecisionReport, type DecisionRequest, type AISide } from '../battle/ai/types';
-import { legalActions, skillSelectable } from '../battle/ai/legalActions';
+import { legalActions, skillSelectable, skillSelectionBlock } from '../battle/ai/legalActions';
 import { readAISettings, settingsForSide } from '../battle/ai/settings';
+import { aiLegalActions } from '../battle/ai/actionPolicy';
 import { calculateDamage } from "../utils/damageCalculator";
 import { SUIT_CATALOG } from "../data/suitsAndEyewears";
 import { TITLE_CATALOG } from "../data/titles";
@@ -107,7 +118,6 @@ import {
   attachLiveElfAccessors,
   activatePendingTurns,
 } from "../battle/contextBuilders";
-import { activateRuneOnSkillSelect } from "../effects/elves/odin/registry";
 import {
   isNonTrueDamageType,
   isSkillDamageType,
@@ -138,7 +148,7 @@ const MANUALLY_TICKED_TURN_KEYS = new Set<string>(["BelienteRegenTurns", "attack
 // 在場精靈（p1/p2）是權威來源：許多效果只寫入 state.p1，未寫回隊伍陣列，
 // 造成隊伍資料過期（全滅判定錯誤、換下場再換回來時狀態回溯）。每次寫入時自動回寫。
 function syncActiveIntoTeam(v: BattleState): BattleState {
-  let out = v;
+  let out = syncMarkStatusProjections(v);
   for (const side of ["p1", "p2"] as const) {
     const teamKey = side === "p1" ? "p1Team" : "p2Team";
     const idx = side === "p1" ? out.p1ActiveIndex : out.p2ActiveIndex;
@@ -150,7 +160,7 @@ function syncActiveIntoTeam(v: BattleState): BattleState {
       out = { ...out, [teamKey]: t };
     }
   }
-  return out;
+  return syncAgeMarks(out);
 }
 
 export { normalizeDamageType } from "../battle/damageSemantics";
@@ -161,7 +171,7 @@ const hasLivingSummonedExtra = (team: Elf[], elf: Elf) => {
   return team.some(e => e.isExtra && e.summonerId === id && !e.isVanished && e.currentHp > 0);
 };
 
-import { checkElfDead } from '../battle/elfAlive';
+import { checkElfDead, positiveDeathLineSettled } from '../battle/elfAlive';
 export { checkElfDead };
 
 export interface BattleEngineOptions {
@@ -172,6 +182,7 @@ export interface BattleEngineOptions {
   initialPrdCounters?: [string, number][];
   runtimeSnapshot?: { deathHandled: string[]; pendingFinalize: boolean };
   /** 外部決策服務。主引擎不引用Worker、不包含精靈AI特例。 */
+  prepareAi?: (request: DecisionRequest) => void;
   selectAi?: (request: DecisionRequest) => Promise<DecisionReport>;
   aiSettings?: () => AISettings;
   onAIDecision?: (report: DecisionReport) => void;
@@ -179,6 +190,7 @@ export interface BattleEngineOptions {
   potionRemaining?: () => number | undefined;
   /** 回傳 promise 代表目前不可出手（AI／托管需等它完成）；回傳 null 代表放行。 */
   actionGate?: () => Promise<void> | null;
+  isInputPaused?: () => boolean;
   initialP1Team: Elf[];
   initialP2Team: Elf[];
   p1StarterId: string;
@@ -198,6 +210,7 @@ export interface BattleEngineOptions {
   /** 戰鬥火焰（data/battleFlames.ts）：雙方各一種，經遺物通道結算。 */
   battleFlames?: { p1?: string; p2?: string };
   /** 狀態整批提交（每個 microtask 最多一次）。畫面在此更新。 */
+  onBattleAction?: (action: Record<string, unknown>) => void;
   onStateCommit?: (state: BattleState) => void;
   /** 播放層（血條、彈出數字）有變化。 */
   onPresentationChange?: () => void;
@@ -221,6 +234,7 @@ export interface BattleEngine {
   onSwitchElf: (side: "p1" | "p2", index: number) => void;
   onUseItem: (side: "p1" | "p2", item: BattleItem) => void;
   onPass: (side: "p1" | "p2") => void;
+  performAIAction: (side: AISide, forced?: boolean, stillEnabled?: () => boolean) => Promise<void>;
   /** 開戰：首發登場（1.1 戰鬥開始／1.3 登場）。重複呼叫無效。 */
   start: () => void;
   /** React 掛載／卸載（StrictMode 會在同一 tick 內卸載再掛載）。 */
@@ -259,8 +273,17 @@ export function createBattleEngine(props: BattleEngineOptions): BattleEngine {
 
   const battleAliveRef = ref(true);
   const battleTimeoutsRef = ref(new Set<ReturnType<typeof setTimeout>>());
+  let pendingSimulationTasks = 0;
   const scheduleBattleTask = stable((callback: () => void, delay = 0) => {
     if (!battleAliveRef.current) return undefined;
+    if (props.simulation && delay === 0) {
+      pendingSimulationTasks++;
+      queueMicrotask(() => {
+        pendingSimulationTasks--;
+        if (battleAliveRef.current) callback();
+      });
+      return undefined;
+    }
     const timer = setTimeout(() => {
       battleTimeoutsRef.current.delete(timer);
       if (battleAliveRef.current) callback();
@@ -332,12 +355,14 @@ export function createBattleEngine(props: BattleEngineOptions): BattleEngine {
   function extraWindow(owner: "p1" | "p2") {
     let open = false;
     return {
-      async begin() {
+      async begin(act?: { label: string; skillId?: string }) {
         if (open) return;
         open = true;
         presentation.beginExtra();
         if (battleAliveRef.current) {
-          pushEffect({ type: 'animation', side: owner, data: { anim: { side: owner, category: 'extra', skillName: '額外行動', targetSide: owner === "p1" ? "p2" : "p1" }, duration: 400 } });
+          // 登記於額外行動技能表的額外行動：演出帶技能名稱與系別（未登記沿用「額外行動」）。
+          const def = extraActionSkill(act?.skillId);
+          pushEffect({ type: 'animation', side: owner, data: { anim: { side: owner, category: 'extra', skillName: def?.name || '額外行動', ...(def ? { skillType: def.type } : {}), targetSide: owner === "p1" ? "p2" : "p1" }, duration: 400 } });
           await processQueue();
         }
       },
@@ -350,6 +375,7 @@ export function createBattleEngine(props: BattleEngineOptions): BattleEngine {
   // 只寫其中一邊的效果（回血、扣血、PP…）會在下回合開始時被另一邊覆蓋掉。
   // 現在：syncStateRef 是唯一真實狀態，dispatch 直接套用 reducer 到它；
   // 任何寫入都在同一個 microtask 結束時整批提交給 React 做畫面更新（多次寫入只重繪一次）。
+  const onActiveHpChanged = ref<(previous: BattleState, next: BattleState) => void>(() => {});
   const syncBoxRef = ref<Ref<BattleState> | null>(null);
   if (!syncBoxRef.current) {
     let value: BattleState = state;
@@ -361,7 +387,9 @@ export function createBattleEngine(props: BattleEngineOptions): BattleEngine {
         for (const side of ['p1', 'p2'] as const) {
           if ((value[side].battleId || value[side].id) !== (next[side].battleId || next[side].id)) presentation.align(side, next[side]);
         }
+        const previous = value;
         value = syncActiveIntoTeam(next);
+        onActiveHpChanged.current(previous, value);
         if (!pending) {
           pending = true;
           queueMicrotask(() => {
@@ -407,24 +435,41 @@ export function createBattleEngine(props: BattleEngineOptions): BattleEngine {
   let pendingAi = 0;
   let forcedAiPending = false;
 
+  function recordAction(side: AISide, kind: string, stage: string, details: Record<string, unknown> = {}) {
+    if (!props.onBattleAction || props.simulation) return;
+    const state = syncStateRef.current, elf = state[side];
+    try { props.onBattleAction({ turn:state.turnNumber, side, actor:elf.name, actorId:elf.battleId || elf.id, kind, stage, ...details }); }
+    catch (error) { console.warn('[戰鬥記錄] 無法記錄行動。', error); }
+  }
+
+  function aiRequest(state: BattleState, side: AISide, forced: boolean, seed: number): DecisionRequest {
+    const settings = props.aiSettings?.() ?? readAISettings();
+    return {state,side,forced,seed,settings:settingsForSide(settings,side),
+      opponentSettings:settingsForSide(settings,side==='p1'?'p2':'p1'),
+      p1Suit,p2Suit,p1Title,p2Title,specialMode:props.specialMode,battleFormat:props.battleFormat,
+      potionRemaining:props.potionRemaining?.(),prdCounters:snapshotPrd(),prngCounters:snapshotPRNG(),
+      runtime:{deathHandled:[...deathHandledRef.current],pendingFinalize:pendingFinalizeRef.current}};
+  }
+
+  async function waitForActionGate(gate: Promise<void> | null) {
+    for (let pending=gate; pending && battleAliveRef.current; pending=props.actionGate?.() ?? null) await pending;
+  }
+
   async function chooseAI(side: AISide, forced = false) {
     // 外部行動閘門（例如入戰動畫播放中）：AI 等閘門放開才讀取局面並出手。
     const gate = props.actionGate?.();
-    if (gate) { await gate; if (!battleAliveRef.current) return null; }
+    if (gate) { await waitForActionGate(gate); if (!battleAliveRef.current) return null; }
     const cur: BattleState = syncStateRef.current;
     const turn = cur.turnNumber, actorId = cur[side].battleId || cur[side].id;
     pendingAi++;
     try {
       if (props.selectAi && !props.simulation) {
-        const settings = props.aiSettings?.() ?? readAISettings();
-        const report = await props.selectAi({ state: cur, side, forced,
-          settings: settingsForSide(settings,side), opponentSettings: settingsForSide(settings,side==='p1'?'p2':'p1'), seed: Math.floor(aiRng() * 0xffffffff),
-          p1Suit, p2Suit, p1Title, p2Title, specialMode: props.specialMode, battleFormat: props.battleFormat,
-          potionRemaining: props.potionRemaining?.(), prdCounters: snapshotPrd(), prngCounters: snapshotPRNG(),
-          runtime: { deathHandled: [...deathHandledRef.current], pendingFinalize: pendingFinalizeRef.current } });
+        const report = await props.selectAi(aiRequest(cur,side,forced,Math.floor(aiRng() * 0xffffffff)));
+        const held = props.actionGate?.();
+        if (held) await waitForActionGate(held);
         const latest = syncStateRef.current;
         if (!battleAliveRef.current || latest.winner || latest.turnNumber !== turn || (latest[side].battleId || latest[side].id) !== actorId) return null;
-        const legal = legalActions(latest, side, forced, props.potionRemaining?.());
+        const legal = aiLegalActions({state:latest,side,forced,potionRemaining:props.potionRemaining?.(),settings:settingsForSide(props.aiSettings?.() ?? readAISettings(),side)});
         if (legal.some(a => actionKey(a) === actionKey(report.action))) {
           props.onAIDecision?.(report);
           return materializeAiAction(latest, side, report.action);
@@ -432,6 +477,8 @@ export function createBattleEngine(props: BattleEngineOptions): BattleEngine {
       }
     } catch (error) { console.warn('[AI] 推演服務失敗，使用本地安全回退。', error); }
     finally { pendingAi--; }
+    const held = props.actionGate?.();
+    if (held) await waitForActionGate(held);
     if (!battleAliveRef.current || syncStateRef.current.winner || syncStateRef.current.turnNumber !== turn || (syncStateRef.current[side].battleId || syncStateRef.current[side].id) !== actorId) return null;
     const latest = syncStateRef.current;
     // 本地回退也帶入注入的 AI 設定與賽制（自我對戰、巔峰回合上限判斷）。
@@ -522,7 +569,7 @@ export function createBattleEngine(props: BattleEngineOptions): BattleEngine {
 // 2026-10-28：根性需要「該段傷害 vs 當前體力」比較；帶入本次實際傷害與是否為傷害來源。
 Object.assign(ctx as any, { fatalDamage: absorbed.amount, fatalIsDamage: true });
           const immune = (guard?.deathImmuneTurns || 0) > 0;
-          const resisted = !outcome.alive && !immune && (SoulMarkRegistry[target.name]?.(ctx, EffectTiming.FATAL_RESIST, {damageType:category, fatalDamage:absorbed.amount}) || TraitsEngine.triggerFatalResist(ctx) || checkStatusDrivenFatalResist(ctx));
+          const resisted = !outcome.alive && !immune && (SoulMarkRegistry[target.name]?.(ctx, EffectTiming.FATAL_RESIST, {damageType:category, fatalDamage:absorbed.amount}) || TraitsEngine.triggerFatalResist(ctx) || traitFatalResist(ctx, side, target, rng) || checkStatusDrivenFatalResist(ctx));
           ctx.updateAnyElf(side, data.targetId, { ...(resisted ? {} : {currentHp:outcome.hp}), shield:retainShield(target,absorbed.shield), barrier:absorbed.barrier });
           if (outcome.damageApplied > 0 && data.sourceSide && data.sourceBattleId) damageOriginRef.current[data.targetId] = {side:data.sourceSide,id:data.sourceBattleId};
           const receipt = settlementReceipt({ operation: 'damage', targetBattleId: data.targetId, damageType: category,
@@ -531,9 +578,13 @@ Object.assign(ctx as any, { fatalDamage: absorbed.amount, fatalIsDamage: true })
             barrierAbsorbed: absorbed.barrierAbsorbed, resistedFatal: !!resisted, blocked: amount === 0 });
           notifySettlement(data, receipt);
           ledgerDamage(data, side, target, receipt, category);
+          settleOutgoingTraitDamage(syncStateRef.current, data.sourceSide ?? data.ledger?.sourceSide,
+            data.sourceBattleId ?? data.ledger?.sourceBattleId, side, ctx.self, receipt,
+            (ownerSide, owner) => getBattleEventContext(ownerSide, true, 0, owner));
           const payload = { ...receipt, receipt, amount, damage: amount, hpReduced: receipt.hpLost, damageType: category,
             rawDamageType: data.damageType, sourceSide: data.sourceSide, sourceBattleId: data.sourceBattleId, isCrit: !!data.isCrit, attackerSide: data.sourceSide,
             side, targetSide: side, isIncoming: true, reaction: data.reaction };
+          if (!resisted && outcome.damageApplied > 0) recoverAtCriticalHp(ctx, hpBeforeHit, receipt.hpAfter);
           SoulMarkRegistry[target.name]?.(ctx, EffectTiming.ON_DAMAGED, payload);
           SoulMarkRegistry[target.name]?.(ctx, EffectTiming.AFTER_DAMAGE, payload);
           ctx.addLog(`【${target.name}】受到 ${receipt.hpLost} 點${category === 'true' ? '真實傷害' : category === 'fixed' ? '固定傷害' : category === 'percent' ? '百分比傷害' : '技能傷害'}。`, "effect");
@@ -921,6 +972,9 @@ Object.assign(fCtx as any, { fatalDamage: effectiveAmount, fatalIsDamage: true }
         }
         notifySettlement(data, receipt);
         ledgerDamage(data, targetSide, target, receipt, normalizedDamageType);
+        settleOutgoingTraitDamage(syncStateRef.current, data.sourceSide ?? data.ledger?.sourceSide,
+          data.sourceBattleId ?? data.ledger?.sourceBattleId, targetSide, syncStateRef.current[targetSide], receipt,
+          (ownerSide, owner) => getBattleEventContext(ownerSide, true, 0, owner));
         reactToTimedAttack(getBattleEventContext(targetSide === 'p1' ? 'p2' : 'p1', true, 0), normalizedDamageType);
         const damagedCtx = getBattleEventContext(targetSide, true, 0);
         // 同時提供 amount / damage / targetSide（部分魂印讀 extraData.damage 與 targetSide，過去缺值導致 NaN 與判定顛倒）
@@ -951,6 +1005,7 @@ Object.assign(fCtx as any, { fatalDamage: effectiveAmount, fatalIsDamage: true }
             amount: presentationAfterHp - hpBefore, delta: presentationAfterHp - hpBefore,
             before: hpBefore, after: presentationAfterHp, maxHp: target.maxHp, label: '體力調整', alive: true });
         }
+        if (!resisted && dmg > 0) recoverAtCriticalHp(damagedCtx, hpBefore, receipt.hpAfter);
         if (SoulMarkRegistry[target.name]) {
           SoulMarkRegistry[target.name](damagedCtx, EffectTiming.ON_DAMAGED, damagedPayload);
         }
@@ -1171,12 +1226,17 @@ Object.assign(fCtx as any, { fatalDamage: effectiveAmount, fatalIsDamage: true }
       case 'heal': {
         const targetSide = side;
         const teamForHeal = cur[`${side}Team`];
-        const target = data.targetId ? teamForHeal.find(e=>(e.battleId||e.id)===data.targetId) : cur[targetSide];
+        let target = data.targetId ? teamForHeal.find(e=>(e.battleId||e.id)===data.targetId) : cur[targetSide];
         // 2026-10-30：已消逝（maxHp 被歸零）或上限<=0 者不可恢復。
         // 否則治療會把 currentHp 補到 400 而上限仍是 0，出現 400/0 並污染消逝判定。
         // 2026-10-30：體力為 0 的目標不觸發恢復（消逝者的上限也會是 0，補血會變成 400/0）。
         // 用 currentHp<=0 判斷，不動 maxHp 相關邏輯，避免影響調整體力的判定。
         if (!target || checkElfDead(target) || Number(target.currentHp) <= 0) break;
+        if (data.amount > 0) {
+          const id = target.battleId || target.id;
+          observeWeightEffect(getBattleEventContext(targetSide, true, 0, target), 'heal');
+          target = syncStateRef.current[`${targetSide}Team`].find(elf => (elf.battleId || elf.id) === id) || target;
+        }
         const recoveryTimers=scopedTimers(syncStateRef.current,targetSide,target);
         const backlash=timedRecoveryBacklash(recoveryTimers,target);
         if(backlash>0){const source=getBattleEventContext(targetSide==='p1'?'p2':'p1');if(source.applyTrueDamageToElf)source.applyTrueDamageToElf(targetSide,target.battleId||target.id,backlash,'恢復時真實傷害');else source.applyTrueDamage(targetSide,backlash,'恢復時真實傷害');}
@@ -1352,7 +1412,9 @@ case 'switch': {
     }
     const run = (async () => {
       while (battleAliveRef.current && (effectQueueRef.current.length > 0 || damageChainFinalizersRef.current.length > 0)) {
-        const ready = damageChainFinalizersRef.current.filter(f => !effectQueueRef.current.some(e => e.chainId === f.chainId));
+        const ready = damageChainFinalizersRef.current.filter(f => f.chainId === undefined
+          ? effectQueueRef.current.length === 0
+          : !effectQueueRef.current.some(e => e.chainId === f.chainId));
         if (ready.length) {
           damageChainFinalizersRef.current = damageChainFinalizersRef.current.filter(f => !ready.includes(f));
           for (const f of ready) {
@@ -1427,6 +1489,7 @@ case 'switch': {
 
     const shared: SharedContextDeps = {
       checkResourceTransitions:checkShieldTransitions,
+      actionId: actionSerialRef.current,
       side,
       isHit,
       moveIndex,
@@ -1507,6 +1570,35 @@ case 'switch': {
     }, syncStateRef, side, self, opp);
   }, [pushEffect, dispatch, showPopup]);
 
+  onActiveHpChanged.current = (previous, next) => {
+    const changed = (['p1', 'p2'] as const).filter(side => {
+      const before = previous[side], after = next[side];
+      return (before.battleId || before.id) === (after.battleId || after.id) && before.currentHp !== after.currentHp;
+    });
+    for (const side of ['p1', 'p2'] as const) {
+      const elf = next[side];
+      if (changed.length && elf.currentHp > 0 && elf.soulMark?.kit?.some(entry => entry.node === 'active_hp_changed')) {
+        SoulMarkRegistry[elf.name](getBattleEventContext(side, true, undefined, elf), EffectTiming.ACTIVE_HP_CHANGED, { sides: changed });
+      }
+    }
+    if (!next.p1RegistryState?.teamRecordedWeight && !next.p2RegistryState?.teamRecordedWeight) return;
+    for (const side of ['p1', 'p2'] as const) {
+      const oldTeam = previous[`${side}Team`], newTeam = next[`${side}Team`];
+      const oldMarks = previous[`${side}Marks`], newMarks = next[`${side}Marks`];
+      if (oldTeam === newTeam && oldMarks === newMarks) continue;
+      for (const elf of newTeam) {
+        const old = oldTeam.find(unit => (unit.battleId || unit.id) === (elf.battleId || elf.id));
+        if (!old || (old.weight === elf.weight && oldMarks === newMarks)) continue;
+        const weight = getEffectiveBody(elf, newMarks.filter(mark => markAppliesToElf(mark, elf))).weight;
+        const before = getEffectiveBody(old, oldMarks.filter(mark => markAppliesToElf(mark, old))).weight;
+        if (before === weight) continue;
+        for (const owner of ['p1', 'p2'] as const) {
+          if (next[`${owner}RegistryState`].teamRecordedWeight) observeWeightChange(getBattleEventContext(owner), { side, elf, weight });
+        }
+      }
+    }
+  };
+
   const triggerSuitEffect = stable((side: "p1" | "p2", event: EffectTiming, extraData?: any) => {
     const cur = syncStateRef.current;
     const suitId = side === "p1" ? p1Suit : p2Suit;
@@ -1574,7 +1666,7 @@ case 'switch': {
     log: (side, text, type = "effect") => pushEffect({ type: 'log', side, data: { text, type } }),
   };
 
-  const applyDamageTicks = stable(async (side: "p1" | "p2", timing: 'ACTION' | 'END' = 'ACTION') => {
+  const applyDamageTicks = stable(async (side: "p1" | "p2", timing: 'ACTION' | 'PHASE_END' | 'END' = 'ACTION') => {
     const cur = syncStateRef.current;
     const elf = cur[side];
     const oppSide = side === 'p1' ? 'p2' : 'p1';
@@ -1607,6 +1699,7 @@ case 'switch': {
 
         // Condition check (e.g. NO_HIT for 腐朽)
         if (params.condition === 'NO_HIT' && elf.tookDamageThisTurn) continue;
+        if (params.condition === 'NO_ATTACK_HIT' && getBattleEventContext(side).getPlayerState('receivedAttackDamageRound') === syncStateRef.current.turnNumber) continue;
 
         let amount = 0;
         const multiplier = (params.doubleOnStack && (effectInstance?.stacks || 1) > 1) ? 2 : 1;
@@ -1653,7 +1746,7 @@ case 'switch': {
            pushEffect({ type: 'log', side, data: { text: `📉 【${entry.name}】使【${elf.name}】扣除了 ${params.ppDrain} 點 PP！`, type: "effect" } });
         }
 
-        if (params.extendOnTrigger > 0 && params.condition === 'NO_HIT') {
+        if (params.extendOnTrigger > 0) {
            // For 腐朽: 回合數+2
            const liveElf = syncStateRef.current[side];
            const nextEffects = liveElf.effects?.map(e => e.id === stId ? { ...e, duration: (e.duration || 0) + params.extendOnTrigger } : e);
@@ -1671,6 +1764,8 @@ case 'switch': {
    */
   const checkFaints = stable(async (killerSide?: "p1" | "p2", deferSwitch = false, deathNode: 1 | 2 | 3 = 3) => {
     if (!battleAliveRef.current) return false;
+    // 正死亡線判死（免死／重生流程已在傷害結算時處理）：體力定案為0，避免正體力殘留造成換人卡死。
+    for (const side of ['p1', 'p2'] as const) if (positiveDeathLineSettled(syncStateRef.current[side])) getBattleEventContext(side, true, 0).updateElf(side, { currentHp: 0 });
     const mid = syncStateRef.current;
     node(DEATH_NODE_ID[deathNode], { killerSide });
 
@@ -1829,6 +1924,7 @@ case 'switch': {
       const e = e0.catchUpTick ? (({ catchUpTick: _c, ...rest }) => rest)(e0) as BattleEffect : e0;
       const currentStatuses = getStatuses(elf);
       const statusTick = { status: e.id, skipTick: false };
+      if (elf.ageStatusTurnsFrozen) { nextEffects.push(e); continue; }
       SoulMarkRegistry[elf.name]?.(getBattleEventContext(side, true, 0, elf), EffectTiming.BEFORE_STATUS_TICK, statusTick);
       // 2026-11-02：回合數被關閉（skipTick）的異常標記為 turnsFrozen，
       // 讓 convert_status 不會把它轉化成其他異常（避免「回合數已凍結」的異常被轉走）。
@@ -1859,7 +1955,7 @@ case 'switch': {
 
           if (targetStatusName) {
             const targetEntry = StatusRegistry[targetStatusName];
-            const nextDur = params.nextDuration || 3; // 衍生轉化未定義回合數：預設 3（同名合併見 mergeSameStatus）
+            const nextDur = transition.transformed?.duration ?? 3;
             nextEffects.push({
               id: targetStatusName,
               name: targetEntry?.name || targetStatusName,
@@ -1893,6 +1989,9 @@ case 'switch': {
         // §3: Check for SPECIAL_BUFF dieOnEnd (窒息)
 
         const p = entry.mechanics?.find(m => m.type === 'SPECIAL_BUFF')?.params || {};
+        if (p.percentDamageOnEnd > 0) {
+          getBattleEventContext(side, true, 0).applyPinkDamage(side, Math.floor(elf.maxHp * p.percentDamageOnEnd), entry.name, undefined, undefined, 'percent');
+        }
         if (p.dieOnEnd) {
            const ctx = getBattleEventContext(side, true, 0);
            ctx.applyTrueDamage(side, elf.maxHp, `【${entry.name}】終末效果`);
@@ -1904,6 +2003,39 @@ case 'switch': {
     return mergeSameStatus(nextEffects);
   };
 
+
+  async function resolveQueuedExtraActions(side: 'p1' | 'p2', idx: number, phase: 'action_end' | 'battle_phase_end') {
+    const opp = side === "p1" ? "p2" : "p1";
+    // 每次只取一項並重新讀取佇列，讓額外行動結算中新增的額外行動也能在同一節點依序生效。
+    // 設上限防止錯誤效果互相排隊造成無限循環。
+    const win = extraWindow(side);
+    const drained = await drainExtraActionQueue<any>({
+      owner: side,
+      eligible: action => (action.phase || 'action_end') === phase,
+      readQueue: () => ((syncStateRef.current as any).extraActionQueue || []),
+      writeQueue: extraActionQueue => { syncStateRef.current = { ...syncStateRef.current, extraActionQueue } as any; },
+      // 原廠：額外行動不因對手倒下而跳過（可鞭屍）；只有自身已倒下時停止。
+      canContinue: () => !checkElfDead(syncStateRef.current[side]),
+      execute: async act => {
+        if (phase === 'action_end') node('3.9', { side, order: idx, label: act.label });
+        recordAction(side,'extra','attempted',{name:act.label,order:idx+1,node:phase === 'action_end' ? '3.9' : '4.10'});
+        await win.begin(act); // 動畫先於第一筆額外行動結算排入
+        pushEffect({ type: 'log', side, data: { text: `⚡ 【額外行動】${extraActionTitle(act)}`, type: "effect" } });
+        let c = getBattleEventContext(side, true, idx);
+        try { SoulMarkRegistry[syncStateRef.current[side].name]?.(c, EffectTiming.EXTRA_ACTION_START, { actor: side, action: act }); } catch (e) { console.error(e); }
+        let dealt = 0;
+        if (act.run) dealt = Number(act.run(c) || 0);
+        else if (act.amount) dealt = c.applySkillTypeDamage(opp, Math.floor(act.amount), act.label, { elem: act.elem || extraActionSkill(act.skillId)?.type, category: "skill_extra_action", node: "extra_action" });
+        c = getBattleEventContext(side, true, idx);
+        act.after?.(c, dealt);
+        try { SoulMarkRegistry[syncStateRef.current[side].name]?.(c, EffectTiming.EXTRA_ACTION_END, { actor: side, action: act, dealt }); } catch (e) { console.error(e); }
+        await processQueue();
+      },
+    }).finally(() => win.end());
+    if (drained.truncated) {
+      pushEffect({ type: 'log', side, data: { text: `⚠️ 額外行動超過安全上限，已停止後續連鎖。`, type: "info" } });
+    }
+  }
 
   const finalizeTurn = stable(async (force: boolean = false) => {
     presentation.setInAction(false);
@@ -1930,6 +2062,9 @@ case 'switch': {
     }
     await processQueue();
     if (!battleAliveRef.current) return;
+
+    for (const side of ['p1', 'p2'] as const) await resolveQueuedExtraActions(side, 0, 'battle_phase_end');
+    for (const side of ['p1', 'p2'] as const) await applyDamageTicks(side, 'PHASE_END');
 
     // ── 4.11 死亡節點二：戰鬥階段結束效果造成的陣亡（已在死亡節點一結算過的不重複） ──
     if (checkElfDead(syncStateRef.current.p1) || checkElfDead(syncStateRef.current.p2)) {
@@ -2127,6 +2262,10 @@ case 'switch': {
     // 體力、能力、印記、計時器等變化全部被抹掉；*Turns 回合計數也從未遞減。
     const live = syncStateRef.current;
     const mergeById = mergeRoundEnd;
+    // 回合結束扣減已把所有「下回合」計時器啟用；扣減之後（回合結束效果期間）才建立／刷新的「下回合」計時器，
+    // 下回合就是緊接著的回合，同樣在此啟用。否則會多等一整回合，且每回合結束重建時永遠停在未啟用
+    // （例：滄嵐「回合結束時…下回合開始時解除異常」從不觸發）。
+    const activateRoundEndCreated = (timers: any[]) => timers.map(t => t?.pendingActivation && t.tickAt === 'round_end' ? { ...t, pendingActivation: false } : t);
     const finalizeActive = (side: "p1" | "p2"): Elf => {
       const midElf = mid[side], liveElf = live[side];
       if (!liveElf || !midElf || (liveElf.battleId || liveElf.id) !== (midElf.battleId || midElf.id)) return liveElf;
@@ -2177,8 +2316,8 @@ case 'switch': {
       ...live,
       p1Team: finalP1Team,
       p2Team: finalP2Team,
-      p1Timers: mergeById(mid.p1Timers || [], nextP1Timers, live.p1Timers || []),
-      p2Timers: mergeById(mid.p2Timers || [], nextP2Timers, live.p2Timers || []),
+      p1Timers: activateRoundEndCreated(mergeById(mid.p1Timers || [], nextP1Timers, live.p1Timers || [])),
+      p2Timers: activateRoundEndCreated(mergeById(mid.p2Timers || [], nextP2Timers, live.p2Timers || [])),
       p1: finalP1,
       p2: finalP2,
       p1RegistryState: { ...tickGenericTurns(live.p1RegistryState, mid.p1RegistryState,live.p1Timers), switchedThisTurn: false, itemUsedThisTurn: false },
@@ -2222,23 +2361,23 @@ case 'switch': {
       try {
       while (resolved < 32) {
         const queue = ((syncStateRef.current as any).extraActionQueue || []) as any[];
-        const index = queue.findIndex(action => action.owner === owner);
+        const index = queue.findIndex(action => action.owner === owner && action.phase !== 'battle_phase_end');
         if (index < 0) break;
         // 原廠：額外行動不因對手倒下而跳過（可鞭屍）；只有自身已倒下時停止。
         if (checkElfDead(syncStateRef.current[owner])) {
           syncStateRef.current = { ...syncStateRef.current, extraActionQueue: queue.filter(action => action.owner !== owner) } as any;
           break;
         }
-        await win.begin(); // 動畫先於第一筆額外行動結算排入
         const action = queue[index];
+        await win.begin(action); // 動畫先於第一筆額外行動結算排入
         syncStateRef.current = { ...syncStateRef.current, extraActionQueue: [...queue.slice(0, index), ...queue.slice(index + 1)] } as any;
         const targetSide = owner === "p1" ? "p2" : "p1";
         const c = getBattleEventContext(owner, true, 0);
-        pushEffect({ type: 'log', side: owner, data: { text: `⚡ 【額外行動】${action.label}`, type: "effect" } });
+        pushEffect({ type: 'log', side: owner, data: { text: `⚡ 【額外行動】${extraActionTitle(action)}`, type: "effect" } });
         try { SoulMarkRegistry[syncStateRef.current[owner].name]?.(c, EffectTiming.EXTRA_ACTION_START, { actor: owner, action }); } catch (e) { console.error(e); }
         let dealt = 0;
         if (action.run) dealt = Number(action.run(c) || 0);
-        else if (action.amount) dealt = c.applySkillTypeDamage(targetSide, Math.floor(action.amount), action.label, { elem: action.elem, category: "skill_extra_action", node: "extra_action" });
+        else if (action.amount) dealt = c.applySkillTypeDamage(targetSide, Math.floor(action.amount), action.label, { elem: action.elem || extraActionSkill(action.skillId)?.type, category: "skill_extra_action", node: "extra_action" });
         const afterCtx = getBattleEventContext(owner, true, 0);
         action.after?.(afterCtx, dealt);
         try { SoulMarkRegistry[syncStateRef.current[owner].name]?.(afterCtx, EffectTiming.EXTRA_ACTION_END, { actor: owner, action, dealt }); } catch (e) { console.error(e); }
@@ -2246,7 +2385,7 @@ case 'switch': {
         resolved++;
       }
       } finally { win.end(); }
-      if (resolved >= 32 && ((syncStateRef.current as any).extraActionQueue || []).some((action: any) => action.owner === owner)) {
+      if (resolved >= 32 && ((syncStateRef.current as any).extraActionQueue || []).some((action: any) => action.owner === owner && action.phase !== 'battle_phase_end')) {
         syncStateRef.current = { ...syncStateRef.current, extraActionQueue: ((syncStateRef.current as any).extraActionQueue || []).filter((action: any) => action.owner !== owner) } as any;
         pushEffect({ type: 'log', side: owner, data: { text: `⚠️ 額外行動超過安全上限，已停止後續連鎖。`, type: "info" } });
       }
@@ -2442,13 +2581,14 @@ case 'switch': {
             if (SoulMarkRegistry[currentElf.name]) SoulMarkRegistry[currentElf.name](nCtx, EffectTiming.ON_ENTRANCE);
             applyEntranceBlessings(s, currentElf, nCtx);
             triggerSuitEffect(s, EffectTiming.ON_ENTRANCE);
+            recordAction(s,'switch','resolved',{target:currentElf.name,targetId:currentElf.battleId || currentElf.id});
             broadcastElfEntered(s, currentElf.id);
 
             const oppSideActual = s === 'p1' ? 'p2' : 'p1';
             const oppElf = syncStateRef.current[oppSideActual];
             if (oppElf && SoulMarkRegistry[oppElf.name]) {
               const oppCtx = getBattleEventContext(oppSideActual, false, mIdx);
-              SoulMarkRegistry[oppElf.name](oppCtx, EffectTiming.OPPONENT_SWITCH, { switchingSide: s });
+              SoulMarkRegistry[oppElf.name](oppCtx, EffectTiming.OPPONENT_SWITCH, { switchingSide: s, forced: false });
             }
           }
           continue;
@@ -2458,7 +2598,9 @@ case 'switch': {
           const item = s === 'p1' ? mid.p1SelectedItem : mid.p2SelectedItem;
           if (item) {
             const nCtx = getBattleEventContext(s, true, mIdx);
-            if (!nCtx.useBattleItem?.(s, item.id, s, item.picked)) nCtx.addLog('藥劑已用盡或目前無法使用，未產生回復。', 'effect');
+            const applied = !!nCtx.useBattleItem?.(s,item.id,s,item.picked);
+            recordAction(s,'item','resolved',{name:item.name,itemId:item.id,applied});
+            if (!applied) nCtx.addLog('藥劑已用盡或目前無法使用，未產生回復。', 'effect');
           }
           await processQueue();
           continue;
@@ -2621,6 +2763,8 @@ case 'switch': {
       const reg = (syncStateRef.current as any)[`${side}RegistryState`] || {};
       if (!reg.capOpponentPriorityThisTurn) continue;
       if (side === "p1") p2Priority = Math.min(p2Priority, p1Priority); else p1Priority = Math.min(p1Priority, p2Priority);
+      syncStateRef.current = { ...syncStateRef.current, [`${side}RegistryState`]: { ...reg, capOpponentPriorityThisTurn: false } } as any;
+    }
     // 通用：「無視對手不高於 N 的先制」（由魂印／技能寫 oppPriorityCeiling；每行動結束重置）——
     // 「寂殺之魄：異常時無視對手不高於層數（×3）的先制」等層數封頂句式。
     for (const side of ["p1", "p2"] as const) {
@@ -2629,9 +2773,11 @@ case 'switch': {
       if (!(Number.isFinite(ceiling) && ceiling >= 0)) continue;
       if (side === "p1") p2Priority = Math.min(p2Priority, ceiling); else p1Priority = Math.min(p1Priority, ceiling);
     }
-      syncStateRef.current = { ...syncStateRef.current, [`${side}RegistryState`]: { ...reg, capOpponentPriorityThisTurn: false } } as any;
-    }
 
+    // 通用：「令對手當回合先制等級調整為先制X」（積木 round_opp_restrict 的 priorityFixed；回合結束到期）。
+    // 定值放在所有先制加減、封頂之後：調整後即鎖定，不再被提高或降低（必定先手屬出手順序，另計）。
+    { const f1=roundRestrictionOf((syncStateRef.current as any).p1Timers).priority, f2=roundRestrictionOf((syncStateRef.current as any).p2Timers).priority;
+      if (f1 !== undefined) p1Priority = f1; if (f2 !== undefined) p2Priority = f2; }
     // 通用：記下本回合雙方出手的先制等級（供「精靈先制為0」等計數條件讀取；強制先手不改變記錄）
     for (const [side, pr] of [["p1", p1Priority], ["p2", p2Priority]] as const) {
       const key = `${side}RegistryState` as "p1RegistryState" | "p2RegistryState";
@@ -2659,6 +2805,10 @@ case 'switch': {
     // ② 對手的速度提升視為下降：p1 行動時看 p2 的等級，反之亦然。
     p2SpeedStage = applyStageViewAsSingle(p2SpeedStage, 'opp', p1AsView);
     p1SpeedStage = applyStageViewAsSingle(p1SpeedStage, 'opp', p2AsView);
+    // ③ 持有者把對手視為至少處於N級全屬性能力下降（資源查詢規則；例：未暝之夜大於1道）
+    { const f1 = resourceOppStageFloor(cur.p1, cur.p1Marks || []), f2 = resourceOppStageFloor(cur.p2, cur.p2Marks || []);
+      if (f1 > 0) p2SpeedStage = Math.min(p2SpeedStage, -f1);
+      if (f2 > 0) p1SpeedStage = Math.min(p1SpeedStage, -f2); }
     let p1Speed = calculateEffectiveStat(cur.p1.calculatedStats.speed, p1SpeedStage);
     let p2Speed = calculateEffectiveStat(cur.p2.calculatedStats.speed, p2SpeedStage);
     // 通用：當回合忽略對手 N 點速度（由套裝／魂印設定 opponentSpeedPenalty）
@@ -2681,37 +2831,12 @@ case 'switch': {
       try { if (SoulMarkRegistry[elf.name]) SoulMarkRegistry[elf.name](ctxE, EffectTiming.ACTION_END, { actor: side }); } catch (e) { console.error(e); }
       // 咒術師的魔咒在主動出手流程結束後排入獨立額外行動節點。
       TraitsEngine.triggerActionPhaseEnd(ctxE);
-      const opp = side === "p1" ? "p2" : "p1";
-      // 每次只取一項並重新讀取佇列，讓額外行動結算中新增的額外行動也能在同一節點依序生效。
-      // 設上限防止錯誤效果互相排隊造成無限循環。
-      const win = extraWindow(side);
-      const drained = await drainExtraActionQueue<any>({
-        owner: side,
-        readQueue: () => ((syncStateRef.current as any).extraActionQueue || []),
-        writeQueue: extraActionQueue => { syncStateRef.current = { ...syncStateRef.current, extraActionQueue } as any; },
-        // 原廠：額外行動不因對手倒下而跳過（可鞭屍）；只有自身已倒下時停止。
-        canContinue: () => !checkElfDead(syncStateRef.current[side]),
-        execute: async act => {
-          node('3.9', { side, order: idx, label: act.label });
-          await win.begin(); // 動畫先於第一筆額外行動結算排入
-          pushEffect({ type: 'log', side, data: { text: `⚡ 【額外行動】${act.label}`, type: "effect" } });
-          let c = getBattleEventContext(side, true, idx);
-          try { SoulMarkRegistry[syncStateRef.current[side].name]?.(c, EffectTiming.EXTRA_ACTION_START, { actor: side, action: act }); } catch (e) { console.error(e); }
-          let dealt = 0;
-          if (act.run) dealt = Number(act.run(c) || 0);
-          else if (act.amount) dealt = c.applySkillTypeDamage(opp, Math.floor(act.amount), act.label, { elem: act.elem, category: "skill_extra_action", node: "extra_action" });
-          c = getBattleEventContext(side, true, idx);
-          act.after?.(c, dealt);
-          try { SoulMarkRegistry[syncStateRef.current[side].name]?.(c, EffectTiming.EXTRA_ACTION_END, { actor: side, action: act, dealt }); } catch (e) { console.error(e); }
-          await processQueue();
-        },
-      }).finally(() => win.end());
-      if (drained.truncated) {
-        pushEffect({ type: 'log', side, data: { text: `⚠️ 額外行動超過安全上限，已停止後續連鎖。`, type: "info" } });
-      }
+      await resolveQueuedExtraActions(side, idx, 'action_end');
     };
     // ── 出手結果通知：自身 AFTER_ACTION（成功）／ACTION_FAILED（無效、未命中、閃避、攻擊免疫），對手 OPPONENT_AFTER_ACTION
     const notifyActionResult = (side: "p1" | "p2", idx: number, info: ActionResultInfo, failed: boolean) => {
+      recordAction(side,'skill','resolved',{name:info.skill?.name,order:idx+1,hit:info.hit,invalid:info.invalid,
+        failed, hpDamage:info.damageDealt,settledDamage:info.settledDamage,critical:info.isCrit});
       const oppS = side === "p1" ? "p2" : "p1";
       const me = syncStateRef.current[side];
       if (me && SoulMarkRegistry[me.name]) {
@@ -2738,9 +2863,9 @@ case 'switch': {
       syncStateRef.current = { ...syncStateRef.current, [key]: { ...rg, ...patch } };
       dispatch({ type: 'UPDATE_REGISTRY_STATE', side, state: patch });
     };
-    const failAction = (side: "p1" | "p2", idx: number, usedSkill: any, kind: "invalid" | "miss" | "evade" | "immune", reason: string) => {
+    const failAction = (side: "p1" | "p2", idx: number, usedSkill: any, kind: "invalid" | "miss" | "evade" | "immune", reason: string, invalidHooksDone = false) => {
       const forced = hasForcedHitEffects(getBattleEventContext(side, true, idx));
-      const h = usedSkill?.name ? getBattleSkillOnInvalidRegistry()[usedSkill.name] : undefined;
+      const h = !invalidHooksDone && usedSkill?.name ? getBattleSkillOnInvalidRegistry()[usedSkill.name] : undefined;
       if (h) {
         try { const c = getBattleEventContext(side, true, idx); (c as any).skill = usedSkill; h(c, { reason, kind }); } catch (e) { console.error("[ON_INVALID]", e); }
       }
@@ -2828,6 +2953,7 @@ case 'switch': {
 
       let ctx = getBattleEventContext(s, true, mIdx);
       ctx.setPlayerState('blkTypeOverrideCurrentAction', false);
+      ctx.setPlayerState('minimumAttackDamageThisAction', undefined);
       ctx.setPlayerState('attackHitCountThisAction', 0);
       ctx.setPlayerState('attackBonusHitCountThisAction', 0);
       const ppCostComp = {
@@ -2957,8 +3083,9 @@ case 'switch': {
         ((globalThis as any).__FE ||= []).push({ s, timers: ((syncStateRef.current as any)[`${s}Timers`] || []).map((x: any) => ({ id: x.id, rem: x.remaining, pend: x.pendingActivation })), pm: pm?.id });
         if (pm) ppCostComp.multiplier *= pm.payload.block.ppMult;
       }
-      const finalPpCost = Math.floor((ppCostComp.base + ppCostComp.additionalCost) * ppCostComp.multiplier);
-      const extraAll = ppCostComp.extraAllSkills;
+      const noPpCostThisRound = ctx.getPlayerState('ppNoCostRound') === ctx.roundNumber;
+      const finalPpCost = noPpCostThisRound ? 0 : Math.floor((ppCostComp.base + ppCostComp.additionalCost) * ppCostComp.multiplier);
+      const extraAll = noPpCostThisRound ? 0 : ppCostComp.extraAllSkills;
 
       if (finalPpCost > 0 || extraAll > 0) {
         const elfToUpdate = syncStateRef.current[s];
@@ -2992,6 +3119,15 @@ case 'switch': {
       }
 
       // 技能本體轉化必須發生在技能無效、命中與攻擊免疫判定之前；PP仍扣原技能欄位。
+      // 複製技能／調用技能（百科名詞積木 copy_opp_skill／invoke_skill）：改用對手當回合技能或自身指定技能，PP 已扣原技能欄位。
+      {
+        const copied = resolveSkillReplacement((syncStateRef.current as any)[`${s}Timers`], activeSkill, s === "p1" ? mid.p2SelectedSkill : mid.p1SelectedSkill, syncStateRef.current[s]);
+        if (copied.consume) {
+          getBattleEventContext(s, true, mIdx).consumeTimer?.(s, copied.consume);
+          pushEffect({ type: 'log', side: s, data: { text: copied.mode === 'invoke' ? `🔁 【調用技能】：【${displayName}】以【${activeSkill.name}】調用了【${copied.skill.name}】！` : `🪞 【複製技能】：【${displayName}】改用了對手的【${copied.skill.name}】！`, type: "effect" } });
+          activeSkill = copied.skill; (ctx as any).skill = copied.skill; if (!actorHidden) displaySkill = copied.skill.name;
+        }
+      }
       const transformedSkill = transformSkillBeforeResolve(getBattleEventContext(s, true, mIdx), activeSkill);
       if (getBattleEventContext(s, true, mIdx).getPlayerState('soulSureHitThisAction')) transformedSkill.isSureHit = true;
       if (transformedSkill !== activeSkill) {
@@ -3137,11 +3273,11 @@ case 'switch': {
         });
       });
 
-      // BOSS 特性（封魔／技能無效）：受方的特性狀態令來襲技能無效
-      if (!skillIsInvalidated) {
-        const traitInvalid = bossTraitInvalidates(syncStateRef.current[oppSide], oppSide, activeSkill);
-        if (traitInvalid) { skillIsInvalidated = true; invalidationReason = traitInvalid; }
-      }
+      // BOSS 特性（封魔／技能無效）：不是整招無效——屬性技能「附加效果失效」；攻擊技能「無法造成技能傷害且附加效果失效」。
+      let traitInvalid = skillIsInvalidated ? null : bossTraitInvalidates(syncStateRef.current[oppSide], oppSide, activeSkill,
+        { attackerSecond: mIdx === 1, attackerPriority: Number((syncStateRef.current as any)[`${s}RegistryState`]?.actionPriorityThisTurn) || 0 });
+      // 封魔 B 型（擴展）：整個技能無效，走既有技能無效流程。
+      if (traitInvalid?.wholeSkill) { skillIsInvalidated = true; invalidationReason = traitInvalid.reason; traitInvalid = null; }
 
       // Check for utilitySkillAddEffectInvalidTurns
       const myRegKey = s === "p1" ? "p1RegistryState" : "p2RegistryState";
@@ -3156,6 +3292,25 @@ case 'switch': {
       if ((syncStateRef.current[s] as any)?.isAdditionalInvalid) {
         addEffectsInvalid = true;
         addEffectsInvalidReason = "技能附加效果失效";
+      }
+      if (traitInvalid) { addEffectsInvalid = true; addEffectsInvalidReason = traitInvalid.reason; }
+      // 2026-11-16 技能無效時統一：BOSS 特性「技能無效／封魔」也是技能無效場景，觸發一次「技能無效時」；
+      // 之後若再未命中／閃避／攻擊免疫，不重複觸發。
+      let invalidHooksFired = false;
+      // 魂印「技能無效時」：未命中／閃避／失明／攻擊免疫也派發 SKILL_INVALID（kind 區分）；只認真正技能無效的處理器自行以 kind==="invalid" 過濾。
+      const notifySkillInvalidSouls = (kind: string, reason: string) => {
+        try {
+          SoulMarkRegistry[syncStateRef.current[s].name]?.(getBattleEventContext(s, false, mIdx), EffectTiming.SKILL_INVALID, { skill: activeSkill, reason, kind, isIncoming: false });
+          SoulMarkRegistry[syncStateRef.current[oppSide].name]?.(getBattleEventContext(oppSide, false, mIdx), EffectTiming.SKILL_INVALID, { skill: activeSkill, reason, kind, isIncoming: true });
+        } catch (e) { console.error("[SKILL_INVALID]", e); }
+      };
+      if (traitInvalid) {
+        invalidHooksFired = true;
+        SoulMarkRegistry[syncStateRef.current[s].name]?.(getBattleEventContext(s, false, mIdx), EffectTiming.SKILL_INVALID, { skill: activeSkill, reason: traitInvalid.reason, kind: "invalid", isIncoming: false });
+        SoulMarkRegistry[syncStateRef.current[oppSide].name]?.(getBattleEventContext(oppSide, false, mIdx), EffectTiming.SKILL_INVALID, { skill: activeSkill, reason: traitInvalid.reason, kind: "invalid", isIncoming: true });
+        const h = activeSkill?.name ? getBattleSkillOnInvalidRegistry()[activeSkill.name] : undefined;
+        if (h) { try { const c = getBattleEventContext(s, true, mIdx); (c as any).skill = activeSkill; h(c, { reason: traitInvalid.reason, kind: "invalid" }); } catch (e) { console.error("[ON_INVALID]", e); } }
+        try { runSkillBlocks(getBattleEventContext(s, true, mIdx), "on_invalid", hasSkillHandler(activeSkill.name), true); emitSelfInvalid(getBattleEventContext(s, true, mIdx), true); } catch (e) { console.error("[blocks]", e); }
       }
       // 競技場：雅髯獅嘯自潔附加的對手命中附加效果失效（回合數制，通用 tick 自動遞減）
       if (!addEffectsInvalid && (syncStateRef.current[myRegKey]?.allHitEffectNullTurns || 0) > 0) {
@@ -3186,13 +3341,15 @@ case 'switch': {
       }
       // 積木：對手下N次（攻擊／屬性）技能無效
       if (!skillIsInvalidated) {
-        const inv = findBlockTimer((syncStateRef.current as any)[`${s}Timers`], b => b.invalid && matchesSkillCategory(b.invalid, activeSkill.category) && (!b.notMatchingType||!String(syncStateRef.current[s].type).split(/[.·・]/).some(t=>String(activeSkill.type).split(/[.·・]/).includes(t))) && (b.powerAbove === undefined || activeSkill.power > b.powerAbove));
+        const inv = findBlockTimer((syncStateRef.current as any)[`${s}Timers`], b => b.invalid && matchesSkillCategory(b.invalid, activeSkill.category) && (!b.notMatchingType||!sharesBattleType(syncStateRef.current[s].type, activeSkill.type)) && (b.powerAbove === undefined || activeSkill.power > b.powerAbove));
         if (inv) {
           skillIsInvalidated = true;
           invalidationReason = `【${inv.payload.block.src || "技能"}】`;
           consumedInvalidation = inv;
           // 次數型才消耗；回合型（「下N回合…技能無效」）期間內每次都無效
           if (inv.kind === "use_counter") getBattleEventContext(s, true, mIdx).consumeTimer?.(s, inv.id);
+          // 成對的「下1次」效果（施加方持有，例：抵擋攻擊）一併消耗。
+          if (typeof inv.payload?.block?.pairTimerId === "string") getBattleEventContext(oppSide, true, mIdx).consumeTimer?.(oppSide, inv.payload.block.pairTimerId);
         }
       }
       // 積木：附加效果失效
@@ -3242,8 +3399,8 @@ case 'switch': {
           const missFloor = 0;
           pushEffect({ type: 'log', side: s, data: { text: `💨 【${displayName}】的【${displaySkill}】沒有命中！`, type: "info" } });
           showPopup(oppSide, `Miss-${missFloor}`, "miss");
-          try { runSkillBlocks(getBattleEventContext(s, true, mIdx), "on_invalid", hasSkillHandler(activeSkill.name)); emitSelfInvalid(getBattleEventContext(s, true, mIdx)); } catch (e) { console.error("[blocks]", e); }
-          const retry = failAction(s, mIdx, activeSkill, "miss", "未命中");
+          if (!invalidHooksFired) { notifySkillInvalidSouls("miss", "未命中"); try { runSkillBlocks(getBattleEventContext(s, true, mIdx), "on_invalid", hasSkillHandler(activeSkill.name)); emitSelfInvalid(getBattleEventContext(s, true, mIdx)); } catch (e) { console.error("[blocks]", e); } }
+          const retry = failAction(s, mIdx, activeSkill, "miss", "未命中", invalidHooksFired);
           await processQueue();
           if (!retry) return "partial";
           activeSkill = recalculatedSkill(activeSkill, retry); retryForced = !!retry.forced; retryFailureKind = 'miss'; addEffectsInvalid = true;
@@ -3259,8 +3416,8 @@ case 'switch': {
           showPopup(oppSide, "Miss-0", "miss");
           // 與無效分支（2603）／Miss分支（2621）一致：閃避也視為未命中，觸發 on_invalid＋self_invalid，
           // 否則 self_invalid timer（深潛者／淨世／sobirat）遇到閃避不會被消耗。
-          try { runSkillBlocks(getBattleEventContext(s, true, mIdx), "on_invalid", hasSkillHandler(activeSkill.name)); emitSelfInvalid(getBattleEventContext(s, true, mIdx)); } catch (e) { console.error("[blocks]", e); }
-          const retry = failAction(s, mIdx, activeSkill, "evade", "閃避");
+          if (!invalidHooksFired) { notifySkillInvalidSouls("evade", "閃避"); try { runSkillBlocks(getBattleEventContext(s, true, mIdx), "on_invalid", hasSkillHandler(activeSkill.name)); emitSelfInvalid(getBattleEventContext(s, true, mIdx)); } catch (e) { console.error("[blocks]", e); } }
+          const retry = failAction(s, mIdx, activeSkill, "evade", "閃避", invalidHooksFired);
           await processQueue();
           if (!retry) return "partial";
           activeSkill = recalculatedSkill(activeSkill, retry); retryForced = !!retry.forced; retryFailureKind = 'evade'; addEffectsInvalid = true;
@@ -3276,7 +3433,7 @@ case 'switch': {
           pushEffect({ type: "log", side: oppSide, data: { text: `🛡️ 【失明】：必中技能【${displaySkill}】無法造成傷害且附加效果失效！`, type: "effect" } });
           showPopup(oppSide, "Miss-0", "miss");
           addEffectsInvalid = true;
-          try { runSkillBlocks(getBattleEventContext(s, true, mIdx), "on_invalid", hasSkillHandler(activeSkill.name)); emitSelfInvalid(getBattleEventContext(s, true, mIdx)); } catch (e) { console.error("[blocks]", e); }
+          if (!invalidHooksFired) { notifySkillInvalidSouls("blind", "失明"); try { runSkillBlocks(getBattleEventContext(s, true, mIdx), "on_invalid", hasSkillHandler(activeSkill.name)); emitSelfInvalid(getBattleEventContext(s, true, mIdx)); } catch (e) { console.error("[blocks]", e); } }
           await processQueue();
           return "partial";
         }
@@ -3298,8 +3455,8 @@ case 'switch': {
           pushEffect({ type: 'log', side: oppSide, data: { text: `🛡️ 【免疫攻擊】：【${syncStateRef.current[oppSide].name}】免疫了【${displaySkill}】！${imm.kind === "count" ? `（剩餘 ${imm.left - 1} 次）` : ""}`, type: "effect" } });
           showPopup(oppSide, "Miss-0", "miss");
           // 攻擊免疫＝未命中：與 Miss／閃避分支一致，觸發技能無效時（on_invalid）
-          try { runSkillBlocks(getBattleEventContext(s, true, mIdx), "on_invalid", hasSkillHandler(activeSkill.name)); emitSelfInvalid(getBattleEventContext(s, true, mIdx)); } catch (e) { console.error("[blocks]", e); }
-          const retry = failAction(s, mIdx, activeSkill, "immune", "攻擊免疫");
+          if (!invalidHooksFired) { notifySkillInvalidSouls("immune", "攻擊免疫"); try { runSkillBlocks(getBattleEventContext(s, true, mIdx), "on_invalid", hasSkillHandler(activeSkill.name)); emitSelfInvalid(getBattleEventContext(s, true, mIdx)); } catch (e) { console.error("[blocks]", e); } }
+          const retry = failAction(s, mIdx, activeSkill, "immune", "攻擊免疫", invalidHooksFired);
           await processQueue();
           if (!retry) return "partial";
           activeSkill = recalculatedSkill(activeSkill, retry); retryForced = !!retry.forced; retryFailureKind = 'immune'; addEffectsInvalid = true;
@@ -3355,7 +3512,8 @@ case 'switch': {
       let mainSettledDamageForAction = 0;
       let mainIsCrit = false;
       let traced37 = false;
-      if (activeSkill.category !== "屬性" && (activeSkill.power || Number(syncStateRef.current[actorRegKey]?.powerAddThisAction) > 0)) {
+      const minimumAttackDamage = Number(ctx.getPlayerState('minimumAttackDamageThisAction')) || 0;
+      if (activeSkill.category !== "屬性" && (activeSkill.power || minimumAttackDamage > 0 || Number(syncStateRef.current[actorRegKey]?.powerAddThisAction) > 0)) {
         const hitCount = Math.max(1, Math.floor(syncStateRef.current[actorRegKey]?.attackHitCountThisAction || 1)) +
           Math.max(0, Math.floor(syncStateRef.current[actorRegKey]?.attackBonusHitCountThisAction || 0));
         syncStateRef.current = { ...syncStateRef.current, [actorRegKey]: { ...syncStateRef.current[actorRegKey], attackHitCountThisAction: 0, attackBonusHitCountThisAction: 0 } };
@@ -3435,7 +3593,9 @@ case 'switch': {
           (isCritGuaranteed && !critBlocked) ? true : undefined,
           mid.p1Team,
           mid.p2Team,
-          { ignoreSpDefPercent, ignoreDefPercent, ignoreOppBuff, hitCount, actionId: actionSerialRef.current, inherentInvalid:!innateAllowed(damageCtx),
+          { traitPowerMultiplier: rollStatusTraitPower(damageCtx, activeSkill), ignoreSpDefPercent, ignoreDefPercent, ignoreOppBuff, hitCount, actionId: actionSerialRef.current, inherentInvalid:!innateAllowed(damageCtx),
+            actorBoostInvalid: boostInvalidActive((syncStateRef.current as any)[`${s}Timers`]), targetBoostInvalid: boostInvalidActive((syncStateRef.current as any)[`${oppSide}Timers`]),
+            ...(() => { const rr = roundRestrictionOf((syncStateRef.current as any)[`${s}Timers`]); return { stabDisabled: rr.stabDisabled, typeAdvantageDisabled: rr.typeAdvantageDisabled }; })(),
             critChanceBonus: Number(findBlockTimer((syncStateRef.current as any)[`${s}Timers`], b => b.critChanceBonus)?.payload?.block?.critChanceBonus || 0) },
           p1Title,
           p2Title,
@@ -3476,6 +3636,7 @@ case 'switch': {
           ignoreDamageBlocking:recalculateSuppressed,
           sourceSide: s,
           base: dmgRes.damage,
+          floor: minimumAttackDamage || undefined,
           increasePercent: 0,
           decreasePercent: 0,
           reductionPolicy: skillReductionPolicy(damageCtx,activeSkill,reductionPolicy(syncStateRef.current, oppSide, currentOpp, "skill_attack")),
@@ -3595,7 +3756,7 @@ case 'switch': {
         }
 
         // 通用特性／異能（屬性強化、堅硬、吸收、虛無、重傷…；pure 獨立乘區時跳過）
-        if (!damageComp.pure) modifySkillDamage(currentActor, currentOpp, activeSkill, damageComp, getBattleEventContext(s, true, mIdx), rng,
+        modifySkillDamage(currentActor, currentOpp, activeSkill, damageComp,
           (text) => pushEffect({ type: 'log', side: s, data: { text, type: "effect" } }));
 
         // 印記：依持有者體力比例調整攻擊傷害（例如武誅：體力高於1/2時受到攻擊傷害提升、低於1/2時造成攻擊傷害降低）
@@ -3646,9 +3807,10 @@ case 'switch': {
         }
         
         finalizeDamageReductions(damageComp, syncStateRef.current, oppSide, currentOpp);
-        // 固定加值（強攻＋80 等）直接加進公式結果，再吃增減傷
+        // 原有固定加值與跳過一般減傷的加值使用不同乘區。
         const stage1 = (damageComp.base + (damageComp.bonusFixed || 0)) * (1 + damageComp.increasePercent) * Math.max(0, 1 - damageComp.decreasePercent);
-        const stage2 = Math.max(0, stage1 * damageComp.multiplier - (damageComp.flatReduction || 0));
+        const protectedBonus = damageComp.multiplier > 0 && !damageComp.incomingDamageImmunity ? damageComp.bonusAfterReduction || 0 : 0;
+        const stage2 = Math.max(0, stage1 * damageComp.multiplier - (damageComp.flatReduction || 0)) + protectedBonus;
         applyAttackDefenseLimit(damageComp);
         const damageLimit200Turns = syncStateRef.current[actorRegKey]?.damageLimit200Turns > 0;
         const disableIncomingLimit=damageComp.reductionPolicy?.incomingDamageLimitDisabled===true;
@@ -3717,6 +3879,7 @@ case 'switch': {
         
         // ── 3.6 造成技能傷害（紅傷） ──
         finalDamage=resolveDamageBlocking(damageComp,finalDamage);
+        if (traitInvalid?.noSkillDamage) finalDamage = 0; // BOSS 特性「技能無效」：無法造成技能傷害
         node('3.6', { side: s, order: mIdx });
         if (checkElfDead(syncStateRef.current[oppSide])) {
           // 前置效果已擊敗對手：主技能傷害只作顯示（紅字＝實際計算值），體力不落地、不觸發命中後結算。
@@ -3777,33 +3940,21 @@ case 'switch': {
            // This is handled in damageCalculator.ts already, so we don't need it here.
         }
 
-        // Sleep wakeup logic (using StatusRegistry wakeOnHit metadata)
-        let hasWokenUp = false;
-        let wokenStatusId = "";
-        let wokenStatusName = "";
-        
-        Object.keys(oppStatuses).forEach(stId => {
-          const entry = StatusRegistry[stId];
-          entry?.mechanics?.forEach(m => {
-            if (m.params?.wakeOnHit) {
-              hasWokenUp = true;
-              wokenStatusId = stId;
-              wokenStatusName = entry.name;
-            }
-          });
-        });
-
-        if (finalDamage > 0 && hasWokenUp) {
-          const nextOppEffects = (opp.effects || []).filter((e: any) => e.id !== wokenStatusId);
-          const nextOppStatuses = { ...oppStatuses };
-          delete nextOppStatuses[wokenStatusId];
-          
-          syncStateRef.current = {
-            ...syncStateRef.current,
-            [oppSide]: { ...opp, effects: nextOppEffects, battleStatuses: nextOppStatuses, battleStatus: "normal" }
-          };
-          dispatch({ type: 'UPDATE_ELF', side: oppSide, elf: { effects: nextOppEffects, battleStatuses: nextOppStatuses, battleStatus: "normal" } });
-          pushEffect({ type: 'log', side: oppSide, data: { text: `✨ 【${opp.name}】從【${wokenStatusName}】中醒來了！`, type: "status" } });
+        if (finalDamage > 0) {
+          const wakeable = Object.keys(oppStatuses).filter(id => StatusRegistry[id]?.mechanics?.some(m => m.params?.wakeOnHit));
+          for (const status of wakeable) {
+            const live = syncStateRef.current[oppSide];
+            if ((live.battleId || live.id) !== (currentOpp.battleId || currentOpp.id) || !getStatuses(live)[status]) continue;
+            // 攻擊可能已結算，解除異常時只更新目前持有者的異常欄位。
+            const updated = { ...live, battleStatuses: { ...live.battleStatuses } };
+            removeStatusEffect(updated, status);
+            getBattleEventContext(s, true, mIdx).updateElf(oppSide, {
+              battleId: live.battleId, id: live.id, effects: updated.effects,
+              battleStatuses: updated.battleStatuses, battleStatus: updated.battleStatus,
+              battleStatusDuration: updated.battleStatusDuration,
+            });
+            pushEffect({ type: 'log', side: oppSide, data: { text: `✨ 【${live.name}】從【${StatusRegistry[status].name}】中醒來了！`, type: 'status' } });
+          }
         }
 
         queueSkillLifesteal(s, finalDamage, "skill_attack", syncStateRef.current[`${s}RegistryState`], pushEffect);
@@ -3940,6 +4091,8 @@ syncStateRef.current = { ...syncStateRef.current, [actorRegKey]: { ...rg, attack
       await processQueue();
       presentation.setInAction(true); // 出手流程：紅字即時播
       // 3.1–3.7：本次出手（"partial"＝未成功出手或提前結束；"full"＝走完整個出手與收尾）
+      const attempted=syncStateRef.current[`${s}SelectedSkill`] as Skill | null;
+      recordAction(s,attempted && isPassSkill(attempted)?'wait':'skill','attempted',{name:attempted?.name,order:mIdx+1});
       const outcome=await executeSkillUse(s,mIdx);
 
       const replayContext=getBattleEventContext(s,true,mIdx),request=replayContext.getPlayerState('pendingSkillRepeats');
@@ -4092,7 +4245,7 @@ syncStateRef.current = { ...syncStateRef.current, [actorRegKey]: { ...rg, attack
       if (need2 && d2 && battleMode === "PVE") aiSides.push("p2");
       if (need1 && d1 && st.isAutoBattle) aiSides.push("p1");
       for (const side of aiSides) {
-        if (props.selectAi && !props.simulation) { requestForcedAI(side); return; }
+        if ((props.selectAi || props.isInputPaused?.()) && !props.simulation) { requestForcedAI(side); return; }
         let idx = pickAiForcedSwitch(st, side, p1Suit, p2Suit, rng);
         if (idx === -1) {
           // AI 只看 currentHp>0；「死亡條件不受體力限制」的精靈 0 血仍可上場，補上後備選擇
@@ -4220,12 +4373,15 @@ syncStateRef.current = { ...syncStateRef.current, [actorRegKey]: { ...rg, attack
   };
 
   const onSkillSelect = (side: "p1" | "p2", skill: Skill) => {
-    if (!battleAliveRef.current) return;
+    if (!battleAliveRef.current || props.isInputPaused?.()) return;
     const cur = latestStateRef.current;
     if (cur.phase !== (side === 'p1' ? 'p1_select' : 'p2_select')) return;
     const slot = skillSlot(cur[side],skill);
     const waiting = slot < 0 && skill.name === '等待' && legalActions(cur, side).every(a => a.kind === 'wait');
-    if (!waiting && !skillSelectable(cur, side, cur[side], slot)) return;
+    if (!waiting) {
+      const block = skillSelectionBlock(cur, side, cur[side], slot);
+      if (block) { pushEffect({ type: 'log', side, data: { text: `🚫 ${block}，無法選擇此技能！`, type: 'system' } }); return; }
+    }
 
     // 合法選招即生效；不延後到可能因受控而被跳過的出手流程。
     const selCtx = getBattleEventContext(side, true, 0);
@@ -4252,21 +4408,14 @@ syncStateRef.current = { ...syncStateRef.current, [actorRegKey]: { ...rg, attack
     }
     statusSkillSelected(selCtx,skill,slot);
 
-    // 選擇技能時立即點亮與激活符文
-    const actorElf = side === 'p1' ? cur.p1 : cur.p2;
-    if (actorElf && actorElf.skills) {
-      const idx = slot;
-      if (idx !== -1) {
-        activateRuneOnSkillSelect(actorElf, idx, (msg, type) => {
-          pushEffect({ type: 'log', side, data: { text: msg, type: type as any } });
-        });
-      }
-    }
+    // 符文（技能槽印記）激活：由 SKILL_SELECTED 派發給印記程式／舊版魂印處理，引擎不含精靈專屬碼。
 
     commitSelection(side, skill);
   };
 
   const commitSelection = (side: "p1" | "p2", skill: Skill) => {
+    if (syncStateRef.current.phase===`${side}_select`) recordAction(side,isPassSkill(skill)?'wait':'skill','selected',
+      {name:isPassSkill(skill)?'空過':skill.name,slot:skillSlot(syncStateRef.current[side],skill)});
     if (syncStateRef.current.phase === "p1_select" && side === "p1") {
       dispatch({ type: 'SET_SKILL', side: 'p1', skill });
       if (battleMode === "PVE") {
@@ -4282,14 +4431,14 @@ syncStateRef.current = { ...syncStateRef.current, [actorRegKey]: { ...rg, attack
 
   /** 空過：選擇階段隨時可用；不觸發選招、使用技能或符文激活。 */
   const onPass = (side: "p1" | "p2") => {
-    if (!battleAliveRef.current) return;
+    if (!battleAliveRef.current || props.isInputPaused?.()) return;
     const cur = latestStateRef.current;
     if (cur.phase !== (side === 'p1' ? 'p1_select' : 'p2_select')) return;
     commitSelection(side, passSkill());
   };
 
   const onSwitchElf = (side: "p1" | "p2", index: number) => {
-    if (!battleAliveRef.current) return;
+    if (!battleAliveRef.current || props.isInputPaused?.()) return;
     const cur = latestStateRef.current;
     const expected = side === 'p1' ? 'p1_select' : 'p2_select';
     const forcedForSide = cur.phase === `forced_switch_${side}` || cur.phase === 'forced_switch_both';
@@ -4320,6 +4469,8 @@ syncStateRef.current = { ...syncStateRef.current, [actorRegKey]: { ...rg, attack
       }
     }
 
+    recordAction(side,'switch',syncStateRef.current.phase.startsWith('forced_switch')?'forced':'selected',
+      {target:targetElf.name,targetId:targetElf.battleId || targetElf.id,slot:index});
     if (syncStateRef.current.phase.startsWith("forced_switch")) {
       const outgoingElf = cur[side];
       if (outgoingElf && SoulMarkRegistry[outgoingElf.name]) {
@@ -4377,7 +4528,7 @@ syncStateRef.current = { ...syncStateRef.current, [actorRegKey]: { ...rg, attack
       const oppElf = syncStateRef.current[oppSide];
       if (oppElf && SoulMarkRegistry[oppElf.name]) {
         const oppCtx = getBattleEventContext(oppSide, false, 0);
-        SoulMarkRegistry[oppElf.name](oppCtx, EffectTiming.OPPONENT_SWITCH, { switchingSide: side });
+        SoulMarkRegistry[oppElf.name](oppCtx, EffectTiming.OPPONENT_SWITCH, { switchingSide: side, forced: true });
       }
       
       if (syncStateRef.current.phase === "forced_switch_both") {
@@ -4403,7 +4554,7 @@ syncStateRef.current = { ...syncStateRef.current, [actorRegKey]: { ...rg, attack
   };
 
   const onUseItem = (side: "p1" | "p2", item: BattleItem) => {
-    if (!battleAliveRef.current) return;
+    if (!battleAliveRef.current || props.isInputPaused?.()) return;
     const curForItems = latestStateRef.current;
     const expectedPhase = side === 'p1' ? 'p1_select' : 'p2_select';
     const catalogItem = BATTLE_ITEMS.find(candidate => candidate.id === item.id);
@@ -4434,6 +4585,7 @@ syncStateRef.current = { ...syncStateRef.current, [actorRegKey]: { ...rg, attack
       if (!props.interstellarOptions.onPotionUse()) { pushEffect({type:"log",side,data:{text:"藥劑次數已用盡。",type:"effect"}}); return; }
       props.onPotionUsed?.();
     }
+    recordAction(side,'item','selected',{name:catalogItem.name,itemId:item.id,target:item.picked});
     dispatch({ type: 'SET_ITEM', side, item: catalogItem.pickTarget ? { ...catalogItem, picked: item.picked } : item });
     // 2026-11-02：記錄「本回合已選道具」，供 UI 禁用其他藥劑按鈕。
     dispatch({ type: 'UPDATE_REGISTRY_STATE', side, state: { itemPickedRound: syncStateRef.current.roundNumber ?? syncStateRef.current.turnNumber } });
@@ -4465,6 +4617,11 @@ syncStateRef.current = { ...syncStateRef.current, [actorRegKey]: { ...rg, attack
     const prev = lastReact;
     const phase = st.phase, auto = !!st.isAutoBattle, winner = st.winner;
     lastReact = { phase, auto, winner };
+    if (props.prepareAi && battleMode==='PVE' && !props.simulation && !props.isInputPaused?.() && !winner && !auto && phase==='p1_select') {
+      // 同時選招：P1 尚未選擇時用同一戰局提前評估，不預知選招、不消耗正式亂數。
+      const request = aiRequest({...st,phase:'p2_select'},'p2',false,st.turnNumber);
+      if (request.settings.mode==='planner' || request.settings.modelEnabled) props.prepareAi(request);
+    }
     // 結算：以即時狀態判斷，避免同一回合被重複結算
     if (phase === "resolving") startResolveRef.current();
     // T0-6：自動戰鬥（P1 托管）
@@ -4493,6 +4650,8 @@ syncStateRef.current = { ...syncStateRef.current, [actorRegKey]: { ...rg, attack
       const side = phase === 'p1_select' ? 'p1' : 'p2';
       if (!(side === 'p1' && auto) && readPassMode() === 'auto' && legalActions(st, side).every(a => a.kind === 'wait')) scheduleBattleTask(async () => {
         await presentation.wait();
+        const held = props.actionGate?.();
+        if (held) await waitForActionGate(held);
         const now = syncStateRef.current;
         if (battleAliveRef.current && now.phase === phase && legalActions(now, side).every(a => a.kind === 'wait')) {
           pushEffect({ type: 'log', side, data: { text: `⏭ 【${now[side].name}】沒有可用行動，自動空過。`, type: 'info' } });
@@ -4510,7 +4669,7 @@ syncStateRef.current = { ...syncStateRef.current, [actorRegKey]: { ...rg, attack
     if ((phase === "forced_switch_p2" || phase === "forced_switch_both") && battleMode === "PVE") {
       const cur = latestStateRef.current;
       if (checkElfDead(cur.p2)) {
-        if (props.selectAi && !props.simulation) { requestForcedAI('p2'); return; }
+        if ((props.selectAi || props.isInputPaused?.()) && !props.simulation) { requestForcedAI('p2'); return; }
         const nextIdx = pickAiForcedSwitch(cur, 'p2', p1Suit, p2Suit, rng);
         if (nextIdx !== -1) onSwitchElf('p2', nextIdx);
       }
@@ -4519,7 +4678,7 @@ syncStateRef.current = { ...syncStateRef.current, [actorRegKey]: { ...rg, attack
     if ((phase === "forced_switch_p1" || phase === "forced_switch_both") && auto) {
       const cur = latestStateRef.current;
       if (checkElfDead(cur.p1)) {
-        if (props.selectAi && !props.simulation) { requestForcedAI('p1'); return; }
+        if ((props.selectAi || props.isInputPaused?.()) && !props.simulation) { requestForcedAI('p1'); return; }
         const nextIdx = pickAiForcedSwitch(cur, 'p1', p1Suit, p2Suit, rng);
         if (nextIdx !== -1) onSwitchElf('p1', nextIdx);
       }
@@ -4536,16 +4695,32 @@ syncStateRef.current = { ...syncStateRef.current, [actorRegKey]: { ...rg, attack
 
   const idle = async () => {
     for (let i = 0; i < 2000; i++) {
-      await new Promise(r => setTimeout(r, 0));
+      if (props.simulation && i % 64 !== 63) await Promise.resolve();
+      else await new Promise(r => setTimeout(r, 0));
       if (!battleAliveRef.current) return;
-      if (!pendingAi && !isResolvingRef.current && !processingPromiseRef.current && !validatingRef.current && battleTimeoutsRef.current.size === 0 && effectQueueRef.current.length === 0) return;
+      if (!pendingAi && !isResolvingRef.current && !processingPromiseRef.current && !validatingRef.current &&
+          pendingSimulationTasks === 0 && battleTimeoutsRef.current.size === 0 && effectQueueRef.current.length === 0) return;
     }
   };
+
+  /** 計時器／外部託管共用既有決策入口；等待期間人工操作會使結果失效。 */
+  async function performAIAction(side: AISide, forced=false, stillEnabled=()=>true) {
+    const before=syncStateRef.current,phase=before.phase;
+    const action=await chooseAI(side,forced);
+    const now=syncStateRef.current;
+    if(!action || !stillEnabled() || !battleAliveRef.current || now.winner || now.phase!==phase || now.turnNumber!==before.turnNumber) return;
+    if(forced) {if(action.type==='switch' && checkElfDead(now[side]))onSwitchElf(side,action.switchIndex!);return;}
+    if(now[`${side}SelectedSkill`] || now[`${side}SelectedItem`] || now[`${side}SwitchIndex`] != null)return;
+    if(action.type==='skill')onSkillSelect(side,action.skill!);
+    else if(action.type==='switch')onSwitchElf(side,action.switchIndex!);
+    else if(action.item)onUseItem(side,action.item);
+    if(syncStateRef.current.phase===phase && !syncStateRef.current[`${side}SelectedSkill`])onPass(side);
+  }
 
   return {
     getState: () => syncStateRef.current,
     dispatch, pushEffect, presentation, ledger,
-    onSkillSelect, onSwitchElf, onUseItem, onPass,
+    onSkillSelect, onSwitchElf, onUseItem, onPass, performAIAction,
     start, mount, unmount,
     isAlive: () => battleAliveRef.current,
     idle,

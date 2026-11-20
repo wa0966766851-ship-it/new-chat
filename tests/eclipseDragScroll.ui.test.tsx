@@ -5,6 +5,10 @@ const dom = new JSDOM('<div id="root"></div>', { url: 'http://localhost/' });
 Object.assign(globalThis, { window: dom.window, document: dom.window.document, localStorage: dom.window.localStorage, sessionStorage: dom.window.sessionStorage,
   HTMLElement: dom.window.HTMLElement, Element: dom.window.Element, SVGElement: dom.window.SVGElement, Node: dom.window.Node, IS_REACT_ACT_ENVIRONMENT: true,
   getComputedStyle: dom.window.getComputedStyle.bind(dom.window), requestAnimationFrame: (f: any) => setTimeout(() => f(performance.now()), 0), cancelAnimationFrame: clearTimeout });
+// Components call window.requestAnimationFrame/cancelAnimationFrame. Keep the
+// jsdom window's timers aligned with the global test shims above.
+(dom.window as any).requestAnimationFrame = globalThis.requestAnimationFrame;
+(dom.window as any).cancelAnimationFrame = globalThis.cancelAnimationFrame;
 (dom.window as any).HTMLElement.prototype.scrollIntoView = () => {};
 (dom.window as any).HTMLElement.prototype.scrollTo = function (o: any) { this.scrollLeft = o.left; };
 const { createRoot } = await import('react-dom/client');

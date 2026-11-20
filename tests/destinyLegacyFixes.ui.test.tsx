@@ -78,6 +78,17 @@ try {
   await click(btn('下一步：進入 Ban')); noEmoji('Ban'); const sect = [...document.querySelectorAll('h4')].find(e => e.textContent?.includes('點擊敵方'))!.parentElement!;
   for (const c of [...sect.querySelectorAll<HTMLElement>('.cursor-pointer')].slice(0, 3)) await click(c);
   await click(btn('確認禁用')); noEmoji('Pick');
+  const poolCards = [...document.querySelectorAll<HTMLElement>('[data-pool-slot]')];
+  assert.equal(poolCards.length,24,'經典版選角保留雙方各12位');
+  for(const cards of [poolCards.slice(0,12),poolCards.slice(12)]) {
+    assert.deepEqual(cards.map(c=>Number(c.dataset.poolSlot)),Array.from({length:12},(_,i)=>i+1));
+    assert.equal(cards.filter(c=>c.dataset.banned==='1').length,3);
+  }
+  const bannedCard=poolCards.find(c=>c.dataset.banned==='1')!;
+  assert.match(bannedCard.textContent!,/已禁用/);
+  await click(bannedCard);
+  assert.match(bannedCard.textContent!,/已禁用/,'禁用精靈保留原位且不能被選用');
+
 
   // ---- D-04：紙本風全頁可讀（作用域映射）----
   await click(btn('紙本')); const rootEl = document.querySelector('[data-destiny-view="A"]')!; assert.match(rootEl.className, /destiny-legacy-paper/);

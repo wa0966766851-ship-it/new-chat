@@ -1,6 +1,6 @@
 import React, { useState, useEffect, lazy, Suspense } from "react";
-import { MotionConfigContext } from 'motion/react';
-import {perfLiteActive,PERF_EVENT} from './shell/perfMode';
+import { MotionConfigContext } from "motion/react";
+import { perfLiteActive, PERF_EVENT } from "./shell/perfMode";
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -12,10 +12,12 @@ import { applySavedSkillCorrections } from './data/savedSkillCorrections';
 import { resetElfStateForBattle, setDynamicMatchups } from "./utils/statCalculator";
 import { useShellMode } from "./shell/shellMode";
 import { LegacyShell, ShellSwitchButton } from "./shell/LegacyShell";
-import TechLoadingScreen from './components/TechLoadingScreen';
-import type { ShellBridge, AppView, BattleFormat } from "./shell/bridge";
+
+import { controlScene, type ShellBridge, type AppView, type BattleFormat } from "./shell/bridge";
 import { GameDataProvider, useGameData } from "./contexts/GameDataContext";
-const AegisShell = lazy(() => import('./shell/AegisShell').then(m => ({ default: m.AegisShell })));
+import TechLoadingScreen from "./components/TechLoadingScreen";
+const AegisShell = lazy(() => import('./shell/AegisShell').then(module => ({ default: module.AegisShell })));
+const ControlHub = lazy(() => import('./components/ControlHub'));
 const PerformanceProbe = lazy(() => import('./components/PerformanceProbe'));
 
 /**
@@ -26,12 +28,9 @@ const PerformanceProbe = lazy(() => import('./components/PerformanceProbe'));
  */
 
 export default function App() {
+  // 效能模式：精簡時 motion 元件改用減少動態（data-perf 由 perfMode 設在 <html>）。
   const [lite, setLite] = useState(() => perfLiteActive());
-  useEffect(() => {
-    const sync = () => setLite(perfLiteActive());
-    window.addEventListener(PERF_EVENT, sync);
-    return () => window.removeEventListener(PERF_EVENT, sync);
-  }, []);
+  useEffect(() => { const sync = () => setLite(perfLiteActive()); window.addEventListener(PERF_EVENT, sync); return () => window.removeEventListener(PERF_EVENT, sync); }, []);
   const parentMotion = React.useContext(MotionConfigContext);
   const motionConfig = React.useMemo(() => ({ ...parentMotion, reducedMotion: lite ? 'always' as const : 'user' as const }), [parentMotion, lite]);
   return (
@@ -201,13 +200,19 @@ function AppContent() {
   return (
     <>
       {shellMode === "aegis" && view !== "battle"
-        ? <Suspense fallback={<TechLoadingScreen />}><AegisShell b={bridge} onSwitchShell={() => { if (view === "bag") setView("start"); toggleShell(); }} /></Suspense>
+        ? <Suspense fallback={<TechLoadingScreen />}>
+            <AegisShell b={bridge} onSwitchShell={() => { if (view === "bag") setView("start"); toggleShell(); }} />
+          </Suspense>
         : <LegacyShell
             b={bridge}
             showHeader={showHeader}
             setShowHeader={setShowHeader}
             isCompactLayout={isCompactLayout}
           />}
+
+      <Suspense fallback={null}>
+        <ControlHub currentScene={controlScene(bridge)} canApplyUpdates={view === 'start' && !editingElf && !showEncyclopedia} />
+      </Suspense>
 
       {/* Legacy 殼的切換鈕：掛在 body，不受任何 overflow 裁切 */}
       {shellMode === "legacy" && (

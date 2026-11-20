@@ -7,7 +7,7 @@ export type StatusCategory =
   | 'RESTRICTIVE'  // 3. 限制類異常
   | 'EVOLUTIONARY' // 4. 衍化類異常
   | 'AUXILIARY'    // 5. 附屬類異常
-  | 'BOSS_ONLY'    // 新增：BOSS 專用附屬異常（神話、免疫）
+  | 'BOSS_ONLY'    // BOSS 類異常：附屬類異常的子集合（必與 AUXILIARY 並列），並關閉回合數（StatusRegistryEntry.noDuration）
   | 'NO_EFFECT'    // 新增：無效果類異常（異常抵抗）
   // 相容保留
   | 'ABNORMAL'

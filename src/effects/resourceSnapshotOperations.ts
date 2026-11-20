@@ -1,3 +1,4 @@
+import { activeAlienTrait } from '../data/elfGroups';
 import type {BattleEventContext} from './types';
 import { StatusRegistry } from './statusRegistry';
 import type {RunState} from '../blocks/runtime';
@@ -36,7 +37,7 @@ export function resourceSnapshotOperations(helpers:{liveElf:(ctx:BattleEventCont
       if(p.traitText==='lowChanceStatus'){
         const traitTexts=(elf:any)=>{
           const groups:Record<string,unknown[]>={soul:[elf.soulMark?.description],general:[elf.trait?.description,elf.alienTraits?.generalTrait?.description],
-            gen2:[elf.alienTraits?.gen2Trait?.description],exclusive:[elf.alienTraits?.exclusiveTrait?.description,...(elf.alienTraits?.exclusiveTraits||[]).map((t:any)=>t?.description)],alien:[elf.alienTraits?.alienTrait?.description]};
+            gen2:[elf.alienTraits?.gen2Trait?.description],exclusive:[elf.alienTraits?.exclusiveTrait?.description,...(elf.alienTraits?.exclusiveTraits||[]).map((t:any)=>t?.description)],alien:[activeAlienTrait(elf)?.description]};
           return (p.traitSources||Object.keys(groups)).flatMap((key:string)=>groups[key]).filter((x:any)=>typeof x==='string'&&x) as string[];
         };
         st.lastAmount=sides.flatMap(side=>ctx.getFullTeam(side as 'p1'|'p2'))
@@ -47,7 +48,7 @@ export function resourceSnapshotOperations(helpers:{liveElf:(ctx:BattleEventCont
       }
       st.lastAmount=sides.flatMap(side=>ctx.getFullTeam(side as 'p1'|'p2')).filter(elf=>!elf.isExtra&&!elf.isVanished&&(p.state==='any'||(p.state==='dead'?checkElfDead(elf):!checkElfDead(elf))))
         .filter(elf=>!p.excludeSelf||id(elf)!==id(ctx.self))
-        .filter(elf=>[elf.trait,elf.alienTraits?.gen2Trait,elf.alienTraits?.exclusiveTrait,...(elf.alienTraits?.exclusiveTraits||[]),elf.alienTraits?.alienTrait,elf.alienTraits?.generalTrait].some(trait=>trait?.name===p.name)).length;
+        .filter(elf=>[elf.trait,elf.alienTraits?.gen2Trait,elf.alienTraits?.exclusiveTrait,...(elf.alienTraits?.exclusiveTraits||[]),activeAlienTrait(elf),elf.alienTraits?.generalTrait].some(trait=>trait?.name===p.name)).length;
       return true;
     },
   };

@@ -411,7 +411,7 @@ export const handleScarlettSoulMark = (ctx: BattleEventContext, event: EffectTim
 
     case EffectTiming.SKILL_INVALID: {
       // K1：3回合內對手屬性技能無效且使用後該技能PP歸0
-      if (extraData?.isIncoming && extraData.skill?.category === "屬性" && (getPlayerState("invalidUtilityPpZeroTurns") || 0) > 0) {
+      if (extraData?.isIncoming && extraData.kind === "invalid" && extraData.skill?.category === "屬性" && (getPlayerState("invalidUtilityPpZeroTurns") || 0) > 0) {
         const opp = liveActive(ctx, oppSide);
         const skills = (opp.skills || []).map((sk: any) => sk.name === extraData.skill.name ? { ...sk, pp: 0 } : sk);
         ctx.updateElf(oppSide, { battleId: opp.battleId, id: opp.id, skills } as any);
@@ -447,7 +447,7 @@ export const handleScarlettSoulMark = (ctx: BattleEventContext, event: EffectTim
       // 珀妮：斯嘉麗在場期間每次出手流程結束後（含未能出手）進行一次額外行動
       if (isPuniAlive(ctx, actor) && extraData?.actor === actor && ctx.queueExtraAction) {
         ctx.queueExtraAction(actor, {
-          label: "珀妮：光系技能傷害",
+          label: "珀妮·光擊", skillId: "puni_light",
           amount: Math.floor(ctx.target.maxHp / 3),
           elem: "光",
           after: (c) => {

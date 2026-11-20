@@ -1,9 +1,10 @@
-﻿// 積木系統資料模型：精靈描述 → 積木（觸發 / 條件 / 動作），同一份結構同時用於「顯示」與「執行」。
+// 積木系統資料模型：精靈描述 → 積木（觸發 / 條件 / 動作），同一份結構同時用於「顯示」與「執行」。
 
 export type Side = "self" | "opp" | "both";
 
 /** 觸發時點（魂印標頭、N回合內的持續效果） */
 export type Trigger =
+  | 'active_hp_changed'
   | "stat_changed" | "team_stat_changed"
   | "battle_node"
   | "before_round_start"
@@ -111,7 +112,7 @@ export interface Clause {
   marker?: string; // ■ 🎯 ◇ > >>
   trig: Trigger;
   /** 出戰背包觀察者；明確指定死亡後仍生效，不傳遞持有者身分。 */
-  observer?: { includeDead: boolean };
+  observer?: { includeDead?: boolean; includeBlocked?: boolean };
   /** 標頭條件（例如「回合開始時自身擁有護盾：」） */
   cond?: Cond[];
   body: Stmt[];

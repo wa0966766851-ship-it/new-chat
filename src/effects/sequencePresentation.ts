@@ -186,6 +186,15 @@ export function sequenceActionLabel(a: Act, triggerLabels: Record<string, string
     case 'status_guard': return `在異常附加前免疫${p.cls || '所有'}異常`;
     case 'crit_uses': return `${p.scope==='team'?'己方':'自身'}下${p.uses}次攻擊必定致命一擊`;
     case 'block_attack': return `抵擋下${p.count}次攻擊傷害`;
+    case 'invoke_skill': return `自身下${p.uses}次使用${p.shell ? `【${p.shell}】` : '技能'}時改以【${p.name}】結算`;
+    case 'unseal_skill': return `解封【${p.name}】`;
+    case 'stat_random': return `隨機令${p.side === 'opp' ? '對手' : '自身'}${p.count}種能力${p.v > 0 ? '+' : ''}${p.v}${p.mirror === 'opp' ? '並附加對手等量反向變化' : ''}`;
+    case 'status_hand_over': return `將自身所處的${(p.statuses || []).join('、')}附加給對手`;
+    case 'round_opp_restrict': return `對手當回合：${[p.priority !== undefined ? `先制調整為${p.priority}` : '', p.stabDisabled ? '失去本系加成' : '', p.typeAdvantageDisabled ? '失去屬性克制' : '', p.addInvalid ? '技能附加效果失效' : ''].filter(Boolean).join('、')}`;
+    case 'drain_mult_turns': return `${p.next ? '下' : ''}${p.turns}回合內自身吸取效果×${p.mult}`;
+    case 'copy_opp_skill': return `自身下${p.uses}次使用技能時改用對手當回合使用的技能`;
+    case 'banish_turns': return `${p.next ? '下' : ''}${p.turns}回合內放逐對手（背包精靈無法主動切換上場）`;
+    case 'boost_invalid_turns': return `${p.next ? '下' : ''}${p.turns}回合內${p.side === 'opp' ? '對手' : '自身'}能力提升效果失效`;
     case 'immune_attack_turns': return `${p.turns}回合內免疫攻擊傷害${p.extendByStatusTurns?`，加上${p.extendByStatusTurns==='both'?'雙方':p.extendByStatusTurns==='self'?'自身':'對手'}當下異常回合數總和`:''}`;
     case 'evade_turns': return `${p.turns}回合內${p.chance}%閃避${p.kind || '所有'}技能（必中除外）`;
     case 'survive_turns': return `${p.turns}回合內致死時保留1點體力`;

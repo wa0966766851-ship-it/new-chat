@@ -2,6 +2,8 @@
 import assert from 'node:assert/strict';
 import { createServer } from 'vite';
 
+type ScriptedPick = number | { switch: number } | 'pass';
+
 export async function createHarness() {
   const server = await createServer({ configFile: false, optimizeDeps: { noDiscovery: true, include: [] }, resolve: { preserveSymlinks: true }, server: { middlewareMode: true, hmr: false, watch: null }, appType: 'custom', logLevel: 'silent' });
   const { createBattleEngine } = await server.ssrLoadModule('/src/engine/battleEngine.ts');
@@ -32,21 +34,23 @@ export async function createHarness() {
    * 跑一個回合。selfSide 的 self 出 selfSkill，對手出 oppSkill。self 速度 200 先手、對手 100。
    * setup 可在開戰前改兩隻精靈；回傳回合後狀態與日誌。
    */
-  async function play(selfSide: 'p1' | 'p2', mk: { self: any; opp: any; selfSuit?:string; oppSuit?:string; selfBench?: any[]; oppBench?: any[]; turns?: (engine: any, turn: number) => [number | { switch: number }, number | { switch: number }] | Promise<[number | { switch: number }, number | { switch: number }]> | null }, turns = 1) {
+  async function play(selfSide: 'p1' | 'p2', mk: { self: any; opp: any; onNode?: (id: string, detail?: Record<string, unknown>) => void; selfSuit?:string; oppSuit?:string; selfBench?: any[]; oppBench?: any[]; turns?: (engine: any, turn: number) => [ScriptedPick, ScriptedPick] | Promise<[ScriptedPick, ScriptedPick]> | null }, turns = 1) {
     (globalThis as any).__BATTLE_SEED__ = 11;
     const other = selfSide === 'p1' ? 'p2' : 'p1';
     const p1 = selfSide === 'p1' ? mk.self : mk.opp, p2 = selfSide === 'p2' ? mk.self : mk.opp;
-    const engine = createBattleEngine({ initialP1Team: [p1, ...((selfSide === 'p1' ? mk.selfBench : mk.oppBench) || [])], initialP2Team: [p2, ...((selfSide === 'p2' ? mk.selfBench : mk.oppBench) || [])], p1StarterId: p1.id, p2StarterId: p2.id, battleMode: 'PVP', p1Suit:selfSide==='p1'?mk.selfSuit:mk.oppSuit, p2Suit:selfSide==='p2'?mk.selfSuit:mk.oppSuit, preparedTeams: true, isFast: () => true });
+    const engine = createBattleEngine({ initialP1Team: [p1, ...((selfSide === 'p1' ? mk.selfBench : mk.oppBench) || [])], initialP2Team: [p2, ...((selfSide === 'p2' ? mk.selfBench : mk.oppBench) || [])], p1StarterId: p1.id, p2StarterId: p2.id, battleMode: 'PVP', p1Suit:selfSide==='p1'?mk.selfSuit:mk.oppSuit, p2Suit:selfSide==='p2'?mk.selfSuit:mk.oppSuit, preparedTeams: true, isFast: () => true, onNode: mk.onNode });
     engine.mount(); engine.start();
     const history: any[] = [];
     for (let t = 1; t <= turns; t++) {
       await engine.idle();
       const pick = await mk.turns?.(engine, t) ?? [0, 0];
       const st = engine.getState();
-      const idx: Record<string, number | { switch: number }> = { [selfSide]: pick![0], [other]: pick![1] };
+      const idx: Record<string, ScriptedPick> = { [selfSide]: pick![0], [other]: pick![1] };
       for (const side of ['p1', 'p2'] as const) {
         const a = idx[side];
-        if (typeof a === 'object') engine.onSwitchElf(side, a.switch); else engine.onSkillSelect(side, st[side].skills[a]);
+        if (a === 'pass') engine.onPass(side);
+        else if (typeof a === 'object') engine.onSwitchElf(side, a.switch);
+        else engine.onSkillSelect(side, st[side].skills[a]);
       }
       await engine.idle();
       const s = engine.getState();

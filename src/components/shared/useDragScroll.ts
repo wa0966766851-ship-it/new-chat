@@ -22,7 +22,7 @@ export function useDragScroll<T extends HTMLElement>(opts: DragScrollOptions = {
   const [dragging, setDragging] = React.useState(false);
   const optRef = React.useRef(opts); optRef.current = opts;
 
-  const stopInertia = () => { cancelAnimationFrame(st.current.raf); st.current.raf = 0; };
+  const stopInertia = () => { window.cancelAnimationFrame(st.current.raf); st.current.raf = 0; };
   const snap = (el: T) => {
     const sel = optRef.current.snapSelector; if (!sel) return;
     const box = el.getBoundingClientRect(), mid = box.left + box.width / 2;
@@ -38,9 +38,9 @@ export function useDragScroll<T extends HTMLElement>(opts: DragScrollOptions = {
       el.scrollLeft = before - s.v * dt;
       s.v *= Math.pow(FRICTION, dt / 16);
       if (Math.abs(s.v) < MIN_V || el.scrollLeft === before) { s.raf = 0; el.style.scrollSnapType = ""; snap(el); return; }
-      s.raf = requestAnimationFrame(step);
+      s.raf = window.requestAnimationFrame(step);
     };
-    st.current.raf = requestAnimationFrame(step);
+    st.current.raf = window.requestAnimationFrame(step);
   };
 
   const onPointerDown = (e: React.PointerEvent<T>) => {
@@ -90,7 +90,9 @@ export function useDragScroll<T extends HTMLElement>(opts: DragScrollOptions = {
     el.addEventListener("wheel", onWheel, { passive: false });
     return () => el.removeEventListener("wheel", onWheel);
   }, [opts.wheel]);
-  React.useEffect(() => () => cancelAnimationFrame(st.current.raf), []);
+  React.useEffect(() => () => {
+    if (st.current.raf) window.cancelAnimationFrame(st.current.raf);
+  }, []);
 
   return {
     ref, dragging,

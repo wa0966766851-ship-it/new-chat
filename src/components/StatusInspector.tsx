@@ -12,7 +12,7 @@ import { useBattleViewMode } from '../battle/viewerMode';
 import { activeEffectViews, stateSignSourceText } from '../battle/activeEffectViews';
 import {statusCountClasses, type StatusCountTone} from '../battle/statusImmunityCount';
 import { getStatuses } from '../utils/battleHelpers';
-import { statusVisual, UNKNOWN_EFFECT_ICON } from '../battle/effectIcons';
+import { statusVisual, UNKNOWN_EFFECT_ICON, placeholderEffectIcon } from '../battle/effectIcons';
 import { ChainImage } from './SeerImages';
 
 export type StateCategory = "異常" | "能力" | "防護" | "印記" | "回合類" | "其他計時" | "次數類" | "常駐";
@@ -62,7 +62,7 @@ export function getActiveEffects(side: "p1" | "p2", state: any, mode: BattleView
     const remaining = Number(turns);
     const visual = statusVisual(status);
     if (remaining > 0) effects.push({
-      name: translateStatus(status), desc: bossTraitInstanceText(elf, status) || visual?.desc || "目前生效中的異常狀態。", category: "異常", remaining: visual?.category === 'BOSS_ONLY' ? undefined : remaining, unit: "回合", polarity: "NEGATIVE", icon: visual?.icon || UNKNOWN_EFFECT_ICON
+      name: translateStatus(status), desc: bossTraitInstanceText(elf, status) || visual?.desc || "目前生效中的異常狀態。", category: "異常", remaining: visual?.category === 'BOSS_ONLY' && !(Number(remaining) > 0 && Number(remaining) < 99) ? undefined : remaining, unit: "回合", polarity: "NEGATIVE", icon: visual?.icon || placeholderEffectIcon(translateStatus(status), undefined, 'negative')
     });
   }
 

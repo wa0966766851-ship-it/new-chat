@@ -1,3 +1,4 @@
+import { sameBattleType } from '../../../utils/typeQuery';
 import type { Skill } from '../../../types';
 import type { BattleSkillHandler } from '../../types';
 import { EffectTiming } from '../../types';
@@ -35,7 +36,7 @@ export function transformWuweiSkill(c: ArenaContext, skill: Skill): Skill {
   return {
     ...skill,
     isSureHit: skill.isSureHit || zeroPP,
-    power: skill.name === FIFTH ? wuweiPower(0, read(c, 'wanxiang'), c.self.type === skill.type) : skill.power,
+    power: skill.name === FIFTH ? wuweiPower(0, read(c, 'wanxiang'), sameBattleType(c.self.type, skill.type)) : skill.power,
   };
 }
 export const WUWEI_SKILL_TRANSFORMS: Record<string, typeof transformWuweiSkill> = Object.fromEntries(

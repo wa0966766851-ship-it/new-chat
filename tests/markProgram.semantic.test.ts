@@ -19,7 +19,8 @@ try {
     }finally{ws.dispose();back.dispose();}
   });
   await check('未知節點／死鍵／遞迴印記／脫離印記的計時器／不存在異常均拒絕',async()=>{
-    for(const patch of [{scope:undefined},{persistsOffField:undefined},{rules:[rule('fatal')]},{rules:[{...rule(),body:[{acts:[mark()]}]}]},
+    // fatal 已成為持有者事件派發的合法印記時點（見 MARK_PROGRAM_TRIGGERS），不再是非法案例。
+    for(const patch of [{scope:undefined},{persistsOffField:undefined},{rules:[{...rule(),body:[{acts:[mark()]}]}]},
       {rules:[{...rule(),body:[{acts:[{op:'timed',p:{turns:3,trig:'round_end',body:rule().body},label:''}]}]}]},
       {rules:[{...rule(),body:[{acts:[{op:'status',p:{side:'self',status:'不存在的異常',turns:3},label:''}]}]}]},
       {rules:[{...rule(),body:[{acts:[{op:'hp_adjust',p:{...rule().body[0].acts[0].p,ignoredFlag:true},label:''}]}]}]},

@@ -1,6 +1,7 @@
 // 效能重構護欄（黃金比對）：固定種子的重量級 6v6 整場，逐回合完整狀態雜湊必須與重構前錄製的基準完全一致。
 // 基準檔 tests/fixtures/perfGolden.json 錄自效能重構（perf-1106）之前的 fix-1106 程式碼。
 // 2026-11-14 重錄：11/06 之後已確認的行為修正（預設抗性、異常回合、存活窗口、符文激活等）使舊基準失效；以目前行為重錄，之後的效能重構仍以此為護欄。
+// 2026-11-20 整合重錄：符文選招、珀妮額外行動與攻擊無效／抵擋改變對戰；測試內統一種子及時鐘。
 // 更新基準：UPDATE_PERF_GOLDEN=1 node --import tsx tests/perfGolden.semantic.test.ts（只有確定「戰鬥行為本來就該改變」時才可更新）。
 import assert from 'node:assert/strict';
 import fs from 'node:fs';

@@ -31,7 +31,7 @@ for (let seed = 1; seed <= 200; seed++) for (const [kind, act, n] of [['elite', 
   assert.deepEqual(a, b, '同種子同結果'); checks++;
   const s = traitScore(act, n); ok(a.length === traitCount(kind, s), '數量符合規則');
   ok(new Set(a.map(t => t.id)).size === a.length, '不重複');
-  for (const t of a) { ok(BOSS_TRAIT_BY_ID[t.id].tier <= maxTier(kind, s), `${t.id} 分級在上限內`); ok(t.id !== 'myth', '不抽神話'); if (kind === 'boss') ok(t.id !== 'immune', '王座不抽免傷'); }
+  for (const t of a) { ok(BOSS_TRAIT_BY_ID[t.id].tier <= maxTier(kind, s), `${t.id} 分級在上限內`); ok(t.id !== 'myth', '不抽神話'); if (kind === 'boss') ok(t.id !== 'immune' && t.id !== 'powerguard', '王座不抽免傷'); }
 }
 const seenLow = new Set<string>(), seenHigh = new Set<string>();
 for (let seed = 1; seed <= 400; seed++) { draw(seed, 'boss', 1, 0).forEach(t => seenLow.add(t.id)); draw(seed, 'boss', 6, 18).forEach(t => seenHigh.add(t.id)); }
@@ -39,8 +39,14 @@ ok([...seenLow].every(id => BOSS_TRAIT_BY_ID[id].tier === 1), '第 1 章只抽�
 ok([...seenHigh].some(id => BOSS_TRAIT_BY_ID[id].tier === 4), '終局能抽到分級 4');
 ok(seenHigh.size >= 25, `終局池夠廣（${seenHigh.size}）`);
 // 參數：lv 表、固定值乘倍率
-ok(traitParams('mend', 0).x === 20 && traitParams('mend', 6).x === 8, '癒合隨等級加強（分母變小）');
-ok(traitParams('sharp', 2, 1).x === 220 && traitParams('sharp', 2, 2).x === 440, '固定點數乘固定值倍率');
+ok(traitParams('mend', 0).x === 10 && traitParams('mend', 6).x === 2, '癒合隨等級加強（分母變小；取自原廠層數 10／4／2，高難取最高層）');
+ok(traitParams('sealmagic', 0).v === 'A' && traitParams('sealmagic', 6).v === 'B', '封魔：低難原廠 A 型（附加效果失效），高難 B 型（整招無效）');
+ok(traitParams('weakpoint', 0).y === 5 && traitParams('weakpoint', 6).y === 10, '要害倍率高難取原廠第 2 層（×10）');
+ok(['blind', 'lock', 'drain', 'immune', 'revive', 'mend'].every(id => { const d = BOSS_TRAIT_BY_ID[id]; return d.lv![3] === d.layers![d.layers!.length - 1] || id === 'blind' || id === 'immune' || id === 'revive'; }), '高難取高層');
+ok(['block', 'vigilance', 'harden'].every(id => traitParams(id, 6).x === 100), '機率型特性最高難回到原廠 100%');
+ok(['A', 'B'].includes(traitParams('block', 6, 1, traitDice(1, 1, 'x', 0, 0)).v!) && traitParams('nullify', 6).v === undefined, '格擋抽到時落在原廠 A／B 型；其餘用預設類型');
+ok(BOSS_TRAITS.every(t => !t.layers || !t.lv || t.lv.every(n => t.layers!.includes(n))), '有原廠層數表的特性，回廊數值一律取自層數表');
+ok(traitParams('sharp', 2, 1).x === 300 && traitParams('sharp', 2, 2).x === 600, '固定點數乘固定值倍率');
 ok(traitParams('drain', 2, 2).x === BOSS_TRAIT_BY_ID.drain.lv![1] * 2, '生命汲取（真實傷害）預乘固定值倍率');
 ok(traitParams('amp', 2, 5).x === BOSS_TRAIT_BY_ID.amp.lv![1], '百分比類不乘倍率');
 ok(BOSS_TRAITS.every(t => !t.lv || t.lv.length === 4), 'lv 表長度 4');

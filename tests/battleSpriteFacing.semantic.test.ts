@@ -20,6 +20,8 @@ test("illusion copies the original asset, then faces its own opponent for explic
     ['異境神霆·雷伊', '/elf-art/otherworld_thunder_rey_body.png', 'left'],
     ['無序.六刃', '/elf-art/wuxu_liuren_body.png', 'right'],
     ['星光·雷納多', '/seer/body/4937.png', 'left'],
+    ['霍光', '/seer/body/4515.png', 'left'],
+    ['北冥之怒·霍光', '/seer/body/1400551.png', 'left'],
     ['恐懼的化身·咤克斯', '/seer/body/2648.png', 'left'],
     ['變革·馬爾修斯', '/seer/body/3393.png', 'left'],
     // 未核對不猜鏡射，與已核對正面圖分開。

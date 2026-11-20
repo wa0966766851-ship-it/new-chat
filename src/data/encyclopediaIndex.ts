@@ -6,7 +6,8 @@
 import { BATTLE_NODES } from '../engine/nodes';
 import { EFFECT_NODES } from '../effects/effectNodes';
 import { TRIGGER_CAPTIONS } from '../battle/effectPresentation';
-import { OP_CATALOG } from './opCatalog';
+import { OP_CATALOG, opCode } from './opCatalog';
+import { ELF_GROUPS, ELF_GROUP_CODES, ELF_GROUP_EFFECTS, ELF_GROUP_KIND_LABEL } from './elfGroups';
 import { ALIAS_BY_OP } from './opAliases';
 import { OP_DISPLAY_NAMES } from '../battle/opDisplayNames';
 import { StatusRegistry } from '../effects/statusRegistry';
@@ -14,8 +15,9 @@ import { EFFECT_CATALOG } from './effectCatalog';
 import { MAJOR_EFFECT_CATEGORIES, INVALIDATION_MECHANISMS, DAMAGE_CATEGORIES, EXECUTION_MECHANICS } from './effectClassificationCatalog';
 import { MECHANIC_TOPICS, MECHANIC_GROUPS, MODE_GUIDES, CONDITION_DISPLAY_NAMES } from './encyclopediaGuide';
 
-export type IndexKind = 'battleNode' | 'effectNode' | 'trigger' | 'op' | 'status' | 'effect' | 'rule' | 'mechanic' | 'mode';
-export type IndexTab = 'nodes' | 'opCodes' | 'status' | 'effectQuery' | 'mechanics' | 'modes';
+export type IndexKind = 'battleNode' | 'effectNode' | 'trigger' | 'op' | 'status' | 'effect' | 'rule' | 'mechanic' | 'mode' | 'template';
+/** 'search'＝只在總索引內顯示（原「效果查詢」分頁已併入總索引，2026-11-16）。 */
+export type IndexTab = 'search' | 'nodes' | 'opCodes' | 'status' | 'mechanics' | 'modes';
 
 export interface IndexEntry {
   id: string;
@@ -29,7 +31,7 @@ export interface IndexEntry {
 
 export const INDEX_KIND_LABEL: Record<IndexKind, string> = {
   battleNode: '戰鬥節點', effectNode: '效果節點', trigger: '觸發詞', op: '積木', status: '異常',
-  effect: '效果詞庫', rule: '判定分類', mechanic: '機制', mode: '玩法',
+  effect: '效果詞庫', rule: '判定分類', mechanic: '機制', mode: '玩法', template: '參考詞庫',
 };
 
 const text = (v: unknown) => (typeof v === 'string' ? v : '');
@@ -72,6 +74,15 @@ export function buildEncyclopediaIndex(): IndexEntry[] {
     });
   }
 
+  out.push({id:'op:Q-106',kind:'op',title:'精靈團體歸屬',code:'Q-106',tab:'opCodes',
+    tags:['條件判斷'],body:'依團體序號或 ID 查詢自身、對手或被擊敗精靈的團體歸屬。'});
+  for (const group of ELF_GROUPS) {
+    const effect=ELF_GROUP_EFFECTS[group.id], code=ELF_GROUP_CODES[group.id];
+    out.push({id:`op:${code}`,kind:'op',title:group.name,code,tab:'opCodes',
+      tags:['精靈團體',ELF_GROUP_KIND_LABEL[group.kind],'Q-106'],
+      body:[group.id,group.source,effect?.description,effect?.ops.map(op=>opCode(op,'condition')??opCode(op)).join('、')].filter(Boolean).join(' · ')});
+  }
+
   for (const [key, s] of Object.entries(StatusRegistry)) {
     out.push({ id: `st:${key}`, kind: 'status', title: s.name, tags: s.categories.map(String), body: s.description, tab: 'status' });
   }
@@ -79,7 +90,7 @@ export function buildEncyclopediaIndex(): IndexEntry[] {
   const statusNames = new Set(Object.values(StatusRegistry).map(s => s.name));
   for (const e of Object.values(EFFECT_CATALOG) as any[]) {
     if (!e?.label || statusNames.has(e.label)) continue;
-    out.push({ id: `ef:${e.id}`, kind: 'effect', title: e.label, code: e.id, tags: (e.categories || []).map(String), body: safeDescribe(e), tab: 'effectQuery' });
+    out.push({ id: `ef:${e.id}`, kind: 'effect', title: e.label, code: e.id, tags: (e.categories || []).map(String), body: safeDescribe(e), tab: 'search' });
   }
 
   const rules: Array<[string, Record<string, any>]> = [
@@ -87,7 +98,7 @@ export function buildEncyclopediaIndex(): IndexEntry[] {
   ];
   for (const [group, table] of rules) {
     for (const [key, r] of Object.entries(table)) {
-      out.push({ id: `ru:${key}`, kind: 'rule', title: text(r.name) || key, code: key, tags: [group], body: [text(r.description), text(r.triggerRequirement)].filter(Boolean).join('\n'), tab: 'effectQuery' });
+      out.push({ id: `ru:${key}`, kind: 'rule', title: (text(r.name) || key).replace(/\s*\([A-Za-z][^)]*\)\s*$/, ''), code: key, tags: [group], body: [text(r.description), text(r.triggerRequirement), text(r.definition), text(r.coreMechanism), ...(Array.isArray(r.criticalNotes) ? r.criticalNotes : [])].filter(Boolean).join('\n'), tab: 'search' });
     }
   }
 

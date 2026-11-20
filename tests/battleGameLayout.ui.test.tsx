@@ -25,7 +25,7 @@ try {
  const team=prepareSavedBattleRoster([base],[base],false,'p1');
  const engine=createBattleEngine({initialP1Team:team,initialP2Team:structuredClone(team),p1StarterId:team[0].battleId,p2StarterId:team[0].battleId,battleMode:'PVE',preparedTeams:true});
  const state=engine.getState();
- const ui=(value:any)=><BattleContext.Provider value={value}><BattleScreenUI battleMode="PVE" onSkillSelect={()=>{}} onSwitchElf={()=>{}} onUseItem={()=>{}} onReset={()=>{}} onBackToMenu={()=>{}} onAutoBattleToggle={()=>{}} activeSkillAnim={null} floatingDamagePopups={[]} consoleShake={null} damageDealt={{}}/></BattleContext.Provider>;
+ const ui=(value:any)=><BattleContext.Provider value={value}><BattleScreenUI battleMode="PVE" loadouts={{p1:{suit:"future_armor",flame:"flame_gold"},p2:{eyewear:"roamer_as"}}} onSkillSelect={()=>{}} onSwitchElf={()=>{}} onUseItem={()=>{}} onReset={()=>{}} onBackToMenu={()=>{}} onAutoBattleToggle={()=>{}} activeSkillAnim={null} floatingDamagePopups={[]} consoleShake={null} damageDealt={{}}/></BattleContext.Provider>;
  const render=async(value:any)=>{await act(async()=>root.render(ui(value)));};
  const withP1=(patch:(e:any)=>void)=>{const p1=structuredClone(state.p1);patch(p1);return {...state,p1,phase:'p1_select'};};
 
@@ -49,6 +49,18 @@ try {
  assert.ok(passive.querySelector('[data-sig="特性"]')&&passive.querySelector('[data-sig="特質"]'),'特性／特質分開標示');
  assert.ok([...passive.querySelectorAll('img')].some(img=>img.getAttribute('src')==='/seer/signbuff/1.png'),'抗性用印記 1 號圖');
  ok('常駐列：抗性＋實際特性／特質');
+ const {INTERCEPTOR_EFFECTS}=await server.ssrLoadModule('/src/utils/destinyGacha.ts');
+ for(const layout of ['game','classic']) {
+  localStorage.setItem('battleLayoutStyle',layout);
+  await act(async()=>window.dispatchEvent(new dom.window.Event('battle-layout-pref')));
+  await render(withP1(e=>{e.destinyRank='C';e.interceptorEffect=INTERCEPTOR_EFFECTS.block_attack;}));
+  assert.equal(document.querySelector('[data-battle-root]')!.getAttribute('data-layout'),layout);
+  const chip=[...document.querySelectorAll<HTMLButtonElement>('button[title]')].find(b=>b.title.includes('C級命運攔截'));
+  assert.ok(chip,`${layout} 顯示C級攔截`);assert.ok(chip.title.includes(INTERCEPTOR_EFFECTS.block_attack.description));
+ }
+ localStorage.setItem('battleLayoutStyle','game');await act(async()=>window.dispatchEvent(new dom.window.Event('battle-layout-pref')));
+ ok('原廠風與實用風顯示C級攔截名稱及完整描述');
+
 
  // 二、護盾／護罩在血條下方（同一 HUD 內、HP 列之後）。
  await render(withP1(e=>{e.shield=300;e.barrier=200;}));
@@ -57,6 +69,21 @@ try {
  assert.ok(prot&&hp.compareDocumentPosition(prot)&dom.window.Node.DOCUMENT_POSITION_FOLLOWING,'護盾列在血條之後');
  assert.ok(!hp.contains(prot)&&!prot.contains(hp),'不與血條同列');
  ok('護盾／護罩在血條下方');
+ const press=async(selector:string)=>{const button=document.querySelector<HTMLButtonElement>(selector);assert.ok(button,selector);await act(async()=>button.click());};
+ await press('[data-battle-loadout="p1"]');
+ const loadout=document.querySelector('[role="dialog"][aria-label="P1 本場配裝"]')!;
+ assert.match(loadout.textContent!,/戰鬥火焰/);
+ assert.match(loadout.textContent!,/未來/);
+ assert.ok(loadout.querySelector('img'),'套裝用既有圖片');
+ await press('[aria-label="關閉效果詳情"]');
+ await press('[data-battle-loadout="p2"]');
+ assert.match(document.querySelector('[role="dialog"][aria-label="P2 本場配裝"]')!.textContent!,/目鏡/);
+ await press('[aria-label="關閉效果詳情"]');
+ await render({...value,battleFormat:'peak_6v6'});
+ await press('[data-battlefield]');
+ assert.match(document.querySelector('[role="dialog"][aria-label="巔峰場地"]')!.textContent!,/50.*額外精靈/);
+ await press('[aria-label="關閉效果詳情"]');
+ ok('雙方配裝圖與火焰、巔峰場地實際規則可查看');
 
  // 三、效果列可整排收起，再展開。
  await render(value);
@@ -126,6 +153,17 @@ try {
  // 八、背包：技能一覽（PP／可否使用），廢除照樣顯示資訊。
  await render(withP1(e=>{e.skills[other].isAbolished=true;}));
  await act(async()=>{([...document.querySelectorAll('.btg-cmd')].find(b=>b.getAttribute('data-en')==='TEAM') as HTMLButtonElement).click();});
+ const benchRail=document.querySelector<HTMLElement>('[data-bench-scroll]')!;
+ const benchCard=benchRail.querySelector<HTMLButtonElement>('[data-bench-idx]')!;
+ const pointer=(target: HTMLElement,type:string,x:number,timeStamp:number)=>{
+  const event=new dom.window.MouseEvent(type,{bubbles:true,cancelable:true,button:0,clientX:x});
+  Object.defineProperties(event,{pointerType:{value:'mouse'},pointerId:{value:1},timeStamp:{value:timeStamp}});
+  target.dispatchEvent(event);
+ };
+ await act(async()=>{pointer(benchCard,'pointerdown',100,10);pointer(benchCard,'pointermove',30,30);});
+ assert.equal(benchRail.scrollLeft,70,'橫拖卡片移動精靈列');
+ await act(async()=>{pointer(benchCard,'pointerup',30,130);benchCard.click();});
+ assert.ok(document.querySelector('[data-bench-scroll]'),'橫拖後仍停留在換人清單');
  await act(async()=>{(document.querySelector('[data-team-view-skills]') as HTMLButtonElement).click();});
  const table=document.querySelector('[data-team-skill-table]')!;
  assert.ok(table,'切換為技能一覽');

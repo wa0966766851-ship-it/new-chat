@@ -1,5 +1,5 @@
 import type { Elf } from '../types';
-import { MAX_BLUEPRINT_BYTES } from './elfBlueprint';
+import { MAX_BLUEPRINT_BYTES } from './blueprintLimits';
 
 /** Preserve unfinished drafts too; validation happens at the shared import. */
 export function createElfUpdateBlueprint(elf: Elf): string {

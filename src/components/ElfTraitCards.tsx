@@ -16,7 +16,7 @@ export function ElfTraitCards({ elf }: { elf: Elf }) {
       <summary className="cursor-pointer text-[15px] font-semibold text-blue-200 leading-6">
         <span className="text-xs font-normal text-slate-400 mr-2">{entry.kind}</span>{entry.name}
       </summary>
-      <EffectBlockToggle {...(entry.soul ? { elf: entry.sourceElf } : { trait: entry })}><EffectDescription description={entry.description || "尚無描述"} className="text-sm leading-7 text-slate-200" /></EffectBlockToggle>
+      {entry.displayOnly ? <EffectDescription description={entry.description} className="text-sm leading-7 text-slate-200" /> : <EffectBlockToggle {...(entry.soul ? { elf: entry.sourceElf } : { trait: entry })}><EffectDescription description={entry.description || "尚無描述"} className="text-sm leading-7 text-slate-200" /></EffectBlockToggle>}
     </details>) : <p className="text-sm text-slate-400">尚無已登記的魂印效果。</p>}
   </section>;
 }

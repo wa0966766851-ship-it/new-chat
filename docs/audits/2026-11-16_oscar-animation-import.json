@@ -1,0 +1,159 @@
+{
+  "checkedAt": "2026-11-16T15:57:48.416Z",
+  "indexUrl": "https://pet-anim-viewer.seerapi.com/pet-anim-index.json",
+  "indexVersion": "20261113164751",
+  "sourceConfig": "launcher/animation-source.local.json",
+  "importDirectory": "_anim_import",
+  "bundles": [
+    {
+      "hash": "19720112218cbcfb6ef7207b60af54f2",
+      "size": 2553973,
+      "sha256": "93224b6a48c831c66c204189aac1cf04372cdc48b9db1b207cdc8e081f15de77",
+      "textures": [
+        {
+          "name": "1400599._Atlas_",
+          "width": 4096,
+          "height": 2048
+        }
+      ],
+      "clips": [
+        {
+          "name": "1400599.pet",
+          "fps": 24,
+          "sequences": [
+            {
+              "name": "standby",
+              "frames": 35,
+              "hits": []
+            },
+            {
+              "name": "attack",
+              "frames": 122,
+              "hits": [
+                100
+              ]
+            },
+            {
+              "name": "sa",
+              "frames": 101,
+              "hits": [
+                77
+              ]
+            },
+            {
+              "name": "cp",
+              "frames": 98,
+              "hits": [
+                49
+              ]
+            },
+            {
+              "name": "hited",
+              "frames": 8,
+              "hits": []
+            },
+            {
+              "name": "appear",
+              "frames": 32,
+              "hits": [
+                2
+              ]
+            }
+          ]
+        }
+      ],
+      "entry": {
+        "id": 1400599,
+        "kind": "swf",
+        "name": "ppets_1400599",
+        "path": "19720112218cbcfb6ef7207b60af54f2",
+        "fileSize": 2553973
+      },
+      "officialUrl": "https://newseer.61.com/Assets/StandaloneWindows64/PetAnimPackage/19720112218cbcfb6ef7207b60af54f2",
+      "cacheRelativePath": "19/19720112218cbcfb6ef7207b60af54f2/__data",
+      "importFile": "19720112218cbcfb6ef7207b60af54f2.bundle",
+      "sourcePreserved": true
+    },
+    {
+      "hash": "ececf5c3a12ab1818a67393f1525ec43",
+      "size": 3661744,
+      "sha256": "a43d4af6bc52515ec407c27510eb226835892920727644a4111d9226ce32c727",
+      "textures": [
+        {
+          "name": "3425._Atlas_",
+          "width": 4096,
+          "height": 4096
+        }
+      ],
+      "clips": [
+        {
+          "name": "3425.pet",
+          "fps": 25,
+          "sequences": [
+            {
+              "name": "standby",
+              "frames": 27,
+              "hits": []
+            },
+            {
+              "name": "attack",
+              "frames": 160,
+              "hits": [
+                114
+              ]
+            },
+            {
+              "name": "sa",
+              "frames": 126,
+              "hits": [
+                99
+              ]
+            },
+            {
+              "name": "cp",
+              "frames": 73,
+              "hits": [
+                31
+              ]
+            },
+            {
+              "name": "hited",
+              "frames": 8,
+              "hits": []
+            }
+          ]
+        }
+      ],
+      "entry": {
+        "id": 3425,
+        "kind": "swf",
+        "name": "ppets_3425",
+        "path": "ececf5c3a12ab1818a67393f1525ec43",
+        "fileSize": 3661744
+      },
+      "officialUrl": "https://newseer.61.com/Assets/StandaloneWindows64/PetAnimPackage/ececf5c3a12ab1818a67393f1525ec43",
+      "cacheRelativePath": "ec/ececf5c3a12ab1818a67393f1525ec43/__data",
+      "importFile": "ececf5c3a12ab1818a67393f1525ec43.bundle",
+      "sourcePreserved": true
+    }
+  ],
+  "facing": {
+    "oscarGenesis": "right",
+    "oscarOriginal": "right",
+    "evidence": ".seer-cache/oscar-animation/*-standby.png"
+  },
+  "notes": [
+    "Skin599 maps to animation1400599, not599.pet.",
+    "Original3425 uses its own clip and timing.",
+    "No dedicated ultimate sequence exists in either bundle; preserve existing sa fallback.",
+    "Bundle copies are local authoring inputs; runtime keeps local cache first, official URL fallback."
+  ],
+  "validation": {
+    "semantic": "passed",
+    "facing": "15 passed",
+    "productionBrowser": "both skins: both sides attack/sa/cp/hited; 4 hit-marker damage events each; 0 degraded; 0 exceptions; skin and static-mode switching passed",
+    "desktopRelease": "1794844940431",
+    "desktopBuild": "c3d1fa1f4a7f7a40a16ba6e817691dd53f5841212fe8fa27ef4fdcf6ebe7f930",
+    "evidence": ".seer-cache/oscar-animation"
+  }
+}

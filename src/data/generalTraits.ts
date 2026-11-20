@@ -1,3 +1,5 @@
+import { DANCE_DESCRIPTION } from './generalTraitKits';
+
 export interface GeneralTrait {
   name: string;
   description: string;
@@ -48,7 +50,7 @@ export const GENERAL_TRAITS: Record<string, GeneralTrait> = {
   強攻: { name: "強攻", description: "物理攻擊有 14% 機率使技能傷害提高 80 點 (保底提升傷害，這段不受減傷影響)" },
   強念: { name: "強念", description: "特殊攻擊有 14% 機率使技能傷害提高 80 點 (保底提升傷害，這段不受減傷影響)" },
   免爆: { name: "免爆", description: "對方致命一擊的機率降低20%" },
-  亂舞: { name: "亂舞", description: "攻擊/特攻提升 12% 且造成技能傷害時隨機選擇對方任意場下精靈/額外精靈作為增加一個攻擊目標" },
+  亂舞: { name: "亂舞", description: DANCE_DESCRIPTION },
   強襲: { name: "強襲", description: "物理攻擊傷害增加 8%" },
   精神: { name: "精神", description: "特殊攻擊傷害增加 8%" },
   火熱: { name: "火熱", description: "自身的特殊攻擊有 8% 機率使對方燒傷" },

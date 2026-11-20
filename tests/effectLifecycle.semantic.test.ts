@@ -202,7 +202,15 @@ test('冰封到期變凍傷3回合及速度-1；石化不衍化，焚燼及隨�
   for (const [id, spec] of Object.entries(StatusRegistry)) {
     const p = spec.mechanics.find(m => m.type === 'EVOLUTION_TRANSFORM')?.params;
     if (!p) continue;
-    if (p.nextStatus) { assert.equal(end(id).transformed?.id, p.nextStatus, id); assert.equal(end(id).transformed?.duration, p.nextDuration, id); }
+    if (p.nextStatus) {
+      assert.equal(end(id).transformed?.id, p.nextStatus, id);
+      // 焚燼等具 nextDurationMin 的異常，轉化回合數在 [min, max] 之間隨機；
+      // rng=()=>0 取到下限，其餘固定長度的異常仍等於 nextDuration。
+      const min = p.nextDurationMin ?? p.nextDuration;
+      const got = end(id).transformed?.duration;
+      assert.ok(got >= min && got <= p.nextDuration, `${id} 轉化回合數 ${got} 應介於 ${min}~${p.nextDuration}`);
+      assert.equal(end(id, () => 0.999).transformed?.duration, p.nextDuration, id + ' rng 上限取到 nextDuration');
+    }
     for (let i = 0; i < (p.randomPool?.length || 0); i++) assert.equal(end(id, () => (i + 0.1) / p.randomPool.length).transformed?.id, p.randomPool[i], id);
   }
 });

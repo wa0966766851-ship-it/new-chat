@@ -2,10 +2,11 @@ import { filterByElf, filterByQuery, turnDigests, elfNamesIn, type BattleLogRow,
 
 /** 訊息欄一頁的筆數；伺服端日誌上限 400 筆（MAX_LOGS），分頁後畫面一次只渲染這麼多行。 */
 export const LOG_PAGE_SIZE = 40;
-export const logViewStats = { pipelineBuilds: 0 };
+export const logViewStats = { pipelineBuilds: 0, maskRuns: 0 };
 
 /** 套用隱匿／魘昧遮蔽後的完整日誌（只在日誌或遮蔽規則改變時重算，不隨每次重繪重算）。 */
 export function maskLogRows<T extends { text: string }>(logs: T[], fog: (text?: string) => string): T[] {
+  logViewStats.maskRuns++;
   return logs.map(l => ({ ...l, text: fog(l.text) }));
 }
 

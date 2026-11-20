@@ -48,10 +48,19 @@ export async function createSeededRunner() {
   };
   /** 回傳每回合的狀態雜湊鏈；counters 供效能守門測試讀取。 */
   async function run(sc: SeededScenario) {
-    (globalThis as any).__BATTLE_SEED__ = sc.seed;
+    const random = Math.random;
+    const now = Date.now;
+    // Legacy paths still use ambient randomness for timer IDs and some choices.
+    // Freeze those inputs per fixture without changing the production engine.
+    Math.random = makeRng(sc.seed ^ 0x7d17bb31);
+    Date.now = () => 1_795_000_000_000;
+    try { return await play(sc); }
+    finally { Math.random = random; Date.now = now; }
+  }
+  async function play(sc: SeededScenario) {
     const p1 = mk(sc.p1, 'a'), p2 = mk(sc.p2, 'b');
     let commits = 0;
-    const engine = createBattleEngine({ initialP1Team: p1, initialP2Team: p2, p1StarterId: p1[0].battleId, p2StarterId: p2[0].battleId, battleMode: 'PVP', isFast: () => true, onStateCommit: () => { commits++; } });
+    const engine = createBattleEngine({ initialP1Team: p1, initialP2Team: p2, p1StarterId: p1[0].battleId, p2StarterId: p2[0].battleId, battleMode: 'PVP', randomSeed: sc.seed, isFast: () => true, onStateCommit: () => { commits++; } });
     engine.mount(); engine.start();
     const rng = makeRng(sc.seed + 800);
     const chain: string[] = []; const commitsPerTurn: number[] = []; let played = 0;

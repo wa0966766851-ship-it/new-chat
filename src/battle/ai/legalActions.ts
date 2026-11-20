@@ -1,3 +1,4 @@
+import { skillSealedUntilUnseal } from '../../blocks/ops/encyclopediaTerms';
 import type { BattleState } from '../../components/BattleManager';
 import type { Elf, Skill } from '../../types';
 import { checkElfDead } from '../elfAlive';
@@ -11,12 +12,24 @@ import { visibleSkills } from '../viewerPerspective';
 import { opposite, type AISide, type PlannedAction } from './types';
 
 /** 不能選擇 ≠ 選了會無效／受控。後者交由真正引擎結算，不能用補PP代替。 */
+/**
+ * 選招合法性的唯一來源（引擎、AI、兩種戰鬥介面共用）：回傳不可選的原因，空字串＝可選。
+ * 第五技能與一般技能同一規則，介面不得另寫判定。
+ */
+export function skillSelectionBlock(state: BattleState, side: AISide, elf: Elf, slot: number): string {
+  const raw = elf?.skills?.[slot];
+  if (!raw) return '沒有此技能';
+  if (raw.isAbolished) return '技能已被廢除';
+  if (skillSealedUntilUnseal(elf, raw)) return '尚未解封';
+  if (checkElfDead(elf)) return '精靈已無法戰鬥';
+  if (isElfSkillSelectionDisabled(elf)) return '目前無法選擇技能';
+  const projected = visibleSkills(elf)[slot] || raw;
+  if (projected.category !== '屬性' && activeConstraints(state[`${side}Timers`], elf).some(p => p.blockAttack)) return '無法選擇攻擊技能';
+  if (!(isZeroPpExempt(elf, raw, state[opposite(side)]) || (raw.charge ?? raw.pp ?? 0) > 0)) return raw.charge !== undefined ? '充能不足' : 'PP 已耗盡';
+  return '';
+}
 export function skillSelectable(state: BattleState, side: AISide, elf: Elf, slot: number): boolean {
-  const raw = elf.skills?.[slot];
-  if (!raw || raw.isAbolished || checkElfDead(elf) || isElfSkillSelectionDisabled(elf)) return false;
-  const projected = visibleSkills(elf)[slot];
-  if (projected.category !== '屬性' && activeConstraints(state[`${side}Timers`], elf).some(p => p.blockAttack)) return false;
-  return isZeroPpExempt(elf, raw, state[opposite(side)]) || (raw.charge ?? raw.pp ?? 0) > 0;
+  return !skillSelectionBlock(state, side, elf, slot);
 }
 export function ppMissing(elf: Elf, skill: Skill): number {
   // 充能不是PP；不能把充能不足當作PP藥劑可以修復。

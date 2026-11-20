@@ -13,6 +13,7 @@ export async function drainExtraActionQueue<T extends OwnedExtraAction>(opts: {
   readQueue: () => T[];
   writeQueue: (queue: T[]) => void;
   canContinue: () => boolean;
+  eligible?: (action: T) => boolean;
   execute: (action: T) => void | Promise<void>;
   limit?: number;
 }): Promise<{ resolved: number; truncated: boolean }> {
@@ -20,14 +21,14 @@ export async function drainExtraActionQueue<T extends OwnedExtraAction>(opts: {
   let resolved = 0;
   while (resolved < limit) {
     const queue = opts.readQueue();
-    const index = queue.findIndex(action => action.owner === opts.owner);
+    const index = queue.findIndex(action => action.owner === opts.owner && (opts.eligible?.(action) ?? true));
     if (index < 0 || !opts.canContinue()) break;
     const action = queue[index];
     opts.writeQueue([...queue.slice(0, index), ...queue.slice(index + 1)]);
     await opts.execute(action);
     resolved++;
   }
-  const truncated = resolved >= limit && opts.readQueue().some(action => action.owner === opts.owner);
-  if (truncated) opts.writeQueue(opts.readQueue().filter(action => action.owner !== opts.owner));
+  const truncated = resolved >= limit && opts.readQueue().some(action => action.owner === opts.owner && (opts.eligible?.(action) ?? true));
+  if (truncated) opts.writeQueue(opts.readQueue().filter(action => action.owner !== opts.owner || !(opts.eligible?.(action) ?? true)));
   return { resolved, truncated };
 }

@@ -15,6 +15,7 @@ const stats = rankStats(pool);
 assert.equal(stats.total, pool.length); assert.equal(DESTINY_RANKS.reduce((n, r) => n + stats.counts[r], 0), pool.length, '四級張數相加＝池總數');
 assert.ok(stats.counts.C >= 2, 'C 級至少 2 隻才能保底開局');
 const liujie = pool.filter(e => e.name.includes('六界神王')); assert.equal(liujie.length, 1, '池內六界神王只有 1 張（圖鑑 5031）');
+assert.ok(liujie[0].interceptorEffect, '六界神王保留魂印並綁定一種 C 級攔截');
 
 let draws = 0;
 for (let seed = 1; seed <= 300; seed++) {
