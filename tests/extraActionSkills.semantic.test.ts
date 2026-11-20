@@ -11,7 +11,7 @@ assert.equal(new Set(EXTRA_ACTION_SKILLS.map(s => s.id)).size, EXTRA_ACTION_SKIL
 assert.ok(EXTRA_ACTION_SKILLS.every(s => s.name && s.type && s.summary && s.elfIds.length), '欄位完整');
 const walk = (dir: string): string[] => fs.readdirSync(dir, { withFileTypes: true }).flatMap(d => d.isDirectory() ? walk(path.join(dir, d.name)) : /\.(ts|tsx)$/.test(d.name) ? [path.join(dir, d.name)] : []);
 const used = new Set<string>();
-for (const f of walk('src')) for (const m of fs.readFileSync(f, 'utf8').matchAll(/skillId:\s*['"]([a-z_]+)['"]/g)) used.add(m[1]);
+for (const f of walk('src')) for (const m of fs.readFileSync(f, 'utf8').matchAll(/skillId:\s*['"]([a-z][a-z0-9_-]*)['"]/g)) used.add(m[1]);
 for (const id of used) assert.ok(extraActionSkill(id), `引用的額外行動 ${id} 已登記`);
 for (const s of EXTRA_ACTION_SKILLS) assert.ok(used.has(s.id) || s.id.startsWith('wraith_'), `登記的 ${s.id} 有排入處`);
 assert.ok(fs.readFileSync('src/utils/traitsEngine.ts', 'utf8').includes("'wraith_doom' : 'wraith_curse'"), '蝕言兩種魔咒帶 skillId');
