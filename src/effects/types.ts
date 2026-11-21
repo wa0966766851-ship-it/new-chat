@@ -251,6 +251,8 @@ export interface BattleEventContext {
   getBattleItem?: (inventorySide: 'p1' | 'p2', itemId: string) => import('../battle/itemInventory').BattleItemEntry | undefined;
   /** 原子轉化：從實際庫存扣一個原形態並依序加入一個可用形態；失敗不扣除。 */
   convertBattleItem?: (inventorySide: 'p1' | 'p2', fromId: string, intoIds: string[]) => boolean;
+  /** 從道具欄移除指定道具的全部持有量。 */
+  discardBattleItem?: (inventorySide: 'p1' | 'p2', itemId: string) => boolean;
   /** 指定持有者的通用事件，不偷換成當前操作方。 */
   emitElfEvent?: (side: 'p1' | 'p2', owner: Elf, event: EffectTiming, data: Record<string, unknown>) => void;
   /** 指定持有者的正式上下文，保留個體狀態銀行；不能用場上精靈上下文冒充場下持有者。 */
@@ -364,6 +366,8 @@ export interface BattleEventContext {
   getSeparatedElves: (side: "p1" | "p2", elf: Elf) => Elf[];
   vanishElf: (side: "p1" | "p2", elf: Elf) => void;
   addExtraElf: (side: "p1" | "p2", extraElf: Elf) => void;
+  /** 將指定精靈移到該陣營背包末位（在場精靈索引隨之校正，不觸發切換）。 */
+  moveElfToEnd?: (side: "p1" | "p2", battleId: string) => boolean;
   /** 令額外精靈死亡（先派發其 self_fatal 再消逝）；已死亡／已消逝回傳 false。由 contextBuilders 注入，避免 blocks/runtime 靜態引入 extraElfKit 形成載入環。 */
   killExtraElf?: (side: "p1" | "p2", extraElf: Elf, data?: Record<string, unknown>) => boolean;
 }

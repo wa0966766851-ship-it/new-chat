@@ -13,7 +13,7 @@ import { trackNativeRegistryWrite } from './acquiredEffectContext';
 import { buildEffectOrigin } from './effectOrigin';
 import { normalizePpPatch } from './ppTransitions';
 import { applyBattleItem, consumeBattleItem, grantBattleItem, readBattleItem, convertBattleItem } from './itemInventory';
-import {battleItemProgramIssue,runBattleItemProgram} from '../effects/battleItemProgram';
+import {battleItemProgramIssue,runBattleItemProgram,runHeldBattleItemPrograms} from '../effects/battleItemProgram';
 import {applyHeldDamageModifiers,guardHeldMaximumHp,syncHeldDeathFloor} from './heldItemModifiers';
 import { findBagElf } from './bagTargets';
 import { BATTLE_ITEMS, isElfItemDisabled } from '../utils/battleHelpers';
@@ -23,6 +23,7 @@ import { reductionPolicy, multiplyDamageReduction, applyStatusDamageModifiers, a
 import { activeConstraints } from './timedConstraints';
 import { observeWeightEffect } from '../effects/weightEffectLifecycle';
 import { blocksStatusInfliction } from './statusOrigin';
+import { guardDamageRequest } from './reactionChain';
 import { attackDefenseBypass, applyAttackDefenseLimit } from './attackDefense';
 import { skillTypeMultiplier } from './skillTypeOverride';
 import {statusTypeMultiplier} from '../effects/statusMechanics';
@@ -41,7 +42,7 @@ import { BattleEventContext, EffectTiming, DamageComputation, PriorityComputatio
 import { Timer } from "./timers";
 import { readScopedRegistry, writeScopedRegistry, addScopedTimer, consumeScopedTimer, clearScopedTurnEffects, scopedTimers, setBattleSideMarks } from "./stateScopes";
 import { getTypeMatchup } from "../utils/statCalculator";
-import { emitStatusApplied, blockStatusGuard } from "../blocks/registry";
+import { emitStatusApplied, blockStatusGuard, statusInClass } from "../blocks/registry";
 import { SoulMarkRegistry } from "../effects/battleEventRegistry";
 import { notifyTeamKitObservers } from '../effects/teamKitObservers';
 import { enforceMaximumHealthLock } from '../blocks/ops/finalOdinDeluBeliente';
@@ -100,7 +101,7 @@ export interface SharedContextDeps {
 export type DamageAPIs = Pick<BattleEventContext, "applyInstantKill" | "applyPinkDamage" | "applyTrueDamage" | "applySkillTypeDamage" | "applyAbsorb" | "applyHeal" | "applyPotionBacklashDamage" | "adjustHp" | "applyPercentDamage" | "applyFixedDamage">;
 export type StatusAPIs = Pick<BattleEventContext, "applyStatusWithImmunityCheck" | "getStatuses" | "clearTurnEffectsOf" | "hasTurnEffectOn" | "applyStatChange" | "applyShield">;
 export type StateAPIs = Pick<BattleEventContext, 
-  "useBattleItem" | "grantBattleItem" | "getBattleItem" | "convertBattleItem" | "applyDeathImmunity" | "vanishElf" | "addExtraElf" | "killExtraElf" | "setMark" | "clearMark" | "getMarks" | "getAllMarks" | "addTimerTo" | "consumeTimer" | "queueExtraAction" | "updateElf" | "updateAnyElf" | "emitElfEvent" | "contextForElf" |
+  "useBattleItem" | "grantBattleItem" | "getBattleItem" | "convertBattleItem" | "discardBattleItem" | "applyDeathImmunity" | "vanishElf" | "addExtraElf" | "moveElfToEnd" | "killExtraElf" | "setMark" | "clearMark" | "getMarks" | "getAllMarks" | "addTimerTo" | "consumeTimer" | "queueExtraAction" | "updateElf" | "updateAnyElf" | "emitElfEvent" | "contextForElf" |
   "getPlayerState" | "setPlayerState" | "getOpponentState" | "setOpponentState" |
   "shuffleArray" | "getEligibleTeam" | "getFullTeam" | "getFirstStarter" | "getNthElf" | "getAdjacentElves" | "getSeparatedElves" | "trackCodeExec" | "setNextTurns"
 >;
@@ -166,7 +167,7 @@ export function buildDamageAPIs(shared: SharedContextDeps): DamageAPIs {
     } catch (e) { console.error('[DAMAGE_IMMUNIZED]', e); }
   };
   
-  return {
+  const apis: DamageAPIs = {
     applyPinkDamage: (tSide, amt, label, aP1, aP2, dmgType, opts?: { pure?: boolean } & DamageCalculationOptions) => {
       const c = syncStateRef.current;
       const tOpp = tSide === "p1" ? c.p1 : c.p2;
@@ -189,6 +190,8 @@ export function buildDamageAPIs(shared: SharedContextDeps): DamageAPIs {
         isIncoming: true,
         // 保底類獨立乘區：通用增減傷段全部跳過，自帶鏈與 floor 不受影響
         pure: !!opts?.pure,
+        // 反應傷害（受傷反應造成的傷害）：受方的受傷反應不再觸發，避免雙方反應無限互打。
+        reaction: !!(opts as any)?.reaction,
       } as any);
 
       runDamageHooks(shared, tSide, damageComp);
@@ -256,7 +259,7 @@ export function buildDamageAPIs(shared: SharedContextDeps): DamageAPIs {
 
       notifyDamageCalculation(opts,damageComp,amt,finalDamage);
       notifyDamageImmunized(tSide, damageComp, amt, finalDamage);
-      pushEffect({ type: 'damage', side: tSide, data: { marksApplied: true, amount: finalDamage, requestedAmount: amt, minimumRemainingHp:opts?.minimumRemainingHp, onSettled: combineSettlementCallbacks(opts?.onSettled, damageComp.afterDamage), label: label || "附加傷害", popup: true, sourceElfName: self.name, sourceSide:side, sourceBattleId:self.battleId||self.id, damageType: damageComp.damageCategory, attackDefenseBypass: damageComp.attackDefenseBypass, reductionPolicy: damageComp.reductionPolicy, ignoreShield: !!damageComp.attackDefenseBypass?.shield } });
+      pushEffect({ type: 'damage', side: tSide, data: { marksApplied: true, amount: finalDamage, requestedAmount: amt, minimumRemainingHp:opts?.minimumRemainingHp, ...((opts as any)?.reaction ? { reaction: true } : {}), onSettled: combineSettlementCallbacks(opts?.onSettled, damageComp.afterDamage), label: label || "附加傷害", popup: true, sourceElfName: self.name, sourceSide:side, sourceBattleId:self.battleId||self.id, damageType: damageComp.damageCategory, attackDefenseBypass: damageComp.attackDefenseBypass, reductionPolicy: damageComp.reductionPolicy, ignoreShield: !!damageComp.attackDefenseBypass?.shield } });
       return finalDamage;
     },
     applySkillTypeDamage: (tSide, amt, label, opts) => {
@@ -600,6 +603,12 @@ export function buildDamageAPIs(shared: SharedContextDeps): DamageAPIs {
       return finalDamage;
     },
   };
+  // 傷害因果鏈：同一條鏈裡同一隻精靈只反應一次（見 battle/reactionChain.ts）。不設結算次數上限。
+  const requester = String(self.battleId || self.id || '');
+  const guard = <F extends (...args: any[]) => any>(fn: F | undefined): F | undefined => fn && (((...args: any[]) => guardDamageRequest(requester, () => fn(...args), 0)) as F);
+  for (const key of ['applyPinkDamage', 'applyTrueDamage', 'applySkillTypeDamage', 'applyFixedDamage', 'applyPercentDamage', 'applyAbsorb', 'applyPotionBacklashDamage'] as const)
+    (apis as any)[key] = guard((apis as any)[key]);
+  return apis;
 }
 
 export function buildStatusAPIs(shared: SharedContextDeps): StatusAPIs {
@@ -627,18 +636,25 @@ export function buildStatusAPIs(shared: SharedContextDeps): StatusAPIs {
         syncStateRef.current = writeScopedRegistry(c0, side, self, { statusAttachTurn: c0.turnNumber });
       }
       _statusApplyDepth++;
-      try { return ((): { success: boolean; immune: boolean } => {
+      try { return ((): { success: boolean; immune: boolean; status?: string } => {
       const c = syncStateRef.current;
       const target = targetBattleId?c[`${tSide}Team`].find(e=>(e.battleId||e.id)===targetBattleId):recipient(c,tSide);
       if(!target)return {success:false,immune:false};
       // 夜之主權（通用積木 status_immunity_bypass；DSH 20261018）：受方列入保護的異常，
       // 任何「異常免疫類效果」都無法免疫——下方免疫／反彈／分類防護／次數免疫／套裝與魂印附加前防護／特性免疫全部讓路；
       // 「無法附加」型禁令（黯痕）與反彈遞迴保護不是免疫類，照舊生效。
-      const sovereignStatus = (readScopedRegistry(c, tSide, target, 'blkStatusImmunityBypass') || []).some((name: string) => canonicalStatusName(name) === s);
+      const sovereignOf = (name: string) => (readScopedRegistry(c, tSide, target, 'blkStatusImmunityBypass') || []).some((n: string) => canonicalStatusName(n) === name);
+      let sovereignStatus = sovereignOf(s);
       const source=recipient(c,side);
       const blockedThisAction = statusOrigin?.kind === 'skill' && statusOrigin.skillCategory === '屬性' &&
         shared.actionId !== undefined && c.phase === 'resolving' && readScopedRegistry(c, side, source, 'utilityStatusBlockedAction') === shared.actionId;
       const applicationBlocked = blockedThisAction || blocksStatusInfliction(scopedTimers(c,side,source),source,side,statusOrigin);
+      // 「無法進入異常狀態」：受方任何來源（含自身魂印／技能的自我附加）都不能進入；不是免疫，不受異常主權繞過、不觸發免疫成功。
+      const entryBlock = activeConstraints(scopedTimers(c,tSide,target),target).find(p=>p.statusEntryBlock&&(!p.statusEntryBlock.cls||statusInClass(s,p.statusEntryBlock.cls)));
+      if (entryBlock) {
+        pushEffect({type:'log',side:tSide,data:{text:`🚫 【無法進入異常】：【${target.name}】無法進入【${s}】！`,type:'info'}});
+        return {success:false,immune:false};
+      }
       const targetId=target.battleId||target.id;
       const targetContext=()=>getBattleEventContext(tSide,true,0,target);
       // 2026-10-28：異常未指定回合數時預設 3 回合。
@@ -798,6 +814,19 @@ export function buildStatusAPIs(shared: SharedContextDeps): StatusAPIs {
         if (statusData.prevented || statusData.prevent) {if(statusData.immunized)notifyImmunized('statusGuard');return { success: false, immune: true };}
       }
 
+      // 持有道具的異常附加前（純粹暗影等）：不依賴受方魂印是否走 Kit 生命週期；同一份 statusData 只執行一次。
+      // 異常主權（例：混沌·布萊克的狂暴）只擋「免疫」：道具把即將進入的異常改成別的（狂暴→平靜）仍照常生效，但道具不能免疫主權異常。
+      {
+        _reflectHookDepth++;
+        try { guarded(() => runHeldBattleItemPrograms(filterCtx, EffectTiming.BEFORE_STATUS_APPLY, statusData)); } finally { _reflectHookDepth--; }
+        s = canonicalStatusName(statusData.status);
+        d = statusData.duration;
+        if (sovereignStatus) { statusData.prevented = false; statusData.prevent = false; statusData.immunized = false; sovereignStatus = sovereignOf(s); }
+        if (statusData.prevented || statusData.prevent) {
+          if(statusData.immunized)notifyImmunized('statusGuard');
+          return { success: false, immune: true };
+        }
+      }
       // Also call SoulMarkRegistry for BEFORE_STATUS_APPLY to allow soul mark immunities/replacements (M1)
       if (!sovereignStatus && SoulMarkRegistry[target.name]) {
         _reflectHookDepth++;
@@ -880,7 +909,7 @@ export function buildStatusAPIs(shared: SharedContextDeps): StatusAPIs {
         try { emitStatusApplied([getBattleEventContext("p1", true, 0,tSide==='p1'?nextElf:undefined), getBattleEventContext("p2", true, 0,tSide==='p2'?nextElf:undefined)], { side: tSide, status: s, duration: d }); } catch (e) { console.error("[blocks]", e); }
       }
 
-      return { success: true, immune: false };
+      return { success: true, immune: false, status: s };
       })(); } finally { _statusApplyDepth--; }
     },
     getStatuses: (e) => getStatuses(e),
@@ -1104,6 +1133,14 @@ export function buildStateAPIs(shared: SharedContextDeps): StateAPIs {
       syncStateRef.current = { ...current, [`${inventorySide}ItemInventory`]: next };
       dispatch({ type: 'SET_ITEM_INVENTORY', side: inventorySide, inventory: next });
       syncHeldDeathFloor(getBattleEventContext(inventorySide,true,moveIndex));
+      return true;
+    },
+    discardBattleItem: (inventorySide, itemId) => {
+      const current = syncStateRef.current, inventory = current[`${inventorySide}ItemInventory`];
+      if (!(inventory?.[itemId]?.left > 0)) return false;
+      const next = { ...inventory, [itemId]: { ...inventory[itemId], left: 0 } };
+      syncStateRef.current = { ...current, [`${inventorySide}ItemInventory`]: next };
+      dispatch({ type: 'SET_ITEM_INVENTORY', side: inventorySide, inventory: next });
       return true;
     },
     grantBattleItem: (inventorySide, itemId, count = 1, snapshot) => {
@@ -1402,6 +1439,18 @@ export function buildStateAPIs(shared: SharedContextDeps): StateAPIs {
       // 通用「被加入時」入口：額外精靈自己的 Kit（on_entered）在加入後立刻執行一次。
       runExtraElfNode(getBattleEventContext(tSide, true, moveIndex, extraElf), tSide, extraElf, 'on_entered');
     },
+    moveElfToEnd: (tSide, battleId) => {
+      const c = syncStateRef.current;
+      const teamKey = `${tSide}Team` as "p1Team" | "p2Team", indexKey = `${tSide}ActiveIndex` as "p1ActiveIndex" | "p2ActiveIndex";
+      const team = c[teamKey] || [], from = team.findIndex(e => (e.battleId || e.id) === battleId);
+      if (from < 0 || from === team.length - 1) return from >= 0;
+      const active = team[c[indexKey]];
+      const nextTeam = [...team.slice(0, from), ...team.slice(from + 1), team[from]];
+      const nextIndex = Math.max(0, nextTeam.findIndex(e => e === active));
+      syncStateRef.current = { ...c, [teamKey]: nextTeam, [indexKey]: nextIndex };
+      dispatch({ type: 'MOVE_ELF_TO_END', side: tSide, battleId } as any);
+      return true;
+    },
     killExtraElf: (tSide, extraElf, data) => killExtraElf(getBattleEventContext(tSide, true, moveIndex), tSide, extraElf, data),
     trackCodeExec: () => {},
     setNextTurns: (who, key, n) => {
@@ -1448,6 +1497,8 @@ export function attachLiveElfAccessors(ctx: BattleEventContext, syncStateRef: Mu
   define("activeP2", () => syncStateRef.current.p2);
   define("p1Timers", () => syncStateRef.current.p1Timers || []);
   define("p2Timers", () => syncStateRef.current.p2Timers || []);
+  // 持有者自己的計時器（在場讀活動清單、場下讀其銀行），供致死抵抗等需要「場下仍生效」的讀取端使用。
+  define("ownTimers", () => () => { const live = (ctx as any).self || selfSnapshot; return scopedTimers(syncStateRef.current, side, live); });
   define("p1FullTeam", () => syncStateRef.current.p1Team);
   define("p2FullTeam", () => syncStateRef.current.p2Team);
   return ctx;

@@ -69,7 +69,19 @@ function finalizeSeed(item: Elf, index: number): Elf {
 }
 
 /** 預設精靈清單（同一個陣列物件）。API 匯入的精靈在 loadImportedElves() 完成後才追加到尾端。 */
-export const DEFAULT_ELVES: Elf[] = prepareSeeds(SEED_ELVES).map(finalizeSeed);
+/** 技能庫共用（sharedSkillPoolFrom）：把指定精靈已完成審核 Kit 的技能（含技能庫）以複本加入技能庫；同名不重複、不改來源精靈。 */
+function withSharedSkillPools(list: Elf[]): Elf[] {
+  const byId = new Map(list.map(e => [String(e.id), e]));
+  return list.map(e => {
+    const from = (e as any).sharedSkillPoolFrom as string[] | undefined;
+    if (!from?.length) return e;
+    const have = new Set([...(e.skills || []), ...(e.skillPool || [])].map(s => s.name));
+    const extra = from.flatMap(id => { const src = byId.get(id); return src ? [...(src.skills || []), ...(src.skillPool || [])] : []; })
+      .filter(s => !have.has(s.name) && (have.add(s.name), true)).map(s => structuredClone(s));
+    return extra.length ? { ...e, skillPool: [...(e.skillPool || e.skills || []), ...extra] } : e;
+  });
+}
+export const DEFAULT_ELVES: Elf[] = withSharedSkillPools(prepareSeeds(SEED_ELVES).map(finalizeSeed));
 
 // ── 延後載入：API 匯入精靈與階段競技場精靈（stagedArenaElves＋heavyweights.json）的資料不進首頁初始 JS ──────────────────────────
 // 載入完成前清單不含匯入精靈；完成後以與其他精靈完全相同的流程（原文套用→審核 Kit→定稿）追加，並通知訂閱者。

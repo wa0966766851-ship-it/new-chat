@@ -7,7 +7,7 @@
 import type { BattleEventContext } from '../../effects/types';
 import type { RunState } from '../runtime';
 import { queueHpDrain } from '../../battle/hpDrain';
-import { statusReplacementActive } from '../../battle/statusRules';
+import { statusReplacementActive, statusRuleList } from '../../battle/statusRules';
 import { getStatuses } from '../../utils/battleHelpers';
 import { StatusRegistry } from '../../effects/statusRegistry';
 import { canonicalStatusName } from '../../effects/statusIdentity';
@@ -263,7 +263,10 @@ export function cassiusShanOperations(helpers: {
     status_rules: (ctx: BattleEventContext, p: any): boolean => {
       const h = holder(ctx);
       if (!h.id) return false;
-      const prev = h.elf.statusRules || {};
+      // 依條件異常分組：同一條件異常合併，不同條件異常並存（2026-11-21 修正多來源互相覆蓋）。
+      const list = statusRuleList((helpers.liveElf(ctx, ctx.actor) || h.elf).statusRules);
+      const index = list.findIndex(r => canonicalStatusName(r.whileStatus) === canonicalStatusName(p.whileStatus));
+      const prev: any = index >= 0 ? list[index] : {};
       const merge = (a?: string[], b?: string[]) => [...new Set([...(a || []), ...(b || [])])];
       const next: any = { ...prev, whileStatus: p.whileStatus };
       if (p.conversionTargetBan) next.conversionTargetBan = merge(prev.conversionTargetBan, p.conversionTargetBan);
@@ -271,7 +274,8 @@ export function cassiusShanOperations(helpers: {
       if (p.cancelEffects) next.cancelEffects = merge(prev.cancelEffects, p.cancelEffects);
       if (p.replacePpFree) next.replacePpFree = true;
       if (p.replaceInvalidateOppTurns) next.replaceInvalidateOppTurns = p.replaceInvalidateOppTurns;
-      ctx.updateAnyElf(h.side, h.id, { statusRules: next } as any);
+      if (index >= 0) list[index] = next; else list.push(next);
+      ctx.updateAnyElf(h.side, h.id, { statusRules: list } as any);
       return true;
     },
     /** 原效果被取消期間的替代規則：技能使用後令對手 N 回合內技能附加效果失效。 */

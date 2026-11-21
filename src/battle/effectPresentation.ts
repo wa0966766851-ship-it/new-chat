@@ -80,7 +80,9 @@ export function payloadPresentation(payload: Record<string, any> = {}): EffectPr
   if (payload.reflectSkillQuarter) add('reflect_skill_quarter', '技能傷害¼反彈', '反傷');
   if (payload.sleepOnFixed) add('sleep_on_fixed', '受到固定傷害附加睡眠', '施加異常');
   if (payload.nextAttackSkillBoost !== undefined) add('next_attack_boost', `下次技能傷害×${payload.nextAttackSkillBoost}`, '增傷');
+  if (payload.nextAttackDamageModifier?.multiplier !== undefined) add('next_attack_modifier', `下次${payload.nextAttackDamageModifier.kind || '攻擊'}傷害×${payload.nextAttackDamageModifier.multiplier}`, '增傷');
   if (payload.incomingAttackCritical) add('incoming_attack_crit', '受到攻擊必定致命一擊', '致命一擊');
+  if (payload.statusEntryBlock) add('status_entry_block', `無法進入${payload.statusEntryBlock.cls || ''}異常狀態`, '異常限制');
   if (payload.fixedPercentAsTrue) add('damage_conversion', '固定／百分比傷害轉為真實傷害');
   if (payload.damageStatusReaction) add('damage_status_reaction', '受傷後異常反應');
   if (payload.afterUsePercent) add('after_use_percent', '使用技能後百分比附傷', '附加傷害');

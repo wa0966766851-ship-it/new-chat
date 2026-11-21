@@ -56,6 +56,9 @@ export const SEER_ID_OVERRIDES: Record<string, number> = {
  [normalizeName("月鈴極樂·奈尼芬多")]: 264,
  [normalizeName("聖光天馬.珀伽索斯")]: 999,
  [normalizeName("難違天律.天邪龍王")]: 2652,
+ [normalizeName("趙雲")]: 4421, // 赤膽游龍·趙雲（SeerAPI）
+ [normalizeName("晻藹夜靈.布萊克")]: 3539, // 使用者指定沿用混沌·布萊克立繪與動作
+ [normalizeName("虯螭淵玄.索蘭特")]: 3536, // 借用暗之龍裔·索蘭特
  [normalizeName("聖靈奧斯卡")]: 1400599, // 皮膚599 創界衣缽·奧斯卡（使用者指定預設外觀；本體 3425）
   '御天龍神·哈莫': 3809, // 本機 SeerAPI 索引：龍神哈莫，不冒用其他型態。
   "天蓬元帥八戒": 1536,            // 使用者指定：菲爾蓬格
@@ -120,6 +123,7 @@ export type SpriteFacing = "left" | "right" | "front";
  */
 export const STATIC_FRONT_EVIDENCE: Record<string, string> = {
   '/seer/body/88.png': '已查看 public/seer/body/88.png 與 .seer-cache/new-ten-animation-shots/static-contact.png：納多雷靜態為正面對稱造型，原生動作另以朝右核對。',
+  '/seer/body/3536.png': '2026-11-21 已查看 SeerAPI 原圖 pet/body/3536.png：暗之龍裔·索蘭特雙翼左右對稱展開、頭部正面，無側向。',
   '/seer/body/3425.png': '2026-11-16 已查看 SeerAPI 原圖 pet/body/3425.png：聖靈守護奧斯卡正面站姿，左右三色光球對稱，無側向。',
   '/elf-art/unknown_myth_ghost_body.png': '已查看 public/elf-art/unknown_myth_ghost_body.png：正面鬼影，無左右側向；原圖與雙方截圖見 review-20261026/static-custom.txt。',
 };
@@ -185,6 +189,10 @@ export const BODY_SOURCE_FACING: Record<string, SpriteFacing> = {
  "/seer/body/999.png": "left",
  "/seer/body/2205.png": "left",
  "/seer/body/2652.png": "left",
+ "/seer/body/4421.png": "right", // 2026-11-21 以正式預覽頁 P1／P2 靜態與 4421.pet 待機對照：姿勢與原生待機（朝右）一致，槍尖朝右下；P2 鏡射後面對面
+ "/seer/body/1400748.png": "left", // 2026-11-21 逐圖核對：持槍朝畫面左（滄浪龍吟）
+ "/seer/body/1400887.png": "left", // 2026-11-21 逐圖核對：龍首朝畫面左（聖貫宙合）
+ "/seer/body/3536.png": "front", // 2026-11-21 逐圖核對：雙翼展開正面站姿
  "/seer/body/1400599.png": "left", // 2026-11-16 逐圖核對：頭部朝畫面左
  "/seer/body/3407.png": "left",
  "/seer/body/4125.png": "left",

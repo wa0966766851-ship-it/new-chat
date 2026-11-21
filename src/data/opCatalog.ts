@@ -737,6 +737,36 @@ export const OP_CATALOG: Record<string, OpEntry> = {
   "weight_record_song_category": { op:"weight_record_song_category", code:"T-046", family:"T", familyLabel:OP_FAMILY_LABEL.T, kind:"action", declaredIn:["action"] },
   "next_attack_priority_offset": { op:"next_attack_priority_offset", code:"P-055", family:"P", familyLabel:OP_FAMILY_LABEL.P, kind:"action", declaredIn:["action"] },
   "weight_entry_status_tick": { op:"weight_entry_status_tick", code:"S-063", family:"S", familyLabel:OP_FAMILY_LABEL.S, kind:"action", declaredIn:["action"] },
+  // 2026-11-21 趙雲／晻藹夜靈.布萊克／虯螭淵玄.索蘭特 通用件（blocks/ops/linkedTeam.ts）
+  "mark_program_team": { op:"mark_program_team", code:"M-033", family:"M", familyLabel:"印記／標記", kind:"action", declaredIn:["action"] },
+  "mark_consume_current": { op:"mark_consume_current", code:"M-034", family:"M", familyLabel:"印記／標記", kind:"action", declaredIn:["action"] },
+  "resource_mark_from_tally": { op:"resource_mark_from_tally", code:"M-035", family:"M", familyLabel:"印記／標記", kind:"action", declaredIn:["action"] },
+  "resource_mark_team_named": { op:"resource_mark_team_named", code:"M-036", family:"M", familyLabel:"印記／標記", kind:"action", declaredIn:["action"] },
+  "stat_random_shared": { op:"stat_random_shared", code:"A-049", family:"A", familyLabel:"能力／面板", kind:"action", declaredIn:["action"] },
+  "stage_flip_down": { op:"stage_flip_down", code:"A-050", family:"A", familyLabel:"能力／面板", kind:"action", declaredIn:["action"] },
+  "stage_scale_up": { op:"stage_scale_up", code:"A-051", family:"A", familyLabel:"能力／面板", kind:"action", declaredIn:["action"] },
+  "stage_absorb_all": { op:"stage_absorb_all", code:"A-052", family:"A", familyLabel:"能力／面板", kind:"action", declaredIn:["action"] },
+  "stage_randomize": { op:"stage_randomize", code:"A-053", family:"A", familyLabel:"能力／面板", kind:"action", declaredIn:["action"] },
+  "stage_swap_lower": { op:"stage_swap_lower", code:"A-054", family:"A", familyLabel:"能力／面板", kind:"action", declaredIn:["action"] },
+  "drain_stage_levels": { op:"drain_stage_levels", code:"H-076", family:"H", familyLabel:"體力", kind:"action", declaredIn:["action"] },
+  "heal_holder_and_active": { op:"heal_holder_and_active", code:"H-077", family:"H", familyLabel:"體力", kind:"action", declaredIn:["action"] },
+  "heal_shield_sum": { op:"heal_shield_sum", code:"H-078", family:"H", familyLabel:"體力", kind:"action", declaredIn:["action"] },
+  "drain_random": { op:"drain_random", code:"H-079", family:"H", familyLabel:"體力", kind:"action", declaredIn:["action"] },
+  "bench_probe_boost": { op:"bench_probe_boost", code:"D-141", family:"D", familyLabel:"傷害", kind:"action", declaredIn:["action"] },
+  "incoming_true_turns": { op:"incoming_true_turns", code:"D-142", family:"D", familyLabel:"傷害", kind:"action", declaredIn:["action"] },
+  "status_doubling_mods": { op:"status_doubling_mods", code:"D-143", family:"D", familyLabel:"傷害", kind:"action", declaredIn:["action"] },
+  "partner_link": { op:"partner_link", code:"X-162", family:"X", familyLabel:"流程／特殊", kind:"action", declaredIn:["action"] },
+  "partner_revive": { op:"partner_revive", code:"X-163", family:"X", familyLabel:"流程／特殊", kind:"action", declaredIn:["action"] },
+  "incoming_skill_to_shields": { op:"incoming_skill_to_shields", code:"G-047", family:"G", familyLabel:"防護／存活", kind:"action", declaredIn:["action"] },
+  "opp_shield_cap_with_cost": { op:"opp_shield_cap_with_cost", code:"G-048", family:"G", familyLabel:"防護／存活", kind:"action", declaredIn:["action"] },
+  "status_entry_block_turns": { op:"status_entry_block_turns", code:"S-065", family:"S", familyLabel:"異常", kind:"action", declaredIn:["action"] },
+  "dmg_per_stage_items": { op:"dmg_per_stage_items", code:"D-144", family:"D", familyLabel:"傷害", kind:"action", declaredIn:["action"] },
+  "priority_offset_round": { op:"priority_offset_round", code:"T-048", family:"T", familyLabel:"回合／時點", kind:"action", declaredIn:["action"] },
+  "strip_type_team_named": { op:"strip_type_team_named", code:"A-055", family:"A", familyLabel:"能力／面板", kind:"action", declaredIn:["action"] },
+  "item_discard": { op:"item_discard", code:"X-164", family:"X", familyLabel:"流程／特殊", kind:"action", declaredIn:["action"] },
+  "seal_fatal_resist": { op:"seal_fatal_resist", code:"G-049", family:"G", familyLabel:"防護／存活", kind:"action", declaredIn:["action"] },
+  "status_seq_until_success": { op:"status_seq_until_success", code:"S-066", family:"S", familyLabel:"異常", kind:"action", declaredIn:["action"] },
+  "stage_view_rule": { op:"stage_view_rule", code:"A-056", family:"A", familyLabel:"能力／面板", kind:"action", declaredIn:["action"] },
 };
 
 // Condition-only lookup: c("name") resolves here, never to an action code.
@@ -848,6 +878,9 @@ export const CONDITION_CATALOG: Record<string, {code:string; op:string}> = {
   "types_equal": { code:"Q-099", op:"types_equal" },
   "unacted": { code:"Q-100", op:"unacted" },
   "weak": { code:"Q-101", op:"weak" },
+  "name_has": { code:"Q-108", op:"name_has" },
+  "pp_below_either": { code:"Q-109", op:"pp_below_either" },
+  "opp_selected_sure": { code:"Q-110", op:"opp_selected_sure" },
 };
 
 export const OP_CODES = Object.values(OP_CATALOG).filter(e=>e.kind!=="deprecatedCondition").map(e=>e.code);

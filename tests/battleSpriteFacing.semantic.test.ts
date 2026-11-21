@@ -22,6 +22,11 @@ test("illusion copies the original asset, then faces its own opponent for explic
     ['星光·雷納多', '/seer/body/4937.png', 'left'],
     ['霍光', '/seer/body/4515.png', 'left'],
     ['北冥之怒·霍光', '/seer/body/1400551.png', 'left'],
+    ['趙雲', '/seer/body/4421.png', 'right'],
+    ['滄浪龍吟', '/seer/body/1400748.png', 'left'],
+    ['聖貫宙合', '/seer/body/1400887.png', 'left'],
+    ['晻藹夜靈.布萊克', '/seer/body/3539.png', 'left'],
+    ['虯螭淵玄.索蘭特', '/seer/body/3536.png', 'front'],
     ['恐懼的化身·咤克斯', '/seer/body/2648.png', 'left'],
     ['變革·馬爾修斯', '/seer/body/3393.png', 'left'],
     // 未核對不猜鏡射，與已核對正面圖分開。

@@ -117,5 +117,26 @@
     "seerId": 4275,
     "height": 178,
     "weight": 58
+  },
+  {
+    "id": "5052",
+    "name": "趙雲",
+    "seerId": 4421,
+    "height": 191,
+    "weight": 82
+  },
+  {
+    "id": "5053",
+    "name": "晻藹夜靈.布萊克",
+    "seerId": 3539,
+    "height": 190,
+    "weight": 75
+  },
+  {
+    "id": "5054",
+    "name": "虯螭淵玄.索蘭特",
+    "seerId": 3536,
+    "height": 290,
+    "weight": 180
   }
 ]

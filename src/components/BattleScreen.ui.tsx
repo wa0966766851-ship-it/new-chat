@@ -203,6 +203,14 @@ function formatResistanceDetail(r?: { damageResist?: any; statusResist?: any }):
   return out.join("\n");
 }
 
+/** 技能的固有效果（■）：Kit 固有條目／技能屬性；無 Kit 時取描述中以 ■ 開頭的行。供轉化浮窗統計。 */
+function inherentEffectLines(skill: any): string[] {
+  const kit: any[] = Array.isArray(skill?.kit) ? skill.kit : [];
+  const fromKit = kit.filter(e => e?.role === 'innate' || e?.codeId === 'skill_property').map(e => String(e.customText || '').replace(/^[■◇🎯]\s*/, '').trim()).filter(Boolean);
+  const lines = fromKit.length ? fromKit : String(skill?.description || '').split(/\r?\n/).filter(l => l.trim().startsWith('■')).map(l => l.replace(/^\s*■\s*/, '').trim()).filter(Boolean);
+  return [...new Set(lines)];
+}
+
 /** 戰鬥畫面：先固定隱匿可見性模式（PVE／PVP），子元件（頭像、詳情、選擇器）共用同一個判斷。 */
 export function BattleScreenUI(props: BattleScreenUIProps) {
   return <BattleViewModeContext.Provider value={toViewMode(props.battleMode)}><BattleScreenBody {...props} /></BattleViewModeContext.Provider>;
@@ -985,7 +993,7 @@ function BattleScreenBody(props: BattleScreenUIProps) {
                             : cat === "buff" ? "text-orange-300 border-orange-500/30 bg-orange-500/10"
                             : "text-rose-300 border-rose-500/30 bg-rose-500/10";
                           // 不鎖按鈕：不能用時照樣可看（說明、庫存），點下只顯示原因。
-                          const unusable = phase !== actPhaseSelect ? '目前不是選擇階段'
+                          const unusable = item.unusable ? '無法被選擇使用' : phase !== actPhaseSelect ? '目前不是選擇階段'
                             : itemLock.blocked ? itemLock.list.map(restrictionText).join('、')
                             : !hasBattleItem((actInventory ?? (battle as any).p1ItemInventory), item.id) ? '已用完'
                             : ((actSide === 'p1' ? battle.p1RegistryState : battle.p2RegistryState)?.itemPickedRound === (battle.roundNumber ?? battle.turnNumber)) ? '本回合已使用道具'
@@ -2137,9 +2145,11 @@ function BattleScreenBody(props: BattleScreenUIProps) {
             style={(() => {
               const spaceAbove = hoveredSkillAnchor.top || hoveredSkillAnchor.y;
               const showBelow = spaceAbove < 350; // Tooltip is approx 320px tall
+              // 轉化技能左右兩欄，浮窗較寬：左右邊界依實際半寬收斂。
+              const half = (hoveredSkill as any).__convertedFrom ? Math.min(440, window.innerWidth / 2 - 8) : 260;
               return {
                 position: 'fixed',
-                left: Math.min(Math.max(260, hoveredSkillAnchor.x), window.innerWidth - 260),
+                left: Math.min(Math.max(half, hoveredSkillAnchor.x), window.innerWidth - half),
                 top: showBelow ? (hoveredSkillAnchor.bottom || hoveredSkillAnchor.y) + 15 : (hoveredSkillAnchor.top || hoveredSkillAnchor.y) - 15,
                 transform: showBelow ? 'translateX(-50%)' : 'translate(-50%, -100%)',
                 zIndex: 10002,
@@ -2151,7 +2161,7 @@ function BattleScreenBody(props: BattleScreenUIProps) {
               initial={{ opacity: 0, y: 10, scale: 0.9 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: 10, scale: 0.9 }}
-              className="w-[500px] bg-slate-950/95 border-2 border-cyan-500 rounded-2xl p-6 shadow-[0_0_100px_rgba(0,0,0,0.8),0_0_20px_rgba(6,182,212,0.3)] backdrop-blur-3xl ring-1 ring-white/10 pointer-events-none"
+              className={`${(hoveredSkill as any).__convertedFrom ? "w-[min(880px,calc(100vw-16px))]" : "w-[500px]"} max-h-[calc(100vh-24px)] overflow-hidden bg-slate-950/95 border-2 border-cyan-500 rounded-2xl p-6 shadow-[0_0_100px_rgba(0,0,0,0.8),0_0_20px_rgba(6,182,212,0.3)] backdrop-blur-3xl ring-1 ring-white/10 pointer-events-none`}
             >
                 <div className="flex justify-between items-start mb-4 border-b border-white/10 pb-4">
                   <div>
@@ -2178,14 +2188,18 @@ function BattleScreenBody(props: BattleScreenUIProps) {
                 
                 <div className="bg-slate-900/60 rounded-xl px-4 py-3 mb-4 border border-white/5 min-h-[60px] flex flex-col justify-center">
                   {(hoveredSkill as any).__convertedFrom ? (
-                    <div className="flex flex-col gap-2" data-conv-boxes>
+                    <div className="grid grid-cols-2 gap-3 items-start" data-conv-boxes>
                       <div className="rounded-lg border border-cyan-400/60 bg-cyan-950/40 px-3 py-2" data-conv-box="after">
                         <div className="text-[11px] font-black text-cyan-300 mb-1">轉化後 · {hoveredSkill.name}</div>
                         {hoveredSkill.description ? <EffectDescription skill={hoveredSkill} description={hoveredSkill.description} className="text-slate-200 text-[13px] font-medium" /> : <p className="text-slate-400 text-sm">無描述</p>}
                       </div>
                       <div className="rounded-lg border border-dashed border-amber-400/50 bg-amber-950/20 px-3 py-2" data-conv-box="before" title="轉化前技能的固有效果保留">
                         <div className="text-[11px] font-black text-amber-300 mb-1">轉化前 · {(hoveredSkill as any).__convertedFrom.name}</div>
-                        <EffectDescription skill={(hoveredSkill as any).__convertedFrom} description={(hoveredSkill as any).__convertedFrom.description || ''} className="text-slate-300 text-[12px]" />
+                        {(() => { const kept = inherentEffectLines((hoveredSkill as any).__convertedFrom); return (
+                          <div className="mb-1.5 text-[11px] text-amber-200/90" data-conv-inherent={kept.length} title={kept.join('\n') || '無固有效果'}>
+                            保留固有效果 {kept.length} 項{kept.length ? '：' : ''}{kept.map(t => <div key={t} className="pl-2 text-amber-100/90">■ {t}</div>)}
+                          </div>); })()}
+                        <EffectDescription skill={(hoveredSkill as any).__convertedFrom} description={(hoveredSkill as any).__convertedFrom.description || ''} className="text-slate-400 text-[11px]" />
                       </div>
                     </div>
                   ) : hoveredSkill.description ? (

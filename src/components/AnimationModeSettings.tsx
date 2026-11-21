@@ -1,6 +1,6 @@
 import React from 'react';
 import type {Elf} from '../types';
-import {ANIMATION_MODES,animationModeFor,elfAnimationKey,readAnimationSettings,writeAnimationSettings,withAnimationMode,setElfAnimationMode,BATTLE_ANIMATION_EVENT,type BattleAnimationSettings,type AnimationMode} from '../battle/animationSettings';
+import {ANIMATION_QUALITIES,type AnimationQuality,ANIMATION_MODES,animationModeFor,elfAnimationKey,readAnimationSettings,writeAnimationSettings,withAnimationMode,setElfAnimationMode,BATTLE_ANIMATION_EVENT,type BattleAnimationSettings,type AnimationMode} from '../battle/animationSettings';
 import {petAnimationBinding} from '../battle/petAnimationRegistry';
 import {PET_ANIMATION_ASSETS} from '../battle/petAnimationAssets';
 
@@ -8,6 +8,10 @@ export function GlobalAnimationMode({settings,onChange}:{settings:BattleAnimatio
  return <div className="space-y-2"><label className="text-sm text-cyan-200">全域播放模式
   <select aria-label="全域播放模式" title="精靈動作：按需取得遊戲素材並快取，僅限個人使用" className="ml-3 rounded-lg bg-slate-950 border border-slate-700 p-2" value={animationModeFor(settings)} onChange={e=>onChange(withAnimationMode(settings,e.target.value as AnimationMode))}>
    {ANIMATION_MODES.map(m=><option key={m.value} value={m.value} title={m.value==='actions'?'按需取得遊戲素材並快取，僅限個人使用':undefined}>{m.label}</option>)}
+  </select></label>
+  <label className="block text-sm text-cyan-200" title={ANIMATION_QUALITIES.map(q=>`${q.label}：${q.tip}`).join('；')}>動畫畫質
+  <select aria-label="動畫畫質" className="ml-3 rounded-lg bg-slate-950 border border-slate-700 p-2" value={settings.quality||'high'} onChange={e=>onChange({...settings,quality:e.target.value as AnimationQuality})}>
+   {ANIMATION_QUALITIES.map(q=><option key={q.value} value={q.value} title={q.tip}>{q.label}</option>)}
   </select></label>
   <p className="text-xs text-slate-400">簡易演出沿用目前的前移、閃光與受擊晃動。精靈動作使用已核對的素材，尚未就緒時沿用簡易演出。每隻精靈可在外觀設定單獨調整。</p>
   <p className="text-xs text-slate-400">已支援的動作素材會自動按需下載並沿用快取。預設快取上限 512 MiB，舊素材自動清理；首次下載期間可繼續操作。</p>

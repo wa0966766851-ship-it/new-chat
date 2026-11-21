@@ -40,7 +40,8 @@ try{
  // 定義：契約通過＋關鍵動作
  const acts=(e:any)=>JSON.stringify(e.params.clause.body);
  for(const e of [...keld.kit,...keer.kit,...gaia])assert.equal(sequenceIssue(e.params.clause,e.node),null,e.customText);
- assert.match(acts(keld.kit.find((e:any)=>e.node==='self_fatal')),/survive_turns/,'柯爾德：當回合每次致死保留1點');
+ // 2026-11-21 使用者統一規則：「當回合每次致死保留」改由引擎共用致死保留窗口處理（battle/fatalHold.ts；實戰驗收見 fatalHoldWindow）。
+assert.match(acts(keld.kit.find((e:any)=>e.node==='self_fatal')),/"op":"survive"/,'柯爾德：致死真實傷害強制存活（之後由致死保留窗口接手）');
  assert.ok(keer.kit.some((e:any)=>e.params.clause.trig==='opp_damaged_true'),'柯爾霍德：對手受真傷也觸發');
  assert.match(acts(keer.kit.find((e:any)=>e.node==='self_fatal')),/keerhodeNightGuard/,'柯爾霍德：只有當回合觸發過才存活');
  assert.match(JSON.stringify(gaia.find((e:any)=>e.params.clause.trig==='fatal')),/fatal_damage/,'蓋亞：致死傷害需≥體力上限');

@@ -4,6 +4,8 @@ import { godDescentFloor, isAliveBySurvivalRule, releaseExpiredSurvivalRule } fr
 /** 陣亡判定（考慮存活規則與免死回合）。引擎、規則、註冊表共用。 */
 export const checkElfDead = (elf: Elf | undefined | null) => {
   if (!elf) return true;
+  // 致死保留封印定案（seal_fatal_resist）：存活規則與免死回合一律不再成立。
+  if ((elf as any).fatalResistSeal === 'spent' && elf.currentHp <= 0) return true;
   // 正死亡線不覆蓋既有負體力存活規則；到達正死亡線仍可觸發通用免死。
   if((elf.heldDeathFloorRatio||0)>0&&godDescentFloor(elf.survivalRule,elf.maxHp)>=0&&elf.currentHp<=elf.maxHp*elf.heldDeathFloorRatio!)return !(elf.deathImmunity&&elf.deathImmunity.deathImmuneTurns>0);
   // God descent: the floor is a DEATH line, not a clamp. Read the formula from the

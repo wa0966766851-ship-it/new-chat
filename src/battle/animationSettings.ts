@@ -1,10 +1,20 @@
 /** 對戰動畫自訂開關。只影響播放，不影響任何結算。 */
 export type AnimationMode = 'static' | 'simple' | 'actions';
+/** 動畫畫質（只影響播放成本，不影響結算）：high＝原畫質；balanced＝畫布解析度上限 1.25、待機 30fps；saver＝解析度 1、待機 15fps、不載入全屏底片。 */
+export type AnimationQuality = 'high' | 'balanced' | 'saver';
+export const ANIMATION_QUALITIES = [{value:'high',label:'高畫質',tip:'原畫質'},{value:'balanced',label:'平衡',tip:'解析度上限 1.25、待機 30fps'},{value:'saver',label:'省效能',tip:'解析度 1、待機 15fps、不載入全屏底片'}] as const;
+export function isAnimationQuality(value:unknown):value is AnimationQuality { return value==='high'||value==='balanced'||value==='saver'; }
+/** 畫布解析度上限（與圖集上限取小）。 */
+export function qualityResolutionCap(quality?:AnimationQuality):number { return quality==='saver'?1:quality==='balanced'?1.25:Infinity; }
+/** 待機序列的最小影格間隔（毫秒）；出招不受限。 */
+export function qualityStandbyFrameMs(quality?:AnimationQuality):number { return quality==='saver'?66:quality==='balanced'?33:0; }
+export function qualityAllowsFullscreenFx(quality?:AnimationQuality):boolean { return quality!=='saver'; }
 export const ANIMATION_MODES = [{value:'static',label:'靜態模式'}, {value:'simple',label:'簡易演出'}, {value:'actions',label:'精靈動作'}] as const;
 export interface BattleAnimationSettings {
   /** 演出倍率；只改播放時鐘，不改戰鬥結算。 */
   speed?: number;
   mode?: AnimationMode;
+  quality?: AnimationQuality;
   elfModes?: Record<string, AnimationMode>;
   /** 跳過所有戰鬥演出；保留個別選項，關閉後恢復。 */
   staticMode?: boolean;
@@ -47,6 +57,7 @@ export function normalizeAnimationSettings(value: unknown): BattleAnimationSetti
     if (typeof out[key] === 'boolean' && typeof raw[key] === 'boolean') (out as any)[key] = raw[key];
   }
   out.mode = isAnimationMode(raw.mode) ? raw.mode : raw.staticMode === true ? 'static' : 'simple';
+  out.quality = isAnimationQuality(raw.quality) ? raw.quality : 'high';
   out.staticMode = out.mode === 'static';
   out.elfModes = Object.fromEntries(Object.entries(raw.elfModes && typeof raw.elfModes === 'object' ? raw.elfModes : {}).filter(([key, mode])=>key.length<200 && isAnimationMode(mode))) as Record<string,AnimationMode>;
   return out;

@@ -256,6 +256,7 @@ export interface Elf {
   skills: Skill[];
   unsealedSkills?: string[]; // 本場已解封的技能名稱（unseal_skill）
   skillPool?: Skill[]; // 該精靈所擁有的完整技能庫/技能池（包含所有可替換技能）
+  sharedSkillPoolFrom?: string[]; // 技能庫另含這些精靈 id 的技能（defaultElves 載入時以複本合併）
   height?: number; // 精靈身高
   weight?: number; // 精靈體重
   gender?: string; // 性別 (預設 無性別)
@@ -406,6 +407,8 @@ export interface Elf {
   darkScarTurns?: number; // 黯痕印記剩餘回合 (悲歌.索比拉特)
   darkScarDurationBonus?: number; // 黯痕額外加成回合
   tookDamageThisTurn?: boolean; // 當回合是否受到傷害
+  fatalHold?: { round: number; hp: number }; // 致死保留窗口：該回合內每次致死傷害皆保留 hp（battle/fatalHold.ts）
+  fatalResistSeal?: 'armed' | 'pending' | 'spent'; // 下次致死保留觸發後本場不再觸發（seal_fatal_resist）
   guardianMarkValue?: number; // 守護印記減傷值 (帝皇之盾)
   guardianMarkTurns?: number; // 守護印記剩餘回合
   bajieMaxHpReductionTurns?: number; // 八戒上限削減剩餘回合
@@ -466,6 +469,8 @@ export interface BattleItem {
   stock?: number;
   /** 不在預設藥劑庫存內，只能由效果（稱號、魂印…）放入；庫存為 0 時不顯示。 */
   grantOnly?: boolean;
+  /** 只作顯示／持有效果的特殊道具，無法被選擇使用。 */
+  unusable?: boolean;
   /** 效果放入時的持有上限；不改變普通藥劑的預設攜帶量。 */
   holdLimit?: number;
   /** 同組不同形態共用的總持有上限；不以各形態上限相加。 */

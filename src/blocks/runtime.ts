@@ -78,6 +78,7 @@ import { powerStatOperations, powerStatEvalCond } from './ops/powerStat';
 import { entranceStackOperations, entranceStackEvalCond } from './ops/entranceStack';
 import { stageDamageOperations, stageDamageEvalCond } from './ops/stageDamage';
 import { keldSoulOperations, keldSoulEvalCond } from './ops/keldSoul';
+import { linkedTeamOperations, linkedTeamEvalCond } from './ops/linkedTeam';
 import { statusSovereigntyOperations } from './ops/statusSovereignty';
 import { priorityBonusOperations } from './ops/priorityBonus';
 import { fifthPpDiff, arenaDrainAmount } from './ops/arenaShared';
@@ -125,6 +126,7 @@ import { switchRestrictions } from '../battle/actionRestrictions';
 import { group5Operations } from './ops/group5';
 import {guaranteedRecipientActs} from './recipientConditionGate';
 import { resourceOppStageFloor } from '../battle/resourceQueryRules';
+import { viewsOppAsDown } from '../battle/stageViewRules';
 
 type S = "p1" | "p2";
 export interface RunState {
@@ -249,7 +251,7 @@ export function evalCond(ctx: BattleEventContext, c: Cond, st: RunState): boolea
         const timers = ctx.targetSide === 'p1' ? ctx.p1Timers : ctx.p2Timers;
         if (timers?.some(timer => timer.remaining > 0 && !timer.pendingActivation && timer.payload?.hideNegativeStages && (!timer.ownerBattleId || timer.ownerBattleId === idOf(opp)))) return !!p.neg;
       }
-      const viewedDown = p.side === 'opp' && resourceOppStageFloor(ctx.self, ctx.getMarks?.(ctx.actor) || []) > 0;
+      const viewedDown = p.side === 'opp' && (resourceOppStageFloor(ctx.self, ctx.getMarks?.(ctx.actor) || []) > 0 || viewsOppAsDown(liveElf(ctx, ctx.actor)));
       const r = viewedDown ? p.kind !== 'up' : hasStage(pick(p.side), p.kind === "up"); return p.neg ? !r : r; }
     case 'stage_value': {const value=pick(p.side)?.statStages?.[p.stat]??0;return Number.isFinite(value)&&cmp(value,p.op,p.amount);}
     case 'stage_all': {const r=hasAllStageDirection(pick(p.side),p.kind);return p.neg?!r:r;}
@@ -439,7 +441,7 @@ export function evalCond(ctx: BattleEventContext, c: Cond, st: RunState): boolea
       const hit = (ctx.getMarks(p.side === "self" ? ctx.actor : ctx.targetSide) || []).some((m: any) => markAppliesToElf(m,pick(p.side)) && (m.name === p.name || m.id === p.name || m.id === `blk_${p.name}`) && (m.count || 0) > 0);
       return p.neg ? !hit : hit;
     }
-    default: return entranceStackEvalCond(ctx, c) ?? keldSoulEvalCond(ctx, c) ?? stageDamageEvalCond(ctx, c) ?? powerStatEvalCond(ctx, c) ?? groupAEvalCond(ctx, c) ?? thunderGodEvalCond(ctx, c, liveElf);
+    default: return entranceStackEvalCond(ctx, c) ?? keldSoulEvalCond(ctx, c) ?? linkedTeamEvalCond(ctx, c, liveElf) ?? stageDamageEvalCond(ctx, c) ?? powerStatEvalCond(ctx, c) ?? groupAEvalCond(ctx, c) ?? thunderGodEvalCond(ctx, c, liveElf);
   }
 }
 
@@ -456,7 +458,9 @@ type OpFn = (ctx: BattleEventContext, p: any, st: RunState) => boolean | void;
 
 function applyStatus(ctx: BattleEventContext, side: S, status: string, turns?: number): boolean {
   const r = ctx.applyStatusWithImmunityCheck(side, status, turns ?? STATUS_DURATION[status] ?? DEFAULT_STATUS_TURNS);
-  if (r.success) ctx.addLog(`💫 【${elfOf(ctx, side)?.name}】陷入了【${status}】！`, "status");
+  // 實際進入的異常可能被替換（狂暴→平靜）或被抗性骰成「異常抵抗」佔位；日誌照實際結果寫。
+  const actual = (r as any).status || status;
+  if (r.success) ctx.addLog(actual === '異常抵抗' && status !== '異常抵抗' ? `🛡️ 【${elfOf(ctx, side)?.name}】抵抗了【${status}】！` : `💫 【${elfOf(ctx, side)?.name}】陷入了【${actual}】！`, "status");
   return !!r.success;
 }
 
@@ -1194,6 +1198,10 @@ export const OPS: Record<string, OpFn> = {
     addBlockTimer(ctx,ctx.actor,p.label||'指定事件次數監控',p.uses,'uses',{trig:p.trig,body:structuredClone(p.body),skillKind:p.kind,consumeOnFire:true,sourceKind:st.sourceKind||'skill'},false,undefined,false,p.scope==='team'?'team':'elf');return true;
   },
   ignore_def_action:(ctx,p)=>queueActionDefenseIgnore(ctx,p.stat,p.ratio),
+  // 「無法進入異常狀態」：受方任何來源（含自我附加）都不能進入（contextBuilders 讀 statusEntryBlock）。
+  status_entry_block_turns:(ctx,p,st)=>{
+    addConstraintTimer(ctx,sideOf(ctx,p.side),'無法進入異常',p.turns,{statusEntryBlock:{cls:p.cls||''}},!!p.next,isSkillCtx(st)?'skill':'soulmark',false);return true;
+  },
   status_inflict_guard_turns:(ctx,p,st)=>{
     addConstraintTimer(ctx,sideOf(ctx,p.side),'異常附加受限',p.turns,{statusInflictGuard:{kind:p.kind}},!!p.next,isSkillCtx(st)?'skill':'soulmark',false);return true;
   },
@@ -1566,7 +1574,7 @@ export const OPS: Record<string, OpFn> = {
     if(p.consume)ctx.setPlayerState(key,0);return st.lastAmount>0;
   },
   pp_cost_mult: (ctx, p) => { addBlockTimer(ctx, ctx.targetSide, `PP消耗×${p.mult}`, p.turns, "turns", { ppMult: p.mult, kind: p.kind },false,undefined,true);
-    ((globalThis as any).__PM2 ||= []).push((ctx.p2Timers||[]).map((x:any)=>x.id)); return true; },
+    return true; },
   dmg_to_heal_turns: (ctx, p) => {
     // 下回合：pendingActivation（本回合不生效，回合結束啟用、下回合結束到期）
     if (p.next) addBlockTimer(ctx, ctx.actor, "下回合傷害轉體力", 1, "turns", { absorbToHeal: true }, true);
@@ -1813,6 +1821,7 @@ export const OPS: Record<string, OpFn> = {
   ...entranceStackOperations(addBlockTimer),
   ...stageDamageOperations({ liveElf, dealDamage }),
   ...keldSoulOperations({ runStmts, dealDamage }),
+  ...linkedTeamOperations({ liveElf, runStmts }),
   ...statusSovereigntyOperations(),
   ...priorityBonusOperations(),
   ...arenaSharedOperations({ runStmts, liveElf }),

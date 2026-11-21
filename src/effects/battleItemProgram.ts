@@ -47,6 +47,9 @@ export function heldBattleItemProgramIssue(item:BattleItem):string|null {
  }
  return null;
 }
+/** 道具定義在對戰中不變：契約檢查每個道具只做一次（原本每個事件重驗，事件量大時拖慢整場）。 */
+const heldIssueCache=new WeakMap<BattleItem,string|null>();
+const cachedHeldIssue=(item:BattleItem)=>{if(!heldIssueCache.has(item))heldIssueCache.set(item,heldBattleItemProgramIssue(item));return heldIssueCache.get(item)!;};
 /** 由真正登場者執行一次；不從全隊魂印觀察者重播。 */
 const runningHeld=new Set<string>();
 export function runHeldBattleItemPrograms(ctx:BattleEventContext,event:EffectTiming,data?:any):void {
@@ -59,8 +62,10 @@ export function runHeldBattleItemPrograms(ctx:BattleEventContext,event:EffectTim
  if(![EffectTiming.ON_DAMAGED,EffectTiming.BEFORE_DAMAGE].includes(event)&&(field?.battleId||field?.id)!==(ctx.self.battleId||ctx.self.id))return;
  for(const item of BATTLE_ITEMS){
   if(!item.heldKit||(ctx.getBattleItem(ctx.actor,item.id)?.left||0)<1)continue;
-  const issue=heldBattleItemProgramIssue(item);if(issue)throw Error(issue);
+  const issue=cachedHeldIssue(item);if(issue)throw Error(issue);
   const token=`${ctx.actor}:${ctx.self.battleId||ctx.self.id}:${item.id}`;
+  // 異常附加前可能由道具入口與魂印生命週期各派發一次：同一份事件資料只執行一次。
+  if(event===EffectTiming.BEFORE_STATUS_APPLY&&data&&typeof data==='object'){const done:Set<string>=data.__heldItemsRun||(data.__heldItemsRun=new Set());if(done.has(token))continue;done.add(token);}
   if(runningHeld.has(token))continue;
   runningHeld.add(token);
   try{

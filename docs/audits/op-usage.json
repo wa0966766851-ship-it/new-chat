@@ -2,64 +2,133 @@
   "schemaVersion": 3,
   "note": "L4 usage index, ACTION/CONDITION split + P3 alias families. Actions resolve to FAMILY-###, conditions to Q-###. unindexedRefs are references whose context had no code (not an error).",
   "totals": {
-    "dataFiles": 152,
-    "opReferences": 2785,
-    "actionRefs": 2247,
-    "conditionRefs": 538,
-    "indexedRefs": 2785,
-    "distinctOpsReferenced": 540,
+    "dataFiles": 156,
+    "opReferences": 2914,
+    "actionRefs": 2344,
+    "conditionRefs": 570,
+    "indexedRefs": 2914,
+    "distinctOpsReferenced": 559,
     "unindexedRefs": 0,
     "contextWarnings": 0,
-    "catalogCodes": 701,
-    "conditionCatalogCodes": 107,
-    "usedCodes": 542,
-    "unusedCodes": 247,
+    "catalogCodes": 730,
+    "conditionCatalogCodes": 110,
+    "usedCodes": 561,
+    "unusedCodes": 259,
     "aliasFamilies": 6,
     "aliasErrors": 0
   },
   "byCode": {
-    "H-056": {
-      "op": "hp_adjust",
-      "count": 2,
+    "D-007": {
+      "op": "change_type",
+      "count": 5,
       "elves": [
-        "5008",
-        "5029"
+        "5014",
+        "5018",
+        "5035"
       ],
       "context": "action"
     },
-    "M-006": {
-      "op": "mark_program",
+    "X-059": {
+      "op": "grant_item",
+      "count": 4,
+      "elves": [],
+      "context": "action"
+    },
+    "T-018": {
+      "op": "timed_uses",
       "count": 11,
       "elves": [
+        "5007",
+        "5014",
+        "5025",
+        "5030"
+      ],
+      "context": "action"
+    },
+    "G-047": {
+      "op": "incoming_skill_to_shields",
+      "count": 1,
+      "elves": [],
+      "context": "action"
+    },
+    "D-039": {
+      "op": "ignore",
+      "count": 50,
+      "elves": [
+        "5009",
+        "5010",
+        "5012",
+        "5013",
+        "5015",
+        "5016",
+        "5019",
+        "5021",
+        "5024",
+        "5025",
+        "5028",
+        "5031",
+        "5035",
+        "5041",
+        "arena_13",
+        "arena_14",
+        "arena_15",
+        "arena_16"
+      ],
+      "context": "action"
+    },
+    "H-032": {
+      "op": "vampire",
+      "count": 13,
+      "elves": [
         "5001",
-        "5006",
-        "5008",
         "5010",
         "5011",
-        "arena_14"
+        "5013",
+        "5014",
+        "5021",
+        "5030",
+        "5034"
       ],
       "context": "action"
     },
-    "G-004": {
-      "op": "block_damage",
-      "count": 2,
+    "A-007": {
+      "op": "stat_clear",
+      "count": 46,
       "elves": [
-        "5008"
-      ],
-      "context": "action"
-    },
-    "S-020": {
-      "op": "status_replace",
-      "count": 3,
-      "elves": [
+        "5000",
+        "5001",
+        "5002",
+        "5003",
+        "5006",
         "5008",
-        "5014"
+        "5009",
+        "5010",
+        "5013",
+        "5014",
+        "5016",
+        "5018",
+        "5022",
+        "5023",
+        "5024",
+        "5025",
+        "5026",
+        "5031",
+        "5032",
+        "5033",
+        "5035",
+        "5036",
+        "5041",
+        "arena_12",
+        "arena_13",
+        "arena_14",
+        "arena_15",
+        "arena_16"
       ],
       "context": "action"
     },
     "S-013": {
       "op": "status",
-      "count": 164,
+      "count": 168,
       "elves": [
         "300",
         "5000",
@@ -98,6 +167,159 @@
         "arena_14",
         "arena_15",
         "arena_16"
+      ],
+      "context": "action"
+    },
+    "X-057": {
+      "op": "flag_set",
+      "count": 44,
+      "elves": [
+        "5013",
+        "5016",
+        "5021",
+        "5029",
+        "5035",
+        "arena_14"
+      ],
+      "context": "action"
+    },
+    "G-002": {
+      "op": "add_invalid_turns",
+      "count": 23,
+      "elves": [
+        "5012",
+        "5013",
+        "5015",
+        "5016",
+        "5017",
+        "5021",
+        "5022",
+        "5023",
+        "5025",
+        "5031",
+        "5032",
+        "5034",
+        "5041",
+        "arena_16"
+      ],
+      "context": "action"
+    },
+    "D-116": {
+      "op": "prio_bonus",
+      "count": 15,
+      "elves": [
+        "5013",
+        "5015",
+        "5016",
+        "5029",
+        "5031",
+        "arena_13",
+        "arena_16"
+      ],
+      "context": "action"
+    },
+    "T-048": {
+      "op": "priority_offset_round",
+      "count": 1,
+      "elves": [],
+      "context": "action"
+    },
+    "H-078": {
+      "op": "heal_shield_sum",
+      "count": 1,
+      "elves": [],
+      "context": "action"
+    },
+    "G-048": {
+      "op": "opp_shield_cap_with_cost",
+      "count": 1,
+      "elves": [],
+      "context": "action"
+    },
+    "Q-065": {
+      "op": "owner_on_field",
+      "count": 12,
+      "elves": [],
+      "context": "condition"
+    },
+    "Q-098": {
+      "op": "type_is",
+      "count": 8,
+      "elves": [
+        "5000",
+        "5010",
+        "5011",
+        "5018"
+      ],
+      "context": "condition"
+    },
+    "Q-060": {
+      "op": "no_skill_dmg",
+      "count": 3,
+      "elves": [
+        "5001",
+        "5028"
+      ],
+      "context": "condition"
+    },
+    "Q-067": {
+      "op": "player_state",
+      "count": 36,
+      "elves": [
+        "5013",
+        "5016",
+        "5018",
+        "5029",
+        "5035",
+        "arena_13"
+      ],
+      "context": "condition"
+    },
+    "Q-020": {
+      "op": "event_damage_type",
+      "count": 4,
+      "elves": [
+        "5012",
+        "5013"
+      ],
+      "context": "condition"
+    },
+    "H-056": {
+      "op": "hp_adjust",
+      "count": 2,
+      "elves": [
+        "5008",
+        "5029"
+      ],
+      "context": "action"
+    },
+    "M-006": {
+      "op": "mark_program",
+      "count": 11,
+      "elves": [
+        "5001",
+        "5006",
+        "5008",
+        "5010",
+        "5011",
+        "arena_14"
+      ],
+      "context": "action"
+    },
+    "G-004": {
+      "op": "block_damage",
+      "count": 2,
+      "elves": [
+        "5008"
+      ],
+      "context": "action"
+    },
+    "S-020": {
+      "op": "status_replace",
+      "count": 3,
+      "elves": [
+        "5008",
+        "5014"
       ],
       "context": "action"
     },
@@ -208,7 +430,7 @@
     },
     "Q-001": {
       "op": "abnormal",
-      "count": 21,
+      "count": 24,
       "elves": [
         "5007",
         "5008",
@@ -226,15 +448,54 @@
       ],
       "context": "condition"
     },
-    "X-059": {
-      "op": "grant_item",
-      "count": 3,
+    "M-036": {
+      "op": "resource_mark_team_named",
+      "count": 2,
+      "elves": [],
+      "context": "action"
+    },
+    "D-035": {
+      "op": "evade_turns",
+      "count": 5,
+      "elves": [
+        "5001",
+        "5013",
+        "5027",
+        "5036"
+      ],
+      "context": "action"
+    },
+    "S-004": {
+      "op": "cure_status",
+      "count": 23,
+      "elves": [
+        "5007",
+        "5009",
+        "5012",
+        "5013",
+        "5015",
+        "5021",
+        "5022",
+        "5028",
+        "5030",
+        "5032",
+        "5034",
+        "arena_12",
+        "arena_13",
+        "arena_14",
+        "arena_16"
+      ],
+      "context": "action"
+    },
+    "D-143": {
+      "op": "status_doubling_mods",
+      "count": 1,
       "elves": [],
       "context": "action"
     },
     "H-008": {
       "op": "drain",
-      "count": 96,
+      "count": 101,
       "elves": [
         "300",
         "5000",
@@ -270,9 +531,84 @@
       ],
       "context": "action"
     },
+    "P-047": {
+      "op": "pp_unlimited_until_switch",
+      "count": 5,
+      "elves": [
+        "5016",
+        "arena_16"
+      ],
+      "context": "action"
+    },
+    "S-021": {
+      "op": "status_seq",
+      "count": 9,
+      "elves": [
+        "5008",
+        "5030",
+        "arena_13",
+        "arena_16"
+      ],
+      "context": "action"
+    },
+    "P-017": {
+      "op": "pp_zero_random",
+      "count": 13,
+      "elves": [
+        "5000",
+        "5008",
+        "5009",
+        "5013",
+        "5015",
+        "5027",
+        "5031",
+        "arena_15"
+      ],
+      "context": "action"
+    },
+    "G-005": {
+      "op": "block_damage_uses",
+      "count": 8,
+      "elves": [
+        "5016",
+        "5027",
+        "5028",
+        "arena_14",
+        "arena_15"
+      ],
+      "context": "action"
+    },
+    "S-048": {
+      "op": "status_rules",
+      "count": 4,
+      "elves": [
+        "5041"
+      ],
+      "context": "action"
+    },
+    "Q-105": {
+      "op": "opp_selected",
+      "count": 9,
+      "elves": [],
+      "context": "condition"
+    },
+    "Q-110": {
+      "op": "opp_selected_sure",
+      "count": 1,
+      "elves": [],
+      "context": "condition"
+    },
+    "Q-027": {
+      "op": "fail_kind",
+      "count": 5,
+      "elves": [
+        "5015"
+      ],
+      "context": "condition"
+    },
     "G-007": {
       "op": "clear_turn",
-      "count": 90,
+      "count": 94,
       "elves": [
         "300",
         "5000",
@@ -315,39 +651,6 @@
       ],
       "context": "action"
     },
-    "S-021": {
-      "op": "status_seq",
-      "count": 8,
-      "elves": [
-        "5008",
-        "5030",
-        "arena_13",
-        "arena_16"
-      ],
-      "context": "action"
-    },
-    "S-004": {
-      "op": "cure_status",
-      "count": 22,
-      "elves": [
-        "5007",
-        "5009",
-        "5012",
-        "5013",
-        "5015",
-        "5021",
-        "5022",
-        "5028",
-        "5030",
-        "5032",
-        "5034",
-        "arena_12",
-        "arena_13",
-        "arena_14",
-        "arena_16"
-      ],
-      "context": "action"
-    },
     "D-084": {
       "op": "damage_extrema_record",
       "count": 1,
@@ -360,15 +663,9 @@
       "elves": [],
       "context": "condition"
     },
-    "Q-065": {
-      "op": "owner_on_field",
-      "count": 10,
-      "elves": [],
-      "context": "condition"
-    },
     "Q-028": {
       "op": "field_rounds",
-      "count": 6,
+      "count": 7,
       "elves": [
         "5035",
         "5041"
@@ -422,62 +719,15 @@
       ],
       "context": "action"
     },
-    "D-116": {
-      "op": "prio_bonus",
-      "count": 11,
-      "elves": [
-        "5013",
-        "5015",
-        "5016",
-        "5029",
-        "5031",
-        "arena_13",
-        "arena_16"
-      ],
-      "context": "action"
-    },
-    "D-039": {
-      "op": "ignore",
-      "count": 43,
-      "elves": [
-        "5009",
-        "5010",
-        "5012",
-        "5013",
-        "5015",
-        "5016",
-        "5019",
-        "5021",
-        "5024",
-        "5025",
-        "5028",
-        "5031",
-        "5035",
-        "5041",
-        "arena_13",
-        "arena_14",
-        "arena_15",
-        "arena_16"
-      ],
-      "context": "action"
-    },
     "X-123": {
       "op": "self_down_as_up",
       "count": 1,
       "elves": [],
       "context": "action"
     },
-    "S-048": {
-      "op": "status_rules",
-      "count": 3,
-      "elves": [
-        "5041"
-      ],
-      "context": "action"
-    },
     "G-019": {
       "op": "survive",
-      "count": 10,
+      "count": 12,
       "elves": [
         "5000",
         "5007",
@@ -492,7 +742,7 @@
     },
     "P-010": {
       "op": "pp_op",
-      "count": 52,
+      "count": 53,
       "elves": [
         "300",
         "5000",
@@ -531,19 +781,6 @@
       "op": "minimum_matchup",
       "count": 1,
       "elves": [],
-      "context": "action"
-    },
-    "X-057": {
-      "op": "flag_set",
-      "count": 37,
-      "elves": [
-        "5013",
-        "5016",
-        "5021",
-        "5029",
-        "5035",
-        "arena_14"
-      ],
       "context": "action"
     },
     "G-006": {
@@ -603,7 +840,7 @@
     },
     "Q-087": {
       "op": "stage",
-      "count": 43,
+      "count": 46,
       "elves": [
         "5002",
         "5004",
@@ -650,31 +887,6 @@
         "arena_16"
       ],
       "context": "condition"
-    },
-    "Q-067": {
-      "op": "player_state",
-      "count": 31,
-      "elves": [
-        "5013",
-        "5016",
-        "5018",
-        "5029",
-        "5035",
-        "arena_13"
-      ],
-      "context": "condition"
-    },
-    "G-005": {
-      "op": "block_damage_uses",
-      "count": 7,
-      "elves": [
-        "5016",
-        "5027",
-        "5028",
-        "arena_14",
-        "arena_15"
-      ],
-      "context": "action"
     },
     "D-118": {
       "op": "priority_disabled_turns",
@@ -790,15 +1002,6 @@
       "elves": [],
       "context": "action"
     },
-    "P-047": {
-      "op": "pp_unlimited_until_switch",
-      "count": 3,
-      "elves": [
-        "5016",
-        "arena_16"
-      ],
-      "context": "action"
-    },
     "X-136": {
       "op": "sure_hit",
       "count": 2,
@@ -815,7 +1018,7 @@
     },
     "D-021": {
       "op": "dmg",
-      "count": 105,
+      "count": 106,
       "elves": [
         "5000",
         "5001",
@@ -874,47 +1077,6 @@
         "5041",
         "arena_12",
         "arena_13"
-      ],
-      "context": "action"
-    },
-    "Q-105": {
-      "op": "opp_selected",
-      "count": 5,
-      "elves": [],
-      "context": "condition"
-    },
-    "A-007": {
-      "op": "stat_clear",
-      "count": 40,
-      "elves": [
-        "5000",
-        "5001",
-        "5002",
-        "5003",
-        "5006",
-        "5008",
-        "5009",
-        "5010",
-        "5013",
-        "5014",
-        "5016",
-        "5018",
-        "5022",
-        "5023",
-        "5024",
-        "5025",
-        "5026",
-        "5031",
-        "5032",
-        "5033",
-        "5035",
-        "5036",
-        "5041",
-        "arena_12",
-        "arena_13",
-        "arena_14",
-        "arena_15",
-        "arena_16"
       ],
       "context": "action"
     },
@@ -1070,7 +1232,7 @@
     },
     "M-010": {
       "op": "resource_mark_add",
-      "count": 37,
+      "count": 38,
       "elves": [
         "5012",
         "5013",
@@ -1347,7 +1509,7 @@
     },
     "Q-055": {
       "op": "mark_count",
-      "count": 45,
+      "count": 48,
       "elves": [
         "5012",
         "5013",
@@ -1408,7 +1570,7 @@
     },
     "D-048": {
       "op": "no_pos_prio_turns",
-      "count": 6,
+      "count": 7,
       "elves": [
         "5008",
         "5013",
@@ -1783,7 +1945,7 @@
     },
     "D-026": {
       "op": "dmg_mod",
-      "count": 18,
+      "count": 20,
       "elves": [
         "5003",
         "5011",
@@ -1823,15 +1985,6 @@
       "elves": [
         "5028",
         "5041"
-      ],
-      "context": "condition"
-    },
-    "Q-060": {
-      "op": "no_skill_dmg",
-      "count": 2,
-      "elves": [
-        "5001",
-        "5028"
       ],
       "context": "condition"
     },
@@ -1892,7 +2045,7 @@
     },
     "S-010": {
       "op": "immune_status_turns",
-      "count": 39,
+      "count": 42,
       "elves": [
         "5001",
         "5007",
@@ -2098,7 +2251,7 @@
     },
     "S-005": {
       "op": "immune_attack_count",
-      "count": 4,
+      "count": 5,
       "elves": [
         "5019",
         "5030",
@@ -2294,7 +2447,7 @@
     },
     "S-054": {
       "op": "status_immunity_now",
-      "count": 1,
+      "count": 3,
       "elves": [
         "arena_16"
       ],
@@ -2302,7 +2455,7 @@
     },
     "D-087": {
       "op": "damage_immunity_now",
-      "count": 2,
+      "count": 3,
       "elves": [
         "5035",
         "arena_16"
@@ -2336,7 +2489,7 @@
     },
     "C-032": {
       "op": "resource_query_rule",
-      "count": 4,
+      "count": 5,
       "elves": [
         "5013",
         "5021",
@@ -2427,27 +2580,6 @@
       ],
       "context": "condition"
     },
-    "G-002": {
-      "op": "add_invalid_turns",
-      "count": 21,
-      "elves": [
-        "5012",
-        "5013",
-        "5015",
-        "5016",
-        "5017",
-        "5021",
-        "5022",
-        "5023",
-        "5025",
-        "5031",
-        "5032",
-        "5034",
-        "5041",
-        "arena_16"
-      ],
-      "context": "action"
-    },
     "D-126": {
       "op": "stored_damage_convert_next",
       "count": 1,
@@ -2518,7 +2650,7 @@
     },
     "Q-037": {
       "op": "has_turn_effect",
-      "count": 2,
+      "count": 4,
       "elves": [
         "5021",
         "5032"
@@ -2670,20 +2802,9 @@
       ],
       "context": "action"
     },
-    "D-035": {
-      "op": "evade_turns",
-      "count": 4,
-      "elves": [
-        "5001",
-        "5013",
-        "5027",
-        "5036"
-      ],
-      "context": "action"
-    },
     "T-013": {
       "op": "once_per_round",
-      "count": 2,
+      "count": 3,
       "elves": [
         "5013",
         "5016"
@@ -3011,21 +3132,6 @@
       ],
       "context": "action"
     },
-    "P-017": {
-      "op": "pp_zero_random",
-      "count": 12,
-      "elves": [
-        "5000",
-        "5008",
-        "5009",
-        "5013",
-        "5015",
-        "5027",
-        "5031",
-        "arena_15"
-      ],
-      "context": "action"
-    },
     "H-013": {
       "op": "heal_flat",
       "count": 2,
@@ -3158,21 +3264,6 @@
       ],
       "context": "condition"
     },
-    "H-032": {
-      "op": "vampire",
-      "count": 12,
-      "elves": [
-        "5001",
-        "5010",
-        "5011",
-        "5013",
-        "5014",
-        "5021",
-        "5030",
-        "5034"
-      ],
-      "context": "action"
-    },
     "H-057": {
       "op": "hp_difference_damage",
       "count": 2,
@@ -3234,7 +3325,7 @@
     },
     "M-012": {
       "op": "resource_mark_subtract",
-      "count": 2,
+      "count": 4,
       "elves": [
         "5017"
       ],
@@ -3353,17 +3444,6 @@
       ],
       "context": "condition"
     },
-    "Q-098": {
-      "op": "type_is",
-      "count": 7,
-      "elves": [
-        "5000",
-        "5010",
-        "5011",
-        "5018"
-      ],
-      "context": "condition"
-    },
     "H-037": {
       "op": "drain_by_pp_state",
       "count": 2,
@@ -3420,17 +3500,6 @@
       "count": 1,
       "elves": [
         "arena_14"
-      ],
-      "context": "action"
-    },
-    "T-018": {
-      "op": "timed_uses",
-      "count": 6,
-      "elves": [
-        "5007",
-        "5014",
-        "5025",
-        "5030"
       ],
       "context": "action"
     },
@@ -3496,16 +3565,6 @@
       "count": 1,
       "elves": [
         "5018"
-      ],
-      "context": "action"
-    },
-    "D-007": {
-      "op": "change_type",
-      "count": 4,
-      "elves": [
-        "5014",
-        "5018",
-        "5035"
       ],
       "context": "action"
     },
@@ -3742,10 +3801,9 @@
     },
     "G-020": {
       "op": "survive_turns",
-      "count": 3,
+      "count": 2,
       "elves": [
         "5001",
-        "5012",
         "5021"
       ],
       "context": "action"
@@ -4398,14 +4456,6 @@
       ],
       "context": "action"
     },
-    "Q-020": {
-      "op": "event_damage_type",
-      "count": 2,
-      "elves": [
-        "5012"
-      ],
-      "context": "condition"
-    },
     "Q-031": {
       "op": "first_hit",
       "count": 1,
@@ -4591,14 +4641,6 @@
         "5015"
       ],
       "context": "action"
-    },
-    "Q-027": {
-      "op": "fail_kind",
-      "count": 3,
-      "elves": [
-        "5015"
-      ],
-      "context": "condition"
     },
     "X-129": {
       "op": "skill_marks_priority",
@@ -5257,6 +5299,24 @@
       "elves": [],
       "context": "condition"
     },
+    "X-162": {
+      "op": "partner_link",
+      "count": 1,
+      "elves": [],
+      "context": "action"
+    },
+    "X-163": {
+      "op": "partner_revive",
+      "count": 1,
+      "elves": [],
+      "context": "action"
+    },
+    "S-066": {
+      "op": "status_seq_until_success",
+      "count": 1,
+      "elves": [],
+      "context": "action"
+    },
     "D-096": {
       "op": "damage_to_side",
       "count": 1,
@@ -5274,15 +5334,69 @@
       "count": 2,
       "elves": [],
       "context": "action"
+    },
+    "M-034": {
+      "op": "mark_consume_current",
+      "count": 4,
+      "elves": [],
+      "context": "action"
+    },
+    "M-033": {
+      "op": "mark_program_team",
+      "count": 2,
+      "elves": [],
+      "context": "action"
+    },
+    "M-035": {
+      "op": "resource_mark_from_tally",
+      "count": 1,
+      "elves": [],
+      "context": "action"
+    },
+    "A-049": {
+      "op": "stat_random_shared",
+      "count": 2,
+      "elves": [],
+      "context": "action"
+    },
+    "A-050": {
+      "op": "stage_flip_down",
+      "count": 1,
+      "elves": [],
+      "context": "action"
+    },
+    "A-056": {
+      "op": "stage_view_rule",
+      "count": 1,
+      "elves": [],
+      "context": "action"
+    },
+    "H-076": {
+      "op": "drain_stage_levels",
+      "count": 2,
+      "elves": [],
+      "context": "action"
+    },
+    "H-077": {
+      "op": "heal_holder_and_active",
+      "count": 1,
+      "elves": [],
+      "context": "action"
+    },
+    "Q-069": {
+      "op": "pp_not_full",
+      "count": 2,
+      "elves": [],
+      "context": "condition"
     }
   },
   "byOp": {
     "abnormal": {
       "actionCode": null,
       "conditionCode": "Q-001",
-      "count": 21,
+      "count": 24,
       "actionCount": 0,
-      "conditionCount": 21,
+      "conditionCount": 24,
       "elves": [
         "5007",
         "5008",
@@ -5372,8 +5486,8 @@
     "add_invalid_turns": {
       "actionCode": "G-002",
       "conditionCode": null,
-      "count": 21,
-      "actionCount": 21,
+      "count": 23,
+      "actionCount": 23,
       "conditionCount": 0,
       "elves": [
         "5012",
@@ -5856,8 +5970,8 @@
     "block_damage_uses": {
       "actionCode": "G-005",
       "conditionCode": null,
-      "count": 7,
-      "actionCount": 7,
+      "count": 8,
+      "actionCount": 8,
       "conditionCount": 0,
       "elves": [
         "5016",
@@ -5985,8 +6099,8 @@
     "change_type": {
       "actionCode": "D-007",
       "conditionCode": null,
-      "count": 4,
-      "actionCount": 4,
+      "count": 5,
+      "actionCount": 5,
       "conditionCount": 0,
       "elves": [
         "5014",
@@ -6118,8 +6232,8 @@
     "clear_turn": {
       "actionCode": "G-007",
       "conditionCode": null,
-      "count": 90,
-      "actionCount": 90,
+      "count": 94,
+      "actionCount": 94,
       "conditionCount": 0,
       "elves": [
         "300",
@@ -6599,8 +6713,8 @@
     "cure_status": {
       "actionCode": "S-004",
       "conditionCode": null,
-      "count": 22,
-      "actionCount": 22,
+      "count": 23,
+      "actionCount": 23,
       "conditionCount": 0,
       "elves": [
         "5007",
@@ -6771,8 +6885,8 @@
     "damage_immunity_now": {
       "actionCode": "D-087",
       "conditionCode": null,
-      "count": 2,
-      "actionCount": 2,
+      "count": 3,
+      "actionCount": 3,
       "conditionCount": 0,
       "elves": [
         "5035",
@@ -7011,8 +7125,8 @@
     "dmg": {
       "actionCode": "D-021",
       "conditionCode": null,
-      "count": 105,
-      "actionCount": 105,
+      "count": 106,
+      "actionCount": 106,
       "conditionCount": 0,
       "elves": [
         "5000",
@@ -7242,8 +7356,8 @@
     "dmg_mod": {
       "actionCode": "D-026",
       "conditionCode": null,
-      "count": 18,
-      "actionCount": 18,
+      "count": 20,
+      "actionCount": 20,
       "conditionCount": 0,
       "elves": [
         "5003",
@@ -7426,8 +7540,8 @@
     "drain": {
       "actionCode": "H-008",
       "conditionCode": null,
-      "count": 96,
-      "actionCount": 96,
+      "count": 101,
+      "actionCount": 101,
       "conditionCount": 0,
       "elves": [
         "300",
@@ -7628,6 +7742,15 @@
       "definitions": [
         "山"
       ]
+    },
+    "drain_stage_levels": {
+      "actionCode": "H-076",
+      "conditionCode": null,
+      "count": 2,
+      "actionCount": 2,
+      "conditionCount": 0,
+      "elves": [],
+      "definitions": []
     },
     "drain_stage_sum": {
       "actionCode": "H-043",
@@ -7925,8 +8048,8 @@
     "evade_turns": {
       "actionCode": "D-035",
       "conditionCode": null,
-      "count": 4,
-      "actionCount": 4,
+      "count": 5,
+      "actionCount": 5,
       "conditionCount": 0,
       "elves": [
         "5001",
@@ -7960,14 +8083,16 @@
     "event_damage_type": {
       "actionCode": null,
       "conditionCode": "Q-020",
-      "count": 2,
+      "count": 4,
       "actionCount": 0,
-      "conditionCount": 2,
+      "conditionCount": 4,
       "elves": [
-        "5012"
+        "5012",
+        "5013"
       ],
       "definitions": [
-        "冰"
+        "冰",
+        "凕"
       ]
     },
     "event_hit": {
@@ -8149,9 +8274,9 @@
     "fail_kind": {
       "actionCode": null,
       "conditionCode": "Q-027",
-      "count": 3,
+      "count": 5,
       "actionCount": 0,
-      "conditionCount": 3,
+      "conditionCount": 5,
       "elves": [
         "5015"
       ],
@@ -8197,9 +8322,9 @@
     "field_rounds": {
       "actionCode": null,
       "conditionCode": "Q-028",
-      "count": 6,
+      "count": 7,
       "actionCount": 0,
-      "conditionCount": 6,
+      "conditionCount": 7,
       "elves": [
         "5035",
         "5041"
@@ -8326,8 +8451,8 @@
     "flag_set": {
       "actionCode": "X-057",
       "conditionCode": null,
-      "count": 37,
-      "actionCount": 37,
+      "count": 44,
+      "actionCount": 44,
       "conditionCount": 0,
       "elves": [
         "5013",
@@ -8385,8 +8510,8 @@
     "grant_item": {
       "actionCode": "X-059",
       "conditionCode": null,
-      "count": 3,
-      "actionCount": 3,
+      "count": 4,
+      "actionCount": 4,
       "conditionCount": 0,
       "elves": [],
       "definitions": []
@@ -8447,9 +8572,9 @@
     "has_turn_effect": {
       "actionCode": null,
       "conditionCode": "Q-037",
-      "count": 2,
+      "count": 4,
       "actionCount": 0,
-      "conditionCount": 2,
+      "conditionCount": 4,
       "elves": [
         "5021",
         "5032"
@@ -8645,6 +8770,15 @@
         "源生壁壘"
       ]
     },
+    "heal_holder_and_active": {
+      "actionCode": "H-077",
+      "conditionCode": null,
+      "count": 1,
+      "actionCount": 1,
+      "conditionCount": 0,
+      "elves": [],
+      "definitions": []
+    },
     "heal_main_settled": {
       "actionCode": "H-015",
       "conditionCode": null,
@@ -8700,6 +8834,15 @@
       "definitions": [
         "雷神"
       ]
+    },
+    "heal_shield_sum": {
+      "actionCode": "H-078",
+      "conditionCode": null,
+      "count": 1,
+      "actionCount": 1,
+      "conditionCount": 0,
+      "elves": [],
+      "definitions": []
     },
     "heal_snapshot": {
       "actionCode": "H-055",
@@ -9035,8 +9178,8 @@
     "ignore": {
       "actionCode": "D-039",
       "conditionCode": null,
-      "count": 43,
-      "actionCount": 43,
+      "count": 50,
+      "actionCount": 50,
       "conditionCount": 0,
       "elves": [
         "5009",
@@ -9192,8 +9335,8 @@
     "immune_attack_count": {
       "actionCode": "S-005",
       "conditionCode": null,
-      "count": 4,
-      "actionCount": 4,
+      "count": 5,
+      "actionCount": 5,
       "conditionCount": 0,
       "elves": [
         "5019",
@@ -9290,8 +9433,8 @@
     "immune_status_turns": {
       "actionCode": "S-010",
       "conditionCode": null,
-      "count": 39,
-      "actionCount": 39,
+      "count": 42,
+      "actionCount": 42,
       "conditionCount": 0,
       "elves": [
         "5001",
@@ -9419,6 +9562,15 @@
         "凕",
         "燦"
       ]
+    },
+    "incoming_skill_to_shields": {
+      "actionCode": "G-047",
+      "conditionCode": null,
+      "count": 1,
+      "actionCount": 1,
+      "conditionCount": 0,
+      "elves": [],
+      "definitions": []
     },
     "incoming_utility_invalid_turns": {
       "actionCode": "S-011",
@@ -9736,12 +9888,21 @@
         "咤"
       ]
     },
+    "mark_consume_current": {
+      "actionCode": "M-034",
+      "conditionCode": null,
+      "count": 4,
+      "actionCount": 4,
+      "conditionCount": 0,
+      "elves": [],
+      "definitions": []
+    },
     "mark_count": {
       "actionCode": null,
       "conditionCode": "Q-055",
-      "count": 45,
+      "count": 48,
       "actionCount": 0,
-      "conditionCount": 45,
+      "conditionCount": 48,
       "elves": [
         "5012",
         "5013",
@@ -9842,6 +10003,15 @@
         "鎮",
         "黯"
       ]
+    },
+    "mark_program_team": {
+      "actionCode": "M-033",
+      "conditionCode": null,
+      "count": 2,
+      "actionCount": 2,
+      "conditionCount": 0,
+      "elves": [],
+      "definitions": []
     },
     "mark_remove_current": {
       "actionCode": "M-008",
@@ -10173,8 +10343,8 @@
     "no_pos_prio_turns": {
       "actionCode": "D-048",
       "conditionCode": null,
-      "count": 6,
-      "actionCount": 6,
+      "count": 7,
+      "actionCount": 7,
       "conditionCount": 0,
       "elves": [
         "5008",
@@ -10224,9 +10394,9 @@
     "no_skill_dmg": {
       "actionCode": null,
       "conditionCode": "Q-060",
-      "count": 2,
+      "count": 3,
       "actionCount": 0,
-      "conditionCount": 2,
+      "conditionCount": 3,
       "elves": [
         "5001",
         "5028"
@@ -10356,8 +10526,8 @@
     "once_per_round": {
       "actionCode": "T-013",
       "conditionCode": null,
-      "count": 2,
-      "actionCount": 2,
+      "count": 3,
+      "actionCount": 3,
       "conditionCount": 0,
       "elves": [
         "5013",
@@ -10410,9 +10580,27 @@
     "opp_selected": {
       "actionCode": null,
       "conditionCode": "Q-105",
-      "count": 5,
+      "count": 9,
       "actionCount": 0,
-      "conditionCount": 5,
+      "conditionCount": 9,
+      "elves": [],
+      "definitions": []
+    },
+    "opp_selected_sure": {
+      "actionCode": null,
+      "conditionCode": "Q-110",
+      "count": 1,
+      "actionCount": 0,
+      "conditionCount": 1,
+      "elves": [],
+      "definitions": []
+    },
+    "opp_shield_cap_with_cost": {
+      "actionCode": "G-048",
+      "conditionCode": null,
+      "count": 1,
+      "actionCount": 1,
+      "conditionCount": 0,
       "elves": [],
       "definitions": []
     },
@@ -10525,9 +10713,9 @@
     "owner_on_field": {
       "actionCode": null,
       "conditionCode": "Q-065",
-      "count": 10,
+      "count": 12,
       "actionCount": 0,
-      "conditionCount": 10,
+      "conditionCount": 12,
       "elves": [],
       "definitions": []
     },
@@ -10543,6 +10731,24 @@
       "definitions": [
         "獅"
       ]
+    },
+    "partner_link": {
+      "actionCode": "X-162",
+      "conditionCode": null,
+      "count": 1,
+      "actionCount": 1,
+      "conditionCount": 0,
+      "elves": [],
+      "definitions": []
+    },
+    "partner_revive": {
+      "actionCode": "X-163",
+      "conditionCode": null,
+      "count": 1,
+      "actionCount": 1,
+      "conditionCount": 0,
+      "elves": [],
+      "definitions": []
     },
     "peel_types": {
       "actionCode": "D-051",
@@ -10636,9 +10842,9 @@
     "player_state": {
       "actionCode": null,
       "conditionCode": "Q-067",
-      "count": 31,
+      "count": 36,
       "actionCount": 0,
-      "conditionCount": 31,
+      "conditionCount": 36,
       "elves": [
         "5013",
         "5016",
@@ -10979,11 +11185,20 @@
         "無為之境"
       ]
     },
+    "pp_not_full": {
+      "actionCode": null,
+      "conditionCode": "Q-069",
+      "count": 2,
+      "actionCount": 0,
+      "conditionCount": 2,
+      "elves": [],
+      "definitions": []
+    },
     "pp_op": {
       "actionCode": "P-010",
       "conditionCode": null,
-      "count": 52,
-      "actionCount": 52,
+      "count": 53,
+      "actionCount": 53,
       "conditionCount": 0,
       "elves": [
         "300",
@@ -11121,8 +11336,8 @@
     "pp_unlimited_until_switch": {
       "actionCode": "P-047",
       "conditionCode": null,
-      "count": 3,
-      "actionCount": 3,
+      "count": 5,
+      "actionCount": 5,
       "conditionCount": 0,
       "elves": [
         "5016",
@@ -11166,8 +11381,8 @@
     "pp_zero_random": {
       "actionCode": "P-017",
       "conditionCode": null,
-      "count": 12,
-      "actionCount": 12,
+      "count": 13,
+      "actionCount": 13,
       "conditionCount": 0,
       "elves": [
         "5000",
@@ -11247,8 +11462,8 @@
     "prio_bonus": {
       "actionCode": "D-116",
       "conditionCode": null,
-      "count": 11,
-      "actionCount": 11,
+      "count": 15,
+      "actionCount": 15,
       "conditionCount": 0,
       "elves": [
         "5013",
@@ -11400,6 +11615,15 @@
     },
     "priority_exponential_damage": {
       "actionCode": "D-119",
+      "conditionCode": null,
+      "count": 1,
+      "actionCount": 1,
+      "conditionCount": 0,
+      "elves": [],
+      "definitions": []
+    },
+    "priority_offset_round": {
+      "actionCode": "T-048",
       "conditionCode": null,
       "count": 1,
       "actionCount": 1,
@@ -11770,8 +11994,8 @@
     "resource_mark_add": {
       "actionCode": "M-010",
       "conditionCode": null,
-      "count": 37,
-      "actionCount": 37,
+      "count": 38,
+      "actionCount": 38,
       "conditionCount": 0,
       "elves": [
         "5012",
@@ -11815,6 +12039,15 @@
         "龍之治癒"
       ]
     },
+    "resource_mark_from_tally": {
+      "actionCode": "M-035",
+      "conditionCode": null,
+      "count": 1,
+      "actionCount": 1,
+      "conditionCount": 0,
+      "elves": [],
+      "definitions": []
+    },
     "resource_mark_remove": {
       "actionCode": "M-011",
       "conditionCode": null,
@@ -11854,8 +12087,8 @@
     "resource_mark_subtract": {
       "actionCode": "M-012",
       "conditionCode": null,
-      "count": 2,
-      "actionCount": 2,
+      "count": 4,
+      "actionCount": 4,
       "conditionCount": 0,
       "elves": [
         "5017"
@@ -11863,6 +12096,15 @@
       "definitions": [
         "荒"
       ]
+    },
+    "resource_mark_team_named": {
+      "actionCode": "M-036",
+      "conditionCode": null,
+      "count": 2,
+      "actionCount": 2,
+      "conditionCount": 0,
+      "elves": [],
+      "definitions": []
     },
     "resource_panel_scale": {
       "actionCode": "X-110",
@@ -11906,8 +12148,8 @@
     "resource_query_rule": {
       "actionCode": "C-032",
       "conditionCode": null,
-      "count": 4,
-      "actionCount": 4,
+      "count": 5,
+      "actionCount": 5,
       "conditionCount": 0,
       "elves": [
         "5013",
@@ -12542,9 +12784,9 @@
     "stage": {
       "actionCode": null,
       "conditionCode": "Q-087",
-      "count": 43,
+      "count": 46,
       "actionCount": 0,
-      "conditionCount": 43,
+      "conditionCount": 46,
       "elves": [
         "5002",
         "5004",
@@ -12631,6 +12873,15 @@
         "異"
       ]
     },
+    "stage_flip_down": {
+      "actionCode": "A-050",
+      "conditionCode": null,
+      "count": 1,
+      "actionCount": 1,
+      "conditionCount": 0,
+      "elves": [],
+      "definitions": []
+    },
     "stage_guard_turns": {
       "actionCode": "A-004",
       "conditionCode": null,
@@ -12682,6 +12933,15 @@
       "definitions": [
         "械"
       ]
+    },
+    "stage_view_rule": {
+      "actionCode": "A-056",
+      "conditionCode": null,
+      "count": 1,
+      "actionCount": 1,
+      "conditionCount": 0,
+      "elves": [],
+      "definitions": []
     },
     "stat": {
       "actionCode": "A-005",
@@ -12831,8 +13091,8 @@
     "stat_clear": {
       "actionCode": "A-007",
       "conditionCode": null,
-      "count": 40,
-      "actionCount": 40,
+      "count": 46,
+      "actionCount": 46,
       "conditionCount": 0,
       "elves": [
         "5000",
@@ -13025,6 +13285,15 @@
       "definitions": [
         "星河入眸"
       ]
+    },
+    "stat_random_shared": {
+      "actionCode": "A-049",
+      "conditionCode": null,
+      "count": 2,
+      "actionCount": 2,
+      "conditionCount": 0,
+      "elves": [],
+      "definitions": []
     },
     "stat_reverse": {
       "actionCode": "A-010",
@@ -13222,8 +13491,8 @@
     "status": {
       "actionCode": "S-013",
       "conditionCode": null,
-      "count": 164,
-      "actionCount": 164,
+      "count": 168,
+      "actionCount": 168,
       "conditionCount": 0,
       "elves": [
         "300",
@@ -13419,6 +13688,15 @@
         "蝕言"
       ]
     },
+    "status_doubling_mods": {
+      "actionCode": "D-143",
+      "conditionCode": null,
+      "count": 1,
+      "actionCount": 1,
+      "conditionCount": 0,
+      "elves": [],
+      "definitions": []
+    },
     "status_duration_damage": {
       "actionCode": "S-037",
       "conditionCode": null,
@@ -13531,8 +13809,8 @@
     "status_immunity_now": {
       "actionCode": "S-054",
       "conditionCode": null,
-      "count": 1,
-      "actionCount": 1,
+      "count": 3,
+      "actionCount": 3,
       "conditionCount": 0,
       "elves": [
         "arena_16"
@@ -13617,8 +13895,8 @@
     "status_rules": {
       "actionCode": "S-048",
       "conditionCode": null,
-      "count": 3,
-      "actionCount": 3,
+      "count": 4,
+      "actionCount": 4,
       "conditionCount": 0,
       "elves": [
         "5041"
@@ -13630,8 +13908,8 @@
     "status_seq": {
       "actionCode": "S-021",
       "conditionCode": null,
-      "count": 8,
-      "actionCount": 8,
+      "count": 9,
+      "actionCount": 9,
       "conditionCount": 0,
       "elves": [
         "5008",
@@ -13646,6 +13924,15 @@
         "艷羅劍典",
         "訣別"
       ]
+    },
+    "status_seq_until_success": {
+      "actionCode": "S-066",
+      "conditionCode": null,
+      "count": 1,
+      "actionCount": 1,
+      "conditionCount": 0,
+      "elves": [],
+      "definitions": []
     },
     "status_transfer_all": {
       "actionCode": "S-049",
@@ -13844,8 +14131,8 @@
     "survive": {
       "actionCode": "G-019",
       "conditionCode": null,
-      "count": 10,
-      "actionCount": 10,
+      "count": 12,
+      "actionCount": 12,
       "conditionCount": 0,
       "elves": [
         "5000",
@@ -13871,16 +14158,14 @@
     "survive_turns": {
       "actionCode": "G-020",
       "conditionCode": null,
-      "count": 3,
-      "actionCount": 3,
+      "count": 2,
+      "actionCount": 2,
       "conditionCount": 0,
       "elves": [
         "5001",
-        "5012",
         "5021"
       ],
       "definitions": [
-        "冰",
         "黯·萬魂歸寂",
         "龍"
       ]
@@ -14145,8 +14430,8 @@
     "timed_uses": {
       "actionCode": "T-018",
       "conditionCode": null,
-      "count": 6,
-      "actionCount": 6,
+      "count": 11,
+      "actionCount": 11,
       "conditionCount": 0,
       "elves": [
         "5007",
@@ -14273,9 +14558,9 @@
     "type_is": {
       "actionCode": null,
       "conditionCode": "Q-098",
-      "count": 7,
+      "count": 8,
       "actionCount": 0,
-      "conditionCount": 7,
+      "conditionCount": 8,
       "elves": [
         "5000",
         "5010",
@@ -14381,8 +14666,8 @@
     "vampire": {
       "actionCode": "H-032",
       "conditionCode": null,
-      "count": 12,
-      "actionCount": 12,
+      "count": 13,
+      "actionCount": 13,
       "conditionCount": 0,
       "elves": [
         "5001",
@@ -14562,7 +14847,7 @@
         "arena_14",
         "arena_15"
       ],
-      "referenceCount": 66
+      "referenceCount": 69
     },
     {
       "id": "fatal-survival",
@@ -14609,7 +14894,7 @@
         "arena_14",
         "arena_16"
       ],
-      "referenceCount": 28
+      "referenceCount": 29
     },
     {
       "id": "shield-barrier",
@@ -14789,7 +15074,7 @@
         "arena_15",
         "arena_16"
       ],
-      "referenceCount": 47
+      "referenceCount": 49
     }
   ],
   "aliasOfOp": {
@@ -14982,6 +15267,11 @@
     "A-046",
     "A-047",
     "A-048",
+    "A-051",
+    "A-052",
+    "A-053",
+    "A-054",
+    "A-055",
     "C-001",
     "C-002",
     "C-003",
@@ -15045,6 +15335,9 @@
     "D-138",
     "D-139",
     "D-140",
+    "D-141",
+    "D-142",
+    "D-144",
     "G-009",
     "G-010",
     "G-032",
@@ -15056,6 +15349,7 @@
     "G-044",
     "G-045",
     "G-046",
+    "G-049",
     "H-001",
     "H-007",
     "H-016",
@@ -15081,6 +15375,7 @@
     "H-073",
     "H-074",
     "H-075",
+    "H-079",
     "M-001",
     "M-002",
     "M-003",
@@ -15144,6 +15439,7 @@
     "S-062",
     "S-063",
     "S-064",
+    "S-065",
     "T-002",
     "T-004",
     "T-005",
@@ -15218,6 +15514,7 @@
     "X-156",
     "X-157",
     "X-160",
-    "X-161"
+    "X-161",
+    "X-164"
   ]
 }

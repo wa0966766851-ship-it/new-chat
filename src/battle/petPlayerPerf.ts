@@ -2,6 +2,7 @@
  * swf-renderer 0.3.2 的 mountStandalone 把 Pixi 解析度寫死為 window.devicePixelRatio，且沒有選項可改；
  * 套件是 registry 依賴（非 vendored、無 patch 機制），所以掛載後用 Pixi 公開 API `renderer.resize(w,h,resolution)` 降到上限。
  * 唯一的非公開存取是 `player.app`（TS private，執行期存在）；取不到就原樣放行，不影響動畫。 */
+import {readAnimationSettings,qualityResolutionCap} from './animationSettings';
 export const MAX_PET_RESOLUTION=2;
 /** 8192 級圖集（聖光普尼、咤克斯系列）的畫布降到 1.5：解析度成本是平方，2→1.5 少 44% 像素。 */
 export const LARGE_ATLAS_RESOLUTION=1.5;
@@ -22,7 +23,8 @@ export function capPlayerResolution(player:unknown,clip?:{atlas?:{width?:number;
  try{
   const renderer=(player as {app?:{renderer?:{resolution:number;screen:{width:number;height:number};resize:(w:number,h:number,resolution?:number)=>void}}})?.app?.renderer;
   if(!renderer||typeof renderer.resize!=='function')return null;
-  const target=cappedResolution(dpr??(typeof window!=='undefined'?window.devicePixelRatio:1),petResolutionCap(clip?.atlas));
+  // 畫質設定（控制中心）再壓一層上限；只影響畫布像素，不改動畫時序。
+  const target=cappedResolution(dpr??(typeof window!=='undefined'?window.devicePixelRatio:1),Math.min(petResolutionCap(clip?.atlas),qualityResolutionCap(readAnimationSettings().quality)));
   if(!(renderer.resolution>target))return null;
   renderer.resize(renderer.screen.width,renderer.screen.height,target);
   return target;

@@ -22,7 +22,10 @@ export interface StatusProjection {
   category: StatusCategory;
   status: string;
 }
-declare module '../types' { interface Elf { statusRules?: ElfStatusRules; markStatusProjections?: readonly StatusProjection[] } }
+/** 2026-11-21：多個來源（例如狂暴、平靜、山神守護、砥礪）各自一組規則並存，不再互相覆蓋 whileStatus。舊存檔的單一物件仍相容。 */
+export type ElfStatusRuleSet = ElfStatusRules | readonly ElfStatusRules[];
+declare module '../types' { interface Elf { statusRules?: ElfStatusRuleSet; markStatusProjections?: readonly StatusProjection[] } }
+export const statusRuleList = (rules: ElfStatusRuleSet | undefined): ElfStatusRules[] => !rules ? [] : Array.isArray(rules) ? [...rules] : [rules as ElfStatusRules];
 
 export function statusMatchesProjection(name: string, category: StatusCategory): boolean {
   const categories = categoriesOf(name);
@@ -43,30 +46,42 @@ const present = (statuses: Record<string, number>, name: string) =>
   Object.entries(statuses).some(([id, turns]) => turns > 0 && canonicalStatusName(id) === canonicalStatusName(name));
 const categoriesOf = (id: string): StatusCategory[] => StatusRegistry[canonicalStatusName(id)]?.categories || [];
 
-/** 條件異常存在時的規則；否則 undefined。 */
-export function activeStatusRules(rules: ElfStatusRules | undefined, statuses: Record<string, number>): ElfStatusRules | undefined {
-  return rules && present(statuses, rules.whileStatus) ? rules : undefined;
+/** 條件異常存在的規則組。 */
+export function activeStatusRuleSets(rules: ElfStatusRuleSet | undefined, statuses: Record<string, number>): ElfStatusRules[] {
+  return statusRuleList(rules).filter(r => present(statuses, r.whileStatus));
+}
+/** 條件異常存在時的規則（多組合併：分類取聯集、布林任一、回合取最大）；否則 undefined。 */
+export function activeStatusRules(rules: ElfStatusRuleSet | undefined, statuses: Record<string, number>): ElfStatusRules | undefined {
+  const sets = activeStatusRuleSets(rules, statuses);
+  if (!sets.length) return undefined;
+  if (sets.length === 1) return sets[0];
+  const union = (k: 'conversionTargetBan' | 'cancelEffects') => { const v = [...new Set(sets.flatMap(r => r[k] || []))]; return v.length ? v : undefined; };
+  const turns = Math.max(0, ...sets.map(r => r.replaceInvalidateOppTurns || 0));
+  return { whileStatus: sets[0].whileStatus, conversionTargetBan: union('conversionTargetBan'), cancelEffects: union('cancelEffects'),
+    ...(sets.some(r => r.replacePpFree) ? { replacePpFree: true } : {}), ...(turns ? { replaceInvalidateOppTurns: turns } : {}) };
 }
 
-/** 目前被取消原有效果的異常 id（不含條件異常自身）。 */
-export function cancelledStatusIds(rules: ElfStatusRules | undefined, statuses: Record<string, number>): string[] {
-  const active = activeStatusRules(rules, statuses);
-  if (!active?.cancelEffects?.length && !active?.cancelExceptCategory) return [];
-  return Object.keys(statuses).filter(id => statuses[id] > 0 && canonicalStatusName(id) !== canonicalStatusName(active.whileStatus)
-    && (active.cancelExceptCategory ? !categoriesOf(id).includes(active.cancelExceptCategory) : categoriesOf(id).some(c => active.cancelEffects!.includes(c))));
+/** 目前被取消原有效果的異常 id（各組分別判定後取聯集；不含該組自身的條件異常）。 */
+export function cancelledStatusIds(rules: ElfStatusRuleSet | undefined, statuses: Record<string, number>): string[] {
+  const out = new Set<string>();
+  for (const active of activeStatusRuleSets(rules, statuses)) {
+    if (!active.cancelEffects?.length && !active.cancelExceptCategory) continue;
+    for (const id of Object.keys(statuses)) if (statuses[id] > 0 && canonicalStatusName(id) !== canonicalStatusName(active.whileStatus)
+      && (active.cancelExceptCategory ? !categoriesOf(id).includes(active.cancelExceptCategory) : categoriesOf(id).some(c => active.cancelEffects!.includes(c)))) out.add(id);
+  }
+  return [...out];
 }
 
 /** 去掉被取消原有效果的異常後的異常表（供機制查詢；顯示與回合數照舊使用原表）。 */
-export function effectiveStatusTable(rules: ElfStatusRules | undefined, statuses: Record<string, number>): Record<string, number> {
+export function effectiveStatusTable(rules: ElfStatusRuleSet | undefined, statuses: Record<string, number>): Record<string, number> {
   const cancelled = cancelledStatusIds(rules, statuses);
   if (!cancelled.length) return statuses;
   return Object.fromEntries(Object.entries(statuses).filter(([id]) => !cancelled.includes(id)));
 }
 
-/** 異常是否被禁止轉化為 targetId（目標屬於被禁分類）。 */
-export function statusConversionBlocked(rules: ElfStatusRules | undefined, statuses: Record<string, number>, targetId: string): boolean {
-  const active = activeStatusRules(rules, statuses);
-  return !!active?.conversionTargetBan?.length && categoriesOf(targetId).some(c => active.conversionTargetBan!.includes(c));
+/** 異常是否被禁止轉化為 targetId（任一生效規則組禁止即禁止）。 */
+export function statusConversionBlocked(rules: ElfStatusRuleSet | undefined, statuses: Record<string, number>, targetId: string): boolean {
+  return activeStatusRuleSets(rules, statuses).some(active => !!active.conversionTargetBan?.length && categoriesOf(targetId).some(c => active.conversionTargetBan!.includes(c)));
 }
 
 /**
@@ -79,6 +94,6 @@ export function statusConversionBlocked(rules: ElfStatusRules | undefined, statu
  * —— 「改為」是並列的替代規則，不是「取消效果」的附屬結果。
  * 只要條件異常還在，替代規則就生效（即使身上沒有任何控制／弱化類異常）。
  */
-export function statusReplacementActive(rules: ElfStatusRules | undefined, statuses: Record<string, number>): ElfStatusRules | undefined {
+export function statusReplacementActive(rules: ElfStatusRuleSet | undefined, statuses: Record<string, number>): ElfStatusRules | undefined {
   return activeStatusRules(rules, statuses);
 }

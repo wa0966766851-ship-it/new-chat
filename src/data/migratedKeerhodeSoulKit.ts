@@ -19,7 +19,7 @@ const entry = (node: KitEntry['node'], trig: string, raw: string, body: any[], o
   params: { clause: { raw, trig, parsed: true, body } },
 });
 
-const raw = '自身每次受到不小於自身當前體力⅓的非真實傷害時：\n> 本次受到傷害減少60%\n> 附加對手等同於減少傷害值的霜寒幽光\n自身每次受到小於自身當前體力⅓的非真實傷害時：\n> 汲取對手傷害值60%的體力\n在場敵我雙方任一方受到真實傷害時：\n> 為自身附加1道未暝之夜\n> 令自身當回合若首次死亡時強制存活並保留1點體力\n> 若回合開始時自身當前體力不高於最大體力½或對手無法主動切換精靈時則取消需受到真實傷害觸發條件\n回合結束時若自身當前體力不低於最大體力⅓：\n> 解除自身所有異常狀態\n> 下2回合自身免疫並反彈所有異常\n> 反彈成功時將當回合對手所處的異常狀態轉化為冰封\n> 解除異常狀態成功則對手下2回合所有技能附加效果失效\n未暝之夜：\n> 持有者無視對手能力上升狀態且所有技能先制+1\n> 造成攻擊傷害提升150%且造成攻擊傷害時吸取對手等同於傷害值100%的體力\n> 若道數大於1道時則上述無視對手能力上升狀態效果改為每有1道將對手視為至少處於1級全屬性能力下降狀態並在自身技能效果判定時將對手視為處於全屬性能力下降狀態\n> 最高6道，下場後保留\n霜寒幽光：\n> 固傷、百分比傷害若超過霜寒幽光值10%時減半\n> 持有者在場吸取隨機不在場精靈技能PP\n> 下場附加給下隻出戰精靈並限制切換';
+const raw = '自身每次受到不小於自身當前體力⅓的非真實傷害時：\n> 本次受到傷害減少60%\n> 附加對手等同於減少傷害值的霜寒幽光\n自身每次受到小於自身當前體力⅓的非真實傷害時：\n> 汲取對手傷害值60%的體力\n在場敵我雙方任一方受到真實傷害時：\n> 為自身附加1道未暝之夜\n> 令自身當回合受到致死傷害（含致死真實傷害）時強制存活並保留1點體力，直到當回合結束每次受到致死傷害皆保留1點體力\n> 若回合開始時自身當前體力不高於最大體力½或對手無法主動切換精靈時則取消需受到真實傷害觸發條件\n回合結束時若自身當前體力不低於最大體力⅓：\n> 解除自身所有異常狀態\n> 下2回合自身免疫並反彈所有異常\n> 反彈成功時將當回合對手所處的異常狀態轉化為冰封\n> 解除異常狀態成功則對手下2回合所有技能附加效果失效\n未暝之夜：\n> 持有者無視對手能力上升狀態且所有技能先制+1\n> 造成攻擊傷害提升150%且造成攻擊傷害時吸取對手等同於傷害值100%的體力\n> 若道數大於1道時則上述無視對手能力上升狀態效果改為每有1道將對手視為至少處於1級全屬性能力下降狀態並在自身技能效果判定時將對手視為處於全屬性能力下降狀態\n> 最高6道，下場後保留\n霜寒幽光：\n> 固傷、百分比傷害若超過霜寒幽光值10%時減半\n> 持有者在場吸取隨機不在場精靈技能PP\n> 下場附加給下隻出戰精靈並限制切換';
 
 export const MIGRATED_KEERHODE_SOUL_KIT = {
   kind: 'soul' as const,
@@ -30,6 +30,8 @@ export const MIGRATED_KEERHODE_SOUL_KIT = {
     // 未暝之夜大於1道：每道將對手視為至少處於1級全屬性能力下降，並於自身效果判定時視對手處於全屬性能力下降（最高6道）
     entry('battle_start', 'battle_start', '未暝之夜：若道數大於1道時則每有1道將對手視為至少處於1級全屬性能力下降狀態並在自身技能效果判定時將對手視為處於全屬性能力下降狀態', [
       { acts: [a('resource_query_rule', { id: 'dark_night', min: 2, ignorePpLimit: false, selfDownAsUp: false, oppUpAsDown: false, oppDownFloorPerStack: 1 })] },
+      // 2026-11-21：未暝之夜（1道起）持有者無視對手能力上升——雙方互算傷害與出手順序都把對手提升視為0（不只自身出手當次）。
+      { acts: [a('resource_query_rule', { id: 'dark_night', min: 1, ignorePpLimit: false, selfDownAsUp: false, oppUpAsDown: false, ignoreOppUp: true })] },
     ], 0),
     // A. 受非真實傷害分流：≥當前體力⅓→減60%＋對手+等同減少量霜寒幽光；<⅓→汲取事件傷害值60%
     entry('before_damage', 'incoming', '受到不小於當前體力⅓的非真實傷害：減60%＋附加等同減少量的霜寒幽光；小於⅓：汲取對手傷害值60%', [
@@ -55,15 +57,19 @@ export const MIGRATED_KEERHODE_SOUL_KIT = {
     ], 2),
     // C. 在場任一方受真傷→+1未暝之夜（資源印記；最高6道，下場後保留）
     // 2026-11-13：原本只聽自身受真傷，對手受真傷不會觸發；且「當回合首次死亡存活」被誤做成只要持有未暝之夜就每回合有效。
-    entry('on_damaged', 'damaged_true', '在場敵我雙方任一方受到真實傷害：為自身附加1道未暝之夜，令自身當回合若首次死亡時強制存活並保留1點體力', [
+    entry('on_damaged', 'damaged_true', '在場敵我雙方任一方受到真實傷害：為自身附加1道未暝之夜，令自身當回合受到致死傷害（含致死真實傷害）時強制存活並保留1點體力，直到當回合結束每次受到致死傷害皆保留1點體力', [
       { acts: [a('resource_mark_add', { id: 'dark_night', name: '未暝之夜', displayChar: '夜', unit: '道', side: 'self', scope: 'elf', persistsOffField: true, maxCount: 6, amount: 1, description: '持有者無視對手能力上升狀態且所有技能先制+1，造成攻擊傷害提升150%且造成攻擊傷害時吸取對手等同於傷害值100%的體力；若道數大於1道時則上述無視對手能力上升狀態效果改為每有1道將對手視為至少處於1級全屬性能力下降狀態並在自身技能效果判定時將對手視為處於全屬性能力下降狀態，最高6道，下場後保留' }), a('flag_set', { key: 'keerhodeNightGuard', value: true, thisRound: true })] },
     ], 2),
-    entry('on_opponent_damaged', 'opp_damaged_true', '在場敵我雙方任一方受到真實傷害：為自身附加1道未暝之夜，令自身當回合若首次死亡時強制存活並保留1點體力', [
+    entry('on_opponent_damaged', 'opp_damaged_true', '在場敵我雙方任一方受到真實傷害：為自身附加1道未暝之夜，令自身當回合受到致死傷害（含致死真實傷害）時強制存活並保留1點體力，直到當回合結束每次受到致死傷害皆保留1點體力', [
       { acts: [a('resource_mark_add', { id: 'dark_night', name: '未暝之夜', displayChar: '夜', unit: '道', side: 'self', scope: 'elf', persistsOffField: true, maxCount: 6, amount: 1, description: '持有者無視對手能力上升狀態且所有技能先制+1，造成攻擊傷害提升150%且造成攻擊傷害時吸取對手等同於傷害值100%的體力；若道數大於1道時則上述無視對手能力上升狀態效果改為每有1道將對手視為至少處於1級全屬性能力下降狀態並在自身技能效果判定時將對手視為處於全屬性能力下降狀態，最高6道，下場後保留' }), a('flag_set', { key: 'keerhodeNightGuard', value: true, thisRound: true })] },
     ], 2),
-    // D. 當回合首次死亡→強制存活1點（未暝之夜賦予；once_per_round）
-    entry('self_fatal', 'fatal', '未暝之夜：當回合首次死亡時強制存活並保留1點體力', [
+    // D. 當回合受到致死傷害→強制存活1點；受到致死真實傷害本身也算觸發（2026-11-21 使用者統一規則）。
+    //    觸發後直到當回合結束每次致死都保留1點，由引擎共用「致死保留窗口」處理（battle/fatalHold.ts）。
+    entry('self_fatal', 'fatal', '未暝之夜：當回合受到致死傷害（含致死真實傷害）時強制存活並保留1點體力，直到當回合結束每次受到致死傷害皆保留1點體力', [
       { cond: [c('player_state', { key: 'keerhodeNightGuard', equals: true, thisRound: true }, '本回合已觸發真實傷害條件')], acts: [
+        a('once_per_round', { key: 'keerhode_ming_first_death', body: [{ acts: [a('survive', {})] }] }),
+      ] },
+      { cond: [c('event_damage_type', { type: '真實' }, '本次為致死真實傷害')], acts: [
         a('once_per_round', { key: 'keerhode_ming_first_death', body: [{ acts: [a('survive', {})] }] }),
       ] },
     ], 3),
@@ -95,7 +101,8 @@ export const MIGRATED_KEERHODE_SOUL_KIT = {
       ] },
     ], 5),
     // G. 造成傷害+150%（modify_power）
-    entry('modify_power', 'outgoing_power', '未暝之夜：造成攻擊傷害提升150%', [
+    // 2026-11-21：原本掛在威力節點（outgoing_power），dmg_mod 讀不到傷害計算，增傷從未生效；改到造成攻擊傷害前。
+    entry('before_damage', 'outgoing_attack', '未暝之夜：造成攻擊傷害提升150%', [
       { cond: [c('mark_count', { side: 'self', id: 'dark_night', op: '不小於', amount: 1 }, '擁有未暝之夜')], acts: [
         a('dmg_mod', { dir: 'out', kind: '攻擊', boost: 1.5 }),
       ] },
