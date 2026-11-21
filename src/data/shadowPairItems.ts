@@ -19,7 +19,7 @@ export const SYMBIOSIS_CYCLE:BattleItem={
 };
 export const PURE_SHADOW:BattleItem={
  id:PURE_SHADOW_ITEM_ID,name:'純粹暗影',type:'special',grantOnly:true,holdLimit:1,
- description:'持有時：己方在場精靈本次在場回合數≤4，所有技能額外吸取對手雙攻值總和80%的體力、使用技能先制+2。使用後變為激活狀態：己方在場布萊克所有技能額外吸取對手雙攻值100%、威力提升150%、造成技能傷害額外附加自身雙攻值總和150%的暗影系傷害、先制+2；進入狂暴時轉化為平靜。激活後布萊克下場即消失。',
+ description:'持有時：己方在場精靈本次在場回合數≤4，所有技能額外吸取對手雙攻值總和80%的體力、使用技能先制+2。使用後變為激活狀態：己方在場布萊克所有技能額外吸取對手雙攻值100%、威力提升150%、造成技能傷害額外附加自身雙攻值總和150%的暗影系技能傷害、先制+2；進入狂暴時轉化為平靜。激活後布萊克下場即消失。',
  heldKit:[
   held('持有時：己方在場精靈本次在場回合數≤4，所有技能額外吸取對手在場精靈雙攻值總和80%的體力','after_action','self_after_skill',[{cond:[early],acts:[a('drain',{base:'stat:攻擊和特攻',of:'opp',ratio:.8})]}],0),
   held('持有時：己方在場精靈本次在場回合數≤4，使用技能額外先制+2且無視對手同等級先制','modify_priority','modify_priority',[{cond:[early],acts:[a('prio_bonus',{v:2}),a('priority_offset_round',{amount:2})]}],1),
@@ -36,9 +36,9 @@ export const PURE_SHADOW:BattleItem={
 /** 純粹暗影（激活）：不可使用；持有期間作用於己方在場且為暗影系的布萊克（任意型態）。布萊克下場後消失。 */
 export const PURE_SHADOW_ACTIVE:BattleItem={
  id:PURE_SHADOW_ACTIVE_ID,name:'純粹暗影（激活）',type:'special',grantOnly:true,holdLimit:1,unusable:true,
- description:'己方在場布萊克若為暗影系：所有技能額外吸取對手雙攻值100%、威力提升150%、造成技能傷害額外附加自身雙攻值總和150%的暗影系傷害；使用技能先制+2且無視對手同等級先制；進入狂暴時轉化為平靜並獲得專屬特性中處於狂暴的效果。布萊克下場後消失。',
+ description:'己方在場布萊克若為暗影系：所有技能額外吸取對手雙攻值100%、威力提升150%、造成技能傷害額外附加自身雙攻值總和150%的暗影系技能傷害；使用技能先制+2且無視對手同等級先制；進入狂暴時轉化為平靜並獲得專屬特性中處於狂暴的效果。布萊克下場後消失。',
  heldKit:[
-  held('激活：在場布萊克若為暗影系所有技能額外吸取對手雙攻值100%，造成的技能傷害額外附加自身雙攻值總和150%的暗影系傷害','after_action','self_after_skill',[{cond:blakeDark,acts:[
+  held('激活：在場布萊克若為暗影系所有技能額外吸取對手雙攻值100%，造成的技能傷害額外附加自身雙攻值總和150%的暗影系技能傷害','after_action','self_after_skill',[{cond:blakeDark,acts:[
    a('drain',{base:'stat:攻擊和特攻',of:'opp',ratio:1}),a('dmg',{base:'stat:攻擊和特攻',of:'self',ratio:1.5,type:'固定',elem:'暗影'}),
   ]}],0),
   held('激活：在場布萊克若為暗影系所有技能威力提升150%','modify_power','outgoing_power',[{cond:blakeDark,acts:[a('power_mod',{boost:1.5})]}],1),
