@@ -1,6 +1,7 @@
 import { applyStatusProjections, effectiveStatusTable } from '../battle/statusRules';
 import {hasPortableDuel} from '../battle/portableSkillMarks';
 import {DIFU_AMULET} from '../data/difuItem';
+import {SYMBIOSIS_CYCLE,PURE_SHADOW,PURE_SHADOW_ACTIVE} from '../data/shadowPairItems';
 import {NAIFEN_GRASS,NAIFEN_FORMS} from '../data/naifenItems';
 // src/utils/battleHelpers.ts
 import { Elf, Skill, BattleItem } from "../types";
@@ -196,6 +197,9 @@ function EXTENDED_POTIONS(): BattleItem[] {
 
 export const BATTLE_ITEMS: BattleItem[] = [
   DIFU_AMULET,
+  SYMBIOSIS_CYCLE,
+  PURE_SHADOW,
+  PURE_SHADOW_ACTIVE,
   NAIFEN_GRASS,
   ...NAIFEN_FORMS,
   { id: 'hp_330', name: '全滿體力藥劑', description: '回復 330 點體力。不受減療影響。', type: 'hp', value: 330 },

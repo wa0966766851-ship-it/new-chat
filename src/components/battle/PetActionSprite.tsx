@@ -9,7 +9,7 @@ import {actionApproach,retargetAttack,petCanvasFrame,physicalContactOffset,ancho
 import {shouldMirrorBattleSprite} from '../../battle/seerAssets';
 import {PET_ANIMATION_ASSETS,type PetAnimationAsset,type PetAnimationAssetId} from '../../battle/petAnimationAssets';
 import {overrideTint,petColorVariant} from '../../battle/petColorVariants';
-import {animationSpeed,readAnimationSettings,BATTLE_ANIMATION_EVENT} from '../../battle/animationSettings';
+import {animationSpeed,readAnimationSettings,BATTLE_ANIMATION_EVENT,qualityStandbyFrameMs,qualityAllowsFullscreenFx,type AnimationQuality} from '../../battle/animationSettings';
 import {hasForegroundPetPlayback,setForegroundPetPlayback,startPetRenderLoop} from '../../battle/petRenderLoop';
 import {PERF_EVENT,readPerfPreference} from '../../shell/perfMode';
 import {preparePetFxAsync} from '../../battle/petFxPolicy';
@@ -24,7 +24,8 @@ import {createLazyFxRuntime} from '../../battle/petFxLayerRuntime';
 /** 純播放元件；所有動作由既有播放時間軸驅動，動畫標記不觸發傷害或魂印。 */
 export function PetActionSprite({elf,side,action,actionToken,width,height,onReady,context='battle',viewport,sink=0,assetId:overrideAsset,active=true,enterTransform=false,onTransitionEnd,onLoadError}:{elf:Elf;side:'p1'|'p2';action:PetAction;actionToken?:unknown;width:number;height:number;onReady:(ready:boolean)=>void;context?:'battle'|'home';viewport?:{width:number;height:number;anchorX:number;targetX?:number};sink?:number;assetId?:PetAnimationAssetId;active?:boolean;enterTransform?:boolean;onTransitionEnd?:()=>void;onLoadError?:()=>void}){
  const speed=React.useRef(1);
- React.useEffect(()=>{const sync=()=>{speed.current=animationSpeed(readAnimationSettings().speed);};sync();window.addEventListener(BATTLE_ANIMATION_EVENT,sync);window.addEventListener('storage',sync);return()=>{window.removeEventListener(BATTLE_ANIMATION_EVENT,sync);window.removeEventListener('storage',sync);};},[]);
+ const quality=React.useRef<AnimationQuality|undefined>(readAnimationSettings().quality);
+ React.useEffect(()=>{const sync=()=>{const s=readAnimationSettings();speed.current=animationSpeed(s.speed);quality.current=s.quality;};sync();window.addEventListener(BATTLE_ANIMATION_EVENT,sync);window.addEventListener('storage',sync);return()=>{window.removeEventListener(BATTLE_ANIMATION_EVENT,sync);window.removeEventListener('storage',sync);};},[]);
  const playbackAction=React.useRef<string>('standby');
  const playbackOwner=React.useRef({}).current;
  const prioritizeAction=React.useRef(true);
@@ -216,7 +217,7 @@ export function PetActionSprite({elf,side,action,actionToken,width,height,onRead
     if(renderLoop)return;
     if(!document.hidden)animation.play();
     renderLoop=startPetRenderLoop({advance:seconds=>{const dt=seconds*(context==='battle'?speed.current:1);animation.advance(dt);const fx=fxRuntime.current;if(fx?.on)fx.player.advance(dt);},draw:()=>{animation.draw();const fx=fxRuntime.current;if(fx?.on)fx.player.draw();},request:callback=>requestAnimationFrame(callback),cancel:id=>cancelAnimationFrame(id),now:()=>performance.now(),visible:()=>!document.hidden,
-     minimumFrameIntervalMs:()=>context==='battle'&&prioritizeAction.current&&currentSequence.current==='standby'&&hasForegroundPetPlayback()?50:0});
+     minimumFrameIntervalMs:()=>Math.max(context==='battle'&&prioritizeAction.current&&currentSequence.current==='standby'&&hasForegroundPetPlayback()?50:0,currentSequence.current==='standby'?qualityStandbyFrameMs(quality.current):0)});
    };
    setRendering.current=syncRendering;
    syncRendering(shownRef.current);
@@ -224,7 +225,8 @@ export function PetActionSprite({elf,side,action,actionToken,width,height,onRead
    const visibility=()=>{if(!shownRef.current)return;renderLoop?.resetTime();if(document.hidden){instance?.pause();fxRuntime.current?.player.pause();}else{instance?.play();fxRuntime.current?.player.play();}};document.addEventListener('visibilitychange',visibility);
    stopListen=()=>{syncRendering(false);clearInterval(metrics);resize.disconnect();document.removeEventListener('visibilitychange',visibility);};
    // 全屏層第二播放器：只有素材有底片序列、且戰鬥畫面掛了 BattleFxLayer 才建立；失敗只失去全屏底片，不影響本體。
-   const layerHost=context==='battle'&&fxClip&&fxReport?getFxHost():null;
+   // 省效能畫質不建立全屏底片層（省一個 WebGL context 與大型圖集上傳）。
+   const layerHost=context==='battle'&&fxClip&&fxReport&&qualityAllowsFullscreenFx(quality.current)?getFxHost():null;
    if(layerHost&&fxClip&&fxReport)fxRuntime.current=createLazyFxRuntime({layerHost,side,fxClip,sequences:fxReport.fullscreen.sequences,bounds:fxReport.backdropBounds,frames:fxReport.backdropFrames,createPlayer:()=>new SwfPlayer(),signal:abort.signal,mainTime:()=>(instance as SwfPlayer&{getTime?:()=>number})?.getTime?.()});// 底片播放器在本體就緒後的瀏覽器閒置時預載、整場保留（petFxLayerRuntime）
    player.current=instance;setReady(true);clearTimeout(deadline);
   })().catch(error=>{clearTimeout(deadline);stopListen?.();renderLoop?.stop();instance?.destroy();customFx?.destroy();lease.release();if(alive){console.warn('[pet-actions] 沿用簡易演出',error);setReady(false);fail('load-failed');}});

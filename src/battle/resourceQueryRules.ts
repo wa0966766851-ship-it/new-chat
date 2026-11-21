@@ -3,7 +3,9 @@ import type {Mark} from './marks';
 import {markAppliesToElf} from './marks';
 export interface ResourceQueryRule {id:string;min:number;ignorePpLimit?:boolean;ignoreAttackPpLimit?:boolean;selfDownAsUp?:boolean;oppUpAsDown?:boolean;ignoreDamageLimit?:boolean;ignoreDamageBlock?:boolean;ignoreAttackImmunity?:boolean;
   /** 每層將對手視為至少處於N級全屬性能力下降（上限6）；同時於自身效果判定時視對手處於全屬性能力下降 */
-  oppDownFloorPerStack?:number}
+  oppDownFloorPerStack?:number;
+  /** 持有者無視對手能力上升（雙方互相計算傷害與出手順序時，對手的提升等級視為0） */
+  ignoreOppUp?:boolean}
 /** 只按持有者配置與其自己可用資源判斷，給別人的同名印記不會替別人授權。 */
 export function activeResourceQueryRules(elf:Elf,marks:Mark[]=[]):ResourceQueryRule[]{
   if(elf.isInherentInvalid)return [];
@@ -16,6 +18,10 @@ const stackOf=(elf:Elf,marks:Mark[],id:string)=>[...marks,...(elf.marks||[])].fi
 export function resourceOppStageFloor(elf:Elf|undefined,marks:Mark[]=[]):number{
   if(!elf)return 0;
   return activeResourceQueryRules(elf,marks).reduce((n,rule)=>rule.oppDownFloorPerStack?Math.max(n,Math.min(6,stackOf(elf,marks,rule.id)*rule.oppDownFloorPerStack)):n,0);
+}
+/** 持有者視角：是否無視對手能力上升。 */
+export function resourceIgnoresOppUp(elf:Elf|undefined,marks:Mark[]=[]):boolean{
+  return !!elf&&activeResourceQueryRules(elf,marks).some(rule=>rule.ignoreOppUp===true);
 }
 export function resourceQueryActive(elf:Elf,query:'ignoreAttackPpLimit'|'ignorePpLimit'|'selfDownAsUp'|'oppUpAsDown'|'ignoreDamageLimit'|'ignoreDamageBlock'|'ignoreAttackImmunity',marks:Mark[]=elf.marks||[]):boolean{
   return activeResourceQueryRules(elf,marks).some(rule=>rule[query]===true);

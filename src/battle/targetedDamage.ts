@@ -34,7 +34,7 @@ export function targetedDamageAPI(shared: SharedContextDeps): NonNullable<Battle
       },
     });
     if (type === 'true') return api.applyTrueDamage(side, amount, opts?.label);
-    if (type === 'fixed' || type === 'percent') return api.applyPinkDamage(side, amount, opts?.label, undefined, undefined, type,{onCalculated:opts?.onCalculated,pure:opts?.pure});
+    if (type === 'fixed' || type === 'percent') return api.applyPinkDamage(side, amount, opts?.label, undefined, undefined, type,{onCalculated:opts?.onCalculated,pure:opts?.pure,reaction:opts?.reaction} as any);
     return api.applySkillTypeDamage(side, amount, opts?.label, { elem: opts?.elem, applyTypeMatchup: opts?.applyTypeMatchup,
       category: type === 'skill_attack' || type === 'skill_extra_action' ? type : 'skill_attribute',
       ...(type === 'skill_attack' ? { node: 'attack_damage' as const } : {}) });

@@ -44,6 +44,8 @@ export interface EffectItem {
   delay?: number;
   /** 只在效果佇列內使用，識別一次效果及其衍生反應。 */
   chainId?: number;
+  /** 傷害因果鏈：引發這個效果的反應者（battle/reactionChain.ts）。 */
+  causeChain?: readonly string[];
 }
 
 export interface BattleState {
@@ -99,6 +101,7 @@ export type BattleAction =
   | { type: 'SET_ITEM_INVENTORY'; side: 'p1' | 'p2'; inventory: BattleItemInventory }
   | { type: 'UPDATE_ELF'; side: 'p1' | 'p2'; elf: Partial<Elf>; targetId?: string }
   | { type: 'UPDATE_TEAM'; side: 'p1' | 'p2'; team: Elf[] }
+  | { type: 'MOVE_ELF_TO_END'; side: 'p1' | 'p2'; battleId: string }
   | { type: 'SET_ACTIVE_INDEX'; side: 'p1' | 'p2'; index: number }
   | { type: 'SET_PHASE'; phase: BattlePhase }
   | { type: 'ADD_LOG'; log: BattleLog }
@@ -174,6 +177,15 @@ export const battleReducer = (state: BattleState, action: BattleAction): BattleS
       return action.side === 'p1' 
         ? { ...state, p1Team: action.team }
         : { ...state, p2Team: action.team };
+    case 'MOVE_ELF_TO_END': {
+      // 只改背包順序並校正在場索引；不是切換，不觸發登場／下場。
+      const teamKey = `${action.side}Team` as 'p1Team' | 'p2Team', indexKey = `${action.side}ActiveIndex` as 'p1ActiveIndex' | 'p2ActiveIndex';
+      const team = state[teamKey] || [], from = team.findIndex(e => (e.battleId || e.id) === action.battleId);
+      if (from < 0 || from === team.length - 1) return state;
+      const active = team[(state as any)[indexKey]];
+      const nextTeam = [...team.slice(0, from), ...team.slice(from + 1), team[from]];
+      return { ...state, [teamKey]: nextTeam, [indexKey]: Math.max(0, nextTeam.indexOf(active)) } as any;
+    }
 case 'SET_ACTIVE_INDEX':
       return switchBattleSide(state, action.side, action.index);
     case 'SET_START_HP':

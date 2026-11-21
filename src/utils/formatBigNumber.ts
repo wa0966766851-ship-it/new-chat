@@ -45,12 +45,13 @@ export function formatBigNumber(n: number, opts: FormatBigOptions = {}): string 
   return `${sign}${r.text}${BIG_UNITS[i][0]}`;
 }
 
+const FULL_NUMBER_FORMAT = new Intl.NumberFormat('en-US', { maximumFractionDigits: 0, useGrouping: true });
 /** 精確完整值（千分位），給 title tooltip。 */
 export function formatFullNumber(n: number): string {
   if (typeof n !== 'number' || Number.isNaN(n)) return '—';
   if (!Number.isFinite(n)) return n > 0 ? '∞' : '-∞';
   const r = Math.round(n);
-  return Object.is(r, -0) ? '0' : r.toLocaleString('en-US', { maximumFractionDigits: 0, useGrouping: true });
+  return Object.is(r, -0) ? '0' : FULL_NUMBER_FORMAT.format(r);
 }
 
 /** 戰鬥 HUD 用：< 1e5 維持原樣字串，以上才縮寫（不改變既有小數字顯示）。 */

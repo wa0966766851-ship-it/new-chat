@@ -1,0 +1,20 @@
+/** 動畫畫質設定（2026-11-21）：只影響播放成本——解析度上限、待機影格間隔、全屏底片；保存與預設。 */
+import assert from 'node:assert/strict';
+const store = new Map<string, string>();
+(globalThis as any).localStorage = { getItem: (k: string) => store.get(k) ?? null, setItem: (k: string, v: string) => store.set(k, v), removeItem: (k: string) => store.delete(k) };
+const s = await import('../src/battle/animationSettings');
+const perf = await import('../src/battle/petPlayerPerf');
+assert.equal(s.normalizeAnimationSettings({}).quality, 'high', '預設高畫質');
+assert.equal(s.normalizeAnimationSettings({ quality: 'saver' }).quality, 'saver');
+assert.equal(s.normalizeAnimationSettings({ quality: 'ultra' }).quality, 'high', '未知值退回高畫質');
+assert.deepEqual([s.qualityResolutionCap('high'), s.qualityResolutionCap('balanced'), s.qualityResolutionCap('saver')], [Infinity, 1.25, 1]);
+assert.deepEqual([s.qualityStandbyFrameMs('high'), s.qualityStandbyFrameMs('balanced'), s.qualityStandbyFrameMs('saver')], [0, 33, 66]);
+assert.equal(s.qualityAllowsFullscreenFx('saver'), false); assert.equal(s.qualityAllowsFullscreenFx('balanced'), true);
+const fake = () => { const r = { resolution: 2, screen: { width: 100, height: 100 }, resize(_w: number, _h: number, res?: number) { r.resolution = res!; } }; return { app: { renderer: r } }; };
+store.set(s.BATTLE_ANIMATION_KEY, JSON.stringify({ quality: 'high' }));
+assert.equal(perf.capPlayerResolution(fake(), null, 2), null, '高畫質：DPR 2 不降');
+store.set(s.BATTLE_ANIMATION_KEY, JSON.stringify({ quality: 'balanced' }));
+assert.equal(perf.capPlayerResolution(fake(), null, 2), 1.25, '平衡：降到 1.25');
+store.set(s.BATTLE_ANIMATION_KEY, JSON.stringify({ quality: 'saver' }));
+assert.equal(perf.capPlayerResolution(fake(), { atlas: { width: 8192, height: 8192 } }, 2), 1, '省效能：大圖集也降到 1');
+console.log('animationQuality passed');

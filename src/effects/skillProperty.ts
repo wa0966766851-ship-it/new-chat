@@ -63,8 +63,10 @@ export function readSkillProperty(skill:any,property:string,ctx:any) {
 
 /** 兩側先制均結算後，套用所選技能的固有排序規則；不寫入跨回合旗標。 */
 export function resolveSelectedPriorityPolicies(p1:number,p2:number,s1:any,s2:any,c1:any,c2:any):[number,number]{
-  const offset1=s1&&s1.category!=='屬性'?(Number(c1.getPlayerState?.('nextWeightedAttackPriority')?.amount)||0):0;
-  const offset2=s2&&s2.category!=='屬性'?(Number(c2.getPlayerState?.('nextWeightedAttackPriority')?.amount)||0):0;
+  // 「無視對手同等級／等量先制」：下次攻擊（重量系）或本回合所有技能（priority_offset_round）抵銷對手等量正先制。
+  const roundOffset=(c:any,s:any)=>{const v=s?c.getPlayerState?.('roundPriorityOffset'):undefined;return v&&v.round===c.roundNumber?Number(v.amount)||0:0;};
+  const offset1=(s1&&s1.category!=='屬性'?(Number(c1.getPlayerState?.('nextWeightedAttackPriority')?.amount)||0):0)+roundOffset(c1,s1);
+  const offset2=(s2&&s2.category!=='屬性'?(Number(c2.getPlayerState?.('nextWeightedAttackPriority')?.amount)||0):0)+roundOffset(c2,s2);
   p1-=Math.min(offset2,Math.max(0,p1));
   p2-=Math.min(offset1,Math.max(0,p2));
   const ignore1=readSkillProperty(s1,'ignore_positive_priority',c1)===true;

@@ -62,7 +62,7 @@ import { roundRestrictionOf } from "../blocks/ops/selectionRules";
 import { runSkillBlocks, emitSkillUse, soulPassiveEvade, emitSelfInvalid, emitFailedSkillUse } from "../blocks/registry";
 import { stripRunesFrom } from "../blocks/ops/odinRune";
 import { applyStageViewAsSingle, applyStageViewAs } from "../utils/stageViewAs";
-import { resourceOppStageFloor } from "../battle/resourceQueryRules";
+import { resourceOppStageFloor, resourceIgnoresOppUp } from "../battle/resourceQueryRules";
 import { runConnectedKit } from "../effects/connectedEffects";
 import {hasForcedHitEffects,runForcedHitEffects} from '../effects/forcedHitEffects';
 import { skillBasePriority } from "../battle/conditionalPriority";
@@ -172,6 +172,9 @@ const hasLivingSummonedExtra = (team: Elf[], elf: Elf) => {
 };
 
 import { checkElfDead, positiveDeathLineSettled } from '../battle/elfAlive';
+import { currentCauseChain, withCauseChain } from '../battle/reactionChain';
+import { viewedOppExtraDown } from '../battle/stageViewRules';
+import { resolveFatalResist, fatalSealSpent, sealedSurvivalRule, markFatalSealTriggered, settleFatalSeal } from '../battle/fatalHold';
 export { checkElfDead };
 
 export interface BattleEngineOptions {
@@ -564,12 +567,15 @@ export function createBattleEngine(props: BattleEngineOptions): BattleEngine {
             }
           }
           const absorbed = settleDamageAbsorption(amount, category, target.shield || 0, target.barrier || 0, !!data.ignoreShield);
-          const outcome = resolveDamageTransition(target.currentHp, target.maxHp, absorbed.amount, category === 'true' ? 'true' : 'non_true', target.survivalRule,{deathFloorRatio:target.heldDeathFloorRatio});
+          const outcome = resolveDamageTransition(target.currentHp, target.maxHp, absorbed.amount, category === 'true' ? 'true' : 'non_true', sealedSurvivalRule(target),{deathFloorRatio:target.heldDeathFloorRatio});
           const ctx = getBattleEventContext(side, true, 0, target);
 // 2026-10-28：根性需要「該段傷害 vs 當前體力」比較；帶入本次實際傷害與是否為傷害來源。
 Object.assign(ctx as any, { fatalDamage: absorbed.amount, fatalIsDamage: true });
-          const immune = (guard?.deathImmuneTurns || 0) > 0;
-          const resisted = !outcome.alive && !immune && (SoulMarkRegistry[target.name]?.(ctx, EffectTiming.FATAL_RESIST, {damageType:category, fatalDamage:absorbed.amount}) || TraitsEngine.triggerFatalResist(ctx) || traitFatalResist(ctx, side, target, rng) || checkStatusDrivenFatalResist(ctx));
+          const immune = (guard?.deathImmuneTurns || 0) > 0 && !fatalSealSpent(target);
+          if (immune && !outcome.alive || outcome.alive && outcome.hp <= 0) markFatalSealTriggered(ctx, side, target);
+          const resisted = !outcome.alive && !immune && resolveFatalResist(ctx, side, target, hpBeforeHit, cur.turnNumber,
+            () => !!(SoulMarkRegistry[target.name]?.(ctx, EffectTiming.FATAL_RESIST, {damageType:category, fatalDamage:absorbed.amount}) || TraitsEngine.triggerFatalResist(ctx) || traitFatalResist(ctx, side, target, rng) || checkStatusDrivenFatalResist(ctx)),
+            () => syncStateRef.current[`${side}Team`].find(e => (e.battleId || e.id) === data.targetId));
           ctx.updateAnyElf(side, data.targetId, { ...(resisted ? {} : {currentHp:outcome.hp}), shield:retainShield(target,absorbed.shield), barrier:absorbed.barrier });
           if (outcome.damageApplied > 0 && data.sourceSide && data.sourceBattleId) damageOriginRef.current[data.targetId] = {side:data.sourceSide,id:data.sourceBattleId};
           const receipt = settlementReceipt({ operation: 'damage', targetBattleId: data.targetId, damageType: category,
@@ -604,7 +610,7 @@ Object.assign(ctx as any, { fatalDamage: absorbed.amount, fatalIsDamage: true })
         
         const guard = target.deathImmunity;
         const inGuardWindow = guard && guard.guardTurns > 0;
-        const inDeathImmuneWindow = guard && guard.deathImmuneTurns > 0;
+        const inDeathImmuneWindow = guard && guard.deathImmuneTurns > 0 && !fatalSealSpent(target);
 
         let effectiveAmount = data.amount;
         const damageDefense = normalizeDamageType(data) === 'skill_attack' && data.sourceSide !== targetSide
@@ -723,7 +729,7 @@ Object.assign(ctx as any, { fatalDamage: absorbed.amount, fatalIsDamage: true })
           target.maxHp,
           hpBoundDamage,
           normalizedDamageType === "true" ? "true" : "non_true",
-          target.survivalRule,
+          sealedSurvivalRule(target),
           { ignoreNonTrueImmunity: !!damageDefense?.block,deathFloorRatio:target.heldDeathFloorRatio },
         );
         const dmg = survivalTransition.damageApplied;
@@ -739,11 +745,16 @@ Object.assign(ctx as any, { fatalDamage: absorbed.amount, fatalIsDamage: true })
         // Synchronously update the ref used for logic
         const wouldFaint = !survivalTransition.alive;
         let resisted = false;
+        // 免死回合或 0 體力存活規則救下封印待觸發的持有者：同樣算作本回合觸發。
+        const sealPatch = (target as any).fatalResistSeal === 'armed' && (wouldFaint && inDeathImmuneWindow || survivalTransition.alive && nextHp <= 0) ? { fatalResistSeal: 'pending' as const } : {};
         
         if (wouldFaint && !inDeathImmuneWindow) {
           const fCtx = getBattleEventContext(targetSide, true, 0);
 // 2026-10-28：同上，帶入實際傷害數值供根性判定。
 Object.assign(fCtx as any, { fatalDamage: effectiveAmount, fatalIsDamage: true });
+          // 致死保留窗口：本回合已觸發致死保留 → 直接保留體力，不重跑效果、不再消耗次數。
+          resisted = resolveFatalResist(fCtx, targetSide, target, hpBefore, cur.turnNumber, () => {
+          let resisted = false;
           if (SoulMarkRegistry[target.name]) {
             resisted = !!SoulMarkRegistry[target.name](fCtx, EffectTiming.FATAL_RESIST, { damageType: data.damageType, fatalDamage: effectiveAmount });
           }
@@ -756,6 +767,8 @@ Object.assign(fCtx as any, { fatalDamage: effectiveAmount, fatalIsDamage: true }
             fCtx.addLog(`✨ 【${target.name}】受到超額真實傷害 ${effectiveAmount}（大於護盾 ${target.shield || 0}）致死，100%重生！`, "effect");
             resisted = true;
           }
+          return resisted;
+          }, () => syncStateRef.current[targetSide]);
         }
 
         if (resisted) {
@@ -816,7 +829,7 @@ Object.assign(fCtx as any, { fatalDamage: effectiveAmount, fatalIsDamage: true }
               }
             };
         } else {
-            const nextElf = { ...target, currentHp: nextHp, shield: nextShieldVal, barrier: nextBarrierVal };
+            const nextElf = { ...target, currentHp: nextHp, shield: nextShieldVal, barrier: nextBarrierVal, ...sealPatch };
             const teamKey = targetSide === 'p1' ? 'p1Team' : 'p2Team';
             const activeIdx = targetSide === 'p1' ? syncStateRef.current.p1ActiveIndex : syncStateRef.current.p2ActiveIndex;
             const nextTeam = [...syncStateRef.current[teamKey]];
@@ -827,7 +840,7 @@ Object.assign(fCtx as any, { fatalDamage: effectiveAmount, fatalIsDamage: true }
               [targetSide]: nextElf,
               [teamKey]: nextTeam
             };
-            dispatch({ type: 'UPDATE_ELF', side, elf: { currentHp: nextHp, shield: nextShieldVal, barrier: nextBarrierVal } });
+            dispatch({ type: 'UPDATE_ELF', side, elf: { currentHp: nextHp, shield: nextShieldVal, barrier: nextBarrierVal, ...sealPatch } });
             dispatch({ type: 'SET_LAST_DAMAGE', side, damage: dmg });
 
             if (wouldFaint && inDeathImmuneWindow) {
@@ -1124,7 +1137,7 @@ Object.assign(fCtx as any, { fatalDamage: effectiveAmount, fatalIsDamage: true }
         const targetIdx=data.targetId?cur[teamKey].findIndex(e=>(e.battleId||e.id)===data.targetId):activeIdx;
         if(targetIdx<0)break;
         const target = cur[teamKey][targetIdx],isActiveAdjustment=targetIdx===activeIdx;
-        const adjustment = resolveHpAdjustment(target.maxHp, target.currentHp, data.amount, target.survivalRule);
+        const adjustment = resolveHpAdjustment(target.maxHp, target.currentHp, data.amount, sealedSurvivalRule(target));
         let adjustedHp = adjustment.hp;
         // 「體力無法恢復/增加超過原始體力上限」（六刃等）：增加體力同樣受恢復上限限制，但不會因此扣血
         const adjustCap = Number(readScopedRegistry(cur, targetSide, target, 'recoveryMaxHpCap')) || 0;
@@ -1210,7 +1223,7 @@ Object.assign(fCtx as any, { fatalDamage: effectiveAmount, fatalIsDamage: true }
         const target = cur[teamKey][targetIdx];
         const amount = Math.max(0, Math.floor(Number(data.amount) || 0));
         if (!amount || checkElfDead(target)) break;
-        const outcome = resolveDamageTransition(target.currentHp, target.maxHp, amount, 'true', target.survivalRule,{deathFloorRatio:target.heldDeathFloorRatio});
+        const outcome = resolveDamageTransition(target.currentHp, target.maxHp, amount, 'true', sealedSurvivalRule(target),{deathFloorRatio:target.heldDeathFloorRatio});
         const nextHp = outcome.hp, lost = Math.max(0, target.currentHp - nextHp);
         const nextElf = { ...target, currentHp: nextHp };
         const nextTeam = [...syncStateRef.current[teamKey]];
@@ -1436,7 +1449,8 @@ case 'switch': {
         effectChainRef.current = effect.chainId;
         try {
           checkShieldTransitions();
-          pending = executeEffect(effect);
+          // 結算這個效果期間要求的傷害，都是對它的反應：接在它的因果鏈後面。
+          pending = withCauseChain(effect.causeChain, () => executeEffect(effect));
         } finally {
           executingEffectRef.current = false;
           effectChainRef.current = undefined;
@@ -1467,7 +1481,8 @@ case 'switch': {
 
   const pushEffect = stable((effect: EffectItem) => {
     if (!battleAliveRef.current) return;
-    effect = { ...effect, chainId: effectChainRef.current ?? ++effectChainSequenceRef.current };
+    // 因果鏈：新效果繼承目前結算／反應所屬的鏈（battle/reactionChain.ts）。
+    effect = { ...effect, chainId: effectChainRef.current ?? ++effectChainSequenceRef.current, causeChain: effect.causeChain ?? currentCauseChain() ?? [] };
     const win = skillWindowRef.current;
     if (effect.type === 'damage' && win && !effect.data?.skillName && !effect.data?.ledger && effect.data?.sourceSide === win.side)
       effect = { ...effect, data: { ...effect.data, ledgerOrigin: { skillName: win.skillName } } };
@@ -2274,7 +2289,7 @@ case 'switch': {
       const effects = mergeById(midElf.effects || [], tickedEffects || [], liveElf.effects || []);
       const deathImmunity = liveElf.deathImmunity === midElf.deathImmunity ? tickedDI : liveElf.deathImmunity;
       return {
-        ...liveElf,
+        ...settleFatalSeal(liveElf),
         effects,
         battleStatuses: Object.fromEntries(effects.map(e => [e.id, e.duration])),
         deathImmunity,
@@ -2284,7 +2299,7 @@ case 'switch': {
     const finalizeTeam = (side: "p1" | "p2"): Elf[] => {
       const midTeam = side === "p1" ? mid.p1Team : mid.p2Team;
       const tickedTeam = side === "p1" ? nextP1Team : nextP2Team;
-      return (side === "p1" ? live.p1Team : live.p2Team).map(e => {
+      return (side === "p1" ? live.p1Team : live.p2Team).map(settleFatalSeal).map(e => {
         const midE = midTeam.find(m => m.id === e.id);
         const tickedE = tickedTeam.find(t => t.id === e.id);
         if (midE && tickedE && e.deathImmunity === midE.deathImmunity) return { ...e, deathImmunity: tickedE.deathImmunity, survivalRule: releaseExpiredSurvivalRule(e.survivalRule, tickedE.deathImmunity) };
@@ -2808,7 +2823,14 @@ case 'switch': {
     // ③ 持有者把對手視為至少處於N級全屬性能力下降（資源查詢規則；例：未暝之夜大於1道）
     { const f1 = resourceOppStageFloor(cur.p1, cur.p1Marks || []), f2 = resourceOppStageFloor(cur.p2, cur.p2Marks || []);
       if (f1 > 0) p2SpeedStage = Math.min(p2SpeedStage, -f1);
-      if (f2 > 0) p1SpeedStage = Math.min(p1SpeedStage, -f2); }
+      if (f2 > 0) p1SpeedStage = Math.min(p1SpeedStage, -f2);
+      // 無視對手能力上升：對手速度提升視為0（未暝之夜等）。
+      if (resourceIgnoresOppUp(cur.p1, cur.p1Marks || [])) p2SpeedStage = Math.min(p2SpeedStage, 0);
+      if (resourceIgnoresOppUp(cur.p2, cur.p2Marks || [])) p1SpeedStage = Math.min(p1SpeedStage, 0);
+      // 能力視圖規則（趙雲）：自身速度提升等級額外視為對手速度下降。
+      { const d1 = viewedOppExtraDown(cur.p1, 'speed'), d2 = viewedOppExtraDown(cur.p2, 'speed');
+        if (d1 > 0) p2SpeedStage = Math.max(-6, p2SpeedStage - d1);
+        if (d2 > 0) p1SpeedStage = Math.max(-6, p1SpeedStage - d2); } }
     let p1Speed = calculateEffectiveStat(cur.p1.calculatedStats.speed, p1SpeedStage);
     let p2Speed = calculateEffectiveStat(cur.p2.calculatedStats.speed, p2SpeedStage);
     // 通用：當回合忽略對手 N 點速度（由套裝／魂印設定 opponentSpeedPenalty）
@@ -3080,7 +3102,6 @@ case 'switch': {
       // PP Consumption Logic
       {
         const pm = findBlockTimer((syncStateRef.current as any)[`${s}Timers`], b => b.ppMult && (!b.kind || (b.kind === "攻擊") === (skill.category !== "屬性")));
-        ((globalThis as any).__FE ||= []).push({ s, timers: ((syncStateRef.current as any)[`${s}Timers`] || []).map((x: any) => ({ id: x.id, rem: x.remaining, pend: x.pendingActivation })), pm: pm?.id });
         if (pm) ppCostComp.multiplier *= pm.payload.block.ppMult;
       }
       const noPpCostThisRound = ctx.getPlayerState('ppNoCostRound') === ctx.roundNumber;

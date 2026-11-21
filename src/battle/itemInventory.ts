@@ -177,6 +177,7 @@ export const itemDamageAmount = (item: BattleItem, maxHp: number) =>
   (item.oppDamage || 0) + Math.floor(maxHp * pct(item.oppDamagePercent) / 100);
 
 export function applyBattleItem(ctx: BattleEventContext, item: BattleItem, recipient: 'p1' | 'p2', runProgram?: (ctx:BattleEventContext,item:BattleItem,backlash:boolean)=>void): boolean {
+  if(item.unusable)return false;
   if(item.useKit&&!runProgram)return false;
   // 需要選擇對象的道具：對象在使用當下必須仍在雙方背包內且未消逝，否則整個道具不生效。
   if (item.pickTarget && !(item.picked && resolveIllusionPick(ctx, item.picked))) {

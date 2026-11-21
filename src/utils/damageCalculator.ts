@@ -17,7 +17,8 @@ import { getElfAdvancedMechanics } from '../data/traitsRegistry';
 import { equipmentDamageFactors } from '../battle/damagePipeline';
 import { hpPowerScale } from '../battle/actionDamageModifiers';
 import {readIncomingPanelAttack} from '../battle/panelAttack';
-import {activeResourceQueryRules,resourceOppStageFloor} from '../battle/resourceQueryRules';
+import {activeResourceQueryRules,resourceOppStageFloor,resourceIgnoresOppUp} from '../battle/resourceQueryRules';
+import {viewedOppExtraDown} from '../battle/stageViewRules';
 import {statusTypeMultiplier} from '../effects/statusMechanics';
 import {markCapability} from '../battle/markCapabilities';
 
@@ -138,7 +139,16 @@ export const calculateDamage = (
   // 能力提升效果失效（百科名詞積木 boost_invalid_turns）：提升等級不參與能力值計算，下降照常。
   if (options?.actorBoostInvalid && atkS > 0) atkS = 0;
   if (options?.targetBoostInvalid && defS > 0) defS = 0;
+  // 資源查詢規則（未暝之夜等）是持有者對「對手」的鎖定，雙向生效且最後套用：
+  // 持有者攻擊時鎖對手防禦等級；持有者被攻擊時鎖對手攻擊等級。無視提升＝提升視為0；下限＝至少視為-N。
+  if (resourceIgnoresOppUp(actor, actorMarks || []) && defS > 0) defS = 0;
+  if (oppFloor > 0) defS = Math.min(defS, -oppFloor);
+  if (resourceIgnoresOppUp(target, targetMarks || []) && atkS > 0) atkS = 0;
+  { const targetFloor = resourceOppStageFloor(target, targetMarks || []); if (targetFloor > 0) atkS = Math.min(atkS, -targetFloor); }
 
+  // 能力視圖規則（趙雲）：持有者的同項提升等級額外視為對手該項下降（攻方看防方防禦、防方看攻方攻擊）。
+  { const d = viewedOppExtraDown(actor, isPhys ? 'def' : 'spdef'); if (d > 0) defS = Math.max(-6, defS - d); }
+  { const d = viewedOppExtraDown(target, isPhys ? 'atk' : 'spatk'); if (d > 0) atkS = Math.max(-6, atkS - d); }
   if (atkPanelRatio) atkS = 0; // 「最終」攻擊／特攻＝面板原始值×比例，不再套能力等級
   const formula = specialDamageFormula(actor, target, skill, (oppSide === 'p1' ? p1Team : p2Team) || [], atkS, calculateEffectiveStat(atk, atkS));
   // 公式替換：結果即總傷，不吃暴擊、也不乘連擊（使用者確認 2026-10-11）

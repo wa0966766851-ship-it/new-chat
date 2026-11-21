@@ -133,6 +133,7 @@ export function sequenceActionLabel(a: Act, triggerLabels: Record<string, string
     case 'flat_reduction_uses':return `下${p.uses}次受到${p.kind || '非真實'}傷害減少${p.flat}點`;
     case 'timed_uses':return `接下來${p.uses}次${p.kind?`${p.kind}技能的`:''}${triggerLabels[p.trig] || p.trig}觸發連鎖`;
     case 'ignore_def_action':return `本次攻擊忽略對手${p.stat}${pct(p.ratio)}`;
+    case 'status_entry_block_turns':return `${p.next?'下':'當回合起'}${p.turns}回合${p.side==='opp'?'對手':'自身'}無法進入${p.cls||''}異常狀態`;
     case 'status_inflict_guard_turns':return `${p.next?'下':'當回合起'}${p.turns}回合${side}無法以${p.kind==='all'?'任何來源':`${p.kind}技能`}附加雙方異常`;
     case 'next_entry_pp_zero':return '對手下隻登場精靈所有技能PP歸零';
     case 'pp_zero_selected':return '對手本次使用技能槽PP歸零';

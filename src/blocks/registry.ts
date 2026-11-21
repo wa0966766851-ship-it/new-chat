@@ -8,7 +8,7 @@ import { CUSTOM } from "./custom";
 import { eventTriggers, runSideTimers, runSkillProgram, runSoulProgram, runAct, runStmts, passiveEvade, runHolderMarks, setSoulProgramProvider, findBlockTimer, evalCond, statusTriggers, settleNoDmgFollowUps, surviveAt1, addBlockTimer } from "./runtime";
 import { isSkillDamageType } from "../battle/damageSemantics";
 import {hasForcedHitEffects} from '../battle/forcedHitRules';
-export { blockStatusGuard } from "./runtime";
+export { blockStatusGuard, statusInClass } from "./runtime";
 import { SKILL_MODE, SOUL_MODE } from "./specs";
 import { BoundedCache } from '../utils/boundedCache';
 import { acquiredEffectContext } from '../battle/acquiredEffectContext';
@@ -123,7 +123,10 @@ export function runBlockEvent(ctx: BattleEventContext, event: string, data: any,
   }
   if (event === EffectTiming.FATAL_RESIST) {
     if(resistFatalFromWindow(ctx))return true;
-    const timers = ctx.actor === "p1" ? ctx.p1Timers : ctx.p2Timers;
+    // 重生／致死存活屬於持有者本身：場下（背包）也生效、下場後保留，且不可被同側其他精靈誤用。
+    const ownerId = String(ctx.self?.battleId || ctx.self?.id || '');
+    const timers = ((ctx as any).ownTimers?.() ?? (ctx.actor === "p1" ? ctx.p1Timers : ctx.p2Timers))
+      .filter((t: any) => t.scope === 'team' || !t.ownerBattleId || String(t.ownerBattleId) === ownerId);
     const rb = findBlockTimer(timers, b => b.rebirth);
     if (rb) {
       ctx.consumeTimer?.(ctx.actor, rb.id);

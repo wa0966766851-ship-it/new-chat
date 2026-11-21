@@ -159,7 +159,8 @@ export function weightEffectOperations(deps: {
       if (count > 0) {
         run(ctx, state, 'invalid_turns', { kind: p.kind, turns: count, next: false });
         timed(ctx, ctx.targetSide, 'statusBlockedWithInvalid:' + battleElfId(ctx.self), count, {
-          statusInflictGuard: { kind: 'all' }, block: { statusGuard: { cls: '' } },
+          // 「無法進入或附加異常」：無法附加（施加方禁令）＋無法進入（任何來源，含自我附加）。
+          statusInflictGuard: { kind: 'all' }, statusEntryBlock: { cls: '' },
         }, false, 'skill', false);
       }
       return true;

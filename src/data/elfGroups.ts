@@ -101,7 +101,7 @@ export function elfGroupCondition(id: string, target:keyof typeof ELF_GROUP_TARG
 
 const ALLIANCE_MEMBERS = new Set(['雷伊', '普通雷伊', '蓋亞', '滅戰神決蓋亞', '卡修斯', '聖地卡修斯', '布萊克', '繆斯']);
 const ALLIANCE_SOURCE_IDS = new Set(['70', '261', '4766', '798', '3568']);
-const ALLIANCE_PROJECT_IDS = new Set(['5005', '5015', '5029', '7070', '707070', '5041', '5043']);
+const ALLIANCE_PROJECT_IDS = new Set(['5005', '5015', '5029', '7070', '707070', '5041', '5043', '5053']);
 // 依專案已核對的特權與使用者指定成員。
 const KING_PRIVILEGE_HOLDERS = new Set(['5012', '5013', '5014', '5015', '5016', '5018', '5028', '5034', '5035', '5038', '5041', '5049']);
 const kingPrivilege = (elf: Partial<Elf>) => KING_PRIVILEGE_HOLDERS.has(String(elf.id))

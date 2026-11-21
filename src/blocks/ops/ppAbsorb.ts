@@ -41,7 +41,6 @@ export function ppAbsorbOperations() {
     heal_equal_percent_turns: (ctx: BattleEventContext, p: any): boolean => {
       const elf = (ctx as any).self;
       const timerId = 'heal_equal_' + ((elf as any).battleId || (elf as any).id || 'src');
-      ((globalThis as any).__HG ||= []).push('heal_op_ran');
       (ctx as any).addTimerTo?.(ctx.actor, {
         id: timerId, name: '使用技能後回滿附傷', kind: 'turn_effect', source: 'skill',
         remaining: p.turns, tickAt: 'round_end', scope: 'elf',

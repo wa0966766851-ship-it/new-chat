@@ -47,6 +47,7 @@ export function legalActions(state: BattleState, side: AISide, forced = false, p
     if (!isElfItemDisabled(self) && !items.blocked) {
       for (const item of BATTLE_ITEMS) {
         if (!hasBattleItem(state[`${side}ItemInventory`], item.id)) continue;
+        if (item.unusable) continue;
         // 藥劑反噬中：回復／解除類藥劑會反轉成自傷，不列為合法選項（攻擊型藥劑也會打到自己）。
         if (items.backlash && !item.pickTarget) continue;
         if (side === 'p1' && potionRemaining !== undefined && potionRemaining <= 0 && item.type !== 'special') continue;

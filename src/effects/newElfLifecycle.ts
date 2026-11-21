@@ -137,10 +137,8 @@ export function runNewElfLifecycle(ctx: BattleEventContext, event: EffectTiming,
     const followup = data?.consumedInvalidation?.payload?.block?.invalidFollowup
       || data?.consumedInvalidation?.payload?.invalidFollowup;
     if (followup) {
-      ((globalThis as any).__FC ||= []).push({ actor: ctx.actor, hasAdd: typeof ctx.addTimerTo, p2len: (ctx.p2Timers || []).length });
       timed(ctx, ctx.actor, 'invalid_same_category_followup', followup.rounds,
         { block: { addInvalid: followup.sameCategory ? data.skill.category : 'all' } }, true);
-      ((globalThis as any).__FC2 ||= []).push({ afterIds: ((ctx.actor === 'p1' ? ctx.p1Timers : ctx.p2Timers) || []).map((x: any) => x.id) });
     }
   }
   if ([EffectTiming.ENFORCE, EffectTiming.ROUND_START, EffectTiming.BEFORE_SKILL].includes(event) && onField) {
