@@ -33,7 +33,7 @@ export const ZHAOYUN_SOUL_KIT=[
  // 戰鬥開始即登場時只附加一次（同一時點）。
  soul('自身登場時為所有精靈附加1層赤膽','entrance',[{cond:[c('player_state',{key:'zyChidanStart',equals:true,thisRound:true,neg:true})],acts:grantChidan[0].acts}],1),
  soul('每消耗1枚赤膽，自身登場時獲得1枚龍膽','entrance',[act(a('resource_mark_from_tally',{key:TALLY,...ZY_GALL})),{chain:'success',acts:[a('immune_status_turns',{turns:2})]}],2),
- soul('回合開始時自身不處於能力提升則令對手攻擊技能命中效果失效且自身免疫異常狀態','round_start',[
+ soul('回合開始時自身不處於能力提升則令對手攻擊技能附加效果失效且自身免疫異常狀態','round_start',[
   {cond:[stageUp('self',true)],acts:[a('add_invalid_turns',{kind:'攻擊',turns:1}),a('immune_status_turns',{turns:1})]},
  ],3),
  soul('自身處於能力提升、能力下降或異常狀態則所有技能先制+3','modify_priority',[

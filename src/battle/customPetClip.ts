@@ -15,8 +15,28 @@ export interface CustomAnimManifest {
   sequences:Record<string,{
     frames:number; hits:number[]; loop?:boolean;
     events?:{launch?:number;recover?:number};
-    quads:{c?:number[];a:number;buv?:number[];f?:number[];fuv?:number[];g?:{p:number[];u:number[]}[];anchors?:Record<string,readonly [number,number]>}[];
+    quads:{c?:number[];a:number;buv?:number[];f?:number[];fuv?:number[];g?:{p:number[];u:number[]}[];anchors?:Record<string,readonly [number,number]>;L?:CustomLayer[]}[];
   }>;
+}
+
+/**
+ * 分層影格（2026-11-22，原廠 .pet 同構）：每格由多個獨立四邊形拼成，各自位移／旋轉／縮放／斜切，
+ * 並帶 Flash 式顏色變換（mul 乘色、t 加色）與混合模式（n＝一般、a＝加算光效）。
+ * 有 L 時整格只畫 L（依序由後往前），c／buv／f／g／殘影一律不用；舊素材不受影響。
+ */
+export interface CustomLayer {
+  /** 4 個頂點的世界座標（x0,y0,…,x3,y3），與 u 的頂點一一對應。 */
+  p:number[];
+  /** 4 個頂點的圖集 UV。 */
+  u:number[];
+  /** 透明度（乘色 alpha）。 */
+  a?:number;
+  /** 乘色 RGB（預設 1,1,1）。 */
+  m?:[number,number,number];
+  /** 加色 RGB（預設 0；閃白＝m 0 + t 1）。 */
+  t?:[number,number,number];
+  /** 混合：n＝一般（預設）、a＝加算。 */
+  b?:'n'|'a';
 }
 
 // Per-drawing anchors use the same source coordinates as the body, independent of
@@ -73,6 +93,22 @@ export function poseBlendGhosts(name:string,quads:readonly CustomQuad[],fallback
 }
 const INDEX=[2,1,0,0,3,2];
 
+/** 分層影格 → mesh：連續同混合模式的圖層合併成一個子網格，順序即繪製順序。 */
+function layeredFrameMesh(layers:readonly CustomLayer[]):SwfFrameMesh{
+  const n=layers.length,positions=new Float32Array(n*8),uvs=new Float32Array(n*8),addColors=new Float32Array(n*16),mulColors=new Float32Array(n*16),indices=new Uint16Array(n*6);
+  const subMeshes:SwfFrameMesh['subMeshes']=[];
+  layers.forEach((layer,k)=>{
+    positions.set(layer.p.slice(0,8),k*8);uvs.set(layer.u.slice(0,8),k*8);
+    const [mr,mg,mb]=layer.m??[1,1,1],[tr,tg,tb]=layer.t??[0,0,0],a=layer.a??1;
+    for(let v=0;v<4;v++){mulColors.set([mr,mg,mb,a],(k*4+v)*4);addColors.set([tr,tg,tb,0],(k*4+v)*4);}
+    for(let j=0;j<6;j++)indices[k*6+j]=INDEX[j]+k*4;
+    const material=layer.b==='a'?FX_MATERIAL:CONTENT_MATERIAL,last=subMeshes[subMeshes.length-1];
+    if(last&&last.material===material)last.indexCount+=6;
+    else subMeshes.push({startVertex:k*4,indexCount:6,indexStart:k*6,material});
+  });
+  return {positions,uvs,addColors,mulColors,indices,subMeshes};
+}
+
 /** 一個四邊形 → 4 個頂點。positions 是「世界座標」，播放器不再額外縮放。 */
 function quad(
   positions:number[], uvs:number[],
@@ -96,6 +132,7 @@ export function customClipFromManifest(manifest:CustomAnimManifest,atlas:ImageBi
   const sequences=Object.entries(manifest.sequences).map(([name,seq])=>{
     const ghosts=poseBlendGhosts(name,seq.quads,manifest.character.uv,manifest.poseBlend!==false);
     const frames=seq.quads.map((original,index)=>{
+      if(original.L?.length)return {labels:[] as string[],mesh:layeredFrameMesh(original.L)};
       // Store a few authored zones, not ~9 MB of repeated idle vertices per elf.
       const uv=original.buv??manifest.character.uv,c=original.c,ppu=manifest.pixelsPerUnit;
       const q=name==='standby'&&manifest.idleMotion&&c?{...original,g:customIdleMesh(

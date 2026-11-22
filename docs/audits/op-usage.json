@@ -3,10 +3,10 @@
   "note": "L4 usage index, ACTION/CONDITION split + P3 alias families. Actions resolve to FAMILY-###, conditions to Q-###. unindexedRefs are references whose context had no code (not an error).",
   "totals": {
     "dataFiles": 156,
-    "opReferences": 2914,
+    "opReferences": 2915,
     "actionRefs": 2344,
-    "conditionRefs": 570,
-    "indexedRefs": 2914,
+    "conditionRefs": 571,
+    "indexedRefs": 2915,
     "distinctOpsReferenced": 559,
     "unindexedRefs": 0,
     "contextWarnings": 0,
@@ -295,7 +295,7 @@
     },
     "M-006": {
       "op": "mark_program",
-      "count": 11,
+      "count": 15,
       "elves": [
         "5001",
         "5006",
@@ -325,7 +325,7 @@
     },
     "D-027": {
       "op": "dmg_mod_turns",
-      "count": 39,
+      "count": 36,
       "elves": [
         "5000",
         "5007",
@@ -742,7 +742,7 @@
     },
     "P-010": {
       "op": "pp_op",
-      "count": 53,
+      "count": 52,
       "elves": [
         "300",
         "5000",
@@ -880,10 +880,11 @@
     },
     "Q-044": {
       "op": "ignore_success",
-      "count": 7,
+      "count": 8,
       "elves": [
         "5021",
         "5041",
+        "arena_14",
         "arena_16"
       ],
       "context": "condition"
@@ -1232,7 +1233,7 @@
     },
     "M-010": {
       "op": "resource_mark_add",
-      "count": 38,
+      "count": 37,
       "elves": [
         "5012",
         "5013",
@@ -1945,7 +1946,7 @@
     },
     "D-026": {
       "op": "dmg_mod",
-      "count": 20,
+      "count": 21,
       "elves": [
         "5003",
         "5011",
@@ -7356,8 +7357,8 @@
     "dmg_mod": {
       "actionCode": "D-026",
       "conditionCode": null,
-      "count": 20,
-      "actionCount": 20,
+      "count": 21,
+      "actionCount": 21,
       "conditionCount": 0,
       "elves": [
         "5003",
@@ -7374,7 +7375,6 @@
         "arena_14"
       ],
       "definitions": [
-        "亂武天傀",
         "凕",
         "咤",
         "寰宇幻影閃",
@@ -7393,8 +7393,8 @@
     "dmg_mod_turns": {
       "actionCode": "D-027",
       "conditionCode": null,
-      "count": 39,
-      "actionCount": 39,
+      "count": 36,
+      "actionCount": 36,
       "conditionCount": 0,
       "elves": [
         "5000",
@@ -7428,7 +7428,6 @@
         "永恆誓約",
         "深潛者盛宴",
         "濁",
-        "無極聖武",
         "無盡入侵",
         "獅",
         "王·潰墮妖族",
@@ -9287,17 +9286,19 @@
     "ignore_success": {
       "actionCode": null,
       "conditionCode": "Q-044",
-      "count": 7,
+      "count": 8,
       "actionCount": 0,
-      "conditionCount": 7,
+      "conditionCount": 8,
       "elves": [
         "5021",
         "5041",
+        "arena_14",
         "arena_16"
       ],
       "definitions": [
         "剛莖棍壓",
         "歸塵",
+        "無極聖武",
         "破影",
         "龍"
       ]
@@ -9983,8 +9984,8 @@
     "mark_program": {
       "actionCode": "M-006",
       "conditionCode": null,
-      "count": 11,
-      "actionCount": 11,
+      "count": 15,
+      "actionCount": 15,
       "conditionCount": 0,
       "elves": [
         "5001",
@@ -11197,8 +11198,8 @@
     "pp_op": {
       "actionCode": "P-010",
       "conditionCode": null,
-      "count": 53,
-      "actionCount": 53,
+      "count": 52,
+      "actionCount": 52,
       "conditionCount": 0,
       "elves": [
         "300",
@@ -11246,7 +11247,6 @@
         "海",
         "濁",
         "灼",
-        "無極聖武",
         "無相諦",
         "獅",
         "王·蒼銀之棺",
@@ -11994,8 +11994,8 @@
     "resource_mark_add": {
       "actionCode": "M-010",
       "conditionCode": null,
-      "count": 38,
-      "actionCount": 38,
+      "count": 37,
+      "actionCount": 37,
       "conditionCount": 0,
       "elves": [
         "5012",

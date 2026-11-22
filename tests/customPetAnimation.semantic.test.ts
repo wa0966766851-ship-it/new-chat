@@ -62,12 +62,21 @@ for (const id of IDS) {
         //   g = 逐幀網格（一張貼圖 + 每格自己的頂點，官方 .pet 的做法）
         //   c = 單一四邊形（舊格式，靠整體位移／縮放）
         const verts: number[] = [];
-        if (Array.isArray(q.g) && q.g.length) {
+        //   L = 分層零件（layered-parts：本體＋殘影＋光效各一個四邊形，官方剪紙動畫同構）
+        if (Array.isArray(q.L) && q.L.length) {
+          for (const layer of q.L) {
+            assert.equal(layer.p.length, 8, name + ' 圖層頂點數不是 4');
+            assert.equal(layer.u.length, 8, name + ' 圖層 UV 數不是 4');
+            for (const u of layer.u) assert.ok(u >= 0 && u <= 1, name + ' 圖層 UV 越界 ' + u);
+            assert.ok((layer.a ?? 1) >= 0 && (layer.a ?? 1) <= 1, name + ' 圖層 alpha 越界');
+            for (const v of layer.p) verts.push(v);
+          }
+        } else if (Array.isArray(q.g) && q.g.length) {
           for (const cell of q.g) for (let i = 0; i < 8; i++) verts.push(cell.p[i]);
         } else if (Array.isArray(q.c)) {
           for (let i = 0; i < 8; i++) verts.push(q.c[i]);
         } else {
-          assert.fail(name + ' 本體既沒有 g 也沒有 c');
+          assert.fail(name + ' 本體既沒有 L、g 也沒有 c');
         }
         for (const raw of verts) {
           const v = raw * ppu;
@@ -128,7 +137,9 @@ for (const id of IDS) {
           }
         }
         // subMesh 數：本體與光效分開（光效要 add 混合才會發亮），沒有光效的幀只有 1 個。
-        assert.ok(f.mesh.subMeshes.length >= 1 && f.mesh.subMeshes.length <= 2, seq.name + '#' + i + ' subMesh 數量異常 ' + f.mesh.subMeshes.length);
+        // 分層影格：每段連續的同混合模式圖層一個 subMesh，最多等於圖層數。
+        const layers = (manifest.sequences[seq.name].quads[i].L || []).length;
+        assert.ok(f.mesh.subMeshes.length >= 1 && f.mesh.subMeshes.length <= Math.max(2, layers), seq.name + '#' + i + ' subMesh 數量異常 ' + f.mesh.subMeshes.length);
         const totalIndex = f.mesh.subMeshes.reduce((a, sm) => a + sm.indexCount, 0);
         assert.equal(totalIndex, f.mesh.indices.length, seq.name + '#' + i + ' subMesh 索引總數不符');
       }

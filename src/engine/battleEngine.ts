@@ -1264,7 +1264,7 @@ Object.assign(fCtx as any, { fatalDamage: effectiveAmount, fatalIsDamage: true }
                             syncStateRef.current[`${oppSide}RegistryState`]?.[`${targetSide}_noHealTurns`] || (skillHealBlocked || blocksTimedRecovery(recoveryTimers,targetSide,target.battleId||target.id,data.recoveryOrigin,data.isPotion) ? 1 : 0);
         const oppSealHealTurns = syncStateRef.current[oppStateKey]?.oppSealHealTurns || 0;
         const healReduce50Turns = recoveryRegistry?.healReduce50Turns || 0;
-        if (isRecoveryBlocked(target.currentHp, target.survivalRule, noHealTurns > 0 || oppSealHealTurns > 0)) {
+        if (isRecoveryBlocked(target.currentHp, sealedSurvivalRule(target), noHealTurns > 0 || oppSealHealTurns > 0)) {
           const defaultNoHealReason = "體力恢復受到限制";
           const defaultOppSealReason = "恢復效果已被封印";
           const noHealReason = recoveryRegistry?.noHealReason ||
@@ -1307,7 +1307,7 @@ Object.assign(fCtx as any, { fatalDamage: effectiveAmount, fatalIsDamage: true }
         const recoveryCap = Number(recoveryRegistry?.recoveryMaxHpCap) || 0;
         if (recoveryCap > 0) maxAllowedHp = Math.min(maxAllowedHp, recoveryCap);
 
-        const recovery = resolveRecoveryEffect(target.currentHp, maxAllowedHp, Math.max(data.amount * multiplier, Math.max(0,Number(data.minimum)||0)), 1, false, target.survivalRule);
+        const recovery = resolveRecoveryEffect(target.currentHp, maxAllowedHp, Math.max(data.amount * multiplier, Math.max(0,Number(data.minimum)||0)), 1, false, sealedSurvivalRule(target));
         const nextHp = capCurrentHp(syncStateRef.current, targetSide, target, recovery.hp);
         const val = nextHp - target.currentHp;
 

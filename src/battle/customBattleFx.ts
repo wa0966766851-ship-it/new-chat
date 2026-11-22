@@ -10,7 +10,7 @@ export type CustomFxStyle='railgun'|'sigil'|'slash'|'vortex';
 export interface WeaponVolleyConfig {sprite:string;travelOrigin?:'standby';edgeLight?:{color:string;radius:number};held?:{sequences:readonly string[];from:number;until:number};patterns?:Readonly<Record<string,readonly WeaponStrikeCue[]>>;formations?:Readonly<Record<string,readonly WeaponFormationCue[]>>;impact?:{sprite:string;cols:number;rows:number;frames:number}}
 /** 序列特效圖表（由官方特效層萃取、改色混合後的加法發光圖）。cols×rows 格，依出招影格逐格播放。 */
 export interface FxSheet {src:string;cols:number;rows:number;frames:number;anchor?:'target'|'caster';at?:'start'|'launch'|'hit';lead?:number;peak?:number;pivot?:readonly [number,number];size?:number;y?:number;dx?:number;rate?:number;alpha?:number}
-export interface CustomFxConfig {fxSheets?:Partial<Record<string,FxSheet|readonly FxSheet[]>>;fxSheetsOnly?:boolean;style:CustomFxStyle;color:string;secondary:string;muzzle?:readonly [number,number];trajectory?:'orbital';focusExtra?:boolean;extraSeal?:boolean;extraSealArt?:{page:string;claw?:{open:string;closed?:string};impact?:{sprite:string;cols:number;rows:number;frames:number}};melee?:boolean;meleeSequences?:readonly string[];contactDepth?:number;ambient?:boolean;impactSheet?:string;weaponVolley?:WeaponVolleyConfig}
+export interface CustomFxConfig {/** 光效已烘進分層動畫影格（layered-parts）：不再疊程式光效與序列圖。 */bakedFx?:boolean;fxSheets?:Partial<Record<string,FxSheet|readonly FxSheet[]>>;fxSheetsOnly?:boolean;style:CustomFxStyle;color:string;secondary:string;muzzle?:readonly [number,number];trajectory?:'orbital';focusExtra?:boolean;extraSeal?:boolean;extraSealArt?:{page:string;claw?:{open:string;closed?:string};impact?:{sprite:string;cols:number;rows:number;frames:number}};melee?:boolean;meleeSequences?:readonly string[];contactDepth?:number;ambient?:boolean;impactSheet?:string;weaponVolley?:WeaponVolleyConfig}
 export const isMeleePresentationSequence=(config:CustomFxConfig|undefined,sequence:string)=>!!config?.melee&&(config.meleeSequences??['attack']).includes(sequence);
 export interface CustomFxFrame {
  sequence:string;frame:number;frames:number;hits:readonly number[];
@@ -160,6 +160,7 @@ export function createCustomBattleFx(host:HTMLElement,config:CustomFxConfig,side
     canvas.dataset.phase=seal.t<.4?'inscribe':seal.t<.67?'bind':seal.t<.87?'seal':'recover';
     return;
    }
+   if(config.bakedFx){canvas.dataset.fxSheet='baked';return;}
    const sheets=sheetList(config,state.sequence);
    if(sheets.length){
     let drawn=0;ctx.save();

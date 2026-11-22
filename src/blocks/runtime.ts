@@ -741,7 +741,8 @@ export const OPS: Record<string, OpFn> = {
   pp_op:(ctx,p,st)=>{
     const side=sideOf(ctx,p.side);
     // kind 過濾（2026-10-15 星核脈衝）：'屬性'＝只作用屬性技能槽；'攻擊'＝只作用非屬性槽；未填＝全部。
-    const only=p.kind?(s:any)=>p.kind==='屬性'?s.category==='屬性':s.category!=='屬性':undefined;
+    const byKind=p.kind?(s:any)=>p.kind==='屬性'?s.category==='屬性':s.category!=='屬性':undefined;
+    const only=p.onlyEmpty?(s:any)=>(s.pp??0)<=0&&(!byKind||byKind(s)):byKind;
     if(p.captureRestored||p.captureRemoved){
       const report={restored:0,removed:0};
       const changed=applyKitPpOperation(ctx,side,p.mode,p.amount||0,only,report);
@@ -1337,11 +1338,13 @@ export const OPS: Record<string, OpFn> = {
     const comp = st.event?.data?.damageComp || (st.event?.data?.base != null ? st.event.data : null);
     if (!comp) return false;
     if (!compMatchesKind(comp, p.kind)) return false;
-    const stacks=p.perMark?readMarkStacks(ctx,p.perMark):1;
+    const shieldOf=(side:'self'|'opp')=>{const e=side==='self'?ctx.self:ctx.target;return Math.max(0,Number(e?.shield)||0)+Math.max(0,Number(e?.barrier)||0);};
+    const stacks=p.perMark?readMarkStacks(ctx,p.perMark):p.perMarkTurns?readMarkRemainingTurns(ctx,p.perMarkTurns):p.perShield?Math.floor(shieldOf(p.perShield.side)/p.perShield.per):1;
     if(stacks<=0)return false;
+    const boost=p.boost===undefined?0:Math.min(p.maxBoost??Infinity,p.boost*stacks);
     if (p.dir === "in" && comp.isIncoming) addDamageReduction(comp, p.reduce*stacks, p.dir !== "out_reduce");
-    else if (p.dir === "in_boost" && comp.isIncoming) comp.increasePercent += p.boost*stacks;
-    else if (p.dir === "out" && !comp.isIncoming) comp.increasePercent += p.boost*stacks;
+    else if (p.dir === "in_boost" && comp.isIncoming) comp.increasePercent += boost;
+    else if (p.dir === "out" && !comp.isIncoming) comp.increasePercent += boost;
     else if (p.dir === "out_reduce" && !comp.isIncoming) addDamageReduction(comp, p.reduce*stacks, p.dir !== "out_reduce");
     else return false;
     return true;
@@ -1370,7 +1373,7 @@ export const OPS: Record<string, OpFn> = {
     const payload: any = { invalid: p.kind || "all", ...(p.powerAbove===undefined?{}:{powerAbove:p.powerAbove}), ...(typeof p.pairTimerId==='string'?{pairTimerId:p.pairTimerId}:{}) };
     if (p.followupRounds) payload.invalidFollowup = { rounds: p.followupRounds, sameCategory: p.followupSameCategory !== false };
     addBlockTimer(ctx, ctx.targetSide, `技能無效`, p.uses, "uses", payload, false, undefined, false, p.scope || 'elf', p.timerId);
-    ctx.addLog(`🚫 對手下 ${p.uses} 次${p.kind}技能無效！`, "effect"); return true; },
+    ctx.addLog(`🚫 對手下 ${p.uses} 次${p.kind === 'all' ? '所有' : p.kind || ''}技能無效！`, "effect"); return true; },
   invalid_turns: (ctx, p, st) => {
     const turns=p.turns*(p.perMarkTurns?readMarkRemainingTurns(ctx,p.perMarkTurns):1);
     if(!(turns>0))return false;
@@ -1380,12 +1383,12 @@ export const OPS: Record<string, OpFn> = {
       // ROUND_END通知在本輪timer扣減之後；此處再設pending會整整晚一回合才啟用。
       const afterTick=st.event?.trig==='round_end';
       addBlockTimer(ctx, ctx.targetSide, `${p.kind || ""}技能無效`, p.turns, "turns", { invalid: p.kind || "all" }, !afterTick, isSkillCtx(st) ? "turn_effect" : "round_counter", afterTick);
-      ctx.addLog(`🚫 下 ${p.turns} 回合對手${p.kind}技能無效！`, "effect");
+      ctx.addLog(`🚫 下 ${p.turns} 回合對手${p.kind === 'all' ? '所有' : p.kind || ''}技能無效！`, "effect");
       return true;
     }
     if (p.kind !== "屬性") setTurnKey(ctx, ctx.targetSide, st, "攻擊技能無效", { attackSkillInvalidTurns: Math.max(p.turns, ctx.getOpponentState("attackSkillInvalidTurns") || 0) }, "attackSkillInvalidTurns");
     if (p.kind !== "攻擊") setTurnKey(ctx, ctx.targetSide, st, "屬性技能無效", { utilitySkillInvalidTurns: Math.max(p.turns, ctx.getOpponentState("utilitySkillInvalidTurns") || 0) }, "utilitySkillInvalidTurns");
-    ctx.addLog(`🚫 ${p.turns} 回合內對手${p.kind}技能無效！`, "effect");
+    ctx.addLog(`🚫 ${p.turns} 回合內對手${p.kind === 'all' ? '所有' : p.kind || ''}技能無效！`, "effect");
     return true;
   },
   add_invalid_turns: (ctx, p, st) => {

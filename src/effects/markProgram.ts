@@ -24,6 +24,8 @@ export const MARK_PROGRAM_FIELDS = [
   'guaranteedMaxHpDamageChance','guaranteedMaxHpDamageChancePerStack',
   // 持有者（屬性／攻擊／全部）技能無效：寫入 marks.effects.blkInvalid（battleEngine 技能無效讀取端既有）。5010 星海之浸。
   'holderInvalid',
+  // 持有者機率不高於50%的異常附加效果機率降為0（battle/statusChanceRules 讀取端既有）。亮節。
+  'statusChanceZeroAtMost50',
   'countFromMark','turnsFromCount','priorityBonus','priorityPerStack','vsOpponentName','bindSource','incomingDamageLimitDisabled','incomingEffectChanceGuaranteed',
 ] as const;
 export function markProgramIssue(p:any):string|null {
@@ -50,13 +52,14 @@ export function markProgramIssue(p:any):string|null {
     if(p[key]!==undefined&&(!Number.isFinite(p[key])||p[key]<=0||p[key]>1000))return '印記非真實傷害倍率需為有限正數';
   if(p.guaranteedMaxHpDamageChance!==undefined&&(!Number.isFinite(p.guaranteedMaxHpDamageChance)||p.guaranteedMaxHpDamageChance<0||p.guaranteedMaxHpDamageChance>1))return '印記保底傷害機率需0至1';
   if(p.guaranteedMaxHpDamageChancePerStack!==undefined&&(!Number.isFinite(p.guaranteedMaxHpDamageChancePerStack)||p.guaranteedMaxHpDamageChancePerStack<0))return '印記每層保底機率需非負有限數';
+  if(p.statusChanceZeroAtMost50!==undefined&&p.statusChanceZeroAtMost50!==true)return '低機率異常歸零需為true';
   if(p.holderInvalid!==undefined&&!['屬性','攻擊','all'].includes(p.holderInvalid))return '印記持有者技能無效需為屬性／攻擊／all';
   if(p.countFromMark!==undefined&&(!p.countFromMark||Object.keys(p.countFromMark).some(k=>!['side','id'].includes(k))||!['self','opp'].includes(p.countFromMark.side)||typeof p.countFromMark.id!=='string'||!p.countFromMark.id||p.countFromMark.id.length>200))return '印記數量來源需明確持有者與資源識別碼';
   if(p.turnsFromCount!==undefined&&(typeof p.turnsFromCount!=='boolean'||!p.countFromMark||p.turns!==undefined))return '依數量定期限需資源來源且不能重複指定期限';
   if(p.priorityBonus!==undefined&&(!Number.isInteger(p.priorityBonus)||!p.priorityBonus||Math.abs(p.priorityBonus)>6))return '印記先制需非零-6至6整數';
   if(p.priorityPerStack!==undefined&&(typeof p.priorityPerStack!=='boolean'||p.priorityBonus===undefined))return '逐層先制需布林值及先制數值';
   if(p.vsOpponentName!==undefined&&(typeof p.vsOpponentName!=='string'||!p.vsOpponentName||p.vsOpponentName.length>200||p.priorityBonus===undefined))return '對手名稱條件需有限文字及先制讀取效果';
-  const hasEngineEffect=p.stabDisabled===true||p.typeAdvantageDisabled===true||p.incomingEffectChanceGuaranteed===true||p.incomingDamageLimitDisabled===true||p.priorityBonus!==undefined||p.holderInvalid!==undefined||p.nonTrueDamageDealtMultiplier!==undefined||p.nonTrueDamageTakenMultiplier!==undefined||p.guaranteedMaxHpDamageChance!==undefined;
+  const hasEngineEffect=p.stabDisabled===true||p.typeAdvantageDisabled===true||p.incomingEffectChanceGuaranteed===true||p.incomingDamageLimitDisabled===true||p.priorityBonus!==undefined||p.holderInvalid!==undefined||p.statusChanceZeroAtMost50===true||p.nonTrueDamageDealtMultiplier!==undefined||p.nonTrueDamageTakenMultiplier!==undefined||p.guaranteedMaxHpDamageChance!==undefined;
   if(!Array.isArray(p.rules)||p.rules.length>30||(!p.rules.length&&p.recoveryReduction===undefined&&p.incomingDamageReduction===undefined&&!hasEngineEffect))return '印記需明確規則陣列；空陣列時需已接通的持有者限制';
   for(const rule of p.rules)if(!MARK_PROGRAM_TRIGGERS.has(rule?.trig))return '印記規則缺少已接通的持有者節點';
   return null;
@@ -81,6 +84,7 @@ export function applyMarkProgram(ctx:BattleEventContext,p:any,holder:any):boolea
     effects:{blockProgram:structuredClone(p.rules) as Clause[],...(p.statusProjection?{statusProjection:structuredClone(p.statusProjection)}:{}),...(p.bindSource?{blockSource:{side:ctx.actor,battleId:String(ctx.self.battleId||ctx.self.id)}}:{}),...(p.holderInvalid!==undefined?{blkInvalid:p.holderInvalid}:{}),...(turns!==undefined?{blkTurns:turns}:{}),
       ...(p.incomingDamageLimitDisabled?{incomingDamageLimitDisabled:1}:{}),
       ...(p.stabDisabled?{stabDisabled:1}:{}),
+      ...(p.statusChanceZeroAtMost50?{statusChanceZeroAtMost50:true}:{}),
       ...(p.typeAdvantageDisabled?{typeAdvantageDisabled:1}:{}),
       ...(p.incomingEffectChanceGuaranteed?{incomingEffectChanceGuaranteed:1}:{}),
       ...(p.priorityBonus!==undefined?{priorityBonus:p.priorityBonus,...(p.priorityPerStack?{priorityPerStack:true}:{}),...(p.vsOpponentName?{vsOpponentName:p.vsOpponentName}:{})}:{}),

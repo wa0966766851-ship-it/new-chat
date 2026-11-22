@@ -1,8 +1,15 @@
 import {authoredEntry as e,authoredSkill as skill,operation as a,actions as act,condition as c} from './authoredKitTools';
 import {property} from './reviewedSequenceSkillKits';
 import {SHADOW_MARK} from './shadowPairKit';
+import type {KitEntry} from '../effects/effectSystem.schema';
 /** 晻藹夜靈.布萊克（5053）技能；每句一個條目，只用通用積木。屬性技能依專案慣例為無屬性。 */
 const line=(text:string,trig:string,body:any[],order:number,cond:any[]=[])=>e(text,trig,body,order,'skill',false,cond);
+/** 攜帶類常駐效果：裝備即在已接通事件監控，不需選中或使用（connectedEffects 的角色過濾）。 */
+const carried=(text:string,trig:string,body:any[],order:number,cond:any[]=[]):KitEntry=>({...e(text,trig,body,order,'skill',false,cond),role:'carried'});
+/** 致死保留封印（攜帶常駐、無條件）：布萊克在場時，對手在場精靈的致死保留本場僅1次。 */
+const carriedFatalSeal=(text:string,order:number,cond:any[]=[])=>carried(text,'round_start',[
+ {cond:[c('owner_on_field',{}),...cond],acts:[a('seal_fatal_resist',{side:'opp'})]},
+],order);
 const shadow={...SHADOW_MARK,side:'self',scope:'elf',persistsOffField:true};
 const hasShadow=c('mark_count',{side:'self',id:SHADOW_MARK.id,op:'不小於',amount:1});
 const noShadow=c('mark_count',{side:'self',id:SHADOW_MARK.id,op:'低於',amount:1});
@@ -66,7 +73,10 @@ export const NB_KING=skill('王.負咎泯晝','暗影','物理',150,5,1,[
  property('先制+1','base_priority',1,0),
  line('攻擊時造成的傷害不會出現微弱（克制關係為微弱時都變成普通）','before_skill',[act(a('minimum_matchup',{value:1}))],1),
  line('自身體力高於對手時額外先制+1','modify_priority',[{cond:[c('hp_cmp',{side:'self',op:'高於'})],acts:[a('prio_bonus',{v:1})]}],2),
- line('若對手處於異常狀態時則技能必定命中並令對方在場精靈下次觸發致死保留體力效果時變為本場戰鬥唯一1次觸發且本場戰鬥無法再次觸發','before_skill',[{cond:[c('abnormal',{side:'opp'})],acts:[a('sure_hit',{}),a('seal_fatal_resist',{side:'opp'})]}],3),
+  // 條件式必中（對手處於異常時）— 技能附加、命中前查詢
+  {codeId:'skill_property',node:'before_skill',source:'skill',role:'attached',order:3,customText:'對手處於異常狀態時必定命中',params:{property:'conditional_sure_hit',value:true,conditions:[c('abnormal',{side:'opp'})]}},
+  // 攜帶類常駐封印（非附加效果）：布萊克在場且對手處於異常時，對手致死保留本場僅1次。
+  carriedFatalSeal('令對方在場精靈下次觸發致死保留體力效果與死亡體力不受體力限制效果時變為本場戰鬥唯一1次觸發且本場戰鬥無法再次觸發',0),
  line('技能無效時，2回合內屬性技能附加效果失效，恢復自身最大體力⅓，自身體力低於對手時效果翻倍','on_invalid',[act(
   a('add_invalid_turns',{kind:'屬性',turns:2}),
   a('heal',{side:'self',ratio:1/3,x2If:c('hp_cmp',{side:'self',op:'低於'})}),
@@ -93,4 +103,23 @@ export const NB_DARK=skill('暗.瞢闇无始','暗影','物理',160,5,0,[
   {cond:[noLoss],acts:[a('dmg',{base:'最大體力',of:'self',ratio:.6,type:'真實'})]},
  ],5),
 ],{sure:true,fifth:true});
-export const DARK_BLAKE_SKILLS=[NB_XUANWEN,NB_NEWNIGHT,NB_INVERTED,NB_KING,NB_DARK];
+/** 備選技能（2026-11-22）：王.黎明前奏 混沌.暗影物攻 160 PP5，命中100%，先制+1。用語依原文；「空定/眩暈/平靜」皆有正式狀態定義。 */
+export const NB_DAWN=skill('王.黎明前奏','混沌.暗影','物理',160,5,1,[
+ property('先制+1','base_priority',1,0),
+ property('必中','sure_hit',true,1),
+  carriedFatalSeal('若此技能不為混沌.暗影系時，布萊克在場期間令對方在場精靈每次觸發致死保留體力效果與體力不受當前體力限制效果時變為本場唯一1次觸發且本場無法再次觸發',0),
+ line('命中後100%令對手害怕，未觸發則100%令雙方狂暴；此技能若當前技能屬性與自身相同改為附加自身平靜、附加對手眩暈','after_hit',[
+  act(a('status',{side:'opp',status:'害怕',chance:100})),
+  {chain:'fail',acts:[a('status',{side:'both',status:'狂暴',chance:100})]},
+  {cond:[c('same_type',{side:'self'})],acts:[a('status',{side:'self',status:'平靜',chance:100}),a('status',{side:'opp',status:'眩暈',chance:100})]},
+ ],3),
+ line('3回合內對手屬性技能固有效果失效','use',[act(a('add_invalid_turns',{kind:'屬性',turns:3}))],4),
+ line('技能無效時，3回合內屬性技能附加效果失效，恢復自身最大體力⅓，自身體力低於對手時效果翻倍','on_invalid',[
+  act(a('add_invalid_turns',{kind:'屬性',turns:3}),a('heal',{side:'self',ratio:1/3,x2If:c('hp_cmp',{side:'self',op:'低於'})})),
+ ],5),
+ line('若當前技能屬性與自身相同則威力提升150，先出手則效果翻倍','use',[
+  {cond:[c('same_type',{side:'self'}),c('first')],acts:[a('boost',{power:true,add:300,mult:1})]},
+  {cond:[c('same_type',{side:'self'}),c('last')],acts:[a('boost',{power:true,add:150,mult:1})]},
+ ],6),
+],{sure:true});
+export const DARK_BLAKE_SKILLS=[NB_XUANWEN,NB_NEWNIGHT,NB_INVERTED,NB_KING,NB_DARK,NB_DAWN];

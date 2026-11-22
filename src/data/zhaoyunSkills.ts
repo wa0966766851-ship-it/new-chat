@@ -60,6 +60,23 @@ export const ZY_CHIDAN_SPEAR=skill('赤膽綴銀槍','光.次元','物理',160,5
   act(a('timed',{turns:3,from:'now',trig:'self_skill',initial:true,label:'赤膽綴銀槍·害怕',body:[act(a('status',{side:'opp',status:'害怕',chance:100}))]})),
   act(a('turn_key_set',{key:'statBoostUnclearableTurns',turns:3,side:'self',label:'能力提升無法被消除和吸取'})),
  ],3),
- line('先出手時吸取對手最大體力的1/4且對手無法造成傷害','use',[{cond:[c('first')],acts:[a('drain',{ratio:1/4}),a('attack_damage_lock',{turns:1,kind:'all'})]}],4),
+ line('先出手時吸取對手最大體力的1/4且對手無法造成攻擊傷害','use',[{cond:[c('first')],acts:[a('drain',{ratio:1/4}),a('attack_damage_lock',{turns:1,kind:'all'})]}],4),
 ],{sure:true,fifth:true});
-export const ZHAOYUN_SKILLS=[ZY_LIDAN,ZY_BAIZHAN,ZY_GUDAN,ZY_CHANGYING,ZY_CHIDAN_SPEAR];
+/** 備選技能（2026-11-22）：豪膽鎮沙場 光次元物攻 85 PP20。用語依原文：先制+3、必中、解除下降→對手隨機3技能PP歸零、吸取提升→下1回合先制+3、龍膽世無雙時令對手空定、附加失敗則傷害提升7倍。 */
+export const ZY_HAODAN=skill('豪膽鎮沙場','光.次元','物理',85,20,3,[
+ property('先制+3','base_priority',3,0),
+ property('必中','sure_hit',true,1),
+ line('解除自身能力下降狀態，解除成功則使對手隨機3個技能PP值歸零','use',[
+  act(a('stat_clear',{side:'self',kind:'down'})),
+  {chain:'success',acts:[a('pp_zero_random',{count:3})]},
+ ],2),
+ line('吸取對手能力提升狀態，吸取成功則自身下1回合先制+3','use',[
+  act(a('stat_steal',{mode:'吸取'})),
+  {chain:'success',acts:[a('prio_turns',{turns:1,v:3,next:true})]},
+ ],3),
+ line('處於龍膽世無雙時令對手空定，附加失敗則該次傷害提升7倍','use',[
+  {cond:[W()],acts:[a('status',{side:'opp',status:'空定',chance:100})]},
+  {chain:'fail',cond:[W()],acts:[a('boost',{mult:7,kind:'攻擊'})]},
+ ],4),
+],{sure:true,labelEffects:true});
+export const ZHAOYUN_SKILLS=[ZY_LIDAN,ZY_BAIZHAN,ZY_GUDAN,ZY_CHANGYING,ZY_CHIDAN_SPEAR,ZY_HAODAN];

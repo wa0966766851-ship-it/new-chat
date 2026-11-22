@@ -1,0 +1,428 @@
+{
+ "bundle": "ppets_4930",
+ "officialPet": 4930,
+ "name": "帝皇鎧甲",
+ "indexPath": "18732522279aefe91963ee2345c26bd1",
+ "source": "SeerAPI/seer-unity-assets-pet_anim_part (GitHub mirror) + pet-anim-index 20261119171130",
+ "blend": "add",
+ "parts": {
+  "star_flare": {
+   "atlasRect": [
+    2163,
+    7127,
+    3628,
+    8192
+   ],
+   "sourceSize": [
+    1465,
+    1065
+   ],
+   "savedSize": [
+    520,
+    378
+   ],
+   "uses": 120,
+   "sequences": [
+    "cp"
+   ]
+  },
+  "gold_sword": {
+   "atlasRect": [
+    2570,
+    5968,
+    3372,
+    6477
+   ],
+   "sourceSize": [
+    802,
+    509
+   ],
+   "savedSize": [
+    520,
+    330
+   ],
+   "uses": 30,
+   "sequences": [
+    "attack"
+   ]
+  },
+  "ring_swirl": {
+   "atlasRect": [
+    2979,
+    6599,
+    3559,
+    7126
+   ],
+   "sourceSize": [
+    580,
+    527
+   ],
+   "savedSize": [
+    520,
+    472
+   ],
+   "uses": 45,
+   "sequences": [
+    "attack",
+    "cp",
+    "sa"
+   ]
+  },
+  "sparks_a": {
+   "atlasRect": [
+    5071,
+    6101,
+    5551,
+    6477
+   ],
+   "sourceSize": [
+    480,
+    376
+   ],
+   "savedSize": [
+    480,
+    376
+   ],
+   "uses": 4,
+   "sequences": [
+    "attack"
+   ]
+  },
+  "burst_gold": {
+   "atlasRect": [
+    5552,
+    6072,
+    5964,
+    6477
+   ],
+   "sourceSize": [
+    412,
+    405
+   ],
+   "savedSize": [
+    412,
+    405
+   ],
+   "uses": 84,
+   "sequences": [
+    "sa"
+   ]
+  },
+  "rays_fan": {
+   "atlasRect": [
+    3380,
+    5683,
+    3854,
+    5967
+   ],
+   "sourceSize": [
+    474,
+    284
+   ],
+   "savedSize": [
+    474,
+    284
+   ],
+   "uses": 180,
+   "sequences": [
+    "cp"
+   ]
+  },
+  "glint_star": {
+   "atlasRect": [
+    3696,
+    5265,
+    4055,
+    5617
+   ],
+   "sourceSize": [
+    359,
+    352
+   ],
+   "savedSize": [
+    359,
+    352
+   ],
+   "uses": 30,
+   "sequences": [
+    "sa"
+   ]
+  },
+  "bolt_a": {
+   "atlasRect": [
+    7900,
+    6061,
+    8191,
+    6477
+   ],
+   "sourceSize": [
+    291,
+    416
+   ],
+   "savedSize": [
+    291,
+    416
+   ],
+   "uses": 27,
+   "sequences": [
+    "attack",
+    "cp",
+    "sa"
+   ]
+  },
+  "bolt_b": {
+   "atlasRect": [
+    2924,
+    1617,
+    3203,
+    2036
+   ],
+   "sourceSize": [
+    279,
+    419
+   ],
+   "savedSize": [
+    279,
+    419
+   ],
+   "uses": 54,
+   "sequences": [
+    "attack",
+    "cp",
+    "sa"
+   ]
+  },
+  "slash_orange": {
+   "atlasRect": [
+    7242,
+    5976,
+    7620,
+    6226
+   ],
+   "sourceSize": [
+    378,
+    250
+   ],
+   "savedSize": [
+    378,
+    250
+   ],
+   "uses": 234,
+   "sequences": [
+    "attack",
+    "cp",
+    "sa"
+   ]
+  },
+  "streak_h": {
+   "atlasRect": [
+    451,
+    87,
+    1028,
+    225
+   ],
+   "sourceSize": [
+    577,
+    138
+   ],
+   "savedSize": [
+    520,
+    124
+   ],
+   "uses": 150,
+   "sequences": [
+    "attack"
+   ]
+  },
+  "slash_cross": {
+   "atlasRect": [
+    7621,
+    5974,
+    7893,
+    6226
+   ],
+   "sourceSize": [
+    272,
+    252
+   ],
+   "savedSize": [
+    272,
+    252
+   ],
+   "uses": 4,
+   "sequences": [
+    "attack",
+    "sa"
+   ]
+  },
+  "slash_burst": {
+   "atlasRect": [
+    3299,
+    4603,
+    3551,
+    4844
+   ],
+   "sourceSize": [
+    252,
+    241
+   ],
+   "savedSize": [
+    252,
+    241
+   ],
+   "uses": 2,
+   "sequences": [
+    "attack",
+    "sa"
+   ]
+  },
+  "flare_h": {
+   "atlasRect": [
+    5071,
+    5978,
+    5544,
+    6100
+   ],
+   "sourceSize": [
+    473,
+    122
+   ],
+   "savedSize": [
+    473,
+    122
+   ],
+   "uses": 157,
+   "sequences": [
+    "attack",
+    "cp",
+    "sa"
+   ]
+  },
+  "pillar_a": {
+   "atlasRect": [
+    3552,
+    4333,
+    3714,
+    4604
+   ],
+   "sourceSize": [
+    162,
+    271
+   ],
+   "savedSize": [
+    162,
+    271
+   ],
+   "uses": 78,
+   "sequences": [
+    "attack",
+    "cp",
+    "sa"
+   ]
+  },
+  "pillar_b": {
+   "atlasRect": [
+    3552,
+    3229,
+    3713,
+    3493
+   ],
+   "sourceSize": [
+    161,
+    264
+   ],
+   "savedSize": [
+    161,
+    264
+   ],
+   "uses": 76,
+   "sequences": [
+    "attack",
+    "cp",
+    "sa"
+   ]
+  },
+  "star_white": {
+   "atlasRect": [
+    5833,
+    4642,
+    6040,
+    4844
+   ],
+   "sourceSize": [
+    207,
+    202
+   ],
+   "savedSize": [
+    207,
+    202
+   ],
+   "uses": 55,
+   "sequences": [
+    "attack",
+    "cp",
+    "sa"
+   ]
+  },
+  "fireball": {
+   "atlasRect": [
+    4046,
+    4410,
+    4228,
+    4604
+   ],
+   "sourceSize": [
+    182,
+    194
+   ],
+   "savedSize": [
+    182,
+    194
+   ],
+   "uses": 2,
+   "sequences": [
+    "attack"
+   ]
+  },
+  "shock_bowl": {
+   "atlasRect": [
+    813,
+    3148,
+    1024,
+    3312
+   ],
+   "sourceSize": [
+    211,
+    164
+   ],
+   "savedSize": [
+    211,
+    164
+   ],
+   "uses": 40,
+   "sequences": [
+    "sa"
+   ]
+  },
+  "sparks_b": {
+   "atlasRect": [
+    6314,
+    5649,
+    6686,
+    5967
+   ],
+   "sourceSize": [
+    372,
+    318
+   ],
+   "savedSize": [
+    372,
+    318
+   ],
+   "uses": 4,
+   "sequences": [
+    "attack"
+   ]
+  }
+ }
+}

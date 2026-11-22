@@ -202,14 +202,16 @@ export const SEQUENCE_ACTION_FIELDS: Record<string, readonly string[]> = {
   // shield 支援 perMark（每層印記倍率）；見 blocks/runtime.shield。
   shield: ['flat','ratio','base','kind','perMark'],
   heal_collection:['side','scope','amount'],
-  pp_op: ['side','mode','amount','stopIfEmpty','kind','captureRestored','captureRemoved'],
+  // onlyEmpty：只作用 PP 為 0 的技能（亮節）。
+  pp_op: ['side','mode','amount','stopIfEmpty','kind','captureRestored','captureRemoved','onlyEmpty'],
   drain_from_last:['ratio','type'],
   dmg: ['flat','both','type','elem','base','of','ratio','stepUnit','stepBonus','perStage','perMark','per','doublePer','appendToAttack'], drain: ['type','flat','cur','ratioCur','ratio','true','ofSelf','perMark','perStatusTurns','basis','base','of','per','perStageDown','ppDiffDouble','leaveHp'],
   clear_shield: ['side','kind'], clear_turn: ['side','polarity'],
   invalid_turns: ['kind','turns','next','perMarkTurns'], invalid_next: ['kind','uses','followupRounds','followupSameCategory','timerId','powerAbove','scope','pairTimerId'],
   no_heal: ['turns','next','scope','perStageKinds'], no_switch: ['turns','next'],
   timed: ['turns','from','trig','body','label','initial','once','onExpire','skillKind','onRoundMiss','perMark','initialAfterSettlement'],
-  dmg_mod: ['dir','kind','boost','reduce','perMark'],
+  // perMarkTurns：依印記剩餘回合倍增；perShield：依護盾＋護罩每 per 點倍增；maxBoost：增傷總量上限。
+  dmg_mod: ['dir','kind','boost','reduce','perMark','perMarkTurns','perShield','maxBoost'],
   dmg_mod_turns: ['side','dir','kind','boost','reduce','chance','turns','next','lateCompensation','doubleIfAnyStatus'],
   dmg_mod_uses:['uses','boost','kind','attackOnly'],
   damage_boost_current_or_next_attack:['boost'],
@@ -375,7 +377,7 @@ function paramsIssue(value: unknown, fields: readonly string[], path: string, nu
     if (['ids','stats','stats2','list','statuses','exclude','fields','phase'].includes(key) && (!Array.isArray(v)||!v.length||v.length>30||v.some(x=>typeof x!=='string'||x.length>200))) return `${path}.${key}需為有限名稱陣列`;
     if (key==='cls' && (typeof v!=='string'||!['','控制類','弱化類','限制類','衍化類','附屬類','非附屬類'].includes(v))) return `${path}.cls異常分類不明`;
     if (['label','text'].includes(key) && (typeof v!=='string'||v.length>100000)) return `${path}.${key}需為有限文字`;
-    if (typeof v === 'object' && !['ids','names','loopList','terms','stats','stats2','list','statuses','exclude','fields','phase','effects','body','bodyLow','bodyHigh','belowBody','afterBody','smallBody','noHealBody','programs','statusProjection','families','onMatch','onMismatch','choices','onExpire','onRoundMiss','branches','perStageDown','from','onClose','onBlock','rules','marks','recoveryReduction','incomingDamageReduction','perMark','perMarkTurns','perStage','perStageKinds','perStageLevel','perMarkHits','scaleByMarks','perNonFullPp','keys','sides','types','resources','pool','repeat','fallback','traitSources','countFromMark','conversionTargetBan','cancelEffects','cycle'].includes(key)) return `${path}.${key}不接受程式或巢狀行為`;
+    if (typeof v === 'object' && !['ids','names','loopList','terms','stats','stats2','list','statuses','exclude','fields','phase','effects','body','bodyLow','bodyHigh','belowBody','afterBody','smallBody','noHealBody','programs','statusProjection','families','onMatch','onMismatch','choices','onExpire','onRoundMiss','branches','perStageDown','from','onClose','onBlock','rules','marks','recoveryReduction','incomingDamageReduction','perMark','perMarkTurns','perShield','perStage','perStageKinds','perStageLevel','perMarkHits','scaleByMarks','perNonFullPp','keys','sides','types','resources','pool','repeat','fallback','traitSources','countFromMark','conversionTargetBan','cancelEffects','cycle'].includes(key)) return `${path}.${key}不接受程式或巢狀行為`;
   }
   return null;
 }
@@ -847,6 +849,10 @@ export function sequenceIssue(value: unknown, node?: string, depth=0, inMark=fal
       if(act.op==='damage_boost_current_or_next_attack'&&(!Number.isFinite(act.p.boost)||act.p.boost<=0||act.p.boost>100))return '當回合及下次受攻擊增傷需有限正倍率';
       if(act.op.startsWith('dmg_mod')&&!['攻擊','技能','非真實','固定','百分比','真實',''].includes(act.p.kind??''))return '增減傷範圍不明';
       if(['dmg_mod','dmg_mod_turns'].includes(act.op)&&!['in','in_boost','out','out_reduce','taken'].includes(act.p.dir))return '增減傷方向不明';
+      if(act.op==='dmg_mod'&&[act.p.perMark,act.p.perMarkTurns,act.p.perShield].filter(v=>v!==undefined).length>1)return '增減傷倍增來源只能擇一';
+      if(act.op==='dmg_mod'&&act.p.perShield!==undefined){const q=act.p.perShield;if(!object(q)||Object.keys(q).some(k=>!['side','per'].includes(k))||!['self','opp'].includes(q.side)||!(Number.isFinite(q.per)&&q.per>0))return '護盾倍增需明確持有者與每多少點';}
+      if(act.op==='dmg_mod'&&act.p.perMarkTurns!==undefined){const q=act.p.perMarkTurns;if(!object(q)||Object.keys(q).some(k=>!['side','id'].includes(k))||!['self','opp'].includes(q.side)||typeof q.id!=='string'||!q.id)return '印記剩餘回合需明確持有者與識別碼';}
+      if(act.op==='dmg_mod'&&act.p.maxBoost!==undefined&&(!(act.p.maxBoost>0)||!['out','in_boost'].includes(act.p.dir)))return '增傷上限需為正數且只用於增傷';
       if(act.op==='dmg_mod'&&act.p.dir==='taken')return '即時受到增傷需選in_boost；taken只用於持續效果';
       if(['boost','dmg_mod','drain','dmg','shield','stat_steal','power_mod'].includes(act.op)&&act.p.perMark!==undefined){
         const q=act.p.perMark;
