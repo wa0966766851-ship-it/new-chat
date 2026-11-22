@@ -14,8 +14,10 @@ try {
   const seed = (id: string, bid: string, slot: number) => {
     const s = structuredClone(DEFAULT_ELVES.find((e: any) => String(e.id) === id));
     assert.ok(s, id + ' 存在');
-    const sk = s.skills[slot];
-    assert.ok(sk && sk.effectMode === 'kit', id + ' 第 ' + slot + ' 技能為 Kit');
+    // 備選技能放 skillPool（主列上限5），從池依技能名取
+    const backupName = slot === 5 ? (id === '5052' ? '豪膽鎮沙場' : '王.黎明前奏') : null;
+    const sk = backupName ? [...s.skills, ...(s.skillPool || [])].find((k: any) => k.name === backupName) : s.skills[slot];
+    assert.ok(sk && sk.effectMode === 'kit', id + ' 第 ' + slot + ' 技能為 Kit（' + (backupName || s.skills[slot]?.name) + '）');
     s.skills = [sk];
     Object.assign(s, { battleId: bid, maxHp: 50000, currentHp: 50000,
       calculatedStats: { hp: 50000, atk: 300, def: 300, spatk: 300, spdef: 300, speed: 300 }, statStages: {} });
@@ -69,7 +71,7 @@ try {
   {
     const { DEFAULT_ELVES } = await h.server.ssrLoadModule('/src/data/defaultElvesLoaded.ts');
     const zy = structuredClone(DEFAULT_ELVES.find((e: any) => String(e.id) === '5052'));
-    zy.skills = [zy.skills[5]];
+    zy.skills = [[...zy.skills, ...(zy.skillPool || [])].find((k: any) => k.name === '豪膽鎮沙場')];
     Object.assign(zy, { battleId: 'ZYPP', maxHp: 50000, currentHp: 50000,
       calculatedStats: { hp: 50000, atk: 300, def: 300, spatk: 300, spdef: 300, speed: 300 }, statStages: {} });
     zy.soulMark = { name: '無', description: '', effectMode: 'kit', kit: [] }; // 移除魂印干擾
