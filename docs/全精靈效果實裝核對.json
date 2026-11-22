@@ -3,12 +3,12 @@
   "note": "parsed ≠ executable route ≠ semantic acceptance",
   "summary": {
     "elves": 64,
-    "sourceRecords": 3212,
+    "sourceRecords": 3223,
     "presentationOnly": 0,
-    "clauses": 3212,
-    "parsed": 3212,
+    "clauses": 3223,
+    "parsed": 3223,
     "unparsed": 0,
-    "pending": 3145,
+    "pending": 3156,
     "partialEvidence": 0,
     "staleEvidence": 67,
     "fullyAccepted": 0
@@ -150165,10 +150165,10 @@
         {
           "kind": "魂印",
           "name": "赤膽",
-          "sourceText": "戰鬥開始及自身登場時 為所有精靈附加1層赤膽\n回合開始時自身不處於能力提升則令對手攻擊技能命中效果失效且自身免疫異常狀態\n自身處於能力提升 能力下降 異常狀態則所有技能先制+3\n自身使用技能時：\n1.使對手隨機3項能力下降並附加到自己身上 自身處於能力提升時 提升等級翻倍且將自身能力提升等級額外視為對手能力下降\n2.自身獲得等同自身能力下降2倍的能力提升\n3.獲得1枚龍膽\n4.每有1枚龍膽 吸取等同自身能力提升等級+對手能力下降等級*77的體力\n5.自身處於異常則吸取對手最大體力的3/1\n\n赤膽：己方持有時 若受到攻擊傷害，或免疫受到的固定傷害、百分比傷害、異常狀態時消耗並免疫以上所有效果 回合結束時消除對手回合類效果 能力提升效果\n對方持有時 回合結束時若對手處於回合類效果 能力提升效果時消耗並消除以上所有效果 令對方害怕\n每消耗1枚赤膽 自身登場時獲得1枚龍膽\n龍膽：獲得後到下回合結束時自身免疫異常狀態 最多7枚 當龍膽達到7枚時開啟龍膽世無雙\n龍膽世無雙：自身免疫異常狀態 對手正先制效果失效 無視對手護盾承傷效果 無視對手攻擊免疫效果 攻擊傷害提升77% 所有技能不受pp值限制 若pp不為滿則攻擊傷害額外提升77%並恢復至滿 龍膽附加的固定點數傷害改為真實傷害 使用攻擊技能額外造成777點光次元傷害\n自身下場後 每經過1回 減少1枚龍膽 並恢復自身及場上精靈177體力",
+          "sourceText": "戰鬥開始及自身登場時 為所有精靈附加1層赤膽\n回合開始時自身不處於能力提升則令對手攻擊技能附加效果失效且自身免疫異常狀態\n自身處於能力提升 能力下降 異常狀態則所有技能先制+3\n自身使用技能時：\n1.使對手隨機3項能力下降並附加到自己身上 自身處於能力提升時 提升等級翻倍且將自身能力提升等級額外視為對手能力下降\n2.自身獲得等同自身能力下降2倍的能力提升\n3.獲得1枚龍膽\n4.每有1枚龍膽 吸取等同自身能力提升等級+對手能力下降等級*77的體力\n5.自身處於異常則吸取對手最大體力的3/1\n\n赤膽：己方持有時 若受到攻擊傷害，或免疫受到的固定傷害、百分比傷害、異常狀態時消耗並免疫以上所有效果 回合結束時消除對手回合類效果 能力提升效果\n對方持有時 回合結束時若對手處於回合類效果 能力提升效果時消耗並消除以上所有效果 令對方害怕\n每消耗1枚赤膽 自身登場時獲得1枚龍膽\n龍膽：獲得後到下回合結束時自身免疫異常狀態 最多7枚 當龍膽達到7枚時開啟龍膽世無雙\n龍膽世無雙：自身免疫異常狀態 對手正先制效果失效 無視對手護盾承傷效果 無視對手攻擊免疫效果 攻擊傷害提升77% 所有技能不受pp值限制 若pp不為滿則攻擊傷害額外提升77%並恢復至滿 龍膽附加的固定點數傷害改為真實傷害 使用攻擊技能額外造成777點光次元傷害\n自身下場後 每經過1回 減少1枚龍膽 並恢復自身及場上精靈177體力",
           "route": "kit",
           "source": "統一魂印來源：kit；未接通 0 項",
-          "sourceSha256": "200094a5e05b8b52337b08b07858a7f38e2cfa8bf343b34f0877f5fcfad2925c",
+          "sourceSha256": "6a23d9c6e526bfe38f9268f47e11e071f427593e3b3d3a9d992e2043b3ce8911",
           "clauses": [
             {
               "index": 0,
@@ -150765,7 +150765,7 @@
             },
             {
               "index": 3,
-              "raw": "回合開始時自身不處於能力提升則令對手攻擊技能命中效果失效且自身免疫異常狀態",
+              "raw": "回合開始時自身不處於能力提升則令對手攻擊技能附加效果失效且自身免疫異常狀態",
               "trigger": "round_start",
               "parsed": true,
               "explanation": false,
@@ -150807,7 +150807,7 @@
                   }
                 ]
               },
-              "id": "5052:魂印:赤膽:712732357939:1",
+              "id": "5052:魂印:赤膽:1358201dd764:1",
               "presentationOnly": false,
               "execution": "authored-block-runtime",
               "textCorrespondence": {
@@ -151664,10 +151664,10 @@
         {
           "kind": "專屬特性",
           "name": "赤膽",
-          "sourceText": "戰鬥開始及自身登場時 為所有精靈附加1層赤膽\n回合開始時自身不處於能力提升則令對手攻擊技能命中效果失效且自身免疫異常狀態\n自身處於能力提升 能力下降 異常狀態則所有技能先制+3\n自身使用技能時：\n1.使對手隨機3項能力下降並附加到自己身上 自身處於能力提升時 提升等級翻倍且將自身能力提升等級額外視為對手能力下降\n2.自身獲得等同自身能力下降2倍的能力提升\n3.獲得1枚龍膽\n4.每有1枚龍膽 吸取等同自身能力提升等級+對手能力下降等級*77的體力\n5.自身處於異常則吸取對手最大體力的3/1\n\n赤膽：己方持有時 若受到攻擊傷害，或免疫受到的固定傷害、百分比傷害、異常狀態時消耗並免疫以上所有效果 回合結束時消除對手回合類效果 能力提升效果\n對方持有時 回合結束時若對手處於回合類效果 能力提升效果時消耗並消除以上所有效果 令對方害怕\n每消耗1枚赤膽 自身登場時獲得1枚龍膽\n龍膽：獲得後到下回合結束時自身免疫異常狀態 最多7枚 當龍膽達到7枚時開啟龍膽世無雙\n龍膽世無雙：自身免疫異常狀態 對手正先制效果失效 無視對手護盾承傷效果 無視對手攻擊免疫效果 攻擊傷害提升77% 所有技能不受pp值限制 若pp不為滿則攻擊傷害額外提升77%並恢復至滿 龍膽附加的固定點數傷害改為真實傷害 使用攻擊技能額外造成777點光次元傷害\n自身下場後 每經過1回 減少1枚龍膽 並恢復自身及場上精靈177體力",
+          "sourceText": "戰鬥開始及自身登場時 為所有精靈附加1層赤膽\n回合開始時自身不處於能力提升則令對手攻擊技能附加效果失效且自身免疫異常狀態\n自身處於能力提升 能力下降 異常狀態則所有技能先制+3\n自身使用技能時：\n1.使對手隨機3項能力下降並附加到自己身上 自身處於能力提升時 提升等級翻倍且將自身能力提升等級額外視為對手能力下降\n2.自身獲得等同自身能力下降2倍的能力提升\n3.獲得1枚龍膽\n4.每有1枚龍膽 吸取等同自身能力提升等級+對手能力下降等級*77的體力\n5.自身處於異常則吸取對手最大體力的3/1\n\n赤膽：己方持有時 若受到攻擊傷害，或免疫受到的固定傷害、百分比傷害、異常狀態時消耗並免疫以上所有效果 回合結束時消除對手回合類效果 能力提升效果\n對方持有時 回合結束時若對手處於回合類效果 能力提升效果時消耗並消除以上所有效果 令對方害怕\n每消耗1枚赤膽 自身登場時獲得1枚龍膽\n龍膽：獲得後到下回合結束時自身免疫異常狀態 最多7枚 當龍膽達到7枚時開啟龍膽世無雙\n龍膽世無雙：自身免疫異常狀態 對手正先制效果失效 無視對手護盾承傷效果 無視對手攻擊免疫效果 攻擊傷害提升77% 所有技能不受pp值限制 若pp不為滿則攻擊傷害額外提升77%並恢復至滿 龍膽附加的固定點數傷害改為真實傷害 使用攻擊技能額外造成777點光次元傷害\n自身下場後 每經過1回 減少1枚龍膽 並恢復自身及場上精靈177體力",
           "route": "kit",
           "source": "特質統一來源：kit；未接通 0 項",
-          "sourceSha256": "200094a5e05b8b52337b08b07858a7f38e2cfa8bf343b34f0877f5fcfad2925c",
+          "sourceSha256": "6a23d9c6e526bfe38f9268f47e11e071f427593e3b3d3a9d992e2043b3ce8911",
           "clauses": [
             {
               "index": 0,
@@ -152264,7 +152264,7 @@
             },
             {
               "index": 3,
-              "raw": "回合開始時自身不處於能力提升則令對手攻擊技能命中效果失效且自身免疫異常狀態",
+              "raw": "回合開始時自身不處於能力提升則令對手攻擊技能附加效果失效且自身免疫異常狀態",
               "trigger": "round_start",
               "parsed": true,
               "explanation": false,
@@ -152306,7 +152306,7 @@
                   }
                 ]
               },
-              "id": "5052:專屬特性:赤膽:712732357939:1",
+              "id": "5052:專屬特性:赤膽:1358201dd764:1",
               "presentationOnly": false,
               "execution": "authored-block-runtime",
               "textCorrespondence": {
@@ -154367,10 +154367,10 @@
         {
           "kind": "技能",
           "name": "赤膽綴銀槍",
-          "sourceText": "必中\n處於龍膽世無雙時對敵方場下精靈造成77點固定傷害，每有1個精靈免疫此次攻擊傷害提升7倍\n消除對手回合效果，消除成功附加250點真實傷害\n3回合內使用技能時100%令對手害怕且能力提升效果無法被消除和吸取\n先出手時吸取對手最大體力的1/4且對手無法造成傷害",
+          "sourceText": "必中\n處於龍膽世無雙時對敵方場下精靈造成77點固定傷害，每有1個精靈免疫此次攻擊傷害提升7倍\n消除對手回合效果，消除成功附加250點真實傷害\n3回合內使用技能時100%令對手害怕且能力提升效果無法被消除和吸取\n先出手時吸取對手最大體力的1/4且對手無法造成攻擊傷害",
           "route": "kit",
           "source": "統一效果來源：kit；未接通 0 項",
-          "sourceSha256": "5e5f3fc47014b5f44eae2d7e64ebe95dadefea05234d92009e86b44f1fddfb36",
+          "sourceSha256": "caba4063e95257e91ef2b8c2e8d67bc4296092b5f216bf0204cce617c88fcb37",
           "clauses": [
             {
               "index": 0,
@@ -154586,17 +154586,17 @@
             },
             {
               "index": 4,
-              "raw": "先出手時吸取對手最大體力的1/4且對手無法造成傷害",
+              "raw": "先出手時吸取對手最大體力的1/4且對手無法造成攻擊傷害",
               "trigger": "use",
               "parsed": true,
               "explanation": false,
               "unresolved": [],
               "damage": {
                 "types": [
-                  "percent"
+                  "attack"
                 ],
-                "inferred": true,
-                "reason": "建議百分比，取值基準待確認；不自動實裝。"
+                "inferred": false,
+                "reason": "文本指定；同句多段傷害仍須逐段核對。"
               },
               "semanticVerification": "pending",
               "blocks": {
@@ -154630,7 +154630,263 @@
                   }
                 ]
               },
-              "id": "5052:技能:赤膽綴銀槍:ce144f7d21f7:1",
+              "id": "5052:技能:赤膽綴銀槍:a3a8504cc41e:1",
+              "presentationOnly": false,
+              "execution": "authored-block-runtime",
+              "textCorrespondence": {
+                "state": "no-matching-txt",
+                "files": []
+              },
+              "evidence": []
+            }
+          ]
+        },
+        {
+          "kind": "技能",
+          "name": "豪膽鎮沙場",
+          "sourceText": "■ 先制+3\n■ 必中\n🎯 解除自身能力下降狀態，解除成功則使對手隨機3個技能PP值歸零\n🎯 吸取對手能力提升狀態，吸取成功則自身下1回合先制+3\n🎯 處於龍膽世無雙時令對手空定，附加失敗則該次傷害提升7倍",
+          "route": "kit",
+          "source": "統一效果來源：kit；未接通 0 項",
+          "sourceSha256": "ff0bc1538d7157dab918aea8160e300756c32588d3d773f903dd22d3322ccda8",
+          "clauses": [
+            {
+              "index": 0,
+              "raw": "先制+3",
+              "trigger": "custom",
+              "parsed": true,
+              "explanation": false,
+              "unresolved": [],
+              "damage": null,
+              "semanticVerification": "pending",
+              "blocks": {
+                "conditions": [],
+                "statements": [
+                  {
+                    "acts": [
+                      {
+                        "op": "skill_property",
+                        "p": {
+                          "node": "modify_priority",
+                          "property": "base_priority",
+                          "value": 3,
+                          "conditions": []
+                        },
+                        "label": "先制判定 · 先制+3"
+                      }
+                    ]
+                  }
+                ]
+              },
+              "id": "5052:技能:豪膽鎮沙場:44285d81ef38:1",
+              "presentationOnly": false,
+              "execution": "authored-block-runtime",
+              "textCorrespondence": {
+                "state": "no-matching-txt",
+                "files": []
+              },
+              "evidence": []
+            },
+            {
+              "index": 1,
+              "raw": "必中",
+              "trigger": "before_skill",
+              "parsed": true,
+              "explanation": false,
+              "unresolved": [],
+              "damage": null,
+              "semanticVerification": "pending",
+              "blocks": {
+                "conditions": [],
+                "statements": [
+                  {
+                    "acts": [
+                      {
+                        "op": "skill_property",
+                        "p": {
+                          "node": "before_skill",
+                          "property": "sure_hit",
+                          "value": true,
+                          "conditions": []
+                        },
+                        "label": "使用技能前 · 必中"
+                      }
+                    ]
+                  }
+                ]
+              },
+              "id": "5052:技能:豪膽鎮沙場:3e76e6d438f9:1",
+              "presentationOnly": false,
+              "execution": "authored-block-runtime",
+              "textCorrespondence": {
+                "state": "no-matching-txt",
+                "files": []
+              },
+              "evidence": []
+            },
+            {
+              "index": 2,
+              "raw": "解除自身能力下降狀態，解除成功則使對手隨機3個技能PP值歸零",
+              "trigger": "use",
+              "parsed": true,
+              "explanation": false,
+              "unresolved": [],
+              "damage": null,
+              "semanticVerification": "pending",
+              "blocks": {
+                "conditions": [],
+                "statements": [
+                  {
+                    "acts": [
+                      {
+                        "op": "stat_clear",
+                        "p": {
+                          "side": "self",
+                          "kind": "down"
+                        },
+                        "label": "stat_clear"
+                      }
+                    ]
+                  },
+                  {
+                    "chain": "success",
+                    "acts": [
+                      {
+                        "op": "pp_zero_random",
+                        "p": {
+                          "count": 3
+                        },
+                        "label": "pp_zero_random"
+                      }
+                    ]
+                  }
+                ]
+              },
+              "id": "5052:技能:豪膽鎮沙場:500cf9cbaf44:1",
+              "presentationOnly": false,
+              "execution": "authored-block-runtime",
+              "textCorrespondence": {
+                "state": "no-matching-txt",
+                "files": []
+              },
+              "evidence": []
+            },
+            {
+              "index": 3,
+              "raw": "吸取對手能力提升狀態，吸取成功則自身下1回合先制+3",
+              "trigger": "use",
+              "parsed": true,
+              "explanation": false,
+              "unresolved": [],
+              "damage": null,
+              "semanticVerification": "pending",
+              "blocks": {
+                "conditions": [],
+                "statements": [
+                  {
+                    "acts": [
+                      {
+                        "op": "stat_steal",
+                        "p": {
+                          "mode": "吸取"
+                        },
+                        "label": "stat_steal"
+                      }
+                    ]
+                  },
+                  {
+                    "chain": "success",
+                    "acts": [
+                      {
+                        "op": "prio_turns",
+                        "p": {
+                          "turns": 1,
+                          "v": 3,
+                          "next": true
+                        },
+                        "label": "prio_turns"
+                      }
+                    ]
+                  }
+                ]
+              },
+              "id": "5052:技能:豪膽鎮沙場:785ad71ac1a3:1",
+              "presentationOnly": false,
+              "execution": "authored-block-runtime",
+              "textCorrespondence": {
+                "state": "no-matching-txt",
+                "files": []
+              },
+              "evidence": []
+            },
+            {
+              "index": 4,
+              "raw": "處於龍膽世無雙時令對手空定，附加失敗則該次傷害提升7倍",
+              "trigger": "use",
+              "parsed": true,
+              "explanation": false,
+              "unresolved": [],
+              "damage": {
+                "types": [],
+                "inferred": true,
+                "reason": "倍率／減傷的作用類別待確認。"
+              },
+              "semanticVerification": "pending",
+              "blocks": {
+                "conditions": [],
+                "statements": [
+                  {
+                    "cond": [
+                      {
+                        "c": "mark_count",
+                        "p": {
+                          "side": "self",
+                          "id": "zyGall",
+                          "op": "不小於",
+                          "amount": 7
+                        },
+                        "label": "mark_count"
+                      }
+                    ],
+                    "acts": [
+                      {
+                        "op": "status",
+                        "p": {
+                          "side": "opp",
+                          "status": "空定",
+                          "chance": 100
+                        },
+                        "label": "status"
+                      }
+                    ]
+                  },
+                  {
+                    "chain": "fail",
+                    "cond": [
+                      {
+                        "c": "mark_count",
+                        "p": {
+                          "side": "self",
+                          "id": "zyGall",
+                          "op": "不小於",
+                          "amount": 7
+                        },
+                        "label": "mark_count"
+                      }
+                    ],
+                    "acts": [
+                      {
+                        "op": "boost",
+                        "p": {
+                          "mult": 7,
+                          "kind": "攻擊"
+                        },
+                        "label": "boost"
+                      }
+                    ]
+                  }
+                ]
+              },
+              "id": "5052:技能:豪膽鎮沙場:cadcfdf64af1:1",
               "presentationOnly": false,
               "execution": "authored-block-runtime",
               "textCorrespondence": {
@@ -157547,10 +157803,10 @@
         {
           "kind": "技能",
           "name": "王.負咎泯晝",
-          "sourceText": "先制+1\n攻擊時造成的傷害不會出現微弱（克制關係為微弱時都變成普通）\n自身體力高於對手時額外先制+1\n若對手處於異常狀態時則技能必定命中並令對方在場精靈下次觸發致死保留體力效果時變為本場戰鬥唯一1次觸發且本場戰鬥無法再次觸發\n技能無效時，2回合內屬性技能附加效果失效，恢復自身最大體力⅓，自身體力低於對手時效果翻倍\n技能無效時，自身下2次攻擊將對手視為暗影系\n若當前技能屬性與自身相同則威力提升150，後出手則效果翻倍",
+          "sourceText": "先制+1\n攻擊時造成的傷害不會出現微弱（克制關係為微弱時都變成普通）\n自身體力高於對手時額外先制+1\n對手處於異常狀態時必定命中\n令對方在場精靈下次觸發致死保留體力效果與死亡體力不受體力限制效果時變為本場戰鬥唯一1次觸發且本場戰鬥無法再次觸發\n技能無效時，2回合內屬性技能附加效果失效，恢復自身最大體力⅓，自身體力低於對手時效果翻倍\n技能無效時，自身下2次攻擊將對手視為暗影系\n若當前技能屬性與自身相同則威力提升150，後出手則效果翻倍",
           "route": "kit",
           "source": "統一效果來源：kit；未接通 0 項",
-          "sourceSha256": "8fb162902957046ea5eaca71e909f21573a151087dc48b057867241ca5197410",
+          "sourceSha256": "98c8f390eeab43ed18d76aa17500bbc99529d09271cb03351dedf13e9734db29",
           "clauses": [
             {
               "index": 0,
@@ -157673,8 +157929,53 @@
             },
             {
               "index": 3,
-              "raw": "若對手處於異常狀態時則技能必定命中並令對方在場精靈下次觸發致死保留體力效果時變為本場戰鬥唯一1次觸發且本場戰鬥無法再次觸發",
+              "raw": "對手處於異常狀態時必定命中",
               "trigger": "before_skill",
+              "parsed": true,
+              "explanation": false,
+              "unresolved": [],
+              "damage": null,
+              "semanticVerification": "pending",
+              "blocks": {
+                "conditions": [],
+                "statements": [
+                  {
+                    "acts": [
+                      {
+                        "op": "skill_property",
+                        "p": {
+                          "node": "before_skill",
+                          "property": "conditional_sure_hit",
+                          "value": true,
+                          "conditions": [
+                            {
+                              "c": "abnormal",
+                              "p": {
+                                "side": "opp"
+                              },
+                              "label": "abnormal"
+                            }
+                          ]
+                        },
+                        "label": "使用技能前 · 對手處於異常狀態時必定命中"
+                      }
+                    ]
+                  }
+                ]
+              },
+              "id": "5053:技能:王.負咎泯晝:38698ac38f95:1",
+              "presentationOnly": false,
+              "execution": "authored-block-runtime",
+              "textCorrespondence": {
+                "state": "no-matching-txt",
+                "files": []
+              },
+              "evidence": []
+            },
+            {
+              "index": 4,
+              "raw": "令對方在場精靈下次觸發致死保留體力效果與死亡體力不受體力限制效果時變為本場戰鬥唯一1次觸發且本場戰鬥無法再次觸發",
+              "trigger": "round_start",
               "parsed": true,
               "explanation": false,
               "unresolved": [],
@@ -157686,19 +157987,12 @@
                   {
                     "cond": [
                       {
-                        "c": "abnormal",
-                        "p": {
-                          "side": "opp"
-                        },
-                        "label": "abnormal"
+                        "c": "owner_on_field",
+                        "p": {},
+                        "label": "owner_on_field"
                       }
                     ],
                     "acts": [
-                      {
-                        "op": "sure_hit",
-                        "p": {},
-                        "label": "sure_hit"
-                      },
                       {
                         "op": "seal_fatal_resist",
                         "p": {
@@ -157710,7 +158004,7 @@
                   }
                 ]
               },
-              "id": "5053:技能:王.負咎泯晝:a99c55c47ca3:1",
+              "id": "5053:技能:王.負咎泯晝:b26db4fabdd9:1",
               "presentationOnly": false,
               "execution": "authored-block-runtime",
               "textCorrespondence": {
@@ -157720,7 +158014,7 @@
               "evidence": []
             },
             {
-              "index": 4,
+              "index": 5,
               "raw": "技能無效時，2回合內屬性技能附加效果失效，恢復自身最大體力⅓，自身體力低於對手時效果翻倍",
               "trigger": "on_invalid",
               "parsed": true,
@@ -157771,7 +158065,7 @@
               "evidence": []
             },
             {
-              "index": 5,
+              "index": 6,
               "raw": "技能無效時，自身下2次攻擊將對手視為暗影系",
               "trigger": "on_invalid",
               "parsed": true,
@@ -157806,7 +158100,7 @@
               "evidence": []
             },
             {
-              "index": 6,
+              "index": 7,
               "raw": "若當前技能屬性與自身相同則威力提升150，後出手則效果翻倍",
               "trigger": "use",
               "parsed": true,
@@ -158199,6 +158493,375 @@
                 ]
               },
               "id": "5053:技能:暗.瞢闇无始:19ca541579a1:1",
+              "presentationOnly": false,
+              "execution": "authored-block-runtime",
+              "textCorrespondence": {
+                "state": "no-matching-txt",
+                "files": []
+              },
+              "evidence": []
+            }
+          ]
+        },
+        {
+          "kind": "技能",
+          "name": "王.黎明前奏",
+          "sourceText": "先制+1\n必中\n若此技能不為混沌.暗影系時，布萊克在場期間令對方在場精靈每次觸發致死保留體力效果與體力不受當前體力限制效果時變為本場唯一1次觸發且本場無法再次觸發\n命中後100%令對手害怕，未觸發則100%令雙方狂暴；此技能若當前技能屬性與自身相同改為附加自身平靜、附加對手眩暈\n3回合內對手屬性技能固有效果失效\n技能無效時，3回合內屬性技能附加效果失效，恢復自身最大體力⅓，自身體力低於對手時效果翻倍\n若當前技能屬性與自身相同則威力提升150，先出手則效果翻倍",
+          "route": "kit",
+          "source": "統一效果來源：kit；未接通 0 項",
+          "sourceSha256": "45502b1befd28553bd9bb595f14e3a7cd43643bcdca9b8fcb5af178fcd5892b2",
+          "clauses": [
+            {
+              "index": 0,
+              "raw": "先制+1",
+              "trigger": "custom",
+              "parsed": true,
+              "explanation": false,
+              "unresolved": [],
+              "damage": null,
+              "semanticVerification": "pending",
+              "blocks": {
+                "conditions": [],
+                "statements": [
+                  {
+                    "acts": [
+                      {
+                        "op": "skill_property",
+                        "p": {
+                          "node": "modify_priority",
+                          "property": "base_priority",
+                          "value": 1,
+                          "conditions": []
+                        },
+                        "label": "先制判定 · 先制+1"
+                      }
+                    ]
+                  }
+                ]
+              },
+              "id": "5053:技能:王.黎明前奏:5772c0f28f56:1",
+              "presentationOnly": false,
+              "execution": "authored-block-runtime",
+              "textCorrespondence": {
+                "state": "no-matching-txt",
+                "files": []
+              },
+              "evidence": []
+            },
+            {
+              "index": 1,
+              "raw": "必中",
+              "trigger": "before_skill",
+              "parsed": true,
+              "explanation": false,
+              "unresolved": [],
+              "damage": null,
+              "semanticVerification": "pending",
+              "blocks": {
+                "conditions": [],
+                "statements": [
+                  {
+                    "acts": [
+                      {
+                        "op": "skill_property",
+                        "p": {
+                          "node": "before_skill",
+                          "property": "sure_hit",
+                          "value": true,
+                          "conditions": []
+                        },
+                        "label": "使用技能前 · 必中"
+                      }
+                    ]
+                  }
+                ]
+              },
+              "id": "5053:技能:王.黎明前奏:3e76e6d438f9:1",
+              "presentationOnly": false,
+              "execution": "authored-block-runtime",
+              "textCorrespondence": {
+                "state": "no-matching-txt",
+                "files": []
+              },
+              "evidence": []
+            },
+            {
+              "index": 2,
+              "raw": "若此技能不為混沌.暗影系時，布萊克在場期間令對方在場精靈每次觸發致死保留體力效果與體力不受當前體力限制效果時變為本場唯一1次觸發且本場無法再次觸發",
+              "trigger": "round_start",
+              "parsed": true,
+              "explanation": false,
+              "unresolved": [],
+              "damage": null,
+              "semanticVerification": "pending",
+              "blocks": {
+                "conditions": [],
+                "statements": [
+                  {
+                    "cond": [
+                      {
+                        "c": "owner_on_field",
+                        "p": {},
+                        "label": "owner_on_field"
+                      }
+                    ],
+                    "acts": [
+                      {
+                        "op": "seal_fatal_resist",
+                        "p": {
+                          "side": "opp"
+                        },
+                        "label": "seal_fatal_resist"
+                      }
+                    ]
+                  }
+                ]
+              },
+              "id": "5053:技能:王.黎明前奏:ebf2048ffc84:1",
+              "presentationOnly": false,
+              "execution": "authored-block-runtime",
+              "textCorrespondence": {
+                "state": "no-matching-txt",
+                "files": []
+              },
+              "evidence": []
+            },
+            {
+              "index": 3,
+              "raw": "命中後100%令對手害怕，未觸發則100%令雙方狂暴；此技能若當前技能屬性與自身相同改為附加自身平靜、附加對手眩暈",
+              "trigger": "after_hit",
+              "parsed": true,
+              "explanation": false,
+              "unresolved": [],
+              "damage": null,
+              "semanticVerification": "pending",
+              "blocks": {
+                "conditions": [],
+                "statements": [
+                  {
+                    "acts": [
+                      {
+                        "op": "status",
+                        "p": {
+                          "side": "opp",
+                          "status": "害怕",
+                          "chance": 100
+                        },
+                        "label": "status"
+                      }
+                    ]
+                  },
+                  {
+                    "chain": "fail",
+                    "acts": [
+                      {
+                        "op": "status",
+                        "p": {
+                          "side": "both",
+                          "status": "狂暴",
+                          "chance": 100
+                        },
+                        "label": "status"
+                      }
+                    ]
+                  },
+                  {
+                    "cond": [
+                      {
+                        "c": "same_type",
+                        "p": {
+                          "side": "self"
+                        },
+                        "label": "same_type"
+                      }
+                    ],
+                    "acts": [
+                      {
+                        "op": "status",
+                        "p": {
+                          "side": "self",
+                          "status": "平靜",
+                          "chance": 100
+                        },
+                        "label": "status"
+                      },
+                      {
+                        "op": "status",
+                        "p": {
+                          "side": "opp",
+                          "status": "眩暈",
+                          "chance": 100
+                        },
+                        "label": "status"
+                      }
+                    ]
+                  }
+                ]
+              },
+              "id": "5053:技能:王.黎明前奏:015709115c0f:1",
+              "presentationOnly": false,
+              "execution": "authored-block-runtime",
+              "textCorrespondence": {
+                "state": "no-matching-txt",
+                "files": []
+              },
+              "evidence": []
+            },
+            {
+              "index": 4,
+              "raw": "3回合內對手屬性技能固有效果失效",
+              "trigger": "use",
+              "parsed": true,
+              "explanation": false,
+              "unresolved": [],
+              "damage": null,
+              "semanticVerification": "pending",
+              "blocks": {
+                "conditions": [],
+                "statements": [
+                  {
+                    "acts": [
+                      {
+                        "op": "add_invalid_turns",
+                        "p": {
+                          "kind": "屬性",
+                          "turns": 3
+                        },
+                        "label": "add_invalid_turns"
+                      }
+                    ]
+                  }
+                ]
+              },
+              "id": "5053:技能:王.黎明前奏:bc3911e146b6:1",
+              "presentationOnly": false,
+              "execution": "authored-block-runtime",
+              "textCorrespondence": {
+                "state": "no-matching-txt",
+                "files": []
+              },
+              "evidence": []
+            },
+            {
+              "index": 5,
+              "raw": "技能無效時，3回合內屬性技能附加效果失效，恢復自身最大體力⅓，自身體力低於對手時效果翻倍",
+              "trigger": "on_invalid",
+              "parsed": true,
+              "explanation": false,
+              "unresolved": [],
+              "damage": null,
+              "semanticVerification": "pending",
+              "blocks": {
+                "conditions": [],
+                "statements": [
+                  {
+                    "acts": [
+                      {
+                        "op": "add_invalid_turns",
+                        "p": {
+                          "kind": "屬性",
+                          "turns": 3
+                        },
+                        "label": "add_invalid_turns"
+                      },
+                      {
+                        "op": "heal",
+                        "p": {
+                          "side": "self",
+                          "ratio": 0.3333333333333333,
+                          "x2If": {
+                            "c": "hp_cmp",
+                            "p": {
+                              "side": "self",
+                              "op": "低於"
+                            },
+                            "label": "hp_cmp"
+                          }
+                        },
+                        "label": "heal"
+                      }
+                    ]
+                  }
+                ]
+              },
+              "id": "5053:技能:王.黎明前奏:372d6f41a9a9:1",
+              "presentationOnly": false,
+              "execution": "authored-block-runtime",
+              "textCorrespondence": {
+                "state": "no-matching-txt",
+                "files": []
+              },
+              "evidence": []
+            },
+            {
+              "index": 6,
+              "raw": "若當前技能屬性與自身相同則威力提升150，先出手則效果翻倍",
+              "trigger": "use",
+              "parsed": true,
+              "explanation": false,
+              "unresolved": [],
+              "damage": null,
+              "semanticVerification": "pending",
+              "blocks": {
+                "conditions": [],
+                "statements": [
+                  {
+                    "cond": [
+                      {
+                        "c": "same_type",
+                        "p": {
+                          "side": "self"
+                        },
+                        "label": "same_type"
+                      },
+                      {
+                        "c": "first",
+                        "p": {},
+                        "label": "first"
+                      }
+                    ],
+                    "acts": [
+                      {
+                        "op": "boost",
+                        "p": {
+                          "power": true,
+                          "add": 300,
+                          "mult": 1
+                        },
+                        "label": "boost"
+                      }
+                    ]
+                  },
+                  {
+                    "cond": [
+                      {
+                        "c": "same_type",
+                        "p": {
+                          "side": "self"
+                        },
+                        "label": "same_type"
+                      },
+                      {
+                        "c": "last",
+                        "p": {},
+                        "label": "last"
+                      }
+                    ],
+                    "acts": [
+                      {
+                        "op": "boost",
+                        "p": {
+                          "power": true,
+                          "add": 150,
+                          "mult": 1
+                        },
+                        "label": "boost"
+                      }
+                    ]
+                  }
+                ]
+              },
+              "id": "5053:技能:王.黎明前奏:b5d181bd5308:1",
               "presentationOnly": false,
               "execution": "authored-block-runtime",
               "textCorrespondence": {
@@ -176166,19 +176829,45 @@
                     "chain": "success",
                     "acts": [
                       {
-                        "label": "resource_mark_add",
-                        "op": "resource_mark_add",
+                        "label": "mark_program",
+                        "op": "mark_program",
                         "p": {
+                          "statusChanceZeroAtMost50": true,
                           "persistsOffField": true,
-                          "description": "機率不高於50%的異常附加效果機率降至0；每回合結束為對手PP為0的技能恢復5點PP",
+                          "description": "3回合內自身機率不高於50%的異常狀態附加效果機率下降至0；每回合結束時，為對手PP值為0的技能恢復5點PP值",
                           "displayChar": "節",
-                          "maxCount": 3,
-                          "amount": 1,
+                          "maxCount": 1,
+                          "count": 1,
+                          "rules": [
+                            {
+                              "parsed": true,
+                              "body": [
+                                {
+                                  "acts": [
+                                    {
+                                      "label": "pp_op",
+                                      "op": "pp_op",
+                                      "p": {
+                                        "onlyEmpty": true,
+                                        "amount": 5,
+                                        "mode": "add",
+                                        "side": "opp"
+                                      }
+                                    }
+                                  ]
+                                }
+                              ],
+                              "trig": "round_end",
+                              "raw": "每回合結束時為對手PP值為0的技能恢復5點PP值"
+                            }
+                          ],
                           "scope": "elf",
+                          "turns": 3,
+                          "mode": "set",
                           "name": "亮節",
                           "side": "opp",
-                          "unit": "層",
-                          "id": "liangJie"
+                          "unit": "回合",
+                          "id": "arena.liangjie"
                         }
                       }
                     ]
@@ -176187,19 +176876,43 @@
                     "chain": "fail",
                     "acts": [
                       {
-                        "label": "resource_mark_add",
-                        "op": "resource_mark_add",
+                        "label": "mark_program",
+                        "op": "mark_program",
                         "p": {
                           "persistsOffField": true,
-                          "description": "造成的非真實傷害額外減少60%",
+                          "description": "3回合內持有者造成的非真實傷害額外減少60%",
                           "displayChar": "怯",
-                          "maxCount": 3,
-                          "amount": 1,
+                          "maxCount": 1,
+                          "count": 1,
+                          "rules": [
+                            {
+                              "parsed": true,
+                              "body": [
+                                {
+                                  "acts": [
+                                    {
+                                      "label": "dmg_mod",
+                                      "op": "dmg_mod",
+                                      "p": {
+                                        "reduce": 0.6,
+                                        "kind": "非真實",
+                                        "dir": "out_reduce"
+                                      }
+                                    }
+                                  ]
+                                }
+                              ],
+                              "trig": "outgoing",
+                              "raw": "造成的非真實傷害減少60%"
+                            }
+                          ],
                           "scope": "elf",
+                          "turns": 3,
+                          "mode": "set",
                           "name": "威怯",
                           "side": "opp",
-                          "unit": "層",
-                          "id": "weiQie"
+                          "unit": "回合",
+                          "id": "arena.weiyue"
                         }
                       }
                     ]
@@ -176251,75 +176964,9 @@
                         }
                       }
                     ]
-                  }
-                ]
-              },
-              "id": "arena_14:魂印:無極聖武:ff258a15db39:1",
-              "presentationOnly": false,
-              "execution": "authored-block-runtime",
-              "textCorrespondence": {
-                "state": "no-matching-txt",
-                "files": []
-              },
-              "evidence": []
-            },
-            {
-              "index": 4,
-              "raw": "自身使用攻擊技能時，若對手沒有【武誅】，技能使用後為對手附加等同於英雄之耀層數的武誅",
-              "trigger": "self_after_skill",
-              "parsed": true,
-              "explanation": false,
-              "unresolved": [],
-              "damage": null,
-              "semanticVerification": "pending",
-              "blocks": {
-                "conditions": [],
-                "statements": [
-                  {
-                    "acts": [
-                      {
-                        "label": "resource_mark_add",
-                        "op": "resource_mark_add",
-                        "p": {
-                          "persistsOffField": true,
-                          "description": "對手為無極聖武時所有技能先制-2；體力高於1/2時受到攻擊傷害+50%，低於1/2時造成攻擊傷害-50%",
-                          "displayChar": "誅",
-                          "maxCount": 99,
-                          "amount": 1,
-                          "scope": "elf",
-                          "name": "武誅",
-                          "side": "opp",
-                          "unit": "層",
-                          "id": "wuZhu"
-                        }
-                      }
-                    ],
-                    "cond": [
-                      {
-                        "label": "對手無武誅",
-                        "c": "mark_count",
-                        "p": {
-                          "amount": 1,
-                          "side": "opp",
-                          "id": "wuZhu",
-                          "op": "低於"
-                        }
-                      }
-                    ]
                   },
                   {
                     "acts": [
-                      {
-                        "label": "dmg_mod_turns",
-                        "op": "dmg_mod_turns",
-                        "p": {
-                          "boost": 0.2,
-                          "turns": 1,
-                          "kind": "攻擊",
-                          "side": "self",
-                          "dir": "out"
-                        }
-                      },
                       {
                         "label": "flag_set",
                         "op": "flag_set",
@@ -176337,52 +176984,16 @@
                           "value": true,
                           "key": "selfDropAsOppDropThisAction"
                         }
-                      },
-                      {
-                        "label": "dmg_mod_turns",
-                        "op": "dmg_mod_turns",
-                        "p": {
-                          "boost": 1,
-                          "turns": 1,
-                          "kind": "攻擊",
-                          "side": "self",
-                          "dir": "out"
-                        }
-                      },
-                      {
-                        "label": "resource_mark_add",
-                        "op": "resource_mark_add",
-                        "p": {
-                          "persistsOffField": true,
-                          "description": "造成的非真實傷害額外減少60%",
-                          "displayChar": "怯",
-                          "maxCount": 3,
-                          "amount": 1,
-                          "scope": "elf",
-                          "name": "威怯",
-                          "side": "opp",
-                          "unit": "層",
-                          "id": "weiQie"
-                        }
-                      },
-                      {
-                        "label": "resource_mark_remove",
-                        "op": "resource_mark_remove",
-                        "p": {
-                          "scope": "elf",
-                          "side": "opp",
-                          "id": "wuZhu"
-                        }
                       }
                     ],
                     "cond": [
                       {
-                        "label": "持有wuZhu",
+                        "label": "持有arena.wuzhu",
                         "c": "mark_count",
                         "p": {
                           "amount": 1,
                           "side": "opp",
-                          "id": "wuZhu",
+                          "id": "arena.wuzhu",
                           "op": "不小於"
                         }
                       }
@@ -176390,7 +177001,7 @@
                   }
                 ]
               },
-              "id": "arena_14:魂印:無極聖武:54d32d9e9cc7:1",
+              "id": "arena_14:魂印:無極聖武:ff258a15db39:1",
               "presentationOnly": false,
               "execution": "authored-block-runtime",
               "textCorrespondence": {
@@ -176400,63 +177011,15 @@
               "evidence": []
             },
             {
-              "index": 5,
-              "raw": "【亮節】：自身機率不高於50%的異常狀態附加效果機率下降至0；每回合結束時，為對手PP值為0的技能恢復5點PP值",
-              "trigger": "round_end",
-              "parsed": true,
-              "explanation": false,
-              "unresolved": [],
-              "damage": null,
-              "semanticVerification": "pending",
-              "blocks": {
-                "conditions": [],
-                "statements": [
-                  {
-                    "acts": [
-                      {
-                        "label": "pp_op",
-                        "op": "pp_op",
-                        "p": {
-                          "amount": 5,
-                          "mode": "add",
-                          "side": "opp"
-                        }
-                      }
-                    ],
-                    "cond": [
-                      {
-                        "label": "持有liangJie",
-                        "c": "mark_count",
-                        "p": {
-                          "amount": 1,
-                          "side": "opp",
-                          "id": "liangJie",
-                          "op": "不小於"
-                        }
-                      }
-                    ]
-                  }
-                ]
-              },
-              "id": "arena_14:魂印:無極聖武:0a30fde83289:1",
-              "presentationOnly": false,
-              "execution": "authored-block-runtime",
-              "textCorrespondence": {
-                "state": "no-matching-txt",
-                "files": []
-              },
-              "evidence": []
-            },
-            {
-              "index": 6,
-              "raw": "【威怯】：自身造成的非真實傷害額外減少60%",
-              "trigger": "outgoing",
+              "index": 4,
+              "raw": "對手已有武誅時：①對手每有1回合武誅，造成的攻擊傷害提升20%；④對手每有100點護盾或護罩，本次攻擊傷害額外提升10%，最高提升100%",
+              "trigger": "outgoing_attack",
               "parsed": true,
               "explanation": false,
               "unresolved": [],
               "damage": {
                 "types": [
-                  "non_true"
+                  "attack"
                 ],
                 "inferred": false,
                 "reason": "文本指定；同句多段傷害仍須逐段核對。"
@@ -176468,25 +177031,41 @@
                   {
                     "acts": [
                       {
-                        "label": "dmg_mod_turns",
-                        "op": "dmg_mod_turns",
+                        "label": "dmg_mod",
+                        "op": "dmg_mod",
                         "p": {
-                          "reduce": 0.6,
-                          "turns": 1,
-                          "kind": "非真實",
-                          "side": "opp",
-                          "dir": "out_reduce"
+                          "perMarkTurns": {
+                            "side": "opp",
+                            "id": "arena.wuzhu"
+                          },
+                          "boost": 0.2,
+                          "kind": "攻擊",
+                          "dir": "out"
+                        }
+                      },
+                      {
+                        "label": "dmg_mod",
+                        "op": "dmg_mod",
+                        "p": {
+                          "perShield": {
+                            "side": "opp",
+                            "per": 100
+                          },
+                          "maxBoost": 1,
+                          "boost": 0.1,
+                          "kind": "攻擊",
+                          "dir": "out"
                         }
                       }
                     ],
                     "cond": [
                       {
-                        "label": "持有weiQie",
+                        "label": "持有arena.wuzhu",
                         "c": "mark_count",
                         "p": {
                           "amount": 1,
                           "side": "opp",
-                          "id": "weiQie",
+                          "id": "arena.wuzhu",
                           "op": "不小於"
                         }
                       }
@@ -176494,7 +177073,225 @@
                   }
                 ]
               },
-              "id": "arena_14:魂印:無極聖武:adc0b058ffe0:1",
+              "id": "arena_14:魂印:無極聖武:95318ae92974:1",
+              "presentationOnly": false,
+              "execution": "authored-block-runtime",
+              "textCorrespondence": {
+                "state": "no-matching-txt",
+                "files": []
+              },
+              "evidence": []
+            },
+            {
+              "index": 5,
+              "raw": "自身使用攻擊技能時，若對手沒有【武誅】，技能使用後為對手附加等同於英雄之耀層數的武誅",
+              "trigger": "self_after_attack",
+              "parsed": true,
+              "explanation": false,
+              "unresolved": [],
+              "damage": null,
+              "semanticVerification": "pending",
+              "blocks": {
+                "conditions": [],
+                "statements": [
+                  {
+                    "acts": [
+                      {
+                        "label": "mark_program",
+                        "op": "mark_program",
+                        "p": {
+                          "persistsOffField": true,
+                          "turnsFromCount": true,
+                          "vsOpponentName": "無極聖武",
+                          "countFromMark": {
+                            "side": "self",
+                            "id": "arena.heroGlory"
+                          },
+                          "priorityBonus": -2,
+                          "description": "對手為無極聖武時所有技能先制-2；體力高於1/2時受到攻擊傷害提升50%，低於1/2時造成攻擊傷害減少50%",
+                          "displayChar": "誅",
+                          "maxCount": 99,
+                          "count": 1,
+                          "rules": [
+                            {
+                              "parsed": true,
+                              "body": [
+                                {
+                                  "acts": [
+                                    {
+                                      "label": "dmg_mod",
+                                      "op": "dmg_mod",
+                                      "p": {
+                                        "boost": 0.5,
+                                        "kind": "攻擊",
+                                        "dir": "in_boost"
+                                      }
+                                    }
+                                  ],
+                                  "cond": [
+                                    {
+                                      "label": "hp_ratio",
+                                      "c": "hp_ratio",
+                                      "p": {
+                                        "ratio": 0.5,
+                                        "side": "self",
+                                        "op": "高於"
+                                      }
+                                    }
+                                  ]
+                                }
+                              ],
+                              "trig": "incoming_attack",
+                              "raw": "體力高於一半受到攻擊傷害提升50%"
+                            },
+                            {
+                              "parsed": true,
+                              "body": [
+                                {
+                                  "acts": [
+                                    {
+                                      "label": "dmg_mod",
+                                      "op": "dmg_mod",
+                                      "p": {
+                                        "reduce": 0.5,
+                                        "kind": "攻擊",
+                                        "dir": "out_reduce"
+                                      }
+                                    }
+                                  ],
+                                  "cond": [
+                                    {
+                                      "label": "hp_ratio",
+                                      "c": "hp_ratio",
+                                      "p": {
+                                        "ratio": 0.5,
+                                        "side": "self",
+                                        "op": "低於"
+                                      }
+                                    }
+                                  ]
+                                }
+                              ],
+                              "trig": "outgoing_attack",
+                              "raw": "體力低於一半造成攻擊傷害減少50%"
+                            }
+                          ],
+                          "scope": "elf",
+                          "mode": "add",
+                          "name": "武誅",
+                          "side": "opp",
+                          "unit": "回合",
+                          "id": "arena.wuzhu"
+                        }
+                      }
+                    ],
+                    "cond": [
+                      {
+                        "label": "對手無武誅",
+                        "c": "mark_count",
+                        "p": {
+                          "amount": 1,
+                          "side": "opp",
+                          "id": "arena.wuzhu",
+                          "op": "低於"
+                        }
+                      }
+                    ],
+                    "pre": true
+                  },
+                  {
+                    "acts": [
+                      {
+                        "label": "resource_mark_remove",
+                        "op": "resource_mark_remove",
+                        "p": {
+                          "scope": "elf",
+                          "side": "opp",
+                          "id": "arena.wuzhu"
+                        }
+                      }
+                    ],
+                    "cond": [
+                      {
+                        "label": "持有arena.wuzhu",
+                        "c": "mark_count",
+                        "p": {
+                          "amount": 1,
+                          "side": "opp",
+                          "id": "arena.wuzhu",
+                          "op": "不小於"
+                        }
+                      }
+                    ],
+                    "pre": true
+                  },
+                  {
+                    "acts": [
+                      {
+                        "label": "mark_program",
+                        "op": "mark_program",
+                        "p": {
+                          "persistsOffField": true,
+                          "description": "3回合內持有者造成的非真實傷害額外減少60%",
+                          "displayChar": "怯",
+                          "maxCount": 1,
+                          "count": 1,
+                          "rules": [
+                            {
+                              "parsed": true,
+                              "body": [
+                                {
+                                  "acts": [
+                                    {
+                                      "label": "dmg_mod",
+                                      "op": "dmg_mod",
+                                      "p": {
+                                        "reduce": 0.6,
+                                        "kind": "非真實",
+                                        "dir": "out_reduce"
+                                      }
+                                    }
+                                  ]
+                                }
+                              ],
+                              "trig": "outgoing",
+                              "raw": "造成的非真實傷害減少60%"
+                            }
+                          ],
+                          "scope": "elf",
+                          "turns": 3,
+                          "mode": "set",
+                          "name": "威怯",
+                          "side": "opp",
+                          "unit": "回合",
+                          "id": "arena.weiyue"
+                        }
+                      }
+                    ],
+                    "cond": [
+                      {
+                        "label": "持有arena.wuzhu",
+                        "c": "mark_count",
+                        "p": {
+                          "amount": 1,
+                          "side": "opp",
+                          "id": "arena.wuzhu",
+                          "op": "不小於"
+                        }
+                      },
+                      {
+                        "label": "無視攻擊免疫成功",
+                        "c": "ignore_success",
+                        "p": {
+                          "what": "攻擊免疫"
+                        }
+                      }
+                    ],
+                    "pre": true
+                  }
+                ]
+              },
+              "id": "arena_14:魂印:無極聖武:54d32d9e9cc7:1",
               "presentationOnly": false,
               "execution": "authored-block-runtime",
               "textCorrespondence": {
@@ -176735,19 +177532,45 @@
                     "chain": "success",
                     "acts": [
                       {
-                        "label": "resource_mark_add",
-                        "op": "resource_mark_add",
+                        "label": "mark_program",
+                        "op": "mark_program",
                         "p": {
+                          "statusChanceZeroAtMost50": true,
                           "persistsOffField": true,
-                          "description": "機率不高於50%的異常附加效果機率降至0；每回合結束為對手PP為0的技能恢復5點PP",
+                          "description": "3回合內自身機率不高於50%的異常狀態附加效果機率下降至0；每回合結束時，為對手PP值為0的技能恢復5點PP值",
                           "displayChar": "節",
-                          "maxCount": 3,
-                          "amount": 1,
+                          "maxCount": 1,
+                          "count": 1,
+                          "rules": [
+                            {
+                              "parsed": true,
+                              "body": [
+                                {
+                                  "acts": [
+                                    {
+                                      "label": "pp_op",
+                                      "op": "pp_op",
+                                      "p": {
+                                        "onlyEmpty": true,
+                                        "amount": 5,
+                                        "mode": "add",
+                                        "side": "opp"
+                                      }
+                                    }
+                                  ]
+                                }
+                              ],
+                              "trig": "round_end",
+                              "raw": "每回合結束時為對手PP值為0的技能恢復5點PP值"
+                            }
+                          ],
                           "scope": "elf",
+                          "turns": 3,
+                          "mode": "set",
                           "name": "亮節",
                           "side": "opp",
-                          "unit": "層",
-                          "id": "liangJie"
+                          "unit": "回合",
+                          "id": "arena.liangjie"
                         }
                       }
                     ]
@@ -176756,19 +177579,43 @@
                     "chain": "fail",
                     "acts": [
                       {
-                        "label": "resource_mark_add",
-                        "op": "resource_mark_add",
+                        "label": "mark_program",
+                        "op": "mark_program",
                         "p": {
                           "persistsOffField": true,
-                          "description": "造成的非真實傷害額外減少60%",
+                          "description": "3回合內持有者造成的非真實傷害額外減少60%",
                           "displayChar": "怯",
-                          "maxCount": 3,
-                          "amount": 1,
+                          "maxCount": 1,
+                          "count": 1,
+                          "rules": [
+                            {
+                              "parsed": true,
+                              "body": [
+                                {
+                                  "acts": [
+                                    {
+                                      "label": "dmg_mod",
+                                      "op": "dmg_mod",
+                                      "p": {
+                                        "reduce": 0.6,
+                                        "kind": "非真實",
+                                        "dir": "out_reduce"
+                                      }
+                                    }
+                                  ]
+                                }
+                              ],
+                              "trig": "outgoing",
+                              "raw": "造成的非真實傷害減少60%"
+                            }
+                          ],
                           "scope": "elf",
+                          "turns": 3,
+                          "mode": "set",
                           "name": "威怯",
                           "side": "opp",
-                          "unit": "層",
-                          "id": "weiQie"
+                          "unit": "回合",
+                          "id": "arena.weiyue"
                         }
                       }
                     ]
@@ -176820,75 +177667,9 @@
                         }
                       }
                     ]
-                  }
-                ]
-              },
-              "id": "arena_14:專屬特性:無極聖武:ff258a15db39:1",
-              "presentationOnly": false,
-              "execution": "authored-block-runtime",
-              "textCorrespondence": {
-                "state": "no-matching-txt",
-                "files": []
-              },
-              "evidence": []
-            },
-            {
-              "index": 4,
-              "raw": "自身使用攻擊技能時，若對手沒有【武誅】，技能使用後為對手附加等同於英雄之耀層數的武誅",
-              "trigger": "self_after_skill",
-              "parsed": true,
-              "explanation": false,
-              "unresolved": [],
-              "damage": null,
-              "semanticVerification": "pending",
-              "blocks": {
-                "conditions": [],
-                "statements": [
-                  {
-                    "acts": [
-                      {
-                        "label": "resource_mark_add",
-                        "op": "resource_mark_add",
-                        "p": {
-                          "persistsOffField": true,
-                          "description": "對手為無極聖武時所有技能先制-2；體力高於1/2時受到攻擊傷害+50%，低於1/2時造成攻擊傷害-50%",
-                          "displayChar": "誅",
-                          "maxCount": 99,
-                          "amount": 1,
-                          "scope": "elf",
-                          "name": "武誅",
-                          "side": "opp",
-                          "unit": "層",
-                          "id": "wuZhu"
-                        }
-                      }
-                    ],
-                    "cond": [
-                      {
-                        "label": "對手無武誅",
-                        "c": "mark_count",
-                        "p": {
-                          "amount": 1,
-                          "side": "opp",
-                          "id": "wuZhu",
-                          "op": "低於"
-                        }
-                      }
-                    ]
                   },
                   {
                     "acts": [
-                      {
-                        "label": "dmg_mod_turns",
-                        "op": "dmg_mod_turns",
-                        "p": {
-                          "boost": 0.2,
-                          "turns": 1,
-                          "kind": "攻擊",
-                          "side": "self",
-                          "dir": "out"
-                        }
-                      },
                       {
                         "label": "flag_set",
                         "op": "flag_set",
@@ -176906,52 +177687,16 @@
                           "value": true,
                           "key": "selfDropAsOppDropThisAction"
                         }
-                      },
-                      {
-                        "label": "dmg_mod_turns",
-                        "op": "dmg_mod_turns",
-                        "p": {
-                          "boost": 1,
-                          "turns": 1,
-                          "kind": "攻擊",
-                          "side": "self",
-                          "dir": "out"
-                        }
-                      },
-                      {
-                        "label": "resource_mark_add",
-                        "op": "resource_mark_add",
-                        "p": {
-                          "persistsOffField": true,
-                          "description": "造成的非真實傷害額外減少60%",
-                          "displayChar": "怯",
-                          "maxCount": 3,
-                          "amount": 1,
-                          "scope": "elf",
-                          "name": "威怯",
-                          "side": "opp",
-                          "unit": "層",
-                          "id": "weiQie"
-                        }
-                      },
-                      {
-                        "label": "resource_mark_remove",
-                        "op": "resource_mark_remove",
-                        "p": {
-                          "scope": "elf",
-                          "side": "opp",
-                          "id": "wuZhu"
-                        }
                       }
                     ],
                     "cond": [
                       {
-                        "label": "持有wuZhu",
+                        "label": "持有arena.wuzhu",
                         "c": "mark_count",
                         "p": {
                           "amount": 1,
                           "side": "opp",
-                          "id": "wuZhu",
+                          "id": "arena.wuzhu",
                           "op": "不小於"
                         }
                       }
@@ -176959,7 +177704,7 @@
                   }
                 ]
               },
-              "id": "arena_14:專屬特性:無極聖武:54d32d9e9cc7:1",
+              "id": "arena_14:專屬特性:無極聖武:ff258a15db39:1",
               "presentationOnly": false,
               "execution": "authored-block-runtime",
               "textCorrespondence": {
@@ -176969,63 +177714,15 @@
               "evidence": []
             },
             {
-              "index": 5,
-              "raw": "【亮節】：自身機率不高於50%的異常狀態附加效果機率下降至0；每回合結束時，為對手PP值為0的技能恢復5點PP值",
-              "trigger": "round_end",
-              "parsed": true,
-              "explanation": false,
-              "unresolved": [],
-              "damage": null,
-              "semanticVerification": "pending",
-              "blocks": {
-                "conditions": [],
-                "statements": [
-                  {
-                    "acts": [
-                      {
-                        "label": "pp_op",
-                        "op": "pp_op",
-                        "p": {
-                          "amount": 5,
-                          "mode": "add",
-                          "side": "opp"
-                        }
-                      }
-                    ],
-                    "cond": [
-                      {
-                        "label": "持有liangJie",
-                        "c": "mark_count",
-                        "p": {
-                          "amount": 1,
-                          "side": "opp",
-                          "id": "liangJie",
-                          "op": "不小於"
-                        }
-                      }
-                    ]
-                  }
-                ]
-              },
-              "id": "arena_14:專屬特性:無極聖武:0a30fde83289:1",
-              "presentationOnly": false,
-              "execution": "authored-block-runtime",
-              "textCorrespondence": {
-                "state": "no-matching-txt",
-                "files": []
-              },
-              "evidence": []
-            },
-            {
-              "index": 6,
-              "raw": "【威怯】：自身造成的非真實傷害額外減少60%",
-              "trigger": "outgoing",
+              "index": 4,
+              "raw": "對手已有武誅時：①對手每有1回合武誅，造成的攻擊傷害提升20%；④對手每有100點護盾或護罩，本次攻擊傷害額外提升10%，最高提升100%",
+              "trigger": "outgoing_attack",
               "parsed": true,
               "explanation": false,
               "unresolved": [],
               "damage": {
                 "types": [
-                  "non_true"
+                  "attack"
                 ],
                 "inferred": false,
                 "reason": "文本指定；同句多段傷害仍須逐段核對。"
@@ -177037,25 +177734,41 @@
                   {
                     "acts": [
                       {
-                        "label": "dmg_mod_turns",
-                        "op": "dmg_mod_turns",
+                        "label": "dmg_mod",
+                        "op": "dmg_mod",
                         "p": {
-                          "reduce": 0.6,
-                          "turns": 1,
-                          "kind": "非真實",
-                          "side": "opp",
-                          "dir": "out_reduce"
+                          "perMarkTurns": {
+                            "side": "opp",
+                            "id": "arena.wuzhu"
+                          },
+                          "boost": 0.2,
+                          "kind": "攻擊",
+                          "dir": "out"
+                        }
+                      },
+                      {
+                        "label": "dmg_mod",
+                        "op": "dmg_mod",
+                        "p": {
+                          "perShield": {
+                            "side": "opp",
+                            "per": 100
+                          },
+                          "maxBoost": 1,
+                          "boost": 0.1,
+                          "kind": "攻擊",
+                          "dir": "out"
                         }
                       }
                     ],
                     "cond": [
                       {
-                        "label": "持有weiQie",
+                        "label": "持有arena.wuzhu",
                         "c": "mark_count",
                         "p": {
                           "amount": 1,
                           "side": "opp",
-                          "id": "weiQie",
+                          "id": "arena.wuzhu",
                           "op": "不小於"
                         }
                       }
@@ -177063,7 +177776,225 @@
                   }
                 ]
               },
-              "id": "arena_14:專屬特性:無極聖武:adc0b058ffe0:1",
+              "id": "arena_14:專屬特性:無極聖武:95318ae92974:1",
+              "presentationOnly": false,
+              "execution": "authored-block-runtime",
+              "textCorrespondence": {
+                "state": "no-matching-txt",
+                "files": []
+              },
+              "evidence": []
+            },
+            {
+              "index": 5,
+              "raw": "自身使用攻擊技能時，若對手沒有【武誅】，技能使用後為對手附加等同於英雄之耀層數的武誅",
+              "trigger": "self_after_attack",
+              "parsed": true,
+              "explanation": false,
+              "unresolved": [],
+              "damage": null,
+              "semanticVerification": "pending",
+              "blocks": {
+                "conditions": [],
+                "statements": [
+                  {
+                    "acts": [
+                      {
+                        "label": "mark_program",
+                        "op": "mark_program",
+                        "p": {
+                          "persistsOffField": true,
+                          "turnsFromCount": true,
+                          "vsOpponentName": "無極聖武",
+                          "countFromMark": {
+                            "side": "self",
+                            "id": "arena.heroGlory"
+                          },
+                          "priorityBonus": -2,
+                          "description": "對手為無極聖武時所有技能先制-2；體力高於1/2時受到攻擊傷害提升50%，低於1/2時造成攻擊傷害減少50%",
+                          "displayChar": "誅",
+                          "maxCount": 99,
+                          "count": 1,
+                          "rules": [
+                            {
+                              "parsed": true,
+                              "body": [
+                                {
+                                  "acts": [
+                                    {
+                                      "label": "dmg_mod",
+                                      "op": "dmg_mod",
+                                      "p": {
+                                        "boost": 0.5,
+                                        "kind": "攻擊",
+                                        "dir": "in_boost"
+                                      }
+                                    }
+                                  ],
+                                  "cond": [
+                                    {
+                                      "label": "hp_ratio",
+                                      "c": "hp_ratio",
+                                      "p": {
+                                        "ratio": 0.5,
+                                        "side": "self",
+                                        "op": "高於"
+                                      }
+                                    }
+                                  ]
+                                }
+                              ],
+                              "trig": "incoming_attack",
+                              "raw": "體力高於一半受到攻擊傷害提升50%"
+                            },
+                            {
+                              "parsed": true,
+                              "body": [
+                                {
+                                  "acts": [
+                                    {
+                                      "label": "dmg_mod",
+                                      "op": "dmg_mod",
+                                      "p": {
+                                        "reduce": 0.5,
+                                        "kind": "攻擊",
+                                        "dir": "out_reduce"
+                                      }
+                                    }
+                                  ],
+                                  "cond": [
+                                    {
+                                      "label": "hp_ratio",
+                                      "c": "hp_ratio",
+                                      "p": {
+                                        "ratio": 0.5,
+                                        "side": "self",
+                                        "op": "低於"
+                                      }
+                                    }
+                                  ]
+                                }
+                              ],
+                              "trig": "outgoing_attack",
+                              "raw": "體力低於一半造成攻擊傷害減少50%"
+                            }
+                          ],
+                          "scope": "elf",
+                          "mode": "add",
+                          "name": "武誅",
+                          "side": "opp",
+                          "unit": "回合",
+                          "id": "arena.wuzhu"
+                        }
+                      }
+                    ],
+                    "cond": [
+                      {
+                        "label": "對手無武誅",
+                        "c": "mark_count",
+                        "p": {
+                          "amount": 1,
+                          "side": "opp",
+                          "id": "arena.wuzhu",
+                          "op": "低於"
+                        }
+                      }
+                    ],
+                    "pre": true
+                  },
+                  {
+                    "acts": [
+                      {
+                        "label": "resource_mark_remove",
+                        "op": "resource_mark_remove",
+                        "p": {
+                          "scope": "elf",
+                          "side": "opp",
+                          "id": "arena.wuzhu"
+                        }
+                      }
+                    ],
+                    "cond": [
+                      {
+                        "label": "持有arena.wuzhu",
+                        "c": "mark_count",
+                        "p": {
+                          "amount": 1,
+                          "side": "opp",
+                          "id": "arena.wuzhu",
+                          "op": "不小於"
+                        }
+                      }
+                    ],
+                    "pre": true
+                  },
+                  {
+                    "acts": [
+                      {
+                        "label": "mark_program",
+                        "op": "mark_program",
+                        "p": {
+                          "persistsOffField": true,
+                          "description": "3回合內持有者造成的非真實傷害額外減少60%",
+                          "displayChar": "怯",
+                          "maxCount": 1,
+                          "count": 1,
+                          "rules": [
+                            {
+                              "parsed": true,
+                              "body": [
+                                {
+                                  "acts": [
+                                    {
+                                      "label": "dmg_mod",
+                                      "op": "dmg_mod",
+                                      "p": {
+                                        "reduce": 0.6,
+                                        "kind": "非真實",
+                                        "dir": "out_reduce"
+                                      }
+                                    }
+                                  ]
+                                }
+                              ],
+                              "trig": "outgoing",
+                              "raw": "造成的非真實傷害減少60%"
+                            }
+                          ],
+                          "scope": "elf",
+                          "turns": 3,
+                          "mode": "set",
+                          "name": "威怯",
+                          "side": "opp",
+                          "unit": "回合",
+                          "id": "arena.weiyue"
+                        }
+                      }
+                    ],
+                    "cond": [
+                      {
+                        "label": "持有arena.wuzhu",
+                        "c": "mark_count",
+                        "p": {
+                          "amount": 1,
+                          "side": "opp",
+                          "id": "arena.wuzhu",
+                          "op": "不小於"
+                        }
+                      },
+                      {
+                        "label": "無視攻擊免疫成功",
+                        "c": "ignore_success",
+                        "p": {
+                          "what": "攻擊免疫"
+                        }
+                      }
+                    ],
+                    "pre": true
+                  }
+                ]
+              },
+              "id": "arena_14:專屬特性:無極聖武:54d32d9e9cc7:1",
               "presentationOnly": false,
               "execution": "authored-block-runtime",
               "textCorrespondence": {
@@ -177706,7 +178637,7 @@
                           "mode": "set",
                           "name": "威怯",
                           "side": "opp",
-                          "unit": "層",
+                          "unit": "回合",
                           "id": "arena.weiyue"
                         }
                       }
