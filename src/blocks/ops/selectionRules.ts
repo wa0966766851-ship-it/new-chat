@@ -17,7 +17,7 @@ const KIND = ['none', '技能', '攻擊', '屬性'];
 
 export const SELECTION_RULE_ACTION_FIELDS = {
   stat_random: ['side', 'count', 'v', 'mirror'],
-  status_hand_over: ['statuses'],
+  status_hand_over: ['statuses', 'allStatuses'],
   round_opp_restrict: ['priority', 'stabDisabled', 'typeAdvantageDisabled', 'addInvalid'],
   drain_mult_turns: ['mult', 'turns', 'next'],
 } as const;
@@ -31,7 +31,8 @@ export function selectionRuleActionIssue(op: string, p: any): string | null {
     if (!(Number.isInteger(p.v) && p.v !== 0 && Math.abs(p.v) <= 6)) return '能力等級變化需 ±1–6';
     if (p.mirror !== undefined && p.mirror !== 'opp') return '等量反向變化只能給對手';
   }
-  if (op === 'status_hand_over' && !(Array.isArray(p?.statuses) && p.statuses.length && p.statuses.every((s: any) => typeof s === 'string' && s))) return '需列出要轉移的異常';
+  if(op==='status_hand_over'&&p.allStatuses!==undefined&&typeof p.allStatuses!=='boolean')return '所有異常需布林值';
+  if (op === 'status_hand_over' && p?.allStatuses!==true && !(Array.isArray(p?.statuses) && p.statuses.length && p.statuses.every((s: any) => typeof s === 'string' && s))) return '需列出要轉移的異常';
   if (op === 'round_opp_restrict') {
     if (p.priority !== undefined && !(Number.isInteger(p.priority) && Math.abs(p.priority) <= 10)) return '先制定值需 -10～10 的整數';
     if (p.addInvalid !== undefined && !['all', '攻擊', '屬性'].includes(p.addInvalid)) return '附加效果失效範圍不明';
@@ -85,7 +86,7 @@ export function selectionRuleOperations(addBlockTimer: AddBlockTimer) {
     status_hand_over: (ctx: BattleEventContext, p: any): boolean => {
       if (selectionRuleActionIssue('status_hand_over', p)) return false;
       const own = live(ctx, ctx.actor), statuses: Record<string, number> = ctx.getStatuses(own) || {};
-      const present = (p.statuses as string[]).filter(s => Number(statuses[s]) > 0);
+      const present = (p.allStatuses===true?Object.keys(statuses):p.statuses as string[]).filter(s => Number(statuses[s]) > 0);
       for (const s of present) ctx.applyStatusWithImmunityCheck(ctx.targetSide, s, Math.max(1, Number(statuses[s]) || 1));
       return present.length > 0;
     },

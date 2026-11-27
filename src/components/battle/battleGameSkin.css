@@ -154,22 +154,6 @@
 [data-skin="eclipse"] .btg-cmd[data-danger="true"] { color: #ffd7dd; border-color: rgba(224, 71, 95, .8); background: linear-gradient(180deg, #3a0d17, #160509); }
 .btg-badge { position: absolute; right: .4rem; top: .3rem; min-width: 1.35rem; height: 1.35rem; padding: 0 .3rem; border-radius: 999px; background: #c8962e; color: #2a1300; font-size: .8rem; line-height: 1.35rem; letter-spacing: 0; text-indent: 0; text-shadow: none; }
 
-.btg-round { width: 3.2rem; height: 3.2rem; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-direction: column; line-height: 1; font-weight: 900; color: #fff; background: var(--g-panel); border: 2px solid var(--g-line); box-shadow: 0 2px 8px rgba(0, 0, 0, .45); }
-.btg-quick-actions { top: clamp(54px, 34%, calc(100% - 530px)); gap: .625rem; }
-@media (max-height: 680px) {
-  .btg-quick-actions { gap: .375rem; }
-  .btg-quick-actions .btg-round { width: 2.6rem; height: 2.6rem; }
-}
-
-.btg-round[data-on="true"] { background: radial-gradient(circle, #34d399, #047857); border-color: #6ee7b7; box-shadow: 0 0 12px rgba(52, 211, 153, .7); }
-[data-skin="eclipse"] .btg-round { color: #f6e2a0; border-radius: 0; transform: rotate(45deg) scale(.86); }
-[data-skin="eclipse"] .btg-round > * { transform: rotate(-45deg); }
-[data-skin="eclipse"] .btg-round[data-on="true"] { background: linear-gradient(180deg, #f6e2a0, #c99a3f); color: #1a1206; }
-.btg-menu { background: var(--g-panel); border: 1px solid var(--g-line); border-radius: 12px; padding: .5rem; display: flex; flex-direction: column; gap: .35rem; min-width: 10rem; box-shadow: 0 10px 30px rgba(0, 0, 0, .55); }
-[data-skin="eclipse"] .btg-menu { border-radius: 0; }
-.btg-menu button { text-align: left; padding: .45rem .8rem; border-radius: 8px; border: 1px solid var(--g-line); background: transparent; color: var(--g-text); font-size: .9rem; font-weight: 700; }
-.btg-menu button:hover { background: rgba(255, 255, 255, .08); }
-
 .btg-logtab { height: 2rem; padding: 0 2rem; border: 0; font-size: .95rem; font-weight: 900; letter-spacing: .2em; color: #fff; background: linear-gradient(180deg, #4f9be8, #1b4f9a); clip-path: polygon(12px 0, calc(100% - 12px) 0, 100% 100%, 0 100%); }
 [data-skin="eclipse"] .btg-logtab { color: #1a1206; background: linear-gradient(180deg, #f6e2a0, #c99a3f); }
 
@@ -235,7 +219,7 @@
   --t-acc-dim: rgba(215, 255, 58, .26);
 }
 /* 角標：四角 L 形，純背景、不增 DOM */
-[data-gskin^="tactical"]:not([data-skin="eclipse"]) :is(.btg-hud, .btg-match, .btg-skill, .btg-bench, .btg-menu) {
+[data-gskin^="tactical"]:not([data-skin="eclipse"]) :is(.btg-hud, .btg-match, .btg-skill, .btg-bench) {
   --tick: var(--t-line-strong);
   background-image:
     linear-gradient(var(--tick), var(--tick)), linear-gradient(var(--tick), var(--tick)),
@@ -327,10 +311,6 @@
 [data-gskin^="tactical"]:not([data-skin="eclipse"]) .btg-badge { border-radius: 0; background: var(--t-acc); color: var(--t-acc-ink); font-family: var(--t-num); }
 
 /* 右側圓鈕、選單、戰報頁籤 */
-[data-gskin^="tactical"]:not([data-skin="eclipse"]) .btg-round { background: rgba(11,14,19,.86); border: 1px solid var(--t-line-strong); box-shadow: 0 0 0 4px rgba(0,0,0,.25); font-family: var(--t-num); }
-[data-gskin^="tactical"]:not([data-skin="eclipse"]) .btg-round[data-on="true"] { background: var(--t-acc); color: var(--t-acc-ink); border-color: var(--t-acc); box-shadow: 0 0 0 4px var(--t-acc-dim); }
-[data-gskin^="tactical"]:not([data-skin="eclipse"]) .btg-menu { border-radius: 0; }
-[data-gskin^="tactical"]:not([data-skin="eclipse"]) .btg-menu button { border-radius: 0; }
 [data-gskin^="tactical"]:not([data-skin="eclipse"]) .btg-logtab { background: var(--t-acc); color: var(--t-acc-ink); clip-path: polygon(10px 0, calc(100% - 10px) 0, 100% 100%, 0 100%); }
 
 /* 指令區：上緣髮絲線、左端強調色斜紋、右側 BATTLE 大字 */
@@ -422,3 +402,14 @@
 [data-gskin^="tactical"]:not([data-skin="eclipse"]) .btg-item { clip-path: polygon(0 0, calc(100% - 8px) 0, 100% 8px, 100% 100%, 0 100%); }
 [data-skin="eclipse"] .btg-item, [data-skin="eclipse"] .btg-itemdesc { border-color: rgba(217,180,90,.45); background: rgba(14,10,20,.9); color: #f1e3bd; }
 [data-layout="game"]:not([data-skin="eclipse"]):not([data-gskin^="tactical"]) .btg-item { border-radius: 10px; }
+
+.battle-controls { position: relative; color: var(--g-text, #e2e8f0); }
+.battle-controls-trigger { display: inline-flex; align-items: center; gap: .45rem; white-space: nowrap; }
+.battle-controls-panel {
+  position: absolute; right: 0; bottom: calc(100% + .45rem);
+  width: min(21rem, calc(100vw - 2rem)); max-height: min(36dvh, 15rem); overflow-y: auto;
+  display: grid; gap: .6rem; padding: .65rem; background: var(--g-panel, #101926);
+  border-color: var(--g-line, #334155); box-shadow: 0 6px 24px #0008;
+}
+.battle-controls-options { display: flex; flex-wrap: wrap; gap: .35rem; }
+.battle-controls-panel [aria-pressed="true"] { border-color: var(--g-accent, #38bdf8); color: var(--g-accent, #7dd3fc); }

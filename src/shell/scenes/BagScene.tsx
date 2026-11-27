@@ -30,8 +30,7 @@ import { haptic } from "../haptics";
  *   套裝 SUIT_CATALOG、護目鏡 EYEWEAR_CATALOG、稱號 TITLE_CATALOG。
  *   技能石只在精靈的換技能介面處理。
  *
- * 唯讀優先：先能「看」，裝備寫入走 Legacy 編輯器（避免兩套裝備邏輯分岔）。
- * 每個項目都附「到 Legacy 裝備」的出口，所以功能不缺席。
+ * 換精靈、配裝與培養均由新版元件操作，沿用共用存檔與倉庫資料。
  */
 
 type BagTab = "team" | "suit" | "eyewear" | "title" | "elf";
@@ -44,7 +43,7 @@ const TABS: { id: BagTab; label: string; icon: React.ReactNode; tone: string }[]
   { id: "elf", label: "精靈", icon: <Users className="w-3.5 h-3.5" />, tone: "#F472B6" },
 ];
 
-export function BagScene({ b, onSetup }: { b: ShellBridge; onSetup?: () => void }) {
+export function BagScene({ b, onSetup,onTrain }: { b: ShellBridge; onSetup?: () => void;onTrain?:(elf:Elf)=>void }) {
   const [tab, setTab] = useState<BagTab>("team");
   // 精靈卡牌倉庫：選中的精靈（null = 關閉）
   const [cardElf, setCardElf] = React.useState<Elf | null>(null);
@@ -240,7 +239,7 @@ export function BagScene({ b, onSetup }: { b: ShellBridge; onSetup?: () => void 
         {/* ── 隊伍分頁：雙方並排（手機上下、桌面左右） ── */}
         {tab === "team" && (
           <div className="flex-1 min-h-0 overflow-y-auto flex flex-col gap-1.5">
-            <TeamBoard b={b} />
+            <TeamBoard b={b} onTrain={onTrain}/>
             <div
               className="shrink-0 flex items-center gap-1.5 px-2 py-1.5"
               style={{ borderRadius: 8, background: "rgba(6,16,26,0.6)", border: "1px solid rgba(148,163,184,0.14)" }}
@@ -431,7 +430,7 @@ export function BagScene({ b, onSetup }: { b: ShellBridge; onSetup?: () => void 
               {detail.elf && <>
                 <ElfAvatar elf={detail.elf} kind="body" className="h-36 w-full object-contain" />
                 <button type="button" className="rounded-lg bg-cyan-700 p-3 text-white" onClick={() => {
-                  b.setEditingElf(detail.elf!); b.setEditorTab('manual'); b.setView('custom');
+                  if(onTrain){onTrain(detail.elf!);setDetail(null);}else{b.setEditingElf(detail.elf!); b.setEditorTab('manual'); b.setView('custom');}
                 }}>編輯精靈／技能／積木</button>
               </>}
               <button

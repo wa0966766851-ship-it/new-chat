@@ -182,6 +182,8 @@ export const BATTLE_SPRITE_FACING: Record<string, SpriteFacing> = {
 
 // 同名精靈的備用型態可能具有不同朝向，以實際載入的素材為準。
 export const BODY_SOURCE_FACING: Record<string, SpriteFacing> = {
+ // 2026-11-26 source PNGs reviewed independently of the native animation facing.
+ '/seer/body/4377.png':'left','/seer/body/1400473.png':'left','/seer/body/1400467.png':'left',
  // 2026-11-10 官方原始PNG逐圖核對；原生動畫另依播放器方向表。
  "/seer/body/88.png": "front",
  "/seer/body/261.png": "left",

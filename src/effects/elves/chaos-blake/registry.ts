@@ -19,7 +19,7 @@ export const handleChaosBlakeSoulMark = (context: BattleEventContext, event: Eff
       // 清空對手隨機 1 項技能 PP
       const ppSkills = target.skills.filter(s => (s.pp || 0) > 0);
       if (ppSkills.length > 0) {
-        const s = ppSkills[Math.floor(Math.random() * ppSkills.length)];
+        const s = ppSkills[Math.floor((context.rng?.() ?? Math.random()) * ppSkills.length)];
         s.pp = 0;
         addLog(`🌑 【混】：令對手隨機技能 【${s.name}】 PP 歸 0！`, "effect");
       }

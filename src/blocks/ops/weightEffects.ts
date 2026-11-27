@@ -173,13 +173,13 @@ export function weightEffectOperations(deps: {
     },
     status_turn_exchange: (ctx: Context, p: any, state: RunState) => {
       const ids = new Set(['turn_effect']);
-      const timers = [...(ctx.p1Timers || []), ...(ctx.p2Timers || [])].filter(timer => timer.remaining > 0 && ids.has(timer.kind));
+      const timers = ([ctx.actor,ctx.targetSide] as const).flatMap(side=>((side==='p1'?ctx.p1Timers:ctx.p2Timers)||[]).filter(timer => timer.remaining > 0 && !timer.pendingActivation && ids.has(timer.kind) && (timer.scope==='team'||!timer.ownerBattleId||timer.ownerBattleId===battleElfId(liveElf(ctx,side)))));
       const existingTurns = statusDurationSum(ctx, [self(ctx), opp(ctx)]);
       if (timers.length) for (const side of [ctx.actor, ctx.targetSide]) {
         const elf = liveElf(ctx, side);
         const effects = (elf.effects || []).map(effect => statuses(ctx, elf).some(([name]) => name === effect.id)
           ? { ...effect, duration: effect.duration + timers.length } : effect);
-        ctx.updateElf(side, { effects });
+        ctx.updateElf(side, { effects, battleStatuses:Object.fromEntries(statuses(ctx,elf).map(([name,turns])=>[name,turns+timers.length])) });
       }
       if (existingTurns) run(ctx, state, 'weight_adjust', { side: 'both', amount: p.amount * existingTurns });
       return Boolean(timers.length || existingTurns);

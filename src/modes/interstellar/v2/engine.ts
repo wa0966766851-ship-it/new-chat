@@ -127,7 +127,7 @@ export function createRun(opts: CreateRunOpts): RunV2 {
     schemaVersion: 2, runId: `run-${seed.toString(36)}-${nLevel}`, revision: 0, seed, nonce: dice.nonce, nLevel, bans, poolSig: poolSigOf(opts.pool),
     lives: startLivesFor(nLevel) + (perk?.lives ?? 0), tempLives: perk?.tempLifePerAct ?? 0, lifeBought: 0, lastLifeLoss: null,
     act: 1, map, at: map.nodes.find(n => n.col === 0)!.id, team: [], relics: [], beans: Math.max(0, 120 + n.startBeans + (perk?.beans ?? 0)),
-    shards: Math.max(0, opts.startingShards + n.startShards), recruitCount: 0, shardsV3: true, tokens: [], tokenSeq: 0, potions, eclipse: 0,
+    shards: Math.max(0, opts.startingShards + n.startShards + (perk?.shards??0)), recruitCount: 0, shardsV3: true, tokens: [], tokenSeq: 0, potions, eclipse: 0,
     equipType: opts.equipType, equipId: opts.equipId, modifiers: opts.modifiers,
     scene: { kind: "draft", offer, picks: [] }, pendingBattle: null, exp: 0,
     stats: { fights: 0, elites: 0, bosses: 0, steps: 0 }, chronicle: ["你點燃了第一盞燈。星蝕回廊的門在背後關上。"],
@@ -878,7 +878,7 @@ export function settleBattleV2(run: RunV2, battleId: string, winner: string, tea
   const baseBeans = enc.kind === "boss" ? 180 + a * 50 : enc.kind === "elite" ? 90 + a * 30 : 40 + a * 15;
   const modMult = (1 + next.modifiers.length * .1) * m.expMult;
   const reward: Reward = {
-    beans: Math.floor(baseBeans * m.beansMult * eclipseBonus), tokens: [], lives: enc.kind === "boss" ? BOSS_LIFE_REWARD : 0,
+    beans: Math.floor(baseBeans * m.beansMult * eclipseBonus * (enc.kind==='combat'?1:1+(perkFor(next.equipType,next.equipId,levelOf(next))?.eliteBeansMult??0))), tokens: [], lives: enc.kind === "boss" ? BOSS_LIFE_REWARD : 0,
     potions: 0, exp: Math.floor((enc.kind === "boss" ? 150 : enc.kind === "elite" ? 60 : 20) * modMult),
     relicChoices: [], recruitChoices: [], isBoss: enc.kind === "boss", isFinal: enc.kind === "boss" && a >= FINAL_ACT,
   };

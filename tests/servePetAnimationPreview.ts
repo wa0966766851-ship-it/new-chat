@@ -5,6 +5,7 @@ async function main(){
  const app=express();registerPetAnimations(app,process.cwd());
  // Read-only authoring assets; outside public so builds never ship raw bundles.
  app.use('/fxlab-data',express.static(path.resolve('.seer-cache/fxlab-data'),{index:false}));
+ if(process.argv.includes('--candidate-review'))app.use('/candidate-bundles',express.static(path.resolve('.seer-cache/pet-anim'),{index:false}));
  // Explicit authoring opt-in. Drafts are never copied into public or releases.
  const draftArg=process.argv.indexOf('--draft-root');
  if(draftArg>=0){
@@ -14,11 +15,12 @@ async function main(){
  }
  // 驗收不依賴另外啟動的正式網站，先供應相同的本機圖片。
  app.use(express.static(path.resolve('public'),{index:false}));
+ for(const kind of ['head','body','type','abnormal','signbuff','buff'])app.use(`/seer/${kind}`,express.static(path.resolve('.seer-cache',kind),{index:false}));
  const dev=process.argv.includes('--dev'),port=Number(process.env.PET_PREVIEW_PORT||(dev?3015:3013));
  const {createServer}=await import('node:http');const server=createServer(app);
  if(dev){
   const {createServer:createViteServer}=await import('vite');
-  const vite=await createViteServer({configFile:path.resolve('tests/fixtures/petAnimation.vite.config.ts'),server:{middlewareMode:true,proxy:{},watch:null,hmr:{server}}});
+  const vite=await createViteServer({configFile:path.resolve('tests/fixtures/petAnimation.vite.config.ts'),server:{middlewareMode:true,proxy:{},watch:null,hmr:process.argv.includes('--candidate-review')?false:{server}}});
   app.use(vite.middlewares);
   server.on('close',()=>{void vite.close();});
  }else app.use(express.static(path.resolve('.seer-cache/animation-preview')));

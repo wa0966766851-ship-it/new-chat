@@ -7,6 +7,7 @@ import dotenv from "dotenv";
 import { registerLauncherPreferences } from './server/launcherPreferences';
 import { registerLauncherIdentity } from './server/launcherIdentity';
 import { registerPetAnimations } from './server/petAnimations';
+import { createP2PSignalRouter } from './server/p2pSignal';
 import { registerPlayerSaves } from './server/playerSaves';
 import { registerMusicMeta } from './server/musicMeta';
 import { registerBattleAI } from './server/battleAI/routes';
@@ -21,6 +22,9 @@ const app = express();
 const PORT = Number(process.env.PORT || 3000);
 
 registerPlayerSaves(app);
+if (process.env.SEER_P2P_ENABLED === '1') {
+  app.use('/api/p2p', createP2PSignalRouter(process.env, req => `${req.protocol}://${req.get('host')}`));
+}
 app.use('/api/battle-ai/records',express.json({limit:'256kb'}));
 registerSpotlightExport(app);
 app.use(express.json());
@@ -486,7 +490,7 @@ app.get("/seer/:kind/:file", async (req, res) => {
     for (const p of [path.join(root, "public", "seer", "xi", file), path.join(root, "系", file)]) if (isPng(p)) return send(p);
     res.status(404).end(); return;
   }
-  if (!["head", "body", "type", "abnormal", "buff", "signbuff", "card"].includes(kind) || !(/^\d+\.png$/.test(file) || (kind === "type" && file === "prop.png"))) { res.status(404).end(); return; }
+  if (!["head", "body", "type", "abnormal", "buff", "signbuff", "card","countermark","gem"].includes(kind) || !(/^\d+\.png$/.test(file) || (kind === "type" && file === "prop.png"))) { res.status(404).end(); return; }
   // 官方資源優先（public/seer → 快取 → 遠端）；使用者 pet/ 資料夾僅在官方取不到時使用（舊版編號可能對不上）
   const cacheFile = path.join(process.env.SEER_CACHE_DIR || path.join(root, ".seer-cache"), kind, file);
   for (const p of [path.join(root, "public", "seer", kind, file), cacheFile]) if (isPng(p)) return send(p);
@@ -494,7 +498,7 @@ app.get("/seer/:kind/:file", async (req, res) => {
   const key = `${kind}/${file}`;
   if (seerMisses.has(key)) { if (userPet && isPng(userPet)) return send(userPet); res.status(404).end(); return; }
   // card：autocard 卡面立繪（星蝕回廊塔羅卡用），路徑在 art/autocard 下
-  const remote = kind === "card" ? `${SEER_REMOTE.replace("/ui/assets", "")}/autocard/texture/cards/card_${file}` : `${SEER_REMOTE}/${kind === "type" ? "pettype" : (kind === "abnormal" || kind === "buff" || kind === "signbuff") ? "battleeffect/" + kind : "pet/" + kind}/${file}`;
+  const remote = kind==='countermark'||kind==='gem'?`https://seerh5.61.com/resource/assets/countermark/${kind==='gem'?'gem':'icon'}/${file}`:kind === "card" ? `${SEER_REMOTE.replace("/ui/assets", "")}/autocard/texture/cards/card_${file}` : `${SEER_REMOTE}/${kind === "type" ? "pettype" : (kind === "abnormal" || kind === "buff" || kind === "signbuff") ? "battleeffect/" + kind : "pet/" + kind}/${file}`;
   const buf = await fetchBuffer(remote);
   if (!buf || buf[0] !== 0x89 || buf[1] !== 0x50) { seerMisses.add(key); if (userPet && isPng(userPet)) return send(userPet); res.status(404).end(); return; }
   try { fs.mkdirSync(path.dirname(cacheFile), { recursive: true }); fs.writeFileSync(cacheFile, buf); } catch {}

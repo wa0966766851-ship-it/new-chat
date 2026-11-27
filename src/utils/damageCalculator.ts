@@ -1,4 +1,5 @@
 import { battleTypeParts } from './typeQuery';
+import {gemFlatPower,gemHas} from '../training/gems';
 import {battleResistances} from '../battle/resistances';
 ﻿import { applyStageViewAs } from './stageViewAs';
 import { readStatPercent } from '../effects/soulProperty';
@@ -42,7 +43,7 @@ export const calculateDamage = (
   p2Marks?: Mark[]
 ) => {
   const fixedPowerAdd = Number((side === 'p1' ? p1RegistryState : p2RegistryState)?.powerAddThisAction) || 0;
-  if (skill.category === "屬性" || !(skill.power + fixedPowerAdd > 0)) return { damage: 0, isCrit: false, typeMultiplier: 1.0, hitCount: 1, statResetApplied: null as "def" | "spdef" | null, formulaReplaced: false, equipmentMultiplier: 1 };
+  if (skill.category === "屬性" || !(skill.power + fixedPowerAdd+gemFlatPower(actor,skill) > 0)) return { damage: 0, isCrit: false, typeMultiplier: 1.0, hitCount: 1, statResetApplied: null as "def" | "spdef" | null, formulaReplaced: false, equipmentMultiplier: 1 };
   
   const isPhys = skill.category === "物理";
   const suit = p1Suit && side === "p1" ? SUIT_CATALOG[p1Suit] : (p2Suit && side === "p2" ? SUIT_CATALOG[p2Suit] : undefined);
@@ -176,7 +177,7 @@ export const calculateDamage = (
     effDef = Math.max(1, Math.floor(Math.min(effDef, otherEff) * ratio));
   }
   const atkTraitMult = 1 + readStatPercent(actor, isPhys ? 'atk' : 'spatk') / 100;
-  const base = ((levelFactor * Math.floor(calculateEffectiveStat(atk, atkS) * atkTraitMult) * (skill.power + powerAdd) * powerMultiplier / Math.max(1, effDef)) / 50 + 2);
+  const base = ((levelFactor * Math.floor(calculateEffectiveStat(atk, atkS) * atkTraitMult) * ((skill.power + powerAdd) * powerMultiplier+gemFlatPower(actor,skill)) / Math.max(1, effDef)) / 50 + 2);
   
   const actorReg = side === "p1" ? p1RegistryState : p2RegistryState;
   // 通用：下N次攻擊的屬性克制計算改以指定屬性（attackTypeOverride 自身攻擊屬性／targetTypeOverride 對手屬性；attackTypeOverrideUses 次數）
@@ -190,6 +191,7 @@ export const calculateDamage = (
   }
   if (actorReg?.minimumTypeMultiplierThisAction !== undefined) typeMult = Math.max(typeMult, actorReg.minimumTypeMultiplierThisAction);
   typeMult=statusTypeMultiplier(actor,typeMult);
+  if(typeMult>0&&typeMult<1&&gemHas(actor,skill,1716))typeMult=1;
   if(markCapability(actor,'typeAdvantageDisabled',actorMarks)>0||options?.typeAdvantageDisabled)typeMult=Math.min(1,typeMult);
   // 積木：克制倍數取指定屬性中最高者
   // 本系加成 1.5 倍：技能屬性（含雙屬性技能的任一屬性）為自身系別中含有的屬性
@@ -212,7 +214,7 @@ export const calculateDamage = (
     suitCritBonus += stacks * suit.effects.critRateBonusPerStack;
   }
 
-  const critChance = Math.max(0, Math.min(1, (skill.resolvedBaseCritChance ?? ((actor.critValue ?? 1) / 16)) + suitCritBonus + ((title?.critBonus || 0) / 100) + critChanceBonus(actor, target) + Number(options?.critChanceBonus || 0)));
+  const critChance = gemHas(actor,skill,543)?1:Math.max(0, Math.min(1, (skill.resolvedBaseCritChance ?? ((actor.critValue ?? 1) / 16)) + suitCritBonus + ((title?.critBonus || 0) / 100) + critChanceBonus(actor, target) + Number(options?.critChanceBonus || 0)));
   const isCrit = isCritOverride !== undefined ? isCritOverride : prdChance(`crit:${side}:${actor.id}`, critChance);
   
   // 套裝／稱號／刻印「傷害提升／減少X%」、寶石「傷害翻倍」不在公式內：由引擎在增傷／減傷層加入（battle/damagePipeline.ts）。

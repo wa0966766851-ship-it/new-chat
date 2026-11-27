@@ -1,3 +1,4 @@
+import { reportFatalResult } from '../battle/fatalHold';
 import { BattleEventContext } from "../effects/types";
 import { StatusRegistry } from "../effects/statusRegistry";
 import { isStatusActive } from "./statusManager";
@@ -7,6 +8,7 @@ import { checkBossTraitFatalResist } from "../blocks/ops/bossTraits";
 export function checkStatusDrivenFatalResist(ctx: BattleEventContext): boolean {
   const self = ctx.self;
   if (isStatusActive(self, "星佑")) {
+    reportFatalResult(ctx, 'rebirth');
     self.currentHp = self.maxHp;
     
     const statuses = getStatuses(self);

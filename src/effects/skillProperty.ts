@@ -1,4 +1,6 @@
 import {portableSkillCapabilities} from '../battle/portableSkillMarks';
+import {gemPriority} from '../training/gems';
+import {SIDE_FIELD_KEY,activeSideField} from '../battle/sideFieldModel';
 import type { KitEntry } from './effectSystem.schema';
 import { fifthPpDiff } from '../blocks/ops/arenaShared';
 import { evalCond } from '../blocks/runtime';
@@ -13,8 +15,10 @@ import {getTypeMatchup} from '../utils/statCalculator';
 export { skillPropertyIssue } from './sequenceContract';
 
 export function readAttachedSureHit(skill:any,ctx:any):boolean {
+  const field=activeSideField(ctx.getPlayerState?.(SIDE_FIELD_KEY),ctx.roundNumber);
+  if(field?.remaining>0&&field.sureHit)return true;
   const timers=ctx.actor==='p1'?ctx.p1Timers:ctx.p2Timers;
-  if(skill?.category!=='屬性'&&(timers||[]).some((t:any)=>t.remaining>0&&!t.pendingActivation&&(!t.ownerBattleId||t.ownerBattleId===(ctx.self.battleId||ctx.self.id))&&t.payload?.block?.sureHit))return true;
+  if((timers||[]).some((t:any)=>t.remaining>0&&!t.pendingActivation&&(!t.ownerBattleId||t.ownerBattleId===(ctx.self.battleId||ctx.self.id))&&t.payload?.block?.sureHit&&(t.payload.block.allSkills||skill?.category!=='屬性')))return true;
   // 純命中預覽的pseudoCtx沒有狀態API；正式引擎已在前置轉換讀過完整上下文。
   // 缺少API時不能擅自假定附加封印為0，也不能為不含此屬性的普通Kit拋錯。
   if(skill?.effectMode!=='kit'||typeof ctx.getPlayerState!=='function')return false;
@@ -108,14 +112,15 @@ export function skillReductionPolicy(ctx:any,skill:any,policy:ReductionPolicy):R
  * 與描述路徑（skill.priority || 無條件先制 + 條件加成）一致，多句可疊加。
  */
 export function readBasePriority(skill:any,ctx:any):number {
-  if(skill.effectMode!=='kit'||ctx.self?.isInherentInvalid)return skill.priority ?? 0;
+  const gem=ctx.self&&ctx.target?gemPriority(ctx.self,ctx.target,skill):0;
+  if(skill.effectMode!=='kit'||ctx.self?.isInherentInvalid)return (skill.priority ?? 0)+gem;
   const entries:KitEntry[]=(skill.kit || []).filter((e:KitEntry)=>e.codeId==='skill_property'&&e.params.property==='base_priority'&&!skillPropertyIssue(e))
     .sort((a:KitEntry,b:KitEntry)=>a.order-b.order);
   const flat=entries.find(e=>!(e.params.conditions || []).length);
   let total=flat?flat.params.value:(skill.priority ?? 0);
   for(const e of entries)if((e.params.conditions || []).length&&e.params.conditions.every((c:any)=>evalCond(ctx,c,{last:null,lastAmount:0})===true))total+=e.params.value;
   for(const e of skill.kit||[])if(e.codeId==='skill_property'&&e.params.property==='mark_priority'&&!skillPropertyIssue(e)&&(e.params.conditions||[]).every((c:any)=>evalCond(ctx,c,{last:null,lastAmount:0})===true))total+=e.params.value*readMarkStacks(ctx,e.params.perMark);
-  return total;
+  return total+gem;
 }
 
 /** 舊編輯／查詢入口的相容投影：只回傳積木所列先制，不擲機率、不借原文。 */

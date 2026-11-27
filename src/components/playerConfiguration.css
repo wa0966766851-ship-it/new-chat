@@ -1,0 +1,15 @@
+[data-player-configuration] .ios-button,
+[data-player-configuration] .ios-button-primary {
+ display:inline-flex;align-items:center;justify-content:center;gap:6px;
+ min-height:40px;max-width:100%;padding:8px 12px;border-radius:10px;
+ border:1px solid rgba(255,255,255,.18);background:rgba(255,255,255,.06);
+ color:#e2e8f0;font-size:12px;font-weight:600;line-height:1.5;cursor:pointer;
+}
+[data-player-configuration] .ios-button-primary {
+ background:color-mix(in srgb,var(--accent-hex,#3b82f6) 55%,#0f172a);
+ border-color:var(--accent-hex,#3b82f6);
+}
+[data-player-configuration] .ios-button:hover:not(:disabled),
+[data-player-configuration] .ios-button-primary:hover:not(:disabled){border-color:var(--accent-hex,#3b82f6);filter:brightness(1.15);}
+[data-player-configuration] :is(button,input,textarea):disabled{opacity:.45;cursor:not-allowed;}
+[data-player-configuration] button:focus-visible{outline:2px solid var(--accent-hex,#3b82f6);outline-offset:3px;}

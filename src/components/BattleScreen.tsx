@@ -3,7 +3,7 @@ import { Skill, BattleItem } from "../types";
 import { BattleState, BattleAction, EffectItem } from "./BattleManager";
 import { BATTLE_ANIMATION_EVENT, readAnimationSettings, effectiveAnimationSettings, type BattleAnimationSettings } from '../battle/animationSettings';
 import { BattleScreenUI } from "./BattleScreen.ui.tsx";
-import { createBattleEngine, type BattleEngine } from "../engine/battleEngine";
+import { createBattleEngine, type BattleEngine, type LockstepSelection } from "../engine/battleEngine";
 import { Elf, BattleMode } from "../types";
 import { createAssistedAIClient } from '../battle/ai/assistedClient';
 import { useTurnTimer } from './battle/useTurnTimer';
@@ -58,6 +58,7 @@ interface BattleScreenProps {
   onBattleEnd?: (winner: "p1" | "p2" | "exit" | "draw", team?: Elf[]) => void;
   preparedTeams?: boolean;
   specialMode?: "destiny" | "interstellar";
+  fieldId?:string;
   battleFormat?: "normal_6v6" | "solo_1v1" | "peak_6v6" | "peak_3v3";
   /** 重來（非首次進入）：入戰動畫播縮短版 */
   introReplay?: boolean;
@@ -74,6 +75,8 @@ interface BattleScreenProps {
     onUseItem: (side: "p1" | "p2", item: BattleItem) => void;
   }) => void;
   onStateChange?: (state: any) => void;
+  /** 雙人連線：本機只操作 localSide；對手的選擇經 onDriverInit 的 applyRemoteSelection 送入。 */
+  lockstep?: { localSide: 'p1' | 'p2'; onLocalSelection: (selection: LockstepSelection) => void };
 }
 
 
@@ -151,7 +154,7 @@ export default function BattleScreen(props: BattleScreenProps) {
   presentRef.current = () => updatePresentation();
   if (!presentation.view) void presentation.stage(engine.getState());
   const state: BattleState = presentation.view ?? engineState;
-  const turnTimer = useTurnTimer(engine,engineState,props.battleMode,introOn,battlePause.isPaused);
+  const turnTimer = useTurnTimer(engine,engineState,props.battleMode,introOn,battlePause.isPaused,props.lockstep?.localSide);
   useEffect(() => { aiRef.current?.sync(); }, [engineState]);
 
   useEffect(() => {
@@ -176,6 +179,7 @@ export default function BattleScreen(props: BattleScreenProps) {
       onUseItem: (side, item) => engine.onUseItem(side, item),
       /** 畫面仍在播放（引擎已算完、動畫還沒播完）。 */
       isPresenting: () => engine.presentation.busy,
+      applyRemoteSelection: (selection: LockstepSelection) => engine.applyRemoteSelection(selection),
     } as any);
   }, []);
 
@@ -197,18 +201,19 @@ export default function BattleScreen(props: BattleScreenProps) {
     addLog: (text, type) => pushEffect({ type: 'log', side: 'p1', data: { text, type } }),
     trackCodeExec: () => {},
     // 雙人同屏（DSH 20261019）：Context 暴露當前操作側——PVP 依 phase 推導，PVE 恆 p1。
-    activeControlSide: props.battleMode === 'PVP' ? (state.phase === 'p2_select' ? 'p2' : 'p1') : 'p1',
+    // 雙人連線：固定由本機這一側操作。
+    activeControlSide: props.lockstep ? props.lockstep.localSide : props.battleMode === 'PVP' ? (state.phase === 'p2_select' ? 'p2' : 'p1') : 'p1',
     // 操作接口保留單側簽名（既有 UI 元件依賴），但依 activeControlSide 分流：
     onSkillSelect: (skill) => {
-      const side = props.battleMode === 'PVP' && state.phase === 'p2_select' ? 'p2' : 'p1';
+      const side = props.lockstep ? props.lockstep.localSide : props.battleMode === 'PVP' && state.phase === 'p2_select' ? 'p2' : 'p1';
       onSkillSelect(side, skill);
     },
     onSwitchElf: (index) => {
-      const side = props.battleMode === 'PVP' && state.phase === 'p2_select' ? 'p2' : 'p1';
+      const side = props.lockstep ? props.lockstep.localSide : props.battleMode === 'PVP' && state.phase === 'p2_select' ? 'p2' : 'p1';
       onSwitchElf(side, index);
     },
     onUseItem: (item) => {
-      const side = props.battleMode === 'PVP' && state.phase === 'p2_select' ? 'p2' : 'p1';
+      const side = props.lockstep ? props.lockstep.localSide : props.battleMode === 'PVP' && state.phase === 'p2_select' ? 'p2' : 'p1';
       onUseItem(side, item);
     }
   }), [state, presentationVersion, props.battleMode]);
@@ -223,6 +228,7 @@ export default function BattleScreen(props: BattleScreenProps) {
         onPass={engine.onPass}
         potionLimit={potionLimit}
         specialMode={props.specialMode}
+          fieldId={props.fieldId}
         loadouts={{
           p1: { suit: props.p1Suit, eyewear: props.p1Eyewear, title: props.p1Title, flame: props.battleFlames?.p1 },
           p2: { suit: props.p2Suit, eyewear: props.p2Eyewear, title: props.p2Title, flame: props.battleFlames?.p2 },
@@ -230,8 +236,8 @@ export default function BattleScreen(props: BattleScreenProps) {
         onReset={props.onRestartBattle}
         onBackToMenu={() => { const st = engine.getState(); if (!st.winner) props.onBattleEnd?.("exit", structuredClone(st.p1Team)); props.onBackToMenu(); }}
         paused={battlePause.paused}
-        onPauseToggle={engineState.winner || introOn ? undefined : battlePause.toggle}
-        onAutoBattleToggle={() => { if(battlePause.isPaused())return; if(engine.getState().isAutoBattle)aiRef.current?.cancel();dispatch({ type: 'SET_AUTO_BATTLE', isAuto: !engine.getState().isAutoBattle }); }}
+        onPauseToggle={engineState.winner || introOn || props.lockstep ? undefined : battlePause.toggle}
+        onAutoBattleToggle={() => { if (props.lockstep) return; if(battlePause.isPaused())return; if(engine.getState().isAutoBattle)aiRef.current?.cancel();dispatch({ type: 'SET_AUTO_BATTLE', isAuto: !engine.getState().isAutoBattle }); }}
         activeSkillAnim={presentation.skillAnim}
         floatingDamagePopups={presentation.popups}
         consoleShake={{ p1: false, p2: false }}
@@ -245,7 +251,7 @@ export default function BattleScreen(props: BattleScreenProps) {
             {(turnTimer.enabled || battlePause.paused) && <span role={battlePause.paused ? 'status' : 'timer'}>
               {battlePause.paused
                 ? (turnTimer.remaining !== null ? `已暫停 · 剩餘 ${turnTimer.remaining} 秒` : engineState.phase === 'resolving' ? '本回合結算後暫停' : '對戰已暫停')
-                : (turnTimer.remaining === null ? '計時暫停' : `${turnTimer.side?.toUpperCase()} 剩餘 ${turnTimer.remaining} 秒`)}
+                : (turnTimer.remaining !== null ? `${turnTimer.side?.toUpperCase()} 剩餘 ${turnTimer.remaining} 秒` : turnTimer.waitingForPresentation || engineState.phase === 'resolving' ? '演出／結算中' : '等待操作階段')}
             </span>}
             {turnTimer.autoP2 && <button type="button" onClick={() => {aiRef.current?.cancel();turnTimer.stopP2();}}>P2 託管中 · 點此關閉</button>}
           </div>

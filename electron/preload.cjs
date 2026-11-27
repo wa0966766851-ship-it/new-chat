@@ -2,6 +2,15 @@ const { contextBridge, ipcRenderer } = require("electron");
 
 contextBridge.exposeInMainWorld("seerDesktop", {
   isElectron: true,
+  fullscreen: {
+    status: () => ipcRenderer.invoke('seer:fullscreen:status'),
+    set: enabled => ipcRenderer.invoke('seer:fullscreen:set', enabled),
+    onChange: listener => {
+      const forward = (_event, active) => listener(active === true);
+      ipcRenderer.on('seer:fullscreen:changed', forward);
+      return () => ipcRenderer.removeListener('seer:fullscreen:changed', forward);
+    },
+  },
   launcher: {
     status: () => ipcRenderer.invoke('seer:launcher:status'),
     preferences: enabled => ipcRenderer.invoke('seer:launcher:preferences', enabled),

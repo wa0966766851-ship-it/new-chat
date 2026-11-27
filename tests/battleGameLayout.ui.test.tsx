@@ -62,6 +62,17 @@ try {
  ok('原廠風與實用風顯示C級攔截名稱及完整描述');
 
 
+ const controls = document.querySelector('[data-battle-controls]')!;
+ const trigger = controls.querySelector<HTMLButtonElement>('[aria-expanded]')!;
+ assert.equal(trigger.getAttribute('aria-expanded'), 'false');
+ assert.equal(controls.querySelector('[data-pass-button]'), null);
+ await act(async()=>trigger.click());
+ assert.equal(trigger.getAttribute('aria-expanded'), 'true');
+ assert.ok(controls.querySelector('[data-pass-button]'));
+ await act(async()=>trigger.click());
+ assert.equal(controls.querySelector('[data-pass-button]'), null);
+ ok('對戰控制預設收合，點擊可展開與收回');
+
  // 二、護盾／護罩在血條下方（同一 HUD 內、HP 列之後）。
  await render(withP1(e=>{e.shield=300;e.barrier=200;}));
  const hud=document.querySelector('[data-hud="p1"]')!;
@@ -151,9 +162,13 @@ try {
  ok('藥劑：可看不可用＋原因');
 
  // 八、背包：技能一覽（PP／可否使用），廢除照樣顯示資訊。
- await render(withP1(e=>{e.skills[other].isAbolished=true;}));
+ const bag = withP1(e=>{e.skills[other].isAbolished=true;});
+ const extra = {...structuredClone(bag.p1), battleId:'extra', name:'額外測試', isExtra:true};
+ const reserve = {...structuredClone(bag.p1), battleId:'reserve', name:'普通測試'};
+ await render({...bag,p1Team:[bag.p1,extra,reserve]});
  await act(async()=>{([...document.querySelectorAll('.btg-cmd')].find(b=>b.getAttribute('data-en')==='TEAM') as HTMLButtonElement).click();});
  const benchRail=document.querySelector<HTMLElement>('[data-bench-scroll]')!;
+ assert.deepEqual([...benchRail.querySelectorAll('[data-bench-idx]')].map(element=>element.getAttribute('data-bench-idx')), ['0','2','1'], '普通精靈先列，並保留實際換人索引');
  const benchCard=benchRail.querySelector<HTMLButtonElement>('[data-bench-idx]')!;
  const pointer=(target: HTMLElement,type:string,x:number,timeStamp:number)=>{
   const event=new dom.window.MouseEvent(type,{bubbles:true,cancelable:true,button:0,clientX:x});
@@ -167,6 +182,7 @@ try {
  await act(async()=>{(document.querySelector('[data-team-view-skills]') as HTMLButtonElement).click();});
  const table=document.querySelector('[data-team-skill-table]')!;
  assert.ok(table,'切換為技能一覽');
+ assert.deepEqual([...table.querySelectorAll('h4')].map(heading=>heading.textContent), ['普通精靈','額外精靈']);
  assert.ok(table.textContent!.includes('已廢除'),'廢除技能仍列出並標示');
  assert.ok(/PP \d+\/\d+/.test(table.textContent!),'列出 PP');
  ok('背包技能一覽');

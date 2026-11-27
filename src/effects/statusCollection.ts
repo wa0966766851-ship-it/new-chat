@@ -4,6 +4,7 @@ import { canonicalStatusName } from './statusIdentity';
 import { checkElfDead } from '../battle/elfAlive';
 import {syncLegacy} from '../utils/battleHelpers';
 import type {Elf} from '../types';
+import {takeGemStatusBoost} from '../training/gemStatusChance';
 
 export const STATUS_COLLECTION_CLASSES=['','控制類','弱化類','限制類','衍化類','附屬類'] as const;
 const categories:Record<string,string>={控制類:'CONTROL',弱化類:'WEAKENING',限制類:'RESTRICTIVE',衍化類:'EVOLUTIONARY',附屬類:'AUXILIARY'};
@@ -37,6 +38,7 @@ export function applyStatusCollection(ctx:BattleEventContext,p:any):boolean {
   const targets=sides.flatMap(side=>(p.scope==='team'?(ctx.getFullTeam?.(side) || []):[side===ctx.actor?ctx.self:ctx.target])
     .filter(elf=>!checkElfDead(elf)).map(elf=>({side,id:elf.battleId || elf.id})));
   let any=false;
+  if(targets.length&&names.length){const boost=takeGemStatusBoost(ctx,100);if(boost.bypass)ctx.setPlayerState('inscriptionGemStatusBypass',boost.bypass);}
   for(const {side,id} of targets)for(const name of names)any=ctx.applyStatusWithImmunityCheck(side,name,p.turns,false,id).success||any;
   return any;
 }

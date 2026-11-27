@@ -123,26 +123,38 @@ export function ElfFilterBar({ state, variant = "slate", placeholder = ELF_SEARC
 }
 
 /** 搜尋＋篩選＋卡片格。卡片內容由呼叫端決定（renderItem），點擊交給 onPick。 */
-export function ElfPicker<E extends Elf>({ elves, onPick, renderItem, variant = "slate", gridClassName, itemClassName, isDisabled, emptyText = "沒有符合的精靈", placeholder, getKey }: {
+export function ElfPicker<E extends Elf>({ elves, onPick, renderItem, variant = "slate", gridClassName, itemClassName, isDisabled, emptyText = "沒有符合的精靈", placeholder, getKey, groupBy }: {
   elves: readonly E[]; onPick: (elf: E) => void; renderItem: (elf: E, index: number) => React.ReactNode; variant?: PickerVariant;
-  gridClassName?: string; itemClassName?: string; isDisabled?: (elf: E) => string | false; emptyText?: string; placeholder?: string; getKey?: (elf: E, index: number) => string;
+  gridClassName?: string; itemClassName?: string; isDisabled?: (elf: E) => string | false; emptyText?: string; placeholder?: string; getKey?: (elf: E, index: number) => string; groupBy?: (elf: E) => string;
 }) {
   const f = useElfFilter();
   const shown = f.filter(elves);
+  const groups = new Map<string, E[]>();
+  for (const elf of shown) {
+    const label = groupBy?.(elf) ?? "";
+    const group = groups.get(label);
+    if (group) group.push(elf);
+    else groups.set(label, [elf]);
+  }
   return (
     <div className="space-y-4">
       <ElfFilterBar state={f} showExtra={elves.some(elf => elf.isExtra)} variant={variant} placeholder={placeholder} count={`${shown.length} / ${elves.length}`} />
-      <div className={gridClassName ?? "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"}>
-        {shown.map((elf, index) => {
-          const reason = isDisabled?.(elf);
-          return (
-            <button type="button" key={getKey ? getKey(elf, index) : `${elf.id}-${index}`} disabled={!!reason} title={reason || undefined} onClick={() => onPick(elf)} className={itemClassName}>
-              {renderItem(elf, index)}
-            </button>
-          );
-        })}
-        {!shown.length && <p className={`col-span-full text-sm ${T[variant].icon}`}>{emptyText}</p>}
-      </div>
+      {Array.from(groups, ([label, group]) => (
+        <section key={label} aria-label={label || undefined}>
+          {label && <h4 className="mb-2 text-sm font-bold text-slate-200">{label}</h4>}
+          <div className={gridClassName ?? "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"}>
+            {group.map((elf, index) => {
+              const reason = isDisabled?.(elf);
+              return (
+                <button type="button" key={getKey ? getKey(elf, index) : `${elf.id}-${index}`} disabled={!!reason} title={reason || undefined} onClick={() => onPick(elf)} className={itemClassName}>
+                  {renderItem(elf, index)}
+                </button>
+              );
+            })}
+          </div>
+        </section>
+      ))}
+      {!shown.length && <p className={`text-sm ${T[variant].icon}`}>{emptyText}</p>}
     </div>
   );
 }

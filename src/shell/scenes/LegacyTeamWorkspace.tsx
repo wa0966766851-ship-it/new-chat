@@ -9,6 +9,7 @@ import { SuitRail } from '../art/SuitRail';
 import { ElfCardSheet } from '../art/ElfCardSheet';
 import { newestElfKeys } from '../elfPool';
 import { AegisBackdrop } from '../art/backdrop';
+import { FreeBattleSetupPanel } from '../../components/FreeBattleSetupPanel';
 import { Swords, Shield, Package, Shirt, Glasses, Award, ArrowLeftRight, Move, Star, Layers, X, ArrowLeft, Library, Settings2, Plus, Save, FolderOpen, Copy, Dices, Trash2, ShieldOff } from 'lucide-react';
 
 export type WorkspaceSide = 'p1' | 'p2';
@@ -37,6 +38,7 @@ export interface LegacyTeamWorkspaceProps {
   format: string; setFormat: (value: any) => void;
   banCount: number; setBanCount: (value: number) => void;
   pickCount: number; setPickCount: (value: number) => void;
+  heal?: () => void;
 }
 
 /** 只有呈現與選取狀態；所有隊伍、配裝、存檔與開戰操作都由原 StartScreen 提供。 */
@@ -76,7 +78,9 @@ export function LegacyTeamWorkspace(p: LegacyTeamWorkspaceProps) {
       <label>賽制 <select className="bg-slate-900 p-1.5" value={p.format} onChange={e => {p.setFormat(e.target.value); if(e.target.value.startsWith('peak')) {p.setBanCount(e.target.value === 'peak_3v3' ? 2 : 3); p.setPickCount(e.target.value === 'peak_3v3' ? 3 : 6);}}}><option value="normal_6v6">自由 6V6</option><option value="solo_1v1">單挑</option><option value="peak_6v6">巔峰 6V6</option><option value="peak_3v3">巔峰 3V3</option></select></label>
       {p.format.startsWith('peak') && <><label>禁用 <select className="bg-slate-900 p-1.5" value={p.banCount} onChange={e=>p.setBanCount(Number(e.target.value))}>{[1,2,3].map(n=><option key={n}>{n}</option>)}</select></label><label>選用 <select className="bg-slate-900 p-1.5" value={p.pickCount} onChange={e=>p.setPickCount(Number(e.target.value))}>{[3,4,5,6].map(n=><option key={n}>{n}</option>)}</select></label></>}
       <span className="text-amber-200">修改後按各隊「保存紀錄」；使用原版保存規則。</span>
+      {p.heal&&<button className={btn} onClick={p.heal}>背包全滿血</button>}
     </div>
+    {(!p.format.startsWith('peak'))&&<details className="shrink-0 text-xs"><summary className="workspace-button cursor-pointer">場地／火焰設定</summary><FreeBattleSetupPanel/></details>}
     {p.message && <p role="status" className="text-sm text-emerald-300">{p.message}</p>}
     {moving && <p role="status" className="text-sm text-cyan-200">已選 {moving.side.toUpperCase()} 第 {moving.index+1} 格，請點同隊目標格交換。<button className={btn} onClick={()=>setMoving(null)}>取消移動</button></p>}
     <div className="workspace-scroll flex-1 min-h-0 overflow-y-auto">

@@ -1,3 +1,4 @@
+import { reportFatalResult } from '../battle/fatalHold';
 import { activeAlienTrait } from '../data/elfGroups';
 // 積木程式快取與戰鬥接點
 import type { Program, Trigger } from "./model";
@@ -26,6 +27,7 @@ import {runDeferredAllyEntry} from '../effects/deferredEntryEffects';
 import {runConditionalRebirth} from '../effects/conditionalRebirth';
 import {getMaxPp} from '../utils/battleHelpers';
 import {skillSlot} from '../battle/skillSlot';
+import {sideFieldLifecycle} from '../battle/sideFields';
 
 const skillCache = new BoundedCache<string, Program>(1024);
 setSoulProgramProvider((elf) => getSoulProgram(elf));
@@ -97,6 +99,7 @@ const ACTIVE_ONLY = new Set<string>([EffectTiming.ROUND_START, EffectTiming.ROUN
 
 /** 魂印事件：側邊持續效果 + 精靈魂印積木（依 SOUL_MODE） */
 export function runBlockEvent(ctx: BattleEventContext, event: string, data: any, elf: any, hasHandler = false): boolean {
+  sideFieldLifecycle(ctx,event,data);
   portableMarkLifecycle(ctx,event,data,runAct);
   const trigs:Trigger[]=event===EffectTiming.SKILL_SELECTED?['skill_selected']:eventTriggers(ctx,event,data);
   const current=ctx.actor==='p1'?ctx.activeP1:ctx.activeP2;
@@ -129,6 +132,7 @@ export function runBlockEvent(ctx: BattleEventContext, event: string, data: any,
       .filter((t: any) => t.scope === 'team' || !t.ownerBattleId || String(t.ownerBattleId) === ownerId);
     const rb = findBlockTimer(timers, b => b.rebirth);
     if (rb) {
+      reportFatalResult(ctx, 'rebirth');
       ctx.consumeTimer?.(ctx.actor, rb.id);
       // 重生是致死節點的同步生命轉移，不是會被禁療或排隊的普通恢復。
       ctx.updateElf(ctx.actor, { currentHp: ctx.self.maxHp,

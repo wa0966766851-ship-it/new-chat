@@ -1,5 +1,6 @@
 import type { Elf } from '../types';
 import type { Mark } from './marks';
+import { FATAL_SEAL_MARK_ID, FATAL_SEAL_PHASE_LABEL } from './fatalHold';
 import type { Timer } from './timers';
 import { buildEffectViewModels, effectCountText, type BattleEffectViewModel } from './effectViewModel';
 import { effectIcon, STATE_SIGNS } from './effectIcons';
@@ -25,6 +26,10 @@ export function stateSignSourceText(own: Elf | undefined, opp: Elf | undefined, 
 /** One read-only projection for HUD, avatar details and inspector. No state is created here. */
 export function activeEffectViews(elf: Elf, marks: Mark[] = [], timers: Timer[] = [], registry: Record<string, any> = {}, sourceText = ''): BattleEffectViewModel[] {
   const views = buildEffectViewModels(marks, timers, elf.battleId || elf.id);
+  const seal = views.find(view => view.semanticId === `mark:${FATAL_SEAL_MARK_ID}`);
+  if (seal && elf.fatalResistSeal) {
+    seal.description = `${FATAL_SEAL_PHASE_LABEL[elf.fatalResistSeal]}。\n${seal.description}`;
+  }
   const mirrored = new Set(views.flatMap(v => v.mirrorKeys || []));
   const append = (view: BattleEffectViewModel, shadowOf?: string, clockKey?: string) => {
     // 只有舊欄位鏡像會去重：該效果的計時器已宣告同步寫入此鍵（mirrorRegistryKeys）即以計時器為準，不再出現數字不同的第二顆。

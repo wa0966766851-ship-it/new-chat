@@ -1,0 +1,1219 @@
+{
+  "count": 65,
+  "rows": [
+    {
+      "id": "5001",
+      "name": "悲歌.索比拉特",
+      "sourceId": 343,
+      "height": 49.5,
+      "weight": 1.9,
+      "gender": "無性別",
+      "appearances": [
+        {
+          "id": "",
+          "name": "原始外觀",
+          "animation": "sobira"
+        }
+      ]
+    },
+    {
+      "id": "5002",
+      "name": "帝皇之盾",
+      "sourceId": 3404,
+      "height": 195,
+      "weight": 75,
+      "gender": "雄性",
+      "body": "/seer/body/3404.png",
+      "appearances": [
+        {
+          "id": "",
+          "name": "原始外觀",
+          "body": "/seer/body/3404.png",
+          "animation": "emperorShield"
+        }
+      ]
+    },
+    {
+      "id": "5003",
+      "name": "天蓬元帥八戒",
+      "sourceId": 1536,
+      "height": 163,
+      "weight": 388,
+      "gender": "雄性",
+      "body": "/seer/body/1536.png",
+      "appearances": [
+        {
+          "id": "",
+          "name": "原始外觀",
+          "body": "/seer/body/1536.png",
+          "animation": "bajie"
+        }
+      ]
+    },
+    {
+      "id": "5004",
+      "name": "皮特薩拉羅",
+      "sourceId": 3098,
+      "height": 150,
+      "weight": 80,
+      "gender": "雌性",
+      "appearances": [
+        {
+          "id": "",
+          "name": "原始外觀",
+          "animation": "petersala"
+        }
+      ]
+    },
+    {
+      "id": "5005",
+      "name": "布萊克",
+      "sourceId": 875,
+      "height": 125,
+      "weight": 46,
+      "gender": "雄性",
+      "appearances": [
+        {
+          "id": "",
+          "name": "原始外觀",
+          "animation": "blake"
+        }
+      ]
+    },
+    {
+      "id": "300",
+      "name": "譜尼",
+      "sourceId": 300,
+      "height": 360,
+      "weight": 0,
+      "gender": "無性別",
+      "appearances": [
+        {
+          "id": "",
+          "name": "原始外觀",
+          "animation": "puni"
+        }
+      ]
+    },
+    {
+      "id": "5006",
+      "name": "星光·魔焰猩猩",
+      "sourceId": 4649,
+      "height": 128,
+      "weight": 50,
+      "gender": "雄性",
+      "appearances": [
+        {
+          "id": "",
+          "name": "原始外觀",
+          "animation": "starFlame"
+        }
+      ]
+    },
+    {
+      "id": "5007",
+      "name": "混濁海妖.布林克克",
+      "sourceId": 359,
+      "height": 159,
+      "weight": 980,
+      "gender": "雌性",
+      "body": "/seer/body/359.png",
+      "appearances": [
+        {
+          "id": "",
+          "name": "原始外觀",
+          "body": "/seer/body/359.png",
+          "animation": "brink"
+        }
+      ]
+    },
+    {
+      "id": "5008",
+      "name": "鎮魂.巴弗洛",
+      "sourceId": 177,
+      "height": 110,
+      "weight": 36,
+      "gender": "雌性",
+      "appearances": [
+        {
+          "id": "",
+          "name": "原始外觀",
+          "animation": "baflo"
+        }
+      ]
+    },
+    {
+      "id": "5009",
+      "name": "誑獅魔軀.魔獅迪露",
+      "sourceId": 187,
+      "height": 187.3,
+      "weight": 33.9,
+      "gender": "雌性",
+      "appearances": [
+        {
+          "id": "",
+          "name": "原始外觀",
+          "animation": "delu"
+        }
+      ]
+    },
+    {
+      "id": "5000",
+      "name": "聖靈譜尼",
+      "sourceId": 5000,
+      "height": 500,
+      "weight": 0,
+      "gender": "無性別",
+      "appearances": [
+        {
+          "id": "",
+          "name": "原始外觀",
+          "animation": "holyPuni"
+        },
+        {
+          "id": "puni-original",
+          "name": "原版譜尼",
+          "body": "/seer/body/300.png",
+          "animation": "puni"
+        }
+      ]
+    },
+    {
+      "id": "5010",
+      "name": "星光·魯斯王",
+      "sourceId": 4648,
+      "height": 110,
+      "weight": 47.5,
+      "gender": "雄性",
+      "appearances": [
+        {
+          "id": "",
+          "name": "原始外觀",
+          "animation": "starRuth"
+        }
+      ]
+    },
+    {
+      "id": "5011",
+      "name": "星光·麗莎布布",
+      "sourceId": 4647,
+      "height": 87.3,
+      "weight": 2,
+      "gender": "雌性",
+      "appearances": [
+        {
+          "id": "",
+          "name": "原始外觀",
+          "animation": "starLisa"
+        }
+      ]
+    },
+    {
+      "id": "5012",
+      "name": "冰魄·柯爾德",
+      "sourceId": 3886,
+      "height": 185,
+      "weight": 90,
+      "gender": "雄性",
+      "appearances": [
+        {
+          "id": "",
+          "name": "原始外觀",
+          "animation": "kold"
+        }
+      ]
+    },
+    {
+      "id": "5013",
+      "name": "柯爾霍德",
+      "sourceId": 3432,
+      "height": 182,
+      "weight": 73,
+      "gender": "雄性",
+      "appearances": [
+        {
+          "id": "",
+          "name": "原始外觀",
+          "animation": "koldhord"
+        }
+      ]
+    },
+    {
+      "id": "5014",
+      "name": "聖光斯嘉麗",
+      "sourceId": 3456,
+      "height": 174,
+      "weight": 56,
+      "gender": "雌性",
+      "appearances": [
+        {
+          "id": "",
+          "name": "原始外觀",
+          "animation": "scarlett"
+        }
+      ]
+    },
+    {
+      "id": "5015",
+      "name": "混沌·布萊克",
+      "sourceId": 3539,
+      "height": 195,
+      "weight": 75,
+      "gender": "雄性",
+      "appearances": [
+        {
+          "id": "",
+          "name": "原始外觀",
+          "animation": "chaosBlake"
+        }
+      ]
+    },
+    {
+      "id": "5016",
+      "name": "變革·馬爾修斯",
+      "sourceId": 3393,
+      "height": 230,
+      "weight": 138,
+      "gender": "無性別",
+      "body": "/seer/body/3393.png",
+      "appearances": [
+        {
+          "id": "",
+          "name": "原始外觀",
+          "body": "/seer/body/3393.png",
+          "animation": "marthus"
+        }
+      ]
+    },
+    {
+      "id": "5017",
+      "name": "人皇·帝辛",
+      "height": 190,
+      "weight": 98,
+      "gender": "雄性",
+      "body": "/elf-art/emperor_dixin_body.png",
+      "appearances": [
+        {
+          "id": "",
+          "name": "原始外觀",
+          "body": "/elf-art/emperor_dixin_body.png",
+          "animation": "emperor_dixin"
+        }
+      ]
+    },
+    {
+      "id": "5018",
+      "name": "蟲后·奧佩婭",
+      "sourceId": 3626,
+      "height": 175,
+      "weight": 52,
+      "gender": "雌性",
+      "appearances": [
+        {
+          "id": "",
+          "name": "原始外觀",
+          "animation": "opeia"
+        }
+      ]
+    },
+    {
+      "id": "5019",
+      "name": "眾神之父·奧丁",
+      "sourceId": 2647,
+      "height": 177,
+      "weight": 76,
+      "gender": "雄性",
+      "appearances": [
+        {
+          "id": "",
+          "name": "原始外觀",
+          "animation": "odin"
+        }
+      ]
+    },
+    {
+      "id": "5020",
+      "name": "皮皮",
+      "sourceId": 10,
+      "height": 38,
+      "weight": 2.5,
+      "gender": "無性別",
+      "appearances": [
+        {
+          "id": "",
+          "name": "原始外觀",
+          "animation": "pipi"
+        }
+      ]
+    },
+    {
+      "id": "5021",
+      "name": "治癒·龍魂再臨",
+      "sourceId": 4586,
+      "height": 197,
+      "weight": 68,
+      "gender": "雄性",
+      "body": "/seer/body/4586.png",
+      "appearances": [
+        {
+          "id": "",
+          "name": "原始外觀",
+          "body": "/seer/body/4586.png",
+          "animation": "dimensionDragon"
+        }
+      ]
+    },
+    {
+      "id": "5022",
+      "name": "無序.六刃",
+      "height": 266,
+      "weight": 66,
+      "gender": "雄性",
+      "body": "/elf-art/wuxu_liuren_body.png",
+      "appearances": [
+        {
+          "id": "",
+          "name": "原始外觀",
+          "body": "/elf-art/wuxu_liuren_body.png",
+          "animation": "wuxu_liuren"
+        }
+      ]
+    },
+    {
+      "id": "5023",
+      "name": "無序·蝕言",
+      "height": 190,
+      "weight": 110,
+      "gender": "雄性",
+      "body": "/elf-art/wuxu_shiyan_body.png",
+      "appearances": [
+        {
+          "id": "",
+          "name": "原始外觀",
+          "body": "/elf-art/wuxu_shiyan_body.png",
+          "animation": "wuxu_shiyan"
+        }
+      ]
+    },
+    {
+      "id": "5024",
+      "name": "湮滅之主・咤克斯",
+      "sourceId": 4762,
+      "height": 1568883,
+      "weight": 1000000,
+      "gender": "無性別",
+      "body": "/seer/body/4762.png",
+      "appearances": [
+        {
+          "id": "",
+          "name": "原始外觀",
+          "body": "/seer/body/4762.png",
+          "animation": "zhakesi4762"
+        },
+        {
+          "id": "zhakesi-fear",
+          "name": "恐懼的化身",
+          "body": "/elf-art/zhakesi_fear_body.png",
+          "animation": "zhakesi15010"
+        },
+        {
+          "id": "zhakesi-wrath",
+          "name": "憤怒的化身",
+          "body": "/elf-art/zhakesi_fear_body.png",
+          "animation": "zhakesi15008"
+        },
+        {
+          "id": "zhakesi-greed",
+          "name": "貪婪的化身",
+          "body": "/elf-art/zhakesi_fear_body.png",
+          "animation": "zhakesi15009"
+        }
+      ]
+    },
+    {
+      "id": "5025",
+      "name": "恐懼的化身·咤克斯",
+      "sourceId": 5010,
+      "height": 1888888,
+      "weight": 88888888,
+      "gender": "無性別",
+      "body": "/elf-art/zhakesi_fear_body.png",
+      "appearances": [
+        {
+          "id": "",
+          "name": "原始外觀",
+          "body": "/elf-art/zhakesi_fear_body.png",
+          "animation": "zhakesi15010"
+        }
+      ]
+    },
+    {
+      "id": "5026",
+      "name": "無序.墜星",
+      "height": 195,
+      "weight": 156,
+      "gender": "雄性",
+      "body": "/elf-art/wuxu_zhuixing_body.png",
+      "appearances": [
+        {
+          "id": "",
+          "name": "原始外觀",
+          "body": "/elf-art/wuxu_zhuixing_body.png",
+          "animation": "wuxu_zhuixing"
+        }
+      ]
+    },
+    {
+      "id": "5027",
+      "name": "蓓麗安特",
+      "sourceId": 4643,
+      "height": 178,
+      "weight": 53,
+      "gender": "雌性",
+      "appearances": [
+        {
+          "id": "",
+          "name": "原始外觀",
+          "animation": "belliant"
+        }
+      ]
+    },
+    {
+      "id": "5028",
+      "name": "怒濤·滄嵐",
+      "sourceId": 3740,
+      "height": 170,
+      "weight": 58,
+      "gender": "雌性",
+      "appearances": [
+        {
+          "id": "",
+          "name": "原始外觀",
+          "animation": "canglan"
+        }
+      ]
+    },
+    {
+      "id": "5029",
+      "name": "異境神霆·雷伊",
+      "seerId": 70,
+      "sourceId": 70,
+      "height": 185,
+      "weight": 70,
+      "gender": "雄性",
+      "body": "/elf-art/otherworld_thunder_rey_body.png",
+      "appearances": [
+        {
+          "id": "",
+          "name": "原始外觀",
+          "body": "/elf-art/otherworld_thunder_rey_body.png",
+          "animation": "rey70"
+        },
+        {
+          "id": "rey-thunder-dragon-v1",
+          "name": "雷龍之翼",
+          "body": "/elf-skins/rey-thunder-dragon-v1.png",
+          "animation": null
+        },
+        {
+          "id": "rey-original",
+          "name": "普通雷伊",
+          "body": "/seer/body/70.png",
+          "animation": "rey70"
+        }
+      ]
+    },
+    {
+      "id": "5030",
+      "name": "聖靈邁爾斯",
+      "seerId": 1204,
+      "sourceId": 1204,
+      "height": 178,
+      "weight": 87,
+      "gender": "雄性",
+      "body": "/seer/body/1204.png",
+      "appearances": [
+        {
+          "id": "",
+          "name": "原始外觀",
+          "body": "/seer/body/1204.png",
+          "animation": "holyMiles"
+        }
+      ]
+    },
+    {
+      "id": "5031",
+      "name": "六界神王",
+      "seerId": 3045,
+      "sourceId": 3045,
+      "height": 184,
+      "weight": 70,
+      "gender": "雄性",
+      "body": "/seer/body/3045.png",
+      "appearances": [
+        {
+          "id": "",
+          "name": "原始外觀",
+          "body": "/seer/body/3045.png",
+          "animation": "sixKing"
+        }
+      ]
+    },
+    {
+      "id": "5032",
+      "name": "星核寰宇·艾斯菲亞",
+      "seerId": 79,
+      "sourceId": 79,
+      "height": 183,
+      "weight": 37.5,
+      "gender": "雄性",
+      "body": "/seer/body/79.png",
+      "appearances": [
+        {
+          "id": "",
+          "name": "原始外觀",
+          "body": "/seer/body/79.png",
+          "animation": "astralAesfia"
+        }
+      ]
+    },
+    {
+      "id": "5033",
+      "name": "星軌重構·艾斯菲格",
+      "seerId": 418,
+      "sourceId": 418,
+      "height": 190,
+      "weight": 42,
+      "gender": "雄性",
+      "body": "/seer/body/418.png",
+      "appearances": [
+        {
+          "id": "",
+          "name": "原始外觀",
+          "body": "/seer/body/418.png",
+          "animation": "astralAesfig"
+        }
+      ]
+    },
+    {
+      "id": "5034",
+      "name": "邪靈主宰·摩哥斯",
+      "seerId": 3561,
+      "sourceId": 3561,
+      "height": 190,
+      "weight": 80,
+      "gender": "無性別",
+      "body": "/seer/body/3561.png",
+      "appearances": [
+        {
+          "id": "",
+          "name": "原始外觀",
+          "body": "/seer/body/3561.png",
+          "animation": "mogos"
+        }
+      ]
+    },
+    {
+      "id": "5036",
+      "name": "九青",
+      "seerId": 4543,
+      "sourceId": 4543,
+      "gender": "雌性",
+      "body": "/elf-art/jiuqing_body.png",
+      "appearances": [
+        {
+          "id": "",
+          "name": "原始外觀",
+          "body": "/elf-art/jiuqing_body.png",
+          "animation": "jiuqing"
+        }
+      ]
+    },
+    {
+      "id": "7070",
+      "name": "魔化.雷伊",
+      "seerId": 70,
+      "sourceId": 70,
+      "height": 129,
+      "weight": 74,
+      "gender": "雄性",
+      "body": "/seer/body/70.png",
+      "appearances": [
+        {
+          "id": "",
+          "name": "原始外觀",
+          "body": "/seer/body/70.png",
+          "animation": "rey70"
+        },
+        {
+          "id": "rey-original",
+          "name": "普通雷伊",
+          "body": "/seer/body/70.png",
+          "animation": "rey70"
+        }
+      ]
+    },
+    {
+      "id": "707070",
+      "name": "墜霆.雷伊",
+      "seerId": 70,
+      "sourceId": 70,
+      "height": 129,
+      "weight": 87,
+      "gender": "雄性",
+      "body": "/seer/body/70.png",
+      "appearances": [
+        {
+          "id": "",
+          "name": "原始外觀",
+          "body": "/seer/body/70.png",
+          "animation": "rey70"
+        },
+        {
+          "id": "rey-original",
+          "name": "普通雷伊",
+          "body": "/seer/body/70.png",
+          "animation": "rey70"
+        }
+      ]
+    },
+    {
+      "id": "5037",
+      "name": "魔化.瑞爾斯",
+      "seerId": 3094,
+      "sourceId": 3094,
+      "height": 180,
+      "weight": 100,
+      "gender": "雄性",
+      "body": "/seer/body/3094.png",
+      "appearances": [
+        {
+          "id": "",
+          "name": "原始外觀",
+          "body": "/seer/body/3094.png",
+          "animation": "corruptedRiels"
+        }
+      ]
+    },
+    {
+      "id": "5038",
+      "name": "不滅.艾恩斯",
+      "seerId": 3467,
+      "sourceId": 3467,
+      "height": 181,
+      "weight": 75,
+      "gender": "雄性",
+      "body": "/seer/body/3467.png",
+      "appearances": [
+        {
+          "id": "",
+          "name": "原始外觀",
+          "body": "/seer/body/3467.png",
+          "animation": "immortalAins"
+        }
+      ]
+    },
+    {
+      "id": "5039",
+      "name": "毀滅之神.莫迪西斯",
+      "seerId": 2205,
+      "sourceId": 2205,
+      "height": 142,
+      "weight": 39,
+      "gender": "雄性",
+      "body": "/seer/body/2205.png",
+      "appearances": [
+        {
+          "id": "",
+          "name": "原始外觀",
+          "body": "/seer/body/2205.png",
+          "animation": "modis"
+        }
+      ]
+    },
+    {
+      "id": "5040",
+      "name": "赫爾卡星魂",
+      "seerId": 2824,
+      "sourceId": 2824,
+      "height": 176,
+      "weight": 96,
+      "gender": "雄性",
+      "body": "/seer/body/2824.png",
+      "appearances": [
+        {
+          "id": "",
+          "name": "原始外觀",
+          "body": "/seer/body/2824.png",
+          "animation": "herka"
+        }
+      ]
+    },
+    {
+      "id": "5042",
+      "name": "滄桑移壤·納多雷",
+      "seerId": 88,
+      "sourceId": 88,
+      "height": 145,
+      "weight": 600,
+      "gender": "无性别",
+      "body": "/seer/body/88.png",
+      "appearances": [
+        {
+          "id": "",
+          "name": "原始外觀",
+          "body": "/seer/body/88.png",
+          "animation": "nadole"
+        }
+      ]
+    },
+    {
+      "id": "5043",
+      "name": "終焉戰神.蓋亞",
+      "seerId": 261,
+      "sourceId": 261,
+      "height": 131,
+      "weight": 51,
+      "gender": "雄性",
+      "body": "/seer/body/261.png",
+      "appearances": [
+        {
+          "id": "",
+          "name": "原始外觀",
+          "body": "/seer/body/261.png",
+          "animation": "finalGaia"
+        },
+        {
+          "id": "gaia-original",
+          "name": "原版蓋亞",
+          "body": "/seer/body/261.png",
+          "animation": "finalGaia"
+        },
+        {
+          "id": "gaia-godslayer",
+          "name": "滅戰神決蓋亞",
+          "body": "/seer/body/4766.png",
+          "animation": "gaiaGodslayer"
+        }
+      ]
+    },
+    {
+      "id": "5044",
+      "name": "炫彩山之神.迪符特",
+      "seerId": 3590,
+      "sourceId": 3590,
+      "height": 260,
+      "weight": 150,
+      "gender": "雄性",
+      "body": "/seer/body/3590.png",
+      "appearances": [
+        {
+          "id": "",
+          "name": "原始外觀",
+          "body": "/seer/body/3590.png",
+          "animation": "difu"
+        }
+      ]
+    },
+    {
+      "id": "5045",
+      "name": "月鈴極樂·奈尼芬多",
+      "seerId": 264,
+      "sourceId": 264,
+      "height": 98,
+      "weight": 45,
+      "gender": "雌性",
+      "body": "/seer/body/264.png",
+      "appearances": [
+        {
+          "id": "",
+          "name": "原始外觀",
+          "body": "/seer/body/264.png",
+          "animation": "naifen"
+        }
+      ]
+    },
+    {
+      "id": "5046",
+      "name": "聖光天馬.珀伽索斯",
+      "seerId": 999,
+      "sourceId": 999,
+      "height": 198,
+      "weight": 102,
+      "gender": "雄性",
+      "body": "/seer/body/999.png",
+      "appearances": [
+        {
+          "id": "",
+          "name": "原始外觀",
+          "body": "/seer/body/999.png",
+          "animation": "pegasus"
+        }
+      ]
+    },
+    {
+      "id": "5047",
+      "name": "難違天律.天邪龍王",
+      "seerId": 2652,
+      "sourceId": 2652,
+      "height": 178,
+      "weight": 98,
+      "gender": "雄性",
+      "body": "/seer/body/2652.png",
+      "appearances": [
+        {
+          "id": "",
+          "name": "原始外觀",
+          "body": "/seer/body/2652.png",
+          "animation": "tianxie"
+        }
+      ]
+    },
+    {
+      "id": "5048",
+      "name": "聖靈奧斯卡",
+      "seerId": 1400599,
+      "sourceId": 1400599,
+      "height": 186,
+      "weight": 77,
+      "gender": "雄性",
+      "body": "/seer/body/1400599.png",
+      "appearances": [
+        {
+          "id": "",
+          "name": "原始外觀",
+          "body": "/seer/body/1400599.png",
+          "animation": "oscarGenesis"
+        },
+        {
+          "id": "oscar-genesis",
+          "name": "創界衣缽·奧斯卡",
+          "body": "/seer/body/1400599.png",
+          "animation": "oscarGenesis"
+        },
+        {
+          "id": "oscar-original",
+          "name": "聖靈守護奧斯卡",
+          "body": "/seer/body/3425.png",
+          "animation": "oscarOriginal"
+        }
+      ]
+    },
+    {
+      "id": "5049",
+      "name": "格勞恩斯",
+      "seerId": 3407,
+      "sourceId": 3407,
+      "height": 177,
+      "weight": 69,
+      "gender": "雄性",
+      "body": "/seer/body/3407.png",
+      "appearances": [
+        {
+          "id": "",
+          "name": "原始外觀",
+          "body": "/seer/body/3407.png",
+          "animation": "grauen"
+        }
+      ]
+    },
+    {
+      "id": "5050",
+      "name": "洪荒·列奧尼達",
+      "seerId": 4125,
+      "sourceId": 4125,
+      "height": 200,
+      "weight": 100,
+      "gender": "雄性",
+      "body": "/seer/body/4125.png",
+      "appearances": [
+        {
+          "id": "",
+          "name": "原始外觀",
+          "body": "/seer/body/4125.png",
+          "animation": "leonidas"
+        }
+      ]
+    },
+    {
+      "id": "5051",
+      "name": "霍光",
+      "seerId": 4515,
+      "sourceId": 4515,
+      "height": 186,
+      "weight": 77,
+      "gender": "雄性",
+      "body": "/seer/body/4515.png",
+      "appearances": [
+        {
+          "id": "",
+          "name": "原始外觀",
+          "body": "/seer/body/4515.png",
+          "animation": "huoguang"
+        },
+        {
+          "id": "huoguang-beiming",
+          "name": "北冥之怒·霍光",
+          "body": "/seer/body/1400551.png",
+          "animation": "huoguangBeiming"
+        }
+      ]
+    },
+    {
+      "id": "5052",
+      "name": "趙雲",
+      "seerId": 4421,
+      "sourceId": 4421,
+      "height": 191,
+      "weight": 82,
+      "gender": "雄性",
+      "body": "/seer/body/4421.png",
+      "appearances": [
+        {
+          "id": "",
+          "name": "原始外觀",
+          "body": "/seer/body/4421.png",
+          "animation": "zhaoyun4421"
+        },
+        {
+          "id": "zhaoyun-original",
+          "name": "赤膽游龍·趙雲",
+          "body": "/seer/body/4421.png",
+          "animation": "zhaoyun4421"
+        },
+        {
+          "id": "zhaoyun-canglang",
+          "name": "滄浪龍吟",
+          "body": "/seer/body/1400748.png",
+          "animation": "zhaoyunCanglang"
+        },
+        {
+          "id": "zhaoyun-shengguan",
+          "name": "聖貫宙合",
+          "body": "/seer/body/1400887.png",
+          "animation": "zhaoyunShengguan"
+        }
+      ]
+    },
+    {
+      "id": "5053",
+      "name": "晻藹夜靈.布萊克",
+      "seerId": 3539,
+      "sourceId": 3539,
+      "height": 190,
+      "weight": 75,
+      "gender": "雄性",
+      "body": "/seer/body/3539.png",
+      "appearances": [
+        {
+          "id": "",
+          "name": "原始外觀",
+          "body": "/seer/body/3539.png",
+          "animation": "chaosBlake"
+        }
+      ]
+    },
+    {
+      "id": "5054",
+      "name": "虯螭淵玄.索蘭特",
+      "seerId": 3536,
+      "sourceId": 3536,
+      "height": 290,
+      "weight": 180,
+      "gender": "雄性",
+      "body": "/seer/body/3536.png",
+      "appearances": [
+        {
+          "id": "",
+          "name": "原始外觀",
+          "body": "/seer/body/3536.png",
+          "animation": "solant3536"
+        }
+      ]
+    },
+    {
+      "id": "5055",
+      "name": "蒂朵",
+      "seerId": 4377,
+      "sourceId": 4377,
+      "height": 168,
+      "weight": 49,
+      "gender": "雌性",
+      "body": "/seer/body/1400473.png",
+      "appearances": [
+        {
+          "id": "",
+          "name": "原始外觀",
+          "body": "/seer/body/1400473.png",
+          "animation": "didoDetective"
+        },
+        {
+          "id": "dido-detective",
+          "name": "剖玄析微·蒂小朵",
+          "body": "/seer/body/1400473.png",
+          "animation": "didoDetective"
+        },
+        {
+          "id": "dido-original",
+          "name": "蒂朵",
+          "body": "/seer/body/4377.png",
+          "animation": "didoOriginal"
+        },
+        {
+          "id": "dido-summer",
+          "name": "汐風微涼·蒂朵",
+          "body": "/seer/body/1400467.png",
+          "animation": "didoSummer"
+        }
+      ]
+    },
+    {
+      "id": "5041",
+      "name": "岳峙淵渟.卡修斯",
+      "sourceId": 3568,
+      "height": 196,
+      "weight": 168,
+      "gender": "雄性",
+      "body": "/seer/body/3568.png",
+      "appearances": [
+        {
+          "id": "",
+          "name": "原始外觀",
+          "body": "/seer/body/3568.png",
+          "animation": "cassiusShandi"
+        },
+        {
+          "id": "cassius-shandi",
+          "name": "聖地卡修斯",
+          "body": "/seer/body/3568.png",
+          "animation": "cassiusShandi"
+        },
+        {
+          "id": "cassius-original",
+          "name": "原版卡修斯",
+          "body": "/seer/body/798.png",
+          "animation": "cassiusOriginal"
+        }
+      ]
+    },
+    {
+      "id": "5035",
+      "name": "御天龍神·哈莫",
+      "seerId": 3809,
+      "sourceId": 3809,
+      "height": 900,
+      "weight": 1200,
+      "gender": "雄性",
+      "body": "/seer/body/3809.png",
+      "appearances": [
+        {
+          "id": "",
+          "name": "原始外觀",
+          "body": "/seer/body/3809.png",
+          "animation": "hamo"
+        }
+      ]
+    },
+    {
+      "id": "arena_12",
+      "name": "無為龍者",
+      "seerId": 4661,
+      "sourceId": 4661,
+      "height": 188,
+      "weight": 90,
+      "gender": "雄性",
+      "body": "/seer/body/4661.png",
+      "appearances": [
+        {
+          "id": "",
+          "name": "原始外觀",
+          "body": "/seer/body/4661.png",
+          "animation": "wuxuLong"
+        }
+      ]
+    },
+    {
+      "id": "arena_13",
+      "name": "龍錄天鋒",
+      "seerId": 4903,
+      "sourceId": 4903,
+      "height": 176,
+      "weight": 62,
+      "gender": "雌性",
+      "body": "/seer/body/4903.png",
+      "appearances": [
+        {
+          "id": "",
+          "name": "原始外觀",
+          "body": "/seer/body/4903.png",
+          "animation": "diluTianfeng"
+        }
+      ]
+    },
+    {
+      "id": "arena_14",
+      "name": "無極聖武",
+      "seerId": 4800,
+      "sourceId": 4800,
+      "height": 200,
+      "weight": 90,
+      "gender": "雄性",
+      "body": "/seer/body/4800.png",
+      "appearances": [
+        {
+          "id": "",
+          "name": "原始外觀",
+          "body": "/seer/body/4800.png",
+          "animation": "wujiShengwu"
+        }
+      ]
+    },
+    {
+      "id": "arena_15",
+      "name": "命運龍輪 莫伊萊",
+      "seerId": 4275,
+      "sourceId": 4275,
+      "height": 178,
+      "weight": 58,
+      "gender": "雌性",
+      "body": "/seer/body/4275.png",
+      "appearances": [
+        {
+          "id": "",
+          "name": "原始外觀",
+          "body": "/seer/body/4275.png",
+          "animation": "moyilai"
+        }
+      ]
+    },
+    {
+      "id": "arena_16",
+      "name": "鎮世龍魂・龍之治癒",
+      "appearances": [
+        {
+          "id": "",
+          "name": "原始外觀",
+          "animation": null
+        }
+      ]
+    },
+    {
+      "id": "wiki_4937",
+      "name": "星光·雷納多",
+      "seerId": 4937,
+      "sourceId": 4937,
+      "height": 89,
+      "weight": 130,
+      "gender": "无性别",
+      "body": "/seer/body/4937.png",
+      "appearances": [
+        {
+          "id": "",
+          "name": "原始外觀",
+          "body": "/seer/body/4937.png",
+          "animation": "renaduo4937"
+        }
+      ]
+    }
+  ]
+}

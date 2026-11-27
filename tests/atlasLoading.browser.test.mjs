@@ -22,17 +22,18 @@ try{
  await send('Runtime.enable');await send('Page.enable');await send('Network.enable');await send('Emulation.setDeviceMetricsOverride',{width:1440,height:1080,deviceScaleFactor:1,mobile:false});
  for(const blank of [false,true]){
   const port=await freePort(),data=path.resolve('.seer-cache','atlas-loading-'+(blank?'blank':'standard')+'-'+Date.now());
-  const server=spawn(process.execPath,[path.join(dist,'server.mjs')],{windowsHide:true,stdio:'ignore',env:{...process.env,ATLAS_ROOT:process.cwd(),ATLAS_DIST:dist,ATLAS_PORT:String(port),ATLAS_DATA_DIR:data,ATLAS_BLANK:blank?'1':'0'}});servers.push(server);
+  const catalog=path.join(data,'catalog');fs.mkdirSync(data,{recursive:true});fs.cpSync(path.join(dist,'catalog'),catalog,{recursive:true});
+  const server=spawn(process.execPath,[path.join(dist,'server.mjs')],{windowsHide:true,stdio:'ignore',env:{...process.env,ATLAS_ROOT:process.cwd(),ATLAS_DIST:dist,ATLAS_CATALOG_DIR:catalog,ATLAS_PORT:String(port),ATLAS_DATA_DIR:data,ATLAS_BLANK:blank?'1':'0'}});servers.push(server);
   const base=`http://127.0.0.1:${port}`;let ready=false;for(let i=0;i<100;i++){try{await fetch(base+'/api/atlas/identity');ready=true;break;}catch{await sleep(100);}}assert.ok(ready);
   requests.length=0;const start=Date.now();await send('Page.navigate',{url:base});await until('!!document.querySelector("[aria-label=目前圖鑑]")');
   if(!blank)await until('document.querySelectorAll(".atlas-elf-row").length>0');
   const uiMs=Date.now()-start;await sleep(700);
   assert.equal(requests.filter(u=>/\/seer\/|\/elf-art\/|\/atlas-images\//.test(u)).length,0,'進入不可預載圖片');
-  assert.equal(requests.filter(u=>/\/catalog\/(?!index\.json)[^/]+\.json/.test(u)).length,0,'未點選不可載入個別資料');
-  if(blank){assert.equal(requests.filter(u=>u.includes('/catalog/')).length,0);assert.equal(await evaluate('document.querySelectorAll(".atlas-elf-row").length'),0);}
+  assert.equal(requests.filter(u=>/\/catalog\/(?!(?:index|version)\.json)[^/]+\.json/.test(u)).length,0,'未點選不可載入個別資料');
+  if(blank){assert.equal((await fetch(base+'/catalog/index.json')).status,404);assert.equal(requests.filter(u=>u.includes('/catalog/')).length,0);assert.equal(await evaluate('document.querySelectorAll(".atlas-elf-row").length'),0);}
   else{
    await evaluate('document.querySelector(".atlas-elf-row").click()');await until('!!document.querySelector(".spot-grid")');
-   assert.equal(requests.filter(u=>/\/catalog\/(?!index\.json)[^/]+\.json/.test(u)).length,1);
+   assert.equal(requests.filter(u=>/\/catalog\/(?!(?:index|version)\.json)[^/]+\.json/.test(u)).length,1);
    await until('document.querySelector(".spot-body")?.naturalWidth>0');
    const rows=await(await fetch(base+'/catalog/index.json')).json();
    const first=await(await fetch(base+'/catalog/'+rows[0].id+'.json')).json();
@@ -51,6 +52,19 @@ try{
    await until('document.querySelectorAll(".atlas-elf-row").length>0');
    assert.equal(await evaluate('window.atlasWrites'),0,'切換圖鑑不等待存檔');
    assert.equal(requests.slice(startRequests).filter(u=>u.includes('/catalog/')||u.includes('/seer/')).length,0,'切換不重新載入已知清單與圖片');
+   const updatedIndex=JSON.parse(fs.readFileSync(path.join(catalog,'index.json'),'utf8'));
+   const updated=JSON.parse(fs.readFileSync(path.join(catalog,updatedIndex[0].id+'.json'),'utf8'));
+   updatedIndex[0].name=updated.name='來源更新驗證精靈';
+   fs.writeFileSync(path.join(catalog,updated.id+'.json'),JSON.stringify(updated));
+   fs.writeFileSync(path.join(catalog,'index.json'),JSON.stringify(updatedIndex));
+   fs.writeFileSync(path.join(catalog,'version.json'),JSON.stringify({fingerprint:'test-updated-source',count:updatedIndex.length}));
+   await evaluate('document.dispatchEvent(new Event("visibilitychange"))');
+   await until('document.querySelector(".atlas-elf-row")?.textContent.includes("來源更新驗證精靈")');
+   await evaluate('document.querySelector(".atlas-elf-row").click()');
+   await until('!!document.querySelector(".spot-grid")&&document.querySelector(".atlas-stage").textContent.includes("來源更新驗證精靈")');
+   assert.equal(await evaluate('window.atlasWrites'),0,'來源更新不覆寫個人圖鑑');
+   console.log('開啟中的圖鑑已取得新版清單與選取介紹，未寫入個人存檔');
+
   }
   if(blank){
    const content=JSON.parse(fs.readFileSync('encyclopedia/templates/content.example.json','utf8'));

@@ -1,0 +1,23 @@
+{
+  "date": "2026-11-27",
+  "scope": "可分享與選填密碼加密的配置碼；帶入相容部分，非整份拒絕",
+  "includes": ["精靈", "練度", "技能", "雙方陣容", "背包預設", "配裝"],
+  "excludes": ["肉鴿進度", "肉鴿種子", "帳號", "API金鑰", "連線身分", "對戰紀錄"],
+  "compatibility": {
+    "newerVersion": "逐項檢查，不因版本號直接拒絕",
+    "unsupported": "略過且列出原因，保留本機原設定",
+    "unsupportedSkill": "整項略過，禁止裁掉未知積木後當作完整技能",
+    "emptyCompatibleResult": "不套用",
+    "opaqueContainerOrWrongPassword": "無法安全解析則不寫入"
+  },
+  "verification": {
+    "semantic": "20組通過，含實際精靈目錄、裝備與皮膚檢查、P1/P2正式陣容載入",
+    "bridge": "忙碌同步、最新值落盤、重新啟動、409衝突、損壞存檔通過",
+    "browser": "預覽、非首頁禁用、套用、IndexedDB復原、加密與錯誤密碼通過",
+    "typecheck": "npm run lint 通過",
+    "desktopBuild": "node scripts/desktop_update.mjs --quick 通過，正式前後端版本一致性實測及啟用完成",
+    "desktopRelease": "1795737064656（修復原1795734371194分塊循環，補上正式首頁瀏覽器啟動測試）"
+  },
+  "limits": ["不保證不同版本戰鬥規則完全相同", "還原點屬於目前瀏覽器網站位址", "外層未知格式仍需更新或改用可讀JSON"],
+  "git": "未提交、未推送"
+}

@@ -88,12 +88,17 @@ export default defineConfig(() => {
             if (blocklyModule) return `blockly-${blocklyModule[1]}`;
             // 描述解析為純函式；獨立快取，不強拆帶狀態的精靈 handler。
             if (/\/src\/blocks\/parse\.ts$/.test(normalized)) return 'effect-description-parser';
-            if (/\/src\/data\/defaultElves\.ts$/.test(normalized)) return 'data-elves';
+            // defaultElves.ts 會在頂層解壓並正規化，不能與初始化所需函式強拆。
+            // 僅切分沒有執行依賴的封裝 JSON，保留資料快取與正確求值順序。
+            if (/\/src\/data\/defaultElfSeeds\.packed\.json$/.test(normalized)) return 'data-elf-seeds';
             // 百科壓縮資料（約350 kB）為純資料；獨立成塊，codexRegistry 邏輯塊才不會超過500 kB預算。
             if (/\/src\/data\/codex\.packed\.json$/.test(normalized)) return 'data-codex';
             // 跨首頁／百科／特殊模式共用的純函數，沒有 React 或狀態初始化相依。
             if (/\/src\/utils\/(elfSearch|controlSettings|safeStorage|elfDisplayRank)\.ts$/.test(normalized)) return 'ui-foundation';
-            if (/\/src\/data\/(descriptions\.compressed\.json|descriptionSources\.ts|alienTraits\.ts|generalTraits\.ts|titles\.ts)$/.test(normalized)) {
+            // 這些清單在頂層讀取特權與亂舞定義；依賴亦須留在同一純資料塊，
+            // 否則自動分塊可能把依賴放回入口，形成 data-reference → index → data-reference 的初始化循環。
+            if (/\/src\/modes\/interstellar\/v2\/suitPerks\.ts$/.test(normalized)) return 'data-reference';
+            if (/\/src\/data\/(descriptions\.compressed\.json|descriptionSources\.ts|alienTraits\.ts|generalTraits\.ts|generalTraitKits\.ts|titles\.ts)$/.test(normalized)) {
               return 'data-reference';
             }
             if (id.includes('node_modules')) {

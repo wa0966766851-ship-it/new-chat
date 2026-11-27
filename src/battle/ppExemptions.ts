@@ -8,7 +8,7 @@ import {skillSlot} from './skillSlot';
 import {hasStoneThrowerMythic} from '../data/skillStones';
 import {authoredPpExemption} from '../effects/skillPpProperty';
 import {statusReplacementActive} from './statusRules';
-import {ppCostFreeByRule} from './skillRules';
+import {ppCostFreeByRule,ppLimitIgnoredByRule} from './skillRules';
 
 // isZeroPpExempt：PP 為 0 時仍可選擇（「不受PP值限制」）
 // isPpCostFree：使用時不消耗 PP（「不消耗PP值」）
@@ -44,6 +44,7 @@ const textPpExempt = (elf: Elf, text?: string): boolean => {
 const nativeZeroPpExempt = (elf: Elf, sk: Skill, opp?: Elf | null): boolean => {
   if (!elf || !sk || !elf.name) return false;
   if((elf as any).ppLimitIgnoredUntilSwitch===true)return true;
+  if(ppLimitIgnoredByRule(elf))return true;
   if(authoredPpExemption(elf,sk,opp))return true;
   // 2026-10-30：可攜技能標記（符文）的能力必須「已激活」才生效。
   // 原寫法不看 isRuneActive，導致 ᚱᚷ 未激活也讓所有技能豁免 PP。

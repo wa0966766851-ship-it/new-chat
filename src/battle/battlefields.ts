@@ -28,9 +28,10 @@ export const BATTLEFIELDS = {
   },
 } satisfies Record<string, BattlefieldDefinition>;
 
-export function resolveBattlefield(mode?: 'destiny' | 'interstellar', format?: BattleFormatId): BattlefieldDefinition {
+export function resolveBattlefield(mode?: 'destiny' | 'interstellar', format?: BattleFormatId,fieldId?:string): BattlefieldDefinition {
   if (mode === 'destiny') return BATTLEFIELDS.destiny;
   if (mode === 'interstellar') return BATTLEFIELDS.eclipse;
+  if(fieldId&&Object.hasOwn(BATTLEFIELDS,fieldId))return BATTLEFIELDS[fieldId as keyof typeof BATTLEFIELDS];
   if (format === 'peak_6v6') return BATTLEFIELDS.peak6;
   if (format === 'peak_3v3') return BATTLEFIELDS.peak;
   return BATTLEFIELDS.duel;

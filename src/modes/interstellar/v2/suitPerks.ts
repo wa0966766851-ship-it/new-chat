@@ -4,6 +4,7 @@
  * 每套至少有 1 項「招牌功能」（特徵鍵 perkKeys 全局唯一），不得與他套相同。N12 起所有特權失效。
  */
 export interface Perk {
+  shards?:number; eliteBeansMult?:number;
   beans?: number; potions?: number;
   /** 起始任意招募令 +n */ anyTokens?: number;
   /** 起始單屬性招募令（含複合屬性） */ typeToken?: string;
@@ -73,6 +74,8 @@ export function perkItems(p: Perk): { text: string; tip?: string }[] {
   if (p.extraRewardChoice) add(`遺物獎勵選項 +${p.extraRewardChoice}`);
   if (p.expMult) add(`旅程經驗 +${Math.round(p.expMult * 100)}%`);
   if (p.beansMult) add(`戰鬥賽爾豆 +${Math.round(p.beansMult * 100)}%`);
+  if (p.shards) add(`起始星晶 +${p.shards}`,'只在新旅程建立時發放一次');
+  if (p.eliteBeansMult) add(`夢魘／首領戰賽爾豆 +${Math.round(p.eliteBeansMult*100)}%`);
   return t;
 }
 export const perkText = (p: Perk): string[] => perkItems(p).map(x => x.text);
@@ -115,4 +118,10 @@ export const SUIT_PERKS: Record<string, { tier: PerkTier; perk: Perk }> = {
   fate_defier: { tier: "support", perk: { lifeline: true, beans: 60 } },
   holy_sanctuary: { tier: "support", perk: { extraRewardChoice: 1, expMult: .15 } },
 };
-export const perkOf = (equipType: "suit" | "title", equipId: string): Perk | null => equipType === "suit" ? SUIT_PERKS[equipId]?.perk ?? null : null;
+export const TITLE_PERKS:Record<string,Perk>={
+ interstellar_pioneer:{eclipsePerMove:-1},
+ void_conqueror:{eliteRelicChoice:1},
+ legendary_explorer:{shards:3},
+ space_bounty_hunter:{eliteBeansMult:1},
+};
+export const perkOf = (equipType: "suit" | "title", equipId: string): Perk | null => equipType === "suit" ? SUIT_PERKS[equipId]?.perk ?? null : TITLE_PERKS[equipId]??null;

@@ -1,0 +1,43 @@
+.peer-room-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 210;
+  display: grid;
+  place-items: center;
+  padding: 1rem;
+  background: #02050dc4;
+}
+.peer-room {
+  box-sizing: border-box;
+  width: min(100%, 32rem);
+  max-height: calc(100dvh - 2rem);
+  overflow: auto;
+  padding: .75rem;
+  background: var(--g-card), #0b111b;
+  border: 1px solid var(--g-line);
+  border-block-start: 3px solid var(--g-accent);
+  border-radius: var(--g-radius);
+  color: var(--g-text);
+  box-shadow: 0 12px 50px #0009;
+}
+.peer-room header, .peer-room h2, .peer-stage, .peer-invite { display: flex; align-items: center; gap: .55rem; }
+.peer-room header { justify-content: space-between; padding-bottom: .8rem; border-bottom: 1px solid var(--g-line); }
+.peer-room h2 { font-size: 1.1rem; font-weight: 800; }
+.peer-room h2 svg, .peer-stage svg { color: var(--g-accent); }
+.peer-room-fields { display: grid; gap: .45rem; margin: .6rem 0; }
+.peer-room-fields label { display: grid; gap: .25rem; font-size: .85rem; }
+.peer-room-fields :is(input:not([type="checkbox"]), select) {
+  width: 100%; min-width: 0; height: 2rem; padding: 0 .6rem; color: var(--g-text);
+  border: 1px solid var(--g-line); background: #0b111b;
+}
+.peer-room-fields form { display: grid; grid-template-columns: minmax(0,1fr) auto; align-items: end; gap: .45rem; }
+.peer-room-fields .peer-direct { display: flex; align-items: center; color: var(--g-muted); gap: .4rem; }
+.peer-button { min-height: 2rem; padding: .25rem .65rem; border: 1px solid var(--g-line); background: var(--g-pill); font-size: .85rem; font-weight: 700; }
+.peer-remote-help { color:var(--g-muted);font-size:.75rem; }
+.peer-remote-help summary { cursor:pointer; }
+.peer-remote-help p { margin-top:.4rem;line-height:1.6; }
+.peer-button[data-primary] { color: #0b111b; background: var(--g-accent); }
+.peer-button:disabled { opacity: .45; }
+.peer-button:focus-visible, .peer-room :is(input, select):focus-visible { outline: 2px solid var(--g-accent); outline-offset: 2px; }
+.peer-invite output { overflow-wrap: anywhere; font-family: monospace; font-size: 1rem; user-select: text; }
+.peer-error { color: #ffb9b7; font-size: .85rem; }

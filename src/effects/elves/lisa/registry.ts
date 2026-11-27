@@ -44,7 +44,7 @@ export const handleLisaSoulMark = (context: BattleEventContext, event: EffectTim
       const isAttack = extraData.category === "物理" || extraData.category === "特殊";
       if (isAttack) {
         const stats = ["atk", "def", "spatk", "spdef", "speed", "accuracy"];
-        const s = stats[Math.floor(Math.random() * stats.length)];
+        const s = stats[Math.floor((context.rng?.() ?? Math.random()) * stats.length)];
         const current = target.statStages[s as keyof typeof target.statStages] || 0;
         target.statStages[s as keyof typeof target.statStages] = Math.max(-6, current - 1);
         addLog(`🌸 【麗】：受擊反震，令對手 【${s}】 等級 -1！`, "effect");
@@ -96,7 +96,7 @@ export const handleLisaSoulMark = (context: BattleEventContext, event: EffectTim
     
     const ppSkills = self.skills.filter(s => (s.pp || 0) < getMaxPp(s, self));
     if (ppSkills.length > 0) {
-      const s = ppSkills[Math.floor(Math.random() * ppSkills.length)];
+      const s = ppSkills[Math.floor((context.rng?.() ?? Math.random()) * ppSkills.length)];
       s.pp = (s.pp || 0) + 1;
       addLog(`🌸 【麗】：神木之靈恢復了隨機技能 【${s.name}】 的 PP！`, "effect");
     }

@@ -1,8 +1,10 @@
 // 技能規則（通用讀取端；DSH 2026-10-31，5041 魂印「山」使用，名稱不綁特定精靈）。
 // elf.skillRules.ppCostFree：符合類型（及場上護盾條件）的技能，使用時不消耗 PP。
 import type { Elf, Skill } from '../types';
+import {getStatuses} from '../utils/battleHelpers';
 
 export interface ElfSkillRules {
+  ppLimitWhenAbnormal?: boolean;
   ppCostFree?: { skillKind?: '攻擊' | '屬性'; whenFieldShield?: boolean };
 }
 declare module '../types' { interface Elf { skillRules?: ElfSkillRules } }
@@ -15,4 +17,8 @@ export function ppCostFreeByRule(elf: Elf, sk: Skill, opp?: Elf | null): boolean
   if (rule.skillKind === '攻擊' && isStatusSkill(sk)) return false;
   if (rule.whenFieldShield && !(((elf.shield || 0) > 0) || ((opp?.shield || 0) > 0))) return false;
   return true;
+}
+
+export function ppLimitIgnoredByRule(elf:Elf):boolean {
+ return elf.skillRules?.ppLimitWhenAbnormal===true && Object.values(getStatuses(elf)).some(n=>n>0);
 }

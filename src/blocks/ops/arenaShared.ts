@@ -99,7 +99,7 @@ export function arena12Conditions(helpers: { liveElf: (ctx: any, side: 'p1' | 'p
       if (!et || !st) return false;
       // 複合屬性（如「光·次元」）以任一分項相同即算同屬性
       const parts = et.split(/[·.、／/]/).map(x => x.trim()).filter(Boolean);
-      return parts.some(x => st.includes(x)) || et === st;
+      return (parts.some(x => st.includes(x)) || et === st) !== !!p?.neg;
     },
   };
 }

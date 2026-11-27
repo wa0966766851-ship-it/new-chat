@@ -177,6 +177,8 @@ export function astralActionIssue(op: string, p: any, _trig: string, inMark: boo
       if (!ALLOWED_KEYS.includes(k as any)) return `持續效果鍵 ${k} 尚未接通引擎讀取端`;
       if (['nonTrueOutputLimit', 'nextAttackHalves'].includes(k)) {
         if (!Number.isInteger(p.keys[k]) || p.keys[k] < 1) return `持續效果鍵 ${k} 需正整數`;
+      } else if (k === 'inherentInvalid' && ['屬性', '物理', '特殊', '攻擊'].includes(p.keys[k])) {
+        continue;
       } else if (p.keys[k] !== true) return `持續效果鍵 ${k} 僅接受布林 true`;
     }
     if (!Number.isInteger(p.turns) || p.turns <= 0) return '持續效果需正整數期限';
@@ -277,3 +279,4 @@ export function astralActionIssue(op: string, p: any, _trig: string, inMark: boo
   }
   return null;
 }
+

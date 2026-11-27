@@ -10,6 +10,7 @@
 import assert from 'node:assert/strict';
 import { createHarness } from './helpers/migrationHarness';
 import { checkElfDead } from '../src/battle/elfAlive';
+import { activeBagOf, listBagElves } from '../src/battle/bagTargets';
 
 const h = await createHarness();
 let checks = 0;
@@ -56,21 +57,34 @@ try {
       assert.equal(marks(r[0].state, side, 'doubleShadow').length, 0, `${side} 回合結束扣除1道（原1道）`);
       checks++;
     }
-    // 四
-    {
-      const blake = seed('5053', 'NB4' + side), solant = seed('5054', 'SL4' + side, [1]); blake.skills = [h.wait()];
+    // 四：兩個方向的召回都依實戰隊列移到最後，原始背包配對位數維持開局設定。
+    for (const [starterId, partnerId] of [['5053', '5054'], ['5054', '5053']]) {
+      const starter = seed(starterId, '首' + side), partner = seed(partnerId, '援' + side);
+      const reserve = h.unit('友4' + side, 3000, [h.wait()]);
+      [starter, partner, reserve].forEach((elf, i) => { elf.initialBagSlot = i; });
+      starter.skills = [h.wait()];
+      partner.skills = [h.wait()];
       const killer = '連殺' + side;
       h.S[killer] = (_c: any, ev: string, data: any) => { if (ev === 'BEFORE_STATUS_APPLY') data.prevented = true; };
-      const r = await h.play(side, { self: blake, selfBench: [solant, h.unit('友4' + side, 3000, [h.wait()])], opp: h.unit(killer, 900000, [truth(999999, 2)]),
-        turns: (_e, t) => t === 3 ? [{ switch: 1 }, 0] : [0, 0] }, 4);
-      const team = r[3].state[`${side}Team`];
-      const revived = team.find((e: any) => e.battleId === blake.battleId);
-      assert.ok(r[3].logs.some((l: string) => l.includes('共生循環')), `${side} 共生循環觸發：` + r[3].logs.slice(-40).join('｜'));
-      assert.equal(revived.currentHp, revived.maxHp, `${side} 布萊克重生回滿：` + r.map((x: any) => x.logs.join("｜")).pop());
-      assert.equal(team[team.length - 1].battleId, blake.battleId, `${side} 布萊克移到背包末位：` + team.map((e: any) => e.name).join(','));
-      const inv = r[3].state[`${side}ItemInventory`];
+      const lethal = truth(999999, 2);
+      // 索蘭特會封對手屬性技能的附加效果，測試傷害用固有條款穿過這項干擾。
+      lethal.kit[0].role = 'innate';
+      lethal.kit[0].params.clause.marker = '■';
+      const r = await h.play(side, { self: starter, selfBench: [partner, reserve], opp: h.unit(killer, 900000, [lethal, h.wait()]),
+        turns: (_e, t) => t === 3 ? [{ switch: 1 }, 1] : [0, t >= 4 ? 1 : 0] }, 4);
+      const state = r[3].state;
+      const team = state[`${side}Team`];
+      const revived = team.find((e: any) => e.battleId === starter.battleId);
+      assert.ok(r[3].logs.some((l: string) => l.includes('被召回己方背包末位並重生')), `${side}/${starterId} 共生循環觸發：` + r[3].logs.slice(-40).join('｜'));
+      assert.equal(revived.currentHp, revived.maxHp, `${side}/${starterId} 重生回滿`);
+      assert.deepEqual(team.map((elf: any) => elf.battleId), [partner.battleId, reserve.battleId, starter.battleId]);
+      assert.equal(team[state[`${side}ActiveIndex`]].battleId, partner.battleId);
+      assert.deepEqual(activeBagOf(team).map(elf => elf.battleId), [starter.battleId, partner.battleId, reserve.battleId]);
+      assert.deepEqual(listBagElves({ p1: state.p1Team, p2: state.p2Team }).filter(entry => entry.side === side).map(entry => entry.elf.battleId),
+        [partner.battleId, reserve.battleId, starter.battleId]);
+      const inv = state[`${side}ItemInventory`];
       assert.ok((inv?.symbiosis_cycle?.left || 0) >= 1, `${side} 道具欄有共生循環`);
-      assert.ok(!legalActions(r[3].state, side).some((a: any) => a.kind === 'item' && a.id === 'symbiosis_cycle'), `${side} 共生循環不可選用`);
+      assert.ok(!legalActions(state, side).some((a: any) => a.kind === 'item' && a.id === 'symbiosis_cycle'), `${side} 共生循環不可選用`);
       checks++;
     }
     // 五

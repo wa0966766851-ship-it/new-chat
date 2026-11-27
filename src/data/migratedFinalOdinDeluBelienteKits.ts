@@ -66,8 +66,8 @@ export const MIGRATED_FINAL_BELIENTE_SOUL_KIT = {
       a('energy_form_enter', { key: energy, snapshotKey: entryMaximum, name: '星執者', displayChar: '執' }),
     ] }], 3),
     observer('cthyaat_death', 'team_defeated', '己方其他精靈被擊敗時星執者額外獲得300點能量', [a('energy_form_ally_defeat', { key: energy, amount: 300 })], 4),
-    observer('after_action', 'team_after_action', '己方每次使用技能後消耗15%能量、至少150點，附加對手等量真實傷害', [a('energy_form_spend', { key: energy, ratio: 0.15, minimum: 150, mode: 'damage', conversionReward: 150 })], 5),
-    observer('round_end', 'team_round_end', '每回合結束消耗15%能量、至少150點，恢復在場存活精靈等量體力', [a('energy_form_spend', { key: energy, ratio: 0.15, minimum: 150, mode: 'heal', conversionReward: 150 })], 6),
+    observer('after_action', 'team_after_action', '己方每次使用技能後消耗初始能量15%、至少150點，附加對手等量真實傷害', [a('energy_form_spend', { key: energy, ratio: 0.15, basis: 'initial', minimum: 150, mode: 'damage', conversionReward: 150 })], 5),
+    observer('round_end', 'team_round_end', '每回合結束消耗初始能量15%、至少150點，恢復在場存活精靈等量體力', [a('energy_form_spend', { key: energy, ratio: 0.15, basis: 'initial', minimum: 150, mode: 'heal', conversionReward: 150 })], 6),
     observer('on_status_received', 'team_status_received', FINAL_BELIENTE_RESOLVED_TEXT, [a('energy_conversion_reward', { key: energy })], 7),
   ],
 };

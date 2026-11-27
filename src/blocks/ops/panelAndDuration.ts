@@ -50,7 +50,9 @@ export function panelDurationOperations(h:{liveElf:Function;dealDamage:Function;
   return {
     panel_pool_transfer:(ctx:BattleEventContext,p:any,st:RunState)=>{
       let reduced=0;
-      for(const elf of ctx.getFullTeam(ctx.targetSide)||[]){
+      const owner=h.liveElf(ctx,ctx.actor),ownPanel={...owner.calculatedStats,hp:owner.maxHp};
+      const targets=(ctx.getFullTeam(ctx.targetSide)||[]).map(elf=>({...elf,calculatedStats:{...elf.calculatedStats}}));
+      for(const elf of targets){
         if(elf.isVanished)continue;
         const next={...elf.calculatedStats,hp:elf.maxHp};
         for(const k of stats){const loss=Math.min(Math.max(0,next[k]-1),Math.floor(next[k]*p.ratio));next[k]-=loss;reduced+=loss;}
@@ -58,7 +60,7 @@ export function panelDurationOperations(h:{liveElf:Function;dealDamage:Function;
       }
       st.lastAmount=reduced;
       const bonus=Math.floor(reduced/p.unit)*p.gain;
-      if(bonus>0){const self=h.liveElf(ctx,ctx.actor),next={...self.calculatedStats,hp:self.maxHp};for(const k of stats)next[k]+=bonus;
+      if(bonus>0){const next={...ownPanel};for(const k of stats)next[k]+=bonus;
         ctx.updateElf(ctx.actor,{calculatedStats:next,maxHp:next.hp});}
       ctx.addLog(`面板轉移：敵方六項實際降低合計 ${reduced}，自身六項各增加 ${bonus}。`,'effect');
       return reduced>0;

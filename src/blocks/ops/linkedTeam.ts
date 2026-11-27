@@ -1,5 +1,7 @@
 // 全隊逐隻印記／共生召回／能力等級翻轉等通用件（2026-11-21；趙雲、晻藹夜靈.布萊克、虯螭淵玄.索蘭特首用）。
 // 只以參數表達對象（陣營、名稱片段、印記識別碼），不含任何精靈專屬分支。
+import { FATAL_SEAL_DESCRIPTION, FATAL_SEAL_MARK_ID } from '../../battle/fatalHold';
+import { checkElfDead } from '../../battle/elfAlive';
 import type { BattleEventContext } from '../../effects/types';
 import type { RunState } from '../runtime';
 import { applyMarkProgram, markProgramIssue, MARK_PROGRAM_FIELDS } from '../../effects/markProgram';
@@ -47,7 +49,7 @@ export const LINKED_TEAM_ACTION_FIELDS: Record<string, readonly string[]> = {
   partner_revive: ['names', 'key'],
   // 下次受到的技能傷害轉為等量護盾與護罩（受到傷害前入口）。
   incoming_skill_to_shields: [],
-  // 對手護盾／護罩高於 cap 時降為 cap，持有者承受差值真實傷害（至多當前體力-1）。
+  // 對手既有護盾／護罩調整為 cap（包括低於 cap 者），持有者承受差值真實傷害（至多當前體力-1）。
   opp_shield_cap_with_cost: ['cap'],
   // 對敵方背包每隻存活精靈造成 flat 點指定分類傷害；每隻體力未減少（免疫）令本次攻擊傷害×mult（乘算）。
   bench_probe_boost: ['flat', 'type', 'mult'],
@@ -78,8 +80,8 @@ export const LINKED_TEAM_ACTION_FIELDS: Record<string, readonly string[]> = {
   stage_randomize: ['min', 'max'],
   // 與對手交換自身低於對手的能力等級。
   stage_swap_lower: [],
-  // 本回合受到非真實傷害降低 reduce、下次攻擊造成非真實傷害提升 boost；雙方每處於1種異常狀態兩者各翻倍1次（至多 cap 次）。
-  status_doubling_mods: ['reduce', 'boost', 'cap'],
+  // 本回合受到非真實傷害降低 reduce、下次攻擊造成非真實傷害提升 boost；雙方每項異常各增加 perStatus 次增傷翻倍與減傷乘算；cap 保留舊資料相容。
+  status_doubling_mods: ['reduce', 'boost', 'cap', 'perStatus'],
 };
 
 export const LINKED_TEAM_CONDITION_FIELDS: Record<string, readonly string[]> = {
@@ -154,7 +156,7 @@ export function linkedTeamActionIssue(op: string, p: any, trig: string, inMark: 
   if (op === 'heal_shield_sum') return p.ratio > 0 && p.ratio <= 10 ? null : '護盾恢復比例需正數';
   if (op === 'drain_random') return Number.isSafeInteger(p.min) && Number.isSafeInteger(p.max) && p.min > 0 && p.max >= p.min && p.max <= 1e6 ? null : '隨機吸取需正整數範圍';
   if (op === 'stage_randomize') return Number.isSafeInteger(p.min) && Number.isSafeInteger(p.max) && p.min >= -6 && p.max <= 6 && p.max > p.min ? null : '隨機能力等級需-6至6範圍';
-  if (op === 'status_doubling_mods') return p.reduce > 0 && p.reduce <= 1 && p.boost > 0 && p.boost <= 100 && Number.isSafeInteger(p.cap) && p.cap >= 0 && p.cap <= 10 ? null : '異常翻倍需減傷0至1、增傷正數與0至10次上限';
+  if (op === 'status_doubling_mods') return p.reduce > 0 && p.reduce <= 1 && p.boost > 0 && p.boost <= 100 && (p.perStatus === undefined || Number.isSafeInteger(p.perStatus) && p.perStatus > 0 && p.perStatus <= 100) ? null : '異常乘算需減傷0至1、增傷正數與每項正整數次數';
   if (op === 'dmg_per_stage_items') return Number.isSafeInteger(p.flat) && p.flat > 0 && p.flat <= 1e5 && ['固定', '真實', '百分比'].includes(p.type) && (p.perMarkId === undefined || text(p.perMarkId)) ? null : '每項附加傷害需正整數、分類與印記識別碼';
   if (op === 'priority_offset_round') return Number.isSafeInteger(p.amount) && p.amount >= 1 && p.amount <= 6 ? null : '抵銷先制需1至6整數';
   if (op === 'strip_type_team_named') return names(p.names) && text(p.type, 20) ? null : '剝離屬性需名稱片段與屬性';
@@ -284,7 +286,7 @@ export function linkedTeamOperations(helpers: { liveElf: (ctx: BattleEventContex
     },
     partner_revive: (ctx: BattleEventContext, p: any): boolean => {
       const self = liveElf(ctx, ctx.actor);
-      for (const partner of (ctx.getFullTeam(ctx.actor) || []).filter(e => !e.isVanished && !e.isExtra && idOf(e) !== idOf(self) && nameHas(e, p.names) && Number(e.currentHp) <= 0)) {
+      for (const partner of (ctx.getFullTeam(ctx.actor) || []).filter(e => !e.isVanished && !e.isExtra && idOf(e) !== idOf(self) && nameHas(e, p.names) && checkElfDead(e))) {
         const key = `${p.key}:${idOf(partner)}`;
         const record = ctx.getPlayerState(key);
         if (!record || record.used) continue;
@@ -314,12 +316,12 @@ export function linkedTeamOperations(helpers: { liveElf: (ctx: BattleEventContex
     opp_shield_cap_with_cost: (ctx: BattleEventContext, p: any): boolean => {
       const opp = liveElf(ctx, ctx.targetSide), holder = liveElf(ctx, ctx.actor);
       const shield = Number(opp?.shield) || 0, barrier = Number((opp as any)?.barrier) || 0;
-      const diff = Math.max(0, shield - p.cap) + Math.max(0, barrier - p.cap);
+      const diff = (shield > 0 ? Math.abs(shield - p.cap) : 0) + (barrier > 0 ? Math.abs(barrier - p.cap) : 0);
       if (diff <= 0) return false;
-      ctx.updateAnyElf(ctx.targetSide, idOf(opp), { ...(shield > p.cap ? { shield: p.cap } : {}), ...(barrier > p.cap ? { barrier: p.cap } : {}) } as any);
+      ctx.updateAnyElf(ctx.targetSide, idOf(opp), { ...(shield > 0 ? { shield: p.cap } : {}), ...(barrier > 0 ? { barrier: p.cap } : {}) } as any);
       const cost = Math.min(diff, Math.max(0, Number(holder?.currentHp || 0) - 1));
       if (cost > 0) ctx.applyTrueDamageToElf ? ctx.applyTrueDamageToElf(ctx.actor, idOf(holder), cost, '護盾壓制代價') : ctx.applyTrueDamage(ctx.actor, cost, '護盾壓制代價');
-      ctx.addLog(`🌑 對手護盾／護罩降為 ${p.cap}，【${holder?.name}】承受 ${cost} 點真實傷害。`, 'effect');
+      ctx.addLog(`🌑 對手護盾／護罩調整為 ${p.cap}，【${holder?.name}】承受 ${cost} 點真實傷害。`, 'effect');
       return true;
     },
     bench_probe_boost: (ctx: BattleEventContext, p: any): boolean => {
@@ -400,13 +402,14 @@ export function linkedTeamOperations(helpers: { liveElf: (ctx: BattleEventContex
     },
     status_doubling_mods: (ctx: BattleEventContext, p: any, st: RunState): boolean => {
       const count = [ctx.actor, ctx.targetSide].reduce((n: number, side) => n + Object.values(ctx.getStatuses(liveElf(ctx, side as S)) || {}).filter((v: any) => Number(v) > 0).length, 0);
-      const doubles = Math.min(p.cap, count), factor = Math.pow(2, doubles);
-      const reduce = Math.min(1, p.reduce * factor), boost = Math.min(1e4, p.boost * factor);
+      const doubles = count * (p.perStatus ?? 10);
+      const retention = p.reduce===1 ? 0 : Math.max(Number.MIN_VALUE,Math.pow(1 - p.reduce, 1 + doubles));
+      const boost = Math.min(Number.MAX_VALUE, p.boost * Math.pow(2, Math.min(1023, doubles)));
       helpers.runStmts(ctx, [{ acts: [
-        { op: 'dmg_mod_turns', p: { dir: 'in', kind: '非真實', reduce, turns: 1 }, label: '本回合非真實減傷' },
+        { op: 'damage_multiplier_turns', p: { dir: 'in', kind: '非真實', mult: retention, turns: 1 }, label: '本回合非真實逐次減傷' },
         { op: 'dmg_mod_uses', p: { uses: 1, boost, kind: '非真實', attackOnly: true }, label: '下次攻擊非真實增傷' },
       ] }], st);
-      ctx.addLog(`🌑 雙方共 ${count} 種異常（翻倍 ${doubles} 次）：本回合受到非真實傷害降低 ${Math.round(reduce * 100)}%，下次攻擊非真實傷害提升 ${Math.round(boost * 100)}%！`, 'effect');
+      ctx.addLog(`🌑 雙方共 ${count} 種異常（翻倍 ${doubles} 次）：本回合承受非真實傷害倍率 ${retention.toExponential(6)}，下次攻擊非真實傷害提升 ${Math.round(boost * 100)}%！`, 'effect');
       return true;
     },
     dmg_per_stage_items: (ctx: BattleEventContext, p: any, st: RunState): boolean => {
@@ -450,8 +453,13 @@ export function linkedTeamOperations(helpers: { liveElf: (ctx: BattleEventContex
     },
     seal_fatal_resist: (ctx: BattleEventContext, p: any): boolean => {
       const side = sideOf(ctx, p.side), elf = liveElf(ctx, side);
-      if (!elf || (elf as any).fatalResistSeal) return false;
-      ctx.updateAnyElf(side, idOf(elf), { fatalResistSeal: 'armed' } as any);
+      if (!elf || elf.fatalResistSeal || checkElfDead(elf)) return false;
+      ctx.updateAnyElf(side, idOf(elf), { fatalResistSeal: 'armed' });
+      ctx.setMark({
+        id: FATAL_SEAL_MARK_ID, name: '幻滅', displayChar: '幻', count: 1,
+        description: FATAL_SEAL_DESCRIPTION, source: ctx.skill?.name || ctx.self.name,
+        ownerBattleId: idOf(elf), scope: 'elf', persistsOffField: true, clearable: false, polarity: 'negative',
+      }, side);
       ctx.addLog(`⛓️ 【${elf.name}】下次觸發致死保留後，本場戰鬥無法再觸發！`, 'effect');
       return true;
     },

@@ -11,6 +11,7 @@ coverage/
 .env*
 !.env.example
 .seer-cache/
+.claude-sync/
 _asset_backup/
 # 系/ 是屬性圖標（171張約6MB），全部跟倉庫走
 # public/seer/ 是官方圖快照，不進版控，靠 SeerAPI 遠端補；public/elf-art 跟著倉庫走
@@ -50,3 +51,7 @@ _備份_*/
 
 # 官方特效萃取暫存（tools/fx-extract；bundle 與逐格輸出只留本機）
 public/fxlab-data/
+
+/dist-online/
+/launcher/online*.log
+/encyclopedia/sync*.log

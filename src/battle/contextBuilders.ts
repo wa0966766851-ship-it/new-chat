@@ -646,6 +646,9 @@ export function buildStatusAPIs(shared: SharedContextDeps): StatusAPIs {
       const sovereignOf = (name: string) => (readScopedRegistry(c, tSide, target, 'blkStatusImmunityBypass') || []).some((n: string) => canonicalStatusName(n) === name);
       let sovereignStatus = sovereignOf(s);
       const source=recipient(c,side);
+      const sourceGemContext=getBattleEventContext(side,true,shared.moveIndex||0,source);
+      const statusResistanceReduction=sourceGemContext.getPlayerState('inscriptionGemStatusBypass');
+      if(statusResistanceReduction)sourceGemContext.setPlayerState('inscriptionGemStatusBypass',undefined);
       const blockedThisAction = statusOrigin?.kind === 'skill' && statusOrigin.skillCategory === '屬性' &&
         shared.actionId !== undefined && c.phase === 'resolving' && readScopedRegistry(c, side, source, 'utilityStatusBlockedAction') === shared.actionId;
       const applicationBlocked = blockedThisAction || blocksStatusInfliction(scopedTimers(c,side,source),source,side,statusOrigin);
@@ -839,6 +842,7 @@ export function buildStatusAPIs(shared: SharedContextDeps): StatusAPIs {
         }
       }
 
+      if(statusResistanceReduction)filterCtx.statusResistanceReduction=statusResistanceReduction;
       const filtered = sovereignStatus ? { handled: false } : TraitsEngine.filterStatusInflict(filterCtx, tSide, s, d);
       if (filtered.handled) {
         if ("resistanceTriggered" in filtered && filtered.resistanceTriggered) notifyImmunized("resistance");

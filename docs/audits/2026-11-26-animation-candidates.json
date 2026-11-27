@@ -1,0 +1,312 @@
+[
+  {
+    "id": 4377,
+    "kind": "swf",
+    "name": "ppets_4377",
+    "path": "9b3305ca7d5a4351095d612aef39f8b5",
+    "fileSize": 12087353,
+    "mirrored": true,
+    "localFile": "D:\\影片\\新增資料夾\\對戰模擬器\\.seer-cache\\pet-anim\\9b3305ca7d5a4351095d612aef39f8b5.bundle",
+    "sha256": "381d2160bd50e598b3f29cf1118f8e2adf06db05a095bfed01ccb7ab26bd109b",
+    "source": {
+      "indexUrl": "https://pet-anim-viewer.seerapi.com/pet-anim-index.json",
+      "indexVersion": "20261119171130",
+      "entry": "ppets_4377",
+      "url": "https://newseer.61.com/Assets/StandaloneWindows64/PetAnimPackage/9b3305ca7d5a4351095d612aef39f8b5"
+    },
+    "parsed": {
+      "clip": "4377.pet",
+      "fps": 23,
+      "atlas": [
+        8192,
+        8192
+      ],
+      "sequences": [
+        {
+          "name": "standby",
+          "frames": 25,
+          "hits": []
+        },
+        {
+          "name": "attack",
+          "frames": 174,
+          "hits": [
+            149
+          ]
+        },
+        {
+          "name": "sa",
+          "frames": 170,
+          "hits": [
+            144
+          ]
+        },
+        {
+          "name": "cp",
+          "frames": 121,
+          "hits": [
+            80
+          ]
+        },
+        {
+          "name": "hited",
+          "frames": 8,
+          "hits": []
+        }
+      ]
+    }
+  },
+  {
+    "id": 1400467,
+    "kind": "swf",
+    "name": "ppets_1400467",
+    "path": "11c04ac7243ed3cf4f2eddea35111ebc",
+    "fileSize": 3118793,
+    "localFile": "D:\\影片\\新增資料夾\\對戰模擬器\\.seer-cache\\pet-anim\\11c04ac7243ed3cf4f2eddea35111ebc.bundle",
+    "sha256": "9dd0c467960e946e58acb698f953ce6458022df709ed950ff9da521e6130d9c4",
+    "source": {
+      "indexUrl": "https://pet-anim-viewer.seerapi.com/pet-anim-index.json",
+      "indexVersion": "20261119171130",
+      "entry": "ppets_1400467",
+      "url": "https://newseer.61.com/Assets/StandaloneWindows64/PetAnimPackage/11c04ac7243ed3cf4f2eddea35111ebc"
+    },
+    "parsed": {
+      "clip": "1400467.pet",
+      "fps": 24,
+      "atlas": [
+        4096,
+        2048
+      ],
+      "sequences": [
+        {
+          "name": "standby",
+          "frames": 37,
+          "hits": []
+        },
+        {
+          "name": "attack",
+          "frames": 146,
+          "hits": [
+            109
+          ]
+        },
+        {
+          "name": "sa",
+          "frames": 187,
+          "hits": [
+            156
+          ]
+        },
+        {
+          "name": "cp",
+          "frames": 103,
+          "hits": [
+            53
+          ]
+        },
+        {
+          "name": "hited",
+          "frames": 8,
+          "hits": []
+        },
+        {
+          "name": "appear",
+          "frames": 40,
+          "hits": [
+            2
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "id": 1400473,
+    "kind": "swf",
+    "name": "ppets_1400473",
+    "path": "6295cda22edd1acc9edb9ea39da3cac1",
+    "fileSize": 4568855,
+    "localFile": "D:\\影片\\新增資料夾\\對戰模擬器\\.seer-cache\\pet-anim\\6295cda22edd1acc9edb9ea39da3cac1.bundle",
+    "sha256": "1b3d34b4795ac35078d827763a739099fa43e30bb843a05bdcaab8a890b9c843",
+    "source": {
+      "indexUrl": "https://pet-anim-viewer.seerapi.com/pet-anim-index.json",
+      "indexVersion": "20261119171130",
+      "entry": "ppets_1400473",
+      "url": "https://newseer.61.com/Assets/StandaloneWindows64/PetAnimPackage/6295cda22edd1acc9edb9ea39da3cac1"
+    },
+    "parsed": {
+      "clip": "1400473.pet",
+      "fps": 23,
+      "atlas": [
+        4096,
+        4096
+      ],
+      "sequences": [
+        {
+          "name": "standby",
+          "frames": 21,
+          "hits": []
+        },
+        {
+          "name": "attack",
+          "frames": 132,
+          "hits": [
+            104
+          ]
+        },
+        {
+          "name": "sa",
+          "frames": 130,
+          "hits": [
+            104
+          ]
+        },
+        {
+          "name": "cp",
+          "frames": 104,
+          "hits": [
+            72
+          ]
+        },
+        {
+          "name": "hited",
+          "frames": 7,
+          "hits": []
+        },
+        {
+          "name": "appear",
+          "frames": 20,
+          "hits": [
+            2
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "id": 1400748,
+    "kind": "swf",
+    "name": "ppets_1400748",
+    "path": "f64ede4753c36dadda518c2898af91b4",
+    "fileSize": 4142793,
+    "localFile": "D:\\影片\\新增資料夾\\對戰模擬器\\.seer-cache\\pet-anim\\f64ede4753c36dadda518c2898af91b4.bundle",
+    "sha256": "4e24faf306edff087a358fdcd55a307019404f106284f0e46dd78b377ad377b1",
+    "source": {
+      "indexUrl": "https://pet-anim-viewer.seerapi.com/pet-anim-index.json",
+      "indexVersion": "20261119171130",
+      "entry": "ppets_1400748",
+      "url": "https://newseer.61.com/Assets/StandaloneWindows64/PetAnimPackage/f64ede4753c36dadda518c2898af91b4"
+    },
+    "parsed": {
+      "clip": "1400748.pet",
+      "fps": 24,
+      "atlas": [
+        4096,
+        2048
+      ],
+      "sequences": [
+        {
+          "name": "standby",
+          "frames": 89,
+          "hits": []
+        },
+        {
+          "name": "attack",
+          "frames": 105,
+          "hits": [
+            67
+          ]
+        },
+        {
+          "name": "sa",
+          "frames": 90,
+          "hits": [
+            41
+          ]
+        },
+        {
+          "name": "cp",
+          "frames": 71,
+          "hits": [
+            16
+          ]
+        },
+        {
+          "name": "hited",
+          "frames": 7,
+          "hits": []
+        },
+        {
+          "name": "appear",
+          "frames": 36,
+          "hits": [
+            2
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "id": 1400887,
+    "kind": "swf",
+    "name": "ppets_1400887",
+    "path": "39727c65e79859c15aeac141588f40d4",
+    "fileSize": 18980169,
+    "mirrored": true,
+    "localFile": "D:\\影片\\新增資料夾\\對戰模擬器\\.seer-cache\\pet-anim\\39727c65e79859c15aeac141588f40d4.bundle",
+    "sha256": "b6cb648976c71ddc7f5e4ea334ff0be2e9b194320a153d410746621fc5dc8488",
+    "source": {
+      "indexUrl": "https://pet-anim-viewer.seerapi.com/pet-anim-index.json",
+      "indexVersion": "20261119171130",
+      "entry": "ppets_1400887",
+      "url": "https://newseer.61.com/Assets/StandaloneWindows64/PetAnimPackage/39727c65e79859c15aeac141588f40d4"
+    },
+    "parsed": {
+      "clip": "1400887.pet",
+      "fps": 24,
+      "atlas": [
+        8192,
+        8192
+      ],
+      "sequences": [
+        {
+          "name": "standby",
+          "frames": 40,
+          "hits": []
+        },
+        {
+          "name": "attack",
+          "frames": 166,
+          "hits": [
+            140
+          ]
+        },
+        {
+          "name": "sa",
+          "frames": 97,
+          "hits": [
+            73
+          ]
+        },
+        {
+          "name": "cp",
+          "frames": 86,
+          "hits": [
+            39
+          ]
+        },
+        {
+          "name": "hited",
+          "frames": 7,
+          "hits": []
+        },
+        {
+          "name": "appear",
+          "frames": 45,
+          "hits": [
+            2
+          ]
+        }
+      ]
+    }
+  }
+]

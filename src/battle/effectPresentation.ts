@@ -65,7 +65,7 @@ export function payloadPresentation(payload: Record<string, any> = {}): EffectPr
     `每回合開始吸取${payload.roundPpAbsorb.amount}點PP${payload.roundPpAbsorb.doubleWhenLostHalf ? '，損失半血時翻倍' : ''}。`);
   if (payload.incomingPhysicalSkillMultiplier !== undefined) add('physical_received_multiplier', `受到物理技能傷害×${payload.incomingPhysicalSkillMultiplier}`, payload.incomingPhysicalSkillMultiplier < 1 ? '減傷' : '增傷');
   if (payload.nonTrueOutputLimit !== undefined) add('non_true_output_cap', `非真實傷害上限${payload.nonTrueOutputLimit}`, '傷害限制');
-  if (payload.inherentInvalid) add('inherent_invalid', '固有效果無效', '技能無效');
+  if (payload.inherentInvalid) add('inherent_invalid', payload.inherentInvalid === true ? '固有效果無效' : `${payload.inherentInvalid}技能固有效果失效`, '技能無效');
   if (payload.preventAction) add('prevent_action', '禁止行動');
   if (payload.banish) add('banish', '放逐', '切換限制', '對手背包中的精靈無法主動切換上場。');
   else if (payload.lockSwitch) add('switch_lock', '禁止主動切換', '切換限制');

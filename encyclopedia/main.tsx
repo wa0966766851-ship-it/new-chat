@@ -18,14 +18,23 @@ function App(){
  const [lib,setLib]=useState<AtlasLibrary>(),[error,setError]=useState(''),[message,setMessage]=useState(''),[busy,setBusy]=useState(false),[query,setQuery]=useState('');
  const [editor,setEditor]=useState<Elf>(),[picker,setPicker]=useState(false),[typeEditor,setTypeEditor]=useState<AtlasType|null|undefined>();
  const [confirm,setConfirm]=useState<{text:string;run:()=>Promise<void>}>();
+ const [catalogVersion,setCatalogVersion]=useState('');
  const [ready,setReady]=useState(false),[DEFAULT_ELVES,setBuiltins]=useState<Elf[]>([]),[catalogLoading,setCatalogLoading]=useState(false);
  const [bookDialog,setBookDialog]=useState<'new'|'rename'>(),[bookName,setBookName]=useState('');
  const params=new URLSearchParams(location.search),isExport=params.has('export');
  useEffect(()=>{readLibrary().then(value=>{try{const view=JSON.parse(localStorage.getItem('atlas-view')||'{}');if(!isExport&&value.books.some(b=>b.id===view.activeBookId)){value.activeBookId=view.activeBookId;value.selectedElfId='';}}catch{}if(!isExport)value.selectedElfId='';setLib(value);setReady(true);}).catch(e=>setError(e.message));},[]);
- useEffect(()=>{if(!ready||DEFAULT_ELVES.length||lib?.edition==='blank'||!(picker||lib?.books.find(b=>b.id===(params.get('book')||lib.activeBookId))?.builtinIds.length))return;let live=true;setCatalogLoading(true);fetch('/catalog/index.json').then(r=>{if(!r.ok)throw Error('清單讀取失敗');return r.json();}).then(rows=>{if(live)startTransition(()=>setBuiltins(rows));}).catch(e=>setError(e.message)).finally(()=>{if(live)setCatalogLoading(false);});return()=>{live=false};},[ready,picker,lib?.activeBookId]);
+ useEffect(()=>{
+  if(!ready||lib?.edition==='blank'||isExport)return;
+  let live=true;
+  const check=async()=>{if(document.hidden)return;try{const response=await fetch('/catalog/version.json',{cache:'no-store'});if(!response.ok)return;const version=await response.json();if(live&&typeof version.fingerprint==='string')setCatalogVersion(version.fingerprint);}catch{}};
+  void check();const timer=window.setInterval(check,30000);document.addEventListener('visibilitychange',check);
+  return()=>{live=false;clearInterval(timer);document.removeEventListener('visibilitychange',check);};
+ },[ready,lib?.edition]);
+ useEffect(()=>{if(catalogVersion){setBuiltins([]);setDetails({});}},[catalogVersion]);
+ useEffect(()=>{if(!ready||DEFAULT_ELVES.length||lib?.edition==='blank'||!(picker||lib?.books.find(b=>b.id===(params.get('book')||lib.activeBookId))?.builtinIds.length))return;let live=true;setCatalogLoading(true);fetch('/catalog/index.json').then(r=>{if(!r.ok)throw Error('清單讀取失敗');return r.json();}).then(rows=>{if(live)startTransition(()=>setBuiltins(rows));}).catch(e=>setError(e.message)).finally(()=>{if(live)setCatalogLoading(false);});return()=>{live=false};},[ready,picker,lib?.activeBookId,catalogVersion,DEFAULT_ELVES.length]);
  const [details,setDetails]=useState<Record<string,Elf>>({});
  const wanted=params.get('elf')||lib?.selectedElfId;
- useEffect(()=>{if(!lib||!wanted||details[wanted]||lib?.books.some(b=>b.custom.some(e=>e.id===wanted)))return;let live=true;fetch('/catalog/'+encodeURIComponent(wanted)+'.json').then(r=>{if(!r.ok)throw Error('精靈介紹讀取失敗');return r.json();}).then(e=>{if(live)setDetails(d=>({...d,[wanted]:e}));}).catch(e=>setError(e.message));return()=>{live=false};},[wanted,!!lib]);
+ useEffect(()=>{if(!lib||lib.edition==='blank'||!wanted||details[wanted]||lib?.books.some(b=>b.custom.some(e=>e.id===wanted)))return;let live=true;fetch('/catalog/'+encodeURIComponent(wanted)+'.json').then(r=>{if(!r.ok)throw Error('精靈介紹讀取失敗');return r.json();}).then(e=>{if(live)setDetails(d=>({...d,[wanted]:e}));}).catch(e=>setError(e.message));return()=>{live=false};},[wanted,!!lib,catalogVersion,!!details[wanted||'']]);
  useEffect(()=>{if(!isExport||params.get('elf')||!DEFAULT_ELVES.length)return;const b=lib?.books.find(b=>b.id===params.get('book'))||lib?.books[0];if(!b)return;const ids=DEFAULT_ELVES.filter(e=>b.builtinIds.includes('*')||b.builtinIds.includes(e.id)).map(e=>e.id);Promise.all(ids.map(async id=>{const r=await fetch('/catalog/'+encodeURIComponent(id)+'.json');if(!r.ok)throw Error('圖鑑讀取失敗');return r.json();})).then(rows=>setDetails(previous=>({...previous,...Object.fromEntries(rows.map(e=>[e.id,e]))}))).catch(e=>setError(e.message));},[DEFAULT_ELVES]);
  const book=lib?.books.find(b=>b.id===(params.get('book')||lib.activeBookId))||lib?.books[0];
  const elves=book?bookElves(book,DEFAULT_ELVES.map(e=>details[e.id]||e)):[];

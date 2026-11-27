@@ -14,7 +14,7 @@
 
 使用者檔案：`%LOCALAPPDATA%\SeerEncyclopedia\library.json`，上版備份為 `library.json.previous`，上傳圖片位於同目錄 `images/`。請使用介面的「備份」保留包含圖片的圖鑑資料。
 
-程式共用主專案的精靈資料、介紹元件、圖片與快取、Node套件。請保留本專案目錄；更新內建資料後使用「更新精靈圖鑑」。自訂資料不會寫回戰鬥精靈。
+程式共用主專案的精靈資料、介紹元件、圖片與快取、Node套件。請保留本專案目錄；一般版啟動時會檢查精靈來源指紋，有變更才同步內建資料；開啟中的視窗每30秒及回到前景時檢查資料版本。也可執行 `npm run atlas:sync` 更新開啟中的資料。自訂資料不會寫回戰鬥精靈。
 
 一般版只讀取 `catalog/index.json` 的名字與屬性，選取後才讀取該隻JSON與圖片；列表以文字顯示，不預載立繪或頭像。空白版不讀取內建清單。匯出時才載入該次需要的完整內容。
 
@@ -27,7 +27,7 @@
 ## 內容與檔案結構
 
 - `main.tsx`、`Editor.tsx`、`Profile.tsx`：介面、編輯與延遲載入的介紹版型；共享主專案的描述階層顯示。
-- `catalog/`：只保留展示欄位的內建快照，不包含戰鬥積木。執行 `npm run atlas:sync` 明確更新，啟動不掃描戰鬥資料。
+- `catalog/`：只保留展示欄位的內建快照，不包含戰鬥積木。一般版啟動檢查來源指紋，有變更才重新產生展示資料；`version.json` 讓已開啟視窗更新清單與目前選取的介紹。空白版不執行來源同步，服務拒絕所有 `/catalog` 要求。
 - `content.ts`、`import-content.ts`、`templates/`、[CONTENT_WORKFLOW.md](CONTENT_WORKFLOW.md)：AI內容格式、驗證與匯入流程；來源隨圖鑑保存。
 - `server/`、`server.ts`：獨立存檔、圖片與PNG/PDF匯出服務。
 - `build.mjs`、`launcher.ps1`、`create-shortcuts.ps1`：建置驗證、版本切換與桌面入口。

@@ -24,11 +24,12 @@ const PerformanceProbe = lazy(() => import("../components/PerformanceProbe"));
 export interface LegacyShellProps {
   b: ShellBridge;
   showHeader: boolean;
+  hideSidebarTrigger?: boolean;
   setShowHeader: (v: boolean) => void;
   isCompactLayout: boolean;
 }
 
-export function LegacyShell({ b, showHeader, setShowHeader, isCompactLayout }: LegacyShellProps) {
+export function LegacyShell({ b, showHeader, setShowHeader, hideSidebarTrigger, isCompactLayout }: LegacyShellProps) {
   const navItems = [
     { id: "start", label: "首頁 / 模式", icon: <Home className="w-5 h-5" />, onClick: () => b.setView("start") },
     { id: "custom", label: "精靈自定", icon: <Settings className="w-5 h-5" />, onClick: () => b.setView("custom") },
@@ -139,7 +140,7 @@ export function LegacyShell({ b, showHeader, setShowHeader, isCompactLayout }: L
         />
       )}
 
-      {!showHeader && (
+      {!showHeader && !hideSidebarTrigger && (
         <button
           onClick={() => setShowHeader(true)}
           className="fixed top-4 left-0 z-[90] p-3 bg-slate-900/80 backdrop-blur-md border border-l-0 border-slate-700 rounded-r-xl text-slate-400 hover:text-white hover:bg-slate-800 transition-all shadow-lg"

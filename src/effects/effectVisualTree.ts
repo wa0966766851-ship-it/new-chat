@@ -13,7 +13,7 @@ export const EFFECT_FIELD_LABELS: Record<string, string> = {
   v:'等級變化', stats:'能力項目', stat:'能力', boost:'增幅（1＝100%）', reduce:'減幅', mult:'倍率',
   threshold:'門檻', perMark:'逐層資源', perMarkTurns:'逐層回合', perStage:'逐能力等級',
   step:'每份門檻比例',thresholdSide:'門檻持有者',belowRatio:'結算合計低於最大體力比例',belowBody:'吸取結算不足時',smallBody:'技能傷害不足一份時',
-  id:'識別碼', key:'狀態鍵', name:'名稱', status:'異常', statuses:'異常清單',
+  id:'識別碼', key:'狀態鍵', name:'名稱', status:'異常', statuses:'異常清單', allStatuses:'所有異常', perStatus:'每項異常乘算次數', basis:'比例基準', ppLimitWhenAbnormal:'處於異常時不受PP限制',
   source:'來源', role:'效果類別', node:'戰鬥節點', order:'順序', codeId:'積木種類', customText:'原文', params:'積木參數',
   chain:'前項結果條件', live:'即時條件', pre:'句首快照', afterHit:'傷害結算後', neg:'條件反轉',
   observer:'觀察範圍', includeDead:'包含陣亡持有者', includeIncoming:'包含本次異常',

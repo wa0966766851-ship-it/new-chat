@@ -29,7 +29,7 @@ import { damagePresentationAmount } from '../battle/damagePresentation';
 import { BattlePresentation, effectivenessLabel, type PresentationKind } from '../battle/presentation';
 import { hiddenFromViewer } from '../battle/viewerPerspective';
 import { BATTLE_ANIMATION_EVENT, readAnimationSettings, effectiveAnimationSettings, animationModeFor, type BattleAnimationSettings } from '../battle/animationSettings';
-import { activeConstraints } from '../battle/timedConstraints';
+import { activeConstraints, timedInnateDisabled } from '../battle/timedConstraints';
 import { mergeRoundEnd } from '../battle/roundEndMerge';
 import { skillSlot } from '../battle/skillSlot';
 import { attackDefenseBypass, bypassesAttackDefense, applyAttackDefenseLimit } from '../battle/attackDefense';
@@ -174,7 +174,7 @@ const hasLivingSummonedExtra = (team: Elf[], elf: Elf) => {
 import { checkElfDead, positiveDeathLineSettled } from '../battle/elfAlive';
 import { currentCauseChain, withCauseChain } from '../battle/reactionChain';
 import { viewedOppExtraDown } from '../battle/stageViewRules';
-import { resolveFatalResist, fatalSealSpent, sealedSurvivalRule, markFatalSealTriggered, settleFatalSeal } from '../battle/fatalHold';
+import { resolveFatalResist, reportFatalResult, fatalSealSpent, sealedSurvivalRule, markFatalSealTriggered, fatalSealTriggeredByDamage, settleFatalSeal } from '../battle/fatalHold';
 export { checkElfDead };
 
 export interface BattleEngineOptions {
@@ -208,6 +208,7 @@ export interface BattleEngineOptions {
   onBattleEnd?: (winner: "p1" | "p2" | "exit" | "draw", team?: Elf[]) => void;
   preparedTeams?: boolean;
   specialMode?: "destiny" | "interstellar";
+  fieldId?:string;
   battleFormat?: "normal_6v6" | "solo_1v1" | "peak_6v6" | "peak_3v3";
   interstellarOptions?: {onPotionUse?:()=>boolean;onBattleEnd?:Function;relics?:string[];enemyRelics?:string[];maxPotionUsage?:number};
   /** 戰鬥火焰（data/battleFlames.ts）：雙方各一種，經遺物通道結算。 */
@@ -224,7 +225,20 @@ export interface BattleEngineOptions {
   onPotionUsed?: () => void;
   /** 節點追蹤（測試／除錯）：依實際執行順序呼叫。 */
   onNode?: (node: BattleNodeId, detail?: Record<string, unknown>) => void;
+  /**
+   * 雙人連線（同步回合制）：雙方各跑一份相同種子的引擎，只交換「選擇」。
+   * 本機只能替 localSide 選擇；對手的選擇只能經 applyRemoteSelection 進入。
+   * 本機選擇成功提交後回呼 onLocalSelection（由連線層送給對手）。
+   */
+  lockstep?: { localSide: 'p1' | 'p2'; onLocalSelection: (selection: LockstepSelection) => void };
 }
+
+/** 同步回合制交換的選擇（以技能槽／背包位置表達，不傳技能物件）。 */
+export type LockstepSelection =
+  | { kind: 'skill'; side: 'p1' | 'p2'; slot: number; turn: number; phase: string }
+  | { kind: 'wait' | 'pass'; side: 'p1' | 'p2'; turn: number; phase: string }
+  | { kind: 'switch'; side: 'p1' | 'p2'; index: number; turn: number; phase: string }
+  | { kind: 'item'; side: 'p1' | 'p2'; id: string; picked?: { side: 'p1' | 'p2'; battleId: string }; turn: number; phase: string };
 
 export interface BattleEngine {
   getState: () => BattleState;
@@ -246,6 +260,8 @@ export interface BattleEngine {
   isAlive: () => boolean;
   /** 等目前排程中的結算、佇列與自我校正都跑完（headless 測試用）。 */
   idle: () => Promise<void>;
+  /** 雙人連線：套用對手的選擇；回傳是否被接受（階段不符時不接受，由連線層稍後重試）。 */
+  applyRemoteSelection: (selection: LockstepSelection) => boolean;
 }
 export function createBattleEngine(props: BattleEngineOptions): BattleEngine {
   
@@ -265,6 +281,8 @@ export function createBattleEngine(props: BattleEngineOptions): BattleEngine {
   const failedActionRef = ref<Record<'p1' | 'p2', number>>({ p1: -1, p2: -1 });
   const resolutionSkillRef=ref<{side:'p1'|'p2';actionId:number;read:()=>Skill}|null>(null);
   const rng = stable(() => rngRef.current(), []);
+  /** 正在套用對手的連線選擇（略過本機暫停、允許對手側）。 */
+  let lockstepApplying = false;
   // AI的候選與隨機風格不得消耗真正戰鬥的亂數串。
   const aiRng = makeRng(seed ^ 0x51a7e);
   const prdInitRef = ref(false);
@@ -434,6 +452,7 @@ export function createBattleEngine(props: BattleEngineOptions): BattleEngine {
   const executingEffectRef = ref(false);
   const presentationPotionRef = ref(false);
   const isResolvingRef = ref(false);
+  const closingFatalRound = ref<number | null>(null);
   const hasInitialEntranceRef = ref(!!props.initialState);
   let pendingAi = 0;
   let forcedAiPending = false;
@@ -572,8 +591,8 @@ export function createBattleEngine(props: BattleEngineOptions): BattleEngine {
 // 2026-10-28：根性需要「該段傷害 vs 當前體力」比較；帶入本次實際傷害與是否為傷害來源。
 Object.assign(ctx as any, { fatalDamage: absorbed.amount, fatalIsDamage: true });
           const immune = (guard?.deathImmuneTurns || 0) > 0 && !fatalSealSpent(target);
-          if (immune && !outcome.alive || outcome.alive && outcome.hp <= 0) markFatalSealTriggered(ctx, side, target);
-          const resisted = !outcome.alive && !immune && resolveFatalResist(ctx, side, target, hpBeforeHit, cur.turnNumber,
+          if (fatalSealTriggeredByDamage(target, outcome, immune)) markFatalSealTriggered(ctx, side, target);
+          const resisted = !outcome.alive && !immune && resolveFatalResist(ctx, side, target, hpBeforeHit, closingFatalRound.current ?? cur.turnNumber,
             () => !!(SoulMarkRegistry[target.name]?.(ctx, EffectTiming.FATAL_RESIST, {damageType:category, fatalDamage:absorbed.amount}) || TraitsEngine.triggerFatalResist(ctx) || traitFatalResist(ctx, side, target, rng) || checkStatusDrivenFatalResist(ctx)),
             () => syncStateRef.current[`${side}Team`].find(e => (e.battleId || e.id) === data.targetId));
           ctx.updateAnyElf(side, data.targetId, { ...(resisted ? {} : {currentHp:outcome.hp}), shield:retainShield(target,absorbed.shield), barrier:absorbed.barrier });
@@ -746,14 +765,14 @@ Object.assign(ctx as any, { fatalDamage: absorbed.amount, fatalIsDamage: true })
         const wouldFaint = !survivalTransition.alive;
         let resisted = false;
         // 免死回合或 0 體力存活規則救下封印待觸發的持有者：同樣算作本回合觸發。
-        const sealPatch = (target as any).fatalResistSeal === 'armed' && (wouldFaint && inDeathImmuneWindow || survivalTransition.alive && nextHp <= 0) ? { fatalResistSeal: 'pending' as const } : {};
+        const sealPatch = fatalSealTriggeredByDamage(target, survivalTransition, inDeathImmuneWindow) ? { fatalResistSeal: 'pending' as const } : {};
         
         if (wouldFaint && !inDeathImmuneWindow) {
           const fCtx = getBattleEventContext(targetSide, true, 0);
 // 2026-10-28：同上，帶入實際傷害數值供根性判定。
 Object.assign(fCtx as any, { fatalDamage: effectiveAmount, fatalIsDamage: true });
           // 致死保留窗口：本回合已觸發致死保留 → 直接保留體力，不重跑效果、不再消耗次數。
-          resisted = resolveFatalResist(fCtx, targetSide, target, hpBefore, cur.turnNumber, () => {
+          resisted = resolveFatalResist(fCtx, targetSide, target, hpBefore, closingFatalRound.current ?? cur.turnNumber, () => {
           let resisted = false;
           if (SoulMarkRegistry[target.name]) {
             resisted = !!SoulMarkRegistry[target.name](fCtx, EffectTiming.FATAL_RESIST, { damageType: data.damageType, fatalDamage: effectiveAmount });
@@ -763,6 +782,7 @@ Object.assign(fCtx as any, { fatalDamage: effectiveAmount, fatalIsDamage: true }
           if (!resisted) resisted = checkStatusDrivenFatalResist(fCtx);
           // 隊伍被動規則：超額真實傷害大於護盾且致死 → 100% 重生（每次滿足條件都觸發，無總次數限制）。
           if (!resisted && normalizedDamageType === 'true' && teamRules.excessTrueRebirth && isLethalExcessTrue(effectiveAmount, target.shield || 0, hpBefore)) {
+            reportFatalResult(fCtx, 'rebirth');
             fCtx.updateElf(targetSide, rebirthPatch(target) as any);
             fCtx.addLog(`✨ 【${target.name}】受到超額真實傷害 ${effectiveAmount}（大於護盾 ${target.shield || 0}）致死，100%重生！`, "effect");
             resisted = true;
@@ -1120,7 +1140,7 @@ Object.assign(fCtx as any, { fatalDamage: effectiveAmount, fatalIsDamage: true }
       case 'instant_kill': {
         const target=cur[`${side}Team`].find(e=>(e.battleId||e.id)===data.targetId);
         if(!target)break;
-        const receipt=settleInstantKill(getBattleEventContext(side,true,0,target),data);
+        const receipt=settleInstantKill(getBattleEventContext(side,true,0,target),data,closingFatalRound.current ?? cur.turnNumber);
         if(receipt.hpLost>0){
           damageOriginRef.current[data.targetId]={side:data.sourceSide,id:data.sourceBattleId};
           if(!props.simulation)recordAdjust(ledger,side,-receipt.hpLost);
@@ -1395,6 +1415,13 @@ case 'switch': {
       shieldSeenRef.current.set(id, now);
       const previous=resourceSeenRef.current.get(id),current={shield:Number(elf.shield)||0,barrier:Number(elf.barrier)||0};
       resourceSeenRef.current.set(id,current);
+      if(previous)for(const resource of ['shield','barrier'] as const){
+        if(previous[resource]===current[resource])continue;
+        const resourceCtx=getBattleEventContext(side,true,0);
+        const change={side,targetBattleId:id,id:resource,before:previous[resource],after:current[resource]};
+        SoulMarkRegistry[elf.name]?.(resourceCtx,EffectTiming.RESOURCE_CHANGED,change);
+        dispatchModeEvent(resourceCtx,EffectTiming.RESOURCE_CHANGED,change);
+      }
       const delta=previous?current.shield-previous.shield:0;
       if(delta)for(const observerSide of ["p1","p2"] as const){
         if(!checkElfDead(syncStateRef.current[observerSide]))dispatchShieldChange(getBattleEventContext(observerSide,true,0),side,delta);
@@ -1524,7 +1551,7 @@ case 'switch': {
       roundNumber: cur.turnNumber,
       actionId: actionSerialRef.current,
       contextForElf:(ownerSide,owner)=>getBattleEventContext(ownerSide,true,moveIndex,owner),
-      specialMode: props.specialMode,
+      specialMode: props.specialMode,fieldId:props.fieldId,
       currentPhase: cur.phase,
       applyDamageToElf: targetedDamageAPI(shared),
       afterDamageChain: run => {
@@ -1582,6 +1609,8 @@ case 'switch': {
       ...buildDamageAPIs(shared),
       ...buildStatusAPIs(shared),
       ...buildStateAPIs(shared),
+      // 隨機挑選一律用戰鬥亂數（可重現；雙人連線雙方結果一致）。
+      shuffleArray: <T,>(items: T[]) => shuffleArray(items, rng),
     }, syncStateRef, side, self, opp);
   }, [pushEffect, dispatch, showPopup]);
 
@@ -2052,7 +2081,7 @@ case 'switch': {
     }
   }
 
-  const finalizeTurn = stable(async (force: boolean = false) => {
+  const finalizeTurnEffects = stable(async (force: boolean) => {
     presentation.setInAction(false);
     // 官方回合流程：4.10 戰鬥階段結束 → 4.11 死亡節點二 → 5 回合結束（效果 → 回合扣減） → 5.4 死亡節點三 → 換人。
     // 陣亡精靈仍在場時照常跑回合結束，換人在本函式最後才進行。
@@ -2289,7 +2318,7 @@ case 'switch': {
       const effects = mergeById(midElf.effects || [], tickedEffects || [], liveElf.effects || []);
       const deathImmunity = liveElf.deathImmunity === midElf.deathImmunity ? tickedDI : liveElf.deathImmunity;
       return {
-        ...settleFatalSeal(liveElf),
+        ...liveElf,
         effects,
         battleStatuses: Object.fromEntries(effects.map(e => [e.id, e.duration])),
         deathImmunity,
@@ -2299,9 +2328,10 @@ case 'switch': {
     const finalizeTeam = (side: "p1" | "p2"): Elf[] => {
       const midTeam = side === "p1" ? mid.p1Team : mid.p2Team;
       const tickedTeam = side === "p1" ? nextP1Team : nextP2Team;
-      return (side === "p1" ? live.p1Team : live.p2Team).map(settleFatalSeal).map(e => {
-        const midE = midTeam.find(m => m.id === e.id);
-        const tickedE = tickedTeam.find(t => t.id === e.id);
+      return (side === "p1" ? live.p1Team : live.p2Team).map((e: Elf) => {
+        const battleId = e.battleId || e.id;
+        const midE = midTeam.find(m => (m.battleId || m.id) === battleId);
+        const tickedE = tickedTeam.find(t => (t.battleId || t.id) === battleId);
         if (midE && tickedE && e.deathImmunity === midE.deathImmunity) return { ...e, deathImmunity: tickedE.deathImmunity, survivalRule: releaseExpiredSurvivalRule(e.survivalRule, tickedE.deathImmunity) };
         return e;
       });
@@ -2410,6 +2440,16 @@ case 'switch': {
     // §1: Apply DAMAGE_TICK at round end
     await applyDamageTicks("p1", "END");
     await applyDamageTicks("p2", "END");
+    closingFatalRound.current = null;
+    for (const side of ['p1', 'p2'] as const) {
+      const state = syncStateRef.current;
+      const key = `${side}Team` as const;
+      const team = state[key] as Elf[];
+      if (team.some(elf => elf.fatalResistSeal === 'pending')) {
+        const settled = team.map(settleFatalSeal);
+        syncStateRef.current = { ...state, [key]: settled, [side]: settled[state[`${side}ActiveIndex`]] };
+      }
+    }
     // 直接改體力、沒有留下紀錄的效果：回合末補成淨變化
     presentation.reconcile('p1', syncStateRef.current.p1);
     presentation.reconcile('p2', syncStateRef.current.p2);
@@ -2429,7 +2469,7 @@ case 'switch': {
     // 巔峰 6V6：滿 50 回合依存活精靈數判勝負（額外精靈不計）
     {
       const st = syncStateRef.current;
-      const w = judgeTurnLimit(props.battleFormat, st.turnNumber - 1, st.p1Team, st.p2Team, checkElfDead);
+      const w = judgeTurnLimit(props.fieldId==='peak6'||props.fieldId==='destiny'?'peak_6v6':props.battleFormat, st.turnNumber - 1, st.p1Team, st.p2Team, checkElfDead);
       if (w) {
         const a = countedAlive(st.p1Team, checkElfDead), b = countedAlive(st.p2Team, checkElfDead);
         pushEffect({ type: 'log', side: 'p1', data: { text: `⏱️ 已滿 ${PEAK_TURN_LIMIT} 回合：存活精靈 ${a} 比 ${b}，${w === "p1" ? "玩家一獲勝！" : w === "p2" ? "對手獲勝！" : "平手！"}`, type: "system" } });
@@ -2455,6 +2495,13 @@ case 'switch': {
 
     dispatch({ type: 'SET_PHASE', phase: "p1_select" });
   }, [dispatch, applyDamageTicks, checkFaints]);
+
+  const finalizeTurn = stable(async (force = false) => {
+    // 收尾推進畫面回合編號後，剩餘傷害仍屬於剛結束的回合。
+    closingFatalRound.current = syncStateRef.current.turnNumber;
+    try { await finalizeTurnEffects(force); }
+    finally { closingFatalRound.current = null; }
+  });
     const applyEntranceBlessings = stable((side: "p1" | "p2", elf: Elf, ctx: BattleEventContext) => {
     recordBattleEntrance(ctx);
     dispatchModeEvent(ctx, EffectTiming.ON_ENTRANCE);
@@ -2685,7 +2732,7 @@ case 'switch': {
     const calcPriority = (side: "p1" | "p2", skill: any): { priority: number, forcedFirst: boolean; tieRole?: 'challenger' | 'challenged' } => {
       if (!skill) return { priority: 0, forcedFirst: false };
       skill = illusionSkill(cur[side], skill);
-      const inherentRestricted = portableSkillCapabilities(syncStateRef.current[side],skill).innateDisabled || cur[side].isInherentInvalid || activeConstraints(cur[`${side}Timers`], cur[side]).some(p => p.inherentInvalid);
+      const inherentRestricted = portableSkillCapabilities(syncStateRef.current[side],skill).innateDisabled || cur[side].isInherentInvalid || timedInnateDisabled(cur[`${side}Timers`], cur[side], skill);
       const regState = cur[`${side}RegistryState`] || {};
       const nextPriorityCount = regState.nextPriorityCount || 0;
       const comp: PriorityComputation = {
@@ -3611,7 +3658,7 @@ case 'switch': {
           p1Suit,
           p2Suit,
           (217 + rng() * (255 - 217)) / 255,
-          (isCritGuaranteed && !critBlocked) ? true : undefined,
+          critBlocked ? false : isCritGuaranteed ? true : undefined,
           mid.p1Team,
           mid.p2Team,
           { traitPowerMultiplier: rollStatusTraitPower(damageCtx, activeSkill), ignoreSpDefPercent, ignoreDefPercent, ignoreOppBuff, hitCount, actionId: actionSerialRef.current, inherentInvalid:!innateAllowed(damageCtx),
@@ -4264,7 +4311,8 @@ syncStateRef.current = { ...syncStateRef.current, [actorRegKey]: { ...rg, attack
       // 若 render 合併導致 effect 沒跑就會永遠停在換人畫面
       const aiSides: ("p1" | "p2")[] = [];
       if (need2 && d2 && battleMode === "PVE") aiSides.push("p2");
-      if (need1 && d1 && st.isAutoBattle) aiSides.push("p1");
+      // 連線對戰不托管：AI 換人會消耗戰鬥亂數，只在一方執行會讓雙方不同步。
+      if (need1 && d1 && st.isAutoBattle && !props.lockstep) aiSides.push("p1");
       for (const side of aiSides) {
         if ((props.selectAi || props.isInputPaused?.()) && !props.simulation) { requestForcedAI(side); return; }
         let idx = pickAiForcedSwitch(st, side, p1Suit, p2Suit, rng);
@@ -4393,8 +4441,8 @@ syncStateRef.current = { ...syncStateRef.current, [actorRegKey]: { ...rg, attack
     })();
   };
 
-  const onSkillSelect = (side: "p1" | "p2", skill: Skill) => {
-    if (!battleAliveRef.current || props.isInputPaused?.()) return;
+  const onSkillSelectRaw = (side: "p1" | "p2", skill: Skill) => {
+    if (!battleAliveRef.current || (props.isInputPaused?.() && !lockstepApplying)) return;
     const cur = latestStateRef.current;
     if (cur.phase !== (side === 'p1' ? 'p1_select' : 'p2_select')) return;
     const slot = skillSlot(cur[side],skill);
@@ -4451,15 +4499,15 @@ syncStateRef.current = { ...syncStateRef.current, [actorRegKey]: { ...rg, attack
   };
 
   /** 空過：選擇階段隨時可用；不觸發選招、使用技能或符文激活。 */
-  const onPass = (side: "p1" | "p2") => {
-    if (!battleAliveRef.current || props.isInputPaused?.()) return;
+  const onPassRaw = (side: "p1" | "p2") => {
+    if (!battleAliveRef.current || (props.isInputPaused?.() && !lockstepApplying)) return;
     const cur = latestStateRef.current;
     if (cur.phase !== (side === 'p1' ? 'p1_select' : 'p2_select')) return;
     commitSelection(side, passSkill());
   };
 
-  const onSwitchElf = (side: "p1" | "p2", index: number) => {
-    if (!battleAliveRef.current || props.isInputPaused?.()) return;
+  const onSwitchElfRaw = (side: "p1" | "p2", index: number) => {
+    if (!battleAliveRef.current || (props.isInputPaused?.() && !lockstepApplying)) return;
     const cur = latestStateRef.current;
     const expected = side === 'p1' ? 'p1_select' : 'p2_select';
     const forcedForSide = cur.phase === `forced_switch_${side}` || cur.phase === 'forced_switch_both';
@@ -4574,8 +4622,8 @@ syncStateRef.current = { ...syncStateRef.current, [actorRegKey]: { ...rg, attack
     }
   };
 
-  const onUseItem = (side: "p1" | "p2", item: BattleItem) => {
-    if (!battleAliveRef.current || props.isInputPaused?.()) return;
+  const onUseItemRaw = (side: "p1" | "p2", item: BattleItem) => {
+    if (!battleAliveRef.current || (props.isInputPaused?.() && !lockstepApplying)) return;
     const curForItems = latestStateRef.current;
     const expectedPhase = side === 'p1' ? 'p1_select' : 'p2_select';
     const catalogItem = BATTLE_ITEMS.find(candidate => candidate.id === item.id);
@@ -4624,6 +4672,57 @@ syncStateRef.current = { ...syncStateRef.current, [actorRegKey]: { ...rg, attack
     }
   };
 
+  // ── 雙人連線（同步回合制）：選擇的入口守門與回報 ──
+  // 本機只能替 localSide 選擇（含計時器、自動空過等內部呼叫）；對手側只能由 applyRemoteSelection 進入。
+  // 選擇成功（階段前進）後才回報給連線層，被拒絕的選擇不會送出。
+  function lockstepRun(side: 'p1' | 'p2', describe: (turn: number, phase: string) => LockstepSelection, run: () => void) {
+    const ls = props.lockstep;
+    if (!ls) { run(); return; }
+    if (side !== ls.localSide && !lockstepApplying) return;
+    // 雙方同時要補位時固定 P1 先補、P2 後補，兩邊引擎看到的輸入順序才一致。
+    if (side === 'p2' && syncStateRef.current.phase === 'forced_switch_both') return;
+    const before = syncStateRef.current, phase = before.phase, turn = before.turnNumber;
+    const selection = describe(turn, phase);
+    run();
+    const after = syncStateRef.current;
+    if (!lockstepApplying && side === ls.localSide && (after.phase !== phase || after.turnNumber !== turn)) {
+      try { ls.onLocalSelection(selection); } catch (e) { console.error('[lockstep]', e); }
+    }
+  }
+  const onSkillSelect = (side: "p1" | "p2", skill: Skill) => lockstepRun(side, (turn, phase) => {
+    const slot = skillSlot(syncStateRef.current[side], skill);
+    return slot < 0 ? { kind: 'wait', side, turn, phase } : { kind: 'skill', side, slot, turn, phase };
+  }, () => onSkillSelectRaw(side, skill));
+  const onPass = (side: "p1" | "p2") => lockstepRun(side, (turn, phase) => ({ kind: 'pass', side, turn, phase }), () => onPassRaw(side));
+  const onSwitchElf = (side: "p1" | "p2", index: number) => lockstepRun(side, (turn, phase) => ({ kind: 'switch', side, index, turn, phase }), () => onSwitchElfRaw(side, index));
+  const onUseItem = (side: "p1" | "p2", item: BattleItem) => {
+    // 連線時以目錄定義重建道具，雙方送進引擎的是同一份資料。
+    const catalog = props.lockstep ? BATTLE_ITEMS.find(candidate => candidate.id === item.id) : undefined;
+    const normalized = catalog ? ({ ...catalog, ...(item.picked ? { picked: item.picked } : {}) } as BattleItem) : item;
+    lockstepRun(side, (turn, phase) => ({ kind: 'item', side, id: item.id, ...(item.picked ? { picked: { side: item.picked.side, battleId: item.picked.battleId } } : {}), turn, phase } as LockstepSelection), () => onUseItemRaw(side, normalized));
+  };
+  function applyRemoteSelection(selection: LockstepSelection): boolean {
+    const ls = props.lockstep;
+    if (!ls || selection.side === ls.localSide || !battleAliveRef.current) return false;
+    const before = syncStateRef.current;
+    if (before.turnNumber !== selection.turn || before.phase !== selection.phase) return false;
+    const side = selection.side;
+    lockstepApplying = true;
+    try {
+      if (selection.kind === 'skill') { const skill = before[side].skills[selection.slot]; if (!skill) return false; onSkillSelectRaw(side, skill); }
+      else if (selection.kind === 'wait') onSkillSelectRaw(side, { name: '等待', type: '普通', category: '屬性', power: 0, pp: 0 } as Skill);
+      else if (selection.kind === 'pass') onPassRaw(side);
+      else if (selection.kind === 'switch') onSwitchElfRaw(side, selection.index);
+      else if (selection.kind === 'item') {
+        const catalog = BATTLE_ITEMS.find(candidate => candidate.id === selection.id);
+        if (!catalog) return false;
+        onUseItemRaw(side, { ...catalog, ...(selection.picked ? { picked: selection.picked } : {}) } as BattleItem);
+      }
+    } finally { lockstepApplying = false; }
+    const after = syncStateRef.current;
+    return after.phase !== before.phase || after.turnNumber !== before.turnNumber;
+  }
+
   // ── 狀態提交後的反應（取代原本 React useEffect 依 phase 觸發的驅動）──
   // 原本這些在 render 後依「畫面看到的 phase」觸發；現在依每次整批提交的狀態觸發，順序與條件相同。
   let lastReact: { phase?: string; auto?: boolean; winner?: any } = {};
@@ -4636,7 +4735,8 @@ syncStateRef.current = { ...syncStateRef.current, [actorRegKey]: { ...rg, attack
   function reactToCommit() {
     const st = syncStateRef.current;
     const prev = lastReact;
-    const phase = st.phase, auto = !!st.isAutoBattle, winner = st.winner;
+    // 連線對戰不托管（見 validateIdle 的說明）。
+    const phase = st.phase, auto = !!st.isAutoBattle && !props.lockstep, winner = st.winner;
     lastReact = { phase, auto, winner };
     if (props.prepareAi && battleMode==='PVE' && !props.simulation && !props.isInputPaused?.() && !winner && !auto && phase==='p1_select') {
       // 同時選招：P1 尚未選擇時用同一戰局提前評估，不預知選招、不消耗正式亂數。
@@ -4669,7 +4769,9 @@ syncStateRef.current = { ...syncStateRef.current, [actorRegKey]: { ...rg, attack
     // 自動空過：選擇階段無任何可用行動（全部封鎖）時，依偏好自動空過，避免卡死。
     if (prev.phase !== phase && !winner && (phase === 'p1_select' || (phase === 'p2_select' && battleMode !== 'PVE')) && !props.simulation) {
       const side = phase === 'p1_select' ? 'p1' : 'p2';
-      if (!(side === 'p1' && auto) && readPassMode() === 'auto' && legalActions(st, side).every(a => a.kind === 'wait')) scheduleBattleTask(async () => {
+      // 連線：對手側的自動空過由對手自己的客戶端決定並送來，本機不代為空過。
+      const remoteSide = !!props.lockstep && side !== props.lockstep.localSide;
+      if (!remoteSide && !(side === 'p1' && auto) && readPassMode() === 'auto' && legalActions(st, side).every(a => a.kind === 'wait')) scheduleBattleTask(async () => {
         await presentation.wait();
         const held = props.actionGate?.();
         if (held) await waitForActionGate(held);
@@ -4745,5 +4847,6 @@ syncStateRef.current = { ...syncStateRef.current, [actorRegKey]: { ...rg, attack
     start, mount, unmount,
     isAlive: () => battleAliveRef.current,
     idle,
+    applyRemoteSelection,
   };
 }

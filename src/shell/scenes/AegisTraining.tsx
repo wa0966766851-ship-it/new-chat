@@ -1,14 +1,19 @@
 // 2026-11-14 Aegis 精靈培養頁：與舊版詳情同功能（能力／性格／學習力、抗性、魂印特質、刻印、技能替換、資料），
 // 但版面與元件全部重做為 Aegis／戰鬥介面風格。資料寫回沿用 StartScreen 的同一個 onChange（倉庫＋隊伍同步）。
 import React, { Suspense, lazy, useMemo, useState } from "react";
-import { X, Pencil, Info, Crown, ArrowLeftRight } from "lucide-react";
+import { X, Pencil, Info, Crown, ArrowLeftRight, Swords,Shield,Sparkles,Diamond,List,Palette,Tags } from "lucide-react";
+import {normalizeElfStats} from '../../utils/elfStats';
+import {TrainingLevelPanel} from '../../training/TrainingLevelPanel';
 import type { BaseStats, Elf, ElfResistances, Inscription, ResistanceSlot, Skill } from "../../types";
 import { ElfAvatar, TypeIcon, SkillTypeIcon } from "../../components/SeerImages";
 import { GENERAL_TRAITS } from "../../data/generalTraits";
 import { ALIEN_TRAITS } from "../../data/alienTraits";
 import { hasAlienGroup } from "../../data/elfGroups";
 import { EffectDescription } from "../../components/EffectDescription";
-import { InscriptionSlot } from "../../components/InscriptionSlot";
+import {getEffectiveInscriptions} from '../../data/inscriptionsCatalog';
+import {GEM_BY_ID} from '../../training/gems';
+import {EffectBlockToggle} from '../../components/EffectBlockToggle';
+import {TrainingTextCopy} from '../TrainingTextCopy';
 import { ElfGroupEditor } from "../../components/ElfGroupEditor";
 import { ElfSkinPicker } from "../../components/ElfSkinPicker";
 import { SEER_NATURES, getNatureFromModifiers, getModifiersFromNature, getDefaultNatureModifiers, EV_PRESETS } from "../../utils/seerNatures";
@@ -21,11 +26,12 @@ import { getElfDisplayRank } from "../../utils/elfDisplayRank";
 import "../art/aegisTraining.css";
 
 const SkillStonePicker = lazy(() => import("../../components/SkillStonePicker"));
+const TypeMatchup=lazy(()=>import('../../components/TypeMatchupPanel').then(m=>({default:m.TypeMatchupPanel})));
 
-type Tab = "stats" | "resist" | "soul" | "insc" | "skill" | "info" | "groups";
-const TABS: { key: Tab; icon: string; label: string }[] = [
-  { key: "stats", icon: "⚔", label: "能力" }, { key: "resist", icon: "🛡", label: "抗性" }, { key: "soul", icon: "✦", label: "魂印" },
-  { key: "insc", icon: "◈", label: "刻印" }, { key: "skill", icon: "☰", label: "技能" }, { key: "info", icon: "ⓘ", label: "資料" }, { key: "groups", icon: "◇", label: "團體" },
+type Tab = "stats" | "resist" | "soul" | "insc" | "skill" | "appearance" | "info" | "groups";
+const TABS: { key: Tab; icon: typeof X; label: string }[] = [
+  { key: "stats", icon:Swords, label: "能力" }, { key: "resist", icon:Shield, label: "抗性" }, { key: "soul", icon:Sparkles, label: "魂印" },
+  { key: "insc", icon:Diamond, label: "刻印" }, { key: "skill", icon:List, label: "技能" }, {key:'appearance',icon:Palette,label:'外觀'}, { key: "info", icon:Info, label: "資料" }, { key: "groups", icon:Tags, label: "團體" },
 ];
 const STAT_KEYS = ["hp", "atk", "def", "spatk", "spdef", "speed"] as const;
 const STAT_LABEL: Record<string, string> = { hp: "體力", atk: "攻擊", def: "防禦", spatk: "特攻", spdef: "特防", speed: "速度" };
@@ -45,11 +51,7 @@ export interface AegisTrainingProps {
   onEditInscription: (index: number) => void;
 }
 
-const withStats = (elf: Elf): Elf => {
-  const stats = calculateElfStats(elf.baseStats, elf.level || 100, elf.ivs, elf.evs, elf.natureModifiers,
-    elf.inscriptions as Inscription[], elf.guildBonuses, elf.hasAnnualBonus);
-  return { ...elf, calculatedStats: stats, maxHp: stats.hp, currentHp: stats.hp };
-};
+const withStats = (elf: Elf): Elf => normalizeElfStats(elf);
 
 export function AegisTraining({ elf, skillSources, groupSources, readonly, onChange, onClose, onEdit, onIntro, onEditInscription }: AegisTrainingProps) {
   const [tab, setTab] = useState<Tab>("stats");
@@ -76,7 +78,7 @@ export function AegisTraining({ elf, skillSources, groupSources, readonly, onCha
           <nav className="atr-rail" role="tablist" aria-label="培養分頁">
             {TABS.map(t => (
               <button key={t.key} type="button" role="tab" aria-selected={tab === t.key} data-active={tab === t.key} title={t.label} onClick={() => setTab(t.key)}>
-                <span aria-hidden>{t.icon}</span><small>{t.label}</small>
+                  <t.icon size={20} aria-hidden/><small>{t.label}</small>
               </button>
             ))}
           </nav>
@@ -88,6 +90,7 @@ export function AegisTraining({ elf, skillSources, groupSources, readonly, onCha
             {tab === "skill" && <SkillTab elf={elf} sources={skillSources} readonly={readonly} onChange={onChange} />}
             {tab === "groups" && <Panel title="歸屬"><ElfGroupEditor key={elf.id} elf={elf} sources={groupSources} readonly={readonly} onChange={onChange} /></Panel>}
             {tab === "info" && <InfoTab elf={elf} readonly={readonly} onChange={onChange} />}
+            {tab==='appearance'&&<Panel title="外觀與動畫"><ElfSkinPicker elf={elf} presentation="aegis" readonly={readonly} onChange={onChange}/></Panel>}
           </section>
         </div>
       </div>
@@ -111,6 +114,7 @@ function StatsTab({ elf, stats, readonly, onChange }: { elf: Elf; stats: BaseSta
   };
   const groups = ["物攻", "特攻", "速度", "防禦", "特防", "平衡"] as const;
   return (<>
+    <TrainingLevelPanel elf={elf} readonly={readonly} onChange={onChange}/>
     <div className="atr-stats">
       {STAT_KEYS.map(k => {
         const m = mods[k] || 1;
@@ -144,6 +148,12 @@ function StatsTab({ elf, stats, readonly, onChange }: { elf: Elf; stats: BaseSta
         ))}
       </div>
     </Panel>
+    <details className="atr-panel"><summary className="cursor-pointer text-cyan-200 text-sm">進階能力 · 個體值／戰隊加成／致命值</summary>
+      <p className="atr-text mt-2">調整後立即保存；不會更改種族值、技能或外觀。</p>
+      <div className="atr-advanced-stats">{STAT_KEYS.map(k=><label key={k}><span>{STAT_LABEL[k]}個體值</span><input aria-label={`${STAT_LABEL[k]}個體值`} type="number" min={0} max={31} disabled={readonly} value={elf.ivs?.[k]??31} onChange={e=>onChange({...elf,ivs:{hp:31,atk:31,def:31,spatk:31,spdef:31,speed:31,...elf.ivs,[k]:Math.max(0,Math.min(31,Math.floor(Number(e.target.value)||0)))}})}/></label>)}</div>
+      <div className="atr-advanced-stats">{STAT_KEYS.map(k=><label key={k}><span>{STAT_LABEL[k]}戰隊加成</span><input aria-label={`${STAT_LABEL[k]}戰隊加成`} type="number" min={0} max={k==='hp'?30:k==='speed'?10:15} disabled={readonly} value={elf.guildBonuses?.[k]??0} onChange={e=>onChange({...elf,guildBonuses:{hp:0,atk:0,def:0,spatk:0,spdef:0,speed:0,...elf.guildBonuses,[k]:Math.max(0,Math.min(k==='hp'?30:k==='speed'?10:15,Math.floor(Number(e.target.value)||0)))}})}/></label>)}</div>
+      <label className="atr-ev mt-3"><span>致命值</span><input aria-label="致命值" type="number" min={0} max={16} disabled={readonly} value={elf.critValue??1} onChange={e=>onChange({...elf,critValue:Math.max(0,Math.min(16,Number(e.target.value)||0))})}/><small>每點1/16機率</small></label>
+    </details>
   </>);
 }
 
@@ -215,11 +225,11 @@ function SoulTab({ elf, readonly, onChange }: Pick<AegisTrainingProps, 'elf' | '
   const traits = [elf.alienTraits?.gen2Trait, (elf.alienTraits as any)?.exclusiveTrait, ...(((elf.alienTraits as any)?.exclusiveTraits) || [])].filter(Boolean) as any[];
   const seen = new Set<string>();
   return (<>
-    {elf.soulMark && <Panel title={`魂印「${elf.soulMark.badgeChar || (elf.soulMark.name || "").slice(0, 1)}」`} aside={<span className="atr-chip">{elf.soulMark.name}</span>}>
-      <EffectDescription description={elf.soulMark.description} className="atr-text" />
+    {elf.soulMark && <Panel title={`魂印「${elf.soulMark.badgeChar || (elf.soulMark.name || "").slice(0, 1)}」`} aside={<span className="inline-flex items-center gap-2"><span className="atr-chip">{elf.soulMark.name}</span><TrainingTextCopy text={elf.soulMark.description||''} label="複製魂印描述"/></span>}>
+      <EffectBlockToggle elf={elf}><EffectDescription description={elf.soulMark.description} className="atr-text" /></EffectBlockToggle>
     </Panel>}
     {traits.filter(t => { const k = t.name || t.description; if (seen.has(k)) return false; seen.add(k); return true; }).map((t, i) => (
-      <Panel key={i} title={t.name || "特質"}><EffectDescription description={t.description} className="atr-text" /></Panel>
+      <Panel key={i} title={t.name || "特質"}><EffectBlockToggle trait={t}><EffectDescription description={t.description} className="atr-text" /></EffectBlockToggle></Panel>
     ))}
     {elf.trait && elf.trait.name !== elf.alienTraits?.generalTrait?.name &&
       <Panel title={elf.trait.name}><EffectDescription description={elf.trait.description} className="atr-text" /></Panel>}
@@ -230,9 +240,15 @@ function SoulTab({ elf, readonly, onChange }: Pick<AegisTrainingProps, 'elf' | '
 
 function InscTab({ elf, readonly, onEdit }: { elf: Elf; readonly?: boolean; onEdit: (i: number) => void }) {
   return (
-    <Panel title="刻印" aside={<span className="atr-chip">{(elf.inscriptions || []).filter(Boolean).length}/3</span>}>
+    <Panel title="刻印" aside={<span className="atr-chip">{getEffectiveInscriptions(elf.inscriptions).filter(i=>!i.id?.startsWith('empty_inscription_')).length}/3</span>}>
       <div className="atr-insc">
-        {[0, 1, 2].map(i => <InscriptionSlot key={i} index={i} inscription={elf.inscriptions?.[i]} onClick={() => !readonly && onEdit(i)} size="md" />)}
+        {getEffectiveInscriptions(elf.inscriptions).map((inscription,i)=><button type="button" className="atr-inscription-card" disabled={readonly} key={i} aria-label={`編輯第 ${i+1} 刻印孔`} onClick={()=>onEdit(i)}>
+          <span className="atr-inscription-number">{String(i+1).padStart(2,'0')}</span>
+          {inscription.skinIcon?<img alt="刻印外觀" src={inscription.skinIcon} loading="lazy"/>:<Diamond size={36}/>}
+          <b>{inscription.name}</b><span className="atr-inscription-values">{STAT_KEYS.map(k=><small key={k}>{STAT_LABEL[k]} +{inscription.stats[k]||0}</small>)}</span>
+          <span className="atr-inscription-gem">{inscription.gem?`◆ ${GEM_BY_ID[inscription.gem.id]?.name||'已嵌寶石'}`:'◇ 未嵌寶石'}</span>
+          <small>調整能力 · 寶石 · 外觀</small>
+        </button>)}
       </div>
     </Panel>
   );
@@ -283,7 +299,7 @@ function SkillTab({ elf, sources, readonly, onChange }: { elf: Elf; sources: Elf
 function SkillCard({ skill, fifth, state, action, onClick }: { skill: Skill; fifth?: boolean; state?: "current" | "equipped"; action?: React.ReactNode; onClick?: () => void; key?: React.Key }) {
   return (
     <div className="atr-skill" data-fifth={fifth || undefined} data-state={state} role={onClick ? "button" : undefined} tabIndex={onClick ? 0 : undefined}
-      onClick={onClick} onKeyDown={e => { if (onClick && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); onClick(); } }}>
+      onClick={e=>{if(!(e.target as HTMLElement).closest('button,select,input,nav'))onClick?.();}} onKeyDown={e => { if (onClick && e.target===e.currentTarget && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); onClick(); } }}>
       <div className="atr-skill-head">
         <SkillTypeIcon skill={skill} size={22} />
         <b className="truncate">{fifth && <Crown size={13} className="inline mr-1 -mt-0.5" />}{skill.name}</b>
@@ -292,14 +308,16 @@ function SkillCard({ skill, fifth, state, action, onClick }: { skill: Skill; fif
         </span>
         {state === "current" && <span className="atr-chip">裝備中</span>}
         {state === "equipped" && <span className="atr-chip" title="選擇後與目前格互換">⇄</span>}
+        <TrainingTextCopy text={`${skill.name}\n${skill.description||''}`} label={`複製 ${skill.name} 描述`}/>
         {action}
       </div>
-      <EffectDescription skill={skill} className="atr-text atr-skill-desc" />
+      <EffectBlockToggle skill={skill}><EffectDescription skill={skill} className="atr-text atr-skill-desc" /></EffectBlockToggle>
     </div>
   );
 }
 
 function InfoTab({ elf, readonly, onChange }: { elf: Elf; readonly?: boolean; onChange: (e: Elf) => void }) {
+  const [matchup,setMatchup]=useState(false);
   return (<>
     <Panel title="資料">
       <dl className="atr-info">
@@ -309,9 +327,10 @@ function InfoTab({ elf, readonly, onChange }: { elf: Elf; readonly?: boolean; on
         <dt>體重</dt><dd>{elf.weight || "—"} kg</dd>
         <dt>性別</dt><dd>{elf.gender || "無性別"}</dd>
         {getElfDisplayRank(elf) && <><dt>分級</dt><dd>{getElfDisplayRank(elf)}</dd></>}
+        {elf.specialModeRating&&elf.specialModeRating!=='未評級'&&<><dt>特殊評級</dt><dd>{elf.specialModeRating}</dd></>}
       </dl>
     </Panel>
-    {!readonly && <Panel title="造型"><ElfSkinPicker elf={elf} onChange={onChange} /></Panel>}
+    <details className="atr-panel" onToggle={e=>setMatchup(e.currentTarget.open)}><summary className="cursor-pointer text-cyan-200 text-sm">屬性克制速查</summary>{matchup&&<Suspense fallback={<p>載入屬性克制…</p>}><TypeMatchup type={elf.type}/></Suspense>}</details>
     {elf.description && <Panel title="備註"><p className="atr-text whitespace-pre-wrap">{elf.description}</p></Panel>}
   </>);
 }

@@ -58,7 +58,7 @@
 .lobby-head { width:clamp(28px,3vw,42px); height:clamp(28px,3vw,42px); object-fit:cover; border-radius:50%; border:1px solid #a8ccdd55; min-width:0; }
 .lobby-squad-row > button { display:flex; align-items:center; gap:8px; min-height:44px; color:#d3ebf7; font-size:13px; }
 .lobby-squad-row > button span { font-size:11px; color:#9fbbc9; }
-.lobby-shortcuts { grid-column:2; display:flex; gap:16px; }
+.lobby-shortcuts { grid-column:2; display:flex; flex-wrap:wrap; gap:16px; }
 .lobby-shortcuts button { display:flex; gap:10px; align-items:center; min-height:44px; color:#d4e9f3; text-align:left; font-size:13px; }
 .lobby-shortcuts small { display:block; color:#99afbd; font-size:11px; margin-top:2px; }
 /* 管理頁使用同一字級與尺寸上限，不能把頭像當作會隨視窗無限長大的內容。 */

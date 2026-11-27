@@ -85,7 +85,11 @@ export class BattlePresentation {
   /** 排入時間軸：前面的演出播完才執行（不等待也不阻擋引擎）。 */
   private schedule(step: () => void | Promise<void>): Promise<void> {
     this.pending++;
-    this.tail = this.tail.then(async () => { try { if (this.active) await step(); } finally { this.pending--; } });
+    this.tail = this.tail.then(async () => {
+      try { if (this.active) await step(); }
+      catch (error) { console.error('[battle presentation]', error); }
+      finally { this.pending--; }
+    });
     return this.tail;
   }
   /** 引擎提交的狀態：播到這裡時畫面才換成它。 */
@@ -150,9 +154,13 @@ export class BattlePresentation {
         await impact;
         return;
       }
-      this.skillAnim = anim; this.notify();
-      if (!this.fast()) await this.pause(anim?.category==='extra'?Math.max(duration,EXTRA_ANIM_MIN_MS):duration);
-      this.skillAnim = null; this.notify();
+      this.skillAnim = anim;
+      try {
+        this.notify();
+        if (!this.fast()) await this.pause(anim?.category==='extra'?Math.max(duration,EXTRA_ANIM_MIN_MS):duration);
+      } finally {
+        this.skillAnim = null; this.notify();
+      }
   }
   private recovery:Promise<void>=Promise.resolve();
   private extraRecoveryActive=false;
@@ -329,7 +337,6 @@ export class BattlePresentation {
       const cur = this.planned.get(k) ?? this.hp.get(k) ?? e.before;
       this.planned.set(k, e.alive !== true && e.after <= 0 ? e.after : cur + e.delta);
     }
-    this.pending++;
     const play = async () => {
       if(simultaneous||(this.extraRecoveryActive&&events.every(e=>e.channel!=='extra')))await this.recovery;
       const frames = simultaneous ? [events] : events.map(e => [e]);
@@ -374,14 +381,24 @@ export class BattlePresentation {
         if (!this.fast()) await this.pause(POPUP_HOLD_MS.exit);
       }
     };
-    this.tail = this.tail.then(play).finally(() => { this.pending--; });
-    return this.tail;
+    return this.schedule(play);
   }
   private pause(ms: number) {
-    return new Promise<void>(resolve => {
-      let remaining=ms,last=performance.now(),timer:ReturnType<typeof setTimeout>;
-      const finish=()=>{clearTimeout(timer);this.cancelWait=undefined;resolve();};
-      const tick=()=>{const now=performance.now();remaining-=(now-last)*animationSpeed(this.settings().speed);last=now;if(remaining<=0)finish();else timer=setTimeout(tick,Math.min(16,remaining));};
+    return new Promise<void>((resolve, reject) => {
+      let remaining = ms, last = performance.now(), timer: ReturnType<typeof setTimeout>;
+      const finish = () => { clearTimeout(timer); this.cancelWait = undefined; resolve(); };
+      const tick = () => {
+        try {
+          const now = performance.now();
+          remaining -= (now - last) * animationSpeed(this.settings().speed);
+          last = now;
+          if (remaining <= 0) finish();
+          else timer = setTimeout(tick, Math.min(16, remaining));
+        } catch (error) {
+          this.cancelWait = undefined;
+          reject(error);
+        }
+      };
       timer=setTimeout(tick,0);
       this.cancelWait=finish;
     });

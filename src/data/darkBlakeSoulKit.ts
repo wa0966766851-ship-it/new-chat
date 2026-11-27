@@ -14,19 +14,19 @@ export const DARK_BLAKE_SOUL_KIT=[
   {cond:[c('opp_selected',{kind:'技能'})],acts:[a('evade_turns',{turns:2,chance:100,kind:'all'})]},
  ],6),
  soul('對手選擇技能時：對手使用技能後解除自身異常狀態並附加自身狂暴異常3回合','opp_after_skill',[act(a('cure_status',{side:'self'}),a('status',{side:'self',status:'狂暴',turns:3,chance:100}))],7),
- soul('若對手選擇使用必中技能：自身受到非真實傷害降低80%，下次自身使用攻擊技能時造成的非真實傷害提升160%；雙方每處於1種異常狀態則上述效果翻倍（至多10次）','round_start',[
-  {cond:[c('opp_selected',{kind:'技能'}),c('opp_selected_sure')],acts:[a('status_doubling_mods',{reduce:.8,boost:1.6,cap:10})]},
+ soul('若對手選擇使用必中技能：直到回合結束時自身每次受到非真實傷害降低80%，下次自身使用攻擊技能時造成的非真實傷害提升160%；雙方每處於1種異常狀態則上述提升非真實傷害效果翻倍10次，且每次降低非真實傷害效果額外降低10次','round_start',[
+  {cond:[c('opp_selected',{kind:'技能'}),c('opp_selected_sure')],acts:[a('status_doubling_mods',{reduce:.8,boost:1.6,perStatus:10})]},
  ],8),
  soul('若對手使用技能未命中或未選擇使用攻擊技能：自身下次攻擊汲取對手自身攻擊值80%的體力','opp_after_skill',[
-  {cond:[c('fail_kind',{kind:'miss'})],acts:[a('timed_uses',{uses:1,trig:'self_attack',label:'夜靈·汲取',body:[act(a('drain',{base:'stat:攻擊',of:'self',ratio:.8}))]})]},
-  {cond:[c('fail_kind',{kind:'evade'})],acts:[a('timed_uses',{uses:1,trig:'self_attack',label:'夜靈·汲取',body:[act(a('drain',{base:'stat:攻擊',of:'self',ratio:.8}))]})]},
+  {cond:[c('fail_kind',{kind:'miss'})],acts:[a('timed_uses',{uses:1,trig:'self_attack',label:'夜靈·汲取',body:[act(a('drain',{base:'stat:攻擊',of:'self',ratio:.8,type:'真實'}))]})]},
+  {cond:[c('fail_kind',{kind:'evade'})],acts:[a('timed_uses',{uses:1,trig:'self_attack',label:'夜靈·汲取',body:[act(a('drain',{base:'stat:攻擊',of:'self',ratio:.8,type:'真實'}))]})]},
  ],9),
  soul('若對手未選擇使用攻擊技能：自身下次攻擊汲取對手自身攻擊值80%的體力','round_start',[
-  {cond:[c('opp_selected',{kind:'屬性'})],acts:[a('timed_uses',{uses:1,trig:'self_attack',label:'夜靈·汲取',body:[act(a('drain',{base:'stat:攻擊',of:'self',ratio:.8}))]})]},
-  {cond:[c('opp_selected',{kind:'none'})],acts:[a('timed_uses',{uses:1,trig:'self_attack',label:'夜靈·汲取',body:[act(a('drain',{base:'stat:攻擊',of:'self',ratio:.8}))]})]},
+  {cond:[c('opp_selected',{kind:'屬性'})],acts:[a('timed_uses',{uses:1,trig:'self_attack',label:'夜靈·汲取',body:[act(a('drain',{base:'stat:攻擊',of:'self',ratio:.8,type:'真實'}))]})]},
+  {cond:[c('opp_selected',{kind:'none'})],acts:[a('timed_uses',{uses:1,trig:'self_attack',label:'夜靈·汲取',body:[act(a('drain',{base:'stat:攻擊',of:'self',ratio:.8,type:'真實'}))]})]},
  ],10),
  // 處於異常狀態時
- soul('處於異常狀態時：選擇使用技能不受PP值限制','round_end',[{cond:[abnormal],acts:[a('pp_unlimited_until_switch',{})]}],11),
+ soul('處於異常狀態時：選擇使用技能不受PP值限制','battle_start',[act(a('skill_rules',{ppLimitWhenAbnormal:true}))],11),
  soul('處於異常狀態時：每次使用攻擊技能依序令對手束縛、詛咒、害怕，並令對手隨機2個PP值不為0的技能歸0','self_attack',[
   {cond:[abnormal],acts:[a('status_seq',{side:'opp',list:['束縛','詛咒','害怕'],chance:100,turns:3}),a('pp_zero_random',{count:2})]},
  ],12),

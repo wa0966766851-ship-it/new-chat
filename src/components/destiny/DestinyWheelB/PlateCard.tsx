@@ -93,7 +93,7 @@ export function PlateCard(p: PlateCardProps) {
     <div role="button" tabIndex={0} aria-label={label} aria-pressed={p.picked !== undefined || p.banned !== undefined ? !!(picked || banned) : undefined}
       data-testid={p.testid} data-face="front" data-rank={rank} data-instance={elf.instanceId} data-pool-slot={index} data-picked={picked ? "1" : undefined} data-banned={banned ? "1" : undefined}
       className={`dwb-card dwb-card--${rank}${picked ? " is-picked" : ""}${starter ? " is-starter" : ""}${banned ? " is-banned" : ""}${p.dim ? " is-dim" : ""}${p.animated === false ? "" : " is-anim"}`}
-      onClick={p.onActivate} onKeyDown={onKey} title={p.activateLabel}>
+      onClick={p.onActivate} onKeyDown={onKey} title={p.activateLabel || label}>
       <Frame seed={seed} rank={rank} selected={picked || starter} />
       <RankSeal rank={rank} size={30} seed={seed % 997} className="dwb-seal" />
       <span className="dwb-card-no" aria-hidden="true">{num}</span>

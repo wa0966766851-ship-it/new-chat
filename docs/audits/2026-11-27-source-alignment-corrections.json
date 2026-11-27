@@ -1,0 +1,72 @@
+{
+  "date": "2026-11-27",
+  "scope": "Source-alignment corrections requested this turn. Preserve all unrelated dirty work; no Git commit/push.",
+  "changes": [
+    {
+      "topic": "布萊克倍率",
+      "rule": "n為雙方各自現有異常種類數之和（維持既有持有者分開計數）；增傷部分1.6×2^(10n)，非真實傷害保留倍率0.2^(1+10n)。在對手選擇技能後的回合開始節點取樣。",
+      "verification": "P1/P2 1億固定傷害乘算後仍有約2點傷害；不是100%免疫。極小正倍率不會因浮點相減轉成免疫。"
+    },
+    {
+      "topic": "布萊克PP與技能",
+      "rule": "異常狀態即時決定0PP選招豁免；解除後立即撤銷。汲取改真實傷害。新生之夜以整次吸取實際回血與失血判定失敗；固有失效與附加失效分離；轉交查詢全部現有異常。"
+    },
+    {
+      "topic": "王.負咎泯晝",
+      "rule": "保留既有攜帶類、持有者在場、回合開始、對方在場精靈的封印施加範圍。不改成需施放或需對手異常。",
+      "evidence": [
+        "src/data/darkBlakeSkills.ts carriedFatalSeal",
+        "tests/fatalSealCarried.semantic.test.ts 2026-11-22 驗收註解與 P1/P2 未選用該招的測試"
+      ],
+      "limitation": "找到既有實作與驗收紀錄；未從可讀取的舊使用者訊息找到足以推翻或重新劃定此範圍的明確裁定。",
+      "commentMismatch": "Resolved at user request: obsolete opponent-abnormal condition removed from the comment. The abnormal condition governs conditional sure-hit only. Carried seal application behavior remains unchanged."
+    },
+    {
+      "topic": "神降與幻滅",
+      "rule": "非正體力存活會消耗幻滅本場次數。回合結束後禁止新的致死保留，但保留已存在的負體力死亡線，不把負體力直接當成0死亡。"
+    },
+    {
+      "topic": "古王",
+      "rule": "回合類效果按條數；重量按延長前雙方既有異常回合數總和×50，兩邊各自增加。歲月之痕阻止自然倒數與王.天衍破霜主動延長是不同機制。",
+      "verification": "同型兩條回合效果將2/3回合異常延長為4/5，重量各+250；真正歲月印記在兩輪後仍維持3回合狂暴。"
+    },
+    {
+      "topic": "索蘭特",
+      "rule": "已存在且>0的護盾、護罩各調整至200，包括上調。0或不存在者不創建。調整代價按各變化絕對差值相加，最多扣至當前體力1。"
+    },
+    {
+      "topic": "墜霆雷伊",
+      "rule": "以本次登場觸發時的雙方實戰面板快照計算；維持敵方六項實際降低總和換算自身六項各增益。不是種族值。"
+    },
+    {
+      "topic": "蓓麗安特",
+      "rule": "15%使用星執者初始能量；最低150，最多剩餘能量。+300補充不改初始基準。獲得150點能力文字改為能量。",
+      "correction": "既有程式已有2026-10-18能力即能量的裁定註解；前次稽核不應再次列成未裁定。"
+    },
+    {
+      "topic": "珀伽索斯",
+      "rule": "紫羽.幻滅與金羽.烈影的未分類增傷文字明確改為攻擊傷害，保留原本實作範圍。"
+    }
+  ],
+  "checks": [
+    "24 P1/P2 regression checks: tests/sourceAlignmentCorrections.semantic.test.ts",
+    "62 Blockly source/save/reload checks: tests/sourceAlignmentBlocks.test.ts",
+    "96 damage-reduction cases",
+    "83 corrupted Rey block-roundtrip and engine cases",
+    "23 Zhao/Blake/Solant P1/P2 cases",
+    "12 fatal-seal and god-descent P1/P2 cases",
+    "Leonidas engine/age tests passed",
+    "7 damage immunity/reduction distinction cases passed",
+    "Final type check passed; 65-elf atlas synchronized, blank atlas remains independent"
+  ],
+  "build": {
+    "id": "1795716950055",
+    "buildId": "b2346e24cd2d59a4f5bf624d6f28400c8df7538d6b8d1d3e37e47a6002700333",
+    "previous": "1795716488959",
+    "checks": "Final description-only refresh: type check, production frontend/backend build and HTTP identity smoke passed"
+  },
+  "sourcePolicy": "Only user-authorized clarified phrases were changed in the source folder; Black source snapshot refreshed verbatim. King seal application scope held unchanged.",
+  "commentFollowup": "Comment-only clarification after the verified desktop build; no executable behavior changed.",
+  "finalSweep": "One remaining description mismatch fixed: 王.黎明前奏 carried seal description now uses the exact line from DARK_BLAKE_SOURCE, verified equal to current source-folder text. No executable effect or King seal scope changes. Blockly roundtrip 62 entries passed again; atlas refreshed. No further confirmed-scope items found.",
+  "status": "All confirmed-scope corrections complete; stopped per user instruction."
+}

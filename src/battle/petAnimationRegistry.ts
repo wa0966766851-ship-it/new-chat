@@ -37,10 +37,10 @@ export function petAnimationBinding(elf:Pick<Elf,'id'|'name'|'skinId'|'path'> & 
   const allowed=!elf.path||elf.path===`zhakesi_${key}`||elf.path===`/elf-art/zhakesi_${key}_body.png`;
   if(allowed)return ({wrath:'zhakesi15008',greed:'zhakesi15009',fear:'zhakesi15010'} as const)[key];
  }
- // 自製動作素材：只認「這張立繪就是該素材的來源圖」，避免自訂外觀誤接別人的動作。
+ // Only an explicitly reviewed source body can select its matching animation.
+ // This also covers a default appearance that uses a skin resource rather than its pet's base ID.
  const byBody=Object.entries(PET_ANIMATION_ASSETS).find(([,meta])=>{
-  const custom=(meta as {custom?:string}).custom;
-  return custom && 'body' in meta && elf.path===meta.body;
+  return 'body' in meta && elf.path===meta.body;
  });
  if(byBody) return byBody[0] as PetAnimationAssetId;
  // 自訂圖址（含自繪立繪）一律不套用官方動作，避免外觀與動作不同來源。

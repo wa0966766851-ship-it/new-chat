@@ -31,10 +31,11 @@ export default function BagElfPickerModal({ teams, viewerSide = "p1", title, onP
         <div className="p-4 overflow-y-auto custom-scrollbar">
           <ElfPicker
             elves={elves}
+            groupBy={elf => entryOf.get(elf)?.zone === "extra" ? "額外精靈" : "普通精靈"}
             getKey={(elf, i) => `${entryOf.get(elf)?.side}-${elf.battleId || elf.id}-${i}`}
             gridClassName="grid grid-cols-1 sm:grid-cols-2 gap-2"
             itemClassName="group bg-[#050608] border border-slate-800 hover:border-amber-500/60 rounded-xl p-2.5 text-left transition-all flex items-center gap-3 cursor-pointer"
-            onPick={elf => { const x = entryOf.get(elf); if (x) onPick(x.side, String(elf.battleId || elf.id)); }}
+            onPick={elf => { const x = entryOf.get(elf); if (x) onPick(x.side, String(x.elf.battleId || x.elf.id)); }}
             renderItem={elf => {
               const x = entryOf.get(elf)!;
               const hidden = hiddenFromViewer(elf, x.side, mode);

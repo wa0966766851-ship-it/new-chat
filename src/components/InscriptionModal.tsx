@@ -1,18 +1,24 @@
 import React, { useState, useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
-import type { Inscription, BaseStats } from "../types";
+import type { Inscription, BaseStats,Skill } from "../types";
+import {InscriptionGemPicker} from '../training/InscriptionGemPicker';
+import {InscriptionAppearancePicker} from '../training/InscriptionAppearancePicker';
 import { INSCRIPTION_PRESETS, getDefaultInscriptions } from "../data/inscriptionsCatalog";
 import { X, Sparkles, Trash2, CheckCircle2, Shield, Zap } from "lucide-react";
 import { HEXAGON_CLIP } from "./InscriptionSlot";
+import {buildInscriptionDraft,emptyInscription} from '../training/inscriptionDraft';
 
 interface InscriptionModalProps {
   slotIndex: number;
   inscription?: Inscription;
+  skills?:Skill[];
   onSave: (updated?: Inscription) => void;
   onClose: () => void;
 }
 
-export function InscriptionModal({ slotIndex, inscription, onSave, onClose }: InscriptionModalProps) {
+export function InscriptionModal({ slotIndex, inscription, onSave, onClose,skills=[] }: InscriptionModalProps) {
+  const [gem,setGem]=useState(inscription?.gem);
+  const [skinId,setSkinId]=useState(inscription?.skinId);
   const dialogRef = useRef<HTMLDivElement>(null), closeRef = useRef(onClose);
   closeRef.current = onClose;
   useEffect(() => {
@@ -64,14 +70,17 @@ export function InscriptionModal({ slotIndex, inscription, onSave, onClose }: In
 
     const finalName = name.trim() || `專屬刻印·第${slotIndex + 1}孔`;
 
-    onSave({
+    onSave(buildInscriptionDraft(inscription,{
+      ...inscription,id:selectedPresetId||inscription?.id,
       name: finalName,
       stats: finalStats,
-    });
+      gem,
+      skinId,skinIcon:skinId?`/seer/countermark/${skinId}.png`:undefined,
+    }));
   };
 
   const handleRemove = () => {
-    onSave(undefined);
+    onSave(emptyInscription(slotIndex));
   };
 
   return createPortal(
@@ -113,6 +122,8 @@ export function InscriptionModal({ slotIndex, inscription, onSave, onClose }: In
 
         {/* Content Body */}
         <div className="p-5 overflow-y-auto space-y-5 flex-1">
+          <InscriptionGemPicker value={gem} skills={skills} onChange={setGem}/>
+          <InscriptionAppearancePicker value={skinId} onChange={setSkinId}/>
 
           {/* Quick Preset Selector */}
           <div>

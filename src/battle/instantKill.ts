@@ -41,7 +41,7 @@ export function queueInstantKill(ctx:BattleEventContext,targetSide:Side,label:st
   return seen.size>0;
 }
 /** 體力修正不經增減傷／護盾，不派發受傷與吸血；致命抵抗及特殊存活仍走正式規則。 */
-export function settleInstantKill(ctx:BattleEventContext,data:any):Readonly<InstantKillReceipt> {
+export function settleInstantKill(ctx:BattleEventContext,data:any, fatalRound = Number(ctx.roundNumber) || 0):Readonly<InstantKillReceipt> {
   const before=ctx.self.currentHp,id=ctx.self.battleId||ctx.self.id;
   let resistedFatal=false;
   const blocked=checkElfDead(ctx.self)||before<=0||instantKillImmune(ctx.self);
@@ -50,7 +50,7 @@ export function settleInstantKill(ctx:BattleEventContext,data:any):Readonly<Inst
     const immortal=(ctx.self.deathImmunity?.deathImmuneTurns||0)>0;
     if(!isAliveBySurvivalRule(outcome.hp,ctx.self.survivalRule,ctx.self.maxHp)&&!immortal){
       const self=ctx.self;
-      resistedFatal=resolveFatalResist(ctx,ctx.actor,self,before,Number(ctx.roundNumber)||0,()=>!!SoulMarkRegistry[self.name]?.(ctx,EffectTiming.FATAL_RESIST,{damageType:'instant_kill',sourceSide:data.sourceSide,sourceBattleId:data.sourceBattleId})
+      resistedFatal=resolveFatalResist(ctx,ctx.actor,self,before,fatalRound,()=>!!SoulMarkRegistry[self.name]?.(ctx,EffectTiming.FATAL_RESIST,{damageType:'instant_kill',sourceSide:data.sourceSide,sourceBattleId:data.sourceBattleId})
         ||TraitsEngine.triggerFatalResist(ctx)||traitFatalResist(ctx,ctx.actor,self,ctx.rng||Math.random)||checkStatusDrivenFatalResist(ctx),()=>ctx.self);
     }
     if(!resistedFatal)ctx.updateAnyElf(ctx.actor,id,{currentHp:outcome.hp});

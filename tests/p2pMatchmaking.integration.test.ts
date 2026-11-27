@@ -1,0 +1,33 @@
+import assert from 'node:assert/strict';
+import express from 'express';
+import {createP2PSignalRouter} from '../server/p2pSignal';
+import {P2P_RULES_VERSION} from '../src/online/protocol';
+const app=express();app.use('/api/p2p',createP2PSignalRouter({SEER_P2P_ALLOW_DIRECT:'1'}));
+const server=app.listen(0,'127.0.0.1');await new Promise<void>(done=>server.once('listening',done));
+const origin='http://127.0.0.1:'+(server.address() as {port:number}).port;
+const request=(p:string,method='GET',body?:object,token?:string)=>fetch(origin+'/api/p2p'+p,{method,headers:{'Content-Type':'application/json',...(token?{Authorization:'Bearer '+token}:{})},body:body?JSON.stringify(body):undefined});
+const enter=async(mode:string)=>{const r=await request('/match','POST',{version:P2P_RULES_VERSION,mode});assert.equal(r.status,200);return r.json();};
+const poll=(t:any)=>request('/match/'+t.id,'GET',undefined,t.token).then(r=>r.json());
+try{
+ assert.equal((await request('/match','POST',{version:'old',mode:'peak'})).status,409);
+ assert.equal((await request('/match','POST',{version:P2P_RULES_VERSION,mode:'free'})).status,400);
+ const a=await enter('peak'),b=await enter('destiny');
+ assert.equal((await poll(a)).state,'waiting');assert.equal((await poll(b)).state,'waiting');
+ assert.equal((await request('/match/'+a.id)).status,404);
+ const c=await enter('peak');
+ const host=await poll(a),guest=await poll(c);
+ assert.equal(host.state,'matched');assert.equal(host.admission.code,guest.admission.code);
+ assert.equal(host.admission.mode,'peak');assert.equal(host.admission.seat,'host');assert.equal(guest.admission.seat,'guest');
+ assert.notEqual(host.admission.token,guest.admission.token);
+ assert.equal((await poll(b)).state,'waiting','不同模式不可配在一起');
+ await request('/match/'+c.id,'DELETE',undefined,c.token);
+ assert.equal((await request('/match/'+a.id,'GET',undefined,a.token)).status,404,'取消配對撤銷雙方票券');
+ assert.equal((await request('/rooms/'+host.admission.code,'GET',undefined,host.admission.token)).status,404,'取消時關閉已建立的房間');
+ await request('/match/'+b.id,'DELETE',undefined,b.token);
+ const d=await enter('destiny'),e=await enter('destiny');const matched=await poll(d);
+ assert.equal((await request('/match/'+d.id+'/claim','POST',{},d.token)).status,204);
+ assert.equal((await request('/match/'+e.id+'/claim','POST',{},e.token)).status,204);
+ assert.equal((await request('/rooms/'+matched.admission.code,'GET',undefined,matched.admission.token)).status,200,'領取配對不關閉已交接的房間');
+ assert.equal((await request('/match/'+d.id+'/claim','POST',{},d.token)).status,404,'票券只能領取一次');
+ console.log('巔峰/命運分池、雙方座位與房間一致、票券驗證、取消清理及單次領取通過');
+}finally{server.closeAllConnections();await new Promise<void>(done=>server.close(()=>done()));}
