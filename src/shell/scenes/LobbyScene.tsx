@@ -1,5 +1,5 @@
-import React, { useMemo, useState } from 'react';
-import { Swords, Target, Trophy, Flame, Disc, Rocket, Settings2, ArrowUpRight, Package, BookOpen, ScrollText } from 'lucide-react';
+import React, { lazy, Suspense, useMemo, useState } from 'react';
+import { Swords, Target, Trophy, Flame, Disc, Rocket, Settings2, ArrowUpRight, Package, BookOpen, ScrollText, Network } from 'lucide-react';
 import type { ShellBridge, BattleFormat } from '../bridge';
 import { readLastUsedRecord, summarizeTeam, buildTeamSummary } from '../lastTeam';
 import { prepareSavedBattleRoster } from '../../data/prepareSavedBattleRoster';
@@ -9,6 +9,8 @@ import { AegisBackdrop } from '../art/backdrop';
 import { haptic } from '../haptics';
 import { HeroStage, SettingsDrawer } from './LobbyPanels';
 import { NoticeSheet } from '../art/NoticeSheet';
+
+const PeerRoom = lazy(() => import('../../online/PeerRoom'));
 
 type ModeId = 'free' | 'solo' | 'peak6' | 'peak3' | 'destiny' | 'interstellar';
 const MODES: { id: ModeId; title: string; detail: string; icon: typeof Swords; format?: BattleFormat; nav?: 'destiny_wheel' | 'interstellar_exploration' }[] = [
@@ -25,6 +27,7 @@ export function LobbyScene({ b }: { b: ShellBridge }) {
   const [activeMode, setActiveMode] = useState<ModeId>(() => MODES.find(m => m.format === b.battleFormat)?.id ?? 'free');
   const [drawer, setDrawer] = useState(false);
   const [noticeOpen, setNoticeOpen] = useState(false);
+  const [roomOpen, setRoomOpen] = useState(false);
   const p1 = useMemo(() => {
     const record = readLastUsedRecord('p1');
     if (!record) return buildTeamSummary(b.allElvesCombined.slice(0, 12), { hasTeam: false });
@@ -66,10 +69,14 @@ export function LobbyScene({ b }: { b: ShellBridge }) {
         </div>
       </div>
       <div className="lobby-shortcuts">
+        <button type="button" onClick={() => setRoomOpen(true)}><Network size={18} />雙人連線<ArrowUpRight size={16} /></button>
         <button type="button" onClick={() => { haptic('light'); setNoticeOpen(true); }}><ScrollText size={18} /><span>航行日誌<small>更新公告與新精靈</small></span><ArrowUpRight size={16} /></button>
         <button type="button" onClick={() => b.setShowEncyclopedia(true)}><BookOpen size={18} />戰鬥圖鑑<ArrowUpRight size={16} /></button>
       </div>
     </div>
+    {roomOpen && <Suspense fallback={<div role="status" className="absolute bottom-4 right-4">載入雙人連線…</div>}>
+      <PeerRoom starterId={p1.hasTeam ? p1.starter?.id : undefined} onClose={() => setRoomOpen(false)} />
+    </Suspense>}
     {drawer && <SettingsDrawer b={b} onClose={() => setDrawer(false)} onSetup={() => { setDrawer(false); b.setEditingElf(null); b.setEditorTab(undefined); b.setView('bag'); }} />}
       {noticeOpen && <NoticeSheet onClose={() => setNoticeOpen(false)} elves={b.allElvesCombined} />}
   </section>;

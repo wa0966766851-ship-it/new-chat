@@ -1,3 +1,4 @@
+import { reportFatalResult } from '../../battle/fatalHold';
 import {instantKillChance} from '../../battle/instantKillChance';
 import {instantKillImmune} from '../../battle/instantKillImmunity';
 // 原廠 BOSS 特性（BWIKI「赛尔号PVE概论」==BOSS特性==）的通用效果實作。
@@ -358,6 +359,7 @@ export function checkBossTraitFatalResist(ctx: BattleEventContext): boolean {
   const eff = (self?.effects || []).find((e: any) => e?.id === BOSS_TRAIT_BY_ID.revive.status && Number(e.duration) > 0);
   const left = Number(eff?.stacks) || 0;
   if (!eff || left <= 0) return false;
+  reportFatalResult(ctx, 'rebirth');
   self.currentHp = self.maxHp;
   if (left - 1 > 0) self.effects = self.effects.map((e: any) => (e === eff ? { ...e, stacks: left - 1 } : e));
   else {

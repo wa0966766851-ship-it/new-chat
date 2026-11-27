@@ -11,11 +11,19 @@ function choiceKey(state: BattleState, turn: ReturnType<typeof timerTurn>) {
 
 const neverPaused = () => false;
 
-export function useTurnTimer(engine: BattleEngine, state: BattleState, battleMode: 'PVE' | 'PVP', introOn: boolean, isPaused = neverPaused) {
-  const [settings,setSettings]=useState(readTurnTimer);
+/** 雙人連線的選擇時限（玩家未開啟計時器時使用），避免一方離座讓對局卡住。 */
+export const ONLINE_TURN_SECONDS = 60;
+
+/**
+ * localSide：雙人連線時只替本機這一側計時；逾時一律依序選擇（不交給 AI 托管，避免雙方不同步）。
+ */
+export function useTurnTimer(engine: BattleEngine, state: BattleState, battleMode: 'PVE' | 'PVP', introOn: boolean, isPaused = neverPaused, localSide?: 'p1' | 'p2') {
+  const [storedSettings,setSettings]=useState(readTurnTimer);
+  const settings = localSide ? { mode: 'ordered' as const, seconds: storedSettings.mode === 'off' ? ONLINE_TURN_SECONDS : storedSettings.seconds } : storedSettings;
   const [clock,setClock]=useState<{key: string; seconds: number} | null>(null);
   const [autoP2,setAutoP2]=useState(false);
-  const turn=timerTurn(state,battleMode);
+  const rawTurn=timerTurn(state,battleMode);
+  const turn=localSide && rawTurn?.side!==localSide ? undefined : rawTurn;
   const key=choiceKey(state,turn);
   const enabled=settings.mode!=='off' && !introOn && !state.winner;
   const p1Auto=turn?.side==='p1' && state.isAutoBattle;
@@ -57,20 +65,24 @@ export function useTurnTimer(engine: BattleEngine, state: BattleState, battleMod
       else if (!forced) engine.onPass(side);
     };
 
-    let last=Date.now(), left=settings.seconds*1000, paused=true;
-    void engine.presentation.wait().then(()=>{
+    let last=performance.now(), left=settings.seconds*1000, paused=true;
+    let aiPending = false;
+    const start = () => {
       if (cancelled) return;
       // 演出可能在選擇階段已開始後排入。使用同一個倒數暫停／繼續，避免把動畫時間算進玩家的時間。
       const tick=()=>{
-        const now=Date.now();
+        const now=performance.now();
         if (!stillChoosing() || isPaused() || engine.presentation.busy) {
           last=now;
           paused=true;
           return;
         }
         if (controlled) {
-          clearInterval(interval);
-          void engine.performAIAction(side,forced,stillChoosing);
+          if (aiPending) return;
+          aiPending = true;
+          void engine.performAIAction(side, forced, () => stillChoosing() && !isPaused())
+            .catch(error => console.error('[turn timer AI]', error))
+            .finally(() => { aiPending = false; });
           return;
         }
         if (!paused) left=Math.max(0,left-(now-last));
@@ -85,7 +97,8 @@ export function useTurnTimer(engine: BattleEngine, state: BattleState, battleMod
       };
       interval=setInterval(tick,100);
       tick();
-    });
+    };
+    void engine.presentation.wait().catch(error => console.error('[turn timer presentation]', error)).then(start);
 
     return()=>{
       cancelled=true;
@@ -97,6 +110,7 @@ export function useTurnTimer(engine: BattleEngine, state: BattleState, battleMod
     enabled,
     remaining: enabled && !p1Auto && clock?.key===key ? clock.seconds : null,
     side: turn?.side,
+    waitingForPresentation: enabled && !!turn && !p1Auto && clock?.key !== key && !(turn.side === 'p2' && autoP2),
     autoP2: autoP2 && !state.winner,
     stopP2:()=>setAutoP2(false),
   };

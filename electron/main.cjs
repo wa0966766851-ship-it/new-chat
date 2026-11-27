@@ -63,6 +63,11 @@ async function createWindow() {
     if (!mainWindow || event.sender !== mainWindow.webContents || event.senderFrame !== mainWindow.webContents.mainFrame || new URL(event.senderFrame.url).origin !== url) throw new Error('不允許的桌面功能呼叫');
   };
   for (const [channel, handler] of Object.entries({
+    'seer:fullscreen:status': () => mainWindow.isFullScreen(),
+    'seer:fullscreen:set': enabled => {
+      if (typeof enabled !== 'boolean') throw new TypeError('全螢幕須指定開啟或關閉');
+      mainWindow.setFullScreen(enabled);
+    },
     'seer:launcher:status': () => shortcuts.status(),
     'seer:launcher:preferences': enabled => shortcuts.preferences(enabled),
     'seer:launcher:create': confirm => shortcuts.create(confirm),
@@ -87,6 +92,8 @@ async function createWindow() {
       autoplayPolicy: "no-user-gesture-required",
     },
   });
+  mainWindow.on('enter-full-screen', () => mainWindow.webContents.send('seer:fullscreen:changed', true));
+  mainWindow.on('leave-full-screen', () => mainWindow.webContents.send('seer:fullscreen:changed', false));
   await mainWindow.loadURL(url);
   console.log(`Desktop ready: ${url}`);
 }

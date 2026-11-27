@@ -16,6 +16,7 @@ import { CHAPTERS, C, ring, blade, prefersReducedMotion, rng, TAU } from "./bMod
 import { DW, inkLayers } from "../../../design/sketchStroke";
 import { paperFiberDataUrl } from "./paperFiber";
 import dwbCss from "./dwbCss";
+import draftLayoutCss from "./draftLayoutCss";
 import { useScopedStyle } from "../injectStyle";
 
 const CHAPTER_NOTE: Record<string, string[]> = {
@@ -58,7 +59,7 @@ function WheelRitual({ animated }: { animated: boolean }) {
  * 章節：00 序章／01 輪盤／02 圖版／03 禁選／04 編隊。
  */
 export default function DestinyWheelB({ draft, onBack, onSwitchToA }: { draft: DestinyDraft; onBack: () => void; onSwitchToA: () => void }) {
-  useScopedStyle("destiny-wheel-b-css", dwbCss);
+  useScopedStyle("destiny-wheel-b-css", dwbCss + draftLayoutCss);
   const d = draft;
   const shellBack = useShellBack();
   const { phase, battleMode } = d;
@@ -94,9 +95,15 @@ export default function DestinyWheelB({ draft, onBack, onSwitchToA }: { draft: D
   // 版面比例：--dwb-s ＝ 背景 slice 縮放（用來讓序章標題剛好落在鈷藍圓盤內）。
   useEffect(() => {
     const root = rootRef.current; if (!root || typeof window === "undefined") return;
-    const upd = () => { const w = root.getBoundingClientRect().width || window.innerWidth; root.style.setProperty("--dwb-s", Math.max(w / 1600, window.innerHeight / 900).toFixed(3)); };
+    const upd = () => {
+      const rect=root.getBoundingClientRect(),w=rect.width||window.innerWidth;
+      root.style.setProperty("--dwb-s", Math.max(w / 1600, window.innerHeight / 900).toFixed(3));
+      // The shell header consumes real viewport space. Do not add another full 100vh below it.
+      root.style.setProperty('--draft-viewport-height',`${Math.max(320,window.innerHeight-Math.max(0,rect.top))}px`);
+    };
     upd(); window.addEventListener("resize", upd);
-    return () => window.removeEventListener("resize", upd);
+    const observer=typeof ResizeObserver==='undefined'?undefined:new ResizeObserver(upd);observer?.observe(root);
+    return () => { window.removeEventListener("resize", upd);observer?.disconnect(); };
   }, []);
 
   // 靜態模式：輪盤儀式縮成 0.25 秒。
@@ -218,16 +225,18 @@ export default function DestinyWheelB({ draft, onBack, onSwitchToA }: { draft: D
 
         {phase === "pick" && (
           <>
-            <ChapterHead no="04" name="編隊" en="ROSTER" hint="挑 6 隻、點「首」設首發；下方選命運配裝"
+            <ChapterHead no="04" name="編隊" en="ROSTER" hint="挑 6 隻、點「首」設首發；左右兩側選命運配裝"
               count={<span data-testid="b-pick-count">P1 {d.p1PickedIds.length} / 6{battleMode === "PVP" ? `　P2 ${d.p2PickedIds.length} / 6` : ""}</span>}
               actions={<TicketButton go testid="b-launch" sub="PEAK · 6V6" label="啟動巔峰對決" disabled={!d.canLaunch} onClick={d.handleLaunchBattle} />} />
-            <div className="dwb-pools">
+            <div className="dwb-draft-workspace" data-testid="b-loadout">
+              <LoadoutPlate d={d} side="p1" />
+              <div className="dwb-pools">
               {panel(`P1 出戰 · ${d.p1Title}`, "b-pick-p1", p1Avail, <span className="dwb-counts">可用 {p1Avail.length}</span>, d.p1Pool.map(e => (
                 <PlateCard key={e.instanceId} elf={e} owner="p1" mode={mode} index={d.p1Pool.indexOf(e) + 1} face="front" testid="b-pick-card" blueprint={blueprint} animated={animated}
                   banned={e.isBanned} bannedText="已禁用" picked={d.p1PickedIds.includes(e.instanceId)} pickOrder={d.p1PickedIds.indexOf(e.instanceId) + 1} starter={d.p1StarterId === e.instanceId}
                   dim={!d.p1PickedIds.includes(e.instanceId)} onActivate={() => d.togglePick(e.instanceId)} onDetail={() => openDetail(e, "p1")}
                   onStarter={e.isBanned ? undefined : () => d.setP1StarterId(e.instanceId)} />
-              )), 3, "FIG.05", "SQUAD")}
+              )), 4, "FIG.05", "SQUAD")}
               {panel(battleMode === "PVE" ? "AI 卡池 · 已選 6 隻出戰" : `P2 出戰 · ${d.p2Title}`, "b-pick-p2", p2Avail,
                 <span className="dwb-counts">{battleMode === "PVE" ? "首發已定" : `${d.p2PickedIds.length} / 6`}</span>,
                 d.p2Pool.map(e => (
@@ -237,9 +246,10 @@ export default function DestinyWheelB({ draft, onBack, onSwitchToA }: { draft: D
                     onActivate={e.isBanned ? undefined : battleMode === "PVE" ? () => openDetail(e, "p2") : () => d.toggleP2Pick(e.instanceId)}
                     onDetail={() => openDetail(e, "p2")}
                     onStarter={battleMode === "PVP" && !e.isBanned ? () => d.setP2StarterId(e.instanceId) : undefined} />
-                )), 3, "FIG.06", "RIVAL", "b")}
+                )), 4, "FIG.06", "RIVAL", "b")}
             </div>
-            <LoadoutPlate d={d} />
+            <LoadoutPlate d={d} side="p2" />
+            </div>
           </>
         )}
       </main>

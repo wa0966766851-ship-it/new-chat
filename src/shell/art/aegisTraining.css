@@ -1,4 +1,9 @@
 /* Aegis 精靈培養頁（2026-11-14）：與編成工作區／戰鬥 HUD 同一套視覺語言（斜切角面板、青色描邊、軌道線）。 */
+.atr-advanced-stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px;margin-top:12px}.atr-advanced-stats label{display:flex;flex-direction:column;gap:6px;color:#9fc6d6;font-size:12px}.atr-advanced-stats input{width:100%;min-width:0;border:1px solid #6a9ab966;background:#112d40;color:#effaff;padding:7px;border-radius:3px}
+.atr-inscription-card{position:relative;display:flex;flex-direction:column;align-items:center;gap:12px;min-width:0;padding:18px 12px;border:1px solid #6f9aae70;border-top:2px solid #84e1f5;border-radius:2px 18px 2px 2px;background:linear-gradient(145deg,#153b50,#081724);color:#bbecf8}.atr-inscription-card:hover{border-color:#9beef7;background:#123446}.atr-inscription-card img{width:64px;height:64px;object-fit:contain}.atr-inscription-card b{font-size:13px;overflow-wrap:anywhere}.atr-inscription-card>small{font-size:10px;color:#8fb3c4}.atr-inscription-number{position:absolute;left:10px;top:9px;font-size:10px;color:#6f95a6}.atr-inscription-values{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px 12px;font-size:11px;text-align:left}.atr-inscription-gem{max-width:100%;font-size:11px;overflow-wrap:anywhere;color:#8de8ff}
+.atr-skin{border-radius:2px 16px 2px 2px!important;background:#081b2b!important}.atr-skin>div:nth-child(2){height:310px;border:1px solid #639ab644;border-radius:2px 14px 2px 2px;background:radial-gradient(ellipse at center,#23526a66,transparent 70%)}.atr-skin select{border-radius:3px;background:#112d40!important;border-color:#6a9ab966!important}
+.atr-content .ios-segment{border:1px solid #639ab669;border-radius:2px 10px 2px 2px;background:#0b2030;padding:2px}.atr-content .ios-segment button{border-radius:2px 7px 2px 2px;color:#9fc6d6;padding:6px 10px}.atr-content .ios-segment button[data-active=true]{background:#28607b;color:#ecfbff}
+@media(max-width:600px){.atr-inscription-values{grid-template-columns:1fr}.atr-inscription-card{padding:20px 7px 12px;gap:9px}.atr-inscription-card b{font-size:11px}.atr-advanced-stats{grid-template-columns:repeat(2,minmax(0,1fr))}.atr-skin>div:nth-child(2){height:240px}}
 .atr-root { position: fixed; inset: 0; z-index: 220; display: flex; align-items: center; justify-content: center; padding: 12px; background: #020a12cc; backdrop-filter: blur(6px); }
 .atr-sheet { position: relative; isolation: isolate; overflow: hidden; width: min(1080px, 98vw); height: min(92vh, 900px); display: flex; flex-direction: column;
   border: 1px solid #6f9aae80; border-top: 2px solid #84e1f5; border-radius: 2px 22px 2px 2px; background: linear-gradient(155deg, #0f2c40f2, #050f19f5 60%); box-shadow: 0 24px 60px #000a; color: #d7edf6; }
@@ -67,6 +72,7 @@
 .atr-info { display: grid; grid-template-columns: 4rem 1fr; gap: 6px 12px; font-size: 13px; }
 .atr-info dt { color: #8fb3c4; } .atr-info dd { color: #eafcff; display: flex; align-items: center; gap: 4px; }
 .atr-empty { text-align: center; color: #6f95a6; padding: 24px 0; }
+.atr-inscription-card:disabled{cursor:default;opacity:.65}
 @media (max-width: 720px) {
   .atr-root { padding: 0; } .atr-sheet { width: 100vw; height: 100dvh; border-radius: 0; }
   .atr-body { flex-direction: column; }

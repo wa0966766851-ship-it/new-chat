@@ -1,6 +1,7 @@
 import { BaseStats } from "../types";
 import { TITLE_CATALOG } from "./titles";
 import { normalizeElfStats } from "../utils/elfStats";
+import {SUIT_PERKS,perkText} from '../modes/interstellar/v2/suitPerks';
 
 export interface SuitDefinition {
   id: string;
@@ -299,6 +300,10 @@ export const SUIT_CATALOG: Record<string, SuitDefinition> = {
   },
 };
 
+for(const [id,{perk}] of Object.entries(SUIT_PERKS)){
+ const suit=SUIT_CATALOG[id];
+ if(suit)suit.description+='\n【星蝕迴廊適應】'+perkText(perk).join('；')+'。N12起不生效。';
+}
 export const EYEWEAR_CATALOG: Record<string, EyewearDefinition> = {
   roamer_as: {
     id: "roamer_as",

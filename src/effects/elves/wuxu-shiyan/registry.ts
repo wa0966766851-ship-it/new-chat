@@ -1,3 +1,4 @@
+import { reportFatalResult } from '../../../battle/fatalHold';
 import { isAlienElf } from '../../../battle/advancedDamageModifiers';
 import { getElfAdvancedMechanics,hasAuthoredAdvancedMechanic } from '../../../data/traitsRegistry';
 import type { BattleEventContext as C, BattleSkillHandler } from '../../types';
@@ -178,7 +179,8 @@ function runShiyanSoul(ctx: C, event: E, extraData?: any): any {
         setPlayerState(`${actor}_cyberWraithHasSubbed`, true);
         setPlayerState(`${actor}_cyberWraithHp`, 0);
         setPlayerState(`${actor}_wraithDamageDoubled`, true);
-        ctx.updateElf(actor, { currentHp: Math.floor(self.maxHp * 0.2) });
+        reportFatalResult(ctx, 'hold');
+        ctx.updateElf(actor, { currentHp: Math.max(1, Math.floor(self.maxHp * 0.2)) });
         return true;
       }
 

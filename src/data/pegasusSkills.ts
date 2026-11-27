@@ -35,7 +35,7 @@ export const PEGASUS_VIOLET=skill(violet,'超能','特殊',100,5,3,[
   // 額外吸取條件取吸取前快照，各份獨立結算；整次未回血才催眠。
   act(a('drain_checked_then',{type:'百分比',ratio:.25,extraRatio:.5,extraBelowHpRatio:.5,measure:'healed',threshold:1,belowBody:[act(a('status',{side:'opp',status:'睡眠',chance:100}))]})),
  ]}))],4),
- line(violet,'造成傷害提升150%','use',[act(a('boost',{mult:2.5,kind:'攻擊'}),a('dmg_mod_uses',{uses:1,boost:1.5,kind:'攻擊',attackOnly:true}))],5),
+ line(violet,'造成攻擊傷害提升150%','use',[act(a('boost',{mult:2.5,kind:'攻擊'}),a('dmg_mod_uses',{uses:1,boost:1.5,kind:'攻擊',attackOnly:true}))],5),
  line(violet,'下2次自身','use',[act(a('prio_next',{v:2,uses:2,attackOnly:true}))],6),
 ],{sure:true});
 const white='白羽.閃耀';

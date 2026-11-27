@@ -1,5 +1,5 @@
 import { fifthSkillSlot } from '../battle/skillSlot';
-import { useState, useEffect, useMemo, lazy, Suspense } from "react";
+import { useState, useEffect, useMemo, lazy, Suspense,createElement } from "react";
 import { useShellBack } from "../shell/shellBack";
 import tacticalPageCss from "../design/tacticalPageCss";
 import { useScopedStyle } from "./destiny/injectStyle";
@@ -42,6 +42,7 @@ import { ClauseBreakdownCard } from "./ClauseBreakdownCard";
 const LazyKitEffectBuilder = lazy(() => import("./KitEffectBuilder").then(m => ({ default: m.KitEffectBuilder })));
 const LazyEffectConnectionControls = lazy(() => import('./EffectConnectionControls'));
 const LazyElfBlocklyPanel = lazy(() => import("./ElfBlocklyPanel").then(m => ({ default: m.ElfBlocklyPanel })));
+const AegisInscriptionEditor=lazy(()=>import('../shell/scenes/AegisInscriptionEditor').then(m=>({default:m.AegisInscriptionEditor})));
 const editorLoading = <p role="status" className="p-4 text-sm text-slate-400">載入積木編輯工具…</p>;
 function KitEffectBuilder(props: ComponentProps<typeof LazyKitEffectBuilder>) {
   return <Suspense fallback={editorLoading}><LazyKitEffectBuilder {...props} /></Suspense>;
@@ -888,13 +889,15 @@ const GrammarLegend = ({ currentText = "" }: { currentText?: string }) => {
 };
 
 interface ElfEditorProps {
+  key?:string;
+  presentation?:'legacy'|'aegis';
   initialElf?: Elf;
   onSaveElf: (elf: Elf) => void;
   onBack: () => void;
   initialTab?: "ai" | "manual" | "blockly";
 }
 
-export default function ElfEditor({ initialElf: suppliedElf, onSaveElf, onBack, initialTab }: ElfEditorProps) {
+export default function ElfEditor({ initialElf: suppliedElf, onSaveElf, onBack, initialTab,presentation='legacy' }: ElfEditorProps) {
   const [initialElf, setInitialElf] = useState(suppliedElf);
   const shellBack = useShellBack();
   useScopedStyle("tactical-page-css", tacticalPageCss);
@@ -1443,7 +1446,7 @@ export default function ElfEditor({ initialElf: suppliedElf, onSaveElf, onBack, 
 
   // 儲存與匯出使用相同完整草稿；匯出並不代表效果已實裝。
   const buildManualElf = (): Elf => {
-    const calculated = calculateElfStats(baseStats, 100, initialElf?.ivs, evs, natureModifiers,
+    const calculated = calculateElfStats(baseStats, initialElf?.level ?? 100, initialElf?.ivs, evs, natureModifiers,
       inscriptions as Inscription[], guildBonuses, initialElf?.hasAnnualBonus);
     const isZhakesi = elfName === "湮滅之主・咤克斯" || initialElf?.id === "zhakesi" || soulMarkName === "咤";
 
@@ -1452,7 +1455,7 @@ export default function ElfEditor({ initialElf: suppliedElf, onSaveElf, onBack, 
       id: initialElf?.id || manualDraftId,
       name: elfName,
       type: elfType,
-      level: 100,
+      level: initialElf?.level ?? 100,
       baseStats: baseStats,
       evs: evs,
       natureModifiers: natureModifiers,
@@ -2260,12 +2263,12 @@ export default function ElfEditor({ initialElf: suppliedElf, onSaveElf, onBack, 
   };
 
   const calculatedManualStats = useMemo(() => calculateElfStats(
-    baseStats, 100, initialElf?.ivs, evs, natureModifiers, inscriptions as Inscription[],
+    baseStats, initialElf?.level ?? 100, initialElf?.ivs, evs, natureModifiers, inscriptions as Inscription[],
     guildBonuses, initialElf?.hasAnnualBonus
-  ), [baseStats, evs, natureModifiers, inscriptions, guildBonuses, initialElf?.ivs, initialElf?.hasAnnualBonus]);
+  ), [baseStats, evs, natureModifiers, inscriptions, guildBonuses, initialElf?.level, initialElf?.ivs, initialElf?.hasAnnualBonus]);
 
   const manualDraft = { ...initialElf, id: initialElf?.id || "editor-draft", name: elfName, type: elfType,
-    level: 100, path: path || undefined, skinId, baseStats, calculatedStats: calculatedManualStats,
+    level: initialElf?.level ?? 100, path: path || undefined, skinId, baseStats, calculatedStats: calculatedManualStats,
     currentHp: calculatedManualStats.hp, maxHp: calculatedManualStats.hp, skills, skillPool,
     soulMark: { ...initialElf?.soulMark, name: soulMarkName, description: soulMarkDesc,
       effectType: soulMarkEffectType, effectValue: soulMarkValue, effectMode: soulEffectMode, kit }, kit,
@@ -2280,9 +2283,9 @@ export default function ElfEditor({ initialElf: suppliedElf, onSaveElf, onBack, 
   } as Elf;
 
   return (
-    <div data-skin="tactical" className="tac-page elf-editor-page w-full max-w-6xl mx-auto px-4 sm:px-6 pt-16 sm:pt-20 pb-8" id="elf-editor-container">
+    <div data-skin={presentation==='aegis'?'aegis-workshop':'tactical'} data-aegis-editor={presentation==='aegis'||undefined} className={`${presentation==='aegis'?'aegis-workshop':'tac-page'} elf-editor-page w-full max-w-6xl mx-auto px-4 sm:px-6 pt-16 sm:pt-20 pb-8`} id="elf-editor-container">
       {/* Back Header */}
-      <div className="ios-panel p-5 flex flex-wrap items-center justify-between gap-4 mb-6">
+      <div className="editor-top-bar ios-panel p-5 flex flex-wrap items-center justify-between gap-4 mb-6">
         <div className="flex items-center gap-4">
           {!shellBack && <button
             id="btn-editor-back"
@@ -2293,7 +2296,7 @@ export default function ElfEditor({ initialElf: suppliedElf, onSaveElf, onBack, 
           </button>}
           <div>
             <span className="tac-kicker">ELF // WORKSHOP</span>
-            <h1 className="tac-title text-xl font-bold text-slate-100">精靈自定</h1>
+            <h1 className="tac-title text-xl font-bold text-slate-100">{presentation==='aegis'?'精靈工作坊':'精靈自定'}</h1>
             <p className="text-xs text-slate-500 mt-0.5">AI 解析／手動表單／積木 三種方式編輯同一隻精靈</p>
           </div>
         </div>
@@ -2344,7 +2347,7 @@ export default function ElfEditor({ initialElf: suppliedElf, onSaveElf, onBack, 
       </div>
 
       {/* Tab Selectors */}
-      <div className="ios-segment flex mb-6" id="editor-tabs">
+      <div className="editor-mode-tabs ios-segment flex mb-6" id="editor-tabs">
         <button
           id="tab-ai-select"
           data-active={activeTab === "ai"}
@@ -3270,8 +3273,8 @@ export default function ElfEditor({ initialElf: suppliedElf, onSaveElf, onBack, 
             <div id="manual-section-content" className="space-y-6 mt-6">
             {manualSection === "basic" && <>
             {/* Part 1: Basic Info */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div>
+            <div className="editor-basic-grid grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className="editor-basic-name">
                 <label className="block text-xs font-bold text-slate-400 mb-2 uppercase tracking-wider">精靈名稱</label>
                 <input
                   id="manual-elf-name"
@@ -3285,7 +3288,7 @@ export default function ElfEditor({ initialElf: suppliedElf, onSaveElf, onBack, 
               </div>
 
               <ElfSkinPicker elf={manualDraft} onChange={next=>setSkinId(next.skinId)} />
-              <div>
+              <div className="editor-basic-path">
                 <label className="block text-xs font-bold text-slate-400 mb-2 uppercase tracking-wider">圖片網址 / 圖標路徑</label>
                 <input
                   type="text"
@@ -3296,7 +3299,7 @@ export default function ElfEditor({ initialElf: suppliedElf, onSaveElf, onBack, 
                 />
               </div>
 
-              <div>
+              <div className="editor-basic-type">
                 <label className="block text-xs font-bold text-slate-400 mb-2 uppercase tracking-wider">精靈屬性與類型</label>
                 <div className="space-y-2">
                   <DualTypeSelect id="manual-elf-type" value={elfType} onChange={setElfType} className="w-full bg-[#050608] border border-slate-800 rounded-xl px-4 py-2 text-xs text-slate-200 cursor-pointer focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500" label1="主屬性" label2="副屬性" />
@@ -3315,7 +3318,7 @@ export default function ElfEditor({ initialElf: suppliedElf, onSaveElf, onBack, 
                 </div>
               </div>
 
-              <div>
+              <div className="editor-basic-traits">
                 <label className="block text-xs font-bold text-slate-400 mb-2 uppercase tracking-wider">二代特質與專屬特質</label>
                 <div className="grid grid-cols-2 gap-2">
                   <div className="bg-[#050608]/40 border border-slate-800/80 rounded-xl px-2 py-2 text-[10px] text-slate-400 font-bold">專屬特性: {soulMarkName || "無"}</div>
@@ -4157,16 +4160,17 @@ export default function ElfEditor({ initialElf: suppliedElf, onSaveElf, onBack, 
       </AnimatePresence>
 
       {editingInscIndex !== null && (
-        <InscriptionModal
-          slotIndex={editingInscIndex}
-          inscription={inscriptions[editingInscIndex]}
-          onSave={(updated) => {
+        createElement(presentation==='aegis'?AegisInscriptionEditor:InscriptionModal,{
+          slotIndex:editingInscIndex,
+          skills,
+          inscription:inscriptions[editingInscIndex],
+          onSave:(updated) => {
             const nextInsc = [...inscriptions];
             nextInsc[editingInscIndex] = updated;
             setInscriptions(nextInsc);
-          }}
-          onClose={() => setEditingInscIndex(null)}
-        />
+          },
+          onClose:() => setEditingInscIndex(null),
+        })
       )}
 
       {zoomedSkillModal !== null && (() => {

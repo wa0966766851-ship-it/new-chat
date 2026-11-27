@@ -380,7 +380,7 @@ export const handleBrinkkSoulMark = (ctx: BattleEventContext, event: EffectTimin
       deadElves.forEach(e => vanishElf(oppSide, e));
       let picked: any = null;
       if (benchAlive.length > 0) {
-        picked = benchAlive[Math.floor(Math.random() * benchAlive.length)];
+        picked = benchAlive[Math.floor((ctx.rng?.() ?? Math.random()) * benchAlive.length)];
         vanishElf(oppSide, picked);
       }
       if (deadElves.length > 0 || picked) {

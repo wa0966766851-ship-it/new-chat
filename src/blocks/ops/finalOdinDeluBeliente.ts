@@ -32,7 +32,7 @@ export const FINAL_ODB_ACTION_FIELDS: Record<string, readonly string[]> = {
   resistance_record: ['key'], entry_maximum_snapshot: ['key'],
   energy_form_enter: ['key', 'snapshotKey', 'name', 'displayChar'],
   energy_form_ally_defeat: ['key', 'amount'],
-  energy_form_spend: ['key', 'ratio', 'minimum', 'mode', 'conversionReward'],
+  energy_form_spend: ['key', 'ratio', 'minimum', 'mode', 'conversionReward', 'basis'],
   team_status_replace: ['key', 'recordKey', 'status', 'turns', 'loseUniversalResistance'],
   energy_conversion_reward: ['key'],
   stat_points_scale: ['side', 'ratio', 'stats','perLastAmount'],
@@ -92,6 +92,7 @@ export function finalOdbActionIssue(op: string, p: any): string | null {
   if (['resistance_record', 'entry_maximum_snapshot', 'energy_form_enter', 'energy_form_ally_defeat', 'energy_form_spend', 'team_status_replace', 'energy_conversion_reward'].includes(op) && (typeof p.key !== 'string' || !p.key || p.key.length > 160)) return '隊伍能力需有限狀態識別碼';
   if (op === 'energy_form_enter' && (!p.snapshotKey || !p.name || !p.displayChar)) return '能量形態需快照鍵與顯示文字';
   if (op === 'energy_form_ally_defeat' && (!Number.isInteger(p.amount) || p.amount < 1)) return '隊員死亡能量需正整數';
+  if(op==='energy_form_spend'&&p.basis!==undefined&&!['initial','remaining'].includes(p.basis))return '能量比例基準需初始或剩餘';
   if (op === 'energy_form_spend' && (!(p.ratio > 0 && p.ratio <= 1) || !Number.isInteger(p.minimum) || p.minimum < 1 || !Number.isInteger(p.conversionReward) || p.conversionReward < 0 || !['damage', 'heal'].includes(p.mode))) return '能量消耗需正比例、最低整數、明確用途與後續轉化獎勵';
   if (op === 'team_status_replace' && (!p.recordKey || !p.status || !Number.isInteger(p.turns) || p.turns < 1 || typeof p.loseUniversalResistance !== 'boolean')) return '隊伍轉化需記錄鍵、狀態、回合、全免抗性規則';
   if(op==='stat_points_scale'&&p.perLastAmount!==undefined&&(!Number.isFinite(p.perLastAmount)||p.perLastAmount<0||p.perLastAmount>10))return '逐回執能力點數增幅需0至1000%有限比例';
@@ -266,7 +267,7 @@ export function finalOdbOperations(addTimer: (ctx: BattleEventContext, side: Sid
     energy_form_enter(ctx: BattleEventContext, p: any) {
       if (ctx.getPlayerState(stateKey(p.key))) return false;
       const energy = Math.max(0, Number(ctx.getPlayerState(p.snapshotKey)) || ctx.self.maxHp);
-      const form = { energy, name: p.name, displayChar: p.displayChar, pendingReward: 0 };
+      const form = { energy, initialEnergy: energy, name: p.name, displayChar: p.displayChar, pendingReward: 0 };
       ctx.setPlayerState(stateKey(p.key), form);
       ctx.updateElf(ctx.actor, { id: ctx.self.id, isVanished: true });
       refreshEnergyMark(ctx, p.key, form); return true;
@@ -280,8 +281,8 @@ export function finalOdbOperations(addTimer: (ctx: BattleEventContext, side: Sid
     },
     energy_form_spend(ctx: BattleEventContext, p: any) {
       const form = ctx.getPlayerState(stateKey(p.key)); if (!(form?.energy > 0)) return false;
-      const amount = Math.min(form.energy, Math.max(p.minimum, Math.floor(form.energy * p.ratio)));
-      const next = { ...form, energy: form.energy - amount, pendingReward: (form.pendingReward || 0) + p.conversionReward };
+      const amount = Math.min(form.energy, Math.max(p.minimum, Math.floor((p.basis==='initial' ? (form.initialEnergy ?? form.energy) : form.energy) * p.ratio)));
+      const next = { ...form, initialEnergy: form.initialEnergy ?? form.energy, energy: form.energy - amount, pendingReward: (form.pendingReward || 0) + p.conversionReward };
       ctx.setPlayerState(stateKey(p.key), next); refreshEnergyMark(ctx, p.key, next);
       const active = liveActive(ctx);
       if (p.mode === 'damage') ctx.applyTrueDamage(ctx.targetSide, amount, form.name);

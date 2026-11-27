@@ -7,5 +7,5 @@ const handlers: Partial<Record<string, (ctx: BattleEventContext, event: EffectTi
 };
 /** 主流程只派送模式事件；模式效果實作仍位於外部註冊表。 */
 export function dispatchModeEvent(ctx: BattleEventContext, event: EffectTiming, data?: any): void {
-  for (const rule of resolveBattlefield(ctx.specialMode).effectIds) handlers[rule]?.(ctx, event, data);
+  for (const rule of resolveBattlefield(ctx.specialMode,undefined,ctx.fieldId).effectIds) handlers[rule]?.(ctx, event, data);
 }

@@ -23,6 +23,8 @@ const CUSTOM_STATUS_ICONS: Record<string, string> = {
   窒息: "/status-icons/窒息.png",
   平靜: "/status-icons/平靜.png",
   入魔: "/status-icons/入魔.png",
+  // 未命名異常（2026-11-24）：裂鏡多手意象先備用，尚未接入 StatusRegistry；只在明確呼叫 statusVisual 時回圖，不影響戰鬥判定。
+  未命名異常: "/status-icons/未命名異常.png",
 };
 // User-provided battle UI artwork; these are intentionally not SeerAPI buff ids.
 const CUSTOM_BUFF_ICONS: Record<string, string> = {
@@ -122,6 +124,7 @@ const SIGN_ICON_IDS: Record<string, number> = {
  * - 綠色龍鱗：以官方藍色龍鱗為底，色相轉綠（官方沒有綠色龍鱗）。
  */
 const CUSTOM_MARK_ICONS: Record<string, string> = {
+  幻滅: '/seer/signbuff/65.png',
   無色龍鱗: '/seer/signbuff/custom/無色龍鱗.png',
   无色龙鳞: '/seer/signbuff/custom/無色龍鱗.png',
   綠色龍鱗: '/seer/signbuff/custom/綠色龍鱗.png',

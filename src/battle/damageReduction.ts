@@ -64,13 +64,19 @@ export function addDamageReduction(comp: ReductionComp, rate: number, incoming =
 
 export function multiplyDamageReduction(comp: ReductionComp, multiplier: number, incoming = true): number {
   const effective = effectiveReduction(comp, 1 - multiplier, incoming);
-  if(incoming&&effective===1)comp.incomingDamageImmunity=true;
-  // 記錄正式減傷乘區；100%改以decreasePercent表示，保留非減傷乘區供結算回執讀取。
-  // 舊的純資料呼叫者未啟用trackReduction時維持既有表示。
-  if(comp.trackReduction && effective===1) comp.decreasePercent=1;
+  let retained=1-effective;
+  // Preserve tiny positive retention directly: 1-(1-1e-20) rounds to zero and falsely
+  // marks multiplicative reduction as damage immunity. Overrides retain their own semantics.
+  if(multiplier>0&&multiplier<1&&!comp.pure&&normalizeDamageType({damageType:comp.damageCategory})!=='true'
+    && (!incoming||comp.reductionPolicy?.override===undefined)){
+    const attenuation=incoming?comp.reductionPolicy?.attenuation??1:1;
+    retained=Math.min(1,Math.max(0,1-attenuation+attenuation*multiplier));
+  }
+  if(incoming&&retained===0)comp.incomingDamageImmunity=true;
+  if(comp.trackReduction&&retained===0)comp.decreasePercent=1;
   else {
-    comp.multiplier *= 1 - effective;
-    if(comp.trackReduction)comp.multiplierReductionProduct=(comp.multiplierReductionProduct??1)*(1-effective);
+    comp.multiplier*=retained;
+    if(comp.trackReduction)comp.multiplierReductionProduct=(comp.multiplierReductionProduct??1)*retained;
   }
   return effective;
 }

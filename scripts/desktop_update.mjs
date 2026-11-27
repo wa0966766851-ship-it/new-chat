@@ -90,8 +90,10 @@ try{
  for(const f of ['index.html','server.cjs','version.json'])if(!fs.statSync(path.join(dir,f)).size)throw Error(`產物不完整：${f}`);
  const version=JSON.parse(fs.readFileSync(path.join(dir,'version.json'),'utf8'));
  await smoke(dir,version.buildId);
+ // HTTP 200 不代表遊戲可啟動：用隔離的瀏覽器與存檔驗證正式首頁，攔截分塊循環等執行期錯誤。
+ run('tests/desktopBoot.browser.test.mjs',[dir,'--training']);
  if(fingerprint()!==source)throw Error('服務驗證期間來源有變更，本次產物不切換。');
- fs.writeFileSync(path.join(dir,'completion.json'),JSON.stringify({source,version,checks:quick?'types, HTTP frontend/backend identity (quick)':'types, rey, facing, saved definitions, skins, HTTP frontend/backend identity',completedAt:new Date().toISOString()}));
+ fs.writeFileSync(path.join(dir,'completion.json'),JSON.stringify({source,version,checks:quick?'types, HTTP frontend/backend identity, browser homepage boot (quick)':'types, rey, facing, saved definitions, skins, HTTP frontend/backend identity, browser homepage boot',completedAt:new Date().toISOString()}));
  activateRelease(home,id);
  console.log('桌面完成版本已就緒。結束目前戰鬥並關閉舊視窗後，使用原桌面捷徑開啟。');
 }finally{await releaseUpdateLock();}

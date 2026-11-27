@@ -205,7 +205,7 @@ export default function InterstellarHub({ allElves, onBack, onStartBattle }: Int
                 </div>
                 <div className="ecl-frame p-6 text-sm leading-7" title="最深抵達第 3 章後星晶 +1；曾迎接黎明再 +1；N 等級另計。招募令只來自套裝特權">
                   {(() => { const perk = lv.perksOff ? null : perkOf(equipType, equipId); return (
-                    <div>初始：<span title={E.LIFE_RULE}>生命 <b className="ecl-gilt">{startLivesFor(nLevel) + (perk?.lives ?? 0)}{perk?.tempLifePerAct ? `＋臨時 ${perk.tempLifePerAct}` : ""}</b>・</span>賽爾豆 <b className="ecl-gilt">{Math.max(0, 120 + lv.startBeans + (perk?.beans ?? 0))}</b>・星晶 <b className="ecl-gilt">{Math.max(0, startingShards + lv.startShards)}</b>・招募令 <b className="ecl-gilt">{(perk?.anyTokens ?? 0) + (perk?.typeToken ? 1 : 0) + (perk?.dualToken ? 1 : 0) + (perk?.repeatTokens ?? 0)}</b>・藥劑 <b className="ecl-gilt">{Math.max(0, 3 - (pacts.includes("no_potions") ? 2 : 0) + lv.startPotions + (perk?.potions ?? 0))}</b></div>
+                    <div>初始：<span title={E.LIFE_RULE}>生命 <b className="ecl-gilt">{startLivesFor(nLevel) + (perk?.lives ?? 0)}{perk?.tempLifePerAct ? `＋臨時 ${perk.tempLifePerAct}` : ""}</b>・</span>賽爾豆 <b className="ecl-gilt">{Math.max(0, 120 + lv.startBeans + (perk?.beans ?? 0))}</b>・星晶 <b className="ecl-gilt">{Math.max(0, startingShards + lv.startShards + (perk?.shards??0))}</b>・招募令 <b className="ecl-gilt">{(perk?.anyTokens ?? 0) + (perk?.typeToken ? 1 : 0) + (perk?.dualToken ? 1 : 0) + (perk?.repeatTokens ?? 0)}</b>・藥劑 <b className="ecl-gilt">{Math.max(0, 3 - (pacts.includes("no_potions") ? 2 : 0) + lv.startPotions + (perk?.potions ?? 0))}</b></div>
                   ); })()}
                 </div>
                 </div>

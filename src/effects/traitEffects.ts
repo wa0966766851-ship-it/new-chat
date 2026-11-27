@@ -1,3 +1,4 @@
+import { reportFatalResult } from '../battle/fatalHold';
 import { activeAlienTrait } from '../data/elfGroups';
 import { resolveGeneralTrait } from '../data/generalTraitKits';
 import { battleTypeParts } from '../utils/typeQuery';
@@ -199,11 +200,13 @@ export function recoverAtCriticalHp(ctx: BattleEventContext, before: number, aft
 export function traitFatalResist(ctx: BattleEventContext, side: "p1" | "p2", elf: Elf, rng: Rng): boolean {
   const names = traitNames(elf);
   if (names.includes("回神") && prdChance(`${side}:${elf?.id}:trait:L166`, 0.08)) {
+    reportFatalResult(ctx, 'rebirth');
     ctx.updateElf(side, { currentHp: elf.maxHp });
     ctx.addLog(`✨ 【回神】：瀕死之際體力回滿！`, "heal");
     return true;
   }
   if (names.includes("頑強") && prdChance(`${side}:${elf?.id}:trait:L171`, 0.08)) {
+    reportFatalResult(ctx, 'hold');
     ctx.updateElf(side, { currentHp: 2 });
     ctx.addLog(`💪 【頑強】：承受致死攻擊，餘下 2 點體力！`, "effect");
     return true;

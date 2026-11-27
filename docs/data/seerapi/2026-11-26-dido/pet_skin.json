@@ -1,0 +1,2219 @@
+{
+  "url": "https://api.seerapi.com/v1/pet_skin/?limit=100&expand=true",
+  "data": {
+    "count": 893,
+    "next": "https://api.seerapi.com/v1/pet_skin?offset=100&limit=100&expand=true",
+    "previous": null,
+    "first": "https://api.seerapi.com/v1/pet_skin?offset=0&limit=100&expand=true",
+    "last": "https://api.seerapi.com/v1/pet_skin?offset=800&limit=100&expand=true",
+    "results": [
+      {
+        "id": 1,
+        "name": "漆墨白羽·米瑞斯",
+        "resource_id": 1400001,
+        "enemy_resource_id": null,
+        "card_price": 30,
+        "diamond_price": null,
+        "skinhouse_price": 198,
+        "discounted_skinhouse_price": null,
+        "ticket_num": 20,
+        "pet": {
+          "id": 2939,
+          "url": "https://api.seerapi.com/v1/pet/2939"
+        },
+        "category": {
+          "id": 3,
+          "url": "https://api.seerapi.com/v1/pet_skin_category/3"
+        },
+        "series": null,
+        "sub_type": null,
+        "hash": "b7b5e3d"
+      },
+      {
+        "id": 2,
+        "name": "天魔咤帝·咤克斯",
+        "resource_id": 1400002,
+        "enemy_resource_id": null,
+        "card_price": 15,
+        "diamond_price": null,
+        "skinhouse_price": null,
+        "discounted_skinhouse_price": null,
+        "ticket_num": null,
+        "pet": {
+          "id": 3194,
+          "url": "https://api.seerapi.com/v1/pet/3194"
+        },
+        "category": {
+          "id": 3,
+          "url": "https://api.seerapi.com/v1/pet_skin_category/3"
+        },
+        "series": null,
+        "sub_type": null,
+        "hash": "e1446399"
+      },
+      {
+        "id": 3,
+        "name": "黯灭锁魂·白炎",
+        "resource_id": 1400003,
+        "enemy_resource_id": null,
+        "card_price": null,
+        "diamond_price": null,
+        "skinhouse_price": 298,
+        "discounted_skinhouse_price": null,
+        "ticket_num": 20,
+        "pet": {
+          "id": 3196,
+          "url": "https://api.seerapi.com/v1/pet/3196"
+        },
+        "category": {
+          "id": 3,
+          "url": "https://api.seerapi.com/v1/pet_skin_category/3"
+        },
+        "series": {
+          "id": 1,
+          "url": "https://api.seerapi.com/v1/pet_skin_series/1"
+        },
+        "sub_type": {
+          "id": 1001,
+          "url": "https://api.seerapi.com/v1/pet_skin_series_sub_type/1001"
+        },
+        "hash": "8f220747"
+      },
+      {
+        "id": 4,
+        "name": "无极破军·白炎",
+        "resource_id": 1400004,
+        "enemy_resource_id": null,
+        "card_price": 10,
+        "diamond_price": null,
+        "skinhouse_price": null,
+        "discounted_skinhouse_price": null,
+        "ticket_num": null,
+        "pet": {
+          "id": 3196,
+          "url": "https://api.seerapi.com/v1/pet/3196"
+        },
+        "category": {
+          "id": 2,
+          "url": "https://api.seerapi.com/v1/pet_skin_category/2"
+        },
+        "series": null,
+        "sub_type": null,
+        "hash": "3e620aec"
+      },
+      {
+        "id": 5,
+        "name": "小乔",
+        "resource_id": 1400005,
+        "enemy_resource_id": null,
+        "card_price": 10,
+        "diamond_price": null,
+        "skinhouse_price": null,
+        "discounted_skinhouse_price": null,
+        "ticket_num": null,
+        "pet": {
+          "id": 3192,
+          "url": "https://api.seerapi.com/v1/pet/3192"
+        },
+        "category": {
+          "id": 0,
+          "url": "https://api.seerapi.com/v1/pet_skin_category/0"
+        },
+        "series": null,
+        "sub_type": null,
+        "hash": "32b95d69"
+      },
+      {
+        "id": 6,
+        "name": "小沃",
+        "resource_id": 1400006,
+        "enemy_resource_id": null,
+        "card_price": 10,
+        "diamond_price": null,
+        "skinhouse_price": null,
+        "discounted_skinhouse_price": null,
+        "ticket_num": null,
+        "pet": {
+          "id": 3171,
+          "url": "https://api.seerapi.com/v1/pet/3171"
+        },
+        "category": {
+          "id": 0,
+          "url": "https://api.seerapi.com/v1/pet_skin_category/0"
+        },
+        "series": null,
+        "sub_type": null,
+        "hash": "cf3e6285"
+      },
+      {
+        "id": 7,
+        "name": "天邪龙王",
+        "resource_id": 1400007,
+        "enemy_resource_id": null,
+        "card_price": 10,
+        "diamond_price": null,
+        "skinhouse_price": null,
+        "discounted_skinhouse_price": null,
+        "ticket_num": null,
+        "pet": {
+          "id": 3162,
+          "url": "https://api.seerapi.com/v1/pet/3162"
+        },
+        "category": {
+          "id": 0,
+          "url": "https://api.seerapi.com/v1/pet_skin_category/0"
+        },
+        "series": null,
+        "sub_type": null,
+        "hash": "1ac19f0d"
+      },
+      {
+        "id": 8,
+        "name": "暗夜邪龙",
+        "resource_id": 1400008,
+        "enemy_resource_id": null,
+        "card_price": 10,
+        "diamond_price": null,
+        "skinhouse_price": null,
+        "discounted_skinhouse_price": null,
+        "ticket_num": null,
+        "pet": {
+          "id": 3162,
+          "url": "https://api.seerapi.com/v1/pet/3162"
+        },
+        "category": {
+          "id": 0,
+          "url": "https://api.seerapi.com/v1/pet_skin_category/0"
+        },
+        "series": null,
+        "sub_type": null,
+        "hash": "ba82754f"
+      },
+      {
+        "id": 9,
+        "name": "塔奥",
+        "resource_id": 1400009,
+        "enemy_resource_id": null,
+        "card_price": 10,
+        "diamond_price": null,
+        "skinhouse_price": null,
+        "discounted_skinhouse_price": null,
+        "ticket_num": null,
+        "pet": {
+          "id": 3154,
+          "url": "https://api.seerapi.com/v1/pet/3154"
+        },
+        "category": {
+          "id": 0,
+          "url": "https://api.seerapi.com/v1/pet_skin_category/0"
+        },
+        "series": null,
+        "sub_type": null,
+        "hash": "d394ed58"
+      },
+      {
+        "id": 10,
+        "name": "小优",
+        "resource_id": 1400010,
+        "enemy_resource_id": null,
+        "card_price": 10,
+        "diamond_price": null,
+        "skinhouse_price": null,
+        "discounted_skinhouse_price": null,
+        "ticket_num": null,
+        "pet": {
+          "id": 3154,
+          "url": "https://api.seerapi.com/v1/pet/3154"
+        },
+        "category": {
+          "id": 0,
+          "url": "https://api.seerapi.com/v1/pet_skin_category/0"
+        },
+        "series": null,
+        "sub_type": null,
+        "hash": "89ff8e03"
+      },
+      {
+        "id": 11,
+        "name": "神·哈迪斯",
+        "resource_id": 1400011,
+        "enemy_resource_id": null,
+        "card_price": 10,
+        "diamond_price": null,
+        "skinhouse_price": null,
+        "discounted_skinhouse_price": null,
+        "ticket_num": null,
+        "pet": {
+          "id": 3141,
+          "url": "https://api.seerapi.com/v1/pet/3141"
+        },
+        "category": {
+          "id": 0,
+          "url": "https://api.seerapi.com/v1/pet_skin_category/0"
+        },
+        "series": null,
+        "sub_type": null,
+        "hash": "53ce5266"
+      },
+      {
+        "id": 12,
+        "name": "哈迪斯",
+        "resource_id": 1400012,
+        "enemy_resource_id": null,
+        "card_price": 10,
+        "diamond_price": null,
+        "skinhouse_price": null,
+        "discounted_skinhouse_price": null,
+        "ticket_num": null,
+        "pet": {
+          "id": 3141,
+          "url": "https://api.seerapi.com/v1/pet/3141"
+        },
+        "category": {
+          "id": 0,
+          "url": "https://api.seerapi.com/v1/pet_skin_category/0"
+        },
+        "series": null,
+        "sub_type": null,
+        "hash": "43562191"
+      },
+      {
+        "id": 13,
+        "name": "波斯蒂加",
+        "resource_id": 1400013,
+        "enemy_resource_id": null,
+        "card_price": 10,
+        "diamond_price": null,
+        "skinhouse_price": null,
+        "discounted_skinhouse_price": null,
+        "ticket_num": null,
+        "pet": {
+          "id": 3147,
+          "url": "https://api.seerapi.com/v1/pet/3147"
+        },
+        "category": {
+          "id": 0,
+          "url": "https://api.seerapi.com/v1/pet_skin_category/0"
+        },
+        "series": null,
+        "sub_type": null,
+        "hash": "57166a6c"
+      },
+      {
+        "id": 14,
+        "name": "波克尔",
+        "resource_id": 1400014,
+        "enemy_resource_id": null,
+        "card_price": 10,
+        "diamond_price": null,
+        "skinhouse_price": null,
+        "discounted_skinhouse_price": null,
+        "ticket_num": null,
+        "pet": {
+          "id": 3147,
+          "url": "https://api.seerapi.com/v1/pet/3147"
+        },
+        "category": {
+          "id": 0,
+          "url": "https://api.seerapi.com/v1/pet_skin_category/0"
+        },
+        "series": null,
+        "sub_type": null,
+        "hash": "14da096"
+      },
+      {
+        "id": 15,
+        "name": "比波",
+        "resource_id": 1400015,
+        "enemy_resource_id": null,
+        "card_price": 10,
+        "diamond_price": null,
+        "skinhouse_price": null,
+        "discounted_skinhouse_price": null,
+        "ticket_num": null,
+        "pet": {
+          "id": 3147,
+          "url": "https://api.seerapi.com/v1/pet/3147"
+        },
+        "category": {
+          "id": 0,
+          "url": "https://api.seerapi.com/v1/pet_skin_category/0"
+        },
+        "series": null,
+        "sub_type": null,
+        "hash": "60aed87"
+      },
+      {
+        "id": 16,
+        "name": "皮皮",
+        "resource_id": 1400016,
+        "enemy_resource_id": null,
+        "card_price": 10,
+        "diamond_price": null,
+        "skinhouse_price": null,
+        "discounted_skinhouse_price": null,
+        "ticket_num": null,
+        "pet": {
+          "id": 3147,
+          "url": "https://api.seerapi.com/v1/pet/3147"
+        },
+        "category": {
+          "id": 0,
+          "url": "https://api.seerapi.com/v1/pet_skin_category/0"
+        },
+        "series": null,
+        "sub_type": null,
+        "hash": "7a1e9bd9"
+      },
+      {
+        "id": 17,
+        "name": "圣瞳·天蛇太祖",
+        "resource_id": 1400017,
+        "enemy_resource_id": null,
+        "card_price": 10,
+        "diamond_price": null,
+        "skinhouse_price": null,
+        "discounted_skinhouse_price": null,
+        "ticket_num": null,
+        "pet": {
+          "id": 3140,
+          "url": "https://api.seerapi.com/v1/pet/3140"
+        },
+        "category": {
+          "id": 0,
+          "url": "https://api.seerapi.com/v1/pet_skin_category/0"
+        },
+        "series": null,
+        "sub_type": null,
+        "hash": "c272622b"
+      },
+      {
+        "id": 18,
+        "name": "天蛇太祖",
+        "resource_id": 1400018,
+        "enemy_resource_id": null,
+        "card_price": 10,
+        "diamond_price": null,
+        "skinhouse_price": null,
+        "discounted_skinhouse_price": null,
+        "ticket_num": null,
+        "pet": {
+          "id": 3140,
+          "url": "https://api.seerapi.com/v1/pet/3140"
+        },
+        "category": {
+          "id": 0,
+          "url": "https://api.seerapi.com/v1/pet_skin_category/0"
+        },
+        "series": null,
+        "sub_type": null,
+        "hash": "dadfaa4a"
+      },
+      {
+        "id": 19,
+        "name": "封印·天蛇太祖",
+        "resource_id": 1400019,
+        "enemy_resource_id": null,
+        "card_price": 10,
+        "diamond_price": null,
+        "skinhouse_price": null,
+        "discounted_skinhouse_price": null,
+        "ticket_num": null,
+        "pet": {
+          "id": 3140,
+          "url": "https://api.seerapi.com/v1/pet/3140"
+        },
+        "category": {
+          "id": 0,
+          "url": "https://api.seerapi.com/v1/pet_skin_category/0"
+        },
+        "series": null,
+        "sub_type": null,
+        "hash": "fafb26d4"
+      },
+      {
+        "id": 20,
+        "name": "兰斯洛特",
+        "resource_id": 1400020,
+        "enemy_resource_id": null,
+        "card_price": 10,
+        "diamond_price": null,
+        "skinhouse_price": null,
+        "discounted_skinhouse_price": null,
+        "ticket_num": null,
+        "pet": {
+          "id": 3134,
+          "url": "https://api.seerapi.com/v1/pet/3134"
+        },
+        "category": {
+          "id": 0,
+          "url": "https://api.seerapi.com/v1/pet_skin_category/0"
+        },
+        "series": null,
+        "sub_type": null,
+        "hash": "34db8ac5"
+      },
+      {
+        "id": 21,
+        "name": "邪眼魔君",
+        "resource_id": 1400021,
+        "enemy_resource_id": null,
+        "card_price": 10,
+        "diamond_price": null,
+        "skinhouse_price": null,
+        "discounted_skinhouse_price": null,
+        "ticket_num": null,
+        "pet": {
+          "id": 3133,
+          "url": "https://api.seerapi.com/v1/pet/3133"
+        },
+        "category": {
+          "id": 0,
+          "url": "https://api.seerapi.com/v1/pet_skin_category/0"
+        },
+        "series": null,
+        "sub_type": null,
+        "hash": "54bb222e"
+      },
+      {
+        "id": 22,
+        "name": "伊洛维奇",
+        "resource_id": 1400022,
+        "enemy_resource_id": null,
+        "card_price": 10,
+        "diamond_price": null,
+        "skinhouse_price": null,
+        "discounted_skinhouse_price": null,
+        "ticket_num": null,
+        "pet": {
+          "id": 3133,
+          "url": "https://api.seerapi.com/v1/pet/3133"
+        },
+        "category": {
+          "id": 0,
+          "url": "https://api.seerapi.com/v1/pet_skin_category/0"
+        },
+        "series": null,
+        "sub_type": null,
+        "hash": "8b1c07ab"
+      },
+      {
+        "id": 23,
+        "name": "万魔天尊",
+        "resource_id": 1400023,
+        "enemy_resource_id": null,
+        "card_price": 10,
+        "diamond_price": null,
+        "skinhouse_price": null,
+        "discounted_skinhouse_price": null,
+        "ticket_num": null,
+        "pet": {
+          "id": 3115,
+          "url": "https://api.seerapi.com/v1/pet/3115"
+        },
+        "category": {
+          "id": 0,
+          "url": "https://api.seerapi.com/v1/pet_skin_category/0"
+        },
+        "series": null,
+        "sub_type": null,
+        "hash": "85042a4a"
+      },
+      {
+        "id": 24,
+        "name": "岚岚",
+        "resource_id": 1400024,
+        "enemy_resource_id": null,
+        "card_price": 10,
+        "diamond_price": null,
+        "skinhouse_price": null,
+        "discounted_skinhouse_price": null,
+        "ticket_num": null,
+        "pet": {
+          "id": 3105,
+          "url": "https://api.seerapi.com/v1/pet/3105"
+        },
+        "category": {
+          "id": 0,
+          "url": "https://api.seerapi.com/v1/pet_skin_category/0"
+        },
+        "series": null,
+        "sub_type": null,
+        "hash": "424d8639"
+      },
+      {
+        "id": 25,
+        "name": "小沧",
+        "resource_id": 1400025,
+        "enemy_resource_id": null,
+        "card_price": 10,
+        "diamond_price": null,
+        "skinhouse_price": null,
+        "discounted_skinhouse_price": null,
+        "ticket_num": null,
+        "pet": {
+          "id": 3105,
+          "url": "https://api.seerapi.com/v1/pet/3105"
+        },
+        "category": {
+          "id": 0,
+          "url": "https://api.seerapi.com/v1/pet_skin_category/0"
+        },
+        "series": null,
+        "sub_type": null,
+        "hash": "e4e07eea"
+      },
+      {
+        "id": 26,
+        "name": "神威·马超",
+        "resource_id": 1400026,
+        "enemy_resource_id": null,
+        "card_price": 10,
+        "diamond_price": null,
+        "skinhouse_price": null,
+        "discounted_skinhouse_price": null,
+        "ticket_num": null,
+        "pet": {
+          "id": 3092,
+          "url": "https://api.seerapi.com/v1/pet/3092"
+        },
+        "category": {
+          "id": 0,
+          "url": "https://api.seerapi.com/v1/pet_skin_category/0"
+        },
+        "series": null,
+        "sub_type": null,
+        "hash": "f37c108b"
+      },
+      {
+        "id": 27,
+        "name": "马超",
+        "resource_id": 1400027,
+        "enemy_resource_id": null,
+        "card_price": 10,
+        "diamond_price": null,
+        "skinhouse_price": null,
+        "discounted_skinhouse_price": null,
+        "ticket_num": null,
+        "pet": {
+          "id": 3092,
+          "url": "https://api.seerapi.com/v1/pet/3092"
+        },
+        "category": {
+          "id": 0,
+          "url": "https://api.seerapi.com/v1/pet_skin_category/0"
+        },
+        "series": null,
+        "sub_type": null,
+        "hash": "120fb16"
+      },
+      {
+        "id": 28,
+        "name": "阿超",
+        "resource_id": 1400028,
+        "enemy_resource_id": null,
+        "card_price": 10,
+        "diamond_price": null,
+        "skinhouse_price": null,
+        "discounted_skinhouse_price": null,
+        "ticket_num": null,
+        "pet": {
+          "id": 3092,
+          "url": "https://api.seerapi.com/v1/pet/3092"
+        },
+        "category": {
+          "id": 0,
+          "url": "https://api.seerapi.com/v1/pet_skin_category/0"
+        },
+        "series": null,
+        "sub_type": null,
+        "hash": "4cf32897"
+      },
+      {
+        "id": 29,
+        "name": "利斯塔",
+        "resource_id": 1400029,
+        "enemy_resource_id": null,
+        "card_price": 10,
+        "diamond_price": null,
+        "skinhouse_price": null,
+        "discounted_skinhouse_price": null,
+        "ticket_num": null,
+        "pet": {
+          "id": 3097,
+          "url": "https://api.seerapi.com/v1/pet/3097"
+        },
+        "category": {
+          "id": 0,
+          "url": "https://api.seerapi.com/v1/pet_skin_category/0"
+        },
+        "series": null,
+        "sub_type": null,
+        "hash": "b254f264"
+      },
+      {
+        "id": 30,
+        "name": "利尔",
+        "resource_id": 1400030,
+        "enemy_resource_id": null,
+        "card_price": 10,
+        "diamond_price": null,
+        "skinhouse_price": null,
+        "discounted_skinhouse_price": null,
+        "ticket_num": null,
+        "pet": {
+          "id": 3097,
+          "url": "https://api.seerapi.com/v1/pet/3097"
+        },
+        "category": {
+          "id": 0,
+          "url": "https://api.seerapi.com/v1/pet_skin_category/0"
+        },
+        "series": null,
+        "sub_type": null,
+        "hash": "ee629857"
+      },
+      {
+        "id": 31,
+        "name": "龙胆天神",
+        "resource_id": 1400031,
+        "enemy_resource_id": null,
+        "card_price": 10,
+        "diamond_price": null,
+        "skinhouse_price": null,
+        "discounted_skinhouse_price": null,
+        "ticket_num": null,
+        "pet": {
+          "id": 3078,
+          "url": "https://api.seerapi.com/v1/pet/3078"
+        },
+        "category": {
+          "id": 0,
+          "url": "https://api.seerapi.com/v1/pet_skin_category/0"
+        },
+        "series": null,
+        "sub_type": null,
+        "hash": "75e2dfdf"
+      },
+      {
+        "id": 32,
+        "name": "龙胆将军",
+        "resource_id": 1400032,
+        "enemy_resource_id": null,
+        "card_price": 10,
+        "diamond_price": null,
+        "skinhouse_price": null,
+        "discounted_skinhouse_price": null,
+        "ticket_num": null,
+        "pet": {
+          "id": 3078,
+          "url": "https://api.seerapi.com/v1/pet/3078"
+        },
+        "category": {
+          "id": 0,
+          "url": "https://api.seerapi.com/v1/pet_skin_category/0"
+        },
+        "series": null,
+        "sub_type": null,
+        "hash": "97e8b5cd"
+      },
+      {
+        "id": 33,
+        "name": "龙胆枪魂",
+        "resource_id": 1400033,
+        "enemy_resource_id": null,
+        "card_price": 10,
+        "diamond_price": null,
+        "skinhouse_price": null,
+        "discounted_skinhouse_price": null,
+        "ticket_num": null,
+        "pet": {
+          "id": 3078,
+          "url": "https://api.seerapi.com/v1/pet/3078"
+        },
+        "category": {
+          "id": 0,
+          "url": "https://api.seerapi.com/v1/pet_skin_category/0"
+        },
+        "series": null,
+        "sub_type": null,
+        "hash": "f847ceea"
+      },
+      {
+        "id": 34,
+        "name": "米斯克",
+        "resource_id": 1400034,
+        "enemy_resource_id": null,
+        "card_price": 10,
+        "diamond_price": null,
+        "skinhouse_price": null,
+        "discounted_skinhouse_price": null,
+        "ticket_num": null,
+        "pet": {
+          "id": 3082,
+          "url": "https://api.seerapi.com/v1/pet/3082"
+        },
+        "category": {
+          "id": 0,
+          "url": "https://api.seerapi.com/v1/pet_skin_category/0"
+        },
+        "series": null,
+        "sub_type": null,
+        "hash": "e82f2ae6"
+      },
+      {
+        "id": 35,
+        "name": "米斯",
+        "resource_id": 1400035,
+        "enemy_resource_id": null,
+        "card_price": 10,
+        "diamond_price": null,
+        "skinhouse_price": null,
+        "discounted_skinhouse_price": null,
+        "ticket_num": null,
+        "pet": {
+          "id": 3082,
+          "url": "https://api.seerapi.com/v1/pet/3082"
+        },
+        "category": {
+          "id": 0,
+          "url": "https://api.seerapi.com/v1/pet_skin_category/0"
+        },
+        "series": null,
+        "sub_type": null,
+        "hash": "13941ee5"
+      },
+      {
+        "id": 36,
+        "name": "圣甲雷鸣",
+        "resource_id": 1400036,
+        "enemy_resource_id": null,
+        "card_price": 10,
+        "diamond_price": null,
+        "skinhouse_price": null,
+        "discounted_skinhouse_price": null,
+        "ticket_num": null,
+        "pet": {
+          "id": 3079,
+          "url": "https://api.seerapi.com/v1/pet/3079"
+        },
+        "category": {
+          "id": 0,
+          "url": "https://api.seerapi.com/v1/pet_skin_category/0"
+        },
+        "series": null,
+        "sub_type": null,
+        "hash": "5d2e4c85"
+      },
+      {
+        "id": 37,
+        "name": "雷魂战甲",
+        "resource_id": 1400037,
+        "enemy_resource_id": null,
+        "card_price": 10,
+        "diamond_price": null,
+        "skinhouse_price": null,
+        "discounted_skinhouse_price": null,
+        "ticket_num": null,
+        "pet": {
+          "id": 3079,
+          "url": "https://api.seerapi.com/v1/pet/3079"
+        },
+        "category": {
+          "id": 0,
+          "url": "https://api.seerapi.com/v1/pet_skin_category/0"
+        },
+        "series": null,
+        "sub_type": null,
+        "hash": "75957e64"
+      },
+      {
+        "id": 38,
+        "name": "圣甲幻瞳",
+        "resource_id": 1400038,
+        "enemy_resource_id": null,
+        "card_price": 10,
+        "diamond_price": null,
+        "skinhouse_price": null,
+        "discounted_skinhouse_price": null,
+        "ticket_num": null,
+        "pet": {
+          "id": 3075,
+          "url": "https://api.seerapi.com/v1/pet/3075"
+        },
+        "category": {
+          "id": 0,
+          "url": "https://api.seerapi.com/v1/pet_skin_category/0"
+        },
+        "series": null,
+        "sub_type": null,
+        "hash": "dc14a208"
+      },
+      {
+        "id": 39,
+        "name": "瞳之战甲",
+        "resource_id": 1400039,
+        "enemy_resource_id": null,
+        "card_price": 10,
+        "diamond_price": null,
+        "skinhouse_price": null,
+        "discounted_skinhouse_price": null,
+        "ticket_num": null,
+        "pet": {
+          "id": 3075,
+          "url": "https://api.seerapi.com/v1/pet/3075"
+        },
+        "category": {
+          "id": 0,
+          "url": "https://api.seerapi.com/v1/pet_skin_category/0"
+        },
+        "series": null,
+        "sub_type": null,
+        "hash": "626435c0"
+      },
+      {
+        "id": 40,
+        "name": "圣甲永夜",
+        "resource_id": 1400040,
+        "enemy_resource_id": null,
+        "card_price": 10,
+        "diamond_price": null,
+        "skinhouse_price": null,
+        "discounted_skinhouse_price": null,
+        "ticket_num": null,
+        "pet": {
+          "id": 3067,
+          "url": "https://api.seerapi.com/v1/pet/3067"
+        },
+        "category": {
+          "id": 0,
+          "url": "https://api.seerapi.com/v1/pet_skin_category/0"
+        },
+        "series": null,
+        "sub_type": null,
+        "hash": "2950ebf5"
+      },
+      {
+        "id": 41,
+        "name": "暗夜战甲",
+        "resource_id": 1400041,
+        "enemy_resource_id": null,
+        "card_price": 10,
+        "diamond_price": null,
+        "skinhouse_price": null,
+        "discounted_skinhouse_price": null,
+        "ticket_num": null,
+        "pet": {
+          "id": 3067,
+          "url": "https://api.seerapi.com/v1/pet/3067"
+        },
+        "category": {
+          "id": 0,
+          "url": "https://api.seerapi.com/v1/pet_skin_category/0"
+        },
+        "series": null,
+        "sub_type": null,
+        "hash": "24af79fb"
+      },
+      {
+        "id": 42,
+        "name": "圣甲地裂",
+        "resource_id": 1400042,
+        "enemy_resource_id": null,
+        "card_price": 10,
+        "diamond_price": null,
+        "skinhouse_price": null,
+        "discounted_skinhouse_price": null,
+        "ticket_num": null,
+        "pet": {
+          "id": 3061,
+          "url": "https://api.seerapi.com/v1/pet/3061"
+        },
+        "category": {
+          "id": 0,
+          "url": "https://api.seerapi.com/v1/pet_skin_category/0"
+        },
+        "series": null,
+        "sub_type": null,
+        "hash": "64415a5e"
+      },
+      {
+        "id": 43,
+        "name": "大地战甲",
+        "resource_id": 1400043,
+        "enemy_resource_id": null,
+        "card_price": 10,
+        "diamond_price": null,
+        "skinhouse_price": null,
+        "discounted_skinhouse_price": null,
+        "ticket_num": null,
+        "pet": {
+          "id": 3061,
+          "url": "https://api.seerapi.com/v1/pet/3061"
+        },
+        "category": {
+          "id": 0,
+          "url": "https://api.seerapi.com/v1/pet_skin_category/0"
+        },
+        "series": null,
+        "sub_type": null,
+        "hash": "c8a7ae2c"
+      },
+      {
+        "id": 44,
+        "name": "圣甲狂战",
+        "resource_id": 1400044,
+        "enemy_resource_id": null,
+        "card_price": 10,
+        "diamond_price": null,
+        "skinhouse_price": null,
+        "discounted_skinhouse_price": null,
+        "ticket_num": null,
+        "pet": {
+          "id": 3056,
+          "url": "https://api.seerapi.com/v1/pet/3056"
+        },
+        "category": {
+          "id": 0,
+          "url": "https://api.seerapi.com/v1/pet_skin_category/0"
+        },
+        "series": null,
+        "sub_type": null,
+        "hash": "53486e46"
+      },
+      {
+        "id": 45,
+        "name": "斗魂战甲",
+        "resource_id": 1400045,
+        "enemy_resource_id": null,
+        "card_price": 10,
+        "diamond_price": null,
+        "skinhouse_price": null,
+        "discounted_skinhouse_price": null,
+        "ticket_num": null,
+        "pet": {
+          "id": 3056,
+          "url": "https://api.seerapi.com/v1/pet/3056"
+        },
+        "category": {
+          "id": 0,
+          "url": "https://api.seerapi.com/v1/pet_skin_category/0"
+        },
+        "series": null,
+        "sub_type": null,
+        "hash": "b2a0b888"
+      },
+      {
+        "id": 46,
+        "name": "昭烈帝刘备",
+        "resource_id": 1400046,
+        "enemy_resource_id": null,
+        "card_price": 10,
+        "diamond_price": null,
+        "skinhouse_price": null,
+        "discounted_skinhouse_price": null,
+        "ticket_num": null,
+        "pet": {
+          "id": 3074,
+          "url": "https://api.seerapi.com/v1/pet/3074"
+        },
+        "category": {
+          "id": 0,
+          "url": "https://api.seerapi.com/v1/pet_skin_category/0"
+        },
+        "series": null,
+        "sub_type": null,
+        "hash": "68e4c68c"
+      },
+      {
+        "id": 47,
+        "name": "貂蝉",
+        "resource_id": 1400047,
+        "enemy_resource_id": null,
+        "card_price": 10,
+        "diamond_price": null,
+        "skinhouse_price": null,
+        "discounted_skinhouse_price": null,
+        "ticket_num": null,
+        "pet": {
+          "id": 3051,
+          "url": "https://api.seerapi.com/v1/pet/3051"
+        },
+        "category": {
+          "id": 0,
+          "url": "https://api.seerapi.com/v1/pet_skin_category/0"
+        },
+        "series": null,
+        "sub_type": null,
+        "hash": "4ab60bd6"
+      },
+      {
+        "id": 48,
+        "name": "玄元风神",
+        "resource_id": 1400048,
+        "enemy_resource_id": null,
+        "card_price": 10,
+        "diamond_price": null,
+        "skinhouse_price": null,
+        "discounted_skinhouse_price": null,
+        "ticket_num": null,
+        "pet": {
+          "id": 3050,
+          "url": "https://api.seerapi.com/v1/pet/3050"
+        },
+        "category": {
+          "id": 0,
+          "url": "https://api.seerapi.com/v1/pet_skin_category/0"
+        },
+        "series": null,
+        "sub_type": null,
+        "hash": "5d880562"
+      },
+      {
+        "id": 49,
+        "name": "玄风",
+        "resource_id": 1400049,
+        "enemy_resource_id": null,
+        "card_price": 10,
+        "diamond_price": null,
+        "skinhouse_price": null,
+        "discounted_skinhouse_price": null,
+        "ticket_num": null,
+        "pet": {
+          "id": 3050,
+          "url": "https://api.seerapi.com/v1/pet/3050"
+        },
+        "category": {
+          "id": 0,
+          "url": "https://api.seerapi.com/v1/pet_skin_category/0"
+        },
+        "series": null,
+        "sub_type": null,
+        "hash": "c250feb8"
+      },
+      {
+        "id": 50,
+        "name": "风风",
+        "resource_id": 1400050,
+        "enemy_resource_id": null,
+        "card_price": 10,
+        "diamond_price": null,
+        "skinhouse_price": null,
+        "discounted_skinhouse_price": null,
+        "ticket_num": null,
+        "pet": {
+          "id": 3050,
+          "url": "https://api.seerapi.com/v1/pet/3050"
+        },
+        "category": {
+          "id": 0,
+          "url": "https://api.seerapi.com/v1/pet_skin_category/0"
+        },
+        "series": null,
+        "sub_type": null,
+        "hash": "b656311b"
+      },
+      {
+        "id": 51,
+        "name": "净天云神",
+        "resource_id": 1400051,
+        "enemy_resource_id": null,
+        "card_price": 10,
+        "diamond_price": null,
+        "skinhouse_price": null,
+        "discounted_skinhouse_price": null,
+        "ticket_num": null,
+        "pet": {
+          "id": 3049,
+          "url": "https://api.seerapi.com/v1/pet/3049"
+        },
+        "category": {
+          "id": 0,
+          "url": "https://api.seerapi.com/v1/pet_skin_category/0"
+        },
+        "series": null,
+        "sub_type": null,
+        "hash": "274aece2"
+      },
+      {
+        "id": 52,
+        "name": "凌云",
+        "resource_id": 1400052,
+        "enemy_resource_id": null,
+        "card_price": 10,
+        "diamond_price": null,
+        "skinhouse_price": null,
+        "discounted_skinhouse_price": null,
+        "ticket_num": null,
+        "pet": {
+          "id": 3049,
+          "url": "https://api.seerapi.com/v1/pet/3049"
+        },
+        "category": {
+          "id": 0,
+          "url": "https://api.seerapi.com/v1/pet_skin_category/0"
+        },
+        "series": null,
+        "sub_type": null,
+        "hash": "1d9af528"
+      },
+      {
+        "id": 53,
+        "name": "云云",
+        "resource_id": 1400053,
+        "enemy_resource_id": null,
+        "card_price": 10,
+        "diamond_price": null,
+        "skinhouse_price": null,
+        "discounted_skinhouse_price": null,
+        "ticket_num": null,
+        "pet": {
+          "id": 3049,
+          "url": "https://api.seerapi.com/v1/pet/3049"
+        },
+        "category": {
+          "id": 0,
+          "url": "https://api.seerapi.com/v1/pet_skin_category/0"
+        },
+        "series": null,
+        "sub_type": null,
+        "hash": "de83852"
+      },
+      {
+        "id": 54,
+        "name": "库贝萨",
+        "resource_id": 1400054,
+        "enemy_resource_id": null,
+        "card_price": 10,
+        "diamond_price": null,
+        "skinhouse_price": null,
+        "discounted_skinhouse_price": null,
+        "ticket_num": null,
+        "pet": {
+          "id": 3044,
+          "url": "https://api.seerapi.com/v1/pet/3044"
+        },
+        "category": {
+          "id": 0,
+          "url": "https://api.seerapi.com/v1/pet_skin_category/0"
+        },
+        "series": null,
+        "sub_type": null,
+        "hash": "e24abf1c"
+      },
+      {
+        "id": 55,
+        "name": "库贝恶",
+        "resource_id": 1400055,
+        "enemy_resource_id": null,
+        "card_price": 10,
+        "diamond_price": null,
+        "skinhouse_price": null,
+        "discounted_skinhouse_price": null,
+        "ticket_num": null,
+        "pet": {
+          "id": 3044,
+          "url": "https://api.seerapi.com/v1/pet/3044"
+        },
+        "category": {
+          "id": 0,
+          "url": "https://api.seerapi.com/v1/pet_skin_category/0"
+        },
+        "series": null,
+        "sub_type": null,
+        "hash": "4612c945"
+      },
+      {
+        "id": 56,
+        "name": "库贝多",
+        "resource_id": 1400056,
+        "enemy_resource_id": null,
+        "card_price": 10,
+        "diamond_price": null,
+        "skinhouse_price": null,
+        "discounted_skinhouse_price": null,
+        "ticket_num": null,
+        "pet": {
+          "id": 3044,
+          "url": "https://api.seerapi.com/v1/pet/3044"
+        },
+        "category": {
+          "id": 0,
+          "url": "https://api.seerapi.com/v1/pet_skin_category/0"
+        },
+        "series": null,
+        "sub_type": null,
+        "hash": "1d39cb73"
+      },
+      {
+        "id": 57,
+        "name": "乔特鲁",
+        "resource_id": 1400057,
+        "enemy_resource_id": null,
+        "card_price": 10,
+        "diamond_price": null,
+        "skinhouse_price": null,
+        "discounted_skinhouse_price": null,
+        "ticket_num": null,
+        "pet": {
+          "id": 3036,
+          "url": "https://api.seerapi.com/v1/pet/3036"
+        },
+        "category": {
+          "id": 0,
+          "url": "https://api.seerapi.com/v1/pet_skin_category/0"
+        },
+        "series": null,
+        "sub_type": null,
+        "hash": "84782dbf"
+      },
+      {
+        "id": 58,
+        "name": "乔德",
+        "resource_id": 1400058,
+        "enemy_resource_id": null,
+        "card_price": 10,
+        "diamond_price": null,
+        "skinhouse_price": null,
+        "discounted_skinhouse_price": null,
+        "ticket_num": null,
+        "pet": {
+          "id": 3036,
+          "url": "https://api.seerapi.com/v1/pet/3036"
+        },
+        "category": {
+          "id": 0,
+          "url": "https://api.seerapi.com/v1/pet_skin_category/0"
+        },
+        "series": null,
+        "sub_type": null,
+        "hash": "d20a863b"
+      },
+      {
+        "id": 59,
+        "name": "龙魂·塔克林",
+        "resource_id": 1400059,
+        "enemy_resource_id": null,
+        "card_price": 10,
+        "diamond_price": null,
+        "skinhouse_price": null,
+        "discounted_skinhouse_price": null,
+        "ticket_num": null,
+        "pet": {
+          "id": 3017,
+          "url": "https://api.seerapi.com/v1/pet/3017"
+        },
+        "category": {
+          "id": 0,
+          "url": "https://api.seerapi.com/v1/pet_skin_category/0"
+        },
+        "series": null,
+        "sub_type": null,
+        "hash": "a3e9f77b"
+      },
+      {
+        "id": 60,
+        "name": "塔克西姆",
+        "resource_id": 1400060,
+        "enemy_resource_id": null,
+        "card_price": 10,
+        "diamond_price": null,
+        "skinhouse_price": null,
+        "discounted_skinhouse_price": null,
+        "ticket_num": null,
+        "pet": {
+          "id": 3017,
+          "url": "https://api.seerapi.com/v1/pet/3017"
+        },
+        "category": {
+          "id": 0,
+          "url": "https://api.seerapi.com/v1/pet_skin_category/0"
+        },
+        "series": null,
+        "sub_type": null,
+        "hash": "51ab8b5c"
+      },
+      {
+        "id": 61,
+        "name": "塔克林",
+        "resource_id": 1400061,
+        "enemy_resource_id": null,
+        "card_price": 10,
+        "diamond_price": null,
+        "skinhouse_price": null,
+        "discounted_skinhouse_price": null,
+        "ticket_num": null,
+        "pet": {
+          "id": 3017,
+          "url": "https://api.seerapi.com/v1/pet/3017"
+        },
+        "category": {
+          "id": 0,
+          "url": "https://api.seerapi.com/v1/pet_skin_category/0"
+        },
+        "series": null,
+        "sub_type": null,
+        "hash": "cb3793b7"
+      },
+      {
+        "id": 62,
+        "name": "塔米",
+        "resource_id": 1400062,
+        "enemy_resource_id": null,
+        "card_price": 10,
+        "diamond_price": null,
+        "skinhouse_price": null,
+        "discounted_skinhouse_price": null,
+        "ticket_num": null,
+        "pet": {
+          "id": 3017,
+          "url": "https://api.seerapi.com/v1/pet/3017"
+        },
+        "category": {
+          "id": 0,
+          "url": "https://api.seerapi.com/v1/pet_skin_category/0"
+        },
+        "series": null,
+        "sub_type": null,
+        "hash": "445faece"
+      },
+      {
+        "id": 63,
+        "name": "龙魂·塞维尔",
+        "resource_id": 1400063,
+        "enemy_resource_id": null,
+        "card_price": 10,
+        "diamond_price": null,
+        "skinhouse_price": null,
+        "discounted_skinhouse_price": null,
+        "ticket_num": null,
+        "pet": {
+          "id": 3015,
+          "url": "https://api.seerapi.com/v1/pet/3015"
+        },
+        "category": {
+          "id": 0,
+          "url": "https://api.seerapi.com/v1/pet_skin_category/0"
+        },
+        "series": null,
+        "sub_type": null,
+        "hash": "ee5b790c"
+      },
+      {
+        "id": 64,
+        "name": "塞维利亚",
+        "resource_id": 1400064,
+        "enemy_resource_id": null,
+        "card_price": 10,
+        "diamond_price": null,
+        "skinhouse_price": null,
+        "discounted_skinhouse_price": null,
+        "ticket_num": null,
+        "pet": {
+          "id": 3015,
+          "url": "https://api.seerapi.com/v1/pet/3015"
+        },
+        "category": {
+          "id": 0,
+          "url": "https://api.seerapi.com/v1/pet_skin_category/0"
+        },
+        "series": null,
+        "sub_type": null,
+        "hash": "6d7486b0"
+      },
+      {
+        "id": 65,
+        "name": "塞维尔",
+        "resource_id": 1400065,
+        "enemy_resource_id": null,
+        "card_price": 10,
+        "diamond_price": null,
+        "skinhouse_price": null,
+        "discounted_skinhouse_price": null,
+        "ticket_num": null,
+        "pet": {
+          "id": 3015,
+          "url": "https://api.seerapi.com/v1/pet/3015"
+        },
+        "category": {
+          "id": 0,
+          "url": "https://api.seerapi.com/v1/pet_skin_category/0"
+        },
+        "series": null,
+        "sub_type": null,
+        "hash": "a581e243"
+      },
+      {
+        "id": 66,
+        "name": "塞维",
+        "resource_id": 1400066,
+        "enemy_resource_id": null,
+        "card_price": 10,
+        "diamond_price": null,
+        "skinhouse_price": null,
+        "discounted_skinhouse_price": null,
+        "ticket_num": null,
+        "pet": {
+          "id": 3015,
+          "url": "https://api.seerapi.com/v1/pet/3015"
+        },
+        "category": {
+          "id": 0,
+          "url": "https://api.seerapi.com/v1/pet_skin_category/0"
+        },
+        "series": null,
+        "sub_type": null,
+        "hash": "e1d5b1d6"
+      },
+      {
+        "id": 67,
+        "name": "龙魂·塔西亚",
+        "resource_id": 1400067,
+        "enemy_resource_id": null,
+        "card_price": 10,
+        "diamond_price": null,
+        "skinhouse_price": null,
+        "discounted_skinhouse_price": null,
+        "ticket_num": null,
+        "pet": {
+          "id": 3004,
+          "url": "https://api.seerapi.com/v1/pet/3004"
+        },
+        "category": {
+          "id": 0,
+          "url": "https://api.seerapi.com/v1/pet_skin_category/0"
+        },
+        "series": null,
+        "sub_type": null,
+        "hash": "7bd409f8"
+      },
+      {
+        "id": 68,
+        "name": "塔西格",
+        "resource_id": 1400068,
+        "enemy_resource_id": null,
+        "card_price": 10,
+        "diamond_price": null,
+        "skinhouse_price": null,
+        "discounted_skinhouse_price": null,
+        "ticket_num": null,
+        "pet": {
+          "id": 3004,
+          "url": "https://api.seerapi.com/v1/pet/3004"
+        },
+        "category": {
+          "id": 0,
+          "url": "https://api.seerapi.com/v1/pet_skin_category/0"
+        },
+        "series": null,
+        "sub_type": null,
+        "hash": "1d7faf4"
+      },
+      {
+        "id": 69,
+        "name": "塔西亚",
+        "resource_id": 1400069,
+        "enemy_resource_id": null,
+        "card_price": 10,
+        "diamond_price": null,
+        "skinhouse_price": null,
+        "discounted_skinhouse_price": null,
+        "ticket_num": null,
+        "pet": {
+          "id": 3004,
+          "url": "https://api.seerapi.com/v1/pet/3004"
+        },
+        "category": {
+          "id": 0,
+          "url": "https://api.seerapi.com/v1/pet_skin_category/0"
+        },
+        "series": null,
+        "sub_type": null,
+        "hash": "8b69b28f"
+      },
+      {
+        "id": 70,
+        "name": "塔拉",
+        "resource_id": 1400070,
+        "enemy_resource_id": null,
+        "card_price": 10,
+        "diamond_price": null,
+        "skinhouse_price": null,
+        "discounted_skinhouse_price": null,
+        "ticket_num": null,
+        "pet": {
+          "id": 3004,
+          "url": "https://api.seerapi.com/v1/pet/3004"
+        },
+        "category": {
+          "id": 0,
+          "url": "https://api.seerapi.com/v1/pet_skin_category/0"
+        },
+        "series": null,
+        "sub_type": null,
+        "hash": "cb8e2880"
+      },
+      {
+        "id": 71,
+        "name": "神王宙斯",
+        "resource_id": 1400071,
+        "enemy_resource_id": null,
+        "card_price": 10,
+        "diamond_price": null,
+        "skinhouse_price": null,
+        "discounted_skinhouse_price": null,
+        "ticket_num": null,
+        "pet": {
+          "id": 3001,
+          "url": "https://api.seerapi.com/v1/pet/3001"
+        },
+        "category": {
+          "id": 0,
+          "url": "https://api.seerapi.com/v1/pet_skin_category/0"
+        },
+        "series": null,
+        "sub_type": null,
+        "hash": "7f6aba7d"
+      },
+      {
+        "id": 72,
+        "name": "宙斯",
+        "resource_id": 1400072,
+        "enemy_resource_id": null,
+        "card_price": 10,
+        "diamond_price": null,
+        "skinhouse_price": null,
+        "discounted_skinhouse_price": null,
+        "ticket_num": null,
+        "pet": {
+          "id": 3001,
+          "url": "https://api.seerapi.com/v1/pet/3001"
+        },
+        "category": {
+          "id": 0,
+          "url": "https://api.seerapi.com/v1/pet_skin_category/0"
+        },
+        "series": null,
+        "sub_type": null,
+        "hash": "f0e52b6"
+      },
+      {
+        "id": 73,
+        "name": "宇",
+        "resource_id": 1400073,
+        "enemy_resource_id": null,
+        "card_price": 10,
+        "diamond_price": null,
+        "skinhouse_price": null,
+        "discounted_skinhouse_price": null,
+        "ticket_num": null,
+        "pet": {
+          "id": 3001,
+          "url": "https://api.seerapi.com/v1/pet/3001"
+        },
+        "category": {
+          "id": 0,
+          "url": "https://api.seerapi.com/v1/pet_skin_category/0"
+        },
+        "series": null,
+        "sub_type": null,
+        "hash": "b6c33445"
+      },
+      {
+        "id": 74,
+        "name": "千夜",
+        "resource_id": 1400074,
+        "enemy_resource_id": null,
+        "card_price": 10,
+        "diamond_price": null,
+        "skinhouse_price": null,
+        "discounted_skinhouse_price": null,
+        "ticket_num": null,
+        "pet": {
+          "id": 2999,
+          "url": "https://api.seerapi.com/v1/pet/2999"
+        },
+        "category": {
+          "id": 0,
+          "url": "https://api.seerapi.com/v1/pet_skin_category/0"
+        },
+        "series": null,
+        "sub_type": null,
+        "hash": "2da5af6e"
+      },
+      {
+        "id": 75,
+        "name": "凡凡",
+        "resource_id": 1400075,
+        "enemy_resource_id": null,
+        "card_price": 10,
+        "diamond_price": null,
+        "skinhouse_price": null,
+        "discounted_skinhouse_price": null,
+        "ticket_num": null,
+        "pet": {
+          "id": 2988,
+          "url": "https://api.seerapi.com/v1/pet/2988"
+        },
+        "category": {
+          "id": 0,
+          "url": "https://api.seerapi.com/v1/pet_skin_category/0"
+        },
+        "series": null,
+        "sub_type": null,
+        "hash": "95c7832a"
+      },
+      {
+        "id": 76,
+        "name": "小凡",
+        "resource_id": 1400076,
+        "enemy_resource_id": null,
+        "card_price": 10,
+        "diamond_price": null,
+        "skinhouse_price": null,
+        "discounted_skinhouse_price": null,
+        "ticket_num": null,
+        "pet": {
+          "id": 2988,
+          "url": "https://api.seerapi.com/v1/pet/2988"
+        },
+        "category": {
+          "id": 0,
+          "url": "https://api.seerapi.com/v1/pet_skin_category/0"
+        },
+        "series": null,
+        "sub_type": null,
+        "hash": "97e416af"
+      },
+      {
+        "id": 77,
+        "name": "奇拉比",
+        "resource_id": 1400077,
+        "enemy_resource_id": null,
+        "card_price": 10,
+        "diamond_price": null,
+        "skinhouse_price": null,
+        "discounted_skinhouse_price": null,
+        "ticket_num": null,
+        "pet": {
+          "id": 2986,
+          "url": "https://api.seerapi.com/v1/pet/2986"
+        },
+        "category": {
+          "id": 0,
+          "url": "https://api.seerapi.com/v1/pet_skin_category/0"
+        },
+        "series": null,
+        "sub_type": null,
+        "hash": "28232752"
+      },
+      {
+        "id": 78,
+        "name": "奇牙",
+        "resource_id": 1400078,
+        "enemy_resource_id": null,
+        "card_price": 10,
+        "diamond_price": null,
+        "skinhouse_price": null,
+        "discounted_skinhouse_price": null,
+        "ticket_num": null,
+        "pet": {
+          "id": 2986,
+          "url": "https://api.seerapi.com/v1/pet/2986"
+        },
+        "category": {
+          "id": 0,
+          "url": "https://api.seerapi.com/v1/pet_skin_category/0"
+        },
+        "series": null,
+        "sub_type": null,
+        "hash": "493fd074"
+      },
+      {
+        "id": 79,
+        "name": "蒙娜丽莎",
+        "resource_id": 1400079,
+        "enemy_resource_id": null,
+        "card_price": 10,
+        "diamond_price": null,
+        "skinhouse_price": null,
+        "discounted_skinhouse_price": null,
+        "ticket_num": null,
+        "pet": {
+          "id": 2966,
+          "url": "https://api.seerapi.com/v1/pet/2966"
+        },
+        "category": {
+          "id": 0,
+          "url": "https://api.seerapi.com/v1/pet_skin_category/0"
+        },
+        "series": null,
+        "sub_type": null,
+        "hash": "9f40d543"
+      },
+      {
+        "id": 80,
+        "name": "丽莎布布",
+        "resource_id": 1400080,
+        "enemy_resource_id": null,
+        "card_price": 10,
+        "diamond_price": null,
+        "skinhouse_price": null,
+        "discounted_skinhouse_price": null,
+        "ticket_num": null,
+        "pet": {
+          "id": 2966,
+          "url": "https://api.seerapi.com/v1/pet/2966"
+        },
+        "category": {
+          "id": 0,
+          "url": "https://api.seerapi.com/v1/pet_skin_category/0"
+        },
+        "series": null,
+        "sub_type": null,
+        "hash": "9cf09a8d"
+      },
+      {
+        "id": 81,
+        "name": "蒙娜布布",
+        "resource_id": 1400081,
+        "enemy_resource_id": null,
+        "card_price": 10,
+        "diamond_price": null,
+        "skinhouse_price": null,
+        "discounted_skinhouse_price": null,
+        "ticket_num": null,
+        "pet": {
+          "id": 2966,
+          "url": "https://api.seerapi.com/v1/pet/2966"
+        },
+        "category": {
+          "id": 0,
+          "url": "https://api.seerapi.com/v1/pet_skin_category/0"
+        },
+        "series": null,
+        "sub_type": null,
+        "hash": "5e5abcde"
+      },
+      {
+        "id": 82,
+        "name": "黄金布布",
+        "resource_id": 1400082,
+        "enemy_resource_id": null,
+        "card_price": 10,
+        "diamond_price": null,
+        "skinhouse_price": null,
+        "discounted_skinhouse_price": null,
+        "ticket_num": null,
+        "pet": {
+          "id": 2966,
+          "url": "https://api.seerapi.com/v1/pet/2966"
+        },
+        "category": {
+          "id": 0,
+          "url": "https://api.seerapi.com/v1/pet_skin_category/0"
+        },
+        "series": null,
+        "sub_type": null,
+        "hash": "a27d638e"
+      },
+      {
+        "id": 83,
+        "name": "萌布布种子",
+        "resource_id": 1400083,
+        "enemy_resource_id": null,
+        "card_price": 10,
+        "diamond_price": null,
+        "skinhouse_price": null,
+        "discounted_skinhouse_price": null,
+        "ticket_num": null,
+        "pet": {
+          "id": 2966,
+          "url": "https://api.seerapi.com/v1/pet/2966"
+        },
+        "category": {
+          "id": 0,
+          "url": "https://api.seerapi.com/v1/pet_skin_category/0"
+        },
+        "series": null,
+        "sub_type": null,
+        "hash": "326cb784"
+      },
+      {
+        "id": 84,
+        "name": "炽焰金刚",
+        "resource_id": 1400084,
+        "enemy_resource_id": null,
+        "card_price": 10,
+        "diamond_price": null,
+        "skinhouse_price": null,
+        "discounted_skinhouse_price": null,
+        "ticket_num": null,
+        "pet": {
+          "id": 2958,
+          "url": "https://api.seerapi.com/v1/pet/2958"
+        },
+        "category": {
+          "id": 0,
+          "url": "https://api.seerapi.com/v1/pet_skin_category/0"
+        },
+        "series": null,
+        "sub_type": null,
+        "hash": "c97979dd"
+      },
+      {
+        "id": 85,
+        "name": "魔焰猩猩",
+        "resource_id": 1400085,
+        "enemy_resource_id": null,
+        "card_price": 10,
+        "diamond_price": null,
+        "skinhouse_price": null,
+        "discounted_skinhouse_price": null,
+        "ticket_num": null,
+        "pet": {
+          "id": 2958,
+          "url": "https://api.seerapi.com/v1/pet/2958"
+        },
+        "category": {
+          "id": 0,
+          "url": "https://api.seerapi.com/v1/pet_skin_category/0"
+        },
+        "series": null,
+        "sub_type": null,
+        "hash": "12e537fd"
+      },
+      {
+        "id": 86,
+        "name": "熔火灵猴",
+        "resource_id": 1400086,
+        "enemy_resource_id": null,
+        "card_price": 10,
+        "diamond_price": null,
+        "skinhouse_price": null,
+        "discounted_skinhouse_price": null,
+        "ticket_num": null,
+        "pet": {
+          "id": 2958,
+          "url": "https://api.seerapi.com/v1/pet/2958"
+        },
+        "category": {
+          "id": 0,
+          "url": "https://api.seerapi.com/v1/pet_skin_category/0"
+        },
+        "series": null,
+        "sub_type": null,
+        "hash": "3d935c00"
+      },
+      {
+        "id": 87,
+        "name": "炎火猴",
+        "resource_id": 1400087,
+        "enemy_resource_id": null,
+        "card_price": 10,
+        "diamond_price": null,
+        "skinhouse_price": null,
+        "discounted_skinhouse_price": null,
+        "ticket_num": null,
+        "pet": {
+          "id": 2958,
+          "url": "https://api.seerapi.com/v1/pet/2958"
+        },
+        "category": {
+          "id": 0,
+          "url": "https://api.seerapi.com/v1/pet_skin_category/0"
+        },
+        "series": null,
+        "sub_type": null,
+        "hash": "2af482f5"
+      },
+      {
+        "id": 88,
+        "name": "萌火猴",
+        "resource_id": 1400088,
+        "enemy_resource_id": null,
+        "card_price": 10,
+        "diamond_price": null,
+        "skinhouse_price": null,
+        "discounted_skinhouse_price": null,
+        "ticket_num": null,
+        "pet": {
+          "id": 2958,
+          "url": "https://api.seerapi.com/v1/pet/2958"
+        },
+        "category": {
+          "id": 0,
+          "url": "https://api.seerapi.com/v1/pet_skin_category/0"
+        },
+        "series": null,
+        "sub_type": null,
+        "hash": "f82e3cd1"
+      },
+      {
+        "id": 89,
+        "name": "利爪鲁斯王",
+        "resource_id": 1400089,
+        "enemy_resource_id": null,
+        "card_price": 10,
+        "diamond_price": null,
+        "skinhouse_price": null,
+        "discounted_skinhouse_price": null,
+        "ticket_num": null,
+        "pet": {
+          "id": 2947,
+          "url": "https://api.seerapi.com/v1/pet/2947"
+        },
+        "category": {
+          "id": 0,
+          "url": "https://api.seerapi.com/v1/pet_skin_category/0"
+        },
+        "series": null,
+        "sub_type": null,
+        "hash": "c567b735"
+      },
+      {
+        "id": 90,
+        "name": "鲁斯王",
+        "resource_id": 1400090,
+        "enemy_resource_id": null,
+        "card_price": 10,
+        "diamond_price": null,
+        "skinhouse_price": null,
+        "discounted_skinhouse_price": null,
+        "ticket_num": null,
+        "pet": {
+          "id": 2947,
+          "url": "https://api.seerapi.com/v1/pet/2947"
+        },
+        "category": {
+          "id": 0,
+          "url": "https://api.seerapi.com/v1/pet_skin_category/0"
+        },
+        "series": null,
+        "sub_type": null,
+        "hash": "cb2ef2ec"
+      },
+      {
+        "id": 91,
+        "name": "利爪尤里安",
+        "resource_id": 1400091,
+        "enemy_resource_id": null,
+        "card_price": 10,
+        "diamond_price": null,
+        "skinhouse_price": null,
+        "discounted_skinhouse_price": null,
+        "ticket_num": null,
+        "pet": {
+          "id": 2947,
+          "url": "https://api.seerapi.com/v1/pet/2947"
+        },
+        "category": {
+          "id": 0,
+          "url": "https://api.seerapi.com/v1/pet_skin_category/0"
+        },
+        "series": null,
+        "sub_type": null,
+        "hash": "dd31612a"
+      },
+      {
+        "id": 92,
+        "name": "伊优达",
+        "resource_id": 1400092,
+        "enemy_resource_id": null,
+        "card_price": 10,
+        "diamond_price": null,
+        "skinhouse_price": null,
+        "discounted_skinhouse_price": null,
+        "ticket_num": null,
+        "pet": {
+          "id": 2947,
+          "url": "https://api.seerapi.com/v1/pet/2947"
+        },
+        "category": {
+          "id": 0,
+          "url": "https://api.seerapi.com/v1/pet_skin_category/0"
+        },
+        "series": null,
+        "sub_type": null,
+        "hash": "d8643dd4"
+      },
+      {
+        "id": 93,
+        "name": "萌伊优",
+        "resource_id": 1400093,
+        "enemy_resource_id": null,
+        "card_price": 10,
+        "diamond_price": null,
+        "skinhouse_price": null,
+        "discounted_skinhouse_price": null,
+        "ticket_num": null,
+        "pet": {
+          "id": 2947,
+          "url": "https://api.seerapi.com/v1/pet/2947"
+        },
+        "category": {
+          "id": 0,
+          "url": "https://api.seerapi.com/v1/pet_skin_category/0"
+        },
+        "series": null,
+        "sub_type": null,
+        "hash": "906328e0"
+      },
+      {
+        "id": 94,
+        "name": "潘多拉",
+        "resource_id": 1400094,
+        "enemy_resource_id": null,
+        "card_price": 10,
+        "diamond_price": null,
+        "skinhouse_price": null,
+        "discounted_skinhouse_price": null,
+        "ticket_num": null,
+        "pet": {
+          "id": 2965,
+          "url": "https://api.seerapi.com/v1/pet/2965"
+        },
+        "category": {
+          "id": 0,
+          "url": "https://api.seerapi.com/v1/pet_skin_category/0"
+        },
+        "series": null,
+        "sub_type": null,
+        "hash": "8b10e243"
+      },
+      {
+        "id": 95,
+        "name": "弗瑞",
+        "resource_id": 1400095,
+        "enemy_resource_id": null,
+        "card_price": 10,
+        "diamond_price": null,
+        "skinhouse_price": null,
+        "discounted_skinhouse_price": null,
+        "ticket_num": null,
+        "pet": {
+          "id": 2959,
+          "url": "https://api.seerapi.com/v1/pet/2959"
+        },
+        "category": {
+          "id": 0,
+          "url": "https://api.seerapi.com/v1/pet_skin_category/0"
+        },
+        "series": null,
+        "sub_type": null,
+        "hash": "82b5f0c6"
+      },
+      {
+        "id": 96,
+        "name": "阿德",
+        "resource_id": 1400096,
+        "enemy_resource_id": null,
+        "card_price": 10,
+        "diamond_price": null,
+        "skinhouse_price": null,
+        "discounted_skinhouse_price": null,
+        "ticket_num": null,
+        "pet": {
+          "id": 2959,
+          "url": "https://api.seerapi.com/v1/pet/2959"
+        },
+        "category": {
+          "id": 0,
+          "url": "https://api.seerapi.com/v1/pet_skin_category/0"
+        },
+        "series": null,
+        "sub_type": null,
+        "hash": "f681d3ae"
+      },
+      {
+        "id": 97,
+        "name": "柯尔",
+        "resource_id": 1400097,
+        "enemy_resource_id": null,
+        "card_price": 10,
+        "diamond_price": null,
+        "skinhouse_price": null,
+        "discounted_skinhouse_price": null,
+        "ticket_num": null,
+        "pet": {
+          "id": 2844,
+          "url": "https://api.seerapi.com/v1/pet/2844"
+        },
+        "category": {
+          "id": 0,
+          "url": "https://api.seerapi.com/v1/pet_skin_category/0"
+        },
+        "series": null,
+        "sub_type": null,
+        "hash": "b07f5a0d"
+      },
+      {
+        "id": 98,
+        "name": "小柯",
+        "resource_id": 1400098,
+        "enemy_resource_id": null,
+        "card_price": 10,
+        "diamond_price": null,
+        "skinhouse_price": null,
+        "discounted_skinhouse_price": null,
+        "ticket_num": null,
+        "pet": {
+          "id": 2844,
+          "url": "https://api.seerapi.com/v1/pet/2844"
+        },
+        "category": {
+          "id": 0,
+          "url": "https://api.seerapi.com/v1/pet_skin_category/0"
+        },
+        "series": null,
+        "sub_type": null,
+        "hash": "59d1c2b4"
+      },
+      {
+        "id": 99,
+        "name": "嘉丽",
+        "resource_id": 1400099,
+        "enemy_resource_id": null,
+        "card_price": 10,
+        "diamond_price": null,
+        "skinhouse_price": null,
+        "discounted_skinhouse_price": null,
+        "ticket_num": null,
+        "pet": {
+          "id": 2787,
+          "url": "https://api.seerapi.com/v1/pet/2787"
+        },
+        "category": {
+          "id": 0,
+          "url": "https://api.seerapi.com/v1/pet_skin_category/0"
+        },
+        "series": null,
+        "sub_type": null,
+        "hash": "808c43da"
+      },
+      {
+        "id": 100,
+        "name": "小丽",
+        "resource_id": 1400100,
+        "enemy_resource_id": null,
+        "card_price": 10,
+        "diamond_price": null,
+        "skinhouse_price": null,
+        "discounted_skinhouse_price": null,
+        "ticket_num": null,
+        "pet": {
+          "id": 2787,
+          "url": "https://api.seerapi.com/v1/pet/2787"
+        },
+        "category": {
+          "id": 0,
+          "url": "https://api.seerapi.com/v1/pet_skin_category/0"
+        },
+        "series": null,
+        "sub_type": null,
+        "hash": "91b1cecc"
+      }
+    ],
+    "hash": "69ec1402"
+  }
+}

@@ -4,7 +4,7 @@ import {portableSkillCapabilities} from '../battle/portableSkillMarks';
 import type { BattleEventContext } from './types';
 import { EffectTiming } from './types';
 import { active, alive, constraint, identity, timersFor, uses, changePp, restorePp, drain, timed } from './newElfOperations';
-import { activeConstraints } from '../battle/timedConstraints';
+import { activeConstraints, timedInnateDisabled } from '../battle/timedConstraints';
 import { getStatuses } from '../utils/battleHelpers';
 import { StatusRegistry } from './statusRegistry';
 import { isSkillDamageType } from '../battle/damageSemantics';
@@ -142,7 +142,7 @@ export function runNewElfLifecycle(ctx: BattleEventContext, event: EffectTiming,
     }
   }
   if ([EffectTiming.ENFORCE, EffectTiming.ROUND_START, EffectTiming.BEFORE_SKILL].includes(event) && onField) {
-    const disabled = payloads.some(p => p.inherentInvalid);
+    const disabled = payloads.some(p => p.inherentInvalid === true);
     if (disabled && !ctx.getPlayerState('timedInherentWasActive')) {
       ctx.setPlayerState('timedInherentOriginal', ctx.self.isInherentInvalid);
       ctx.setPlayerState('timedInherentWasActive', true);
@@ -344,5 +344,5 @@ export function runNewElfLifecycle(ctx: BattleEventContext, event: EffectTiming,
 }
 
 export function innateDisabled(ctx: BattleEventContext): boolean {
-  return portableSkillCapabilities(ctx.self,ctx.skill).innateDisabled===true||!!constraint(ctx, ctx.actor, 'inherentInvalid');
+  return portableSkillCapabilities(ctx.self,ctx.skill).innateDisabled===true||timedInnateDisabled(ctx.actor === 'p1' ? ctx.p1Timers : ctx.p2Timers, ctx.self, ctx.skill);
 }

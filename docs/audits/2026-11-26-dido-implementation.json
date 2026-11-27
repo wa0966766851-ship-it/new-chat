@@ -1,0 +1,92 @@
+{
+  "elfId": "5055",
+  "rosterCount": 65,
+  "primarySource": "D:\\影片\\新增資料夾\\elf_source_files\\elf_files\\蒂朵.txt",
+  "primarySha256": "d6be48b002e1045cf3419b7e01da3682a25d1559122a1d0fc446539b8bb0e28a",
+  "confirmedRules": {
+    "exitRefresh": "own side only, 13 rounds",
+    "damageCap": "250 per individual skill damage event; true damage excluded"
+  },
+  "fields": {
+    "slots": [
+      "central",
+      "p1",
+      "p2"
+    ],
+    "layout": "independent centered row below round information; symmetric side columns",
+    "duration": "inclusive expiration round, active through both sides round-end settlement",
+    "icons": "Field API provides no icon reference; local vector symbols identify swimming pool and stage"
+  },
+  "animations": {
+    "connected": [
+      "didoDetective",
+      "didoOriginal",
+      "didoSummer",
+      "zhaoyunCanglang",
+      "zhaoyunShengguan"
+    ],
+    "unbound": [
+      "rey-thunder-dragon-v1 (custom artwork, no verified native source)",
+      "dragon healing original (no verified official source)"
+    ],
+    "nativeFacing": {
+      "didoDetective": "right",
+      "didoOriginal": "right",
+      "didoSummer": "right",
+      "zhaoyunCanglang": "right",
+      "zhaoyunShengguan": "left"
+    },
+    "staticSourceFacing": "all five left, independently inspected",
+    "contactChecks": "P1 at 1920 and P2 at 1024; native hit frames, opponent contact and no degradation verified per appearance",
+    "browserReload": "development HMR interrupted one combined run; isolated reruns passed without increasing production deadlines",
+    "physicalContactOverrides": {
+      "zhaoyunShengguan": {
+        "attack": 0.5,
+        "reason": "Native hit flash centered on opponent; original leading mesh edge did not identify visible impact.",
+        "verified": "P1 1920 and P2 1024, native frame 140; visible hit flash on opponent"
+      }
+    }
+  },
+  "metadata": {
+    "verifiedRecords": 17,
+    "unavailable": [
+      {
+        "id": "5036",
+        "error": "HTTP Error 404: Not Found"
+      }
+    ],
+    "policy": "fill missing/zero only; preserve explicit values, custom elves and Puni physical exemption"
+  },
+  "equipment": {
+    "upgradeComparisonNotesRemoved": 10,
+    "adaptations": {
+      "interstellar_pioneer": "eclipse per move -1",
+      "void_conqueror": "elite relic choices +1",
+      "legendary_explorer": "initial shards +3",
+      "space_bounty_hunter": "elite/boss bean reward +100%"
+    },
+    "N12": "adaptation perks disabled"
+  },
+  "validation": [
+    "dido semantic P1/P2",
+    "fatal hold windows 16 assertions",
+    "state scope regression",
+    "equipment adaptation",
+    "equipment persistence",
+    "native cache integrity",
+    "impact coordinates",
+    "sprite facing 15 tests",
+    "op usage: 0 unindexed, 0 context warnings",
+    "outgoing per-event skill damage cap",
+    "skill damage conversion with true damage excluded",
+    "reserve skill sacrifice and next-ally 13 HP plus shield/barrier",
+    "field row: below round text, centered and equal side widths in native battle UI"
+  ],
+  "desktopBuild": {
+    "releaseId": "1795701117536",
+    "buildId": "b19cbe56e6f8c86d3324536bd3a03dccafbae3e87ca55c13ce72a2805027806d",
+    "checks": "types, HTTP frontend/backend identity (quick)",
+    "completedAt": "2026-11-26T13:55:28.505Z"
+  },
+  "cleanup": "Incomplete generated release retained because automatic approval review blocked its deletion."
+}

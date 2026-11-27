@@ -1,8 +1,8 @@
-import React, { useMemo, useState, useRef } from "react";
+import React, { useMemo, useState, useRef,useEffect } from "react";
 import { X, Check, Crown, Plus, Trash2, ChevronLeft, ChevronRight, Sparkles, Package } from "lucide-react";
 import type { ShellBridge } from "../bridge";
 import type { Elf } from "../../types";
-import { ElfAvatar, TypeIcon, SkillTypeIcon } from "../../components/SeerImages";
+import { ElfAvatar, TypeIcon } from "../../components/SeerImages";
 import { cueCss } from "../../design/cues";
 import { typeColor } from "../art/figure";
 import {
@@ -13,6 +13,7 @@ import { readLastUsedRecord } from "../lastTeam";
 import { haptic } from "../haptics";
 import { AegisBackdrop } from "../art/backdrop";
 import { ElfFilterBar, useElfFilter } from "../../components/shared/ElfPicker";
+import {BackpackPresets} from '../BackpackPresets';
 
 /**
  * TeamScene — Aegis 原生編成（Phase 3）
@@ -27,7 +28,7 @@ import { ElfFilterBar, useElfFilter } from "../../components/shared/ElfPicker";
 
 type Side = "p1" | "p2";
 
-export function TeamScene({ b, onSetup }: { b: ShellBridge; onSetup?: () => void }) {
+export function TeamScene({ b, onSetup, onTrain,onCommitReady }: { b: ShellBridge; onSetup?: () => void;onTrain?:(elf:Elf)=>void;onCommitReady?:(commit:()=>boolean)=>void }) {
   const [side, setSide] = useState<Side>("p1");
   const [draft, setDraft] = useState<TeamDraft>(() =>
     draftFromRecord(readLastUsedRecord("p1"))
@@ -36,6 +37,12 @@ export function TeamScene({ b, onSetup }: { b: ShellBridge; onSetup?: () => void
   const [saved, setSaved] = useState(false);
 
   const drafts = useRef<Partial<Record<Side, TeamDraft>>>({});
+  const warehouse=useMemo(()=>new Map(b.allElvesCombined.map(e=>[e.id,e])),[b.allElvesCombined]);
+  const latestDraft=(value:TeamDraft):TeamDraft=>({...value,members:value.members.map(member=>{
+    const latest=warehouse.get(member.id);return latest?{...latest,battleId:member.battleId}:member;
+  })});
+  const displayMembers=latestDraft(draft).members;
+  useEffect(()=>{onCommitReady?.(()=>Object.entries({...drafts.current,[side]:draft}).every(([owner,value])=>saveDraft(owner as Side,latestDraft(value as TeamDraft))));return()=>onCommitReady?.(()=>true);},[side,draft,onCommitReady,warehouse]);
   const [saveError, setSaveError] = useState('');
   const switchSide = (next: Side) => {
     if (next === side) return;
@@ -52,7 +59,7 @@ export function TeamScene({ b, onSetup }: { b: ShellBridge; onSetup?: () => void
     draft.members.some(m => (m.id || m.name) === (elf.id || elf.name));
 
   const handleSave = () => {
-    if (!saveDraft(side, draft)) { setSaveError('未能儲存陣容，請檢查儲存空間。'); return; }
+    if (!saveDraft(side, latestDraft(draft))) { setSaveError('未能儲存陣容，請檢查儲存空間。'); return; }
     setSaveError('');
     haptic("medium");
     setSaved(true);
@@ -103,7 +110,10 @@ export function TeamScene({ b, onSetup }: { b: ShellBridge; onSetup?: () => void
           {/* 背包從這裡進（主導航已移除背包，避免暴露在首頁） */}
           <button
             type="button"
-            onClick={() => b.setView("bag")}
+            onClick={() => {
+              const ok=Object.entries({...drafts.current,[side]:draft}).every(([owner,value])=>saveDraft(owner as Side,latestDraft(value as TeamDraft)));
+              if(ok)b.setView('bag');else setSaveError('陣容未能儲存，請檢查可用空間');
+            }}
             className="ml-auto flex items-center gap-1 px-2 py-1.5 active:scale-95 transition-transform"
             style={{
               borderRadius: 8,
@@ -134,7 +144,8 @@ export function TeamScene({ b, onSetup }: { b: ShellBridge; onSetup?: () => void
         </div>
 
         {saveError && <p role="alert" className="text-amber-200">{saveError}</p>}
-        <button type="button" className="text-left text-cyan-200" onClick={() => { b.setEditingElf(draft.members.find(e => e.battleId === draft.starterBattleId) ?? b.allElvesCombined[0] ?? null); b.setEditorTab('manual'); }}>編輯首發精靈／技能</button>
+        <BackpackPresets side={side} draft={latestDraft(draft)} onLoad={next=>{setDraft(next);setSaved(false);}}/>
+        <button type="button" className="text-left text-cyan-200" onClick={() => { const elf=draft.members.find(e => e.battleId === draft.starterBattleId) ?? b.allElvesCombined[0];if(elf&&onTrain)onTrain(elf);else{b.setEditingElf(elf??null); b.setEditorTab('manual');} }}>培養首發精靈／技能</button>
         {/* ── 隊伍格（12 格） ── */}
         <div
           className="shrink-0 p-1.5"
@@ -142,7 +153,7 @@ export function TeamScene({ b, onSetup }: { b: ShellBridge; onSetup?: () => void
         >
           <div className="team-draft-grid grid grid-cols-6 gap-1">
             {Array.from({ length: TEAM_CAPACITY }).map((_, i) => {
-              const elf = draft.members[i];
+              const elf = displayMembers[i];
               return (
                 <React.Fragment key={i}>
                   {elf ? (
@@ -170,13 +181,12 @@ export function TeamScene({ b, onSetup }: { b: ShellBridge; onSetup?: () => void
                       <span className="text-[8px] truncate w-full text-center" style={{ color: "rgba(241,245,249,0.88)" }}>
                         {elf.name}
                       </span>
+                      {onTrain&&<button type="button" className="text-xs text-cyan-200 px-2" aria-label={`培養 ${elf.name}`} onClick={()=>onTrain(b.allElvesCombined.find(e=>e.id===elf.id)||elf)}>培養</button>}
                       <TypeIcon type={elf.type} size={16} />
-                      <button
-                        type="button"
-                        onClick={() => setDraft(d => removeMember(d, elf.battleId || ""))}
-                        className="absolute -mt-1 opacity-0"
-                        aria-hidden
-                      />
+                      <div className="flex items-center gap-1">
+                        <button type="button" aria-label={`將 ${elf.name} 往前移`} disabled={i===0} onClick={()=>setDraft(d=>moveMember(d,i,i-1))} className="p-1 disabled:opacity-20"><ChevronLeft size={14}/></button>
+                        <button type="button" aria-label={`將 ${elf.name} 往後移`} disabled={i===draft.members.length-1} onClick={()=>setDraft(d=>moveMember(d,i,i+1))} className="p-1 disabled:opacity-20"><ChevronRight size={14}/></button>
+                      </div>
                     </div>
                   ) : (
                     <div
@@ -194,7 +204,7 @@ export function TeamScene({ b, onSetup }: { b: ShellBridge; onSetup?: () => void
           {/* 移出按鈕：列出隊員，點一下就移除（比長按可靠） */}
           {draft.members.length > 0 && (
             <div className="flex flex-wrap gap-1 mt-1.5 pt-1.5" style={{ borderTop: "1px solid rgba(148,163,184,0.14)" }}>
-              {draft.members.map(m => (
+              {displayMembers.map(m => (
                 <button
                   key={m.battleId}
                   type="button"
@@ -219,17 +229,17 @@ export function TeamScene({ b, onSetup }: { b: ShellBridge; onSetup?: () => void
           >
             <span className="text-[7.5px] font-mono shrink-0" style={{ color: "rgba(148,163,184,0.7)" }}>首發</span>
             {(() => {
-              const s = draft.members.find(m => m.battleId === draft.starterBattleId) ?? draft.members[0];
+              const s = displayMembers.find(m => m.battleId === draft.starterBattleId) ?? displayMembers[0];
               return s ? (
                 <>
                   <span className="text-[9.5px] font-bold shrink-0 truncate max-w-[90px]" style={{ color: "var(--p-accent-hot)" }}>{s.name}</span>
-                  <span className="text-[8px] shrink-0 px-1 py-px" style={{ borderRadius: 3, color: typeColor(s.type), background: `color-mix(in srgb, ${typeColor(s.type)} 20%, transparent)` }}><SkillTypeIcon skill={s} size={16} />{s.type}</span>
+                  <span className="text-[8px] shrink-0 px-1 py-px" style={{ borderRadius: 3, color: typeColor(s.type), background: `color-mix(in srgb, ${typeColor(s.type)} 20%, transparent)` }}><TypeIcon type={s.type} size={16} />{s.type}</span>
                 </>
               ) : null;
             })()}
             <div className="flex items-center gap-1 ml-auto shrink-0">
               {Object.entries(
-                draft.members.reduce((acc: Record<string, number>, m) => {
+                displayMembers.reduce((acc: Record<string, number>, m) => {
                   const t = m.type || "無";
                   acc[t] = (acc[t] ?? 0) + 1;
                   return acc;

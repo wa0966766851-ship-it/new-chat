@@ -1,0 +1,7 @@
+.training-level header{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px;margin-bottom:12px}
+.training-level header small{color:#8ab6c9}
+.training-level-row{display:grid;grid-template-columns:72px minmax(64px,140px) 48px;align-items:center;gap:8px}
+.training-level>input[type=range]{width:min(100%,340px);margin:10px 0}
+.training-hp-row{display:grid;grid-template-columns:72px minmax(100px,180px) minmax(64px,100px) 30px;align-items:center;gap:8px;margin:14px 0 10px}
+.training-level :is(input[type=number],select){min-width:0;width:100%;border:1px solid #35566c;border-radius:5px;background:#0a2030;padding:6px;color:#d4ecf6}
+@media(max-width:520px){.training-hp-row{grid-template-columns:64px minmax(76px,1fr) 64px 25px;gap:4px}}

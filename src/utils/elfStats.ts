@@ -1,6 +1,7 @@
 import type { BaseStats, Elf } from "../types";
 import { getEffectiveInscriptions } from "../data/inscriptionsCatalog";
 import { getDefaultNatureModifiers } from "./seerNatures";
+import {configuredStartingHp,trainingLevel} from '../training/levelPolicy';
 
 const STAT_KEYS = ["hp", "atk", "def", "spatk", "spdef", "speed"] as const;
 
@@ -8,7 +9,7 @@ const STAT_KEYS = ["hp", "atk", "def", "spatk", "spdef", "speed"] as const;
 export function normalizeElfStats<T extends Partial<Elf>>(elf: T): T & Pick<Elf, "calculatedStats" | "maxHp" | "currentHp"> {
   let stats: BaseStats;
   if (elf.baseStats && STAT_KEYS.every(key => Number.isFinite(elf.baseStats![key]) && elf.baseStats![key] >= 0)) {
-    stats = calculateElfStats(elf.baseStats, elf.level ?? 100, elf.ivs, elf.evs,
+    stats = calculateElfStats(elf.baseStats, trainingLevel(elf.level), elf.ivs, elf.evs,
       elf.natureModifiers, elf.inscriptions, elf.guildBonuses, elf.hasAnnualBonus);
   } else if (elf.calculatedStats && STAT_KEYS.every(key => Number.isFinite(elf.calculatedStats![key]) && elf.calculatedStats![key] > 0)) {
     // 僅有完整面板的舊格式仍可使用；缺失資料不能偽造為100。
@@ -19,7 +20,7 @@ export function normalizeElfStats<T extends Partial<Elf>>(elf: T): T & Pick<Elf,
   if (!STAT_KEYS.every(key => Number.isFinite(stats[key]) && stats[key] > 0)) {
     throw new Error(`【${elf.name || elf.id || "未命名精靈"}】能力配置含有缺失或非法數值，請先修正資料。`);
   }
-  return { ...elf, calculatedStats: stats, maxHp: stats.hp, currentHp: stats.hp };
+  return { ...elf, level:trainingLevel(elf.level), calculatedStats: stats, maxHp: stats.hp, currentHp: configuredStartingHp(elf,stats.hp) };
 }
 
 /** 讀取損壞存檔仍讓使用者能開啟編輯器修復；保存與開局則使用嚴格版本。 */

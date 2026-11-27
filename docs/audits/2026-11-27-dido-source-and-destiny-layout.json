@@ -1,0 +1,32 @@
+{
+  "date": "2026-11-27",
+  "source": "D:\\影片\\新增資料夾\\elf_source_files\\elf_files\\蒂朵.txt",
+  "sha256": "447804886aadb199b3f3bd71d48928bc604b7ab6328afd84fbcff6ccb39d266a",
+  "wording": "Soul, six skills and side fields copied verbatim; only line breaks, effect role markers and hierarchy markup added. Original typos retained. No synthesized replacement prose.",
+  "confirmedMechanics": [
+    "Fatal survival resets on entrance, holds 13 HP for every lethal event in the triggering round, does not reset on the next round in the same stay.",
+    "Skill damage cap is per damage event; true damage is excluded.",
+    "Departure refresh affects only own side field."
+  ],
+  "tags": [
+    "匠心精靈",
+    "泳館經理",
+    "靈籟之夏",
+    "偵探"
+  ],
+  "checks": [
+    "Verbatim source comparison including punctuation",
+    "P1/P2 semantic tests including departure and re-entry",
+    "Destiny B UI: 43 checks",
+    "Type check passed",
+    "Atlas catalog refreshed: 65 elves, blank catalog remains independent",
+    "Real browser: seven viewport/shell combinations; stable aspect ratio through reveal/ban/pick, desktop first-screen bounds, banned cards retained and equipment expand/collapse"
+  ],
+  "layout": "All draft phases use four columns and one shared aspect-ratio-preserving size; available height excludes the app header and applies to the background too.",
+  "desktop": {
+    "id": "1795713681568",
+    "buildId": "4c202aac1b588a02a2c85291f6944d8d29e69f998291906e28f8928ac826bfe2",
+    "previous": "1795701117536",
+    "verification": "Production build and frontend/backend HTTP identity smoke passed"
+  }
+}

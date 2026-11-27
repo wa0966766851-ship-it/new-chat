@@ -531,12 +531,11 @@
       ],
       "context": "action"
     },
-    "P-047": {
-      "op": "pp_unlimited_until_switch",
-      "count": 5,
+    "X-131": {
+      "op": "skill_rules",
+      "count": 2,
       "elves": [
-        "5016",
-        "arena_16"
+        "5041"
       ],
       "context": "action"
     },
@@ -1001,6 +1000,15 @@
       "op": "status_hand_over",
       "count": 1,
       "elves": [],
+      "context": "action"
+    },
+    "P-047": {
+      "op": "pp_unlimited_until_switch",
+      "count": 4,
+      "elves": [
+        "5016",
+        "arena_16"
+      ],
       "context": "action"
     },
     "X-136": {
@@ -2974,14 +2982,6 @@
       "elves": [
         "5010",
         "5024",
-        "5041"
-      ],
-      "context": "action"
-    },
-    "X-131": {
-      "op": "skill_rules",
-      "count": 1,
-      "elves": [
         "5041"
       ],
       "context": "action"
@@ -11336,8 +11336,8 @@
     "pp_unlimited_until_switch": {
       "actionCode": "P-047",
       "conditionCode": null,
-      "count": 5,
-      "actionCount": 5,
+      "count": 4,
+      "actionCount": 4,
       "conditionCount": 0,
       "elves": [
         "5016",
@@ -12706,8 +12706,8 @@
     "skill_rules": {
       "actionCode": "X-131",
       "conditionCode": null,
-      "count": 1,
-      "actionCount": 1,
+      "count": 2,
+      "actionCount": 2,
       "conditionCount": 0,
       "elves": [
         "5041"

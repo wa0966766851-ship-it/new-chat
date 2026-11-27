@@ -179,6 +179,9 @@ export interface Inscription {
   name: string;
   stats: BaseStats; // { hp, atk, def, spatk, spdef, speed }
   description?: string;
+  gem?:{id:string;skillName:string};
+  skinId?:string;
+  skinIcon?:string;
 }
 
 export interface DecompositionReport {
@@ -233,6 +236,9 @@ export interface Elf {
   /** 戰鬥中記錄的歷史屬性，下場保留；每場由新戰鬥個體重建。 */
   typeHistory?: string[];
   level: number;
+  /** Training is resource-free; default 100, all elves may be set to 1–120. */
+  growthType?: number;
+  startingHp?: {mode:'percent'|'absolute';value:number};
   baseStats: BaseStats;
   ivs?: BaseStats; // individual values (0-31), if undefined we assume 31
   evs?: BaseStats; // effort values (0-255), if undefined we assume 255 for main, 0 for others

@@ -122,12 +122,14 @@ try {
   assert.equal($('b-confirm-ban')!.hasAttribute('disabled'), false);
   await click($('b-confirm-ban')); verify('pick-pve');
   assert.ok($('b-loadout'), '編隊章有命運配裝');
+  assert.equal($$('b-lo-p1-suit').length,0,'預設只展示目前配裝');
+  await click($('b-lo-summary-p1-suit'));
   { const suits = $$('b-lo-p1-suit'); assert.equal(suits.length, 3); assert.equal(suits[0].getAttribute('aria-checked'), 'true');
-    await click(suits[2]); assert.equal($$('b-lo-p1-suit')[2].getAttribute('aria-checked'), 'true'); assert.equal($$('b-lo-p1-suit')[0].getAttribute('aria-checked'), 'false');
-    const ai = $$('b-lo-p2-suit'); assert.equal(ai.filter(b => b.getAttribute('aria-checked') === 'true').length, 1, 'AI 已選一件');
+    await click(suits[2]);assert.equal($$('b-lo-p1-suit').length,0,'選好後收合');await click($('b-lo-summary-p1-suit')); assert.equal($$('b-lo-p1-suit')[2].getAttribute('aria-checked'), 'true'); assert.equal($$('b-lo-p1-suit')[0].getAttribute('aria-checked'), 'false');
+    await click($('b-lo-summary-p2-suit'));const ai = $$('b-lo-p2-suit'); assert.equal(ai.filter(b => b.getAttribute('aria-checked') === 'true').length, 1, 'AI 已選一件');
     assert.ok(ai.filter(b => b.getAttribute('aria-checked') !== 'true').every(b => b.hasAttribute('disabled')), 'PVE：AI 配裝不可改');
     const mine = new Set($$('b-lo-p1-suit').map(b => b.getAttribute('data-value'))); assert.ok(ai.every(b => !mine.has(b.getAttribute('data-value'))), '雙方套裝候選不重複');
-    assert.equal($$('b-lo-p1-flame').length, 2, '火焰 2 選 1'); ok('命運配裝：可改選、AI 鎖定、雙方不重複'); }
+    await click($('b-lo-summary-p1-flame'));assert.equal($$('b-lo-p1-flame').length, 2, '火焰 2 選 1');await act(async()=>{$('b-lo-summary-p1-flame')!.dispatchEvent(new dom.window.KeyboardEvent('keydown',{key:'Escape',bubbles:true}));});assert.equal($$('b-lo-p1-flame').length,0,'Esc只收合候選');assert.ok($('b-pick-p1'),'收合不退回上一階段');await click($('b-lo-summary-p1-suit'));await act(async()=>document.body.dispatchEvent(new dom.window.Event('pointerdown',{bubbles:true})));assert.equal($$('b-lo-p1-suit').length,0,'點擊外部收合候選'); ok('命運配裝：可改選、AI 鎖定、雙方不重複'); }
   assert.match($('b-pick-count')!.textContent!, /6 \/ 6/); assert.equal($$('b-pick-card').length, 12); assert.equal($$('b-pick2-card').length, 12, 'PVE 保留 AI 原卡池 12 位');
   for (const testid of ['b-pick-card', 'b-pick2-card']) {
     const cards = $$(testid);

@@ -6,6 +6,7 @@ import { PageErrorBoundary } from "../../components/PageErrorBoundary";
 
 const StartScreen = lazy(() => import("../../components/StartScreen"));
 const ElfEditor = lazy(() => import("../../components/ElfEditor"));
+const ElfWorkshop = lazy(() => import("./AegisElfWorkshop").then(m => ({ default:m.AegisElfWorkshop })));
 const UpdatesPage = lazy(() => import("../../components/UpdatesPage"));
 const DestinyWheelScreen = lazy(() => import("../../components/DestinyWheelScreen"));
 const TestRunnerPage = lazy(() => import("../../components/TestRunnerPage"));
@@ -72,6 +73,7 @@ export function LegacyScenes({ b, workspace = false }: { b: ShellBridge; workspa
 
         {b.view === "custom" && (!workspace || workspaceEditor) && (
           <React.Fragment key={(b.editingElf?.id || "new") + (b.editorTab || "")}>
+            {workspace ? <ElfWorkshop b={b}/> :
             <ElfEditor
               initialElf={b.editingElf || undefined}
               initialTab={b.editorTab}
@@ -83,6 +85,7 @@ export function LegacyScenes({ b, workspace = false }: { b: ShellBridge; workspa
               }}
               onBack={() => { b.setEditingElf(null); b.setEditorTab(undefined); b.setView(workspace ? "bag" : "custom"); }}
             />
+            }
           </React.Fragment>
         )}
 
@@ -131,6 +134,7 @@ export function LegacyScenes({ b, workspace = false }: { b: ShellBridge; workspa
             onHostPlayerChange={b.setHostPlayer}
             interstellarOptions={b.interstellarOptions}
             battleFlames={b.battleFlames || undefined}
+            fieldId={b.battlefieldId}
             randomSeed={b.interstellarOptions?.battleSeed}
             preparedTeams={!!b.interstellarOptions}
             specialMode={b.specialMode}

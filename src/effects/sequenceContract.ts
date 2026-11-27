@@ -52,6 +52,7 @@ import {FINAL_MARS_LAN_DRAGON_ACTION_FIELDS,finalMarsLanDragonActionIssue} from 
 import {TYPED_CYCLE_ACTION_FIELDS,typedCycleActionIssue} from '../blocks/ops/typedDamageCycle';
 import {RESOURCE_DEFENSE_FIELDS,resourceDefenseIssue} from '../blocks/ops/resourceDefenses';
 import {MISSING_HP_SCALING_FIELDS,missingHpScalingIssue} from '../blocks/ops/missingHpScaling';
+import {SIDE_FIELD_FIELDS,sideFieldIssue} from '../blocks/ops/sideField';
 import {SETTLEMENT_CHAIN_FIELDS,settlementChainIssue} from '../blocks/ops/settlementChains';
 import {TYPE_MEMORY_FIELDS,typeMemoryIssue} from '../blocks/ops/typeMemory';
 import {PP_SETTLEMENT_FIELDS,ppSettlementIssue} from '../blocks/ops/ppSettlement';
@@ -155,6 +156,7 @@ export const SEQUENCE_ACTION_FIELDS: Record<string, readonly string[]> = {
   ...TYPED_CYCLE_ACTION_FIELDS,
   ...RESOURCE_DEFENSE_FIELDS,
   ...MISSING_HP_SCALING_FIELDS,
+  ...SIDE_FIELD_FIELDS,
   ...SETTLEMENT_CHAIN_FIELDS,
   ...COMBAT_RECEIPT_FIELDS,
   ...FORM_CYCLE_FIELDS,
@@ -477,7 +479,8 @@ export function sequenceIssue(value: unknown, node?: string, depth=0, inMark=fal
         ...(['heal','heal_flat','dmg','drain','shield','boost'].includes(act.op)?['rampInc','rampCap','rampStreak','rampReset']:[])];
       // boss_trait 的 v 是特性類型（A／B／C），欄位檢查由 bossTraitActionIssue 負責，不套能力等級範圍。
       const {x2If,...basicParams}=act.op==='boss_trait'?(({v,...rest})=>rest)(act.p||{}):(act.p || {});
-      const issue=paramsIssue(basicParams,fields,'action',act.op==='maximum_health_lock'?1e9:1e6);if(issue)return issue;
+      const checkedParams=SIDE_FIELD_FIELDS[act.op]?Object.fromEntries(Object.entries(basicParams).filter(([key])=>!['field','evenField','elseBody'].includes(key))):basicParams;
+      const issue=paramsIssue(checkedParams,fields,'action',act.op==='maximum_health_lock'?1e9:1e6);if(issue)return issue;
       if(act.p.perStageKinds!==undefined){const issue=stageKindScaleIssue(act.p.perStageKinds,act.op==='no_heal');if(issue)return issue;}
       if(act.op==='no_heal'&&act.p.perStageKinds&&act.p.turns+6*act.p.perStageKinds.amount>10000)return '每種能力加量後禁療期限不得超過10000回合';
       const scaleIssue=actionMarkScaleIssue(act.op,act.p);if(scaleIssue)return scaleIssue;
@@ -628,6 +631,14 @@ export function sequenceIssue(value: unknown, node?: string, depth=0, inMark=fal
       if(TYPED_CYCLE_ACTION_FIELDS[act.op]){const issue=typedCycleActionIssue(act.op,act.p,value.trig,(body,trig)=>sequenceIssue({raw:'屬性循環子流程',trig,parsed:true,body},undefined,depth+1,inMark));if(issue)return issue;}
       if(RESOURCE_DEFENSE_FIELDS[act.op]){const issue=resourceDefenseIssue(act.op,act.p,value.trig,body=>sequenceIssue({raw:'資源消耗副作用',trig:value.trig,parsed:true,body},undefined,depth+1,inMark));if(issue)return issue;}
       if(MISSING_HP_SCALING_FIELDS[act.op]){const issue=missingHpScalingIssue(act.op,act.p,value.trig);if(issue)return issue;}
+      if(SIDE_FIELD_FIELDS[act.op]){
+        if(Object.keys(act.p).some(key=>!SIDE_FIELD_FIELDS[act.op].includes(key)))return '場地積木參數尚無合約';
+        const issue=sideFieldIssue(act.op,act.p);if(issue)return issue;
+        for(const body of [act.p.body,act.p.elseBody].filter(Boolean)){
+          const nested=sequenceIssue({raw:'場地子流程',trig:value.trig,parsed:true,body},undefined,depth+1,inMark);if(nested)return nested;
+        }
+        if(act.op==='survive_per_stay'&&value.trig!==(act.p.reset?'entrance':'fatal'))return '在場存活只能於登場重置或致死觸發';
+      }
       if(SETTLEMENT_CHAIN_FIELDS[act.op]){const issue=settlementChainIssue(act.op,act.p,value.trig,(body,trig)=>sequenceIssue({raw:'結算鏈分支',trig,parsed:true,body},undefined,depth+1,inMark));if(issue)return issue;}
       if(TYPE_MEMORY_FIELDS[act.op]){const issue=typeMemoryIssue(act.op,act.p,value.trig,(body,trig)=>sequenceIssue({raw:'屬性紀錄子流程',trig,parsed:true,body},undefined,depth+1,inMark));if(issue)return issue;}
       if (Object.hasOwn(FORM_CYCLE_FIELDS, act.op)) { const issue = formCycleIssue(act.op, act.p, value.trig); if (issue) return issue; }

@@ -1,0 +1,33 @@
+.online-loading{min-height:100dvh;display:grid;place-items:center;background:#07111d;color:#b3e8f8}
+.online-lobby{min-height:100dvh;background:radial-gradient(at 20% 0,#15384e,#060f1b 65%);color:var(--g-text,#d9edf6);padding:18px 24px;font-family:system-ui,sans-serif}
+.online-lobby button,.online-lobby select,.online-lobby input{font:inherit}
+.online-lobby button{cursor:pointer}.online-lobby button:disabled{cursor:not-allowed;opacity:.4}
+.online-lobby :focus-visible{outline:2px solid #54d6f0;outline-offset:2px}
+.online-top,.online-top h1,.online-top nav,.online-team>header,.online-team h2,.online-setup h2{display:flex;align-items:center;gap:10px}
+.online-top{justify-content:space-between;border-bottom:1px solid #8ac9e733;padding-bottom:12px}
+.online-top small{font:10px monospace;letter-spacing:.25em;color:#79adc8}.online-top h1{font-size:23px;font-weight:750;margin:2px 0}
+.online-lobby button{border:1px solid #83c0df42;background:#133247;color:#cdebf6;border-radius:3px;padding:6px 10px;font-size:13px}
+.online-top nav button{display:flex;align-items:center;gap:6px}
+.online-flow{display:flex;gap:24px;padding:12px 0;font-size:12px;color:#7f9eb3}.online-flow [data-active]{color:#69ddf1}
+.online-workspace{display:grid;grid-template-columns:minmax(0,1fr) minmax(280px,320px);gap:18px;max-width:1600px;margin:auto}
+.online-team,.online-setup>section{min-width:0;background:#0a1b2be6;border:1px solid #7da8c644;padding:12px;border-radius:2px 14px 2px 2px}
+.online-team>header{justify-content:space-between;margin-bottom:10px}.online-team h2,.online-setup h2{font-size:15px;font-weight:700;margin:0 0 6px}.online-team h2 small{font-size:12px;color:#8eb3c8}
+.online-team-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;min-height:200px}
+.online-team-grid article{border:1px solid #87b9ce42;background:#112b3dcc;padding:8px;text-align:center;min-width:0}
+.online-lobby .online-elf-art{width:100%;height:clamp(65px,12dvh,105px);display:flex;align-items:center;justify-content:center;border:0;background:transparent;padding:0}
+.online-body{max-width:100%;max-height:100%;object-fit:contain}
+.online-team-grid h3{font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin:4px 0;font-weight:700}
+.online-team-grid p{display:flex;align-items:center;justify-content:center;gap:4px;font-size:11px;color:#9fbed0;margin:3px 0}
+.online-team-grid article>div{display:flex;gap:4px;justify-content:center}.online-team-grid article>div button{display:flex;align-items:center;gap:3px;padding:4px 6px;font-size:11px;min-height:28px}
+.online-lobby [aria-pressed=true]{border-color:#53d8ef;background:#18506a;color:#d7fbff}
+.online-library{margin-top:12px;border-top:1px solid #9ebcce33;padding-top:10px}
+.online-library label{display:flex;align-items:center;gap:6px}.online-library input{min-width:0;width:100%;background:#06131f;border:1px solid #88b6ca55;color:#d6e7f1;padding:5px 8px;font-size:12px}
+.online-library>div{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:4px;max-height:116px;overflow:auto;margin-top:6px}
+.online-library button{text-align:left;font-size:11px;min-width:0;padding:5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.online-library small{display:block;color:#91b4c5;font-size:10px}
+.online-setup{display:flex;flex-direction:column;gap:10px;min-width:0}.online-setup p{color:#8fb2c7;font-size:12px;line-height:1.6;margin:6px 0}
+.online-modes,.online-equipment nav{display:flex;gap:5px}.online-modes button{flex:1}.online-equipment nav button{font-size:12px}
+.online-equipment>div{max-height:260px;overflow:auto}.online-equipment [data-suit-card]{max-width:160px}
+.online-setup select{width:100%;min-width:0;background:#102b3d;color:#d0ebf4;border:1px solid #8dcee655;padding:6px;font-size:12px}
+.online-lobby .online-match{display:flex;justify-content:center;align-items:center;gap:8px;min-height:48px;background:#4dd2ec;border-color:#8ae6f5;color:#042332;font-size:17px;font-weight:800}
+.online-note{font-size:11px!important;color:#7795a8!important}.online-notice{font-size:12px;margin:10px 0;color:#9be5f5}.online-notice[role=alert]{color:#ffc6ba}
+@media(max-width:900px){.online-lobby{padding:12px}.online-workspace{grid-template-columns:minmax(0,1fr)}.online-flow{gap:12px;font-size:11px}.online-top h1{font-size:19px}.online-team-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}

@@ -10,10 +10,12 @@ import { Elf, BattleMode } from "./types";
 import { DEFAULT_ELVES } from "./data/defaultElves";
 import { applySavedSkillCorrections } from './data/savedSkillCorrections';
 import { resetElfStateForBattle, setDynamicMatchups } from "./utils/statCalculator";
+import {readFreeBattleSetup} from './battle/freeBattleSetup';
 import { useShellMode } from "./shell/shellMode";
 import { LegacyShell, ShellSwitchButton } from "./shell/LegacyShell";
 
 import { controlScene, type ShellBridge, type AppView, type BattleFormat } from "./shell/bridge";
+import { FullscreenProvider } from "./contexts/FullscreenContext";
 import { GameDataProvider, useGameData } from "./contexts/GameDataContext";
 import TechLoadingScreen from "./components/TechLoadingScreen";
 const AegisShell = lazy(() => import('./shell/AegisShell').then(module => ({ default: module.AegisShell })));
@@ -37,7 +39,7 @@ export default function App() {
     <MotionConfigContext.Provider value={motionConfig}>
     <GameDataProvider>
       <style>{`@keyframes appHeaderBtnIn{from{opacity:0;transform:translateX(-20px)}to{opacity:1;transform:translateX(0)}}`}</style>
-      <AppContent />
+      <FullscreenProvider><AppContent /></FullscreenProvider>
     </GameDataProvider>
     </MotionConfigContext.Provider>
   );
@@ -71,9 +73,20 @@ function AppContent() {
     typeof window === "undefined" || !window.matchMedia("(max-width: 767px)").matches
   );
 
+  const [battleKey, setBattleKey] = useState<number>(0);
+  const [battleChrome, setBattleChrome] = useState<{ battle: number | null; sidebar: boolean }>({ battle: null, sidebar: false });
+  const showBattleChrome = view === "battle" && battleChrome.battle === battleKey;
   useEffect(() => {
-    if (view === "battle" && typeof window !== "undefined" && (window.innerHeight <= 560 || window.innerWidth < 1100)) setShowHeader(false);
-  }, [view]);
+    if (view !== "battle") {
+      setBattleChrome({ battle: null, sidebar: false });
+      return;
+    }
+    const toggle = () => setBattleChrome(previous => ({
+      battle: previous.battle === battleKey ? null : battleKey, sidebar: false,
+    }));
+    window.addEventListener('toggle-battle-shell-tools', toggle);
+    return () => window.removeEventListener('toggle-battle-shell-tools', toggle);
+  }, [view, battleKey]);
 
   const [showEncyclopedia, setShowEncyclopedia] = useState(false);
   const [showPerformanceProbe, setShowPerformanceProbe] = useState(false);
@@ -81,7 +94,6 @@ function AppContent() {
 
   const [battleMode, setBattleMode] = useState<BattleMode>("PVE");
   const [battleFormat, setBattleFormat] = useState<BattleFormat>("normal_6v6");
-  const [battleKey, setBattleKey] = useState<number>(0);
   const restartedRef = React.useRef(false);
   const [isTransitioning, setIsTransitioning] = useState<boolean>(false);
   const [p1Team, setP1Team] = useState<Elf[]>([]);
@@ -97,6 +109,7 @@ function AppContent() {
   const [p2Title, setP2Title] = useState<string>("");
   const [editingElf, setEditingElf] = useState<Elf | null>(null);
   const [specialMode, setSpecialMode] = useState<"destiny" | "interstellar" | undefined>();
+  const [battlefieldId,setBattlefieldId]=useState<string>();
   const [interstellarOptions, setInterstellarOptions] = useState<any>(null);
   const [battleFlames, setBattleFlames] = useState<{ p1?: string; p2?: string } | null>(null);
   const elvesRef = React.useRef<Elf[]>([]);
@@ -169,7 +182,9 @@ function AppContent() {
       setBattleMode(mode);
       setSpecialMode(options?.specialMode);
       setInterstellarOptions(options?.interstellarOptions || null);
-      setBattleFlames(options?.flames || null);
+      const free=!options?.specialMode&&(!format||format==='normal_6v6'||format==='solo_1v1')?readFreeBattleSetup():undefined;
+      setBattleFlames(options?.flames || free?.flames || null);
+      setBattlefieldId(options?.fieldId||free?.fieldId);
 
       restartedRef.current = false;
       setIsTransitioning(true);
@@ -191,7 +206,7 @@ function AppContent() {
     p1Team, p2Team, p1StarterId, p2StarterId,
     p1Suit, p1Eyewear, p2Suit, p2Eyewear, p1Title, p2Title,
     hostPlayer, setHostPlayer,
-    specialMode, interstellarOptions, setInterstellarOptions, battleFlames,
+    specialMode, interstellarOptions, setInterstellarOptions, battleFlames,battlefieldId,
     editingElf, setEditingElf, editorTab, setEditorTab,
     showEncyclopedia, setShowEncyclopedia,
     showPerformanceProbe, setShowPerformanceProbe,
@@ -205,17 +220,18 @@ function AppContent() {
           </Suspense>
         : <LegacyShell
             b={bridge}
-            showHeader={showHeader}
-            setShowHeader={setShowHeader}
+            showHeader={view === "battle" ? showBattleChrome && battleChrome.sidebar : showHeader}
+            setShowHeader={view === "battle" ? sidebar => setBattleChrome(previous => ({ ...previous, sidebar })) : setShowHeader}
+            hideSidebarTrigger={view === "battle" && !showBattleChrome}
             isCompactLayout={isCompactLayout}
           />}
 
       <Suspense fallback={null}>
-        <ControlHub currentScene={controlScene(bridge)} canApplyUpdates={view === 'start' && !editingElf && !showEncyclopedia} />
+        <ControlHub preferModern={shellMode === "aegis"} hideTriggers={view === "battle" && !showBattleChrome} currentScene={controlScene(bridge)} canApplyUpdates={view === 'start' && !editingElf && !showEncyclopedia} />
       </Suspense>
 
       {/* Legacy 殼的切換鈕：掛在 body，不受任何 overflow 裁切 */}
-      {shellMode === "legacy" && (
+      {shellMode === "legacy" && (view !== "battle" || showBattleChrome) && (
         <ShellSwitchButton onClick={toggleShell} target="aegis" />
       )}
       {showPerformanceProbe && (

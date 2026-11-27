@@ -25,6 +25,7 @@ export function InscriptionSlot({ index, inscription, onClick, size = "md" }: In
 
   return (
     <button type="button" aria-label={`編輯第 ${index + 1} 刻印孔`}
+      title={`${effectiveInsc?.name||'刻印'}${effectiveInsc?.gem?' · 已嵌寶石':''}`}
       onClick={onClick}
       className={`${sizeClasses} p-[2px] transition-all duration-300 cursor-pointer flex items-center justify-center group relative drop-shadow-lg ${
         hasInsc
@@ -39,6 +40,8 @@ export function InscriptionSlot({ index, inscription, onClick, size = "md" }: In
       >
         {hasInsc ? (
           <div className="flex flex-col items-center justify-center w-full h-full overflow-hidden">
+            {effectiveInsc.skinId&&<img src={`/seer/countermark/${effectiveInsc.skinId}.png`} alt="刻印外觀" className="h-7 w-7 object-contain" loading="lazy" onError={e=>{e.currentTarget.style.display='none';}}/>}
+            {effectiveInsc.gem&&<span className="text-[9px] text-cyan-300">◆ 已嵌寶石</span>}
             <span className="text-[10px] sm:text-xs font-bold text-amber-300 group-hover:text-amber-200 truncate max-w-full px-1 border-b border-amber-500/30 pb-0.5 mb-1 flex items-center gap-1">
               <Award className="w-3 h-3 text-amber-400 flex-shrink-0 inline" />
               <span className="truncate">{effectiveInsc.name || "自訂刻印"}</span>

@@ -88,7 +88,7 @@ export const handleMonkeySoulMark = (context: BattleEventContext, event: EffectT
     // 隨機 2 個技能 PP 歸 0
     const ppSkills = target.skills.filter(s => (s.pp || 0) > 0);
     for (let i = 0; i < 2 && ppSkills.length > 0; i++) {
-      const idx = Math.floor(Math.random() * ppSkills.length);
+      const idx = Math.floor((context.rng?.() ?? Math.random()) * ppSkills.length);
       const s = ppSkills.splice(idx, 1)[0];
       s.pp = 0;
       addLog(`🔥 【焰】：令對手技能 【${s.name}】 PP 歸 0！`, "effect");
@@ -96,7 +96,7 @@ export const handleMonkeySoulMark = (context: BattleEventContext, event: EffectT
     // 隨機 2 項屬性 -2
     const stats = ["atk", "def", "spatk", "spdef", "speed", "accuracy"];
     for (let i = 0; i < 2; i++) {
-      const s = stats[Math.floor(Math.random() * stats.length)];
+      const s = stats[Math.floor((context.rng?.() ?? Math.random()) * stats.length)];
       const current = target.statStages[s as keyof typeof target.statStages] || 0;
       target.statStages[s as keyof typeof target.statStages] = Math.max(-6, current - 2);
       addLog(`🔥 【焰】：令對手 【${s}】 等級 -2！`, "effect");

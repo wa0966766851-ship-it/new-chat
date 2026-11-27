@@ -1,3 +1,5 @@
+import { reportFatalResult } from '../battle/fatalHold';
+import {sideFieldOperations} from './ops/sideField';
 import {instantKillChance} from '../battle/instantKillChance';
 ﻿import {ownerLinkOperations,ownerLinkCondition} from './ops/ownerLinks';
 import {extraElfLifecycleOperations,extraElfLifecycleCondition} from './ops/extraElfLifecycle';
@@ -46,6 +48,7 @@ const matchCondText = (t?: string) => { const c = t ? matchCond(String(t).replac
 import { CUSTOM } from "./custom";
 import { getTypeMatchup, calculateEffectiveStat } from "../utils/statCalculator";
 import { statusChanceBlocked } from '../battle/statusChanceRules';
+import {takeGemStatusBoost} from '../training/gemStatusChance';
 import {recipientEffectChance} from '../battle/recipientEffectChance';
 import { settleDamageAbsorption } from '../battle/damageSemantics';
 import { StatusRegistry } from '../effects/statusRegistry';
@@ -303,7 +306,7 @@ export function evalCond(ctx: BattleEventContext, c: Cond, st: RunState): boolea
       const et = String(elf.type || ''), st = String(sk.type || '');
       if (!et || !st) return false;
       const parts = et.split(/[·.、／/]/).map((x: string) => x.trim()).filter(Boolean);
-      return parts.some((x: string) => st.includes(x)) || et === st;
+      return (parts.some((x: string) => st.includes(x)) || et === st) !== !!p.neg;
     }
     case "opp_pp_changed": return ctx.getOpponentState('fieldPpChanged') === true;
     case "invalid": return st.event?.trig === "on_invalid" || st.event?.trig === "self_invalid";
@@ -456,7 +459,8 @@ export function compMatchesKind(comp: any, kind?: string): boolean {
 // ───────── 動作 ─────────
 type OpFn = (ctx: BattleEventContext, p: any, st: RunState) => boolean | void;
 
-function applyStatus(ctx: BattleEventContext, side: S, status: string, turns?: number): boolean {
+function applyStatus(ctx: BattleEventContext, side: S, status: string, turns?: number,boost=true): boolean {
+  if(boost){const gem=takeGemStatusBoost(ctx,100);if(gem.bypass)ctx.setPlayerState('inscriptionGemStatusBypass',gem.bypass);}
   const r = ctx.applyStatusWithImmunityCheck(side, status, turns ?? STATUS_DURATION[status] ?? DEFAULT_STATUS_TURNS);
   // 實際進入的異常可能被替換（狂暴→平靜）或被抗性骰成「異常抵抗」佔位；日誌照實際結果寫。
   const actual = (r as any).status || status;
@@ -761,15 +765,16 @@ export const OPS: Record<string, OpFn> = {
     const sides: S[] = p.side === "both" ? [ctx.targetSide, ctx.actor] : [sideOf(ctx, p.side)];
     let ok = false;
     // chanceHpRatio：以自身體力當前百分比作為機率（「有等同於自身體力當前百分比機率…」）；100% 不消耗亂數。
-    const pct = Math.max(markCapability(liveElf(ctx,ctx.actor),'statusChanceFloor'),p.chanceHpRatio === true
+    const originalPct = Math.max(markCapability(liveElf(ctx,ctx.actor),'statusChanceFloor'),p.chanceHpRatio === true
       ? Math.max(0, Math.min(100, ((liveElf(ctx, ctx.actor)?.currentHp ?? 0) / (liveElf(ctx, ctx.actor)?.maxHp || 1)) * 100))
       : increasingStatusChance(ctx, p));
+    const gemBoost=takeGemStatusBoost(ctx,originalPct),pct=gemBoost.percent;
     let normalRoll:boolean|undefined;
     for (const s of sides) {
       const actual=recipientEffectChance(ctx,s,pct,liveElf(ctx,s));
       if(statusChanceBlocked(ctx,actual))continue;
       const passes=actual>=100||(normalRoll??=chance(ctx,`st:${p.status}`,pct));
-      if(passes)ok=applyStatus(ctx,s,p.status,p.turns)||ok;
+      if(passes){if(gemBoost.bypass)ctx.setPlayerState('inscriptionGemStatusBypass',gemBoost.bypass);ok=applyStatus(ctx,s,p.status,p.turns,false)||ok;}
     }
     return ok;
   },
@@ -781,12 +786,13 @@ export const OPS: Record<string, OpFn> = {
   status_chance_turns: (ctx, p, st) => OPS.status(ctx, p, st),
   status_seq: (ctx, p, st) => {
     const candidates:S[]=p.side==='both'?[ctx.actor,ctx.targetSide]:[p.side==='self'?ctx.actor:ctx.targetSide];
+    const gemBoost=takeGemStatusBoost(ctx,p.chance??100),pct=gemBoost.percent;
     let normalRoll:boolean|undefined;
     const sides=candidates.filter(side=>{
-      if(p.chance==null)return true;
-      const actual=recipientEffectChance(ctx,side,p.chance,liveElf(ctx,side));
-      return !statusChanceBlocked(ctx,actual)&&(actual>=100||(normalRoll??=chance(ctx,`seq:${p.list}`,p.chance)));
+      const actual=recipientEffectChance(ctx,side,pct,liveElf(ctx,side));
+      return !statusChanceBlocked(ctx,actual)&&(actual>=100||(normalRoll??=chance(ctx,`seq:${p.list}`,pct)));
     });
+    if(sides.length&&gemBoost.bypass)ctx.setPlayerState('inscriptionGemStatusBypass',gemBoost.bypass);
     // 「隨機附加其中 N 種」：count 指定抽取數（'fifth_pp_diff'＝第五技能PP差；競技場通用讀取端）。
     const pool = p.countFrom ? [...p.list] : null;
     if (pool) {
@@ -796,13 +802,13 @@ export const OPS: Record<string, OpFn> = {
         const local = [...pool];
         for (let i = 0; i < Math.min(n, local.length); i++) {
           const idx = Math.floor((ctx.rng?.() ?? Math.random()) * local.length);
-          const ok=applyStatus(ctx, side, local.splice(idx, 1)[0], p.turns);if(!ok)failed++;any=ok||any;
+          const ok=applyStatus(ctx, side, local.splice(idx, 1)[0], p.turns,false);if(!ok)failed++;any=ok||any;
         }
       }
       if(p.countFrom==='peeledTypes')st.lastAmount=failed;
       return any;
     }
-    let any=false,failed=0;for(const side of sides)for(const name of p.list){const ok=applyStatus(ctx,side,name,p.turns);if(!ok)failed++;any=ok||any;}if(p.countFailures)st.lastAmount=failed;return any;
+    let any=false,failed=0;for(const side of sides)for(const name of p.list){const ok=applyStatus(ctx,side,name,p.turns,false);if(!ok)failed++;any=ok||any;}if(p.countFailures)st.lastAmount=failed;return any;
   },
   status_random: (ctx, p) => {
     // 候選池一律取自正式 StatusRegistry 分類，不用手寫清單（避免漏掉新異常或分類錯誤）。
@@ -1853,6 +1859,7 @@ export const OPS: Record<string, OpFn> = {
   ...typedCycleOperations(runStmts),
   ...resourceDefenseOperations(runStmts),
   ...missingHpScalingOperations,
+  ...sideFieldOperations(runStmts),
   ...formCycleOperations({ survive: surviveAt1, ops: () => OPS }),
   ...combatReceiptOperations({liveElf,ops:()=>OPS,addTimer:addBlockTimer}),
   ...statusRepeatCombatOperations({liveElf}),
@@ -1911,6 +1918,7 @@ export const OPS: Record<string, OpFn> = {
 
 /** 強制存活：本次致命傷害改為保留 1 點體力 */
 export function surviveAt1(ctx: BattleEventContext) {
+  reportFatalResult(ctx, 'hold');
   ctx.updateElf(ctx.actor, { currentHp: 1 } as any);
 }
 

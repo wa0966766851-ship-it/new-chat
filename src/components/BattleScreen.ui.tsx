@@ -1,10 +1,11 @@
 import { activeAlienTrait } from '../data/elfGroups';
 import { useDragScroll } from './shared/useDragScroll';
 import { resolveBattlefield } from '../battle/battlefields';
+import {BattlefieldStatus} from './battle/BattlefieldStatus';
 import { BattleLoadoutDetails, type BattleLoadout } from './battle/BattleLoadoutDetails';
-import { BattlePauseButton } from './battle/BattlePauseButton';
+import { BattleControls } from './battle/BattleControls';
 import {skillDescriptionText} from '../utils/skillDescription';
-﻿import {AnimationSpeedControl,useAnimationSpeed} from './battle/AnimationSpeedControl';
+﻿import {useAnimationSpeed} from './battle/AnimationSpeedControl';
 import { readPassMode, writePassMode, type PassMode } from '../battle/passAction';
 import {BattleFxLayer} from './battle/BattleFxLayer';
 import {BATTLE_LAYERS as Z} from '../battle/battleLayers';
@@ -23,7 +24,6 @@ import {
   Shield, 
   Sword, 
   Activity, 
-  Settings, 
   ChevronLeft, 
   ChevronRight, 
   MessageSquare, 
@@ -67,7 +67,7 @@ import { spriteStageLayout } from "../battle/spriteMetrics";
 import { getVisibleBox } from "../battle/visibleBox";
 import { hiddenFromViewer, viewerMaskTermsForMode, maskViewerText, maskViewerDeep, maskElfIdentity, UNKNOWN_EFFECT, UNKNOWN_ELF, UNKNOWN_SKILL, elfForViewer, visibleSkills } from "../battle/viewerPerspective";
 import { toViewMode, BattleViewModeContext } from "../battle/viewerMode";
-import { isAliveBySurvivalRule } from "../battle/survivalRules";
+import { checkElfDead } from "../battle/elfAlive";
 import { statusVisual, stageDesc, STAT_FULL, signIconFor, effectIcon, UNKNOWN_EFFECT_ICON, placeholderEffectIcon } from "../battle/effectIcons";
 import { bossTraitInstanceText } from "../data/bossTraits";
 import { markAppliesToElf } from "../battle/marks";
@@ -86,7 +86,7 @@ import { SkillActionArea } from './battle/SkillActionArea';
 import { searchList } from '../utils/textSearch';
 import { classifyLog, filterByMode, mergeExtraActions, toTraditional, turnDigests, damageTone, extractAmount, elfNamesIn, type LogMode, type BattleLogRow } from '../battle/logClassifier';
 import { LOG_PAGE_SIZE, maskLogRows, buildLogPipeline } from '../battle/logView';
-import { useBattleLayoutPrefs, useWideEnoughForGameLayout, cycleAnimationSpeed, TypeSlot, FifthMedallion, typeAccent, BATTLE_GAME_SKINS } from './battle/gameHud';
+import { useBattleLayoutPrefs, useWideEnoughForGameLayout, TypeSlot, FifthMedallion, typeAccent, BATTLE_GAME_SKINS } from './battle/gameHud';
 import { effectDefinitionEntries } from '../battle/effectSources';
 import { switchRestrictions, itemRestrictions, restrictionText, type ActionRestriction } from '../battle/actionRestrictions';
 
@@ -100,6 +100,7 @@ interface BattleScreenUIProps {
   paused?: boolean;
   onPauseToggle?: () => void;
   specialMode?: "destiny" | "interstellar";
+  fieldId?:string;
   loadouts?: Record<"p1" | "p2", BattleLoadout>;
   onSkillSelect: (side: "p1" | "p2", skill: Skill) => void;
   onSwitchElf: (side: "p1" | "p2", index: number) => void;
@@ -229,7 +230,8 @@ function BattleScreenBody(props: BattleScreenUIProps) {
     damageDealt, p1Marks, p2Marks, p1Timers, p2Timers
   } = battle;
   // 雙人同屏（DSH 20261019）：當前操作側——PVP 依 phase，PVE 恆 p1。
-  const actSide: "p1" | "p2" = props.battleMode === 'PVP' && phase === 'p2_select' ? 'p2' : 'p1';
+  // 雙人連線：Context 固定給本機這一側（activeControlSide）；其他模式與原本相同。
+  const actSide: "p1" | "p2" = battle.activeControlSide ?? (props.battleMode === 'PVP' && phase === 'p2_select' ? 'p2' : 'p1');
   const isLocalPvp = props.battleMode === 'PVP';
   // 隱匿可見性：模式固定後，所有顯示點一律走 hid()（viewer×owner×mode 的單一判斷）。
   const viewMode = toViewMode(props.battleMode);
@@ -237,6 +239,8 @@ function BattleScreenBody(props: BattleScreenUIProps) {
   // 操作側的活體資料（技能列/隊伍/藥劑都讀這組，不再硬編碼 p1）
   const actElf = actSide === 'p2' ? p2 : p1;
   const actTeam = actSide === 'p2' ? (p2Team || []) : (p1Team || []);
+  const teamBagEntries = actTeam.map((elf, idx) => ({ elf, idx }))
+    .sort((a, b) => Number(!!a.elf?.isExtra) - Number(!!b.elf?.isExtra));
   const actActiveIndex = actSide === 'p2' ? p2ActiveIndex : p1ActiveIndex;
   const actSelectedSkill = actSide === 'p2' ? (battle as any).p2SelectedSkill : p1SelectedSkill;
   const actInventory = actSide === 'p2' ? (battle as any).p2ItemInventory : (battle as any).p1ItemInventory;
@@ -291,7 +295,6 @@ function BattleScreenBody(props: BattleScreenUIProps) {
   const layoutPrefs = useBattleLayoutPrefs();
   const wideEnough = useWideEnoughForGameLayout();
   const gameLayout = layoutPrefs.style === 'game' && wideEnough;
-  const [gMenuOpen, setGMenuOpen] = useState(false);
   const [passMode, setPassModeState] = useState<PassMode>(() => readPassMode());
   useEffect(() => { const on = (e: Event) => setPassModeState((e as CustomEvent).detail === 'manual' ? 'manual' : 'auto'); window.addEventListener('seer-pass-mode', on); return () => window.removeEventListener('seer-pass-mode', on); }, []);
   const canPass = !!props.onPass && phase === actPhaseSelect && !winner && !props.paused;
@@ -302,9 +305,9 @@ function BattleScreenBody(props: BattleScreenUIProps) {
     ? <span className="text-[10px] text-rose-300" data-extra-target-legend>◎ 額外攻擊目標（僅技能傷害）</span> : null;
   const togglePassMode = () => writePassMode(passMode === 'auto' ? 'manual' : 'auto');
   const [gBenchFocus, setGBenchFocus] = useState<number | null>(null);
-  const battlefield = resolveBattlefield(props.specialMode, battle.battleFormat);
-  const fieldButton = <button type="button" data-battlefield className="bt-btn px-1.5 text-[10px] leading-4 shrink-0 pointer-events-auto" aria-label={`場地：${battlefield.name}`}
-    onClick={() => setModalContent({ title: battlefield.name, content: battlefield.description })}>{battlefield.name}</button>;
+  const battlefield = resolveBattlefield(props.specialMode, battle.battleFormat,props.fieldId);
+  const fieldButton = <BattlefieldStatus center={battlefield} p1={battle.p1RegistryState} p2={battle.p2RegistryState} round={turnNumber}
+    onInspect={field=>setModalContent({title:field.name,content:field.description})}/>;
   const loadoutButton = (side: "p1" | "p2") => <button type="button" data-battle-loadout={side} className="bt-btn px-1 text-[10px] shrink-0" aria-label={`${side.toUpperCase()} 本場配裝`}
     onClick={() => setModalContent({ title: `${side.toUpperCase()} 本場配裝`, body: <BattleLoadoutDetails loadout={props.loadouts?.[side]} /> })}>配裝</button>;
   const gameBenchScroll = useDragScroll<HTMLDivElement>();
@@ -853,9 +856,9 @@ function BattleScreenBody(props: BattleScreenUIProps) {
                         <span className="text-xs font-black text-cyan-500 uppercase tracking-widest">點擊精靈頭像以進行切換 (消耗一回合)</span>
                       </div>
                       <div ref={classicBenchScroll.ref} {...classicBenchScroll.bind} tabIndex={0} aria-label="左右捲動精靈" onDragStart={e => e.preventDefault()} className="grid grid-flow-col auto-cols-[minmax(130px,1fr)] overflow-x-auto custom-scrollbar gap-2.5" data-team-side={actSide}>
-                        {actTeam.map((elf, idx) => {
+                        {teamBagEntries.map(({ elf, idx }) => {
                           const isExtra = !!elf.isExtra;
-                          const isDead = !elf || (!isAliveBySurvivalRule(elf.currentHp, elf.survivalRule) && !(elf.deathImmunity && elf.deathImmunity.deathImmuneTurns > 0));
+                          const isDead = checkElfDead(elf);
                           const isDeathImmuneActive = !!(elf && elf.currentHp <= 0 && elf.deathImmunity && elf.deathImmunity.deathImmuneTurns > 0);
                           // 不鎖按鈕：不能出戰時點下改看精靈詳情（資訊照樣可看）。
                           const switchBlocked = !isExtra && (idx === actActiveIndex || isDead || (phase === actPhaseSelect && switchRestrictions(battle, actSide).blocked) || (phase !== actPhaseSelect && !phase.includes("forced_switch")) || (phase === actPhaseSelect && (actSide === 'p1' ? battle.p1RegistryState : battle.p2RegistryState)?.switchPickedRound === (battle.roundNumber ?? battle.turnNumber)));
@@ -1049,7 +1052,7 @@ function BattleScreenBody(props: BattleScreenUIProps) {
   );
 
 
-  const aliveCount = (team: Elf[]) => team.filter((e, i) => e && !e.isExtra && !e.isVanished && (isAliveBySurvivalRule(e.currentHp, e.survivalRule) || (e.deathImmunity && e.deathImmunity.deathImmuneTurns > 0))).length;
+  const aliveCount = (team: Elf[]) => team.filter((e, i) => e && !e.isExtra && !e.isVanished && !checkElfDead(e)).length;
 
   const catalogDesc = (c: any, inst: any) => {
     try { return typeof c?.describe === "function" ? c.describe(inst || {}) : (c?.description || ""); } catch { return c?.description || ""; }
@@ -1261,7 +1264,7 @@ function BattleScreenBody(props: BattleScreenUIProps) {
             {team.map((e, i) => {
               if (!e) return null;
               const extra = !!e.isExtra;
-              const dead = e.isVanished || (!isAliveBySurvivalRule(e.currentHp, e.survivalRule) && !(e.deathImmunity && e.deathImmunity.deathImmuneTurns > 0));
+              const dead = e.isVanished || checkElfDead(e);
               const active = i === activeIdx;
               return (
                 <button key={i} type="button" onClick={() => !hid(e, side) && setSelectedElfDetail({ elf: e, side, idx: i })}
@@ -1289,8 +1292,9 @@ function BattleScreenBody(props: BattleScreenUIProps) {
           <span className="text-3xl font-black bt-accent tabular-nums leading-none">{turnNumber}</span>
           <span className="text-sm font-black bt-muted">回合</span>
           {limit > 0 && <span className="text-xs font-bold bt-muted" title="巔峰 6V6：滿 50 回合依存活精靈數判勝負（額外精靈不計）">/ {limit}</span>}
-          <span className="ml-1 text-xs font-bold bt-muted">{PHASE_LABEL[phase] || phase}</span>{fieldButton}
+          <span className="ml-1 text-xs font-bold bt-muted">{PHASE_LABEL[phase] || phase}</span>
         </div>
+        {fieldButton}
         <div className="bt-panel flex flex-col items-center gap-1 px-4 py-1.5">
           <div className="flex items-center gap-2.5">
             {hid(p1, "p1") ? <span className="text-base font-black text-slate-400">?</span> : <TypeIcon type={shownP1?.type} size={30} />}
@@ -1340,7 +1344,7 @@ function BattleScreenBody(props: BattleScreenUIProps) {
       : isActing ? { x: 0, filter: ['brightness(1)', 'brightness(1.3)', 'brightness(1)'] }
       : isHit ? { x: [0, isP1 ? -10 : 10, isP1 ? 6 : -6, 0], filter: ['brightness(1)', 'brightness(2.2)', 'brightness(1)'] }
       : { x: 0, filter: 'brightness(1)' };
-    const dead = !isAliveBySurvivalRule(elf.currentHp, elf.survivalRule);
+    const dead = checkElfDead(elf);
     const spriteProfile = hid(elf, side) ? undefined : battleSpriteProfile(elf.name);
 
     // 全部立繪共用可見區域與貼地座標；首領僅以資料配置尺寸上限。
@@ -1461,6 +1465,16 @@ function BattleScreenBody(props: BattleScreenUIProps) {
     { key: "SKILLS", label: "戰鬥" }, { key: "TEAM", label: "精靈" }, { key: "ITEMS", label: "道具" }, { key: "EFFECTS", label: "效果" },
   ];
 
+  const renderBattleControls = (game: boolean) => (
+    <BattleControls paused={props.paused} onPause={props.onPauseToggle} auto={isAutoBattle}
+      onAuto={props.onAutoBattleToggle} canPass={canPass} onPass={doPass}
+      passMode={passMode} onPassMode={togglePassMode}
+      onDisplay={() => setShowDisplaySettings(true)}
+      onSettings={() => window.dispatchEvent(new CustomEvent('open-settings', { detail: { tab: 'battle' } }))}
+      onInspect={game ? () => setGInspector(true) : undefined}
+      onLayout={() => layoutPrefs.setStyle(game ? 'classic' : 'game')} game={game} />
+  );
+
   const renderFixedLayout = () => (
     <div className="absolute inset-0">
       {/* 場地：立繪依身高比例擺放（左右），中間留給對戰訊息 */}
@@ -1501,14 +1515,8 @@ function BattleScreenBody(props: BattleScreenUIProps) {
               {phase === actPhaseSelect ? (isLocalPvp && actSide === "p2" ? "P2 請選擇指令" : "請選擇指令") : phase.includes("forced_switch") ? (isLocalPvp && (phase === "forced_switch_p2" || phase === "forced_switch_both") ? "P2 請選擇出戰精靈" : "請選擇出戰精靈") : (isLocalPvp ? PHASE_LABEL_PVP[phase] : PHASE_LABEL[phase]) || ""}
             </span>
             <button onClick={() => setLogOpen(v => !v)} className="bt-btn shrink-0" data-active={logOpen} data-log-toggle>{logOpen ? "收起對戰訊息" : "打開對戰訊息"}</button>
-            <AnimationSpeedControl/>
             <span className="flex-1 max-sm:hidden" />
-            <button onClick={doPass} disabled={!canPass} data-pass-button title="空過：放棄本回合行動" className="bt-btn disabled:opacity-40">空過</button>
-            <button onClick={togglePassMode} data-pass-mode={passMode} title={passMode === 'auto' ? '無可用行動時自動空過（點擊改為手動）' : '手動空過（點擊改為無可用行動時自動空過）'} className="bt-btn" style={passMode === 'auto' ? { color: "#7dd3fc", borderColor: "#38bdf8" } : undefined}>{passMode === 'auto' ? '自動空過' : '手動空過'}</button>
-            <BattlePauseButton paused={props.paused} onToggle={props.onPauseToggle} />
-            <button disabled={props.paused} onClick={props.onAutoBattleToggle} title="自動戰鬥" className="bt-btn" style={isAutoBattle ? { background: "#059669", color: "#fff", borderColor: "#34d399" } : undefined}>托管</button>
-            <button onClick={() => setShowDisplaySettings(true)} title="顯示設定" className="bt-btn"><Layout className="w-4 h-4" /></button>
-            <button onClick={() => window.dispatchEvent(new CustomEvent('open-settings', { detail: { tab: 'battle' } }))} title="戰鬥設定" className="bt-btn"><Settings className="w-4 h-4" /></button>
+            {renderBattleControls(false)}
             <button onClick={props.onBackToMenu} title="撤退離開" className="bt-btn !text-rose-300 !border-rose-800/70">撤退</button>
           </div>
           <div inert={props.paused} className="p-3 pt-2.5 short:p-1.5 max-h-[30vh] sm:max-h-[150px] short:max-h-[70px] overflow-y-auto custom-scrollbar">
@@ -1673,7 +1681,7 @@ function BattleScreenBody(props: BattleScreenUIProps) {
       const activeIdx = side === "p1" ? p1ActiveIndex : battle.p2ActiveIndex;
       return team.map((e, i) => {
         if (!e || !!e.isExtra !== extra) return null;
-        const dead = e.isVanished || (!isAliveBySurvivalRule(e.currentHp, e.survivalRule) && !(e.deathImmunity && e.deathImmunity.deathImmuneTurns > 0));
+        const dead = e.isVanished || checkElfDead(e);
         const sheltered = !e.isVanished && e.currentHp <= 0 && e.deathImmunity && e.deathImmunity.deathImmuneTurns > 0;
         const activeNow = i === activeIdx;
         const bg = extra ? (dead ? '#5a4410' : '#f2c14e') : dead ? '#3a4252' : activeNow ? '#7de3ff' : sheltered ? '#b57cff' : '#3dd68c';
@@ -1700,7 +1708,7 @@ function BattleScreenBody(props: BattleScreenUIProps) {
         </div>
         <div className="flex items-center gap-2.5" style={{ textShadow: '0 1px 3px #000' }}>
           <span className="flex gap-1" title={`剩餘 ${aliveCount(p1Team)} 隻（計入勝負）`}>{dots('p1', false)}</span>
-          <b className="text-lg">第 {turnNumber} 回合</b>{fieldButton}
+          <b className="text-lg">第 {turnNumber} 回合</b>
           {limit > 0 && <span className="text-sm" style={{ color: 'var(--g-muted)' }} title="巔峰 6V6：滿 50 回合依存活精靈數判勝負（額外精靈不計）">/ {limit}</span>}
           <span className="flex gap-1 flex-row-reverse" title={`剩餘 ${aliveCount(p2Team)} 隻（計入勝負）`}>{dots('p2', false)}</span>
         </div>
@@ -1714,6 +1722,7 @@ function BattleScreenBody(props: BattleScreenUIProps) {
         <span className="text-xs font-bold max-w-[18rem] truncate" style={{ color: 'var(--g-muted)', textShadow: '0 1px 2px #000' }}>
           {phase === actPhaseSelect ? (isLocalPvp && actSide === "p2" ? "P2 請選擇指令" : "請選擇指令") : phase.includes("forced_switch") ? (isLocalPvp && (phase === "forced_switch_p2" || phase === "forced_switch_both") ? "P2 請選擇出戰精靈" : "請選擇出戰精靈") : (isLocalPvp ? PHASE_LABEL_PVP[phase] : PHASE_LABEL[phase]) || ""}
         </span>
+        {fieldButton}
       </div>
     );
   };
@@ -1830,7 +1839,7 @@ function BattleScreenBody(props: BattleScreenUIProps) {
     // 陣亡後強制換人不受切換限制；一般選擇階段依統一判斷（個體／全隊）。
     const swLock = phase === actPhaseSelect ? switchRestrictions(battle, actSide) : { blocked: false, list: [] as ActionRestriction[] };
     const teamLock = swLock.list.some(r => r.scope === 'team'), elfLock = swLock.list.some(r => r.scope === 'elf');
-    const deadOf = (elf: Elf) => !isAliveBySurvivalRule(elf.currentHp, elf.survivalRule) && !(elf.deathImmunity && elf.deathImmunity.deathImmuneTurns > 0);
+    const deadOf = (elf: Elf) => checkElfDead(elf);
     /** 不能出戰的原因（空字串＝可以）；按鈕不鎖，只用來顯示與擋下動作。 */
     const switchBlock = (idx: number): string => {
       const elf = actTeam[idx];
@@ -1893,14 +1902,20 @@ function BattleScreenBody(props: BattleScreenUIProps) {
         </div>
         {gTeamView === 'skills' ? (
           <div className="flex-1 min-h-0 overflow-y-auto custom-scrollbar flex flex-col gap-1.5 pr-1 pt-5" data-team-skill-table>
-            {actTeam.map((teamElf, idx) => {
+            {teamBagEntries.map(({ elf: teamElf, idx }, row) => {
               if (!teamElf) return null;
               const isActive = idx === actActiveIndex;
               // 在場者讀即時狀態（隊伍陣列可能尚未同步廢除、PP 等變化）。
               const elf = isActive ? actElf : teamElf;
               const hidden = hid(elf, actSide);
               return (
-                <div key={`${actSide}-st-${idx}`} className="flex items-center gap-2" data-dead={deadOf(elf) || !!elf.isVanished}>
+                <React.Fragment key={`${actSide}-st-${idx}`}>
+                {(row === 0 || !!teamBagEntries[row - 1].elf?.isExtra !== !!teamElf.isExtra) && (
+                  <h4 className="text-xs font-bold" style={{ color: 'var(--g-muted)' }}>
+                    {teamElf.isExtra ? '額外精靈' : '普通精靈'}
+                  </h4>
+                )}
+                <div className="flex items-center gap-2" data-dead={deadOf(elf) || !!elf.isVanished}>
                   <span className="w-[6.5rem] shrink-0 flex items-center gap-1.5 min-w-0">
                     <span className="block w-7 h-7 shrink-0 rounded-full overflow-hidden bg-slate-900"><ElfAvatar elf={elf} battleSide={actSide} kind="head" className="w-full h-full object-cover" /></span>
                     <span className="text-[11px] font-black truncate" style={{ color: isActive ? '#4fc3f7' : elf.isExtra ? '#e0b45a' : undefined }}>{hidden ? UNKNOWN_ELF : elf.name}</span>
@@ -1908,6 +1923,7 @@ function BattleScreenBody(props: BattleScreenUIProps) {
                   {hidden ? <span className="text-xs bt-muted">{UNKNOWN_SKILL}</span>
                     : <span className="flex-1 min-w-0 grid grid-cols-5 gap-1.5">{skillsOf(elf).map(({ s, fifth }) => skillChip(elf, s, fifth, isActive, s.battleSlot ?? s.name))}</span>}
                 </div>
+                </React.Fragment>
               );
             })}
           </div>
@@ -1916,7 +1932,7 @@ function BattleScreenBody(props: BattleScreenUIProps) {
         <div ref={gameBenchScroll.ref} {...gameBenchScroll.bind} tabIndex={0} aria-label="左右捲動精靈" onDragStart={e => e.preventDefault()} className="grid gap-2 h-[5.9rem] overflow-x-auto overflow-y-hidden custom-scrollbar snap-x" data-bench-scroll
           style={{ gridAutoFlow: 'column', gridAutoColumns: `max(5.5rem, calc((100% - ${5 * 0.5}rem) / 6))`, overscrollBehaviorX: 'contain' }}
           onWheel={e => { const el = e.currentTarget; if (el.scrollWidth > el.clientWidth && Math.abs(e.deltaY) > Math.abs(e.deltaX)) el.scrollLeft += e.deltaY; }}>
-          {actTeam.map((elf, idx) => {
+          {teamBagEntries.map(({ elf, idx }) => {
             if (!elf) return <span key={idx} />;
             const isExtra = !!elf.isExtra;
             const isDead = deadOf(elf);
@@ -1926,7 +1942,7 @@ function BattleScreenBody(props: BattleScreenUIProps) {
             const block = switchBlock(idx);
             const canSwitch = !block;
             const lockedCandidate = swLock.blocked && !isExtra && !isActive && !isDead && !elf.isVanished;
-            const tag = elf.isVanished ? ['消逝', '#6b21a8'] : isDead ? ['陣亡', '#8a2a33'] : sheltered ? ['庇護中', '#7a3ab8'] : isActive ? ['出場中', '#1c8fb8'] : isExtra ? ['額外', '#b8761c'] : null;
+            const tag = elf.isVanished ? ['消逝', '#6b21a8'] : isDead ? ['陣亡', '#8a2a33'] : sheltered ? ['庇護中', '#7a3ab8'] : isActive ? ['出場中', '#1c8fb8'] : isExtra ? ['額外精靈', '#b8761c'] : null;
             const pct = elf.maxHp > 0 ? (elf.currentHp / elf.maxHp) * 100 : 0;
             const dragOver = !!gDrag && isActive && gDrag.over;
             return (
@@ -2005,24 +2021,8 @@ function BattleScreenBody(props: BattleScreenUIProps) {
         ))}
         <div style={{ zIndex: Z.HUD }} className="absolute top-2 left-1/2 -translate-x-1/2">{renderGameMatch()}</div>
 
-        {/* 右側對戰控制 */}
-        <div style={{ zIndex: Z.CONTROLS }} className="btg-quick-actions absolute right-4 flex flex-col pointer-events-auto">
-          <BattlePauseButton compact paused={props.paused} onToggle={props.onPauseToggle} />
-          <button type="button" disabled={props.paused} className="btg-round text-lg disabled:opacity-40" data-on={isAutoBattle} onClick={props.onAutoBattleToggle} title="托管（自動戰鬥）"><span>A</span></button>
-          <button type="button" className="btg-round text-sm disabled:opacity-40" data-pass-button disabled={!canPass} onClick={doPass} title="空過：放棄本回合行動"><span>⏭<br /><small className="text-[9px]">空過</small></span></button>
-          <button type="button" className="btg-round text-sm" onClick={() => cycleAnimationSpeed(animationRate)} title="動畫速度（點擊切換 ×1／×2／×5／×10）"><span>×{Number(animationRate.toFixed(1))}<br /><small className="text-[9px]">▶▶</small></span></button>
-          <div className="relative">
-            <button type="button" className="btg-round" onClick={() => setGMenuOpen(v => !v)} title="設定" aria-label="設定"><span><Settings className="w-5 h-5" /></span></button>
-            {gMenuOpen && (
-              <div className="btg-menu absolute right-[3.8rem] top-0" onMouseLeave={() => setGMenuOpen(false)}>
-                <button type="button" onClick={() => { setGMenuOpen(false); setShowDisplaySettings(true); }}>顯示設定</button>
-                <button type="button" onClick={() => { setGMenuOpen(false); window.dispatchEvent(new CustomEvent('open-settings', { detail: { tab: 'battle' } })); }}>戰鬥設定</button>
-                <button type="button" onClick={() => { setGMenuOpen(false); setGInspector(true); }}>效果總覽</button>
-                <button type="button" data-pass-mode={passMode} onClick={togglePassMode} title="無可用行動時是否自動空過">{passMode === 'auto' ? '自動空過 ✓' : '自動空過 ✗'}</button>
-                <button type="button" onClick={() => { setGMenuOpen(false); layoutPrefs.setStyle('classic'); }}>切換為實用風</button>
-              </div>
-            )}
-          </div>
+        <div style={{ zIndex: Z.CONTROLS + 1 }} className="absolute bottom-3 right-4 pointer-events-auto">
+          {renderBattleControls(true)}
         </div>
 
         {/* 戰報 */}

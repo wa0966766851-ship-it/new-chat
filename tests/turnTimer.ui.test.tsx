@@ -7,6 +7,7 @@ Object.assign(globalThis,{window:dom.window,document:dom.window.document,localSt
 Object.defineProperty(globalThis,'navigator',{value:dom.window.navigator,configurable:true});
 const {createRoot}=await import('react-dom/client');
 const server=await createServer({ configFile: false, optimizeDeps: { noDiscovery: true, include: [] }, resolve: { preserveSymlinks: true }, server: { middlewareMode: true, hmr: false, watch: null }, appType: 'custom', logLevel: 'silent' });
+const {BattlePresentation}=await server.ssrLoadModule('/src/battle/presentation.ts');
 const {useTurnTimer}=await server.ssrLoadModule('/src/components/battle/useTurnTimer.ts');
 const {writeTurnTimer}=await server.ssrLoadModule('/src/battle/turnTimer.ts');
 const {BattleTimerSettingsPanel}=await server.ssrLoadModule('/src/components/BattleTimerSettingsPanel.tsx');
@@ -19,10 +20,10 @@ const selected:any[]=[],switched:any[]=[],automated:any[]=[],dispatched:any[]=[]
 const reset=()=>{const a=elf('A'),b=elf('B');state={p1:a,p2:b,p1Team:[a,elf('C')],p2Team:[b,elf('D')],p1ActiveIndex:0,p2ActiveIndex:0,p1Timers:[],p2Timers:[],p1RegistryState:{},p2RegistryState:{},p1ItemInventory:{},p2ItemInventory:{},phase:'p1_select',turnNumber:1,p1SwitchIndex:null,p2SwitchIndex:null};selected.length=0;switched.length=0;automated.length=0;dispatched.length=0;};
 const engine:any={getState:()=>state,isAlive:()=>true,presentation:{wait:()=>wait,busy:false},onSkillSelect:(side:string,s:any)=>{selected.push([side,s.name]);state={...state,[`${side}SelectedSkill`]:s};},onSwitchElf:(side:string,index:number)=>switched.push([side,index]),onPass:(side:string)=>selected.push([side,'pass']),performAIAction:async(side:string,forced:boolean)=>automated.push([side,forced]),dispatch:(a:any)=>dispatched.push(a)};
 let clock=0,serial=0;const intervals=new Map<number,()=>void>();
-const realInterval=globalThis.setInterval,realClear=globalThis.clearInterval,realNow=Date.now;
+const realInterval=globalThis.setInterval,realClear=globalThis.clearInterval,realNow=Object.getOwnPropertyDescriptor(performance,'now');
 (globalThis as any).setInterval=(fn:()=>void)=>{intervals.set(++serial,fn);return serial;};
 (globalThis as any).clearInterval=(id:number)=>intervals.delete(id);
-Date.now=()=>clock;
+Object.defineProperty(performance,'now',{configurable:true,value:()=>clock});
 const root=createRoot(document.getElementById('root')!);
 function Harness(){hook=useTurnTimer(engine,state,mode,intro,isPaused);return <><BattleTimerSettingsPanel/><output>{hook.remaining}</output></>;}
 const render=()=>act(async()=>root.render(<Harness/>));
@@ -47,6 +48,26 @@ try {
   await act(async()=>hook.stopP2());assert.equal(hook.autoP2,false);
   await remount();intro=true;await render();await tick(5000);assert.equal(dispatched.length,0);intro=false;await render();assert.equal(hook.remaining,5);
   await act(async()=>root.render(null));await tick(5000);assert.equal(dispatched.length,0);assert.equal(intervals.size,0);
+  const usualError=console.error;
+  const failures: string[]=[];
+  console.error=message=>{failures.push(String(message));};
+  try {
+    let calls=0;
+    const presentation=new BattlePresentation(()=>{if(!calls++)throw Error('broken frame');},()=>true);
+    await presentation.setTurn(2);
+    await presentation.setTurn(3);
+    await presentation.wait();
+    assert.equal(presentation.turnNumber,3);
+    assert.equal(presentation.busy,false);
+    assert.deepEqual(failures,['[battle presentation]']);
+    const waitForPresentation=engine.presentation.wait;
+    engine.presentation.wait=()=>Promise.reject(Error('failed presentation wait'));
+    try { await remount(); }
+    finally { engine.presentation.wait=waitForPresentation; }
+    assert.equal(hook.remaining,5);
+    await tick(5000);
+    assert.deepEqual(dispatched,[{type:'SET_AUTO_BATTLE',isAuto:true}]);
+  } finally { console.error=usualError; }
   console.log('✓ 計時器設定 UI、預設關閉、技能順序、死亡換人、演出等待、人工操作取消、P1／P2 託管與卸載清理');
-} finally {await act(async()=>root.unmount());globalThis.setInterval=realInterval;globalThis.clearInterval=realClear;Date.now=realNow;await server.close();dom.window.close();}
+} finally {await act(async()=>root.unmount());globalThis.setInterval=realInterval;globalThis.clearInterval=realClear;if(realNow)Object.defineProperty(performance,'now',realNow);else Reflect.deleteProperty(performance,'now');await server.close();dom.window.close();}
 process.exit(0);

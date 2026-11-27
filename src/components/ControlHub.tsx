@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useMemo, lazy, Suspense } from "react";
-import { normalizePlaylist, readControlSetting, resolveControlSection, type ControlSectionId } from '../utils/controlSettings';
+import { normalizePlaylist, readControlSetting, resolveControlPage, legacyControlTab, HUB_LAYOUT_KEY, HUB_NOTES_KEY, type ControlDetailPage, type ControlHubLayout, type ControlSectionId } from '../utils/controlSettings';
 import { Volume2, VolumeX, Settings2 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { useSceneResources, saveSceneResources, DEFAULT_SCENE_RESOURCES, SceneResourceMap } from "../utils/resourceManager";
@@ -81,6 +81,16 @@ function useControlHubModel(currentScene: string, canApplyUpdates: boolean) {
   const [state, setState] = useState(() => getThemeState());
   const [isOpen, setIsOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<ControlSectionId>("background");
+  const [activePage, setActivePage] = useState<ControlDetailPage | null>(null);
+  const openSettings = React.useCallback((page: ControlDetailPage | null) => {
+    setActivePage(page);
+    if (page) setActiveTab(legacyControlTab(page));
+    setIsOpen(true);
+  }, []);
+  const navigatePage = (page: ControlDetailPage | null) => {
+    setActivePage(page);
+    if (page) setActiveTab(legacyControlTab(page));
+  };
   const [isMaximized, setIsMaximized] = useState(false);
   const [selectedScene, setSelectedScene] = useState<string>("start");
   const sceneResources = useSceneResources();
@@ -129,12 +139,11 @@ function useControlHubModel(currentScene: string, canApplyUpdates: boolean) {
 
   useEffect(() => {
     const handleOpenSettings = (e: any) => {
-      setIsOpen(true);
-      const tab = resolveControlSection(e.detail?.tab); if (tab) setActiveTab(tab);
+      openSettings(resolveControlPage(e.detail?.tab));
     };
     window.addEventListener('open-settings', handleOpenSettings as EventListener);
     return () => window.removeEventListener('open-settings', handleOpenSettings as EventListener);
-  }, []);
+  }, [openSettings]);
   const [searchTerm, setSearchTerm] = useState("");
   const [inputBgUrl, setInputBgUrl] = useState("");
   const [inputBgmUrl, setInputBgmUrl] = useState("");
@@ -219,15 +228,33 @@ function useControlHubModel(currentScene: string, canApplyUpdates: boolean) {
     if (shouldAutoplayOnEnter(prev, currentScene, autoplay) && !music.requestedPlaying && (!continuousMusic || !music.mounted)) music.setIsPlaying(true);
   }, [currentScene]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  return { isMaximized, setIsMaximized, setIsOpen, activeTab, searchTerm, setSearchTerm, setActiveTab, state, updateUrlParam, currentAccent, setFeedback, backgrounds, inputBgUrl, setInputBgUrl, musicInfo, playlist, inputBgmUrl, setInputBgmUrl, animationSettings, setAnimationSettings, customLayout, setCustomLayout, p1Panel, setP1Panel, p2Panel, setP2Panel, tacticalPanel, setTacticalPanel, hudOpacity, setHudOpacity, setLocalResources, localResources, selectedScene, sceneResources, currentScene, setSelectedScene, updateSceneBg, updateSceneBgm, setPlaylist, setBackgrounds, feedback, isOpen, canApplyUpdates, autoplay, setAutoplay, continuousMusic, setContinuousMusic, ...music };
+  return { isMaximized, setIsMaximized, setIsOpen, activeTab, activePage, navigatePage, openSettings, searchTerm, setSearchTerm, setActiveTab, state, updateUrlParam, currentAccent, setFeedback, backgrounds, inputBgUrl, setInputBgUrl, musicInfo, playlist, inputBgmUrl, setInputBgmUrl, animationSettings, setAnimationSettings, customLayout, setCustomLayout, p1Panel, setP1Panel, p2Panel, setP2Panel, tacticalPanel, setTacticalPanel, hudOpacity, setHudOpacity, setLocalResources, localResources, selectedScene, sceneResources, currentScene, setSelectedScene, updateSceneBg, updateSceneBgm, setPlaylist, setBackgrounds, feedback, isOpen, canApplyUpdates, autoplay, setAutoplay, continuousMusic, setContinuousMusic, ...music };
 }
 
 export type ControlHubPanelModel = ReturnType<typeof useControlHubModel>;
 
-export default function ControlHub({ currentScene, canApplyUpdates = false }: { currentScene: string; canApplyUpdates?: boolean }) {
+export default function ControlHub({ currentScene, canApplyUpdates = false, hideTriggers = false, preferModern = false }: { currentScene: string; canApplyUpdates?: boolean; hideTriggers?: boolean; preferModern?: boolean }) {
   const model = useControlHubModel(currentScene, canApplyUpdates);
+  const [layout, changeLayout] = useState<ControlHubLayout | null>(() =>
+    readControlSetting<ControlHubLayout | null>(HUB_LAYOUT_KEY, null, (value): value is ControlHubLayout => value === 'modern' || value === 'classic'));
+  const [showNotes, changeNotes] = useState(() =>
+    readControlSetting(HUB_NOTES_KEY, false, (value): value is boolean => typeof value === 'boolean'));
+  const setLayout = (next: ControlHubLayout) => {
+    changeLayout(next);
+    try { localStorage.setItem(HUB_LAYOUT_KEY, JSON.stringify(next)); } catch { /* 保留目前畫面的選擇。 */ }
+  };
+  const setShowNotes = (next: boolean) => {
+    changeNotes(next);
+    try { localStorage.setItem(HUB_NOTES_KEY, JSON.stringify(next)); } catch { /* 保留目前畫面的選擇。 */ }
+  };
   const { isOpen, setIsOpen, currentAccent, isPlaying, isMuted, toggleMute, mounted, musicInfo, containerRef, playback, retryMusic, closeMusic, showPlayer, setShowPlayer } = model;
   const watchUrl = musicWatchUrl(musicInfo);
+  useEffect(() => { if (hideTriggers) setIsOpen(false); }, [hideTriggers, setIsOpen]);
+  useEffect(() => {
+    const onAudio = () => toggleMute();
+    window.addEventListener('toggle-battle-audio', onAudio);
+    return () => window.removeEventListener('toggle-battle-audio', onAudio);
+  }, [toggleMute]);
   return (
     <div className="fixed top-2.5 right-6 sm:right-8 z-[100] flex flex-col items-end gap-3 select-none font-sans">
       {/* 保留尺寸，顯示切換不重建影片；畫面外播放並非 YouTube 支援的背景音樂模式。 */}
@@ -247,7 +274,7 @@ export default function ControlHub({ currentScene, canApplyUpdates = false }: { 
         </div>
       </section>}
 
-      <div className="flex items-center gap-2">
+      {!hideTriggers && <div className="flex items-center gap-2">
         {/* 快速播放按鍵：點擊啟動並解除靜音 */}
         <motion.button
           whileHover={{ scale: 1.1 }}
@@ -267,7 +294,7 @@ export default function ControlHub({ currentScene, canApplyUpdates = false }: { 
         <motion.button
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
-          onClick={() => setIsOpen(!isOpen)}
+          onClick={() => isOpen ? setIsOpen(false) : model.openSettings(null)}
           aria-label="控制中心" title="控制中心（背景、音樂、外觀）"
           className={`flex items-center gap-1.5 h-9 px-3 rounded-full border backdrop-blur-xl shadow-2xl transition-all ${
             isOpen ? "bg-slate-800 border-slate-600 ring-2 ring-blue-500/20" : `bg-slate-900/90 ${currentAccent.border} hover:bg-slate-800`
@@ -284,7 +311,7 @@ export default function ControlHub({ currentScene, canApplyUpdates = false }: { 
           </div>
           <span className="hidden xl:inline text-xs font-bold text-slate-100">控制中心</span>
         </motion.button>
-      </div>
+      </div>}
 
       {/* 控制面板 */}
 
@@ -309,7 +336,8 @@ export default function ControlHub({ currentScene, canApplyUpdates = false }: { 
           <Suspense fallback={<div role="status" className="ios-card p-4 text-slate-200">
             載入控制中心… <button type="button" className="ios-button ml-2" onClick={() => setIsOpen(false)}>取消</button>
           </div>}>
-            <ControlHubPanel {...model} />
+            <ControlHubPanel {...model} navigation={{ layout, setLayout, preferModern, page: model.activePage,
+              setPage: model.navigatePage, showNotes, setShowNotes }} />
           </Suspense>
           </PageErrorBoundary>
           </>

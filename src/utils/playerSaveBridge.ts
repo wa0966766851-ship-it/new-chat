@@ -1,5 +1,12 @@
 // 瀏覽器仍使用原有 localStorage；桌面另保存不依賴網址埠號的副本。
 const META='seer_desktop_save_revision';
+let flushBeforeReload:(()=>Promise<void>)|undefined;
+let bridgeBlocked=false;
+/** Configuration import must reach the desktop save before reloading, or startup can restore the old disk copy. */
+export async function flushPlayerSaveNow(){
+ if(bridgeBlocked)throw Error('桌面存檔同步目前不可用，請先處理畫面上的存檔提示；尚未重新載入');
+ await flushBeforeReload?.();
+}
 const LEGACY_BACKUP_PREFIXES=['seer_before_builtin_kit_repair_'];
 export function readPlayerEntries(storage:Storage):Record<string,string> {
   const entries:Record<string,string>={};
@@ -11,6 +18,7 @@ export function readPlayerEntries(storage:Storage):Record<string,string> {
 }
 export async function initializePlayerSave(storage:Storage=localStorage,request:typeof fetch=fetch) {
   if(!['localhost','127.0.0.1','[::1]'].includes(location.hostname))return;
+  bridgeBlocked=true;flushBeforeReload=undefined;
   const warn=(message:string)=>{
     console.error('[桌面存檔]',message);
     // 持續顯示；不能讓使用者誤以為已安全保存。
@@ -21,8 +29,8 @@ export async function initializePlayerSave(storage:Storage=localStorage,request:
   let saved:{schema:number;revision:string;entries:Record<string,string>};
   try{
     const response=await request('/api/player-save',{signal:AbortSignal.timeout(3000),cache:'no-store'});
-    if(response.status===404)return;
-    if(response.ok && !response.headers.get('content-type')?.includes('application/json'))return;
+    if(response.status===404){bridgeBlocked=false;return;}
+    if(response.ok && !response.headers.get('content-type')?.includes('application/json')){bridgeBlocked=false;return;}
     if(!response.ok)throw Error('桌面存檔無法讀取；目前瀏覽器資料保留，暫停同步，請先匯出備份。');
     saved=await response.json();
     if(saved.schema!==1 || typeof saved.revision!=='string' || !saved.entries || typeof saved.entries!=='object' ||
@@ -75,5 +83,12 @@ export async function initializePlayerSave(storage:Storage=localStorage,request:
   const timer=setInterval(()=>void flush(),1500);
   const hidden=()=>{if(document.hidden)void flush();};
   document.addEventListener('visibilitychange',hidden);
+  bridgeBlocked=false;
+  flushBeforeReload=async()=>{
+    const deadline=Date.now()+6500;
+    while(busy){if(Date.now()>deadline)throw Error('桌面存檔仍在同步，請稍後再試');await new Promise(r=>setTimeout(r,25));}
+    if(stopped)throw Error('桌面存檔同步已暫停，未重新載入');
+    await flush();if(stopped)throw Error('桌面存檔同步未完成，配置仍保留於本機，未重新載入');
+  };
   return {flush,stop:()=>{stopped=true;clearInterval(timer);document.removeEventListener('visibilitychange',hidden);}};
 }

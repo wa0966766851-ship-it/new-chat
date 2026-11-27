@@ -1,4 +1,5 @@
 import { BaseStats } from "../types";
+import {TITLE_PERKS,perkText} from '../modes/interstellar/v2/suitPerks';
 
 export interface TitleDefinition {
   id: string;
@@ -38,7 +39,7 @@ export const TITLE_CATALOG: Record<string, TitleDefinition> = {
     id: "kuangzhanshi",
     name: "狂戰士",
     category: "一、全屬性",
-    description: "全屬性+20（戰鬥愛好者升級版稱號）",
+    description: "全屬性+20",
     statBonus: { hp: 20, atk: 20, def: 20, spatk: 20, spdef: 20, speed: 20 },
   },
   weilai_linghangyuan: {
@@ -119,14 +120,14 @@ export const TITLE_CATALOG: Record<string, TitleDefinition> = {
     id: "jinjia_houwang",
     name: "金甲猴王",
     category: "三、體力",
-    description: "體力+50（嬉山小猴升級版稱號）",
+    description: "體力+50",
     statBonus: { hp: 50 },
   },
   qitian_xiaosheng: {
     id: "qitian_xiaosheng",
     name: "齊天小聖",
     category: "三、體力",
-    description: "體力+100（金甲猴王升級版稱號）",
+    description: "體力+100",
     statBonus: { hp: 100 },
   },
   shenhua: {
@@ -163,14 +164,14 @@ export const TITLE_CATALOG: Record<string, TitleDefinition> = {
     id: "shuangyue_qiji",
     name: "霜月奇蹟",
     category: "四、雙攻",
-    description: "體力+35，攻擊+15，特攻+15（元初聖印升級版稱號）",
+    description: "體力+35，攻擊+15，特攻+15",
     statBonus: { hp: 35, atk: 15, spatk: 15 },
   },
   zhandou_wangzhe: {
     id: "zhandou_wangzhe",
     name: "戰鬥王者",
     category: "四、雙攻",
-    description: "攻擊+40，特攻+40（戰鬥大師升級版稱號）",
+    description: "攻擊+40，特攻+40",
     statBonus: { atk: 40, spatk: 40 },
   },
   jiguang_fengyu: {
@@ -205,7 +206,7 @@ export const TITLE_CATALOG: Record<string, TitleDefinition> = {
     id: "shengling_zhanjiang",
     name: "聖靈戰將",
     category: "四、雙攻",
-    description: "攻擊+25，特攻+25，體力+40（聖靈戰士升級版稱號，原稱號並無屬性加成）",
+    description: "攻擊+25，特攻+25，體力+40",
     statBonus: { atk: 25, spatk: 25, hp: 40 },
   },
   shiguang_yinji: {
@@ -340,14 +341,14 @@ export const TITLE_CATALOG: Record<string, TitleDefinition> = {
     id: "xingqiu_hanweizhe",
     name: "星球捍衛者",
     category: "五、雙防",
-    description: "防禦+25，特防+25，體力+40（星球守望者升級版稱號）",
+    description: "防禦+25，特防+25，體力+40",
     statBonus: { def: 25, spdef: 25, hp: 40 },
   },
   hundun_lingjun: {
     id: "hundun_lingjun",
     name: "混沌領軍",
     category: "五、雙防",
-    description: "防禦+25，特防+25，體力+45（混沌侍從升級版稱號，原稱號並無屬性加成）",
+    description: "防禦+25，特防+25，體力+45",
     statBonus: { def: 25, spdef: 25, hp: 45 },
   },
   hunyu_jiefangzhe: {
@@ -435,7 +436,7 @@ export const TITLE_CATALOG: Record<string, TitleDefinition> = {
     id: "zhengyi_shengshi",
     name: "正義聖使",
     category: "七、攻速",
-    description: "攻擊+40，速度+25，防禦+25（正義守望者升級版稱號，原稱號並無屬性加成）",
+    description: "攻擊+40，速度+25，防禦+25",
     statBonus: { atk: 40, speed: 25, def: 25 },
   },
 
@@ -558,7 +559,7 @@ export const TITLE_CATALOG: Record<string, TitleDefinition> = {
     id: "saier_xiaolaomo",
     name: "賽爾小勞模",
     category: "九、暴擊稱號",
-    description: "暴擊機率+14%（勞動最光榮升級版稱號）",
+    description: "暴擊機率+14%",
     critBonus: 14,
   },
   shikong_chuansuozhe: {
@@ -616,28 +617,32 @@ export const TITLE_CATALOG: Record<string, TitleDefinition> = {
     id: "interstellar_pioneer",
     name: "星際先鋒",
     category: "十一、特殊",
-    description: "全屬性+35，移動節點燃料消耗 -1 (最低為1)",
+    description: "全屬性+35。",
     statBonus: { hp: 35, atk: 35, def: 35, spatk: 35, spdef: 35, speed: 35 },
   },
   void_conqueror: {
     id: "void_conqueror",
     name: "虛空征服者",
     category: "十一、特殊",
-    description: "全屬性+50，對精英與 Boss 傷害 +20%",
+    description: "全屬性+50。",
     statBonus: { hp: 50, atk: 50, def: 50, spatk: 50, spdef: 50, speed: 50 },
   },
   legendary_explorer: {
     id: "legendary_explorer",
     name: "傳奇探險家",
     category: "十一、特殊",
-    description: "全屬性+60，初始鑽石 +3 (僅開局生效)",
+    description: "全屬性+60。",
     statBonus: { hp: 60, atk: 60, def: 60, spatk: 60, spdef: 60, speed: 60 },
   },
   space_bounty_hunter: {
     id: "space_bounty_hunter",
     name: "星際賞金獵人",
     category: "十一、特殊",
-    description: "攻擊+120；擊敗精英或 Boss 後獲得雙倍賽爾豆。",
+    description: "攻擊+120。",
     statBonus: { atk: 120 },
   },
 };
+for(const [id,perk] of Object.entries(TITLE_PERKS)){
+ const title=TITLE_CATALOG[id];
+ if(title)title.description+='\n【星蝕迴廊適應】'+perkText(perk).join('；')+'。N12起不生效。';
+}

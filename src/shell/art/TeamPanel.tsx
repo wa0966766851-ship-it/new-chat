@@ -34,7 +34,7 @@ export interface SlotAction {
   elf: Elf;
 }
 
-export function TeamBoard({ b }: { b: ShellBridge }) {
+export function TeamBoard({ b,onTrain }: { b: ShellBridge;onTrain?:(elf:Elf)=>void }) {
   const [selected, setSelected] = useState<SlotAction | null>(null);
   const [picking, setPicking] = useState<SlotAction | null>(null);
   const [version, setVersion] = useState(0); // 換人後強制重讀
@@ -92,7 +92,7 @@ export function TeamBoard({ b }: { b: ShellBridge }) {
           slot={selected}
           onClose={() => setSelected(null)}
           onReplace={() => setPicking(selected)}
-          onEdit={() => { b.setEditingElf(selected.elf); b.setEditorTab(undefined); b.setView('custom'); }}
+          onEdit={() => { if(onTrain){onTrain(selected.elf);setSelected(null);}else{b.setEditingElf(selected.elf); b.setEditorTab(undefined); b.setView('custom');} }}
           onDetail={()=>setProfile(selected.elf)}
         />
       )}

@@ -1,13 +1,15 @@
 import { readPerfPreference, writePerfPreference, perfLiteActive, type PerfPreference } from '../shell/perfMode';
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { lazy, Suspense, useEffect, useMemo, useRef, useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
-import { Maximize2, Minimize2, Image as ImageIcon, RotateCcw, Copy, Music, X, Sliders, Sun, Moon, Eye, Check, Play, Pause, Plus, Volume2, VolumeX, Palette, Swords, Upload, Gauge } from "lucide-react";
+import { Maximize2, Minimize2, Image as ImageIcon, RotateCcw, Copy, Music, X, Sliders, Sun, Moon, Eye, Check, Play, Pause, Plus, Volume2, VolumeX, Palette, Swords, Upload, Gauge, Settings2 } from "lucide-react";
 import { CONTROL_SECTIONS, backgroundThumb, type ControlSectionId } from "../utils/controlSettings";
 import { DEFAULT_SCENE_RESOURCES, saveSceneResources } from "../utils/resourceManager";
 import { BATTLE_ANIMATION_OPTIONS, writeAnimationSettings } from "../battle/animationSettings";
 import {ImageRetrySetting} from './ImageRetrySetting';
 import { ACCENT_CONFIGS, OPACITY_CONFIGS, RECOMMENDED_BACKGROUNDS, RECOMMENDED_BGMS, DEFAULT_PLAYLIST, DEFAULT_BACKGROUNDS } from "./ControlHubPresets";
 import type { AccentColor, CardOpacity } from "./ControlHubPresets";
+import { FullscreenSettings } from "./FullscreenSettings";
+import { ControlHubNavigation, SettingsLayoutSwitch, SettingsNotesButton, type ControlHubNavigationState } from './ControlHubNavigation';
 import type { ControlHubPanelModel } from "./ControlHub";
 import { UpdateSettingsPanel } from './UpdateSettingsPanel';
 import { parseMusicSource } from '../utils/musicSource';
@@ -16,6 +18,7 @@ import { BattleAISettingsPanel } from './BattleAISettingsPanel';
 import { LauncherSettingsPanel } from './LauncherSettingsPanel';
 import {GlobalAnimationMode} from './AnimationModeSettings';
 import { BATTLE_GAME_SKINS, useBattleLayoutPrefs } from './battle/gameHud';
+const PlayerConfigurationPanel=lazy(()=>import('./PlayerConfigurationPanel'));
 
 const TAB_ICONS: Record<ControlSectionId, React.ComponentType<{ className?: string }>> = {
   background: ImageIcon, audio: Music, visual: Palette, battle: Swords, system: Sliders,
@@ -38,6 +41,7 @@ function Section({ title, hint, action, children }: { title: string; hint?: stri
         <h3 className="text-xs font-bold text-slate-300" title={hint}>{title}</h3>
         {action}
       </div>
+      {hint && <p data-settings-note>{hint}</p>}
       {children}
     </section>
   );
@@ -47,11 +51,16 @@ const chip = (active: boolean) => `px-3 py-1.5 rounded-lg text-xs font-bold bord
 const linkBtn = "text-[11px] text-slate-400 hover:text-white flex items-center gap-1";
 const inputCls = "flex-1 min-w-0 bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-xs text-white placeholder:text-slate-600 focus:outline-none focus:border-blue-500";
 
-export default function ControlHubPanel(model: ControlHubPanelModel) {
+export default function ControlHubPanel(model: ControlHubPanelModel & { navigation?: ControlHubNavigationState }) {
   const { isMaximized, setIsMaximized, setIsOpen, activeTab, setActiveTab, state, updateUrlParam, currentAccent, setFeedback, backgrounds, isPlaying, musicInfo, togglePlay, setIsPlaying, playlist, animationSettings, setAnimationSettings, setLocalResources, localResources, currentScene, updateSceneBg, updateSceneBgm, isMuted, setIsMuted, toggleMute, setPlaylist, setBackgrounds, feedback } = model;
 
   // 戰鬥外觀偏好（與戰鬥畫面共用同一組 localStorage 鍵）
   const battleLayout = useBattleLayoutPrefs();
+  const nav = model.navigation;
+  const eclipse = currentScene === 'eclipse_battle';
+  const battleScene = currentScene === 'battle' || eclipse;
+  const modern = !!nav && (nav.layout ? nav.layout === 'modern' : battleScene ? battleLayout.style === 'game' : nav.preferModern);
+  const page = modern ? nav.page : activeTab;
 
   const timer = useRef<number>();
   const flash = (msg: string) => { setFeedback(msg); window.clearTimeout(timer.current); timer.current = window.setTimeout(() => setFeedback(null), 1800); };
@@ -146,15 +155,20 @@ export default function ControlHubPanel(model: ControlHubPanelModel) {
 
   return (
     <motion.div
-      role="dialog" aria-label="系統控制中心" data-control-hub
+      role="dialog" aria-label="系統控制中心" data-control-hub data-control-layout={modern ? 'modern' : 'classic'}
+      data-layout={modern ? 'game' : undefined} data-gskin={modern ? battleLayout.skin : undefined}
+      data-skin={modern && eclipse ? 'eclipse' : undefined}
+      data-show-notes={modern ? nav.showNotes : undefined}
       initial={{ opacity: 0, x: 24 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 24 }}
       transition={{ duration: 0.18 }}
-      className={`fixed top-0 right-0 bottom-0 z-[200] w-full ${isMaximized ? 'sm:w-[min(980px,100vw)]' : 'sm:w-[460px]'} bg-slate-950 border-l border-slate-700/70 shadow-2xl flex flex-col`}
+      className={`fixed top-0 right-0 bottom-0 z-[200] w-full shadow-2xl flex flex-col ${isMaximized ? 'sm:w-[min(980px,100vw)]' : modern ? 'sm:w-[min(680px,100vw)]' : 'sm:w-[460px]'} ${modern ? 'control-hub-modern' : 'bg-slate-950 border-l border-slate-700/70'}`}
     >
       {/* 標題列 */}
-      <div className="flex items-center justify-between px-4 pt-3 pb-2">
-        <h2 className="text-sm font-bold text-slate-100">控制中心</h2>
-        <div className="flex gap-1">
+      <div className={`flex items-center justify-between px-4 pt-3 pb-2 ${modern ? 'settings-modern-header' : ''}`}>
+        <h2 className="flex items-center gap-2 text-sm font-bold text-slate-100">{modern && <Settings2 size={18} aria-hidden="true" />}控制中心</h2>
+        <div className="flex items-center gap-1">
+          {modern && <SettingsNotesButton show={nav.showNotes} onChange={nav.setShowNotes} />}
+          {nav && <SettingsLayoutSwitch modern={modern} onSwitch={() => nav.setLayout(modern ? 'classic' : 'modern')} />}
           <button type="button" aria-label={isMaximized ? '縮小' : '放大'} title={isMaximized ? '縮小' : '放大'} onClick={() => setIsMaximized(!isMaximized)} className="hidden sm:block p-2 text-slate-400 hover:text-white">
             {isMaximized ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
           </button>
@@ -162,22 +176,22 @@ export default function ControlHubPanel(model: ControlHubPanelModel) {
         </div>
       </div>
 
-      {/* 分頁 */}
+      {modern ? <ControlHubNavigation page={nav.page} setPage={nav.setPage} showNotes={nav.showNotes} /> :
       <div className="grid grid-cols-5 gap-1 px-3 pb-2 border-b border-slate-800" role="tablist" aria-label="控制中心分類">
         {CONTROL_SECTIONS.map(section => {
           const Icon = TAB_ICONS[section.id];
           const active = activeTab === section.id;
           return (
-            <button key={section.id} type="button" role="tab" aria-selected={active} title={section.description} onClick={() => setActiveTab(section.id)}
+            <button key={section.id} type="button" role="tab" aria-selected={active} title={section.description} onClick={() => nav ? nav.setPage(section.id) : setActiveTab(section.id)}
               className={`flex flex-col items-center gap-1 py-2 rounded-xl text-[11px] font-bold transition-colors ${active ? 'bg-blue-600 text-white' : 'text-slate-400 hover:text-slate-100 hover:bg-slate-900'}`}>
               <Icon className="w-4 h-4" />{section.title}
             </button>
           );
         })}
-      </div>
+      </div>}
 
-      <div className="flex-1 overflow-y-auto custom-scrollbar p-4 space-y-5">
-        {activeTab === 'background' && (<>
+      {page && <div key={page} className={`flex-1 min-h-0 overflow-y-auto custom-scrollbar p-4 space-y-5 ${modern ? 'settings-modern-body' : ''}`}>
+        {page === 'background' && (<>
           {/* 目前效果預覽 */}
           <div className="relative aspect-[16/7] rounded-xl overflow-hidden border border-slate-800 bg-slate-900">
             {isMediaUrl(targetBg || shownBg)
@@ -240,7 +254,7 @@ export default function ControlHubPanel(model: ControlHubPanelModel) {
           </div>
         </>)}
 
-        {activeTab === 'audio' && (<>
+        {page === 'audio' && (<>
           <div className="flex items-center gap-3 rounded-xl border border-slate-800 bg-slate-900/60 p-3">
             <button type="button" onClick={model.playback.phase === 'blocked' || model.playback.phase === 'error' ? () => setIsPlaying(true) : togglePlay} aria-label={model.requestedPlaying && !['blocked', 'error'].includes(model.playback.phase) ? '暫停' : '播放'} className={`w-11 h-11 rounded-full flex items-center justify-center ${isPlaying ? 'bg-blue-600 text-white' : 'bg-slate-800 text-slate-300'}`}>
               {model.requestedPlaying && !['blocked', 'error'].includes(model.playback.phase) ? <Pause className="w-5 h-5" /> : <Play className="w-5 h-5" />}
@@ -314,7 +328,7 @@ export default function ControlHubPanel(model: ControlHubPanelModel) {
           </Section>
         </>)}
 
-        {activeTab === 'visual' && (<>
+        {page === 'visual' && (<>
           <Section title="明暗" hint="只調整背景遮罩明暗，不改變數值辨識色">
             <div className="grid grid-cols-3 gap-2">
               {[{ id: "day", icon: Sun, label: "日間" }, { id: "night", icon: Moon, label: "標準" }, { id: "dark", icon: Eye, label: "極黑" }].map(item => (
@@ -346,7 +360,7 @@ export default function ControlHubPanel(model: ControlHubPanelModel) {
           </Section>
         </>)}
 
-        {activeTab === 'battle' && (<>
+        {page === 'battle' && (<>
           <BattleAISettingsPanel />
           <Section title="戰鬥介面" hint="介面風格與外觀；星蝕迴廊固定黑漆鎏金">
             <div className="flex items-center justify-between gap-3 rounded-lg border border-slate-700 bg-slate-950 p-3 mb-3">
@@ -366,14 +380,14 @@ export default function ControlHubPanel(model: ControlHubPanelModel) {
               </div>
             </div>
             <label className="flex items-center justify-between gap-3 rounded-lg border border-slate-700 bg-slate-950 p-3 mb-3">
-              <span><span className="block text-sm font-bold text-slate-200">效果列</span><span className="text-xs text-slate-400">原廠風頭像下方的能力／異常／常駐／印記／回合整排</span></span>
+              <span><span className="block text-sm font-bold text-slate-200">效果列</span><span className="text-xs text-slate-400" data-settings-optional>頭像下方的能力、異常、常駐、印記與回合效果</span></span>
               <div className="ios-segment">
                 {([[false, "顯示"], [true, "收起"]] as const).map(([k, l]) => (
                   <button key={l} type="button" data-active={battleLayout.trayHidden === k} onClick={() => battleLayout.setTrayHidden(k)}>{l}</button>
                 ))}
               </div>
             </label>
-            <p className="text-xs text-slate-500 leading-relaxed">切換後直接套用到戰鬥畫面；手機直向固定使用實用風。</p>
+            <p className="text-xs text-slate-500 leading-relaxed" data-settings-optional>切換後直接套用到戰鬥畫面；手機直向固定使用實用風。</p>
           </Section>
 
           <Section title="動畫播放" hint="關閉的項目直接略過動畫，不影響結算">
@@ -381,7 +395,7 @@ export default function ControlHubPanel(model: ControlHubPanelModel) {
             <PerfModeSetting/>
             <GlobalAnimationMode settings={animationSettings} onChange={next=>{setAnimationSettings(next);writeAnimationSettings(next);}}/>
             <label className="flex items-center justify-between gap-3 rounded-lg border border-cyan-900 bg-slate-950 p-3 mb-3">
-              <span><span className="block text-sm font-bold text-cyan-200">靜態模式</span><span className="text-xs text-slate-400">略過出招與登場動畫，飄字保留。</span></span>
+              <span><span className="block text-sm font-bold text-cyan-200">靜態模式</span><span className="text-xs text-slate-400" data-settings-optional>略過出招與登場動畫，飄字保留。</span></span>
               <input aria-label="靜態模式" type="checkbox" checked={!!animationSettings.staticMode} onChange={e=>{const next={...animationSettings,mode:e.target.checked?'static' as const:'simple' as const,staticMode:e.target.checked};setAnimationSettings(next);writeAnimationSettings(next);}}/>
             </label>
             <div className="grid grid-cols-2 gap-2" data-testid="battle-animation-settings">
@@ -396,15 +410,21 @@ export default function ControlHubPanel(model: ControlHubPanelModel) {
           </Section>
         </>)}
 
-        {activeTab === 'system' && (<>
-          <LauncherSettingsPanel />
+        {(page === 'controls' || (!modern && page === 'system')) &&
+          <Section title="全螢幕與快捷鍵"><FullscreenSettings /></Section>}
+        {!modern && page === 'system' && <LauncherSettingsPanel />}
+        {(page === 'backup' || (!modern && page === 'system')) &&
+          <Suspense fallback={<p className="text-xs text-slate-400">正在開啟配置帶入…</p>}><PlayerConfigurationPanel canApply={model.canApplyUpdates}/></Suspense>}
+        {(page === 'backup' || (!modern && page === 'system')) &&
           <Section title="背景與音樂設定" hint="包含各頁背景／BGM、背景庫與歌單">
             <div className="grid grid-cols-3 gap-2">
               <button type="button" onClick={exportConfig} className="py-2 rounded-lg bg-slate-900 border border-slate-700 text-xs text-slate-200 flex items-center justify-center gap-1.5 hover:border-slate-500"><Copy className="w-3.5 h-3.5" />匯出</button>
               <button type="button" onClick={importConfig} className="py-2 rounded-lg bg-slate-900 border border-slate-700 text-xs text-slate-200 flex items-center justify-center gap-1.5 hover:border-slate-500"><Upload className="w-3.5 h-3.5" />匯入</button>
               <button type="button" onClick={resetAll} className="py-2 rounded-lg bg-slate-900 border border-rose-800/70 text-xs text-rose-300 flex items-center justify-center gap-1.5 hover:border-rose-500"><RotateCcw className="w-3.5 h-3.5" />全部預設</button>
             </div>
-          </Section>
+          </Section>}
+        {page === 'system' && (<>
+          {modern && <LauncherSettingsPanel />}
           <Section title="效能" hint="手動量測畫面間隔、長任務與記憶體">
             <button type="button" onClick={() => window.dispatchEvent(new Event('open-performance-probe'))} className="w-full py-2 rounded-lg bg-slate-900 border border-slate-700 text-xs text-slate-200 flex items-center justify-center gap-1.5 hover:border-slate-500"><Gauge className="w-3.5 h-3.5" />開啟效能量測</button>
           </Section>
@@ -412,7 +432,7 @@ export default function ControlHubPanel(model: ControlHubPanelModel) {
             <UpdateSettingsPanel canApplyUpdates={model.canApplyUpdates} />
           </Section>
         </>)}
-      </div>
+      </div>}
 
       <AnimatePresence>
         {feedback && (

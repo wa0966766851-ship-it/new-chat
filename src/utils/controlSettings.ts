@@ -41,3 +41,26 @@ export function readControlSetting<T>(key: string, fallback: T, valid: (value: u
   try { const value = JSON.parse(localStorage.getItem(key) || 'null'); return valid(value) ? value : fallback; }
   catch { return fallback; }
 }
+export const CONTROL_DETAIL_PAGES = [
+  { id: 'visual', title: '外觀', description: '明暗、主色與透明度' },
+  { id: 'background', title: '背景', description: '各頁背景與自訂圖庫' },
+  { id: 'audio', title: '音訊', description: '音量、歌單與各頁音樂' },
+  { id: 'controls', title: '操作', description: '全螢幕與快捷鍵' },
+  { id: 'battle', title: '對戰', description: '版面、動畫、計時與 AI' },
+  { id: 'backup', title: '存檔與配置', description: '配置碼、精靈與背包帶入、加密分享與復原' },
+  { id: 'system', title: '系統', description: '更新、效能與桌面捷徑' },
+] as const;
+
+export type ControlDetailPage = typeof CONTROL_DETAIL_PAGES[number]['id'];
+export type ControlHubLayout = 'modern' | 'classic';
+export const HUB_LAYOUT_KEY = 'seer_control_hub_layout';
+export const HUB_NOTES_KEY = 'seer_control_hub_notes';
+
+export function resolveControlPage(id: unknown): ControlDetailPage | null {
+  if (id === 'controls' || id === 'backup') return id;
+  return resolveControlSection(id);
+}
+
+export function legacyControlTab(page: ControlDetailPage): ControlSectionId {
+  return page === 'controls' || page === 'backup' ? 'system' : page;
+}

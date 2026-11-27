@@ -1,5 +1,6 @@
 import { activeAlienTrait } from '../data/elfGroups';
 import { resolveGeneralTrait } from '../data/generalTraitKits';
+import {runInscriptionGems} from './inscriptionGems';
 import type { Elf, Skill } from '../types';
 import type { BattleEventContext } from './types';
 import { EffectTiming } from './types';
@@ -8,6 +9,7 @@ import { effectRoute, kitEntryIssue, type EffectDefinition } from './effectConne
 import { runNode } from './effectRunner';
 import { eventEffectNode } from './effectNodes';
 import { checkElfDead } from '../battle/elfAlive';
+import { innateAllowed } from './additionalGate';
 import { isPpConsumption, claimPpCarriedSlot } from './ppConsumptionChain';
 import { TEAM_KIT_TRIGGERS } from './teamKitContract';
 import { soulDefinition } from './soulDefinitionSource';
@@ -35,7 +37,7 @@ export function runConnectedKit(node: Node, definition: EffectDefinition, ctx: B
     if((ctx as any).failedUseOnly&&(entry.codeId!=='effect_sequence'||entry.params?.clause?.trig!=='self_after_use'))continue;
     if (!!TEAM_KIT_TRIGGERS[entry.params?.clause?.trig] !== !!(ctx as any).teamKitObserver) continue;
     if (entry.source === 'skill') {
-      if (entry.role === 'innate' && ctx.self.isInherentInvalid) continue;
+      if (entry.role === 'innate' && !innateAllowed(ctx)) continue;
       // 技能無效時的附加效果：技能本身無效不等於附加效果失效（仍受附加效果失效／封印限制）。
       if ((entry.role || 'attached') === 'attached' && !(ctx as any).forcedHitEffects && (((ctx as any).additionalEffectsEnabled === false && entry.node !== 'on_invalid') || ctx.self.isAdditionalInvalid || ctx.getPlayerState?.('additionalEffectsSealed') || ctx.getPlayerState?.(`${ctx.actor}_sealSkillAdditionalEffects`))) continue;
     }
@@ -77,6 +79,7 @@ export function runConnectedLifecycle(ctx: BattleEventContext, event: EffectTimi
   const incomingToOwner=event===EffectTiming.BEFORE_DAMAGE && (data?.damageComp?.isIncoming || data?.isIncoming);
   if(event===EffectTiming.RESOURCE_CHANGED&&!resourceChanged)return;
   if(bench && !teamRound && !teamStart && !recipientEvent && !incomingToOwner && !instantGuard && !resourceChanged)return;
+  if(!bench&&!acquired)runInscriptionGems(ctx,event,data);
   const nodes = connectedEventNodes(event, { ...data, holderSide: ctx.actor }, battleStart);
   if (!nodes.length) return false;
   // ActionResultInfo.actor 是原行動方，不是事件持有方；不可蓋掉 ctx.actor／即時 self getter。

@@ -1,4 +1,6 @@
 import {recipientEffectChance} from '../battle/recipientEffectChance';
+import {gemHas} from '../training/gems';
+import {takeGemStatusBoost} from '../training/gemStatusChance';
 import { queueActionDamageModifier, queueActionPowerMultiplier } from '../battle/actionDamageModifiers';
 import { queueHpDrain } from '../battle/hpDrain';
 import { traitNames } from './traitEffects';
@@ -339,11 +341,13 @@ const RULES: Rule[] = [
   {
     re: /(?:(\d+)%\s*(?:機率)?\s*)?(?:令|使)(?:對[手方])(?:陷入)?(麻痺|麻痹|中毒|燒傷|害怕|睡眠|冰封|石化|寄生|凍傷|混亂|衰弱|失明|疲憊|焚燼|詛咒|感染|束縛|流血)/,
     apply: (m, ctx, st) => {
-      const chance = recipientEffectChance(ctx,ctx.targetSide,m[1] !== undefined ? Number(m[1]) : 100);
+      const gemBoost=takeGemStatusBoost(ctx,m[1] !== undefined ? Number(m[1]) : 100);
+      const chance = recipientEffectChance(ctx,ctx.targetSide,gemBoost.percent);
       const status = STATUS_ALIAS[m[2]] || m[2];
       if (!isStatusStatus(status)) return false;
       st.lastTriggered = false;
       if (statusChanceBlocked(ctx, chance) || !chanceOf(ctx, "L308", chance)) return;
+      if(gemBoost.bypass)ctx.setPlayerState('inscriptionGemStatusBypass',gemBoost.bypass);
       const res = ctx.applyStatusWithImmunityCheck(ctx.targetSide, status, STATUS_DURATION[status] ?? DEFAULT_STATUS_TURNS);
       st.lastTriggered = !!res.success;
       if (res.success) ctx.addLog(`💫 【異常狀態】：使對手陷入了【${status}】！`, "status");
@@ -384,12 +388,13 @@ const RULES: Rule[] = [
     re: /(?:(\d+)%\s*)?(?:令|使)?(?:敵我)?雙方(?:同時)?(?:進入)?((?:麻痺|中毒|燒傷|害怕|睡眠|冰封|石化|寄生|凍傷|混亂|衰弱|失明|疲憊|流血|詛咒|凝滯)(?:、(?:麻痺|中毒|燒傷|害怕|睡眠|冰封|石化|寄生|凍傷|混亂|衰弱|失明|疲憊|流血|詛咒|凝滯))*)(?:異常)?(?:狀態)?$/,
     apply: (m, ctx) => {
       const chance = m[1] !== undefined ? Number(m[1]) : 100;
-      const baseRoll=chanceOf(ctx,"L348",chance);
+      const gemBoost=takeGemStatusBoost(ctx,chance),boostedChance=gemBoost.percent;
+      const baseRoll=chanceOf(ctx,"L348",boostedChance);
       for (const status of m[2].split("、")) {
         if (!isStatusStatus(status)) continue;
         for (const side of [ctx.targetSide, ctx.actor] as Side[]) {
-          const pct=recipientEffectChance(ctx,side,chance);
-          if (!statusChanceBlocked(ctx,pct) && (baseRoll || pct===100)) ctx.applyStatusWithImmunityCheck(side,status,STATUS_DURATION[status] ?? DEFAULT_STATUS_TURNS);
+          const pct=recipientEffectChance(ctx,side,boostedChance);
+          if (!statusChanceBlocked(ctx,pct) && (baseRoll || pct===100)) {if(gemBoost.bypass)ctx.setPlayerState('inscriptionGemStatusBypass',gemBoost.bypass);ctx.applyStatusWithImmunityCheck(side,status,STATUS_DURATION[status] ?? DEFAULT_STATUS_TURNS);}
         }
       }
       ctx.addLog(`💫 雙方陷入【${m[2]}】！`, "status");
@@ -717,8 +722,9 @@ export function applyEffectDetail(ctx: BattleEventContext): boolean {
     m = part.match(/^([a-z_]+):(\d+)%?$/i);
     if (m && DETAIL_STATUS[m[1].toLowerCase()]) {
       const status = DETAIL_STATUS[m[1].toLowerCase()];
-      const pct=recipientEffectChance(ctx,ctx.targetSide,Number(m[2]));
+      const gemBoost=takeGemStatusBoost(ctx,Number(m[2])),pct=recipientEffectChance(ctx,ctx.targetSide,gemBoost.percent);
       if (isStatusStatus(status) && !statusChanceBlocked(ctx,pct) && chanceOf(ctx, "L633",pct)) {
+        if(gemBoost.bypass)ctx.setPlayerState('inscriptionGemStatusBypass',gemBoost.bypass);
         if (ctx.applyStatusWithImmunityCheck(ctx.targetSide, status, STATUS_DURATION[status] ?? DEFAULT_STATUS_TURNS).success) ctx.addLog(`💫 使對手陷入了【${status}】！`, "status");
       }
       done = true; continue;
@@ -809,11 +815,13 @@ export function computeHitChance(actor: any, target: any, skill: any, getStatuse
   // 2026-10-31：命中等級也要套用「能力等級視為」規則（無極聖武 ②③）。
   // ② 對手的命中提升視為同級下降；③ 自身的命中下降視為對手的同級下降。
   let accStage = skillStageView(actor, skill, 'accuracy');
+  if(gemHas(actor,skill,2188)&&accStage<0)accStage=Math.min(0,accStage+5);
   if (actorReg?.selfDropAsOppDropThisAction && accStage < 0) accStage = 0;
   if (targetReg?.oppBoostAsDropThisAction && accStage > 0) accStage = -accStage;
   const stage = Math.max(-6, Math.min(6, accStage));
   const mult = getStatMultiplier(stage, true); // 命中等級（下降採使用者規則表）
   let chance = Math.max(0, base) * mult;
+  if(gemHas(actor,skill,2188))chance*=1.1;
   if (ACC_TRAIT(actor, "精準")) chance *= 1.14;
   if (ACC_TRAIT(target, "迴避")) chance -= 0.14;
   return Math.max(0, Math.min(1, chance));

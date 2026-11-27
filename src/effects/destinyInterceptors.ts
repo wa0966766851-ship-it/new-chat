@@ -3,7 +3,7 @@ import { activeConstraints } from '../battle/timedConstraints';
 import { isAliveBySurvivalRule } from '../battle/survivalRules';
 const finiteHp=(hp: number)=>Number.isFinite(hp)?Math.max(0,hp):0;
 export function handleDestinyInterceptor(ctx: BattleEventContext, event: EffectTiming, data?: any) {
-  if(ctx.specialMode!=='destiny') return;
+  if(ctx.specialMode!=='destiny'&&ctx.fieldId!=='destiny') return;
   const timers=ctx.actor==='p1'?ctx.p1Timers:ctx.p2Timers;
   if(event===EffectTiming.MODIFY_PRIORITY) {
     for(const p of activeConstraints(timers,ctx.self)) data.priorityComp.bonus+=p.priorityDelta??0;

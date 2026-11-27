@@ -1,0 +1,72 @@
+[
+  {
+    "kind": "head",
+    "resource": 4377,
+    "url": "https://raw.githubusercontent.com/SeerAPI/seer-unity-assets/main/newseer/assets/art/ui/assets/pet/head/4377.png",
+    "bytes": 70092,
+    "sha256": "affdcc6420957d2cc3c78c322d37795615bd5de079bdb240e730e183d8b47283"
+  },
+  {
+    "kind": "body",
+    "resource": 4377,
+    "url": "https://raw.githubusercontent.com/SeerAPI/seer-unity-assets/main/newseer/assets/art/ui/assets/pet/body/4377.png",
+    "bytes": 665924,
+    "sha256": "c5f539d5e2fe67fb7b93e4cc5c42f06760d9b560e872bf50da0850df144d9a12"
+  },
+  {
+    "kind": "head",
+    "resource": 1400473,
+    "url": "https://raw.githubusercontent.com/SeerAPI/seer-unity-assets/main/newseer/assets/art/ui/assets/pet/head/1400473.png",
+    "bytes": 64682,
+    "sha256": "a4492be842179fb93ba7e2dd7331325702bff1bfc865333c3aa8fc73402b3d81"
+  },
+  {
+    "kind": "body",
+    "resource": 1400473,
+    "url": "https://raw.githubusercontent.com/SeerAPI/seer-unity-assets/main/newseer/assets/art/ui/assets/pet/body/1400473.png",
+    "bytes": 172101,
+    "sha256": "5942e9902f31a4c44099c3f3d99cdbb26fe8e107356c01e138357a5cb512f8d9"
+  },
+  {
+    "kind": "head",
+    "resource": 1400467,
+    "url": "https://raw.githubusercontent.com/SeerAPI/seer-unity-assets/main/newseer/assets/art/ui/assets/pet/head/1400467.png",
+    "bytes": 75745,
+    "sha256": "84adad0198dc2202be842c9733b24ea518a6b30fffc5eda6711b58977b78b38b"
+  },
+  {
+    "kind": "body",
+    "resource": 1400467,
+    "url": "https://raw.githubusercontent.com/SeerAPI/seer-unity-assets/main/newseer/assets/art/ui/assets/pet/body/1400467.png",
+    "bytes": 712153,
+    "sha256": "540d90599e30e63aba133bebf05ef93709537b38b4b90422716d2e3862d38a0a"
+  },
+  {
+    "kind": "head",
+    "resource": 1400748,
+    "url": "https://raw.githubusercontent.com/SeerAPI/seer-unity-assets/main/newseer/assets/art/ui/assets/pet/head/1400748.png",
+    "bytes": 75965,
+    "sha256": "9a6d5c4fc23e1806582fca0b703702dfaee978546e08d6616721be71078413d3"
+  },
+  {
+    "kind": "body",
+    "resource": 1400748,
+    "url": "https://raw.githubusercontent.com/SeerAPI/seer-unity-assets/main/newseer/assets/art/ui/assets/pet/body/1400748.png",
+    "bytes": 1758024,
+    "sha256": "9ffdbfe97c74b6981d494d7b78c2b44220df55cb99b8f1e564131fcb693881fb"
+  },
+  {
+    "kind": "head",
+    "resource": 1400887,
+    "url": "https://raw.githubusercontent.com/SeerAPI/seer-unity-assets/main/newseer/assets/art/ui/assets/pet/head/1400887.png",
+    "bytes": 93642,
+    "sha256": "c09fbb165ccedc029599a00ed8a5bb863da606f16377ccb41660eca5d034f69b"
+  },
+  {
+    "kind": "body",
+    "resource": 1400887,
+    "url": "https://raw.githubusercontent.com/SeerAPI/seer-unity-assets/main/newseer/assets/art/ui/assets/pet/body/1400887.png",
+    "bytes": 2469661,
+    "sha256": "99946e883a8a6a30669385bd99f578dc1733331ee086e6c9edbd310489e09160"
+  }
+]

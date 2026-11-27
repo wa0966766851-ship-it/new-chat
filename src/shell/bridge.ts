@@ -82,6 +82,7 @@ export interface ShellBridge {
   interstellarOptions: any;
   /** 戰鬥火焰（命運之輪等模式抽選；data/battleFlames.ts）。 */
   battleFlames?: { p1?: string; p2?: string } | null;
+  battlefieldId?:string;
   setInterstellarOptions: (o: any) => void;
 
   // ── 編輯器 ──

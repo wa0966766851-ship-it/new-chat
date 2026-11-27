@@ -83,7 +83,7 @@ export const LEONIDAS_SKILLS = [
       act(op('weight_enemy_monitor', { mode: 'stage', turns: 3 }))),
     line(3, '3回合內，對手每次執行恢復體力效果時，扣除相當於雙方重量總和25%的最大體力',
       act(op('weight_enemy_monitor', { mode: 'heal', turns: 3 }))),
-    line(4, '雙方每有1種回合類效果，延長雙方既有異常1回合。雙方每有1回合異常，各增加50重量',
+    line(4, '雙方在場精靈每有1條回合類效果，延長雙方既有異常1回合。以延長前的異常回合數總和計算，每有1回合異常，雙方各增加50重量',
       act(op('status_turn_exchange', { amount: 50 }))),
     line(5, '額外威力等於自身重量的50%。對手目前體力每滿20%，整個技能威力額外提升10%',
       act(op('weight_power', { ratio: .5, hpStep: .2, hpBonus: .1 }))),

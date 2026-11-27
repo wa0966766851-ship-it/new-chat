@@ -1,3 +1,4 @@
+import { reportFatalResult } from '../battle/fatalHold';
 import {battleResistances} from '../battle/resistances';
 ﻿import { Elf } from '../types';
 import { BattleEventContext, EffectTiming } from '../effects/types';
@@ -196,7 +197,8 @@ export class TraitsEngine {
       if (resistCfg) {
         const slot = resistCfg.slots?.find(s => sameStatus(s.status, status));
         if (slot || resistCfg.allImmune) {
-          const totalRate = Math.min(100,(slot?.rate||0)+(resistCfg.allImmune?5:0));
+          const rawRate = Math.min(100,(slot?.rate||0)+(resistCfg.allImmune?5:0));
+          const totalRate=ctx.statusResistanceReduction&&rawRate<=ctx.statusResistanceReduction.maxBase?Math.max(0,rawRate-ctx.statusResistanceReduction.amount):rawRate;
           const rngFunc = ctx.rng || Math.random;
           // 2026-11-02：機率性判定一律用「偽保底」——連續失敗會累積補正，
           // 避免同一隻精靈長期臉黑（純隨機在少量樣本下波動過大）。
@@ -615,6 +617,7 @@ export class TraitsEngine {
         ctx.setPlayerState(`${selfSide}_cyberWraithActive`,false);
         ctx.setPlayerState(`${selfSide}_wraithSubUsed`,true);
         ctx.setPlayerState(`${selfSide}_wraithDamageDoubled`,!!mechanics.wraithSpellDamageDoubleAfterSub);
+        reportFatalResult(ctx, 'hold');
         ctx.updateElf(selfSide,{currentHp:Math.max(1,Math.floor(ctx.self.maxHp*(mechanics.wraithSubstituteDeathHpRatio||0)))});
         return true;
       }
@@ -630,6 +633,7 @@ export class TraitsEngine {
         ctx.setPlayerState(`${selfSide}_wraithDamageDoubled`, true); // 後續真實傷害翻倍
 
         const retainHp = Math.floor(ctx.self.maxHp * mechanics.wraithSubstituteDeathHpRatio!);
+        reportFatalResult(ctx, 'hold');
         ctx.updateElf(selfSide, { currentHp: retainHp });
 
         ctx.addLog(`💖 【${elfName}】即將重傷倒下！「賽博怨靈」代為承受了全部致命傷害並消逝！`, "effect");
@@ -646,6 +650,7 @@ const dmg = Number((ctx as any).fatalDamage);
 const hp = Number(ctx.self.currentHp);
 const isDamage = (ctx as any).fatalIsDamage !== false;
 if (isDamage && (!Number.isFinite(dmg) || !Number.isFinite(hp) || dmg >= hp)) {
+reportFatalResult(ctx, 'hold');
 ctx.updateElf(selfSide, { currentHp: 1 });
 ctx.addLog(`🌟 【${elfName}】的【投石者】：承受致死傷害（${Number.isFinite(dmg)?dmg:"?"} ≥ ${Number.isFinite(hp)?hp:"?"}），保留 1 點體力！`, "effect");
 return true;

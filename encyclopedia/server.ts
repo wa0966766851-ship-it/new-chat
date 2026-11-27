@@ -8,7 +8,7 @@ const root=path.resolve(process.env.ATLAS_ROOT||process.cwd());
 const data=path.resolve(process.env.ATLAS_DATA_DIR||path.join(process.env.LOCALAPPDATA||root,'SeerEncyclopedia'));
 const storage=createAtlasStorage(data),app=express(),port=Number(process.env.ATLAS_PORT||3177);
 app.disable('x-powered-by');
-app.use('/catalog',express.static(path.join(process.env.ATLAS_DIST||path.join(root,'encyclopedia'),'catalog'),{index:false}));
+app.use('/catalog',(req,res,next)=>{if(process.env.ATLAS_BLANK==='1')return res.status(404).end();next();},express.static(process.env.ATLAS_CATALOG_DIR||path.join(process.env.ATLAS_DIST||path.join(root,'encyclopedia'),'catalog'),{index:false,maxAge:0,setHeaders:res=>res.setHeader('Cache-Control','no-store')}),(_req,res)=>{res.status(404).end();});
 app.use('/api/atlas',(req,res,next)=>{if(req.method!=='GET'&&req.headers.origin&&req.headers.origin!==`http://${req.headers.host}`)return res.status(403).json({error:'請從圖鑑視窗進行操作'});res.setHeader('Cache-Control','no-store');next();});
 app.get('/api/atlas/identity',(_req,res)=>res.json({app:'seer-encyclopedia',root,data,pid:process.pid,build:process.env.ATLAS_BUILD_ID||'development'}));
 app.get('/api/atlas/library',(_req,res)=>{try{res.json(storage.read());}catch{res.status(500).json({error:'圖鑑存檔無法讀取，原檔已保留。請使用備份恢復。'});}});

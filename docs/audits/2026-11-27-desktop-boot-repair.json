@@ -1,0 +1,16 @@
+{
+  "date": "2026-11-27",
+  "affectedRelease": "1795734371194",
+  "symptom": "桌面後端可用，遊戲首頁空白，使用者回報桌面打不開",
+  "reproduction": "隔離存檔與全新瀏覽器啟動正式產物，出現 ReferenceError: Cannot access 'n' before initialization",
+  "cause": "data-reference 的稱號清單頂層讀取 TITLE_PERKS，特權定義被分到 index 入口；亂舞定義亦形成跨塊循環。手動分塊將原本單向資料依賴變成循環初始化。",
+  "fix": "將無執行期外部依賴的 suitPerks、generalTraitKits 與使用它們的清單留在 data-reference 同一塊；defaultElves 有頂層初始化，改為只切分 defaultElfSeeds.packed.json 純資料，避免讀到尚未初始化的封裝資料常數",
+  "prevention": "桌面快速及完整建置均在啟用版本前，用隔離瀏覽器實際載入正式首頁，拒絕未捕捉錯誤及未呈現的首頁；HTTP服務正常不足以通過",
+  "verification": {
+    "brokenRelease": "新正式首頁測試確實失敗並重現同一錯誤",
+    "repairedRelease": "1795737064656，型別檢查、正式前後端身分驗證及真實瀏覽器首頁啟動通過；已啟用",
+    "buildId": "167b1dab4baa2e06d909ef988ec9276f881743cc1ff6722c46946457554a0508",
+    "launcherIdentity": "PowerShell啟動器版本、根目錄及舊服務拒絕檢查通過"
+  },
+  "playerData": "檢查使用隔離測試存檔，不刪除或替換使用者資料"
+}

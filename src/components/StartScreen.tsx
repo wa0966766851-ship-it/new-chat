@@ -38,6 +38,7 @@ const EvNaturePanel = lazy(() => import("./EvNaturePanel"));
 const TypeMatchupPanel = lazy(() => import("./TypeMatchupPanel").then(m => ({ default: m.TypeMatchupPanel })));
 const ResistancePanel = lazy(() => import("./ResistancePanel"));
 const InscriptionModal = lazy(() => import("./InscriptionModal").then(m => ({ default: m.InscriptionModal })));
+const AegisInscriptionEditor=lazy(()=>import('../shell/scenes/AegisInscriptionEditor').then(m=>({default:m.AegisInscriptionEditor})));
 const LazyBlockProgramView = lazy(() => import("./LazyBlockProgramView"));
 const BattleAIQuickSettings = lazy(() => import('./BattleAIQuickSettings').then(m=>({default:m.BattleAIQuickSettings})));
 const EffectLibraryModal = lazy(() => import("./EffectLibraryModal").then(m => ({ default: m.EffectLibraryModal })));
@@ -1272,6 +1273,12 @@ export default function StartScreen({
             manageLibrary={() => {}}
             elves={allElves ?? []} message={saveSuccessMsg} detail={setShowDetailModal} create={onNavigateToCustom}
             start={handleStart} swapTeams={handleSwapTeams} mode={battleMode} setMode={setBattleMode}
+            heal={() => {
+              const ids=new Set([...p1Team,...p2Team].map(e=>e.id));
+              for(const elf of allElves)if(ids.has(elf.id))onUpdateElf({...elf,startingHp:{mode:'percent',value:100}});
+              const full=(team:TeamInstance[])=>team.map(e=>({...e,startingHp:{mode:'percent' as const,value:100}}));
+              setP1Team(full);setP2Team(full);setSaveSuccessMsg('雙方背包已設為開戰滿血，培養與配裝保留。');
+            }}
             host={hostPlayer} setHost={h => onHostPlayerChange?.(h)} format={battleFormat} setFormat={setBattleFormat}
             banCount={banCount} setBanCount={setBanCount} pickCount={pickCount} setPickCount={setPickCount}
             sides={{
@@ -2828,12 +2835,11 @@ export default function StartScreen({
             <button type="button" className="ml-4 ios-button" onClick={() => setEditingModalInscIndex(null)}>取消</button>
           </div>
         }>
-        <InscriptionModal
-          slotIndex={editingModalInscIndex}
-          inscription={showDetailModal.inscriptions?.[editingModalInscIndex]}
-          onSave={handleSaveModalInscription}
-          onClose={() => setEditingModalInscIndex(null)}
-        />
+        {React.createElement(presentation==='aegis'?AegisInscriptionEditor:InscriptionModal,{
+            slotIndex:editingModalInscIndex,skills:showDetailModal.skills,
+            inscription:showDetailModal.inscriptions?.[editingModalInscIndex],
+            onSave:handleSaveModalInscription,onClose:()=>setEditingModalInscIndex(null),
+          })}
         </Suspense>
       )}
 

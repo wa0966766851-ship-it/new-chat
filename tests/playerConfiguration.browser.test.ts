@@ -1,0 +1,30 @@
+import assert from 'node:assert/strict';
+import fs from 'node:fs';import path from 'node:path';import express from 'express';import {build} from 'esbuild';
+import {launchPetTestBrowser,closePetTestBrowser,findPetTestBrowser,petTestProfile} from './helpers/petBrowserProcess.mjs';
+import {createServer} from 'node:net';
+const out=path.resolve('.seer-cache/player-config-browser');fs.mkdirSync(out,{recursive:true});
+await build({entryPoints:['tests/fixtures/playerConfiguration.tsx'],outfile:path.join(out,'app.js'),bundle:true,format:'esm',platform:'browser',jsx:'automatic',logLevel:'error',define:{__APP_VERSION__:'"test"',__APP_BUILD_ID__:'"fixture"',__APP_COMMIT__:'"fixture"'}});
+const active=JSON.parse(fs.readFileSync('.desktop-releases/active.json','utf8'));const assets=path.join('.desktop-releases',active.id,'assets');const css=fs.readdirSync(assets).find(f=>f.startsWith('index-')&&f.endsWith('.css'));if(css){const widget=fs.existsSync(path.join(out,'app.css'))?fs.readFileSync(path.join(out,'app.css'),'utf8'):'';fs.writeFileSync(path.join(out,'app.css'),fs.readFileSync(path.join(assets,css),'utf8')+'\n'+widget);}
+fs.writeFileSync(path.join(out,'index.html'),'<!doctype html><html><head><meta charset="utf-8"><link rel="stylesheet" href="/app.css"></head><body style="background:#101826"><div id="root"></div><script type="module" src="/app.js"></script></body></html>');
+const app=express();app.use(express.static(out));const server=app.listen(0,'127.0.0.1');await new Promise<void>(r=>server.once('listening',r));const origin='http://127.0.0.1:'+(server.address() as any).port;
+const portServer=createServer();await new Promise<void>(r=>portServer.listen(0,'127.0.0.1',r));const port=(portServer.address() as any).port;await new Promise<void>(r=>portServer.close(()=>r()));
+const profile=petTestProfile(),browser=launchPetTestBrowser(findPetTestBrowser(),port,profile),delay=(n:number)=>new Promise(r=>setTimeout(r,n));let socket:WebSocket|undefined;
+try{
+ let target:any;for(let i=0;i<100;i++){try{target=await fetch(`http://127.0.0.1:${port}/json/new?about:blank`,{method:'PUT'}).then(r=>r.json());break;}catch{await delay(100);}}assert.ok(target);
+ socket=new WebSocket(target.webSocketDebuggerUrl);await new Promise(r=>socket!.addEventListener('open',r,{once:true}));let seq=0;const pending=new Map<number,any>(),errors:any[]=[];
+ socket.addEventListener('message',event=>{const m=JSON.parse(String(event.data));if(m.method==='Runtime.exceptionThrown')errors.push(m.params.exceptionDetails);const p=pending.get(m.id);if(p){pending.delete(m.id);m.error?p.reject(m.error):p.resolve(m.result);}});
+ const send=(method:string,params={})=>new Promise<any>((resolve,reject)=>{const id=++seq;const timer=setTimeout(()=>reject(Error('瀏覽器逾時 '+method)),30000);pending.set(id,{resolve:(v:any)=>{clearTimeout(timer);resolve(v);},reject});socket!.send(JSON.stringify({id,method,params}));});
+ const evaluate=async(expression:string)=>{const r=await send('Runtime.evaluate',{expression,returnByValue:true,awaitPromise:true});if(r.exceptionDetails)throw Error(r.exceptionDetails.exception?.description||r.exceptionDetails.text);return r.result.value;};
+ const until=async(expression:string)=>{for(let i=0;i<150;i++){if(errors.length)throw Error(JSON.stringify(errors));if(await evaluate(expression))return;await delay(100);}throw Error('畫面逾時 '+expression+' '+await evaluate('document.body.innerText'));};
+ const click=async(label:string)=>evaluate(`Array.from(document.querySelectorAll('button')).find(b=>b.textContent.trim()===${JSON.stringify(label)}).click()`);
+ const input=async(label:string,value:string)=>evaluate(`(()=>{const e=document.querySelector('[aria-label="${label}"]');Object.getOwnPropertyDescriptor(e instanceof HTMLTextAreaElement?HTMLTextAreaElement.prototype:HTMLInputElement.prototype,'value').set.call(e,${JSON.stringify(value)});e.dispatchEvent(new Event('input',{bubbles:true}));})()`);
+ await send('Runtime.enable');await send('Page.enable');await send('Emulation.setDeviceMetricsOverride',{width:1366,height:1000,deviceScaleFactor:1,mobile:false});await send('Page.navigate',{url:origin});await until('!!document.querySelector("[data-player-configuration]")');
+ const raw=await evaluate('window.fixtureCode');await input('配置碼或存檔內容',raw);await click('預覽');await until('!!document.querySelector("[data-config-preview]")');assert.equal(await evaluate('localStorage.getItem("seer_p1_suit")'),'original');
+ const shot=await send('Page.captureScreenshot',{format:'png'});fs.writeFileSync(path.join(out,'preview.png'),Buffer.from(shot.data,'base64'));
+ await evaluate('document.querySelector("[aria-label=允許套用]").click()');assert.ok(await evaluate('Array.from(document.querySelectorAll("button")).find(b=>b.textContent=== "套用並重新載入").disabled'));await evaluate('document.querySelector("[aria-label=允許套用]").click()');
+ await click('套用並重新載入');await until('window.reloadCount===1');assert.equal(await evaluate('localStorage.getItem("seer_p1_suit")'),'future_armor');assert.equal(await evaluate('JSON.parse(localStorage.getItem("seer_default_elves_overrides"))["5000"].level'),75);assert.equal(await evaluate('localStorage.getItem("seer_ai_api_key")'),'private-fixture-key');
+ await evaluate('Array.from(document.querySelectorAll("button")).find(b=>b.textContent.includes("復原上次套用")).click()');await until('window.reloadCount===2');assert.equal(await evaluate('localStorage.getItem("seer_p1_suit")'),'original');assert.equal(await evaluate('localStorage.getItem("seer_last_used_p1_team")'),null);
+ await input('配置密碼','browser-password');await click('產生配置碼');await until('document.querySelector("textarea").value.startsWith("SCFGE1.")');
+ await input('配置密碼','wrong-password');await click('預覽');await until('document.body.innerText.includes("密碼不正確")');assert.equal(await evaluate('localStorage.getItem("seer_p1_suit")'),'original');
+ assert.equal(errors.length,0);console.log('真實瀏覽器：配置預覽、不改存檔、非首頁禁用、套用練度與配裝、IndexedDB復原、加密與錯誤密碼通過');
+}finally{socket?.close();closePetTestBrowser(browser,profile);server.closeAllConnections();await new Promise<void>(r=>server.close(()=>r()));}

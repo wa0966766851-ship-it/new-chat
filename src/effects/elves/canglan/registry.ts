@@ -1,3 +1,4 @@
+import { reportFatalResult } from '../../../battle/fatalHold';
 import { multiplyDamageReduction, addDamageReduction } from '../../../battle/damageReduction';
 import { abilityKeys, currentElf, clearStatuses } from '../../semanticOperations';
 import { sameStatus } from '../../statusIdentity';
@@ -138,6 +139,7 @@ export const handleCanglanSoulMark = (ctx: BattleEventContext, event: EffectTimi
       if (water >= 2 && tears >= 1) {
         setOwnedMark(actor, self, "blk_永恆之水", water - 2);
         setOwnedMark(oppSide, ctx.target, "blk_千秋一淚", tears - 1);
+        reportFatalResult(ctx, 'rebirth');
         self.currentHp = Math.max(1, self.maxHp);
         self.battleStatus = "normal";
         self.battleStatusDuration = 0;

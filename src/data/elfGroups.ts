@@ -26,6 +26,9 @@ export const ELF_GROUPS: readonly ElfGroupDefinition[] = [
   { id: 'huoguang-tao', name: '千里擊濤濤濤濤濤濤濤!!!!!', kind: 'special', source: '使用者提供' },
   { id: 'artisan-elf', name: '匠心精靈', kind: 'group', source: '使用者提供' },
   { id: 'beiming-huo', name: '北冥霍氏', kind: 'group', source: 'Seer API 精靈圖鑑' },
+  { id: 'pool-manager', name: '泳館經理', kind: 'special', source: 'Seer API 蒂朵圖鑑' },
+  { id: 'summer-chime', name: '靈籟之夏', kind: 'group', source: 'Seer API 皮膚系列25，持有泳裝皮膚' },
+  { id: 'detective', name: '偵探', kind: 'special', source: '使用者指定偵探皮膚' },
   { id: 'extra', name: '額外精靈', kind: 'special', source: '本場戰鬥的召喚身分' },
 ];
 
@@ -69,6 +72,9 @@ export const ELF_GROUP_CODES: Readonly<Record<string,string>> = {
   'huoguang-tao': 'EG-036',
   'artisan-elf': 'EG-037',
   'beiming-huo': 'EG-038',
+  'pool-manager': 'EG-039',
+  'summer-chime': 'EG-040',
+  'detective': 'EG-041',
 };
 
 export const ELF_GROUP_EFFECTS: Readonly<Record<string,{description:string; ops:readonly string[]}>> = {

@@ -7,11 +7,17 @@ $atlasStartup = New-StartupWindow '精靈圖鑑' (Join-Path $atlasRoot 'launcher
 $atlasServer = $null
 try {
  $atlasNode = (Get-Command node -ErrorAction Stop).Source
+ if (-not $Blank) {
+  Update-StartupWindow $atlasStartup '正在檢查精靈資料更新…' 1
+  $atlasSync = Start-Process -FilePath $atlasNode -ArgumentList @('--import','tsx','encyclopedia/sync-catalog.ts','--if-stale') -WorkingDirectory $atlasRoot -WindowStyle Hidden -RedirectStandardOutput (Join-Path $PSScriptRoot 'sync.log') -RedirectStandardError (Join-Path $PSScriptRoot 'sync.error.log') -PassThru
+  while (-not $atlasSync.HasExited) { Start-Sleep -Milliseconds 200; Update-StartupWindow $atlasStartup '正在同步精靈介紹，保留自製內容…' 1 }
+  if ($atlasSync.ExitCode -ne 0) { throw '圖鑑資料同步失敗，請查看 encyclopedia/sync.error.log。' }
+ }
  $atlasActivePath = Join-Path $PSScriptRoot '.releases/active.json'
  if ($Rebuild -or -not (Test-Path -LiteralPath $atlasActivePath)) {
   Update-StartupWindow $atlasStartup '正在同步目前專案資料並更新圖鑑…' 2
   $atlasLog = Join-Path $PSScriptRoot 'build.log'
-  $atlasBuild = Start-Process -FilePath $atlasNode -ArgumentList @('encyclopedia/build.mjs','--sync') -WorkingDirectory $atlasRoot -WindowStyle Hidden -RedirectStandardOutput $atlasLog -RedirectStandardError (Join-Path $PSScriptRoot 'build.error.log') -PassThru
+  $atlasBuild = Start-Process -FilePath $atlasNode -ArgumentList @('encyclopedia/build.mjs') -WorkingDirectory $atlasRoot -WindowStyle Hidden -RedirectStandardOutput $atlasLog -RedirectStandardError (Join-Path $PSScriptRoot 'build.error.log') -PassThru
   while (-not $atlasBuild.HasExited) { Start-Sleep -Milliseconds 200; Update-StartupWindow $atlasStartup '正在檢查與打包圖鑑，請稍候…' 2 }
   if ($atlasBuild.ExitCode -ne 0) { throw "圖鑑更新失敗，原版本已保留。請查看 $atlasLog" }
  }
@@ -21,6 +27,7 @@ try {
  if (-not (Test-Path -LiteralPath (Join-Path $atlasDist 'completion.json'))) { throw '圖鑑版本尚未完成，請先更新圖鑑。' }
  $atlasPort = if ($Blank) { 3179 } else { 3177 }
  $env:ATLAS_BLANK = if ($Blank) { '1' } else { '0' }
+ $env:ATLAS_CATALOG_DIR = Join-Path $PSScriptRoot 'catalog'
  $env:ATLAS_DATA_DIR = Join-Path $env:LOCALAPPDATA $(if ($Blank) { 'SeerEncyclopediaBlank' } else { 'SeerEncyclopedia' })
  $atlasBusy = Get-NetTCPConnection -LocalPort $atlasPort -State Listen -ErrorAction SilentlyContinue
  if ($atlasBusy) {

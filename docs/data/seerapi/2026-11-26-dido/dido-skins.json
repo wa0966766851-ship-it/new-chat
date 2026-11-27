@@ -1,0 +1,162 @@
+[
+  {
+    "id": 462,
+    "name": "星辰之籁·蒂朵",
+    "resource_id": 1400462,
+    "enemy_resource_id": null,
+    "card_price": null,
+    "diamond_price": null,
+    "skinhouse_price": null,
+    "discounted_skinhouse_price": null,
+    "ticket_num": null,
+    "pet": {
+      "id": 4377,
+      "url": "https://api.seerapi.com/v1/pet/4377"
+    },
+    "category": {
+      "id": 11,
+      "url": "https://api.seerapi.com/v1/pet_skin_category/11"
+    },
+    "series": {
+      "id": 24,
+      "url": "https://api.seerapi.com/v1/pet_skin_series/24"
+    },
+    "sub_type": null,
+    "hash": "ffe1ee49"
+  },
+  {
+    "id": 467,
+    "name": "汐风微凉·蒂朵",
+    "resource_id": 1400467,
+    "enemy_resource_id": null,
+    "card_price": null,
+    "diamond_price": null,
+    "skinhouse_price": null,
+    "discounted_skinhouse_price": null,
+    "ticket_num": null,
+    "pet": {
+      "id": 4377,
+      "url": "https://api.seerapi.com/v1/pet/4377"
+    },
+    "category": {
+      "id": 12,
+      "url": "https://api.seerapi.com/v1/pet_skin_category/12"
+    },
+    "series": {
+      "id": 25,
+      "url": "https://api.seerapi.com/v1/pet_skin_series/25"
+    },
+    "sub_type": null,
+    "hash": "2d9f4795"
+  },
+  {
+    "id": 472,
+    "name": "百鬼签算·蒂小朵",
+    "resource_id": 1400472,
+    "enemy_resource_id": null,
+    "card_price": null,
+    "diamond_price": null,
+    "skinhouse_price": null,
+    "discounted_skinhouse_price": null,
+    "ticket_num": null,
+    "pet": {
+      "id": 4377,
+      "url": "https://api.seerapi.com/v1/pet/4377"
+    },
+    "category": {
+      "id": 3,
+      "url": "https://api.seerapi.com/v1/pet_skin_category/3"
+    },
+    "series": null,
+    "sub_type": null,
+    "hash": "7557887c"
+  },
+  {
+    "id": 473,
+    "name": "剖玄析微·蒂小朵",
+    "resource_id": 1400473,
+    "enemy_resource_id": null,
+    "card_price": null,
+    "diamond_price": null,
+    "skinhouse_price": null,
+    "discounted_skinhouse_price": null,
+    "ticket_num": null,
+    "pet": {
+      "id": 4377,
+      "url": "https://api.seerapi.com/v1/pet/4377"
+    },
+    "category": {
+      "id": 3,
+      "url": "https://api.seerapi.com/v1/pet_skin_category/3"
+    },
+    "series": null,
+    "sub_type": null,
+    "hash": "af12cec6"
+  },
+  {
+    "id": 474,
+    "name": "喵萌冲击·蒂小朵",
+    "resource_id": 1400474,
+    "enemy_resource_id": null,
+    "card_price": null,
+    "diamond_price": null,
+    "skinhouse_price": null,
+    "discounted_skinhouse_price": null,
+    "ticket_num": null,
+    "pet": {
+      "id": 4377,
+      "url": "https://api.seerapi.com/v1/pet/4377"
+    },
+    "category": {
+      "id": 3,
+      "url": "https://api.seerapi.com/v1/pet_skin_category/3"
+    },
+    "series": null,
+    "sub_type": null,
+    "hash": "8c884390"
+  },
+  {
+    "id": 569,
+    "name": "遥望光年·蒂朵",
+    "resource_id": 1400569,
+    "enemy_resource_id": null,
+    "card_price": null,
+    "diamond_price": null,
+    "skinhouse_price": null,
+    "discounted_skinhouse_price": null,
+    "ticket_num": null,
+    "pet": {
+      "id": 4377,
+      "url": "https://api.seerapi.com/v1/pet/4377"
+    },
+    "category": {
+      "id": 3,
+      "url": "https://api.seerapi.com/v1/pet_skin_category/3"
+    },
+    "series": null,
+    "sub_type": null,
+    "hash": "a0cf74ea"
+  },
+  {
+    "id": 642,
+    "name": "都市漫游·蒂小朵",
+    "resource_id": 1400642,
+    "enemy_resource_id": null,
+    "card_price": null,
+    "diamond_price": null,
+    "skinhouse_price": null,
+    "discounted_skinhouse_price": null,
+    "ticket_num": null,
+    "pet": {
+      "id": 4377,
+      "url": "https://api.seerapi.com/v1/pet/4377"
+    },
+    "category": {
+      "id": 3,
+      "url": "https://api.seerapi.com/v1/pet_skin_category/3"
+    },
+    "series": null,
+    "sub_type": null,
+    "hash": "f9e84a09"
+  }
+]

@@ -31,7 +31,7 @@ export const CASSIUS_SHAN_ACTION_FIELDS: Record<string, readonly string[]> = {
   team_intercept_settle: ['shieldRatio', 'healRatio'],
   status_rules: ['whileStatus', 'cancelExceptCategory', 'conversionTargetBan', 'cancelEffects', 'replacePpFree', 'replaceInvalidateOppTurns'],
   replacement_invalidate_opp: [],
-  skill_rules: ['ppFreeKind', 'ppFreeWhenFieldShield'],
+  skill_rules: ['ppFreeKind', 'ppFreeWhenFieldShield', 'ppLimitWhenAbnormal'],
   shield_lost_watch: ['scope', 'once', 'body'],
 };
 
@@ -98,7 +98,8 @@ export function cassiusShanActionIssue(op: string, p: any, bodyIssue?: (body: an
   if (op === 'skill_rules') {
     if (p.ppFreeKind !== undefined && !['攻擊', '屬性'].includes(p.ppFreeKind)) return '技能規則類型需攻擊或屬性';
     if (p.ppFreeWhenFieldShield !== undefined && p.ppFreeWhenFieldShield !== true) return '布林規則只接受true';
-    if (p.ppFreeKind === undefined && p.ppFreeWhenFieldShield === undefined) return '技能規則需明確不消耗PP條件';
+    if(p.ppLimitWhenAbnormal!==undefined&&p.ppLimitWhenAbnormal!==true)return '異常PP條件只接受true';
+    if (p.ppFreeKind === undefined && p.ppFreeWhenFieldShield === undefined && p.ppLimitWhenAbnormal === undefined) return '技能規則需明確不消耗PP條件';
     return null;
   }
   if (op === 'shield_lost_watch') {
@@ -290,6 +291,7 @@ export function cassiusShanOperations(helpers: {
     skill_rules: (ctx: BattleEventContext, p: any): boolean => {
       const h = holder(ctx);
       if (!h.id) return false;
+      if(p.ppLimitWhenAbnormal===true){ctx.updateAnyElf(h.side,h.id,{skillRules:{...(h.elf.skillRules||{}),ppLimitWhenAbnormal:true}} as any);return true;}
       ctx.updateAnyElf(h.side, h.id, { skillRules: { ...(h.elf.skillRules || {}), ppCostFree: { ...(p.ppFreeKind ? { skillKind: p.ppFreeKind } : {}), ...(p.ppFreeWhenFieldShield ? { whenFieldShield: true } : {}) } } } as any);
       return true;
     },

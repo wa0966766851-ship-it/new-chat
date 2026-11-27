@@ -13,6 +13,7 @@ import { checkElfDead } from '../src/battle/elfAlive';
 const h = await createHarness();
 let checks = 0;
 try {
+  const { reportFatalResult } = await h.server.ssrLoadModule('/src/battle/fatalHold.ts');
   const { DEFAULT_ELVES } = await h.server.ssrLoadModule('/src/data/defaultElvesLoaded.ts');
   const { authoredEntry: e, actions: act, operation: a } = await h.server.ssrLoadModule('/src/data/authoredKitTools.ts');
   const surviveOnce = { name: '下次致死存活', effectMode: 'kit', kit: [e('登場時獲得1次致死存活', 'entrance', [act(a('survive_uses', { uses: 1 }))], 0, 'soulmark', true)] };
@@ -26,6 +27,39 @@ try {
       assert.equal(r[0].self.currentHp, 1, `${side} 同回合三次致死真傷後仍保留1點：` + r[0].logs.join('｜'));
       assert.equal(checkElfDead(r[0].self), false, `${side} 第1回合存活`);
       assert.ok(checkElfDead(r[1].self), `${side} 下一回合窗口結束且次數已用完 → 死亡`);
+      checks++;
+    }
+    // 回合編號已推進時，正在結算的異常仍屬於前一回合。
+    {
+      const self = h.unit('效果收尾' + side, 1000, [h.wait()], { extra: { soulMark: surviveOnce } });
+      const hit = h.kitSkill('結算後失溫', [
+        { op: 'status', p: { side: 'opp', status: '失溫', turns: 4, chance: 100 } },
+        { op: 'dmg', p: { flat: 999999, type: '真實' } },
+      ], { priority: 5 });
+      const r = await h.play(side, { self, opp: h.unit('收尾攻擊' + side, 1000, [hit]) }, 2);
+      assert.equal(r[0].self.currentHp, 1, `${side} 回合末失溫後仍保留體力`);
+      assert.ok(r[0].logs.some((log: string) => log.includes('致死保留：')), '回合末傷害經過既有保留窗口：' + r[0].logs.join('｜'));
+      assert.equal(r[0].self.fatalHold.round, r[0].turn - 1);
+      assert.ok(checkElfDead(r[1].self), '下一回合的新傷害可以擊敗');
+      checks++;
+    }
+    {
+      const name = '固定保留2點' + side;
+      let activations = 0;
+      h.S[name] = (ctx: any, event: string) => {
+        if (event !== 'FATAL_RESIST' || activations) return false;
+        activations++;
+        reportFatalResult(ctx, 'hold');
+        ctx.updateElf(ctx.actor, {currentHp: 2});
+        return true;
+      };
+      const self = h.unit(name, 1, [h.wait()], { maxHp: 1000 });
+      const hit = h.kitSkill('致死與未致死交錯', [999999, 1, 999999].map(flat => ({
+        op: 'dmg', p: {flat, type: '真實'},
+      })), { priority: 5 });
+      const [round] = await h.play(side, { self, opp: h.unit('連擊' + side, 1000, [hit]) });
+      assert.equal(round.self.currentHp, 2, '固定保留高於原體力時仍開啟窗口');
+      assert.equal(activations, 1, '同回合多次致死不重複消耗');
       checks++;
     }
     // 三、重生不開窗口：星佑「體力歸0時100%重生一次」，同回合第二次致死照常死亡

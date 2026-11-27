@@ -1,4 +1,5 @@
 import { battleTypeKey } from './typeQuery';
+import {configuredStartingHp} from '../training/levelPolicy';
 export { SEER_TYPES } from './typeQuery';
 import { BaseStats, Inscription, Elf } from "../types";
 import { getEffectiveInscriptions } from "../data/inscriptionsCatalog";
@@ -328,6 +329,7 @@ export function resetElfStateForBattle(elf: Elf, isStarter: boolean = false, sui
     cloned.starGovernorEnergy = 0;
   }
 
+  cloned.currentHp=configuredStartingHp(cloned,cloned.maxHp);
   return cloned;
 }
 

@@ -1,0 +1,214 @@
+{
+  "date": "2026-11-27",
+  "scope": {
+    "sourceFolder": "D:\\影片\\新增資料夾\\elf_source_files\\elf_files",
+    "textFilesScanned": 51,
+    "method": "Text sweep across all 51 source files, targeted static code comparison, existing 12-case fatal-seal P1/P2 test, and four isolated multiplier P1/P2 battle probes. This is not exhaustive battle acceptance for all elves.",
+    "applicationChanges": "Audit report and ignored diagnostic files only. No gameplay descriptions, mechanics, private saves, desktop release, commits, or branch changes."
+  },
+  "blackSourceSha256": "fa9cc18bde02f390c097141d485722dd6be68967a80b4b0e333f330189e8109b",
+  "blackFindings": [
+    {
+      "id": "B01",
+      "classification": "confirmed mismatch",
+      "source": {
+        "file": "D:\\影片\\新增資料夾\\elf_source_files\\elf_files\\晻藹夜靈.布萊克.txt",
+        "line": 20,
+        "quote": ">>>>雙方每處於1種異常狀態則上述提升非真實傷害效果翻倍10次"
+      },
+      "finding": "Existing source snapshot is stale. The operation computes doubles=min(10,statusCount), boost=1.6*2^doubles, reduce=min(1,0.8*2^doubles). This differs from ten doublings per status and repeated 80% damage reduction. For repeated reduction, the literal source reading retains 0.2^(1+10*n) of non-true damage before integer rounding.",
+      "evidence": "src/data/darkBlakeSoulKit.ts:17; src/blocks/ops/linkedTeam.ts:403; isolated P1/P2 battle probe: 1000 fixed damage loses 200 with no status, 0 with one status; boost log changes 160% to 320%."
+    },
+    {
+      "id": "B02",
+      "classification": "confirmed mismatch",
+      "source": {
+        "file": "D:\\影片\\新增資料夾\\elf_source_files\\elf_files\\晻藹夜靈.布萊克.txt",
+        "line": 100,
+        "quote": "若對手處於異常狀態時則技能必定命中並令對方在場精靈下次觸發致死保留體力效果與死亡體力不受體力限制效果時變為本場戰鬥唯一1次觸發且本場戰鬥無法再次觸發"
+      },
+      "finding": "King skill seal is registered as unconditional carried round_start, without the source condition that the opponent has an abnormal status and without requiring this skill to be used.",
+      "evidence": "src/data/darkBlakeSkills.ts:73-79; tests/fatalSealCarried.semantic.test.ts confirms seal applies even when a different skill is selected against a normal opponent."
+    },
+    {
+      "id": "B03",
+      "classification": "confirmed exclusion",
+      "source": {
+        "file": "D:\\影片\\新增資料夾\\elf_source_files\\elf_files\\晻藹夜靈.布萊克.txt",
+        "line": 87,
+        "quote": "若攜帶此技能則布萊克在場期間每回合令對方在場精靈下次觸發受到致死傷害保留體力效果與體力不受當前體力限制效果時效果將持續至生效回合結束且此後變為本場戰鬥無法再次觸發同類效果"
+      },
+      "finding": "Negative-HP survival, including god descent, is explicitly excluded from both triggering and disabling the survival rule. It follows its negative death line but never consumes this seal through crossing zero. Whether a negative-HP survival rule itself should count as triggering at its activation point needs a precise event definition; current exception is hard coded and is not implied by the expanded source category.",
+      "evidence": "src/battle/fatalHold.ts:80-89; tests/fatalSealCarried.semantic.test.ts:58-69 explicitly expects armed/spent flags unchanged for god descent. Existing 12-case P1/P2 test passed, proving old expectations, not the new source semantics."
+    },
+    {
+      "id": "B04",
+      "classification": "confirmed mismatch",
+      "source": {
+        "file": "D:\\影片\\新增資料夾\\elf_source_files\\elf_files\\晻藹夜靈.布萊克.txt",
+        "line": 24,
+        "quote": ">>自身下次攻擊汲取對手自身攻擊值80%的體力"
+      },
+      "finding": "The drain uses base stat attack *0.8 with neither true:true nor type:真實; it is percentage damage, whereas the user previously defined 汲取 as true damage.",
+      "evidence": "src/data/darkBlakeSoulKit.ts:22-30; src/blocks/runtime.ts:1109-1115."
+    },
+    {
+      "id": "B05",
+      "classification": "confirmed timing mismatch",
+      "source": {
+        "file": "D:\\影片\\新增資料夾\\elf_source_files\\elf_files\\晻藹夜靈.布萊克.txt",
+        "line": 27,
+        "quote": ">選擇使用技能不受PP值限制"
+      },
+      "finding": "Grant runs only at round_end, then persists until switch. It neither grants at every battle node nor removes the permission when the abnormal status disappears during the same stay.",
+      "evidence": "src/data/darkBlakeSoulKit.ts:34; src/blocks/ops/dragonHealing.ts:88. Static inspection; no new PP scenario run in this audit."
+    },
+    {
+      "id": "B06",
+      "classification": "confirmed category mismatch",
+      "source": {
+        "file": "D:\\影片\\新增資料夾\\elf_source_files\\elf_files\\晻藹夜靈.布萊克.txt",
+        "line": 67,
+        "quote": "5回合內使用技能後吸取對手最大體力⅓，自身體力低於最大體力½時額外吸取對手最大體力½，若吸取後自身體力未增加或對手體力未減少則2回合對手屬性技能固有效果失效"
+      },
+      "finding": "New Night ignores failed healing in its fallback test (checks only opponent HP not reduced). Its fallback, Inverted skill curse-failure fallback, and Dark fifth-skill clear-success fallback use add_invalid_turns (attached effects disabled) where source says innate effects disabled. Dawn skill uses the correct inherentInvalid path.",
+      "evidence": "src/data/darkBlakeSkills.ts:45-49,66-69,91-96,116; src/blocks/runtime.ts:1396. Static inspection."
+    },
+    {
+      "id": "B07",
+      "classification": "confirmed scope mismatch",
+      "source": {
+        "file": "D:\\影片\\新增資料夾\\elf_source_files\\elf_files\\晻藹夜靈.布萊克.txt",
+        "line": 76,
+        "quote": "將自身所有異常狀態附加給對手並解除自身所有異常狀態，解除成功則2回合內對手所有技能附加效果失效且無法附加在場精靈任一方異常狀態"
+      },
+      "finding": "Inverted skill transfers only the fixed ALL_STATUSES array. Registered statuses including 雷解、腐朽、空定、眩暈、平靜 are absent, despite source saying all abnormal statuses.",
+      "evidence": "src/data/darkBlakeSkills.ts:17,62; src/blocks/ops/selectionRules.ts:85."
+    },
+    {
+      "id": "B08",
+      "classification": "needs definition",
+      "source": {
+        "file": "D:\\影片\\新增資料夾\\elf_source_files\\elf_files\\晻藹夜靈.布萊克.txt",
+        "line": 20,
+        "quote": ">>>>雙方每處於1種異常狀態則上述提升非真實傷害效果翻倍10次"
+      },
+      "finding": "When both sides carry the same status, does that count as one unique type or two holder/type occurrences? Existing operation sums each holder separately. Also clarify whether scaling snapshots on opponent skill selection or updates on subsequent status changes.",
+      "evidence": "src/blocks/ops/linkedTeam.ts:404; calculation is currently a round_start snapshot."
+    }
+  ],
+  "otherTextQuestions": [
+    {
+      "elf": "洪荒·列奧尼達",
+      "source": {
+        "file": "D:\\影片\\新增資料夾\\elf_source_files\\elf_files\\洪荒.列奧尼達.txt",
+        "line": 102,
+        "quote": "雙方處於1種回合類效果，則令異常狀態回合數+1，若每有1回合異常狀態則提升雙方50點重量"
+      },
+      "uncertainty": "Count unique effect types or individual effect instances across both sides? Extend whose statuses, and compute weight gain using remaining status turns before or after extension?",
+      "implementation": "Current kit explicitly extends both sides and uses status_turn_exchange. That choice should be stated in authoritative source rather than assumed.",
+      "code": "src/data/leonidasSkills.ts:86; src/blocks/ops/weightEffects.ts:174"
+    },
+    {
+      "elf": "虯螭淵玄·索蘭特",
+      "source": {
+        "file": "D:\\影片\\新增資料夾\\elf_source_files\\elf_files\\虯螭淵玄.索蘭特.txt",
+        "line": 27,
+        "quote": ">>將對手護盾、護罩變為200"
+      },
+      "uncertainty": "Literal setting to 200 differs from capping at 200. If the opponent shield is 100, should it rise to 200? How should the stated difference cost be handled in that case?",
+      "implementation": "Only values above 200 are reduced. Values below 200 are left unchanged; cost sums positive reductions.",
+      "code": "src/blocks/ops/linkedTeam.ts:316"
+    },
+    {
+      "elf": "魔化·瑞爾斯",
+      "source": {
+        "file": "D:\\影片\\新增資料夾\\elf_source_files\\elf_files\\魔化.瑞爾斯.txt",
+        "line": 7,
+        "quote": ">每造成對手最大體力1%的傷害則額外吸取對手1%體力"
+      },
+      "uncertainty": "The extra 1% HP does not specify current versus maximum HP. Do incomplete 1% damage segments accumulate across hits?",
+      "implementation": "Uses opponent maximum HP, floors segment count per individual damage event, and settles each extra 1% separately.",
+      "code": "src/data/corruptedRiels.ts:19; src/blocks/ops/settlementChains.ts:109"
+    },
+    {
+      "elf": "墜霆·雷伊",
+      "source": {
+        "file": "D:\\影片\\新增資料夾\\elf_source_files\\elf_files\\墜霆.雷伊.txt",
+        "line": 9,
+        "quote": "降低敵方背包內所有精靈基礎能力值7%"
+      },
+      "uncertainty": "Base species stats or trained battle panel? Do all six actual reductions across the enemy team sum before the per-seven conversion? This materially changes the enormous bonus seen in previous logs.",
+      "implementation": "Uses trained calculatedStats and maxHp, sums reductions across the full team, then grants each own stat floor(total/7)*70.",
+      "code": "src/data/corruptedRey.ts:93; src/blocks/ops/panelAndDuration.ts:51"
+    },
+    {
+      "elf": "蓓麗安特",
+      "source": {
+        "file": "D:\\影片\\新增資料夾\\elf_source_files\\elf_files\\5027_蓓麗安特.txt",
+        "line": 26,
+        "quote": "> 己方精靈每次使用技能後星執者消耗15%的能量以附加給對手等量真實傷害"
+      },
+      "uncertainty": "15% of initial, maximum, or currently remaining energy? The following phrase 獲得150點能力 also does not identify whether 能力 means energy or combat stats.",
+      "implementation": "Text ambiguity identified; energy behavior not newly battle-tested in this audit.",
+      "code": null
+    },
+    {
+      "elf": "聖光天馬·珀伽索斯",
+      "source": {
+        "file": "D:\\影片\\新增資料夾\\elf_source_files\\elf_files\\聖光天馬.珀伽索斯.txt",
+        "line": 42,
+        "quote": "造成傷害提升150%，同時令自身下次攻擊造成傷害提升150%"
+      },
+      "uncertainty": "Damage type is unspecified for 紫羽·幻滅 and 金羽·烈影 damage boosts: attack damage only, all skill damage, or all non-true damage?",
+      "implementation": "Purple feather currently applies the two boosts to attack damage only. The previously confirmed potential multiplier (gold power x10, blue reflect remains 100%) is not being re-questioned.",
+      "code": "src/data/pegasusSkills.ts:34"
+    }
+  ],
+  "alreadyConfirmedDoNotAskAgain": [
+    "格勞恩斯 low-HP +75% boosts attack damage only.",
+    "格勞恩斯 successful status infliction and statuses present count separately.",
+    "洪荒 宿世歸泯 +20% boosts all skill damage; paying weight persists until battle end.",
+    "珀伽索斯 potential gold power x10, blue true reflect remains 100%; violet initial application must hit and drain triggers on each skill use.",
+    "天邪龍王 counts current peace duration and clears the freeze effect on switch.",
+    "蒂朵 fatal survival resets on entrance; damage cap is per event; exit refresh is own side only."
+  ],
+  "multiplierProbe": [
+    {
+      "side": "p1",
+      "statusCount": 0,
+      "hp": 9800,
+      "actualLost": 200,
+      "logs": [
+        "🌑 雙方共 0 種異常（翻倍 0 次）：本回合受到非真實傷害降低 80%，下次攻擊非真實傷害提升 160%！"
+      ]
+    },
+    {
+      "side": "p1",
+      "statusCount": 1,
+      "hp": 10000,
+      "actualLost": 0,
+      "logs": [
+        "🌑 雙方共 1 種異常（翻倍 1 次）：本回合受到非真實傷害降低 100%，下次攻擊非真實傷害提升 320%！"
+      ]
+    },
+    {
+      "side": "p2",
+      "statusCount": 0,
+      "hp": 9800,
+      "actualLost": 200,
+      "logs": [
+        "🌑 雙方共 0 種異常（翻倍 0 次）：本回合受到非真實傷害降低 80%，下次攻擊非真實傷害提升 160%！"
+      ]
+    },
+    {
+      "side": "p2",
+      "statusCount": 1,
+      "hp": 10000,
+      "actualLost": 0,
+      "logs": [
+        "🌑 雙方共 1 種異常（翻倍 1 次）：本回合受到非真實傷害降低 100%，下次攻擊非真實傷害提升 320%！"
+      ]
+    }
+  ]
+}

@@ -47,9 +47,11 @@ export function benchOfTeam(team: readonly Elf[]): Elf[] {
   return team.find(e => e.initialBench)?.initialBench ?? [];
 }
 
+const isActiveBagMember = (elf: Elf) => !elf.isExtra && !elf.summonerId;
+
 /** 出戰區（含已陣亡，不含召喚物與額外精靈），依開局位數排序。 */
 export function activeBagOf(team: readonly Elf[]): Elf[] {
-  return team.filter(e => !e.isExtra && !e.summonerId)
+  return team.filter(isActiveBagMember)
     .map((e, i) => ({ e, i })).sort((a, b) => (a.e.initialBagSlot ?? a.i) - (b.e.initialBagSlot ?? b.i) || a.i - b.i).map(x => x.e);
 }
 
@@ -72,7 +74,8 @@ export interface BagEntry { side: 'p1' | 'p2'; elf: Elf; zone: 'active' | 'stand
 export function listBagElves(teams: Record<'p1' | 'p2', readonly Elf[]>): BagEntry[] {
   const out: BagEntry[] = [];
   for (const side of ['p1', 'p2'] as const) {
-    for (const elf of activeBagOf(teams[side])) if (!elf.isVanished) out.push({ side, elf, zone: 'active' });
+    // 手動目標顯示當前隊伍順序，共生循環召回到隊尾時也會更新。
+    for (const elf of teams[side]) if (isActiveBagMember(elf) && !elf.isVanished) out.push({ side, elf, zone: 'active' });
     for (const elf of benchOfTeam(teams[side])) if (!elf.isVanished) out.push({ side, elf, zone: 'standby' });
     for (const elf of teams[side]) if (elf.isExtra && !elf.isVanished && !checkElfDead(elf)) out.push({ side, elf, zone: 'extra' });
   }

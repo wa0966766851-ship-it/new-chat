@@ -268,6 +268,8 @@ export interface BattleEventContext {
   /** 一次正式出手的識別碼；失效重算不變，另一個獨立出手另取新碼。 */
   actionId?: number;
   specialMode?: 'destiny' | 'interstellar';
+  fieldId?:string;
+  statusResistanceReduction?:{maxBase:number;amount:number};
   applyTrueDamageToElf?: (side: "p1" | "p2", targetId: string, amount: number, label?: string) => void;
   applyHealToElf?: (side: 'p1' | 'p2', targetId: string, amount: number, opts?: SettlementOptions) => void;
   adjustHpToElf?: (side:'p1'|'p2',targetId:string,amount:number) => void;
