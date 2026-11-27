@@ -1,0 +1,389 @@
+[
+  {
+    "query": "幻梦芳逝",
+    "url": "https://api.seerapi.com/v1/skill/%E5%B9%BB%E6%A2%A6%E8%8A%B3%E9%80%9D",
+    "result": {
+      "data": {
+        "35914": {
+          "id": 35914,
+          "name": "幻梦芳逝",
+          "power": 0,
+          "max_pp": 1,
+          "accuracy": 95,
+          "crit_rate": 6.25,
+          "priority": 3,
+          "must_hit": true,
+          "atk_num": 1,
+          "info": null,
+          "category": {
+            "id": 1,
+            "url": "https://api.seerapi.com/v1/skill_category/1"
+          },
+          "type": {
+            "id": 64,
+            "url": "https://api.seerapi.com/v1/element_type_combination/64"
+          },
+          "learned_by_pet": [],
+          "skill_effect": [
+            {
+              "info": "消耗自身全部体力，使己方下只出场精灵首次使用的技能必定先手、必定命中",
+              "analyze_info": "[sprite name=iconHit]消耗自身全部体力，使[color=#52a5f2]己方[/color]下只出场精灵[color=#52a5f2]首次[/color]使用的技能必定先手、[color=#52a5f2]必定命中[/color]（boss有效）",
+              "args": [],
+              "effect": {
+                "id": 1812,
+                "url": "https://api.seerapi.com/v1/skill_effect_type/1812"
+              }
+            }
+          ],
+          "friend_skill_effect": [],
+          "hide_effect": null,
+          "advance": null,
+          "hash": "9dd11dfd"
+        }
+      }
+    }
+  },
+  {
+    "query": "时空牵绊",
+    "url": "https://api.seerapi.com/v1/skill/%E6%97%B6%E7%A9%BA%E7%89%B5%E7%BB%8A",
+    "result": {
+      "data": {
+        "35911": {
+          "id": 35911,
+          "name": "时空牵绊",
+          "power": 85,
+          "max_pp": 20,
+          "accuracy": 98,
+          "crit_rate": 6.25,
+          "priority": 3,
+          "must_hit": false,
+          "atk_num": 1,
+          "info": null,
+          "category": {
+            "id": 2,
+            "url": "https://api.seerapi.com/v1/skill_category/2"
+          },
+          "type": {
+            "id": 64,
+            "url": "https://api.seerapi.com/v1/element_type_combination/64"
+          },
+          "learned_by_pet": [],
+          "skill_effect": [
+            {
+              "info": "消除对手能力提升状态，消除成功则3回合内对手造成的攻击伤害不超过250点",
+              "analyze_info": "[sprite name=iconHit]消除对手能力提升状态，消除成功则3回合内对手造成的[color=#52a5f2]攻击伤害[/color]不超过250点（boss有效）",
+              "args": [
+                3,
+                250
+              ],
+              "effect": {
+                "id": 766,
+                "url": "https://api.seerapi.com/v1/skill_effect_type/766"
+              }
+            },
+            {
+              "info": "附加对手已损失生命值40%的百分比伤害",
+              "analyze_info": "[sprite name=iconHit]附加对手已损失生命值40%的[color=#52a5f2]百分比伤害[/color]（boss有效）",
+              "args": [
+                40
+              ],
+              "effect": {
+                "id": 514,
+                "url": "https://api.seerapi.com/v1/skill_effect_type/514"
+              }
+            }
+          ],
+          "friend_skill_effect": [],
+          "hide_effect": null,
+          "advance": null,
+          "hash": "31837d85"
+        }
+      }
+    }
+  },
+  {
+    "query": "灵籁之愿",
+    "url": "https://api.seerapi.com/v1/skill/%E7%81%B5%E7%B1%81%E4%B9%8B%E6%84%BF",
+    "result": {
+      "data": {
+        "27982": {
+          "id": 27982,
+          "name": "灵籁之愿",
+          "power": 0,
+          "max_pp": 5,
+          "accuracy": 95,
+          "crit_rate": null,
+          "priority": 0,
+          "must_hit": true,
+          "atk_num": 1,
+          "info": "开始免疫并反弹异常状态了；开始恢复自身一定体力并造成等量固定伤害了；3回合内自身受到的攻击伤害不会超过250",
+          "category": {
+            "id": 4,
+            "url": "https://api.seerapi.com/v1/skill_category/4"
+          },
+          "type": {
+            "id": 8,
+            "url": "https://api.seerapi.com/v1/element_type_combination/8"
+          },
+          "learned_by_pet": [],
+          "skill_effect": [
+            {
+              "info": "4回合内免疫并反弹所有受到的异常状态",
+              "analyze_info": "[sprite name=iconHit]4回合内免疫并[color=#52a5f2]反弹[/color]所有受到的异常状态（boss有效）",
+              "args": [
+                4
+              ],
+              "effect": {
+                "id": 191,
+                "url": "https://api.seerapi.com/v1/skill_effect_type/191"
+              }
+            },
+            {
+              "info": "4回合内每回合使用技能恢复自身最大体力的1/3并造成等量百分比伤害，恢复体力时若自身体力低于最大体力的1/2则恢复效果和百分比伤害翻倍",
+              "analyze_info": "[sprite name=iconHit]4回合内每回合使用技能恢复自身最大体力的1/3并造成等量[color=#52a5f2]百分比伤害[/color]，恢复体力时若自身体力低于最大体力的1/2则恢复效果和[color=#52a5f2]百分比伤害[/color]翻倍（boss有效）",
+              "args": [
+                4,
+                3,
+                2
+              ],
+              "effect": {
+                "id": 1065,
+                "url": "https://api.seerapi.com/v1/skill_effect_type/1065"
+              }
+            },
+            {
+              "info": "3回合内每回合被攻击所受到的伤害不超过250",
+              "analyze_info": "[sprite name=iconHit]3回合内每回合被攻击所受到的伤害不超过250（boss有效）",
+              "args": [
+                3,
+                250
+              ],
+              "effect": {
+                "id": 125,
+                "url": "https://api.seerapi.com/v1/skill_effect_type/125"
+              }
+            }
+          ],
+          "friend_skill_effect": [],
+          "hide_effect": null,
+          "advance": null,
+          "hash": "5597bb0"
+        }
+      }
+    }
+  },
+  {
+    "query": "星璨之望",
+    "url": "https://api.seerapi.com/v1/skill/%E6%98%9F%E7%92%A8%E4%B9%8B%E6%9C%9B",
+    "result": {
+      "data": {
+        "27983": {
+          "id": 27983,
+          "name": "星璨之望",
+          "power": 0,
+          "max_pp": 5,
+          "accuracy": 95,
+          "crit_rate": null,
+          "priority": 0,
+          "must_hit": true,
+          "atk_num": 1,
+          "info": "全属性都提升了；对手受到的伤害提升了；自身出手更快了",
+          "category": {
+            "id": 4,
+            "url": "https://api.seerapi.com/v1/skill_category/4"
+          },
+          "type": {
+            "id": 8,
+            "url": "https://api.seerapi.com/v1/element_type_combination/8"
+          },
+          "learned_by_pet": [],
+          "skill_effect": [
+            {
+              "info": "全属性+1，自身当前体力高于最大体力的1/2时强化效果翻倍",
+              "analyze_info": "[sprite name=iconHit][color=#52a5f2]全属性[/color]+1，自身当前体力高于最大体力的1/2时强化效果翻倍（boss有效）",
+              "args": [
+                1,
+                2
+              ],
+              "effect": {
+                "id": 1014,
+                "url": "https://api.seerapi.com/v1/skill_effect_type/1014"
+              }
+            },
+            {
+              "info": "下2回合造成的攻击伤害额外提升130%",
+              "analyze_info": "[sprite name=iconHit]下2回合造成的攻击[color=#52a5f2]伤害额外提升[/color]130%（boss有效）",
+              "args": [
+                2,
+                130
+              ],
+              "effect": {
+                "id": 693,
+                "url": "https://api.seerapi.com/v1/skill_effect_type/693"
+              }
+            },
+            {
+              "info": "下2回合令自身所有技能先制+2",
+              "analyze_info": "[sprite name=iconHit]下2回合令自身所有[color=#52a5f2]技能先制[/color]+2（boss有效）",
+              "args": [
+                2,
+                2
+              ],
+              "effect": {
+                "id": 843,
+                "url": "https://api.seerapi.com/v1/skill_effect_type/843"
+              }
+            }
+          ],
+          "friend_skill_effect": [],
+          "hide_effect": null,
+          "advance": null,
+          "hash": "bf0a3ac4"
+        }
+      }
+    }
+  },
+  {
+    "query": "琴·万律归一",
+    "url": "https://api.seerapi.com/v1/skill/%E7%90%B4%C2%B7%E4%B8%87%E5%BE%8B%E5%BD%92%E4%B8%80",
+    "result": {
+      "data": {
+        "35915": {
+          "id": 35915,
+          "name": "琴·万律归一",
+          "power": 150,
+          "max_pp": 5,
+          "accuracy": 95,
+          "crit_rate": 6.25,
+          "priority": 0,
+          "must_hit": true,
+          "atk_num": 1,
+          "info": null,
+          "category": {
+            "id": 2,
+            "url": "https://api.seerapi.com/v1/skill_category/2"
+          },
+          "type": {
+            "id": 64,
+            "url": "https://api.seerapi.com/v1/element_type_combination/64"
+          },
+          "learned_by_pet": [],
+          "skill_effect": [
+            {
+              "info": "反转自身能力下降状态",
+              "analyze_info": "[sprite name=iconHit]反转自身能力下降状态（boss有效）",
+              "args": [],
+              "effect": {
+                "id": 521,
+                "url": "https://api.seerapi.com/v1/skill_effect_type/521"
+              }
+            },
+            {
+              "info": "2回合内令对手使用的属性技能无效",
+              "analyze_info": "[sprite name=iconHit]2回合内令对手使用的属性技能无效（boss有效）",
+              "args": [
+                2
+              ],
+              "effect": {
+                "id": 478,
+                "url": "https://api.seerapi.com/v1/skill_effect_type/478"
+              }
+            },
+            {
+              "info": "技能使用成功时，100%改变自身防御等级+1",
+              "analyze_info": "[sprite name=iconHit]技能使用成功时，100%改变自身防御等级+1（boss有效）",
+              "args": [
+                1,
+                100,
+                1
+              ],
+              "effect": {
+                "id": 4,
+                "url": "https://api.seerapi.com/v1/skill_effect_type/4"
+              }
+            },
+            {
+              "info": "技能使用成功时，100%改变自身特防等级+1",
+              "analyze_info": "[sprite name=iconHit]技能使用成功时，100%改变自身特防等级+1（boss有效）",
+              "args": [
+                3,
+                100,
+                1
+              ],
+              "effect": {
+                "id": 4,
+                "url": "https://api.seerapi.com/v1/skill_effect_type/4"
+              }
+            }
+          ],
+          "friend_skill_effect": [],
+          "hide_effect": null,
+          "advance": null,
+          "hash": "d7240fc6"
+        }
+      }
+    }
+  },
+  {
+    "query": "朵·盛夏咏叹",
+    "url": "https://api.seerapi.com/v1/skill/%E6%9C%B5%C2%B7%E7%9B%9B%E5%A4%8F%E5%92%8F%E5%8F%B9",
+    "result": {
+      "data": {
+        "35916": {
+          "id": 35916,
+          "name": "朵·盛夏咏叹",
+          "power": 130,
+          "max_pp": 13,
+          "accuracy": 95,
+          "crit_rate": 6.25,
+          "priority": 0,
+          "must_hit": true,
+          "atk_num": 1,
+          "info": null,
+          "category": {
+            "id": 2,
+            "url": "https://api.seerapi.com/v1/skill_category/2"
+          },
+          "type": {
+            "id": 64,
+            "url": "https://api.seerapi.com/v1/element_type_combination/64"
+          },
+          "learned_by_pet": [],
+          "skill_effect": [
+            {
+              "info": "消除对手回合类效果，消除成功则下回合自身造成的攻击伤害额外提升130%",
+              "analyze_info": "[sprite name=iconHit]消除对手[color=#52a5f2]回合类效果[/color]，消除成功则下回合自身造成的攻击[color=#52a5f2]伤害额外提升[/color]130%（boss有效）",
+              "args": [
+                130
+              ],
+              "effect": {
+                "id": 913,
+                "url": "https://api.seerapi.com/v1/skill_effect_type/913"
+              }
+            },
+            {
+              "info": "获得130点护盾与130点护罩，若己方场地效果不为星璨舞台，则护盾效果翻倍且吸取对手130点体力并于下回合开始时将己方场地变为星璨舞台，持续5回合，若己方场地效果为星璨舞台，则护罩效果翻倍且造成伤害的130%恢复自身体力并于下回合开始时将己方场地变为灵籁泳馆，持续5回合",
+              "analyze_info": "[sprite name=iconHit]获得130点[color=#57c975]护盾[/color]与130点[color=#57c975]护罩[/color]，若[color=#52a5f2]己方[/color]场地效果不为星璨舞台，则[color=#57c975]护盾[/color]效果翻倍且[color=#52a5f2]吸取[/color]对手130点体力并于下[color=#57c975]回合开始时[/color]将[color=#52a5f2]己方[/color]场地变为星璨舞台，持续5回合，若[color=#52a5f2]己方[/color]场地效果为星璨舞台，则[color=#57c975]护罩[/color]效果翻倍且造成伤害的130%恢复自身体力并于下[color=#57c975]回合开始时[/color]将[color=#52a5f2]己方[/color]场地变为灵籁泳馆，持续5回合（boss有效）",
+              "args": [
+                130,
+                130,
+                130,
+                5,
+                130,
+                5
+              ],
+              "effect": {
+                "id": 1813,
+                "url": "https://api.seerapi.com/v1/skill_effect_type/1813"
+              }
+            }
+          ],
+          "friend_skill_effect": [],
+          "hide_effect": null,
+          "advance": null,
+          "hash": "60fa834a"
+        }
+      }
+    }
+  }
+]

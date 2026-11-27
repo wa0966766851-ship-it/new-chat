@@ -124,7 +124,8 @@ if (check) {
   // 2026-11-21 新精靈 5052 趙雲／5053 晻藹夜靈.布萊克／5054 虯螭淵玄.索蘭特（全 Kit）：技能 1618→1704、魂印 982→1062 子句；下限同步提高到目前解析量 914。
   // 2026-11-22 新增備選技能：趙雲「豪膽鎮沙場」、晻藹夜靈.布萊克「王.黎明前奏」；
   //   兩招放技能池（主列上限5，見 scripts/audit_main_skill_panels.ts），故稽核分母仍為 1705、已解析 914。
-  if (skills.parsed < 914 || skills.total !== 1705) failures.push(`技能覆蓋率退步或資料集改變：${skills.parsed}/${skills.total}`);
+  // 20261127：蒂朵新增28個攜帶技能子句，其中13個可解析。提高已解析門檻，不將資料集擴充視為解析退步。
+  if (skills.parsed < 927 || skills.total !== 1733) failures.push(`技能覆蓋率退步或資料集改變：${skills.parsed}/${skills.total}`);
   // 5029 異境神霆·雷伊加入 16 個可稽核魂印子句；資料集基準由 409 更新為 427。
   // 競技場五隻魂印走專屬 handler：431 → 449，已解析維持 104。
   // 20261003-2：無極聖武補英雄之耀／武誅／亮節／威怯官方定義、龍之治癒補赤龍與四龍追加效果：449 → 456，已解析 104 → 105。
@@ -135,7 +136,8 @@ if (check) {
   // 20261024：資料集擴充：120/629 → 122/663。
   // 20261101：5041 魂印補入官方「額外精靈炫彩山神」整段原文（+8 子句，皆為額外精靈敘述；已解析維持 122）：122/681 → 122/689（退步門檻不變）。
   // 20261111：同上述資料集擴充，魂印分母同步為 842；已解析門檻保留 122，只更新分母。
-  if (souls.parsed < 135 || souls.total !== 1062) failures.push(`魂印覆蓋率退步或資料集改變：${souls.parsed}/${souls.total}`);
+  // 20261127：蒂朵魂印新增10句，布萊克原文修訂新增1句；已解析門檻維持135。
+  if (souls.parsed < 135 || souls.total !== 1073) failures.push(`魂印覆蓋率退步或資料集改變：${souls.parsed}/${souls.total}`);
 
   for (const name of Object.keys(SKILL_MODE)) {
     const skill = DEFAULT_ELVES.flatMap(elf => elf.skills || []).find(item => item.name === name);

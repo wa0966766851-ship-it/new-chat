@@ -1,0 +1,43 @@
+[
+  {
+    "name": "monsters",
+    "url": "https://raw.githubusercontent.com/SeerAPI/config-sources/main/unity/monsters.json",
+    "keys": [
+      "monsters"
+    ]
+  },
+  {
+    "name": "mintmark",
+    "url": "https://raw.githubusercontent.com/SeerAPI/config-sources/main/unity/mintmark.json",
+    "keys": [
+      "mint_marks"
+    ]
+  },
+  {
+    "name": "mintmarkTemp",
+    "url": "https://raw.githubusercontent.com/SeerAPI/config-sources/main/unity/mintmarkTemp.json",
+    "keys": [
+      "mint_marks"
+    ]
+  },
+  {
+    "name": "new_monster_level",
+    "url": "https://raw.githubusercontent.com/SeerAPI/config-sources/main/html5/json/new_monster_level.json",
+    "keys": [
+      "data"
+    ]
+  },
+  {
+    "name": "gems",
+    "url": "https://api.seerapi.com/v1/gem/?limit=100&expand=true",
+    "keys": [
+      "count",
+      "next",
+      "previous",
+      "first",
+      "last",
+      "results",
+      "hash"
+    ]
+  }
+]

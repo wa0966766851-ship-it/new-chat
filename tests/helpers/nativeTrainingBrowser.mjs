@@ -67,7 +67,7 @@ export async function verifyNativeTraining(send,origin){
  await wait(`JSON.parse(localStorage.getItem('seer_default_elves_overrides'))['5043']?.skinId==='gaia-godslayer'`);
  await shot('native-elf-appearance');
  await evaluate(`document.querySelector('.atr-icon[aria-label="關閉"]').click()`);
- await click('背包');await wait(`!!document.querySelector('[data-workspace-slot="p1-0"]')`);
+ await wait(`!!document.querySelector('[data-workspace-slot="p1-0"]')`);
  assert.equal(await evaluate(`document.querySelectorAll('[data-workspace-slot]').length`),24,'必須保留雙方各12格出戰與待命位置');
  await evaluate(`document.querySelector('[data-workspace-slot="p1-0"] [aria-label="替換精靈"]').click()`);
  await wait(`!!document.querySelector('[aria-label="選擇替換精靈"] section .grid > button')`);

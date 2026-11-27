@@ -305,7 +305,8 @@
     "online:desktop": "powershell -NoProfile -ExecutionPolicy Bypass -File launcher/online.ps1",
     "online:shortcut": "powershell -NoProfile -ExecutionPolicy Bypass -File launcher/create-online-shortcut.ps1",
     "test:destiny-compact": "node --import tsx tests/destinyCompact.browser.test.ts",
-    "test:online-preparation": "node --import tsx tests/onlinePreparation.semantic.test.ts"
+    "test:online-preparation": "node --import tsx tests/onlinePreparation.semantic.test.ts",
+    "test:training": "node --import tsx tests/trainingLevel.semantic.test.ts && node --import tsx tests/nativeTrainingParity.semantic.test.ts && node --import tsx tests/inscriptionGems.semantic.test.ts && node --import tsx tests/freeBattleTraining.semantic.test.ts"
   },
   "dependencies": {
     "@google/genai": "^2.4.0",
